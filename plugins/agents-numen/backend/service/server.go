@@ -41,7 +41,7 @@ var errClosing = errors.New("this agent is closing")
 // or linked into the process that hosts the vault. The zero value uses the default chat API with no
 // key.
 type Server struct {
-	agentrun.UnimplementedAgentServiceHandler
+	agentrun.Unimplemented
 
 	// Client sends the requests to the chat API. Nil sends them with a client of its own.
 	Client *http.Client
@@ -113,22 +113,13 @@ func (s *Server) getModel(named string) string {
 	return defaultModel
 }
 
-// AskAgent works the task and reports each request to the model, its output, each tool call
-// and the stop reason. A conversation continues from the transcript stored for it.
-func (s *Server) AskAgent(
-	ctx context.Context,
-	req *connect.Request[agentrun.AskAgentRequest],
-	stream *connect.ServerStream[agentrun.AskAgentResponse],
-) error {
-	return s.Ask(ctx, req.Msg, stream.Send)
-}
-
-// Ask is AskAgent with the steps going to send.
-func (s *Server) Ask(ctx context.Context, task *agentrun.AskAgentRequest, send func(*agentrun.AskAgentResponse) error) (err error) {
+// Ask works the task and reports each request to the model, its output, each tool call and the
+// stop reason to send. A conversation continues from the transcript stored for it.
+func (s *Server) Ask(ctx context.Context, task *agentrun.Request, send func(*agentrun.Response) error) (err error) {
 	taskCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	conversation := task.GetConversation()
+	conversation := task.Conversation
 	work := agentrun.NewWork(conversation, 0, agentrun.StopByCancel(cancel))
 	if !s.registry.Add(work) {
 		return connect.NewError(connect.CodeUnavailable, errClosing)
@@ -141,7 +132,7 @@ func (s *Server) Ask(ctx context.Context, task *agentrun.AskAgentRequest, send f
 		if taskCtx.Err() != nil {
 			return nil
 		}
-		return send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseStopped{
+		return send(&agentrun.Response{Step: &agentrun.StoppedStep{
 			Stopped: fmt.Sprintf("the agent could not reach this vault: %v", err),
 		}})
 	}
@@ -149,20 +140,20 @@ func (s *Server) Ask(ctx context.Context, task *agentrun.AskAgentRequest, send f
 
 	history := s.getConversation(conversation)
 	messages := make([]message, 0, len(history)+2)
-	if instructions := task.GetInstructions(); instructions != "" {
+	if instructions := task.Instructions; instructions != "" {
 		messages = append(messages, message{Role: "system", Content: newText(instructions), ToolCalls: nil, ToolCallID: ""})
 	}
 	messages = append(messages, history...)
-	messages = append(messages, message{Role: "user", Content: newText(task.GetPrompt()), ToolCalls: nil, ToolCallID: ""})
+	messages = append(messages, message{Role: "user", Content: newText(task.Prompt), ToolCalls: nil, ToolCallID: ""})
 
-	modelName := s.getModel(task.GetModel())
+	modelName := s.getModel(task.Model)
 	taskRun := &run{
 		chat:    s.getChat(),
 		model:   modelName,
-		effort:  s.getEffort(taskCtx, modelName, task.GetReasoning()),
+		effort:  s.getEffort(taskCtx, modelName, task.Reasoning),
 		tools:   tools,
-		words:   toolcall.IndexDeclarations(task.GetToolDeclarations()),
-		turns:   int(task.GetMaxSteps()),
+		words:   toolcall.IndexDeclarations(task.ToolDeclarations),
+		turns:   int(task.MaxSteps),
 		send:    send,
 		isPlain: false,
 	}
@@ -178,7 +169,7 @@ func (s *Server) Ask(ctx context.Context, task *agentrun.AskAgentRequest, send f
 	if reason == reasonDone || reason == reasonTurns || reason == reasonCut {
 		s.appendConversation(conversation, transcript[len(messages)-1:])
 	}
-	return send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseStopped{Stopped: reason}})
+	return send(&agentrun.Response{Step: &agentrun.StoppedStep{Stopped: reason}})
 }
 
 // getConversation is the transcript in the conversation so far, oldest first.
@@ -207,42 +198,32 @@ func (s *Server) appendConversation(conversation string, transcript []message) {
 
 // FinishConversation stops what is still running in the conversation and discards its
 // history.
-func (s *Server) FinishConversation(
-	ctx context.Context,
-	req *connect.Request[agentrun.FinishConversationRequest],
-) (*connect.Response[agentrun.FinishConversationResponse], error) {
-	conversation := req.Msg.GetConversation()
+func (s *Server) FinishConversation(ctx context.Context, conversation string) error {
 	if err := s.registry.EndConversation(ctx, conversation); err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return connect.NewError(connect.CodeInternal, err)
 	}
 	s.mu.Lock()
 	delete(s.conversations, conversation)
 	s.mu.Unlock()
-	return connect.NewResponse(&agentrun.FinishConversationResponse{}), nil
+	return nil
 }
 
-// GetAgentState is unreachable while the chat API does not list its models.
-func (s *Server) GetAgentState(
-	ctx context.Context,
-	_ *connect.Request[agentrun.GetAgentStateRequest],
-) (*connect.Response[agentrun.GetAgentStateResponse], error) {
-	res := &agentrun.GetAgentStateResponse{Unreachable: ""}
+// GetState is unreachable while the chat API does not list its models.
+func (s *Server) GetState(ctx context.Context) (*agentrun.State, error) {
+	state := &agentrun.State{Unreachable: ""}
 	if _, err := s.listModels(ctx); err != nil {
-		res.Unreachable = fmt.Sprintf("the chat API cannot be reached: %v", err)
+		state.Unreachable = fmt.Sprintf("the chat API cannot be reached: %v", err)
 	}
-	return connect.NewResponse(res), nil
+	return state, nil
 }
 
-// GetAgentPrograms lists the one program this agent runs: the chat API the settings name, installed
+// GetPrograms lists the one program this agent runs: the chat API the settings name, installed
 // while it lists its models, with those models and the configured one as the default. It runs only
 // the vault tools a task names.
-func (s *Server) GetAgentPrograms(
-	ctx context.Context,
-	_ *connect.Request[agentrun.GetAgentProgramsRequest],
-) (*connect.Response[agentrun.GetAgentProgramsResponse], error) {
+func (s *Server) GetPrograms(ctx context.Context, _ []agentrun.ProgramCommand) ([]*agentrun.Program, error) {
 	models, err := s.listModels(ctx)
 	configured := s.getModel("")
-	program := &agentrun.AgentProgram{
+	program := &agentrun.Program{
 		Name:        ProgramName,
 		Title:       programTitle,
 		IsInstalled: err == nil,
@@ -255,18 +236,18 @@ func (s *Server) GetAgentPrograms(
 		if one.Name == configured {
 			hasConfigured = true
 		}
-		program.Models = append(program.Models, &agentrun.AgentModel{
+		program.Models = append(program.Models, &reasoning.Model{
 			Name: one.Name, Title: one.Title, IsDefault: one.Name == configured,
-			ReasoningLevels: reasoning.ToProto(one.ReasoningLevels), DefaultReasoning: one.DefaultReasoning,
+			ReasoningLevels: one.ReasoningLevels, DefaultReasoning: one.DefaultReasoning,
 		})
 	}
 	if !hasConfigured && configured != "" && len(models) > 0 {
-		program.Models = append(program.Models, &agentrun.AgentModel{
+		program.Models = append(program.Models, &reasoning.Model{
 			Name: configured, Title: configured, IsDefault: true,
 			ReasoningLevels: nil, DefaultReasoning: "",
 		})
 	}
-	return connect.NewResponse(&agentrun.GetAgentProgramsResponse{Programs: []*agentrun.AgentProgram{program}}), nil
+	return []*agentrun.Program{program}, nil
 }
 
 // listModels is what the chat API lists: what it listed under the present settings, or what it

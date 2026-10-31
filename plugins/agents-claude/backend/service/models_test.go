@@ -1,14 +1,13 @@
 package service
 
 import (
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"os"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
-	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 )
 
 // initializeFixture is the answer of Claude Code 2.1.303 to the initialize request, cut to its models.
@@ -23,10 +22,10 @@ func readFixture(t *testing.T) string {
 	return string(raw)
 }
 
-func getLevelNames(levels []*agentrun.ReasoningLevel) []string {
+func getLevelNames(levels []reasoning.Level) []string {
 	names := []string{}
 	for _, one := range levels {
-		names = append(names, one.GetName())
+		names = append(names, one.Name)
 	}
 	return names
 }
@@ -37,17 +36,17 @@ func TestTheModelsAreReadFromTheAnswerOfTheProgram(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	byName := map[string]*agentrun.AgentModel{}
+	byName := map[string]*reasoning.Model{}
 	for _, one := range models {
 		byName[one.Value] = one.toProto()
 	}
-	if got := getLevelNames(byName["opus"].GetReasoningLevels()); !slices.Equal(got, []string{"low", "medium", "high", "xhigh", "max"}) {
+	if got := getLevelNames(byName["opus"].ReasoningLevels); !slices.Equal(got, []string{"low", "medium", "high", "xhigh", "max"}) {
 		t.Errorf("opus offers %v", got)
 	}
-	if got := getLevelNames(byName["claude-sonnet-4-6"].GetReasoningLevels()); !slices.Equal(got, []string{"low", "medium", "high", "max"}) {
+	if got := getLevelNames(byName["claude-sonnet-4-6"].ReasoningLevels); !slices.Equal(got, []string{"low", "medium", "high", "max"}) {
 		t.Errorf("sonnet 4.6 offers %v", got)
 	}
-	if got := byName["claude-haiku-4-5-20251001"]; len(got.GetReasoningLevels()) != 0 || got.GetTitle() != "Haiku 4.5" {
+	if got := byName["claude-haiku-4-5-20251001"]; len(got.ReasoningLevels) != 0 || got.Title != "Haiku 4.5" {
 		t.Errorf("a model of no effort offers a level: %v", got)
 	}
 	if byName[defaultModelName] == nil {
@@ -78,11 +77,11 @@ func TestModels_QueriesProgramForModels(t *testing.T) {
 	t.Setenv("NUMEN_CLAUDE_COMMAND", script)
 	client := startAgent(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
+	got, err := client.GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	models := got.Msg.GetPrograms()[0].GetModels()
+	models := got[0].Models
 	if len(models) != 13 {
 		t.Fatalf("the models are %v", models)
 	}
@@ -99,12 +98,12 @@ func TestGetModels_FallbackWhenListFails(t *testing.T) {
 	t.Setenv("NUMEN_CLAUDE_COMMAND", writeScript(t, "claude", "exit 1\n"))
 	client := startAgent(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
+	got, err := client.GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for place, one := range got.Msg.GetPrograms()[0].GetModels() {
-		if one.GetName() != fallbackModels[place].Value || len(one.GetReasoningLevels()) != 0 {
+	for place, one := range got[0].Models {
+		if one.Name != fallbackModels[place].Value || len(one.ReasoningLevels) != 0 {
 			t.Errorf("the model %v is not a fallback alias", one)
 		}
 	}

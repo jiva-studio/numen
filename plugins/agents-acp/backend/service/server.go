@@ -9,7 +9,7 @@ import (
 )
 
 type agentServer struct {
-	agentrun.UnimplementedAgentServiceHandler
+	agentrun.Unimplemented
 	// acpAgents returns the agents the programs are listed for. Nil is those the settings name.
 	acpAgents func() []acpAgent
 	// discover returns the ACP agents discovered on the machine.

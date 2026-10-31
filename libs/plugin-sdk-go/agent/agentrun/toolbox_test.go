@@ -3,50 +3,43 @@ package agentrun_test
 import (
 	"testing"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 func TestToolboxPreservesTheToolsAndExtendsThePrompt(t *testing.T) {
 	var box agentrun.Toolbox
 	ctx := t.Context()
 
-	reg, err := box.RegisterTool(ctx, connect.NewRequest(&v1.RegisterToolRequest{
-		Tool: &v1.AgentToolDefinition{Name: "read_note"},
-	}))
-	if err != nil || !reg.Msg.GetSuccess() {
+	if err := box.RegisterTool(ctx, &agentrun.ToolDefinition{Name: "read_note"}); err != nil {
 		t.Fatalf("registration failed: %v", err)
 	}
-	if _, err := box.RegisterTool(ctx, connect.NewRequest(&v1.RegisterToolRequest{})); err != nil {
+	if err := box.RegisterTool(ctx, nil); err != nil {
 		t.Fatal(err)
 	}
-	first, err := box.ExtendSystemPrompt(ctx, connect.NewRequest(&v1.ExtendSystemPromptRequest{Extension: "Be polite."}))
+	first, err := box.ExtendSystemPrompt(ctx, "Be polite.")
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := box.ExtendSystemPrompt(ctx, connect.NewRequest(&v1.ExtendSystemPromptRequest{Extension: "Be brief."}))
+	second, err := box.ExtendSystemPrompt(ctx, "Be brief.")
 	if err != nil {
 		t.Fatal(err)
 	}
-	same, err := box.ExtendSystemPrompt(ctx, connect.NewRequest(&v1.ExtendSystemPromptRequest{}))
+	same, err := box.ExtendSystemPrompt(ctx, "")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if first.Msg.GetFullPrompt() != "Be polite." || second.Msg.GetFullPrompt() != "Be polite.\nBe brief." ||
-		same.Msg.GetFullPrompt() != "Be polite.\nBe brief." {
-		t.Errorf("the prompts are %q, %q, %q", first.Msg.GetFullPrompt(), second.Msg.GetFullPrompt(), same.Msg.GetFullPrompt())
+	if first != "Be polite." || second != "Be polite.\nBe brief." || same != "Be polite.\nBe brief." {
+		t.Errorf("the prompts are %q, %q, %q", first, second, same)
 	}
-	got, err := box.GetAgentTools(ctx, connect.NewRequest(&v1.GetAgentToolsRequest{}))
+	got, err := box.GetTools(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if tools := got.Msg.GetTools(); len(tools) != 1 || tools[0].GetName() != "read_note" {
-		t.Errorf("the tools are %v", tools)
+	if len(got.Tools) != 1 || got.Tools[0].Name != "read_note" {
+		t.Errorf("the tools are %v", got.Tools)
 	}
-	if got.Msg.GetSystemPromptExtension() != "Be polite.\nBe brief." {
-		t.Errorf("the extension is %q", got.Msg.GetSystemPromptExtension())
+	if got.SystemPromptExtension != "Be polite.\nBe brief." {
+		t.Errorf("the extension is %q", got.SystemPromptExtension)
 	}
 }

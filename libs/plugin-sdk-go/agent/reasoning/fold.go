@@ -24,8 +24,8 @@ type Family struct {
 	variants map[string]string
 }
 
-// ToProto is the family in the schema's words.
-func (f Family) ToProto() *AgentModel {
+// GetModel returns the family as the model a program offers.
+func (f Family) GetModel() *Model {
 	return NewModel(f.Name, f.Title, f.Levels, f.Default)
 }
 

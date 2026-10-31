@@ -6,24 +6,17 @@ import (
 	"slices"
 	"testing"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 type runner struct {
 	agentrun.Service
 }
 
-func (s *runner) AskAgent(
-	ctx context.Context,
-	req *connect.Request[v1.AskAgentRequest],
-	_ *connect.ServerStream[v1.AskAgentResponse],
-) error {
-	cmd := exec.CommandContext(ctx, req.Msg.GetCommand()[0], req.Msg.GetCommand()[1:]...)
-	cmd.Dir = req.Msg.GetRoot()
+func (s *runner) Ask(ctx context.Context, req *agentrun.Request, _ func(*agentrun.Response) error) error {
+	cmd := exec.CommandContext(ctx, req.Command[0], req.Command[1:]...)
+	cmd.Dir = req.Root
 	return cmd.Run()
 }
 
@@ -31,7 +24,7 @@ func TestARecordingProgramRecordsTheFolderAndTheArguments(t *testing.T) {
 	path, read := agenttest.RecordingProgram(t, "prog")
 	root := t.TempDir()
 
-	agenttest.Ask(t, agenttest.Serve(t, &runner{}), &v1.AskAgentRequest{
+	agenttest.Ask(t, agenttest.Serve(t, &runner{}), &agentrun.Request{
 		Command: []string{path, "--flag", "two words"},
 		Root:    root,
 	})

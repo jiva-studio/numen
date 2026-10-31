@@ -46,14 +46,14 @@ type reader struct {
 	sentCount    int
 }
 
-func (r *reader) Send(resp *agentrun.AskAgentResponse) {
+func (r *reader) Send(resp *agentrun.Response) {
 	select {
 	case r.work.Output <- resp:
 	case <-r.work.Stopped():
 		return
 	}
 	r.sentCount++
-	if resp.GetToolFinished() != nil {
+	if resp.IsToolFinished() {
 		r.completed++
 	}
 }
@@ -67,7 +67,7 @@ func (r *reader) reportLimit() {
 }
 
 func (r *reader) reportStop(reason string) {
-	r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseStopped{Stopped: reason}})
+	r.Send(&agentrun.Response{Step: &agentrun.StoppedStep{Stopped: reason}})
 }
 
 func start(ctx context.Context, reg *agentrun.Registry, s spec) (*agentrun.Work, error) {
@@ -161,7 +161,7 @@ func scanOutput(
 		if err := json.Unmarshal(line, &event); err == nil {
 			handle(event)
 		} else if text := strings.TrimSpace(string(line)); text != "" {
-			r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseText{Text: text + "\n"}})
+			r.Send(&agentrun.Response{Step: &agentrun.TextStep{Text: text + "\n"}})
 		}
 		if r.isOverLimit() {
 			r.reportLimit()
@@ -189,22 +189,22 @@ func reportExit(r *reader, scanErr, waitErr error, stderr string) {
 }
 
 // newSpec builds the Codex CLI invocation for the request.
-func newSpec(req *agentrun.AskAgentRequest, customPath ...string) spec {
+func newSpec(req *agentrun.Request, customPath ...string) spec {
 	execPath := ""
 	if len(customPath) > 0 {
 		execPath = customPath[0]
 	}
 	s := spec{
-		Conversation: req.GetConversation(),
-		MaxSteps:     int(req.GetMaxSteps()),
+		Conversation: req.Conversation,
+		MaxSteps:     int(req.MaxSteps),
 		NewHandler:   newEventHandler,
 		Root:         "",
 		Token:        "",
 		Build:        nil,
 	}
 	if agentrun.HasTools(req) {
-		s.Root = req.GetRoot()
-		s.Token = req.GetToolsToken()
+		s.Root = req.Root
+		s.Token = req.ToolsToken
 		s.Build = func(ctx context.Context) (*exec.Cmd, func() error, error) {
 			return makeCodexCommand(ctx, req, execPath), nil, nil
 		}
@@ -223,33 +223,33 @@ func resolveCommand(command []string, customPath ...string) (string, []string) {
 	return FindCodex(customPath...), nil
 }
 
-func makeCodexCommand(runCtx context.Context, req *agentrun.AskAgentRequest, customPath ...string) *exec.Cmd {
-	binName, baseArgs := resolveCommand(req.GetCommand(), customPath...)
+func makeCodexCommand(runCtx context.Context, req *agentrun.Request, customPath ...string) *exec.Cmd {
+	binName, baseArgs := resolveCommand(req.Command, customPath...)
 	args := append([]string{}, baseArgs...)
 	args = append(args,
 		"exec",
 		"--json",
 		"--dangerously-bypass-approvals-and-sandbox",
 	)
-	if req.GetToolsUrl() != "" {
-		mcpURL := fmt.Sprintf(`mcp_servers.numen.url=%q`, req.GetToolsUrl())
-		mcpHeader := fmt.Sprintf(`mcp_servers.numen.http_headers={"Authorization"="Bearer %s"}`, req.GetToolsToken())
+	if req.ToolsURL != "" {
+		mcpURL := fmt.Sprintf(`mcp_servers.numen.url=%q`, req.ToolsURL)
+		mcpHeader := fmt.Sprintf(`mcp_servers.numen.http_headers={"Authorization"="Bearer %s"}`, req.ToolsToken)
 		args = append(args, "-c", mcpURL, "-c", mcpHeader)
 	}
 	args = appendModelArguments(args, req)
-	args = append(args, req.GetPrompt())
+	args = append(args, req.Prompt)
 	return exec.CommandContext(runCtx, binName, args...)
 }
 
 // makeAnswerCommand is the run of the Codex CLI that gives one answer: no MCP server, none of the
 // tools Codex has of its own that can be turned off, nothing the user's configuration adds, a
 // sandbox that writes nothing and an empty folder to run in. The folder goes when the run does.
-func makeAnswerCommand(runCtx context.Context, req *agentrun.AskAgentRequest, customPath ...string) (*exec.Cmd, func() error, error) {
+func makeAnswerCommand(runCtx context.Context, req *agentrun.Request, customPath ...string) (*exec.Cmd, func() error, error) {
 	dir, cleanDir, err := agentrun.CreateTempDir("numen-codex-*")
 	if err != nil {
 		return nil, nil, fmt.Errorf("create the folder to run in: %w", err)
 	}
-	binName, baseArgs := resolveCommand(req.GetCommand(), customPath...)
+	binName, baseArgs := resolveCommand(req.Command, customPath...)
 	args := append([]string{}, baseArgs...)
 	args = append(args,
 		"exec",
@@ -264,18 +264,18 @@ func makeAnswerCommand(runCtx context.Context, req *agentrun.AskAgentRequest, cu
 		args = append(args, "--disable", feature)
 	}
 	args = appendModelArguments(args, req)
-	args = append(args, "--", agentrun.WritePrompt(req.GetInstructions(), req.GetPrompt()))
+	args = append(args, "--", agentrun.WritePrompt(req.Instructions, req.Prompt))
 	cmd := exec.CommandContext(runCtx, binName, args...)
 	cmd.Dir = dir
 	return cmd, cleanDir, nil
 }
 
 // appendModelArguments adds the model the request names and the reasoning level it requests.
-func appendModelArguments(args []string, req *agentrun.AskAgentRequest) []string {
-	if model := req.GetModel(); model != "" && model != "default" {
+func appendModelArguments(args []string, req *agentrun.Request) []string {
+	if model := req.Model; model != "" && model != "default" {
 		args = append(args, "--model", model)
 	}
-	if level := req.GetReasoning(); reasoning.IsKnown(level) {
+	if level := req.Reasoning; reasoning.IsKnown(level) {
 		args = append(args, "-c", fmt.Sprintf("model_reasoning_effort=%q", level))
 	}
 	return args

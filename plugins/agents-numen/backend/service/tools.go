@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"net/http"
 	neturl "net/url"
 	"slices"
 	"strings"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
 // errPlainToken is a tool server the token would reach unencrypted.
@@ -44,8 +45,8 @@ func (b bearer) RoundTrip(req *http.Request) (*http.Response, error) {
 
 // openToolbox connects to the tool server of the task and lists the tools of it the task names. An
 // empty url, or a task naming no tool, is a run with no tools, and no connection is made.
-func openToolbox(ctx context.Context, task *agentrun.AskAgentRequest) (*toolbox, error) {
-	url, named := task.GetToolsUrl(), task.GetTools()
+func openToolbox(ctx context.Context, task *agentrun.Request) (*toolbox, error) {
+	url, named := task.ToolsURL, task.Tools
 	if url == "" || len(named) == 0 {
 		return &toolbox{session: nil, tools: nil, meta: nil}, nil
 	}
@@ -55,7 +56,7 @@ func openToolbox(ctx context.Context, task *agentrun.AskAgentRequest) (*toolbox,
 	transport := &sdk.StreamableClientTransport{
 		Endpoint: url,
 		HTTPClient: &http.Client{
-			Transport:     bearer{token: task.GetToolsToken(), base: http.DefaultTransport},
+			Transport:     bearer{token: task.ToolsToken, base: http.DefaultTransport},
 			CheckRedirect: refuseDowngrade,
 			Jar:           nil,
 			Timeout:       0,
@@ -73,7 +74,7 @@ func openToolbox(ctx context.Context, task *agentrun.AskAgentRequest) (*toolbox,
 		return nil, fmt.Errorf("connect to the vault's tools: %w", err)
 	}
 
-	box := &toolbox{session: session, tools: nil, meta: readMeta(task.GetContext())}
+	box := &toolbox{session: session, tools: nil, meta: readMeta(task.Context)}
 	for tool, err := range session.Tools(ctx, nil) {
 		if err != nil {
 			return nil, errors.Join(fmt.Errorf("list the vault's tools: %w", err), session.Close())

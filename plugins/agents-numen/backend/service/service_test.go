@@ -2,8 +2,6 @@ package service
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +10,8 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
@@ -78,12 +78,12 @@ func TestConfigure_PropagatesSettingsToAgent(t *testing.T) {
 		Configure(t.Context(), map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}); err != nil {
 		t.Fatal(err)
 	}
-	res, err := agentrun.NewAgentServiceClient(http.DefaultClient, pos, withToken()).
-		GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
+	res, err := agentrun.NewClient(http.DefaultClient, pos, withToken()).
+		GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if programs := res.Msg.GetPrograms(); len(programs) != 1 || !programs[0].GetIsInstalled() || len(programs[0].GetModels()) != 2 {
+	if programs := res; len(programs) != 1 || !programs[0].IsInstalled || len(programs[0].Models) != 2 {
 		t.Errorf("the programs are %+v", programs)
 	}
 }
@@ -109,12 +109,12 @@ func TestNewHandler_PropagatesSettingsToAgent(t *testing.T) {
 		Configure(t.Context(), map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}); err != nil {
 		t.Fatal(err)
 	}
-	res, err := agentrun.NewAgentServiceClient(web.Client(), web.URL, withToken()).
-		GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
+	res, err := agentrun.NewClient(web.Client(), web.URL, withToken()).
+		GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if programs := res.Msg.GetPrograms(); len(programs) != 1 || len(programs[0].GetModels()) != 2 {
+	if programs := res; len(programs) != 1 || len(programs[0].Models) != 2 {
 		t.Errorf("the programs are %+v", programs)
 	}
 }
