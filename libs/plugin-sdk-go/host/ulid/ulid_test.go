@@ -10,8 +10,9 @@ import (
 
 func TestTheDefaultEntropyMakesTwoIdentifiersOfOneInstantDiffer(t *testing.T) {
 	instant := time.Date(2026, time.August, 15, 12, 0, 0, 0, time.UTC)
-	if ulid.New(instant) == ulid.New(instant) {
-		t.Error("two identifiers of one instant are equal")
+	first, second := ulid.New(instant), ulid.New(instant)
+	if first == second {
+		t.Errorf("two identifiers of one instant are equal: %s", first)
 	}
 }
 

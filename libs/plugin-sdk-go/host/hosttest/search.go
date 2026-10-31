@@ -287,18 +287,11 @@ func (s *Search) SampleSimilarities(_ context.Context, recipe string, queries []
 	}
 	rows := make([][]float64, len(queries))
 	for i, query := range queries {
-		if len(query.Vector) == 0 {
-			continue
+		row, err := s.compareRowLocked(query, passages)
+		if err != nil {
+			return host.SimilaritySample{}, err
 		}
-		for _, passage := range passages {
-			if query.Path != "" && passage.Path == query.Path {
-				continue
-			}
-			if len(passage.Vector) != len(query.Vector) {
-				return host.SimilaritySample{}, host.ErrInvalidQuery
-			}
-			rows[i] = append(rows[i], s.compareLocked(query.Vector, passage.Vector))
-		}
+		rows[i] = row
 	}
 	return host.SimilaritySample{PassageCount: len(passages), SourceCount: len(paths), Rows: rows}, nil
 }
@@ -321,6 +314,25 @@ func (s *Search) GetBestSimilarity(_ context.Context, recipe string, query []flo
 		}
 	}
 	return best, nil
+}
+
+// compareRowLocked is the similarity of the query with each passage of another note, in the order of
+// the passages, and nil for a query with no vector.
+func (s *Search) compareRowLocked(query host.SimilarityQuery, passages []SearchPassage) ([]float64, error) {
+	if len(query.Vector) == 0 {
+		return nil, nil
+	}
+	var row []float64
+	for _, passage := range passages {
+		if query.Path != "" && passage.Path == query.Path {
+			continue
+		}
+		if len(passage.Vector) != len(query.Vector) {
+			return nil, host.ErrInvalidQuery
+		}
+		row = append(row, s.compareLocked(query.Vector, passage.Vector))
+	}
+	return row, nil
 }
 
 // compareLocked is the similarity of the query with the passage.

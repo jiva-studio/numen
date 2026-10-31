@@ -1,3 +1,4 @@
+// Package plugintest checks the wire contract of the messages a plugin exchanges with the host.
 package plugintest
 
 import (
