@@ -59,8 +59,7 @@ async function loadDynamicModule(
   if (!res.ok) {
     throw new Error(`manifest.json of plugin "${pluginId}" answered ${res.status}`)
   }
-  const document: unknown = await res.json()
-  const parsed = parseManifest(document)
+  const parsed = parseManifest(await res.text())
   if (!parsed.ok) {
     throw new Error(`manifest.json of plugin "${pluginId}" is invalid: ${parsed.error}`)
   }

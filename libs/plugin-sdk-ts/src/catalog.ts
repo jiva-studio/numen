@@ -10,21 +10,26 @@ import {
   CatalogService,
   CatalogState,
   ManifestSchema,
-  type CatalogEntry,
-  type CatalogSourceError,
-  type Manifest,
+  type CatalogEntry as CatalogEntryMessage,
+  type CatalogSourceError as CatalogSourceErrorMessage,
+  type Manifest as ManifestMessage,
+  type ManifestContributes as ManifestContributesMessage,
+  type ManifestTabKind as ManifestTabKindMessage,
 } from '@numen/protocol'
 import { asFailure, asValue, type Result } from './result'
 import { formatErrorMessage } from './errors/error'
 import { transport } from './transport'
 
-export type {
-  CatalogEntry,
-  CatalogSourceError,
-  Manifest,
-  ManifestContributes,
-  ManifestTabKind,
-} from '@numen/protocol'
+/** One plugin as the catalog knows it. */
+export type CatalogEntry = CatalogEntryMessage
+/** A source that could not be read in full. */
+export type CatalogSourceError = CatalogSourceErrorMessage
+/** The schema of a plugin's manifest.json. */
+export type Manifest = ManifestMessage
+/** What a plugin adds to the application, known before its frontend is loaded. */
+export type ManifestContributes = ManifestContributesMessage
+/** A kind of tab a plugin registers. */
+export type ManifestTabKind = ManifestTabKindMessage
 
 export const createCatalogClient = (customTransport: Transport = transport) =>
   createClient(CatalogService, customTransport)
@@ -116,12 +121,13 @@ export const createPluginCatalog = (client: CatalogClient): PluginCatalog => ({
 export const pluginCatalog = createPluginCatalog(catalogService)
 
 /**
- * A manifest.json document read against the generated schema. Keys the schema does not name are
+ * The text of a manifest.json read against the generated schema. Keys the schema does not name are
  * ignored; a value of the wrong type is an error.
  */
-export const parseManifest = (document: unknown): Result<Manifest, string> => {
+export const parseManifest = (text: string): Result<Manifest, string> => {
   try {
-    return asValue(fromJson(ManifestSchema, document as JsonValue, { ignoreUnknownFields: true }))
+    const document = JSON.parse(text) as JsonValue
+    return asValue(fromJson(ManifestSchema, document, { ignoreUnknownFields: true }))
   } catch (error) {
     return asFailure(formatErrorMessage(error))
   }

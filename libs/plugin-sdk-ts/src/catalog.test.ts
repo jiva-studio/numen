@@ -92,13 +92,15 @@ describe('createPluginCatalog', () => {
 
 describe('parseManifest', () => {
   it('reads a manifest and ignores the keys the schema does not name', () => {
-    const answer = parseManifest({
-      id: 'sample',
-      name: 'Sample',
-      version: '1.0.0',
-      futureField: true,
-      contributes: { feature: 'Samples', tabKinds: [{ kind: 'sample' }] },
-    })
+    const answer = parseManifest(
+      JSON.stringify({
+        id: 'sample',
+        name: 'Sample',
+        version: '1.0.0',
+        futureField: true,
+        contributes: { feature: 'Samples', tabKinds: [{ kind: 'sample' }] },
+      }),
+    )
 
     expect(answer.ok).toBe(true)
     if (!answer.ok) return
@@ -106,9 +108,13 @@ describe('parseManifest', () => {
   })
 
   it('reports a value of the wrong type', () => {
-    const answer = parseManifest({ id: 5 })
+    const answer = parseManifest('{"id": 5}')
 
     expect(answer.ok).toBe(false)
+  })
+
+  it('reports text that is not JSON', () => {
+    expect(parseManifest('{').ok).toBe(false)
   })
 })
 
