@@ -17,11 +17,11 @@
   "dependencies": {
     "@connectrpc/connect": "^2.1.2",
     "@lucide/vue": "^1.57.0",
+    "@numen/core-client": "*",
     "@numen/plugin-host": "*",
     "@numen/plugin-manager": "*",
     "@numen/plugin-sdk": "*",
     "@numen/shell": "*",
-    "@numen/protocol": "*",
     "@numen/ui": "*",
     "vue": "^3.5.44"
   },

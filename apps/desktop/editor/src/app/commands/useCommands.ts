@@ -3,7 +3,8 @@
  */
 
 import { computed, watch, type Component } from 'vue'
-import { formatErrorMessage, type CommandNote, type MenuEntry } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
+import type { CommandNote, MenuEntry } from '@numen/plugin-sdk'
 import type { WelcomeAction } from '@numen/shell'
 import { runInBackground } from '@numen/ui'
 import {

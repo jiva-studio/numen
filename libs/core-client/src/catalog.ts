@@ -2,7 +2,7 @@
  * The plugin catalog: the plugins the application has, the ones it could have, and the plugin that
  * provides a kind of tab. Entries are the generated protocol types.
  */
-import { createClient, type Client, type Transport } from '@connectrpc/connect'
+import { createClient, type Client } from '@connectrpc/connect'
 import {
   CatalogErrorCode,
   CatalogIncompatibility,
@@ -11,16 +11,14 @@ import {
   type CatalogEntry as CatalogEntryMessage,
   type CatalogSourceError as CatalogSourceErrorMessage,
 } from '@numen/protocol'
-import { asFailure, asValue, formatErrorMessage, transport, type Result } from '@numen/plugin-sdk'
+import { formatErrorMessage } from './errors/error'
+import { asFailure, asValue, type Result } from './result'
+import { transport } from './transport'
 
 /** One plugin as the catalog knows it. */
 export type CatalogEntry = CatalogEntryMessage
 /** A source that could not be read in full. */
 export type CatalogSourceError = CatalogSourceErrorMessage
-export const createCatalogClient = (customTransport: Transport = transport) =>
-  createClient(CatalogService, customTransport)
-
-export const catalogService = createCatalogClient()
 
 export const CATALOG_STATE = CatalogState
 export type CatalogStateValue = CatalogState
@@ -29,7 +27,6 @@ export const CATALOG_INCOMPATIBILITY = CatalogIncompatibility
 export type CatalogIncompatibilityValue = CatalogIncompatibility
 
 export const CATALOG_ERROR_CODE = CatalogErrorCode
-export type CatalogErrorCodeValue = CatalogErrorCode
 
 /** The calls of CatalogService the catalog is read through. */
 export type CatalogClient = Pick<
@@ -104,4 +101,4 @@ export const createPluginCatalog = (client: CatalogClient): PluginCatalog => ({
 })
 
 /** The catalog of the window the page is served from. */
-export const pluginCatalog = createPluginCatalog(catalogService)
+export const pluginCatalog = createPluginCatalog(createClient(CatalogService, transport))

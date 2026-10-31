@@ -5,8 +5,8 @@ import { createNoticeQueue } from '@numen/shell'
 import { useWindowTabs } from '@/entities/tab'
 import type { AnyTabKind } from '@/entities/tab'
 import type { AgentHost, PluginContext, WorkspaceHost } from '@numen/plugin-sdk'
-import type { Manifest } from '@numen/plugin-host'
-import { createMockManifest } from '@numen/plugin-host/testing'
+import type { Manifest } from '@numen/core-client'
+import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginSupport, getFrontendPluginIds } from './useWindowPlugins'
 
 const createSupport = () => {

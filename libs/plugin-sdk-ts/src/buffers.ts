@@ -15,8 +15,3 @@ export interface BufferHost {
 }
 
 export type FileConflict = 'gone' | 'stale' | null
-
-// parseFileConflict returns the conflict a state names, and nothing for every other state.
-export function parseFileConflict(state: string): FileConflict {
-  return state === 'gone' || state === 'stale' ? state : null
-}

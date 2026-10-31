@@ -4,7 +4,7 @@
  * begins without the page asking for one.
  */
 import { onMounted, onUnmounted } from 'vue'
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
 import { createFollower } from '@numen/ui'
 import type { NoticeQueue } from '@numen/shell'
 import { windowService } from '@/shared/clients'

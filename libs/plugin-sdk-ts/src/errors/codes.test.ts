@@ -1,20 +1,22 @@
 import { describe, expect, it } from 'vitest'
 import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 import { formatErrorCodeMessage } from './error'
-
-import { ERROR_CODE } from './answers'
-import { ERRORS, getErrorWords, getKnownErrorCode } from './codes'
+import { getErrorWords, getRelationErrorWords } from './codes'
 
 describe('the words of an error code', () => {
   it('are the words the wire gives the code of the schema', () => {
-    for (const [proto, code] of Object.entries(ERROR_CODE)) {
-      if (code === null || Number(proto) === ProtoErrorCode.UNSPECIFIED) continue
-      expect(getErrorWords(code), code).toBe(formatErrorCodeMessage(Number(proto)))
-    }
-  })
-
-  it('are returned for every code the window has', () => {
-    expect(Object.values(ERRORS).every((one) => one !== '')).toBe(true)
+    expect(getErrorWords('missing')).toBe(formatErrorCodeMessage(ProtoErrorCode.MISSING))
+    expect(getErrorWords('notANote')).toBe(formatErrorCodeMessage(ProtoErrorCode.NOT_A_NOTE))
+    expect(getErrorWords('notText')).toBe(formatErrorCodeMessage(ProtoErrorCode.NOT_TEXT))
+    expect(getErrorWords('tooLarge')).toBe(formatErrorCodeMessage(ProtoErrorCode.TOO_LARGE))
+    expect(getErrorWords('bodyUnwritable')).toBe(
+      formatErrorCodeMessage(ProtoErrorCode.BODY_UNWRITABLE),
+    )
+    expect(getErrorWords('unreadable')).toBe(formatErrorCodeMessage(ProtoErrorCode.UNREADABLE))
+    expect(getErrorWords('alreadyExists')).toBe(
+      formatErrorCodeMessage(ProtoErrorCode.ALREADY_EXISTS),
+    )
+    expect(getErrorWords('invalidName')).toBe(formatErrorCodeMessage(ProtoErrorCode.INVALID_NAME))
   })
 
   it('say that the vault could not be reached where it did not answer', () => {
@@ -22,14 +24,9 @@ describe('the words of an error code', () => {
   })
 })
 
-describe('a code given as text', () => {
-  it('is the code the window words, where it words it', () => {
-    expect(getKnownErrorCode('alreadyExists')).toBe('alreadyExists')
-    expect(getKnownErrorCode('unreachable')).toBe('unreachable')
-  })
-
-  it('is unreadable where the window has no words for it', () => {
-    expect(getKnownErrorCode('changed')).toBe('unreadable')
-    expect(getKnownErrorCode('')).toBe('unreadable')
+describe('the words of a relationship error', () => {
+  it('word the error of a relation, and fall back on the words of an error code', () => {
+    expect(getRelationErrorWords('cycle')).toBe('a note cannot sit above itself in the hierarchy')
+    expect(getRelationErrorWords('missing')).toBe(getErrorWords('missing'))
   })
 })

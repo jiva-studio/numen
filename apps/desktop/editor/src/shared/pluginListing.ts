@@ -8,7 +8,7 @@ import {
   type PluginInfo,
   type PluginListing,
 } from '@numen/plugin-manager'
-import { CATALOG_STATE, type CatalogEntry } from './pluginCatalog'
+import { CATALOG_STATE, type CatalogEntry } from '@numen/core-client'
 
 /** The listing of one catalog entry: its category in lowercase and whether a source offers it. */
 export const createPluginListing = (entry: CatalogEntry): PluginListing => ({

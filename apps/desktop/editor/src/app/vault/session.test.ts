@@ -3,7 +3,7 @@
  * response maps to an empty or zero value.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { FlushResult, Unit } from '@numen/protocol'
+import { FLUSH_RESULT, TASK_UNIT } from '@numen/core-client'
 import { sessionCore } from './session'
 
 const request = vi.hoisted(() => ({
@@ -78,7 +78,7 @@ describe('a flush reported', () => {
     expect(request.reportFlush).toHaveBeenCalledWith({
       window: 'editor',
       token: 'token-1',
-      result: FlushResult.NOTHING,
+      result: FLUSH_RESULT.NOTHING,
     })
   })
 
@@ -88,7 +88,7 @@ describe('a flush reported', () => {
     expect(request.reportFlush).toHaveBeenCalledWith({
       window: 'editor',
       token: 'token-1',
-      result: FlushResult.WRITTEN,
+      result: FLUSH_RESULT.WRITTEN,
     })
   })
 })
@@ -144,7 +144,7 @@ describe('the streams a window follows', () => {
             about: 'library/scan.pdf',
             done: 3n,
             total: 10n,
-            unit: Unit.BYTES,
+            unit: TASK_UNIT.BYTES,
             error: '',
             isUserStarted: true,
             pluginId: 'md.example.scans',

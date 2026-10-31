@@ -139,8 +139,9 @@ export const PACKAGE_DEPENDENCIES = {
   "@numen/ui": [],
   "@numen/shell": ["@numen/ui"],
   "@numen/protocol": [],
+  "@numen/core-client": ["@numen/protocol"],
   "@numen/plugin-sdk": ["@numen/protocol", "@numen/ui"],
-  "@numen/plugin-host": ["@numen/plugin-sdk", "@numen/protocol"],
+  "@numen/plugin-host": ["@numen/plugin-sdk", "@numen/core-client"],
   "@numen/plugin-manager": ["@numen/ui"],
 };
 

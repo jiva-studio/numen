@@ -2,7 +2,7 @@
  * A file of a kind a tab creates, created in a folder under the given name and
  * opened in a tab of its own.
  */
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
 import type { ErrorCode } from '@/shared/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { CreateResult } from '@/shared/model/fileTypes'

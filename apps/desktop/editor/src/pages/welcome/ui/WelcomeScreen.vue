@@ -7,7 +7,7 @@
  * standing at it, which is the letter drawn on that row.
  */
 import { computed, onMounted, onUnmounted } from 'vue'
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
 import { getVaultForKey, WelcomePage } from '@numen/shell'
 import { runInBackground } from '@numen/ui'
 import {

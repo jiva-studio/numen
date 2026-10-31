@@ -32,4 +32,6 @@ export {
   openExternalUrl,
   type ExternalOpener,
 } from './externalOpener'
-export * from './manifest'
+export { createAgentPort, type AgentClient } from './agentPort'
+export { resolveTextLinks, type LinkClient } from './textLinks'
+export { createPluginTexts } from './pluginTexts'

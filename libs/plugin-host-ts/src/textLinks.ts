@@ -4,7 +4,7 @@
  * Every window queries the core the same way, so the meaning of
  * `ResolveAddresses` in the port is written down once.
  */
-import type { TextLink } from '../agent'
+import type { TextLink } from '@numen/plugin-sdk'
 
 /** What the core resolves for one text. Empty fields refer to the window's own. */
 export interface LinkRequest {

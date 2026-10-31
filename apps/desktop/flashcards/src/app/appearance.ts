@@ -4,8 +4,13 @@
  * settings through the theme service and dresses the page in it.
  */
 import { ref, shallowRef } from 'vue'
-import { THEME_MODE, THEME_ORIGIN, formatErrorMessage } from '@numen/plugin-sdk'
-import type { ThemeModeCode, ThemeOriginCode } from '@numen/plugin-sdk'
+import {
+  THEME_MODE,
+  THEME_ORIGIN,
+  formatErrorMessage,
+  type ThemeModeCode,
+  type ThemeOriginCode,
+} from '@numen/core-client'
 import type { PaletteGroup, PaletteItem } from '@numen/shell'
 import { WORDS } from '@/shared/words'
 

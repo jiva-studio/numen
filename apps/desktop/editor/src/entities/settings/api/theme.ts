@@ -12,7 +12,7 @@ import {
   THEME_ORIGIN,
   type ThemeModeCode,
   type ThemeOriginCode,
-} from '@numen/plugin-sdk'
+} from '@numen/core-client'
 import { theme } from '@/shared/clients'
 
 import type { Bounds, Mode, Scales, Theme } from '../lib/appearance'

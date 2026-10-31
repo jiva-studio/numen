@@ -3,7 +3,7 @@
  * Settings for the AI agent.
  */
 import { computed } from 'vue'
-import { getProgramHooksPath, getProgramModelPath, getProgramStepsPath } from '@numen/plugin-sdk'
+import { getProgramHooksPath, getProgramModelPath, getProgramStepsPath } from '@numen/core-client'
 import { NumberField, Select, Switch } from '@numen/ui'
 import type { SelectChoice } from '@numen/ui'
 import SettingRow from './setting-row/SettingRow.vue'

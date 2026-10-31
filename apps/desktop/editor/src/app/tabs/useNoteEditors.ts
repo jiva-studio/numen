@@ -1,7 +1,7 @@
 /**
  * Editing, conflict handling, and flushing for open notes.
  */
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
 import { runInBackground } from '@numen/ui'
 import { openNotes, createNoteWriter } from '@/entities/note'
 import { raiseConflicts, createFileFlush } from '@/features/file-conflict'

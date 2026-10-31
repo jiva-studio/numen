@@ -6,7 +6,7 @@ import {
   theme,
   vaultsService,
   windowService,
-} from '@numen/plugin-sdk'
+} from '@numen/core-client'
 
 export { agentService, pluginService, theme, vaultsService, windowService }
 

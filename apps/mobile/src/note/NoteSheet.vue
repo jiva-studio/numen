@@ -3,7 +3,7 @@
  * One note on the phone, as plain text until the note editor view is mounted here.
  */
 import { onMounted, ref, useTemplateRef } from 'vue'
-import { formatErrorCodeMessage } from '@numen/plugin-sdk'
+import { formatErrorCodeMessage } from '@numen/core-client'
 import { NoteBar } from './note-bar'
 import type { Core } from '../core'
 

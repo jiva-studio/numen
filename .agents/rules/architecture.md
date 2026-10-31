@@ -26,7 +26,8 @@ numen/
 │   │   └── ulid/                 # the identifiers a note is given
 │   ├── protocol/                 # the schema, and the Go and TypeScript generated from it
 │   ├── plugin-sdk-go/            # Go: what a native plugin backend is built from
-│   ├── plugin-sdk-ts/            # TypeScript: what a plugin frontend is built from
+│   ├── plugin-sdk-ts/            # TypeScript: what a plugin frontend is built from; published
+│   ├── core-client/              # TypeScript: the first-party client of the core, for applications and the plugin host; private
 │   ├── plugin-host-ts/           # TypeScript: the loader of plugin frontends
 │   ├── plugin-manager/           # Vue: the plugin list and the plugin page, data by props and answers by events
 │   └── ui/                       # Vue 3: `core` holds components that know nothing about the domain, `shell` the window chrome
@@ -47,8 +48,9 @@ numen/
 - **Libraries never depend on applications.** `libs/*` is what `apps/*` is built from, never the reverse and never sideways.
 - **`core` points inward.** `domain/`, `port/` and `usecase/` import nothing from `adapter/`, and nothing that is a driver, a framework or a transport. The violation is always visible in an import block.
 - **`ui` knows nothing about the domain.** No component, story or fixture in `libs/ui/core` imports `@numen/protocol`, a wire type, a domain type, or anything under `apps/**`. A fixture taken from the domain is how the dependency comes back in through the door marked "tests".
-- **`plugin-host` knows Vue, the plugin SDK and the protocol schema.** `libs/plugin-host-ts` (`@numen/plugin-host`) is the loader of plugin frontends and the build of the host modules an application serves them; it implements the plugin contract and reads a manifest through the generated schema. Each application that loads plugins implements its `LoaderHost`. It imports nothing of `@numen/ui`, `@numen/shell` or an application, and no plugin imports it (`tools/lint-layers`, `plugin-host-isolation` and `plugins-reach-no-shell`).
-- **`plugin-manager` is a component library.** `libs/plugin-manager` (`@numen/plugin-manager`) draws the plugin list, the plugin page and the filters over view-model types it defines (`PluginInfo`, `PluginListing`, `ManagedPlugin`) and answers with events; it imports `@numen/ui` and nothing else. The application owns the catalog client and maps protocol messages to those types (`tools/lint-layers`, `package-matrix`).
+- **`core-client` is the first-party client of the core.** `libs/core-client` (`@numen/core-client`, private, never published) holds the service clients, the transport, the enum codes, the error words, the manifest reader and the plugin catalog client that applications and the plugin host use to talk to the core. It depends on `@numen/protocol` and re-exports the generated types applications name. No plugin imports it (`tools/lint-layers`, `package-matrix`, `core-client-private` and `plugins-no-protocol-or-wire`).
+- **`plugin-host` knows Vue, the plugin SDK and the core client.** `libs/plugin-host-ts` (`@numen/plugin-host`) is the loader of plugin frontends and the build of the host modules an application serves them; it implements the plugin contract over the core client (the agent port, the text links, the texts of a plugin) and reads a manifest through it. Each application that loads plugins implements its `LoaderHost`. It imports nothing of `@numen/ui`, `@numen/shell`, `@numen/protocol` or an application, and no plugin imports it (`tools/lint-layers`, `plugin-host-isolation` and `plugins-reach-no-shell`).
+- **`plugin-manager` is a component library.** `libs/plugin-manager` (`@numen/plugin-manager`) draws the plugin list, the plugin page and the filters over view-model types it defines (`PluginInfo`, `PluginListing`, `ManagedPlugin`) and answers with events; it imports `@numen/ui` and nothing else. The application reads the catalog through `@numen/core-client` and maps the entries to those types (`tools/lint-layers`, `package-matrix`).
 - **`protocol` is generated, not written.** What crosses between the Go host and a window is the schema's shape; `make generate-check` fails when what is committed is out of date.
 - **An application is where the two sides meet.** `apps/desktop` translates the domain into the drawing vocabulary a component takes, and translates the identifier a component emits back.
 
@@ -115,31 +117,31 @@ A rule has no exception. There is no `nolint`, `eslint-disable`, `@ts-ignore`, `
 
 `tools/lint-layers` states each rule once, over a capture or a set derived from the repository, and declares a minimum of what it examines, so a check over nothing fails. Each rule has a violation fixture in `tools/lint-layers/checks.test.mjs`.
 
-- **Plugins** (`plugins-isolation-capture`, `plugins-leakage`, `plugins-no-protocol-or-wire`, `plugins-use-main-entry`, `plugins-standalone-repo`, `plugins-reach-no-app`, `plugins-reach-no-shell`, `plugins-share-no-frontend-file`): a file under `plugins/(X)/` references no other plugin; a plugin depends on the plugin SDKs, the UI library, the Go protocol module and third-party code, never on `libs/core`, `libs/notes`, the shell, the plugin host or an application, and reaches notes through the SDK. `libs/core/container/plugin_independence_test.go` states the Go dependency rule and `plugin_isolation_packages_test.go` applies it to the type-checked import graph. No file repeats a file of another plugin; shared code lives in `@numen/ui` or the plugin SDK.
+- **Plugins** (`plugins-isolation-capture`, `plugins-leakage`, `plugins-no-protocol-or-wire`, `plugins-use-main-entry`, `protocol-imported-only-by-clients`, `core-client-private`, `plugins-standalone-repo`, `plugins-reach-no-app`, `plugins-reach-no-shell`, `plugins-share-no-frontend-file`): a file under `plugins/(X)/` references no other plugin; a plugin depends on the plugin SDKs, the UI library, the Go protocol module and third-party code, never on `libs/core`, `libs/notes`, the shell, the plugin host or an application, and reaches notes through the SDK. `libs/core/container/plugin_independence_test.go` states the Go dependency rule and `plugin_isolation_packages_test.go` applies it to the type-checked import graph. No file repeats a file of another plugin; shared code lives in `@numen/ui` or the plugin SDK.
 - **Permissions** (`host_permission_test.go`): the core refuses a call whose permission the plugin's manifest does not declare, for any client of the host endpoint.
 - **Notes** (`notes-hexagon`, `notes-depguard`, `notes-names-no-producer`): `libs/notes` depends on nothing of this repository and states no word a plugin manifest states.
-- **UI** (`ui-isolation`, `ui-holds-no-plugin-view`, `ui-holds-no-shell-part`, `ui-exports-no-editor`, `shell-isolation`, `plugin-host-isolation`): `libs/ui/core` knows no domain, protocol or application; the shell reaches components through `@numen/ui`; the plugin host knows Vue, the plugin SDK and the protocol schema only.
+- **UI** (`ui-isolation`, `ui-holds-no-plugin-view`, `ui-holds-no-shell-part`, `ui-exports-no-editor`, `shell-isolation`, `plugin-host-isolation`): `libs/ui/core` knows no domain, protocol or application; the shell reaches components through `@numen/ui`; the plugin host knows Vue, the plugin SDK and the core client only.
 - **Applications** (`apps-reach-no-plugin`, `window-names-no-plugin-kind`): an application reaches no plugin and states no plugin word.
 - **Fail-closed**: `every-path-has-a-layer` and `workspace-lists-every-module` fail on a module no layer owns and on a `go.mod` that `go.work` omits.
 
 ## 11. Plugin boundary
 
-These rules bind every change to `libs/plugin-sdk-go`, `libs/plugin-sdk-ts`, `libs/ui`, `libs/plugin-host-ts`, `libs/plugin-manager`, `libs/core` and `plugins/`.
+These rules bind every change to `libs/plugin-sdk-go`, `libs/plugin-sdk-ts`, `libs/core-client`, `libs/ui`, `libs/plugin-host-ts`, `libs/plugin-manager`, `libs/core` and `plugins/`.
 
 **(a) A plugin depends on two libraries.** A plugin depends on the plugin SDK (Go: `libs/plugin-sdk-go`; TypeScript: `@numen/plugin-sdk`) and on `@numen/ui`, plus third-party code. Plugins live in other repositories and may not use any other shared library. There are no "kits": no third shared library for plugins exists, and none is proposed. The Go SDK may depend on `libs/notes` and passes the note types, the note parser, the editor and the identifiers on to plugins through `host/domain`, `host/markdown`, `host/edit` and `host/ulid`; `libs/notes` is published and tagged together with the SDK. A plugin never imports `libs/notes` and never requires it directly in its `go.mod`; an `// indirect` line that appears because the SDK requires it is allowed (`plugins-standalone-repo`).
 
 **(b) The SDK contains what plugins use.** The SDK holds only code that at least one plugin imports, plus the contracts of capabilities (agent provider, embedding). It knows nothing about implementations:
 
 - no concrete agents, engines or runtimes (for example ONNX);
-- no application-side API: the catalog client, the manifest parser, and raw core clients that only windows use.
+- no application-side API: the catalog client, the manifest parser, the transport and the raw core clients that only windows use. Those live in `@numen/core-client`.
 
-Every SDK export has a plugin that uses it. The boundary check derives its forbidden words from the plugin manifests, so a word a manifest states (an agent, an engine, a runtime, a provider) cannot appear in the SDK.
+The SDK is for plugins and is published. `@numen/core-client` is the internal first-party client of the core for applications and the plugin host; it is private and never published. A curated plugin API kept apart from the application's own access to the core is how VS Code, Obsidian and JetBrains separate extensions from the application, which is a first-party client of its core. Every SDK export has a plugin that uses it, or is the contract of a capability an application implements. The boundary check derives its forbidden words from the plugin manifests, so a word a manifest states (an agent, an engine, a runtime, a provider) cannot appear in the SDK.
 
 **(c) Implementation code is duplicated between plugins.** Code of one implementation family that several plugins use is copied into each of those plugins. Duplication between plugins is preferred over growth of the SDK. No check may push implementation code into a shared library; a check that does so is wrong and is corrected.
 
 **(d) Who may use `@numen/protocol`.**
 
-- Windows (`apps/*`) and host libraries (`libs/plugin-host-ts`) may use `@numen/protocol`. Plugins may not.
+- Only `@numen/plugin-sdk` and `@numen/core-client` import or declare `@numen/protocol`. Applications (`apps/*`) and host libraries (`libs/plugin-host-ts`) reach the core through `@numen/core-client`; plugins reach it through `@numen/plugin-sdk`. The package matrix gives `@numen/core-client` the row `[@numen/protocol]` and `@numen/plugin-host` the row `[@numen/plugin-sdk, @numen/core-client]`, and no plugin imports `@numen/core-client`.
 - `libs/plugin-manager` is a component library. It depends on `@numen/ui` only, takes data by props and emits events. It owns the view-model logic (filters, query parsing, states) and declares a port interface for the gateway; the application implements the gateway.
 
 **(e) The core knows no plugin by name.** Plugins are discovered through their manifests. A manifest declares what it contributes (`contributes`: `tabKinds`, `settingsViews`, `statusViews`, `themes`, `fileTypes`, and the rest listed in `docs/plugins/README.md`). A plugin id appears nowhere in `libs/core`, `apps/*` or `libs/ui`. The plugin index is generated from the manifests at build time.

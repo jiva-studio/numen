@@ -6,12 +6,12 @@ import type { Component } from 'vue'
 import { runInBackground } from '@numen/ui'
 import {
   asFailure,
-  getKnownErrorCode,
   type ContextMenuRegistration,
   type ContextMenuTarget,
   type VaultFiles,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
+import { getKnownErrorCode } from '@numen/core-client'
 import { createFileCreators, type FileOpeners, type useWindowTabs } from '@/entities/tab'
 import type { CreateResult } from '@/entities/file'
 import {

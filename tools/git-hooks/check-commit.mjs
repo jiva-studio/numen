@@ -38,6 +38,7 @@ export const ALLOWED_BASE_SCOPES = new Set([
   'plugin-sdk-go',
   'plugin-sdk-ts',
   'plugin-host',
+  'core-client',
 
   // Apps
   'desktop',

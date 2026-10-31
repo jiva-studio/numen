@@ -14,9 +14,9 @@
   },
   "dependencies": {
     "@connectrpc/connect": "^2.1.2",
+    "@numen/core-client": "*",
     "@numen/plugin-host": "*",
     "@numen/plugin-sdk": "*",
-    "@numen/protocol": "*",
     "@numen/shell": "*",
     "@numen/ui": "*",
     "vue": "^3.5.44"

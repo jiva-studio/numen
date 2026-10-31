@@ -3,7 +3,7 @@
  * hands the vault to write.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { CAPABILITY_AGENT_PROVIDER, CompletionConsent, Presence } from '@numen/protocol'
+import { AGENT_PROVIDER_CAPABILITY, COMPLETION_CONSENT, MODEL_PRESENCE } from '@numen/core-client'
 import { settingsCore as core } from './settings'
 
 const request = vi.hoisted(() => ({
@@ -71,7 +71,7 @@ describe('every setting', () => {
       group: 'On this machine',
       isDefault: true,
       writes: [{ at: ['indexing', 'model', 'name'], value: '"e5-small-int8"', extra: 1 }],
-      presence: Presence.NOT_FETCHED,
+      presence: MODEL_PRESENCE.NOT_FETCHED,
       extra: 'not the window’s',
     }
     request.getSettings.mockResolvedValue(answer({ a: 1 }, { models: [model] }))
@@ -108,10 +108,10 @@ describe('every setting', () => {
               version: '1.0.0',
               description: 'Sample plugin',
               isActive: true,
-              capabilities: [CAPABILITY_AGENT_PROVIDER],
+              capabilities: [AGENT_PROVIDER_CAPABILITY],
               secrets: [{ name: 'apiKey', title: 'API key', description: '' }],
               storedSecrets: ['apiKey'],
-              completionConsent: CompletionConsent.REQUESTED,
+              completionConsent: COMPLETION_CONSENT.REQUESTED,
               hasFrontend: true,
               readers: [{ id: 'reader-sample', extensions: ['sample'] }],
               settingsViews: [{ id: 'floor', title: 'Floor', after: 'language' }],
@@ -157,7 +157,7 @@ describe('every setting', () => {
         version: '1.0.0',
         description: 'Sample plugin',
         isActive: true,
-        capabilities: [CAPABILITY_AGENT_PROVIDER],
+        capabilities: [AGENT_PROVIDER_CAPABILITY],
         secrets: [{ name: 'apiKey', title: 'API key', description: '', when: undefined }],
         storedSecrets: ['apiKey'],
         consent: 'requested',
@@ -251,7 +251,7 @@ describe('a plugin the host suspends', () => {
               capabilities: [],
               secrets: [],
               storedSecrets: [],
-              completionConsent: CompletionConsent.UNSPECIFIED,
+              completionConsent: COMPLETION_CONSENT.UNSPECIFIED,
               settings: [],
               failure: {
                 reason: 'Timed out while starting',

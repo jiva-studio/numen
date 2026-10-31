@@ -1,13 +1,17 @@
 import { create } from '@bufbuild/protobuf'
-import { CatalogEntrySchema, ManifestContributesSchema, ManifestTabKindSchema } from '@numen/protocol'
-import { asFailure, asValue } from '@numen/plugin-sdk'
+import {
+  CatalogEntrySchema,
+  ManifestContributesSchema,
+  ManifestTabKindSchema,
+} from '@numen/protocol'
+import { asFailure, asValue } from '../result'
 import {
   CATALOG_STATE,
   type CatalogEntry,
   type CatalogIncompatibilityValue,
   type CatalogStateValue,
   type PluginCatalog,
-} from '../shared/pluginCatalog'
+} from '../catalog'
 
 /** What a catalog entry made for a test is given. */
 export interface MockCatalogEntryOptions {
@@ -23,6 +27,26 @@ export interface MockCatalogEntryOptions {
   readonly tabKinds?: readonly (string | { readonly kind: string; readonly title: string })[]
 }
 
+/** What an entry contributes to the application: its feature, category and kinds of tab. */
+function createMockContributes(options: MockCatalogEntryOptions) {
+  return create(ManifestContributesSchema, {
+    feature: options.feature ?? '',
+    category: options.category ?? '',
+    tabKinds: (options.tabKinds ?? []).map((one) =>
+      create(ManifestTabKindSchema, typeof one === 'string' ? { kind: one } : one),
+    ),
+  })
+}
+
+/** The fields of an entry that is not compatible with the application, and none for one that is. */
+function createMockIncompatibility(options: MockCatalogEntryOptions) {
+  if (options.incompatibility === undefined) return {}
+  return {
+    incompatibility: options.incompatibility,
+    incompatibilityDetail: options.incompatibilityDetail ?? '',
+  }
+}
+
 /** A catalog entry for the plugin `id`, installed unless the options say otherwise. */
 export function createMockCatalogEntry(
   id: string,
@@ -36,19 +60,8 @@ export function createMockCatalogEntry(
     category: options.category ?? '',
     source: 'mock',
     state: options.state ?? CATALOG_STATE.INSTALLED,
-    ...(options.incompatibility === undefined
-      ? {}
-      : {
-          incompatibility: options.incompatibility,
-          incompatibilityDetail: options.incompatibilityDetail ?? '',
-        }),
-    contributes: create(ManifestContributesSchema, {
-      feature: options.feature ?? '',
-      category: options.category ?? '',
-      tabKinds: (options.tabKinds ?? []).map((one) =>
-        create(ManifestTabKindSchema, typeof one === 'string' ? { kind: one } : one),
-      ),
-    }),
+    ...createMockIncompatibility(options),
+    contributes: createMockContributes(options),
   })
 }
 

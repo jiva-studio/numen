@@ -3,7 +3,7 @@
  * window has no address bar.
  */
 import { onMounted, onUnmounted } from 'vue'
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
 import { openExternalUrl } from '@numen/plugin-host'
 import { interceptExternalLinks } from '@numen/ui'
 import type { NoticeQueue } from '@numen/shell'

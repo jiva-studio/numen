@@ -3,7 +3,7 @@
  * window dispatches it and reads its result.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { CommandErrorCode } from '@numen/protocol'
+import { COMMAND_ERROR_CODE } from '@numen/core-client'
 
 vi.mock('@/shared/clients', () => ({ pluginCommands: request }))
 
@@ -73,7 +73,7 @@ describe('the commands the plugins declare', () => {
 describe('a run', () => {
   it('sends the file and values and returns the plugin message', async () => {
     request.runPluginCommand.mockResolvedValue({
-      error: CommandErrorCode.UNSPECIFIED,
+      error: COMMAND_ERROR_CODE.UNSPECIFIED,
       message: 'Converted 3 pages',
       openedPath: 'a.md',
     })
@@ -94,7 +94,7 @@ describe('a run', () => {
 
   it('of a command over no file is handed none', async () => {
     request.runPluginCommand.mockResolvedValue({
-      error: CommandErrorCode.UNSPECIFIED,
+      error: COMMAND_ERROR_CODE.UNSPECIFIED,
       message: '',
       openedPath: '',
     })
@@ -109,7 +109,7 @@ describe('a run', () => {
 
   it('that did not succeed answers why', async () => {
     request.runPluginCommand.mockResolvedValue({
-      error: CommandErrorCode.FAILED,
+      error: COMMAND_ERROR_CODE.FAILED,
       message: 'the disk is full',
     })
 

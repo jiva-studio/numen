@@ -3,7 +3,7 @@
  * the answer left out reads as nothing, and a passage is a start and a length.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { SearchMode } from '@numen/protocol'
+import { SEARCH_MODE } from '@numen/core-client'
 import { searchCore } from './search'
 
 const search = vi.hoisted(() => ({
@@ -60,7 +60,7 @@ describe('a passage searched for', () => {
     expect(search.searchPassages).toHaveBeenCalledWith({
       query: 'grass',
       limit: 8,
-      mode: SearchMode.MEANING,
+      mode: SEARCH_MODE.MEANING,
     })
   })
 

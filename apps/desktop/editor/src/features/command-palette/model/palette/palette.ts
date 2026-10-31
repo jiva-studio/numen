@@ -7,7 +7,7 @@
  * depends on is what the field means. What a step renders is recomputed on
  * every keystroke, so a vault changing under an open step is rendered as it is.
  */
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
 import {
   computed,
   ref,

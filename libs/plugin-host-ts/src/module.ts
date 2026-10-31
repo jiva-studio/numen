@@ -1,8 +1,8 @@
 /**
  * How a plugin module is found and read: its stylesheet, its lifecycle hooks, its loader.
  */
-import { parseManifest, type Manifest } from './manifest'
-import { type PluginLifecycle } from '@numen/plugin-sdk'
+import { parseManifest, type Manifest } from '@numen/core-client'
+import type { PluginLifecycle } from '@numen/plugin-sdk'
 import { loadPluginStyle, unregisterPluginStyle } from './styles'
 
 function getStyleUrl(baseUrl: string, pluginId: string, stylesPath: string): string {

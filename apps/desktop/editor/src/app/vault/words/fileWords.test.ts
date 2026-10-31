@@ -2,7 +2,7 @@
  * A listing row and a move result, read into the window's own words.
  */
 import { describe, expect, it } from 'vitest'
-import type { Entry, MoveResult } from '@numen/protocol'
+import type { Entry, MoveResult } from '@numen/core-client'
 import { mapEntry, mapMoveResult } from './fileWords'
 
 describe('a row of a listing', () => {

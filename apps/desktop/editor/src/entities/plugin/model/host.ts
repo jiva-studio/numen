@@ -15,8 +15,9 @@ import type {
   SettingsViewRegistration,
   TabKindRegistration,
   VaultChangeEvent,
+  DropRegistry,
 } from '@numen/plugin-sdk'
-import type { Manifest } from '@numen/plugin-host'
+import type { Manifest } from '@numen/core-client'
 import {
   createAppInfo,
   createDropRegistry,
@@ -25,7 +26,6 @@ import {
   type StatusViewRegistry,
   type ViewRegistry,
 } from '@numen/plugin-host'
-import type { DropRegistry } from '@numen/plugin-sdk'
 import { createPluginContext } from './context'
 import {
   addListener,

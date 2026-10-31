@@ -1,7 +1,8 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { formatErrorMessage, THEME_MODE, THEME_ORIGIN, VAULT_SUMMARY } from '@numen/plugin-sdk'
+import { formatErrorMessage, THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
+import { VAULT_SUMMARY } from '@numen/plugin-sdk'
 import type { VaultRow } from '@numen/shell'
 
 const wire = vi.hoisted(() => {

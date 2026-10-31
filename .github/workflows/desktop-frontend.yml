@@ -17,6 +17,8 @@ on:
       - "!libs/plugin-sdk-ts/**/*.md"
       - "libs/ui/shell/**"
       - "!libs/ui/shell/**/*.md"
+      - "libs/core-client/**"
+      - "!libs/core-client/**/*.md"
       - "libs/plugin-host-ts/**"
       - "!libs/plugin-host-ts/**/*.md"
       - "libs/plugin-manager/**"
@@ -92,12 +94,14 @@ jobs:
           npm run lint --prefix apps/desktop/editor
           npm run lint --prefix apps/desktop/flashcards
           npm run lint --prefix libs/ui/shell
+          npm run lint --prefix libs/core-client
           npm run lint --prefix libs/plugin-host-ts
           npm run lint --prefix libs/plugin-manager
 
       - name: Typecheck screens and SDK
         run: |
           npm run typecheck --prefix libs/plugin-sdk-ts
+          npm run typecheck --prefix libs/core-client
           npm run typecheck --prefix libs/ui/shell
           npm run typecheck --prefix libs/plugin-host-ts
           npm run typecheck --prefix libs/plugin-manager
@@ -107,6 +111,7 @@ jobs:
       - name: Run frontend tests
         run: |
           npm test --prefix libs/plugin-sdk-ts
+          npm test --prefix libs/core-client
           npm run test:unit --prefix libs/ui/shell -- --coverage
           npm run test:stories --prefix libs/ui/shell
           npm test --prefix libs/plugin-host-ts

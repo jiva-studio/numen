@@ -5,7 +5,7 @@
  * registered here, one for each version.
  */
 import { computed, shallowRef } from 'vue'
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
 import { runInBackground } from '@numen/ui'
 import { registerCommand, type Command } from '@/features/command-palette'
 import { getFileMenu, runFileMenuEntry, type FileMenuEntry } from '@/entities/text-version'

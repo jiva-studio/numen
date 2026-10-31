@@ -6,7 +6,7 @@
  */
 import { registerPlugin } from '@capacitor/core'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { createNoteClient, createVaultClient } from '@numen/plugin-sdk'
+import { createNoteClient, createVaultClient } from '@numen/core-client'
 
 interface CorePlugin {
   start(): Promise<{ port: number; dir: string }>

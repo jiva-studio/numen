@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { createMockPluginInfo } from '@numen/plugin-manager/testing'
-import { CATALOG_STATE } from './pluginCatalog'
+import { CATALOG_STATE } from '@numen/core-client'
 import { createManagedFromEntries, createPluginListing } from './pluginListing'
-import { createMockCatalogEntry } from '../testing/pluginCatalog'
+import { createMockCatalogEntry } from '@numen/core-client/testing'
 
 describe('createPluginListing', () => {
   it('reads the lowercase category, the feature and the tab kinds of an entry', () => {

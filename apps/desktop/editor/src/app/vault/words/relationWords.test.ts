@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Marker, Role } from '@numen/protocol'
+import { NOTE_MARKER, NOTE_ROLE } from '@numen/core-client'
 import {
   CONNECTION_ROLES,
   findRelationError,
@@ -13,14 +13,14 @@ import {
 describe('the roles of the schema', () => {
   // The roles come from the schema, so a role added there is covered here.
   it('are all named by the window', () => {
-    const named = Object.keys(Role).filter(
+    const named = Object.keys(NOTE_ROLE).filter(
       (name) => Number.isNaN(Number(name)) && name !== 'UNSPECIFIED',
     )
     expect(named).toContain('ATTACHMENT')
 
     for (const name of named) {
       expect(roleCodes[name.toLowerCase() as keyof typeof roleCodes]).toBe(
-        Role[name as keyof typeof Role],
+        NOTE_ROLE[name as keyof typeof NOTE_ROLE],
       )
     }
   })
@@ -32,7 +32,7 @@ describe('the roles of the schema', () => {
 
 describe('a connection', () => {
   it('reads a role no connection carries as none', () => {
-    const wire = { first: 'a', second: 'b', role: Role.REF }
+    const wire = { first: 'a', second: 'b', role: NOTE_ROLE.REF }
     expect(mapConnection(wire, '').role).toBeNull()
   })
 
@@ -49,8 +49,8 @@ describe('a connection', () => {
     expect(wire).toStrictEqual({
       first: 'a',
       second: 'b',
-      role: Role.PARENT,
-      firstSide: { type: 'preset', note: 'why', label: '', marker: Marker.ARROW },
+      role: NOTE_ROLE.PARENT,
+      firstSide: { type: 'preset', note: 'why', label: '', marker: NOTE_MARKER.ARROW },
       secondSide: undefined,
     })
   })
@@ -64,7 +64,7 @@ describe('a connection', () => {
       firstSide: null,
       secondSide: null,
     })
-    expect(wire.role).toBe(Role.UNSPECIFIED)
+    expect(wire.role).toBe(NOTE_ROLE.UNSPECIFIED)
   })
 })
 
@@ -78,9 +78,9 @@ describe('the error of a write', () => {
 
 describe('a marker', () => {
   it('draws nothing when it is absent', () => {
-    expect(writeMarker(null)).toBe(Marker.UNSPECIFIED)
-    expect(writeMarker(undefined)).toBe(Marker.UNSPECIFIED)
-    expect(writeMarker('arrow')).toBe(Marker.ARROW)
+    expect(writeMarker(null)).toBe(NOTE_MARKER.UNSPECIFIED)
+    expect(writeMarker(undefined)).toBe(NOTE_MARKER.UNSPECIFIED)
+    expect(writeMarker('arrow')).toBe(NOTE_MARKER.ARROW)
   })
 })
 
@@ -88,12 +88,12 @@ describe('the backlinks of an answer', () => {
   it('name a role with no counterpart as none', () => {
     const [one] = mapBacklinks([
       {
-        role: Role.REF,
-        roleFromHere: Role.UNSPECIFIED,
+        role: NOTE_ROLE.REF,
+        roleFromHere: NOTE_ROLE.UNSPECIFIED,
         type: '',
         note: '',
         label: '',
-        marker: Marker.UNSPECIFIED,
+        marker: NOTE_MARKER.UNSPECIFIED,
       },
     ])
     expect(one).toMatchObject({ role: 'ref', roleFromHere: null, marker: null })

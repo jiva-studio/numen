@@ -6,7 +6,7 @@
  * is applied after the keyboard has rested on the row for HELD, and the
  * settings values are restored as soon as the keyboard leaves the list.
  */
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
 import { ref, shallowRef, watch, type Ref, type ShallowRef } from 'vue'
 import { createFollower } from '@numen/ui'
 import { createRequestGuard } from '@/shared/requestGuard'

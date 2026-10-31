@@ -2,7 +2,7 @@
  * Tab kinds and openers declared for the desktop window.
  */
 import { shallowRef } from 'vue'
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
 import { getCurrentDate, runInBackground } from '@numen/ui'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { DestinationDeps } from '@/features/command-palette'

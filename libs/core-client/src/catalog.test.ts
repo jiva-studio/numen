@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import {
-  CatalogErrorCode,
   FindCatalogEntryByTabKindResponseSchema,
   GetCatalogEntryResponseSchema,
   ListCatalogResponseSchema,
 } from '@numen/protocol'
-import { CATALOG_STATE, createPluginCatalog, type CatalogClient } from './pluginCatalog'
-import { createMockCatalogEntry, createMockPluginCatalog } from '../testing/pluginCatalog'
+import {
+  CATALOG_ERROR_CODE,
+  CATALOG_STATE,
+  createPluginCatalog,
+  type CatalogClient,
+} from './catalog'
+import { createMockCatalogEntry, createMockPluginCatalog } from './testing/mockCatalog'
 
 const notes = createMockCatalogEntry('notes', { tabKinds: ['note'], feature: 'Markdown notes' })
 
@@ -48,7 +52,7 @@ describe('createPluginCatalog', () => {
       findCatalogEntryByTabKind: () =>
         Promise.resolve(
           create(FindCatalogEntryByTabKindResponseSchema, {
-            error: CatalogErrorCode.NOT_FOUND,
+            error: CATALOG_ERROR_CODE.NOT_FOUND,
           }),
         ),
     })
@@ -62,7 +66,7 @@ describe('createPluginCatalog', () => {
     const client = createClient({
       getCatalogEntry: () =>
         Promise.resolve(
-          create(GetCatalogEntryResponseSchema, { error: CatalogErrorCode.NOT_FOUND }),
+          create(GetCatalogEntryResponseSchema, { error: CATALOG_ERROR_CODE.NOT_FOUND }),
         ),
     })
 

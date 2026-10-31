@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { TextErrorCode } from '@numen/protocol'
-import { createPluginTexts, type TextClient } from './pluginTexts'
+import { TEXT_ERROR_CODE, type TextClient } from '@numen/core-client'
+import { createPluginTexts } from './pluginTexts'
 
 const version = {
   id: 'md.numen.engines.transcription/k',
@@ -23,7 +23,7 @@ const createClient = (requests: unknown[]): TextClient => ({
     requests.push(request)
     return {
       version: { ...version, pluginId: request.pluginId, sourceVersionId: request.sourceVersionId },
-      error: TextErrorCode.UNSPECIFIED,
+      error: TEXT_ERROR_CODE.UNSPECIFIED,
     } as unknown as Awaited<ReturnType<TextClient['createTextEdit']>>
   },
 })
