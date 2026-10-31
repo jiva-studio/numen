@@ -1,77 +1,26 @@
 /**
- * Creating a note from the graph, and joining two notes already on it.
+ * Creating a note from the window: untitled, under a title, or in a relation to another note.
  *
- * A note is created in a relation to another note, and the link that records
- * the relation is written into it on creation. The meaning of a relation for
- * what is written is decided here; the plex reports only the shape of a gesture.
+ * The core numbers untitled names, files a related note beside the note it is related to and
+ * writes the record of the relation. The window reports what the core answers.
  */
-import { formatErrorMessage } from '@numen/plugin-sdk'
-import type { Link, NewNote, NoteRelation, PairLink, Role } from '../lib/note'
+import {
+  formatErrorMessage,
+  getRelationErrorWords,
+  type ConnectionRole,
+  type VaultRelations,
+} from '@numen/plugin-sdk'
+import type { NewNote } from '../lib/note'
 import type { CreateResult } from '@/shared/model/fileTypes'
-import type { ErrorCode } from '@/shared/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { ERRORS } from '@/shared/words'
 
 /** The operations note creation needs from the vault. */
 export interface NoteMaker {
-  /** A note made, named after the title it is given and joined as it is written. */
+  /** A note made, named after the title it is given. An empty title makes an untitled note. */
   create(note: NewNote): Promise<CreateResult>
-  /**
-   * A relationship written into one note. The note at the other end is left
-   * alone: a link is one end's account of a relationship.
-   */
-  join(path: string, link: Link): Promise<ErrorCode | null>
-  /**
-   * A relationship removed from one note.
-   */
-  removeLink(path: string, to: string, role?: Role): Promise<ErrorCode | null>
-  /** The links between two notes made exactly the ones given. */
-  replaceLinks(first: string, second: string, links: readonly PairLink[]): Promise<ErrorCode | null>
+  readonly relations: Pick<VaultRelations, 'createRelated'>
 }
-
-/** The relations a link can put a note in. Each is also the role the link carries. */
-type CreatableRelation = 'parent' | 'child' | 'jump'
-
-/** The relations a note can be created in: exactly those a link can write. */
-export const CREATABLE: readonly CreatableRelation[] = ['parent', 'child', 'jump']
-
-/** The role a link carries to put a note in that relation, and nothing for a sibling. */
-const getRole = (relation: NoteRelation): CreatableRelation | undefined =>
-  CREATABLE.find((one) => one === relation)
-
-/**
- * What a new note writes about the note it was made from. The new one takes the
- * relation the gesture named, so from at its current position the other one takes the
- * opposite relation.
- */
-const opposites: Partial<Record<NoteRelation, CreatableRelation>> = {
-  parent: 'child',
-  child: 'parent',
-  jump: 'jump',
-}
-
-/**
- * What a new note writes to sit in that relation of another one. A note in no relation
- * writes nothing, and a relation nothing faces is not a relation to make one in.
- */
-const resolveRelationLinks = (
-  from: string,
-  relation: NoteRelation | null,
-): readonly Link[] | null => {
-  if (!relation) return []
-  const role = opposites[relation]
-  return role ? [{ to: from, role }] : null
-}
-
-/** The title of a note before the user has named it. */
-export const UNTITLED = 'Untitled note'
-
-/** The number of names tried before reporting that the vault rejected all of them. */
-const names = 100
-
-const words: Record<ErrorCode, string> = ERRORS
-
-const exhausted = `every name from ${UNTITLED} onwards is taken`
 
 /** A note that now exists: where it is filed, and what it is called. */
 export interface NoteRef {
@@ -79,134 +28,57 @@ export interface NoteRef {
   readonly title: string
 }
 
-function createNoteFactory(core: NoteMaker, writeMessage: MessageWriter) {
-  const reportNoteResult = (result: NoteRef | ErrorCode | null): NoteRef | null => {
-    if (result === null) return null
-    if (typeof result === 'string') {
-      writeMessage(words[result], 'error')
-      return null
-    }
-    writeMessage('')
-    return result
-  }
-
-  async function createNote(
-    title: string,
-    folder: string,
-    links: readonly Link[],
-  ): Promise<NoteRef | ErrorCode | null> {
+export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
+  async function createInFolder(title: string, folder: string): Promise<NoteRef | null> {
     try {
-      const createdItem = await core.create({ title, folder, links })
-      if (!createdItem.ok) return createdItem.error
-      return { path: createdItem.value.path, title }
+      const made = await core.create({ title, folder })
+      if (!made.ok) {
+        writeMessage(ERRORS[made.error], 'error')
+        return null
+      }
+      writeMessage('')
+      return { path: made.value.path, title }
     } catch (error) {
       writeMessage(formatErrorMessage(error), 'error')
       return null
     }
   }
 
-  async function createUntitled(folder: string, links: readonly Link[]): Promise<NoteRef | null> {
-    for (let counter = 1; counter <= names; counter++) {
-      const createdItem = await createNote(createNumberedName(counter), folder, links)
-      if (createdItem === 'alreadyExists') continue
-      return reportNoteResult(createdItem)
+  async function createRelated(
+    title: string,
+    from: string,
+    role: ConnectionRole,
+  ): Promise<NoteRef | null> {
+    try {
+      const made = await core.relations.createRelated({ from, role, title })
+      if (!made.ok) {
+        writeMessage(getRelationErrorWords(made.error), 'error')
+        return null
+      }
+      writeMessage('')
+      return { path: made.value, title }
+    } catch (error) {
+      writeMessage(formatErrorMessage(error), 'error')
+      return null
     }
-    writeMessage(exhausted, 'error')
-    return null
   }
 
+  /** The path of an untitled note made in the folder; empty where none was made. */
+  async function createUntitled(folder: string): Promise<string> {
+    return (await createInFolder('', folder))?.path ?? ''
+  }
+
+  /** A note under the title, in a relation to another note, or at the root where it has no relation. */
   async function createWithTitle(
     title: string,
     from: string,
-    relation: NoteRelation | null,
+    relation: ConnectionRole | null,
   ): Promise<NoteRef | null> {
-    const links = resolveRelationLinks(from, relation)
-    if (!links) return null
-    return reportNoteResult(await createNote(title, from ? getParentFolder(from) : '', links))
+    if (relation === null) return createInFolder(title, '')
+    return createRelated(title, from, relation)
   }
 
-  async function createInRelation(from: string, relation: NoteRelation): Promise<NoteRef | null> {
-    const links = resolveRelationLinks(from, relation)
-    if (!links) return null
-    return createUntitled(getParentFolder(from), links)
-  }
-
-  return { createInRelation, createUntitled, createWithTitle }
-}
-
-async function runLinkOp(
-  op: () => Promise<ErrorCode | null>,
-  writeMessage: MessageWriter,
-): Promise<boolean> {
-  try {
-    const opError = await op()
-    if (opError !== null) {
-      writeMessage(words[opError], 'error')
-      return false
-    }
-    writeMessage('')
-    return true
-  } catch (error) {
-    writeMessage(formatErrorMessage(error), 'error')
-    return false
-  }
-}
-
-function createNoteLinkWriter(core: NoteMaker, writeMessage: MessageWriter) {
-  async function join(
-    ...[from, to, relation, label]: [string, string, NoteRelation, string?]
-  ): Promise<boolean> {
-    const role = getRole(relation)
-    if (!role) return false
-    return runLinkOp(
-      () =>
-        core.join(from, {
-          to,
-          role,
-          ...(label !== undefined ? { label } : {}),
-        }),
-      writeMessage,
-    )
-  }
-
-  async function removeLink(from: string, to: string, relation?: NoteRelation): Promise<boolean> {
-    const role = relation ? getRole(relation) : undefined
-    return runLinkOp(() => core.removeLink(from, to, role), writeMessage)
-  }
-
-  async function replaceLinks(
-    first: string,
-    second: string,
-    links: readonly { from: string; to: string; relation: NoteRelation; label: string }[],
-  ): Promise<boolean> {
-    const pairs: PairLink[] = []
-    for (const { relation, ...link } of links) {
-      const role = getRole(relation)
-      if (!role) return false
-      pairs.push({ ...link, role })
-    }
-    return runLinkOp(() => core.replaceLinks(first, second, pairs), writeMessage)
-  }
-
-  return { join, removeLink, replaceLinks }
-}
-
-export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
-  return {
-    ...createNoteFactory(core, writeMessage),
-    ...createNoteLinkWriter(core, writeMessage),
-  }
+  return { createUntitled, createWithTitle }
 }
 
 export type NoteCreator = ReturnType<typeof createNoteWriter>
-
-/** The name of a note, given the number of names already taken. */
-const createNumberedName = (count: number): string =>
-  count === 1 ? UNTITLED : `${UNTITLED} ${count}`
-
-/** The folder a note is in, so one made from it is filed beside it. */
-const getParentFolder = (path: string): string => {
-  const slashIndex = path.lastIndexOf('/')
-  // Stryker disable next-line EqualityOperator: a path starting with slash produces empty string either way.
-  return slashIndex < 0 ? '' : path.slice(0, slashIndex)
-}

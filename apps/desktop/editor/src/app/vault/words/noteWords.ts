@@ -6,26 +6,18 @@ import {
   asValue,
   findErrorCode,
   formatFingerprint,
-  getNames,
   isStaleAnswer,
   NAME_SOURCE,
   NOTE_RELATION,
-  NOTE_ROLE,
   parseFingerprint,
   type NameSourceCode,
   type NoteErrorCodeValue,
+  type NoteMarkerCode,
   type NoteRelationCode,
-  type NoteRoleCode,
 } from '@numen/plugin-sdk'
-import type {
-  Link,
-  Neighbourhood,
-  NoteResult,
-  NoteRelation,
-  Role,
-  WriteResult,
-} from '@/entities/note'
+import type { Neighbourhood, NoteResult, NoteRelation, WriteResult } from '@/entities/note'
 import type { NoteType } from '@/entities/file'
+import { readMarker } from './relationWords'
 
 interface NeighbourhoodWire {
   readonly focus?: { readonly path: string; readonly title: string } | undefined
@@ -38,6 +30,8 @@ interface NeighbourhoodWire {
     readonly reverseLabel: string
     readonly through: string
     readonly isMutual: boolean
+    readonly marker: NoteMarkerCode
+    readonly reverseMarker: NoteMarkerCode
   }[]
 }
 
@@ -50,19 +44,6 @@ export const writes: Record<NameSourceCode, boolean> = {
   [NAME_SOURCE.FRONTMATTER]: true,
   [NAME_SOURCE.FILENAME]: false,
 }
-
-/** The role of a link, as named in the window. */
-const called: Record<NoteRoleCode, Role | null> = {
-  [NOTE_ROLE.UNSPECIFIED]: null,
-  [NOTE_ROLE.PARENT]: 'parent',
-  [NOTE_ROLE.CHILD]: 'child',
-  [NOTE_ROLE.JUMP]: 'jump',
-  [NOTE_ROLE.REF]: 'ref',
-  [NOTE_ROLE.ATTACHMENT]: 'attachment',
-}
-
-/** The role of a link, as named in the schema. */
-export const roles = getNames<Role, NoteRoleCode>(called)
 
 /** The position of a note relative to the focused note, as named in the window. */
 export const relationByWire: Record<NoteRelationCode, NoteRelation | null> = {
@@ -80,13 +61,6 @@ export const mapNoteType = (of: string): NoteType => of || 'note'
 export const mapRange = (range: { start: number; end: number }) => ({
   start: range.start,
   end: range.end,
-})
-
-/** A link in the shape the schema carries it. */
-export const mapLink = (link: Link) => ({
-  to: link.to,
-  role: roles[link.role],
-  label: link.label ?? '',
 })
 
 export const mapBaseline = (baseline: { prose: string; stat: string }) => ({
@@ -136,6 +110,8 @@ export const mapNeighbourhood = (answer: NeighbourhoodWire): Neighbourhood => ({
         reverseLabel: one.reverseLabel,
         through: one.through,
         isMutual: one.isMutual,
+        marker: readMarker(one.marker),
+        reverseMarker: readMarker(one.reverseMarker),
       },
     ]
   }),

@@ -227,11 +227,8 @@ describe('the agent a plugin is handed', () => {
 describe('the notes of the vault a plugin is handed', () => {
   const createNotes = () => {
     const making = {
-      createUntitled: vi.fn(() => Promise.resolve({ path: 'Untitled.md', title: 'Untitled' })),
-      createInRelation: vi.fn(() => Promise.resolve({ path: 'Made.md', title: 'Made' })),
+      createUntitled: vi.fn(() => Promise.resolve('Untitled.md')),
       createWithTitle: vi.fn(() => Promise.resolve(null)),
-      join: vi.fn(() => Promise.resolve(true)),
-      replaceLinks: vi.fn(() => Promise.resolve(false)),
     } as unknown as NoteCreator
     const core = {
       neighbourhood: vi.fn((path: string) =>
@@ -298,21 +295,12 @@ describe('the notes of the vault a plugin is handed', () => {
     const { notes, making } = createNotes()
 
     expect(await notes.createUntitledNote()).toBe('Untitled.md')
-    expect(making.createUntitled).toHaveBeenCalledWith('', [])
-    expect(await notes.createInRelation('Root.md', 'child')).toStrictEqual({
-      path: 'Made.md',
-      title: 'Made',
-    })
-    expect(await notes.createWithTitle('Two', 'Root.md', 'parent')).toBeNull()
-    expect(await notes.join('Root.md', 'Two.md', 'jump', 'see')).toBe(true)
-    expect(making.join).toHaveBeenCalledWith('Root.md', 'Two.md', 'jump', 'see')
-    expect(await notes.replaceLinks('Root.md', 'Two.md', [])).toBe(false)
-    expect(notes.creatableRelations).toStrictEqual(['parent', 'child', 'jump'])
+    expect(making.createUntitled).toHaveBeenCalledWith('')
   })
 
   it('makes no path where the note maker made no untitled note', async () => {
     const { notes, making } = createNotes()
-    vi.mocked(making.createUntitled).mockResolvedValueOnce(null)
+    vi.mocked(making.createUntitled).mockResolvedValueOnce('')
 
     expect(await notes.createUntitledNote()).toBe('')
   })

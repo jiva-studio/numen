@@ -33,6 +33,6 @@ export {
   retryWhileBusy,
 } from './errors/answers'
 export type { ErrorCode } from './errors/errorCode'
-export { ERRORS, getErrorWords, getKnownErrorCode } from './errors/codes'
+export { ERRORS, getErrorWords, getKnownErrorCode, getRelationErrorWords } from './errors/codes'
 export { getFileMenu, getMediaSource, getPageSource, runFileMenuEntry } from './media'
 export type { FileMenuEntry, MediaSource } from './media'

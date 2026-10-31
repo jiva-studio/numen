@@ -5,7 +5,7 @@
  * showing something stale, with no error and no way back.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { asValue } from '@numen/plugin-sdk'
+import { asFailure, asValue } from '@numen/plugin-sdk'
 import { useWindowDisplay } from './useWindowDisplay'
 import type { Core } from '@/app/ports/core'
 import type { Task } from '@/shared/notices/task'
@@ -61,9 +61,16 @@ function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
     read: async () => asValue({ body: '' }),
     write: async () => asValue({ body: '' }),
     create: async () => ({ ok: true, value: { path: '' } }),
-    join: async () => null,
-    removeLink: async () => null,
-    replaceLinks: async () => null,
+    relations: {
+      roles: ['parent', 'child', 'jump'],
+      getConnection: async () => asFailure('missing'),
+      saveConnection: async () => asValue(undefined),
+      removeSide: async () => asValue(undefined),
+      removeConnection: async () => asValue(undefined),
+      join: async () => asValue(undefined),
+      createRelated: async () => asValue(''),
+      listBacklinks: async () => [],
+    },
     rename: async (path, title) => asValue({ path, title, hasFrontmatter: false, moved: null }),
     remove: async () => asValue({ trashed: '', dangling: [] }),
     list: async () => [],

@@ -69,7 +69,7 @@ const create = ({
     editing: { making: {}, fileFlush: { addHandler: vi.fn(), raise: vi.fn() } },
     settings: { kinds: ['settings'] },
     window: { failure: ref(''), opening: ref('Root.md'), readInitialNote: vi.fn() },
-    core: {},
+    core: { relations: { roles: ['parent', 'child', 'jump'] } },
     getTarget: vi.fn(() => ({})),
     runCommand: vi.fn(),
   } as unknown as Parameters<typeof useWindowKinds>[0]
@@ -189,7 +189,7 @@ describe('the services the window gives a plugin', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 8, 4, 3, 30))
     const { deps, window, writer } = create()
-    const { workspace, notes } = window.services
+    const { workspace } = window.services
 
     workspace?.ask('what is this?')
     workspace?.setDraggedPaths(['a.md'])
@@ -202,7 +202,7 @@ describe('the services the window gives a plugin', () => {
     expect(deps.log.getWriter).toHaveBeenCalledWith('form')
     expect(workspace?.getToday()).toBe('2026-09-04')
     expect(workspace?.openingPath.value).toBe('Root.md')
-    expect(notes?.creatableRelations).toStrictEqual(['parent', 'child', 'jump'])
+    expect(window.services.relations?.roles).toStrictEqual(['parent', 'child', 'jump'])
   })
 
   it('tell the person why a question could not be put to the agent', async () => {

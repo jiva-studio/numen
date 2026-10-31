@@ -11,6 +11,7 @@ import type { WindowKindsDeps } from '../kinds/deps'
 import {
   createAgentHost,
   createVaultNotes,
+  createVaultRelations,
   createWorkspaceHost,
   type PluginServices,
 } from '../plugins/pluginServices'
@@ -109,6 +110,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
       making: editing.making,
       pluginNotes: deps.pluginNotes,
     }),
+    relations: createVaultRelations({ core }),
     files: createVaultFiles({ ...deps, making: editing.making }),
     agent: createAgentHost({ port: agentPort, ...deps }),
     buffers: createBufferHost({ fileFlush: editing.fileFlush }),

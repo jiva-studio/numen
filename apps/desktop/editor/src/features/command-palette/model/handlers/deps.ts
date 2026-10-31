@@ -6,7 +6,8 @@
  * how what it has to say becomes one line.
  */
 import type { Movement } from '@/entities/file'
-import type { NoteRelation, RemoveResult, RenameResult } from '@/entities/note'
+import type { ConnectionRole } from '@numen/plugin-sdk'
+import type { RemoveResult, RenameResult } from '@/entities/note'
 import type { Vaults } from '@/entities/vault'
 import type { ErrorCode } from '@/shared/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
@@ -22,7 +23,7 @@ export interface NewNote {
 /** The vault as a command changes what it holds. */
 export interface VaultWriter {
   /** A note made under the name it is given, in a relation of another one. */
-  createNote(title: string, from: string, relation: NoteRelation | null): Promise<NewNote | null>
+  createNote(title: string, from: string, relation: ConnectionRole | null): Promise<NewNote | null>
   /** A note given a different name, and its file renamed with it where the two are one name. */
   rename(path: string, title: string): Promise<RenameResult>
   /** A note taken out of the vault, into the trash or off the disk. */

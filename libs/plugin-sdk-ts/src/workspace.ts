@@ -2,6 +2,8 @@ import type { Component, Ref } from 'vue'
 import type { Selector } from './texts'
 import type { TextRange } from './types'
 import type { Severity } from './notices'
+import type { ErrorCode } from './errors/errorCode'
+import type { Result } from './result'
 
 // NoteRef is one note of the vault: where it is filed, and what it is called.
 export interface NoteRef {
@@ -25,6 +27,9 @@ export interface NoteHeading {
 // NoteRelation is how a neighbouring note is linked to the focused note.
 export type NoteRelation = 'parent' | 'child' | 'jump' | 'sibling'
 
+// LinkMarker is what a link record draws at the end that points at its target. A link without one draws nothing there.
+export type LinkMarker = 'arrow'
+
 // NoteNeighbour is one note joined to the note in focus.
 export interface NoteNeighbour {
   readonly path: string
@@ -35,6 +40,10 @@ export interface NoteNeighbour {
   readonly reverseLabel?: string
   readonly through: string
   readonly isMutual: boolean
+  // What the record the note in focus writes draws at this note.
+  readonly marker: LinkMarker | null
+  // What the record this note writes draws at the note in focus.
+  readonly reverseMarker: LinkMarker | null
 }
 
 // NoteNeighbourhood is a note in focus, and the notes joined to it.
@@ -44,14 +53,6 @@ export interface NoteNeighbourhood {
   readonly related: readonly NoteNeighbour[]
 }
 
-// NoteLink is one link between two notes, written in the note it runs from.
-export interface NoteLink {
-  readonly from: string
-  readonly to: string
-  readonly relation: NoteRelation
-  readonly label: string
-}
-
 // VaultNotes is what a plugin reads of the notes of the vault, and writes to them.
 export interface VaultNotes {
   getNeighbourhood(path: string): Promise<NoteNeighbourhood>
@@ -59,18 +60,111 @@ export interface VaultNotes {
   findNotes(query: string, limit?: number): Promise<readonly NoteRef[]>
   // A note made untitled at the root of the vault: its path, and empty where none was made.
   createUntitledNote(): Promise<string>
-  createInRelation(from: string, relation: NoteRelation): Promise<NoteRef | null>
-  createWithTitle(title: string, from: string, relation: NoteRelation): Promise<NoteRef | null>
-  // Whether the link was written.
-  join(from: string, to: string, relation: NoteRelation, label?: string): Promise<boolean>
-  // Whether the links between two notes are now exactly the ones given.
-  replaceLinks(first: string, second: string, links: readonly NoteLink[]): Promise<boolean>
   // The prose of a note below its frontmatter, and why it could not be read: empty where it was.
   read(path: string): Promise<{ readonly body: string; readonly error?: string }>
   // Prose written into a note, keeping its frontmatter. Writes to one path are made in order.
   write(path: string, body: string): Promise<void>
-  // The relations a note can be made in.
-  readonly creatableRelations: readonly NoteRelation[]
+}
+
+// ConnectionRole is what the second note of a connection is to the first: its parent, its child, or a jump.
+// The role of the other note is derived by the core.
+export type ConnectionRole = 'parent' | 'child' | 'jump'
+
+// LinkRole is the role of a link as written: a ConnectionRole, a mention in prose, or an attachment.
+export type LinkRole = ConnectionRole | 'ref' | 'attachment'
+
+// ConnectionSide is the record one note writes about the other in a connection.
+export interface ConnectionSide {
+  // What the person calls the relationship; empty when they call it nothing.
+  readonly label: string
+  // What the record draws at the other note; null draws nothing.
+  readonly marker: LinkMarker | null
+  // Why the link exists, in the person's words.
+  readonly reason: string
+}
+
+// Connection is the relationship between two notes as a whole: up to two records, one written in each note.
+export interface Connection {
+  readonly first: string
+  readonly second: string
+  // What the second note is to the first; null when neither note writes a record of a role a connection carries.
+  readonly role: ConnectionRole | null
+  // The type of the records; empty for an ordinary link.
+  readonly type: string
+  // The record the first note writes about the second; null where it writes none.
+  readonly firstSide: ConnectionSide | null
+  // The record the second note writes about the first; null where it writes none.
+  readonly secondSide: ConnectionSide | null
+}
+
+// RelationJoin is the record one note is made to write about another.
+export interface RelationJoin {
+  // What the other note is to the writing one.
+  readonly role: ConnectionRole
+  readonly type?: string
+  readonly label?: string
+  readonly marker?: LinkMarker
+  readonly reason?: string
+}
+
+// RelatedNoteRequest is a note to make joined to an existing one.
+export interface RelatedNoteRequest {
+  // The existing note.
+  readonly from: string
+  // What the new note is to the existing one.
+  readonly role: ConnectionRole
+  // What the new note is called; empty takes the lowest free "Untitled note N".
+  readonly title?: string
+  // The type of the record the new note writes.
+  readonly type?: string
+  // What the record the new note writes draws at the existing note.
+  readonly marker?: LinkMarker
+}
+
+// Backlink is a link written in another note that points at a note.
+export interface Backlink {
+  readonly from: NoteRef
+  // The role as written, relative to the note it is written in.
+  readonly role: LinkRole | null
+  // The role of the writing note relative to the note asked about; null where the role has no counterpart.
+  readonly roleFromHere: LinkRole | null
+  readonly type: string
+  readonly reason: string
+  readonly label: string
+  readonly marker: LinkMarker | null
+}
+
+// RelationError is why an operation on relationships did not land: a vault error, a connection that is not one
+// ('invalid'), a connection that would put a note above itself ('cycle'), or no free untitled name ('nameExhausted').
+export type RelationError = ErrorCode | 'invalid' | 'cycle' | 'nameExhausted'
+
+// VaultRelations is what a plugin reads and writes of the relationships between notes. The core derives the
+// role each note writes and enforces the rules of the hierarchy.
+export interface VaultRelations {
+  // The roles a note can be created or joined in.
+  readonly roles: readonly ConnectionRole[]
+  // The relationship between two notes, restricted to the records of one type.
+  getConnection(
+    first: string,
+    second: string,
+    type?: string,
+  ): Promise<Result<Connection, RelationError>>
+  // Makes the records between two notes exactly the ones given, in both notes or in neither.
+  saveConnection(connection: Connection): Promise<Result<void, RelationError>>
+  // Removes the record one note writes about another and leaves the other note alone.
+  removeSide(from: string, to: string, type?: string): Promise<Result<void, RelationError>>
+  // Removes the records two notes write about each other.
+  removeConnection(
+    first: string,
+    second: string,
+    type?: string,
+  ): Promise<Result<void, RelationError>>
+  // Makes one note write a record about another and keeps the record the other note writes.
+  join(from: string, to: string, side: RelationJoin): Promise<Result<void, RelationError>>
+  // Makes a note joined to an existing one; the value is its path.
+  createRelated(request: RelatedNoteRequest): Promise<Result<string, RelationError>>
+  // The links written in other notes that point at a note.
+  listBacklinks(path: string): Promise<readonly Backlink[]>
 }
 
 // FilePlacement is where a file opened from a tab is drawn: in the current pane, or in a split beside it.

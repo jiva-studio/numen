@@ -136,6 +136,8 @@ describe('vault neighbourhood responses', () => {
         reverseLabel: 'contains rota',
         through: '',
         isMutual: true,
+        marker: null,
+        reverseMarker: null,
       },
     ])
   })

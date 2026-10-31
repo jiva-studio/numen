@@ -1,7 +1,7 @@
 /**
  * Note and file creation and mutation helpers for command execution.
  */
-import type { NoteRelation } from '@/entities/note'
+import type { ConnectionRole } from '@numen/plugin-sdk'
 import type { CommandDeps, TabContext, VaultContext, Voice } from './deps'
 import type { CommandInvocation } from '../../types'
 import type { AnswerWords } from '../../words'
@@ -45,7 +45,7 @@ export const navigateToPath = async (
 }
 
 export interface CreateNoteOptions {
-  readonly relation: NoteRelation | null
+  readonly relation: ConnectionRole | null
   readonly words: AnswerWords
 }
 

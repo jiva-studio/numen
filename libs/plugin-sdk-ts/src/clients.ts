@@ -13,6 +13,7 @@ import {
   FileService,
   FloorSource,
   FlushResult,
+  Marker,
   Mode,
   NameSource,
   NoteService,
@@ -86,6 +87,9 @@ export const pluginService = createPluginClient()
 
 export const NAME_SOURCE = NameSource
 export type NameSourceCode = NameSource
+
+export const NOTE_MARKER = Marker
+export type NoteMarkerCode = Marker
 
 export const NOTE_ROLE = Role
 export type NoteRoleCode = Role

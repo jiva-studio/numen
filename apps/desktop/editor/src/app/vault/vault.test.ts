@@ -6,8 +6,6 @@
  * shape.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { Role } from '@numen/protocol'
-import type { Role as WindowRole } from '@/entities/note'
 
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
@@ -85,45 +83,6 @@ describe('the file a save presents', () => {
     await core.write('Heat.md', 'mine', null)
 
     expect(request.writeNote.mock.calls.at(-1)?.[0]).toEqual({ path: 'Heat.md', body: 'mine' })
-  })
-})
-
-describe('the role a link carries', () => {
-  it('goes to the schema under the word the vault uses for it', async () => {
-    request.createNote.mockResolvedValue({ path: 'Entropy.md' })
-
-    await core.create({
-      title: 'Entropy',
-      folder: '',
-      links: [{ to: 'Ontology.md', role: 'jump', label: 'see also' }],
-    })
-
-    expect(request.createNote.mock.calls[0]?.[0].links).toEqual([
-      { to: 'Ontology.md', role: Role.JUMP, label: 'see also' },
-    ])
-  })
-
-  // The roles come from the schema, so a role added there is covered here.
-  it('is every role the schema names, on a link written into a note that is there', async () => {
-    const carried = Object.keys(Role).filter(
-      (name) => Number.isNaN(Number(name)) && name !== 'UNSPECIFIED',
-    )
-    expect(carried).toContain('ATTACHMENT')
-
-    for (const name of carried) {
-      request.writeLink.mockResolvedValue({})
-
-      await core.join('Ontology.md', {
-        to: 'Entropy.md',
-        role: name.toLowerCase() as WindowRole,
-      })
-
-      expect(request.writeLink.mock.calls.at(-1)?.[0].link).toEqual({
-        to: 'Entropy.md',
-        role: Role[name as keyof typeof Role],
-        label: '',
-      })
-    }
   })
 })
 

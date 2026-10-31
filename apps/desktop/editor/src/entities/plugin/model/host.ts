@@ -369,6 +369,7 @@ function createServiceBridge(
   PluginContextHost,
   | 'getWorkspace'
   | 'getNotes'
+  | 'getRelations'
   | 'getFiles'
   | 'getAgent'
   | 'getBuffers'
@@ -379,6 +380,7 @@ function createServiceBridge(
   return {
     getWorkspace: () => deps.getWorkspace?.(),
     getNotes: () => deps.getNotes?.(),
+    getRelations: () => deps.getRelations?.(),
     getFiles: () => deps.getFiles?.(),
     getAgent: () => deps.getAgent?.(),
     getBuffers: () => deps.getBuffers?.(),
