@@ -174,6 +174,7 @@ func (c *Client) Join(ctx context.Context, from, to string, side Side) error {
 func (c *Client) CreateInRelation(ctx context.Context, in RelatedNote) (string, error) {
 	res, err := c.rpc.CreateRelatedNote(ctx, request(c, &v1.HostVaultServiceCreateRelatedNoteRequest{
 		From: in.From, Role: writeRole(in.Role), Title: in.Title, Type: in.Type,
+		Marker: writeMarker(in.Marker),
 	}))
 	if err != nil {
 		return "", readError(err)

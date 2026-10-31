@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"connectrpc.com/connect"
@@ -98,11 +99,16 @@ func (h *noteHandler) CreateNote(
 	}
 	defer h.state.Writing.finish()
 
-	made, err := h.create.Execute(ctx, showing, note.NewNote{
-		Title: r.Msg.GetTitle(),
-		Path:  r.Msg.GetPath(),
-		Links: links,
-	})
+	creating := note.NewNote{Title: r.Msg.GetTitle(), Path: r.Msg.GetPath(), Links: links}
+	var made note.CreateResult
+	if strings.TrimSpace(creating.Title) == "" {
+		made, err = h.create.ExecuteUntitled(ctx, showing, creating)
+		if errors.Is(err, domain.ErrNoFreeName) {
+			return connect.NewResponse(&v1.CreateNoteResponse{IsNameExhausted: true}), nil
+		}
+	} else {
+		made, err = h.create.Execute(ctx, showing, creating)
+	}
 	unlevelled := h.state.isUnlevelled(err)
 	if made.Path != "" {
 		// The note is on disk under that name, so the response carries it. The
@@ -151,80 +157,6 @@ func (h *noteHandler) WriteLink(
 		return connect.NewResponse(&v1.WriteLinkResponse{Error: &reason}), nil
 	}
 	return connect.NewResponse(&v1.WriteLinkResponse{}), nil
-}
-
-// RemoveLink takes one relationship out of one note.
-func (h *noteHandler) RemoveLink(
-	ctx context.Context, r *connect.Request[v1.RemoveLinkRequest],
-) (*connect.Response[v1.RemoveLinkResponse], error) {
-	showing, err := h.state.getCurrentVault()
-	if err != nil {
-		return nil, err
-	}
-	if !h.state.Writing.begin() {
-		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
-	}
-	defer h.state.Writing.finish()
-
-	role, _ := wire.ConvertRoleFromWire(r.Msg.GetRole())
-	to, err := h.getAddress(ctx, r.Msg.GetTo())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
-	}
-	key := domain.LinkKey{Target: to, Role: role, Type: r.Msg.GetType()}
-	if _, err := h.editLinks.Remove(ctx, showing, r.Msg.GetPath(), key, domain.FileStat{}); err != nil {
-		reason, ok := wire.GetErrorCode(err)
-		if !ok {
-			return nil, connect.NewError(connect.CodeInternal, err)
-		}
-		return connect.NewResponse(&v1.RemoveLinkResponse{Error: &reason}), nil
-	}
-	return connect.NewResponse(&v1.RemoveLinkResponse{}), nil
-}
-
-// ReplaceLinks makes the links between two notes the ones the request names.
-func (h *noteHandler) ReplaceLinks(
-	ctx context.Context, r *connect.Request[v1.ReplaceLinksRequest],
-) (*connect.Response[v1.ReplaceLinksResponse], error) {
-	showing, err := h.state.getCurrentVault()
-	if err != nil {
-		return nil, err
-	}
-	links := make([]note.PairLink, 0, len(r.Msg.GetLinks()))
-	for _, l := range r.Msg.GetLinks() {
-		role, ok := wire.ConvertRoleFromWire(l.GetRole())
-		if !ok {
-			err := fmt.Errorf("no link carries the role %v", l.GetRole())
-			return nil, connect.NewError(connect.CodeInvalidArgument, err)
-		}
-		marker, ok := wire.ConvertMarkerFromWire(l.GetMarker())
-		if !ok {
-			err := fmt.Errorf("no link carries the marker %v", l.GetMarker())
-			return nil, connect.NewError(connect.CodeInvalidArgument, err)
-		}
-		links = append(links, note.PairLink{
-			From: l.GetFrom(), To: l.GetTo(), Role: role, Type: l.GetType(), Why: l.GetNote(),
-			Label: l.GetLabel(), Marker: marker,
-		})
-	}
-	if !h.state.Writing.begin() {
-		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
-	}
-	defer h.state.Writing.finish()
-
-	if err := h.replaceLinks.Execute(
-		ctx, showing, r.Msg.GetFirst(), r.Msg.GetSecond(), links,
-	); err != nil {
-		if errors.Is(err, note.ErrNotAPair) {
-			return nil, connect.NewError(connect.CodeInvalidArgument, err)
-		}
-		reason, ok := wire.GetErrorCode(err)
-		if !ok {
-			return nil, connect.NewError(connect.CodeInternal, err)
-		}
-		return connect.NewResponse(&v1.ReplaceLinksResponse{Error: &reason}), nil
-	}
-	return connect.NewResponse(&v1.ReplaceLinksResponse{}), nil
 }
 
 func (h *noteHandler) GetOpeningNote(

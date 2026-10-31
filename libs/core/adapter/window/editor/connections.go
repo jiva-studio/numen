@@ -180,13 +180,17 @@ func (h *noteHandler) CreateRelatedNote(
 	if !ok {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("no note is created in this role"))
 	}
+	marker, ok := wire.ConvertMarkerFromWire(r.Msg.GetMarker())
+	if !ok {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("no link carries this marker"))
+	}
 	if !h.state.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
 	defer h.state.Writing.finish()
 
 	made, err := h.createInRelation.Execute(ctx, showing, domain.RelatedNote{
-		From: r.Msg.GetFrom(), Role: role, Title: r.Msg.GetTitle(), Type: r.Msg.GetType(),
+		From: r.Msg.GetFrom(), Role: role, Title: r.Msg.GetTitle(), Type: r.Msg.GetType(), Marker: marker,
 	})
 	unlevelled := h.state.isUnlevelled(err)
 	switch {

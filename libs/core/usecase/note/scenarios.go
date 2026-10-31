@@ -19,7 +19,6 @@ type Scenarios struct {
 	Replace      Replace
 	Linking      EditLinks
 	AddLinks     AddLinks
-	ReplaceLinks ReplaceLinks
 	Move         Move
 	Rename       Rename
 	Remove       Remove

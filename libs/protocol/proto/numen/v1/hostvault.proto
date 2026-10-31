@@ -447,6 +447,8 @@ message HostVaultServiceCreateRelatedNoteRequest {
   string title = 3;
   // The type of the record the new note writes. Empty for an ordinary link.
   string type = 4;
+  // What the record the new note writes draws at the existing note.
+  Marker marker = 5;
 }
 
 message HostVaultServiceCreateRelatedNoteResponse {

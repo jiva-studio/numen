@@ -373,29 +373,6 @@ func TestRemovingAConnectionRemovesBothSidesButNotOtherTypes(t *testing.T) {
 	}
 }
 
-func TestReplacingLinksKeepsTheTypeAndTheReasonOfTheRecord(t *testing.T) {
-	t.Parallel()
-	c := openChanging(t, map[string]string{
-		"Heat.md": "---\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRC\nlinks:\n  - to: Entropy\n    role: parent\n" +
-			"    type: requires\n    note: only eigenvectors\n---\n# Heat\n",
-		"Entropy.md": entropyNote,
-	})
-
-	err := c.newReplaceLinks().Execute(t.Context(), c.vault, "Heat.md", "Entropy.md", []note.PairLink{
-		{From: "Heat.md", To: "Entropy.md", Role: domain.RoleJump, Type: "requires", Label: "renamed"},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	body := c.read(t, "Heat.md")
-	for _, want := range []string{"type: requires", "note: only eigenvectors", "label: renamed", "role: jump"} {
-		if !strings.Contains(body, want) {
-			t.Errorf("Heat is missing %q:\n%s", want, body)
-		}
-	}
-}
-
 func TestRemovingALinkAddressesATypeAndKeepsOtherTypes(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{
