@@ -39,12 +39,9 @@ const (
 	// HostSearchServiceEmbedTextsProcedure is the fully-qualified name of the HostSearchService's
 	// EmbedTexts RPC.
 	HostSearchServiceEmbedTextsProcedure = "/numen.v1.HostSearchService/EmbedTexts"
-	// HostSearchServiceListNoteTitlesProcedure is the fully-qualified name of the HostSearchService's
-	// ListNoteTitles RPC.
-	HostSearchServiceListNoteTitlesProcedure = "/numen.v1.HostSearchService/ListNoteTitles"
-	// HostSearchServiceListSmallChunkVectorsProcedure is the fully-qualified name of the
-	// HostSearchService's ListSmallChunkVectors RPC.
-	HostSearchServiceListSmallChunkVectorsProcedure = "/numen.v1.HostSearchService/ListSmallChunkVectors"
+	// HostSearchServiceSampleSimilaritiesProcedure is the fully-qualified name of the
+	// HostSearchService's SampleSimilarities RPC.
+	HostSearchServiceSampleSimilaritiesProcedure = "/numen.v1.HostSearchService/SampleSimilarities"
 	// HostSearchServiceGetBestSimilarityProcedure is the fully-qualified name of the
 	// HostSearchService's GetBestSimilarity RPC.
 	HostSearchServiceGetBestSimilarityProcedure = "/numen.v1.HostSearchService/GetBestSimilarity"
@@ -66,14 +63,12 @@ type HostSearchServiceClient interface {
 	// EmbedTexts embeds texts with the model in use. At most 256 texts of at most
 	// 8192 bytes each are embedded in one call.
 	EmbedTexts(context.Context, *connect.Request[v1.EmbedTextsRequest]) (*connect.Response[v1.EmbedTextsResponse], error)
-	// ListNoteTitles lists the titles of the notes of the vault. The order is a
-	// function of the content in the index, so one index yields one list. A limit
-	// of zero or above 1000 is 1000.
-	ListNoteTitles(context.Context, *connect.Request[v1.ListNoteTitlesRequest]) (*connect.Response[v1.ListNoteTitlesResponse], error)
-	// ListSmallChunkVectors lists the small chunks of the vault that carry a
-	// vector under the recipe, in the order of their content hashes. A limit of
-	// zero or above 1000 is 1000.
-	ListSmallChunkVectors(context.Context, *connect.Request[v1.ListSmallChunkVectorsRequest]) (*connect.Response[v1.ListSmallChunkVectorsResponse], error)
+	// SampleSimilarities is the cosine similarity of each query vector with the
+	// small chunks of the vault that carry a vector under the recipe and belong
+	// to a source other than the one the query names. The host takes at most 500
+	// small chunks, in the order of their content hashes, so one index yields
+	// one sample. At most 256 queries are sampled in one call.
+	SampleSimilarities(context.Context, *connect.Request[v1.SampleSimilaritiesRequest]) (*connect.Response[v1.SampleSimilaritiesResponse], error)
 	// GetBestSimilarity is the cosine similarity of the passage of the vault
 	// nearest a vector under the recipe, and zero when the vault has none.
 	GetBestSimilarity(context.Context, *connect.Request[v1.GetBestSimilarityRequest]) (*connect.Response[v1.GetBestSimilarityResponse], error)
@@ -109,16 +104,10 @@ func NewHostSearchServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(hostSearchServiceMethods.ByName("EmbedTexts")),
 			connect.WithClientOptions(opts...),
 		),
-		listNoteTitles: connect.NewClient[v1.ListNoteTitlesRequest, v1.ListNoteTitlesResponse](
+		sampleSimilarities: connect.NewClient[v1.SampleSimilaritiesRequest, v1.SampleSimilaritiesResponse](
 			httpClient,
-			baseURL+HostSearchServiceListNoteTitlesProcedure,
-			connect.WithSchema(hostSearchServiceMethods.ByName("ListNoteTitles")),
-			connect.WithClientOptions(opts...),
-		),
-		listSmallChunkVectors: connect.NewClient[v1.ListSmallChunkVectorsRequest, v1.ListSmallChunkVectorsResponse](
-			httpClient,
-			baseURL+HostSearchServiceListSmallChunkVectorsProcedure,
-			connect.WithSchema(hostSearchServiceMethods.ByName("ListSmallChunkVectors")),
+			baseURL+HostSearchServiceSampleSimilaritiesProcedure,
+			connect.WithSchema(hostSearchServiceMethods.ByName("SampleSimilarities")),
 			connect.WithClientOptions(opts...),
 		),
 		getBestSimilarity: connect.NewClient[v1.GetBestSimilarityRequest, v1.GetBestSimilarityResponse](
@@ -144,13 +133,12 @@ func NewHostSearchServiceClient(httpClient connect.HTTPClient, baseURL string, o
 
 // hostSearchServiceClient implements HostSearchServiceClient.
 type hostSearchServiceClient struct {
-	getEmbeddingState     *connect.Client[v1.GetEmbeddingStateRequest, v1.GetEmbeddingStateResponse]
-	embedTexts            *connect.Client[v1.EmbedTextsRequest, v1.EmbedTextsResponse]
-	listNoteTitles        *connect.Client[v1.ListNoteTitlesRequest, v1.ListNoteTitlesResponse]
-	listSmallChunkVectors *connect.Client[v1.ListSmallChunkVectorsRequest, v1.ListSmallChunkVectorsResponse]
-	getBestSimilarity     *connect.Client[v1.GetBestSimilarityRequest, v1.GetBestSimilarityResponse]
-	getSearchFloor        *connect.Client[v1.GetSearchFloorRequest, v1.GetSearchFloorResponse]
-	setSearchFloor        *connect.Client[v1.SetSearchFloorRequest, v1.SetSearchFloorResponse]
+	getEmbeddingState  *connect.Client[v1.GetEmbeddingStateRequest, v1.GetEmbeddingStateResponse]
+	embedTexts         *connect.Client[v1.EmbedTextsRequest, v1.EmbedTextsResponse]
+	sampleSimilarities *connect.Client[v1.SampleSimilaritiesRequest, v1.SampleSimilaritiesResponse]
+	getBestSimilarity  *connect.Client[v1.GetBestSimilarityRequest, v1.GetBestSimilarityResponse]
+	getSearchFloor     *connect.Client[v1.GetSearchFloorRequest, v1.GetSearchFloorResponse]
+	setSearchFloor     *connect.Client[v1.SetSearchFloorRequest, v1.SetSearchFloorResponse]
 }
 
 // GetEmbeddingState calls numen.v1.HostSearchService.GetEmbeddingState.
@@ -163,14 +151,9 @@ func (c *hostSearchServiceClient) EmbedTexts(ctx context.Context, req *connect.R
 	return c.embedTexts.CallUnary(ctx, req)
 }
 
-// ListNoteTitles calls numen.v1.HostSearchService.ListNoteTitles.
-func (c *hostSearchServiceClient) ListNoteTitles(ctx context.Context, req *connect.Request[v1.ListNoteTitlesRequest]) (*connect.Response[v1.ListNoteTitlesResponse], error) {
-	return c.listNoteTitles.CallUnary(ctx, req)
-}
-
-// ListSmallChunkVectors calls numen.v1.HostSearchService.ListSmallChunkVectors.
-func (c *hostSearchServiceClient) ListSmallChunkVectors(ctx context.Context, req *connect.Request[v1.ListSmallChunkVectorsRequest]) (*connect.Response[v1.ListSmallChunkVectorsResponse], error) {
-	return c.listSmallChunkVectors.CallUnary(ctx, req)
+// SampleSimilarities calls numen.v1.HostSearchService.SampleSimilarities.
+func (c *hostSearchServiceClient) SampleSimilarities(ctx context.Context, req *connect.Request[v1.SampleSimilaritiesRequest]) (*connect.Response[v1.SampleSimilaritiesResponse], error) {
+	return c.sampleSimilarities.CallUnary(ctx, req)
 }
 
 // GetBestSimilarity calls numen.v1.HostSearchService.GetBestSimilarity.
@@ -198,14 +181,12 @@ type HostSearchServiceHandler interface {
 	// EmbedTexts embeds texts with the model in use. At most 256 texts of at most
 	// 8192 bytes each are embedded in one call.
 	EmbedTexts(context.Context, *connect.Request[v1.EmbedTextsRequest]) (*connect.Response[v1.EmbedTextsResponse], error)
-	// ListNoteTitles lists the titles of the notes of the vault. The order is a
-	// function of the content in the index, so one index yields one list. A limit
-	// of zero or above 1000 is 1000.
-	ListNoteTitles(context.Context, *connect.Request[v1.ListNoteTitlesRequest]) (*connect.Response[v1.ListNoteTitlesResponse], error)
-	// ListSmallChunkVectors lists the small chunks of the vault that carry a
-	// vector under the recipe, in the order of their content hashes. A limit of
-	// zero or above 1000 is 1000.
-	ListSmallChunkVectors(context.Context, *connect.Request[v1.ListSmallChunkVectorsRequest]) (*connect.Response[v1.ListSmallChunkVectorsResponse], error)
+	// SampleSimilarities is the cosine similarity of each query vector with the
+	// small chunks of the vault that carry a vector under the recipe and belong
+	// to a source other than the one the query names. The host takes at most 500
+	// small chunks, in the order of their content hashes, so one index yields
+	// one sample. At most 256 queries are sampled in one call.
+	SampleSimilarities(context.Context, *connect.Request[v1.SampleSimilaritiesRequest]) (*connect.Response[v1.SampleSimilaritiesResponse], error)
 	// GetBestSimilarity is the cosine similarity of the passage of the vault
 	// nearest a vector under the recipe, and zero when the vault has none.
 	GetBestSimilarity(context.Context, *connect.Request[v1.GetBestSimilarityRequest]) (*connect.Response[v1.GetBestSimilarityResponse], error)
@@ -237,16 +218,10 @@ func NewHostSearchServiceHandler(svc HostSearchServiceHandler, opts ...connect.H
 		connect.WithSchema(hostSearchServiceMethods.ByName("EmbedTexts")),
 		connect.WithHandlerOptions(opts...),
 	)
-	hostSearchServiceListNoteTitlesHandler := connect.NewUnaryHandler(
-		HostSearchServiceListNoteTitlesProcedure,
-		svc.ListNoteTitles,
-		connect.WithSchema(hostSearchServiceMethods.ByName("ListNoteTitles")),
-		connect.WithHandlerOptions(opts...),
-	)
-	hostSearchServiceListSmallChunkVectorsHandler := connect.NewUnaryHandler(
-		HostSearchServiceListSmallChunkVectorsProcedure,
-		svc.ListSmallChunkVectors,
-		connect.WithSchema(hostSearchServiceMethods.ByName("ListSmallChunkVectors")),
+	hostSearchServiceSampleSimilaritiesHandler := connect.NewUnaryHandler(
+		HostSearchServiceSampleSimilaritiesProcedure,
+		svc.SampleSimilarities,
+		connect.WithSchema(hostSearchServiceMethods.ByName("SampleSimilarities")),
 		connect.WithHandlerOptions(opts...),
 	)
 	hostSearchServiceGetBestSimilarityHandler := connect.NewUnaryHandler(
@@ -273,10 +248,8 @@ func NewHostSearchServiceHandler(svc HostSearchServiceHandler, opts ...connect.H
 			hostSearchServiceGetEmbeddingStateHandler.ServeHTTP(w, r)
 		case HostSearchServiceEmbedTextsProcedure:
 			hostSearchServiceEmbedTextsHandler.ServeHTTP(w, r)
-		case HostSearchServiceListNoteTitlesProcedure:
-			hostSearchServiceListNoteTitlesHandler.ServeHTTP(w, r)
-		case HostSearchServiceListSmallChunkVectorsProcedure:
-			hostSearchServiceListSmallChunkVectorsHandler.ServeHTTP(w, r)
+		case HostSearchServiceSampleSimilaritiesProcedure:
+			hostSearchServiceSampleSimilaritiesHandler.ServeHTTP(w, r)
 		case HostSearchServiceGetBestSimilarityProcedure:
 			hostSearchServiceGetBestSimilarityHandler.ServeHTTP(w, r)
 		case HostSearchServiceGetSearchFloorProcedure:
@@ -300,12 +273,8 @@ func (UnimplementedHostSearchServiceHandler) EmbedTexts(context.Context, *connec
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.EmbedTexts is not implemented"))
 }
 
-func (UnimplementedHostSearchServiceHandler) ListNoteTitles(context.Context, *connect.Request[v1.ListNoteTitlesRequest]) (*connect.Response[v1.ListNoteTitlesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.ListNoteTitles is not implemented"))
-}
-
-func (UnimplementedHostSearchServiceHandler) ListSmallChunkVectors(context.Context, *connect.Request[v1.ListSmallChunkVectorsRequest]) (*connect.Response[v1.ListSmallChunkVectorsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.ListSmallChunkVectors is not implemented"))
+func (UnimplementedHostSearchServiceHandler) SampleSimilarities(context.Context, *connect.Request[v1.SampleSimilaritiesRequest]) (*connect.Response[v1.SampleSimilaritiesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.SampleSimilarities is not implemented"))
 }
 
 func (UnimplementedHostSearchServiceHandler) GetBestSimilarity(context.Context, *connect.Request[v1.GetBestSimilarityRequest]) (*connect.Response[v1.GetBestSimilarityResponse], error) {

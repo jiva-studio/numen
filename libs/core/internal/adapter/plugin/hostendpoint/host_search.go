@@ -82,6 +82,8 @@ func answerSearch(ctx context.Context, err error) (v1.HostSearchErrorCode, error
 		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_LIMIT_EXCEEDED, nil
 	case errors.Is(err, pluginport.ErrEmbeddingFailed):
 		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED, nil
+	case errors.Is(err, pluginport.ErrInvalidQuery):
+		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_QUERY, nil
 	}
 	return 0, connect.NewError(connect.CodeInternal, err)
 }
@@ -133,48 +135,34 @@ func (e *searchEndpoint) EmbedTexts(
 	return connect.NewResponse(&v1.EmbedTextsResponse{Recipe: embedded.Recipe, Vectors: vectors}), nil
 }
 
-func (e *searchEndpoint) ListNoteTitles(
-	ctx context.Context, req *connect.Request[v1.ListNoteTitlesRequest],
-) (*connect.Response[v1.ListNoteTitlesResponse], error) {
+func (e *searchEndpoint) SampleSimilarities(
+	ctx context.Context, req *connect.Request[v1.SampleSimilaritiesRequest],
+) (*connect.Response[v1.SampleSimilaritiesResponse], error) {
 	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, true)
 	if err != nil {
 		return nil, err
 	}
 	if code := call.getRefusal(true); code != 0 {
-		return connect.NewResponse(&v1.ListNoteTitlesResponse{Error: code}), nil
+		return connect.NewResponse(&v1.SampleSimilaritiesResponse{Error: code}), nil
 	}
-	found, err := call.search.ListNoteTitles(ctx, call.vault, int(req.Msg.GetLimit()))
+	queries := make([]pluginport.PluginSimilarityQuery, len(req.Msg.GetQueries()))
+	for i, one := range req.Msg.GetQueries() {
+		queries[i] = pluginport.PluginSimilarityQuery{Path: one.GetPath(), Vector: one.GetVector().GetValues()}
+	}
+	sample, err := call.search.SampleSimilarities(ctx, call.vault, req.Msg.GetRecipe(), queries)
 	code, err := answerSearch(ctx, err)
 	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.ListNoteTitlesResponse{Error: code}), err
+		return connect.NewResponse(&v1.SampleSimilaritiesResponse{Error: code}), err
 	}
-	titles := make([]*v1.NoteTitle, len(found))
-	for i, one := range found {
-		titles[i] = &v1.NoteTitle{SourceId: one.Source, Title: one.Title}
+	rows := make([]*v1.SimilarityRow, len(sample.Rows))
+	for i, one := range sample.Rows {
+		rows[i] = &v1.SimilarityRow{Values: one}
 	}
-	return connect.NewResponse(&v1.ListNoteTitlesResponse{Titles: titles}), nil
-}
-
-func (e *searchEndpoint) ListSmallChunkVectors(
-	ctx context.Context, req *connect.Request[v1.ListSmallChunkVectorsRequest],
-) (*connect.Response[v1.ListSmallChunkVectorsResponse], error) {
-	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, true)
-	if err != nil {
-		return nil, err
-	}
-	if code := call.getRefusal(true); code != 0 {
-		return connect.NewResponse(&v1.ListSmallChunkVectorsResponse{Error: code}), nil
-	}
-	found, err := call.search.ListSmallChunkVectors(ctx, call.vault, req.Msg.GetRecipe(), int(req.Msg.GetLimit()))
-	code, err := answerSearch(ctx, err)
-	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.ListSmallChunkVectorsResponse{Error: code}), err
-	}
-	vectors := make([]*v1.ChunkVector, len(found))
-	for i, one := range found {
-		vectors[i] = &v1.ChunkVector{SourceId: one.Source, Embedding: one.Vector}
-	}
-	return connect.NewResponse(&v1.ListSmallChunkVectorsResponse{Vectors: vectors}), nil
+	return connect.NewResponse(&v1.SampleSimilaritiesResponse{
+		PassageCount: int32(sample.PassageCount),
+		SourceCount:  int32(sample.SourceCount),
+		Rows:         rows,
+	}), nil
 }
 
 func (e *searchEndpoint) GetBestSimilarity(

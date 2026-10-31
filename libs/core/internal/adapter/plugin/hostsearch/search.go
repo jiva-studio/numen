@@ -100,34 +100,55 @@ func (s Search) EmbedTexts(ctx context.Context, texts []string) (pluginport.Plug
 	return pluginport.PluginEmbeddedTexts{Recipe: recipe, Vectors: vectors}, nil
 }
 
-// ListNoteTitles lists the titles of the vault, at most MaxListedTitles.
-func (s Search) ListNoteTitles(ctx context.Context, v domain.Vault, limit int) ([]pluginport.PluginNoteTitle, error) {
-	found, err := s.Samples.ListNoteTitles(ctx, v, clampLimit(limit, pluginport.MaxListedTitles))
+// SampleSimilarities compares each query with the sampled small chunks of the vault. At most
+// MaxSampledQueries queries are taken, else ErrLimitExceeded. A query whose dimension count differs
+// from a passage's returns ErrInvalidQuery.
+func (s Search) SampleSimilarities(ctx context.Context, v domain.Vault, recipe string, queries []pluginport.PluginSimilarityQuery) (pluginport.PluginSimilaritySample, error) {
+	if err := s.checkRecipe(recipe); err != nil {
+		return pluginport.PluginSimilaritySample{}, err
+	}
+	if len(queries) > pluginport.MaxSampledQueries {
+		return pluginport.PluginSimilaritySample{}, fmt.Errorf("%w: %d queries, at most %d", pluginport.ErrLimitExceeded, len(queries), pluginport.MaxSampledQueries)
+	}
+	passages, err := s.Samples.ListSmallChunkVectors(ctx, v, recipe, pluginport.MaxSampledPassages)
 	if err != nil {
-		return nil, err
+		return pluginport.PluginSimilaritySample{}, err
 	}
-	out := make([]pluginport.PluginNoteTitle, len(found))
-	for i, one := range found {
-		out[i] = pluginport.PluginNoteTitle{Source: one.Source, Title: one.Text}
+	sources := make(map[int64]struct{}, len(passages))
+	for _, passage := range passages {
+		sources[passage.Source] = struct{}{}
 	}
-	return out, nil
+	rows := make([][]float64, len(queries))
+	for i, query := range queries {
+		if err := ctx.Err(); err != nil {
+			return pluginport.PluginSimilaritySample{}, err
+		}
+		row, err := compare(query, passages)
+		if err != nil {
+			return pluginport.PluginSimilaritySample{}, fmt.Errorf("query %d: %w", i, err)
+		}
+		rows[i] = row
+	}
+	return pluginport.PluginSimilaritySample{PassageCount: len(passages), SourceCount: len(sources), Rows: rows}, nil
 }
 
-// ListSmallChunkVectors lists the stored vectors of the small chunks of the vault under the recipe,
-// at most MaxListedVectors.
-func (s Search) ListSmallChunkVectors(ctx context.Context, v domain.Vault, recipe string, limit int) ([]pluginport.PluginChunkVector, error) {
-	if err := s.checkRecipe(recipe); err != nil {
-		return nil, err
+// compare is the similarity of the query with each passage that belongs to another note than the
+// query's, in the order of the passages.
+func compare(query pluginport.PluginSimilarityQuery, passages []searchpolicyport.Passage) ([]float64, error) {
+	if len(query.Vector) == 0 {
+		return nil, nil
 	}
-	found, err := s.Samples.ListSmallChunkVectors(ctx, v, recipe, clampLimit(limit, pluginport.MaxListedVectors))
-	if err != nil {
-		return nil, err
+	row := make([]float64, 0, len(passages))
+	for _, passage := range passages {
+		if query.Path != "" && passage.Path == query.Path {
+			continue
+		}
+		if len(passage.Vector) != len(query.Vector) {
+			return nil, fmt.Errorf("%w: a passage holds %d dimensions where the query has %d", pluginport.ErrInvalidQuery, len(passage.Vector), len(query.Vector))
+		}
+		row = append(row, getCosine(query.Vector, passage.Vector))
 	}
-	out := make([]pluginport.PluginChunkVector, len(found))
-	for i, one := range found {
-		out[i] = pluginport.PluginChunkVector{Source: one.Source, Vector: one.Vector}
-	}
-	return out, nil
+	return row, nil
 }
 
 // GetBestSimilarity is the similarity of the passage of the vault nearest the query.
@@ -162,14 +183,6 @@ func (s Search) SetSearchFloor(ctx context.Context, v domain.Vault, recipe strin
 		return err
 	}
 	return nil
-}
-
-// clampLimit is the limit a list is read with: the maximum for a limit of zero or less, or above it.
-func clampLimit(limit, maximum int) int {
-	if limit <= 0 || limit > maximum {
-		return maximum
-	}
-	return limit
 }
 
 func convertSource(source search.FloorSourceKind) pluginport.PluginFloorSource {

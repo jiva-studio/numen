@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostsearch.proto.
  */
 export const file_numen_v1_hostsearch: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9ob3N0c2VhcmNoLnByb3RvEghudW1lbi52MSIaChhHZXRFbWJlZGRpbmdTdGF0ZVJlcXVlc3QiuwEKGUdldEVtYmVkZGluZ1N0YXRlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEg4KBnJlY2lwZRgCIAEoCRINCgVtb2RlbBgDIAEoCRISCgpmbG9vcl9oaW50GAQgASgBEhMKC2NodW5rX2NvdW50GAUgASgDEhYKDmVtYmVkZGVkX2NvdW50GAYgASgDEhAKCGlzX3JlYWR5GAcgASgIIiIKEUVtYmVkVGV4dHNSZXF1ZXN0Eg0KBXRleHRzGAEgAygJInoKEkVtYmVkVGV4dHNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSDgoGcmVjaXBlGAIgASgJEiYKB3ZlY3RvcnMYAyADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvciImChVMaXN0Tm90ZVRpdGxlc1JlcXVlc3QSDQoFbGltaXQYASABKAUiLQoJTm90ZVRpdGxlEhEKCXNvdXJjZV9pZBgBIAEoAxINCgV0aXRsZRgCIAEoCSJrChZMaXN0Tm90ZVRpdGxlc1Jlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFNlYXJjaEVycm9yQ29kZRIjCgZ0aXRsZXMYAiADKAsyEy5udW1lbi52MS5Ob3RlVGl0bGUiPQocTGlzdFNtYWxsQ2h1bmtWZWN0b3JzUmVxdWVzdBIOCgZyZWNpcGUYASABKAkSDQoFbGltaXQYAiABKAUiMwoLQ2h1bmtWZWN0b3ISEQoJc291cmNlX2lkGAEgASgDEhEKCWVtYmVkZGluZxgCIAEoDCJ1Ch1MaXN0U21hbGxDaHVua1ZlY3RvcnNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSJgoHdmVjdG9ycxgCIAMoCzIVLm51bWVuLnYxLkNodW5rVmVjdG9yIjkKGEdldEJlc3RTaW1pbGFyaXR5UmVxdWVzdBIOCgZyZWNpcGUYASABKAkSDQoFcXVlcnkYAiADKAIiXQoZR2V0QmVzdFNpbWlsYXJpdHlSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSEgoKc2ltaWxhcml0eRgCIAEoASInChVHZXRTZWFyY2hGbG9vclJlcXVlc3QSDgoGcmVjaXBlGAEgASgJIsMBChZHZXRTZWFyY2hGbG9vclJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFNlYXJjaEVycm9yQ29kZRINCgVmbG9vchgCIAEoARIrCgZzb3VyY2UYAyABKA4yGy5udW1lbi52MS5TZWFyY2hGbG9vclNvdXJjZRIUCgxzdG9yZWRfZmxvb3IYBCABKAESEgoKaGludF9mbG9vchgFIAEoARIVCg1kZWZhdWx0X2Zsb29yGAYgASgBIjYKFVNldFNlYXJjaEZsb29yUmVxdWVzdBIOCgZyZWNpcGUYASABKAkSDQoFZmxvb3IYAiABKAEiRgoWU2V0U2VhcmNoRmxvb3JSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUqtQIKE0hvc3RTZWFyY2hFcnJvckNvZGUSJgoiSE9TVF9TRUFSQ0hfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiMKH0hPU1RfU0VBUkNIX0VSUk9SX0NPREVfTk9fVkFVTFQQARIjCh9IT1NUX1NFQVJDSF9FUlJPUl9DT0RFX05PX01PREVMEAISKgomSE9TVF9TRUFSQ0hfRVJST1JfQ09ERV9SRUNJUEVfTUlTTUFUQ0gQAxIoCiRIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX0lOVkFMSURfRkxPT1IQBBIpCiVIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX0xJTUlUX0VYQ0VFREVEEAUSKwonSE9TVF9TRUFSQ0hfRVJST1JfQ09ERV9FTUJFRERJTkdfRkFJTEVEEAYqnQEKEVNlYXJjaEZsb29yU291cmNlEiMKH1NFQVJDSF9GTE9PUl9TT1VSQ0VfVU5TUEVDSUZJRUQQABIeChpTRUFSQ0hfRkxPT1JfU09VUkNFX1NUT1JFRBABEiIKHlNFQVJDSF9GTE9PUl9TT1VSQ0VfTU9ERUxfSElOVBACEh8KG1NFQVJDSF9GTE9PUl9TT1VSQ0VfREVGQVVMVBADMoEFChFIb3N0U2VhcmNoU2VydmljZRJcChFHZXRFbWJlZGRpbmdTdGF0ZRIiLm51bWVuLnYxLkdldEVtYmVkZGluZ1N0YXRlUmVxdWVzdBojLm51bWVuLnYxLkdldEVtYmVkZGluZ1N0YXRlUmVzcG9uc2USRwoKRW1iZWRUZXh0cxIbLm51bWVuLnYxLkVtYmVkVGV4dHNSZXF1ZXN0GhwubnVtZW4udjEuRW1iZWRUZXh0c1Jlc3BvbnNlElMKDkxpc3ROb3RlVGl0bGVzEh8ubnVtZW4udjEuTGlzdE5vdGVUaXRsZXNSZXF1ZXN0GiAubnVtZW4udjEuTGlzdE5vdGVUaXRsZXNSZXNwb25zZRJoChVMaXN0U21hbGxDaHVua1ZlY3RvcnMSJi5udW1lbi52MS5MaXN0U21hbGxDaHVua1ZlY3RvcnNSZXF1ZXN0GicubnVtZW4udjEuTGlzdFNtYWxsQ2h1bmtWZWN0b3JzUmVzcG9uc2USXAoRR2V0QmVzdFNpbWlsYXJpdHkSIi5udW1lbi52MS5HZXRCZXN0U2ltaWxhcml0eVJlcXVlc3QaIy5udW1lbi52MS5HZXRCZXN0U2ltaWxhcml0eVJlc3BvbnNlElMKDkdldFNlYXJjaEZsb29yEh8ubnVtZW4udjEuR2V0U2VhcmNoRmxvb3JSZXF1ZXN0GiAubnVtZW4udjEuR2V0U2VhcmNoRmxvb3JSZXNwb25zZRJTCg5TZXRTZWFyY2hGbG9vchIfLm51bWVuLnYxLlNldFNlYXJjaEZsb29yUmVxdWVzdBogLm51bWVuLnYxLlNldFNlYXJjaEZsb29yUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_embedding]);
+  fileDesc("ChludW1lbi92MS9ob3N0c2VhcmNoLnByb3RvEghudW1lbi52MSIaChhHZXRFbWJlZGRpbmdTdGF0ZVJlcXVlc3QiuwEKGUdldEVtYmVkZGluZ1N0YXRlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEg4KBnJlY2lwZRgCIAEoCRINCgVtb2RlbBgDIAEoCRISCgpmbG9vcl9oaW50GAQgASgBEhMKC2NodW5rX2NvdW50GAUgASgDEhYKDmVtYmVkZGVkX2NvdW50GAYgASgDEhAKCGlzX3JlYWR5GAcgASgIIiIKEUVtYmVkVGV4dHNSZXF1ZXN0Eg0KBXRleHRzGAEgAygJInoKEkVtYmVkVGV4dHNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSDgoGcmVjaXBlGAIgASgJEiYKB3ZlY3RvcnMYAyADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvciJGCg9TaW1pbGFyaXR5UXVlcnkSJQoGdmVjdG9yGAEgASgLMhUubnVtZW4udjEuRmxvYXRWZWN0b3ISDAoEcGF0aBgCIAEoCSJXChlTYW1wbGVTaW1pbGFyaXRpZXNSZXF1ZXN0Eg4KBnJlY2lwZRgBIAEoCRIqCgdxdWVyaWVzGAIgAygLMhkubnVtZW4udjEuU2ltaWxhcml0eVF1ZXJ5Ih8KDVNpbWlsYXJpdHlSb3cSDgoGdmFsdWVzGAEgAygBIp4BChpTYW1wbGVTaW1pbGFyaXRpZXNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSFQoNcGFzc2FnZV9jb3VudBgCIAEoBRIUCgxzb3VyY2VfY291bnQYAyABKAUSJQoEcm93cxgEIAMoCzIXLm51bWVuLnYxLlNpbWlsYXJpdHlSb3ciOQoYR2V0QmVzdFNpbWlsYXJpdHlSZXF1ZXN0Eg4KBnJlY2lwZRgBIAEoCRINCgVxdWVyeRgCIAMoAiJdChlHZXRCZXN0U2ltaWxhcml0eVJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFNlYXJjaEVycm9yQ29kZRISCgpzaW1pbGFyaXR5GAIgASgBIicKFUdldFNlYXJjaEZsb29yUmVxdWVzdBIOCgZyZWNpcGUYASABKAkiwwEKFkdldFNlYXJjaEZsb29yUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEg0KBWZsb29yGAIgASgBEisKBnNvdXJjZRgDIAEoDjIbLm51bWVuLnYxLlNlYXJjaEZsb29yU291cmNlEhQKDHN0b3JlZF9mbG9vchgEIAEoARISCgpoaW50X2Zsb29yGAUgASgBEhUKDWRlZmF1bHRfZmxvb3IYBiABKAEiNgoVU2V0U2VhcmNoRmxvb3JSZXF1ZXN0Eg4KBnJlY2lwZRgBIAEoCRINCgVmbG9vchgCIAEoASJGChZTZXRTZWFyY2hGbG9vclJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFNlYXJjaEVycm9yQ29kZSrfAgoTSG9zdFNlYXJjaEVycm9yQ29kZRImCiJIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIwofSE9TVF9TRUFSQ0hfRVJST1JfQ09ERV9OT19WQVVMVBABEiMKH0hPU1RfU0VBUkNIX0VSUk9SX0NPREVfTk9fTU9ERUwQAhIqCiZIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX1JFQ0lQRV9NSVNNQVRDSBADEigKJEhPU1RfU0VBUkNIX0VSUk9SX0NPREVfSU5WQUxJRF9GTE9PUhAEEikKJUhPU1RfU0VBUkNIX0VSUk9SX0NPREVfTElNSVRfRVhDRUVERUQQBRIrCidIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX0VNQkVERElOR19GQUlMRUQQBhIoCiRIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX0lOVkFMSURfUVVFUlkQByqdAQoRU2VhcmNoRmxvb3JTb3VyY2USIwofU0VBUkNIX0ZMT09SX1NPVVJDRV9VTlNQRUNJRklFRBAAEh4KGlNFQVJDSF9GTE9PUl9TT1VSQ0VfU1RPUkVEEAESIgoeU0VBUkNIX0ZMT09SX1NPVVJDRV9NT0RFTF9ISU5UEAISHwobU0VBUkNIX0ZMT09SX1NPVVJDRV9ERUZBVUxUEAMyowQKEUhvc3RTZWFyY2hTZXJ2aWNlElwKEUdldEVtYmVkZGluZ1N0YXRlEiIubnVtZW4udjEuR2V0RW1iZWRkaW5nU3RhdGVSZXF1ZXN0GiMubnVtZW4udjEuR2V0RW1iZWRkaW5nU3RhdGVSZXNwb25zZRJHCgpFbWJlZFRleHRzEhsubnVtZW4udjEuRW1iZWRUZXh0c1JlcXVlc3QaHC5udW1lbi52MS5FbWJlZFRleHRzUmVzcG9uc2USXwoSU2FtcGxlU2ltaWxhcml0aWVzEiMubnVtZW4udjEuU2FtcGxlU2ltaWxhcml0aWVzUmVxdWVzdBokLm51bWVuLnYxLlNhbXBsZVNpbWlsYXJpdGllc1Jlc3BvbnNlElwKEUdldEJlc3RTaW1pbGFyaXR5EiIubnVtZW4udjEuR2V0QmVzdFNpbWlsYXJpdHlSZXF1ZXN0GiMubnVtZW4udjEuR2V0QmVzdFNpbWlsYXJpdHlSZXNwb25zZRJTCg5HZXRTZWFyY2hGbG9vchIfLm51bWVuLnYxLkdldFNlYXJjaEZsb29yUmVxdWVzdBogLm51bWVuLnYxLkdldFNlYXJjaEZsb29yUmVzcG9uc2USUwoOU2V0U2VhcmNoRmxvb3ISHy5udW1lbi52MS5TZXRTZWFyY2hGbG9vclJlcXVlc3QaIC5udW1lbi52MS5TZXRTZWFyY2hGbG9vclJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_embedding]);
 
 /**
  * @generated from message numen.v1.GetEmbeddingStateRequest
@@ -135,137 +135,110 @@ export const EmbedTextsResponseSchema: GenMessage<EmbedTextsResponse> = /*@__PUR
   messageDesc(file_numen_v1_hostsearch, 3);
 
 /**
- * @generated from message numen.v1.ListNoteTitlesRequest
+ * @generated from message numen.v1.SimilarityQuery
  */
-export type ListNoteTitlesRequest = Message<"numen.v1.ListNoteTitlesRequest"> & {
+export type SimilarityQuery = Message<"numen.v1.SimilarityQuery"> & {
   /**
-   * @generated from field: int32 limit = 1;
+   * The embedding of the query under the recipe.
+   *
+   * @generated from field: numen.v1.FloatVector vector = 1;
    */
-  limit: number;
+  vector?: FloatVector | undefined;
+
+  /**
+   * The path of the note the query was made from, relative to the vault. The
+   * passages of that note are left out of the sample of the query. An empty
+   * path leaves out none.
+   *
+   * @generated from field: string path = 2;
+   */
+  path: string;
 };
 
 /**
- * Describes the message numen.v1.ListNoteTitlesRequest.
- * Use `create(ListNoteTitlesRequestSchema)` to create a new message.
+ * Describes the message numen.v1.SimilarityQuery.
+ * Use `create(SimilarityQuerySchema)` to create a new message.
  */
-export const ListNoteTitlesRequestSchema: GenMessage<ListNoteTitlesRequest> = /*@__PURE__*/
+export const SimilarityQuerySchema: GenMessage<SimilarityQuery> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostsearch, 4);
 
 /**
- * @generated from message numen.v1.NoteTitle
+ * @generated from message numen.v1.SampleSimilaritiesRequest
  */
-export type NoteTitle = Message<"numen.v1.NoteTitle"> & {
-  /**
-   * The identity of the source of the note in the index.
-   *
-   * @generated from field: int64 source_id = 1;
-   */
-  sourceId: bigint;
-
-  /**
-   * @generated from field: string title = 2;
-   */
-  title: string;
-};
-
-/**
- * Describes the message numen.v1.NoteTitle.
- * Use `create(NoteTitleSchema)` to create a new message.
- */
-export const NoteTitleSchema: GenMessage<NoteTitle> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 5);
-
-/**
- * @generated from message numen.v1.ListNoteTitlesResponse
- */
-export type ListNoteTitlesResponse = Message<"numen.v1.ListNoteTitlesResponse"> & {
-  /**
-   * @generated from field: numen.v1.HostSearchErrorCode error = 1;
-   */
-  error: HostSearchErrorCode;
-
-  /**
-   * @generated from field: repeated numen.v1.NoteTitle titles = 2;
-   */
-  titles: NoteTitle[];
-};
-
-/**
- * Describes the message numen.v1.ListNoteTitlesResponse.
- * Use `create(ListNoteTitlesResponseSchema)` to create a new message.
- */
-export const ListNoteTitlesResponseSchema: GenMessage<ListNoteTitlesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 6);
-
-/**
- * @generated from message numen.v1.ListSmallChunkVectorsRequest
- */
-export type ListSmallChunkVectorsRequest = Message<"numen.v1.ListSmallChunkVectorsRequest"> & {
+export type SampleSimilaritiesRequest = Message<"numen.v1.SampleSimilaritiesRequest"> & {
   /**
    * @generated from field: string recipe = 1;
    */
   recipe: string;
 
   /**
-   * @generated from field: int32 limit = 2;
+   * @generated from field: repeated numen.v1.SimilarityQuery queries = 2;
    */
-  limit: number;
+  queries: SimilarityQuery[];
 };
 
 /**
- * Describes the message numen.v1.ListSmallChunkVectorsRequest.
- * Use `create(ListSmallChunkVectorsRequestSchema)` to create a new message.
+ * Describes the message numen.v1.SampleSimilaritiesRequest.
+ * Use `create(SampleSimilaritiesRequestSchema)` to create a new message.
  */
-export const ListSmallChunkVectorsRequestSchema: GenMessage<ListSmallChunkVectorsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 7);
+export const SampleSimilaritiesRequestSchema: GenMessage<SampleSimilaritiesRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostsearch, 5);
 
 /**
- * @generated from message numen.v1.ChunkVector
+ * @generated from message numen.v1.SimilarityRow
  */
-export type ChunkVector = Message<"numen.v1.ChunkVector"> & {
+export type SimilarityRow = Message<"numen.v1.SimilarityRow"> & {
   /**
-   * The identity of the source the chunk belongs to.
+   * The similarity of the query with each sampled passage, in the order of the
+   * passages. A query with no vector, or whose note is the only source, has none.
    *
-   * @generated from field: int64 source_id = 1;
+   * @generated from field: repeated double values = 1;
    */
-  sourceId: bigint;
-
-  /**
-   * The stored vector: one signed byte per dimension.
-   *
-   * @generated from field: bytes embedding = 2;
-   */
-  embedding: Uint8Array;
+  values: number[];
 };
 
 /**
- * Describes the message numen.v1.ChunkVector.
- * Use `create(ChunkVectorSchema)` to create a new message.
+ * Describes the message numen.v1.SimilarityRow.
+ * Use `create(SimilarityRowSchema)` to create a new message.
  */
-export const ChunkVectorSchema: GenMessage<ChunkVector> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 8);
+export const SimilarityRowSchema: GenMessage<SimilarityRow> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostsearch, 6);
 
 /**
- * @generated from message numen.v1.ListSmallChunkVectorsResponse
+ * @generated from message numen.v1.SampleSimilaritiesResponse
  */
-export type ListSmallChunkVectorsResponse = Message<"numen.v1.ListSmallChunkVectorsResponse"> & {
+export type SampleSimilaritiesResponse = Message<"numen.v1.SampleSimilaritiesResponse"> & {
   /**
    * @generated from field: numen.v1.HostSearchErrorCode error = 1;
    */
   error: HostSearchErrorCode;
 
   /**
-   * @generated from field: repeated numen.v1.ChunkVector vectors = 2;
+   * How many passages the host sampled, and how many sources they come from.
+   *
+   * @generated from field: int32 passage_count = 2;
    */
-  vectors: ChunkVector[];
+  passageCount: number;
+
+  /**
+   * @generated from field: int32 source_count = 3;
+   */
+  sourceCount: number;
+
+  /**
+   * One row per query, in the order the queries arrived.
+   *
+   * @generated from field: repeated numen.v1.SimilarityRow rows = 4;
+   */
+  rows: SimilarityRow[];
 };
 
 /**
- * Describes the message numen.v1.ListSmallChunkVectorsResponse.
- * Use `create(ListSmallChunkVectorsResponseSchema)` to create a new message.
+ * Describes the message numen.v1.SampleSimilaritiesResponse.
+ * Use `create(SampleSimilaritiesResponseSchema)` to create a new message.
  */
-export const ListSmallChunkVectorsResponseSchema: GenMessage<ListSmallChunkVectorsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 9);
+export const SampleSimilaritiesResponseSchema: GenMessage<SampleSimilaritiesResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostsearch, 7);
 
 /**
  * @generated from message numen.v1.GetBestSimilarityRequest
@@ -287,7 +260,7 @@ export type GetBestSimilarityRequest = Message<"numen.v1.GetBestSimilarityReques
  * Use `create(GetBestSimilarityRequestSchema)` to create a new message.
  */
 export const GetBestSimilarityRequestSchema: GenMessage<GetBestSimilarityRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 10);
+  messageDesc(file_numen_v1_hostsearch, 8);
 
 /**
  * @generated from message numen.v1.GetBestSimilarityResponse
@@ -309,7 +282,7 @@ export type GetBestSimilarityResponse = Message<"numen.v1.GetBestSimilarityRespo
  * Use `create(GetBestSimilarityResponseSchema)` to create a new message.
  */
 export const GetBestSimilarityResponseSchema: GenMessage<GetBestSimilarityResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 11);
+  messageDesc(file_numen_v1_hostsearch, 9);
 
 /**
  * @generated from message numen.v1.GetSearchFloorRequest
@@ -326,7 +299,7 @@ export type GetSearchFloorRequest = Message<"numen.v1.GetSearchFloorRequest"> & 
  * Use `create(GetSearchFloorRequestSchema)` to create a new message.
  */
 export const GetSearchFloorRequestSchema: GenMessage<GetSearchFloorRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 12);
+  messageDesc(file_numen_v1_hostsearch, 10);
 
 /**
  * @generated from message numen.v1.GetSearchFloorResponse
@@ -376,7 +349,7 @@ export type GetSearchFloorResponse = Message<"numen.v1.GetSearchFloorResponse"> 
  * Use `create(GetSearchFloorResponseSchema)` to create a new message.
  */
 export const GetSearchFloorResponseSchema: GenMessage<GetSearchFloorResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 13);
+  messageDesc(file_numen_v1_hostsearch, 11);
 
 /**
  * @generated from message numen.v1.SetSearchFloorRequest
@@ -401,7 +374,7 @@ export type SetSearchFloorRequest = Message<"numen.v1.SetSearchFloorRequest"> & 
  * Use `create(SetSearchFloorRequestSchema)` to create a new message.
  */
 export const SetSearchFloorRequestSchema: GenMessage<SetSearchFloorRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 14);
+  messageDesc(file_numen_v1_hostsearch, 12);
 
 /**
  * @generated from message numen.v1.SetSearchFloorResponse
@@ -418,7 +391,7 @@ export type SetSearchFloorResponse = Message<"numen.v1.SetSearchFloorResponse"> 
  * Use `create(SetSearchFloorResponseSchema)` to create a new message.
  */
 export const SetSearchFloorResponseSchema: GenMessage<SetSearchFloorResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 15);
+  messageDesc(file_numen_v1_hostsearch, 13);
 
 /**
  * HostSearchErrorCode is why a call on the search index was refused. The zero
@@ -473,6 +446,13 @@ export enum HostSearchErrorCode {
    * @generated from enum value: HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED = 6;
    */
   EMBEDDING_FAILED = 6,
+
+  /**
+   * A query vector has a dimension count other than the one of the vectors in the index.
+   *
+   * @generated from enum value: HOST_SEARCH_ERROR_CODE_INVALID_QUERY = 7;
+   */
+  INVALID_QUERY = 7,
 }
 
 /**
@@ -523,8 +503,8 @@ export const SearchFloorSourceSchema: GenEnum<SearchFloorSource> = /*@__PURE__*/
 /**
  * HostSearchService is the search index and the search floor of a vault, as a
  * plugin reads and sets them. The host identifies the plugin by its token.
- * GetEmbeddingState, EmbedTexts, ListNoteTitles, ListSmallChunkVectors and
- * GetBestSimilarity need index:read; GetSearchFloor and SetSearchFloor need
+ * GetEmbeddingState, EmbedTexts, SampleSimilarities and GetBestSimilarity need
+ * index:read; GetSearchFloor and SetSearchFloor need
  * search:policy.
  *
  * Numen-Vault works the vault of that identity; without it a call works the
@@ -564,28 +544,18 @@ export const HostSearchService: GenService<{
     output: typeof EmbedTextsResponseSchema;
   },
   /**
-   * ListNoteTitles lists the titles of the notes of the vault. The order is a
-   * function of the content in the index, so one index yields one list. A limit
-   * of zero or above 1000 is 1000.
+   * SampleSimilarities is the cosine similarity of each query vector with the
+   * small chunks of the vault that carry a vector under the recipe and belong
+   * to a source other than the one the query names. The host takes at most 500
+   * small chunks, in the order of their content hashes, so one index yields
+   * one sample. At most 256 queries are sampled in one call.
    *
-   * @generated from rpc numen.v1.HostSearchService.ListNoteTitles
+   * @generated from rpc numen.v1.HostSearchService.SampleSimilarities
    */
-  listNoteTitles: {
+  sampleSimilarities: {
     methodKind: "unary";
-    input: typeof ListNoteTitlesRequestSchema;
-    output: typeof ListNoteTitlesResponseSchema;
-  },
-  /**
-   * ListSmallChunkVectors lists the small chunks of the vault that carry a
-   * vector under the recipe, in the order of their content hashes. A limit of
-   * zero or above 1000 is 1000.
-   *
-   * @generated from rpc numen.v1.HostSearchService.ListSmallChunkVectors
-   */
-  listSmallChunkVectors: {
-    methodKind: "unary";
-    input: typeof ListSmallChunkVectorsRequestSchema;
-    output: typeof ListSmallChunkVectorsResponseSchema;
+    input: typeof SampleSimilaritiesRequestSchema;
+    output: typeof SampleSimilaritiesResponseSchema;
   },
   /**
    * GetBestSimilarity is the cosine similarity of the passage of the vault

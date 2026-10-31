@@ -20,6 +20,8 @@ var (
 	ErrLimitExceeded = errors.New("host: the call exceeds the limits of one embedding call")
 	// ErrEmbeddingFailed is what an embedding call gets when the model could not answer.
 	ErrEmbeddingFailed = errors.New("host: the embedding model could not answer")
+	// ErrInvalidQuery is what a sampling call gets whose query vector has another dimension count than the vectors of the index.
+	ErrInvalidQuery = errors.New("host: a query vector does not match the vectors of the index")
 )
 
 // The permissions of the search calls. The reads, the embedding included, need PermissionIndexRead, and
@@ -29,13 +31,14 @@ const (
 	PermissionSearchPolicy = "search:policy"
 )
 
-// The limits the host applies to a search call. A list limit of zero, or above its maximum, is the
-// maximum.
+// The limits the host applies to a search call.
 const (
-	MaxListedTitles  = 1000
-	MaxListedVectors = 1000
 	MaxEmbeddedTexts = 256
 	MaxEmbeddedBytes = 8192
+	// MaxSampledQueries is how many queries one SampleSimilarities call takes, and MaxSampledPassages
+	// how many small chunks the host compares each of them with.
+	MaxSampledQueries  = 256
+	MaxSampledPassages = 500
 )
 
 // EmbeddingState is the model in use and how far a vault is embedded under it.
@@ -60,17 +63,22 @@ type EmbeddedTexts struct {
 	Vectors [][]float32
 }
 
-// NoteTitle is the title of a note and the source it belongs to in the index.
-type NoteTitle struct {
-	Source int64
-	Title  string
+// SimilarityQuery is a query vector of the model in use, and the path of the note it was made from.
+// The passages of that note are left out of the sample of the query; an empty path leaves out none.
+type SimilarityQuery struct {
+	Path   string
+	Vector []float32
 }
 
-// ChunkVector is the stored vector of a small chunk and the source it belongs to. Vector holds one
-// signed byte per dimension.
-type ChunkVector struct {
-	Source int64
-	Vector []byte
+// SimilaritySample is the cosine similarity of each query with the small chunks the host sampled.
+type SimilaritySample struct {
+	// PassageCount is how many small chunks the host sampled, and SourceCount how many sources they
+	// belong to.
+	PassageCount int
+	SourceCount  int
+	// Rows holds, for each query in the order given, its similarity with each sampled passage of another
+	// note, in the order of the passages. The row of a query with no vector is empty.
+	Rows [][]float64
 }
 
 // FloorSource is where the floor a search applies comes from.
@@ -119,12 +127,12 @@ type SearchIndex interface {
 	// EmbedTexts embeds the texts with the model in use. At most MaxEmbeddedTexts texts of at most
 	// MaxEmbeddedBytes bytes each are embedded in one call.
 	EmbedTexts(ctx context.Context, texts []string) (EmbeddedTexts, error)
-	// ListNoteTitles lists the titles of the notes of the vault in the order of their content hashes,
-	// at most limit of them and at most MaxListedTitles.
-	ListNoteTitles(ctx context.Context, limit int) ([]NoteTitle, error)
-	// ListSmallChunkVectors lists the small chunks of the vault that carry a vector under the recipe,
-	// in the order of their content hashes, at most limit of them and at most MaxListedVectors.
-	ListSmallChunkVectors(ctx context.Context, recipe string, limit int) ([]ChunkVector, error)
+	// SampleSimilarities is the cosine similarity of each query with the small chunks of the vault that
+	// carry a vector under the recipe and belong to a note other than the query's. The host takes at
+	// most MaxSampledPassages small chunks in a fixed order, so one index yields one sample, and at most
+	// MaxSampledQueries queries per call. A query with another dimension count than the index returns
+	// ErrInvalidQuery.
+	SampleSimilarities(ctx context.Context, recipe string, queries []SimilarityQuery) (SimilaritySample, error)
 	// GetBestSimilarity is the cosine similarity of the passage of the vault nearest the query vector
 	// under the recipe, and zero where the vault has none.
 	GetBestSimilarity(ctx context.Context, recipe string, query []float32) (float64, error)

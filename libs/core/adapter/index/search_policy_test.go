@@ -4,6 +4,7 @@ import (
 	"math"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
@@ -171,49 +172,6 @@ func TestSearchFloorsSurviveReopeningTheIndex(t *testing.T) {
 	}
 }
 
-func TestSearchSamplesAreScopedToTheVaultAndOrderedByContent(t *testing.T) {
-	ctx := t.Context()
-	db := openDB(t)
-	for _, title := range []string{"Entropy", "Gravity", "Harmony", "Tide"} {
-		if err := saveNote(t, db, first, "notes/"+title+".md", title); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := saveNote(t, db, second, "notes/Other.md", "Other"); err != nil {
-		t.Fatal(err)
-	}
-
-	samples := db.SearchSamples()
-	all, err := samples.ListNoteTitles(ctx, first, 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(all) != 4 {
-		t.Fatalf("got %d titles, want the 4 of the first vault: %+v", len(all), all)
-	}
-	for _, title := range all {
-		if title.Text == "Other" {
-			t.Errorf("the title of another vault was sampled")
-		}
-	}
-
-	again, err := samples.ListNoteTitles(ctx, first, 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !slices.Equal(all, again) {
-		t.Errorf("two reads gave %+v and %+v", all, again)
-	}
-
-	few, err := samples.ListNoteTitles(ctx, first, 2)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !slices.Equal(few, all[:2]) {
-		t.Errorf("a limit of 2 gave %+v, want the first two of %+v", few, all)
-	}
-}
-
 func TestSearchSamplePassagesAreSmallChunksWithAVectorOfTheRecipe(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
@@ -233,6 +191,9 @@ func TestSearchSamplePassagesAreSmallChunksWithAVectorOfTheRecipe(t *testing.T) 
 	sources := map[int64]int{}
 	for _, passage := range got {
 		sources[passage.Source]++
+		if !strings.HasPrefix(passage.Path, "library/") {
+			t.Errorf("a passage names the path %q, want one of the vault", passage.Path)
+		}
 		if len(passage.Vector) != 1024 {
 			t.Errorf("a passage holds %d dimensions, want 1024", len(passage.Vector))
 		}

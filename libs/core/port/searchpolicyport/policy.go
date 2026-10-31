@@ -16,26 +16,20 @@ type FloorStore interface {
 	DeleteFloor(ctx context.Context, v domain.Vault, recipe string) error
 }
 
-// Title is the name of a note and the source it belongs to.
-type Title struct {
-	Source int64
-	Text   string
-}
-
 // Passage is a small chunk that carries a vector, and the source it belongs to.
 // Vector is the stored form of the vector.
 type Passage struct {
 	Source int64
+	// Path is the path of the source in the vault.
+	Path   string
 	Vector []byte
 }
 
-// Samples reads the titles and vectors that a plugin measures a vault with.
+// Samples reads the vectors that a plugin measures a vault with.
 //
-// The order of both is a function of the content hashes in the index, so the
-// same index yields the same samples.
+// The order is a function of the content hashes in the index, so the same index
+// yields the same sample.
 type Samples interface {
-	// ListNoteTitles returns at most `limit` note titles of the vault.
-	ListNoteTitles(ctx context.Context, v domain.Vault, limit int) ([]Title, error)
 	// ListSmallChunkVectors returns at most `limit` small chunks of the vault that carry a
 	// vector under the recipe.
 	ListSmallChunkVectors(ctx context.Context, v domain.Vault, recipe string, limit int) ([]Passage, error)

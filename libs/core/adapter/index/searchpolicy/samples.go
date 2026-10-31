@@ -10,37 +10,11 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// Samples reads the titles and vectors a plugin measures a vault with.
+// Samples reads the vectors a plugin measures a vault with.
 type Samples struct{ db *sql.DB }
 
 // NewSamples is the samples over a pool that reads.
 func NewSamples(db *sql.DB) *Samples { return &Samples{db: db} }
-
-// ListNoteTitles returns at most `limit` note titles of the vault, in the order of
-// their content hashes.
-func (s *Samples) ListNoteTitles(ctx context.Context, v domain.Vault, limit int) ([]searchpolicyport.Title, error) {
-	out, err := s.readTitles(ctx, v, limit)
-	if err != nil {
-		return nil, fmt.Errorf("read the titles of %s: %w", v.ID, err)
-	}
-	return out, nil
-}
-
-func (s *Samples) readTitles(ctx context.Context, v domain.Vault, limit int) (out []searchpolicyport.Title, err error) {
-	rows, err := s.db.QueryContext(ctx, stmt.Get("titles"), string(v.ID), limit)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = errors.Join(err, rows.Close()) }()
-	for rows.Next() {
-		var title searchpolicyport.Title
-		if err := rows.Scan(&title.Source, &title.Text); err != nil {
-			return nil, err
-		}
-		out = append(out, title)
-	}
-	return out, rows.Err()
-}
 
 // ListSmallChunkVectors returns at most `limit` small chunks of the vault that carry a
 // vector under the recipe, in the order of their content hashes.
@@ -60,7 +34,7 @@ func (s *Samples) readPassages(ctx context.Context, v domain.Vault, recipe strin
 	defer func() { err = errors.Join(err, rows.Close()) }()
 	for rows.Next() {
 		var passage searchpolicyport.Passage
-		if err := rows.Scan(&passage.Source, &passage.Vector); err != nil {
+		if err := rows.Scan(&passage.Source, &passage.Path, &passage.Vector); err != nil {
 			return nil, err
 		}
 		out = append(out, passage)

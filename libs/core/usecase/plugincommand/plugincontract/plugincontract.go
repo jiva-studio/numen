@@ -19,7 +19,6 @@ type (
 	PluginActivator        = pluginport.PluginActivator
 	PluginBackend          = pluginport.PluginBackend
 	PluginCache            = pluginport.PluginCache
-	PluginChunkVector      = pluginport.PluginChunkVector
 	PluginCommand          = pluginport.PluginCommand
 	PluginCommandArgument  = pluginport.PluginCommandArgument
 	PluginCommandCall      = pluginport.PluginCommandCall
@@ -44,7 +43,6 @@ type (
 	PluginManager          = pluginport.PluginManager
 	PluginManifest         = pluginport.PluginManifest
 	PluginManifestSetting  = pluginport.PluginManifestSetting
-	PluginNoteTitle        = pluginport.PluginNoteTitle
 	PluginNoteType         = pluginport.PluginNoteType
 	PluginPersistHandler   = pluginport.PluginPersistHandler
 	PluginPlayback         = pluginport.PluginPlayback
@@ -56,6 +54,8 @@ type (
 	PluginSearchIndex      = pluginport.PluginSearchIndex
 	PluginSearchPolicy     = pluginport.PluginSearchPolicy
 	PluginSearchFloor      = pluginport.PluginSearchFloor
+	PluginSimilarityQuery  = pluginport.PluginSimilarityQuery
+	PluginSimilaritySample = pluginport.PluginSimilaritySample
 	PluginSecret           = pluginport.PluginSecret
 	PluginSettingsView     = pluginport.PluginSettingsView
 	PluginSetting          = pluginport.PluginSetting
@@ -114,8 +114,8 @@ const (
 	PermissionVaultWrite        = pluginport.PermissionVaultWrite
 	MaxEmbeddedBytes            = pluginport.MaxEmbeddedBytes
 	MaxEmbeddedTexts            = pluginport.MaxEmbeddedTexts
-	MaxListedTitles             = pluginport.MaxListedTitles
-	MaxListedVectors            = pluginport.MaxListedVectors
+	MaxSampledQueries           = pluginport.MaxSampledQueries
+	MaxSampledPassages          = pluginport.MaxSampledPassages
 	PluginFloorDefault          = pluginport.PluginFloorDefault
 	PluginFloorModelHint        = pluginport.PluginFloorModelHint
 	PluginFloorStored           = pluginport.PluginFloorStored
@@ -148,6 +148,7 @@ var (
 	ErrEmptySettingTitle      = pluginport.ErrEmptySettingTitle
 	ErrEmptyVersion           = pluginport.ErrEmptyVersion
 	ErrEmbeddingFailed        = pluginport.ErrEmbeddingFailed
+	ErrInvalidQuery           = pluginport.ErrInvalidQuery
 	ErrEnumMissingOptions     = pluginport.ErrEnumMissingOptions
 	ErrInvalidActivationEvent = pluginport.ErrInvalidActivationEvent
 	ErrInvalidAgentSetting    = pluginport.ErrInvalidAgentSetting
