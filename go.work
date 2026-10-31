@@ -28,6 +28,7 @@ use (
 	./plugins/readers-pdf
 	./plugins/tools-media-importer
 	./plugins/tools-proofreading
+	./plugins/tools-search-relevance
 	./plugins/views-flashcards-studio
 )
 

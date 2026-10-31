@@ -1,0 +1,16 @@
+{
+  "floor": 0.41,
+  "source": "calibrated",
+  "model": "bge-m3",
+  "automaticFloor": 0.41,
+  "isManual": false,
+  "manualFloor": 0,
+  "calibration": {
+    "median": 0.27,
+    "spread": 0.07,
+    "histogram": [0, 1, 4, 9, 4, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    "queryCount": 200,
+    "passageCount": 500,
+    "calibratedAt": 1792000000
+  }
+}

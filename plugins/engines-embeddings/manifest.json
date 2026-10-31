@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.embeddings",
   "name": "Vector Embeddings",
-  "version": "2026.10.3",
+  "version": "2026.10.4",
   "protocol": 1,
   "description": "Meaning-based search across your notes, books, and recordings",
   "capabilities": ["embedding"],
@@ -35,11 +35,6 @@
     "type": "process",
     "entrypoint": "bin/engines-embeddings"
   },
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  },
-  "settingsViews": [{ "id": "floor", "title": "Search relevance", "after": "model" }],
   "settings": [
     {
       "key": "provider",

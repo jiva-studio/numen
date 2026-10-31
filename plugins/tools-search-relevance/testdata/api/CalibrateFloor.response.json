@@ -1,0 +1,11 @@
+{
+  "outcome": "too-few",
+  "state": {
+    "floor": 0.3,
+    "source": "default",
+    "model": "bge-m3",
+    "automaticFloor": 0.3,
+    "isManual": false,
+    "manualFloor": 0
+  }
+}
