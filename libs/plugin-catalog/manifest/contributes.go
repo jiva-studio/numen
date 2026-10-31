@@ -36,6 +36,12 @@ type FileType struct {
 	FileNames []string
 }
 
+// StatusView is a component of the plugin's frontend that the window draws in its status bar.
+type StatusView struct {
+	// ID is the id the frontend registers the component under.
+	ID string
+}
+
 // Contributes is what a plugin adds to the application, known before the frontend of the plugin is loaded.
 type Contributes struct {
 	// TabKinds are the kinds of tab the plugin registers.
@@ -48,6 +54,17 @@ type Contributes struct {
 	FileTypes []FileType
 	// Themes are the stylesheets the plugin adds to the list of themes.
 	Themes []Theme
+	// StatusViews are the components the window draws in its status bar.
+	StatusViews []StatusView
+}
+
+// ListStatusViews returns the ids of the components the plugin registers for the status bar.
+func (c Contributes) ListStatusViews() []string {
+	ids := make([]string, 0, len(c.StatusViews))
+	for _, declared := range c.StatusViews {
+		ids = append(ids, declared.ID)
+	}
+	return ids
 }
 
 // HasTabKind reports whether the plugin registers the kind of tab.
@@ -76,14 +93,18 @@ func (c Contributes) ListTabKinds() []string {
 }
 
 // listContributionIssues checks that each kind of tab has a unique id and a title, that the icons and
-// the category are written as the application names them, and that a plugin registering tabs has a
-// frontend to register them from.
+// the category are written as the application names them, that each status view has a unique id, and
+// that a plugin registering tabs or status views has a frontend to register them from.
 func (m Manifest) listContributionIssues() []error {
 	var issues []error
 	c := m.Contributes
 	if len(c.TabKinds) > 0 && !m.HasFrontend() {
 		issues = append(issues, fmt.Errorf("%w: the plugin declares tab kinds and has no frontend to register them", ErrInvalidContribution))
 	}
+	if len(c.StatusViews) > 0 && !m.HasFrontend() {
+		issues = append(issues, fmt.Errorf("%w: the plugin declares status views and has no frontend to register them", ErrInvalidContribution))
+	}
+	issues = append(issues, listStatusViewIssues(c.StatusViews)...)
 	observed := map[string]bool{}
 	for _, declared := range c.TabKinds {
 		switch {
@@ -144,5 +165,22 @@ func listFileKeyIssues(noun, value, key string, observed map[string]bool) []erro
 		issues = append(issues, fmt.Errorf("%w: %s %q is declared twice", ErrInvalidContribution, noun, value))
 	}
 	observed[key] = true
+	return issues
+}
+
+// listStatusViewIssues checks that each status view has an id written as the frontend registers it
+// and that no id is declared twice.
+func listStatusViewIssues(views []StatusView) []error {
+	var issues []error
+	observed := map[string]bool{}
+	for _, declared := range views {
+		switch {
+		case !tabKindPattern.MatchString(declared.ID):
+			issues = append(issues, fmt.Errorf("%w: status view %q is not lowercase words", ErrInvalidContribution, declared.ID))
+		case observed[declared.ID]:
+			issues = append(issues, fmt.Errorf("%w: status view %q is declared twice", ErrInvalidContribution, declared.ID))
+		}
+		observed[declared.ID] = true
+	}
 	return issues
 }

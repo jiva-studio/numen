@@ -13,7 +13,7 @@ import { UnsavedChangesPrompt } from '@/features/file-conflict'
 import CoreFailureNotice from '@/shared/notices/CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
 import { TabLinkIndicator, TabLinkMenu, useTabLinkMenu } from '@/features/tab-linking'
-import { UpdateIndicator } from '@/features/app-update'
+import { StatusViewHost } from '@/features/status-views'
 import { WelcomeScreen } from '@/pages/welcome'
 import { useWindow } from '../window/useWindow'
 import { WORDS as words } from '@/shared/words'
@@ -45,6 +45,7 @@ const {
   notices,
   dismissNotice,
   statusBar,
+  statusViews,
   palette,
   destinations,
   closeTab,
@@ -177,7 +178,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       @action="statusBar.onActionTask"
     >
       <template #trailing>
-        <UpdateIndicator />
+        <StatusViewHost :views="statusViews" />
       </template>
     </StatusBar>
 

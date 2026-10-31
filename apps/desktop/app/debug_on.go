@@ -17,9 +17,8 @@ import (
 
 // DebugOptions holds test settings for debug builds.
 type DebugOptions struct {
-	HttpAddr  string
-	IsMockML  bool
-	UpdateURL string
+	HttpAddr string
+	IsMockML bool
 }
 
 // RegisterDebugFlags registers debug flags on the flag set.
@@ -27,7 +26,6 @@ func RegisterDebugFlags(fs *flag.FlagSet, opts *Options) {
 	fs.StringVar(&opts.Debug.HttpAddr, "debug-http-addr", "", "serve the window over HTTP without opening an OS window")
 	fs.BoolVar(&opts.Debug.IsMockML, "debug-mock-ml", false,
 		"use fast mock ML models, and an empty placeholder file for every dependency a plugin declares")
-	fs.StringVar(&opts.Debug.UpdateURL, "debug-update-url", "", "where the release manifest is asked for")
 }
 
 // dependencySetter is a plugin host whose dependency catalog can be replaced.
@@ -66,9 +64,6 @@ func (d *DebugOptions) serveHTTP(
 	opened *editor.Installation,
 	pages http.Handler,
 ) error {
-	if d.UpdateURL != "" {
-		opened.Services.UpdateEndpoint = d.UpdateURL
-	}
 	opened.State.NotifyOpenTabs = func(domain.OpenTabs) {}
 	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
 		cfg.SetPluginVaultPath(v.Path)

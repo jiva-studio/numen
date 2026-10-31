@@ -1,0 +1,31 @@
+{
+  "name": "@numen/tools.updater",
+  "version": "2026.10.1",
+  "private": true,
+  "type": "module",
+  "description": "Update notifier plugin frontend for Numen",
+  "main": "./frontend/index.ts",
+  "types": "./frontend/index.ts",
+  "scripts": {
+    "build": "vite build",
+    "lint": "eslint .",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@numen/plugin-sdk": "workspace:*"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@numen/plugin-sdk": "workspace:*",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^26.0.0",
+    "typescript": "^6.0.3",
+    "vite": "^6.0.0",
+    "vitest": "^5.0.3",
+    "vue": "^3.5.0"
+  }
+}

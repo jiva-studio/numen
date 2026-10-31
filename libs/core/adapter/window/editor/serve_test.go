@@ -1094,30 +1094,6 @@ func TestPluginRouteIsNotServedByANarrowBuild(t *testing.T) {
 	}
 }
 
-func TestServeUpdateAsksTheEndpointTheServicesName(t *testing.T) {
-	release := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/latest.json" {
-			http.NotFound(w, r)
-			return
-		}
-		if _, err := io.WriteString(w, `{"version":"9.9.9"}`); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	}))
-	t.Cleanup(release.Close)
-
-	services := newBareServices()
-	services.UpdateEndpoint = release.URL + "/latest.json"
-	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler()))
-	t.Cleanup(server.Close)
-
-	resp := fetch(t, server.Client(), server.URL+updateRoute)
-	body := resp.Body
-	if resp.StatusCode != http.StatusOK || string(body) != `{"version":"9.9.9"}` {
-		t.Errorf("answered %d %q, want 200 and the manifest of the endpoint", resp.StatusCode, body)
-	}
-}
-
 func TestPluginRouteServesAFolderFileAndForwardsTheRest(t *testing.T) {
 	folder := t.TempDir()
 	if err := os.WriteFile(filepath.Join(folder, "manifest.json"), []byte(`{"id":"org.example.reader"}`), 0o644); err != nil {

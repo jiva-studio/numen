@@ -50,6 +50,27 @@ export interface SettingsViewProps {
   readonly values: Readonly<Record<string, unknown>>
 }
 
+// StatusViewRegistration registers a component the window draws in its status bar. The manifest
+// declares the same id under `contributes.statusViews`. The component gets StatusViewProps as props.
+export interface StatusViewRegistration {
+  readonly id: string
+  readonly component: unknown
+}
+
+// StatusViewProps are the props the window passes the component of a status view.
+export interface StatusViewProps {
+  readonly pluginId: string
+}
+
+// AppInfo describes the application build a plugin runs in.
+export interface AppInfo {
+  // The version the build calls itself, such as `2026.10.3` or `0.0.0-dev` for a manual build.
+  readonly version: string
+  // The build number; 0 where the build has none.
+  readonly build: number
+  readonly platform: 'darwin' | 'windows' | 'linux'
+}
+
 // ReaderTabState is the `state` prop the window passes the component of a reader tab.
 export interface ReaderTabState {
   readonly path: string
@@ -217,9 +238,15 @@ export interface PluginContext {
   // The window the plugin is activated in, named as a manifest's targets name it.
   readonly target: string
   readonly subscriptions: Disposable[]
+  // The application build the plugin runs in.
+  readonly app: AppInfo
+  // Opens an http or https address in the system browser. Any other address fails.
+  openExternal(url: string): Promise<Result<null>>
   registerReader(registration: ReaderRegistration): Disposable
   // Registers the component of the settings view the manifest declares under the same id.
   registerSettingsView(registration: SettingsViewRegistration): Disposable
+  // Registers the component of the status bar view the manifest declares under the same id.
+  registerStatusView(registration: StatusViewRegistration): Disposable
   registerTabKind<State>(registration: TabKindRegistration<State>): Disposable
   registerCommand(registration: CommandRegistration): Disposable
   registerContextMenu(registration: ContextMenuRegistration): Disposable

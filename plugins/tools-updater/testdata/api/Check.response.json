@@ -1,0 +1,19 @@
+{
+  "state": "available",
+  "update": {
+    "version": "2026.10.1",
+    "build": 950,
+    "channel": "stable",
+    "releasedAt": "2026-10-15T12:00:00Z",
+    "notesUrl": "https://github.com/jiva-studio/numen/releases/tag/v2026.10.1",
+    "downloadUrl": "https://dl.numen.md/numen-windows-setup.exe",
+    "file": {
+      "name": "numen-windows-setup.exe",
+      "arch": "amd64",
+      "kind": "exe",
+      "url": "https://dl.numen.md/numen-windows-setup.exe",
+      "size": 75000000,
+      "sha256": "0f1e2d3c"
+    }
+  }
+}

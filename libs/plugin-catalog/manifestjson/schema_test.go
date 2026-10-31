@@ -44,7 +44,8 @@ const everyFieldManifest = `{
 	"frames": ["https://player.example"],
 	"contributes": {"tabKinds": [{"kind": "full", "title": "Full", "icon": "gauge"}], "feature": "full tabs", "category": "views",
 		"fileTypes": [{"tabKind": "full", "extensions": ["full"], "fileNames": ["full.config"]}],
-		"themes": [{"id": "full-dark", "name": "Full Dark", "appearance": "dark", "file": "themes/full-dark.css"}]},
+		"themes": [{"id": "full-dark", "name": "Full Dark", "appearance": "dark", "file": "themes/full-dark.css"}],
+		"statusViews": [{"id": "gauge"}]},
 	"appVersion": {"min": "2026.1.0", "max": "2027.1.0"}
 }`
 

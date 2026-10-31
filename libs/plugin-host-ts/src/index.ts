@@ -20,3 +20,15 @@ export {
 } from './styles'
 export { createViewRegistry, type ViewRegistry } from './views'
 export { createDropRegistry } from './drops'
+export {
+  createStatusViewRegistry,
+  type DeclaredStatusView,
+  type StatusViewRegistry,
+} from './statusViews'
+export { createAppInfo, DEV_VERSION, type AppInfoSource } from './appInfo'
+export {
+  createExternalOpener,
+  isWebAddress,
+  openExternalUrl,
+  type ExternalOpener,
+} from './externalOpener'

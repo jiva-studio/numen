@@ -14,6 +14,7 @@ import type {
   Manifest,
   ReaderRegistration,
   SettingsViewRegistration,
+  StatusViewRegistration,
   TabKindRegistration,
   VaultChangeEvent,
   VaultFiles,
@@ -23,6 +24,7 @@ import type {
   ViewRegistration,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
+import { createExternalOpener } from '@numen/plugin-host'
 import type { PluginContextHost } from './types'
 
 function trackSubscription(subscriptions: Disposable[], disposable: Disposable): Disposable {
@@ -267,6 +269,8 @@ export function createPluginContext(
   return {
     pluginId,
     target: EDITOR_TARGET,
+    app: host.app,
+    openExternal: createExternalOpener(host.openExternal),
     subscriptions,
     ...guardServices(host, requirePerm, add),
     ...(notices ? { notices } : {}),
@@ -276,6 +280,8 @@ export function createPluginContext(
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
     registerSettingsView: (reg: SettingsViewRegistration) =>
       add(host.registerSettingsView(pluginId, reg)),
+    registerStatusView: (reg: StatusViewRegistration) =>
+      add(host.registerStatusView(pluginId, reg)),
     registerTabKind: <State>(reg: TabKindRegistration<State>) =>
       add(host.registerTabKind(pluginId, reg)),
     registerCommand: (reg: CommandRegistration) => add(host.registerCommand(pluginId, reg)),

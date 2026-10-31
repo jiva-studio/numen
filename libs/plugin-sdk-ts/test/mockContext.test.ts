@@ -35,6 +35,39 @@ describe('mock plugin context', () => {
     expect(ctx.getRegisteredSettingsViews()).toHaveLength(0)
   })
 
+  it('manages status view registrations', () => {
+    const ctx = createMockPluginContext({ pluginId: 'status-plugin' })
+    const d = ctx.registerStatusView({ id: 'update', component: {} })
+
+    expect(ctx.getRegisteredStatusViews()).toEqual([{ id: 'update', component: {} }])
+    d.dispose()
+    expect(ctx.getRegisteredStatusViews()).toHaveLength(0)
+  })
+
+  it('removes status views on dispose', () => {
+    const ctx = createMockPluginContext()
+    ctx.registerStatusView({ id: 'update', component: {} })
+    ctx.dispose()
+    expect(ctx.getRegisteredStatusViews()).toHaveLength(0)
+  })
+
+  it('describes the application build', () => {
+    const ctx = createMockPluginContext({
+      app: { version: '2026.10.3', build: 42, platform: 'windows' },
+    })
+    expect(ctx.app).toEqual({ version: '2026.10.3', build: 42, platform: 'windows' })
+    expect(createMockPluginContext().app.platform).toBe('linux')
+  })
+
+  it('opens web addresses only', async () => {
+    const ctx = createMockPluginContext()
+
+    expect(await ctx.openExternal('https://numen.md/')).toEqual({ ok: true, value: null })
+    expect((await ctx.openExternal('file:///etc/passwd')).ok).toBe(false)
+    expect((await ctx.openExternal('not an address')).ok).toBe(false)
+    expect(ctx.getOpenedAddresses()).toEqual(['https://numen.md/'])
+  })
+
   it('keeps a kind that says what its tabs hold, with the hooks it declares', async () => {
     const ctx = createMockPluginContext({ pluginId: 'graph-plugin' })
     const navigated: string[] = []

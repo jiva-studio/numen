@@ -3,7 +3,13 @@ import { runInBackground } from '@numen/ui'
 import type { PluginServices } from './pluginServices'
 import { createPluginHost } from '@/entities/plugin'
 import { registerNoteIcon } from '@/entities/note'
-import { DEFAULT_PLUGIN_ENABLED, createPluginLoader, type PluginLoader } from '@numen/plugin-host'
+import {
+  DEFAULT_PLUGIN_ENABLED,
+  createAppInfo,
+  createPluginLoader,
+  openExternalUrl,
+  type PluginLoader,
+} from '@numen/plugin-host'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { useTabLinks } from '@/features/tab-linking'
 import type { NoticeQueue } from '@numen/shell'
@@ -81,6 +87,12 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   }
 
   const pluginHost = createPluginHost({
+    app: createAppInfo({
+      version: import.meta.env.VITE_NUMEN_VERSION,
+      build: import.meta.env.VITE_NUMEN_BUILD,
+      userAgent: navigator.userAgent,
+    }),
+    openExternal: (url) => openExternalUrl(url),
     ...(deps.reportError !== undefined ? { onError: deps.reportError } : {}),
     registerKind: (kind) => {
       const unregisterKind = windowTabs.registerKind(kind)

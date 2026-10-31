@@ -23,6 +23,7 @@ const valid = {
     feature: 'Samples',
     category: 'tools',
     tabKinds: [{ kind: 'sample', title: 'Sample' }],
+    statusViews: [{ id: 'sample-status' }],
   },
 }
 
@@ -47,6 +48,7 @@ test('a manifest is read as the schema message and as the document', () => {
   assert.equal(manifest.id, 'sample.plugin')
   assert.equal(manifest.contributes.feature, 'Samples')
   assert.equal(manifest.contributes.tabKinds[0].kind, 'sample')
+  assert.equal(manifest.contributes.statusViews[0].id, 'sample-status')
   assert.deepEqual(document, valid)
 })
 

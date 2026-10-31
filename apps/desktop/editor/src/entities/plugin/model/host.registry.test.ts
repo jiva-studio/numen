@@ -186,6 +186,37 @@ describe('the settings views of a plugin', () => {
   })
 })
 
+describe('the status views of the plugins', () => {
+  it('list the registrations of every plugin in order, reactively', () => {
+    const host = createPluginHost(createDeps())
+    const count = computed(() => host.statusViews.value.length)
+
+    expect(count.value).toBe(0)
+    host.createContext('first.plugin').registerStatusView({ id: 'update', component: 'A' })
+    host.createContext('second.plugin').registerStatusView({ id: 'update', component: 'B' })
+
+    expect(count.value).toBe(2)
+    expect(host.statusViews.value.map((one) => [one.pluginId, one.registration.component])).toEqual(
+      [
+        ['first.plugin', 'A'],
+        ['second.plugin', 'B'],
+      ],
+    )
+  })
+
+  it('are removed with the plugin and with the host', () => {
+    const host = createPluginHost(createDeps())
+    host.createContext('first.plugin').registerStatusView({ id: 'update', component: {} })
+    host.createContext('second.plugin').registerStatusView({ id: 'update', component: {} })
+
+    host.disposePlugin('first.plugin')
+    expect(host.statusViews.value.map((one) => one.pluginId)).toEqual(['second.plugin'])
+
+    host.disposeAll()
+    expect(host.statusViews.value).toHaveLength(0)
+  })
+})
+
 describe('a tab kind opened as the editor of a path', () => {
   const registerKind = (deps: PluginHostDeps) => {
     let open: (path: string, title?: string, options?: unknown) => void = vi.fn()

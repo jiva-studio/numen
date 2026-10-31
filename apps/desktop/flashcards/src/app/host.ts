@@ -14,7 +14,13 @@ import type {
   Manifest,
   TabKindRegistration,
 } from '@numen/plugin-sdk'
-import { createViewRegistry, type LoaderHost } from '@numen/plugin-host'
+import {
+  createAppInfo,
+  createExternalOpener,
+  createViewRegistry,
+  openExternalUrl,
+  type LoaderHost,
+} from '@numen/plugin-host'
 import { createNoticeQueue, type NoticeQueue } from '@numen/shell'
 
 /** The target of this window, which names the plugins it loads. */
@@ -122,6 +128,12 @@ export function createShellHost(agent?: AgentHost) {
       pluginId,
       target: TARGET,
       subscriptions,
+      app: createAppInfo({
+        version: import.meta.env.VITE_NUMEN_VERSION,
+        build: import.meta.env.VITE_NUMEN_BUILD,
+        userAgent: navigator.userAgent,
+      }),
+      openExternal: createExternalOpener((url) => openExternalUrl(url)),
       registerTabKind: (registration) =>
         add(addView({ pluginId, registration: registration as TabKindRegistration })),
       registerReader: () => NOTHING,
@@ -129,6 +141,7 @@ export function createShellHost(agent?: AgentHost) {
       registerContextMenu: () => NOTHING,
       registerAgentProvider: () => NOTHING,
       registerSettingsView: () => NOTHING,
+      registerStatusView: () => NOTHING,
       registerView: (registration) => add(declaredViews.registerView(pluginId, registration)),
       mountView: (capability, element, viewContext) => {
         const view = declaredViews.mountView(capability, element, viewContext)

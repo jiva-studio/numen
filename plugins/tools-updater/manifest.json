@@ -1,0 +1,60 @@
+{
+  "id": "md.numen.tools.updater",
+  "name": "Update Notifier",
+  "version": "2026.10.1",
+  "protocol": 1,
+  "description": "Tells when a newer build of Numen is published",
+  "targets": ["desktop.editor"],
+  "contributes": {
+    "category": "tools",
+    "statusViews": [{ "id": "update" }]
+  },
+  "activationEvents": [],
+  "permissions": ["network:outbound"],
+  "services": ["numen.updater"],
+  "texts": {},
+  "lifecycle": {
+    "idleTimeoutSeconds": 60,
+    "keepAliveWhileVisible": false,
+    "memoryLimitBytes": 268435456
+  },
+  "backend": {
+    "type": "process",
+    "entrypoint": "bin/tools-updater",
+    "serviceName": "numen.updater"
+  },
+  "frontend": {
+    "entrypoint": "dist/index.js",
+    "styles": "dist/styles.css"
+  },
+  "settings": [
+    {
+      "key": "channel",
+      "type": "enum",
+      "title": "Channel",
+      "description": "Which builds are announced",
+      "default": "stable",
+      "options": [
+        { "value": "stable", "title": "Stable", "detail": "Releases made once they are tested" },
+        { "value": "beta", "title": "Beta", "detail": "Builds published ahead of the next release" }
+      ]
+    },
+    {
+      "key": "endpoint",
+      "type": "string",
+      "title": "Release feed address",
+      "description": "Address of the latest.json file to ask for the newest build. Empty asks the published feed of the channel, https://dl.numen.md/latest/latest.json for the stable channel",
+      "default": ""
+    },
+    {
+      "key": "checkIntervalHours",
+      "type": "number",
+      "title": "Check interval",
+      "description": "Hours between two checks for a newer build",
+      "default": 4,
+      "min": 1,
+      "max": 168,
+      "step": 1
+    }
+  ]
+}

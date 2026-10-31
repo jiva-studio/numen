@@ -1,0 +1,74 @@
+/**
+ * Frontend entrypoint for the Update Notifier plugin: a status bar view that announces a newer
+ * build of the application and offers its download.
+ */
+import { defineComponent, h } from 'vue'
+import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import { updater, type UpdateApi } from './api/wire'
+import { createUpdates, type Timer, type Updates } from './model/updates'
+import UpdateIndicator from './UpdateIndicator.vue'
+import './styles.css'
+
+export { UpdateIndicator }
+
+/** The id the manifest declares the status bar view under. */
+export const UPDATE_VIEW = 'update'
+
+/** What the plugin is made of outside the window, replaced by a test. */
+export interface UpdateParts {
+  readonly api: UpdateApi
+  readonly timer: Timer
+}
+
+const browserTimer: Timer = {
+  set: (run, delayMs) => setTimeout(run, delayMs),
+  clear: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
+}
+
+/** The component of the status bar view: the indicator over the announcement of the model. */
+export function createStatusView(context: PluginContext, updates: Updates) {
+  return defineComponent({
+    name: 'UpdateStatusView',
+    setup: () => () =>
+      h(UpdateIndicator, {
+        update: updates.announced.value,
+        platform: context.app.platform,
+        onDownload: () => showFailure(context, updates.openDownload()),
+        onReleaseNotes: () => showFailure(context, updates.openNotes()),
+        onDismiss: () => updates.dismiss(),
+      }),
+  })
+}
+
+/** Shows the person why an address did not open. */
+function showFailure(context: PluginContext, opening: ReturnType<Updates['openDownload']>): void {
+  opening.then(
+    (result) => {
+      if (!result.ok) context.notices?.show(result.error, 'error')
+    },
+    (error: unknown) => context.notices?.show(String(error), 'error'),
+  )
+}
+
+export const activate = (
+  context: PluginContext,
+  parts: UpdateParts = { api: updater, timer: browserTimer },
+): void => {
+  const updates = createUpdates({
+    api: parts.api,
+    app: context.app,
+    openExternal: (url) => context.openExternal(url),
+    getIntervalHours: () => context.getSetting('checkIntervalHours'),
+    timer: parts.timer,
+  })
+  context.registerStatusView({ id: UPDATE_VIEW, component: createStatusView(context, updates) })
+  context.onSettingChange('checkIntervalHours', () => updates.reschedule())
+  context.onSettingChange('endpoint', () => updates.checkSoon())
+  context.onSettingChange('channel', () => updates.checkSoon())
+  context.subscriptions.push({ dispose: () => updates.stop() })
+  updates.start()
+}
+
+export default definePlugin({
+  activate,
+})

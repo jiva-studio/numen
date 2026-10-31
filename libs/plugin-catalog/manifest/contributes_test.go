@@ -81,3 +81,39 @@ func TestATabNeedsAFrontendToRegisterIt(t *testing.T) {
 		t.Errorf("error = %v, want a refusal for the missing frontend", err)
 	}
 }
+
+func TestAManifestDeclaresTheStatusViewsOfThePlugin(t *testing.T) {
+	m, err := manifestjson.Read(strings.NewReader(contributesHead + `,"contributes":{
+		"statusViews":[{"id":"update"},{"id":"sync-state"}]}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !slices.Equal(m.Contributes.ListStatusViews(), []string{"update", "sync-state"}) {
+		t.Errorf("status views = %v", m.Contributes.ListStatusViews())
+	}
+}
+
+func TestAStatusViewTheApplicationCannotUseIsRefused(t *testing.T) {
+	cases := map[string]string{
+		"an id in capitals":    `{"statusViews":[{"id":"Update"}]}`,
+		"an id with no name":   `{"statusViews":[{"id":""}]}`,
+		"an id declared twice": `{"statusViews":[{"id":"update"},{"id":"update"}]}`,
+	}
+	for name, contributes := range cases {
+		_, err := manifestjson.Read(strings.NewReader(contributesHead + `,"contributes":` + contributes + `}`))
+
+		if !errors.Is(err, manifest.ErrInvalidContribution) {
+			t.Errorf("%s: error = %v, want an invalid contribution", name, err)
+		}
+	}
+}
+
+func TestAStatusViewNeedsAFrontendToRegisterIt(t *testing.T) {
+	_, err := manifestjson.Read(strings.NewReader(
+		`{"id":"a.b","name":"A","version":"1.0.0","contributes":{"statusViews":[{"id":"update"}]}}`))
+
+	if !errors.Is(err, manifest.ErrInvalidContribution) || !strings.Contains(err.Error(), "no frontend") {
+		t.Errorf("error = %v, want a refusal for the missing frontend", err)
+	}
+}

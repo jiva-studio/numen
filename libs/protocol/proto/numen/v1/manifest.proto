@@ -58,6 +58,8 @@ message ManifestContributes {
   repeated ManifestTheme themes = 5;
   // file_types are the types of file the plugin opens.
   repeated ManifestFileType file_types = 6;
+  // status_views are the components of the plugin's frontend the window draws in its status bar.
+  repeated ManifestStatusView status_views = 4;
 }
 
 // ManifestFileType is a type of file the plugin opens in a tab of one of its
@@ -85,6 +87,13 @@ message ManifestTheme {
   string appearance = 3;
   // file is the path of the stylesheet relative to the plugin folder.
   string file = 4;
+}
+
+// ManifestStatusView is a component of the plugin's frontend that the window draws in its status
+// bar.
+message ManifestStatusView {
+  // id is the id the frontend registers the component under.
+  string id = 1;
 }
 
 // ManifestTabKind is a kind of tab the plugin registers.
