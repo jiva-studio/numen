@@ -107,7 +107,7 @@ func (u RenameField) WithNotes(notes TypeQueries) RenameField {
 
 // createIdentifier is the identifier a file this rename writes is to carry
 // where it carries none.
-func (u RenameField) createIdentifier() string { return ulid.New(u.now()) }
+func (u RenameField) createIdentifier() string { return ulid.New(u.now.Now()) }
 
 // Execute renames the field, in the card model first and then in the vault.
 //

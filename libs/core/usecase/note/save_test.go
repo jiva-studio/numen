@@ -17,11 +17,12 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
 func (c changing) newWrite() note.Write {
-	return note.NewWrite(vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, time.Now)
+	return note.NewWrite(vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, testsupport.NewClock())
 }
 
 // openNote is a tab that has read a note: the prose it received and the
@@ -192,7 +193,7 @@ func TestTheSameBytesSavedAgainAreNotAChange(t *testing.T) {
 	if err := os.WriteFile(on, raw, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	later := time.Now().Add(time.Hour)
+	later := testsupport.Machine.Now().Add(time.Hour)
 	if err := os.Chtimes(on, later, later); err != nil {
 		t.Fatal(err)
 	}
@@ -324,7 +325,7 @@ func TestALinkSavedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		}},
 		vaultwriter.VaultWriters{},
 		c.index,
-		time.Now,
+		testsupport.NewClock(),
 	)
 
 	saveAsking := make(chan struct{})
@@ -339,7 +340,7 @@ func TestALinkSavedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		}},
 		watchedWriters{inner: vaultwriter.VaultWriters{}, hold: func() { close(saveAsking) }},
 		c.index,
-		time.Now,
+		testsupport.NewClock(),
 	)
 
 	added := make(chan error, 1)
@@ -417,7 +418,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		c.db.Queries(),
 		c.db.Sources(),
 		c.index,
-		time.Now,
+		testsupport.NewClock(),
 	)
 
 	saveAsking := make(chan struct{})
@@ -432,7 +433,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		}},
 		watchedWriters{inner: vaultwriter.VaultWriters{}, hold: func() { close(saveAsking) }},
 		c.index,
-		time.Now,
+		testsupport.NewClock(),
 	)
 
 	moved := make(chan error, 1)
@@ -608,7 +609,7 @@ func TestRefresh_SeparatesIgnoredFilesFromRemovedNotes(t *testing.T) {
 	}
 
 	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(), c.db.SourcesKnown(), c.db.Sources(), time.Now)
+		vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(), c.db.SourcesKnown(), c.db.Sources(), testsupport.NewClock())
 	res, err := refresh.Execute(t.Context(), c.vault, []string{".photo.png", "Gone.md", "Entropy.md"})
 	if err != nil {
 		t.Fatal(err)

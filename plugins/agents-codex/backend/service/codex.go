@@ -19,7 +19,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
-	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/clock"
 )
 
 // AgentModel represents an AI model available from an external agent CLI.
@@ -96,16 +95,18 @@ type codexModelCache struct {
 	failedAt  time.Time
 	inFlight  map[string]bool
 	isAsync   bool
-	// now is the clock the backoff uses. Empty is the system clock.
-	now func() time.Time
+	// clock is the time source of the backoff.
+	clock timeSource
+}
+
+// timeSource gets the current time.
+type timeSource interface {
+	Now() time.Time
 }
 
 // getNow is the time by the clock of the cache.
 func (c *codexModelCache) getNow() time.Time {
-	if c.now == nil {
-		return clock.Now()
-	}
-	return c.now()
+	return c.clock.Now()
 }
 
 // get are the models Codex lists: the cached ones, or those it lists now.

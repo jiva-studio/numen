@@ -68,7 +68,7 @@ func TestAnEmbeddingPluginIsReadyWherePluginIsAvailable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	host := plugin.NewHost("desktop.editor", tmp)
+	host := plugin.NewHost(testsupport.Machine, "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +118,7 @@ func writeEmbeddingPlugin(t *testing.T, manifest string) *plugin.Host {
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := plugin.NewHost("desktop.editor", tmp)
+	host := plugin.NewHost(testsupport.Machine, "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}

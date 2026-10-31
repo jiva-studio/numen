@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 
 	"connectrpc.com/connect"
 )
@@ -76,7 +77,7 @@ func TestCodexModelCache_Retention(t *testing.T) {
 			`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+
 			"while read -r _; do :; done\n")
-	var cache codexModelCache
+	cache := codexModelCache{clock: clock.NewFake(time.Unix(1000, 0))}
 
 	for range 2 {
 		if got := cache.get(t.Context(), []string{command}); len(got) != 1 || got[0].Name != "gpt-x" {
@@ -99,7 +100,7 @@ func TestAnEndedRequestKeepsNoCodexModels(t *testing.T) {
 		`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+
 			"while read -r _; do :; done\n")
-	var cache codexModelCache
+	cache := codexModelCache{clock: clock.NewFake(time.Unix(1000, 0))}
 
 	ended, cancel := context.WithCancel(t.Context())
 	cancel()
@@ -140,8 +141,8 @@ func TestModels_FailedListingIsRequeried(t *testing.T) {
 	agenttest.NeedsShell(t)
 	t.Setenv("HOME", t.TempDir())
 	failing := agenttest.WriteScript(t, "codex", "exit 1\n")
-	now := time.Unix(1000, 0)
-	cache := codexModelCache{now: func() time.Time { return now }}
+	now := clock.NewFake(time.Unix(1000, 0))
+	cache := codexModelCache{clock: now}
 
 	if got := cache.get(t.Context(), []string{failing}); got != nil {
 		t.Fatalf("a failed listing gave %+v", got)
@@ -156,7 +157,7 @@ func TestModels_FailedListingIsRequeried(t *testing.T) {
 	if got := cache.get(t.Context(), []string{failing}); got != nil {
 		t.Fatalf("a command line that just failed was asked again: %+v", got)
 	}
-	now = now.Add(codexFailureBackoff)
+	now.Advance(codexFailureBackoff)
 	if got := cache.get(t.Context(), []string{failing}); len(got) != 1 || got[0].Name != "gpt-x" {
 		t.Errorf("the next listing gave %+v", got)
 	}

@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
@@ -34,7 +35,7 @@ func newFrontendOnlyHost(t *testing.T) (*Host, *int) {
 	if err := os.WriteFile(filepath.Join(pluginDir, "manifest.json"), []byte(frontendOnlyManifest), 0o600); err != nil {
 		t.Fatalf("write manifest: %v", err)
 	}
-	host := NewHost("desktop.editor", dir)
+	host := NewHost(testsupport.Machine, "desktop.editor", dir)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
 	}

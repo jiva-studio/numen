@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -59,7 +60,7 @@ func TestAShutDownHostDoesNotStartPluginsAgain(t *testing.T) {
 }
 
 func TestClosingTheEventBusWaitsForDispatchesInFlight(t *testing.T) {
-	bus := eventbus.New(nil, time.Millisecond, 10*time.Millisecond)
+	bus := eventbus.New(nil, testsupport.NewClock(), time.Millisecond, 10*time.Millisecond)
 	entered := make(chan struct{})
 	release := make(chan struct{})
 	bus.Subscribe("onSlow", func(_ context.Context, _ string) error {
@@ -145,7 +146,7 @@ func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 }
 
 func TestGetContentTypeHonoursEnabledAndSafeMode(t *testing.T) {
-	host := NewHost("desktop.editor")
+	host := NewHost(testsupport.Machine, "desktop.editor")
 	manifest := pluginport.PluginManifest{ID: "org.example.samples", ContentTypes: []pluginport.PluginContentType{
 		{Type: "application/x-example-sample", Globs: []string{"*.sample"}},
 	}}
@@ -172,7 +173,7 @@ func TestGetContentTypeHonoursEnabledAndSafeMode(t *testing.T) {
 // ResolveCapability reports why no plugin responds: none declares the
 // capability, or those that do are disabled or turned off by safe mode.
 func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
-	host := NewHost("desktop.editor")
+	host := NewHost(testsupport.Machine, "desktop.editor")
 	for _, id := range []string{"md.numen.b", "md.numen.a"} {
 		host.plugins[id] = manifestfile.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Capabilities: []string{"org.example.widget"}}}
 	}
@@ -221,7 +222,7 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 // A plugin EnsureActive cannot start is distinguished from one that is absent
 // or turned off.
 func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
-	host := NewHost("desktop.editor")
+	host := NewHost(testsupport.Machine, "desktop.editor")
 	host.plugins["md.numen.a"] = manifestfile.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.a"}}
 	if err := host.SetPluginEnabled(t.Context(), "md.numen.a", false); err != nil {
 		t.Fatal(err)
@@ -239,7 +240,7 @@ func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 }
 
 func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
-	host := NewHost("desktop.editor")
+	host := NewHost(testsupport.Machine, "desktop.editor")
 	for _, id := range []string{"a.failing", "b.working"} {
 		host.plugins[id] = manifestfile.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, ActivationEvents: []string{"onOpen"}, Backend: pluginport.PluginBackend{Entrypoint: "bin/plugin"}}}
 	}
@@ -291,7 +292,7 @@ func TestADisableThatCannotBePersistedPreservesThePluginRunning(t *testing.T) {
 }
 
 func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
-	host := NewHost("desktop.editor")
+	host := NewHost(testsupport.Machine, "desktop.editor")
 	var reported []error
 	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
 	cmd := plugintest.NewIdleCommand(t.Context())
@@ -299,8 +300,8 @@ func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
 		t.Fatalf("start process: %v", err)
 	}
 	t.Cleanup(func() { plugintest.KillProcess(t, cmd.Process) })
-	sup := lifecycle.New()
-	if err := sup.Attach(t.Context(), cmd.Process, time.Now()); err != nil {
+	sup := lifecycle.New(testsupport.Machine)
+	if err := sup.Attach(t.Context(), cmd.Process, testsupport.Machine.Now()); err != nil {
 		t.Fatalf("attach: %v", err)
 	}
 	sup.BeginTeardown()

@@ -19,7 +19,9 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/onnxruntime"
 )
 
@@ -88,6 +90,7 @@ func newConfig(server *httptest.Server, archive []byte) onnxruntime.Config {
 		Dir:     "",
 		Machine: []string{},
 		Client:  server.Client(),
+		Clock:   clock.NewFake(time.Unix(0, 0)),
 		Check:   func(string) error { return nil },
 		Release: onnxruntime.Release{
 			Address:    server.URL + "/onnxruntime.tgz",
@@ -434,14 +437,14 @@ func TestProvisionKeepsTheLibraryInTheModelsHome(t *testing.T) {
 func TestFromEnvironmentReadsTheProviderAndTheOfflineSwitch(t *testing.T) {
 	t.Setenv(onnxruntime.EnvProvider, "coreml")
 	t.Setenv(onnxruntime.EnvOffline, "1")
-	cfg := onnxruntime.FromEnvironment()
+	cfg := onnxruntime.FromEnvironment(clock.NewFake(time.Unix(0, 0)))
 	if cfg.Provider != "coreml" || !cfg.Offline {
 		t.Errorf("FromEnvironment() = %+v", cfg)
 	}
 
 	t.Setenv(onnxruntime.EnvProvider, "")
 	t.Setenv(onnxruntime.EnvOffline, "no")
-	cfg = onnxruntime.FromEnvironment()
+	cfg = onnxruntime.FromEnvironment(clock.NewFake(time.Unix(0, 0)))
 	if cfg.Provider != "" || cfg.Offline {
 		t.Errorf("FromEnvironment() = %+v", cfg)
 	}

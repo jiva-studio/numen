@@ -210,7 +210,7 @@ func openTestBridge(t *testing.T, handler numenv1connect.AgentServiceHandler) *A
 
 	tmp := t.TempDir()
 	createTestAgentPluginTree(t, tmp)
-	host := plugin.NewHost("desktop.editor", tmp)
+	host := plugin.NewHost(testsupport.Machine, "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}

@@ -75,7 +75,7 @@ func TestACardDueLaterTodayIsDueNow(t *testing.T) {
 
 func TestDayIsDue_UnansweredCard(t *testing.T) {
 	day := review.Day{Starts: review.DayStartTime}
-	if !day.IsDue(review.Schedule{}, time.Now()) {
+	if !day.IsDue(review.Schedule{}, testEpoch) {
 		t.Error("a card with no answers behind it is not due")
 	}
 }
@@ -453,7 +453,7 @@ func TestAStreakInTheSmallHoursIsTheEveningsStill(t *testing.T) {
 // is the zone of the user's evening.
 func TestADayWithNoZoneIsTheMachinesOwn(t *testing.T) {
 	here := review.Day{Starts: review.DayStartTime}
-	now := time.Now()
+	now := testEpoch
 	days := makeTallies(map[string]int{
 		here.GetName(now):                   1,
 		here.GetName(now.AddDate(0, 0, -1)): 1,

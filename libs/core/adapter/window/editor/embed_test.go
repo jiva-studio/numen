@@ -350,7 +350,7 @@ func (s *mockEmbeddingServer) EmbedBatch(
 func vaultConfig(t *testing.T, embedding container.EmbeddingConfig) container.Config {
 	t.Helper()
 	root := t.TempDir()
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
 		t.Fatal(err)
 	}
 	cfg := container.Config{
@@ -362,7 +362,7 @@ func vaultConfig(t *testing.T, embedding container.EmbeddingConfig) container.Co
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry, time.Now).Execute(root, "alpha"); err != nil {
+	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry, testsupport.NewClock()).Execute(root, "alpha"); err != nil {
 		t.Fatal(err)
 	}
 	return cfg
@@ -399,7 +399,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	}
 	serverPort := serverAddress.Port
 
-	host := plugin.NewHost("desktop.editor", tmp)
+	host := plugin.NewHost(testsupport.Machine, "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}

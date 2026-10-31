@@ -1,6 +1,8 @@
 package projection
 
-import "testing"
+import (
+	"testing"
+)
 
 // The upper bound of a minutes curve is twice the larger of the cost of the
 // whole load and the minutes the preset keeps, so the current day and the day

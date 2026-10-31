@@ -485,6 +485,28 @@ function findPluginConfigDrift() {
     }
   }
 
+  const goConfigCopies = ["plugins/.example", "libs/plugin-sdk-go"];
+  const pluginsRoot = path.join(REPO_ROOT, "plugins");
+  for (const entry of fs.readdirSync(pluginsRoot, { withFileTypes: true })) {
+    if (entry.isDirectory() && !entry.name.startsWith(".") && fs.existsSync(path.join(pluginsRoot, entry.name, "go.mod"))) {
+      goConfigCopies.push(`plugins/${entry.name}`);
+    }
+  }
+  for (const name of [".golangci.yml", ".golangci-structure.yml"]) {
+    const rootFile = path.join(REPO_ROOT, name);
+    if (!fs.existsSync(rootFile)) {
+      found.push({ file: name, line: 1, symbol: "the root Go lint configuration is missing" });
+      continue;
+    }
+    const rootText = fs.readFileSync(rootFile, "utf8");
+    for (const dir of goConfigCopies) {
+      const copy = path.join(REPO_ROOT, dir, name);
+      if (!fs.existsSync(copy) || fs.readFileSync(copy, "utf8") !== rootText) {
+        found.push({ file: `${dir}/${name}`, line: 1, symbol: `must be a byte-identical copy of the root ${name}` });
+      }
+    }
+  }
+
   for (const parentConfig of ["plugins/.golangci.yml", "plugins/eslint.config.js"]) {
     if (fs.existsSync(path.join(REPO_ROOT, parentConfig))) {
       found.push({ file: parentConfig, line: 1, symbol: "shared parent config outside plugin directory (each plugin must carry its own copy of plugins/.example/)" });

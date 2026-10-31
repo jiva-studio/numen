@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service/presetwire"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
@@ -83,7 +84,7 @@ var firstMorning = time.Date(2026, 4, 6, 9, 0, 0, 0, time.UTC)
 
 // setNow synchronizes window time, review day calculation, and scenario clocks to now.
 func setNow(handler *API, now time.Time) {
-	pos := func() time.Time { return now }
+	pos := clock.NewFake(now)
 	handler.now = pos
 	handler.scenarios().day = reviewDay
 	handler.scenarios().flash.Record = flashcards.NewRecord(pos)

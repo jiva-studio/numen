@@ -74,16 +74,19 @@ func toAPIError(err error) *APIError {
 // manifest `services`; the host forwards every request whose path starts with it to the plugin with
 // the host token, and a method is mounted at POST /<service>/<method>.
 type API struct {
-	server  *Server
-	service string
+	server   *Server
+	service  string
+	rejected bool
 }
 
-// NewAPI creates the API of the service name on the server.
+// NewAPI creates the API of the service name on the server. An invalid name is recorded as a
+// mount error that Serve and NewLinkedHandler return, and the API mounts no method.
 func (s *Server) NewAPI(service string) *API {
 	if service == "" || strings.ContainsAny(service, "/ {}") {
-		panic(fmt.Sprintf("server: invalid API service name %q", service))
+		s.addMountError(fmt.Errorf("server: invalid API service name %q", service))
+		return &API{server: s, service: "", rejected: true}
 	}
-	return &API{server: s, service: service}
+	return &API{server: s, service: service, rejected: false}
 }
 
 type headerKey struct{}
@@ -91,8 +94,10 @@ type headerKey struct{}
 // GetHeader returns the headers of the request a method is answering, such as the Numen-Vault
 // header that names the vault the call works. It returns nil outside a method.
 func GetHeader(ctx context.Context) http.Header {
-	header, _ := ctx.Value(headerKey{}).(http.Header)
-	return header
+	if header, ok := ctx.Value(headerKey{}).(http.Header); ok {
+		return header
+	}
+	return nil
 }
 
 func withHeader(ctx context.Context, header http.Header) context.Context {
@@ -100,8 +105,12 @@ func withHeader(ctx context.Context, header http.Header) context.Context {
 }
 
 func (a *API) mount(method string, handler http.Handler) {
+	if a.rejected {
+		return
+	}
 	if method == "" || strings.ContainsAny(method, "/ {}") {
-		panic(fmt.Sprintf("server: invalid API method name %q", method))
+		a.server.addMountError(fmt.Errorf("server: invalid API method name %q", method))
+		return
 	}
 	a.server.Register(http.MethodPost+" /"+a.service+"/"+method, a.server.interceptor.RequireToken(handler))
 }

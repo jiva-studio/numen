@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
@@ -45,6 +46,9 @@ type agentServer struct {
 
 	// models are the models the program listed.
 	models *cache.Cache[[]claudeModel]
+
+	// clock paces the reports of a change being written.
+	clock timeSource
 }
 
 // getEnvironment returns the variables a program of the agent is started with.
@@ -131,14 +135,14 @@ func (s *agentServer) AskAgent(
 	cmdName, cmdArgs := s.getCommand(msg.GetCommand())
 	if cmdName == "" {
 		if err := stream.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_Text{
+			Step: &agentrun.AskAgentResponseText{
 				Text: "Claude Code CLI is not installed or not found on PATH.",
 			},
 		}); err != nil {
 			return err
 		}
 		return stream.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_Stopped{
+			Step: &agentrun.AskAgentResponseStopped{
 				Stopped: "claude not installed",
 			},
 		})
@@ -165,7 +169,7 @@ func (s *agentServer) AskAgent(
 
 	// The wait for the model begins with the program, and the stream opens on saying so.
 	if err := stream.Send(&agentrun.AskAgentResponse{
-		Step: &agentrun.AskAgentResponse_ModelStarted{ModelStarted: &agentrun.ModelStarted{}},
+		Step: &agentrun.AskAgentResponseModelStarted{ModelStarted: &agentrun.ModelStarted{}},
 	}); err != nil {
 		return err
 	}
@@ -178,7 +182,7 @@ func (s *agentServer) AskAgent(
 	recordSession := func(session string) { s.registry.SetSession(conversation, session) }
 	reasons := make(chan string, 1)
 	go func() {
-		reasons <- parseStream(runCtx, out, stream.Send, toolcall.IndexDeclarations(msg.GetToolDeclarations()), recordSession, configFile != "")
+		reasons <- parseStream(runCtx, out, stream.Send, toolcall.IndexDeclarations(msg.GetToolDeclarations()), recordSession, s.clock, configFile != "")
 	}()
 
 	stoppedReason, ok := waitAgentCompletion(runCtx, cmd, out, stderrBuf, reasons)
@@ -187,7 +191,7 @@ func (s *agentServer) AskAgent(
 	}
 
 	return stream.Send(&agentrun.AskAgentResponse{
-		Step: &agentrun.AskAgentResponse_Stopped{
+		Step: &agentrun.AskAgentResponseStopped{
 			Stopped: stoppedReason,
 		},
 	})
@@ -354,6 +358,7 @@ func (s *agentServer) GetAgentTools(
 // The runs the agent started end when s closes.
 func Mount(s *server.Server) error {
 	agent := new(agentServer)
+	agent.clock = clock.System{}
 	agent.models = newModelCache(true)
 	return mount(s, agent)
 }
@@ -374,6 +379,7 @@ func mount(s *server.Server, agentSvc *agentServer) error {
 func NewHandler(vars map[string]string) (http.Handler, error) {
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
 		agent := new(agentServer)
+		agent.clock = clock.System{}
 		agent.environ = getVariables(vars)
 		agent.models = newModelCache(true)
 		return mount(s, agent)

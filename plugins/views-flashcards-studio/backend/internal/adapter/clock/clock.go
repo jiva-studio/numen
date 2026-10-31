@@ -1,15 +1,10 @@
-// Package clock reads the system time and entropy for the use cases.
+// Package clock provides the tickers and the entropy for the use cases.
 package clock
 
 import (
 	"crypto/rand"
 	"time"
 )
-
-// Now gets the current time.
-func Now() time.Time {
-	return time.Now()
-}
 
 // NewTicker returns a ticker that sends the current time on its channel after each duration.
 func NewTicker(d time.Duration) *time.Ticker {

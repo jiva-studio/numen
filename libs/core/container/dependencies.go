@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
@@ -30,8 +31,8 @@ func newDependencies() *provision.Registry {
 		dir = filepath.Join(models, "dependencies")
 	}
 	return provision.NewRegistry(
-		onnxruntime.NewONNXProvisioner(onnxruntime.FromEnvironment()),
-		provision.NewFileProvisioner(provision.Config{Dir: dir, Offline: onnxruntime.IsOffline()}),
+		onnxruntime.NewONNXProvisioner(onnxruntime.FromEnvironment(clock.System{})),
+		provision.NewFileProvisioner(provision.Config{Dir: dir, Offline: onnxruntime.IsOffline(), Clock: clock.System{}}),
 	)
 }
 

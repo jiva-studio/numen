@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
@@ -61,14 +62,14 @@ func openVault(t testing.TB, notes map[string]string) vaulted {
 	standings := flashcards.NewListReviewCards(env.Ports.Readers, env.Queries, env.Queries)
 	presets := flashcards.NewPresets(
 		env.Ports.Readers, env.Ports.Writers,
-		env.Queries, env.Queries, scanned, review.Day{}, time.Now)
+		env.Queries, env.Queries, scanned, review.Day{}, vaulttest.NewClock())
 	presets.Problems = env.Queries
 	// Each card is scheduled with the share of cards its own preset specifies, as
 	// the application builds it.
 	schedules := flashcards.NewSchedules(logs, review.NewFSRS(), today, standings, presets)
 	schedules.Cache = env.Ports.Schedules("schedules")
 
-	counted := flashcards.NewCountReviews(logs, schedules, today, time.Now)
+	counted := flashcards.NewCountReviews(logs, schedules, today, vaulttest.NewClock())
 	counted.Cache = env.Ports.Schedules("days")
 
 	return vaulted{
@@ -78,7 +79,7 @@ func openVault(t testing.TB, notes map[string]string) vaulted {
 		presets:   presets,
 		assigning: flashcards.NewAssignCardIDs(
 			env.Ports.Readers, env.Ports.Writers,
-			env.Queries, env.Queries, scanned, time.Now),
+			env.Queries, env.Queries, scanned, vaulttest.NewClock()),
 		schedules: schedules,
 		counted:   counted,
 		logs:      logs,
@@ -127,7 +128,7 @@ type sitting struct {
 	record flashcards.Record
 }
 
-func newSitting(run *flashcards.LogWriter, now func() time.Time) sitting {
+func newSitting(run *flashcards.LogWriter, now ports.Clock) sitting {
 	return sitting{run: run, record: flashcards.NewRecord(now)}
 }
 
@@ -147,7 +148,7 @@ func (s vaulted) run(t *testing.T, pos time.Time) sitting {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return newSitting(run, func() time.Time { return pos })
+	return newSitting(run, clock.NewFake(pos))
 }
 
 // runNamed is a run whose file is named for one instant and whose answers were
@@ -159,14 +160,14 @@ func (s vaulted) runNamed(t *testing.T, named, reviewedAt time.Time) sitting {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return newSitting(run, func() time.Time { return reviewedAt })
+	return newSitting(run, clock.NewFake(reviewedAt))
 }
 
 func (s vaulted) newCountCardsDue(day review.Day) flashcards.CountCardsDue {
-	return s.newCountCardsDueAt(day, time.Now)
+	return s.newCountCardsDueAt(day, vaulttest.NewClock())
 }
 
-func (s vaulted) newCountCardsDueAt(day review.Day, now func() time.Time) flashcards.CountCardsDue {
+func (s vaulted) newCountCardsDueAt(day review.Day, now ports.Clock) flashcards.CountCardsDue {
 	return flashcards.NewCountCardsDue(
 		s.standings, s.schedules, s.presets, day, now,
 	)
@@ -177,7 +178,7 @@ func (s vaulted) newCountCardsDueAt(day review.Day, now func() time.Time) flashc
 func (s vaulted) session(day review.Day) flashcards.Session {
 	return flashcards.NewSession(
 		s.assigning, s.standings, s.schedules,
-		flashcards.NewPresets(nil, nil, nil, nil, nil, day, time.Now), day, time.Now,
+		flashcards.NewPresets(nil, nil, nil, nil, nil, day, vaulttest.NewClock()), day, vaulttest.NewClock(),
 	)
 }
 
@@ -475,7 +476,7 @@ func TestACardInsertDaysAwayIsNotDueToday(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Easy, 0); err != nil {
+	if _, err := s.run(t, vaulttest.Epoch).Answer(t.Context(), on, review.Easy, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -509,7 +510,7 @@ func TestACardReachesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
+	if _, err := s.run(t, vaulttest.Epoch).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -523,7 +524,7 @@ func TestACardReachesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 	}
 
 	// The count is taken on the day the card falls on, and the card is due.
-	counter := s.newCountCardsDueAt(today, func() time.Time { return due })
+	counter := s.newCountCardsDueAt(today, clock.NewFake(due))
 	counts, err := counter.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -533,7 +534,7 @@ func TestACardReachesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 	}
 
 	// And the day before it, it is not.
-	counterBefore := s.newCountCardsDueAt(today, func() time.Time { return due.AddDate(0, 0, -1) })
+	counterBefore := s.newCountCardsDueAt(today, clock.NewFake(due.AddDate(0, 0, -1)))
 	before, err := counterBefore.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -548,7 +549,7 @@ func TestACardReachesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 func TestAnAnswerIsSavedDownAndReadBack(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	when := time.Now()
+	when := vaulttest.Epoch
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 4*time.Second); err != nil {
@@ -575,7 +576,7 @@ func TestAnAnswerIsSavedDownAndReadBack(t *testing.T) {
 func TestAnAnswerTakenBackPreservesTheCardUnanswered(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	when := time.Now()
+	when := vaulttest.Epoch
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	record := s.run(t, when)
@@ -600,7 +601,7 @@ func TestAnAnswerTakenBackPreservesTheCardUnanswered(t *testing.T) {
 func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	record := s.run(t, time.Now())
+	record := s.run(t, vaulttest.Epoch)
 
 	if _, err := record.Answer(
 		t.Context(), review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}, review.Rating(9), 0,
@@ -614,8 +615,8 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 func TestASessionAsksWhatIsDueBeforeWhatIsNew(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	long := time.Now().Add(-30 * 24 * time.Hour)
-	recent := time.Now().Add(-3 * 24 * time.Hour)
+	long := vaulttest.Epoch.Add(-30 * 24 * time.Hour)
+	recent := vaulttest.Epoch.Add(-3 * 24 * time.Hour)
 
 	waited := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	lately := review.CardID{Card: "zpqrstvwxy", Template: "Recognise"}
@@ -672,7 +673,7 @@ func TestACacheReadBackReturnsWhatTheAnswersSay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	when := time.Now().Add(-72 * time.Hour)
+	when := vaulttest.Epoch.Add(-72 * time.Hour)
 
 	record := s.run(t, when)
 	for _, r := range []review.Rating{review.Good, review.Again, review.Hard, review.Easy} {
@@ -714,7 +715,7 @@ func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	invented := review.CardID{Card: "nobodyhasit", Template: "Recognise"}
 
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
+	if _, err := s.run(t, vaulttest.Epoch).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.schedules.Execute(t.Context(), s.vault); err != nil {
@@ -724,7 +725,7 @@ func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
 		was.V++
 		was.ReviewCards = append(was.ReviewCards, plantedCard{
 			Card: invented.Card, Template: invented.Template,
-			Due: formatTime(time.Now()), Last: formatTime(time.Now()), Reps: 7,
+			Due: formatTime(vaulttest.Epoch), Last: formatTime(vaulttest.Epoch), Reps: 7,
 		})
 	})
 
@@ -746,7 +747,7 @@ func TestARunTheCacheHasNotObservedIsCountedIn(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	when := time.Now().Add(-24 * time.Hour)
+	when := vaulttest.Epoch.Add(-24 * time.Hour)
 
 	if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -761,7 +762,7 @@ func TestARunTheCacheHasNotObservedIsCountedIn(t *testing.T) {
 
 	// A second run writes a second file, as when a file arrives from another
 	// machine after the first was counted.
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
+	if _, err := s.run(t, vaulttest.Epoch).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 	second, err := s.schedules.Execute(t.Context(), s.vault)
@@ -780,7 +781,7 @@ func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	record := s.run(t, time.Now())
+	record := s.run(t, vaulttest.Epoch)
 
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -813,7 +814,7 @@ func TestAnAnswerTakenBackInTheSameRunIsNotCounted(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	record := s.run(t, time.Now())
+	record := s.run(t, vaulttest.Epoch)
 
 	provided, err := record.Answer(t.Context(), on, review.Good, 0)
 	if err != nil {
@@ -843,7 +844,7 @@ func TestACacheFilledByAnotherSchedulerIsThrownAway(t *testing.T) {
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	invented := review.CardID{Card: "nobodyhasit", Template: "Recognise"}
 
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
+	if _, err := s.run(t, vaulttest.Epoch).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -858,7 +859,7 @@ func TestACacheFilledByAnotherSchedulerIsThrownAway(t *testing.T) {
 	rewrite(t, s, func(was *plantedCache) {
 		was.ReviewCards = append(was.ReviewCards, plantedCard{
 			Card: invented.Card, Template: invented.Template,
-			Due: formatTime(time.Now()), Last: formatTime(time.Now()), Reps: 1,
+			Due: formatTime(vaulttest.Epoch), Last: formatTime(vaulttest.Epoch), Reps: 1,
 		})
 		for item := range was.ReviewCards {
 			was.ReviewCards[item].Reps = 7

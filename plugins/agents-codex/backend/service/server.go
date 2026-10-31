@@ -38,7 +38,7 @@ func (s *agentServer) AskAgent(
 	stream *connect.ServerStream[agentrun.AskAgentResponse],
 ) error {
 	if err := stream.Send(&agentrun.AskAgentResponse{
-		Step: &agentrun.AskAgentResponse_ModelStarted{
+		Step: &agentrun.AskAgentResponseModelStarted{
 			ModelStarted: &agentrun.ModelStarted{},
 		},
 	}); err != nil {
@@ -48,7 +48,7 @@ func (s *agentServer) AskAgent(
 	work, err := start(ctx, &s.Registry, newSpec(req.Msg, s.getExecutablePath()))
 	if err != nil {
 		return stream.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_Stopped{Stopped: err.Error()},
+			Step: &agentrun.AskAgentResponseStopped{Stopped: err.Error()},
 		})
 	}
 	return agentrun.ForwardResponses(ctx, work, stream)

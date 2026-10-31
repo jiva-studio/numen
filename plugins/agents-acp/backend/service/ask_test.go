@@ -14,6 +14,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 )
 
 // askAgent sends the task and returns the response text and the stop reason.
@@ -124,12 +125,12 @@ func TestAskAgentReportsTheToolCallsOfTheAgent(t *testing.T) {
 	var steps []string
 	for stream.Receive() {
 		switch step := stream.Msg().GetStep().(type) {
-		case *agentrun.AskAgentResponse_ToolCall:
+		case *agentrun.AskAgentResponseToolCall:
 			call := step.ToolCall
 			steps = append(steps, fmt.Sprintf("call %s %s %s %s %s", call.GetCall(), call.GetTool(), call.GetKind(), call.GetAbout(), call.GetPath()))
-		case *agentrun.AskAgentResponse_ToolFinished:
+		case *agentrun.AskAgentResponseToolFinished:
 			steps = append(steps, "finished")
-		case *agentrun.AskAgentResponse_Text:
+		case *agentrun.AskAgentResponseText:
 			steps = append(steps, "text")
 		}
 	}
@@ -414,16 +415,16 @@ func TestNoProgramIsListedWithoutAnACPAgent(t *testing.T) {
 // An agent that failed to list is not queried again until the backoff has elapsed.
 func TestAnAgentThatFailedToListIsLeftAlone(t *testing.T) {
 	agent, record := fakeACPAgent(t, "failing", "fail")
-	now := time.Unix(1000, 0)
+	now := clock.NewFake(time.Unix(1000, 0))
 	svc := serveAgents(agent)
-	svc.getModelCache().SetClock(func() time.Time { return now })
+	svc.getModelCache().SetClock(now)
 
 	listPrograms(t, svc)
 	listPrograms(t, svc)
 	if started := readRecord(t, record)["started"]; len(started) != 1 {
 		t.Fatalf("the agent was started %d times within the backoff, want 1", len(started))
 	}
-	now = now.Add(acpFailureBackoff)
+	now.Advance(acpFailureBackoff)
 	listPrograms(t, svc)
 	if started := readRecord(t, record)["started"]; len(started) != 2 {
 		t.Errorf("the agent was started %d times after the backoff, want 2", len(started))

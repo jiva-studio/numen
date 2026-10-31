@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jiva-studio/numen/libs/core/port/machineport"
 )
 
 // ErrChecksum is a download whose bytes do not hold the checksum the requirement pins.
@@ -33,6 +34,7 @@ type transfer struct {
 	dest       string
 	sum        string
 	backoff    backoff
+	clock      machineport.Clock
 	onProgress func(count, total int64)
 }
 
@@ -141,7 +143,7 @@ func (t transfer) append(ctx context.Context, part string) (err error) {
 	if err != nil {
 		return err
 	}
-	byteCount, err := copyProgress(io.MultiWriter(file, hasher), answer.Body, offset, total, t.onProgress)
+	byteCount, err := copyProgress(t.clock, io.MultiWriter(file, hasher), answer.Body, offset, total, t.onProgress)
 	if closeErr := file.Close(); err == nil {
 		err = closeErr
 	}
@@ -178,10 +180,10 @@ func hashExisting(path string, hasher hash.Hash) (_ int64, err error) {
 
 // copyProgress copies the body to the writer and reports how far it has got no
 // more often than progressInterval.
-func copyProgress(dst io.Writer, src io.Reader, offset, total int64, onProgress func(count, total int64)) (int64, error) {
+func copyProgress(clock machineport.Clock, dst io.Writer, src io.Reader, offset, total int64, onProgress func(count, total int64)) (int64, error) {
 	buffer := make([]byte, 64*1024)
 	var byteCount int64
-	last := time.Now()
+	last := clock.Now()
 	for {
 		count, readErr := src.Read(buffer)
 		if count > 0 {
@@ -189,9 +191,9 @@ func copyProgress(dst io.Writer, src io.Reader, offset, total int64, onProgress 
 				return byteCount, err
 			}
 			byteCount += int64(count)
-			if onProgress != nil && time.Since(last) >= progressInterval {
+			if onProgress != nil && clock.Now().Sub(last) >= progressInterval {
 				onProgress(offset+byteCount, total)
-				last = time.Now()
+				last = clock.Now()
 			}
 		}
 		if errors.Is(readErr, io.EOF) {

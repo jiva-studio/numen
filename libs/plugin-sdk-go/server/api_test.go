@@ -54,7 +54,7 @@ func createAPIHandler(t *testing.T) http.Handler {
 
 func postAPI(t *testing.T, handler http.Handler, path, body, token string) *httptest.ResponseRecorder {
 	t.Helper()
-	req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(body))
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, path, strings.NewReader(body))
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
@@ -158,13 +158,16 @@ func TestStream_EndsWithAnErrorEvent(t *testing.T) {
 	}
 }
 
-func TestNewAPI_PanicsOnAnInvalidName(t *testing.T) {
-	defer func() {
-		if recover() == nil {
-			t.Error("a service name with a slash was accepted")
-		}
-	}()
-	New().NewAPI("a/b")
+func TestNewAPI_ReportsAnInvalidNameWhenServing(t *testing.T) {
+	_, err := NewLinkedHandler(map[string]string{tokenVar: "api-token"}, func(s *Server) error {
+		Handle(s.NewAPI("a/b"), "Echo", func(context.Context, echoRequest) (echoResponse, error) {
+			return echoResponse{}, nil
+		})
+		return nil
+	})
+	if err == nil || !strings.Contains(err.Error(), "invalid API service name") {
+		t.Fatalf("a service name with a slash gave %v", err)
+	}
 }
 
 func TestHandle_ExposesRequestHeaders(t *testing.T) {
@@ -177,7 +180,7 @@ func TestHandle_ExposesRequestHeaders(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequest(http.MethodPost, "/org.example.echo/Vault", strings.NewReader("{}"))
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/org.example.echo/Vault", strings.NewReader("{}"))
 	req.Header.Set("Authorization", "Bearer api-token")
 	req.Header.Set("Numen-Vault", "vault-7")
 	recorded := httptest.NewRecorder()

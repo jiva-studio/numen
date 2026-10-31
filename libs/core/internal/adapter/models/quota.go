@@ -12,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/port/machineport"
 )
 
 const (
@@ -65,7 +67,7 @@ func GetQuota() int64 {
 }
 
 // GetUsage returns the bytes under dir and active reservations.
-func GetUsage(dir string) (int64, error) {
+func GetUsage(clock machineport.Clock, dir string) (int64, error) {
 	var sum int64
 	err := filepath.WalkDir(resolvePath(dir), func(name string, entry fs.DirEntry, err error) error {
 		if err != nil {
@@ -86,15 +88,15 @@ func GetUsage(dir string) (int64, error) {
 		}
 		sum += info.Size()
 		if strings.HasSuffix(name, reserveSuffix) {
-			sum += getUnwritten(name, info)
+			sum += getUnwritten(clock, name, info)
 		}
 		return nil
 	})
 	return sum, err
 }
 
-func getUnwritten(reservation string, info fs.FileInfo) int64 {
-	if time.Since(info.ModTime()) > staleReservation {
+func getUnwritten(clock machineport.Clock, reservation string, info fs.FileInfo) int64 {
+	if clock.Now().Sub(info.ModTime()) > staleReservation {
 		return 0
 	}
 	raw, err := os.ReadFile(reservation)
@@ -116,9 +118,9 @@ func getUnwritten(reservation string, info fs.FileInfo) int64 {
 }
 
 // CheckQuota returns an error when need bytes exceeds remaining space under dir.
-func CheckQuota(dir string, need int64) error {
+func CheckQuota(clock machineport.Clock, dir string, need int64) error {
 	limit := GetQuota()
-	used, err := GetUsage(dir)
+	used, err := GetUsage(clock, dir)
 	if err != nil {
 		return fmt.Errorf("counting bytes under %s: %w", dir, err)
 	}
@@ -147,7 +149,7 @@ func resolvePath(name string) string {
 	}
 }
 
-func lockQuota(ctx context.Context, root string) (func() error, error) {
+func lockQuota(ctx context.Context, clock machineport.Clock, root string) (func() error, error) {
 	if err := os.MkdirAll(root, 0o755); err != nil {
 		return nil, err
 	}
@@ -160,7 +162,7 @@ func lockQuota(ctx context.Context, root string) (func() error, error) {
 		if !errors.Is(err, fs.ErrExist) {
 			return nil, err
 		}
-		if info, statErr := os.Stat(lock); statErr == nil && time.Since(info.ModTime()) > staleLock {
+		if info, statErr := os.Stat(lock); statErr == nil && clock.Now().Sub(info.ModTime()) > staleLock {
 			if err := os.Remove(lock); err != nil && !errors.Is(err, fs.ErrNotExist) {
 				return nil, err
 			}
@@ -187,18 +189,18 @@ type Reservation struct {
 }
 
 // Reserve claims want bytes under root for a download.
-func Reserve(ctx context.Context, root string, want int64, part string) (*Reservation, error) {
-	return reserve(ctx, root, want, part, touchInterval)
+func Reserve(ctx context.Context, clock machineport.Clock, root string, want int64, part string) (*Reservation, error) {
+	return reserve(ctx, clock, root, want, part, touchInterval)
 }
 
-func reserve(ctx context.Context, root string, want int64, part string, touch time.Duration) (_ *Reservation, err error) {
-	unlock, err := lockQuota(ctx, root)
+func reserve(ctx context.Context, clock machineport.Clock, root string, want int64, part string, touch time.Duration) (_ *Reservation, err error) {
+	unlock, err := lockQuota(ctx, clock, root)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = errors.Join(err, unlock()) }()
 
-	used, err := GetUsage(root)
+	used, err := GetUsage(clock, root)
 	if err != nil {
 		return nil, fmt.Errorf("counting bytes under %s: %w", root, err)
 	}

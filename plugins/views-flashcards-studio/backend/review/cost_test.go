@@ -41,7 +41,7 @@ func makeAnswers(
 // not by minutes.
 func TestWhatAnAnswerCostsIsTheMiddleOfTheAnswers(t *testing.T) {
 	delta := review.NewFSRS()
-	pos := time.Now().Add(-400 * 24 * time.Hour)
+	pos := testEpoch.Add(-400 * 24 * time.Hour)
 
 	// Twelve review cards answered three times each: three seconds while a card
 	// review card is being learned and nine once it is scheduled in days. One of them
@@ -73,7 +73,7 @@ func TestWhatAnAnswerCostsIsTheMiddleOfTheAnswers(t *testing.T) {
 // at the default and reports it.
 func TestAHistoryTooShortToSayExistsAtTheDefault(t *testing.T) {
 	delta := review.NewFSRS()
-	pos := time.Now().Add(-400 * 24 * time.Hour)
+	pos := testEpoch.Add(-400 * 24 * time.Hour)
 
 	// One review card answered once, for fifty-five seconds.
 	answers := makeAnswers(pos, 1, 1, func(int, int) time.Duration { return 55 * time.Second })
@@ -91,7 +91,7 @@ func TestAHistoryTooShortToSayExistsAtTheDefault(t *testing.T) {
 // other at the default and reports which of the two it is.
 func TestACostOfOneKindPreservesTheOtherAtTheDefault(t *testing.T) {
 	delta := review.NewFSRS()
-	pos := time.Now().Add(-400 * 24 * time.Hour)
+	pos := testEpoch.Add(-400 * 24 * time.Hour)
 
 	// Twelve review cards answered twice each, which is a vault holding no answer
 	// to a card that comes round in days.
@@ -111,7 +111,7 @@ func TestACostOfOneKindPreservesTheOtherAtTheDefault(t *testing.T) {
 // day is never priced at more cards than can be answered.
 func TestAKindOfAnswerIsNeverCostedBelowTheShortest(t *testing.T) {
 	delta := review.NewFSRS()
-	pos := time.Now().Add(-400 * 24 * time.Hour)
+	pos := testEpoch.Add(-400 * 24 * time.Hour)
 
 	answers := makeAnswers(pos, 12, 3, func(int, int) time.Duration { return 20 * time.Millisecond })
 
@@ -125,7 +125,7 @@ func TestAKindOfAnswerIsNeverCostedBelowTheShortest(t *testing.T) {
 // screen does not count as an hour of review.
 func TestAnAnswerNobodySatThroughIsCappedAtTheLongest(t *testing.T) {
 	delta := review.NewFSRS()
-	pos := time.Now().Add(-400 * 24 * time.Hour)
+	pos := testEpoch.Add(-400 * 24 * time.Hour)
 
 	// Every answer stayed on the screen for an hour, so the median of them is
 	// what one answer is capped at.
@@ -149,7 +149,7 @@ func TestAVaultContainingNoAnswerTimesIsProjectedAtTheDefault(t *testing.T) {
 // only the answers that carry a time determine a cost.
 func TestAnAnswerCarryingNoTimeReturnsNothingAboutItsKind(t *testing.T) {
 	delta := review.NewFSRS()
-	pos := time.Now().Add(-400 * 24 * time.Hour)
+	pos := testEpoch.Add(-400 * 24 * time.Hour)
 
 	// Twenty-four review cards answered three times each, at nine seconds an
 	// answer. Half the review cards were answered with no time recorded at all.

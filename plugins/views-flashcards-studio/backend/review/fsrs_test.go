@@ -17,7 +17,7 @@ import (
 // card is due.
 func TestTheBetterACardCameBackTheLongerItIsLeft(t *testing.T) {
 	delta := review.NewFSRS()
-	when := parseTime("2026-08-29T09:00:00Z")
+	when := parseTime(t, "2026-08-29T09:00:00Z")
 
 	// A card already in review, so the four ratings are distinguished by their effect
 	// on a scheduled card and not by the first learning steps.
@@ -38,7 +38,7 @@ func TestTheBetterACardCameBackTheLongerItIsLeft(t *testing.T) {
 // A card that did not come back at all is a lapse, and it is counted.
 func TestACardThatDidNotComeBackIsALapse(t *testing.T) {
 	delta := review.NewFSRS()
-	when := parseTime("2026-08-29T09:00:00Z")
+	when := parseTime(t, "2026-08-29T09:00:00Z")
 
 	learnt := delta.Next(delta.Next(review.Schedule{}, when, review.Good),
 		when.Add(10*24*time.Hour), review.Good)
@@ -58,7 +58,7 @@ func TestACardThatDidNotComeBackIsALapse(t *testing.T) {
 // An answer marks a card as reviewed, which distinguishes it from a new card.
 func TestFSRSNext_ReviewedCardIsNotNew(t *testing.T) {
 	delta := review.NewFSRS()
-	when := parseTime("2026-08-29T09:00:00Z")
+	when := parseTime(t, "2026-08-29T09:00:00Z")
 
 	if delta.Next(review.Schedule{}, when, review.Good).IsNew() {
 		t.Error("a card answered once is still new")
@@ -78,7 +78,7 @@ func TestFSRSNext_ReviewedCardIsNotNew(t *testing.T) {
 // place of a curve.
 func TestASchedulerAnswersForManyReviewCardsAtOnce(t *testing.T) {
 	delta := review.NewFSRS()
-	when := parseTime("2026-08-29T09:00:00Z")
+	when := parseTime(t, "2026-08-29T09:00:00Z")
 
 	// still putting into memory, and ones it has put into review.
 	cards := []review.Schedule{{}}
@@ -136,7 +136,7 @@ func TestASchedulerAnswersForManyReviewCardsAtOnce(t *testing.T) {
 // a review phase without one.
 func TestAReviewScheduleWithNoStabilityAnswersWithoutPoisoning(t *testing.T) {
 	delta := review.NewFSRS()
-	when := parseTime("2026-08-29T09:00:00Z")
+	when := parseTime(t, "2026-08-29T09:00:00Z")
 
 	corrupt := review.Schedule{
 		Last:      when.Add(-10 * 24 * time.Hour),

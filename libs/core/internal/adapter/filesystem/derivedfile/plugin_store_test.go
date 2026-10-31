@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -23,7 +22,7 @@ const pluginID = "md.numen.a"
 func openPluginStore(t *testing.T) (pluginport.PluginStore, string) {
 	t.Helper()
 	root := t.TempDir()
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
 		t.Fatal(err)
 	}
 	store, err := derivedfile.PluginStores{}.Open(domain.Vault{ID: "v", Path: root}, pluginID)

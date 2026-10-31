@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
@@ -21,7 +22,7 @@ func newDiscoveredHost(t *testing.T) *Host {
 	t.Helper()
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.Machine, "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -162,7 +163,7 @@ func TestACanceledCallerDoesNotCountAsAFailedActivation(t *testing.T) {
 	if _, err := host.EnsureActive(ctx, "org.example.sample"); err == nil {
 		t.Fatal("expected the activation to fail")
 	}
-	if err := host.supervisors["org.example.sample"].CheckActivationAllowed(time.Now()); err != nil {
+	if err := host.supervisors["org.example.sample"].CheckActivationAllowed(testsupport.Machine.Now()); err != nil {
 		t.Fatalf("a canceled caller put the plugin into backoff: %v", err)
 	}
 }

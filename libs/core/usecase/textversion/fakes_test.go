@@ -247,13 +247,18 @@ func (f *fakeProvider) getCreated() int {
 }
 
 // steppingClock is an instant a minute later at every reading.
-func steppingClock() func() time.Time {
-	var mu sync.Mutex
-	now := time.Date(2026, 3, 1, 9, 0, 0, 0, time.UTC)
-	return func() time.Time {
-		mu.Lock()
-		defer mu.Unlock()
-		now = now.Add(time.Minute)
-		return now
-	}
+func steppingClock() *minuteClock {
+	return &minuteClock{now: time.Date(2026, 3, 1, 9, 0, 0, 0, time.UTC)}
+}
+
+type minuteClock struct {
+	mu  sync.Mutex
+	now time.Time
+}
+
+func (c *minuteClock) Now() time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.now = c.now.Add(time.Minute)
+	return c.now
 }

@@ -14,7 +14,7 @@ func init() {
 }
 
 func TestShapeAndAlphabet(t *testing.T) {
-	id := ulid.New(time.Now())
+	id := ulid.New(time.Date(2026, time.August, 15, 12, 0, 0, 0, time.UTC))
 	if len(id) != 26 {
 		t.Fatalf("len = %d, want 26 (%s)", len(id), id)
 	}
@@ -40,7 +40,7 @@ func TestOrderMatchesTime(t *testing.T) {
 }
 
 func TestDistinctWithinTheSameMillisecond(t *testing.T) {
-	stamp := time.Now()
+	stamp := time.Date(2026, time.August, 15, 12, 0, 0, 0, time.UTC)
 	observed := map[string]bool{}
 	for range 1000 {
 		id := ulid.New(stamp)
@@ -52,7 +52,7 @@ func TestDistinctWithinTheSameMillisecond(t *testing.T) {
 }
 
 func TestValidRejectsNearMisses(t *testing.T) {
-	good := ulid.New(time.Now())
+	good := ulid.New(time.Date(2026, time.August, 15, 12, 0, 0, 0, time.UTC))
 	for _, bad := range []string{
 		"", good[:25], good + "0",
 		strings.Replace(good, string(good[10]), "I", 1),

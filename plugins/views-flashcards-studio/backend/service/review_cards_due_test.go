@@ -2,12 +2,14 @@ package service
 
 import (
 	"fmt"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
@@ -113,7 +115,7 @@ func TestTheDayTheCountsStandInIsTheReviewDay(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			handler.now = func() time.Time { return c.currentTime }
+			handler.now = clock.NewFake(c.currentTime)
 			if got := front(t, handler).Day; got != c.want {
 				t.Errorf("at %v the counts stand in %q, want %q", c.currentTime, got, c.want)
 			}
@@ -300,7 +302,7 @@ func benchAnswers(b *testing.B, handler *API, v domain.Vault, cards, days, perDa
 	b.Helper()
 	ctx := b.Context()
 
-	pos := time.Now().Add(-time.Duration(days) * 24 * time.Hour)
+	pos := vaulttest.Epoch.Add(-time.Duration(days) * 24 * time.Hour)
 	card := 0
 	for day := range days {
 		when := pos.Add(time.Duration(day) * 24 * time.Hour)

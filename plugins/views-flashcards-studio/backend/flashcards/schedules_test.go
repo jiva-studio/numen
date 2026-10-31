@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
@@ -24,7 +26,7 @@ func TestSchedulesAreTheSameWithNothingCached(t *testing.T) {
 	s := openVault(t, vault)
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
-	record := s.run(t, time.Now())
+	record := s.run(t, vaulttest.Epoch)
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -57,9 +59,9 @@ func TestAScheduleCacheIsFreshAcrossAReorderedListing(t *testing.T) {
 	s := openVault(t, vault)
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	for _, item := range []time.Time{
-		time.Now().AddDate(0, 0, -2),
-		time.Now().AddDate(0, 0, -1),
-		time.Now(),
+		vaulttest.Epoch.AddDate(0, 0, -2),
+		vaulttest.Epoch.AddDate(0, 0, -1),
+		vaulttest.Epoch,
 	} {
 		if _, err := s.run(t, item).Answer(t.Context(), on, review.Good, 0); err != nil {
 			t.Fatal(err)
@@ -97,7 +99,7 @@ func TestTheCacheIsSavedInOneOrder(t *testing.T) {
 	recognise := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	name := review.CardID{Card: "k7m2xq9fzp", Template: "Name it"}
 
-	record := s.run(t, time.Now())
+	record := s.run(t, vaulttest.Epoch)
 	if _, err := record.Answer(t.Context(), name, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -132,7 +134,7 @@ func TestACacheNothingCanReadIsWorkedOutAgain(t *testing.T) {
 	s := openVault(t, vault)
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
+	if _, err := s.run(t, vaulttest.Epoch).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 	want, err := s.schedules.Execute(t.Context(), s.vault)
@@ -328,7 +330,7 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	direct := flashcards.NewSchedules(
 		s.logs, review.NewFSRS(), today,
 		flashcards.NewListReviewCards(s.env.Ports.Readers, nil, nil),
-		flashcards.NewPresets(nil, nil, nil, nil, nil, today, time.Now),
+		flashcards.NewPresets(nil, nil, nil, nil, nil, today, vaulttest.NewClock()),
 	)
 	want, err := direct.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -703,7 +705,7 @@ type loaded struct {
 // a day and one run file to a day.
 func load(tb testing.TB, cards, days, perDay int) loaded {
 	tb.Helper()
-	return loadAt(tb, time.Now, cards, days, perDay)
+	return loadAt(tb, vaulttest.NewClock(), cards, days, perDay)
 }
 
 // loadAt is load with every request reading the time from now.
@@ -721,7 +723,7 @@ func loadAt(tb testing.TB, now ports.Clock, cards, days, perDay int) loaded {
 		s.presets,
 	)
 	schedules.Cache = countingKept{inner: s.env.Ports.Schedules("reviewCards"), on: on}
-	loadAnswers(tb, s, now(), cards, days, perDay)
+	loadAnswers(tb, s, now.Now(), cards, days, perDay)
 	reviewUseCase := flashcards.NewCountReviews(logs, schedules, today, now)
 	reviewUseCase.Cache = countingKept{inner: s.env.Ports.Schedules("days"), on: on}
 	return loaded{
@@ -871,7 +873,7 @@ func BenchmarkVault(b *testing.B) {
 		}
 	})
 
-	uncounted := flashcards.NewCountReviews(l.logs, l.schedules, today, time.Now)
+	uncounted := flashcards.NewCountReviews(l.logs, l.schedules, today, vaulttest.NewClock())
 	b.Run("HistoryUncounted", func(b *testing.B) {
 		for b.Loop() {
 			if _, err := uncounted.Execute(ctx, l.vault); err != nil {
@@ -963,11 +965,11 @@ func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
 	presets := flashcards.NewPresets(
 		s.env.Ports.Readers, s.env.Ports.Writers,
 		lookups{LinkQueries: s.links, looks: looks},
-		s.notes, s.scan, review.Day{}, time.Now,
+		s.notes, s.scan, review.Day{}, vaulttest.NewClock(),
 	)
 
 	schedules := flashcards.NewSchedules(s.logs, review.NewFSRS(), today, standings, presets)
-	counter := flashcards.NewCountCardsDue(standings, schedules, presets, today, func() time.Time { return saturday })
+	counter := flashcards.NewCountCardsDue(standings, schedules, presets, today, clock.NewFake(saturday))
 
 	if _, err := counter.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
@@ -997,10 +999,10 @@ func TestAPresetIsOpenedOncePerCall(t *testing.T) {
 	reads := map[string]int{}
 	presets := flashcards.NewPresets(
 		counting{VaultReaders: s.env.Ports.Readers, reads: reads},
-		s.env.Ports.Writers, s.links, s.notes, s.scan, review.Day{}, time.Now,
+		s.env.Ports.Writers, s.links, s.notes, s.scan, review.Day{}, vaulttest.NewClock(),
 	)
 	schedules := flashcards.NewSchedules(s.logs, review.NewFSRS(), today, s.standings, presets)
-	counter := flashcards.NewCountCardsDue(s.standings, schedules, presets, today, func() time.Time { return saturday })
+	counter := flashcards.NewCountCardsDue(s.standings, schedules, presets, today, clock.NewFake(saturday))
 
 	if _, err := counter.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
@@ -1025,7 +1027,7 @@ func TestTheAnswerLogIsReadOnce(t *testing.T) {
 		tallied{LogStores: s.logs, reads: reads},
 		review.NewFSRS(), today, s.standings, s.presets,
 	)
-	counter := flashcards.NewCountCardsDue(s.standings, schedules, s.presets, today, func() time.Time { return saturday })
+	counter := flashcards.NewCountCardsDue(s.standings, schedules, s.presets, today, clock.NewFake(saturday))
 
 	if _, err := counter.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)

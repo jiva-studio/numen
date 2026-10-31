@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/rjeczalik/notify"
 )
 
@@ -62,7 +63,7 @@ func feed(t *testing.T, raw chan notify.EventInfo, root string, from, notes int)
 // debouncing is determined by the burst and not by timing.
 func waitForQueue(t *testing.T, q *queue, is func() bool) {
 	t.Helper()
-	deadline := time.Now().Add(5 * time.Second)
+	deadline := testsupport.Machine.Now().Add(5 * time.Second)
 	for {
 		q.mu.Lock()
 		isDone := is()
@@ -70,7 +71,7 @@ func waitForQueue(t *testing.T, q *queue, is func() bool) {
 		if isDone {
 			return
 		}
-		if time.Now().After(deadline) {
+		if testsupport.Machine.Now().After(deadline) {
 			t.Fatal("the burst never reached the queue")
 		}
 		time.Sleep(time.Millisecond)

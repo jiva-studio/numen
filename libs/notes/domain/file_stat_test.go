@@ -57,7 +57,7 @@ func TestOneInstantInTwoZonesIsOneFile(t *testing.T) {
 // A stamp a clock handed out carries a monotonic reading, which `==` compares
 // and no round trip preserves.
 func TestAStampCarryingAMonotonicReadingIsTheSameFileWithoutIt(t *testing.T) {
-	stamp := time.Now()
+	stamp := <-time.After(0)
 	if stamp.Round(0) == stamp {
 		t.Skip("this clock hands out no monotonic reading")
 	}

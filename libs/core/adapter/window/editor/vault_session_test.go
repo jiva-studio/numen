@@ -115,10 +115,10 @@ func newListedVault(
 			t.Fatal(err)
 		}
 	}
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
 		t.Fatal(err)
 	}
-	v, err := vaults.NewAdd(cfg.VaultIdentity(), registry, time.Now).Execute(root, name)
+	v, err := vaults.NewAdd(cfg.VaultIdentity(), registry, testsupport.NewClock()).Execute(root, name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -758,10 +758,10 @@ func openInstallation(t *testing.T) *editor.Installation {
 		t.Fatal(err)
 	}
 	root := t.TempDir()
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
 		t.Fatal(err)
 	}
-	add := vaults.NewAdd(cfg.VaultIdentity(), registry, time.Now)
+	add := vaults.NewAdd(cfg.VaultIdentity(), registry, testsupport.NewClock())
 	if _, err := add.Execute(root, "one"); err != nil {
 		t.Fatal(err)
 	}
@@ -1130,7 +1130,7 @@ func TestAVaultAddedToAWindowActiveOnNothingIsShown(t *testing.T) {
 	); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
 		t.Fatal(err)
 	}
 

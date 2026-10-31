@@ -160,7 +160,7 @@ func levelNothing(context.Context, domain.Vault, []string) error { return nil }
 func openEditor(t *testing.T, notes map[string]string) *Services {
 	t.Helper()
 	writing := note.NewWrite(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, levelNothing, time.Now)
+		vaultreader.Readers{}, vaultwriter.VaultWriters{}, levelNothing, testsupport.NewClock())
 	read := note.NewRead(vaultreader.Readers{})
 	api := newBareServices()
 	api.Note.read, api.Note.write = &read, &writing
@@ -306,7 +306,7 @@ func TestJoinNote_ReportsConflictWhenNoteChanged(t *testing.T) {
 		}},
 		vaultwriter.VaultWriters{},
 		levelNothing,
-		time.Now,
+		testsupport.NewClock(),
 	)
 	api.Note.editLinks = &linking
 
@@ -353,7 +353,7 @@ func TestEditLoad(t *testing.T) {
 	testsupport.CloseAfter(t, db)
 
 	writing := note.NewWrite(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, levelNothing, time.Now)
+		vaultreader.Readers{}, vaultwriter.VaultWriters{}, levelNothing, testsupport.NewClock())
 	read := note.NewRead(vaultreader.Readers{})
 	api := createServices(&State{
 		ChangeEvents: newChangeBroadcaster(),
@@ -364,7 +364,7 @@ func TestEditLoad(t *testing.T) {
 	api.state.Indexing.Progress = db.Progress()
 	api.state.setVault(v)
 
-	startTime := time.Now()
+	startTime := testsupport.Machine.Now()
 	made := container.NewEditorAssembly(cfg, nil, db)
 	worker := newIndexWorker(made, api.state, nil, time.Hour, io.Discard)
 	_, wait := startIndexing(t.Context(), v, made, api.state, false, worker, worker.NewSession(), io.Discard)
@@ -375,31 +375,31 @@ func TestEditLoad(t *testing.T) {
 	if why := api.state.Error.Why(); why != "" {
 		t.Fatalf("the vault could not be read: %s", why)
 	}
-	t.Logf("read %d notes in %s", notes, time.Since(startTime).Round(time.Millisecond))
+	t.Logf("read %d notes in %s", notes, testsupport.Machine.Now().Sub(startTime).Round(time.Millisecond))
 
 	line, isDone := api.state.ChangeEvents.subscribe()
 	t.Cleanup(isDone)
 
 	const path = "01/note-000001.md"
-	body := "# Heat\n\nA line nobody wrote before, at " + strconv.FormatInt(time.Now().UnixNano(), 10) + ".\n"
+	body := "# Heat\n\nA line nobody wrote before, at " + strconv.FormatInt(testsupport.Machine.Now().UnixNano(), 10) + ".\n"
 
-	saving := time.Now()
+	saving := testsupport.Machine.Now()
 	if _, err := api.Note.write.Save(t.Context(), v, path, body, nil); err != nil {
 		t.Fatal(err)
 	}
-	wrote := time.Since(saving)
+	wrote := testsupport.Machine.Now().Sub(saving)
 
 	durationCh := make(chan time.Duration, 1)
 	go func() {
 		for what := range line {
 			for _, p := range what.paths {
 				if p == path {
-					durationCh <- time.Since(saving)
+					durationCh <- testsupport.Machine.Now().Sub(saving)
 					return
 				}
 			}
 			if what.shouldReload {
-				durationCh <- time.Since(saving)
+				durationCh <- testsupport.Machine.Now().Sub(saving)
 				return
 			}
 		}

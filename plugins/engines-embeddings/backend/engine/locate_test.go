@@ -161,7 +161,7 @@ func TestLocateCachedReturnsNewestSnapshotWithoutRevision(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	older := time.Now().Add(-time.Hour)
+	older := time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
 	if err := os.Chtimes(filepath.Join(cache, "snapshots", "old", "onnx", "model.onnx"), older, older); err != nil {
 		t.Fatal(err)
 	}

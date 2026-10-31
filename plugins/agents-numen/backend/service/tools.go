@@ -11,7 +11,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/modelcontextprotocol/go-sdk/mcp"
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // errPlainToken is a tool server the token would reach unencrypted.
@@ -23,10 +23,10 @@ var emptySchema = json.RawMessage(`{"type":"object","properties":{}}`)
 // toolbox is the vault's tool server as seen by one run, and the tools of it the
 // run may call. A toolbox with no session offers nothing.
 type toolbox struct {
-	session *mcp.ClientSession
+	session *sdk.ClientSession
 	tools   []functionTool
 	// meta is the context of the task, sent as the `_meta` of every call.
-	meta mcp.Meta
+	meta sdk.Meta
 }
 
 // bearer presents the token on every request to the tool server.
@@ -52,7 +52,7 @@ func openToolbox(ctx context.Context, task *agentrun.AskAgentRequest) (*toolbox,
 	if address, err := neturl.Parse(url); err != nil || !isPrivate(address) {
 		return nil, errPlainToken
 	}
-	transport := &mcp.StreamableClientTransport{
+	transport := &sdk.StreamableClientTransport{
 		Endpoint: url,
 		HTTPClient: &http.Client{
 			Transport:     bearer{token: task.GetToolsToken(), base: http.DefaultTransport},
@@ -65,7 +65,7 @@ func openToolbox(ctx context.Context, task *agentrun.AskAgentRequest) (*toolbox,
 		OAuthHandler:         nil,
 		MaxEventSize:         0,
 	}
-	client := mcp.NewClient(&mcp.Implementation{
+	client := sdk.NewClient(&sdk.Implementation{
 		Name: "numen-agent", Title: "", Description: "", Version: "1.0.0", WebsiteURL: "", Icons: nil,
 	}, nil)
 	session, err := client.Connect(ctx, transport, nil)
@@ -86,7 +86,7 @@ func openToolbox(ctx context.Context, task *agentrun.AskAgentRequest) (*toolbox,
 }
 
 // readFunctionTool is the tool as the chat API is offered it.
-func readFunctionTool(tool *mcp.Tool) functionTool {
+func readFunctionTool(tool *sdk.Tool) functionTool {
 	var proposed functionTool
 	proposed.Type = "function"
 	proposed.Function.Name = tool.Name
@@ -113,7 +113,7 @@ func (b *toolbox) call(ctx context.Context, name, arguments string) string {
 	if !json.Valid(args) {
 		return "error: the arguments are not JSON"
 	}
-	result, err := b.session.CallTool(ctx, &mcp.CallToolParams{
+	result, err := b.session.CallTool(ctx, &sdk.CallToolParams{
 		Meta: b.meta, Name: name, Arguments: args, InputResponses: nil, RequestState: "",
 	})
 	if err != nil {
@@ -127,10 +127,10 @@ func (b *toolbox) call(ctx context.Context, name, arguments string) string {
 }
 
 // readResultText is the text of what a tool returned, each content written out on its own line.
-func readResultText(result *mcp.CallToolResult) string {
+func readResultText(result *sdk.CallToolResult) string {
 	parts := make([]string, 0, len(result.Content))
 	for _, content := range result.Content {
-		if text, ok := content.(*mcp.TextContent); ok {
+		if text, ok := content.(*sdk.TextContent); ok {
 			parts = append(parts, text.Text)
 			continue
 		}
@@ -155,11 +155,11 @@ func (b *toolbox) close() error {
 }
 
 // readMeta is the context of a task as MCP `_meta`, nil for a task with none.
-func readMeta(values map[string]string) mcp.Meta {
+func readMeta(values map[string]string) sdk.Meta {
 	if len(values) == 0 {
 		return nil
 	}
-	meta := make(mcp.Meta, len(values))
+	meta := make(sdk.Meta, len(values))
 	for key, value := range values {
 		meta[key] = value
 	}

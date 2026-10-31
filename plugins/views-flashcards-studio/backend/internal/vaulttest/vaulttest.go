@@ -8,10 +8,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/hostports"
 )
+
+// Epoch is the moment that the clock of a test reports.
+var Epoch = time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)
+
+// NewClock creates a clock that reports Epoch until it is moved.
+func NewClock() *clock.Fake {
+	return clock.NewFake(Epoch)
+}
 
 // Queries answers queries about a vault's notes, links and parse problems from
 // the index.

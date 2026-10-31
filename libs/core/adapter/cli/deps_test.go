@@ -6,7 +6,6 @@ import (
 	"io"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/adapter/index"
@@ -36,7 +35,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 				Readers:  vaultreader.Readers{Options: options},
 				Identity: vaultreader.Identity{Options: options},
 				Trash:    s.bin,
-				Now:      time.Now,
+				Now:      testsupport.NewClock(),
 				Rows: func(ctx context.Context) (cli.VaultRows, error) {
 					db, err := index.Open(ctx, where.Index)
 					if err != nil {

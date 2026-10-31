@@ -40,7 +40,7 @@ func (r *eventReader) handle(rawMap map[string]any) {
 
 	if thinking, ok := rawMap["thinking"].(string); ok && thinking != "" {
 		r.reader.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_ModelStarted{
+			Step: &agentrun.AskAgentResponseModelStarted{
 				ModelStarted: &agentrun.ModelStarted{},
 			},
 		})
@@ -49,7 +49,7 @@ func (r *eventReader) handle(rawMap map[string]any) {
 
 	if content, ok := rawMap["content"].(string); ok && content != "" {
 		r.reader.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_Text{
+			Step: &agentrun.AskAgentResponseText{
 				Text: content,
 			},
 		})
@@ -72,7 +72,7 @@ func (r *eventReader) handleStreamEvent(rawMap map[string]any) {
 	case "content_block_stop":
 		if r.currentTool != "" {
 			r.reader.Send(&agentrun.AskAgentResponse{
-				Step: &agentrun.AskAgentResponse_ToolCall{
+				Step: &agentrun.AskAgentResponseToolCall{
 					ToolCall: &agentrun.ToolCall{
 						Tool:   r.currentTool,
 						About:  r.currentArgs.String(),
@@ -110,7 +110,7 @@ func (r *eventReader) continueBlock(evObj map[string]any) {
 	}
 	if text, ok := delta["text"].(string); ok && text != "" {
 		r.reader.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_Text{
+			Step: &agentrun.AskAgentResponseText{
 				Text: text,
 			},
 		})
@@ -136,7 +136,7 @@ func (r *eventReader) handleToolCalls(rawMap map[string]any) {
 			args = nil
 		}
 		r.reader.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_ToolCall{
+			Step: &agentrun.AskAgentResponseToolCall{
 				ToolCall: &agentrun.ToolCall{
 					Tool:   name,
 					About:  string(args),
@@ -155,7 +155,7 @@ func (r *eventReader) handleStepUpdate(rawMap map[string]any) {
 	}
 	if text, ok := delta["text"].(string); ok && text != "" {
 		r.reader.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_Text{
+			Step: &agentrun.AskAgentResponseText{
 				Text: text,
 			},
 		})
@@ -165,14 +165,14 @@ func (r *eventReader) handleStepUpdate(rawMap map[string]any) {
 func (r *eventReader) handleResult(rawMap map[string]any) {
 	if text, ok := rawMap["result"].(string); ok && text != "" {
 		r.reader.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_Text{
+			Step: &agentrun.AskAgentResponseText{
 				Text: text,
 			},
 		})
 	}
 	if reason, ok := rawMap["stopped"].(string); ok && reason != "" {
 		r.reader.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_Stopped{
+			Step: &agentrun.AskAgentResponseStopped{
 				Stopped: reason,
 			},
 		})
@@ -206,7 +206,7 @@ func (r *eventReader) handleCliStep(step map[string]any) {
 		return
 	}
 	r.isTextStreamed = true
-	r.reader.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: text}})
+	r.reader.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseText{Text: text}})
 }
 
 // handleCliResult emits the response of a run that streamed no text, and stops
@@ -221,10 +221,10 @@ func (r *eventReader) handleCliResult(result map[string]any) {
 		if reason == "" {
 			reason = "the run ended with status " + status
 		}
-		r.reader.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Stopped{Stopped: reason}})
+		r.reader.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseStopped{Stopped: reason}})
 		return
 	}
 	if response := getString(result, "response"); response != "" && !r.isTextStreamed {
-		r.reader.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: response}})
+		r.reader.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseText{Text: response}})
 	}
 }

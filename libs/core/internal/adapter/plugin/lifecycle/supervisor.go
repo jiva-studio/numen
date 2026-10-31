@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/security"
+	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
@@ -69,11 +70,13 @@ type Supervisor struct {
 	onError           func(error)
 	monitorStopCh     chan struct{}
 	rssReader         func(pid int) (uint64, error)
+	clock             machineport.Clock
 }
 
-// New creates an idle supervisor for a plugin.
-func New() *Supervisor {
+// New creates an idle supervisor for a plugin that reads the time from clock.
+func New(clock machineport.Clock) *Supervisor {
 	return &Supervisor{
+		clock:             clock,
 		mu:                sync.Mutex{},
 		state:             StateDormant,
 		process:           nil,
@@ -552,7 +555,7 @@ func (s *Supervisor) inspectMemoryExceeded(proc *os.Process) (func(context.Conte
 }
 
 func (s *Supervisor) evictForMemory(ctx context.Context, rpc func(context.Context) error, gracePeriod time.Duration, onExceeded func()) {
-	s.RecordActivationFailure(time.Now(), s.activationPolicy, fmt.Errorf("%w: %d bytes", ErrMemoryExceeded, s.memoryLimitBytes))
+	s.RecordActivationFailure(s.clock.Now(), s.activationPolicy, fmt.Errorf("%w: %d bytes", ErrMemoryExceeded, s.memoryLimitBytes))
 	if onExceeded != nil {
 		onExceeded()
 	}

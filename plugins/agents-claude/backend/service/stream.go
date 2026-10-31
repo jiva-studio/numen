@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
-	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/clock"
 )
 
 // serverName is what the vault's tool server calls itself, and the prefix its tools arrive under.
@@ -23,10 +22,15 @@ const reportChunk = 200
 // previewInterval is the shortest time between two reports of a change being written.
 const previewInterval = 50 * time.Millisecond
 
+// timeSource gets the current time.
+type timeSource interface {
+	Now() time.Time
+}
+
 type streamParser struct {
 	send         func(*agentrun.AskAgentResponse) error
 	words        map[string]toolcall.Declaration
-	now          func() time.Time
+	clock        timeSource
 	last         time.Time
 	record       func(string)
 	isStreaming  bool
@@ -116,9 +120,10 @@ func parseStream(
 	send func(*agentrun.AskAgentResponse) error,
 	words map[string]toolcall.Declaration,
 	record func(string),
+	clock timeSource,
 	expectsVault bool,
 ) string {
-	return parseStreamWithClock(ctx, r, send, words, record, clock.Now, expectsVault)
+	return parseStreamWithClock(ctx, r, send, words, record, clock, expectsVault)
 }
 
 // parseStreamWithClock is parseStream with the clock that paces the reports of a change.
@@ -128,7 +133,7 @@ func parseStreamWithClock(
 	send func(*agentrun.AskAgentResponse) error,
 	words map[string]toolcall.Declaration,
 	record func(string),
-	now func() time.Time,
+	clock timeSource,
 	expectsVault ...bool,
 ) string {
 	hasVault := true
@@ -138,7 +143,7 @@ func parseStreamWithClock(
 	p := &streamParser{
 		send:         send,
 		words:        words,
-		now:          now,
+		clock:        clock,
 		record:       record,
 		expectsVault: hasVault,
 		last:         time.Time{},
@@ -179,7 +184,7 @@ func (p *streamParser) parseLine(ctx context.Context, line string) {
 	case "user":
 		if response.hasToolAnswer() {
 			p.emit(&agentrun.AskAgentResponse{
-				Step: &agentrun.AskAgentResponse_ToolFinished{
+				Step: &agentrun.AskAgentResponseToolFinished{
 					ToolFinished: &agentrun.ToolFinished{},
 				},
 			})
@@ -207,7 +212,7 @@ func (p *streamParser) parseSystemEvent(response event) {
 	case "status":
 		if response.Status == "requesting" {
 			p.emit(&agentrun.AskAgentResponse{
-				Step: &agentrun.AskAgentResponse_ModelStarted{
+				Step: &agentrun.AskAgentResponseModelStarted{
 					ModelStarted: &agentrun.ModelStarted{},
 				},
 			})
@@ -235,7 +240,7 @@ func (p *streamParser) parseStreamEvent(_ context.Context, ev streamEvent) {
 			}
 			p.isStreaming = true
 			p.emit(&agentrun.AskAgentResponse{
-				Step: &agentrun.AskAgentResponse_Text{
+				Step: &agentrun.AskAgentResponseText{
 					Text: ev.Delta.Text,
 				},
 			})
@@ -280,7 +285,7 @@ func (p *streamParser) parseAssistantMessage(_ context.Context, response event) 
 		case "text":
 			if block.Text != "" {
 				p.emit(&agentrun.AskAgentResponse{
-					Step: &agentrun.AskAgentResponse_Text{
+					Step: &agentrun.AskAgentResponseText{
 						Text: block.Text,
 					},
 				})
@@ -311,7 +316,7 @@ func stripServerPrefix(tool string) string {
 
 func (p *streamParser) buildCallStep(callID, tool, args string) *agentrun.AskAgentResponse {
 	call := toolcall.Describe(p.words, stripServerPrefix(tool), callID, args)
-	return &agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_ToolCall{ToolCall: call}}
+	return &agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseToolCall{ToolCall: call}}
 }
 
 // reportEdit reports the change a call is writing, once the text that replaces the match has
@@ -329,12 +334,12 @@ func (p *streamParser) reportEdit() {
 	if path == "" || match == "" {
 		return
 	}
-	now := p.now()
+	now := p.clock.Now()
 	if now.Sub(p.last) < previewInterval {
 		return
 	}
 	p.last = now
-	p.emit(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_EditProgress{
+	p.emit(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseEditProgress{
 		EditProgress: &agentrun.EditProgress{
 			Call:  p.callID,
 			Path:  path,

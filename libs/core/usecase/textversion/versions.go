@@ -133,7 +133,7 @@ func (u *Versions) saveVersion(ctx context.Context, v domain.Vault, version doma
 		return domain.TextVersion{}, fmt.Errorf("%w: file %s of %s: %w", textport.ErrInvalidVersion, version.File, version.PluginID, err)
 	}
 	version.Hash = file.Hash
-	version.CreateTime = u.clock()
+	version.CreateTime = u.clock.Now()
 	if i := indexOf(versions, version.GetID()); i >= 0 {
 		version.CreateTime = versions[i].CreateTime
 	}
@@ -249,7 +249,7 @@ func (u *Versions) CreateEdit(ctx context.Context, v domain.Vault, edit TextEdit
 	if err != nil {
 		return domain.TextVersion{}, err
 	}
-	key := editPrefix + strconv.FormatInt(u.clock().UnixNano(), 36)
+	key := editPrefix + strconv.FormatInt(u.clock.Now().UnixNano(), 36)
 	name := key + fileExtension
 	if _, err := files.WriteTextFile(ctx, edit.PluginID, name, edit.Segments); err != nil {
 		return domain.TextVersion{}, fmt.Errorf("write edit of %s: %w", edit.Path, err)

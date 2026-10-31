@@ -28,8 +28,10 @@ var (
 	ErrLockedByAnother = errors.New("the file is held by another program")
 )
 
-// Clock is what time it is. A use case that takes none has none.
-type Clock func() time.Time
+// Clock gets what time it is. A use case that takes none has none.
+type Clock interface {
+	Now() time.Time
+}
 
 // VaultReader is what a use case reads of one vault's files.
 type VaultReader interface {

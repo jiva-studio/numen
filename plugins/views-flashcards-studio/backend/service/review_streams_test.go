@@ -17,9 +17,9 @@ import (
 
 var errPageGone = errors.New("the page is gone")
 
-// fixedContext returns a function that always returns ctx.
-func fixedContext(ctx context.Context) func() context.Context {
-	return func() context.Context { return ctx }
+// fixedContext returns a function that returns ctx whatever context it is given.
+func fixedContext(ctx context.Context) func(context.Context) context.Context {
+	return func(context.Context) context.Context { return ctx }
 }
 
 // breaking serves a stream whose writes fail where `fails` returns true, and
@@ -27,7 +27,7 @@ func fixedContext(ctx context.Context) func() context.Context {
 // getContext returns.
 type breaking struct {
 	fails      func(n int, msg any) bool
-	getContext func() context.Context
+	getContext func(parent context.Context) context.Context
 	returned   chan error
 }
 
@@ -47,11 +47,11 @@ func newBreakingClient(_ *testing.T, handler *API, b breaking) breakingClient {
 // breakStream runs the stream method under the breaking context, counting each
 // message sent and failing the ones b selects.
 func breakStream[Req, Res any](
-	c breakingClient, req *Req, method func(context.Context, *Req, func(*Res) error) error,
+	ctx context.Context, c breakingClient, req *Req, method func(context.Context, *Req, func(*Res) error) error,
 ) (*messageStream[Res], error) {
-	return openStream(context.WithoutCancel(c.b.getContext()), req, func(_ context.Context, req *Req, send func(*Res) error) error {
+	return openStream(context.WithoutCancel(ctx), req, func(streamCtx context.Context, req *Req, send func(*Res) error) error {
 		count := 0
-		err := method(c.b.getContext(), req, func(res *Res) error {
+		err := method(c.b.getContext(streamCtx), req, func(res *Res) error {
 			count++
 			if c.b.fails(count, res) {
 				return errPageGone
@@ -65,16 +65,16 @@ func breakStream[Req, Res any](
 
 // WatchReloads opens the reload stream through the breaking writes.
 func (c breakingClient) WatchReloads(
-	_ context.Context, req *api.WatchReloadsRequest,
+	ctx context.Context, req *api.WatchReloadsRequest,
 ) (*messageStream[api.WatchReloadsResponse], error) {
-	return breakStream(c, req, c.handler.WatchReloads)
+	return breakStream(ctx, c, req, c.handler.WatchReloads)
 }
 
 // WatchCardsDue opens the count stream through the breaking writes.
 func (c breakingClient) WatchCardsDue(
-	_ context.Context, req *api.WatchCardsDueRequest,
+	ctx context.Context, req *api.WatchCardsDueRequest,
 ) (*messageStream[api.WatchCardsDueResponse], error) {
-	return breakStream(c, req, c.handler.WatchCardsDue)
+	return breakStream(ctx, c, req, c.handler.WatchCardsDue)
 }
 
 // awaitReturn is what the handler returned.
@@ -96,7 +96,7 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 	cancel()
 
 	for name, one := range map[string]struct {
-		getContext func() context.Context
+		getContext func(parent context.Context) context.Context
 		fails      func(n int, msg any) bool
 		moved      bool
 	}{
@@ -106,7 +106,8 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 		"repeating": {fixedContext(t.Context()), func(n int, _ any) bool { return n > 1 }, false},
 		// Something changed, and the page is gone by the time it is sent.
 		"reloading": {fixedContext(t.Context()), func(_ int, msg any) bool {
-			return msg.(*api.WatchReloadsResponse).Reload
+			reloads, ok := msg.(*api.WatchReloadsResponse)
+			return ok && reloads.Reload
 		}, true},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -140,7 +141,8 @@ func TestWatchCardsDue_SaveFailureEndsStream(t *testing.T) {
 		"listing": func(n int, _ any) bool { return n == 1 },
 		// A count has come in.
 		"counting": func(_ int, msg any) bool {
-			return msg.(*api.WatchCardsDueResponse).Counted != nil
+			counts, ok := msg.(*api.WatchCardsDueResponse)
+			return ok && counts.Counted != nil
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -363,7 +365,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	returned := make(chan error, 1)
 	firstMessage := make(chan struct{}, 1)
 	go func() {
-		returned <- handler.WatchReloads(context.Background(), &api.WatchReloadsRequest{},
+		returned <- handler.WatchReloads(t.Context(), &api.WatchReloadsRequest{},
 			func(*api.WatchReloadsResponse) error {
 				select {
 				case firstMessage <- struct{}{}:

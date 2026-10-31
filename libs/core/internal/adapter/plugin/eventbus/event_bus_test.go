@@ -7,10 +7,14 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 )
 
+var realClock clock.System
+
 func TestEventBusDebounceTyping(t *testing.T) {
-	bus := New(nil, 50*time.Millisecond, 200*time.Millisecond)
+	bus := New(nil, realClock, 50*time.Millisecond, 200*time.Millisecond)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -37,7 +41,7 @@ func TestEventBusDebounceTyping(t *testing.T) {
 }
 
 func TestEventBusThrottle(t *testing.T) {
-	bus := New(nil, 40*time.Millisecond, 100*time.Millisecond)
+	bus := New(nil, realClock, 40*time.Millisecond, 100*time.Millisecond)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -51,8 +55,8 @@ func TestEventBusThrottle(t *testing.T) {
 	})
 	defer unsub()
 
-	start := time.Now()
-	for time.Since(start) < 250*time.Millisecond {
+	start := realClock.Now()
+	for realClock.Now().Sub(start) < 250*time.Millisecond {
 		bus.Publish("onVaultModify")
 		time.Sleep(10 * time.Millisecond)
 	}
@@ -66,18 +70,18 @@ func TestEventBusThrottle(t *testing.T) {
 }
 
 func TestEventBusNonBlocking(t *testing.T) {
-	bus := New(nil, 50*time.Millisecond, 200*time.Millisecond)
+	bus := New(nil, realClock, 50*time.Millisecond, 200*time.Millisecond)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
 		}
 	}()
 
-	start := time.Now()
+	start := realClock.Now()
 	for i := 0; i < 100; i++ {
 		bus.Publish("onTyping")
 	}
-	elapsed := time.Since(start)
+	elapsed := realClock.Now().Sub(start)
 
 	if elapsed > 50*time.Millisecond {
 		t.Fatalf("Publish blocked the caller for %v", elapsed)
@@ -85,7 +89,7 @@ func TestEventBusNonBlocking(t *testing.T) {
 }
 
 func TestEventBusFlush(t *testing.T) {
-	bus := New(nil, 500*time.Millisecond, 1000*time.Millisecond)
+	bus := New(nil, realClock, 500*time.Millisecond, 1000*time.Millisecond)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -116,7 +120,7 @@ func TestEventBusFlush(t *testing.T) {
 }
 
 func TestEventBusUnsubscribe(t *testing.T) {
-	bus := New(nil, 10*time.Millisecond, 50*time.Millisecond)
+	bus := New(nil, realClock, 10*time.Millisecond, 50*time.Millisecond)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -167,7 +171,7 @@ func newMockScheduler(start time.Time) *mockScheduler {
 	}
 }
 
-func (s *mockScheduler) getClock() time.Time {
+func (s *mockScheduler) Now() time.Time {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.current
@@ -212,8 +216,7 @@ func (s *mockScheduler) advance(d time.Duration) {
 
 func TestEventBusDeterministicDebounce(t *testing.T) {
 	sched := newMockScheduler(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC))
-	bus := New(nil, 50*time.Millisecond, 200*time.Millisecond,
-		WithClock(sched.getClock),
+	bus := New(nil, sched, 50*time.Millisecond, 200*time.Millisecond,
 		WithDelay(sched.scheduleDelay),
 	)
 	defer func() {
@@ -246,7 +249,7 @@ func TestEventBusDeterministicDebounce(t *testing.T) {
 }
 
 func TestEventBusConfigurableKeyExtractor(t *testing.T) {
-	bus := New(nil, 500*time.Millisecond, 1000*time.Millisecond,
+	bus := New(nil, realClock, 500*time.Millisecond, 1000*time.Millisecond,
 		WithKeyExtractor(func(event string) string {
 			if strings.HasPrefix(event, "customGroup:") {
 				return "customGroup"
@@ -284,7 +287,7 @@ func TestEventBusConfigurableKeyExtractor(t *testing.T) {
 }
 
 func TestEventBusDebounceRule(t *testing.T) {
-	bus := New(nil, 500*time.Millisecond, 1000*time.Millisecond,
+	bus := New(nil, realClock, 500*time.Millisecond, 1000*time.Millisecond,
 		WithDebounceRule(func(event string) (string, bool) {
 			if strings.HasPrefix(event, "ruleA:") {
 				return "ruleA-shared", true
@@ -325,7 +328,7 @@ func TestEventBusErrorHandling(t *testing.T) {
 	expectedErr := context.DeadlineExceeded
 	var asyncErr atomic.Pointer[error]
 
-	bus := New(nil, 10*time.Millisecond, 50*time.Millisecond,
+	bus := New(nil, realClock, 10*time.Millisecond, 50*time.Millisecond,
 		WithErrorHandler(func(err error) {
 			asyncErr.Store(&err)
 		}),

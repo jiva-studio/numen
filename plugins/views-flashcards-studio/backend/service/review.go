@@ -67,7 +67,7 @@ func (s *sessions) getRun(vault domain.VaultID, name string) (*flashcards.LogWri
 
 // person's session is on.
 func (h *reviewHandler) openRun(ctx context.Context, v domain.Vault) (*flashcards.LogWriter, error) {
-	run, err := h.scenarios().flash.Log.Open(ctx, v, h.now())
+	run, err := h.scenarios().flash.Log.Open(ctx, v, h.now.Now())
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (h *reviewHandler) WatchCardsDue(
 	}
 	// The day these counts stand in, which is the day a goal is weighed against.
 	createResponse := func() *api.WatchCardsDueResponse {
-		return &api.WatchCardsDueResponse{Vaults: items, Day: h.scenarios().day.GetName(h.now()), Counted: nil}
+		return &api.WatchCardsDueResponse{Vaults: items, Day: h.scenarios().day.GetName(h.now.Now()), Counted: nil}
 	}
 	if err := send(createResponse()); err != nil {
 		return err

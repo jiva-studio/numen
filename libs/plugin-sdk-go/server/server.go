@@ -162,6 +162,9 @@ type Server struct {
 	closeOnce sync.Once
 	closers   []func()
 
+	mountMu     sync.Mutex
+	mountErrors []error
+
 	lifecycle   *LifecycleServer
 	interceptor *AuthInterceptor
 	mux         *http.ServeMux
@@ -185,6 +188,10 @@ func NewLinkedHandler(vars map[string]string, mount func(*Server) error) (http.H
 	}
 	s := newServer(0, token, nil, true)
 	if err := mount(s); err != nil {
+		s.Close()
+		return nil, err
+	}
+	if err := s.getMountError(); err != nil {
 		s.Close()
 		return nil, err
 	}
@@ -257,6 +264,21 @@ func (s *Server) Close() {
 			fn()
 		}
 	})
+}
+
+// addMountError records an error of mounting a service. Serve and NewLinkedHandler return the
+// recorded errors.
+func (s *Server) addMountError(err error) {
+	s.mountMu.Lock()
+	defer s.mountMu.Unlock()
+	s.mountErrors = append(s.mountErrors, err)
+}
+
+// getMountError returns the errors recorded by mounting, joined, or nil when there are none.
+func (s *Server) getMountError() error {
+	s.mountMu.Lock()
+	defer s.mountMu.Unlock()
+	return errors.Join(s.mountErrors...)
 }
 
 // Register mounts a service handler on the server multiplexer.
@@ -343,6 +365,9 @@ func (s *Server) Serve() error {
 func (s *Server) ServeContext(ctx context.Context) (err error) {
 	defer s.Close()
 
+	if err := s.getMountError(); err != nil {
+		return err
+	}
 	if err := s.authenticate(); err != nil {
 		return err
 	}

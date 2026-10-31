@@ -101,8 +101,8 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 
 	reviewCard := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	status := review.OrderAnswers([]review.Answer{
-		makeAnswer("01A", reviewCard.Card, reviewCard.Template, "2026-10-10T08:00:00Z", review.Good),
-		makeAnswer("01B", reviewCard.Card, reviewCard.Template, "2026-10-13T08:00:00Z", review.Good),
+		makeAnswer(t, "01A", reviewCard.Card, reviewCard.Template, "2026-10-10T08:00:00Z", review.Good),
+		makeAnswer(t, "01B", reviewCard.Card, reviewCard.Template, "2026-10-13T08:00:00Z", review.Good),
 	}).Replay(day, review.ScheduleBy(delta))[reviewCard]
 
 	// The answer is given ten days before the night the clock goes back, so the day

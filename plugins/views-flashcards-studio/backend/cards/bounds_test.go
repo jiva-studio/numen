@@ -3,7 +3,6 @@ package cards_test
 import (
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
@@ -35,14 +34,14 @@ func newBoundedRenameField(t *testing.T, vs vaulted, maxDecks int) cards.RenameF
 	t.Helper()
 	return cards.NewRenameField(
 		vs.ports.Readers, vs.ports.Writers,
-		vs.queries, vs.queries, vs.index(t), time.Now, maxDecks,
+		vs.queries, vs.queries, vs.index(t), vaulttest.NewClock(), maxDecks,
 	)
 }
 
 func TestACardModelIsMadeWithItsTemplatesLaidDown(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
-	u := cards.NewCreate(env.Ports.Writers, nil, time.Now)
+	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock())
 
 	made, err := u.CardModel(t.Context(), v, cards.New{
 		Title: "Bird", Fields: []string{"Name", "Call"},
@@ -60,7 +59,7 @@ func TestACardModelIsMadeWithItsTemplatesLaidDown(t *testing.T) {
 func TestACardModelWithTemplatesLargerThanANoteIsRefused(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
-	u := cards.NewCreate(env.Ports.Writers, nil, time.Now)
+	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock())
 
 	_, err := u.CardModel(t.Context(), v, cards.New{
 		Title: "Bird", Fields: []string{"Name"},

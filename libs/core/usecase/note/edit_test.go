@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
@@ -16,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
@@ -98,7 +98,7 @@ func (c changing) overwrite(t *testing.T, path, content string) {
 func TestAnEditNeedsNoIndexToLeaveTheNoteSaved(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
-	edit := note.NewEdit(vaultreader.Readers{}, vaultwriter.VaultWriters{}, nil, time.Now)
+	edit := note.NewEdit(vaultreader.Readers{}, vaultwriter.VaultWriters{}, nil, testsupport.NewClock())
 
 	content, err := edit.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
 	if err != nil {
@@ -129,7 +129,7 @@ func TestAnEditThatCannotReachTheVaultChangesNothing(t *testing.T) {
 			t.Parallel()
 			c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 
-			content, err := note.NewEdit(tc.readers, tc.writers, c.index, time.Now).
+			content, err := note.NewEdit(tc.readers, tc.writers, c.index, testsupport.NewClock()).
 				Apply(t.Context(), c.vault, "Heat.md", titleHeat)
 
 			if !errors.Is(err, errDiskGone) {
@@ -171,7 +171,7 @@ func TestEdit_ReadsFileOnlyWhenFingerprintRequired(t *testing.T) {
 			request := 0
 			edit := note.NewEdit(
 				watchedReaders{inner: vaultreader.Readers{}, stat: func(string) { request++ }},
-				vaultwriter.VaultWriters{}, c.index, time.Now)
+				vaultwriter.VaultWriters{}, c.index, testsupport.NewClock())
 			if tc.existing {
 				edit.FileStat = current.FileStat
 			}
@@ -198,7 +198,7 @@ func TestEdit_NoFingerprintChecksAgainstLatestRead(t *testing.T) {
 	theirs := "# Heat\n\nSaved in the meantime, and longer.\n"
 	edit := note.NewEdit(
 		watchedReaders{inner: vaultreader.Readers{}, read: func(string) { c.overwrite(t, "Heat.md", theirs) }},
-		vaultwriter.VaultWriters{}, c.index, time.Now)
+		vaultwriter.VaultWriters{}, c.index, testsupport.NewClock())
 
 	_, err := edit.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
 
@@ -223,7 +223,7 @@ func TestAnEditOfANoteThatCannotBeLookedAtIsRefused(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
-			edit := note.NewEdit(brokenReaders{stat: tc.stat}, vaultwriter.VaultWriters{}, c.index, time.Now)
+			edit := note.NewEdit(brokenReaders{stat: tc.stat}, vaultwriter.VaultWriters{}, c.index, testsupport.NewClock())
 
 			_, err := edit.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
 
@@ -258,7 +258,7 @@ func TestAnEditOfANoteTheVaultDoesNotHoldMakesNothing(t *testing.T) {
 }
 
 func (c changing) editWith(readers vaultport.VaultReaders, writers vaultport.VaultWriters) note.Edit {
-	return note.NewEdit(readers, writers, c.index, time.Now)
+	return note.NewEdit(readers, writers, c.index, testsupport.NewClock())
 }
 
 // A caller writing over what is there makes the note when it is missing, and

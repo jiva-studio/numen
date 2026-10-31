@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache/internal/adapter/clock"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 )
 
 // Option configures a Cache.
@@ -25,7 +25,7 @@ type config struct {
 	timeout        time.Duration
 	isAsync        bool
 	isDiskEnabled  bool
-	now            func() time.Time
+	clock          Clock
 	onError        func(error)
 }
 
@@ -69,9 +69,14 @@ func WithDisk(isEnabled bool) Option {
 	return func(c *config) { c.isDiskEnabled = isEnabled }
 }
 
+// Clock gets the current time.
+type Clock interface {
+	Now() time.Time
+}
+
 // WithClock sets the clock used for expiration and failure backoff.
-func WithClock(now func() time.Time) Option {
-	return func(c *config) { c.now = now }
+func WithClock(source Clock) Option {
+	return func(c *config) { c.clock = source }
 }
 
 type entry[V any] struct {
@@ -97,7 +102,7 @@ type Cache[V any] struct {
 	timeout        time.Duration
 	isAsync        bool
 	isDiskEnabled  bool
-	now            func() time.Time
+	clock          Clock
 	onError        func(error)
 	entries        map[string]entry[V]
 	failed         map[string]bool
@@ -107,11 +112,14 @@ type Cache[V any] struct {
 
 // New creates a Cache named name with the given options.
 func New[V any](name string, opts ...Option) *Cache[V] {
-	var cfg config
+	cfg := config{clock: clock.System{}}
 	for _, opt := range opts {
 		if opt != nil {
 			opt(&cfg)
 		}
+	}
+	if cfg.clock == nil {
+		cfg.clock = clock.System{}
 	}
 	return &Cache[V]{
 		name:           name,
@@ -122,7 +130,7 @@ func New[V any](name string, opts ...Option) *Cache[V] {
 		timeout:        cfg.timeout,
 		isAsync:        cfg.isAsync,
 		isDiskEnabled:  cfg.isDiskEnabled,
-		now:            cfg.now,
+		clock:          cfg.clock,
 		onError:        cfg.onError,
 		entries:        make(map[string]entry[V]),
 		failed:         make(map[string]bool),
@@ -139,9 +147,9 @@ func (c *Cache[V]) SetAsync(isAsync bool) {
 }
 
 // SetClock sets the clock used for expiration and failure backoff.
-func (c *Cache[V]) SetClock(now func() time.Time) {
+func (c *Cache[V]) SetClock(source Clock) {
 	c.mu.Lock()
-	c.now = now
+	c.clock = source
 	c.mu.Unlock()
 }
 
@@ -200,19 +208,19 @@ func (c *Cache[V]) Get(ctx context.Context, key string, load func(context.Contex
 
 func (c *Cache[V]) getNow() time.Time {
 	c.mu.Lock()
-	now := c.now
+	source := c.clock
 	c.mu.Unlock()
-	if now == nil {
-		return clock.Now()
+	if source == nil {
+		return clock.System{}.Now()
 	}
-	return now()
+	return source.Now()
 }
 
 func (c *Cache[V]) getNowLocked() time.Time {
-	if c.now == nil {
-		return clock.Now()
+	if c.clock == nil {
+		return clock.System{}.Now()
 	}
-	return c.now()
+	return c.clock.Now()
 }
 
 func (c *Cache[V]) ensureMapsLocked() {

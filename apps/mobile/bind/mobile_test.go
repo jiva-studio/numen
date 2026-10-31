@@ -2,6 +2,7 @@ package bind_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -112,7 +113,9 @@ func TestStartAnswers(t *testing.T) {
 	// The vault is read behind the caller, so the relations are polled for.
 	wanted := []string{"RELATION_PARENT", "RELATION_CHILD", "RELATION_JUMP", "RELATION_SIBLING"}
 	relations := map[string]int{}
-	for until := time.Now().Add(10 * time.Second); time.Now().Before(until); {
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+	defer cancel()
+	for ctx.Err() == nil {
 		relations = map[string]int{}
 		var around []any
 		if related, hasRelated := ask("NoteService", "GetNeighbourhood", map[string]any{"path": graphCentre})["related"]; hasRelated && related != nil {

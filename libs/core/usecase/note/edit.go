@@ -83,7 +83,7 @@ func (e Edit) shared() edit.Edit {
 	return edit.Edit{
 		Open:            e.openFiles,
 		Index:           e.index,
-		Now:             e.now,
+		Clock:           e.now,
 		FileStat:        e.FileStat,
 		ShouldOverwrite: e.ShouldOverwrite,
 		Bound:           e.Bound,

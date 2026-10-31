@@ -234,9 +234,10 @@ func TestTranscribeReportsUnopenableRecording(t *testing.T) {
 // seconds.
 func waitUntil(t *testing.T, condition func() bool) {
 	t.Helper()
-	deadline := time.Now().Add(5 * time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
 	for !condition() {
-		if time.Now().After(deadline) {
+		if ctx.Err() != nil {
 			t.Fatal("the condition did not hold within five seconds")
 		}
 		runtime.Gosched()

@@ -77,7 +77,7 @@ func newFollowed(t *testing.T, notes map[string]string, watcher *manualWatcher) 
 	moved := make(chan vaults.VaultChanges, 8)
 	follow := vaults.NewFollow(
 		watcher,
-		vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now),
+		vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), testsupport.Machine),
 		scanner(vaultreader.Readers{}, db),
 	)
 	follow.Changed = func(m vaults.VaultChanges) { moved <- m }
@@ -208,7 +208,7 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 	readers := &sometimes{VaultReaders: vaultreader.Readers{}}
 	follow := vaults.NewFollow(
 		watcher,
-		vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now),
+		vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), testsupport.Machine),
 		scanner(vaultreader.Readers{}, db),
 	)
 	follow.ErrorHandler = func(err error) { reported <- err }
@@ -270,7 +270,7 @@ func TestAWatchEndsWhenTheWatcherStops(t *testing.T) {
 	db := openIndex(t)
 	follow := vaults.NewFollow(
 		watcher,
-		vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now),
+		vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), testsupport.Machine),
 		scanner(vaultreader.Readers{}, db),
 	)
 	started, err := follow.Begin(t.Context(), v)
@@ -308,7 +308,7 @@ func TestAWalkThatFailsIsReportedAndClearedByTheNextOne(t *testing.T) {
 	readers := &sometimes{VaultReaders: vaultreader.Readers{}}
 	follow := vaults.NewFollow(
 		watcher,
-		vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now),
+		vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), testsupport.Machine),
 		scanner(readers, db),
 	)
 	follow.ErrorHandler = func(err error) { reported <- err }

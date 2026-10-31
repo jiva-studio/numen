@@ -85,7 +85,7 @@ func servePlugin(t *testing.T, recorder *eventRecorder) int {
 // The host is torn down before its processes are killed.
 func newEventHost(t *testing.T, manifests map[string]pluginport.PluginManifest, ports map[string]int) *Host {
 	t.Helper()
-	host := NewHost("desktop.editor")
+	host := NewHost(testsupport.Machine, "desktop.editor")
 	host.SetContentTypeTable(sharedmimeinfo.Open())
 	for id, manifest := range manifests {
 		manifest.ID = id

@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
@@ -94,7 +93,7 @@ func TestScanWrites_LongNoteClosesBatchEarly(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	cfg, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now())
+	cfg, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch)
 	if err != nil {
 		t.Fatal(err)
 	}

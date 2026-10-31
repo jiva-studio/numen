@@ -23,7 +23,7 @@ func (tell TellEdit) beginChange(ctx context.Context, now machineport.Clock, res
 	if tell == nil {
 		return func() error { return nil }, nil
 	}
-	name := ulid.New(now())
+	name := ulid.New(now.Now())
 	response.Change = name
 	if err := tell(ctx, response); err != nil {
 		return nil, err

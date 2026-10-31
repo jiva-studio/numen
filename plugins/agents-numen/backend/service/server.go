@@ -141,7 +141,7 @@ func (s *Server) Ask(ctx context.Context, task *agentrun.AskAgentRequest, send f
 		if taskCtx.Err() != nil {
 			return nil
 		}
-		return send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Stopped{
+		return send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseStopped{
 			Stopped: fmt.Sprintf("the agent could not reach this vault: %v", err),
 		}})
 	}
@@ -178,7 +178,7 @@ func (s *Server) Ask(ctx context.Context, task *agentrun.AskAgentRequest, send f
 	if reason == reasonDone || reason == reasonTurns || reason == reasonCut {
 		s.appendConversation(conversation, transcript[len(messages)-1:])
 	}
-	return send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Stopped{Stopped: reason}})
+	return send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseStopped{Stopped: reason}})
 }
 
 // getConversation is the transcript in the conversation so far, oldest first.

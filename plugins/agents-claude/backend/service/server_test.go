@@ -20,6 +20,9 @@ import (
 // startAgent serves the agent over HTTP and answers with a client of it.
 func startAgent(t *testing.T, agentSvc *agentServer) agentrun.AgentServiceClient {
 	t.Helper()
+	if agentSvc.clock == nil {
+		agentSvc.clock = &steppingClock{tick: time.Unix(0, 0), step: time.Second}
+	}
 	mux := http.NewServeMux()
 	mux.Handle(agentrun.NewAgentServiceHandler(agentSvc))
 	testServer := httptest.NewServer(mux)
@@ -178,15 +181,15 @@ func TestTheProgramListNamesClaudeWithItsModels(t *testing.T) {
 // wordStep words one step of a run.
 func wordStep(msg *agentrun.AskAgentResponse) string {
 	switch s := msg.GetStep().(type) {
-	case *agentrun.AskAgentResponse_ModelStarted:
+	case *agentrun.AskAgentResponseModelStarted:
 		return "model_started"
-	case *agentrun.AskAgentResponse_ToolCall:
+	case *agentrun.AskAgentResponseToolCall:
 		return "tool_call:" + s.ToolCall.GetTool()
-	case *agentrun.AskAgentResponse_ToolFinished:
+	case *agentrun.AskAgentResponseToolFinished:
 		return "tool_finished"
-	case *agentrun.AskAgentResponse_Text:
+	case *agentrun.AskAgentResponseText:
 		return "said:" + s.Text
-	case *agentrun.AskAgentResponse_Stopped:
+	case *agentrun.AskAgentResponseStopped:
 		return "stopped:" + s.Stopped
 	}
 	return ""

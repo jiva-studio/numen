@@ -16,12 +16,12 @@ import (
 )
 
 func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
-	sup := New()
+	sup := New(testsupport.NewClock())
 	if sup.GetState() != StateDormant {
 		t.Fatalf("expected StateDormant, got %v", sup.GetState())
 	}
 
-	err := sup.Attach(t.Context(), nil, time.Now())
+	err := sup.Attach(t.Context(), nil, testsupport.Epoch)
 	if err == nil {
 		t.Fatal("expected error attaching nil process, got nil")
 	}
@@ -31,7 +31,7 @@ func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
 		t.Fatalf("failed to start mock process: %v", err)
 	}
 
-	now := time.Now()
+	now := testsupport.Epoch
 	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach process: %v", err)
 	}
@@ -70,7 +70,7 @@ func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
 }
 
 func TestSupervisorTeardownNotRunning(t *testing.T) {
-	sup := New()
+	sup := New(testsupport.NewClock())
 	err := sup.Teardown(t.Context(), 50*time.Millisecond, nil)
 	if err == nil {
 		t.Fatal("expected error tearing down non-running supervisor, got nil")
@@ -83,8 +83,8 @@ func TestSupervisorTeardownGraceful(t *testing.T) {
 		t.Fatalf("failed to start process: %v", err)
 	}
 
-	sup := New()
-	if err := sup.Attach(t.Context(), cmd.Process, time.Now()); err != nil {
+	sup := New(testsupport.NewClock())
+	if err := sup.Attach(t.Context(), cmd.Process, testsupport.Epoch); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
 
@@ -105,9 +105,9 @@ func TestSupervisorTeardownGraceful(t *testing.T) {
 }
 
 func TestSupervisorTeardownInProcessCallsRPC(t *testing.T) {
-	sup := New()
+	sup := New(testsupport.NewClock())
 	sup.SetActivating()
-	sup.ActivateInProcess(time.Now())
+	sup.ActivateInProcess(testsupport.Epoch)
 
 	rpcCalled := false
 	err := sup.Teardown(t.Context(), 50*time.Millisecond, func(_ context.Context) error {
@@ -131,8 +131,8 @@ func TestSupervisorTeardownForceKill(t *testing.T) {
 		t.Fatalf("failed to start process: %v", err)
 	}
 
-	sup := New()
-	if err := sup.Attach(t.Context(), cmd.Process, time.Now()); err != nil {
+	sup := New(testsupport.NewClock())
+	if err := sup.Attach(t.Context(), cmd.Process, testsupport.Epoch); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
 
@@ -146,7 +146,7 @@ func TestSupervisorTeardownForceKill(t *testing.T) {
 }
 
 func TestSupervisorPermissionNormalization(t *testing.T) {
-	sup := New()
+	sup := New(testsupport.NewClock())
 	sup.SetPermissions([]string{manifestfile.PermissionVaultRead, "network"})
 
 	if !sup.HasPermission(manifestfile.PermissionVaultRead) {
@@ -172,13 +172,13 @@ func TestSupervisorProcessCrashTriggersOnExit(t *testing.T) {
 		t.Fatalf("start process: %v", err)
 	}
 
-	sup := New()
+	sup := New(testsupport.NewClock())
 	onExitCh := make(chan struct{})
 	sup.SetOnExit(func() {
 		close(onExitCh)
 	})
 
-	if err := sup.Attach(t.Context(), cmd.Process, time.Now()); err != nil {
+	if err := sup.Attach(t.Context(), cmd.Process, testsupport.Epoch); err != nil {
 		t.Fatalf("attach process: %v", err)
 	}
 
@@ -196,7 +196,7 @@ func TestSupervisorProcessCrashTriggersOnExit(t *testing.T) {
 }
 
 func TestSupervisorActivationLifecycle(t *testing.T) {
-	sup := New()
+	sup := New(testsupport.NewClock())
 	if sup.GetState() != StateDormant {
 		t.Fatalf("expected StateDormant, got %v", sup.GetState())
 	}
@@ -256,7 +256,7 @@ func TestSupervisorActivationLifecycle(t *testing.T) {
 }
 
 func TestSupervisorTeardownWhileActivating(t *testing.T) {
-	sup := New()
+	sup := New(testsupport.NewClock())
 	ch := sup.SetActivating()
 
 	err := sup.Teardown(t.Context(), 50*time.Millisecond, nil)
@@ -283,13 +283,13 @@ func TestSupervisorMemoryTrackingAndEviction(t *testing.T) {
 		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
-	sup := New()
+	sup := New(testsupport.NewClock())
 	sup.SetMemoryLimit(100 * 1024 * 1024)
 	if sup.GetMemoryLimit() != 100*1024*1024 {
 		t.Fatalf("got memory limit %d, want %d", sup.GetMemoryLimit(), 100*1024*1024)
 	}
 
-	if err := sup.Attach(t.Context(), cmd.Process, time.Now()); err != nil {
+	if err := sup.Attach(t.Context(), cmd.Process, testsupport.Epoch); err != nil {
 		t.Fatalf("failed to attach process: %v", err)
 	}
 
@@ -331,8 +331,8 @@ func TestSupervisorMemoryTrackingAndEviction(t *testing.T) {
 		t.Fatal("expected graceful RPC shutdown on memory limit exceeded")
 	}
 
-	deadline := time.Now().Add(2 * time.Second)
-	for sup.GetState() != StateDormant && time.Now().Before(deadline) {
+	deadline := testsupport.Machine.Now().Add(2 * time.Second)
+	for sup.GetState() != StateDormant && testsupport.Machine.Now().Before(deadline) {
 		time.Sleep(10 * time.Millisecond)
 	}
 	if sup.GetState() != StateDormant {
@@ -349,7 +349,7 @@ func TestMemoryExceededRecordsActivationFailureAndBackoff(t *testing.T) {
 		plugintest.KillProcess(t, cmd.Process)
 	}()
 
-	sup := New()
+	sup := New(testsupport.NewClock())
 	sup.SetActivationPolicy(ActivationPolicy{
 		BackoffBase: 500 * time.Millisecond,
 		BackoffMax:  time.Second,
@@ -370,13 +370,13 @@ func TestMemoryExceededRecordsActivationFailureAndBackoff(t *testing.T) {
 	})
 	sup.SetMemoryLimit(100)
 
-	now := time.Now()
+	now := testsupport.Epoch
 	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
 
-	deadline := time.Now().Add(2 * time.Second)
-	for sup.GetState() != StateDormant && time.Now().Before(deadline) {
+	deadline := testsupport.Machine.Now().Add(2 * time.Second)
+	for sup.GetState() != StateDormant && testsupport.Machine.Now().Before(deadline) {
 		time.Sleep(10 * time.Millisecond)
 	}
 	if sup.GetState() != StateDormant {
@@ -385,7 +385,7 @@ func TestMemoryExceededRecordsActivationFailureAndBackoff(t *testing.T) {
 	if !onExceededCalled {
 		t.Fatal("expected onMemoryExceeded to be called")
 	}
-	if err := sup.CheckActivationAllowed(time.Now()); err == nil {
+	if err := sup.CheckActivationAllowed(testsupport.Epoch); err == nil {
 		t.Fatal("expected activation to be blocked by backoff")
 	}
 
@@ -412,8 +412,8 @@ func TestAcquire_RejectsDeactivatingPlugin(t *testing.T) {
 	defer func() {
 		plugintest.KillProcess(t, cmd.Process)
 	}()
-	sup := New()
-	now := time.Now()
+	sup := New(testsupport.NewClock())
+	now := testsupport.Epoch
 	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
@@ -438,8 +438,8 @@ func TestADeactivationDoesNotBeginOnAHeldPlugin(t *testing.T) {
 	defer func() {
 		plugintest.KillProcess(t, cmd.Process)
 	}()
-	sup := New()
-	now := time.Now()
+	sup := New(testsupport.NewClock())
+	now := testsupport.Epoch
 	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
@@ -458,7 +458,7 @@ func TestSupervisorPermissionsAndPathValidation(t *testing.T) {
 	}
 
 	t.Run("permission denied without vault:read", func(t *testing.T) {
-		sup := New()
+		sup := New(testsupport.NewClock())
 		sup.SetPermissions([]string{"network:outbound"})
 
 		if err := sup.CheckPermission("vault:read"); !errors.Is(err, pluginport.ErrPermissionDenied) {
@@ -471,7 +471,7 @@ func TestSupervisorPermissionsAndPathValidation(t *testing.T) {
 	})
 
 	t.Run("permission granted with vault:read", func(t *testing.T) {
-		sup := New()
+		sup := New(testsupport.NewClock())
 		sup.SetPermissions([]string{"vault:read", "vault:write"})
 
 		if err := sup.CheckPermission("vault:read"); err != nil {
@@ -488,7 +488,7 @@ func TestSupervisorPermissionsAndPathValidation(t *testing.T) {
 	})
 
 	t.Run("traversal blocked even with vault:read", func(t *testing.T) {
-		sup := New()
+		sup := New(testsupport.NewClock())
 		sup.SetPermissions([]string{"vault:read"})
 
 		_, err := sup.ValidatePath(vaultDir, "../secret.txt")

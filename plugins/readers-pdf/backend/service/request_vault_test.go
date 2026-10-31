@@ -56,7 +56,7 @@ func postAPI(t *testing.T, documents *DocumentServer, method, vault, body string
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequest(http.MethodPost, "/"+APIService+"/"+method, strings.NewReader(body))
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/"+APIService+"/"+method, strings.NewReader(body))
 	req.Header.Set("Authorization", "Bearer token")
 	if vault != "" {
 		req.Header.Set("Numen-Vault", vault)

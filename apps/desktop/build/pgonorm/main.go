@@ -54,7 +54,9 @@ func main() {
 		fail(err)
 	}
 	p, err := profile.Parse(in)
-	in.Close()
+	if closeErr := in.Close(); closeErr != nil {
+		fail(closeErr)
+	}
 	if err != nil {
 		fail(err)
 	}

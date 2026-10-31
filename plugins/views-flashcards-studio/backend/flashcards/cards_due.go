@@ -163,7 +163,7 @@ func (u CountCardsDue) readInputs(ctx context.Context, v domain.Vault) (dueInput
 		return dueInputs{}, err
 	}
 
-	now := u.now()
+	now := u.now.Now()
 	day, err := getBudgets(
 		ctx, v, reads, u.day, reviewCards, schedules, log,
 		u.schedules.scheduler, u.schedules.getScheduler, now,

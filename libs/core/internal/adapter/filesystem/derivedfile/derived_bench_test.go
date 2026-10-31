@@ -2,10 +2,10 @@ package derivedfile_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 // opening is a store on a vault of one file, which is what the store operations
@@ -13,7 +13,7 @@ import (
 func opening(b *testing.B) *derivedfile.DerivedStore {
 	b.Helper()
 	root := b.TempDir()
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
 		b.Fatal(err)
 	}
 	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, testArea)

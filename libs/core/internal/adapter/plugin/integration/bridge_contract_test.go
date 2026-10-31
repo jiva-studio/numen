@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -122,7 +123,7 @@ func TestEveryBridgeAnswersAPluginThatIsDownWithAnErrorAndNoValue(t *testing.T) 
 func TestBridges_UninstalledPluginReturnsUnavailable(t *testing.T) {
 	for _, tc := range bridgeContracts {
 		t.Run(tc.name, func(t *testing.T) {
-			host := plugin.NewHost("desktop.editor")
+			host := plugin.NewHost(testsupport.Machine, "desktop.editor")
 			defer func() {
 				if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 					t.Errorf("TeardownAll: %v", err)

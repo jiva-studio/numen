@@ -223,7 +223,7 @@ func (u Record) Answer(
 	if u.now == nil {
 		return review.Answer{}, errNoClock
 	}
-	pos := u.now()
+	pos := u.now.Now()
 	id := ulid.New(pos)
 	a := review.Answer{ID: id, ReviewCard: on, At: pos, Rating: r, Took: took, Undoes: ""}
 	if err := run.Append(ctx, a); err != nil {
@@ -241,7 +241,7 @@ func (u Record) TakeBack(ctx context.Context, run *LogWriter, id string) (review
 	if u.now == nil {
 		return review.Answer{}, errNoClock
 	}
-	pos := u.now()
+	pos := u.now.Now()
 	own := ulid.New(pos)
 	a := review.Answer{ID: own, ReviewCard: review.CardID{Card: "", Template: ""}, At: pos, Rating: review.Rating(0), Took: time.Duration(0), Undoes: id}
 	if err := run.Append(ctx, a); err != nil {

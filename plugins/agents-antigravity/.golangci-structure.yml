@@ -1,0 +1,74 @@
+# Structure rules for production code: complexity, function size, enum switches
+# and struct literals. Test files are not checked here (run.tests is false);
+# .golangci.yml checks tests.
+#
+# Plugin directories and libs/plugin-sdk-go carry byte-identical copies of this
+# file; tools/lint-layers verifies the copies.
+#
+# Run from the directory of a module: golangci-lint run -c <path to this file> ./...
+
+version: "2"
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+run:
+  tests: false
+
+linters:
+  default: none
+  enable:
+    - exhaustive
+    - exhaustruct
+    - cyclop
+    - gocognit
+    - nestif
+    - funlen
+    - nakedret
+    - maintidx
+    - interfacebloat
+    - goconst
+    - containedctx
+
+  settings:
+    maintidx:
+      under: 20
+
+    interfacebloat:
+      max: 5
+
+    goconst:
+      min-len: 3
+      min-occurrences: 3
+
+    cyclop:
+      max-complexity: 15
+
+    gocognit:
+      min-complexity: 15
+
+    nestif:
+      min-complexity: 4
+
+    funlen:
+      lines: 80
+      statements: 50
+
+    nakedret:
+      max-func-lines: 5
+
+    exhaustive:
+      default-signifies-exhaustive: true
+      ignore-enum-types: ^(golang\.org/x/net/html/atom\.Atom|gopkg\.in/yaml\.v3\.Kind|time\.Weekday)$
+
+    exhaustruct:
+      include:
+        - .*/core/port/(embeddingport\.(EmbeddingModel|Vector)|transcriptionport\.TranscriptionModel)$
+        - .*/notes/domain\.Address$
+        - github\.com/jiva-studio/numen/plugins/.*
+      allow-empty-returns: true
+      allow-empty-declarations: true
+
+  exclusions:
+    generated: lax

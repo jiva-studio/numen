@@ -24,8 +24,8 @@ func TestWhichSettingsAGoalReads(t *testing.T) {
 		{review.GoalDate, false},
 	} {
 		p := review.Defaults()
-		p.Goal, p.By, p.Backlog = one.goal, time.Now().AddDate(0, 0, 30), 40
-		admits := p.GetAllowance(day, time.Now(), review.Spent{}, 0, 0)
+		p.Goal, p.By, p.Backlog = one.goal, testEpoch.AddDate(0, 0, 30), 40
+		admits := p.GetAllowance(day, testEpoch, review.Spent{}, 0, 0)
 
 		if got := admits.Limits.Backlog != ""; got != one.shouldRead {
 			t.Errorf("under %s the share is read %v, want %v", one.goal, got, one.shouldRead)
@@ -49,8 +49,8 @@ func TestADaysSpendIsOffWhatItStillAdmits(t *testing.T) {
 	p.Goal, p.MinutesADay = review.GoalMinutes, 1
 	p.NewADay, p.ReviewsADay = 20, 20
 
-	initialAllowance := p.GetAllowance(day, time.Now(), review.Spent{}, 0, 0)
-	after := p.GetAllowance(day, time.Now(), review.Spent{
+	initialAllowance := p.GetAllowance(day, testEpoch, review.Spent{}, 0, 0)
+	after := p.GetAllowance(day, testEpoch, review.Spent{
 		Answered: 3, New: 3, Reviews: 3, Took: 18 * time.Second,
 	}, 0, 0)
 

@@ -13,7 +13,7 @@ type fakeEngine struct{ libPath string }
 
 func TestOpenRejectsWhenTheHostGaveNoLibrary(t *testing.T) {
 	var r Runtime[*fakeEngine]
-	_, _, err := r.Open(t.Context(), "", func(libPath string) (*fakeEngine, error) {
+	_, _, err := r.Open(t.Context(), "", func(string) (*fakeEngine, error) {
 		t.Fatal("load ran with no library")
 		return nil, nil
 	})

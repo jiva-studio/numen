@@ -10,6 +10,7 @@ type Contents = notesedit.Contents
 type ReadOutcome = notesedit.ReadOutcome
 type Edit = notesedit.Edit
 type Levels = notesedit.Levels
+type Clock = notesedit.Clock
 
 const (
 	MaxBytes   = notesedit.MaxBytes

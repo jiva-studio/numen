@@ -67,7 +67,7 @@ func (r *reader) reportLimit() {
 }
 
 func (r *reader) reportStop(reason string) {
-	r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Stopped{Stopped: reason}})
+	r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseStopped{Stopped: reason}})
 }
 
 func start(ctx context.Context, reg *agentrun.Registry, s spec) (*agentrun.Work, error) {
@@ -164,7 +164,7 @@ func scanOutput(
 		if err := json.Unmarshal(line, &event); err == nil {
 			handle(event)
 		} else if text := strings.TrimSpace(string(line)); text != "" {
-			r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: text + "\n"}})
+			r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseText{Text: text + "\n"}})
 		}
 		if r.isOverLimit() {
 			r.reportLimit()

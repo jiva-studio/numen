@@ -24,8 +24,8 @@ const suffix = ".trashinfo"
 const deletedAt = "2006-01-02T15:04:05"
 
 // moveToTrash puts the folder in the trash the desktop reads.
-func moveToTrash(path string) error {
-	return moveToUserOrVolumeTrash(path, getUserTrashDir())
+func moveToTrash(path string, deletedOn time.Time) error {
+	return moveToUserOrVolumeTrash(path, getUserTrashDir(), deletedOn)
 }
 
 // getUserTrashDir is the trash of this login. It is empty where the machine will not say
@@ -45,9 +45,9 @@ func getUserTrashDir() string {
 // moveToUserOrVolumeTrash puts the folder in the trash of this login, and in the trash at the root
 // of its own volume when a rename cannot reach the first. A volume that has no
 // trash and takes none has nowhere to put it.
-func moveToUserOrVolumeTrash(path, home string) error {
+func moveToUserOrVolumeTrash(path, home string, deletedOn time.Time) error {
 	if home != "" {
-		if err := moveIntoTrash(home, path, path); !errors.Is(err, syscall.EXDEV) {
+		if err := moveIntoTrash(home, path, path, deletedOn); !errors.Is(err, syscall.EXDEV) {
 			return err
 		}
 	}
@@ -63,7 +63,7 @@ func moveToUserOrVolumeTrash(path, home string) error {
 	if err != nil {
 		return err
 	}
-	return moveIntoTrash(dir, path, from)
+	return moveIntoTrash(dir, path, from, deletedOn)
 }
 
 // getVolumeRoot is the root of the volume the folder is on: the last directory on the
@@ -116,7 +116,7 @@ func getVolumeTrashDir(top string, uid int) (string, error) {
 //
 // The note is written first: the name is this deletion's before anything moves
 // under it. A move that fails takes the note back with it.
-func moveIntoTrash(dir, path, from string) error {
+func moveIntoTrash(dir, path, from string, deletedOn time.Time) error {
 	files := filepath.Join(dir, "files")
 	info := filepath.Join(dir, "info")
 	for _, item := range []string{files, info} {
@@ -129,7 +129,7 @@ func moveIntoTrash(dir, path, from string) error {
 	if err != nil {
 		return err
 	}
-	_, err = note.WriteString(formatTrashInfo(from))
+	_, err = note.WriteString(formatTrashInfo(from, deletedOn))
 	if closed := note.Close(); err == nil {
 		err = closed
 	}
@@ -167,8 +167,8 @@ func reserveTrashName(files, notes, name string) (string, *os.File, error) {
 // formatTrashInfo returns the info file content for a trashed folder: its
 // original path and deletion time. The path is URL-encoded, and is relative to
 // the volume root for a trash at that root.
-func formatTrashInfo(from string) string {
+func formatTrashInfo(from string, deletedOn time.Time) string {
 	return "[Trash Info]\n" +
 		"Path=" + (&url.URL{Path: from}).EscapedPath() + "\n" +
-		"DeletionDate=" + time.Now().Format(deletedAt) + "\n"
+		"DeletionDate=" + deletedOn.Format(deletedAt) + "\n"
 }

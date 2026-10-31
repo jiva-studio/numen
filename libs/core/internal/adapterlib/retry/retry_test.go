@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/retry"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 var now = time.Date(2026, 10, 11, 12, 0, 0, 0, time.UTC)
@@ -36,11 +37,11 @@ func TestRetryAfterIsReadInSecondsAndAsADate(t *testing.T) {
 func TestAWaitEndsWithItsContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	start := time.Now()
+	start := testsupport.Machine.Now()
 	if err := retry.Wait(ctx, time.Hour); !errors.Is(err, context.Canceled) {
 		t.Fatalf("got %v", err)
 	}
-	if time.Since(start) > 5*time.Second {
+	if testsupport.Machine.Now().Sub(start) > 5*time.Second {
 		t.Error("the wait did not end with the context")
 	}
 }

@@ -18,8 +18,9 @@ func codeOf(err error) server.ErrorCode {
 	return toAPIError(err).Code
 }
 
-func postMethod(handler http.Handler, method, body, token string) *httptest.ResponseRecorder {
-	req := httptest.NewRequest(http.MethodPost, "/numen.epub/"+method, strings.NewReader(body))
+func postMethod(t *testing.T, handler http.Handler, method, body, token string) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/numen.epub/"+method, strings.NewReader(body))
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
@@ -37,10 +38,10 @@ func TestLinkedHandler_RequiresTheHostToken(t *testing.T) {
 		t.Fatalf("NewHandler: %v", err)
 	}
 
-	if got := postMethod(handler, "GetBook", `{"path":"book.epub"}`, "").Code; got != http.StatusUnauthorized {
+	if got := postMethod(t, handler, "GetBook", `{"path":"book.epub"}`, "").Code; got != http.StatusUnauthorized {
 		t.Fatalf("GetBook without the token = %d, want %d", got, http.StatusUnauthorized)
 	}
-	if got := postMethod(handler, "GetBook", `{}`, "linked-token"); got.Code != http.StatusBadRequest || !strings.Contains(got.Body.String(), `"code":"invalid_argument"`) {
+	if got := postMethod(t, handler, "GetBook", `{}`, "linked-token"); got.Code != http.StatusBadRequest || !strings.Contains(got.Body.String(), `"code":"invalid_argument"`) {
 		t.Fatalf("GetBook with no path = %d %s, want invalid_argument", got.Code, got.Body)
 	}
 }
@@ -56,7 +57,7 @@ func TestLinkedHandler_ReachesTheHostOfItsVariables(t *testing.T) {
 	}
 
 	body := `{"path":"` + filepath.Join("books", "book.epub") + `"}`
-	if got := postMethod(handler, "GetBook", body, "linked-token"); got.Code != http.StatusNotFound {
+	if got := postMethod(t, handler, "GetBook", body, "linked-token"); got.Code != http.StatusNotFound {
 		t.Fatalf("GetBook = %d %s, want %d", got.Code, got.Body, http.StatusNotFound)
 	}
 }

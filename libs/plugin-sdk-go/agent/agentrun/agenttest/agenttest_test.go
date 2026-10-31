@@ -20,7 +20,7 @@ type runner struct {
 func (s *runner) AskAgent(
 	ctx context.Context,
 	req *connect.Request[v1.AskAgentRequest],
-	stream *connect.ServerStream[v1.AskAgentResponse],
+	_ *connect.ServerStream[v1.AskAgentResponse],
 ) error {
 	cmd := exec.CommandContext(ctx, req.Msg.GetCommand()[0], req.Msg.GetCommand()[1:]...)
 	cmd.Dir = req.Msg.GetRoot()

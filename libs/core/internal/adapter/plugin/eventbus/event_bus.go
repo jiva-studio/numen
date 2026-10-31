@@ -61,13 +61,6 @@ type Bus struct {
 	errorHandler     ErrorHandler
 }
 
-// WithClock sets the clock port used for time measurements.
-func WithClock(clock machineport.Clock) Option {
-	return func(b *Bus) {
-		b.clock = clock
-	}
-}
-
 // WithDelay sets the delay port used for scheduling timers.
 func WithDelay(delay machineport.Delay) Option {
 	return func(b *Bus) {
@@ -97,7 +90,7 @@ func WithErrorHandler(handler ErrorHandler) Option {
 }
 
 // New creates a debouncing and throttling event bus.
-func New(host Trigger, debounceDelay, throttleInterval time.Duration, opts ...Option) *Bus {
+func New(host Trigger, clock machineport.Clock, debounceDelay, throttleInterval time.Duration, opts ...Option) *Bus {
 	if debounceDelay <= 0 {
 		debounceDelay = 50 * time.Millisecond
 	}
@@ -114,7 +107,7 @@ func New(host Trigger, debounceDelay, throttleInterval time.Duration, opts ...Op
 		nextSubID:        0,
 		isClosed:         false,
 		inFlight:         sync.WaitGroup{},
-		clock:            nil,
+		clock:            clock,
 		delay:            nil,
 		keyExtractor:     nil,
 		debounceRules:    nil,
@@ -124,13 +117,6 @@ func New(host Trigger, debounceDelay, throttleInterval time.Duration, opts ...Op
 		opt(bus)
 	}
 	return bus
-}
-
-// SetClock sets the clock port used for time measurements.
-func (b *Bus) SetClock(clock machineport.Clock) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	b.clock = clock
 }
 
 // SetDelay sets the delay port used for scheduling timers.
@@ -162,10 +148,7 @@ func (b *Bus) SetErrorHandler(handler ErrorHandler) {
 }
 
 func (b *Bus) getNow() time.Time {
-	if b.clock != nil {
-		return b.clock()
-	}
-	return time.Now()
+	return b.clock.Now()
 }
 
 func (b *Bus) scheduleDelay(d time.Duration, f func()) func() bool {

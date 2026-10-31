@@ -8,7 +8,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
@@ -16,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
@@ -133,7 +133,7 @@ func (c changing) moveOf(p moveParts) note.Move {
 	if !p.hasIndex {
 		p.index = c.index
 	}
-	return note.NewMove(p.readers, p.writers, p.links, p.names, c.db.Sources(), p.index, time.Now)
+	return note.NewMove(p.readers, p.writers, p.links, p.names, c.db.Sources(), p.index, testsupport.NewClock())
 }
 
 const heatLinkedToEntropy = "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Heat\n"

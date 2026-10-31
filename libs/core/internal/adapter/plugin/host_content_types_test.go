@@ -9,11 +9,12 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
 func newReaderHost(manifests ...pluginport.PluginManifest) *Host {
-	host := NewHost("desktop.editor")
+	host := NewHost(testsupport.Machine, "desktop.editor")
 	host.SetContentTypeTable(sharedmimeinfo.Open())
 	for _, manifest := range manifests {
 		manifest.Frontend = pluginport.PluginFrontend{Entrypoint: "dist/index.js"}

@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 )
 
@@ -50,12 +51,15 @@ func note(t *testing.T, pos string) map[string]string {
 	return fields
 }
 
+// deletedOn is the moment that the clock of the tests reports.
+var deletedOn = time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)
+
 func TestAFolderGoesToTheTrash(t *testing.T) {
 	data := t.TempDir()
 	t.Setenv("XDG_DATA_HOME", data)
 	pos := folder(t, "Vault")
 
-	if err := New().Trash(pos); err != nil {
+	if err := New(clock.NewFake(deletedOn)).Trash(pos); err != nil {
 		t.Fatal(err)
 	}
 
@@ -92,7 +96,7 @@ func TestAFolderWithAPunctuatedName(t *testing.T) {
 	t.Setenv("XDG_DATA_HOME", data)
 	pos := folder(t, "Notes & Papers 100% #1")
 
-	if err := New().Trash(pos); err != nil {
+	if err := New(clock.NewFake(deletedOn)).Trash(pos); err != nil {
 		t.Fatal(err)
 	}
 
@@ -118,7 +122,7 @@ func TestANameAlreadyTaken(t *testing.T) {
 	first, second := folder(t, "Vault"), folder(t, "Vault")
 
 	for _, item := range []string{first, second} {
-		if err := New().Trash(item); err != nil {
+		if err := New(clock.NewFake(deletedOn)).Trash(item); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -180,7 +184,7 @@ func TestNowhereToInsertIt(t *testing.T) {
 
 	// The user has no trash, so the volume's own trash is the only candidate, and
 	// its root rejects one.
-	if err := moveToUserOrVolumeTrash(pos, ""); !errors.Is(err, machineport.ErrNoTrash) {
+	if err := moveToUserOrVolumeTrash(pos, "", deletedOn); !errors.Is(err, machineport.ErrNoTrash) {
 		t.Errorf("trashing %s gave %v, want %v", pos, err, machineport.ErrNoTrash)
 	}
 	if _, err := os.Lstat(filepath.Join(pos, "note.md")); err != nil {

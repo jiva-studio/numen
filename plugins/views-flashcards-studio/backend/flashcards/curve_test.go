@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"maps"
 	"reflect"
 	"runtime"
@@ -12,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
@@ -63,7 +65,7 @@ func newReviewedVault(t *testing.T, cards int) vaulted {
 func (s vaulted) curves(now time.Time) flashcards.ProjectCurve {
 	u := flashcards.NewProjectCurve(
 		s.standings, s.schedules, s.presets,
-		today, func() time.Time { return now },
+		today, clock.NewFake(now),
 	)
 	u.Cores = runtime.GOMAXPROCS(0)
 	return u
@@ -1172,7 +1174,7 @@ func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 4)
 	noIndex := flashcards.NewListReviewCards(s.env.Ports.Readers, nil, nil)
-	u := flashcards.NewProjectCurve(noIndex, s.schedules, s.presets, today, func() time.Time { return noon })
+	u := flashcards.NewProjectCurve(noIndex, s.schedules, s.presets, today, clock.NewFake(noon))
 
 	p := review.Preset{
 		Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
@@ -1296,7 +1298,7 @@ func BenchmarkCurveCards(b *testing.B) {
 	for _, cards := range []int{500, 5000, 20000, 50000} {
 		b.Run(fmt.Sprint(cards), func(b *testing.B) {
 			s := openVault(b, curveWhole(cards))
-			loadAnswers(b, s, time.Now(), cards, 180, max(1, cards*150/50000))
+			loadAnswers(b, s, vaulttest.Epoch, cards, 180, max(1, cards*150/50000))
 
 			ctx := b.Context()
 			if _, err := s.schedules.Execute(ctx, s.vault); err != nil {
@@ -1305,7 +1307,7 @@ func BenchmarkCurveCards(b *testing.B) {
 			p := review.Preset{
 				Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			}
-			curves := s.curves(time.Now())
+			curves := s.curves(vaulttest.Epoch)
 			if _, err := curves.Execute(ctx, s.vault, "Whole.md", p); err != nil {
 				b.Fatal(err)
 			}
@@ -1330,14 +1332,14 @@ func BenchmarkCurveCards(b *testing.B) {
 func BenchmarkPresetCurve(b *testing.B) {
 	const cards = 50000
 	s := openVault(b, curveLoad(cards))
-	loadAnswers(b, s, time.Now(), cards, 180, 150)
+	loadAnswers(b, s, vaulttest.Epoch, cards, 180, 150)
 
 	ctx := b.Context()
 	if _, err := s.schedules.Execute(ctx, s.vault); err != nil {
 		b.Fatal(err)
 	}
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
-	curves := s.curves(time.Now())
+	curves := s.curves(vaulttest.Epoch)
 
 	for _, path := range []string{"Small.md", "Large.md"} {
 		if _, err := curves.Execute(ctx, s.vault, path, p); err != nil {
@@ -1387,7 +1389,7 @@ func TestProjectCurve_ErrorsOnCancelledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 
 	customCards := flashcards.NewListReviewCards(closing{inner: s.env.Ports.Readers, cancel: cancel}, s.notes, s.links)
-	curves := flashcards.NewProjectCurve(customCards, s.schedules, s.presets, today, func() time.Time { return noon })
+	curves := flashcards.NewProjectCurve(customCards, s.schedules, s.presets, today, clock.NewFake(noon))
 
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 	got, err := curves.Execute(ctx, s.vault, "Sanskrit.md", p)

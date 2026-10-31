@@ -30,7 +30,7 @@ export const BOUNDARY_RULES = new Set([
 export function isBoundaryRule(file) {
   return (
     BOUNDARY_RULES.has(file) ||
-    /^plugins\/[^/]+\/(eslint\.config\.js|\.golangci\.yml)$/.test(file)
+    /^plugins\/[^/]+\/(eslint\.config\.js|\.golangci(-structure)?\.yml)$/.test(file)
   );
 }
 

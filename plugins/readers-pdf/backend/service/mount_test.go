@@ -5,11 +5,10 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 )
 
-func postDocument(t *testing.T, baseURL, token, body string) *http.Response {
+// postDocument calls GetDocument and returns the status code of the answer.
+func postDocument(t *testing.T, baseURL, token, body string) int {
 	t.Helper()
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, baseURL+"/"+APIService+"/GetDocument", strings.NewReader(body))
 	if err != nil {
@@ -23,8 +22,10 @@ func postDocument(t *testing.T, baseURL, token, body string) *http.Response {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleanup.CloseAfter(t, res.Body)
-	return res
+	if err := res.Body.Close(); err != nil {
+		t.Error(err)
+	}
+	return res.StatusCode
 }
 
 // The handler a host that links the plugin in answers the document API with the token it was given
@@ -40,11 +41,11 @@ func TestTheLinkedHandlerAnswersTheDocumentAPI(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
-	if res := postDocument(t, web.URL, "", `{"path":"tiny.pdf"}`); res.StatusCode != http.StatusUnauthorized {
-		t.Fatalf("GetDocument without the token = %d, want 401", res.StatusCode)
+	if status := postDocument(t, web.URL, "", `{"path":"tiny.pdf"}`); status != http.StatusUnauthorized {
+		t.Fatalf("GetDocument without the token = %d, want 401", status)
 	}
-	if res := postDocument(t, web.URL, "linked-token", `{}`); res.StatusCode != http.StatusBadRequest {
-		t.Fatalf("GetDocument with no path = %d, want 400", res.StatusCode)
+	if status := postDocument(t, web.URL, "linked-token", `{}`); status != http.StatusBadRequest {
+		t.Fatalf("GetDocument with no path = %d, want 400", status)
 	}
 }
 
@@ -61,9 +62,9 @@ func TestTheLinkedHandlerReachesTheHostOfItsVariables(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
-	res := postDocument(t, web.URL, "linked-token", `{"path":"books/tiny.pdf"}`)
+	status := postDocument(t, web.URL, "linked-token", `{"path":"books/tiny.pdf"}`)
 
-	if res.StatusCode != http.StatusNotFound {
-		t.Fatalf("GetDocument = %d, want 404", res.StatusCode)
+	if status != http.StatusNotFound {
+		t.Fatalf("GetDocument = %d, want 404", status)
 	}
 }

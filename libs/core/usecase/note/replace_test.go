@@ -4,16 +4,16 @@ import (
 	"errors"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
 func (c changing) replace() note.Replace {
-	return note.NewReplace(vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, time.Now)
+	return note.NewReplace(vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, testsupport.NewClock())
 }
 
 // The requested span is replaced and every other byte is unchanged.

@@ -15,7 +15,7 @@ func dialEndpoint(t *testing.T, served *endpoint) net.Conn {
 	if err != nil {
 		t.Fatal(err)
 	}
-	conn, err := net.Dial("tcp", address.Host)
+	conn, err := (&net.Dialer{}).DialContext(t.Context(), "tcp", address.Host)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,7 +25,7 @@ func dialEndpoint(t *testing.T, served *endpoint) net.Conn {
 
 func waitFor(t *testing.T, isReady func() bool) {
 	t.Helper()
-	for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); time.Sleep(time.Millisecond) {
+	for deadline := testsupport.Machine.Now().Add(5 * time.Second); testsupport.Machine.Now().Before(deadline); time.Sleep(time.Millisecond) {
 		if isReady() {
 			return
 		}
@@ -45,11 +45,11 @@ func TestCloseDoesNotWaitForAConnectionThatSentNoRequest(t *testing.T) {
 		return len(served.states) > 0
 	})
 
-	started := time.Now()
+	started := testsupport.Machine.Now()
 	if err := served.close(t.Context()); err != nil {
 		t.Errorf("close reported %v for a connection with no request", err)
 	}
-	if took := time.Since(started); took >= shutdownLimit/2 {
+	if took := testsupport.Machine.Now().Sub(started); took >= shutdownLimit/2 {
 		t.Errorf("close took %v", took)
 	}
 }

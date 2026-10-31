@@ -12,15 +12,16 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 )
 
 func TestSyncGetCachesHitsAndExpiresAfterTTL(t *testing.T) {
-	now := time.Unix(1000, 0)
+	now := clock.NewFake(time.Unix(1000, 0))
 	var calls int
 	c := cache.New[[]string](
 		"models",
 		cache.WithTTL(10*time.Minute),
-		cache.WithClock(func() time.Time { return now }),
+		cache.WithClock(now),
 	)
 	load := func(context.Context) ([]string, error) {
 		calls++
@@ -32,13 +33,13 @@ func TestSyncGetCachesHitsAndExpiresAfterTTL(t *testing.T) {
 		t.Fatalf("first Get = %v, %v, %v (calls=%d)", got1, found1, err1, calls)
 	}
 
-	now = now.Add(5 * time.Minute)
+	now.Advance(5 * time.Minute)
 	got2, found2, err2 := c.Get(t.Context(), "k1", load)
 	if err2 != nil || !found2 || !slices.Equal(got2, []string{"m1", "m2"}) || calls != 1 {
 		t.Fatalf("second Get within TTL = %v, %v, %v (calls=%d)", got2, found2, err2, calls)
 	}
 
-	now = now.Add(6 * time.Minute)
+	now.Advance(6 * time.Minute)
 	got3, found3, err3 := c.Get(t.Context(), "k1", load)
 	if err3 != nil || !found3 || !slices.Equal(got3, []string{"m1", "m2"}) || calls != 2 {
 		t.Fatalf("third Get after TTL = %v, %v, %v (calls=%d)", got3, found3, err3, calls)
@@ -46,12 +47,12 @@ func TestSyncGetCachesHitsAndExpiresAfterTTL(t *testing.T) {
 }
 
 func TestSyncFailureBackoffSkipsReloadUntilBackoffElapses(t *testing.T) {
-	now := time.Unix(2000, 0)
+	now := clock.NewFake(time.Unix(2000, 0))
 	var calls int
 	c := cache.New[string](
 		"models",
 		cache.WithFailureBackoff(30*time.Second),
-		cache.WithClock(func() time.Time { return now }),
+		cache.WithClock(now),
 	)
 	load := func(context.Context) (string, error) {
 		calls++
@@ -66,13 +67,13 @@ func TestSyncFailureBackoffSkipsReloadUntilBackoffElapses(t *testing.T) {
 		t.Fatalf("first Get = found=%v, err=%v, failed=%v, calls=%d", found, err, c.HasFailed("k1"), calls)
 	}
 
-	now = now.Add(10 * time.Second)
+	now.Advance(10 * time.Second)
 	_, found, err = c.Get(t.Context(), "k1", load)
 	if err != nil || found || calls != 1 {
 		t.Fatalf("second Get during backoff = found=%v, err=%v, calls=%d", found, err, calls)
 	}
 
-	now = now.Add(25 * time.Second)
+	now.Advance(25 * time.Second)
 	val, found, err := c.Get(t.Context(), "k1", load)
 	if err != nil || !found || val != "ok" || c.HasFailed("k1") || calls != 2 {
 		t.Fatalf("third Get after backoff = %q, found=%v, err=%v, failed=%v, calls=%d", val, found, err, c.HasFailed("k1"), calls)
@@ -83,25 +84,14 @@ func TestAsyncGet_ServesStaleWhileRevalidating(t *testing.T) {
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
 
-	now := time.Unix(3000, 0)
-	var mu sync.Mutex
-	currentTime := func() time.Time {
-		mu.Lock()
-		defer mu.Unlock()
-		return now
-	}
-	advanceTime := func(d time.Duration) {
-		mu.Lock()
-		now = now.Add(d)
-		mu.Unlock()
-	}
+	now := clock.NewFake(time.Unix(3000, 0))
 
 	c := cache.New[[]string](
 		"models",
 		cache.WithPluginID("test-plugin"),
 		cache.WithTTL(5*time.Minute),
 		cache.WithAsync(true),
-		cache.WithClock(currentTime),
+		cache.WithClock(now),
 	)
 
 	firstGate := make(chan struct{})
@@ -125,7 +115,7 @@ func TestAsyncGet_ServesStaleWhileRevalidating(t *testing.T) {
 		return ok && slices.Equal(v, []string{"v1"})
 	})
 
-	advanceTime(10 * time.Minute)
+	now.Advance(10 * time.Minute)
 	secondGate := make(chan struct{})
 	stale, found, err := c.Get(t.Context(), "k1", func(context.Context) ([]string, error) {
 		<-secondGate
@@ -243,8 +233,8 @@ func TestValuesSnapshot(t *testing.T) {
 
 func waitForCondition(t *testing.T, check func() bool) {
 	t.Helper()
-	deadline := time.Now().Add(3 * time.Second)
-	for time.Now().Before(deadline) {
+	const attempts = 600
+	for range attempts {
 		if check() {
 			return
 		}

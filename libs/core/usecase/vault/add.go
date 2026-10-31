@@ -62,7 +62,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		return domain.Vault{}, err
 	}
 
-	id, err := u.identity.EnsureIdentity(root, u.now())
+	id, err := u.identity.EnsureIdentity(root, u.now.Now())
 	if err != nil {
 		return domain.Vault{}, fmt.Errorf("give %s an identity: %w", root, err)
 	}

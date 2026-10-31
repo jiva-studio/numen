@@ -61,7 +61,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 			t.Fatal(err)
 		}
 	}
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
 		t.Fatal(err)
 	}
 
@@ -74,7 +74,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := vaults.NewAdd(settings.VaultIdentity(), registry, time.Now).Execute(root, "watched"); err != nil {
+	if _, err := vaults.NewAdd(settings.VaultIdentity(), registry, testsupport.NewClock()).Execute(root, "watched"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -322,7 +322,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 			t.Fatal(err)
 		}
 	}
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
 		t.Fatal(err)
 	}
 
@@ -336,7 +336,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry, time.Now).Execute(root, "quitting"); err != nil {
+	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry, testsupport.NewClock()).Execute(root, "quitting"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -356,7 +356,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 		cfg.VaultReaders(),
 		recording{VaultWriters: cfg.VaultWriters(), order: recorded, hold: hold},
 		unlevelled,
-		time.Now,
+		testsupport.NewClock(),
 	)
 	installation.Services.SetNoteWrite(&writing)
 
@@ -622,11 +622,11 @@ func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), linked)
 	defer cancel()
 
-	began := time.Now()
+	began := testsupport.Machine.Now()
 	if !f.installation.FlushPending(ctx) {
 		t.Fatal("the vault never settled")
 	}
-	took := time.Since(began)
+	took := testsupport.Machine.Now().Sub(began)
 
 	if took < linked {
 		t.Errorf("the quit gave the page %v of the %v it is unembedded", took, linked)
@@ -748,11 +748,11 @@ func TestAPageWithAQuestionActiveDoesNotLetTheWindowGo(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 
-	began := time.Now()
+	began := testsupport.Machine.Now()
 	if f.installation.FlushPending(ctx) {
 		t.Fatal("the vault settled with a question standing")
 	}
-	if took := time.Since(began); took > 5*time.Second {
+	if took := testsupport.Machine.Now().Sub(began); took > 5*time.Second {
 		t.Errorf("a page that had answered was waited on for %v", took)
 	}
 
@@ -879,11 +879,11 @@ func TestFlushPending_BoundsWaitForDepartedPageWithQuestion(t *testing.T) {
 	ctx, endsAt := context.WithTimeout(t.Context(), linked)
 	defer endsAt()
 
-	began := time.Now()
+	began := testsupport.Machine.Now()
 	if !f.installation.FlushPending(ctx) {
 		t.Fatal("the vault never settled after the page went")
 	}
-	took := time.Since(began)
+	took := testsupport.Machine.Now().Sub(began)
 
 	if took < linked {
 		t.Errorf("the quit gave the page %v of the %v it is unembedded", took, linked)

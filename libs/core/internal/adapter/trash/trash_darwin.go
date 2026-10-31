@@ -5,6 +5,7 @@ package trash
 import (
 	"fmt"
 	"sync"
+	"time"
 	"unsafe"
 
 	"github.com/ebitengine/purego"
@@ -40,7 +41,7 @@ var foundation = sync.OnceValue(func() error {
 
 // moveToTrash moves the folder to the Finder trash and records its origin for
 // Put Back.
-func moveToTrash(path string) error {
+func moveToTrash(path string, _ time.Time) error {
 	if err := foundation(); err != nil {
 		return err
 	}
