@@ -24,7 +24,7 @@ export const TRANSCRIBE_ENTRY: MenuEntry = {
 export const DELETE_ENTRY: MenuEntry = {
   pluginId: 'md.test.transcription',
   pluginName: 'Transcription',
-  command: 'delete-transcript',
+  command: 'delete-entry',
   title: 'Delete transcript',
   icon: '',
   versionId: 'md.test.transcription/abc',

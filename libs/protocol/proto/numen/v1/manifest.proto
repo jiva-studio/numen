@@ -54,6 +54,22 @@ message ManifestContributes {
   string feature = 2;
   // category groups the plugin in lists.
   string category = 3;
+  // file_types are the types of file the plugin opens.
+  repeated ManifestFileType file_types = 6;
+}
+
+// ManifestFileType is a type of file the plugin opens in a tab of one of its
+// kinds.
+message ManifestFileType {
+  // tab_kind is the kind of tab that opens the file. It is one of the plugin's
+  // tab_kinds.
+  string tab_kind = 1;
+  // extensions are the extensions, lowercase and without the dot, of the files
+  // of the type.
+  repeated string extensions = 2;
+  // file_names are the names, lowercase, of the files of the type whatever
+  // their extension.
+  repeated string file_names = 3;
 }
 
 // ManifestTabKind is a kind of tab the plugin registers.

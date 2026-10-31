@@ -121,7 +121,11 @@ func newWireContributes(contributes manifest.Contributes) *v1.ManifestContribute
 	for _, kind := range contributes.TabKinds {
 		kinds = append(kinds, &v1.ManifestTabKind{Kind: kind.Kind, Title: kind.Title, Icon: kind.Icon})
 	}
-	return &v1.ManifestContributes{TabKinds: kinds, Feature: contributes.Feature, Category: contributes.Category}
+	fileTypes := make([]*v1.ManifestFileType, 0, len(contributes.FileTypes))
+	for _, one := range contributes.FileTypes {
+		fileTypes = append(fileTypes, &v1.ManifestFileType{TabKind: one.TabKind, Extensions: one.Extensions, FileNames: one.FileNames})
+	}
+	return &v1.ManifestContributes{TabKinds: kinds, Feature: contributes.Feature, Category: contributes.Category, FileTypes: fileTypes}
 }
 
 func newWireState(state catalog.State) v1.CatalogState {

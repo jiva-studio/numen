@@ -21,6 +21,7 @@ ICON     := tools/build-icons
 STORIES  := tools/ci-stories
 COMMANDS := tools/ci-commands
 PLUGIN_VERSIONS := tools/plugin-versions
+PLUGIN_INDEX := tools/build-plugin-index
 LAYERS   := tools/lint-layers
 QUALITY  := tools/lint-quality
 NARRATIVE := tools/lint-narrative
@@ -77,8 +78,18 @@ endef
 .PHONY: plugins
 plugins: plugins_build ## build every plugin
 
+# The index of the plugins is written next to their folders before anything compiled or packaged
+# from them reads it.
+.PHONY: plugins_index
+plugins_index: ## write plugins/plugins-index.json from the manifest of every plugin
+	node $(PLUGIN_INDEX)/build.mjs
+
+.PHONY: plugins_index_test
+plugins_index_test: ## test the plugin index build
+	node --test $(PLUGIN_INDEX)/build.test.mjs
+
 .PHONY: plugins_build
-plugins_build: lib_ui_build ## build every plugin
+plugins_build: lib_ui_build plugins_index ## build every plugin
 	$(call run_in_plugins,build)
 
 .PHONY: plugins_lint
@@ -124,7 +135,7 @@ lib_core_build: ## build core Go library
 lib_core_compile: lib_core_build
 
 .PHONY: lib_core_test
-lib_core_test: ## run core tests with race detector
+lib_core_test: plugins_index ## run core tests with race detector
 	cd $(CORE) && go test ./... -race
 
 .PHONY: lib_core_lint
@@ -354,6 +365,7 @@ define bundle
 			done; \
 		fi; \
 	done
+	cp $(PLUGINS)/plugins-index.json "$(1).app/Contents/Resources/plugins/"
 	printf 'APPL????' > "$(1).app/Contents/PkgInfo"
 	plutil -lint "$(1).app/Contents/Info.plist"
 	codesign --force -s - "$(1).app"

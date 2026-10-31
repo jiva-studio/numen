@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { findWordsInGo, findWordsInScript, listManifestFiles, loadPluginDictionary } from "./dictionary.mjs";
-import { REPO_ROOT, failOnFindings, listShippedFiles, requireMatches } from "./helpers.mjs";
+import { readPluginManifests } from "../../shared/manifests.mjs";
+import { findWordsInGo, findWordsInScript, getIdPrefix, listManifestFiles, loadPluginDictionary } from "./dictionary.mjs";
+import { REPO_ROOT, SCRIPT_EXTENSIONS, failOnFindings, listShippedFiles, readSource, requireMatches } from "./helpers.mjs";
 
 /** The libraries and applications whose frontend sources know no plugin. */
 const FRONTEND_NAME_FREE_ROOTS = ["apps", "libs/ui/shell", "libs/plugin-host-ts", "libs/plugin-manager", "libs/ui/core"];
@@ -57,6 +58,52 @@ export function verifyNotesNamesNoProducer() {
   failOnFindings("The notes library names plugin words", findPluginWords(readSources(files), "go", dictionary));
 }
 
+/** The libraries and applications whose production code names no plugin id. */
+const PLUGIN_ID_FREE_ROOTS = ["libs/core", "apps", "libs/ui"];
+
+/** The reverse-DNS namespace every plugin id shares, with its trailing dot, such as `md.numen.`. */
+export function getIdNamespace(ids) {
+  return ids[0].split(".").slice(0, getIdPrefix(ids)).join(".") + ".";
+}
+
+/**
+ * The literals that state a plugin id, or the start of one: a token that begins at the namespace of
+ * the ids and equals an id, continues an id with a segment, or is the start of an id. Each source is
+ * `{ file, literals }`, a literal being `{ line, value }`.
+ */
+export function findPluginIdLiterals(sources, ids) {
+  const namespace = getIdNamespace(ids);
+  const found = [];
+  for (const { file, literals } of sources) {
+    for (const { line, value } of literals) {
+      for (let at = value.indexOf(namespace); at >= 0; at = value.indexOf(namespace, at + 1)) {
+        const token = /^[\w.-]*/.exec(value.slice(at))[0];
+        if (ids.some((id) => id.startsWith(token) || token === id || token.startsWith(id + "."))) {
+          found.push({ file, line, symbol: `literal ${JSON.stringify(value)} states the plugin id ${JSON.stringify(token)}` });
+          break;
+        }
+      }
+    }
+  }
+  return found;
+}
+
+function readLiterals(files) {
+  return files.flatMap((file) => {
+    const source = readSource(file);
+    return source ? [{ file, literals: source.literals }] : [];
+  });
+}
+
+/** The core, the applications and the UI library name no plugin id in their production code. */
+export function verifyHostNamesNoPluginId() {
+  const ids = readPluginManifests(path.join(REPO_ROOT, "plugins")).map(({ manifest }) => manifest.id);
+  requireMatches("plugin ids read", ids.length, 10);
+  const files = listShippedFiles(PLUGIN_ID_FREE_ROOTS).filter((file) => file.endsWith(".go") || SCRIPT_EXTENSIONS.has(path.extname(file)));
+  requireMatches("production sources read for plugin ids", files.length, 500);
+  failOnFindings("Production code names a plugin id", findPluginIdLiterals(readLiterals(files), ids));
+}
+
 export const VOCABULARY_VERIFIERS = [
   {
     id: "window-names-no-plugin-kind",
@@ -71,5 +118,12 @@ export const VOCABULARY_VERIFIERS = [
     module: "notes",
     name: "Notes Library Names No Plugin Word (words of the plugin manifests)",
     run: verifyNotesNamesNoProducer,
+  },
+  {
+    id: "host-names-no-plugin-id",
+    scope: "libs",
+    module: "core",
+    name: "Core, Applications and UI Library Name No Plugin Id (no literal states an id of a plugin manifest)",
+    run: verifyHostNamesNoPluginId,
   },
 ];

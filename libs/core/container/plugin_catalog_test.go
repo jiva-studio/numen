@@ -3,13 +3,14 @@ package container
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
-	"github.com/jiva-studio/numen/libs/plugin-catalog/hintsource"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/indexsource"
 )
 
 // readFrontendSource is the text of the sources of a plugin's frontend that are not tests.
@@ -51,29 +52,51 @@ func TestAPluginThatRegistersTabsDeclaresThemInItsManifest(t *testing.T) {
 	}
 }
 
-func TestEveryHintRepeatsTheManifestOfThePluginItNames(t *testing.T) {
+// indexPath is the plugin index make plugins_index writes next to the manifests of the plugins.
+var indexPath = filepath.Join(modulesRoot, "plugins", indexsource.FileName)
+
+func TestTheGeneratedPluginIndexEqualsTheManifests(t *testing.T) {
 	manifests := getPluginManifests(t)
-	hinted := map[string]bool{}
-	for _, hint := range hintsource.BuiltIn() {
-		hinted[hint.ID] = true
-		index := slices.IndexFunc(manifests, func(one pluginManifest) bool { return one.ID == hint.ID })
-		if index < 0 {
-			t.Errorf("the hint %s names a plugin that has no manifest", hint.ID)
-			continue
-		}
-		declared := manifests[index]
-		if hint.Name != declared.Name || hint.Description != declared.Description {
-			t.Errorf("%s: the hint says %q, %q and the manifest %q, %q", hint.ID, hint.Name, hint.Description, declared.Name, declared.Description)
-		}
-		if hint.Contributes.Feature != declared.Contributes.Feature || hint.Contributes.Category != declared.Contributes.Category ||
-			!slices.Equal(hint.Contributes.TabKinds, declared.Contributes.TabKinds) {
-			t.Errorf("%s: the hint contributes %+v and the manifest %+v", hint.ID, hint.Contributes, declared.Contributes)
-		}
+	if _, err := os.Stat(indexPath); err != nil {
+		t.Fatalf("the plugin index is missing (%v): run make plugins_index", err)
+	}
+
+	listed, err := indexsource.New([]string{indexPath}, nil).List(t.Context())
+
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(listed) != len(manifests) {
+		t.Errorf("the index lists %d plugins and the tree holds %d manifests: run make plugins_index", len(listed), len(manifests))
 	}
 	for _, one := range manifests {
-		if len(one.Contributes.TabKinds) > 0 && !hinted[one.ID] {
-			t.Errorf("%s declares tab kinds and has no hint, so a tab of its kind has no placeholder before the plugin is installed", one.ID)
+		want := catalog.NewEntry(indexsource.Name, catalog.StateAvailable, one.PluginManifest)
+		index := slices.IndexFunc(listed, func(entry catalog.Entry) bool { return entry.ID == one.ID })
+		if index < 0 {
+			t.Errorf("the index lacks %s: run make plugins_index", one.ID)
+			continue
 		}
+		if !reflect.DeepEqual(listed[index], want) {
+			t.Errorf("%s: the index says %+v and the manifest %+v: run make plugins_index", one.ID, listed[index], want)
+		}
+	}
+}
+
+func TestTheIndexNamesTheFilesThePluginsOpen(t *testing.T) {
+	listed, err := indexsource.New([]string{indexPath}, nil).List(t.Context())
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+
+	opening := 0
+	for _, entry := range listed {
+		if len(entry.Contributes.FileTypes) > 0 {
+			opening++
+		}
+	}
+
+	if opening < 4 {
+		t.Errorf("%d plugins of the index open files: the rule is checked against too little", opening)
 	}
 }
 
@@ -91,17 +114,19 @@ func writeCatalogPlugin(t *testing.T, dir, id, targets string) {
 	}
 }
 
-func TestTheCatalogListsThePluginsOnDiskWithTheirEnabledFlagAndTheHints(t *testing.T) {
+func TestTheCatalogListsThePluginsOnDiskWithTheirEnabledFlagAndTheOfferedOnes(t *testing.T) {
 	dir := t.TempDir()
 	writeCatalogPlugin(t, dir, "org.example.on", `"desktop.editor"`)
 	writeCatalogPlugin(t, dir, "org.example.off", `"desktop.editor"`)
 	writeCatalogPlugin(t, dir, "org.example.cards", `"desktop.flashcards"`)
+	offeredDir := t.TempDir()
+	writeCatalogPlugin(t, offeredDir, "org.example.offered", `"desktop.editor"`)
 	host := NewPluginHost("desktop.editor", dir)
 	host.SetSettings(map[string]map[string]any{"org.example.off": {"enabled": false}})
 	cfg := Config{
 		PluginHost:    host,
 		PluginDirs:    []string{dir},
-		PluginCatalog: catalog.Config{Target: "desktop.editor", AppVersion: "2026.10.0", Sources: nil, InstallDir: "", CacheDir: ""},
+		PluginCatalog: catalog.Config{Target: "desktop.editor", AppVersion: "2026.10.0", Sources: []catalog.Source{indexsource.New(nil, []string{offeredDir})}, InstallDir: "", CacheDir: ""},
 	}
 
 	service := cfg.GetPluginCatalog()
@@ -120,8 +145,8 @@ func TestTheCatalogListsThePluginsOnDiskWithTheirEnabledFlagAndTheHints(t *testi
 	if states["org.example.on"] != catalog.StateInstalled || states["org.example.off"] != catalog.StateDisabled {
 		t.Errorf("states = %v, want the enabled plugin installed and the other disabled", states)
 	}
-	if states["md.numen.readers.pdf"] != catalog.StateAvailable {
-		t.Errorf("a plugin that ships with the application and is not on disk is %q, want available", states["md.numen.readers.pdf"])
+	if states["org.example.offered"] != catalog.StateAvailable {
+		t.Errorf("a plugin of a source that is not on disk is %q, want available", states["org.example.offered"])
 	}
 	cards, ok := findEntry(listing, "org.example.cards")
 	if !ok || cards.Incompatibility == nil {

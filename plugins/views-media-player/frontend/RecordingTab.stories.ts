@@ -51,7 +51,7 @@ const TRANSCRIBE: MenuEntry = {
 const TRANSCRIBED: MenuEntry = {
   pluginId: 'md.test.transcription',
   pluginName: 'Transcription',
-  command: 'delete-transcript',
+  command: 'delete-entry',
   title: 'Delete transcript',
   icon: '',
   versionId: 'md.test.transcription/lecture-4',

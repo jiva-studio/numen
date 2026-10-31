@@ -1,13 +1,14 @@
 {
   "id": "md.numen.readers.epub",
   "name": "EPUB Book Reader",
-  "version": "2026.10.3",
+  "version": "2026.10.4",
   "protocol": 1,
   "description": "EPUB book reader with highlights and passage links",
   "capabilities": [],
   "targets": ["desktop.editor"],
   "contributes": {
     "tabKinds": [{ "kind": "reader:reader-epub", "title": "EPUB Reader", "icon": "book-open" }],
+    "fileTypes": [{ "tabKind": "reader:reader-epub", "extensions": ["epub"] }],
     "feature": "EPUB books",
     "category": "readers"
   },

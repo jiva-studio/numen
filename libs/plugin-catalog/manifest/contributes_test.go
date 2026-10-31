@@ -32,15 +32,37 @@ func TestAManifestDeclaresTheTabsFeatureAndCategoryOfThePlugin(t *testing.T) {
 	}
 }
 
+func TestAManifestDeclaresTheFilesItsTabsOpen(t *testing.T) {
+	m, err := manifestjson.Read(strings.NewReader(contributesHead + `,"contributes":{
+		"tabKinds":[{"kind":"reader:plex","title":"Plex"}],
+		"fileTypes":[{"tabKind":"reader:plex","extensions":["plex","plx"],"fileNames":["plex.config"]}]}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := manifest.FileType{TabKind: "reader:plex", Extensions: []string{"plex", "plx"}, FileNames: []string{"plex.config"}}
+	if len(m.Contributes.FileTypes) != 1 || m.Contributes.FileTypes[0].TabKind != want.TabKind ||
+		!slices.Equal(m.Contributes.FileTypes[0].Extensions, want.Extensions) ||
+		!slices.Equal(m.Contributes.FileTypes[0].FileNames, want.FileNames) {
+		t.Errorf("file types = %+v, want [%+v]", m.Contributes.FileTypes, want)
+	}
+}
+
 func TestAContributionThatTheApplicationCannotUseIsRefused(t *testing.T) {
 	cases := map[string]string{
-		"a kind in capitals":    `{"tabKinds":[{"kind":"Plex","title":"P"}]}`,
-		"a kind with no name":   `{"tabKinds":[{"kind":"","title":"P"}]}`,
-		"a kind declared twice": `{"tabKinds":[{"kind":"plex","title":"P"},{"kind":"plex","title":"Q"}]}`,
-		"a kind with no title":  `{"tabKinds":[{"kind":"plex","title":" "}]}`,
-		"an icon in capitals":   `{"tabKinds":[{"kind":"plex","title":"P","icon":"Waypoints"}]}`,
-		"a category with space": `{"category":"my views"}`,
-		"a padded feature":      `{"feature":" plex "}`,
+		"a kind in capitals":                `{"tabKinds":[{"kind":"Plex","title":"P"}]}`,
+		"a kind with no name":               `{"tabKinds":[{"kind":"","title":"P"}]}`,
+		"a kind declared twice":             `{"tabKinds":[{"kind":"plex","title":"P"},{"kind":"plex","title":"Q"}]}`,
+		"a kind with no title":              `{"tabKinds":[{"kind":"plex","title":" "}]}`,
+		"an icon in capitals":               `{"tabKinds":[{"kind":"plex","title":"P","icon":"Waypoints"}]}`,
+		"a category with space":             `{"category":"my views"}`,
+		"a padded feature":                  `{"feature":" plex "}`,
+		"a file type of an undeclared kind": `{"tabKinds":[{"kind":"plex","title":"P"}],"fileTypes":[{"tabKind":"deck","extensions":["deck"]}]}`,
+		"a file type naming no file":        `{"tabKinds":[{"kind":"plex","title":"P"}],"fileTypes":[{"tabKind":"plex"}]}`,
+		"an extension in capitals":          `{"tabKinds":[{"kind":"plex","title":"P"}],"fileTypes":[{"tabKind":"plex","extensions":["PLEX"]}]}`,
+		"an extension with a dot":           `{"tabKinds":[{"kind":"plex","title":"P"}],"fileTypes":[{"tabKind":"plex","extensions":[".plex"]}]}`,
+		"an extension of two file types":    `{"tabKinds":[{"kind":"plex","title":"P"}],"fileTypes":[{"tabKind":"plex","extensions":["plex"]},{"tabKind":"plex","extensions":["plex"]}]}`,
+		"a file name in capitals":           `{"tabKinds":[{"kind":"plex","title":"P"}],"fileTypes":[{"tabKind":"plex","fileNames":["Plex.config"]}]}`,
 	}
 	for name, contributes := range cases {
 		_, err := manifestjson.Read(strings.NewReader(contributesHead + `,"contributes":` + contributes + `}`))

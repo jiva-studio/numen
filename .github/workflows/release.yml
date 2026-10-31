@@ -656,6 +656,7 @@ jobs:
               if [ -d "$p/dist" ]; then cp -r "$p/dist" "$RUNNER_TEMP/plugins/$name/"; fi
             fi
           done
+          cp ../../plugins/plugins-index.json "$RUNNER_TEMP/plugins/"
           ../../../.github/scripts/check-staged-plugins.sh ../../plugins "$RUNNER_TEMP/plugins"
 
       - name: Create Windows zip archive
@@ -775,6 +776,7 @@ jobs:
               if [ -d "$p/dist" ]; then cp -r "$p/dist" "$RUNNER_TEMP/plugins/$name/"; fi
             fi
           done
+          cp ../../plugins/plugins-index.json "$RUNNER_TEMP/plugins/"
           ../../../.github/scripts/check-staged-plugins.sh ../../plugins "$RUNNER_TEMP/plugins"
 
       - name: Assemble macOS application bundle
@@ -792,10 +794,11 @@ jobs:
             if [ -d "$RUNNER_TEMP/plugins" ]; then
               mkdir -p "$APP/Contents/Resources/plugins"
               for p in "$RUNNER_TEMP/plugins/"*; do
-                if grep -q "\"$TARGET\"" "$p/manifest.json"; then
+                if [ -d "$p" ] && grep -q "\"$TARGET\"" "$p/manifest.json"; then
                   cp -r "$p" "$APP/Contents/Resources/plugins/"
                 fi
               done
+              cp "$RUNNER_TEMP/plugins/plugins-index.json" "$APP/Contents/Resources/plugins/"
             fi
             printf 'APPL????' > "$APP/Contents/PkgInfo"
             plutil -replace CFBundleShortVersionString -string "$VERSION" "$APP/Contents/Info.plist"

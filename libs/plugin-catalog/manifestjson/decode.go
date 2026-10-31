@@ -140,7 +140,11 @@ func newContributes(wire *v1.ManifestContributes) manifest.Contributes {
 	for _, one := range wire.GetTabKinds() {
 		kinds = append(kinds, manifest.TabKind{Kind: one.GetKind(), Title: one.GetTitle(), Icon: one.GetIcon()})
 	}
-	return manifest.Contributes{TabKinds: kinds, Feature: wire.GetFeature(), Category: wire.GetCategory()}
+	var fileTypes []manifest.FileType
+	for _, one := range wire.GetFileTypes() {
+		fileTypes = append(fileTypes, manifest.FileType{TabKind: one.GetTabKind(), Extensions: one.GetExtensions(), FileNames: one.GetFileNames()})
+	}
+	return manifest.Contributes{TabKinds: kinds, Feature: wire.GetFeature(), Category: wire.GetCategory(), FileTypes: fileTypes}
 }
 
 func newDependencies(wire []*v1.ManifestDependency) []manifest.DependencyRequirement {

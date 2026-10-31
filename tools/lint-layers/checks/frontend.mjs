@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { readPluginManifests } from "../../shared/manifests.mjs";
 import {
   MODULES_DIR,
   REPO_ROOT,
@@ -11,6 +12,7 @@ import {
   getImportSpecifiers,
   listShippedFiles,
   readSource,
+  requireMatches,
 } from "./helpers.mjs";
 
 /** The names `libs/ui/core/src/index.ts` exports in braces. */
@@ -24,31 +26,60 @@ export function getUiExports() {
   );
 }
 
+/** The folders of a UI library under `src` that hold views, besides `src` itself. */
+const UI_VIEW_ROOTS = ["", "features", "screens"];
+
 /**
- * The views plugins own, which `@numen/ui` neither holds nor exports.
+ * The views a plugin owns, read from the frontend folders of the plugins: the folders directly under
+ * `frontend` and the components (`.vue` files, stories and tests apart) of each plugin. A folder or a
+ * component of two or more plugins identifies no plugin and is not listed.
+ *
+ * @param {string} pluginsDir - the folder that holds the plugins
+ * @returns {{ dirs: Map<string, string>, names: Map<string, string> }} each owned folder name and
+ *   component name with the plugin that owns it
  */
-const PLUGIN_VIEWS = [
-  {
-    plugin: "views-agent-chat",
-    dirs: ["screens/agent", "features/thread", "features/message-composer"],
-    names: ["Agent", "Thread", "MessageComposer", "useConversation", "Conversation", "Turn", "AgentModelOption", "AgentPort", "AgentStep"],
-  },
-];
+export function loadPluginViews(pluginsDir = path.join(MODULES_DIR, "plugins")) {
+  const dirOwners = new Map();
+  const nameOwners = new Map();
+  const add = (owners, key, plugin) => {
+    if (!owners.has(key)) owners.set(key, new Set());
+    owners.get(key).add(plugin);
+  };
+  for (const { name: plugin } of readPluginManifests(pluginsDir)) {
+    const frontend = path.join(pluginsDir, plugin, "frontend");
+    if (!fs.existsSync(frontend)) continue;
+    for (const entry of fs.readdirSync(frontend, { recursive: true, withFileTypes: true })) {
+      if (entry.isDirectory() && path.relative(frontend, path.join(entry.parentPath, entry.name)).split(path.sep).length === 1) {
+        add(dirOwners, entry.name, plugin);
+      }
+      if (entry.isFile() && /^[A-Z]\w*\.vue$/.test(entry.name)) add(nameOwners, entry.name.replace(/\.vue$/, ""), plugin);
+    }
+  }
+  const owned = (owners) => new Map([...owners].filter(([, plugins]) => plugins.size === 1).map(([key, plugins]) => [key, [...plugins][0]]));
+  return { dirs: owned(dirOwners), names: owned(nameOwners) };
+}
+
+/** The views of `views` that the UI library at `uiSrc` holds as a folder or exports by `exported`. */
+export function findPluginViewsInUi(views, exported, uiSrc = path.join(MODULES_DIR, "libs/ui/core/src")) {
+  const found = [];
+  for (const [dir, plugin] of views.dirs) {
+    for (const root of UI_VIEW_ROOTS) {
+      const relative = path.join(root, dir);
+      if (fs.existsSync(path.join(uiSrc, relative))) found.push(`${relative} of the UI library belongs to ${plugin}`);
+    }
+  }
+  for (const [name, plugin] of views.names) {
+    if (exported.has(name)) found.push(`@numen/ui exports ${name}, which belongs to ${plugin}`);
+  }
+  return found;
+}
 
 /** `@numen/ui` holds and exports none of the views a plugin owns. */
 export function verifyUiHoldsNoPluginView() {
-  const exported = new Set(getUiExports());
-  const found = [];
-  for (const { plugin, dirs, names } of PLUGIN_VIEWS) {
-    for (const dir of dirs) {
-      if (fs.existsSync(path.join(MODULES_DIR, "libs/ui/core/src", dir))) {
-        found.push(`libs/ui/core/src/${dir} belongs to ${plugin}`);
-      }
-    }
-    for (const name of names) {
-      if (exported.has(name)) found.push(`@numen/ui exports ${name}, which belongs to ${plugin}`);
-    }
-  }
+  const views = loadPluginViews();
+  requireMatches("view folders owned by one plugin", views.dirs.size, 5);
+  requireMatches("view components owned by one plugin", views.names.size, 20);
+  const found = findPluginViewsInUi(views, new Set(getUiExports()));
   if (found.length > 0) {
     throw new Error("The UI library holds views plugins own:\n" + found.join("\n"));
   }
@@ -322,7 +353,7 @@ export const FRONTEND_VERIFIERS = [
     id: "ui-holds-no-plugin-view",
     scope: "libs",
     module: "ui",
-    name: "UI Library Holds No Plugin View (agent chat: Agent, thread, message composer)",
+    name: "UI Library Holds No Plugin View (no folder or export named after a folder or component of one plugin)",
     run: verifyUiHoldsNoPluginView,
   },
   {

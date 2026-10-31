@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { readPluginManifests } from "../../shared/manifests.mjs";
+import { loadPluginDictionary } from "./dictionary.mjs";
 import {
   MODULES_DIR,
   NOT_SHIPPED,
@@ -20,6 +21,7 @@ import {
   isWithin,
   listShippedFiles,
   readSource,
+  requireMatches,
 } from "./helpers.mjs";
 
 export function verifyPluginsStatic() {
@@ -274,24 +276,48 @@ export function verifyPluginsStandaloneRepo() {
   failOnFindings("A plugin is tied to the monorepo by relative paths, libs/notes, or its own .proto", findPluginStandaloneViolations());
 }
 
-/** The tab kinds, text kinds and command/menu ids owned by specific plugins. */
-const PLUGIN_OWNED_TOKENS = [
-  { token: "note", owners: ["notes"] },
-  { token: "plex", owners: ["views-plex-graph"] },
-  { token: "document", owners: ["readers-pdf"] },
-  { token: "book", owners: ["readers-epub"] },
-  { token: "recording", owners: ["views-media-player"] },
-  { token: "deck", owners: ["views-flashcards-studio"] },
-  { token: "card-model", owners: ["views-flashcards-studio"] },
-  { token: "preset", owners: ["views-flashcards-studio"] },
-  { token: "transcript", owners: ["engines-transcription", "views-media-player"] },
-  { token: "recognition", owners: ["engines-ocr", "readers-pdf"] },
-  { token: "page-text", owners: ["readers-pdf"] },
-  { token: "transcribe", owners: ["engines-transcription"] },
-  { token: "proofread", owners: ["tools-proofreading"] },
-  { token: "recognise", owners: ["engines-ocr"] },
-  { token: "relation", owners: ["views-plex-graph"] },
-];
+/** The tab kinds, note types, command ids and text kinds a manifest contributes, lower-case. */
+export function listContributedTokens(manifest) {
+  const tokens = [];
+  for (const { kind } of manifest.contributes?.tabKinds ?? []) tokens.push(kind, kind.replace(/^reader:/, ""));
+  for (const { type } of manifest.noteTypes ?? []) tokens.push(type);
+  for (const command of manifest.commands ?? []) tokens.push(command.id, ...(command.when?.liveTextKinds ?? []));
+  return [...new Set(tokens.filter(Boolean).map((token) => token.toLowerCase()))];
+}
+
+/**
+ * The tab kinds, note types, command ids and text kinds a plugin owns: those its manifest contributes
+ * and no other manifest states in any value. A token that the manifests of two or more plugins state
+ * identifies no plugin and is not listed.
+ *
+ * @param {{ name: string, manifest: object }[]} manifests - each plugin folder with its parsed manifest
+ * @param {Map<string, Set<string>>} words - the words of one manifest, from `loadPluginDictionary`
+ */
+export function loadOwnedTokens(manifests = readPluginManifests(path.join(MODULES_DIR, "plugins")), words = loadPluginDictionary()) {
+  const owned = new Map();
+  for (const { name, manifest } of manifests) {
+    for (const token of listContributedTokens(manifest)) {
+      const owners = words.get(token);
+      if (owners?.size === 1 && owners.has(name)) owned.set(token, { token, owners: [name] });
+    }
+  }
+  return [...owned.values()];
+}
+
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** The lines of a manifest that state a token another plugin owns, as findings. */
+export function findForeignTokensInManifest(file, plugin, text, ownedTokens) {
+  const found = [];
+  text.split("\n").forEach((line, idx) => {
+    for (const { token, owners } of ownedTokens) {
+      if (!owners.includes(plugin) && new RegExp(`"${escapeRegExp(token)}"`).test(line)) {
+        found.push({ file, line: idx + 1, symbol: `"${token}" (owned by ${owners.join(", ")})` });
+      }
+    }
+  });
+  return found;
+}
 
 /** Every reference in a plugin to another plugin's manifest id, tab kind, text kind or menu/command id. */
 function findCrossPluginKnowledge() {
@@ -301,6 +327,8 @@ function findCrossPluginKnowledge() {
     .filter((e) => e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules")
     .map((e) => e.name);
   const manifestIds = new Map(readPluginManifests(pluginsDir).map(({ name, manifest }) => [manifest.id, name]));
+  const ownedTokens = loadOwnedTokens().filter(({ token }) => !manifestIds.has(token));
+  requireMatches("tokens owned by one plugin", ownedTokens.length, 10);
   const found = [];
   const listed = spawnSync("git", ["ls-files", "--", "plugins"], { cwd: REPO_ROOT, encoding: "utf8" });
   for (const file of (listed.stdout || "").split("\n").filter(Boolean)) {
@@ -308,14 +336,7 @@ function findCrossPluginKnowledge() {
     const plugin = file.split("/")[1];
     if (!pluginNames.includes(plugin)) continue;
     if (path.basename(file) === "manifest.json") {
-      const text = fs.readFileSync(path.join(REPO_ROOT, file), "utf8");
-      text.split("\n").forEach((line, idx) => {
-        for (const { token, owners } of PLUGIN_OWNED_TOKENS) {
-          if (!owners.includes(plugin) && new RegExp(`"${token}"`).test(line)) {
-            found.push({ file, line: idx + 1, symbol: `"${token}" (owned by ${owners.join(", ")})` });
-          }
-        }
-      });
+      found.push(...findForeignTokensInManifest(file, plugin, fs.readFileSync(path.join(REPO_ROOT, file), "utf8"), ownedTokens));
       continue;
     }
     const source = readSource(file);
@@ -326,7 +347,7 @@ function findCrossPluginKnowledge() {
         found.push({ file, line, symbol: `${JSON.stringify(value)} (plugin ID of ${idOwner})` });
       }
       if (!NOT_SHIPPED.test(file)) {
-        for (const { token, owners } of PLUGIN_OWNED_TOKENS) {
+        for (const { token, owners } of ownedTokens) {
           if (!owners.includes(plugin) && value === token) {
             found.push({ file, line, symbol: `${JSON.stringify(value)} (owned by ${owners.join(", ")})` });
           }
