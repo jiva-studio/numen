@@ -148,7 +148,7 @@ export const MANIFEST_VERIFIERS = [
     run: verifyManifestParsedOnce,
   },
   {
-    id: 'manifest-schema-names-no-plugin-function',
+    id: "manifest-schema-names-no-plugin-function",
     scope: 'libs',
     module: 'quality',
     name: 'Manifest Schema Names No Plugin Function (no top-level section of the manifest is named after a word that the manifest of exactly one plugin owns)',
