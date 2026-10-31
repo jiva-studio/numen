@@ -69,7 +69,7 @@ func getSegments(fetched download.Text) ([]domain.TextSegment, error) {
 	}
 	segments := make([]domain.TextSegment, len(fetched.Cues))
 	for i, cue := range fetched.Cues {
-		selector, err := timeSelector{T: []float64{float64(cue.From) / 1000, float64(cue.To) / 1000}}.encode()
+		selector, err := domain.EncodeSelector(domain.TimeSelector{T: []float64{float64(cue.From) / 1000, float64(cue.To) / 1000}})
 		if err != nil {
 			return nil, err
 		}

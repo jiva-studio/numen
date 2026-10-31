@@ -279,8 +279,13 @@ export function verifyNoDuplicateFrontendFiles() {
   failOnFindings("Frontend files of different plugins hold the same code", findDuplicateFiles(readShippedPluginSources(), { languages: /\.(ts|vue)$/ }));
 }
 
+/** Generated Go code and fixtures; every other Go file of a plugin, test files included, is compared. */
+const BACKEND_NOT_COMPARED = /(\.pb\.go|\.connect\.go)$|(^|\/)(testdata|fixtures|gen)\//;
+
 export function verifyNoDuplicateBackendFiles() {
-  failOnFindings("Go files of different plugins hold the same code", findDuplicateFiles(readShippedPluginSources(), { languages: /\.go$/ }));
+  const sources = readTrackedSources(["plugins"], (file) => file.endsWith(".go") && !BACKEND_NOT_COMPARED.test(file));
+  requireMatches("plugin Go sources read", sources.length, 100);
+  failOnFindings("Go files of different plugins hold the same code", findDuplicateFiles(sources, { languages: /\.go$/ }));
 }
 
 /* ----------------------------- Import cycles ------------------------------ */
@@ -460,8 +465,7 @@ export const DISCIPLINE_VERIFIERS = [
     id: "plugins-share-no-backend-file",
     scope: "plugins",
     module: "plugins",
-    isManual: true,
-    name: "Plugins Share No Backend File (no Go file of one plugin repeats a file of another)",
+    name: "Plugins Share No Backend File (no Go file of one plugin, test files included, repeats a file of another)",
     run: verifyNoDuplicateBackendFiles,
   },
   {

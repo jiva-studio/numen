@@ -226,7 +226,7 @@ func getSelector(places epub.Places, offset int) (domain.Selector, error) {
 	if !ok {
 		return "", nil
 	}
-	return cfiSelector{CFI: place.String()}.encode()
+	return domain.EncodeSelector(domain.CFISelector{CFI: place.String()})
 }
 
 // segmentCut is the text of a book, and the sections and block starts still ahead of the cut.

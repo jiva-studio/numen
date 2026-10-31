@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
@@ -138,7 +139,7 @@ func getConfig() engine.Config {
 	cfg := engine.Defaults()
 	if dir := os.Getenv("NUMEN_OCR_DIR"); dir != "" {
 		cfg.Dir = dir
-	} else if modelsDir := os.Getenv(engine.EnvDir); modelsDir != "" {
+	} else if modelsDir := os.Getenv(onnx.ModelsDirVar); modelsDir != "" {
 		cfg.Dir = modelsDir
 	}
 	if runtime := os.Getenv("NUMEN_OCR_RUNTIME"); runtime != "" {

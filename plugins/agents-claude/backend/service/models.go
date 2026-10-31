@@ -16,6 +16,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/supervise"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 )
 
@@ -113,7 +114,7 @@ func fetchModels(ctx context.Context, command, env []string) (models []claudeMod
 	})
 	cmd := exec.CommandContext(ctx, command[0], args...)
 	cmd.Env = buildEnvironment(env)
-	supervise(cmd)
+	supervise.Command(cmd)
 	in, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, err

@@ -1,24 +1,14 @@
 package service
 
-import (
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	"net/http"
+import "github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentmount"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-)
+// Mount registers the plugin's services on a server. NewHandler returns the handler of the plugin's
+// backend for a host that links the plugin in, made from the variables a launched process of the
+// plugin is given.
+var Mount, NewHandler = agentmount.NewEntry(newAgent)
 
-// Mount registers the plugin's services on s.
-func Mount(s *server.Server) error {
+func newAgent() agentmount.Agent {
 	agent := new(agentServer)
 	agent.models = newModelCache(true)
-	s.OnClose(agent.Close)
-	s.SetUpdateConfig(agent.applyConfig)
-	s.Register(agentrun.NewAgentServiceHandler(agent, s.HandlerOptions()...))
-	return nil
-}
-
-// NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
-// from the variables a launched process of the plugin is given.
-func NewHandler(vars map[string]string) (http.Handler, error) {
-	return server.NewLinkedHandler(vars, Mount)
+	return agent
 }

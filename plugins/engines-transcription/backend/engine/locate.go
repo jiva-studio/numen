@@ -3,7 +3,6 @@ package engine
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -12,9 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
 )
 
-// EnvDir names the folder plugins keep their models in.
-const EnvDir = "NUMEN_MODELS_DIR"
-
 // paths are the files this run transcribes with, and where they were found.
 type paths struct {
 	encoder   string
@@ -22,29 +18,6 @@ type paths struct {
 	joiner    string
 	tokens    string
 	segmenter string
-}
-
-func findInFolder(dir, fileName string) string {
-	if dir == "" || fileName == "" {
-		return ""
-	}
-	candidate := filepath.Join(dir, fileName)
-	if _, err := os.Stat(candidate); err == nil {
-		return candidate
-	}
-	return ""
-}
-
-func findInHome(fileName string) string {
-	if home := os.Getenv(EnvDir); home != "" {
-		if found := findInFolder(home, fileName); found != "" {
-			return found
-		}
-	}
-	if base, err := os.UserConfigDir(); err == nil {
-		return findInFolder(filepath.Join(base, "numen", "models"), fileName)
-	}
-	return ""
 }
 
 func resolveFileName(repoAddress, defaultFileName string) string {
@@ -59,30 +32,14 @@ func resolveFileName(repoAddress, defaultFileName string) string {
 // 2. Provisioned environment variable (NUMEN_DEPENDENCY_*)
 // 3. Plugin directory / models folder fallback (only if repo address is provided)
 func locateModel(explicitPath, repoAddress, envVar, defaultFileName, dir string) (string, error) {
-	if explicitPath != "" {
-		if _, err := os.Stat(explicitPath); err != nil {
-			return "", fmt.Errorf("configured model path not found: %w", err)
-		}
-		return explicitPath, nil
-	}
-	if envVar != "" {
-		if env := os.Getenv(envVar); env != "" {
-			if _, err := os.Stat(env); err == nil {
-				return env, nil
-			}
-		}
+	configured, err := onnx.ResolveConfigured(explicitPath, envVar)
+	if err != nil || configured != "" {
+		return configured, err
 	}
 	if repoAddress == "" {
 		return "", fmt.Errorf("model %s is not named: specify path or repo", defaultFileName)
 	}
-	fileName := resolveFileName(repoAddress, defaultFileName)
-	if found := findInFolder(dir, fileName); found != "" {
-		return found, nil
-	}
-	if found := findInHome(fileName); found != "" {
-		return found, nil
-	}
-	return "", fmt.Errorf("model %s not found", fileName)
+	return onnx.LocateInFolders(dir, resolveFileName(repoAddress, defaultFileName))
 }
 
 func locateModels(ctx context.Context, cfg Config) (*ort.Engine, paths, error) {

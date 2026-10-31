@@ -4,16 +4,22 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
 )
 
-func TestLocateModelResolvesExplicitPath(t *testing.T) {
-	dir := t.TempDir()
-	explicit := filepath.Join(dir, "custom-encoder.onnx")
-	if err := os.WriteFile(explicit, []byte("encoder"), 0o644); err != nil {
+const (
+	encoderVar  = "NUMEN_DEPENDENCY_PARAKEET_ENCODER"
+	exampleRepo = "https://example.invalid/parakeet/"
+)
+
+func TestLocateModelResolvesAConfiguredPathWithoutARepo(t *testing.T) {
+	explicit := filepath.Join(t.TempDir(), "custom-encoder.onnx")
+	if err := os.WriteFile(explicit, []byte("encoder"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
-	found, err := locateModel(explicit, "", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, dir)
+	found, err := locateModel(explicit, "", encoderVar, encoderFile, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -22,31 +28,25 @@ func TestLocateModelResolvesExplicitPath(t *testing.T) {
 	}
 }
 
-func TestLocateModelResolvesEnvironmentVariable(t *testing.T) {
+func TestLocateModelRequiresARepoToSearchTheFolders(t *testing.T) {
 	dir := t.TempDir()
-	envPath := filepath.Join(dir, "provisioned-encoder.onnx")
-	if err := os.WriteFile(envPath, []byte("encoder"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, encoderFile), []byte("encoder"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("NUMEN_DEPENDENCY_PARAKEET_ENCODER", envPath)
 
-	found, err := locateModel("", "", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, "")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if found != envPath {
-		t.Errorf("got %s, want %s", found, envPath)
+	if _, err := locateModel("", "", encoderVar, encoderFile, dir); err == nil {
+		t.Fatal("expected an error where no path, variable or repo names the model")
 	}
 }
 
-func TestLocateModelResolvesDirFallback(t *testing.T) {
+func TestLocateModelResolvesTheFolderFallbackOfARepo(t *testing.T) {
 	dir := t.TempDir()
 	fallbackPath := filepath.Join(dir, encoderFile)
-	if err := os.WriteFile(fallbackPath, []byte("fallback-encoder"), 0o644); err != nil {
+	if err := os.WriteFile(fallbackPath, []byte("fallback-encoder"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
-	found, err := locateModel("", "https://example.invalid/parakeet/", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, dir)
+	found, err := locateModel("", exampleRepo, encoderVar, encoderFile, dir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -55,43 +55,27 @@ func TestLocateModelResolvesDirFallback(t *testing.T) {
 	}
 }
 
-func TestLocateModelErrorsWhenNotFound(t *testing.T) {
+func TestLocateModelNamesTheFileOfARepoAddress(t *testing.T) {
 	dir := t.TempDir()
-	_, err := locateModel("", "https://example.invalid/repo/", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", "non-existent.onnx", dir)
-	if err == nil {
-		t.Fatal("expected error for non-existent model, got nil")
-	}
-}
-
-func TestLocateModelPrecedence(t *testing.T) {
-	dir := t.TempDir()
-	explicit := filepath.Join(dir, "explicit.onnx")
-	writeFile(t, explicit, []byte("explicit"), 0o644)
-
-	envPath := filepath.Join(dir, "env.onnx")
-	writeFile(t, envPath, []byte("env"), 0o644)
-	t.Setenv("NUMEN_DEPENDENCY_PARAKEET_ENCODER", envPath)
-
-	dirPath := filepath.Join(dir, encoderFile)
-	writeFile(t, dirPath, []byte("dir"), 0o644)
-
-	// 1. Explicit beats env and dir
-	got, err := locateModel(explicit, "https://example.invalid/repo/", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, dir)
-	if err != nil || got != explicit {
-		t.Errorf("explicit precedence failed: got %s, err %v", got, err)
-	}
-
-	// 2. Env beats dir
-	got, err = locateModel("", "https://example.invalid/repo/", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, dir)
-	if err != nil || got != envPath {
-		t.Errorf("env precedence failed: got %s, err %v", got, err)
-	}
-}
-
-// writeFile writes content to path and fails the test when writing fails.
-func writeFile(t *testing.T, path string, content []byte, perm os.FileMode) {
-	t.Helper()
-	if err := os.WriteFile(path, content, perm); err != nil {
+	named := filepath.Join(dir, "encoder-int8.onnx")
+	if err := os.WriteFile(named, []byte("encoder"), 0o600); err != nil {
 		t.Fatal(err)
+	}
+
+	found, err := locateModel("", exampleRepo+"encoder-int8.onnx", encoderVar, encoderFile, dir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if found != named {
+		t.Errorf("got %s, want %s", found, named)
+	}
+}
+
+func TestLocateModelFailsWhenTheRepoFileIsAbsent(t *testing.T) {
+	t.Setenv(onnx.ModelsDirVar, t.TempDir())
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
+	if _, err := locateModel("", exampleRepo, encoderVar, "non-existent.onnx", t.TempDir()); err == nil {
+		t.Fatal("expected an error for a model that exists nowhere")
 	}
 }

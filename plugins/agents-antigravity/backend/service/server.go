@@ -8,6 +8,8 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/discovery"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/jsonlrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 )
@@ -17,9 +19,9 @@ const defaultModelName = "default"
 
 type agentServer struct {
 	agentrun.Service
-	mu             sync.RWMutex
-	executablePath string
-	models         *cache.Cache[[]antigravityModel]
+	agentrun.ExecutablePath
+	mu     sync.Mutex
+	models *cache.Cache[[]antigravityModel]
 }
 
 func newModelCache(isAsync bool) *cache.Cache[[]antigravityModel] {
@@ -41,53 +43,24 @@ func (s *agentServer) getModelCache() *cache.Cache[[]antigravityModel] {
 	return s.models
 }
 
-func (s *agentServer) applyConfig(values map[string]string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if execPath, ok := values["executable_path"]; ok {
-		s.executablePath = strings.TrimSpace(execPath)
-	}
-}
-
-func (s *agentServer) getExecutablePath() string {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.executablePath
-}
-
 func (s *agentServer) AskAgent(
 	ctx context.Context,
 	req *connect.Request[agentrun.AskAgentRequest],
 	stream *connect.ServerStream[agentrun.AskAgentResponse],
 ) error {
-	if err := stream.Send(&agentrun.AskAgentResponse{
-		Step: &agentrun.AskAgentResponseModelStarted{
-			ModelStarted: &agentrun.ModelStarted{},
-		},
-	}); err != nil {
-		return err
-	}
-
-	s.resolveModel(ctx, req.Msg)
-	work, err := start(ctx, &s.Registry, newSpec(req.Msg, &s.Registry, s.getExecutablePath()))
-	if err != nil {
-		return stream.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponseStopped{Stopped: err.Error()},
-		})
-	}
-	return agentrun.ForwardResponses(ctx, work, stream)
+	return agentrun.StreamWork(ctx, stream, func() (*agentrun.Work, error) {
+		s.resolveModel(ctx, req.Msg)
+		return jsonlrun.Start(ctx, &s.Registry, newSpec(req.Msg, &s.Registry, s.GetExecutablePath()))
+	})
 }
 
 func (s *agentServer) GetAgentState(
 	_ context.Context,
 	_ *connect.Request[agentrun.GetAgentStateRequest],
 ) (*connect.Response[agentrun.GetAgentStateResponse], error) {
-	if !IsAntigravityInstalled(s.getExecutablePath()) {
-		return connect.NewResponse(&agentrun.GetAgentStateResponse{
-			Unreachable: "Antigravity was not found on this machine",
-		}), nil
-	}
-	return connect.NewResponse(&agentrun.GetAgentStateResponse{Unreachable: ""}), nil
+	return agentrun.NewInstalledState(
+		IsAntigravityInstalled(s.GetExecutablePath()), "Antigravity was not found on this machine",
+	), nil
 }
 
 // GetAgentPrograms lists Antigravity, whether it is installed, and the models it lists.
@@ -95,8 +68,8 @@ func (s *agentServer) GetAgentPrograms(
 	ctx context.Context,
 	req *connect.Request[agentrun.GetAgentProgramsRequest],
 ) (*connect.Response[agentrun.GetAgentProgramsResponse], error) {
-	command := programCommand(req.Msg.GetCommands(), "antigravity")
-	customPath := s.getExecutablePath()
+	command := discovery.GetCommand(req.Msg.GetCommands(), "antigravity")
+	customPath := s.GetExecutablePath()
 	if len(command) == 0 && customPath != "" {
 		command = []string{customPath}
 	}

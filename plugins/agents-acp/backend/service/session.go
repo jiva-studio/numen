@@ -16,6 +16,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/supervise"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 )
 
@@ -58,7 +59,7 @@ type acpSession struct {
 	lines    *bufio.Scanner
 	stderr   *tailBuffer
 	stop     context.CancelFunc
-	cleanDir func()
+	cleanDir func() error
 	dir      string
 	program  string
 	nextID   int
@@ -115,7 +116,7 @@ func openACPSession(ctx context.Context, agent acpAgent, tools toolEndpoint) (*a
 	s.cmd.Dir = dir
 	s.cmd.Env = os.Environ()
 	s.cmd.Stderr = s.stderr
-	supervise(s.cmd)
+	supervise.Command(s.cmd)
 	if err := s.start(); err != nil {
 		return nil, errors.Join(err, s.close())
 	}
@@ -318,7 +319,7 @@ func (s *acpSession) close() error {
 		}
 	}
 	if s.cleanDir != nil {
-		s.cleanDir()
+		err = errors.Join(err, s.cleanDir())
 	}
 	return err
 }

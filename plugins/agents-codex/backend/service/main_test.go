@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"os"
 	"path/filepath"
 	"slices"
@@ -10,10 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"connectrpc.com/connect"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
-
-	"connectrpc.com/connect"
 )
 
 // The program list names Codex, installed where it is found, with the models it lists under the command
@@ -168,9 +168,9 @@ func withoutAgentsAnywhere(t *testing.T) {
 	t.Helper()
 	t.Setenv("PATH", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	was := codexPlaces
-	codexPlaces = nil
-	t.Cleanup(func() { codexPlaces = was })
+	was := codexProgram.Places
+	codexProgram.Places = nil
+	t.Cleanup(func() { codexProgram.Places = was })
 }
 
 // The run is started from the request: the command line, the folder, the model and the tools it is

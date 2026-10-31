@@ -31,7 +31,7 @@ func GetSegments(cues []Cue) ([]domain.TextSegment, error) {
 		if text == "" {
 			continue
 		}
-		selector, err := timeSelector{T: []float64{toSeconds(cue.From), toSeconds(cue.To)}}.encode()
+		selector, err := domain.EncodeSelector(domain.TimeSelector{T: []float64{toSeconds(cue.From), toSeconds(cue.To)}})
 		if err != nil {
 			return nil, err
 		}
@@ -46,7 +46,7 @@ func GetCues(segments []domain.TextSegment) []Cue {
 	out := make([]Cue, 0, len(segments))
 	for _, segment := range segments {
 		cue := Cue{Text: strings.TrimRight(segment.Text, "\n"), From: 0, To: 0}
-		if selector, err := readTimeSelector(segment.Selector); err == nil && len(selector.T) == 2 {
+		if selector, err := domain.DecodeSelector[domain.TimeSelector](segment.Selector); err == nil && len(selector.T) == 2 {
 			cue.From, cue.To = toMS(selector.T[0]), toMS(selector.T[1])
 		}
 		out = append(out, cue)

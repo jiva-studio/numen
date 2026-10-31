@@ -1,6 +1,6 @@
 //go:build !unix && !windows
 
-package service
+package supervise
 
 import "os/exec"
 

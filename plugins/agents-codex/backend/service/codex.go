@@ -19,6 +19,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/supervise"
 )
 
 // AgentModel represents an AI model available from an external agent CLI.
@@ -192,7 +193,7 @@ func askCodexModels(ctx context.Context, command []string) (models []AgentModel,
 	running, stop := context.WithCancel(ctx)
 	defer stop()
 	cmd := exec.CommandContext(running, name, slices.Concat(args, []string{"app-server"})...)
-	supervise(cmd)
+	supervise.Command(cmd)
 	in, err := cmd.StdinPipe()
 	// gomutants:disable-next-line BRANCH_IF reason="cmd.StdinPipe cannot fail on an unstarted exec.Cmd"
 	if err != nil {

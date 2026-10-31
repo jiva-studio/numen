@@ -17,6 +17,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/supervise"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
@@ -153,6 +154,22 @@ func (s *agentServer) AskAgent(
 		return err
 	}
 
+	runErr := s.streamClaude(ctx, stream, msg, cmdName, cmdArgs, claudeArgs, configFile)
+	if removeErr := agentrun.RemoveFile(configFile); removeErr != nil {
+		return errors.Join(runErr, fmt.Errorf("remove the tool configuration: %w", removeErr))
+	}
+	return runErr
+}
+
+// streamClaude starts the program and streams its responses until it ends.
+func (s *agentServer) streamClaude(
+	ctx context.Context,
+	stream *connect.ServerStream[agentrun.AskAgentResponse],
+	msg *agentrun.AskAgentRequest,
+	cmdName string,
+	cmdArgs, claudeArgs []string,
+	configFile string,
+) error {
 	conversation := msg.GetConversation()
 	runCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -160,12 +177,10 @@ func (s *agentServer) AskAgent(
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="work.Output is unused because agent-claude writes responses directly to the stream"
 	work := agentrun.NewWork(conversation, 0, agentrun.StopByCancel(cancel))
 	if !s.registry.Add(work) {
-		agentrun.RemoveFile(configFile)
 		return connect.NewError(connect.CodeUnavailable, errors.New("this agent is closing"))
 	}
 	defer s.registry.Remove(work)
 	defer work.End()
-	defer agentrun.RemoveFile(configFile)
 
 	// The wait for the model begins with the program, and the stream opens on saying so.
 	if err := stream.Send(&agentrun.AskAgentResponse{
@@ -207,7 +222,7 @@ func (s *agentServer) launchAgentCmd(
 	cmd.Dir = msg.GetRoot()
 	cmd.Env = buildEnvironment(s.getEnvironment())
 	cmd.Stdin = strings.NewReader(msg.GetPrompt())
-	supervise(cmd)
+	supervise.Command(cmd)
 
 	out, err := cmd.StdoutPipe()
 	if err != nil {

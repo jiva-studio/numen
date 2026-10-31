@@ -151,7 +151,7 @@ func TestPagesOfTheLayerJoinIntoTheWholeText(t *testing.T) {
 			t.Fatal(err)
 		}
 		for _, part := range layerParts {
-			if selector, err := readPageSelector(part.Selector); err != nil || selector.Page != page+1 {
+			if selector, err := domain.DecodeSelector[domain.PageSelector](part.Selector); err != nil || selector.Page != page+1 {
 				t.Errorf("a segment of page %d has selector %s", page, part.Selector)
 			}
 			if part.Heading != "" {

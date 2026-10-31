@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/jsonlrun"
 )
 
 func TestResolveCommandWithEmptyCommand(t *testing.T) {
@@ -40,7 +40,7 @@ func TestTheSessionAndTheContentOfAntigravityAreReported(t *testing.T) {
 			`echo '{"tool_calls":[{"name":"read_note","arguments":{"path":"a.md"}}]}'`+"\n")
 	var reg agentrun.Registry
 
-	w, err := start(t.Context(), &reg, newSpec(
+	w, err := jsonlrun.Start(t.Context(), &reg, newSpec(
 		&agentrun.AskAgentRequest{Command: []string{script}, Conversation: "c-1"}, &reg))
 	if err != nil {
 		t.Fatal(err)
@@ -67,7 +67,7 @@ func TestAFailedHomeSetupEndsTheRunBeforeItStarts(t *testing.T) {
 	setUnusableTempDir(t)
 	var reg agentrun.Registry
 
-	_, err := start(t.Context(), &reg, newSpec(
+	_, err := jsonlrun.Start(t.Context(), &reg, newSpec(
 		&agentrun.AskAgentRequest{Command: []string{"agy"}, ToolsUrl: "http://127.0.0.1:1/mcp"}, &reg))
 
 	if err == nil || !strings.Contains(err.Error(), "set up the Antigravity home") {
@@ -80,7 +80,7 @@ func TestTheToolCallsOfAntigravityAreCountedAgainstTheStepLimit(t *testing.T) {
 		`while true; do echo '{"tool_calls":[{"name":"read_note","arguments":{}}]}'; done`+"\n")
 	var reg agentrun.Registry
 
-	w, err := start(t.Context(), &reg, newSpec(
+	w, err := jsonlrun.Start(t.Context(), &reg, newSpec(
 		&agentrun.AskAgentRequest{Command: []string{script}, MaxSteps: 2}, &reg))
 	if err != nil {
 		t.Fatal(err)
@@ -102,7 +102,7 @@ echo '{"type":"stream_event","event":{"type":"content_block_stop"}}'
 done`+"\n")
 	var reg agentrun.Registry
 
-	w, err := start(t.Context(), &reg, newSpec(
+	w, err := jsonlrun.Start(t.Context(), &reg, newSpec(
 		&agentrun.AskAgentRequest{Command: []string{script}, MaxSteps: 1}, &reg))
 	if err != nil {
 		t.Fatal(err)
@@ -129,7 +129,7 @@ func setUnusableTempDir(t *testing.T) {
 func collect(t *testing.T, script string) ([]*agentrun.AskAgentResponse, *agentrun.Registry) {
 	t.Helper()
 	var reg agentrun.Registry
-	w, err := start(t.Context(), &reg, newSpec(
+	w, err := jsonlrun.Start(t.Context(), &reg, newSpec(
 		&agentrun.AskAgentRequest{Command: []string{script}, Conversation: "c-1", Prompt: "q"}, &reg))
 	if err != nil {
 		t.Fatal(err)

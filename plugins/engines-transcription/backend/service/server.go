@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
 )
@@ -121,7 +122,7 @@ func NewConfig(modelsDir, runtime string) engine.Config {
 	cfg := engine.Defaults()
 	if modelsDir != "" {
 		cfg.Dir = modelsDir
-	} else if envDir := os.Getenv(engine.EnvDir); envDir != "" {
+	} else if envDir := os.Getenv(onnx.ModelsDirVar); envDir != "" {
 		cfg.Dir = envDir
 	}
 	if runtime != "" {

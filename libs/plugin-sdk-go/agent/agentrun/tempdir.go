@@ -12,24 +12,18 @@ import (
 )
 
 // CreateTempDir creates a temporary directory matching pattern, and returns its path and a clean-up
-// function that deletes it.
-func CreateTempDir(pattern string) (string, func(), error) {
+// function that deletes it and returns the error of the deletion.
+func CreateTempDir(pattern string) (string, func() error, error) {
 	dir, err := os.MkdirTemp("", pattern)
 	if err != nil {
-		return "", func() {}, err
+		return "", func() error { return nil }, err
 	}
-	return dir, func() {
+	return dir, func() error {
 		if err := os.RemoveAll(dir); err != nil {
-			reportFileError("remove", dir, err)
+			return fmt.Errorf("remove %s: %w", dir, err)
 		}
+		return nil
 	}, nil
-}
-
-// reportFileError writes a failed file operation to standard error.
-func reportFileError(operation, path string, err error) {
-	if _, writeErr := fmt.Fprintf(os.Stderr, "%s %s: %v\n", operation, path, err); writeErr != nil {
-		return
-	}
 }
 
 // WriteTempFile creates a mode-0600 temporary file matching pattern, writes data to it, and returns
@@ -60,15 +54,15 @@ func WriteTempFile(pattern string, data []byte) (path string, err error) {
 	return file.Name(), nil
 }
 
-// RemoveFile removes the file at path when present.
-func RemoveFile(path string) {
-	// gomutants:disable-next-line BRANCH_IF reason="os.Remove on an empty path returns ErrNotExist which is ignored"
+// RemoveFile removes the file at path. An empty path and a missing file are not errors.
+func RemoveFile(path string) error {
 	if path == "" {
-		return
+		return nil
 	}
 	if err := os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		reportFileError("remove", path, err)
+		return fmt.Errorf("remove %s: %w", path, err)
 	}
+	return nil
 }
 
 // IsRunnable reports whether path is an executable file.
