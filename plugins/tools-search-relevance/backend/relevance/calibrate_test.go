@@ -12,20 +12,20 @@ import (
 )
 
 // calibrate runs one calibration over the search, with the state the host reports.
-func calibrate(t *testing.T, search host.Search) (relevance.Outcome, relevance.Calibration, error) {
+func calibrate(t *testing.T, search host.Search, vault host.NoteLookup) (relevance.Outcome, relevance.Calibration, error) {
 	t.Helper()
 	state, err := search.GetEmbeddingState(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	return relevance.NewCalibrator(newClock()).Calibrate(t.Context(), search, state)
+	return relevance.NewCalibrator(newClock()).Calibrate(t.Context(), search, vault, state)
 }
 
 func TestCalibrateMeasuresTheNoise(t *testing.T) {
-	search, _ := newHost(0)
-	fill(search, 25, passagesOf(60, 3))
+	search, vault := newHost(0)
+	fill(search, vault, 25, passagesOf(60, 3))
 
-	outcome, got, err := calibrate(t, search)
+	outcome, got, err := calibrate(t, search, vault)
 	if err != nil || outcome != relevance.Calibrated {
 		t.Fatalf("got %v, %v", outcome, err)
 	}
@@ -48,12 +48,12 @@ func TestCalibrateMeasuresTheNoise(t *testing.T) {
 }
 
 func TestCalibrateComparesATitleOnlyWithPassagesOfOtherSources(t *testing.T) {
-	search, _ := newHost(0)
-	// This passage is the title's own note's: identical in direction to every title.
-	passages := append(passagesOf(60, 2), host.ChunkVector{Source: 1, Vector: stored(127, 0, 0, 0)})
-	fill(search, 20, passages)
+	search, vault := newHost(0)
+	// This passage is the first note's: identical in direction to every title.
+	passages := append(passagesOf(60, 2), hosttest.SearchPassage{Path: notePath(1), Vector: []float32{127, 0, 0, 0}})
+	fill(search, vault, 20, passages)
 
-	_, got, err := calibrate(t, search)
+	_, got, err := calibrate(t, search, vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +70,7 @@ func TestCalibrateHasTooFewToMeasure(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
 		titles   int
-		passages []host.ChunkVector
+		passages []hosttest.SearchPassage
 	}{
 		{"19 titles", 19, passagesOf(60, 3)},
 		{"49 passages", 25, passagesOf(49, 3)},
@@ -78,9 +78,9 @@ func TestCalibrateHasTooFewToMeasure(t *testing.T) {
 		{"nothing", 0, nil},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			search, _ := newHost(0)
-			fill(search, tc.titles, tc.passages)
-			outcome, _, err := calibrate(t, search)
+			search, vault := newHost(0)
+			fill(search, vault, tc.titles, tc.passages)
+			outcome, _, err := calibrate(t, search, vault)
 			if err != nil || outcome != relevance.TooFew {
 				t.Fatalf("got %v, %v, want TooFew", outcome, err)
 			}
@@ -92,39 +92,36 @@ func TestCalibrateHasTooFewToMeasure(t *testing.T) {
 }
 
 func TestCalibrateThresholdsAreInclusive(t *testing.T) {
-	search, _ := newHost(0)
-	fill(search, 20, passagesOf(50, 2))
-	outcome, _, err := calibrate(t, search)
+	search, vault := newHost(0)
+	fill(search, vault, 20, passagesOf(50, 2))
+	outcome, _, err := calibrate(t, search, vault)
 	if err != nil || outcome != relevance.Calibrated {
 		t.Errorf("20 titles and 50 passages over 2 sources gave %v, %v, want Calibrated", outcome, err)
 	}
 }
 
 func TestCalibrateCountsOnlyTitlesThatGotAVector(t *testing.T) {
-	search, _ := newHost(0)
+	search, vault := newHost(0)
 	search.SetEmbedder(func(text string) []float32 {
 		if text == "title 0" {
 			return nil
 		}
 		return []float32{1, 0, 0, 0}
 	})
-	fill(search, 20, passagesOf(60, 3))
-	outcome, _, err := calibrate(t, search)
+	fill(search, vault, 20, passagesOf(60, 3))
+	outcome, _, err := calibrate(t, search, vault)
 	if err != nil || outcome != relevance.TooFew {
 		t.Errorf("got %v, %v, want TooFew", outcome, err)
 	}
 }
 
 func TestCalibrateClipsALongTitleAtTheEmbeddingLimit(t *testing.T) {
-	search, _ := newHost(0)
+	search, vault := newHost(0)
 	long := strings.Repeat("é", host.MaxEmbeddedBytes)
-	titles := titlesOf(25)
-	titles[0].Title = long
-	search.SetNoteTitles(titles)
-	search.SetChunkVectors(modelRecipe, passagesOf(60, 3))
-	search.SetProgress(60, 60)
+	fill(search, vault, 25, passagesOf(60, 3))
+	vault.File(notePath(1), "---\ntitle: "+long+"\n---\n")
 
-	outcome, _, err := calibrate(t, search)
+	outcome, _, err := calibrate(t, search, vault)
 	if err != nil || outcome != relevance.Calibrated {
 		t.Fatalf("got %v, %v", outcome, err)
 	}
@@ -163,15 +160,15 @@ func TestCalibrateKeepsNothingWhenTheModelChangesDuringTheRun(t *testing.T) {
 		}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			search, _ := newHost(0)
-			fill(search, 25, passagesOf(60, 3))
+			search, vault := newHost(0)
+			fill(search, vault, 25, passagesOf(60, 3))
 			state, err := search.GetEmbeddingState(t.Context())
 			if err != nil {
 				t.Fatal(err)
 			}
 			changing := changingSearch{Search: search, answer: tc.answer}
 
-			outcome, got, err := relevance.NewCalibrator(newClock()).Calibrate(t.Context(), changing, state)
+			outcome, got, err := relevance.NewCalibrator(newClock()).Calibrate(t.Context(), changing, vault, state)
 			if !errors.Is(err, relevance.ErrRecipeChanged) {
 				t.Errorf("got %v, want ErrRecipeChanged", err)
 			}
@@ -192,14 +189,14 @@ func TestCalibrateReportsTheFailuresOfTheHost(t *testing.T) {
 		{"a permission that is denied", func(search *hosttest.Search) { search.Deny(host.PermissionIndexRead) }, host.ErrPermissionDenied},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			search, _ := newHost(0)
-			fill(search, 25, passagesOf(60, 3))
+			search, vault := newHost(0)
+			fill(search, vault, 25, passagesOf(60, 3))
 			state, err := search.GetEmbeddingState(t.Context())
 			if err != nil {
 				t.Fatal(err)
 			}
 			tc.set(search)
-			_, _, err = relevance.NewCalibrator(newClock()).Calibrate(t.Context(), search, state)
+			_, _, err = relevance.NewCalibrator(newClock()).Calibrate(t.Context(), search, vault, state)
 			if !errors.Is(err, tc.want) {
 				t.Errorf("got %v, want %v", err, tc.want)
 			}
@@ -207,24 +204,24 @@ func TestCalibrateReportsTheFailuresOfTheHost(t *testing.T) {
 	}
 }
 
-func TestCalibrateRefusesAStoredVectorOfAnotherWidth(t *testing.T) {
-	search, _ := newHost(0)
-	fill(search, 25, append(passagesOf(60, 3), host.ChunkVector{Source: 9, Vector: stored(1, 2)}))
-	if _, _, err := calibrate(t, search); err == nil {
+func TestCalibrateRefusesAPassageOfAnotherWidth(t *testing.T) {
+	search, vault := newHost(0)
+	fill(search, vault, 25, append(passagesOf(60, 3), hosttest.SearchPassage{Path: "narrow.md", Vector: []float32{1, 2}}))
+	if _, _, err := calibrate(t, search, vault); err == nil {
 		t.Error("a vector of another width was measured")
 	}
 }
 
 func TestCalibrateStopsWhenTheContextEnds(t *testing.T) {
-	search, _ := newHost(0)
-	fill(search, 25, passagesOf(60, 3))
+	search, vault := newHost(0)
+	fill(search, vault, 25, passagesOf(60, 3))
 	state, err := search.GetEmbeddingState(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if _, _, err := relevance.NewCalibrator(newClock()).Calibrate(ctx, search, state); !errors.Is(err, context.Canceled) {
+	if _, _, err := relevance.NewCalibrator(newClock()).Calibrate(ctx, search, vault, state); !errors.Is(err, context.Canceled) {
 		t.Errorf("got %v, want the cancellation", err)
 	}
 }

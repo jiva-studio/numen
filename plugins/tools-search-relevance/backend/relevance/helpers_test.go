@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 )
 
@@ -30,38 +29,37 @@ func newHost(hint float64) (*hosttest.Search, *hosttest.Vault) {
 	return search, vault
 }
 
-// stored is the stored form of a vector: a signed byte per dimension.
-func stored(values ...int8) []byte {
-	out := make([]byte, len(values))
-	for i, value := range values {
-		out[i] = byte(value)
+// maxNotes is the number of notes the helpers write at most.
+const maxNotes = 100
+
+// notePath is the path of the nth note, numbered from 1.
+func notePath(n int) string { return fmt.Sprintf("note-%d.md", n) }
+
+// setNotes makes the vault hold n notes titled "title 0" to "title n-1", and no other.
+func setNotes(vault *hosttest.Vault, n int) {
+	for i := 1; i <= maxNotes; i++ {
+		if i > n {
+			vault.Remove(notePath(i))
+			continue
+		}
+		vault.File(notePath(i), fmt.Sprintf("---\ntitle: title %d\n---\n", i-1))
 	}
-	return out
 }
 
-// titlesOf is n titles, each on a source of its own numbered from 1.
-func titlesOf(n int) []host.NoteTitle {
-	out := make([]host.NoteTitle, n)
+// passagesOf is n passages spread over `sources` notes named "source-100.md" onwards, each at 0.5
+// cosine similarity to the unit vector along the first dimension.
+func passagesOf(n, sources int) []hosttest.SearchPassage {
+	out := make([]hosttest.SearchPassage, n)
 	for i := range out {
-		out[i] = host.NoteTitle{Source: int64(i + 1), Title: fmt.Sprintf("title %d", i)}
+		out[i] = hosttest.SearchPassage{Path: fmt.Sprintf("source-%d.md", 100+i%sources), Vector: []float32{64, 64, 64, 64}}
 	}
 	return out
 }
 
-// passagesOf is n passages spread over `sources` sources numbered from 100, each at 0.5 cosine
-// similarity to the unit vector along the first dimension.
-func passagesOf(n, sources int) []host.ChunkVector {
-	out := make([]host.ChunkVector, n)
-	for i := range out {
-		out[i] = host.ChunkVector{Source: int64(100 + i%sources), Vector: stored(64, 64, 64, 64)}
-	}
-	return out
-}
-
-// fill makes the vault of the search hold enough embedded notes to measure.
-func fill(search *hosttest.Search, titles int, passages []host.ChunkVector) {
-	search.SetNoteTitles(titlesOf(titles))
-	search.SetChunkVectors(modelRecipe, passages)
+// fill makes the vault hold the notes and the search the passages, enough to measure.
+func fill(search *hosttest.Search, vault *hosttest.Vault, notes int, passages []hosttest.SearchPassage) {
+	setNotes(vault, notes)
+	search.SetPassages(modelRecipe, passages)
 	search.SetProgress(int64(len(passages)), int64(len(passages)))
 }
 

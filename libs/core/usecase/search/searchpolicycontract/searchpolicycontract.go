@@ -8,5 +8,4 @@ type (
 	Nearest    = searchpolicyport.Nearest
 	Passage    = searchpolicyport.Passage
 	Samples    = searchpolicyport.Samples
-	Title      = searchpolicyport.Title
 )

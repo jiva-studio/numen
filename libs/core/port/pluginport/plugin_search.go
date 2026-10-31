@@ -18,14 +18,18 @@ var (
 	ErrLimitExceeded = errors.New("the call exceeds the limits of one embedding call")
 	// ErrEmbeddingFailed is an embedding model that could not answer.
 	ErrEmbeddingFailed = errors.New("the embedding model could not answer")
+	// ErrInvalidQuery is a query vector whose dimension count is not the one of the vectors in the index.
+	ErrInvalidQuery = errors.New("a query vector does not match the vectors of the index")
 )
 
-// The limits of the search index calls. A list limit of zero, or above its maximum, is the maximum.
+// The limits of the search index calls.
 const (
-	MaxListedTitles  = 1000
-	MaxListedVectors = 1000
 	MaxEmbeddedTexts = 256
 	MaxEmbeddedBytes = 8192
+	// MaxSampledQueries is how many queries one SampleSimilarities call takes, and MaxSampledPassages how
+	// many small chunks it compares each of them with.
+	MaxSampledQueries  = 256
+	MaxSampledPassages = 500
 )
 
 // PluginEmbeddingState is the model in use and how far a vault is embedded under it.
@@ -50,16 +54,21 @@ type PluginEmbeddedTexts struct {
 	Vectors [][]float32
 }
 
-// PluginNoteTitle is the title of a note and the source it belongs to.
-type PluginNoteTitle struct {
-	Source int64
-	Title  string
+// PluginSimilarityQuery is a query vector, and the path of the note it was made from. The passages of
+// that note are left out of its sample; an empty path leaves out none.
+type PluginSimilarityQuery struct {
+	Path   string
+	Vector []float32
 }
 
-// PluginChunkVector is the stored vector of a small chunk and the source it belongs to.
-type PluginChunkVector struct {
-	Source int64
-	Vector []byte
+// PluginSimilaritySample is the cosine similarity of each query with the sampled passages of the vault.
+type PluginSimilaritySample struct {
+	// PassageCount is how many passages were sampled, and SourceCount how many sources they come from.
+	PassageCount int
+	SourceCount  int
+	// Rows holds, for each query in the order given, its similarity with each sampled passage of another
+	// source. A query with no vector has an empty row.
+	Rows [][]float64
 }
 
 // PluginFloorSource is where the floor a search applies comes from.
@@ -92,11 +101,12 @@ type PluginSearchIndex interface {
 	GetEmbeddingState(ctx context.Context, v domain.Vault) (PluginEmbeddingState, error)
 	// EmbedTexts embeds the texts with the model in use.
 	EmbedTexts(ctx context.Context, texts []string) (PluginEmbeddedTexts, error)
-	// ListNoteTitles lists at most limit note titles of the vault, in the order of their content hashes.
-	ListNoteTitles(ctx context.Context, v domain.Vault, limit int) ([]PluginNoteTitle, error)
-	// ListSmallChunkVectors lists at most limit small chunks of the vault that carry a vector under the
-	// recipe, in the order of their content hashes.
-	ListSmallChunkVectors(ctx context.Context, v domain.Vault, recipe string, limit int) ([]PluginChunkVector, error)
+	// SampleSimilarities is the cosine similarity of each query with the small chunks of the vault that
+	// carry a vector under the recipe and belong to a source other than the query's note. At most
+	// MaxSampledQueries queries are taken, and at most MaxSampledPassages small chunks, in the order of
+	// their content hashes. A query longer or shorter than the vectors of the index returns
+	// ErrInvalidQuery.
+	SampleSimilarities(ctx context.Context, v domain.Vault, recipe string, queries []PluginSimilarityQuery) (PluginSimilaritySample, error)
 	// GetBestSimilarity is the cosine similarity of the passage of the vault nearest the query vector,
 	// zero where there is none.
 	GetBestSimilarity(ctx context.Context, v domain.Vault, recipe string, query []float32) (float64, error)

@@ -65,7 +65,7 @@ func openFromEnv() (Hosts, error) {
 		return Hosts{}, err
 	}
 	return Hosts{
-		Floors: relevance.Host{Search: host.NewSearchClient(endpoint), Store: host.NewStoreClient(endpoint)},
+		Floors: relevance.Host{Search: host.NewSearchClient(endpoint), Vault: host.NewClient(endpoint), Store: host.NewStoreClient(endpoint)},
 		Queue:  host.NewQueueClient(endpoint),
 	}, nil
 }
@@ -76,7 +76,7 @@ func (a *App) Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	if hosts.Floors.Search == nil || hosts.Floors.Store == nil || hosts.Queue == nil {
+	if hosts.Floors.Search == nil || hosts.Floors.Vault == nil || hosts.Floors.Store == nil || hosts.Queue == nil {
 		return errIncompleteHost
 	}
 	a.mu.Lock()

@@ -1,10 +1,11 @@
-package relevance
+package hostsearch
 
 import "math"
 
-// getSimilarity is the cosine of the angle between a query vector and a stored vector of signed bytes.
-// The four partial sums are kept apart so that the result is the same for the same vectors on every machine.
-func getSimilarity(query []float32, stored []byte) float64 {
+// getCosine is the cosine of the angle between a query vector and a stored vector of signed bytes.
+// The four partial sums are accumulated separately, which fixes the order of the additions and makes
+// the result a function of the two vectors alone.
+func getCosine(query []float32, stored []byte) float64 {
 	if len(query) != len(stored) || len(query) == 0 {
 		return 0
 	}

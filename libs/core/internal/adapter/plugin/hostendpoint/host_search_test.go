@@ -22,10 +22,11 @@ import (
 // recordingSearch answers the search calls with fixed values and records the vault and the arguments
 // of each. A call answers err when it is set.
 type recordingSearch struct {
-	err    error
-	vaults []domain.VaultID
-	limits []int
-	floors []float64
+	err     error
+	vaults  []domain.VaultID
+	recipes []string
+	queries []pluginport.PluginSimilarityQuery
+	floors  []float64
 }
 
 func (s *recordingSearch) GetEmbeddingState(_ context.Context, v domain.Vault) (pluginport.PluginEmbeddingState, error) {
@@ -41,16 +42,11 @@ func (s *recordingSearch) EmbedTexts(_ context.Context, texts []string) (pluginp
 	return pluginport.PluginEmbeddedTexts{Recipe: "r", Vectors: vectors}, s.err
 }
 
-func (s *recordingSearch) ListNoteTitles(_ context.Context, v domain.Vault, limit int) ([]pluginport.PluginNoteTitle, error) {
+func (s *recordingSearch) SampleSimilarities(_ context.Context, v domain.Vault, recipe string, queries []pluginport.PluginSimilarityQuery) (pluginport.PluginSimilaritySample, error) {
 	s.vaults = append(s.vaults, v.ID)
-	s.limits = append(s.limits, limit)
-	return []pluginport.PluginNoteTitle{{Source: 2, Title: "Entropy"}, {Source: 7, Title: "Tide"}}, s.err
-}
-
-func (s *recordingSearch) ListSmallChunkVectors(_ context.Context, v domain.Vault, _ string, limit int) ([]pluginport.PluginChunkVector, error) {
-	s.vaults = append(s.vaults, v.ID)
-	s.limits = append(s.limits, limit)
-	return []pluginport.PluginChunkVector{{Source: 3, Vector: []byte{1, 2, 3}}}, s.err
+	s.recipes = append(s.recipes, recipe)
+	s.queries = append(s.queries, queries...)
+	return pluginport.PluginSimilaritySample{PassageCount: 3, SourceCount: 2, Rows: [][]float64{{0.25, 0.5}, nil}}, s.err
 }
 
 func (s *recordingSearch) GetBestSimilarity(context.Context, domain.Vault, string, []float32) (float64, error) {
@@ -101,13 +97,16 @@ func TestHostSearchAnswersEveryCallAndChecksItsPermission(t *testing.T) {
 	if err != nil || embedded.Msg.GetRecipe() != "r" || len(embedded.Msg.GetVectors()) != 2 || embedded.Msg.GetVectors()[1].GetValues()[0] != 1 {
 		t.Fatalf("embedded %v (%v)", embedded.Msg, err)
 	}
-	titles, err := client.ListNoteTitles(ctx, connect.NewRequest(&v1.ListNoteTitlesRequest{Limit: 9}))
-	if err != nil || len(titles.Msg.GetTitles()) != 2 || titles.Msg.GetTitles()[0].GetSourceId() != 2 || titles.Msg.GetTitles()[1].GetTitle() != "Tide" {
-		t.Fatalf("titles %v (%v)", titles.Msg, err)
-	}
-	vectors, err := client.ListSmallChunkVectors(ctx, connect.NewRequest(&v1.ListSmallChunkVectorsRequest{Recipe: "r", Limit: 4}))
-	if err != nil || len(vectors.Msg.GetVectors()) != 1 || !slices.Equal(vectors.Msg.GetVectors()[0].GetEmbedding(), []byte{1, 2, 3}) {
-		t.Fatalf("vectors %v (%v)", vectors.Msg, err)
+	sample, err := client.SampleSimilarities(ctx, connect.NewRequest(&v1.SampleSimilaritiesRequest{
+		Recipe: "r",
+		Queries: []*v1.SimilarityQuery{
+			{Vector: &v1.FloatVector{Values: []float32{1, 0}}, Path: "a.md"},
+			{},
+		},
+	}))
+	if err != nil || sample.Msg.GetPassageCount() != 3 || sample.Msg.GetSourceCount() != 2 || len(sample.Msg.GetRows()) != 2 ||
+		!slices.Equal(sample.Msg.GetRows()[0].GetValues(), []float64{0.25, 0.5}) || len(sample.Msg.GetRows()[1].GetValues()) != 0 {
+		t.Fatalf("sample %v (%v)", sample.Msg, err)
 	}
 	best, err := client.GetBestSimilarity(ctx, connect.NewRequest(&v1.GetBestSimilarityRequest{Recipe: "r", Query: []float32{1}}))
 	if err != nil || best.Msg.GetSimilarity() != 0.75 {
@@ -122,8 +121,10 @@ func TestHostSearchAnswersEveryCallAndChecksItsPermission(t *testing.T) {
 	if err != nil || set.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("set %v (%v)", set.Msg, err)
 	}
-	if !slices.Equal(search.limits, []int{9, 4}) || !slices.Equal(search.floors, []float64{0.6}) {
-		t.Errorf("the host received limits %v and floors %v", search.limits, search.floors)
+	if !slices.Equal(search.recipes, []string{"r"}) || len(search.queries) != 2 || search.queries[0].Path != "a.md" ||
+		!slices.Equal(search.queries[0].Vector, []float32{1, 0}) || len(search.queries[1].Vector) != 0 ||
+		!slices.Equal(search.floors, []float64{0.6}) {
+		t.Errorf("the host received recipes %v, queries %v and floors %v", search.recipes, search.queries, search.floors)
 	}
 	for _, permission := range []string{"index:read", "search:policy"} {
 		if !slices.Contains(fakeCallers.checked, "md.numen.a "+permission) {
@@ -132,7 +133,7 @@ func TestHostSearchAnswersEveryCallAndChecksItsPermission(t *testing.T) {
 	}
 	wantChecked := []string{
 		"md.numen.a index:read", "md.numen.a index:read", "md.numen.a index:read", "md.numen.a index:read",
-		"md.numen.a index:read", "md.numen.a search:policy", "md.numen.a search:policy",
+		"md.numen.a search:policy", "md.numen.a search:policy",
 	}
 	if !slices.Equal(fakeCallers.checked, wantChecked) {
 		t.Errorf("checked %v, want %v", fakeCallers.checked, wantChecked)
@@ -144,7 +145,7 @@ func TestHostSearchRefusesAPluginWithoutPermissionAndAnUnknownToken(t *testing.T
 	fakeCallers := newSearchCallers(&recordingSearch{})
 
 	denied := newSearchClient(t, fakeCallers, "token-b")
-	if _, err := denied.ListNoteTitles(ctx, connect.NewRequest(&v1.ListNoteTitlesRequest{})); readCode(t, err) != connect.CodePermissionDenied {
+	if _, err := denied.SampleSimilarities(ctx, connect.NewRequest(&v1.SampleSimilaritiesRequest{Recipe: "r"})); readCode(t, err) != connect.CodePermissionDenied {
 		t.Errorf("a plugin without the permission got %v", err)
 	}
 	if _, err := denied.SetSearchFloor(ctx, connect.NewRequest(&v1.SetSearchFloorRequest{Recipe: "r", Floor: 0.5})); readCode(t, err) != connect.CodePermissionDenied {
@@ -168,21 +169,21 @@ func TestHostSearchNamesTheVaultOfTheHeaderAndRefusesAnUnknownOne(t *testing.T) 
 	fakeCallers.search = search
 	client := newSearchClient(t, fakeCallers, "token-a")
 
-	named := connect.NewRequest(&v1.ListNoteTitlesRequest{})
+	named := connect.NewRequest(&v1.SampleSimilaritiesRequest{Recipe: "r"})
 	named.Header().Set("Numen-Vault", "v2")
-	if _, err := client.ListNoteTitles(ctx, named); err != nil {
+	if _, err := client.SampleSimilarities(ctx, named); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.ListNoteTitles(ctx, connect.NewRequest(&v1.ListNoteTitlesRequest{})); err != nil {
+	if _, err := client.SampleSimilarities(ctx, connect.NewRequest(&v1.SampleSimilaritiesRequest{Recipe: "r"})); err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Equal(search.vaults, []domain.VaultID{"v2", "v1"}) {
 		t.Errorf("the calls worked the vaults %v, want the named v2 and then the shown v1", search.vaults)
 	}
 
-	unknown := connect.NewRequest(&v1.ListNoteTitlesRequest{})
+	unknown := connect.NewRequest(&v1.SampleSimilaritiesRequest{Recipe: "r"})
 	unknown.Header().Set("Numen-Vault", "v9")
-	if _, err := client.ListNoteTitles(ctx, unknown); readCode(t, err) != connect.CodeNotFound {
+	if _, err := client.SampleSimilarities(ctx, unknown); readCode(t, err) != connect.CodeNotFound {
 		t.Errorf("an unknown vault got %v, want not found", err)
 	}
 	setUnknown := connect.NewRequest(&v1.SetSearchFloorRequest{Recipe: "r", Floor: 0.5})
@@ -222,6 +223,7 @@ func TestHostSearchAnswersACodeForWhatItCannotServe(t *testing.T) {
 		{"an invalid floor", pluginport.ErrInvalidFloor, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_FLOOR},
 		{"a limit exceeded", pluginport.ErrLimitExceeded, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_LIMIT_EXCEEDED},
 		{"an embedding failure", pluginport.ErrEmbeddingFailed, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED},
+		{"an invalid query", pluginport.ErrInvalidQuery, v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_QUERY},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			client := newSearchClient(t, newSearchCallers(&recordingSearch{err: tc.err}), "token-a")
@@ -229,9 +231,9 @@ func TestHostSearchAnswersACodeForWhatItCannotServe(t *testing.T) {
 			if err != nil || set.Msg.GetError() != tc.want {
 				t.Errorf("answered %v (%v), want %v", set.Msg, err, tc.want)
 			}
-			titles, err := client.GetBestSimilarity(ctx, connect.NewRequest(&v1.GetBestSimilarityRequest{Recipe: "r"}))
-			if err != nil || titles.Msg.GetError() != tc.want || titles.Msg.GetSimilarity() != 0 {
-				t.Errorf("answered %v (%v), want only the code %v", titles.Msg, err, tc.want)
+			sampled, err := client.SampleSimilarities(ctx, connect.NewRequest(&v1.SampleSimilaritiesRequest{Recipe: "r"}))
+			if err != nil || sampled.Msg.GetError() != tc.want || len(sampled.Msg.GetRows()) != 0 || sampled.Msg.GetPassageCount() != 0 {
+				t.Errorf("answered %v (%v), want only the code %v", sampled.Msg, err, tc.want)
 			}
 		})
 	}

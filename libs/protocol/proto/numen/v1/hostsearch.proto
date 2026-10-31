@@ -8,8 +8,8 @@ option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;num
 
 // HostSearchService is the search index and the search floor of a vault, as a
 // plugin reads and sets them. The host identifies the plugin by its token.
-// GetEmbeddingState, EmbedTexts, ListNoteTitles, ListSmallChunkVectors and
-// GetBestSimilarity need index:read; GetSearchFloor and SetSearchFloor need
+// GetEmbeddingState, EmbedTexts, SampleSimilarities and GetBestSimilarity need
+// index:read; GetSearchFloor and SetSearchFloor need
 // search:policy.
 //
 // Numen-Vault works the vault of that identity; without it a call works the
@@ -31,15 +31,12 @@ service HostSearchService {
   // 8192 bytes each are embedded in one call.
   rpc EmbedTexts(EmbedTextsRequest) returns (EmbedTextsResponse);
 
-  // ListNoteTitles lists the titles of the notes of the vault. The order is a
-  // function of the content in the index, so one index yields one list. A limit
-  // of zero or above 1000 is 1000.
-  rpc ListNoteTitles(ListNoteTitlesRequest) returns (ListNoteTitlesResponse);
-
-  // ListSmallChunkVectors lists the small chunks of the vault that carry a
-  // vector under the recipe, in the order of their content hashes. A limit of
-  // zero or above 1000 is 1000.
-  rpc ListSmallChunkVectors(ListSmallChunkVectorsRequest) returns (ListSmallChunkVectorsResponse);
+  // SampleSimilarities is the cosine similarity of each query vector with the
+  // small chunks of the vault that carry a vector under the recipe and belong
+  // to a source other than the one the query names. The host takes at most 500
+  // small chunks, in the order of their content hashes, so one index yields
+  // one sample. At most 256 queries are sampled in one call.
+  rpc SampleSimilarities(SampleSimilaritiesRequest) returns (SampleSimilaritiesResponse);
 
   // GetBestSimilarity is the cosine similarity of the passage of the vault
   // nearest a vector under the recipe, and zero when the vault has none.
@@ -77,6 +74,9 @@ enum HostSearchErrorCode {
 
   // The embedding model could not answer.
   HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED = 6;
+
+  // A query vector has a dimension count other than the one of the vectors in the index.
+  HOST_SEARCH_ERROR_CODE_INVALID_QUERY = 7;
 }
 
 // SearchFloorSource is where the floor a search applies comes from.
@@ -131,38 +131,36 @@ message EmbedTextsResponse {
   repeated FloatVector vectors = 3;
 }
 
-message ListNoteTitlesRequest {
-  int32 limit = 1;
+message SimilarityQuery {
+  // The embedding of the query under the recipe.
+  FloatVector vector = 1;
+
+  // The path of the note the query was made from, relative to the vault. The
+  // passages of that note are left out of the sample of the query. An empty
+  // path leaves out none.
+  string path = 2;
 }
 
-message NoteTitle {
-  // The identity of the source of the note in the index.
-  int64 source_id = 1;
-
-  string title = 2;
-}
-
-message ListNoteTitlesResponse {
-  HostSearchErrorCode error = 1;
-  repeated NoteTitle titles = 2;
-}
-
-message ListSmallChunkVectorsRequest {
+message SampleSimilaritiesRequest {
   string recipe = 1;
-  int32 limit = 2;
+  repeated SimilarityQuery queries = 2;
 }
 
-message ChunkVector {
-  // The identity of the source the chunk belongs to.
-  int64 source_id = 1;
-
-  // The stored vector: one signed byte per dimension.
-  bytes embedding = 2;
+message SimilarityRow {
+  // The similarity of the query with each sampled passage, in the order of the
+  // passages. A query with no vector, or whose note is the only source, has none.
+  repeated double values = 1;
 }
 
-message ListSmallChunkVectorsResponse {
+message SampleSimilaritiesResponse {
   HostSearchErrorCode error = 1;
-  repeated ChunkVector vectors = 2;
+
+  // How many passages the host sampled, and how many sources they come from.
+  int32 passage_count = 2;
+  int32 source_count = 3;
+
+  // One row per query, in the order the queries arrived.
+  repeated SimilarityRow rows = 4;
 }
 
 message GetBestSimilarityRequest {

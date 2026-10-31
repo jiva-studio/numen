@@ -53,9 +53,11 @@ type ProbeResult struct {
 	DoesPass bool
 }
 
-// Host is the part of the host the floors work through: the search index and the plugin's own folder.
+// Host is the part of the host the floors work through: the search index, the notes of the vault and
+// the plugin's own folder.
 type Host struct {
 	Search host.Search
+	Vault  host.Vault
 	Store  host.Store
 }
 
@@ -74,20 +76,21 @@ func New(h Host, clock Clock) *Floors {
 	return &Floors{host: h, calibrator: NewCalibrator(clock), mu: sync.Mutex{}}
 }
 
-// scope is the search and the records of one vault.
+// scope is the search, the notes and the records of one vault.
 type scope struct {
 	search  host.Search
+	notes   host.NoteLookup
 	records Records
 }
 
 // open returns the scope of the vault of the identity, and of the vault the host shows where the
 // identity is empty.
 func (f *Floors) open(vault host.VaultID) scope {
-	search, store := f.host.Search, f.host.Store
+	search, notes, store := f.host.Search, f.host.Vault, f.host.Store
 	if vault != "" {
-		search, store = search.With(vault), store.With(vault)
+		search, notes, store = search.With(vault), notes.With(vault), store.With(vault)
 	}
-	return scope{search: search, records: NewRecords(store)}
+	return scope{search: search, notes: notes, records: NewRecords(store)}
 }
 
 // Get returns the floor in force for the vault. An installation with no model has the default floor.
@@ -167,7 +170,7 @@ func (f *Floors) Calibrate(ctx context.Context, vault host.VaultID) (Outcome, St
 	if err != nil {
 		return 0, State{}, fmt.Errorf("read the embedding state: %w", err)
 	}
-	outcome, calibration, err := f.calibrator.Calibrate(ctx, s.search, embedding)
+	outcome, calibration, err := f.calibrator.Calibrate(ctx, s.search, s.notes, embedding)
 	if err != nil {
 		return 0, State{}, err
 	}
@@ -304,7 +307,7 @@ func (f *Floors) Ensure(ctx context.Context, vault host.VaultID) error {
 	if found && (record.IsManual || record.Calibration != nil) {
 		return apply(ctx, s, record)
 	}
-	outcome, calibration, err := f.calibrator.Calibrate(ctx, s.search, embedding)
+	outcome, calibration, err := f.calibrator.Calibrate(ctx, s.search, s.notes, embedding)
 	if err != nil || outcome != Calibrated {
 		return err
 	}

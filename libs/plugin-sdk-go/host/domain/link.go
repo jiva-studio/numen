@@ -1,0 +1,235 @@
+package domain
+
+import (
+	"net/url"
+	"strings"
+)
+
+// LinkRole is the purpose of a link. The list is closed: navigation and rendering
+// read it, so an undefined role has no behaviour.
+type LinkRole string
+
+const (
+	RoleParent     LinkRole = "parent"
+	RoleChild      LinkRole = "child"
+	RoleJump       LinkRole = "jump"
+	RoleRef        LinkRole = "ref"
+	RoleAttachment LinkRole = "attachment"
+)
+
+// IsKnownRole reports whether a role is one the application acts on. An unknown
+// role in a file is shown as a problem.
+func IsKnownRole(r LinkRole) bool {
+	switch r {
+	case RoleParent, RoleChild, RoleJump, RoleRef, RoleAttachment:
+		return true
+	}
+	return false
+}
+
+// LinkMarker is what is drawn at the end of a link that points at its target. The
+// list is closed and a value is introduced together with the code that draws
+// it. An absent marker draws nothing.
+type LinkMarker string
+
+const (
+	MarkerNone  LinkMarker = ""
+	MarkerArrow LinkMarker = "arrow"
+)
+
+// IsKnownMarker reports whether a marker is one the application draws. The
+// absent marker is not a marker; an unknown one in a file is shown as a problem.
+func IsKnownMarker(m LinkMarker) bool {
+	return m == MarkerArrow
+}
+
+// IsWritableMarker reports whether a marker can be stored: absent or known.
+func IsWritableMarker(m LinkMarker) bool {
+	return m == MarkerNone || IsKnownMarker(m)
+}
+
+// Address is what a link points at. Every address has a scheme, so reading one
+// is a split at the first colon: a title like "Lecture 3: entropy" carries one
+// of its own, and only an explicit scheme distinguishes the two.
+type Address struct {
+	Scheme string
+	Value  string
+}
+
+// Schemes. `name` never appears in a file: it is what a `[[wikilink]]` becomes
+// once it is stored.
+const (
+	SchemeName  = "name"
+	SchemeNote  = "note"
+	SchemeAsset = "asset"
+)
+
+func (a Address) String() string { return a.Scheme + "://" + a.Value }
+
+// GetWritten is an address as it goes into a file, and as it is shown to the
+// person who wrote it. A name is written as itself: `name://` is how the index
+// holds it and never appears in a note.
+func (a Address) GetWritten() string {
+	if a.Scheme == SchemeName {
+		return a.Value
+	}
+	return a.String()
+}
+
+// ParseAddress reads what was written in a file.
+//
+// A wikilink carries two things the address does not: an alias after `|`, which
+// is how the link is read in the sentence, and a fragment after `#`, which names
+// a place inside the note. Both are dropped here.
+func ParseAddress(raw string) Address {
+	target := strings.TrimSpace(raw)
+	target = strings.TrimPrefix(target, "[[")
+	target = strings.TrimSuffix(target, "]]")
+
+	if alias := strings.IndexByte(target, '|'); alias >= 0 {
+		target = target[:alias]
+	}
+	if fragment := strings.IndexByte(target, '#'); fragment >= 0 {
+		target = target[:fragment]
+	}
+	target = strings.TrimSpace(target)
+
+	if scheme, value, found := strings.Cut(target, "://"); found && isScheme(scheme) {
+		return Address{Scheme: scheme, Value: value}
+	}
+	return Address{Scheme: SchemeName, Value: target}
+}
+
+// isScheme keeps a title with a colon in it from being read as an address. A
+// scheme is letters, digits, `+`, `-` and `.`, and a name is anything else.
+func isScheme(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
+		case r == '+', r == '-', r == '.':
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+// Link is one edge as written. Where it resolves to is a query to the index,
+// not a fact stored in the file.
+type Link struct {
+	Target Address
+	Role   LinkRole
+
+	// Type is open vocabulary, and a value is only introduced together with the
+	// code that reads it.
+	Type string
+
+	// Why the link exists, in the author's words.
+	Why string
+
+	// Label is the user's name for this relationship, in a few words, rendered
+	// along the line between the two notes. It is not a copy of anything: no
+	// field carries the target's name, because a name kept alongside an address
+	// is a cache in the file the address is written in.
+	Label string
+
+	// Marker is what is drawn at the end of the line that points at Target. The
+	// absent marker draws nothing; the marker of the record in the other note
+	// belongs to the other end.
+	Marker LinkMarker
+}
+
+// LinkKey addresses the records of a note's `links:` block: the target, the role
+// when one is named, and the type. A type is part of the address: the empty type
+// names the records that carry none.
+type LinkKey struct {
+	Target Address
+	// Role narrows the address to one role. Empty matches every role.
+	Role LinkRole
+	Type string
+}
+
+// ResolvedLink is a link together with what it currently points at. "Currently"
+// is the word that matters: resolution is a query, so adding a file can resolve
+// a link that was dangling and removing one can break a link that worked.
+type ResolvedLink struct {
+	Link
+
+	// From is the note the link is written in; To is the note it resolves to,
+	// empty when nothing does.
+	From string
+	To   string
+
+	// ToVault is the vault the target turned out to be in. Empty when the link
+	// resolved to nothing, and equal to the vault the link was written in for
+	// every ordinary link.
+	ToVault VaultID
+
+	// IsAmbiguous is set when several notes answer to the name. The link still
+	// resolves — to the nearest one — but the vault has a question in it.
+	IsAmbiguous bool
+}
+
+// InVault is the vault the link resolved into, which is not always the vault it
+// was written in: an identifier names one note in the world, so a link may cross
+// a boundary the user put there on purpose.
+func (r ResolvedLink) InVault(writtenIn VaultID) (vault VaultID, crossed bool) {
+	if r.ToVault == "" || r.ToVault == writtenIn {
+		return writtenIn, false
+	}
+	return r.ToVault, true
+}
+
+// Backlink is a link written in another note that resolves to the note asked
+// about. The embedded link keeps the role as written, relative to the note it is
+// written in; RoleFromHere is the role of that note relative to the one asked
+// about, and is empty for a role with no counterpart.
+type Backlink struct {
+	ResolvedLink
+	RoleFromHere LinkRole
+}
+
+// AmbiguousLink is a link that several notes answer to. It resolved to the
+// nearest of them, and the rest are what makes it worth showing: which one it
+// means is a fact about where the notes sit.
+type AmbiguousLink struct {
+	ResolvedLink
+	// Candidates is every note that answers to the name, the chosen one among them.
+	Candidates []string
+}
+
+// IsNameable reports whether a filename can be written as an address that
+// resolves back to it.
+//
+// A file may be called almost anything, and an address may not. `#` starts a
+// fragment, `|` starts an alias, `://` starts a scheme and `]]` ends a
+// wikilink, so a note named with any of them cannot be reached by its name:
+// the character is read as punctuation of the link. Such a note is addressed
+// by its identifier or not at all.
+func IsNameable(name string) bool {
+	if strings.TrimSpace(name) != name || name == "" || strings.ContainsAny(name, "\n\r") {
+		return false
+	}
+	if strings.Contains(name, "[[") || strings.Contains(name, "]]") {
+		return false
+	}
+	return ParseAddress(name) == Address{Scheme: SchemeName, Value: name}
+}
+
+// IsHTTPSAddress reports whether raw is an https:// URL with a host.
+func IsHTTPSAddress(raw string) bool {
+	u, err := url.Parse(raw)
+	return err == nil && u.Scheme == "https" && u.Host != ""
+}
+
+// IsHTTPSOrigin reports whether raw is an https:// origin with a host and no path, query, fragment, or userinfo.
+func IsHTTPSOrigin(raw string) bool {
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "https" || u.Host == "" {
+		return false
+	}
+	return u.User == nil && u.Path == "" && u.RawQuery == "" && u.Fragment == "" && u.Opaque == "" && !u.ForceQuery
+}

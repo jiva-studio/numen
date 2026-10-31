@@ -1,0 +1,88 @@
+package domain
+
+// Relation is the position of a note relative to the focus note.
+//
+// It is not a link role. A role is written in a file and states what one link is
+// for; a relation is derived from both ends of every link at once, and one of
+// them, the sibling, is written nowhere.
+type Relation string
+
+const (
+	RelationParent  Relation = "parent"
+	RelationChild   Relation = "child"
+	RelationJump    Relation = "jump"
+	RelationSibling Relation = "sibling"
+)
+
+// GetRelationRank orders the relations a note can have. A note can answer to
+// two of them — a pair that are each other's parent, a jump between siblings —
+// and is shown under only one, so it takes the first it qualifies for.
+func GetRelationRank(s Relation) int {
+	switch s {
+	case RelationParent:
+		return 0
+	case RelationChild:
+		return 1
+	case RelationJump:
+		return 2
+	case RelationSibling:
+		return 3
+	default:
+		return 4
+	}
+}
+
+// NoteRef is a note as something else refers to it: enough to show it and to
+// ask for it again.
+type NoteRef struct {
+	Path  string
+	Title string
+	// ID is the identifier written in the file, empty for a note made outside
+	// the application.
+	ID string
+}
+
+// Neighbour is a note, its location, and the label of the link that relates
+// it.
+type Neighbour struct {
+	NoteRef
+	Relation Relation
+
+	// Label is the text written on the link.
+	Label string
+
+	// ReverseLabel is what the other note wrote on its link back, when IsMutual is true.
+	ReverseLabel string
+
+	// IsMutual is set when both notes name this relationship, each in its own
+	// words. Label is then the word the note in focus wrote for it.
+	IsMutual bool
+
+	// Marker is what the record written in the note in focus draws at this
+	// neighbour. It is absent when that note writes no record.
+	Marker LinkMarker
+
+	// ReverseMarker is what the record written in this neighbour draws at the
+	// note in focus. It is absent when the neighbour writes no record.
+	ReverseMarker LinkMarker
+
+	// Parent is the note the relationship runs from, when that is not the one
+	// in focus. A sibling is another child of a shared parent, and which parent
+	// is a fact about the vault.
+	Parent string
+}
+
+// Neighbourhood is one note and everything joined to it, seen from that note.
+type Neighbourhood struct {
+	Focus   NoteRef
+	Related []Neighbour
+}
+
+// AddNeighbour adds a note under its relation. The focus is not related to itself.
+func (n *Neighbourhood) AddNeighbour(note NoteRef, neighbour Neighbour) {
+	if note.Path == n.Focus.Path {
+		return
+	}
+	neighbour.NoteRef = note
+	n.Related = append(n.Related, neighbour)
+}

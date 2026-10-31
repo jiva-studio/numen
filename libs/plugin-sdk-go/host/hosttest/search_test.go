@@ -20,18 +20,12 @@ func newSearch() *hosttest.Search {
 	return search
 }
 
-func titlesOf(n int) []host.NoteTitle {
-	out := make([]host.NoteTitle, n)
+// passagesOf is n passages, each on a note of its own, whose vector leans further to the second axis
+// the later it comes.
+func passagesOf(n int) []hosttest.SearchPassage {
+	out := make([]hosttest.SearchPassage, n)
 	for i := range out {
-		out[i] = host.NoteTitle{Source: int64(i + 1), Title: fmt.Sprintf("title %d", i)}
-	}
-	return out
-}
-
-func vectorsOf(n int) []host.ChunkVector {
-	out := make([]host.ChunkVector, n)
-	for i := range out {
-		out[i] = host.ChunkVector{Source: int64(i + 1), Vector: []byte{byte(i), 1}}
+		out[i] = hosttest.SearchPassage{Path: fmt.Sprintf("note-%d.md", i+1), Vector: []float32{float32(n - i), float32(i + 1)}}
 	}
 	return out
 }
@@ -47,8 +41,8 @@ func TestTheSearchRefusesACallWithoutThePermission(t *testing.T) {
 	if _, err := search.EmbedTexts(ctx, []string{"a"}); !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("embedding gave %v", err)
 	}
-	if _, err := search.ListNoteTitles(ctx, 1); !errors.Is(err, host.ErrPermissionDenied) {
-		t.Errorf("titles gave %v", err)
+	if _, err := search.SampleSimilarities(ctx, searchRecipe, nil); !errors.Is(err, host.ErrPermissionDenied) {
+		t.Errorf("sample gave %v", err)
 	}
 	if _, err := search.GetBestSimilarity(ctx, searchRecipe, nil); !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("best similarity gave %v", err)
@@ -69,22 +63,22 @@ func TestTheSearchRefusesACallWithoutThePermission(t *testing.T) {
 func TestTheSearchOfAnUnknownVaultIsRefusedAndAKnownOtherVaultIsItsOwn(t *testing.T) {
 	ctx := t.Context()
 	search := newSearch()
-	search.SetNoteTitles(titlesOf(3))
+	search.SetPassages(searchRecipe, passagesOf(3))
 
 	unknown := search.With("biology")
 	if _, err := unknown.GetEmbeddingState(ctx); !errors.Is(err, host.ErrUnknownVault) {
 		t.Errorf("state gave %v", err)
 	}
-	if _, err := unknown.ListNoteTitles(ctx, 1); !errors.Is(err, host.ErrUnknownVault) {
-		t.Errorf("titles gave %v", err)
+	if _, err := unknown.SampleSimilarities(ctx, searchRecipe, nil); !errors.Is(err, host.ErrUnknownVault) {
+		t.Errorf("sample gave %v", err)
 	}
 	if err := unknown.SetSearchFloor(ctx, searchRecipe, 0.5); !errors.Is(err, host.ErrUnknownVault) {
 		t.Errorf("floor set gave %v", err)
 	}
 
-	titles, err := search.With("chemistry").ListNoteTitles(ctx, 10)
-	if err != nil || len(titles) != 0 {
-		t.Errorf("another vault listed %v (%v), want none", titles, err)
+	sample, err := search.With("chemistry").SampleSimilarities(ctx, searchRecipe, []host.SimilarityQuery{{Vector: []float32{1, 0}}})
+	if err != nil || sample.PassageCount != 0 {
+		t.Errorf("another vault sampled %+v (%v), want none", sample, err)
 	}
 	if err := search.With("chemistry").SetSearchFloor(ctx, searchRecipe, 0.6); err != nil {
 		t.Fatal(err)
@@ -105,67 +99,73 @@ func TestTheSearchOfAHostShowingNoVaultReturnsNoVault(t *testing.T) {
 	}
 }
 
-func TestTheSearchCapsEveryList(t *testing.T) {
+func TestTheSearchCapsASampleAndItsQueries(t *testing.T) {
 	ctx := t.Context()
 	search := newSearch()
-	search.SetNoteTitles(titlesOf(host.MaxListedTitles + 50))
-	search.SetChunkVectors(searchRecipe, vectorsOf(host.MaxListedVectors+50))
+	search.SetPassages(searchRecipe, passagesOf(host.MaxSampledPassages+50))
 
-	for _, limit := range []int{0, -1, 1_000_000} {
-		titles, err := search.ListNoteTitles(ctx, limit)
-		if err != nil || len(titles) != host.MaxListedTitles {
-			t.Errorf("titles with limit %d: %d (%v), want %d", limit, len(titles), err, host.MaxListedTitles)
-		}
-		vectors, err := search.ListSmallChunkVectors(ctx, searchRecipe, limit)
-		if err != nil || len(vectors) != host.MaxListedVectors {
-			t.Errorf("vectors with limit %d: %d (%v), want %d", limit, len(vectors), err, host.MaxListedVectors)
-		}
+	sample, err := search.SampleSimilarities(ctx, searchRecipe, []host.SimilarityQuery{{Vector: []float32{1, 0}}})
+	if err != nil || sample.PassageCount != host.MaxSampledPassages || len(sample.Rows[0]) != host.MaxSampledPassages {
+		t.Errorf("sampled %d passages and %d similarities (%v), want %d", sample.PassageCount, len(sample.Rows[0]), err, host.MaxSampledPassages)
 	}
-	titles, err := search.ListNoteTitles(ctx, 7)
-	if err != nil || len(titles) != 7 {
-		t.Errorf("a limit of 7 listed %d (%v)", len(titles), err)
+	if _, err := search.SampleSimilarities(ctx, searchRecipe, make([]host.SimilarityQuery, host.MaxSampledQueries+1)); !errors.Is(err, host.ErrLimitExceeded) {
+		t.Errorf("too many queries gave %v", err)
 	}
 }
 
-func TestTheSearchListsInTheOrderOfTheIndexEveryTime(t *testing.T) {
+func TestTheSearchSamplesInTheOrderOfTheIndexEveryTime(t *testing.T) {
 	ctx := t.Context()
 	search := newSearch()
-	search.SetNoteTitles(titlesOf(30))
-	search.SetChunkVectors(searchRecipe, vectorsOf(30))
+	search.SetPassages(searchRecipe, passagesOf(30))
+	queries := []host.SimilarityQuery{{Path: "note-3.md", Vector: []float32{1, 0}}, {Vector: []float32{0, 1}}}
 
-	first, err := search.ListNoteTitles(ctx, 20)
+	first, err := search.SampleSimilarities(ctx, searchRecipe, queries)
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := search.ListNoteTitles(ctx, 20)
+	second, err := search.SampleSimilarities(ctx, searchRecipe, queries)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(first, second) || first[0].Source != 1 || first[19].Source != 20 {
-		t.Errorf("two reads gave %v and %v", first, second)
+	if first.PassageCount != 30 || first.SourceCount != 30 || len(first.Rows[0]) != 29 || len(first.Rows[1]) != 30 {
+		t.Errorf("sampled %d passages of %d sources in rows of %d and %d, want 30 of 30 in rows of 29 and 30",
+			first.PassageCount, first.SourceCount, len(first.Rows[0]), len(first.Rows[1]))
 	}
-	prefix, err := search.ListNoteTitles(ctx, 5)
-	if err != nil || !slices.Equal(prefix, first[:5]) {
-		t.Errorf("a shorter read gave %v (%v), want the head of the longer one", prefix, err)
-	}
-	vectors, err := search.ListSmallChunkVectors(ctx, searchRecipe, 30)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for i, one := range vectors {
-		if one.Source != int64(i+1) {
-			t.Fatalf("vector %d belongs to source %d", i, one.Source)
+	for i := range first.Rows {
+		if !slices.Equal(first.Rows[i], second.Rows[i]) {
+			t.Errorf("two samples gave different row %d", i)
 		}
+	}
+	// The first query leans on the first axis, so its similarity falls along the index.
+	if !slices.IsSortedFunc(first.Rows[0], func(a, b float64) int {
+		switch {
+		case a > b:
+			return -1
+		case a < b:
+			return 1
+		}
+		return 0
+	}) {
+		t.Errorf("the similarities do not follow the order of the passages: %v", first.Rows[0])
+	}
+}
+
+func TestTheSearchRefusesAQueryOfAnotherWidth(t *testing.T) {
+	search := newSearch()
+	search.SetPassages(searchRecipe, passagesOf(3))
+	_, err := search.SampleSimilarities(t.Context(), searchRecipe, []host.SimilarityQuery{{Vector: []float32{1, 0, 0}}})
+	if !errors.Is(err, host.ErrInvalidQuery) {
+		t.Errorf("got %v, want ErrInvalidQuery", err)
 	}
 }
 
 func TestTheSearchRefusesARecipeOfAnotherModelAndAHostWithNoModel(t *testing.T) {
 	ctx := t.Context()
 	search := newSearch()
-	search.SetChunkVectors(searchRecipe, vectorsOf(3))
+	search.SetPassages(searchRecipe, passagesOf(3))
 
-	if _, err := search.ListSmallChunkVectors(ctx, "other", 10); !errors.Is(err, host.ErrRecipeMismatch) {
-		t.Errorf("vectors gave %v", err)
+	if _, err := search.SampleSimilarities(ctx, "other", nil); !errors.Is(err, host.ErrRecipeMismatch) {
+		t.Errorf("sample gave %v", err)
 	}
 	if _, err := search.GetBestSimilarity(ctx, "other", []float32{1, 0}); !errors.Is(err, host.ErrRecipeMismatch) {
 		t.Errorf("best similarity gave %v", err)
@@ -283,12 +283,12 @@ func TestTheSearchEmbedsWithinTheLimitsAndFailsWhenTheModelFails(t *testing.T) {
 	}
 }
 
-func TestTheBestSimilarityIsTheNearestStoredVector(t *testing.T) {
+func TestTheBestSimilarityIsTheNearestPassage(t *testing.T) {
 	ctx := t.Context()
 	search := newSearch()
-	search.SetChunkVectors(searchRecipe, []host.ChunkVector{
-		{Source: 1, Vector: []byte{0, 127}},
-		{Source: 2, Vector: []byte{127, 0}},
+	search.SetPassages(searchRecipe, []hosttest.SearchPassage{
+		{Path: "a.md", Vector: []float32{0, 127}},
+		{Path: "b.md", Vector: []float32{127, 0}},
 	})
 
 	best, err := search.GetBestSimilarity(ctx, searchRecipe, []float32{1, 0})

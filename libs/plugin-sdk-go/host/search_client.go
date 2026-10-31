@@ -88,6 +88,8 @@ func readSearchError(code v1.HostSearchErrorCode) error {
 		return ErrLimitExceeded
 	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED:
 		return ErrEmbeddingFailed
+	case v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_QUERY:
+		return ErrInvalidQuery
 	}
 	return fmt.Errorf("host: rejected with code %s", code)
 }
@@ -137,36 +139,27 @@ func (c *SearchClient) EmbedTexts(ctx context.Context, texts []string) (Embedded
 	return EmbeddedTexts{Recipe: res.Msg.GetRecipe(), Vectors: vectors}, nil
 }
 
-func (c *SearchClient) ListNoteTitles(ctx context.Context, limit int) ([]NoteTitle, error) {
-	res, err := c.rpc.ListNoteTitles(ctx, newSearchRequest(c, &v1.ListNoteTitlesRequest{Limit: int32(limit)}))
+func (c *SearchClient) SampleSimilarities(ctx context.Context, recipe string, queries []SimilarityQuery) (SimilaritySample, error) {
+	wire := make([]*v1.SimilarityQuery, len(queries))
+	for i, one := range queries {
+		wire[i] = &v1.SimilarityQuery{Vector: &v1.FloatVector{Values: one.Vector}, Path: one.Path}
+	}
+	res, err := c.rpc.SampleSimilarities(ctx, newSearchRequest(c, &v1.SampleSimilaritiesRequest{Recipe: recipe, Queries: wire}))
 	if err != nil {
-		return nil, readSearchCallError(err)
+		return SimilaritySample{}, readSearchCallError(err)
 	}
 	if err := readSearchError(res.Msg.GetError()); err != nil {
-		return nil, err
+		return SimilaritySample{}, err
 	}
-	out := make([]NoteTitle, len(res.Msg.GetTitles()))
-	for i, one := range res.Msg.GetTitles() {
-		out[i] = NoteTitle{Source: one.GetSourceId(), Title: one.GetTitle()}
+	rows := make([][]float64, len(res.Msg.GetRows()))
+	for i, one := range res.Msg.GetRows() {
+		rows[i] = one.GetValues()
 	}
-	return out, nil
-}
-
-func (c *SearchClient) ListSmallChunkVectors(ctx context.Context, recipe string, limit int) ([]ChunkVector, error) {
-	res, err := c.rpc.ListSmallChunkVectors(ctx, newSearchRequest(c, &v1.ListSmallChunkVectorsRequest{
-		Recipe: recipe, Limit: int32(limit),
-	}))
-	if err != nil {
-		return nil, readSearchCallError(err)
-	}
-	if err := readSearchError(res.Msg.GetError()); err != nil {
-		return nil, err
-	}
-	out := make([]ChunkVector, len(res.Msg.GetVectors()))
-	for i, one := range res.Msg.GetVectors() {
-		out[i] = ChunkVector{Source: one.GetSourceId(), Vector: one.GetEmbedding()}
-	}
-	return out, nil
+	return SimilaritySample{
+		PassageCount: int(res.Msg.GetPassageCount()),
+		SourceCount:  int(res.Msg.GetSourceCount()),
+		Rows:         rows,
+	}, nil
 }
 
 func (c *SearchClient) GetBestSimilarity(ctx context.Context, recipe string, query []float32) (float64, error) {

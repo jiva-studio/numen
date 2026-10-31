@@ -119,15 +119,15 @@ func TestASearchCallWithoutTheManifestPermissionIsRefusedByTheCore(t *testing.T)
 		deny  bool
 	}{
 		{"token-vault", "state", callGetEmbeddingState, true},
-		{"token-vault", "titles", callListNoteTitles, true},
+		{"token-vault", "sample", callSampleSimilarities, true},
 		{"token-vault", "get floor", callGetSearchFloor, true},
 		{"token-vault", "set floor", callSetSearchFloor, true},
 		{"token-index", "state", callGetEmbeddingState, false},
-		{"token-index", "titles", callListNoteTitles, false},
+		{"token-index", "sample", callSampleSimilarities, false},
 		{"token-index", "get floor", callGetSearchFloor, true},
 		{"token-index", "set floor", callSetSearchFloor, true},
 		{"token-policy", "state", callGetEmbeddingState, true},
-		{"token-policy", "titles", callListNoteTitles, true},
+		{"token-policy", "sample", callSampleSimilarities, true},
 		{"token-policy", "get floor", callGetSearchFloor, false},
 		{"token-policy", "set floor", callSetSearchFloor, false},
 	} {
@@ -143,8 +143,8 @@ func callGetEmbeddingState(ctx context.Context, client numenv1connect.HostSearch
 	return err
 }
 
-func callListNoteTitles(ctx context.Context, client numenv1connect.HostSearchServiceClient) error {
-	_, err := client.ListNoteTitles(ctx, connect.NewRequest(&v1.ListNoteTitlesRequest{}))
+func callSampleSimilarities(ctx context.Context, client numenv1connect.HostSearchServiceClient) error {
+	_, err := client.SampleSimilarities(ctx, connect.NewRequest(&v1.SampleSimilaritiesRequest{Recipe: "r"}))
 	return err
 }
 

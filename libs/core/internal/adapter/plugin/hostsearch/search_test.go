@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -62,29 +64,21 @@ func (e *stubEmbedder) Close() error     { return nil }
 
 func (e *stubEmbedder) GetFloorHint(context.Context) float64 { return e.hint }
 
-// stubSamples answers with n titles and n vectors and records the limit it was asked for.
+// stubSamples answers with n passages of four dimensions, each on a source and a path of its own,
+// and records the limit and the recipe it was asked for.
 type stubSamples struct {
-	titles       int
 	vectors      int
-	titleLimit   int
 	vectorLimit  int
 	vectorRecipe string
-}
-
-func (s *stubSamples) ListNoteTitles(_ context.Context, _ domain.Vault, limit int) ([]searchpolicyport.Title, error) {
-	s.titleLimit = limit
-	out := make([]searchpolicyport.Title, 0, min(limit, s.titles))
-	for i := range min(limit, s.titles) {
-		out = append(out, searchpolicyport.Title{Source: int64(i + 1), Text: fmt.Sprintf("title %d", i)})
-	}
-	return out, nil
 }
 
 func (s *stubSamples) ListSmallChunkVectors(_ context.Context, _ domain.Vault, recipe string, limit int) ([]searchpolicyport.Passage, error) {
 	s.vectorLimit, s.vectorRecipe = limit, recipe
 	out := make([]searchpolicyport.Passage, 0, min(limit, s.vectors))
 	for i := range min(limit, s.vectors) {
-		out = append(out, searchpolicyport.Passage{Source: int64(i + 1), Vector: []byte{byte(i), 1, 2, 3}})
+		out = append(out, searchpolicyport.Passage{
+			Source: int64(i + 1), Path: fmt.Sprintf("note-%d.md", i+1), Vector: []byte{byte(i), 1, 2, 3},
+		})
 	}
 	return out, nil
 }
@@ -136,7 +130,7 @@ type fixture struct {
 func newFixture() *fixture {
 	f := &fixture{
 		embedder: &stubEmbedder{model: model, hint: 0.4},
-		samples:  &stubSamples{titles: 1500, vectors: 1500},
+		samples:  &stubSamples{vectors: 1500},
 		nearest:  &stubNearest{best: 0.7},
 		floors:   memoryFloors{},
 	}
@@ -150,66 +144,97 @@ func newFixture() *fixture {
 	return f
 }
 
-func TestAListOfTitlesIsCappedAndAZeroLimitIsTheCap(t *testing.T) {
+func unitQuery(path string) pluginport.PluginSimilarityQuery {
+	return pluginport.PluginSimilarityQuery{Path: path, Vector: []float32{1, 0, 0, 0}}
+}
+
+func TestSampleSimilaritiesCapsThePassages(t *testing.T) {
 	f := newFixture()
-	for _, tc := range []struct {
-		limit     int
-		wantAsked int
-		wantGot   int
-	}{
-		{limit: 10, wantAsked: 10, wantGot: 10},
-		{limit: 0, wantAsked: pluginport.MaxListedTitles, wantGot: pluginport.MaxListedTitles},
-		{limit: -3, wantAsked: pluginport.MaxListedTitles, wantGot: pluginport.MaxListedTitles},
-		{limit: 100000, wantAsked: pluginport.MaxListedTitles, wantGot: pluginport.MaxListedTitles},
-	} {
-		got, err := f.search.ListNoteTitles(t.Context(), vault, tc.limit)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if f.samples.titleLimit != tc.wantAsked || len(got) != tc.wantGot {
-			t.Errorf("limit %d asked the index for %d and returned %d, want %d and %d",
-				tc.limit, f.samples.titleLimit, len(got), tc.wantAsked, tc.wantGot)
+	got, err := f.search.SampleSimilarities(t.Context(), vault, model.Recipe(), []pluginport.PluginSimilarityQuery{unitQuery("")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.samples.vectorLimit != pluginport.MaxSampledPassages || got.PassageCount != pluginport.MaxSampledPassages {
+		t.Errorf("asked the index for %d and sampled %d, want %d", f.samples.vectorLimit, got.PassageCount, pluginport.MaxSampledPassages)
+	}
+	if got.SourceCount != pluginport.MaxSampledPassages {
+		t.Errorf("%d sources, want %d", got.SourceCount, pluginport.MaxSampledPassages)
+	}
+	if len(got.Rows) != 1 || len(got.Rows[0]) != pluginport.MaxSampledPassages {
+		t.Fatalf("rows %d, want one of %d similarities", len(got.Rows), pluginport.MaxSampledPassages)
+	}
+	// Passage i holds {i, 1, 2, 3}: its cosine with the first axis is i / sqrt(i*i + 14).
+	for _, i := range []int{0, 1, 100, 127} {
+		want := float64(int8(i)) / math.Sqrt(float64(int8(i))*float64(int8(i))+14)
+		if math.Abs(got.Rows[0][i]-want) > 1e-6 {
+			t.Errorf("similarity %d is %v, want %v", i, got.Rows[0][i], want)
 		}
 	}
 }
 
-func TestAListOfVectorsIsCappedAndKeepsTheOrderOfTheIndex(t *testing.T) {
+func TestSampleSimilaritiesIsDeterministic(t *testing.T) {
 	f := newFixture()
-	recipe := model.Recipe()
-
-	got, err := f.search.ListSmallChunkVectors(t.Context(), vault, recipe, 100000)
+	queries := []pluginport.PluginSimilarityQuery{unitQuery("note-3.md"), {Path: "", Vector: []float32{0.5, 0.5, 0.5, 0.5}}}
+	first, err := f.search.SampleSimilarities(t.Context(), vault, model.Recipe(), queries)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if f.samples.vectorLimit != pluginport.MaxListedVectors || len(got) != pluginport.MaxListedVectors {
-		t.Errorf("asked the index for %d and returned %d, want %d", f.samples.vectorLimit, len(got), pluginport.MaxListedVectors)
-	}
-	for i, one := range got {
-		if one.Source != int64(i+1) || one.Vector[0] != byte(i) {
-			t.Fatalf("entry %d is %+v: the order of the index was not kept", i, one)
-		}
-	}
-	again, err := f.search.ListSmallChunkVectors(t.Context(), vault, recipe, 100000)
+	second, err := f.search.SampleSimilarities(t.Context(), vault, model.Recipe(), queries)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i := range got {
-		if got[i].Source != again[i].Source {
-			t.Fatalf("two reads ordered entry %d differently", i)
-		}
+	if !reflect.DeepEqual(first, second) {
+		t.Error("two samples of one index differ")
 	}
 }
 
-func TestATitleListKeepsTheOrderOfTheIndex(t *testing.T) {
+func TestSampleSimilaritiesExcludesTheNoteOfTheQuery(t *testing.T) {
 	f := newFixture()
-	got, err := f.search.ListNoteTitles(t.Context(), vault, 5)
+	f.samples.vectors = 10
+	got, err := f.search.SampleSimilarities(t.Context(), vault, model.Recipe(), []pluginport.PluginSimilarityQuery{
+		unitQuery("note-4.md"), unitQuery("missing.md"), unitQuery(""),
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i, one := range got {
-		if one.Source != int64(i+1) || one.Title != fmt.Sprintf("title %d", i) {
-			t.Fatalf("entry %d is %+v", i, one)
-		}
+	if len(got.Rows[0]) != 9 || len(got.Rows[1]) != 10 || len(got.Rows[2]) != 10 {
+		t.Errorf("rows of %d, %d and %d similarities, want 9, 10 and 10", len(got.Rows[0]), len(got.Rows[1]), len(got.Rows[2]))
+	}
+	if got.PassageCount != 10 || got.SourceCount != 10 {
+		t.Errorf("%d passages from %d sources, want 10 from 10", got.PassageCount, got.SourceCount)
+	}
+}
+
+func TestSampleSimilaritiesReturnsAnEmptyRowWithoutAVector(t *testing.T) {
+	f := newFixture()
+	got, err := f.search.SampleSimilarities(t.Context(), vault, model.Recipe(), []pluginport.PluginSimilarityQuery{{Path: "a.md"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Rows) != 1 || len(got.Rows[0]) != 0 {
+		t.Errorf("rows %v, want one empty row", got.Rows)
+	}
+}
+
+func TestSampleSimilaritiesRejectsAQueryOfAnotherWidth(t *testing.T) {
+	f := newFixture()
+	_, err := f.search.SampleSimilarities(t.Context(), vault, model.Recipe(), []pluginport.PluginSimilarityQuery{
+		{Vector: []float32{1, 0, 0}},
+	})
+	if !errors.Is(err, pluginport.ErrInvalidQuery) {
+		t.Errorf("got %v, want ErrInvalidQuery", err)
+	}
+}
+
+func TestSampleSimilaritiesCapsTheQueries(t *testing.T) {
+	f := newFixture()
+	queries := make([]pluginport.PluginSimilarityQuery, pluginport.MaxSampledQueries+1)
+	_, err := f.search.SampleSimilarities(t.Context(), vault, model.Recipe(), queries)
+	if !errors.Is(err, pluginport.ErrLimitExceeded) {
+		t.Errorf("got %v, want ErrLimitExceeded", err)
+	}
+	if f.samples.vectorRecipe != "" {
+		t.Error("a call over the limit reached the index")
 	}
 }
 
@@ -218,8 +243,8 @@ func TestACallWithARecipeOfAnotherModelIsRefused(t *testing.T) {
 	other := "another|recipe"
 	ctx := t.Context()
 
-	if _, err := f.search.ListSmallChunkVectors(ctx, vault, other, 10); !errors.Is(err, pluginport.ErrRecipeMismatch) {
-		t.Errorf("listing vectors under another recipe gave %v", err)
+	if _, err := f.search.SampleSimilarities(ctx, vault, other, nil); !errors.Is(err, pluginport.ErrRecipeMismatch) {
+		t.Errorf("sampling under another recipe gave %v", err)
 	}
 	if _, err := f.search.GetBestSimilarity(ctx, vault, other, []float32{1}); !errors.Is(err, pluginport.ErrRecipeMismatch) {
 		t.Errorf("a best similarity under another recipe gave %v", err)
@@ -246,8 +271,8 @@ func TestACallThatNeedsAModelIsRefusedWhereThereIsNone(t *testing.T) {
 	if _, err := f.search.EmbedTexts(ctx, []string{"a"}); !errors.Is(err, pluginport.ErrNoModel) {
 		t.Errorf("embedding gave %v", err)
 	}
-	if _, err := f.search.ListSmallChunkVectors(ctx, vault, "r", 1); !errors.Is(err, pluginport.ErrNoModel) {
-		t.Errorf("listing vectors gave %v", err)
+	if _, err := f.search.SampleSimilarities(ctx, vault, "r", nil); !errors.Is(err, pluginport.ErrNoModel) {
+		t.Errorf("sampling gave %v", err)
 	}
 	if err := f.search.SetSearchFloor(ctx, vault, "r", 0.5); !errors.Is(err, pluginport.ErrNoModel) {
 		t.Errorf("setting a floor gave %v", err)

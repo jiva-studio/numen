@@ -22,7 +22,7 @@ type SearchModel struct {
 }
 
 // Search is the search index and the search floor of the vaults in memory, answering as the host
-// does: every call that names a recipe checks it against the model in use, the lists are capped, and
+// does: every call that names a recipe checks it against the model in use, a sample is capped, and
 // a floor outside the range is refused. A call on a vault the host does not know returns
 // ErrUnknownVault. With returns the search of another vault of the same host.
 type Search struct {
@@ -41,12 +41,19 @@ type searchHost struct {
 	failure error
 	denied  map[string]bool
 	embeds  [][]string
+	cosine  func(query, passage []float32) float64
+}
+
+// SearchPassage is a small chunk of the index in the fake: the vector it carries and the path of the
+// note it belongs to.
+type SearchPassage struct {
+	Path   string
+	Vector []float32
 }
 
 // searchVault is what the index holds of one vault.
 type searchVault struct {
-	titles        []host.NoteTitle
-	vectors       map[string][]host.ChunkVector
+	passages      map[string][]SearchPassage
 	chunkCount    int64
 	embeddedCount int64
 	floors        map[string]float64
@@ -60,7 +67,7 @@ var _ host.Search = (*Search)(nil)
 func NewSearch(current host.VaultID, others ...host.VaultID) *Search {
 	all := &searchHost{current: current, hasShow: true, vaults: map[host.VaultID]*searchVault{}, denied: map[string]bool{}}
 	for _, id := range append([]host.VaultID{current}, others...) {
-		all.vaults[id] = &searchVault{vectors: map[string][]host.ChunkVector{}, floors: map[string]float64{}}
+		all.vaults[id] = &searchVault{passages: map[string][]SearchPassage{}, floors: map[string]float64{}}
 	}
 	return &Search{all: all}
 }
@@ -114,23 +121,21 @@ func (s *Search) Deny(permissions ...string) {
 	}
 }
 
-// SetNoteTitles is the titles the index holds of the vault, in the order the index lists them.
-func (s *Search) SetNoteTitles(titles []host.NoteTitle) {
+// SetPassages is the small chunks of the vault under the recipe, in the order the index lists them.
+func (s *Search) SetPassages(recipe string, passages []SearchPassage) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
 	if one, ok := s.lookupLocked(); ok {
-		one.titles = slices.Clone(titles)
+		one.passages[recipe] = slices.Clone(passages)
 	}
 }
 
-// SetChunkVectors is the stored vectors of the small chunks of the vault under the recipe, in the
-// order the index lists them.
-func (s *Search) SetChunkVectors(recipe string, vectors []host.ChunkVector) {
+// SetCosine is how the fake compares a query with a passage. The default is the cosine of the angle
+// between the two vectors.
+func (s *Search) SetCosine(cosine func(query, passage []float32) float64) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
-	if one, ok := s.lookupLocked(); ok {
-		one.vectors[recipe] = slices.Clone(vectors)
-	}
+	s.all.cosine = cosine
 }
 
 // SetProgress is how many chunks of the vault can carry a vector, and how many do.
@@ -261,28 +266,34 @@ func (s *Search) EmbedTexts(_ context.Context, texts []string) (host.EmbeddedTex
 	return host.EmbeddedTexts{Recipe: s.all.model.Recipe, Vectors: vectors}, nil
 }
 
-func (s *Search) ListNoteTitles(_ context.Context, limit int) ([]host.NoteTitle, error) {
+func (s *Search) SampleSimilarities(_ context.Context, recipe string, queries []host.SimilarityQuery) (host.SimilaritySample, error) {
 	s.all.mu.Lock()
 	defer s.all.mu.Unlock()
 	one, err := s.openLocked(host.PermissionIndexRead)
 	if err != nil {
-		return nil, err
-	}
-	return slices.Clone(one.titles[:min(clampSearchLimit(limit, host.MaxListedTitles), len(one.titles))]), nil
-}
-
-func (s *Search) ListSmallChunkVectors(_ context.Context, recipe string, limit int) ([]host.ChunkVector, error) {
-	s.all.mu.Lock()
-	defer s.all.mu.Unlock()
-	one, err := s.openLocked(host.PermissionIndexRead)
-	if err != nil {
-		return nil, err
+		return host.SimilaritySample{}, err
 	}
 	if err := s.checkRecipeLocked(recipe); err != nil {
-		return nil, err
+		return host.SimilaritySample{}, err
 	}
-	chunks := one.vectors[recipe]
-	return slices.Clone(chunks[:min(clampSearchLimit(limit, host.MaxListedVectors), len(chunks))]), nil
+	if len(queries) > host.MaxSampledQueries {
+		return host.SimilaritySample{}, host.ErrLimitExceeded
+	}
+	passages := one.passages[recipe]
+	passages = passages[:min(host.MaxSampledPassages, len(passages))]
+	paths := map[string]struct{}{}
+	for _, passage := range passages {
+		paths[passage.Path] = struct{}{}
+	}
+	rows := make([][]float64, len(queries))
+	for i, query := range queries {
+		row, err := s.compareRowLocked(query, passages)
+		if err != nil {
+			return host.SimilaritySample{}, err
+		}
+		rows[i] = row
+	}
+	return host.SimilaritySample{PassageCount: len(passages), SourceCount: len(paths), Rows: rows}, nil
 }
 
 func (s *Search) GetBestSimilarity(_ context.Context, recipe string, query []float32) (float64, error) {
@@ -296,13 +307,40 @@ func (s *Search) GetBestSimilarity(_ context.Context, recipe string, query []flo
 		return 0, err
 	}
 	best, found := 0.0, false
-	for _, chunk := range one.vectors[recipe] {
-		similarity := cosineOfStored(query, chunk.Vector)
+	for _, passage := range one.passages[recipe] {
+		similarity := s.compareLocked(query, passage.Vector)
 		if !found || similarity > best {
 			best, found = similarity, true
 		}
 	}
 	return best, nil
+}
+
+// compareRowLocked is the similarity of the query with each passage of another note, in the order of
+// the passages, and nil for a query with no vector.
+func (s *Search) compareRowLocked(query host.SimilarityQuery, passages []SearchPassage) ([]float64, error) {
+	if len(query.Vector) == 0 {
+		return nil, nil
+	}
+	var row []float64
+	for _, passage := range passages {
+		if query.Path != "" && passage.Path == query.Path {
+			continue
+		}
+		if len(passage.Vector) != len(query.Vector) {
+			return nil, host.ErrInvalidQuery
+		}
+		row = append(row, s.compareLocked(query.Vector, passage.Vector))
+	}
+	return row, nil
+}
+
+// compareLocked is the similarity of the query with the passage.
+func (s *Search) compareLocked(query, passage []float32) float64 {
+	if s.all.cosine != nil {
+		return s.all.cosine(query, passage)
+	}
+	return cosineOf(query, passage)
 }
 
 func (s *Search) GetSearchFloor(_ context.Context, recipe string) (host.SearchFloor, error) {
@@ -352,25 +390,17 @@ func (s *Search) SetSearchFloor(_ context.Context, recipe string, floor float64)
 	return nil
 }
 
-// clampSearchLimit is the limit a list is read with: the maximum for a limit of zero or less, or above it.
-func clampSearchLimit(limit, maximum int) int {
-	if limit <= 0 || limit > maximum {
-		return maximum
-	}
-	return limit
-}
-
-// cosineOfStored is the cosine of the angle between a query vector and a stored vector of signed bytes.
-func cosineOfStored(query []float32, stored []byte) float64 {
-	if len(query) != len(stored) || len(query) == 0 {
+// cosineOf is the cosine of the angle between two vectors, and zero for vectors of different lengths.
+func cosineOf(query, passage []float32) float64 {
+	if len(query) != len(passage) || len(query) == 0 {
 		return 0
 	}
 	var dot, left, right float64
 	for i, q := range query {
-		s := float64(int8(stored[i]))
-		dot += float64(q) * s
+		p := float64(passage[i])
+		dot += float64(q) * p
 		left += float64(q) * float64(q)
-		right += s * s
+		right += p * p
 	}
 	if left == 0 || right == 0 {
 		return 0
