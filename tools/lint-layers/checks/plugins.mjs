@@ -10,7 +10,6 @@ import {
   failOnFindings,
   findBoundaryReferences,
   findCrossings,
-  findInCode,
   getGoReferences,
   getImportSpecifiers,
   getPackageNames,
@@ -61,62 +60,6 @@ export function verifyPluginsReachNoShell() {
   if (crossings.length > 0) {
     throw new Error("A plugin reaches @numen/shell or @numen/plugin-host:\n" + crossings.join("\n"));
   }
-}
-
-/** What draws the notices of a window, which the window owns and a plugin reaches through `ctx.notices`. */
-const NOTICE_NAMES = new Set(["Notices", "Notice", "createNotice", "createNoticeQueue", "NoticeQueue"]);
-
-/** Every import of a package by a plugin that names one of NOTICE_NAMES. */
-function findPluginNoticeImports() {
-  const listed = spawnSync("git", ["ls-files", "--", "plugins"], { cwd: REPO_ROOT, encoding: "utf8" });
-  const pattern = /^\s*import\s+(?:type\s+)?\{([^}]*)\}\s*from\s*(['"])([^'"]+)\2/gm;
-  const found = [];
-  for (const file of (listed.stdout || "").split("\n")) {
-    if (!/\.(ts|vue)$/.test(file)) continue;
-    const text = fs.readFileSync(path.join(REPO_ROOT, file), "utf8");
-    for (const match of text.matchAll(pattern)) {
-      if (match[3].startsWith(".")) continue;
-      const names = match[1].split(",").map((one) => one.trim().replace(/^type\s+/, "").split(/\s+as\s+/)[0]);
-      for (const name of names.filter((one) => NOTICE_NAMES.has(one))) found.push(`${file}: ${name} from ${match[3]}`);
-    }
-  }
-  return found;
-}
-
-/** A plugin shows notices through `ctx.notices`; the window draws them, in one list. */
-export function verifyPluginsDrawNoNotices() {
-  const found = findPluginNoticeImports();
-  if (found.length > 0) {
-    throw new Error("A plugin draws notices itself instead of showing them through ctx.notices:\n" + found.join("\n"));
-  }
-}
-
-/** The calls of Go's `os` and `filepath` packages that read or write the file system in a plugin service. */
-const OS_WRITES = /\b(os\.(?:WriteFile|Create|CreateTemp|OpenFile|Mkdir|MkdirAll|MkdirTemp|Rename|Remove|RemoveAll|Symlink|Link|Chmod|Chtimes|Truncate))\(/g;
-const OS_VAULT_ACCESS = /\b(os\.(?:WriteFile|Create|OpenFile|Mkdir|MkdirAll|Rename|Remove|RemoveAll|ReadFile|Open|Stat|ReadDir)|filepath\.WalkDir)\(/g;
-
-/** Every direct `os` vault read/write or `NUMEN_VAULT_PATH` lookup in a shipped Go file of a plugin. */
-function findPluginDataWrites() {
-  const found = [];
-  for (const file of listShippedFiles(["plugins/*.go"])) {
-    const { literals, code } = readSource(file);
-    for (const { line, value } of literals) {
-      if (value === "NUMEN_VAULT_PATH") {
-        found.push({ file, line, symbol: JSON.stringify(value) });
-      }
-    }
-    const touchesDotNumen = literals.some(({ value }) => value === ".numen" || value.startsWith(".numen/"));
-    const isServiceFile = /\/backend\/service\//.test(file);
-    const pattern = isServiceFile ? OS_VAULT_ACCESS : touchesDotNumen ? OS_WRITES : null;
-    if (!pattern) continue;
-    for (const hit of findInCode(code, pattern)) found.push({ file, ...hit });
-  }
-  return found;
-}
-
-/** A plugin accesses vault files and `.numen/` through the host store, never with `os`. */
-export function verifyPluginsWriteDataThroughHost() {
-  failOnFindings("A plugin accesses vault or .numen/ directly with os or NUMEN_VAULT_PATH", findPluginDataWrites());
 }
 
 /** True for a module name that is the package `name` or a path inside it. */
@@ -605,20 +548,6 @@ export const PLUGIN_VERIFIERS = [
     module: "plugins",
     name: "Plugins Reach No Shell or Plugin Host (no @numen/shell, no @numen/plugin-host, no path into either)",
     run: verifyPluginsReachNoShell,
-  },
-  {
-    id: "plugins-draw-no-notices",
-    scope: "plugins",
-    module: "plugins",
-    name: "Plugins Draw No Notices (no Notices, Notice, createNotice or notice queue imported; ctx.notices instead)",
-    run: verifyPluginsDrawNoNotices,
-  },
-  {
-    id: "plugins-write-data-through-host",
-    scope: "plugins",
-    module: "plugins",
-    name: "Plugins Access Vault and .numen/ Only Through the Host Store (no direct os fs or NUMEN_VAULT_PATH)",
-    run: verifyPluginsWriteDataThroughHost,
   },
   {
     id: "plugins-no-protocol-or-wire",

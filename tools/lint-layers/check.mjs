@@ -17,7 +17,7 @@
  *   apps      - Application FSD layer hierarchies (desktop editor, flashcards)
  *
  * Modules:
- *   core, libraries, notes, protocol, ui, shell, host, wire, sdk, lint, docs, plugins, boundary, desktop, editor, flashcards
+ *   core, libraries, notes, protocol, ui, shell, host, sdk, lint, docs, plugins, boundary, desktop, editor, flashcards
  */
 import { spawnSync } from "node:child_process";
 import process from "node:process";
@@ -32,10 +32,12 @@ import { LINT_CONFIG_VERIFIERS } from "./checks/lintConfig.mjs";
 import { MANIFEST_VERIFIERS } from "./checks/manifests.mjs";
 import { PLUGIN_VERIFIERS } from "./checks/plugins.mjs";
 import { PROTOCOL_VERIFIERS } from "./checks/protocol.mjs";
+import { SDK_VERIFIERS } from "./checks/sdkProtocol.mjs";
 import { assertGolangciLintBuild } from "./checks/tools.mjs";
 
 const VERIFIERS = [
   ...CORE_VERIFIERS,
+  ...SDK_VERIFIERS,
   ...LIBRARY_VERIFIERS,
   ...CORE_CLIENT_VERIFIERS,
   ...MANIFEST_VERIFIERS,
@@ -120,7 +122,7 @@ function getChangedModules() {
     if (file.startsWith("libs/")) matched.add("libraries");
     if (file.startsWith("libs/protocol/") || file.startsWith("tools/lint-layers/")) matched.add("protocol");
     if (file.startsWith("tools/lint-layers/")) ["ui", "plugins"].forEach((one) => matched.add(one));
-    if (file.startsWith("libs/plugin-sdk-go/") || file.startsWith("libs/plugin-sdk-ts/")) matched.add("sdk");
+    if (file.startsWith("libs/plugin-sdk-go/") || file.startsWith("libs/plugin-sdk-ts/") || file.startsWith("libs/protocol/")) matched.add("sdk");
     if (file.startsWith("libs/ui/core/")) matched.add("ui");
     if (file.startsWith("libs/ui/shell/")) matched.add("shell");
     if (file.startsWith("libs/plugin-host-ts/")) matched.add("host");

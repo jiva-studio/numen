@@ -363,3 +363,4 @@ To prevent linguistic contagion and degraded code readability, pseudo-literary p
 7. Do the work first. Run the heavy checks (full lint-layers, tests across modules, linters) once at the end.
 8. Commit messages carry no `Co-Authored-By` line and no session trailer.
 9. Write comments and docs in plain technical English (§1, §13).
+10. Lint checks decide by structure: import specifiers and the dependency graph, `package.json` and `go.mod` data, directory layout, syntax trees and type information, ESLint rules, or schema shape. A check never decides by a regular expression over source text, a list of names or a list of files ([`.agents/rules/architecture.md`](.agents/rules/architecture.md) §10).

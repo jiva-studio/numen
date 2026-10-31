@@ -42,29 +42,34 @@ test("the schema references of this repository are read, and only the SDK and th
   assert.deepEqual(findProtocolViolations(references), []);
 });
 
-const PRIVATE_MANIFEST = { name: "@numen/core-client", private: true };
-const PUBLISH = { file: ".github/workflows/release.yml", text: "steps:\n  - run: npm publish --access public\n" };
+const CLIENT = { file: "libs/core-client/package.json", manifest: { name: "@numen/core-client", private: true } };
+const dependent = (file, manifest) => ({ file, manifest: { name: "@numen/other", ...manifest } });
 
-test("a private core client that no publishing workflow names is clean", () => {
-  assert.deepEqual(findCoreClientPublishViolations(PRIVATE_MANIFEST, [PUBLISH]), []);
+test("a private core client that only private packages depend on is clean", () => {
+  const manifests = [CLIENT, dependent("apps/a/package.json", { private: true, dependencies: { "@numen/core-client": "*" } })];
+  assert.deepEqual(findCoreClientPublishViolations(manifests), []);
 });
 
 test("a core client that is not private is reported", () => {
-  const found = findCoreClientPublishViolations({ name: "@numen/core-client" }, []);
+  const found = findCoreClientPublishViolations([{ file: CLIENT.file, manifest: { name: "@numen/core-client" } }]);
   assert.equal(found.length, 1);
   assert.match(found[0].symbol, /not "private": true/);
 });
 
-test("a publishing workflow that names the core client is reported with the line", () => {
-  const workflow = { file: ".github/workflows/release.yml", text: "steps:\n  - run: npm publish --workspace libs/core-client\n" };
-  const found = findCoreClientPublishViolations(PRIVATE_MANIFEST, [workflow]);
+test("a package that is not private and depends on the core client is reported with the field", () => {
+  const manifests = [CLIENT, dependent("libs/x/package.json", { peerDependencies: { "@numen/core-client": "*" } })];
+  const found = findCoreClientPublishViolations(manifests);
   assert.equal(found.length, 1);
-  assert.equal(found[0].line, 2);
+  assert.equal(found[0].file, "libs/x/package.json");
+  assert.match(found[0].symbol, /peerDependencies/);
 });
 
-test("a workflow that names the core client without publishing is clean", () => {
-  const workflow = { file: ".github/workflows/desktop-frontend.yml", text: "paths:\n  - libs/core-client/**\n  - run: npm test\n" };
-  assert.deepEqual(findCoreClientPublishViolations(PRIVATE_MANIFEST, [workflow]), []);
+test("a package that is not private and does not depend on the core client is clean", () => {
+  assert.deepEqual(findCoreClientPublishViolations([CLIENT, dependent("libs/x/package.json", { dependencies: { vue: "*" } })]), []);
+});
+
+test("a missing core client package is reported", () => {
+  assert.equal(findCoreClientPublishViolations([]).length, 1);
 });
 
 test("a plugin package.json that depends on the core client or the schema is reported", () => {
