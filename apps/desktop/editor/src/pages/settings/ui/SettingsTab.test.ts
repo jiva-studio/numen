@@ -95,8 +95,8 @@ const createTab = (
     },
     file: ref('/numen.json'),
     themes: ref([
-      { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
-      { name: 'mine:sea', title: 'sea', isBuiltIn: false, isPinned: false },
+      { name: 'preset:numen', title: 'numen', isBuiltIn: true, pluginId: '', isPinned: false },
+      { name: 'mine:sea', title: 'sea', isBuiltIn: false, pluginId: '', isPinned: false },
     ]),
     applied: ref('preset:numen'),
     mode: ref('system'),

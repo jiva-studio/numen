@@ -46,6 +46,9 @@ enum Origin {
 
   // A `.css` file in the person's themes folder.
   ORIGIN_MINE = 2;
+
+  // A theme an enabled plugin contributes.
+  ORIGIN_PLUGIN = 3;
 }
 
 // Mode is what chooses between the two halves of a `light-dark()` pair. The
@@ -64,8 +67,9 @@ enum Mode {
 // Theme is one theme as the list refers to it. Its text is asked for by the
 // name here.
 message Theme {
-  // Name is the origin and the filename, `preset:dracula` or `mine:dracula`,
-  // and it is how the theme is asked for again.
+  // Name is the origin and the identifier, `preset:numen`, `mine:dracula` or
+  // `plugin:md.numen.themes.presets/dracula`, and it is how the theme is asked
+  // for again.
   string name = 1;
 
   // Title is what the file is called, without the origin.
@@ -78,6 +82,13 @@ message Theme {
   // Set for a theme that declares `color-scheme` itself. Light and dark are
   // the theme's own, and the mode has nothing left to choose.
   bool is_pinned = 4;
+
+  // The plugin that contributes the theme. Empty for the other origins.
+  string plugin_id = 5;
+
+  // The color scheme a plugin theme declares: `light`, `dark`, or empty for a
+  // theme that follows the mode. Empty for the other origins.
+  string appearance = 6;
 }
 
 message ListThemesRequest {}

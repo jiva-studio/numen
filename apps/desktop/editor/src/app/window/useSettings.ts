@@ -280,10 +280,17 @@ export function useSettings({
   getSettingsViews,
   catalog,
 }: SettingsDeps) {
-  const appearance = createWindowAppearance({ core: themes, words, write: log.getWriter('worn') })
+  const writeWornMessage = log.getWriter('worn')
   const sync = syncSetting(core, words, log.getWriter('named'))
   const writeSettingsMessage = log.getWriter('configured')
   const rest = createSettingsStore(core, words, writeSettingsMessage)
+  const appearance = createWindowAppearance({
+    core: themes,
+    words,
+    write: writeWornMessage,
+    getPluginName: (pluginId) =>
+      rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId,
+  })
   const refreshTimers: ReturnType<typeof setTimeout>[] = []
   const reportError = (error: unknown) => writeSettingsMessage(formatErrorMessage(error), 'error')
 

@@ -22,8 +22,11 @@ export function listManifestFiles() {
   return listPluginNames(path.join(REPO_ROOT, "plugins")).map((name) => `plugins/${name}/${MANIFEST_FILE}`);
 }
 
-/** The manifest fields that hold presentation or configuration values, which name no plugin. */
-const PRESENTATION_KEYS = new Set(["icon", "key", "title", "description", "default", "label", "unit", "placeholder", "name"]);
+/**
+ * The manifest fields that hold presentation or configuration values, which name no plugin. The themes
+ * a plugin contributes are palettes: their ids, titles and files name colour schemes, not plugins.
+ */
+const PRESENTATION_KEYS = new Set(["icon", "key", "title", "description", "default", "label", "unit", "placeholder", "name", "themes"]);
 
 /** The manifest fields that name the windows a plugin runs in; the host defines them. */
 const HOST_KEYS = new Set(["targets"]);

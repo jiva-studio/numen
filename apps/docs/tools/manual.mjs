@@ -20,6 +20,7 @@ import {
   readBracketed,
   readWords,
 } from '../../../tools/ci-commands/commands.mjs'
+import { hasPreset } from '../../../tools/ci-stories/presets.mjs'
 import { faults, proves, stories } from '../../../tools/ci-stories/stories.mjs'
 
 const EDITOR = new URL('../../desktop/editor/src/', import.meta.url)
@@ -641,7 +642,6 @@ const cli = async () => {
  */
 const pictured = async () => {
   const { SHOTS } = await import('./shots.mjs')
-  const { access } = await import('node:fs/promises')
 
   const unproved = proves()
   if (unproved) die(unproved)
@@ -649,12 +649,8 @@ const pictured = async () => {
   const missing = faults(SHOTS, await stories())
   if (missing.length > 0) die(missing.join('; '))
 
-  const presets = new URL('../../../libs/core/internal/adapter/theme/presets/', import.meta.url)
   for (const shot of SHOTS) {
-    if (!shot.preset) continue
-    try {
-      await access(new URL(`${shot.preset}.css`, presets))
-    } catch {
+    if (shot.preset && !hasPreset(shot.preset)) {
       die(`no palette called ${shot.preset} — the picture of it cannot be taken again`)
     }
   }

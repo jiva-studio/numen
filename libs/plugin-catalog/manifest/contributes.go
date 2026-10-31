@@ -46,6 +46,8 @@ type Contributes struct {
 	Category string
 	// FileTypes are the types of file the plugin opens.
 	FileTypes []FileType
+	// Themes are the stylesheets the plugin adds to the list of themes.
+	Themes []Theme
 }
 
 // HasTabKind reports whether the plugin registers the kind of tab.
@@ -105,7 +107,7 @@ func (m Manifest) listContributionIssues() []error {
 	if c.Feature != strings.TrimSpace(c.Feature) {
 		issues = append(issues, fmt.Errorf("%w: feature %q has surrounding space", ErrInvalidContribution, c.Feature))
 	}
-	return issues
+	return append(issues, c.listThemeIssues()...)
 }
 
 // listFileTypeIssues checks that each type of file names a kind of tab the plugin registers and at

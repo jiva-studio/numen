@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/theme.proto.
  */
 export const file_numen_v1_theme: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS90aGVtZS5wcm90bxIIbnVtZW4udjEiWQoFVGhlbWUSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIgCgZvcmlnaW4YAyABKA4yEC5udW1lbi52MS5PcmlnaW4SEQoJaXNfcGlubmVkGAQgASgIIhMKEUxpc3RUaGVtZXNSZXF1ZXN0IvABChJMaXN0VGhlbWVzUmVzcG9uc2USHwoGdGhlbWVzGAEgAygLMg8ubnVtZW4udjEuVGhlbWUSDwoHYXBwbGllZBgCIAEoCRIcCgRtb2RlGAMgASgOMg4ubnVtZW4udjEuTW9kZRIXCg9pbnRlcmZhY2Vfc2NhbGUYBCABKAESEgoKdGV4dF9zY2FsZRgFIAEoARIwChZpbnRlcmZhY2Vfc2NhbGVfYm91bmRzGAYgASgLMhAubnVtZW4udjEuQm91bmRzEisKEXRleHRfc2NhbGVfYm91bmRzGAcgASgLMhAubnVtZW4udjEuQm91bmRzIiAKEFJlYWRUaGVtZVJlcXVlc3QSDAoEbmFtZRgBIAEoCSIgChFSZWFkVGhlbWVSZXNwb25zZRILCgNjc3MYASABKAkingEKFldyaXRlQXBwZWFyYW5jZVJlcXVlc3QSDAoEbmFtZRgBIAEoCRIcCgRtb2RlGAIgASgOMg4ubnVtZW4udjEuTW9kZRIcCg9pbnRlcmZhY2Vfc2NhbGUYAyABKAFIAIgBARIXCgp0ZXh0X3NjYWxlGAQgASgBSAGIAQFCEgoQX2ludGVyZmFjZV9zY2FsZUINCgtfdGV4dF9zY2FsZSIoChdXcml0ZUFwcGVhcmFuY2VSZXNwb25zZRINCgVlcnJvchgBIAEoCSIUChJXYXRjaFRoZW1lc1JlcXVlc3QiJAoTV2F0Y2hUaGVtZXNSZXNwb25zZRINCgVuYW1lcxgBIAMoCSpECgZPcmlnaW4SFgoST1JJR0lOX1VOU1BFQ0lGSUVEEAASEQoNT1JJR0lOX1BSRVNFVBABEg8KC09SSUdJTl9NSU5FEAIqTAoETW9kZRIUChBNT0RFX1VOU1BFQ0lGSUVEEAASDwoLTU9ERV9TWVNURU0QARIOCgpNT0RFX0xJR0hUEAISDQoJTU9ERV9EQVJLEAMywwIKDFRoZW1lU2VydmljZRJHCgpMaXN0VGhlbWVzEhsubnVtZW4udjEuTGlzdFRoZW1lc1JlcXVlc3QaHC5udW1lbi52MS5MaXN0VGhlbWVzUmVzcG9uc2USRAoJUmVhZFRoZW1lEhoubnVtZW4udjEuUmVhZFRoZW1lUmVxdWVzdBobLm51bWVuLnYxLlJlYWRUaGVtZVJlc3BvbnNlElYKD1dyaXRlQXBwZWFyYW5jZRIgLm51bWVuLnYxLldyaXRlQXBwZWFyYW5jZVJlcXVlc3QaIS5udW1lbi52MS5Xcml0ZUFwcGVhcmFuY2VSZXNwb25zZRJMCgtXYXRjaFRoZW1lcxIcLm51bWVuLnYxLldhdGNoVGhlbWVzUmVxdWVzdBodLm51bWVuLnYxLldhdGNoVGhlbWVzUmVzcG9uc2UwAUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS90aGVtZS5wcm90bxIIbnVtZW4udjEigAEKBVRoZW1lEgwKBG5hbWUYASABKAkSDQoFdGl0bGUYAiABKAkSIAoGb3JpZ2luGAMgASgOMhAubnVtZW4udjEuT3JpZ2luEhEKCWlzX3Bpbm5lZBgEIAEoCBIRCglwbHVnaW5faWQYBSABKAkSEgoKYXBwZWFyYW5jZRgGIAEoCSITChFMaXN0VGhlbWVzUmVxdWVzdCLwAQoSTGlzdFRoZW1lc1Jlc3BvbnNlEh8KBnRoZW1lcxgBIAMoCzIPLm51bWVuLnYxLlRoZW1lEg8KB2FwcGxpZWQYAiABKAkSHAoEbW9kZRgDIAEoDjIOLm51bWVuLnYxLk1vZGUSFwoPaW50ZXJmYWNlX3NjYWxlGAQgASgBEhIKCnRleHRfc2NhbGUYBSABKAESMAoWaW50ZXJmYWNlX3NjYWxlX2JvdW5kcxgGIAEoCzIQLm51bWVuLnYxLkJvdW5kcxIrChF0ZXh0X3NjYWxlX2JvdW5kcxgHIAEoCzIQLm51bWVuLnYxLkJvdW5kcyIgChBSZWFkVGhlbWVSZXF1ZXN0EgwKBG5hbWUYASABKAkiIAoRUmVhZFRoZW1lUmVzcG9uc2USCwoDY3NzGAEgASgJIp4BChZXcml0ZUFwcGVhcmFuY2VSZXF1ZXN0EgwKBG5hbWUYASABKAkSHAoEbW9kZRgCIAEoDjIOLm51bWVuLnYxLk1vZGUSHAoPaW50ZXJmYWNlX3NjYWxlGAMgASgBSACIAQESFwoKdGV4dF9zY2FsZRgEIAEoAUgBiAEBQhIKEF9pbnRlcmZhY2Vfc2NhbGVCDQoLX3RleHRfc2NhbGUiKAoXV3JpdGVBcHBlYXJhbmNlUmVzcG9uc2USDQoFZXJyb3IYASABKAkiFAoSV2F0Y2hUaGVtZXNSZXF1ZXN0IiQKE1dhdGNoVGhlbWVzUmVzcG9uc2USDQoFbmFtZXMYASADKAkqVwoGT3JpZ2luEhYKEk9SSUdJTl9VTlNQRUNJRklFRBAAEhEKDU9SSUdJTl9QUkVTRVQQARIPCgtPUklHSU5fTUlORRACEhEKDU9SSUdJTl9QTFVHSU4QAypMCgRNb2RlEhQKEE1PREVfVU5TUEVDSUZJRUQQABIPCgtNT0RFX1NZU1RFTRABEg4KCk1PREVfTElHSFQQAhINCglNT0RFX0RBUksQAzLDAgoMVGhlbWVTZXJ2aWNlEkcKCkxpc3RUaGVtZXMSGy5udW1lbi52MS5MaXN0VGhlbWVzUmVxdWVzdBocLm51bWVuLnYxLkxpc3RUaGVtZXNSZXNwb25zZRJECglSZWFkVGhlbWUSGi5udW1lbi52MS5SZWFkVGhlbWVSZXF1ZXN0GhsubnVtZW4udjEuUmVhZFRoZW1lUmVzcG9uc2USVgoPV3JpdGVBcHBlYXJhbmNlEiAubnVtZW4udjEuV3JpdGVBcHBlYXJhbmNlUmVxdWVzdBohLm51bWVuLnYxLldyaXRlQXBwZWFyYW5jZVJlc3BvbnNlEkwKC1dhdGNoVGhlbWVzEhwubnVtZW4udjEuV2F0Y2hUaGVtZXNSZXF1ZXN0Gh0ubnVtZW4udjEuV2F0Y2hUaGVtZXNSZXNwb25zZTABQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * Theme is one theme as the list refers to it. Its text is asked for by the
@@ -29,8 +29,9 @@ export const file_numen_v1_theme: GenFile = /*@__PURE__*/
  */
 export type Theme = Message<"numen.v1.Theme"> & {
   /**
-   * Name is the origin and the filename, `preset:dracula` or `mine:dracula`,
-   * and it is how the theme is asked for again.
+   * Name is the origin and the identifier, `preset:numen`, `mine:dracula` or
+   * `plugin:md.numen.themes.presets/dracula`, and it is how the theme is asked
+   * for again.
    *
    * @generated from field: string name = 1;
    */
@@ -58,6 +59,21 @@ export type Theme = Message<"numen.v1.Theme"> & {
    * @generated from field: bool is_pinned = 4;
    */
   isPinned: boolean;
+
+  /**
+   * The plugin that contributes the theme. Empty for the other origins.
+   *
+   * @generated from field: string plugin_id = 5;
+   */
+  pluginId: string;
+
+  /**
+   * The color scheme a plugin theme declares: `light`, `dark`, or empty for a
+   * theme that follows the mode. Empty for the other origins.
+   *
+   * @generated from field: string appearance = 6;
+   */
+  appearance: string;
 };
 
 /**
@@ -296,6 +312,13 @@ export enum Origin {
    * @generated from enum value: ORIGIN_MINE = 2;
    */
   MINE = 2,
+
+  /**
+   * A theme an enabled plugin contributes.
+   *
+   * @generated from enum value: ORIGIN_PLUGIN = 3;
+   */
+  PLUGIN = 3,
 }
 
 /**

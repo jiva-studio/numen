@@ -1,9 +1,11 @@
 // Package theme lists and applies the stylesheets that restyle the window.
 //
 // A theme is one CSS file redeclaring the tokens the interface renders with.
-// Some ship inside the binary and the rest are files in the user's themes
-// folder; both form one list with one format, and one name applies either.
-// Nothing here reads inside a theme beyond whether it pins `color-scheme`.
+// The default theme ships inside the binary, enabled plugins contribute
+// themes through their manifests, and the rest are files in the user's themes
+// folder; all form one list with one format, and one name applies any of them.
+// Nothing here reads inside a theme beyond whether a user's theme pins
+// `color-scheme`.
 package theme
 
 import (
@@ -16,6 +18,8 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/core/usecase/plugintheme/themecontract"
 )
 
 // ErrNoTheme is a theme name no theme file answers for.
@@ -37,6 +41,9 @@ const MaxSize = 256 << 10
 // matches nothing. It is the theme of an installation with no selection.
 const Default = "preset:numen"
 
+// pluginPrefix starts the name of a plugin theme: `plugin:<pluginId>/<themeId>`.
+const pluginPrefix = string(Plugin) + ":"
+
 // Origin is where a theme comes from. A theme carries its origin in its name, and
 // two themes on different origins can share a filename.
 type Origin string
@@ -47,30 +54,53 @@ const (
 
 	// Mine is a `.css` file in the user's themes folder.
 	Mine Origin = "mine"
+
+	// Plugin is a theme an enabled plugin contributes.
+	Plugin Origin = "plugin"
 )
+
+// PluginName is the name of the theme a plugin contributes.
+func PluginName(pluginID, themeID string) string {
+	return pluginPrefix + pluginID + "/" + themeID
+}
 
 // Theme is one theme as the list refers to it.
 type Theme struct {
-	// Name is the origin and the filename, `preset:dracula` or `mine:dracula`,
-	// and it identifies the theme in later requests.
+	// Name is the origin and the identifier, `preset:numen`, `mine:dracula` or
+	// `plugin:md.numen.themes.presets/dracula`, and it identifies the theme in
+	// later requests.
 	Name string
 
-	// Title is what the file is called, without the origin and without `.css`.
+	// Title is what the theme is listed as: the file name without the origin and
+	// without `.css`, or the name a plugin gives the theme.
 	Title string
 
 	Origin Origin
 
-	// IsPinned is set for a theme declaring `color-scheme` itself. Light and dark
-	// are that theme's own, and the mode has nothing left to choose.
+	// IsPinned is set for a theme declaring `color-scheme` itself, or a plugin
+	// theme declaring an appearance. Light and dark are that theme's own, and the
+	// mode has nothing left to choose.
 	IsPinned bool
+
+	// PluginID is the plugin that contributes the theme. Empty for the other
+	// origins.
+	PluginID string
+
+	// Appearance is the color scheme a plugin theme declares: light, dark, or
+	// empty for a theme that follows the mode.
+	Appearance string
 }
 
-// Catalogue is every theme this installation offers: the ones inside the
-// binary, and the ones in the user's folder.
+// Catalogue is every theme this installation offers: the one inside the
+// binary, the ones enabled plugins contribute, and the ones in the user's
+// folder.
 //
 // A catalogue whose folder could not be created or read still offers the
-// presets, so the window opens with a theme regardless of disk state.
-type Catalogue struct{ dir string }
+// default theme, so the window opens with a theme regardless of disk state.
+type Catalogue struct {
+	dir     string
+	plugins themecontract.PluginThemes
+}
 
 // Open returns the catalogue at the folder where this desktop keeps its
 // configuration. The themes folder is created empty if it does not exist.
@@ -93,11 +123,18 @@ func OpenAt(dir string) (Catalogue, error) {
 	return Catalogue{dir: dir}, made
 }
 
+// WithPlugins returns the catalogue that also offers the themes of the plugins
+// the source lists. A nil source offers none.
+func (c Catalogue) WithPlugins(source themecontract.PluginThemes) Catalogue {
+	c.plugins = source
+	return c
+}
+
 // Dir is the folder the user's themes are read from.
 func (c Catalogue) Dir() string { return c.dir }
 
-// Themes is every theme, the shipped ones first and each origin ordered by
-// name. A file that cannot be read is excluded: every name in this list is a
+// Themes is every theme: the shipped one first, then the plugin themes in the
+// order of their plugin ids, then the user's themes ordered by name. A file that cannot be read is excluded: every name in this list is a
 // theme that can be applied.
 func (c Catalogue) Themes() []Theme {
 	var themes []Theme
@@ -111,8 +148,44 @@ func (c Catalogue) Themes() []Theme {
 			themes = append(themes, describeTheme(Preset, entry.Name(), string(text)))
 		}
 	}
+	themes = append(themes, c.getPluginThemes()...)
 	return append(themes, c.getOwnThemes()...)
 }
+
+// getPluginThemes returns the themes of the enabled plugins as their manifests
+// declare them. The stylesheets are read when a theme is applied.
+func (c Catalogue) getPluginThemes() []Theme {
+	if c.plugins == nil {
+		return nil
+	}
+	declared := c.plugins.ListThemes()
+	themes := make([]Theme, 0, len(declared))
+	for _, one := range declared {
+		themes = append(themes, Theme{
+			Name:       PluginName(one.PluginID, one.ID),
+			Title:      one.Name,
+			Origin:     Plugin,
+			IsPinned:   one.Appearance != "",
+			PluginID:   one.PluginID,
+			Appearance: one.Appearance,
+		})
+	}
+	return themes
+}
+
+// ListPluginThemeNames returns the names of the plugin themes, in the order
+// the plugins list them.
+func (c Catalogue) ListPluginThemeNames() []string {
+	themes := c.getPluginThemes()
+	names := make([]string, 0, len(themes))
+	for _, one := range themes {
+		names = append(names, one.Name)
+	}
+	return names
+}
+
+// HasPlugins reports whether the catalogue reads plugin themes from a source.
+func (c Catalogue) HasPlugins() bool { return c.plugins != nil }
 
 // getOwnThemes returns the user's themes, read flat: one level, names ending
 // `.css`. A folder is not a theme and neither is `dracula.css.bak`.
@@ -151,7 +224,12 @@ func describeTheme(origin Origin, filename, text string) Theme {
 	}
 }
 
+// Text returns the stylesheet a name selects, or an error wrapping ErrNoTheme
+// where no theme answers for the name.
 func (c Catalogue) Text(name string) (string, error) {
+	if strings.HasPrefix(name, pluginPrefix) {
+		return c.readPluginTheme(name)
+	}
 	origin, title, err := splitName(name)
 	if err != nil {
 		return "", err
@@ -171,6 +249,21 @@ func (c Catalogue) Text(name string) (string, error) {
 		if errors.Is(err, fs.ErrNotExist) {
 			return "", fmt.Errorf("%s: %w", name, ErrNoTheme)
 		}
+		return "", fmt.Errorf("%s: %w", name, err)
+	}
+	return text, nil
+}
+
+func (c Catalogue) readPluginTheme(name string) (string, error) {
+	pluginID, themeID, found := strings.Cut(strings.TrimPrefix(name, pluginPrefix), "/")
+	if !found || pluginID == "" || themeID == "" || c.plugins == nil {
+		return "", fmt.Errorf("%s: %w", name, ErrNoTheme)
+	}
+	text, err := c.plugins.ReadTheme(pluginID, themeID)
+	if errors.Is(err, themecontract.ErrNoTheme) {
+		return "", fmt.Errorf("%s: %w", name, ErrNoTheme)
+	}
+	if err != nil {
 		return "", fmt.Errorf("%s: %w", name, err)
 	}
 	return text, nil
@@ -199,6 +292,8 @@ func splitName(name string) (Origin, string, error) {
 		switch Origin(origin) {
 		case Preset, Mine:
 			return Origin(origin), title, nil
+		case Plugin:
+			// A plugin theme is named by plugin and theme id and is resolved by readPluginTheme.
 		}
 	}
 	return "", "", fmt.Errorf("%s: %w", name, ErrNoTheme)

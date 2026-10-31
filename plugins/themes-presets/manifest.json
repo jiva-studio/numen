@@ -1,0 +1,27 @@
+{
+  "id": "md.numen.themes.presets",
+  "name": "Preset Themes",
+  "version": "2026.10.1",
+  "protocol": 1,
+  "description": "Twelve color themes for the editor and the flashcards window",
+  "capabilities": [],
+  "targets": ["desktop.editor", "desktop.flashcards"],
+  "contributes": {
+    "feature": "color themes",
+    "category": "themes",
+    "themes": [
+      { "id": "amber", "name": "Amber", "appearance": "dark", "file": "themes/amber.css" },
+      { "id": "ayu", "name": "Ayu", "file": "themes/ayu.css" },
+      { "id": "catppuccin", "name": "Catppuccin", "file": "themes/catppuccin.css" },
+      { "id": "cobalt2", "name": "Cobalt2", "appearance": "dark", "file": "themes/cobalt2.css" },
+      { "id": "dracula", "name": "Dracula", "appearance": "dark", "file": "themes/dracula.css" },
+      { "id": "github", "name": "GitHub", "file": "themes/github.css" },
+      { "id": "gruvbox", "name": "Gruvbox", "file": "themes/gruvbox.css" },
+      { "id": "monokai", "name": "Monokai", "appearance": "dark", "file": "themes/monokai.css" },
+      { "id": "nord", "name": "Nord", "appearance": "dark", "file": "themes/nord.css" },
+      { "id": "one-dark", "name": "One Dark", "appearance": "dark", "file": "themes/one-dark.css" },
+      { "id": "solarized", "name": "Solarized", "file": "themes/solarized.css" },
+      { "id": "tokyo-night", "name": "Tokyo Night", "file": "themes/tokyo-night.css" }
+    ]
+  }
+}

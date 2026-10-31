@@ -95,6 +95,12 @@ func scanPluginDir(pluginDir string, seenCount map[string]string) (manifest.Disc
 		return manifest.Discovered{}, false, fmt.Errorf("read manifest %s: %w", manifestPath, err)
 	}
 
+	for _, theme := range m.Contributes.Themes {
+		if _, err := manifest.ReadThemeFile(pluginDir, theme.File); err != nil {
+			return manifest.Discovered{}, false, fmt.Errorf("theme %q of %s: %w", theme.ID, manifestPath, err)
+		}
+	}
+
 	cleanPluginDir := absolutePath(pluginDir)
 	if existingDir, ok := seenCount[m.ID]; ok {
 		if existingDir == cleanPluginDir {

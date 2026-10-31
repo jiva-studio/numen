@@ -28,7 +28,12 @@ const modes = [
 ]
 
 const themes = computed<readonly SelectChoice[]>(() =>
-  toThemeChoices(installation.value.themes.value, words.shipped, words.owned),
+  toThemeChoices(installation.value.themes.value, {
+    shipped: words.shipped,
+    owned: words.owned,
+    getPluginName: (pluginId) =>
+      installation.value.plugins?.value.find((one) => one.id === pluginId)?.name ?? pluginId,
+  }),
 )
 
 const STEP = 0.1

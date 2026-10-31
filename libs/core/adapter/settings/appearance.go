@@ -26,8 +26,9 @@ type Appearance struct {
 	Mode string `json:"mode"`
 
 	// Theme is the stylesheet applied to the window, named by its origin
-	// and its filename: `preset:dracula` ships here, `mine:dracula` is the
-	// person's file.
+	// and its identifier: `preset:numen` ships here, `mine:dracula` is the
+	// person's file, and `plugin:md.numen.themes.presets/dracula` is a theme
+	// of an enabled plugin.
 	Theme string `json:"theme"`
 }
 

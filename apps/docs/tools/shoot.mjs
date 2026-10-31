@@ -6,7 +6,7 @@
  * it is drawn at, in light and in dark. The Storybooks the stories are drawn in
  * are started and stopped again, so one command answers with the whole set.
  */
-import { accessSync, constants, readFileSync } from 'node:fs'
+import { accessSync, constants } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -15,13 +15,12 @@ import sharp from 'sharp'
 
 // By path and not by name, as the manual reads its story list.
 import { openBooks } from '../../../tools/ci-stories/books.mjs'
+import { readPreset } from '../../../tools/ci-stories/presets.mjs'
 
 import { SHOTS } from './shots.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const INTO = join(HERE, '..', 'src', 'assets')
-/** The palettes that ship inside the application, as the window wears them. */
-const PRESETS = join(HERE, '..', '..', '..', 'libs', 'core', 'internal', 'adapter', 'theme', 'presets')
 
 /** Pixels for one, so a picture holds up on a screen that has them. */
 const SCALE = 2
@@ -122,7 +121,7 @@ try {
       // A picture of a theme is the window wearing that theme: the palette
       // that ships with the application, spliced in as the window splices it.
       if (shot.preset) {
-        await page.addStyleTag({ content: readFileSync(join(PRESETS, `${shot.preset}.css`), 'utf8') })
+        await page.addStyleTag({ content: readPreset(shot.preset) })
         await page.waitForTimeout(200)
       }
 

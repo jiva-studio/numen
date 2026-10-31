@@ -83,8 +83,9 @@ func Start(dir string) (int, error) {
 		return 0, err
 	}
 
-	// The themes come from the installation. If the themes folder cannot be
-	// created, only the themes bundled with this binary are loaded. A theme
+	// The themes come from the installation. The config has no plugin host, so
+	// the catalogue offers the default theme and the person's own. If the themes
+	// folder cannot be created, only the default theme is loaded. A theme
 	// named in the settings that is missing from the catalogue is reported on
 	// the platform log.
 	themes, wrong := cfg.Themes(opened.SayTheme)

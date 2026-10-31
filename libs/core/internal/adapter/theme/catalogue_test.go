@@ -1,6 +1,7 @@
 package theme_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -69,16 +70,20 @@ func TestTheFolderIsMadeEmptyOnTheFirstRun(t *testing.T) {
 	}
 }
 
-func TestThirteenPalettesShipInsideTheApplication(t *testing.T) {
-	themes := createThemeFolder(t).Themes()
-	for _, name := range []string{
-		"preset:numen", "preset:dracula", "preset:nord", "preset:solarized",
-		"preset:catppuccin", "preset:gruvbox", "preset:amber", "preset:github",
-		"preset:one-dark", "preset:monokai", "preset:tokyo-night", "preset:ayu",
-		"preset:cobalt2",
-	} {
-		if !hasTheme(themes, name) {
-			t.Errorf("no %s among %v", name, getNames(themes))
+func TestOnlyThisProductsOwnPaletteShipsInsideTheApplication(t *testing.T) {
+	catalogue := createThemeFolder(t)
+	var shipped []string
+	for _, one := range catalogue.Themes() {
+		if one.Origin == theme.Preset {
+			shipped = append(shipped, one.Name)
+		}
+	}
+	if len(shipped) != 1 || shipped[0] != theme.Default {
+		t.Errorf("the binary ships %v", shipped)
+	}
+	for _, name := range []string{"preset:dracula", "preset:nord", "preset:solarized"} {
+		if _, err := catalogue.Text(name); !errors.Is(err, theme.ErrNoTheme) {
+			t.Errorf("%s: error = %v, want ErrNoTheme", name, err)
 		}
 	}
 }
@@ -101,27 +106,16 @@ func TestThisProductsOwnPalettePreservesTheModeSomethingToChoose(t *testing.T) {
 	}
 }
 
-// A palette published in one half pins it; one published in two halves does not,
-// and the setting chooses.
-func TestAThemeReturnsWhetherItIsAPair(t *testing.T) {
-	pinned := map[string]bool{"preset:dracula": true, "preset:solarized": false}
-	for _, one := range createThemeFolder(t).Themes() {
-		want, request := pinned[one.Name]
-		if request && one.IsPinned != want {
-			t.Errorf("%s is pinned: %v", one.Name, one.IsPinned)
-		}
-	}
-}
-
-func TestAPersonsThemeExistsAdjacentThePresetItsNameIsShared(t *testing.T) {
-	catalogue := createThemeFolder(t)
-	writeTheme(t, catalogue, "dracula.css", ":root { --numen-surface: #000000 }")
+func TestAPersonsThemeExistsAdjacentAPluginThemeOfTheSameFilename(t *testing.T) {
+	catalogue := createThemeFolder(t).WithPlugins(createFakePlugins())
+	writeTheme(t, catalogue, "night.css", ":root { --numen-surface: #000000 }")
 
 	themes := catalogue.Themes()
-	if !hasTheme(themes, "preset:dracula") || !hasTheme(themes, "mine:dracula") {
+	pluginName := theme.PluginName(pluginID, "night")
+	if !hasTheme(themes, pluginName) || !hasTheme(themes, "mine:night") {
 		t.Fatalf("one hides the other: %v", getNames(themes))
 	}
-	text, err := catalogue.Text("mine:dracula")
+	text, err := catalogue.Text("mine:night")
 	if err != nil {
 		t.Fatal(err)
 	}

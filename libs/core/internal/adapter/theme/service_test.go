@@ -68,11 +68,13 @@ func (d *fakeAppearances) choose(t *testing.T, name string, mode v1.Mode) string
 }
 
 func TestTheListReturnsWhatIsWornAndWhichHalfItIsReadAs(t *testing.T) {
-	aged := createFakeAppearances(t, theme.Appearance{ThemeName: "preset:dracula", Mode: appearance.Dark})
+	night := theme.PluginName(pluginID, "night")
+	aged := createFakeAppearances(t, theme.Appearance{ThemeName: night, Mode: appearance.Dark})
+	aged.service.Catalogue = aged.service.Catalogue.WithPlugins(createFakePlugins())
 	writeTheme(t, aged.service.Catalogue, "mine.css", ":root { --numen-surface: #000000 }")
 
 	answer := aged.themes(t)
-	if answer.GetApplied() != "preset:dracula" || answer.GetMode() != v1.Mode_MODE_DARK {
+	if answer.GetApplied() != night || answer.GetMode() != v1.Mode_MODE_DARK {
 		t.Errorf("wears %q, read as %v", answer.GetApplied(), answer.GetMode())
 	}
 
@@ -80,28 +82,33 @@ func TestTheListReturnsWhatIsWornAndWhichHalfItIsReadAs(t *testing.T) {
 	for _, one := range answer.GetThemes() {
 		origins[one.GetName()] = one.GetOrigin()
 	}
-	if origins["preset:dracula"] != v1.Origin_ORIGIN_PRESET {
-		t.Errorf("preset:dracula came off %v", origins["preset:dracula"])
+	if origins[theme.Default] != v1.Origin_ORIGIN_PRESET {
+		t.Errorf("%s came off %v", theme.Default, origins[theme.Default])
+	}
+	if origins[night] != v1.Origin_ORIGIN_PLUGIN {
+		t.Errorf("%s came off %v", night, origins[night])
 	}
 	if origins["mine:mine"] != v1.Origin_ORIGIN_MINE {
 		t.Errorf("the person's theme came off %v", origins["mine:mine"])
 	}
 	for _, one := range answer.GetThemes() {
-		if one.GetName() == "preset:dracula" && !one.GetIsPinned() {
-			t.Error("a palette published in one half is not offered as pinned")
+		if one.GetName() == night && !one.GetIsPinned() {
+			t.Error("a theme declaring an appearance is not offered as pinned")
 		}
 	}
 }
 
 func TestGetTheme_ResolvesKnownNamesAndEmptyForOthers(t *testing.T) {
 	aged := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
+	aged.service.Catalogue = aged.service.Catalogue.WithPlugins(createFakePlugins())
 	writeTheme(t, aged.service.Catalogue, "kept.css", ":root { --numen-surface: #123456 }")
 
 	for name, want := range map[string]string{
-		"mine:kept":                 "#123456",
-		"preset:dracula":            "--numen-surface",
-		"mine:../../../.ssh/id_rsa": "",
-		"mine:gone":                 "",
+		"mine:kept":                         "#123456",
+		theme.PluginName(pluginID, "night"): "--numen-surface",
+		"preset:dracula":                    "",
+		"mine:../../../.ssh/id_rsa":         "",
+		"mine:gone":                         "",
 	} {
 		answer, err := aged.service.ReadTheme(t.Context(),
 			connect.NewRequest(&v1.ReadThemeRequest{Name: name}))
@@ -130,13 +137,14 @@ func TestGetTheme_ResolvesKnownNamesAndEmptyForOthers(t *testing.T) {
 
 func TestChoosingWritesTheThemeAndTheHalfItIsReadAs(t *testing.T) {
 	aged := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
-	if failed := aged.choose(t, "preset:nord", v1.Mode_MODE_DARK); failed != "" {
+	writeTheme(t, aged.service.Catalogue, "nord.css", ":root {}")
+	if failed := aged.choose(t, "mine:nord", v1.Mode_MODE_DARK); failed != "" {
 		t.Fatalf("failed: %s", failed)
 	}
-	if len(aged.content) != 1 || aged.content[0] != (theme.Appearance{ThemeName: "preset:nord", Mode: appearance.Dark}) {
+	if len(aged.content) != 1 || aged.content[0] != (theme.Appearance{ThemeName: "mine:nord", Mode: appearance.Dark}) {
 		t.Fatalf("written: %+v", aged.content)
 	}
-	if answer := aged.themes(t); answer.GetApplied() != "preset:nord" {
+	if answer := aged.themes(t); answer.GetApplied() != "mine:nord" {
 		t.Errorf("wears %q", answer.GetApplied())
 	}
 }
@@ -183,8 +191,9 @@ func TestChoosingOneSizePreservesTheOtherAsItExists(t *testing.T) {
 	})
 
 	scale := 1.75
+	writeTheme(t, aged.service.Catalogue, "nord.css", ":root {}")
 	answer, err := aged.service.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
-		Name:           "preset:nord",
+		Name:           "mine:nord",
 		Mode:           v1.Mode_MODE_DARK,
 		InterfaceScale: &scale,
 	}))
@@ -209,7 +218,8 @@ func TestAChoiceThatCannotBeWornIsRefusedAndReturnsWhy(t *testing.T) {
 	}{
 		{"mine:the-one-i-deleted", v1.Mode_MODE_DARK},
 		{"mine:../../../.ssh/id_rsa", v1.Mode_MODE_DARK},
-		{"preset:nord", v1.Mode_MODE_UNSPECIFIED},
+		{"preset:nord", v1.Mode_MODE_DARK},
+		{theme.Default, v1.Mode_MODE_UNSPECIFIED},
 	} {
 		failed := aged.choose(t, selected.name, selected.mode)
 		if failed == "" {
@@ -227,7 +237,7 @@ func TestAChoiceThatCannotBeWornIsRefusedAndReturnsWhy(t *testing.T) {
 func TestASettingsFileThatWouldNotTakeTheChoiceReturnsSo(t *testing.T) {
 	aged := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 	aged.failure = errNotWritten
-	if failed := aged.choose(t, "preset:nord", v1.Mode_MODE_DARK); !strings.Contains(failed, "read-only") {
+	if failed := aged.choose(t, theme.Default, v1.Mode_MODE_DARK); !strings.Contains(failed, "read-only") {
 		t.Errorf("failed with %q", failed)
 	}
 }

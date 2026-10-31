@@ -586,6 +586,7 @@ var validPluginKinds = []string{
 	"views",
 	"engines",
 	"tools",
+	"themes",
 }
 
 // domainPlugins are plugins named by the domain they hold whole, with no kind.
@@ -593,7 +594,7 @@ var domainPlugins = []string{"notes"}
 
 // listPluginNamingIssues lists what a plugin folder and id break: the id starts
 // with md.numen., matches the folder name (with hyphens mapped to dots),
-// and the kind is one of agents, readers, editors, views, engines or tools, or
+// and the kind is one of agents, readers, editors, views, engines, tools or themes, or
 // the folder is a domain plugin.
 func listPluginNamingIssues(folder, id string) []string {
 	var issues []string
