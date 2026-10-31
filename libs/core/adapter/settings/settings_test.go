@@ -460,18 +460,25 @@ func TestOneSettingIsAValidFile(t *testing.T) {
 	}
 }
 
-// A file naming one field of one section leaves everything else alone.
-func TestAFileNamingOneFieldKeepsTheDefaultsForTheRest(t *testing.T) {
-	cfg, err := openAt(write(t, `{"indexing":{"embedding":{"floor":0.3}}}`))
+// A section the file leaves empty keeps its defaults.
+func TestAFileNamingAnEmptySectionKeepsTheDefaultsForTheRest(t *testing.T) {
+	cfg, err := openAt(write(t, `{"indexing":{"embedding":{}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	e := cfg.Indexing.Embedding
-	if e.Floor != 0.3 {
-		t.Errorf("the floor is %v", e.Floor)
+	if got := cfg.Indexing.Embedding; got != container.DefaultEmbedding() {
+		t.Errorf("the embedding section is %+v", got)
 	}
-	if e.MaxTokens != container.DefaultEmbedding().MaxTokens {
-		t.Errorf("a chunk is cut at %d tokens", e.MaxTokens)
+}
+
+// A file naming the cut of a chunk replaces the default.
+func TestAFileNamingTheTokenLimitReplacesTheDefault(t *testing.T) {
+	cfg, err := openAt(write(t, `{"indexing":{"embedding":{"max_tokens":128}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := cfg.Indexing.Embedding.MaxTokens; got != 128 {
+		t.Errorf("a chunk is cut at %d tokens", got)
 	}
 }
 

@@ -17,10 +17,22 @@ export default [
     languageOptions: {
       parserOptions: {
         parser: tseslint.parser,
+        projectService: { allowDefaultProject: ['vite.config.ts', 'vitest.config.ts'] },
+        tsconfigRootDir: import.meta.dirname,
         extraFileExtensions: ['.vue'],
       },
     },
     rules: {
+      // The strict set: every promise is awaited, returned or given an error channel; no
+      // statement discards a value with `void`; no block or function body is empty.
+      'no-void': 'error',
+      'no-empty': ['error', { allowEmptyCatch: false }],
+      'no-empty-function': 'off',
+      '@typescript-eslint/no-empty-function': 'error',
+      '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: false }],
+      '@typescript-eslint/no-misused-promises': 'error',
+      '@typescript-eslint/await-thenable': 'error',
+      '@typescript-eslint/switch-exhaustiveness-check': ['error', { considerDefaultExhaustiveForUnions: true }],
       complexity: ['error', 12],
       'max-depth': ['error', 3],
       'max-params': ['error', 4],
@@ -162,6 +174,11 @@ export default [
       complexity: 'off',
       'max-params': 'off',
     },
+  },
+  // Configuration scripts are outside the TypeScript project.
+  {
+    files: ['**/*.js'],
+    ...tseslint.configs.disableTypeChecked,
   },
   prettier,
 ]

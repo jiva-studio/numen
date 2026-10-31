@@ -72,6 +72,20 @@ func (h *Host) GetCompleter() completionport.Completer {
 	return h.completer
 }
 
+// SetPluginSearch is the search index and the search floor the plugins work through the host.
+func (h *Host) SetPluginSearch(search pluginport.PluginSearch) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.search = search
+}
+
+// GetPluginSearch is the search index the plugins work, or nil.
+func (h *Host) GetPluginSearch() pluginport.PluginSearch {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.search
+}
+
 // openHostEndpoint returns the port the host endpoint serves on, starting it on
 // the first call after a completer or a vault is set. It returns zero while
 // neither is set.
@@ -81,7 +95,7 @@ func (h *Host) openHostEndpoint(ctx context.Context) (int, error) {
 	if h.hostEndpoint != nil {
 		return h.hostEndpoint.GetPort(), nil
 	}
-	if (h.completer == nil && h.vault == nil && h.dependencies == nil && h.work == nil) || h.isClosed {
+	if (h.completer == nil && h.vault == nil && h.dependencies == nil && h.work == nil && h.search == nil) || h.isClosed {
 		return 0, nil
 	}
 	endpoint, err := hostendpoint.Open(ctx, h.hostAddress, h)

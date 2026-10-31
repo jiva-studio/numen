@@ -18,9 +18,6 @@ const (
 	WalkingNotes  = "walking the notes"
 	IndexingTexts = "indexing the file texts"
 	MakingVectors = "making the vectors"
-	// CalibratingFloor is the measurement of the similarity floor that follows the
-	// last vector of a vault.
-	CalibratingFloor = "calibrating the floor"
 )
 
 const taskIndexingTexts = "Indexing file texts"
@@ -55,9 +52,9 @@ type ReadNotes func(ctx context.Context, during func()) (int, error)
 // many carry one.
 type GetVectorCounts func(ctx context.Context, v domain.Vault) (held, embedded int64, err error)
 
-// Calibrate measures the similarity floor of a vault once all its vectors exist,
-// and does nothing where the floor is already measured or set.
-type Calibrate func(ctx context.Context, v domain.Vault) error
+// VectorsReady is told that all the vectors of a vault exist. It is told after every pass that
+// leaves no vector pending, so it is told more than once for a vault.
+type VectorsReady func(ctx context.Context, v domain.Vault)
 
 // Config is what a worker is made from.
 type Config struct {
@@ -66,9 +63,9 @@ type Config struct {
 	// VectorCounts is nil when the number of pending vectors is unknown; every pass then
 	// assumes some vectors are pending.
 	VectorCounts GetVectorCounts
-	// Calibrate is nil where no floor is calibrated.
-	Calibrate Calibrate
-	Events    Events
+	// VectorsReady is nil where nobody is told.
+	VectorsReady VectorsReady
+	Events       Events
 	// Quiet is how long the vault has to have been still before a note that was
 	// written is embedded, and After is the timer that counts it.
 	Quiet time.Duration
@@ -85,7 +82,7 @@ type Worker struct {
 	reading      OpenReading
 	embedder     embeddingport.Embedder
 	vectorCounts GetVectorCounts
-	calibrate    Calibrate
+	vectorsReady VectorsReady
 	events       Events
 	debounce     time.Duration
 	after        func(time.Duration) <-chan time.Time
@@ -100,7 +97,7 @@ func NewWorker(cfg Config) *Worker {
 		reading:      cfg.Reading,
 		embedder:     cfg.Embedder,
 		vectorCounts: cfg.VectorCounts,
-		calibrate:    cfg.Calibrate,
+		vectorsReady: cfg.VectorsReady,
 		events:       cfg.Events,
 		debounce:     cfg.Quiet,
 		after:        cfg.After,
@@ -330,7 +327,7 @@ func (p *pass) embed(ctx context.Context) {
 	pending, hasPending := w.getPendingVectors(ctx, p.v)
 	if !hasPending {
 		w.events.FinishTask(MakingVectors)
-		p.calibrateFloor(ctx)
+		p.reportVectorsReady(ctx)
 		return
 	}
 
@@ -338,24 +335,18 @@ func (p *pass) embed(ctx context.Context) {
 	defer stop()
 
 	if p.makeVectors(ctx, limit, pending) {
-		p.calibrateFloor(ctx)
+		p.reportVectorsReady(ctx)
 	}
 }
 
-// calibrateFloor measures the similarity floor of the vault once the pass has
-// left no vector pending. A failure is reported as a task and does not fail the pass.
-func (p *pass) calibrateFloor(ctx context.Context) {
+// reportVectorsReady tells the worker's listener that the pass has left no vector pending. A stopped
+// pass tells nobody.
+func (p *pass) reportVectorsReady(ctx context.Context) {
 	w := p.worker
-	if w.calibrate == nil || ctx.Err() != nil {
+	if w.vectorsReady == nil || ctx.Err() != nil {
 		return
 	}
-	switch err := w.calibrate(ctx, p.v); {
-	case err == nil:
-		w.events.FinishTask(CalibratingFloor)
-	case errors.Is(err, context.Canceled):
-	default:
-		w.events.ReportTask(vaultreading.Task{ID: CalibratingFloor, Title: "Calibrating the search", Error: err.Error()})
-	}
+	w.vectorsReady(ctx, p.v)
 }
 
 // getPendingVectors returns the number of vectors a pass must create, computed once

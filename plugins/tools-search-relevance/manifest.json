@@ -1,0 +1,26 @@
+{
+  "id": "md.numen.tools.search.relevance",
+  "name": "Search Relevance",
+  "version": "2026.10.1",
+  "protocol": 1,
+  "description": "Chooses how similar a note has to be to your search before it shows up",
+  "targets": ["desktop.editor"],
+  "contributes": { "category": "tools" },
+  "activationEvents": ["*"],
+  "permissions": ["index:read", "search:policy"],
+  "lifecycle": {
+    "idleTimeoutSeconds": 180,
+    "keepAliveWhileVisible": true,
+    "memoryLimitBytes": 268435456
+  },
+  "services": ["numen.relevance"],
+  "backend": {
+    "type": "process",
+    "entrypoint": "bin/tools-search-relevance"
+  },
+  "frontend": {
+    "entrypoint": "dist/index.js",
+    "styles": "dist/styles.css"
+  },
+  "settingsViews": [{ "id": "floor", "title": "Search relevance" }]
+}

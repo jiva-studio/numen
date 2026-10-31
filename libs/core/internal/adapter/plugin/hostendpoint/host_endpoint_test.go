@@ -34,6 +34,7 @@ type callers struct {
 	checked   []string
 	vault     pluginport.PluginVault
 	texts     pluginport.PluginTexts
+	search    pluginport.PluginSearch
 	work      pluginport.PluginWork
 	tools     PluginTools
 	acquired  map[string]int
@@ -70,6 +71,7 @@ func (c *callers) GetCompleter() completionport.Completer { return c.completer }
 func (c *callers) GetPluginVault() pluginport.PluginVault { return c.vault }
 
 func (c *callers) GetPluginTexts() pluginport.PluginTexts        { return c.texts }
+func (c *callers) GetPluginSearch() pluginport.PluginSearch      { return c.search }
 func (c *callers) GetDependencies() pluginport.DependencyCatalog { return nil }
 func (c *callers) GetPluginWork() pluginport.PluginWork          { return c.work }
 func (c *callers) GetPluginTools() PluginTools                   { return c.tools }

@@ -35,7 +35,6 @@ How the index keeps and asks vectors.
 | | | |
 | --- | --- | --- |
 | `max_tokens` | a number | the input bound, in tokens, of a chunk the index keeps a vector of. |
-| `floor` | a number | how near a question a passage stands to be an answer at all. |
 
 ### `agent`
 

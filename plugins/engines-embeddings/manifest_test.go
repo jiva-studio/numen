@@ -47,36 +47,17 @@ func TestManifestDeclaresTheEmbeddingCapabilityAndNoWindowService(t *testing.T) 
 	}
 }
 
-// The plugin mounts the relevance panel in its settings, after the model setting.
-func TestManifestDeclaresTheFloorSettingsView(t *testing.T) {
+// The plugin reports the model and a starting floor for it and draws nothing: the search floor is
+// measured and set by another plugin.
+func TestManifestDeclaresNoFrontendAndNoSettingsView(t *testing.T) {
 	var manifest struct {
-		Targets  []string `json:"targets"`
-		Frontend struct {
-			Entrypoint string `json:"entrypoint"`
-		} `json:"frontend"`
-		SettingsViews []struct {
-			ID    string `json:"id"`
-			Title string `json:"title"`
-			After string `json:"after"`
-		} `json:"settingsViews"`
-		Settings []struct {
-			Key string `json:"key"`
-		} `json:"settings"`
+		Frontend      map[string]any   `json:"frontend"`
+		SettingsViews []map[string]any `json:"settingsViews"`
 	}
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(manifest.Targets, "desktop.editor") || manifest.Frontend.Entrypoint == "" {
-		t.Errorf("targets %v and frontend %q, want desktop.editor and an entrypoint", manifest.Targets, manifest.Frontend.Entrypoint)
-	}
-	if len(manifest.SettingsViews) != 1 || manifest.SettingsViews[0].ID != "floor" || manifest.SettingsViews[0].After != "model" {
-		t.Fatalf("settingsViews = %+v, want floor after model", manifest.SettingsViews)
-	}
-	isDeclared := false
-	for _, setting := range manifest.Settings {
-		isDeclared = isDeclared || setting.Key == manifest.SettingsViews[0].After
-	}
-	if !isDeclared {
-		t.Errorf("the settings view follows %q, which is not a setting", manifest.SettingsViews[0].After)
+	if len(manifest.Frontend) != 0 || len(manifest.SettingsViews) != 0 {
+		t.Errorf("frontend %v and settingsViews %v, want neither", manifest.Frontend, manifest.SettingsViews)
 	}
 }

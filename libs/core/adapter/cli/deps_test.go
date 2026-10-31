@@ -90,7 +90,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			}
 			return cli.Search{
 				Search: search.New(db.ChunkQueries(), vaultreader.Readers{Options: options},
-					testsupport.Texts{Readers: vaultreader.Readers{Options: options}}, nil, 0, errorHandler),
+					testsupport.Texts{Readers: vaultreader.Readers{Options: options}}, nil, errorHandler),
 				Close: db.Close,
 			}, nil
 		},

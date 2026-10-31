@@ -11,7 +11,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/floor"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -30,8 +29,6 @@ type Handler struct {
 	Finds          *search.Search
 	GetTitles      note.GetTitles
 	GetTypes       *note.GetTypes
-	// Floors is nil on a window put together without them.
-	Floors *floor.Scenarios
 }
 
 func NewHandler(vaults VaultProvider) *Handler {

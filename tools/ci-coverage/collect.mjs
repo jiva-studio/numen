@@ -27,6 +27,7 @@ const GO_MODULES = [
   'plugins/engines-embeddings',
   'plugins/engines-ocr',
   'plugins/tools-proofreading',
+  'plugins/tools-search-relevance',
   'plugins/tools-updater',
   'plugins/readers-epub',
   'plugins/readers-pdf',

@@ -1,0 +1,10 @@
+{
+  "state": {
+    "floor": 0.6,
+    "source": "manual",
+    "model": "bge-m3",
+    "automaticFloor": 0.4,
+    "isManual": true,
+    "manualFloor": 0.6
+  }
+}

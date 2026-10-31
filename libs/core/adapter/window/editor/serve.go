@@ -122,8 +122,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 		state.reportTask(run.Task{ID: wordsAlone, Title: "Answering by words alone", Error: err.Error()})
 	})
 	services.Search.Finds = &finds
-	floors := made.OpenFloors(embedder, newFloorErrorReporter(state))
-	services.Search.Floors = &floors
+	made.SetPluginSearch(embedder, newFloorErrorReporter(state))
 
 	pool := &Installation{
 		State:         state,

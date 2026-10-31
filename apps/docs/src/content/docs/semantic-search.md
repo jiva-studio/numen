@@ -21,9 +21,8 @@ The model a vector came from is kept beside it, so a vault read by another model
 
 ## The rest
 
-Two keys under `indexing.embedding` in [the settings file](/settings/) are about the index, not the model:
+The key `indexing.embedding.max_tokens` in [the settings file](/settings/) is about the index, not the model. It is the input bound, in tokens, a chunk that carries a vector is cut below. It is 256 by default; a model that reads more can take longer chunks.
 
-- `max_tokens` is the input bound, in tokens, a chunk that carries a vector is cut below. It is 256 by default; a model that reads more can take longer chunks.
-- `floor` is how near a question a passage has to stand to count as an answer. Zero takes what the search was built against. Where a model puts two pieces of text is a fact about that model, so a model changed is a floor worth measuring again.
+How near a question a passage has to stand to count as an answer is the floor of the search. The Search Relevance plugin measures it on your vault for the model in use and lets you set it by hand. Where a model puts two pieces of text is a fact about that model, so a model changed has a floor of its own.
 
 The complete list is on [every setting](/reference/).

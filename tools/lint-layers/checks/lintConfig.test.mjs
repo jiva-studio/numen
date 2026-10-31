@@ -80,15 +80,11 @@ test("packages are derived from eslint configs and plugin package.json files", (
 });
 
 test("the probes are the first source file and the first test file of the package", () => {
-  const tracked = [
-    "plugins/notes/vite.config.ts",
-    "plugins/notes/frontend/index.d.ts",
-    "plugins/notes/frontend/a.stories.ts",
-    "plugins/notes/frontend/b.ts",
-    "plugins/notes/frontend/b.test.ts",
-    "plugins/notes/frontend/c.test.ts",
-    "plugins/notes-other/frontend/z.ts",
-  ];
+  const filesByPackage = {
+    "plugins/notes": ["vite.config.ts", "frontend/index.d.ts", "frontend/a.stories.ts", "frontend/b.ts", "frontend/b.test.ts", "frontend/c.test.ts"],
+    "plugins/notes-other": ["frontend/z.ts"],
+  };
+  const tracked = Object.entries(filesByPackage).flatMap(([dir, names]) => names.map((name) => `${dir}/${name}`));
   assert.deepEqual(pickProbeFiles(tracked, "plugins/notes"), ["plugins/notes/frontend/b.ts", "plugins/notes/frontend/b.test.ts"]);
   assert.deepEqual(pickProbeFiles(tracked, "plugins/missing"), ["plugins/missing/probe.ts", "plugins/missing/probe.test.ts"]);
 });

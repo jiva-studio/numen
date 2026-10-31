@@ -210,11 +210,17 @@ type pluginContentTypes interface {
 	ListExtensions(mask domain.ContentType) []string
 }
 
+// pluginHostServices receives what the host lends the plugins that call it.
+type pluginHostServices interface {
+	PluginTextHost
+	PluginSearchHost
+}
+
 // PluginManager coordinates process lifecycle, discovery, settings, and RPC routing for modular extensions.
 type PluginManager interface {
 	PluginLifecycleManager
 	PluginRegistryManager
-	PluginTextHost
+	pluginHostServices
 	pluginContentTypes
 	GetDependencies() DependencyCatalog
 }

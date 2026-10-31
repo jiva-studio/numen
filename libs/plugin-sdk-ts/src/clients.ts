@@ -5,13 +5,11 @@ import { createClient, type Client, type Transport } from '@connectrpc/connect'
 import {
   AgentService,
   CAPABILITY_AGENT_PROVIDER,
-  CalibrationOutcome,
   CommandErrorCode,
   CommandService,
   CompletionConsent,
   ErrorCode as ProtoErrorCode,
   FileService,
-  FloorSource,
   FlushResult,
   Marker,
   Mode,
@@ -108,12 +106,6 @@ export type ModelPresenceCode = Presence
 
 export const SEARCH_MODE = SearchMode
 export type SearchModeCode = SearchMode
-
-export const FLOOR_SOURCE = FloorSource
-export type FloorSourceCode = FloorSource
-
-export const CALIBRATION_OUTCOME = CalibrationOutcome
-export type CalibrationOutcomeCode = CalibrationOutcome
 
 export const TASK_UNIT = Unit
 export type TaskUnitCode = Unit

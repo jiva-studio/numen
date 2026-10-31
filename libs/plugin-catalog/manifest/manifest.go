@@ -23,6 +23,13 @@ const (
 	// PermissionAIComplete allows asking the host for a model completion.
 	PermissionAIComplete = "ai:complete"
 
+	// PermissionIndexRead allows reading the search index of a vault: its note titles, the stored
+	// vectors of its chunks, and the state of its embedding.
+	PermissionIndexRead = "index:read"
+
+	// PermissionSearchPolicy allows reading and setting the floor that a search by meaning applies.
+	PermissionSearchPolicy = "search:policy"
+
 	// PermissionNetworkAlias is the accepted short spelling of PermissionNetworkOutbound.
 	PermissionNetworkAlias = "network"
 
@@ -34,7 +41,10 @@ const (
 
 // PluginPermissions is every permission a manifest may declare, in its canonical spelling.
 func PluginPermissions() []string {
-	return []string{PermissionVaultRead, PermissionVaultWrite, PermissionNetworkOutbound, PermissionAIComplete}
+	return []string{
+		PermissionVaultRead, PermissionVaultWrite, PermissionNetworkOutbound, PermissionAIComplete,
+		PermissionIndexRead, PermissionSearchPolicy,
+	}
 }
 
 // PluginCapabilities is every core capability the guide lists.

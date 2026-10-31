@@ -19,7 +19,6 @@ var useCaseEdges = map[string][]string{
 	"settings":      nil,
 	"run":           nil,
 	"filetext":      nil,
-	"floor":         nil,
 	"vectors":       nil,
 	"file":          nil,
 	"search":        nil,

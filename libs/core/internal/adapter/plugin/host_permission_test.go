@@ -86,6 +86,78 @@ func TestACallWithoutTheManifestPermissionIsRefusedByTheCore(t *testing.T) {
 	}
 }
 
+// createRawSearchClient is createRawVaultClient for the search service.
+func createRawSearchClient(t *testing.T, host *Host, token string) numenv1connect.HostSearchServiceClient {
+	t.Helper()
+	endpoint, err := hostendpoint.Open(t.Context(), host.hostAddress, host)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := endpoint.Close(context.WithoutCancel(t.Context())); err != nil {
+			t.Error(err)
+		}
+	})
+	return numenv1connect.NewHostSearchServiceClient(
+		&http.Client{Timeout: 5 * time.Second},
+		"http://127.0.0.1:"+strconv.Itoa(endpoint.GetPort()),
+		connect.WithInterceptors(transport.AuthInterceptor(token)),
+	)
+}
+
+// The index reads need index:read and the floor needs search:policy, whatever client the plugin calls with.
+func TestASearchCallWithoutTheManifestPermissionIsRefusedByTheCore(t *testing.T) {
+	host := createManifestedHost(t, map[string]string{
+		"token-index":  `{"id":"md.numen.indexer","name":"Indexer","version":"1.0.0","protocol":1,"permissions":["index:read"]}`,
+		"token-policy": `{"id":"md.numen.policy","name":"Policy","version":"1.0.0","protocol":1,"permissions":["search:policy"]}`,
+		"token-vault":  `{"id":"md.numen.vault","name":"Vault","version":"1.0.0","protocol":1,"permissions":["vault:read","vault:write"]}`,
+	})
+	for _, one := range []struct {
+		token string
+		name  string
+		call  func(ctx context.Context, client numenv1connect.HostSearchServiceClient) error
+		deny  bool
+	}{
+		{"token-vault", "state", callGetEmbeddingState, true},
+		{"token-vault", "titles", callListNoteTitles, true},
+		{"token-vault", "get floor", callGetSearchFloor, true},
+		{"token-vault", "set floor", callSetSearchFloor, true},
+		{"token-index", "state", callGetEmbeddingState, false},
+		{"token-index", "titles", callListNoteTitles, false},
+		{"token-index", "get floor", callGetSearchFloor, true},
+		{"token-index", "set floor", callSetSearchFloor, true},
+		{"token-policy", "state", callGetEmbeddingState, true},
+		{"token-policy", "titles", callListNoteTitles, true},
+		{"token-policy", "get floor", callGetSearchFloor, false},
+		{"token-policy", "set floor", callSetSearchFloor, false},
+	} {
+		err := one.call(t.Context(), createRawSearchClient(t, host, one.token))
+		if got := connect.CodeOf(err) == connect.CodePermissionDenied; got != one.deny {
+			t.Errorf("%s %s: permission denied is %v (%v), want %v", one.token, one.name, got, err, one.deny)
+		}
+	}
+}
+
+func callGetEmbeddingState(ctx context.Context, client numenv1connect.HostSearchServiceClient) error {
+	_, err := client.GetEmbeddingState(ctx, connect.NewRequest(&v1.GetEmbeddingStateRequest{}))
+	return err
+}
+
+func callListNoteTitles(ctx context.Context, client numenv1connect.HostSearchServiceClient) error {
+	_, err := client.ListNoteTitles(ctx, connect.NewRequest(&v1.ListNoteTitlesRequest{}))
+	return err
+}
+
+func callGetSearchFloor(ctx context.Context, client numenv1connect.HostSearchServiceClient) error {
+	_, err := client.GetSearchFloor(ctx, connect.NewRequest(&v1.GetSearchFloorRequest{Recipe: "r"}))
+	return err
+}
+
+func callSetSearchFloor(ctx context.Context, client numenv1connect.HostSearchServiceClient) error {
+	_, err := client.SetSearchFloor(ctx, connect.NewRequest(&v1.SetSearchFloorRequest{Recipe: "r", Floor: 0.5}))
+	return err
+}
+
 // A call with a token no running plugin was issued is unauthenticated, not served.
 func TestACallWithAnUnknownTokenIsRefusedByTheCore(t *testing.T) {
 	host := createManifestedHost(t, map[string]string{
