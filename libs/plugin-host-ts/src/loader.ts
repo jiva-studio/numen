@@ -3,7 +3,7 @@
  * created by the host, and deactivated according to its `enabled` setting.
  */
 import { shallowRef, type ShallowRef } from 'vue'
-import type { Disposable, PluginLifecycle, PluginManifest } from '@numen/plugin-sdk'
+import type { Disposable, PluginLifecycle, Manifest } from '@numen/plugin-sdk'
 import type { LoaderHost } from './host'
 import {
   getLifecycleHooks,
@@ -89,7 +89,7 @@ async function activateEntry(
 interface DeactivateDeps {
   readonly host: LoaderHost
   readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
-  readonly manifests: Map<string, PluginManifest>
+  readonly manifests: Map<string, Manifest>
   readonly reportError: (pluginId: string, error: unknown) => void
 }
 
@@ -217,7 +217,7 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
 interface LoaderState {
   readonly activePlugins: ShallowRef<ReadonlyMap<string, ActivePluginEntry>>
   readonly failures: ShallowRef<ReadonlyMap<string, string>>
-  readonly manifests: Map<string, PluginManifest>
+  readonly manifests: Map<string, Manifest>
   readonly moduleLoaders: Map<string, () => Promise<unknown>>
 }
 
@@ -299,7 +299,7 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
   return {
     ...createRuntime(deps, state, activation),
     ...activation,
-    registerPluginManifest: (id: string, manifest: PluginManifest) => {
+    registerPluginManifest: (id: string, manifest: Manifest) => {
       manifests.set(id, manifest)
       host.registerManifest?.(id, manifest)
     },

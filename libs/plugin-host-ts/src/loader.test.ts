@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { PluginContext, PluginLifecycle } from '@numen/plugin-sdk'
+import { createMockManifest } from '@numen/plugin-sdk/testing'
 import type { LoaderHost } from './host'
 import { getPluginStyle } from './styles'
 import { createPluginLoader } from './loader'
@@ -314,7 +315,11 @@ describe('createPluginLoader catalog manifests', () => {
       disposePlugin: vi.fn(),
       disposeAll: vi.fn(),
     } as unknown as LoaderHost
-    const manifest = { id: 'cat.plugin', name: 'Cat', version: '1', permissions: ['vault:read'] }
+    const manifest = createMockManifest('cat.plugin', {
+      name: 'Cat',
+      version: '1',
+      permissions: ['vault:read'],
+    })
     const loader = registerModules(createPluginLoader({ host }), {
       'cat.plugin': async () => ({ activate: () => undefined }),
     })

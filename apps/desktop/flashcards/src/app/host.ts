@@ -11,7 +11,7 @@ import type {
   Disposable,
   NoticeHost,
   PluginContext,
-  PluginManifest,
+  Manifest,
   TabKindRegistration,
 } from '@numen/plugin-sdk'
 import { createViewRegistry, type LoaderHost } from '@numen/plugin-host'
@@ -112,7 +112,7 @@ export function createShellHost(agent?: AgentHost) {
     return { dispose: () => (views.value = views.value.filter((one) => one !== view)) }
   }
 
-  const createContext = (pluginId: string, manifest?: PluginManifest): PluginContext => {
+  const createContext = (pluginId: string, manifest?: Manifest): PluginContext => {
     const subscriptions: Disposable[] = []
     const add = (one: Disposable) => {
       subscriptions.push(one)

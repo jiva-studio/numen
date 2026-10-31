@@ -3,7 +3,7 @@ import type { BufferHost } from './buffers'
 import type { DropHost, DropRegistration } from './drops'
 import type { NoticeHost } from './notices'
 import type { TaskHost } from './tasks'
-import type { Selector, TextMaker, VaultTexts } from './texts'
+import type { Selector, VaultTexts } from './texts'
 import type { MountedView, ViewRegistration } from './views'
 import type { NoteType, VaultFiles, VaultNotes, WorkspaceHost } from './workspace'
 
@@ -21,42 +21,6 @@ export interface TextRange {
 // Result is the discriminated outcome of a fallible operation.
 import type { Result } from './result'
 export type { Failure, Result } from './result'
-
-// SettingOption declares one choice in an enumerated setting.
-export interface SettingOption {
-  value: string
-  /** The display title for the value; when absent the value is displayed. */
-  title?: string
-  /** Text displayed under the setting while the value is selected. */
-  detail?: string
-  /** The ids of the dependencies the host provisions only while the value is in force. */
-  dependencies?: string[]
-}
-
-// SettingCondition holds while a setting holds one of the values listed.
-export interface SettingCondition {
-  setting: string
-  is: string[]
-}
-
-// SettingDeclaration declares a plugin configuration option.
-export interface SettingDeclaration {
-  key: string
-  type: 'string' | 'boolean' | 'number' | 'range' | 'enum' | 'select' | 'agent' | 'file' | 'folder'
-  title: string
-  description?: string
-  default?: unknown
-  options?: (string | SettingOption)[]
-  /** The options under each value of another enum setting; the first of a list is its default. */
-  optionsBy?: { setting: string; options: Record<string, (string | SettingOption)[]> }
-  /** The condition under which the setting is shown and handed to the plugin. */
-  when?: SettingCondition
-  /** The extensions a setting of type file takes, each with its leading dot. */
-  accept?: string[]
-  min?: number
-  max?: number
-  step?: number
-}
 
 // ReaderRegistration registers a viewer component for files. The manifest declares, under
 // `readers` with the same id, the content types it opens. The component gets a ReaderTabState as
@@ -296,43 +260,4 @@ export interface PluginContext {
   registerDropHandler?(registration: DropRegistration): Disposable
   // Hands a drop to the plugin that takes it, where the host offers drops.
   readonly drops?: DropHost
-}
-
-// PluginManifest describes the metadata in manifest.json.
-export interface PluginManifest {
-  id: string
-  name: string
-  version: string
-  /** The plugin protocol the plugin was written against; absent means 1. */
-  protocol?: number
-  description?: string
-  capabilities?: string[]
-  targets?: string[]
-  activationEvents?: string[]
-  permissions?: string[]
-  runtimes?: string[]
-  /** The secrets the plugin requests the host to store and pass to it in Configure. */
-  secrets?: { name: string; title: string; description?: string; when?: SettingCondition }[]
-  lifecycle?: {
-    idleTimeoutSeconds?: number
-    keepAliveWhileVisible?: boolean
-  }
-  backend?: {
-    type: 'process'
-    entrypoint: string
-    serviceName?: string
-  }
-  frontend?: {
-    entrypoint: string
-    styles?: string
-  }
-  /** What the plugin declares of the text it makes; a plugin that makes no text declares none. */
-  /** The types of file the plugin brings, each with the globs of its names, such as `*.txt`. */
-  contentTypes?: { type: string; globs: string[] }[]
-  /** The readers of the frontend, by registered id, with the content types each opens and its rank. */
-  readers?: { id: string; contentTypes: string[]; rank: 'default' | 'alternate' }[]
-  texts?: TextMaker
-  settings?: SettingDeclaration[]
-  /** The views the settings page mounts in the plugin's form, after the setting named by `after`; the top where it is empty. */
-  settingsViews?: { id: string; title: string; after?: string }[]
 }

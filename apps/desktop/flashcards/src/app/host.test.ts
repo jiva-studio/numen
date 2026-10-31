@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { defineComponent, h, onScopeDispose } from 'vue'
-import { CONVERSATION, createMockAgentHost, VAULT_SUMMARY } from '@numen/plugin-sdk'
+import {
+  CONVERSATION,
+  createMockAgentHost,
+  createMockManifest,
+  VAULT_SUMMARY,
+} from '@numen/plugin-sdk'
 import { createShellHost, TARGET } from './host'
 
 const view = (kind: string, order?: number) => ({
@@ -40,12 +45,10 @@ describe('createShellHost', () => {
 
   it('answers a plugin with the permissions its manifest declares', () => {
     const { host } = createShellHost()
-    const context = host.createContext('md.numen.example', {
-      id: 'md.numen.example',
-      name: 'Example',
-      version: '1.0.0',
-      permissions: ['vault:read'],
-    })
+    const context = host.createContext(
+      'md.numen.example',
+      createMockManifest('md.numen.example', { name: 'Example', permissions: ['vault:read'] }),
+    )
 
     expect(context.hasPermission?.('vault:read')).toBe(true)
     expect(context.hasPermission?.('vault:write')).toBe(false)

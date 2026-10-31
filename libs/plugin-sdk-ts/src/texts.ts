@@ -58,13 +58,6 @@ export interface VaultTexts {
   ): Promise<Result<TextVersion, TextErrorCode>>
 }
 
-// TextMaker is what a manifest declares of the text a plugin makes. `contentTypes`, where it names
-// any, are the types of the files, such as `audio/*`, for which the host requests text from the plugin
-// when they have no live version. A plugin that makes its text when a command runs names none.
-export interface TextMaker {
-  contentTypes?: string[]
-}
-
 // joinTextSegments is a text as one string.
 export function joinTextSegments(segments: readonly TextSegment[]): string {
   return segments.map((segment) => segment.text).join('')
