@@ -28,7 +28,6 @@ func TestHostSafeMode(t *testing.T) {
 			"handles": [{"purpose": "text-provider", "contentTypes": ["application/x-sample"]}]
 		},
 		"permissions": ["vault:read"],
-		"lifecycle": {"mode": "on-demand", "idleTimeoutSeconds": 10, "keepAliveWhileVisible": false},
 		"backend": {"type": "process", "entrypoint": "bin/sample", "serviceName": "numen.v1.TextProviderService"}
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {

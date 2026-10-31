@@ -24,7 +24,6 @@ func TestDiscover(t *testing.T) {
 		"targets": ["desktop.editor"],
 		"activationEvents": [],
 		"permissions": [],
-		"lifecycle": {"mode": "on-demand", "idleTimeoutSeconds": 100, "keepAliveWhileVisible": false},
 		"backend": {"type": "process", "entrypoint": "bin/engines.ocr", "serviceName": "TextProviderService"},
 		"frontend": {"entrypoint": "", "styles": ""},
 		"settings": []
@@ -46,7 +45,6 @@ func TestDiscover(t *testing.T) {
 		"targets": ["desktop.samples"],
 		"activationEvents": ["*"],
 		"permissions": [],
-		"lifecycle": {"mode": "persistent", "idleTimeoutSeconds": 0, "keepAliveWhileVisible": true},
 		"backend": {"type": "process", "entrypoint": "bin/sample", "serviceName": "SampleService"},
 		"frontend": {"entrypoint": "", "styles": ""},
 		"settings": []
@@ -87,7 +85,6 @@ func TestDiscoverPluginsDuplicateID(t *testing.T) {
 		"targets": [],
 		"activationEvents": [],
 		"permissions": [],
-		"lifecycle": {"mode": "", "idleTimeoutSeconds": 0, "keepAliveWhileVisible": false},
 		"backend": {"type": "", "entrypoint": "", "serviceName": ""},
 		"frontend": {"entrypoint": "", "styles": ""},
 		"settings": []
@@ -133,7 +130,6 @@ func TestDiscoverPluginsSameDirectoryRepeated(t *testing.T) {
 		"targets": ["desktop.editor"],
 		"activationEvents": [],
 		"permissions": [],
-		"lifecycle": {"mode": "", "idleTimeoutSeconds": 0, "keepAliveWhileVisible": false},
 		"backend": {"type": "", "entrypoint": "", "serviceName": ""},
 		"frontend": {"entrypoint": "", "styles": ""},
 		"settings": []

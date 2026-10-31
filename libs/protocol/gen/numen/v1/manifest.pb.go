@@ -41,7 +41,6 @@ type Manifest struct {
 	Permissions      []string `protobuf:"bytes,9,rep,name=permissions,proto3" json:"permissions,omitempty"`
 	// dependencies are what the host provisions for the plugin: runtimes, models, binaries and datasets.
 	Dependencies  []*ManifestDependency   `protobuf:"bytes,11,rep,name=dependencies,proto3" json:"dependencies,omitempty"`
-	Lifecycle     *ManifestLifecycle      `protobuf:"bytes,12,opt,name=lifecycle,proto3" json:"lifecycle,omitempty"`
 	Backend       *ManifestBackend        `protobuf:"bytes,13,opt,name=backend,proto3" json:"backend,omitempty"`
 	Frontend      *ManifestFrontend       `protobuf:"bytes,14,opt,name=frontend,proto3" json:"frontend,omitempty"`
 	Settings      []*ManifestSetting      `protobuf:"bytes,15,rep,name=settings,proto3" json:"settings,omitempty"`
@@ -154,13 +153,6 @@ func (x *Manifest) GetPermissions() []string {
 func (x *Manifest) GetDependencies() []*ManifestDependency {
 	if x != nil {
 		return x.Dependencies
-	}
-	return nil
-}
-
-func (x *Manifest) GetLifecycle() *ManifestLifecycle {
-	if x != nil {
-		return x.Lifecycle
 	}
 	return nil
 }
@@ -821,66 +813,6 @@ func (x *ManifestDependency) GetMetadata() map[string]string {
 	return nil
 }
 
-type ManifestLifecycle struct {
-	state                 protoimpl.MessageState `protogen:"open.v1"`
-	IdleTimeoutSeconds    int32                  `protobuf:"varint,1,opt,name=idle_timeout_seconds,json=idleTimeoutSeconds,proto3" json:"idle_timeout_seconds,omitempty"`
-	KeepAliveWhileVisible bool                   `protobuf:"varint,2,opt,name=keep_alive_while_visible,json=keepAliveWhileVisible,proto3" json:"keep_alive_while_visible,omitempty"`
-	MemoryLimitBytes      uint64                 `protobuf:"varint,3,opt,name=memory_limit_bytes,json=memoryLimitBytes,proto3" json:"memory_limit_bytes,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
-}
-
-func (x *ManifestLifecycle) Reset() {
-	*x = ManifestLifecycle{}
-	mi := &file_numen_v1_manifest_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ManifestLifecycle) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ManifestLifecycle) ProtoMessage() {}
-
-func (x *ManifestLifecycle) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_manifest_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ManifestLifecycle.ProtoReflect.Descriptor instead.
-func (*ManifestLifecycle) Descriptor() ([]byte, []int) {
-	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *ManifestLifecycle) GetIdleTimeoutSeconds() int32 {
-	if x != nil {
-		return x.IdleTimeoutSeconds
-	}
-	return 0
-}
-
-func (x *ManifestLifecycle) GetKeepAliveWhileVisible() bool {
-	if x != nil {
-		return x.KeepAliveWhileVisible
-	}
-	return false
-}
-
-func (x *ManifestLifecycle) GetMemoryLimitBytes() uint64 {
-	if x != nil {
-		return x.MemoryLimitBytes
-	}
-	return 0
-}
-
 type ManifestBackend struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Type          string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
@@ -892,7 +824,7 @@ type ManifestBackend struct {
 
 func (x *ManifestBackend) Reset() {
 	*x = ManifestBackend{}
-	mi := &file_numen_v1_manifest_proto_msgTypes[10]
+	mi := &file_numen_v1_manifest_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -904,7 +836,7 @@ func (x *ManifestBackend) String() string {
 func (*ManifestBackend) ProtoMessage() {}
 
 func (x *ManifestBackend) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_manifest_proto_msgTypes[10]
+	mi := &file_numen_v1_manifest_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -917,7 +849,7 @@ func (x *ManifestBackend) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ManifestBackend.ProtoReflect.Descriptor instead.
 func (*ManifestBackend) Descriptor() ([]byte, []int) {
-	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{10}
+	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ManifestBackend) GetType() string {
@@ -951,7 +883,7 @@ type ManifestFrontend struct {
 
 func (x *ManifestFrontend) Reset() {
 	*x = ManifestFrontend{}
-	mi := &file_numen_v1_manifest_proto_msgTypes[11]
+	mi := &file_numen_v1_manifest_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -963,7 +895,7 @@ func (x *ManifestFrontend) String() string {
 func (*ManifestFrontend) ProtoMessage() {}
 
 func (x *ManifestFrontend) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_manifest_proto_msgTypes[11]
+	mi := &file_numen_v1_manifest_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -976,7 +908,7 @@ func (x *ManifestFrontend) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ManifestFrontend.ProtoReflect.Descriptor instead.
 func (*ManifestFrontend) Descriptor() ([]byte, []int) {
-	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{11}
+	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ManifestFrontend) GetEntrypoint() string {
@@ -1008,7 +940,7 @@ type ManifestSettingOption struct {
 
 func (x *ManifestSettingOption) Reset() {
 	*x = ManifestSettingOption{}
-	mi := &file_numen_v1_manifest_proto_msgTypes[12]
+	mi := &file_numen_v1_manifest_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1020,7 +952,7 @@ func (x *ManifestSettingOption) String() string {
 func (*ManifestSettingOption) ProtoMessage() {}
 
 func (x *ManifestSettingOption) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_manifest_proto_msgTypes[12]
+	mi := &file_numen_v1_manifest_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1033,7 +965,7 @@ func (x *ManifestSettingOption) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ManifestSettingOption.ProtoReflect.Descriptor instead.
 func (*ManifestSettingOption) Descriptor() ([]byte, []int) {
-	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{12}
+	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ManifestSettingOption) GetValue() string {
@@ -1076,7 +1008,7 @@ type ManifestOptionsBy struct {
 
 func (x *ManifestOptionsBy) Reset() {
 	*x = ManifestOptionsBy{}
-	mi := &file_numen_v1_manifest_proto_msgTypes[13]
+	mi := &file_numen_v1_manifest_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1088,7 +1020,7 @@ func (x *ManifestOptionsBy) String() string {
 func (*ManifestOptionsBy) ProtoMessage() {}
 
 func (x *ManifestOptionsBy) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_manifest_proto_msgTypes[13]
+	mi := &file_numen_v1_manifest_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1101,7 +1033,7 @@ func (x *ManifestOptionsBy) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ManifestOptionsBy.ProtoReflect.Descriptor instead.
 func (*ManifestOptionsBy) Descriptor() ([]byte, []int) {
-	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{13}
+	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ManifestOptionsBy) GetSetting() string {
@@ -1128,7 +1060,7 @@ type ManifestCondition struct {
 
 func (x *ManifestCondition) Reset() {
 	*x = ManifestCondition{}
-	mi := &file_numen_v1_manifest_proto_msgTypes[14]
+	mi := &file_numen_v1_manifest_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1140,7 +1072,7 @@ func (x *ManifestCondition) String() string {
 func (*ManifestCondition) ProtoMessage() {}
 
 func (x *ManifestCondition) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_manifest_proto_msgTypes[14]
+	mi := &file_numen_v1_manifest_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1153,7 +1085,7 @@ func (x *ManifestCondition) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ManifestCondition.ProtoReflect.Descriptor instead.
 func (*ManifestCondition) Descriptor() ([]byte, []int) {
-	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{14}
+	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ManifestCondition) GetSetting() string {
@@ -1194,7 +1126,7 @@ type ManifestSetting struct {
 
 func (x *ManifestSetting) Reset() {
 	*x = ManifestSetting{}
-	mi := &file_numen_v1_manifest_proto_msgTypes[15]
+	mi := &file_numen_v1_manifest_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1206,7 +1138,7 @@ func (x *ManifestSetting) String() string {
 func (*ManifestSetting) ProtoMessage() {}
 
 func (x *ManifestSetting) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_manifest_proto_msgTypes[15]
+	mi := &file_numen_v1_manifest_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1219,7 +1151,7 @@ func (x *ManifestSetting) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ManifestSetting.ProtoReflect.Descriptor instead.
 func (*ManifestSetting) Descriptor() ([]byte, []int) {
-	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{15}
+	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ManifestSetting) GetKey() string {
@@ -1339,7 +1271,7 @@ type ManifestSecret struct {
 
 func (x *ManifestSecret) Reset() {
 	*x = ManifestSecret{}
-	mi := &file_numen_v1_manifest_proto_msgTypes[16]
+	mi := &file_numen_v1_manifest_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1351,7 +1283,7 @@ func (x *ManifestSecret) String() string {
 func (*ManifestSecret) ProtoMessage() {}
 
 func (x *ManifestSecret) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_manifest_proto_msgTypes[16]
+	mi := &file_numen_v1_manifest_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1364,7 +1296,7 @@ func (x *ManifestSecret) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ManifestSecret.ProtoReflect.Descriptor instead.
 func (*ManifestSecret) Descriptor() ([]byte, []int) {
-	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{16}
+	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ManifestSecret) GetName() string {
@@ -1410,7 +1342,7 @@ type ManifestNoteType struct {
 
 func (x *ManifestNoteType) Reset() {
 	*x = ManifestNoteType{}
-	mi := &file_numen_v1_manifest_proto_msgTypes[17]
+	mi := &file_numen_v1_manifest_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1422,7 +1354,7 @@ func (x *ManifestNoteType) String() string {
 func (*ManifestNoteType) ProtoMessage() {}
 
 func (x *ManifestNoteType) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_manifest_proto_msgTypes[17]
+	mi := &file_numen_v1_manifest_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1435,7 +1367,7 @@ func (x *ManifestNoteType) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ManifestNoteType.ProtoReflect.Descriptor instead.
 func (*ManifestNoteType) Descriptor() ([]byte, []int) {
-	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{17}
+	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ManifestNoteType) GetType() string {
@@ -1486,7 +1418,7 @@ type ManifestCommandArgument struct {
 
 func (x *ManifestCommandArgument) Reset() {
 	*x = ManifestCommandArgument{}
-	mi := &file_numen_v1_manifest_proto_msgTypes[18]
+	mi := &file_numen_v1_manifest_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1498,7 +1430,7 @@ func (x *ManifestCommandArgument) String() string {
 func (*ManifestCommandArgument) ProtoMessage() {}
 
 func (x *ManifestCommandArgument) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_manifest_proto_msgTypes[18]
+	mi := &file_numen_v1_manifest_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1511,7 +1443,7 @@ func (x *ManifestCommandArgument) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ManifestCommandArgument.ProtoReflect.Descriptor instead.
 func (*ManifestCommandArgument) Descriptor() ([]byte, []int) {
-	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{18}
+	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ManifestCommandArgument) GetName() string {
@@ -1561,7 +1493,7 @@ type ManifestContextCondition struct {
 
 func (x *ManifestContextCondition) Reset() {
 	*x = ManifestContextCondition{}
-	mi := &file_numen_v1_manifest_proto_msgTypes[19]
+	mi := &file_numen_v1_manifest_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1573,7 +1505,7 @@ func (x *ManifestContextCondition) String() string {
 func (*ManifestContextCondition) ProtoMessage() {}
 
 func (x *ManifestContextCondition) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_manifest_proto_msgTypes[19]
+	mi := &file_numen_v1_manifest_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1586,7 +1518,7 @@ func (x *ManifestContextCondition) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ManifestContextCondition.ProtoReflect.Descriptor instead.
 func (*ManifestContextCondition) Descriptor() ([]byte, []int) {
-	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{19}
+	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ManifestContextCondition) GetKey() string {
@@ -1621,7 +1553,7 @@ type ManifestCommand struct {
 
 func (x *ManifestCommand) Reset() {
 	*x = ManifestCommand{}
-	mi := &file_numen_v1_manifest_proto_msgTypes[20]
+	mi := &file_numen_v1_manifest_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1633,7 +1565,7 @@ func (x *ManifestCommand) String() string {
 func (*ManifestCommand) ProtoMessage() {}
 
 func (x *ManifestCommand) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_manifest_proto_msgTypes[20]
+	mi := &file_numen_v1_manifest_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1646,7 +1578,7 @@ func (x *ManifestCommand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ManifestCommand.ProtoReflect.Descriptor instead.
 func (*ManifestCommand) Descriptor() ([]byte, []int) {
-	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{20}
+	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ManifestCommand) GetId() string {
@@ -1715,7 +1647,7 @@ type ManifestContentType struct {
 
 func (x *ManifestContentType) Reset() {
 	*x = ManifestContentType{}
-	mi := &file_numen_v1_manifest_proto_msgTypes[21]
+	mi := &file_numen_v1_manifest_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1727,7 +1659,7 @@ func (x *ManifestContentType) String() string {
 func (*ManifestContentType) ProtoMessage() {}
 
 func (x *ManifestContentType) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_manifest_proto_msgTypes[21]
+	mi := &file_numen_v1_manifest_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1740,7 +1672,7 @@ func (x *ManifestContentType) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ManifestContentType.ProtoReflect.Descriptor instead.
 func (*ManifestContentType) Descriptor() ([]byte, []int) {
-	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{21}
+	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ManifestContentType) GetType() string {
@@ -1768,7 +1700,7 @@ type ManifestReader struct {
 
 func (x *ManifestReader) Reset() {
 	*x = ManifestReader{}
-	mi := &file_numen_v1_manifest_proto_msgTypes[22]
+	mi := &file_numen_v1_manifest_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1780,7 +1712,7 @@ func (x *ManifestReader) String() string {
 func (*ManifestReader) ProtoMessage() {}
 
 func (x *ManifestReader) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_manifest_proto_msgTypes[22]
+	mi := &file_numen_v1_manifest_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1793,7 +1725,7 @@ func (x *ManifestReader) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ManifestReader.ProtoReflect.Descriptor instead.
 func (*ManifestReader) Descriptor() ([]byte, []int) {
-	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{22}
+	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ManifestReader) GetId() string {
@@ -1828,7 +1760,7 @@ type ManifestSettingsView struct {
 
 func (x *ManifestSettingsView) Reset() {
 	*x = ManifestSettingsView{}
-	mi := &file_numen_v1_manifest_proto_msgTypes[23]
+	mi := &file_numen_v1_manifest_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1840,7 +1772,7 @@ func (x *ManifestSettingsView) String() string {
 func (*ManifestSettingsView) ProtoMessage() {}
 
 func (x *ManifestSettingsView) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_manifest_proto_msgTypes[23]
+	mi := &file_numen_v1_manifest_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1853,7 +1785,7 @@ func (x *ManifestSettingsView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ManifestSettingsView.ProtoReflect.Descriptor instead.
 func (*ManifestSettingsView) Descriptor() ([]byte, []int) {
-	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{23}
+	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ManifestSettingsView) GetId() string {
@@ -1881,7 +1813,7 @@ var File_numen_v1_manifest_proto protoreflect.FileDescriptor
 
 const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/manifest.proto\x12\bnumen.v1\x1a\x1cgoogle/protobuf/struct.proto\"\xf3\a\n" +
+	"\x17numen/v1/manifest.proto\x12\bnumen.v1\x1a\x1cgoogle/protobuf/struct.proto\"\xb8\a\n" +
 	"\bManifest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
@@ -1892,8 +1824,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\atargets\x18\a \x03(\tR\atargets\x12+\n" +
 	"\x11activation_events\x18\b \x03(\tR\x10activationEvents\x12 \n" +
 	"\vpermissions\x18\t \x03(\tR\vpermissions\x12@\n" +
-	"\fdependencies\x18\v \x03(\v2\x1c.numen.v1.ManifestDependencyR\fdependencies\x129\n" +
-	"\tlifecycle\x18\f \x01(\v2\x1b.numen.v1.ManifestLifecycleR\tlifecycle\x123\n" +
+	"\fdependencies\x18\v \x03(\v2\x1c.numen.v1.ManifestDependencyR\fdependencies\x123\n" +
 	"\abackend\x18\r \x01(\v2\x19.numen.v1.ManifestBackendR\abackend\x126\n" +
 	"\bfrontend\x18\x0e \x01(\v2\x1a.numen.v1.ManifestFrontendR\bfrontend\x125\n" +
 	"\bsettings\x18\x0f \x03(\v2\x19.numen.v1.ManifestSettingR\bsettings\x122\n" +
@@ -1959,11 +1890,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\bmetadata\x18\x06 \x03(\v2*.numen.v1.ManifestDependency.MetadataEntryR\bmetadata\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xc3\x01\n" +
-	"\x11ManifestLifecycle\x120\n" +
-	"\x14idle_timeout_seconds\x18\x01 \x01(\x05R\x12idleTimeoutSeconds\x127\n" +
-	"\x18keep_alive_while_visible\x18\x02 \x01(\bR\x15keepAliveWhileVisible\x12,\n" +
-	"\x12memory_limit_bytes\x18\x03 \x01(\x04R\x10memoryLimitBytesJ\x04\b\x04\x10\x05R\x0fmemory_limit_mb\"h\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"h\n" +
 	"\x0fManifestBackend\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12\x1e\n" +
 	"\n" +
@@ -2063,7 +1990,7 @@ func file_numen_v1_manifest_proto_rawDescGZIP() []byte {
 	return file_numen_v1_manifest_proto_rawDescData
 }
 
-var file_numen_v1_manifest_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_numen_v1_manifest_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_numen_v1_manifest_proto_goTypes = []any{
 	(*Manifest)(nil),                 // 0: numen.v1.Manifest
 	(*ManifestContributes)(nil),      // 1: numen.v1.ManifestContributes
@@ -2074,61 +2001,59 @@ var file_numen_v1_manifest_proto_goTypes = []any{
 	(*ManifestTabKind)(nil),          // 6: numen.v1.ManifestTabKind
 	(*ManifestAppVersion)(nil),       // 7: numen.v1.ManifestAppVersion
 	(*ManifestDependency)(nil),       // 8: numen.v1.ManifestDependency
-	(*ManifestLifecycle)(nil),        // 9: numen.v1.ManifestLifecycle
-	(*ManifestBackend)(nil),          // 10: numen.v1.ManifestBackend
-	(*ManifestFrontend)(nil),         // 11: numen.v1.ManifestFrontend
-	(*ManifestSettingOption)(nil),    // 12: numen.v1.ManifestSettingOption
-	(*ManifestOptionsBy)(nil),        // 13: numen.v1.ManifestOptionsBy
-	(*ManifestCondition)(nil),        // 14: numen.v1.ManifestCondition
-	(*ManifestSetting)(nil),          // 15: numen.v1.ManifestSetting
-	(*ManifestSecret)(nil),           // 16: numen.v1.ManifestSecret
-	(*ManifestNoteType)(nil),         // 17: numen.v1.ManifestNoteType
-	(*ManifestCommandArgument)(nil),  // 18: numen.v1.ManifestCommandArgument
-	(*ManifestContextCondition)(nil), // 19: numen.v1.ManifestContextCondition
-	(*ManifestCommand)(nil),          // 20: numen.v1.ManifestCommand
-	(*ManifestContentType)(nil),      // 21: numen.v1.ManifestContentType
-	(*ManifestReader)(nil),           // 22: numen.v1.ManifestReader
-	(*ManifestSettingsView)(nil),     // 23: numen.v1.ManifestSettingsView
-	nil,                              // 24: numen.v1.ManifestDependency.MetadataEntry
-	nil,                              // 25: numen.v1.ManifestOptionsBy.OptionsEntry
-	(*structpb.Value)(nil),           // 26: google.protobuf.Value
-	(*structpb.ListValue)(nil),       // 27: google.protobuf.ListValue
+	(*ManifestBackend)(nil),          // 9: numen.v1.ManifestBackend
+	(*ManifestFrontend)(nil),         // 10: numen.v1.ManifestFrontend
+	(*ManifestSettingOption)(nil),    // 11: numen.v1.ManifestSettingOption
+	(*ManifestOptionsBy)(nil),        // 12: numen.v1.ManifestOptionsBy
+	(*ManifestCondition)(nil),        // 13: numen.v1.ManifestCondition
+	(*ManifestSetting)(nil),          // 14: numen.v1.ManifestSetting
+	(*ManifestSecret)(nil),           // 15: numen.v1.ManifestSecret
+	(*ManifestNoteType)(nil),         // 16: numen.v1.ManifestNoteType
+	(*ManifestCommandArgument)(nil),  // 17: numen.v1.ManifestCommandArgument
+	(*ManifestContextCondition)(nil), // 18: numen.v1.ManifestContextCondition
+	(*ManifestCommand)(nil),          // 19: numen.v1.ManifestCommand
+	(*ManifestContentType)(nil),      // 20: numen.v1.ManifestContentType
+	(*ManifestReader)(nil),           // 21: numen.v1.ManifestReader
+	(*ManifestSettingsView)(nil),     // 22: numen.v1.ManifestSettingsView
+	nil,                              // 23: numen.v1.ManifestDependency.MetadataEntry
+	nil,                              // 24: numen.v1.ManifestOptionsBy.OptionsEntry
+	(*structpb.Value)(nil),           // 25: google.protobuf.Value
+	(*structpb.ListValue)(nil),       // 26: google.protobuf.ListValue
 }
 var file_numen_v1_manifest_proto_depIdxs = []int32{
 	8,  // 0: numen.v1.Manifest.dependencies:type_name -> numen.v1.ManifestDependency
-	9,  // 1: numen.v1.Manifest.lifecycle:type_name -> numen.v1.ManifestLifecycle
-	10, // 2: numen.v1.Manifest.backend:type_name -> numen.v1.ManifestBackend
-	11, // 3: numen.v1.Manifest.frontend:type_name -> numen.v1.ManifestFrontend
-	15, // 4: numen.v1.Manifest.settings:type_name -> numen.v1.ManifestSetting
-	16, // 5: numen.v1.Manifest.secrets:type_name -> numen.v1.ManifestSecret
-	20, // 6: numen.v1.Manifest.commands:type_name -> numen.v1.ManifestCommand
-	23, // 7: numen.v1.Manifest.settings_views:type_name -> numen.v1.ManifestSettingsView
-	1,  // 8: numen.v1.Manifest.contributes:type_name -> numen.v1.ManifestContributes
-	7,  // 9: numen.v1.Manifest.app_version:type_name -> numen.v1.ManifestAppVersion
-	6,  // 10: numen.v1.ManifestContributes.tab_kinds:type_name -> numen.v1.ManifestTabKind
-	4,  // 11: numen.v1.ManifestContributes.themes:type_name -> numen.v1.ManifestTheme
-	3,  // 12: numen.v1.ManifestContributes.file_types:type_name -> numen.v1.ManifestFileType
-	5,  // 13: numen.v1.ManifestContributes.status_views:type_name -> numen.v1.ManifestStatusView
-	2,  // 14: numen.v1.ManifestContributes.handles:type_name -> numen.v1.ManifestHandle
-	21, // 15: numen.v1.ManifestContributes.content_types:type_name -> numen.v1.ManifestContentType
-	22, // 16: numen.v1.ManifestContributes.readers:type_name -> numen.v1.ManifestReader
-	17, // 17: numen.v1.ManifestContributes.note_types:type_name -> numen.v1.ManifestNoteType
-	24, // 18: numen.v1.ManifestDependency.metadata:type_name -> numen.v1.ManifestDependency.MetadataEntry
-	25, // 19: numen.v1.ManifestOptionsBy.options:type_name -> numen.v1.ManifestOptionsBy.OptionsEntry
-	26, // 20: numen.v1.ManifestSetting.default:type_name -> google.protobuf.Value
-	27, // 21: numen.v1.ManifestSetting.options:type_name -> google.protobuf.ListValue
-	13, // 22: numen.v1.ManifestSetting.options_by:type_name -> numen.v1.ManifestOptionsBy
-	14, // 23: numen.v1.ManifestSetting.when:type_name -> numen.v1.ManifestCondition
-	14, // 24: numen.v1.ManifestSecret.when:type_name -> numen.v1.ManifestCondition
-	27, // 25: numen.v1.ManifestNoteType.headings:type_name -> google.protobuf.ListValue
-	19, // 26: numen.v1.ManifestCommand.when:type_name -> numen.v1.ManifestContextCondition
-	18, // 27: numen.v1.ManifestCommand.arguments:type_name -> numen.v1.ManifestCommandArgument
-	27, // 28: numen.v1.ManifestOptionsBy.OptionsEntry.value:type_name -> google.protobuf.ListValue
-	29, // [29:29] is the sub-list for method output_type
-	29, // [29:29] is the sub-list for method input_type
-	29, // [29:29] is the sub-list for extension type_name
-	29, // [29:29] is the sub-list for extension extendee
-	0,  // [0:29] is the sub-list for field type_name
+	9,  // 1: numen.v1.Manifest.backend:type_name -> numen.v1.ManifestBackend
+	10, // 2: numen.v1.Manifest.frontend:type_name -> numen.v1.ManifestFrontend
+	14, // 3: numen.v1.Manifest.settings:type_name -> numen.v1.ManifestSetting
+	15, // 4: numen.v1.Manifest.secrets:type_name -> numen.v1.ManifestSecret
+	19, // 5: numen.v1.Manifest.commands:type_name -> numen.v1.ManifestCommand
+	22, // 6: numen.v1.Manifest.settings_views:type_name -> numen.v1.ManifestSettingsView
+	1,  // 7: numen.v1.Manifest.contributes:type_name -> numen.v1.ManifestContributes
+	7,  // 8: numen.v1.Manifest.app_version:type_name -> numen.v1.ManifestAppVersion
+	6,  // 9: numen.v1.ManifestContributes.tab_kinds:type_name -> numen.v1.ManifestTabKind
+	4,  // 10: numen.v1.ManifestContributes.themes:type_name -> numen.v1.ManifestTheme
+	3,  // 11: numen.v1.ManifestContributes.file_types:type_name -> numen.v1.ManifestFileType
+	5,  // 12: numen.v1.ManifestContributes.status_views:type_name -> numen.v1.ManifestStatusView
+	2,  // 13: numen.v1.ManifestContributes.handles:type_name -> numen.v1.ManifestHandle
+	20, // 14: numen.v1.ManifestContributes.content_types:type_name -> numen.v1.ManifestContentType
+	21, // 15: numen.v1.ManifestContributes.readers:type_name -> numen.v1.ManifestReader
+	16, // 16: numen.v1.ManifestContributes.note_types:type_name -> numen.v1.ManifestNoteType
+	23, // 17: numen.v1.ManifestDependency.metadata:type_name -> numen.v1.ManifestDependency.MetadataEntry
+	24, // 18: numen.v1.ManifestOptionsBy.options:type_name -> numen.v1.ManifestOptionsBy.OptionsEntry
+	25, // 19: numen.v1.ManifestSetting.default:type_name -> google.protobuf.Value
+	26, // 20: numen.v1.ManifestSetting.options:type_name -> google.protobuf.ListValue
+	12, // 21: numen.v1.ManifestSetting.options_by:type_name -> numen.v1.ManifestOptionsBy
+	13, // 22: numen.v1.ManifestSetting.when:type_name -> numen.v1.ManifestCondition
+	13, // 23: numen.v1.ManifestSecret.when:type_name -> numen.v1.ManifestCondition
+	26, // 24: numen.v1.ManifestNoteType.headings:type_name -> google.protobuf.ListValue
+	18, // 25: numen.v1.ManifestCommand.when:type_name -> numen.v1.ManifestContextCondition
+	17, // 26: numen.v1.ManifestCommand.arguments:type_name -> numen.v1.ManifestCommandArgument
+	26, // 27: numen.v1.ManifestOptionsBy.OptionsEntry.value:type_name -> google.protobuf.ListValue
+	28, // [28:28] is the sub-list for method output_type
+	28, // [28:28] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_manifest_proto_init() }
@@ -2136,14 +2061,14 @@ func file_numen_v1_manifest_proto_init() {
 	if File_numen_v1_manifest_proto != nil {
 		return
 	}
-	file_numen_v1_manifest_proto_msgTypes[17].OneofWrappers = []any{}
+	file_numen_v1_manifest_proto_msgTypes[16].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_manifest_proto_rawDesc), len(file_numen_v1_manifest_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   26,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

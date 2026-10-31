@@ -1,18 +1,13 @@
 {
   "id": "md.numen.agents.acp",
   "name": "ACP Agents",
-  "version": "2026.10.4",
+  "version": "2026.10.5",
   "protocol": 1,
   "description": "External AI assistants via the Agent Client Protocol",
   "capabilities": ["agent", "ai.agent.provider"],
   "targets": ["desktop.editor", "desktop.flashcards"],
   "contributes": { "category": "agents" },
   "permissions": ["network:outbound", "vault:read", "vault:write"],
-  "lifecycle": {
-    "idleTimeoutSeconds": 180,
-    "keepAliveWhileVisible": false,
-    "memoryLimitBytes": 4294967296
-  },
   "backend": {
     "type": "process",
     "entrypoint": "bin/agents-acp",

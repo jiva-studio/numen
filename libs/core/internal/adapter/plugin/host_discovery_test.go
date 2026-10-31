@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -206,27 +205,5 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 	}
 	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
-	}
-}
-
-func TestAPluginStoppedForMemoryIsReported(t *testing.T) {
-	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
-	host := NewHost(testsupport.Machine, "desktop.editor", tmp)
-	var reported []error
-	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
-	if err := host.Discover(); err != nil {
-		t.Fatalf("Discover failed: %v", err)
-	}
-
-	sup, _ := host.GetSupervisor("org.example.sample")
-	onExceeded := sup.GetOnMemoryExceeded()
-	if onExceeded == nil {
-		t.Fatal("the supervisor of the plugin reports no memory stop")
-	}
-	onExceeded()
-
-	if len(reported) != 1 || !strings.Contains(reported[0].Error(), "org.example.sample was stopped") {
-		t.Fatalf("expected the stop to be reported for the plugin, got %v", reported)
 	}
 }

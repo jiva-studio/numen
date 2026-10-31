@@ -40,7 +40,6 @@ type (
 	PluginIndexState       = pluginport.PluginIndexState
 	PluginIndexStatus      = pluginport.PluginIndexStatus
 	PluginInfo             = pluginport.PluginInfo
-	PluginLifecycle        = pluginport.PluginLifecycle
 	PluginLifecycleManager = pluginport.PluginLifecycleManager
 	PluginManager          = pluginport.PluginManager
 	PluginManifest         = pluginport.PluginManifest
@@ -163,7 +162,6 @@ var (
 	ErrInvalidFloor           = pluginport.ErrInvalidFloor
 	ErrInvalidFrontend        = pluginport.ErrInvalidFrontend
 	ErrInvalidID              = pluginport.ErrInvalidID
-	ErrInvalidLifecycle       = pluginport.ErrInvalidLifecycle
 	ErrInvalidNoteType        = pluginport.ErrInvalidNoteType
 	ErrInvalidPermission      = pluginport.ErrInvalidPermission
 	ErrInvalidHandle          = pluginport.ErrInvalidHandle

@@ -19,7 +19,6 @@ const everyFieldManifest = `{
 	"permissions": ["vault:read"],
 	"dependencies": [{"id": "weights", "kind": "model", "version": "1", "sourceUrl": "https://example.org/w",
 		"checksumSha256": "0000000000000000000000000000000000000000000000000000000000000000", "metadata": {"k": "v"}}],
-	"lifecycle": {"idleTimeoutSeconds": 5, "keepAliveWhileVisible": true, "memoryLimitBytes": 7},
 	"backend": {"type": "process", "entrypoint": "bin/full", "serviceName": "numen.v1.Full"},
 	"frontend": {"entrypoint": "dist/index.js", "styles": "dist/styles.css"},
 	"settings": [
@@ -220,7 +219,7 @@ func TestAnOptionOfNoValueShapeIsRefused(t *testing.T) {
 }
 
 func TestANumberOutsideTheRangeOfAFieldIsRefused(t *testing.T) {
-	_, err := manifestjson.Decode([]byte(`{"lifecycle":{"memoryLimitBytes":18446744073709551616}}`))
+	_, err := manifestjson.Decode([]byte(`{"protocol":4294967296}`))
 	if err == nil {
 		t.Error("a limit that overflows was accepted")
 	}

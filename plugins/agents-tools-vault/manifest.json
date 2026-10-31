@@ -1,17 +1,13 @@
 {
   "id": "md.numen.agents.tools.vault",
   "name": "Vault Knowledge Tools",
-  "version": "2026.10.4",
+  "version": "2026.10.5",
   "protocol": 1,
   "description": "Library search, reading, and note editing tools for AI assistants",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
   "contributes": { "category": "agents" },
   "permissions": ["vault:read", "vault:write"],
-  "lifecycle": {
-    "idleTimeoutSeconds": 0,
-    "memoryLimitBytes": 134217728
-  },
   "backend": {
     "type": "process",
     "entrypoint": "bin/agents-tools-vault"

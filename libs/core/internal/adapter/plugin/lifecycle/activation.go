@@ -124,8 +124,6 @@ func DescribeFailure(cause error) string {
 		return "Unsupported plugin protocol. Update the plugin or Numen"
 	case errors.Is(cause, transport.ErrHandshakeTimeout):
 		return "Timed out while starting"
-	case errors.Is(cause, ErrMemoryExceeded):
-		return "Exceeded its memory limit"
 	default:
 		return "Failed to start"
 	}

@@ -59,57 +59,6 @@ func getPluginManifests(t *testing.T) []pluginManifest {
 	return manifests
 }
 
-// listLifecycleGaps lists what a manifest with a backend leaves out of its
-// lifecycle: the idle policy and the memory limit are each declared by name.
-func listLifecycleGaps(raw []byte) []string {
-	declaration, err := manifestjson.ReadDeclaration(raw)
-	if err != nil {
-		return []string{err.Error()}
-	}
-	if !declaration.HasBackend() {
-		return nil
-	}
-	decoded, err := manifestjson.Decode(raw)
-	if err != nil {
-		return []string{err.Error()}
-	}
-	var gaps []string
-	if !declaration.HasLifecycleField("idleTimeoutSeconds") {
-		gaps = append(gaps, "idleTimeoutSeconds is not declared")
-	}
-	if decoded.Lifecycle.MemoryLimitBytes == 0 {
-		gaps = append(gaps, "memoryLimitBytes is not declared")
-	}
-	return gaps
-}
-
-func TestPluginManifests_BackendDeclaresMemoryLimitAndIdlePolicy(t *testing.T) {
-	for _, one := range getPluginManifests(t) {
-		for _, gap := range listLifecycleGaps(one.Raw) {
-			t.Errorf("%s: %s", one.Dir, gap)
-		}
-	}
-}
-
-func TestLifecycleRule_ReportsMissingLifecycleFields(t *testing.T) {
-	for name, one := range map[string]struct {
-		manifest string
-		gaps     int
-	}{
-		"both declared":          {`{"backend":{"entrypoint":"x"},"lifecycle":{"idleTimeoutSeconds":0,"memoryLimitBytes":1}}`, 0},
-		"the limit in megabytes": {`{"backend":{"entrypoint":"x"},"lifecycle":{"idleTimeoutSeconds":60,"memoryLimitMB":512}}`, 0},
-		"no memory limit":        {`{"backend":{"entrypoint":"x"},"lifecycle":{"idleTimeoutSeconds":60}}`, 1},
-		"no idle policy":         {`{"backend":{"entrypoint":"x"},"lifecycle":{"memoryLimitBytes":1}}`, 1},
-		"no lifecycle":           {`{"backend":{"entrypoint":"x"}}`, 2},
-		"a limit of zero":        {`{"backend":{"entrypoint":"x"},"lifecycle":{"idleTimeoutSeconds":60,"memoryLimitBytes":0}}`, 1},
-		"no backend":             {`{"frontend":{"entrypoint":"x"}}`, 0},
-	} {
-		if got := listLifecycleGaps([]byte(one.manifest)); len(got) != one.gaps {
-			t.Errorf("%s: %d gaps found, want %d: %v", name, len(got), one.gaps, got)
-		}
-	}
-}
-
 var backtick = regexp.MustCompile("`([^`]+)`")
 
 // readDocumentedPermissions is the permissions the plugin guide lists: the

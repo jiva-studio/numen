@@ -1,7 +1,7 @@
 {
   "id": "md.numen.agents.mcp.server",
   "name": "Model Context Protocol Server",
-  "version": "2026.10.3",
+  "version": "2026.10.4",
   "protocol": 1,
   "description": "Connects external AI apps to your open vault",
   "capabilities": [],
@@ -9,10 +9,6 @@
   "contributes": { "category": "agents" },
   "activationEvents": ["*"],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
-  "lifecycle": {
-    "idleTimeoutSeconds": 0,
-    "memoryLimitBytes": 134217728
-  },
   "backend": {
     "type": "process",
     "entrypoint": "bin/agents-mcp-server",

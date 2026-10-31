@@ -46,11 +46,6 @@ func createTestAgentPluginTree(t *testing.T, dir string) {
 		"targets": ["desktop.editor"],
 		"activationEvents": ["onCommand:askAgent"],
 		"permissions": [],
-		"lifecycle": {
-			"mode": "on-demand",
-			"idleTimeoutSeconds": 1,
-			"keepAliveWhileVisible": false
-		},
 		"backend": {
 			"type": "process",
 			"entrypoint": "bin/agent",

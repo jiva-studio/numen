@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.updater",
   "name": "Update Notifier",
-  "version": "2026.10.2",
+  "version": "2026.10.3",
   "protocol": 1,
   "description": "Tells when a newer build of Numen is published",
   "targets": ["desktop.editor"],
@@ -13,11 +13,6 @@
   "activationEvents": [],
   "permissions": ["network:outbound"],
   "services": ["numen.updater"],
-  "lifecycle": {
-    "idleTimeoutSeconds": 60,
-    "keepAliveWhileVisible": false,
-    "memoryLimitBytes": 268435456
-  },
   "backend": {
     "type": "process",
     "entrypoint": "bin/tools-updater",

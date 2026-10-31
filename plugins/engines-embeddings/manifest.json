@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.embeddings",
   "name": "Vector Embeddings",
-  "version": "2026.10.4",
+  "version": "2026.10.5",
   "protocol": 1,
   "description": "Meaning-based search across your notes, books, and recordings",
   "capabilities": ["embedding"],
@@ -26,11 +26,6 @@
       }
     }
   ],
-  "lifecycle": {
-    "idleTimeoutSeconds": 0,
-    "keepAliveWhileVisible": true,
-    "memoryLimitBytes": 2147483648
-  },
   "backend": {
     "type": "process",
     "entrypoint": "bin/engines-embeddings"

@@ -43,11 +43,6 @@ func CreateTestPluginTree(t *testing.T, dir string) {
 			"handles": [{"purpose": "text-provider", "contentTypes": ["application/x-sample"]}]
 		},
 		"permissions": ["vault:read"],
-		"lifecycle": {
-			"mode": "on-demand",
-			"idleTimeoutSeconds": 1,
-			"keepAliveWhileVisible": false
-		},
 		"backend": {
 			"type": "process",
 			"entrypoint": "bin/sample",

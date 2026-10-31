@@ -98,14 +98,6 @@ func (h *Host) registerSupervisorLocked(p manifest.Discovered) {
 	}
 	sup.SetPermissions(p.Manifest.Permissions)
 	sup.SetActivationPolicy(h.activation)
-	memLimit := h.processLimits.MemoryLimitBytes
-	if p.Manifest.Lifecycle.MemoryLimitBytes > 0 {
-		memLimit = p.Manifest.Lifecycle.MemoryLimitBytes
-	}
-	sup.SetMemoryLimit(memLimit)
-	sup.SetOnMemoryExceeded(func() {
-		h.reportMemoryExceeded(id, sup)
-	})
 }
 
 // retirePlugin stops a plugin whose manifest changed or vanished and forgets its supervisor once it is unregistered.

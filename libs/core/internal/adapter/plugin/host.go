@@ -165,13 +165,6 @@ func (h *Host) SetProcessLimits(limits process.Limits) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.processLimits = limits
-	for id, sup := range h.supervisors {
-		if p, ok := h.plugins[id]; ok && p.Manifest.Lifecycle.MemoryLimitBytes > 0 {
-			sup.SetMemoryLimit(p.Manifest.Lifecycle.MemoryLimitBytes)
-		} else {
-			sup.SetMemoryLimit(limits.MemoryLimitBytes)
-		}
-	}
 }
 
 // SetActivationPolicy sets the activation deadline and the restart backoff of plugins.
@@ -538,6 +531,7 @@ func (h *Host) dropEndpointOfStoppedPlugin(pluginID string, sup *lifecycle.Super
 	h.mu.Unlock()
 	if isStopped {
 		h.clearPluginWork(pluginID)
+		h.clearPluginTasks(pluginID)
 	}
 }
 
@@ -840,10 +834,6 @@ func (h *Host) defaultLauncher(
 	limits := h.processLimits
 	h.mu.RUnlock()
 
-	if p.Manifest.Lifecycle.MemoryLimitBytes > 0 {
-		limits.MemoryLimitBytes = p.Manifest.Lifecycle.MemoryLimitBytes
-	}
-
 	workDir, err := process.ValidateWorkingDirectory(p.Dir, p.Dir, vaultPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("validate plugin working directory: %w", err)
@@ -930,23 +920,16 @@ type pluginTeardownTarget struct {
 	endpoint transport.Endpoint
 }
 
-// EvictIdle stops idle plugins whose idle duration exceeds their configured timeout.
-func (h *Host) EvictIdle(ctx context.Context, defaultThreshold, gracePeriod time.Duration) []string {
+// idleThreshold is how long a plugin without a lease may stay idle before the host stops it.
+const idleThreshold = 180 * time.Second
+
+// EvictIdle stops the plugins that hold no lease and have been idle for longer than threshold.
+func (h *Host) EvictIdle(ctx context.Context, threshold, gracePeriod time.Duration) []string {
 	h.mu.Lock()
 	now := h.clock.Now()
 	var targets []pluginTeardownTarget
 
 	for id, sup := range h.supervisors {
-		threshold := defaultThreshold
-		if p, ok := h.plugins[id]; ok {
-			if p.Manifest.Lifecycle.IdleTimeoutSeconds == 0 {
-				continue
-			}
-			if p.Manifest.Lifecycle.IdleTimeoutSeconds > 0 {
-				threshold = time.Duration(p.Manifest.Lifecycle.IdleTimeoutSeconds) * time.Second
-			}
-		}
-
 		pid := sup.GetProcessID()
 		if sup.BeginDeactivation(threshold, now) {
 			targets = append(targets, pluginTeardownTarget{
@@ -961,46 +944,6 @@ func (h *Host) EvictIdle(ctx context.Context, defaultThreshold, gracePeriod time
 	h.mu.Unlock()
 
 	return h.evictTargets(ctx, targets, gracePeriod)
-}
-
-// EvictMemoryExceeded stops plugins whose resident memory exceeds their configured limit.
-func (h *Host) EvictMemoryExceeded(ctx context.Context, gracePeriod time.Duration) []string {
-	h.mu.Lock()
-	var targets []pluginTeardownTarget
-
-	for id, sup := range h.supervisors {
-		if sup.IsMemoryExceeded() {
-			targets = append(targets, pluginTeardownTarget{
-				id:       id,
-				pid:      sup.GetProcessID(),
-				sup:      sup,
-				endpoint: h.endpoints[id],
-			})
-			delete(h.endpoints, id)
-		}
-	}
-	h.mu.Unlock()
-
-	evicted := h.evictTargets(ctx, targets, gracePeriod)
-	for _, target := range targets {
-		if slices.Contains(evicted, target.id) {
-			target.sup.RecordActivationFailure(h.clock.Now(), h.activation, fmt.Errorf("%w: %d bytes", lifecycle.ErrMemoryExceeded, target.sup.GetMemoryLimit()))
-			h.reportMemoryExceeded(target.id, target.sup)
-		}
-	}
-	return evicted
-}
-
-func (h *Host) reportMemoryExceeded(pluginID string, sup *lifecycle.Supervisor) {
-	memLimit := sup.GetMemoryLimit()
-	err := fmt.Errorf("plugin %s was stopped: it used more than %d bytes of memory", pluginID, memLimit)
-	h.reportError(err)
-	h.mu.Lock()
-	if failed, cause := sup.GetActivationFailure(); failed {
-		h.failedPlugins = append(h.failedPlugins, h.newPluginFailureLocked(pluginID, sup, cause))
-	}
-	h.mu.Unlock()
-	h.deliverPluginFailures()
 }
 
 // evictTargets stops the targets and returns the ids that stopped; a failed stop is reported to the error handler.
@@ -1026,8 +969,7 @@ func (h *Host) startEvictLoop() {
 				return
 			case <-h.evictTicker.C:
 				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-				_ = h.EvictIdle(ctx, 3*time.Minute, 2*time.Second)
-				_ = h.EvictMemoryExceeded(ctx, 2*time.Second)
+				_ = h.EvictIdle(ctx, idleThreshold, 2*time.Second)
 				cancel()
 			}
 		}

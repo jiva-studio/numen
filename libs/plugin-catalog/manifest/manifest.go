@@ -69,7 +69,6 @@ var (
 	ErrInvalidID              = errors.New("plugin id must be reverse-DNS: two or more dot-separated segments of letters, digits, _ or - (e.g. org.example.sample)")
 	ErrInvalidVersion         = errors.New("plugin version is not valid semver (e.g. 1.0.0)")
 	ErrUnsupportedProtocol    = errors.New("unsupported plugin protocol")
-	ErrInvalidLifecycle       = errors.New("invalid lifecycle")
 	ErrEmptySettingTitle      = errors.New("setting title cannot be empty")
 	ErrInvalidBackend         = errors.New("invalid backend")
 	ErrInvalidFrontend        = errors.New("invalid frontend")
@@ -125,13 +124,6 @@ const (
 
 var validSettingTypes = []string{"boolean", SettingTypeString, "number", SettingTypeEnum, "select", "range", SettingTypeFile, SettingTypeFolder}
 
-// Lifecycle defines when the host evicts an idle plugin from memory.
-type Lifecycle struct {
-	IdleTimeoutSeconds    int
-	KeepAliveWhileVisible bool
-	MemoryLimitBytes      uint64
-}
-
 // Backend describes the server-side executable of a plugin.
 type Backend struct {
 	Type        string
@@ -185,7 +177,6 @@ type Manifest struct {
 	ActivationEvents []string
 	Permissions      []string
 	Dependencies     []DependencyRequirement
-	Lifecycle        Lifecycle
 	Backend          Backend
 	Frontend         Frontend
 	Settings         []Setting
@@ -249,9 +240,6 @@ func (m Manifest) ListIssues() []error {
 	issues = append(issues, m.listIdentityIssues()...)
 	if m.Protocol < 0 || m.Protocol > ProtocolVersion {
 		issues = append(issues, fmt.Errorf("%w: %d, this host speaks up to %d", ErrUnsupportedProtocol, m.Protocol, ProtocolVersion))
-	}
-	if m.Lifecycle.IdleTimeoutSeconds < 0 {
-		issues = append(issues, fmt.Errorf("%w: idleTimeoutSeconds cannot be negative", ErrInvalidLifecycle))
 	}
 	issues = append(issues, m.listEntrypointIssues()...)
 	issues = append(issues, m.listBackendlessIssues()...)
