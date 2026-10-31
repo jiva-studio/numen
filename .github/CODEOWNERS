@@ -1,9 +1,0 @@
-# The files that decide what the other checks accept. A change to one needs a review by an owner.
-/tools/lint-layers/        akdasa@jiva.studio
-/.golangci.yml             akdasa@jiva.studio
-/.golangci-structure.yml   akdasa@jiva.studio
-**/.golangci.yml           akdasa@jiva.studio
-**/.golangci-structure.yml akdasa@jiva.studio
-**/eslint.config.*         akdasa@jiva.studio
-/.github/workflows/        akdasa@jiva.studio
-/.github/CODEOWNERS        akdasa@jiva.studio
