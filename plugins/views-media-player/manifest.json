@@ -18,23 +18,23 @@
       }
     ],
     "feature": "audio playback and recording",
-    "category": "views"
+    "category": "views",
+    "readers": [
+      {
+        "id": "media-player",
+        "contentTypes": [
+          "audio/mpeg",
+          "audio/mp4",
+          "audio/vnd.wave",
+          "audio/ogg",
+          "audio/aac",
+          "audio/flac"
+        ],
+        "rank": "default"
+      }
+    ]
   },
   "permissions": ["vault:read", "vault:write"],
-  "readers": [
-    {
-      "id": "media-player",
-      "contentTypes": [
-        "audio/mpeg",
-        "audio/mp4",
-        "audio/vnd.wave",
-        "audio/ogg",
-        "audio/aac",
-        "audio/flac"
-      ],
-      "rank": "default"
-    }
-  ],
   "activationEvents": [],
   "frontend": {
     "entrypoint": "dist/index.js",

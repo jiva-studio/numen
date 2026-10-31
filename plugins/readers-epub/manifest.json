@@ -10,15 +10,15 @@
     "tabKinds": [{ "kind": "reader:reader-epub", "title": "EPUB Reader", "icon": "book-open" }],
     "fileTypes": [{ "tabKind": "reader:reader-epub", "extensions": ["epub"] }],
     "feature": "EPUB books",
-    "category": "readers"
+    "category": "readers",
+    "handles": [{ "purpose": "text-provider", "contentTypes": ["application/epub+zip"] }],
+    "readers": [
+      { "id": "reader-epub", "contentTypes": ["application/epub+zip"], "rank": "default" }
+    ]
   },
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
   "services": ["numen.epub"],
-  "readers": [{ "id": "reader-epub", "contentTypes": ["application/epub+zip"], "rank": "default" }],
-  "texts": {
-    "contentTypes": ["application/epub+zip"]
-  },
   "lifecycle": {
     "idleTimeoutSeconds": 300,
     "keepAliveWhileVisible": true,

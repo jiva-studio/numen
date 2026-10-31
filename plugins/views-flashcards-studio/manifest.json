@@ -14,7 +14,18 @@
       { "kind": "flashcards.review", "title": "Flashcards" }
     ],
     "feature": "flashcards",
-    "category": "views"
+    "category": "views",
+    "noteTypes": [
+      {
+        "type": "deck",
+        "chunks": false,
+        "headings": [1, 2],
+        "idHeadingLevels": [2],
+        "idPattern": "[0-9a-hjkmnp-tv-z]{10}"
+      },
+      { "type": "card-model", "chunks": false, "headings": [] },
+      { "type": "preset" }
+    ]
   },
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
@@ -24,23 +35,6 @@
     "memoryLimitBytes": 1073741824
   },
   "services": ["numen.flashcards"],
-  "noteTypes": [
-    {
-      "type": "deck",
-      "chunks": false,
-      "headings": [1, 2],
-      "idHeadingLevels": [2],
-      "idPattern": "[0-9a-hjkmnp-tv-z]{10}"
-    },
-    {
-      "type": "card-model",
-      "chunks": false,
-      "headings": []
-    },
-    {
-      "type": "preset"
-    }
-  ],
   "commands": [
     {
       "id": "create-deck",

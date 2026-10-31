@@ -5,7 +5,7 @@
   "protocol": 1,
   "description": "Cleans up transcripts and scanned text with a language model",
   "targets": ["desktop.editor"],
-  "contributes": { "category": "tools" },
+  "contributes": { "category": "tools", "handles": [{ "purpose": "text-provider" }] },
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "ai:complete", "network:outbound"],
   "secrets": [
@@ -19,19 +19,21 @@
       }
     }
   ],
-  "texts": {},
   "commands": [
     {
       "id": "proofread",
       "title": "Proofread",
       "icon": "spell-check",
-      "when": { "liveTextKinds": ["*"] }
+      "when": [
+        { "key": "version.live", "is": ["true"] },
+        { "key": "version.kind", "is": ["*"] }
+      ]
     },
     {
       "id": "delete-proofreading",
       "title": "Delete proofreading",
       "icon": "trash-2",
-      "when": { "hasOwnText": true }
+      "when": [{ "key": "version.plugin", "is": ["md.numen.tools.proofreading"] }]
     }
   ],
   "settings": [
@@ -39,10 +41,10 @@
       "key": "provider",
       "type": "enum",
       "title": "Provider",
-      "description": "How proofreading requests are executed: through a Numen agent or directly against an OpenAI-compatible batch/chat API",
+      "description": "How proofreading requests are executed: through the default Numen agent or directly against an OpenAI-compatible batch/chat API",
       "default": "agent",
       "options": [
-        { "value": "agent", "title": "Agent", "detail": "Uses a configured Numen agent" },
+        { "value": "agent", "title": "Agent", "detail": "Uses the default Numen agent" },
         {
           "value": "openrouter",
           "title": "OpenRouter",
@@ -59,16 +61,6 @@
           "detail": "Any OpenAI-compatible chat completions API"
         }
       ]
-    },
-    {
-      "key": "agent",
-      "type": "agent",
-      "title": "Agent",
-      "description": "Agent and model used for proofreading",
-      "when": {
-        "setting": "provider",
-        "is": ["agent"]
-      }
     },
     {
       "key": "baseUrl",

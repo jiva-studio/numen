@@ -7,12 +7,12 @@
   "targets": ["desktop.editor"],
   "contributes": {
     "category": "tools",
-    "statusViews": [{ "id": "update" }]
+    "statusViews": [{ "id": "update" }],
+    "handles": [{ "purpose": "text-provider" }]
   },
   "activationEvents": [],
   "permissions": ["network:outbound"],
   "services": ["numen.updater"],
-  "texts": {},
   "lifecycle": {
     "idleTimeoutSeconds": 60,
     "keepAliveWhileVisible": false,

@@ -13,11 +13,11 @@
     ],
     "fileTypes": [{ "tabKind": "reader:markdown", "extensions": ["md", "markdown"] }],
     "feature": "Markdown notes",
-    "category": "views"
+    "category": "views",
+    "readers": [
+      { "id": "markdown", "contentTypes": ["text/markdown", "text/plain"], "rank": "default" }
+    ]
   },
-  "readers": [
-    { "id": "markdown", "contentTypes": ["text/markdown", "text/plain"], "rank": "default" }
-  ],
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
   "lifecycle": {

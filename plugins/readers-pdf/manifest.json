@@ -10,14 +10,12 @@
     "tabKinds": [{ "kind": "reader:reader-pdf", "title": "PDF Reader", "icon": "file-text" }],
     "fileTypes": [{ "tabKind": "reader:reader-pdf", "extensions": ["pdf"] }],
     "feature": "PDF documents",
-    "category": "readers"
+    "category": "readers",
+    "handles": [{ "purpose": "text-provider", "contentTypes": ["application/pdf"] }],
+    "readers": [{ "id": "reader-pdf", "contentTypes": ["application/pdf"], "rank": "default" }]
   },
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
-  "readers": [{ "id": "reader-pdf", "contentTypes": ["application/pdf"], "rank": "default" }],
-  "texts": {
-    "contentTypes": ["application/pdf"]
-  },
   "lifecycle": {
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false,
