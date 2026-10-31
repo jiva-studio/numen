@@ -116,7 +116,7 @@ type clockWalk struct {
 	// enclosing holds, for each function around the visited node, whether it is a clock method.
 	enclosing []bool
 	reads     []clockRead
-	visited      map[string]bool
+	visited   map[string]bool
 }
 
 // visit records the clock reads under node.

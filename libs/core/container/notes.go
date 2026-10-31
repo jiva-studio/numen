@@ -40,15 +40,15 @@ func (c Config) Notes(
 	create := note.NewCreate(writers, queries, index, now)
 
 	return note.Scenarios{
-		Read:         note.NewRead(readers),
-		Write:        note.NewWrite(readers, writers, index, now),
-		Create:       create,
-		Replace:      note.NewReplace(readers, writers, index, now),
-		Linking:      linking,
-		AddLinks:     note.NewAddLinks(linking),
-		Move:         mover,
-		Rename:       note.NewRename(mover),
-		Remove:       remove,
+		Read:     note.NewRead(readers),
+		Write:    note.NewWrite(readers, writers, index, now),
+		Create:   create,
+		Replace:  note.NewReplace(readers, writers, index, now),
+		Linking:  linking,
+		AddLinks: note.NewAddLinks(linking),
+		Move:     mover,
+		Rename:   note.NewRename(mover),
+		Remove:   remove,
 
 		SaveConnection:   note.NewSaveConnection(readers, writers, index, now, links, addresses),
 		RemoveSide:       note.NewRemoveSide(readers, writers, index, now, links, addresses),
