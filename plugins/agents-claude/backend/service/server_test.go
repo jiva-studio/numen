@@ -20,6 +20,9 @@ import (
 // startAgent serves the agent over HTTP and answers with a client of it.
 func startAgent(t *testing.T, agentSvc *agentServer) agentrun.AgentServiceClient {
 	t.Helper()
+	if agentSvc.clock == nil {
+		agentSvc.clock = &steppingClock{tick: time.Unix(0, 0), step: time.Second}
+	}
 	mux := http.NewServeMux()
 	mux.Handle(agentrun.NewAgentServiceHandler(agentSvc))
 	testServer := httptest.NewServer(mux)

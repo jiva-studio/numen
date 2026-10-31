@@ -69,22 +69,21 @@ func (c tallyingConn) PrepareContext(ctx context.Context, query string) (driver.
 	return tallyingStmt{s}, nil
 }
 
+// errPositionalQuery is what a statement answers when the driver offers no QueryContext.
+var errPositionalQuery = errors.New("the driver offers no QueryContext")
+
 type tallyingStmt struct{ driver.Stmt }
 
-func (s tallyingStmt) Query(args []driver.Value) (driver.Rows, error) {
-	ran.Add(1)
-	return s.Stmt.Query(args)
+// Query is never called: database/sql calls QueryContext on a statement that has it.
+func (s tallyingStmt) Query([]driver.Value) (driver.Rows, error) {
+	return nil, errPositionalQuery
 }
 
 func (s tallyingStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driver.Rows, error) {
 	ran.Add(1)
 	queries, ok := s.Stmt.(driver.StmtQueryContext)
 	if !ok {
-		values := make([]driver.Value, 0, len(args))
-		for _, a := range args {
-			values = append(values, a.Value)
-		}
-		return s.Stmt.Query(values)
+		return nil, errPositionalQuery
 	}
 	return queries.QueryContext(ctx, args)
 }

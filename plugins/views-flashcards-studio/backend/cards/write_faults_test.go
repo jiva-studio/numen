@@ -3,9 +3,9 @@ package cards_test
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/markdown"
@@ -34,7 +34,7 @@ func TestADeckOverTheBoundIsNotSaved(t *testing.T) {
 func TestACardModelOverTheBoundOfANoteIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
 	w := cards.NewWrite(
-		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, time.Now)
+		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock())
 	before := read(t, vs.first, "Animal.md")
 
 	_, err := w.CardModel(t.Context(), vs.first, "Animal.md",
@@ -54,7 +54,7 @@ func TestADeckWhoseLinksCannotBeResolvedIsNotSaved(t *testing.T) {
 	newWriteForDeck(t, vs, "decks/Wrens.md", wrenDeck)
 	before := read(t, vs.first, "decks/Wrens.md")
 	w := cards.NewWrite(
-		vs.ports.Readers, vs.ports.Writers, unanswered{}, indexNothing, time.Now)
+		vs.ports.Readers, vs.ports.Writers, unanswered{}, indexNothing, vaulttest.NewClock())
 
 	_, err := w.Deck(t.Context(), vs.first, "decks/Wrens.md", wrenDeck+"\n## Crow\n\n[[Animal]]\n", domain.FileStat{})
 	if !errors.Is(err, errOutOfReach) {
@@ -111,7 +111,7 @@ func TestADeckSavedAndNotLevelledPassesBackWhatItExistsAt(t *testing.T) {
 func TestACardModelBodyOpeningWithFrontmatterIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
 	w := cards.NewWrite(
-		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, time.Now)
+		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock())
 	before := read(t, vs.first, "Animal.md")
 
 	_, err := w.CardModel(t.Context(), vs.first, "Animal.md", "---\ntype: deck\n---\n", []string{"Name"}, domain.FileStat{})
@@ -130,7 +130,7 @@ func TestACardModelWhoseFrontmatterIsNeverClosedIsNotSaved(t *testing.T) {
 	write(t, vs.first, "Open.md", "---\ntype: card-model\nfields:\n  - Name\n\n## Recognise\n")
 	before := read(t, vs.first, "Open.md")
 	w := cards.NewWrite(
-		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, time.Now)
+		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock())
 
 	_, err := w.CardModel(t.Context(), vs.first, "Open.md", "\n## Spot it\n", []string{"Sample"}, domain.FileStat{})
 	if !errors.Is(err, markdown.ErrUnterminated) {
@@ -147,7 +147,7 @@ func TestWriteCardModel_ErrorsOnUnterminatedFrontmatter(t *testing.T) {
 	write(t, vs.first, "Open.md", "---\ntype: card-model\nfields:\n  - Name\n\n## Recognise\n")
 	before := read(t, vs.first, "Open.md")
 	w := cards.NewWrite(
-		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, time.Now)
+		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock())
 
 	_, err := w.CardModel(t.Context(), vs.first, "Open.md", "\n## Spot it\n", []string{"Name"}, domain.FileStat{})
 	if !errors.Is(err, markdown.ErrUnterminated) {

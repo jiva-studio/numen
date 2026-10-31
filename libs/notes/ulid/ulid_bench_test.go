@@ -8,7 +8,7 @@ import (
 )
 
 func BenchmarkNew(b *testing.B) {
-	now := time.Now()
+	now := time.Date(2026, time.August, 15, 12, 0, 0, 0, time.UTC)
 	b.ReportAllocs()
 	for b.Loop() {
 		ulid.New(now)
@@ -16,7 +16,7 @@ func BenchmarkNew(b *testing.B) {
 }
 
 func BenchmarkValid(b *testing.B) {
-	id := ulid.New(time.Now())
+	id := ulid.New(time.Date(2026, time.August, 15, 12, 0, 0, 0, time.UTC))
 	b.ReportAllocs()
 	for b.Loop() {
 		if !ulid.Valid(id) {

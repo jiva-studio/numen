@@ -120,7 +120,7 @@ func TestAFolderAlreadyThereIsNotItsWholeContents(t *testing.T) {
 	time.Sleep(500 * time.Millisecond)
 	next := watchVault(t, root)
 
-	now := time.Now()
+	now := testsupport.Machine.Now()
 	if err := os.Chtimes(root, now, now); err != nil {
 		t.Fatal(err)
 	}

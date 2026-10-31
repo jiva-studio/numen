@@ -308,7 +308,7 @@ func TestTheSchemaAndTheAddressCarryNanosecondsSinceTheEpoch(t *testing.T) {
 }
 
 func TestAFileStampedByAClockIsStillItselfThroughTheSchema(t *testing.T) {
-	ref := domain.FileStat{Path: "recordings/Compost.mp3", Size: 3, ModTime: time.Now()}
+	ref := domain.FileStat{Path: "recordings/Compost.mp3", Size: 3, ModTime: testsupport.Machine.Now()}
 	if back := convertFileStatFromWire(convertFileStatToWire(ref)); !back.IsUnchanged(ref) {
 		t.Errorf("the message carried the file back as %+v, and it is %+v", back, ref)
 	}

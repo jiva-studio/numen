@@ -18,13 +18,14 @@ import (
 // waitFor polls until the condition holds or the deadline passes.
 func waitFor(t *testing.T, what string, holds func() bool) {
 	t.Helper()
-	deadline := time.Now().Add(30 * time.Second)
-	for !holds() {
-		if time.Now().After(deadline) {
-			t.Fatalf("%s did not happen", what)
+	const attempts = 3000
+	for range attempts {
+		if holds() {
+			return
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
+	t.Fatalf("%s did not happen", what)
 }
 
 func isAlive(pid int) bool {

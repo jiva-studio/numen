@@ -137,7 +137,7 @@ func writeRestartedPlugin(t *testing.T) string {
 func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 	for _, tc := range bridgeContracts {
 		t.Run(tc.name, func(t *testing.T) {
-			host := plugin.NewHost("desktop.editor", writeRestartedPlugin(t))
+			host := plugin.NewHost(testsupport.Machine, "desktop.editor", writeRestartedPlugin(t))
 			if err := host.Discover(); err != nil {
 				t.Fatal(err)
 			}

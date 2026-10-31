@@ -77,7 +77,7 @@ func NewEdit(readers ports.VaultReaders, writers ports.VaultWriters, index Level
 			return files{reader: reader, writer: writer, writers: writers, vault: v}, nil
 		},
 		Index:           index,
-		Now:             now,
+		Clock:           now,
 		Entropy:         nil,
 		FileStat:        domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}},
 		ShouldOverwrite: false,

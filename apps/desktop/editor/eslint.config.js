@@ -65,9 +65,6 @@ export default tseslint.config(
       'src/**/*.test.ts',
       'src/**/*.stories.ts',
       'src/testing/**',
-      // The ports' own defaults, which is where the browser is allowed in.
-      'src/entities/note/model/notes.ts',
-      'src/app/window/useWindowKinds.ts',
     ],
     rules: {
       'no-restricted-globals': [

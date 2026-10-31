@@ -3,14 +3,17 @@ package onnx
 import "testing"
 
 func TestParseProviderAcceptsEverySpelling(t *testing.T) {
-	for name, want := range map[string]Provider{
-		"": ProviderAuto, " Auto ": ProviderAuto, "cpu": ProviderCPU,
-		"coreml": ProviderCoreML, "core-ml": ProviderCoreML, "CUDA": ProviderCUDA,
-		"directml": ProviderDirectML, "direct-ml": ProviderDirectML, "dml": ProviderDirectML,
-		"rocm": ProviderROCm,
+	for _, tc := range []struct {
+		name string
+		want Provider
+	}{
+		{"", ProviderAuto}, {" Auto ", ProviderAuto}, {"cpu", ProviderCPU},
+		{"coreml", ProviderCoreML}, {"core-ml", ProviderCoreML}, {"CUDA", ProviderCUDA},
+		{"directml", ProviderDirectML}, {"direct-ml", ProviderDirectML}, {"dml", ProviderDirectML},
+		{"rocm", ProviderROCm},
 	} {
-		if got, err := ParseProvider(name); err != nil || got != want {
-			t.Errorf("ParseProvider(%q) = %q, %v, want %q", name, got, err, want)
+		if got, err := ParseProvider(tc.name); err != nil || got != tc.want {
+			t.Errorf("ParseProvider(%q) = %q, %v, want %q", tc.name, got, err, tc.want)
 		}
 	}
 }
@@ -23,12 +26,15 @@ func TestParseProviderRejectsAnUnknownNameAndFallsBackToTheCPU(t *testing.T) {
 }
 
 func TestParseComputeUnitsIgnoresCase(t *testing.T) {
-	for name, want := range map[string]ComputeUnits{
-		"": ComputeUnitsDefault, " all ": ComputeUnitsAll, "cpuandneuralengine": ComputeUnitsCPUAndNeuralEngine,
-		"CPUAndGPU": ComputeUnitsCPUAndGPU, "cpuonly": ComputeUnitsCPUOnly,
+	for _, tc := range []struct {
+		name string
+		want ComputeUnits
+	}{
+		{"", ComputeUnitsDefault}, {" all ", ComputeUnitsAll}, {"cpuandneuralengine", ComputeUnitsCPUAndNeuralEngine},
+		{"CPUAndGPU", ComputeUnitsCPUAndGPU}, {"cpuonly", ComputeUnitsCPUOnly},
 	} {
-		if got, err := ParseComputeUnits(name); err != nil || got != want {
-			t.Errorf("ParseComputeUnits(%q) = %q, %v, want %q", name, got, err, want)
+		if got, err := ParseComputeUnits(tc.name); err != nil || got != tc.want {
+			t.Errorf("ParseComputeUnits(%q) = %q, %v, want %q", tc.name, got, err, tc.want)
 		}
 	}
 	if got, err := ParseComputeUnits("GPUOnly"); err == nil || got != ComputeUnitsDefault {

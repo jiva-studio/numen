@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -38,7 +37,7 @@ func GenerateVault(tb testing.TB, n int) domain.Vault {
 		}
 	}
 
-	cfg, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now())
+	cfg, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, Epoch)
 	if err != nil {
 		tb.Fatal(err)
 	}

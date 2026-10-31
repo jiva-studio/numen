@@ -112,9 +112,8 @@ try {
       // story that will not load draws Storybook's error page instead.
       try {
         await page.waitForFunction(
-          () =>
-            !document.body.classList.contains('sb-show-errordisplay') &&
-            (document.querySelector('#storybook-root')?.children.length ?? 0) > 0,
+          "!document.body.classList.contains('sb-show-errordisplay') && (document.querySelector('#storybook-root')?.children.length ?? 0) > 0",
+          undefined,
           { timeout: PATIENCE },
         )
       } catch {

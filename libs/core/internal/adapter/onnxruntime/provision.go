@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/core/port/machineport"
 )
 
 // Config is what the runtime is provisioned from.
@@ -30,6 +32,8 @@ type Config struct {
 	// path. Nil opens it with the platform loader and requests the API the
 	// plugins call.
 	Check func(targetPath string) error
+	// Clock paces the progress reports.
+	Clock machineport.Clock
 }
 
 // Provisioner finds or fetches the library once per plugin folder and hands the

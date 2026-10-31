@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -34,7 +35,7 @@ func newAskingHost(t *testing.T) *Host {
 			t.Fatal(err)
 		}
 	}
-	host := NewHost("desktop.editor", root)
+	host := NewHost(testsupport.Machine, "desktop.editor", root)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}

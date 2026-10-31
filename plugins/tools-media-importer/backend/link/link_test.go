@@ -8,7 +8,9 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
@@ -83,7 +85,7 @@ func newWorld(t *testing.T) *world {
 		vault: vault, store: vault.Store(), texts: hosttest.NewTexts(vault.Vault().ID, pluginID),
 		queue: hosttest.NewQueue(), sites: &sites{clip: bytes.Repeat([]byte("frame "), 1000)},
 	}
-	w.links = link.New(link.Host{Vault: vault, Store: w.store, Texts: w.texts, Queue: w.queue},
+	w.links = link.New(link.Host{Vault: vault, Store: w.store, Texts: w.texts, Queue: w.queue, Clock: clock.NewFake(time.Unix(1_700_000_000, 0))},
 		func() link.Fetcher { return w.sites },
 		func() link.Settings { return link.Settings{CopyMaxSize: w.limit} })
 	w.texts.SetStore(pluginID, w.store)

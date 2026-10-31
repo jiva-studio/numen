@@ -19,4 +19,4 @@ func (debugOptions) registerVault(container.Config) error { return nil }
 
 func (debugOptions) isServingHTTP() bool { return false }
 
-func (debugOptions) serveHTTP(context.Context, http.Handler) error { return nil }
+func (debugOptions) serveHTTP(context.Context, container.Config, http.Handler) error { return nil }

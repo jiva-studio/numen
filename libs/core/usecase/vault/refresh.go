@@ -134,7 +134,7 @@ func (l *Ledger) drop(v domain.VaultID, path string) {
 // isRecent reports whether a file modified at mtime can still be edited again
 // under the same modification time.
 func (u Refresh) isRecent(mtime time.Time) bool {
-	return u.now().Sub(mtime) < TimestampGranularity
+	return u.now.Now().Sub(mtime) < TimestampGranularity
 }
 
 // NewRefresh creates a Refresh from the vault readers, the vault repository,
@@ -320,7 +320,7 @@ func (u Refresh) writeLedger(v domain.Vault, recorded map[string]*ledgerEntry) {
 			u.Ledger.drop(v.ID, path)
 			continue
 		}
-		u.Ledger.put(u.now(), v.ID, path, *entry)
+		u.Ledger.put(u.now.Now(), v.ID, path, *entry)
 	}
 }
 
@@ -377,7 +377,7 @@ func (u Refresh) isCurrent(ctx context.Context, reader vaultport.VaultReader, v 
 	if pos < 0 || !target[pos].IsUnchanged(ref) {
 		return false
 	}
-	entry, ok := u.Ledger.get(u.now(), v.ID, ref.Path)
+	entry, ok := u.Ledger.get(u.now.Now(), v.ID, ref.Path)
 	if !ok {
 		return !u.isRecent(ref.ModTime)
 	}

@@ -154,8 +154,10 @@ func TestModelCache_AsyncReturnsEmptyThenFallbackOnFailure(t *testing.T) {
 	if err := os.WriteFile(gate, nil, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	deadline := time.Now().Add(3 * time.Second)
-	for time.Now().Before(deadline) && !s.getModelCache().HasFailed(script) {
+	for range 600 {
+		if s.getModelCache().HasFailed(script) {
+			break
+		}
 		time.Sleep(5 * time.Millisecond)
 	}
 	got, err = s.getModels(t.Context(), []string{script}, nil)

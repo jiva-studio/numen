@@ -50,6 +50,11 @@ func (s *Baseline) isStale(on domain.FileStat, prose string) bool {
 	return prose != s.Prose && !on.IsUnchanged(s.FileStat)
 }
 
+// Clock gets the current time.
+type Clock interface {
+	Now() time.Time
+}
+
 // Edit is what every change to the contents of an existing note needs.
 //
 // It is one function because the shape is always the same and the rules in it are easy to forget one
@@ -60,8 +65,8 @@ type Edit struct {
 	Open func(v domain.Vault) (Files, error)
 	// Index brings the index level with what was written. Nil brings nothing.
 	Index Levels
-	// Now is the time an identifier is minted at.
-	Now func() time.Time
+	// Clock gives the time an identifier is minted at.
+	Clock Clock
 	// Entropy is the randomness source for minted identifiers.
 	Entropy io.Reader
 
@@ -185,5 +190,5 @@ func (e Edit) addIdentifier(doc *markdown.Document) error {
 	if _, carried := doc.Identifier(); carried || e.ShouldOverwrite {
 		return nil
 	}
-	return doc.SetIdentifier(ulid.New(e.Now(), e.Entropy))
+	return doc.SetIdentifier(ulid.New(e.Clock.Now(), e.Entropy))
 }

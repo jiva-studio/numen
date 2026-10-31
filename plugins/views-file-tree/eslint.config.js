@@ -52,7 +52,7 @@ export default [
   },
   {
     files: ['**/*.{ts,vue}'],
-    ignores: ['**/*.test.ts', '**/*.stories.ts', 'stories/.storybook/**', '**/testing/**', '**/clock.ts', '**/drop.ts', '**/dom.ts'],
+    ignores: ['**/*.test.ts', '**/*.stories.ts', 'stories/.storybook/**', '**/testing/**'],
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -148,12 +148,6 @@ export default [
         { name: 'document', message: '.vue components must not access document directly — use template refs or a composable' },
         { name: 'navigator', message: '.vue components must not access navigator directly — delegate to a composable or port' },
       ],
-    },
-  },
-  {
-    files: ['**/safe.ts', '**/safe.stories.ts'],
-    rules: {
-      'no-control-regex': 'off',
     },
   },
   {

@@ -11,7 +11,10 @@ import { ANY, DRAWN, OWN, SCHEMES, STRUCK, STYLED } from './tags'
 const INLINE_IMAGE = /^data:image\/(png|jpeg|jpg|gif|webp|avif);base64,/i
 
 /** A URL with the spaces and control characters a scheme may be hidden behind dropped. */
-const stripControls = (url: string): string => url.replace(/[\u0000-\u0020]/g, '')
+const stripControls = (url: string): string =>
+  Array.from(url)
+    .filter((character) => character.charCodeAt(0) > 0x20)
+    .join('')
 
 /** The scheme a URL names, and nothing where it names none. */
 export const scheme = (url: string): string | null =>

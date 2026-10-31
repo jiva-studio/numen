@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
@@ -175,7 +176,7 @@ func TestADeckWhoseModificationTimeChangedIsReadAgain(t *testing.T) {
 	s, reviewCards, reads := openTallied(t, vault)
 
 	pos := filepath.Join(s.vault.Path, "decks", "Words.md")
-	later := time.Now().Add(time.Hour)
+	later := vaulttest.Epoch.Add(time.Hour)
 	if err := os.Chtimes(pos, later, later); err != nil {
 		t.Fatal(err)
 	}
@@ -448,7 +449,7 @@ func TestWhatADayCameToBelowEachPresetOfAVault(t *testing.T) {
 	answer(t, evening, "zpqrstvwxy", 9*time.Second)
 	answer(t, evening, "3f4g5h6j7k", 4*time.Second)
 
-	counts, err := s.newCountCardsDueAt(today, func() time.Time { return saturday.Add(10 * time.Hour) }).
+	counts, err := s.newCountCardsDueAt(today, clock.NewFake(saturday.Add(10*time.Hour))).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -492,7 +493,7 @@ func TestAVaultContainingNoPresetExistsOnTheDefaults(t *testing.T) {
 		"decks/Two.md": deckOf("", 20, 100),
 	})
 
-	counts, err := s.newCountCardsDueAt(today, func() time.Time { return saturday }).Execute(t.Context(), s.vault)
+	counts, err := s.newCountCardsDueAt(today, clock.NewFake(saturday)).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -521,7 +522,7 @@ func TestAPresetNoDeckPointsAtExistsInTheCount(t *testing.T) {
 	files["Empty.md"] = "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 137\n---\n\n# Empty\n"
 	s := openVault(t, files)
 
-	counts, err := s.newCountCardsDueAt(today, func() time.Time { return saturday }).
+	counts, err := s.newCountCardsDueAt(today, clock.NewFake(saturday)).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -556,7 +557,7 @@ func TestCountCardsDue_CountsOnlyAnswersOfThatDay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	counts, err := s.newCountCardsDueAt(today, func() time.Time { return saturday.Add(time.Hour) }).
+	counts, err := s.newCountCardsDueAt(today, clock.NewFake(saturday.Add(time.Hour))).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -577,7 +578,7 @@ func TestCountCardsDue_CountsAnswersPerDeck(t *testing.T) {
 	// One card of one of the two decks the Sanskrit preset schedules.
 	answer(t, s.run(t, saturday), "k7m2xq9fzp", 6*time.Second)
 
-	counts, err := s.newCountCardsDueAt(today, func() time.Time { return saturday.Add(time.Hour) }).
+	counts, err := s.newCountCardsDueAt(today, clock.NewFake(saturday.Add(time.Hour))).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -608,7 +609,7 @@ func TestASecondCountReadsTheSchedulesOutOfTheCache(t *testing.T) {
 	s.schedules.At = func(retention float64) review.Scheduler {
 		return replaying{Scheduler: review.NewFSRSAt(retention), answers: &replayed}
 	}
-	counter := s.newCountCardsDueAt(today, func() time.Time { return saturday.Add(time.Hour) })
+	counter := s.newCountCardsDueAt(today, clock.NewFake(saturday.Add(time.Hour)))
 
 	if _, err := counter.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
@@ -677,7 +678,7 @@ func TestAnEmptyDeckStillPointsAtItsPreset(t *testing.T) {
 		"decks/Full.md":  deckOf("Empty", 3, 0),
 	})
 
-	counts, err := s.newCountCardsDueAt(today, func() time.Time { return saturday }).Execute(t.Context(), s.vault)
+	counts, err := s.newCountCardsDueAt(today, clock.NewFake(saturday)).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -704,7 +705,7 @@ func TestAPresetOnlyAnEmptyDeckNamesIsPointedAt(t *testing.T) {
 		"decks/Empty.md": deckOf("Empty", 0, 0),
 	})
 
-	counts, err := s.newCountCardsDueAt(today, func() time.Time { return saturday }).Execute(t.Context(), s.vault)
+	counts, err := s.newCountCardsDueAt(today, clock.NewFake(saturday)).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -733,7 +734,7 @@ func TestACountIsDroppedOnceTheWindowHasMissing(t *testing.T) {
 
 	u := flashcards.NewCountCardsDue(
 		flashcards.ListReviewCards{}, flashcards.Schedules{}, flashcards.Presets{},
-		review.Day{}, time.Now,
+		review.Day{}, vaulttest.NewClock(),
 	)
 	_, err := u.Execute(removed, domain.Vault{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV"})
 	if !errors.Is(err, context.Canceled) {
@@ -768,7 +769,7 @@ func TestADecksLearnedCardsAreCountedByItsOwnPresetsRule(t *testing.T) {
 	answer(t, run, "card000010", 5*time.Second)
 	answer(t, run, "card000020", 5*time.Second)
 
-	counts, err := s.newCountCardsDueAt(today, func() time.Time { return learnedHour.Add(time.Minute) }).
+	counts, err := s.newCountCardsDueAt(today, clock.NewFake(learnedHour.Add(time.Minute))).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -799,7 +800,7 @@ func TestCountCardsDue_UnansweredDeckHasZeroLearned(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, learnedVault)
 
-	counts, err := s.newCountCardsDueAt(today, func() time.Time { return learnedHour }).
+	counts, err := s.newCountCardsDueAt(today, clock.NewFake(learnedHour)).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -824,7 +825,7 @@ func TestADeckOfNoCardsIsCountedForNothing(t *testing.T) {
 		"decks/One.md":   deckOf("Recall", 1, 0),
 	})
 
-	counts, err := s.newCountCardsDueAt(today, func() time.Time { return learnedHour }).
+	counts, err := s.newCountCardsDueAt(today, clock.NewFake(learnedHour)).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -843,7 +844,7 @@ func TestADecksUnbegunCardsAreCounted(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, learnedVault)
 
-	before, err := s.newCountCardsDueAt(today, func() time.Time { return learnedHour }).
+	before, err := s.newCountCardsDueAt(today, clock.NewFake(learnedHour)).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -858,7 +859,7 @@ func TestADecksUnbegunCardsAreCounted(t *testing.T) {
 	run := s.run(t, learnedHour)
 	answer(t, run, "card000000", 5*time.Second)
 
-	after, err := s.newCountCardsDueAt(today, func() time.Time { return learnedHour.Add(time.Minute) }).
+	after, err := s.newCountCardsDueAt(today, clock.NewFake(learnedHour.Add(time.Minute))).
 		Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -879,7 +880,7 @@ func TestCountAnswers_GroupsByDay(t *testing.T) {
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	other := review.CardID{Card: "zpqrstvwxy", Template: "Recognise"}
 
-	yesterday := time.Now().AddDate(0, 0, -1)
+	yesterday := vaulttest.Epoch.AddDate(0, 0, -1)
 	past := s.run(t, yesterday)
 	if _, err := past.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -887,7 +888,7 @@ func TestCountAnswers_GroupsByDay(t *testing.T) {
 	if _, err := past.Answer(t.Context(), other, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
+	if _, err := s.run(t, vaulttest.Epoch).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -901,8 +902,8 @@ func TestCountAnswers_GroupsByDay(t *testing.T) {
 	if got.Days[today.GetName(yesterday)].Answered != 2 {
 		t.Errorf("yesterday came to %d, want 2: %v", got.Days[today.GetName(yesterday)].Answered, got.Days)
 	}
-	if got.Days[today.GetName(time.Now())].Answered != 1 {
-		t.Errorf("today came to %d, want 1: %v", got.Days[today.GetName(time.Now())].Answered, got.Days)
+	if got.Days[today.GetName(vaulttest.Epoch)].Answered != 1 {
+		t.Errorf("today came to %d, want 1: %v", got.Days[today.GetName(vaulttest.Epoch)].Answered, got.Days)
 	}
 	if got.Streak != 2 {
 		t.Errorf("the streak is %d, want the two days answered", got.Streak)
@@ -932,7 +933,7 @@ func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 	s := openVault(t, vault)
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
-	first := s.run(t, time.Now().AddDate(0, 0, -1))
+	first := s.run(t, vaulttest.Epoch.AddDate(0, 0, -1))
 	if _, err := first.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -969,7 +970,7 @@ func TestARunThatGrewIsCountedAfresh(t *testing.T) {
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	other := review.CardID{Card: "zpqrstvwxy", Template: "Recognise"}
 
-	record := s.run(t, time.Now())
+	record := s.run(t, vaulttest.Epoch)
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -1000,7 +1001,7 @@ func TestARunCopiedBelowAnotherNameIsCountedOnce(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
+	if _, err := s.run(t, vaulttest.Epoch).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 	writeConflictedCopies(t, s)
@@ -1015,7 +1016,7 @@ func TestARunCopiedBelowAnotherNameIsCountedOnce(t *testing.T) {
 			t.Errorf("counted from %s, the vault holds %d answers, want the one given",
 				from, got.Answered)
 		}
-		if day := got.Days[today.GetName(time.Now())].Answered; day != 1 {
+		if day := got.Days[today.GetName(vaulttest.Epoch)].Answered; day != 1 {
 			t.Errorf("counted from %s, today came to %d, want 1: %v", from, day, got.Days)
 		}
 	}
@@ -1067,7 +1068,7 @@ func TestWhatIsStillToComeIsCountedByDay(t *testing.T) {
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	// Answered easily, so it is days away and not minutes.
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Easy, 0); err != nil {
+	if _, err := s.run(t, vaulttest.Epoch).Answer(t.Context(), on, review.Easy, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1152,7 +1153,7 @@ func TestACacheOfAnotherShapeIsCountedAfresh(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
+	if _, err := s.run(t, vaulttest.Epoch).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1176,7 +1177,7 @@ func TestACacheOfThisShapeIsBelieved(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
+	if _, err := s.run(t, vaulttest.Epoch).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1197,7 +1198,7 @@ func TestAVaultIsCountedWithNothingCached(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
+	if _, err := s.run(t, vaulttest.Epoch).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1208,7 +1209,7 @@ func TestAVaultIsCountedWithNothingCached(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Answered != 1 || got.Days[today.GetName(time.Now())].Answered != 1 {
+	if got.Answered != 1 || got.Days[today.GetName(vaulttest.Epoch)].Answered != 1 {
 		t.Errorf("counted %+v", got)
 	}
 }
@@ -1219,12 +1220,12 @@ func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Easy, 0); err != nil {
+	if _, err := s.run(t, vaulttest.Epoch).Answer(t.Context(), on, review.Easy, 0); err != nil {
 		t.Fatal(err)
 	}
 
 	scheds := flashcards.NewSchedules(s.logs, nil, today, flashcards.ListReviewCards{}, flashcards.Presets{})
-	blind := flashcards.NewCountReviews(s.logs, scheds, today, time.Now)
+	blind := flashcards.NewCountReviews(s.logs, scheds, today, vaulttest.NewClock())
 
 	got, err := blind.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -1245,7 +1246,7 @@ func TestACardDueTodayIsNotStillToCome(t *testing.T) {
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	// Answered again, so it is due again within minutes and is due today.
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Again, 0); err != nil {
+	if _, err := s.run(t, vaulttest.Epoch).Answer(t.Context(), on, review.Again, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1265,7 +1266,7 @@ func TestGetReviewDaysKeepsTheDaysInsideTheStretch(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	now := time.Now()
+	now := vaulttest.Epoch
 	yesterday, twoDaysAgo := now.AddDate(0, 0, -1), now.AddDate(0, 0, -2)
 	for _, item := range []time.Time{twoDaysAgo, yesterday, now} {
 		if _, err := s.run(t, item).Answer(t.Context(), on, review.Good, 0); err != nil {

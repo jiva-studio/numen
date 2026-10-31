@@ -73,10 +73,14 @@ func (f *files) Lock(context.Context) (func(), error) {
 
 var vault = domain.Vault{ID: "v1", Name: "Physics", Path: "/vaults/Physics"}
 
+type fixedClock time.Time
+
+func (c fixedClock) Now() time.Time { return time.Time(c) }
+
 func editing(f *files) edit.Edit {
 	return edit.Edit{
-		Open: func(domain.Vault) (edit.Files, error) { return f, nil },
-		Now:  func() time.Time { return time.Unix(1_700_000_000, 0) },
+		Open:  func(domain.Vault) (edit.Files, error) { return f, nil },
+		Clock: fixedClock(time.Unix(1_700_000_000, 0)),
 	}
 }
 

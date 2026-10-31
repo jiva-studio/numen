@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"io/fs"
@@ -61,7 +62,7 @@ func newAPIOn(t testing.TB, notes ...map[string]string) (*API, []domain.Vault, v
 	for _, one := range notes {
 		target = append(target, installation.Add(t, one))
 	}
-	backend := New(Config{Vault: installation.Host, Store: installation.Host.Store()})
+	backend := New(Config{Vault: installation.Host, Store: installation.Host.Store(), Now: vaulttest.NewClock()})
 	return &reviewHandler{Backend: backend}, target, installation
 }
 
@@ -76,7 +77,9 @@ func front(t *testing.T, handler *API) *api.WatchCardsDueResponse {
 	client := newFlashcardsClient(t, handler)
 
 	var out *api.WatchCardsDueResponse
-	for pos := time.Now(); time.Since(pos) < 30*time.Second; {
+	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+	defer cancel()
+	for ctx.Err() == nil {
 		out = readCardsDue(t, client)
 		if !slices.ContainsFunc(out.Vaults, func(one *api.VaultCardsDue) bool { return one.IsIndexing }) {
 			return out
@@ -661,7 +664,7 @@ func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 		},
 		{
 			what: "a date", goal: review.GoalDate, learned: review.RuleRetention,
-			byDate: time.Now().AddDate(0, 0, 6), closed: review.ClosedDate, isSameDay: true,
+			byDate: vaulttest.Epoch.AddDate(0, 0, 6), closed: review.ClosedDate, isSameDay: true,
 			never: []review.BudgetName{
 				review.ClosedNew, review.ClosedReviews, review.ClosedMinutes,
 			},

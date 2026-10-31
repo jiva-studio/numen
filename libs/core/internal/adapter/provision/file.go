@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
@@ -29,6 +30,8 @@ type Config struct {
 	Discovery discovery
 	// Backoff is the waits between attempts. Zero is the default.
 	Backoff backoff
+	// Clock paces the progress reports.
+	Clock machineport.Clock
 }
 
 // FileProvisioner provisions a dependency that is one downloadable file with a
@@ -125,7 +128,7 @@ func (p *FileProvisioner) Provision(
 	primary := filepath.Join(dir, name)
 	title := "Downloading " + req.ID
 	err = transfer{
-		client: p.cfg.Client, address: req.SourceURL, dest: primary, sum: req.ChecksumSHA256, backoff: p.cfg.Backoff,
+		client: p.cfg.Client, address: req.SourceURL, dest: primary, sum: req.ChecksumSHA256, backoff: p.cfg.Backoff, clock: p.cfg.Clock,
 		onProgress: func(done, total int64) {
 			onProgress(pluginport.DependencyStatus{
 				ID: req.ID, State: pluginport.DependencyStateProvisioning, BytesDownloaded: done, BytesTotal: total,

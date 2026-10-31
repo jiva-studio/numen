@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -122,7 +121,7 @@ func makeSampleVault(t *testing.T, cfg Config) string {
 	t.Helper()
 
 	root := t.TempDir()
-	if _, err := cfg.VaultIdentity().EnsureIdentity(root, time.Now()); err != nil {
+	if _, err := cfg.VaultIdentity().EnsureIdentity(root, testsupport.Epoch); err != nil {
 		t.Fatal(err)
 	}
 	for name, body := range openVaultsSamples {

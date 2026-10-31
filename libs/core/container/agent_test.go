@@ -143,7 +143,7 @@ func hostWith(t *testing.T, capabilities map[string][]string, servers map[string
 		ports[id] = addr.Port
 	}
 
-	host := plugin.NewHost("desktop.editor", tmp)
+	host := plugin.NewHost(testsupport.Machine, "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}

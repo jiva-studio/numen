@@ -61,7 +61,7 @@ func TestZeroIsAPauseBelowTheGoalThatNamesIt(t *testing.T) {
 		if len(problems) != 0 {
 			t.Fatalf("problems = %v", problems)
 		}
-		got := p.IsPaused(review.Day{Starts: review.DayStartTime}, time.Now())
+		got := p.IsPaused(review.Day{Starts: review.DayStartTime}, testEpoch)
 		if got != one.isPaused {
 			t.Errorf("%q is paused %v, want %v", one.front, got, one.isPaused)
 		}

@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
@@ -46,7 +47,7 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 }
 
 func mount(s *server.Server, vault host.Vault, store host.Store) error {
-	backend := New(Config{Vault: vault, Store: store, DayStart: nil, Now: nil, Cores: 0, Scheduler: nil})
+	backend := New(Config{Vault: vault, Store: store, DayStart: nil, Now: clock.System{}, Cores: 0, Scheduler: nil})
 	s.SetConfigure(func(_ context.Context, values map[string]string) error {
 		backend.Configure(values)
 		return nil

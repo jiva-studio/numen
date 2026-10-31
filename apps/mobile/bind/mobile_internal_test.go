@@ -4,6 +4,7 @@ package bind
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -779,7 +780,9 @@ func getListenersOf(t *testing.T, server *http.Server) []net.Listener {
 func closeListenersOf(t *testing.T, server *http.Server) {
 	t.Helper()
 	var found []net.Listener
-	for until := time.Now().Add(5 * time.Second); len(found) == 0 && time.Now().Before(until); {
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	for len(found) == 0 && ctx.Err() == nil {
 		found = getListenersOf(t, server)
 		time.Sleep(10 * time.Millisecond)
 	}
@@ -801,8 +804,9 @@ func TestPort_ZeroAndErrorLoggedAfterServerStopsAccepting(t *testing.T) {
 	mu.Unlock()
 	closeListenersOf(t, server)
 
-	until := time.Now().Add(5 * time.Second)
-	for Port() != 0 && time.Now().Before(until) {
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	for Port() != 0 && ctx.Err() == nil {
 		time.Sleep(10 * time.Millisecond)
 	}
 	if got := Port(); got != 0 {

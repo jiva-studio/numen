@@ -91,7 +91,7 @@ func (h *Host) registerSupervisorLocked(p manifest.Discovered) {
 	id := p.Manifest.ID
 	sup, exists := h.supervisors[id]
 	if !exists {
-		sup = lifecycle.New()
+		sup = lifecycle.New(h.clock)
 		sup.SetOnExit(func() { h.dropEndpointOfStoppedPlugin(id, sup) })
 		sup.SetOnError(h.reportError)
 		h.supervisors[id] = sup

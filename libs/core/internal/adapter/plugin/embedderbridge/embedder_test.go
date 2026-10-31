@@ -76,7 +76,7 @@ func (s *mockEmbeddingServer) EmbedBatch(
 }
 
 func TestOpenEmbedderBridgeNoPlugin(t *testing.T) {
-	host := plugin.NewHost("desktop.editor", t.TempDir())
+	host := plugin.NewHost(testsupport.Machine, "desktop.editor", t.TempDir())
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +124,7 @@ func TestEmbedderBridge(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	host := plugin.NewHost("desktop.editor", tmp)
+	host := plugin.NewHost(testsupport.Machine, "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}

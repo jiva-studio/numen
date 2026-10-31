@@ -16,6 +16,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
@@ -27,7 +29,7 @@ func sumOf(data []byte) string {
 func newTestProvisioner(t *testing.T, offline bool) *FileProvisioner {
 	t.Helper()
 	return NewFileProvisioner(Config{
-		Dir: t.TempDir(), Offline: offline, Discovery: discovery{dirs: []string{}},
+		Dir: t.TempDir(), Offline: offline, Discovery: discovery{dirs: []string{}}, Clock: clock.NewFake(time.Unix(0, 0)),
 		Backoff: backoff{attempts: 3, first: time.Millisecond, sleep: func(context.Context, time.Duration) error { return nil }},
 	})
 }
@@ -143,8 +145,8 @@ func TestARunContinuesWhileACallerRemainsAndStopsWhenAllLeave(t *testing.T) {
 	if err := <-errs; !errors.Is(err, context.Canceled) {
 		t.Fatalf("err = %v, want canceled", err)
 	}
-	deadline := time.Now().Add(2 * time.Second)
-	for registry.flights.isRunning(getFlightKey(req)) && time.Now().Before(deadline) {
+	deadline := testsupport.Machine.Now().Add(2 * time.Second)
+	for registry.flights.isRunning(getFlightKey(req)) && testsupport.Machine.Now().Before(deadline) {
 		time.Sleep(5 * time.Millisecond)
 	}
 	if registry.flights.isRunning(getFlightKey(req)) {

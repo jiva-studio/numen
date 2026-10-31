@@ -26,7 +26,7 @@ const testArea = "area"
 func store(t *testing.T) (*derivedfile.DerivedStore, string) {
 	t.Helper()
 	root := t.TempDir()
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
 		t.Fatal(err)
 	}
 	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, testArea)
@@ -78,7 +78,7 @@ func TestAppend_RejectsMissingVaultFolder(t *testing.T) {
 
 	// A folder put back at the path, carrying an identity of its own, is
 	// another vault and not this one.
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
 		t.Fatal(err)
 	}
 	if err := derived.Append(ctx, "area/run.txt", []byte("two\n")); !errors.Is(err, derivedfile.ErrNotThisVault) {
@@ -129,7 +129,7 @@ func TestAStoreNoticesTheIdentityChangingBelowIt(t *testing.T) {
 	if err := os.WriteFile(pos, []byte(other), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	when := time.Now().Add(time.Second)
+	when := testsupport.Machine.Now().Add(time.Second)
 	if err := os.Chtimes(pos, when, when); err != nil {
 		t.Fatal(err)
 	}
@@ -445,7 +445,9 @@ func TestContainingAClaimForAnotherProcess(t *testing.T) {
 		}
 	}()
 
-	fmt.Println(claimLocked)
+	if _, err := fmt.Fprintln(os.Stdout, claimLocked); err != nil {
+		t.Error(err)
+	}
 	if _, err := io.ReadAll(os.Stdin); err != nil {
 		t.Error(err)
 	}
@@ -516,7 +518,7 @@ func TestTheStoreListsNothingOutsideItself(t *testing.T) {
 // A use case reading what two producers wrote opens one store on both areas.
 func TestAStoreAnswersForEveryAreaItWasOpenedOn(t *testing.T) {
 	root := t.TempDir()
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
 		t.Fatal(err)
 	}
 	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, testArea, "other")
@@ -633,7 +635,7 @@ func TestAStoreDoesNotWriteIntoWhereItsFolderWasBefore(t *testing.T) {
 	if err := os.Symlink(old, service); err != nil {
 		t.Skipf("this filesystem has no links: %v", err)
 	}
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
 		t.Fatal(err)
 	}
 	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, testArea)

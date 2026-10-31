@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -47,7 +48,7 @@ func TestTheSourceRowContainsNanosecondsSinceTheEpoch(t *testing.T) {
 // carries neither. A file read back off the index is still the file that was
 // walked, or every scan indexes the whole vault again.
 func TestAFileStampedByAClockIsUnchangedThroughTheIndex(t *testing.T) {
-	pos := time.Now()
+	pos := testsupport.Machine.Now()
 	db := openDB(t)
 
 	ref := domain.FileStat{

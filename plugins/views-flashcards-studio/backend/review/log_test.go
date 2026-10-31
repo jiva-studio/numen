@@ -10,12 +10,13 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-func parseTime(s string) time.Time {
-	t, err := time.Parse(time.RFC3339, s)
+func parseTime(t *testing.T, s string) time.Time {
+	t.Helper()
+	parsed, err := time.Parse(time.RFC3339, s)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
-	return t
+	return parsed
 }
 
 // An answer written down and read back is the answer that was given.
@@ -23,7 +24,7 @@ func TestAnAnswerReachesBackAsItWasSaved(t *testing.T) {
 	provided := review.Answer{
 		ID:         "01K3ZQ7X2M9QRSTVWXYZ012345",
 		ReviewCard: review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"},
-		At:         parseTime("2026-08-29T09:12:33.412Z"),
+		At:         parseTime(t, "2026-08-29T09:12:33.412Z"),
 		Rating:     review.Good,
 		Took:       4210 * time.Millisecond,
 	}
@@ -49,7 +50,7 @@ func TestAnAnswerReachesBackAsItWasSaved(t *testing.T) {
 func TestAnAnswerTakenBackNamesTheOneItConsumesBack(t *testing.T) {
 	raw, err := review.Write(review.Answer{
 		ID:     "01K3ZQ7X8B0CDEFGHJKMNPQRST",
-		At:     parseTime("2026-08-29T09:12:41.006Z"),
+		At:     parseTime(t, "2026-08-29T09:12:41.006Z"),
 		Undoes: "01K3ZQ7X2M9QRSTVWXYZ012345",
 	})
 	if err != nil {
@@ -71,7 +72,7 @@ func TestALineThatDidNotLandWholeIsLeftOut(t *testing.T) {
 	whole, err := review.Write(review.Answer{
 		ID:         "01K3ZQ7X2M9QRSTVWXYZ012345",
 		ReviewCard: review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"},
-		At:         parseTime("2026-08-29T09:12:33.412Z"),
+		At:         parseTime(t, "2026-08-29T09:12:33.412Z"),
 		Rating:     review.Good,
 	})
 	if err != nil {
@@ -121,7 +122,7 @@ func TestAnInstantIsReadWithWhateverOffsetItCarries(t *testing.T) {
 	if len(back) != 1 || skipped != 0 {
 		t.Fatalf("read %d answers and skipped %d", len(back), skipped)
 	}
-	if want := parseTime("2026-08-29T09:12:33.412Z"); !back[0].At.Equal(want) {
+	if want := parseTime(t, "2026-08-29T09:12:33.412Z"); !back[0].At.Equal(want) {
 		t.Errorf("read %v, want the same instant as %v", back[0].At, want)
 	}
 }

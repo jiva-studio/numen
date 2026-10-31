@@ -105,7 +105,7 @@ func (u Calibrate) Execute(ctx context.Context, v domain.Vault) (Outcome, floorp
 		Histogram:      stats.Histogram,
 		QueryCount:     queries,
 		PassageCount:   len(passages),
-		CalibratedTime: u.clock(),
+		CalibratedTime: u.clock.Now(),
 	}
 	if err := u.store.WriteCalibration(ctx, v, recipe, calibration); err != nil {
 		return 0, floorport.Calibration{}, err

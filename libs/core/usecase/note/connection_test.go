@@ -5,10 +5,10 @@ import (
 	"errors"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -25,27 +25,27 @@ func (c changing) addresses() *note.GetLinkAddress {
 
 func (c changing) saveConnection() note.SaveConnection {
 	return note.NewSaveConnection(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, time.Now, c.db.Links(), c.addresses())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, testsupport.NewClock(), c.db.Links(), c.addresses())
 }
 
 func (c changing) saveConnectionWith(writers vaultport.VaultWriters) note.SaveConnection {
 	return note.NewSaveConnection(
-		vaultreader.Readers{}, writers, c.index, time.Now, c.db.Links(), c.addresses())
+		vaultreader.Readers{}, writers, c.index, testsupport.NewClock(), c.db.Links(), c.addresses())
 }
 
 func (c changing) removeConnection() note.RemoveConnection {
 	return note.NewRemoveConnection(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, time.Now, c.db.Links(), c.addresses())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, testsupport.NewClock(), c.db.Links(), c.addresses())
 }
 
 func (c changing) removeSide() note.RemoveSide {
 	return note.NewRemoveSide(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, time.Now, c.db.Links(), c.addresses())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, testsupport.NewClock(), c.db.Links(), c.addresses())
 }
 
 func (c changing) join() note.Join {
 	return note.NewJoin(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, time.Now, c.db.Links(), c.addresses())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, testsupport.NewClock(), c.db.Links(), c.addresses())
 }
 
 func (c changing) connection(t *testing.T, a, b string) domain.Connection {

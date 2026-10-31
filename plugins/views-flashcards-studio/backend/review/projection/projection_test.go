@@ -277,7 +277,7 @@ func TestAProjectionAnswersTheCallersCancellation(t *testing.T) {
 
 	run := projection.Simulation{By: review.NewFSRS(), Day: ahead, Cost: review.DefaultCost}
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
-	if _, err := run.Run(ctx, time.Now(), p, nil, 30); !errors.Is(err, context.Canceled) {
+	if _, err := run.Run(ctx, testEpoch, p, nil, 30); !errors.Is(err, context.Canceled) {
 		t.Errorf("a cancelled projection said %v", err)
 	}
 }
@@ -514,7 +514,7 @@ func weekdays(now time.Time, days int) []time.Weekday {
 // review card stays overdue.
 func TestAPresetSchedulingNothingProjectsNothing(t *testing.T) {
 	delta := review.NewFSRS()
-	now := getDayStart(time.Now())
+	now := getDayStart(testEpoch)
 	pos := makeLearnedCards(delta, now.AddDate(0, 0, -30), 12)
 
 	run := projection.Simulation{By: delta, Day: ahead, Cost: review.DefaultCost}

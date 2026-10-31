@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
-	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/clock"
 )
 
 // serverName is what the vault's tool server calls itself, and the prefix its tools arrive under.
@@ -23,10 +22,15 @@ const reportChunk = 200
 // previewInterval is the shortest time between two reports of a change being written.
 const previewInterval = 50 * time.Millisecond
 
+// timeSource gets the current time.
+type timeSource interface {
+	Now() time.Time
+}
+
 type streamParser struct {
 	send         func(*agentrun.AskAgentResponse) error
 	words        map[string]toolcall.Declaration
-	now          func() time.Time
+	clock        timeSource
 	last         time.Time
 	record       func(string)
 	isStreaming  bool
@@ -116,9 +120,10 @@ func parseStream(
 	send func(*agentrun.AskAgentResponse) error,
 	words map[string]toolcall.Declaration,
 	record func(string),
+	clock timeSource,
 	expectsVault bool,
 ) string {
-	return parseStreamWithClock(ctx, r, send, words, record, clock.Now, expectsVault)
+	return parseStreamWithClock(ctx, r, send, words, record, clock, expectsVault)
 }
 
 // parseStreamWithClock is parseStream with the clock that paces the reports of a change.
@@ -128,7 +133,7 @@ func parseStreamWithClock(
 	send func(*agentrun.AskAgentResponse) error,
 	words map[string]toolcall.Declaration,
 	record func(string),
-	now func() time.Time,
+	clock timeSource,
 	expectsVault ...bool,
 ) string {
 	hasVault := true
@@ -138,7 +143,7 @@ func parseStreamWithClock(
 	p := &streamParser{
 		send:         send,
 		words:        words,
-		now:          now,
+		clock:        clock,
 		record:       record,
 		expectsVault: hasVault,
 		last:         time.Time{},
@@ -329,7 +334,7 @@ func (p *streamParser) reportEdit() {
 	if path == "" || match == "" {
 		return
 	}
-	now := p.now()
+	now := p.clock.Now()
 	if now.Sub(p.last) < previewInterval {
 		return
 	}

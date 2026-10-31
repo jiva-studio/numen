@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 // newLinkedHost is a host with one plugin whose model chooses its weights, and whose path settings
@@ -33,7 +35,7 @@ func newLinkedHost(t *testing.T) *Host {
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.Machine, "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}

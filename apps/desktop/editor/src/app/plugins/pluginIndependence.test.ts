@@ -3,7 +3,7 @@
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { useWindowTabs } from '@/entities/tab'
 import { getTabs, mountWindow } from '@/testing/window'
 
@@ -71,13 +71,13 @@ describe('host and plugin independence', () => {
 
 describe('restoring a session with a disabled plugin', () => {
   it('restores a session holding a tab of a disabled plugin without throwing', async () => {
-    const originalLocation = globalThis.location
     try {
-      // @ts-expect-error mocking location for session restore
-      delete globalThis.location
-      globalThis.location = new URL(
-        'http://localhost/?tab=disabled-plugin:/docs/sample.pdf',
-      ) as unknown as Location
+      vi.stubGlobal(
+        'location',
+        new URL(
+          'http://localhost/?tab=disabled-plugin:/docs/sample.pdf',
+        ),
+      )
 
       const window = await mountWindow()
       expect(getTabs(window)).toEqual([
@@ -86,7 +86,7 @@ describe('restoring a session with a disabled plugin', () => {
       expect(window.text()).toContain('Plugin disabled')
       expect(window.text()).toContain('disabled-plugin')
     } finally {
-      globalThis.location = originalLocation
+      vi.unstubAllGlobals()
     }
   })
 

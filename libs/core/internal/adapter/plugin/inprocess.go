@@ -194,7 +194,7 @@ func (h *Host) startBuiltIn(ctx context.Context, p manifest.Discovered, builtIn 
 		return emptyEndpoint(), err
 	}
 
-	now := time.Now()
+	now := h.clock.Now()
 	h.mu.Lock()
 	if sup.GetState() != lifecycle.StateActivating {
 		h.mu.Unlock()

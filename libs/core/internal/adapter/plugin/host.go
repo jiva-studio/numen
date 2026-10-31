@@ -28,6 +28,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/security"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
+	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
@@ -109,11 +110,14 @@ type Host struct {
 	builtIns       map[string]builtInPlugin
 	contentTypes   contentTypeTable
 	typeCache      contentTypeCache
+	clock          machineport.Clock
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
-func NewHost(target string, dirs ...string) *Host {
+// The host reads the time from clock.
+func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 	h := &Host{
+		clock:            clock,
 		mu:               sync.RWMutex{},
 		target:           target,
 		dirs:             dirs,
@@ -150,7 +154,7 @@ func NewHost(target string, dirs ...string) *Host {
 		contentTypes:     nil,
 		typeCache:        contentTypeCache{},
 	}
-	h.bus = eventbus.New(h, 50*time.Millisecond, 250*time.Millisecond)
+	h.bus = eventbus.New(h, clock, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
 	return h
 }
@@ -539,7 +543,7 @@ func (h *Host) dropEndpointOfStoppedPlugin(pluginID string, sup *lifecycle.Super
 // acquireRunningLocked holds the plugin for a consumer when it is running with a usable endpoint.
 func (h *Host) acquireRunningLocked(pluginID string, sup *lifecycle.Supervisor) (transport.Endpoint, bool) {
 	endpoint := h.endpoints[pluginID]
-	if isEmptyEndpoint(endpoint) || endpoint.Token == "" || !sup.Acquire(time.Now()) {
+	if isEmptyEndpoint(endpoint) || endpoint.Token == "" || !sup.Acquire(h.clock.Now()) {
 		return emptyEndpoint(), false
 	}
 	return endpoint, true
@@ -557,7 +561,7 @@ func (h *Host) failActivation(ctx context.Context, pluginID string, sup *lifecyc
 	failedNow := false
 	if ctx.Err() == nil {
 		wasFailed := sup.IsActivationFailed()
-		failedNow = sup.RecordActivationFailure(time.Now(), h.activation, cause) && !wasFailed
+		failedNow = sup.RecordActivationFailure(h.clock.Now(), h.activation, cause) && !wasFailed
 	}
 	if failedNow {
 		h.failedPlugins = append(h.failedPlugins, h.newPluginFailureLocked(pluginID, sup, cause))
@@ -660,7 +664,7 @@ func (h *Host) ensureActiveDuringDiscovery(ctx context.Context, pluginID string)
 
 // beginActivationLocked moves a dormant plugin to Activating unless it is backing off or has failed.
 func (h *Host) beginActivationLocked(pluginID string, sup *lifecycle.Supervisor) error {
-	if err := sup.CheckActivationAllowed(time.Now()); err != nil {
+	if err := sup.CheckActivationAllowed(h.clock.Now()); err != nil {
 		return fmt.Errorf("activate plugin %s: %w", pluginID, err)
 	}
 	sup.SetActivating()
@@ -774,7 +778,7 @@ func (h *Host) startPluginProcess(ctx context.Context, p manifest.Discovered, su
 		return emptyEndpoint(), err
 	}
 
-	now := time.Now()
+	now := h.clock.Now()
 	h.mu.Lock()
 	if sup.GetState() != lifecycle.StateActivating {
 		h.mu.Unlock()
@@ -894,7 +898,7 @@ func (h *Host) Acquire(pluginID string) {
 	sup, ok := h.supervisors[pluginID]
 	h.mu.RUnlock()
 	if ok {
-		sup.Acquire(time.Now())
+		sup.Acquire(h.clock.Now())
 	}
 }
 
@@ -904,7 +908,7 @@ func (h *Host) Release(pluginID string) {
 	sup, ok := h.supervisors[pluginID]
 	h.mu.RUnlock()
 	if ok {
-		sup.Release(time.Now())
+		sup.Release(h.clock.Now())
 	}
 }
 
@@ -928,7 +932,7 @@ type pluginTeardownTarget struct {
 // EvictIdle stops idle plugins whose idle duration exceeds their configured timeout.
 func (h *Host) EvictIdle(ctx context.Context, defaultThreshold, gracePeriod time.Duration) []string {
 	h.mu.Lock()
-	now := time.Now()
+	now := h.clock.Now()
 	var targets []pluginTeardownTarget
 
 	for id, sup := range h.supervisors {
@@ -979,7 +983,7 @@ func (h *Host) EvictMemoryExceeded(ctx context.Context, gracePeriod time.Duratio
 	evicted := h.evictTargets(ctx, targets, gracePeriod)
 	for _, target := range targets {
 		if slices.Contains(evicted, target.id) {
-			target.sup.RecordActivationFailure(time.Now(), h.activation, fmt.Errorf("%w: %d bytes", lifecycle.ErrMemoryExceeded, target.sup.GetMemoryLimit()))
+			target.sup.RecordActivationFailure(h.clock.Now(), h.activation, fmt.Errorf("%w: %d bytes", lifecycle.ErrMemoryExceeded, target.sup.GetMemoryLimit()))
 			h.reportMemoryExceeded(target.id, target.sup)
 		}
 	}
@@ -1718,7 +1722,7 @@ func (h *Host) recordActivationFailure(pluginID string, cause error) *pluginport
 	}
 	policy := h.activation
 	policy.MaxFailures = 1
-	if !sup.RecordActivationFailure(time.Now(), policy, cause) {
+	if !sup.RecordActivationFailure(h.clock.Now(), policy, cause) {
 		return nil
 	}
 	failure := h.newPluginFailureLocked(pluginID, sup, cause)

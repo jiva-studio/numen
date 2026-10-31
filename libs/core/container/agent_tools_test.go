@@ -247,7 +247,7 @@ func hostOver(t *testing.T, plugins ...testPlugin) *plugin.Host {
 		ports[one.id] = addr.Port
 	}
 
-	host := plugin.NewHost("desktop.editor", tmp)
+	host := plugin.NewHost(testsupport.Machine, "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}

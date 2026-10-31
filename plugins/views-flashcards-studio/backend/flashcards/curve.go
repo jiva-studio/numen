@@ -137,7 +137,7 @@ func (u ProjectCurve) Execute(
 	if !costed {
 		cost = review.DefaultCost
 	}
-	now := u.now()
+	now := u.now.Now()
 	// The projection runs with the scheduler this preset requests, which is the one
 	// that schedules its cards, and it starts on the current day with the answers
 	// already given.

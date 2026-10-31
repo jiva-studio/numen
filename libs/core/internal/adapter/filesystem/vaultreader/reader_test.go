@@ -407,7 +407,7 @@ func TestOpenDoesNotWriteIntoTheFolder(t *testing.T) {
 func TestInitializeProducesAnIdentityOnceAndKeepsIt(t *testing.T) {
 	dir := t.TempDir()
 
-	first, err := vaultconfig.Initialize(dir, "", time.Now())
+	first, err := vaultconfig.Initialize(dir, "", testsupport.Epoch)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -420,7 +420,7 @@ func TestInitializeProducesAnIdentityOnceAndKeepsIt(t *testing.T) {
 
 	// Re-adding a vault must not mint a new identity: every row in the index
 	// points at the old one.
-	second, err := vaultconfig.Initialize(dir, "", time.Now().Add(time.Hour))
+	second, err := vaultconfig.Initialize(dir, "", testsupport.Machine.Now().Add(time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -431,7 +431,7 @@ func TestInitializeProducesAnIdentityOnceAndKeepsIt(t *testing.T) {
 
 func TestInitializeWritesOnlyIntoTheServiceFolder(t *testing.T) {
 	dir := t.TempDir()
-	if _, err := vaultconfig.Initialize(dir, "", time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(dir, "", testsupport.Epoch); err != nil {
 		t.Fatal(err)
 	}
 	entries, err := os.ReadDir(dir)
@@ -445,7 +445,7 @@ func TestInitializeWritesOnlyIntoTheServiceFolder(t *testing.T) {
 
 func TestServiceFolderNameIsASetting(t *testing.T) {
 	dir := t.TempDir()
-	if _, err := vaultconfig.Initialize(dir, "_numen", time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(dir, "_numen", testsupport.Epoch); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(filepath.Join(dir, "_numen", "config.json")); err != nil {

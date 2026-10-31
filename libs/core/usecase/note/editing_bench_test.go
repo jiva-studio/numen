@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
@@ -54,7 +53,7 @@ func BenchmarkSave(b *testing.B) {
 		b.Run(fmt.Sprintf("%d words", size), func(b *testing.B) {
 			v := testsupport.GenerateVault(b, 100)
 			write := note.NewWrite(
-				vaultreader.Readers{}, vaultwriter.VaultWriters{}, indexNothing, time.Now)
+				vaultreader.Readers{}, vaultwriter.VaultWriters{}, indexNothing, testsupport.NewClock())
 			path := "01/note-000001.md"
 
 			body := ""

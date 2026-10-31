@@ -124,7 +124,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 
 	run.log.order = newHistory(run.log.Answers)
 	u.remember(ctx, v, run.now)
-	run.out.Streak = review.Streak(u.day, run.out.Days, u.now())
+	run.out.Streak = review.Streak(u.day, run.out.Days, u.now.Now())
 
 	// The upcoming cards and the retained cards are both computed from the answers
 	// in the order they were given, so they are requested together.
@@ -276,7 +276,7 @@ func (u CountReviews) getDueAndRetained(
 		return nil, nil, err
 	}
 
-	now := u.now()
+	now := u.now.Now()
 	ends := u.day.GetEnd(now)
 	for _, s := range schedules {
 		if s.IsNew() || s.Due.Before(ends) {

@@ -15,14 +15,15 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 )
 
 func TestCodexModelCacheClearsFailedKeyOnSuccess(t *testing.T) {
 	agenttest.NeedsShell(t)
 	t.Setenv("HOME", t.TempDir())
 	failing := agenttest.WriteScript(t, "codex", "exit 1\n")
-	now := time.Unix(1000, 0)
-	cache := codexModelCache{now: func() time.Time { return now }}
+	now := clock.NewFake(time.Unix(1000, 0))
+	cache := codexModelCache{clock: now}
 
 	if got := cache.get(t.Context(), []string{failing}); got != nil {
 		t.Fatalf("expected nil from failed script, got %v", got)
@@ -38,7 +39,7 @@ func TestCodexModelCacheClearsFailedKeyOnSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	now = now.Add(codexFailureBackoff)
+	now.Advance(codexFailureBackoff)
 	got := cache.get(t.Context(), []string{failing})
 	if len(got) != 1 || got[0].Name != "gpt-ok" {
 		t.Fatalf("expected 1 model, got %v", got)
@@ -122,17 +123,15 @@ func TestAskCodexModelsStopsCommand(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 3*time.Second)
 	defer cancel()
 
-	start := time.Now()
 	models, err := askCodexModels(ctx, []string{script})
-	elapsed := time.Since(start)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(models) != 1 {
 		t.Fatalf("expected 1 model, got %v", models)
 	}
-	if elapsed > 2*time.Second {
-		t.Errorf("expected prompt return, took %v", elapsed)
+	if ctx.Err() != nil {
+		t.Errorf("expected return before the deadline, got %v", ctx.Err())
 	}
 
 	pidBytes, err := os.ReadFile(pidFile)

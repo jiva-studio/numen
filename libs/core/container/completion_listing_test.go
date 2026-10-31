@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/usecase/completion"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 )
@@ -30,7 +31,7 @@ func TestTheListingOfProgramsForAQuestionHasALimit(t *testing.T) {
 	provider := &listingProvider{}
 	programs := completion.NewPrograms(provider, func() completion.AgentSettings { return completion.AgentSettings{} })
 
-	before := time.Now()
+	before := testsupport.Machine.Now()
 	_, err := programs.GetProgram(t.Context(), "claude")
 
 	if !errors.Is(err, completionport.ErrUnavailable) {

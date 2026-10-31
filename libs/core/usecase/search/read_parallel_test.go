@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
@@ -240,9 +241,9 @@ func TestRead_StopsOnContextCancelWithoutLeakedGoroutines(t *testing.T) {
 // waitForGoroutines waits for the goroutines to be no more than `before`.
 func waitForGoroutines(t *testing.T, before int) {
 	t.Helper()
-	deadline := time.Now().Add(5 * time.Second)
+	deadline := testsupport.Machine.Now().Add(5 * time.Second)
 	for runtime.NumGoroutine() > before {
-		if time.Now().After(deadline) {
+		if testsupport.Machine.Now().After(deadline) {
 			t.Fatalf("%d goroutines are running, there were %d before the read", runtime.NumGoroutine(), before)
 		}
 		time.Sleep(time.Millisecond)

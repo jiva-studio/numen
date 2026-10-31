@@ -2,8 +2,8 @@ package service
 
 import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
@@ -45,8 +45,8 @@ func TestListReviewDays_ReturnsDaysOldestFirst(t *testing.T) {
 	if len(response.Days) != 1 {
 		t.Fatalf("answered on %d days, want the one", len(response.Days))
 	}
-	if got := response.Days[0]; got.Day != counting.GetName(time.Now()) {
-		t.Errorf("the day is %q, want %q", got.Day, counting.GetName(time.Now()))
+	if got := response.Days[0]; got.Day != counting.GetName(vaulttest.Epoch) {
+		t.Errorf("the day is %q, want %q", got.Day, counting.GetName(vaulttest.Epoch))
 	}
 }
 
@@ -99,7 +99,7 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 		t.Errorf("%d cards fall on %s, want the one", coming.Reviewed, coming.Day)
 	}
 	// A day is formatted to sort as text in the same order as in time.
-	if today := counting.GetName(time.Now()); coming.Day <= today {
+	if today := counting.GetName(vaulttest.Epoch); coming.Day <= today {
 		t.Errorf("what is coming falls on %s, which is not after %s", coming.Day, today)
 	}
 	// What was answered is still answered: the two are counted apart.

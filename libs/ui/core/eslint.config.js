@@ -126,9 +126,6 @@ export default tseslint.config(
       'src/**/*.test.ts',
       'src/**/*.stories.ts',
       'src/**/fixtures/**',
-      // The port itself.
-      'src/shared/lib/time/clock.ts',
-      'src/shared/lib/dom.ts',
     ],
     rules: {
       'no-restricted-globals': [
@@ -164,16 +161,4 @@ export default tseslint.config(
     },
   },
 
-  {
-    files: ['vitest.setup.ts'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'off',
-      '@typescript-eslint/no-floating-promises': 'off',
-      '@typescript-eslint/no-misused-promises': 'off',
-      '@typescript-eslint/await-thenable': 'off',
-      'no-console': 'off',
-      'require-yield': 'off',
-    },
-  },
 )

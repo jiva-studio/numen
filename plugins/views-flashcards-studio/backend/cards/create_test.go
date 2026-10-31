@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
@@ -19,7 +18,7 @@ import (
 func TestATitleNoFileCanBeNamedAfterIsRefused(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
-	u := cards.NewCreate(env.Ports.Writers, nil, time.Now)
+	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock())
 
 	for name, title := range map[string]string{
 		"empty":     "  ",
@@ -45,7 +44,7 @@ func TestATitleNoFileCanBeNamedAfterIsRefused(t *testing.T) {
 func TestATitleIsSavedOnlyWhereTheFilenameCannotCarryIt(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
-	u := cards.NewCreate(env.Ports.Writers, nil, time.Now)
+	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock())
 
 	plain, err := u.Deck(t.Context(), v, cards.New{Title: "Birds"})
 	if err != nil {
@@ -71,7 +70,7 @@ func TestATitleIsSavedOnlyWhereTheFilenameCannotCarryIt(t *testing.T) {
 func TestACardModelOfOneFieldDeclaresIt(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
-	u := cards.NewCreate(env.Ports.Writers, nil, time.Now)
+	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock())
 
 	made, err := u.CardModel(t.Context(), v, cards.New{Title: "Word", Fields: []string{"Meaning"}})
 	if err != nil {
@@ -86,7 +85,7 @@ func TestACardModelOfOneFieldDeclaresIt(t *testing.T) {
 func TestANoteIsMadeWithNoIndexToBringLevel(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
-	u := cards.NewCreate(env.Ports.Writers, nil, time.Now)
+	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock())
 
 	made, err := u.Deck(t.Context(), v, cards.New{Title: "Birds", Body: "About birds."})
 	if err != nil {
@@ -104,7 +103,7 @@ func TestANoteIsMadeWithNoIndexToBringLevel(t *testing.T) {
 func TestANoteIsNotMadeOverOneThatIsThere(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
-	u := cards.NewCreate(env.Ports.Writers, nil, time.Now)
+	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock())
 	if err := os.WriteFile(filepath.Join(v.Path, "Birds.md"), []byte("mine"), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +126,7 @@ func (unopenable) Open(domain.Vault) (ports.VaultWriter, error) { return nil, er
 func TestANoteIsNotMadeInAVaultThatCannotBeSaved(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
-	u := cards.NewCreate(unopenable{}, nil, time.Now)
+	u := cards.NewCreate(unopenable{}, nil, vaulttest.NewClock())
 
 	if _, err := u.Deck(t.Context(), v, cards.New{Title: "Birds"}); !errors.Is(err, errUnopenable) {
 		t.Errorf("make a deck = %v, want %v", err, errUnopenable)
@@ -139,7 +138,7 @@ func TestANewNoteIsBroughtLevelInTheIndexItWasGiven(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
 	var levelled []string
-	u := cards.NewCreate(env.Ports.Writers, nil, time.Now).WithIndex(
+	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock()).WithIndex(
 		func(_ context.Context, _ domain.Vault, paths []string) error {
 			levelled = append(levelled, paths...)
 			return nil

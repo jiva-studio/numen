@@ -103,7 +103,7 @@ func (u Session) Execute(
 	}
 	schedules := u.schedules.getSchedulesCached(ctx, v, target, asks)
 
-	now := u.now()
+	now := u.now.Now()
 	day, err := getBudgets(
 		ctx, v, reads, u.day, reviewCards, schedules, target,
 		u.schedules.scheduler, u.schedules.getScheduler, now,

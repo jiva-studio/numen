@@ -9,11 +9,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
 func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
-	host := plugin.NewHost("desktop.editor")
+	host := plugin.NewHost(testsupport.Machine, "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)

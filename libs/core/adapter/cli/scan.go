@@ -7,6 +7,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
@@ -96,11 +97,11 @@ func splitRebuildFlag(args []string) (rebuild bool, rest []string) {
 }
 
 // readClock is the time the clock gives, and the zero time where there is no clock.
-func readClock(clock func() time.Time) time.Time {
-	if clock == nil {
+func readClock(source machinecontract.Clock) time.Time {
+	if source == nil {
 		return time.Time{}
 	}
-	return clock()
+	return source.Now()
 }
 
 // describeSources describes the extraction of the files that are not notes: the

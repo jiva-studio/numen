@@ -25,7 +25,7 @@ export const NOT_SHIPPED = /(_test\.go|\.(test|spec|stories)\.ts|\.pb\.go|\.conn
  * The files that state the boundary between applications and plugins, and so name both sides: lint
  * configurations, and layer tests in a `layers` directory.
  */
-const BOUNDARY_RULE_FILE = /(^|\/)(eslint\.config\.[cm]?js|\.golangci\.ya?ml)$|(^|\/)layers\/[^/]*_test\.go$/;
+const BOUNDARY_RULE_FILE = /(^|\/)(eslint\.config\.[cm]?js|\.golangci(-structure)?\.ya?ml)$|(^|\/)layers\/[^/]*_test\.go$/;
 
 export function isBoundaryRule(file) {
   return BOUNDARY_RULE_FILE.test(file);

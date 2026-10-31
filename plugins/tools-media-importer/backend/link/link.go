@@ -56,13 +56,18 @@ type Fetcher interface {
 	Download(ctx context.Context, address string, into io.Writer) (download.Copy, error)
 }
 
+// Clock gets the current time.
+type Clock interface {
+	Now() time.Time
+}
+
 // Host is what the plugin works through the host.
 type Host struct {
 	Vault host.Vault
 	Store host.Store
 	Texts host.Texts
 	Queue host.Queue
-	Now   func() time.Time
+	Clock Clock
 }
 
 // Settings are the user's fetch settings. CopyMaxSize is in bytes; zero means
@@ -78,7 +83,7 @@ type Links struct {
 	host     Host
 	fetcher  func() Fetcher
 	settings func() Settings
-	now      func() time.Time
+	clock    Clock
 
 	closing   chan struct{}
 	closeOnce sync.Once
@@ -91,12 +96,8 @@ type Links struct {
 // New returns the links service for the host. fetcher and settings are
 // evaluated on every fetch, so a changed setting applies to the next one.
 func New(h Host, fetcher func() Fetcher, settings func() Settings) *Links {
-	now := h.Now
-	if now == nil {
-		now = func() time.Time { return time.Unix(1_700_000_000, 0) }
-	}
 	return &Links{
-		host: h, fetcher: fetcher, settings: settings, now: now,
+		host: h, fetcher: fetcher, settings: settings, clock: h.Clock,
 		closing: make(chan struct{}), closeOnce: sync.Once{}, wg: sync.WaitGroup{},
 		mu: sync.Mutex{}, running: map[string]bool{},
 	}
@@ -179,7 +180,7 @@ func (l *Links) Create(ctx context.Context, folder, raw string) (Link, error) {
 	if err != nil {
 		return Link{}, err
 	}
-	doc, err := markdown.Open(markdown.Create(ulid.New(l.now()), ""))
+	doc, err := markdown.Open(markdown.Create(ulid.New(l.clock.Now()), ""))
 	if err != nil {
 		return Link{}, err
 	}

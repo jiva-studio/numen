@@ -8,24 +8,28 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 )
+
+var realClock clock.System
 
 func TestReserveQuota_RejectsOverCommit(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv(EnvQuota, "100")
 
-	first, err := Reserve(t.Context(), root, 60, "")
+	first, err := Reserve(t.Context(), realClock, root, 60, "")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if first.Room != 60 {
 		t.Fatalf("room = %d, want 60", first.Room)
 	}
-	if _, err := Reserve(t.Context(), root, 60, ""); err == nil || !strings.Contains(err.Error(), EnvQuota) {
+	if _, err := Reserve(t.Context(), realClock, root, 60, ""); err == nil || !strings.Contains(err.Error(), EnvQuota) {
 		t.Fatalf("second reservation error = %v", err)
 	}
 	release(t, first)
-	again, err := Reserve(t.Context(), root, 60, "")
+	again, err := Reserve(t.Context(), realClock, root, 60, "")
 	if err != nil {
 		t.Fatalf("after release: %v", err)
 	}
@@ -38,7 +42,7 @@ func TestReserveQuotaOfAnUnknownSizeClaimsWhatIsRemaining(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "member"), make([]byte, 40), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	claim, err := Reserve(t.Context(), root, -1, "")
+	claim, err := Reserve(t.Context(), realClock, root, -1, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,26 +57,26 @@ func TestReserveQuotaReportsAFolderItCannotCreate(t *testing.T) {
 	if err := os.WriteFile(blocker, nil, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Reserve(t.Context(), filepath.Join(blocker, "models"), 1, ""); err == nil {
+	if _, err := Reserve(t.Context(), realClock, filepath.Join(blocker, "models"), 1, ""); err == nil {
 		t.Fatal("reservation succeeded under a regular file")
 	}
 }
 
 func TestLockQuotaWaitsForTheHolder(t *testing.T) {
 	root := t.TempDir()
-	unlock, err := lockQuota(t.Context(), root)
+	unlock, err := lockQuota(t.Context(), realClock, root)
 	if err != nil {
 		t.Fatal(err)
 	}
 	ctx, stop := context.WithTimeout(t.Context(), 150*time.Millisecond)
 	defer stop()
-	if _, err := lockQuota(ctx, root); err == nil {
+	if _, err := lockQuota(ctx, realClock, root); err == nil {
 		t.Fatal("lock was taken twice")
 	}
 	if err := unlock(); err != nil {
 		t.Fatal(err)
 	}
-	again, err := lockQuota(t.Context(), root)
+	again, err := lockQuota(t.Context(), realClock, root)
 	if err != nil {
 		t.Fatalf("after unlock: %v", err)
 	}
@@ -87,11 +91,11 @@ func TestLockQuotaBreaksAStaleLock(t *testing.T) {
 	if err := os.Mkdir(lock, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	old := time.Now().Add(-2 * staleLock)
+	old := realClock.Now().Add(-2 * staleLock)
 	if err := os.Chtimes(lock, old, old); err != nil {
 		t.Fatal(err)
 	}
-	unlock, err := lockQuota(t.Context(), root)
+	unlock, err := lockQuota(t.Context(), realClock, root)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,32 +109,32 @@ func TestLockQuotaReportsAFolderItCannotCreate(t *testing.T) {
 	if err := os.WriteFile(blocker, nil, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := lockQuota(t.Context(), filepath.Join(blocker, "models")); err == nil {
+	if _, err := lockQuota(t.Context(), realClock, filepath.Join(blocker, "models")); err == nil {
 		t.Fatal("lock was taken under a file")
 	}
 }
 
 func TestReservationPreservesItselfAlive(t *testing.T) {
 	root := t.TempDir()
-	claim, err := reserve(t.Context(), root, 10, "", 10*time.Millisecond)
+	claim, err := reserve(t.Context(), realClock, root, 10, "", 10*time.Millisecond)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer release(t, claim)
-	old := time.Now().Add(-time.Hour)
+	old := realClock.Now().Add(-time.Hour)
 	if err := os.Chtimes(claim.file, old, old); err != nil {
 		t.Fatal(err)
 	}
-	deadline := time.Now().Add(5 * time.Second)
+	deadline := realClock.Now().Add(5 * time.Second)
 	for {
 		info, err := os.Stat(claim.file)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if time.Since(info.ModTime()) < time.Minute {
+		if realClock.Now().Sub(info.ModTime()) < time.Minute {
 			return
 		}
-		if time.Now().After(deadline) {
+		if realClock.Now().After(deadline) {
 			t.Fatal("reservation was not kept alive")
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -139,7 +143,7 @@ func TestReservationPreservesItselfAlive(t *testing.T) {
 
 func TestReservationReleaseIsIdempotentAndRemovesTheFile(t *testing.T) {
 	root := t.TempDir()
-	claim, err := Reserve(t.Context(), root, 10, "")
+	claim, err := Reserve(t.Context(), realClock, root, 10, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -157,12 +161,12 @@ func TestReservationDoesNotCountTheBytesOfItsPartTwice(t *testing.T) {
 	if err := os.WriteFile(part, make([]byte, 40), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	claim, err := Reserve(t.Context(), root, 50, part)
+	claim, err := Reserve(t.Context(), realClock, root, 50, part)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer release(t, claim)
-	used, err := GetUsage(root)
+	used, err := GetUsage(realClock, root)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -234,10 +238,10 @@ func TestGetUsageSumsNestedFiles(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if got, err := GetUsage(dir); err != nil || got != 8 {
+	if got, err := GetUsage(realClock, dir); err != nil || got != 8 {
 		t.Fatalf("GetUsage() = %d, %v, want 8", got, err)
 	}
-	if got, err := GetUsage(filepath.Join(dir, "missing")); err != nil || got != 0 {
+	if got, err := GetUsage(realClock, filepath.Join(dir, "missing")); err != nil || got != 0 {
 		t.Fatalf("GetUsage(missing) = %d, %v, want 0", got, err)
 	}
 }
@@ -252,7 +256,7 @@ func TestGetUsageCountsWhatALiveReservationHasNotSaved(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "reservation-1"+reserveSuffix), []byte(reservation), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	got, err := GetUsage(dir)
+	got, err := GetUsage(realClock, dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -267,11 +271,11 @@ func TestGetUsageIgnoresWhatAStaleReservationPromised(t *testing.T) {
 	if err := os.WriteFile(file, []byte("100"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	old := time.Now().Add(-2 * staleReservation)
+	old := realClock.Now().Add(-2 * staleReservation)
 	if err := os.Chtimes(file, old, old); err != nil {
 		t.Fatal(err)
 	}
-	if got, err := GetUsage(dir); err != nil || got != 3 {
+	if got, err := GetUsage(realClock, dir); err != nil || got != 3 {
 		t.Fatalf("GetUsage() = %d, %v, want 3", got, err)
 	}
 }
@@ -281,7 +285,7 @@ func TestGetUsageIgnoresAReservationThatIsNotANumber(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "m.part-1"+reserveSuffix), []byte("many"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if got, err := GetUsage(dir); err != nil || got != 4 {
+	if got, err := GetUsage(realClock, dir); err != nil || got != 4 {
 		t.Fatalf("GetUsage() = %d, %v, want 4", got, err)
 	}
 }
@@ -303,10 +307,10 @@ func TestGetUsageReportsAFolderItCannotRead(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	if _, err := GetUsage(dir); err == nil {
+	if _, err := GetUsage(realClock, dir); err == nil {
 		t.Fatal("an unreadable folder was counted as empty")
 	}
-	if err := CheckQuota(dir, 1); err == nil {
+	if err := CheckQuota(realClock, dir, 1); err == nil {
 		t.Fatal("CheckQuota passed over an unreadable folder")
 	}
 }
@@ -317,10 +321,10 @@ func TestCheckQuota(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv(EnvQuota, "10")
-	if err := CheckQuota(dir, 4); err != nil {
+	if err := CheckQuota(realClock, dir, 4); err != nil {
 		t.Fatalf("10 of 10 bytes: %v", err)
 	}
-	if err := CheckQuota(dir, 5); err == nil {
+	if err := CheckQuota(realClock, dir, 5); err == nil {
 		t.Fatal("11 of 10 bytes passed")
 	}
 }

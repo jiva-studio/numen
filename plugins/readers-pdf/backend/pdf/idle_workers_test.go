@@ -1,6 +1,7 @@
 package pdf
 
 import (
+	"context"
 	"fmt"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"os"
@@ -114,8 +115,9 @@ func TestTheWorkersAreReleasedAfterTheIdlePeriod(t *testing.T) {
 		t.Fatal("the pool was released while a document was open")
 	}
 	cleanup.Close(t, doc)
-	deadline := time.Now().Add(5 * time.Second)
-	for hasPool() && time.Now().Before(deadline) {
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	for hasPool() && ctx.Err() == nil {
 		time.Sleep(10 * time.Millisecond)
 	}
 	if hasPool() {

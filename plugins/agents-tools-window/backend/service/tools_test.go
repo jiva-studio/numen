@@ -5,13 +5,15 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
 func TestRegisterTools(t *testing.T) {
-	mgr := NewManager()
+	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, nil); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
@@ -35,7 +37,7 @@ func TestRegisterTools(t *testing.T) {
 }
 
 func TestWindowTabsGetEmpty(t *testing.T) {
-	mgr := NewManager()
+	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, nil); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
@@ -66,7 +68,7 @@ func TestWindowTabsGetEmpty(t *testing.T) {
 }
 
 func TestWindowTabsGetWithTabs(t *testing.T) {
-	mgr := NewManager()
+	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	mgr.SetOpenTabs([]TabInfo{
 		{ID: "tab-1", Kind: "note", Path: "notes/daily.md", Title: "daily"},
 		{ID: "tab-2", Kind: "document", Path: "docs/spec.pdf", Title: "Specification", Where: "page 3 of 10"},
@@ -101,7 +103,7 @@ func TestWindowTabsGetWithTabs(t *testing.T) {
 }
 
 func TestWindowTabsGet_UsesContextFocus(t *testing.T) {
-	mgr := NewManager()
+	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, nil); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
@@ -132,7 +134,7 @@ func TestWindowTabsGet_UsesContextFocus(t *testing.T) {
 }
 
 func TestWindowFocusTab(t *testing.T) {
-	mgr := NewManager()
+	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	mgr.SetOpenTabs([]TabInfo{
 		{ID: "t1", Kind: "note", Path: "notes/a.md", Title: "A"},
 		{ID: "t2", Kind: "note", Path: "notes/b.md", Title: "B"},
@@ -191,7 +193,7 @@ func TestWindowFocusTab(t *testing.T) {
 }
 
 func TestEditPreviewFromVault(t *testing.T) {
-	mgr := NewManager()
+	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	vault := hosttest.New("test-vault")
 	ctx := t.Context()
 	if err := vault.Create(ctx, "notes/sample.md", []byte("hello world\nline 2\n")); err != nil {
@@ -240,7 +242,7 @@ func TestEditPreviewFromVault(t *testing.T) {
 }
 
 func TestEditPreviewWithDirectDiff(t *testing.T) {
-	mgr := NewManager()
+	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, nil); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
@@ -269,7 +271,7 @@ func TestEditPreviewWithDirectDiff(t *testing.T) {
 }
 
 func TestEditPreviewValidation(t *testing.T) {
-	mgr := NewManager()
+	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	registry := tools.New()
 	if err := RegisterTools(registry, mgr, nil); err != nil {
 		t.Fatalf("RegisterTools: %v", err)

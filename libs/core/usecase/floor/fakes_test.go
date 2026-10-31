@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/port/floorport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -129,4 +130,4 @@ func stored(values ...int8) []byte {
 	return out
 }
 
-func newClock(instant time.Time) func() time.Time { return func() time.Time { return instant } }
+func newClock(instant time.Time) *clock.Fake { return clock.NewFake(instant) }

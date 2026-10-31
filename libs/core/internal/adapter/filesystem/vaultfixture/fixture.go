@@ -35,7 +35,7 @@ func CreateVault(t *testing.T, files map[string]string, ignore []string) string 
 			t.Fatal(err)
 		}
 	}
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)); err != nil {
 		t.Fatal(err)
 	}
 	if ignore != nil {

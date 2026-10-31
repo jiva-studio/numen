@@ -80,7 +80,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 		}
 	}
 
-	identifier := ulid.New(u.now())
+	identifier := ulid.New(u.now.Now())
 
 	content, err := writeTitle(markdown.Create(identifier, in.Body), title, exact)
 	if err != nil {

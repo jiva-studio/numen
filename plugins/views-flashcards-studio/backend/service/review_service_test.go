@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"os"
 	"path/filepath"
 	"slices"
@@ -156,7 +157,7 @@ func (unreadable) GetVaults(context.Context) ([]domain.Vault, error) {
 // their vaults are gone.
 func TestAWindowThatCannotReadTheVaultsReturnsSo(t *testing.T) {
 	_, _, installation := newAPIOn(t)
-	handler := &reviewHandler{Backend: New(Config{Vault: unreadable{Vault: installation.Host}, Store: installation.Host.Store()})}
+	handler := &reviewHandler{Backend: New(Config{Vault: unreadable{Vault: installation.Host}, Store: installation.Host.Store(), Now: vaulttest.NewClock()})}
 
 	stream, err := newFlashcardsClient(t, handler).WatchCardsDue(t.Context(),
 		&api.WatchCardsDueRequest{})
@@ -299,7 +300,7 @@ func TestASessionWhoseRunCannotBeOpenedIsRefused(t *testing.T) {
 func TestAVaultWhoseAnswersCannotBeCountedIsRefused(t *testing.T) {
 	handler, target := newAPI(t, deck)
 	handler.scenarios().flash.GetReviewDays = flashcards.NewGetReviewDays(
-		flashcards.NewCountReviews(unopenable{}, handler.scenarios().flash.Schedules, reviewDay, time.Now))
+		flashcards.NewCountReviews(unopenable{}, handler.scenarios().flash.Schedules, reviewDay, vaulttest.NewClock()))
 
 	out, err := handler.ListReviewDays(t.Context(),
 		&api.ListReviewDaysRequest{Vault: string(target[0].ID)})

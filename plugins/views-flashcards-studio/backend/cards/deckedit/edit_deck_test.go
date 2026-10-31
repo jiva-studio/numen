@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
@@ -92,7 +91,7 @@ func newEditing(t *testing.T) editing {
 	vs := newVaults(t)
 	read := cards.NewRead(vs.ports.Readers, vs.queries)
 	write := cards.NewWrite(
-		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, time.Now)
+		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock())
 	return editing{
 		vs: vs, read: read,
 		addCard:       deckedit.NewAddCard(read, write),

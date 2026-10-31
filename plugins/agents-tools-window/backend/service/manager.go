@@ -8,14 +8,18 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-
-	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/internal/adapter/clock"
+	"time"
 )
 
 var (
 	errMissingFocusTarget = errors.New("specify tabId, path, or title to focus")
 	errTabNotFound        = errors.New("no open tab matches criteria")
 )
+
+// timeSource gets the current time.
+type timeSource interface {
+	Now() time.Time
+}
 
 // WindowManager coordinates open tabs and edit previews.
 type WindowManager struct {
@@ -24,16 +28,18 @@ type WindowManager struct {
 	activeID   string
 	previews   map[string]EditPreview
 	previewSeq atomic.Uint64
+	clock      timeSource
 }
 
 // NewManager creates a window manager instance.
-func NewManager() *WindowManager {
+func NewManager(clock timeSource) *WindowManager {
 	return &WindowManager{
 		mu:         sync.RWMutex{},
 		tabs:       nil,
 		activeID:   "",
 		previews:   make(map[string]EditPreview),
 		previewSeq: atomic.Uint64{},
+		clock:      clock,
 	}
 }
 
@@ -164,5 +170,10 @@ func (m *WindowManager) ClearPreviews() {
 // NextPreviewID generates a unique identifier for an edit preview.
 func (m *WindowManager) NextPreviewID() string {
 	seq := m.previewSeq.Add(1)
-	return fmt.Sprintf("prev-%d-%d", clock.Now().UnixNano(), seq)
+	return fmt.Sprintf("prev-%d-%d", m.clock.Now().UnixNano(), seq)
+}
+
+// GetNow gets the current time of the manager's clock.
+func (m *WindowManager) GetNow() time.Time {
+	return m.clock.Now()
 }

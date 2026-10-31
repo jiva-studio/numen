@@ -82,10 +82,15 @@ func (w *memWorld) index(path string) {
 	w.item[path] = []domain.FileStat{w.files[path].fp}
 }
 
+// memClock reads the clock function of a memWorld.
+type memClock struct{ w *memWorld }
+
+func (c memClock) Now() time.Time { return c.w.clock() }
+
 func (w *memWorld) refresh() vaults.Refresh {
 	return vaults.NewRefresh(
 		memReaders{w}, memRows{w}, memNotes{w}, memQueries{w: w}, memSources{w: w},
-		func() time.Time { return w.clock() },
+		memClock{w},
 	)
 }
 

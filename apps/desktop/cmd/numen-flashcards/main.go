@@ -131,7 +131,7 @@ func run(cfg container.Config, debug debugOptions) error {
 	}
 	handler := api.NewHandler(pages)
 	if debug.isServingHTTP() {
-		return debug.serveHTTP(ctx, handler)
+		return debug.serveHTTP(ctx, cfg, handler)
 	}
 	return runApplication(handler, target)
 }

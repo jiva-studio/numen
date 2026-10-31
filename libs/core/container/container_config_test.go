@@ -9,8 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
 
@@ -35,15 +37,15 @@ func isolateWithNoHome(t *testing.T) {
 
 func TestTheClockIsTheOneTheInstallationNamed(t *testing.T) {
 	named := time.Date(2020, 2, 3, 4, 5, 6, 0, time.UTC)
-	if got := (Config{Now: func() time.Time { return named }}).Clock()(); !got.Equal(named) {
+	if got := (Config{Now: clock.NewFake(named)}).Clock().Now(); !got.Equal(named) {
 		t.Errorf("the clock reads %v, and the installation named %v", got, named)
 	}
 }
 
 func TestAnInstallationNamingNoClockReadsTheMachinesOwn(t *testing.T) {
-	before := time.Now()
-	got := Config{}.Clock()()
-	if got.Before(before) || got.After(time.Now()) {
+	before := testsupport.Machine.Now()
+	got := Config{}.Clock().Now()
+	if got.Before(before) || got.After(testsupport.Machine.Now()) {
 		t.Errorf("the clock reads %v, and it is %v", got, before)
 	}
 }

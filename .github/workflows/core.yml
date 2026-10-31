@@ -21,6 +21,7 @@ on:
       - ".github/workflows/core.yml"
       # The rules the linter is held to, and the ones written here in Go.
       - ".golangci.yml"
+      - ".golangci-structure.yml"
   # A platform can be asked for after the checks have already run, without
   # rewriting a commit to carry the trailer.
   workflow_dispatch:
@@ -211,8 +212,20 @@ jobs:
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v2.14.0
+          working-directory: libs/core
+          args: --timeout 15m -c ${{ github.workspace }}/.golangci-structure.yml
+
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.14.0
           working-directory: libs/notes
           args: --timeout 10m
+
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.14.0
+          working-directory: libs/notes
+          args: --timeout 10m -c ${{ github.workspace }}/.golangci-structure.yml
 
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
@@ -223,8 +236,20 @@ jobs:
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v2.14.0
+          working-directory: libs/protocol
+          args: --timeout 10m -c ${{ github.workspace }}/.golangci-structure.yml
+
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.14.0
           working-directory: libs/plugin-sdk-go
           args: --timeout 10m
+
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.14.0
+          working-directory: libs/plugin-sdk-go
+          args: --timeout 10m -c ${{ github.workspace }}/.golangci-structure.yml
 
       - uses: ./.github/actions/govulncheck
         with:

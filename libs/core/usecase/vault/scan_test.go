@@ -272,7 +272,7 @@ func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
 	}
 	// Modification time is the invalidation key, and a test can write twice
 	// within one timestamp tick.
-	future := time.Now().Add(2 * time.Second)
+	future := testsupport.Machine.Now().Add(2 * time.Second)
 	if err := os.Chtimes(edited, future, future); err != nil {
 		t.Fatal(err)
 	}
@@ -602,7 +602,7 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 	db := openIndex(t)
 
 	newest := filepath.Join(root, "edge", "unicode.md")
-	pos := time.Now().Add(time.Hour)
+	pos := testsupport.Machine.Now().Add(time.Hour)
 	if err := os.Chtimes(newest, pos, pos); err != nil {
 		t.Fatal(err)
 	}

@@ -30,6 +30,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -108,7 +109,7 @@ type Config struct {
 	// ErrorHandler receives asynchronous errors.
 	ErrorHandler windowport.ErrorHandler
 
-	// Now provides current time for timestamping and scheduling. Defaults to time.Now if nil.
+	// Now provides current time for timestamping and scheduling. Defaults to the system clock if nil.
 	Now machineport.Clock
 
 	agentProvider agentport.AgentProvider
@@ -118,7 +119,7 @@ type Config struct {
 // The host provisions the dependencies the plugins declare; the ONNX Runtime runs on the
 // provider NUMEN_ONNX_PROVIDER names (auto when unset).
 func NewPluginHost(target string, dirs ...string) *plugin.Host {
-	host := plugin.NewHost(target, dirs...)
+	host := plugin.NewHost(clock.System{}, target, dirs...)
 	host.SetContentTypeTable(sharedmimeinfo.Open())
 	host.SetDependencies(newDependencies())
 	if err := host.Discover(); err != nil {
@@ -133,7 +134,7 @@ func (c Config) Clock() machineport.Clock {
 	if c.Now != nil {
 		return c.Now
 	}
-	return time.Now
+	return clock.System{}
 }
 
 // handleError forwards errors to ErrorHandler if configured.
@@ -292,7 +293,7 @@ func (c Config) VaultIdentity() vaultport.VaultIdentity {
 }
 
 // Trash provides trash and recycling operations.
-func (c Config) Trash() machineport.Trash { return trash.New() }
+func (c Config) Trash() machineport.Trash { return trash.New(c.Clock()) }
 
 // vaultOptions returns filesystem configuration for vaults.
 func (c Config) vaultOptions() vaultconfig.Options {

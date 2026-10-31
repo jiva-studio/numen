@@ -204,7 +204,7 @@ func openingWith(
 	testsupport.CloseAfter(t, db)
 
 	writing := note.NewWrite(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, levelNothing, time.Now)
+		vaultreader.Readers{}, vaultwriter.VaultWriters{}, levelNothing, testsupport.NewClock())
 	read := note.NewRead(vaultreader.Readers{})
 	api := createServices(&State{
 		ChangeEvents: newChangeBroadcaster(),

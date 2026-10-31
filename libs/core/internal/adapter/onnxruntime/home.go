@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/core/port/machineport"
 )
 
 // The environment variables a user sets to relocate the models home, disable
@@ -43,6 +45,6 @@ var offlineValues = []string{"1", "true", "yes", "on"}
 // FromEnvironment returns the configuration the environment names: the
 // provider, and whether fetching is forbidden. The models home is resolved when
 // the runtime is provisioned.
-func FromEnvironment() Config {
-	return Config{Provider: os.Getenv(EnvProvider), Offline: IsOffline()}
+func FromEnvironment(clock machineport.Clock) Config {
+	return Config{Provider: os.Getenv(EnvProvider), Offline: IsOffline(), Clock: clock}
 }

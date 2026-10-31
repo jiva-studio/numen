@@ -96,7 +96,7 @@ func NewPresets(
 // getStopReasons is why a preset schedules nothing, and why it schedules
 // nothing today.
 func (u Presets) getStopReasons(p review.Preset) (review.StopReason, review.StopReason) {
-	pos := u.now()
+	pos := u.now.Now()
 	return p.GetOverallStopReason(u.day, pos), p.GetStopReason(u.day, pos)
 }
 

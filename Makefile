@@ -130,7 +130,7 @@ lib_core_test: ## run core tests with race detector
 lib_core_lint: ## run linters for core
 	$(CORE)/adapter/index/migration-forward-only.sh --self-test
 	cd $(CORE) && go vet ./...
-	cd $(CORE) && golangci-lint run ./...
+	cd $(CORE) && golangci-lint run ./... && golangci-lint run -c $(CURDIR)/.golangci-structure.yml ./...
 
 .PHONY: lib_core_vulncheck
 lib_core_vulncheck: ## scan core dependencies for vulnerabilities
@@ -151,7 +151,7 @@ lib_notes_test: ## run notes tests with race detector
 .PHONY: lib_notes_lint
 lib_notes_lint: ## run linters for notes
 	cd $(NOTES) && go vet ./...
-	cd $(NOTES) && golangci-lint run ./...
+	cd $(NOTES) && golangci-lint run ./... && golangci-lint run -c $(CURDIR)/.golangci-structure.yml ./...
 
 # ------------------------- Lib: Plugin Catalog --------------------------------
 .PHONY: lib_plugin_catalog_build
@@ -192,7 +192,7 @@ lib_protocol_test: lib_protocol_compile
 .PHONY: lib_protocol_lint
 lib_protocol_lint: ## lint protocol definitions
 	cd $(PROTOCOL) && buf lint
-	cd $(PROTOCOL) && golangci-lint run ./...
+	cd $(PROTOCOL) && golangci-lint run ./... && golangci-lint run -c $(CURDIR)/.golangci-structure.yml ./...
 
 .PHONY: lib_protocol_vulncheck
 lib_protocol_vulncheck: ## scan protocol dependencies for vulnerabilities
@@ -298,7 +298,7 @@ lib_plugin_sdk_go_test: ## run plugin-sdk-go tests with race detector
 
 .PHONY: lib_plugin_sdk_go_lint
 lib_plugin_sdk_go_lint: ## run linters for plugin-sdk-go
-	for m in $(PLUGIN_SDK_GO_MODULES); do (cd $$m && go vet ./... && golangci-lint run ./...) || exit 1; done
+	for m in $(PLUGIN_SDK_GO_MODULES); do (cd $$m && go vet ./... && golangci-lint run ./... && golangci-lint run -c $(CURDIR)/$(PLUGIN_SDK_GO)/.golangci-structure.yml ./...) || exit 1; done
 
 # ------------------------------ Plugins Tooling -------------------------------
 .PHONY: create_plugin
@@ -396,7 +396,7 @@ app_desktop_e2e: lib_shell_build app_desktop_editor_build app_desktop_flashcards
 .PHONY: app_desktop_lint
 app_desktop_lint: ## lint desktop module
 	cd $(DESKTOP) && go vet ./...
-	cd $(DESKTOP) && golangci-lint run ./...
+	cd $(DESKTOP) && golangci-lint run ./... && golangci-lint run -c $(CURDIR)/.golangci-structure.yml ./...
 	cd $(DESKTOP)/editor && npm run lint
 	cd $(DESKTOP)/editor && npm run typecheck
 	cd $(DESKTOP)/flashcards && npm run lint
@@ -424,7 +424,7 @@ app_mobile_test: ## run mobile tests
 .PHONY: app_mobile_lint
 app_mobile_lint: ## lint mobile module
 	cd $(MOBILE) && go vet ./...
-	cd $(MOBILE) && golangci-lint run ./...
+	cd $(MOBILE) && golangci-lint run ./... && golangci-lint run -c $(CURDIR)/.golangci-structure.yml ./...
 	cd $(MOBILE) && npm run lint
 	cd $(MOBILE) && npm run typecheck
 

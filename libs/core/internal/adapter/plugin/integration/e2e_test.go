@@ -22,7 +22,7 @@ func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
 		t.Skipf("Embeddings binary not found at %s; skipping real process E2E test", embeddingsBin)
 	}
 
-	host := plugin.NewHost("desktop.editor", pluginsDir)
+	host := plugin.NewHost(testsupport.Machine, "desktop.editor", pluginsDir)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}

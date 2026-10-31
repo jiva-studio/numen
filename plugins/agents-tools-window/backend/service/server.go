@@ -3,6 +3,7 @@ package service
 import (
 	"net/http"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
@@ -30,7 +31,7 @@ func connectVault(client *host.Client, err error) host.Vault {
 }
 
 func mount(s *server.Server, vault host.Vault) error {
-	manager := NewManager()
+	manager := NewManager(clock.System{})
 	registry := tools.New()
 	if err := RegisterTools(registry, manager, vault); err != nil {
 		return err

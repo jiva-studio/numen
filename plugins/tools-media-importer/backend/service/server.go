@@ -10,12 +10,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
 )
 
@@ -32,7 +32,7 @@ func openHostAt(endpoint hostcall.Endpoint) link.Host {
 		Store: host.NewStoreClient(endpoint),
 		Texts: host.NewTextClient(endpoint),
 		Queue: host.NewQueueClient(endpoint),
-		Now:   clock.Now,
+		Clock: clock.System{},
 	}
 }
 

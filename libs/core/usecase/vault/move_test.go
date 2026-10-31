@@ -8,7 +8,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
@@ -43,7 +42,7 @@ func openFiling(t *testing.T, notes map[string]string) filing {
 		t.Fatal(err)
 	}
 	readers := &countingReaders{VaultReaders: vaultreader.Readers{}}
-	refresh := vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now)
+	refresh := vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), testsupport.NewClock())
 	return filing{
 		db:      db,
 		vault:   v,
@@ -66,7 +65,7 @@ func (f filing) moveApart() vaults.Move { return f.newMove(false) }
 func (f filing) newMove(preserved note.SyncTitleAndFilename) vaults.Move {
 	notes := note.NewMove(
 		f.readers, vaultwriter.VaultWriters{},
-		f.db.Links(), f.db.Queries(), f.db.Sources(), f.index, time.Now,
+		f.db.Links(), f.db.Queries(), f.db.Sources(), f.index, testsupport.NewClock(),
 	)
 	notes.Sync = func() note.SyncTitleAndFilename { return preserved }
 	notes.Drawing = func(_ context.Context, went domain.Move) error {

@@ -8,7 +8,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
@@ -89,7 +88,7 @@ func (f filing) wiring() wiring {
 func (f filing) moveOver(w wiring) vaults.Move {
 	notes := note.NewMove(
 		f.readers, vaultwriter.VaultWriters{},
-		w.links, f.db.Queries(), f.db.Sources(), w.index, time.Now,
+		w.links, f.db.Queries(), f.db.Sources(), w.index, testsupport.NewClock(),
 	)
 	notes.Sync = func() note.SyncTitleAndFilename { return true }
 	notes.Drawing = func(_ context.Context, went domain.Move) error {

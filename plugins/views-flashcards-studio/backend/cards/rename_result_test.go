@@ -3,8 +3,8 @@ package cards_test
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
 )
@@ -34,7 +34,7 @@ func TestARenameWhoseContextEndsReturnsWhatTheCardModelExistsAt(t *testing.T) {
 	u := cards.NewRenameField(
 		vs.ports.Readers, vs.ports.Writers,
 		decksOf{paths: []string{"decks/Birds.md"}, cancel: cancel},
-		vs.queries, indexNothing, time.Now, cards.UnboundedDecks,
+		vs.queries, indexNothing, vaulttest.NewClock(), cards.UnboundedDecks,
 	)
 
 	got, err := u.Execute(ctx, vs.first, cards.Rename{

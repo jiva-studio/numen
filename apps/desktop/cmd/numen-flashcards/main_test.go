@@ -61,7 +61,7 @@ func vaultOf(t *testing.T, cfg container.Config) string {
 	t.Helper()
 
 	root := t.TempDir()
-	if _, err := cfg.VaultIdentity().EnsureIdentity(root, time.Now()); err != nil {
+	if _, err := cfg.VaultIdentity().EnsureIdentity(root, time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)); err != nil {
 		t.Fatal(err)
 	}
 	for name, body := range notes {

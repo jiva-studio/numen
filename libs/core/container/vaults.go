@@ -1,8 +1,6 @@
 package container
 
 import (
-	"time"
-
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
@@ -34,7 +32,7 @@ func (c Config) Vaults(registry vaultport.VaultRegistry, db *Index, notes note.M
 		Find:        find,
 		FolderCheck: vault.NewFolderCheck(c.VaultReaders()),
 		Remove:      vault.NewRemove(find, unregister, erase),
-		Add:         vault.NewAdd(c.VaultIdentity(), registry, time.Now),
+		Add:         vault.NewAdd(c.VaultIdentity(), registry, c.Clock()),
 		Rename:      vault.NewRename(registry, db.Vaults()),
 		Unregister:  unregister,
 		Erase:       erase,

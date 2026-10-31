@@ -7,8 +7,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
 	"strings"
 	"testing"
-	"time"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -191,7 +191,7 @@ func TestAWriteThroughReplacedPortsUsesThem(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	levelled := 0
-	w := note.NewWrite(brokenReaders{open: errDiskGone}, brokenWriters{hold: errDiskGone}, nil, time.Now).
+	w := note.NewWrite(brokenReaders{open: errDiskGone}, brokenWriters{hold: errDiskGone}, nil, testsupport.NewClock()).
 		WithReaders(vaultreader.Readers{}).
 		WithWriters(vaultwriter.VaultWriters{}).
 		WithIndex(func(context.Context, domain.Vault, []string) error {

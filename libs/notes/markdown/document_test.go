@@ -38,7 +38,7 @@ func TestOpenAndCloseChangesNothing(t *testing.T) {
 // What Create writes has to be readable by the parser that reads every other
 // note, or the application has invented a second format.
 func TestCreateIsReadBackByTheParser(t *testing.T) {
-	identifier := ulid.New(time.Now())
+	identifier := ulid.New(time.Date(2026, time.August, 15, 12, 0, 0, 0, time.UTC))
 	raw := Create(identifier, "# Entropy\n")
 	n := Parse(domain.FileStat{Path: "entropy.md"}, raw)
 	if n.ID != identifier {

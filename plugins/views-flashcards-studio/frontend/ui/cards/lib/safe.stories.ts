@@ -224,7 +224,10 @@ const createArrangement = (next: () => number, pos: number): string => {
 }
 
 /** A URL with the spaces and control characters a scheme may be hidden behind dropped. */
-const stripControls = (url: string): string => url.replace(/[\x00-\x20]/g, '')
+const stripControls = (url: string): string =>
+  Array.from(url)
+    .filter((character) => character.charCodeAt(0) > 0x20)
+    .join('')
 
 /** How many comments the markup holds, wherever they stand. */
 const comments = (root: Node): number => {

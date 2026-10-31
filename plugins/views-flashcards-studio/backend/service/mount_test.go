@@ -18,7 +18,7 @@ const mountToken = "mount-token"
 func newMountedHandler(t *testing.T, notes map[string]string) http.Handler {
 	t.Helper()
 	env := vaulttest.New(t, notes)
-	backend := service.New(service.Config{Vault: env.Host, Store: env.Store})
+	backend := service.New(service.Config{Vault: env.Host, Store: env.Store, Now: vaulttest.NewClock()})
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": mountToken}, backend.Mount)
 	if err != nil {
 		t.Fatal(err)

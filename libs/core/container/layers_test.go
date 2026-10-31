@@ -1236,7 +1236,7 @@ func TestTheCoresPublicAdaptersAreTheseAndNoOthers(t *testing.T) {
 
 // internalAdapters lists adapters internal to this module.
 var internalAdapters = []string{
-	"appstate", "filesystem", "models", "onnxruntime", "plugin", "provision", "sharedmimeinfo",
+	"appstate", "clock", "filesystem", "models", "onnxruntime", "plugin", "provision", "sharedmimeinfo",
 	"theme", "trash",
 }
 

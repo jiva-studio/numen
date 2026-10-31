@@ -12,6 +12,8 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/port/floorport"
 	"github.com/jiva-studio/numen/libs/core/usecase/floor"
@@ -119,7 +121,7 @@ func newFloorFixture(t *testing.T, vault domain.Vault, samples stubSamples, best
 	embedder := &floorEmbedder{model: floorModel}
 	scenarios := floor.NewScenarios(floor.Config{
 		Store: store, Samples: samples, Nearest: stubNearest{best: best}, Embedder: embedder,
-		Clock:     func() time.Time { return time.Unix(1_700_000_000, 0) },
+		Clock:     clock.NewFake(time.Unix(1_700_000_000, 0)),
 		FileFloor: fileFloor, DefaultFloor: 0.30,
 	})
 	handler := NewHandler(stubVault{v: vault})
@@ -346,7 +348,7 @@ func TestFloorRequestsWithoutAModelAreUnavailable(t *testing.T) {
 	store := &floorStore{settings: map[string]floorport.Setting{}}
 	scenarios := floor.NewScenarios(floor.Config{
 		Store: store, Samples: enough, Nearest: stubNearest{}, Embedder: nil,
-		Clock: time.Now, DefaultFloor: 0.30,
+		Clock: testsupport.NewClock(), DefaultFloor: 0.30,
 	})
 	handler := NewHandler(stubVault{v: floorVault})
 	handler.Floors = &scenarios
