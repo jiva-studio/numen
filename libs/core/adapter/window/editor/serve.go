@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/assembly"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/command"
+	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/plugincatalog"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/textmenu"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/texts"
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
@@ -338,6 +339,9 @@ func (o *Installation) wireUseCases() {
 	services.PluginServices = made.GetPluginServices()
 	services.Playing.setPluginServices(services.PluginServices)
 	services.Command = command.NewHandler(o.State, made.GetPluginCommands())
+	if plugins := made.GetPluginCatalog(); plugins != nil {
+		services.Catalog = plugincatalog.NewHandler(plugins)
+	}
 	if menu := made.OpenFileMenu(); menu != nil {
 		services.TextVersion = textmenu.NewHandler(o.State, menu)
 	}

@@ -6,6 +6,14 @@
   "description": "Markdown note editor with live formatting and wikilinks",
   "capabilities": [],
   "targets": ["desktop.editor"],
+  "contributes": {
+    "tabKinds": [
+      { "kind": "note", "title": "Note", "icon": "file-text" },
+      { "kind": "reader:markdown", "title": "Markdown Note Editor", "icon": "file-text" }
+    ],
+    "feature": "Markdown notes",
+    "category": "editors"
+  },
   "readers": [
     { "id": "markdown", "contentTypes": ["text/markdown", "text/plain"], "rank": "default" }
   ],

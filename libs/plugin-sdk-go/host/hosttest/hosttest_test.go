@@ -195,7 +195,7 @@ func TestACreateOnDiskMakesTheFoldersAndRejectsAFileThatIsThere(t *testing.T) {
 }
 
 func TestHostVault_ReadReturnsConfiguredError(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	v := hosttest.New("Physics")
 	v.File("a.md", "x")
 	testErr := errors.New("permission denied")
@@ -211,7 +211,7 @@ func TestHostVault_ReadReturnsConfiguredError(t *testing.T) {
 }
 
 func TestHostTest_IndexSeesExternalFileOnlyAfterScan(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	v := hosttest.OnDisk(t, "Physics", map[string]string{"A.md": "---\ntype: sample\n---\n"})
 	if err := os.WriteFile(filepath.Join(v.Vault().Path, "B.md"), []byte("---\ntype: sample\n---\n"), 0o644); err != nil {
 		t.Fatal(err)

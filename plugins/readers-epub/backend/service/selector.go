@@ -20,13 +20,3 @@ func (s cfiSelector) encode() (domain.Selector, error) {
 	}
 	return domain.Selector(raw), nil
 }
-
-// readCFISelector reads the CFI of a segment's selector. An empty selector has none.
-func readCFISelector(raw domain.Selector) (cfiSelector, error) {
-	var out cfiSelector
-	if raw == "" {
-		return out, nil
-	}
-	err := json.Unmarshal([]byte(raw), &out)
-	return out, err
-}

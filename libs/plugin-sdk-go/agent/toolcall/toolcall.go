@@ -8,7 +8,7 @@ import (
 	"math"
 	"strconv"
 
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // Declaration is what the host declares about one vault tool: its title, its effect, and the
@@ -17,11 +17,11 @@ type Declaration struct {
 	Title, Kind, About, Element, Match, Text string
 }
 
-type ToolDeclaration = numenv1.ToolDeclaration
+type ToolDeclaration = v1.ToolDeclaration
 
-type ToolCall = numenv1.ToolCall
+type ToolCall = v1.ToolCall
 
-type Range = numenv1.Range
+type Range = v1.Range
 
 // IndexDeclarations indexes the declarations of the vault's tools by tool name.
 func IndexDeclarations(declarations []*ToolDeclaration) map[string]Declaration {
@@ -64,7 +64,7 @@ func Describe(words map[string]Declaration, name, call, args string) *ToolCall {
 }
 
 // readRange is the run of a source's text a call names, read once the arguments parse whole.
-func readRange(args string) *numenv1.Range {
+func readRange(args string) *v1.Range {
 	var parsed map[string]any
 	if err := json.Unmarshal([]byte(args), &parsed); err != nil {
 		return nil
@@ -73,7 +73,7 @@ func readRange(args string) *numenv1.Range {
 	if length <= 0 || start < 0 || start > math.MaxInt32-length {
 		return nil
 	}
-	return &numenv1.Range{Start: int32(start), End: int32(start + length)}
+	return &v1.Range{Start: int32(start), End: int32(start + length)}
 }
 
 // readAbout is what a call is about, read from the arguments as far as they have arrived.
@@ -121,7 +121,7 @@ func describeCollection(value []any, inside string) string {
 
 // readCallDetails is what an undeclared call is about, the file it names and the span inside it,
 // read from the arguments whole or as far as they have arrived.
-func readCallDetails(args string) (string, string, *numenv1.Range) {
+func readCallDetails(args string) (string, string, *v1.Range) {
 	if args == "" {
 		return "", "", nil
 	}
@@ -145,20 +145,20 @@ func readCallDetails(args string) (string, string, *numenv1.Range) {
 		about = path
 	}
 
-	var span *numenv1.Range
+	var span *v1.Range
 	start, err := strconv.ParseInt(ReadPartialField(args, "start"), 10, 32)
 	if err != nil {
 		return about, path, nil
 	}
 	length, err := strconv.ParseInt(ReadPartialField(args, "length"), 10, 32)
 	if err == nil && start >= 0 && length >= 0 && start <= math.MaxInt32-length {
-		span = &numenv1.Range{Start: int32(start), End: int32(start + length)}
+		span = &v1.Range{Start: int32(start), End: int32(start + length)}
 	}
 	return about, path, span
 }
 
 // readWholeCallDetails is readCallDetails for arguments that parse whole.
-func readWholeCallDetails(parsed map[string]any, args string) (string, string, *numenv1.Range) {
+func readWholeCallDetails(parsed map[string]any, args string) (string, string, *v1.Range) {
 	path, _ := readFirstString(parsed, "path", "file")
 	about, hasAbout := readFirstString(parsed, "query", "about", "title")
 	if !hasAbout {
@@ -177,7 +177,7 @@ func readWholeCallDetails(parsed map[string]any, args string) (string, string, *
 	if from < 0 || length < 0 || from > math.MaxInt32-length {
 		return about, path, nil
 	}
-	return about, path, &numenv1.Range{Start: int32(from), End: int32(from + length)}
+	return about, path, &v1.Range{Start: int32(from), End: int32(from + length)}
 }
 
 // readNumber returns the number under key, or 0 when the key is absent or not a number.

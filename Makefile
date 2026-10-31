@@ -1,6 +1,7 @@
 # ---------------------------------- Modules -----------------------------------
 CORE     := libs/core
 NOTES    := libs/notes
+PLUGIN_CATALOG := libs/plugin-catalog
 UI       := libs/ui/core
 SHELL_LIB := libs/ui/shell
 PLUGIN_HOST := libs/plugin-host-ts
@@ -45,7 +46,7 @@ install: ## fetch all workspace dependencies
 	$(INSTALL)
 
 .PHONY: compile
-compile: lib_core_compile lib_notes_compile lib_protocol_compile lib_ui_compile lib_plugin_sdk_compile lib_shell_compile lib_plugin_host_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
+compile: lib_core_compile lib_notes_compile lib_plugin_catalog_compile lib_protocol_compile lib_ui_compile lib_plugin_sdk_compile lib_shell_compile lib_plugin_host_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
 
 .PHONY: build
 build: interface lib_core_build app_desktop_build ## build all application artifacts
@@ -151,6 +152,23 @@ lib_notes_test: ## run notes tests with race detector
 lib_notes_lint: ## run linters for notes
 	cd $(NOTES) && go vet ./...
 	cd $(NOTES) && golangci-lint run ./...
+
+# ------------------------- Lib: Plugin Catalog --------------------------------
+.PHONY: lib_plugin_catalog_build
+lib_plugin_catalog_build: ## build the Go library of plugin manifests and the plugin catalog
+	cd $(PLUGIN_CATALOG) && go build ./...
+
+.PHONY: lib_plugin_catalog_compile
+lib_plugin_catalog_compile: lib_plugin_catalog_build
+
+.PHONY: lib_plugin_catalog_test
+lib_plugin_catalog_test: ## run plugin catalog tests with race detector
+	cd $(PLUGIN_CATALOG) && go test ./... -race
+
+.PHONY: lib_plugin_catalog_lint
+lib_plugin_catalog_lint: ## run linters for the plugin catalog
+	cd $(PLUGIN_CATALOG) && go vet ./...
+	cd $(PLUGIN_CATALOG) && golangci-lint run ./...
 
 # ------------------------------- Lib: Protocol --------------------------------
 .PHONY: lib_protocol_generate protocol_gen
@@ -481,8 +499,13 @@ check_quality: ## validate code quality metrics (usage: make check_quality [chec
 lint_narrative: ## reject narrative identifiers, test names and comments across the repository
 	node $(NARRATIVE)/scan.mjs . --check
 
+.PHONY: check_typecheck
+check_typecheck: lib_ui_build ## typecheck every frontend package and plugin with vue-tsc
+	npm run typecheck --workspaces --if-present
+	for dir in plugins/*/; do if [ -f "$$dir/package.json" ] && grep -q '"typecheck"' "$$dir/package.json"; then (cd "$$dir" && npm run typecheck) || exit 1; fi; done
+
 .PHONY: check_gate
-check_gate: ## run architectural and quality gates on changed files (fast pre-push gate)
+check_gate: lib_protocol_generate_check check_typecheck ## run architectural and quality gates on changed files (fast pre-push gate)
 	node $(LAYERS)/check.mjs --changed-only
 	node $(QUALITY)/check.mjs --changed-only $(opts)
 

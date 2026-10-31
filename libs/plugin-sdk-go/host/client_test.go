@@ -139,7 +139,7 @@ func TestAWriteSendsTheBaselineAndReportsStale(t *testing.T) {
 }
 
 func TestGetLink_PreservesHostFields(t *testing.T) {
-	links, err := clientTo(t, &answering{}).GetLinks(context.Background(), "a.md")
+	links, err := clientTo(t, &answering{}).GetLinks(t.Context(), "a.md")
 
 	want := domain.ResolvedLink{
 		Link:        domain.Link{Target: domain.Address{Scheme: "name", Value: "B"}, Type: "cites", Label: "see"},

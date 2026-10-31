@@ -10,7 +10,10 @@ import (
 	"path/filepath"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/keychain"
+	"github.com/jiva-studio/numen/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/packagecache"
 )
 
 var isDev bool
@@ -46,15 +49,31 @@ func GetConfig() container.Config { return GetConfigFor(TargetEditor) }
 // GetConfigFor is GetConfig for the window of a target, whose plugin host runs the plugins that name
 // that target.
 func GetConfigFor(target string) container.Config {
+	dirs := getPluginsDirs()
 	cfg := container.Config{
-		PluginHost: newPluginHost(target, getPluginsDirs()...),
-		KeyStore:   keychain.Store{},
+		PluginHost:    newPluginHost(target, dirs...),
+		PluginDirs:    dirs,
+		PluginCatalog: getCatalogConfig(target),
+		KeyStore:      keychain.Store{},
 	}
 	// A machine with no data folder leaves the path empty, and the core fails to start.
 	if path, err := GetIndexPath(); err == nil {
 		cfg.IndexPath = path
 	}
 	return cfg
+}
+
+// getCatalogConfig is the catalog of plugins as this machine keeps it: installs go to the plugin folder
+// of the user, and the downloaded packages are kept in the cache folder every window shares.
+func getCatalogConfig(target string) catalog.Config {
+	config := catalog.Config{Target: target, AppVersion: version.GetVersion(), Sources: nil, InstallDir: "", CacheDir: ""}
+	if configDir, err := os.UserConfigDir(); err == nil {
+		config.InstallDir = filepath.Join(configDir, "numen", "plugins")
+	}
+	if cacheDir, err := packagecache.DefaultDir(); err == nil {
+		config.CacheDir = cacheDir
+	}
+	return config
 }
 
 func getPluginsDirs() []string {

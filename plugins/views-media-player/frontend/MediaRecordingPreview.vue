@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { doc, getCurrentDate } from './dom'
 import { ref, useTemplateRef } from 'vue'
 import { Pause, Play } from '@lucide/vue'
-import { clock } from '@numen/ui'
+import { clock, doc, getCurrentDate } from '@numen/ui'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{

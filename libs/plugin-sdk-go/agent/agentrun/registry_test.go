@@ -2,6 +2,7 @@ package agentrun_test
 
 import (
 	"context"
+	"errors"
 	"os/exec"
 	"runtime"
 	"testing"
@@ -25,7 +26,7 @@ func start(t *testing.T, registry *agentrun.Registry, conversation string) (*age
 	}
 	cmd := exec.CommandContext(running, command, args...)
 
-	w := agentrun.NewWork(conversation, 1, cancel)
+	w := agentrun.NewWork(conversation, 1, agentrun.StopByCancel(cancel))
 	if !registry.Add(w) {
 		t.Fatal("the registry rejected work while open")
 	}
@@ -70,7 +71,7 @@ func TestCloseStopsEveryChildAndRejectsMore(t *testing.T) {
 	if !isOver(first) || !isOver(second) {
 		t.Errorf("a child outlived Close: first over %v, second over %v", isOver(first), isOver(second))
 	}
-	if registry.Add(agentrun.NewWork("", 1, func() {})) {
+	if registry.Add(agentrun.NewWork("", 1, func() error { return nil })) {
 		t.Error("the registry took work after Close")
 	}
 }
@@ -132,7 +133,7 @@ func TestStopEndsTheChildOnce(t *testing.T) {
 // done, even when the reader has not started.
 func TestCloseWaitsForTheReaderOfWhatWasAdded(t *testing.T) {
 	var registry agentrun.Registry
-	w := agentrun.NewWork("", 1, func() {})
+	w := agentrun.NewWork("", 1, func() error { return nil })
 	if !registry.Add(w) {
 		t.Fatal("the registry rejected work while open")
 	}
@@ -171,5 +172,20 @@ func TestFinishConversationEndsTheConversation(t *testing.T) {
 	}
 	if got := registry.GetSession("c-1"); got != "" {
 		t.Errorf("the session is %q, want none", got)
+	}
+}
+
+// Close returns the error of a stop function that fails, after the reader has ended.
+func TestCloseReturnsTheErrorOfAStopFunction(t *testing.T) {
+	var registry agentrun.Registry
+	stopErr := errors.New("kill failed")
+	w := agentrun.NewWork("", 1, func() error { return stopErr })
+	if !registry.Add(w) {
+		t.Fatal("the registry rejected work while open")
+	}
+	w.End()
+
+	if err := registry.Close(); !errors.Is(err, stopErr) {
+		t.Fatalf("Close = %v, want %v", err, stopErr)
 	}
 }

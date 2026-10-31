@@ -7,6 +7,7 @@ use (
 	./apps/mobile
 	./libs/core
 	./libs/notes
+	./libs/plugin-catalog
 	./libs/plugin-sdk-go
 	./libs/plugin-sdk-go/agent
 	./libs/plugin-sdk-go/host
@@ -33,6 +34,7 @@ use (
 replace (
 	github.com/jiva-studio/numen/libs/core v0.0.0 => ./libs/core
 	github.com/jiva-studio/numen/libs/notes v0.0.0 => ./libs/notes
+	github.com/jiva-studio/numen/libs/plugin-catalog v0.0.0 => ./libs/plugin-catalog
 	github.com/jiva-studio/numen/libs/plugin-sdk-go v0.0.0 => ./libs/plugin-sdk-go
 	github.com/jiva-studio/numen/libs/plugin-sdk-go/agent v0.0.0 => ./libs/plugin-sdk-go/agent
 	github.com/jiva-studio/numen/libs/plugin-sdk-go/host v0.0.0 => ./libs/plugin-sdk-go/host

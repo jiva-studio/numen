@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { measureRect } from '../../../dom'
+import { measureRect } from '@numen/ui'
 /**
  * One node: its box, its title, and the handle to reach out from. Every number
  * it draws with is already on the node it was handed, but for what it is to a

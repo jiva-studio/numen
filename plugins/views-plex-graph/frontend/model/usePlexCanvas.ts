@@ -1,7 +1,7 @@
 /**
  * Canvas interaction and viewport gestures for the plex graph view.
  */
-import { measureRect } from '../dom'
+import { measureRect } from '@numen/ui'
 import { ref, useTemplateRef } from 'vue'
 import type { PlexTabState } from '../types'
 

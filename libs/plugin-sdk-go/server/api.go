@@ -76,14 +76,22 @@ func toAPIError(err error) *APIError {
 type API struct {
 	server  *Server
 	service string
+	err     error
 }
 
-// NewAPI creates the API of the service name on the server.
+// NewAPI creates the API of the service name on the server. An invalid service name is reported by
+// Err and no method is mounted.
 func (s *Server) NewAPI(service string) *API {
+	a := &API{server: s, service: service}
 	if service == "" || strings.ContainsAny(service, "/ {}") {
-		panic(fmt.Sprintf("server: invalid API service name %q", service))
+		a.err = fmt.Errorf("server: invalid API service name %q", service)
 	}
-	return &API{server: s, service: service}
+	return a
+}
+
+// Err returns the first failure to mount the service or one of its methods, or nil.
+func (a *API) Err() error {
+	return a.err
 }
 
 type headerKey struct{}
@@ -91,8 +99,10 @@ type headerKey struct{}
 // GetHeader returns the headers of the request a method is answering, such as the Numen-Vault
 // header that names the vault the call works. It returns nil outside a method.
 func GetHeader(ctx context.Context) http.Header {
-	header, _ := ctx.Value(headerKey{}).(http.Header)
-	return header
+	if header, ok := ctx.Value(headerKey{}).(http.Header); ok {
+		return header
+	}
+	return nil
 }
 
 func withHeader(ctx context.Context, header http.Header) context.Context {
@@ -100,8 +110,12 @@ func withHeader(ctx context.Context, header http.Header) context.Context {
 }
 
 func (a *API) mount(method string, handler http.Handler) {
+	if a.err != nil {
+		return
+	}
 	if method == "" || strings.ContainsAny(method, "/ {}") {
-		panic(fmt.Sprintf("server: invalid API method name %q", method))
+		a.err = fmt.Errorf("server: invalid API method name %q", method)
+		return
 	}
 	a.server.Register(http.MethodPost+" /"+a.service+"/"+method, a.server.interceptor.RequireToken(handler))
 }

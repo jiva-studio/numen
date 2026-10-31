@@ -5,7 +5,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"sync"
@@ -147,11 +146,9 @@ func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) error 
 		return err
 	}
 	command.Mount(s, commands)
-	s.OnClose(func() {
+	s.OnClose(func() error {
 		transcriber.Close()
-		if err := model.close(); err != nil {
-			fmt.Fprintln(os.Stderr, "engines-transcription: close the model:", err)
-		}
+		return model.close()
 	})
 	return nil
 }

@@ -60,7 +60,7 @@ func (s *agentServer) AskAgent(
 ) error {
 	msg := req.Msg
 	if err := stream.Send(&agentrun.AskAgentResponse{
-		Step: &agentrun.AskAgentResponse_ModelStarted{ModelStarted: &agentrun.ModelStarted{}},
+		Step: &agentrun.AskAgentResponseModelStarted{ModelStarted: &agentrun.ModelStarted{}},
 	}); err != nil {
 		return err
 	}
@@ -78,14 +78,14 @@ func (s *agentServer) AskAgent(
 		}
 		return sendStopped(stream, err.Error())
 	}
-	if err := stream.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: text}}); err != nil {
+	if err := stream.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseText{Text: text}}); err != nil {
 		return err
 	}
 	return sendStopped(stream, reasonDone)
 }
 
 func sendStopped(stream *connect.ServerStream[agentrun.AskAgentResponse], reason string) error {
-	return stream.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Stopped{Stopped: reason}})
+	return stream.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseStopped{Stopped: reason}})
 }
 
 // findAgent returns the agent the program names, started by the command line given, else by the one

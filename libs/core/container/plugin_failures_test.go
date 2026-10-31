@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -35,7 +35,7 @@ func newFailingConfig(t *testing.T) Config {
 		t.Fatal(err)
 	}
 	host := NewPluginHost("desktop.editor", root)
-	host.SetLauncher(func(context.Context, manifestfile.DiscoveredPlugin, int, string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
 		return nil, nil, errors.New("exec format error")
 	})
 	return Config{PluginHost: host}

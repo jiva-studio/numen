@@ -19,19 +19,16 @@ export const WINDOW_IDS = ["editor", "flashcards", "desktop.editor", "desktop.fl
 export const WINDOW_ROUTE_PREFIXES = ["/assets/"];
 
 /** Tests, stories, test kits of a window, fixtures and generated code. */
-export const NOT_SHIPPED = /(_test\.go|\.(test|spec|stories)\.ts|\.pb\.go|\.connect\.go)$|(^|\/)(testing|testdata|e2e|gen)\//;
+export const NOT_SHIPPED = /(_test\.go|\.(test|spec|stories)\.ts|\.pb\.go|\.connect\.go)$|(^|\/)(testing|testdata|fixtures|e2e|gen)\//;
 
-/** The files that state the boundary between applications and plugins, and so name both sides. */
-export const BOUNDARY_RULES = new Set([
-  "apps/desktop/editor/eslint.config.js",
-  "apps/desktop/internal/layers/linked_test.go",
-]);
+/**
+ * The files that state the boundary between applications and plugins, and so name both sides: lint
+ * configurations, and layer tests in a `layers` directory.
+ */
+const BOUNDARY_RULE_FILE = /(^|\/)(eslint\.config\.[cm]?js|\.golangci\.ya?ml)$|(^|\/)layers\/[^/]*_test\.go$/;
 
 export function isBoundaryRule(file) {
-  return (
-    BOUNDARY_RULES.has(file) ||
-    /^plugins\/[^/]+\/(eslint\.config\.js|\.golangci\.yml)$/.test(file)
-  );
+  return BOUNDARY_RULE_FILE.test(file);
 }
 
 export function exec(cmd, cwd = REPO_ROOT) {
@@ -54,6 +51,13 @@ export function listShippedFiles(pathspecs) {
   return (listed.stdout || "")
     .split("\n")
     .filter((file) => file && !NOT_SHIPPED.test(file) && fs.existsSync(path.join(REPO_ROOT, file)));
+}
+
+/** Fails when fewer than `minimum` things were examined, so a rule over an empty set cannot pass. */
+export function requireMatches(title, count, minimum) {
+  if (count < minimum) {
+    throw new Error(`${title}: ${count} found, at least ${minimum} expected; the rule examined too little`);
+  }
 }
 
 /** Fails with every finding, by file, line and symbol. */
@@ -238,6 +242,7 @@ export function getGoModReferences(source) {
  */
 export function readGo(source) {
   const literals = [];
+  const comments = [];
   let code = "";
   let line = 1;
   let i = 0;
@@ -247,6 +252,7 @@ export function readGo(source) {
     const from = i;
     if (c === "/" && source[i + 1] === "/") {
       while (i < source.length && source[i] !== "\n") i++;
+      comments.push({ line, value: source.slice(from, i) });
       code += blank(source.slice(from, i));
       continue;
     }
@@ -254,6 +260,7 @@ export function readGo(source) {
       const end = source.indexOf("*/", i + 2);
       i = end < 0 ? source.length : end + 2;
       const text = source.slice(from, i);
+      comments.push({ line, value: text });
       line += text.split("\n").length - 1;
       code += blank(text);
       continue;
@@ -281,7 +288,7 @@ export function readGo(source) {
     code += c;
     i++;
   }
-  return { literals, code };
+  return { literals, comments, code };
 }
 
 /** Reads a tracked source file as literals and code, by its extension; null for any other file. */

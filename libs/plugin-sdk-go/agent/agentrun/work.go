@@ -13,15 +13,15 @@ type Work struct {
 	Output chan *AskAgentResponse
 
 	conversation string
-	stop         func()
+	stop         func() error
 	reader       sync.WaitGroup
 	once         sync.Once
 	stopped      chan struct{}
 }
 
 // NewWork creates the work of a task requested in a conversation, empty for none. Stop ends the child
-// the reader reads.
-func NewWork(conversation string, buffer int, stop func()) *Work {
+// the reader reads by calling stop once.
+func NewWork(conversation string, buffer int, stop func() error) *Work {
 	return &Work{
 		Output:       make(chan *AskAgentResponse, buffer),
 		conversation: conversation,
@@ -37,23 +37,36 @@ func (w *Work) End() { w.reader.Done() }
 // Stopped is closed once the work is requested to stop.
 func (w *Work) Stopped() <-chan struct{} { return w.stopped }
 
-// Stop ends the child and everything it started, then waits for the reader to finish.
+// Stop ends the child and everything it started, then waits for the reader to finish. It returns
+// the error of the stop function.
 func (w *Work) Stop() error {
-	stopAll([]*Work{w})
-	return nil
+	return stopAll([]*Work{w})
 }
 
-// stopAll cancels each work and waits for its reader to finish.
-func stopAll(works []*Work) {
+// StopByCancel returns a stop function for NewWork that calls cancel.
+func StopByCancel(cancel context.CancelFunc) func() error {
+	return func() error {
+		cancel()
+		return nil
+	}
+}
+
+// stopAll stops each work and waits for its reader to finish. It returns the joined errors of the
+// stop functions that ran.
+func stopAll(works []*Work) error {
+	var failures []error
 	for _, w := range works {
 		w.once.Do(func() {
 			close(w.stopped)
-			w.stop()
+			if err := w.stop(); err != nil {
+				failures = append(failures, err)
+			}
 		})
 	}
 	for _, w := range works {
 		w.reader.Wait()
 	}
+	return errors.Join(failures...)
 }
 
 // ForwardResponses sends the responses of the work to the stream until the work is done, and stops the work

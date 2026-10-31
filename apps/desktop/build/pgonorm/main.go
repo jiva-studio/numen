@@ -54,9 +54,12 @@ func main() {
 		fail(err)
 	}
 	p, err := profile.Parse(in)
-	in.Close()
+	closeErr := in.Close()
 	if err != nil {
 		fail(err)
+	}
+	if closeErr != nil {
+		fail(closeErr)
 	}
 	for _, m := range p.Mapping {
 		m.File = normalize(root, m.File)

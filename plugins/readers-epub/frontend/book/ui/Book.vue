@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { measureRect } from '../../dom'
 /**
  * A book rendered for a screen: its text set in columns and turned a page at a
  * time.
@@ -10,7 +9,7 @@ import { measureRect } from '../../dom'
  */
 import { useTemplateRef, type Directive } from 'vue'
 
-import { getPageNavigationAction } from '@numen/ui'
+import { getPageNavigationAction, measureRect } from '@numen/ui'
 import { createBookPointer } from '../model/hand'
 import { useBookLayout } from '../model/layout'
 import { createBookLinks } from '../model/links'

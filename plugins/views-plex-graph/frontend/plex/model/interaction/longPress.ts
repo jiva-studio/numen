@@ -5,7 +5,7 @@
  *
  * A mouse is ignored: it has the handle.
  */
-import { win } from '../../../dom'
+import { win } from '@numen/ui'
 import { onScopeDispose, ref } from 'vue'
 
 /** How long a finger rests on a node before it is reaching out, in milliseconds. */

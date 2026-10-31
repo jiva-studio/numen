@@ -1,4 +1,4 @@
-import { getNow } from './dom'
+import { getNow } from '@numen/ui'
 import { computed, onUnmounted, ref } from 'vue'
 
 export type RecordingStatus = 'idle' | 'recording' | 'paused' | 'stopped'

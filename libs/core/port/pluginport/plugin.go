@@ -95,12 +95,6 @@ type PluginFailure struct {
 // PluginPersistHandler is called when a plugin modifies its own settings.
 type PluginPersistHandler func(pluginID string, key string, value any) error
 
-// DiscoveredPlugin is a validated plugin located on disk.
-type DiscoveredPlugin struct {
-	Dir      string
-	Manifest PluginManifest
-}
-
 // PluginTransport represents an underlying communication channel for a plugin endpoint.
 type PluginTransport interface {
 	RoundTripTransport()
@@ -158,6 +152,8 @@ type PluginActivator interface {
 type PluginDiscoverer interface {
 	Discover() error
 	GetPluginInfos() []PluginInfo
+	// IsPluginEnabled reports whether the settings of the plugin leave it enabled.
+	IsPluginEnabled(pluginID string) bool
 }
 
 type pluginSecretConfigurator interface {

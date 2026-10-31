@@ -123,10 +123,15 @@ func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 		return err
 	}
 	s.SetUpdateConfig(f.updateConfig)
-	mountAPI(s, links)
+	if err := mountAPI(s, links); err != nil {
+		return err
+	}
 	command.Mount(s, commands)
 	s.RegisterRoute(embedPattern, http.HandlerFunc(serveEmbed))
-	s.OnClose(links.Close)
+	s.OnClose(func() error {
+		links.Close()
+		return nil
+	})
 	return nil
 }
 
