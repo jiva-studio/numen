@@ -130,8 +130,7 @@ function resolveChecks(args, changedOnly) {
     }
     const hasGo = changed.some((f) => f.endsWith(".go"));
     const hasTsOrVue = changed.some((f) => f.endsWith(".ts") || f.endsWith(".vue") || f.endsWith(".astro"));
-    const hasLintConfig = changed.some((f) => /(^|\/)(eslint\.config\.js|base-eslint\.mjs|tsconfig\.json)$/.test(f));
-    const hasGoPlugins = changed.some((f) => f.startsWith("plugins/") && f.endsWith(".go"));
+    const hasLintConfig = changed.some((f) => /(^|\/)(eslint\.config\.m?js|base-eslint\.mjs|tsconfig\.json)$/.test(f));
     const hasUi = changed.some((f) => f.startsWith("libs/ui/core/"));
     const hasGoCore = changed.some((f) => f.startsWith("libs/core/") && f.endsWith(".go"));
 

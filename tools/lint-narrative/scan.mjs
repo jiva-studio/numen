@@ -210,9 +210,9 @@ const RE_TS_FAKE_CASTS = [
   { name: 'case "said"', re: /\bcase\s+['"]said['"]/g },
   { name: 'data-palette="said"', re: /\bdata-palette=["']said["']/g },
   { name: 'data-day-summary', re: /\bdata-day-summary\b/g },
-  { name: 'key held:', re: /(?:^|[{,]\s*|\s{2,})held:\s*[A-Za-z_$(\[{'"`0-9]/g },
-  { name: 'key refuses:', re: /(?:^|[{,]\s*|\s{2,})refuses:\s*[A-Za-z_$(\[{'"`0-9]/g },
-  { name: 'key asked:', re: /(?:^|[{,]\s*|\s{2,})asked:\s*[A-Za-z_$(\[{'"`0-9]/g },
+  { name: 'key held:', re: /(?:^|[{,]\s*|\s{2,})held:\s*[A-Za-z_$([{'"`0-9]/g },
+  { name: 'key refuses:', re: /(?:^|[{,]\s*|\s{2,})refuses:\s*[A-Za-z_$([{'"`0-9]/g },
+  { name: 'key asked:', re: /(?:^|[{,]\s*|\s{2,})asked:\s*[A-Za-z_$([{'"`0-9]/g },
   { name: 'as unknown as Turn', re: /\bas\s+unknown\s+as\s+Turn\b/g },
   { name: 'as any as Turn', re: /\bas\s+any\s+as\s+Turn\b/g },
 ]
@@ -600,7 +600,7 @@ function scanFile(filePath) {
     else stats.frontendTotal++
   }
 
-  let content = ''
+  let content
   try {
     content = fs.readFileSync(filePath, 'utf8')
   } catch {
@@ -1154,7 +1154,7 @@ function getGitIgnoredDirs() {
 const gitIgnoredDirs = getGitIgnoredDirs()
 
 function walk(dir) {
-  let entries = []
+  let entries
   try {
     entries = fs.readdirSync(dir, { withFileTypes: true })
   } catch {

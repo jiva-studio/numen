@@ -7,11 +7,16 @@
 
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'
-import { createBaseConfig, createClockSelectors, lifetimes } from '../../../tools/lint-layers/base-eslint.mjs'
+import { createBaseConfig, createDeterminismSelectors, createPureSegmentConfig, lifetimes } from '../../../tools/lint-layers/base-eslint.mjs'
 import { createLayerElements, createLayerPolicies } from '../../../tools/lint-layers/layers.mjs'
 
 /** The one function declaration that reads the wall clock. */
 const clockFunction = 'getNow'
+
+/** The one function declaration that reads the monotonic clock. */
+const monotonicFunction = 'getMonotonicNow'
+
+const clockFunctions = { clockFunction, monotonicFunction }
 
 const layerOrder = ['shared', 'features', 'screens']
 const sliceLayers = ['features']
@@ -50,7 +55,7 @@ const domainImports = [
 ]
 
 export default tseslint.config(
-  ...createBaseConfig(import.meta.dirname, { clockFunction }),
+  ...createBaseConfig(import.meta.dirname, clockFunctions),
 
   {
     languageOptions: {
@@ -140,21 +145,10 @@ export default tseslint.config(
       ],
       'no-restricted-syntax': [
         'error',
-        ...createClockSelectors(clockFunction),
-        {
-          selector: 'MemberExpression[object.name="Math"][property.name="random"]',
-          message: 'the same input gives the same numbers on any machine on any day',
-        },
-        {
-          selector: 'MemberExpression[property.name="getBoundingClientRect"]',
-          message: 'what the window measures is a port — take it as a value',
-        },
-        {
-          selector: 'MemberExpression[property.name="matchMedia"]',
-          message: 'a reader who asks for less motion is answered in CSS',
-        },
+        ...createDeterminismSelectors(clockFunctions),
       ],
     },
   },
 
+  createPureSegmentConfig(clockFunctions),
 )

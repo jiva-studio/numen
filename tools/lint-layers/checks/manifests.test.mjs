@@ -61,3 +61,18 @@ test("a Go file that decodes the generated message with protojson is the reader 
 test("a Go file that decodes JSON without naming manifest.json is clean", () => {
   assert.deepEqual(findManifestParsers([go("libs/core/b.go", "package b\n\nfunc f() {\n\tjson.Unmarshal(raw, &m)\n}\n")]), []);
 });
+
+test("a Go file that decodes the bytes of a manifest with encoding/json is reported", () => {
+  const found = findManifestParsers([
+    go("plugins/x/backend/kinds.go", 'package a\n\nfunc f(manifest []byte) {\n\tjson.Unmarshal(manifest, &parsed)\n}\n'),
+  ]);
+  assert.equal(found.length, 1);
+  assert.equal(found[0].line, 4);
+});
+
+test("a Go file that names manifest.json and decodes YAML is clean", () => {
+  const found = findManifestParsers([
+    go("libs/core/b_test.go", 'package a\n\nfunc f(raw []byte) {\n\tname := "manifest.json"\n\tyaml.Unmarshal(raw, &parsed)\n}\n'),
+  ]);
+  assert.deepEqual(found, []);
+});

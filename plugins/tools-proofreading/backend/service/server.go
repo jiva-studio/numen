@@ -23,7 +23,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	proofreading "github.com/jiva-studio/numen/plugins/tools-proofreading"
 )
 
 // PluginID is the identity the manifest gives the plugin.
@@ -291,11 +290,7 @@ func mount(s *server.Server, h Host, complete completer, vars map[string]string)
 	if len(vars) > 0 {
 		config.updateConfig(vars)
 	}
-	kinds, err := readKinds(proofreading.Manifest)
-	if err != nil {
-		return err
-	}
-	run := newProofreading(h, kinds, newAskModel(complete, config.getConfig), config.getConfig)
+	run := newProofreading(h, getProofreadKinds(), newAskModel(complete, config.getConfig), config.getConfig)
 	commands := command.New()
 	if err := commands.Add("proofread", newProofreadCommand(run)); err != nil {
 		return err

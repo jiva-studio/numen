@@ -14,8 +14,8 @@ import (
 var (
 	// errNoText is a file no live version gives words to.
 	errNoText = errors.New("the file has no text to proofread")
-	// errFormat is a version of a kind the manifest does not list.
-	errFormat = errors.New("the plugin proofreads the text kinds its manifest lists")
+	// errFormat is a version of a kind the plugin does not proofread.
+	errFormat = errors.New("the plugin does not proofread this text kind")
 )
 
 // Request is one text to proofread. Source is the version read, and empty for the live one.
