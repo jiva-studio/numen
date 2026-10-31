@@ -45,19 +45,12 @@ service NoteService {
 
   // CreateNote makes a note. The file is named after the title, and the links
   // the note carries are written into it as it is made, so it arrives joined.
+  // An empty title takes the lowest free "Untitled note N".
   rpc CreateNote(CreateNoteRequest) returns (CreateNoteResponse);
 
   // WriteLink writes a relationship into one note. The note at the other end is
   // left alone: a link is one end's account of a relationship.
   rpc WriteLink(WriteLinkRequest) returns (WriteLinkResponse);
-
-  // RemoveLink removes a relationship from one note. The note at the other end
-  // is left alone: a link is one end's account of a relationship.
-  rpc RemoveLink(RemoveLinkRequest) returns (RemoveLinkResponse);
-
-  // ReplaceLinks makes the links between two notes exactly the ones given: each
-  // note holds one link to the other, or none.
-  rpc ReplaceLinks(ReplaceLinksRequest) returns (ReplaceLinksResponse);
 
   // GetConnection is the relationship between two notes as a whole: the record
   // each note writes about the other.
@@ -152,8 +145,7 @@ message Neighbour {
   string through = 4;
 
   // Set when both notes name this relationship, each in its own words. The
-  // label is then the one the note in focus wrote, and the arrow drawn on the
-  // line points at the note it was written about.
+  // label is then the one the note in focus wrote.
   bool is_mutual = 5;
 
   // The `type` key of the note's frontmatter, so a client draws a note as what it is.
@@ -352,7 +344,8 @@ message Link {
 }
 
 message CreateNoteRequest {
-  // What the note is called. The file is named after it.
+  // What the note is called. The file is named after it. Empty takes the
+  // lowest free "Untitled note N".
   string title = 1;
 
   // The folder it goes in, as a path relative to the root. Empty is the root.
@@ -373,6 +366,9 @@ message CreateNoteResponse {
   // The note was made and `path` stands; search does not answer about it until
   // a walk goes past.
   bool is_unlevelled = 3;
+
+  // Set when no title was given and every numbered untitled name is taken.
+  bool is_name_exhausted = 4;
 }
 
 message WriteLinkRequest {
@@ -385,55 +381,6 @@ message WriteLinkResponse {
   // Set when nothing was written, and why. A note that moved between being
   // read and being written is ERROR_CODE_STALE, and the caller reads it again
   // before asking for this.
-  optional ErrorCode error = 1;
-}
-
-message RemoveLinkRequest {
-  // The note the link is removed from.
-  string path = 1;
-  string to = 2;
-  // Narrows the removal to one role. ROLE_UNSPECIFIED matches every role.
-  Role role = 3;
-  // The records removed carry this type. Empty names the records that carry none.
-  string type = 4;
-}
-
-message RemoveLinkResponse {
-  // Set when nothing was removed, and why.
-  optional ErrorCode error = 1;
-}
-
-// PairLink is one relationship between the two notes a ReplaceLinks names: the
-// note it is written in, the note it goes to, and what kind it is.
-message PairLink {
-  string from = 1;
-  string to = 2;
-  Role role = 3;
-
-  // What the person calls this relationship, when they call it anything.
-  string label = 4;
-
-  // What the link is for. The record is addressed by its target and this type.
-  string type = 5;
-
-  // Why the link exists. The reason already written is kept when this is empty.
-  string note = 6;
-
-  Marker marker = 7;
-}
-
-message ReplaceLinksRequest {
-  // The two notes the links run between.
-  string first = 1;
-  string second = 2;
-
-  // Every link that is to stand between them. A note written in no entry holds
-  // no link to the other.
-  repeated PairLink links = 3;
-}
-
-message ReplaceLinksResponse {
-  // Set when the links were not all replaced, and why.
   optional ErrorCode error = 1;
 }
 
@@ -452,6 +399,10 @@ message ConnectionSide {
 message Connection {
   string first = 1;
   string second = 2;
+  // What the second note is to the first. A record written without a role takes
+  // this role, or its inverse for the record of the second note. A reply always
+  // carries it when the connection holds a record.
+  Role role = 5;
   // The record written in the first note about the second. Absent when the
   // first note writes none.
   optional ConnectionSide first_side = 3;
@@ -543,6 +494,9 @@ message CreateRelatedNoteRequest {
 
   // The type of the record the new note writes. Empty for an ordinary link.
   string type = 4;
+
+  // What the record the new note writes draws at the existing note.
+  Marker marker = 5;
 }
 
 message CreateRelatedNoteResponse {

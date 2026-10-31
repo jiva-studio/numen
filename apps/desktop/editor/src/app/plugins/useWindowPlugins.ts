@@ -108,6 +108,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     ...(deps.writeNote !== undefined ? { writeNote: deps.writeNote } : {}),
     getWorkspace: () => deps.services?.workspace,
     getNotes: () => deps.services?.notes,
+    getRelations: () => deps.services?.relations,
     getFiles: () => deps.services?.files,
     getAgent: () => deps.services?.agent,
     getBuffers: () => deps.services?.buffers,

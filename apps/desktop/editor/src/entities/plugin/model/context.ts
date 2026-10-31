@@ -18,6 +18,7 @@ import type {
   VaultChangeEvent,
   VaultFiles,
   VaultNotes,
+  VaultRelations,
   VaultTexts,
   ViewRegistration,
   WorkspaceHost,
@@ -60,25 +61,49 @@ function guardNotes(notes: VaultNotes, requireWrite: (operation: string) => void
       requireWrite('notes.createUntitledNote')
       return notes.createUntitledNote()
     },
-    createInRelation: async (from, relation) => {
-      requireWrite('notes.createInRelation')
-      return notes.createInRelation(from, relation)
-    },
-    createWithTitle: async (title, from, relation) => {
-      requireWrite('notes.createWithTitle')
-      return notes.createWithTitle(title, from, relation)
-    },
-    join: async (...args: Parameters<VaultNotes['join']>) => {
-      requireWrite('notes.join')
-      return notes.join(...args)
-    },
-    replaceLinks: async (first, second, links) => {
-      requireWrite('notes.replaceLinks')
-      return notes.replaceLinks(first, second, links)
-    },
     write: async (path, body) => {
       requireWrite('notes.write')
       return notes.write(path, body)
+    },
+  }
+}
+
+/** The relationships between notes: reading needs vault:read, and a write vault:write. */
+function guardRelations(
+  relations: VaultRelations,
+  requirePerm: (permission: string, operation: string) => void,
+): VaultRelations {
+  const requireRead = (operation: string) => requirePerm('vault:read', operation)
+  const requireWrite = (operation: string) => requirePerm('vault:write', operation)
+  return {
+    roles: relations.roles,
+    getConnection: async (first, second, type) => {
+      requireRead('relations.getConnection')
+      return relations.getConnection(first, second, type)
+    },
+    saveConnection: async (connection) => {
+      requireWrite('relations.saveConnection')
+      return relations.saveConnection(connection)
+    },
+    removeSide: async (from, to, type) => {
+      requireWrite('relations.removeSide')
+      return relations.removeSide(from, to, type)
+    },
+    removeConnection: async (first, second, type) => {
+      requireWrite('relations.removeConnection')
+      return relations.removeConnection(first, second, type)
+    },
+    join: async (from, to, side) => {
+      requireWrite('relations.join')
+      return relations.join(from, to, side)
+    },
+    createRelated: async (request) => {
+      requireWrite('relations.createRelated')
+      return relations.createRelated(request)
+    },
+    listBacklinks: async (path) => {
+      requireRead('relations.listBacklinks')
+      return relations.listBacklinks(path)
     },
   }
 }
@@ -190,7 +215,10 @@ function guardWorkspace(
   }
 }
 
-type Services = Pick<PluginContext, 'workspace' | 'notes' | 'files' | 'agent' | 'buffers'>
+type Services = Pick<
+  PluginContext,
+  'workspace' | 'notes' | 'relations' | 'files' | 'agent' | 'buffers'
+>
 
 /** A service the window made, guarded; nothing where the window made none. */
 function guardService<K extends keyof Services, S>(
@@ -213,6 +241,7 @@ function guardServices(
   return {
     ...guardService('workspace', host.getWorkspace?.(), (one) => guardWorkspace(one, requireWrite)),
     ...guardService('notes', host.getNotes?.(), (one) => guardNotes(one, requireWrite)),
+    ...guardService('relations', host.getRelations?.(), (one) => guardRelations(one, requirePerm)),
     ...guardService('files', host.getFiles?.(), (one) => guardFiles(one, requireWrite)),
     ...guardService('agent', host.getAgent?.(), (one) => guardAgent(one, requirePerm)),
     ...guardService('buffers', host.getBuffers?.(), (one) => guardBuffers(one, requireWrite, add)),

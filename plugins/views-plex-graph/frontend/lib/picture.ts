@@ -5,6 +5,7 @@
  * a relation and edges between them and has no concept of a note; the schema
  * has no concept of drawing.
  */
+import type { LinkMarker } from '@numen/plugin-sdk'
 import type { Neighbourhood, NoteHeading, NoteRelation, NoteType } from '../types'
 import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexHeading } from '../plex'
 
@@ -19,10 +20,24 @@ export function getNoteTypes(neighbourhood: Neighbourhood): ReadonlyMap<string, 
   return found
 }
 
-/** A relationship both notes named is drawn with an arrow at the end away from the focus. */
-function getEdgeArrow(relation: NoteRelation, isMutual: boolean): EdgeArrow | undefined {
-  if (isMutual) return relation === 'child' ? 'to' : 'from'
-  return undefined
+/**
+ * The ends of an edge that carry an arrowhead. The marker of the record the focus
+ * writes is drawn at the neighbour, and the marker of the record the neighbour
+ * writes at the focus. A parent or a jump edge runs from the neighbour to the focus,
+ * and a child edge from the focus to the neighbour. A sibling hangs off a shared
+ * parent, and no record of the focus is drawn on it.
+ */
+function getEdgeArrows(
+  relation: NoteRelation,
+  markers: { readonly marker: LinkMarker | null; readonly reverseMarker: LinkMarker | null },
+): readonly EdgeArrow[] {
+  if (relation === 'sibling') return []
+  const atNeighbour: EdgeArrow = relation === 'child' ? 'to' : 'from'
+  const atFocus: EdgeArrow = relation === 'child' ? 'from' : 'to'
+  return [
+    ...(markers.marker === 'arrow' ? [atNeighbour] : []),
+    ...(markers.reverseMarker === 'arrow' ? [atFocus] : []),
+  ]
 }
 
 /**
@@ -33,7 +48,7 @@ function getEdgeArrow(relation: NoteRelation, isMutual: boolean): EdgeArrow | un
  * the focus at all: it is another of a parent's children, so it hangs off that
  * parent. Which parent that is comes from the vault, and this file names it.
  *
- * A relationship both notes named is drawn with an arrow at the end away from
+ * An arrowhead is drawn at each end whose record carries a marker, and nowhere else.
  */
 export function convertNeighbourhood(
   neighbourhood: Neighbourhood,
@@ -52,7 +67,8 @@ export function convertNeighbourhood(
     relation: NoteRelation
     label: string
     through: string
-    isMutual: boolean
+    marker: LinkMarker | null
+    reverseMarker: LinkMarker | null
   }[] = []
   // Stryker restore ArrayDeclaration
   /** The path of every note this picture draws, the note in focus included. */
@@ -68,23 +84,26 @@ export function convertNeighbourhood(
       // by the application would be read as written by the user.
       label: related.label,
       through: related.through,
-      isMutual: related.isMutual,
+      marker: related.marker,
+      reverseMarker: related.reverseMarker,
     })
   }
 
-  const edges: PlexEdge[] = items.flatMap(({ id, relation, label, through, isMutual }) => {
-    const line = label ? { label } : {}
-    const arrow = getEdgeArrow(relation, isMutual)
-    const head = arrow ? { arrow } : {}
+  const edges: PlexEdge[] = items.flatMap(
+    ({ id, relation, label, through, marker, reverseMarker }) => {
+      const line = label ? { label } : {}
+      const arrows = getEdgeArrows(relation, { marker, reverseMarker })
+      const head = arrows.length > 0 ? { arrows } : {}
 
-    if (relation === 'parent' || relation === 'jump') {
-      return [{ from: id, to: focus.id, ...line, ...head }]
-    }
-    if (relation === 'child') {
-      return [{ from: focus.id, to: id, ...line, ...head }]
-    }
-    return visiblePaths.has(through) ? [{ from: token(through), to: id, ...line }] : []
-  })
+      if (relation === 'parent' || relation === 'jump') {
+        return [{ from: id, to: focus.id, ...line, ...head }]
+      }
+      if (relation === 'child') {
+        return [{ from: focus.id, to: id, ...line, ...head }]
+      }
+      return visiblePaths.has(through) ? [{ from: token(through), to: id, ...line }] : []
+    },
+  )
 
   return { nodes, edges }
 }
@@ -130,7 +149,8 @@ export function areNeighbourhoodsEqual(
       related.relation === comparison.relation &&
       related.label === comparison.label &&
       related.through === comparison.through &&
-      related.isMutual === comparison.isMutual
+      related.marker === comparison.marker &&
+      related.reverseMarker === comparison.reverseMarker
     )
   })
 }

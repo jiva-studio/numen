@@ -3,8 +3,18 @@
  * and the notes of the vault.
  */
 import { describe, expect, it } from 'vitest'
+import type { Connection } from '@numen/plugin-sdk'
 import { createHost } from '../fixtures/host'
 import { createPlexTabDeps } from './tabDeps'
+
+const emptyConnection: Connection = {
+  first: 'One.md',
+  second: 'Two.md',
+  role: null,
+  type: '',
+  firstSide: null,
+  secondSide: null,
+}
 
 describe('a note a plex tab opens', () => {
   it('goes to the tabs linked to it, and opens nowhere else', () => {
@@ -81,13 +91,23 @@ describe('what else a plex tab asks of the window', () => {
     const { host, recorded } = createHost()
     const deps = createPlexTabDeps(host, 'plex:1')
 
-    await deps.editor.createInRelation('One.md', 'child')
-    expect(await deps.editor.createWithTitle('Two', 'One.md', 'parent')).toStrictEqual({
-      path: 'Two.md',
-      title: 'Two',
+    await deps.editor.createRelated({ from: 'One.md', role: 'child' })
+    expect(
+      await deps.editor.createRelated({ from: 'One.md', role: 'parent', title: 'Two' }),
+    ).toStrictEqual({ ok: true, value: 'Two.md' })
+    expect(await deps.editor.join('One.md', 'Two.md', { role: 'jump' })).toStrictEqual({
+      ok: true,
+      value: undefined,
     })
-    expect(await deps.editor.join('One.md', 'Two.md', 'jump')).toBe(true)
-    expect(await deps.editor.replaceLinks('One.md', 'Two.md', [])).toBe(true)
+    expect(await deps.editor.getConnection('One.md', 'Two.md')).toMatchObject({ ok: true })
+    expect(await deps.editor.saveConnection(emptyConnection)).toStrictEqual({
+      ok: true,
+      value: undefined,
+    })
+    expect(await deps.editor.removeConnection('One.md', 'Two.md')).toStrictEqual({
+      ok: true,
+      value: undefined,
+    })
     expect(await deps.createUntitledNote()).toBe('Untitled.md')
 
     expect(recorded.made).toStrictEqual([

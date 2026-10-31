@@ -705,6 +705,8 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
           label: '',
           through: one.through ?? '',
           isMutual: false,
+          marker: null,
+          reverseMarker: null,
         })),
       }
     },
@@ -1178,10 +1180,10 @@ describe('quick-link popover from a node handle', () => {
     const { state } = tab('Focus.md', ['Child.md'])
     await settle()
 
-    state.openLinkInspector('invalidSingleToken', { x: 0, y: 0 })
+    await state.openLinkInspector('invalidSingleToken', { x: 0, y: 0 })
     expect(state.linkInspector.value).toBeNull()
 
-    state.openLinkInspector('unknown1 unknown2', { x: 0, y: 0 })
+    await state.openLinkInspector('unknown1 unknown2', { x: 0, y: 0 })
     expect(state.linkInspector.value).toBeNull()
   })
 
@@ -1219,7 +1221,7 @@ describe('usePlexTab edge cases and helpers', () => {
     one.state.openQuickLink({ from: one.node('Root.md'), relation: 'child', at: { x: 10, y: 10 } })
     expect(one.state.quickLink.value).not.toBeNull()
     const pair = `${one.node('Root.md')} ${one.node('Child.md')}`
-    one.state.openLinkInspector(pair, { x: 10, y: 10 })
+    await one.state.openLinkInspector(pair, { x: 10, y: 10 })
     expect(one.state.linkInspector.value).not.toBeNull()
 
     one.state.openMenu({ node: null, at: { x: 10, y: 10 }, opening: 'pointer' })

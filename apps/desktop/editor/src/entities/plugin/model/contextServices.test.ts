@@ -3,12 +3,14 @@
  * handed: the reads are open, the writes need `vault:write`.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { asValue } from '@numen/plugin-sdk'
 import type {
   AgentHost,
   BufferHost,
   PluginContext,
   VaultFiles,
   VaultNotes,
+  VaultRelations,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import { createPluginContext } from './context'
@@ -24,12 +26,18 @@ const createServices = () => {
   const notes = {
     getHeadings: vi.fn(() => Promise.resolve(new Map())),
     createUntitledNote: vi.fn(() => Promise.resolve('Untitled.md')),
-    createInRelation: vi.fn(() => Promise.resolve(null)),
-    createWithTitle: vi.fn(() => Promise.resolve(null)),
-    join: vi.fn(() => Promise.resolve(true)),
-    replaceLinks: vi.fn(() => Promise.resolve(true)),
     write: vi.fn(() => Promise.resolve()),
   } as unknown as VaultNotes
+  const relations = {
+    roles: ['parent', 'child', 'jump'],
+    getConnection: vi.fn(() => Promise.resolve(asValue({}))),
+    saveConnection: vi.fn(() => Promise.resolve(asValue(undefined))),
+    removeSide: vi.fn(() => Promise.resolve(asValue(undefined))),
+    removeConnection: vi.fn(() => Promise.resolve(asValue(undefined))),
+    join: vi.fn(() => Promise.resolve(asValue(undefined))),
+    createRelated: vi.fn(() => Promise.resolve(asValue('a.md'))),
+    listBacklinks: vi.fn(() => Promise.resolve([])),
+  } as unknown as VaultRelations
   const files = {
     list: vi.fn(() => Promise.resolve([])),
     move: vi.fn(() => Promise.resolve()),
@@ -54,9 +62,10 @@ const createServices = () => {
     getBuffers: () => buffers,
     getWorkspace: () => workspace,
     getNotes: () => notes,
+    getRelations: () => relations,
     getFiles: () => files,
   } as unknown as PluginContextHost
-  return { host, workspace, notes, files, agent, buffers }
+  return { host, workspace, notes, relations, files, agent, buffers }
 }
 
 const createContext = (permissions: readonly string[]) => {
@@ -74,12 +83,70 @@ type Call = (context: PluginContext) => unknown
 
 const NOTE_WRITES: Record<string, Call> = {
   createUntitledNote: (c) => c.notes!.createUntitledNote(),
-  createInRelation: (c) => c.notes!.createInRelation('a.md', 'child'),
-  createWithTitle: (c) => c.notes!.createWithTitle('T', 'a.md', 'child'),
-  join: (c) => c.notes!.join('a.md', 'b.md', 'child'),
-  replaceLinks: (c) => c.notes!.replaceLinks('a.md', 'b.md', []),
   write: (c) => c.notes!.write('a.md', 'Prose.'),
 }
+
+const RELATION_WRITES: Record<string, Call> = {
+  saveConnection: (c) =>
+    c.relations!.saveConnection({
+      first: 'a.md',
+      second: 'b.md',
+      role: 'child',
+      type: '',
+      firstSide: { label: '', marker: 'arrow', reason: '' },
+      secondSide: null,
+    }),
+  removeSide: (c) => c.relations!.removeSide('a.md', 'b.md'),
+  removeConnection: (c) => c.relations!.removeConnection('a.md', 'b.md'),
+  join: (c) => c.relations!.join('a.md', 'b.md', { role: 'child' }),
+  createRelated: (c) => c.relations!.createRelated({ from: 'a.md', role: 'child' }),
+}
+
+const RELATION_READS: Record<string, Call> = {
+  getConnection: (c) => c.relations!.getConnection('a.md', 'b.md'),
+  listBacklinks: (c) => c.relations!.listBacklinks('a.md'),
+}
+
+describe('the relationships a plugin writes', () => {
+  it.each(Object.entries(RELATION_WRITES))(
+    'fail through %s without vault:write',
+    async (_, call) => {
+      const { context } = createContext(['vault:read'])
+
+      await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(/vault:write/)
+    },
+  )
+
+  it.each(Object.entries(RELATION_WRITES))(
+    'are written through %s with vault:write',
+    async (_, call) => {
+      const { context } = createContext(['vault:write'])
+
+      await expect(Promise.resolve().then(() => call(context))).resolves.not.toThrow()
+    },
+  )
+
+  it.each(Object.entries(RELATION_READS))('fail through %s without vault:read', async (_, call) => {
+    const { context } = createContext(['vault:write'])
+
+    await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(/vault:read/)
+  })
+
+  it.each(Object.entries(RELATION_READS))(
+    'are read through %s with vault:read',
+    async (_, call) => {
+      const { context } = createContext(['vault:read'])
+
+      await expect(Promise.resolve().then(() => call(context))).resolves.not.toThrow()
+    },
+  )
+
+  it('hand over the roles the window offers', () => {
+    const { context } = createContext([])
+
+    expect(context.relations!.roles).toStrictEqual(['parent', 'child', 'jump'])
+  })
+})
 
 const FILE_WRITES: Record<string, Call> = {
   move: (c) => c.files!.move('a.md', 'b.md'),

@@ -24,6 +24,7 @@ import type {
   ViewRegistration,
   VaultFiles,
   VaultNotes,
+  VaultRelations,
   VaultTexts,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
@@ -96,6 +97,8 @@ export interface PluginHostDeps {
   readonly getWorkspace?: () => WorkspaceHost | undefined
   /** The notes of the vault, once the window has made them. */
   readonly getNotes?: () => VaultNotes | undefined
+  /** The relationships between notes, once the window has made them. */
+  readonly getRelations?: () => VaultRelations | undefined
   /** The files of the vault, once the window has made them. */
   readonly getFiles?: () => VaultFiles | undefined
   /** The agent the window queries, once the window has created it. */
@@ -144,6 +147,7 @@ export interface PluginContextHost {
   closeTab?(id: string): void
   getWorkspace?(): WorkspaceHost | undefined
   getNotes?(): VaultNotes | undefined
+  getRelations?(): VaultRelations | undefined
   getFiles?(): VaultFiles | undefined
   getAgent?(): AgentHost | undefined
   getBuffers?(): BufferHost | undefined

@@ -457,8 +457,8 @@ describe('the box the attention has settled on', () => {
 })
 
 /**
- * An arrow is drawn on a line whose relationship both ends named, at the end
- * the edge specifies. A line with no specified end has no arrow.
+ * An arrowhead is drawn on a line at each end the edge specifies. A line with
+ * no specified end has none.
  */
 describe('the arrow on a line', () => {
   const named: PlexNeighbourhood = {
@@ -469,8 +469,8 @@ describe('the arrow on a line', () => {
       { id: 'aside', title: 'Aside', relation: 'jump' },
     ],
     edges: [
-      { from: 'focus', to: 'below', label: 'holds', arrow: 'to' },
-      { from: 'above', to: 'focus', arrow: 'from' },
+      { from: 'focus', to: 'below', label: 'holds', arrows: ['to'] },
+      { from: 'above', to: 'focus', arrows: ['from'] },
       { from: 'aside', to: 'focus', label: 'see also' },
     ],
   }
@@ -498,9 +498,9 @@ describe('the arrow on a line', () => {
 
     for (const [at, edge] of [frame.edges[0]!, frame.edges[1]!].entries()) {
       const head = parseTransform(renderedArrows[at]!.attributes('transform')!)
-      expect(head.x).toBeCloseTo(edge.arrowhead!.at.x)
-      expect(head.y).toBeCloseTo(edge.arrowhead!.at.y)
-      expect(head.angle).toBeCloseTo(edge.arrowhead!.angle)
+      expect(head.x).toBeCloseTo(edge.arrowheads![0]!.at.x)
+      expect(head.y).toBeCloseTo(edge.arrowheads![0]!.at.y)
+      expect(head.angle).toBeCloseTo(edge.arrowheads![0]!.angle)
     }
 
     // The two ends of one picture: one arrow points down out of the focus and

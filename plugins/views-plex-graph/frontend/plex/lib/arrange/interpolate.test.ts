@@ -337,7 +337,7 @@ describe('the arrow a line carries while the picture moves', () => {
   const markArrows = (neighbourhood: PlexNeighbourhood): PlexNeighbourhood => ({
     ...neighbourhood,
     edges: neighbourhood.edges.map((edge) =>
-      edge.to === 'a' ? { ...edge, arrow: 'to' as const } : edge,
+      edge.to === 'a' ? { ...edge, arrows: ['to' as const] } : edge,
     ),
   })
 
@@ -347,9 +347,9 @@ describe('the arrow a line carries while the picture moves', () => {
   it('keeps it on the end of the line, wherever the line has got to', () => {
     for (let t = 0.05; t < 1; t += 0.05) {
       const edge = interpolatePlex(start, end, t).edges.find((e) => e.to === 'a')!
-      expect(edge.arrowhead, `at ${t.toFixed(2)}`).toBeDefined()
-      expect(edge.arrowhead!.at.x).toBe(edge.toPoint.x)
-      expect(edge.arrowhead!.at.y).toBe(edge.toPoint.y)
+      expect(edge.arrowheads, `at ${t.toFixed(2)}`).toBeDefined()
+      expect(edge.arrowheads![0]!.at.x).toBe(edge.toPoint.x)
+      expect(edge.arrowheads![0]!.at.y).toBe(edge.toPoint.y)
     }
   })
 
@@ -360,7 +360,7 @@ describe('the arrow a line carries while the picture moves', () => {
       const chord =
         (Math.atan2(edge.toPoint.y - precedingPoint.y, edge.toPoint.x - precedingPoint.x) * 180) /
         Math.PI
-      expect(edge.arrowhead!.angle, `at ${t.toFixed(2)}`).toBeCloseTo(chord, 1)
+      expect(edge.arrowheads![0]!.angle, `at ${t.toFixed(2)}`).toBeCloseTo(chord, 1)
     }
   })
 })

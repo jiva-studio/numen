@@ -255,6 +255,8 @@ describe('a vault that changed somewhere else', () => {
           label: '',
           through: '',
           isMutual: false,
+          marker: null,
+          reverseMarker: null,
         })),
       })),
     )

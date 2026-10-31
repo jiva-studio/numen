@@ -962,8 +962,8 @@ const arrowedLines: PlexNeighbourhood = {
     { id: 'rota', title: 'The question of the rota', relation: 'sibling' },
   ],
   edges: [
-    { from: 'allotments', to: 'alice', arrow: 'from' },
-    { from: 'bram', to: 'alice', label: 'the oldest tenant', arrow: 'from' },
+    { from: 'allotments', to: 'alice', arrows: ['from'] },
+    { from: 'bram', to: 'alice', label: 'the oldest tenant', arrows: ['from'] },
     { from: 'cora', to: 'alice', label: 'keys, hoses, the gate' },
     { from: 'allotments', to: 'rota', label: 'the minutes of the meeting' },
   ],

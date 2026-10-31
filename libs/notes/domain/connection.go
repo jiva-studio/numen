@@ -61,6 +61,41 @@ type Connection struct {
 	BA   *Side
 }
 
+// GetRole returns what B is to A according to the records: the role of AB, else
+// the inverse of the role of BA. It is empty for a connection with no record
+// that carries a role.
+func (c Connection) GetRole() LinkRole {
+	if c.AB != nil && c.AB.Role != "" {
+		return c.AB.Role
+	}
+	if c.BA != nil {
+		inverse, _ := GetInverseRole(c.BA.Role)
+		return inverse
+	}
+	return ""
+}
+
+// FillRoles returns the connection with the role of every record that has none
+// filled in. role is what B is to A; an empty role is taken from the records
+// that carry one. The record BA takes the inverse of the role.
+func (c Connection) FillRoles(role LinkRole) Connection {
+	if role == "" {
+		role = c.GetRole()
+	}
+	inverse, _ := GetInverseRole(role)
+	if c.AB != nil && c.AB.Role == "" {
+		side := *c.AB
+		side.Role = role
+		c.AB = &side
+	}
+	if c.BA != nil && c.BA.Role == "" {
+		side := *c.BA
+		side.Role = inverse
+		c.BA = &side
+	}
+	return c
+}
+
 // IsEmpty reports whether neither note writes a record.
 func (c Connection) IsEmpty() bool {
 	return c.AB == nil && c.BA == nil
@@ -171,4 +206,6 @@ type RelatedNote struct {
 	Title string
 	// Type is the type of the record the new note writes about From.
 	Type string
+	// Marker is what the record the new note writes draws at From.
+	Marker LinkMarker
 }

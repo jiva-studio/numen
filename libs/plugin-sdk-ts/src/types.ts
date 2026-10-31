@@ -5,7 +5,7 @@ import type { NoticeHost } from './notices'
 import type { TaskHost } from './tasks'
 import type { Selector, TextMaker, VaultTexts } from './texts'
 import type { MountedView, ViewRegistration } from './views'
-import type { NoteType, VaultFiles, VaultNotes, WorkspaceHost } from './workspace'
+import type { NoteType, VaultFiles, VaultNotes, VaultRelations, WorkspaceHost } from './workspace'
 
 // Disposable is a handle released on teardown.
 export interface Disposable {
@@ -280,6 +280,8 @@ export interface PluginContext {
   readonly workspace?: WorkspaceHost
   // The notes of the vault, where the host offers them.
   readonly notes?: VaultNotes
+  // The relationships between the notes of the vault, where the host offers them.
+  readonly relations?: VaultRelations
   // The folders and files of the vault, where the host offers them.
   readonly files?: VaultFiles
   // The agent the window talks to, when the host provides one.

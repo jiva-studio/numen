@@ -46,13 +46,21 @@ func (u CreateInRelation) Execute(ctx context.Context, v domain.Vault, in domain
 	if folder == "." {
 		folder = ""
 	}
-	links := []domain.Link{{Target: target, Role: inverse, Type: in.Type}}
+	links := []domain.Link{{Target: target, Role: inverse, Type: in.Type, Marker: in.Marker}}
 
 	if in.Title != "" {
 		return u.create.Execute(ctx, v, NewNote{Title: in.Title, Path: folder, Links: links})
 	}
+	return u.create.ExecuteUntitled(ctx, v, NewNote{Path: folder, Links: links})
+}
+
+// ExecuteUntitled creates a note under the lowest free "Untitled note N". The
+// title of the input is ignored. It fails with domain.ErrNoFreeName when every
+// numbered name is taken.
+func (u Create) ExecuteUntitled(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, error) {
 	for attempt := 1; attempt <= MaxUntitledAttempts; attempt++ {
-		made, err := u.create.Execute(ctx, v, NewNote{Title: getUntitledName(attempt), Path: folder, Links: links})
+		in.Title = getUntitledName(attempt)
+		made, err := u.Execute(ctx, v, in)
 		if errors.Is(err, vaultport.ErrAlreadyExists) {
 			continue
 		}

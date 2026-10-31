@@ -46,7 +46,6 @@ func (c Config) Notes(
 		Replace:      note.NewReplace(readers, writers, index, now),
 		Linking:      linking,
 		AddLinks:     note.NewAddLinks(linking),
-		ReplaceLinks: note.NewReplaceLinks(linking, addresses),
 		Move:         mover,
 		Rename:       note.NewRename(mover),
 		Remove:       remove,

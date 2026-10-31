@@ -77,6 +77,7 @@ function notifyListener<T>(listener: (event: T) => void | Promise<void>, event: 
 const OPTIONAL_SERVICE_KEYS = [
   'workspace',
   'notes',
+  'relations',
   'files',
   'agent',
   'buffers',

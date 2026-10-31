@@ -467,7 +467,7 @@ describe('a title set on a straight line', () => {
 
   it('keeps the room an arrowhead takes at the end of the line', () => {
     // Clear only from 136 to the end, which an arrowhead takes 20 of.
-    const arrow = createLine(ACROSS.from, ACROSS.to, 'abcdefgh', { arrow: 'to' })
+    const arrow = createLine(ACROSS.from, ACROSS.to, 'abcdefgh', { arrows: ['to'] })
     const [resolved] = separateTitles([arrow], [createBlocker('box', -204, 134)], edgeRouting)
 
     expect(resolved!.words).toBe('abc…')
@@ -475,7 +475,7 @@ describe('a title set on a straight line', () => {
   })
 
   it('writes no title on a line that an arrowhead takes the whole of', () => {
-    const short = createLine({ x: 0, y: 0 }, { x: 30, y: 0 }, 'a', { arrow: 'to' })
+    const short = createLine({ x: 0, y: 0 }, { x: 30, y: 0 }, 'a', { arrows: ['to'] })
     const [resolved] = separateTitles([short], [], edgeRouting)
 
     expect(resolved!.words).toBeUndefined()

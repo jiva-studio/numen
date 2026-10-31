@@ -129,7 +129,6 @@ type noteHandler struct {
 	write             *note.Write
 	create            *note.Create
 	editLinks         *note.EditLinks
-	replaceLinks      *note.ReplaceLinks
 	rename            *note.Rename
 	showNeighbourhood *note.ShowNeighbourhood
 	getLinkAddress    *note.GetLinkAddress

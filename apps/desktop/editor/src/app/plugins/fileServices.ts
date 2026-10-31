@@ -117,7 +117,7 @@ export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
     list: (folder) => core.list(folder),
     move: (from, to) => run('move', { ...getTarget(), path: from }, to),
     createFolder: (path) => run('createFolder', getTarget(), path),
-    createNote: async (folder) => (await making.createUntitled(folder, []))?.path ?? '',
+    createNote: (folder) => making.createUntitled(folder),
   }
 }
 

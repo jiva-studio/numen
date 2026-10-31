@@ -64,7 +64,7 @@ describe('the arrowhead', () => {
   })
 
   it('is moved onto its point and turned along the line there', () => {
-    expect(createArrowTransform({ at: { x: 7, y: -3 }, angle: 45 })).toBe(
+    expect(createArrowTransform({ end: 'to', at: { x: 7, y: -3 }, angle: 45 })).toBe(
       'translate(7 -3) rotate(45)',
     )
   })

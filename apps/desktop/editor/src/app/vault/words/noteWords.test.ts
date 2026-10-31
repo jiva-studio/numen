@@ -76,6 +76,8 @@ describe('mapNeighbourhood', () => {
           reverseLabel: 'holds',
           through: 'Mid.md',
           isMutual: true,
+          marker: null,
+          reverseMarker: null,
         },
       ],
     })

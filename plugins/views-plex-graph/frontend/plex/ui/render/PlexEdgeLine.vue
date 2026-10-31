@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** One edge: the curve, and the arrowhead it ends in where it carries one. */
+/** One edge: the curve, and the arrowheads it ends in where it carries any. */
 import { ARROWHEAD_PATH } from '../../lib/arrange'
 import type { EdgeLine } from './lines'
 
@@ -17,10 +17,11 @@ withDefaults(
   <g class="plex__edge-line" :class="{ 'plex__edge-line--lifted': isRaised }">
     <path class="plex__edge" :d="line.d" :opacity="line.edge.opacity" />
     <path
-      v-if="line.arrow"
+      v-for="arrow in line.arrows"
+      :key="arrow.end"
       class="plex__edge-arrow"
       :d="ARROWHEAD_PATH"
-      :transform="line.arrow"
+      :transform="arrow.transform"
       :opacity="line.edge.opacity"
     />
   </g>

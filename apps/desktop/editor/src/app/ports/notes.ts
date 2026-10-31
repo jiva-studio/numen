@@ -1,19 +1,15 @@
 /** The vault operations on notes available to the window. */
 import type {
-  Link,
   Neighbourhood,
   NewNote,
   NoteEdit,
   NoteHeading,
   NoteResult,
-  PairLink,
-  Role,
   WriteResult,
   RemoveResult,
   RenameResult,
 } from '@/entities/note'
-import type { TextLink } from '@numen/plugin-sdk'
-import type { ErrorCode } from '@/shared/errors'
+import type { TextLink, VaultRelations } from '@numen/plugin-sdk'
 import type { CreateResult } from '@/entities/file'
 
 export interface NotePort {
@@ -48,20 +44,8 @@ export interface NotePort {
   ): Promise<WriteResult>
   /** A note made, named after the title it is given and joined as it is written. */
   create(note: NewNote): Promise<CreateResult>
-  /**
-   * A relationship written into one note. The note at the other end is left
-   * alone: a link is one end's account of a relationship.
-   */
-  join(path: string, link: Link): Promise<ErrorCode | null>
-  /**
-   * A relationship taken out of one note.
-   */
-  removeLink(path: string, to: string, role?: Role): Promise<ErrorCode | null>
-  /**
-   * Replaces the links between two notes with exactly the ones given: each note
-   * holds one link to the other, or none. On failure the result gives the reason.
-   */
-  replaceLinks(first: string, second: string, links: readonly PairLink[]): Promise<ErrorCode | null>
+  /** The relationships between notes: read, written and created through the core. */
+  readonly relations: VaultRelations
   /**
    * A note given a different name. Whichever of the title and the filename
    * names it is brought into line, and the file follows where a title and a

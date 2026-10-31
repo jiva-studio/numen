@@ -2731,7 +2731,9 @@ type HostVaultServiceCreateRelatedNoteRequest struct {
 	// What the note is called. Empty takes the lowest free "Untitled note N".
 	Title string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
 	// The type of the record the new note writes. Empty for an ordinary link.
-	Type          string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	Type string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	// What the record the new note writes draws at the existing note.
+	Marker        Marker `protobuf:"varint,5,opt,name=marker,proto3,enum=numen.v1.Marker" json:"marker,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2792,6 +2794,13 @@ func (x *HostVaultServiceCreateRelatedNoteRequest) GetType() string {
 		return x.Type
 	}
 	return ""
+}
+
+func (x *HostVaultServiceCreateRelatedNoteRequest) GetMarker() Marker {
+	if x != nil {
+		return x.Marker
+	}
+	return Marker_MARKER_UNSPECIFIED
 }
 
 type HostVaultServiceCreateRelatedNoteResponse struct {
@@ -3440,12 +3449,13 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\x02to\x18\x02 \x01(\tR\x02to\x12,\n" +
 	"\x04side\x18\x03 \x01(\v2\x18.numen.v1.ConnectionSideR\x04side\"W\n" +
 	"!HostVaultServiceJoinNotesResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\"\x8c\x01\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\"\xb6\x01\n" +
 	"(HostVaultServiceCreateRelatedNoteRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\"\n" +
 	"\x04role\x18\x02 \x01(\x0e2\x0e.numen.v1.RoleR\x04role\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x12\n" +
-	"\x04type\x18\x04 \x01(\tR\x04type\"s\n" +
+	"\x04type\x18\x04 \x01(\tR\x04type\x12(\n" +
+	"\x06marker\x18\x05 \x01(\x0e2\x10.numen.v1.MarkerR\x06marker\"s\n" +
 	")HostVaultServiceCreateRelatedNoteResponse\x122\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\"\x19\n" +
@@ -3649,73 +3659,74 @@ var file_numen_v1_hostvault_proto_depIdxs = []int32{
 	68, // 36: numen.v1.HostVaultServiceJoinNotesRequest.side:type_name -> numen.v1.ConnectionSide
 	0,  // 37: numen.v1.HostVaultServiceJoinNotesResponse.error:type_name -> numen.v1.HostVaultErrorCode
 	65, // 38: numen.v1.HostVaultServiceCreateRelatedNoteRequest.role:type_name -> numen.v1.Role
-	0,  // 39: numen.v1.HostVaultServiceCreateRelatedNoteResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	0,  // 40: numen.v1.GetParseProblemsResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	55, // 41: numen.v1.GetParseProblemsResponse.problems:type_name -> numen.v1.HostParseProblem
-	0,  // 42: numen.v1.ReadCacheResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	0,  // 43: numen.v1.WriteCacheResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	35, // 44: numen.v1.ResolveLinksResponse.LinksEntry.value:type_name -> numen.v1.HostLink
-	10, // 45: numen.v1.HostVaultService.GetHostVault:input_type -> numen.v1.GetHostVaultRequest
-	3,  // 46: numen.v1.HostVaultService.ListHostVaults:input_type -> numen.v1.ListHostVaultsRequest
-	6,  // 47: numen.v1.HostVaultService.EnsureVaultIndexed:input_type -> numen.v1.EnsureVaultIndexedRequest
-	12, // 48: numen.v1.HostVaultService.StatFile:input_type -> numen.v1.StatFileRequest
-	14, // 49: numen.v1.HostVaultService.ReadFile:input_type -> numen.v1.ReadFileRequest
-	16, // 50: numen.v1.HostVaultService.WriteFile:input_type -> numen.v1.WriteFileRequest
-	18, // 51: numen.v1.HostVaultService.CreateFile:input_type -> numen.v1.CreateFileRequest
-	20, // 52: numen.v1.HostVaultService.LockVault:input_type -> numen.v1.LockVaultRequest
-	22, // 53: numen.v1.HostVaultService.UnlockVault:input_type -> numen.v1.UnlockVaultRequest
-	24, // 54: numen.v1.HostVaultService.ScanFiles:input_type -> numen.v1.ScanFilesRequest
-	27, // 55: numen.v1.HostVaultService.GetNoteRefs:input_type -> numen.v1.GetNoteRefsRequest
-	29, // 56: numen.v1.HostVaultService.GetNoteTypes:input_type -> numen.v1.GetNoteTypesRequest
-	31, // 57: numen.v1.HostVaultService.GetNamedPaths:input_type -> numen.v1.GetNamedPathsRequest
-	33, // 58: numen.v1.HostVaultService.GetPathsOfType:input_type -> numen.v1.GetPathsOfTypeRequest
-	36, // 59: numen.v1.HostVaultService.GetLinks:input_type -> numen.v1.GetLinksRequest
-	38, // 60: numen.v1.HostVaultService.GetBacklinks:input_type -> numen.v1.GetBacklinksRequest
-	40, // 61: numen.v1.HostVaultService.ResolveLinks:input_type -> numen.v1.ResolveLinksRequest
-	42, // 62: numen.v1.HostVaultService.GetConnection:input_type -> numen.v1.HostVaultServiceGetConnectionRequest
-	44, // 63: numen.v1.HostVaultService.SaveConnection:input_type -> numen.v1.HostVaultServiceSaveConnectionRequest
-	46, // 64: numen.v1.HostVaultService.RemoveSide:input_type -> numen.v1.HostVaultServiceRemoveSideRequest
-	48, // 65: numen.v1.HostVaultService.RemoveConnection:input_type -> numen.v1.HostVaultServiceRemoveConnectionRequest
-	50, // 66: numen.v1.HostVaultService.JoinNotes:input_type -> numen.v1.HostVaultServiceJoinNotesRequest
-	52, // 67: numen.v1.HostVaultService.CreateRelatedNote:input_type -> numen.v1.HostVaultServiceCreateRelatedNoteRequest
-	54, // 68: numen.v1.HostVaultService.GetParseProblems:input_type -> numen.v1.GetParseProblemsRequest
-	57, // 69: numen.v1.HostVaultService.ReadCache:input_type -> numen.v1.ReadCacheRequest
-	59, // 70: numen.v1.HostVaultService.WriteCache:input_type -> numen.v1.WriteCacheRequest
-	8,  // 71: numen.v1.HostVaultService.WatchMoves:input_type -> numen.v1.WatchMovesRequest
-	61, // 72: numen.v1.HostVaultService.WatchVault:input_type -> numen.v1.WatchVaultRequest
-	11, // 73: numen.v1.HostVaultService.GetHostVault:output_type -> numen.v1.GetHostVaultResponse
-	5,  // 74: numen.v1.HostVaultService.ListHostVaults:output_type -> numen.v1.ListHostVaultsResponse
-	7,  // 75: numen.v1.HostVaultService.EnsureVaultIndexed:output_type -> numen.v1.EnsureVaultIndexedResponse
-	13, // 76: numen.v1.HostVaultService.StatFile:output_type -> numen.v1.StatFileResponse
-	15, // 77: numen.v1.HostVaultService.ReadFile:output_type -> numen.v1.ReadFileResponse
-	17, // 78: numen.v1.HostVaultService.WriteFile:output_type -> numen.v1.WriteFileResponse
-	19, // 79: numen.v1.HostVaultService.CreateFile:output_type -> numen.v1.CreateFileResponse
-	21, // 80: numen.v1.HostVaultService.LockVault:output_type -> numen.v1.LockVaultResponse
-	23, // 81: numen.v1.HostVaultService.UnlockVault:output_type -> numen.v1.UnlockVaultResponse
-	25, // 82: numen.v1.HostVaultService.ScanFiles:output_type -> numen.v1.ScanFilesResponse
-	28, // 83: numen.v1.HostVaultService.GetNoteRefs:output_type -> numen.v1.GetNoteRefsResponse
-	30, // 84: numen.v1.HostVaultService.GetNoteTypes:output_type -> numen.v1.GetNoteTypesResponse
-	32, // 85: numen.v1.HostVaultService.GetNamedPaths:output_type -> numen.v1.GetNamedPathsResponse
-	34, // 86: numen.v1.HostVaultService.GetPathsOfType:output_type -> numen.v1.GetPathsOfTypeResponse
-	37, // 87: numen.v1.HostVaultService.GetLinks:output_type -> numen.v1.GetLinksResponse
-	39, // 88: numen.v1.HostVaultService.GetBacklinks:output_type -> numen.v1.GetBacklinksResponse
-	41, // 89: numen.v1.HostVaultService.ResolveLinks:output_type -> numen.v1.ResolveLinksResponse
-	43, // 90: numen.v1.HostVaultService.GetConnection:output_type -> numen.v1.HostVaultServiceGetConnectionResponse
-	45, // 91: numen.v1.HostVaultService.SaveConnection:output_type -> numen.v1.HostVaultServiceSaveConnectionResponse
-	47, // 92: numen.v1.HostVaultService.RemoveSide:output_type -> numen.v1.HostVaultServiceRemoveSideResponse
-	49, // 93: numen.v1.HostVaultService.RemoveConnection:output_type -> numen.v1.HostVaultServiceRemoveConnectionResponse
-	51, // 94: numen.v1.HostVaultService.JoinNotes:output_type -> numen.v1.HostVaultServiceJoinNotesResponse
-	53, // 95: numen.v1.HostVaultService.CreateRelatedNote:output_type -> numen.v1.HostVaultServiceCreateRelatedNoteResponse
-	56, // 96: numen.v1.HostVaultService.GetParseProblems:output_type -> numen.v1.GetParseProblemsResponse
-	58, // 97: numen.v1.HostVaultService.ReadCache:output_type -> numen.v1.ReadCacheResponse
-	60, // 98: numen.v1.HostVaultService.WriteCache:output_type -> numen.v1.WriteCacheResponse
-	9,  // 99: numen.v1.HostVaultService.WatchMoves:output_type -> numen.v1.WatchMovesResponse
-	62, // 100: numen.v1.HostVaultService.WatchVault:output_type -> numen.v1.WatchVaultResponse
-	73, // [73:101] is the sub-list for method output_type
-	45, // [45:73] is the sub-list for method input_type
-	45, // [45:45] is the sub-list for extension type_name
-	45, // [45:45] is the sub-list for extension extendee
-	0,  // [0:45] is the sub-list for field type_name
+	66, // 39: numen.v1.HostVaultServiceCreateRelatedNoteRequest.marker:type_name -> numen.v1.Marker
+	0,  // 40: numen.v1.HostVaultServiceCreateRelatedNoteResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	0,  // 41: numen.v1.GetParseProblemsResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	55, // 42: numen.v1.GetParseProblemsResponse.problems:type_name -> numen.v1.HostParseProblem
+	0,  // 43: numen.v1.ReadCacheResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	0,  // 44: numen.v1.WriteCacheResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	35, // 45: numen.v1.ResolveLinksResponse.LinksEntry.value:type_name -> numen.v1.HostLink
+	10, // 46: numen.v1.HostVaultService.GetHostVault:input_type -> numen.v1.GetHostVaultRequest
+	3,  // 47: numen.v1.HostVaultService.ListHostVaults:input_type -> numen.v1.ListHostVaultsRequest
+	6,  // 48: numen.v1.HostVaultService.EnsureVaultIndexed:input_type -> numen.v1.EnsureVaultIndexedRequest
+	12, // 49: numen.v1.HostVaultService.StatFile:input_type -> numen.v1.StatFileRequest
+	14, // 50: numen.v1.HostVaultService.ReadFile:input_type -> numen.v1.ReadFileRequest
+	16, // 51: numen.v1.HostVaultService.WriteFile:input_type -> numen.v1.WriteFileRequest
+	18, // 52: numen.v1.HostVaultService.CreateFile:input_type -> numen.v1.CreateFileRequest
+	20, // 53: numen.v1.HostVaultService.LockVault:input_type -> numen.v1.LockVaultRequest
+	22, // 54: numen.v1.HostVaultService.UnlockVault:input_type -> numen.v1.UnlockVaultRequest
+	24, // 55: numen.v1.HostVaultService.ScanFiles:input_type -> numen.v1.ScanFilesRequest
+	27, // 56: numen.v1.HostVaultService.GetNoteRefs:input_type -> numen.v1.GetNoteRefsRequest
+	29, // 57: numen.v1.HostVaultService.GetNoteTypes:input_type -> numen.v1.GetNoteTypesRequest
+	31, // 58: numen.v1.HostVaultService.GetNamedPaths:input_type -> numen.v1.GetNamedPathsRequest
+	33, // 59: numen.v1.HostVaultService.GetPathsOfType:input_type -> numen.v1.GetPathsOfTypeRequest
+	36, // 60: numen.v1.HostVaultService.GetLinks:input_type -> numen.v1.GetLinksRequest
+	38, // 61: numen.v1.HostVaultService.GetBacklinks:input_type -> numen.v1.GetBacklinksRequest
+	40, // 62: numen.v1.HostVaultService.ResolveLinks:input_type -> numen.v1.ResolveLinksRequest
+	42, // 63: numen.v1.HostVaultService.GetConnection:input_type -> numen.v1.HostVaultServiceGetConnectionRequest
+	44, // 64: numen.v1.HostVaultService.SaveConnection:input_type -> numen.v1.HostVaultServiceSaveConnectionRequest
+	46, // 65: numen.v1.HostVaultService.RemoveSide:input_type -> numen.v1.HostVaultServiceRemoveSideRequest
+	48, // 66: numen.v1.HostVaultService.RemoveConnection:input_type -> numen.v1.HostVaultServiceRemoveConnectionRequest
+	50, // 67: numen.v1.HostVaultService.JoinNotes:input_type -> numen.v1.HostVaultServiceJoinNotesRequest
+	52, // 68: numen.v1.HostVaultService.CreateRelatedNote:input_type -> numen.v1.HostVaultServiceCreateRelatedNoteRequest
+	54, // 69: numen.v1.HostVaultService.GetParseProblems:input_type -> numen.v1.GetParseProblemsRequest
+	57, // 70: numen.v1.HostVaultService.ReadCache:input_type -> numen.v1.ReadCacheRequest
+	59, // 71: numen.v1.HostVaultService.WriteCache:input_type -> numen.v1.WriteCacheRequest
+	8,  // 72: numen.v1.HostVaultService.WatchMoves:input_type -> numen.v1.WatchMovesRequest
+	61, // 73: numen.v1.HostVaultService.WatchVault:input_type -> numen.v1.WatchVaultRequest
+	11, // 74: numen.v1.HostVaultService.GetHostVault:output_type -> numen.v1.GetHostVaultResponse
+	5,  // 75: numen.v1.HostVaultService.ListHostVaults:output_type -> numen.v1.ListHostVaultsResponse
+	7,  // 76: numen.v1.HostVaultService.EnsureVaultIndexed:output_type -> numen.v1.EnsureVaultIndexedResponse
+	13, // 77: numen.v1.HostVaultService.StatFile:output_type -> numen.v1.StatFileResponse
+	15, // 78: numen.v1.HostVaultService.ReadFile:output_type -> numen.v1.ReadFileResponse
+	17, // 79: numen.v1.HostVaultService.WriteFile:output_type -> numen.v1.WriteFileResponse
+	19, // 80: numen.v1.HostVaultService.CreateFile:output_type -> numen.v1.CreateFileResponse
+	21, // 81: numen.v1.HostVaultService.LockVault:output_type -> numen.v1.LockVaultResponse
+	23, // 82: numen.v1.HostVaultService.UnlockVault:output_type -> numen.v1.UnlockVaultResponse
+	25, // 83: numen.v1.HostVaultService.ScanFiles:output_type -> numen.v1.ScanFilesResponse
+	28, // 84: numen.v1.HostVaultService.GetNoteRefs:output_type -> numen.v1.GetNoteRefsResponse
+	30, // 85: numen.v1.HostVaultService.GetNoteTypes:output_type -> numen.v1.GetNoteTypesResponse
+	32, // 86: numen.v1.HostVaultService.GetNamedPaths:output_type -> numen.v1.GetNamedPathsResponse
+	34, // 87: numen.v1.HostVaultService.GetPathsOfType:output_type -> numen.v1.GetPathsOfTypeResponse
+	37, // 88: numen.v1.HostVaultService.GetLinks:output_type -> numen.v1.GetLinksResponse
+	39, // 89: numen.v1.HostVaultService.GetBacklinks:output_type -> numen.v1.GetBacklinksResponse
+	41, // 90: numen.v1.HostVaultService.ResolveLinks:output_type -> numen.v1.ResolveLinksResponse
+	43, // 91: numen.v1.HostVaultService.GetConnection:output_type -> numen.v1.HostVaultServiceGetConnectionResponse
+	45, // 92: numen.v1.HostVaultService.SaveConnection:output_type -> numen.v1.HostVaultServiceSaveConnectionResponse
+	47, // 93: numen.v1.HostVaultService.RemoveSide:output_type -> numen.v1.HostVaultServiceRemoveSideResponse
+	49, // 94: numen.v1.HostVaultService.RemoveConnection:output_type -> numen.v1.HostVaultServiceRemoveConnectionResponse
+	51, // 95: numen.v1.HostVaultService.JoinNotes:output_type -> numen.v1.HostVaultServiceJoinNotesResponse
+	53, // 96: numen.v1.HostVaultService.CreateRelatedNote:output_type -> numen.v1.HostVaultServiceCreateRelatedNoteResponse
+	56, // 97: numen.v1.HostVaultService.GetParseProblems:output_type -> numen.v1.GetParseProblemsResponse
+	58, // 98: numen.v1.HostVaultService.ReadCache:output_type -> numen.v1.ReadCacheResponse
+	60, // 99: numen.v1.HostVaultService.WriteCache:output_type -> numen.v1.WriteCacheResponse
+	9,  // 100: numen.v1.HostVaultService.WatchMoves:output_type -> numen.v1.WatchMovesResponse
+	62, // 101: numen.v1.HostVaultService.WatchVault:output_type -> numen.v1.WatchVaultResponse
+	74, // [74:102] is the sub-list for method output_type
+	46, // [46:74] is the sub-list for method input_type
+	46, // [46:46] is the sub-list for extension type_name
+	46, // [46:46] is the sub-list for extension extendee
+	0,  // [0:46] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_hostvault_proto_init() }

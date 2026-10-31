@@ -60,11 +60,6 @@ const (
 	NoteServiceCreateNoteProcedure = "/numen.v1.NoteService/CreateNote"
 	// NoteServiceWriteLinkProcedure is the fully-qualified name of the NoteService's WriteLink RPC.
 	NoteServiceWriteLinkProcedure = "/numen.v1.NoteService/WriteLink"
-	// NoteServiceRemoveLinkProcedure is the fully-qualified name of the NoteService's RemoveLink RPC.
-	NoteServiceRemoveLinkProcedure = "/numen.v1.NoteService/RemoveLink"
-	// NoteServiceReplaceLinksProcedure is the fully-qualified name of the NoteService's ReplaceLinks
-	// RPC.
-	NoteServiceReplaceLinksProcedure = "/numen.v1.NoteService/ReplaceLinks"
 	// NoteServiceGetConnectionProcedure is the fully-qualified name of the NoteService's GetConnection
 	// RPC.
 	NoteServiceGetConnectionProcedure = "/numen.v1.NoteService/GetConnection"
@@ -115,16 +110,11 @@ type NoteServiceClient interface {
 	WriteNote(context.Context, *connect.Request[v1.WriteNoteRequest]) (*connect.Response[v1.WriteNoteResponse], error)
 	// CreateNote makes a note. The file is named after the title, and the links
 	// the note carries are written into it as it is made, so it arrives joined.
+	// An empty title takes the lowest free "Untitled note N".
 	CreateNote(context.Context, *connect.Request[v1.CreateNoteRequest]) (*connect.Response[v1.CreateNoteResponse], error)
 	// WriteLink writes a relationship into one note. The note at the other end is
 	// left alone: a link is one end's account of a relationship.
 	WriteLink(context.Context, *connect.Request[v1.WriteLinkRequest]) (*connect.Response[v1.WriteLinkResponse], error)
-	// RemoveLink removes a relationship from one note. The note at the other end
-	// is left alone: a link is one end's account of a relationship.
-	RemoveLink(context.Context, *connect.Request[v1.RemoveLinkRequest]) (*connect.Response[v1.RemoveLinkResponse], error)
-	// ReplaceLinks makes the links between two notes exactly the ones given: each
-	// note holds one link to the other, or none.
-	ReplaceLinks(context.Context, *connect.Request[v1.ReplaceLinksRequest]) (*connect.Response[v1.ReplaceLinksResponse], error)
 	// GetConnection is the relationship between two notes as a whole: the record
 	// each note writes about the other.
 	GetConnection(context.Context, *connect.Request[v1.GetConnectionRequest]) (*connect.Response[v1.GetConnectionResponse], error)
@@ -216,18 +206,6 @@ func NewNoteServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(noteServiceMethods.ByName("WriteLink")),
 			connect.WithClientOptions(opts...),
 		),
-		removeLink: connect.NewClient[v1.RemoveLinkRequest, v1.RemoveLinkResponse](
-			httpClient,
-			baseURL+NoteServiceRemoveLinkProcedure,
-			connect.WithSchema(noteServiceMethods.ByName("RemoveLink")),
-			connect.WithClientOptions(opts...),
-		),
-		replaceLinks: connect.NewClient[v1.ReplaceLinksRequest, v1.ReplaceLinksResponse](
-			httpClient,
-			baseURL+NoteServiceReplaceLinksProcedure,
-			connect.WithSchema(noteServiceMethods.ByName("ReplaceLinks")),
-			connect.WithClientOptions(opts...),
-		),
 		getConnection: connect.NewClient[v1.GetConnectionRequest, v1.GetConnectionResponse](
 			httpClient,
 			baseURL+NoteServiceGetConnectionProcedure,
@@ -295,8 +273,6 @@ type noteServiceClient struct {
 	writeNote         *connect.Client[v1.WriteNoteRequest, v1.WriteNoteResponse]
 	createNote        *connect.Client[v1.CreateNoteRequest, v1.CreateNoteResponse]
 	writeLink         *connect.Client[v1.WriteLinkRequest, v1.WriteLinkResponse]
-	removeLink        *connect.Client[v1.RemoveLinkRequest, v1.RemoveLinkResponse]
-	replaceLinks      *connect.Client[v1.ReplaceLinksRequest, v1.ReplaceLinksResponse]
 	getConnection     *connect.Client[v1.GetConnectionRequest, v1.GetConnectionResponse]
 	saveConnection    *connect.Client[v1.SaveConnectionRequest, v1.SaveConnectionResponse]
 	removeSide        *connect.Client[v1.RemoveSideRequest, v1.RemoveSideResponse]
@@ -346,16 +322,6 @@ func (c *noteServiceClient) CreateNote(ctx context.Context, req *connect.Request
 // WriteLink calls numen.v1.NoteService.WriteLink.
 func (c *noteServiceClient) WriteLink(ctx context.Context, req *connect.Request[v1.WriteLinkRequest]) (*connect.Response[v1.WriteLinkResponse], error) {
 	return c.writeLink.CallUnary(ctx, req)
-}
-
-// RemoveLink calls numen.v1.NoteService.RemoveLink.
-func (c *noteServiceClient) RemoveLink(ctx context.Context, req *connect.Request[v1.RemoveLinkRequest]) (*connect.Response[v1.RemoveLinkResponse], error) {
-	return c.removeLink.CallUnary(ctx, req)
-}
-
-// ReplaceLinks calls numen.v1.NoteService.ReplaceLinks.
-func (c *noteServiceClient) ReplaceLinks(ctx context.Context, req *connect.Request[v1.ReplaceLinksRequest]) (*connect.Response[v1.ReplaceLinksResponse], error) {
-	return c.replaceLinks.CallUnary(ctx, req)
 }
 
 // GetConnection calls numen.v1.NoteService.GetConnection.
@@ -428,16 +394,11 @@ type NoteServiceHandler interface {
 	WriteNote(context.Context, *connect.Request[v1.WriteNoteRequest]) (*connect.Response[v1.WriteNoteResponse], error)
 	// CreateNote makes a note. The file is named after the title, and the links
 	// the note carries are written into it as it is made, so it arrives joined.
+	// An empty title takes the lowest free "Untitled note N".
 	CreateNote(context.Context, *connect.Request[v1.CreateNoteRequest]) (*connect.Response[v1.CreateNoteResponse], error)
 	// WriteLink writes a relationship into one note. The note at the other end is
 	// left alone: a link is one end's account of a relationship.
 	WriteLink(context.Context, *connect.Request[v1.WriteLinkRequest]) (*connect.Response[v1.WriteLinkResponse], error)
-	// RemoveLink removes a relationship from one note. The note at the other end
-	// is left alone: a link is one end's account of a relationship.
-	RemoveLink(context.Context, *connect.Request[v1.RemoveLinkRequest]) (*connect.Response[v1.RemoveLinkResponse], error)
-	// ReplaceLinks makes the links between two notes exactly the ones given: each
-	// note holds one link to the other, or none.
-	ReplaceLinks(context.Context, *connect.Request[v1.ReplaceLinksRequest]) (*connect.Response[v1.ReplaceLinksResponse], error)
 	// GetConnection is the relationship between two notes as a whole: the record
 	// each note writes about the other.
 	GetConnection(context.Context, *connect.Request[v1.GetConnectionRequest]) (*connect.Response[v1.GetConnectionResponse], error)
@@ -525,18 +486,6 @@ func NewNoteServiceHandler(svc NoteServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(noteServiceMethods.ByName("WriteLink")),
 		connect.WithHandlerOptions(opts...),
 	)
-	noteServiceRemoveLinkHandler := connect.NewUnaryHandler(
-		NoteServiceRemoveLinkProcedure,
-		svc.RemoveLink,
-		connect.WithSchema(noteServiceMethods.ByName("RemoveLink")),
-		connect.WithHandlerOptions(opts...),
-	)
-	noteServiceReplaceLinksHandler := connect.NewUnaryHandler(
-		NoteServiceReplaceLinksProcedure,
-		svc.ReplaceLinks,
-		connect.WithSchema(noteServiceMethods.ByName("ReplaceLinks")),
-		connect.WithHandlerOptions(opts...),
-	)
 	noteServiceGetConnectionHandler := connect.NewUnaryHandler(
 		NoteServiceGetConnectionProcedure,
 		svc.GetConnection,
@@ -609,10 +558,6 @@ func NewNoteServiceHandler(svc NoteServiceHandler, opts ...connect.HandlerOption
 			noteServiceCreateNoteHandler.ServeHTTP(w, r)
 		case NoteServiceWriteLinkProcedure:
 			noteServiceWriteLinkHandler.ServeHTTP(w, r)
-		case NoteServiceRemoveLinkProcedure:
-			noteServiceRemoveLinkHandler.ServeHTTP(w, r)
-		case NoteServiceReplaceLinksProcedure:
-			noteServiceReplaceLinksHandler.ServeHTTP(w, r)
 		case NoteServiceGetConnectionProcedure:
 			noteServiceGetConnectionHandler.ServeHTTP(w, r)
 		case NoteServiceSaveConnectionProcedure:
@@ -670,14 +615,6 @@ func (UnimplementedNoteServiceHandler) CreateNote(context.Context, *connect.Requ
 
 func (UnimplementedNoteServiceHandler) WriteLink(context.Context, *connect.Request[v1.WriteLinkRequest]) (*connect.Response[v1.WriteLinkResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.WriteLink is not implemented"))
-}
-
-func (UnimplementedNoteServiceHandler) RemoveLink(context.Context, *connect.Request[v1.RemoveLinkRequest]) (*connect.Response[v1.RemoveLinkResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.RemoveLink is not implemented"))
-}
-
-func (UnimplementedNoteServiceHandler) ReplaceLinks(context.Context, *connect.Request[v1.ReplaceLinksRequest]) (*connect.Response[v1.ReplaceLinksResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.ReplaceLinks is not implemented"))
 }
 
 func (UnimplementedNoteServiceHandler) GetConnection(context.Context, *connect.Request[v1.GetConnectionRequest]) (*connect.Response[v1.GetConnectionResponse], error) {

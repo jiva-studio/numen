@@ -75,11 +75,17 @@ var ErrBadWireValue = errors.New("the schema names no such value")
 // ConvertSideFromWire is the record of a connection in the core's words. A nil
 // side is no record.
 func ConvertSideFromWire(side *v1.ConnectionSide) (*domain.Side, error) {
+	return convertSide(side, false)
+}
+
+// convertSide converts a record. A record without a role is accepted when
+// isRoleOptional is set, and its role is left empty for the connection to fill.
+func convertSide(side *v1.ConnectionSide, isRoleOptional bool) (*domain.Side, error) {
 	if side == nil {
 		return nil, nil
 	}
 	role, ok := ConvertRoleFromWire(side.GetRole())
-	if !ok {
+	if !ok && !(isRoleOptional && side.GetRole() == v1.Role_ROLE_UNSPECIFIED) {
 		return nil, fmt.Errorf("%w: role %v", ErrBadWireValue, side.GetRole())
 	}
 	marker, ok := ConvertMarkerFromWire(side.GetMarker())
@@ -103,23 +109,33 @@ func ConvertSideToWire(side *domain.Side) *v1.ConnectionSide {
 	}
 }
 
-// ConvertConnectionFromWire is a connection in the core's words.
+// ConvertConnectionFromWire is a connection in the core's words. A record
+// without a role takes the role of the connection, or the inverse of the
+// other record's role.
 func ConvertConnectionFromWire(c *v1.Connection) (domain.Connection, error) {
-	first, err := ConvertSideFromWire(c.GetFirstSide())
+	first, err := convertSide(c.GetFirstSide(), true)
 	if err != nil {
 		return domain.Connection{}, err
 	}
-	second, err := ConvertSideFromWire(c.GetSecondSide())
+	second, err := convertSide(c.GetSecondSide(), true)
 	if err != nil {
 		return domain.Connection{}, err
 	}
-	return domain.Connection{A: c.GetFirst(), B: c.GetSecond(), AB: first, BA: second}, nil
+	role, _ := ConvertRoleFromWire(c.GetRole())
+	joined := domain.Connection{A: c.GetFirst(), B: c.GetSecond(), AB: first, BA: second}
+	joined = joined.FillRoles(role)
+	for _, side := range [...]*domain.Side{joined.AB, joined.BA} {
+		if side != nil && side.Role == "" {
+			return domain.Connection{}, fmt.Errorf("%w: a record carries no role and the connection gives none", ErrBadWireValue)
+		}
+	}
+	return joined, nil
 }
 
 // ConvertConnectionToWire is a connection as the schema carries it.
 func ConvertConnectionToWire(c domain.Connection) *v1.Connection {
 	return &v1.Connection{
-		First: c.A, Second: c.B,
+		First: c.A, Second: c.B, Role: ConvertRoleToWire(c.GetRole()),
 		FirstSide: ConvertSideToWire(c.AB), SecondSide: ConvertSideToWire(c.BA),
 	}
 }

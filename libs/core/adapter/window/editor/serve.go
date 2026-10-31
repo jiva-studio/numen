@@ -328,7 +328,6 @@ func (o *Installation) wireUseCases() {
 	services.Note.write = &notes.Write
 	services.Note.create = &notes.Create
 	services.Note.editLinks = &notes.Linking
-	services.Note.replaceLinks = &notes.ReplaceLinks
 	services.Note.rename = &notes.Rename
 	services.Note.showNeighbourhood = &notes.Neighbourhood
 	services.Note.getLinkAddress = notes.GetLinkAddress

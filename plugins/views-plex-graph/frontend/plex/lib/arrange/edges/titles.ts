@@ -61,7 +61,7 @@ export function separateTitles(
 
   for (const { edge, index, metrics } of sortTightestFirst(edges, width)) {
     const boxAt = runBoxes(edge, routing.labelDepth + 2 * apart)
-    const ends = (edge.arrow ? routing.arrowClearance : 0) / metrics.arc
+    const ends = (edge.arrows?.length ? routing.arrowClearance : 0) / metrics.arc
     const clear = clearSpans(boxAt, [...boxes, ...titles], { ends, step: STEP / metrics.arc })
 
     const found = settle(clear, edge.words!, { metrics, width })

@@ -11,11 +11,12 @@ import {
   type NoteRef,
   type VaultFiles,
   type VaultNotes,
+  type VaultRelations,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { SearchDeps } from '@/features/command-palette'
 import type { FileOpeners } from '@/entities/tab'
-import { CREATABLE, type NoteCreator } from '@/entities/note'
+import type { NoteCreator } from '@/entities/note'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { Task } from '@/shared/notices/task'
 import type { NotePort } from '@/app/ports/notes'
@@ -27,6 +28,7 @@ import type { PluginNotes } from './pluginNotes'
 export interface PluginServices {
   workspace?: WorkspaceHost
   notes?: VaultNotes
+  relations?: VaultRelations
   files?: VaultFiles
   agent?: AgentHost
   buffers?: BufferHost
@@ -118,14 +120,30 @@ export function createVaultNotes({
     getHeadings: (paths) => core.headings(paths),
     findNotes: async (query, limit = FOUND_LIMIT) =>
       (await search.names(query, limit)).map(({ path, title }) => ({ path, title })),
-    createUntitledNote: async () => (await making.createUntitled('', []))?.path ?? '',
-    createInRelation: (from, relation) => making.createInRelation(from, relation),
-    createWithTitle: (title, from, relation) => making.createWithTitle(title, from, relation),
-    join: (...link) => making.join(...link),
-    replaceLinks: (first, second, links) => making.replaceLinks(first, second, links),
+    createUntitledNote: () => making.createUntitled(''),
     read: (path) => pluginNotes.readNote(path),
     write: (path, body) => pluginNotes.writeNote(path, body),
-    creatableRelations: CREATABLE,
+  }
+}
+
+/** What the relationships between notes are read and written through. */
+export interface VaultRelationsDeps {
+  readonly core: Pick<NotePort, 'relations'>
+}
+
+/** The relationships a plugin reads and writes; the core derives the roles and enforces the hierarchy. */
+export function createVaultRelations({ core }: VaultRelationsDeps): VaultRelations {
+  return {
+    get roles() {
+      return core.relations.roles
+    },
+    getConnection: (first, second, type) => core.relations.getConnection(first, second, type),
+    saveConnection: (connection) => core.relations.saveConnection(connection),
+    removeSide: (from, to, type) => core.relations.removeSide(from, to, type),
+    removeConnection: (first, second, type) => core.relations.removeConnection(first, second, type),
+    join: (from, to, side) => core.relations.join(from, to, side),
+    createRelated: (request) => core.relations.createRelated(request),
+    listBacklinks: (path) => core.relations.listBacklinks(path),
   }
 }
 

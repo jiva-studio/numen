@@ -114,8 +114,14 @@ func (e *vaultEndpoint) CreateRelatedNote(
 			Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION,
 		}), nil
 	}
+	marker, ok := wire.ConvertMarkerFromWire(req.Msg.GetMarker())
+	if !ok {
+		return connect.NewResponse(&v1.HostVaultServiceCreateRelatedNoteResponse{
+			Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION,
+		}), nil
+	}
 	path, err := vault.CreateInRelation(ctx, domain.RelatedNote{
-		From: req.Msg.GetFrom(), Role: role, Title: req.Msg.GetTitle(), Type: req.Msg.GetType(),
+		From: req.Msg.GetFrom(), Role: role, Title: req.Msg.GetTitle(), Type: req.Msg.GetType(), Marker: marker,
 	})
 	code, err := answer(ctx, err)
 	return connect.NewResponse(&v1.HostVaultServiceCreateRelatedNoteResponse{Error: code, Path: path}), err
