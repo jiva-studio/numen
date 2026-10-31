@@ -45,7 +45,7 @@ Plugins communicating over Connect-RPC use loopback TCP:
 
 ## What a plugin may depend on
 
-- A plugin depends on the plugin SDK (`plugin-sdk-go`, `@numen/plugin-sdk`) and on `@numen/ui`, plus third-party code. Plugins live in other repositories and may not use any other shared library; there are no "kits".
+- A plugin depends on the plugin SDK (`plugin-sdk-go`, `@numen/plugin-sdk`) and on `@numen/ui`, plus third-party code. Plugins live in other repositories and may not use any other shared library; there are no "kits". The Go SDK may depend on `libs/notes` and passes its note types, parser, editor and identifiers on through `host/domain`, `host/markdown`, `host/edit` and `host/ulid`; `libs/notes` is published and tagged together with the SDK. A plugin never imports `libs/notes` or requires it directly in its `go.mod`; an `// indirect` line that exists because the SDK requires it is allowed.
 - The SDK contains what plugins use, plus the contracts of capabilities (agent provider, embedding). It contains no concrete agent, engine or runtime, and no application-side API (catalog client, manifest parser, raw core clients that only windows use).
 - Code of one implementation family that several plugins use is duplicated in those plugins. Duplication between plugins is preferred over growth of the SDK.
 - A plugin does not use `@numen/protocol`.

@@ -47,26 +47,22 @@ test("a library that reaches an application or a plugin is reported", () => {
   assert.match(found[0].symbol, /outside libs/);
 });
 
-test("the plugin SDK family is not allowed to reach the notes library", () => {
-  assert.deepEqual(LIBRARY_DEPENDENCIES["plugin-sdk-go"], ["protocol"]);
+test("the plugin SDK family may reach the notes library and the protocol", () => {
+  assert.deepEqual(LIBRARY_DEPENDENCIES["plugin-sdk-go"], ["notes", "protocol"]);
   const libraries = [
     library("libs/notes"),
     library("libs/protocol"),
     library("libs/plugin-sdk-go"),
     library("libs/plugin-sdk-go/host", ["libs/notes", "libs/notes/domain", "libs/protocol/gen/numen/v1"]),
   ];
-  const found = findLibraryViolations(libraries, LIBRARY_DEPENDENCIES);
-  assert.equal(found.length, 2);
-  assert.match(found[0].symbol, /family plugin-sdk-go reaches notes/);
+  assert.deepEqual(findLibraryViolations(libraries, LIBRARY_DEPENDENCIES), []);
 });
 
-test("no go.mod of the plugin SDK requires the notes library", () => {
-  const libraries = readLibraries().filter((one) => one.dir.startsWith("libs/plugin-sdk-go"));
-  assert.ok(libraries.length >= 2);
-  for (const one of libraries) {
-    const notes = one.references.filter((reference) => reference.value.includes("/libs/notes"));
-    assert.deepEqual(notes, [], `${one.dir} reaches the notes library`);
-  }
+test("the plugin SDK family is not allowed to reach the core", () => {
+  const libraries = [library("libs/core"), library("libs/plugin-sdk-go", ["libs/core/port"])];
+  const found = findLibraryViolations(libraries, LIBRARY_DEPENDENCIES);
+  assert.equal(found.length, 1);
+  assert.match(found[0].symbol, /family plugin-sdk-go reaches core/);
 });
 
 test("the libraries of this repository are read, each with a module path", () => {

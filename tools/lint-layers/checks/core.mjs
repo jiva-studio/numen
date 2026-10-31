@@ -370,7 +370,7 @@ export function verifyNoWireLibrary() {
   failOnFindings("The @numen/wire library still exists or is referenced", findWireLibraryReferences());
 }
 
-/** Every exported declaration in `libs/plugin-sdk-go` or `libs/plugin-sdk-ts` that leaks protocol types or window ids. */
+/** Every exported declaration in `libs/plugin-sdk-go` or `libs/plugin-sdk-ts` that leaks protocol/notes types or window ids. */
 function findSdkProtocolLeaks() {
   const found = [];
   for (const file of listShippedFiles(["libs/plugin-sdk-go/*.go"])) {
@@ -380,9 +380,9 @@ function findSdkProtocolLeaks() {
       const isExportedFuncOrType =
         /^func\s+(?:\([^)]*\)\s+)?[A-Z]\w*/.test(line) ||
         /^type\s+[A-Z]\w*\s+(?!=\s)/.test(line) ||
-        /^\s+[A-Z]\w*\s+.*\b(?:numenv1|v1|numenv1connect)\.[A-Z]\w*/.test(line);
+        /^\s+[A-Z]\w*\s+.*\b(?:numenv1|v1|numenv1connect|domain|edit|markdown)\.[A-Z]\w*/.test(line);
       if (isExportedFuncOrType) {
-        for (const m of line.matchAll(/\b((?:numenv1|v1|numenv1connect)\.[A-Z]\w*)/g)) {
+        for (const m of line.matchAll(/\b((?:numenv1|v1|numenv1connect|domain|edit|markdown)\.[A-Z]\w*)/g)) {
           found.push({ file, line: idx + 1, symbol: m[1] });
         }
       }
@@ -405,9 +405,9 @@ function findSdkProtocolLeaks() {
   return found;
 }
 
-/** The plugin SDK encapsulates `libs/protocol` and exposes only SDK types. */
+/** The plugin SDK encapsulates `libs/protocol` and `libs/notes` and exposes only SDK types. */
 export function verifySdkEncapsulatesProtocol() {
-  failOnFindings("The plugin SDK leaks protocol types or host window IDs in its public contract", findSdkProtocolLeaks());
+  failOnFindings("The plugin SDK leaks protocol/notes types or host window IDs in its public contract", findSdkProtocolLeaks());
 }
 
 /** Only plugins/*, apps/*, libs/plugin-host-ts, and the SDKs themselves may import libs/plugin-sdk-go or @numen/plugin-sdk. */

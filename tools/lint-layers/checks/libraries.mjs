@@ -26,7 +26,7 @@ export const LIBRARY_DEPENDENCIES = {
   notes: [],
   protocol: [],
   "plugin-catalog": ["notes", "protocol"],
-  "plugin-sdk-go": ["protocol"],
+  "plugin-sdk-go": ["notes", "protocol"],
   core: ["notes", "plugin-catalog", "protocol"],
 };
 

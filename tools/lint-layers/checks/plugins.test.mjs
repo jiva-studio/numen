@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import {
   findPluginEntryViolations,
   findPluginGoModViolations,
+  findPluginNotesImports,
   readPluginPackageExports,
 } from './plugins.mjs'
 
@@ -26,8 +27,13 @@ test('a plugin go.mod that requires the notes library is reported with the line'
   const text = CLEAN.replace('\n)\n', `\n\t${ROOT}/libs/notes v0.0.0\n)\n`)
   const found = findPluginGoModViolations('plugins/example/go.mod', text)
   assert.equal(found.length, 1)
-  assert.match(found[0].symbol, /libs\/notes in go\.mod/)
+  assert.match(found[0].symbol, /direct libs\/notes requirement in go\.mod/)
   assert.equal(found[0].line, 8)
+})
+
+test('an indirect requirement of the notes library, reached through the SDK, is allowed', () => {
+  const text = `${CLEAN}\nrequire ${ROOT}/libs/notes v0.0.0 // indirect\n`
+  assert.deepEqual(findPluginGoModViolations('plugins/example/go.mod', text), [])
 })
 
 test('a plugin go.mod that replaces the notes library by a relative path is reported twice', () => {
@@ -39,6 +45,16 @@ test('a plugin go.mod that replaces the notes library by a relative path is repo
 test('a comment that names the notes library is not a requirement', () => {
   const text = `${CLEAN}\n// ${ROOT}/libs/notes is not required\n`
   assert.deepEqual(findPluginGoModViolations('plugins/example/go.mod', text), [])
+})
+
+test('a plugin Go file that imports the notes library is reported, the SDK packages are not', () => {
+  const imports = [
+    { line: 4, value: `${ROOT}/libs/notes/domain` },
+    { line: 5, value: `${ROOT}/libs/plugin-sdk-go/host/domain` },
+  ]
+  const found = findPluginNotesImports('plugins/example/backend/a.go', imports)
+  assert.equal(found.length, 1)
+  assert.equal(found[0].line, 4)
 })
 
 const EXPORTS = {
