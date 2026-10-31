@@ -245,11 +245,11 @@ A concept takes the standard term of its field (W3C, LSP, MIME, gRPC codes).
 
 Specific term rules:
 
-| Wrong                | Correct              | Context                                       |
-| -------------------- | -------------------- | --------------------------------------------- |
-| `refusal`, `refused` | `error`, `errorCode` | operation error discriminants                 |
-| `spoken`, `spokenBy` | `transcript`         | audio/video transcription output              |
-| `make` (frontend)    | `create`             | factory functions in TS/Vue                   |
+| Wrong                | Correct              | Context                          |
+| -------------------- | -------------------- | -------------------------------- |
+| `refusal`, `refused` | `error`, `errorCode` | operation error discriminants    |
+| `spoken`, `spokenBy` | `transcript`         | audio/video transcription output |
+| `make` (frontend)    | `create`             | factory functions in TS/Vue      |
 
 ### Vault and link formatting rules
 
@@ -349,3 +349,17 @@ To prevent linguistic contagion and degraded code readability, pseudo-literary p
   `npm run test:unit`,
   `vitest run --project 'stories (chromium)'`,
   `vitest run --project 'stories (webkit)'`. WebKit does run on this machine.
+
+---
+
+## 15. Rules for agents learned from review
+
+1. Never add to the plugin SDK what no plugin uses. Every SDK export has a plugin that imports it.
+2. Never propose a third shared library for plugins. Plugins depend on the SDK and `@numen/ui` only.
+3. Prefer duplicating implementation code between plugins over moving it into the SDK.
+4. Never add or keep a check that forces code into a shared library without checking it against the plugin boundary rules in [`.agents/rules/architecture.md`](.agents/rules/architecture.md) §11.
+5. Checks never get weaker: no exclusion, no workaround that dodges a rule (such as obtaining the time through `time.After(0)`), and no name lists in checks. Derive sets from manifests and from structure.
+6. Tell the owner a design decision before writing it into a plan file or implementing it. Do not present a guess as agreed.
+7. Do the work first. Run the heavy checks (full lint-layers, tests across modules, linters) once at the end.
+8. Commit messages carry no `Co-Authored-By` line and no session trailer.
+9. Write comments and docs in plain technical English (§1, §13).

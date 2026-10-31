@@ -43,6 +43,34 @@ Plugins communicating over Connect-RPC use loopback TCP:
 
 ---
 
+## What a plugin may depend on
+
+- A plugin depends on the plugin SDK (`plugin-sdk-go`, `@numen/plugin-sdk`) and on `@numen/ui`, plus third-party code. Plugins live in other repositories and may not use any other shared library; there are no "kits".
+- The SDK contains what plugins use, plus the contracts of capabilities (agent provider, embedding). It contains no concrete agent, engine or runtime, and no application-side API (catalog client, manifest parser, raw core clients that only windows use).
+- Code of one implementation family that several plugins use is duplicated in those plugins. Duplication between plugins is preferred over growth of the SDK.
+- A plugin does not use `@numen/protocol`.
+
+The full rules are in [`.agents/rules/architecture.md`](../../.agents/rules/architecture.md) §11.
+
+### What a manifest contributes
+
+The core discovers plugins from their manifests and knows none by name. The manifest declares:
+
+| Field                     | Where                  | What it declares                                                              |
+| ------------------------- | ---------------------- | ----------------------------------------------------------------------------- |
+| `contributes.tabKinds`    | `ManifestContributes`  | Kinds of tab the frontend registers: `kind`, `title`, `icon`.                 |
+| `contributes.feature`     | `ManifestContributes`  | What the plugin provides, in words a placeholder for an unavailable tab uses. |
+| `contributes.category`    | `ManifestContributes`  | The group the plugin is listed in.                                            |
+| `contributes.fileTypes`   | `ManifestContributes`  | Files the plugin opens: `tabKind`, `extensions`, `fileNames`.                 |
+| `contributes.themes`      | `ManifestContributes`  | Stylesheets added to the list of themes: `id`, `name`, `appearance`, `file`.  |
+| `contributes.statusViews` | `ManifestContributes`  | Components drawn in the status bar: `id`.                                     |
+| `settingsViews`           | `Manifest` (top level) | Components mounted in the plugin's settings form: `id`, `title`, `after`.     |
+| `appVersion`              | `Manifest` (top level) | Inclusive range of application versions the plugin runs in: `min`, `max`.     |
+
+The schema is `libs/protocol/proto/numen/v1/manifest.proto`; the Go reader is `libs/plugin-catalog/manifest`.
+
+---
+
 ## 2. Plugin Directory Layout
 
 Every plugin follows a standard layout:
