@@ -1,6 +1,6 @@
 {
   "name": "@numen/views.file.tree",
-  "version": "2026.10.1",
+  "version": "2026.10.2",
   "private": true,
   "type": "module",
   "description": "Modular file tree explorer plugin for Numen",

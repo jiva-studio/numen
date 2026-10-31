@@ -1,7 +1,7 @@
 {
   "id": "md.numen.notes",
   "name": "Notes",
-  "version": "2026.10.2",
+  "version": "2026.10.3",
   "protocol": 1,
   "description": "Markdown note editor with live formatting and wikilinks",
   "capabilities": [],

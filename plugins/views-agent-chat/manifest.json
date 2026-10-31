@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.agent.chat",
   "name": "Agent Chat",
-  "version": "2026.10.2",
+  "version": "2026.10.3",
   "protocol": 1,
   "description": "Interactive chat tab for working with AI assistants",
   "capabilities": [],

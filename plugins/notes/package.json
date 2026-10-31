@@ -1,6 +1,6 @@
 {
   "name": "@numen/notes",
-  "version": "2026.10.2",
+  "version": "2026.10.3",
   "private": true,
   "type": "module",
   "description": "Notes written in Markdown: the live editor, wikilinks and the note editor view",

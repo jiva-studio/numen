@@ -1,7 +1,7 @@
 {
   "id": "md.numen.agents.claude",
   "name": "Claude Code Agent",
-  "version": "2026.10.2",
+  "version": "2026.10.3",
   "protocol": 1,
   "description": "Anthropic Claude Code assistant for chat and note editing",
   "capabilities": ["agent", "ai.agent.provider"],

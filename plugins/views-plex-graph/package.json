@@ -1,6 +1,6 @@
 {
   "name": "@numen/views.plex.graph",
-  "version": "2026.10.2",
+  "version": "2026.10.3",
   "private": true,
   "type": "module",
   "description": "Modular knowledge graph visualizer and plex explorer plugin for Numen",

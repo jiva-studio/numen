@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.transcription",
   "name": "Audio/Video Transcription",
-  "version": "2026.10.2",
+  "version": "2026.10.3",
   "protocol": 1,
   "description": "Offline speech-to-text transcription for audio and video recordings",
   "targets": ["desktop.editor"],

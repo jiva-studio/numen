@@ -1,6 +1,6 @@
 {
   "name": "@numen/readers.pdf",
-  "version": "2026.10.2",
+  "version": "2026.10.3",
   "private": true,
   "type": "module",
   "description": "Standalone PDF document viewer plugin for Numen",

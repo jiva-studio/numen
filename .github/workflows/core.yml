@@ -11,6 +11,8 @@ on:
       - "!libs/core/**/*.md"
       - "libs/notes/**"
       - "!libs/notes/**/*.md"
+      - "libs/plugin-catalog/**"
+      - "!libs/plugin-catalog/**/*.md"
       - "libs/protocol/**"
       - "!libs/protocol/**/*.md"
       - "libs/plugin-sdk-go/**"
@@ -154,6 +156,7 @@ jobs:
           cache-dependency-path: |
             libs/core/go.sum
             libs/notes/go.sum
+            libs/plugin-catalog/go.sum
 
       - name: Verify Go formatting (Core)
         run: |
@@ -170,6 +173,14 @@ jobs:
             echo "not gofmt-ed:"; echo "$unformatted"; exit 1
           fi
         working-directory: libs/notes
+
+      - name: Verify Go formatting (Plugin Catalog)
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "not gofmt-ed:"; echo "$unformatted"; exit 1
+          fi
+        working-directory: libs/plugin-catalog
 
       - name: Verify Go formatting (Protocol)
         run: |
@@ -194,6 +205,10 @@ jobs:
       - name: Run go vet (Notes)
         run: go vet ./...
         working-directory: libs/notes
+
+      - name: Run go vet (Plugin Catalog)
+        run: go vet ./...
+        working-directory: libs/plugin-catalog
 
       - name: Run go vet (Protocol)
         run: go vet ./...
@@ -225,6 +240,18 @@ jobs:
         with:
           version: v2.14.0
           working-directory: libs/notes
+          args: --timeout 10m -c ${{ github.workspace }}/.golangci-structure.yml
+
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.14.0
+          working-directory: libs/plugin-catalog
+          args: --timeout 10m
+
+      - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.14.0
+          working-directory: libs/plugin-catalog
           args: --timeout 10m -c ${{ github.workspace }}/.golangci-structure.yml
 
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
@@ -378,6 +405,11 @@ jobs:
         if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
         run: go test ${{ matrix.race && '-race' || '' }} ./...
         working-directory: libs/notes
+
+      - name: Run Go tests (Plugin Catalog)
+        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
+        run: go test ${{ matrix.race && '-race' || '' }} ./...
+        working-directory: libs/plugin-catalog
 
       # A push to main writes what it built, and every other run only reads it.
       # A run that found something still built most of it.
