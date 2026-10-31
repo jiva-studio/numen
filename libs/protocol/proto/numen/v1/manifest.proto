@@ -54,6 +54,15 @@ message ManifestContributes {
   string feature = 2;
   // category groups the plugin in lists.
   string category = 3;
+  // status_views are the components of the plugin's frontend the window draws in its status bar.
+  repeated ManifestStatusView status_views = 4;
+}
+
+// ManifestStatusView is a component of the plugin's frontend that the window draws in its status
+// bar.
+message ManifestStatusView {
+  // id is the id the frontend registers the component under.
+  string id = 1;
 }
 
 // ManifestTabKind is a kind of tab the plugin registers.

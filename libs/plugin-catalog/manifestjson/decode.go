@@ -140,7 +140,11 @@ func newContributes(wire *v1.ManifestContributes) manifest.Contributes {
 	for _, one := range wire.GetTabKinds() {
 		kinds = append(kinds, manifest.TabKind{Kind: one.GetKind(), Title: one.GetTitle(), Icon: one.GetIcon()})
 	}
-	return manifest.Contributes{TabKinds: kinds, Feature: wire.GetFeature(), Category: wire.GetCategory()}
+	var views []manifest.StatusView
+	for _, one := range wire.GetStatusViews() {
+		views = append(views, manifest.StatusView{ID: one.GetId()})
+	}
+	return manifest.Contributes{TabKinds: kinds, Feature: wire.GetFeature(), Category: wire.GetCategory(), StatusViews: views}
 }
 
 func newDependencies(wire []*v1.ManifestDependency) []manifest.DependencyRequirement {

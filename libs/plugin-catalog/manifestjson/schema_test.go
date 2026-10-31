@@ -42,7 +42,7 @@ const everyFieldManifest = `{
 	"readers": [{"id": "r", "contentTypes": ["audio/*"], "rank": "default"}],
 	"settingsViews": [{"id": "v", "title": "V", "after": "mode"}],
 	"frames": ["https://player.example"],
-	"contributes": {"tabKinds": [{"kind": "full", "title": "Full", "icon": "gauge"}], "feature": "full tabs", "category": "views"},
+	"contributes": {"tabKinds": [{"kind": "full", "title": "Full", "icon": "gauge"}], "feature": "full tabs", "category": "views", "statusViews": [{"id": "gauge"}]},
 	"appVersion": {"min": "2026.1.0", "max": "2027.1.0"}
 }`
 
