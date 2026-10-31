@@ -55,10 +55,10 @@ func FindCodex(customPath ...string) string {
 	return "codex"
 }
 
-func programCommand(commands []*agentrun.AgentProgramCommand, name string) []string {
+func programCommand(commands []agentrun.ProgramCommand, name string) []string {
 	for _, one := range commands {
-		if one.GetProgram() == name {
-			return one.GetCommand()
+		if one.Program == name {
+			return one.Command
 		}
 	}
 	return nil

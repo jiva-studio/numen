@@ -86,7 +86,7 @@ type acpSession struct {
 	// words are the declarations of the run's tools, which a call is shown by.
 	words map[string]toolcall.Declaration
 	// report sends a step of the run as it happens. Nil sends none.
-	report func(*agentrun.AskAgentResponse) error
+	report func(*agentrun.Response) error
 }
 
 // openACPSession starts the agent, initializes the connection and opens a session in an empty

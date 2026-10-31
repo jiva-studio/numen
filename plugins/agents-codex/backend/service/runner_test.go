@@ -3,9 +3,8 @@ package service
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
 )
 
 func TestResolveCommandWithEmptyCommand(t *testing.T) {
@@ -26,7 +25,7 @@ func TestTheToolCallsOfCodexAreReported(t *testing.T) {
 			"echo plain text\n")
 	var reg agentrun.Registry
 
-	w, err := start(t.Context(), &reg, newSpec(&agentrun.AskAgentRequest{Command: []string{script}}))
+	w, err := start(t.Context(), &reg, newSpec(&agentrun.Request{Command: []string{script}}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,17 +35,17 @@ func TestTheToolCallsOfCodexAreReported(t *testing.T) {
 		}
 	}()
 
-	var got []*agentrun.AskAgentResponse
+	var got []*agentrun.Response
 	for resp := range w.Output {
 		got = append(got, resp)
 	}
 	if len(got) != 3 {
 		t.Fatalf("expected 3 steps, got %v", got)
 	}
-	if call := got[0].GetToolCall(); call.GetTool() != "read_note" || call.GetAbout() != `{"path":"a.md"}` {
+	if call := got[0].GetToolCall(); call.Tool != "read_note" || call.About != `{"path":"a.md"}` {
 		t.Errorf("tool call is %v", got[0])
 	}
-	if got[1].GetToolFinished() == nil {
+	if !got[1].IsToolFinished() {
 		t.Errorf("expected a finished tool, got %v", got[1])
 	}
 	if got[2].GetText() != "plain text\n" {
@@ -61,11 +60,11 @@ func TestRunner_EmitsCodexMessages(t *testing.T) {
 			`echo '{"type":"item.completed","item":{"type":"reasoning","text":"hidden"}}'`+"\n")
 	var reg agentrun.Registry
 
-	w, err := start(t.Context(), &reg, newSpec(&agentrun.AskAgentRequest{Command: []string{script}}))
+	w, err := start(t.Context(), &reg, newSpec(&agentrun.Request{Command: []string{script}}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	var got []*agentrun.AskAgentResponse
+	var got []*agentrun.Response
 	for resp := range w.Output {
 		got = append(got, resp)
 	}
@@ -79,15 +78,15 @@ func TestACodexToolCallNamesItsToolByTheToolField(t *testing.T) {
 		`echo '{"type":"item.started","item":{"type":"mcp_tool_call","server":"numen","tool":"search_notes","arguments":{"q":"x"}}}'`+"\n")
 	var reg agentrun.Registry
 
-	w, err := start(t.Context(), &reg, newSpec(&agentrun.AskAgentRequest{Command: []string{script}}))
+	w, err := start(t.Context(), &reg, newSpec(&agentrun.Request{Command: []string{script}}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	var got []*agentrun.AskAgentResponse
+	var got []*agentrun.Response
 	for resp := range w.Output {
 		got = append(got, resp)
 	}
-	if len(got) != 1 || got[0].GetToolCall().GetTool() != "search_notes" {
+	if len(got) != 1 || got[0].GetToolCall().Tool != "search_notes" {
 		t.Errorf("got %v", got)
 	}
 }

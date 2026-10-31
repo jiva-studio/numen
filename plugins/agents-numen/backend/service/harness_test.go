@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -17,8 +16,10 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"connectrpc.com/connect"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 )
 
 const vaultToken = "vault-token"
@@ -242,21 +243,21 @@ func (v *fakeVault) getCalls() []string {
 }
 
 // newTask is a task that may call note_read, on the vault at url.
-func newTask(url, prompt string) *agentrun.AskAgentRequest {
-	return &agentrun.AskAgentRequest{
+func newTask(url, prompt string) *agentrun.Request {
+	return &agentrun.Request{
 		Prompt:           prompt,
 		Instructions:     "Answer from the vault.",
 		Tools:            []string{"note_read"},
-		ToolDeclarations: []*agentrun.ToolDeclaration{{Name: "note_read", Title: "Read a note", Kind: "read", About: "path"}},
-		ToolsUrl:         url,
+		ToolDeclarations: []toolcall.ToolDeclaration{{Name: "note_read", Title: "Read a note", Kind: "read", About: "path"}},
+		ToolsURL:         url,
 		ToolsToken:       vaultToken,
 	}
 }
 
-func ask(t *testing.T, s *Server, task *agentrun.AskAgentRequest) []*agentrun.AskAgentResponse {
+func ask(t *testing.T, s *Server, task *agentrun.Request) []*agentrun.Response {
 	t.Helper()
-	var steps []*agentrun.AskAgentResponse
-	if err := s.Ask(t.Context(), task, func(r *agentrun.AskAgentResponse) error {
+	var steps []*agentrun.Response
+	if err := s.Ask(t.Context(), task, func(r *agentrun.Response) error {
 		steps = append(steps, r)
 		return nil
 	}); err != nil {
@@ -266,15 +267,15 @@ func ask(t *testing.T, s *Server, task *agentrun.AskAgentRequest) []*agentrun.As
 }
 
 // describeSteps writes the steps out one word each, a run of pieces of the transcript as one.
-func describeSteps(steps []*agentrun.AskAgentResponse) string {
+func describeSteps(steps []*agentrun.Response) string {
 	words := make([]string, 0, len(steps))
 	for _, one := range steps {
 		switch {
-		case one.GetModelStarted() != nil:
+		case one.IsModelStarted():
 			words = append(words, "model")
 		case one.GetToolCall() != nil:
 			words = append(words, "call")
-		case one.GetToolFinished() != nil:
+		case one.IsToolFinished():
 			words = append(words, "finished")
 		case one.GetText() != "":
 			if len(words) == 0 || words[len(words)-1] != "said" {
@@ -288,7 +289,7 @@ func describeSteps(steps []*agentrun.AskAgentResponse) string {
 }
 
 // getSpoken is every piece of the transcript, in the order it was sent.
-func getSpoken(steps []*agentrun.AskAgentResponse) []string {
+func getSpoken(steps []*agentrun.Response) []string {
 	var response []string
 	for _, one := range steps {
 		if text := one.GetText(); text != "" {
@@ -304,13 +305,13 @@ func newServer(chatURL string) *Server {
 	return s
 }
 
-func assertToolSteps(t *testing.T, steps []*agentrun.AskAgentResponse) {
+func assertToolSteps(t *testing.T, steps []*agentrun.Response) {
 	t.Helper()
 	if got := describeSteps(steps); got != "model call finished model said stopped" {
 		t.Fatalf("steps are %q", got)
 	}
 	call := steps[1].GetToolCall()
-	if call.GetTool() != "Read a note" || call.GetKind() != "read" || call.GetCall() != "call-1" || call.GetPath() != "Plan.md" {
+	if call.Tool != "Read a note" || call.Kind != "read" || call.Call != "call-1" || call.Path != "Plan.md" {
 		t.Errorf("the call is %+v", call)
 	}
 	if response, last := strings.Join(getSpoken(steps), ""), steps[len(steps)-1]; response != "Water the garden." || last.GetStopped() != reasonDone {
@@ -432,7 +433,7 @@ func TestHarness_ConversationContinuesUntilFinished(t *testing.T) {
 	ask(t, s, task)
 	task.Prompt = "What did I ask?"
 	ask(t, s, task)
-	if _, err := s.FinishConversation(t.Context(), connect.NewRequest(&agentrun.FinishConversationRequest{Conversation: "talk-1"})); err != nil {
+	if err := s.FinishConversation(t.Context(), "talk-1"); err != nil {
 		t.Fatal(err)
 	}
 	ask(t, s, task)
@@ -451,19 +452,19 @@ func TestTheProgramIsInstalledWhileTheChatAPIListsItsModels(t *testing.T) {
 	model := &fakeChat{models: []string{"m0", "m1"}}
 	s := newServer(model.serve(t).URL)
 
-	res, err := s.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
+	res, err := s.GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	program := res.Msg.GetPrograms()[0]
-	if program.GetName() != ProgramName || !program.GetIsInstalled() || !program.GetLimitsTools() || len(program.GetModels()) != 2 {
+	program := res[0]
+	if program.Name != ProgramName || !program.IsInstalled || !program.LimitsTools || len(program.Models) != 2 {
 		t.Fatalf("the program is %+v", program)
 	}
-	if program.GetModels()[0].GetIsDefault() || !program.GetModels()[1].GetIsDefault() || program.GetModels()[1].GetTitle() != "M1" {
-		t.Errorf("the models are %+v", program.GetModels())
+	if program.Models[0].IsDefault || !program.Models[1].IsDefault || program.Models[1].Title != "M1" {
+		t.Errorf("the models are %+v", program.Models)
 	}
-	state, err := s.GetAgentState(t.Context(), connect.NewRequest(&agentrun.GetAgentStateRequest{}))
-	if err != nil || state.Msg.GetUnreachable() != "" {
+	state, err := s.GetState(t.Context())
+	if err != nil || state.Unreachable != "" {
 		t.Errorf("state %v, %v", state, err)
 	}
 }
@@ -472,15 +473,15 @@ func TestTheProgramIsNotInstalledWhileTheChatAPIRejects(t *testing.T) {
 	model := &fakeChat{status: http.StatusUnauthorized}
 	s := newServer(model.serve(t).URL)
 
-	res, err := s.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
+	res, err := s.GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Msg.GetPrograms()[0].GetIsInstalled() {
+	if res[0].IsInstalled {
 		t.Error("a refusing chat API was installed")
 	}
-	state, err := s.GetAgentState(t.Context(), connect.NewRequest(&agentrun.GetAgentStateRequest{}))
-	if err != nil || !strings.Contains(state.Msg.GetUnreachable(), "401") {
+	state, err := s.GetState(t.Context())
+	if err != nil || !strings.Contains(state.Unreachable, "401") {
 		t.Errorf("state %v, %v", state, err)
 	}
 }
@@ -490,15 +491,15 @@ func TestAskAgentStreamsTheStepsOverConnect(t *testing.T) {
 	vault := &fakeVault{}
 	s := newServer(model.serve(t).URL)
 	mux := http.NewServeMux()
-	mux.Handle(agentrun.NewAgentServiceHandler(s))
+	mux.Handle(agentrun.NewHandler(s))
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	stream, err := agentrun.NewAgentServiceClient(srv.Client(), srv.URL).AskAgent(t.Context(), connect.NewRequest(newTask(vault.serve(t), "Plan?")))
+	stream, err := agentrun.NewClient(srv.Client(), srv.URL).Ask(t.Context(), newTask(vault.serve(t), "Plan?"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	var steps []*agentrun.AskAgentResponse
+	var steps []*agentrun.Response
 	for stream.Receive() {
 		steps = append(steps, stream.Msg())
 	}
@@ -640,7 +641,7 @@ func TestAStepThatCannotBeSentEndsTheRunWithItsError(t *testing.T) {
 	removed := errors.New("the window closed")
 	dispatched := 0
 
-	err := s.Ask(t.Context(), newTask(vault.serve(t), "Read."), func(*agentrun.AskAgentResponse) error {
+	err := s.Ask(t.Context(), newTask(vault.serve(t), "Read."), func(*agentrun.Response) error {
 		dispatched++
 		if dispatched == 2 {
 			return removed
@@ -754,13 +755,13 @@ func TestGetModels_ReasoningParameterYieldsLevels(t *testing.T) {
 	}
 	s := newServer(model.serve(t).URL)
 
-	res, err := s.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
+	res, err := s.GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var proposed []int
-	for _, one := range res.Msg.GetPrograms()[0].GetModels() {
-		proposed = append(proposed, len(one.GetReasoningLevels()))
+	for _, one := range res[0].Models {
+		proposed = append(proposed, len(one.ReasoningLevels))
 	}
 	if !slices.Equal(proposed, []int{3, 3, 0, 0}) {
 		t.Errorf("the levels offered are %v", proposed)
@@ -789,7 +790,7 @@ func TestTheLevelOfATaskGoesInTheFieldTheModelListsOrNowhere(t *testing.T) {
 		s := newServer(model.serve(t).URL)
 		task := newTask("", "Hello?")
 		task.Model, task.Reasoning = one.model, one.level
-		task.Tools, task.ToolsUrl = nil, ""
+		task.Tools, task.ToolsURL = nil, ""
 
 		ask(t, s, task)
 
@@ -874,11 +875,11 @@ func TestAnyMCPToolWithoutPrefixCanBeCalled(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	s := newServer(model.serve(t).URL)
-	task := &agentrun.AskAgentRequest{
+	task := &agentrun.Request{
 		Prompt:       "Run custom tool",
 		Instructions: "Follow instructions",
 		Tools:        []string{"custom_remote_tool"},
-		ToolsUrl:     srv.URL,
+		ToolsURL:     srv.URL,
 		ToolsToken:   vaultToken,
 	}
 	steps := ask(t, s, task)

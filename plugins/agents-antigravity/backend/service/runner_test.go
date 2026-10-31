@@ -6,9 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
 )
 
 func TestResolveCommandWithEmptyCommand(t *testing.T) {
@@ -24,7 +23,7 @@ func TestTheSessionOfTheConversationIsHandedToTheNextRun(t *testing.T) {
 	var reg agentrun.Registry
 	reg.SetSession("c-1", "s-1")
 
-	cmd, _, err := makeAntigravityCommand(t.Context(), &agentrun.AskAgentRequest{Conversation: "c-1", Prompt: "q"}, &reg)
+	cmd, _, err := makeAntigravityCommand(t.Context(), &agentrun.Request{Conversation: "c-1", Prompt: "q"}, &reg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +40,7 @@ func TestTheSessionAndTheContentOfAntigravityAreReported(t *testing.T) {
 	var reg agentrun.Registry
 
 	w, err := start(t.Context(), &reg, newSpec(
-		&agentrun.AskAgentRequest{Command: []string{script}, Conversation: "c-1"}, &reg))
+		&agentrun.Request{Command: []string{script}, Conversation: "c-1"}, &reg))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,11 +50,11 @@ func TestTheSessionAndTheContentOfAntigravityAreReported(t *testing.T) {
 		}
 	}()
 
-	var got []*agentrun.AskAgentResponse
+	var got []*agentrun.Response
 	for resp := range w.Output {
 		got = append(got, resp)
 	}
-	if len(got) != 2 || got[0].GetText() != "hello" || got[1].GetToolCall().GetTool() != "read_note" {
+	if len(got) != 2 || got[0].GetText() != "hello" || got[1].GetToolCall().Tool != "read_note" {
 		t.Fatalf("the steps are %v", got)
 	}
 	if session := reg.GetSession("c-1"); session != "s-1" {
@@ -68,7 +67,7 @@ func TestAFailedHomeSetupEndsTheRunBeforeItStarts(t *testing.T) {
 	var reg agentrun.Registry
 
 	_, err := start(t.Context(), &reg, newSpec(
-		&agentrun.AskAgentRequest{Command: []string{"agy"}, ToolsUrl: "http://127.0.0.1:1/mcp"}, &reg))
+		&agentrun.Request{Command: []string{"agy"}, ToolsURL: "http://127.0.0.1:1/mcp"}, &reg))
 
 	if err == nil || !strings.Contains(err.Error(), "set up the Antigravity home") {
 		t.Errorf("got %v", err)
@@ -81,11 +80,11 @@ func TestTheToolCallsOfAntigravityAreCountedAgainstTheStepLimit(t *testing.T) {
 	var reg agentrun.Registry
 
 	w, err := start(t.Context(), &reg, newSpec(
-		&agentrun.AskAgentRequest{Command: []string{script}, MaxSteps: 2}, &reg))
+		&agentrun.Request{Command: []string{script}, MaxSteps: 2}, &reg))
 	if err != nil {
 		t.Fatal(err)
 	}
-	var got []*agentrun.AskAgentResponse
+	var got []*agentrun.Response
 	for resp := range w.Output {
 		got = append(got, resp)
 	}
@@ -103,11 +102,11 @@ done`+"\n")
 	var reg agentrun.Registry
 
 	w, err := start(t.Context(), &reg, newSpec(
-		&agentrun.AskAgentRequest{Command: []string{script}, MaxSteps: 1}, &reg))
+		&agentrun.Request{Command: []string{script}, MaxSteps: 1}, &reg))
 	if err != nil {
 		t.Fatal(err)
 	}
-	var got []*agentrun.AskAgentResponse
+	var got []*agentrun.Response
 	for resp := range w.Output {
 		got = append(got, resp)
 	}
@@ -126,11 +125,11 @@ func setUnusableTempDir(t *testing.T) {
 }
 
 // collect returns every response of a run of the script, for a request that has no tools.
-func collect(t *testing.T, script string) ([]*agentrun.AskAgentResponse, *agentrun.Registry) {
+func collect(t *testing.T, script string) ([]*agentrun.Response, *agentrun.Registry) {
 	t.Helper()
 	var reg agentrun.Registry
 	w, err := start(t.Context(), &reg, newSpec(
-		&agentrun.AskAgentRequest{Command: []string{script}, Conversation: "c-1", Prompt: "q"}, &reg))
+		&agentrun.Request{Command: []string{script}, Conversation: "c-1", Prompt: "q"}, &reg))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +138,7 @@ func collect(t *testing.T, script string) ([]*agentrun.AskAgentResponse, *agentr
 			t.Error(err)
 		}
 	}()
-	var got []*agentrun.AskAgentResponse
+	var got []*agentrun.Response
 	for resp := range w.Output {
 		got = append(got, resp)
 	}

@@ -14,7 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 )
@@ -48,7 +47,7 @@ func (m claudeModel) getLevels() []reasoning.Level {
 }
 
 // toProto returns the model in the schema's words.
-func (m claudeModel) toProto() *agentrun.AgentModel {
+func (m claudeModel) toProto() *reasoning.Model {
 	return reasoning.NewModel(m.Value, m.DisplayName, m.getLevels(), "")
 }
 

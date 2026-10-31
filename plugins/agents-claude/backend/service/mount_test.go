@@ -1,11 +1,10 @@
 package service
 
 import (
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"net/http/httptest"
 	"testing"
 
-	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
 // The handler a host that links the plugin in serves lists Claude Code, with the token it was given.
@@ -17,14 +16,13 @@ func TestTheLinkedHandlerListsClaudeCode(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
-	client := agentrun.NewAgentServiceClient(web.Client(), web.URL)
-	req := connect.NewRequest(&agentrun.GetAgentProgramsRequest{})
-	req.Header().Set("Authorization", "Bearer linked-token")
-	resp, err := client.GetAgentPrograms(t.Context(), req)
+	client := agentrun.NewClient(web.Client(), web.URL)
+	client.Header.Set("Authorization", "Bearer linked-token")
+	programs, err := client.GetPrograms(t.Context(), nil)
 	if err != nil {
-		t.Fatalf("GetAgentPrograms: %v", err)
+		t.Fatalf("GetPrograms: %v", err)
 	}
-	if programs := resp.Msg.GetPrograms(); len(programs) != 1 || programs[0].GetName() != programName {
+	if len(programs) != 1 || programs[0].Name != programName {
 		t.Fatalf("programs = %v, want %s alone", programs, programName)
 	}
 }

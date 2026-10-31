@@ -40,14 +40,14 @@ type reader struct {
 	isFinished   bool
 }
 
-func (r *reader) Send(resp *agentrun.AskAgentResponse) {
+func (r *reader) Send(resp *agentrun.Response) {
 	select {
 	case r.work.Output <- resp:
 	case <-r.work.Stopped():
 		return
 	}
 	r.sentCount++
-	if resp.GetToolFinished() != nil {
+	if resp.IsToolFinished() {
 		r.completed++
 	}
 }
@@ -67,7 +67,7 @@ func (r *reader) reportLimit() {
 }
 
 func (r *reader) reportStop(reason string) {
-	r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseStopped{Stopped: reason}})
+	r.Send(&agentrun.Response{Step: &agentrun.StoppedStep{Stopped: reason}})
 }
 
 func start(ctx context.Context, reg *agentrun.Registry, s spec) (*agentrun.Work, error) {
@@ -159,7 +159,7 @@ func scanOutput(
 		if err := json.Unmarshal(line, &event); err == nil {
 			handle(event)
 		} else if text := strings.TrimSpace(string(line)); text != "" {
-			r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseText{Text: text + "\n"}})
+			r.Send(&agentrun.Response{Step: &agentrun.TextStep{Text: text + "\n"}})
 		}
 		if r.isFinished {
 			stop()
@@ -191,22 +191,22 @@ func reportExit(r *reader, scanErr, waitErr error, stderr string) {
 }
 
 // newSpec builds the Antigravity CLI invocation for the request.
-func newSpec(req *agentrun.AskAgentRequest, reg *agentrun.Registry, customPath ...string) spec {
+func newSpec(req *agentrun.Request, reg *agentrun.Registry, customPath ...string) spec {
 	execPath := ""
 	if len(customPath) > 0 {
 		execPath = customPath[0]
 	}
 	s := spec{
-		Conversation: req.GetConversation(),
-		MaxSteps:     int(req.GetMaxSteps()),
+		Conversation: req.Conversation,
+		MaxSteps:     int(req.MaxSteps),
 		NewHandler:   newEventHandler,
 		Root:         "",
 		Token:        "",
 		Build:        nil,
 	}
 	if agentrun.HasTools(req) {
-		s.Root = req.GetRoot()
-		s.Token = req.GetToolsToken()
+		s.Root = req.Root
+		s.Token = req.ToolsToken
 	}
 	s.Build = func(ctx context.Context) (*exec.Cmd, func() error, error) {
 		return makeAntigravityCommand(ctx, req, reg, execPath)
@@ -222,28 +222,28 @@ func resolveCommand(command []string, customPath ...string) (string, []string) {
 }
 
 func makeAntigravityCommand(
-	runCtx context.Context, req *agentrun.AskAgentRequest, reg *agentrun.Registry, customPath ...string,
+	runCtx context.Context, req *agentrun.Request, reg *agentrun.Registry, customPath ...string,
 ) (*exec.Cmd, func() error, error) {
 	if !agentrun.HasTools(req) {
 		return makeAnswerCommand(runCtx, req, reg, customPath...)
 	}
-	binName, baseArgs := resolveCommand(req.GetCommand(), customPath...)
+	binName, baseArgs := resolveCommand(req.Command, customPath...)
 	args := append([]string{}, baseArgs...)
 	args = append(args,
-		"-p", req.GetPrompt(),
+		"-p", req.Prompt,
 		"--output-format", "stream-json",
 		"--dangerously-skip-permissions",
 	)
-	if model := req.GetModel(); model != "" && model != defaultModelName {
+	if model := req.Model; model != "" && model != defaultModelName {
 		args = append(args, "--model", model)
 	}
-	if sessID := reg.GetSession(req.GetConversation()); sessID != "" {
+	if sessID := reg.GetSession(req.Conversation); sessID != "" {
 		args = append(args, "--conversation", sessID)
 	}
 
 	cmd := exec.CommandContext(runCtx, binName, args...)
-	if req.GetToolsUrl() != "" {
-		tempHome, clean, err := setupAntigravityHome(&Endpoint{URL: req.GetToolsUrl(), Token: req.GetToolsToken()})
+	if req.ToolsURL != "" {
+		tempHome, clean, err := setupAntigravityHome(&Endpoint{URL: req.ToolsURL, Token: req.ToolsToken})
 		if err != nil {
 			return nil, nil, fmt.Errorf("set up the Antigravity home: %w", err)
 		}
@@ -257,7 +257,7 @@ func makeAntigravityCommand(
 // permission granted beforehand, and an empty folder to run in. The home and the folder go when the
 // run does.
 func makeAnswerCommand(
-	runCtx context.Context, req *agentrun.AskAgentRequest, reg *agentrun.Registry, customPath ...string,
+	runCtx context.Context, req *agentrun.Request, reg *agentrun.Registry, customPath ...string,
 ) (*exec.Cmd, func() error, error) {
 	tempHome, cleanHome, err := setupAntigravityHome(nil)
 	if err != nil {
@@ -267,16 +267,16 @@ func makeAnswerCommand(
 	if err != nil {
 		return nil, nil, errors.Join(fmt.Errorf("create the folder to run in: %w", err), cleanHome())
 	}
-	binName, baseArgs := resolveCommand(req.GetCommand(), customPath...)
+	binName, baseArgs := resolveCommand(req.Command, customPath...)
 	args := append([]string{}, baseArgs...)
 	args = append(args,
-		"-p", agentrun.WritePrompt(req.GetInstructions(), req.GetPrompt()),
+		"-p", agentrun.WritePrompt(req.Instructions, req.Prompt),
 		"--output-format", "stream-json",
 	)
-	if model := req.GetModel(); model != "" && model != defaultModelName {
+	if model := req.Model; model != "" && model != defaultModelName {
 		args = append(args, "--model", model)
 	}
-	if sessID := reg.GetSession(req.GetConversation()); sessID != "" {
+	if sessID := reg.GetSession(req.Conversation); sessID != "" {
 		args = append(args, "--conversation", sessID)
 	}
 	cmd := exec.CommandContext(runCtx, binName, args...)

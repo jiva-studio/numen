@@ -5,11 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"io"
 	"strings"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 )
 
@@ -28,7 +28,7 @@ type timeSource interface {
 }
 
 type streamParser struct {
-	send         func(*agentrun.AskAgentResponse) error
+	send         func(*agentrun.Response) error
 	words        map[string]toolcall.Declaration
 	clock        timeSource
 	last         time.Time
@@ -44,7 +44,7 @@ type streamParser struct {
 	sendErr error
 }
 
-func (p *streamParser) emit(resp *agentrun.AskAgentResponse) {
+func (p *streamParser) emit(resp *agentrun.Response) {
 	if p.sendErr == nil {
 		p.sendErr = p.send(resp)
 	}
@@ -117,7 +117,7 @@ type streamEvent struct {
 func parseStream(
 	ctx context.Context,
 	r io.Reader,
-	send func(*agentrun.AskAgentResponse) error,
+	send func(*agentrun.Response) error,
 	words map[string]toolcall.Declaration,
 	record func(string),
 	clock timeSource,
@@ -130,7 +130,7 @@ func parseStream(
 func parseStreamWithClock(
 	ctx context.Context,
 	r io.Reader,
-	send func(*agentrun.AskAgentResponse) error,
+	send func(*agentrun.Response) error,
 	words map[string]toolcall.Declaration,
 	record func(string),
 	clock timeSource,
@@ -183,10 +183,8 @@ func (p *streamParser) parseLine(ctx context.Context, line string) {
 		p.parseAssistantMessage(ctx, response)
 	case "user":
 		if response.hasToolAnswer() {
-			p.emit(&agentrun.AskAgentResponse{
-				Step: &agentrun.AskAgentResponseToolFinished{
-					ToolFinished: &agentrun.ToolFinished{},
-				},
+			p.emit(&agentrun.Response{
+				Step: &agentrun.ToolFinishedStep{},
 			})
 		}
 	case "system":
@@ -211,10 +209,8 @@ func (p *streamParser) parseSystemEvent(response event) {
 		}
 	case "status":
 		if response.Status == "requesting" {
-			p.emit(&agentrun.AskAgentResponse{
-				Step: &agentrun.AskAgentResponseModelStarted{
-					ModelStarted: &agentrun.ModelStarted{},
-				},
+			p.emit(&agentrun.Response{
+				Step: &agentrun.ModelStartedStep{},
 			})
 		}
 	}
@@ -239,8 +235,8 @@ func (p *streamParser) parseStreamEvent(_ context.Context, ev streamEvent) {
 				return
 			}
 			p.isStreaming = true
-			p.emit(&agentrun.AskAgentResponse{
-				Step: &agentrun.AskAgentResponseText{
+			p.emit(&agentrun.Response{
+				Step: &agentrun.TextStep{
 					Text: ev.Delta.Text,
 				},
 			})
@@ -284,8 +280,8 @@ func (p *streamParser) parseAssistantMessage(_ context.Context, response event) 
 		switch block.Type {
 		case "text":
 			if block.Text != "" {
-				p.emit(&agentrun.AskAgentResponse{
-					Step: &agentrun.AskAgentResponseText{
+				p.emit(&agentrun.Response{
+					Step: &agentrun.TextStep{
 						Text: block.Text,
 					},
 				})
@@ -314,9 +310,9 @@ func stripServerPrefix(tool string) string {
 	return tool
 }
 
-func (p *streamParser) buildCallStep(callID, tool, args string) *agentrun.AskAgentResponse {
+func (p *streamParser) buildCallStep(callID, tool, args string) *agentrun.Response {
 	call := toolcall.Describe(p.words, stripServerPrefix(tool), callID, args)
-	return &agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseToolCall{ToolCall: call}}
+	return &agentrun.Response{Step: &agentrun.ToolCallStep{ToolCall: call}}
 }
 
 // reportEdit reports the change a call is writing, once the text that replaces the match has
@@ -339,7 +335,7 @@ func (p *streamParser) reportEdit() {
 		return
 	}
 	p.last = now
-	p.emit(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseEditProgress{
+	p.emit(&agentrun.Response{Step: &agentrun.EditProgressStep{
 		EditProgress: &agentrun.EditProgress{
 			Call:  p.callID,
 			Path:  path,

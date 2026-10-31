@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -13,14 +12,16 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 )
 
 // askAgent sends the task and returns the response text and the stop reason.
-func askAgent(t *testing.T, svc *agentServer, task *agentrun.AskAgentRequest) (said, stopReason string) {
+func askAgent(t *testing.T, svc *agentServer, task *agentrun.Request) (said, stopReason string) {
 	t.Helper()
-	stream, err := agenttest.Serve(t, svc).AskAgent(t.Context(), connect.NewRequest(task))
+	stream, err := agenttest.Serve(t, svc).Ask(t.Context(), task)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +40,7 @@ func askAgent(t *testing.T, svc *agentServer, task *agentrun.AskAgentRequest) (s
 func TestAskAgent_ResponseSuccess(t *testing.T) {
 	agent, record := fakeACPAgent(t, "fake", "plain")
 
-	response, stopReason := askAgent(t, serveAgents(agent), &agentrun.AskAgentRequest{
+	response, stopReason := askAgent(t, serveAgents(agent), &agentrun.Request{
 		Agent: "acp:fake", Instructions: "be brief", Prompt: "why?",
 	})
 
@@ -64,9 +65,9 @@ func TestAskAgent_ResponseSuccess(t *testing.T) {
 func TestAskAgentOpensTheSessionWithTheRunEndpoint(t *testing.T) {
 	agent, record := fakeACPAgent(t, "fake", "tools")
 
-	response, stopReason := askAgent(t, serveAgents(agent), &agentrun.AskAgentRequest{
+	response, stopReason := askAgent(t, serveAgents(agent), &agentrun.Request{
 		Agent: "acp:fake", Prompt: "why?", Tools: []string{"note_read"},
-		ToolsUrl: "http://127.0.0.1:1/mcp", ToolsToken: "secret",
+		ToolsURL: "http://127.0.0.1:1/mcp", ToolsToken: "secret",
 	})
 
 	if response != "the answer" || stopReason != reasonDone {
@@ -89,9 +90,9 @@ func TestAskAgentOpensTheSessionWithTheRunEndpoint(t *testing.T) {
 func TestAskAgentAllowsTheToolsOfTheTaskByTheirNames(t *testing.T) {
 	agent, record := fakeACPAgent(t, "fake", "tools")
 
-	askAgent(t, serveAgents(agent), &agentrun.AskAgentRequest{
+	askAgent(t, serveAgents(agent), &agentrun.Request{
 		Agent: "acp:fake", Prompt: "why?", Tools: []string{"note_read"},
-		ToolsUrl: "http://127.0.0.1:1/mcp", ToolsToken: "secret",
+		ToolsURL: "http://127.0.0.1:1/mcp", ToolsToken: "secret",
 	})
 
 	replies := readRecord(t, record)["reply"]
@@ -114,23 +115,23 @@ func TestAskAgentAllowsTheToolsOfTheTaskByTheirNames(t *testing.T) {
 // of its tool, and its end once.
 func TestAskAgentReportsTheToolCallsOfTheAgent(t *testing.T) {
 	agent, _ := fakeACPAgent(t, "fake", "tools")
-	stream, err := agenttest.Serve(t, serveAgents(agent)).AskAgent(t.Context(), connect.NewRequest(&agentrun.AskAgentRequest{
+	stream, err := agenttest.Serve(t, serveAgents(agent)).Ask(t.Context(), &agentrun.Request{
 		Agent: "acp:fake", Prompt: "why?", Tools: []string{"note_read"},
-		ToolsUrl: "http://127.0.0.1:1/mcp", ToolsToken: "secret",
-		ToolDeclarations: []*agentrun.ToolDeclaration{{Name: "note_read", Title: "Read a note", Kind: "read", About: "path"}},
-	}))
+		ToolsURL: "http://127.0.0.1:1/mcp", ToolsToken: "secret",
+		ToolDeclarations: []toolcall.ToolDeclaration{{Name: "note_read", Title: "Read a note", Kind: "read", About: "path"}},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	var steps []string
 	for stream.Receive() {
 		switch step := stream.Msg().GetStep().(type) {
-		case *agentrun.AskAgentResponseToolCall:
+		case *agentrun.ToolCallStep:
 			call := step.ToolCall
-			steps = append(steps, fmt.Sprintf("call %s %s %s %s %s", call.GetCall(), call.GetTool(), call.GetKind(), call.GetAbout(), call.GetPath()))
-		case *agentrun.AskAgentResponseToolFinished:
+			steps = append(steps, fmt.Sprintf("call %s %s %s %s %s", call.Call, call.Tool, call.Kind, call.About, call.Path))
+		case *agentrun.ToolFinishedStep:
 			steps = append(steps, "finished")
-		case *agentrun.AskAgentResponseText:
+		case *agentrun.TextStep:
 			steps = append(steps, "text")
 		}
 	}
@@ -152,8 +153,8 @@ func TestAskAgentReportsTheToolCallsOfTheAgent(t *testing.T) {
 func TestAskAgentOpensASessionWithNoServerForATaskWithNoTool(t *testing.T) {
 	agent, record := fakeACPAgent(t, "fake", "tools")
 
-	askAgent(t, serveAgents(agent), &agentrun.AskAgentRequest{
-		Agent: "acp:fake", Prompt: "why?", ToolsUrl: "http://127.0.0.1:1/mcp", ToolsToken: "secret",
+	askAgent(t, serveAgents(agent), &agentrun.Request{
+		Agent: "acp:fake", Prompt: "why?", ToolsURL: "http://127.0.0.1:1/mcp", ToolsToken: "secret",
 	})
 
 	session := getField[map[string]any](t, readRecord(t, record)["session/new"][0], "params")
@@ -167,9 +168,9 @@ func TestAskAgentOpensASessionWithNoServerForATaskWithNoTool(t *testing.T) {
 func TestAskAgentStopsWhereTheAgentCannotReachTheTools(t *testing.T) {
 	agent, record := fakeACPAgent(t, "fake", "plain")
 
-	response, stopReason := askAgent(t, serveAgents(agent), &agentrun.AskAgentRequest{
+	response, stopReason := askAgent(t, serveAgents(agent), &agentrun.Request{
 		Agent: "acp:fake", Prompt: "why?", Tools: []string{"note_read"},
-		ToolsUrl: "http://127.0.0.1:1/mcp", ToolsToken: "secret",
+		ToolsURL: "http://127.0.0.1:1/mcp", ToolsToken: "secret",
 	})
 
 	if response != "" || !strings.Contains(stopReason, "takes no MCP server over HTTP") {
@@ -183,7 +184,7 @@ func TestAskAgentStopsWhereTheAgentCannotReachTheTools(t *testing.T) {
 func TestAskAgentChoosesTheModelTheTaskNames(t *testing.T) {
 	agent, record := fakeACPAgent(t, "fake", "config")
 
-	askAgent(t, serveAgents(agent), &agentrun.AskAgentRequest{Agent: "acp:fake", Model: "m2", Prompt: "why?"})
+	askAgent(t, serveAgents(agent), &agentrun.Request{Agent: "acp:fake", Model: "m2", Prompt: "why?"})
 
 	set := readRecord(t, record)["session/set_config_option"]
 	if len(set) != 1 || getField[string](t, getField[map[string]any](t, set[0], "params"), "value") != "m2" {
@@ -196,7 +197,7 @@ func TestAskAgentChoosesTheModelTheTaskNames(t *testing.T) {
 func TestAskAgentStartsTheAgentByTheCommandOfTheTask(t *testing.T) {
 	agent, record := fakeACPAgent(t, "fake", "plain")
 
-	response, _ := askAgent(t, &agentServer{}, &agentrun.AskAgentRequest{
+	response, _ := askAgent(t, &agentServer{}, &agentrun.Request{
 		Agent: "acp:fake", Prompt: "why?", Command: agent.Command,
 	})
 
@@ -210,7 +211,7 @@ func TestAskAgentStopsWithTheReasonItCannotAnswer(t *testing.T) {
 	refusing, _ := fakeACPAgent(t, "refusing", "refuse")
 	svc := serveAgents(failing, refusing)
 
-	for _, task := range []*agentrun.AskAgentRequest{
+	for _, task := range []*agentrun.Request{
 		{Agent: "acp:failing", Prompt: "why?"},
 		{Agent: "acp:refusing", Prompt: "why?"},
 		{Agent: "acp:absent", Prompt: "why?"},
@@ -218,7 +219,7 @@ func TestAskAgentStopsWithTheReasonItCannotAnswer(t *testing.T) {
 	} {
 		response, stopReason := askAgent(t, svc, task)
 		if response != "" || stopReason == "" || stopReason == reasonDone {
-			t.Errorf("%s: said %q, stopReason %q", task.GetAgent(), response, stopReason)
+			t.Errorf("%s: said %q, stopReason %q", task.Agent, response, stopReason)
 		}
 	}
 }
@@ -230,30 +231,27 @@ func TestTheProgramsAreTheACPAgentsTheSettingsName(t *testing.T) {
 	plain, _ := fakeACPAgent(t, "plain", "plain")
 	svc := &agentServer{}
 
-	got, err := svc.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{
-		Commands: []*agentrun.AgentProgramCommand{
-			{Program: "acp:plain", Command: plain.Command},
-			{Program: "acp:config", Command: config.Command},
-			{Program: "other", Command: []string{"/bin/other"}},
-		},
-	}))
+	programs, err := svc.GetPrograms(t.Context(), []agentrun.ProgramCommand{
+		{Program: "acp:plain", Command: plain.Command},
+		{Program: "acp:config", Command: config.Command},
+		{Program: "other", Command: []string{"/bin/other"}},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	programs := got.Msg.GetPrograms()
-	if len(programs) != 2 || programs[0].GetName() != "acp:config" || programs[1].GetName() != "acp:plain" {
+	if len(programs) != 2 || programs[0].Name != "acp:config" || programs[1].Name != "acp:plain" {
 		t.Fatalf("the programs are %v", programs)
 	}
-	if !programs[0].GetIsInstalled() || !programs[0].GetLimitsTools() || programs[0].GetIsDefault() {
+	if !programs[0].IsInstalled || !programs[0].LimitsTools || programs[0].IsDefault {
 		t.Errorf("the program is %v", programs[0])
 	}
-	models := programs[0].GetModels()
-	if len(models) != 2 || models[0].GetName() != "m1" || models[0].GetTitle() != "Model One" || !models[0].GetIsDefault() ||
-		models[1].GetName() != "m2" || models[1].GetIsDefault() {
+	models := programs[0].Models
+	if len(models) != 2 || models[0].Name != "m1" || models[0].Title != "Model One" || !models[0].IsDefault ||
+		models[1].Name != "m2" || models[1].IsDefault {
 		t.Errorf("the models are %v", models)
 	}
-	if len(programs[1].GetModels()) != 0 {
-		t.Errorf("the models are %v", programs[1].GetModels())
+	if len(programs[1].Models) != 0 {
+		t.Errorf("the models are %v", programs[1].Models)
 	}
 }
 
@@ -261,7 +259,7 @@ func TestTheProgramsAreTheACPAgentsTheSettingsName(t *testing.T) {
 func TestAskAgent_RejectsEveryAgentRequest(t *testing.T) {
 	agent, record := fakeACPAgent(t, "fake", "plain")
 
-	askAgent(t, serveAgents(agent), &agentrun.AskAgentRequest{Agent: "acp:fake", Prompt: "why?"})
+	askAgent(t, serveAgents(agent), &agentrun.Request{Agent: "acp:fake", Prompt: "why?"})
 
 	observed := readRecord(t, record)
 	session := getField[map[string]any](t, observed["session/new"][0], "params")
@@ -295,7 +293,7 @@ func TestAskAgent_RejectsEveryAgentRequest(t *testing.T) {
 func TestAskAgent_SelectsModelFromLegacyModelList(t *testing.T) {
 	agent, record := fakeACPAgent(t, "fake", "legacy")
 
-	askAgent(t, serveAgents(agent), &agentrun.AskAgentRequest{Agent: "acp:fake", Model: "m2", Prompt: "why?"})
+	askAgent(t, serveAgents(agent), &agentrun.Request{Agent: "acp:fake", Model: "m2", Prompt: "why?"})
 
 	set := readRecord(t, record)["session/set_model"]
 	if len(set) != 1 || getField[string](t, getField[map[string]any](t, set[0], "params"), "modelId") != "m2" {
@@ -308,7 +306,7 @@ func TestAskAgent_FailsOnUnavailableModel(t *testing.T) {
 	for program, behaviour := range map[string]string{"fake": "config", "plain": "plain"} {
 		agent, record := fakeACPAgent(t, program, behaviour)
 
-		response, stopReason := askAgent(t, serveAgents(agent), &agentrun.AskAgentRequest{
+		response, stopReason := askAgent(t, serveAgents(agent), &agentrun.Request{
 			Agent: "acp:" + program, Model: "m9", Prompt: "why?",
 		})
 
@@ -324,7 +322,7 @@ func TestAskAgent_FailsOnUnavailableModel(t *testing.T) {
 func TestAskAgent_FailureReason(t *testing.T) {
 	agent, _ := fakeACPAgent(t, "fake", "fail")
 
-	_, stopReason := askAgent(t, serveAgents(agent), &agentrun.AskAgentRequest{Agent: "acp:fake", Prompt: "why?"})
+	_, stopReason := askAgent(t, serveAgents(agent), &agentrun.Request{Agent: "acp:fake", Prompt: "why?"})
 
 	if !strings.Contains(stopReason, "not signed in") {
 		t.Errorf("stopped with %q, want the agent's own message", stopReason)
@@ -336,8 +334,7 @@ func TestAskAgentStopsTheAgentWhenCancelled(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
 	defer cancel()
 
-	stream, err := agenttest.Serve(t, serveAgents(agent)).AskAgent(ctx, connect.NewRequest(
-		&agentrun.AskAgentRequest{Agent: "acp:fake", Prompt: "why?"}))
+	stream, err := agenttest.Serve(t, serveAgents(agent)).Ask(ctx, &agentrun.Request{Agent: "acp:fake", Prompt: "why?"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -361,10 +358,10 @@ func TestTheModelsOfAProgramAreThoseTheACPAgentReports(t *testing.T) {
 
 	var got []string
 	for _, program := range listPrograms(t, serveAgents(config, legacy, plain, failing)) {
-		entry := program.GetName() + ":"
-		for _, one := range program.GetModels() {
-			entry += " " + one.GetName() + "=" + one.GetTitle()
-			if one.GetIsDefault() {
+		entry := program.Name + ":"
+		for _, one := range program.Models {
+			entry += " " + one.Name + "=" + one.Title
+			if one.IsDefault {
 				entry += "*"
 			}
 		}
@@ -382,13 +379,13 @@ func TestTheModelsOfAProgramAreThoseTheACPAgentReports(t *testing.T) {
 	}
 }
 
-func listPrograms(t *testing.T, svc *agentServer) []*agentrun.AgentProgram {
+func listPrograms(t *testing.T, svc *agentServer) []*agentrun.Program {
 	t.Helper()
-	res, err := svc.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
+	res, err := svc.GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return res.Msg.GetPrograms()
+	return res
 }
 
 func TestGetAgentPrograms_ModelCache(t *testing.T) {
@@ -398,7 +395,7 @@ func TestGetAgentPrograms_ModelCache(t *testing.T) {
 	first := listPrograms(t, svc)
 	second := listPrograms(t, svc)
 
-	if len(first) != 1 || len(first[0].GetModels()) != 2 || len(second) != 1 || len(second[0].GetModels()) != 2 {
+	if len(first) != 1 || len(first[0].Models) != 2 || len(second) != 1 || len(second[0].Models) != 2 {
 		t.Errorf("listed %v, then %v", first, second)
 	}
 	if started := readRecord(t, record)["initialize"]; len(started) != 1 {
@@ -439,17 +436,16 @@ func serveAgents(agents ...acpAgent) *agentServer {
 func TestGetAgentPrograms_ReturnsDepthsForCurrentModel(t *testing.T) {
 	agent, _ := fakeACPAgent(t, "fake", "thought")
 
-	got, err := agenttest.Serve(t, serveAgents(agent)).GetAgentPrograms(t.Context(),
-		connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
+	got, err := agenttest.Serve(t, serveAgents(agent)).GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range got.Msg.GetPrograms()[0].GetModels() {
+	for _, one := range got[0].Models {
 		want := 0
-		if one.GetName() == "m1" {
+		if one.Name == "m1" {
 			want = 3
 		}
-		if len(one.GetReasoningLevels()) != want || (want > 0 && one.GetDefaultReasoning() != "medium") {
+		if len(one.ReasoningLevels) != want || (want > 0 && one.DefaultReasoning != "medium") {
 			t.Errorf("the model %v offers the wrong levels", one)
 		}
 	}
@@ -458,7 +454,7 @@ func TestGetAgentPrograms_ReturnsDepthsForCurrentModel(t *testing.T) {
 func TestAskAgentSetsTheDepthTheTaskNamesWhereTheAgentReportsIt(t *testing.T) {
 	agent, record := fakeACPAgent(t, "fake", "thought")
 
-	askAgent(t, serveAgents(agent), &agentrun.AskAgentRequest{
+	askAgent(t, serveAgents(agent), &agentrun.Request{
 		Agent: "acp:fake", Reasoning: "high", Prompt: "why?",
 	})
 
@@ -469,7 +465,7 @@ func TestAskAgentSetsTheDepthTheTaskNamesWhereTheAgentReportsIt(t *testing.T) {
 	}
 
 	other, otherRecord := fakeACPAgent(t, "other", "thought")
-	askAgent(t, serveAgents(other), &agentrun.AskAgentRequest{Agent: "acp:other", Reasoning: "max", Prompt: "why?"})
+	askAgent(t, serveAgents(other), &agentrun.Request{Agent: "acp:other", Reasoning: "max", Prompt: "why?"})
 	if set := readRecord(t, otherRecord)["session/set_config_option"]; len(set) != 0 {
 		t.Errorf("a depth the agent does not report was sent: %v", set)
 	}

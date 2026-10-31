@@ -1,11 +1,12 @@
 package service
 
 import (
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"net/http/httptest"
 	"testing"
 
 	"connectrpc.com/connect"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
 // The handler a host that links the plugin in serves answers the agent service with the token it
@@ -17,16 +18,15 @@ func TestTheLinkedHandlerAnswersTheAgentService(t *testing.T) {
 	}
 	web := httptest.NewServer(handler)
 	defer web.Close()
-	client := agentrun.NewAgentServiceClient(web.Client(), web.URL)
+	client := agentrun.NewClient(web.Client(), web.URL)
 
-	req := connect.NewRequest(&agentrun.GetAgentProgramsRequest{})
-	req.Header().Set("Authorization", "Bearer linked-token")
-	if _, err := client.GetAgentPrograms(t.Context(), req); err != nil {
+	client.Header.Set("Authorization", "Bearer linked-token")
+	if _, err := client.GetPrograms(t.Context(), nil); err != nil {
 		t.Fatalf("call with the token: %v", err)
 	}
 
-	unauthReq := connect.NewRequest(&agentrun.GetAgentProgramsRequest{})
-	_, err = client.GetAgentPrograms(t.Context(), unauthReq)
+	client.Header.Del("Authorization")
+	_, err = client.GetPrograms(t.Context(), nil)
 	if connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Fatalf("call without the token = %v, want unauthenticated", err)
 	}

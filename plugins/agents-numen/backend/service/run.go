@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"log"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 )
 
@@ -38,7 +38,7 @@ type run struct {
 	tools   *toolbox
 	words   map[string]toolcall.Declaration
 	turns   int
-	send    func(*agentrun.AskAgentResponse) error
+	send    func(*agentrun.Response) error
 	isPlain bool
 }
 
@@ -69,14 +69,14 @@ func (r *run) answer(ctx context.Context, messages []message) ([]message, string
 }
 
 func (r *run) turn(ctx context.Context, messages []message) ([]message, string, bool, error) {
-	if err := r.send(&agentrun.AskAgentResponse{
-		Step: &agentrun.AskAgentResponseModelStarted{ModelStarted: &agentrun.ModelStarted{}},
+	if err := r.send(&agentrun.Response{
+		Step: &agentrun.ModelStartedStep{},
 	}); err != nil {
 		return messages, "", false, err
 	}
 	var unsent error
 	emit := func(text string) error {
-		unsent = r.send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseText{Text: text}})
+		unsent = r.send(&agentrun.Response{Step: &agentrun.TextStep{Text: text}})
 		return unsent
 	}
 	reply, finished, err := r.ask(ctx, messages, emit)
@@ -127,15 +127,15 @@ func (r *run) runToolCalls(ctx context.Context, messages []message, calls []tool
 func (r *run) callTool(ctx context.Context, call toolCall) (string, error) {
 	name, args := call.Function.Name, call.Function.Arguments
 	described := toolcall.Describe(r.words, name, call.ID, args)
-	if err := r.send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseToolCall{ToolCall: described}}); err != nil {
+	if err := r.send(&agentrun.Response{Step: &agentrun.ToolCallStep{ToolCall: described}}); err != nil {
 		return "", err
 	}
 	result := r.tools.call(ctx, name, args)
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
-	if err := r.send(&agentrun.AskAgentResponse{
-		Step: &agentrun.AskAgentResponseToolFinished{ToolFinished: &agentrun.ToolFinished{}},
+	if err := r.send(&agentrun.Response{
+		Step: &agentrun.ToolFinishedStep{},
 	}); err != nil {
 		return "", err
 	}
