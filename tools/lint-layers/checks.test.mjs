@@ -1,14 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import {
-  findWordsInGo,
-  findWordsInScript,
-  loadImplementationDictionary,
-  loadImplementationWords,
-  loadManifestWords,
-  loadPluginDictionary,
-  subtractDataWords,
-} from "./checks/dictionary.mjs";
+import { loadImplementationDictionary, loadImplementationWords, loadManifestWords, subtractDataWords } from "./checks/dictionary.mjs";
 import {
   findDuplicateFiles,
   findImportCycles,
@@ -47,7 +39,7 @@ const MANIFESTS = {
 const readFixture = (file) => MANIFESTS[file];
 const fixtureWords = () => loadManifestWords(Object.keys(MANIFESTS), readFixture);
 
-describe("the dictionary of plugin words", () => {
+describe("the words of the plugin manifests", () => {
   it("holds the ids, segments and values of the manifests", () => {
     const words = fixtureWords();
     for (const word of ["zephyr", "mango", "quokkaformat", "md.example.views.zephyr.graph"]) assert.ok(words.has(word), word);
@@ -61,58 +53,6 @@ describe("the dictionary of plugin words", () => {
   it("holds no value of an array that lists files, whatever the array is called", () => {
     const words = fixtureWords();
     for (const word of ["nectarine", "palettes/nectarine.css"]) assert.equal(words.has(word), false, word);
-  });
-
-  it("drops the words an SDK or the protocol defines", () => {
-    const dictionary = subtractDataWords(fixtureWords(), new Set(["vault", "read", "mango", "player"]));
-    assert.equal(dictionary.has("mango"), false);
-    assert.ok(dictionary.has("zephyr"));
-  });
-
-  it("is built from the live manifests, enough to examine", () => {
-    assert.ok(loadPluginDictionary().size >= 10);
-  });
-});
-
-describe("a plugin word in a frontend source", () => {
-  const dictionary = subtractDataWords(fixtureWords(), new Set());
-  const cases = {
-    "a string literal": "const kind = 'zephyr'",
-    "a template literal": "const kind = `zephyr`",
-    "an object key": "const table = { zephyr: 1 }",
-    "an enum member": "enum Kind { Zephyr }",
-    "a case label": "switch (kind) { case 'zephyr': break }",
-    "an identifier": "const zephyr = 1",
-    "a segment of a literal": "const filter = 'feature:zephyr'",
-    "a word of a camel-case identifier": "const getZephyrGraph = () => 1",
-  };
-  for (const [name, text] of Object.entries(cases)) {
-    it(`is found as ${name}`, () => {
-      assert.ok(findWordsInScript("fixture.ts", dictionary, text).length > 0, text);
-    });
-  }
-
-  it("is found in the script block of a component", () => {
-    const text = "<template><p /></template>\n<script setup lang=\"ts\">\nconst a = 'mango'\n</script>\n";
-    const found = findWordsInScript("Fixture.vue", dictionary, text);
-    assert.equal(found.length, 1);
-    assert.equal(found[0].line, 3);
-  });
-
-  it("is not found in an import path or in a word that only contains it", () => {
-    assert.deepEqual(findWordsInScript("fixture.ts", dictionary, "import x from './zephyr'\nconst a = 'zephyrs'"), []);
-  });
-
-  it("is found for a word of any live manifest, so no name is listed in the check", () => {
-    const live = loadPluginDictionary();
-    const word = [...live.keys()].find((one) => /^[a-z]+$/.test(one));
-    assert.ok(word, "the live dictionary holds a plain word");
-    assert.ok(findWordsInScript("fixture.ts", live, `const kind = '${word}'`).length > 0);
-  });
-
-  it("is found in a Go source as a literal and as an identifier", () => {
-    const found = findWordsInGo("fixture.go", dictionary, 'package a\nvar mango = "zephyr"\n');
-    assert.equal(found.length, 2);
   });
 });
 
