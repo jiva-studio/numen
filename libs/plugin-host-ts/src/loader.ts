@@ -3,7 +3,8 @@
  * created by the host, and deactivated according to its `enabled` setting.
  */
 import { shallowRef, type ShallowRef } from 'vue'
-import type { Disposable, PluginLifecycle, Manifest } from '@numen/plugin-sdk'
+import type { Disposable, PluginLifecycle } from '@numen/plugin-sdk'
+import type { Manifest } from './manifest'
 import type { LoaderHost } from './host'
 import {
   getLifecycleHooks,

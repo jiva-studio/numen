@@ -5,8 +5,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/segmenter"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/onnx"
 )
 
 // Config is what a user may change about transcription: which models, where

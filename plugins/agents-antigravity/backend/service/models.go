@@ -9,8 +9,6 @@ import (
 	"slices"
 	"strings"
 	"time"
-
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/supervise"
 )
 
 const (
@@ -29,7 +27,7 @@ type antigravityModel struct {
 func listAntigravityModels(ctx context.Context, command []string) ([]antigravityModel, error) {
 	name, args := resolveCommand(command)
 	cmd := exec.CommandContext(ctx, name, slices.Concat(args, []string{"models"})...)
-	supervise.Command(cmd)
+	supervise(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("list the models of %s: %w", name, err)

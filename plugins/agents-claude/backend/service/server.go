@@ -17,7 +17,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/supervise"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
@@ -222,7 +221,7 @@ func (s *agentServer) launchAgentCmd(
 	cmd.Dir = msg.GetRoot()
 	cmd.Env = buildEnvironment(s.getEnvironment())
 	cmd.Stdin = strings.NewReader(msg.GetPrompt())
-	supervise.Command(cmd)
+	supervise(cmd)
 
 	out, err := cmd.StdoutPipe()
 	if err != nil {

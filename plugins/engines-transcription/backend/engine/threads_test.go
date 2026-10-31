@@ -3,7 +3,7 @@ package engine
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/onnx"
 )
 
 func TestOnlyTheEncoderConsumesMoreThanOneThread(t *testing.T) {

@@ -16,7 +16,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/supervise"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 )
 
@@ -116,7 +115,7 @@ func openACPSession(ctx context.Context, agent acpAgent, tools toolEndpoint) (*a
 	s.cmd.Dir = dir
 	s.cmd.Env = os.Environ()
 	s.cmd.Stderr = s.stderr
-	supervise.Command(s.cmd)
+	supervise(s.cmd)
 	if err := s.start(); err != nil {
 		return nil, errors.Join(err, s.close())
 	}

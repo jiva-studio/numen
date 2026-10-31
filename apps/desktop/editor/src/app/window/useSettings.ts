@@ -23,7 +23,8 @@ import {
   type PluginSettingOption,
   type SettingEdit,
 } from '@/entities/settings'
-import { formatErrorMessage, type PluginCatalog } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/plugin-sdk'
+import { type PluginCatalog } from '@numen/plugin-manager'
 import { useCatalogEntries } from '@/entities/plugin'
 import { runInBackground } from '@numen/ui'
 import { createPluginRetry, createSecretStore, createSettingsStore } from '@/entities/settings'

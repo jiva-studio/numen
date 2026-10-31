@@ -32,3 +32,4 @@ export {
   openExternalUrl,
   type ExternalOpener,
 } from './externalOpener'
+export * from './manifest'

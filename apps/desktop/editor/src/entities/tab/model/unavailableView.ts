@@ -1,4 +1,4 @@
-import { CATALOG_INCOMPATIBILITY, CATALOG_STATE, type CatalogEntry } from '@numen/plugin-sdk'
+import { CATALOG_INCOMPATIBILITY, CATALOG_STATE, type CatalogEntry } from '@numen/plugin-manager'
 import type { UnavailableLookup } from './unavailable'
 
 /** What the person can do about the plugin: switch it on, install it, or look at it. */

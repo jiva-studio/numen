@@ -1,6 +1,6 @@
 import { fn } from 'storybook/test'
 import { ref } from 'vue'
-import { createMockPluginInfo } from '@numen/plugin-sdk/testing'
+import { createMockPluginInfo } from '@numen/plugin-manager/testing'
 import type { Model } from '@/entities/settings'
 import type { Installation } from '@/pages/settings/types'
 

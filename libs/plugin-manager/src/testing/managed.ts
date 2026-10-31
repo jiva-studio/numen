@@ -1,9 +1,10 @@
-import { CATALOG_STATE, type PluginInfo } from '@numen/plugin-sdk'
+import { CATALOG_STATE } from '../catalog/catalog'
+import type { PluginInfo } from '../catalog/plugins'
 import {
   createMockCatalogEntry,
   createMockPluginInfo,
   type MockCatalogEntryOptions,
-} from '@numen/plugin-sdk/testing'
+} from '../testing/mockCatalog'
 import { createManagedPlugins, type ManagedPlugin } from '../plugins'
 
 /** An installed plugin as the manager lists it, with the catalog entry made from `entry`. */

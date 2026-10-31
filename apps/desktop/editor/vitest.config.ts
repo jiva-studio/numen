@@ -15,8 +15,14 @@ import { getStoryBrowser } from '../../../libs/ui/core/.storybook/browser'
 
 const alias = {
   '@': fileURLToPath(new URL('./src', import.meta.url)),
+  '@numen/plugin-host/testing': fileURLToPath(
+    new URL('../../../libs/plugin-host-ts/src/testing/index.ts', import.meta.url),
+  ),
   '@numen/plugin-host': fileURLToPath(
     new URL('../../../libs/plugin-host-ts/src/index.ts', import.meta.url),
+  ),
+  '@numen/plugin-manager/testing': fileURLToPath(
+    new URL('../../../libs/plugin-manager/src/testing/index.ts', import.meta.url),
   ),
   '@numen/plugin-manager': fileURLToPath(
     new URL('../../../libs/plugin-manager/src/index.ts', import.meta.url),

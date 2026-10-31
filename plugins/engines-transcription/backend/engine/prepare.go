@@ -3,7 +3,7 @@ package engine
 import (
 	"os"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/onnx"
 )
 
 // Ready reports whether everything a transcription needs is already on this machine.

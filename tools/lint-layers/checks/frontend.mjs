@@ -127,7 +127,7 @@ export function verifyShellDomainIsolation() {
  * What `libs/plugin-host-ts/src` may import besides its own files.
  */
 const PLUGIN_HOST_IMPORTS = [
-  { files: /./, specifiers: /^(vue|@numen\/plugin-sdk)(\/|$)/ },
+  { files: /./, specifiers: /^(vue|@numen\/plugin-sdk|@numen\/protocol|@bufbuild\/protobuf)(\/|$)/ },
   { files: /\.test\.ts$/, specifiers: /^vitest$/ },
   { files: /^vite\.ts$/, specifiers: /^vite$/ },
 ];
@@ -150,11 +150,11 @@ function findPluginHostImports() {
   return found;
 }
 
-/** The plugin loader knows Vue and the plugin SDK, and nothing of the UI, the shell, the wire or an application. */
+/** The plugin loader knows Vue, the plugin SDK and the protocol, and nothing of the UI, the shell, the wire or an application. */
 export function verifyPluginHostIsolation() {
   const found = findPluginHostImports();
   if (found.length > 0) {
-    throw new Error("The plugin host imports beyond vue and @numen/plugin-sdk:\n" + found.join("\n"));
+    throw new Error("The plugin host imports beyond vue, @numen/plugin-sdk and the protocol:\n" + found.join("\n"));
   }
   exec("npm run lint", path.join(MODULES_DIR, "libs/plugin-host-ts"));
 }
@@ -381,7 +381,7 @@ export const FRONTEND_VERIFIERS = [
     id: "plugin-host-isolation",
     scope: "libs",
     module: "host",
-    name: "Plugin Host Isolation (imports only vue and @numen/plugin-sdk)",
+    name: "Plugin Host Isolation (imports only vue, @numen/plugin-sdk and the protocol)",
     run: verifyPluginHostIsolation,
   },
   {

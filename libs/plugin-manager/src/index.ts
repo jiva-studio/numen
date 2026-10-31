@@ -16,3 +16,5 @@ export {
 export { formatFailedAt, getFailedPlugins, getPluginState, type PluginState } from './state'
 export { parsePluginReadme, type PluginReadmeParts } from './readme'
 export { PLUGIN_WORDS } from './words'
+export * from './catalog/catalog'
+export * from './catalog/plugins'

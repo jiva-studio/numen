@@ -7,7 +7,8 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./vite": "./src/vite.ts"
+    "./vite": "./src/vite.ts",
+    "./testing": "./src/testing/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --build --force",
@@ -15,7 +16,9 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@bufbuild/protobuf": "^2.14.0",
     "@numen/plugin-sdk": "*",
+    "@numen/protocol": "*",
     "vue": "^3.5.44"
   },
   "devDependencies": {

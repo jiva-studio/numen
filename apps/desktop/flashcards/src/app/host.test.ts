@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { defineComponent, h, onScopeDispose } from 'vue'
-import {
-  CONVERSATION,
-  createMockAgentHost,
-  createMockManifest,
-  VAULT_SUMMARY,
-} from '@numen/plugin-sdk'
+import { CONVERSATION, createMockAgentHost, VAULT_SUMMARY } from '@numen/plugin-sdk'
+import { createMockManifest } from '@numen/plugin-host/testing'
 import { createShellHost, TARGET } from './host'
 
 const view = (kind: string, order?: number) => ({

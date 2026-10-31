@@ -140,8 +140,8 @@ export const PACKAGE_DEPENDENCIES = {
   "@numen/shell": ["@numen/ui"],
   "@numen/protocol": [],
   "@numen/plugin-sdk": ["@numen/protocol", "@numen/ui"],
-  "@numen/plugin-host": ["@numen/plugin-sdk"],
-  "@numen/plugin-manager": ["@numen/plugin-sdk", "@numen/ui"],
+  "@numen/plugin-host": ["@numen/plugin-sdk", "@numen/protocol"],
+  "@numen/plugin-manager": ["@numen/plugin-sdk", "@numen/protocol", "@numen/ui"],
 };
 
 const FIRST_PARTY = /^(@numen\/[^/]+)/;

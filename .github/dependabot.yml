@@ -21,7 +21,6 @@ updates:
       - /libs/plugin-sdk-go
       - /libs/plugin-sdk-go/agent
       - /libs/plugin-sdk-go/models
-      - /libs/plugin-sdk-go/onnx
       - /libs/plugin-sdk-go/vault
       - /apps/desktop
       - /apps/mobile

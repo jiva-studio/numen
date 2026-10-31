@@ -1,5 +1,5 @@
 // Correctness and boundaries for the plugin manager. It imports components from `@numen/ui` and
-// the plugin contract from `@numen/plugin-sdk`, and no other first-party package.
+// the plugin contract from `@numen/plugin-sdk` and `@numen/protocol`, and no other first-party package.
 
 import tseslint from 'typescript-eslint'
 import { createBaseConfig } from '../../tools/lint-layers/base-eslint.mjs'
@@ -13,6 +13,8 @@ const firstPartyImports = [
       '!@numen/ui/**',
       '!@numen/plugin-sdk',
       '!@numen/plugin-sdk/**',
+      '!@numen/protocol',
+      '!@numen/protocol/**',
       // The same packages named by the path the install put them at.
       '**/node_modules/@numen/**',
     ],

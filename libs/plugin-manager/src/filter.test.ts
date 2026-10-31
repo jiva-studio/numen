@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { CATALOG_STATE } from '@numen/plugin-sdk'
-import { createMockCatalogEntry, createMockPluginInfo } from '@numen/plugin-sdk/testing'
+import { CATALOG_STATE } from './catalog/catalog'
+import { createMockCatalogEntry, createMockPluginInfo } from './testing/mockCatalog'
 import { createManagedPlugins } from './plugins'
 import {
   formatCategoryLabel,

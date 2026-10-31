@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createMockPluginInfo as createPluginInfo } from '@numen/plugin-sdk/testing'
+import { createMockPluginInfo as createPluginInfo } from './testing/mockCatalog'
 import { formatFailedAt, getFailedPlugins, getPluginState } from './state'
 
 describe('the plugins suspended', () => {

@@ -1,4 +1,5 @@
-import { CATALOG_STATE, type CatalogEntry, type PluginInfo } from '@numen/plugin-sdk'
+import { CATALOG_STATE, type CatalogEntry } from './catalog/catalog'
+import type { PluginInfo } from './catalog/plugins'
 
 /** The group a plugin without a category is listed under. */
 export const OTHER_CATEGORY = 'other'

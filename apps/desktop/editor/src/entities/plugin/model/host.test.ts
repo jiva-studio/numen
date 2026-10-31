@@ -4,7 +4,7 @@ import { mount } from '@vue/test-utils'
 import { createPluginHost, createPluginPaneWrapper } from './host'
 import { registerPluginStyle } from '@numen/plugin-host'
 import { CONVERSATION } from '@numen/plugin-sdk'
-import { createMockManifest } from '@numen/plugin-sdk/testing'
+import { createMockManifest } from '@numen/plugin-host/testing'
 import type { PluginHostDeps } from './types'
 
 describe('createPluginHost', () => {
