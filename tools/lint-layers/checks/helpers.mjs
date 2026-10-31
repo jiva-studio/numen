@@ -14,9 +14,6 @@ export const GO_MODULE_ROOT = "github.com/jiva-studio/numen/";
 /** The source files read for references, by extension. */
 export const SCRIPT_EXTENSIONS = new Set([".ts", ".tsx", ".mts", ".cts", ".js", ".mjs", ".cjs", ".vue"]);
 
-/** The ids of the application windows. */
-export const WINDOW_IDS = ["editor", "flashcards", "desktop.editor", "desktop.flashcards", "mobile"];
-
 /** Tests, stories, test kits of a window, fixtures and generated code. */
 export const NOT_SHIPPED = /(_test\.go|\.(test|spec|stories)\.ts|\.pb\.go|\.connect\.go)$|(^|\/)(testing|testdata|fixtures|e2e|gen)\//;
 
@@ -302,15 +299,6 @@ export function readSource(file) {
   if (file.endsWith(".vue")) return readScript(getVueScript(text));
   if (/\.(ts|tsx|mts|cts|js|mjs|cjs)$/.test(file)) return readScript(text);
   return null;
-}
-
-/** Every match of `pattern` in the code of a source, with its line and the text it matched. */
-export function findInCode(code, pattern) {
-  const found = [];
-  code.split("\n").forEach((text, index) => {
-    for (const match of text.matchAll(pattern)) found.push({ line: index + 1, symbol: match[1] ?? match[0] });
-  });
-  return found;
 }
 
 /** True when `target` is `root` or a path below it. */
