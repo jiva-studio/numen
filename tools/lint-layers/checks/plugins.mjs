@@ -2,10 +2,8 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { readPluginManifests } from "../../shared/manifests.mjs";
-import { loadPluginDictionary } from "./dictionary.mjs";
 import {
   MODULES_DIR,
-  NOT_SHIPPED,
   REPO_ROOT,
   SCRIPT_EXTENSIONS,
   WINDOW_IDS,
@@ -388,93 +386,6 @@ export function verifyPluginsStandaloneRepo() {
   failOnFindings("A plugin is tied to the monorepo by relative paths, libs/notes, or its own .proto", findPluginStandaloneViolations());
 }
 
-/** The tab kinds, note types, command ids and condition values a manifest contributes, lower-case. */
-export function listContributedTokens(manifest) {
-  const tokens = [];
-  for (const { kind } of manifest.contributes?.tabKinds ?? []) tokens.push(kind, kind.replace(/^reader:/, ""));
-  for (const { type } of manifest.contributes?.noteTypes ?? []) tokens.push(type);
-  for (const command of manifest.commands ?? []) tokens.push(command.id, ...(command.when ?? []).flatMap((condition) => condition.is ?? []));
-  return [...new Set(tokens.filter(Boolean).map((token) => token.toLowerCase()))];
-}
-
-/**
- * The tab kinds, note types, command ids and text kinds a plugin owns: those its manifest contributes
- * and no other manifest states in any value. A token that the manifests of two or more plugins state
- * identifies no plugin and is not listed.
- *
- * @param {{ name: string, manifest: object }[]} manifests - each plugin folder with its parsed manifest
- * @param {Map<string, Set<string>>} words - the words of one manifest, from `loadPluginDictionary`
- */
-export function loadOwnedTokens(manifests = readPluginManifests(path.join(MODULES_DIR, "plugins")), words = loadPluginDictionary()) {
-  const owned = new Map();
-  for (const { name, manifest } of manifests) {
-    for (const token of listContributedTokens(manifest)) {
-      const owners = words.get(token);
-      if (owners?.size === 1 && owners.has(name)) owned.set(token, { token, owners: [name] });
-    }
-  }
-  return [...owned.values()];
-}
-
-const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-/** The lines of a manifest that state a token another plugin owns, as findings. */
-export function findForeignTokensInManifest(file, plugin, text, ownedTokens) {
-  const found = [];
-  text.split("\n").forEach((line, idx) => {
-    for (const { token, owners } of ownedTokens) {
-      if (!owners.includes(plugin) && new RegExp(`"${escapeRegExp(token)}"`).test(line)) {
-        found.push({ file, line: idx + 1, symbol: `"${token}" (owned by ${owners.join(", ")})` });
-      }
-    }
-  });
-  return found;
-}
-
-/** Every reference in a plugin to another plugin's manifest id, tab kind, text kind or menu/command id. */
-function findCrossPluginKnowledge() {
-  const pluginsDir = path.join(MODULES_DIR, "plugins");
-  const pluginNames = fs
-    .readdirSync(pluginsDir, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules")
-    .map((e) => e.name);
-  const manifestIds = new Map(readPluginManifests(pluginsDir).map(({ name, manifest }) => [manifest.id, name]));
-  const ownedTokens = loadOwnedTokens().filter(({ token }) => !manifestIds.has(token));
-  requireMatches("tokens owned by one plugin", ownedTokens.length, 10);
-  const found = [];
-  const listed = spawnSync("git", ["ls-files", "--", "plugins"], { cwd: REPO_ROOT, encoding: "utf8" });
-  for (const file of (listed.stdout || "").split("\n").filter(Boolean)) {
-    if (/\/frontend\/gen\/|\.pb\.go$|\.connect\.go$/.test(file) || path.basename(file) === "eslint.config.js") continue;
-    const plugin = file.split("/")[1];
-    if (!pluginNames.includes(plugin)) continue;
-    if (path.basename(file) === "manifest.json") {
-      found.push(...findForeignTokensInManifest(file, plugin, fs.readFileSync(path.join(REPO_ROOT, file), "utf8"), ownedTokens));
-      continue;
-    }
-    const source = readSource(file);
-    if (!source) continue;
-    for (const { line, value } of source.literals) {
-      const idOwner = manifestIds.get(value);
-      if (idOwner && idOwner !== plugin) {
-        found.push({ file, line, symbol: `${JSON.stringify(value)} (plugin ID of ${idOwner})` });
-      }
-      if (!NOT_SHIPPED.test(file)) {
-        for (const { token, owners } of ownedTokens) {
-          if (!owners.includes(plugin) && value === token) {
-            found.push({ file, line, symbol: `${JSON.stringify(value)} (owned by ${owners.join(", ")})` });
-          }
-        }
-      }
-    }
-  }
-  return found;
-}
-
-/** A plugin knows no other plugin's ID, tab kind, text kind or command ID. */
-export function verifyPluginsNoCrossPluginKnowledge() {
-  failOnFindings("A plugin hardcodes another plugin's ID, tab kind, text kind or command", findCrossPluginKnowledge());
-}
-
 /** Plugin backend internal layers (inner packages under backend/<pkg> must not import backend/service or backend/engine). */
 function findPluginBackendLayerInversions() {
   const found = [];
@@ -753,13 +664,6 @@ export const PLUGIN_VERIFIERS = [
     module: "plugins",
     name: "Plugins Import the SDK and UI Through Their Main Entry (only the test entry, stylesheets and build entries a package declares in exports)",
     run: verifyPluginsUseMainEntry,
-  },
-  {
-    id: "plugins-no-cross-plugin-knowledge",
-    scope: "plugins",
-    module: "plugins",
-    name: "Plugins Know Nothing of Other Plugins (no cross-plugin IDs, tab kinds, text kinds or command IDs)",
-    run: verifyPluginsNoCrossPluginKnowledge,
   },
   {
     id: "plugins-standalone-repo",

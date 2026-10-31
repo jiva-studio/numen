@@ -1,16 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { createRequire } from "node:module";
 import { listPluginNames, parseManifest, MANIFEST_FILE } from "../../shared/manifests.mjs";
-import { REPO_ROOT, listShippedFiles, readGo, readSource } from "./helpers.mjs";
-
-const require = createRequire(import.meta.url);
-
-/** Where the shared vocabulary of plugins is defined; words found as literals there are data, not plugin names. */
-const DATA_SOURCES = ["libs/plugin-sdk-ts/src", "libs/plugin-sdk-go", "libs/protocol/proto"];
-
-/** The libraries whose own words are common vocabulary, unless the check reads that library. */
-const HOST_VOCABULARY = ["libs/core", "libs/notes"];
+import { REPO_ROOT, listShippedFiles, readSource } from "./helpers.mjs";
 
 const MIN_WORD_LENGTH = 3;
 const TOKEN = /^[A-Za-z][\w.:*-]*$/;
@@ -128,12 +119,6 @@ export function loadWordsOf(roots) {
   return words;
 }
 
-/** The words the SDKs and the protocol define, as literals or as names: shared data, not plugin names. */
-export function loadDataWords(scanned = []) {
-  const isScanned = (root) => scanned.some((one) => one === root || one.startsWith(root + "/") || root.startsWith(one + "/"));
-  return loadWordsOf([...DATA_SOURCES, ...HOST_VOCABULARY.filter((root) => !isScanned(root))]);
-}
-
 /** The libraries that define the contracts between the host and a plugin; their words are not implementation names. */
 const CONTRACT_SOURCES = ["libs/protocol", "libs/notes"];
 
@@ -193,11 +178,6 @@ export function subtractDataWords(manifestWords, data) {
   return dictionary;
 }
 
-/** The dictionary of plugin names: manifest words minus the shared data words. */
-export function loadPluginDictionary(scanned = []) {
-  return subtractDataWords(loadManifestWords(), loadDataWords(scanned));
-}
-
 const splitIdentifier = splitSegments;
 
 /** The dictionary words an identifier is made of; a word of a plugin id is matched whole, never inside a longer word. */
@@ -212,78 +192,4 @@ export function matchIdentifier(name, dictionary) {
     }
   }
   return hits;
-}
-
-/** The dictionary words a literal states: the whole value or one of its separated segments. */
-export function matchLiteral(value, dictionary) {
-  return splitWords(value).filter((word) => dictionary.has(word));
-}
-
-let tsModule;
-function getTypeScript() {
-  tsModule ??= require("typescript");
-  return tsModule;
-}
-
-/** The script text of a single-file component and the line its script starts at. */
-function readVueScripts(text) {
-  const { parse } = require("@vue/compiler-sfc");
-  const { descriptor } = parse(text);
-  return [descriptor.script, descriptor.scriptSetup]
-    .filter(Boolean)
-    .map((block) => ({ text: block.content, lineOffset: block.loc.start.line - 1 }));
-}
-
-/**
- * Every dictionary word a TypeScript or Vue source states: string literals, template literal heads,
- * property keys, enum members, `case` labels and identifiers. Each hit has its line and kind.
- */
-export function findWordsInScript(file, dictionary, text = fs.readFileSync(path.join(REPO_ROOT, file), "utf8")) {
-  const ts = getTypeScript();
-  const scripts = file.endsWith(".vue") ? readVueScripts(text) : [{ text, lineOffset: 0 }];
-  const found = [];
-  for (const script of scripts) {
-    const kind = file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
-    const sourceFile = ts.createSourceFile(file, script.text, ts.ScriptTarget.Latest, true, kind);
-    const report = (node, symbol, how) => {
-      const line = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1 + script.lineOffset;
-      found.push({ file, line, symbol: `${how} ${JSON.stringify(symbol)}` });
-    };
-    const visit = (node) => {
-      if (ts.isStringLiteralLike(node) || ts.isTemplateHead(node)) {
-        const insideImport = node.parent && (ts.isImportDeclaration(node.parent) || ts.isExportDeclaration(node.parent) || ts.isExternalModuleReference(node.parent) || ts.isImportTypeNode?.(node.parent));
-        const isCall = node.parent && ts.isCallExpression(node.parent) && node.parent.expression.kind === ts.SyntaxKind.ImportKeyword;
-        if (!insideImport && !isCall) {
-          const how = node.parent && ts.isCaseClause(node.parent) ? "case" : "literal";
-          for (const word of matchLiteral(node.text, dictionary)) report(node, word, how);
-        }
-      } else if (ts.isIdentifier(node) || ts.isPrivateIdentifier(node)) {
-        const parent = node.parent;
-        const isPropertyKey = parent && (ts.isPropertyAssignment(parent) || ts.isPropertySignature(parent)) && parent.name === node;
-        const isEnumMember = parent && ts.isEnumMember(parent) && parent.name === node;
-        const how = isEnumMember ? "enum member" : isPropertyKey ? "key" : "identifier";
-        for (const word of matchIdentifier(node.text, dictionary)) report(node, word, how);
-      }
-      ts.forEachChild(node, visit);
-    };
-    visit(sourceFile);
-  }
-  return found;
-}
-
-/** Every dictionary word a Go source states: string literals and identifiers. */
-export function findWordsInGo(file, dictionary, text = fs.readFileSync(path.join(REPO_ROOT, file), "utf8")) {
-  const source = readGo(text);
-  const found = [];
-  for (const { line, value } of source.literals) {
-    for (const word of matchLiteral(value, dictionary)) found.push({ file, line, symbol: `literal ${JSON.stringify(word)}` });
-  }
-  source.code.split("\n").forEach((text, index) => {
-    for (const match of text.matchAll(/[A-Za-z_]\w*/g)) {
-      for (const word of matchIdentifier(match[0], dictionary)) {
-        found.push({ file, line: index + 1, symbol: `identifier ${JSON.stringify(word)}` });
-      }
-    }
-  });
-  return found;
 }

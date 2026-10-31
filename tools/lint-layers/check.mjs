@@ -17,7 +17,7 @@
  *   apps      - Application FSD layer hierarchies (desktop editor, flashcards)
  *
  * Modules:
- *   core, libraries, notes, protocol, kinds, ui, shell, host, wire, sdk, lint, docs, plugins, boundary, desktop, editor, flashcards
+ *   core, libraries, notes, protocol, ui, shell, host, wire, sdk, lint, docs, plugins, boundary, desktop, editor, flashcards
  */
 import { spawnSync } from "node:child_process";
 import process from "node:process";
@@ -25,12 +25,14 @@ import { CORE_VERIFIERS } from "./checks/core.mjs";
 import { CORE_CLIENT_VERIFIERS } from "./checks/coreClient.mjs";
 import { DOCS_VERIFIERS } from "./checks/docs.mjs";
 import { FRONTEND_VERIFIERS } from "./checks/frontend.mjs";
+import { IDENTIFIER_VERIFIERS } from "./checks/identifiers.mjs";
 import { REPO_ROOT } from "./checks/helpers.mjs";
 import { DISCIPLINE_VERIFIERS } from "./checks/discipline.mjs";
 import { LIBRARY_VERIFIERS } from "./checks/libraries.mjs";
 import { LINT_CONFIG_VERIFIERS } from "./checks/lintConfig.mjs";
 import { MANIFEST_VERIFIERS } from "./checks/manifests.mjs";
 import { PLUGIN_VERIFIERS } from "./checks/plugins.mjs";
+import { PROTOCOL_VERIFIERS } from "./checks/protocol.mjs";
 import { assertGolangciLintBuild } from "./checks/tools.mjs";
 import { VOCABULARY_VERIFIERS } from "./checks/vocabulary.mjs";
 
@@ -42,6 +44,8 @@ const VERIFIERS = [
   ...DOCS_VERIFIERS,
   ...FRONTEND_VERIFIERS.filter((v) => v.scope === "libs"),
   ...LINT_CONFIG_VERIFIERS,
+  ...PROTOCOL_VERIFIERS,
+  ...IDENTIFIER_VERIFIERS,
   ...VOCABULARY_VERIFIERS,
   ...DISCIPLINE_VERIFIERS.filter((v) => v.scope === "libs"),
   ...PLUGIN_VERIFIERS,
@@ -119,7 +123,6 @@ function getChangedModules() {
     if (file.startsWith("libs/notes/")) matched.add("notes");
     if (file.startsWith("libs/")) matched.add("libraries");
     if (file.startsWith("libs/protocol/") || file.startsWith("tools/lint-layers/")) matched.add("protocol");
-    if (/^(libs\/(core|notes|plugin-sdk-go|plugin-sdk-ts|ui)|apps\/desktop\/editor|tools\/lint-layers)\//.test(file)) matched.add("kinds");
     if (file.startsWith("tools/lint-layers/")) ["ui", "plugins"].forEach((one) => matched.add(one));
     if (file.startsWith("libs/plugin-sdk-go/") || file.startsWith("libs/plugin-sdk-ts/")) matched.add("sdk");
     if (file.startsWith("libs/ui/core/")) matched.add("ui");
