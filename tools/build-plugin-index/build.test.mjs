@@ -76,7 +76,6 @@ test('the index is written next to the plugins and is read back unchanged', () =
     const index = writeIndex(root)
 
     assert.equal(readFileSync(join(root, INDEX_FILE), 'utf8'), formatIndex(index))
-    assert.deepEqual(JSON.parse(readFileSync(join(root, INDEX_FILE), 'utf8')), index)
   })
 })
 

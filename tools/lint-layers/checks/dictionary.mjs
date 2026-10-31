@@ -22,11 +22,8 @@ export function listManifestFiles() {
   return listPluginNames(path.join(REPO_ROOT, "plugins")).map((name) => `plugins/${name}/${MANIFEST_FILE}`);
 }
 
-/**
- * The manifest fields that hold presentation or configuration values, which name no plugin. A category
- * groups the plugins of a list under a word several plugins share.
- */
-const PRESENTATION_KEYS = new Set(["icon", "key", "title", "description", "default", "label", "unit", "placeholder", "name", "category"]);
+/** The manifest fields that hold presentation or configuration values, which name no plugin. */
+const PRESENTATION_KEYS = new Set(["icon", "key", "title", "description", "default", "label", "unit", "placeholder", "name"]);
 
 /** The manifest fields that name the windows a plugin runs in; the host defines them. */
 const HOST_KEYS = new Set(["targets"]);
@@ -63,8 +60,8 @@ export function splitWords(text) {
   return [...words].filter((word) => word.length >= MIN_WORD_LENGTH);
 }
 
-/** The reverse-DNS prefix every plugin id shares, such as `md.numen.`. */
-function getIdPrefix(ids) {
+/** The number of leading segments every plugin id shares, such as the two of `md.numen.`. */
+export function getIdPrefix(ids) {
   const segments = ids.map((id) => id.split("."));
   const prefix = [];
   for (let i = 0; segments.every((one) => one.length > i && one[i] === segments[0][i]); i++) prefix.push(segments[0][i]);
@@ -72,8 +69,9 @@ function getIdPrefix(ids) {
 }
 
 /**
- * The words the manifests of all plugins state, each with the plugin directories that state it: every
- * single-token value, and the segments of each plugin id that no other plugin id shares.
+ * The words the manifests of all plugins state, each with the plugin directory that states it: every
+ * single-token value, and the segments of each plugin id that no other plugin id shares. A word that
+ * the manifests of two or more plugins state identifies no plugin and is left out.
  */
 export function loadManifestWords(manifestFiles = listManifestFiles(), readFile = (file) => fs.readFileSync(path.join(REPO_ROOT, file), "utf8")) {
   const words = new Map();
@@ -106,6 +104,7 @@ export function loadManifestWords(manifestFiles = listManifestFiles(), readFile 
     }
   }
   for (const word of hostWords) words.delete(word);
+  for (const [word, plugins] of words) if (plugins.size > 1) words.delete(word);
   return words;
 }
 
