@@ -6,6 +6,7 @@ import js from '@eslint/js'
 import globals from 'globals'
 import astro from 'eslint-plugin-astro'
 import tseslint from 'typescript-eslint'
+import { createStrictRules, createStrictScriptRules } from '../../tools/lint-layers/base-eslint.mjs'
 
 /** A parameter that is named and unused is part of a required signature; a leading underscore marks it. */
 const unused = [
@@ -32,6 +33,22 @@ export default tseslint.config(
   {
     files: ['**/*.mjs'],
     languageOptions: { globals: globals.node },
-    rules: { 'no-unused-vars': unused },
+    rules: { 'no-unused-vars': unused, ...createStrictScriptRules() },
   },
+
+  {
+    files: ['**/*.ts'],
+    languageOptions: {
+      parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
+    },
+  },
+
+  {
+    files: ['**/*.astro'],
+    languageOptions: {
+      parserOptions: { project: true, tsconfigRootDir: import.meta.dirname },
+    },
+  },
+
+  { files: ['**/*.ts', '**/*.astro'], rules: createStrictRules() },
 )

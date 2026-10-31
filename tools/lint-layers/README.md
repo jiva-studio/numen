@@ -37,6 +37,7 @@ Each check has an id, a scope (`libs`, `plugins` or `apps`) and a module; `node 
    - `docs-name-existing-tests`: Rule Documents Name Declared Go Tests.
    - `docs-list-verifiers`: Layer Validator README Lists Every Registered Verifier.
    - `all-ts-packages-eslint`: Every TypeScript Package Has ESLint Configured.
+   - `strict-lint-rules`: every directory with an `eslint.config.js`, and every plugin with a `package.json`, resolves (`eslint --print-config` on a source file and a test file) `no-void`, `no-empty` (`allowEmptyCatch: false`) and the typed `@typescript-eslint` rules `no-empty-function`, `no-floating-promises` (`ignoreVoid: false`), `no-misused-promises`, `await-thenable` and `switch-exhaustiveness-check` as errors. The shared definition is `createStrictRules` in `base-eslint.mjs`; `plugins/.example/eslint.config.js` carries the same block because a plugin config imports nothing outside its directory.
 2. **Plugins (`plugins`)**:
    - `plugins-independence`: the `Plugin` tests of `libs/core/container`.
    - `plugins-leakage`: every `manifest.json` has an id, a name and a version; there is no shared plugin folder; no plugin imports `libs/core`; no plugin imports another, by a Go import, by a relative TypeScript or Vue import that resolves into another plugin's directory, or by another plugin's package name.

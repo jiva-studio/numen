@@ -185,14 +185,14 @@ describe('giving a day a level', () => {
   it('returns the day it was given and the level chosen for it', async () => {
     const row = mountChips()
     await row.findAll('button')[0]?.trigger('click')
-    await document.body.querySelectorAll<HTMLElement>('.menu__item')[2]?.click()
+    document.body.querySelectorAll<HTMLElement>('.menu__item')[2]?.click()
     expect(getChosen(row)).toEqual([['mon', 0.25]])
   })
 
   it('returns a day put at the whole of it like any other', async () => {
     const row = mountChips()
     await row.findAll('button')[5]?.trigger('click')
-    await document.body.querySelectorAll<HTMLElement>('.menu__item')[6]?.click()
+    document.body.querySelectorAll<HTMLElement>('.menu__item')[6]?.click()
     expect(getChosen(row)).toEqual([['sat', 1]])
   })
 

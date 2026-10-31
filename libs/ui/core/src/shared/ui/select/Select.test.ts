@@ -140,7 +140,8 @@ describe('choosing', () => {
   it('returns the identifier it was given', async () => {
     const control = mountSelect()
     await openSelect(control)
-    await rows()[2]!.click()
+    rows()[2]!.click()
+    await nextTick()
     expect(getEmitted(control)).toStrictEqual(['large'])
   })
 

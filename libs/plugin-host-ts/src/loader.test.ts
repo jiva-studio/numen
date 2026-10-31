@@ -21,13 +21,13 @@ describe('createPluginLoader', () => {
   } {
     const contexts = new Map<string, PluginContext>()
     const settings = new Map<string, unknown>()
-    const settingListeners = new Map<string, Set<(val: unknown) => void>>()
+    const settingListeners = new Map<string, Set<(val: unknown) => void | Promise<void>>>()
 
     const getSetting: NonNullable<LoaderHost['getSetting']> = vi.fn(
       (pluginId: string, key: string) => settings.get(`${pluginId}.${key}`),
     ) as unknown as NonNullable<LoaderHost['getSetting']>
     const onSettingChange = vi.fn(
-      (pluginId: string, key: string, handler: (val: unknown) => void) => {
+      (pluginId: string, key: string, handler: (val: unknown) => void | Promise<void>) => {
         const compositeKey = `${pluginId}.${key}`
         let activeSet = settingListeners.get(compositeKey)
         if (!activeSet) {

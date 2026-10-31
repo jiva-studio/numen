@@ -28,6 +28,47 @@ export function createClockSelectors(clockFunction) {
 }
 
 /**
+ * The rules every package enforces on every file, tests included. A promise is awaited, returned
+ * or given an error channel; `void` never discards a value; no block or function body is empty.
+ *
+ * @param {{ isTyped?: boolean }} options `isTyped` adds the rules that need type information
+ * @returns {Record<string, unknown>}
+ */
+export function createStrictRules({ isTyped = true } = {}) {
+  return {
+    'no-void': 'error',
+    'no-empty': ['error', { allowEmptyCatch: false }],
+    'no-empty-function': 'off',
+    '@typescript-eslint/no-empty-function': 'error',
+    ...(isTyped
+      ? {
+          '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: false }],
+          '@typescript-eslint/no-misused-promises': 'error',
+          '@typescript-eslint/await-thenable': 'error',
+          '@typescript-eslint/switch-exhaustiveness-check': [
+            'error',
+            { considerDefaultExhaustiveForUnions: true },
+          ],
+        }
+      : {}),
+  }
+}
+
+/**
+ * The strict rules for plain JavaScript files, which carry no TypeScript plugin and no type
+ * information.
+ *
+ * @returns {Record<string, unknown>}
+ */
+export function createStrictScriptRules() {
+  return {
+    'no-void': 'error',
+    'no-empty': ['error', { allowEmptyCatch: false }],
+    'no-empty-function': 'error',
+  }
+}
+
+/**
  * Custom rule: Enforce extracting large props interfaces into a separate *.types.ts file.
  */
 const SECTION_ORDER = {
@@ -776,17 +817,7 @@ export function createBaseConfig(dirname, options = {}) {
       },
       rules: {
         'no-console': 'error',
-        ...(useProjectService
-          ? {
-              '@typescript-eslint/no-floating-promises': 'error',
-              '@typescript-eslint/no-misused-promises': 'error',
-              '@typescript-eslint/await-thenable': 'error',
-              '@typescript-eslint/switch-exhaustiveness-check': [
-                'error',
-                { considerDefaultExhaustiveForUnions: true },
-              ],
-            }
-          : {}),
+        ...createStrictRules({ isTyped: useProjectService }),
         '@typescript-eslint/no-unused-vars': [
           'error',
           { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
@@ -998,9 +1029,6 @@ export function createBaseConfig(dirname, options = {}) {
       rules: {
         '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-non-null-assertion': 'off',
-        '@typescript-eslint/no-floating-promises': 'off',
-        '@typescript-eslint/no-misused-promises': 'off',
-        '@typescript-eslint/await-thenable': 'off',
         'no-console': 'off',
         'no-restricted-globals': 'off',
         'require-yield': 'off',

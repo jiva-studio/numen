@@ -17,8 +17,16 @@ function lintPackage(repoRoot, relDir, pkgName) {
     const eslintBin = path.join(repoRoot, "node_modules/.bin/eslint");
     const targetDir = path.join(repoRoot, relDir);
 
+    const fail = (reason) =>
+      resolve({
+        pkgName,
+        errorCount: 1,
+        issues: [`[${pkgName}] ${reason} (fatal-error)`],
+        ruleStats: { "fatal-error": 1 },
+      });
+
     if (!fs.existsSync(eslintBin) || !fs.existsSync(targetDir)) {
-      resolve({ pkgName, errorCount: 0, issues: [], ruleStats: {} });
+      fail(`eslint or package directory missing: ${eslintBin}, ${targetDir}`);
       return;
     }
 
@@ -28,9 +36,15 @@ function lintPackage(repoRoot, relDir, pkgName) {
     });
 
     let stdout = "";
+    let stderr = "";
     child.stdout.on("data", (d) => {
       stdout += d.toString();
     });
+    child.stderr.on("data", (d) => {
+      stderr += d.toString();
+    });
+
+    child.on("error", (error) => fail(`eslint did not start: ${error.message}`));
 
     child.on("close", () => {
       try {
@@ -55,7 +69,7 @@ function lintPackage(repoRoot, relDir, pkgName) {
 
         resolve({ pkgName, errorCount, issues, ruleStats });
       } catch {
-        resolve({ pkgName, errorCount: 0, issues: [], ruleStats: {} });
+        fail(`eslint produced no JSON report: ${stderr.trim() || stdout.trim()}`);
       }
     });
   });

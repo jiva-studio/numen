@@ -17,7 +17,7 @@
  *   apps      - Application FSD layer hierarchies (desktop editor, flashcards)
  *
  * Modules:
- *   core, libraries, notes, protocol, kinds, ui, shell, host, wire, sdk, docs, plugins, boundary, desktop, editor, flashcards
+ *   core, libraries, notes, protocol, kinds, ui, shell, host, wire, sdk, lint, docs, plugins, boundary, desktop, editor, flashcards
  */
 import { spawnSync } from "node:child_process";
 import process from "node:process";
@@ -27,6 +27,7 @@ import { FRONTEND_VERIFIERS } from "./checks/frontend.mjs";
 import { REPO_ROOT } from "./checks/helpers.mjs";
 import { DISCIPLINE_VERIFIERS } from "./checks/discipline.mjs";
 import { LIBRARY_VERIFIERS } from "./checks/libraries.mjs";
+import { LINT_CONFIG_VERIFIERS } from "./checks/lintConfig.mjs";
 import { MANIFEST_VERIFIERS } from "./checks/manifests.mjs";
 import { PLUGIN_VERIFIERS } from "./checks/plugins.mjs";
 import { assertGolangciLintBuild } from "./checks/tools.mjs";
@@ -38,6 +39,7 @@ const VERIFIERS = [
   ...MANIFEST_VERIFIERS,
   ...DOCS_VERIFIERS,
   ...FRONTEND_VERIFIERS.filter((v) => v.scope === "libs"),
+  ...LINT_CONFIG_VERIFIERS,
   ...VOCABULARY_VERIFIERS,
   ...DISCIPLINE_VERIFIERS.filter((v) => v.scope === "libs"),
   ...PLUGIN_VERIFIERS,
@@ -121,6 +123,7 @@ function getChangedModules() {
     if (file.startsWith("libs/ui/core/")) matched.add("ui");
     if (file.startsWith("libs/ui/shell/")) matched.add("shell");
     if (file.startsWith("libs/plugin-host-ts/")) matched.add("host");
+    if (/(^|\/)(eslint\.config\.js|tsconfig\.json)$/.test(file) || file.startsWith("tools/lint-layers/")) matched.add("lint");
     if (file.startsWith("plugins/")) matched.add("plugins");
     if (file.startsWith("apps/desktop/")) matched.add("desktop");
     if (file.startsWith("apps/")) matched.add("apps");

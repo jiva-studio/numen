@@ -1,13 +1,13 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { FLOOR_SOURCE } from '../model/codes'
 import { createFakeClient, createState } from '../model/fixtures'
 import FloorPanel from './FloorPanel.vue'
 
 globalThis.ResizeObserver ??= class {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe = vi.fn()
+  unobserve = vi.fn()
+  disconnect = vi.fn()
 }
 
 async function render(
@@ -62,17 +62,17 @@ describe('FloorPanel', () => {
   })
 
   it('disables the recalculate button while calibrating', async () => {
-    let release: () => void = () => {}
+    const releases: Array<() => void> = []
     const { wrapper } = await render(createState(), (fake) =>
       fake.calibrateFloor.mockImplementation(
-        () => new Promise((resolve) => (release = () => resolve({ outcome: 1 }))),
+        () => new Promise((resolve) => releases.push(() => resolve({ outcome: 1 }))),
       ),
     )
     await wrapper.get('[data-testid="floor-recalculate"]').trigger('click')
     const button = wrapper.get('[data-testid="floor-recalculate"]')
     expect(button.attributes('disabled')).toBeDefined()
     expect(button.text()).toBe('Calculating…')
-    release()
+    releases.forEach((release) => release())
     await flushPromises()
     expect(wrapper.get('[data-testid="floor-recalculate"]').attributes('disabled')).toBeUndefined()
   })
