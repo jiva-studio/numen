@@ -230,7 +230,7 @@ func hostOver(t *testing.T, plugins ...testPlugin) *plugin.Host {
 			"id": %q, "name": %q, "version": "1.0.0",
 			"capabilities": %s, "permissions": %s,
 			"targets": ["desktop.editor"],
-			"backend": {"type": "process", "entrypoint": "bin/x", "serviceName": "numen.v1.PluginToolService"}
+			"services": ["numen.v1.PluginToolService"], "backend": {"entrypoint": "bin/x"}
 		}`, one.id, one.id, capabilities, permissions)
 		if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 			t.Fatal(err)

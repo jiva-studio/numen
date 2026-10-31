@@ -133,7 +133,7 @@ func TestAPluginWithoutTheEmbeddingCapabilityIsNotTheProvider(t *testing.T) {
 		"name": "Vectors",
 		"version": "1.0.0",
 		"targets": ["desktop.editor"],
-		"backend": {"type": "process", "entrypoint": "bin/vectors", "serviceName": "numen.v1.EmbeddingService"}
+		"services": ["numen.v1.EmbeddingService"], "backend": {"entrypoint": "bin/vectors"}
 	}`)
 	cfg := container.Config{PluginHost: host}
 
@@ -154,7 +154,7 @@ func TestSearchWithDisabledEmbeddingProviderMatchesWords(t *testing.T) {
 		"version": "1.0.0",
 		"capabilities": ["embedding"],
 		"targets": ["desktop.editor"],
-		"backend": {"type": "process", "entrypoint": "bin/vectors"}
+		"backend": {"entrypoint": "bin/vectors"}
 	}`)
 	host.SetSettings(map[string]map[string]any{"test.vectors": {"enabled": false}})
 	cfg, vault := makeScannedVault(t)

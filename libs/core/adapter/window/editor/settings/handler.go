@@ -323,7 +323,7 @@ func (h *Handler) ChoosePluginPath(
 func newWireSettingsViews(views []setting.PluginSettingsView) []*v1.PluginSettingsView {
 	out := make([]*v1.PluginSettingsView, 0, len(views))
 	for _, one := range views {
-		out = append(out, &v1.PluginSettingsView{Id: one.ID, Title: one.Title, After: one.After})
+		out = append(out, &v1.PluginSettingsView{Id: one.ID, Title: one.Title})
 	}
 	return out
 }

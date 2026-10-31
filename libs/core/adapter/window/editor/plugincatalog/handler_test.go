@@ -23,7 +23,7 @@ func entry(id string, state catalog.State, kind string) catalog.Entry {
 			TabKinds: []manifest.TabKind{{Kind: kind, Title: "Tab", Icon: "layers"}}, Feature: "a feature", Category: "views",
 		},
 		Source: "", State: state,
-		Requirements:    manifest.Requirements{Targets: nil, Protocol: 0, AppVersion: manifest.AppVersionRange{Min: "", Max: ""}},
+		Requirements:    manifest.Requirements{Targets: nil, Protocol: 0},
 		Incompatibility: nil,
 		Warnings:        nil,
 	}
@@ -31,7 +31,7 @@ func entry(id string, state catalog.State, kind string) catalog.Entry {
 
 func newHandler(t *testing.T, sources ...catalog.Source) *plugincatalog.Handler {
 	t.Helper()
-	service, err := catalog.NewService(catalog.Config{Target: "desktop.editor", AppVersion: "2026.10.0", Sources: sources, InstallDir: "", CacheDir: ""})
+	service, err := catalog.NewService(catalog.Config{Target: "desktop.editor", Sources: sources, InstallDir: "", CacheDir: ""})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +89,7 @@ func TestListCatalogReportsWhyAPluginCannotRun(t *testing.T) {
 	elsewhere := entry("org.example.cards", catalog.StateInstalled, "deck")
 	elsewhere.Requirements.Targets = []string{"desktop.flashcards"}
 	tooNew := entry("org.example.new", catalog.StateAvailable, "future")
-	tooNew.Requirements.AppVersion.Min = "2027.1.0"
+	tooNew.Requirements.Protocol = manifest.ProtocolVersion + 1
 	handler := newHandler(t, catalogtest.NewFakeSource("local", elsewhere, tooNew))
 
 	got, err := handler.ListCatalog(t.Context(), connect.NewRequest(&v1.ListCatalogRequest{}))
@@ -105,7 +105,7 @@ func TestListCatalogReportsWhyAPluginCannotRun(t *testing.T) {
 		}
 	}
 	if reasons["org.example.cards"] != v1.CatalogIncompatibility_CATALOG_INCOMPATIBILITY_TARGET ||
-		reasons["org.example.new"] != v1.CatalogIncompatibility_CATALOG_INCOMPATIBILITY_APP_TOO_OLD {
+		reasons["org.example.new"] != v1.CatalogIncompatibility_CATALOG_INCOMPATIBILITY_PROTOCOL {
 		t.Errorf("reasons = %v", reasons)
 	}
 }

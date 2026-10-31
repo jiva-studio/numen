@@ -11,7 +11,7 @@ import (
 )
 
 // ErrNoPathSetting is a plugin or a setting of it that holds no path.
-var ErrNoPathSetting = errors.New("the plugin declares no setting of type file or folder under that key")
+var ErrNoPathSetting = errors.New("the plugin declares no setting of type file under that key")
 
 // ChosenPath is the path the user chose for a setting.
 type ChosenPath struct {
@@ -19,8 +19,8 @@ type ChosenPath struct {
 	IsChosen bool
 }
 
-// ChoosePluginPath opens the machine's native file or folder picker for a
-// setting of type file or folder, and writes the chosen path.
+// ChoosePluginPath opens the machine's native file picker for a setting of
+// type file, and writes the chosen path.
 type ChoosePluginPath struct {
 	dialog  machineport.PathDialog
 	plugins func() []PluginInfo
@@ -42,13 +42,7 @@ func (u *ChoosePluginPath) Execute(ctx context.Context, pluginID, key string) (C
 	if err != nil {
 		return ChosenPath{}, err
 	}
-	var path string
-	var isChosen bool
-	if declared.Type == pluginport.SettingTypeFolder {
-		path, isChosen, err = u.dialog.ChooseFolder(ctx, declared.Title, "")
-	} else {
-		path, isChosen, err = u.dialog.ChooseFile(ctx, declared.Title, "", declared.Accept)
-	}
+	path, isChosen, err := u.dialog.ChooseFile(ctx, declared.Title, "", declared.Accept)
 	if err != nil || !isChosen {
 		return ChosenPath{}, err
 	}
@@ -62,7 +56,7 @@ func (u *ChoosePluginPath) findSetting(pluginID, key string) (PluginSetting, err
 			continue
 		}
 		for _, declared := range plugin.Settings {
-			if declared.Key == key && (declared.Type == pluginport.SettingTypeFile || declared.Type == pluginport.SettingTypeFolder) {
+			if declared.Key == key && declared.Type == pluginport.SettingTypeFile {
 				return declared, nil
 			}
 		}

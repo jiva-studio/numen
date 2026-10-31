@@ -35,23 +35,14 @@ func CreateTestPluginTree(t *testing.T, dir string) {
 		"name": "Sample Plugin",
 		"version": "1.0.0",
 		"description": "Sample",
-		"capabilities": ["org.example.reading"],
+		"capabilities": ["tools"],
 		"targets": ["desktop.editor"],
-		"activationEvents": [],
 		"contributes": {
-			"contentTypes": [{"type": "application/x-sample", "globs": ["*.sample"]}],
-			"handles": [{"purpose": "text-provider", "contentTypes": ["application/x-sample"]}]
+			"handles": [{"purpose": "text-provider", "contentTypes": ["application/pdf"]}]
 		},
 		"permissions": ["vault:read"],
-		"backend": {
-			"type": "process",
-			"entrypoint": "bin/sample",
-			"serviceName": "numen.v1.TextProviderService"
-		},
-		"frontend": {
-			"entrypoint": "dist/index.js",
-			"styles": "dist/styles.css"
-		},
+		"services": ["numen.v1.TextProviderService"], "backend": {"entrypoint": "bin/sample"},
+		"frontend": {},
 		"settings": []
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {

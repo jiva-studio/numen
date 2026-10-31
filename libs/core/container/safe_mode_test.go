@@ -31,7 +31,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 		"capabilities": ["embedding"],
 		"targets": ["desktop.editor"],
 		"permissions": ["vault:read"],
-		"backend": {"type": "process", "entrypoint": "bin/doc", "serviceName": "numen.sample.v1.SampleService"}
+		"services": ["numen.sample.v1.SampleService"], "backend": {"entrypoint": "bin/doc"}
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
@@ -106,7 +106,7 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 		t.Fatal(err)
 	}
 	manifest := `{"id": "md.numen.engines.ocr", "name": "OCR", "version": "1.0.0", "capabilities": ["embedding"],
-		"targets": ["desktop.editor"], "backend": {"type": "process", "entrypoint": "bin/engines.ocr"}}`
+		"targets": ["desktop.editor"], "backend": {"entrypoint": "bin/engines.ocr"}}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}

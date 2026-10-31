@@ -29,7 +29,6 @@ type (
 	PluginContributes      = pluginport.PluginContributes
 	PluginCommands         = pluginport.PluginCommands
 	PluginConfigurator     = pluginport.PluginConfigurator
-	PluginContentType      = pluginport.PluginContentType
 	PluginDiscoverer       = pluginport.PluginDiscoverer
 	PluginEmbeddedTexts    = pluginport.PluginEmbeddedTexts
 	PluginEmbeddingState   = pluginport.PluginEmbeddingState
@@ -88,6 +87,7 @@ type (
 )
 
 const (
+	ActivationEventAll          = pluginport.ActivationEventAll
 	CommandArgumentBoolean      = pluginport.CommandArgumentBoolean
 	CommandArgumentNumber       = pluginport.CommandArgumentNumber
 	CommandArgumentVersion      = pluginport.CommandArgumentVersion
@@ -135,7 +135,6 @@ const (
 	SettingStoredSecrets        = pluginport.SettingStoredSecrets
 	SettingTypeEnum             = pluginport.SettingTypeEnum
 	SettingTypeFile             = pluginport.SettingTypeFile
-	SettingTypeFolder           = pluginport.SettingTypeFolder
 	SettingTypeString           = pluginport.SettingTypeString
 	TaskUnitBytes               = pluginport.TaskUnitBytes
 	TaskUnitSeconds             = pluginport.TaskUnitSeconds
@@ -160,7 +159,6 @@ var (
 	ErrInvalidDependency      = pluginport.ErrInvalidDependency
 	ErrInvalidFrame           = pluginport.ErrInvalidFrame
 	ErrInvalidFloor           = pluginport.ErrInvalidFloor
-	ErrInvalidFrontend        = pluginport.ErrInvalidFrontend
 	ErrInvalidID              = pluginport.ErrInvalidID
 	ErrInvalidNoteType        = pluginport.ErrInvalidNoteType
 	ErrInvalidPermission      = pluginport.ErrInvalidPermission
@@ -189,7 +187,6 @@ var (
 	FormatSettingValue        = pluginport.FormatSettingValue
 	GetDependencyKinds        = pluginport.GetDependencyKinds
 	NormalizePermission       = pluginport.NormalizePermission
-	PluginActivationEvents    = pluginport.PluginActivationEvents
 	PluginCapabilities        = pluginport.PluginCapabilities
 	PluginPermissions         = pluginport.PluginPermissions
 )

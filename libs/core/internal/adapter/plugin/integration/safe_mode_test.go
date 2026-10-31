@@ -22,13 +22,11 @@ func TestHostSafeMode(t *testing.T) {
 		"version": "1.0.0",
 		"capabilities": ["embedding"],
 		"targets": ["desktop.editor"],
-		"activationEvents": [],
 		"contributes": {
-			"contentTypes": [{"type": "application/x-sample", "globs": ["*.sample"]}],
-			"handles": [{"purpose": "text-provider", "contentTypes": ["application/x-sample"]}]
+			"handles": [{"purpose": "text-provider", "contentTypes": ["application/pdf"]}]
 		},
 		"permissions": ["vault:read"],
-		"backend": {"type": "process", "entrypoint": "bin/sample", "serviceName": "numen.v1.TextProviderService"}
+		"services": ["numen.v1.TextProviderService"], "backend": {"entrypoint": "bin/sample"}
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
@@ -62,7 +60,7 @@ func TestHostSafeMode(t *testing.T) {
 		t.Fatalf("expected errSafeModeActive, got %v", err)
 	}
 
-	activated, err := host.TriggerEvent(ctx, "onFile:test.sample")
+	activated, err := host.TriggerEvent(ctx, "onFile:test.pdf")
 	if err != nil {
 		t.Fatalf("TriggerEvent error: %v", err)
 	}

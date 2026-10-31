@@ -82,24 +82,6 @@ func TestTheGeneratedPluginIndexEqualsTheManifests(t *testing.T) {
 	}
 }
 
-func TestTheIndexNamesTheFilesThePluginsOpen(t *testing.T) {
-	listed, err := indexsource.New([]string{indexPath}, nil).List(t.Context())
-	if err != nil {
-		t.Fatalf("List: %v", err)
-	}
-
-	opening := 0
-	for _, entry := range listed {
-		if len(entry.Contributes.FileTypes) > 0 {
-			opening++
-		}
-	}
-
-	if opening < 4 {
-		t.Errorf("%d plugins of the index open files: the rule is checked against too little", opening)
-	}
-}
-
 func writeCatalogPlugin(t *testing.T, dir, id, targets string) {
 	t.Helper()
 	folder := filepath.Join(dir, id)
@@ -107,7 +89,7 @@ func writeCatalogPlugin(t *testing.T, dir, id, targets string) {
 		t.Fatal(err)
 	}
 	text := `{"id":"` + id + `","name":"` + id + `","version":"1.0.0","targets":[` + targets + `],
-		"frontend":{"entrypoint":"dist/index.js"},
+		"frontend":{},
 		"contributes":{"tabKinds":[{"kind":"` + strings.ReplaceAll(id, ".", "-") + `","title":"Tab"}],"feature":"a feature","category":"views"}}`
 	if err := os.WriteFile(filepath.Join(folder, "manifest.json"), []byte(text), 0o600); err != nil {
 		t.Fatal(err)
@@ -126,7 +108,7 @@ func TestTheCatalogListsThePluginsOnDiskWithTheirEnabledFlagAndTheOfferedOnes(t 
 	cfg := Config{
 		PluginHost:    host,
 		PluginDirs:    []string{dir},
-		PluginCatalog: catalog.Config{Target: "desktop.editor", AppVersion: "2026.10.0", Sources: []catalog.Source{indexsource.New(nil, []string{offeredDir})}, InstallDir: "", CacheDir: ""},
+		PluginCatalog: catalog.Config{Target: "desktop.editor", Sources: []catalog.Source{indexsource.New(nil, []string{offeredDir})}, InstallDir: "", CacheDir: ""},
 	}
 
 	service := cfg.GetPluginCatalog()

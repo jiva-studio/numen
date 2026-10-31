@@ -435,7 +435,7 @@ func (h *Host) FindPluginByCapability(capability string) (manifest.Discovered, b
 	return p, err == nil
 }
 
-// TriggerEvent activates every enabled plugin whose activationEvents match the event and delivers the event to it.
+// TriggerEvent activates every enabled plugin that declares the activation event `*`, and every one with a backend that opens the file an `onFile:` event names, and delivers the event to it.
 func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error) {
 	h.mu.RLock()
 	if h.safeMode {
@@ -448,7 +448,7 @@ func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error)
 		if !h.isPluginEnabledLocked(id) {
 			continue
 		}
-		if p.Manifest.CanActivateOn(event) || h.isOpeningFileLocked(p, event) {
+		if p.Manifest.IsActivatedByAnyEvent() || h.isOpeningFileLocked(p, event) {
 			candidates = append(candidates, id)
 		}
 	}
@@ -1432,17 +1432,6 @@ func toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []plu
 				defJSON = string(b)
 			}
 		}
-		var minPtr, maxPtr, stepPtr *float64
-		if s.Min != 0 || s.Max != 0 {
-			minVal := s.Min
-			maxVal := s.Max
-			minPtr = &minVal
-			maxPtr = &maxVal
-		}
-		if s.Step != 0 {
-			stepVal := s.Step
-			stepPtr = &stepVal
-		}
 		options := s.Options
 		if s.Key == keyExecutablePath && len(options) == 0 {
 			options = resolveDiscoveredACPOptions()
@@ -1456,9 +1445,9 @@ func toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []plu
 			Palette:     s.Palette,
 			Icon:        s.Icon,
 			Options:     options,
-			Min:         minPtr,
-			Max:         maxPtr,
-			Step:        stepPtr,
+			Min:         s.Min,
+			Max:         s.Max,
+			Step:        s.Step,
 			Replaces:    s.Replaces,
 			OptionsBy:   s.OptionsBy,
 			When:        s.When,

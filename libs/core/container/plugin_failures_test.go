@@ -21,7 +21,7 @@ const sampleManifest = `{
 	"capabilities": [],
 	"targets": ["desktop.editor"],
 	"permissions": ["vault:read"],
-	"backend": {"type": "process", "entrypoint": "bin/sample", "serviceName": "numen.sample.v1.SampleService"}
+	"services": ["numen.sample.v1.SampleService"], "backend": {"entrypoint": "bin/sample"}
 }`
 
 func newFailingConfig(t *testing.T) Config {

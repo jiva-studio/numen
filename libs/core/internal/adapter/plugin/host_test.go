@@ -48,17 +48,11 @@ func createNamedTestPlugin(t *testing.T, dir, id string) {
 		"name": %q,
 		"version": "1.0.0",
 		"description": "test plugin",
-		"capabilities": ["test"],
+		"capabilities": ["tools"],
 		"targets": ["desktop.editor"],
 		"permissions": ["vault:read"],
-		"backend": {
-			"type": "process",
-			"entrypoint": "bin/test",
-			"serviceName": "numen.v1.TestService"
-		},
-		"frontend": {
-			"entrypoint": "dist/index.js"
-		},
+		"services": ["numen.v1.TestService"], "backend": {"entrypoint": "bin/test"},
+		"frontend": {},
 		"settings": []
 	}`, id, id)
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
@@ -85,9 +79,9 @@ func TestHostDiscoveryAndLookup(t *testing.T) {
 		t.Fatal("expected to find org.example.sample")
 	}
 
-	capPlugin, ok := host.FindPluginByCapability("org.example.reading")
+	capPlugin, ok := host.FindPluginByCapability("tools")
 	if !ok || capPlugin.Manifest.ID != "org.example.sample" {
-		t.Fatal("expected to find plugin by capability org.example.reading")
+		t.Fatal("expected to find plugin by capability tools")
 	}
 }
 
@@ -143,7 +137,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	host.Release("org.example.sample")
 
 	// TriggerEvent for matching event
-	activated, err := host.TriggerEvent(ctx, "onFile:test.sample")
+	activated, err := host.TriggerEvent(ctx, "onFile:test.pdf")
 	if err != nil {
 		t.Fatalf("TriggerEvent failed: %v", err)
 	}
@@ -259,7 +253,7 @@ func TestHostEmitEventActivation(t *testing.T) {
 	}
 
 	// Emit onFile event via debounced event bus
-	host.EmitEvent("onFile:document.sample")
+	host.EmitEvent("onFile:document.pdf")
 	if err := host.GetEventBus().Flush(ctx); err != nil {
 		t.Fatal(err)
 	}

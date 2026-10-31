@@ -114,11 +114,7 @@ func TestEmbedderBridge(t *testing.T) {
 		"version": "1.0.0",
 		"capabilities": ["embedding"],
 		"targets": ["desktop.editor"],
-		"backend": {
-			"type": "process",
-			"entrypoint": "bin/embeddings",
-			"serviceName": "numen.v1.EmbeddingService"
-		}
+		"services": ["numen.v1.EmbeddingService"], "backend": {"entrypoint": "bin/embeddings"}
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifestText), 0o600); err != nil {
 		t.Fatal(err)

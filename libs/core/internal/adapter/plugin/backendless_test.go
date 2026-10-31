@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
@@ -20,11 +21,10 @@ const frontendOnlyManifest = `{
 	"version": "1.0.0",
 	"targets": ["desktop.editor"],
 	"contributes": {
-		"contentTypes": [{"type": "application/x-numen-sketch", "globs": ["*.sketch"]}],
-		"readers": [{"id": "sketch", "contentTypes": ["application/x-numen-sketch"], "rank": "default"}]
+		"readers": [{"id": "sketch", "contentTypes": ["application/pdf"], "rank": "default"}]
 	},
 	"settings": [{"key": "grid", "type": "boolean", "title": "Grid", "default": true}],
-	"frontend": {"entrypoint": "dist/index.js"}
+	"frontend": {}
 }`
 
 func newFrontendOnlyHost(t *testing.T) (*Host, *int) {
@@ -38,6 +38,7 @@ func newFrontendOnlyHost(t *testing.T) (*Host, *int) {
 		t.Fatalf("write manifest: %v", err)
 	}
 	host := NewHost(testsupport.Machine, "desktop.editor", dir)
+	host.SetContentTypeTable(sharedmimeinfo.Open())
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
@@ -76,7 +77,7 @@ func TestAPluginWithoutABackendIsNeverLaunched(t *testing.T) {
 func TestAnEventForTheFilesOfAFrontendPluginStartsNothing(t *testing.T) {
 	host, launches := newFrontendOnlyHost(t)
 
-	activated, err := host.TriggerEvent(t.Context(), "onFile:.sketch")
+	activated, err := host.TriggerEvent(t.Context(), "onFile:pdf")
 	if err != nil {
 		t.Fatalf("TriggerEvent: %v", err)
 	}
@@ -92,7 +93,7 @@ func TestPluginInfosMarkThePluginsWithAFrontend(t *testing.T) {
 	if len(infos) != 1 || !infos[0].HasFrontend {
 		t.Fatalf("GetPluginInfos = %+v, want the sketch plugin with a frontend", infos)
 	}
-	want := []pluginport.PluginReaderInfo{{ID: "sketch", Extensions: []string{"sketch"}}}
+	want := []pluginport.PluginReaderInfo{{ID: "sketch", Extensions: []string{"pdf"}}}
 	if !reflect.DeepEqual(infos[0].Readers, want) {
 		t.Fatalf("Readers = %+v, want %+v", infos[0].Readers, want)
 	}

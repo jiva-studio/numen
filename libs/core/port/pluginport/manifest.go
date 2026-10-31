@@ -13,7 +13,6 @@ type (
 	PluginContextCondition = manifest.ContextCondition
 	PluginContext          = manifest.Context
 	PluginContributes      = manifest.Contributes
-	PluginContentType      = manifest.DeclaredContentType
 	PluginFrontend         = manifest.Frontend
 	PluginManifest         = manifest.Manifest
 	PluginManifestSetting  = manifest.Setting
@@ -39,6 +38,7 @@ const (
 	RuntimeONNX               = "onnxruntime"
 	HandlePlaybackCopy        = "playback-copy"
 	HandleTextProvider        = "text-provider"
+	ActivationEventAll        = manifest.ActivationEventAll
 	ContextAnyValue           = manifest.ContextAnyValue
 	PluginProtocolVersion     = manifest.ProtocolVersion
 	SettingStoredSecrets      = manifest.SettingStoredSecrets
@@ -46,7 +46,6 @@ const (
 	SettingTypeString         = manifest.SettingTypeString
 	SettingTypeEnum           = manifest.SettingTypeEnum
 	SettingTypeFile           = manifest.SettingTypeFile
-	SettingTypeFolder         = manifest.SettingTypeFolder
 	CommandArgumentString     = manifest.CommandArgumentString
 	CommandArgumentNumber     = manifest.CommandArgumentNumber
 	CommandArgumentBoolean    = manifest.CommandArgumentBoolean
@@ -72,7 +71,6 @@ var (
 	ErrInvalidCommandArgument = manifest.ErrInvalidCommandArgument
 	ErrInvalidDependency      = manifest.ErrInvalidDependency
 	ErrInvalidFrame           = manifest.ErrInvalidFrame
-	ErrInvalidFrontend        = manifest.ErrInvalidFrontend
 	ErrInvalidID              = manifest.ErrInvalidID
 	ErrInvalidNoteType        = manifest.ErrInvalidNoteType
 	ErrInvalidPermission      = manifest.ErrInvalidPermission
@@ -92,7 +90,6 @@ var (
 	FormatSettingValue        = manifest.FormatSettingValue
 	GetDependencyKinds        = manifest.GetDependencyKinds
 	NormalizePermission       = manifest.NormalizePermission
-	PluginActivationEvents    = manifest.PluginActivationEvents
 	PluginCapabilities        = manifest.PluginCapabilities
 	PluginPermissions         = manifest.PluginPermissions
 )
