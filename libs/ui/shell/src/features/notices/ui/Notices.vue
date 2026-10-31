@@ -9,7 +9,8 @@
  * It takes no space from what it covers, and each card's content is the caller's.
  */
 import { useTemplateRef } from 'vue'
-import { getNow, isDocumentHidden } from '@/shared/lib/dom'
+import { getNow } from '@numen/ui'
+import { isDocumentHidden } from '@/shared/lib/dom'
 import { LiveRegions } from './live-regions'
 import NoticeCard from './NoticeCard.vue'
 import { CARD_DELAY } from '../lib/duration'

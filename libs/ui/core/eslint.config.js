@@ -7,8 +7,11 @@
 
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'
-import { createBaseConfig, lifetimes } from '../../../tools/lint-layers/base-eslint.mjs'
+import { createBaseConfig, createClockSelectors, lifetimes } from '../../../tools/lint-layers/base-eslint.mjs'
 import { createLayerElements, createLayerPolicies } from '../../../tools/lint-layers/layers.mjs'
+
+/** The one function declaration that reads the wall clock. */
+const clockFunction = 'getNow'
 
 const layerOrder = ['shared', 'features', 'screens']
 const sliceLayers = ['features']
@@ -47,7 +50,7 @@ const domainImports = [
 ]
 
 export default tseslint.config(
-  ...createBaseConfig(import.meta.dirname),
+  ...createBaseConfig(import.meta.dirname, { clockFunction }),
 
   {
     languageOptions: {
@@ -137,14 +140,7 @@ export default tseslint.config(
       ],
       'no-restricted-syntax': [
         'error',
-        {
-          selector: 'MemberExpression[object.name="Date"][property.name="now"]',
-          message: 'the clock is a port — take the now a Clock carries',
-        },
-        {
-          selector: 'NewExpression[callee.name="Date"][arguments.length=0]',
-          message: 'the clock is a port — take the now a Clock carries',
-        },
+        ...createClockSelectors(clockFunction),
         {
           selector: 'MemberExpression[object.name="Math"][property.name="random"]',
           message: 'the same input gives the same numbers on any machine on any day',

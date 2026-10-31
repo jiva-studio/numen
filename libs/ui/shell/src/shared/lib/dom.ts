@@ -1,10 +1,6 @@
 /**
- * Browser DOM, visibility, platform, and clock adapters.
+ * Browser DOM, visibility, and platform adapters.
  */
-
-export function getNow(): number {
-  return globalThis.performance.timeOrigin + globalThis.performance.now()
-}
 
 export function isDocumentHidden(): boolean {
   return globalThis.document.hidden

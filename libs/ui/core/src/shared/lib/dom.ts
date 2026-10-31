@@ -31,8 +31,9 @@ export function measureRect(el: Element | null | undefined): DOMRect | undefined
   return el ? measureElementRect(el) : undefined
 }
 
+/** Milliseconds since the epoch. The only function that reads the wall clock; tests control it with fake timers. */
 export function getNow(): number {
-  return globalThis.performance.timeOrigin + globalThis.performance.now()
+  return Date.now()
 }
 
 export const getCurrentDate = (): Date => new Date(getNow())

@@ -12,6 +12,22 @@ export const lifetimes = [
 ]
 
 /**
+ * Selectors that ban the wall clock (`Date.now()`, `new Date()`). When `clockFunction` names a
+ * function declaration, the wall clock is allowed inside that declaration only.
+ *
+ * @param {string | undefined} clockFunction Name of the one function that reads the wall clock
+ * @returns {Array<{ selector: string, message: string }>}
+ */
+export function createClockSelectors(clockFunction) {
+  const sanctioned = clockFunction ? `:not(FunctionDeclaration[id.name="${clockFunction}"] *)` : ''
+  const message = 'the clock is a port — take the now a Clock carries'
+  return [
+    { selector: `MemberExpression[object.name="Date"][property.name="now"]${sanctioned}`, message },
+    { selector: `NewExpression[callee.name="Date"][arguments.length=0]${sanctioned}`, message },
+  ]
+}
+
+/**
  * Custom rule: Enforce extracting large props interfaces into a separate *.types.ts file.
  */
 const SECTION_ORDER = {
@@ -712,7 +728,7 @@ const numenPlugin = {
  * Returns the unified base ESLint flat configuration array for Vue 3 + TypeScript projects.
  *
  * @param {string} dirname The import.meta.dirname of the package
- * @param {object} options Optional overrides
+ * @param {object} options Optional overrides; `clockFunction` names the one function allowed to read the wall clock
  * @returns {Array}
  */
 export function createBaseConfig(dirname, options = {}) {
@@ -890,14 +906,7 @@ export function createBaseConfig(dirname, options = {}) {
         ],
         'no-restricted-syntax': [
           'error',
-          {
-            selector: 'MemberExpression[object.name="Date"][property.name="now"]',
-            message: 'the clock is a port — take the now a Clock carries',
-          },
-          {
-            selector: 'NewExpression[callee.name="Date"][arguments.length=0]',
-            message: 'the clock is a port — take the now a Clock carries',
-          },
+          ...createClockSelectors(options.clockFunction),
           {
             selector: 'MemberExpression[object.name="Math"][property.name="random"]',
             message: 'the same input gives the same numbers on any machine on any day',
