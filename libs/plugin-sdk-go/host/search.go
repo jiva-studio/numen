@@ -102,13 +102,16 @@ type SearchFloor struct {
 // A call that names a recipe other than the one of the model in use returns ErrRecipeMismatch, and a
 // call while the installation has no model returns ErrNoModel. A call while the host shows no vault
 // returns ErrNoVault.
-//
-// The reads need the index:read permission and the floor needs search:policy.
 type Search interface {
 	// With is the search of the vault of the identity. A call on it returns ErrUnknownVault when the
 	// installation has no such vault.
 	With(id VaultID) Search
+	SearchIndex
+	SearchPolicy
+}
 
+// SearchIndex reads the search index of a vault. It needs the index:read permission.
+type SearchIndex interface {
 	// GetEmbeddingState is the model in use and how far the vault is embedded under it. It is read
 	// from the index at each call, so a plugin that starts after the vectors exist reads the same
 	// state as one that was running when they were made.
@@ -125,13 +128,23 @@ type Search interface {
 	// GetBestSimilarity is the cosine similarity of the passage of the vault nearest the query vector
 	// under the recipe, and zero where the vault has none.
 	GetBestSimilarity(ctx context.Context, recipe string, query []float32) (float64, error)
+}
 
+// SearchPolicy reads and sets the floor that a search by meaning applies to a vault. It needs the
+// search:policy permission.
+type SearchPolicy interface {
 	// GetSearchFloor is the floor a search applies to the vault under the recipe, and where it comes from.
 	GetSearchFloor(ctx context.Context, recipe string) (SearchFloor, error)
 	// SetSearchFloor stores the effective floor of the vault under the recipe. A floor of zero removes
 	// the stored floor, and a floor above one or below zero returns ErrInvalidFloor. Setting the floor
 	// that is stored changes nothing.
 	SetSearchFloor(ctx context.Context, recipe string, floor float64) error
+}
+
+// GetVectorsReadyEvent is the event the host emits to plugins when every chunk of the vault of the
+// identity carries a vector under the model in use.
+func GetVectorsReadyEvent(id VaultID) string {
+	return protocol.GetVectorsReadyEvent(string(id))
 }
 
 // ReadVectorsReadyEvent returns the identity of the vault that an event of the host names as having

@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/schematest"
-	"github.com/jiva-studio/numen/libs/protocol"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
@@ -274,7 +273,7 @@ func TestAPermissionTheManifestLacksIsDeniedAndAnUnknownVaultIsUnknown(t *testin
 }
 
 func TestTheVectorsReadyEventNamesTheVaultAndOnlyThatEvent(t *testing.T) {
-	id, ok := host.ReadVectorsReadyEvent(protocol.GetVectorsReadyEvent("01VAULT"))
+	id, ok := host.ReadVectorsReadyEvent(host.GetVectorsReadyEvent("01VAULT"))
 	if !ok || id != "01VAULT" {
 		t.Errorf("read %q, %v", id, ok)
 	}

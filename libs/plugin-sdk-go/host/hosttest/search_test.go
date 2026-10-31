@@ -245,8 +245,9 @@ func TestTheEmbeddingStateIsReadAtEachCallSoALatePluginSeesIt(t *testing.T) {
 		t.Fatalf("before any chunk: %+v (%v)", state, err)
 	}
 	search.SetProgress(10, 4)
-	if state, _ = search.GetEmbeddingState(ctx); state.IsReady || state.ChunkCount != 10 || state.EmbeddedCount != 4 {
-		t.Errorf("while embedding: %+v", state)
+	state, err = search.GetEmbeddingState(ctx)
+	if err != nil || state.IsReady || state.ChunkCount != 10 || state.EmbeddedCount != 4 {
+		t.Errorf("while embedding: %+v (%v)", state, err)
 	}
 	search.SetProgress(10, 10)
 	for range 3 {
