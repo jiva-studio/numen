@@ -162,7 +162,7 @@ A vector is kept under the model the plugin answers with: its name, width, input
 
 The proofreading plugin, `md.numen.tools.proofreading`, puts a transcript or a recognition right when a person asks for it from the file's menu, and its settings are the plugin's own. What a correction may change, and what refuses one, is in [Proofreading](proofreading.md).
 
-Which model answers is not the plugin's to say: it asks the host, and the host answers from the plugin's own `agent` setting, else from [`ai.default`](#where-a-plugins-questions-to-a-model-are-answered), which names the agent program, the model and the number of questions answered at once. With no agent to answer, proofreading fails with "unavailable"; before the person lets the plugin ask, it fails with "AI access not allowed — allow it in Settings → AI". Either way no version is made.
+Which model answers is not the plugin's to say: it asks the host, and the host answers from [`ai.default`](#where-a-plugins-questions-to-a-model-are-answered), which names the agent program, the model and the number of questions answered at once. With no agent to answer, proofreading fails with "unavailable"; before the person lets the plugin ask, it fails with "AI access not allowed — allow it in Settings → AI". Either way no version is made.
 
 ```json
 {
@@ -232,7 +232,7 @@ An installation naming no agent and asking for no tools opens no port and writes
 
 ## Where a plugin's questions to a model are answered
 
-A plugin that holds the `ai:complete` permission asks the host for a completion and names neither a model, an agent nor a key. The host knows which plugin asks by the token it gave that plugin at launch, and answers from that plugin's own agent setting, else from `ai.default`. Nothing in a question chooses where it goes. The question reaches the agent as a task that names no tool and no conversation, so the agent has none of the vault's tools, and the answer is what the agent said.
+A plugin that holds the `ai:complete` permission asks the host for a completion and names neither a model, an agent nor a key. The host knows which plugin asks by the token it gave that plugin at launch, and answers from `ai.default`. Nothing in a question chooses where it goes. The question reaches the agent as a task that names no tool and no conversation, so the agent has none of the vault's tools, and the answer is what the agent said.
 
 ```json
 {
@@ -248,13 +248,12 @@ A plugin that holds the `ai:complete` permission asks the host for a completion 
 }
 ```
 
-|                          |                                                                                                                                                                                                                                             |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ai.default.agent`       | the name of the agent program that answers a plugin whose own setting names none (`claude`, `codex`, `antigravity`, `acp:<name>`, the names the AI section lists). Empty is the program `agent.use` names, else the default of the plugins. |
-| `ai.default.model`       | the model that program answers with. Empty is the model `agent.<program>.model` names, else the program's own. It goes with the default agent alone.                                                                                        |
-| `ai.default.concurrency` | how many questions one agent answers at once; the others wait for a place, and a question whose plugin gave up leaves the wait. Below one is one.                                                                                           |
-| `plugins.<id>.<key>`     | a plugin's own choice, under the key of the setting of type `agent` its manifest declares: `agent` and `model`. An empty `agent` is `ai.default`, agent and model both; an empty `model` is the chosen agent's own.                         |
-| `plugins.<id>.aiConsent` | whether the person lets the plugin ask a model: `true` or `false`. Left out, the person has not answered.                                                                                                                                   |
+|                          |                                                                                                                                                                                                                                 |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ai.default.agent`       | the name of the agent program that answers the questions plugins ask (`claude`, `codex`, `antigravity`, `acp:<name>`, the names the AI section lists). Empty is the program `agent.use` names, else the default of the plugins. |
+| `ai.default.model`       | the model that program answers with. Empty is the model `agent.<program>.model` names, else the program's own. It goes with the default agent alone.                                                                            |
+| `ai.default.concurrency` | how many questions one agent answers at once; the others wait for a place, and a question whose plugin gave up leaves the wait. Below one is one.                                                                               |
+| `plugins.<id>.aiConsent` | whether the person lets the plugin ask a model: `true` or `false`. Left out, the person has not answered.                                                                                                                       |
 
 A program that is not installed or that no plugin lists is answered `NO_ROUTE`, and so is a question when `agent.use` is empty or no program is installed; no other program answers in its place. A program whose plugin cannot be reached, that stops without an answer or that says nothing is answered `UNAVAILABLE`, with the reason it stopped for in the log. The command line, the options and the model of the program's section under `agent` apply to the task as they do to the panel's. A model the program does not offer is the program's own error.
 
@@ -264,10 +263,10 @@ The file is read at every question, so a choice written while the application ru
 
 The first question of a plugin the person has not answered for is rejected with `NO_CONSENT`, and the settings page puts it to the person: the AI section names the plugin that asked, with Allow and Deny. If denied, every question of that plugin is answered `NO_CONSENT`, which the plugin shows as the reason nothing was answered; the proofreading plugin shows it as the error of its task in the list of what is being done.
 
-The settings page writes all of these. Its AI section holds the default agent and its model, a switch for each plugin that may ask, and the keys of the secrets plugins declare; a plugin's own section draws its setting of type `agent` as two lists, the agent first, "Default (<the agent answering it now>)" at its head, then the model, "Agent default" at its head. The agents a list offers are the programs the plugins list, and the models are the ones each program lists for `GetAgentPrograms`.
+The settings page writes all of these. Its AI section holds the default agent and its model, a switch for each plugin that may ask, and the keys of the secrets plugins declare; The agents its lists offer are the programs the plugins list, and the models are the ones each program lists for `GetAgentPrograms`.
 
 A file of an older shape, holding `ai.routes`, still loads: its `routes.default` is read as `ai.default` where the file names no `ai.default`, and the routes of single purposes are not read.
 
 No key is written in this file. An agent plugin that needs one declares it under `secrets` in its manifest; the person enters, replaces and deletes it in the AI section, and the host keeps it in the system keychain and hands it to the plugin in `Configure`, so it is in neither the plugin's environment nor its command line. The page shows whether a key is set and never shows the key. Under `plugins.<id>.storedSecrets` the host records only the names of the secrets that have a key, and reads the keychain for those alone. Storing a key on a machine without a keychain fails with an error saying so and keeps the key nowhere else; the plugin is then configured without it.
 
-A setting of type `string` that names a program in `modelsOf` in its manifest is chosen from the models that program lists, in a list that can be searched; the plugin's own `model` setting names the program it runs. It is typed by hand while the program lists no model, such as when the chat API cannot be reached.
+A setting of type `string` that declares `options` in its manifest is chosen from them in a list that can be searched, and its value can also be typed.
