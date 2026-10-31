@@ -5,6 +5,7 @@ export {
   agentService,
   files,
   notes,
+  pluginCatalog,
   pluginCommands,
   search,
   settingsService,

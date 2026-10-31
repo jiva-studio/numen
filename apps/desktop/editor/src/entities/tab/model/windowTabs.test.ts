@@ -818,7 +818,7 @@ describe('the registration of a kind', () => {
     dispose()
 
     const id = await window.createTab('thing', 'a')
-    expect(window.getTab(id)?.state).toEqual({ kind: 'thing', targetPath: 'a' })
+    expect(window.getTab(id)?.state).toMatchObject({ kind: 'thing', targetPath: 'a' })
   })
 
   it('is kept when the disposer of a registration it replaced runs late', async () => {

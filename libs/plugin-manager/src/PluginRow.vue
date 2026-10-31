@@ -5,13 +5,13 @@
  */
 import { computed, ref } from 'vue'
 import { Menu, type MenuItem } from '@numen/ui'
-import type { PluginInfo } from '@/entities/settings'
-import { getPluginState, type PluginState } from '../../lib/failures'
-import { WORDS as words } from '../../words'
+import { isInstalled, type ManagedPlugin } from './plugins'
+import { getPluginState, type PluginState } from './state'
+import { PLUGIN_WORDS as words } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  plugin: PluginInfo
+  plugin: ManagedPlugin
   isEnabled: boolean
   categoryPrefix?: string
 }>()
@@ -31,17 +31,15 @@ const categoryPrefixText = computed(() =>
 const rowTitle = computed(
   () => `${categoryPrefixText.value}${props.plugin.name}${versionSuffix.value}`,
 )
-const pluginState = computed<PluginState>(() => getPluginState(props.plugin, props.isEnabled))
+const pluginState = computed<PluginState>(() =>
+  props.plugin.info ? getPluginState(props.plugin.info, props.isEnabled) : 'available',
+)
 
 const menuItems = computed<readonly MenuItem[]>(() => [
-  {
-    id: 'toggle',
-    text: props.isEnabled ? words.pluginDisable : words.pluginEnable,
-  },
-  {
-    id: 'configure',
-    text: words.settings,
-  },
+  ...(isInstalled(props.plugin)
+    ? [{ id: 'toggle', text: props.isEnabled ? words.pluginDisable : words.pluginEnable }]
+    : []),
+  { id: 'configure', text: words.settings },
 ])
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -102,7 +100,7 @@ function onChooseMenuItem(id: string): void {
 
     <div class="plugin-row__trail">
       <span
-        v-if="pluginState === 'stopped'"
+        v-if="pluginState === 'stopped' || pluginState === 'available'"
         class="plugin-row__badge"
         :class="`plugin-row__badge--${pluginState}`"
       >
@@ -227,6 +225,11 @@ function onChooseMenuItem(id: string): void {
   font-size: var(--numen-text-1);
   padding: 0.125rem 0.375rem;
   border-radius: var(--numen-radius-small);
+}
+
+.plugin-row__badge--available {
+  color: var(--numen-hushed);
+  background-color: var(--numen-surface-hover);
 }
 
 .plugin-row__badge--stopped {

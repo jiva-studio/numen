@@ -2,7 +2,7 @@
 /**
  * System settings entry row in the settings list: window appearance, theme, scale.
  */
-import { WORDS as words } from '../../words'
+import { PLUGIN_WORDS as words } from './words'
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{

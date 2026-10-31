@@ -7,7 +7,8 @@ import { computed, ref, watch } from 'vue'
 import type { SettingsTabState } from '../types'
 import type { PluginInfo } from '@/entities/settings'
 import SystemDetail from './SystemDetail.vue'
-import { PluginsList, PluginDetail } from './plugins'
+import { createManagedPlugins } from '@numen/plugin-manager'
+import { OfferedPluginDetail, PluginsList, PluginDetail } from './plugins'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ state: SettingsTabState }>()
@@ -26,6 +27,11 @@ watch(
 )
 
 const plugins = computed<readonly PluginInfo[]>(() => props.state.installation.plugins?.value ?? [])
+const uninstalled = computed(() =>
+  createManagedPlugins([], props.state.installation.catalog?.value ?? []).find(
+    (one) => one.id === selectedPluginId.value,
+  ),
+)
 const selectedPlugin = computed<PluginInfo | undefined>(() =>
   plugins.value.find((one) => one.id === selectedPluginId.value),
 )
@@ -57,6 +63,7 @@ function onBack(): void {
           :plugin="selectedPlugin"
           @back="onBack"
         />
+        <OfferedPluginDetail v-else-if="uninstalled" :plugin="uninstalled" @back="onBack" />
         <PluginsList
           v-else
           :state="props.state"

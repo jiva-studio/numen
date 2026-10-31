@@ -65,9 +65,9 @@ const writeMessage = log.getWriter('window')
 
 /* --------------------------------- Hooks ---------------------------------- */
 function onOpenSettings(event: Event): void {
-  const filter = (event as CustomEvent<{ filter?: string }>).detail?.filter
-  if (filter && openSettings) {
-    openSettings(undefined, filter)
+  const detail = (event as CustomEvent<{ filter?: string; pluginId?: string }>).detail
+  if ((detail?.filter || detail?.pluginId) && openSettings) {
+    openSettings(detail.pluginId, detail.filter)
     return
   }
   runCommand('settings', getTarget())

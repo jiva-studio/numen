@@ -10,7 +10,7 @@ import type {
   ContextMenuTarget,
   Disposable,
   PluginContext,
-  PluginManifest,
+  Manifest,
   FileSelectEvent,
   ReaderRegistration,
   SettingsViewRegistration,
@@ -77,7 +77,7 @@ interface HostRegistry {
   readonly settingsViews: { value: ReadonlyMap<string, RegisteredSettingsView> }
   readonly agentProviders: Map<string, RegisteredAgentProvider>
   readonly contexts: Map<string, PluginContext>
-  readonly manifests: Map<string, PluginManifest>
+  readonly manifests: Map<string, Manifest>
 }
 
 interface PluginItemRegistration<T> {
@@ -445,7 +445,7 @@ export function createPluginHost(deps: PluginHostDeps) {
 
   return {
     contextHost,
-    createContext: (pluginId: string, manifest?: PluginManifest): PluginContext => {
+    createContext: (pluginId: string, manifest?: Manifest): PluginContext => {
       let ctx = registry.contexts.get(pluginId)
       if (!ctx) {
         const effectiveManifest = manifest ?? registry.manifests.get(pluginId)
@@ -454,7 +454,7 @@ export function createPluginHost(deps: PluginHostDeps) {
       }
       return ctx
     },
-    registerManifest: (pluginId: string, manifest: PluginManifest): void => {
+    registerManifest: (pluginId: string, manifest: Manifest): void => {
       if (registry.contexts.has(pluginId)) {
         throw new Error(
           `Cannot replace the manifest for plugin "${pluginId}" while its context is cached`,

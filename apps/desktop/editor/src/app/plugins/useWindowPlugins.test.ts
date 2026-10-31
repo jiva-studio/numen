@@ -4,7 +4,8 @@ import { DEFAULT_PLUGIN_ENABLED } from '@numen/plugin-host'
 import { createNoticeQueue } from '@numen/shell'
 import { useWindowTabs } from '@/entities/tab'
 import type { AnyTabKind } from '@/entities/tab'
-import type { AgentHost, PluginContext, PluginManifest, WorkspaceHost } from '@numen/plugin-sdk'
+import type { AgentHost, PluginContext, Manifest, WorkspaceHost } from '@numen/plugin-sdk'
+import { createMockManifest } from '@numen/plugin-sdk/testing'
 import { createPluginSupport, getFrontendPluginIds } from './useWindowPlugins'
 
 const createSupport = () => {
@@ -43,7 +44,7 @@ describe('closing the tabs of a plugin', () => {
 
     support.pluginHost.disposePlugin('md.numen.a')
 
-    expect(windowTabs.getTab(id)?.state).toEqual({
+    expect(windowTabs.getTab(id)?.state).toMatchObject({
       kind: 'a-kind',
       targetPath: 'x',
       saved: undefined,
@@ -75,11 +76,7 @@ describe('closing the tabs of a plugin', () => {
 })
 
 /** A plugin that adds one tab kind to the window. */
-const manifest: PluginManifest = {
-  id: 'md.numen.sample.chat',
-  name: 'Chat',
-  version: '1.0.0',
-}
+const manifest: Manifest = createMockManifest('md.numen.sample.chat', { name: 'Chat' })
 
 const activate = (context: PluginContext) => {
   context.registerTabKind({ kind: 'chat', component: null, title: 'Chat' })
@@ -106,7 +103,7 @@ describe('the tab kind a plugin adds', () => {
     support.pluginHost.disposePlugin(manifest.id)
 
     expect(windowTabs.hasKind('chat')).toBe(false)
-    expect(windowTabs.getTab(id)?.state).toEqual({
+    expect(windowTabs.getTab(id)?.state).toMatchObject({
       kind: 'chat',
       targetPath: '',
       saved: undefined,
@@ -180,11 +177,7 @@ describe('the settings and notices a plugin is given', () => {
       .registerReader({ id: 'document', title: 'Document', component: null })
 
     expect(registerExtensionReader).toHaveBeenCalledTimes(1)
-    expect(registerExtensionReader).toHaveBeenCalledWith(
-      '.pdf',
-      expect.any(Function),
-      undefined,
-    )
+    expect(registerExtensionReader).toHaveBeenCalledWith('.pdf', expect.any(Function), undefined)
   })
 
   it('reads no setting before the window has its settings', () => {

@@ -1,6 +1,4 @@
-export { default as PluginRow } from './PluginRow.vue'
 export { default as PluginsList } from './PluginsList.vue'
 export { default as PluginFields } from './PluginFields.vue'
 export { default as PluginDetail } from './PluginDetail.vue'
-export { default as PluginsSection } from './PluginsSection.vue'
-export { default as SystemRow } from './SystemRow.vue'
+export { default as OfferedPluginDetail } from './OfferedPluginDetail.vue'

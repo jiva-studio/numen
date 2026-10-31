@@ -1,0 +1,41 @@
+{
+  "name": "@numen/plugin-manager",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The plugin list and the plugin page: what is installed, what the catalog offers, and the controls to enable, install and inspect a plugin. Takes data by props and answers with events.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "vue-tsc --noEmit",
+    "lint": "eslint .",
+    "knip": "knip"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.44"
+  },
+  "dependencies": {
+    "@numen/plugin-sdk": "*",
+    "@numen/ui": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "@vitest/coverage-v8": "^5.0.3",
+    "@vue/test-utils": "^2.4.6",
+    "eslint": "^10.10.0",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "jsdom": "^30.1.3",
+    "knip": "^6.41.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.3",
+    "vue": "^3.5.44",
+    "vue-tsc": "^3.3.13"
+  }
+}

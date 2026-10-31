@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, type PropType } from 'vue'
 import { mount } from '@vue/test-utils'
 import type { PluginContext, TabKindRegistration } from '@numen/plugin-sdk'
+import { createMockManifest } from '@numen/plugin-sdk/testing'
 import { createPluginHost } from './host'
 import { registerPluginStyle, unregisterPluginStyle } from '@numen/plugin-host'
 import {
@@ -214,12 +215,10 @@ describe('the services a plugin context is given', () => {
     const onError = vi.fn()
     const host = createPluginHost(createDeps({ onError }))
     const received: unknown[] = []
-    const readText = {
-      id: 'md.numen.one',
+    const readText = createMockManifest('md.numen.one', {
       name: 'One',
-      version: '1.0.0',
       permissions: ['vault:read'],
-    }
+    })
     host.createContext('md.numen.one', readText).onVaultChange((event) => {
       received.push(event)
     })

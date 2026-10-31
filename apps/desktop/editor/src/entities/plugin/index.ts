@@ -1,3 +1,4 @@
+export { useCatalogEntries } from './model/catalogEntries'
 export { createPluginContext } from './model/context'
 export { createPluginHost, createPluginPaneWrapper, type PluginHost } from './model/host'
 export type {
