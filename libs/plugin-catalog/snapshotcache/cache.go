@@ -172,5 +172,6 @@ func newEntry(stored entryFile) catalog.Entry {
 		State:           stored.State,
 		Requirements:    manifest.Requirements{Targets: stored.Targets, Protocol: stored.Protocol, AppVersion: stored.AppVersion},
 		Incompatibility: nil,
+		Warnings:        nil,
 	}
 }

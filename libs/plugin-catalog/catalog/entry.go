@@ -7,6 +7,7 @@ package catalog
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
@@ -51,6 +52,9 @@ type Entry struct {
 	// Incompatibility is why the application cannot run the plugin. Nil is a plugin it can run. The
 	// Service sets it and a source leaves it nil.
 	Incompatibility *manifest.IncompatibleError
+	// Warnings are the findings of the manifest reader that leave the manifest valid, such as a key the
+	// schema does not name.
+	Warnings []string
 }
 
 // NewEntry returns the entry of a plugin whose manifest a source has read.
@@ -66,6 +70,7 @@ func NewEntry(source string, state State, m manifest.Manifest) Entry {
 		State:           state,
 		Requirements:    m.GetRequirements(),
 		Incompatibility: nil,
+		Warnings:        slices.Clone(m.Warnings),
 	}
 }
 

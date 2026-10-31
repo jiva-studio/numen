@@ -33,9 +33,6 @@ const (
 	// PermissionNetworkAlias is the accepted short spelling of PermissionNetworkOutbound.
 	PermissionNetworkAlias = "network"
 
-	// RuntimeONNX names the ONNX Runtime library, which the host provisions for a plugin that declares it.
-	RuntimeONNX = "onnxruntime"
-
 	ProtocolVersion = 1
 )
 
@@ -79,7 +76,6 @@ var (
 	ErrInvalidPermission      = errors.New("invalid permission")
 	ErrInvalidCapability      = errors.New("invalid capability")
 	ErrInvalidActivationEvent = errors.New("invalid activation event")
-	ErrInvalidRuntime         = errors.New("invalid runtime")
 	ErrEmptySettingKey        = errors.New("setting key cannot be empty")
 	ErrInvalidSettingKey      = errors.New("invalid setting key")
 	ErrDuplicateSettingKey    = errors.New("duplicate setting key")
@@ -88,8 +84,6 @@ var (
 	ErrRangeInvalidBounds     = errors.New("range min cannot exceed max")
 	ErrInvalidSecret          = errors.New("invalid secret")
 	ErrReservedSettingKey     = errors.New("the setting key is kept by the host")
-	ErrInvalidAgentSetting    = errors.New("invalid agent setting")
-	ErrInvalidModelsOf        = errors.New("only a string setting is offered the models of a program")
 	ErrInvalidSetting         = errors.New("invalid setting")
 	ErrInvalidService         = errors.New("invalid service name")
 	ErrInvalidNoteType        = errors.New("invalid note type")
@@ -105,11 +99,6 @@ const SettingStoredSecrets = "storedSecrets"
 // absent means the user has not been prompted yet. The window writes it, and no
 // manifest uses the name.
 const SettingAIConsent = "aiConsent"
-
-// SettingTypeAgent is the type of the setting that holds the agent and the model
-// answering the completions of a plugin. Its value is a CompletionChoice, and
-// the user sets it: the setting declares no default.
-const SettingTypeAgent = "agent"
 
 // reservedSettingKeys are the settings of a plugin the host keeps for itself.
 var reservedSettingKeys = []string{SettingStoredSecrets, SettingAIConsent}
@@ -134,7 +123,7 @@ const (
 	SettingTypeFolder = "folder"
 )
 
-var validSettingTypes = []string{"boolean", SettingTypeString, "number", SettingTypeEnum, "select", "range", SettingTypeAgent, SettingTypeFile, SettingTypeFolder}
+var validSettingTypes = []string{"boolean", SettingTypeString, "number", SettingTypeEnum, "select", "range", SettingTypeFile, SettingTypeFolder}
 
 // Lifecycle defines when the host evicts an idle plugin from memory.
 type Lifecycle struct {
@@ -169,9 +158,6 @@ type Setting struct {
 	Min         float64
 	Max         float64
 	Step        float64
-	// ModelsOf is the agent program whose models a string setting is offered, as the program names
-	// itself. The models are those the plugins list for it.
-	ModelsOf string
 	// Replaces are the places in the settings file where the user stored this setting before the plugin took
 	// it over, each written as the dot-joined keys leading to it, the newest first. The first of
 	// them the file contains supplies the value for a user whose file has none for the plugin yet.
@@ -198,7 +184,6 @@ type Manifest struct {
 	Targets          []string
 	ActivationEvents []string
 	Permissions      []string
-	Runtimes         []string
 	Dependencies     []DependencyRequirement
 	Lifecycle        Lifecycle
 	Backend          Backend
@@ -213,30 +198,18 @@ type Manifest struct {
 	// receives a call for one forwards it to the plugin; a service the host serves itself is never
 	// forwarded.
 	Services []string
-	// NoteTypes are the types of note the plugin gives meaning to, and how the index keeps the notes of
-	// each. A note of a type no plugin declares is kept as an ordinary note is.
-	NoteTypes []NoteType
 	// Commands are the commands the plugin's backend runs, offered by the palette and the command line.
 	Commands []Command
-	// Texts is what the plugin declares of the text it makes. A plugin that makes no text declares none.
-	Texts *TextMaker
-	// Playback is the file types the plugin keeps a copy to play of. A plugin that keeps none declares none.
-	Playback *Playback
-	// ContentTypes are the types of file the plugin brings that the content type table does not know.
-	ContentTypes []DeclaredContentType
-	// Readers are the tabs of the plugin's frontend that open files, each by the id the frontend
-	// registers it under.
-	Readers []Reader
 	// SettingsViews are the components of the plugin's frontend the settings page draws among the
 	// settings of the plugin, each by the id the frontend registers it under.
 	SettingsViews []SettingsView
-	// Frames are the https origins the plugin's pages frame, such as a video site's player. The
-	// window's frame-src names them while the plugin is enabled.
-	Frames []string
 	// Contributes is what the plugin adds to the application, known before its frontend is loaded.
 	Contributes Contributes
 	// AppVersion bounds the versions of the application the plugin runs in.
 	AppVersion AppVersionRange
+	// Warnings are the findings of the reader that do not make the manifest invalid, such as a key the
+	// schema does not name. The reader fills them and a manifest built in code has none.
+	Warnings []string
 }
 
 // NoteType declares one type of note and how the index keeps the notes of it.
@@ -283,21 +256,14 @@ func (m Manifest) ListIssues() []error {
 	issues = append(issues, m.listEntrypointIssues()...)
 	issues = append(issues, m.listBackendlessIssues()...)
 	issues = append(issues, m.listPermissionIssues()...)
-	issues = append(issues, m.listRuntimeIssues()...)
 	issues = append(issues, m.listDependencyIssues()...)
 	issues = append(issues, m.listSecretIssues()...)
 	issues = append(issues, m.listServiceIssues()...)
 	issues = append(issues, m.listNoteTypeIssues()...)
 	issues = append(issues, m.listCommandIssues()...)
-	issues = append(issues, m.listTextsIssues()...)
-	issues = append(issues, m.listPlaybackIssues()...)
-	issues = append(issues, m.listContentTypeIssues()...)
-	issues = append(issues, m.listReaderIssues()...)
 	issues = append(issues, m.listSettingsViewIssues()...)
-	issues = append(issues, m.listFrameIssues()...)
 	issues = append(issues, m.listContributionIssues()...)
 	issues = append(issues, m.listAppVersionIssues()...)
-	issues = append(issues, m.listAgentSettingIssues()...)
 	issues = append(issues, m.listSettingLinkIssues()...)
 	return append(issues, listManifestSettingIssues(m.Settings)...)
 }
@@ -323,7 +289,7 @@ func (m Manifest) listServiceIssues() []error {
 func (m Manifest) listNoteTypeIssues() []error {
 	var issues []error
 	observed := map[string]bool{}
-	for _, declared := range m.NoteTypes {
+	for _, declared := range m.Contributes.NoteTypes {
 		switch {
 		case !manifestSecretPattern.MatchString(declared.Type):
 			issues = append(issues, fmt.Errorf("%w: %q", ErrInvalidNoteType, declared.Type))
@@ -371,46 +337,12 @@ func (t NoteType) GetProfile() domain.NoteProfile {
 
 // GetNoteType is the declaration of a type of note the plugin gives meaning to.
 func (m Manifest) GetNoteType(noteType string) (NoteType, bool) {
-	for _, declared := range m.NoteTypes {
+	for _, declared := range m.Contributes.NoteTypes {
 		if declared.Type == noteType {
 			return declared, true
 		}
 	}
 	return NoteType{}, false
-}
-
-// listAgentSettingIssues checks the setting that chooses the agent: one at most,
-// declared by a plugin that holds the ai:complete permission, with no default.
-func (m Manifest) listAgentSettingIssues() []error {
-	var issues []error
-	count := 0
-	for _, s := range m.Settings {
-		if s.Type != SettingTypeAgent {
-			continue
-		}
-		count++
-		if s.Default != nil {
-			issues = append(issues, fmt.Errorf("%w: %s declares a default", ErrInvalidAgentSetting, s.Key))
-		}
-	}
-	if count > 1 {
-		issues = append(issues, fmt.Errorf("%w: %d are declared, and a plugin has one at most", ErrInvalidAgentSetting, count))
-	}
-	if count > 0 && !m.HasPermission(PermissionAIComplete) {
-		issues = append(issues, fmt.Errorf("%w: the plugin does not hold %s", ErrInvalidAgentSetting, PermissionAIComplete))
-	}
-	return issues
-}
-
-// GetAgentSettingKey returns the key of the setting that chooses the agent of the
-// plugin's completions, and false when the manifest declares none.
-func (m Manifest) GetAgentSettingKey() (string, bool) {
-	for _, s := range m.Settings {
-		if s.Type == SettingTypeAgent {
-			return s.Key, true
-		}
-	}
-	return "", false
 }
 
 func (m Manifest) listIdentityIssues() []error {
@@ -473,9 +405,8 @@ func (m Manifest) listBackendlessIssues() []error {
 		{"commands", len(m.Commands) > 0},
 		{"services", len(m.Services) > 0},
 		{"secrets", len(m.Secrets) > 0},
-		{"runtimes", len(m.Runtimes) > 0},
-		{"texts", m.Texts != nil},
-		{"playback", m.Playback != nil},
+		{"runtime dependencies", slices.ContainsFunc(m.Dependencies, func(d DependencyRequirement) bool { return d.Kind == DependencyKindRuntime })},
+		{"contributes.handles", len(m.Contributes.Handles) > 0},
 	}
 	var issues []error
 	for _, field := range fields {
@@ -541,21 +472,6 @@ func isRecognizedActivationEvent(event string) bool {
 	return false
 }
 
-func (m Manifest) listRuntimeIssues() []error {
-	var issues []error
-	observed := make(map[string]bool, len(m.Runtimes))
-	for _, name := range m.Runtimes {
-		switch {
-		case name != RuntimeONNX:
-			issues = append(issues, fmt.Errorf("%w: %q, expected %q", ErrInvalidRuntime, name, RuntimeONNX))
-		case observed[name]:
-			issues = append(issues, fmt.Errorf("%w: %s is declared twice", ErrInvalidRuntime, name))
-		}
-		observed[name] = true
-	}
-	return issues
-}
-
 func (m Manifest) listSecretIssues() []error {
 	var issues []error
 	observed := make(map[string]bool, len(m.Secrets))
@@ -618,9 +534,6 @@ func listManifestSettingIssue(s Setting, key string) []error {
 	}
 	if s.Type == "range" && (s.Min != 0 || s.Max != 0) && s.Min > s.Max {
 		issues = append(issues, fmt.Errorf("%w: %s", ErrRangeInvalidBounds, key))
-	}
-	if s.ModelsOf != "" && s.Type != "string" {
-		issues = append(issues, fmt.Errorf("%w: %s", ErrInvalidModelsOf, key))
 	}
 	return append(issues, listAcceptIssues(s, key)...)
 }

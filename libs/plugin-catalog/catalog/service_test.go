@@ -27,6 +27,7 @@ func entry(id, version string, state catalog.State, kinds ...string) catalog.Ent
 		State:           state,
 		Requirements:    manifest.Requirements{Targets: nil, Protocol: 0, AppVersion: manifest.AppVersionRange{Min: "", Max: ""}},
 		Incompatibility: nil,
+		Warnings:        nil,
 	}
 }
 
@@ -233,4 +234,15 @@ func TestTheFakeSourceSatisfiesTheSourceContract(t *testing.T) {
 	catalogtest.RunSourceContract(t, func(_ *testing.T, entries []catalog.Entry) catalog.Source {
 		return catalogtest.NewFakeSource("fake", entries...)
 	}, append(catalogtest.OnDiskEntries(), catalogtest.OfferedEntries()...))
+}
+
+func TestAnEntryCarriesTheWarningsOfItsManifest(t *testing.T) {
+	m := manifest.Manifest{ID: "a.b", Name: "A", Version: "1.0.0", Warnings: []string{`unknown key "texts"`}}
+
+	got := catalog.NewEntry("local", catalog.StateInstalled, m)
+	m.Warnings[0] = "changed"
+
+	if len(got.Warnings) != 1 || got.Warnings[0] != `unknown key "texts"` {
+		t.Errorf("warnings = %q, want the warning of the manifest", got.Warnings)
+	}
 }

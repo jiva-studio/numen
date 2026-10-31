@@ -14,7 +14,7 @@ var ErrInvalidFrame = errors.New("invalid frame origin")
 // with no path, query or fragment, as a frame-src source of a Content-Security-Policy names it.
 func (m Manifest) listFrameIssues() []error {
 	var issues []error
-	for _, origin := range m.Frames {
+	for _, origin := range m.Contributes.FrameOrigins {
 		if !domain.IsHTTPSOrigin(origin) {
 			issues = append(issues, fmt.Errorf("%w: %q is not https://host", ErrInvalidFrame, origin))
 		}

@@ -1,6 +1,7 @@
 package manifestjson_test
 
 import (
+	"errors"
 	"slices"
 	"strings"
 	"testing"
@@ -9,22 +10,34 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 )
 
-func TestManifestTreatsAnONNXRuntimeDependencyAsTheRuntimesEntry(t *testing.T) {
-	legacy, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","runtimes":["onnxruntime"],"backend":{"entrypoint":"bin/a"}}`))
+func TestManifestDeclaresARuntimeAsADependency(t *testing.T) {
+	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},
+		"dependencies":[{"id":"sample-runtime","kind":"runtime"}]}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	explicit, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"onnxruntime","kind":"runtime"}]}`))
+	if !slices.Equal(m.GetRuntimeIDs(), []string{"sample-runtime"}) {
+		t.Errorf("runtime ids = %v, want [sample-runtime]", m.GetRuntimeIDs())
+	}
+	got := m.GetDependencyRequirements("/p", nil)
+	if len(got) != 1 || got[0].Kind != manifest.DependencyKindRuntime || got[0].PluginDir != "/p" {
+		t.Errorf("requirements = %+v", got)
+	}
+}
+
+func TestManifestNoLongerReadsARuntimesList(t *testing.T) {
+	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","runtimes":["sample-runtime"],"backend":{"entrypoint":"bin/a"}}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !slices.Equal(legacy.GetRuntimeIDs(), explicit.GetRuntimeIDs()) {
-		t.Errorf("runtime ids = %v, want %v", explicit.GetRuntimeIDs(), legacy.GetRuntimeIDs())
+	if len(m.GetRuntimeIDs()) != 0 || len(m.Warnings) != 1 || !strings.Contains(m.Warnings[0], "runtimes") {
+		t.Errorf("runtime ids = %v, warnings = %v; want no runtime and a warning on runtimes", m.GetRuntimeIDs(), m.Warnings)
 	}
-	same := func(a, b manifest.DependencyRequirement) bool {
-		return a.ID == b.ID && a.Kind == b.Kind && a.SourceURL == b.SourceURL && a.PluginDir == b.PluginDir
-	}
-	if !slices.EqualFunc(legacy.GetDependencyRequirements("/p", nil), explicit.GetDependencyRequirements("/p", nil), same) {
-		t.Errorf("requirements = %v, want %v", explicit.GetDependencyRequirements("/p", nil), legacy.GetDependencyRequirements("/p", nil))
+}
+
+func TestAPluginThatDeclaresARuntimeHasABackendToRunIt(t *testing.T) {
+	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"sample-runtime","kind":"runtime"}]}`))
+	if !errors.Is(err, manifest.ErrNoBackend) {
+		t.Errorf("error = %v, want ErrNoBackend", err)
 	}
 }

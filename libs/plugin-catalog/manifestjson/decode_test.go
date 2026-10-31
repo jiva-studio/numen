@@ -126,10 +126,6 @@ func TestReadManifestSettingsValidation(t *testing.T) {
 			json: `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"select","title":"T"}]}`,
 		},
 		{
-			name: "models of a program on a setting that is not a string",
-			json: `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"number","title":"T","modelsOf":"p"}]}`,
-		},
-		{
 			name: "range min greater than max",
 			json: `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"range","title":"T","min":100,"max":50}]}`,
 		},
@@ -214,14 +210,14 @@ func TestManifestLifecycleMemoryLimit(t *testing.T) {
 		}
 	})
 
-	t.Run("decodes memoryLimitMB", func(t *testing.T) {
-		raw := `{"id":"a.b","name":"A","version":"1.0.0","lifecycle":{"mode":"on-demand","memoryLimitMB":512}}`
+	t.Run("reports memoryLimitMB as an unknown key", func(t *testing.T) {
+		raw := `{"id":"a.b","name":"A","version":"1.0.0","lifecycle":{"memoryLimitMB":512}}`
 		m, err := manifestjson.Read(strings.NewReader(raw))
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if m.Lifecycle.MemoryLimitBytes != 512*1024*1024 {
-			t.Errorf("got memoryLimitBytes %d, want %d", m.Lifecycle.MemoryLimitBytes, 512*1024*1024)
+		if m.Lifecycle.MemoryLimitBytes != 0 || !slices.Equal(m.Warnings, []string{`unknown key "lifecycle.memoryLimitMB"`}) {
+			t.Errorf("limit = %d, warnings = %v", m.Lifecycle.MemoryLimitBytes, m.Warnings)
 		}
 	})
 }
@@ -246,12 +242,10 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 		{"commands without a backend", `{"id":"a.b","name":"A","version":"1.0.0","commands":[{"id":"run","title":"Run"}]}`, manifest.ErrNoBackend},
 		{"services without a backend", `{"id":"a.b","name":"A","version":"1.0.0","services":["numen.v1.SketchService"]}`, manifest.ErrNoBackend},
 		{"secrets without a backend", `{"id":"a.b","name":"A","version":"1.0.0","secrets":[{"name":"apiKey","title":"T"}]}`, manifest.ErrNoBackend},
-		{"runtimes without a backend", `{"id":"a.b","name":"A","version":"1.0.0","runtimes":["onnxruntime"]}`, manifest.ErrNoBackend},
+		{"runtime dependencies without a backend", `{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"sample-runtime","kind":"runtime"}]}`, manifest.ErrNoBackend},
 		{"frontend without entrypoint", `{"id":"a.b","name":"A","version":"1.0.0","frontend":{"styles":"s.css"}}`, manifest.ErrInvalidFrontend},
 		{"setting without title", `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, manifest.ErrEmptySettingTitle},
 		{"unknown permission", `{"id":"a.b","name":"A","version":"1.0.0","permissions":["shell"]}`, manifest.ErrInvalidPermission},
-		{"unknown runtime", `{"id":"a.b","name":"A","version":"1.0.0","runtimes":["tensorrt"]}`, manifest.ErrInvalidRuntime},
-		{"runtime declared twice", `{"id":"a.b","name":"A","version":"1.0.0","runtimes":["onnxruntime","onnxruntime"]}`, manifest.ErrInvalidRuntime},
 		{"settings view without a frontend", `{"id":"a.b","name":"A","version":"1.0.0","settingsViews":[{"id":"v","title":"T"}]}`, manifest.ErrInvalidSettingsView},
 		{"settings view after an unknown setting", `{"id":"a.b","name":"A","version":"1.0.0","frontend":{"entrypoint":"dist/index.js"},"settingsViews":[{"id":"v","title":"T","after":"nope"}]}`, manifest.ErrInvalidSettingsView},
 	}
@@ -339,16 +333,6 @@ func TestManifestNetworkAlias(t *testing.T) {
 	}
 }
 
-func TestManifestAcceptsTheONNXRuntime(t *testing.T) {
-	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","runtimes":["onnxruntime"],"backend":{"entrypoint":"bin/a"}}`))
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if !slices.Equal(m.Runtimes, []string{manifest.RuntimeONNX}) {
-		t.Errorf("runtimes = %v, want [%s]", m.Runtimes, manifest.RuntimeONNX)
-	}
-}
-
 func TestManifestAcceptsAICompletePermission(t *testing.T) {
 	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","permissions":["ai:complete"]}`))
 	if err != nil {
@@ -409,34 +393,10 @@ func TestAManifestDoesNotTakeTheNameOfTheStoredSecrets(t *testing.T) {
 	}
 }
 
-// A setting of type agent is at most one, declared by a plugin that may query a
-// model, and leaves the choice to the user.
-func TestAManifestDeclaresTheAgentSettingOnceWithoutADefault(t *testing.T) {
-	const agent = `{"key":"model","type":"agent","title":"Model"}`
-	for _, one := range []struct {
-		name, fields string
-		wrong        bool
-	}{
-		{"one", `"permissions":["ai:complete"],"settings":[` + agent + `]`, false},
-		{"none", `"permissions":["ai:complete"]`, false},
-		{"without the permission", `"settings":[` + agent + `]`, true},
-		{"two", `"permissions":["ai:complete"],"settings":[` + agent + `,{"key":"other","type":"agent","title":"Other"}]`, true},
-		{"a default", `"permissions":["ai:complete"],"settings":[{"key":"model","type":"agent","title":"Model","default":{"agent":"md.numen.agents.numen"}}]`, true},
-	} {
-		t.Run(one.name, func(t *testing.T) {
-			text := `{"id":"a.b","name":"A","version":"1.0.0",` + one.fields + `}`
-			m, err := manifestjson.Read(strings.NewReader(text))
-			if one.wrong != errors.Is(err, manifest.ErrInvalidAgentSetting) {
-				t.Fatalf("error = %v, want invalid agent setting: %v", err, one.wrong)
-			}
-			if one.wrong {
-				return
-			}
-			key, found := m.GetAgentSettingKey()
-			if found != strings.Contains(one.fields, `"type":"agent"`) || (found && key != "model") {
-				t.Errorf("the agent setting is %q, %v", key, found)
-			}
-		})
+func TestAnAgentSettingTypeIsNotInTheSchema(t *testing.T) {
+	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"model","type":"agent","title":"Model"}]}`))
+	if !errors.Is(err, manifest.ErrInvalidSettingType) {
+		t.Errorf("error = %v, want ErrInvalidSettingType", err)
 	}
 }
 
@@ -470,25 +430,25 @@ func TestTheServicesAPluginServesAreFullNamesListedOnce(t *testing.T) {
 	}
 }
 
-func TestReadManifest_KeepsModelsOfProgram(t *testing.T) {
+func TestReadManifest_ReportsModelsOfAsUnknownKey(t *testing.T) {
 	m, err := manifestjson.Read(strings.NewReader(
 		`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"model","type":"string","title":"Model","modelsOf":"prog"}]}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := m.Settings[0].ModelsOf; got != "prog" {
-		t.Errorf("ModelsOf = %q, want prog", got)
+	if !slices.Equal(m.Warnings, []string{`unknown key "settings[0].modelsOf"`}) {
+		t.Errorf("warnings = %v", m.Warnings)
 	}
 }
 
 func TestAManifestDeclaresDependencies(t *testing.T) {
 	sum := strings.Repeat("a", 64)
-	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"runtimes":["onnxruntime"],"dependencies":[{"id":"whisper","kind":"model","version":"1","sourceUrl":"https://example.com/w.bin","checksumSha256":"` + sum + `","metadata":{"fileName":"w.bin"}}]}`))
+	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"dependencies":[{"id":"sample-runtime","kind":"runtime"},{"id":"whisper","kind":"model","version":"1","sourceUrl":"https://example.com/w.bin","checksumSha256":"` + sum + `","metadata":{"fileName":"w.bin"}}]}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	got := m.GetDependencyRequirements("/p", nil)
-	if len(got) != 2 || got[0].Kind != manifest.DependencyKindRuntime || got[0].ID != manifest.RuntimeONNX || got[1].ID != "whisper" || got[1].Metadata["fileName"] != "w.bin" || got[1].PluginDir != "/p" {
+	if len(got) != 2 || got[0].Kind != manifest.DependencyKindRuntime || got[0].ID != "sample-runtime" || got[1].ID != "whisper" || got[1].Metadata["fileName"] != "w.bin" || got[1].PluginDir != "/p" {
 		t.Errorf("requirements = %+v", got)
 	}
 }

@@ -45,14 +45,11 @@ func GetDependencyKinds() []DependencyKind {
 }
 
 // GetDependencyRequirements is the requirements of the plugin under the settings in force: its
-// declared runtimes, each as a runtime requirement, then its dependencies. A dependency an option of a
-// setting provisions is a requirement only while that option is in force.
+// dependencies. A dependency an option of a setting provisions is a requirement only while that
+// option is in force.
 func (m Manifest) GetDependencyRequirements(pluginDir string, values map[string]any) []DependencyRequirement {
 	optional, active := m.getOptionalDependencies(values)
-	out := make([]DependencyRequirement, 0, len(m.Runtimes)+len(m.Dependencies))
-	for _, name := range m.Runtimes {
-		out = append(out, DependencyRequirement{ID: name, Kind: DependencyKindRuntime, PluginDir: pluginDir})
-	}
+	out := make([]DependencyRequirement, 0, len(m.Dependencies))
 	for _, req := range m.Dependencies {
 		if optional[req.ID] && !active[req.ID] {
 			continue

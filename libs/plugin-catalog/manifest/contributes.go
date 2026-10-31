@@ -56,6 +56,19 @@ type Contributes struct {
 	Themes []Theme
 	// StatusViews are the components the window draws in its status bar.
 	StatusViews []StatusView
+	// Handles are the capabilities the plugin takes part in for files and notes of some types.
+	Handles []Handle
+	// ContentTypes are the types of file the plugin brings that the content type table does not know.
+	ContentTypes []DeclaredContentType
+	// Readers are the tabs of the plugin's frontend that open files, each by the id the frontend
+	// registers it under.
+	Readers []Reader
+	// NoteTypes are the types of note the plugin gives meaning to, and how the index keeps the notes of
+	// each. A note of a type no plugin declares is kept as an ordinary note is.
+	NoteTypes []NoteType
+	// FrameOrigins are the https origins the plugin's pages frame, such as a video site's player. The
+	// window's frame-src names them while the plugin is enabled.
+	FrameOrigins []string
 }
 
 // ListStatusViews returns the ids of the components the plugin registers for the status bar.
@@ -128,7 +141,11 @@ func (m Manifest) listContributionIssues() []error {
 	if c.Feature != strings.TrimSpace(c.Feature) {
 		issues = append(issues, fmt.Errorf("%w: feature %q has surrounding space", ErrInvalidContribution, c.Feature))
 	}
-	return append(issues, c.listThemeIssues()...)
+	issues = append(issues, c.listThemeIssues()...)
+	issues = append(issues, m.listHandleIssues()...)
+	issues = append(issues, m.listContentTypeIssues()...)
+	issues = append(issues, m.listReaderIssues()...)
+	return append(issues, m.listFrameIssues()...)
 }
 
 // listFileTypeIssues checks that each type of file names a kind of tab the plugin registers and at
