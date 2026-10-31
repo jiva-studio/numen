@@ -5,7 +5,6 @@ import {
   failOnFindings,
   getImportSpecifiers,
   getVueScript,
-  listFiles,
   parsePackageJson,
   requireMatches,
 } from "./helpers.mjs";
@@ -109,37 +108,36 @@ export function verifyProtocolImportedOnlyByClients() {
   );
 }
 
-/** The commands that publish a package to a registry. */
-const PUBLISH_COMMAND = /\b(?:npm|pnpm|yarn|bun)\s+publish\b|\bchangeset\s+publish\b/;
+/** The directory of the core client package. */
+const CORE_CLIENT_DIR = "libs/core-client";
 
 /**
- * Lists the findings for the manifest of the core client and `workflows` given as
- * `{ file, text }`: the package must be private, and no workflow that publishes a package names it.
+ * Lists the findings for `manifests` given as `{ file, manifest }`: the core client, the manifest in
+ * `libs/core-client`, must be private, and no package that is not private may declare it as a dependency.
  */
-export function findCoreClientPublishViolations(manifest, workflows) {
+export function findCoreClientPublishViolations(manifests) {
+  const client = manifests.find((one) => one.file === `${CORE_CLIENT_DIR}/package.json`);
+  if (!client) return [{ file: `${CORE_CLIENT_DIR}/package.json`, line: 1, symbol: "the core client has no package.json" }];
   const found = [];
-  if (manifest.name !== CORE_CLIENT) {
-    found.push({ file: "libs/core-client/package.json", line: 1, symbol: `the package is named ${manifest.name}, not ${CORE_CLIENT}` });
+  if (client.manifest.private !== true) {
+    found.push({ file: client.file, line: 1, symbol: `${client.manifest.name} is not "private": true` });
   }
-  if (manifest.private !== true) {
-    found.push({ file: "libs/core-client/package.json", line: 1, symbol: `${CORE_CLIENT} is not "private": true` });
-  }
-  for (const { file, text } of workflows) {
-    if (!PUBLISH_COMMAND.test(text)) continue;
-    const at = text.split("\n").findIndex((line) => line.includes("core-client"));
-    if (at !== -1) found.push({ file, line: at + 1, symbol: `a workflow that publishes a package names core-client` });
+  for (const { file, manifest } of manifests) {
+    if (manifest.private === true || file === client.file) continue;
+    for (const field of DEPENDENCY_FIELDS) {
+      if (client.manifest.name in (manifest[field] ?? {})) {
+        found.push({ file, line: 1, symbol: `${manifest.name} is published and declares ${client.manifest.name} in ${field}` });
+      }
+    }
   }
   return found;
 }
 
-/** The core client is never published: it is private and no publishing workflow names it. */
+/** The core client is never published: it is private and no published package depends on it. */
 export function verifyCoreClientIsPrivate() {
-  const manifest = parsePackageJson(fs.readFileSync(path.join(REPO_ROOT, "libs/core-client/package.json"), "utf8"));
-  const workflows = listFiles(".github/workflows")
-    .filter((file) => /\.ya?ml$/.test(file))
-    .map((file) => ({ file, text: fs.readFileSync(path.join(REPO_ROOT, file), "utf8") }));
-  requireMatches("workflows read for the publish boundary", workflows.length, 10);
-  failOnFindings("The core client is public or named by a publishing workflow", findCoreClientPublishViolations(manifest, workflows));
+  const manifests = readManifests(["apps", "libs", "plugins", "tools", "tests"]);
+  requireMatches("packages read for the publish boundary", manifests.length, 15);
+  failOnFindings("The core client is public or a published package depends on it", findCoreClientPublishViolations(manifests));
 }
 
 export const CORE_CLIENT_VERIFIERS = [
@@ -154,7 +152,7 @@ export const CORE_CLIENT_VERIFIERS = [
     id: "core-client-private",
     scope: "libs",
     module: "boundary",
-    name: "Core Client Is Private (libs/core-client is \"private\": true and no publishing workflow names it)",
+    name: "Core Client Is Private (libs/core-client is \"private\": true and no package that is not private depends on it)",
     run: verifyCoreClientIsPrivate,
   },
 ];
