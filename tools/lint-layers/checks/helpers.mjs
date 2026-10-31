@@ -14,9 +14,8 @@ export const GO_MODULE_ROOT = "github.com/jiva-studio/numen/";
 /** The source files read for references, by extension. */
 export const SCRIPT_EXTENSIONS = new Set([".ts", ".tsx", ".mts", ".cts", ".js", ".mjs", ".cjs", ".vue"]);
 
-/** The ids and HTTP asset routes of the application's windows. */
+/** The ids of the application windows. */
 export const WINDOW_IDS = ["editor", "flashcards", "desktop.editor", "desktop.flashcards", "mobile"];
-export const WINDOW_ROUTE_PREFIXES = ["/assets/"];
 
 /** Tests, stories, test kits of a window, fixtures and generated code. */
 export const NOT_SHIPPED = /(_test\.go|\.(test|spec|stories)\.ts|\.pb\.go|\.connect\.go)$|(^|\/)(testing|testdata|fixtures|e2e|gen)\//;

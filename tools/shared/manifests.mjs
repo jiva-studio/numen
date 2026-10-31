@@ -15,10 +15,6 @@ import {
   ManifestSettingOptionSchema,
 } from '../../libs/protocol/src/numen/v1/manifest_pb.ts'
 
-/** The top-level sections of a manifest: the fields of the schema, by proto name and JSON name. */
-export const listManifestSections = () =>
-  ManifestSchema.fields.map((field) => ({ name: field.name, jsonName: field.jsonName }))
-
 /** The name of the file a plugin declares itself in. */
 export const MANIFEST_FILE = 'manifest.json'
 

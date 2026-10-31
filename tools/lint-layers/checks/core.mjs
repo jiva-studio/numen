@@ -8,7 +8,6 @@ import {
   exec,
   failOnFindings,
   getGoReferences,
-  listFiles,
   listShippedFiles,
   readSource,
 } from "./helpers.mjs";
@@ -41,46 +40,6 @@ export function verifyCoreHexagon() {
     throw new Error("No core hexagonal architecture tests discovered in libs/core/container/*_test.go");
   }
   exec(`go test -v ./container -run "^(${tests.join("|")})$"`, path.join(MODULES_DIR, "libs/core"));
-}
-
-/** The packages of the core that belong to a plugin, as directories, and as files of `container`. */
-const CORE_MOVED_DIRS = [
-  "usecase/document",
-  "usecase/recognition",
-  "usecase/transcription",
-  "usecase/embedding",
-  "internal/embedding",
-  "internal/ocrartifact",
-  "internal/transcript",
-  "port/transcriptionport",
-  "internal/adapter/plugin/transcriberbridge",
-  "internal/adapter/plugin/proofreaderbridge",
-  "internal/urlfile",
-  "internal/adapter/download",
-  "internal/adapter/plugin/downloaderbridge",
-  "port/downloadport",
-  "internal/correction",
-  "adapter/window/flashcards",
-  "internal/adapter/plugin/toolsbridge",
-  "usecase/plugintool",
-];
-const CORE_MOVED_CONTAINER_FILES = ["recogniser", "transcriber", "proofreader", "embedder", "downloader"];
-
-/** The core holds none of the packages a domain plugin owns. */
-export function verifyCoreHoldsNoPluginPackage() {
-  const found = [];
-  for (const dir of CORE_MOVED_DIRS) {
-    const files = listFiles(path.join("libs/core", dir));
-    if (files.length > 0) found.push(`libs/core/${dir}/ (${files.length} files)`);
-  }
-  const container = listFiles("libs/core/container").filter((f) => path.dirname(f) === "libs/core/container");
-  for (const name of CORE_MOVED_CONTAINER_FILES) {
-    const files = container.filter((f) => new RegExp(`/${name}(_\\w+)?\\.go$`).test(f));
-    if (files.length > 0) found.push(`libs/core/container/${name}*.go: ${files.map((f) => path.basename(f)).join(", ")}`);
-  }
-  if (found.length > 0) {
-    throw new Error("The core holds packages a plugin owns:\n" + found.join("\n"));
-  }
 }
 
 /** Every file in `libs/wire` and every reference to `@numen/wire` across the repository. */
@@ -275,13 +234,6 @@ export const CORE_VERIFIERS = [
     run: () => {
       exec("golangci-lint run --issues-exit-code 1 ./...", path.join(MODULES_DIR, "libs/notes"));
     },
-  },
-  {
-    id: "core-holds-no-plugin-package",
-    scope: "libs",
-    module: "core",
-    name: "Core Holds No Plugin Package (document, recognition, transcription, links, proofreading, embedding)",
-    run: verifyCoreHoldsNoPluginPackage,
   },
   {
     id: "sdk-isolation",

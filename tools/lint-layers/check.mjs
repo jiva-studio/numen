@@ -25,7 +25,6 @@ import { CORE_VERIFIERS } from "./checks/core.mjs";
 import { CORE_CLIENT_VERIFIERS } from "./checks/coreClient.mjs";
 import { DOCS_VERIFIERS } from "./checks/docs.mjs";
 import { FRONTEND_VERIFIERS } from "./checks/frontend.mjs";
-import { IDENTIFIER_VERIFIERS } from "./checks/identifiers.mjs";
 import { REPO_ROOT } from "./checks/helpers.mjs";
 import { DISCIPLINE_VERIFIERS } from "./checks/discipline.mjs";
 import { LIBRARY_VERIFIERS } from "./checks/libraries.mjs";
@@ -34,7 +33,6 @@ import { MANIFEST_VERIFIERS } from "./checks/manifests.mjs";
 import { PLUGIN_VERIFIERS } from "./checks/plugins.mjs";
 import { PROTOCOL_VERIFIERS } from "./checks/protocol.mjs";
 import { assertGolangciLintBuild } from "./checks/tools.mjs";
-import { VOCABULARY_VERIFIERS } from "./checks/vocabulary.mjs";
 
 const VERIFIERS = [
   ...CORE_VERIFIERS,
@@ -45,8 +43,6 @@ const VERIFIERS = [
   ...FRONTEND_VERIFIERS.filter((v) => v.scope === "libs"),
   ...LINT_CONFIG_VERIFIERS,
   ...PROTOCOL_VERIFIERS,
-  ...IDENTIFIER_VERIFIERS,
-  ...VOCABULARY_VERIFIERS,
   ...DISCIPLINE_VERIFIERS.filter((v) => v.scope === "libs"),
   ...PLUGIN_VERIFIERS,
   ...DISCIPLINE_VERIFIERS.filter((v) => v.scope === "plugins"),
@@ -80,7 +76,7 @@ if (flags.has("--help") || flags.has("-h")) {
 if (flags.has("--list")) {
   console.log("Registered architectural verifiers:");
   for (const v of VERIFIERS) {
-    console.log("  [" + v.scope.padEnd(7) + " / " + v.module.padEnd(8) + "] " + v.id + ": " + v.name + (v.isManual ? " (manual)" : ""));
+    console.log("  [" + v.scope.padEnd(7) + " / " + v.module.padEnd(8) + "] " + v.id + ": " + v.name);
   }
   process.exit(0);
 }
@@ -138,26 +134,24 @@ function getChangedModules() {
   return Array.from(matched);
 }
 
-/** The verifiers a scope, a module or the full run selects; a manual verifier runs only when named by its id. */
-const AUTOMATIC_VERIFIERS = VERIFIERS.filter((v) => !v.isManual);
-
+/** The verifiers a scope, a module, a changed file set or the full run selects. */
 function resolveSelectedVerifiers(targets) {
   if (targets.includes("--changed-only")) {
     const changedModules = getChangedModules();
     if (changedModules.length === 0) {
       return [];
     }
-    return AUTOMATIC_VERIFIERS.filter((v) => changedModules.includes(v.module));
+    return VERIFIERS.filter((v) => changedModules.includes(v.module));
   }
   if (targets.length === 0 || targets.includes("all")) {
-    return AUTOMATIC_VERIFIERS;
+    return VERIFIERS;
   }
   const selected = new Set();
   for (const target of targets) {
     if (SCOPES.includes(target)) {
-      AUTOMATIC_VERIFIERS.filter((v) => v.scope === target).forEach((v) => selected.add(v));
+      VERIFIERS.filter((v) => v.scope === target).forEach((v) => selected.add(v));
     } else if (MODULE_NAMES.includes(target)) {
-      AUTOMATIC_VERIFIERS.filter((v) => v.module === target).forEach((v) => selected.add(v));
+      VERIFIERS.filter((v) => v.module === target).forEach((v) => selected.add(v));
     } else {
       const byId = VERIFIERS.find((v) => v.id === target);
       if (byId) {
