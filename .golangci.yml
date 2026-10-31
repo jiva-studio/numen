@@ -207,6 +207,8 @@ linters:
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hosttext"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
+            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostsearch"
+              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
         plugin-commandbridge:
@@ -228,6 +230,8 @@ linters:
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hosttext"
+              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
+            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostsearch"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
@@ -251,6 +255,8 @@ linters:
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hosttext"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
+            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostsearch"
+              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
         plugin-servicebridge:
@@ -272,6 +278,8 @@ linters:
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hosttext"
+              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
+            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostsearch"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
@@ -295,6 +303,8 @@ linters:
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hosttext"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
+            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostsearch"
+              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
         plugin-agenttoolsbridge:
@@ -317,6 +327,8 @@ linters:
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hosttext"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
+            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostsearch"
+              desc: "a bridge to a plugin does not use the host side that serves plugin calls"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostvault"
               desc: "a bridge to a plugin does not use the host side that serves plugin calls"
 
@@ -326,6 +338,7 @@ linters:
           files:
             - "**/internal/adapter/plugin/hostendpoint/**"
             - "**/internal/adapter/plugin/hosttext/**"
+            - "**/internal/adapter/plugin/hostsearch/**"
             - "**/internal/adapter/plugin/hostvault/**"
             - "!$test"
           deny:
