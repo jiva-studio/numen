@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	notesmarkdown "github.com/jiva-studio/numen/libs/notes/markdown"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/markdown"
 )
 
 // getKind is what sort of source a file is, from its name alone, as the core decides it.
@@ -55,7 +55,7 @@ func (v *Vault) rescan(paths ...string) {
 			delete(v.indexed, filePath)
 			continue
 		}
-		v.indexed[filePath] = notesmarkdown.Parse(fp, raw)
+		v.indexed[filePath] = markdown.Parse(fp, raw)
 	}
 }
 

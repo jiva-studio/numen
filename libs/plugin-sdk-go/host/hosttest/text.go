@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/notes/textfile"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/textfile"
 )
 
 // Texts is the text versions of a vault in memory, used as a plugin uses them through the

@@ -1,0 +1,520 @@
+package markdown
+
+import (
+	"bytes"
+	"fmt"
+	"slices"
+	"strings"
+
+	"gopkg.in/yaml.v3"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+)
+
+// ErrNotOwned is returned when a change targets an entry that holds content the
+// application does not own. On a collision the user's entry wins: the link is named
+// in the error and left as written.
+var ErrNotOwned = fmt.Errorf("this link carries something the application does not own")
+
+// owned is every key an entry of the `links:` block may carry. Anything else is
+// content the application does not own.
+var owned = map[string]bool{
+	"to": true, "role": true, "type": true, "note": true, "label": true, "marker": true,
+}
+
+// entry is one record of the `links:` block: its content and the bytes it occupies.
+//
+// An entry is changed by replacing its own span only, so neighbouring entries,
+// including ones the parser could not interpret, unknown keys, and user comments,
+// survive a write unchanged.
+type entry struct {
+	link       domain.Link
+	start, end int
+	// isReadable is whether the application can interpret this entry. An entry it
+	// cannot interpret is user content and is never rewritten.
+	isReadable bool
+	// isOwned is whether every key in it is one the application owns.
+	isOwned bool
+	// address is the node holding where the link goes, so changing it is a
+	// change to that scalar.
+	address *yaml.Node
+}
+
+// block is the `links:` key: its location, its contents, and its layout, so a new
+// entry matches the existing ones.
+type block struct {
+	start, end int
+	entries    []entry
+	indent     string
+	isFound    bool
+}
+
+func (d *Document) block() (block, error) {
+	node, err := d.getWritableNode()
+	if err != nil {
+		return block{}, err
+	}
+	start, end, found := d.span(node, "links")
+	if !found {
+		return block{indent: "  "}, nil
+	}
+	b := block{start: start, end: end, indent: "  ", isFound: true}
+
+	items := valueOf(node, "links")
+	switch {
+	case items == nil || isNullValue(items):
+		return b, nil
+	case items.Kind != yaml.SequenceNode || hasFlowStyle(items):
+		return block{}, ErrInline
+	}
+
+	entries, indent := d.readBlockEntries(items, end)
+	b.entries = entries
+	if len(entries) > 0 {
+		b.indent = indent
+	}
+	return b, nil
+}
+
+func (d *Document) readBlockEntries(items *yaml.Node, end int) ([]entry, string) {
+	lines := lineOffsets(d.front)
+	var entries []entry
+	var indent string
+	for i, item := range items.Content {
+		itemLine := item.Line
+		if itemLine < 1 || itemLine >= len(lines) {
+			continue
+		}
+		var linked int
+		if i+1 < len(items.Content) {
+			linked = items.Content[i+1].Line - 1
+		} else {
+			linked = offsetLine(lines, end) - 1
+		}
+		last := d.endLine(lines, item, items.Column)
+		if last > linked {
+			last = linked
+		}
+		if last < itemLine {
+			last = itemLine
+		}
+		entries = append(entries, entry{
+			link:       linkOf(item),
+			start:      lines[itemLine-1],
+			end:        lines[last],
+			isReadable: isReadable(item),
+			isOwned:    hasOnlyOwnedKeys(item),
+			address:    valueOf(item, "to"),
+		})
+		if i == 0 {
+			indent = getIndent(string(d.front[lines[itemLine-1]:lines[itemLine]]))
+		}
+	}
+	return entries, indent
+}
+
+// AddLink writes one relationship into the block and leaves every other entry
+// byte-for-byte unchanged.
+//
+// An entry is addressed by its target and its type. The entry of the same target
+// and type takes the role, label and marker given, and keeps the reason the user
+// wrote on it unless a reason is given.
+func (d *Document) AddLink(add domain.Link) error {
+	b, err := d.block()
+	if err != nil {
+		return err
+	}
+	for _, e := range b.entries {
+		if e.link.Target != add.Target || e.link.Type != add.Type {
+			continue
+		}
+		next := e.link
+		next.Role = add.Role
+		next.Label = add.Label
+		next.Marker = add.Marker
+		if add.Why != "" {
+			next.Why = add.Why
+		}
+		if next == e.link {
+			return nil
+		}
+		rendered, err := renderEntry(next, b.indent, d.eol)
+		if err != nil {
+			return err
+		}
+		d.splice(e.start, e.end, rendered)
+		return nil
+	}
+
+	return d.appendEntry(b, add)
+}
+
+// SetLink makes the block hold exactly the record given for its target and type:
+// the entry that goes to the target, or to any of the addresses also given, with
+// the same type is replaced whole, and a block with none gains the record.
+// Another entry of the same target and type is removed, so a note holds one record
+// per target and type.
+func (d *Document) SetLink(link domain.Link, also ...domain.Address) error {
+	b, err := d.block()
+	if err != nil {
+		return err
+	}
+	found, err := findRecords(b.entries, link, also)
+	if err != nil {
+		return err
+	}
+	if len(found) == 0 {
+		return d.appendEntry(b, link)
+	}
+	for i := len(found) - 1; i >= 0; i-- {
+		e := found[i]
+		if i > 0 {
+			d.splice(e.start, e.end, nil)
+			continue
+		}
+		next := link
+		next.Target = e.link.Target
+		rendered, err := renderEntry(next, b.indent, d.eol)
+		if err != nil {
+			return err
+		}
+		d.splice(e.start, e.end, rendered)
+	}
+	return nil
+}
+
+// findRecords returns the entries that go to the target of the link, or to one of
+// the addresses also given, under the type of the link. An entry the application
+// cannot rewrite is reported as ErrNotOwned.
+func findRecords(entries []entry, link domain.Link, also []domain.Address) ([]entry, error) {
+	var found []entry
+	for _, e := range entries {
+		isTarget := e.link.Target == link.Target || slices.Contains(also, e.link.Target)
+		if !isTarget || e.link.Type != link.Type {
+			continue
+		}
+		if !e.isOwned || !e.isReadable {
+			return nil, fmt.Errorf("%w: %s", ErrNotOwned, e.link.Target)
+		}
+		found = append(found, e)
+	}
+	return found, nil
+}
+
+// RemoveLink takes out every entry that matches the key: the target, the type,
+// and the role when one is named. An empty block goes with them.
+func (d *Document) RemoveLink(key domain.LinkKey) (int, error) {
+	b, err := d.block()
+	if err != nil {
+		return 0, err
+	}
+
+	removed, keptCount := 0, 0
+	for i := len(b.entries) - 1; i >= 0; i-- {
+		e := b.entries[i]
+		if e.link.Target != key.Target || e.link.Type != key.Type ||
+			(key.Role != "" && e.link.Role != key.Role) {
+			keptCount++
+			continue
+		}
+		d.splice(e.start, e.end, nil)
+		removed++
+	}
+	if removed > 0 && keptCount == 0 {
+		if err := d.set("links", nil); err != nil {
+			return removed, err
+		}
+	}
+	return removed, nil
+}
+
+// SetLinkOfType makes the block name one note under a `type`.
+//
+// The first entry with that type is pointed at the address and keeps its role and
+// the user's text; any further entry with that type is removed, so a note has one
+// target per type. An empty address removes all of them, and an empty block is
+// removed with them.
+//
+// An entry the parser cannot read is left as written.
+func findTypedEntries(entries []entry, kind string) ([]int, int, error) {
+	var carrying []int
+	remainingCount := 0
+	for i, e := range entries {
+		if e.link.Type != kind || !e.isReadable {
+			remainingCount++
+			continue
+		}
+		if !e.isOwned {
+			return nil, 0, fmt.Errorf("%w: %s", ErrNotOwned, e.link.Target)
+		}
+		carrying = append(carrying, i)
+	}
+	return carrying, remainingCount, nil
+}
+
+func (d *Document) replaceTypedEntries(b block, carrying []int, kind string, to domain.Address) error {
+	for idx := len(carrying) - 1; idx >= 0; idx-- {
+		e := b.entries[carrying[idx]]
+		if idx > 0 || to.Value == "" {
+			d.splice(e.start, e.end, nil)
+			continue
+		}
+		next := e.link
+		next.Target, next.Type = to, kind
+		rendered, err := renderEntry(next, b.indent, d.eol)
+		if err != nil {
+			return err
+		}
+		d.splice(e.start, e.end, rendered)
+	}
+	return nil
+}
+
+func (d *Document) appendEntry(b block, l domain.Link) error {
+	rendered, err := renderEntry(l, b.indent, d.eol)
+	if err != nil {
+		return err
+	}
+	if !b.isFound {
+		return d.set("links", append([]byte("links:"+d.eol), rendered...))
+	}
+	d.splice(b.end, b.end, rendered)
+	return nil
+}
+
+// SetLinkOfType makes the block name one note under a `type`.
+//
+// The first entry with that type is pointed at the address and keeps its role and
+// the user's text; any further entry with that type is removed, so a note has one
+// target per type. An empty address removes all of them, and an empty block is
+// removed with them.
+//
+// An entry the parser cannot read is left as written.
+func (d *Document) SetLinkOfType(kind string, to domain.Address, role domain.LinkRole) error {
+	b, err := d.block()
+	if err != nil {
+		return err
+	}
+
+	carrying, retained, err := findTypedEntries(b.entries, kind)
+	if err != nil {
+		return err
+	}
+
+	if err := d.replaceTypedEntries(b, carrying, kind, to); err != nil {
+		return err
+	}
+
+	if to.Value == "" {
+		if len(carrying) > 0 && retained == 0 {
+			return d.set("links", nil)
+		}
+		return nil
+	}
+	if len(carrying) > 0 {
+		return nil
+	}
+	return d.appendEntry(b, domain.Link{Target: to, Role: role, Type: kind})
+}
+
+func applyLinkChange(orig, change domain.Link) domain.Link {
+	next := orig
+	if change.Role != "" {
+		next.Role = change.Role
+	}
+	if change.Type != "" {
+		next.Type = change.Type
+	}
+	if change.Why != "" {
+		next.Why = change.Why
+	}
+	if change.Label != "" {
+		next.Label = change.Label
+	}
+	if change.Marker != "" {
+		next.Marker = change.Marker
+	}
+	return next
+}
+
+type linkEdit struct {
+	start, end int
+	rendered   []byte
+}
+
+func (d *Document) collectLinkEdits(b block, to domain.Address, change domain.Link) ([]linkEdit, error) {
+	var edits []linkEdit
+	for i := len(b.entries) - 1; i >= 0; i-- {
+		e := b.entries[i]
+		if e.link.Target != to {
+			continue
+		}
+		if !e.isOwned {
+			return nil, fmt.Errorf("%w: %s", ErrNotOwned, e.link.Target)
+		}
+		next := applyLinkChange(e.link, change)
+		rendered, err := renderEntry(next, b.indent, d.eol)
+		if err != nil {
+			return nil, err
+		}
+		edits = append(edits, linkEdit{start: e.start, end: e.end, rendered: rendered})
+	}
+	return edits, nil
+}
+
+// UpdateLink changes the content of an entry without changing its target
+func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error) {
+	b, err := d.block()
+	if err != nil {
+		return 0, err
+	}
+	edits, err := d.collectLinkEdits(b, to, change)
+	if err != nil {
+		return 0, err
+	}
+	for _, e := range edits {
+		d.splice(e.start, e.end, e.rendered)
+	}
+	return len(edits), nil
+}
+
+// RedirectLinks sends every entry that goes to one address to another, changing
+// the address and not one byte else. An entry the application could not read,
+// or one carrying a key it does not own, is left alone: its link stays as it
+// was written and is visible as a problem.
+func (d *Document) RedirectLinks(from domain.Address, to string) (int, error) {
+	if !domain.IsNameable(to) {
+		// A name that cannot be a link target leaves the link unchanged; it is reported
+		// as a problem.
+		return 0, nil
+	}
+	b, err := d.block()
+	if err != nil {
+		return 0, err
+	}
+
+	moved := 0
+	for i := len(b.entries) - 1; i >= 0; i-- {
+		e := b.entries[i]
+		if e.link.Target != from || !e.isReadable || !e.isOwned {
+			continue
+		}
+		if e.address == nil {
+			continue
+		}
+		start, end, ok := d.scalarSpan(e.address)
+		if !ok {
+			continue
+		}
+		content, err := scalarLike(keepLinkNotation(e.address.Value, to), e.address.Style)
+		if err != nil {
+			return moved, err
+		}
+		d.splice(start, end, []byte(content))
+		moved++
+	}
+	return moved, nil
+}
+
+// renderEntry writes one entry, indented as the block already is.
+func renderEntry(l domain.Link, indent, eol string) ([]byte, error) {
+	var out bytes.Buffer
+	enc := yaml.NewEncoder(&out)
+	enc.SetIndent(2)
+	if err := enc.Encode([]linkEntry{{
+		To:     l.Target.GetWritten(),
+		Role:   string(l.Role),
+		Type:   l.Type,
+		Note:   l.Why,
+		Label:  l.Label,
+		Marker: string(l.Marker),
+	}}); err != nil {
+		return nil, err
+	}
+	if err := enc.Close(); err != nil {
+		return nil, err
+	}
+
+	text := bytes.TrimRight(out.Bytes(), "\n")
+	block := make([]byte, 0, len(text)+(bytes.Count(text, []byte("\n"))+1)*(len(indent)+len(eol)))
+	for {
+		line, rest, more := bytes.Cut(text, []byte("\n"))
+		block = append(block, indent...)
+		block = append(block, line...)
+		block = append(block, eol...)
+		if !more {
+			return block, nil
+		}
+		text = rest
+	}
+}
+
+// linkOf reads one entry of the block, taking what it can and leaving the rest.
+func linkOf(item *yaml.Node) domain.Link {
+	var l domain.Link
+	if item.Kind != yaml.MappingNode {
+		return l
+	}
+	for i := 0; i+1 < len(item.Content); i += 2 {
+		value := strings.TrimSpace(item.Content[i+1].Value)
+		switch item.Content[i].Value {
+		case "to":
+			l.Target = domain.ParseAddress(value)
+		case "role":
+			l.Role = domain.LinkRole(value)
+		case "type":
+			l.Type = value
+		case "note":
+			l.Why = value
+		case "label":
+			l.Label = value
+		case "marker":
+			l.Marker = domain.LinkMarker(value)
+		}
+	}
+	return l
+}
+
+// isReadable is whether the application can act on an entry at all: somewhere to
+// go, a role it has decided on, and a marker that is absent or one it draws.
+func isReadable(item *yaml.Node) bool {
+	if item.Kind != yaml.MappingNode {
+		return false
+	}
+	l := linkOf(item)
+	return l.Target.Value != "" && domain.IsKnownRole(l.Role) && domain.IsWritableMarker(l.Marker)
+}
+
+// hasOnlyOwnedKeys is whether every key in an entry is one the application owns.
+func hasOnlyOwnedKeys(item *yaml.Node) bool {
+	if item.Kind != yaml.MappingNode {
+		return false
+	}
+	for i := 0; i+1 < len(item.Content); i += 2 {
+		if !owned[item.Content[i].Value] {
+			return false
+		}
+	}
+	return true
+}
+
+// keepLinkNotation returns a name in the notation of the name it replaces. Double
+// brackets are the user's link notation, and an alias after `|` or a heading after
+// `#` belongs to the user: only the target changes.
+func keepLinkNotation(was, to string) string {
+	if !strings.HasPrefix(was, "[[") || !strings.HasSuffix(was, "]]") || len(was) < 4 {
+		return to
+	}
+	return "[[" + to + getWikilinkSuffix(was[2:len(was)-2]) + "]]"
+}
+
+// linkEntry is one record of the `links:` block, in the order the format
+// specification lists the fields.
+type linkEntry struct {
+	To     string `yaml:"to"`
+	Role   string `yaml:"role"`
+	Type   string `yaml:"type,omitempty"`
+	Note   string `yaml:"note,omitempty"`
+	Label  string `yaml:"label,omitempty"`
+	Marker string `yaml:"marker,omitempty"`
+}

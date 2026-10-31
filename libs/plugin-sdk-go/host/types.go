@@ -1,59 +1,59 @@
 package host
 
 import (
-	notesdomain "github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
-type VaultInfo = notesdomain.Vault
-type VaultID = notesdomain.VaultID
-type FileStat = notesdomain.FileStat
-type SourceKind = notesdomain.SourceKind
-type Note = notesdomain.Note
-type NoteRef = notesdomain.NoteRef
-type NoteType = notesdomain.NoteType
-type ResolvedLink = notesdomain.ResolvedLink
-type Link = notesdomain.Link
-type Address = notesdomain.Address
-type LinkRole = notesdomain.LinkRole
-type LinkMarker = notesdomain.LinkMarker
-type Connection = notesdomain.Connection
-type Side = notesdomain.Side
-type RelatedNote = notesdomain.RelatedNote
-type Backlink = notesdomain.Backlink
-type VaultProblem = notesdomain.VaultProblem
-type TextVersion = notesdomain.TextVersion
-type TextVersionID = notesdomain.TextVersionID
-type TextKind = notesdomain.TextKind
-type TextSegment = notesdomain.TextSegment
-type RawSelector = notesdomain.Selector
-type VersionText = notesdomain.VersionText
-type ByteRange = notesdomain.ByteRange
+type VaultInfo = domain.Vault
+type VaultID = domain.VaultID
+type FileStat = domain.FileStat
+type SourceKind = domain.SourceKind
+type Note = domain.Note
+type NoteRef = domain.NoteRef
+type NoteType = domain.NoteType
+type ResolvedLink = domain.ResolvedLink
+type Link = domain.Link
+type Address = domain.Address
+type LinkRole = domain.LinkRole
+type LinkMarker = domain.LinkMarker
+type Connection = domain.Connection
+type Side = domain.Side
+type RelatedNote = domain.RelatedNote
+type Backlink = domain.Backlink
+type VaultProblem = domain.VaultProblem
+type TextVersion = domain.TextVersion
+type TextVersionID = domain.TextVersionID
+type TextKind = domain.TextKind
+type TextSegment = domain.TextSegment
+type RawSelector = domain.Selector
+type VersionText = domain.VersionText
+type ByteRange = domain.ByteRange
 
 const (
-	KindFile       = notesdomain.KindFile
-	KindNote       = notesdomain.KindNote
-	NoteExtension  = notesdomain.NoteExtension
-	TypeNote       = notesdomain.TypeNote
-	RoleParent     = notesdomain.RoleParent
-	RoleChild      = notesdomain.RoleChild
-	RoleJump       = notesdomain.RoleJump
-	RoleRef        = notesdomain.RoleRef
-	RoleAttachment = notesdomain.RoleAttachment
-	MarkerNone     = notesdomain.MarkerNone
-	MarkerArrow    = notesdomain.MarkerArrow
-	SchemeName     = notesdomain.SchemeName
-	SchemeNote     = notesdomain.SchemeNote
-	CheckParse     = notesdomain.CheckParse
+	KindFile       = domain.KindFile
+	KindNote       = domain.KindNote
+	NoteExtension  = domain.NoteExtension
+	TypeNote       = domain.TypeNote
+	RoleParent     = domain.RoleParent
+	RoleChild      = domain.RoleChild
+	RoleJump       = domain.RoleJump
+	RoleRef        = domain.RoleRef
+	RoleAttachment = domain.RoleAttachment
+	MarkerNone     = domain.MarkerNone
+	MarkerArrow    = domain.MarkerArrow
+	SchemeName     = domain.SchemeName
+	SchemeNote     = domain.SchemeNote
+	CheckParse     = domain.CheckParse
 )
 
 var (
-	NewTextVersionID = notesdomain.NewTextVersionID
-	NewVersionText   = notesdomain.NewVersionText
-	FindLiveVersion  = notesdomain.FindLiveVersion
-	HashContent      = notesdomain.HashContent
-	ParseAddress     = notesdomain.ParseAddress
-	FoldName         = notesdomain.FoldName
-	Basename         = notesdomain.Basename
-	LinkName         = notesdomain.LinkName
-	ChooseMatch      = notesdomain.ChooseMatch
+	NewTextVersionID = domain.NewTextVersionID
+	NewVersionText   = domain.NewVersionText
+	FindLiveVersion  = domain.FindLiveVersion
+	HashContent      = domain.HashContent
+	ParseAddress     = domain.ParseAddress
+	FoldName         = domain.FoldName
+	Basename         = domain.Basename
+	LinkName         = domain.LinkName
+	ChooseMatch      = domain.ChooseMatch
 )
