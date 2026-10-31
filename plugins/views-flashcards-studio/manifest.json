@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.flashcards.studio",
   "name": "Flashcards Studio",
-  "version": "2026.10.4",
+  "version": "2026.10.5",
   "protocol": 1,
   "description": "Flashcard deck editor, card template designer, and spaced-repetition review",
   "capabilities": ["tools"],
