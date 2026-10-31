@@ -1,4 +1,4 @@
-package tools_test
+package tools
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
@@ -21,12 +20,12 @@ type greetOut struct {
 	Greeting string `json:"greeting"`
 }
 
-func newRegistry(t *testing.T) *tools.Registry {
+func newRegistry(t *testing.T) *Registry {
 	t.Helper()
-	registry := tools.New()
-	err := tools.Add(registry, tools.Spec{
-		Name: "greet", Title: "Greet", Description: "Greets.", Effect: tools.ReadOnly,
-		Servers: []tools.Server{tools.Full, tools.Reading}, Step: tools.Search,
+	registry := New()
+	err := Add(registry, Spec{
+		Name: "greet", Title: "Greet", Description: "Greets.", Effect: ReadOnly,
+		Servers: []Server{Full, Reading}, Step: Search,
 	}, func(_ context.Context, in greetIn) (greetOut, error) {
 		if in.Name == "" {
 			return greetOut{}, errors.New("recipient required")
@@ -39,9 +38,9 @@ func newRegistry(t *testing.T) *tools.Registry {
 	return registry
 }
 
-func call(t *testing.T, registry *tools.Registry, name, arguments string) *v1.CallToolResponse {
+func call(t *testing.T, registry *Registry, name, arguments string) *v1.CallToolResponse {
 	t.Helper()
-	res, err := registry.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{Name: name, Arguments: []byte(arguments)}))
+	res, err := registryHandler{registry: registry}.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{Name: name, Arguments: []byte(arguments)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +48,7 @@ func call(t *testing.T, registry *tools.Registry, name, arguments string) *v1.Ca
 }
 
 func TestListTools_ReturnsSchemasAndServers(t *testing.T) {
-	res, err := newRegistry(t).ListTools(t.Context(), connect.NewRequest(&v1.ListToolsRequest{}))
+	res, err := registryHandler{registry: newRegistry(t)}.ListTools(t.Context(), connect.NewRequest(&v1.ListToolsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,8 +111,8 @@ func TestCall_UnknownNameAndNonObjectArgsReturnErrorCode(t *testing.T) {
 }
 
 func TestCall_TextResultReturnsText(t *testing.T) {
-	registry := tools.New()
-	if err := tools.Add(registry, tools.Spec{Name: "count", Effect: tools.ReadOnly}, func(context.Context, struct{}) (int, error) {
+	registry := New()
+	if err := Add(registry, Spec{Name: "count", Effect: ReadOnly}, func(context.Context, struct{}) (int, error) {
 		return 3, nil
 	}); err != nil {
 		t.Fatal(err)
@@ -129,28 +128,28 @@ func TestCall_TextResultReturnsText(t *testing.T) {
 func TestTwoToolsOfOneNameAreRefused(t *testing.T) {
 	registry := newRegistry(t)
 
-	err := tools.Add(registry, tools.Spec{Name: "greet", Effect: tools.ReadOnly}, func(context.Context, greetIn) (greetOut, error) {
+	err := Add(registry, Spec{Name: "greet", Effect: ReadOnly}, func(context.Context, greetIn) (greetOut, error) {
 		return greetOut{}, nil
 	})
 
-	if !errors.Is(err, tools.ErrDuplicate) {
+	if !errors.Is(err, ErrDuplicate) {
 		t.Errorf("the second tool was added with %v", err)
 	}
 }
 
 func TestCall_ContextCarriesTokenMark(t *testing.T) {
-	registry := tools.New()
+	registry := New()
 	type in struct{}
 	type out struct {
 		Mark string `json:"mark"`
 	}
-	if err := tools.Add(registry, tools.Spec{Name: "current", Effect: tools.ReadOnly}, func(ctx context.Context, _ in) (out, error) {
-		return out{Mark: tools.GetCallContext(ctx)["org.example.sample/item"]}, nil
+	if err := Add(registry, Spec{Name: "current", Effect: ReadOnly}, func(ctx context.Context, _ in) (out, error) {
+		return out{Mark: GetCallContext(ctx)["org.example.sample/item"]}, nil
 	}); err != nil {
 		t.Fatal(err)
 	}
 
-	res, err := registry.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{
+	res, err := registryHandler{registry: registry}.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{
 		Name: "current", Arguments: []byte(`{}`), Context: map[string]string{"org.example.sample/item": "k7"},
 	}))
 
@@ -160,18 +159,18 @@ func TestCall_ContextCarriesTokenMark(t *testing.T) {
 }
 
 func TestCall_ContextCarriesVault(t *testing.T) {
-	registry := tools.New()
+	registry := New()
 	type in struct{}
 	type out struct {
 		Vault string `json:"vault"`
 	}
-	if err := tools.Add(registry, tools.Spec{Name: "current", Effect: tools.ReadOnly}, func(ctx context.Context, _ in) (out, error) {
-		return out{Vault: tools.GetVault(ctx)}, nil
+	if err := Add(registry, Spec{Name: "current", Effect: ReadOnly}, func(ctx context.Context, _ in) (out, error) {
+		return out{Vault: GetVault(ctx)}, nil
 	}); err != nil {
 		t.Fatal(err)
 	}
 
-	res, err := registry.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{
+	res, err := registryHandler{registry: registry}.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{
 		Name: "current", Arguments: []byte(`{}`), VaultId: "v-garden",
 	}))
 

@@ -78,8 +78,6 @@ var ErrDuplicate = errors.New("a tool of that name is already added")
 
 // Registry is the tools one plugin offers. It serves PluginToolService.
 type Registry struct {
-	numenv1connect.UnimplementedPluginToolServiceHandler
-
 	mu    sync.RWMutex
 	tools []registered
 }
@@ -146,13 +144,21 @@ func (r *Registry) add(one registered) error {
 
 // Mount registers the registry as PluginToolService on s.
 func (r *Registry) Mount(s *server.Server) {
-	s.Register(numenv1connect.NewPluginToolServiceHandler(r, s.HandlerOptions()...))
+	s.Register(numenv1connect.NewPluginToolServiceHandler(registryHandler{registry: r}, s.HandlerOptions()...))
+}
+
+// registryHandler serves a Registry as PluginToolService.
+type registryHandler struct {
+	numenv1connect.UnimplementedPluginToolServiceHandler
+
+	registry *Registry
 }
 
 // ListTools lists the tools in the order they were added.
-func (r *Registry) ListTools(
+func (h registryHandler) ListTools(
 	context.Context, *connect.Request[v1.ListToolsRequest],
 ) (*connect.Response[v1.ListToolsResponse], error) {
+	r := h.registry
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	items := make([]*v1.PluginTool, 0, len(r.tools))
@@ -164,9 +170,10 @@ func (r *Registry) ListTools(
 
 // CallTool runs the tool named. A name nothing was added under, and arguments that are no JSON
 // object, are answered with an error code.
-func (r *Registry) CallTool(
+func (h registryHandler) CallTool(
 	ctx context.Context, req *connect.Request[v1.CallToolRequest],
 ) (*connect.Response[v1.CallToolResponse], error) {
+	r := h.registry
 	r.mu.RLock()
 	index := slices.IndexFunc(r.tools, func(reg registered) bool { return reg.tool.GetName() == req.Msg.GetName() })
 	var one registered
@@ -247,42 +254,6 @@ func writeResult(out any) *v1.ToolResult {
 		return &v1.ToolResult{Structured: encoded}
 	}
 	return &v1.ToolResult{Text: string(encoded)}
-}
-
-func writeEffect(effect Effect) v1.ToolEffect {
-	switch effect {
-	case ReadOnly:
-		return v1.ToolEffect_TOOL_EFFECT_READ_ONLY
-	case ReadWrite:
-		return v1.ToolEffect_TOOL_EFFECT_READ_WRITE
-	}
-	return v1.ToolEffect_TOOL_EFFECT_UNSPECIFIED
-}
-
-func writeStep(step Step) v1.ToolStep {
-	switch step {
-	case Search:
-		return v1.ToolStep_TOOL_STEP_SEARCH
-	case Remove:
-		return v1.ToolStep_TOOL_STEP_REMOVE
-	case Move:
-		return v1.ToolStep_TOOL_STEP_MOVE
-	case ByEffect:
-	}
-	return v1.ToolStep_TOOL_STEP_UNSPECIFIED
-}
-
-func writeServers(servers []Server) []v1.ToolServer {
-	wire := make([]v1.ToolServer, 0, len(servers))
-	for _, one := range servers {
-		switch one {
-		case Full:
-			wire = append(wire, v1.ToolServer_TOOL_SERVER_FULL)
-		case Reading:
-			wire = append(wire, v1.ToolServer_TOOL_SERVER_READING)
-		}
-	}
-	return wire
 }
 
 // ErrorCode is the result status of a tool call.
@@ -439,110 +410,9 @@ func (t *ToolInfo) GetServers() []Server {
 	return t.Servers
 }
 
-func readEffect(effect v1.ToolEffect) Effect {
-	switch effect {
-	case v1.ToolEffect_TOOL_EFFECT_READ_ONLY:
-		return ReadOnly
-	case v1.ToolEffect_TOOL_EFFECT_READ_WRITE:
-		return ReadWrite
-	default:
-		return 0
-	}
-}
-
-func readStep(step v1.ToolStep) Step {
-	switch step {
-	case v1.ToolStep_TOOL_STEP_SEARCH:
-		return Search
-	case v1.ToolStep_TOOL_STEP_REMOVE:
-		return Remove
-	case v1.ToolStep_TOOL_STEP_MOVE:
-		return Move
-	default:
-		return ByEffect
-	}
-}
-
-func readServers(servers []v1.ToolServer) []Server {
-	var out []Server
-	for _, s := range servers {
-		switch s {
-		case v1.ToolServer_TOOL_SERVER_UNSPECIFIED:
-			continue
-		case v1.ToolServer_TOOL_SERVER_FULL:
-			out = append(out, Full)
-		case v1.ToolServer_TOOL_SERVER_READING:
-			out = append(out, Reading)
-		}
-	}
-	return out
-}
-
-func readToolInfo(t *v1.PluginTool) *ToolInfo {
-	if t == nil {
-		return nil
-	}
-	return &ToolInfo{
-		Name:         t.GetName(),
-		Title:        t.GetTitle(),
-		Description:  t.GetDescription(),
-		InputSchema:  t.GetInputSchema(),
-		OutputSchema: t.GetOutputSchema(),
-		Effect:       readEffect(t.GetEffect()),
-		Step:         readStep(t.GetStep()),
-		Servers:      readServers(t.GetServers()),
-	}
-}
-
-func writeToolInfo(t *ToolInfo) *v1.PluginTool {
-	if t == nil {
-		return nil
-	}
-	return &v1.PluginTool{
-		Name:         t.Name,
-		Title:        t.Title,
-		Description:  t.Description,
-		InputSchema:  t.InputSchema,
-		OutputSchema: t.OutputSchema,
-		Effect:       writeEffect(t.Effect),
-		Step:         writeStep(t.Step),
-		Servers:      writeServers(t.Servers),
-	}
-}
-
-func readCallResponse(res *v1.CallToolResponse) *CallResponse {
-	if res == nil {
-		return nil
-	}
-	out := &CallResponse{Error: ErrorCode(res.GetError())}
-	if r := res.GetResult(); r != nil {
-		out.Result = &CallResult{
-			Text:       r.GetText(),
-			Structured: r.GetStructured(),
-			IsRefusal:  r.GetIsRefusal(),
-		}
-	}
-	return out
-}
-
-func writeCallResponse(res *CallResponse) *v1.CallToolResponse {
-	if res == nil {
-		return &v1.CallToolResponse{}
-	}
-	out := &v1.CallToolResponse{Error: v1.ToolErrorCode(res.Error)}
-	if res.Result != nil {
-		out.Result = &v1.ToolResult{
-			Text:       res.Result.Text,
-			Structured: res.Result.Structured,
-			IsRefusal:  res.Result.IsRefusal,
-		}
-	}
-	return out
-}
-
 // ListToolInfos returns the tools in the registry.
 func (r *Registry) ListToolInfos(ctx context.Context) ([]*ToolInfo, error) {
-	res, err := r.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
+	res, err := registryHandler{registry: r}.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
 	if err != nil {
 		return nil, err
 	}
@@ -555,7 +425,7 @@ func (r *Registry) ListToolInfos(ctx context.Context) ([]*ToolInfo, error) {
 
 // InvokeTool invokes a tool in the registry.
 func (r *Registry) InvokeTool(ctx context.Context, call Call) (*CallResponse, error) {
-	res, err := r.CallTool(ctx, connect.NewRequest(&v1.CallToolRequest{
+	res, err := registryHandler{registry: r}.CallTool(ctx, connect.NewRequest(&v1.CallToolRequest{
 		Name:      call.Name,
 		Arguments: call.Arguments,
 		Context:   call.Context,
