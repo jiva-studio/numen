@@ -1,25 +1,28 @@
 import { describe, expect, it } from 'vitest'
+import type { LinkMarker } from '@numen/plugin-sdk'
 import type { Neighbourhood, NoteRelation } from '../types'
 import { areNeighbourhoodsEqual, convertNeighbourhood, getNoteTypes } from './picture'
 import { createNodeIdMap } from './nodeIdMap'
 
 /**
- * A related note: relation, label, the note it connects through, and whether
- * the other note also names the relationship.
+ * A related note: relation, label, the note it connects through, and the
+ * markers of the record the focus writes and of the record the note writes.
  */
-type NeighbourRow = [string, NoteRelation, string, string, boolean?]
+type NeighbourRow = [string, NoteRelation, string, string, [LinkMarker | null, LinkMarker | null]?]
 
 const createNeighbourhood = (focus: string, rows: NeighbourRow[]): Neighbourhood => ({
   focus: { path: focus, title: focus },
   focusType: 'note',
-  related: rows.map(([path, relation, label, through, mutual]) => ({
+  related: rows.map(([path, relation, label, through, markers]) => ({
     path,
     title: path,
     type: 'note',
     relation,
     label,
     through,
-    isMutual: mutual ?? false,
+    isMutual: false,
+    marker: markers?.[0] ?? null,
+    reverseMarker: markers?.[1] ?? null,
   })),
 })
 
@@ -165,90 +168,77 @@ describe('what a note is drawn under', () => {
   })
 })
 
-/** Every edge as the end its arrow is drawn at, and the pair it joins. */
+/** Every edge as the ends its arrowheads are drawn at, and the pair it joins. */
 const arrows = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
   const { plex, note } = renderImage(neighbourhood)
   return plex.edges.map(
-    (edge) => `${note(edge.from)} -> ${note(edge.to)}: ${edge.arrow ?? 'no arrow'}`,
+    (edge) => `${note(edge.from)} -> ${note(edge.to)}: ${edge.arrows?.join(' and ') ?? 'no arrow'}`,
   )
 }
 
-describe('whose wording is on the line', () => {
-  it('points the arrow out of the focus, down a line into a child', () => {
-    // Marrowfield allotments relations Alice Fenn below it and writes a word on the
-    // link; Alice Fenn names the same relationship back.
+describe('the markers on the line', () => {
+  it('draws the arrow of the focus at the child, down a line out of the focus', () => {
     expect(
       arrows(
         createNeighbourhood('Marrowfield allotments', [
-          ['Alice Fenn, The Chair', 'child', 'the chair since May', '', true],
+          ['Alice Fenn, The Chair', 'child', 'the chair since May', '', ['arrow', null]],
         ]),
       ),
     ).toEqual(['Marrowfield allotments -> Alice Fenn, The Chair: to'])
   })
 
-  it('points it out of the focus down a line the relationship runs into', () => {
-    // The same link from the other end, where Alice Fenn wrote no label. An
-    // arrow indicates which note chose the wording, whether or not a label
-    // exists.
+  it('draws the arrow of the child at the focus', () => {
     expect(
       arrows(
-        createNeighbourhood('Alice Fenn, The Chair', [
-          ['Marrowfield allotments', 'parent', '', '', true],
+        createNeighbourhood('Marrowfield allotments', [
+          ['Alice Fenn, The Chair', 'child', '', '', [null, 'arrow']],
         ]),
       ),
     ).toEqual(['Marrowfield allotments -> Alice Fenn, The Chair: from'])
   })
 
-  it('points it out of the focus on a jump each note wrote its own word on', () => {
+  it('draws the arrow of the focus at a parent, down a line into the focus', () => {
     expect(
       arrows(
         createNeighbourhood('Alice Fenn, The Chair', [
-          ['Bram Doyle', 'jump', 'the oldest tenant', '', true],
+          ['Marrowfield allotments', 'parent', '', '', ['arrow', null]],
         ]),
       ),
-    ).toEqual(['Bram Doyle -> Alice Fenn, The Chair: from'])
+    ).toEqual(['Marrowfield allotments -> Alice Fenn, The Chair: from'])
   })
 
-  it('draws no arrow where only one note named a jump relationship', () => {
-    // Alice Fenn links to Cora Hale and Cora Hale has no link back: an
-    // associative link named by one note has no arrow.
+  it('draws an arrow at each end where both records carry one', () => {
     expect(
       arrows(
         createNeighbourhood('Alice Fenn, The Chair', [
-          ['Cora Hale', 'jump', 'keys, hoses, the gate', '', false],
+          ['Bram Doyle', 'jump', 'the oldest tenant', '', ['arrow', 'arrow']],
         ]),
       ),
-    ).toEqual(['Cora Hale -> Alice Fenn, The Chair: no arrow'])
+    ).toEqual(['Bram Doyle -> Alice Fenn, The Chair: from and to'])
   })
 
-  it('draws no arrow for single child and parent relationships by default', () => {
-    // Single child link has no arrow by default
+  it('draws no arrow where neither record carries a marker, whoever wrote a record', () => {
     expect(
       arrows(
         createNeighbourhood('Alice Fenn, The Chair', [
-          ['Child note', 'child', 'subtask', '', false],
+          ['Cora Hale', 'jump', 'keys, hoses, the gate', '', [null, null]],
+          ['Child note', 'child', 'subtask', ''],
+          ['Parent note', 'parent', 'depends on', ''],
         ]),
       ),
-    ).toEqual(['Alice Fenn, The Chair -> Child note: no arrow'])
-
-    // Single parent link has no arrow by default
-    expect(
-      arrows(
-        createNeighbourhood('Alice Fenn, The Chair', [
-          ['Parent note', 'parent', 'depends on', '', false],
-        ]),
-      ),
-    ).toEqual(['Parent note -> Alice Fenn, The Chair: no arrow'])
+    ).toEqual([
+      'Cora Hale -> Alice Fenn, The Chair: no arrow',
+      'Alice Fenn, The Chair -> Child note: no arrow',
+      'Parent note -> Alice Fenn, The Chair: no arrow',
+    ])
   })
 
   it('draws no arrow on a sibling, whose line is between two other notes', () => {
-    // The line hangs off the shared parent, so neither end of it is the note
-    // in focus and there is no end for an arrow to name.
     expect(
       arrows(
         createNeighbourhood('Alice Fenn, The Chair', [
-          ['Marrowfield allotments', 'parent', '', '', true],
-          ['The question of the rota', 'sibling', '', 'Marrowfield allotments', true],
+          ['Marrowfield allotments', 'parent', '', '', ['arrow', null]],
+          ['The question of the rota', 'sibling', '', 'Marrowfield allotments', ['arrow', 'arrow']],
         ]),
       ),
     ).toEqual([
@@ -280,6 +270,8 @@ describe('what each note of a neighbourhood is', () => {
           label: '',
           through: '',
           isMutual: false,
+          marker: null,
+          reverseMarker: null,
         },
       ],
     }
@@ -317,6 +309,8 @@ describe('two neighbourhoods drawing one picture', () => {
         label: 'part of',
         through: '',
         isMutual: false,
+        marker: null,
+        reverseMarker: null,
       },
       {
         path: 'Beside.md',
@@ -326,6 +320,8 @@ describe('two neighbourhoods drawing one picture', () => {
         label: 'next to',
         through: 'Above.md',
         isMutual: true,
+        marker: null,
+        reverseMarker: null,
       },
     ],
   })
@@ -378,7 +374,8 @@ describe('two neighbourhoods drawing one picture', () => {
     ['relation', { relation: 'child' }],
     ['label', { label: 'far from' }],
     ['through', { through: 'Here.md' }],
-    ['isMutual', { isMutual: false }],
+    ['marker', { marker: 'arrow' }],
+    ['reverseMarker', { reverseMarker: 'arrow' }],
   ])('are not two answers whose second note differs in its %s', (_, more) => {
     expect(areNeighbourhoodsEqual(target(), changed(more))).toBe(false)
   })

@@ -5,7 +5,7 @@
  * every request the editor made is kept in order.
  */
 import { ref } from 'vue'
-import { NOTE_TYPE } from '@numen/plugin-sdk'
+import { asFailure, asValue, NOTE_TYPE, type Connection, type LinkMarker } from '@numen/plugin-sdk'
 import type { PlexRelation } from '../plex'
 import type { PlexEditor, PlexView, Neighbourhood, NoteType, PathRename } from '../types'
 
@@ -21,6 +21,8 @@ export interface RelatedNeighbourSpec {
   label?: string
   reverseLabel?: string
   isMutual?: boolean
+  marker?: LinkMarker
+  reverseMarker?: LinkMarker
   title?: string
   type?: NoteType
 }
@@ -43,6 +45,8 @@ const createNeighbourhood = (
       label: spec.label ?? '',
       reverseLabel: spec.reverseLabel ?? '',
       isMutual: spec.isMutual ?? false,
+      marker: spec.marker ?? null,
+      reverseMarker: spec.reverseMarker ?? null,
       path: spec.path,
       title: spec.title ?? spec.path.replace(/\.md$/, ''),
       type: spec.type ?? types[spec.path] ?? NOTE_TYPE,
@@ -82,30 +86,42 @@ export const viewOn = (
 }
 
 /** A vault that accepts every note creation request, and records the requests. */
-export const createVault = (takes = true) => {
+export const createVault = (takes = true, connection: Connection | null = null) => {
   const createdItem: [string, string][] = []
   const joined: [string, string, string, string?][] = []
-  const replaced: { first: string; second: string; links: unknown[] }[] = []
+  const saved: Connection[] = []
+  const removed: [string, string][] = []
   /** The notes this vault will write no link to, which a test names. */
   const notJoinedPaths = new Set<string>()
   const editor: PlexEditor = {
-    createInRelation: async (from, relation) => {
-      createdItem.push([from, relation])
-      return takes ? { path: 'Made.md', title: 'Made' } : null
+    createRelated: async ({ from, role, title }) => {
+      createdItem.push([from, role])
+      return takes ? asValue(title ? `${title}.md` : 'Made.md') : asFailure('missing')
     },
-    createWithTitle: async (title, from, relation) => {
-      createdItem.push([from, relation])
-      return takes ? { path: `${title}.md`, title } : null
+    join: async (from, to, side) => {
+      if (side.label !== undefined) joined.push([from, to, side.role, side.label])
+      else joined.push([from, to, side.role])
+      return takes && !notJoinedPaths.has(to) ? asValue(undefined) : asFailure('missing')
     },
-    join: async (...[from, to, relation, label]) => {
-      if (label !== undefined) joined.push([from, to, relation, label])
-      else joined.push([from, to, relation])
-      return takes && !notJoinedPaths.has(to)
+    getConnection: async (first, second, type = '') =>
+      asValue(
+        connection ?? {
+          first,
+          second,
+          role: null,
+          type,
+          firstSide: null,
+          secondSide: null,
+        },
+      ),
+    saveConnection: async (saving) => {
+      saved.push(saving)
+      return takes ? asValue(undefined) : asFailure('cycle')
     },
-    replaceLinks: async (first, second, links) => {
-      replaced.push({ first, second, links: [...links] })
-      return takes
+    removeConnection: async (first, second) => {
+      removed.push([first, second])
+      return takes ? asValue(undefined) : asFailure('missing')
     },
   }
-  return { editor, made: createdItem, joined, replaced, notJoinedPaths }
+  return { editor, made: createdItem, joined, saved, removed, notJoinedPaths }
 }

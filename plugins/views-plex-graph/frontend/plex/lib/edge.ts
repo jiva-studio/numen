@@ -8,8 +8,8 @@ export interface PlexEdge {
   readonly to: string
   /** Drawn along the line when present; the plex never invents one. */
   readonly label?: string
-  /** The end an arrowhead is drawn at. A line given none carries none. */
-  readonly arrow?: EdgeArrow
+  /** The ends an arrowhead is drawn at. A line given none carries none. */
+  readonly arrows?: readonly EdgeArrow[]
 }
 
 /**
@@ -36,6 +36,8 @@ export type EdgeHeading = 'along' | 'against'
  * in degrees clockwise from the positive x axis.
  */
 export interface PlacedArrow {
+  /** The end of the line the arrowhead is drawn at. */
+  readonly end: EdgeArrow
   readonly at: Position
   readonly angle: number
 }
@@ -54,8 +56,8 @@ export interface PlacedEdge extends PlexEdge, EdgeCurve {
    * middle of the line, unless the title was shifted along it to find space.
    */
   readonly wordsAt: number
-  /** Where the arrowhead goes and which way it is aimed, for an edge with one. */
-  readonly arrowhead?: PlacedArrow | undefined
+  /** Where each arrowhead goes and which way it is aimed, for an edge with any. */
+  readonly arrowheads?: readonly PlacedArrow[] | undefined
 }
 
 /**
@@ -198,5 +200,5 @@ export const getArrow = (edge: EdgeCurve, end: EdgeArrow): PlacedArrow => {
   const tangent = end === 'to' ? way : { x: -way.x, y: -way.y }
   const out = covered > 0 && (spanned.x !== 0 || spanned.y !== 0) ? spanned : tangent
 
-  return { at: point, angle: (Math.atan2(out.y, out.x) * 180) / Math.PI }
+  return { end, at: point, angle: (Math.atan2(out.y, out.x) * 180) / Math.PI }
 }

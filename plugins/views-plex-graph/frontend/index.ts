@@ -2,8 +2,10 @@ import { Waypoints } from '@lucide/vue'
 import {
   definePlugin,
   formatErrorMessage,
+  getRelationErrorWords,
   NOTE_SCOPE,
   NOTE_TARGET,
+  type ConnectionRole,
   type PluginContext,
 } from '@numen/plugin-sdk'
 import PlexGraphView from './PlexGraphView.vue'
@@ -21,17 +23,26 @@ export * from './types'
 export * from './words'
 
 export function activate(context: PluginContext): void {
-  const { workspace, notes } = context
-  if (!workspace || !notes) {
-    throw new Error('a plex needs the window it is drawn in and the notes of the vault')
+  const { workspace, notes, relations } = context
+  if (!workspace || !notes || !relations) {
+    throw new Error(
+      'a plex needs the window it is drawn in, the notes of the vault and their relationships',
+    )
   }
-  const plexes = createPlexKind({ workspace, notes, nesting: readNesting(context) }, () =>
-    usePlexView({ neighbourhood: (path) => notes.getNeighbourhood(path) }),
+  const plexes = createPlexKind(
+    { workspace, notes, relations, nesting: readNesting(context) },
+    () => usePlexView({ neighbourhood: (path) => notes.getNeighbourhood(path) }),
   )
   context.registerTabKind(plexes.kind)
   context.onVaultChange((event) => plexes.refresh(event))
 
   const reportFailure = (error: unknown): void => workspace.showError(formatErrorMessage(error))
+
+  /** Makes an untitled note in a relation to another, and says why where the core made none. */
+  const createRelated = async (from: string, role: ConnectionRole): Promise<void> => {
+    const made = await relations.createRelated({ from, role })
+    if (!made.ok) workspace.showError(getRelationErrorWords(made.error))
+  }
 
   /** Opens the note in the plex that was last active, or in a new plex when none is open. */
   const travel = async (path: string): Promise<void> => {
@@ -71,7 +82,7 @@ export function activate(context: PluginContext): void {
     parentId: 'relation',
     target: NOTE_TARGET,
     handler: (target) => {
-      notes.createInRelation(target.path, 'child').catch(reportFailure)
+      createRelated(target.path, 'child').catch(reportFailure)
     },
   })
   context.registerContextMenu({
@@ -80,7 +91,7 @@ export function activate(context: PluginContext): void {
     parentId: 'relation',
     target: NOTE_TARGET,
     handler: (target) => {
-      notes.createInRelation(target.path, 'parent').catch(reportFailure)
+      createRelated(target.path, 'parent').catch(reportFailure)
     },
   })
   context.registerContextMenu({
@@ -89,7 +100,7 @@ export function activate(context: PluginContext): void {
     parentId: 'relation',
     target: NOTE_TARGET,
     handler: (target) => {
-      notes.createInRelation(target.path, 'jump').catch(reportFailure)
+      createRelated(target.path, 'jump').catch(reportFailure)
     },
   })
 }

@@ -2,71 +2,107 @@
  * What the link inspector shows of the core, and the one call a save makes.
  */
 import { describe, expect, it } from 'vitest'
+import type { Connection } from '@numen/plugin-sdk'
 import { createNodeIdMap } from '../lib/nodeIdMap'
-import { createVault, viewOn, type NeighbourSpec } from '../fixtures'
-import type { DirectionalLinkItem } from '../types'
+import { createVault, viewOn } from '../fixtures'
+import { setSideLabel, setSidePresent, toggleSideArrow } from './connectionDraft'
 import { useLinkInspector } from './useLinkInspector'
 
-/** A row of the inspector running one way between two notes. */
-const link = (
-  from: string,
-  to: string,
-  role: DirectionalLinkItem['role'],
-  direction: DirectionalLinkItem['direction'],
-  label = '',
-): DirectionalLinkItem => ({ id: `${from}->${to}`, from, to, role, direction, label })
+/** The connection the core reports between Root.md and Child.md. */
+const reported: Connection = {
+  first: 'Root.md',
+  second: 'Child.md',
+  role: 'child',
+  type: '',
+  firstSide: { label: 'owns', marker: null, reason: 'kept' },
+  secondSide: null,
+}
 
-/** An inspector over Root.md with the neighbours given, and the pair of Root.md and Child.md. */
-const inspecting = (neighbours: readonly NeighbourSpec[] = ['Child.md'], takes = true) => {
-  const plex = viewOn('Root.md', neighbours)
-  const vault = createVault(takes)
+/** An inspector over Root.md, on the pair of Root.md and Child.md, over a core that reports the connection given. */
+const inspecting = (connection: Connection | null = reported, takes = true) => {
+  const plex = viewOn('Root.md', ['Child.md'])
+  const vault = createVault(takes, connection)
   const map = createNodeIdMap()
-  const inspector = useLinkInspector(plex.view, vault.editor, map, (path) =>
-    path.replace(/\.md$/, ''),
+  const messages: string[] = []
+  const inspector = useLinkInspector(
+    plex.view,
+    {
+      editor: vault.editor,
+      roles: ['parent', 'child', 'jump'],
+      showMessage: (text) => messages.push(text),
+    },
+    map,
+    (path) => path.replace(/\.md$/, ''),
   )
   const pair = `${map.getNodeId('Root.md')} ${map.getNodeId('Child.md')}`
-  const open = () => {
-    inspector.openLinkInspector(pair, { x: 1, y: 2 })
+  const open = async () => {
+    await inspector.openLinkInspector(pair, { x: 1, y: 2 })
     return inspector.linkInspector.value
   }
-  return { ...inspector, ...vault, went: plex.went, view: plex.view, pair, open }
+  return { ...inspector, ...vault, messages, went: plex.went, view: plex.view, pair, open }
 }
 
 describe('opening the link inspector', () => {
-  it('shows the link the core reports, with the words it reports on it', () => {
-    const one = inspecting([{ path: 'Child.md', label: 'subtask' }])
+  it('shows the connection the core reports, with the kinds of link the host offers', async () => {
+    const one = inspecting()
 
-    const request = one.open()
+    const request = await one.open()
 
     expect(request?.nodeA).toMatchObject({ title: 'Root', path: 'Root.md' })
     expect(request?.nodeB).toMatchObject({ title: 'Child', path: 'Child.md' })
-    expect(request?.links).toEqual([link('Root.md', 'Child.md', 'child', 'forward', 'subtask')])
+    expect(request?.connection).toEqual(reported)
+    expect(request?.roles).toStrictEqual(['parent', 'child', 'jump'])
   })
 
-  it('shows both links of a mutual relationship with the words of each note', () => {
-    const one = inspecting([
-      { path: 'Child.md', isMutual: true, label: 'owns', reverseLabel: 'belongs to' },
-    ])
+  it('shows a pair that no record joins as a connection with no records', async () => {
+    const one = inspecting(null)
 
-    expect(one.open()?.links).toEqual([
-      link('Root.md', 'Child.md', 'child', 'forward', 'owns'),
-      link('Child.md', 'Root.md', 'parent', 'reverse', 'belongs to'),
-    ])
+    const request = await one.open()
+
+    expect(request?.connection).toMatchObject({ firstSide: null, secondSide: null })
   })
 
-  it('opens on nothing where a node was never drawn or the pair is malformed', () => {
+  it('opens on nothing where a node was never drawn or the pair is malformed', async () => {
     const one = inspecting()
 
-    one.openLinkInspector('nowhere elsewhere', { x: 1, y: 2 })
+    await one.openLinkInspector('nowhere elsewhere', { x: 1, y: 2 })
     expect(one.linkInspector.value).toBeNull()
 
-    one.openLinkInspector('single', { x: 1, y: 2 })
+    await one.openLinkInspector('single', { x: 1, y: 2 })
     expect(one.linkInspector.value).toBeNull()
   })
 
-  it('closes on dismissal', () => {
+  it('says why and opens on nothing where the core would not report the connection', async () => {
     const one = inspecting()
-    one.open()
+    const plex = viewOn('Root.md', ['Child.md'])
+    const map = createNodeIdMap()
+    const messages: string[] = []
+    const refusing = useLinkInspector(
+      plex.view,
+      {
+        editor: {
+          ...one.editor,
+          getConnection: async () => ({ ok: false, error: 'unreadable' }),
+        },
+        roles: [],
+        showMessage: (text) => messages.push(text),
+      },
+      map,
+      (path) => path,
+    )
+
+    await refusing.openLinkInspector(`${map.getNodeId('Root.md')} ${map.getNodeId('Child.md')}`, {
+      x: 0,
+      y: 0,
+    })
+
+    expect(refusing.linkInspector.value).toBeNull()
+    expect(messages).toHaveLength(1)
+  })
+
+  it('closes on dismissal', async () => {
+    const one = inspecting()
+    await one.open()
 
     one.dismissLinkInspector()
 
@@ -75,88 +111,97 @@ describe('opening the link inspector', () => {
 })
 
 describe('saving the link inspector', () => {
-  it('replaces the links of the pair in one call and shows the picture again', async () => {
+  it('saves the connection in one call and shows the picture again', async () => {
     const one = inspecting()
-    one.open()
-    const rows = [
-      link('Root.md', 'Child.md', 'child', 'forward', 'owns'),
-      link('Child.md', 'Root.md', 'parent', 'reverse', 'belongs to'),
-    ]
+    const request = await one.open()
+    const edited = toggleSideArrow(setSideLabel(request!.connection, 'first', 'holds'), 'first')
 
-    await one.saveLinkInspector(rows)
+    await one.saveLinkInspector(edited)
 
-    expect(one.replaced).toEqual([
+    expect(one.saved).toEqual([
       {
-        first: 'Root.md',
-        second: 'Child.md',
-        links: [
-          { from: 'Root.md', to: 'Child.md', relation: 'child', label: 'owns' },
-          { from: 'Child.md', to: 'Root.md', relation: 'parent', label: 'belongs to' },
-        ],
+        ...reported,
+        firstSide: { label: 'holds', marker: 'arrow', reason: 'kept' },
       },
     ])
     expect(one.went).toStrictEqual(['Root.md'])
     expect(one.linkInspector.value).toBeNull()
   })
 
-  it('replaces them with none where every row was removed', async () => {
-    const one = inspecting()
-    one.open()
+  it('saves a record that carries an arrow and an empty label', async () => {
+    const one = inspecting(null)
+    const request = await one.open()
+    const edited = toggleSideArrow(setSidePresent(request!.connection, 'second', true), 'second')
 
-    await one.saveLinkInspector([])
+    await one.saveLinkInspector(edited)
 
-    expect(one.replaced).toEqual([{ first: 'Root.md', second: 'Child.md', links: [] }])
-    expect(one.linkInspector.value).toBeNull()
+    expect(one.saved[0]?.secondSide).toEqual({ label: '', marker: 'arrow', reason: '' })
   })
 
-  it('asks nothing of the core where the rows are what the core reported', async () => {
-    const one = inspecting([{ path: 'Child.md', label: 'subtask' }])
-    const request = one.open()
+  it('asks nothing of the core where the draft is what the core reported', async () => {
+    const one = inspecting()
+    const request = await one.open()
 
-    await one.saveLinkInspector(request?.links ?? [])
+    await one.saveLinkInspector(request!.connection)
 
-    expect(one.replaced).toEqual([])
+    expect(one.saved).toEqual([])
     expect(one.went).toStrictEqual([])
     expect(one.linkInspector.value).toBeNull()
   })
 
-  it('stays open where the core rejected, and shows the picture the core now holds', async () => {
-    const one = inspecting(['Child.md'], false)
-    one.open()
+  it('stays open and says why where the core rejected', async () => {
+    const one = inspecting(reported, false)
+    const request = await one.open()
 
-    await one.saveLinkInspector([link('Root.md', 'Child.md', 'child', 'forward', 'typed')])
+    await one.saveLinkInspector(setSideLabel(request!.connection, 'first', 'typed'))
 
-    expect(one.replaced).toHaveLength(1)
+    expect(one.saved).toHaveLength(1)
     expect(one.linkInspector.value).not.toBeNull()
+    expect(one.messages).toStrictEqual(['a note cannot sit above itself in the hierarchy'])
     expect(one.went).toStrictEqual(['Root.md'])
-  })
-
-  it('shows the core on reopening, never the words that were typed', async () => {
-    const one = inspecting([{ path: 'Child.md', label: 'subtask' }], false)
-    one.open()
-    await one.saveLinkInspector([link('Root.md', 'Child.md', 'child', 'forward', 'typed')])
-
-    one.dismissLinkInspector()
-
-    expect(one.open()?.links[0]?.label).toBe('subtask')
   })
 
   it('does nothing where no inspector is open', async () => {
     const one = inspecting()
 
-    await one.saveLinkInspector([link('Root.md', 'Child.md', 'child', 'forward', 'x')])
+    await one.saveLinkInspector(reported)
+    await one.removeLinkInspector()
 
-    expect(one.replaced).toEqual([])
+    expect(one.saved).toEqual([])
+    expect(one.removed).toEqual([])
   })
 
   it('travels nowhere while the plex remains nowhere', async () => {
     const one = inspecting()
-    one.open()
+    const request = await one.open()
     one.view.here.value = ''
 
-    await one.saveLinkInspector([])
+    await one.saveLinkInspector(setSideLabel(request!.connection, 'first', 'x'))
 
     expect(one.went).toStrictEqual([])
     expect(one.linkInspector.value).toBeNull()
+  })
+})
+
+describe('removing the connection', () => {
+  it('removes both records of the pair under the type of the connection and closes', async () => {
+    const one = inspecting()
+    await one.open()
+
+    await one.removeLinkInspector()
+
+    expect(one.removed).toEqual([['Root.md', 'Child.md']])
+    expect(one.went).toStrictEqual(['Root.md'])
+    expect(one.linkInspector.value).toBeNull()
+  })
+
+  it('stays open where the core would not remove it', async () => {
+    const one = inspecting(reported, false)
+    await one.open()
+
+    await one.removeLinkInspector()
+
+    expect(one.linkInspector.value).not.toBeNull()
+    expect(one.messages).toHaveLength(1)
   })
 })

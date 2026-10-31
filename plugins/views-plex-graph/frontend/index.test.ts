@@ -11,6 +11,7 @@ const createContext = () => {
     pluginId: 'md.numen.views.plex.graph',
     workspace: host.workspace,
     notes: host.notes,
+    relations: host.relations,
   })
   return { ctx, requested }
 }
@@ -63,6 +64,7 @@ describe('view-plex-graph plugin', () => {
       pluginId: 'md.numen.views.plex.graph',
       workspace: host.workspace,
       notes: host.notes,
+      relations: host.relations,
       openTab: (kind, path) => {
         openCalls.push([kind, path])
         return Promise.resolve('')
@@ -111,6 +113,7 @@ describe('view-plex-graph plugin', () => {
       pluginId: 'md.numen.views.plex.graph',
       workspace: host.workspace,
       notes: host.notes,
+      relations: host.relations,
       initialSettings: { nest_headings: false },
     })
     activate(ctx)
@@ -126,10 +129,12 @@ describe('view-plex-graph plugin', () => {
     expect(state.maxHeadings.value).toBe(3)
   })
 
-  it('refuses to activate in a window that offers no workspace or notes', () => {
+  it('refuses to activate in a window that offers no workspace, notes or relationships', () => {
     expect(() =>
       activate(createMockPluginContext({ pluginId: 'md.numen.views.plex.graph' })),
-    ).toThrow('a plex needs the window it is drawn in and the notes of the vault')
+    ).toThrow(
+      'a plex needs the window it is drawn in, the notes of the vault and their relationships',
+    )
   })
 
   it('activates through the default plugin lifecycle', async () => {

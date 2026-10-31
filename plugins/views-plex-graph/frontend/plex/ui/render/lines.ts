@@ -1,7 +1,7 @@
 /** An edge with the properties the drawing needs, computed once for both layers. */
 import { computed, ref, watch } from 'vue'
 import { createArrowTransform, createPath, createReadingPath } from '../../lib/arrange'
-import { edgeKey, type PlacedEdge } from '../../lib/edge'
+import { edgeKey, type EdgeArrow, type PlacedEdge } from '../../lib/edge'
 import type { PlexFrame } from '../../lib/frame'
 
 export interface EdgeLine {
@@ -11,8 +11,8 @@ export interface EdgeLine {
   /** The edge under the pointer: two lines between one pair are one line to target. */
   readonly pair: string
   readonly d: string
-  /** The head on its end of the line, and nothing for a line carrying none. */
-  readonly arrow: string | null
+  /** Each head, by the end of the line it is drawn at, with the transform that puts it there. */
+  readonly arrows: readonly { readonly end: EdgeArrow; readonly transform: string }[]
   /** The path the title is set along, named, and nothing for a line with no title. */
   readonly titlePath: string | null
   readonly titleLine: string
@@ -34,7 +34,10 @@ export const getLines = (edges: readonly PlacedEdge[], uid: string): readonly Ed
     key: `${edge.from}->${edge.to}`,
     pair: edgeKey(edge),
     d: createPath(edge),
-    arrow: edge.arrowhead ? createArrowTransform(edge.arrowhead) : null,
+    arrows: (edge.arrowheads ?? []).map((head) => ({
+      end: head.end,
+      transform: createArrowTransform(head),
+    })),
     titlePath: edge.words ? `${uid}-title-${index}` : null,
     titleLine: createReadingPath(edge),
     titleAt: `${100 * edge.wordsAt}%`,

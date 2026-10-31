@@ -4,7 +4,7 @@
 import { measureRect, measureWindow, win } from '@numen/ui'
 import { computed, nextTick, onMounted, onScopeDispose, ref, watch } from 'vue'
 import type { Ref } from 'vue'
-import { resolvePopoverPosition } from './linkInspector'
+import { resolvePopoverPosition } from '../lib/popoverPlacement'
 
 export interface PopoverPositionOptions {
   readonly target: Ref<HTMLElement | null>

@@ -153,7 +153,7 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
  */
 function cutLabel(edge: PlexEdge, curve: EdgeCurve, routing: Routing): string | undefined {
   if (edge.label === undefined || !routing.labelWidth) return edge.label
-  const room = getLength(curve) - (edge.arrow ? 2 * routing.arrowClearance : 0)
+  const room = getLength(curve) - (edge.arrows?.length ? 2 * routing.arrowClearance : 0)
   return cutToFit(edge.label, room, routing.labelWidth)
 }
 
@@ -188,7 +188,7 @@ export function routeEdge(
     heading: getHeading(curve, MIDDLE),
     words: cutLabel(edge, curve, routingOptions),
     wordsAt: MIDDLE,
-    arrowhead: edge.arrow ? getArrow(curve, edge.arrow) : undefined,
+    arrowheads: edge.arrows?.map((end) => getArrow(curve, end)),
   }
 }
 

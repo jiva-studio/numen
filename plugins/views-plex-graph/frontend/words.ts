@@ -24,16 +24,17 @@ export const WORDS = {
   linkDescription: 'Link description',
   /** The input placeholder for link description in inspector. */
   linkDescriptionPlaceholder: 'Link description…',
-  /** Button to add reverse direction. */
-  addReverseDirection: 'Reverse',
-  /** Button to cycle direction. */
-  changeDirection: 'Change direction',
-  /** Button to remove a link. */
-  removeLink: 'Remove link',
-  /** Button to add link when none exist. */
-  addLink: 'Add link',
-  /** Notice shown when all links between nodes are deleted. */
-  linkWillBeRemoved: 'The link between these notes will be removed.',
+  /** What the arrow switch of a record in the inspector is called. */
+  toggleArrow: 'Arrow',
+  /** What the kind of link field in the inspector is called. */
+  linkKind: 'Kind',
+  /** The choice shown while a connection has no records and so no kind. */
+  noLinkKind: 'Choose a kind',
+  /** One kind of link, read as what the second note is to the first. */
+  linkKindOption: (second: string, role: PlexRelation, first: string) =>
+    `${second} is the ${getRelationName(role)} of ${first}`,
+  /** Button to remove both records of a connection. */
+  removeConnection: 'Remove link',
   /** Button to close inspector and save changes. */
   apply: 'Done',
   /** Button to cancel and close inspector without saving. */

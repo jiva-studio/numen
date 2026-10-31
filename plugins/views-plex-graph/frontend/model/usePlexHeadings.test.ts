@@ -3,6 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
+import { createVault } from '../fixtures'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import type { PlexTabDeps, NoteHeading, NoteType } from '../types'
 import { usePlexHeadings } from './usePlexHeadings'
@@ -16,12 +17,7 @@ const createDeps = (
     return headings
   },
 ): PlexTabDeps => ({
-  editor: {
-    createInRelation: async () => null,
-    createWithTitle: async () => null,
-    join: async () => false,
-    replaceLinks: async () => false,
-  },
+  editor: createVault(false).editor,
   isReady: ref(true),
   isNesting: ref(true),
   headings: ref(6),

@@ -54,6 +54,23 @@ export const AroundANote: Story = {
   },
 }
 
+/** Arrows are drawn where the records carry a marker: here a head at one end and at both ends. */
+export const WithArrows: Story = {
+  render: () => ({
+    components: {
+      Tab: createTab('Ontology.md', [
+        { path: 'Being.md', relation: 'child', marker: 'arrow' },
+        { path: 'Logic.md', relation: 'jump', marker: 'arrow', reverseMarker: 'arrow' },
+        { path: 'Ethics.md', relation: 'jump' },
+      ]),
+    },
+    template: '<Tab />',
+  }),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(canvasElement.querySelectorAll('.plex__edge-arrow')).toHaveLength(3))
+  },
+}
+
 /** A note joined to nothing: the plex draws it alone. */
 export const Alone: Story = {
   render: () => ({ components: { Tab: createTab('Solitude.md', []) }, template: '<Tab />' }),

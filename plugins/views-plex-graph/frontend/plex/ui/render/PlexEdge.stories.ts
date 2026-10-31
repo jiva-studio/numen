@@ -33,7 +33,7 @@ const createEdge = (args: Knobs): PlacedEdge => ({
   from: 'one',
   to: 'two',
   label: args.words,
-  ...(args.isArrow ? { arrow: 'to' as const } : {}),
+  ...(args.isArrow ? { arrows: ['to' as const] } : {}),
   fromPoint: { x: -200, y: -40 },
   toPoint: { x: 200, y: 40 },
   control1: { x: -60, y: -40 },
@@ -42,7 +42,9 @@ const createEdge = (args: Knobs): PlacedEdge => ({
   heading: 'along',
   words: args.words || undefined,
   wordsAt: args.wordsAt,
-  ...(args.isArrow ? { arrowhead: { at: { x: 200, y: 40 }, angle: 12 } } : {}),
+  ...(args.isArrow
+    ? { arrowheads: [{ end: 'to' as const, at: { x: 200, y: 40 }, angle: 12 }] }
+    : {}),
 })
 
 /** The edge with the properties that the drawing requires, as the plex computes them. */
@@ -51,7 +53,10 @@ const createLine = (edge: PlacedEdge): EdgeLine => ({
   key: `${edge.from}->${edge.to}`,
   pair: `${edge.from}|${edge.to}`,
   d: createPath(edge),
-  arrow: edge.arrowhead ? createArrowTransform(edge.arrowhead) : null,
+  arrows: (edge.arrowheads ?? []).map((head) => ({
+    end: head.end,
+    transform: createArrowTransform(head),
+  })),
   titlePath: edge.words ? 'edge-title' : null,
   titleLine: createReadingPath(edge),
   titleAt: `${100 * edge.wordsAt}%`,

@@ -9,7 +9,8 @@ import type { MenuTrigger } from '@numen/ui'
 import type { PlexRelation, PlexDestination } from './plex'
 import PlexQuickLinkPopover from './ui/PlexQuickLinkPopover.vue'
 import PlexLinkInspectorPopover from './ui/PlexLinkInspectorPopover.vue'
-import type { DirectionalLinkItem, PlexTabState } from './types'
+import type { Connection } from '@numen/plugin-sdk'
+import type { PlexTabState } from './types'
 import { WORDS as words } from './words'
 import { usePlexCanvas } from './model/usePlexCanvas'
 
@@ -88,8 +89,12 @@ function onDismissQuickLink() {
   props.state.dismissQuickLink()
 }
 
-function onSaveLinkInspector(rows: readonly DirectionalLinkItem[]) {
-  props.state.saveLinkInspector(rows).catch(props.state.reportFailure)
+function onSaveLinkInspector(connection: Connection) {
+  props.state.saveLinkInspector(connection).catch(props.state.reportFailure)
+}
+
+function onRemoveLinkInspector() {
+  props.state.removeLinkInspector().catch(props.state.reportFailure)
 }
 
 function onDismissLinkInspector() {
@@ -173,6 +178,7 @@ function onDismissLinkInspector() {
       v-if="linkInspector"
       :request="linkInspector"
       @save="onSaveLinkInspector"
+      @remove="onRemoveLinkInspector"
       @dismiss="onDismissLinkInspector"
     />
   </div>

@@ -1,25 +1,27 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
-import { ArrowLeft, ArrowLeftRight, ArrowRight } from '@lucide/vue'
+import { ArrowLeft, ArrowLeftRight, ArrowRight, Minus } from '@lucide/vue'
+import type { Connection } from '@numen/plugin-sdk'
 import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
 import type { LinkInspectorRequest } from '../types'
 import { WORDS as words } from '../words'
 
 describe('PlexLinkInspectorPopover component', () => {
+  const connection: Connection = {
+    first: 'notes/alpha.md',
+    second: 'notes/beta.md',
+    role: 'jump',
+    type: '',
+    firstSide: { label: 'Relates to', marker: null, reason: 'kept' },
+    secondSide: null,
+  }
+
   const defaultRequest: LinkInspectorRequest = {
     nodeA: { id: 'n1', title: 'Note Alpha', path: 'notes/alpha.md' },
     nodeB: { id: 'n2', title: 'Note Beta', path: 'notes/beta.md' },
-    links: [
-      {
-        id: 'notes/alpha.md->notes/beta.md',
-        from: 'notes/alpha.md',
-        to: 'notes/beta.md',
-        role: 'jump',
-        direction: 'forward',
-        label: 'Relates to',
-      },
-    ],
+    connection,
+    roles: ['parent', 'child', 'jump'],
     at: { x: 300, y: 200 },
   }
 
@@ -29,6 +31,9 @@ describe('PlexLinkInspectorPopover component', () => {
       attachTo: document.body,
     })
   }
+
+  const saved = (wrapper: ReturnType<typeof mountPopover>) =>
+    wrapper.emitted('save')?.[0]?.[0] as Connection
 
   it('renders positioned at resolved coordinates and shows node titles', () => {
     const wrapper = mountPopover()
@@ -43,11 +48,7 @@ describe('PlexLinkInspectorPopover component', () => {
   })
 
   it('clamps left position and flips below when placed near top-left boundary', () => {
-    const edgeRequest: LinkInspectorRequest = {
-      ...defaultRequest,
-      at: { x: 20, y: 40 },
-    }
-    const wrapper = mountPopover(edgeRequest)
+    const wrapper = mountPopover({ ...defaultRequest, at: { x: 20, y: 40 } })
     const popover = wrapper.get('.plex-link-popover')
 
     expect(popover.attributes('style')).toContain('left: 12px')
@@ -55,40 +56,99 @@ describe('PlexLinkInspectorPopover component', () => {
     wrapper.unmount()
   })
 
-  it('toggles direction locally when direction button is clicked and saves on done', async () => {
+  it('shows one row for each of the two notes, the one that writes nothing unchecked and unlabelled', () => {
     const wrapper = mountPopover()
-    const dirBtn = wrapper.get('.plex-link-popover__dir-btn')
-    expect(dirBtn.findComponent(ArrowRight).exists()).toBe(true)
 
-    await dirBtn.trigger('click')
-    expect(dirBtn.findComponent(ArrowLeft).exists()).toBe(true)
-
-    const doneBtn = wrapper.get('.plex-link-popover__btn--done')
-    await doneBtn.trigger('click')
-
-    expect(wrapper.emitted('save')).toBeTruthy()
-    const rows = wrapper.emitted('save')?.[0]?.[0] as { direction: string }[]
-    expect(rows[0]?.direction).toBe('reverse')
+    const presence = wrapper.findAll('.plex-link-row__present')
+    const labels = wrapper.findAll('.plex-link-row__input')
+    expect(presence.map((one) => (one.element as HTMLInputElement).checked)).toEqual([true, false])
+    expect(labels.map((one) => (one.element as HTMLInputElement).value)).toEqual(['Relates to', ''])
+    expect(labels[1]?.attributes('disabled')).toBeDefined()
     wrapper.unmount()
   })
 
-  it('updates description locally and saves on Enter', async () => {
+  it('offers each kind of link the host names, with the one the connection has chosen', () => {
     const wrapper = mountPopover()
-    const input = wrapper.get('input')
+    const select = wrapper.get('select').element as HTMLSelectElement
+
+    expect([...select.options].map((option) => option.value)).toEqual(['parent', 'child', 'jump'])
+    expect(select.value).toBe('jump')
+    expect(wrapper.get('select').text()).toContain('Note Beta is the child of Note Alpha')
+    wrapper.unmount()
+  })
+
+  it('saves the kind of link chosen and leaves the records as they were', async () => {
+    const wrapper = mountPopover()
+    await wrapper.get('select').setValue('parent')
+    await wrapper.get('.plex-link-popover__btn--done').trigger('click')
+
+    expect(saved(wrapper)).toEqual({ ...connection, role: 'parent' })
+    wrapper.unmount()
+  })
+
+  it('switches the arrow of one record without touching its label', async () => {
+    const wrapper = mountPopover()
+    const arrow = wrapper.findAll('.plex-link-row__arrow-btn')[0]!
+    expect(arrow.findComponent(Minus).exists()).toBe(true)
+
+    await arrow.trigger('click')
+    expect(arrow.attributes('aria-pressed')).toBe('true')
+    expect(arrow.findComponent(ArrowRight).exists()).toBe(true)
+    await wrapper.get('.plex-link-popover__btn--done').trigger('click')
+
+    expect(saved(wrapper).firstSide).toEqual({
+      label: 'Relates to',
+      marker: 'arrow',
+      reason: 'kept',
+    })
+    wrapper.unmount()
+  })
+
+  it('draws the arrow of the record the second note writes pointing back at the first', async () => {
+    const wrapper = mountPopover()
+    await wrapper.findAll('.plex-link-row__present')[1]!.setValue(true)
+    const arrow = wrapper.findAll('.plex-link-row__arrow-btn')[1]!
+    await arrow.trigger('click')
+
+    expect(arrow.findComponent(ArrowLeft).exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('saves a record with an arrow and an empty label', async () => {
+    const wrapper = mountPopover()
+    await wrapper.findAll('.plex-link-row__present')[1]!.setValue(true)
+    await wrapper.findAll('.plex-link-row__arrow-btn')[1]!.trigger('click')
+    await wrapper.get('.plex-link-popover__btn--done').trigger('click')
+
+    expect(saved(wrapper).secondSide).toEqual({ label: '', marker: 'arrow', reason: '' })
+    wrapper.unmount()
+  })
+
+  it('takes a record away when its box is cleared', async () => {
+    const wrapper = mountPopover()
+    await wrapper.findAll('.plex-link-row__present')[0]!.setValue(false)
+    await wrapper.get('.plex-link-popover__btn--done').trigger('click')
+
+    expect(saved(wrapper).firstSide).toBeNull()
+    wrapper.unmount()
+  })
+
+  it('updates the label locally and saves on Enter', async () => {
+    const wrapper = mountPopover()
+    const input = wrapper.get('.plex-link-row__input')
     await input.setValue('Causes')
     await input.trigger('keydown', { key: 'Enter' })
 
-    expect(wrapper.emitted('save')).toBeTruthy()
-    const rows = wrapper.emitted('save')?.[0]?.[0] as { label: string }[]
-    expect(rows[0]?.label).toBe('Causes')
+    expect(saved(wrapper).firstSide?.label).toBe('Causes')
     wrapper.unmount()
   })
 
-  it('names every description field by a label of its own', async () => {
+  it('names every label field by a label of its own', () => {
     const wrapper = mountPopover()
-    await wrapper.get('.plex-link-popover__btn--add').trigger('click')
 
-    const fields = wrapper.findAll('input').map((input) => input.element as HTMLInputElement)
+    const fields = wrapper
+      .findAll('.plex-link-row__input')
+      .map((input) => input.element as HTMLInputElement)
     expect(
       fields.map((field) => [...(field.labels ?? [])].map((label) => label.textContent)),
     ).toEqual([[words.linkDescription], [words.linkDescription]])
@@ -96,173 +156,30 @@ describe('PlexLinkInspectorPopover component', () => {
     wrapper.unmount()
   })
 
-  it('adds reverse direction row when add reverse button is clicked', async () => {
+  it('keeps the rows under the same keys while a record is added and taken away', async () => {
     const wrapper = mountPopover()
-    const addBtn = wrapper.get('.plex-link-popover__btn--add')
-    await addBtn.trigger('click')
+    const rows = () => wrapper.findAll('.plex-link-row').map((row) => row.element)
+    const before = rows()
 
-    const inputs = wrapper.findAll('input')
-    expect(inputs.length).toBe(2)
+    await wrapper.findAll('.plex-link-row__present')[1]!.setValue(true)
+    await wrapper.findAll('.plex-link-row__present')[0]!.setValue(false)
+
+    expect(rows()).toEqual(before)
     wrapper.unmount()
   })
 
-  it('filters out empty second reverse row on done if left blank', async () => {
+  it('asks for the removal of the connection when the remove button is clicked', async () => {
     const wrapper = mountPopover()
-    const addBtn = wrapper.get('.plex-link-popover__btn--add')
-    await addBtn.trigger('click')
+    await wrapper.get('.plex-link-popover__btn--remove').trigger('click')
 
-    const doneBtn = wrapper.get('.plex-link-popover__btn--done')
-    await doneBtn.trigger('click')
-
-    expect(wrapper.emitted('save')).toBeTruthy()
-    const rows = wrapper.emitted('save')?.[0]?.[0] as { label: string }[]
-    expect(rows.length).toBe(1)
-    expect(rows[0]?.label).toBe('Relates to')
-    wrapper.unmount()
-  })
-
-  it('saves both rows when second reverse row has a description', async () => {
-    const wrapper = mountPopover()
-    const addBtn = wrapper.get('.plex-link-popover__btn--add')
-    await addBtn.trigger('click')
-
-    const inputs = wrapper.findAll('input')
-    await inputs[1]?.setValue('Reverse description')
-
-    const doneBtn = wrapper.get('.plex-link-popover__btn--done')
-    await doneBtn.trigger('click')
-
-    expect(wrapper.emitted('save')).toBeTruthy()
-    const rows = wrapper.emitted('save')?.[0]?.[0] as { label: string }[]
-    expect(rows.length).toBe(2)
-    expect(rows[0]?.label).toBe('Relates to')
-    expect(rows[1]?.label).toBe('Reverse description')
-    wrapper.unmount()
-  })
-
-  it('saves removal when trash button is clicked and Done is clicked', async () => {
-    const wrapper = mountPopover()
-    const deleteBtn = wrapper.get('.plex-link-popover__delete-btn')
-    await deleteBtn.trigger('click')
-
-    expect(wrapper.findAll('input').length).toBe(0)
-    expect(wrapper.find('.plex-link-popover__empty-state').exists()).toBe(true)
-    expect(wrapper.text()).toContain('The link between these notes will be removed.')
-
-    const doneBtn = wrapper.get('.plex-link-popover__btn--done')
-    await doneBtn.trigger('click')
-
-    expect(wrapper.emitted('save')).toBeTruthy()
-    expect(wrapper.emitted('save')?.[0]?.[0]).toEqual([])
-    wrapper.unmount()
-  })
-
-  it('flips between forward and reverse on each click', async () => {
-    const wrapper = mountPopover()
-    const dirBtn = wrapper.get('.plex-link-popover__dir-btn')
-    expect(dirBtn.findComponent(ArrowRight).exists()).toBe(true)
-
-    await dirBtn.trigger('click')
-    expect(dirBtn.findComponent(ArrowLeft).exists()).toBe(true)
-
-    await dirBtn.trigger('click')
-    expect(dirBtn.findComponent(ArrowRight).exists()).toBe(true)
-
-    wrapper.unmount()
-  })
-
-  it('inverts child role to parent when toggled to reverse', async () => {
-    const childRequest: LinkInspectorRequest = {
-      nodeA: { id: 'parent', title: 'Parent Node', path: 'notes/parent.md' },
-      nodeB: { id: 'child', title: 'Child Node', path: 'notes/child.md' },
-      links: [
-        {
-          id: 'notes/parent.md->notes/child.md',
-          from: 'notes/parent.md',
-          to: 'notes/child.md',
-          role: 'child',
-          direction: 'forward',
-          label: 'Is child of',
-        },
-      ],
-      at: { x: 100, y: 100 },
-    }
-
-    const wrapper = mountPopover(childRequest)
-    const dirBtn = wrapper.get('.plex-link-popover__dir-btn')
-    await dirBtn.trigger('click') // to reverse
-
-    const doneBtn = wrapper.get('.plex-link-popover__btn--done')
-    await doneBtn.trigger('click')
-
-    const rows = wrapper.emitted('save')?.[0]?.[0] as {
-      from: string
-      to: string
-      role: string
-      direction: string
-    }[]
-    expect(rows[0]?.from).toBe('notes/child.md')
-    expect(rows[0]?.to).toBe('notes/parent.md')
-    expect(rows[0]?.role).toBe('parent')
-    expect(rows[0]?.direction).toBe('reverse')
-
-    wrapper.unmount()
-  })
-
-  it('adds reverse row on Ctrl+Enter from input', async () => {
-    const wrapper = mountPopover()
-    const input = wrapper.get('input')
-    await input.trigger('keydown', { key: 'Enter', ctrlKey: true })
-
-    expect(wrapper.findAll('input').length).toBe(2)
-    wrapper.unmount()
-  })
-
-  it('disables direction toggle when two bidirectional rows exist', async () => {
-    const bidirectionalRequest: LinkInspectorRequest = {
-      nodeA: { id: 'n1', title: 'Note Alpha', path: 'notes/alpha.md' },
-      nodeB: { id: 'n2', title: 'Note Beta', path: 'notes/beta.md' },
-      links: [
-        {
-          id: 'notes/alpha.md->notes/beta.md',
-          from: 'notes/alpha.md',
-          to: 'notes/beta.md',
-          role: 'jump',
-          direction: 'forward',
-          label: 'Forward',
-        },
-        {
-          id: 'notes/beta.md->notes/alpha.md',
-          from: 'notes/beta.md',
-          to: 'notes/alpha.md',
-          role: 'jump',
-          direction: 'reverse',
-          label: 'Reverse',
-        },
-      ],
-      at: { x: 300, y: 200 },
-    }
-
-    const wrapper = mountPopover(bidirectionalRequest)
-    const dirButtons = wrapper.findAll('.plex-link-popover__dir-btn')
-    expect(dirButtons.length).toBe(2)
-    expect(dirButtons[0]?.attributes('disabled')).toBeDefined()
-    expect(dirButtons[1]?.attributes('disabled')).toBeDefined()
-
-    // Clicking does not change direction
-    await dirButtons[0]?.trigger('click')
-    await dirButtons[1]?.trigger('click')
-
-    expect(dirButtons[0]?.findComponent(ArrowRight).exists()).toBe(true)
-    expect(dirButtons[1]?.findComponent(ArrowLeft).exists()).toBe(true)
-
+    expect(wrapper.emitted('remove')).toBeTruthy()
+    expect(wrapper.emitted('save')).toBeFalsy()
     wrapper.unmount()
   })
 
   it('emits dismiss on escape key', async () => {
     const wrapper = mountPopover()
-    const popover = wrapper.get('.plex-link-popover')
-    await popover.trigger('keydown', { key: 'Escape' })
+    await wrapper.get('.plex-link-popover').trigger('keydown', { key: 'Escape' })
 
     expect(wrapper.emitted('dismiss')).toBeTruthy()
     wrapper.unmount()
@@ -270,80 +187,16 @@ describe('PlexLinkInspectorPopover component', () => {
 
   it('emits dismiss and does not save when close/cancel button is clicked', async () => {
     const wrapper = mountPopover()
-    const input = wrapper.get('input')
-    await input.setValue('Modified Text')
+    await wrapper.get('.plex-link-row__input').setValue('Modified Text')
 
-    const closeBtn = wrapper.get('.plex-link-popover__close-btn')
-    await closeBtn.trigger('click')
+    await wrapper.get('.plex-link-popover__close-btn').trigger('click')
 
     expect(wrapper.emitted('dismiss')).toBeTruthy()
     expect(wrapper.emitted('save')).toBeFalsy()
     wrapper.unmount()
   })
 
-  it('re-enables direction toggle when a row is removed from a 2-row inspector', async () => {
-    const bidirectionalRequest: LinkInspectorRequest = {
-      nodeA: { id: 'n1', title: 'Note Alpha', path: 'notes/alpha.md' },
-      nodeB: { id: 'n2', title: 'Note Beta', path: 'notes/beta.md' },
-      links: [
-        {
-          id: 'notes/alpha.md->notes/beta.md',
-          from: 'notes/alpha.md',
-          to: 'notes/beta.md',
-          role: 'jump',
-          direction: 'forward',
-          label: 'Forward text',
-        },
-        {
-          id: 'notes/beta.md->notes/alpha.md',
-          from: 'notes/beta.md',
-          to: 'notes/alpha.md',
-          role: 'jump',
-          direction: 'reverse',
-          label: 'Reverse text',
-        },
-      ],
-      at: { x: 300, y: 200 },
-    }
-
-    const wrapper = mountPopover(bidirectionalRequest)
-    const deleteButtons = wrapper.findAll('.plex-link-popover__delete-btn')
-    expect(deleteButtons.length).toBe(2)
-
-    // Delete row 2
-    await deleteButtons[1]?.trigger('click')
-
-    // Now only 1 row remains
-    const dirButtons = wrapper.findAll('.plex-link-popover__dir-btn')
-    expect(dirButtons.length).toBe(1)
-    expect(dirButtons[0]?.attributes('disabled')).toBeUndefined()
-
-    // Can toggle direction now
-    await dirButtons[0]?.trigger('click')
-    expect(dirButtons[0]?.findComponent(ArrowLeft).exists()).toBe(true)
-
-    wrapper.unmount()
-  })
-
-  it('treats whitespace-only descriptions as empty and prunes reverse row', async () => {
-    const wrapper = mountPopover()
-    const addBtn = wrapper.get('.plex-link-popover__btn--add')
-    await addBtn.trigger('click')
-
-    const inputs = wrapper.findAll('input')
-    await inputs[1]?.setValue('    ') // Whitespace only
-
-    const doneBtn = wrapper.get('.plex-link-popover__btn--done')
-    await doneBtn.trigger('click')
-
-    expect(wrapper.emitted('save')).toBeTruthy()
-    const rows = wrapper.emitted('save')?.[0]?.[0] as { label: string }[]
-    expect(rows.length).toBe(1)
-    expect(rows[0]?.label).toBe('Relates to')
-    wrapper.unmount()
-  })
-
-  it('saves and closes when clicking outside the popover', async () => {
+  it('saves and closes when clicking outside the popover', () => {
     const wrapper = mountPopover()
     const outsideEl = document.createElement('div')
     document.body.appendChild(outsideEl)
@@ -357,125 +210,15 @@ describe('PlexLinkInspectorPopover component', () => {
     outsideEl.remove()
   })
 
-  it('leaves out the empty first row when only the second has a label', async () => {
-    const bidirectionalRequest: LinkInspectorRequest = {
-      nodeA: { id: 'n1', title: 'Note Alpha', path: 'notes/alpha.md' },
-      nodeB: { id: 'n2', title: 'Note Beta', path: 'notes/beta.md' },
-      links: [
-        {
-          id: 'notes/alpha.md->notes/beta.md',
-          from: 'notes/alpha.md',
-          to: 'notes/beta.md',
-          role: 'jump',
-          direction: 'forward',
-          label: '',
-        },
-        {
-          id: 'notes/beta.md->notes/alpha.md',
-          from: 'notes/beta.md',
-          to: 'notes/alpha.md',
-          role: 'jump',
-          direction: 'reverse',
-          label: 'Reverse only',
-        },
-      ],
-      at: { x: 300, y: 200 },
-    }
+  it('gives a connection with no records the new link role once a record is added', async () => {
+    const empty = { ...connection, role: null, firstSide: null }
+    const wrapper = mountPopover({ ...defaultRequest, connection: empty })
+    expect(wrapper.get('select').element.querySelector('option[disabled]')).not.toBeNull()
 
-    const wrapper = mountPopover(bidirectionalRequest)
-    const doneBtn = wrapper.get('.plex-link-popover__btn--done')
-    await doneBtn.trigger('click')
+    await wrapper.findAll('.plex-link-row__present')[0]!.setValue(true)
+    await wrapper.get('.plex-link-popover__btn--done').trigger('click')
 
-    expect(wrapper.emitted('save')).toBeTruthy()
-    const rows = wrapper.emitted('save')?.[0]?.[0] as { label: string }[]
-    expect(rows.length).toBe(1)
-    expect(rows[0]?.label).toBe('Reverse only')
-    wrapper.unmount()
-  })
-
-  it('adds initial row when add reverse is invoked and localRows was empty', async () => {
-    const wrapper = mountPopover()
-    const deleteBtn = wrapper.get('.plex-link-popover__delete-btn')
-    await deleteBtn.trigger('click')
-    expect(wrapper.findAll('input').length).toBe(0)
-
-    const addBtn = wrapper.get('.plex-link-popover__btn--add')
-    await addBtn.trigger('click')
-    expect(wrapper.findAll('input').length).toBe(1)
-    wrapper.unmount()
-  })
-
-  it('toggles direction when row starts in reverse direction', async () => {
-    const reverseRequest: LinkInspectorRequest = {
-      nodeA: { id: 'n1', title: 'Note Alpha', path: 'notes/alpha.md' },
-      nodeB: { id: 'n2', title: 'Note Beta', path: 'notes/beta.md' },
-      links: [
-        {
-          id: 'notes/beta.md->notes/alpha.md',
-          from: 'notes/beta.md',
-          to: 'notes/alpha.md',
-          role: 'jump',
-          direction: 'reverse',
-          label: 'Reverse link',
-        },
-      ],
-      at: { x: 300, y: 200 },
-    }
-
-    const wrapper = mountPopover(reverseRequest)
-    const dirBtn = wrapper.get('.plex-link-popover__dir-btn')
-    expect(dirBtn.findComponent(ArrowLeft).exists()).toBe(true)
-
-    // Toggle reverse -> forward
-    await dirBtn.trigger('click')
-    expect(dirBtn.findComponent(ArrowRight).exists()).toBe(true)
-
-    const doneBtn = wrapper.get('.plex-link-popover__btn--done')
-    await doneBtn.trigger('click')
-
-    const rows = wrapper.emitted('save')?.[0]?.[0] as {
-      from: string
-      to: string
-      direction: string
-    }[]
-    expect(rows[0]?.direction).toBe('forward')
-    expect(rows[0]?.from).toBe('notes/alpha.md')
-    expect(rows[0]?.to).toBe('notes/beta.md')
-    wrapper.unmount()
-  })
-
-  it('adds reverse row on Meta+Enter from input', async () => {
-    const wrapper = mountPopover()
-    const input = wrapper.get('input')
-    await input.trigger('keydown', { key: 'Enter', metaKey: true })
-
-    expect(wrapper.findAll('input').length).toBe(2)
-    wrapper.unmount()
-  })
-
-  it('adds forward second row when starting from a single reverse row', async () => {
-    const reverseRequest: LinkInspectorRequest = {
-      nodeA: { id: 'n1', title: 'Note Alpha', path: 'notes/alpha.md' },
-      nodeB: { id: 'n2', title: 'Note Beta', path: 'notes/beta.md' },
-      links: [
-        {
-          id: 'notes/beta.md->notes/alpha.md',
-          from: 'notes/beta.md',
-          to: 'notes/alpha.md',
-          role: 'parent',
-          direction: 'reverse',
-          label: 'Reverse parent',
-        },
-      ],
-      at: { x: 300, y: 200 },
-    }
-
-    const wrapper = mountPopover(reverseRequest)
-    const addBtn = wrapper.get('.plex-link-popover__btn--add')
-    await addBtn.trigger('click')
-
-    const inputs = wrapper.findAll('input')
-    expect(inputs.length).toBe(2)
+    expect(saved(wrapper)).toMatchObject({ role: 'jump', firstSide: { label: '', marker: null } })
     wrapper.unmount()
   })
 
@@ -486,12 +229,7 @@ describe('PlexLinkInspectorPopover component', () => {
     window.dispatchEvent(new Event('resize'))
     expect(wrapper.find('.plex-link-popover').exists()).toBe(true)
 
-    await wrapper.setProps({
-      request: {
-        ...defaultRequest,
-        at: { x: 500, y: 350 },
-      },
-    })
+    await wrapper.setProps({ request: { ...defaultRequest, at: { x: 500, y: 350 } } })
     await nextTick()
 
     expect(popover.attributes('style')).toContain('left: 340px')

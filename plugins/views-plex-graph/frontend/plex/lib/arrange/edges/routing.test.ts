@@ -262,25 +262,35 @@ describe('the arrowhead a line carries', () => {
   const routeWithArrow = (arrow?: EdgeArrow) =>
     arrangePlex({
       nodes,
-      edges: [{ from: 'focus', to: 'below', ...(arrow ? { arrow } : {}) }],
+      edges: [{ from: 'focus', to: 'below', ...(arrow ? { arrows: [arrow] } : {}) }],
     }).edges[0]!
 
   it('sits where the line arrives, aimed the way it is going', () => {
     const edge = routeWithArrow('to')
-    expect(edge.arrowhead!.at.x).toBe(edge.toPoint.x)
-    expect(edge.arrowhead!.at.y).toBe(edge.toPoint.y)
-    expect(edge.arrowhead!.angle).toBeCloseTo(90)
+    expect(edge.arrowheads![0]!.at.x).toBe(edge.toPoint.x)
+    expect(edge.arrowheads![0]!.at.y).toBe(edge.toPoint.y)
+    expect(edge.arrowheads![0]!.angle).toBeCloseTo(90)
   })
 
   it('sits where the line leaves, aimed back out of it', () => {
     const edge = routeWithArrow('from')
-    expect(edge.arrowhead!.at.x).toBe(edge.fromPoint.x)
-    expect(edge.arrowhead!.at.y).toBe(edge.fromPoint.y)
-    expect(edge.arrowhead!.angle).toBeCloseTo(-90)
+    expect(edge.arrowheads![0]!.at.x).toBe(edge.fromPoint.x)
+    expect(edge.arrowheads![0]!.at.y).toBe(edge.fromPoint.y)
+    expect(edge.arrowheads![0]!.angle).toBeCloseTo(-90)
+  })
+
+  it('is drawn at both ends of a line given both', () => {
+    const edge = arrangePlex({
+      nodes,
+      edges: [{ from: 'focus', to: 'below', arrows: ['from', 'to'] }],
+    }).edges[0]!
+    expect(edge.arrowheads!.map((head) => head.end)).toEqual(['from', 'to'])
+    expect(edge.arrowheads![0]!.at.y).toBe(edge.fromPoint.y)
+    expect(edge.arrowheads![1]!.at.y).toBe(edge.toPoint.y)
   })
 
   it('is drawn on no line that was given no arrow', () => {
-    expect(routeWithArrow().arrowhead).toBeUndefined()
+    expect(routeWithArrow().arrowheads).toBeUndefined()
   })
 
   // A head has a body, and over its length a curve turns, so a head aimed
@@ -294,7 +304,7 @@ describe('the arrowhead a line carries', () => {
         { id: 'third', title: 'Third', relation: 'child' },
       ],
       edges: [
-        { from: 'focus', to: 'wide', arrow: 'to' },
+        { from: 'focus', to: 'wide', arrows: ['to'] },
         { from: 'focus', to: 'other' },
         { from: 'focus', to: 'third' },
       ],
@@ -307,7 +317,7 @@ describe('the arrowhead a line carries', () => {
       Math.PI
 
     expect(Math.abs(chord - 90)).toBeGreaterThan(3)
-    expect(aside.arrowhead!.angle).toBeCloseTo(chord, 1)
+    expect(aside.arrowheads![0]!.angle).toBeCloseTo(chord, 1)
 
     // The end a line leaves from is read the same way, backwards.
     const leaving = getArrow(aside, 'from')
@@ -342,7 +352,7 @@ describe('the arrowhead a line carries', () => {
             from: 'focus',
             to: 'below',
             label: 'the scene in the assembly',
-            ...(arrow ? { arrow } : {}),
+            ...(arrow ? { arrows: [arrow] } : {}),
           },
         ],
         byId,
