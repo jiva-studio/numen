@@ -13,7 +13,7 @@ import (
 )
 
 const handleManifestHead = `{"id":"org.example.copies","name":"A","version":"1.0.0",` +
-	`"backend":{"type":"process","entrypoint":"bin/copies"},"contributes":{"noteTypes":[{"type":"link"}],"handles":`
+	`"backend": {"entrypoint": "bin/copies"},"contributes":{"noteTypes":[{"type":"link"}],"handles":`
 
 func TestReadManifestReadsTheHandlesOfAPlugin(t *testing.T) {
 	m, err := manifestjson.Read(strings.NewReader(handleManifestHead +

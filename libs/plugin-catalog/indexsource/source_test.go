@@ -20,7 +20,7 @@ func manifestOf(entry catalog.Entry) map[string]any {
 	return map[string]any{
 		"id": entry.ID, "name": entry.Name, "version": entry.Version, "description": entry.Description,
 		"targets":  entry.Requirements.Targets,
-		"frontend": map[string]string{"entrypoint": "dist/index.js"},
+		"frontend": map[string]any{},
 		"contributes": map[string]any{
 			"tabKinds": kinds, "feature": entry.Contributes.Feature, "category": entry.Contributes.Category,
 		},
@@ -125,27 +125,5 @@ func TestAnIndexThatIsNotJSONIsAnError(t *testing.T) {
 	}
 	if !errors.Is(getErr, catalog.ErrNotFound) {
 		t.Errorf("Get error = %v, want catalog.ErrNotFound joined to the read error", getErr)
-	}
-}
-
-func TestTheFileTypesOfAManifestReachTheEntry(t *testing.T) {
-	path := filepath.Join(t.TempDir(), indexsource.FileName)
-	one := manifestOf(catalogtest.OfferedEntries()[0])
-	contributes, ok := one["contributes"].(map[string]any)
-	if !ok {
-		t.Fatal("the sample manifest has no contributes")
-	}
-	kind := catalogtest.OfferedEntries()[0].Contributes.TabKinds[0].Kind
-	contributes["fileTypes"] = []map[string]any{{"tabKind": kind, "extensions": []string{"sample"}, "fileNames": []string{"sample.config"}}}
-	writeIndex(t, path, []map[string]any{one})
-
-	listed, err := indexsource.New([]string{path}, nil).List(t.Context())
-
-	if err != nil || len(listed) != 1 || len(listed[0].Contributes.FileTypes) != 1 {
-		t.Fatalf("List = %+v, %v; want one entry with one file type", listed, err)
-	}
-	got := listed[0].Contributes.FileTypes[0]
-	if got.TabKind != kind || len(got.Extensions) != 1 || got.Extensions[0] != "sample" || len(got.FileNames) != 1 || got.FileNames[0] != "sample.config" {
-		t.Errorf("file type = %+v", got)
 	}
 }

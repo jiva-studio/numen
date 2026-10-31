@@ -36,31 +36,23 @@ type snapshotFile struct {
 }
 
 type entryFile struct {
-	ID          string                   `json:"id"`
-	Name        string                   `json:"name"`
-	Version     string                   `json:"version"`
-	Description string                   `json:"description"`
-	Category    string                   `json:"category"`
-	TabKinds    []tabKindFile            `json:"tabKinds"`
-	FileTypes   []fileTypeFile           `json:"fileTypes"`
-	Feature     string                   `json:"feature"`
-	Source      string                   `json:"source"`
-	State       catalog.State            `json:"state"`
-	Targets     []string                 `json:"targets"`
-	Protocol    int                      `json:"protocol"`
-	AppVersion  manifest.AppVersionRange `json:"appVersion"`
+	ID          string        `json:"id"`
+	Name        string        `json:"name"`
+	Version     string        `json:"version"`
+	Description string        `json:"description"`
+	Category    string        `json:"category"`
+	TabKinds    []tabKindFile `json:"tabKinds"`
+	Feature     string        `json:"feature"`
+	Source      string        `json:"source"`
+	State       catalog.State `json:"state"`
+	Targets     []string      `json:"targets"`
+	Protocol    int           `json:"protocol"`
 }
 
 type tabKindFile struct {
 	Kind  string `json:"kind"`
 	Title string `json:"title"`
 	Icon  string `json:"icon"`
-}
-
-type fileTypeFile struct {
-	TabKind    string   `json:"tabKind"`
-	Extensions []string `json:"extensions"`
-	FileNames  []string `json:"fileNames"`
 }
 
 // Read returns the snapshot, or catalog.ErrEmptyCache when the file does not exist.
@@ -131,10 +123,6 @@ func newEntryFile(entry catalog.Entry) entryFile {
 	for _, kind := range entry.Contributes.TabKinds {
 		kinds = append(kinds, tabKindFile{Kind: kind.Kind, Title: kind.Title, Icon: kind.Icon})
 	}
-	fileTypes := make([]fileTypeFile, 0, len(entry.Contributes.FileTypes))
-	for _, one := range entry.Contributes.FileTypes {
-		fileTypes = append(fileTypes, fileTypeFile{TabKind: one.TabKind, Extensions: one.Extensions, FileNames: one.FileNames})
-	}
 	return entryFile{
 		ID:          entry.ID,
 		Name:        entry.Name,
@@ -142,13 +130,11 @@ func newEntryFile(entry catalog.Entry) entryFile {
 		Description: entry.Description,
 		Category:    entry.Category,
 		TabKinds:    kinds,
-		FileTypes:   fileTypes,
 		Feature:     entry.Contributes.Feature,
 		Source:      entry.Source,
 		State:       entry.State,
 		Targets:     entry.Requirements.Targets,
 		Protocol:    entry.Requirements.Protocol,
-		AppVersion:  entry.Requirements.AppVersion,
 	}
 }
 
@@ -157,20 +143,16 @@ func newEntry(stored entryFile) catalog.Entry {
 	for _, kind := range stored.TabKinds {
 		kinds = append(kinds, manifest.TabKind{Kind: kind.Kind, Title: kind.Title, Icon: kind.Icon})
 	}
-	var fileTypes []manifest.FileType
-	for _, one := range stored.FileTypes {
-		fileTypes = append(fileTypes, manifest.FileType{TabKind: one.TabKind, Extensions: one.Extensions, FileNames: one.FileNames})
-	}
 	return catalog.Entry{
 		ID:              stored.ID,
 		Name:            stored.Name,
 		Version:         stored.Version,
 		Description:     stored.Description,
 		Category:        stored.Category,
-		Contributes:     manifest.Contributes{TabKinds: kinds, Feature: stored.Feature, Category: stored.Category, FileTypes: fileTypes},
+		Contributes:     manifest.Contributes{TabKinds: kinds, Feature: stored.Feature, Category: stored.Category},
 		Source:          stored.Source,
 		State:           stored.State,
-		Requirements:    manifest.Requirements{Targets: stored.Targets, Protocol: stored.Protocol, AppVersion: stored.AppVersion},
+		Requirements:    manifest.Requirements{Targets: stored.Targets, Protocol: stored.Protocol},
 		Incompatibility: nil,
 		Warnings:        nil,
 	}

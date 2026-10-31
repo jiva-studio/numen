@@ -14,9 +14,6 @@ import (
 type Config struct {
 	// Target is the window the application opens, as plugins name it in their manifests.
 	Target string
-	// AppVersion is the version of the application. Empty is an application that states none, and no
-	// bound on the versions applies.
-	AppVersion string
 	// Sources are the places plugins are found in, in the order that decides between two entries that
 	// are equal in every other way.
 	Sources []Source
@@ -48,7 +45,7 @@ func NewService(config Config) (*Service, error) {
 	}
 	return &Service{
 		sources: slices.Clone(config.Sources),
-		env:     manifest.Environment{Target: config.Target, AppVersion: config.AppVersion},
+		env:     manifest.Environment{Target: config.Target},
 	}, nil
 }
 

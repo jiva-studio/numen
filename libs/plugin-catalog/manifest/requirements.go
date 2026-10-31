@@ -15,10 +15,6 @@ const (
 	ReasonTarget IncompatibleReason = "target"
 	// ReasonProtocol is a plugin that speaks a newer plugin protocol than the application.
 	ReasonProtocol IncompatibleReason = "protocol"
-	// ReasonAppTooOld is an application whose version is below the minimum the plugin runs in.
-	ReasonAppTooOld IncompatibleReason = "app-too-old"
-	// ReasonAppTooNew is an application whose version is above the maximum the plugin runs in.
-	ReasonAppTooNew IncompatibleReason = "app-too-new"
 )
 
 // ErrIncompatible is a plugin that an application cannot run.
@@ -45,9 +41,6 @@ func (e *IncompatibleError) Is(target error) bool {
 type Environment struct {
 	// Target is the window the plugin is loaded into.
 	Target string
-	// AppVersion is the version of the application. Empty is an application that states none, and no
-	// bound on the versions applies.
-	AppVersion string
 }
 
 // Requirements are what a plugin requires of the application that runs it.
@@ -56,13 +49,11 @@ type Requirements struct {
 	Targets []string
 	// Protocol is the plugin protocol the plugin speaks. Zero is the first.
 	Protocol int
-	// AppVersion bounds the versions of the application.
-	AppVersion AppVersionRange
 }
 
 // GetRequirements returns what the plugin requires of the application.
 func (m Manifest) GetRequirements() Requirements {
-	return Requirements{Targets: slices.Clone(m.Targets), Protocol: m.GetProtocol(), AppVersion: m.AppVersion}
+	return Requirements{Targets: slices.Clone(m.Targets), Protocol: m.GetProtocol()}
 }
 
 // Check returns an *IncompatibleError for the first requirement the environment fails, and nil when
@@ -73,15 +64,6 @@ func (r Requirements) Check(env Environment) error {
 	}
 	if r.Protocol > ProtocolVersion {
 		return &IncompatibleError{Reason: ReasonProtocol, Detail: fmt.Sprintf("speaks protocol %d, the application speaks up to %d", r.Protocol, ProtocolVersion)}
-	}
-	if env.AppVersion == "" {
-		return nil
-	}
-	switch r.AppVersion.Locate(env.AppVersion) {
-	case -1:
-		return &IncompatibleError{Reason: ReasonAppTooOld, Detail: fmt.Sprintf("needs application %s or newer, this is %s", r.AppVersion.Min, env.AppVersion)}
-	case 1:
-		return &IncompatibleError{Reason: ReasonAppTooNew, Detail: fmt.Sprintf("needs application %s or older, this is %s", r.AppVersion.Max, env.AppVersion)}
 	}
 	return nil
 }

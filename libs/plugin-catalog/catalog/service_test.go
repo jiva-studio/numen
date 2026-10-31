@@ -25,7 +25,7 @@ func entry(id, version string, state catalog.State, kinds ...string) catalog.Ent
 		Contributes:     manifest.Contributes{TabKinds: tabs, Feature: "", Category: ""},
 		Source:          "",
 		State:           state,
-		Requirements:    manifest.Requirements{Targets: nil, Protocol: 0, AppVersion: manifest.AppVersionRange{Min: "", Max: ""}},
+		Requirements:    manifest.Requirements{Targets: nil, Protocol: 0},
 		Incompatibility: nil,
 		Warnings:        nil,
 	}
@@ -33,7 +33,7 @@ func entry(id, version string, state catalog.State, kinds ...string) catalog.Ent
 
 func newService(t *testing.T, sources ...catalog.Source) *catalog.Service {
 	t.Helper()
-	service, err := catalog.NewService(catalog.Config{Target: editor, AppVersion: "2026.10.0", Sources: sources, InstallDir: "", CacheDir: ""})
+	service, err := catalog.NewService(catalog.Config{Target: editor, Sources: sources, InstallDir: "", CacheDir: ""})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func find(listing catalog.Listing, id string) (catalog.Entry, bool) {
 }
 
 func TestAServiceNeedsATarget(t *testing.T) {
-	if _, err := catalog.NewService(catalog.Config{Target: " ", AppVersion: "", Sources: nil, InstallDir: "", CacheDir: ""}); err == nil {
+	if _, err := catalog.NewService(catalog.Config{Target: " ", Sources: nil, InstallDir: "", CacheDir: ""}); err == nil {
 		t.Error("a config with no target was accepted")
 	}
 }
@@ -183,7 +183,7 @@ func TestAKindOfTabIsFoundInThePluginThatProvidesIt(t *testing.T) {
 
 func TestAnIncompatiblePluginIsReportedWithItsReason(t *testing.T) {
 	tooNew := entry("org.example.new", "1.0.0", catalog.StateAvailable, "future")
-	tooNew.Requirements.AppVersion.Min = "2027.1.0"
+	tooNew.Requirements.Protocol = manifest.ProtocolVersion + 1
 	elsewhere := entry("org.example.cards", "1.0.0", catalog.StateAvailable, "deck")
 	elsewhere.Requirements.Targets = []string{flashcards}
 	fine := entry("org.example.fine", "1.0.0", catalog.StateAvailable, "fine")
@@ -195,10 +195,10 @@ func TestAnIncompatiblePluginIsReportedWithItsReason(t *testing.T) {
 	prepared, installFine := service.PrepareInstall(t.Context(), "org.example.fine")
 	_, findIncompatible := service.FindByTabKind(t.Context(), "future")
 
-	if listed, _ := find(listing, "org.example.new"); listed.Incompatibility == nil || listed.Incompatibility.Reason != manifest.ReasonAppTooOld {
+	if listed, _ := find(listing, "org.example.new"); listed.Incompatibility == nil || listed.Incompatibility.Reason != manifest.ReasonProtocol {
 		t.Errorf("the listing does not say why the plugin is refused: %+v", listed.Incompatibility)
 	}
-	assertRefusal(t, installTooNew, manifest.ReasonAppTooOld)
+	assertRefusal(t, installTooNew, manifest.ReasonProtocol)
 	assertRefusal(t, installElsewhere, manifest.ReasonTarget)
 	if installFine != nil || prepared.ID != "org.example.fine" {
 		t.Errorf("PrepareInstall of a compatible plugin = %+v, %v", prepared, installFine)

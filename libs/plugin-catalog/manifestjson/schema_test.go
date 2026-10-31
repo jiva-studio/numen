@@ -19,8 +19,8 @@ const everyFieldManifest = `{
 	"permissions": ["vault:read"],
 	"dependencies": [{"id": "weights", "kind": "model", "version": "1", "sourceUrl": "https://example.org/w",
 		"checksumSha256": "0000000000000000000000000000000000000000000000000000000000000000", "metadata": {"k": "v"}}],
-	"backend": {"type": "process", "entrypoint": "bin/full", "serviceName": "numen.v1.Full"},
-	"frontend": {"entrypoint": "dist/index.js", "styles": "dist/styles.css"},
+	"backend": {"entrypoint": "bin/full"},
+	"frontend": {},
 	"settings": [
 		{"key": "mode", "type": "enum", "title": "Mode", "description": "d", "default": "a", "palette": true, "icon": "gauge",
 			"options": ["a", {"value": "b", "title": "B", "detail": "d", "dependencies": ["weights"]}],
@@ -35,17 +35,14 @@ const everyFieldManifest = `{
 		"arguments": [{"name": "n", "title": "N", "type": "number", "required": false, "hiddenInPalette": true},
 			{"name": "m", "title": "M", "type": "number", "required": true}],
 		"hiddenInPalette": true}],
-	"settingsViews": [{"id": "v", "title": "V", "after": "mode"}],
+	"settingsViews": [{"id": "v", "title": "V"}],
 	"contributes": {"tabKinds": [{"kind": "full", "title": "Full", "icon": "gauge"}], "feature": "full tabs", "category": "views",
-		"fileTypes": [{"tabKind": "full", "extensions": ["full"], "fileNames": ["full.config"]}],
 		"themes": [{"id": "full-dark", "name": "Full Dark", "appearance": "dark", "file": "themes/full-dark.css"}],
 		"statusViews": [{"id": "gauge"}],
 		"handles": [{"purpose": "sample-purpose", "contentTypes": ["audio/*"], "noteTypes": ["link"]}],
-		"contentTypes": [{"type": "application/x-example", "globs": ["*.example"]}],
 		"readers": [{"id": "r", "contentTypes": ["audio/*"], "rank": "default"}],
 		"noteTypes": [{"type": "link", "chunks": false, "headings": [1, 2], "idHeadingLevels": [3], "idPattern": "[a-z]+"}],
-		"frameOrigins": ["https://player.example"]},
-	"appVersion": {"min": "2026.1.0", "max": "2027.1.0"}
+		"frameOrigins": ["https://player.example"]}
 }`
 
 func TestTheSampleManifestSetsEveryFieldOfTheSchema(t *testing.T) {

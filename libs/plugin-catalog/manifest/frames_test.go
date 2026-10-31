@@ -11,7 +11,7 @@ import (
 )
 
 const framesManifestHead = `{"id":"org.example.frames","name":"A","version":"1.0.0",` +
-	`"backend":{"type":"process","entrypoint":"bin/frames"}`
+	`"backend": {"entrypoint": "bin/frames"}`
 
 func TestReadManifestReadsTheOriginsThePluginFrames(t *testing.T) {
 	m, err := manifestjson.Read(strings.NewReader(framesManifestHead + `,

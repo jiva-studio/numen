@@ -12,22 +12,6 @@ import (
 // ErrInvalidReader is a reader declared wrongly.
 var ErrInvalidReader = errors.New("invalid reader")
 
-// DeclaredContentType is a type of file the plugin brings, and the names of the files of it.
-type DeclaredContentType struct {
-	Type domain.ContentType
-	// Globs are the patterns of the names, each `*.` and an extension: `*.sample`.
-	Globs []string
-}
-
-// ListExtensions lists the extensions of the globs, lowercase and without the dot.
-func (t DeclaredContentType) ListExtensions() []string {
-	out := make([]string, 0, len(t.Globs))
-	for _, glob := range t.Globs {
-		out = append(out, strings.ToLower(strings.TrimPrefix(glob, "*.")))
-	}
-	return out
-}
-
 // Reader is a tab of the plugin that opens files of the types it names.
 type Reader struct {
 	// ID is the id the frontend registers the reader under.
@@ -64,34 +48,6 @@ func isAnyMatching(masks []domain.ContentType, contentType domain.ContentType) b
 		}
 	}
 	return false
-}
-
-// listContentTypeIssues checks that each type the plugin brings is one type, declared once, with
-// globs of extensions.
-func (m Manifest) listContentTypeIssues() []error {
-	var issues []error
-	observed := map[domain.ContentType]bool{}
-	for _, declared := range m.Contributes.ContentTypes {
-		if err := checkContentType(declared.Type); err != nil {
-			issues = append(issues, err)
-		}
-		switch {
-		case declared.Type.IsMask() || declared.Type == domain.AnyContentType:
-			issues = append(issues, fmt.Errorf("%w: %q is a mask, and a plugin brings types", domain.ErrInvalidContentType, declared.Type))
-		case observed[declared.Type]:
-			issues = append(issues, fmt.Errorf("%w: %q is declared twice", domain.ErrInvalidContentType, declared.Type))
-		case len(declared.Globs) == 0:
-			issues = append(issues, fmt.Errorf("%w: %q has no globs", domain.ErrInvalidContentType, declared.Type))
-		}
-		observed[declared.Type] = true
-		for _, glob := range declared.Globs {
-			extension, ok := strings.CutPrefix(glob, "*.")
-			if !ok || extension == "" || extension != strings.ToLower(extension) || strings.ContainsAny(extension, `.*?[/\ `) {
-				issues = append(issues, fmt.Errorf("%w: %q has glob %q, which is not *. and a lowercase extension", domain.ErrInvalidContentType, declared.Type, glob))
-			}
-		}
-	}
-	return issues
 }
 
 // listReaderIssues checks that each reader has an id of its own, a rank and types, and that the
