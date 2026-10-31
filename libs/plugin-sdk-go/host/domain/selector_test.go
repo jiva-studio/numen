@@ -32,12 +32,16 @@ func TestATimeSelectorSurvivesEncodingAndDecoding(t *testing.T) {
 	}
 }
 
-func TestACFISelectorEncodesTheFragment(t *testing.T) {
-	raw, err := EncodeSelector(CFISelector{CFI: "epubcfi(/6/4)"})
+func TestAnyStructOfKeysEncodesAsItsJSON(t *testing.T) {
+	type keys struct {
+		Anchor string `json:"anchor,omitempty"`
+	}
+
+	raw, err := EncodeSelector(keys{Anchor: "a1"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if raw != `{"cfi":"epubcfi(/6/4)"}` {
+	if raw != `{"anchor":"a1"}` {
 		t.Errorf("encoded %s", raw)
 	}
 }

@@ -19,13 +19,8 @@ type TimeSelector struct {
 	T []float64 `json:"t,omitempty"`
 }
 
-// CFISelector locates a segment in a book: CFI is an EPUB Canonical Fragment Identifier.
-type CFISelector struct {
-	CFI string `json:"cfi,omitempty"`
-}
-
-// EncodeSelector returns the value as the JSON a segment carries.
-func EncodeSelector[T PageSelector | TimeSelector | CFISelector](value T) (Selector, error) {
+// EncodeSelector returns the value, a struct of selector keys, as the JSON a segment carries.
+func EncodeSelector[T any](value T) (Selector, error) {
 	raw, err := json.Marshal(value)
 	if err != nil {
 		return "", fmt.Errorf("encode %T: %w", value, err)
@@ -34,7 +29,7 @@ func EncodeSelector[T PageSelector | TimeSelector | CFISelector](value T) (Selec
 }
 
 // DecodeSelector reads the keys of a segment's selector. An empty selector has none.
-func DecodeSelector[T PageSelector | TimeSelector | CFISelector](raw Selector) (T, error) {
+func DecodeSelector[T any](raw Selector) (T, error) {
 	var out T
 	if raw == "" {
 		return out, nil
