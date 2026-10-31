@@ -45,13 +45,13 @@ const choices = [
 const mode = computed({
   get: () => (isManual.value ? 'manual' : 'auto'),
   set: (id: string) => {
-    void floor.setMode(id === 'manual')
+    floor.setMode(id === 'manual').catch(floor.reportFailure)
   },
 })
 const slider = computed({
   get: () => manualValue.value,
   set: (value: number) => {
-    void floor.setManualFloor(value)
+    floor.setManualFloor(value).catch(floor.reportFailure)
   },
 })
 const shownFloor = computed(() => (state.value === null ? '' : formatFloor(state.value.floor)))
@@ -73,27 +73,27 @@ const isAutomaticInRange = computed(
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
-  void floor.load()
+  floor.load().catch(floor.reportFailure)
 })
 
 watch(
   () => [props.values.provider, props.values.model],
   () => {
-    void floor.load()
+    floor.load().catch(floor.reportFailure)
   },
 )
 
 /* -------------------------------- Handlers -------------------------------- */
 function onRecalculate(): void {
-  void floor.calibrate()
+  floor.calibrate().catch(floor.reportFailure)
 }
 
 function onRetry(): void {
-  void floor.load()
+  floor.load().catch(floor.reportFailure)
 }
 
 function onCheck(query: string): void {
-  void floor.probe(query)
+  floor.probe(query).catch(floor.reportFailure)
 }
 </script>
 

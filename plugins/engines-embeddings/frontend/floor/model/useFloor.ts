@@ -142,6 +142,11 @@ export function useFloor(options: UseFloorOptions) {
     }
   }
 
+  /** Shows a failure that no action of this model handled itself. */
+  function reportFailure(error: unknown): void {
+    if (!isDisposed) actionError.value = getErrorMessage(error)
+  }
+
   return {
     state,
     status,
@@ -161,6 +166,7 @@ export function useFloor(options: UseFloorOptions) {
     setMode,
     setManualFloor,
     probe,
+    reportFailure,
   }
 }
 

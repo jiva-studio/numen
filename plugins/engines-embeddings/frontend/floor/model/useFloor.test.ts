@@ -158,7 +158,12 @@ describe('useFloor', () => {
   it('waits the configured pause', async () => {
     const client = createFakeClient(createState({ isManual: true, manualFloor: 0.4, floor: 0.4 }))
     const waits: number[] = []
-    const floor = useFloor({ client, wait: async (ms) => void waits.push(ms) })
+    const floor = useFloor({
+      client,
+      wait: async (ms) => {
+        waits.push(ms)
+      },
+    })
     await floor.load()
     await floor.setManualFloor(0.5)
     expect(waits).toEqual([300])
