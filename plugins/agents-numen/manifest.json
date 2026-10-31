@@ -1,11 +1,12 @@
 {
   "id": "md.numen.agents.numen",
   "name": "Numen Agent",
-  "version": "2026.10.2",
+  "version": "2026.10.3",
   "protocol": 1,
   "description": "Built-in AI assistant for OpenRouter, OpenAI, Ollama, and LM Studio",
   "capabilities": ["ai.agent.provider"],
   "targets": ["desktop.editor", "desktop.flashcards"],
+  "contributes": { "category": "agents" },
   "activationEvents": [],
   "permissions": ["network:outbound", "vault:read", "vault:write"],
   "secrets": [{ "name": "apiKey", "title": "API key" }],

@@ -1,11 +1,12 @@
 {
   "id": "md.numen.agents.antigravity",
   "name": "Antigravity Agent",
-  "version": "2026.10.1",
+  "version": "2026.10.2",
   "protocol": 1,
   "description": "Google Antigravity AI assistant for chat and note editing",
   "capabilities": ["agent", "ai.agent.provider"],
   "targets": ["desktop.editor", "desktop.flashcards"],
+  "contributes": { "category": "agents" },
   "permissions": ["network:outbound", "vault:read", "vault:write"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,

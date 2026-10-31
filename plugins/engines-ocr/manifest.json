@@ -1,11 +1,12 @@
 {
   "id": "md.numen.engines.ocr",
   "name": "Document OCR",
-  "version": "2026.10.2",
+  "version": "2026.10.3",
   "protocol": 1,
   "description": "Text recognition for scanned PDFs and images",
   "capabilities": [],
   "targets": ["desktop.editor"],
+  "contributes": { "category": "engines" },
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "texts": {

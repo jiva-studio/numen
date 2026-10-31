@@ -1,11 +1,12 @@
 {
   "id": "md.numen.agents.acp",
   "name": "ACP Agents",
-  "version": "2026.10.2",
+  "version": "2026.10.3",
   "protocol": 1,
   "description": "External AI assistants via the Agent Client Protocol",
   "capabilities": ["agent", "ai.agent.provider"],
   "targets": ["desktop.editor", "desktop.flashcards"],
+  "contributes": { "category": "agents" },
   "permissions": ["network:outbound", "vault:read", "vault:write"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,

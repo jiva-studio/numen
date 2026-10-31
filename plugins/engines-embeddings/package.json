@@ -1,6 +1,6 @@
 {
   "name": "@numen/engines.embeddings",
-  "version": "2026.10.2",
+  "version": "2026.10.3",
   "private": true,
   "type": "module",
   "description": "Settings panel of the Vector Embeddings plugin: the search relevance threshold",
