@@ -111,6 +111,23 @@ func TestAMovedFolderCarriesANameThatIsNotLatin(t *testing.T) {
 	}
 }
 
+// A pass that ran between the move on disk and the move here has already
+// replaced the rows at the old path with the rows at the new one. Those rows
+// are the current ones and stay.
+func TestAMoveKeepsTheRowsAScanFiledWhenNothingIsLeftToMove(t *testing.T) {
+	db := openDB(t)
+	saveNamedNote(t, db, first, "science/physics/Entropy.md", "Entropy")
+
+	if err := db.Sources().MoveSources(t.Context(), first.ID, "physics", "science/physics"); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []string{"science/physics/Entropy.md"}
+	if got := getPathsUnder(t, db, first, "science/physics"); !slices.Equal(got, want) {
+		t.Errorf("the folder holds %v, want %v", got, want)
+	}
+}
+
 // A file is moved on disk and then filed here, and a scan reading the vault
 // between the two puts the file in afresh under its new path. The move lands,
 // and the row that carries the note's chunks is the one that keeps the path.

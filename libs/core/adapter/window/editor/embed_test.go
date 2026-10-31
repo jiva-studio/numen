@@ -36,6 +36,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
 
 // The two vocabularies a note in these tests is written in. A save changes
@@ -453,13 +454,47 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 	}
 }
 
+// gatedWalk is an assembly whose first walk of the notes starts when release is
+// closed.
+type gatedWalk struct {
+	Assembly
+
+	release <-chan struct{}
+}
+
+func (g gatedWalk) StartVault(
+	ctx context.Context, v domain.Vault, rebuild bool,
+	notified func(paths, assets []string, reload bool),
+	handleError windowport.ErrorHandler,
+) (
+	read func(ctx context.Context, during func()) (notes int, err error),
+	run func(ctx context.Context),
+	refresh vaults.Refresh,
+	unwatched error,
+) {
+	walk, run, refresh, unwatched := g.Assembly.StartVault(ctx, v, rebuild, notified, handleError)
+	read = func(ctx context.Context, during func()) (int, error) {
+		select {
+		case <-g.release:
+			return walk(ctx, during)
+		case <-ctx.Done():
+			return 0, ctx.Err()
+		}
+	}
+	return read, run, refresh, unwatched
+}
+
 // Reading a vault is work, and work is one entry in the list of operations. A
 // pass that reports itself elsewhere creates a second entry for the same work,
 // with a separate count.
 func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 	cfg := vaultConfig(t, container.EmbeddingConfig{})
+	release := make(chan struct{})
+	var releaseOnce sync.Once
+	releaseWalk := func() { releaseOnce.Do(func() { close(release) }) }
+	t.Cleanup(releaseWalk)
 
-	installation, err := Open(t.Context(), NewAssembly(t, cfg), "", os.Stderr)
+	installation, err := Open(t.Context(), gatedWalk{Assembly: NewAssembly(t, cfg), release: release}, "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -480,5 +515,6 @@ func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 
 	// Each pass removes its entry when it ends, so a fully read vault reports no
 	// operations.
+	releaseWalk()
 	testsupport.WaitFor(t, func() bool { return len(installation.State.Window.Tasking.List()) == 0 })
 }

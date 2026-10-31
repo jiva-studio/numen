@@ -226,6 +226,15 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 		if err != nil {
 			return err
 		}
+		isMoving, err := hasSourcesUnder(ctx, tx, vault, from)
+		if err != nil {
+			return err
+		}
+		if !isMoving {
+			// A pass that ran between the move on disk and this call already replaced
+			// the rows at from with the rows at to. Those rows are the current ones.
+			return nil
+		}
 		if err := deleteMoveTarget(ctx, tx, vault, from, to); err != nil {
 			return err
 		}
@@ -241,6 +250,22 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 		}
 		return nil
 	})
+}
+
+// hasSourcesUnder is whether the vault holds a source at the path or under it.
+func hasSourcesUnder(ctx context.Context, tx *sqlwrite.Transaction, vault int64, path string) (_ bool, err error) {
+	first, past := getRangeUnder(path)
+	rows, err := tx.QueryContext(ctx, stmt.Get("sources_under"), vault, path, first, past)
+	if err != nil {
+		return false, fmt.Errorf("what the vault holds at %s and under it: %w", path, err)
+	}
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
+
+	hasRow := rows.Next()
+	if err := rows.Err(); err != nil {
+		return false, fmt.Errorf("what the vault holds at %s and under it: %w", path, err)
+	}
+	return hasRow, nil
 }
 
 // deleteMoveTarget deletes the rows the vault holds at the path a move lands on.
