@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/textfile"
+	"github.com/jiva-studio/numen/libs/notes/textfile"
 )
 
 var (

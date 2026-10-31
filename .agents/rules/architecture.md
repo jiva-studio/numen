@@ -126,7 +126,7 @@ A rule has no exception. There is no `nolint`, `eslint-disable`, `@ts-ignore`, `
 
 These rules bind every change to `libs/plugin-sdk-go`, `libs/plugin-sdk-ts`, `libs/ui`, `libs/plugin-host-ts`, `libs/plugin-manager`, `libs/core` and `plugins/`.
 
-**(a) A plugin depends on two libraries.** A plugin depends on the plugin SDK (Go: `libs/plugin-sdk-go`; TypeScript: `@numen/plugin-sdk`) and on `@numen/ui`, plus third-party code. Plugins live in other repositories and may not use any other shared library. There are no "kits": no third shared library for plugins exists, and none is proposed.
+**(a) A plugin depends on two libraries.** A plugin depends on the plugin SDK (Go: `libs/plugin-sdk-go`; TypeScript: `@numen/plugin-sdk`) and on `@numen/ui`, plus third-party code. Plugins live in other repositories and may not use any other shared library. There are no "kits": no third shared library for plugins exists, and none is proposed. The Go SDK may depend on `libs/notes` and passes the note types, the note parser, the editor and the identifiers on to plugins through `host/domain`, `host/markdown`, `host/edit` and `host/ulid`; `libs/notes` is published and tagged together with the SDK. A plugin never imports `libs/notes` and never requires it directly in its `go.mod`; an `// indirect` line that appears because the SDK requires it is allowed (`plugins-standalone-repo`).
 
 **(b) The SDK contains what plugins use.** The SDK holds only code that at least one plugin imports, plus the contracts of capabilities (agent provider, embedding). It knows nothing about implementations:
 

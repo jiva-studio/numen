@@ -271,8 +271,9 @@ export function verifyPluginsUseMainEntry() {
  * own repository.
  */
 /**
- * Lists the findings of the `go.mod` of a plugin: a relative `replace`, and any line that names the
- * notes library, whether as a requirement or as a replacement target.
+ * Lists the findings of the `go.mod` of a plugin: a relative `replace`, and a direct requirement
+ * or a replacement of the notes library. A requirement marked `// indirect` is the notes library
+ * reached through the SDK and passes.
  */
 export function findPluginGoModViolations(file, text) {
   const found = [];
@@ -282,11 +283,19 @@ export function findPluginGoModViolations(file, text) {
     if (/=>\s*\.\.\//.test(trimmed)) {
       found.push({ file, line: idx + 1, symbol: `relative replace in go.mod: ${trimmed}` });
     }
-    if (trimmed.includes("github.com/jiva-studio/numen/libs/notes")) {
-      found.push({ file, line: idx + 1, symbol: `libs/notes in go.mod: ${trimmed}` });
+    const isIndirect = /\/\/\s*indirect\b/.test(trimmed);
+    if (trimmed.includes("github.com/jiva-studio/numen/libs/notes") && !isIndirect) {
+      found.push({ file, line: idx + 1, symbol: `direct libs/notes requirement in go.mod: ${trimmed}` });
     }
   });
   return found;
+}
+
+/** Lists the imports of a plugin Go file (`imports` as `{ line, value }`) that name the notes library. */
+export function findPluginNotesImports(file, imports) {
+  return imports
+    .filter(({ value }) => value.startsWith("github.com/jiva-studio/numen/libs/notes"))
+    .map(({ line, value }) => ({ file, line, symbol: `import "${value}"` }));
 }
 
 function findPluginStandaloneViolations() {
@@ -322,11 +331,7 @@ function findPluginStandaloneViolations() {
     }
     if (file.endsWith(".go")) {
       const { imports, literals } = getGoReferences(text);
-      for (const { line, value } of imports) {
-        if (value.startsWith("github.com/jiva-studio/numen/libs/notes")) {
-          found.push({ file, line, symbol: `import "${value}"` });
-        }
-      }
+      found.push(...findPluginNotesImports(file, imports));
       for (const { line, value } of literals) {
         if (/^\.\.\//.test(value) && !isWithin(path.resolve(path.dirname(abs), value), pluginRoot)) {
           found.push({ file, line, symbol: `relative path escapes plugins/${plugin}: ${JSON.stringify(value)}` });

@@ -8,9 +8,9 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )

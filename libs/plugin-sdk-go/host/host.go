@@ -13,8 +13,8 @@ import (
 	"errors"
 	"io/fs"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/edit"
+	notesdomain "github.com/jiva-studio/numen/libs/notes/domain"
+	notesedit "github.com/jiva-studio/numen/libs/notes/edit"
 )
 
 var (
@@ -23,20 +23,20 @@ var (
 	// ErrOutside is what a path that does not stay in the vault gets.
 	ErrOutside = errors.New("host: not a path inside the vault")
 	// ErrStale is what a write gets when the file changed since the baseline.
-	ErrStale = edit.ErrStale
+	ErrStale = notesedit.ErrStale
 	// ErrAlreadyExists is what a create gets when a file is already there.
 	ErrAlreadyExists = errors.New("host: a file is already there")
 	// ErrLockedByAnother is what a name gets when another program holds the file.
 	ErrLockedByAnother = errors.New("host: the file is held by another program")
 	// ErrNotANote is what a path gets when the file is not a note the vault holds.
-	ErrNotANote = edit.ErrNotANote
+	ErrNotANote = notesedit.ErrNotANote
 	// ErrInvalidConnection is what a connection gets that is not one: a role no connection
 	// carries, roles that are not inverse of each other, or a note joined to itself.
-	ErrInvalidConnection = domain.ErrInvalidConnection
+	ErrInvalidConnection = notesdomain.ErrInvalidConnection
 	// ErrHierarchyCycle is what a connection gets that would put a note above itself.
-	ErrHierarchyCycle = domain.ErrHierarchyCycle
+	ErrHierarchyCycle = notesdomain.ErrHierarchyCycle
 	// ErrNoFreeName is what a new untitled note gets when every numbered name is taken.
-	ErrNoFreeName = domain.ErrNoFreeName
+	ErrNoFreeName = notesdomain.ErrNoFreeName
 	// ErrUnknownVault is what a call gets when it names a vault the installation does not know.
 	ErrUnknownVault = errors.New("host: no such vault")
 	// ErrNotExist is fs.ErrNotExist: a file, a note or a name that is not there.
