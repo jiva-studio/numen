@@ -2,41 +2,14 @@ package server
 
 import (
 	"context"
-	"net/http"
 	"sync"
-
-	"connectrpc.com/connect"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
+// ProtocolVersion is the protocol version the SDK speaks.
 const ProtocolVersion = 1
 
-type PingRequest = v1.PingRequest
-
-type PingResponse = v1.PingResponse
-
-type ConfigureRequest = v1.ConfigureRequest
-
-type ConfigureResponse = v1.ConfigureResponse
-
-type ShutdownRequest = v1.ShutdownRequest
-
-type ShutdownResponse = v1.ShutdownResponse
-
-type PluginLifecycleServiceHandler = numenv1connect.PluginLifecycleServiceHandler
-
-type PluginLifecycleServiceClient = numenv1connect.PluginLifecycleServiceClient
-
-// NewPluginLifecycleServiceHandler builds an HTTP handler for the lifecycle service.
-func NewPluginLifecycleServiceHandler(svc PluginLifecycleServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	return numenv1connect.NewPluginLifecycleServiceHandler(svc, opts...)
-}
-
-// NewPluginLifecycleServiceClient constructs a client for the lifecycle service.
-func NewPluginLifecycleServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) PluginLifecycleServiceClient {
-	return numenv1connect.NewPluginLifecycleServiceClient(httpClient, baseURL, opts...)
-}
+// statusOK is the status a healthy plugin answers a ping with.
+const statusOK = "ok"
 
 // LifecycleOption configures a LifecycleServer instance.
 type LifecycleOption func(*LifecycleServer)
@@ -70,9 +43,9 @@ func WithLifecycleShutdown(fn func() error) LifecycleOption {
 	}
 }
 
-// LifecycleServer implements numen.v1.PluginLifecycleService.
+// LifecycleServer holds the lifecycle state of a plugin: its configuration and its shutdown signal.
+// Server serves it to the host as the plugin lifecycle service.
 type LifecycleServer struct {
-	numenv1connect.UnimplementedPluginLifecycleServiceHandler
 	shutdownCh   chan struct{}
 	shutdownOnce sync.Once
 	mu           sync.RWMutex
@@ -93,41 +66,19 @@ func NewLifecycleServer(shutdownCh chan struct{}, opts ...LifecycleOption) *Life
 	return ls
 }
 
-func (s *LifecycleServer) Ping(
-	_ context.Context,
-	_ *connect.Request[v1.PingRequest],
-) (*connect.Response[v1.PingResponse], error) {
-	return connect.NewResponse(&v1.PingResponse{
-		Status:   "ok",
-		Protocol: ProtocolVersion,
-	}), nil
-}
-
-// Shutdown signals termination to the server runner without blocking.
-func (s *LifecycleServer) Shutdown(
-	_ context.Context,
-	_ *connect.Request[v1.ShutdownRequest],
-) (*connect.Response[v1.ShutdownResponse], error) {
+// shutdown runs the shutdown callback and signals termination. The signal is sent even when the
+// callback fails.
+func (s *LifecycleServer) shutdown() error {
 	var closeErr error
 	if s.onShutdown != nil {
 		closeErr = s.onShutdown()
 	}
 	s.TriggerShutdown()
-	if closeErr != nil {
-		return nil, connect.NewError(connect.CodeInternal, closeErr)
-	}
-	return connect.NewResponse(&v1.ShutdownResponse{
-		Success: true,
-	}), nil
+	return closeErr
 }
 
-// Configure persists configuration values and invokes the registered configure callback.
-func (s *LifecycleServer) Configure(
-	ctx context.Context,
-	req *connect.Request[v1.ConfigureRequest],
-) (*connect.Response[v1.ConfigureResponse], error) {
-	values := req.Msg.GetValues()
-
+// configure stores the values and invokes the registered configure callback.
+func (s *LifecycleServer) configure(ctx context.Context, values map[string]string) error {
 	s.mu.Lock()
 	if s.config == nil {
 		s.config = make(map[string]string)
@@ -139,14 +90,9 @@ func (s *LifecycleServer) Configure(
 	s.mu.Unlock()
 
 	if callback != nil {
-		if err := callback(ctx, values); err != nil {
-			return nil, err
-		}
+		return callback(ctx, values)
 	}
-
-	return connect.NewResponse(&v1.ConfigureResponse{
-		Success: true,
-	}), nil
+	return nil
 }
 
 // TriggerShutdown initiates server termination.
@@ -195,29 +141,23 @@ func (s *LifecycleServer) AllConfigs() map[string]string {
 	return res
 }
 
-// CheckStatus executes a Ping check and returns the status string.
-func (s *LifecycleServer) CheckStatus(ctx context.Context) (string, error) {
-	res, err := s.Ping(ctx, connect.NewRequest(&v1.PingRequest{}))
-	if err != nil {
-		return "", err
-	}
-	return res.Msg.GetStatus(), nil
+// CheckStatus returns the status a ping answers with.
+func (s *LifecycleServer) CheckStatus(context.Context) (string, error) {
+	return statusOK, nil
 }
 
-// ApplyConfig applies configuration values through Configure.
+// ApplyConfig stores the configuration values and runs the configure callback.
 func (s *LifecycleServer) ApplyConfig(ctx context.Context, values map[string]string) (bool, error) {
-	res, err := s.Configure(ctx, connect.NewRequest(&v1.ConfigureRequest{Values: values}))
-	if err != nil {
+	if err := s.configure(ctx, values); err != nil {
 		return false, err
 	}
-	return res.Msg.GetSuccess(), nil
+	return true, nil
 }
 
-// RequestShutdown triggers shutdown through Shutdown.
-func (s *LifecycleServer) RequestShutdown(ctx context.Context) (bool, error) {
-	res, err := s.Shutdown(ctx, connect.NewRequest(&v1.ShutdownRequest{}))
-	if err != nil {
+// RequestShutdown runs the shutdown callback and signals termination.
+func (s *LifecycleServer) RequestShutdown(context.Context) (bool, error) {
+	if err := s.shutdown(); err != nil {
 		return false, err
 	}
-	return res.Msg.GetSuccess(), nil
+	return true, nil
 }

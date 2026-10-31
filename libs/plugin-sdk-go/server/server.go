@@ -236,7 +236,7 @@ func newServer(port int, token string, opts []Option, linked bool) *Server {
 	}
 	s.lifecycle = NewLifecycleServer(make(chan struct{}), lifecycleOpts...)
 
-	s.Register(numenv1connect.NewPluginLifecycleServiceHandler(s.lifecycle, s.HandlerOptions()...))
+	s.Register(numenv1connect.NewPluginLifecycleServiceHandler(lifecycleHandler{state: s.lifecycle}, s.HandlerOptions()...))
 	if s.onEvent != nil {
 		s.Register(numenv1connect.NewPluginEventServiceHandler(eventServer{handle: s.onEvent}, s.HandlerOptions()...))
 	}

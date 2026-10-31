@@ -50,15 +50,7 @@ func (a *adapter) GetEmbeddingModel(
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&v1.GetEmbeddingModelResponse{
-		Name:        info.Name,
-		Dimensions:  info.Dimensions,
-		MaxTokens:   info.MaxTokens,
-		Pooling:     info.Pooling,
-		From:        info.From,
-		Concurrency: info.Concurrency,
-		FloorHint:   info.FloorHint,
-	}), nil
+	return connect.NewResponse(writeModelInfo(info)), nil
 }
 
 func (a *adapter) EmbedBatch(
@@ -69,11 +61,7 @@ func (a *adapter) EmbedBatch(
 	if err != nil {
 		return nil, err
 	}
-	vectors := make([]*v1.FloatVector, len(dense))
-	for i, v := range dense {
-		vectors[i] = &v1.FloatVector{Values: v}
-	}
-	return connect.NewResponse(&v1.EmbedBatchResponse{Vectors: vectors}), nil
+	return connect.NewResponse(writeVectors(dense)), nil
 }
 
 // NewHandler creates the Connect-RPC handler for an embedding Handler.
@@ -86,13 +74,70 @@ func Mount(s *server.Server, h Handler) {
 	s.Register(NewHandler(h, s.HandlerOptions()...))
 }
 
-type EmbedBatchRequest = v1.EmbedBatchRequest
+func readModelInfo(res *v1.GetEmbeddingModelResponse) ModelInfo {
+	return ModelInfo{
+		Name:        res.GetName(),
+		Dimensions:  res.GetDimensions(),
+		MaxTokens:   res.GetMaxTokens(),
+		Pooling:     res.GetPooling(),
+		From:        res.GetFrom(),
+		Concurrency: res.GetConcurrency(),
+		FloorHint:   res.GetFloorHint(),
+	}
+}
 
-type EmbedBatchResponse = v1.EmbedBatchResponse
+func writeModelInfo(info ModelInfo) *v1.GetEmbeddingModelResponse {
+	return &v1.GetEmbeddingModelResponse{
+		Name:        info.Name,
+		Dimensions:  info.Dimensions,
+		MaxTokens:   info.MaxTokens,
+		Pooling:     info.Pooling,
+		From:        info.From,
+		Concurrency: info.Concurrency,
+		FloorHint:   info.FloorHint,
+	}
+}
 
-type EmbeddingServiceClient = numenv1connect.EmbeddingServiceClient
+func readVectors(res *v1.EmbedBatchResponse) [][]float32 {
+	vectors := make([][]float32, len(res.GetVectors()))
+	for i, one := range res.GetVectors() {
+		vectors[i] = one.GetValues()
+	}
+	return vectors
+}
 
-// NewEmbeddingServiceClient constructs a client for EmbeddingService.
-func NewEmbeddingServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) EmbeddingServiceClient {
-	return numenv1connect.NewEmbeddingServiceClient(httpClient, baseURL, opts...)
+func writeVectors(dense [][]float32) *v1.EmbedBatchResponse {
+	vectors := make([]*v1.FloatVector, len(dense))
+	for i, values := range dense {
+		vectors[i] = &v1.FloatVector{Values: values}
+	}
+	return &v1.EmbedBatchResponse{Vectors: vectors}
+}
+
+// Client calls the embedding service of a plugin.
+type Client struct {
+	rpc numenv1connect.EmbeddingServiceClient
+}
+
+// NewClient creates a client of the embedding service served at baseURL.
+func NewClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) *Client {
+	return &Client{rpc: numenv1connect.NewEmbeddingServiceClient(httpClient, baseURL, opts...)}
+}
+
+// GetModelInfo returns the description of the model the plugin serves.
+func (c *Client) GetModelInfo(ctx context.Context) (ModelInfo, error) {
+	res, err := c.rpc.GetEmbeddingModel(ctx, connect.NewRequest(&v1.GetEmbeddingModelRequest{}))
+	if err != nil {
+		return ModelInfo{}, err
+	}
+	return readModelInfo(res.Msg), nil
+}
+
+// EmbedTexts returns one vector per text, in order.
+func (c *Client) EmbedTexts(ctx context.Context, texts []string) ([][]float32, error) {
+	res, err := c.rpc.EmbedBatch(ctx, connect.NewRequest(&v1.EmbedBatchRequest{Texts: texts}))
+	if err != nil {
+		return nil, err
+	}
+	return readVectors(res.Msg), nil
 }

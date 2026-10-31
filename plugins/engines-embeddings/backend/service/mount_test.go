@@ -34,13 +34,12 @@ func TestTheLinkedHandlerEmbedsThroughTheServiceItsConfigureNames(t *testing.T) 
 		}
 	}))
 
-	_, err = server.NewPluginLifecycleServiceClient(web.Client(), web.URL, token).Configure(t.Context(),
-		connect.NewRequest(&server.ConfigureRequest{Values: map[string]string{"baseUrl": remote.URL, "apiKey": "remote-key"}}))
+	_, err = server.NewLifecycleClient(web.Client(), web.URL, token).Configure(t.Context(),
+		map[string]string{"baseUrl": remote.URL, "apiKey": "remote-key"})
 	if err != nil {
 		t.Fatalf("Configure: %v", err)
 	}
-	resp, err := embedding.NewEmbeddingServiceClient(web.Client(), web.URL, token).EmbedBatch(t.Context(),
-		connect.NewRequest(&embedding.EmbedBatchRequest{Texts: []string{"words"}}))
+	vectors, err := embedding.NewClient(web.Client(), web.URL, token).EmbedTexts(t.Context(), []string{"words"})
 	if err != nil {
 		t.Fatalf("EmbedBatch: %v", err)
 	}
@@ -48,8 +47,7 @@ func TestTheLinkedHandlerEmbedsThroughTheServiceItsConfigureNames(t *testing.T) 
 	if authorization != "Bearer remote-key" {
 		t.Errorf("the remote service was asked with %q", authorization)
 	}
-	vectors := resp.Msg.GetVectors()
-	if len(vectors) != 1 || len(vectors[0].GetValues()) != 2 || vectors[0].GetValues()[0] != 0.5 {
+	if len(vectors) != 1 || len(vectors[0]) != 2 || vectors[0][0] != 0.5 {
 		t.Errorf("vectors = %v", vectors)
 	}
 }

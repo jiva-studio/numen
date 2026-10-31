@@ -296,15 +296,16 @@ func TestLifecycleUnitMethods(t *testing.T) {
 	}))
 
 	ctx := t.Context()
+	handler := lifecycleHandler{state: life}
 
 	// Ping
-	pingResp, err := life.Ping(ctx, connect.NewRequest(&v1.PingRequest{}))
+	pingResp, err := handler.Ping(ctx, connect.NewRequest(&v1.PingRequest{}))
 	if err != nil || pingResp.Msg.GetStatus() != "ok" {
 		t.Fatalf("Ping failed: %v, %v", pingResp, err)
 	}
 
 	// Configure
-	confResp, err := life.Configure(ctx, connect.NewRequest(&v1.ConfigureRequest{
+	confResp, err := handler.Configure(ctx, connect.NewRequest(&v1.ConfigureRequest{
 		Values: map[string]string{"foo": "bar"},
 	}))
 	if err != nil || !confResp.Msg.GetSuccess() {
@@ -315,7 +316,7 @@ func TestLifecycleUnitMethods(t *testing.T) {
 	}
 
 	// Shutdown
-	shutResp, err := life.Shutdown(ctx, connect.NewRequest(&v1.ShutdownRequest{}))
+	shutResp, err := handler.Shutdown(ctx, connect.NewRequest(&v1.ShutdownRequest{}))
 	if err != nil || !shutResp.Msg.GetSuccess() {
 		t.Fatalf("Shutdown failed: %v, %v", shutResp, err)
 	}
