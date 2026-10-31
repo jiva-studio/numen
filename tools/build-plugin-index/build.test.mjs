@@ -92,6 +92,6 @@ test('the index of the repository holds every plugin and the files they open', (
     index.plugins.map((plugin) => plugin.id).sort(),
     manifests.map(({ manifest }) => manifest.id).sort(),
   )
-  const opening = index.plugins.filter((plugin) => (plugin.contributes?.fileTypes ?? []).length > 0)
+  const opening = index.plugins.filter((plugin) => (plugin.contributes?.readers ?? []).length > 0)
   assert.ok(opening.length >= 4, `only ${opening.length} plugins open files`)
 })

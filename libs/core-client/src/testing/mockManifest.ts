@@ -17,6 +17,6 @@ export function createMockManifest(
     name: fields.name ?? id,
     version: fields.version ?? '1.0.0',
     permissions: [...(fields.permissions ?? [])],
-    ...(fields.frontend ? { frontend: { entrypoint: 'dist/index.js', styles: '' } } : {}),
+    ...(fields.frontend ? { frontend: {} } : {}),
   })
 }

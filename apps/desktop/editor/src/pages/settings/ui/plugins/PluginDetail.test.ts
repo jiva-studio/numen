@@ -581,9 +581,9 @@ describe('the settings views of a plugin', () => {
     { key: 'last', type: 'boolean' as const, title: 'Last', description: '', default: true },
   ]
   const views = [
-    { id: 'floor', title: 'Floor', after: 'model' },
-    { id: 'top', title: 'Top', after: '' },
-    { id: 'gone', title: 'Gone', after: 'last' },
+    { id: 'floor', title: 'Floor' },
+    { id: 'top', title: 'Top' },
+    { id: 'gone', title: 'Gone' },
   ]
   const mountWith = (registered: Record<string, unknown>) => {
     const plugin = createPluginInfo('views.plugin', 'Views', { settings, settingsViews: views })
@@ -601,15 +601,7 @@ describe('the settings views of a plugin', () => {
     return { wrapper, recordedWrites }
   }
 
-  it('draws a view after the setting it follows', () => {
-    const { wrapper } = mountWith({ floor: View })
-    expect(wrapper.findAll('.view')).toHaveLength(1)
-    const html = wrapper.html()
-    expect(html.indexOf('Model')).toBeLessThan(html.indexOf('class="view"'))
-    expect(html.indexOf('class="view"')).toBeLessThan(html.indexOf('Floor'))
-  })
-
-  it('draws a view with an empty after before the settings', () => {
+  it('draws a registered view before the settings', () => {
     const { wrapper } = mountWith({ top: View })
     const html = wrapper.html()
     expect(html.indexOf('class="view"')).toBeGreaterThan(-1)

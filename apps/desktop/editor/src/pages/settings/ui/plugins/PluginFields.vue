@@ -87,7 +87,7 @@ function getStringSetting(key: string, fallback: unknown): string {
 </script>
 
 <template>
-  <SettingsViews :state="props.state" :plugin="props.plugin" after="" />
+  <SettingsViews :state="props.state" :plugin="props.plugin" />
 
   <SecretField
     v-for="secret in getTopSecrets()"
@@ -165,7 +165,7 @@ function getStringSetting(key: string, fallback: unknown): string {
       </span>
 
       <PathField
-        v-else-if="setting.type === 'file' || setting.type === 'folder'"
+        v-else-if="setting.type === 'file'"
         :path="getStringSetting(setting.key, setting.default)"
         :problem="pathProblems[setting.key] ?? ''"
         :labelled-by="labelledBy"
@@ -209,8 +209,6 @@ function getStringSetting(key: string, fallback: unknown): string {
       @save="(key) => onSecretSave(secret.name, key)"
       @delete="onSecretDelete(secret.name)"
     />
-
-    <SettingsViews :state="props.state" :plugin="props.plugin" :after="setting.key" />
   </template>
 </template>
 
