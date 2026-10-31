@@ -1,16 +1,16 @@
 package service
 
 import (
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 
-	"connectrpc.com/connect"
-
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
+
+	"connectrpc.com/connect"
 )
 
 // withoutAgentsAnywhere makes this machine hold none of the programs, wherever they are searched for.
@@ -18,9 +18,9 @@ func withoutAgentsAnywhere(t *testing.T) {
 	t.Helper()
 	t.Setenv("PATH", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	was := antigravityProgram.Places
-	antigravityProgram.Places = nil
-	t.Cleanup(func() { antigravityProgram.Places = was })
+	was := antigravityPlaces
+	antigravityPlaces = nil
+	t.Cleanup(func() { antigravityPlaces = was })
 }
 
 // The program list names Antigravity, installed where it is found, with the models the program lists: none here.

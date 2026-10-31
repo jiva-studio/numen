@@ -3,7 +3,7 @@ package engine
 import (
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 )
 
 // referenceLength is the token length at which a full configured batch is one pass.

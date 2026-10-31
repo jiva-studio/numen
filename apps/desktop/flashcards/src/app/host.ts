@@ -11,9 +11,9 @@ import type {
   Disposable,
   NoticeHost,
   PluginContext,
-  Manifest,
   TabKindRegistration,
 } from '@numen/plugin-sdk'
+import type { Manifest } from '@numen/plugin-host'
 import {
   createAppInfo,
   createExternalOpener,

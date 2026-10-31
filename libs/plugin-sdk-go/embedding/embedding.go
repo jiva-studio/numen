@@ -31,7 +31,7 @@ func (m ModelInfo) GetFrom() string       { return m.From }
 func (m ModelInfo) GetConcurrency() int32 { return m.Concurrency }
 func (m ModelInfo) GetFloorHint() float64 { return m.FloorHint }
 
-// Handler serves embedding model metadata and batch embeddings.
+// Handler serves embedding model metadata and batches of vectors.
 type Handler interface {
 	GetModelInfo(ctx context.Context) (ModelInfo, error)
 	EmbedTexts(ctx context.Context, texts []string) ([][]float32, error)

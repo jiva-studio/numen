@@ -272,7 +272,7 @@ func (c *layerCut) addPage(page, from, to int, boxes []pdf.HighlightBox) ([]pdf.
 func (c *layerCut) add(from, to, page int, boxes [][4]float32) error {
 	for from < to {
 		for len(c.sections) > 0 && c.sections[0].Offset <= from {
-			selector, err := domain.EncodeSelector(domain.PageSelector{Page: page + 1, Boxes: nil})
+			selector, err := pageSelector{Page: page + 1, Boxes: nil}.encode()
 			if err != nil {
 				return err
 			}
@@ -283,7 +283,7 @@ func (c *layerCut) add(from, to, page int, boxes [][4]float32) error {
 		if len(c.sections) > 0 && c.sections[0].Offset < to {
 			end = c.sections[0].Offset
 		}
-		selector, err := domain.EncodeSelector(domain.PageSelector{Page: page + 1, Boxes: boxes})
+		selector, err := pageSelector{Page: page + 1, Boxes: boxes}.encode()
 		if err != nil {
 			return err
 		}

@@ -2,9 +2,8 @@
  * What the settings hold: one setting written at its current position, and the models a
  * setting that names one can be set to.
  */
-import type { PluginInfo } from '@numen/plugin-sdk'
+import type { PluginInfo } from '@numen/plugin-manager'
 export type {
-  CompletionChoice,
   Consent,
   PluginFailure,
   PluginInfo,
@@ -15,8 +14,8 @@ export type {
   PluginSettingOption,
   PluginSettingOptionsBy,
   PluginSettingsViewInfo,
-  PluginSettingType,
-} from '@numen/plugin-sdk'
+} from '@numen/plugin-manager'
+export type { CompletionChoice, PluginSettingType } from '@numen/plugin-sdk'
 
 /** One setting of the configuration file, and the JSON value to set. */
 export interface SettingEdit {

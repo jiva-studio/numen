@@ -9,7 +9,7 @@ import (
 	ort "github.com/getcharzp/onnxruntime_purego"
 	"golang.org/x/image/draw"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
 )
 
 const layoutSide = 800

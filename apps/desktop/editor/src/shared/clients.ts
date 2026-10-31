@@ -5,7 +5,6 @@ export {
   agentService,
   files,
   notes,
-  pluginCatalog,
   pluginCommands,
   search,
   settingsService,
@@ -17,3 +16,4 @@ export {
   windowService,
   workspace,
 } from '@numen/plugin-sdk'
+export { pluginCatalog } from '@numen/plugin-manager'

@@ -10,13 +10,13 @@ import type {
   ContextMenuTarget,
   Disposable,
   PluginContext,
-  Manifest,
   FileSelectEvent,
   ReaderRegistration,
   SettingsViewRegistration,
   TabKindRegistration,
   VaultChangeEvent,
 } from '@numen/plugin-sdk'
+import type { Manifest } from '@numen/plugin-host'
 import {
   createAppInfo,
   createDropRegistry,

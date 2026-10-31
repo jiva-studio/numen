@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/onnx"
 )
 
 func TestResolveLibrary_ModelsDirPrecedesHostRuntime(t *testing.T) {

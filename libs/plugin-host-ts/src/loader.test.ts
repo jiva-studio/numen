@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { PluginContext, PluginLifecycle } from '@numen/plugin-sdk'
-import { createMockManifest } from '@numen/plugin-sdk/testing'
+import { createMockManifest } from './testing/mockManifest'
 import type { LoaderHost } from './host'
 import { getPluginStyle } from './styles'
 import { createPluginLoader } from './loader'

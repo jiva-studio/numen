@@ -4,7 +4,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 )
 
 func TestDefaultBGEM3Config(t *testing.T) {

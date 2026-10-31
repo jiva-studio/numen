@@ -111,18 +111,72 @@ export function loadManifestWords(manifestFiles = listManifestFiles(), readFile 
   return words;
 }
 
-/** The words the SDKs and the protocol define, as literals or as names: shared data, not plugin names. */
-export function loadDataWords(scanned = []) {
+/** The words the files under `roots` define, as literals or as names. */
+export function loadWordsOf(roots) {
   const words = new Set();
-  const isScanned = (root) => scanned.some((one) => one === root || one.startsWith(root + "/") || root.startsWith(one + "/"));
-  const sources = [...DATA_SOURCES, ...HOST_VOCABULARY.filter((root) => !isScanned(root))];
-  for (const file of listShippedFiles(sources)) {
+  for (const file of listShippedFiles(roots)) {
     const source = readSource(file);
     if (!source) continue;
     for (const { value } of source.literals) splitWords(value).forEach((word) => words.add(word));
     for (const match of source.code.matchAll(/[A-Za-z_]\w*/g)) splitSegments(match[0]).forEach((word) => words.add(word));
   }
   return words;
+}
+
+/** The words the SDKs and the protocol define, as literals or as names: shared data, not plugin names. */
+export function loadDataWords(scanned = []) {
+  const isScanned = (root) => scanned.some((one) => one === root || one.startsWith(root + "/") || root.startsWith(one + "/"));
+  return loadWordsOf([...DATA_SOURCES, ...HOST_VOCABULARY.filter((root) => !isScanned(root))]);
+}
+
+/** The libraries that define the contracts between the host and a plugin; their words are not implementation names. */
+const CONTRACT_SOURCES = ["libs/protocol", "libs/notes"];
+
+/** The compact form of an identifier: lower case, without separators, so that `pp-doclayout` and `PPDocLayout` agree. */
+const compact = (text) => text.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/** The file extension of a file name, without the dot. */
+const getExtension = (fileName) => (fileName.includes(".") ? fileName.slice(fileName.lastIndexOf(".") + 1) : "");
+
+/**
+ * The words that name how a plugin is implemented, from its manifests: the runtimes it declares, the id
+ * and the model file format of each dependency, and, for a plugin that runs a backend and declares
+ * capabilities or dependencies, each segment of its id that no other plugin id has. A runtime or a model
+ * format that several plugins declare is kept, because the plugins that use it share it.
+ */
+export function loadImplementationWords(manifestFiles = listManifestFiles(), readFile = (file) => fs.readFileSync(path.join(REPO_ROOT, file), "utf8")) {
+  const words = new Map();
+  const add = (word, plugin) => {
+    if (word.length < MIN_WORD_LENGTH) return;
+    if (!words.has(word)) words.set(word, new Set());
+    words.get(word).add(plugin);
+  };
+  const manifests = manifestFiles.map((file) => ({ plugin: file.split("/")[1], json: parseManifest(readFile(file), file).document }));
+  const prefix = getIdPrefix(manifests.map(({ json }) => String(json.id)));
+  const segmentOwners = new Map();
+  for (const { plugin, json } of manifests) {
+    for (const segment of new Set(String(json.id).split(".").slice(prefix))) {
+      if (!segmentOwners.has(segment)) segmentOwners.set(segment, new Set());
+      segmentOwners.get(segment).add(plugin);
+    }
+  }
+  for (const { plugin, json } of manifests) {
+    const hasEngine = Boolean(json.backend) && ((json.capabilities ?? []).length > 0 || (json.dependencies ?? []).length > 0);
+    for (const segment of hasEngine ? String(json.id).split(".").slice(prefix) : []) {
+      if (segmentOwners.get(segment).size === 1) add(segment.toLowerCase(), plugin);
+    }
+    for (const runtime of json.runtimes ?? []) add(compact(String(runtime)), plugin);
+    for (const dependency of json.dependencies ?? []) {
+      add(compact(String(dependency.id ?? "")), plugin);
+      if (dependency.kind === "model") add(compact(getExtension(String(dependency.metadata?.fileName ?? ""))), plugin);
+    }
+  }
+  return words;
+}
+
+/** The implementation words that the protocol and the notes library do not define. */
+export function loadImplementationDictionary() {
+  return subtractDataWords(loadImplementationWords(), loadWordsOf(CONTRACT_SOURCES));
 }
 
 /** The words of `manifestWords` that no data word defines: the names of plugins. */

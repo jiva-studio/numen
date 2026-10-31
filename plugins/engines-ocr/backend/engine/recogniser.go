@@ -11,7 +11,7 @@ import (
 	read "github.com/getcharzp/go-ocr"
 	"github.com/getcharzp/go-ocr/paddle"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 

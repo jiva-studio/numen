@@ -2,7 +2,7 @@
 package engine
 
 import (
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
 )
 
 // Config holds settings for recognising scanned pages.

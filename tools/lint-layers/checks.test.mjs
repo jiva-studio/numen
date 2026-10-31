@@ -3,6 +3,8 @@ import { describe, it } from "node:test";
 import {
   findWordsInGo,
   findWordsInScript,
+  loadImplementationDictionary,
+  loadImplementationWords,
   loadManifestWords,
   loadPluginDictionary,
   subtractDataWords,
@@ -18,6 +20,7 @@ import {
   parseWorkspaceUses,
 } from "./checks/discipline.mjs";
 import { requireMatches } from "./checks/helpers.mjs";
+import { findImplementationWords } from "./checks/vocabulary.mjs";
 import { compareGoVersions, getLinterBuildGap, parseBuiltWithGo, parseGoDirective } from "./checks/tools.mjs";
 
 /** Manifests of two imaginary plugins, in the shape the real ones have. */
@@ -276,5 +279,87 @@ describe("the import cycles of frontend files", () => {
     assert.equal(findImportCycles([source("a.ts", "import { b } from './b'"), source("b.ts", "export const b = 1")], roots).length, 0);
     const typed = [source("a.ts", "import type { B } from './b'"), source("b.ts", "import { a } from './a'")];
     assert.equal(findImportCycles(typed, roots).length, 0);
+  });
+});
+
+/** Manifests of two engine plugins and of a plugin that runs no engine, in the shape the real ones have. */
+const ENGINE_MANIFESTS = {
+  "plugins/engines-quartz/manifest.json": JSON.stringify({
+    id: "md.example.engines.quartz",
+    name: "Quartz",
+    version: "1.0.0",
+    capabilities: ["text.provider"],
+    backend: { type: "process", entrypoint: "bin/engines-quartz", serviceName: "example.v1.TextService" },
+    dependencies: [
+      { id: "feldspar", kind: "runtime" },
+      { id: "mica-large", kind: "model", metadata: { fileName: "mica-large.gneiss" } },
+    ],
+  }),
+  "plugins/engines-basalt/manifest.json": JSON.stringify({
+    id: "md.example.engines.basalt",
+    name: "Basalt",
+    version: "1.0.0",
+    capabilities: ["text.provider"],
+    backend: { type: "process", entrypoint: "bin/engines-basalt", serviceName: "example.v1.TextService" },
+    dependencies: [{ id: "feldspar", kind: "runtime" }],
+  }),
+  "plugins/views-slate/manifest.json": JSON.stringify({
+    id: "md.example.views.slate",
+    name: "Slate",
+    version: "1.0.0",
+    frontend: { entry: "index.js" },
+  }),
+};
+
+const readEngines = (file) => ENGINE_MANIFESTS[file];
+const engineWords = () => loadImplementationWords(Object.keys(ENGINE_MANIFESTS), readEngines);
+
+describe("the dictionary of implementation words", () => {
+  it("holds the dependency ids in compact form, the model formats and the ids of engines", () => {
+    const words = engineWords();
+    for (const word of ["feldspar", "micalarge", "gneiss", "quartz", "basalt"]) assert.ok(words.has(word), word);
+  });
+
+  it("keeps a runtime that several plugins declare", () => {
+    assert.equal(engineWords().get("feldspar").size, 2);
+  });
+
+  it("holds no word of a plugin that runs no backend and no segment that every id shares", () => {
+    const words = engineWords();
+    for (const word of ["slate", "example", "views", "engines"]) assert.equal(words.has(word), false, word);
+  });
+
+  it("drops the words the protocol and the notes library define", () => {
+    const dictionary = subtractDataWords(engineWords(), new Set(["quartz"]));
+    assert.equal(dictionary.has("quartz"), false);
+    assert.ok(dictionary.has("feldspar"));
+  });
+
+  it("is built from the live manifests, enough to examine", () => {
+    assert.ok(loadImplementationDictionary().size >= 10);
+  });
+
+  it("holds a runtime that several live plugins declare, so no name is listed in the check", () => {
+    const live = loadImplementationWords();
+    assert.ok([...live.values()].some((plugins) => plugins.size >= 2));
+  });
+});
+
+describe("an implementation word in an SDK source", () => {
+  const dictionary = subtractDataWords(engineWords(), new Set());
+  const find = (text) => findImplementationWords([{ file: "libs/plugin-sdk-go/a.go", text }], dictionary);
+
+  it("is found in an identifier, a comment, a literal and a document line", () => {
+    for (const text of ["func OpenFeldspar() {}", "// runs on feldspar", 'const lib = "feldspar_purego"', "The Quartz engine"]) {
+      assert.ok(find(text).length > 0, text);
+    }
+  });
+
+  it("is found with its line", () => {
+    assert.equal(find("package a\n\n// micalarge\n")[0].line, 3);
+  });
+
+  it("is not found in a module path or in a word that only contains it", () => {
+    assert.deepEqual(find('import "github.com/jiva-studio/numen/plugins/engines-quartz/backend"\nvar feldsparse = 1'), []);
   });
 });

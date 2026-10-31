@@ -1,7 +1,7 @@
 /**
  * Plugin state for the plugin list and page, and the failure time format.
  */
-import type { PluginInfo } from '@numen/plugin-sdk'
+import type { PluginInfo } from './catalog/plugins'
 
 /** What a plugin's state badge shows. */
 export type PluginState = 'enabled' | 'disabled' | 'stopped' | 'available'

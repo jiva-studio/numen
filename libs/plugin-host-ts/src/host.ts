@@ -1,4 +1,5 @@
-import type { Disposable, PluginContext, Manifest } from '@numen/plugin-sdk'
+import type { Disposable, PluginContext } from '@numen/plugin-sdk'
+import type { Manifest } from './manifest'
 
 /** What the loader requires of the window that hosts the plugins it activates. */
 export interface LoaderHost {

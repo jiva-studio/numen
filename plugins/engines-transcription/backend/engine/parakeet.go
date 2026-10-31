@@ -20,12 +20,12 @@ import (
 
 	ort "github.com/getcharzp/onnxruntime_purego"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/features"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/ortraw"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/segmenter"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/tokens"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/transducer"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/onnx"
 )
 
 // The input and output names of the graphs.

@@ -2,15 +2,12 @@ package service
 
 import (
 	"encoding/json"
-	"strings"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/jsonfield"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/jsonlrun"
+	"strings"
 )
 
 type eventReader struct {
-	reader *jsonlrun.Reader
+	reader *reader
 
 	// isTextStreamed is set once the agent has emitted any of its answer in
 	// step updates.
@@ -21,12 +18,12 @@ type eventReader struct {
 }
 
 // newEventHandler is what the run calls with each event of the Antigravity output.
-func newEventHandler(r *jsonlrun.Reader) func(map[string]any) {
+func newEventHandler(r *reader) func(map[string]any) {
 	return (&eventReader{reader: r, isTextStreamed: false, currentTool: "", currentArgs: strings.Builder{}}).handle
 }
 
 func (r *eventReader) handle(rawMap map[string]any) {
-	if kind := jsonfield.GetString(rawMap, "event"); kind != "" {
+	if kind := getString(rawMap, "event"); kind != "" {
 		r.handleCliEvent(kind, rawMap)
 		return
 	}
@@ -66,7 +63,7 @@ func (r *eventReader) handleStreamEvent(rawMap map[string]any) {
 	if !ok {
 		return
 	}
-	subType := jsonfield.GetString(evObj, "type")
+	subType := getString(evObj, "type")
 	switch subType {
 	case "content_block_start":
 		r.startBlock(evObj)
@@ -96,7 +93,7 @@ func (r *eventReader) startBlock(evObj map[string]any) {
 		return
 	}
 	if cb["type"] == "tool_use" {
-		r.currentTool = jsonfield.GetString(cb, "name")
+		r.currentTool = getString(cb, "name")
 		r.currentArgs.Reset()
 		if initInput, ok := cb["input"].(map[string]any); ok {
 			if raw, err := json.Marshal(initInput); err == nil {
@@ -133,7 +130,7 @@ func (r *eventReader) handleToolCalls(rawMap map[string]any) {
 		if !ok {
 			continue
 		}
-		name := jsonfield.GetString(tc, "name")
+		name := getString(tc, "name")
 		args, err := json.Marshal(tc["arguments"])
 		if err != nil {
 			args = nil
@@ -188,10 +185,10 @@ func (r *eventReader) handleResult(rawMap map[string]any) {
 func (r *eventReader) handleCliEvent(kind string, rawMap map[string]any) {
 	switch kind {
 	case "step_update":
-		step := jsonfield.GetMap(rawMap, "step_update")
+		step := getMap(rawMap, "step_update")
 		r.handleCliStep(step)
 	case "result":
-		result := jsonfield.GetMap(rawMap, "result")
+		result := getMap(rawMap, "result")
 		r.handleCliResult(result)
 	default:
 		if session, ok := rawMap["conversation_id"].(string); ok {
@@ -204,8 +201,8 @@ func (r *eventReader) handleCliStep(step map[string]any) {
 	if session, ok := step["conversation_id"].(string); ok {
 		r.reader.SetSession(session)
 	}
-	text := jsonfield.GetString(step, "text_delta")
-	if kind := jsonfield.GetString(step, "step_type"); kind != "agent_response" || text == "" {
+	text := getString(step, "text_delta")
+	if kind := getString(step, "step_type"); kind != "agent_response" || text == "" {
 		return
 	}
 	r.isTextStreamed = true
@@ -215,19 +212,19 @@ func (r *eventReader) handleCliStep(step map[string]any) {
 // handleCliResult emits the response of a run that streamed no text, and stops
 // a run whose status is not success with the error the CLI reported.
 func (r *eventReader) handleCliResult(result map[string]any) {
-	r.reader.Finish()
+	r.reader.isFinished = true
 	if session, ok := result["conversation_id"].(string); ok {
 		r.reader.SetSession(session)
 	}
-	if status := jsonfield.GetString(result, "status"); status != "" && !strings.EqualFold(status, "success") {
-		reason := jsonfield.GetString(result, "error")
+	if status := getString(result, "status"); status != "" && !strings.EqualFold(status, "success") {
+		reason := getString(result, "error")
 		if reason == "" {
 			reason = "the run ended with status " + status
 		}
 		r.reader.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseStopped{Stopped: reason}})
 		return
 	}
-	if response := jsonfield.GetString(result, "response"); response != "" && !r.isTextStreamed {
+	if response := getString(result, "response"); response != "" && !r.isTextStreamed {
 		r.reader.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponseText{Text: response}})
 	}
 }
