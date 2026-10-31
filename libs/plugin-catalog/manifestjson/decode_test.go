@@ -16,19 +16,15 @@ func TestReadManifest(t *testing.T) {
 		"name": "Document OCR",
 		"version": "1.0.0",
 		"description": "Optical character recognition",
-		"capabilities": ["recognition"],
+		"capabilities": ["tools"],
 		"targets": ["desktop.editor"],
-		"activationEvents": ["onCommand:ocr.recognize"],
+		"activationEvents": ["*"],
 		"permissions": ["vault:read"],
 		"backend": {
-			"type": "process",
-			"entrypoint": "bin/engines.ocr",
-			"serviceName": "numen.v1.TextProviderService"
+			"entrypoint": "bin/engines.ocr"
 		},
-		"frontend": {
-			"entrypoint": "dist/index.js",
-			"styles": "dist/styles.css"
-		},
+		"services": ["numen.v1.TextProviderService"],
+		"frontend": {},
 		"settings": [
 			{
 				"key": "dpi",
@@ -59,14 +55,14 @@ func TestReadManifest(t *testing.T) {
 	if m.CanTarget("desktop.samples") {
 		t.Errorf("expected target desktop.samples to be rejected")
 	}
-	if !m.HasCapability("recognition") {
-		t.Errorf("expected capability recogniser")
+	if !m.HasCapability("tools") {
+		t.Errorf("expected capability tools")
 	}
-	if m.CanActivateOn("onFile:document.pdf") {
-		t.Errorf("unexpected activation on onFile:document.pdf: a file event is matched by content type")
+	if !m.IsActivatedByAnyEvent() {
+		t.Errorf("expected activation on every event")
 	}
-	if !m.CanActivateOn("onCommand:ocr.recognize") {
-		t.Errorf("expected activation on onCommand:ocr.recognize")
+	if !m.HasService("numen.v1.TextProviderService") || !m.HasFrontend() {
+		t.Errorf("expected the service and the frontend")
 	}
 }
 
@@ -113,12 +109,12 @@ func TestReadManifestSettingsValidation(t *testing.T) {
 			json: `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"enum","title":"T","options":[]}]}`,
 		},
 		{
-			name: "select without options",
-			json: `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"select","title":"T","options":[]}]}`,
+			name: "enum without options",
+			json: `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"enum","title":"T","options":[]}]}`,
 		},
 		{
-			name: "select missing options",
-			json: `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"select","title":"T"}]}`,
+			name: "enum missing options",
+			json: `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"enum","title":"T"}]}`,
 		},
 		{
 			name: "range min greater than max",
@@ -166,31 +162,13 @@ func TestReadManifestValidSettings(t *testing.T) {
 	}
 }
 
-func TestManifestSelectSetting(t *testing.T) {
-	t.Run("passes when options are present", func(t *testing.T) {
-		raw := `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"mode","type":"select","title":"Mode","options":["fast","accurate"]}]}`
-		m, err := manifestjson.Read(strings.NewReader(raw))
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
+func TestManifestRejectsASettingTypeTheFormDoesNotDraw(t *testing.T) {
+	for _, kind := range []string{"select", "folder"} {
+		raw := `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"mode","type":"` + kind + `","title":"Mode"}]}`
+		if _, err := manifestjson.Read(strings.NewReader(raw)); !errors.Is(err, manifest.ErrInvalidSettingType) {
+			t.Errorf("type %q: error = %v, want ErrInvalidSettingType", kind, err)
 		}
-		if len(m.Settings) != 1 {
-			t.Fatalf("got %d settings, want 1", len(m.Settings))
-		}
-		if m.Settings[0].Type != "select" {
-			t.Errorf("got type %q, want select", m.Settings[0].Type)
-		}
-		if len(m.Settings[0].Options) != 2 {
-			t.Errorf("expected select setting to have 2 options")
-		}
-	})
-
-	t.Run("fails when options are missing", func(t *testing.T) {
-		raw := `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"mode","type":"select","title":"Mode"}]}`
-		_, err := manifestjson.Read(strings.NewReader(raw))
-		if err == nil {
-			t.Fatal("expected error for select without options, got nil")
-		}
-	})
+	}
 }
 
 func TestManifestRulesReportTheirSentinel(t *testing.T) {
@@ -206,18 +184,17 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 		{"id of one segment", `{"id":"foo","name":"A","version":"1.0.0"}`, manifest.ErrInvalidID},
 		{"protocol newer than the host", `{"id":"a.b","name":"A","version":"1.0.0","protocol":2}`, manifest.ErrUnsupportedProtocol},
 		{"negative protocol", `{"id":"a.b","name":"A","version":"1.0.0","protocol":-1}`, manifest.ErrUnsupportedProtocol},
-		{"wasm backend", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"type":"wasm","entrypoint":"x.wasm"}}`, manifest.ErrInvalidBackend},
-		{"backend without entrypoint", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"type":"process"}}`, manifest.ErrInvalidBackend},
-		{"activation events without a backend", `{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onCommand:a"],"frontend":{"entrypoint":"dist/index.js"}}`, manifest.ErrNoBackend},
+		{"backend with a blank entrypoint", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":" "}}`, manifest.ErrInvalidBackend},
+		{"an activation event that is not the wildcard", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["onCommand:a"]}`, manifest.ErrInvalidActivationEvent},
+		{"a capability no host resolves", `{"id":"a.b","name":"A","version":"1.0.0","capabilities":["agent"]}`, manifest.ErrInvalidCapability},
+		{"activation events without a backend", `{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["*"],"frontend":{}}`, manifest.ErrNoBackend},
 		{"commands without a backend", `{"id":"a.b","name":"A","version":"1.0.0","commands":[{"id":"run","title":"Run"}]}`, manifest.ErrNoBackend},
 		{"services without a backend", `{"id":"a.b","name":"A","version":"1.0.0","services":["numen.v1.SketchService"]}`, manifest.ErrNoBackend},
 		{"secrets without a backend", `{"id":"a.b","name":"A","version":"1.0.0","secrets":[{"name":"apiKey","title":"T"}]}`, manifest.ErrNoBackend},
 		{"runtime dependencies without a backend", `{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"sample-runtime","kind":"runtime"}]}`, manifest.ErrNoBackend},
-		{"frontend without entrypoint", `{"id":"a.b","name":"A","version":"1.0.0","frontend":{"styles":"s.css"}}`, manifest.ErrInvalidFrontend},
 		{"setting without title", `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, manifest.ErrEmptySettingTitle},
 		{"unknown permission", `{"id":"a.b","name":"A","version":"1.0.0","permissions":["shell"]}`, manifest.ErrInvalidPermission},
 		{"settings view without a frontend", `{"id":"a.b","name":"A","version":"1.0.0","settingsViews":[{"id":"v","title":"T"}]}`, manifest.ErrInvalidSettingsView},
-		{"settings view after an unknown setting", `{"id":"a.b","name":"A","version":"1.0.0","frontend":{"entrypoint":"dist/index.js"},"settingsViews":[{"id":"v","title":"T","after":"nope"}]}`, manifest.ErrInvalidSettingsView},
 	}
 
 	for _, tc := range cases {
@@ -264,13 +241,13 @@ func TestManifestListIssuesReportsEveryViolation(t *testing.T) {
 }
 
 func TestManifestReadsSettingsViews(t *testing.T) {
-	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","frontend":{"entrypoint":"dist/index.js"},
+	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","frontend":{},
 		"settings":[{"key":"model","type":"string","title":"Model"}],
-		"settingsViews":[{"id":"floor","title":"Search relevance","after":"model"},{"id":"top","title":"Top"}]}`))
+		"settingsViews":[{"id":"floor","title":"Search relevance"},{"id":"top","title":"Top"}]}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	want := []manifest.SettingsView{{ID: "floor", Title: "Search relevance", After: "model"}, {ID: "top", Title: "Top"}}
+	want := []manifest.SettingsView{{ID: "floor", Title: "Search relevance"}, {ID: "top", Title: "Top"}}
 	if !slices.Equal(m.SettingsViews, want) {
 		t.Errorf("SettingsViews = %+v, want %+v", m.SettingsViews, want)
 	}
@@ -435,5 +412,22 @@ func TestAManifestRejectsAnInvalidDependency(t *testing.T) {
 		if !errors.Is(err, manifest.ErrInvalidDependency) {
 			t.Errorf("%s: err = %v, want ErrInvalidDependency", name, err)
 		}
+	}
+}
+
+func TestSettingBoundsAreAbsentUntilTheManifestSetsThem(t *testing.T) {
+	raw := `{"id":"a.b","name":"A","version":"1.0.0","settings":[
+		{"key":"zero","type":"range","title":"Zero","min":0,"max":0,"step":0},
+		{"key":"none","type":"number","title":"None"}]}`
+	m, err := manifestjson.Read(strings.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	zero, none := m.Settings[0], m.Settings[1]
+	if zero.Min == nil || zero.Max == nil || zero.Step == nil || *zero.Min != 0 || *zero.Max != 0 || *zero.Step != 0 {
+		t.Errorf("bounds set to 0 are absent: %+v", zero)
+	}
+	if none.Min != nil || none.Max != nil || none.Step != nil {
+		t.Errorf("bounds the manifest does not set are present: %+v", none)
 	}
 }

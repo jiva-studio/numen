@@ -1,6 +1,6 @@
 {
   "name": "@numen/tools.media.importer",
-  "version": "2026.10.6",
+  "version": "2026.10.7",
   "private": true,
   "type": "module",
   "description": "Media downloader plugin frontend for Numen",

@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.plex.graph",
   "name": "Plex Graph",
-  "version": "2026.10.3",
+  "version": "2026.10.4",
   "protocol": 1,
   "description": "Interactive visual map of connected notes and topics",
   "capabilities": [],
@@ -11,7 +11,6 @@
     "feature": "plex graph",
     "category": "views"
   },
-  "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
   "settings": [
     {
@@ -34,8 +33,5 @@
       "step": 1
     }
   ],
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  }
+  "frontend": {}
 }

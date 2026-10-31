@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.ocr",
   "name": "Document OCR",
-  "version": "2026.10.6",
+  "version": "2026.10.7",
   "protocol": 1,
   "description": "Text recognition for scanned PDFs and images",
   "capabilities": [],
@@ -15,7 +15,6 @@
       }
     ]
   },
-  "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "commands": [
     {
@@ -127,11 +126,8 @@
       }
     }
   ],
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/engines-ocr",
-    "serviceName": "numen.v1.TextProviderService"
-  },
+  "backend": { "entrypoint": "bin/engines-ocr" },
+  "services": ["numen.v1.TextProviderService"],
   "settings": [
     {
       "key": "model",

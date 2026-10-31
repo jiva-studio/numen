@@ -1030,9 +1030,7 @@ type PluginSettingsView struct {
 	// The id the frontend registers the component under.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// What the component is called.
-	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	// The key of the setting the component is drawn after, empty for the top.
-	After         string `protobuf:"bytes,3,opt,name=after,proto3" json:"after,omitempty"`
+	Title         string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1077,13 +1075,6 @@ func (x *PluginSettingsView) GetId() string {
 func (x *PluginSettingsView) GetTitle() string {
 	if x != nil {
 		return x.Title
-	}
-	return ""
-}
-
-func (x *PluginSettingsView) GetAfter() string {
-	if x != nil {
-		return x.After
 	}
 	return ""
 }
@@ -1466,11 +1457,10 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\afailure\x18\r \x01(\v2\x17.numen.v1.PluginFailureR\afailure\x12!\n" +
 	"\fhas_frontend\x18\x0e \x01(\bR\vhasFrontend\x120\n" +
 	"\areaders\x18\x0f \x03(\v2\x16.numen.v1.PluginReaderR\areaders\x12C\n" +
-	"\x0esettings_views\x18\x10 \x03(\v2\x1c.numen.v1.PluginSettingsViewR\rsettingsViewsJ\x04\b\v\x10\fR\x06models\"P\n" +
+	"\x0esettings_views\x18\x10 \x03(\v2\x1c.numen.v1.PluginSettingsViewR\rsettingsViewsJ\x04\b\v\x10\fR\x06models\"G\n" +
 	"\x12PluginSettingsView\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
-	"\x05after\x18\x03 \x01(\tR\x05after\">\n" +
+	"\x05title\x18\x02 \x01(\tR\x05titleJ\x04\b\x03\x10\x04R\x05after\">\n" +
 	"\fPluginReader\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1e\n" +
 	"\n" +

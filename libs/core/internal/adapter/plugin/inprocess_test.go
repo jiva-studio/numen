@@ -46,12 +46,12 @@ func newBuiltInManifest(id string, runtimes ...string) []byte {
 		"id": %q,
 		"name": "Example Agent",
 		"version": "1.0.0",
-		"capabilities": ["agent"],
+		"capabilities": ["ai.agent.provider"],
 		"targets": ["desktop.editor"],
 		"permissions": [],
 		%s
 		"secrets": [{"name": "apiKey", "title": "API key"}],
-		"backend": {"type": "process", "entrypoint": "bin/example", "serviceName": "numen.v1.AgentService"},
+		"services": ["numen.v1.AgentService"], "backend": {"entrypoint": "bin/example"},
 		"settings": [{"key": "model", "type": "string", "title": "Model", "default": "small-model"}]
 	}`, id, declared)
 }
@@ -155,7 +155,7 @@ func TestABuiltInPluginIsFoundByItsCapability(t *testing.T) {
 	host := newBuiltInHost(t)
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), newBuiltInBackend().serve("first agent"))
 
-	found, ok := host.FindPluginByCapability("agent")
+	found, ok := host.FindPluginByCapability("ai.agent.provider")
 	if !ok || found.Manifest.ID != firstBuiltInID {
 		t.Fatalf("FindPluginByCapability(agent) = %+v, %v", found, ok)
 	}

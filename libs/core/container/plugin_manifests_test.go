@@ -1,6 +1,7 @@
 package container
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 	"go/parser"
@@ -205,9 +206,12 @@ func TestTheCapabilitiesTheGuideListsAreTheValidators(t *testing.T) {
 		t.Error(difference)
 	}
 	for _, name := range valid {
-		if err := (pluginport.PluginManifest{Capabilities: []string{name}}).ValidateCapabilities(); err != nil {
-			t.Errorf("the validator refuses %s: %v", name, err)
+		if hasIssue(pluginport.PluginManifest{Capabilities: []string{name}}, pluginport.ErrInvalidCapability) {
+			t.Errorf("the validator refuses %s", name)
 		}
+	}
+	if !hasIssue(pluginport.PluginManifest{Capabilities: []string{"not-a-capability"}}, pluginport.ErrInvalidCapability) {
+		t.Error("the validator accepts a capability no host resolves")
 	}
 }
 
@@ -220,15 +224,23 @@ func TestTheActivationEventsTheGuideListsAreTheValidators(t *testing.T) {
 	if len(documented) == 0 {
 		t.Fatal("the guide lists no activation events: a rule checked against nothing")
 	}
-	valid := pluginport.PluginActivationEvents()
+	valid := []string{pluginport.ActivationEventAll}
 	for _, difference := range listDifferences(documented, valid, "activation event") {
 		t.Error(difference)
 	}
 	for _, name := range valid {
-		if err := (pluginport.PluginManifest{ActivationEvents: []string{name}}).ValidateActivationEvents(); err != nil {
-			t.Errorf("the validator refuses %s: %v", name, err)
+		if hasIssue(pluginport.PluginManifest{ActivationEvents: []string{name}}, pluginport.ErrInvalidActivationEvent) {
+			t.Errorf("the validator refuses %s", name)
 		}
 	}
+	if !hasIssue(pluginport.PluginManifest{ActivationEvents: []string{"onCommand:run"}}, pluginport.ErrInvalidActivationEvent) {
+		t.Error("the validator accepts an event no host emits to a subscriber")
+	}
+}
+
+// hasIssue reports whether the manifest breaks the rule the error names.
+func hasIssue(m pluginport.PluginManifest, rule error) bool {
+	return slices.ContainsFunc(m.ListIssues(), func(issue error) bool { return errors.Is(issue, rule) })
 }
 
 func TestWhatTheCapabilityAndEventDocumentationRulesRefuse(t *testing.T) {
@@ -246,8 +258,8 @@ func TestWhatTheCapabilityAndEventDocumentationRulesRefuse(t *testing.T) {
 	if got := readDocumentedCapabilities(guideLine); !slices.Equal(got, []string{"document", "book"}) {
 		t.Errorf("the capabilities line is read as %v", got)
 	}
-	eventGuide := "- **`activationEvents`**: Triggers:\n  - `onCommand:<id>` (e.g. ocr.scan)\n  - `*` (startup)\n- **`next`**:\n"
-	if got := readDocumentedActivationEvents(eventGuide); !slices.Equal(got, []string{"onCommand:<id>", "*"}) {
+	eventGuide := "- **`activationEvents`**: Triggers:\n  - `*` (every event)\n- **`next`**:\n"
+	if got := readDocumentedActivationEvents(eventGuide); !slices.Equal(got, []string{"*"}) {
 		t.Errorf("the activation events section is read as %v", got)
 	}
 }
@@ -400,115 +412,12 @@ func TestSettingRule_ReportsUnreadSettings(t *testing.T) {
 	}
 }
 
-// coreCapabilities are the capabilities resolved by the core's adapters and composition root.
-var coreCapabilities = map[string]bool{
-	bridge.CapabilityEmbedding: true,
-	bridge.CapabilityTools:     true,
-	"ai.agent.provider":        true,
-}
-
-// sdkCapabilities are the capabilities resolved by the frontend SDK and tab kinds.
-var sdkCapabilities = map[string]bool{
-	"audio":     true,
-	"recording": true,
-	"media":     true,
-	"note":      true,
-}
-
-// capabilityMarkers are explicit capability markers declared by plugins.
-var capabilityMarkers = map[string]bool{
-	"agent":    true,
-	"book":     true,
-	"document": true,
-}
-
-func isResolvedCapability(capability string) bool {
-	return coreCapabilities[capability] || sdkCapabilities[capability] || capabilityMarkers[capability]
-}
-
-func TestEveryCapabilityInAManifestIsResolvedOrMarked(t *testing.T) {
-	manifests := getPluginManifests(t)
-	declared := 0
-	for _, one := range manifests {
-		for _, capability := range one.Capabilities {
-			declared++
-			if !isResolvedCapability(capability) {
-				t.Errorf("%s declares capability %q which is neither resolved nor an explicit marker", one.Dir, capability)
-			}
-		}
-	}
-	if declared == 0 {
-		t.Fatal("no plugin declares a capability: a rule checked against nothing")
-	}
-}
-
-func TestCapabilityRule_RejectsUnresolvedCapabilities(t *testing.T) {
-	var violations []string
-	for _, capability := range []string{
-		"document",
-		"audio",
-		"views.agent.chat",
-		"unknown.capability",
-		"unresolved",
-	} {
-		if !isResolvedCapability(capability) {
-			violations = append(violations, capability)
-		}
-	}
-	want := []string{"views.agent.chat", "unknown.capability", "unresolved"}
-	if !slices.Equal(violations, want) {
-		t.Errorf("the capability rule rejects %v, want %v", violations, want)
-	}
-}
-
-// isEmittedActivationEvent answers whether an activation event is one the host emits.
-func isEmittedActivationEvent(event string) bool {
-	switch {
-	case event == "*":
-		return true
-	case strings.HasPrefix(event, "onCommand:"):
-		return len(strings.TrimPrefix(event, "onCommand:")) > 0
-	default:
-		return false
-	}
-}
-
-func TestEveryActivationEventIsOneTheHostEmits(t *testing.T) {
-	manifests := getPluginManifests(t)
-	declared := 0
-	for _, one := range manifests {
-		for _, event := range one.ActivationEvents {
-			declared++
-			if !isEmittedActivationEvent(event) {
-				t.Errorf("%s declares activation event %q which is not emitted by the host", one.Dir, event)
-			}
-		}
-	}
-	if declared == 0 {
-		t.Fatal("no plugin declares an activation event: a rule checked against nothing")
-	}
-}
-
-func TestActivationEventRule_RejectsUnsupportedEvents(t *testing.T) {
-	var violations []string
-	for _, event := range []string{
-		"*",
-		"onFile:*.pdf",
-		"onCommand:ocr.recognize",
-		"onStartupFinished",
-		"onView:agent",
-		"unsupportedEvent",
-		"onFile:",
-		"onCommand:",
-		"onView:",
-	} {
-		if !isEmittedActivationEvent(event) {
-			violations = append(violations, event)
-		}
-	}
-	want := []string{"onFile:*.pdf", "onStartupFinished", "onView:agent", "unsupportedEvent", "onFile:", "onCommand:", "onView:"}
-	if !slices.Equal(violations, want) {
-		t.Errorf("the activation event rule rejects %v, want %v", violations, want)
+// The capabilities a manifest may declare are those the adapters of the core resolve a plugin by.
+func TestTheCapabilitiesAManifestMayDeclareAreTheOnesTheHostResolves(t *testing.T) {
+	want := []string{bridge.CapabilityAgentProvider, bridge.CapabilityEmbedding, bridge.CapabilityTools}
+	got := slices.Sorted(slices.Values(pluginport.PluginCapabilities()))
+	if !slices.Equal(got, want) {
+		t.Errorf("PluginCapabilities = %v, want %v", got, want)
 	}
 }
 

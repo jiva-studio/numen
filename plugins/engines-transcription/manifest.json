@@ -1,12 +1,11 @@
 {
   "id": "md.numen.engines.transcription",
   "name": "Audio/Video Transcription",
-  "version": "2026.10.6",
+  "version": "2026.10.7",
   "protocol": 1,
   "description": "Offline speech-to-text transcription for audio and video recordings",
   "targets": ["desktop.editor"],
   "contributes": { "category": "engines", "handles": [{ "purpose": "text-provider" }] },
-  "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "commands": [
     {
@@ -118,11 +117,8 @@
       }
     }
   ],
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/engines-transcription",
-    "serviceName": "numen.v1.TextProviderService"
-  },
+  "backend": { "entrypoint": "bin/engines-transcription" },
+  "services": ["numen.v1.TextProviderService"],
   "settings": [
     {
       "key": "model",

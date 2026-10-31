@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/keychain"
-	"github.com/jiva-studio/numen/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/indexsource"
@@ -71,7 +70,7 @@ var devPluginsDirs = []string{"modules/plugins", "plugins"}
 // of the user, and the downloaded packages are kept in the cache folder every window shares. The
 // plugins that ship with the application are offered from the plugin index found in the plugin folders.
 func getCatalogConfig(target string, pluginDirs []string) catalog.Config {
-	config := catalog.Config{Target: target, AppVersion: version.GetVersion(), Sources: []catalog.Source{getIndexSource(pluginDirs)}, InstallDir: "", CacheDir: ""}
+	config := catalog.Config{Target: target, Sources: []catalog.Source{getIndexSource(pluginDirs)}, InstallDir: "", CacheDir: ""}
 	if configDir, err := os.UserConfigDir(); err == nil {
 		config.InstallDir = filepath.Join(configDir, "numen", "plugins")
 	}

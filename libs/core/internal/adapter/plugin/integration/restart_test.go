@@ -124,7 +124,7 @@ func writeRestartedPlugin(t *testing.T) string {
 		"capabilities": ["embedding", "tools"],
 		"targets": ["desktop.editor"],
 		"permissions": ["vault:read", "network:outbound"],
-		"backend": {"type": "process", "entrypoint": "bin/stub"}
+		"backend": {"entrypoint": "bin/stub"}
 	}`
 	if err := os.WriteFile(filepath.Join(pos, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)

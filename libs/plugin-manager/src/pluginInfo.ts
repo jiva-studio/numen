@@ -4,8 +4,7 @@
  */
 
 /** Declarative setting value types exposed by a plugin. */
-export type PluginSettingType =
-  'boolean' | 'string' | 'number' | 'enum' | 'range' | 'agent' | 'file' | 'folder'
+export type PluginSettingType = 'boolean' | 'string' | 'number' | 'enum' | 'range' | 'file'
 
 /** One value an enum setting can hold, with its display title. */
 export interface PluginSettingOption {
@@ -99,8 +98,6 @@ export interface PluginInfo {
 export interface PluginSettingsViewInfo {
   readonly id: string
   readonly title: string
-  /** The key of the setting the view follows; empty places the view at the top of the form. */
-  readonly after: string
 }
 
 /** A reader of a plugin and the extensions, lowercase and without the dot, of the files it opens. */

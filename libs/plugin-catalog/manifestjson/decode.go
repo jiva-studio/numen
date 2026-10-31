@@ -107,26 +107,24 @@ func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
 		Commands:         newCommands(wire.GetCommands()),
 		SettingsViews:    newSettingsViews(wire.GetSettingsViews()),
 		Contributes:      contributes,
-		AppVersion:       manifest.AppVersionRange{Min: wire.GetAppVersion().GetMin(), Max: wire.GetAppVersion().GetMax()},
 	}, nil
 }
 
 func newBackend(wire *v1.ManifestBackend) manifest.Backend {
-	return manifest.Backend{Type: wire.GetType(), Entrypoint: wire.GetEntrypoint(), ServiceName: wire.GetServiceName()}
+	return manifest.Backend{Entrypoint: wire.GetEntrypoint()}
 }
 
-func newFrontend(wire *v1.ManifestFrontend) manifest.Frontend {
-	return manifest.Frontend{Entrypoint: wire.GetEntrypoint(), Styles: wire.GetStyles()}
+func newFrontend(wire *v1.ManifestFrontend) *manifest.Frontend {
+	if wire == nil {
+		return nil
+	}
+	return &manifest.Frontend{}
 }
 
 func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) {
 	var kinds []manifest.TabKind
 	for _, one := range wire.GetTabKinds() {
 		kinds = append(kinds, manifest.TabKind{Kind: one.GetKind(), Title: one.GetTitle(), Icon: one.GetIcon()})
-	}
-	var fileTypes []manifest.FileType
-	for _, one := range wire.GetFileTypes() {
-		fileTypes = append(fileTypes, manifest.FileType{TabKind: one.GetTabKind(), Extensions: one.GetExtensions(), FileNames: one.GetFileNames()})
 	}
 	var themes []manifest.Theme
 	for _, one := range wire.GetThemes() {
@@ -144,11 +142,9 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		TabKinds:     kinds,
 		Feature:      wire.GetFeature(),
 		Category:     wire.GetCategory(),
-		FileTypes:    fileTypes,
 		Themes:       themes,
 		StatusViews:  views,
 		Handles:      newHandles(wire.GetHandles()),
-		ContentTypes: newDeclaredContentTypes(wire.GetContentTypes()),
 		Readers:      newReaders(wire.GetReaders()),
 		NoteTypes:    noteTypes,
 		FrameOrigins: wire.GetFrameOrigins(),
@@ -220,9 +216,9 @@ func newSettings(wire []*v1.ManifestSetting) ([]manifest.Setting, error) {
 			Palette:     one.GetPalette(),
 			Icon:        one.GetIcon(),
 			Options:     options,
-			Min:         one.GetMin(),
-			Max:         one.GetMax(),
-			Step:        one.GetStep(),
+			Min:         one.Min,
+			Max:         one.Max,
+			Step:        one.Step,
 			Replaces:    one.GetReplaces(),
 			OptionsBy:   optionsBy,
 			When:        newCondition(one.GetWhen()),
@@ -393,17 +389,6 @@ func newHandles(wire []*v1.ManifestHandle) []manifest.Handle {
 	return out
 }
 
-func newDeclaredContentTypes(wire []*v1.ManifestContentType) []manifest.DeclaredContentType {
-	if wire == nil {
-		return nil
-	}
-	out := make([]manifest.DeclaredContentType, 0, len(wire))
-	for _, one := range wire {
-		out = append(out, manifest.DeclaredContentType{Type: newContentType(one.GetType()), Globs: one.GetGlobs()})
-	}
-	return out
-}
-
 func newReaders(wire []*v1.ManifestReader) []manifest.Reader {
 	if wire == nil {
 		return nil
@@ -421,7 +406,7 @@ func newSettingsViews(wire []*v1.ManifestSettingsView) []manifest.SettingsView {
 	}
 	out := make([]manifest.SettingsView, 0, len(wire))
 	for _, one := range wire {
-		out = append(out, manifest.SettingsView{ID: one.GetId(), Title: one.GetTitle(), After: one.GetAfter()})
+		out = append(out, manifest.SettingsView{ID: one.GetId(), Title: one.GetTitle()})
 	}
 	return out
 }

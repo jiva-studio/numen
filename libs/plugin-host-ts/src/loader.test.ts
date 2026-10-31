@@ -220,17 +220,14 @@ describe('createPluginLoader', () => {
     let deactivated = false
 
     const mockFetch = vi.fn(async (url: string | URL | Request) => {
-      manifestFetchedUrl = String(url)
+      if (String(url).endsWith('manifest.json')) manifestFetchedUrl = String(url)
       return {
         ok: true,
         text: async () =>
           JSON.stringify({
             id: 'dynamic.sample',
             name: 'Dynamic Sample',
-            frontend: {
-              entrypoint: 'dist/bundle.js',
-              styles: 'dist/bundle.css',
-            },
+            frontend: {},
           }),
       } as Response
     })
@@ -256,11 +253,11 @@ describe('createPluginLoader', () => {
     expect(success).toBe(true)
     expect(activated).toBe(true)
     expect(manifestFetchedUrl).toBe('/plugin/dynamic.sample/manifest.json')
-    expect(dynamicImportCalledWith).toBe('/plugin/dynamic.sample/dist/bundle.js')
+    expect(dynamicImportCalledWith).toBe('/plugin/dynamic.sample/dist/index.js')
 
     expect(document.head.querySelector('link[data-plugin-id="dynamic.sample"]')).toBeNull()
     expect(document.querySelector('link[data-plugin-id="dynamic.sample"]')).toBeNull()
-    expect(getPluginStyle('dynamic.sample')).toBe('/plugin/dynamic.sample/dist/bundle.css')
+    expect(getPluginStyle('dynamic.sample')).toBe('/plugin/dynamic.sample/dist/styles.css')
     expect(host.createContext).toHaveBeenCalledWith(
       'dynamic.sample',
       expect.objectContaining({ id: 'dynamic.sample' }),

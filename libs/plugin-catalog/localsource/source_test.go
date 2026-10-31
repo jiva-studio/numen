@@ -40,7 +40,7 @@ func manifestOf(entry catalog.Entry) map[string]any {
 	return map[string]any{
 		"id": entry.ID, "name": entry.Name, "version": entry.Version, "description": entry.Description,
 		"targets":  entry.Requirements.Targets,
-		"frontend": map[string]string{"entrypoint": "dist/index.js"},
+		"frontend": map[string]any{},
 		"contributes": map[string]any{
 			"tabKinds": kinds, "feature": entry.Contributes.Feature, "category": entry.Contributes.Category,
 		},

@@ -1,32 +1,27 @@
 import { describe, expect, it } from 'vitest'
-import { getRegisteredViewsAfter, getSettingValues } from './settingsViews'
+import { getRegisteredViews, getSettingValues } from './settingsViews'
 import { createPluginInfo } from '@/testing/installation'
 
-describe('getRegisteredViewsAfter', () => {
+describe('getRegisteredViews', () => {
   const declared = [
-    { id: 'top', title: 'Top', after: '' },
-    { id: 'floor', title: 'Floor', after: 'model' },
-    { id: 'missing', title: 'Missing', after: 'model' },
+    { id: 'top', title: 'Top' },
+    { id: 'floor', title: 'Floor' },
+    { id: 'missing', title: 'Missing' },
   ]
   const registered = new Map([
     ['top', { component: 'T' }],
     ['floor', { component: 'F' }],
   ])
 
-  it('returns the registered views placed after a key, in declared order', () => {
-    expect(getRegisteredViewsAfter(declared, registered, 'model')).toStrictEqual([
+  it('returns the registered views in declared order', () => {
+    expect(getRegisteredViews(declared, registered)).toStrictEqual([
+      { id: 'top', component: 'T' },
       { id: 'floor', component: 'F' },
     ])
   })
 
-  it('places a view with an empty after at the empty key', () => {
-    expect(getRegisteredViewsAfter(declared, registered, '')).toStrictEqual([
-      { id: 'top', component: 'T' },
-    ])
-  })
-
   it('returns nothing while no view is registered', () => {
-    expect(getRegisteredViewsAfter(declared, new Map(), 'model')).toStrictEqual([])
+    expect(getRegisteredViews(declared, new Map())).toStrictEqual([])
   })
 })
 

@@ -44,21 +44,16 @@ func PluginPermissions() []string {
 	}
 }
 
-// PluginCapabilities is every core capability the guide lists.
+// ActivationEventAll is the activation event that matches every event the host emits.
+const ActivationEventAll = "*"
+
+// PluginCapabilities is every capability a manifest may declare: the capabilities the host resolves
+// a plugin by.
 func PluginCapabilities() []string {
 	return []string{
 		"embedding",
 		"tools",
-		"agent",
 		"ai.agent.provider",
-	}
-}
-
-// PluginActivationEvents is every activation event pattern the guide lists.
-func PluginActivationEvents() []string {
-	return []string{
-		"onCommand:<id>",
-		"*",
 	}
 }
 
@@ -71,7 +66,6 @@ var (
 	ErrUnsupportedProtocol    = errors.New("unsupported plugin protocol")
 	ErrEmptySettingTitle      = errors.New("setting title cannot be empty")
 	ErrInvalidBackend         = errors.New("invalid backend")
-	ErrInvalidFrontend        = errors.New("invalid frontend")
 	ErrInvalidPermission      = errors.New("invalid permission")
 	ErrInvalidCapability      = errors.New("invalid capability")
 	ErrInvalidActivationEvent = errors.New("invalid activation event")
@@ -116,26 +110,19 @@ const SettingTypeString = "string"
 // SettingTypeEnum is the type of a setting that holds one of its options.
 const SettingTypeEnum = "enum"
 
-// The types of a setting that holds a path on this machine.
-const (
-	SettingTypeFile   = "file"
-	SettingTypeFolder = "folder"
-)
+// SettingTypeFile is the type of a setting that holds a file path on this machine.
+const SettingTypeFile = "file"
 
-var validSettingTypes = []string{"boolean", SettingTypeString, "number", SettingTypeEnum, "select", "range", SettingTypeFile, SettingTypeFolder}
+var validSettingTypes = []string{"boolean", SettingTypeString, "number", SettingTypeEnum, "range", SettingTypeFile}
 
 // Backend describes the server-side executable of a plugin.
 type Backend struct {
-	Type        string
-	Entrypoint  string
-	ServiceName string
+	Entrypoint string
 }
 
-// Frontend describes the client-side bundle and styles of a plugin.
-type Frontend struct {
-	Entrypoint string
-	Styles     string
-}
+// Frontend declares that a plugin has a client-side bundle. The bundle is dist/index.js and its
+// stylesheet is dist/styles.css in the plugin folder.
+type Frontend struct{}
 
 // Setting declares one configuration field managed by the core host.
 type Setting struct {
@@ -147,9 +134,10 @@ type Setting struct {
 	Palette     bool
 	Icon        string
 	Options     SettingOptions
-	Min         float64
-	Max         float64
-	Step        float64
+	// Min, Max and Step are nil where the manifest sets none.
+	Min  *float64
+	Max  *float64
+	Step *float64
 	// Replaces are the places in the settings file where the user stored this setting before the plugin took
 	// it over, each written as the dot-joined keys leading to it, the newest first. The first of
 	// them the file contains supplies the value for a user whose file has none for the plugin yet.
@@ -178,8 +166,9 @@ type Manifest struct {
 	Permissions      []string
 	Dependencies     []DependencyRequirement
 	Backend          Backend
-	Frontend         Frontend
-	Settings         []Setting
+	// Frontend is nil for a plugin without a frontend.
+	Frontend *Frontend
+	Settings []Setting
 	// Secrets are the names of the secrets, such as an API key, that the plugin
 	// requests the host to store. The host passes them as Configure values,
 	// empty while a secret has no key, and never puts one in the environment or
@@ -196,8 +185,6 @@ type Manifest struct {
 	SettingsViews []SettingsView
 	// Contributes is what the plugin adds to the application, known before its frontend is loaded.
 	Contributes Contributes
-	// AppVersion bounds the versions of the application the plugin runs in.
-	AppVersion AppVersionRange
 	// Warnings are the findings of the reader that do not make the manifest invalid, such as a key the
 	// schema does not name. The reader fills them and a manifest built in code has none.
 	Warnings []string
@@ -241,6 +228,8 @@ func (m Manifest) ListIssues() []error {
 	if m.Protocol < 0 || m.Protocol > ProtocolVersion {
 		issues = append(issues, fmt.Errorf("%w: %d, this host speaks up to %d", ErrUnsupportedProtocol, m.Protocol, ProtocolVersion))
 	}
+	issues = append(issues, m.listCapabilityIssues()...)
+	issues = append(issues, m.listActivationEventIssues()...)
 	issues = append(issues, m.listEntrypointIssues()...)
 	issues = append(issues, m.listBackendlessIssues()...)
 	issues = append(issues, m.listPermissionIssues()...)
@@ -251,7 +240,6 @@ func (m Manifest) ListIssues() []error {
 	issues = append(issues, m.listCommandIssues()...)
 	issues = append(issues, m.listSettingsViewIssues()...)
 	issues = append(issues, m.listContributionIssues()...)
-	issues = append(issues, m.listAppVersionIssues()...)
 	issues = append(issues, m.listSettingLinkIssues()...)
 	return append(issues, listManifestSettingIssues(m.Settings)...)
 }
@@ -354,19 +342,10 @@ func (m Manifest) listIdentityIssues() []error {
 }
 
 func (m Manifest) listEntrypointIssues() []error {
-	var issues []error
-	if m.Backend != (Backend{}) {
-		if m.Backend.Type != "" && m.Backend.Type != "process" {
-			issues = append(issues, fmt.Errorf("%w: type %q must be \"process\" or empty", ErrInvalidBackend, m.Backend.Type))
-		}
-		if strings.TrimSpace(m.Backend.Entrypoint) == "" {
-			issues = append(issues, fmt.Errorf("%w: entrypoint cannot be empty", ErrInvalidBackend))
-		}
+	if m.Backend != (Backend{}) && strings.TrimSpace(m.Backend.Entrypoint) == "" {
+		return []error{fmt.Errorf("%w: entrypoint cannot be empty", ErrInvalidBackend)}
 	}
-	if m.Frontend != (Frontend{}) && strings.TrimSpace(m.Frontend.Entrypoint) == "" {
-		issues = append(issues, fmt.Errorf("%w: entrypoint cannot be empty", ErrInvalidFrontend))
-	}
-	return issues
+	return nil
 }
 
 // HasBackend reports whether the plugin declares a process the host starts.
@@ -376,7 +355,7 @@ func (m Manifest) HasBackend() bool {
 
 // HasFrontend reports whether the plugin declares a bundle the windows load.
 func (m Manifest) HasFrontend() bool {
-	return strings.TrimSpace(m.Frontend.Entrypoint) != ""
+	return m.Frontend != nil
 }
 
 // listBackendlessIssues names each field of a plugin without a backend that only a backend serves:
@@ -428,36 +407,26 @@ func (m Manifest) listPermissionIssues() []error {
 	return issues
 }
 
-// ValidateCapabilities checks that every capability is one the validator recognizes.
-func (m Manifest) ValidateCapabilities() error {
+// listCapabilityIssues checks that every capability is one the host resolves a plugin by.
+func (m Manifest) listCapabilityIssues() []error {
 	var issues []error
 	for _, c := range m.Capabilities {
 		if !slices.Contains(PluginCapabilities(), c) {
 			issues = append(issues, fmt.Errorf("%w: %s", ErrInvalidCapability, c))
 		}
 	}
-	return errors.Join(issues...)
+	return issues
 }
 
-// ValidateActivationEvents checks that every activation event matches a recognized pattern.
-func (m Manifest) ValidateActivationEvents() error {
+// listActivationEventIssues checks that every activation event is ActivationEventAll.
+func (m Manifest) listActivationEventIssues() []error {
 	var issues []error
 	for _, e := range m.ActivationEvents {
-		if !isRecognizedActivationEvent(e) {
+		if e != ActivationEventAll {
 			issues = append(issues, fmt.Errorf("%w: %s", ErrInvalidActivationEvent, e))
 		}
 	}
-	return errors.Join(issues...)
-}
-
-func isRecognizedActivationEvent(event string) bool {
-	if event == "*" {
-		return true
-	}
-	if strings.HasPrefix(event, "onCommand:") && len(event) > len("onCommand:") {
-		return true
-	}
-	return false
+	return issues
 }
 
 func (m Manifest) listSecretIssues() []error {
@@ -517,10 +486,10 @@ func listManifestSettingIssue(s Setting, key string) []error {
 	if !slices.Contains(validSettingTypes, s.Type) {
 		issues = append(issues, fmt.Errorf("%w: %q for %s", ErrInvalidSettingType, s.Type, key))
 	}
-	if (s.Type == SettingTypeEnum || s.Type == "select") && len(s.Options) == 0 && s.OptionsBy == nil {
+	if s.Type == SettingTypeEnum && len(s.Options) == 0 && s.OptionsBy == nil {
 		issues = append(issues, fmt.Errorf("%w: %s", ErrEnumMissingOptions, key))
 	}
-	if s.Type == "range" && (s.Min != 0 || s.Max != 0) && s.Min > s.Max {
+	if s.Type == "range" && s.Min != nil && s.Max != nil && *s.Min > *s.Max {
 		issues = append(issues, fmt.Errorf("%w: %s", ErrRangeInvalidBounds, key))
 	}
 	return append(issues, listAcceptIssues(s, key)...)
@@ -569,10 +538,11 @@ func (m Manifest) HasService(service string) bool {
 	if service == "" {
 		return false
 	}
-	return (m.Backend.ServiceName != "" && m.Backend.ServiceName == service) || slices.Contains(m.Services, service)
+	return slices.Contains(m.Services, service)
 }
 
-// CanActivateOn reports whether the given event triggers plugin activation.
-func (m Manifest) CanActivateOn(event string) bool {
-	return slices.Contains(m.ActivationEvents, "*") || slices.Contains(m.ActivationEvents, event)
+// IsActivatedByAnyEvent reports whether the plugin declares the activation event `*`: the host
+// starts it for every event it emits and delivers the event to it.
+func (m Manifest) IsActivatedByAnyEvent() bool {
+	return slices.Contains(m.ActivationEvents, ActivationEventAll)
 }

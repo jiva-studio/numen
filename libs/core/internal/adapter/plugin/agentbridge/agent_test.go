@@ -44,13 +44,9 @@ func createTestAgentPluginTree(t *testing.T, dir string) {
 		"description": "Agent and chat provider",
 		"capabilities": ["ai.agent.provider"],
 		"targets": ["desktop.editor"],
-		"activationEvents": ["onCommand:askAgent"],
+		"activationEvents": ["*"],
 		"permissions": [],
-		"backend": {
-			"type": "process",
-			"entrypoint": "bin/agent",
-			"serviceName": "numen.v1.AgentService"
-		}
+		"services": ["numen.v1.AgentService"], "backend": {"entrypoint": "bin/agent"}
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatalf("write manifest failed: %v", err)

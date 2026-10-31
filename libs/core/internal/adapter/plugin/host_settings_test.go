@@ -20,7 +20,7 @@ func TestHostSettingsOverlayAndPersistence(t *testing.T) {
 		"name": "Sample Plugin",
 		"version": "1.0.0",
 		"description": "Sample description",
-		"capabilities": ["sample"],
+		"capabilities": ["tools"],
 		"targets": ["desktop.editor"],
 		"settings": [
 			{"key": "enabled", "type": "boolean", "title": "Enabled", "default": true, "palette": true},
@@ -147,7 +147,7 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 		"name": "Toggleable Plugin",
 		"version": "1.0.0",
 		"description": "Can be toggled",
-		"capabilities": ["text-processing"],
+		"capabilities": ["tools"],
 		"targets": ["desktop.editor"],
 		"activation_events": ["on-edit"]
 	}`
@@ -178,7 +178,7 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 		t.Errorf("status.IsActive = true, want false")
 	}
 
-	if _, found := host.FindPluginByCapability("text-processing"); !found {
+	if _, found := host.FindPluginByCapability("tools"); !found {
 		t.Errorf("expected capability text-processing to be found")
 	}
 
@@ -196,7 +196,7 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 		t.Errorf("expected status.Enabled = false after disable")
 	}
 
-	if _, found := host.FindPluginByCapability("text-processing"); found {
+	if _, found := host.FindPluginByCapability("tools"); found {
 		t.Errorf("expected disabled plugin to not be found by capability")
 	}
 
@@ -222,7 +222,7 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 	if !host.IsPluginEnabled(pluginID) {
 		t.Errorf("expected plugin to be enabled after toggle")
 	}
-	if _, found := host.FindPluginByCapability("text-processing"); !found {
+	if _, found := host.FindPluginByCapability("tools"); !found {
 		t.Errorf("expected capability text-processing to be found after re-enabling")
 	}
 

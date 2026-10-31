@@ -1,57 +1,10 @@
 package manifest
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 )
-
-// ErrInvalidAppVersion is a bound of the application versions a plugin runs in that is not a version.
-var ErrInvalidAppVersion = errors.New("invalid application version")
-
-// ErrInvertedAppVersion is a range of application versions whose minimum exceeds its maximum.
-var ErrInvertedAppVersion = errors.New("minimum application version exceeds the maximum")
-
-// AppVersionRange bounds the application versions a plugin runs in. Both bounds are inclusive and an
-// empty bound is open.
-type AppVersionRange struct {
-	Min string
-	Max string
-}
-
-// Locate returns -1 for a version below the range, 1 for one above it and 0 for one inside it. A
-// version that is no version is -1.
-func (r AppVersionRange) Locate(version string) int {
-	if r.Min != "" {
-		if order, err := CompareVersions(version, r.Min); err != nil || order < 0 {
-			return -1
-		}
-	}
-	if r.Max != "" {
-		if order, err := CompareVersions(version, r.Max); err != nil || order > 0 {
-			return 1
-		}
-	}
-	return 0
-}
-
-// listAppVersionIssues checks that each bound is a version and that the minimum does not exceed the maximum.
-func (m Manifest) listAppVersionIssues() []error {
-	var issues []error
-	limits := []struct{ name, value string }{{"min", m.AppVersion.Min}, {"max", m.AppVersion.Max}}
-	for _, limit := range limits {
-		if limit.value != "" && !manifestVersionPattern.MatchString(limit.value) {
-			issues = append(issues, fmt.Errorf("%w: %s %q", ErrInvalidAppVersion, limit.name, limit.value))
-		}
-	}
-	if len(issues) == 0 && m.AppVersion.Min != "" && m.AppVersion.Max != "" {
-		if order, err := CompareVersions(m.AppVersion.Min, m.AppVersion.Max); err == nil && order > 0 {
-			issues = append(issues, fmt.Errorf("%w: %s > %s", ErrInvertedAppVersion, m.AppVersion.Min, m.AppVersion.Max))
-		}
-	}
-	return issues
-}
 
 // CompareVersions orders two semantic versions by precedence: -1 when a precedes b, 1 when b precedes a
 // and 0 when they are equal. A leading v and build metadata are ignored.

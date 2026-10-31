@@ -88,7 +88,7 @@ const MANIFEST = {
   id: 'md.numen.cards',
   name: 'Cards',
   version: '1.0.0',
-  frontend: { entrypoint: 'dist/index.js', styles: 'dist/styles.css' },
+  frontend: {},
 }
 
 /** What the shell is given: one plugin that draws the review, and how the vaults are listed. */

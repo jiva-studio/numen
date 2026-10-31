@@ -13,7 +13,7 @@ func TestThePagesLoadOnlyThePluginsThatDeclareAFrontend(t *testing.T) {
 		"server": `{"id": "md.numen.server", "name": "Server", "version": "1.0.0", "targets": ["desktop.editor"],
 			"backend": {"entrypoint": "bin/server"}}`,
 		"view": `{"id": "md.numen.view", "name": "View", "version": "1.0.0", "targets": ["desktop.editor"],
-			"frontend": {"entrypoint": "dist/index.js"}}`,
+			"frontend": {}}`,
 	}
 	for dir, manifest := range manifests {
 		if err := os.MkdirAll(filepath.Join(root, dir), 0o755); err != nil {

@@ -11,15 +11,13 @@ export interface MountedSettingsView {
   readonly component: unknown
 }
 
-/** The views placed at the top of the form (empty `after`) or after the setting `key`, in declared order. */
-export function getRegisteredViewsAfter(
+/** The declared views that the frontend registered, in declared order. */
+export function getRegisteredViews(
   declared: readonly PluginSettingsViewInfo[],
   registered: ReadonlyMap<string, { readonly component: unknown }>,
-  key: string,
 ): readonly MountedSettingsView[] {
   const views: MountedSettingsView[] = []
   for (const one of declared) {
-    if (one.after !== key) continue
     const entry = registered.get(one.id)
     if (entry) views.push({ id: one.id, component: entry.component })
   }

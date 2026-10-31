@@ -16,7 +16,7 @@ func readTestManifest(t *testing.T) Manifest {
 	t.Helper()
 	m, err := manifestjson.Read(strings.NewReader(`{
 		"id": "org.example.sample", "name": "Sample", "version": "1.0.0",
-		"backend": {"type": "process", "entrypoint": "bin/sample"},
+		"backend": {"entrypoint": "bin/sample"},
 		"dependencies": [
 			{"id": "shared", "kind": "model"},
 			{"id": "small-weights", "kind": "model"},

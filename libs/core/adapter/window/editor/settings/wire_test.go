@@ -24,11 +24,11 @@ func TestNewWirePluginInfos_CarriesTheIcon(t *testing.T) {
 func TestNewWirePluginInfos_CarriesSettingsViews(t *testing.T) {
 	wire := NewWirePluginInfos([]setting.PluginInfo{{
 		ID:            "a.b",
-		SettingsViews: []setting.PluginSettingsView{{ID: "floor", Title: "Search relevance", After: "model"}},
+		SettingsViews: []setting.PluginSettingsView{{ID: "floor", Title: "Search relevance"}},
 	}})
 
 	got := wire[0].GetSettingsViews()
-	if len(got) != 1 || got[0].GetId() != "floor" || got[0].GetTitle() != "Search relevance" || got[0].GetAfter() != "model" {
+	if len(got) != 1 || got[0].GetId() != "floor" || got[0].GetTitle() != "Search relevance" {
 		t.Errorf("the settings views carry %v", got)
 	}
 }

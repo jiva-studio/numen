@@ -32,7 +32,7 @@ func Validate(targetPath string) ([]string, error) {
 		issues = append(issues, issue.Error())
 	}
 	issues = append(issues, listBackendFileIssues(m.Backend, pluginDir)...)
-	issues = append(issues, listFrontendFileIssues(m.Frontend, pluginDir)...)
+	issues = append(issues, listFrontendFileIssues(m.HasFrontend(), pluginDir)...)
 	issues = append(issues, listThemeFileIssues(m.Contributes.Themes, pluginDir)...)
 	return issues, nil
 }
@@ -73,14 +73,14 @@ func listBackendFileIssues(b manifest.Backend, pluginDir string) []string {
 	return []string{fmt.Sprintf("backend entrypoint %q does not exist and no backend/main.go source found", b.Entrypoint)}
 }
 
-func listFrontendFileIssues(f manifest.Frontend, pluginDir string) []string {
-	if strings.TrimSpace(f.Entrypoint) == "" {
+func listFrontendFileIssues(hasFrontend bool, pluginDir string) []string {
+	if !hasFrontend {
 		return nil
 	}
-	if hasAnyFile(filepath.Join(pluginDir, f.Entrypoint), filepath.Join(pluginDir, "frontend", "index.ts")) {
+	if hasAnyFile(filepath.Join(pluginDir, "dist", "index.js"), filepath.Join(pluginDir, "frontend", "index.ts")) {
 		return nil
 	}
-	return []string{fmt.Sprintf("frontend entrypoint %q does not exist and no frontend/index.ts source found", f.Entrypoint)}
+	return []string{"frontend bundle dist/index.js does not exist and no frontend/index.ts source found"}
 }
 
 func hasAnyFile(paths ...string) bool {

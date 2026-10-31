@@ -146,7 +146,7 @@ The SDK is for plugins and is published. `@numen/core-client` is the internal fi
 - Only `@numen/plugin-sdk` and `@numen/core-client` import or declare `@numen/protocol`. Applications (`apps/*`) and host libraries (`libs/plugin-host-ts`) reach the core through `@numen/core-client`; plugins reach it through `@numen/plugin-sdk`. The package matrix gives `@numen/core-client` the row `[@numen/protocol]` and `@numen/plugin-host` the row `[@numen/plugin-sdk, @numen/core-client]`, and no plugin imports `@numen/core-client`.
 - `libs/plugin-manager` is a component library. It depends on `@numen/ui` only, takes data by props and emits events. It owns the view-model logic (filters, query parsing, states) and declares a port interface for the gateway; the application implements the gateway.
 
-**(e) The core knows no plugin by name.** Plugins are discovered through their manifests. A manifest declares what it contributes (`contributes`: `tabKinds`, `settingsViews`, `statusViews`, `themes`, `fileTypes`, and the rest listed in `docs/plugins/README.md`). A plugin id appears nowhere in `libs/core`, `apps/*` or `libs/ui`. The plugin index is generated from the manifests at build time.
+**(e) The core knows no plugin by name.** Plugins are discovered through their manifests. A manifest declares what it contributes (`contributes`: `tabKinds`, `settingsViews`, `statusViews`, `themes`, `readers`, and the rest listed in `docs/plugins/README.md`). A plugin id appears nowhere in `libs/core`, `apps/*` or `libs/ui`. The plugin index is generated from the manifests at build time.
 
 **(f) The kernel keeps defaults only.** The kernel keeps the default theme, the effective search floor and its default value. Calibration, update checks and preset themes are plugins.
 

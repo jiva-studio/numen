@@ -263,7 +263,8 @@ func TestPluginValidate_ReportsCoreRules(t *testing.T) {
 		{"leading zero version", `{"id":"md.numen.x","name":"X","version":"01.0.0"}`, "semver"},
 		{"single segment id", `{"id":"foo","name":"X","version":"1.0.0"}`, "reverse-DNS"},
 		{"newer protocol", `{"id":"md.numen.x","name":"X","version":"1.0.0","protocol":99}`, "protocol"},
-		{"wasm backend", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"type":"wasm","entrypoint":"x.wasm"}}`, "must be \"process\""},
+		{"capability no host resolves", `{"id":"md.numen.x","name":"X","version":"1.0.0","capabilities":["agent"]}`, "invalid capability"},
+		{"activation event other than the wildcard", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"activationEvents":["onCommand:run"]}`, "invalid activation event"},
 		{"setting without title", `{"id":"md.numen.x","name":"X","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, "title"},
 		{"command without backend", `{"id":"md.numen.x","name":"X","version":"1.0.0","commands":[{"id":"run","title":"Run"}]}`, "no backend to run them"},
 		{"command id in capitals", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"commands":[{"id":"Run","title":"Run"}]}`, "lowercase words joined by hyphens"},
@@ -295,12 +296,12 @@ func TestPluginValidate_InvalidJSON(t *testing.T) {
 
 func TestPluginValidate_MissingEntrypointFiles(t *testing.T) {
 	issues, err := Validate(writeManifestFile(t, `{"id":"md.numen.x","name":"X","version":"1.0.0",
-"backend":{"type":"process","entrypoint":"bin/x"},"frontend":{"entrypoint":"dist/index.js"}}`))
+"backend": {"entrypoint": "bin/x"},"frontend": {}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	joined := strings.Join(issues, "\n")
-	if !strings.Contains(joined, "backend entrypoint") || !strings.Contains(joined, "frontend entrypoint") {
+	if !strings.Contains(joined, "backend entrypoint") || !strings.Contains(joined, "frontend bundle") {
 		t.Fatalf("got %v", issues)
 	}
 }

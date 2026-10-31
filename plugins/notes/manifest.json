@@ -1,7 +1,7 @@
 {
   "id": "md.numen.notes",
   "name": "Notes",
-  "version": "2026.10.6",
+  "version": "2026.10.7",
   "protocol": 1,
   "description": "Markdown note editor with live formatting and wikilinks",
   "capabilities": [],
@@ -11,19 +11,14 @@
       { "kind": "note", "title": "Note", "icon": "file-text" },
       { "kind": "reader:markdown", "title": "Markdown Note Editor", "icon": "file-text" }
     ],
-    "fileTypes": [{ "tabKind": "reader:markdown", "extensions": ["md", "markdown"] }],
     "feature": "Markdown notes",
     "category": "views",
     "readers": [
       { "id": "markdown", "contentTypes": ["text/markdown", "text/plain"], "rank": "default" }
     ]
   },
-  "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  },
+  "frontend": {},
   "settings": [
     {
       "key": "soft_wrap",

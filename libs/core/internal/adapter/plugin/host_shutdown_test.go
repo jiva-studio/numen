@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
-
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/eventbus"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
@@ -144,31 +142,6 @@ func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 	}
 }
 
-func TestGetContentTypeHonoursEnabledAndSafeMode(t *testing.T) {
-	host := NewHost(testsupport.Machine, "desktop.editor")
-	manifest := pluginport.PluginManifest{ID: "org.example.samples", Contributes: pluginport.PluginContributes{ContentTypes: []pluginport.PluginContentType{
-		{Type: "application/x-example-sample", Globs: []string{"*.sample"}},
-	}}}
-	host.plugins[manifest.ID] = pluginport.DiscoveredPlugin{Manifest: manifest}
-
-	if got := host.GetContentType("samples/Verbs.SAMPLE"); got != "application/x-example-sample" {
-		t.Fatalf("GetContentType = %q; want the type the enabled plugin brings", got)
-	}
-	if err := host.SetPluginEnabled(t.Context(), manifest.ID, false); err != nil {
-		t.Fatalf("SetPluginEnabled failed: %v", err)
-	}
-	if got := host.GetContentType("samples/Verbs.sample"); got != domain.UnknownContentType {
-		t.Fatalf("GetContentType = %q; want unknown with the plugin disabled", got)
-	}
-	if err := host.SetPluginEnabled(t.Context(), manifest.ID, true); err != nil {
-		t.Fatalf("SetPluginEnabled failed: %v", err)
-	}
-	host.SetSafeMode(true)
-	if got := host.GetContentType("samples/Verbs.sample"); got != domain.UnknownContentType {
-		t.Fatalf("GetContentType = %q; want unknown in safe mode", got)
-	}
-}
-
 // ResolveCapability reports why no plugin responds: none declares the
 // capability, or those that do are disabled or turned off by safe mode.
 func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
@@ -241,7 +214,7 @@ func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
 	host := NewHost(testsupport.Machine, "desktop.editor")
 	for _, id := range []string{"a.failing", "b.working"} {
-		host.plugins[id] = pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, ActivationEvents: []string{"onOpen"}, Backend: pluginport.PluginBackend{Entrypoint: "bin/plugin"}}}
+		host.plugins[id] = pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, ActivationEvents: []string{pluginport.ActivationEventAll}, Backend: pluginport.PluginBackend{Entrypoint: "bin/plugin"}}}
 	}
 	var started atomic.Int32
 	working := startSleepLauncher(t, &started, nil)

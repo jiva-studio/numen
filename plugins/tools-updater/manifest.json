@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.updater",
   "name": "Update Notifier",
-  "version": "2026.10.3",
+  "version": "2026.10.4",
   "protocol": 1,
   "description": "Tells when a newer build of Numen is published",
   "targets": ["desktop.editor"],
@@ -10,18 +10,10 @@
     "statusViews": [{ "id": "update" }],
     "handles": [{ "purpose": "text-provider" }]
   },
-  "activationEvents": [],
   "permissions": ["network:outbound"],
   "services": ["numen.updater"],
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/tools-updater",
-    "serviceName": "numen.updater"
-  },
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  },
+  "backend": { "entrypoint": "bin/tools-updater" },
+  "frontend": {},
   "settings": [
     {
       "key": "channel",

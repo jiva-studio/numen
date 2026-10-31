@@ -2,10 +2,6 @@ package manifestjson
 
 import "github.com/jiva-studio/numen/libs/notes/domain"
 
-func newContentType(text string) domain.ContentType {
-	return domain.ContentType(text)
-}
-
 func newContentTypes(texts []string) []domain.ContentType {
 	if texts == nil {
 		return nil

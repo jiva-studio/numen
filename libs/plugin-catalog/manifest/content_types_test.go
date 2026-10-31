@@ -11,12 +11,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 )
 
-const readerManifestHead = `{"id":"org.example.reader","name":"A","version":"1.0.0","frontend":{"entrypoint":"dist/index.js"}`
+const readerManifestHead = `{"id":"org.example.reader","name":"A","version":"1.0.0","frontend":{}`
 
-func TestReadManifestReadsReadersAndNewContentTypes(t *testing.T) {
+func TestReadManifestReadsReaders(t *testing.T) {
 	m, err := manifestjson.Read(strings.NewReader(readerManifestHead + `,
 		"contributes": {
-			"contentTypes": [{"type": "application/x-example-sample", "globs": ["*.sample"]}],
 			"readers": [
 				{"id": "sample", "contentTypes": ["application/x-example-sample"], "rank": "default"},
 				{"id": "audio", "contentTypes": ["audio/*"], "rank": "alternate"}
@@ -30,9 +29,6 @@ func TestReadManifestReadsReadersAndNewContentTypes(t *testing.T) {
 	}
 	if got := m.ListContentHandlers(); !slices.Equal(got, want) {
 		t.Errorf("ListContentHandlers = %+v; want %+v", got, want)
-	}
-	if got := m.Contributes.ContentTypes[0].ListExtensions(); !slices.Equal(got, []string{"sample"}) {
-		t.Errorf("ListExtensions = %v; want [sample]", got)
 	}
 	if !m.IsHandling("audio/mpeg") || m.IsHandling("video/mp4") {
 		t.Error("IsHandling answers for the wrong types")
@@ -50,7 +46,7 @@ func TestIsHandlingMatchesTheTypesOfTheHandlesOfThePlugin(t *testing.T) {
 	}
 }
 
-func TestReadManifestRejectsAnInvalidReaderOrContentType(t *testing.T) {
+func TestReadManifestRejectsAnInvalidReader(t *testing.T) {
 	cases := map[string]struct {
 		fields string
 		want   error
@@ -60,10 +56,6 @@ func TestReadManifestRejectsAnInvalidReaderOrContentType(t *testing.T) {
 		"a reader with no id":      {`"readers":[{"contentTypes":["application/pdf"],"rank":"default"}]`, manifest.ErrInvalidReader},
 		"a reader declared twice":  {`"readers":[{"id":"r","contentTypes":["text/plain"],"rank":"default"},{"id":"r","contentTypes":["text/plain"],"rank":"default"}]`, manifest.ErrInvalidReader},
 		"a reader of an extension": {`"readers":[{"id":"r","contentTypes":[".pdf"],"rank":"default"}]`, manifest.ErrInvalidReader},
-		"a new type as a mask":     {`"contentTypes":[{"type":"audio/*","globs":["*.x"]}]`, domain.ErrInvalidContentType},
-		"a new type of no glob":    {`"contentTypes":[{"type":"application/x-a","globs":[]}]`, domain.ErrInvalidContentType},
-		"a glob of a whole name":   {`"contentTypes":[{"type":"application/x-a","globs":["sample"]}]`, domain.ErrInvalidContentType},
-		"a glob in capitals":       {`"contentTypes":[{"type":"application/x-a","globs":["*.SAMPLE"]}]`, domain.ErrInvalidContentType},
 	}
 	for name, one := range cases {
 		_, err := manifestjson.Read(strings.NewReader(readerManifestHead + `,"contributes":{` + one.fields + "}}"))
@@ -85,14 +77,14 @@ func TestReadManifestReadsSettingsViews(t *testing.T) {
 	m, err := manifestjson.Read(strings.NewReader(readerManifestHead + `,
 		"settings": [{"key": "model", "type": "string", "title": "Model"}],
 		"settingsViews": [
-			{"id": "floor", "title": "Search relevance", "after": "model"},
+			{"id": "floor", "title": "Search relevance"},
 			{"id": "top", "title": "Top"}
 		]}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := []manifest.SettingsView{
-		{ID: "floor", Title: "Search relevance", After: "model"},
+		{ID: "floor", Title: "Search relevance"},
 		{ID: "top", Title: "Top"},
 	}
 	if !slices.Equal(m.SettingsViews, want) {
@@ -105,9 +97,6 @@ func TestReadManifestRejectsAnInvalidSettingsView(t *testing.T) {
 		"a view with no id":         `"settingsViews":[{"title":"T"}]`,
 		"a view declared twice":     `"settingsViews":[{"id":"v","title":"T"},{"id":"v","title":"U"}]`,
 		"a view with no title":      `"settingsViews":[{"id":"v"}]`,
-		"a view after an unknown":   `"settingsViews":[{"id":"v","title":"T","after":"nope"}]`,
-		"a view after a secret":     `"settingsViews":[{"id":"v","title":"T","after":"apiKey"}]`,
-		"a view after its own id":   `"settingsViews":[{"id":"v","title":"T","after":"v"}]`,
 		"a view with a blank title": `"settingsViews":[{"id":"v","title":"  "}]`,
 	}
 	for name, fields := range cases {

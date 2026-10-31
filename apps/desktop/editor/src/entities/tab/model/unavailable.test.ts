@@ -146,7 +146,7 @@ describe('the pane of a tab whose plugin cannot run here', () => {
       createServices(
         {
           ...notesOptions,
-          incompatibility: CATALOG_INCOMPATIBILITY.APP_TOO_OLD,
+          incompatibility: CATALOG_INCOMPATIBILITY.PROTOCOL,
           incompatibilityDetail: 'needs 2.0',
         },
         { enablePlugin },

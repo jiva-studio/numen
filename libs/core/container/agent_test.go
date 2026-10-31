@@ -122,7 +122,7 @@ func hostWith(t *testing.T, capabilities map[string][]string, servers map[string
 			"id": %q, "name": %q, "version": "1.0.0",
 			"capabilities": [%s],
 			"targets": ["desktop.editor"],
-			"backend": {"type": "process", "entrypoint": "bin/x", "serviceName": "numen.v1.AgentService"}
+			"services": ["numen.v1.AgentService"], "backend": {"entrypoint": "bin/x"}
 		}`, id, id, `"`+strings.Join(declared, `","`)+`"`)
 		if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 			t.Fatal(err)
@@ -177,9 +177,9 @@ func twoProviders(t *testing.T) (*plugin.Host, *providerServer, *providerServer)
 	two := &providerServer{programs: []*v1.AgentProgram{{Name: "beta", Title: "Beta"}}}
 	host := hostWith(t,
 		map[string][]string{
-			providerOne:      {"agent", "ai.agent.provider"},
+			providerOne:      {"ai.agent.provider"},
 			providerTwo:      {"ai.agent.provider"},
-			"md.test.chatty": {"agent"},
+			"md.test.chatty": {"embedding"},
 		},
 		map[string]*providerServer{providerOne: one, providerTwo: two})
 	return host, one, two
@@ -200,7 +200,7 @@ func TestNoAgentProviderInSafeMode(t *testing.T) {
 
 // A host with no plugin that runs agent programs lists none, and takes no task.
 func TestAHostWithoutProvidersListsNoPrograms(t *testing.T) {
-	host := hostWith(t, map[string][]string{"md.test.chatty": {"agent"}}, nil)
+	host := hostWith(t, map[string][]string{"md.test.chatty": {"embedding"}}, nil)
 	provider := (container.Config{PluginHost: host}).AgentProvider()
 	if provider == nil {
 		t.Fatal("a host has a provider, even where no plugin is one")

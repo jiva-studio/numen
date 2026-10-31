@@ -80,11 +80,7 @@ export const settingsCore: SettingsPort = {
         storedSecrets: p.storedSecrets,
         hasFrontend: p.hasFrontend,
         readers: (p.readers ?? []).map((one) => ({ id: one.id, extensions: one.extensions })),
-        settingsViews: (p.settingsViews ?? []).map((one) => ({
-          id: one.id,
-          title: one.title,
-          after: one.after,
-        })),
+        settingsViews: (p.settingsViews ?? []).map((one) => ({ id: one.id, title: one.title })),
         consent: consented[p.completionConsent],
         ...(p.failure
           ? {
@@ -126,9 +122,9 @@ export const settingsCore: SettingsPort = {
               : undefined,
             when: readCondition(s.when),
             accept: s.accept,
-            min: s.min === 0 && s.max === 0 ? undefined : s.min,
-            max: s.min === 0 && s.max === 0 ? undefined : s.max,
-            step: s.step === 0 ? undefined : s.step,
+            min: s.min,
+            max: s.max,
+            step: s.step,
           }
         }),
       })),

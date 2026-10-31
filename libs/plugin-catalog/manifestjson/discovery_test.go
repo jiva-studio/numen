@@ -20,12 +20,10 @@ func TestDiscover(t *testing.T) {
 		"name": "OCR",
 		"version": "1.0.0",
 		"description": "OCR plugin",
-		"capabilities": ["recognition"],
+		"capabilities": ["tools"],
 		"targets": ["desktop.editor"],
-		"activationEvents": [],
-		"permissions": [],
-		"backend": {"type": "process", "entrypoint": "bin/engines.ocr", "serviceName": "TextProviderService"},
-		"frontend": {"entrypoint": "", "styles": ""},
+				"permissions": [],
+		"backend": {"entrypoint": "bin/engines.ocr"},
 		"settings": []
 	}`
 	if err := os.WriteFile(filepath.Join(plugin1Dir, "manifest.json"), []byte(manifest1), 0o644); err != nil {
@@ -41,12 +39,11 @@ func TestDiscover(t *testing.T) {
 		"name": "Sample",
 		"version": "1.0.0",
 		"description": "Sample plugin",
-		"capabilities": ["samples"],
+		"capabilities": ["embedding"],
 		"targets": ["desktop.samples"],
 		"activationEvents": ["*"],
 		"permissions": [],
-		"backend": {"type": "process", "entrypoint": "bin/sample", "serviceName": "SampleService"},
-		"frontend": {"entrypoint": "", "styles": ""},
+		"backend": {"entrypoint": "bin/sample"},
 		"settings": []
 	}`
 	if err := os.WriteFile(filepath.Join(plugin2Dir, "manifest.json"), []byte(manifest2), 0o644); err != nil {
@@ -83,10 +80,8 @@ func TestDiscoverPluginsDuplicateID(t *testing.T) {
 		"description": "Dup",
 		"capabilities": [],
 		"targets": [],
-		"activationEvents": [],
-		"permissions": [],
-		"backend": {"type": "", "entrypoint": "", "serviceName": ""},
-		"frontend": {"entrypoint": "", "styles": ""},
+				"permissions": [],
+		"backend": {},
 		"settings": []
 	}`
 
@@ -128,10 +123,8 @@ func TestDiscoverPluginsSameDirectoryRepeated(t *testing.T) {
 		"description": "Single",
 		"capabilities": ["embedding"],
 		"targets": ["desktop.editor"],
-		"activationEvents": [],
-		"permissions": [],
-		"backend": {"type": "", "entrypoint": "", "serviceName": ""},
-		"frontend": {"entrypoint": "", "styles": ""},
+				"permissions": [],
+		"backend": {},
 		"settings": []
 	}`
 	if err := os.WriteFile(filepath.Join(p, "manifest.json"), []byte(manifestText), 0o644); err != nil {

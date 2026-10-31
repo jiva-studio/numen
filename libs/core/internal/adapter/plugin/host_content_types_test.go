@@ -16,7 +16,7 @@ func newReaderHost(manifests ...pluginport.PluginManifest) *Host {
 	host := NewHost(testsupport.Machine, "desktop.editor")
 	host.SetContentTypeTable(sharedmimeinfo.Open())
 	for _, manifest := range manifests {
-		manifest.Frontend = pluginport.PluginFrontend{Entrypoint: "dist/index.js"}
+		manifest.Frontend = &pluginport.PluginFrontend{}
 		host.plugins[manifest.ID] = pluginport.DiscoveredPlugin{Manifest: manifest}
 	}
 	return host
@@ -74,22 +74,5 @@ func TestPluginInfosAssignAnExtensionToTheNarrowerType(t *testing.T) {
 	}
 	if raw := got["org.example.y"][0].Extensions; len(raw) != 0 {
 		t.Errorf("an alternate reader opens %v; want none", raw)
-	}
-}
-
-func TestListExtensionsIncludesPluginContentTypes(t *testing.T) {
-	brings := pluginport.PluginManifest{ID: "org.example.samples", Contributes: pluginport.PluginContributes{ContentTypes: []pluginport.PluginContentType{
-		{Type: "application/x-example-sample", Globs: []string{"*.example", "*.md"}},
-	}}}
-	host := newReaderHost(brings)
-
-	if got := host.ListExtensions("application/x-example-sample"); !slices.Equal(got, []string{"example", "md"}) {
-		t.Errorf("ListExtensions = %v; want [example md]", got)
-	}
-	if got := host.ListExtensions("text/markdown"); slices.Contains(got, "md") {
-		t.Errorf("ListExtensions(text/markdown) = %v; want md taken by the plugin type", got)
-	}
-	if got := host.GetContentType("Plan.MD"); got != "application/x-example-sample" {
-		t.Errorf("GetContentType = %q; want the type the plugin brings", got)
 	}
 }

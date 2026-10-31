@@ -44,7 +44,7 @@ func sampleEntry(id, version string, state catalog.State, category, kind string)
 		},
 		Source:          "",
 		State:           state,
-		Requirements:    manifest.Requirements{Targets: []string{"desktop.editor"}, Protocol: 1, AppVersion: manifest.AppVersionRange{Min: "", Max: ""}},
+		Requirements:    manifest.Requirements{Targets: []string{"desktop.editor"}, Protocol: 1},
 		Incompatibility: nil,
 		Warnings:        nil,
 	}

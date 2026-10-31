@@ -25,8 +25,6 @@ func TestEveryIncompatibilityIsSavedFromOne(t *testing.T) {
 		v1.CatalogIncompatibility_CATALOG_INCOMPATIBILITY_UNSPECIFIED: "",
 		v1.CatalogIncompatibility_CATALOG_INCOMPATIBILITY_TARGET:      manifest.ReasonTarget,
 		v1.CatalogIncompatibility_CATALOG_INCOMPATIBILITY_PROTOCOL:    manifest.ReasonProtocol,
-		v1.CatalogIncompatibility_CATALOG_INCOMPATIBILITY_APP_TOO_OLD: manifest.ReasonAppTooOld,
-		v1.CatalogIncompatibility_CATALOG_INCOMPATIBILITY_APP_TOO_NEW: manifest.ReasonAppTooNew,
 	}, newWireIncompatibility)
 }
 

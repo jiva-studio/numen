@@ -36,7 +36,7 @@ export interface ReaderRegistration {
 }
 
 // SettingsViewRegistration registers a component the plugin's settings page mounts. The manifest
-// declares, under `settingsViews` with the same id, its title and the setting it follows.
+// declares, under `settingsViews` with the same id, its title.
 export interface SettingsViewRegistration {
   readonly id: string
   readonly component: unknown

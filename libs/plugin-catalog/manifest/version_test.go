@@ -50,27 +50,6 @@ func TestAVersionThatIsNoVersionCannotBeCompared(t *testing.T) {
 	}
 }
 
-func readWithAppVersion(t *testing.T, bounds string) error {
-	t.Helper()
-	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","appVersion":` + bounds + `}`))
-	return err
-}
-
-func TestTheBoundsOfTheAppVersionAreVersionsInOrder(t *testing.T) {
-	if err := readWithAppVersion(t, `{"min":"2026.1.0","max":"2027.1.0"}`); err != nil {
-		t.Errorf("a valid range was refused: %v", err)
-	}
-	if err := readWithAppVersion(t, `{"min":"2026.1.0"}`); err != nil {
-		t.Errorf("an open maximum was refused: %v", err)
-	}
-	if err := readWithAppVersion(t, `{"min":"soon"}`); !errors.Is(err, manifest.ErrInvalidAppVersion) {
-		t.Errorf("a minimum that is no version: error = %v", err)
-	}
-	if err := readWithAppVersion(t, `{"min":"2.0.0","max":"1.0.0"}`); !errors.Is(err, manifest.ErrInvertedAppVersion) {
-		t.Errorf("a minimum above the maximum: error = %v", err)
-	}
-}
-
 func TestAnIncompatibleManifestReportsItsReason(t *testing.T) {
 	read := func(text string) manifest.Manifest {
 		t.Helper()
@@ -87,10 +66,8 @@ func TestAnIncompatibleManifestReportsItsReason(t *testing.T) {
 		env    manifest.Environment
 		reason manifest.IncompatibleReason
 	}{
-		{"another window", read(head + `,"targets":["desktop.flashcards"]}`), manifest.Environment{Target: "desktop.editor", AppVersion: "2026.10.0"}, manifest.ReasonTarget},
-		{"an older application", read(head + `,"appVersion":{"min":"2026.11.0"}}`), manifest.Environment{Target: "desktop.editor", AppVersion: "2026.10.0"}, manifest.ReasonAppTooOld},
-		{"a newer application", read(head + `,"appVersion":{"max":"2026.9.9"}}`), manifest.Environment{Target: "desktop.editor", AppVersion: "2026.10.0"}, manifest.ReasonAppTooNew},
-		{"a newer protocol", manifest.Manifest{Protocol: manifest.ProtocolVersion + 1}, manifest.Environment{Target: "desktop.editor", AppVersion: "2026.10.0"}, manifest.ReasonProtocol},
+		{"another window", read(head + `,"targets":["desktop.flashcards"]}`), manifest.Environment{Target: "desktop.editor"}, manifest.ReasonTarget},
+		{"a newer protocol", manifest.Manifest{Protocol: manifest.ProtocolVersion + 1}, manifest.Environment{Target: "desktop.editor"}, manifest.ReasonProtocol},
 	}
 	for _, one := range cases {
 		err := one.m.CheckCompatibility(one.env)
@@ -107,19 +84,14 @@ func TestAnIncompatibleManifestReportsItsReason(t *testing.T) {
 
 func TestAPluginRunsWhereItsRequirementsAreMet(t *testing.T) {
 	m, err := manifestjson.Read(strings.NewReader(
-		`{"id":"a.b","name":"A","version":"1.0.0","targets":["desktop.editor"],"appVersion":{"min":"2026.1.0","max":"2026.12.0"}}`))
+		`{"id":"a.b","name":"A","version":"1.0.0","targets":["desktop.editor"]}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	for _, env := range []manifest.Environment{
-		{Target: "desktop.editor", AppVersion: "2026.1.0"},
-		{Target: "desktop.editor", AppVersion: "2026.12.0"},
-		{Target: "desktop.editor", AppVersion: ""},
-	} {
-		if err := m.CheckCompatibility(env); err != nil {
-			t.Errorf("%+v: %v", env, err)
-		}
+	env := manifest.Environment{Target: "desktop.editor"}
+	if err := m.CheckCompatibility(env); err != nil {
+		t.Errorf("%+v: %v", env, err)
 	}
 	if !m.Supports("desktop.editor") || m.Supports("desktop.flashcards") {
 		t.Error("Supports does not follow the targets")
