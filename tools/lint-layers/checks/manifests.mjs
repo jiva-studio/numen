@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import {
@@ -23,11 +24,14 @@ const MANIFEST_TEMPLATE = /`[^`\n]*[/}]manifest\.json[^`\n]*`/
 /** A name that stands for the file in code. */
 const MANIFEST_NAME = /\b(?:MANIFEST_FILE|manifest\.FileName)\b/
 
+/** A Go call that decodes a value named for the manifest, which is the manifest text without its file name. */
+const GO_MANIFEST_VALUE_DECODE = /\bUnmarshal\s*\(\s*(?:\w+\.)*[Mm]anifest\w*\s*[,)]/
+
 /** A call that decodes JSON text in a script. */
 const SCRIPT_DECODE = /\bJSON\.parse\s*\(|\.json\s*\(\s*\)/
 
 /** A call that decodes JSON text in Go. */
-const GO_DECODE = /\b(?:json\.(?:Unmarshal|NewDecoder)|protojson\.\w+|\w+\.Unmarshal)\s*\(/
+const GO_DECODE = /\b(?:json\.(?:Unmarshal|NewDecoder)|protojson\.\w+|(?!yaml\.|toml\.)\w+\.Unmarshal)\s*\(/
 
 /** A call that decodes a manifest through the generated TypeScript schema. */
 const SCRIPT_SCHEMA_DECODE = /\bfromJson\s*\(\s*ManifestSchema\b/
@@ -51,7 +55,8 @@ export function findManifestParsers(sources) {
     const namesFile =
       source.literals.some(({ value }) => MANIFEST_LITERAL.test(value)) ||
       MANIFEST_NAME.test(source.code) ||
-      MANIFEST_TEMPLATE.test(text)
+      MANIFEST_TEMPLATE.test(text) ||
+      (file.endsWith('.go') && GO_MANIFEST_VALUE_DECODE.test(source.code))
     if (!namesFile || isSchemaReader(file, source.code)) continue
     const decode = file.endsWith('.go') ? GO_DECODE : SCRIPT_DECODE
     source.code.split('\n').forEach((line, index) => {
@@ -68,10 +73,24 @@ export function findManifestParsers(sources) {
   return found
 }
 
-/** Reads the shipped Go files and scripts of the libraries, applications and tools. */
+/** Generated code and fixture data, which no author writes. */
+const NOT_AUTHORED = /(\.pb\.go|\.connect\.go|_pb\.ts|\.d\.ts)$|(^|\/)(gen|testdata|fixtures|node_modules)\//
+
+/** The tracked files under `pathspecs` that an author wrote, tests included. */
+function listAuthoredFiles(pathspecs) {
+  const listed = spawnSync('git', ['ls-files', '--', ...pathspecs], { cwd: REPO_ROOT, encoding: 'utf8' })
+  return (listed.stdout || '')
+    .split('\n')
+    .filter((file) => file && !NOT_AUTHORED.test(file) && fs.existsSync(path.join(REPO_ROOT, file)))
+}
+
+/**
+ * Reads the Go files and scripts of the libraries, applications and tools, tests included, and the
+ * shipped ones of the plugins. A plugin test reads the manifest its own module embeds.
+ */
 function readHostSources() {
-  const files = listShippedFiles(['libs', 'apps', 'tools']).filter(
-    (file) => (file.endsWith('.go') || SCRIPT_FILE.test(file)) && !file.endsWith('.d.ts'),
+  const files = [...listAuthoredFiles(['libs', 'apps', 'tools']), ...listShippedFiles(['plugins'])].filter(
+    (file) => file.endsWith('.go') || SCRIPT_FILE.test(file),
   )
   return files
     .map((file) => ({

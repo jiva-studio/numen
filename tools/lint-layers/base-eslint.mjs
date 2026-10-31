@@ -12,19 +12,80 @@ export const lifetimes = [
 ]
 
 /**
- * Selectors that ban the wall clock (`Date.now()`, `new Date()`). When `clockFunction` names a
- * function declaration, the wall clock is allowed inside that declaration only.
+ * Selectors that ban the wall clock (`Date.now()`, `new Date()`) and the monotonic clock
+ * (`performance.now()`). When `clockFunction` names a function declaration, the wall clock is
+ * allowed inside that declaration only; `monotonicFunction` does the same for `performance.now()`.
  *
  * @param {string | undefined} clockFunction Name of the one function that reads the wall clock
+ * @param {string | undefined} monotonicFunction Name of the one function that reads the monotonic clock
  * @returns {Array<{ selector: string, message: string }>}
  */
-export function createClockSelectors(clockFunction) {
-  const sanctioned = clockFunction ? `:not(FunctionDeclaration[id.name="${clockFunction}"] *)` : ''
+export function createClockSelectors(clockFunction, monotonicFunction) {
+  const inside = (name) => (name ? `:not(FunctionDeclaration[id.name="${name}"] *)` : '')
   const message = 'the clock is a port — take the now a Clock carries'
   return [
-    { selector: `MemberExpression[object.name="Date"][property.name="now"]${sanctioned}`, message },
-    { selector: `NewExpression[callee.name="Date"][arguments.length=0]${sanctioned}`, message },
+    { selector: `MemberExpression[object.name="Date"][property.name="now"]${inside(clockFunction)}`, message },
+    { selector: `NewExpression[callee.name="Date"][arguments.length=0]${inside(clockFunction)}`, message },
+    {
+      selector: `MemberExpression[object.name="performance"][property.name="now"]${inside(monotonicFunction)}`,
+      message,
+    },
   ]
+}
+
+/**
+ * Selectors that ban scheduling with the machine's timers. A pure module takes the schedule it
+ * runs on from its caller.
+ *
+ * @returns {Array<{ selector: string, message: string }>}
+ */
+export function createTimerSelectors() {
+  const message = 'a timer has a lifetime a test must control — take the schedule a Clock carries'
+  return [
+    { selector: 'CallExpression[callee.name=/^(setTimeout|setInterval)$/]', message },
+    { selector: 'CallExpression[callee.property.name=/^(setTimeout|setInterval)$/]', message },
+  ]
+}
+
+/**
+ * The selectors every non-test source file obeys: the clocks, randomness and measuring the window.
+ *
+ * @param {{ clockFunction?: string, monotonicFunction?: string }} options The sanctioned clock functions
+ * @returns {Array<{ selector: string, message: string }>}
+ */
+export function createDeterminismSelectors({ clockFunction, monotonicFunction } = {}) {
+  return [
+    ...createClockSelectors(clockFunction, monotonicFunction),
+    {
+      selector: 'MemberExpression[object.name="Math"][property.name="random"]',
+      message: 'the same input gives the same numbers on any machine on any day',
+    },
+    {
+      selector: 'MemberExpression[property.name="getBoundingClientRect"]',
+      message: 'what the window measures is a port — take it as a value',
+    },
+    {
+      selector: 'MemberExpression[property.name="matchMedia"]',
+      message: 'a reader who asks for less motion is answered in CSS',
+    },
+  ]
+}
+
+/**
+ * The block for the pure segments (`lib/`, `domain/`): the determinism selectors and the timers.
+ * A package that sets `no-restricted-syntax` for its sources adds this block after its own.
+ *
+ * @param {{ clockFunction?: string, monotonicFunction?: string }} options The sanctioned clock functions
+ * @returns {object}
+ */
+export function createPureSegmentConfig(options = {}) {
+  return {
+    files: ['**/lib/**/*.ts', '**/domain/**/*.ts'],
+    ignores: ['**/*.test.ts', '**/*.stories.ts', '**/fixtures/**', '**/testing/**', '.storybook/**', ...(options.portIgnores || [])],
+    rules: {
+      'no-restricted-syntax': ['error', ...createDeterminismSelectors(options), ...createTimerSelectors()],
+    },
+  }
 }
 
 /**
@@ -445,7 +506,6 @@ const numenPlugin = {
       },
       create(context) {
         const max = context.options[0]?.max ?? 8
-        const filename = context.filename || ''
 
         // Check if file is a composable file (e.g. use*.ts) or function is use*
         function checkReturnObject(node, fnName) {
@@ -769,7 +829,7 @@ const numenPlugin = {
  * Returns the unified base ESLint flat configuration array for Vue 3 + TypeScript projects.
  *
  * @param {string} dirname The import.meta.dirname of the package
- * @param {object} options Optional overrides; `clockFunction` names the one function allowed to read the wall clock
+ * @param {object} options Optional overrides; `clockFunction` and `monotonicFunction` name the one function allowed to read each clock
  * @returns {Array}
  */
 export function createBaseConfig(dirname, options = {}) {
@@ -937,22 +997,12 @@ export function createBaseConfig(dirname, options = {}) {
         ],
         'no-restricted-syntax': [
           'error',
-          ...createClockSelectors(options.clockFunction),
-          {
-            selector: 'MemberExpression[object.name="Math"][property.name="random"]',
-            message: 'the same input gives the same numbers on any machine on any day',
-          },
-          {
-            selector: 'MemberExpression[property.name="getBoundingClientRect"]',
-            message: 'what the window measures is a port — take it as a value',
-          },
-          {
-            selector: 'MemberExpression[property.name="matchMedia"]',
-            message: 'a reader who asks for less motion is answered in CSS',
-          },
+          ...createDeterminismSelectors(options),
         ],
       },
     },
+
+    createPureSegmentConfig(options),
 
     {
       files: ['**/lib/**/*.ts'],

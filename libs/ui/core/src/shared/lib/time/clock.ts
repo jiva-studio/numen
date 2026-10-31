@@ -7,8 +7,13 @@ export interface Clock {
   readonly cancel: (handle: number) => void
 }
 
+/** Milliseconds on the monotonic clock. The only function that reads it; tests control it with fake timers. */
+export function getMonotonicNow(): number {
+  return performance.now()
+}
+
 export const browserClock: Clock = {
-  now: () => performance.now(),
+  now: getMonotonicNow,
   schedule: (run) => globalThis.requestAnimationFrame(run),
   cancel: (handle) => globalThis.cancelAnimationFrame(handle),
 }

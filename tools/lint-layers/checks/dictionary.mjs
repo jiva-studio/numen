@@ -14,7 +14,6 @@ const HOST_VOCABULARY = ["libs/core", "libs/notes"];
 
 const MIN_WORD_LENGTH = 3;
 const TOKEN = /^[A-Za-z][\w.:*-]*$/;
-const SEPARATORS = /[.:*\-_/\s]+/;
 const HASH = /^[0-9a-f]{32,}$/;
 
 /** The manifest of each plugin that holds one. */
@@ -22,11 +21,16 @@ export function listManifestFiles() {
   return listPluginNames(path.join(REPO_ROOT, "plugins")).map((name) => `plugins/${name}/${MANIFEST_FILE}`);
 }
 
+/** The manifest fields that hold presentation or configuration values, which name no plugin. */
+const PRESENTATION_KEYS = new Set(["icon", "key", "title", "description", "default", "label", "unit", "placeholder", "name"]);
+
 /**
- * The manifest fields that hold presentation or configuration values, which name no plugin. The themes
- * a plugin contributes are palettes: their ids, titles and files name colour schemes, not plugins.
+ * Whether a manifest array lists files: its objects hold a `file` path. The entries of such an array
+ * (the themes of a plugin are one) are assets with their own ids and titles, which name no plugin.
  */
-const PRESENTATION_KEYS = new Set(["icon", "key", "title", "description", "default", "label", "unit", "placeholder", "name", "themes"]);
+export function isFileList(value) {
+  return Array.isArray(value) && value.some((item) => item && typeof item === "object" && typeof item.file === "string");
+}
 
 /** The manifest fields that name the windows a plugin runs in; the host defines them. */
 const HOST_KEYS = new Set(["targets"]);
@@ -36,6 +40,7 @@ function collectStrings(value, into, { skipKeys = PRESENTATION_KEYS, onlyKeys = 
   if (typeof value === "string") {
     if (active) into.push(value);
   } else if (Array.isArray(value)) {
+    if (onlyKeys === null && isFileList(value)) return;
     value.forEach((item) => collectStrings(item, into, { skipKeys, onlyKeys }, key, active));
   } else if (value && typeof value === "object") {
     for (const [name, item] of Object.entries(value)) {

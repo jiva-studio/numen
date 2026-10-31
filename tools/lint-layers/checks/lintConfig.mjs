@@ -23,6 +23,13 @@ export const STRICT_RULES = [
   { rule: "@typescript-eslint/switch-exhaustiveness-check" },
 ];
 
+/** The rule set every package of plain scripts (`.mjs`) enforces; the typed rules need a TypeScript parser. */
+export const SCRIPT_STRICT_RULES = [
+  { rule: "no-void", isOptionValid: (options) => options?.allowAsStatement !== true },
+  { rule: "no-empty", isOptionValid: (options) => options?.allowEmptyCatch === false },
+  { rule: "no-empty-function" },
+];
+
 /** The severity and first option of a resolved rule entry (`[2, {...}]`, `2` or `"error"`). */
 function readRuleEntry(entry) {
   const [level, options] = Array.isArray(entry) ? entry : [entry];
@@ -34,12 +41,13 @@ function readRuleEntry(entry) {
  * The gaps between the resolved rules of one file (`eslint --print-config`) and `STRICT_RULES`.
  *
  * @param {Record<string, unknown> | undefined} rules The `rules` object of the resolved config
+ * @param {typeof STRICT_RULES} required The rule set the package must resolve
  * @returns {string[]} One description per missing or loosened rule
  */
-export function findStrictRuleGaps(rules) {
+export function findStrictRuleGaps(rules, required = STRICT_RULES) {
   if (!rules || typeof rules !== "object") return ["no resolved rules"];
   const gaps = [];
-  for (const { rule, isOptionValid } of STRICT_RULES) {
+  for (const { rule, isOptionValid } of required) {
     const { isError, options } = readRuleEntry(rules[rule]);
     if (!isError) {
       gaps.push(`${rule} is not an error`);
@@ -51,7 +59,7 @@ export function findStrictRuleGaps(rules) {
 }
 
 /**
- * The packages that lint TypeScript: every directory holding an `eslint.config.js`, plus every
+ * The packages that lint TypeScript: every directory holding an `eslint.config.js` or `eslint.config.mjs`, plus every
  * `plugins/<name>/` that has a `package.json` (a plugin without a config is a gap).
  *
  * @param {string[]} trackedFiles Repository-relative paths of the tracked files
@@ -60,7 +68,7 @@ export function findStrictRuleGaps(rules) {
  */
 export function listLintedPackages(trackedFiles, hasPackageJson) {
   const configured = new Set(
-    trackedFiles.filter((file) => path.posix.basename(file) === "eslint.config.js").map((file) => path.posix.dirname(file)),
+    trackedFiles.filter((file) => /^eslint\.config\.m?js$/.test(path.posix.basename(file))).map((file) => path.posix.dirname(file)),
   );
   const plugins = new Set(
     trackedFiles
@@ -92,6 +100,25 @@ export function pickProbeFiles(trackedFiles, dir) {
   return [sources[0] ?? `${dir}/probe.ts`, tests[0] ?? `${dir}/probe.test.ts`];
 }
 
+/**
+ * The script files of a package the resolved config is read for: the first source and the first
+ * test, as `pickProbeFiles` does for TypeScript.
+ *
+ * @param {string[]} trackedFiles Repository-relative paths of the tracked files
+ * @param {string} dir Repository-relative package directory
+ * @returns {string[]}
+ */
+export function pickScriptProbeFiles(trackedFiles, dir) {
+  const own = trackedFiles.filter((file) => file.startsWith(`${dir}/`) && /\.mjs$/.test(file) && !/(^|\/)[^/]*\.config\.mjs$/.test(file));
+  const isTest = (file) => /\.test\.mjs$/.test(file);
+  return [own.find((file) => !isTest(file)), own.find(isTest)].filter(Boolean);
+}
+
+/** Whether a package holds TypeScript, and so resolves the typed rule set. */
+function hasTypeScript(trackedFiles, dir) {
+  return trackedFiles.some((file) => file.startsWith(`${dir}/`) && /\.(ts|vue)$/.test(file));
+}
+
 function readTrackedFiles() {
   const listed = spawnSync("git", ["ls-files"], { cwd: REPO_ROOT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
   if (listed.status !== 0) throw new Error(`git ls-files failed: ${listed.stderr}`);
@@ -111,7 +138,7 @@ function readResolvedRules(dir, file) {
 }
 
 /** The smallest number of linted packages the repository has; fewer means discovery broke. */
-const MINIMUM_PACKAGES = 15;
+const MINIMUM_PACKAGES = 16;
 
 /** Every package with an ESLint config resolves the strict rule set on a source file and a test file. */
 export function verifyStrictLintRules() {
@@ -126,10 +153,12 @@ export function verifyStrictLintRules() {
       findings.push({ file: dir, line: 1, symbol: "package has no eslint.config.js" });
       continue;
     }
-    const probes = pickProbeFiles(tracked, dir);
+    const isScriptPackage = !hasTypeScript(tracked, dir) && !dir.startsWith("plugins/");
+    const probes = isScriptPackage ? pickScriptProbeFiles(tracked, dir) : pickProbeFiles(tracked, dir);
+    const required = isScriptPackage ? SCRIPT_STRICT_RULES : STRICT_RULES;
     for (const probe of probes) {
       probed += 1;
-      for (const gap of findStrictRuleGaps(readResolvedRules(dir, probe))) {
+      for (const gap of findStrictRuleGaps(readResolvedRules(dir, probe), required)) {
         findings.push({ file: probe, line: 1, symbol: gap });
       }
     }

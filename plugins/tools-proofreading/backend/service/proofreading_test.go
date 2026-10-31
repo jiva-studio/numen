@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	proofreading "github.com/jiva-studio/numen/plugins/tools-proofreading"
 )
 
 const (
@@ -70,11 +69,7 @@ func newScene(t *testing.T) *scene {
 	s.texts.File(scanPath, []byte("the scan"))
 	s.texts.File(talkPath, []byte("the recording"))
 	s.texts.SetStore(PluginID, s.store)
-	kinds, err := readKinds(proofreading.Manifest)
-	if err != nil {
-		t.Fatal(err)
-	}
-	s.run = newProofreading(Host{Store: s.store, Texts: s.texts, Queue: s.queue}, kinds, newAskModel(s.model.complete, s.settings.getConfig), s.settings.getConfig)
+	s.run = newProofreading(Host{Store: s.store, Texts: s.texts, Queue: s.queue}, getProofreadKinds(), newAskModel(s.model.complete, s.settings.getConfig), s.settings.getConfig)
 	return s
 }
 

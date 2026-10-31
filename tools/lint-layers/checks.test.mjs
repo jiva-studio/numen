@@ -33,6 +33,7 @@ const MANIFESTS = {
     targets: ["desktop.editor"],
     settings: [{ key: "quokka_limit", type: "number", icon: "waypoints" }],
     contentTypes: [{ type: "quokkaformat", globs: ["*.qk"] }],
+    contributes: { palettes: [{ id: "nectarine", appearance: "dark", file: "palettes/nectarine.css" }] },
   }),
   "plugins/beta-view/manifest.json": JSON.stringify({
     id: "md.example.views.mango.player",
@@ -55,6 +56,11 @@ describe("the dictionary of plugin words", () => {
   it("holds no segment that every plugin id shares, no presentation value and no host target", () => {
     const words = fixtureWords();
     for (const word of ["md", "example", "waypoints", "quokka_limit", "desktop.editor", "editor"]) assert.equal(words.has(word), false, word);
+  });
+
+  it("holds no value of an array that lists files, whatever the array is called", () => {
+    const words = fixtureWords();
+    for (const word of ["nectarine", "palettes/nectarine.css"]) assert.equal(words.has(word), false, word);
   });
 
   it("drops the words an SDK or the protocol defines", () => {

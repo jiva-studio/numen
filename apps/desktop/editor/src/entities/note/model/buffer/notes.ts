@@ -4,6 +4,7 @@
  * Coordinates open note tabs, executing reads, writes, timers, and holding note state.
  */
 import { shallowReactive } from 'vue'
+import { getMonotonicNow } from '@numen/ui'
 import {
   openTab,
   getState,
@@ -149,7 +150,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
   const limits = how.limits ?? DEFAULT_WRITE_LIMITS
   // Without a listener, a replaced body needs no notification.
   const onReplaced = how.onReplaced ?? (() => undefined)
-  const now = how.now ?? (() => performance.now())
+  const now = how.now ?? getMonotonicNow
 
   const { context, dispatch } = createNoteStoreContext(core, limits, onReplaced)
   const { tabs, bodies, queue, reportedIds, closeCallbacks } = context

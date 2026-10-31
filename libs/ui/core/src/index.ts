@@ -77,7 +77,13 @@ export {
   type Viewport,
 } from './shared/lib/dom/viewport'
 export { getPageNavigationAction, type PageNavigationAction } from './shared/lib/dom/pageNavigation'
-export { browserClock, onNextFrame, type Clock, type Paint } from './shared/lib/time/clock'
+export {
+  browserClock,
+  getMonotonicNow,
+  onNextFrame,
+  type Clock,
+  type Paint,
+} from './shared/lib/time/clock'
 export {
   doc,
   getCurrentDate,

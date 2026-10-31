@@ -1,7 +1,6 @@
 package container
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 	"go/parser"
@@ -63,23 +62,22 @@ func getPluginManifests(t *testing.T) []pluginManifest {
 // listLifecycleGaps lists what a manifest with a backend leaves out of its
 // lifecycle: the idle policy and the memory limit are each declared by name.
 func listLifecycleGaps(raw []byte) []string {
-	var manifest struct {
-		Backend   *json.RawMessage `json:"backend"`
-		Lifecycle map[string]any   `json:"lifecycle"`
-	}
-	if err := json.Unmarshal(raw, &manifest); err != nil {
+	declaration, err := manifestjson.ReadDeclaration(raw)
+	if err != nil {
 		return []string{err.Error()}
 	}
-	if manifest.Backend == nil {
+	if !declaration.HasBackend() {
 		return nil
 	}
+	decoded, err := manifestjson.Decode(raw)
+	if err != nil {
+		return []string{err.Error()}
+	}
 	var gaps []string
-	if _, declared := manifest.Lifecycle["idleTimeoutSeconds"].(float64); !declared {
+	if !declaration.HasLifecycleField("idleTimeoutSeconds") {
 		gaps = append(gaps, "idleTimeoutSeconds is not declared")
 	}
-	bytes := getNumber(manifest.Lifecycle, "memoryLimitBytes")
-	megabytes := getNumber(manifest.Lifecycle, "memoryLimitMB")
-	if bytes <= 0 && megabytes <= 0 {
+	if decoded.Lifecycle.MemoryLimitBytes == 0 {
 		gaps = append(gaps, "memoryLimitBytes is not declared")
 	}
 	return gaps
@@ -643,13 +641,4 @@ func TestPluginNamingRule_ReportsNamingIssues(t *testing.T) {
 			t.Errorf("%s: %d issues found, want %d: %v", name, len(got), one.issues, got)
 		}
 	}
-}
-
-// getNumber is the number at the key, and zero where the key holds none.
-func getNumber(values map[string]any, key string) float64 {
-	number, isNumber := values[key].(float64)
-	if !isNumber {
-		return 0
-	}
-	return number
 }

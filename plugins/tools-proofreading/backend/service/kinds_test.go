@@ -8,25 +8,13 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	proofreading "github.com/jiva-studio/numen/plugins/tools-proofreading"
 )
 
-func TestReadKindsReturnsTheKindsOfTheProofreadCommand(t *testing.T) {
-	kinds, err := readKinds(proofreading.Manifest)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	got := slices.Sorted(maps.Keys(kinds))
+func TestGetProofreadKindsAcceptsEveryKind(t *testing.T) {
+	got := slices.Sorted(maps.Keys(getProofreadKinds()))
 	want := []domain.TextKind{"*"}
 	if !slices.Equal(got, want) {
 		t.Errorf("kinds %v, want %v", got, want)
-	}
-}
-
-func TestReadKindsRejectsAManifestWithoutKinds(t *testing.T) {
-	if _, err := readKinds([]byte(`{"commands":[{"id":"proofread","title":"Proofread"}]}`)); !errors.Is(err, errNoKinds) {
-		t.Errorf("got %v, want %v", err, errNoKinds)
 	}
 }
 

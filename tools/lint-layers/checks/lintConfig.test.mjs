@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { STRICT_RULES, findStrictRuleGaps, listLintedPackages, pickProbeFiles } from "./lintConfig.mjs";
+import {
+  SCRIPT_STRICT_RULES,
+  STRICT_RULES,
+  findStrictRuleGaps,
+  listLintedPackages,
+  pickProbeFiles,
+  pickScriptProbeFiles,
+} from "./lintConfig.mjs";
 
 /** The rules of a package that enforces the whole set, in the shape `eslint --print-config` prints. */
 const strictRules = () => ({
@@ -87,4 +94,24 @@ test("the probes are the first source file and the first test file of the packag
   const tracked = Object.entries(filesByPackage).flatMap(([dir, names]) => names.map((name) => `${dir}/${name}`));
   assert.deepEqual(pickProbeFiles(tracked, "plugins/notes"), ["plugins/notes/frontend/b.ts", "plugins/notes/frontend/b.test.ts"]);
   assert.deepEqual(pickProbeFiles(tracked, "plugins/missing"), ["plugins/missing/probe.ts", "plugins/missing/probe.test.ts"]);
+});
+
+test("a script package is checked against the script rule set only", () => {
+  const rules = { "no-void": [2, { allowAsStatement: false }], "no-empty": [2, { allowEmptyCatch: false }], "no-empty-function": [2] };
+  assert.deepEqual(findStrictRuleGaps(rules, SCRIPT_STRICT_RULES), []);
+  assert.deepEqual(findStrictRuleGaps({ ...rules, "no-empty-function": [0] }, SCRIPT_STRICT_RULES), ["no-empty-function is not an error"]);
+});
+
+test("a config written as eslint.config.mjs makes its directory a linted package", () => {
+  assert.deepEqual(listLintedPackages(["tools/eslint.config.mjs", "tools/lint-layers/check.mjs"], () => false), [
+    { dir: "tools", hasConfig: true },
+  ]);
+});
+
+test("script probes are the first source and the first test, never a config", () => {
+  const probes = pickScriptProbeFiles(
+    ["tools/eslint.config.mjs", "tools/a/a.test.mjs", "tools/a/a.mjs", "tools/b/b.mjs", "libs/x/y.mjs"],
+    "tools",
+  );
+  assert.deepEqual(probes, ["tools/a/a.mjs", "tools/a/a.test.mjs"]);
 });
