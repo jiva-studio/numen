@@ -5,7 +5,7 @@
  * The index is one JSON file listing the manifest of every plugin of the repository, so that the
  * application knows which plugin provides a tab or a file before that plugin is on disk. Each
  * manifest is read against the schema generated from `manifest.proto` and written back in the
- * schema's JSON form: keys the schema does not name are dropped.
+ * schema's JSON form: keys the schema does not name are dropped and reported as warnings.
  *
  *   node build.mjs [--plugins <dir>] [--out <file>]
  *
@@ -27,7 +27,8 @@ export const buildIndex = (pluginsDir = PLUGINS_DIR) => {
   const plugins = readPluginManifests(pluginsDir)
   if (plugins.length === 0) throw new Error(`no plugin with a manifest.json in ${pluginsDir}`)
   const byId = new Map()
-  for (const { name, manifest } of plugins) {
+  for (const { name, manifest, warnings } of plugins) {
+    for (const warning of warnings) console.warn(`warning: plugins/${name}/manifest.json: ${warning}`)
     if (byId.has(manifest.id))
       throw new Error(`plugin id ${manifest.id} is declared twice (${name})`)
     byId.set(manifest.id, toJson(ManifestSchema, manifest))

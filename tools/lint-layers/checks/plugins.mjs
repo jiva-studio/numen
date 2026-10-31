@@ -276,12 +276,12 @@ export function verifyPluginsStandaloneRepo() {
   failOnFindings("A plugin is tied to the monorepo by relative paths, libs/notes, or its own .proto", findPluginStandaloneViolations());
 }
 
-/** The tab kinds, note types, command ids and text kinds a manifest contributes, lower-case. */
+/** The tab kinds, note types, command ids and condition values a manifest contributes, lower-case. */
 export function listContributedTokens(manifest) {
   const tokens = [];
   for (const { kind } of manifest.contributes?.tabKinds ?? []) tokens.push(kind, kind.replace(/^reader:/, ""));
-  for (const { type } of manifest.noteTypes ?? []) tokens.push(type);
-  for (const command of manifest.commands ?? []) tokens.push(command.id, ...(command.when?.liveTextKinds ?? []));
+  for (const { type } of manifest.contributes?.noteTypes ?? []) tokens.push(type);
+  for (const command of manifest.commands ?? []) tokens.push(command.id, ...(command.when ?? []).flatMap((condition) => condition.is ?? []));
   return [...new Set(tokens.filter(Boolean).map((token) => token.toLowerCase()))];
 }
 
