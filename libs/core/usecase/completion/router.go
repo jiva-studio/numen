@@ -36,13 +36,12 @@ func NewRouter(config func() Config, programs agentport.CompletionPrograms) (*Ro
 	return &Router{config: config, programs: programs, limits: newLimits()}, nil
 }
 
-// Complete answers the question of the plugin with the id given, by the default
-// agent and model. The question goes to the agent as a task that names no tool and no
-// conversation. A model the program does not list is replaced by the one it answers with unasked,
+// Complete answers the question of a plugin by the default agent and model. The
+// question goes to the agent as a task that names no tool and no conversation. A model the program does not list is replaced by the one it answers with unasked,
 // else its first; a failure then states the replacement. A program that is not there fails with
 // port.ErrNoRoute. The wait for a place under the agent's limit, and the answer, end with the
 // context.
-func (r *Router) Complete(ctx context.Context, pluginID string, question completionport.Question) (string, error) {
+func (r *Router) Complete(ctx context.Context, _ string, question completionport.Question) (string, error) {
 	task, err := newTask(question)
 	if err != nil {
 		return "", err
