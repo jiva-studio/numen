@@ -54,10 +54,16 @@ func TestOneInstantInTwoZonesIsOneFile(t *testing.T) {
 	}
 }
 
+// machineClock reads the clock of the machine, the only source of a monotonic reading.
+type machineClock struct{}
+
+// Now gets the current wall-clock time.
+func (machineClock) Now() time.Time { return time.Now() }
+
 // A stamp a clock handed out carries a monotonic reading, which `==` compares
 // and no round trip preserves.
 func TestAStampCarryingAMonotonicReadingIsTheSameFileWithoutIt(t *testing.T) {
-	stamp := <-time.After(0)
+	stamp := machineClock{}.Now()
 	if stamp.Round(0) == stamp {
 		t.Skip("this clock hands out no monotonic reading")
 	}

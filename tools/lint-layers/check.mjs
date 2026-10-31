@@ -108,6 +108,7 @@ function getChangedModules() {
 
   const matched = new Set();
   for (const file of files) {
+    if (/\.go$|(^|\/)go\.(mod|work)$/.test(file)) matched.add("machine-clock");
     if (file.startsWith("libs/core/")) matched.add("core");
     if (file.startsWith("libs/notes/")) matched.add("notes");
     if (file.startsWith("libs/")) matched.add("libraries");

@@ -83,6 +83,7 @@ Component architecture enforces separation of concerns:
 In anything pure — `domain/`, the model and arithmetic modules beside a component, the text cutting and chunking:
 
 - **The clock is a port.** `time.Now()`, `Date.now()`, `new Date()`, `setTimeout` and `setInterval` are injected as a clock the caller supplies, and the module that wraps the real one is the only place they appear. Time has a lifetime a test must control.
+  - In Go the rule is structural. `TestTheMachineClockIsReadOnlyByAClockPortImplementation` (`libs/core/container/clock_port_test.go`) loads every module of `go.work` with go/packages, tests included, and fails on any reference to `time.Now`, `time.Since` or `time.Until` outside the body of a method `Now() time.Time` whose receiver implements a clock port (an interface declared in non-test code whose only method is `Now() time.Time`). Generated files are skipped. No path, file or name is listed, forbidigo carries no time pattern, and the test asserts that it finds the real clock implementations. It runs in `make check_layers` (verifier `machine-clock`), which `make check_gate` runs whenever a Go file changes.
 - **Randomness is a port.** `math/rand` and `Math.random()` are passed in or seeded.
 - **The same input gives the same output** on any machine on any day. A chunk identified by its text is the same identifier on either platform.
 - **No error is swallowed.** An empty `catch {}`, a discarded `_ = fn()` and a floating `void promise` are all forbidden. An error is handled, returned or wrapped.

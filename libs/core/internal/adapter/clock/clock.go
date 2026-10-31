@@ -11,10 +11,11 @@ import (
 // packages it constructs.
 type System struct{}
 
-// Now gets the current wall-clock time. The value is the time at which a
-// zero-length timer fires.
+// Now gets the current wall-clock time. This is the only read of the machine
+// clock in the workspace; TestTheMachineClockIsReadOnlyByAClockPortImplementation
+// enforces it.
 func (System) Now() time.Time {
-	return <-time.After(0)
+	return time.Now()
 }
 
 // Fake is a clock that reports a configured time and moves only when told.

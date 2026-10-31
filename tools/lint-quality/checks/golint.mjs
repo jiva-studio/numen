@@ -1,17 +1,18 @@
 import { spawn } from "node:child_process";
-import { listGoModules } from "./modules.mjs";
+import { findGoLintConfig, listGoModules } from "./modules.mjs";
 
 const MAX_PARALLEL_MODULES = 4;
 
 /**
- * Runs golangci-lint with the configuration of the module itself.
+ * Runs golangci-lint once with the given configuration file.
  *
  * @param {{ name: string, dir: string }} module
+ * @param {string} configFile
  * @returns {Promise<string[]>}
  */
-function lintModule({ name, dir }) {
+function lintWithConfig({ name, dir }, configFile) {
   return new Promise((resolve) => {
-    const child = spawn("golangci-lint", ["run", "--allow-parallel-runners", "./..."], {
+    const child = spawn("golangci-lint", ["run", "-c", configFile, "--allow-parallel-runners", "./..."], {
       cwd: dir,
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -37,7 +38,21 @@ function lintModule({ name, dir }) {
 }
 
 /**
- * Runs the golangci-lint configuration of each Go module, which for a plugin is its own
+ * Runs both Go lint configurations on a module: the rules for code and tests, then the
+ * structure rules for code.
+ *
+ * @param {string} repoRoot
+ * @param {{ name: string, dir: string }} module
+ * @returns {Promise<string[]>}
+ */
+async function lintModule(repoRoot, module) {
+  const rules = await lintWithConfig(module, findGoLintConfig(repoRoot, module.dir, ".golangci.yml"));
+  const structure = await lintWithConfig(module, findGoLintConfig(repoRoot, module.dir, ".golangci-structure.yml"));
+  return [...rules, ...structure];
+}
+
+/**
+ * Runs the golangci-lint configurations of each Go module, which for a plugin is its own
  * .golangci.yml, and reports every finding. Only the modules holding a changed directory are
  * checked when `targetDirs` is given.
  *
@@ -54,7 +69,7 @@ export async function runGolintCheck({ repoRoot, warnOnly = false, targetDirs = 
   const issues = [];
   for (let i = 0; i < modules.length; i += MAX_PARALLEL_MODULES) {
     const batch = modules.slice(i, i + MAX_PARALLEL_MODULES);
-    issues.push(...(await Promise.all(batch.map(lintModule))).flat());
+    issues.push(...(await Promise.all(batch.map((module) => lintModule(repoRoot, module)))).flat());
   }
 
   const durationMs = Date.now() - start;

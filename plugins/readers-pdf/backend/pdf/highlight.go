@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/klippa-app/go-pdfium"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/responses"
 )
@@ -83,7 +84,7 @@ func getOrderedPages(pages []int, most int) []int {
 // A page that cannot be measured, or cannot be read, yields no word locations.
 func (d *document) words(index, offset int) []HighlightBox {
 	page := requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}, ByReference: nil}
-	sheet, ok := d.getSheet(page)
+	sheet, ok := getSheet(pdfiumMeasurer{worker: d.worker}, page)
 	// gomutants:disable-next-line BRANCH_IF reason="words aborts when page sheet cannot be retrieved"
 	if !ok {
 		return nil
@@ -187,15 +188,36 @@ type pageGeometry struct {
 	rotation      int
 }
 
+// pageMeasurer is the part of the pdfium worker that measures a page.
+type pageMeasurer interface {
+	GetPageSize(request *requests.GetPageSize) (*responses.GetPageSize, error)
+	GetPageRotation(request *requests.FPDFPage_GetRotation) (*responses.FPDFPage_GetRotation, error)
+}
+
+// pdfiumMeasurer measures pages with a pdfium worker.
+type pdfiumMeasurer struct {
+	worker pdfium.Pdfium
+}
+
+// GetPageSize gets the size of a page as it is drawn.
+func (m pdfiumMeasurer) GetPageSize(request *requests.GetPageSize) (*responses.GetPageSize, error) {
+	return m.worker.GetPageSize(request)
+}
+
+// GetPageRotation gets the rotation of a page in quarter turns.
+func (m pdfiumMeasurer) GetPageRotation(request *requests.FPDFPage_GetRotation) (*responses.FPDFPage_GetRotation, error) {
+	return m.worker.FPDFPage_GetRotation(request)
+}
+
 // getSheet measures one page. The size the library reports is of the page as it is
 // drawn, and a page drawn a quarter turn from the way its text is written is as
 // wide as its text is high.
-func (d *document) getSheet(page requests.Page) (pageGeometry, bool) {
-	size, err := d.worker.GetPageSize(&requests.GetPageSize{Page: page})
+func getSheet(measurer pageMeasurer, page requests.Page) (pageGeometry, bool) {
+	size, err := measurer.GetPageSize(&requests.GetPageSize{Page: page})
 	if err != nil || size.Width <= 0 || size.Height <= 0 {
 		return pageGeometry{width: 0, height: 0, rotation: 0}, false
 	}
-	turned, err := d.worker.FPDFPage_GetRotation(&requests.FPDFPage_GetRotation{Page: page})
+	turned, err := measurer.GetPageRotation(&requests.FPDFPage_GetRotation{Page: page})
 	// gomutants:disable-next-line BRANCH_IF reason="getSheet returns false when rotation cannot be retrieved"
 	if err != nil {
 		return pageGeometry{width: 0, height: 0, rotation: 0}, false

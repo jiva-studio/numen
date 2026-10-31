@@ -21,7 +21,7 @@ export function discoverCoreHexagonTests() {
   const containerDir = path.join(MODULES_DIR, "libs/core/container");
   const archFiles = fs
     .readdirSync(containerDir)
-    .filter((f) => f.endsWith("_test.go") && !f.startsWith("plugin") && f !== "chunking_test.go")
+    .filter((f) => f.endsWith("_test.go") && !f.startsWith("plugin") && f !== "chunking_test.go" && f !== "clock_port_test.go")
     .filter((f) => {
       const text = fs.readFileSync(path.join(containerDir, f), "utf8");
       return text.includes('"go/ast"') || text.includes('"go/parser"');
@@ -485,6 +485,18 @@ export const CORE_VERIFIERS = [
     module: "core",
     name: "Core Hexagonal Layers & Inward Dependencies (layers_test.go)",
     run: verifyCoreHexagon,
+  },
+  {
+    id: "machine-clock",
+    scope: "libs",
+    module: "machine-clock",
+    name: "Machine Clock Read Only By A Clock Port Implementation (clock_port_test.go, all Go modules)",
+    run: () => {
+      exec(
+        'go test -v ./container -count=1 -run "^(TestTheMachineClockIsReadOnlyByAClockPortImplementation|TestClockPortRule_RejectsReadsOutsideAClockImplementation|TestClockPortRule_RejectsAClockMethodWithoutAPort)$"',
+        path.join(MODULES_DIR, "libs/core"),
+      );
+    },
   },
   {
     id: "notes-hexagon",

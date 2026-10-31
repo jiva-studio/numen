@@ -1,9 +1,16 @@
 # Structure rules for production code: complexity, function size, enum switches
-# and struct literals. Test files are not checked here (run.tests is false);
-# .golangci.yml checks tests.
+# and struct literals.
 #
-# Plugin directories and libs/plugin-sdk-go carry byte-identical copies of this
-# file; tools/lint-layers verifies the copies.
+# This file is the second of two Go lint configurations; both always run together.
+# It sets `run.tests: false` because these rules do not fit test code (long table
+# tests and setup helpers), and golangci-lint offers no way to scope a linter to
+# non-test files other than a separate configuration or a path exclusion, which this
+# repository does not use. .golangci.yml checks production code and tests.
+#
+# exhaustruct applies to the core identity types and to every struct of a plugin
+# (matched by the plugin module path, which holds wherever the plugin is checked
+# out). Plugin directories and libs/plugin-sdk-go carry byte-identical copies of
+# this file; tools/lint-layers verifies the copies.
 #
 # Run from the directory of a module: golangci-lint run -c <path to this file> ./...
 

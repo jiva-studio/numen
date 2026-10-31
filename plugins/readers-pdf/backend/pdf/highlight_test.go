@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	pdfium "github.com/klippa-app/go-pdfium"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/responses"
 )
@@ -352,7 +351,6 @@ func TestDocumentWordsInvalidPage(t *testing.T) {
 }
 
 type mockPageWorker struct {
-	pdfium.Pdfium
 	width  float64
 	height float64
 }
@@ -361,23 +359,23 @@ func (m *mockPageWorker) GetPageSize(_ *requests.GetPageSize) (*responses.GetPag
 	return &responses.GetPageSize{Width: m.width, Height: m.height}, nil
 }
 
-func (m *mockPageWorker) FPDFPage_GetRotation(_ *requests.FPDFPage_GetRotation) (*responses.FPDFPage_GetRotation, error) {
+func (m *mockPageWorker) GetPageRotation(_ *requests.FPDFPage_GetRotation) (*responses.FPDFPage_GetRotation, error) {
 	return &responses.FPDFPage_GetRotation{}, nil
 }
 
 func TestGetSheetRejectsZeroDimensions(t *testing.T) {
-	docZeroWidth := &document{worker: &mockPageWorker{width: 0, height: 100}}
-	if _, ok := docZeroWidth.getSheet(requests.Page{}); ok {
+	docZeroWidth := &mockPageWorker{width: 0, height: 100}
+	if _, ok := getSheet(docZeroWidth, requests.Page{}); ok {
 		t.Error("expected getSheet to reject zero width")
 	}
 
-	docZeroHeight := &document{worker: &mockPageWorker{width: 100, height: 0}}
-	if _, ok := docZeroHeight.getSheet(requests.Page{}); ok {
+	docZeroHeight := &mockPageWorker{width: 100, height: 0}
+	if _, ok := getSheet(docZeroHeight, requests.Page{}); ok {
 		t.Error("expected getSheet to reject zero height")
 	}
 
-	docValid := &document{worker: &mockPageWorker{width: 100, height: 200}}
-	sheet, ok := docValid.getSheet(requests.Page{})
+	docValid := &mockPageWorker{width: 100, height: 200}
+	sheet, ok := getSheet(docValid, requests.Page{})
 	if !ok || sheet.width != 100 || sheet.height != 200 {
 		t.Errorf("expected valid sheet (100, 200), got %+v, %v", sheet, ok)
 	}

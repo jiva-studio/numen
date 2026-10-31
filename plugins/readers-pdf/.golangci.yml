@@ -1,9 +1,18 @@
 # Rules for every Go file, production code and tests alike.
 #
+# This file is one of two Go lint configurations, and both always run together
+# (make lint targets, CI, tools/lint-quality). The second one,
+# .golangci-structure.yml, holds the rules that apply to production code only:
+# complexity, function length, struct completeness and enum switches. golangci-lint
+# scopes a linter to non-test files only through `run.tests: false` for a whole
+# configuration or through path exclusions; exclusions are not used, so those rules
+# live in a configuration that does not load tests.
+#
 # A rule here has no path exclusion, no exclusion preset and no suppression
-# comment. The structure rules for production code are in .golangci-structure.yml.
-# Plugin directories and libs/plugin-sdk-go carry byte-identical copies of both
-# files; tools/lint-layers verifies the copies.
+# comment. Reads of the machine clock are not a forbidigo rule: a type-aware test in
+# libs/core/container (clock_port_test.go) permits them only inside the Now method
+# of a clock port implementation. Plugin directories and libs/plugin-sdk-go carry
+# byte-identical copies of both files; tools/lint-layers verifies the copies.
 #
 # Run from the directory of a module.
 
@@ -375,15 +384,6 @@ linters:
     forbidigo:
       analyze-types: true
       forbid:
-        - pattern: ^time\.Now$
-          pkg: ^time$
-          msg: read the time through an injected clock
-        - pattern: ^time\.Since$
-          pkg: ^time$
-          msg: read the time through an injected clock
-        - pattern: ^time\.Until$
-          pkg: ^time$
-          msg: read the time through an injected clock
         - pattern: ^panic$
           msg: return the error of the call instead of panicking
         - pattern: ^fmt\.Print.*$
@@ -412,7 +412,6 @@ linters:
       checks:
         - all
         - -QF*
-        - -ST1003
         - -ST1020
         - -ST1021
         - -ST1022
