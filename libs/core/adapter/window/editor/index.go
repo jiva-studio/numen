@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/protocol"
+
 	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
@@ -76,10 +78,12 @@ func newIndexWorker(
 			}
 			return indexing.GetProgress(ctx, state.Indexing.Progress, v.ID, text(&state.Indexing.Recipe))
 		},
-		Calibrate: made.OpenFloors(embedder, newFloorErrorReporter(state)).AutoCalibrate.Execute,
-		Events:    indexEvents{state: state, out: out},
-		Quiet:     idleDuration,
-		After:     time.After,
+		VectorsReady: func(_ context.Context, v domain.Vault) {
+			made.EmitEvent(protocol.GetVectorsReadyEvent(string(v.ID)))
+		},
+		Events: indexEvents{state: state, out: out},
+		Quiet:  idleDuration,
+		After:  time.After,
 	})
 }
 

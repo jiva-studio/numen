@@ -2,7 +2,6 @@ package assembly
 
 import (
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
-	"github.com/jiva-studio/numen/libs/core/usecase/floor"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
@@ -27,8 +26,8 @@ type fileScenarioAssembly interface {
 
 type searchScenarioAssembly interface {
 	NewSearch(asking embeddingport.Embedder, handleError func(error)) search.Search
-	// OpenFloors is the floor use cases of the embedder that fills the index.
-	OpenFloors(embedder embeddingport.Embedder, handleError func(error)) floor.Scenarios
+	// SetPluginSearch lends the plugins the search index and the floors, under the embedder that fills the index.
+	SetPluginSearch(embedder embeddingport.Embedder, handleError func(error))
 }
 
 // ScenarioAssembly is what this window requires for scenarios, search, and refresh.

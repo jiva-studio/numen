@@ -20,8 +20,7 @@ func DefaultIndexing() Indexing {
 
 // EmbeddingConfig is the embedding section of this installation's settings.
 type EmbeddingConfig struct {
-	MaxTokens int     `json:"max_tokens"`
-	Floor     float64 `json:"floor"`
+	MaxTokens int `json:"max_tokens"`
 }
 
 // DefaultEmbedding cuts chunks a model reading 256 tokens takes whole.

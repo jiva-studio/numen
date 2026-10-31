@@ -41,8 +41,8 @@ func (c Config) OpenIndex(ctx context.Context) (*Index, error) {
 		Problems:      db.NoteQueries(),
 		OpenTabs:      db.OpenTabs(),
 		TextVersions:  version.NewIndexVersions(db.TextVersions()),
-		Floors:        db.Floors(),
-		FloorSamples:  db.FloorSamples(),
+		SearchFloors:  db.SearchFloors(),
+		SearchSamples: db.SearchSamples(),
 		Nearest:       db.ChunkQueries(),
 	}), nil
 }

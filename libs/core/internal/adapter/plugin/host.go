@@ -94,6 +94,7 @@ type Host struct {
 	completer        completionport.Completer
 	vault            pluginport.PluginVault
 	texts            pluginport.PluginTexts
+	search           pluginport.PluginSearch
 	// consentAsks holds the plugins that requested a completion while the consent
 	// prompt was unanswered, since the host started.
 	consentAsks   map[string]bool
