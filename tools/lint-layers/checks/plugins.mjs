@@ -18,9 +18,11 @@ import {
   getGoReferences,
   getImportSpecifiers,
   getPackageNames,
+  getVueScript,
   isWithin,
   parsePackageJson,
   listShippedFiles,
+  readScript,
   readSource,
   requireMatches,
 } from "./helpers.mjs";
@@ -143,7 +145,45 @@ export function verifyPluginsWriteDataThroughHost() {
   failOnFindings("A plugin accesses vault or .numen/ directly with os or NUMEN_VAULT_PATH", findPluginDataWrites());
 }
 
-/** Every reference a plugin makes to `libs/protocol`, `numen/v1/*.proto`, `@numen/protocol` or `@numen/wire`. */
+/** True for a module name that is the package `name` or a path inside it. */
+function isPackageName(value, name) {
+  return value === name || value.startsWith(name + "/");
+}
+
+/** The first-party packages a plugin never names: the schema, the first-party client of the core, and the wire. */
+const PLUGIN_FORBIDDEN_PACKAGES = ["@numen/protocol", "@numen/core-client", "@numen/wire"];
+
+/**
+ * Lists the findings of one plugin file that is a `package.json` or a script: a dependency on, or a
+ * module name or path of, a package in PLUGIN_FORBIDDEN_PACKAGES or of `libs/protocol`,
+ * `libs/core-client` or `libs/wire`.
+ */
+export function findPluginForbiddenPackageUses(file, text) {
+  const found = [];
+  if (path.basename(file) === "package.json") {
+    const manifest = parsePackageJson(text);
+    for (const field of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
+      for (const name of Object.keys(manifest[field] ?? {})) {
+        if (PLUGIN_FORBIDDEN_PACKAGES.includes(name)) found.push({ file, line: 1, symbol: `${field}: ${name}` });
+      }
+    }
+  } else if (SCRIPT_EXTENSIONS.has(path.extname(file)) && path.basename(file) !== "eslint.config.js") {
+    const source = file.endsWith(".vue") ? readScript(getVueScript(text)) : readScript(text);
+    for (const { line, value } of source.literals) {
+      if (
+        PLUGIN_FORBIDDEN_PACKAGES.some((name) => isPackageName(value, name)) ||
+        value.includes("libs/protocol") ||
+        value.includes("libs/core-client") ||
+        value.includes("libs/wire")
+      ) {
+        found.push({ file, line, symbol: JSON.stringify(value) });
+      }
+    }
+  }
+  return found;
+}
+
+/** Every reference a plugin makes to `libs/protocol`, `libs/core-client`, `numen/v1/*.proto`, `@numen/protocol`, `@numen/core-client` or `@numen/wire`. */
 function findPluginProtocolAndWireLeaks() {
   const found = [];
   const listed = spawnSync("git", ["ls-files", "--", "plugins"], { cwd: REPO_ROOT, encoding: "utf8" });
@@ -170,37 +210,21 @@ function findPluginProtocolAndWireLeaks() {
         const m = line.match(/^\s*import\s+"(numen\/v1\/[^"]+)"/);
         if (m) found.push({ file, line: idx + 1, symbol: `import "${m[1]}"` });
       });
-    } else if (path.basename(file) === "package.json") {
-      const manifest = parsePackageJson(text);
-      for (const field of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
-        for (const name of Object.keys(manifest[field] ?? {})) {
-          if (name === "@numen/protocol" || name === "@numen/wire") {
-            found.push({ file, line: 1, symbol: `${field}: ${name}` });
-          }
-        }
-      }
-    } else if (SCRIPT_EXTENSIONS.has(path.extname(file)) && path.basename(file) !== "eslint.config.js") {
-      const { literals } = readSource(file);
-      for (const { line, value } of literals) {
-        if (
-          value === "@numen/protocol" ||
-          value.startsWith("@numen/protocol/") ||
-          value === "@numen/wire" ||
-          value.startsWith("@numen/wire/") ||
-          value.includes("libs/protocol") ||
-          value.includes("libs/wire")
-        ) {
-          found.push({ file, line, symbol: JSON.stringify(value) });
-        }
-      }
+    } else {
+      found.push(...findPluginForbiddenPackageUses(file, text));
     }
   }
   return found;
 }
 
-/** A plugin depends on the SDK and `@numen/ui`, and knows nothing of `libs/protocol` or `@numen/wire`. */
+/** A plugin depends on the SDK and `@numen/ui`, and knows nothing of `libs/protocol`, `@numen/core-client` or `@numen/wire`. */
 export function verifyPluginsNoProtocolOrWire() {
-  failOnFindings("A plugin depends on libs/protocol, numen/v1/*.proto, @numen/protocol or @numen/wire", findPluginProtocolAndWireLeaks());
+  requireMatches(
+    "plugin sources read for the schema boundary",
+    listShippedFiles(["plugins"]).filter((file) => /\.(ts|vue)$/.test(file)).length,
+    100,
+  );
+  failOnFindings("A plugin depends on libs/protocol, numen/v1/*.proto, @numen/protocol, @numen/core-client or @numen/wire", findPluginProtocolAndWireLeaks());
 }
 
 /** The packages a plugin depends on; their `package.json` `exports` declare the entries a plugin may name. */
@@ -715,7 +739,7 @@ export const PLUGIN_VERIFIERS = [
     id: "plugins-no-protocol-or-wire",
     scope: "plugins",
     module: "plugins",
-    name: "Plugins Never Import @numen/protocol or the Wire (no libs/protocol, numen/v1/*.proto, @numen/protocol or @numen/wire in source or package.json)",
+    name: "Plugins Never Import @numen/protocol, @numen/core-client or the Wire (no libs/protocol, libs/core-client, numen/v1/*.proto, @numen/protocol, @numen/core-client or @numen/wire in source or package.json)",
     run: verifyPluginsNoProtocolOrWire,
   },
   {

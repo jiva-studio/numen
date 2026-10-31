@@ -22,6 +22,7 @@
 import { spawnSync } from "node:child_process";
 import process from "node:process";
 import { CORE_VERIFIERS } from "./checks/core.mjs";
+import { CORE_CLIENT_VERIFIERS } from "./checks/coreClient.mjs";
 import { DOCS_VERIFIERS } from "./checks/docs.mjs";
 import { FRONTEND_VERIFIERS } from "./checks/frontend.mjs";
 import { REPO_ROOT } from "./checks/helpers.mjs";
@@ -36,6 +37,7 @@ import { VOCABULARY_VERIFIERS } from "./checks/vocabulary.mjs";
 const VERIFIERS = [
   ...CORE_VERIFIERS,
   ...LIBRARY_VERIFIERS,
+  ...CORE_CLIENT_VERIFIERS,
   ...MANIFEST_VERIFIERS,
   ...DOCS_VERIFIERS,
   ...FRONTEND_VERIFIERS.filter((v) => v.scope === "libs"),
@@ -123,6 +125,7 @@ function getChangedModules() {
     if (file.startsWith("libs/ui/core/")) matched.add("ui");
     if (file.startsWith("libs/ui/shell/")) matched.add("shell");
     if (file.startsWith("libs/plugin-host-ts/")) matched.add("host");
+    if (/^(libs\/(core-client|plugin-sdk-ts)\/|tools\/lint-layers\/|\.github\/workflows\/)/.test(file) || /(^|\/)package\.json$/.test(file)) matched.add("boundary");
     if (/(^|\/)(eslint\.config\.js|tsconfig\.json)$/.test(file) || file.startsWith("tools/lint-layers/")) matched.add("lint");
     if (file.startsWith("plugins/")) matched.add("plugins");
     if (file.startsWith("apps/desktop/")) matched.add("desktop");

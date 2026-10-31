@@ -117,9 +117,25 @@ test("the packages of this repository are read, the plugin manager among them", 
   assert.deepEqual(findPackageViolations(packages, PACKAGE_DEPENDENCIES), []);
 });
 
-test("the plugin manager row allows only the UI library, and the plugin host the SDK and the schema", () => {
+test("the rows allow the plugin manager the UI library, the plugin host the SDK and the core client, the SDK the schema and the UI build helpers, and the core client the schema", () => {
   assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-manager"], ["@numen/ui"]);
-  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-host"], ["@numen/plugin-sdk", "@numen/protocol"]);
+  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-host"], ["@numen/plugin-sdk", "@numen/core-client"]);
+  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-sdk"], ["@numen/protocol", "@numen/ui"]);
+  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/core-client"], ["@numen/protocol"]);
+});
+
+test("a plugin host that declares or imports the schema is reported", () => {
+  const host = { dir: "libs/plugin-host-ts", name: "@numen/plugin-host", declared: ["@numen/plugin-sdk", "@numen/core-client", "@numen/protocol"], imports: [{ file: "libs/plugin-host-ts/src/a.ts", line: 2, name: "@numen/protocol" }] };
+  const found = findPackageViolations([host], PACKAGE_DEPENDENCIES);
+  assert.equal(found.length, 2);
+  assert.match(found[0].symbol, /declares @numen\/protocol/);
+  assert.match(found[1].symbol, /imports @numen\/protocol/);
+});
+
+test("a core client that declares or imports the SDK is reported", () => {
+  const client = { dir: "libs/core-client", name: "@numen/core-client", declared: ["@numen/protocol", "@numen/plugin-sdk"], imports: [{ file: "libs/core-client/src/a.ts", line: 4, name: "@numen/plugin-sdk" }] };
+  const found = findPackageViolations([client], PACKAGE_DEPENDENCIES);
+  assert.equal(found.length, 2);
 });
 
 test("a plugin manager that declares or imports the protocol or the SDK is reported", () => {

@@ -127,34 +127,40 @@ export function verifyShellDomainIsolation() {
  * What `libs/plugin-host-ts/src` may import besides its own files.
  */
 const PLUGIN_HOST_IMPORTS = [
-  { files: /./, specifiers: /^(vue|@numen\/plugin-sdk|@numen\/protocol|@bufbuild\/protobuf)(\/|$)/ },
+  { files: /./, specifiers: /^(vue|@numen\/plugin-sdk|@numen\/core-client)(\/|$)/ },
   { files: /\.test\.ts$/, specifiers: /^vitest$/ },
   { files: /^vite\.ts$/, specifiers: /^vite$/ },
 ];
 
-/** Every import of `libs/plugin-host-ts/src` that is neither relative nor in PLUGIN_HOST_IMPORTS. */
+/** The imports of one file of `libs/plugin-host-ts/src` that are neither relative nor in PLUGIN_HOST_IMPORTS. */
+export function findDisallowedHostImports(file, specifiers) {
+  return specifiers
+    .filter((specifier) => !specifier.startsWith("."))
+    .filter((specifier) => !PLUGIN_HOST_IMPORTS.some((rule) => rule.files.test(path.basename(file)) && rule.specifiers.test(specifier)))
+    .map((specifier) => `libs/plugin-host-ts/src/${file}: ${specifier}`);
+}
+
+/** Every import of `libs/plugin-host-ts/src` that is neither relative nor in PLUGIN_HOST_IMPORTS, and the number of imports read. */
 function findPluginHostImports() {
   const src = path.join(MODULES_DIR, "libs/plugin-host-ts/src");
   const found = [];
+  let read = 0;
   for (const file of fs.readdirSync(src, { recursive: true })) {
     if (!/\.(ts|vue)$/.test(file)) continue;
     const text = fs.readFileSync(path.join(src, file), "utf8");
-    for (const specifier of getImportSpecifiers(text)) {
-      if (specifier.startsWith(".")) continue;
-      const allowed = PLUGIN_HOST_IMPORTS.some(
-        (rule) => rule.files.test(path.basename(file)) && rule.specifiers.test(specifier),
-      );
-      if (!allowed) found.push(`libs/plugin-host-ts/src/${file}: ${specifier}`);
-    }
+    const specifiers = getImportSpecifiers(text);
+    read += specifiers.length;
+    found.push(...findDisallowedHostImports(file, specifiers));
   }
-  return found;
+  return { found, read };
 }
 
-/** The plugin loader knows Vue, the plugin SDK and the protocol, and nothing of the UI, the shell, the wire or an application. */
+/** The plugin loader knows Vue, the plugin SDK and the core client, and nothing of the UI, the shell, the schema, the wire or an application. */
 export function verifyPluginHostIsolation() {
-  const found = findPluginHostImports();
+  const { found, read } = findPluginHostImports();
+  requireMatches("imports of the plugin host", read, 20);
   if (found.length > 0) {
-    throw new Error("The plugin host imports beyond vue, @numen/plugin-sdk and the protocol:\n" + found.join("\n"));
+    throw new Error("The plugin host imports beyond vue, @numen/plugin-sdk and @numen/core-client:\n" + found.join("\n"));
   }
   exec("npm run lint", path.join(MODULES_DIR, "libs/plugin-host-ts"));
 }
@@ -300,6 +306,7 @@ function findTsPackagesWithoutEslint() {
     "libs/ui/core",
     "libs/ui/shell",
     "libs/plugin-sdk-ts",
+    "libs/core-client",
     "libs/plugin-host-ts",
     "apps/desktop/editor",
     "apps/desktop/flashcards",
@@ -361,7 +368,7 @@ export const FRONTEND_VERIFIERS = [
     id: "plugin-host-isolation",
     scope: "libs",
     module: "host",
-    name: "Plugin Host Isolation (imports only vue, @numen/plugin-sdk and the protocol)",
+    name: "Plugin Host Isolation (imports only vue, @numen/plugin-sdk and @numen/core-client)",
     run: verifyPluginHostIsolation,
   },
   {

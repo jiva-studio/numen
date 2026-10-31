@@ -5,7 +5,7 @@ import { findWordsInGo, findWordsInScript, getIdPrefix, listManifestFiles, loadI
 import { REPO_ROOT, SCRIPT_EXTENSIONS, failOnFindings, isBoundaryRule, listShippedFiles, readSource, requireMatches } from "./helpers.mjs";
 
 /** The libraries and applications whose frontend sources know no plugin. */
-const FRONTEND_NAME_FREE_ROOTS = ["apps", "libs/ui/shell", "libs/plugin-host-ts", "libs/plugin-manager", "libs/ui/core"];
+const FRONTEND_NAME_FREE_ROOTS = ["apps", "libs/ui/shell", "libs/core-client", "libs/plugin-host-ts", "libs/plugin-manager", "libs/ui/core"];
 
 /** The Go library whose sources know no plugin. */
 const GO_NAME_FREE_ROOTS = ["libs/notes"];
