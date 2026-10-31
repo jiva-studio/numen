@@ -11,6 +11,7 @@ import {
   PLUGINS_DIR,
   listPluginNames,
   parseManifest,
+  readManifestVersion,
   readPluginManifests,
 } from './manifests.mjs'
 
@@ -119,6 +120,18 @@ test('text that is not JSON, and JSON that is not an object, are refused', () =>
 test('a manifest with no id, name or version is refused', () => {
   assert.throws(() => parseManifest(JSON.stringify({ id: 'a' })), /has no name, version/)
   assert.throws(() => parseManifest('{}'), /has no id, name, version/)
+})
+
+test('the version of a manifest of an older schema is read without the schema', () => {
+  const older = JSON.stringify({ ...valid, version: '2026.9.2', commands: [{ id: 'a', when: {} }] })
+
+  assert.equal(readManifestVersion(older), '2026.9.2')
+  assert.throws(() => parseManifest(older), ManifestError)
+})
+
+test('a manifest with no version, or that is not JSON, has no version to read', () => {
+  assert.throws(() => readManifestVersion('{}', 'plugins/a/manifest.json'), /has no version/)
+  assert.throws(() => readManifestVersion('{', 'plugins/a/manifest.json'), /is not JSON/)
 })
 
 test('the plugins of a folder are the directories that hold a manifest', () =>

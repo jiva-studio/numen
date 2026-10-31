@@ -122,6 +122,27 @@ export const parseManifest = (text, source = MANIFEST_FILE) => {
   return { manifest, document, warnings }
 }
 
+/**
+ * The version a manifest.json text declares, read without the schema: a revision older than the
+ * schema still has one, and the tools that compare versions across revisions need nothing else.
+ *
+ * @param {string} text - the content of the file
+ * @param {string} source - where the text comes from, named in the error
+ * @returns {string} the version
+ */
+export const readManifestVersion = (text, source = MANIFEST_FILE) => {
+  let document
+  try {
+    document = JSON.parse(text)
+  } catch (error) {
+    throw new ManifestError(`${source} is not JSON: ${error.message}`, { cause: error })
+  }
+  if (typeof document?.version !== 'string' || document.version === '') {
+    throw new ManifestError(`${source} has no version`)
+  }
+  return document.version
+}
+
 /** The manifest at `file`, read and checked. */
 export const readManifestFile = (file) => parseManifest(readFileSync(file, 'utf8'), file)
 
