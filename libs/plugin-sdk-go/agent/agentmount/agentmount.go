@@ -24,19 +24,24 @@ func Mount(s *server.Server, agent Agent) {
 	s.Register(agentrun.NewAgentServiceHandler(agent, s.HandlerOptions()...))
 }
 
-// NewEntry returns the entry points of a plugin backend whose server serves the agent that create
-// returns: the mount function of a launched process, and the handler constructor of a host that
-// links the plugin in. Each mount creates its own agent.
-func NewEntry(create func() Agent) (
-	mount func(*server.Server) error,
-	newHandler func(vars map[string]string) (http.Handler, error),
-) {
-	mount = func(s *server.Server) error {
-		Mount(s, create())
-		return nil
-	}
-	newHandler = func(vars map[string]string) (http.Handler, error) {
-		return server.NewLinkedHandler(vars, mount)
-	}
-	return mount, newHandler
+// Entry holds the constructor of an agent and provides the entry points of a plugin backend whose
+// server serves that agent. Each mount creates its own agent.
+type Entry struct {
+	create func() Agent
+}
+
+// NewEntry returns the entry of a plugin backend that serves the agent create returns.
+func NewEntry(create func() Agent) Entry {
+	return Entry{create: create}
+}
+
+// Mount registers a new agent on s. It is the mount function of a launched process.
+func (e Entry) Mount(s *server.Server) error {
+	Mount(s, e.create())
+	return nil
+}
+
+// NewHandler returns the handler of a host that links the plugin in.
+func (e Entry) NewHandler(vars map[string]string) (http.Handler, error) {
+	return server.NewLinkedHandler(vars, e.Mount)
 }

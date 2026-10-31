@@ -16,9 +16,9 @@ import {
   type ManifestContributes as ManifestContributesMessage,
   type ManifestTabKind as ManifestTabKindMessage,
 } from '@numen/protocol'
-import { asFailure, asValue, type Result } from './result'
-import { formatErrorMessage } from './errors/error'
-import { transport } from './transport'
+import { asFailure, asValue, type Result } from '../result'
+import { formatErrorMessage } from '../errors/error'
+import { transport } from '../transport'
 
 /** One plugin as the catalog knows it. */
 export type CatalogEntry = CatalogEntryMessage

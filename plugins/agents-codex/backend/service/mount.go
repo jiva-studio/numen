@@ -5,10 +5,14 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 )
 
-// Mount registers the plugin's services on a server. NewHandler returns the handler of the plugin's
-// backend for a host that links the plugin in, made from the variables a launched process of the
-// plugin is given.
-var Mount, NewHandler = agentmount.NewEntry(newAgent)
+// entry provides the mount function and the linked handler constructor of the plugin backend.
+var entry = agentmount.NewEntry(newAgent)
+
+// Mount registers the agent service on s.
+var Mount = entry.Mount
+
+// NewHandler returns the handler of a host that links the plugin in.
+var NewHandler = entry.NewHandler
 
 func newAgent() agentmount.Agent {
 	agent := new(agentServer)

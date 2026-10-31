@@ -3,7 +3,7 @@
  * state the host reports for it.
  */
 import type { PluginInfo as PluginInfoMessage } from '@numen/protocol'
-import type { PluginSettingType } from './agent'
+import type { PluginSettingType } from '../agent'
 
 /** One value an enum setting can hold, with its display title. */
 export interface PluginSettingOption {

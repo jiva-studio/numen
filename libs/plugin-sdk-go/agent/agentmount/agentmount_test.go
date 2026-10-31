@@ -25,7 +25,7 @@ func (*handler) GetAgentState(
 func newAgent() agentmount.Agent { return new(handler) }
 
 func TestNewEntryHandlerServesAgentService(t *testing.T) {
-	_, newHandler := agentmount.NewEntry(newAgent)
+	entry := agentmount.NewEntry(newAgent)
 
-	agenttest.CheckLinkedHandler(t, newHandler)
+	agenttest.CheckLinkedHandler(t, entry.NewHandler)
 }

@@ -7,7 +7,7 @@ import {
   ListCatalogResponseSchema,
 } from '@numen/protocol'
 import { CATALOG_STATE, createPluginCatalog, parseManifest, type CatalogClient } from './catalog'
-import { createMockCatalogEntry, createMockPluginCatalog } from './testing/mockCatalog'
+import { createMockCatalogEntry, createMockPluginCatalog } from '../testing/mockCatalog'
 
 const notes = createMockCatalogEntry('notes', { tabKinds: ['note'], feature: 'Markdown notes' })
 

@@ -12,8 +12,8 @@ import {
   type CatalogStateValue,
   type Manifest,
   type PluginCatalog,
-} from '../catalog'
-import type { PluginInfo } from '../plugins'
+} from '../catalog/catalog'
+import type { PluginInfo } from '../catalog/plugins'
 import { asFailure, asValue } from '../result'
 
 /** A manifest for a test: the fields given, and the schema's default for the rest. */
