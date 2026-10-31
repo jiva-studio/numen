@@ -5,6 +5,7 @@ PLUGIN_CATALOG := libs/plugin-catalog
 UI       := libs/ui/core
 SHELL_LIB := libs/ui/shell
 PLUGIN_HOST := libs/plugin-host-ts
+PLUGIN_MANAGER := libs/plugin-manager
 PROTOCOL := libs/protocol
 PLUGIN_SDK := libs/plugin-sdk-ts
 PLUGIN_SDK_GO := libs/plugin-sdk-go
@@ -46,7 +47,7 @@ install: ## fetch all workspace dependencies
 	$(INSTALL)
 
 .PHONY: compile
-compile: lib_core_compile lib_notes_compile lib_plugin_catalog_compile lib_protocol_compile lib_ui_compile lib_plugin_sdk_compile lib_shell_compile lib_plugin_host_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
+compile: lib_core_compile lib_notes_compile lib_plugin_catalog_compile lib_protocol_compile lib_ui_compile lib_plugin_sdk_compile lib_shell_compile lib_plugin_host_compile lib_plugin_manager_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
 
 .PHONY: build
 build: interface lib_core_build app_desktop_build ## build all application artifacts
@@ -268,6 +269,26 @@ lib_plugin_host_test: ## run plugin-host tests
 .PHONY: lib_plugin_host_lint
 lib_plugin_host_lint: ## lint the plugin-host package
 	cd $(PLUGIN_HOST) && npm run lint && npm run typecheck
+
+# ----------------------------- Lib: Plugin Manager ----------------------------
+.PHONY: lib_plugin_manager_typecheck
+lib_plugin_manager_typecheck: lib_ui_build ## typecheck the plugin-manager package
+	cd $(PLUGIN_MANAGER) && npm run typecheck
+
+.PHONY: lib_plugin_manager_compile
+lib_plugin_manager_compile: lib_plugin_manager_typecheck
+
+.PHONY: lib_plugin_manager_test
+lib_plugin_manager_test: lib_ui_build ## run plugin-manager tests
+	cd $(PLUGIN_MANAGER) && npm test
+
+.PHONY: lib_plugin_manager_lint
+lib_plugin_manager_lint: lib_ui_build ## lint the plugin-manager package
+	cd $(PLUGIN_MANAGER) && npm run lint && npm run typecheck
+
+.PHONY: lib_plugin_manager_knip
+lib_plugin_manager_knip: ## check dead code and unused dependencies of the plugin manager with knip
+	cd $(PLUGIN_MANAGER) && npm run knip
 
 # ------------------------------ Lib: Plugin SDK -------------------------------
 .PHONY: lib_plugin_sdk_typecheck

@@ -25,14 +25,16 @@ const MANIFESTS = {
   "plugins/alpha-view/manifest.json": JSON.stringify({
     id: "md.example.views.zephyr.graph",
     name: "Zephyr Graph",
+    version: "1.0.0",
     permissions: ["vault:read"],
     targets: ["desktop.editor"],
     settings: [{ key: "quokka_limit", type: "number", icon: "waypoints" }],
-    contentTypes: ["quokkaformat"],
+    contentTypes: [{ type: "quokkaformat", globs: ["*.qk"] }],
   }),
   "plugins/beta-view/manifest.json": JSON.stringify({
     id: "md.example.views.mango.player",
     name: "Mango Player",
+    version: "1.0.0",
     permissions: ["vault:read"],
     targets: ["desktop.editor"],
   }),

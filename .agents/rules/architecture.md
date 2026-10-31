@@ -28,6 +28,7 @@ numen/
 │   ├── plugin-sdk-go/            # Go: what a native plugin backend is built from
 │   ├── plugin-sdk-ts/            # TypeScript: what a plugin frontend is built from
 │   ├── plugin-host-ts/           # TypeScript: the loader of plugin frontends
+│   ├── plugin-manager/           # Vue: the plugin list and the plugin page, data by props and answers by events
 │   └── ui/                       # Vue 3: `core` holds components that know nothing about the domain, `shell` the window chrome
 ├── plugins/                      # one folder per plugin: manifest.json, backend/ (Go), frontend/ (Vue)
 └── apps/
@@ -47,6 +48,7 @@ numen/
 - **`core` points inward.** `domain/`, `port/` and `usecase/` import nothing from `adapter/`, and nothing that is a driver, a framework or a transport. The violation is always visible in an import block.
 - **`ui` knows nothing about the domain.** No component, story or fixture in `libs/ui/core` imports `@numen/protocol`, a wire type, a domain type, or anything under `apps/**`. A fixture taken from the domain is how the dependency comes back in through the door marked "tests".
 - **`plugin-host` knows only Vue and the plugin SDK.** `libs/plugin-host-ts` (`@numen/plugin-host`) is the loader of plugin frontends and the build of the host modules an application serves them; each application that loads plugins implements its `LoaderHost`. It imports nothing of `@numen/ui`, `@numen/shell`, the protocol or an application, and no plugin imports it (`tools/lint-layers`, `plugin-host-isolation` and `plugins-reach-no-shell`).
+- **`plugin-manager` knows only the components and the plugin SDK.** `libs/plugin-manager` (`@numen/plugin-manager`) draws the plugin list, the plugin page and the filters over the catalog entries and the plugin states an application gives it, and answers with events; it imports `@numen/ui` and `@numen/plugin-sdk` and nothing else, and the application writes the settings (`tools/lint-layers`, `package-matrix`).
 - **`protocol` is generated, not written.** What crosses between the Go host and a window is the schema's shape; `make generate-check` fails when what is committed is out of date.
 - **An application is where the two sides meet.** `apps/desktop` translates the domain into the drawing vocabulary a component takes, and translates the identifier a component emits back.
 

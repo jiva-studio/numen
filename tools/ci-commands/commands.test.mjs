@@ -37,8 +37,9 @@ test('a plugin is read with its settings, declared and registered commands', () 
         {
           id: 'tools.lantern',
           name: 'Lantern',
+          version: '1.0.0',
           targets: ['desktop.editor'],
-          frontend: true,
+          frontend: { entrypoint: 'dist/index.js' },
           settings: [{ title: 'Glow', palette: true }, { title: 'Hidden' }],
           commands: [
             { title: 'Light a file', contentTypes: ['text/plain'] },
@@ -65,7 +66,12 @@ test('a plugin is read with its settings, declared and registered commands', () 
             "export const WORDS = {\n  lamp: 'New lamp',\n  wick: (name) => `Trim ${name}`,\n}\n",
         },
       )
-      await writePlugin(root, 'tools-elsewhere', { id: 'tools.elsewhere', targets: ['mobile'] })
+      await writePlugin(root, 'tools-elsewhere', {
+        id: 'tools.elsewhere',
+        name: 'Elsewhere',
+        version: '1.0.0',
+        targets: ['mobile'],
+      })
     },
     async (at) => {
       assert.deepEqual(await getPluginCommands('desktop.editor', at), [
@@ -91,7 +97,13 @@ test('a shortcut the window cannot draw is refused', () =>
       writePlugin(
         root,
         'tools-bell',
-        { id: 'tools.bell', name: 'Bell', targets: ['desktop.editor'], frontend: true },
+        {
+          id: 'tools.bell',
+          name: 'Bell',
+          version: '1.0.0',
+          targets: ['desktop.editor'],
+          frontend: { entrypoint: 'dist/index.js' },
+        },
         {
           'index.ts':
             "import { WORDS } from './words'\ncontext.registerCommand({\n  id: 'ring',\n  title: WORDS.ring,\n  shortcut: 'alt+f4',\n})\n",
@@ -115,13 +127,36 @@ test('a command with no title this can read is refused', () =>
       writePlugin(
         root,
         'tools-drum',
-        { id: 'tools.drum', name: 'Drum', targets: ['desktop.editor'], frontend: true },
+        {
+          id: 'tools.drum',
+          name: 'Drum',
+          version: '1.0.0',
+          targets: ['desktop.editor'],
+          frontend: { entrypoint: 'dist/index.js' },
+        },
         { 'index.ts': "context.registerCommand({\n  id: 'beat',\n  title: 'Beat',\n})\n" },
       ),
     (at) =>
       assert.rejects(getPluginCommands('desktop.editor', at), {
         name: 'Error',
         message: 'tools-drum registers a command this cannot read',
+      }),
+  ))
+
+test('a manifest that does not fit the schema is refused', () =>
+  withPlugins(
+    (root) =>
+      writePlugin(root, 'tools-gong', {
+        id: 'tools.gong',
+        name: 'Gong',
+        version: '1.0.0',
+        targets: 'desktop.editor',
+      }),
+    (at) =>
+      assert.rejects(getPluginCommands('desktop.editor', at), (error) => {
+        assert.ok(error instanceof ReadError)
+        assert.match(error.message, /does not fit the manifest schema/)
+        return true
       }),
   ))
 

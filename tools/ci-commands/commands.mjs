@@ -5,7 +5,9 @@
  * The manual lists them, and an application reaches no plugin, so the reading
  * stands here and the manual takes what it returns.
  */
-import { readFile, readdir } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
+import { ManifestError, readPluginManifests } from '../shared/manifests.mjs'
 
 const PLUGINS = new URL('../../plugins/', import.meta.url)
 
@@ -132,28 +134,31 @@ const getShortcutChord = (shortcut, where) => {
  */
 export const getPluginCommands = async (target, plugins = PLUGINS) => {
   const found = []
-  for (const entry of await readdir(plugins, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue
-    const at = new URL(`${entry.name}/`, plugins)
-    let manifest
-    try {
-      manifest = JSON.parse(await readFile(new URL('manifest.json', at), 'utf8'))
-    } catch {
-      continue
-    }
-    if (!(manifest.targets ?? []).includes(target)) continue
+  for (const { name, manifest } of readManifests(plugins)) {
+    if (!manifest.targets.includes(target)) continue
+    const at = new URL(`${name}/`, plugins)
     found.push({
       id: manifest.id,
-      settings: (manifest.settings ?? [])
+      settings: manifest.settings
         .filter((one) => one.palette)
         .map((one) => ({ text: `${manifest.name}: ${one.title}`, group: 'settings' })),
-      declared: (manifest.commands ?? [])
-        .filter((one) => !one.hiddenInPalette && !one.when)
-        .map((one) => ({ text: one.title, group: one.contentTypes?.length ? 'file' : 'window' })),
-      commands: manifest.frontend ? await readRegisteredCommands(at, entry.name) : [],
+      declared: manifest.commands
+        .filter((one) => !one.isHiddenInPalette && !one.when)
+        .map((one) => ({ text: one.title, group: one.contentTypes.length ? 'file' : 'window' })),
+      commands: manifest.frontend ? await readRegisteredCommands(at, name) : [],
     })
   }
   return found.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+}
+
+/** The manifests under the plugins folder; one that cannot be read is a ReadError. */
+const readManifests = (plugins) => {
+  try {
+    return readPluginManifests(fileURLToPath(plugins))
+  } catch (error) {
+    if (error instanceof ManifestError) fail(error.message)
+    throw error
+  }
 }
 
 /**

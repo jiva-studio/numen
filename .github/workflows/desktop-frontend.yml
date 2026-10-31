@@ -19,6 +19,8 @@ on:
       - "!libs/ui/shell/**/*.md"
       - "libs/plugin-host-ts/**"
       - "!libs/plugin-host-ts/**/*.md"
+      - "libs/plugin-manager/**"
+      - "!libs/plugin-manager/**/*.md"
       - "libs/protocol/**"
       - "!libs/protocol/**/*.md"
       - "tools/ci-stories/**"
@@ -91,12 +93,14 @@ jobs:
           npm run lint --prefix apps/desktop/flashcards
           npm run lint --prefix libs/ui/shell
           npm run lint --prefix libs/plugin-host-ts
+          npm run lint --prefix libs/plugin-manager
 
       - name: Typecheck screens and SDK
         run: |
           npm run typecheck --prefix libs/plugin-sdk-ts
           npm run typecheck --prefix libs/ui/shell
           npm run typecheck --prefix libs/plugin-host-ts
+          npm run typecheck --prefix libs/plugin-manager
           npm run typecheck --prefix apps/desktop/editor
           npm run typecheck --prefix apps/desktop/flashcards
 
@@ -106,6 +110,7 @@ jobs:
           npm run test:unit --prefix libs/ui/shell -- --coverage
           npm run test:stories --prefix libs/ui/shell
           npm test --prefix libs/plugin-host-ts
+          npm test --prefix libs/plugin-manager
           npm run test:unit --prefix apps/desktop/editor -- --coverage
           npm run test:stories --prefix apps/desktop/editor
           npm run test:unit --prefix apps/desktop/flashcards -- --coverage

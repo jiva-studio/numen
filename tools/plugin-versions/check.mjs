@@ -9,10 +9,12 @@
  *   node check.mjs [--base <ref>]            fail when a changed plugin keeps its version
  *   node check.mjs [--base <ref>] --write    write the next version into each changed plugin
  */
-import { execFileSync } from 'node:child_process'
-import { readFileSync, readdirSync, existsSync, writeFileSync } from 'node:fs'
+import { execFileSync, spawnSync } from 'node:child_process'
+import { readFileSync, existsSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { MANIFEST_FILE, listPluginNames, parseManifest } from '../shared/manifests.mjs'
+import { readPackageVersion } from './package.mjs'
 
 const VERSION_PATTERN = /^(\d{4})\.([1-9]|1[0-2])\.([1-9]\d*)$/
 const VERSION_FIELD = /("version"\s*:\s*")[^"]*(")/
@@ -23,8 +25,7 @@ export const parseVersion = (text) => {
   return match ? { year: Number(match[1]), month: Number(match[2]), build: Number(match[3]) } : null
 }
 
-export const compareVersions = (a, b) =>
-  a.year - b.year || a.month - b.month || a.build - b.build
+export const compareVersions = (a, b) => a.year - b.year || a.month - b.month || a.build - b.build
 
 export const formatVersion = ({ year, month, build }) => `${year}.${month}.${build}`
 
@@ -59,12 +60,11 @@ export const checkVersion = ({ current, base, isChanged, today }) => {
 
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim()
 
+/** The version a plugin had on `base`, and null where the plugin did not exist there. */
 const readBaseVersion = (base, dir) => {
-  try {
-    return JSON.parse(git('show', `${base}:${dir}/manifest.json`)).version
-  } catch {
-    return null
-  }
+  const source = `${base}:${dir}/${MANIFEST_FILE}`
+  const shown = spawnSync('git', ['show', source], { encoding: 'utf8' })
+  return shown.status === 0 ? parseManifest(shown.stdout, source).manifest.version : null
 }
 
 const main = () => {
@@ -78,31 +78,33 @@ const main = () => {
   const today = new Date()
   const failures = []
 
-  for (const name of readdirSync('plugins').sort()) {
+  for (const name of listPluginNames('plugins')) {
     const dir = `plugins/${name}`
-    const manifestPath = join(dir, 'manifest.json')
-    if (!existsSync(manifestPath)) continue
+    const manifestPath = join(dir, MANIFEST_FILE)
 
     const text = readFileSync(manifestPath, 'utf8')
-    const current = JSON.parse(text).version
+    const current = parseManifest(text, manifestPath).manifest.version
     const base = readBaseVersion(mergeBase, dir)
     const changed = git('diff', '--name-only', mergeBase, '--', dir).split('\n').filter(Boolean)
     const isChanged = getCodeFiles(changed).length > 0
 
     const packagePath = join(dir, 'package.json')
     const packageText = existsSync(packagePath) ? readFileSync(packagePath, 'utf8') : null
-    const packageVersion = packageText === null ? current : JSON.parse(packageText).version
+    const packageVersion = packageText === null ? current : readPackageVersion(packageText)
 
     const error = checkVersion({ current, base, isChanged, today })
     if (isWrite && isChanged && error) {
       const next = getNextVersion(base ?? '', today)
       writeFileSync(manifestPath, text.replace(VERSION_FIELD, `$1${next}$2`))
-      if (packageText !== null) writeFileSync(packagePath, packageText.replace(VERSION_FIELD, `$1${next}$2`))
+      if (packageText !== null)
+        writeFileSync(packagePath, packageText.replace(VERSION_FIELD, `$1${next}$2`))
       console.log(`${name}: ${current} -> ${next}`)
     } else if (error) {
       failures.push(`${name}: ${error}`)
     } else if (packageVersion !== current) {
-      failures.push(`${name}: package.json version ${packageVersion} differs from manifest.json ${current}`)
+      failures.push(
+        `${name}: package.json version ${packageVersion} differs from manifest.json ${current}`,
+      )
     }
   }
 
