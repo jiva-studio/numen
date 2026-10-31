@@ -44,15 +44,6 @@ const PLUGINS: readonly PluginInfo[] = [
   }),
   createPlugin('sample.asking', 'Sample Asking Plugin', {
     consent: 'requested',
-    settings: [
-      {
-        key: 'agent',
-        type: 'agent',
-        title: 'Agent',
-        description: 'The agent and the model that answer this plugin',
-        default: undefined,
-      },
-    ],
   }),
 ]
 

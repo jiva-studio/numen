@@ -56,8 +56,6 @@ export const WORDS = {
     'Used by plugins without their own agent setting. Defaults to the panel agent.',
   defaultModel: 'Default model',
   defaultModelDetail: 'Model of the selected agent.',
-  pluginModel: 'Model',
-  agentByDefault: (name: string) => `Default (${name})`,
   agentFirst: (name: string) => `Panel agent (${name})`,
   agentNone: 'None',
   agentMissing: 'Not installed. Requests fail.',

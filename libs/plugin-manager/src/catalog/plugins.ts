@@ -52,8 +52,6 @@ export interface PluginSettingInfo {
   readonly min?: number | undefined
   readonly max?: number | undefined
   readonly step?: number | undefined
-  /** The agent program whose models the setting offers; empty when the user types the value. */
-  readonly modelsOf?: string | undefined
 }
 
 /**

@@ -94,12 +94,9 @@ export interface AgentHost extends AgentPort {
   getModelsAt(path: readonly string[]): readonly AgentModel[]
 }
 
-/** Setting type identifier for an agent and model selector. */
-export const AGENT_SETTING_TYPE = 'agent' as const
-
 /** Declarative setting value types exposed by a plugin. */
 export type PluginSettingType =
-  'boolean' | 'string' | 'number' | 'enum' | 'range' | typeof AGENT_SETTING_TYPE | 'file' | 'folder'
+  'boolean' | 'string' | 'number' | 'enum' | 'range' | 'file' | 'folder'
 
 /** Where the active agent program and default AI agent stand in the settings file. */
 export const AGENT_USE_PATH = ['agent', 'use'] as const
@@ -122,7 +119,7 @@ export const getProgramHooksPath = (program: string): readonly string[] => [
   'reads_hooks_and_skills',
 ]
 
-/** The agent program and the model a setting of that type holds. Empty is the default. */
+/** The agent program and the model of a choice. Empty is the default. */
 export interface CompletionChoice {
   readonly agent: string
   readonly model: string
