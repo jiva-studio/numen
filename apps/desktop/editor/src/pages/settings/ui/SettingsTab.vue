@@ -7,7 +7,7 @@ import { computed, ref, watch } from 'vue'
 import type { SettingsTabState } from '../types'
 import type { PluginInfo } from '@/entities/settings'
 import SystemDetail from './SystemDetail.vue'
-import { createManagedPlugins } from '@numen/plugin-manager'
+import { createManagedFromEntries } from '@/shared/pluginListing'
 import { OfferedPluginDetail, PluginsList, PluginDetail } from './plugins'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -28,7 +28,7 @@ watch(
 
 const plugins = computed<readonly PluginInfo[]>(() => props.state.installation.plugins?.value ?? [])
 const uninstalled = computed(() =>
-  createManagedPlugins([], props.state.installation.catalog?.value ?? []).find(
+  createManagedFromEntries([], props.state.installation.catalog?.value ?? []).find(
     (one) => one.id === selectedPluginId.value,
   ),
 )

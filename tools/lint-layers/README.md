@@ -26,7 +26,7 @@ Each check has an id, a scope (`libs`, `plugins` or `apps`) and a module; `node 
    - `protocol-holds-no-plugin-contract`: the code of `libs/protocol/proto/numen/v1` names nothing a single plugin owns: `TranscriptService`, `ArticleService`, `BookService`, `DocumentService`, `SOURCE_KIND_BOOK`, `SOURCE_KIND_RECORDING`, `SOURCE_KIND_URL`, `BookFormat`, `FILE_MENU_ACTION_RECOGNISE`, `FILE_MENU_ACTION_PROOFREAD`, `BookProgress`, `RecordingProgress`, `SetVaultInUse` and its messages, and the `mark` and `face` fields of `agent.proto`. Comments are not read.
    - `no-file-kind-outside-plugins`: the shipped code of `libs/core`, `libs/notes`, `libs/plugin-sdk-go`, `libs/plugin-sdk-ts`, `libs/ui/core`, `libs/ui/shell` and `apps/desktop/editor/src` holds no literal `"book"`, `"recording"`, `"url"` or `"document"`, and no name of those kinds (`KindBook`, `TabRecording`, `CapabilityDocument`, `SOURCE_KIND_URL`, `SourceKind.BOOK`, `BookFormat`, `DefaultBookExtensions`, `BookProgress`, `ReadBooks`, `BookServiceName`, and the script constants `BOOK`, `RECORDING`, `DOCUMENT`). A double-quoted string inside a literal, such as a manifest in a Go raw string, is read too. Tests, stories, `testing/`, `testdata/`, `e2e/` and generated code are not read. The core finds a plugin by content type instead.
    - `shell-isolation`: `libs/ui/shell/src` names no `@numen/protocol`, `@numen/wire` or `apps`, and `npm run lint` passes in `libs/ui/shell`; the shell reaches the components through `@numen/ui` alone.
-   - `plugin-host-isolation`: `libs/plugin-host-ts/src` imports only `vue` and `@numen/plugin-sdk` besides its own files (its tests also `vitest`, its `vite.ts` also `vite`), so the plugin loader knows nothing of `@numen/ui`, `@numen/shell`, the protocol, the wire or an application; and `npm run lint` passes in `libs/plugin-host-ts`.
+   - `plugin-host-isolation`: `libs/plugin-host-ts/src` imports only `vue`, `@numen/plugin-sdk` and `@numen/protocol` (with `@bufbuild/protobuf`, which reads the schema) besides its own files (its tests also `vitest`, its `vite.ts` also `vite`), so the plugin loader knows nothing of `@numen/ui`, `@numen/shell`, the wire or an application; and `npm run lint` passes in `libs/plugin-host-ts`.
    - `notes-hexagon`: Notes Library Internal Hexagonal Layers (layers_test.go).
    - `sdk-consumers`: Plugin SDK Imported Only By Plugins and Applications.
    - `go-no-mutable-globals`: Go No Package-Level Mutable Singletons or os.Exit Outside cmd/.
@@ -52,7 +52,8 @@ Each check has an id, a scope (`libs`, `plugins` or `apps`) and a module; `node 
    - `plugins-frontend`: ESLint over `plugins/`: no `@/**` or `@plugins/**` import.
    - `plugin-config-golden-parity`: Plugin Configs Match Golden Example plugins/.example/ & Root .golangci.yml.
    - `plugin-backend-layers`: Plugin Backend Internal Hexagonal Layer Direction.
-   - `plugins-no-protocol-or-wire`: Plugins Depend Only on SDK (no libs/protocol, numen/v1/*.proto, @numen/protocol or @numen/wire).
+   - `plugins-no-protocol-or-wire`: Plugins Never Import @numen/protocol or the Wire (no libs/protocol, numen/v1/*.proto, @numen/protocol or @numen/wire in source, or in a `package.json` dependency field).
+   - `plugins-use-main-entry`: a plugin names `@numen/plugin-sdk` and `@numen/ui` through the main entry. A deep path must be an entry the package declares in `exports`, and it passes only as the `testing` entry, as a stylesheet, or from a build configuration file (`*.config.ts`). The exports are read from the `package.json` of each package, and the rule fails when it reads fewer than 100 references.
    - `plugins-no-cross-plugin-knowledge`: Plugins Know Nothing of Other Plugins (no cross-plugin IDs, tab kinds, text kinds or command IDs). The tab kinds, note types, command ids and text kinds a plugin owns are those its manifest contributes and no manifest of another plugin states; a word the manifests of two or more plugins state, or that the SDKs, the protocol, `libs/core` or `libs/notes` define, is not owned.
    - `plugins-standalone-repo`: Plugins Are Standalone-Repo Ready (no ../ escapes, no vite.shared, no go.mod replace ../, no libs/notes, no plugin .proto).
 3. **Applications (`apps`)**:
@@ -61,7 +62,6 @@ Each check has an id, a scope (`libs`, `plugins` or `apps`) and a module; `node 
    - `desktop-editor-fsd`, `desktop-flashcards-fsd`: the Feature-Sliced Design layer hierarchy (`shared` → `entities` → `features` → `widgets` → `pages` → `app`), by `npm run lint` in each window.
    - `frontend-segments-and-entities`: Frontend Segment Direction (ui -> model -> api -> lib) & No @x Entity Cross-Imports.
    - `vue-style-and-template`: Vue <style> Tokens & <template> Purity.
-   - `apps-no-direct-protocol`: Applications Talk to Core Through SDK (no direct @numen/protocol in apps/*/src).
    - `desktop-flashcards-fsd`: Desktop Flashcards FSD Layer Hierarchy.
 
 ## Structural checks

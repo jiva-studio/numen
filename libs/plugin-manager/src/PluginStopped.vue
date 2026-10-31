@@ -3,7 +3,7 @@
  * The card of a plugin the host suspended: why it stopped, when, and the ways to bring it back.
  */
 import { Button } from '@numen/ui'
-import type { PluginFailure } from './catalog/plugins'
+import type { PluginFailure } from './pluginInfo'
 import { formatFailedAt } from './state'
 import { PLUGIN_WORDS as words } from './words'
 

@@ -1,5 +1,5 @@
 // Correctness and boundaries for the plugin manager. It imports components from `@numen/ui` and
-// the plugin contract from `@numen/plugin-sdk` and `@numen/protocol`, and no other first-party package.
+// no other first-party package.
 
 import tseslint from 'typescript-eslint'
 import { createBaseConfig } from '../../tools/lint-layers/base-eslint.mjs'
@@ -11,19 +11,15 @@ const firstPartyImports = [
       '@numen/*/**',
       '!@numen/ui',
       '!@numen/ui/**',
-      '!@numen/plugin-sdk',
-      '!@numen/plugin-sdk/**',
-      '!@numen/protocol',
-      '!@numen/protocol/**',
       // The same packages named by the path the install put them at.
       '**/node_modules/@numen/**',
     ],
     message:
-      'the plugin manager knows the components and the plugin contract — take everything else by props and answer with events',
+      'the plugin manager knows the components — take everything else by props and answer with events',
   },
   {
     group: ['**/apps/**', '**/libs/**'],
-    message: 'the dependency runs apps → libs/plugin-manager → libs/ui and libs/plugin-sdk-ts',
+    message: 'the dependency runs apps → libs/plugin-manager → libs/ui',
   },
 ]
 

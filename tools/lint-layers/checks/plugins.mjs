@@ -19,6 +19,7 @@ import {
   getImportSpecifiers,
   getPackageNames,
   isWithin,
+  parsePackageJson,
   listShippedFiles,
   readSource,
   requireMatches,
@@ -169,6 +170,15 @@ function findPluginProtocolAndWireLeaks() {
         const m = line.match(/^\s*import\s+"(numen\/v1\/[^"]+)"/);
         if (m) found.push({ file, line: idx + 1, symbol: `import "${m[1]}"` });
       });
+    } else if (path.basename(file) === "package.json") {
+      const manifest = parsePackageJson(text);
+      for (const field of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
+        for (const name of Object.keys(manifest[field] ?? {})) {
+          if (name === "@numen/protocol" || name === "@numen/wire") {
+            found.push({ file, line: 1, symbol: `${field}: ${name}` });
+          }
+        }
+      }
     } else if (SCRIPT_EXTENSIONS.has(path.extname(file)) && path.basename(file) !== "eslint.config.js") {
       const { literals } = readSource(file);
       for (const { line, value } of literals) {
@@ -191,6 +201,69 @@ function findPluginProtocolAndWireLeaks() {
 /** A plugin depends on the SDK and `@numen/ui`, and knows nothing of `libs/protocol` or `@numen/wire`. */
 export function verifyPluginsNoProtocolOrWire() {
   failOnFindings("A plugin depends on libs/protocol, numen/v1/*.proto, @numen/protocol or @numen/wire", findPluginProtocolAndWireLeaks());
+}
+
+/** The packages a plugin depends on; their `package.json` `exports` declare the entries a plugin may name. */
+const PLUGIN_PACKAGES = ["@numen/plugin-sdk", "@numen/ui"];
+
+/** A build configuration file, which may name the build entries a package declares. */
+const BUILD_CONFIGURATION = /\.config\.[cm]?[jt]s$/;
+
+/** The entry a plugin file may not name: `testing` is the test entry a package declares, a stylesheet is an asset. */
+const TEST_ENTRY = "./testing";
+
+/**
+ * Lists the specifiers of `files` that reach into a plugin package beyond its main entry. `files`
+ * holds `{ file, literals }` with each literal as `{ line, value }`, and `exportsByPackage` maps a
+ * package name to the keys and targets of its `exports`. A deep path passes when the package
+ * declares it and it is the test entry, a stylesheet, or named from a build configuration file.
+ */
+export function findPluginEntryViolations(files, exportsByPackage) {
+  const found = [];
+  for (const { file, literals } of files) {
+    for (const { line, value } of literals) {
+      const name = PLUGIN_PACKAGES.find((one) => value.startsWith(one + "/"));
+      if (!name) continue;
+      const entry = "." + value.slice(name.length);
+      const target = exportsByPackage[name]?.[entry];
+      if (target === undefined) {
+        found.push({ file, line, symbol: `${JSON.stringify(value)} is not an entry ${name} declares` });
+        continue;
+      }
+      const targetPath = typeof target === "string" ? target : JSON.stringify(target);
+      const isAllowed = entry === TEST_ENTRY || /\.css\b/.test(targetPath) || BUILD_CONFIGURATION.test(path.basename(file));
+      if (!isAllowed) found.push({ file, line, symbol: `${JSON.stringify(value)} reaches past the main entry of ${name}` });
+    }
+  }
+  return found;
+}
+
+/** The `exports` map of each plugin package, read from the `package.json` under `libs/` that names it. */
+export function readPluginPackageExports() {
+  const result = {};
+  for (const file of listShippedFiles(["libs"]).filter((one) => path.basename(one) === "package.json" && !one.includes("node_modules/"))) {
+    const manifest = parsePackageJson(fs.readFileSync(path.join(REPO_ROOT, file), "utf8"));
+    if (PLUGIN_PACKAGES.includes(manifest.name)) result[manifest.name] = manifest.exports ?? {};
+  }
+  return result;
+}
+
+/** A plugin imports `@numen/plugin-sdk` and `@numen/ui` through their main entry, and from the test entry, stylesheets and build entries a package declares. */
+export function verifyPluginsUseMainEntry() {
+  const exportsByPackage = readPluginPackageExports();
+  for (const name of PLUGIN_PACKAGES) requireMatches(`exports of ${name}`, Object.keys(exportsByPackage[name] ?? {}).length, 1);
+  const files = [];
+  let named = 0;
+  for (const file of listShippedFiles(["plugins"])) {
+    if (!/\.(ts|tsx|mts|cts|js|mjs|cjs|vue)$/.test(file)) continue;
+    const source = readSource(file);
+    if (!source) continue;
+    const literals = source.literals.filter(({ value }) => PLUGIN_PACKAGES.some((one) => value === one || value.startsWith(one + "/")));
+    named += literals.length;
+    files.push({ file, literals });
+  }
+  requireMatches("plugin references to the plugin packages", named, 100);
+  failOnFindings("A plugin reaches past the main entry of @numen/plugin-sdk or @numen/ui", findPluginEntryViolations(files, exportsByPackage));
 }
 
 /**
@@ -642,8 +715,15 @@ export const PLUGIN_VERIFIERS = [
     id: "plugins-no-protocol-or-wire",
     scope: "plugins",
     module: "plugins",
-    name: "Plugins Depend Only on SDK (no libs/protocol, numen/v1/*.proto, @numen/protocol or @numen/wire)",
+    name: "Plugins Never Import @numen/protocol or the Wire (no libs/protocol, numen/v1/*.proto, @numen/protocol or @numen/wire in source or package.json)",
     run: verifyPluginsNoProtocolOrWire,
+  },
+  {
+    id: "plugins-use-main-entry",
+    scope: "plugins",
+    module: "plugins",
+    name: "Plugins Import the SDK and UI Through Their Main Entry (only the test entry, stylesheets and build entries a package declares in exports)",
+    run: verifyPluginsUseMainEntry,
   },
   {
     id: "plugins-no-cross-plugin-knowledge",

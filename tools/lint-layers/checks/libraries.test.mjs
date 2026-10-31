@@ -112,7 +112,20 @@ test("a package with no row is reported", () => {
 test("the packages of this repository are read, the plugin manager among them", () => {
   const packages = readPackages();
   const manager = packages.find((one) => one.name === "@numen/plugin-manager");
-  assert.deepEqual([...manager.declared].sort(), ["@numen/plugin-sdk", "@numen/ui"]);
+  assert.deepEqual([...manager.declared].sort(), ["@numen/ui"]);
   assert.ok(manager.imports.length > 0);
   assert.deepEqual(findPackageViolations(packages, PACKAGE_DEPENDENCIES), []);
+});
+
+test("the plugin manager row allows only the UI library, and the plugin host the SDK and the schema", () => {
+  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-manager"], ["@numen/ui"]);
+  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-host"], ["@numen/plugin-sdk", "@numen/protocol"]);
+});
+
+test("a plugin manager that declares or imports the protocol or the SDK is reported", () => {
+  const manager = { dir: "libs/plugin-manager", name: "@numen/plugin-manager", declared: ["@numen/ui", "@numen/protocol"], imports: [{ file: "libs/plugin-manager/src/a.ts", line: 3, name: "@numen/plugin-sdk" }] };
+  const found = findPackageViolations([manager], PACKAGE_DEPENDENCIES);
+  assert.equal(found.length, 2);
+  assert.match(found[0].symbol, /declares @numen\/protocol/);
+  assert.match(found[1].symbol, /imports @numen\/plugin-sdk/);
 });

@@ -1,1 +1,1 @@
-export * from './mockCatalog'
+export * from './listing'

@@ -20,10 +20,6 @@
     "vue": "^3.5.44"
   },
   "dependencies": {
-    "@bufbuild/protobuf": "^2.14.0",
-    "@connectrpc/connect": "^2.1.2",
-    "@numen/plugin-sdk": "*",
-    "@numen/protocol": "*",
     "@numen/ui": "*"
   },
   "devDependencies": {

@@ -7,8 +7,7 @@ import {
   type CatalogIncompatibilityValue,
   type CatalogStateValue,
   type PluginCatalog,
-} from '../catalog/catalog'
-import type { PluginInfo } from '../catalog/plugins'
+} from '../shared/pluginCatalog'
 
 /** What a catalog entry made for a test is given. */
 export interface MockCatalogEntryOptions {
@@ -88,27 +87,5 @@ export function createMockPluginCatalog(initial: readonly CatalogEntry[] = []): 
           : asFailure({ kind: 'not-found', sourceErrors: [] }),
       )
     },
-  }
-}
-
-/** A plugin the host lists, with what a test cares about put over the defaults. */
-export function createMockPluginInfo(
-  id: string,
-  name: string,
-  overrides: Partial<PluginInfo> = {},
-): PluginInfo {
-  return {
-    id,
-    name,
-    version: '1.0.0',
-    description: '',
-    isActive: false,
-    settings: [],
-    capabilities: [],
-    secrets: [],
-    storedSecrets: [],
-    consent: 'none',
-    hasFrontend: false,
-    ...overrides,
   }
 }

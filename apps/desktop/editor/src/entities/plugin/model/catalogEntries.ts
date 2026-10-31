@@ -1,6 +1,7 @@
 import { shallowRef, watch, type Ref, type ShallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
-import type { CatalogEntry, PluginCatalog, PluginInfo } from '@numen/plugin-manager'
+import type { PluginInfo } from '@numen/plugin-manager'
+import type { CatalogEntry, PluginCatalog } from '@/shared/pluginCatalog'
 
 /**
  * The entries of the plugin catalog, read again each time the plugins the host lists change: a

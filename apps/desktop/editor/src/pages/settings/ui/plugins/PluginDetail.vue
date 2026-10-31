@@ -5,7 +5,8 @@
  */
 import { computed, ref, watch } from 'vue'
 import { formatErrorMessage } from '@numen/plugin-sdk'
-import { PluginDetail as PluginDetailView, createManagedPlugins } from '@numen/plugin-manager'
+import { PluginDetail as PluginDetailView } from '@numen/plugin-manager'
+import { createManagedFromEntries } from '@/shared/pluginListing'
 import { runInBackground } from '@numen/ui'
 import PluginFields from './PluginFields.vue'
 import type { SettingsTabState } from '../../types'
@@ -28,7 +29,7 @@ const installation = computed(() => props.state.installation)
 const fields = createSettingFields(() => props.state.installation)
 
 const managed = computed(() => {
-  const [one] = createManagedPlugins([props.plugin], installation.value.catalog?.value ?? [])
+  const [one] = createManagedFromEntries([props.plugin], installation.value.catalog?.value ?? [])
   return one
 })
 
