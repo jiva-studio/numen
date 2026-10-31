@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.flashcards.studio",
   "name": "Flashcards Studio",
-  "version": "2026.10.5",
+  "version": "2026.10.6",
   "protocol": 1,
   "description": "Flashcard deck editor, card template designer, and spaced-repetition review",
   "capabilities": ["tools"],
@@ -29,11 +29,6 @@
   },
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
-  "lifecycle": {
-    "idleTimeoutSeconds": 300,
-    "keepAliveWhileVisible": true,
-    "memoryLimitBytes": 1073741824
-  },
   "services": ["numen.flashcards"],
   "commands": [
     {

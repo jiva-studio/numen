@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.transcription",
   "name": "Audio/Video Transcription",
-  "version": "2026.10.5",
+  "version": "2026.10.6",
   "protocol": 1,
   "description": "Offline speech-to-text transcription for audio and video recordings",
   "targets": ["desktop.editor"],
@@ -118,11 +118,6 @@
       }
     }
   ],
-  "lifecycle": {
-    "idleTimeoutSeconds": 600,
-    "keepAliveWhileVisible": false,
-    "memoryLimitBytes": 4294967296
-  },
   "backend": {
     "type": "process",
     "entrypoint": "bin/engines-transcription",

@@ -20,11 +20,6 @@ func TestReadManifest(t *testing.T) {
 		"targets": ["desktop.editor"],
 		"activationEvents": ["onCommand:ocr.recognize"],
 		"permissions": ["vault:read"],
-		"lifecycle": {
-			"mode": "on-demand",
-			"idleTimeoutSeconds": 180,
-			"keepAliveWhileVisible": true
-		},
 		"backend": {
 			"type": "process",
 			"entrypoint": "bin/engines.ocr",
@@ -198,30 +193,6 @@ func TestManifestSelectSetting(t *testing.T) {
 	})
 }
 
-func TestManifestLifecycleMemoryLimit(t *testing.T) {
-	t.Run("decodes memoryLimitBytes", func(t *testing.T) {
-		raw := `{"id":"a.b","name":"A","version":"1.0.0","lifecycle":{"mode":"on-demand","memoryLimitBytes":1073741824}}`
-		m, err := manifestjson.Read(strings.NewReader(raw))
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if m.Lifecycle.MemoryLimitBytes != 1073741824 {
-			t.Errorf("got memoryLimitBytes %d, want 1073741824", m.Lifecycle.MemoryLimitBytes)
-		}
-	})
-
-	t.Run("reports memoryLimitMB as an unknown key", func(t *testing.T) {
-		raw := `{"id":"a.b","name":"A","version":"1.0.0","lifecycle":{"memoryLimitMB":512}}`
-		m, err := manifestjson.Read(strings.NewReader(raw))
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if m.Lifecycle.MemoryLimitBytes != 0 || !slices.Equal(m.Warnings, []string{`unknown key "lifecycle.memoryLimitMB"`}) {
-			t.Errorf("limit = %d, warnings = %v", m.Lifecycle.MemoryLimitBytes, m.Warnings)
-		}
-	})
-}
-
 func TestManifestRulesReportTheirSentinel(t *testing.T) {
 	cases := []struct {
 		name string
@@ -235,7 +206,6 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 		{"id of one segment", `{"id":"foo","name":"A","version":"1.0.0"}`, manifest.ErrInvalidID},
 		{"protocol newer than the host", `{"id":"a.b","name":"A","version":"1.0.0","protocol":2}`, manifest.ErrUnsupportedProtocol},
 		{"negative protocol", `{"id":"a.b","name":"A","version":"1.0.0","protocol":-1}`, manifest.ErrUnsupportedProtocol},
-		{"negative idle timeout", `{"id":"a.b","name":"A","version":"1.0.0","lifecycle":{"idleTimeoutSeconds":-1}}`, manifest.ErrInvalidLifecycle},
 		{"wasm backend", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"type":"wasm","entrypoint":"x.wasm"}}`, manifest.ErrInvalidBackend},
 		{"backend without entrypoint", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"type":"process"}}`, manifest.ErrInvalidBackend},
 		{"activation events without a backend", `{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onCommand:a"],"frontend":{"entrypoint":"dist/index.js"}}`, manifest.ErrNoBackend},

@@ -39,7 +39,7 @@ Plugins communicating over Connect-RPC use loopback TCP:
   ```
 - All plugins implement the `numen.v1.PluginLifecycleService` providing `Ping` and `Shutdown` endpoints. `Ping` answers with the protocol version the plugin speaks; the Go SDK fills it in.
 - After the handshake the host calls `Ping`. A plugin whose protocol differs from its manifest's `protocol` or from the host's is stopped and reported failed at once.
-- A plugin whose `lifecycle.idleTimeoutSeconds` is above zero is terminated after that many seconds without active clients.
+- The host stops every plugin process after 180 seconds without a lease. A lease is held for each call into the plugin that has not returned, for each open stream, and for each of the plugin's own pending jobs: a plugin keeps itself alive by reporting its work to the host as a task (`HostQueueService.ReportTask`, until the task counts to its total, fails, or `FinishTask` ends it) or by holding a queue turn (`HostQueueService.EnqueueWork`, until the stream ends). Each open task id holds one lease. The host drops the leases of a plugin whose process exits. The host sets no CPU or memory limit on a plugin process.
 
 ---
 
@@ -123,11 +123,6 @@ The manifest declares identity, activation rules, required permissions, and serv
     ]
   },
   "permissions": ["vault:read"],
-  "lifecycle": {
-    "idleTimeoutSeconds": 180,
-    "keepAliveWhileVisible": true,
-    "memoryLimitBytes": 2147483648
-  },
   "backend": {
     "type": "process",
     "entrypoint": "bin/sample",
@@ -169,10 +164,6 @@ The manifest declares identity, activation rules, required permissions, and serv
 - **`contributes.statusViews`**: The components of the frontend that the editor's status bar draws at its trailing end, each `{ "id" }`: the id the frontend registers the view under with `registerStatusView`. A view whose plugin is disabled or whose frontend did not register it draws nothing. A plugin with status views has a `frontend`.
 - **`permissions`**: Whitelisted resource access: `vault:read`, `vault:write`, `network:outbound` (`network` is accepted as an alias), `ai:complete` (ask the host for a model completion), `index:read` (read the note titles, the stored vectors and the embedding state of the search index, and embed texts with the model in use) and `search:policy` (read and set the floor that a search by meaning applies). Any other value is rejected. Permissions are checked by the host when a plugin calls it; the host does not sandbox the plugin process, so a plugin runs with the user rights of the host.
 - **`dependencies`**: What the host provisions for the plugin, each `{ "id", "kind", "version", "sourceUrl", "checksumSha256", "metadata" }`. The `kind` is `runtime`, `model`, `binary` or `dataset`: the host fetches the artifact from `sourceUrl`, verifies it against the checksum, and provides its location to the plugin. A dependency with no `sourceUrl` is one the host provides itself. A dependency of kind `runtime` is a library the plugin loads; the host provides the plugin with the variables that locate it. Of those, the ONNX Runtime (`{ "id": "onnxruntime", "kind": "runtime" }`) launches the plugin with `NUMEN_ONNX_RUNTIME_LIB` (the absolute path of the library) and `NUMEN_ONNX_PROVIDER` (`auto`, `cpu`, `coreml`, `cuda`, `directml` or `rocm`) in its environment, and it opens its sessions on them. It is also launched with the variables of the host that say where the loader finds shared libraries and which accelerator devices it may use (`LD_LIBRARY_PATH`, `CUDA_VISIBLE_DEVICES`, `CUDA_PATH` and `CUDA_PATH_V*`, `CUDA_HOME`, `NVIDIA_VISIBLE_DEVICES`, `NVIDIA_DRIVER_CAPABILITIES`, `ROCR_VISIBLE_DEVICES`, `HIP_VISIBLE_DEVICES`, and `DYLD_LIBRARY_PATH` and `DYLD_FALLBACK_LIBRARY_PATH` on macOS), which a plugin without a runtime does not get; `PATH` reaches every plugin. If the host cannot provision a dependency the plugin is not launched, and the activation fails with the reason. A dependency an option of a setting names in `dependencies` is provisioned only while that option is in force.
-- **`lifecycle`**:
-  - `idleTimeoutSeconds`: Seconds of inactivity before process eviction; it cannot be negative.
-  - `keepAliveWhileVisible`: Keep alive while a tab displaying the plugin is open.
-  - `memoryLimitBytes`: The resident memory the plugin process may hold before the host evicts it. A plugin with a backend declares it, and declares `idleTimeoutSeconds` too (`0` keeps it running). The host sets no CPU limit on a plugin process.
 - **`backend`**: `type` is `process` (the only backend type) and `entrypoint` is required. A plugin without a backend is never started: its manifest declares no `activationEvents`, `commands`, `services`, `secrets`, dependencies of kind `runtime` or `contributes.handles`, and the host refuses one that does when it reads the manifest.
 - **`frontend`**: `entrypoint` is required, `styles` is optional. The window loads both from the plugin route `/plugin/<id>/`, which serves a file of the plugin folder where one exists and forwards every other path to the plugin backend, and compiles nothing of a plugin into itself. A frontend bundle leaves `vue`, `@numen/plugin-sdk` and `@numen/ui` out and imports them from the paths `HOST_MODULES` in `@numen/plugin-sdk/host-modules` names (`/sdk/vue.js`, `/sdk/plugin-sdk.js`, `/sdk/ui.js`), where the window serves its own instances. The loader of plugin frontends and the build of those host modules are `@numen/plugin-host` (`libs/plugin-host-ts`), which every application that loads plugins uses. A window loads only the plugins that declare a frontend.
 - **`settings`**: Declarative settings schema automatically rendered in host settings and stored by the core. The host hands the settings to the plugin in `Configure`, once it is running and again on every change; they are not in its environment. A setting has a `key`, a `type` (`boolean`, `string`, `number`, `enum`, `select`, `range`, `file` or `folder`), a `title`, a `description` and a `default`; `enum` and `select` take `options` (a `string` setting may take them too, as suggestions the person can also type past), `range` and `number` take `min`, `max` and `step`. An option is a value or an object `{ "value", "title", "detail", "dependencies" }`: the title is what the person reads, the detail is said under the setting while the option is in force, and `dependencies` names dependencies of the manifest the host provisions only while the option is in force (the plugin is stopped when the set changes, and launched with the new set on its next call). An `enum` takes `optionsBy: { "setting": "<key>", "options": { "<value>": [options] } }` in place of `options` to offer, under each value of an earlier enum setting, its own list; the first option of a list is the default under that value, and a stored value that is not in the list gives way to it. A setting of one option is shown fixed, with no choice. `when: { "setting": "<key>", "is": ["<value>"] }` shows a setting only while an earlier setting holds one of the values; a setting whose condition fails keeps its stored value and is not handed to the plugin. A `file` setting takes `accept` (extensions with their dot) and a `folder` setting a folder; the window offers the machine's own picker, and the host refuses a path that does not exist, is of the other kind, or has another extension. The settings page says of an enum whether its value is the default, the default of the setting it follows, or the person's choice. Neither `storedSecrets` nor `aiConsent` may be a key: the host keeps both.
@@ -283,7 +274,7 @@ Supported templates:
 
 ### 2. Validation (`validate`)
 
-Verify `manifest.json` with the same validator the host runs at discovery (identity, protocol, lifecycle, permissions, settings), and ensure backend/frontend entrypoints resolve:
+Verify `manifest.json` with the same validator the host runs at discovery (identity, protocol, permissions, settings), and ensure backend/frontend entrypoints resolve:
 
 ```bash
 numen plugin validate plugins/sample

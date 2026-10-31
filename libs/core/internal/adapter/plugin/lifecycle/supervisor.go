@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/security"
 	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
@@ -19,8 +18,6 @@ import (
 var (
 	ErrProcessNotRunning = errors.New("plugin process is not running")
 	errNilProcess        = errors.New("process handle is nil")
-	// ErrMemoryExceeded indicates the plugin process exceeded its memory limit.
-	ErrMemoryExceeded = errors.New("plugin exceeded memory limit")
 )
 
 // ProcessState represents the lifecycle phase of a managed plugin process.
@@ -60,54 +57,41 @@ type Supervisor struct {
 	onExit           func()
 	activatingCh     chan struct{}
 	activationErr    error
-	cleanupErr       error
 
-	memoryLimitBytes  uint64
-	monitorInterval   time.Duration
-	memoryGracePeriod time.Duration
-	rpcShutdown       func(ctx context.Context) error
-	onMemoryExceeded  func()
-	onError           func(error)
-	monitorStopCh     chan struct{}
-	rssReader         func(pid int) (uint64, error)
-	clock             machineport.Clock
+	rpcShutdown func(ctx context.Context) error
+	onError     func(error)
+	clock       machineport.Clock
 }
 
 // New creates an idle supervisor for a plugin that reads the time from clock.
 func New(clock machineport.Clock) *Supervisor {
 	return &Supervisor{
-		clock:             clock,
-		mu:                sync.Mutex{},
-		state:             StateDormant,
-		process:           nil,
-		inProcess:         false,
-		teardownBegun:     false,
-		failures:          0,
-		failure:           nil,
-		failed:            false,
-		failedAt:          time.Time{},
-		retryAt:           time.Time{},
-		activationPolicy:  DefaultActivationPolicy(),
-		lastActiveTime:    time.Time{},
-		activeRefCount:    0,
-		permissions:       nil,
-		validator:         security.NewVaultPathValidator(),
-		exitCh:            nil,
-		onExit:            nil,
-		activatingCh:      nil,
-		activationErr:     nil,
-		memoryLimitBytes:  0,
-		monitorInterval:   500 * time.Millisecond,
-		memoryGracePeriod: 2 * time.Second,
-		rpcShutdown:       nil,
-		onMemoryExceeded:  nil,
-		onError:           nil,
-		monitorStopCh:     nil,
-		rssReader:         process.ReadRSS,
+		clock:            clock,
+		mu:               sync.Mutex{},
+		state:            StateDormant,
+		process:          nil,
+		inProcess:        false,
+		teardownBegun:    false,
+		failures:         0,
+		failure:          nil,
+		failed:           false,
+		failedAt:         time.Time{},
+		retryAt:          time.Time{},
+		activationPolicy: DefaultActivationPolicy(),
+		lastActiveTime:   time.Time{},
+		activeRefCount:   0,
+		permissions:      nil,
+		validator:        security.NewVaultPathValidator(),
+		exitCh:           nil,
+		onExit:           nil,
+		activatingCh:     nil,
+		activationErr:    nil,
+		rpcShutdown:      nil,
+		onError:          nil,
 	}
 }
 
-// SetActivationPolicy sets the retry and backoff policy applied when activation fails or memory is exceeded.
+// SetActivationPolicy sets the retry and backoff policy applied when activation fails.
 func (s *Supervisor) SetActivationPolicy(policy ActivationPolicy) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -181,13 +165,6 @@ func (s *Supervisor) ActivationError() error {
 	return s.activationErr
 }
 
-// CleanupError returns any error from the most recent cgroup cleanup.
-func (s *Supervisor) CleanupError() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.cleanupErr
-}
-
 // FinishActivating transitions the supervisor state to StateActive and unblocks waiters.
 func (s *Supervisor) FinishActivating() {
 	s.mu.Lock()
@@ -204,7 +181,6 @@ func (s *Supervisor) FinishActivating() {
 func (s *Supervisor) SetDormant(err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.stopMemoryMonitorLocked()
 	s.state = StateDormant
 	s.process = nil
 	s.inProcess = false
@@ -270,18 +246,13 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 	exitCh := make(chan struct{})
 	s.exitCh = exitCh
 
-	s.startMemoryMonitorLocked(context.WithoutCancel(ctx), p)
-
 	go func() {
 		_, waitErr := p.Wait()
 		close(exitCh)
 		if waitErr != nil && !errors.Is(waitErr, os.ErrProcessDone) {
 			s.reportError(fmt.Errorf("wait for plugin process %d: %w", p.Pid, waitErr))
 		}
-		cleanupErr := process.CleanupCgroup(p.Pid)
 		s.mu.Lock()
-		s.cleanupErr = cleanupErr
-		s.stopMemoryMonitorLocked()
 		if s.process == p {
 			s.process = nil
 			s.inProcess = false
@@ -403,7 +374,6 @@ func (s *Supervisor) Teardown(
 	rpcShutdown func(ctx context.Context) error,
 ) error {
 	s.mu.Lock()
-	s.stopMemoryMonitorLocked()
 	if s.process == nil {
 		s.mu.Unlock()
 		return s.teardownNilProcess(ctx, rpcShutdown)
@@ -502,7 +472,6 @@ func (s *Supervisor) markDormant(proc *os.Process) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if proc == nil || s.process == proc {
-		s.stopMemoryMonitorLocked()
 		s.state = StateDormant
 		s.process = nil
 		s.inProcess = false
@@ -516,158 +485,11 @@ func (s *Supervisor) markDormant(proc *os.Process) {
 	}
 }
 
-func (s *Supervisor) stopMemoryMonitorLocked() {
-	if s.monitorStopCh != nil {
-		close(s.monitorStopCh)
-		s.monitorStopCh = nil
-	}
-}
-
-func (s *Supervisor) startMemoryMonitorLocked(ctx context.Context, p *os.Process) {
-	if s.memoryLimitBytes == 0 || p == nil {
-		return
-	}
-	s.stopMemoryMonitorLocked()
-	stopCh := make(chan struct{})
-	s.monitorStopCh = stopCh
-	interval := s.monitorInterval
-	if interval <= 0 {
-		interval = 500 * time.Millisecond
-	}
-	go s.runMemoryMonitor(ctx, p, stopCh, interval)
-}
-
-func (s *Supervisor) inspectMemoryExceeded(proc *os.Process) (func(context.Context) error, time.Duration, func(), bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.process != proc || (s.state != StateActive && s.state != StateIdle) || s.memoryLimitBytes == 0 {
-		return nil, 0, nil, false
-	}
-	reader := s.rssReader
-	if reader == nil {
-		reader = process.ReadRSS
-	}
-	rss, err := reader(proc.Pid)
-	if err != nil || rss <= s.memoryLimitBytes {
-		return nil, 0, nil, false
-	}
-	return s.rpcShutdown, s.memoryGracePeriod, s.onMemoryExceeded, true
-}
-
-func (s *Supervisor) evictForMemory(ctx context.Context, rpc func(context.Context) error, gracePeriod time.Duration, onExceeded func()) {
-	s.RecordActivationFailure(s.clock.Now(), s.activationPolicy, fmt.Errorf("%w: %d bytes", ErrMemoryExceeded, s.memoryLimitBytes))
-	if onExceeded != nil {
-		onExceeded()
-	}
-	ctx, cancel := context.WithTimeout(ctx, gracePeriod+3*time.Second)
-	defer cancel()
-	if err := s.Teardown(ctx, gracePeriod, rpc); err != nil {
-		s.reportError(fmt.Errorf("evict plugin for memory: %w", err))
-	}
-}
-
-func (s *Supervisor) runMemoryMonitor(ctx context.Context, proc *os.Process, stopCh <-chan struct{}, interval time.Duration) {
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-stopCh:
-			return
-		case <-ticker.C:
-			rpc, gracePeriod, onExceeded, shouldEvict := s.inspectMemoryExceeded(proc)
-			if shouldEvict {
-				s.evictForMemory(ctx, rpc, gracePeriod, onExceeded)
-				return
-			}
-		}
-	}
-}
-
-// SetMemoryLimit configures the resident memory threshold in bytes for eviction.
-func (s *Supervisor) SetMemoryLimit(limit uint64) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.memoryLimitBytes = limit
-}
-
-// GetMemoryLimit returns the configured resident memory threshold in bytes.
-func (s *Supervisor) GetMemoryLimit() uint64 {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.memoryLimitBytes
-}
-
-// SetMemoryMonitorInterval configures the polling interval for memory monitoring.
-func (s *Supervisor) SetMemoryMonitorInterval(interval time.Duration) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.monitorInterval = interval
-}
-
-// SetMemoryGracePeriod configures the teardown grace period when memory is exceeded.
-func (s *Supervisor) SetMemoryGracePeriod(period time.Duration) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.memoryGracePeriod = period
-}
-
 // SetRPCShutdown sets the RPC callback invoked during graceful eviction.
 func (s *Supervisor) SetRPCShutdown(fn func(ctx context.Context) error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.rpcShutdown = fn
-}
-
-// SetOnMemoryExceeded registers a callback invoked when resident memory exceeds limit.
-func (s *Supervisor) SetOnMemoryExceeded(fn func()) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.onMemoryExceeded = fn
-}
-
-// SetRSSReader overrides the function that reads process resident memory.
-func (s *Supervisor) SetRSSReader(fn func(pid int) (uint64, error)) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.rssReader = fn
-}
-
-// GetResidentMemory returns the resident set size in bytes of the supervised process.
-func (s *Supervisor) GetResidentMemory() (uint64, error) {
-	s.mu.Lock()
-	proc := s.process
-	reader := s.rssReader
-	s.mu.Unlock()
-
-	if proc == nil {
-		return 0, ErrProcessNotRunning
-	}
-	if reader == nil {
-		reader = process.ReadRSS
-	}
-	return reader(proc.Pid)
-}
-
-// IsMemoryExceeded reports whether resident memory exceeds the configured limit.
-func (s *Supervisor) IsMemoryExceeded() bool {
-	s.mu.Lock()
-	limit := s.memoryLimitBytes
-	proc := s.process
-	reader := s.rssReader
-	s.mu.Unlock()
-
-	if limit == 0 || proc == nil {
-		return false
-	}
-	if reader == nil {
-		reader = process.ReadRSS
-	}
-	rss, err := reader(proc.Pid)
-	if err != nil {
-		return false
-	}
-	return rss > limit
 }
 
 // GetExitSignal returns the channel the supervisor closes once it has reaped its current process.
@@ -683,11 +505,4 @@ func (s *Supervisor) BeginTeardown() {
 	defer s.mu.Unlock()
 	s.state = StateDeactivating
 	s.teardownBegun = true
-}
-
-// GetOnMemoryExceeded returns what the supervisor calls once its process exceeds its memory limit.
-func (s *Supervisor) GetOnMemoryExceeded() func() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.onMemoryExceeded
 }

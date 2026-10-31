@@ -9,12 +9,10 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"slices"
-	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -53,10 +51,6 @@ func createNamedTestPlugin(t *testing.T, dir, id string) {
 		"capabilities": ["test"],
 		"targets": ["desktop.editor"],
 		"permissions": ["vault:read"],
-		"lifecycle": {
-			"mode": "on-demand",
-			"idleTimeoutSeconds": 10
-		},
 		"backend": {
 			"type": "process",
 			"entrypoint": "bin/test",
@@ -159,7 +153,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 
 	// EvictIdle test
 	evicted := host.EvictIdle(ctx, 10*time.Millisecond, 50*time.Millisecond)
-	// Because idleTimeoutSeconds is 1s, right now it is not evicted yet
+	// The plugin holds a lease, so it is not evicted
 	if len(evicted) != 0 {
 		t.Fatalf("expected 0 evicted before threshold, got %v", evicted)
 	}
@@ -771,12 +765,6 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	host.stdins[stdinKey{pluginID: "org.example.sample", pid: cmd.Process.Pid}] = closer
 	host.stdinsMu.Unlock()
 
-	host.mu.Lock()
-	p := host.plugins["org.example.sample"]
-	p.Manifest.Lifecycle.IdleTimeoutSeconds = 1
-	host.plugins["org.example.sample"] = p
-	host.mu.Unlock()
-
 	host.Release("org.example.sample")
 	host.Release("org.example.sample")
 
@@ -805,154 +793,6 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	sup := host.supervisors["org.example.sample"]
 	if sup.GetState() != lifecycle.StateDormant {
 		t.Errorf("expected StateDormant, got %v", sup.GetState())
-	}
-}
-
-func TestHostEvictMemoryExceeded(t *testing.T) {
-	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
-
-	host := NewHost(testsupport.Machine, "desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
-		t.Fatalf("Discover failed: %v", err)
-	}
-
-	handler := &testLifecycleHandler{}
-	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(handler))
-	server := httptest.NewServer(mux)
-	defer server.Close()
-
-	serverURL, err := url.Parse(server.URL)
-	if err != nil {
-		t.Fatalf("parse server URL: %v", err)
-	}
-	serverPort, err := strconv.Atoi(serverURL.Port())
-	if err != nil {
-		t.Fatalf("parse port: %v", err)
-	}
-
-	cmd := exec.CommandContext(t.Context(), "sleep", "10")
-	if err := cmd.Start(); err != nil {
-		t.Fatalf("start sleep: %v", err)
-	}
-	defer func() {
-		testsupport.Kill(t, cmd)
-		plugintest.ReapProcess(t, cmd.Process)
-	}()
-
-	handler.onShutdown = func() {
-		testsupport.Kill(t, cmd)
-	}
-
-	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
-		return cmd.Process, io.NopCloser(r), nil
-	})
-
-	ctx := t.Context()
-	_, err = host.EnsureActive(ctx, "org.example.sample")
-	if err != nil {
-		t.Fatalf("EnsureActive failed: %v", err)
-	}
-
-	closer := &testCloser{}
-	host.stdinsMu.Lock()
-	host.stdins[stdinKey{pluginID: "org.example.sample", pid: cmd.Process.Pid}] = closer
-	host.stdinsMu.Unlock()
-
-	sup := host.supervisors["org.example.sample"]
-	sup.SetMemoryLimit(100 * 1024 * 1024)
-
-	// Simulate RSS below limit
-	sup.SetRSSReader(func(_ int) (uint64, error) {
-		return 50 * 1024 * 1024, nil
-	})
-	evicted := host.EvictMemoryExceeded(ctx, 500*time.Millisecond)
-	if len(evicted) != 0 {
-		t.Fatalf("expected no eviction when below limit, got %v", evicted)
-	}
-
-	// Simulate RSS above limit
-	sup.SetRSSReader(func(_ int) (uint64, error) {
-		return 200 * 1024 * 1024, nil
-	})
-	evicted = host.EvictMemoryExceeded(ctx, 500*time.Millisecond)
-	if len(evicted) != 1 || evicted[0] != "org.example.sample" {
-		t.Fatalf("expected org.example.sample to be evicted for memory, got %v", evicted)
-	}
-
-	if !handler.isShutdownCalled() {
-		t.Error("expected PluginLifecycleService.Shutdown RPC to be sent")
-	}
-
-	if !closer.getIsClosed() {
-		t.Error("expected stdin closer to be closed on eviction")
-	}
-
-	if sup.GetState() != lifecycle.StateDormant {
-		t.Errorf("expected StateDormant, got %v", sup.GetState())
-	}
-}
-
-func TestHostMemoryEvictionReportsErrorAndBacksOff(t *testing.T) {
-	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
-
-	host := NewHost(testsupport.Machine, "desktop.editor", tmp)
-	var reportedErrors []error
-	host.SetErrorHandler(func(err error) {
-		reportedErrors = append(reportedErrors, err)
-	})
-	if err := host.Discover(); err != nil {
-		t.Fatalf("Discover failed: %v", err)
-	}
-
-	cmd := exec.CommandContext(t.Context(), "sleep", "60")
-	if err := cmd.Start(); err != nil {
-		t.Fatalf("failed to start mock process: %v", err)
-	}
-	defer func() {
-		testsupport.Kill(t, cmd)
-		plugintest.ReapProcess(t, cmd.Process)
-	}()
-
-	now := testsupport.Machine.Now()
-	ctx := t.Context()
-
-	host.mu.Lock()
-	sup := host.supervisors["org.example.sample"]
-	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
-		host.mu.Unlock()
-		t.Fatal(err)
-	}
-	host.endpoints["org.example.sample"] = transport.Endpoint{Host: "127.0.0.1", Port: 8080, Token: "test-token"}
-	host.mu.Unlock()
-
-	sup.SetMemoryLimit(100 * 1024 * 1024)
-	sup.SetRSSReader(func(_ int) (uint64, error) {
-		return 200 * 1024 * 1024, nil
-	})
-
-	evicted := host.EvictMemoryExceeded(ctx, 100*time.Millisecond)
-	if len(evicted) != 1 || evicted[0] != "org.example.sample" {
-		t.Fatalf("expected org.example.sample evicted, got %v", evicted)
-	}
-
-	if len(reportedErrors) == 0 {
-		t.Fatal("expected error to be reported for memory eviction")
-	}
-	if !strings.Contains(reportedErrors[0].Error(), "org.example.sample was stopped") {
-		t.Fatalf("expected memory limit error message, got %v", reportedErrors[0])
-	}
-
-	// Next EnsureActive should refuse activation with backoff
-	_, err := host.EnsureActive(ctx, "org.example.sample")
-	if err == nil {
-		t.Fatal("expected EnsureActive to fail due to backoff after memory eviction")
-	}
-	if !errors.Is(err, lifecycle.ErrActivationBackoff) {
-		t.Fatalf("expected errActivationBackoff, got %v", err)
 	}
 }
 
@@ -1076,12 +916,6 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 	if _, err := host.EnsureActive(ctx, "org.example.sample"); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-
-	host.mu.Lock()
-	p := host.plugins["org.example.sample"]
-	p.Manifest.Lifecycle.IdleTimeoutSeconds = 1
-	host.plugins["org.example.sample"] = p
-	host.mu.Unlock()
 
 	host.Release("org.example.sample")
 	host.Release("org.example.sample")
@@ -1268,12 +1102,6 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 	}
 	var started atomic.Int32
 	host.SetLauncher(startSleepLauncher(t, &started, nil))
-	host.mu.Lock()
-	p := host.plugins["org.example.sample"]
-	p.Manifest.Lifecycle.IdleTimeoutSeconds = 1
-	host.plugins["org.example.sample"] = p
-	host.mu.Unlock()
-
 	var evictions atomic.Int32
 	stop := make(chan struct{})
 	var evictor sync.WaitGroup
@@ -1460,7 +1288,7 @@ func TestTheHostListsPluginsInIDOrder(t *testing.T) {
 	}
 }
 
-func TestHostEvictIdleNeverEvictsZeroTimeoutPlugin(t *testing.T) {
+func TestHostEvictIdleKeepsAPluginIdleForLessThanTheThreshold(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 
@@ -1477,23 +1305,12 @@ func TestHostEvictIdleNeverEvictsZeroTimeoutPlugin(t *testing.T) {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 
-	host.mu.Lock()
-	p := host.plugins["org.example.sample"]
-	p.Manifest.Lifecycle.IdleTimeoutSeconds = 0
-	host.plugins["org.example.sample"] = p
-	host.mu.Unlock()
-
 	host.Release("org.example.sample")
 	host.Release("org.example.sample")
 
-	evicted := host.EvictIdle(ctx, 0, 50*time.Millisecond)
+	evicted := host.EvictIdle(ctx, idleThreshold, 50*time.Millisecond)
 	if len(evicted) != 0 {
-		t.Fatalf("expected 0 evicted for zero timeout plugin, got %v", evicted)
-	}
-
-	evicted = host.EvictIdle(ctx, 3*time.Minute, 50*time.Millisecond)
-	if len(evicted) != 0 {
-		t.Fatalf("expected 0 evicted with defaultThreshold for zero timeout plugin, got %v", evicted)
+		t.Fatalf("expected 0 evicted before the idle threshold, got %v", evicted)
 	}
 
 	host.mu.RLock()
@@ -1692,10 +1509,7 @@ func TestHostProcessLimitsConfig(t *testing.T) {
 		t.Fatalf("NewHost holds %v, want the default limits", h.processLimits)
 	}
 
-	customLimits := process.Limits{
-		CPULimitSeconds:  60,
-		MemoryLimitBytes: 512 * 1024 * 1024,
-	}
+	customLimits := process.Limits{CPULimitSeconds: 60}
 	h.SetProcessLimits(customLimits)
 
 	h.mu.RLock()

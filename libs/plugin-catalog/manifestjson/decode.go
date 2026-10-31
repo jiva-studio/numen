@@ -99,7 +99,6 @@ func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
 		ActivationEvents: wire.GetActivationEvents(),
 		Permissions:      wire.GetPermissions(),
 		Dependencies:     newDependencies(wire.GetDependencies()),
-		Lifecycle:        newLifecycle(wire.GetLifecycle()),
 		Backend:          newBackend(wire.GetBackend()),
 		Frontend:         newFrontend(wire.GetFrontend()),
 		Settings:         settings,
@@ -110,14 +109,6 @@ func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
 		Contributes:      contributes,
 		AppVersion:       manifest.AppVersionRange{Min: wire.GetAppVersion().GetMin(), Max: wire.GetAppVersion().GetMax()},
 	}, nil
-}
-
-func newLifecycle(wire *v1.ManifestLifecycle) manifest.Lifecycle {
-	return manifest.Lifecycle{
-		IdleTimeoutSeconds:    int(wire.GetIdleTimeoutSeconds()),
-		KeepAliveWhileVisible: wire.GetKeepAliveWhileVisible(),
-		MemoryLimitBytes:      wire.GetMemoryLimitBytes(),
-	}
 }
 
 func newBackend(wire *v1.ManifestBackend) manifest.Backend {

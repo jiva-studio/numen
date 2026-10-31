@@ -15,7 +15,6 @@ type (
 	PluginContributes      = manifest.Contributes
 	PluginContentType      = manifest.DeclaredContentType
 	PluginFrontend         = manifest.Frontend
-	PluginLifecycle        = manifest.Lifecycle
 	PluginManifest         = manifest.Manifest
 	PluginManifestSetting  = manifest.Setting
 	PluginNoteType         = manifest.NoteType
@@ -75,7 +74,6 @@ var (
 	ErrInvalidFrame           = manifest.ErrInvalidFrame
 	ErrInvalidFrontend        = manifest.ErrInvalidFrontend
 	ErrInvalidID              = manifest.ErrInvalidID
-	ErrInvalidLifecycle       = manifest.ErrInvalidLifecycle
 	ErrInvalidNoteType        = manifest.ErrInvalidNoteType
 	ErrInvalidPermission      = manifest.ErrInvalidPermission
 	ErrInvalidHandle          = manifest.ErrInvalidHandle

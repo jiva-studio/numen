@@ -26,7 +26,6 @@ message Manifest {
   repeated string permissions = 9;
   // dependencies are what the host provisions for the plugin: runtimes, models, binaries and datasets.
   repeated ManifestDependency dependencies = 11;
-  ManifestLifecycle lifecycle = 12;
   ManifestBackend backend = 13;
   ManifestFrontend frontend = 14;
   repeated ManifestSetting settings = 15;
@@ -137,14 +136,6 @@ message ManifestDependency {
   string source_url = 4;
   string checksum_sha256 = 5;
   map<string, string> metadata = 6;
-}
-
-message ManifestLifecycle {
-  int32 idle_timeout_seconds = 1;
-  bool keep_alive_while_visible = 2;
-  uint64 memory_limit_bytes = 3;
-  reserved 4;
-  reserved "memory_limit_mb";
 }
 
 message ManifestBackend {

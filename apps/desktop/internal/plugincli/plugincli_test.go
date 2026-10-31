@@ -264,7 +264,6 @@ func TestPluginValidate_ReportsCoreRules(t *testing.T) {
 		{"single segment id", `{"id":"foo","name":"X","version":"1.0.0"}`, "reverse-DNS"},
 		{"newer protocol", `{"id":"md.numen.x","name":"X","version":"1.0.0","protocol":99}`, "protocol"},
 		{"wasm backend", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"type":"wasm","entrypoint":"x.wasm"}}`, "must be \"process\""},
-		{"negative idle", `{"id":"md.numen.x","name":"X","version":"1.0.0","lifecycle":{"idleTimeoutSeconds":-5}}`, "idleTimeoutSeconds"},
 		{"setting without title", `{"id":"md.numen.x","name":"X","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, "title"},
 		{"command without backend", `{"id":"md.numen.x","name":"X","version":"1.0.0","commands":[{"id":"run","title":"Run"}]}`, "no backend to run them"},
 		{"command id in capitals", `{"id":"md.numen.x","name":"X","version":"1.0.0","backend":{"entrypoint":"bin/x"},"commands":[{"id":"Run","title":"Run"}]}`, "lowercase words joined by hyphens"},

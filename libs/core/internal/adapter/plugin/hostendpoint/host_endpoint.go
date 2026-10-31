@@ -69,6 +69,7 @@ type Services interface {
 // plugin.
 type Endpoint struct {
 	callers Callers
+	tasks   taskLeases
 	server  *http.Server
 	port    int
 	// serveResult receives the error that ended the server other than a close, and is closed once the server no longer serves.
@@ -213,4 +214,9 @@ func checkLoopback(address string) error {
 		return fmt.Errorf("%w: %q", errNotLoopback, address)
 	}
 	return nil
+}
+
+// ClearPluginTasks forgets the tasks a plugin reported once its process has ended.
+func (e *Endpoint) ClearPluginTasks(pluginID string) {
+	e.tasks.clear(pluginID)
 }

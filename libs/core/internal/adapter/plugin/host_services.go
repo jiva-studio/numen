@@ -191,6 +191,16 @@ func (h *Host) clearPluginWork(pluginID string) {
 	}
 }
 
+// clearPluginTasks forgets the open tasks of a plugin that stopped.
+func (h *Host) clearPluginTasks(pluginID string) {
+	h.mu.RLock()
+	endpoint := h.hostEndpoint
+	h.mu.RUnlock()
+	if endpoint != nil {
+		endpoint.ClearPluginTasks(pluginID)
+	}
+}
+
 // GetPluginTools is the tools the plugins with the tools capability offer on the full server, which
 // a plugin serves to programs outside Numen.
 func (h *Host) GetPluginTools() hostendpoint.PluginTools {

@@ -233,9 +233,6 @@ func TestProcessLimits(t *testing.T) {
 	if defaults.CPULimitSeconds != 0 {
 		t.Errorf("the default CPU limit is %d seconds, want none", defaults.CPULimitSeconds)
 	}
-	if defaults.MemoryLimitBytes == 0 {
-		t.Error("expected non-zero default memory limit")
-	}
 
 	cmd := exec.CommandContext(t.Context(), "sleep", "5")
 	ConfigureSysProcAttr(cmd)
@@ -249,10 +246,7 @@ func TestProcessLimits(t *testing.T) {
 	}()
 
 	t.Run("apply valid limits", func(t *testing.T) {
-		limits := Limits{
-			CPULimitSeconds:  10,
-			MemoryLimitBytes: 1024 * 1024 * 1024,
-		}
+		limits := Limits{CPULimitSeconds: 10}
 		if err := ApplyLimits(cmd.Process.Pid, limits); err != nil {
 			t.Fatalf("applyProcessLimits failed: %v", err)
 		}
