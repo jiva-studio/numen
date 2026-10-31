@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.search.relevance",
   "name": "Search Relevance",
-  "version": "2026.10.2",
+  "version": "2026.10.3",
   "protocol": 1,
   "description": "Chooses how similar a note has to be to your search before it shows up",
   "targets": ["desktop.editor"],
