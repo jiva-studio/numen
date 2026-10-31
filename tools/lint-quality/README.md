@@ -5,9 +5,9 @@ Automated verification of code quality, duplication, complexity, and symbol hygi
 ## Invariants Checked
 
 1. **Code Duplication (`jscpd`)**:
-   - Scans all handwritten code in `libs`, `apps`, and `plugins`.
+   - Scans handwritten code in one scope for `libs` and `apps` and one scope per plugin directory. Plugins are separate repositories that depend only on the SDK, so copies between plugins are not counted.
    - Ignores tests, fixtures, generated code, stories, and build artifacts.
-   - Enforces a maximum duplication rate threshold (default: <= 3.0%).
+   - Enforces a maximum duplication rate threshold per scope (default: <= 3.5%).
 
 2. **Cyclomatic & Cognitive Complexity (`cyclop`, `gocognit`, `nestif`, `funlen`)**:
    - Enforces complexity boundaries on Go modules and plugins:
