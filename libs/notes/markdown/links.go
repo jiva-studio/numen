@@ -82,12 +82,20 @@ func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 			problems = append(problems, "links: "+to+" has an unknown role "+string(role))
 			continue
 		}
+		marker := domain.LinkMarker(str(fields["marker"]))
+		if !domain.IsWritableMarker(marker) {
+			// The list of markers is closed, so an unknown one has nothing to draw.
+			// It is reported as a problem.
+			problems = append(problems, "links: "+to+" has an unknown marker "+string(marker))
+			continue
+		}
 		out = append(out, domain.Link{
 			Target: domain.ParseAddress(to),
 			Role:   role,
 			Type:   str(fields["type"]),
 			Why:    str(fields["note"]),
 			Label:  str(fields["label"]),
+			Marker: marker,
 		})
 	}
 	return out, problems

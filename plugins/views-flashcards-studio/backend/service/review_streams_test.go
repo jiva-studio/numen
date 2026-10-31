@@ -17,18 +17,12 @@ import (
 
 var errPageGone = errors.New("the page is gone")
 
-// fixedContext returns a function that returns ctx whatever context it is given.
-func fixedContext(ctx context.Context) func(context.Context) context.Context {
-	return func(context.Context) context.Context { return ctx }
-}
-
 // breaking serves a stream whose writes fail where `fails` returns true, and
-// reports what the handler returned. The handler runs under the context that
-// getContext returns.
+// reports what the handler returned. The handler runs under the context its
+// stream method is called with.
 type breaking struct {
-	fails      func(n int, msg any) bool
-	getContext func(parent context.Context) context.Context
-	returned   chan error
+	fails    func(n int, msg any) bool
+	returned chan error
 }
 
 // breakingClient is the client of the review window over streams broken as b
@@ -49,9 +43,9 @@ func newBreakingClient(_ *testing.T, handler *API, b breaking) breakingClient {
 func breakStream[Req, Res any](
 	ctx context.Context, c breakingClient, req *Req, method func(context.Context, *Req, func(*Res) error) error,
 ) (*messageStream[Res], error) {
-	return openStream(context.WithoutCancel(ctx), req, func(streamCtx context.Context, req *Req, send func(*Res) error) error {
+	return openStream(context.WithoutCancel(ctx), req, func(_ context.Context, req *Req, send func(*Res) error) error {
 		count := 0
-		err := method(c.b.getContext(streamCtx), req, func(res *Res) error {
+		err := method(ctx, req, func(res *Res) error {
 			count++
 			if c.b.fails(count, res) {
 				return errPageGone
@@ -96,26 +90,26 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 	cancel()
 
 	for name, one := range map[string]struct {
-		getContext func(parent context.Context) context.Context
+		getContext func() context.Context
 		fails      func(n int, msg any) bool
 		moved      bool
 	}{
-		"opening": {fixedContext(cancelled), func(n int, _ any) bool { return n == 1 }, false},
+		"opening": {func() context.Context { return cancelled }, func(n int, _ any) bool { return n == 1 }, false},
 		// Nothing changed, and the stream repeats the message until the page is
 		// found gone.
-		"repeating": {fixedContext(t.Context()), func(n int, _ any) bool { return n > 1 }, false},
+		"repeating": {t.Context, func(n int, _ any) bool { return n > 1 }, false},
 		// Something changed, and the page is gone by the time it is sent.
-		"reloading": {fixedContext(t.Context()), func(_ int, msg any) bool {
-			reloads, ok := msg.(*api.WatchReloadsResponse)
-			return ok && reloads.Reload
+		"reloading": {t.Context, func(_ int, msg any) bool {
+			reload, ok := msg.(*api.WatchReloadsResponse)
+			return ok && reload.Reload
 		}, true},
 	} {
 		t.Run(name, func(t *testing.T) {
 			handler, _, installation := newAPIOn(t)
 			returned := make(chan error, 1)
-			client := newBreakingClient(t, handler, breaking{fails: one.fails, getContext: one.getContext, returned: returned})
+			client := newBreakingClient(t, handler, breaking{fails: one.fails, returned: returned})
 
-			stream, err := client.WatchReloads(t.Context(), &api.WatchReloadsRequest{})
+			stream, err := client.WatchReloads(one.getContext(), &api.WatchReloadsRequest{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -141,8 +135,8 @@ func TestWatchCardsDue_SaveFailureEndsStream(t *testing.T) {
 		"listing": func(n int, _ any) bool { return n == 1 },
 		// A count has come in.
 		"counting": func(_ int, msg any) bool {
-			counts, ok := msg.(*api.WatchCardsDueResponse)
-			return ok && counts.Counted != nil
+			due, ok := msg.(*api.WatchCardsDueResponse)
+			return ok && due.Counted != nil
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -150,7 +144,7 @@ func TestWatchCardsDue_SaveFailureEndsStream(t *testing.T) {
 			front(t, handler)
 
 			returned := make(chan error, 1)
-			client := newBreakingClient(t, handler, breaking{fails: fails, getContext: fixedContext(t.Context()), returned: returned})
+			client := newBreakingClient(t, handler, breaking{fails: fails, returned: returned})
 			stream, err := client.WatchCardsDue(t.Context(), &api.WatchCardsDueRequest{})
 			if err != nil {
 				t.Fatal(err)
@@ -176,9 +170,8 @@ func TestWatchCardsDue_MissingPageDuringCountEndsStream(t *testing.T) {
 
 	returned := make(chan error, 1)
 	client := newBreakingClient(t, handler, breaking{
-		fails:      func(n int, _ any) bool { return n > 1 },
-		getContext: fixedContext(t.Context()),
-		returned:   returned,
+		fails:    func(n int, _ any) bool { return n > 1 },
+		returned: returned,
 	})
 	stream, err := client.WatchCardsDue(t.Context(), &api.WatchCardsDueRequest{})
 	if err != nil {
@@ -326,9 +319,9 @@ func TestWatchCardsDue_EndsAfterRunningCountsFinish(t *testing.T) {
 	defer cancel()
 	returned := make(chan error, 1)
 	client := newBreakingClient(t, handler, breaking{
-		fails: func(int, any) bool { return false }, getContext: fixedContext(ctx), returned: returned,
+		fails: func(int, any) bool { return false }, returned: returned,
 	})
-	stream, err := client.WatchCardsDue(t.Context(), &api.WatchCardsDueRequest{})
+	stream, err := client.WatchCardsDue(ctx, &api.WatchCardsDueRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}

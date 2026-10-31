@@ -64,11 +64,9 @@ linters:
 
     exhaustruct:
       include:
-        - .*/core/port/(embeddingport\.(EmbeddingModel|Vector)|transcriptionport\.TranscriptionModel)$
+        - .*/core/port/\w+port\.(\w+Model|Vector)$
         - .*/notes/domain\.Address$
         - github\.com/jiva-studio/numen/plugins/.*
       allow-empty-returns: true
       allow-empty-declarations: true
 
-  exclusions:
-    generated: lax

@@ -178,46 +178,6 @@ export function verifyUiExportsNoEditor() {
   failOnFindings("The UI library holds the editor or wikilink helpers", findUiEditor());
 }
 
-/** The tab kinds, note types and commands plugins own. */
-const PLUGIN_KINDS = [
-  "deck",
-  "card-model",
-  "preset",
-  "plex",
-  "agent",
-  "files",
-  "travel",
-  "ocr",
-  "recognise",
-  "proofread",
-  "transcribe",
-  "reads_hooks_and_skills",
-];
-
-/** Files of the window where one of PLUGIN_KINDS names a host service on the plugin context. */
-const CORE_NAME_FILES = ["apps/desktop/editor/src/entities/plugin/model/context.ts"];
-
-/** The window names no tab kind, note type or command of a plugin as a literal. */
-export function verifyWindowNamesNoPluginKind() {
-  const literal = `['"\`](${PLUGIN_KINDS.join("|")})['"\`]`;
-  const grep = spawnSync(
-    "git",
-    [
-      "grep", "-nE", literal, "--",
-      "apps/desktop/editor/src/*.ts", "apps/desktop/editor/src/*.vue",
-      ":!*.test.ts", ":!*.spec.ts", ":!*.stories.ts",
-    ],
-    { cwd: REPO_ROOT, encoding: "utf8" },
-  );
-  const found = (grep.stdout || "")
-    .split("\n")
-    .filter(Boolean)
-    .filter((line) => !CORE_NAME_FILES.some((prefix) => line.split(":")[0].startsWith(prefix)));
-  if (found.length > 0) {
-    throw new Error(`The window names plugin kinds (${found.length}):\n` + found.join("\n"));
-  }
-}
-
 /** An application knows no plugin: it compiles, imports, aliases and reads nothing under `plugins/`. */
 export function verifyAppsReachNoPlugin() {
   const crossings = findCrossings("apps", "plugins", [
@@ -420,13 +380,6 @@ export const FRONTEND_VERIFIERS = [
     module: "apps",
     name: "Applications Talk to Core Through SDK (no direct @numen/protocol in apps/*/src)",
     run: verifyAppsNoDirectProtocol,
-  },
-  {
-    id: "window-names-no-plugin-kind",
-    scope: "apps",
-    module: "desktop",
-    name: "Desktop Window Names No Plugin Kind (deck, card model, preset, plex, agent, files)",
-    run: verifyWindowNamesNoPluginKind,
   },
   {
     id: "desktop-editor-fsd",

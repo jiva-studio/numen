@@ -36,10 +36,4 @@ export default tseslint.config(
     rules: { 'no-unused-vars': unused },
   },
 
-  // The screenshot script drives a browser: the code it passes to the page to
-  // wait for is written here and evaluated there.
-  {
-    files: ['tools/shoot.mjs'],
-    languageOptions: { globals: { ...globals.node, ...globals.browser } },
-  },
 )

@@ -9,9 +9,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 const frontendOnlyManifest = `{
@@ -40,7 +40,7 @@ func newFrontendOnlyHost(t *testing.T) (*Host, *int) {
 		t.Fatalf("Discover: %v", err)
 	}
 	launches := 0
-	host.SetLauncher(func(context.Context, manifestfile.DiscoveredPlugin, int, string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
 		launches++
 		return nil, nil, errors.New("no process is started in this test")
 	})

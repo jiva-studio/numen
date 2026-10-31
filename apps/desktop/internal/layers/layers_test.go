@@ -23,11 +23,19 @@ const apps = "github.com/jiva-studio/numen/apps/"
 
 // isAssembled is what an application takes from the core: the composition root,
 // the adapters it serves something through, and the two languages both are
-// named in. Everything else the core holds is the core's own work.
+// named in, and the contract packages under usecase/, which only re-export port
+// types. Everything else the core holds is the core's own work.
 func isAssembled(pkg string) bool {
 	return pkg == "container" || pkg == "domain" || pkg == "port" ||
 		strings.HasPrefix(pkg, "port/") ||
-		strings.HasPrefix(pkg, "adapter/")
+		strings.HasPrefix(pkg, "adapter/") ||
+		isContract(pkg)
+}
+
+// isContract reports whether pkg is a contract package of a use case, such as
+// usecase/vault/vaultcontract.
+func isContract(pkg string) bool {
+	return strings.HasPrefix(pkg, "usecase/") && strings.HasSuffix(pkg, "contract")
 }
 
 // standing is a file of the applications, under the package it belongs to.

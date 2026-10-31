@@ -151,11 +151,8 @@ func readLink(ctx context.Context, vault host.Vault, path string) (Link, error) 
 		return Link{}, err
 	}
 	note := markdown.Parse(domain.FileStat{Path: path, Kind: "", Size: 0, ModTime: time.Time{}}, raw)
-	value, hasURL := note.Frontmatter[urlKey].(string)
-	if !hasURL {
-		value = ""
-	}
-	if note.Type != NoteType || value == "" {
+	value, isText := note.Frontmatter[urlKey].(string)
+	if note.Type != NoteType || !isText || value == "" {
 		return Link{}, fmt.Errorf("%s: %w", path, ErrNotALink)
 	}
 	parsed, err := address.Parse(value)

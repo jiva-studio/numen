@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { measureRect } from './dom'
 /**
  * A recording and its transcript: the player at the top of the pane, and the transcript text below it.
  *
  * The player is provided through the slot, as is any tab-specific content shown over it.
  */
 import { computed, ref } from 'vue'
-import { Menu, NamedIcon } from '@numen/ui'
+import { Menu, NamedIcon, measureRect } from '@numen/ui'
 import type { MenuItem, Position } from '@numen/ui'
 import MediaActions from './MediaActions.vue'
 import Transcript from './Transcript.vue'

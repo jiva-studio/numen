@@ -3,7 +3,7 @@
  */
 import { shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/plugin-sdk'
-import { runInBackground } from '@numen/ui'
+import { getCurrentDate, runInBackground } from '@numen/ui'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { DestinationDeps } from '@/features/command-palette'
 import { agentPort } from '../plugins/agentPort'
@@ -101,7 +101,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
       ask: (text) => agents.askQuestion(text),
       writeMessage,
       getMessageWriter: (name) => log.getWriter(name),
-      today: () => formatLocalDate(new Date()),
+      today: () => formatLocalDate(getCurrentDate()),
     }),
     notes: createVaultNotes({
       core,

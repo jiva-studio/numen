@@ -20,7 +20,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
@@ -90,7 +89,7 @@ func newEventHost(t *testing.T, manifests map[string]pluginport.PluginManifest, 
 	for id, manifest := range manifests {
 		manifest.ID = id
 		manifest.Backend = pluginport.PluginBackend{Entrypoint: "bin/plugin"}
-		host.plugins[id] = manifestfile.DiscoveredPlugin{Manifest: manifest}
+		host.plugins[id] = pluginport.DiscoveredPlugin{Manifest: manifest}
 	}
 	var mu sync.Mutex
 	var procs []*os.Process
@@ -101,7 +100,7 @@ func newEventHost(t *testing.T, manifests map[string]pluginport.PluginManifest, 
 			plugintest.KillProcess(t, proc)
 		}
 	})
-	host.SetLauncher(func(ctx context.Context, p manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(ctx context.Context, p pluginport.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		cmd := plugintest.NewIdleCommand(context.WithoutCancel(ctx))
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err

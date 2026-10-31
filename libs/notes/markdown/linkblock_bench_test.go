@@ -53,7 +53,7 @@ func BenchmarkLinkBlock(b *testing.B) {
 				if err != nil {
 					b.Fatal(err)
 				}
-				if _, err := doc.RemoveLink(target, ""); err != nil {
+				if _, err := doc.RemoveLink(domain.LinkKey{Target: target}); err != nil {
 					b.Fatal(err)
 				}
 			}

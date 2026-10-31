@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -73,6 +74,15 @@ type Config struct {
 
 	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.
 	PluginHost pluginport.PluginManager
+
+	// PluginCatalog configures the catalog of plugins. A config with no Target is an installation
+	// with no catalog. The sources the container knows, the plugin folders and the plugins that ship
+	// with the application, are added to the Sources named here.
+	PluginCatalog catalog.Config
+
+	// PluginDirs are the folders the catalog reads plugins from. They are the folders the plugin host
+	// discovers in.
+	PluginDirs []string
 
 	// KeyStore is where the keys of plugin secrets are kept. The application names it; without one
 	// every secret fails with port.ErrNoKeyStore.

@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -235,18 +236,24 @@ func (c Config) OpenPluginVault(
 	}
 	refresh := makeRefresh(c, db, db.Notes())
 	queries := db.Queries()
+	index := func(ctx context.Context, v domain.Vault, paths []string) error {
+		_, err := refresh.Execute(ctx, v, paths)
+		return err
+	}
+	scenarios := c.Notes(queries, db.Links(), db.Sources(), db.SourcesKnown(), index)
 	vaults := hostvault.Vault{
-		Current:  current,
-		Readers:  c.VaultReaders(),
-		Writers:  c.VaultWriters(),
-		Notes:    queries,
-		Links:    db.Links(),
-		Problems: db.Problems(),
-		Stores:   derivedfile.PluginStores{Options: c.vaultOptions()},
-		Cache:    cache,
-		Watcher:  c.VaultWatcher(),
-		Written:  hooks.Written,
-		Vaults:   registry.List,
+		Current:     current,
+		Readers:     c.VaultReaders(),
+		Writers:     c.VaultWriters(),
+		Notes:       queries,
+		Links:       db.Links(),
+		Connections: note.NewConnections(scenarios),
+		Problems:    db.Problems(),
+		Stores:      derivedfile.PluginStores{Options: c.vaultOptions()},
+		Cache:       cache,
+		Watcher:     c.VaultWatcher(),
+		Written:     hooks.Written,
+		Vaults:      registry.List,
 		Find: func(id domain.VaultID) (domain.Vault, error) {
 			found, isFound, err := registry.FindVault(string(id))
 			if err != nil {
@@ -259,10 +266,7 @@ func (c Config) OpenPluginVault(
 		},
 		IndexState: hooks.IndexState,
 		Moved:      hooks.Moved,
-		Index: func(ctx context.Context, v domain.Vault, paths []string) error {
-			_, err := refresh.Execute(ctx, v, paths)
-			return err
-		},
+		Index:      index,
 	}
 	if vaults.IndexState == nil {
 		vaults.IndexState = func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error) {

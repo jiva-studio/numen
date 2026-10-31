@@ -56,6 +56,10 @@ type Services struct {
 	// Plugin answers questions about the plugins installed in the application.
 	Plugin numenv1connect.PluginServiceHandler
 
+	// Catalog answers which plugins the application has, which it could have, and which provides a
+	// kind of tab. A build put together without a catalog serves no CatalogService.
+	Catalog numenv1connect.CatalogServiceHandler
+
 	// openChoosePath makes the use case that puts the picker for a plugin's path setting in front of the
 	// person. Nil is a build that serves none.
 	openChoosePath func(dialog machineport.PathDialog) *setting.ChoosePluginPath
@@ -129,6 +133,14 @@ type noteHandler struct {
 	rename            *note.Rename
 	showNeighbourhood *note.ShowNeighbourhood
 	getLinkAddress    *note.GetLinkAddress
+
+	getConnection    *note.GetConnection
+	saveConnection   *note.SaveConnection
+	removeSide       *note.RemoveSide
+	removeConnection *note.RemoveConnection
+	join             *note.Join
+	createInRelation *note.CreateInRelation
+	getBacklinks     *note.GetBacklinks
 }
 
 // SetFolderDialog sets the native file and folder dialog used when a client

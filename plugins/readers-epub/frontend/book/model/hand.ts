@@ -3,7 +3,7 @@
  * and so does a press near either edge. A text selection is a reading action,
  * and releasing it turns nothing.
  */
-import { win } from '../../dom'
+import { win } from '@numen/ui'
 import type { ShallowRef } from 'vue'
 
 import type { PageNavigationAction } from '@numen/ui'

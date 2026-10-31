@@ -3,11 +3,8 @@
  * Placeholder displayed when a tab's kind belongs to a disabled or missing plugin.
  */
 import { computed } from 'vue'
-import {
-  formatUnavailableFeature,
-  getUnavailablePluginFilter,
-  type UnavailableState,
-} from './unavailable'
+import { formatUnavailableFeature, getUnavailablePluginFilter } from './unavailableText'
+import type { UnavailableState } from './unavailable'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{

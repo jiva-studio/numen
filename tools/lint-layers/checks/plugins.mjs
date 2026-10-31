@@ -21,36 +21,6 @@ import {
   readSource,
 } from "./helpers.mjs";
 
-/**
- * Every TypeScript or Vue import of a plugin that names another plugin: a relative path that
- * resolves into the other plugin's directory, or the other plugin's package name.
- */
-function findCrossPluginImports(pluginNames) {
-  const pluginsDir = path.join(MODULES_DIR, "plugins");
-  const packages = new Map();
-  for (const plugin of pluginNames) {
-    const manifest = path.join(pluginsDir, plugin, "package.json");
-    if (fs.existsSync(manifest)) packages.set(plugin, JSON.parse(fs.readFileSync(manifest, "utf8")).name);
-  }
-  const found = [];
-  for (const plugin of pluginNames) {
-    const listed = spawnSync("git", ["ls-files", "--", `plugins/${plugin}/*.ts`, `plugins/${plugin}/*.vue`], {
-      cwd: REPO_ROOT,
-      encoding: "utf8",
-    });
-    for (const file of (listed.stdout || "").split("\n").filter(Boolean)) {
-      const text = fs.readFileSync(path.join(REPO_ROOT, file), "utf8");
-      for (const specifier of getImportSpecifiers(text)) {
-        const other = specifier.startsWith(".")
-          ? path.relative(pluginsDir, path.resolve(REPO_ROOT, path.dirname(file), specifier)).split(path.sep)[0]
-          : [...packages].find(([, name]) => specifier === name || specifier.startsWith(name + "/"))?.[0];
-        if (other && other !== plugin && pluginNames.includes(other)) found.push(`${file}: ${specifier}`);
-      }
-    }
-  }
-  return found;
-}
-
 export function verifyPluginsStatic() {
   const pluginsDir = path.join(MODULES_DIR, "plugins");
   const entries = fs.readdirSync(pluginsDir, { withFileTypes: true });
@@ -78,22 +48,6 @@ export function verifyPluginsStatic() {
   const nonCommentLeaks = lines.filter((l) => !l.includes(".golangci.yml") && !l.includes("README"));
   if (nonCommentLeaks.length > 0) {
     throw new Error("Plugin imports core package:\n" + nonCommentLeaks.join("\n"));
-  }
-
-  for (const plugin of pluginNames) {
-    for (const other of pluginNames) {
-      if (plugin === other) continue;
-      const crossLeak = spawnSync("git", ["grep", "-rn", "github.com/jiva-studio/numen/plugins/" + other, "plugins/" + plugin], { cwd: REPO_ROOT });
-      const leaks = (crossLeak.stdout ? crossLeak.stdout.toString() : "").trim();
-      if (leaks) {
-        throw new Error("Cross-plugin import detected: " + plugin + " imports " + other + "\n" + leaks);
-      }
-    }
-  }
-
-  const frontendLeaks = findCrossPluginImports(pluginNames);
-  if (frontendLeaks.length > 0) {
-    throw new Error("Cross-plugin import detected:\n" + frontendLeaks.join("\n"));
   }
 }
 

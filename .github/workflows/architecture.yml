@@ -68,5 +68,9 @@ jobs:
         run: |
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.14.0
 
+      - name: Test the checks against violation fixtures
+        if: matrix.scope == 'libs'
+        run: npm test --prefix tools/lint-layers
+
       - name: Validate architectural layer boundaries (${{ matrix.scope }})
         run: make check_layers target=${{ matrix.scope }}

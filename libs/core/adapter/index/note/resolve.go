@@ -37,12 +37,13 @@ func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from str
 	var out []domain.ResolvedLink
 	for rows.Next() {
 		var r domain.ResolvedLink
-		var role string
+		var role, marker string
 		if err := rows.Scan(&r.Target.Scheme, &r.Target.Value, &role,
-			&r.Type, &r.Why, &r.Label); err != nil {
+			&r.Type, &r.Why, &r.Label, &marker); err != nil {
 			return nil, err
 		}
 		r.Role = domain.LinkRole(role)
+		r.Marker = domain.LinkMarker(marker)
 		out = append(out, r)
 	}
 	if err := rows.Err(); err != nil {
@@ -215,13 +216,14 @@ func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to s
 	var candidates []domain.ResolvedLink
 	for rows.Next() {
 		var r domain.ResolvedLink
-		var role string
+		var role, marker string
 		var position int
 		if err := rows.Scan(&r.From, &r.Target.Scheme, &r.Target.Value, &role,
-			&r.Type, &r.Why, &r.Label, &position); err != nil {
+			&r.Type, &r.Why, &r.Label, &marker, &position); err != nil {
 			return nil, err
 		}
 		r.Role = domain.LinkRole(role)
+		r.Marker = domain.LinkMarker(marker)
 		candidates = append(candidates, r)
 	}
 	if err := rows.Err(); err != nil {

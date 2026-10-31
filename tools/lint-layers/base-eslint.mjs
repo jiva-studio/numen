@@ -765,6 +765,10 @@ export function createBaseConfig(dirname, options = {}) {
               '@typescript-eslint/no-floating-promises': 'error',
               '@typescript-eslint/no-misused-promises': 'error',
               '@typescript-eslint/await-thenable': 'error',
+              '@typescript-eslint/switch-exhaustiveness-check': [
+                'error',
+                { considerDefaultExhaustiveForUnions: true },
+              ],
             }
           : {}),
         '@typescript-eslint/no-unused-vars': [
@@ -874,11 +878,6 @@ export function createBaseConfig(dirname, options = {}) {
         '**/*.stories.ts',
         '.storybook/**',
         '**/testing/**',
-        '**/clock.ts',
-        '**/drop.ts',
-        '**/dom.ts',
-        'src/entities/note/model/notes.ts',
-        'src/app/window/useWindowKinds.ts',
         ...(options.portIgnores || []),
       ],
       rules: {
@@ -982,13 +981,6 @@ export function createBaseConfig(dirname, options = {}) {
           { name: 'document', message: '.vue components must not access document directly — use template refs or a composable' },
           { name: 'navigator', message: '.vue components must not access navigator directly — delegate to a composable or port' },
         ],
-      },
-    },
-
-    {
-      files: ['**/safe.ts', '**/safe.stories.ts'],
-      rules: {
-        'no-control-regex': 'off',
       },
     },
 

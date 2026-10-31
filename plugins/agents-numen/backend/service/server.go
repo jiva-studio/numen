@@ -129,7 +129,7 @@ func (s *Server) Ask(ctx context.Context, task *agentrun.AskAgentRequest, send f
 	defer cancel()
 
 	conversation := task.GetConversation()
-	work := agentrun.NewWork(conversation, 0, cancel)
+	work := agentrun.NewWork(conversation, 0, agentrun.StopByCancel(cancel))
 	if !s.registry.Add(work) {
 		return connect.NewError(connect.CodeUnavailable, errClosing)
 	}

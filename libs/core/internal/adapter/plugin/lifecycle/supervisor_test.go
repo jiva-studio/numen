@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
@@ -147,22 +147,22 @@ func TestSupervisorTeardownForceKill(t *testing.T) {
 
 func TestSupervisorPermissionNormalization(t *testing.T) {
 	sup := New(testsupport.NewClock())
-	sup.SetPermissions([]string{manifestfile.PermissionVaultRead, "network"})
+	sup.SetPermissions([]string{manifest.PermissionVaultRead, "network"})
 
-	if !sup.HasPermission(manifestfile.PermissionVaultRead) {
-		t.Errorf("expected permission %s to be present", manifestfile.PermissionVaultRead)
+	if !sup.HasPermission(manifest.PermissionVaultRead) {
+		t.Errorf("expected permission %s to be present", manifest.PermissionVaultRead)
 	}
-	if !sup.HasPermission(manifestfile.PermissionNetworkOutbound) {
-		t.Errorf("expected permission %s to be normalized and present", manifestfile.PermissionNetworkOutbound)
+	if !sup.HasPermission(manifest.PermissionNetworkOutbound) {
+		t.Errorf("expected permission %s to be normalized and present", manifest.PermissionNetworkOutbound)
 	}
 	if !sup.HasPermission("network") {
 		t.Errorf("expected alias network to return true")
 	}
-	if err := sup.CheckPermission(manifestfile.PermissionNetworkOutbound); err != nil {
-		t.Errorf("expected CheckPermission for %s to pass: %v", manifestfile.PermissionNetworkOutbound, err)
+	if err := sup.CheckPermission(manifest.PermissionNetworkOutbound); err != nil {
+		t.Errorf("expected CheckPermission for %s to pass: %v", manifest.PermissionNetworkOutbound, err)
 	}
-	if sup.HasPermission(manifestfile.PermissionVaultWrite) {
-		t.Errorf("expected undeclared permission %s to be false", manifestfile.PermissionVaultWrite)
+	if sup.HasPermission(manifest.PermissionVaultWrite) {
+		t.Errorf("expected undeclared permission %s to be false", manifest.PermissionVaultWrite)
 	}
 }
 

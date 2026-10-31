@@ -160,10 +160,8 @@ type Server struct {
 	onEvent           EventHandler
 
 	closeOnce sync.Once
-	closers   []func()
-
-	mountMu     sync.Mutex
-	mountErrors []error
+	closers   []func() error
+	closeErr  error
 
 	lifecycle   *LifecycleServer
 	interceptor *AuthInterceptor
@@ -188,12 +186,7 @@ func NewLinkedHandler(vars map[string]string, mount func(*Server) error) (http.H
 	}
 	s := newServer(0, token, nil, true)
 	if err := mount(s); err != nil {
-		s.Close()
-		return nil, err
-	}
-	if err := s.getMountError(); err != nil {
-		s.Close()
-		return nil, err
+		return nil, errors.Join(err, s.Close())
 	}
 	return s.mux, nil
 }
@@ -253,32 +246,19 @@ func newServer(port int, token string, opts []Option, linked bool) *Server {
 
 // OnClose adds what Close runs. A server that serves on a port runs it when Serve returns; a linked
 // server runs it when the host shuts the plugin down.
-func (s *Server) OnClose(fn func()) {
+func (s *Server) OnClose(fn func() error) {
 	s.closers = append(s.closers, fn)
 }
 
-// Close runs what OnClose added, once, last added first.
-func (s *Server) Close() {
+// Close runs what OnClose added, once, last added first. It returns the joined errors of the
+// functions; a later call returns the same result without running them again.
+func (s *Server) Close() error {
 	s.closeOnce.Do(func() {
 		for _, fn := range slices.Backward(s.closers) {
-			fn()
+			s.closeErr = errors.Join(s.closeErr, fn())
 		}
 	})
-}
-
-// addMountError records an error of mounting a service. Serve and NewLinkedHandler return the
-// recorded errors.
-func (s *Server) addMountError(err error) {
-	s.mountMu.Lock()
-	defer s.mountMu.Unlock()
-	s.mountErrors = append(s.mountErrors, err)
-}
-
-// getMountError returns the errors recorded by mounting, joined, or nil when there are none.
-func (s *Server) getMountError() error {
-	s.mountMu.Lock()
-	defer s.mountMu.Unlock()
-	return errors.Join(s.mountErrors...)
+	return s.closeErr
 }
 
 // Register mounts a service handler on the server multiplexer.
@@ -363,11 +343,10 @@ func (s *Server) Serve() error {
 
 // ServeContext runs the HTTP/2 server until context cancellation or shutdown is triggered.
 func (s *Server) ServeContext(ctx context.Context) (err error) {
-	defer s.Close()
+	defer func() {
+		err = errors.Join(err, s.Close())
+	}()
 
-	if err := s.getMountError(); err != nil {
-		return err
-	}
 	if err := s.authenticate(); err != nil {
 		return err
 	}

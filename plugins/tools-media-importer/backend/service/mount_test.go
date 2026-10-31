@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -27,7 +28,7 @@ func TestTheLinkedHandlerAnswersTheImporterAPI(t *testing.T) {
 	defer web.Close()
 	url := web.URL + "/" + api.Service + "/" + api.MethodGetLink
 
-	post := func(token string) (int, server.APIError) {
+	post := func(token string) (int, []byte) {
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, url, strings.NewReader(`{"path":"notes/plain.txt"}`))
 		if err != nil {
 			t.Fatal(err)
@@ -39,21 +40,26 @@ func TestTheLinkedHandlerAnswersTheImporterAPI(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		var failure server.APIError
-		decodeErr := json.NewDecoder(res.Body).Decode(&failure)
-		if closeErr := res.Body.Close(); closeErr != nil {
-			t.Error(closeErr)
+		defer func() {
+			if closeErr := res.Body.Close(); closeErr != nil {
+				t.Error(closeErr)
+			}
+		}()
+		data, err := io.ReadAll(res.Body)
+		if err != nil {
+			t.Fatal(err)
 		}
-		if res.StatusCode == http.StatusNotFound && decodeErr != nil {
-			t.Fatal(decodeErr)
-		}
-		return res.StatusCode, failure
+		return res.StatusCode, data
 	}
 
 	if status, _ := post(""); status != http.StatusUnauthorized {
 		t.Fatalf("GetLink without the token = %d, want 401", status)
 	}
-	status, failure := post("linked-token")
+	status, data := post("linked-token")
+	var failure server.APIError
+	if err := json.Unmarshal(data, &failure); err != nil {
+		t.Fatal(err)
+	}
 	if status != http.StatusNotFound || failure.Code != server.CodeNotFound {
 		t.Errorf("a file that is no note is answered %d %+v, want 404 not_found", status, failure)
 	}

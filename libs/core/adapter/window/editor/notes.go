@@ -166,14 +166,13 @@ func (h *noteHandler) RemoveLink(
 	}
 	defer h.state.Writing.finish()
 
-	role, _ := convertRoleFromWire(r.Msg.GetRole())
+	role, _ := wire.ConvertRoleFromWire(r.Msg.GetRole())
 	to, err := h.getAddress(ctx, r.Msg.GetTo())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	if _, err := h.editLinks.Remove(
-		ctx, showing, r.Msg.GetPath(), to, role, domain.FileStat{},
-	); err != nil {
+	key := domain.LinkKey{Target: to, Role: role, Type: r.Msg.GetType()}
+	if _, err := h.editLinks.Remove(ctx, showing, r.Msg.GetPath(), key, domain.FileStat{}); err != nil {
 		reason, ok := wire.GetErrorCode(err)
 		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
@@ -193,12 +192,20 @@ func (h *noteHandler) ReplaceLinks(
 	}
 	links := make([]note.PairLink, 0, len(r.Msg.GetLinks()))
 	for _, l := range r.Msg.GetLinks() {
-		role, ok := convertRoleFromWire(l.GetRole())
+		role, ok := wire.ConvertRoleFromWire(l.GetRole())
 		if !ok {
 			err := fmt.Errorf("no link carries the role %v", l.GetRole())
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
-		links = append(links, note.PairLink{From: l.GetFrom(), To: l.GetTo(), Role: role, Label: l.GetLabel()})
+		marker, ok := wire.ConvertMarkerFromWire(l.GetMarker())
+		if !ok {
+			err := fmt.Errorf("no link carries the marker %v", l.GetMarker())
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
+		links = append(links, note.PairLink{
+			From: l.GetFrom(), To: l.GetTo(), Role: role, Type: l.GetType(), Why: l.GetNote(),
+			Label: l.GetLabel(), Marker: marker,
+		})
 	}
 	if !h.state.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
@@ -269,13 +276,15 @@ func (h *noteHandler) GetNeighbourhood(
 	}
 	for _, related := range found.Related {
 		out.Related = append(out.Related, &v1.Neighbour{
-			Note:         convertNoteToWire(related.NoteRef),
-			Relation:     convertRelationToWire(related.Relation),
-			Label:        related.Label,
-			ReverseLabel: related.ReverseLabel,
-			Through:      related.Parent,
-			IsMutual:     related.IsMutual,
-			Type:         convertNoteTypeToWire(types[related.Path]),
+			Note:          convertNoteToWire(related.NoteRef),
+			Relation:      convertRelationToWire(related.Relation),
+			Label:         related.Label,
+			ReverseLabel:  related.ReverseLabel,
+			Marker:        wire.ConvertMarkerToWire(related.Marker),
+			ReverseMarker: wire.ConvertMarkerToWire(related.ReverseMarker),
+			Through:       related.Parent,
+			IsMutual:      related.IsMutual,
+			Type:          convertNoteTypeToWire(types[related.Path]),
 		})
 	}
 	return connect.NewResponse(out), nil
@@ -323,42 +332,29 @@ func (h *noteHandler) getLinks(ctx context.Context, links []*v1.Link) ([]domain.
 // How much of that path the link carries is `note.GetAddress`: a name where it
 // means one note, and the path where it would mean another.
 func (h *noteHandler) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error) {
-	role, ok := convertRoleFromWire(l.GetRole())
+	role, ok := wire.ConvertRoleFromWire(l.GetRole())
 	if !ok {
 		return domain.Link{}, fmt.Errorf("no link carries the role %v", l.GetRole())
 	}
 	if l.GetTo() == "" {
 		return domain.Link{}, errors.New("a link needs a note to go to")
 	}
+	marker, ok := wire.ConvertMarkerFromWire(l.GetMarker())
+	if !ok {
+		return domain.Link{}, fmt.Errorf("no link carries the marker %v", l.GetMarker())
+	}
 	target, err := h.getAddress(ctx, l.GetTo())
 	if err != nil {
 		return domain.Link{}, err
 	}
-	return domain.Link{Target: target, Role: role, Label: l.GetLabel()}, nil
+	return domain.Link{
+		Target: target, Role: role, Type: l.GetType(), Why: l.GetNote(), Label: l.GetLabel(), Marker: marker,
+	}, nil
 }
 
 // getAddress is the note at the other end as a link carries it.
 func (h *noteHandler) getAddress(ctx context.Context, to string) (domain.Address, error) {
 	return h.getLinkAddress.Execute(ctx, h.state.GetCurrentVault(), to)
-}
-
-// convertRoleFromWire is the role a link carries, in the core's words. A link is written
-// only with a role the schema names.
-func convertRoleFromWire(role v1.Role) (domain.LinkRole, bool) {
-	switch role {
-	case v1.Role_ROLE_PARENT:
-		return domain.RoleParent, true
-	case v1.Role_ROLE_CHILD:
-		return domain.RoleChild, true
-	case v1.Role_ROLE_JUMP:
-		return domain.RoleJump, true
-	case v1.Role_ROLE_REF:
-		return domain.RoleRef, true
-	case v1.Role_ROLE_ATTACHMENT:
-		return domain.RoleAttachment, true
-	default:
-		return "", false
-	}
 }
 
 func convertNoteToWire(n domain.NoteRef) *v1.Note {

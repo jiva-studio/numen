@@ -5,7 +5,7 @@
  * The strip is as wide as all three panels, scrolled to the visible one, and
  * it settles on the nearest of the three when a pointer is released.
  */
-import { win } from '../../../../dom'
+import { win } from '@numen/ui'
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { Ref, ShallowRef } from 'vue'
 

@@ -158,15 +158,20 @@ func TestStream_EndsWithAnErrorEvent(t *testing.T) {
 	}
 }
 
-func TestNewAPI_ReportsAnInvalidNameWhenServing(t *testing.T) {
-	_, err := NewLinkedHandler(map[string]string{tokenVar: "api-token"}, func(s *Server) error {
-		Handle(s.NewAPI("a/b"), "Echo", func(context.Context, echoRequest) (echoResponse, error) {
-			return echoResponse{}, nil
-		})
-		return nil
+func TestNewAPI_ReportsAnInvalidName(t *testing.T) {
+	api := New().NewAPI("a/b")
+	if api.Err() == nil {
+		t.Error("a service name with a slash was accepted")
+	}
+}
+
+func TestHandle_ReportsAnInvalidMethodName(t *testing.T) {
+	api := New().NewAPI("org.example.echo")
+	Handle(api, "a/b", func(_ context.Context, _ echoRequest) (echoResponse, error) {
+		return echoResponse{}, nil
 	})
-	if err == nil || !strings.Contains(err.Error(), "invalid API service name") {
-		t.Fatalf("a service name with a slash gave %v", err)
+	if api.Err() == nil {
+		t.Error("a method name with a slash was accepted")
 	}
 }
 

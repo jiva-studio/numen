@@ -28,7 +28,10 @@ func setupAntigravityHome(tools *Endpoint) (string, func(), error) {
 		cleanup()
 		return "", func() {}, err
 	}
-	agentrun.LinkEntries(realHome, tempHome, ".gemini")
+	if err := agentrun.LinkEntries(realHome, tempHome, ".gemini"); err != nil {
+		cleanup()
+		return "", func() {}, err
+	}
 
 	realGemini := filepath.Join(realHome, ".gemini")
 	tempGemini := filepath.Join(tempHome, ".gemini")
@@ -38,8 +41,14 @@ func setupAntigravityHome(tools *Endpoint) (string, func(), error) {
 		cleanup()
 		return "", func() {}, fmt.Errorf("create %s: %w", tempConfig, err)
 	}
-	agentrun.LinkEntries(realGemini, tempGemini, "config")
-	agentrun.LinkEntries(realConfig, tempConfig, "mcp_config.json")
+	if err := agentrun.LinkEntries(realGemini, tempGemini, "config"); err != nil {
+		cleanup()
+		return "", func() {}, err
+	}
+	if err := agentrun.LinkEntries(realConfig, tempConfig, "mcp_config.json"); err != nil {
+		cleanup()
+		return "", func() {}, err
+	}
 
 	mcpConfig := map[string]any{"mcpServers": map[string]any{}}
 	if tools != nil {

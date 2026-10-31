@@ -3,7 +3,7 @@
  */
 
 export function getNow(): number {
-  return Date.now()
+  return globalThis.performance.timeOrigin + globalThis.performance.now()
 }
 
 export function isDocumentHidden(): boolean {

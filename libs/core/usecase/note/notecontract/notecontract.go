@@ -4,7 +4,8 @@ package notecontract
 import "github.com/jiva-studio/numen/libs/core/port/noteport"
 
 type (
-	LinkQueries    = noteport.LinkQueries
-	NoteQueries    = noteport.NoteQueries
-	NoteRepository = noteport.NoteRepository
+	ConnectionOperations = noteport.ConnectionOperations
+	LinkQueries          = noteport.LinkQueries
+	NoteQueries          = noteport.NoteQueries
+	NoteRepository       = noteport.NoteRepository
 )

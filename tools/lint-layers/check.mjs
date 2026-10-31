@@ -17,7 +17,7 @@
  *   apps      - Application FSD layer hierarchies (desktop editor, flashcards)
  *
  * Modules:
- *   core, notes, protocol, kinds, ui, shell, host, wire, sdk, docs, plugins, boundary, desktop, editor, flashcards
+ *   core, libraries, notes, protocol, kinds, ui, shell, host, wire, sdk, docs, plugins, boundary, desktop, editor, flashcards
  */
 import { spawnSync } from "node:child_process";
 import process from "node:process";
@@ -25,13 +25,21 @@ import { CORE_VERIFIERS } from "./checks/core.mjs";
 import { DOCS_VERIFIERS } from "./checks/docs.mjs";
 import { FRONTEND_VERIFIERS } from "./checks/frontend.mjs";
 import { REPO_ROOT } from "./checks/helpers.mjs";
+import { DISCIPLINE_VERIFIERS } from "./checks/discipline.mjs";
+import { LIBRARY_VERIFIERS } from "./checks/libraries.mjs";
 import { PLUGIN_VERIFIERS } from "./checks/plugins.mjs";
+import { assertGolangciLintBuild } from "./checks/tools.mjs";
+import { VOCABULARY_VERIFIERS } from "./checks/vocabulary.mjs";
 
 const VERIFIERS = [
   ...CORE_VERIFIERS,
+  ...LIBRARY_VERIFIERS,
   ...DOCS_VERIFIERS,
   ...FRONTEND_VERIFIERS.filter((v) => v.scope === "libs"),
+  ...VOCABULARY_VERIFIERS,
+  ...DISCIPLINE_VERIFIERS.filter((v) => v.scope === "libs"),
   ...PLUGIN_VERIFIERS,
+  ...DISCIPLINE_VERIFIERS.filter((v) => v.scope === "plugins"),
   ...FRONTEND_VERIFIERS.filter((v) => v.scope === "apps"),
 ];
 
@@ -62,7 +70,7 @@ if (flags.has("--help") || flags.has("-h")) {
 if (flags.has("--list")) {
   console.log("Registered architectural verifiers:");
   for (const v of VERIFIERS) {
-    console.log("  [" + v.scope.padEnd(7) + " / " + v.module.padEnd(8) + "] " + v.id + ": " + v.name);
+    console.log("  [" + v.scope.padEnd(7) + " / " + v.module.padEnd(8) + "] " + v.id + ": " + v.name + (v.isManual ? " (manual)" : ""));
   }
   process.exit(0);
 }
@@ -102,6 +110,7 @@ function getChangedModules() {
   for (const file of files) {
     if (file.startsWith("libs/core/")) matched.add("core");
     if (file.startsWith("libs/notes/")) matched.add("notes");
+    if (file.startsWith("libs/")) matched.add("libraries");
     if (file.startsWith("libs/protocol/") || file.startsWith("tools/lint-layers/")) matched.add("protocol");
     if (/^(libs\/(core|notes|plugin-sdk-go|plugin-sdk-ts|ui)|apps\/desktop\/editor|tools\/lint-layers)\//.test(file)) matched.add("kinds");
     if (file.startsWith("tools/lint-layers/")) ["ui", "plugins"].forEach((one) => matched.add(one));
@@ -117,23 +126,26 @@ function getChangedModules() {
   return Array.from(matched);
 }
 
+/** The verifiers a scope, a module or the full run selects; a manual verifier runs only when named by its id. */
+const AUTOMATIC_VERIFIERS = VERIFIERS.filter((v) => !v.isManual);
+
 function resolveSelectedVerifiers(targets) {
   if (targets.includes("--changed-only")) {
     const changedModules = getChangedModules();
     if (changedModules.length === 0) {
       return [];
     }
-    return VERIFIERS.filter((v) => changedModules.includes(v.module));
+    return AUTOMATIC_VERIFIERS.filter((v) => changedModules.includes(v.module));
   }
   if (targets.length === 0 || targets.includes("all")) {
-    return VERIFIERS;
+    return AUTOMATIC_VERIFIERS;
   }
   const selected = new Set();
   for (const target of targets) {
     if (SCOPES.includes(target)) {
-      VERIFIERS.filter((v) => v.scope === target).forEach((v) => selected.add(v));
+      AUTOMATIC_VERIFIERS.filter((v) => v.scope === target).forEach((v) => selected.add(v));
     } else if (MODULE_NAMES.includes(target)) {
-      VERIFIERS.filter((v) => v.module === target).forEach((v) => selected.add(v));
+      AUTOMATIC_VERIFIERS.filter((v) => v.module === target).forEach((v) => selected.add(v));
     } else {
       const byId = VERIFIERS.find((v) => v.id === target);
       if (byId) {
@@ -159,6 +171,15 @@ if (activeVerifiers.length === 0) {
 console.log("\x1b[1mNumen Architectural Layer & Boundary Validator\x1b[0m");
 console.log("Selected targets: " + (args.length === 0 ? "all" : args.join(", ")));
 console.log("Verifiers count:  " + activeVerifiers.length + "\n");
+
+if (activeVerifiers.some((v) => v.tools?.includes("golangci-lint"))) {
+  try {
+    assertGolangciLintBuild();
+  } catch (err) {
+    console.error("\x1b[31mTool version check failed:\x1b[0m " + err.message);
+    process.exit(1);
+  }
+}
 
 let exitCode = 0;
 const results = [];

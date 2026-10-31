@@ -5,7 +5,7 @@
 -- that is decided by the same resolution every other link goes through, not
 -- here.
 SELECT s.path, l.scheme, l.target, l.role,
-       COALESCE(l.type, ''), COALESCE(l.why, ''), COALESCE(l.label, '')
+       COALESCE(l.type, ''), COALESCE(l.why, ''), COALESCE(l.label, ''), COALESCE(l.marker, '')
 FROM links l
 JOIN sources s ON s.id = l.note_id
 WHERE s.vault_id = ?

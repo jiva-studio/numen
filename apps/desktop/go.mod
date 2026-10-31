@@ -50,8 +50,11 @@ replace github.com/jiva-studio/numen/libs/protocol => ../../libs/protocol
 require (
 	github.com/jiva-studio/numen/libs/core v0.0.0
 	github.com/jiva-studio/numen/libs/notes v0.0.0
+	github.com/jiva-studio/numen/libs/plugin-catalog v0.0.0
 	github.com/zalando/go-keyring v0.2.8
 )
+
+replace github.com/jiva-studio/numen/libs/plugin-catalog => ../../libs/plugin-catalog
 
 replace github.com/jiva-studio/numen/libs/core => ../../libs/core
 

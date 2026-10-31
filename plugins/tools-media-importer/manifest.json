@@ -5,6 +5,11 @@
   "protocol": 1,
   "description": "Saves web articles and downloads online videos for offline playback",
   "targets": ["desktop.editor"],
+  "contributes": {
+    "tabKinds": [{ "kind": "link", "title": "Link", "icon": "link" }],
+    "feature": "media links",
+    "category": "tools"
+  },
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "noteTypes": [

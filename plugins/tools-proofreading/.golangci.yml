@@ -42,6 +42,7 @@ linters:
             - "**/domain/**"
             - "**/domain.go"
             - "!$test"
+            - "!$test"
           allow:
             - "net/url"
             - "net/netip"
@@ -82,6 +83,7 @@ linters:
           files:
             - "**/usecase/**"
             - "!$test"
+            - "!$test"
           deny:
             - pkg: "github.com/jiva-studio/numen/libs/core/adapter"
               desc: "a use case does not reach concrete adapters"
@@ -100,6 +102,7 @@ linters:
           list-mode: lax
           files:
             - "**/port/**"
+            - "!$test"
             - "!$test"
           deny:
             - pkg: "encoding/json"
@@ -120,12 +123,14 @@ linters:
             - "**/adapter/settings/**"
             - "**/internal/adapter/appstate/**"
             - "**/internal/adapter/clock/**"
+            - "**/internal/adapter/clock/**"
             - "**/internal/adapter/filesystem/**"
             - "**/internal/adapter/models/**"
             - "**/internal/adapter/onnxruntime/**"
             - "**/internal/adapter/provision/**"
             - "**/internal/adapter/sharedmimeinfo/**"
             - "**/internal/adapter/trash/**"
+            - "!$test"
             - "!$test"
           deny:
             - pkg: "github.com/jiva-studio/numen/libs/core/usecase"
@@ -158,6 +163,8 @@ linters:
             - pkg: "github.com/jiva-studio/numen/libs/core/adapter"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/appstate"
+              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
@@ -364,6 +371,35 @@ linters:
             - pkg: "github.com/jiva-studio/numen/apps"
               desc: "plugin SDK must not import host applications"
 
+        # A plugin reaches the host through the plugin SDK. The rule covers every
+        # file outside libs/ and apps/, which includes a plugin checked out alone.
+        plugin-isolation:
+          list-mode: lax
+          files:
+            - "$all"
+            - "!**/libs/**"
+            - "!**/apps/**"
+          deny:
+            - pkg: "github.com/jiva-studio/numen/libs/core"
+              desc: "a plugin names the plugin SDK and no core package"
+            - pkg: "github.com/jiva-studio/numen/libs/notes"
+              desc: "a plugin reaches notes through the plugin SDK"
+            - pkg: "github.com/jiva-studio/numen/libs/protocol"
+              desc: "a plugin communicates through the plugin SDK and imports no raw protocol"
+            - pkg: "github.com/jiva-studio/numen/apps"
+              desc: "a plugin reaches no application"
+
+        # The plugin SDK and its feature modules import no core package and no application.
+        sdk-isolation:
+          list-mode: lax
+          files:
+            - "**/libs/plugin-sdk-go/**"
+          deny:
+            - pkg: "github.com/jiva-studio/numen/libs/core"
+              desc: "plugin SDK must not import core packages"
+            - pkg: "github.com/jiva-studio/numen/apps"
+              desc: "plugin SDK must not import host applications"
+
     errcheck:
       check-type-assertions: true
       check-blank: true
@@ -428,5 +464,3 @@ linters:
         - name: receiver-naming
         - name: blank-imports
 
-  exclusions:
-    generated: lax

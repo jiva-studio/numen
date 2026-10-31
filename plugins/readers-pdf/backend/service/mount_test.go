@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// postDocument calls GetDocument and returns the status code of the answer.
+// postDocument calls GetDocument and returns the HTTP status of the answer.
 func postDocument(t *testing.T, baseURL, token, body string) int {
 	t.Helper()
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, baseURL+"/"+APIService+"/GetDocument", strings.NewReader(body))
@@ -22,9 +22,11 @@ func postDocument(t *testing.T, baseURL, token, body string) int {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := res.Body.Close(); err != nil {
-		t.Error(err)
-	}
+	defer func() {
+		if closeErr := res.Body.Close(); closeErr != nil {
+			t.Error(closeErr)
+		}
+	}()
 	return res.StatusCode
 }
 

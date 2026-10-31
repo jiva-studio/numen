@@ -14,12 +14,16 @@ import (
 var ErrNotAPair = errors.New("a link must run between the two notes given")
 
 // PairLink is one relationship between two notes: the note it is written in,
-// the note it points to, and its role.
+// the note it points to, and its role. The record is addressed by its target and
+// Type; the reason already written on it is kept when Why is empty.
 type PairLink struct {
-	From  string
-	To    string
-	Role  domain.LinkRole
-	Label string
+	From   string
+	To     string
+	Role   domain.LinkRole
+	Type   string
+	Why    string
+	Label  string
+	Marker domain.LinkMarker
 }
 
 // ReplaceLinks makes the links between two notes exactly the ones given.
@@ -44,21 +48,26 @@ func (u ReplaceLinks) Execute(
 	if err != nil {
 		return err
 	}
+	kind := ""
+	for _, link := range links {
+		kind = link.Type
+	}
 	ends := [2]struct{ note, other string }{{first, second}, {second, first}}
 	for _, end := range ends {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if err := u.replaceIn(ctx, v, end.note, end.other, content[end.note]); err != nil {
+		if err := u.replaceIn(ctx, v, end.note, end.other, kind, content[end.note]); err != nil {
 			return fmt.Errorf("replace the link in %s: %w", end.note, err)
 		}
 	}
 	return nil
 }
 
-// replaceIn leaves one note holding the link given to the other, or none.
+// replaceIn leaves one note holding the link given to the other, or none. A note
+// given none loses its records of that type to the other note.
 func (u ReplaceLinks) replaceIn(
-	ctx context.Context, v domain.Vault, from, to string, link *PairLink,
+	ctx context.Context, v domain.Vault, from, to, kind string, link *PairLink,
 ) error {
 	target, err := u.addresses.Execute(ctx, v, to)
 	if err != nil {
@@ -66,10 +75,13 @@ func (u ReplaceLinks) replaceIn(
 	}
 	_, err = u.linking.newEdit().Apply(ctx, v, from, func(doc *markdown.Document) error {
 		if link == nil {
-			_, err := doc.RemoveLink(target, "")
+			_, err := doc.RemoveLink(domain.LinkKey{Target: target, Type: kind})
 			return err
 		}
-		return doc.AddLink(domain.Link{Target: target, Role: link.Role, Label: link.Label})
+		return doc.AddLink(domain.Link{
+			Target: target, Role: link.Role, Type: link.Type, Why: link.Why,
+			Label: link.Label, Marker: link.Marker,
+		})
 	})
 	return err
 }
@@ -90,6 +102,9 @@ func checkPairLinks(first, second string, links []PairLink) (map[string]*PairLin
 		}
 		if !domain.IsKnownRole(link.Role) {
 			return nil, fmt.Errorf("%q is not a role a link can carry", link.Role)
+		}
+		if !domain.IsWritableMarker(link.Marker) {
+			return nil, fmt.Errorf("%q is not a marker a link can carry", link.Marker)
 		}
 		if content[link.From] != nil {
 			return nil, fmt.Errorf("%w: two links written in %s", ErrNotAPair, link.From)

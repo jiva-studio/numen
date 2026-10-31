@@ -158,7 +158,7 @@ func (s *agentServer) AskAgent(
 	defer cancel()
 
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="work.Output is unused because agent-claude writes responses directly to the stream"
-	work := agentrun.NewWork(conversation, 0, cancel)
+	work := agentrun.NewWork(conversation, 0, agentrun.StopByCancel(cancel))
 	if !s.registry.Add(work) {
 		agentrun.RemoveFile(configFile)
 		return connect.NewError(connect.CodeUnavailable, errors.New("this agent is closing"))
@@ -366,11 +366,7 @@ func Mount(s *server.Server) error {
 func mount(s *server.Server, agentSvc *agentServer) error {
 	s.SetUpdateConfig(agentSvc.applyConfig)
 	s.Register(agentrun.NewAgentServiceHandler(agentSvc, s.HandlerOptions()...))
-	s.OnClose(func() {
-		if err := agentSvc.registry.Close(); err != nil {
-			fmt.Fprintf(os.Stderr, "close the agent: %v\n", err)
-		}
-	})
+	s.OnClose(agentSvc.registry.Close)
 	return nil
 }
 

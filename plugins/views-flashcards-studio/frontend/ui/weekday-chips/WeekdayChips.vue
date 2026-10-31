@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { measureRect } from '../../dom'
 /**
  * The days of the week as seven chips, each at a level. Pressing a day
  * opens the levels, and the day it was chosen for is returned with the choice.
@@ -8,7 +7,7 @@ import { measureRect } from '../../dom'
  */
 import { computed, ref, type HTMLAttributes } from 'vue'
 import { RovingFocusGroup, RovingFocusItem } from 'reka-ui'
-import { cn } from '@numen/ui'
+import { cn, measureRect } from '@numen/ui'
 import { Menu } from '@numen/ui'
 import type { Position } from '@numen/ui'
 import { getFill, getFillPercent, getMenuLevels, type Day } from './week'

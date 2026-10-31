@@ -15,6 +15,11 @@ type ResolvedLink = notesdomain.ResolvedLink
 type Link = notesdomain.Link
 type Address = notesdomain.Address
 type LinkRole = notesdomain.LinkRole
+type LinkMarker = notesdomain.LinkMarker
+type Connection = notesdomain.Connection
+type Side = notesdomain.Side
+type RelatedNote = notesdomain.RelatedNote
+type Backlink = notesdomain.Backlink
 type VaultProblem = notesdomain.VaultProblem
 type TextVersion = notesdomain.TextVersion
 type TextVersionID = notesdomain.TextVersionID
@@ -25,14 +30,20 @@ type VersionText = notesdomain.VersionText
 type ByteRange = notesdomain.ByteRange
 
 const (
-	KindFile      = notesdomain.KindFile
-	KindNote      = notesdomain.KindNote
-	NoteExtension = notesdomain.NoteExtension
-	TypeNote      = notesdomain.TypeNote
-	RoleRef       = notesdomain.RoleRef
-	SchemeName    = notesdomain.SchemeName
-	SchemeNote    = notesdomain.SchemeNote
-	CheckParse    = notesdomain.CheckParse
+	KindFile       = notesdomain.KindFile
+	KindNote       = notesdomain.KindNote
+	NoteExtension  = notesdomain.NoteExtension
+	TypeNote       = notesdomain.TypeNote
+	RoleParent     = notesdomain.RoleParent
+	RoleChild      = notesdomain.RoleChild
+	RoleJump       = notesdomain.RoleJump
+	RoleRef        = notesdomain.RoleRef
+	RoleAttachment = notesdomain.RoleAttachment
+	MarkerNone     = notesdomain.MarkerNone
+	MarkerArrow    = notesdomain.MarkerArrow
+	SchemeName     = notesdomain.SchemeName
+	SchemeNote     = notesdomain.SchemeNote
+	CheckParse     = notesdomain.CheckParse
 )
 
 var (

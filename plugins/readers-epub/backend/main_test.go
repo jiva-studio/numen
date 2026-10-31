@@ -37,22 +37,13 @@ func TestLifecycleServerPingAndShutdown(t *testing.T) {
 		t.Fatalf("expected success true, got false")
 	}
 
+	timeout, cancel := context.WithTimeout(ctx, 2*testingTimeout())
+	defer cancel()
 	select {
 	case <-shutdownTrigger:
-	case <-timeAfter(t):
+	case <-timeout.Done():
 		t.Fatal("expected shutdownTrigger to be closed")
 	}
-}
-
-func timeAfter(t *testing.T) <-chan struct{} {
-	ch := make(chan struct{})
-	ctx, cancel := context.WithTimeout(t.Context(), 2*testingTimeout())
-	go func() {
-		defer cancel()
-		<-ctx.Done()
-		close(ch)
-	}()
-	return ch
 }
 
 func testingTimeout() time.Duration {

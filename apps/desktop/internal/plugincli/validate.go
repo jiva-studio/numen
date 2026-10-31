@@ -1,15 +1,13 @@
 package plugincli
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
-	// The container package is linked for the initialization of its dependencies.
-	_ "github.com/jiva-studio/numen/libs/core/container"
-	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 )
 
 // Validate inspects a plugin manifest and entrypoints on disk.
@@ -24,8 +22,8 @@ func Validate(targetPath string) ([]string, error) {
 		return nil, fmt.Errorf("read manifest at %s: %w", manifestPath, err)
 	}
 
-	var m pluginport.PluginManifest
-	if err := json.Unmarshal(data, &m); err != nil {
+	m, err := manifestjson.Decode(data)
+	if err != nil {
 		return []string{fmt.Sprintf("invalid json in manifest: %v", err)}, nil
 	}
 
@@ -46,7 +44,7 @@ func resolveManifestPath(targetPath string) (manifestPath, pluginDir string, err
 
 	if info.IsDir() {
 		pluginDir = targetPath
-		manifestPath = filepath.Join(targetPath, "manifest.json")
+		manifestPath = filepath.Join(targetPath, manifest.FileName)
 	} else {
 		pluginDir = filepath.Dir(targetPath)
 		manifestPath = targetPath
@@ -54,7 +52,7 @@ func resolveManifestPath(targetPath string) (manifestPath, pluginDir string, err
 	return manifestPath, pluginDir, nil
 }
 
-func listBackendFileIssues(b pluginport.PluginBackend, pluginDir string) []string {
+func listBackendFileIssues(b manifest.Backend, pluginDir string) []string {
 	if strings.TrimSpace(b.Entrypoint) == "" {
 		return nil
 	}
@@ -64,7 +62,7 @@ func listBackendFileIssues(b pluginport.PluginBackend, pluginDir string) []strin
 	return []string{fmt.Sprintf("backend entrypoint %q does not exist and no backend/main.go source found", b.Entrypoint)}
 }
 
-func listFrontendFileIssues(f pluginport.PluginFrontend, pluginDir string) []string {
+func listFrontendFileIssues(f manifest.Frontend, pluginDir string) []string {
 	if strings.TrimSpace(f.Entrypoint) == "" {
 		return nil
 	}

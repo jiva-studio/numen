@@ -93,7 +93,7 @@ func start(ctx context.Context, reg *agentrun.Registry, s spec) (*agentrun.Work,
 		stop()
 		return nil, err
 	}
-	w := agentrun.NewWork(s.Conversation, outputBuffer, stop)
+	w := agentrun.NewWork(s.Conversation, outputBuffer, agentrun.StopByCancel(stop))
 	if !reg.Add(w) {
 		closeErr := stdout.Close()
 		cleanup()

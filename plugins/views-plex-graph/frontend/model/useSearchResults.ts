@@ -3,7 +3,7 @@
  * response to the latest query only.
  */
 import { getCurrentScope, onScopeDispose, ref, shallowRef } from 'vue'
-import { createRequestGuard, type RequestGuard, type InFlightRequest } from '../lib/requestGuard'
+import { createRequestGuard, type RequestGuard, type InFlightRequest } from '@numen/ui'
 
 export const SEARCH_DEBOUNCE_MS = 120
 

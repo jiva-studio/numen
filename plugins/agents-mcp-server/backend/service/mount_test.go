@@ -30,8 +30,9 @@ func TestMountAndConfigure(t *testing.T) {
 		t.Fatalf("configure failed: %v", err)
 	}
 
-	// Cleanup
-	s.Close()
+	if err := s.Close(); err != nil {
+		t.Errorf("close failed: %v", err)
+	}
 }
 
 func TestNewHandler(t *testing.T) {

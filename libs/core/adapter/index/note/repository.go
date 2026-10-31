@@ -153,6 +153,7 @@ func insertLinks(ctx context.Context, tx *sqlwrite.Transaction, row int64, links
 		if _, err := tx.ExecContext(ctx, stmt.Get("insert_link"), row, i,
 			l.Target.Scheme, l.Target.Value, domain.FoldName(domain.LinkName(l.Target.Value)),
 			string(l.Role), newNullable(l.Type), newNullable(l.Why), newNullable(l.Label),
+			newNullable(string(l.Marker)),
 		); err != nil {
 			return fmt.Errorf("store what this note points at: %w", err)
 		}

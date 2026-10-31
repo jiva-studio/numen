@@ -62,8 +62,9 @@ func WithLifecycleUpdateConfig(fn func(values map[string]string)) LifecycleOptio
 	}
 }
 
-// WithLifecycleShutdown sets what the Shutdown RPC runs before it signals termination.
-func WithLifecycleShutdown(fn func()) LifecycleOption {
+// WithLifecycleShutdown sets what the Shutdown RPC runs before it signals termination. The RPC
+// signals termination even when fn fails, and answers the failure.
+func WithLifecycleShutdown(fn func() error) LifecycleOption {
 	return func(s *LifecycleServer) {
 		s.onShutdown = fn
 	}
@@ -77,7 +78,7 @@ type LifecycleServer struct {
 	mu           sync.RWMutex
 	config       map[string]string
 	onConfigure  func(ctx context.Context, values map[string]string) error
-	onShutdown   func()
+	onShutdown   func() error
 }
 
 // NewLifecycleServer creates a lifecycle service handler with a shutdown signal channel.
@@ -107,10 +108,14 @@ func (s *LifecycleServer) Shutdown(
 	_ context.Context,
 	_ *connect.Request[v1.ShutdownRequest],
 ) (*connect.Response[v1.ShutdownResponse], error) {
+	var closeErr error
 	if s.onShutdown != nil {
-		s.onShutdown()
+		closeErr = s.onShutdown()
 	}
 	s.TriggerShutdown()
+	if closeErr != nil {
+		return nil, connect.NewError(connect.CodeInternal, closeErr)
+	}
 	return connect.NewResponse(&v1.ShutdownResponse{
 		Success: true,
 	}), nil

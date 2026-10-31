@@ -2,7 +2,6 @@ package plugincli
 
 import (
 	"archive/zip"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -11,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 )
 
 // Package bundles the files a plugin ships (manifest.json, bin and dist) into a distributable zip archive.
@@ -34,8 +33,8 @@ func Package(targetPath, outArchive string, stdout io.Writer) (string, error) {
 		return "", fmt.Errorf("read manifest: %w", err)
 	}
 
-	var m pluginport.PluginManifest
-	if err := json.Unmarshal(manifestData, &m); err != nil {
+	m, err := manifestjson.Decode(manifestData)
+	if err != nil {
 		return "", fmt.Errorf("decode manifest: %w", err)
 	}
 

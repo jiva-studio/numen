@@ -62,6 +62,7 @@ describe('createPluginLoader', () => {
           registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
           registerContextMenu: vi.fn(() => ({ dispose: vi.fn() })),
           registerView: vi.fn(() => ({ dispose: vi.fn() })),
+          registerSettingsView: vi.fn(() => ({ dispose: vi.fn() })),
           mountView: vi.fn(() => ({ focus: vi.fn(), dispose: vi.fn() })),
           registerAgentProvider: vi.fn(() => ({ dispose: vi.fn() })),
           getSetting: vi.fn((key: string) =>

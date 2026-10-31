@@ -467,7 +467,7 @@ func TestServerAnswersHTTP1AndUnencryptedHTTP2(t *testing.T) {
 func TestServerRunsItsClosersWhenServeReturns(t *testing.T) {
 	s := New(WithPort(0), WithToken("closer-token"), WithStdout(io.Discard), WithStdin(nil))
 	closed := 0
-	s.OnClose(func() { closed++ })
+	s.OnClose(func() error { closed++; return nil })
 	if _, err := s.Listen(); err != nil {
 		t.Fatalf("Listen failed: %v", err)
 	}

@@ -185,6 +185,7 @@ func TestMigrationFourAppliesOnAnIndexAtTheVersionBeforeIt(t *testing.T) {
 		`DROP TABLE open_tabs`,
 		`DROP TABLE text_versions`,
 		`DROP TABLE coarse_recipe`,
+		`ALTER TABLE links DROP COLUMN marker`,
 		`DELETE FROM schema_migrations WHERE version >= 4`,
 		`PRAGMA user_version = 3`,
 	} {

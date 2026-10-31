@@ -84,6 +84,24 @@ const (
 	// HostVaultServiceResolveLinksProcedure is the fully-qualified name of the HostVaultService's
 	// ResolveLinks RPC.
 	HostVaultServiceResolveLinksProcedure = "/numen.v1.HostVaultService/ResolveLinks"
+	// HostVaultServiceGetConnectionProcedure is the fully-qualified name of the HostVaultService's
+	// GetConnection RPC.
+	HostVaultServiceGetConnectionProcedure = "/numen.v1.HostVaultService/GetConnection"
+	// HostVaultServiceSaveConnectionProcedure is the fully-qualified name of the HostVaultService's
+	// SaveConnection RPC.
+	HostVaultServiceSaveConnectionProcedure = "/numen.v1.HostVaultService/SaveConnection"
+	// HostVaultServiceRemoveSideProcedure is the fully-qualified name of the HostVaultService's
+	// RemoveSide RPC.
+	HostVaultServiceRemoveSideProcedure = "/numen.v1.HostVaultService/RemoveSide"
+	// HostVaultServiceRemoveConnectionProcedure is the fully-qualified name of the HostVaultService's
+	// RemoveConnection RPC.
+	HostVaultServiceRemoveConnectionProcedure = "/numen.v1.HostVaultService/RemoveConnection"
+	// HostVaultServiceJoinNotesProcedure is the fully-qualified name of the HostVaultService's
+	// JoinNotes RPC.
+	HostVaultServiceJoinNotesProcedure = "/numen.v1.HostVaultService/JoinNotes"
+	// HostVaultServiceCreateRelatedNoteProcedure is the fully-qualified name of the HostVaultService's
+	// CreateRelatedNote RPC.
+	HostVaultServiceCreateRelatedNoteProcedure = "/numen.v1.HostVaultService/CreateRelatedNote"
 	// HostVaultServiceGetParseProblemsProcedure is the fully-qualified name of the HostVaultService's
 	// GetParseProblems RPC.
 	HostVaultServiceGetParseProblemsProcedure = "/numen.v1.HostVaultService/GetParseProblems"
@@ -147,6 +165,24 @@ type HostVaultServiceClient interface {
 	GetBacklinks(context.Context, *connect.Request[v1.GetBacklinksRequest]) (*connect.Response[v1.GetBacklinksResponse], error)
 	// ResolveLinks says what each link written in a note reaches now.
 	ResolveLinks(context.Context, *connect.Request[v1.ResolveLinksRequest]) (*connect.Response[v1.ResolveLinksResponse], error)
+	// GetConnection is the relationship between two notes as a whole: the record
+	// each note writes about the other.
+	GetConnection(context.Context, *connect.Request[v1.HostVaultServiceGetConnectionRequest]) (*connect.Response[v1.HostVaultServiceGetConnectionResponse], error)
+	// SaveConnection makes the records between two notes exactly the ones given,
+	// in both notes or in neither. It needs vault:write.
+	SaveConnection(context.Context, *connect.Request[v1.HostVaultServiceSaveConnectionRequest]) (*connect.Response[v1.HostVaultServiceSaveConnectionResponse], error)
+	// RemoveSide removes the record one note writes about another and leaves the
+	// other note alone. It needs vault:write.
+	RemoveSide(context.Context, *connect.Request[v1.HostVaultServiceRemoveSideRequest]) (*connect.Response[v1.HostVaultServiceRemoveSideResponse], error)
+	// RemoveConnection removes the records two notes write about each other. It
+	// needs vault:write.
+	RemoveConnection(context.Context, *connect.Request[v1.HostVaultServiceRemoveConnectionRequest]) (*connect.Response[v1.HostVaultServiceRemoveConnectionResponse], error)
+	// JoinNotes makes one note write a record about another and keeps the record
+	// the other note already writes. It needs vault:write.
+	JoinNotes(context.Context, *connect.Request[v1.HostVaultServiceJoinNotesRequest]) (*connect.Response[v1.HostVaultServiceJoinNotesResponse], error)
+	// CreateRelatedNote makes a note joined to an existing one, with the inverse
+	// role, in the folder of the existing note. It needs vault:write.
+	CreateRelatedNote(context.Context, *connect.Request[v1.HostVaultServiceCreateRelatedNoteRequest]) (*connect.Response[v1.HostVaultServiceCreateRelatedNoteResponse], error)
 	// GetParseProblems lists what parsing each file of the vault turned up.
 	GetParseProblems(context.Context, *connect.Request[v1.GetParseProblemsRequest]) (*connect.Response[v1.GetParseProblemsResponse], error)
 	// ReadCache reads what the plugin kept for this vault under a name. The cache
@@ -277,6 +313,42 @@ func NewHostVaultServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(hostVaultServiceMethods.ByName("ResolveLinks")),
 			connect.WithClientOptions(opts...),
 		),
+		getConnection: connect.NewClient[v1.HostVaultServiceGetConnectionRequest, v1.HostVaultServiceGetConnectionResponse](
+			httpClient,
+			baseURL+HostVaultServiceGetConnectionProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("GetConnection")),
+			connect.WithClientOptions(opts...),
+		),
+		saveConnection: connect.NewClient[v1.HostVaultServiceSaveConnectionRequest, v1.HostVaultServiceSaveConnectionResponse](
+			httpClient,
+			baseURL+HostVaultServiceSaveConnectionProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("SaveConnection")),
+			connect.WithClientOptions(opts...),
+		),
+		removeSide: connect.NewClient[v1.HostVaultServiceRemoveSideRequest, v1.HostVaultServiceRemoveSideResponse](
+			httpClient,
+			baseURL+HostVaultServiceRemoveSideProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("RemoveSide")),
+			connect.WithClientOptions(opts...),
+		),
+		removeConnection: connect.NewClient[v1.HostVaultServiceRemoveConnectionRequest, v1.HostVaultServiceRemoveConnectionResponse](
+			httpClient,
+			baseURL+HostVaultServiceRemoveConnectionProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("RemoveConnection")),
+			connect.WithClientOptions(opts...),
+		),
+		joinNotes: connect.NewClient[v1.HostVaultServiceJoinNotesRequest, v1.HostVaultServiceJoinNotesResponse](
+			httpClient,
+			baseURL+HostVaultServiceJoinNotesProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("JoinNotes")),
+			connect.WithClientOptions(opts...),
+		),
+		createRelatedNote: connect.NewClient[v1.HostVaultServiceCreateRelatedNoteRequest, v1.HostVaultServiceCreateRelatedNoteResponse](
+			httpClient,
+			baseURL+HostVaultServiceCreateRelatedNoteProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("CreateRelatedNote")),
+			connect.WithClientOptions(opts...),
+		),
 		getParseProblems: connect.NewClient[v1.GetParseProblemsRequest, v1.GetParseProblemsResponse](
 			httpClient,
 			baseURL+HostVaultServiceGetParseProblemsProcedure,
@@ -329,6 +401,12 @@ type hostVaultServiceClient struct {
 	getLinks           *connect.Client[v1.GetLinksRequest, v1.GetLinksResponse]
 	getBacklinks       *connect.Client[v1.GetBacklinksRequest, v1.GetBacklinksResponse]
 	resolveLinks       *connect.Client[v1.ResolveLinksRequest, v1.ResolveLinksResponse]
+	getConnection      *connect.Client[v1.HostVaultServiceGetConnectionRequest, v1.HostVaultServiceGetConnectionResponse]
+	saveConnection     *connect.Client[v1.HostVaultServiceSaveConnectionRequest, v1.HostVaultServiceSaveConnectionResponse]
+	removeSide         *connect.Client[v1.HostVaultServiceRemoveSideRequest, v1.HostVaultServiceRemoveSideResponse]
+	removeConnection   *connect.Client[v1.HostVaultServiceRemoveConnectionRequest, v1.HostVaultServiceRemoveConnectionResponse]
+	joinNotes          *connect.Client[v1.HostVaultServiceJoinNotesRequest, v1.HostVaultServiceJoinNotesResponse]
+	createRelatedNote  *connect.Client[v1.HostVaultServiceCreateRelatedNoteRequest, v1.HostVaultServiceCreateRelatedNoteResponse]
 	getParseProblems   *connect.Client[v1.GetParseProblemsRequest, v1.GetParseProblemsResponse]
 	readCache          *connect.Client[v1.ReadCacheRequest, v1.ReadCacheResponse]
 	writeCache         *connect.Client[v1.WriteCacheRequest, v1.WriteCacheResponse]
@@ -421,6 +499,36 @@ func (c *hostVaultServiceClient) ResolveLinks(ctx context.Context, req *connect.
 	return c.resolveLinks.CallUnary(ctx, req)
 }
 
+// GetConnection calls numen.v1.HostVaultService.GetConnection.
+func (c *hostVaultServiceClient) GetConnection(ctx context.Context, req *connect.Request[v1.HostVaultServiceGetConnectionRequest]) (*connect.Response[v1.HostVaultServiceGetConnectionResponse], error) {
+	return c.getConnection.CallUnary(ctx, req)
+}
+
+// SaveConnection calls numen.v1.HostVaultService.SaveConnection.
+func (c *hostVaultServiceClient) SaveConnection(ctx context.Context, req *connect.Request[v1.HostVaultServiceSaveConnectionRequest]) (*connect.Response[v1.HostVaultServiceSaveConnectionResponse], error) {
+	return c.saveConnection.CallUnary(ctx, req)
+}
+
+// RemoveSide calls numen.v1.HostVaultService.RemoveSide.
+func (c *hostVaultServiceClient) RemoveSide(ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveSideRequest]) (*connect.Response[v1.HostVaultServiceRemoveSideResponse], error) {
+	return c.removeSide.CallUnary(ctx, req)
+}
+
+// RemoveConnection calls numen.v1.HostVaultService.RemoveConnection.
+func (c *hostVaultServiceClient) RemoveConnection(ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveConnectionRequest]) (*connect.Response[v1.HostVaultServiceRemoveConnectionResponse], error) {
+	return c.removeConnection.CallUnary(ctx, req)
+}
+
+// JoinNotes calls numen.v1.HostVaultService.JoinNotes.
+func (c *hostVaultServiceClient) JoinNotes(ctx context.Context, req *connect.Request[v1.HostVaultServiceJoinNotesRequest]) (*connect.Response[v1.HostVaultServiceJoinNotesResponse], error) {
+	return c.joinNotes.CallUnary(ctx, req)
+}
+
+// CreateRelatedNote calls numen.v1.HostVaultService.CreateRelatedNote.
+func (c *hostVaultServiceClient) CreateRelatedNote(ctx context.Context, req *connect.Request[v1.HostVaultServiceCreateRelatedNoteRequest]) (*connect.Response[v1.HostVaultServiceCreateRelatedNoteResponse], error) {
+	return c.createRelatedNote.CallUnary(ctx, req)
+}
+
 // GetParseProblems calls numen.v1.HostVaultService.GetParseProblems.
 func (c *hostVaultServiceClient) GetParseProblems(ctx context.Context, req *connect.Request[v1.GetParseProblemsRequest]) (*connect.Response[v1.GetParseProblemsResponse], error) {
 	return c.getParseProblems.CallUnary(ctx, req)
@@ -492,6 +600,24 @@ type HostVaultServiceHandler interface {
 	GetBacklinks(context.Context, *connect.Request[v1.GetBacklinksRequest]) (*connect.Response[v1.GetBacklinksResponse], error)
 	// ResolveLinks says what each link written in a note reaches now.
 	ResolveLinks(context.Context, *connect.Request[v1.ResolveLinksRequest]) (*connect.Response[v1.ResolveLinksResponse], error)
+	// GetConnection is the relationship between two notes as a whole: the record
+	// each note writes about the other.
+	GetConnection(context.Context, *connect.Request[v1.HostVaultServiceGetConnectionRequest]) (*connect.Response[v1.HostVaultServiceGetConnectionResponse], error)
+	// SaveConnection makes the records between two notes exactly the ones given,
+	// in both notes or in neither. It needs vault:write.
+	SaveConnection(context.Context, *connect.Request[v1.HostVaultServiceSaveConnectionRequest]) (*connect.Response[v1.HostVaultServiceSaveConnectionResponse], error)
+	// RemoveSide removes the record one note writes about another and leaves the
+	// other note alone. It needs vault:write.
+	RemoveSide(context.Context, *connect.Request[v1.HostVaultServiceRemoveSideRequest]) (*connect.Response[v1.HostVaultServiceRemoveSideResponse], error)
+	// RemoveConnection removes the records two notes write about each other. It
+	// needs vault:write.
+	RemoveConnection(context.Context, *connect.Request[v1.HostVaultServiceRemoveConnectionRequest]) (*connect.Response[v1.HostVaultServiceRemoveConnectionResponse], error)
+	// JoinNotes makes one note write a record about another and keeps the record
+	// the other note already writes. It needs vault:write.
+	JoinNotes(context.Context, *connect.Request[v1.HostVaultServiceJoinNotesRequest]) (*connect.Response[v1.HostVaultServiceJoinNotesResponse], error)
+	// CreateRelatedNote makes a note joined to an existing one, with the inverse
+	// role, in the folder of the existing note. It needs vault:write.
+	CreateRelatedNote(context.Context, *connect.Request[v1.HostVaultServiceCreateRelatedNoteRequest]) (*connect.Response[v1.HostVaultServiceCreateRelatedNoteResponse], error)
 	// GetParseProblems lists what parsing each file of the vault turned up.
 	GetParseProblems(context.Context, *connect.Request[v1.GetParseProblemsRequest]) (*connect.Response[v1.GetParseProblemsResponse], error)
 	// ReadCache reads what the plugin kept for this vault under a name. The cache
@@ -618,6 +744,42 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 		connect.WithSchema(hostVaultServiceMethods.ByName("ResolveLinks")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostVaultServiceGetConnectionHandler := connect.NewUnaryHandler(
+		HostVaultServiceGetConnectionProcedure,
+		svc.GetConnection,
+		connect.WithSchema(hostVaultServiceMethods.ByName("GetConnection")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceSaveConnectionHandler := connect.NewUnaryHandler(
+		HostVaultServiceSaveConnectionProcedure,
+		svc.SaveConnection,
+		connect.WithSchema(hostVaultServiceMethods.ByName("SaveConnection")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceRemoveSideHandler := connect.NewUnaryHandler(
+		HostVaultServiceRemoveSideProcedure,
+		svc.RemoveSide,
+		connect.WithSchema(hostVaultServiceMethods.ByName("RemoveSide")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceRemoveConnectionHandler := connect.NewUnaryHandler(
+		HostVaultServiceRemoveConnectionProcedure,
+		svc.RemoveConnection,
+		connect.WithSchema(hostVaultServiceMethods.ByName("RemoveConnection")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceJoinNotesHandler := connect.NewUnaryHandler(
+		HostVaultServiceJoinNotesProcedure,
+		svc.JoinNotes,
+		connect.WithSchema(hostVaultServiceMethods.ByName("JoinNotes")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostVaultServiceCreateRelatedNoteHandler := connect.NewUnaryHandler(
+		HostVaultServiceCreateRelatedNoteProcedure,
+		svc.CreateRelatedNote,
+		connect.WithSchema(hostVaultServiceMethods.ByName("CreateRelatedNote")),
+		connect.WithHandlerOptions(opts...),
+	)
 	hostVaultServiceGetParseProblemsHandler := connect.NewUnaryHandler(
 		HostVaultServiceGetParseProblemsProcedure,
 		svc.GetParseProblems,
@@ -684,6 +846,18 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 			hostVaultServiceGetBacklinksHandler.ServeHTTP(w, r)
 		case HostVaultServiceResolveLinksProcedure:
 			hostVaultServiceResolveLinksHandler.ServeHTTP(w, r)
+		case HostVaultServiceGetConnectionProcedure:
+			hostVaultServiceGetConnectionHandler.ServeHTTP(w, r)
+		case HostVaultServiceSaveConnectionProcedure:
+			hostVaultServiceSaveConnectionHandler.ServeHTTP(w, r)
+		case HostVaultServiceRemoveSideProcedure:
+			hostVaultServiceRemoveSideHandler.ServeHTTP(w, r)
+		case HostVaultServiceRemoveConnectionProcedure:
+			hostVaultServiceRemoveConnectionHandler.ServeHTTP(w, r)
+		case HostVaultServiceJoinNotesProcedure:
+			hostVaultServiceJoinNotesHandler.ServeHTTP(w, r)
+		case HostVaultServiceCreateRelatedNoteProcedure:
+			hostVaultServiceCreateRelatedNoteHandler.ServeHTTP(w, r)
 		case HostVaultServiceGetParseProblemsProcedure:
 			hostVaultServiceGetParseProblemsHandler.ServeHTTP(w, r)
 		case HostVaultServiceReadCacheProcedure:
@@ -769,6 +943,30 @@ func (UnimplementedHostVaultServiceHandler) GetBacklinks(context.Context, *conne
 
 func (UnimplementedHostVaultServiceHandler) ResolveLinks(context.Context, *connect.Request[v1.ResolveLinksRequest]) (*connect.Response[v1.ResolveLinksResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.ResolveLinks is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) GetConnection(context.Context, *connect.Request[v1.HostVaultServiceGetConnectionRequest]) (*connect.Response[v1.HostVaultServiceGetConnectionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.GetConnection is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) SaveConnection(context.Context, *connect.Request[v1.HostVaultServiceSaveConnectionRequest]) (*connect.Response[v1.HostVaultServiceSaveConnectionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.SaveConnection is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) RemoveSide(context.Context, *connect.Request[v1.HostVaultServiceRemoveSideRequest]) (*connect.Response[v1.HostVaultServiceRemoveSideResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.RemoveSide is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) RemoveConnection(context.Context, *connect.Request[v1.HostVaultServiceRemoveConnectionRequest]) (*connect.Response[v1.HostVaultServiceRemoveConnectionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.RemoveConnection is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) JoinNotes(context.Context, *connect.Request[v1.HostVaultServiceJoinNotesRequest]) (*connect.Response[v1.HostVaultServiceJoinNotesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.JoinNotes is not implemented"))
+}
+
+func (UnimplementedHostVaultServiceHandler) CreateRelatedNote(context.Context, *connect.Request[v1.HostVaultServiceCreateRelatedNoteRequest]) (*connect.Response[v1.HostVaultServiceCreateRelatedNoteResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.CreateRelatedNote is not implemented"))
 }
 
 func (UnimplementedHostVaultServiceHandler) GetParseProblems(context.Context, *connect.Request[v1.GetParseProblemsRequest]) (*connect.Response[v1.GetParseProblemsResponse], error) {

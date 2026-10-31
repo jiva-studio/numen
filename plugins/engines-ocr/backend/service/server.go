@@ -166,11 +166,9 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 	s.SetUpdateConfig(models.updateConfig)
 	s.Register(host.NewTextProviderHandler(provider, s.HandlerOptions()...))
 	command.Mount(s, commands)
-	s.OnClose(func() {
+	s.OnClose(func() error {
 		provider.Close()
-		if err := models.close(); err != nil {
-			fmt.Fprintln(os.Stderr, "engines-ocr: close the recogniser:", err)
-		}
+		return models.close()
 	})
 	return nil
 }

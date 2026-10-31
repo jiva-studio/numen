@@ -76,6 +76,27 @@ type pluginVaultLinkReader interface {
 	ResolveLinks(ctx context.Context, from string, output []string) (map[string]domain.ResolvedLink, error)
 }
 
+type pluginVaultConnectionReader interface {
+	GetConnection(ctx context.Context, a, b, kind string) (domain.Connection, error)
+}
+
+type pluginVaultConnectionWriter interface {
+	SaveConnection(ctx context.Context, c domain.Connection) error
+	RemoveSide(ctx context.Context, from, to, kind string) error
+	RemoveConnection(ctx context.Context, a, b, kind string) error
+	Join(ctx context.Context, from, to string, side domain.Side) error
+}
+
+// pluginVaultRelations reads and writes the relationships between notes, with the
+// rules of a connection enforced by the host.
+type pluginVaultRelations interface {
+	pluginVaultConnectionReader
+	pluginVaultConnectionWriter
+	// CreateInRelation returns the path of the note it created, which is set when
+	// the note exists even if the error is not nil.
+	CreateInRelation(ctx context.Context, in domain.RelatedNote) (string, error)
+}
+
 type PluginVaultReader interface {
 	pluginVaultNoteReader
 	pluginVaultLinkReader
@@ -123,6 +144,7 @@ type PluginVaultLifecycle interface {
 type PluginVault interface {
 	PluginVaultReader
 	PluginVaultWriter
+	pluginVaultRelations
 	PluginVaultStore
 	PluginVaultLifecycle
 }

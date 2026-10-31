@@ -408,13 +408,13 @@ describe('the window started and closed', () => {
 describe('the layout started with an initial tab', () => {
   it('opens tab of kind with at payload from URL search params', async () => {
     h.f.windowTabs.openTabOfKind.mockResolvedValue('note:hello.md')
-    const originalLocation = globalThis.location
     try {
-      // @ts-expect-error mocking location for test
-      delete globalThis.location
-      globalThis.location = new URL(
-        'http://localhost/?window=secondary&tab=note:hello.md',
-      ) as unknown as Location
+      vi.stubGlobal(
+        'location',
+        new URL(
+          'http://localhost/?window=secondary&tab=note:hello.md',
+        ),
+      )
       useWindow()
 
       await h.args.bootstrap.startLayout()
@@ -426,7 +426,7 @@ describe('the layout started with an initial tab', () => {
         focus: 'main',
       })
     } finally {
-      globalThis.location = originalLocation
+      vi.unstubAllGlobals()
     }
   })
 })

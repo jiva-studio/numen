@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Validation and enforcement of architectural layer boundaries across backend, plugins, and frontend.",
   "scripts": {
-    "check": "node check.mjs"
+    "check": "node check.mjs",
+    "test": "node --test ./*.test.mjs"
   }
 }
