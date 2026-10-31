@@ -2,7 +2,26 @@
 export { default as PluginsList } from './PluginsList.vue'
 export { default as PluginDetail } from './PluginDetail.vue'
 export type { PluginDetailProps } from './PluginDetail.types'
-export { createManagedPlugins, isInstalled, OTHER_CATEGORY, type ManagedPlugin } from './plugins'
+export {
+  createManagedPlugins,
+  isInstalled,
+  OTHER_CATEGORY,
+  type ManagedPlugin,
+  type PluginListing,
+} from './plugins'
+export type {
+  Consent,
+  PluginFailure,
+  PluginInfo,
+  PluginReader,
+  PluginSecret,
+  PluginSettingCondition,
+  PluginSettingInfo,
+  PluginSettingOption,
+  PluginSettingOptionsBy,
+  PluginSettingsViewInfo,
+  PluginSettingType,
+} from './pluginInfo'
 export {
   formatCategoryLabel,
   getFilteredPluginItems,
@@ -16,5 +35,3 @@ export {
 export { formatFailedAt, getFailedPlugins, getPluginState, type PluginState } from './state'
 export { parsePluginReadme, type PluginReadmeParts } from './readme'
 export { PLUGIN_WORDS } from './words'
-export * from './catalog/catalog'
-export * from './catalog/plugins'

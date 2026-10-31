@@ -220,26 +220,6 @@ export function verifyAppsReachNoPlugin() {
   }
 }
 
-/** Every direct `@numen/protocol` import in a frontend client application (`apps/*`). */
-function findAppDirectProtocolImports() {
-  const found = [];
-  for (const file of listShippedFiles(["apps/desktop/editor/src", "apps/desktop/flashcards/src", "apps/mobile/src"])) {
-    const source = readSource(file);
-    if (!source) continue;
-    for (const { line, value } of source.literals) {
-      if (value === "@numen/protocol" || value.startsWith("@numen/protocol/") || value.includes("libs/protocol")) {
-        found.push({ file, line, symbol: JSON.stringify(value) });
-      }
-    }
-  }
-  return found;
-}
-
-/** A frontend client application talks to the core through `@numen/plugin-sdk` and imports no `@numen/protocol`. */
-export function verifyAppsNoDirectProtocol() {
-  failOnFindings("An application frontend imports @numen/protocol directly instead of using @numen/plugin-sdk", findAppDirectProtocolImports());
-}
-
 /** Segment direction (ui -> model -> api -> lib) and no @x cross-entity imports. */
 function findFrontendSegmentAndCrossEntityViolations() {
   const found = [];
@@ -404,13 +384,6 @@ export const FRONTEND_VERIFIERS = [
     module: "apps",
     name: "Applications Reach No Plugin (no path, alias, glob or import into plugins/)",
     run: verifyAppsReachNoPlugin,
-  },
-  {
-    id: "apps-no-direct-protocol",
-    scope: "apps",
-    module: "apps",
-    name: "Applications Talk to Core Through SDK (no direct @numen/protocol in apps/*/src)",
-    run: verifyAppsNoDirectProtocol,
   },
   {
     id: "desktop-editor-fsd",

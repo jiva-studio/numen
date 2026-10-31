@@ -16,4 +16,4 @@ export {
   windowService,
   workspace,
 } from '@numen/plugin-sdk'
-export { pluginCatalog } from '@numen/plugin-manager'
+export { pluginCatalog } from './pluginCatalog'

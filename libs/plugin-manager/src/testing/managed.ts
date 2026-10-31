@@ -1,31 +1,23 @@
-import { CATALOG_STATE } from '../catalog/catalog'
-import type { PluginInfo } from '../catalog/plugins'
-import {
-  createMockCatalogEntry,
-  createMockPluginInfo,
-  type MockCatalogEntryOptions,
-} from '../testing/mockCatalog'
+import type { PluginInfo } from '../pluginInfo'
+import { createMockListing, createMockPluginInfo, type MockListingOptions } from './listing'
 import { createManagedPlugins, type ManagedPlugin } from '../plugins'
 
-/** An installed plugin as the manager lists it, with the catalog entry made from `entry`. */
+/** An installed plugin as the manager lists it, with the listing made from `listing`. */
 export function createManaged(
   id: string,
   name: string,
   overrides: Partial<PluginInfo> = {},
-  entry: MockCatalogEntryOptions | undefined = undefined,
+  listing: MockListingOptions | undefined = undefined,
 ): ManagedPlugin {
   const info = createMockPluginInfo(id, name, overrides)
-  const [plugin] = createManagedPlugins([info], entry ? [createMockCatalogEntry(id, entry)] : [])
+  const [plugin] = createManagedPlugins([info], listing ? [createMockListing(id, listing)] : [])
   if (!plugin) throw new Error('the plugin did not merge')
   return plugin
 }
 
 /** A plugin the catalog offers and the host does not have. */
 export function createOffered(id: string, name: string): ManagedPlugin {
-  const [plugin] = createManagedPlugins(
-    [],
-    [createMockCatalogEntry(id, { name, state: CATALOG_STATE.AVAILABLE })],
-  )
+  const [plugin] = createManagedPlugins([], [createMockListing(id, { name, isOffered: true })])
   if (!plugin) throw new Error('the plugin did not merge')
   return plugin
 }

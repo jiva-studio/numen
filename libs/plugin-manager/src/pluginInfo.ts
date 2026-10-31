@@ -1,9 +1,18 @@
 /**
- * The plugins as a window shows them: the generated PluginInfo with its settings decoded, and the
- * state the host reports for it.
+ * The plugins as the manager shows them: the settings of a plugin decoded, and the state the host
+ * reports for it.
  */
-import type { PluginInfo as PluginInfoMessage } from '@numen/protocol'
-import type { PluginSettingType } from '@numen/plugin-sdk'
+
+/** Declarative setting value types exposed by a plugin. */
+export type PluginSettingType =
+  | 'boolean'
+  | 'string'
+  | 'number'
+  | 'enum'
+  | 'range'
+  | 'agent'
+  | 'file'
+  | 'folder'
 
 /** One value an enum setting can hold, with its display title. */
 export interface PluginSettingOption {
@@ -74,10 +83,13 @@ export interface PluginFailure {
 }
 
 /** Information about an installed and active plugin, including declarative settings. */
-export interface PluginInfo extends Pick<
-  PluginInfoMessage,
-  'id' | 'name' | 'version' | 'description' | 'isActive' | 'hasFrontend'
-> {
+export interface PluginInfo {
+  readonly id: string
+  readonly name: string
+  readonly version: string
+  readonly description: string
+  readonly isActive: boolean
+  readonly hasFrontend: boolean
   readonly settings: readonly PluginSettingInfo[]
   readonly capabilities: readonly string[]
   /** The secrets the plugin declares, and the names of those that have a key stored. */

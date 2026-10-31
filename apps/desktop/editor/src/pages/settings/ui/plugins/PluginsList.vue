@@ -4,7 +4,8 @@
  * the catalog and the enabled settings.
  */
 import { computed, ref, watch } from 'vue'
-import { PluginsList as PluginsListView, createManagedPlugins } from '@numen/plugin-manager'
+import { PluginsList as PluginsListView } from '@numen/plugin-manager'
+import { createManagedFromEntries } from '@/shared/pluginListing'
 import type { SettingsTabState } from '../../types'
 import { write, type PluginInfo } from '@/entities/settings'
 
@@ -38,7 +39,7 @@ watch(searchQuery, (newQuery) => {
 })
 
 const managed = computed(() =>
-  createManagedPlugins(props.plugins, props.state.installation.catalog?.value ?? []),
+  createManagedFromEntries(props.plugins, props.state.installation.catalog?.value ?? []),
 )
 
 const enabled = computed(() =>

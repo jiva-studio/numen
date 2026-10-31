@@ -291,6 +291,11 @@ export function readGo(source) {
   return { literals, comments, code };
 }
 
+/** The parsed `package.json` text of a package. */
+export function parsePackageJson(text) {
+  return JSON.parse(text);
+}
+
 /** Reads a tracked source file as literals and code, by its extension; null for any other file. */
 export function readSource(file) {
   const text = fs.readFileSync(path.join(REPO_ROOT, file), "utf8");

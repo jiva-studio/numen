@@ -1,6 +1,6 @@
 import { shallowRef, type Component, type ShallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
-import type { CatalogEntry, PluginCatalog } from '@numen/plugin-manager'
+import type { CatalogEntry, PluginCatalog } from '@/shared/pluginCatalog'
 import UnavailablePane from './UnavailablePane.vue'
 import type { AnyTabKind } from './kinds'
 

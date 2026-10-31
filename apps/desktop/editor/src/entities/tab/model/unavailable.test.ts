@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import { CATALOG_INCOMPATIBILITY, CATALOG_STATE } from '@numen/plugin-manager'
+import { CATALOG_INCOMPATIBILITY, CATALOG_STATE } from '@/shared/pluginCatalog'
 import {
   createMockCatalogEntry,
   createMockPluginCatalog,
   type MockCatalogEntryOptions,
-} from '@numen/plugin-manager/testing'
+} from '@/testing/pluginCatalog'
 import { createUnavailableKind, type UnavailableServices } from './unavailable'
 
 const notesOptions: MockCatalogEntryOptions = {

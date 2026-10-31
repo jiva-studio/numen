@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CATALOG_STATE } from './catalog/catalog'
-import { createMockCatalogEntry, createMockPluginInfo } from './testing/mockCatalog'
+import { createMockListing, createMockPluginInfo } from './testing/listing'
 import { createManagedPlugins } from './plugins'
 import {
   formatCategoryLabel,
@@ -29,23 +28,23 @@ const agentInfo = createMockPluginInfo('sample.gamma', 'Claude Code Agent', {
 const bareInfo = createMockPluginInfo('sample.delta', 'Bare Engine')
 
 const entries = [
-  createMockCatalogEntry('sample.alpha', {
+  createMockListing('sample.alpha', {
     category: 'editors',
     feature: 'Markdown notes',
     tabKinds: ['note', 'reader:markdown'],
   }),
-  createMockCatalogEntry('sample.beta', {
+  createMockListing('sample.beta', {
     category: 'views',
     feature: 'file tree',
     tabKinds: ['files'],
   }),
-  createMockCatalogEntry('sample.gamma', { category: 'agents' }),
-  createMockCatalogEntry('sample.offer', {
+  createMockListing('sample.gamma', { category: 'agents' }),
+  createMockListing('sample.offer', {
     name: 'Offered Reader',
     category: 'readers',
     feature: 'EPUB books',
     tabKinds: ['reader:offer'],
-    state: CATALOG_STATE.AVAILABLE,
+    isOffered: true,
   }),
 ]
 
@@ -81,7 +80,7 @@ describe('createManagedPlugins', () => {
   it('does not list an uninstalled entry of a plugin that is installed', () => {
     const merged = createManagedPlugins(
       [notesInfo],
-      [createMockCatalogEntry('sample.alpha', { state: CATALOG_STATE.AVAILABLE })],
+      [createMockListing('sample.alpha', { isOffered: true })],
     )
 
     expect(merged.map((one) => one.id)).toStrictEqual(['sample.alpha'])
