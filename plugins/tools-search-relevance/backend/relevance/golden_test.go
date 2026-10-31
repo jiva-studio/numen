@@ -2,13 +2,13 @@ package relevance_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"os"
 	"path/filepath"
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/relevance"
 )
@@ -16,7 +16,8 @@ import (
 // goldenFixture is a sample vault and the calibration the calibration of the core measured on it
 // before that code moved into this plugin. The samples are the titles with their vectors and the
 // stored vectors of the passages. The expected values are the output of the core's
-// usecase/floor Calibrate on those samples, so the plugin has to measure the same floor.
+// usecase/floor Calibrate on those samples, so the plugin has to measure the same floor. The host
+// double compares a title with a passage the way the core does, over the stored bytes.
 type goldenFixture struct {
 	Name   string `json:"name"`
 	Titles []struct {
@@ -60,36 +61,97 @@ func readFixtures(t *testing.T) []goldenFixture {
 	return fixtures
 }
 
-// hostOf is a host whose index holds the samples of the fixture, in the order they were recorded.
-func hostOf(fixture goldenFixture) *hosttest.Search {
+// sourcePath is the path of the note of a source. The numbers are padded so that the paths sort in
+// the order the fixture records the titles.
+func sourcePath(source int64) string { return fmt.Sprintf("note-%05d.md", source) }
+
+// coreCosine is the cosine of the angle between a query vector and a stored vector of signed bytes,
+// summed in the order the core sums it.
+func coreCosine(query, stored []float32) float64 {
+	if len(query) != len(stored) || len(query) == 0 {
+		return 0
+	}
+	var dot0, dot1, dot2, dot3 float32
+	var left0, left1, left2, left3 float32
+	var right0, right1, right2, right3 int32
+
+	n := len(stored)
+	i := 0
+	for ; i+3 < n; i += 4 {
+		q0, s0 := query[i], int32(stored[i])
+		q1, s1 := query[i+1], int32(stored[i+1])
+		q2, s2 := query[i+2], int32(stored[i+2])
+		q3, s3 := query[i+3], int32(stored[i+3])
+
+		dot0 += q0 * float32(s0)
+		left0 += q0 * q0
+		right0 += s0 * s0
+
+		dot1 += q1 * float32(s1)
+		left1 += q1 * q1
+		right1 += s1 * s1
+
+		dot2 += q2 * float32(s2)
+		left2 += q2 * q2
+		right2 += s2 * s2
+
+		dot3 += q3 * float32(s3)
+		left3 += q3 * q3
+		right3 += s3 * s3
+	}
+
+	dot := float64((dot0 + dot1) + (dot2 + dot3))
+	remaining := float64((left0 + left1) + (left2 + left3))
+	right := float64((right0 + right1) + (right2 + right3))
+
+	for ; i < n; i++ {
+		q, s := query[i], int32(stored[i])
+		dot += float64(q * float32(s))
+		remaining += float64(q * q)
+		right += float64(s * s)
+	}
+
+	if remaining == 0 || right == 0 {
+		return 0
+	}
+	return dot / math.Sqrt(remaining*right)
+}
+
+// hostOf is a host whose index holds the passages of the fixture and whose vault holds a note for
+// each title, in the order they were recorded.
+func hostOf(fixture goldenFixture) (*hosttest.Search, *hosttest.Vault) {
 	search := hosttest.NewSearch("physics")
 	search.SetModel(hosttest.SearchModel{Name: modelName, Recipe: modelRecipe})
+	vault := hosttest.New("physics")
 	vectors := map[string][]float32{}
-	titles := make([]host.NoteTitle, len(fixture.Titles))
-	for i, one := range fixture.Titles {
+	for _, one := range fixture.Titles {
 		vectors[one.Text] = one.Vector
-		titles[i] = host.NoteTitle{Source: one.Source, Title: one.Text}
+		vault.File(sourcePath(one.Source), fmt.Sprintf("---\ntitle: %s\n---\n", one.Text))
 	}
 	search.SetEmbedder(func(text string) []float32 { return vectors[text] })
-	search.SetNoteTitles(titles)
-	passages := make([]host.ChunkVector, len(fixture.Passages))
+	passages := make([]hosttest.SearchPassage, len(fixture.Passages))
 	for i, one := range fixture.Passages {
-		passages[i] = host.ChunkVector{Source: one.Source, Vector: one.Vector}
+		values := make([]float32, len(one.Vector))
+		for j, b := range one.Vector {
+			values[j] = float32(int8(b))
+		}
+		passages[i] = hosttest.SearchPassage{Path: sourcePath(one.Source), Vector: values}
 	}
-	search.SetChunkVectors(modelRecipe, passages)
-	return search
+	search.SetPassages(modelRecipe, passages)
+	search.SetCosine(coreCosine)
+	return search, vault
 }
 
 func TestTheSamplesOfTheCoreGiveTheSameFloorInThePlugin(t *testing.T) {
 	for _, fixture := range readFixtures(t) {
 		t.Run(fixture.Name, func(t *testing.T) {
-			search := hostOf(fixture)
+			search, vault := hostOf(fixture)
 			state, err := search.GetEmbeddingState(t.Context())
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			outcome, got, err := relevance.NewCalibrator(newClock()).Calibrate(t.Context(), search, state)
+			outcome, got, err := relevance.NewCalibrator(newClock()).Calibrate(t.Context(), search, vault, state)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -126,10 +188,9 @@ func TestTheFloorOfTheCoreIsStoredByTheFloorsOfThePlugin(t *testing.T) {
 			continue
 		}
 		t.Run(fixture.Name, func(t *testing.T) {
-			search := hostOf(fixture)
+			search, vault := hostOf(fixture)
 			search.SetProgress(10, 10)
-			vault := hosttest.New("physics")
-			floors := relevance.New(relevance.Host{Search: search, Store: vault.Store()}, newClock())
+			floors := relevance.New(relevance.Host{Search: search, Vault: vault, Store: vault.Store()}, newClock())
 
 			outcome, state, err := floors.Calibrate(t.Context(), "")
 			if err != nil || outcome != relevance.Calibrated {

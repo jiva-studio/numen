@@ -43,8 +43,8 @@ func TestManifestDeclaresTheIndexAndTheFloorPermissionsAndNoCapability(t *testin
 	if manifest.ID != "md.numen.tools.search.relevance" {
 		t.Errorf("id = %q", manifest.ID)
 	}
-	if !slices.Equal(manifest.Permissions, []string{"index:read", "search:policy"}) {
-		t.Errorf("permissions = %v, want index:read and search:policy", manifest.Permissions)
+	if !slices.Equal(manifest.Permissions, []string{"index:read", "search:policy", "vault:read"}) {
+		t.Errorf("permissions = %v, want index:read, search:policy and vault:read", manifest.Permissions)
 	}
 	if len(manifest.Capabilities) != 0 {
 		t.Errorf("capabilities = %v, want none: the plugin embeds through the model of the host", manifest.Capabilities)

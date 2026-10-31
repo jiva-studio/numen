@@ -7,7 +7,7 @@
   "targets": ["desktop.editor"],
   "contributes": { "category": "tools" },
   "activationEvents": ["*"],
-  "permissions": ["index:read", "search:policy"],
+  "permissions": ["index:read", "search:policy", "vault:read"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": true,

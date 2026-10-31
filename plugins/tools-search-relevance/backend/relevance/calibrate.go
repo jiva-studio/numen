@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -13,10 +14,8 @@ import (
 )
 
 const (
-	// titleSample and passageSample are how many titles and passages a calibration reads from the
-	// vault at most.
-	titleSample   = 200
-	passageSample = 500
+	// titleSample is how many note titles a calibration takes from the vault at most.
+	titleSample = 200
 
 	// minQueries, minPassages and minSources are what a vault has to hold before a measurement is
 	// meaningful.
@@ -62,8 +61,9 @@ type Clock interface {
 
 // Calibrator measures where the model in use puts text about different things in a vault.
 //
-// The note titles are the queries. Each is compared with the passages of every other note, and those
-// pairs are not about each other: the similarities between them are the noise a floor has to stand above.
+// The note titles are the queries. The host compares each with the passages of every other note, and
+// those pairs are not about each other: the similarities between them are the noise a floor has to
+// stand above.
 type Calibrator struct {
 	clock Clock
 }
@@ -73,25 +73,41 @@ func NewCalibrator(clock Clock) Calibrator {
 	return Calibrator{clock: clock}
 }
 
-// Calibrate measures the vault the search works under the recipe of the state.
-func (c Calibrator) Calibrate(ctx context.Context, index host.Search, state host.EmbeddingState) (Outcome, Calibration, error) {
-	titles, passages, err := readSamples(ctx, index, state.Recipe)
+// Calibrate measures the vault the search and the notes work, under the recipe of the state.
+func (c Calibrator) Calibrate(ctx context.Context, index host.Search, notes host.NoteLookup, state host.EmbeddingState) (Outcome, Calibration, error) {
+	titles, err := readTitles(ctx, notes)
 	if err != nil {
 		return 0, Calibration{}, err
 	}
-	if len(titles) < minQueries || len(passages) < minPassages || countSources(passages) < minSources {
+	if len(titles) < minQueries {
+		return TooFew, Calibration{}, nil
+	}
+	counts, err := index.SampleSimilarities(ctx, state.Recipe, nil)
+	if err != nil {
+		return 0, Calibration{}, fmt.Errorf("sample the passages: %w", err)
+	}
+	if isTooSmall(counts) {
 		return TooFew, Calibration{}, nil
 	}
 
-	vectors, err := embedTitles(ctx, index, state.Recipe, titles)
+	queries, err := embedTitles(ctx, index, state.Recipe, titles)
 	if err != nil {
 		return 0, Calibration{}, err
 	}
-	similarities, queries, err := measureNoise(ctx, titles, vectors, passages)
-	if err != nil {
-		return 0, Calibration{}, err
+	sample, err := index.SampleSimilarities(ctx, state.Recipe, queries)
+	switch {
+	case errors.Is(err, host.ErrRecipeMismatch):
+		return 0, Calibration{}, fmt.Errorf("%w: %w", ErrRecipeChanged, err)
+	case err != nil:
+		return 0, Calibration{}, fmt.Errorf("sample the similarities: %w", err)
+	case len(sample.Rows) != len(queries):
+		return 0, Calibration{}, fmt.Errorf("sample the similarities: %d rows for %d queries", len(sample.Rows), len(queries))
 	}
-	if queries < minQueries {
+	if isTooSmall(sample) {
+		return TooFew, Calibration{}, nil
+	}
+	similarities, measured := collectNoise(queries, sample)
+	if measured < minQueries {
 		return TooFew, Calibration{}, nil
 	}
 
@@ -101,30 +117,51 @@ func (c Calibrator) Calibrate(ctx context.Context, index host.Search, state host
 		Median:         stats.Median,
 		Spread:         stats.Spread,
 		Histogram:      stats.Histogram,
-		QueryCount:     queries,
-		PassageCount:   len(passages),
+		QueryCount:     measured,
+		PassageCount:   sample.PassageCount,
 		CalibratedTime: c.clock.Now(),
 	}, nil
 }
 
-// readSamples reads the titles and the passages a calibration measures.
-func readSamples(ctx context.Context, index host.Search, recipe string) ([]host.NoteTitle, []host.ChunkVector, error) {
-	titles, err := index.ListNoteTitles(ctx, titleSample)
-	if err != nil {
-		return nil, nil, fmt.Errorf("read the note titles: %w", err)
-	}
-	passages, err := index.ListSmallChunkVectors(ctx, recipe, passageSample)
-	if err != nil {
-		return nil, nil, fmt.Errorf("read the stored vectors: %w", err)
-	}
-	return titles, passages, nil
+// isTooSmall reports whether the sampled passages are too few, or come from too few notes, to measure.
+func isTooSmall(sample host.SimilaritySample) bool {
+	return sample.PassageCount < minPassages || sample.SourceCount < minSources
 }
 
-// embedTitles returns one vector per title, in one call to the model.
-func embedTitles(ctx context.Context, index host.Search, recipe string, titles []host.NoteTitle) ([][]float32, error) {
+// noteTitle is the title of a note and its path.
+type noteTitle struct {
+	path string
+	text string
+}
+
+// readTitles reads the titles of the first notes of the vault, at most titleSample of them, in the
+// order the host lists the paths. A note with a blank title is left out.
+func readTitles(ctx context.Context, notes host.NoteLookup) ([]noteTitle, error) {
+	paths, err := notes.GetPathsOfType(ctx, host.TypeNote)
+	if err != nil {
+		return nil, fmt.Errorf("list the notes: %w", err)
+	}
+	titles := make([]noteTitle, 0, min(len(paths), titleSample))
+	for start := 0; start < len(paths) && len(titles) < titleSample; start += titleSample {
+		batch := paths[start:min(start+titleSample, len(paths))]
+		refs, err := notes.GetNotes(ctx, batch)
+		if err != nil {
+			return nil, fmt.Errorf("read the note titles: %w", err)
+		}
+		for _, path := range batch {
+			if ref, found := refs[path]; found && strings.TrimSpace(ref.Title) != "" && len(titles) < titleSample {
+				titles = append(titles, noteTitle{path: path, text: ref.Title})
+			}
+		}
+	}
+	return titles, nil
+}
+
+// embedTitles returns one query per title, in one call to the model.
+func embedTitles(ctx context.Context, index host.Search, recipe string, titles []noteTitle) ([]host.SimilarityQuery, error) {
 	texts := make([]string, len(titles))
 	for i, title := range titles {
-		texts[i] = clipText(title.Title, host.MaxEmbeddedBytes)
+		texts[i] = clipText(title.text, host.MaxEmbeddedBytes)
 	}
 	embedded, err := index.EmbedTexts(ctx, texts)
 	switch {
@@ -137,7 +174,11 @@ func embedTitles(ctx context.Context, index host.Search, recipe string, titles [
 	case len(embedded.Vectors) != len(titles):
 		return nil, fmt.Errorf("embed the titles: %w: %d vectors for %d titles", host.ErrEmbeddingFailed, len(embedded.Vectors), len(titles))
 	}
-	return embedded.Vectors, nil
+	queries := make([]host.SimilarityQuery, len(titles))
+	for i, title := range titles {
+		queries[i] = host.SimilarityQuery{Path: title.path, Vector: embedded.Vectors[i]}
+	}
+	return queries, nil
 }
 
 // clipText is the text cut to at most limit bytes at the end of a character.
@@ -152,38 +193,17 @@ func clipText(text string, limit int) string {
 	return text[:end]
 }
 
-// measureNoise is the similarity of each title with each passage of another source, and how many
-// titles were measured. A title without a vector is not measured.
-func measureNoise(ctx context.Context, titles []host.NoteTitle, vectors [][]float32, passages []host.ChunkVector) ([]float64, int, error) {
-	similarities := make([]float64, 0, len(titles)*len(passages))
-	queries := 0
-	for i, title := range titles {
-		if err := ctx.Err(); err != nil {
-			return nil, 0, err
-		}
-		query := vectors[i]
-		if len(query) == 0 {
+// collectNoise gathers the similarities of the sample into one list, and counts the queries that had
+// a vector. A query without a vector is not measured.
+func collectNoise(queries []host.SimilarityQuery, sample host.SimilaritySample) ([]float64, int) {
+	similarities := make([]float64, 0, len(queries)*sample.PassageCount)
+	measured := 0
+	for i, query := range queries {
+		if len(query.Vector) == 0 {
 			continue
 		}
-		queries++
-		for _, passage := range passages {
-			if passage.Source == title.Source {
-				continue
-			}
-			if len(passage.Vector) != len(query) {
-				return nil, 0, fmt.Errorf("a passage holds %d dimensions where the title has %d", len(passage.Vector), len(query))
-			}
-			similarities = append(similarities, getSimilarity(query, passage.Vector))
-		}
+		measured++
+		similarities = append(similarities, sample.Rows[i]...)
 	}
-	return similarities, queries, nil
-}
-
-// countSources is how many sources the passages come from.
-func countSources(passages []host.ChunkVector) int {
-	members := make(map[int64]struct{}, len(passages))
-	for _, passage := range passages {
-		members[passage.Source] = struct{}{}
-	}
-	return len(members)
+	return similarities, measured
 }

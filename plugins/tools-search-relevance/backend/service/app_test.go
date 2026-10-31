@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,6 +20,7 @@ import (
 )
 
 const (
+	maxNotes    = 100
 	token       = "plugin-token"
 	modelRecipe = "test|test-model|4|0|mean|int8@0.4"
 )
@@ -29,16 +31,28 @@ var measuredAt = time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC)
 type fixture struct {
 	app    *service.App
 	search *hosttest.Search
+	vault  *hosttest.Vault
 	queue  *hosttest.Queue
 	web    *httptest.Server
 }
 
-func passages(n, sources int) []host.ChunkVector {
-	out := make([]host.ChunkVector, n)
+func passages(n, sources int) []hosttest.SearchPassage {
+	out := make([]hosttest.SearchPassage, n)
 	for i := range out {
-		out[i] = host.ChunkVector{Source: int64(100 + i%sources), Vector: []byte{64, 64, 64, 64}}
+		out[i] = hosttest.SearchPassage{Path: fmt.Sprintf("source-%d.md", 100+i%sources), Vector: []float32{64, 64, 64, 64}}
 	}
 	return out
+}
+
+// setNotes makes the vault hold n notes and no other.
+func setNotes(vault *hosttest.Vault, n int) {
+	for i := 1; i <= maxNotes; i++ {
+		if i > n {
+			vault.Remove(fmt.Sprintf("note-%d.md", i))
+			continue
+		}
+		vault.File(fmt.Sprintf("note-%d.md", i), "---\ntitle: title\n---\n")
+	}
 }
 
 func newFixture(t *testing.T, hint float64) *fixture {
@@ -46,19 +60,15 @@ func newFixture(t *testing.T, hint float64) *fixture {
 	search := hosttest.NewSearch("physics", "chemistry")
 	search.SetModel(hosttest.SearchModel{Name: "test-model", Recipe: modelRecipe, FloorHint: hint})
 	search.SetEmbedder(func(string) []float32 { return []float32{1, 0, 0, 0} })
-	titles := make([]host.NoteTitle, 25)
-	for i := range titles {
-		titles[i] = host.NoteTitle{Source: int64(i + 1), Title: "title"}
-	}
-	search.SetNoteTitles(titles)
-	search.SetChunkVectors(modelRecipe, passages(60, 3))
+	search.SetPassages(modelRecipe, passages(60, 3))
 	search.SetProgress(60, 60)
 
 	vault := hosttest.New("physics")
 	vault.Beside(hosttest.New("chemistry"))
+	setNotes(vault, 25)
 	queue := hosttest.NewQueue()
 	app := service.NewAppOver(service.Hosts{
-		Floors: relevance.Host{Search: search, Store: vault.Store()},
+		Floors: relevance.Host{Search: search, Vault: vault, Store: vault.Store()},
 		Queue:  queue,
 	}, clock.NewFake(measuredAt))
 
@@ -68,7 +78,7 @@ func newFixture(t *testing.T, hint float64) *fixture {
 	}
 	web := httptest.NewServer(handler)
 	t.Cleanup(web.Close)
-	return &fixture{app: app, search: search, queue: queue, web: web}
+	return &fixture{app: app, search: search, vault: vault, queue: queue, web: web}
 }
 
 // call posts the request to a method of the service the way the window's forwarding does, and decodes
@@ -149,7 +159,7 @@ func TestTheServiceCalibratesSetsAndReadsTheFloor(t *testing.T) {
 		t.Errorf("the host applies %v, want 0.7", stored)
 	}
 
-	f.search.SetChunkVectors(modelRecipe, []host.ChunkVector{{Source: 1, Vector: []byte{127, 0, 0, 0}}})
+	f.search.SetPassages(modelRecipe, []hosttest.SearchPassage{{Path: "note-1.md", Vector: []float32{127, 0, 0, 0}}})
 	var probe api.ProbeFloorResponse
 	if status, failure := f.call(t, api.MethodProbeFloor, api.ProbeFloorRequest{Query: "entropy"}, &probe); status != http.StatusOK {
 		t.Fatalf("probe: %d %v", status, failure)
@@ -222,7 +232,7 @@ func TestTheFirstEventOfAnyKindChecksAVaultWhoseVectorsAlreadyExist(t *testing.T
 		t.Fatal("a plugin that started after the vectors existed did not measure the vault")
 	}
 
-	f.search.SetNoteTitles(nil)
+	setNotes(f.vault, 0)
 	if err := f.app.HandleEvent(ctx, "onFile:md"); err != nil {
 		t.Fatal(err)
 	}
