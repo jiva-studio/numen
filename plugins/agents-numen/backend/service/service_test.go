@@ -54,13 +54,12 @@ func withToken() connect.ClientOption {
 func TestThePluginAnswersPingWithTheProtocolVersion(t *testing.T) {
 	pos := startPlugin(t)
 
-	res, err := server.NewPluginLifecycleServiceClient(http.DefaultClient, pos, withToken()).
-		Ping(t.Context(), connect.NewRequest(&server.PingRequest{}))
+	res, err := server.NewLifecycleClient(http.DefaultClient, pos, withToken()).Ping(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Msg.GetProtocol() != server.ProtocolVersion {
-		t.Errorf("the protocol is %d", res.Msg.GetProtocol())
+	if res.Protocol != server.ProtocolVersion {
+		t.Errorf("the protocol is %d", res.Protocol)
 	}
 }
 
@@ -75,8 +74,8 @@ func TestConfigure_PropagatesSettingsToAgent(t *testing.T) {
 	defer chat.Close()
 	pos := startPlugin(t)
 
-	if _, err := server.NewPluginLifecycleServiceClient(http.DefaultClient, pos, withToken()).
-		Configure(t.Context(), connect.NewRequest(&server.ConfigureRequest{Values: map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}})); err != nil {
+	if _, err := server.NewLifecycleClient(http.DefaultClient, pos, withToken()).
+		Configure(t.Context(), map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}); err != nil {
 		t.Fatal(err)
 	}
 	res, err := agentrun.NewAgentServiceClient(http.DefaultClient, pos, withToken()).
@@ -106,8 +105,8 @@ func TestNewHandler_PropagatesSettingsToAgent(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
-	if _, err := server.NewPluginLifecycleServiceClient(web.Client(), web.URL, withToken()).
-		Configure(t.Context(), connect.NewRequest(&server.ConfigureRequest{Values: map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}})); err != nil {
+	if _, err := server.NewLifecycleClient(web.Client(), web.URL, withToken()).
+		Configure(t.Context(), map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}); err != nil {
 		t.Fatal(err)
 	}
 	res, err := agentrun.NewAgentServiceClient(web.Client(), web.URL, withToken()).

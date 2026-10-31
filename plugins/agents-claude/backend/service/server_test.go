@@ -44,34 +44,38 @@ func writeScript(t *testing.T, name, body string) string {
 }
 
 func TestLifecycleServer(t *testing.T) {
-	shutdownCh := make(chan struct{})
 	agentSvc := &agentServer{}
-	life := server.NewLifecycleServer(shutdownCh, server.WithLifecycleConfigure(func(_ context.Context, values map[string]string) error {
-		agentSvc.applyConfig(values)
+	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token"}, func(s *server.Server) error {
+		s.SetConfigure(func(_ context.Context, values map[string]string) error {
+			agentSvc.applyConfig(values)
+			return nil
+		})
 		return nil
-	}))
-
-	mux := http.NewServeMux()
-	mux.Handle(server.NewPluginLifecycleServiceHandler(life))
-
-	testServer := httptest.NewServer(mux)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	testServer := httptest.NewServer(handler)
 	defer testServer.Close()
 
-	client := server.NewPluginLifecycleServiceClient(http.DefaultClient, testServer.URL)
+	token := connect.WithInterceptors(connect.UnaryInterceptorFunc(func(next connect.UnaryFunc) connect.UnaryFunc {
+		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			req.Header().Set("Authorization", "Bearer linked-token")
+			return next(ctx, req)
+		}
+	}))
+	client := server.NewLifecycleClient(http.DefaultClient, testServer.URL, token)
 	ctx := t.Context()
 
-	pingResp, err := client.Ping(ctx, connect.NewRequest(&server.PingRequest{}))
+	ping, err := client.Ping(ctx)
 	if err != nil {
 		t.Fatalf("Ping failed: %v", err)
 	}
-	if pingResp.Msg.GetStatus() != "ok" {
-		t.Errorf("unexpected status: %s", pingResp.Msg.GetStatus())
+	if ping.Status != "ok" {
+		t.Errorf("unexpected status: %s", ping.Status)
 	}
 
-	_, err = client.Configure(ctx, connect.NewRequest(&server.ConfigureRequest{
-		Values: map[string]string{"model": "m1"},
-	}))
-	if err != nil {
+	if _, err = client.Configure(ctx, map[string]string{"model": "m1"}); err != nil {
 		t.Fatalf("Configure failed: %v", err)
 	}
 	if agentSvc.defaultModel != "m1" {

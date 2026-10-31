@@ -47,6 +47,7 @@ Plugins communicating over Connect-RPC use loopback TCP:
 
 - A plugin depends on the plugin SDK (`plugin-sdk-go`, `@numen/plugin-sdk`) and on `@numen/ui`, plus third-party code. Plugins live in other repositories and may not use any other shared library; there are no "kits".
 - The SDK is for plugins and is published. It contains what plugins use, plus the contracts of capabilities (agent provider, embedding). It contains no concrete agent, engine or runtime, and no application-side API (catalog client, manifest parser, transport, raw core clients that only windows use). Applications and the plugin host reach the core through `@numen/core-client` (`libs/core-client`), which is private and never published.
+- The Go SDK exposes no generated protocol type. Each public package defines its own types and interfaces for the fields plugins use, builds the Connect handlers and clients itself, and converts between its types and the wire messages in unexported code. A plugin imports no `libs/protocol` package. `server.NewLifecycleClient`, `embedding.NewClient` and `tools.NewClient` are the clients for plugin tests.
 - Code of one implementation family that several plugins use is duplicated in those plugins. Duplication between plugins is preferred over growth of the SDK.
 - A plugin does not use `@numen/protocol` or `@numen/core-client`. Only `@numen/plugin-sdk` and `@numen/core-client` import the protocol.
 
