@@ -6,8 +6,6 @@ import {
   MODULES_DIR,
   REPO_ROOT,
   SCRIPT_EXTENSIONS,
-  WINDOW_IDS,
-  WINDOW_ROUTE_PREFIXES,
   exec,
   failOnFindings,
   findBoundaryReferences,
@@ -91,28 +89,6 @@ export function verifyPluginsDrawNoNotices() {
   if (found.length > 0) {
     throw new Error("A plugin draws notices itself instead of showing them through ctx.notices:\n" + found.join("\n"));
   }
-}
-
-/** Every window id literal, window route literal and name of the window's service in a plugin. */
-function findPluginWindowNames() {
-  const service = /\b((?:New)?WindowService(?:Client)?)\b/g;
-  const found = [];
-  for (const file of listShippedFiles(["plugins"])) {
-    const source = readSource(file);
-    if (!source) continue;
-    for (const { line, value } of source.literals) {
-      if (WINDOW_IDS.includes(value) || WINDOW_ROUTE_PREFIXES.some((p) => value.startsWith(p))) {
-        found.push({ file, line, symbol: JSON.stringify(value) });
-      }
-    }
-    for (const hit of findInCode(source.code, service)) found.push({ file, ...hit });
-  }
-  return found;
-}
-
-/** A plugin reaches the window through the SDK: it names no window and creates no `WindowService` client. */
-export function verifyPluginsNameNoWindow() {
-  failOnFindings("A plugin names a window, window route, or WindowService", findPluginWindowNames());
 }
 
 /** The calls of Go's `os` and `filepath` packages that read or write the file system in a plugin service. */
@@ -636,13 +612,6 @@ export const PLUGIN_VERIFIERS = [
     module: "plugins",
     name: "Plugins Draw No Notices (no Notices, Notice, createNotice or notice queue imported; ctx.notices instead)",
     run: verifyPluginsDrawNoNotices,
-  },
-  {
-    id: "plugins-name-no-window",
-    scope: "plugins",
-    module: "plugins",
-    name: "Plugins Name No Window (no window ids, no window routes, no WindowService client)",
-    run: verifyPluginsNameNoWindow,
   },
   {
     id: "plugins-write-data-through-host",

@@ -358,7 +358,7 @@ To prevent linguistic contagion and degraded code readability, pseudo-literary p
 2. Never propose a third shared library for plugins. Plugins depend on the SDK and `@numen/ui` only.
 3. Prefer duplicating implementation code between plugins over moving it into the SDK.
 4. Never add or keep a check that forces code into a shared library without checking it against the plugin boundary rules in [`.agents/rules/architecture.md`](.agents/rules/architecture.md) §11.
-5. Checks never get weaker: no exclusion, no workaround that dodges a rule (such as obtaining the time through `time.After(0)`), and no name lists in checks. Derive sets from manifests and from structure.
+5. Checks never get weaker: no exclusion, no workaround that dodges a rule (such as obtaining the time through `time.After(0)`), and no name lists in checks. Derive sets from structure.
 6. Tell the owner a design decision before writing it into a plan file or implementing it. Do not present a guess as agreed.
 7. Do the work first. Run the heavy checks (full lint-layers, tests across modules, linters) once at the end.
 8. Commit messages carry no `Co-Authored-By` line and no session trailer.
