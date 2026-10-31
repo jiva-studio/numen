@@ -121,3 +121,40 @@ A rule has no exception. There is no `nolint`, `eslint-disable`, `@ts-ignore`, `
 - **UI** (`ui-isolation`, `ui-holds-no-plugin-view`, `ui-holds-no-shell-part`, `ui-exports-no-editor`, `shell-isolation`, `plugin-host-isolation`): `libs/ui/core` knows no domain, protocol or application; the shell reaches components through `@numen/ui`; the plugin host knows Vue and the plugin SDK only.
 - **Applications** (`apps-reach-no-plugin`, `window-names-no-plugin-kind`): an application reaches no plugin and states no plugin word.
 - **Fail-closed**: `every-path-has-a-layer` and `workspace-lists-every-module` fail on a module no layer owns and on a `go.mod` that `go.work` omits.
+
+## 11. Plugin boundary
+
+These rules bind every change to `libs/plugin-sdk-go`, `libs/plugin-sdk-ts`, `libs/ui`, `libs/plugin-host-ts`, `libs/plugin-manager`, `libs/core` and `plugins/`.
+
+**(a) A plugin depends on two libraries.** A plugin depends on the plugin SDK (Go: `libs/plugin-sdk-go`; TypeScript: `@numen/plugin-sdk`) and on `@numen/ui`, plus third-party code. Plugins live in other repositories and may not use any other shared library. There are no "kits": no third shared library for plugins exists, and none is proposed.
+
+**(b) The SDK contains what plugins use.** The SDK holds only code that at least one plugin imports, plus the contracts of capabilities (agent provider, embedding). It knows nothing about implementations:
+
+- no concrete agents, engines or runtimes (for example ONNX);
+- no application-side API: the catalog client, the manifest parser, and raw core clients that only windows use.
+
+Every SDK export has a plugin that uses it. The boundary check derives its forbidden words from the plugin manifests, so a word a manifest states (an agent, an engine, a runtime, a provider) cannot appear in the SDK.
+
+**(c) Implementation code is duplicated between plugins.** Code of one implementation family that several plugins use is copied into each of those plugins. Duplication between plugins is preferred over growth of the SDK. No check may push implementation code into a shared library; a check that does so is wrong and is corrected.
+
+**(d) Who may use `@numen/protocol`.**
+
+- Windows (`apps/*`) and host libraries (`libs/plugin-host-ts`) may use `@numen/protocol`. Plugins may not.
+- `libs/plugin-manager` is a component library. It depends on `@numen/ui` only, takes data by props and emits events. It owns the view-model logic (filters, query parsing, states) and declares a port interface for the gateway; the application implements the gateway.
+
+**(e) The core knows no plugin by name.** Plugins are discovered through their manifests. A manifest declares what it contributes (`contributes`: `tabKinds`, `settingsViews`, `statusViews`, `themes`, `fileTypes`, and the rest listed in `docs/plugins/README.md`). A plugin id appears nowhere in `libs/core`, `apps/*` or `libs/ui`. The plugin index is generated from the manifests at build time.
+
+**(f) The kernel keeps defaults only.** The kernel keeps the default theme, the effective search floor and its default value. Calibration, update checks and preset themes are plugins.
+
+**(g) Time, randomness and identifiers are ports.** There is one sanctioned clock per language. In Go it is a method `Now() time.Time` that implements a declared clock port. In TypeScript it is `getNow()`. The structural checks in §5 enforce this.
+
+### Comparison with established architectures
+
+- **Clean Architecture dependency rule.** Source code dependencies point inward. Here the plugins are the outermost ring. The SDK is the published interface between the core and the plugins. The core loads plugins by manifest and never imports them. Composition roots (`libs/core/container`, the application entry points) wire the concrete parts together.
+- **VS Code extension API.** VS Code exposes a curated, stable API surface and runs extensions in a separate extension host process. New API is added through a deliberate review. The equivalent rule here: every SDK export needs a plugin that uses it, and each plugin runs as its own process.
+
+The VS Code points come from its public documentation, and the Clean Architecture points from the book and its commentary. Both are secondary sources for this repository; the rules above are binding, the comparison is context.
+
+### Why duplication
+
+Plugins are independent deployables in separate repositories. A shared implementation library couples their release cycles and their dependencies: a change for one plugin forces a rebuild and a re-test of every other plugin that imports it. A copy changes with its plugin only. The cost of a copy is bounded by the plugin; the cost of shared-code coupling grows with every plugin added.
