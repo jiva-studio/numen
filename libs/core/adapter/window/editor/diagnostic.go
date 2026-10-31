@@ -14,9 +14,6 @@ const writingDiagnostics = "writing diagnostics"
 // closingResources is the entry for a file or response body that could not be closed.
 const closingResources = "closing a file"
 
-// relayingResponse is the entry for a response that could not be copied to its client.
-const relayingResponse = "relaying a response"
-
 // writeDiagnostic writes a formatted line to out. A failed write is reported
 // through report as a failed task.
 func writeDiagnostic(report func(run.Task), out io.Writer, format string, a ...any) {

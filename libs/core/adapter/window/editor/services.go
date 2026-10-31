@@ -71,9 +71,6 @@ type Services struct {
 	// returns no address, and the window reports that playback is unavailable.
 	Playing *Loopback
 
-	// UpdateEndpoint is the URL of the release manifest. When empty, the published URL is used.
-	UpdateEndpoint string
-
 	server *fileServer
 }
 

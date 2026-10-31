@@ -129,6 +129,7 @@ fs.writeFileSync(
       agent: { use: 'numen' },
       plugins: {
         'md.numen.agents.numen': { baseUrl: standIns.chatUrl, model: STAND_IN_MODEL },
+        'md.numen.tools.updater': { endpoint: standIns.updateUrl },
         'md.numen.agents.claude': { enabled: false },
         'md.numen.agents.codex': { enabled: false },
         'md.numen.agents.antigravity': { enabled: false },
@@ -165,13 +166,7 @@ pages.listen(pagesPort, host)
 
 const child = spawn(
   binaryPath,
-  [
-    `-debug-http-addr=${host}:${port}`,
-    '-debug-mock-ml',
-    `-debug-update-url=${standIns.updateUrl}`,
-    '-no-mcp',
-    `-vault=${tmpVault}`,
-  ],
+  [`-debug-http-addr=${host}:${port}`, '-debug-mock-ml', '-no-mcp', `-vault=${tmpVault}`],
   {
     stdio: 'inherit',
     env: {

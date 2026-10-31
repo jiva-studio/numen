@@ -116,7 +116,7 @@ What has landed since the last stable release is worked out before anything is u
 
 Then it tags the commit it built and makes a release on GitHub carrying the notes, the canonical and stamped builds, `checksums.txt`, and `latest.json`. A beta's release is marked as a prerelease. The tag is made once the builds are up, so no tag names a build that failed.
 
-`latest/latest.json` is the one file asked for over and over by machines that already hold the rest, and the pull zone has to be told to hold it no longer than a minute — today it says thirty days. Everything under `releases/` and `builds/` is written once, and the zone can hold it for as long as it likes.
+`latest/latest.json` is the one file asked for over and over by machines that already hold the rest — among them the editor, whose Update Notifier plugin (`md.numen.tools.updater`) asks it every few hours from its own backend, or asks `beta/latest.json` on the beta channel, or the address its settings name instead — and the pull zone has to be told to hold it no longer than a minute — today it says thirty days. Everything under `releases/` and `builds/` is written once, and the zone can hold it for as long as it likes.
 
 The page stands on one host and the builds on another, so the builds' zone has to send `Access-Control-Allow-Origin` for the page to read the manifest at all. Until it does, the page keeps the links it was written with, which reach the newest build under names that carry no version.
 
