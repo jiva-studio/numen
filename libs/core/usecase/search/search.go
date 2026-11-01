@@ -269,24 +269,9 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 		return nil, err
 	}
 	recipe := u.embedder.GetModel().Recipe()
-	var vector []float32
-	if u.cache != nil {
-		if cached, ok := u.cache.Get(recipe, query); ok {
-			vector = cached
-		}
-	}
-	if vector == nil {
-		vectors, err := u.embedder.Embed(ctx, []string{query})
-		if err != nil {
-			return nil, fmt.Errorf("%w: %w", errNoVector, err)
-		}
-		if len(vectors) != 1 {
-			return nil, fmt.Errorf("%w: the embedder answered with %d vectors for one query", errNoVector, len(vectors))
-		}
-		vector = vectors[0]
-		if u.cache != nil {
-			u.cache.Put(recipe, query, vector)
-		}
+	vector, err := u.getQueryVector(ctx, recipe, query)
+	if err != nil {
+		return nil, err
 	}
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -294,7 +279,28 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 	// A vector is stored under the recipe that produced it, which covers every
 	// property of the model that determines what a vector is. A lookup under any
 	// other recipe finds no vector and this mode returns nothing.
-	return u.passages.FindNearest(ctx, v.ID, recipe, vector, p.Kinds, p.Dense, u.getFloor(ctx, v, recipe, p))
+	return u.passages.FindNearest(ctx, v.ID, sourceport.NearestQuery{Recipe: recipe, Vector: vector, Kinds: p.Kinds, Limit: p.Dense, Floor: u.getFloor(ctx, v, recipe, p)})
+}
+
+// getQueryVector returns the vector of the query from the cache, or embeds the query
+// and caches the result.
+func (u Search) getQueryVector(ctx context.Context, recipe, query string) ([]float32, error) {
+	if u.cache != nil {
+		if cached, ok := u.cache.Get(recipe, query); ok {
+			return cached, nil
+		}
+	}
+	vectors, err := u.embedder.Embed(ctx, []string{query})
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", errNoVector, err)
+	}
+	if len(vectors) != 1 {
+		return nil, fmt.Errorf("%w: the embedder answered with %d vectors for one query", errNoVector, len(vectors))
+	}
+	if u.cache != nil {
+		u.cache.Put(recipe, query, vectors[0])
+	}
+	return vectors[0], nil
 }
 
 // getFloor is the floor of one query: the query's own, the floor source's, and
@@ -341,8 +347,10 @@ func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, 
 
 	groups, order := groupBySource(found)
 
-	filled := make([]domain.Passage, len(found))
-	keep := make([]bool, len(found))
+	fill := passageFill{
+		query: query, found: found,
+		filled: make([]domain.Passage, len(found)), keep: make([]bool, len(found)),
+	}
 	g, gctx := errgroup.WithContext(ctx)
 	g.SetLimit(u.GetExtractors())
 	for _, source := range order {
@@ -351,7 +359,7 @@ func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, 
 		}
 		indices := groups[source]
 		g.Go(func() error {
-			return fillSource(gctx, of, source, query, indices, found, filled, keep)
+			return fillSource(gctx, of, source, indices, fill)
 		})
 	}
 	if err := g.Wait(); err != nil {
@@ -362,9 +370,9 @@ func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, 
 	}
 
 	out := make([]domain.Passage, 0, len(found))
-	for i, k := range keep {
+	for i, k := range fill.keep {
 		if k {
-			out = append(out, filled[i])
+			out = append(out, fill.filled[i])
 		}
 	}
 	return out, nil
@@ -378,17 +386,20 @@ func (u Search) GetExtractors() int {
 	return defaultExtractors
 }
 
+// passageFill is what a search fills in: the passages found, the filled copies, the
+// flags of those to keep, and the query that located them.
+type passageFill struct {
+	query         string
+	found, filled []domain.Passage
+	keep          []bool
+}
+
 // fillSource extracts one source and fills in the passages of `found` at
 // `indices`, which name it. It writes only those indices of `filled` and `keep`.
 func fillSource(
-	ctx context.Context,
-	of sourceTexts,
-	source string,
-	query string,
-	indices []int,
-	found, filled []domain.Passage,
-	keep []bool,
+	ctx context.Context, of sourceTexts, source string, indices []int, fill passageFill,
 ) error {
+	found, filled, keep, query := fill.found, fill.filled, fill.keep, fill.query
 	if err := ctx.Err(); err != nil {
 		return err
 	}

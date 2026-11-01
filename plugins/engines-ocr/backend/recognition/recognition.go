@@ -173,15 +173,21 @@ func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task
 		return Result{}, fmt.Errorf("open the recogniser: %w", err)
 	}
 	model := recogniser.GetRecognitionModel()
-	recipe := fmt.Sprintf("%s|%s|%s|%d", model.From, model.Layout, model.Recogniser, model.DPI)
-	if !rec.isFor(inputHash, recipe) {
-		rec = &record{Path: req.Path, InputHash: inputHash, Recipe: recipe, PageCount: doc.GetPageCount(), Pages: nil}
-	}
+	rec = keepOrRestart(rec, req.Path, inputHash, model, doc.GetPageCount())
 
 	if err := r.readPages(ctx, pageReading{doc: doc, recogniser: recogniser, dpi: model.DPI, store: on.store, task: task}, rec); err != nil {
 		return Result{}, err
 	}
 	return putVersion(ctx, on, rec)
+}
+
+// keepOrRestart returns the record when it was made from this content with this model, else a new empty one.
+func keepOrRestart(rec *record, path, inputHash string, model Model, pageCount int) *record {
+	recipe := fmt.Sprintf("%s|%s|%s|%d", model.From, model.Layout, model.Recogniser, model.DPI)
+	if rec.isFor(inputHash, recipe) {
+		return rec
+	}
+	return &record{Path: path, InputHash: inputHash, Recipe: recipe, PageCount: pageCount, Pages: nil}
 }
 
 // pageReading is what the pages of one file are read with.

@@ -35,7 +35,7 @@ func embedFromKeptVectors(t *testing.T, db *DB, vault domain.Vault) int {
 	t.Helper()
 	ctx := t.Context()
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, testRecipe, 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, testRecipe, chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}

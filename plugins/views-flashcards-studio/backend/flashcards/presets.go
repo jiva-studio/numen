@@ -75,22 +75,27 @@ type Presets struct {
 
 // NewPresets creates the use case through which a vault's presets are read and
 // written. It takes the vault readers and writers, the deck-link resolver, the
-// note queries that identify presets and their names, the index updater, the
-// review day boundary, and the clock.
+// note queries that identify presets and their names, the index updater, and the clock.
 func NewPresets(
 	readers ports.VaultReaders,
 	writers ports.VaultWriters,
 	links ports.LinkQueries,
 	notes ports.NoteQueries,
 	index note.Levels,
-	day review.Day,
 	now ports.Clock,
 ) Presets {
 	return Presets{
 		readers: readers, writers: writers, links: links, notes: notes,
 		Problems: nil,
-		index:    index, day: day, now: now,
+		index:    index, day: review.Day{Starts: 0, In: nil}, now: now,
 	}
+}
+
+// WithDay returns the use case with the review day boundary that decides whether a preset
+// schedules anything today.
+func (u Presets) WithDay(day review.Day) Presets {
+	u.day = day
+	return u
 }
 
 // getStopReasons is why a preset schedules nothing, and why it schedules
@@ -217,27 +222,36 @@ func (r *PresetReads) getSchedulingPreset(
 		return out, nil
 	}
 
-	first := matchedLinks[0]
-	delta := first.Target.GetWritten()
-	out := CreateDefaultPreset()
-	if first.To != "" {
-		delta = first.To
-		if out, err = r.read(ctx, v, first.To); err != nil {
-			return PresetContents{}, err
-		}
-		// A note that is not a preset schedules nothing, so the deck is treated like
-		// the decks that name no preset and the problem is reported against it.
-		if out.Type != format.TypePreset {
-			out.Path = ""
-		}
-	} else {
-		out.Problems = []string{delta + " reaches no note, and the defaults stand"}
+	out, delta, err := r.readFirstLink(ctx, v, matchedLinks[0])
+	if err != nil {
+		return PresetContents{}, err
 	}
 	if len(matchedLinks) > 1 {
 		out.Problems = append(slices.Clone(out.Problems),
 			"this deck names more than one preset, and is scheduled by "+delta)
 	}
 	return out, nil
+}
+
+// readFirstLink reads the preset the link names, and returns the name of the link that schedules the deck.
+func (r *PresetReads) readFirstLink(ctx context.Context, v domain.Vault, first domain.ResolvedLink) (PresetContents, string, error) {
+	delta := first.Target.GetWritten()
+	out := CreateDefaultPreset()
+	if first.To == "" {
+		out.Problems = []string{delta + " reaches no note, and the defaults stand"}
+		return out, delta, nil
+	}
+	delta = first.To
+	out, err := r.read(ctx, v, first.To)
+	if err != nil {
+		return PresetContents{}, delta, err
+	}
+	// A note that is not a preset schedules nothing, so the deck is treated like
+	// the decks that name no preset and the problem is reported against it.
+	if out.Type != format.TypePreset {
+		out.Path = ""
+	}
+	return out, delta, nil
 }
 
 // readRolelessProblems returns what is shown against a deck that names no preset: every entry of
@@ -337,6 +351,11 @@ func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (P
 		return PresetContents{}, fmt.Errorf("read %s: %w", path, err)
 	}
 
+	return parsePresetBytes(out, ref, raw)
+}
+
+// parsePresetBytes reads the settings from the bytes of the note at the path of out.
+func parsePresetBytes(out PresetContents, ref domain.FileStat, raw []byte) (PresetContents, error) {
 	if !utf8.Valid(raw) {
 		out.Outcome = note.NotText
 		return out, nil
@@ -345,13 +364,13 @@ func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (P
 		out.Outcome = note.Unreadable
 		return out, nil
 	} else if err != nil {
-		return PresetContents{}, fmt.Errorf("read %s: %w", path, err)
+		return PresetContents{}, fmt.Errorf("read %s: %w", out.Path, err)
 	}
 
 	n := markdown.Parse(ref, raw)
 	out.Outcome, out.Type = note.Ok, n.Type
 	if n.Type != format.TypePreset {
-		out.Problems = append(out.Problems, path+" is not a preset, and the defaults stand")
+		out.Problems = append(out.Problems, out.Path+" is not a preset, and the defaults stand")
 		return out, nil
 	}
 	out.Settings, out.Problems = review.ReadPreset(n.Frontmatter)
@@ -401,27 +420,34 @@ var ErrNoPresets = errors.New("this build cannot work the presets of a vault")
 func (u Presets) Point(
 	ctx context.Context, v domain.Vault, deck, preset string, stat domain.FileStat,
 ) (domain.FileStat, error) {
-	var to domain.Address
-	if preset != "" {
-		if u.notes == nil {
-			return domain.FileStat{}, ErrNoPresets
-		}
-		pos, err := u.Read(ctx, v, preset)
-		if err != nil {
-			return domain.FileStat{}, err
-		}
-		switch {
-		case pos.Outcome == note.Missing:
-			return domain.FileStat{}, fmt.Errorf("%w: %s", note.ErrNoNote, preset)
-		case pos.Outcome != note.Ok || pos.Type != format.TypePreset:
-			return domain.FileStat{}, fmt.Errorf("%w: %s", ErrNotAPreset, preset)
-		}
-		if to, err = note.GetAddress(ctx, u.notes, v.ID, preset); err != nil {
-			return domain.FileStat{}, err
-		}
+	to, err := u.getPresetAddress(ctx, v, preset)
+	if err != nil {
+		return domain.FileStat{}, err
 	}
-	linking := note.NewEditLinks(u.readers, u.writers, u.index, u.now)
-	return linking.PointAt(ctx, v, deck, LinkType, to, domain.RoleRef, stat)
+	linking := note.NewEditLinks(u.readers, u.writers, u.index, u.now).WithStat(stat)
+	return linking.PointAt(ctx, v, deck, LinkType, to, domain.RoleRef)
+}
+
+// getPresetAddress is the address of the preset a deck is to point at, empty when it is to point at none.
+func (u Presets) getPresetAddress(ctx context.Context, v domain.Vault, preset string) (domain.Address, error) {
+	var to domain.Address
+	if preset == "" {
+		return to, nil
+	}
+	if u.notes == nil {
+		return to, ErrNoPresets
+	}
+	pos, err := u.Read(ctx, v, preset)
+	if err != nil {
+		return to, err
+	}
+	switch {
+	case pos.Outcome == note.Missing:
+		return to, fmt.Errorf("%w: %s", note.ErrNoNote, preset)
+	case pos.Outcome != note.Ok || pos.Type != format.TypePreset:
+		return to, fmt.Errorf("%w: %s", ErrNotAPreset, preset)
+	}
+	return note.GetAddress(ctx, u.notes, v.ID, preset)
 }
 
 // Save writes the settings into the preset at path.

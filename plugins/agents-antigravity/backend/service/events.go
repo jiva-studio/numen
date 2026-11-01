@@ -92,14 +92,17 @@ func (r *eventReader) startBlock(evObj map[string]any) {
 	if !ok {
 		return
 	}
-	if cb["type"] == "tool_use" {
-		r.currentTool = getString(cb, "name")
-		r.currentArgs.Reset()
-		if initInput, ok := cb["input"].(map[string]any); ok {
-			if raw, err := json.Marshal(initInput); err == nil {
-				r.currentArgs.Write(raw)
-			}
-		}
+	if cb["type"] != "tool_use" {
+		return
+	}
+	r.currentTool = getString(cb, "name")
+	r.currentArgs.Reset()
+	initInput, ok := cb["input"].(map[string]any)
+	if !ok {
+		return
+	}
+	if raw, err := json.Marshal(initInput); err == nil {
+		r.currentArgs.Write(raw)
 	}
 }
 

@@ -206,14 +206,7 @@ func (s *acpSession) create() error {
 		return fmt.Errorf("%s opened a session with no id", s.program)
 	}
 	s.id = reply.SessionID
-	for _, option := range reply.ConfigOptions {
-		if option.Category == "thought_level" && option.Type == "select" {
-			s.thoughtOption, s.thoughtCurrent, s.thoughtLevels = option.ID, option.CurrentValue, option.getLevels()
-		}
-		if option.Category == "model" && option.Type == "select" {
-			s.modelOption, s.current, s.models = option.ID, option.CurrentValue, option.getModels()
-		}
-	}
+	s.readConfigOptions(reply.ConfigOptions)
 	if s.modelOption == "" && reply.Models != nil {
 		s.current = reply.Models.CurrentModelID
 		for _, one := range reply.Models.AvailableModels {
@@ -221,6 +214,18 @@ func (s *acpSession) create() error {
 		}
 	}
 	return nil
+}
+
+// readConfigOptions takes the thought level and the model from the select options the agent reports.
+func (s *acpSession) readConfigOptions(options []acpConfigOption) {
+	for _, option := range options {
+		if option.Category == "thought_level" && option.Type == "select" {
+			s.thoughtOption, s.thoughtCurrent, s.thoughtLevels = option.ID, option.CurrentValue, option.getLevels()
+		}
+		if option.Category == "model" && option.Type == "select" {
+			s.modelOption, s.current, s.models = option.ID, option.CurrentValue, option.getModels()
+		}
+	}
 }
 
 // setModel makes the session answer with the model, one of those the agent reports.

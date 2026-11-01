@@ -161,19 +161,24 @@ func assertSameEntries(t *testing.T, source catalog.Source, got, want []catalog.
 			t.Errorf("entry %s is missing", wanted.ID)
 			continue
 		}
-		entry := got[index]
-		if entry.Source != source.Name() {
-			t.Errorf("%s: source = %q, want %q", wanted.ID, entry.Source, source.Name())
-		}
-		if entry.Name != wanted.Name || entry.Version != wanted.Version || entry.Description != wanted.Description ||
-			entry.State != wanted.State || entry.Category != wanted.Category {
-			t.Errorf("%s: entry = %+v, want %+v", wanted.ID, entry, wanted)
-		}
-		if !slices.Equal(entry.Contributes.TabKinds, wanted.Contributes.TabKinds) || entry.Contributes.Feature != wanted.Contributes.Feature {
-			t.Errorf("%s: contributes = %+v, want %+v", wanted.ID, entry.Contributes, wanted.Contributes)
-		}
-		if !slices.Equal(entry.Requirements.Targets, wanted.Requirements.Targets) {
-			t.Errorf("%s: targets = %v, want %v", wanted.ID, entry.Requirements.Targets, wanted.Requirements.Targets)
-		}
+		assertSameEntry(t, source, got[index], wanted)
+	}
+}
+
+// assertSameEntry compares one entry with the entry wanted.
+func assertSameEntry(t *testing.T, source catalog.Source, entry, wanted catalog.Entry) {
+	t.Helper()
+	if entry.Source != source.Name() {
+		t.Errorf("%s: source = %q, want %q", wanted.ID, entry.Source, source.Name())
+	}
+	if entry.Name != wanted.Name || entry.Version != wanted.Version || entry.Description != wanted.Description ||
+		entry.State != wanted.State || entry.Category != wanted.Category {
+		t.Errorf("%s: entry = %+v, want %+v", wanted.ID, entry, wanted)
+	}
+	if !slices.Equal(entry.Contributes.TabKinds, wanted.Contributes.TabKinds) || entry.Contributes.Feature != wanted.Contributes.Feature {
+		t.Errorf("%s: contributes = %+v, want %+v", wanted.ID, entry.Contributes, wanted.Contributes)
+	}
+	if !slices.Equal(entry.Requirements.Targets, wanted.Requirements.Targets) {
+		t.Errorf("%s: targets = %v, want %v", wanted.ID, entry.Requirements.Targets, wanted.Requirements.Targets)
 	}
 }

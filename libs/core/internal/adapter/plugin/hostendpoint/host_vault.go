@@ -82,29 +82,47 @@ func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return 0, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
-	switch {
-	case errors.Is(err, hostvault.ErrNoVault):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT, nil
-	case errors.Is(err, vaultport.ErrStale):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE, nil
-	case errors.Is(err, vaultport.ErrAlreadyExists):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS, nil
-	case errors.Is(err, vaultport.ErrLockedByAnother):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED_BY_ANOTHER, nil
-	case errors.Is(err, vaultport.ErrNotANote):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE, nil
-	case errors.Is(err, vaultport.ErrOutside):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE, nil
-	case errors.Is(err, domain.ErrHierarchyCycle):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE, nil
-	case errors.Is(err, domain.ErrInvalidConnection), errors.Is(err, domain.ErrNotCreatable):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION, nil
-	case errors.Is(err, domain.ErrNoFreeName):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED, nil
-	case errors.Is(err, fs.ErrNotExist):
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_MISSING, nil
+	if code, ok := getVaultErrorCode(err); ok {
+		return code, nil
+	}
+	if code, ok := getDomainErrorCode(err); ok {
+		return code, nil
 	}
 	return 0, connect.NewError(connect.CodeInternal, err)
+}
+
+// getVaultErrorCode is the code of an error the vault port defines.
+func getVaultErrorCode(err error) (v1.HostVaultErrorCode, bool) {
+	switch {
+	case errors.Is(err, hostvault.ErrNoVault):
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT, true
+	case errors.Is(err, vaultport.ErrStale):
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE, true
+	case errors.Is(err, vaultport.ErrAlreadyExists):
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS, true
+	case errors.Is(err, vaultport.ErrLockedByAnother):
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED_BY_ANOTHER, true
+	case errors.Is(err, vaultport.ErrNotANote):
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE, true
+	case errors.Is(err, vaultport.ErrOutside):
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE, true
+	case errors.Is(err, fs.ErrNotExist):
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_MISSING, true
+	}
+	return 0, false
+}
+
+// getDomainErrorCode is the code of an error the domain defines.
+func getDomainErrorCode(err error) (v1.HostVaultErrorCode, bool) {
+	switch {
+	case errors.Is(err, domain.ErrHierarchyCycle):
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE, true
+	case errors.Is(err, domain.ErrInvalidConnection), errors.Is(err, domain.ErrNotCreatable):
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION, true
+	case errors.Is(err, domain.ErrNoFreeName):
+		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED, true
+	}
+	return 0, false
 }
 
 const noVault = v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT

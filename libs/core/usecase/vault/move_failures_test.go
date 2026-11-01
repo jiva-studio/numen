@@ -86,10 +86,10 @@ func (f filing) wiring() wiring {
 // moveOver returns the move of an unconfigured installation, built from what
 // the test supplies.
 func (f filing) moveOver(w wiring) vaults.Move {
-	notes := note.NewMove(
-		f.readers, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		w.links, f.db.Queries(), f.db.Sources(), w.index, testsupport.NewClock(),
-	)
+	notes := note.NewMove(note.MoveDeps{
+		Readers: f.readers, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
+		Links: w.links, Names: f.db.Queries(), Sources: f.db.Sources(), Index: w.index, Now: testsupport.NewClock(),
+	})
 	notes.Sync = func() note.SyncTitleAndFilename { return true }
 	notes.Drawing = func(_ context.Context, went domain.Move) error {
 		*f.went = append(*f.went, went)

@@ -151,11 +151,19 @@ func (s *agentServer) Ask(ctx context.Context, msg *agentrun.Request, send func(
 		return err
 	}
 
-	runErr := s.streamClaude(ctx, send, msg, cmdName, cmdArgs, claudeArgs, configFile)
+	runErr := s.streamClaude(ctx, send, msg, claudeCommand{name: cmdName, args: cmdArgs, claudeArgs: claudeArgs, configFile: configFile})
 	if removeErr := agentrun.RemoveFile(configFile); removeErr != nil {
 		return errors.Join(runErr, fmt.Errorf("remove the tool configuration: %w", removeErr))
 	}
 	return runErr
+}
+
+// claudeCommand is the program to start for a run and the files it works with.
+type claudeCommand struct {
+	name       string
+	args       []string
+	claudeArgs []string
+	configFile string
 }
 
 // streamClaude starts the program and streams its responses until it ends.
@@ -163,9 +171,7 @@ func (s *agentServer) streamClaude(
 	ctx context.Context,
 	send func(*agentrun.Response) error,
 	msg *agentrun.Request,
-	cmdName string,
-	cmdArgs, claudeArgs []string,
-	configFile string,
+	cmd claudeCommand,
 ) error {
 	conversation := msg.Conversation
 	runCtx, cancel := context.WithCancel(ctx)
@@ -186,7 +192,7 @@ func (s *agentServer) streamClaude(
 		return err
 	}
 
-	cmd, out, stderrBuf, err := s.launchAgentCmd(runCtx, cmdName, cmdArgs, claudeArgs, msg)
+	proc, out, stderrBuf, err := s.launchAgentCmd(runCtx, cmd.name, cmd.args, cmd.claudeArgs, msg)
 	if err != nil {
 		return err
 	}
@@ -194,10 +200,12 @@ func (s *agentServer) streamClaude(
 	recordSession := func(session string) { s.registry.SetSession(conversation, session) }
 	reasons := make(chan string, 1)
 	go func() {
-		reasons <- parseStream(runCtx, out, send, toolcall.IndexDeclarations(msg.ToolDeclarations), recordSession, s.clock, configFile != "")
+		reasons <- parseStream(runCtx, out, send, streamOptions{
+			words: toolcall.IndexDeclarations(msg.ToolDeclarations), record: recordSession, clock: s.clock, expectsVault: cmd.configFile != "",
+		})
 	}()
 
-	stoppedReason, ok := waitAgentCompletion(runCtx, cmd, out, stderrBuf, reasons)
+	stoppedReason, ok := waitAgentCompletion(runCtx, proc, out, stderrBuf, reasons)
 	if !ok {
 		return nil
 	}

@@ -47,18 +47,21 @@ type Move struct {
 // readers and writers, the link queries that find links to the note, the name
 // queries that decide which name resolves to it, the index file registry, the
 // level that syncs the repaired notes with the index, and the clock.
-func NewMove(
-	readers vaultport.VaultReaders,
-	writers vaultport.VaultWriters,
-	links noteport.LinkQueries,
-	names NameQueries,
-	sources sourceport.SourceRepository,
-	index Levels,
-	now machineport.Clock,
-) Move {
+// MoveDeps is what NewMove takes.
+type MoveDeps struct {
+	Readers vaultport.VaultReaders
+	Writers vaultport.VaultWriters
+	Links   noteport.LinkQueries
+	Names   NameQueries
+	Sources sourceport.SourceRepository
+	Index   Levels
+	Now     machineport.Clock
+}
+
+func NewMove(d MoveDeps) Move {
 	return Move{
-		readers: readers, writers: writers, links: links,
-		names: names, sources: sources, index: index, now: now,
+		readers: d.Readers, writers: d.Writers, links: d.Links,
+		names: d.Names, sources: d.Sources, index: d.Index, now: d.Now,
 	}
 }
 

@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/internal/vector"
+	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -217,16 +218,16 @@ func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, 
 }
 
 // FindNearest is a semantic search: the chunks of one vault nearest a query
-// vector, nearest first, at most `limit` of them.
+// vector, nearest first, at most `search.Limit` of them.
 //
-// The coarse pass over the bit vectors keeps several times `limit` candidates,
+// The coarse pass over the bit vectors keeps several times `search.Limit` candidates,
 // and the full-precision vectors order them. A chunk below the similarity floor
 // is not a result, so a vault without matching content returns no results.
-func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, recipe string, query []float32, of []domain.SourceKind, limit int, floor float64) ([]domain.Passage, error) {
-	if limit <= 0 {
-		return nil, fmt.Errorf("a search by meaning needs a positive limit, got %d", limit)
+func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, search sourceport.NearestQuery) ([]domain.Passage, error) {
+	if search.Limit <= 0 {
+		return nil, fmt.Errorf("a search by meaning needs a positive limit, got %d", search.Limit)
 	}
-	if len(query) == 0 {
+	if len(search.Vector) == 0 {
 		return nil, nil
 	}
 	vault, err := vaultRow(ctx, q.db, vaultID)
@@ -237,20 +238,20 @@ func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, recip
 		return nil, err
 	}
 
-	item, err := q.findNearestByBits(ctx, vault, query, limit*coarseCandidates)
+	item, err := q.findNearestByBits(ctx, vault, search.Vector, search.Limit*coarseCandidates)
 	if err != nil {
-		if q.hasOtherCoarseRecipe(ctx, recipe) {
+		if q.hasOtherCoarseRecipe(ctx, search.Recipe) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	ranked, err := q.rerank(ctx, recipe, query, item, of, floor)
+	ranked, err := q.rerank(ctx, search.Recipe, search.Vector, item, search.Kinds, search.Floor)
 	if err != nil {
 		return nil, err
 	}
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="the mutated test is >= : cutting a list of exactly limit entries to limit entries leaves it unchanged"
-	if len(ranked) > limit {
-		ranked = ranked[:limit]
+	if len(ranked) > search.Limit {
+		ranked = ranked[:search.Limit]
 	}
 	return q.getEnclosingPassages(ctx, vault, ranked)
 }
@@ -391,9 +392,14 @@ func (q *Queries) GetSourcesWithOtherRecipe(ctx context.Context, vaultID domain.
 	})
 }
 
+// Cursor is the point in the ordering of unembedded chunks that a page begins after.
+type Cursor struct {
+	MTime, Source, Chunk int64
+}
+
 // GetUnembeddedChunks is the small chunks of a vault with no vector from the
 // model in use, ordered so recently modified sources are embedded first.
-func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, recipe string, afterMTime, afterSource, afterChunk int64, limit int) (_ []Passage, err error) {
+func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, recipe string, after Cursor, limit int) (_ []Passage, err error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a batch needs a positive limit, got %d", limit)
 	}
@@ -405,11 +411,11 @@ func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultI
 		return nil, err
 	}
 
-	if afterMTime <= 0 && afterSource <= 0 && afterChunk <= 0 {
-		afterMTime = math.MaxInt64
-		afterSource = math.MaxInt64
+	if after.MTime <= 0 && after.Source <= 0 && after.Chunk <= 0 {
+		after.MTime = math.MaxInt64
+		after.Source = math.MaxInt64
 	}
-	rows, err := q.db.QueryContext(ctx, getStatement("unembedded"), recipe, vault, afterMTime, afterMTime, afterSource, afterSource, afterChunk, limit)
+	rows, err := q.db.QueryContext(ctx, getStatement("unembedded"), recipe, vault, after.MTime, after.MTime, after.Source, after.Source, after.Chunk, limit)
 	if err != nil {
 		return nil, err
 	}

@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/internal/vector"
+	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -109,7 +110,7 @@ func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) 
 // given, in both of the representations a chunk carries.
 func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 	t.Helper()
-	unembedded, err := c.db.ChunkQueries().GetUnembeddedChunks(t.Context(), v.ID, getModel().Recipe(), 0, 0, 0, 1000)
+	unembedded, err := c.db.ChunkQueries().GetUnembeddedChunks(t.Context(), v.ID, getModel().Recipe(), chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -220,7 +221,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	// A search by meaning answers with the whole table's best k, so this is where a
 	// lost filter shows.
 	dense := c.db.ChunkQueries()
-	item, err := dense.FindNearest(ctx, c.first.ID, getModel().Recipe(), newVector(+1), nil, 20, search.DefaultFloor)
+	item, err := dense.FindNearest(ctx, c.first.ID, sourceport.NearestQuery{Recipe: getModel().Recipe(), Vector: newVector(+1), Limit: 20, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -529,8 +530,7 @@ func TestASearchByMeaningAsksBelowTheRecipeAVectorIsCachedBy(t *testing.T) {
 	c := newCorpus(t)
 	c.vectorise(t, c.first, newVector(+1))
 
-	limit, err := c.db.ChunkQueries().FindNearest(
-		ctx, c.first.ID, getModel().Recipe(), newVector(+1), nil, 10, search.DefaultFloor)
+	limit, err := c.db.ChunkQueries().FindNearest(ctx, c.first.ID, sourceport.NearestQuery{Recipe: getModel().Recipe(), Vector: newVector(+1), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -538,8 +538,7 @@ func TestASearchByMeaningAsksBelowTheRecipeAVectorIsCachedBy(t *testing.T) {
 		t.Fatal("nothing came back under the recipe the vectors were written with")
 	}
 
-	astray, err := c.db.ChunkQueries().FindNearest(
-		ctx, c.first.ID, getModel().String(), newVector(+1), nil, 10, search.DefaultFloor)
+	astray, err := c.db.ChunkQueries().FindNearest(ctx, c.first.ID, sourceport.NearestQuery{Recipe: getModel().String(), Vector: newVector(+1), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -614,7 +613,7 @@ func TestEveryModeIsReportedWhichKindsAQuestionIsAbout(t *testing.T) {
 		t.Errorf("a search by name answered %d sections of books in a vault of notes", len(named))
 	}
 
-	dense, err := queries.FindNearest(ctx, c.first.ID, getModel().Recipe(), newVector(+1), books, 20, -1)
+	dense, err := queries.FindNearest(ctx, c.first.ID, sourceport.NearestQuery{Recipe: getModel().Recipe(), Vector: newVector(+1), Kinds: books, Limit: 20, Floor: -1})
 	if err != nil {
 		t.Fatal(err)
 	}

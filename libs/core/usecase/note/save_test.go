@@ -409,21 +409,21 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 	var readOnce sync.Once
 	mendRead := make(chan struct{})
 	mendMayWrite := make(chan struct{})
-	mover := note.NewMove(
-		watchedReaders{inner: vaultreader.Readers{}, read: func(path string) {
+	mover := note.NewMove(note.MoveDeps{
+		Readers: watchedReaders{inner: vaultreader.Readers{}, read: func(path string) {
 			if path != "physics/Heat.md" {
 				return
 			}
 			readOnce.Do(func() { close(mendRead) })
 			<-mendMayWrite
 		}},
-		vaultwriter.VaultWriters{Locks: locks},
-		c.db.Links(),
-		c.db.Queries(),
-		c.db.Sources(),
-		c.index,
-		testsupport.NewClock(),
-	)
+		Writers: vaultwriter.VaultWriters{Locks: locks},
+		Links:   c.db.Links(),
+		Names:   c.db.Queries(),
+		Sources: c.db.Sources(),
+		Index:   c.index,
+		Now:     testsupport.NewClock(),
+	})
 
 	saveAsking := make(chan struct{})
 	saveRead := make(chan struct{})

@@ -34,8 +34,8 @@ func newBoundedRenameField(t *testing.T, vs vaulted, maxDecks int) cards.RenameF
 	t.Helper()
 	return cards.NewRenameField(
 		vs.ports.Readers, vs.ports.Writers,
-		vs.queries, vs.queries, vs.index(t), vaulttest.NewClock(), maxDecks,
-	)
+		vs.queries, vs.queries, vs.index(t), vaulttest.NewClock(),
+	).WithMaxDecks(maxDecks)
 }
 
 func TestACardModelIsMadeWithItsTemplatesLaidDown(t *testing.T) {

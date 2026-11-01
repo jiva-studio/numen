@@ -80,8 +80,8 @@ func NewScenarios(cfg Config) Scenarios {
 	day := review.Day{Starts: starts, In: nil}
 
 	presets := NewPresets(
-		cfg.Readers, cfg.Writers, cfg.Links, cfg.Notes, leveled, day, cfg.Now,
-	)
+		cfg.Readers, cfg.Writers, cfg.Links, cfg.Notes, leveled, cfg.Now,
+	).WithDay(day)
 	// A link the index does not carry is accounted for in what parsing turned
 	// up.
 	presets.Problems = cfg.Problems

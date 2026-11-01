@@ -125,12 +125,11 @@ func (u EditLinks) Update(
 // back. A write that landed answers with the file stat of the file it
 // produced.
 func (u EditLinks) PointAt(
-	ctx context.Context, v domain.Vault, from, of string,
-	to domain.Address, role domain.LinkRole, stat domain.FileStat,
+	ctx context.Context, v domain.Vault, from string, p LinkPoint,
 ) (domain.FileStat, error) {
 	e := u.newEdit()
-	e.FileStat = stat
-	return e.shared().PointAt(ctx, v, from, of, to, role)
+	e.FileStat = p.Stat
+	return e.shared().PointAt(ctx, v, from, p.Of, p.To, p.Role)
 }
 
 // Remove takes a relationship out. The note at the other end is untouched: what
@@ -172,4 +171,14 @@ func CheckWritable(link domain.Link) error {
 
 func (u EditLinks) newEdit() Edit {
 	return NewEdit(u.readers, u.writers, u.index, u.now)
+}
+
+// LinkPoint is the relationship PointAt writes: the block it is written in (Of),
+// the address it points at, its role, and the file stat the caller believes is on
+// disk.
+type LinkPoint struct {
+	Of   string
+	To   domain.Address
+	Role domain.LinkRole
+	Stat domain.FileStat
 }

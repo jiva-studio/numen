@@ -185,21 +185,23 @@ func parseHeading(text string) (level int, heading string, ok bool) {
 	if len(rest) == 0 || (rest[0] != ' ' && rest[0] != '\t') {
 		return 0, "", false
 	}
-	i := 0
-	for i < len(rest) && (rest[i] == ' ' || rest[i] == '\t') {
-		i++
-	}
-	content := rest[i:]
+	content := strings.TrimLeft(rest, " \t")
 	if len(content) == 0 {
 		return 0, "", false
 	}
-	headingText := strings.TrimRight(content, " \t")
-	headingText = strings.TrimRight(headingText, "#")
-	headingText = strings.TrimRight(headingText, " \t")
-	if headingText == "" {
-		headingText = content[:1]
+	return n, trimClosingMarks(content), true
+}
+
+// trimClosingMarks removes the trailing blanks and the closing hashes of a heading, and keeps the
+// first character when nothing else is left.
+func trimClosingMarks(content string) string {
+	text := strings.TrimRight(content, " \t")
+	text = strings.TrimRight(text, "#")
+	text = strings.TrimRight(text, " \t")
+	if text == "" {
+		return content[:1]
 	}
-	return n, headingText, true
+	return text
 }
 
 // title prefers an explicit frontmatter title and falls back to the filename —

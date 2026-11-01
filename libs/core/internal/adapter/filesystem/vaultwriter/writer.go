@@ -74,24 +74,8 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, st
 	}
 	defer closeAndJoin(&err, root)
 
-	mode := newFileMode
-	switch info, err := root.Stat(name); {
-	case err == nil:
-		if info.IsDir() {
-			return domain.FileStat{}, fmt.Errorf("write %s: it is a directory", path)
-		}
-		mode = info.Mode().Perm()
-		if !stat.IsZero() &&
-			(info.Size() != stat.Size || !info.ModTime().Equal(stat.ModTime)) {
-			return domain.FileStat{}, fmt.Errorf("write %s: %w", path, vaultport.ErrStale)
-		}
-	case errors.Is(err, fs.ErrNotExist):
-		// A missing note cannot have changed, so a caller holding a stat for it gets
-		// ErrStale.
-		if !stat.IsZero() {
-			return domain.FileStat{}, fmt.Errorf("write %s: %w", path, vaultport.ErrStale)
-		}
-	default:
+	mode, err := getWriteMode(root, name, path, stat)
+	if err != nil {
 		return domain.FileStat{}, err
 	}
 
@@ -138,19 +122,7 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {
 		return err
 	}
 
-	switch there, err := root.Lstat(arrives); {
-	case err == nil:
-		// A file already at the target name is a conflict unless it is the source
-		// itself: a filesystem that ignores case or accent normalization reports the
-		// new name as the file being renamed.
-		here, err := root.Lstat(leaves)
-		if err != nil {
-			return err
-		}
-		if !os.SameFile(here, there) {
-			return fmt.Errorf("move %s to %s: %w", from, to, vaultport.ErrAlreadyExists)
-		}
-	case !errors.Is(err, fs.ErrNotExist):
+	if err := checkMoveTarget(root, leaves, arrives, from, to); err != nil {
 		return err
 	}
 
@@ -454,4 +426,53 @@ func streamReplace(ctx context.Context, root *os.Root, target string, content io
 		return err
 	}
 	return atomicfile.SyncDirectory(root, dir)
+}
+
+// getWriteMode is the mode a note is written with and an error where the write
+// must not go ahead: the path is a folder, or the note is not the one the caller
+// has seen.
+func getWriteMode(root *os.Root, name, path string, stat domain.FileStat) (fs.FileMode, error) {
+	info, err := root.Stat(name)
+	switch {
+	case err == nil:
+		if info.IsDir() {
+			return 0, fmt.Errorf("write %s: it is a directory", path)
+		}
+		if !stat.IsZero() &&
+			(info.Size() != stat.Size || !info.ModTime().Equal(stat.ModTime)) {
+			return 0, fmt.Errorf("write %s: %w", path, vaultport.ErrStale)
+		}
+		return info.Mode().Perm(), nil
+	case errors.Is(err, fs.ErrNotExist):
+		// A missing note cannot have changed, so a caller holding a stat for it gets
+		// ErrStale.
+		if !stat.IsZero() {
+			return 0, fmt.Errorf("write %s: %w", path, vaultport.ErrStale)
+		}
+		return newFileMode, nil
+	default:
+		return 0, err
+	}
+}
+
+// checkMoveTarget reports an error where a file already stands at the target
+// name and is not the source itself.
+func checkMoveTarget(root *os.Root, leaves, arrives, from, to string) error {
+	there, err := root.Lstat(arrives)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	// A filesystem that ignores case or accent normalization reports the new name
+	// as the file being renamed.
+	here, err := root.Lstat(leaves)
+	if err != nil {
+		return err
+	}
+	if !os.SameFile(here, there) {
+		return fmt.Errorf("move %s to %s: %w", from, to, vaultport.ErrAlreadyExists)
+	}
+	return nil
 }

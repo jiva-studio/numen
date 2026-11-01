@@ -69,15 +69,7 @@ func ServePluginFile(w http.ResponseWriter, r *http.Request, getPluginDir func(i
 
 	file, info, err := openPluginAsset(r.Context(), pluginDir, parts[1])
 	if err != nil {
-		switch {
-		case errors.Is(err, os.ErrNotExist):
-			return false
-		case errors.Is(err, os.ErrPermission), errors.Is(err, errPluginAssetEscapes):
-			http.Error(w, "forbidden: path escapes plugin directory", http.StatusForbidden)
-		default:
-			http.Error(w, "cannot read plugin file", http.StatusInternalServerError)
-		}
-		return true
+		return answerPluginAssetError(w, err)
 	}
 	content, err := io.ReadAll(file)
 	if err = errors.Join(err, file.Close()); err != nil {
@@ -87,6 +79,20 @@ func ServePluginFile(w http.ResponseWriter, r *http.Request, getPluginDir func(i
 
 	setPluginAssetContentType(w, parts[1])
 	http.ServeContent(w, r, info.Name(), info.ModTime(), bytes.NewReader(content))
+	return true
+}
+
+// answerPluginAssetError answers a request whose file could not be opened and reports
+// whether it did. A missing file is left unanswered, for the plugin backend.
+func answerPluginAssetError(w http.ResponseWriter, err error) bool {
+	switch {
+	case errors.Is(err, os.ErrNotExist):
+		return false
+	case errors.Is(err, os.ErrPermission), errors.Is(err, errPluginAssetEscapes):
+		http.Error(w, "forbidden: path escapes plugin directory", http.StatusForbidden)
+	default:
+		http.Error(w, "cannot read plugin file", http.StatusInternalServerError)
+	}
 	return true
 }
 

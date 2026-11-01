@@ -106,12 +106,9 @@ func (t transfer) append(ctx context.Context, part string) (err error) {
 	if err != nil {
 		return err
 	}
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, t.address, nil)
+	request, err := t.newRequest(ctx, offset)
 	if err != nil {
 		return err
-	}
-	if offset > 0 {
-		request.Header.Set("Range", "bytes="+strconv.FormatInt(offset, 10)+"-")
 	}
 	answer, err := t.client.Do(request)
 	if err != nil {
@@ -133,6 +130,28 @@ func (t transfer) append(ctx context.Context, part string) (err error) {
 	if total >= 0 {
 		total += offset
 	}
+	byteCount, err := t.store(part, answer.Body, hasher, offset, total)
+	if err != nil {
+		return fmt.Errorf("fetching %s: %w", t.address, err)
+	}
+	return t.finish(hasher, offset+byteCount)
+}
+
+// newRequest asks for the file, from offset on where the partial holds bytes already.
+func (t transfer) newRequest(ctx context.Context, offset int64) (*http.Request, error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, t.address, nil)
+	if err != nil {
+		return nil, err
+	}
+	if offset > 0 {
+		request.Header.Set("Range", "bytes="+strconv.FormatInt(offset, 10)+"-")
+	}
+	return request, nil
+}
+
+// store writes the body to the partial, from its start where offset is zero and after
+// its end otherwise, feeding the hash too. It returns the bytes written.
+func (t transfer) store(part string, body io.Reader, hasher hash.Hash, offset, total int64) (int64, error) {
 	flags := os.O_WRONLY | os.O_CREATE
 	if offset == 0 {
 		flags |= os.O_TRUNC
@@ -141,16 +160,13 @@ func (t transfer) append(ctx context.Context, part string) (err error) {
 	}
 	file, err := os.OpenFile(part, flags, 0o644)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	byteCount, err := copyProgress(t.clock, io.MultiWriter(file, hasher), answer.Body, offset, total, t.onProgress)
+	byteCount, err := copyProgress(t.clock, io.MultiWriter(file, hasher), body, offset, total, t.onProgress)
 	if closeErr := file.Close(); err == nil {
 		err = closeErr
 	}
-	if err != nil {
-		return fmt.Errorf("fetching %s: %w", t.address, err)
-	}
-	return t.finish(hasher, offset+byteCount)
+	return byteCount, err
 }
 
 // finish checks the checksum of the whole file. A file that does not hold it is

@@ -64,7 +64,7 @@ func openVault(t testing.TB, notes map[string]string) vaulted {
 	standings := flashcards.NewListReviewCards(env.Ports.Readers, env.Queries, env.Queries)
 	presets := flashcards.NewPresets(
 		env.Ports.Readers, env.Ports.Writers,
-		env.Queries, env.Queries, scanned, review.Day{}, vaulttest.NewClock())
+		env.Queries, env.Queries, scanned, vaulttest.NewClock())
 	presets.Problems = env.Queries
 	// Each card is scheduled with the share of cards its own preset specifies, as
 	// the application builds it.
@@ -180,7 +180,7 @@ func (s vaulted) newCountCardsDueAt(day review.Day, now ports.Clock) flashcards.
 func (s vaulted) session(day review.Day) flashcards.Session {
 	return flashcards.NewSession(
 		s.assigning, s.standings, s.schedules,
-		flashcards.NewPresets(nil, nil, nil, nil, nil, day, vaulttest.NewClock()), day, vaulttest.NewClock(),
+		flashcards.NewPresets(nil, nil, nil, nil, nil, vaulttest.NewClock()).WithDay(day), day, vaulttest.NewClock(),
 	)
 }
 

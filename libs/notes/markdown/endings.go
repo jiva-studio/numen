@@ -49,20 +49,37 @@ func lineEnding(raw []byte) string {
 func breakWidth(block []byte, offset int) int {
 	switch block[offset] {
 	case '\r':
-		if offset+1 < len(block) && block[offset+1] == '\n' {
-			return 2
-		}
-		return 1
+		return carriageReturnWidth(block, offset)
 	case '\n':
 		return 1
 	case 0xC2:
-		if offset+1 < len(block) && block[offset+1] == 0x85 {
-			return 2
-		}
+		return nextLineWidth(block, offset)
 	case 0xE2:
-		if offset+2 < len(block) && block[offset+1] == 0x80 && (block[offset+2] == 0xA8 || block[offset+2] == 0xA9) {
-			return 3
-		}
+		return separatorWidth(block, offset)
+	}
+	return 0
+}
+
+// carriageReturnWidth returns 2 for a carriage return followed by a line feed and 1 for one alone.
+func carriageReturnWidth(block []byte, offset int) int {
+	if offset+1 < len(block) && block[offset+1] == '\n' {
+		return 2
+	}
+	return 1
+}
+
+// nextLineWidth returns the width of the Unicode NEL at an offset, or zero.
+func nextLineWidth(block []byte, offset int) int {
+	if offset+1 < len(block) && block[offset+1] == 0x85 {
+		return 2
+	}
+	return 0
+}
+
+// separatorWidth returns the width of the Unicode LS or PS at an offset, or zero.
+func separatorWidth(block []byte, offset int) int {
+	if offset+2 < len(block) && block[offset+1] == 0x80 && (block[offset+2] == 0xA8 || block[offset+2] == 0xA9) {
+		return 3
 	}
 	return 0
 }

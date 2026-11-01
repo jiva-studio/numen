@@ -37,16 +37,7 @@ func sections(body []byte, first, last int) []section {
 		}
 		line := bytes.TrimRight(body[pos:end], "\r")
 		if !f.IsCrossedByBytes(line) && !f.IsInside() {
-			if level, name, ok := heading(line, first, last); ok {
-				if n := len(out); n > 0 {
-					out[n-1].to = pos
-				}
-				// A heading the file ends on has nothing under it, so its run
-				// begins where the body ends.
-				out = append(out, section{
-					level: level, name: name, head: pos, from: min(next, len(body)), to: len(body),
-				})
-			}
+			out = openSection(out, line, levelRange{first: first, last: last}, lineOffsets{pos: pos, next: next, size: len(body)})
 		}
 		pos = next
 	}
@@ -55,6 +46,29 @@ func sections(body []byte, first, last int) []section {
 	}
 	return out
 }
+
+// openSection closes the section before it and opens one when the line is a heading of the levels.
+// The offsets are those where the line begins, where the next begins and where the body ends.
+func openSection(out []section, line []byte, levels levelRange, offsets lineOffsets) []section {
+	level, name, ok := heading(line, levels.first, levels.last)
+	if !ok {
+		return out
+	}
+	if n := len(out); n > 0 {
+		out[n-1].to = offsets.pos
+	}
+	// A heading the file ends on has nothing under it, so its run
+	// begins where the body ends.
+	return append(out, section{
+		level: level, name: name, head: offsets.pos, from: min(offsets.next, offsets.size), to: offsets.size,
+	})
+}
+
+// levelRange is the heading levels a scan reads, from first to last.
+type levelRange struct{ first, last int }
+
+// lineOffsets is where a line begins, where the next begins and where the body ends.
+type lineOffsets struct{ pos, next, size int }
 
 // heading reads a heading of one of the levels from first to last. The name may
 // be empty: `##` on its own opens a card whose first field holds nothing.

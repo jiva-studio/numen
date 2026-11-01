@@ -111,9 +111,9 @@ func (b *Backend) build(dayStart func() time.Duration) *Scenarios {
 		List:        cards.NewList(wired.Readers, wired.Notes),
 		Write:       write,
 		Create:      cards.NewCreate(wired.Writers, index, now),
-		RenameField: cards.NewRenameField(wired.Readers, wired.Writers, wired.Notes, wired.Links, index, now, cards.UnboundedDecks),
+		RenameField: cards.NewRenameField(wired.Readers, wired.Writers, wired.Notes, wired.Links, index, now),
 		BoundedRenameField: cards.NewRenameField(
-			wired.Readers, wired.Writers, wired.Notes, wired.Links, index, now, cards.MaxDecksPerRename),
+			wired.Readers, wired.Writers, wired.Notes, wired.Links, index, now).WithMaxDecks(cards.MaxDecksPerRename),
 	}
 	deckEdits := deckedit.NewScenarios(read, write)
 

@@ -116,6 +116,20 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 	return nil
 }
 
+// describeToolError is the message for the error code the host returned for the tool.
+func describeToolError(code tools.ErrorCode, name string) string {
+	switch code {
+	case tools.ErrorCodeUnknownTool:
+		return "unknown tool: " + name
+	case tools.ErrorCodeBadArguments:
+		return "invalid tool arguments"
+	case tools.ErrorCodeUnspecified:
+		return fmt.Sprintf("tool error: %v", code)
+	default:
+		return fmt.Sprintf("tool error: %v", code)
+	}
+}
+
 // ExecuteTool forwards a tool call to the host and translates the response. The host runs it in the
 // vault it has open, without request context: the call does not originate from a Numen request.
 func (a *ToolAggregator) ExecuteTool(ctx context.Context, name string, args json.RawMessage) (*sdk.CallToolResult, error) {
@@ -134,18 +148,7 @@ func (a *ToolAggregator) ExecuteTool(ctx context.Context, name string, args json
 	}
 
 	if res.GetError() != tools.ErrorCodeUnspecified {
-		var errMsg string
-		switch res.GetError() {
-		case tools.ErrorCodeUnknownTool:
-			errMsg = "unknown tool: " + name
-		case tools.ErrorCodeBadArguments:
-			errMsg = "invalid tool arguments"
-		case tools.ErrorCodeUnspecified:
-			errMsg = fmt.Sprintf("tool error: %v", res.GetError())
-		default:
-			errMsg = fmt.Sprintf("tool error: %v", res.GetError())
-		}
-		return newErrorResult(errMsg), nil
+		return newErrorResult(describeToolError(res.GetError(), name)), nil
 	}
 
 	wireResult := res.GetResult()

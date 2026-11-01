@@ -79,7 +79,7 @@ type TypeQueries interface {
 	GetPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
 }
 
-// NewRenameField renames a card model's field across its decks, refusing a vault of more than maxDecks decks.
+// NewRenameField renames a card model's field across its decks, taking a vault of any number of decks.
 func NewRenameField(
 	readers ports.VaultReaders,
 	writers ports.VaultWriters,
@@ -87,12 +87,17 @@ func NewRenameField(
 	links ports.LinkQueries,
 	index note.Levels,
 	now ports.Clock,
-	maxDecks int,
 ) RenameField {
 	return RenameField{
 		readers: readers, writers: writers, notes: notes, links: links,
-		index: index, now: now, maxDecks: maxDecks,
+		index: index, now: now, maxDecks: UnboundedDecks,
 	}
+}
+
+// WithMaxDecks returns a copy of RenameField that refuses a vault of more than maxDecks decks.
+func (u RenameField) WithMaxDecks(maxDecks int) RenameField {
+	u.maxDecks = maxDecks
+	return u
 }
 
 // WithWriters returns a copy of RenameField with the given VaultWriters.

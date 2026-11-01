@@ -22,14 +22,7 @@ func (l *Library) applyProvider(opts *ort.SessionOptions, requested Provider, un
 	case ProviderCPU:
 		return ProviderCPU, nil
 	case ProviderCoreML, ProviderAuto:
-		if runtime.GOARCH == "arm64" {
-			if err := l.enableCoreML(opts, units, modelPath); err == nil {
-				return ProviderCoreML, nil
-			} else if requested == ProviderCoreML {
-				return ProviderCPU, err
-			}
-		}
-		return ProviderCPU, nil
+		return l.applyCoreML(opts, requested, units, modelPath)
 	case ProviderCUDA:
 		if err := opts.EnableCUDA(); err != nil {
 			return ProviderCPU, err
@@ -40,6 +33,21 @@ func (l *Library) applyProvider(opts *ort.SessionOptions, requested Provider, un
 	default:
 		return ProviderCPU, nil
 	}
+}
+
+// applyCoreML enables Core ML on arm64. An explicit request for it that fails is an error; under auto the CPU is used.
+func (l *Library) applyCoreML(opts *ort.SessionOptions, requested Provider, units ComputeUnits, modelPath string) (Provider, error) {
+	if runtime.GOARCH != "arm64" {
+		return ProviderCPU, nil
+	}
+	err := l.enableCoreML(opts, units, modelPath)
+	if err == nil {
+		return ProviderCoreML, nil
+	}
+	if requested == ProviderCoreML {
+		return ProviderCPU, err
+	}
+	return ProviderCPU, nil
 }
 
 func (l *Library) enableCoreML(opts *ort.SessionOptions, units ComputeUnits, modelPath string) error {

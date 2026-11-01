@@ -87,6 +87,15 @@ func newIndexWorker(
 	})
 }
 
+// indexJob is the vault to index and the parts that index it.
+type indexJob struct {
+	vault   domain.Vault
+	rebuild bool
+	worker  *indexing.Worker
+	session *indexing.Session
+	out     io.Writer
+}
+
 // startIndexing starts the watch and the first scan together, and returns a
 // function that waits for both to stop.
 //
@@ -94,16 +103,8 @@ func newIndexWorker(
 //
 // A vault that cannot be watched stays usable: the application keeps working
 // and reports that changes will not appear automatically.
-func startIndexing(
-	ctx context.Context,
-	v domain.Vault,
-	made Assembly,
-	state *State,
-	rebuild bool,
-	worker *indexing.Worker,
-	session *indexing.Session,
-	out io.Writer,
-) (vaults.Refresh, func()) {
+func startIndexing(ctx context.Context, made Assembly, state *State, job indexJob) (vaults.Refresh, func()) {
+	v, rebuild, worker, session, out := job.vault, job.rebuild, job.worker, job.session, job.out
 	// The task is reported before the goroutine starts, so a window opened on a new
 	// vault shows the walk from the start.
 	state.reportTask(run.Task{ID: walkingNotes, Title: "Indexing the vault"})

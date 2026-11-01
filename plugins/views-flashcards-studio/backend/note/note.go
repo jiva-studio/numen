@@ -196,20 +196,27 @@ type EditLinks struct {
 	writers ports.VaultWriters
 	index   Levels
 	now     ports.Clock
+	stat    domain.FileStat
 }
 
 // NewEditLinks is what a note's relationships are written through.
 func NewEditLinks(readers ports.VaultReaders, writers ports.VaultWriters, index Levels, now ports.Clock) EditLinks {
-	return EditLinks{readers: readers, writers: writers, index: index, now: now}
+	return EditLinks{readers: readers, writers: writers, index: index, now: now, stat: domain.FileStat{}}
+}
+
+// WithStat returns a copy of EditLinks that writes over the file stat the caller read.
+func (u EditLinks) WithStat(stat domain.FileStat) EditLinks {
+	u.stat = stat
+	return u
 }
 
 // PointAt makes a note name one place under a link `type`. An empty address takes the entry out.
 func (u EditLinks) PointAt(
 	ctx context.Context, v domain.Vault, from, of string,
-	to domain.Address, role domain.LinkRole, stat domain.FileStat,
+	to domain.Address, role domain.LinkRole,
 ) (domain.FileStat, error) {
 	e, getReleaseError := NewEdit(u.readers, u.writers, u.index, u.now)
-	e.FileStat = stat
+	e.FileStat = u.stat
 	written, err := e.PointAt(ctx, v, from, of, to, role)
 	return written, errors.Join(err, getReleaseError())
 }

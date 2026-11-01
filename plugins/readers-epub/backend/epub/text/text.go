@@ -94,30 +94,20 @@ func (x *Extractor) writeNode(n *html.Node) {
 		return
 	}
 	if n.DataAtom == atom.Br {
-		x.breakLine()
-		// begins.
-		if x.markup.openElement(n, len(x.out)) {
-			x.markup.close()
-		}
+		x.writeLineBreak(n)
 		return
 	}
 
 	block := isBlock(n.DataAtom)
 	if block {
-		x.breakLine()
-		if x.isPlacing {
-			x.places.Blocks = append(x.places.Blocks, len(x.out))
-		}
+		x.startBlock()
 	}
 
 	if n.DataAtom == atom.Pre {
 		x.preformattedDepth++
 	}
 	element := x.markup.openElement(n, len(x.out))
-	if n.DataAtom == atom.Td || n.DataAtom == atom.Th {
-		// A cell is set off from the one before it by a space, and the space
-		x.write(" ")
-	}
+	x.writeCellGap(n)
 	x.writeChildren(n)
 	if n.DataAtom == atom.Pre {
 		x.preformattedDepth--
@@ -129,6 +119,30 @@ func (x *Extractor) writeNode(n *html.Node) {
 	// The line a block ends is the block's own, so it closes over it.
 	if element {
 		x.markup.close()
+	}
+}
+
+// writeCellGap sets a cell off from the one before it by a space.
+func (x *Extractor) writeCellGap(n *html.Node) {
+	if n.DataAtom == atom.Td || n.DataAtom == atom.Th {
+		x.write(" ")
+	}
+}
+
+// writeLineBreak ends the line for a br element.
+func (x *Extractor) writeLineBreak(n *html.Node) {
+	x.breakLine()
+	// begins.
+	if x.markup.openElement(n, len(x.out)) {
+		x.markup.close()
+	}
+}
+
+// startBlock ends the line before a block and notes where the block begins.
+func (x *Extractor) startBlock() {
+	x.breakLine()
+	if x.isPlacing {
+		x.places.Blocks = append(x.places.Blocks, len(x.out))
 	}
 }
 

@@ -182,7 +182,7 @@ func TestParseLines_VaultMcpFailure(t *testing.T) {
 
 func TestParseLines_NoVaultExpected(t *testing.T) {
 	line := `{"type":"system","subtype":"init","mcp_servers":[]}`
-	reason := parseStreamWithClock(t.Context(), strings.NewReader(line+"\n"), func(*agentrun.Response) error { return nil }, nil, nil, &steppingClock{tick: time.Unix(0, 0), step: time.Second}, false)
+	reason := parseStream(t.Context(), strings.NewReader(line+"\n"), func(*agentrun.Response) error { return nil }, streamOptions{clock: &steppingClock{tick: time.Unix(0, 0), step: time.Second}})
 	if reason != "" {
 		t.Fatalf("expected empty reason when no vault is expected, got %q", reason)
 	}

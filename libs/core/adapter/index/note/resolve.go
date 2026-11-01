@@ -186,7 +186,7 @@ func (q *Queries) candidates(ctx context.Context, vault int64, name string) (_ [
 // written as a bare name may resolve to a nearer note of the same name. So
 // every candidate goes through the same resolution the forward direction uses,
 // and only the ones that land here are kept.
-func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to string) (_ []domain.ResolvedLink, err error) {
+func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -206,6 +206,29 @@ func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to s
 		return nil, err
 	}
 
+	candidates, err := q.getBacklinkCandidates(ctx, vault, identifier, base)
+	if err != nil {
+		return nil, err
+	}
+
+	var out []domain.ResolvedLink
+	for _, c := range candidates {
+		if err := q.resolve(ctx, vault, vaultID, c.From, &c); err != nil {
+			return nil, err
+		}
+		// A candidate belongs here when it landed on this path in this vault.
+		// An identifier resolves without regard to vault, and two vaults may
+		// file a note at the same path.
+		if c.To == to && c.ToVault == vaultID {
+			out = append(out, c)
+		}
+	}
+	return out, nil
+}
+
+// getBacklinkCandidates returns the links that may point at the note filed under
+// an identifier and a base name, before resolution decides which of them do.
+func (q *Queries) getBacklinkCandidates(ctx context.Context, vault int64, identifier, base string) (_ []domain.ResolvedLink, err error) {
 	rows, err := q.db.QueryContext(ctx, getStatement("backlink_candidates"),
 		identifier, vault, base, vault)
 	if err != nil {
@@ -226,21 +249,5 @@ func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to s
 		r.Marker = domain.LinkMarker(marker)
 		candidates = append(candidates, r)
 	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	var out []domain.ResolvedLink
-	for _, c := range candidates {
-		if err := q.resolve(ctx, vault, vaultID, c.From, &c); err != nil {
-			return nil, err
-		}
-		// A candidate belongs here when it landed on this path in this vault.
-		// An identifier resolves without regard to vault, and two vaults may
-		// file a note at the same path.
-		if c.To == to && c.ToVault == vaultID {
-			out = append(out, c)
-		}
-	}
-	return out, nil
+	return candidates, rows.Err()
 }

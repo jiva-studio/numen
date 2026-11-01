@@ -54,23 +54,9 @@ func (r *recording) GetSegments(ctx context.Context, from, count int) ([]Audio, 
 	defer r.mu.Unlock()
 
 	if !r.isCut {
-		samples, rate, err := sound.Read(r.raw)
-		if err != nil {
+		if err := r.cut(ctx); err != nil {
 			return nil, err
 		}
-		pos, err := resample.Convert(ctx, samples, rate, signal.SampleRate, r.owner.workers)
-		if err != nil {
-			return nil, err
-		}
-		cut, err := r.owner.cutter.Split(ctx, pos)
-		if err != nil {
-			return nil, err
-		}
-		r.segments = make([]Audio, len(cut))
-		for i, one := range cut {
-			r.segments[i] = Audio(one)
-		}
-		r.raw, r.isCut = nil, true
 	}
 
 	var out []Audio
@@ -84,6 +70,28 @@ func (r *recording) GetSegments(ctx context.Context, from, count int) ([]Audio, 
 		}
 	}
 	return out, nil
+}
+
+// cut runs the segmenter over the whole recording and keeps the segments. The caller holds the lock.
+func (r *recording) cut(ctx context.Context) error {
+	samples, rate, err := sound.Read(r.raw)
+	if err != nil {
+		return err
+	}
+	pos, err := resample.Convert(ctx, samples, rate, signal.SampleRate, r.owner.workers)
+	if err != nil {
+		return err
+	}
+	cut, err := r.owner.cutter.Split(ctx, pos)
+	if err != nil {
+		return err
+	}
+	r.segments = make([]Audio, len(cut))
+	for i, one := range cut {
+		r.segments[i] = Audio(one)
+	}
+	r.raw, r.isCut = nil, true
+	return nil
 }
 
 func (r *recording) Close() error {

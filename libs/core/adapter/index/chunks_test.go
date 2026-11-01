@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/internal/vector"
+	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -139,7 +140,7 @@ func saveSeededVectors(t *testing.T, db *DB, vault domain.Vault, seed byte) {
 	t.Helper()
 	ctx := t.Context()
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,7 +198,7 @@ func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	nearVal := func(vault domain.Vault, seed byte) []domain.Passage {
-		matches, err := queries.FindNearest(ctx, vault.ID, "model", getVectorForSeed(seed), nil, 10, search.DefaultFloor)
+		matches, err := queries.FindNearest(ctx, vault.ID, sourceport.NearestQuery{Recipe: "model", Vector: getVectorForSeed(seed), Limit: 10, Floor: search.DefaultFloor})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -264,7 +265,7 @@ func TestAHitReachesBackAsTheChunkThatIsRead(t *testing.T) {
 	book(t, db, getFirst(), "library/first.epub", 0x00)
 
 	queries := db.ChunkQueries()
-	dense, err := queries.FindNearest(ctx, getFirst().ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
+	dense, err := queries.FindNearest(ctx, getFirst().ID, sourceport.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -321,7 +322,7 @@ func TestAPassageReturnsWhatItWasReadOutOf(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	dense, err := queries.FindNearest(ctx, getFirst().ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
+	dense, err := queries.FindNearest(ctx, getFirst().ID, sourceport.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -476,7 +477,7 @@ func TestANoteIsSplitIntoChunksThatCanCarryAVector(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", 0, 0, 0, 100)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", chunk.Cursor{}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -503,7 +504,7 @@ func TestRemovingASourcePreservesNothingSearchable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	matches, err := db.ChunkQueries().FindNearest(ctx, getFirst().ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
+	matches, err := db.ChunkQueries().FindNearest(ctx, getFirst().ID, sourceport.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -685,7 +686,7 @@ func TestStaleQueries_FileRecipeAndModelKeys(t *testing.T) {
 	}
 
 	// The model: chunks whose vectors were made by a different one.
-	unembedded, err := queries.GetUnembeddedChunks(ctx, getFirst().ID, "another-model", 0, 0, 0, 10)
+	unembedded, err := queries.GetUnembeddedChunks(ctx, getFirst().ID, "another-model", chunk.Cursor{}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -697,7 +698,7 @@ func TestStaleQueries_FileRecipeAndModelKeys(t *testing.T) {
 			t.Errorf("the first vault answered with %s", p.Path)
 		}
 	}
-	if isDone, err := queries.GetUnembeddedChunks(ctx, getFirst().ID, "model", 0, 0, 0, 10); err != nil {
+	if isDone, err := queries.GetUnembeddedChunks(ctx, getFirst().ID, "model", chunk.Cursor{}, 10); err != nil {
 		t.Fatal(err)
 	} else if len(isDone) != 0 {
 		t.Errorf("%d chunks need a vector from the model that made theirs", len(isDone))
@@ -715,14 +716,14 @@ func TestGetUnembeddedChunks_ResumesFromLastID(t *testing.T) {
 	}
 
 	queries := db.ChunkQueries()
-	firstBatch, err := queries.GetUnembeddedChunks(ctx, getFirst().ID, "model", 0, 0, 0, 1)
+	firstBatch, err := queries.GetUnembeddedChunks(ctx, getFirst().ID, "model", chunk.Cursor{}, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(firstBatch) != 1 {
 		t.Fatalf("a batch of one gave %d", len(firstBatch))
 	}
-	next, err := queries.GetUnembeddedChunks(ctx, getFirst().ID, "model", firstBatch[0].MTime, firstBatch[0].Source, firstBatch[0].Chunk, 10)
+	next, err := queries.GetUnembeddedChunks(ctx, getFirst().ID, "model", chunk.Cursor{MTime: firstBatch[0].MTime, Source: firstBatch[0].Source, Chunk: firstBatch[0].Chunk}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -803,7 +804,7 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -822,7 +823,7 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	unembedded, err = db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", 0, 0, 0, 1000)
+	unembedded, err = db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, "model", chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -872,7 +873,7 @@ func TestAChunkThatWentIsSavedNoVectorAndStopsNothing(t *testing.T) {
 	cutInto(t, db, getFirst(), "library/recut.epub", "the passage as it was")
 
 	// What a pass is given, before anything moves under it.
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -926,7 +927,7 @@ func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
 	book(t, db, getFirst(), "library/first.epub", 0x00)
 	queries := db.ChunkQueries()
 
-	far, err := queries.FindNearest(ctx, getFirst().ID, "model", getVectorForSeed(0xff), nil, 10, search.DefaultFloor)
+	far, err := queries.FindNearest(ctx, getFirst().ID, sourceport.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0xff), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -935,7 +936,7 @@ func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
 	}
 
 	// The same vault, queried with a vector it contains.
-	val, err := queries.FindNearest(ctx, getFirst().ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
+	val, err := queries.FindNearest(ctx, getFirst().ID, sourceport.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -954,7 +955,7 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 	cutInto(t, db, getFirst(), "library/coarse.epub", "the passage the bits prefer")
 	cutInto(t, db, getFirst(), "library/true.epub", "the passage the vectors prefer")
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", 0, 0, 0, 10)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", chunk.Cursor{}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -979,7 +980,7 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 		}
 	}
 
-	data, err := db.ChunkQueries().FindNearest(ctx, getFirst().ID, "model", getVectorForSeed(0xff), nil, 1, search.DefaultFloor)
+	data, err := db.ChunkQueries().FindNearest(ctx, getFirst().ID, sourceport.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0xff), Limit: 1, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1001,7 +1002,7 @@ func TestAVectorIsCachedByTheTextItWasMadeFrom(t *testing.T) {
 	db := openDB(t)
 	cutInto(t, db, getFirst(), "library/kept.epub", "the passage that was paid for")
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", 0, 0, 0, 10)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", chunk.Cursor{}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1061,7 +1062,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 	cutInto(t, db, getFirst(), "library/first.epub", "a passage two models read")
 	queries := db.ChunkQueries()
 
-	unembedded, err := queries.GetUnembeddedChunks(ctx, getFirst().ID, "another-model", 0, 0, 0, 10)
+	unembedded, err := queries.GetUnembeddedChunks(ctx, getFirst().ID, "another-model", chunk.Cursor{}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1081,7 +1082,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 
 	// The coarse pass matches because the bits are present. The follow-up
 	// full-precision query is model-specific, and this vector belongs to another model.
-	itemVal, err := queries.FindNearest(ctx, getFirst().ID, "model", getVectorForSeed(0x00), nil, 10, 0.5)
+	itemVal, err := queries.FindNearest(ctx, getFirst().ID, sourceport.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: 0.5})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1090,7 +1091,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 	}
 
 	// Queried with the model that created them, the same rows match.
-	its, err := queries.FindNearest(ctx, getFirst().ID, "another-model", getVectorForSeed(0x00), nil, 10, 0.5)
+	its, err := queries.FindNearest(ctx, getFirst().ID, sourceport.NearestQuery{Recipe: "another-model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: 0.5})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1111,7 +1112,7 @@ func TestTextThatWentConsumesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 	cutInto(t, db, getFirst(), "library/edited.epub", "a passage that will be rewritten")
 	cutInto(t, db, getFirst(), "library/gone.epub", "a passage in a book that goes")
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", 0, 0, 0, 10)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", chunk.Cursor{}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1167,7 +1168,7 @@ func TestAVectorStaysWhileAnyChunkStillContainsItsText(t *testing.T) {
 	cutInto(t, db, getFirst(), "library/one.epub", shared)
 	cutInto(t, db, getFirst(), "library/two.epub", shared)
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", 0, 0, 0, 10)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", chunk.Cursor{}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1513,7 +1514,7 @@ func TestRecentlyModifiedSourcesAreEmbeddedFirst(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", 0, 0, 0, 10)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", chunk.Cursor{}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -34,7 +34,7 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, before, 0, 0, 0, 100)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, before, chunk.Cursor{}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}

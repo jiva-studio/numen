@@ -124,19 +124,24 @@ func (c *codexModelCache) get(ctx context.Context, command []string) []AgentMode
 		return nil
 	}
 	if c.isAsync {
-		if !c.inFlight[key] {
-			if c.inFlight == nil {
-				c.inFlight = make(map[string]bool)
-			}
-			c.inFlight[key] = true
-			cmdCopy := slices.Clone(command)
-			go c.fetchInBackground(context.WithoutCancel(ctx), key, cmdCopy)
-		}
+		c.startBackgroundFetch(ctx, key, command)
 		c.mu.Unlock()
 		return readCodexCache()
 	}
 	c.mu.Unlock()
 	return c.fetchAndStore(ctx, key, command)
+}
+
+// startBackgroundFetch lists the models in the background unless that is already under way. The caller holds the lock.
+func (c *codexModelCache) startBackgroundFetch(ctx context.Context, key string, command []string) {
+	if c.inFlight[key] {
+		return
+	}
+	if c.inFlight == nil {
+		c.inFlight = make(map[string]bool)
+	}
+	c.inFlight[key] = true
+	go c.fetchInBackground(context.WithoutCancel(ctx), key, slices.Clone(command))
 }
 
 func (c *codexModelCache) fetchInBackground(ctx context.Context, key string, command []string) {

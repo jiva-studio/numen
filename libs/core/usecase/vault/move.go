@@ -114,7 +114,10 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (dom
 		called = u.notes.WriteFilenameAsTitle(ctx, v, to)
 	}
 
-	if err := u.rewriteNoteLinks(ctx, v, from, to, travelling, pointing, &res); err != nil {
+	rewritten, err := u.rewriteNoteLinks(ctx, v, from, to, travelling, pointing)
+	res.Repaired = append(res.Repaired, rewritten.Repaired...)
+	res.Dangling = append(res.Dangling, rewritten.Dangling...)
+	if err != nil {
 		return res, err
 	}
 	return res, called
@@ -140,15 +143,15 @@ func (u Move) getBacklinksByPath(
 }
 
 // rewriteNoteLinks rewrites the links of each note among the sources at its new path and adds what
-// it repaired and what it left dangling to res.
+// it repaired and what it left dangling in the result.
 func (u Move) rewriteNoteLinks(
 	ctx context.Context,
 	v domain.Vault,
 	from, to string,
 	sources []domain.FileStat,
 	pointing map[string][]domain.ResolvedLink,
-	res *domain.MoveResult,
-) error {
+) (domain.MoveResult, error) {
+	var res domain.MoveResult
 	for _, source := range sources {
 		if source.Kind != domain.KindNote {
 			continue
@@ -157,10 +160,10 @@ func (u Move) rewriteNoteLinks(
 		res.Repaired = append(res.Repaired, resolved.Repaired...)
 		res.Dangling = append(res.Dangling, resolved.Dangling...)
 		if err != nil {
-			return err
+			return res, err
 		}
 	}
-	return nil
+	return res, nil
 }
 
 // isRename is whether this move is one note given a different name, in the

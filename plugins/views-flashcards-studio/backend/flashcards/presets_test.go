@@ -158,7 +158,7 @@ func TestAPresetSavedWithNoLevellingPassesBackItsFingerprint(t *testing.T) {
 	s := openVault(t, getPointing())
 	presets := flashcards.NewPresets(
 		s.env.Ports.Readers, s.env.Ports.Writers,
-		s.links, s.notes, busy, review.Day{}, vaulttest.NewClock(),
+		s.links, s.notes, busy, vaulttest.NewClock(),
 	)
 
 	target, err := presets.Read(t.Context(), s.vault, "Sanskrit.md")
@@ -935,7 +935,7 @@ func TestPresetsList_ErrorsWithoutPresetIndex(t *testing.T) {
 
 	blind := flashcards.NewPresets(
 		s.env.Ports.Readers, s.env.Ports.Writers,
-		s.links, nil, s.scan, review.Day{}, vaulttest.NewClock(),
+		s.links, nil, s.scan, vaulttest.NewClock(),
 	)
 	if _, err := blind.List(t.Context(), s.vault); !errors.Is(err, flashcards.ErrNoPresets) {
 		t.Errorf("listing the presets of a vault it cannot reach answered %v", err)

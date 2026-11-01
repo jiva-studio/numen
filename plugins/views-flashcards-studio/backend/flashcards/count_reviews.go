@@ -184,17 +184,17 @@ func (u CountReviews) countFile(
 		run.log.Files = append(run.log.Files, ports.Entry{Run: file.Run, Size: ran.Size})
 	}
 
-	days := one.Days
-	if isRepeated(one.IDs, run.countedIDs) {
-		if !didOpen {
-			ran, err = log.ReadFile(ctx, store, file)
-			if err != nil {
-				return err
-			}
-		}
-		days = review.GetDayTallies(u.day, getUncounted(ran.Answers, run.countedIDs))
+	if !isRepeated(one.IDs, run.countedIDs) {
+		run.addDays(one.IDs, one.Days)
+		return nil
 	}
-	run.addDays(one.IDs, days)
+	if !didOpen {
+		ran, err = log.ReadFile(ctx, store, file)
+		if err != nil {
+			return err
+		}
+	}
+	run.addDays(one.IDs, review.GetDayTallies(u.day, getUncounted(ran.Answers, run.countedIDs)))
 	return nil
 }
 

@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/internal/vector"
+	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -150,7 +151,7 @@ func (s source) save(t *testing.T, db *index.DB) {
 
 func getUnembedded(t *testing.T, db *index.DB, vault domain.VaultID) []chunk.Passage {
 	t.Helper()
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vault, recipe, 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vault, recipe, chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -644,7 +645,7 @@ func meaningFixture(t *testing.T) *index.DB {
 func TestASearchByMeaningAnswersNearestFirstWithWhereEachExists(t *testing.T) {
 	db := meaningFixture(t)
 
-	got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, recipe, seedVector(0xF0), nil, 10, -1)
+	got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -675,12 +676,12 @@ func TestFindNearest_HonorsLimit(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	for _, limit := range []int{1, 3} {
-		got, err := queries.FindNearest(t.Context(), vaultA, recipe, seedVector(0xF0), nil, limit, -1)
+		got, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: limit, Floor: -1})
 		if err != nil || len(got) != limit {
 			t.Errorf("asked for %d, got %d, %v", limit, len(got), err)
 		}
 	}
-	both, err := queries.FindNearest(t.Context(), vaultA, recipe, seedVector(0xF0), nil, 8, -1)
+	both, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 8, Floor: -1})
 	if err != nil || len(both) != 8 {
 		t.Errorf("asked for exactly what there is, got %d, %v", len(both), err)
 	}
@@ -688,7 +689,7 @@ func TestFindNearest_HonorsLimit(t *testing.T) {
 
 func TestASearchByMeaningAnswersNothingBelowTheFloor(t *testing.T) {
 	db := meaningFixture(t)
-	got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, recipe, seedVector(0xF0), nil, 10, 0.5)
+	got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: 0.5})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -706,18 +707,18 @@ func TestASearchByMeaningStaysInItsKindsRecipeAndVault(t *testing.T) {
 	db := meaningFixture(t)
 	queries := db.ChunkQueries()
 
-	notes, err := queries.FindNearest(t.Context(), vaultA, recipe, seedVector(0x0F), []domain.SourceKind{domain.KindNote}, 10, -1)
+	notes, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0x0F), Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10, Floor: -1})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(notes) != 2 || slices.ContainsFunc(notes, func(p domain.Passage) bool { return p.Kind != domain.KindNote }) {
 		t.Errorf("a search of notes answered %v", getSources(notes))
 	}
-	other, err := queries.FindNearest(t.Context(), vaultA, "another model", seedVector(0xF0), nil, 10, -1)
+	other, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: "another model", Vector: seedVector(0xF0), Limit: 10, Floor: -1})
 	if err != nil || len(other) != 0 {
 		t.Errorf("a recipe nothing was made under answered %d, %v", len(other), err)
 	}
-	b, err := queries.FindNearest(t.Context(), vaultB, recipe, seedVector(0xF0), nil, 10, -1)
+	b, err := queries.FindNearest(t.Context(), vaultB, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1})
 	if err != nil || !slices.Equal(getSources(b), []string{"lib/elsewhere.epub", "lib/elsewhere.epub"}) {
 		t.Errorf("the other vault answered %v, %v", getSources(b), err)
 	}
@@ -727,17 +728,17 @@ func TestASearchByMeaningHasNothingToSayWithoutAQueryOrAVault(t *testing.T) {
 	queries := meaningFixture(t).ChunkQueries()
 
 	for _, empty := range [][]float32{nil, {}} {
-		got, err := queries.FindNearest(t.Context(), vaultA, recipe, empty, nil, 10, -1)
+		got, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: empty, Limit: 10, Floor: -1})
 		if err != nil || got != nil {
 			t.Errorf("an empty query answered %v, %v", got, err)
 		}
 	}
-	got, err := queries.FindNearest(t.Context(), nobody, recipe, seedVector(0xF0), nil, 10, -1)
+	got, err := queries.FindNearest(t.Context(), nobody, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1})
 	if err != nil || got != nil {
 		t.Errorf("an unknown vault answered %v, %v", got, err)
 	}
 	for _, limit := range []int{0, -2} {
-		got, err := queries.FindNearest(t.Context(), vaultA, recipe, seedVector(0xF0), nil, limit, -1)
+		got, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: limit, Floor: -1})
 		if err == nil || got != nil || !strings.Contains(err.Error(), strconv.Itoa(limit)) {
 			t.Errorf("limit %d answered %v, %v", limit, got, err)
 		}
@@ -754,7 +755,7 @@ func TestASearchByMeaningFailsOnAClosedOrBrokenIndex(t *testing.T) {
 		"no coarse": broken(t, seed, `DROP TABLE chunks_vec`),
 		"no vector": broken(t, seed, `ALTER TABLE vectors RENAME TO gone`),
 	} {
-		if _, err := queries.FindNearest(t.Context(), vaultA, recipe, seedVector(0xF0), nil, 5, -1); err == nil {
+		if _, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 5, Floor: -1}); err == nil {
 			t.Errorf("%s: a search answered", name)
 		}
 	}
@@ -765,7 +766,7 @@ func TestAChunkWhoseVectorIsOfAnotherWidthIsACorruptRow(t *testing.T) {
 		source{path: "lib/a.epub", large: "t", smalls: []string{"t"}}.save(t, db)
 		embed(t, db, vaultA, "lib/a.epub", 0xF0)
 	})
-	if _, err := queries.FindNearest(t.Context(), vaultA, recipe, seedVector(0xF0)[:512], nil, 5, -1); err == nil {
+	if _, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0)[:512], Limit: 5, Floor: -1}); err == nil {
 		t.Error("a query of 512 dimensions was compared to vectors of 1024")
 	}
 }
@@ -938,11 +939,11 @@ func TestGetUnembeddedChunks_OtherRecipeReturnsAllChunks(t *testing.T) {
 	source{path: "lib/a.epub", large: "l", smalls: []string{"s1", "s2"}}.save(t, db)
 	embed(t, db, vaultA, "lib/a.epub", 0xF0)
 
-	same, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vaultA, recipe, 0, 0, 0, 10)
+	same, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vaultA, recipe, chunk.Cursor{}, 10)
 	if err != nil || len(same) != 0 {
 		t.Errorf("the recipe the vectors were made under still needs %d, %v", len(same), err)
 	}
-	other, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vaultA, "another model", 0, 0, 0, 10)
+	other, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vaultA, "another model", chunk.Cursor{}, 10)
 	if err != nil || len(other) != 2 {
 		t.Errorf("another recipe needs %d, %v", len(other), err)
 	}
@@ -958,9 +959,9 @@ func TestAWalkOfUnembeddedChunksInPagesVisitsEachOnce(t *testing.T) {
 
 	for _, limit := range []int{1, 2, 3} {
 		var visited []int64
-		var afterMTime, afterSource, afterChunk int64
+		var after chunk.Cursor
 		for range 20 {
-			page, err := queries.GetUnembeddedChunks(t.Context(), vaultA, recipe, afterMTime, afterSource, afterChunk, limit)
+			page, err := queries.GetUnembeddedChunks(t.Context(), vaultA, recipe, after, limit)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -974,7 +975,7 @@ func TestAWalkOfUnembeddedChunksInPagesVisitsEachOnce(t *testing.T) {
 				visited = append(visited, p.Chunk)
 			}
 			last := page[len(page)-1]
-			afterMTime, afterSource, afterChunk = last.MTime, last.Source, last.Chunk
+			after = chunk.Cursor{MTime: last.MTime, Source: last.Source, Chunk: last.Chunk}
 		}
 		var want []int64
 		for _, p := range all {
@@ -992,12 +993,12 @@ func TestGetUnembeddedChunks_CursorPastEndReturnsNone(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	for _, cursor := range [][3]int64{{0, 0, 5}, {0, 5, 0}, {0, 5, 5}, {5, 0, 0}, {5, 0, 5}, {5, 5, 0}} {
-		got, err := queries.GetUnembeddedChunks(t.Context(), vaultA, recipe, cursor[0], cursor[1], cursor[2], 10)
+		got, err := queries.GetUnembeddedChunks(t.Context(), vaultA, recipe, chunk.Cursor{MTime: cursor[0], Source: cursor[1], Chunk: cursor[2]}, 10)
 		if err != nil || len(got) != 0 {
 			t.Errorf("cursor %v needs %d, %v", cursor, len(got), err)
 		}
 	}
-	start, err := queries.GetUnembeddedChunks(t.Context(), vaultA, recipe, 0, 0, 0, 10)
+	start, err := queries.GetUnembeddedChunks(t.Context(), vaultA, recipe, chunk.Cursor{}, 10)
 	if err != nil || len(start) != 1 {
 		t.Errorf("a walk from the start needs %d, %v", len(start), err)
 	}
@@ -1006,19 +1007,19 @@ func TestGetUnembeddedChunks_CursorPastEndReturnsNone(t *testing.T) {
 func TestUnembeddedChunksNeedAPositiveLimitAndAKnownVault(t *testing.T) {
 	queries := openIndex(t).ChunkQueries()
 	for _, limit := range []int{0, -1} {
-		got, err := queries.GetUnembeddedChunks(t.Context(), vaultA, recipe, 0, 0, 0, limit)
+		got, err := queries.GetUnembeddedChunks(t.Context(), vaultA, recipe, chunk.Cursor{}, limit)
 		if err == nil || got != nil || !strings.Contains(err.Error(), strconv.Itoa(limit)) {
 			t.Errorf("limit %d answered %v, %v", limit, got, err)
 		}
 	}
-	got, err := queries.GetUnembeddedChunks(t.Context(), nobody, recipe, 0, 0, 0, 10)
+	got, err := queries.GetUnembeddedChunks(t.Context(), nobody, recipe, chunk.Cursor{}, 10)
 	if err != nil || got != nil {
 		t.Errorf("an unknown vault needs %v, %v", got, err)
 	}
 }
 
 func TestUnembeddedChunksFailOnAClosedOrBrokenIndex(t *testing.T) {
-	if _, err := closed(t).GetUnembeddedChunks(t.Context(), vaultA, recipe, 0, 0, 0, 5); err == nil {
+	if _, err := closed(t).GetUnembeddedChunks(t.Context(), vaultA, recipe, chunk.Cursor{}, 5); err == nil {
 		t.Error("a closed index answered")
 	}
 	seed := func(db *index.DB) { source{path: "lib/a.epub", large: "l", smalls: []string{"s"}}.save(t, db) }
@@ -1026,7 +1027,7 @@ func TestUnembeddedChunksFailOnAClosedOrBrokenIndex(t *testing.T) {
 		"no vectors":  broken(t, seed, `ALTER TABLE vectors RENAME TO gone`),
 		"garbled row": broken(t, seed, `UPDATE chunks SET start = 'abc'`),
 	} {
-		if _, err := queries.GetUnembeddedChunks(t.Context(), vaultA, recipe, 0, 0, 0, 5); err == nil {
+		if _, err := queries.GetUnembeddedChunks(t.Context(), vaultA, recipe, chunk.Cursor{}, 5); err == nil {
 			t.Errorf("%s: answered", name)
 		}
 	}
@@ -1225,7 +1226,7 @@ func TestEveryQueryFailsWhenTheVaultCannotBeLooked(t *testing.T) {
 			return err
 		},
 		"FindNearest": func() error {
-			_, err := q.FindNearest(ctx, vaultA, recipe, seedVector(0xF0), nil, 5, -1)
+			_, err := q.FindNearest(ctx, vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 5, Floor: -1})
 			return err
 		},
 		"GetUnchunkedSources": func() error { _, err := q.GetUnchunkedSources(ctx, vaultA, "book", 5); return err },
@@ -1233,7 +1234,7 @@ func TestEveryQueryFailsWhenTheVaultCannotBeLooked(t *testing.T) {
 			_, err := q.GetSourcesWithOtherRecipe(ctx, vaultA, "book", []string{"r"}, 5)
 			return err
 		},
-		"GetUnembeddedChunks": func() error { _, err := q.GetUnembeddedChunks(ctx, vaultA, recipe, 0, 0, 0, 5); return err },
+		"GetUnembeddedChunks": func() error { _, err := q.GetUnembeddedChunks(ctx, vaultA, recipe, chunk.Cursor{}, 5); return err },
 		"GetProgress":         func() error { _, _, err := q.GetProgress(ctx, vaultA, recipe); return err },
 		"GetRecognisedSources": func() error {
 			_, err := q.GetRecognisedSources(ctx, vaultA, "book")
@@ -1264,7 +1265,7 @@ func TestACursorOfOneIsAPositionAndNotTheStart(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/a.epub", mtime: century, large: "l", smalls: []string{"a1"}}.save(t, db)
 	for _, cursor := range [][3]int64{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}} {
-		got, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vaultA, recipe, cursor[0], cursor[1], cursor[2], 10)
+		got, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vaultA, recipe, chunk.Cursor{MTime: cursor[0], Source: cursor[1], Chunk: cursor[2]}, 10)
 		if err != nil || len(got) != 0 {
 			t.Errorf("cursor %v needs %d, %v", cursor, len(got), err)
 		}
@@ -1274,14 +1275,14 @@ func TestACursorOfOneIsAPositionAndNotTheStart(t *testing.T) {
 func TestASourceModifiedAtTheLatestInstantIsStillWalked(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/last.epub", mtime: math.MaxInt64, large: "l", smalls: []string{"x"}}.save(t, db)
-	got, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vaultA, recipe, 0, 0, 0, 10)
+	got, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vaultA, recipe, chunk.Cursor{}, 10)
 	if err != nil || len(got) != 1 {
 		t.Errorf("a walk from the start needs %d, %v", len(got), err)
 	}
 }
 
 func TestASearchByMeaningThatNothingReachesAnswersWithNoPassages(t *testing.T) {
-	got, err := meaningFixture(t).ChunkQueries().FindNearest(t.Context(), vaultA, recipe, seedVector(0xF0), nil, 5, 2)
+	got, err := meaningFixture(t).ChunkQueries().FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 5, Floor: 2})
 	if err != nil || got != nil {
 		t.Errorf("a floor nothing reaches answered %v, %v", got, err)
 	}
@@ -1292,7 +1293,7 @@ func TestAPassageWhoseOffsetIsNoNumberIsACorruptRow(t *testing.T) {
 		source{path: "lib/a.epub", large: "t", smalls: []string{"t"}}.save(t, db)
 		embed(t, db, vaultA, "lib/a.epub", 0xF0)
 	}, `UPDATE chunks SET start = 'abc'`)
-	got, err := queries.FindNearest(t.Context(), vaultA, recipe, seedVector(0xF0), nil, 5, -1)
+	got, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 5, Floor: -1})
 	if err == nil || got != nil {
 		t.Errorf("answered %v, %v", got, err)
 	}

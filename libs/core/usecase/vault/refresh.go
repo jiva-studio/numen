@@ -206,11 +206,12 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	}}
 
 	recorded := make(map[string]*ledgerEntry)
+	run := refreshRun{v: v, reader: reader, group: &group, recorded: recorded, res: &res}
 	for _, path := range paths {
 		if err := ctx.Err(); err != nil {
 			return res, err
 		}
-		if err := u.refreshPath(ctx, v, reader, path, &group, recorded, &res); err != nil {
+		if err := u.refreshPath(ctx, &run, path); err != nil {
 			return res, err
 		}
 	}
@@ -234,18 +235,20 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	return res, nil
 }
 
+// refreshRun is what one Execute shares across the paths it refreshes.
+type refreshRun struct {
+	v        domain.Vault
+	reader   vaultport.VaultReader
+	group    *grouping
+	recorded map[string]*ledgerEntry
+	res      *RefreshResult
+}
+
 // refreshPath files one path under the list of res it belongs to, and adds the
 // note it holds to the group when the index is behind the file. A note indexed
 // is recorded for the ledger: its entry when it is recent, nil when it is not.
-func (u Refresh) refreshPath(
-	ctx context.Context,
-	v domain.Vault,
-	reader vaultport.VaultReader,
-	path string,
-	group *grouping,
-	recorded map[string]*ledgerEntry,
-	res *RefreshResult,
-) error {
+func (u Refresh) refreshPath(ctx context.Context, run *refreshRun, path string) error {
+	v, reader, group, recorded, res := run.v, run.reader, run.group, run.recorded, run.res
 	ref, isNote := u.statNote(ctx, reader, path, res)
 	if !isNote {
 		return nil

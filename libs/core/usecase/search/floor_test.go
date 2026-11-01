@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -27,11 +28,11 @@ func (s *floorSpy) GetNamedPassages(context.Context, domain.VaultID, string, []d
 	return nil, nil
 }
 
-func (s *floorSpy) FindNearest(_ context.Context, _ domain.VaultID, recipe string, _ []float32, _ []domain.SourceKind, _ int, floor float64) ([]domain.Passage, error) {
+func (s *floorSpy) FindNearest(_ context.Context, _ domain.VaultID, q sourceport.NearestQuery) ([]domain.Passage, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.floors = append(s.floors, floor)
-	s.recipes = append(s.recipes, recipe)
+	s.floors = append(s.floors, q.Floor)
+	s.recipes = append(s.recipes, q.Recipe)
 	return nil, nil
 }
 

@@ -180,23 +180,31 @@ func (w riffWave) readSound() ([]float32, error) {
 		return out, nil
 	}
 	for i := 0; i < count; i++ {
-		raw := w.samples[i*width : (i+1)*width]
-		switch {
-		case w.format == wavFloating && w.bits == 32:
-			out[i] = math.Float32frombits(binary.LittleEndian.Uint32(raw))
-		case w.format == wavFloating && w.bits == 64:
-			out[i] = float32(math.Float64frombits(binary.LittleEndian.Uint64(raw)))
-		case w.format == wavInteger && w.bits == 8:
-			// Eight bit samples are written without a sign, silence in the
-			// middle of their range.
-			out[i] = (float32(raw[0]) - 128) / 128
-		case w.format == wavInteger:
-			out[i] = float32(readSigned(raw)) / float32(int64(1)<<(w.bits-1))
-		default:
-			return nil, fmt.Errorf("the wav recording writes its samples as %d of %d bits", w.format, w.bits)
+		value, err := w.readSample(w.samples[i*width : (i+1)*width])
+		if err != nil {
+			return nil, err
 		}
+		out[i] = value
 	}
 	return out, nil
+}
+
+// readSample is one sample of the file as floating point.
+func (w riffWave) readSample(raw []byte) (float32, error) {
+	switch {
+	case w.format == wavFloating && w.bits == 32:
+		return math.Float32frombits(binary.LittleEndian.Uint32(raw)), nil
+	case w.format == wavFloating && w.bits == 64:
+		return float32(math.Float64frombits(binary.LittleEndian.Uint64(raw))), nil
+	case w.format == wavInteger && w.bits == 8:
+		// Eight bit samples are written without a sign, silence in the
+		// middle of their range.
+		return (float32(raw[0]) - 128) / 128, nil
+	case w.format == wavInteger:
+		return float32(readSigned(raw)) / float32(int64(1)<<(w.bits-1)), nil
+	default:
+		return 0, fmt.Errorf("the wav recording writes its samples as %d of %d bits", w.format, w.bits)
+	}
 }
 
 // readInt16 fills out with little-endian 16-bit samples scaled to [-1, 1), four

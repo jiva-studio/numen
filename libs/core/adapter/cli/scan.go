@@ -40,20 +40,7 @@ func runScanCommand(ctx context.Context, out io.Writer, deps Deps, args []string
 		r.Printf("not embedding %s: %v\n", v.Name, open.Unembedded)
 	}
 	making := open.Read
-
-	// A terminal that prints nothing for a minute looks broken. One group is
-	// about half a second, and the line rewrites itself.
-	making.OnNotesProgress = func(res vaults.ScanResult) {
-		r.Printf("  %d indexed\r", res.Indexed)
-	}
-	making.OnTextsProgress = func(res filetext.IndexResult) {
-		if res.CurrentSource != "" {
-			r.Printf("  cutting %s\r", res.CurrentSource)
-		}
-	}
-	making.OnVectorsProgress = func(res vectors.EmbedResult) {
-		r.Printf("  %d embedded\r", res.Embedded)
-	}
+	showProgress(&making, r)
 
 	started := readClock(registered.Now)
 	made, err := making.Execute(ctx, v)
@@ -65,15 +52,7 @@ func runScanCommand(ctx context.Context, out io.Writer, deps Deps, args []string
 	if err != nil {
 		return err
 	}
-	if made.Texts.Seen > 0 {
-		r.Println(describeSources(made.Texts))
-	}
-	switch {
-	case made.Vectors.IsBusy:
-		r.Printf("indexing %s is already running\n", v.Name)
-	case made.Vectors.Embedded > 0:
-		r.Printf("%d vectors made\n", made.Vectors.Embedded)
-	}
+	reportMade(r, v.Name, made)
 	elapsed := ""
 	if registered.Now != nil {
 		elapsed = ", in " + readClock(registered.Now).Sub(started).Round(time.Millisecond).String()
@@ -116,4 +95,34 @@ func describeSources(r filetext.IndexResult) string {
 		s += fmt.Sprintf(", %d gone before they could be read", r.Vanished)
 	}
 	return s
+}
+
+// showProgress prints the passes of a scan as they run. A terminal that prints
+// nothing for a minute looks broken. One group is about half a second, and the
+// line rewrites itself.
+func showProgress(making *vaults.ReadWholeVault, r *reporter) {
+	making.OnNotesProgress = func(res vaults.ScanResult) {
+		r.Printf("  %d indexed\r", res.Indexed)
+	}
+	making.OnTextsProgress = func(res filetext.IndexResult) {
+		if res.CurrentSource != "" {
+			r.Printf("  cutting %s\r", res.CurrentSource)
+		}
+	}
+	making.OnVectorsProgress = func(res vectors.EmbedResult) {
+		r.Printf("  %d embedded\r", res.Embedded)
+	}
+}
+
+// reportMade prints what the text and vector passes did.
+func reportMade(r *reporter, vaultName string, made vaults.ReadWholeVaultResult) {
+	if made.Texts.Seen > 0 {
+		r.Println(describeSources(made.Texts))
+	}
+	switch {
+	case made.Vectors.IsBusy:
+		r.Printf("indexing %s is already running\n", vaultName)
+	case made.Vectors.Embedded > 0:
+		r.Printf("%d vectors made\n", made.Vectors.Embedded)
+	}
 }

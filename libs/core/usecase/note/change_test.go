@@ -54,10 +54,10 @@ func (c changing) create() note.Create {
 }
 
 func (c changing) move() note.Move {
-	return note.NewMove(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		c.db.Links(), c.db.Queries(), c.db.Sources(), c.index, testsupport.NewClock(),
-	)
+	return note.NewMove(note.MoveDeps{
+		Readers: vaultreader.Readers{}, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
+		Links: c.db.Links(), Names: c.db.Queries(), Sources: c.db.Sources(), Index: c.index, Now: testsupport.NewClock(),
+	})
 }
 
 func (c changing) remove() note.Remove {
@@ -494,8 +494,8 @@ func TestPointingANoteAtAPlaceBelowATypeReplacesTheEntryItHad(t *testing.T) {
 			"  - to: Grammar\n    role: parent\n---\n# Roots\n",
 	})
 
-	pos, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Roots.md", "preset",
-		domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef, domain.FileStat{})
+	pos, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Roots.md", note.LinkPoint{Of: "preset",
+		To: domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, Role: domain.RoleRef})
 	if err != nil {
 		t.Fatal(err)
 	}

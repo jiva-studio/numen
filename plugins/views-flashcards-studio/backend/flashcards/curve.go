@@ -149,7 +149,9 @@ func (u ProjectCurve) Execute(
 		Spent: review.GetSpentUnder(u.day, u.day.GetName(now), target.Answers, presets,
 			map[string]review.BudgetUnit{path: p.Counts})[path],
 	}
-	out, err := run.Curve(ctx, now, p, pos, unbegunCount, u.getScheduler, u.computePlaces)
+	out, err := run.Curve(ctx, now, p, projection.CurveInputs{
+		Schedules: pos, UnbegunCount: unbegunCount, Scheduler: u.getScheduler, Places: u.computePlaces,
+	})
 	if err != nil {
 		return Curve{}, err
 	}

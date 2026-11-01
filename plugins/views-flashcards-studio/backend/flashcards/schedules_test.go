@@ -333,7 +333,7 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	direct := flashcards.NewSchedules(
 		s.logs, review.NewFSRS(), getToday(),
 		flashcards.NewListReviewCards(s.env.Ports.Readers, nil, nil),
-		flashcards.NewPresets(nil, nil, nil, nil, nil, getToday(), vaulttest.NewClock()),
+		flashcards.NewPresets(nil, nil, nil, nil, nil, vaulttest.NewClock()).WithDay(getToday()),
 	)
 	want, err := direct.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -968,7 +968,7 @@ func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
 	presets := flashcards.NewPresets(
 		s.env.Ports.Readers, s.env.Ports.Writers,
 		lookups{LinkQueries: s.links, looks: looks},
-		s.notes, s.scan, review.Day{}, vaulttest.NewClock(),
+		s.notes, s.scan, vaulttest.NewClock(),
 	)
 
 	schedules := flashcards.NewSchedules(s.logs, review.NewFSRS(), getToday(), standings, presets)
@@ -1002,7 +1002,7 @@ func TestAPresetIsOpenedOncePerCall(t *testing.T) {
 	reads := map[string]int{}
 	presets := flashcards.NewPresets(
 		counting{VaultReaders: s.env.Ports.Readers, reads: reads},
-		s.env.Ports.Writers, s.links, s.notes, s.scan, review.Day{}, vaulttest.NewClock(),
+		s.env.Ports.Writers, s.links, s.notes, s.scan, vaulttest.NewClock(),
 	)
 	schedules := flashcards.NewSchedules(s.logs, review.NewFSRS(), getToday(), s.standings, presets)
 	counter := flashcards.NewCountCardsDue(s.standings, schedules, presets, getToday(), clock.NewFake(getSaturday()))

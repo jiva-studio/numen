@@ -85,15 +85,17 @@ func Run(opts ...*Options) error {
 		textScale:      opt.TextScale,
 	}
 
-	if err := run(cfg, opt.Vault, scaleFlags, &opt.Debug); err != nil {
-		if !opt.Debug.isServingHTTP() {
-			if dialogErr := failWithDialog(cfg, err); dialogErr != nil {
-				return errors.Join(err, dialogErr)
-			}
-		}
+	err := run(cfg, opt.Vault, scaleFlags, &opt.Debug)
+	if err == nil {
+		return nil
+	}
+	if opt.Debug.isServingHTTP() {
 		return err
 	}
-	return nil
+	if dialogErr := failWithDialog(cfg, err); dialogErr != nil {
+		return errors.Join(err, dialogErr)
+	}
+	return err
 }
 
 func parseFlags() (*Options, error) {
@@ -216,7 +218,7 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 	app := makeApplication(installation, pages, shutdownSeq, going, observed)
 	window = makeWindow(app, installation)
 	tracker.addWindow()
-	connectWindow(ctx, app, cfg, window, installation, tracker, going)
+	connectWindow(ctx, app, window, installation, windowHooks{cfg: cfg, tracker: tracker, going: going})
 
 	window.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
 		if !handleWindowClosing(ctx, tracker, going, observed, installation.WaitForFlush, window.Close) {
@@ -327,9 +329,16 @@ func makeSecondaryWindow(
 	return app.Window.NewWithOptions(opts)
 }
 
+// windowHooks holds what a window needs to close and to follow the vault.
+type windowHooks struct {
+	cfg     container.Config
+	tracker *windowTracker
+	going   *vaultFlush
+}
+
 func connectWindow(
-	ctx context.Context, app *application.App, cfg container.Config, window *application.WebviewWindow, opened *editor.Installation,
-	tracker *windowTracker, going *vaultFlush,
+	ctx context.Context, app *application.App, window *application.WebviewWindow, opened *editor.Installation,
+	hooks windowHooks,
 ) {
 	opened.Services.SetFolderDialog(&folderDialog{window: window})
 
@@ -341,21 +350,21 @@ func connectWindow(
 	})
 
 	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
-		cfg.SetPluginVaultPath(v.Path)
+		hooks.cfg.SetPluginVaultPath(v.Path)
 		err := opened.Show(ctx, v)
 		naming(opened.State.GetOpenTabs())
 		return err
 	}
 
 	opened.State.DetachTab = func(_ context.Context, tabID string, x, y int) error {
-		tracker.addWindow()
+		hooks.tracker.addWindow()
 		secWindow := makeSecondaryWindow(app, opened, tabID, x, y)
 		secSeen := visibility{
 			hide: func() { secWindow.Hide() },
 			show: func() { secWindow.Show() },
 		}
 		secWindow.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
-			if !handleWindowClosing(ctx, tracker, going, secSeen, opened.WaitForFlush, secWindow.Close) {
+			if !handleWindowClosing(ctx, hooks.tracker, hooks.going, secSeen, opened.WaitForFlush, secWindow.Close) {
 				event.Cancel()
 			}
 		})

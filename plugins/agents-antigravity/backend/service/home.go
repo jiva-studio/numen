@@ -75,17 +75,25 @@ func makeMCPConfig(tools Endpoint, existingPath string) map[string]any {
 			},
 		},
 	}
-	if raw, err := agentrun.ReadFile(existingPath); err == nil {
-		var existing struct {
-			MCPServers map[string]any `json:"mcpServers"`
-		}
-		if err := json.Unmarshal(raw, &existing); err == nil {
-			for k, v := range existing.MCPServers {
-				if k != "numen" {
-					servers[k] = v
-				}
-			}
+	for k, v := range readMCPServers(existingPath) {
+		if k != "numen" {
+			servers[k] = v
 		}
 	}
 	return map[string]any{"mcpServers": servers}
+}
+
+// readMCPServers returns the servers of the config file, none when it cannot be read.
+func readMCPServers(path string) map[string]any {
+	raw, err := agentrun.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	var existing struct {
+		MCPServers map[string]any `json:"mcpServers"`
+	}
+	if err := json.Unmarshal(raw, &existing); err != nil {
+		return nil
+	}
+	return existing.MCPServers
 }

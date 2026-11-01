@@ -173,7 +173,7 @@ func (p *Proofreading) correctSpeech(ctx context.Context, lines []Line, task *ho
 	var out []Line
 	uncorrected := 0
 	for from := 1; ; {
-		result, err := proofreadSpeech(ctx, p.ask, lines, cfg.batchSize, cfg.overlap, from, cfg.inFlight*cfg.batchSize)
+		result, err := proofreadSpeech(ctx, p.ask, lines, batchShape{size: cfg.batchSize, overlap: cfg.overlap}, from, cfg.inFlight*cfg.batchSize)
 		if err != nil {
 			return nil, 0, err
 		}

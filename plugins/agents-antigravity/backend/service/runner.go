@@ -105,7 +105,7 @@ func start(ctx context.Context, reg *agentrun.Registry, s spec) (*agentrun.Work,
 		return nil, errors.Join(fmt.Errorf("start %s: %w", cmd.Path, err), stdout.Close(), cleanup())
 	}
 
-	go runReader(runCtx, stop, cmd, stdout, &stderr, w, reg, s, cleanup)
+	go runReader(runCtx, &runProcess{stop: stop, cmd: cmd, stdout: stdout, stderr: &stderr, cleanup: cleanup}, w, reg, s)
 	return w, nil
 }
 
@@ -121,10 +121,17 @@ func configureCommand(cmd *exec.Cmd, s spec) {
 	}
 }
 
-func runReader(
-	runCtx context.Context, stop func(), cmd *exec.Cmd, stdout io.ReadCloser,
-	stderr *strings.Builder, w *agentrun.Work, reg *agentrun.Registry, s spec, cleanup func() error,
-) {
+// runProcess holds the started command of a run and what its reader needs to stop and release it.
+type runProcess struct {
+	stop    func()
+	cmd     *exec.Cmd
+	stdout  io.ReadCloser
+	stderr  *strings.Builder
+	cleanup func() error
+}
+
+func runReader(runCtx context.Context, p *runProcess, w *agentrun.Work, reg *agentrun.Registry, s spec) {
+	stop, cleanup, stdout, cmd, stderr := p.stop, p.cleanup, p.stdout, p.cmd, p.stderr
 	r := &reader{work: w, registry: reg, conversation: s.Conversation, limit: s.MaxSteps,
 		completed: 0, sentCount: 0, isFinished: false}
 	defer func() {

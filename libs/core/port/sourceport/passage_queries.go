@@ -28,11 +28,23 @@ type PassageQueries interface {
 	GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query string, kinds []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error)
 
 	// FindNearest is the chunks of one vault nearest a query vector, nearest first,
-	// at most `limit` of them. `query` is the full precision the model answered
-	// with, and a chunk whose similarity to it is under `floor` is not an answer
+	// at most `q.Limit` of them. `q.Vector` is the full precision the model answered
+	// with, and a chunk whose similarity to it is under `q.Floor` is not an answer
 	// and does not come back.
 	//
-	// `recipe` is what a vector is kept under, which is everything about the
+	// `q.Recipe` is what a vector is kept under, which is everything about the
 	// model that decides what a vector is. A name alone finds none of them.
-	FindNearest(ctx context.Context, vaultID domain.VaultID, recipe string, query []float32, kinds []domain.SourceKind, limit int, floor float64) ([]domain.Passage, error)
+	FindNearest(ctx context.Context, vaultID domain.VaultID, q NearestQuery) ([]domain.Passage, error)
+}
+
+// NearestQuery is a search by meaning: the vector the model answered with, the
+// recipe it was made under, the kinds of source to look in (all where empty),
+// how many chunks to return at most and the similarity under which a chunk is
+// not an answer.
+type NearestQuery struct {
+	Recipe string
+	Vector []float32
+	Kinds  []domain.SourceKind
+	Limit  int
+	Floor  float64
 }

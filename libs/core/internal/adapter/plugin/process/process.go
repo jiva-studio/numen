@@ -71,20 +71,22 @@ func isPathWithin(base, child string) bool {
 		return false
 	}
 
-	rel, err := filepath.Rel(cleanBase, cleanChild)
-	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+	if !isRelativeInside(cleanBase, cleanChild) {
 		return false
 	}
 
 	realBase, errB := filepath.EvalSymlinks(cleanBase)
 	realChild, errC := filepath.EvalSymlinks(cleanChild)
 	if errB == nil && errC == nil {
-		relReal, errRel := filepath.Rel(realBase, realChild)
-		if errRel != nil || relReal == ".." || strings.HasPrefix(relReal, ".."+string(filepath.Separator)) {
-			return false
-		}
+		return isRelativeInside(realBase, realChild)
 	}
 	return true
+}
+
+// isRelativeInside reports whether child lies at or below base by the names alone.
+func isRelativeInside(base, child string) bool {
+	rel, err := filepath.Rel(base, child)
+	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
 }
 
 // IsWhitelistedEnv reports whether a variable of the host environment is

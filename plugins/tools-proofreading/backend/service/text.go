@@ -48,14 +48,21 @@ func proofreadScan(ctx context.Context, ask askModel, pages []Batch, maxDistance
 	return out, nil
 }
 
+// batchShape is how the lines are cut into batches: the lines in a batch and those it shares with the next.
+type batchShape struct {
+	size    int
+	overlap int
+}
+
 // proofreadSpeech queries the model about the lines of a recording from a given
 // line on, at most limit of them when limit is above zero. The batches are cut
 // by size and overlap, and a sentence spanning a cut is queried whole in a
 // batch over that cut. The next line is where a sentence spanning past the last
 // line answered begins, or the lines shared with the end of the window.
 func proofreadSpeech(
-	ctx context.Context, ask askModel, lines []Line, size, overlap, from, limit int,
+	ctx context.Context, ask askModel, lines []Line, shape batchShape, from, limit int,
 ) (textResult, error) {
+	size, overlap := shape.size, shape.overlap
 	cues := getSpokenLines(lines)
 	pos := sort.Search(len(cues), func(i int) bool { return cues[i].Number >= from })
 	if pos >= len(cues) {

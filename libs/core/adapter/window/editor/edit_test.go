@@ -367,7 +367,7 @@ func TestEditLoad(t *testing.T) {
 	startTime := testsupport.GetMachine().Now()
 	made := container.NewEditorAssembly(cfg, nil, db)
 	worker := newIndexWorker(made, api.state, nil, time.Hour, io.Discard)
-	_, wait := startIndexing(t.Context(), v, made, api.state, false, worker, worker.NewSession(), io.Discard)
+	_, wait := startIndexing(t.Context(), made, api.state, indexJob{vault: v, rebuild: false, worker: worker, session: worker.NewSession(), out: io.Discard})
 	t.Cleanup(wait)
 	for !api.state.Ready.Load() && api.state.Error.Why() == "" {
 		time.Sleep(50 * time.Millisecond)

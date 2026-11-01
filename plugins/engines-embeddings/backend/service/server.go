@@ -102,6 +102,11 @@ func (s *embeddingServer) updateConfig(values map[string]string) {
 	if s.provider == providerLocal || s.provider == "" {
 		s.updateLocalModelLocked(model)
 	}
+	s.refreshModelInfoLocked()
+}
+
+// refreshModelInfoLocked names the model info after the selected model and loads its profile.
+func (s *embeddingServer) refreshModelInfoLocked() {
 	s.modelInfo.Name = s.localName
 	if s.provider != providerLocal && s.remoteModel != "" {
 		s.modelInfo.Name = s.remoteModel

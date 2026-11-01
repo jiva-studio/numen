@@ -63,10 +63,10 @@ func (f filing) move() vaults.Move { return f.newMove(true) }
 func (f filing) moveApart() vaults.Move { return f.newMove(false) }
 
 func (f filing) newMove(preserved note.SyncTitleAndFilename) vaults.Move {
-	notes := note.NewMove(
-		f.readers, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		f.db.Links(), f.db.Queries(), f.db.Sources(), f.index, testsupport.NewClock(),
-	)
+	notes := note.NewMove(note.MoveDeps{
+		Readers: f.readers, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
+		Links: f.db.Links(), Names: f.db.Queries(), Sources: f.db.Sources(), Index: f.index, Now: testsupport.NewClock(),
+	})
 	notes.Sync = func() note.SyncTitleAndFilename { return preserved }
 	notes.Drawing = func(_ context.Context, went domain.Move) error {
 		*f.went = append(*f.went, went)

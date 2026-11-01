@@ -123,12 +123,18 @@ type curveBuilder struct {
 	places       func(count int, each func(index int) error) error
 }
 
+// CurveInputs are the cards and the helpers a curve is evaluated with. A nil Scheduler is FSRS and a nil
+// Places visits the places in order.
+type CurveInputs struct {
+	Schedules    map[ReviewCardID]Schedule
+	UnbegunCount int
+	Scheduler    func(retention float64) Scheduler
+	Places       func(count int, each func(index int) error) error
+}
+
 // Curve evaluates a preset over the goal range using simulation.
-func (s Simulation) Curve(
-	ctx context.Context, now time.Time, p Preset, schedules map[ReviewCardID]Schedule,
-	unbegunCount int, scheduler func(retention float64) Scheduler,
-	places func(count int, each func(index int) error) error,
-) (Curve, error) {
+func (s Simulation) Curve(ctx context.Context, now time.Time, p Preset, in CurveInputs) (Curve, error) {
+	schedules, unbegunCount, scheduler, places := in.Schedules, in.UnbegunCount, in.Scheduler, in.Places
 	if scheduler == nil {
 		scheduler = func(retention float64) Scheduler { return NewFSRSAt(retention) }
 	}

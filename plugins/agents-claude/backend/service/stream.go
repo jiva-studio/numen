@@ -114,19 +114,16 @@ type streamEvent struct {
 	} `json:"content_block"`
 }
 
-func parseStream(
-	ctx context.Context,
-	r io.Reader,
-	send func(*agentrun.Response) error,
-	words map[string]toolcall.Declaration,
-	record func(string),
-	clock timeSource,
-	expectsVault bool,
-) string {
-	return parseStreamWithClock(ctx, r, send, words, record, clock, expectsVault)
+// streamOptions are what the parser of a stream needs besides the stream and the way to send.
+type streamOptions struct {
+	words        map[string]toolcall.Declaration
+	record       func(string)
+	clock        timeSource
+	expectsVault bool
 }
 
-// parseStreamWithClock is parseStream with the clock that paces the reports of a change.
+// parseStreamWithClock is parseStream for a run that expects the vault tools, with the clock that paces the
+// reports of a change.
 func parseStreamWithClock(
 	ctx context.Context,
 	r io.Reader,
@@ -134,18 +131,17 @@ func parseStreamWithClock(
 	words map[string]toolcall.Declaration,
 	record func(string),
 	clock timeSource,
-	expectsVault ...bool,
 ) string {
-	hasVault := true
-	if len(expectsVault) > 0 {
-		hasVault = expectsVault[0]
-	}
+	return parseStream(ctx, r, send, streamOptions{words: words, record: record, clock: clock, expectsVault: true})
+}
+
+func parseStream(ctx context.Context, r io.Reader, send func(*agentrun.Response) error, opts streamOptions) string {
 	p := &streamParser{
 		send:         send,
-		words:        words,
-		clock:        clock,
-		record:       record,
-		expectsVault: hasVault,
+		words:        opts.words,
+		clock:        opts.clock,
+		record:       opts.record,
+		expectsVault: opts.expectsVault,
 		last:         time.Time{},
 		isStreaming:  false,
 		callID:       "",

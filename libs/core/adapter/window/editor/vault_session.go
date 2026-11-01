@@ -124,7 +124,7 @@ func (o *Installation) buildSession(ctx context.Context, v domain.Vault, rebuild
 
 	// Indexing every file again belongs to the vault this window was opened on,
 	// and to nothing built for a vault that arrives later.
-	refresh, ended := startIndexing(watching, v, o.made, o.State, rebuild, o.indexer, indexed, o.out)
+	refresh, ended := startIndexing(watching, o.made, o.State, indexJob{vault: v, rebuild: rebuild, worker: o.indexer, session: indexed, out: o.out})
 
 	return &vaultSession{
 		refresh: refresh,

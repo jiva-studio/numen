@@ -311,7 +311,7 @@ func (u Index) recordIfOutdated(
 func (u Index) cut(ctx context.Context, v domain.Vault, on openVault, res *IndexResult) error {
 	sizes := u.sizes()
 	recognized := []string{recipe(versionReader, sizes)}
-	tried := map[string]bool{}
+	run := cutRun{tried: map[string]bool{}, sizes: sizes, res: res}
 
 	questions := []func(context.Context) ([]string, error){
 		func(ctx context.Context) ([]string, error) {
@@ -327,7 +327,7 @@ func (u Index) cut(ctx context.Context, v domain.Vault, on openVault, res *Index
 			if err != nil {
 				return err
 			}
-			freshCount, err := u.chunkNewPaths(ctx, v, on, paths, tried, sizes, res)
+			freshCount, err := u.chunkNewPaths(ctx, v, on, paths, run)
 			if err != nil {
 				return err
 			}
@@ -339,6 +339,14 @@ func (u Index) cut(ctx context.Context, v domain.Vault, on openVault, res *Index
 	return nil
 }
 
+// cutRun is the state one cut shares across its queries: the paths tried, the chunk
+// sizes and the result.
+type cutRun struct {
+	tried map[string]bool
+	sizes chunking.Sizes
+	res   *IndexResult
+}
+
 // chunkNewPaths cuts each path not yet in tried, marks it tried, and returns how
 // many it cut.
 func (u Index) chunkNewPaths(
@@ -346,16 +354,14 @@ func (u Index) chunkNewPaths(
 	v domain.Vault,
 	on openVault,
 	paths []string,
-	tried map[string]bool,
-	sizes chunking.Sizes,
-	res *IndexResult,
+	run cutRun,
 ) (int, error) {
 	freshCount := 0
 	for _, path := range paths {
-		if tried[path] {
+		if run.tried[path] {
 			continue
 		}
-		tried[path] = true
+		run.tried[path] = true
 		if u.IsSkipped != nil && u.IsSkipped(path) {
 			continue
 		}
@@ -363,7 +369,7 @@ func (u Index) chunkNewPaths(
 		if err := ctx.Err(); err != nil {
 			return freshCount, err
 		}
-		if err := u.source(ctx, v, on, path, sizes, res); err != nil {
+		if err := u.source(ctx, v, on, path, run.sizes, run.res); err != nil {
 			return freshCount, err
 		}
 	}

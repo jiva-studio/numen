@@ -133,7 +133,10 @@ func (c changing) moveOf(p moveParts) note.Move {
 	if !p.hasIndex {
 		p.index = c.index
 	}
-	return note.NewMove(p.readers, p.writers, p.links, p.names, c.db.Sources(), p.index, testsupport.NewClock())
+	return note.NewMove(note.MoveDeps{
+		Readers: p.readers, Writers: p.writers, Links: p.links, Names: p.names,
+		Sources: c.db.Sources(), Index: p.index, Now: testsupport.NewClock(),
+	})
 }
 
 const heatLinkedToEntropy = "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Heat\n"

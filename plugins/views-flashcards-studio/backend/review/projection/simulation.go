@@ -362,18 +362,23 @@ func createEmptyAllowance() Allowance {
 	}
 }
 
+// simulationSetup is what the state of a simulated day starts from.
+type simulationSetup struct {
+	days, base  int
+	open        time.Time
+	p           Preset
+	daysToLearn int
+	cards       []Schedule
+	falls       [][]int
+	on          *DueByDay
+	reckoned    *learnedCount
+	unreviewed  int
+}
+
 // createSimulationDay initializes simulation day state across the projected days.
-func (s Simulation) createSimulationDay(
-	days, base int,
-	open time.Time,
-	p Preset,
-	daysToLearn int,
-	cards []Schedule,
-	falls [][]int,
-	on *DueByDay,
-	reckoned *learnedCount,
-	unreviewed int,
-) *simulationDay {
+func (s Simulation) createSimulationDay(in simulationSetup) *simulationDay {
+	days, base, open, p, daysToLearn := in.days, in.base, in.open, in.p, in.daysToLearn
+	cards, falls, on, reckoned, unreviewed := in.cards, in.falls, in.on, in.reckoned, in.unreviewed
 	return &simulationDay{
 		sim:          s,
 		preset:       p,
@@ -661,7 +666,10 @@ func (s Simulation) Run(
 	out.Short = s.short(p, cards, unreviewed, open)
 	daysToLearn := s.getDaysToLearnGoal(p, now)
 
-	d := s.createSimulationDay(days, base, open, p, daysToLearn, cards, falls, on, reckoned, unreviewed)
+	d := s.createSimulationDay(simulationSetup{
+		days: days, base: base, open: open, p: p, daysToLearn: daysToLearn, cards: cards,
+		falls: falls, on: on, reckoned: reckoned, unreviewed: unreviewed,
+	})
 	var elapsed time.Duration
 
 	for today := range days {

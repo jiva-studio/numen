@@ -67,12 +67,8 @@ func locateModel(explicitPath, repoAddress, envVar, defaultFileName, dir string)
 		}
 		return explicitPath, nil
 	}
-	if envVar != "" {
-		if env := os.Getenv(envVar); env != "" {
-			if _, err := os.Stat(env); err == nil {
-				return env, nil
-			}
-		}
+	if env := findInEnv(envVar); env != "" {
+		return env, nil
 	}
 	if repoAddress == "" {
 		return "", fmt.Errorf("model %s is not named: specify path or repo", defaultFileName)
@@ -85,6 +81,21 @@ func locateModel(explicitPath, repoAddress, envVar, defaultFileName, dir string)
 		return found, nil
 	}
 	return "", fmt.Errorf("model %s not found", fileName)
+}
+
+// findInEnv is the file the variable names, empty when it is unset or the file is missing.
+func findInEnv(envVar string) string {
+	if envVar == "" {
+		return ""
+	}
+	env := os.Getenv(envVar)
+	if env == "" {
+		return ""
+	}
+	if _, err := os.Stat(env); err != nil {
+		return ""
+	}
+	return env
 }
 
 func locateModels(ctx context.Context, library *onnx.Library, cfg Config) (*ort.Engine, paths, error) {

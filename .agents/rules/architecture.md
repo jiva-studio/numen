@@ -109,13 +109,13 @@ Cyclomatic complexity, nesting depth and function length are rules. Go, TypeScri
 
 | Limit                               | Maximum | Go (`.golangci-structure.yml`) | TypeScript and Vue (`tools/lint-layers/base-eslint.mjs`) |
 | ----------------------------------- | ------- | ------------------------------ | -------------------------------------------------------- |
-| Cyclomatic complexity of a function | 15      | `cyclop` `max-complexity`      | `complexity`                                             |
-| Nesting depth of control blocks     | 4       | revive `max-control-nesting`   | `max-depth`                                              |
-| Function length in lines            | 250     | `funlen` `lines`               | `max-lines-per-function`                                 |
+| Cyclomatic complexity of a function | 12      | `cyclop` `max-complexity`      | `complexity`                                             |
+| Nesting depth of control blocks     | 3       | revive `max-control-nesting`   | `max-depth`                                              |
+| Function length in lines            | 80      | `funlen` `lines`               | `max-lines-per-function`                                 |
 | Function length in statements       | 50      | `funlen` `statements`          | `max-statements`                                         |
-| Parameters of a function            | 10      | revive `argument-limit`        | `max-params`                                             |
+| Parameters of a function            | 6       | revive `argument-limit`        | `max-params`                                             |
 
-A configuration may set a lower value than the table and never a higher one. The TypeScript configuration sets complexity 12, depth 3 and parameters 4 today; the Go configuration also runs `gocognit` (15), `nestif` (4) and `maintidx`. `max-control-nesting`, `argument-limit`, `max-lines-per-function` and `max-statements` are not configured yet. A Vue file also has limits for its blocks: the script block 100 lines, the template 140 lines, template depth 4, 6 inline props, 3 statements in a `computed`, and 8 properties a composable returns. Test files (`_test.go`, `*.test.ts`, `*.stories.ts`) are outside these limits. A function over a limit is split by responsibility.
+A configuration may set a lower value than the table and never a higher one. The TypeScript configuration sets parameters 4, below the table; the Go configuration also runs `gocognit` (15), `nestif` (3) and `maintidx`. A Vue file also has limits for its blocks: the script block 100 lines, the template 140 lines, template depth 4, 6 inline props, 3 statements in a `computed`, and 8 properties a composable returns. Test files (`_test.go`, `*.test.ts`, `*.stories.ts`) are outside these limits. A function over a limit is split by responsibility.
 
 File length and import counts have no limit. A file is split when it holds a second responsibility: a section with its own state, a part rendered on its own elsewhere, a concern that can be exercised separately. A folder that collects a kind rather than a thing is a finding: every entity in one file, every use case in one package, readable at five and unreadable at fifty.
 

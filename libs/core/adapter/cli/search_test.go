@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -33,7 +34,7 @@ func (a fakeSearchIndex) GetNamedPassages(context.Context, domain.VaultID, strin
 	return nil, a.err
 }
 
-func (a fakeSearchIndex) FindNearest(context.Context, domain.VaultID, string, []float32, []domain.SourceKind, int, float64) ([]domain.Passage, error) {
+func (a fakeSearchIndex) FindNearest(context.Context, domain.VaultID, sourceport.NearestQuery) ([]domain.Passage, error) {
 	return nil, a.err
 }
 

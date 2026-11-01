@@ -34,7 +34,7 @@ func TestARenameWhoseContextEndsReturnsWhatTheCardModelExistsAt(t *testing.T) {
 	u := cards.NewRenameField(
 		vs.ports.Readers, vs.ports.Writers,
 		decksOf{paths: []string{"decks/Birds.md"}, cancel: cancel},
-		vs.queries, indexNothing, vaulttest.NewClock(), cards.UnboundedDecks,
+		vs.queries, indexNothing, vaulttest.NewClock(),
 	)
 
 	got, err := u.Execute(ctx, vs.first, cards.Rename{

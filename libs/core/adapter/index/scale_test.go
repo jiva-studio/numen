@@ -60,7 +60,7 @@ func TestAScaleThatMovedBuysTheVectorsAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, before, 0, 0, 0, 100)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, before, chunk.Cursor{}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,13 +82,13 @@ func TestAScaleThatMovedBuysTheVectorsAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if atBefore, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, before, 0, 0, 0, 100); err != nil {
+	if atBefore, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, before, chunk.Cursor{}, 100); err != nil {
 		t.Fatal(err)
 	} else if len(atBefore) != 0 {
 		t.Fatalf("%d chunks need a vector under the scale they were made at, want none", len(atBefore))
 	}
 
-	afterSwitch, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, getQuantising().Recipe(), 0, 0, 0, 100)
+	afterSwitch, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, getQuantising().Recipe(), chunk.Cursor{}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -405,13 +405,14 @@ func Replace(ctx context.Context, tx *sqlwrite.Transaction, source, vault int64,
 		return fmt.Errorf("take the names of this source's sections out of the index: %w", err)
 	}
 
+	writer := chunkWriter{tx: tx, target: target, source: source, vault: vault}
 	for _, large := range chunks {
-		row, err := upsertChunk(ctx, tx, target, source, vault, large, nil, len(large.Small) == 0)
+		row, err := writer.upsert(ctx, large, nil, len(large.Small) == 0)
 		if err != nil {
 			return err
 		}
 		for _, small := range large.Small {
-			if _, err := upsertChunk(ctx, tx, target, source, vault, small, row, true); err != nil {
+			if _, err := writer.upsert(ctx, small, row, true); err != nil {
 				return err
 			}
 		}
@@ -422,14 +423,19 @@ func Replace(ctx context.Context, tx *sqlwrite.Transaction, source, vault int64,
 	return deleteOrphanVectors(ctx, tx, target.getRemovedHashes())
 }
 
-// upsertChunk is the row one chunk is held on, and moves or writes it.
+// chunkWriter holds what writing the chunks of one source shares.
+type chunkWriter struct {
+	tx            *sqlwrite.Transaction
+	target        *rows
+	source, vault int64
+}
+
+// upsert is the row one chunk is held on, and moves or writes it.
 //
 // A chunk inside another arrives with the row enclosing it, and a large chunk
 // with nothing, which is also what the row's `parent_id` becomes.
-func upsertChunk(
-	ctx context.Context, tx *sqlwrite.Transaction, target *rows,
-	source, vault int64, c Chunk, parent any, isLeaf bool,
-) (int64, error) {
+func (w chunkWriter) upsert(ctx context.Context, c Chunk, parent any, isLeaf bool) (int64, error) {
+	tx, target, source, vault := w.tx, w.target, w.source, w.vault
 	key := textID{hash: computeHash(c.Text), isSmall: parent != nil}
 	if row, hasRow := target.takeUnusedRow(key); hasRow {
 		if _, err := tx.ExecContext(ctx, getStatement("move_chunk"),

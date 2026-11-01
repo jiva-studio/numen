@@ -61,57 +61,88 @@ type Contents struct {
 func Read(ctx context.Context, files Reader, path string) (Contents, error) {
 	out := Contents{Path: path}
 
-	// The vault reports what is at a path without opening it: a note, a file it ignores, or
-	// nothing.
+	target, stop, err := statNote(ctx, files, path, &out)
+	if err != nil {
+		return Contents{}, err
+	}
+	if stop {
+		return out, nil
+	}
+
+	raw, stop, err := readNoteBytes(ctx, files, path, target, &out)
+	if err != nil {
+		return Contents{}, err
+	}
+	if stop {
+		return out, nil
+	}
+
+	if err := readBody(raw, &out); err != nil {
+		return Contents{}, err
+	}
+	return out, nil
+}
+
+// statNote asks the vault what is at path without opening it: a note, a file it ignores, or
+// nothing. It sets the outcome in out and reports stop when the read ends there.
+func statNote(ctx context.Context, files Reader, path string, out *Contents) (target, stop bool, err error) {
 	ref, err := files.StatFile(ctx, path)
-	target := err == nil
 	switch {
-	case target:
+	case err == nil:
 		out.FileStat = ref
 		// A vault holds several kinds of source and this reads one of them.
 		if ref.Kind != domain.KindNote {
 			out.Outcome = NotANote
-			return out, nil
+			return true, true, nil
 		}
 		if ref.Size > MaxBytes {
 			out.Outcome = TooLarge
-			return out, nil
+			return true, true, nil
 		}
+		return true, false, nil
 	case errors.Is(err, ErrNotANote):
 		out.Outcome = NotANote
-		return out, nil
+		return false, true, nil
 	case !errors.Is(err, fs.ErrNotExist):
-		return Contents{}, fmt.Errorf("look at %s: %w", path, err)
+		return false, false, fmt.Errorf("look at %s: %w", path, err)
 	}
+	return false, false, nil
+}
 
-	raw, err := files.Read(ctx, path)
+// readNoteBytes reads the file and sets the outcome in out when it is missing or not a note.
+func readNoteBytes(ctx context.Context, files Reader, path string, target bool, out *Contents) (raw []byte, stop bool, err error) {
+	raw, err = files.Read(ctx, path)
 	switch {
 	case errors.Is(err, fs.ErrNotExist):
 		out.Outcome = Missing
-		return out, nil
+		return nil, true, nil
 	case !target && err == nil:
 		out.Outcome = NotANote
-		return out, nil
+		return nil, true, nil
 	case err != nil:
-		return Contents{}, fmt.Errorf("read %s: %w", path, err)
+		return nil, false, fmt.Errorf("read %s: %w", path, err)
 	}
+	return raw, false, nil
+}
 
+// readBody sets the body and the outcome in out from the bytes of a note.
+func readBody(raw []byte, out *Contents) error {
 	// The body is returned in a string field. A browser converts an ill-formed sequence to U+FFFD, and
 	// the next save would write those characters in place of the original bytes.
 	if !utf8.Valid(raw) {
 		out.Outcome = NotText
-		return out, nil
+		return nil
 	}
 
 	doc, err := markdown.Open(raw)
 	if errors.Is(err, markdown.ErrUnreadable) {
 		out.Outcome = Unreadable
-		return out, nil
+		return nil
 	}
 	if err != nil {
-		return Contents{}, fmt.Errorf("read %s: %w", path, err)
+		return fmt.Errorf("read %s: %w", out.Path, err)
 	}
 	out.Body = markdown.Normalise(doc.Body())
 	out.Outcome = Ok
-	return out, nil
+	return nil
 }

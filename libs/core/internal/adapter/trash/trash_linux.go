@@ -79,18 +79,31 @@ func getVolumeRoot(path string) (string, error) {
 		if parent == pos {
 			return pos, nil
 		}
-		var up syscall.Stat_t
-		// A parent nothing here can look at is as far as this goes: what it is
-		// on cannot be compared, so the folder below it is the root.
-		if err := syscall.Lstat(parent, &up); errors.Is(err, syscall.EACCES) || errors.Is(err, syscall.EPERM) || errors.Is(err, fs.ErrPermission) || errors.Is(err, fs.ErrNotExist) {
-			return pos, nil
-		} else if err != nil {
-			return "", fmt.Errorf("stat parent %s: %w", parent, err)
-		} else if up.Dev != folder.Dev {
+		isRoot, err := isVolumeRoot(parent, folder.Dev)
+		if err != nil {
+			return "", err
+		}
+		if isRoot {
 			return pos, nil
 		}
 		pos = parent
 	}
+}
+
+// isVolumeRoot tells whether a folder is the root of its volume: its parent cannot be looked
+// at, or lies on another device than dev.
+func isVolumeRoot(parent string, dev uint64) (bool, error) {
+	var up syscall.Stat_t
+	err := syscall.Lstat(parent, &up)
+	// A parent nothing here can look at is as far as this goes: what it is
+	// on cannot be compared, so the folder below it is the root.
+	if errors.Is(err, syscall.EACCES) || errors.Is(err, syscall.EPERM) || errors.Is(err, fs.ErrPermission) || errors.Is(err, fs.ErrNotExist) {
+		return true, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("stat parent %s: %w", parent, err)
+	}
+	return up.Dev != dev, nil
 }
 
 // getVolumeTrashDir returns the trash directory at the root of a mounted

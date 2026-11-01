@@ -346,15 +346,7 @@ func (s *Server) ServeContext(ctx context.Context) (err error) {
 		}
 	}()
 
-	// plain TCP on loopback.
-	var protocols http.Protocols
-	protocols.SetHTTP1(true)
-	protocols.SetUnencryptedHTTP2(true)
-	httpSrv := &http.Server{
-		Handler:           s.mux,
-		ReadHeaderTimeout: s.readHeaderTimeout,
-		Protocols:         &protocols,
-	}
+	httpSrv := s.newHTTPServer()
 
 	serveErrCh := make(chan error, 1)
 	go serveHTTP(httpSrv, s.listener, serveErrCh)
@@ -364,23 +356,12 @@ func (s *Server) ServeContext(ctx context.Context) (err error) {
 	}
 
 	stdinEOF := s.watchStdin()
+	sigCh, stopSignals := s.notifySignals()
+	defer stopSignals()
 
-	sigCh := make(chan os.Signal, 1)
-	if len(s.signals) > 0 {
-		signal.Notify(sigCh, s.signals...)
-		defer signal.Stop(sigCh)
-	}
-
-	select {
-	case <-ctx.Done():
-	case <-sigCh:
-	case <-s.lifecycle.ShutdownTrigger():
-	case <-stdinEOF:
-	case err := <-serveErrCh:
-		if err != nil {
-			return fmt.Errorf("serve: %w", err)
-		}
-		return nil
+	served, err := waitForStop(ctx, s.lifecycle.ShutdownTrigger(), sigCh, stdinEOF, serveErrCh)
+	if served {
+		return err
 	}
 
 	shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.shutdownTimeout)
@@ -390,6 +371,49 @@ func (s *Server) ServeContext(ctx context.Context) (err error) {
 	}
 
 	return nil
+}
+
+// newHTTPServer returns the server for plain TCP on loopback, speaking HTTP/1 and unencrypted HTTP/2.
+func (s *Server) newHTTPServer() *http.Server {
+	var protocols http.Protocols
+	protocols.SetHTTP1(true)
+	protocols.SetUnencryptedHTTP2(true)
+	return &http.Server{
+		Handler:           s.mux,
+		ReadHeaderTimeout: s.readHeaderTimeout,
+		Protocols:         &protocols,
+	}
+}
+
+// notifySignals subscribes to the configured signals and returns the channel and the function that
+// ends the subscription.
+func (s *Server) notifySignals() (<-chan os.Signal, func()) {
+	sigCh := make(chan os.Signal, 1)
+	if len(s.signals) == 0 {
+		return sigCh, func() {}
+	}
+	signal.Notify(sigCh, s.signals...)
+	return sigCh, func() { signal.Stop(sigCh) }
+}
+
+// waitForStop blocks until the context ends, a signal arrives, a shutdown is triggered or standard
+// input closes, and then reports served false. It reports served true with the result when the HTTP
+// server ended on its own first.
+func waitForStop(
+	ctx context.Context, shutdown <-chan struct{}, sigCh <-chan os.Signal, stdinEOF <-chan struct{}, serveErrCh <-chan error,
+) (served bool, err error) {
+	select {
+	case <-ctx.Done():
+	case <-sigCh:
+	case <-shutdown:
+	case <-stdinEOF:
+	case err := <-serveErrCh:
+		if err != nil {
+			return true, fmt.Errorf("serve: %w", err)
+		}
+		return true, nil
+	}
+	return false, nil
 }
 
 // serveHTTP serves on listener, sends a failure other than a shutdown to errs, and closes errs.

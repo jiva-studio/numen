@@ -97,15 +97,38 @@ func (c Contributes) ListTabKinds() []string {
 func (m Manifest) listContributionIssues() []error {
 	var issues []error
 	c := m.Contributes
-	if len(c.TabKinds) > 0 && !m.HasFrontend() {
+	issues = append(issues, m.listFrontendIssues()...)
+	issues = append(issues, listStatusViewIssues(c.StatusViews)...)
+	issues = append(issues, listTabKindIssues(c.TabKinds)...)
+	if c.Category != "" && !categoryNamePattern.MatchString(c.Category) {
+		issues = append(issues, fmt.Errorf("%w: category %q is not lowercase words joined by hyphens", ErrInvalidContribution, c.Category))
+	}
+	if c.Feature != strings.TrimSpace(c.Feature) {
+		issues = append(issues, fmt.Errorf("%w: feature %q has surrounding space", ErrInvalidContribution, c.Feature))
+	}
+	issues = append(issues, c.listThemeIssues()...)
+	issues = append(issues, m.listHandleIssues()...)
+	issues = append(issues, m.listReaderIssues()...)
+	return append(issues, m.listFrameIssues()...)
+}
+
+// listFrontendIssues checks that a plugin registering tabs or status views has a frontend to register them from.
+func (m Manifest) listFrontendIssues() []error {
+	var issues []error
+	if len(m.Contributes.TabKinds) > 0 && !m.HasFrontend() {
 		issues = append(issues, fmt.Errorf("%w: the plugin declares tab kinds and has no frontend to register them", ErrInvalidContribution))
 	}
-	if len(c.StatusViews) > 0 && !m.HasFrontend() {
+	if len(m.Contributes.StatusViews) > 0 && !m.HasFrontend() {
 		issues = append(issues, fmt.Errorf("%w: the plugin declares status views and has no frontend to register them", ErrInvalidContribution))
 	}
-	issues = append(issues, listStatusViewIssues(c.StatusViews)...)
+	return issues
+}
+
+// listTabKindIssues checks that each kind of tab has a unique id and a title and an icon written as the application names it.
+func listTabKindIssues(kinds []TabKind) []error {
+	var issues []error
 	observed := map[string]bool{}
-	for _, declared := range c.TabKinds {
+	for _, declared := range kinds {
 		switch {
 		case !tabKindPattern.MatchString(declared.Kind):
 			issues = append(issues, fmt.Errorf("%w: tab kind %q is not lowercase words", ErrInvalidContribution, declared.Kind))
@@ -120,16 +143,7 @@ func (m Manifest) listContributionIssues() []error {
 			issues = append(issues, fmt.Errorf("%w: tab kind %q has icon %q, which is not lowercase words joined by hyphens", ErrInvalidContribution, declared.Kind, declared.Icon))
 		}
 	}
-	if c.Category != "" && !categoryNamePattern.MatchString(c.Category) {
-		issues = append(issues, fmt.Errorf("%w: category %q is not lowercase words joined by hyphens", ErrInvalidContribution, c.Category))
-	}
-	if c.Feature != strings.TrimSpace(c.Feature) {
-		issues = append(issues, fmt.Errorf("%w: feature %q has surrounding space", ErrInvalidContribution, c.Feature))
-	}
-	issues = append(issues, c.listThemeIssues()...)
-	issues = append(issues, m.listHandleIssues()...)
-	issues = append(issues, m.listReaderIssues()...)
-	return append(issues, m.listFrameIssues()...)
+	return issues
 }
 
 // listStatusViewIssues checks that each status view has an id written as the frontend registers it

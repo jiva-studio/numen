@@ -1,6 +1,7 @@
 package chunking
 
 import (
+	"strings"
 	"unicode"
 	"unicode/utf8"
 )
@@ -47,25 +48,9 @@ func isClean(chunk string, dirtyLimit float64) bool {
 }
 
 func countWords(chunk string) (words, dirty int) {
-	start := -1
-	for i, r := range chunk {
-		if unicode.IsSpace(r) {
-			if start >= 0 {
-				words++
-				if !isSpelled(chunk[start:i]) {
-					dirty++
-				}
-				start = -1
-			}
-			continue
-		}
-		if start < 0 {
-			start = i
-		}
-	}
-	if start >= 0 {
+	for _, word := range strings.FieldsFunc(chunk, unicode.IsSpace) {
 		words++
-		if !isSpelled(chunk[start:]) {
+		if !isSpelled(word) {
 			dirty++
 		}
 	}

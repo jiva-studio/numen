@@ -257,7 +257,22 @@ func (v *ytDLP) Download(ctx context.Context, target string, into io.Writer) (re
 const mediaTypeMP4Audio = "audio/mp4"
 
 func getMediaType(name string) string {
-	switch strings.ToLower(filepath.Ext(name)) {
+	extension := strings.ToLower(filepath.Ext(name))
+	if mediaType := getAudioMediaType(extension); mediaType != "" {
+		return mediaType
+	}
+	switch extension {
+	case ".mp4":
+		return "video/mp4"
+	case ".webm":
+		return "video/webm"
+	}
+	return "application/octet-stream"
+}
+
+// getAudioMediaType is the media type of an audio extension, empty for any other.
+func getAudioMediaType(extension string) string {
+	switch extension {
 	case ".aac":
 		return "audio/aac"
 	case ".aif", ".aiff":
@@ -270,8 +285,6 @@ func getMediaType(name string) string {
 		return mediaTypeMP4Audio
 	case ".mp3":
 		return "audio/mpeg"
-	case ".mp4":
-		return "video/mp4"
 	case ".oga", ".ogg":
 		return "audio/ogg"
 	case ".opus":
@@ -280,10 +293,8 @@ func getMediaType(name string) string {
 		return "audio/wav"
 	case ".weba":
 		return "audio/webm"
-	case ".webm":
-		return "video/webm"
 	}
-	return "application/octet-stream"
+	return ""
 }
 
 func chooseLanguage(meta Metadata, languages []string, automatic bool) string {

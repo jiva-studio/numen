@@ -245,16 +245,22 @@ func removeSpacesAndControls(url string) string {
 func parseScheme(url string) string {
 	for i := 0; i < len(url); i++ {
 		c := url[i]
-		switch {
-		case c == ':':
+		if c == ':' {
 			return url[:i]
-		case c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z':
-		case i > 0 && (c >= '0' && c <= '9' || c == '+' || c == '-' || c == '.'):
-		default:
+		}
+		if !isSchemeByte(c, i) {
 			return ""
 		}
 	}
 	return ""
+}
+
+// isSchemeByte reports whether c may stand at index i of a scheme: a letter, or after the first byte a digit, plus, minus or dot.
+func isSchemeByte(c byte, i int) bool {
+	if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' {
+		return true
+	}
+	return i > 0 && (c >= '0' && c <= '9' || c == '+' || c == '-' || c == '.')
 }
 
 // isAnyElementAttribute reports whether any element may carry the attribute. An id is how a link

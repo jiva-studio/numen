@@ -119,23 +119,23 @@ func checkSymlinkContainment(realVault, cleanTarget string) error {
 
 func resolveSymlinkTarget(cleanTarget string) (string, error) {
 	fi, err := os.Lstat(cleanTarget)
-	if err == nil {
-		if fi.Mode()&os.ModeSymlink == 0 {
-			return cleanTarget, nil
-		}
-		dest, errR := os.Readlink(cleanTarget)
-		if errR != nil {
-			return "", ErrPathTraversal
-		}
-		if !filepath.IsAbs(dest) {
-			dest = filepath.Join(filepath.Dir(cleanTarget), dest)
-		}
-		return filepath.Clean(dest), nil
+	if errors.Is(err, os.ErrNotExist) {
+		return cleanTarget, nil
 	}
-	if !errors.Is(err, os.ErrNotExist) {
+	if err != nil {
 		return "", err
 	}
-	return cleanTarget, nil
+	if fi.Mode()&os.ModeSymlink == 0 {
+		return cleanTarget, nil
+	}
+	dest, errR := os.Readlink(cleanTarget)
+	if errR != nil {
+		return "", ErrPathTraversal
+	}
+	if !filepath.IsAbs(dest) {
+		dest = filepath.Join(filepath.Dir(cleanTarget), dest)
+	}
+	return filepath.Clean(dest), nil
 }
 
 func findExistingAncestor(start string) (string, error) {

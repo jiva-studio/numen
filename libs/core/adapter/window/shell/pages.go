@@ -31,38 +31,45 @@ func (a *API) NewHandler(files http.Handler) http.Handler {
 	agentRoute, agent := numenv1connect.NewAgentServiceHandler(&wire.AgentHandler{GetAgent: a.GetAgent})
 	vaultsRoute, vaults := numenv1connect.NewVaultsServiceHandler(vaultList{list: a.ListVaults})
 	notesRoute, notes := numenv1connect.NewNoteServiceHandler(noteLinks{resolve: a.ResolveLinks, list: a.ListVaults})
-	var themesRoute string
-	var themes http.Handler
+	routes := []route{{windowRoute, window}, {pluginsRoute, plugins}}
 	if a.Themes != nil {
-		themesRoute, themes = numenv1connect.NewThemeServiceHandler(a.Themes)
+		themesRoute, themes := numenv1connect.NewThemeServiceHandler(a.Themes)
+		routes = append(routes, route{themesRoute, themes})
 	}
+	routes = append(routes, route{agentRoute, agent}, route{vaultsRoute, vaults}, route{notesRoute, notes})
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", getPolicy())
-		switch {
-		case strings.HasPrefix(r.URL.Path, windowRoute):
-			window.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, pluginsRoute):
-			plugins.ServeHTTP(w, r)
-		case themes != nil && strings.HasPrefix(r.URL.Path, themesRoute):
-			themes.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, agentRoute):
-			agent.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, vaultsRoute):
-			vaults.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, notesRoute):
-			notes.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, wire.PluginRoute):
-			// The shell runs no plugin backend: the route serves only the files of a plugin folder.
-			if !wire.ServePluginFile(w, r, a.GetPluginDir) {
-				http.Error(w, "plugin file not found", http.StatusNotFound)
+		for _, rt := range routes {
+			if strings.HasPrefix(r.URL.Path, rt.prefix) {
+				rt.handler.ServeHTTP(w, r)
+				return
 			}
-		case a.PluginServices != nil && a.PluginServices.Serves(r.URL.Path):
-			a.PluginServices.ServeHTTP(w, r)
-		case slices.Contains(wire.GetOpenedAt(), r.URL.Path):
-			wire.WritePage(w, r, pages, a.Themes, files)
-		default:
-			files.ServeHTTP(w, r)
 		}
+		a.serveOther(w, r, files)
 	})
+}
+
+// route is a prefix of the request path and the handler that answers it.
+type route struct {
+	prefix  string
+	handler http.Handler
+}
+
+// serveOther answers what no route of the window itself claims: plugin files,
+// plugin services, the pages and the files they are made of.
+func (a *API) serveOther(w http.ResponseWriter, r *http.Request, files http.Handler) {
+	switch {
+	case strings.HasPrefix(r.URL.Path, wire.PluginRoute):
+		// The shell runs no plugin backend: the route serves only the files of a plugin folder.
+		if !wire.ServePluginFile(w, r, a.GetPluginDir) {
+			http.Error(w, "plugin file not found", http.StatusNotFound)
+		}
+	case a.PluginServices != nil && a.PluginServices.Serves(r.URL.Path):
+		a.PluginServices.ServeHTTP(w, r)
+	case slices.Contains(wire.GetOpenedAt(), r.URL.Path):
+		wire.WritePage(w, r, pages, a.Themes, files)
+	default:
+		files.ServeHTTP(w, r)
+	}
 }

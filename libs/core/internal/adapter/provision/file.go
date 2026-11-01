@@ -154,22 +154,30 @@ func getPercent(done, total int64) float64 {
 
 // getFileName returns what the fetched file is called in the dependency's folder.
 func getFileName(req pluginport.DependencyRequirement) (string, error) {
-	name := cleanName(req.ID)
-	if named := req.Metadata["fileName"]; named != "" {
-		name = cleanName(named)
-	} else {
-		address, err := url.Parse(req.SourceURL)
-		if err != nil {
-			return "", err
-		}
-		if base := path.Base(address.Path); base != "" && base != "." && base != "/" {
-			name = cleanName(base)
-		}
+	name, err := pickFileName(req)
+	if err != nil {
+		return "", err
 	}
 	if isReserved(name) {
 		return "", fmt.Errorf("%s %s: %q is a name the folder keeps for itself", req.Kind, req.ID, name)
 	}
 	return name, nil
+}
+
+// pickFileName is the name the requirement states, else the last segment of its
+// address, else its identifier.
+func pickFileName(req pluginport.DependencyRequirement) (string, error) {
+	if named := req.Metadata["fileName"]; named != "" {
+		return cleanName(named), nil
+	}
+	address, err := url.Parse(req.SourceURL)
+	if err != nil {
+		return "", err
+	}
+	if base := path.Base(address.Path); base != "" && base != "." && base != "/" {
+		return cleanName(base), nil
+	}
+	return cleanName(req.ID), nil
 }
 
 // readCached returns the dependency a folder with the sentinel holds, when the

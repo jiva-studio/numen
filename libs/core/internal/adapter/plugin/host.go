@@ -1002,21 +1002,7 @@ func (h *Host) TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 		}
 	}
 
-	h.mu.Lock()
-	h.isClosed = true
-	var targets []pluginTeardownTarget
-	for id, sup := range h.supervisors {
-		if sup.GetState() != lifecycle.StateDormant {
-			targets = append(targets, pluginTeardownTarget{
-				id:       id,
-				pid:      sup.GetProcessID(),
-				sup:      sup,
-				endpoint: h.endpoints[id],
-			})
-			delete(h.endpoints, id)
-		}
-	}
-	h.mu.Unlock()
+	targets := h.takeTeardownTargets()
 
 	for _, target := range targets {
 		if err := h.teardownTarget(ctx, target, gracePeriod); err != nil && firstErr == nil &&
@@ -1031,6 +1017,27 @@ func (h *Host) TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 		firstErr = err
 	}
 	return firstErr
+}
+
+// takeTeardownTargets marks the host closed and returns the plugins that are running,
+// forgetting their endpoints.
+func (h *Host) takeTeardownTargets() []pluginTeardownTarget {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.isClosed = true
+	var targets []pluginTeardownTarget
+	for id, sup := range h.supervisors {
+		if sup.GetState() != lifecycle.StateDormant {
+			targets = append(targets, pluginTeardownTarget{
+				id:       id,
+				pid:      sup.GetProcessID(),
+				sup:      sup,
+				endpoint: h.endpoints[id],
+			})
+			delete(h.endpoints, id)
+		}
+	}
+	return targets
 }
 
 // closeAllStdins closes the stdin pipes of every plugin process generation and forgets them.
@@ -1210,11 +1217,7 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 	result := maps.Clone(rawStored)
 	if p, ok := h.plugins[pluginID]; ok {
 		result = p.Manifest.ResolveSettings(result)
-		if _, hasStored := rawStored[keyExecutablePath]; !hasStored && hasACPPathsSetting(p.Manifest) {
-			if paths := joinOptionValues(resolveDiscoveredACPOptions()); paths != "" {
-				result[keyExecutablePath] = paths
-			}
-		}
+		addDiscoveredExecutable(result, rawStored, p.Manifest)
 	}
 	if result == nil {
 		result = map[string]any{}
@@ -1227,6 +1230,17 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 		}
 	}
 	return result
+}
+
+// addDiscoveredExecutable fills the executable path of an ACP plugin from the agents found
+// on the machine, where the user has stored none.
+func addDiscoveredExecutable(result, stored map[string]any, manifest pluginport.PluginManifest) {
+	if _, hasStored := stored[keyExecutablePath]; hasStored || !hasACPPathsSetting(manifest) {
+		return
+	}
+	if paths := joinOptionValues(resolveDiscoveredACPOptions()); paths != "" {
+		result[keyExecutablePath] = paths
+	}
 }
 
 // hasACPPathsSetting reports whether the manifest declares a setting that holds ACP agent executables.

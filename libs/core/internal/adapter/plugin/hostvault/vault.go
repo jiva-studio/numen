@@ -70,21 +70,25 @@ func (a Vault) GetVaults() ([]domain.Vault, error) {
 }
 
 func (a Vault) With(id domain.VaultID) (pluginport.PluginVault, error) {
-	var found domain.Vault
-	if a.Find != nil {
-		v, err := a.Find(id)
-		if err != nil {
-			return nil, err
-		}
-		found = v
-	} else if v, showing := a.GetVault(); showing && v.ID == id {
-		found = v
-	} else {
-		return nil, fmt.Errorf("vault %q: %w", id, fs.ErrNotExist)
+	found, err := a.find(id)
+	if err != nil {
+		return nil, err
 	}
 	linked := a
 	linked.Current = func() (domain.Vault, bool) { return found, true }
 	return linked, nil
+}
+
+// find is the vault an identifier names: through the lookup where there is one, else
+// the vault shown, when that is the one named.
+func (a Vault) find(id domain.VaultID) (domain.Vault, error) {
+	if a.Find != nil {
+		return a.Find(id)
+	}
+	if v, showing := a.GetVault(); showing && v.ID == id {
+		return v, nil
+	}
+	return domain.Vault{}, fmt.Errorf("vault %q: %w", id, fs.ErrNotExist)
 }
 
 func (a Vault) EnsureIndexed(ctx context.Context) (pluginport.PluginIndexState, error) {
