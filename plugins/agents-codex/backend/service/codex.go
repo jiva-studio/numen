@@ -207,8 +207,7 @@ func askCodexModels(ctx context.Context, command []string) (models []AgentModel,
 	}
 	defer func() {
 		closeErr := errors.Join(in.Close(), out.Close())
-		stop()
-		waitErr := cmd.Wait()
+		waitErr := waitForExit(cmd, stop)
 		if isStopped(waitErr) {
 			waitErr = nil
 		}

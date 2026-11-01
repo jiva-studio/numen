@@ -301,7 +301,8 @@ func (s *acpSession) ask(system, prompt string) (string, error) {
 	return strings.TrimSpace(s.answer.String()), nil
 }
 
-// close ends the session where the agent can, then the agent, and removes the session folder. A
+// close ends the session where the agent can, then the agent, and removes the session folder. The
+// agent is given exitGrace to exit on the end of its input before its process group is killed. A
 // stopped agent is not an error.
 func (s *acpSession) close() error {
 	var err error
@@ -311,12 +312,12 @@ func (s *acpSession) close() error {
 	if s.stdin != nil {
 		err = errors.Join(err, s.stdin.Close())
 	}
-	s.stop()
 	if s.cmd.Process != nil {
-		if waitErr := s.cmd.Wait(); !isStopped(waitErr) {
+		if waitErr := waitForExit(s.cmd, s.stop); !isStopped(waitErr) {
 			err = errors.Join(err, waitErr)
 		}
 	}
+	s.stop()
 	if s.cleanDir != nil {
 		err = errors.Join(err, s.cleanDir())
 	}

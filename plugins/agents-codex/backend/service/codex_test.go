@@ -104,6 +104,26 @@ func TestAskCodexModelsCommandArguments(t *testing.T) {
 	}
 }
 
+// A program that exits as soon as it has listed its models is not reported as killed: on macOS the
+// kill of its exited process group fails.
+func TestACodexThatExitsAfterListingItsModelsListsThem(t *testing.T) {
+	agenttest.NeedsShell(t)
+	script := agenttest.WriteScript(t, "codex",
+		"read -r _\n"+
+			`echo '{"id":1,"result":{}}'`+"\n"+
+			"read -r _\nread -r _\n"+
+			`echo '{"id":2,"result":{"data":[{"model":"m1"}]}}'`+"\n"+
+			"exit 0\n")
+
+	models, err := askCodexModels(t.Context(), []string{script})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(models) != 1 || models[0].Name != "m1" {
+		t.Errorf("the models are %v", models)
+	}
+}
+
 func TestAskCodexModelsStartFailure(t *testing.T) {
 	_, err := askCodexModels(t.Context(), []string{"/nonexistent/path/to/binary"})
 	if err == nil {

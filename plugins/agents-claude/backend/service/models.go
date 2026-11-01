@@ -125,8 +125,8 @@ func fetchModels(ctx context.Context, command, env []string) (models []claudeMod
 		return nil, err
 	}
 	defer func() {
-		cancel()
-		if waitErr := cmd.Wait(); !isStopped(waitErr) {
+		err = errors.Join(err, in.Close())
+		if waitErr := waitForExit(cmd, cancel); !isStopped(waitErr) {
 			err = errors.Join(err, waitErr)
 		}
 	}()

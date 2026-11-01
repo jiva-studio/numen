@@ -94,6 +94,22 @@ func TestModels_QueriesProgramForModels(t *testing.T) {
 	}
 }
 
+// A program that exits as soon as it has answered lists its models and not the fallback: on macOS the
+// kill of its exited process group fails.
+func TestAProgramThatExitsAfterAnsweringListsItsModels(t *testing.T) {
+	answer := strings.Replace(readFixture(t), `"r1"`, `"numen-models"`, 1)
+	answer = strings.ReplaceAll(answer, "'", "")
+	script := writeScript(t, "claude", "read -r _\ncat <<'EOF'\n"+answer+"EOF\nexit 0\n")
+
+	models, err := fetchModels(t.Context(), []string{script}, os.Environ())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(models) != 13 {
+		t.Errorf("the models are %v", models)
+	}
+}
+
 func TestGetModels_FallbackWhenListFails(t *testing.T) {
 	t.Setenv("NUMEN_CLAUDE_COMMAND", writeScript(t, "claude", "exit 1\n"))
 	client := startAgent(t, &agentServer{})

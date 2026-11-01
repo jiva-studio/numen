@@ -66,7 +66,7 @@ func readFixtures(t *testing.T) []goldenFixture {
 func sourcePath(source int64) string { return fmt.Sprintf("note-%05d.md", source) }
 
 // coreCosine is the cosine of the angle between a query vector and a stored vector of signed bytes,
-// summed in the order the core sums it.
+// summed and rounded the way the core does it.
 func coreCosine(query, stored []float32) float64 {
 	if len(query) != len(stored) || len(query) == 0 {
 		return 0
@@ -83,20 +83,20 @@ func coreCosine(query, stored []float32) float64 {
 		q2, s2 := query[i+2], int32(stored[i+2])
 		q3, s3 := query[i+3], int32(stored[i+3])
 
-		dot0 += q0 * float32(s0)
-		left0 += q0 * q0
+		dot0 += float32(q0 * float32(s0))
+		left0 += float32(q0 * q0)
 		right0 += s0 * s0
 
-		dot1 += q1 * float32(s1)
-		left1 += q1 * q1
+		dot1 += float32(q1 * float32(s1))
+		left1 += float32(q1 * q1)
 		right1 += s1 * s1
 
-		dot2 += q2 * float32(s2)
-		left2 += q2 * q2
+		dot2 += float32(q2 * float32(s2))
+		left2 += float32(q2 * q2)
 		right2 += s2 * s2
 
-		dot3 += q3 * float32(s3)
-		left3 += q3 * q3
+		dot3 += float32(q3 * float32(s3))
+		left3 += float32(q3 * q3)
 		right3 += s3 * s3
 	}
 

@@ -62,7 +62,8 @@ func getQuantile(sorted []float64, p float64) float64 {
 	position := p * float64(len(sorted)-1)
 	lower := int(math.Floor(position))
 	upper := min(lower+1, len(sorted)-1)
-	return sorted[lower] + (sorted[upper]-sorted[lower])*(position-float64(lower))
+	// The conversion keeps arm64 from fusing the multiply and the add into one rounding.
+	return sorted[lower] + float64((sorted[upper]-sorted[lower])*(position-float64(lower)))
 }
 
 // getBin is the histogram bin of a similarity. Values outside zero to one fall in

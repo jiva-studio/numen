@@ -488,3 +488,9 @@ func isSyncUnsupported(err error) bool {
 	return errors.Is(err, errors.ErrUnsupported) || errors.Is(err, fs.ErrPermission) ||
 		errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.ENOTSUP)
 }
+
+// isUnwritable is whether the file or its folder refuses writes. A read-only
+// installation runs with the settings it reads, so this is not reported.
+func isUnwritable(err error) bool {
+	return errors.Is(err, fs.ErrPermission) || errors.Is(err, syscall.EROFS)
+}
