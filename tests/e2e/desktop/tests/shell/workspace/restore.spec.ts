@@ -1,4 +1,4 @@
-import { test, expect, readSavedStates, type Page } from '../../support/test.js'
+import { test, expect, readActivePath, readSavedStates, type Page } from '../../support/test.js'
 import {
   openVaultFile,
   openWorkspace,
@@ -127,6 +127,7 @@ test.describe('The tabs of the window after a restart', () => {
     await expect(getPageField(page, /shore/i)).toHaveValue('1')
     await setPdfReaderEnabled(page, false)
     await page.getByRole('tab', { name: /shore/i }).click()
+    await expect.poll(() => readActivePath(page.request)).toBe('assets/shore.pdf')
 
     await page.reload()
 

@@ -27,6 +27,20 @@ export const readSavedStates = async (request: APIRequestContext): Promise<Map<s
   return new Map(tabs.map((one) => [one.path ?? '', one.state ?? '']))
 }
 
+/** The path of the tab the core keeps as active for the vault in the window, empty for none. */
+export const readActivePath = async (request: APIRequestContext): Promise<string> => {
+  const answer = await request.post('/numen.v1.WorkspaceService/ReadOpenTabs', {
+    data: {},
+    headers: { 'Content-Type': 'application/json' },
+  })
+  if (!answer.ok()) throw new Error(`reading the open tabs answered ${answer.status()}`)
+  const { tabs = [], activeId = '' } = (await answer.json()) as {
+    tabs?: { id?: string; path?: string }[]
+    activeId?: string
+  }
+  return tabs.find((one) => one.id === activeId)?.path ?? ''
+}
+
 export const test = base.extend<{ isFreshTabs: void }>({
   isFreshTabs: [
     async ({ request }, use) => {
