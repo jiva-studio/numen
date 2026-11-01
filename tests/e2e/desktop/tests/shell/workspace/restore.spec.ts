@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '../../support/test.js'
+import { test, expect, readSavedStates, type Page } from '../../support/test.js'
 import {
   openVaultFile,
   openWorkspace,
@@ -9,6 +9,14 @@ import {
 /** The page field of the PDF reader in a panel. */
 const getPageField = (page: Page, name: RegExp) =>
   page.getByRole('tabpanel', { name }).getByRole('spinbutton', { name: 'Page' })
+
+/**
+ * Waits until the state the core keeps for the tab of the file holds the text. The window writes it
+ * in the background, and a reload before the write lands loses it.
+ */
+const expectSavedState = async (page: Page, path: string, text: string): Promise<void> => {
+  await expect.poll(async () => (await readSavedStates(page.request)).get(path)).toContain(text)
+}
 
 /** Turns the PDF reader plugin on or off in the settings. */
 const setPdfReaderEnabled = async (page: Page, isEnabled: boolean): Promise<void> => {
@@ -30,6 +38,7 @@ test.describe('The tabs of the window after a restart', () => {
     const tab = await openVaultFile(page, 'assets', 'shore.pdf')
     await tab.getByRole('button', { name: 'Next page' }).click()
     await expect(getPageField(page, /shore/i)).toHaveValue('2')
+    await expectSavedState(page, 'assets/shore.pdf', '"page":2')
 
     await page.reload()
 
@@ -39,9 +48,11 @@ test.describe('The tabs of the window after a restart', () => {
   test('open an EPUB at the place it was left at', async ({ page }) => {
     await openWorkspace(page)
     const tab = await openVaultFile(page, 'assets', 'sample.epub')
-    await expect(tab.locator('.book-tab__reading')).toBeVisible()
+    const bookText = tab.locator('.book-tab__reading')
+    await expect(bookText).toContainText(/\d+ of \d+/)
     await tab.locator('.book-tab').press('PageDown')
-    const textBefore = await tab.locator('.book-tab__reading').innerText()
+    await expect(bookText).toContainText(/\d+ of \d+/)
+    const textBefore = await bookText.innerText()
 
     await page.reload()
 
@@ -56,6 +67,7 @@ test.describe('The tabs of the window after a restart', () => {
     await expect(player).toContainText('3:07')
     await player.getByRole('slider').fill('120000')
     await expect(player).toContainText('2:00')
+    await expectSavedState(page, 'assets/talk.mp3', '"t":[120,')
 
     await page.reload()
 

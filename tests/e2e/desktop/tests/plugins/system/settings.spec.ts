@@ -4,7 +4,6 @@ import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 /** The settings page of the transcription plugin, opened from the palette. The tab opens again on the plugin it last showed. */
 async function openTranscriptionSettings(page: Page): Promise<void> {
   await runPaletteCommand(page, 'Settings', 'Settings')
-  await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
   const pluginRow = page.getByRole('button', { name: /Audio\/Video Transcription/i }).first()
   const model = page.getByTestId('setting-model')
   await expect(pluginRow.or(model)).toBeVisible({ timeout: 10_000 })

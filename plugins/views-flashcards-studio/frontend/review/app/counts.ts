@@ -36,9 +36,20 @@ export function createVaultCounts(deps: VaultCountsDeps) {
     if (isStarted || !isOpen) return
     isStarted = true
     counter.count().catch(deps.reportError)
+    let isOpening = true
     follow(
-      () => cards.watchReloads({}, { signal: abortController.signal }),
+      () => {
+        isOpening = true
+        return cards.watchReloads({}, { signal: abortController.signal })
+      },
       async (response) => {
+        // The first message of a stream says the watch is open. A vault indexed before it opened
+        // sends no reload, so the vaults are counted again then.
+        if (isOpening) {
+          isOpening = false
+          await refresh()
+          return
+        }
         // A message carrying no reload keeps the stream open and moves nothing.
         if (!response.reload) return
         await refresh()

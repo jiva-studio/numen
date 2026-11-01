@@ -16,8 +16,9 @@ export type TaskSource = (onTasks: (tasks: readonly WatchedTask[]) => void) => {
   dispose(): void
 }
 
-const isActiveTask = (task: WatchedTask): boolean =>
-  !task.error && ((task.total ?? 0) === 0 || (task.done ?? 0) < (task.total ?? 0))
+// The host keeps a task in the list until the plugin finishes it, and a plugin may count every
+// part done before it writes the result.
+const isActiveTask = (task: WatchedTask): boolean => !task.error
 
 /** Notifies each listener whether work on its file is in progress, from one subscription to the tasks. */
 export function createWorkWatcher(watchTasks: TaskSource) {

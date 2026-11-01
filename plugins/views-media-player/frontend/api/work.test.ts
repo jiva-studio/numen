@@ -60,7 +60,7 @@ describe('a watcher of work', () => {
     expect(changes).toStrictEqual([true])
   })
 
-  it('ignores tasks that have finished or failed', () => {
+  it('counts a task as work until it leaves the list or fails', () => {
     const { source, push } = createSource()
     const changes: boolean[] = []
     const watcher = createWorkWatcher(source)
@@ -70,6 +70,6 @@ describe('a watcher of work', () => {
     push([{ about: 'a.wav', done: 3, total: 3 }])
     push([{ about: 'a.wav', done: 1, total: 3, error: 'failed' }])
 
-    expect(changes).toStrictEqual([true, false])
+    expect(changes).toStrictEqual([true, true, false])
   })
 })

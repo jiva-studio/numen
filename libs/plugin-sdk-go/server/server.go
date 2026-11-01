@@ -440,7 +440,7 @@ func (s *Server) authenticate() error {
 	return nil
 }
 
-// announceReady writes the handshake line and flushes it when the output supports flushing.
+// announceReady writes the handshake line.
 func (s *Server) announceReady() error {
 	if s.stdout == nil {
 		return nil
@@ -448,19 +448,7 @@ func (s *Server) announceReady() error {
 	if _, err := fmt.Fprintf(s.stdout, "NUMEN_READY port=%d\n", s.actualPort); err != nil {
 		return fmt.Errorf("write ready line: %w", err)
 	}
-	syncer, ok := s.stdout.(interface{ Sync() error })
-	if !ok {
-		return nil
-	}
-	if err := syncer.Sync(); err != nil && !isSyncUnsupported(err) {
-		return fmt.Errorf("sync ready line: %w", err)
-	}
 	return nil
-}
-
-// isSyncUnsupported reports whether err says the output (a pipe or terminal) cannot be synced.
-func isSyncUnsupported(err error) bool {
-	return errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.ENOTTY) || errors.Is(err, errors.ErrUnsupported)
 }
 
 // watchStdin returns a channel closed when standard input reaches end of file.

@@ -148,8 +148,21 @@ describe('what the counting follows', () => {
 })
 
 describe('a deck written underneath the window', () => {
-  it('counts the vaults again on a message that carries a reload, and on no other', async () => {
+  it('counts the vaults again once the watch is open, and on a message that carries a reload', async () => {
     wire.reloads = () => sends({ reload: false }, { reload: true }, { reload: false })
+    const counts = createVaultCounts({ reportError: vi.fn() })
+
+    counts.start()
+    await settle()
+    await settle()
+    await settle()
+
+    expect(wire.countsOpened).toBe(3)
+    counts.dispose()
+  })
+
+  it('counts the vaults again when the watch opens, for a vault indexed before it did', async () => {
+    wire.reloads = () => sends({ reload: false })
     const counts = createVaultCounts({ reportError: vi.fn() })
 
     counts.start()

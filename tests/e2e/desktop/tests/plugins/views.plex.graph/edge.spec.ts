@@ -19,19 +19,21 @@ test.describe('Plex Edge and Link Inspector', () => {
     const popover = await openLinkInspector(page)
 
     await expect(popover.locator('.plex-link-popover__title')).toBeVisible()
-    await expect(popover.locator('.plex-link-row')).toBeVisible()
+    await expect(popover.getByRole('checkbox', { name: 'Thermodynamics Entropy' })).toBeChecked()
+    await expect(
+      popover.getByRole('checkbox', { name: 'Entropy Thermodynamics' }),
+    ).not.toBeChecked()
   })
 
-  test('toggles link directionality inside link inspector', async ({ page }) => {
+  test('toggles the arrow of a link inside link inspector', async ({ page }) => {
     const popover = await openLinkInspector(page)
 
-    const dirBtn = popover.locator('.plex-link-popover__dir-btn').first()
-    await expect(dirBtn).toBeVisible()
-    const initialSvg = await dirBtn.innerHTML()
+    const arrow = popover.getByRole('button', { name: 'Arrow' }).first()
+    await expect(arrow).toHaveAttribute('aria-pressed', 'true')
 
-    await dirBtn.click()
+    await arrow.click()
 
-    await expect.poll(() => dirBtn.innerHTML()).not.toBe(initialSvg)
+    await expect(arrow).toHaveAttribute('aria-pressed', 'false')
   })
 
   test('dismisses link inspector via close button without breaking plex graph', async ({

@@ -171,6 +171,14 @@ test.describe('Audio Transcription Pipeline', () => {
 
     const player = page.locator('.recording__player')
     await expect(player).toBeVisible({ timeout: 10_000 })
+
+    // The menu at the end of the strip is shown for a recording that has words; the test before
+    // this one deletes them.
+    const transcribe = page.getByRole('button', { name: 'Transcribe' })
+    const text = page.locator('.transcript__text')
+    await expect(transcribe.or(text)).toBeVisible({ timeout: 10_000 })
+    if (await transcribe.isVisible()) await transcribe.click()
+    await expect(text).toBeVisible({ timeout: 15_000 })
     await expect(page.locator('.media__actions')).toBeVisible({ timeout: 10_000 })
   })
 })

@@ -7,13 +7,18 @@ import { openWorkspace, runPaletteCommand } from '../../support/workspace'
  */
 const VIEWS = [
   {
-    command: 'Show files',
+    command: 'Open files tab',
     query: 'files',
     tab: /^Files/,
     keys: 'Control+Shift+e',
   },
-  { command: 'New agent', query: 'agent', tab: /^Agent/, keys: 'Control+Shift+a' },
-  { command: 'New plex', query: 'plex', tab: /^(Thermodynamics|Plex)/, keys: 'Control+Shift+x' },
+  { command: 'Open agent tab', query: 'agent', tab: /^Agent/, keys: 'Control+Shift+a' },
+  {
+    command: 'Open plex tab',
+    query: 'plex',
+    tab: /^(Thermodynamics|Plex)/,
+    keys: 'Control+Shift+x',
+  },
   { command: 'Record audio', query: 'record', tab: /^Record Audio/, keys: undefined },
 ] as const
 

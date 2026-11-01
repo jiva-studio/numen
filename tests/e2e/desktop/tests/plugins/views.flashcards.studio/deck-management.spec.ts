@@ -110,6 +110,7 @@ test.describe('Deck Management and Scheduling Interactions', () => {
     await deckRow.press('Enter')
 
     await expect(page.locator('.deck')).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.card').first()).toBeVisible({ timeout: 10_000 })
 
     const initialSections = await page.locator('.section-heading').count()
 

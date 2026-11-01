@@ -16,6 +16,12 @@ const getServedThemeStyle = async (page: Page): Promise<string> => {
   return /<style data-appearance="theme">([^<]*)<\/style>/.exec(html)?.[1] ?? ''
 }
 
+/** Reloads the window and waits until it has drawn the tabs it restores. */
+const reloadWindow = async (page: Page): Promise<void> => {
+  await page.reload()
+  await expect(page.getByRole('tabpanel').first()).toBeVisible()
+}
+
 /** Wears the theme of that title through the palette. */
 const chooseTheme = async (page: Page, title: string): Promise<void> => {
   await runCommand(page, 'Change theme', /^Change theme/)
@@ -29,6 +35,7 @@ const chooseTheme = async (page: Page, title: string): Promise<void> => {
 const setPresetThemesEnabled = async (page: Page, isEnabled: boolean): Promise<void> => {
   await runCommand(page, 'Settings', /^Settings$/)
   const settings = page.getByRole('tabpanel', { name: /Settings/ })
+  await expect(settings).toBeVisible()
   const toggle = settings.getByRole('switch', { name: /Enabled Preset Themes/ })
   if (!(await toggle.isVisible())) {
     await settings.getByRole('button', { name: /Preset Themes/ }).click()
@@ -50,12 +57,12 @@ test.describe('A theme of the preset themes plugin', () => {
 
       // The server writes the theme into the page it sends, so the first frame is already drawn in it.
       await expect.poll(() => getServedThemeStyle(page)).toContain(DRACULA_SURFACE)
-      await page.reload()
+      await reloadWindow(page)
       await expect.poll(() => getThemeStyle(page)).toContain(DRACULA_SURFACE)
 
       await setPresetThemesEnabled(page, false)
       await expect.poll(() => getServedThemeStyle(page)).not.toContain(DRACULA_SURFACE)
-      await page.reload()
+      await reloadWindow(page)
       await expect.poll(() => getThemeStyle(page)).not.toContain(DRACULA_SURFACE)
     } finally {
       await setPresetThemesEnabled(page, true)
