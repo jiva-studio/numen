@@ -48,7 +48,7 @@ Rewrite on sight of any of these:
 - `so that we do not…`, `to avoid…`
 - `these are those X`, `which is why this exists`
 - benchmark numbers, or any comparison with a previous implementation
-  (measurements live only in `docs/performance.md`)
+  (measurements are stored only in `docs/performance.md`)
 
 Comments must be concise, factual, and strictly technical engineering English. Avoid storytelling and literary cadence.
 
@@ -131,9 +131,9 @@ Rules:
 4. A section with independent state, or a part rendered on its own elsewhere, is extracted into its own component.
 5. Business logic does not live in a `.vue` file — it is a composable or a domain model.
 
-The components in the tree still carry the short `// --- <Name> ---` form. They
-are migrated to the banner above; until that lands, the banner is what new and
-touched components take.
+The components in the tree still use the short `// --- <Name> ---` form. They
+are being migrated to the banner above; until the migration is done, new and
+touched components use the banner.
 
 ---
 
@@ -241,7 +241,7 @@ Pick **one** word for the failure discriminant: **`error`** (never `refusal`, `r
 
 ## 9. Domain terminology
 
-A concept takes the standard term of its field (W3C, LSP, MIME, gRPC codes).
+A concept is named with the standard term of its field (W3C, LSP, MIME, gRPC codes).
 
 Specific term rules:
 
@@ -261,7 +261,7 @@ Specific term rules:
 
 ## 10. File placement — domain code stays in its domain
 
-Code that serves one domain lives inside that domain's folder under
+Code that serves one domain is in that domain's folder under
 `apps/desktop/editor/src/` (or its respective plugin under `plugins/`):
 
 | File                                             | Belongs in |
@@ -300,7 +300,7 @@ interface Correctable {
 
 A file is split when it holds a second responsibility. The unit of organisation
 is the thing, not the kind of thing: a folder collecting every type, every
-handler or every use case is a heap at fifty entries and was already one at
+handler or every use case is unstructured at fifty entries and was already unstructured at
 five.
 
 ## 12. File and directory naming (frontend — TypeScript / Vue)
@@ -313,7 +313,7 @@ Directories and files follow strict casing rules:
 
 ## 13. Absolute ban on narrative slop, participles, and Anglish metaphors (all languages)
 
-To prevent linguistic contagion and degraded code readability, pseudo-literary prose, Anglish idioms, irregular past participles as identifiers, and bare prepositions are strictly forbidden across TypeScript, Vue, and Go.
+To keep code readable, pseudo-literary prose, Anglish idioms, irregular past participles as identifiers, and bare prepositions are strictly forbidden across TypeScript, Vue, and Go.
 
 ### Forbidden variable & identifier patterns:
 
@@ -335,18 +335,18 @@ To prevent linguistic contagion and degraded code readability, pseudo-literary p
 ## 14. Known gotchas
 
 - **Every worktree shares one `git stash` stack.** Two agents stashing at once
-  cross: one `pop` takes the other's entry into the wrong tree. For a clean
+  mix up the entries: one `pop` takes the other's entry into the wrong tree. For a clean
   tree, commit first and `git checkout HEAD~1 -- <path>`, or copy the file
   aside.
-- **The windows reach `@numen/ui` through its build.** Run `npm run build` in
+- **The windows import `@numen/ui` from its build.** Run `npm run build` in
   `libs/ui/core` before the suites in `apps/desktop/editor` and
   `flashcards`, or they fail on `Cannot find module '@numen/ui'`.
 - **`node_modules` symlinked from the primary checkout resolves
-  `@numen/protocol` to whatever branch that checkout is parked on.** A
+  `@numen/protocol` to whatever branch that checkout has checked out.** A
   generated symbol missing there is that, not the branch under test. Install
   for real when the answer matters.
 - **`npm test` in `libs/ui/core` starts both story instances at once**, and
-  the run dies before any test executes. Take them one at a time:
+  the run fails before any test executes. Take them one at a time:
   `npm run test:unit`,
   `vitest run --project 'stories (chromium)'`,
   `vitest run --project 'stories (webkit)'`. WebKit does run on this machine.
@@ -357,17 +357,17 @@ To prevent linguistic contagion and degraded code readability, pseudo-literary p
 
 The plugin model is [`.agents/rules/architecture.md`](.agents/rules/architecture.md) §11.
 
-1. A window (editor, flashcards, mobile) reaches the core only through `@numen/core-client`. A plugin frontend reaches it only through `@numen/plugin-sdk`, a plugin backend only through `libs/plugin-sdk-go`. The core routes every call; windows and plugins never call each other directly.
+1. A window (editor, flashcards, mobile) calls the core only through `@numen/core-client`. A plugin frontend calls it only through `@numen/plugin-sdk`, a plugin backend only through `libs/plugin-sdk-go`. The core routes every call; windows and plugins never call each other directly.
 2. A plugin depends on the SDK and third-party code, and its frontend also on `@numen/ui`. Never add a direct import or require of `libs/notes`, `libs/protocol`, `@numen/core-client`, `@connectrpc` or another library to a plugin. `// indirect` lines in a plugin's `go.mod` come from the SDK and are allowed.
 3. Never add to the plugin SDK what no plugin uses. Every SDK export has a plugin that imports it. Never propose a third shared library for plugins.
 4. An SDK type may be an alias of a `libs/notes` type. Each type has one name; never add a second set of names.
-5. A plugin has no `.proto` file and no protobuf code. Its backend answers its frontend with JSON methods. A plugin's own service is named after its plugin id; shared services such as `numen.v1.AgentService` are declared by the core.
+5. A plugin has no `.proto` file and no protobuf code. Its backend exposes JSON methods to its frontend. A plugin's own service is named after its plugin id; shared services such as `numen.v1.AgentService` are declared by the core.
 6. Code may be duplicated between plugins. Never add or keep a check that pushes code into the SDK or `@numen/ui`.
 7. Logic that depends on time takes a clock as a port. A plugin takes the SDK clock or declares its own.
 8. Size and complexity limits are rules, with one set for Go, TypeScript and Vue ([`.agents/rules/architecture.md`](.agents/rules/architecture.md) §8).
 9. Nothing is published for now. Publishing, API compatibility tooling and iframe isolation come later, when the SDK is released.
 10. Checks are structural. Use an off-the-shelf tool with configuration where one exists (dependency-cruiser, depguard and gomodguard, golangci-lint linters, stylelint). Write a check by hand only over syntax trees, import graphs and type information. A check never decides by a regular expression over source text, a list of names or a list of files ([`.agents/rules/architecture.md`](.agents/rules/architecture.md) §10).
-11. Checks never get weaker: no exclusion and no workaround that dodges a rule (such as obtaining the time through `time.After(0)`). Derive sets from structure.
+11. Checks never get weaker: no exclusion and no workaround that bypasses a rule (such as obtaining the time through `time.After(0)`). Derive sets from structure.
 12. Tell the owner a design decision before writing it into a plan file or implementing it. Do not present a guess as agreed.
 13. Do the work first. Run the heavy checks (full lint-layers, tests across modules, linters) once at the end.
 14. Commit messages carry no `Co-Authored-By` line and no session trailer.

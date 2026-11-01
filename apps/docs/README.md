@@ -1,6 +1,6 @@
 # The manual
 
-What a person using the application reads: how to write, link, find and ask. Astro and Starlight, static output, published at [docs.numen.md](https://docs.numen.md).
+The manual for a person using the application: how to write, link, find and ask. Astro and Starlight, static output, published at [docs.numen.md](https://docs.numen.md).
 
 ```
 npm install
@@ -13,33 +13,33 @@ npm run typecheck  # astro check
 
 Only what somebody using numen needs. The specifications under `docs/` in this repository — the note format, the index, the performance targets — are how the application is built, and stay there.
 
-## Five pages write themselves
+## Five pages are generated
 
-| Page | Written from |
-| --- | --- |
-| `keyboard.md` | the window's table of chords, `editor/src/features/command-palette/lib/chords/chords.ts`, and the shortcuts the plugins register |
-| `commands.mdx` | the window's own commands, composed in `editor/src/features/command-palette/lib/commands/table.ts` and drawn in the words of `shared/words.ts`; then what the plugins add — the settings and commands their `manifest.json` offers the palette, the menu of the file in front, and the commands each frontend registers |
-| `reference.md` | the settings the core declares, walked from `container.Settings` |
-| `starting.md` | the flags `cmd/numen/main.go` declares |
-| `cli.md` | what `numen-cli` prints when it is asked, in `adapter/cli/cli.go` |
+| Page           | Generated from                                                                                                                                                                                                                                                                                                       |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `keyboard.md`  | the window's table of chords in `editor/src/features/command-palette/lib/chords/chords.ts`, and the shortcuts the plugins register                                                                                                                                                                                   |
+| `commands.mdx` | the window's own commands, built in `editor/src/features/command-palette/lib/commands/table.ts` and labelled with the words in `shared/words.ts`; then what the plugins add: the settings and commands their `manifest.json` offers the palette, the menu of the open file, and the commands each frontend registers |
+| `reference.md` | the settings the core declares, read from `container.Settings`                                                                                                                                                                                                                                                       |
+| `starting.md`  | the flags `cmd/numen/main.go` declares                                                                                                                                                                                                                                                                               |
+| `cli.md`       | what `numen-cli` prints for its help, in `adapter/cli/cli.go`                                                                                                                                                                                                                                                        |
 
-What the plugins add is read by `tools/ci-commands/commands.mjs`, out of each plugin's `manifest.json` and `frontend/index.ts`: an application reaches no plugin, so the manual takes the list from that tool.
+What the plugins add is read by `tools/ci-commands/commands.mjs`, out of each plugin's `manifest.json` and `frontend/index.ts`: the application cannot load a plugin, so the manual takes the list from that tool.
 
-Each is one block between `<!-- BEGIN AUTOGEN -->` and `<!-- END AUTOGEN -->`; the prose around it is written by hand.
+Each page has one block between `<!-- BEGIN AUTOGEN -->` and `<!-- END AUTOGEN -->`; the prose around it is written by hand.
 
 ```
 npm run manual        # write the blocks again
-npm run manual:check  # fail where a page has drifted
+npm run manual:check  # fail where a page is out of date
 ```
 
-`npm run build` writes them first, and the workflow checks them, so a command, a chord, a setting or a flag added to the application without the manual catching up is caught in CI.
+`npm run build` writes them first, and the workflow checks them, so a command, a chord, a setting or a flag added to the application without a matching manual change fails in CI.
 
-## Taking the pictures
+## Taking the screenshots
 
 ```
-npm run shoot  # every picture in src/assets/, light and dark
+npm run shoot  # every screenshot in src/assets/, light and dark
 ```
 
-Each is a story, drawn at the size it is drawn at, in the Storybook that declares it: the components' own in `libs/ui/core`, the shell's in `libs/ui/shell`, which draws the windows' screens too, or the plugins' in `plugins/`. Each one a shot names is started for the run and stopped again; `STORYBOOK_PORT`, `STORYBOOK_SHELL_PORT` and `STORYBOOK_PLUGINS_PORT` name ones already running. The shell's and the plugins' Storybooks reach `@numen/ui` through its build, so `npm run build` in `libs/ui/core` comes first. A screen of the desktop reaches `@numen/protocol`, so that module needs its dependencies installed as well, and a story that will not draw stops the run rather than being photographed.
+Each screenshot is a story, rendered at its real size in the Storybook that declares it: the components' Storybook in `libs/ui/core`, the shell's in `libs/ui/shell` (which also renders the windows' screens), or the plugins' in `plugins/`. The run starts each Storybook a shot names and stops it afterwards. `STORYBOOK_PORT`, `STORYBOOK_SHELL_PORT` and `STORYBOOK_PLUGINS_PORT` name Storybooks that are already running. The shell's and the plugins' Storybooks use `@numen/ui` through its build, so run `npm run build` in `libs/ui/core` first. A screen of the desktop imports `@numen/protocol`, so that module needs its dependencies installed as well. A story that fails to render stops the run.
 
-A picture that came back the same picture is left where it is: the encoder writes different bytes of one window, so what is compared is the pixels. A run over a manual nothing has changed under leaves the folder untouched.
+A screenshot whose pixels are unchanged is not rewritten: the encoder writes different bytes for the same image, so the run compares pixels. A run over an unchanged manual leaves the folder untouched.

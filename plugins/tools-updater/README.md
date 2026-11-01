@@ -1,6 +1,6 @@
 # Update Notifier
 
-Tells you when a newer build of Numen is published, and takes you to its download.
+Shows a notice when a newer build of Numen is published, with a link to its download.
 
 <!-- more -->
 
@@ -9,12 +9,12 @@ Tells you when a newer build of Numen is published, and takes you to its downloa
 - **See that an update exists**: A version badge appears at the right end of the status bar while a newer build is published. Click it for the release date, the way to install on your system and a link to the release notes.
 - **Dismiss an announcement**: **Dismiss** hides the badge for that version until you restart the window. A newer version shows it again.
 
-The plugin checks quietly. A machine without a network connection, or a feed that does not answer, shows nothing and is asked again a little later.
+The plugin checks without showing messages. A machine without a network connection, or a feed that does not respond, shows nothing, and the feed is requested again later.
 
 ## Settings
 
-- **Channel**: **Stable** *(default)* announces releases; **Beta** announces builds published ahead of the next release.
-- **Release feed address**: Address of the `latest.json` file to ask for the newest build. Empty asks the published feed of the channel, `https://dl.numen.md/latest/latest.json` for the stable channel.
+- **Channel**: **Stable** _(default)_ notifies about releases; **Beta** notifies about builds published ahead of the next release.
+- **Release feed address**: Address of the `latest.json` file to request the newest build. If empty, the published feed of the channel is used, `https://dl.numen.md/latest/latest.json` for the stable channel.
 - **Check interval**: Hours between two checks (`4` by default).
 
 ## How It Works

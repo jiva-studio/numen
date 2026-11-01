@@ -5,104 +5,104 @@ description: The map around one note — parents above, children below, jumps an
 
 import Shot from '../../components/Shot.astro'
 
-The plex is the shape of your links, drawn around one note at a time. It is not a picture of the
-whole vault: it is where you are, and everything one step away from you.
+The plex shows your links around one note at a time. It does not show the
+whole vault: it shows the note you are on and every note one link away.
 
 <Shot
   name="plex"
-  alt="A note in the middle of the plex with parents above it, children below, and lines carrying labels between them."
-  caption="One note in the middle, its parents overhead and its children below. The words along a line are the label you gave that link."
+  alt="A note in the middle of the plex with parents above it, children below, and lines with labels between them."
+  caption="One note in the middle, its parents above it and its children below. The words along a line are the label you gave that link."
 />
 
 ## How it is laid out
 
 The note you are on is in the middle. Around it:
 
-| | |
-| --- | --- |
-| <span class="up">above</span> | its parents — what it hangs under. |
-| <span class="down">below</span> | its children. |
-| <span class="across">to the left</span> | its jumps, the links that cross the hierarchy. |
-| to the right | its siblings — the other children of its parents. |
+|                                         |                                                   |
+| --------------------------------------- | ------------------------------------------------- |
+| <span class="up">above</span>           | its parents, the notes it is under.               |
+| <span class="down">below</span>         | its children.                                     |
+| <span class="across">to the left</span> | its jumps, the links that cross the hierarchy.    |
+| to the right                            | its siblings — the other children of its parents. |
 
-Walk one step and the map rearranges around where you arrived. What was a child above you is
-now the middle, with its own parents overhead.
+When you move one step, the map is rearranged around the note you moved to, which is now the middle, with its own parents above it
+and its own children below it.
 
 ## Moving
 
-| | |
-| --- | --- |
-| Click a node | go there. It becomes the middle, and the plex is redrawn around it. |
-| Double-click a node | open that note in a tab. |
-| <kbd>Alt</kbd> double-click | open it in a pane beside the one you are in. |
-| <kbd>Enter</kbd> or <kbd>Space</kbd> | go to the node the keyboard is on. |
-| <kbd>⇧</kbd> <kbd>Enter</kbd> | open it. Hold <kbd>Alt</kbd> as well to open it beside. |
-| Right-click, or <kbd>⇧</kbd> <kbd>F10</kbd> | the node's menu: everything the commands offer over a note. |
+|                                             |                                                                     |
+| ------------------------------------------- | ------------------------------------------------------------------- |
+| Click a node                                | go there. It becomes the middle, and the plex is redrawn around it. |
+| Double-click a node                         | open that note in a tab.                                            |
+| <kbd>Alt</kbd> double-click                 | open it in a pane beside the one you are in.                        |
+| <kbd>Enter</kbd> or <kbd>Space</kbd>        | go to the node the keyboard is on.                                  |
+| <kbd>⇧</kbd> <kbd>Enter</kbd>               | open it. Hold <kbd>Alt</kbd> as well to open it beside.             |
+| Right-click, or <kbd>⇧</kbd> <kbd>F10</kbd> | the node's menu: everything the commands offer over a note.         |
 
 **Show in plex** on the note you are reading — or <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd>
-<kbd>P</kbd> — brings the plex to that note.
+
+<kbd>P</kbd> — shows the plex for that note.
 
 ## What is inside a note
 
-Leave the pointer on a node for a moment and the note's headings come out from under the box —
-the sections of that note, each set in by how deep it is under the ones above it.
+Leave the pointer on a node for a moment and the note's headings appear under the box: the sections of that note, each indented by its depth under the headings above it.
 
 <Shot
   name="parts"
-  alt="A node in the plex with the headings of its note hung under the box, indented by depth, and a mark below them saying there are more."
-  caption="A hand left on a node brings out what is inside the note it stands for."
+  alt="A node in the plex with the headings of its note shown under the box, indented by depth, and a mark below them showing that there are more."
+  caption="Holding the pointer on a node shows what is inside its note."
 />
 
 Click one and that note opens with the caret on the heading's line. **The map does not move.** A
 heading is a place inside a note, not somewhere to travel to, so the plex stays on the note it
 was drawn around.
 
-Six headings stand at once. Where a note has more, a small mark at the edge says so, and the
-wheel winds through the rest a heading at a time. A node near the foot of the window stands
-fewer, because that is what the room below it holds.
+Six headings are shown at once. Where a note has more, a small mark at the edge shows it, and the
+mouse wheel scrolls through the rest a heading at a time. A node near the bottom of the window shows
+fewer, because there is less space below it.
 
-Move the pointer away and they go back under the box.
+Move the pointer away and they are hidden again.
 
-This is a thing for the hand. From the keyboard, [search](/search/) matches headings by name
+This works with a pointer only. From the keyboard, [search](/search/) matches headings by name
 and opens the note at the one you choose.
 
-**Turn it off** with **Plex Graph: Nest headings under notes** in the commands, and a node is
-its box alone. **Headings per note** sets how many stand at once, from one to twelve. Both are
+**Turn it off** with **Plex Graph: Nest headings under notes** in the commands, and a node shows
+its box only. **Headings per note** sets how many are shown at once, from one to twelve. Both are
 settings of the Plex Graph plugin, in its section of [the settings](/settings/), stored as
 `plugins.md.numen.views.plex.graph.nest_headings` and `heading_limit`.
 
 ## Building with it
 
-Every node carries a small handle: a disc with a cross in it. Press it and pull away from the
-node, and a thread follows your hand. Let go where you want the new note, and it is made there —
+Every node has a small handle: a disc with a cross in it. Press it and drag away from the
+node, and a line follows the pointer. Release where you want the new note, and it is created there:
 above the node it is a parent, below it is a child, to the side it is a jump.
 
-The link and the note arrive together. There is no separate step where you go and connect them. Letting go on empty space opens a quick-link popover: pick an existing note to link to, or type a new title to create and link in one motion.
+The link and the note are created together. There is no separate step to connect them. Releasing on empty space opens a quick-link popover: pick an existing note to link to, or type a new title to create and link in one motion.
 
-Clicking the handle directly creates one more child — the action most often
-wanted, and convenient on a trackpad without holding a button down. <kbd>Enter</kbd> on
+Clicking the handle directly creates one more child. This is the most common action,
+and it is convenient on a trackpad because you do not hold a button down. <kbd>Enter</kbd> on
 the handle does the same from the keyboard.
 
-<kbd>Escape</kbd> in the middle of a drag calls it off and nothing is made.
+<kbd>Escape</kbd> during a drag cancels it and nothing is created.
 
 ## Connecting two notes you already have
 
-The same gesture, let go **on another node** instead of on empty space, connects the two rather
-than making a third. The direction you dragged in is the relationship: upwards it becomes a
+The same gesture, released **on another node** instead of on empty space, connects the two rather
+than creating a third. The direction you drag in is the relationship: upwards it becomes a
 parent, downwards a child, to the side a jump.
 
-Three directions make something, then. To the right is where siblings are drawn, and a sibling
-is not a link anybody writes — it is what two notes under one parent already are — so nothing
-is made there. Letting go on the node you started from does nothing either.
+So three directions create a link. Siblings are drawn to the right. A sibling
+is not a link anyone writes; it is what two notes under one parent already are. So nothing
+is created there. Releasing on the node you started from does nothing either.
 
-Notes carried over from the [files tab](/files/#carrying-notes-onto-the-map) land the same way:
+Notes dragged from the [files tab](/files/#carrying-notes-onto-the-map) work the same way:
 drop them into a relation and they are linked to the note that relation belongs to.
 
 ## Reading the lines
 
 A line between two nodes is a link. Where you gave the link a
-[label](/links/#what-it-looks-like-in-the-file), the label is written along the line, so the map
-says *why* two notes are connected and not only *that* they are. An arrowhead at an end of the
+[label](/links/#what-it-looks-like-in-the-file), the label is shown along the line, so the map
+tells you _why_ two notes are connected and not only _that_ they are. An arrowhead at an end of the
 line is the [marker](/links/#markers) the note at the other end wrote on its link; a link with no
 marker is drawn without one.
 
@@ -110,7 +110,7 @@ marker is drawn without one.
 
 Right-clicking any connection line between two nodes opens the link inspector:
 
-- **Arrow**: Each end of the connection can carry an arrow, independently of the other. A line with no arrow is plain, and a line with an arrow at both ends has a head at each note.
+- **Arrow**: Each end of the connection can have an arrow, independently of the other. A line with no arrow is plain, and a line with an arrow at both ends has a head at each note.
 - **Labels**: Each end has its own label, so the two notes can describe the same connection in their own words. An end with an arrow and no label is kept.
 - **Delete links**: Remove one end or the entire connection between the notes.
 

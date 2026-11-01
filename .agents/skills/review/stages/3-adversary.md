@@ -5,14 +5,14 @@ description: Stage 3 of the numen review pipeline. Writes and runs adversarial t
 
 # Stage 3 — Dynamic Stress Verification
 
-The tester's mindset: **if the code can fail under some sequence of events, write the test that forces it to fail.**
+The tester's approach: **if the code can fail under some sequence of events, write the test that forces it to fail.**
 
 ---
 
 ## Core principles
 
 1. **Code over opinion.** A hypothesis is not a defect until a test execution fails against the current implementation.
-2. **Zero false positives.** A finding promoted from Stage 2 to "confirmed" carries the failing run.
+2. **Zero false positives.** A finding promoted from Stage 2 to "confirmed" includes the failing run.
 3. **A test is an asset.** Every adversarial test that uncovered something stays in the suite as a regression test once the fix lands. One that proved resilience stays if it covers an edge nobody had covered.
 
 This stage writes tests. It does not fix the implementation.
@@ -21,9 +21,9 @@ This stage writes tests. It does not fix the implementation.
 
 ## The mutation check, first
 
-Before attacking, turn the check on the change's own tests. For anything guarding a rule rather than a value, the question is not "does it pass?" but **"would it fail if the rule were broken?"** — and the way to know is to break it and watch.
+Before attacking, turn the check on the change's own tests. For anything guarding a rule rather than a value, the question is not "does it pass?" but **"would it fail if the rule were broken?"** — and the way to know is to break the rule and check that the test fails.
 
-Remove the filter, invert the condition, delete the guard clause, run the test, put it back. This is required for tests defending what the type system cannot: vault scoping, invalidation, anything about what is *not* read or *not* returned. It matters as much on the interface side, where "the nodes were arranged" and "the component rendered" pass under almost any implementation.
+Remove the filter, invert the condition, delete the guard clause, run the test, put it back. This is required for tests defending what the type system cannot: vault scoping, invalidation, anything about what is _not_ read or _not_ returned. It matters as much on the interface side, where "the nodes were arranged" and "the component rendered" pass under almost any implementation.
 
 A test that passes either way is worse than no test, because it is counted as protection and nobody looks at it again. Report it as a Stage 3 finding with the mutation that did not break it.
 
@@ -35,7 +35,7 @@ A test that passes either way is worse than no test, because it is counted as pr
 
 Empty vault, empty note, a note with no frontmatter, broken YAML, a file that is not markdown, a hidden folder. A single character. A source of ten thousand chunks. A line with nothing to break at. Text that is not Latin, combining diacritics, RTL, emoji past the basic plane. CRLF against LF, and a missing final newline.
 
-The committed fixture vault in `tests/` is awkward on purpose and holds most of these. It is read-only: a test that needs to change it works on a copy.
+The committed fixture vault in `tests/` is deliberately irregular and contains most of these. It is read-only: a test that needs to change it works on a copy.
 
 ### 2. Two vaults, disjoint content
 
@@ -43,7 +43,7 @@ Any claim about scoping is tested with two vaults whose notes share no words, as
 
 ### 3. Concurrency and ordering
 
-- `go test -race` with several connections held at once, since anything configured per connection is handed the same connection by a sequential test and cannot observe that the others were never configured.
+- `go test -race` with several connections held at once, since anything configured per connection uses the same connection in a sequential test and cannot observe that the others were never configured.
 - A cancelled context part-way through a scan, a walk or a query: does the work stop, and does it leave the index consistent?
 - In Vitest, resolve mocked responses out of order — the first request sent, the second sent, the first resolving last.
 - Rapid-fire interaction: repeated clicks, keyboard navigation before an animation or a fetch settles, a double submit, a double toggle.

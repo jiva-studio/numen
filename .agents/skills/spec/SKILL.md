@@ -5,7 +5,7 @@ description: Translates intent.md into a technical specification in .agents/task
 
 # Technical Specification Skill (`/spec`)
 
-The `/spec` skill transforms business intent (`intent.md`) into a precise technical blueprint (`spec.md`). It maps existing code, prevents hallucinations, defines contracts, outlines the blast radius, and formulates acceptance criteria.
+The `/spec` skill transforms business intent (`intent.md`) into a precise technical specification (`spec.md`). It maps existing code, prevents hallucinations, defines contracts, outlines the blast radius, and formulates acceptance criteria.
 
 ```mermaid
 flowchart TD
@@ -32,6 +32,7 @@ flowchart TD
 ## Step 2: Codebase Reconnaissance (Anti-Hallucination Gate)
 
 Before proposing new files, types, or methods, search the codebase:
+
 1. Search existing domain models, ports, and DTOs across `libs/core` and `apps/desktop`.
 2. Check existing composables, components, and utilities in `libs/ui/core`.
 3. Check `AGENTS.md` and the rules in `.agents/rules/` governing the touched area.
@@ -50,26 +51,31 @@ Generate `.agents/tasks/<slug>/spec.md` with:
 **Intent:** `.agents/tasks/<slug>/intent.md`
 
 ## 1. Target Architecture & Interfaces
+
 - Type signatures, interface definitions, or component prop/event contracts.
 - Explicit placement: which layer each file belongs to (`shared`, `entities`, `features`, `widgets`, `pages`).
 
 ## 2. Blast Radius Matrix
-| Package / Path | File | Action (Create/Modify) | Downstream Consumers |
-| :--- | :--- | :--- | :--- |
-| `libs/core` | `domain/card.go` | Modify | `usecase/flashcards`, `adapter/sqlite` |
-| `apps/desktop/editor` | `src/features/deck/ui/DeckView.vue` | Create | `pages/DeckPage.vue` |
+
+| Package / Path        | File                                | Action (Create/Modify) | Downstream Consumers                   |
+| :-------------------- | :---------------------------------- | :--------------------- | :------------------------------------- |
+| `libs/core`           | `domain/card.go`                    | Modify                 | `usecase/flashcards`, `adapter/sqlite` |
+| `apps/desktop/editor` | `src/features/deck/ui/DeckView.vue` | Create                 | `pages/DeckPage.vue`                   |
 
 ## 3. Negative Invariants (Architectural Prohibitions)
+
 - Explicit architectural constraints (e.g. No direct DB access from UI, no god objects, preserve layer arrows).
 
 ## 4. Acceptance Criteria
 
 ### AC-1: <Title of Behavior 1>
+
 - **Given**: <initial state / preconditions>
 - **When**: <action or event triggered>
 - **Then**: <expected observable outcome>
 
 ### AC-2: <Title of Behavior 2>
+
 - **Given**: <initial state / preconditions>
 - **When**: <action or event triggered>
 - **Then**: <expected observable outcome>
@@ -83,8 +89,9 @@ Generate `.agents/tasks/<slug>/spec.md` with:
 
 Present a concise summary of the specification to the user and request confirmation:
 
-> 📐 **Specification created in `.agents/tasks/<slug>/spec.md`.**  
-> - **Blast Radius:** `<N> files touched across <modules>`  
-> - **Acceptance Criteria:** `<Count> verifiable behaviors defined`  
->  
-> *Please review the specification above. Once approved, proceed to `/coder` (or let `tester` write the red acceptance tests).*
+> 📐 **Specification created in `.agents/tasks/<slug>/spec.md`.**
+>
+> - **Blast Radius:** `<N> files touched across <modules>`
+> - **Acceptance Criteria:** `<Count> verifiable behaviors defined`
+>
+> _Please review the specification above. Once approved, proceed to `/coder` (or let `tester` write the red acceptance tests)._

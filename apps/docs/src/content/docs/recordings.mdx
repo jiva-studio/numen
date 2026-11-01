@@ -1,79 +1,78 @@
 ---
 title: Recordings
-description: A lecture or a voice note in the vault, written down on your own machine and searchable by the moment it was said.
+description: A lecture or a voice note in the vault, transcribed on your own machine and searchable by the moment it was spoken.
 ---
 
 import Shot from '../../components/Shot.astro'
 
-A vault holds recordings the way it holds books: a lecture you taped, a conversation, a voice note. A recording says nothing until a model has listened to it, and the listening happens here, on your machine — nothing is uploaded and no account is involved.
+A vault holds recordings the way it holds books: a lecture you taped, a conversation, a voice note. A recording has no text until a model has transcribed it, and the transcription runs here on your machine. Nothing is uploaded and no account is involved.
 
-A file is a recording by its name: `.mp3`, `.wav` and `.flac` are the containers numen walks as recordings, plays, and listens to. Anything else in the folder is a file like any other.
+A file is a recording by its name: `.mp3`, `.wav` and `.flac` are the formats numen treats as recordings, plays and transcribes. Anything else in the folder is a file like any other.
 
 <Shot
   name="recording"
-  alt="The numen window: a recording playing, with its transcript below the player and the line being said drawn in the accent."
-  caption="The player over the words, each line against the moment it was said."
+  alt="The numen window: a recording playing, with its transcript below the player and the line being spoken highlighted in the accent colour."
+  caption="The player above the transcript, with each line tied to the time it was spoken."
 />
 
 ## Opening one
 
 A recording opens in a tab of its own: the player at the top, and under it the transcript written as one text.
 
-The time in the gutter beside a line is where that line was said. Press it and the recording plays from there. The line being said is drawn in the accent as it goes, and the button beside the player decides whether the view follows it or stays where you put it.
+The time in the gutter beside a line is when that line was spoken. Click it and the recording plays from there. The line being spoken is highlighted in the accent colour as the recording plays, and the button beside the player sets whether the view follows it or stays where you put it.
 
 ## Asking for a transcript
 
-Open a recording numen holds no transcript for, and its tab offers **Transcribe** under the player, where there would otherwise be words. **Recognise the text with Audio/Video Transcription** in the [commands](/commands/), under **File**, does the same for the recording in front of you.
+Open a recording numen holds no transcript for, and its tab offers **Transcribe** under the player, where there would otherwise be words. **Recognise the text with Audio/Video Transcription** in the [commands](/commands/), under **File**, does the same for the open recording.
 
 <Shot
   name="transcribe"
   alt="The numen window: a recording with no transcript yet, offering to transcribe it under the player."
-  caption="The run over a recording, offered in its own tab."
+  caption="Starting transcription of a recording in its own tab."
 />
 
-The words arrive while the run goes, so a long talk becomes searchable before it is finished.
+The words appear while the run is in progress, so a long talk becomes searchable before it is finished.
 
-## Taking turns
+## Sharing the processor
 
-A recording is transcribed only when you ask. Recognising a scanned book and transcribing a recording use the same models and the same processor, so they take turns, and a long recording lets other waiting work run between its batches.
+A recording is transcribed only when you ask. Recognising a scanned book and transcribing a recording use the same models and the same processor, so they run in turn, and a long recording lets other waiting work run between its batches.
 
-## When nothing comes back
+## When there is no result
 
 A recording with no speech in it gets no transcript. A file the transcriber cannot open stays in the status bar with the reason.
 
 ## Editing the words
 
-A transcript is yours to correct. Type into it and it is written back against the recording, the way a note is written back — there is no separate save. A run holding the recording writes over nothing you typed: the words are read-only while it goes.
+You can correct a transcript. Type into it and the change is saved with the recording, the way a note is saved, with no separate save. While a run is using the recording, the words are read-only, so the run never overwrites what you typed.
 
 ## Proofreading the transcript
 
 A transcription model can misspell names, confuse homophones, and fail to identify sentence boundaries. A proofreader verifies and corrects these errors without altering original meaning.
 
-**Proofread transcript** is in the **More** menu at the end of the player strip, and **Proofread the text with LLM Proofreading** is in the [commands](/commands/). Pressing it always answers in a sentence — the run has begun, or the transcript has already been put right, or the words were written by hand, or another run holds the recording, or nothing has been transcribed yet.
+**Proofread transcript** is in the **More** menu at the end of the player strip, and **Proofread the text with LLM Proofreading** is in the [commands](/commands/). Pressing it always shows a one-sentence message: the run has started, or the transcript is already corrected, or the words were written by hand, or another run is using the recording, or nothing has been transcribed yet.
 
-It is offered where an enabled plugin proofreads timed text. The proofread transcript is a new version beside the one it was made from, and deleting it brings that one back.
+It is offered where an enabled plugin proofreads timed text. The proofread transcript is a new version next to the one it was made from, and deleting it brings that one back.
 
 ## Deleting the transcript
 
-**Delete transcript** is in the same **More** menu, and in the commands as **Delete the text Audio/Video Transcription made**. It deletes the transcript shown. Deleting an edit or a proofread version brings back the version it was made from; deleting the transcription leaves the recording untranscribed. It asks first.
+**Delete transcript** is in the same **More** menu, and in the commands as **Delete the text Audio/Video Transcription made**. It deletes the transcript shown. Deleting an edit or a proofread version brings back the version it was made from; deleting the transcription leaves the recording untranscribed. It asks for confirmation first.
 
 ## Where it is kept
 
 The transcript is a [WebVTT](https://developer.mozilla.org/en-US/docs/Web/API/WebVTT_API) file in the transcription plugin's folder, `.numen/md.numen.engines.transcription/`, named after the bytes of the recording. Move or rename the recording and its transcript follows it; keep two copies of one recording and they share it.
 
-WebVTT is somebody else's format, which is the whole of its appeal: it opens in a player, it renders as subtitles in a browser, and it is still useful if you take it somewhere numen has never been.
+WebVTT is an existing standard format, which is its main advantage: it opens in a player, it renders as subtitles in a browser, and it is still useful outside numen.
 
 ## From a terminal
 
-The [command line](/cli/) does the same run without a window, which is what you want for a folder you would rather leave going overnight:
+The [command line](/cli/) does the same run without a window, which suits a large folder you want to leave running overnight:
 
 ```sh
 numen-cli transcribe Research "Lectures/Lecture 4.mp3"
 ```
 
-
 ## Finding a moment
 
-A recording answers searches like anything else, and a result opens it at the second the words were said rather than at the top. Ask the [agent](/agent/) about a lecture and it reads the transcript, quotes it into a note, and can put the moment in front of you.
+A recording appears in search results like anything else, and a result opens it at the second the words were spoken rather than at the start. Ask the [agent](/agent/) about a lecture and it reads the transcript, quotes it into a note, and can show you the moment.
 
-The transcription's settings are the Audio/Video Transcription plugin's own, on its page in the [settings](/settings/): the language it listens for, which the commands offer as well, as **Audio/Video Transcription: Transcription Language**.
+The transcription's settings are the Audio/Video Transcription plugin's own, on its page in the [settings](/settings/): the language it transcribes, which the commands offer as well, as **Audio/Video Transcription: Transcription Language**.

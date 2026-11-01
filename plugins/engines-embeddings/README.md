@@ -1,6 +1,6 @@
 # Vector Embeddings
 
-Powers meaning-based search across your vault so you can find related notes, books, and recordings even when they use different words.
+Provides meaning-based search across your vault so you can find related notes, books, and recordings even when they use different words.
 
 <!-- more -->
 

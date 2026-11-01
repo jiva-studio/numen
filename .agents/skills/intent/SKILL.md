@@ -20,9 +20,10 @@ flowchart TD
 
 ---
 
-## Strict Zero-Code Rule (Anti-Technical Pollution)
+## Strict Zero-Code Rule (No Technical Details)
 
 `/intent` MUST NEVER invent or record code-level implementation details:
+
 - ❌ **No file names or extensions** (`.vue`, `.go`, `.ts`, `.sql`).
 - ❌ **No database schema details** (tables, columns, foreign keys).
 - ❌ **No code symbols or architecture terms** (DTO, interface, class, method, props, endpoint).
@@ -47,13 +48,13 @@ Technical decisions, interfaces, file mappings, and data structures belong exclu
 
 Formulate concise questions covering the **5 essential lenses**:
 
-| Lens | What to clarify |
-| :--- | :--- |
-| **🔍 1. JTBD & Core UX** | What specific problem does this solve for the user? What is the primary user interaction flow? |
-| **🔍 2. Limits & Edge Cases** | What happens with large data, empty inputs, network interruptions, or boundary conditions? |
-| **🔍 3. Strict Non-Goals** | Which related features, screens, or adjacent scopes are strictly OUT OF SCOPE? |
-| **🔍 4. Pre-Mortem & Recovery** | What could fail when using this feature? How does the system recover or inform the user? |
-| **🔍 5. Invariants** | What business rules, permissions, or security boundaries must never be violated? |
+| Lens                            | What to clarify                                                                                |
+| :------------------------------ | :--------------------------------------------------------------------------------------------- |
+| **🔍 1. JTBD & Core UX**        | What specific problem does this solve for the user? What is the primary user interaction flow? |
+| **🔍 2. Limits & Edge Cases**   | What happens with large data, empty inputs, network interruptions, or boundary conditions?     |
+| **🔍 3. Strict Non-Goals**      | Which related features, screens, or adjacent scopes are strictly OUT OF SCOPE?                 |
+| **🔍 4. Pre-Mortem & Recovery** | What could fail when using this feature? How does the system recover or inform the user?       |
+| **🔍 5. Invariants**            | What business rules, permissions, or security boundaries must never be violated?               |
 
 ---
 
@@ -68,24 +69,31 @@ Generate `.agents/tasks/<slug>/intent.md` strictly reflecting the agreed answers
 **Date:** `<YYYY-MM-DD>`
 
 ## 1. Problem & JTBD (The "Why")
+
 - **Pain & Trigger:** <User problem in plain language>
 - **Target User & Scenario:** <Who uses this and when>
 - **Desired Outcome:** <What the user observes upon success>
 
 ## 2. Scope Boundaries & Strict Non-Goals
+
 ### In Scope (Goals):
+
 - <Clear user-facing capabilities, NO code/file names>
+
 ### Strictly Out of Scope (Non-Goals):
+
 - <Explicitly excluded features/behaviors>
 
 ## 3. Limits & Failure Modes
-| Scenario | Expected Behavior |
-| :--- | :--- |
-| Empty / Invalid Input | ... |
-| Network / Transport Interruption | ... |
-| Boundary Limit Exceeded | ... |
+
+| Scenario                         | Expected Behavior |
+| :------------------------------- | :---------------- |
+| Empty / Invalid Input            | ...               |
+| Network / Transport Interruption | ...               |
+| Boundary Limit Exceeded          | ...               |
 
 ## 4. Invariants & Business Constraints
+
 - Invariant 1: <Business / data integrity rule>
 - Invariant 2: <Security / permission rule>
 ```
@@ -96,5 +104,5 @@ Generate `.agents/tasks/<slug>/intent.md` strictly reflecting the agreed answers
 
 Prompt the user clearly with the next step:
 
-> 🎯 **Intent locked in `.agents/tasks/<slug>/intent.md`.**  
-> *Next step:* Run `/spec` to analyze the codebase, define interfaces, map blast radius, and generate acceptance criteria.
+> 🎯 **Intent saved in `.agents/tasks/<slug>/intent.md`.**  
+> _Next step:_ Run `/spec` to analyze the codebase, define interfaces, map blast radius, and generate acceptance criteria.

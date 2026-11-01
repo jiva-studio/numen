@@ -2,15 +2,15 @@
 
 The on-disk format of a single note. This is a specification.
 
-Scope is the **note file only**. The layout of the vault around it — one service folder holding everything else the application writes, named `.numen` by default and subfoldered by kind — is the vault's own concern, not the note's.
+Scope is the **note file only**. The layout of the vault around it — one service folder holding everything else the application writes, named `.numen` by default and subfoldered by kind — is part of the vault format and is not described here.
 
 ## What a note is
 
-A UTF-8 file named `.md`, in any folder of the vault the user likes. A card model, a deck and a preset are notes and carry the same extension.
+A UTF-8 file named `.md`, in any folder of the vault. A card model, a deck and a preset are notes and have the same extension.
 
-Two places are never notes: the service folder — `.numen` by default — and any directory whose name begins with a dot, which holds tool state. Both are skipped whole. The application neither imposes nor rearranges layout.
+Two places are never notes: the service folder — `.numen` by default — and any directory whose name begins with a dot, which holds tool state. Both are skipped entirely. The application neither imposes nor rearranges layout.
 
-A markdown file written by anything else — vim, a script, another editor — is a valid note from the first byte. Nothing has to be registered, imported or converted.
+A markdown file written by anything else — vim, a script, another editor — is a valid note as soon as it is in the vault. Nothing has to be registered, imported or converted.
 
 ## Structure
 
@@ -26,55 +26,55 @@ Frontmatter is optional. A note with no frontmatter is a normal note.
 
 ## Frontmatter
 
-Fields the application owns live here rather than in the body. The body is prose the user wrote; the frontmatter is where machine-readable facts about the note as a whole belong.
+Fields the application owns are stored here rather than in the body. The body is prose the user wrote; the frontmatter is where machine-readable facts about the note as a whole belong.
 
 The frontmatter is shared, not owned:
 
 - Keys the application does not own are **preserved verbatim**, in their original order, including keys it may own in a future version.
 - Owned keys are a **closed set**, each introduced for a reason the table below gives. The set is listed below.
-- A **collision is the user's win**: if a user key has the name of an owned key, the application reports the conflict rather than overwriting or reinterpreting it.
+- On a **collision the user's key is kept**: if a user key has the name of an owned key, the application reports the conflict rather than overwriting or reinterpreting it.
 
 ### Owned keys
 
-| Key | Meaning | Decided in |
-| --- | --- | --- |
-| `title` | The name a note is shown by. Written when a note that already has a non-empty one is renamed, and when a title no filename can carry whole is given to one that has none. | — |
-| `id` | The identity of the note, a ULID. Written when the application creates a note or changes what is in it, never backfilled and never written by a person typing in it. A note that was moved carries the identifier it carried before. | — |
-| `links` | Links that carry a role, and optionally a type, a label, a marker and a note. | [Links](links.md) |
-| `type` | Which of four this note is: `note`, `deck`, `card-model` or `preset`. A note carrying none is a `note`. | — |
-| `fields` | The fields a card cut by this card model has, in the order they are asked for. Read on a card model and nowhere else. | — |
-| `goal`, `by_date`, `minutes_a_day`, `new_a_day`, `reviews_a_day`, `retention` | What a day of the decks pointing at this preset holds, and which of those closes it. Read on a preset and nowhere else. | — |
-| `learned`, `interval` | What this preset counts as a card learned, and what a day named under `by_date` is tested by. Read on a preset and nowhere else. | — |
-| `counts`, `backlog` | What a day's budget is spent on, and in what order. Read on a preset and nowhere else. | — |
-| `load` | The share of a day's load each day of the week carries. Read on a preset and nowhere else. | — |
-| `even_load` | Whether a card is moved off the day it fell on. Read on a preset and nowhere else. | — |
+| Key                                                                           | Meaning                                                                                                                                                                                                         | Decided in        |
+| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| `title`                                                                       | The name a note is shown by. Written when a note that already has a non-empty one is renamed, and when a title that no filename can hold in full is set on a note that has none.                                | —                 |
+| `id`                                                                          | The identity of the note, a ULID. Written when the application creates a note or changes what is in it, never backfilled and never written by a person typing in it. A note that is moved keeps its identifier. | —                 |
+| `links`                                                                       | Links that have a role, and optionally a type, a label, a marker and a note.                                                                                                                                    | [Links](links.md) |
+| `type`                                                                        | Which of four this note is: `note`, `deck`, `card-model` or `preset`. A note without one is a `note`.                                                                                                           | —                 |
+| `fields`                                                                      | The fields a card created from this card model has, in the order they are filled in. Read on a card model and nowhere else.                                                                                     | —                 |
+| `goal`, `by_date`, `minutes_a_day`, `new_a_day`, `reviews_a_day`, `retention` | What a day of the decks pointing at this preset holds, and which of those closes it. Read on a preset and nowhere else.                                                                                         | —                 |
+| `learned`, `interval`                                                         | What this preset counts as a card learned, and what a day named under `by_date` is tested by. Read on a preset and nowhere else.                                                                                | —                 |
+| `counts`, `backlog`                                                           | What a day's budget is spent on, and in what order. Read on a preset and nowhere else.                                                                                                                          | —                 |
+| `load`                                                                        | The share of a day's load that each day of the week has. Read on a preset and nowhere else.                                                                                                                     | —                 |
+| `even_load`                                                                   | Whether a card is moved from the day it is due. Read on a preset and nowhere else.                                                                                                                              | —                 |
 
-A note with no `title` is named by its filename. A heading in the prose names nothing: what a person writes in the body is the body, and typing one does not rename the note.
+A note with no `title` is named by its filename. A heading in the prose does not set the note's name: typing one does not rename the note.
 
-How far a rename reaches — whether a new title renames the file, and whether a renamed file writes the new name into the note — is `naming.sync_title_and_filename` in [Settings](settings.md).
+What a rename changes — whether a new title renames the file, and whether a renamed file writes the new name into the note — is `naming.sync_title_and_filename` in [Settings](settings.md).
 
-A note carrying no `id` is indexed in full and simply cannot be a *target*: nothing points at it with `note://`, and nothing is attached to it.
+A note with no `id` is indexed in full and simply cannot be a _target_: nothing points at it with `note://`, and nothing is attached to it.
 
 ## What the application may add
 
 The complete permitted set. Everything must survive a third-party markdown editor and stay readable to a human.
 
-| Addition | Where | Status |
-| --- | --- | --- |
-| YAML frontmatter | top of file | allowed; the keys the application owns are the closed set above |
-| `[[wikilink]]` | body | a link with the role `ref`, resolved by name ([Links](links.md)) |
-| `{{Field}}` | the body of a card model | where a card's value goes on a template ([Cards](cards.md)) |
-| `^` and a card's id | the end of a card's heading in a deck | what that card is, wherever it goes ([Cards](cards.md)) |
+| Addition            | Where                                 | Status                                                             |
+| ------------------- | ------------------------------------- | ------------------------------------------------------------------ |
+| YAML frontmatter    | top of file                           | allowed; the keys the application owns are the closed set above    |
+| `[[wikilink]]`      | body                                  | a link with the role `ref`, resolved by name ([Links](links.md))   |
+| `{{Field}}`         | the body of a card model              | where a card's value is inserted in a template ([Cards](cards.md)) |
+| `^` and a card's id | the end of a card's heading in a deck | the card's identity, wherever it is moved ([Cards](cards.md))      |
 
-The first two are every note's. The last two belong to a note of `type: card-model` or `type: deck`, and no other kind of note may carry them.
+The first two are every note's. The last two belong to a note of `type: card-model` or `type: deck`, and no other kind of note may contain them.
 
-Nothing else is permitted: no custom fences, no HTML comments carrying data, no sidecar files, no private extension. A kind of note that wants an addition of its own asks for it in a record, as a card model and a deck did, and the table above is what is kept current.
+Nothing else is permitted: no custom fences, no HTML comments carrying data, no sidecar files, no private extension. A kind of note that needs an addition of its own must have it recorded in the table above, as a card model and a deck did, and that table is kept current.
 
 ## Handling of existing files
 
-These follow from files being the source of truth, where the application is a guest in a file the user also edits.
+These follow from files being the source of truth, where the user also edits the files the application writes.
 
 - **The application does not rewrite what it did not change.** Formatting, whitespace, key order in frontmatter and line endings are preserved as found. A save must not produce a diff the user did not ask for.
-- **Line endings are preserved per file.** Every break in the file decides. A file whose breaks are all CRLF has its body written with CRLF; any other file has its body written with LF, and a new file is written with LF. The frontmatter arrives on the other side as the bytes it went in as, so a file whose breaks are mixed above the body keeps that mixture and a save that changes no text leaves the file byte for byte as it was.
+- **Line endings are preserved per file.** The line breaks of the whole file decide. A file whose breaks are all CRLF has its body written with CRLF; any other file has its body written with LF, and a new file is written with LF. The frontmatter is written back with the same bytes it was read with, so a file whose breaks are mixed above the body keeps that mixture and a save that changes no text leaves the file byte for byte as it was.
 - **Unknown frontmatter keys are preserved verbatim.** The application reads the keys it owns and leaves everything else untouched, including keys it will own in a future version.
 - **A file that fails to parse is not rewritten.** Broken YAML is reported, never repaired in place — repairing it means guessing at content the user wrote.

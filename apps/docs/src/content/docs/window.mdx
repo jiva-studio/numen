@@ -5,55 +5,54 @@ description: Panes, tabs and the five things a tab can hold.
 
 import Shot from '../../components/Shot.astro'
 
-The window opens with the [plex](/plex/) holding the room and the [agent](/agent/) along the
-edge. Everything else you do happens in tabs inside that arrangement.
+The window opens with the [plex](/plex/) filling the main area and the [agent](/agent/) along the
+edge. Everything else you do happens in tabs inside that layout.
 
 <Shot
   name="window"
-  alt="The numen window: a map of connected notes filling the room, an agent panel down the right-hand side, and a row of tabs across the top."
-  caption="Two panes and two tabs: the plex holding the room, the agent along the edge."
+  alt="The numen window: a map of connected notes filling the window, an agent panel down the right-hand side, and a row of tabs across the top."
+  caption="Two panes and two tabs: the plex filling the main area, the agent along the edge."
 />
 
 ## What a tab can hold
 
-| | |
-| --- | --- |
-| A note | the prose, [saving as you type](/editor/). |
-| A plex | the map of what a note is connected to. |
-| An agent | a conversation about the vault. |
-| A document | a book or a PDF, [read where it stands](/documents/). |
-| A recording | the player over [the words that were said](/recordings/). |
-| A deck | [the cards](/cards/) of one file, as a grid under their sections. |
-| A card model | the fields a card has, and [the templates](/cards/#a-card-model) that ask them. |
-| A preset | [how much a day of review holds](/review/#a-preset), and the curve of its goal. |
-| The files | [the folders of the vault](/files/) as they are on disk. |
-| The settings | [what this installation is configured as](/settings/), a control to a setting. |
-| `numen.json` | [the settings file itself](/settings/#the-file), to edit by hand. |
+|              |                                                                                         |
+| ------------ | --------------------------------------------------------------------------------------- |
+| A note       | the prose, [saving as you type](/editor/).                                              |
+| A plex       | the map of what a note is connected to.                                                 |
+| An agent     | a conversation about the vault.                                                         |
+| A document   | a book or a PDF, [read in place](/documents/).                                          |
+| A recording  | the player above [the transcript](/recordings/).                                        |
+| A deck       | [the cards](/cards/) of one file, as a grid under their sections.                       |
+| A card model | the fields a card has, and [the templates](/cards/#a-card-model) that use them.         |
+| A preset     | [how much work a day of review contains](/review/#a-preset), and the curve of its goal. |
+| The files    | [the folders of the vault](/files/) as they are on disk.                                |
+| The settings | [what this installation is configured as](/settings/), a control to a setting.          |
+| `numen.json` | [the settings file itself](/settings/#the-file), to edit by hand.                       |
 
-A note, a plex and an agent open as many times as you like: two notes side by side, two plexes standing at different notes, a second agent working on something else. A file that is not a note opens once, in the tab it is already in. The files, the settings and the settings file are one to a window — there is only one of each to look at.
+A note, a plex and an agent open as many times as you like: two notes side by side, two plexes showing different notes, a second agent working on something else. A file that is not a note opens once, in the tab it is already in. The files, the settings and the settings file are limited to one per window, because there is only one of each.
 
-The kinds that hold a file — a note, a document, a recording, a deck, a card model, a preset — are chosen by opening the file, not by choosing a kind. numen opens each in the editor made for what it is, and a file it has no word for is opened as a note.
+The kinds that hold a file — a note, a document, a recording, a deck, a card model, a preset — are chosen by opening the file, not by choosing a kind. numen opens each file in the editor for its type, and a file whose type it does not know is opened as a note.
 
 ## When nothing is open
 
-Close the last tab and the window does not go blank: it draws the ways in, each with the key
-that reaches it — search the vault, show the commands, a new note, a plex, an agent, the
-settings — and under them the vaults this installation holds. The one you are in says so; one
-whose folder has gone says that instead.
+Close the last tab and the window does not go blank: it shows the ways to start, each with its shortcut: search the vault, show the commands, a new note, a plex, an agent, the
+settings. Under them are the vaults this installation has. The vault you are in is labelled as such; a vault
+whose folder is missing is labelled that way instead.
 
-A window standing on no vault at all offers the settings, that list, and **New vault**: a plex and an agent each need a vault to stand on, and the settings are the installation's and stand outside every vault.
+A window with no vault open offers the settings, that list, and **New vault**. A plex and an agent each need a vault, and the settings belong to the installation, not to a vault.
 
 ## Panes
 
-Drag a tab to the edge of a pane to split it — left, right, top or bottom, whichever edge you
-came closest to. Drag it into the middle of another pane to join that stack instead. The handle
+Drag a tab to the edge of a pane to split it — left, right, top or bottom, whichever edge is
+nearest. Drag it into the middle of another pane to join that stack instead. The handle
 between two panes moves the boundary.
 
 **Open beside** in the commands does the same without the dragging: it puts what you chose in a
 pane next to the one you are in.
 
-<kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>W</kbd> closes the tab in front of you. A tab
-holding an unanswered question is told once, and closes the second time you ask.
+<kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>W</kbd> closes the current tab. A tab with an
+unresolved choice shows a warning the first time and closes the second time you ask.
 
 ## Linked tabs across panes
 
@@ -70,26 +69,25 @@ Right-click any Note, Plex, or Files tab header to open the link menu:
 ## The two keys everything starts from
 
 <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd> searches the vault. <kbd>Ctrl</kbd>/<kbd>⌘</kbd>
-<kbd>P</kbd> opens the commands — everything the window can do, over the note you are on, over
-the file, over the window, and over the vault. Both are in the same panel and each closes the
-other.
+<kbd>P</kbd> opens the commands — everything the window can do, for the note you are on, for the
+file, for the window and for the vault. Both are in the same panel and each closes the other.
 
 Commands are grouped by what they act on:
 
 - **Note** — show it in the plex, make a child, change the title, ask the agent about it,
   copy its path, remove it.
-- **File** — write down a recording, put its transcript right, read the text of a scan.
+- **File** — transcribe a recording, proofread its transcript, read the text of a scan.
 - **General** — a new note, a new agent, close this tab, search, appearance, the settings.
 - **Vault** — go to a note, open or make a vault, rename, remove, erase.
 
-A command that cannot act on what is in front of you says why rather than disappearing: with a
-document open, *nothing in front of you is a note*; during the first scan, *the vault is still
-being read*.
+A command that cannot act on the open tab shows why rather than disappearing: with a
+document open, _nothing in front of you is a note_; during the first scan, _the vault is still
+being read_.
 
-The [keyboard page](/keyboard/) lists what has a key of its own.
+The [keyboard page](/keyboard/) lists what has its own key.
 
 ## The status bar and background tasks
 
-The bottom status bar shows what is running behind the window: vault scanning, vector embedding, document OCR, and audio transcription progress. Clicking the task indicator opens a background task popover detailing active pipelines, completed items, and errors.
+The bottom status bar shows what is running in the background: vault scanning, vector embedding, document OCR, and audio transcription progress. Clicking the task indicator opens a background task popover detailing active pipelines, completed items, and errors.
 
-It is also where the window reports overall vault status — *not following the vault*, *the vault could not be read*. See [when something is wrong](/trouble/).
+It is also where the window reports overall vault status — _not following the vault_, _the vault could not be read_. See [when something is wrong](/trouble/).

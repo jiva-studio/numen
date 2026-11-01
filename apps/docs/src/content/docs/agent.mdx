@@ -1,69 +1,70 @@
 ---
 title: The agent
-description: An assistant that has read your vault, answers beside the note you are on, and can write in it when you ask.
+description: An assistant that can search and read your vault, answers beside the note you are on, and can write in it when you ask.
 ---
 
 import Shot from '../../components/Shot.astro'
 
 The panel along the edge of the window is an agent that works inside your vault. It searches
-your notes, reads them, writes them, and connects them — the same operations you have, reached
+your notes, reads them, writes them, and connects them — the same operations you have, which you start
 by asking in words.
 
 <Shot
   name="asking"
   alt="The agent panel beside a note, showing a question, the tools the agent used to answer it, and the answer."
-  caption="Each thing it did is shown as it did it: the notes it read, the links it added, and then the answer."
+  caption="Each step is shown as it happens: the notes it read, the links it added, and then the answer."
 />
 
 ## Asking
 
 Type into the panel and send. **Ask the agent about this note** in the commands starts a
 conversation about the note you are on, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd>
+
 <kbd>A</kbd> opens a fresh one.
 
-It knows which note you are looking at, so *this note*, *file this under Thermodynamics* and
-*what did I write about entropy* all mean what you would expect them to mean.
+It is told which note you are looking at, so _this note_, _file this under Thermodynamics_ and
+_what did I write about entropy_ all mean what you would expect them to mean.
 
-Each thing it does is shown as it does it — the note it read, the link it added — and **Stop**
-ends the run wherever it has got to.
+Each step is shown as it happens (the note it read, the link it added), and **Stop**
+ends the run at once.
 
 ## What it can do
 
-| | |
-| --- | --- |
-| Notes | search the vault, read notes, write and edit them, rename, move, remove, and put one in front of you. |
-| Links | add, change, remove and list the links a note carries. |
-| Documents | list the books and recordings a vault holds, read a stretch of one, ask for a scan to be read or a recording to be written down, show you a passage. |
-| Cards | read a [deck](/cards/) and the card models a vault has, add a card, edit one, remove one, open a section, make a deck or a card model, rename a field across a card model and everything cut by it. |
-| Files | read a stretch of any other file the vault holds, by its path — a transcript somebody typed, an export, whatever you put in the folder. |
-| Vaults | tell you what a scan could not make sense of, and list, add, rename, remove and open vaults. |
+|           |                                                                                                                                                                                                          |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Notes     | search the vault, read notes, write and edit them, rename, move, remove, and open one for you.                                                                                                           |
+| Links     | add, change, remove and list the links a note contains.                                                                                                                                                  |
+| Documents | list the books and recordings a vault holds, read a stretch of one, start the reading of a scan or the transcription of a recording, show you a passage.                                                 |
+| Cards     | read a [deck](/cards/) and the card models a vault has, add a card, edit one, remove one, open a section, make a deck or a card model, rename a field across a card model and in everything based on it. |
+| Files     | read a stretch of any other file the vault contains, by its path — a transcript somebody typed, an export, whatever you put in the folder.                                                               |
+| Vaults    | tell you what could not be read from a scan, and list, add, rename, remove and open vaults.                                                                                                              |
 
-It also knows what you have open — every tab of the window and which of them you are looking at — because you move between tabs while it works.
+It is also told what you have open — every tab of the window and which of them you are looking at — because you move between tabs while it works.
 
 It has web search and web fetch as well, for the questions your notes do not answer.
 
-Anything it writes lands in your files, so it shows up in the plex and in search at once — an agent that creates a note and then searches for it finds it.
+Anything it writes is saved in your files, so it appears in the plex and in search at once. An agent that creates a note can find it by searching.
 
-A note it names in its answer is a link you can press: it opens in a tab beside the conversation. See [following a link](/links/#following-a-link).
+A note it names in its answer is a link you can click. It opens in a tab beside the conversation. See [following a link](/links/#following-a-link).
 
 ## What it cannot do
 
-**It has no shell.** It reaches your vault through the operations above and through nothing else. It cannot run a command on your machine, and the one tool that reads a file by its path reads inside the vault folder and nowhere else — a path leading out of it, or at a file the vault passes over, is rejected.
+**It has no shell.** It accesses your vault only through the operations above. It cannot run a command on your machine, and the one tool that reads a file by its path reads only inside the vault folder. A path outside it, or to a file the vault skips, is rejected.
 
-**It reads no instructions carried by the vault.** A vault is a folder that arrives from
-somewhere — synced, cloned, shared, restored — and a configuration file inside one names
-commands for your machine to run. Those are rejected, always, whatever the settings say.
+**It does not read instructions stored in the vault.** A vault is a folder that can come from
+another place (synced, cloned, shared or restored), and a configuration file inside one can list
+commands for your machine to run. Those are always rejected, whatever the settings say.
 
-**It cannot erase a vault from your disk.** Taking a folder away is asked for in front of you. Putting a folder on the list it can do, when you ask: nothing already in the folder is moved or rewritten, and the vault's identity is written into it so the folder is recognised wherever it moves to.
+**It cannot erase a vault from your disk.** Removing a folder from the list needs your confirmation. Adding a folder to the list it can do when you ask: nothing already in the folder is moved or rewritten, and the vault's identity is written into the folder so it is recognised after it is moved.
 
 By default it also ignores what is configured for the assistant on this machine — standing
 instructions, hooks, skills, plugins. If you want your own configuration used, turn on
-`agent.claude.reads_hooks_and_skills` in [the settings](/settings/); a vault's own files stay
+`agent.claude.reads_hooks_and_skills` in [the settings](/settings/); a vault's own files are
 rejected either way.
 
 ## Setting it up
 
-numen auto-discovers installed CLI agents on your machine — checking standard paths and installers for Claude Code and compatible tools. The floating selector island above the message composer lets you pick which discovered agent or model answers for the active conversation.
+numen auto-discovers installed CLI agents on your machine — checking standard paths and installers for Claude Code and compatible tools. The floating selector island above the message composer lets you pick which discovered agent or model is used for the active conversation.
 
 Where an agent is installed in the usual place, numen finds it automatically and there is nothing to configure.
 
@@ -82,25 +83,24 @@ Where an agent is installed in the usual place, numen finds it automatically and
 }
 ```
 
-| | |
-| --- | --- |
-| `use` | which agent answers. Empty means none, and the panel says so. |
-| `serve_tools` | put the tools on a port even with no agent in the panel, for [an agent you run yourself](/connect/). |
-| `command` | how to start it. Empty looks on the path, then where its installers put it. Worth naming on a machine carrying several installations. |
-| `model` | `opus`, `sonnet`, or a full model name. Empty takes whatever that installation answers with. |
-| `max_steps` | how many turns it may take before it is stopped. |
+|               |                                                                                                                             |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `use`         | which agent is used. Empty means none, and the panel says so.                                                               |
+| `serve_tools` | serve the tools on a port even with no agent in the panel, for [an agent you run yourself](/connect/).                      |
+| `command`     | how to start it. Empty looks on the path, then where its installers put it. Set it on a machine with several installations. |
+| `model`       | `opus`, `sonnet`, or a full model name. Empty uses that installation's default model.                                       |
+| `max_steps`   | how many turns it may take before it is stopped.                                                                            |
 
 ## Another agent, in another window
 
-The panel is not the only way in. While the window is open, the same tools are served over MCP
+The panel is not the only way to reach the vault. While the window is open, the same tools are served over MCP
 on this machine, so an assistant you already use elsewhere can work in the vault too — see
 [connect another agent](/connect/).
 
 ## Where it runs, and what it costs
 
-The agent runs on your machine and answers through your own account with whoever provides the
-model. numen has no server, and there is nothing for your notes to be uploaded to: what leaves
-the machine is what the model is asked, by the program you installed and signed in to.
+The agent runs on your machine and uses your own account with the model provider. numen has no server, and there is nothing for your notes to be uploaded to: the only data that leaves
+the machine is what the program you installed and signed in to sends to the model.
 
 [Searching by meaning](/search/) is separate from this, and by default it runs a small model
 locally with no account at all.

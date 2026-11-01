@@ -31,6 +31,19 @@ function assertClean(name, content) {
 }
 
 describe('Markdown documents', () => {
+  it('flags a personified or theatrical phrase', () => {
+    assertFlagged('i/perf.md', 'Repeating it measures patience.\n', 'proseDocs')
+    assertFlagged('i/tabs.md', 'The list hangs under the heading and the page opens of its own accord.\n', 'proseDocs')
+    assertFlagged('i/core.md', 'The core knows nothing about proofreading.\n', 'proseDocs')
+    assertFlagged('i/ui.md', 'A plugin that works seamlessly takes you to the download.\n', 'proseDocs')
+  })
+  it('flags the ground and the door as figures', () => {
+    assertFlagged('j/theme.md', 'The ground under code is darker.\n', 'proseDocs')
+    assertFlagged('j/off.md', '## Shutting the door\n', 'proseDocs')
+  })
+  it('accepts the plain wording of the same facts', () => {
+    assertClean('k/plain.md', 'The list is placed under the heading and the page opens automatically.\n\nThe core does not depend on proofreading. The background of code is darker.\n')
+  })
   it('flags a window that wears a theme', () => {
     assertFlagged('a/themes.md', '# Themes\n\nThe window wears the theme from the first frame.\n', 'proseDocs')
   })

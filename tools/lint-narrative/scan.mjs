@@ -225,6 +225,11 @@ const PROSE_RULES = [
   { name: 'stands/sits at a place', re: new RegExp(`\\b(?:stands|sits) (?:${PROSE_PLACES})\\b`, 'i'), use: 'is in, is at, is under' },
   { name: 'nowhere to put', re: /\bnowhere to put\b/i, use: 'no trash, no location' },
 ]
+// Figures that were found and removed from the Markdown documents. Code comments and strings are not checked against them.
+const DOC_PROSE_RULES = [
+  { name: 'idiom: personified or theatrical phrase', re: /\b(?:measures patience|never catches up|lost in the noise|says so plainly|the whole case for|what settles it|argues for|hangs? (?:off|under)|hanging under|of its own accord|brought into line|brings? into line|dragged in|mendable|keeps itself alive|behind (?:a|the) person's back|a guest in|hairball|safety catch|appetites?|takes you to|works seamlessly|navigate smoothly|smooth zooming|pick up where it left off|checks quietly|knows (?:none|nothing) (?:of|about)|calls? (?:it|the \w+) off|put right|putting [\w ]{1,20} right)\b/i, use: 'state the operation: depends on, is placed under, automatically, cancels, fixes' },
+  { name: 'ground/door/hole as a figure', re: /\b(?:the ground (?:under|beneath)|the door marked|no door at all|shutting the door|three doors|the hole was)\b/i, use: 'background, port, gap' },
+]
 const RE_INLINE_CODE = /`[^`]*`/g
 const RE_COMMENT_START = /^(?:\/\/|\/\*|\*|<!--)/
 // Task titles, notices and field values: the keys of the strings a person reads in manifest.json files.
@@ -234,6 +239,11 @@ const RE_ANY_STRING = /"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|`([^`]*)`/g
 const RE_GO_TEST_MESSAGE = /\bt\.(?:Errorf|Fatalf|Fatal|Error|Logf|Log)\s*\(/
 
 /** The prose rule a text breaks, or null. Backtick-quoted words are not checked. */
+function findDocProseRule(text) {
+  const plain = text.replace(RE_INLINE_CODE, ' ')
+  return DOC_PROSE_RULES.find((rule) => rule.re.test(plain)) ?? findProseRule(text)
+}
+
 function findProseRule(text) {
   const plain = text.replace(RE_INLINE_CODE, ' ')
   return PROSE_RULES.find((rule) => rule.re.test(plain)) ?? null
@@ -745,7 +755,7 @@ function scanFile(filePath) {
     if (isDoc) {
       if (/^\s*(?:```|~~~)/.test(line)) isInFence = !isInFence
       else if (!isInFence && shouldCheckCategory('prose')) {
-        const rule = findProseRule(line)
+        const rule = findDocProseRule(line)
         if (rule) {
           findings.proseDocs.push({ file: relPath, line: lineNum, lang: 'doc', word: rule.name, text: trimmed.slice(0, 140) })
           stats.frontendTotal++

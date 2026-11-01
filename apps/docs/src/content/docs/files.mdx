@@ -1,12 +1,12 @@
 ---
 title: Files
-description: The vault as it is on disk, in a tab — moving, renaming, making, and carrying notes onto the map.
+description: The vault as it is on disk, in a tab — moving, renaming, creating, and dragging notes onto the map.
 ---
 
 import Shot from '../../components/Shot.astro'
 
-The plex is the shape of your links. The files tab is the shape of your folders: the vault
-exactly as it is on disk, with everything in it — notes, books, pictures, whatever else you keep
+The plex shows your links. The files tab shows your folders: the vault
+exactly as it is on disk, with everything in it, including notes, books, pictures and any other file you keep
 there.
 
 <Shot
@@ -16,58 +16,57 @@ there.
 />
 
 Open one from a new tab, or with **Show the files of the vault** in the
-[commands](/commands/). **Show this note in the files** finds the note you are reading in the
+[commands](/commands/). **Show this note in the files** selects the note you are reading in the
 tree.
 
 ## Moving things
 
-Drag a row into a folder. Several at once if several are chosen, and the pointer says how many
-it is carrying. A folder goes whole, with everything filed inside it.
+Drag a row into a folder. You can drag several rows at once if several are selected, and the pointer shows how many
+it is dragging. A folder moves whole, with everything inside it.
 
-Two things are rejected, quietly and safely:
+Two cases are rejected without changing anything:
 
 - **A name already taken** in the folder you dropped on. That row stays where it was, the others
-  go, and numen names the ones it left behind.
+  go, and numen lists the ones it did not move.
 - **A folder dropped into itself**, or into anything under it.
 
-Moving a note is a proper move: links that pointed at it are looked at, and the ones that would
-otherwise reach nothing are [put right](/links/#after-a-rename-or-a-move).
+When you move a note, numen checks the links that pointed to it and [fixes](/links/#after-a-rename-or-a-move) those that would
+otherwise point to nothing.
 
 ## Renaming
 
 **Rename** on a row opens an inline editable text field for the item. For a note, the title follows
 the filename — the new name is written into the note — unless you have
-[told the two apart](/editor/#renaming) in the settings.
+[made them separate](/editor/#renaming) in the settings.
 
 ## Making things
 
-**New note**, **New deck**, **New card model**, **New preset** and **New folder** make them in the folder you asked on, and the new folder opens with its name in a field, waiting to be called something. A deck and a card model are [cards](/cards/); a preset is [how much a day of review holds](/review/#a-preset).
+**New note**, **New deck**, **New card model**, **New preset** and **New folder** create them in the folder you chose, and the new folder opens with a field where you type its name. A deck and a card model are [cards](/cards/); a preset is [how much a day of review holds](/review/#a-preset).
 
 ## What a row offers
 
-Over a note, the menu is everything [the commands](/commands/) offer over one, in bands: open it
+For a note, the menu has everything [the commands](/commands/) offer for one, in bands: open it
 or show it in the plex; rename, copy its path, make a note beside it; make it a
 [child, a parent or a jump](/links/); change its title; ask the agent about it; remove it.
 
-Over anything else — a PDF, a picture, a file numen does not read — the menu is what can be
+For anything else (a PDF, a picture, a file numen does not read), the menu has what can be
 done to a file: rename it, copy its path, make something beside it, remove it.
 
-Choose several rows and the menu offers what means something for all of them, which is removing
+If you select several rows, the menu offers only what applies to all of them, which is removing
 them.
 
-## Making text of a file
+## Making text from a file
 
-A [recording](/recordings/) and a [scanned book](/documents/#scanned-books) are written down by
+A [recording](/recordings/) and a [scanned book](/documents/#scanned-books) are transcribed by
 plugins rather than from their row. A recording with no transcript offers **Transcribe** in its
-own tab, under the player; a scan is read by the Document OCR plugin of its own accord. Both are
-in the [commands](/commands/) under **File** for the file in front of you, each named by the
-plugin that does it. Both run on your own machine, behind the window, and say how far they have
-got in the corner.
+own tab, under the player; a scan is read by the Document OCR plugin automatically. Both are
+in the [commands](/commands/) under **File** for the open file, each labelled with the
+plugin that runs it. Both run on your own machine, in the background, and show their progress in the corner.
 
 <Shot
   name="transcribe"
   alt="The numen window: a recording with no transcript yet, offering to transcribe it under the player."
-  caption="A recording offers to be written down, in its own tab."
+  caption="A recording offers transcription in its own tab."
 />
 
 **Remove** puts a file in `.trash/` inside the vault, the same as anywhere else in numen.
@@ -75,9 +74,9 @@ Nothing is destroyed.
 
 ## Carrying notes onto the map
 
-Rows lift out of the tree: pick notes up and carry them over the rest of the window. Drop them
-into a relation in the [plex](/plex/) — above, below, or to the side of a node — and they are
+Drag notes out of the tree and over the rest of the window. Drop them
+into a relation in the [plex](/plex/) (above, below, or to the side of a node) and they are
 **linked** to that note, as parents, children or jumps.
 
-Only notes are carried this way. A picture or a PDF among the chosen rows stays where it is,
-because a link in the vault runs between notes.
+Only notes can be dragged this way. A picture or a PDF among the selected rows is not moved,
+because links in the vault connect notes only.
