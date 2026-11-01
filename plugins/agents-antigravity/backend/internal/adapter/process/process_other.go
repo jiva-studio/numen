@@ -1,6 +1,6 @@
 //go:build !unix && !windows
 
-package service
+package process
 
 import "os/exec"
 

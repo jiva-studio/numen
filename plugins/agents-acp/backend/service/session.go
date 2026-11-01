@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/internal/adapter/process"
 )
 
 const (
@@ -115,7 +116,7 @@ func openACPSession(ctx context.Context, agent acpAgent, tools toolEndpoint) (*a
 	s.cmd.Dir = dir
 	s.cmd.Env = os.Environ()
 	s.cmd.Stderr = s.stderr
-	supervise(s.cmd)
+	process.Supervise(s.cmd)
 	if err := s.start(); err != nil {
 		return nil, errors.Join(err, s.close())
 	}
@@ -302,8 +303,8 @@ func (s *acpSession) ask(system, prompt string) (string, error) {
 }
 
 // close ends the session where the agent can, then the agent, and removes the session folder. The
-// agent is given exitGrace to exit on the end of its input before its process group is killed. A
-// stopped agent is not an error.
+// agent is given process.ExitGrace to exit on the end of its input before its process group is
+// killed. A stopped agent is not an error.
 func (s *acpSession) close() error {
 	var err error
 	if s.canClose && s.id != "" {
@@ -313,7 +314,7 @@ func (s *acpSession) close() error {
 		err = errors.Join(err, s.stdin.Close())
 	}
 	if s.cmd.Process != nil {
-		if waitErr := waitForExit(s.cmd, s.stop); !isStopped(waitErr) {
+		if waitErr := process.WaitForExit(s.cmd, s.stop); !isStopped(waitErr) {
 			err = errors.Join(err, waitErr)
 		}
 	}

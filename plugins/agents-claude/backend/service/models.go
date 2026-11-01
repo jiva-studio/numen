@@ -16,6 +16,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/process"
 )
 
 // defaultModelName is the model the program lists for the choice of its own.
@@ -112,7 +113,7 @@ func fetchModels(ctx context.Context, command, env []string) (models []claudeMod
 	})
 	cmd := exec.CommandContext(ctx, command[0], args...)
 	cmd.Env = buildEnvironment(env)
-	supervise(cmd)
+	process.Supervise(cmd)
 	in, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, err
@@ -126,7 +127,7 @@ func fetchModels(ctx context.Context, command, env []string) (models []claudeMod
 	}
 	defer func() {
 		err = errors.Join(err, in.Close())
-		if waitErr := waitForExit(cmd, cancel); !isStopped(waitErr) {
+		if waitErr := process.WaitForExit(cmd, cancel); !isStopped(waitErr) {
 			err = errors.Join(err, waitErr)
 		}
 	}()

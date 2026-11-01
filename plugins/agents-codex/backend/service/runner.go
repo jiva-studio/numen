@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/process"
 )
 
 const (
@@ -85,7 +86,7 @@ func start(ctx context.Context, reg *agentrun.Registry, s spec) (*agentrun.Work,
 	if cmd.Stderr == nil {
 		cmd.Stderr = &stderr
 	}
-	supervise(cmd)
+	process.Supervise(cmd)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {

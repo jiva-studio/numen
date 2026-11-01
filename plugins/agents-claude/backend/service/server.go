@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/process"
 )
 
 // programName is the name tasks use for the program, and the settings section key.
@@ -216,7 +217,7 @@ func (s *agentServer) launchAgentCmd(
 	cmd.Dir = msg.Root
 	cmd.Env = buildEnvironment(s.getEnvironment())
 	cmd.Stdin = strings.NewReader(msg.Prompt)
-	supervise(cmd)
+	process.Supervise(cmd)
 
 	out, err := cmd.StdoutPipe()
 	if err != nil {
