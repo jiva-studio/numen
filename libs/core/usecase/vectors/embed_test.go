@@ -522,6 +522,7 @@ func (l *progressLog) getLast() EmbedResult {
 // While the second of three sources is embedding, the report names that source:
 // the first has finished, and the third is only read ahead.
 func TestProgressNamesTheSourceBeingEmbedded(t *testing.T) {
+	first := getFirst()
 	const (
 		pathA = "library/a.epub"
 		pathB = "library/b.epub"
@@ -529,8 +530,8 @@ func TestProgressNamesTheSourceBeingEmbedded(t *testing.T) {
 	)
 	third := []string{"harbour", "quay", "mast", "keel", "rope", "sail", "buoy", "tide"}
 	index, shelf := newStore(), newLibrary()
-	shelf.hold(pathA, domain.KindFile, bookOf(t, "A", words(latin, 300)), 300)
-	shelf.hold(pathB, domain.KindFile, bookOf(t, "B", words(sanskrit, 300)), 200)
+	shelf.hold(pathA, domain.KindFile, bookOf(t, "A", words(getLatin(), 300)), 300)
+	shelf.hold(pathB, domain.KindFile, bookOf(t, "B", words(getSanskrit(), 300)), 200)
 	shelf.hold(pathC, domain.KindFile, bookOf(t, "C", words(third, 300)), 100)
 	cutBooks(t, index, shelf, first)
 
@@ -540,7 +541,7 @@ func TestProgressNamesTheSourceBeingEmbedded(t *testing.T) {
 			aChunks++
 		}
 	}
-	isB := func(text string) bool { return strings.Contains(text, sanskrit[0]) }
+	isB := func(text string) bool { return strings.Contains(text, getSanskrit()[0]) }
 	model := &holdingEmbedder{
 		embedder: &embedder{dims: dimensions}, holds: isB, started: make(chan struct{}, 1),
 	}
