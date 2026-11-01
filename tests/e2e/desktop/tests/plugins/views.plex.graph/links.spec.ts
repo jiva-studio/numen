@@ -1,6 +1,13 @@
 import { test, expect, type Page } from '../../support/test.js'
 import { getGraph, openWorkspace } from '../../support/workspace.js'
-import { createNoteWithBody, destroyNotes, getConnectionSides, getRow, getTab, showInFiles } from '../../support/layout.js'
+import {
+  createNoteWithBody,
+  destroyNotes,
+  getConnectionSides,
+  getRow,
+  getTab,
+  showInFiles,
+} from '../../support/layout.js'
 
 /** Shows the note at the path in the plex, from the menu on its row in the files tab. */
 const showInPlex = async (page: Page, path: string): Promise<void> => {
@@ -14,8 +21,18 @@ test.describe('Links between two notes in the plex', () => {
   let jetty = ''
 
   test.beforeEach(async ({ request }) => {
-    quay = await createNoteWithBody(request, 'Quay', 'notes', '# Quay\n\nWhere the barges unload.\n')
-    jetty = await createNoteWithBody(request, 'Jetty', 'notes', '# Jetty\n\nWhere the ferry ties up.\n')
+    quay = await createNoteWithBody(
+      request,
+      'Quay',
+      'notes',
+      '# Quay\n\nWhere the barges unload.\n',
+    )
+    jetty = await createNoteWithBody(
+      request,
+      'Jetty',
+      'notes',
+      '# Jetty\n\nWhere the ferry ties up.\n',
+    )
   })
 
   test.afterEach(async ({ request }) => {
@@ -32,7 +49,9 @@ test.describe('Links between two notes in the plex', () => {
     await expect(getTab(page, 'Quay')).toBeVisible()
     const focus = getGraph(page).getByRole('img', { name: 'Quay, focus' })
     await focus.hover()
-    await page.locator('.plex__handle').first().click({ force: true })
+    const handle = page.locator('.plex__handle').first()
+    await handle.hover()
+    await handle.click()
 
     const field = page.getByRole('dialog', { name: 'New thought' }).getByRole('textbox')
     await field.fill('Jett')
@@ -55,7 +74,12 @@ test.describe('Links between two notes in the plex', () => {
   }) => {
     await request.post('/numen.v1.NoteService/SaveConnection', {
       data: {
-        connection: { first: quay, second: jetty, role: 'ROLE_CHILD', firstSide: { label: 'unloads at' } },
+        connection: {
+          first: quay,
+          second: jetty,
+          role: 'ROLE_CHILD',
+          firstSide: { label: 'unloads at' },
+        },
       },
     })
     expect(await getConnectionSides(request, quay, jetty)).toMatchObject({ first: true })
@@ -76,7 +100,7 @@ test.describe('Links between two notes in the plex', () => {
     await expect(popover).toContainText('The link between these notes will be removed.')
     await popover.locator('.plex-link-popover__btn--done').click()
 
-    await expect(popover).not.toBeVisible()
+    await expect(popover).toBeHidden()
     await expect
       .poll(async () => getConnectionSides(request, quay, jetty))
       .toEqual({ first: false, second: false })

@@ -73,3 +73,38 @@ describe('a watcher of work', () => {
     expect(changes).toStrictEqual([true, true, false])
   })
 })
+
+describe('a watcher of changes', () => {
+  it('calls the handler of a file the vault reports changed, and no other', () => {
+    const watcher = createWorkWatcher(createSource().source)
+    const changed: string[] = []
+    watcher.watchChanges('a.wav', () => changed.push('a'))
+    watcher.watchChanges('b.wav', () => changed.push('b'))
+
+    watcher.refresh(['a.wav'])
+
+    expect(changed).toStrictEqual(['a'])
+  })
+
+  it('calls every handler where the report names no file', () => {
+    const watcher = createWorkWatcher(createSource().source)
+    const changed: string[] = []
+    watcher.watchChanges('a.wav', () => changed.push('a'))
+    watcher.watchChanges('b.wav', () => changed.push('b'))
+
+    watcher.refresh([])
+
+    expect(changed).toStrictEqual(['a', 'b'])
+  })
+
+  it('stops calling a handler once it is stopped', () => {
+    const watcher = createWorkWatcher(createSource().source)
+    const changed: string[] = []
+    const stop = watcher.watchChanges('a.wav', () => changed.push('a'))
+    stop()
+
+    watcher.refresh(['a.wav'])
+
+    expect(changed).toStrictEqual([])
+  })
+})

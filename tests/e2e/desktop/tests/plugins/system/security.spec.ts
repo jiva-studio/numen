@@ -10,7 +10,10 @@ const askRPC = async (request: APIRequestContext, method: string, data: object) 
     headers: { 'Content-Type': 'application/json' },
   })
   const text = await answer.text()
-  return { status: answer.status(), body: text ? (JSON.parse(text) as Record<string, unknown>) : {} }
+  return {
+    status: answer.status(),
+    body: text ? (JSON.parse(text) as Record<string, unknown>) : {},
+  }
 }
 
 /** Whether an answer refused the call: an error status, or an error code in the reply. */
@@ -59,8 +62,10 @@ test.describe('Paths outside the vault', () => {
         `${name}.md`,
       ])
     } finally {
-      for (const one of fs.readdirSync(path.dirname(vault))) {
-        if (one.startsWith(name)) fs.rmSync(path.join(path.dirname(vault), one), { force: true })
+      for (const one of fs
+        .readdirSync(path.dirname(vault))
+        .filter((file) => file.startsWith(name))) {
+        fs.rmSync(path.join(path.dirname(vault), one), { force: true })
       }
     }
   })

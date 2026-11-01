@@ -119,7 +119,14 @@ export function useTranscript(
     isWorking.value = next
     readRecording().catch(reportFailure)
   }
-  const stopWatching = recordings.watchWork(path, setWorking)
+  const stopWorking = recordings.watchWork(path, setWorking)
+  const stopChanges = recordings.watchChanges(path, () => {
+    if (isOpen) readRecording().catch(reportFailure)
+  })
+  const stopWatching = () => {
+    stopWorking()
+    stopChanges()
+  }
 
   const starter = computed(() => findStarter(entries.value))
   const isSettled = computed(() => !isLoading.value && !isWorking.value)

@@ -26,6 +26,7 @@ export function createWorkWatcher(watchTasks: TaskSource) {
   let nextId = 0
   let working = new Set<string>()
   let subscription: { dispose(): void } | null = null
+  const changeListeners = new Map<number, { path: string; onChange: () => void }>()
 
   const publish = (paths: Set<string>) => {
     const before = working
@@ -37,6 +38,20 @@ export function createWorkWatcher(watchTasks: TaskSource) {
   }
 
   return {
+    /** Calls the handler whenever the vault reports a change to the file, until the returned function is called. */
+    watchChanges(path: string, onChange: () => void): () => void {
+      const id = nextId++
+      changeListeners.set(id, { path, onChange })
+      return () => {
+        changeListeners.delete(id)
+      }
+    },
+    /** Reports a change to these paths, or to every file where none are named. */
+    refresh(paths: readonly string[]): void {
+      for (const one of changeListeners.values()) {
+        if (paths.length === 0 || paths.includes(one.path)) one.onChange()
+      }
+    },
     watch(path: string, onChange: (isWorking: boolean) => void): () => void {
       const id = nextId++
       listeners.set(id, { path, onChange })

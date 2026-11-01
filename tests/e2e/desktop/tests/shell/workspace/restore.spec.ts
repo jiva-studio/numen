@@ -6,6 +6,12 @@ import {
   waitForPassage,
 } from '../../support/workspace.js'
 
+declare global {
+  interface Window {
+    placeholderTexts: string[]
+  }
+}
+
 /** The page field of the PDF reader in a panel. */
 const getPageField = (page: Page, name: RegExp) =>
   page.getByRole('tabpanel', { name }).getByRole('spinbutton', { name: 'Page' })
@@ -109,7 +115,7 @@ test.describe('The tabs of the window after a restart', () => {
   }) => {
     await page.addInitScript(() => {
       const texts: string[] = []
-      Object.assign(window, { placeholderTexts: texts })
+      window.placeholderTexts = texts
       const record = () => {
         for (const one of document.querySelectorAll('.tab-unavailable h3, .tab-unavailable p')) {
           const text = one.textContent?.trim() ?? ''
@@ -133,9 +139,7 @@ test.describe('The tabs of the window after a restart', () => {
 
     const panel = page.getByRole('tabpanel', { name: /shore/i })
     await expect(panel.getByRole('heading', { name: 'Plugin disabled' })).toBeVisible()
-    const placeholderTexts = await page.evaluate(
-      () => (window as unknown as { placeholderTexts: string[] }).placeholderTexts,
-    )
+    const placeholderTexts = await page.evaluate(() => window.placeholderTexts)
     expect(placeholderTexts).toStrictEqual([
       'Plugin disabled',
       'The plugin for PDF documents is disabled.',

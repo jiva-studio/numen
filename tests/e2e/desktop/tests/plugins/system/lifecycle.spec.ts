@@ -24,10 +24,9 @@ test.describe('Plugin Lifecycle and Process Management', () => {
 
     // Close the tab
     const closeBtn = page.getByRole('button', { name: /Close sample\.pdf/i }).first()
-    if (await closeBtn.isVisible()) {
-      await closeBtn.click()
-      await expect(page.locator('.reader')).not.toBeVisible({ timeout: 5_000 })
-    }
+    await expect(closeBtn).toBeVisible()
+    await closeBtn.click()
+    await expect(page.locator('.reader')).toBeHidden({ timeout: 5_000 })
   })
 
   test('activates reader-epub plugin on demand and cleans up on close', async ({ page }) => {
@@ -52,11 +51,10 @@ test.describe('Plugin Lifecycle and Process Management', () => {
     await expect(page.locator('.book-tab')).toBeVisible({ timeout: 10_000 })
 
     // Close the tab
-    const closeBtn = page.getByRole('button', { name: /Close Test Book/i }).first()
-    if (await closeBtn.isVisible()) {
-      await closeBtn.click()
-      await expect(page.locator('.book-tab')).not.toBeVisible({ timeout: 5_000 })
-    }
+    const closeBtn = page.getByRole('button', { name: /Close sample\.epub/i }).first()
+    await expect(closeBtn).toBeVisible()
+    await closeBtn.click()
+    await expect(page.locator('.book-tab')).toBeHidden({ timeout: 5_000 })
   })
 
   test('re-activates plugin on second file opening after tab closure', async ({ page }) => {
@@ -79,9 +77,9 @@ test.describe('Plugin Lifecycle and Process Management', () => {
     await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
 
     const closeBtn = page.getByRole('button', { name: /Close sample\.pdf/i }).first()
-    if (await closeBtn.isVisible()) {
-      await closeBtn.click()
-    }
+    await expect(closeBtn).toBeVisible()
+    await closeBtn.click()
+    await expect(page.locator('.reader')).toBeHidden()
 
     // 2. Open paper.pdf to verify plugin re-activation
     const paperRow = page.locator('[data-tree-row="assets/paper.pdf"]')

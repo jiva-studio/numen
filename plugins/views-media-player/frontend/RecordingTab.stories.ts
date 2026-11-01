@@ -66,6 +66,7 @@ const createRecordings = (cues: readonly Cue[], menu: readonly MenuEntry[]): Rec
   findCueTime: async () => null,
   getMenu: async () => menu,
   runMenuEntry: async () => undefined,
+  watchChanges: () => () => undefined,
   watchWork: (_, onChange) => {
     onChange(false)
     return () => undefined

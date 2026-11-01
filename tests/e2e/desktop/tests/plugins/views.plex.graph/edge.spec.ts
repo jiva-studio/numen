@@ -101,7 +101,7 @@ const getDirections = (popover: Locator) =>
 
 const clickDone = async (page: Page, popover: Locator) => {
   await popover.locator('.plex-link-popover__btn--done').click()
-  await expect(popover).not.toBeVisible()
+  await expect(popover).toBeHidden()
   await expect(page.locator('.plex-frame:not([data-moving])')).toBeAttached()
 }
 
@@ -337,10 +337,10 @@ test.describe('Plex Edge and Link Inspector', () => {
       fields.map((field) => (field as HTMLInputElement).value),
     )
     expect([...values].sort()).toStrictEqual(['', 'warms'])
-    const added = values.indexOf('') === 0 ? inputs.first() : inputs.last()
+    const added = inputs.nth(values.indexOf(''))
     await added.fill('measures')
     await added.press('Enter')
-    await expect(popover).not.toBeVisible()
+    await expect(popover).toBeHidden()
 
     expect(await getRecords(request)).toEqual({
       Thermodynamics: { label: 'warms', marker: ARROW },
@@ -377,7 +377,7 @@ test.describe('Plex Edge and Link Inspector', () => {
     await expect(closeBtn).toBeVisible()
     await closeBtn.click()
 
-    await expect(popover).not.toBeVisible()
+    await expect(popover).toBeHidden()
     expect(await getRecords(request)).toEqual({
       Thermodynamics: { label: 'warms' },
       Entropy: null,

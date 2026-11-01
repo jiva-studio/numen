@@ -1,40 +1,141 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { expect, test } from 'playwright/test'
+import { expect, test, type Page } from 'playwright/test'
 import { STAND_IN_REPLY } from '../scripts/stand-ins.mjs'
 
 const vault = process.env.NUMEN_FLASHCARDS_VAULT ?? ''
 const answers = path.join(vault, '.numen', 'md.numen.views.flashcards.studio')
 
-/** The lines of review answers the plugin wrote into its own folder of the vault. */
-function readAnswers(): string[] {
+/** One line of the review log: an answer of a card, or the taking back of one. */
+interface ReviewLine {
+  readonly v: number
+  readonly id: string
+  readonly card?: string
+  readonly template?: string
+  readonly rating?: number
+  readonly undo?: string
+}
+
+/** The ratings the review log writes for the four answers. */
+const RATING = { Again: 1, Hard: 2, Good: 3, Easy: 4 } as const
+
+/** The lines of review answers the plugin wrote into its own folder of the vault, oldest first. */
+function readReviewLog(): ReviewLine[] {
   if (!fs.existsSync(answers)) return []
   return fs
     .readdirSync(answers)
     .filter((name) => name.endsWith('.jsonl'))
+    .sort()
     .flatMap((name) => fs.readFileSync(path.join(answers, name), 'utf8').split('\n'))
     .filter(Boolean)
+    .map((line) => JSON.parse(line) as ReviewLine)
 }
 
-test('the window loads the flashcards plugin, shows what is due and writes an answer', async ({
-  page,
-}) => {
+/** Waits until the review log holds one line more than `count`, and returns that line. */
+async function waitForReviewLine(count: number): Promise<ReviewLine> {
+  await expect.poll(() => readReviewLog().length).toBe(count + 1)
+  return readReviewLog().at(-1) as ReviewLine
+}
+
+/** Opens the decks of the run's vault. */
+async function openDecks(page: Page): Promise<void> {
   await page.goto('/')
-
-  const row = page.getByRole('button', { name: new RegExp(path.basename(vault)) })
-  await expect(row).toBeVisible()
-  await row.click()
-
+  await page.getByRole('button', { name: new RegExp(path.basename(vault)) }).click()
   await expect(page.getByRole('heading', { name: path.basename(vault) })).toBeVisible()
+}
+
+/** Starts reviewing every deck of the vault. */
+async function startReview(page: Page): Promise<void> {
+  await openDecks(page)
   const review = page.getByRole('button', { name: /Review/ })
   await expect(review).toBeEnabled()
   await review.click()
+  await expect(page.getByRole('button', { name: /Show the answer/ })).toBeVisible()
+}
+
+test('a deck started on its own reviews only its cards', async ({ page }) => {
+  await openDecks(page)
+  const deck = page.getByRole('button', { name: /crlf-deck/ })
+  await expect(deck).toBeEnabled()
+  const figure = deck.locator('.due-count')
+  await expect(figure).toHaveText(/^\d+ to review$/)
+  const due = (await figure.innerText()).split(' ')[0]
+
+  await deck.click()
+
+  await expect(page.locator('.session__deck')).toHaveText('crlf-deck')
+  await expect(page.locator('.session__left')).toHaveText(`${due} left`)
+  const count = readReviewLog().length
+  await page.getByRole('button', { name: /Show the answer/ }).click()
+  await page.getByRole('button', { name: /Easy/ }).click()
+  // The one card of cards/crlf-deck.md, by the mark its heading carries.
+  expect(await waitForReviewLine(count)).toMatchObject({ card: '9r4tn6wqhd', rating: RATING.Easy })
+})
+
+test('writes a Good answer of the card shown to the review log', async ({ page }) => {
+  const count = readReviewLog().length
+  await startReview(page)
 
   await page.getByRole('button', { name: /Show the answer/ }).click()
   await page.getByRole('button', { name: /Good/ }).click()
 
-  await expect.poll(readAnswers).toHaveLength(1)
-  expect(JSON.parse(readAnswers()[0] ?? '{}')).toMatchObject({ rating: expect.anything() })
+  const line = await waitForReviewLine(count)
+  expect(line).toMatchObject({ v: 1, rating: RATING.Good })
+  expect(line.card).toMatch(/^[0-9a-hjkmnp-tv-z]{10}$/)
+  expect(line.template).toBeTruthy()
+})
+
+test('writes Again, Hard and Easy from their buttons to the review log', async ({ page }) => {
+  await startReview(page)
+
+  for (const answer of ['Again', 'Hard', 'Easy'] as const) {
+    const count = readReviewLog().length
+    await page.getByRole('button', { name: /Show the answer/ }).click()
+    await page.getByRole('button', { name: new RegExp(answer) }).click()
+
+    expect(await waitForReviewLine(count)).toMatchObject({ rating: RATING[answer] })
+  }
+})
+
+test('shows the answer on Space and writes the answer of each number key', async ({ page }) => {
+  await startReview(page)
+
+  for (const [key, rating] of [
+    ['1', RATING.Again],
+    ['2', RATING.Hard],
+    ['3', RATING.Good],
+    ['4', RATING.Easy],
+  ] as const) {
+    const count = readReviewLog().length
+    await expect(page.getByRole('button', { name: /Show the answer/ })).toBeVisible()
+    await page.keyboard.press('Space')
+    await expect(page.getByRole('button', { name: /Good/ })).toBeVisible()
+    await page.keyboard.press(key)
+
+    expect(await waitForReviewLine(count)).toMatchObject({ rating })
+  }
+})
+
+test('Undo writes a line taking the last answer back, and shows its card again', async ({
+  page,
+}) => {
+  await startReview(page)
+  const where = await page.locator('.session__where').textContent()
+  const remaining = await page.locator('.session__left').innerText()
+  const count = readReviewLog().length
+  await page.getByRole('button', { name: /Show the answer/ }).click()
+  await page.getByRole('button', { name: /Easy/ }).click()
+  const answer = await waitForReviewLine(count)
+  await expect(page.locator('.session__left')).not.toHaveText(remaining)
+
+  await page.getByRole('button', { name: /Undo/ }).click()
+
+  const undone = await waitForReviewLine(count + 1)
+  expect(undone).toMatchObject({ v: 1, undo: answer.id })
+  expect(undone.rating).toBeUndefined()
+  await expect(page.locator('.session__left')).toHaveText(remaining)
+  await expect(page.locator('.session__where')).toHaveText(where ?? '')
+  await expect(page.getByRole('button', { name: /Again/ })).toBeVisible()
 })
 
 /** The JSON message of the one frame a Connect streaming request carries. */

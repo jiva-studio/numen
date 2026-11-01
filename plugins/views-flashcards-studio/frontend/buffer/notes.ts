@@ -76,15 +76,17 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
     clearTimer(id)
     tab.state = 'saving'
     const observed = tab.keepOverride ? null : tab.baseline
+    const body = tab.body
     try {
-      const res = await notes.write(tab.path, tab.body, observed)
+      const res = await notes.write(tab.path, body, observed)
       if (!tabs.has(id)) return
       if (res.ok) {
-        tab.state = 'clean'
+        // An edit made while the write was in flight stays unsaved, with its own flush scheduled.
+        if (tab.state === 'saving') tab.state = 'clean'
         tab.error = null
         tab.keepOverride = false
         tab.filePath = res.value.at ?? tab.filePath
-        tab.baseline = { prose: tab.body, stat: res.value.at ?? '' }
+        tab.baseline = { prose: body, stat: res.value.at ?? '' }
       } else {
         if (res.error === 'changed') {
           tab.state = 'stale'
@@ -159,16 +161,8 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
     }
   }
 
+  /** Replaces the text of a tab, and writes it once the edits pause. */
   function setBody(id: string, body: string): void {
-    const tab = tabs.get(id)
-    if (!tab) return
-    tab.body = body
-    if (tab.state === 'clean' || tab.state === 'saving') {
-      tab.state = 'unsaved'
-    }
-  }
-
-  function saveBody(id: string, body: string): void {
     const tab = tabs.get(id)
     if (!tab) return
     tab.body = body
@@ -286,7 +280,6 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
     getFilePath,
     getOpenNote,
     setBody,
-    saveBody,
     flushPending,
     flush,
     keep,

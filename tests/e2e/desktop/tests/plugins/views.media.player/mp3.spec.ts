@@ -1,6 +1,12 @@
 import { test, expect, type Locator } from '../../support/test.js'
 import { openVaultFile, openWorkspace } from '../../support/workspace.js'
 
+declare global {
+  interface Window {
+    shownFailures: string[]
+  }
+}
+
 /** The message the player shows when it cannot play a recording, in any of its forms. */
 const FAILURE = /failed to play|unreadable|not supported|loading stopped/i
 
@@ -23,7 +29,7 @@ test.describe('An mp3 recording', () => {
     await page.addInitScript((source) => {
       const failure = new RegExp(source, 'i')
       const failures: string[] = []
-      ;(window as unknown as { shownFailures: string[] }).shownFailures = failures
+      window.shownFailures = failures
       const watch = (root: Node) =>
         new MutationObserver(() => {
           const found = (root.textContent ?? '').match(failure)
@@ -51,9 +57,7 @@ test.describe('An mp3 recording', () => {
     await expect(player).toContainText(/2:0[0-9]/)
     await expect.poll(() => getBarLength(bar)).toBeCloseTo(LENGTH_MS, -3)
 
-    const failures = await page.evaluate(
-      () => (window as unknown as { shownFailures: string[] }).shownFailures,
-    )
+    const failures = await page.evaluate(() => window.shownFailures)
     expect(failures).toEqual([])
   })
 

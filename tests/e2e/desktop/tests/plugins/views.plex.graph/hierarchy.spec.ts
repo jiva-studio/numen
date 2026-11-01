@@ -48,6 +48,12 @@ const showInPlex = async (page: Page, title: string) => {
 }
 
 test.describe('Making a related note', () => {
+  const madeNotes: string[] = []
+
+  test.afterEach(async ({ request }) => {
+    for (const one of madeNotes.splice(0)) await destroyNote(request, one)
+  })
+
   test('makes a child from the palette, joined below the note in front', async ({
     page,
     request,
@@ -55,7 +61,6 @@ test.describe('Making a related note', () => {
     const parentTitle = createUniqueTitle('Estuary')
     const childTitle = createUniqueTitle('Tributary')
     const parent = await createNote(request, parentTitle)
-    let child = ''
     try {
       await openWorkspace(page)
       await openNote(page, parent)
@@ -63,13 +68,13 @@ test.describe('Making a related note', () => {
       await runPaletteCommand(page, 'New child note', 'New child note')
       await nameNote(page, childTitle)
 
-      child = await waitForMadeNote(page, childTitle)
+      const child = await waitForMadeNote(page, childTitle)
+      madeNotes.push(child)
       await expect(getNoteTab(page, child)).toHaveAttribute('aria-selected', 'true')
       expect((await getConnection(request, parent, child)).role).toBe('ROLE_CHILD')
       await showInPlex(page, childTitle)
       await expect(getPlexNode(page, parentTitle, 'parent')).toBeAttached()
     } finally {
-      if (child) await destroyNote(request, child)
       await destroyNote(request, parent)
     }
   })
@@ -81,7 +86,6 @@ test.describe('Making a related note', () => {
     const childTitle = createUniqueTitle('Delta')
     const parentTitle = createUniqueTitle('River basin')
     const note = await createNote(request, childTitle)
-    let parent = ''
     try {
       await openWorkspace(page)
       await openNote(page, note)
@@ -89,24 +93,20 @@ test.describe('Making a related note', () => {
       await runPaletteCommand(page, 'New parent note', 'New parent note')
       await nameNote(page, parentTitle)
 
-      parent = await waitForMadeNote(page, parentTitle)
+      const parent = await waitForMadeNote(page, parentTitle)
+      madeNotes.push(parent)
       expect((await getConnection(request, note, parent)).role).toBe('ROLE_PARENT')
       await showInPlex(page, parentTitle)
       await expect(getPlexNode(page, childTitle, 'child')).toBeAttached()
     } finally {
-      if (parent) await destroyNote(request, parent)
       await destroyNote(request, note)
     }
   })
 
-  test('makes a jump from the menu of the node in focus of the plex', async ({
-    page,
-    request,
-  }) => {
+  test('makes a jump from the menu of the node in focus of the plex', async ({ page, request }) => {
     const fromTitle = createUniqueTitle('Tidal bore')
     const jumpTitle = createUniqueTitle('Severn')
     const from = await createNote(request, fromTitle)
-    let jump = ''
     try {
       await openWorkspace(page)
       await openNote(page, from)
@@ -116,12 +116,12 @@ test.describe('Making a related note', () => {
       await page.getByRole('menuitem', { name: 'New jump note' }).click()
       await nameNote(page, jumpTitle)
 
-      jump = await waitForMadeNote(page, jumpTitle)
+      const jump = await waitForMadeNote(page, jumpTitle)
+      madeNotes.push(jump)
       expect((await getConnection(request, from, jump)).role).toBe('ROLE_JUMP')
       await showInPlex(page, jumpTitle)
       await expect(getPlexNode(page, fromTitle, 'jump')).toBeAttached()
     } finally {
-      if (jump) await destroyNote(request, jump)
       await destroyNote(request, from)
     }
   })

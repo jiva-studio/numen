@@ -3,7 +3,16 @@
  * reader shows moves forward once and does not return to the page before it.
  */
 import type { Page } from 'playwright/test'
-import { test, expect } from '../../support/test.js'
+import { test, expect, readSavedStates } from '../../support/test.js'
+
+declare global {
+  interface Window {
+    bookFrames?: Promise<Frame[]>
+  }
+}
+
+/** The path of the book the tests of turns open. */
+const LEDGER = 'assets/ledger.epub'
 
 /** What the reader shows on one frame. */
 interface Frame {
@@ -88,15 +97,13 @@ const startRecording = async (page: Page, ms: number): Promise<void> => {
       }
       return frames
     })()
-    Object.assign(globalThis, { bookFrames: recording })
+    window.bookFrames = recording
   }, ms)
 }
 
 /** The frames of the recording started last, once it has run its course. */
 const readRecording = async (page: Page): Promise<Frame[]> =>
-  await page.evaluate(
-    async () => await (globalThis as unknown as { bookFrames: Promise<Frame[]> }).bookFrames,
-  )
+  await page.evaluate(async () => (await window.bookFrames) ?? [])
 
 /** Records the frames from just before the turn until `WATCH_MS` after it. */
 const recordTurn = async (page: Page, runTurn: () => Promise<void>): Promise<Frame[]> => {
@@ -168,10 +175,13 @@ test.describe('EPUB page turns', () => {
   }) => {
     await openLedger(page)
     const edge = await getAreaPoint(page, 0.95)
+    const unturned = (await readSavedStates(page.request)).get(LEDGER) ?? ''
     for (let turn = 0; turn < 3; turn += 1) await page.mouse.click(edge.x, edge.y)
     await expect(page.locator('.book__count')).not.toHaveText(/^1 of \d+$/)
     // The place is saved once the backend has named it.
-    await page.waitForTimeout(1_000)
+    await expect
+      .poll(async () => (await readSavedStates(page.request)).get(LEDGER) ?? '')
+      .not.toBe(unturned)
 
     await page.reload()
     // The window lays the panes out again, so the page is named by another count.

@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from '../../support/test.js'
 import { getGraph, openWorkspace } from '../../support/workspace.js'
+import { readBox } from '../../support/browser.js'
 import { getRow, getTab, readOpenTabs, readWidth, showInFiles } from '../../support/layout.js'
 
 /** The panes of the window, in the order they are drawn. */
@@ -49,8 +50,7 @@ test.describe('Workspace Layout and Split Panes', () => {
     const aside = getPanes(page).nth(1)
     const mainBefore = await readWidth(main)
     const asideBefore = await readWidth(aside)
-    const box = await separator.boundingBox()
-    if (!box) throw new Error('the separator is not drawn')
+    const box = await readBox(separator)
 
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
     await page.mouse.down()

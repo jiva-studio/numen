@@ -146,6 +146,16 @@ func TestAWriteSendsTheBaselineAndReportsStale(t *testing.T) {
 	}
 }
 
+func TestAWriteWithTheZeroBaselineSendsNoBaseline(t *testing.T) {
+	a := &answering{}
+
+	_, err := clientTo(t, a).Write(t.Context(), "n.md", []byte("abc"), domain.FileStat{})
+
+	if err != nil || len(a.baselines) != 1 || a.baselines[0] != nil {
+		t.Errorf("got %v and %v", err, a.baselines)
+	}
+}
+
 func TestGetLink_PreservesHostFields(t *testing.T) {
 	links, err := clientTo(t, &answering{}).GetLinks(t.Context(), "a.md")
 

@@ -58,6 +58,7 @@ export function createRecordings(
     cueTimes: new Map<number, number>(),
     readError: null as Error | null,
     onWork: null as ((isWorking: boolean) => void) | null,
+    onChange: null as (() => void) | null,
     isWatched: false,
   }
   const recordings: Recordings = {
@@ -74,6 +75,12 @@ export function createRecordings(
     getMenu: async () => state.menu,
     runMenuEntry: async (_, entry) => {
       state.runs.push(entry)
+    },
+    watchChanges: (_, onChange) => {
+      state.onChange = onChange
+      return () => {
+        state.onChange = null
+      }
     },
     watchWork: (_, onChange) => {
       state.onWork = onChange

@@ -26,6 +26,8 @@ on:
       - "libs/protocol/**"
       - "!libs/protocol/**/*.md"
       - "tools/ci-stories/**"
+      - "tests/e2e/desktop/**"
+      - "!tests/e2e/desktop/**/*.md"
       - "!docs/**"
       - ".github/workflows/desktop-frontend.yml"
 
@@ -97,6 +99,7 @@ jobs:
           npm run lint --prefix libs/core-client
           npm run lint --prefix libs/plugin-host-ts
           npm run lint --prefix libs/plugin-manager
+          npm run lint --prefix tests/e2e/desktop
 
       - name: Typecheck screens and SDK
         run: |

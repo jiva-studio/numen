@@ -1,3 +1,4 @@
+import { observeFor } from '../../support/browser.js'
 import { test, expect, type APIRequestContext } from '../../support/test.js'
 
 /** The word that makes the mock embedder hold a batch until it is cancelled (engine.MockHoldWord). */
@@ -29,11 +30,34 @@ const callRPC = async (
   }
 }
 
+/** Whether the vault is read and every chunk it holds has its vector, as the core reports it. */
+const isIndexed = async (request: APIRequestContext): Promise<boolean> => {
+  const { body } = await callRPC(request, 'VaultService/GetVaultState', {})
+  const scan = body['scan'] as { isReady?: boolean } | undefined
+  const coverage = body['coverage'] as { chunkCount?: string; embeddedCount?: string } | undefined
+  return scan?.isReady === true && coverage?.chunkCount === coverage?.embeddedCount
+}
+
 test.describe('Cancelling a background task', () => {
+  test.describe.configure({ timeout: 240_000 })
+
   test('the row holds still under the pointer, and Cancel stops the vector pass', async ({
     page,
     request,
   }) => {
+    // The vector pass is one task that names the source it last embedded, and it embeds the pending
+    // chunks source by source. The row of the held note is the row of the pass only once the
+    // fixtures are indexed, the text of their PDFs included: the core reports the PDF that cannot
+    // be read as failed once its text pass has got there, and the chunks of the others follow.
+    await page.goto('/')
+    const trigger = page.locator('.status-bar__trigger')
+    await expect(trigger).toBeVisible()
+    await expect(page.locator('.status-bar__badge--alarm')).toHaveText(/^1 failed$/, {
+      timeout: 120_000,
+    })
+    await expect.poll(() => isIndexed(request), { timeout: 120_000 }).toBe(true)
+    await expect(page.locator('.status-bar__summary')).not.toHaveText(/^[1-9]\d* active$/)
+
     const created = await callRPC(request, 'NoteService/CreateNote', {
       title: 'Tide clock',
       path: 'notes',
@@ -48,9 +72,6 @@ test.describe('Cancelling a background task', () => {
       })
       expect(writeAnswer.status).toBe(200)
 
-      await page.goto('/')
-      const trigger = page.locator('.status-bar__trigger')
-      await expect(trigger).toBeVisible()
       await trigger.click()
 
       const row = page.locator('.task-item').filter({ hasText: path })
@@ -126,7 +147,7 @@ test.describe('Cancelling a background task', () => {
         id: VECTOR_TASK_ID,
       })
       expect(again.status).toBe(404)
-      await page.waitForTimeout(3_000)
+      await observeFor(page, 3_000)
       await expect(row).toHaveCount(0)
     } finally {
       await callRPC(request, 'NoteService/WriteNote', { path, body: `# Tide clock\n\n${BODY}\n` })

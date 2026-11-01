@@ -17,11 +17,14 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
 
   let profile: unknown
   let mode: unknown
+  /** The row of the profile other than the one in force. */
+  let other = ''
 
   test.beforeEach(async ({ request }) => {
     const settings = await readSettings(request)
     profile = (settings['performance'] as Record<string, unknown> | undefined)?.['profile']
     mode = (settings['appearance'] as Record<string, unknown> | undefined)?.['mode']
+    other = profile === 'eco' ? 'Maximum' : 'Eco'
   })
 
   test.afterEach(async ({ request }) => {
@@ -33,7 +36,6 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
     page,
     request,
   }) => {
-    const other = profile === 'eco' ? 'Maximum' : 'Eco'
     await openWorkspace(page)
 
     await runPaletteCommand(page, 'Set performance profile', 'Set performance profile')

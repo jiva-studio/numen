@@ -127,7 +127,12 @@ func readKind(f *v1.HostFileStat) domain.SourceKind {
 	}
 }
 
+// writeFileStat returns the stat as the host reads it, and nil for the zero stat, which is a write
+// made without a baseline. time.Time{}.UnixNano is no zero, so the zero stat is sent as no stat.
 func writeFileStat(f domain.FileStat) *v1.HostFileStat {
+	if f.IsZero() {
+		return nil
+	}
 	return &v1.HostFileStat{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), IsNote: f.Kind == domain.KindNote}
 }
 

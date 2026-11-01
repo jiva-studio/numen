@@ -2,7 +2,17 @@ import { access } from 'node:fs/promises'
 import { join } from 'node:path'
 import { test, expect, type Page } from '../../support/test.js'
 import { openWorkspace } from '../../support/workspace.js'
-import { createFolder, createNoteWithBody, destroyNotes, getRow, getTab, listPaths, readOpenTabs, showInFiles, trashFiles } from '../../support/layout.js'
+import {
+  createFolder,
+  createNoteWithBody,
+  destroyNotes,
+  getRow,
+  getTab,
+  listPaths,
+  readOpenTabs,
+  showInFiles,
+  trashFiles,
+} from '../../support/layout.js'
 import { getVaultPath, readNote } from '../../support/vault.js'
 
 /** Whether a file stands at the path, relative to the folder of the vault, on the disk. */
@@ -19,7 +29,9 @@ const getNameField = (page: Page) => page.getByRole('tree').getByRole('textbox')
 const chooseNewItem = async (page: Page, row: string, item: string): Promise<void> => {
   await getRow(page, row).click({ button: 'right' })
   // The submenu opens over the item that opens it once the pointer reaches it.
-  await page.getByRole('menuitem', { name: 'New', exact: true }).hover({ force: true })
+  const newItem = page.getByRole('menuitem', { name: 'New', exact: true })
+  await newItem.focus()
+  await newItem.press('ArrowRight')
   await page.getByRole('menuitem', { name: item, exact: true }).click()
 }
 
@@ -114,7 +126,7 @@ test.describe('Naming, making and removing files in the files tab', () => {
     const first = await createNoteWithBody(request, 'Mill race', 'notes', '# Mill race\n')
     const second = await createNoteWithBody(request, 'Tail race', 'notes', '# Tail race\n')
     const kept = await createNoteWithBody(request, 'Head race', 'notes', '# Head race\n')
-    const vault = await getVaultPath()
+    const vault = getVaultPath()
     try {
       await openWorkspace(page)
       await showInFiles(page, ['notes'])
@@ -164,6 +176,6 @@ test.describe('Naming, making and removing files in the files tab', () => {
     await cardsRow.press('Enter')
 
     await expect(cardsRow).toHaveAttribute('aria-expanded', 'false')
-    await expect(animalsRow).not.toBeVisible()
+    await expect(animalsRow).toBeHidden()
   })
 })

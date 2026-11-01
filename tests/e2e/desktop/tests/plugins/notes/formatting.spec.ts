@@ -94,9 +94,6 @@ test.describe('Note editor live formatting and styling', () => {
     await expect(cmContent).toContainText('Fundamental principle of entropy')
 
     // Verify bullet widget or bullet mark
-    const bullet = page
-      .locator('.cm-bullet')
-      .or(page.locator('.cm-line', { hasText: 'Fundamental principle of entropy' }))
-    await expect(bullet.first()).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('.cm-bullet').first()).toBeVisible({ timeout: 5_000 })
   })
 })

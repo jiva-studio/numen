@@ -127,9 +127,13 @@ export function createCardModelTabs(cards: Cards, options: CardModelTabsOptions)
     (id) => store.getOpenNote(id).body,
     (id, body) => store.setBody(id, body),
     (id) => wire.getProblems(store.getPath(id)),
+    // The vault renames the field in the file on disk, so the edits the tab holds are written first.
     (id, field, name) => {
-      wire
-        .renameField(store.getPath(id), { from: field, to: name }, store.applyPathChanges)
+      store
+        .flushPending(id)
+        .then(() =>
+          wire.renameField(store.getPath(id), { from: field, to: name }, store.applyPathChanges),
+        )
         .catch(reportFailure)
     },
   )

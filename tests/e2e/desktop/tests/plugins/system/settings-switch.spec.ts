@@ -1,4 +1,5 @@
 import { test, expect, type Locator, type Page } from '../../support/test.js'
+import { observeFor } from '../../support/browser.js'
 import { openWorkspace, runCommand } from '../../support/workspace.js'
 
 const PLUGIN = 'ACP Agents'
@@ -58,7 +59,7 @@ const toggleAndRecord = async (page: Page, toggle: Locator, isEnabled: boolean) 
   await toggle.click()
   await expect.poll(() => readEnabled(page)).toBe(isEnabled)
   // The window reads the settings again after a write, the last time 16 s after it.
-  await page.waitForTimeout(17_000)
+  await observeFor(page, 17_000)
   return page.evaluate(() => window.shownChecked ?? [])
 }
 

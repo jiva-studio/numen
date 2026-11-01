@@ -1,6 +1,13 @@
 import { test, expect, type Page } from '../../support/test.js'
+import { observeFor } from '../../support/browser.js'
 import { getGraph, openWorkspace, runPaletteCommand } from '../../support/workspace.js'
-import { getRow, getTab, readComputedFontSize, readOpenTabs, showInFiles } from '../../support/layout.js'
+import {
+  getRow,
+  getTab,
+  readComputedFontSize,
+  readOpenTabs,
+  showInFiles,
+} from '../../support/layout.js'
 import { readSettings, writeSetting } from '../../support/vault.js'
 
 const PLEX_ID = 'md.numen.views.plex.graph'
@@ -83,7 +90,7 @@ test.describe('Window Controls and Display Preferences', () => {
     await page.mouse.move(0, 0)
     await focusNode.hover()
     // Longer than a hovered node takes to open its headings while they are on.
-    await page.waitForTimeout(1_500)
+    await observeFor(page, 1_500)
     await expect(headings).toHaveCount(0)
 
     await runPaletteCommand(page, 'Nest headings', 'Plex Graph: Nest headings under notes')

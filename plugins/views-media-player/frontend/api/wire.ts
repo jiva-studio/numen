@@ -39,4 +39,10 @@ export const recordings: Recordings = {
   getMenu: (path) => getFileMenu(path),
   runMenuEntry: (path, entry) => runFileMenuEntry(path, entry),
   watchWork: (path, onChange) => work.watch(path, onChange),
+  watchChanges: (path, onChange) => work.watchChanges(path, onChange),
+}
+
+/** Tells the open recording tabs on these paths that the vault changed them. */
+export const refreshRecordings = (paths: readonly string[]): void => {
+  work.refresh(paths)
 }

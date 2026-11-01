@@ -20,9 +20,9 @@ test.describe('PDF Document Reader', () => {
     await pdfRow.press('Enter')
 
     // Verify document tab opened and no error modal or error panel is shown
-    await expect(page.locator('.fallback-panel')).not.toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('text=Saving went wrong')).not.toBeVisible()
-    await expect(page.locator('text=Something went wrong')).not.toBeVisible()
+    await expect(page.locator('.fallback-panel')).toBeHidden({ timeout: 5_000 })
+    await expect(page.locator('text=Saving went wrong')).toBeHidden()
+    await expect(page.locator('text=Something went wrong')).toBeHidden()
 
     // Verify reader canvas / page rendered
     await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
@@ -47,8 +47,8 @@ test.describe('PDF Document Reader', () => {
     await paperRow.press('Enter')
 
     // Verify document tab opened and reader rendered
-    await expect(page.locator('.fallback-panel')).not.toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('text=something inside numen went wrong')).not.toBeVisible()
+    await expect(page.locator('.fallback-panel')).toBeHidden({ timeout: 5_000 })
+    await expect(page.locator('text=something inside numen went wrong')).toBeHidden()
     await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
 
     // The page image arrives from the plugin's own route and decodes

@@ -1,103 +1,138 @@
-import { test, expect } from '../../support/test.js'
+import { test, expect, type APIRequestContext, type Page } from '../../support/test.js'
+import { openVaultFile, openWorkspace } from '../../support/workspace.js'
+import {
+  createCardId,
+  createDeckText,
+  deleteVaultFiles,
+  waitForListedFile,
+} from '../../support/media.js'
+import { createUniqueTitle, readNote, writeVaultFile } from '../../support/vault.js'
 
-test.describe('Flashcards and Deck Editor', () => {
-  test('opens flashcard deck editor and displays card list with sections', async ({ page }) => {
-    await page.goto('/')
+/** A deck of two cards cut by the Animal card model of the fixture, at `cards/<title>.md`. */
+const createDeck = async (request: APIRequestContext) => {
+  const title = createUniqueTitle('Shore birds')
+  const path = `cards/${title}.md`
+  const heron = createCardId()
+  const otter = createCardId()
+  await writeVaultFile(
+    request,
+    path,
+    createDeckText(title, [
+      { id: heron, cardModel: 'Animal', values: { Name: 'Heron', Height: 'about 1 m' } },
+      { id: otter, cardModel: 'Animal', values: { Name: 'Otter', Height: 'about 30 cm' } },
+    ]),
+  )
+  await waitForListedFile(request, path)
+  return { title, path, heron, otter }
+}
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+const openDeck = async (page: Page, title: string) => {
+  await openWorkspace(page)
+  const panel = await openVaultFile(page, 'cards', `${title}.md`)
+  await expect(panel.locator('.card').first()).toBeVisible()
+  return panel
+}
 
-    // Open Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
+test.describe('the deck editor', () => {
+  let deck: Awaited<ReturnType<typeof createDeck>>
 
-    // Expand cards directory
-    const cardsRow = page.locator('[data-tree-row="cards"]')
-    await expect(cardsRow).toBeVisible()
-    await cardsRow.press('Enter')
-
-    // Open Animals.md deck
-    const deckRow = page.locator('[data-tree-row="cards/Animals.md"]')
-    await expect(deckRow).toBeVisible()
-    await deckRow.press('Enter')
-
-    // Verify DeckEditor renders
-    await expect(page.locator('.deck')).toBeVisible({ timeout: 10_000 })
-
-    // Verify cards are drawn
-    const cards = page.locator('.card')
-    await expect(cards.first()).toBeVisible({ timeout: 10_000 })
-    expect(await cards.count()).toBeGreaterThanOrEqual(1)
+  test.beforeEach(async ({ request }) => {
+    deck = await createDeck(request)
   })
 
-  test('adds new section to flashcard deck', async ({ page }) => {
-    await page.goto('/')
-
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const cardsRow = page.locator('[data-tree-row="cards"]')
-    await expect(cardsRow).toBeVisible()
-    await cardsRow.press('Enter')
-
-    const deckRow = page.locator('[data-tree-row="cards/Animals.md"]')
-    await expect(deckRow).toBeVisible()
-    await deckRow.press('Enter')
-
-    await expect(page.locator('.deck')).toBeVisible({ timeout: 10_000 })
-
-    // Click Add section button
-    const addSectionBtn = page.locator('[data-add-section]')
-    await expect(addSectionBtn).toBeVisible()
-    await addSectionBtn.click()
-
-    // Verify new section heading appeared
-    await expect(page.locator('.deck').first()).toBeVisible()
+  test.afterEach(() => {
+    deleteVaultFiles(deck.path)
   })
 
-  test('edits flashcard field text in deck editor', async ({ page }) => {
-    await page.goto('/')
+  test('draws one tile for each card of the deck file, with its values', async ({ page }) => {
+    const panel = await openDeck(page, deck.title)
 
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const cardsRow = page.locator('[data-tree-row="cards"]')
-    await expect(cardsRow).toBeVisible()
-    await cardsRow.press('Enter')
-
-    const deckRow = page.locator('[data-tree-row="cards/Animals.md"]')
-    await expect(deckRow).toBeVisible()
-    await deckRow.press('Enter')
-
-    await expect(page.locator('.deck')).toBeVisible({ timeout: 10_000 })
-
-    // Find first editable field in card
-    const editableField = page
-      .locator('.card [contenteditable="true"], .card textarea, .card input')
-      .first()
-    if (await editableField.isVisible()) {
-      await editableField.click()
-      await page.keyboard.type(' Updated')
-    }
-    await expect(page.locator('.deck')).toBeVisible()
+    await expect(panel.locator('.card')).toHaveCount(2)
+    const heron = panel.getByRole('article', { name: 'Card 1' })
+    await expect(heron.getByRole('textbox', { name: 'Name', exact: true })).toHaveValue('Heron')
+    await expect(heron.getByRole('textbox', { name: 'Height' })).toHaveValue('about 1 m')
+    await expect(heron.getByRole('group', { name: 'Card model' })).toHaveText('Animal')
   })
 
-  test('inspects cards and deck schedule controls', async ({ page }) => {
-    await page.goto('/')
+  test('writes an edited value to the deck file, and shows it after a reload', async ({
+    page,
+    request,
+  }) => {
+    let panel = await openDeck(page, deck.title)
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await panel
+      .getByRole('article', { name: 'Card 1' })
+      .getByRole('textbox', { name: 'Height' })
+      .fill('about 1.2 m at the shoulder')
 
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const cardsRow = page.locator('[data-tree-row="cards"]')
-    await expect(cardsRow).toBeVisible()
-    await cardsRow.press('Enter')
+    await expect
+      .poll(async () => (await readNote(request, deck.path)).body)
+      .toContain('### Height\n\nabout 1.2 m at the shoulder')
+    const body = (await readNote(request, deck.path)).body
+    expect(body).not.toContain('about 1 m\n')
+    expect(body).toContain('### Height\n\nabout 30 cm')
 
-    const deckRow = page.locator('[data-tree-row="cards/Animals.md"]')
-    await expect(deckRow).toBeVisible()
-    await deckRow.press('Enter')
+    await page.reload()
+    panel = await openDeck(page, deck.title)
+    await expect(
+      panel.getByRole('article', { name: 'Card 1' }).getByRole('textbox', { name: 'Height' }),
+    ).toHaveValue('about 1.2 m at the shoulder')
+  })
 
-    await expect(page.locator('.deck')).toBeVisible({ timeout: 10_000 })
+  test('writes a card added under a card model to the deck file', async ({ page, request }) => {
+    let panel = await openDeck(page, deck.title)
 
-    // Verify deck header or schedule bar is present
-    const cards = page.locator('.card')
-    await expect(cards.first()).toBeVisible()
+    await panel.getByRole('button', { name: 'Add a card' }).first().click()
+    await panel.locator('[data-cut="Animal"]').click()
+    await expect(panel.locator('.card')).toHaveCount(3)
+    await panel
+      .getByRole('article', { name: 'Card 3' })
+      .getByRole('textbox', { name: 'Name', exact: true })
+      .fill('Kingfisher')
+
+    await expect
+      .poll(async () => (await readNote(request, deck.path)).body)
+      .toContain('### Name\n\nKingfisher')
+    const body = (await readNote(request, deck.path)).body
+    expect(body.match(/^\[\[Animal\]\]$/gm)).toHaveLength(3)
+    expect(body).toMatch(/^## Kingfisher \^[0-9a-hjkmnp-tv-z]{10}$/m)
+
+    await page.reload()
+    panel = await openDeck(page, deck.title)
+    await expect(panel.locator('.card')).toHaveCount(3)
+  })
+
+  test('takes a removed card out of the deck file', async ({ page, request }) => {
+    let panel = await openDeck(page, deck.title)
+
+    await panel.getByRole('button', { name: 'Remove: Card 1' }).click()
+
+    await expect
+      .poll(async () => (await readNote(request, deck.path)).body)
+      .not.toContain(`^${deck.heron}`)
+    const body = (await readNote(request, deck.path)).body
+    expect(body).not.toContain('Heron')
+    expect(body).toContain(`## Otter ^${deck.otter}`)
+
+    await page.reload()
+    panel = await openDeck(page, deck.title)
+    await expect(panel.locator('.card')).toHaveCount(1)
+    await expect(
+      panel
+        .getByRole('article', { name: 'Card 1' })
+        .getByRole('textbox', { name: 'Name', exact: true }),
+    ).toHaveValue('Otter')
+  })
+
+  test('writes an added section as a heading of the deck file', async ({ page, request }) => {
+    const panel = await openDeck(page, deck.title)
+    await expect(panel.locator('.section-heading')).toHaveCount(0)
+
+    await panel.locator('[data-add-section]').click()
+
+    await expect(panel.locator('.section-heading')).toHaveCount(1)
+    await expect
+      .poll(async () => (await readNote(request, deck.path)).body)
+      .toMatch(/^# Section \d+$/m)
   })
 })

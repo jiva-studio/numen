@@ -1,146 +1,129 @@
-import { test, expect } from '../../support/test.js'
+import { test, expect, type Page } from '../../support/test.js'
+import { openVaultFile, openWorkspace, runPaletteCommand } from '../../support/workspace.js'
+import {
+  createCardId,
+  createDeckText,
+  deleteVaultFiles,
+  waitForListedFile,
+} from '../../support/media.js'
+import { createUniqueTitle, readVaultFile, writeVaultFile } from '../../support/vault.js'
 
-test.describe('Spaced Repetition and Preset Editor', () => {
-  test('opens new spaced repetition preset editor from command palette', async ({ page }) => {
-    await page.goto('/')
+/** Runs a palette command that asks for a name, and gives it the name. */
+const runNamingCommand = async (page: Page, command: string, name: string): Promise<void> => {
+  await runPaletteCommand(page, command, command)
+  const field = page.locator('input[data-palette="field"]').first()
+  await expect(field).toBeVisible()
+  await field.fill(name)
+  await page.keyboard.press('Enter')
+}
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+/** The number a frontmatter key of a preset file holds. */
+const readNumber = (text: string, key: string): number =>
+  Number(new RegExp(`^${key}: (.+)$`, 'm').exec(text)?.[1] ?? Number.NaN)
 
-    // Trigger command palette
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
+test.describe('the preset editor', () => {
+  const made: string[] = []
 
-    // Select New preset command
-    await paletteInput.fill('New preset')
-    await expect(page.getByRole('option', { name: /New preset/ }).first()).toBeVisible()
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
-
-    // In naming step, enter preset name
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-    await paletteInput.fill('PhysicsSRS')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
-
-    // Verify preset tab is opened and contains goal options
-    await expect(
-      page
-        .getByRole('tab', { name: /PhysicsSRS/i })
-        .or(page.locator('[aria-label*="PhysicsSRS"]'))
-        .first(),
-    ).toBeVisible({ timeout: 10_000 })
-
-    await expect(page.getByRole('region', { name: 'Goal', exact: true })).toBeVisible({
-      timeout: 10_000,
-    })
-    await expect(page.getByRole('radio', { name: 'Minutes per day' })).toBeVisible()
-    await expect(page.getByRole('radio', { name: 'Retention' })).toBeVisible()
+  test.afterEach(() => {
+    deleteVaultFiles(...made.splice(0))
   })
 
-  test('validates preset retention and interval boundaries with problem hints', async ({
+  test('New preset writes a preset file and opens its goal, minutes per day first', async ({
     page,
+    request,
   }) => {
-    await page.goto('/')
+    const title = createUniqueTitle('Tidepool pace')
+    made.push(`${title}.md`)
+    await openWorkspace(page)
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await runNamingCommand(page, 'New preset', title)
 
-    // Create and open preset
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-
-    await paletteInput.fill('New preset')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
-
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-    await paletteInput.fill('StrictSRS')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
-
-    await expect(page.getByRole('tab', { name: /StrictSRS/i }).first()).toBeVisible({
-      timeout: 10_000,
-    })
-
-    // Verify initial radio state
-    const minutesRadio = page.getByRole('radio', { name: 'Minutes per day' })
-    const retentionRadio = page.getByRole('radio', { name: 'Retention' })
-
-    await expect(minutesRadio).toBeChecked()
-
-    // Verify daily schedule toolbar
+    await expect(page.getByRole('tab', { name: new RegExp(title) })).toBeVisible()
+    await expect(page.getByRole('radio', { name: 'Minutes per day' })).toBeChecked()
     await expect(page.getByRole('toolbar', { name: 'Load by weekday' })).toBeVisible()
-
-    // Switch goal to Retention
-    await retentionRadio.click()
-    await expect(retentionRadio).toBeChecked()
+    await expect.poll(() => readVaultFile(request, `${title}.md`)).toMatch(/^type: preset$/m)
   })
 
-  test('assigns custom preset to active note via preset command', async ({ page }) => {
-    await page.goto('/')
+  test('writes the goal chosen to the preset file, and shows it chosen after a reload', async ({
+    page,
+    request,
+  }) => {
+    const title = createUniqueTitle('Tidepool goal')
+    made.push(`${title}.md`)
+    await openWorkspace(page)
+    await runNamingCommand(page, 'New preset', title)
+    await expect(page.getByRole('radio', { name: 'Minutes per day' })).toBeChecked()
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await page.getByRole('radio', { name: 'Retention' }).click()
 
-    // Open notes folder and Entropy.md
+    await expect.poll(() => readVaultFile(request, `${title}.md`)).toMatch(/^goal: retention$/m)
+
+    await page.reload()
+    await openWorkspace(page)
     await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
+    await page.getByRole('treeitem', { name: `${title}.md`, exact: true }).press('Enter')
+    await expect(page.getByRole('radio', { name: 'Retention' })).toBeChecked()
+  })
 
-    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
-    await expect(entropyRow).toBeVisible()
-    await entropyRow.press('Enter')
+  test('opens the preset a deck names, and writes the retention its slider is moved to', async ({
+    page,
+    request,
+  }) => {
+    const preset = createUniqueTitle('Tidepool recall')
+    const deck = createUniqueTitle('Tidepool animals')
+    made.push(`${preset}.md`, `cards/${deck}.md`)
+    await writeVaultFile(
+      request,
+      `${preset}.md`,
+      `---\ntype: preset\ngoal: retention\nretention: 0.9\n---\n\n# ${preset}\n`,
+    )
+    const deckText = createDeckText(deck, [
+      { id: createCardId(), cardModel: 'Animal', values: { Name: 'Limpet', Height: '2 cm' } },
+      { id: createCardId(), cardModel: 'Animal', values: { Name: 'Whelk', Height: '5 cm' } },
+    ]).replace(
+      'type: deck\n',
+      `type: deck\nlinks:\n  - to: ${preset}\n    role: ref\n    type: preset\n`,
+    )
+    await writeVaultFile(request, `cards/${deck}.md`, deckText)
+    await waitForListedFile(request, `${preset}.md`)
+    await waitForListedFile(request, `cards/${deck}.md`)
 
-    await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
+    await openWorkspace(page)
+    await openVaultFile(page, 'cards', `${deck}.md`)
+    await runPaletteCommand(page, 'Open preset', 'Open preset tab')
+    await expect(page.getByRole('tab', { name: new RegExp(preset) })).toBeVisible()
+    const slider = page.getByRole('slider', { name: 'Preset goal' })
+    await expect(slider).toBeVisible()
+    const before = await slider.getAttribute('aria-valuetext')
 
-    // Trigger Preset command on note
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
+    await slider.press('ArrowLeft')
 
-    await paletteInput.fill('Preset')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
+    await expect(slider).not.toHaveAttribute('aria-valuetext', before ?? '')
+    await expect
+      .poll(async () => readNumber(await readVaultFile(request, `${preset}.md`), 'retention'))
+      .not.toBe(0.9)
+    const retention = readNumber(await readVaultFile(request, `${preset}.md`), 'retention')
+    expect(retention).toBeGreaterThan(0.5)
+    expect(retention).toBeLessThan(0.9)
+    const moved = await slider.getAttribute('aria-valuetext')
 
-    // Verify preset editor is opened for the note with goal region and defaults explanation
-    await expect(
-      page
-        .getByRole('tab', { name: /Entropy\.md/i })
-        .or(page.getByRole('region', { name: 'Goal', exact: true }))
-        .first(),
-    ).toBeVisible({ timeout: 10_000 })
-
-    await expect(page.getByRole('region', { name: 'Goal', exact: true })).toBeVisible({
-      timeout: 10_000,
-    })
+    await page.reload()
+    await openWorkspace(page)
+    await page.getByRole('tab', { name: /^Files/ }).click()
+    await page.getByRole('treeitem', { name: `${preset}.md`, exact: true }).press('Enter')
+    await expect(page.getByRole('slider', { name: 'Preset goal' })).toHaveAttribute(
+      'aria-valuetext',
+      moved ?? '',
+    )
   })
 
   test('says a deck naming no preset is scheduled by the defaults', async ({ page }) => {
-    await page.goto('/')
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await openWorkspace(page)
+    await openVaultFile(page, 'cards', 'Animals.md')
 
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const cardsRow = page.locator('[data-tree-row="cards"]')
-    await expect(cardsRow).toBeVisible()
-    await cardsRow.press('Enter')
-    const deckRow = page.locator('[data-tree-row="cards/Animals.md"]')
-    await expect(deckRow).toBeVisible()
-    await deckRow.press('Enter')
-    await expect(page.getByRole('tab', { name: /Animals/ }).first()).toBeVisible({
-      timeout: 10_000,
-    })
+    await runPaletteCommand(page, 'Open preset', 'Open preset tab')
 
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-    await paletteInput.fill('Open preset')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
-
-    await expect(page.getByText('No preset set. Scheduled by the defaults.').first()).toBeVisible({
-      timeout: 10_000,
-    })
+    await expect(page.getByText('No preset set. Scheduled by the defaults.').first()).toBeVisible()
     await expect(page.getByRole('region', { name: 'Goal', exact: true })).toHaveCount(0)
   })
 })

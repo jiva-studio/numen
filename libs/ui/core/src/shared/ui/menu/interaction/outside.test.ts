@@ -50,6 +50,32 @@ describe('a press outside', () => {
     expect(onOutside).toHaveBeenCalledTimes(1)
   })
 
+  it('is not reported inside an open shadow root the element stands in', () => {
+    const host = createElement()
+    const root = host.attachShadow({ mode: 'open' })
+    const inside = document.createElement('div')
+    const child = document.createElement('button')
+    inside.appendChild(child)
+    root.appendChild(inside)
+    const { onOutside } = setup(inside)
+
+    child.dispatchEvent(new Event('pointerdown', { bubbles: true, composed: true }))
+
+    expect(onOutside).not.toHaveBeenCalled()
+  })
+
+  it('is reported on the host of a shadow root the element stands in', () => {
+    const host = createElement()
+    const root = host.attachShadow({ mode: 'open' })
+    const inside = document.createElement('div')
+    root.appendChild(inside)
+    const { onOutside } = setup(inside)
+
+    press(host)
+
+    expect(onOutside).toHaveBeenCalledTimes(1)
+  })
+
   it('is not reported on the element or inside it', () => {
     const inside = createElement()
     const child = document.createElement('span')

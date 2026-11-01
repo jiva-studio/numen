@@ -442,6 +442,7 @@ app_desktop_compile: lib_shell_build ## compile desktop Go code and typecheck fr
 	cd $(DESKTOP) && go build ./...
 	cd $(DESKTOP)/editor && npm run typecheck
 	cd $(DESKTOP)/flashcards && npm run typecheck
+	cd $(TESTS)/e2e/desktop && npm run lint
 
 .PHONY: app_desktop_test
 app_desktop_test: lib_shell_build ## run desktop tests

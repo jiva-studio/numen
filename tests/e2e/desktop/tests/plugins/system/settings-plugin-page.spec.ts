@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { test, expect, type Page } from '../../support/test.js'
+import { observeFor } from '../../support/browser.js'
 import { openWorkspace, runCommand } from '../../support/workspace.js'
 
 const FIRST = { id: 'md.numen.agents.antigravity', name: 'Antigravity Agent' }
@@ -83,11 +84,14 @@ test.describe('The page of a plugin', () => {
     await expect(settings.locator('.plugin-detail__title')).toContainText(SECOND.name)
     await expect(settings.getByRole('group', { name: 'Executable Path' })).toBeVisible()
     // The settings are read again after the page opens.
-    await page.waitForTimeout(2_000)
+    await observeFor(page, 2_000)
 
     const shownPaths = await page.evaluate(() => window.shownPaths ?? [])
     const firstRenderMs = await page.evaluate(() => window.firstRenderMs ?? Infinity)
-    console.log(`first render of the ${SECOND.name} page: ${Math.round(firstRenderMs)} ms`)
+    test.info().annotations.push({
+      type: 'first render',
+      description: `${SECOND.name} page: ${Math.round(firstRenderMs)} ms`,
+    })
     expect(shownPaths).toEqual([])
     expect(firstRenderMs).toBeLessThan(FIRST_RENDER_LIMIT_MS)
   })

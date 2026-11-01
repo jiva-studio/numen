@@ -167,6 +167,20 @@ describe('a recording firstRead at a place in its words', () => {
   })
 })
 
+describe('a recording whose file the vault changes', () => {
+  it('reads its words again, and shows none once the transcript is deleted', async () => {
+    const { tab, state } = open()
+    await tab.content.firstRead
+    state.cues = []
+
+    state.onChange?.()
+    await flush()
+
+    expect(tab.content.cues.value).toStrictEqual([])
+    expect(tab.lines.hasText.value).toBe(false)
+  })
+})
+
 describe('a recording tab that closes', () => {
   it('stops listening for work and holds no words', async () => {
     const { tab, state } = open()
