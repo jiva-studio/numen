@@ -48,8 +48,8 @@ numen/
 - **Libraries never depend on applications.** `libs/*` is what `apps/*` is built from, never the reverse and never sideways.
 - **`core` points inward.** `domain/`, `port/` and `usecase/` import nothing from `adapter/`, and nothing that is a driver, a framework or a transport. The violation is always visible in an import block.
 - **`ui` knows nothing about the domain.** No component, story or fixture in `libs/ui/core` imports `@numen/protocol`, a wire type, a domain type, or anything under `apps/**`. A fixture taken from the domain is how the dependency comes back in through the door marked "tests".
-- **`core-client` is the first-party client of the core.** `libs/core-client` (`@numen/core-client`, private, never published) holds the service clients, the transport, the enum codes, the error words, the manifest reader and the plugin catalog client that applications and the plugin host use to talk to the core. It depends on `@numen/protocol` and re-exports the generated types applications name. No plugin imports it (`tools/lint-layers`, `package-matrix`, `core-client-private` and `plugins-no-protocol-or-wire`).
-- **`plugin-host` knows Vue, the plugin SDK and the core client.** `libs/plugin-host-ts` (`@numen/plugin-host`) is the loader of plugin frontends and the build of the host modules an application serves them; it implements the plugin contract over the core client (the agent port, the text links, the texts of a plugin) and reads a manifest through it. Each application that loads plugins implements its `LoaderHost`. It imports nothing of `@numen/ui`, `@numen/shell`, `@numen/protocol` or an application, and no plugin imports it (`tools/lint-layers`, `plugin-host-isolation` and `plugins-reach-no-shell`).
+- **`core-client` is the first-party client of the core.** `libs/core-client` (`@numen/core-client`, private, never published) holds the service clients, the transport, the enum codes, the error words, the manifest reader and the plugin catalog client that applications and the plugin host use to talk to the core. It depends on `@numen/protocol` and re-exports the generated types applications name. No plugin imports it (`tools/lint-layers`, `package-matrix`, `core-client-private` and `dependency-graph`).
+- **`plugin-host` knows Vue, the plugin SDK and the core client.** `libs/plugin-host-ts` (`@numen/plugin-host`) is the loader of plugin frontends and the build of the host modules an application serves them; it implements the plugin contract over the core client (the agent port, the text links, the texts of a plugin) and reads a manifest through it. Each application that loads plugins implements its `LoaderHost`. It imports nothing of `@numen/ui`, `@numen/shell`, `@numen/protocol` or an application, and no plugin imports it (`tools/lint-layers`, `dependency-graph`).
 - **`plugin-manager` is a component library.** `libs/plugin-manager` (`@numen/plugin-manager`) draws the plugin list, the plugin page and the filters over view-model types it defines (`PluginInfo`, `PluginListing`, `ManagedPlugin`) and answers with events; it imports `@numen/ui` and nothing else. The application reads the catalog through `@numen/core-client` and maps the entries to those types (`tools/lint-layers`, `package-matrix`).
 - **`protocol` is generated, not written.** What crosses between the Go host and a window is the schema's shape; `make generate-check` fails when what is committed is out of date.
 - **An application is where the two sides meet.** `apps/desktop` translates the domain into the drawing vocabulary a component takes, and translates the identifier a component emits back.
@@ -71,7 +71,7 @@ The window frontends (`apps/desktop/editor`, `apps/desktop/flashcards`) are stru
 $$\text{shared (0)} \longrightarrow \text{entities (1)} \longrightarrow \text{features (2)} \longrightarrow \text{pages (3)} \longrightarrow \text{app (4)}$$
 
 - **Directionality**: A module may only import from lower architectural layers and never from higher layers (`desktop-editor-fsd`, `desktop-flashcards-fsd`).
-- **Slice isolation**: A slice does not import from a sibling slice on the same layer. Shared code resides in a lower layer. There is no `@x` cross-import; `frontend-segments-and-entities` fails on one. A slice is reached from above through its `index.ts` alone.
+- **Slice isolation**: A slice does not import from a sibling slice on the same layer. Shared code resides in a lower layer. There is no `@x` cross-import; `dependency-graph` fails on one. A slice is reached from above through its `index.ts` alone.
 - **Import aliasing**: Imports crossing slice boundaries use the `@/` alias (e.g. `@/entities/note`), while intra-slice imports remain relative (`./model`, `./types`).
 - **Segments**: Inside a slice the direction is `ui` → `model` → `api` → `lib`.
 
@@ -87,7 +87,7 @@ Component architecture enforces separation of concerns:
 In anything pure — `domain/`, the model and arithmetic modules beside a component, the text cutting and chunking:
 
 - **The clock is a port.** `time.Now()`, `Date.now()`, `new Date()`, `setTimeout` and `setInterval` are injected as a clock the caller supplies, and the module that wraps the real one is the only place they appear. Time has a lifetime a test must control.
-  - In Go the rule is structural. `TestTheMachineClockIsReadOnlyByAClockPortImplementation` (`libs/core/container/clock_port_test.go`) loads every module of `go.work` with go/packages, tests included, and fails on any reference to `time.Now`, `time.Since` or `time.Until` outside the body of a method `Now() time.Time` whose receiver implements a clock port (an interface declared in non-test code whose only method is `Now() time.Time`). Generated files are skipped. No path, file or name is listed, forbidigo carries no time pattern, and the test asserts that it finds the real clock implementations. It runs in `make check_layers` (verifier `machine-clock`), which `make check_gate` runs whenever a Go file changes.
+  - In Go the rule is structural. `TestTheMachineClockIsReadOnlyByAClockPortImplementation` (`libs/core/container/clock_port_test.go`) loads every module of `go.work` with go/packages, tests included, and fails on any reference to `time.Now`, `time.Since` or `time.Until` outside the body of a method `Now() time.Time` whose receiver implements a clock port (an interface declared in non-test code whose only method is `Now() time.Time`). Generated files are skipped. No path, file or name is listed, forbidigo carries no time pattern, and the test asserts that it finds the real clock implementations. It runs in `make check_layers` (verifier `go-structure`), which `make check_gate` runs whenever a Go file changes.
   - In TypeScript the rule is structural. `no-restricted-syntax` in `tools/lint-layers/base-eslint.mjs` (`createClockSelectors`) bans `Date.now()` and `new Date()` with no arguments in every package, except inside the declaration of the function `getNow` in `libs/ui/core/src/shared/lib/dom.ts`. `performance.now()` is banned the same way, except inside the declaration of `getMonotonicNow` in `libs/ui/core/src/shared/lib/time/clock.ts`. In every `lib/` and `domain/` segment `createPureSegmentConfig` also bans `setTimeout` and `setInterval`; a stateful `model/` module that debounces or polls is not a pure segment and may schedule. Other code takes the time from `getNow` (exported by `@numen/ui`) or from an injected clock, and tests control it with fake timers. `tools/lint-layers/clock.test.mjs` proves a stray `Date.now()` fails and `getNow` passes.
 - **Randomness is a port.** `math/rand` and `Math.random()` are passed in or seeded.
 - **The same input gives the same output** on any machine on any day. A chunk identified by its text is the same identifier on either platform.
@@ -129,14 +129,36 @@ A check decides by structure. Where an off-the-shelf tool exists, the check is t
 
 `tools/lint-layers` states each rule once, over a capture or a set derived from the repository, and declares a minimum of what it examines, so a check over nothing fails. Each rule has a violation fixture in `tools/lint-layers/checks.test.mjs`. `node tools/lint-layers/check.mjs --list` prints the registered verifiers:
 
-- **Go core and libraries**: `core-hexagon` (`layers_test.go`: the core layers point inward), `core-depguard` (`.golangci.yml`: domain and use case imports), `machine-clock` (§5), `notes-hexagon` and `notes-depguard` (`libs/notes` layers, and `libs/notes` depends on nothing of this repository), `library-matrix` (every `go.mod` under `libs/` depends only on the families its row allows), `workspace-lists-every-module` (`go.work` lists every `go.mod`).
-- **Plugin SDK**: `sdk-isolation` (the Go SDK imports no core and no application), `sdk-encapsulates-protocol` (no exported identifier of a public package of `libs/plugin-sdk-go` mentions a type of `libs/protocol/gen`; `sdk_protocol_encapsulation_test.go`), `sdk-ts-encapsulates-protocol` (no exported declaration of `@numen/plugin-sdk` reaches a declaration of `libs/protocol`; `checks/sdkProtocol.mjs` walks the type graph with the compiler API).
-- **TypeScript libraries**: `package-matrix` (every `package.json` under `libs/` depends only on its row), `protocol-imported-only-by-clients` (only `@numen/plugin-sdk` and `@numen/core-client` import or declare `@numen/protocol`), `core-client-private` (`libs/core-client` is private and no package that is not private depends on it), `ui-isolation` (`libs/ui/core` knows no domain, protocol, wire, shell or application), `shell-isolation` (the shell knows no domain, protocol, wire or application), `plugin-host-isolation` (the plugin host imports only `vue`, `@numen/plugin-sdk` and `@numen/core-client`).
-- **Protocol**: `protocol-holds-only-host-contracts` (every service, message and enum of `numen.v1` is used by the core, a client, an SDK, the plugin host, the UI or an application).
-- **Lint and quality**: `all-ts-packages-eslint` (every TypeScript package has ESLint configured), `strict-lint-rules` (every package resolves `no-void`, `no-empty`, `no-empty-function`, `no-floating-promises` and `no-misused-promises`), `no-suppressions` (§9), `frontend-no-import-cycle` (no import cycle in applications, libraries and plugin frontends), `manifest-parsed-in-one-place` (a manifest is decoded through the generated schema only), `docs-list-verifiers` (`tools/lint-layers/README.md` lists every verifier).
-- **Fail-closed**: `every-path-has-a-layer` fails on a module no layer owns.
-- **Plugins**: `plugins-isolation-capture` (a file under `plugins/(X)/` references no other plugin), `plugins-independence` (`plugin_independence_test.go` and `plugin_isolation_packages_test.go` apply the dependency rule of §11 to the type-checked import graph on 14 platform targets), `plugins-leakage` (manifest schema and static non-leakage), `plugins-no-protocol-or-wire` (no `@numen/protocol`, `@numen/core-client`, wire or `libs/protocol` in a plugin), `plugins-use-main-entry` (the SDK and the UI library are imported through their declared entries), `plugins-reach-no-app`, `plugins-reach-no-shell` (no shell and no plugin host), `apps-plugins-boundary` (applications compile nothing from plugins, plugins nothing from applications), `plugins-frontend` (no `@/**` and no `@plugins/**` in a plugin frontend), `plugins-standalone-repo` (no `../` escape, no shared Vite config, no `replace ../`, no direct `libs/notes` require, no `.proto`), `plugin-backend-layers` (the layers inside a plugin backend), `plugin-config-golden-parity` (plugin lint configurations match `plugins/.example/` and the root `.golangci.yml`), `plugins-share-no-frontend-file` (fails on a TypeScript or Vue file copied from another plugin; it contradicts §11(e) and is removed).
-- **Applications**: `apps-reach-no-plugin`, `desktop-editor-fsd` and `desktop-flashcards-fsd` (§4), `frontend-segments-and-entities` (segment direction and no `@x` cross-import).
+- `go-structure`: every test of `libs/core/container`, the package of the structural Go tests: the layers of the core, the machine clock, the plugin dependency rule of §11 and the encapsulation of the protocol by the Go SDK.
+- `notes-hexagon`: the layer tests of the root package of `libs/notes`.
+- `core-depguard`: `.golangci.yml` depguard rules for the domain and use cases of `libs/core`.
+- `notes-depguard`: depguard rules of `libs/notes`, which depends on nothing of this repository.
+- `sdk-isolation`: the Go SDK imports no core and no application.
+- `sdk-ts-encapsulates-protocol`: no exported declaration of an entry in the `exports` of `@numen/plugin-sdk` reaches a declaration of `libs/protocol`.
+- `library-matrix`: every `go.mod` under `libs/` depends only on the families its row allows.
+- `package-matrix`: every `package.json` under `libs/` declares only the libraries its row allows.
+- `protocol-declared-only-by-clients`: only `@numen/plugin-sdk` and `@numen/core-client` declare `@numen/protocol`.
+- `core-client-private`: `@numen/core-client` is private and no plugin relies on it.
+- `dependency-graph`: dependency-cruiser decides package boundaries, segment direction and import cycles for libraries, applications and plugin frontends.
+- `styles-use-tokens`: stylelint allows no colour literal, no `--numen-` declaration outside token and theme files, no `var()` fallback and no undeclared token.
+- `all-ts-packages-eslint`: every TypeScript package has ESLint configured.
+- `ui-lint`: `npm run lint` passes in `libs/ui/core`.
+- `shell-lint`: `npm run lint` passes in `libs/ui/shell`.
+- `plugin-host-lint`: `npm run lint` passes in `libs/plugin-host-ts`.
+- `strict-lint-rules`: every package resolves `no-void`, `no-empty`, `no-empty-function`, `no-floating-promises` and `no-misused-promises`.
+- `no-suppressions`: §9.
+- `every-path-has-a-layer`: fails on a module no layer owns.
+- `workspace-lists-every-module`: `go.work` lists every `go.mod`.
+- `plugin-config-golden-parity`: plugin lint configurations match `plugins/.example/` and the root `.golangci.yml`.
+- `plugin-backend-layers`: the layers inside a plugin backend point inward.
+- `plugins-independence`: the plugin tests of `libs/core/container` apply the dependency rule of §11 to the type-checked import graph on 14 platform targets.
+- `plugins-leakage`: manifest schema and static non-leakage.
+- `plugins-use-main-entry`: the SDK and the UI library are imported through their declared entries.
+- `plugins-frontend`: no `@/**` and no `@plugins/**` in a plugin frontend.
+- `plugins-isolation-capture`: a file under `plugins/(X)/` references no other plugin.
+- `plugins-hold-no-schema`: no `.proto` file under `plugins/(*)/`.
+- `desktop-editor-fsd`: the FSD layer hierarchy of the editor (§4).
+- `desktop-flashcards-fsd`: the FSD layer hierarchy of the flashcards window (§4).
 
 Outside `tools/lint-layers`, `host_permission_test.go` holds the permission rule: the core refuses a call whose permission the plugin's manifest does not declare, for any client of the host endpoint.
 
@@ -183,7 +205,7 @@ graph LR
 
 **(i) Time, randomness and identifiers are ports.** Logic that depends on time takes a clock as a port, so a test controls the time. In Go a plugin takes the clock of the SDK package `clock` or declares its own; the check in §5 accepts a read of the machine clock inside any method `Now() time.Time` that implements a declared clock port. In TypeScript the time comes from `getNow()` of `@numen/ui` or from an injected clock.
 
-**(j) Nothing is published for now.** The SDK, `@numen/ui` and `libs/notes` are built inside this repository. Each plugin is built as if it had a repository of its own (`plugins-standalone-repo`). Later, when the SDK is released: publishing of the SDK and `@numen/ui`, tooling for API compatibility, and iframe isolation of plugin frontends.
+**(j) Nothing is published for now.** The SDK, `@numen/ui` and `libs/notes` are built inside this repository. Each plugin is built as if it had a repository of its own (`go-structure` and `dependency-graph`). Later, when the SDK is released: publishing of the SDK and `@numen/ui`, tooling for API compatibility, and iframe isolation of plugin frontends.
 
 ### Comparison with established architectures
 
