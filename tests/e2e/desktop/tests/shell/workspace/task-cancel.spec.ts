@@ -50,8 +50,8 @@ test.describe('Cancelling a background task', () => {
     // start waits for the vault to be indexed and for no task to be running. The failed task of
     // corrupted.pdf is not waited for: a plugin that stops takes its tasks out of the list, so it is
     // there in some runs and not in others.
-    await page.goto(/)
-    const trigger = page.locator(.status-bar__trigger)
+    await page.goto('/')
+    const trigger = page.locator('.status-bar__trigger')
     await expect(trigger).toBeVisible()
     await expect.poll(() => isIndexed(request), { timeout: 120_000 }).toBe(true)
     await expect(page.locator('.status-bar__summary')).not.toHaveText(/^[1-9]\d* active$/)
