@@ -25,8 +25,23 @@ function flushLayout(element: HTMLElement): number {
   return element.offsetWidth
 }
 
+/**
+ * Pins the columns where a turn still under way has carried them, so the next turn starts from
+ * there. A turn retargeted while it runs was drawn from where the one before it started, which is
+ * the page the reader has just left.
+ */
+function pinPaper(text: HTMLElement): void {
+  const now = getComputedStyle(text).translate
+  if (now === '' || now === 'none') return
+  text.style.transition = 'none'
+  text.style.translate = now
+  flushLayout(text)
+  text.style.transition = ''
+}
+
 function translatePaper(text: HTMLElement, to: string, how: 'smooth' | 'auto'): void {
   if (how === 'smooth') {
+    pinPaper(text)
     text.style.translate = to
     return
   }

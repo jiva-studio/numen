@@ -4,15 +4,13 @@
  */
 import type { Page } from 'playwright/test'
 import { test, expect, readSavedStates } from '../../support/test.js'
+import { openLedger, getAreaPoint, LEDGER } from './ledger.js'
 
 declare global {
   interface Window {
     bookFrames?: Promise<Frame[]>
   }
 }
-
-/** The path of the book the tests of turns open. */
-const LEDGER = 'assets/ledger.epub'
 
 /** What the reader shows on one frame. */
 interface Frame {
@@ -26,29 +24,6 @@ interface Frame {
 
 /** How long a turn is watched for, in milliseconds. */
 const WATCH_MS = 1_200
-
-const openLedger = async (page: Page): Promise<void> => {
-  await page.goto('/')
-  await expect(page.locator('text=Ready')).toBeVisible()
-  await page.getByRole('tab', { name: /^Files/ }).click()
-  const assetsRow = page.locator('[data-tree-row="assets"]')
-  await expect(assetsRow).toBeVisible()
-  await assetsRow.press('Enter')
-  const epubRow = page.locator('[data-tree-row="assets/ledger.epub"]')
-  await expect(epubRow).toBeVisible()
-  await epubRow.press('Enter')
-
-  await expect(page.locator('.book-tab')).toBeVisible({ timeout: 10_000 })
-  await expect(page.locator('.book__count')).toHaveText(/^1 of \d+$/, { timeout: 10_000 })
-  await expect(page.locator('.book__paper:not(.book__paper--unset)')).toBeVisible()
-}
-
-/** The point a press is made at, as a fraction of the reading area across. */
-const getAreaPoint = async (page: Page, fraction: number) => {
-  const box = await page.locator('.book__area').boundingBox()
-  if (!box) throw new Error('no reading area')
-  return { x: box.x + box.width * fraction, y: box.y + box.height / 2 }
-}
 
 /**
  * Starts recording the counter and the first offset in the reading area on every animation frame

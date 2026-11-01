@@ -286,6 +286,27 @@ describe('where the person is standing', () => {
     expect(markupCalls).toHaveLength(1)
   })
 
+  it('drops a document that arrives after a turn back inside the drawn one', async () => {
+    const { books } = shelf()
+    const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
+    await readItem.goToOffset(100)
+    let arrive!: (markup: string) => void
+    books.readMarkup = () =>
+      new Promise<string>((resolve) => {
+        arrive = resolve
+      })
+
+    const crossing = readItem.moveTo(3_000)
+    await settle()
+    await readItem.moveTo(2_500)
+    arrive('<p data-offset="3000">next</p>')
+    await crossing
+    await settle()
+
+    expect(readItem.documentSpan.value).toStrictEqual({ start: 0, end: 3_000 })
+    expect(readItem.offset.value).toBe(2_500)
+  })
+
   it('jumps to an offset reported past the end of the drawn document', async () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)

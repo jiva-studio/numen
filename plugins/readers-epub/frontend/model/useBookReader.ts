@@ -77,6 +77,7 @@ function useBookNavigation(deps: BookNavigationDeps) {
     await deps.getShape()
     const { start, end } = deps.bookDocument.documentSpan.value
     if (reported >= start && reported < end) {
+      deps.bookDocument.keepDrawn()
       offset.value = Math.trunc(reported)
       return
     }

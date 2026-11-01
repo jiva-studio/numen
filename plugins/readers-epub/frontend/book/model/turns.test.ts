@@ -92,6 +92,23 @@ describe('putting a spread in front', () => {
     expect(writes).toStrictEqual(['translate -2000px 0'])
   })
 
+  it('pins the columns where a turn under way has carried them before the next smooth turn', () => {
+    const { turns, writes } = setUp()
+    const style = vi
+      .spyOn(window, 'getComputedStyle')
+      .mockReturnValue({ translate: '-120px 0px' } as CSSStyleDeclaration)
+
+    turns.stand(2, 'smooth')
+    style.mockRestore()
+
+    expect(writes).toStrictEqual([
+      'transition [none]',
+      'translate -120px 0px',
+      'transition []',
+      'translate -2000px 0',
+    ])
+  })
+
   it('counts the spread without a drawn document', () => {
     const { turns, writes } = setUp(MARKS, 0, false)
 

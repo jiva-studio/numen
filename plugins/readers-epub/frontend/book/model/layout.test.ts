@@ -107,6 +107,7 @@ const room = (options: Options = {}) => {
     markup: string
     at: number
     target: { offset: number } | null
+    span: { start: number; end: number }
   }
   const area = shallowRef<HTMLElement | null>(options.hasArea === false ? null : box)
   const paper = shallowRef<HTMLElement | null>(options.hasPaper === false ? null : text)
@@ -478,8 +479,127 @@ describe('the layout being mounted', () => {
     await Promise.resolve()
     await Promise.resolve()
 
+    flushFrames()
     expect(columns().measure).toHaveBeenCalledTimes(1)
     flushFrames()
     expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(KEPT), 'auto')
+  })
+})
+
+describe('the page counter of a document just drawn', () => {
+  const pageOf = (page: number) => ({ page, pages: 40 })
+  const setFront = (page: number) => {
+    ;(fake.turns['front'] as { value: unknown }).value = pageOf(page)
+  }
+
+  it('stays on the page before it until the columns stand at their spread', async () => {
+    const { layout, props } = room()
+    flushFrames()
+    setFront(48)
+    expect(layout().front.value).toStrictEqual(pageOf(48))
+
+    props.markup = '<p>the document before</p>'
+    await nextTick()
+    setFront(1)
+
+    expect(layout().front.value).toStrictEqual(pageOf(48))
+    flushFrames()
+    expect(layout().front.value).toStrictEqual(pageOf(1))
+  })
+
+  it('stays on the page before it when the span arrives before the markup', () => {
+    const { layout, props } = room()
+    flushFrames()
+    setFront(48)
+
+    props.span = { start: 200, end: 300 }
+    setFront(1)
+
+    expect(layout().front.value).toStrictEqual(pageOf(48))
+  })
+
+  it('follows a turn made once the columns stand', () => {
+    const { layout } = room()
+    flushFrames()
+
+    setFront(7)
+
+    expect(layout().front.value).toStrictEqual(pageOf(7))
+  })
+})
+
+describe('the text set again for a picture or a face that arrives', () => {
+  it('keeps the offset in front, once for the requests of one frame', () => {
+    const { layout } = room()
+    flushFrames()
+    turns().stand.mockClear()
+
+    layout().settleKept()
+    layout().settleKept()
+    layout().settleKept()
+    flushFrames()
+    flushFrames()
+
+    expect(turns().stand).toHaveBeenCalledTimes(1)
+    expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(KEPT), 'auto')
+  })
+
+  it('is asked for when a face finishes loading', () => {
+    const listeners = new Map<string, () => void>()
+    Object.defineProperty(document, 'fonts', {
+      configurable: true,
+      value: {
+        ready: new Promise(() => undefined),
+        addEventListener: (name: string, run: () => void) => listeners.set(name, run),
+        removeEventListener: vi.fn(),
+      },
+    })
+    room()
+    flushFrames()
+    turns().stand.mockClear()
+
+    listeners.get('loadingdone')?.()
+    flushFrames()
+    flushFrames()
+
+    expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(KEPT), 'auto')
+  })
+})
+
+describe('the columns of a document with a picture that has not arrived', () => {
+  const addPicture = (text: HTMLElement) => {
+    const picture = document.createElement('img')
+    Object.defineProperty(picture, 'complete', { value: false })
+    text.append(picture)
+    return picture
+  }
+
+  it('are read once the picture has arrived', () => {
+    const { layout, text } = room()
+    flushFrames()
+    const picture = addPicture(text)
+    columns().readColumns.mockClear()
+    turns().stand.mockClear()
+
+    layout().settle(() => 40)
+    flushFrames()
+
+    expect(columns().readColumns).not.toHaveBeenCalled()
+    picture.dispatchEvent(new Event('load'))
+    expect(columns().readColumns).toHaveBeenCalledTimes(1)
+    expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(40), 'auto')
+  })
+
+  it('are read once the picture has failed', () => {
+    const { layout, text } = room()
+    flushFrames()
+    const picture = addPicture(text)
+    columns().readColumns.mockClear()
+
+    layout().settle(() => 40)
+    flushFrames()
+    picture.dispatchEvent(new Event('error'))
+
+    expect(columns().readColumns).toHaveBeenCalledTimes(1)
   })
 })

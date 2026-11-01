@@ -74,6 +74,9 @@ const hand = createBookPointer({
 })
 
 /* -------------------------------- Handlers -------------------------------- */
+/** A picture arrives after the columns were read, which sets the text again. */
+const onArrival = () => layout.settleKept()
+
 const onFollow = (press: MouseEvent) => links.follow(press, layout.findFragmentOffset)
 
 /**
@@ -131,6 +134,8 @@ defineExpose({
           class="book__paper prose prose-sm prose-numen max-w-none"
           :class="{ 'book__paper--unset': !isStood }"
           :style="setting"
+          @load.capture="onArrival"
+          @error.capture="onArrival"
           @click="onFollow"
           @auxclick="onFollow"
         />
