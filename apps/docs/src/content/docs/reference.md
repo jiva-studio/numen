@@ -26,7 +26,7 @@ How the window is drawn.
 | `interface_scale` | a number | the scale of the window: its chrome, its controls, the spacing between them and the type in them. |
 | `text_scale` | a number | the scale of reading text: a note, a book, an answer, the editor. |
 | `mode` | text | which half of a colour pair the window takes: `system`, `light` or `dark`. |
-| `theme` | text | the stylesheet applied to the window, named by its origin and its identifier: `preset:numen` ships here, `mine:dracula` is the person's file, and `plugin:md.numen.themes.presets/dracula` is a theme of an enabled plugin. |
+| `theme` | text | the stylesheet applied to the window, named by its origin and its identifier: `preset:numen` ships here, `mine:dracula` is the person's file, and `plugin:org.example.themes/dark` is a theme of an enabled plugin. |
 
 ### `indexing.embedding`
 
