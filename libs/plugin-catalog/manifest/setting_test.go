@@ -110,13 +110,13 @@ func TestResolveSettings_OptionsByFollowsProvider(t *testing.T) {
 	}
 }
 
-// A setting whose condition fails is not handed over, and a stored value it holds stays stored.
+// A setting whose condition fails is not passed, and a stored value it holds stays stored.
 func TestASettingWhoseConditionFailsIsLeftOut(t *testing.T) {
 	m := readTestManifest(t)
 	stored := map[string]any{"url": "https://mine.example.org", "enabled": true}
 	values := m.ResolveSettings(stored)
 	if _, ok := values["url"]; ok {
-		t.Errorf("url is handed over under the local provider: %v", values)
+		t.Errorf("url is passed under the local provider: %v", values)
 	}
 	if values["enabled"] != true {
 		t.Errorf("a key the manifest does not declare is lost: %v", values)

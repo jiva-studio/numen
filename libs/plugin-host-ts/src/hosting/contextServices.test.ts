@@ -141,7 +141,7 @@ describe('the relationships a plugin writes', () => {
     },
   )
 
-  it('hand over the roles the window offers', () => {
+  it('pass the roles the window offers', () => {
     const { context } = createContext([])
 
     expect(context.relations!.roles).toStrictEqual(['parent', 'child', 'jump'])
@@ -200,7 +200,7 @@ describe('the open files a plugin passes the window', () => {
     },
   )
 
-  it('are handed over to the window the plugin runs in, and to none where the window made none', () => {
+  it('are passed to the window the plugin runs in, and to none where the window made none', () => {
     const { context, buffers } = createContext(['vault:write'])
     context.buffers!.track({} as never)
 

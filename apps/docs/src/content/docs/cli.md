@@ -20,16 +20,16 @@ numen-cli search Research "entropy"
 <!-- BEGIN AUTOGEN -->
 | | |
 | --- | --- |
-| `numen-cli vault add <path> [--name <name>]` | give a folder an identity and remember it |
+| `numen-cli vault add <path> [--name <name>]` | add a folder to the vault list |
 | `numen-cli vault list` | show the vaults this installation knows |
-| `numen-cli vault rename <vault> <new name>` | call a vault something else |
+| `numen-cli vault rename <vault> <new name>` | change the name of a vault |
 | `numen-cli vault remove <vault>` | take a vault off the list, leaving its folder |
-| `numen-cli vault erase <vault> [--yes]` | remove it, and put its folder in the trash |
-| `numen-cli vault open <vault>` | the vault the next window opens |
-| `numen-cli scan <vault> [--rebuild-index]` | bring the index up to date with a vault --rebuild-index reads every file again, forgets the vectors of every model but the one in use, and gives their space back |
+| `numen-cli vault erase <vault> [--yes]` | remove it and move its folder to the trash |
+| `numen-cli vault open <vault>` | set the vault the next window opens |
+| `numen-cli scan <vault> [--rebuild-index]` | update the index of a vault --rebuild-index reads every file again and deletes the vectors of every model except the one in use |
 | `numen-cli search <vault> <query>` | full-text search within one vault |
 | `numen-cli links <vault> <note>` | what a note points at, and what points at it |
-| `numen-cli problems <vault> [<check>...]` | what the vault holds that was not guessed at |
+| `numen-cli problems <vault> [<check>...]` | list notes with broken links, invalid frontmatter or ambiguous links |
 
 ### Over every command
 

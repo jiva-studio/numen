@@ -21,7 +21,7 @@ export type Stay = 'holds' | 'read' | 'kept'
  * applied to: one change counts as one, however large the changed object.
  */
 export interface Notice {
-  /** Whatever the caller addresses this notice by. Never read, only handed back. */
+  /** Whatever the caller addresses this notice by. Never read, only returned. */
   readonly id: string
   /** What is happening, in the words it is to be shown by. */
   readonly text: string

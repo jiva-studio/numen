@@ -1,4 +1,4 @@
--- Every note filed under one name, whatever folder it sits in.
+-- Every note filed under one name, whatever folder it is in.
 --
 -- Names are folded, so a vault holding `Entropy.md` and `entropy.md` is a vault
 -- where one name means two notes — which is the answer this question exists to

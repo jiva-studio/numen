@@ -313,10 +313,10 @@ func (u AssignCardIDs) Execute(ctx context.Context, v domain.Vault) (AssignCardI
 			out.Unwritten = append(out.Unwritten, path)
 			continue
 		}
-		// A deck the index could not be brought level with carries its card ids all
+		// A deck the index could not be updated for carries its card ids all
 		// the same, and its cards stand in this session.
 		if _, err := write.Deck(ctx, v, path, body, deck.FileStat); err != nil &&
-			!errors.Is(err, note.ErrUnlevelled) {
+			!errors.Is(err, note.ErrIndexOutdated) {
 			out.Unwritten = append(out.Unwritten, path)
 		}
 	}

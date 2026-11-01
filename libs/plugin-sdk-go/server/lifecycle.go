@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-// ProtocolVersion is the protocol version the SDK speaks.
+// ProtocolVersion is the protocol version the SDK uses.
 const ProtocolVersion = 1
 
 // statusOK is the status a healthy plugin answers a ping with.

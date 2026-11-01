@@ -183,7 +183,7 @@ func (r *VaultRegistry) RecordOpened(id domain.VaultID) error {
 		return err
 	}
 	if !slices.ContainsFunc(f.Vaults, func(v domain.Vault) bool { return v.ID == id }) {
-		return fmt.Errorf("no vault on the list carries the identity %s", id)
+		return fmt.Errorf("no vault on the list has the identity %s", id)
 	}
 	if f.LastID == id {
 		return nil

@@ -16,7 +16,7 @@ message Manifest {
   string id = 1;
   string name = 2;
   string version = 3;
-  // protocol is the plugin protocol the plugin speaks. Absent means 1.
+  // protocol is the plugin protocol the plugin uses. Absent means 1.
   int32 protocol = 4;
   string description = 5;
   repeated string capabilities = 6;

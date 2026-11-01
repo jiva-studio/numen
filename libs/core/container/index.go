@@ -47,8 +47,8 @@ func (c Config) OpenIndex(ctx context.Context) (*Index, error) {
 	}), nil
 }
 
-// Level brings the notes at the paths given up to date in the index.
-func (c Config) Level(db *Index) note.Levels {
+// UpdateIndex updates the notes at the paths given up to date in the index.
+func (c Config) UpdateIndex(db *Index) note.IndexUpdater {
 	refresh := vault.NewRefresh(
 		c.VaultReaders(),
 		db.Vaults(),

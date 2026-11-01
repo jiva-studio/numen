@@ -67,7 +67,7 @@ type Installation struct {
 	models *run.Lock
 	// closing signals when the window root context ends.
 	closing <-chan struct{}
-	// indexer brings the index of the vault in the window level with it.
+	// indexer updates the index of the vault in the window.
 	indexer *indexing.Worker
 	// embedderError records the error if embedding model initialization failed.
 	embedderError error
@@ -119,7 +119,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 	// only. The degraded state is reported as a task because a window opened
 	// from a desktop entry has no terminal.
 	finds := made.NewSearch(asking, func(err error) {
-		state.reportTask(run.Task{ID: wordsAlone, Title: "Answering by words alone", Error: err.Error()})
+		state.reportTask(run.Task{ID: wordsAlone, Title: "Search by words only", Error: err.Error()})
 	})
 	services.Search.Finds = &finds
 	made.SetPluginSearch(embedder, newFloorErrorReporter(state))
@@ -222,10 +222,10 @@ func (o *Installation) Refresh() vaults.Refresh {
 	return o.made.GetRefresh()
 }
 
-// level brings named notes up to date in the index, through whatever is
-// following the vault they are in. A note the window makes is level before the
+// updateIndex updates the index for named notes, through whatever is
+// following the vault they are in. A note the window makes is in the index before the
 // answer comes back, so it is drawn as soon as it exists.
-func (o *Installation) level(ctx context.Context, v domain.Vault, paths []string) error {
+func (o *Installation) updateIndex(ctx context.Context, v domain.Vault, paths []string) error {
 	_, err := o.Refresh().Execute(ctx, v, paths)
 	return err
 }
@@ -237,27 +237,26 @@ const (
 	indexingTexts = indexing.IndexingTexts
 	makingVectors = indexing.MakingVectors
 	// wordsAlone is the task ID for a search that runs without semantic retrieval.
-	wordsAlone = "answering by words alone"
-	// wearingATheme is a theme the settings name that the catalogue has not.
-	wearingATheme = "wearing a theme"
-	// readingTheSettings is a name the settings file holds that this build
-	// reads under another one. Each sentence is placed under this and its place.
-	readingTheSettings = "reading the settings"
-	// readingTheFloor is a similarity floor the index holds and cannot read.
-	readingTheFloor = "reading the search floor"
-	// levellingTheIndex is a file that reached the vault and an index that did
-	// not follow it.
-	levellingTheIndex = "levelling the index"
+	wordsAlone = "search by words only"
+	// applyingTheme is the task ID for a theme the settings name that the catalogue does not have.
+	applyingTheme = "apply theme"
+	// readingTheSettings is the task ID for a settings name that this build reads under another name.
+	// Each message is appended to this ID with its position.
+	readingTheSettings = "read settings"
+	// readingTheFloor is the task ID for a similarity floor that is stored and cannot be read.
+	readingTheFloor = "read search floor"
+	// updatingIndex is the task ID for a file written to the vault that the index did not follow.
+	updatingIndex = "update index"
 )
 
 // SayTheme records a theme warning task, and takes the task out of the list for an empty message,
 // which says the theme the settings name is found now.
 func (o *Installation) SayTheme(message string) {
 	if message == "" {
-		o.State.finishTask(wearingATheme)
+		o.State.finishTask(applyingTheme)
 		return
 	}
-	o.State.reportTask(run.Task{ID: wearingATheme, Title: "Wearing a theme", Error: message})
+	o.State.reportTask(run.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
 }
 
 // Report records configuration messages as tasks.
@@ -265,7 +264,7 @@ func (o *Installation) Report(messages []string) {
 	for item, one := range messages {
 		o.State.reportTask(run.Task{
 			ID:    fmt.Sprintf("%s %d", readingTheSettings, item),
-			Title: "Reading the settings",
+			Title: "Read settings",
 			Error: one,
 		})
 	}
@@ -324,7 +323,7 @@ func (o *Installation) wireUseCases() {
 	//
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
-	o.notes = made.OpenNotes(o.level).FollowMoves(o.State.GetWindow())
+	o.notes = made.OpenNotes(o.updateIndex).FollowMoves(o.State.GetWindow())
 	o.vaults = made.OpenVaults(o.notes.Move)
 
 	notes := &o.notes
@@ -490,7 +489,7 @@ type WorkerAssembly = assembly.WorkerAssembly
 type ScenarioAssembly = assembly.ScenarioAssembly
 
 // importingFiles is what a drop is called in the list of what is being done.
-const importingFiles = "importing files"
+const importingFiles = "import files"
 
 // namedInAnError is how many of the files that stayed outside are named before
 // the rest are counted.
@@ -518,11 +517,11 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	}
 	defer state.Writing.finish()
 
-	pos := run.Task{ID: importingFiles + " " + into, Title: "Bringing files in", About: into}
+	pos := run.Task{ID: importingFiles + " " + into, Title: "Import files", About: into}
 	state.reportTask(pos)
 
 	imported, err := o.vaults.Import.Execute(ctx, showing, into, paths)
-	if direct := getDirectChildren(into, imported.Landed); len(direct) > 0 {
+	if direct := getDirectChildren(into, imported.Imported); len(direct) > 0 {
 		state.ChangeEvents.publish(change{paths: direct})
 	}
 	if err != nil {

@@ -58,17 +58,17 @@ func (h *noteHandler) WriteNote(
 	pos, err := h.write.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newBaseline(r.Msg.GetBaseline()))
 	// A write that reached the vault has happened, so the response carries the
 	// file stat the client uses at its next save. The response also sets
-	// IsUnlevelled when the index did not follow, because the prose is on disk
+	// IsIndexOutdated when the index did not follow, because the prose is on disk
 	// but search does not include it.
-	unlevelled := h.state.isUnlevelled(err)
-	if err == nil || unlevelled {
+	indexOutdated := h.state.isIndexOutdated(err)
+	if err == nil || indexOutdated {
 		// The written prose requires new vectors. The pending chunks are
 		// tracked in the index, so several saves are embedded in one pass.
 		if h.state.NotifyNoteWritten != nil {
 			h.state.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.WriteNoteResponse{
-			At: convertFileStatToWire(pos), IsUnlevelled: unlevelled,
+			At: convertFileStatToWire(pos), IsIndexOutdated: indexOutdated,
 		}), nil
 	}
 	reason, ok := wire.GetErrorCode(err)
@@ -109,13 +109,13 @@ func (h *noteHandler) CreateNote(
 	} else {
 		made, err = h.create.Execute(ctx, showing, creating)
 	}
-	unlevelled := h.state.isUnlevelled(err)
+	indexOutdated := h.state.isIndexOutdated(err)
 	if made.Path != "" {
 		// The note is on disk under that name, so the response carries it. The
 		// index catches up after the write, and the watcher repeats that
 		// update.
 		return connect.NewResponse(&v1.CreateNoteResponse{
-			Path: made.Path, IsUnlevelled: unlevelled,
+			Path: made.Path, IsIndexOutdated: indexOutdated,
 		}), nil
 	}
 	if err == nil {
@@ -266,14 +266,14 @@ func (h *noteHandler) getLinks(ctx context.Context, links []*v1.Link) ([]domain.
 func (h *noteHandler) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error) {
 	role, ok := wire.ConvertRoleFromWire(l.GetRole())
 	if !ok {
-		return domain.Link{}, fmt.Errorf("no link carries the role %v", l.GetRole())
+		return domain.Link{}, fmt.Errorf("no link has the role %v", l.GetRole())
 	}
 	if l.GetTo() == "" {
 		return domain.Link{}, errors.New("a link needs a note to go to")
 	}
 	marker, ok := wire.ConvertMarkerFromWire(l.GetMarker())
 	if !ok {
-		return domain.Link{}, fmt.Errorf("no link carries the marker %v", l.GetMarker())
+		return domain.Link{}, fmt.Errorf("no link has the marker %v", l.GetMarker())
 	}
 	target, err := h.getAddress(ctx, l.GetTo())
 	if err != nil {
@@ -442,8 +442,8 @@ func (h *noteHandler) RenameNote(
 	if renamed.Moved != nil {
 		out.Moved = newMoveResult(*renamed.Moved)
 	}
-	out.IsUnlevelled = h.state.isUnlevelled(err)
-	if err != nil && !out.GetIsUnlevelled() {
+	out.IsIndexOutdated = h.state.isIndexOutdated(err)
+	if err != nil && !out.GetIsIndexOutdated() {
 		reason, ok := wire.GetErrorCode(err)
 		switch {
 		case ok:

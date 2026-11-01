@@ -4,14 +4,14 @@
  * assertive that interrupts other announcements. Neither is visible.
  */
 defineProps<{
-  /** The text announced when the screen reader enters the region. */
-  told: string
+  /** The text announced politely, when the screen reader is idle. */
+  polite: string
   /** The text announced immediately. */
-  cried: string
+  assertive: string
 }>()
 </script>
 
 <template>
-  <span class="sr-only" aria-live="polite">{{ told }}</span>
-  <span class="sr-only" aria-live="assertive">{{ cried }}</span>
+  <span class="sr-only" aria-live="polite">{{ polite }}</span>
+  <span class="sr-only" aria-live="assertive">{{ assertive }}</span>
 </template>

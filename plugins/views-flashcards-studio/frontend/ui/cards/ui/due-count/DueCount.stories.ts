@@ -48,7 +48,7 @@ const meta: Meta<Knobs> = {
         component:
           'One figure and the word for what it counts. A figure not worked ' +
           'out yet is drawn as the shape it will be, in the same box, so the ' +
-          'row it stands in does not move when it lands.',
+          'row it is in does not move when it lands.',
       },
     },
   },

@@ -398,7 +398,7 @@ jobs:
           # Nix says a hash in base64, under the name of what made it.
           hash="sha256-$(sha256sum "$archive" | cut -d' ' -f1 | xxd -r -p | base64)"
 
-          # A flake handed over as a file cannot write itself a lock, so it
+          # A flake passed as a file cannot write itself a lock, so it
           # carries the one this tree holds.
           cp flake.nix flake.lock "$flake/"
           cp tools/build-nix/numen.nix "$flake/tools/build-nix/"
@@ -1101,7 +1101,7 @@ jobs:
           KEY: ${{ secrets.BUNNY_STORAGE_KEY }}
         run: |
           set -euo pipefail
-          # The key is handed over in a file. A command line is read by anything
+          # The key is passed in a file. A command line is read by anything
           # on the machine and is what an error prints.
           umask 077
           printf 'AccessKey: %s\n' "$KEY" > "$RUNNER_TEMP/storage.header"

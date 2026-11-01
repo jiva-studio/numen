@@ -2,7 +2,7 @@
  * Which rows the selection relies on, and where a reach is measured from.
  *
  * The rows themselves are the caller's: a press is worked out here and the
- * selection it came to is handed back.
+ * selection it came to is returned.
  */
 import { computed, shallowRef, type ComputedRef, type Ref } from 'vue'
 import type { RowId, ShownRow } from '../lib/row'

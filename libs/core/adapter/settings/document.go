@@ -8,7 +8,7 @@ import (
 
 // Indexing is how a vault is made searchable.
 type Indexing struct {
-	// Embedding is how the index cuts notes into chunks and stores their vectors.
+	// Embedding is how notes are split into chunks and how the vectors of the chunks are stored.
 	Embedding EmbeddingConfig `json:"embedding"`
 }
 
@@ -21,8 +21,7 @@ func DefaultIndexing() Indexing {
 
 // EmbeddingConfig is the embedding section of this installation's settings.
 type EmbeddingConfig struct {
-	// MaxTokens is the input limit, in tokens, of one chunk the index stores a
-	// vector of.
+	// MaxTokens is the input limit, in tokens, of one chunk that gets a vector.
 	MaxTokens int `json:"max_tokens"`
 }
 

@@ -178,7 +178,7 @@ func (a *API) EnsureIndexed(ctx context.Context, v domain.Vault) (pluginport.Plu
 	}
 	if !a.IsVaultIndexed.Execute(ctx, v) {
 		return pluginport.PluginIndexState{
-			Status: pluginport.PluginIndexFailed, Reason: "the index does not carry this vault",
+			Status: pluginport.PluginIndexFailed, Reason: "the index does not contain this vault",
 		}, nil
 	}
 	return pluginport.PluginIndexState{Status: pluginport.PluginIndexed}, nil

@@ -217,7 +217,7 @@ const commands = async () => {
     const word = row.match(/text:\s*words\.([A-Za-z]+)/)
     const group = row.match(/group:\s*'(note|file|window|settings|vault)'/)
     if (!word) die(`no words draw the command '${id}'`)
-    if (!group) die(`the command '${id}' stands in no group`)
+    if (!group) die(`the command '${id}' is in no group`)
     const chord = table.find((one) => one.command === id)
     const key = chord ? chordOf(chord) : id === 'find' ? chordOf({ letter: 'k' }) : ''
     own.push({ text: await said(words, word[1]), group: group[1], key })
@@ -265,7 +265,7 @@ const commands = async () => {
  * is every key that type declares, written at this level, which is what the
  * settings file holds and so what the manual has to say. A line that is
  * neither and is still written down — one exported, tagged with something other
- * than `-` — is handed back unread, for whoever asked to refuse it: a field
+ * than `-` — is returned unread, for whoever asked to refuse it: a field
  * shape nobody taught this to read is a setting quietly left out.
  */
 const fieldsOf = (source, name) => {
@@ -303,7 +303,7 @@ const fieldsOf = (source, name) => {
  * A type keeping its settings unexported writes the keys down on a mirror
  * struct beside it, so a type declaring none is read from its mirror: what a
  * person writes in the settings file is what the mirror says, whatever the
- * fields behind it come to be called. A type with neither hands back nothing,
+ * fields behind it come to be called. A type with neither returns nothing,
  * which the caller answers for.
  */
 const structOf = (source, name) => {
@@ -392,7 +392,7 @@ const held = new Map()
 /**
  * One package's Go, every file of it read as one.
  *
- * A section stands in whichever file of its package a reader put it in, so the
+ * A section is in whichever file of its package a reader put it in, so the
  * package is read whole and a type moved next door keeps its page.
  */
 const sourceOf = async (pkg) => {
@@ -586,7 +586,7 @@ const cli = async () => {
     }
     if (!holding) continue
     // Two spaces are what holds a line apart from what it says. A line with
-    // none of them that stands in under what is said carries the line above
+    // none of them that is in under what is said carries the line above
     // on; anywhere else it is a line this cannot read, and dropping it is
     // dropping a command off the page.
     const said = line.trim().match(/^(\S.*?)\s{2,}(.*)$/)

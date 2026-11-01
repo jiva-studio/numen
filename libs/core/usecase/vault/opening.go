@@ -44,8 +44,8 @@ func (o *VaultOpener) GetScan() Scan {
 	return scan
 }
 
-// Level brings named notes up to date.
-func (o *VaultOpener) Level(ctx context.Context, v domain.Vault, paths []string) error {
+// UpdateIndex updates the index for the named notes.
+func (o *VaultOpener) UpdateIndex(ctx context.Context, v domain.Vault, paths []string) error {
 	_, err := o.Refresh.Execute(ctx, v, paths)
 	return err
 }

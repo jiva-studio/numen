@@ -117,7 +117,7 @@ func (p Preset) computeDueDay(s *DueByDay, pos, due time.Time) time.Time {
 		}
 	}
 
-	// The instant is handed back in the zone it arrived in.
+	// The instant is returned in the zone it arrived in.
 	return due.In(in).AddDate(0, 0, on-dueDay).In(due.Location())
 }
 

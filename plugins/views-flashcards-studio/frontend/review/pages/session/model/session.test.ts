@@ -399,7 +399,7 @@ describe('an answer taken back', () => {
 })
 
 describe('the cards a session opens on', () => {
-  it('holds each as it was handed over, with the intervals ahead of it in seconds', async () => {
+  it('holds each as it was passed, with the intervals ahead of it in seconds', async () => {
     const cards: SessionClient = {
       async startSession() {
         return {

@@ -18,7 +18,7 @@ interface Drag<Item> {
  * What following a press takes.
  *
  * `Item` is what the press picked up and `At` is where letting go would put it;
- * both are handed back untouched.
+ * both are returned untouched.
  */
 export interface Press<Item, At> {
   /** The distance the pointer moves before a press becomes a drag. */

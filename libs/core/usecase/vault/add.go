@@ -106,7 +106,7 @@ func (u Add) checkNotCopy(id domain.VaultID, root, oldPath string) error {
 	}
 	if carriesIt && stillThere == id {
 		return fmt.Errorf(
-			"%w: %s and %s both carry the identity %s, so they are copies of one "+
+			"%w: %s and %s both have the identity %s, so they are copies of one "+
 				"vault and cannot both be indexed. To make this a separate "+
 				"vault, delete its service folder and add it again",
 			ErrCopy, root, oldPath, id)

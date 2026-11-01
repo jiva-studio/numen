@@ -30,7 +30,7 @@ func TestAnAmbiguousSpanReturnsHowManyPlaces(t *testing.T) {
 	t.Parallel()
 
 	got := note.AmbiguousSpan{Places: 3}.Error()
-	want := "this span stands in 3 places; take in enough of what is around one of them to tell it from the others"
+	want := "this span is in 3 places; take in enough of what is around one of them to tell it from the others"
 	if got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}

@@ -115,10 +115,10 @@ func (c Connection) Validate() error {
 			continue
 		}
 		if !IsConnectionRole(side.side.Role) {
-			return fmt.Errorf("%w: %q is not a role a connection can carry", ErrInvalidConnection, side.side.Role)
+			return fmt.Errorf("%w: %q is not a role a connection can have", ErrInvalidConnection, side.side.Role)
 		}
 		if !IsWritableMarker(side.side.Marker) {
-			return fmt.Errorf("%w: %q is not a marker a link can carry", ErrInvalidConnection, side.side.Marker)
+			return fmt.Errorf("%w: %q is not a marker a link can have", ErrInvalidConnection, side.side.Marker)
 		}
 	}
 	if c.AB == nil || c.BA == nil {

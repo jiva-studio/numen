@@ -24,7 +24,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'What was said sits in a bubble; what came back is text on the ' +
+          'What was said is in a bubble; what came back is text on the ' +
           'surface. It scrolls on its own and stays at the foot while an ' +
           'answer arrives. What a turn’s text is made of belongs to whoever ' +
           'renders the thread — the default keeps the line breaks and does ' +

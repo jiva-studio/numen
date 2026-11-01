@@ -13,7 +13,7 @@ Every change puts the write off again. Two things bring one on:
 
 Nothing changed is nothing written. `Ctrl+S` writes the unsaved changes at the moment it is pressed, under every rule below.
 
-Closing a tab and quitting the window write the unsaved changes and wait for them. Renaming or removing the file does the same, and that write reaches the path the tab still stands at.
+Closing a tab and quitting the window write the unsaved changes and wait for them. Renaming or removing the file does the same, and that write reaches the path the tab is still at.
 
 A save reaches the index at once: the note is parsed again, cut again, and found by word. Its vectors are asked for once the vault has been quiet for eight seconds, and every write puts that pass off again. The cooldown is longer than the bound above, so one session at one note is embedded once.
 
@@ -45,7 +45,7 @@ The predicates are read in order, so a tab is in exactly one state. The mark is 
 | --------- | ------------------------------------------------------------------ | --------- |
 | `stuck`   | reading or writing this note is impossible, and the tab says why   | `stuck`   |
 | `loading` | the first read has not answered; there is no document to type into | —         |
-| `gone`    | the name the tab stands at has no file behind it                   | `gone`    |
+| `gone`    | the name the tab is at has no file behind it                   | `gone`    |
 | `stale`   | the file moved past the prose this tab read, and the save stopped  | `stale`   |
 | `saving`  | a write is in the air                                              | `unsaved` |
 | `unsaved` | what is shown differs from what was written                        | `unsaved` |
@@ -91,9 +91,9 @@ Typing `[[` inside the editor opens an autocomplete list of matching notes acros
 
 ## Limits
 
-**A megabyte is the most a note may be and still be read here.** The size is asked of the file before it is opened, so a file over the bound is refused with none of its bytes read, and the tab says which file and what the bound is. A body handed back over the same number is refused by it too. The bound is the core's, so what is refused to the window is refused to an agent.
+**A megabyte is the most a note may be and still be read here.** The size is asked of the file before it is opened, so a file over the bound is refused with none of its bytes read, and the tab says which file and what the bound is. A body returned over the same number is refused by it too. The bound is the core's, so what is refused to the window is refused to an agent.
 
-**A body that opens with the frontmatter delimiter is refused.** A body is the prose below the frontmatter, and a whole note handed back as prose is not one.
+**A body that opens with the frontmatter delimiter is refused.** A body is the prose below the frontmatter, and a whole note returned as prose is not one.
 
 **A file that is not valid UTF-8 is not opened here.**
 
@@ -161,7 +161,7 @@ Destroying the file outright is available and is asked for explicitly. Nothing b
 
 The notes whose links pointed at the removed note are reported and not repaired: the link is not wrong, its target is gone, and only the person knows what they meant.
 
-## Bringing files in
+## Importing files
 
 A file dragged off the machine and let go over the tree is copied into the vault. The row under the pointer names where it lands: a folder takes it inside, and any other row puts it beside itself. Let go over the tree and over no row it lands at the top level. The row a drop would land on is ringed while the pointer is over it, and a drop anywhere else in the window does nothing.
 
@@ -181,7 +181,7 @@ The window is asked for everything it still holds, and it answers once every tab
 
 A page that goes with a question standing still has unsaved changes. Its work is held by a window this process cannot reach into, and a page that comes back takes it over and raises the question again.
 
-The window then settles in one order — the page, the agents, the scan and the follower, the database. A page has three seconds to hand over what it holds; the agents' transport has two seconds to be cut off; the writes already taken are waited for with no bound, the door having been shut first. A quit that does not arrive through the window happens once, the same way.
+The window then settles in one order — the page, the agents, the scan and the follower, the database. A page has three seconds to pass what it holds; the agents' transport has two seconds to be cut off; the writes already taken are waited for with no bound, the door having been shut first. A quit that does not arrive through the window happens once, the same way.
 
 ## Linked tabs across panes
 

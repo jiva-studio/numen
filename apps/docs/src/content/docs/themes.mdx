@@ -5,19 +5,19 @@ description: One palette is built into numen, twelve more come as a plugin, and 
 
 import Shot from '../../components/Shot.astro'
 
-**Change the theme** in the commands lists everything you can wear. Choosing one is instant, and
+**Change the theme** in the commands lists every theme you can apply. Choosing one is instant, and
 it is written down for the next time. The flashcards window has the same choice in its command
 palette (Ctrl+P, or Cmd+P on a Mac), with the three modes beside the themes.
 
 <Shot
   name="theme-dracula"
-  alt="The numen window wearing the Dracula palette: purple ground, pink and green accents."
+  alt="The numen window with the Dracula palette: purple ground, pink and green accents."
   caption="Dracula — published dark, so it pins the half and leaves Light or dark nothing to choose."
 />
 
 <Shot
   name="theme-solarized"
-  alt="The numen window wearing the Solarized palette."
+  alt="The numen window with the Solarized palette."
   caption="Solarized — published in two halves, so it follows whichever one you are in."
 />
 
@@ -25,7 +25,7 @@ palette (Ctrl+P, or Cmd+P on a Mac), with the three modes beside the themes.
 
 `numen` is built into the application: this product's own palette, light and dark. The other
 twelve come with the **Preset Themes** plugin, and the list shows them under that name. If you
-turn the plugin off in the settings, they leave the list, and a window wearing one goes back to
+turn the plugin off in the settings, they leave the list, and a window using one goes back to
 `numen`.
 
 | | |
@@ -39,7 +39,7 @@ turn the plugin off in the settings, they leave the list, and a window wearing o
 | `dracula`, `nord`, `one-dark`, `monokai`, `cobalt2`, `amber` | dark only. |
 
 A palette published in one half only pins that half, and **Light or dark** has nothing left to
-choose while you are wearing it.
+choose while it is applied.
 
 ## Writing your own
 
@@ -59,7 +59,7 @@ on the first run.
 ```
 
 `dracula.css` in that folder appears in the list as **your** dracula, beside the one the plugin
-adds; neither hides the other. Save the file and the window is wearing the change on the next reload —
+adds; neither hides the other. Save the file and the window applies the change on the next reload —
 the folder is watched.
 
 A few rules:
@@ -103,14 +103,14 @@ Or commit to one half — flat colours, and say which half it is:
 | `--numen-accent-ink` | text on the accent. |
 | `--numen-ring` | the outline around what is focused, and a link in marked-up text. |
 | `--numen-alarm` | what is wrong: a refusal, and what could not be read. |
-| `--numen-alarm-bg` | the ground a card carrying one of those stands on. |
+| `--numen-alarm-bg` | the ground a card carrying one of those is on. |
 | `--numen-hushed` | text said quietly beside what it is about: a caption, a count, a month over a grid. |
 
 **The plex**
 
 | | |
 | --- | --- |
-| `--numen-relation-parent` | the hue of the relation a parent stands in. |
+| `--numen-relation-parent` | the hue of the relation a parent is in. |
 | `--numen-relation-child` | a child's relation. |
 | `--numen-relation-jump` | a jump's relation. |
 | `--numen-relation-sibling` | a sibling's relation. |
@@ -158,7 +158,7 @@ Or commit to one half — flat colours, and say which half it is:
 
 | | |
 | --- | --- |
-| `--numen-field-bg` | the ground a field of typing sits in. |
+| `--numen-field-bg` | the ground a field of typing is in. |
 | `--numen-field-border` | the line around it. |
 | `--numen-bubble-bg` | the bubble what you said is drawn in. |
 | `--numen-bubble-fg` | the words in it. |

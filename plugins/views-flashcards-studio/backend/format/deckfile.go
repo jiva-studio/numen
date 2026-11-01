@@ -18,7 +18,7 @@ var ErrNoSuchCard = errors.New("card not found in deck")
 // ErrTwoCards is returned when a change addresses a card id carried by two
 // cards of the deck. Both cards are read and displayed, and the change does
 // not choose between them.
-var ErrTwoCards = errors.New("two cards of this deck carry that card id")
+var ErrTwoCards = errors.New("two cards of this deck have that card id")
 
 // ErrNoSuchSection is returned when a change addresses a section index that
 // the deck does not hold.

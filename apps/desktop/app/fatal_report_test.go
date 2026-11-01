@@ -237,7 +237,7 @@ func TestFatalReport_DistinguishesIndexFaults(t *testing.T) {
 
 	corrupt := delta["an index that is not a database"]
 	if strings.Contains(corrupt.Sentence, "(26)") || strings.Contains(corrupt.Sentence, "not a database") {
-		t.Errorf("the page speaks sqlite's language: %q", corrupt.Sentence)
+		t.Errorf("the page uses sqlite's format: %q", corrupt.Sentence)
 	}
 }
 

@@ -168,7 +168,7 @@ func TestAnEditReachesAListener(t *testing.T) {
 		t.Fatal("the edit never reached the listener")
 	}
 
-	// And the index is level with the disk by the time it is announced.
+	// And the index matches the disk by the time it is announced.
 	displayed, err := client.GetNeighbourhood(t.Context(),
 		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "Note.md"}))
 	if err != nil {
@@ -350,12 +350,12 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 
 	recorded := &order{}
 	// What this watches is the order the writes and the closing land in, so
-	// nothing is brought level behind them.
-	unlevelled := func(context.Context, domain.Vault, []string) error { return nil }
+	// nothing is updated behind them.
+	noIndex := func(context.Context, domain.Vault, []string) error { return nil }
 	writing := note.NewWrite(
 		cfg.VaultReaders(),
 		recording{VaultWriters: cfg.VaultWriters(), order: recorded, hold: hold},
-		unlevelled,
+		noIndex,
 		testsupport.NewClock(),
 	)
 	installation.Services.SetNoteWrite(&writing)

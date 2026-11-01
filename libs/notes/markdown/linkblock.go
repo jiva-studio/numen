@@ -14,7 +14,7 @@ import (
 // ErrNotOwned is returned when a change targets an entry that holds content the
 // application does not own. On a collision the user's entry wins: the link is named
 // in the error and left as written.
-var ErrNotOwned = fmt.Errorf("this link carries something the application does not own")
+var ErrNotOwned = fmt.Errorf("this link has something the application does not own")
 
 // isOwnedKey reports whether key is one an entry of the `links:` block may carry.
 // Anything else is content the application does not own.

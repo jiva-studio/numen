@@ -25,7 +25,7 @@ export interface AppearanceWords {
   readonly setting: string
   /** The themes could not be listed, and one theme's file could not be read. */
   readonly unlisted: string
-  readonly unworn: string
+  readonly themeUnreadable: string
 }
 
 /** Interface text of the sync settings. */

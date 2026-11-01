@@ -70,7 +70,7 @@ The editor does not move the first field, does not move another field above it, 
 
 The fields below the first are reordered freely. Their order is the order a person is asked for them and nothing else, and moving them writes to no deck.
 
-A person who edits `fields` by hand and moves the first field is not stopped and cannot be. Nothing is lost from the file: every value stands under its own heading, and from the next write of a deck on, its cards are headed by the field that now stands first.
+A person who edits `fields` by hand and moves the first field is not stopped and cannot be. Nothing is lost from the file: every value is under its own heading, and from the next write of a deck on, its cards are headed by the field that now stands first.
 
 ### Renaming a field
 
@@ -84,7 +84,7 @@ A rename is the application changing what is in a file, so a deck it reaches car
 
 Each second-level heading is one template, and the heading is what the template is called. Under it, `### Front` and `### Back` hold what is shown before and after the answer. A template missing either is a problem, and it lays out nothing.
 
-A side runs to the next `### Front`, the next `### Back` or the next template, so a third-level heading of any other name stands inside the side it is written under, and a second `### Front` or `### Back` is text under the first.
+A side runs to the next `### Front`, the next `### Back` or the next template, so a third-level heading of any other name is inside the side it is written under, and a second `### Front` or `### Back` is text under the first.
 
 A card model has as many templates as a person writes. One card is shown once through each.
 
@@ -204,7 +204,7 @@ Each third-level heading is a field, and the value is everything under it until 
 
 A value is HTML and holds what HTML holds: paragraphs, lists, a table, a picture, a rule. What it cannot hold is a heading at the first, second or third level written as a markdown heading, because those three levels are what the file is cut at. A value wanting a heading writes one as `<h4>` or below.
 
-A card is not markdown. What stands under a field's heading is drawn as the markup it is, and a line of prose with no tag around it is a line of prose. It cannot run: the window serves itself under a policy that allows no script it did not serve, and no handler written in an attribute.
+A card is not markdown. What is under a field's heading is drawn as the markup it is, and a line of prose with no tag around it is a line of prose. It cannot run: the window serves itself under a policy that allows no script it did not serve, and no handler written in an attribute.
 
 A card carrying a field its card model does not declare keeps it in the file, and no template shows it. A field the card model declares and the card omits is empty, and so is one whose heading is there with nothing under it.
 
@@ -255,13 +255,13 @@ A deck's tab reads which preset schedules it, and offers the defaults and every 
 
 | | |
 | --- | --- |
-| `goal` | which value the one control steers: `minutes_a_day`, `retention` or `by_date`. The value stands under the key it names. |
+| `goal` | which value the one control steers: `minutes_a_day`, `retention` or `by_date`. The value is under the key it names. |
 | `by_date` | the day the material is to be learned by, written `2026-09-30`. What learned means is this preset's own `learned` rule, asked of every card on that day. |
 | `minutes_a_day` | how long a day of review runs, spent against the time each answer took. Zero under this goal is a pause. Under the other two goals the value is not read at all. |
 | `new_a_day` | how many unseen cards a day holds. 10. |
 | `reviews_a_day` | how many returning cards a day holds. 200. |
 | `retention` | the share of cards recalled when they come round again. 0.90, and it goes from 0.70 to 0.99. |
-| `learned` | what counts as a card learned: `interval`, or `retention`. The value stands under the key it names. `interval`. |
+| `learned` | what counts as a card learned: `interval`, or `retention`. The value is under the key it names. `interval`. |
 | `interval` | how long a card is sent away for before it is learned, in days. 21, and it goes from 1 to 365. |
 | `counts` | what a day's budget is spent on: `cards`, where a review card counts once however often it comes round that day, or `shows`, where every showing spends a slot. `cards`. |
 | `backlog` | how much of a day goes to what is overdue before anything new is offered, in per cent. 100 is the overdue pile first and new cards only once it is empty; 0 is new cards first; 50 splits the day between them. 100. |
@@ -280,7 +280,7 @@ Each preset's budget is spent on the cards of the decks pointing at it, and a se
 
 **A day names every budget that closed it.** Under `retention` the day is constrained by both its new cards and its reviews, and a day that completes the entirety of each has been closed by each. A person notified of only one of them might increase it and find the day unchanged, so both are reported.
 
-`learned` is what the preset counts as a card learned, and the value it reads stands under the key it names. Under `interval` a card is learned once the interval it is sent away for reaches `interval` days; under `retention` it is learned once the chance of recalling it today is at or above `retention`. The rule not named keeps its value and takes no part until it is chosen again, and a preset naming no rule at all counts by `interval` at 21 days. Learned is a state and not a milestone: both rules are asked of where the card stands now, and a lapse takes a card back out of that standing under either of them. How many cards stand learned today is answered by the rule in force. How long until all of them are is a prediction made under a stated assumption: the soonest the material could be learned, read off the run in which nothing is forgotten. It is what the deck could reach and not a forecast of what will happen. It stands beside a goal of `minutes_a_day` and a goal of `retention`, and is absent under `by_date`, whose day is the answer already; and it is asked only under `learned: interval`, since a chance of recall is a level a deck stands at and names no such day. Over the range of a `retention` goal it falls away and steps up wherever another review is wanted — the day a card passes an interval is the reviews it takes times the space between them, and a review is a whole number. Every value of it is right where it is asked, and a step is that arithmetic and not a fault.
+`learned` is what the preset counts as a card learned, and the value it reads is under the key it names. Under `interval` a card is learned once the interval it is sent away for reaches `interval` days; under `retention` it is learned once the chance of recalling it today is at or above `retention`. The rule not named keeps its value and takes no part until it is chosen again, and a preset naming no rule at all counts by `interval` at 21 days. Learned is a state and not a milestone: both rules are asked of where the card stands now, and a lapse takes a card back out of that standing under either of them. How many cards stand learned today is answered by the rule in force. How long until all of them are is a prediction made under a stated assumption: the soonest the material could be learned, read off the run in which nothing is forgotten. It is what the deck could reach and not a forecast of what will happen. It is beside a goal of `minutes_a_day` and a goal of `retention`, and is absent under `by_date`, whose day is the answer already; and it is asked only under `learned: interval`, since a chance of recall is a level a deck is at and names no such day. Over the range of a `retention` goal it falls away and steps up wherever another review is wanted — the day a card passes an interval is the reviews it takes times the space between them, and a review is a whole number. Every value of it is right where it is asked, and a step is that arithmetic and not a fault.
 
 A goal of `by_date` aims at that same rule on the day it names, so the pace begins a card early enough to learn it by then: three weeks before the day under an interval of three weeks, and on the day itself under a chance of recall. Where a card cannot get there whatever the pace — a card added a fortnight before a day it must stand three weeks away from — the picture says how many review cards fall short. The day is not moved and the rule is not bent; the pace shown beside that number gets there every card that can. The day named is the answer, so no second day is offered beside it, and past that day the preset schedules nothing: what a projection shows there is a deck nobody is answering, with the debt climbing and what was learned fading.
 

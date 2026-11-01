@@ -66,7 +66,7 @@ type Presets struct {
 	Problems ports.ProblemQueries
 	// index brings what a write touched up to date. Every write here calls it,
 	// and a preset short of it cannot point a deck at anything.
-	index note.Levels
+	index note.IndexUpdater
 	// day is where one day of review gives way to the next, and now what time
 	// it is. They answer whether a preset schedules anything today.
 	day review.Day
@@ -81,7 +81,7 @@ func NewPresets(
 	writers ports.VaultWriters,
 	links ports.LinkQueries,
 	notes ports.NoteQueries,
-	index note.Levels,
+	index note.IndexUpdater,
 	now ports.Clock,
 ) Presets {
 	return Presets{
@@ -416,7 +416,7 @@ var ErrNoPresets = errors.New("this build cannot work the presets of a vault")
 // that has changed since it was read is left alone and port.ErrStale comes
 // back. A write that landed answers with the file stat of the file it
 // produced, which the caller presents at its next write. An index that could
-// not be brought level is note.ErrUnlevelled beside that file stat.
+// not be updated is note.ErrIndexOutdated beside that file stat.
 func (u Presets) Point(
 	ctx context.Context, v domain.Vault, deck, preset string, stat domain.FileStat,
 ) (domain.FileStat, error) {
@@ -460,7 +460,7 @@ func (u Presets) getPresetAddress(ctx context.Context, v domain.Vault, preset st
 // that has changed since it was read is left alone and port.ErrStale comes
 // back. A write that landed answers with the file stat of the file it
 // produced, which the caller presents at its next write. An index that could
-// not be brought level is note.ErrUnlevelled beside that file stat.
+// not be updated is note.ErrIndexOutdated beside that file stat.
 func (u Presets) Save(
 	ctx context.Context, v domain.Vault, path string, settings review.Preset,
 	stat domain.FileStat,
@@ -472,7 +472,7 @@ func (u Presets) Save(
 	if err != nil {
 		return pos, err
 	}
-	return pos, note.WrapUnlevelled(u.index(ctx, v, []string{path}), path)
+	return pos, note.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)
 }
 
 // save is the read, the change and the write, under this vault's write lock

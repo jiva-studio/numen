@@ -20,7 +20,7 @@ func (t *Tools) addCardCurrent(registry *tools.Registry) error {
 		Step:  tools.ByEffect,
 		Name:  "card_current",
 		Title: "Show the card in front",
-		Description: "The card in front of the person: the deck it stands in, the card id " +
+		Description: "The card in front of the person: the deck it is in, the card id " +
 			"`card_read` addresses it by, and the template it is being shown through. Ask it " +
 			"before saying anything about the card they are on — a person answers one " +
 			"card and moves to the next while you work — and read the card itself with " +
@@ -39,7 +39,7 @@ type cardModelListInput struct {
 
 type cardModelListOutput struct {
 	CardModels []CardModel `json:"cardModels"`
-	Total      int         `json:"total" jsonschema:"how many card models the vault holds, which stands above the list when the ceiling was reached"`
+	Total      int         `json:"total" jsonschema:"how many card models the vault holds, which is above the list when the ceiling was reached"`
 }
 
 func (t *Tools) addCardCardModelList(registry *tools.Registry) error {
@@ -167,7 +167,7 @@ func (t *Tools) addCardRead(registry *tools.Registry) error {
 			"cards as a person writes, so this answers a run of them at a time: `total` " +
 			"says how many there are, and `from` takes the next run. The sections are " +
 			"the runs a person divided the deck into, and every card says which of them " +
-			"it stands under. What was wrong with the file comes back under `faults`, " +
+			"it is under. What was wrong with the file comes back under `faults`, " +
 			"on the card it is against. The fingerprint is what the writing tools want: " +
 			"hand it back and a write fails if the person changed the deck in the " +
 			"meantime.",

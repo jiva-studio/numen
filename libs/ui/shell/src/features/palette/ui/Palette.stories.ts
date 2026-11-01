@@ -184,7 +184,7 @@ const meta = {
       description: {
         component:
           'A field, and everything the words in it turned up, in groups. It ' +
-          'stands over the whole window and takes groups of items, and says ' +
+          'is over the whole window and takes groups of items, and says ' +
           'which item was chosen and what was asked of it. What the groups ' +
           'are, what an item addresses and what choosing one does are the ' +
           'caller’s. The keyboard stays in the field the whole time, because ' +

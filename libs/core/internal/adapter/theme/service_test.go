@@ -67,15 +67,15 @@ func (d *fakeAppearances) choose(t *testing.T, name string, mode v1.Mode) string
 	return answer.Msg.GetError()
 }
 
-func TestTheListReturnsWhatIsWornAndWhichHalfItIsReadAs(t *testing.T) {
+func TestTheListReturnsWhatIsAppliedAndWhichHalfItIsReadAs(t *testing.T) {
 	night := theme.PluginName(pluginID, "night")
-	aged := createFakeAppearances(t, theme.Appearance{ThemeName: night, Mode: appearance.Dark})
-	aged.service.Catalogue = aged.service.Catalogue.WithPlugins(createFakePlugins())
-	writeTheme(t, aged.service.Catalogue, "mine.css", ":root { --numen-surface: #000000 }")
+	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: night, Mode: appearance.Dark})
+	fakeSettings.service.Catalogue = fakeSettings.service.Catalogue.WithPlugins(createFakePlugins())
+	writeTheme(t, fakeSettings.service.Catalogue, "mine.css", ":root { --numen-surface: #000000 }")
 
-	answer := aged.themes(t)
+	answer := fakeSettings.themes(t)
 	if answer.GetApplied() != night || answer.GetMode() != v1.Mode_MODE_DARK {
-		t.Errorf("wears %q, read as %v", answer.GetApplied(), answer.GetMode())
+		t.Errorf("applied %q, read as %v", answer.GetApplied(), answer.GetMode())
 	}
 
 	origins := map[string]v1.Origin{}
@@ -99,9 +99,9 @@ func TestTheListReturnsWhatIsWornAndWhichHalfItIsReadAs(t *testing.T) {
 }
 
 func TestGetTheme_ResolvesKnownNamesAndEmptyForOthers(t *testing.T) {
-	aged := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
-	aged.service.Catalogue = aged.service.Catalogue.WithPlugins(createFakePlugins())
-	writeTheme(t, aged.service.Catalogue, "kept.css", ":root { --numen-surface: #123456 }")
+	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
+	fakeSettings.service.Catalogue = fakeSettings.service.Catalogue.WithPlugins(createFakePlugins())
+	writeTheme(t, fakeSettings.service.Catalogue, "kept.css", ":root { --numen-surface: #123456 }")
 
 	for name, want := range map[string]string{
 		"mine:kept":                         "#123456",
@@ -110,7 +110,7 @@ func TestGetTheme_ResolvesKnownNamesAndEmptyForOthers(t *testing.T) {
 		"mine:../../../.ssh/id_rsa":         "",
 		"mine:gone":                         "",
 	} {
-		answer, err := aged.service.ReadTheme(t.Context(),
+		answer, err := fakeSettings.service.ReadTheme(t.Context(),
 			connect.NewRequest(&v1.ReadThemeRequest{Name: name}))
 		if err != nil {
 			t.Fatal(err)
@@ -125,7 +125,7 @@ func TestGetTheme_ResolvesKnownNamesAndEmptyForOthers(t *testing.T) {
 
 	// This product's own palette names no token: what `tokens.css` holds is
 	// what it is. It answers with its file all the same.
-	answer, err := aged.service.ReadTheme(t.Context(),
+	answer, err := fakeSettings.service.ReadTheme(t.Context(),
 		connect.NewRequest(&v1.ReadThemeRequest{Name: theme.Default}))
 	if err != nil {
 		t.Fatal(err)
@@ -136,29 +136,29 @@ func TestGetTheme_ResolvesKnownNamesAndEmptyForOthers(t *testing.T) {
 }
 
 func TestChoosingWritesTheThemeAndTheHalfItIsReadAs(t *testing.T) {
-	aged := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
-	writeTheme(t, aged.service.Catalogue, "nord.css", ":root {}")
-	if failed := aged.choose(t, "mine:nord", v1.Mode_MODE_DARK); failed != "" {
+	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
+	writeTheme(t, fakeSettings.service.Catalogue, "nord.css", ":root {}")
+	if failed := fakeSettings.choose(t, "mine:nord", v1.Mode_MODE_DARK); failed != "" {
 		t.Fatalf("failed: %s", failed)
 	}
-	if len(aged.content) != 1 || aged.content[0] != (theme.Appearance{ThemeName: "mine:nord", Mode: appearance.Dark}) {
-		t.Fatalf("written: %+v", aged.content)
+	if len(fakeSettings.content) != 1 || fakeSettings.content[0] != (theme.Appearance{ThemeName: "mine:nord", Mode: appearance.Dark}) {
+		t.Fatalf("written: %+v", fakeSettings.content)
 	}
-	if answer := aged.themes(t); answer.GetApplied() != "mine:nord" {
-		t.Errorf("wears %q", answer.GetApplied())
+	if answer := fakeSettings.themes(t); answer.GetApplied() != "mine:nord" {
+		t.Errorf("applied %q", answer.GetApplied())
 	}
 }
 
 // A client reports the range of each size before the user types a number into it.
 func TestTheListReturnsTheTwoSizesAndHowFarEachGoes(t *testing.T) {
-	aged := createFakeAppearances(t, theme.Appearance{
+	fakeSettings := createFakeAppearances(t, theme.Appearance{
 		ThemeName:      theme.Default,
 		Mode:           appearance.System,
 		InterfaceScale: 1.25,
 		TextScale:      1.5,
 	})
 
-	answer := aged.themes(t)
+	answer := fakeSettings.themes(t)
 	if answer.GetInterfaceScale() != 1.25 || answer.GetTextScale() != 1.5 {
 		t.Errorf("drawn at %v and set at %v", answer.GetInterfaceScale(), answer.GetTextScale())
 	}
@@ -170,12 +170,12 @@ func TestTheListReturnsTheTwoSizesAndHowFarEachGoes(t *testing.T) {
 	}
 }
 
-// A window that has been dressed by nothing is drawn at the size it was
+// A window with no theme applied is drawn at the size it was
 // designed at.
 func TestASettingsFileNamingNoSizeIsGeneratedAsDesigned(t *testing.T) {
-	aged := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
+	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 
-	answer := aged.themes(t)
+	answer := fakeSettings.themes(t)
 	if answer.GetInterfaceScale() != theme.AsDesigned || answer.GetTextScale() != theme.AsDesigned {
 		t.Errorf("drawn at %v and set at %v", answer.GetInterfaceScale(), answer.GetTextScale())
 	}
@@ -183,7 +183,7 @@ func TestASettingsFileNamingNoSizeIsGeneratedAsDesigned(t *testing.T) {
 
 // One size is one command, and choosing it leaves the other unchanged.
 func TestChoosingOneSizePreservesTheOtherAsItExists(t *testing.T) {
-	aged := createFakeAppearances(t, theme.Appearance{
+	fakeSettings := createFakeAppearances(t, theme.Appearance{
 		ThemeName:      theme.Default,
 		Mode:           appearance.System,
 		InterfaceScale: 1.25,
@@ -191,8 +191,8 @@ func TestChoosingOneSizePreservesTheOtherAsItExists(t *testing.T) {
 	})
 
 	scale := 1.75
-	writeTheme(t, aged.service.Catalogue, "nord.css", ":root {}")
-	answer, err := aged.service.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
+	writeTheme(t, fakeSettings.service.Catalogue, "nord.css", ":root {}")
+	answer, err := fakeSettings.service.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
 		Name:           "mine:nord",
 		Mode:           v1.Mode_MODE_DARK,
 		InterfaceScale: &scale,
@@ -203,15 +203,15 @@ func TestChoosingOneSizePreservesTheOtherAsItExists(t *testing.T) {
 	if reason := answer.Msg.GetError(); reason != "" {
 		t.Fatalf("failed: %s", reason)
 	}
-	if len(aged.content) != 1 || aged.content[0].InterfaceScale != 1.75 || aged.content[0].TextScale != 0 {
-		t.Fatalf("written: %+v", aged.content)
+	if len(fakeSettings.content) != 1 || fakeSettings.content[0].InterfaceScale != 1.75 || fakeSettings.content[0].TextScale != 0 {
+		t.Fatalf("written: %+v", fakeSettings.content)
 	}
 }
 
 // The settings are unchanged, and the user is left with the list that was
-// chosen from.
-func TestAChoiceThatCannotBeWornIsRefusedAndReturnsWhy(t *testing.T) {
-	aged := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
+// fakeSettings from.
+func TestAChoiceThatCannotBeAppliedIsRefusedAndReturnsWhy(t *testing.T) {
+	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
 	for _, selected := range []struct {
 		name string
 		mode v1.Mode
@@ -221,7 +221,7 @@ func TestAChoiceThatCannotBeWornIsRefusedAndReturnsWhy(t *testing.T) {
 		{"preset:nord", v1.Mode_MODE_DARK},
 		{theme.Default, v1.Mode_MODE_UNSPECIFIED},
 	} {
-		failed := aged.choose(t, selected.name, selected.mode)
+		failed := fakeSettings.choose(t, selected.name, selected.mode)
 		if failed == "" {
 			t.Errorf("%s, %v was written", selected.name, selected.mode)
 		}
@@ -229,52 +229,52 @@ func TestAChoiceThatCannotBeWornIsRefusedAndReturnsWhy(t *testing.T) {
 			t.Errorf("%s failed with %q", selected.name, failed)
 		}
 	}
-	if len(aged.content) != 0 {
-		t.Errorf("written: %+v", aged.content)
+	if len(fakeSettings.content) != 0 {
+		t.Errorf("written: %+v", fakeSettings.content)
 	}
 }
 
 func TestASettingsFileThatWouldNotTakeTheChoiceReturnsSo(t *testing.T) {
-	aged := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
-	aged.failure = errNotWritten
-	if failed := aged.choose(t, theme.Default, v1.Mode_MODE_DARK); !strings.Contains(failed, "read-only") {
+	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default, Mode: appearance.System})
+	fakeSettings.failure = errNotWritten
+	if failed := fakeSettings.choose(t, theme.Default, v1.Mode_MODE_DARK); !strings.Contains(failed, "read-only") {
 		t.Errorf("failed with %q", failed)
 	}
 }
 
 // A theme deleted out of the folder does not leave the window undressed, and the
 func TestThemes_MissingSettingsThemeReportsAndUsesDefault(t *testing.T) {
-	aged := createFakeAppearances(t, theme.Appearance{ThemeName: "mine:the-one-i-deleted", Mode: appearance.Light})
-	answer := aged.themes(t)
+	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: "mine:the-one-i-deleted", Mode: appearance.Light})
+	answer := fakeSettings.themes(t)
 	if answer.GetApplied() != theme.Default {
-		t.Errorf("wears %q", answer.GetApplied())
+		t.Errorf("applied %q", answer.GetApplied())
 	}
 	if answer.GetMode() != v1.Mode_MODE_LIGHT {
 		t.Errorf("read as %v", answer.GetMode())
 	}
-	if len(aged.reply) != 1 || !strings.Contains(aged.reply[0], "mine:the-one-i-deleted") {
-		t.Errorf("said %v", aged.reply)
+	if len(fakeSettings.reply) != 1 || !strings.Contains(fakeSettings.reply[0], "mine:the-one-i-deleted") {
+		t.Errorf("said %v", fakeSettings.reply)
 	}
 }
 
 // The warning about a missing theme is withdrawn once the theme the settings name is found again.
 func TestThemes_FoundThemeWithdrawsTheEarlierWarning(t *testing.T) {
-	aged := createFakeAppearances(t, theme.Appearance{ThemeName: "mine:the-one-i-deleted", Mode: appearance.Light})
-	aged.themes(t)
-	aged.appearance = theme.Appearance{ThemeName: theme.Default, Mode: appearance.Light}
-	aged.themes(t)
-	if len(aged.reply) != 2 || aged.reply[1] != "" {
-		t.Errorf("said %v, want the warning and then an empty text", aged.reply)
+	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: "mine:the-one-i-deleted", Mode: appearance.Light})
+	fakeSettings.themes(t)
+	fakeSettings.appearance = theme.Appearance{ThemeName: theme.Default, Mode: appearance.Light}
+	fakeSettings.themes(t)
+	if len(fakeSettings.reply) != 2 || fakeSettings.reply[1] != "" {
+		t.Errorf("said %v, want the warning and then an empty text", fakeSettings.reply)
 	}
 }
 
 // Choosing a theme that is found withdraws the warning about the one that was missing.
 func TestThemes_WritingAFoundThemeWithdrawsTheEarlierWarning(t *testing.T) {
-	aged := createFakeAppearances(t, theme.Appearance{ThemeName: "mine:the-one-i-deleted", Mode: appearance.Light})
-	aged.themes(t)
-	aged.choose(t, theme.Default, v1.Mode_MODE_LIGHT)
-	if len(aged.reply) != 2 || aged.reply[1] != "" {
-		t.Errorf("said %v, want the warning and then an empty text", aged.reply)
+	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: "mine:the-one-i-deleted", Mode: appearance.Light})
+	fakeSettings.themes(t)
+	fakeSettings.choose(t, theme.Default, v1.Mode_MODE_LIGHT)
+	if len(fakeSettings.reply) != 2 || fakeSettings.reply[1] != "" {
+		t.Errorf("said %v, want the warning and then an empty text", fakeSettings.reply)
 	}
 }
 
@@ -286,7 +286,7 @@ func TestThemes_NoSettingsUsesDefaultPalette(t *testing.T) {
 		t.Fatal(err)
 	}
 	if answer.Msg.GetApplied() != theme.Default || answer.Msg.GetMode() != v1.Mode_MODE_SYSTEM {
-		t.Errorf("wears %q, read as %v", answer.Msg.GetApplied(), answer.Msg.GetMode())
+		t.Errorf("applied %q, read as %v", answer.Msg.GetApplied(), answer.Msg.GetMode())
 	}
 
 	selected, err := service.WriteAppearance(t.Context(),

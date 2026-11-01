@@ -3,7 +3,7 @@ import type { Disposable } from '../types'
 
 // MockBufferHost is a BufferHost that holds what it is given, so a test can write the window out as a quit does.
 export interface MockBufferHost extends BufferHost {
-  // The buffers a plugin handed over, in the order it did.
+  // The buffers a plugin passed, in the order it did.
   getTracked(): readonly FileBuffers[]
   // Writes every tracked buffer and every flush handler out.
   flush(): Promise<void>

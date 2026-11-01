@@ -22,7 +22,7 @@ export const MARKED_UP = `# Entropy
 Some of this is **strong**, some *slanted*, some ~~struck out~~, and some is
 \`inline code\`. A link goes to
 [somewhere](https://example.invalid/vault "a title"), and
-<https://example.invalid/plain> stands on its own.
+<https://example.invalid/plain> is on its own.
 
 ## What follows from it
 

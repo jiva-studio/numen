@@ -247,7 +247,7 @@ func TestSave_PreservesUnknownFields(t *testing.T) {
 		t.Fatal(err)
 	}
 	if file.Appearance.Theme != "preset:nord" {
-		t.Errorf("wears %q", file.Appearance.Theme)
+		t.Errorf("applied %q", file.Appearance.Theme)
 	}
 	if file.Appearance.Zoom != 1.5 || file.Appearance.Tint != "warm" {
 		t.Errorf("the window section is now %+v", file.Appearance)
@@ -298,7 +298,7 @@ func TestSavingIntoAFileThatIsNotThereWritesTheSettingAlone(t *testing.T) {
 		t.Fatal(err)
 	}
 	if cfg.Appearance.Theme != "preset:gruvbox" {
-		t.Errorf("wears %q", cfg.Appearance.Theme)
+		t.Errorf("applied %q", cfg.Appearance.Theme)
 	}
 	if cfg.Appearance.Mode != settings.ModeSystem || cfg.Appearance.TextScale != settings.AsDesigned {
 		t.Errorf("the rest of the file is not the defaults: %+v", cfg)

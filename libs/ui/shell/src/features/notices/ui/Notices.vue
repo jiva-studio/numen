@@ -67,7 +67,7 @@ const { polite, assertive } = useAnnouncer(() => notices.value)
 
 <template>
   <div class="notices numen text-small font-sans">
-    <LiveRegions :told="polite" :cried="assertive" />
+    <LiveRegions :polite="polite" :assertive="assertive" />
 
     <aside
       v-if="folds.visible.length || folds.overflowCount"

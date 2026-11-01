@@ -573,8 +573,8 @@ func TestVaultSession_ConcurrentSwapAndCloseDoNotCancel(t *testing.T) {
 // Two processes write the index, so a write can complete while the index is
 // behind: the file is on disk and search does not yet contain its content.
 
-// refuseToLevel is an index that will not come level with what was written.
-func refuseToLevel(context.Context, domain.Vault, []string) error {
+// refuseToUpdate is an index that cannot be updated for what was written.
+func refuseToUpdate(context.Context, domain.Vault, []string) error {
 	return errors.New("the index is held open elsewhere")
 }
 
@@ -585,7 +585,7 @@ func unwritten(t *testing.T, notes map[string]string) *going {
 
 	f := openWindow(t, nil, notes)
 	waitForScan(t, f)
-	*f.installation.Services.NoteWrite() = f.installation.Services.NoteWrite().WithIndex(refuseToLevel)
+	*f.installation.Services.NoteWrite() = f.installation.Services.NoteWrite().WithIndex(refuseToUpdate)
 	return f
 }
 
@@ -607,7 +607,7 @@ func TestWriteNote_IndexFailureStillSucceeds(t *testing.T) {
 	if answer.Msg.GetAt() == nil {
 		t.Error("the save landed and the client was handed no fingerprint")
 	}
-	if !answer.Msg.GetIsUnlevelled() {
+	if !answer.Msg.GetIsIndexOutdated() {
 		t.Error("the save is answered as findable and search does not hold it")
 	}
 	if target := onDisk(t, f.root, "Note.md"); !strings.Contains(target, "what the person typed") {
@@ -629,10 +629,10 @@ func TestASaveTheIndexCameLevelWithReturnsNothingIsPrior(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetIsUnlevelled() {
-		t.Error("a save the index came level with is answered as behind")
+	if answer.Msg.GetIsIndexOutdated() {
+		t.Error("a save the index was updated for is answered as behind")
 	}
-	if pos := findLevellingTask(t, f); pos != nil {
+	if pos := findUpdateIndexTask(t, f); pos != nil {
 		t.Errorf("a save that went through is in the list as %+v", pos)
 	}
 }
@@ -654,24 +654,24 @@ func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 	}
 
 	save()
-	pos := findLevellingTask(t, f)
+	pos := findUpdateIndexTask(t, f)
 	if pos == nil || pos.GetError() == "" {
 		t.Fatalf("what a person is shown after a save search cannot see is %+v", pos)
 	}
 
-	// The index stays behind until a later write brings it level, and that write
+	// The index stays behind until a later write updates it, and that write
 	// reports the state.
 	*f.installation.Services.NoteWrite() = f.installation.Services.NoteWrite().WithIndex(func(context.Context, domain.Vault, []string) error { return nil })
 	save()
-	if offset := findLevellingTask(t, f); offset != nil {
+	if offset := findUpdateIndexTask(t, f); offset != nil {
 		t.Errorf("the index came level and a person is still shown %+v", offset)
 	}
 }
 
-// findLevellingTask returns the task-list entry about the index, requested the
+// findUpdateIndexTask returns the task-list entry about the index, requested the
 // way the window requests it. The first stream message is the current list, so
 // nothing here waits.
-func findLevellingTask(t *testing.T, f *going) *v1.Task {
+func findUpdateIndexTask(t *testing.T, f *going) *v1.Task {
 	t.Helper()
 
 	listening, cancel := context.WithCancel(t.Context())
@@ -687,7 +687,7 @@ func findLevellingTask(t *testing.T, f *going) *v1.Task {
 		t.Fatalf("the tasks stream never opened: %v", tasks.Err())
 	}
 	for _, item := range tasks.Msg().GetTasks() {
-		if item.GetId() == "levelling the index" {
+		if item.GetId() == "update index" {
 			return item
 		}
 	}
@@ -699,7 +699,7 @@ func findLevellingTask(t *testing.T, f *going) *v1.Task {
 func TestCreateNote_IndexFailureStillSucceeds(t *testing.T) {
 	f := openWindow(t, nil, nil)
 	waitForScan(t, f)
-	*f.installation.Services.NoteCreate() = f.installation.Services.NoteCreate().WithIndex(refuseToLevel)
+	*f.installation.Services.NoteCreate() = f.installation.Services.NoteCreate().WithIndex(refuseToUpdate)
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title: "Entropy",
@@ -710,7 +710,7 @@ func TestCreateNote_IndexFailureStillSucceeds(t *testing.T) {
 	if path := answer.Msg.GetPath(); path != "Entropy.md" {
 		t.Fatalf("the note is filed at %q", path)
 	}
-	if !answer.Msg.GetIsUnlevelled() {
+	if !answer.Msg.GetIsIndexOutdated() {
 		t.Error("the note is answered as findable and search does not hold it")
 	}
 }
@@ -725,7 +725,7 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 			"# Entropy\n",
 	})
 	waitForScan(t, f)
-	*f.installation.Services.FileRemove() = f.installation.Services.FileRemove().WithIndex(refuseToLevel)
+	*f.installation.Services.FileRemove() = f.installation.Services.FileRemove().WithIndex(refuseToUpdate)
 
 	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "Ontology.md",
@@ -736,7 +736,7 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 	if answer.Msg.GetTrashed() == "" {
 		t.Error("the note went to the trash and the client received nothing of where")
 	}
-	if !answer.Msg.GetIsUnlevelled() {
+	if !answer.Msg.GetIsIndexOutdated() {
 		t.Error("the removal is answered as followed and search still holds the note")
 	}
 	if len(answer.Msg.GetDangling()) != 1 {

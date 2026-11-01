@@ -92,7 +92,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 	}
 	to := pathpkg.Join(pathpkg.Dir(path), name+pathpkg.Ext(path))
 	moved, err := u.Move.Execute(ctx, v, path, to)
-	if moved.IsLanded {
+	if moved.IsMoved {
 		res.Path, res.Moved = moved.To, &moved
 	}
 	return res, err

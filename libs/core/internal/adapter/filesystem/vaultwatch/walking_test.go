@@ -54,7 +54,7 @@ func writeFolderOfNotes(t *testing.T, root, name string, notes int) string {
 }
 
 // TestAFolderNewToTheWatchIsHandedOverRatherThanWalked. The one goroutine that
-// empties the backlog walks nothing: a folder new to the watch is handed back
+// empties the backlog walks nothing: a folder new to the watch is returned
 // as a name, and it is walked beside the backlog that goes on emptying.
 func TestAFolderNewToTheWatchIsHandedOverInsteadOfWalked(t *testing.T) {
 	root, shape := makeVaultAndShape(t)
@@ -68,7 +68,7 @@ func TestAFolderNewToTheWatchIsHandedOverInsteadOfWalked(t *testing.T) {
 		t.Errorf("the folder was walked where the events are drained: %v", paths)
 	}
 	if walk != pos {
-		t.Fatalf("the folder was not handed over to be walked: %q", walk)
+		t.Fatalf("the folder was not passed to be walked: %q", walk)
 	}
 
 	target, whole := shape.GetPathsUnder(t.Context(), walk)

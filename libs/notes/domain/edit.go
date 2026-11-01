@@ -36,8 +36,8 @@ type Move struct {
 type MoveResult struct {
 	From string
 	To   string
-	// IsLanded is whether the file is at To.
-	IsLanded bool
+	// IsMoved is whether the file is at To.
+	IsMoved bool
 	// Repaired is the notes whose link stopped resolving and was written
 	// again, by name.
 	Repaired []string

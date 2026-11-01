@@ -346,7 +346,7 @@ func TestRemoveFile_TrashesNoteAndReturnsDanglingLinks(t *testing.T) {
 		t.Fatalf("the note failed: %v", code)
 	}
 	if trashed := answer.Msg.GetTrashed(); trashed != ".trash/Entropy.md" {
-		t.Errorf("the note sits at %q", trashed)
+		t.Errorf("the note is at %q", trashed)
 	}
 	dangling := answer.Msg.GetDangling()
 	if len(dangling) != 1 || dangling[0] != "Heat.md" {
@@ -1411,7 +1411,7 @@ func TestARemovedFolderGoesToTheTrashWithEverythingBelowIt(t *testing.T) {
 		t.Fatalf("the folder failed: %v", code)
 	}
 	if trashed := answer.Msg.GetTrashed(); trashed != ".trash/physics" {
-		t.Errorf("the folder sits at %q", trashed)
+		t.Errorf("the folder is at %q", trashed)
 	}
 	dangling := answer.Msg.GetDangling()
 	if len(dangling) != 1 || dangling[0] != "Heat.md" {

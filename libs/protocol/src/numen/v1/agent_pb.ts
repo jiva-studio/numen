@@ -4,7 +4,7 @@
 
 // What a client asks an agent, and what it hears back while the agent works.
 //
-// The window hands over a person's task and draws what arrives, a step at a
+// The window passes a person's task and draws what arrives, a step at a
 // time. What the agent is and how it reaches the vault is the application's
 // business and is said nowhere here.
 
@@ -812,7 +812,7 @@ export const GetAgentToolsResponseSchema: GenMessage<GetAgentToolsResponse> = /*
  */
 export const AgentService: GenService<{
   /**
-   * AskAgent hands over a task and reports what the agent does, in the order it
+   * AskAgent passes a task and reports what the agent does, in the order it
    * does it, until it is done. Letting go of the stream stops the agent.
    *
    * @generated from rpc numen.v1.AgentService.AskAgent

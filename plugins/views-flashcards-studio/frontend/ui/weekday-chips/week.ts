@@ -7,7 +7,7 @@
 
 /** What a day is called. */
 export interface DayName {
-  /** The caller's own identifier, handed back as given. */
+  /** The caller's own identifier, returned as given. */
   readonly id: string
   /** What is drawn on the chip: a letter or two. */
   readonly short: string

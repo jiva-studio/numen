@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/appearance"
 )
 
-// Appearance is how the window is drawn.
+// Appearance holds the theme, the mode and the sizes of the window.
 type Appearance struct {
 	// InterfaceScale is the scale of the window: its chrome, its controls, the
 	// spacing between them and the type in them. A number outside

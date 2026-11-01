@@ -90,7 +90,7 @@ describe('the themes the palette offers', () => {
     expect(groups[1]?.items.map((one) => one.title)).toStrictEqual(['Night', 'Day'])
   })
 
-  it('mark the one worn', async () => {
+  it('mark the applied one', async () => {
     const { appearance } = open(setup.client)
     await appearance.refresh()
 
@@ -113,7 +113,7 @@ describe('the themes the palette offers', () => {
 })
 
 describe('choosing a theme', () => {
-  it('writes the name with the mode in force and dresses the page in it', async () => {
+  it('writes the name with the mode in force and applies it to the page', async () => {
     const { client } = createClient()
     const { appearance, page } = open(client)
     await appearance.refresh()
@@ -152,7 +152,7 @@ describe('choosing a theme', () => {
 })
 
 describe('choosing a mode', () => {
-  it('writes the theme worn with the mode and writes the color scheme of the mode', async () => {
+  it('writes the applied theme with the mode and writes the color scheme of the mode', async () => {
     const { client } = createClient()
     const { appearance, page } = open(client)
     await appearance.refresh()
@@ -164,7 +164,7 @@ describe('choosing a mode', () => {
     expect(appearance.mode.value).toBe('dark')
   })
 
-  it('cannot be done while the theme worn sets light or dark itself', async () => {
+  it('cannot be done while the applied theme sets light or dark itself', async () => {
     const { client } = createClient({ ...LIST, applied: NIGHT.name })
     const { appearance } = open(client)
     await appearance.refresh()
@@ -212,7 +212,7 @@ describe('reading the themes again', () => {
     expect(style(page, 'theme')).toBeUndefined()
   })
 
-  it('dresses the page in the default theme when the theme worn is gone', async () => {
+  it('applies the default theme to the page when the applied theme is gone', async () => {
     const { client, state } = createClient({ ...LIST, applied: DAY.name })
     const { appearance, page } = open(client)
     await appearance.refresh()

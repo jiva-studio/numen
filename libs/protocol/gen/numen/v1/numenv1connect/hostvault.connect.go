@@ -147,7 +147,7 @@ type HostVaultServiceClient interface {
 	LockVault(context.Context, *connect.Request[v1.LockVaultRequest]) (*connect.Response[v1.LockVaultResponse], error)
 	// UnlockVault lets the writers go.
 	UnlockVault(context.Context, *connect.Request[v1.UnlockVaultRequest]) (*connect.Response[v1.UnlockVaultResponse], error)
-	// ScanFiles brings the index level with the files named, after the plugin
+	// ScanFiles updates the index for the files named, after the plugin
 	// changed them.
 	ScanFiles(context.Context, *connect.Request[v1.ScanFilesRequest]) (*connect.Response[v1.ScanFilesResponse], error)
 	// GetNoteRefs names the notes at the paths given, and leaves out a path with
@@ -582,7 +582,7 @@ type HostVaultServiceHandler interface {
 	LockVault(context.Context, *connect.Request[v1.LockVaultRequest]) (*connect.Response[v1.LockVaultResponse], error)
 	// UnlockVault lets the writers go.
 	UnlockVault(context.Context, *connect.Request[v1.UnlockVaultRequest]) (*connect.Response[v1.UnlockVaultResponse], error)
-	// ScanFiles brings the index level with the files named, after the plugin
+	// ScanFiles updates the index for the files named, after the plugin
 	// changed them.
 	ScanFiles(context.Context, *connect.Request[v1.ScanFilesRequest]) (*connect.Response[v1.ScanFilesResponse], error)
 	// GetNoteRefs names the notes at the paths given, and leaves out a path with

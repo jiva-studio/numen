@@ -112,7 +112,7 @@ type PluginVaultWriter interface {
 	Create(ctx context.Context, path string, content []byte) error
 	// Lock holds the vault's writers until the release is called.
 	Lock(ctx context.Context) (release func(), err error)
-	// Scan brings the index level with the files named.
+	// Scan updates the index for the files named.
 	Scan(ctx context.Context, paths []string) error
 }
 

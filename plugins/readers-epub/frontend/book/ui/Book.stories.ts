@@ -394,7 +394,7 @@ export const VerseSetInAPreElement: Story = {
     await expect(activeSet.scrollHeight).toBeLessThanOrEqual(activeSet.clientHeight + 1)
     await expect(activeSet.scrollWidth).toBeLessThanOrEqual(activeSet.clientWidth + 1)
 
-    // It relies on the paper the rest of the text does. The typography dresses
+    // It relies on the paper the rest of the text does. The typography styles
     // a pre as a block of code, and a title page is not one.
     const renderedStyle = getComputedStyle(activeSet)
     await expect(renderedStyle.backgroundColor).toBe('rgba(0, 0, 0, 0)')

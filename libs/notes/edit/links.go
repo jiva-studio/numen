@@ -26,7 +26,7 @@ func (e Edit) PointAt(
 		return domain.FileStat{}, errors.New("a link is pointed at under a type")
 	}
 	if to.Value != "" && !domain.IsKnownRole(role) {
-		return domain.FileStat{}, fmt.Errorf("%q is not a role a link can carry", role)
+		return domain.FileStat{}, fmt.Errorf("%q is not a role a link can have", role)
 	}
 	return e.Apply(ctx, v, from, func(doc *markdown.Document) error {
 		return doc.SetLinkOfType(of, to, role)

@@ -241,7 +241,7 @@ message NoteHeadings {
   repeated Heading headings = 2;
 }
 
-// Heading is one line of a note that names what stands below it.
+// Heading is one line of a note that names what is below it.
 message Heading {
   string text = 1;
 
@@ -299,10 +299,10 @@ message WriteNoteResponse {
   // Absent when nothing was written.
   optional FileStat at = 2;
 
-  // Set when the prose is on disk and the index would not come level with it.
+  // Set when the prose is on disk and the index could not be updated for it.
   // The write happened and `at` stands; search answers about this note as it
   // read it last, until a walk goes past.
-  bool is_unlevelled = 3;
+  bool is_index_outdated = 3;
 }
 
 // Role is what kind of relationship a link is. The list is closed: navigation
@@ -362,10 +362,10 @@ message CreateNoteResponse {
   // Set when nothing was made, and why.
   optional ErrorCode error = 2;
 
-  // Set when the note is on disk and the index would not come level with it.
+  // Set when the note is on disk and the index could not be updated for it.
   // The note was made and `path` stands; search does not answer about it until
   // a walk goes past.
-  bool is_unlevelled = 3;
+  bool is_index_outdated = 3;
 
   // Set when no title was given and every numbered untitled name is taken.
   bool is_name_exhausted = 4;
@@ -506,8 +506,8 @@ message CreateRelatedNoteResponse {
   // Set when nothing was made, and why.
   optional ErrorCode error = 2;
 
-  // Set when the note is on disk and the index would not come level with it.
-  bool is_unlevelled = 3;
+  // Set when the note is on disk and the index could not be updated for it.
+  bool is_index_outdated = 3;
 
   // Set when every numbered untitled name is taken.
   bool is_name_exhausted = 4;
@@ -577,10 +577,10 @@ message RenameNoteResponse {
   // caller never saw is ERROR_CODE_STALE, and nothing was written at all.
   optional ErrorCode error = 5;
 
-  // Set when the rename reached the vault and the index would not come level
+  // Set when the rename reached the vault and the index could not be updated
   // with it. Search answers about these files as it read them last, until a
   // walk goes past.
-  bool is_unlevelled = 6;
+  bool is_index_outdated = 6;
 }
 
 message WatchEditsRequest {}

@@ -98,7 +98,7 @@ const wrongWith = (field: string): readonly string[] => props.wrong?.get(field) 
 </script>
 
 <template>
-  <!-- A field is let go anywhere in the part its list stands in, so the way the
+  <!-- A field is let go anywhere in the part its list is in, so the way the
        list is added by takes it and a card model naming no field still has
        somewhere to put one. -->
   <section

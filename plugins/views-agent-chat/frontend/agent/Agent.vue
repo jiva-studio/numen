@@ -123,7 +123,7 @@ const agentStyle = computed(() => ({ '--agent-room': room.value }))
   --fade: 1.25rem;
   --lift: 0.75rem;
   /* What is left between the last turn and the composer written over it. */
-  --breath: 1.75rem;
+  --gutter: 1.75rem;
 
   position: relative;
   block-size: 100%;

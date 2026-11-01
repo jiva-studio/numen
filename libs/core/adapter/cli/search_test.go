@@ -110,7 +110,7 @@ func TestASearchByWordsAloneReturnsWhy(t *testing.T) {
 	if out != "nothing found\n" {
 		t.Errorf("search said %q", out)
 	}
-	if copyPath != "searching by words alone: rejected on purpose\n" {
+	if copyPath != "search by words only: rejected on purpose\n" {
 		t.Errorf("search said beside its answer %q", copyPath)
 	}
 
@@ -178,7 +178,7 @@ func TestAHalfThatCannotRunIsHeardAboutAdjacentTheAnswer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if stderr != "answering by words alone: rejected on purpose\n" {
+	if stderr != "search by words only: rejected on purpose\n" {
 		t.Errorf("search said beside its answer %q", stderr)
 	}
 }

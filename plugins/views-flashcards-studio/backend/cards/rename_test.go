@@ -382,16 +382,16 @@ func TestRenamingAFieldToItsOwnNameWritesNothing(t *testing.T) {
 	}
 }
 
-// Every file a rename wrote is brought level in the index: the card model, and each
+// Every file a rename wrote is updated in the index: the card model, and each
 // deck a heading was rewritten in.
 func TestARenameLevelsEveryFileItWrote(t *testing.T) {
 	vs := newVaults(t)
-	var levelled []string
+	var updated []string
 	u := cards.NewRenameField(
 		vs.ports.Readers, vs.ports.Writers,
 		vs.queries, vs.queries,
 		func(_ context.Context, _ domain.Vault, paths []string) error {
-			levelled = append(levelled, paths...)
+			updated = append(updated, paths...)
 			return nil
 		},
 		vaulttest.NewClock(),
@@ -402,8 +402,8 @@ func TestARenameLevelsEveryFileItWrote(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("rename: %v", err)
 	}
-	if !slices.Equal(levelled, []string{"Animal.md", "decks/Birds.md", "decks/Mammals.md"}) {
-		t.Errorf("levelled = %v", levelled)
+	if !slices.Equal(updated, []string{"Animal.md", "decks/Birds.md", "decks/Mammals.md"}) {
+		t.Errorf("updated = %v", updated)
 	}
 }
 

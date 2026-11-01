@@ -42,7 +42,7 @@
   --sl-content-pad-x: 2rem;
 }
 
-/* Everything below stands after Starlight's own layers, so it is the last word
+/* Everything below is after Starlight's own layers, so it is the last word
    on the few things a custom property cannot say. */
 
 /* The bar across the top, and the name in the corner set as it is set on the

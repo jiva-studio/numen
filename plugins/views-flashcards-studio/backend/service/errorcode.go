@@ -78,5 +78,5 @@ func newError(code server.ErrorCode, err error) error {
 	return server.NewAPIError(code, err.Error())
 }
 
-// isUnlevelled reports whether a write reached the vault and the index was not updated.
-func isUnlevelled(err error) bool { return errors.Is(err, edit.ErrUnlevelled) }
+// isIndexOutdated reports whether a write reached the vault and the index was not updated.
+func isIndexOutdated(err error) bool { return errors.Is(err, edit.ErrIndexOutdated) }

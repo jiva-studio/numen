@@ -160,7 +160,7 @@ const handle = (req, res) => {
 }
 
 /**
- * Starts the local server that stands in for what the application reaches outside the
+ * Starts the local server that is in for what the application reaches outside the
  * machine: the release manifest of dl.numen.md and an OpenAI-compatible chat API. A test switches
  * the release through `/stand-in/release` and reads how often each path was asked for through
  * `/stand-in/requests`.

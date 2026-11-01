@@ -79,7 +79,7 @@ func createLinks(ctx context.Context, cfg container.Config) (cli.Links, error) {
 		return cli.Links{}, err
 	}
 	notes := cfg.Notes(
-		db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), cfg.Level(db))
+		db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), cfg.UpdateIndex(db))
 	return cli.Links{Show: notes.Links, Close: db.Close}, nil
 }
 

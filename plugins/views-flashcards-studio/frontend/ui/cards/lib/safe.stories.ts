@@ -271,7 +271,7 @@ const wrong = (element: Element): string | null => {
     const response = stripControls(src)
     if (scheme(response) === 'data:') {
       if (!INLINE_IMAGE.test(response))
-        return `a picture stands in the text as ${response.slice(0, 30)}`
+        return `a picture is in the text as ${response.slice(0, 30)}`
     } else if (scheme(response) !== null || /^[\\/]{2}/.test(response)) {
       return `a picture would be fetched from ${response.slice(0, 40)}`
     }

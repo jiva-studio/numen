@@ -4,7 +4,7 @@
 // 	protoc        (unknown)
 // source: numen/v1/theme.proto
 
-// What a client may ask about how the window is drawn: the themes it can wear,
+// What a client may ask about how the window is drawn: the themes it can apply,
 // and how large it and the text in it are.
 //
 // A theme is one stylesheet that redeclares the tokens the interface draws

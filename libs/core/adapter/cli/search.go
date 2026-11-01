@@ -26,14 +26,14 @@ func runSearchCommand(
 	// The same search the window runs. An installation with no model searches by
 	// words alone, which is reported through the error handler.
 	diagnostics := newReporter(errOut)
-	errorHandler := func(err error) { diagnostics.Printf("answering by words alone: %v\n", err) }
+	errorHandler := func(err error) { diagnostics.Printf("search by words only: %v\n", err) }
 	open, err := deps.Search(ctx, v, errorHandler)
 	if err != nil {
 		return err
 	}
 	defer closeInto(&err, open.Close)
 	if open.Words != nil {
-		diagnostics.Printf("searching by words alone: %v\n", open.Words)
+		diagnostics.Printf("search by words only: %v\n", open.Words)
 	}
 
 	found, err := open.Search.Execute(ctx, v, args[1], search.Parameters{})

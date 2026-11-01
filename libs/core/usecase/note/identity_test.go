@@ -98,7 +98,7 @@ func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 				if err != nil {
 					rt.Fatalf("move %s to %s: %v", path, to, err)
 				}
-				if out.IsLanded {
+				if out.IsMoved {
 					path = out.To
 				}
 			case "rename", "rename apart":
@@ -125,7 +125,7 @@ func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 			now, holds := getIdentifier(rt, c.vault.Path, path)
 			switch {
 			case stamped && (!holds || now != was):
-				rt.Fatalf("a note stamped %q stands at %q after step %d, filed at %s",
+				rt.Fatalf("a note stamped %q is at %q after step %d, filed at %s",
 					was, now, step, path)
 			case moved && !stamped && holds:
 				rt.Fatalf("a move stamped %q into a note that carried none, at %s",

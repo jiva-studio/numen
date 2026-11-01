@@ -36,7 +36,7 @@ func main() {
 	var debug debugOptions
 	flag.StringVar(&cfg.IndexPath, "index", cfg.IndexPath, "path to the index database")
 	flag.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
-	flag.BoolVar(&showVersion, "version", false, "say what this build is and stop")
+	flag.BoolVar(&showVersion, "version", false, "print the version and exit")
 	registerDebugFlags(flag.CommandLine, &debug)
 	flag.Parse()
 

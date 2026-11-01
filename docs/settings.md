@@ -28,11 +28,11 @@ How the window is drawn: how large, which half of a colour pair, and which palet
 | `interface_scale` | how large the interface is drawn — its chrome, its controls, the spacing between them and the type in them. 1 is as designed, and it goes from 0.8 to 2.                                                                                 |
 | `text_scale`      | how large the text a person reads is set: a note, a book, an answer, the editor. 1 is as designed, and it goes from 0.8 to 1.75.                                                                                                         |
 | `mode`            | which half of a colour pair is read: `system`, `light` or `dark`. Any other word is read as `system`.                                                                                                                                    |
-| `theme`           | the stylesheet the window wears, named by its origin and its identifier: `preset:numen` ships inside the application, `mine:dracula` is the person's file, and `plugin:md.numen.themes.presets/dracula` is a theme of an enabled plugin. |
+| `theme`           | the stylesheet the window applies, named by its origin and its identifier: `preset:numen` ships inside the application, `mine:dracula` is the person's file, and `plugin:md.numen.themes.presets/dracula` is a theme of an enabled plugin. |
 
 Each size is a multiplier. `interface_scale` is the root's font size, and every length in the window is a multiple of it: the height of a field and a button, the clearance inside a node, the radii, the spacing, and the type throughout. `text_scale` is a second multiplier over the text a person reads — the editor, and marked-up text with the scale above it, its headings, code, lists and quotations. A hairline, a border, a focus ring and the stroke of a handle are one physical line under either.
 
-A number outside the valid range is rejected. What stands in the window's place is in [Starting](starting.md). The number is left as it was written.
+A number outside the valid range is rejected. What is in the window's place is in [Starting](starting.md). The number is left as it was written.
 
 A file naming no size at all asks the desktop: a session that set `GDK_DPI_SCALE` draws its interface by that, and one that said nothing is drawn at 1. A scale outside what `interface_scale` goes to is not one it is seeded with.
 
@@ -46,7 +46,7 @@ A `zoom` outside what `interface_scale` goes to keeps its name and is said, and 
 
 The tokens a theme sets, where the person's themes live, and how a file names itself light-and-dark or one half only are in [Themes](themes.md).
 
-A theme pinning `color-scheme` is published in one half, and `mode` has nothing left to choose while it is worn. A name matching nothing wears `preset:numen`, and the name that was not found is said; this file is left as it is.
+A theme pinning `color-scheme` is published in one half, and `mode` has nothing left to choose while it is applied. A name matching nothing falls back to `preset:numen`, and the name that was not found is reported; this file is left as it is.
 
 Choosing a theme, light or dark, or either size writes the field it names back here — each is a command of its own in the palette, over the window. The file is read as an object, the named fields are set, and it is written back, so a key this build knows nothing about comes through the write unchanged. A file that does not parse is not written.
 

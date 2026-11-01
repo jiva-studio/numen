@@ -1124,7 +1124,7 @@ func getRefusal(from, to string) string {
 			return "an adapter is given what it needs and takes no other adapter"
 		}
 		if strings.HasPrefix(to, "usecase/") && !getDriving()[family(from)] {
-			return "a driven adapter stands behind a port and runs no scenario"
+			return "a driven adapter is behind a port and runs no scenario"
 		}
 		if isUnder(to, "port") && getDriving()[family(from)] {
 			return "a driving adapter calls the use case layer and imports no port directly"

@@ -23,7 +23,7 @@ import (
 type Replace struct {
 	readers vaultport.VaultReaders
 	writers vaultport.VaultWriters
-	index   Levels
+	index   IndexUpdater
 	// Drawing is notified of each change while it is applied. When nil, no
 	// notification is sent.
 	Drawing TellEdit
@@ -31,13 +31,13 @@ type Replace struct {
 }
 
 // NewReplace creates a Replace from the vault readers and writers, the index
-// leveller and the clock.
+// index updater and the clock.
 //
-// All four are required, as for NewWrite: without the leveller, a replacement
+// All four are required, as for NewWrite: without the index updater, a replacement
 // changes the file but the index does not reflect the new content, and without
 // the clock the note is stamped with the machine's time.
 func NewReplace(
-	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index Levels, now machineport.Clock,
+	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater, now machineport.Clock,
 ) Replace {
 	return Replace{readers: readers, writers: writers, index: index, now: now}
 }
@@ -81,7 +81,7 @@ type AmbiguousSpan struct {
 }
 
 func (e AmbiguousSpan) Error() string {
-	return fmt.Sprintf("this span stands in %d places; take in enough of what is around "+
+	return fmt.Sprintf("this span is in %d places; take in enough of what is around "+
 		"one of them to tell it from the others", e.Places)
 }
 

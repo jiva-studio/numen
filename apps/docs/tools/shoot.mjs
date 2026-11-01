@@ -118,7 +118,7 @@ try {
       } catch {
         throw new Error(`${shot.story} drew nothing this build could photograph`)
       }
-      // A picture of a theme is the window wearing that theme: the palette
+      // A picture of a theme is the window with that theme applied: the palette
       // that ships with the application, spliced in as the window splices it.
       if (shot.preset) {
         await page.addStyleTag({ content: readPreset(shot.preset) })

@@ -202,7 +202,7 @@
       "key": "custom_dict_path",
       "type": "file",
       "title": "Character dictionary",
-      "description": "UTF-8 text, one character per line. Empty for a model that carries its own",
+      "description": "UTF-8 text, one character per line. Empty for a model that includes its own",
       "accept": [".txt"],
       "default": "",
       "when": {

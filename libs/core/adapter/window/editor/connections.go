@@ -37,7 +37,7 @@ type connectionFailure struct {
 // error to fail the call with when the schema carries no answer for it.
 func (h *noteHandler) failureOf(err error) (connectionFailure, error) {
 	switch {
-	case err == nil, h.state.isUnlevelled(err):
+	case err == nil, h.state.isIndexOutdated(err):
 		return connectionFailure{}, nil
 	case errors.Is(err, domain.ErrHierarchyCycle):
 		return connectionFailure{isCycle: true}, nil
@@ -182,7 +182,7 @@ func (h *noteHandler) CreateRelatedNote(
 	}
 	marker, ok := wire.ConvertMarkerFromWire(r.Msg.GetMarker())
 	if !ok {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("no link carries this marker"))
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("no link has this marker"))
 	}
 	if !h.state.Writing.begin() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
@@ -192,10 +192,10 @@ func (h *noteHandler) CreateRelatedNote(
 	made, err := h.createInRelation.Execute(ctx, showing, domain.RelatedNote{
 		From: r.Msg.GetFrom(), Role: role, Title: r.Msg.GetTitle(), Type: r.Msg.GetType(), Marker: marker,
 	})
-	unlevelled := h.state.isUnlevelled(err)
+	indexOutdated := h.state.isIndexOutdated(err)
 	switch {
 	case made.Path != "":
-		return connect.NewResponse(&v1.CreateRelatedNoteResponse{Path: made.Path, IsUnlevelled: unlevelled}), nil
+		return connect.NewResponse(&v1.CreateRelatedNoteResponse{Path: made.Path, IsIndexOutdated: indexOutdated}), nil
 	case errors.Is(err, domain.ErrNoFreeName):
 		return connect.NewResponse(&v1.CreateRelatedNoteResponse{IsNameExhausted: true}), nil
 	case errors.Is(err, domain.ErrNotCreatable):

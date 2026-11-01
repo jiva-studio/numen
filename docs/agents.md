@@ -46,7 +46,7 @@ Where the person has a note in front of them, its path is named, and a task sayi
 
 ## What an answer links to
 
-A note an answer speaks about is named as `[[Harmonic oscillator]]` — the same brackets a note is written with, resolved the same way, and pressing one opens the note in a tab beside what the person is looking at. A name no note answers to is drawn as reaching nothing, and pressing it opens nothing. `[[note://<identifier>]]` names one note where a title is shared. See [Links](links.md).
+A note an answer mentions is named as `[[Harmonic oscillator]]` — the same brackets a note is written with, resolved the same way, and pressing one opens the note in a tab beside what the person is looking at. A name no note answers to is drawn as reaching nothing, and pressing it opens nothing. `[[note://<identifier>]]` names one note where a title is shared. See [Links](links.md).
 
 A passage of a book is named as `[the Remuna episode](numen:library%2FA%20Book.pdf?start=62690&length=1246)`: a document's path, percent-encoded, and the run of its text the search gave. Pressing one opens the document there, with the other passages of that answer lit beside it.
 
@@ -95,13 +95,13 @@ Three plugins register the tools an agent reaches, each over the subject it owns
 | `card_remove`                                                    | take one card out of a deck                                                               | full    |
 | `card_section_add`, `card_section_rename`, `card_section_remove` | write, rename and remove the sections a deck is divided into                              | full    |
 
-A card is named by its card id and never by the place it stands in, so a deck reordered under an agent leaves what it holds addressable. Every write to a deck takes the fingerprint `card_read` gave, and lands only on the deck that fingerprint names.
+A card is named by its card id and never by the place it is in, so a deck reordered under an agent leaves what it holds addressable. Every write to a deck takes the fingerprint `card_read` gave, and lands only on the deck that fingerprint names.
 
 `file_read` is how a file that is not a note is read — a transcript somebody typed, an export, whatever they put in the folder — and how a file too long to answer with is read a range at a time.
 
 ### How a tool is named
 
-A tool is named for the subject it acts on, then what it does: `note_read`, `card_add`, `window_focus_tab`. Three tools carry a second name that answers the same call: `search_query` is `note_search`, `link_list` is `note_neighbourhood`, and `vault_get` is `vault_info`. `edit_preview` stands under no subject.
+A tool is named for the subject it acts on, then what it does: `note_read`, `card_add`, `window_focus_tab`. Three tools carry a second name that answers the same call: `search_query` is `note_search`, `link_list` is `note_neighbourhood`, and `vault_get` is `vault_info`. `edit_preview` is under no subject.
 
 ## The servers
 

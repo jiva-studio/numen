@@ -31,7 +31,7 @@ func TestConfigure_UsesConfiguredKeyNotEnvironment(t *testing.T) {
 
 	configure(map[string]string{"provider": "custom", "baseUrl": service.URL})
 	if key, _ := emb.getService(); key != "" {
-		t.Fatalf("key = %q while Configure handed over none", key)
+		t.Fatalf("key = %q while Configure passed none", key)
 	}
 
 	configure(map[string]string{"provider": "custom", "baseUrl": service.URL, server.SecretAPIKey: "host-key"})
@@ -43,7 +43,7 @@ func TestConfigure_UsesConfiguredKeyNotEnvironment(t *testing.T) {
 		t.Errorf("vectors = %v, want the one the service answered", vectors)
 	}
 	if len(auth) != 1 || auth[0] != "Bearer host-key" {
-		t.Errorf("the service was asked with %v, want only the key Configure handed over", auth)
+		t.Errorf("the service was asked with %v, want only the key Configure passed", auth)
 	}
 
 	configure(map[string]string{"provider": "custom", "baseUrl": service.URL, server.SecretAPIKey: ""})

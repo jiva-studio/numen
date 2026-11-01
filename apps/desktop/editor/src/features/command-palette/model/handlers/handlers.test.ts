@@ -852,7 +852,7 @@ describe('a vault taken off the list', () => {
     expect(one.actions).toStrictEqual(['erases heat'])
   })
 
-  it('says a machine with nowhere to put what is deleted', async () => {
+  it('says a machine with no trash', async () => {
     const one = window({ turnedDown: 'noTrash' })
 
     await carry(createInvocation('eraseVault', heat(), 'Heat'), one.on)

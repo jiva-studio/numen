@@ -269,7 +269,7 @@ export type RemoveVaultRequest = Message<"numen.v1.RemoveVaultRequest"> & {
   id: string;
 
   /**
-   * Trash sends the folder to the place this machine keeps what a person
+   * Trash sends the folder to the trash of this machine, where a person
    * deleted. A folder no longer carrying this vault's identity stays where it
    * is and the vault stays on the list.
    *
@@ -404,7 +404,7 @@ export enum VaultsErrorCode {
   UNKNOWN = 7,
 
   /**
-   * This machine has nowhere to put what is deleted, so the folder stays where
+   * This machine has no trash, so the folder stays where
    * it is and the vault stays on the list.
    *
    * @generated from enum value: VAULTS_ERROR_CODE_NO_TRASH = 8;

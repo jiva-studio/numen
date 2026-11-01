@@ -70,7 +70,7 @@ export const createProgramModels =
           }),
         ),
         createModel(settingPath, {
-          title: 'Nothing answers',
+          title: 'No agent responds',
           isDefault: !programs.some((one) => one.isDefault),
         }),
       ]

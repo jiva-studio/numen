@@ -1103,7 +1103,7 @@ func (*LockVaultRequest) Descriptor() ([]byte, []int) {
 type LockVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Error HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
-	// The lock to hand back to UnlockVault.
+	// The lock to return to UnlockVault.
 	Lock          string `protobuf:"bytes,2,opt,name=lock,proto3" json:"lock,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

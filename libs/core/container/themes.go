@@ -66,14 +66,14 @@ func (c Config) readAppearance(scales *theme.Scales) (theme.Appearance, error) {
 	if err != nil {
 		return theme.Appearance{}, err
 	}
-	aged := theme.Appearance{
+	current := theme.Appearance{
 		ThemeName:      activeSettings.Appearance.Theme,
 		Mode:           settings.Mode(activeSettings.Appearance.Mode),
 		InterfaceScale: activeSettings.Appearance.InterfaceScale,
 		TextScale:      activeSettings.Appearance.TextScale,
 	}
-	scales.Apply(&aged)
-	return aged, nil
+	scales.Apply(&current)
+	return current, nil
 }
 
 const appearancePrefix = "appearance"

@@ -14,7 +14,7 @@ import { WORDS } from '@/shared/words'
 describe('the four commands over how the window is drawn', () => {
   /** What the mode's element holds while the tokens are read as a pair. */
   const PAIR = ':root { color-scheme: light dark; }'
-  /** What the page was served wearing, which is the applied theme's file. */
+  /** The file of the applied theme, as the page was served. */
   const SERVED = ':root { --numen-surface: #101014 }'
   /** What the page was served drawn at, which is as it is designed. */
   const SIZED = ':root { --numen-interface-scale: 1; --numen-text-scale: 1; }'
@@ -26,7 +26,7 @@ describe('the four commands over how the window is drawn', () => {
     return one
   }
 
-  /** What the head is wearing, in the order the elements stand in it. */
+  /** The elements of the head, in order. */
   const getHeadStyles = () =>
     [...document.head.querySelectorAll('style')].map((one) => one.textContent)
 
@@ -147,7 +147,7 @@ describe('the four commands over how the window is drawn', () => {
   })
 
   describe('the step that offers the themes', () => {
-    it('draws the shelves as groups, and opens on the theme the window wears', async () => {
+    it('draws the themes as groups, and opens on the applied theme', async () => {
       await runCommand('theme')
 
       expect(groups()).toStrictEqual(['Built-in', 'Custom themes'])
@@ -155,13 +155,13 @@ describe('the four commands over how the window is drawn', () => {
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
     })
 
-    it('wears the theme the keyboard walks onto', async () => {
+    it('applies the theme the keyboard moves to', async () => {
       await runCommand('theme')
 
       await press('ArrowDown')
 
       expect(getHeadStyles()).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }', SIZED])
-      expect(requests.worn).toStrictEqual([])
+      expect(requests.applied).toStrictEqual([])
     })
 
     it('puts back the theme the settings name when the step is left', async () => {
@@ -171,16 +171,16 @@ describe('the four commands over how the window is drawn', () => {
       await press('Escape')
 
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
-      expect(requests.worn).toStrictEqual([])
+      expect(requests.applied).toStrictEqual([])
     })
 
-    it('keeps wearing the theme that was chosen, and writes it down', async () => {
+    it('keeps the chosen theme applied, and writes it down', async () => {
       await runCommand('theme')
       await press('ArrowDown')
 
       await press('Enter')
 
-      expect(requests.worn).toStrictEqual(['mine:sea system 1/1'])
+      expect(requests.applied).toStrictEqual(['mine:sea system 1/1'])
       expect(getHeadStyles()).toStrictEqual([PAIR, ':root { --numen-surface: mine:sea }', SIZED])
     })
   })
@@ -200,7 +200,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('ArrowDown')
 
       expect(getHeadStyles()).toStrictEqual([':root { color-scheme: light; }', SERVED, SIZED])
-      expect(requests.worn).toStrictEqual([])
+      expect(requests.applied).toStrictEqual([])
     })
 
     it('puts back the half the settings name when the step is left', async () => {
@@ -210,7 +210,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('Escape')
 
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
-      expect(requests.worn).toStrictEqual([])
+      expect(requests.applied).toStrictEqual([])
     })
 
     it('writes the half that was chosen, leaving the theme where it was', async () => {
@@ -219,7 +219,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await press('Enter')
 
-      expect(requests.worn).toStrictEqual(['preset:numen dark 1/1'])
+      expect(requests.applied).toStrictEqual(['preset:numen dark 1/1'])
       expect(getHeadStyles()).toStrictEqual([':root { color-scheme: dark; }', SERVED, SIZED])
     })
   })
@@ -232,7 +232,7 @@ describe('the four commands over how the window is drawn', () => {
     document.body.querySelector('[data-here] [data-palette="name"]')?.textContent?.trim()
 
   describe('a step opened over a setting', () => {
-    /** The page as the handler serves it, dressed as the settings say. */
+    /** The page as the handler serves it, with the theme the settings name. */
     const applyServedStyles = (mode = PAIR, sizes = SIZED) => {
       for (const one of document.head.querySelectorAll('style')) one.remove()
       document.head.append(
@@ -243,7 +243,7 @@ describe('the four commands over how the window is drawn', () => {
       return [mode, SERVED, sizes]
     }
 
-    it('relies on the theme the settings name, and goes on wearing it', async () => {
+    it('uses the theme the settings name, and keeps applying it', async () => {
       mockVaultState.applied = 'mine:sea'
       const was = applyServedStyles()
 
@@ -251,7 +251,7 @@ describe('the four commands over how the window is drawn', () => {
 
       expect(getStandingRow()).toBe('sea')
       expect(getHeadStyles()).toStrictEqual(was)
-      expect(requests.worn).toStrictEqual([])
+      expect(requests.applied).toStrictEqual([])
     })
 
     it('relies on the half the tokens are read as, and goes on reading them so', async () => {
@@ -334,7 +334,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await press('Enter')
 
-      expect(requests.worn).toStrictEqual(['preset:numen system 1.37/1'])
+      expect(requests.applied).toStrictEqual(['preset:numen system 1.37/1'])
       expect(getHeadStyles().at(-1)).toBe(
         ':root { --numen-interface-scale: 1.37; --numen-text-scale: 1; }',
       )
@@ -370,7 +370,7 @@ describe('the four commands over how the window is drawn', () => {
       expect(getHeadStyles().at(-1)).toBe(
         ':root { --numen-interface-scale: 2; --numen-text-scale: 1; }',
       )
-      expect(requests.worn).toStrictEqual([])
+      expect(requests.applied).toStrictEqual([])
     })
 
     it('puts back the size the settings name when the step is left', async () => {
@@ -381,7 +381,7 @@ describe('the four commands over how the window is drawn', () => {
       await press('Escape')
 
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
-      expect(requests.worn).toStrictEqual([])
+      expect(requests.applied).toStrictEqual([])
     })
 
     it('keeps drawing at the size that was chosen, and writes it down', async () => {
@@ -390,7 +390,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await press('Enter')
 
-      expect(requests.worn).toStrictEqual(['preset:numen system 2/1'])
+      expect(requests.applied).toStrictEqual(['preset:numen system 2/1'])
       expect(getHeadStyles().at(-1)).toBe(
         ':root { --numen-interface-scale: 2; --numen-text-scale: 1; }',
       )
@@ -424,7 +424,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await press('Enter')
 
-      expect(requests.worn).toStrictEqual(['preset:numen system 1/1.75'])
+      expect(requests.applied).toStrictEqual(['preset:numen system 1/1.75'])
       expect(getHeadStyles().at(-1)).toBe(
         ':root { --numen-interface-scale: 1; --numen-text-scale: 1.75; }',
       )

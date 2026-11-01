@@ -1314,7 +1314,7 @@ func TestGetReviewDaysKeepsTheDaysInsideTheStretch(t *testing.T) {
 	}
 }
 
-// busy is an index that cannot be brought level, which is what a second writer
+// busy is an index that cannot be updated, which is what a second writer
 func busy(context.Context, domain.Vault, []string) error {
 	return errors.New("the index is busy")
 }
@@ -1337,17 +1337,17 @@ func TestADeckThatCouldNotBeSavedIsNamed(t *testing.T) {
 	}
 }
 
-// A deck the index could not be brought level with was written all the same.
+// A deck the index could not be updated for was written all the same.
 // Its cards carry the card ids that were minted, so they stand in this session and
 // nothing has to mint them a second time.
-func TestADeckSavedWithNoLevellingIsNotNamed(t *testing.T) {
+func TestADeckSavedWithNoIndexUpdateIsNotNamed(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getHandwritten())
 	assigning := s.assigning.WithIndex(busy)
 
 	assigned, err := assigning.Execute(t.Context(), s.vault)
 	if err != nil {
-		t.Fatalf("a levelling that failed was trouble: %v", err)
+		t.Fatalf("an index update that failed was trouble: %v", err)
 	}
 	if len(assigned.Unwritten) != 0 {
 		t.Fatalf("the deck was written and is named as unwritten: %v", assigned.Unwritten)

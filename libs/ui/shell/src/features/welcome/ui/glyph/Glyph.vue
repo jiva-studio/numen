@@ -8,7 +8,7 @@
 </script>
 
 <template>
-  <!-- The box is the glyph's own bounds, so whatever stands beside it stands
+  <!-- The box is the glyph's own bounds, so whatever is beside it stands
        where it is put and not against the air around a letter. -->
   <svg viewBox="21 25 86 78" fill="currentColor" aria-hidden="true" focusable="false">
     <path

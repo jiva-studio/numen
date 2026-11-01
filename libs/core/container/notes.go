@@ -23,7 +23,7 @@ func (c Config) Notes(
 	links noteport.LinkQueries,
 	sources sourceport.SourceRepository,
 	indexed sourceport.SourceQueries,
-	index note.Levels,
+	index note.IndexUpdater,
 ) note.Scenarios {
 	readers := c.VaultReaders()
 	writers := c.VaultWriters()

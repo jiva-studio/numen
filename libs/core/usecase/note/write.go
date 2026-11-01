@@ -48,7 +48,7 @@ var (
 type Write struct {
 	readers vaultport.VaultReaders
 	writers vaultport.VaultWriters
-	index   Levels
+	index   IndexUpdater
 	now     machineport.Clock
 	// Bound is the most the file may be, measured as it goes to disk. Zero is
 	// MaxBytes. A caller whose files are read at a bound of their own sets it.
@@ -61,7 +61,7 @@ type Write struct {
 // NewWrite returns the writer that saves a note to disk. It takes the vault
 // readers and writers, the index synchronizer, and the clock.
 func NewWrite(
-	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index Levels, now machineport.Clock,
+	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater, now machineport.Clock,
 ) Write {
 	return Write{readers: readers, writers: writers, index: index, now: now}
 }
@@ -79,7 +79,7 @@ func (u Write) WithWriters(writers vaultport.VaultWriters) Write {
 }
 
 // WithIndex replaces the index function.
-func (u Write) WithIndex(index Levels) Write {
+func (u Write) WithIndex(index IndexUpdater) Write {
 	u.index = index
 	return u
 }

@@ -68,7 +68,7 @@ func (s Settings) Styles() string {
 }
 
 // AddStyles is the page carrying those elements, put where the head ends. A
-// page with no head is handed back as it was built.
+// page with no head is returned as it was built.
 func AddStyles(text []byte, styles string) []byte {
 	pos := bytes.LastIndex(text, []byte(HeadEnd))
 	if styles == "" || pos < 0 {

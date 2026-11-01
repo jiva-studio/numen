@@ -28,7 +28,7 @@ Each check has an id, a scope (`libs`, `plugins` or `apps`) and a module; `node 
 2. **Plugins (`plugins`)**:
    - `plugins-independence`: the `Plugin` tests of `libs/core/container`.
    - `plugins-leakage`: every `manifest.json` has an id, a name and a version; there is no shared plugin folder; no plugin imports `libs/core`.
-   - `plugins-hold-no-schema`: no tracked file under `plugins/(*)/` is a `.proto` schema; a plugin speaks to the core through the SDK.
+   - `plugins-hold-no-schema`: no tracked file under `plugins/(*)/` is a `.proto` schema; a plugin reaches the core through the SDK.
    - `plugins-frontend`: ESLint over `plugins/`: no `@/**` or `@plugins/**` import.
    - `plugin-config-golden-parity`: Plugin Configs Match Golden Example plugins/.example/ & Root .golangci.yml.
    - `plugin-backend-layers`: Plugin Backend Internal Hexagonal Layer Direction.

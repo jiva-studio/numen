@@ -2,8 +2,8 @@
 -- typed, best first.
 --
 -- The row that comes back is the large chunk enclosing the hit, which is what
--- a result shows, and where the hit itself stands inside it. A chunk with
--- nothing enclosing it is its own, and stands at its own beginning.
+-- a result shows, and where the hit itself is inside it. A chunk with
+-- nothing enclosing it is its own, and is at its own beginning.
 WITH hits AS (
     SELECT chunks_fts.rowid, bm25(chunks_fts) AS rank
     FROM chunks_fts

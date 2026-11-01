@@ -2,7 +2,7 @@
 // @generated from file numen/v1/theme.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-// What a client may ask about how the window is drawn: the themes it can wear,
+// What a client may ask about how the window is drawn: the themes it can apply,
 // and how large it and the text in it are.
 //
 // A theme is one stylesheet that redeclares the tokens the interface draws

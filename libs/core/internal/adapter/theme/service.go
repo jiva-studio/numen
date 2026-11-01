@@ -66,15 +66,15 @@ type Service struct {
 	DebounceDelay time.Duration
 }
 
-// ListThemes is every theme there is, and what the window is wearing out of it.
+// ListThemes returns every theme and the one applied.
 func (s *Service) ListThemes(
 	_ context.Context,
 	_ *connect.Request[v1.ListThemesRequest],
 ) (*connect.Response[v1.ListThemesResponse], error) {
-	aged := s.getAppearance()
-	applied, missing := s.Catalogue.GetApplied(aged.ThemeName)
+	current := s.getAppearance()
+	applied, missing := s.Catalogue.GetApplied(current.ThemeName)
 	if missing != "" {
-		s.warn(fmt.Sprintf("there is no theme called %s, so the window wears %s", missing, applied))
+		s.warn(fmt.Sprintf("Theme not found: %s. Applied: %s", missing, applied))
 	} else {
 		s.warn("")
 	}
@@ -94,9 +94,9 @@ func (s *Service) ListThemes(
 	return connect.NewResponse(&v1.ListThemesResponse{
 		Themes:               items,
 		Applied:              applied,
-		Mode:                 wire.ConvertModeToWire(aged.Mode),
-		InterfaceScale:       aged.InterfaceScale,
-		TextScale:            aged.TextScale,
+		Mode:                 wire.ConvertModeToWire(current.Mode),
+		InterfaceScale:       current.InterfaceScale,
+		TextScale:            current.TextScale,
 		InterfaceScaleBounds: encodeBounds(s.InterfaceScaleBounds),
 		TextScaleBounds:      encodeBounds(s.TextScaleBounds),
 	}), nil
@@ -152,7 +152,7 @@ func (s *Service) WriteAppearance(
 	if err := s.Settings.Write(selected); err != nil {
 		return respond(err.Error())
 	}
-	// The theme chosen is found, so a warning about the one that was missing is withdrawn.
+	// The theme current is found, so a warning about the one that was missing is withdrawn.
 	s.warn("")
 	return connect.NewResponse(&v1.WriteAppearanceResponse{}), nil
 }
@@ -235,31 +235,31 @@ const keepaliveInterval = time.Second
 // was designed at, under the system's choice, where they say nothing or could
 // not be read.
 func (s *Service) getAppearance() Appearance {
-	aged := Appearance{
+	current := Appearance{
 		ThemeName:      Default,
 		Mode:           appearance.System,
 		InterfaceScale: AsDesigned,
 		TextScale:      AsDesigned,
 	}
 	if s.Settings == nil {
-		return aged
+		return current
 	}
 	response, err := s.Settings.Read()
 	if err != nil {
-		s.warn(fmt.Sprintf("the settings could not be read, so the window wears %s: %v", Default, err))
-		return aged
+		s.warn(fmt.Sprintf("Settings not read, applied %s: %v", Default, err))
+		return current
 	}
 	if response.ThemeName != "" {
-		aged.ThemeName = response.ThemeName
+		current.ThemeName = response.ThemeName
 	}
-	aged.Mode = response.Mode
+	current.Mode = response.Mode
 	if response.InterfaceScale > 0 {
-		aged.InterfaceScale = response.InterfaceScale
+		current.InterfaceScale = response.InterfaceScale
 	}
 	if response.TextScale > 0 {
-		aged.TextScale = response.TextScale
+		current.TextScale = response.TextScale
 	}
-	return aged
+	return current
 }
 
 func (s *Service) warn(why string) {

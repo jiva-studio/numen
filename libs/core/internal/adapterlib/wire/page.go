@@ -93,16 +93,16 @@ func readAppearanceSettings(
 	if themes == nil {
 		return appearance.Settings{}, false
 	}
-	aged, err := themes.ListThemes(ctx, connect.NewRequest(&v1.ListThemesRequest{}))
+	current, err := themes.ListThemes(ctx, connect.NewRequest(&v1.ListThemesRequest{}))
 	if err != nil {
 		return appearance.Settings{}, false
 	}
 	out := appearance.Settings{
-		Mode:           ConvertModeFromWire(aged.Msg.GetMode()),
-		InterfaceScale: aged.Msg.GetInterfaceScale(),
-		TextScale:      aged.Msg.GetTextScale(),
+		Mode:           ConvertModeFromWire(current.Msg.GetMode()),
+		InterfaceScale: current.Msg.GetInterfaceScale(),
+		TextScale:      current.Msg.GetTextScale(),
 	}
-	text, err := themes.ReadTheme(ctx, connect.NewRequest(&v1.ReadThemeRequest{Name: aged.Msg.GetApplied()}))
+	text, err := themes.ReadTheme(ctx, connect.NewRequest(&v1.ReadThemeRequest{Name: current.Msg.GetApplied()}))
 	if err == nil {
 		out.Theme = text.Msg.GetCss()
 	}

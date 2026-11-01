@@ -114,7 +114,7 @@ describe('the modes offered', () => {
     expect(items.some((one) => one.isDisabled)).toBe(false)
   })
 
-  it('says why none can be chosen where the theme worn pins the two halves', () => {
+  it('says why none can be chosen where the applied theme pins the two halves', () => {
     const items = getModeGroups('dark', true, words).flatMap((one) => one.items)
 
     expect(items.every((one) => one.isDisabled)).toBe(true)

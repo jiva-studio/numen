@@ -1,5 +1,5 @@
 /**
- * The palettes of the preset themes plugin, which a picture of a theme draws the window wearing.
+ * The palettes of the preset themes plugin, which a picture of a theme draws the window with.
  */
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'

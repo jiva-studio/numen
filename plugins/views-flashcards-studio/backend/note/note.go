@@ -23,8 +23,8 @@ type (
 	ReadOutcome = edit.ReadOutcome
 	// Contents is one note as returned by a read.
 	Contents = edit.Contents
-	// Levels brings the named notes up to date in the index.
-	Levels = edit.Levels
+	// IndexUpdater brings the named notes up to date in the index.
+	IndexUpdater = edit.IndexUpdater
 	// Edit is what every change to the contents of an existing note needs.
 	Edit = edit.Edit
 )
@@ -47,14 +47,14 @@ const (
 // The errors of reading and writing a note.
 var (
 	ErrNoNote         = edit.ErrNoNote
-	ErrUnlevelled     = edit.ErrUnlevelled
+	ErrIndexOutdated     = edit.ErrIndexOutdated
 	ErrTooLarge       = edit.ErrTooLarge
 	ErrBodyUnwritable = edit.ErrBodyUnwritable
 )
 
-// WrapUnlevelled wraps err as a failure to bring the index up to date after a
+// WrapIndexOutdated wraps err as a failure to bring the index up to date after a
 // write. A caller distinguishes it from a write that never landed.
-func WrapUnlevelled(err error, paths ...string) error { return edit.WrapUnlevelled(err, paths...) }
+func WrapIndexOutdated(err error, paths ...string) error { return edit.WrapIndexOutdated(err, paths...) }
 
 // CheckSize holds a file to the most it may be. Zero holds it to nothing.
 func CheckSize(path string, size, limit int) error { return edit.CheckSize(path, size, limit) }
@@ -65,10 +65,10 @@ func GetAddress(ctx context.Context, names ports.NoteQueries, vaultID domain.Vau
 }
 
 // NewEdit is what a change to an existing note is made through: the vault it is read and written
-// through, what brings it level in the index, and what time it is. The function returned with it
+// through, what updates the index for it, and what time it is. The function returned with it
 // returns the failures to release the write lock of the changes made through it, which edit.Files
 // releases without an error.
-func NewEdit(readers ports.VaultReaders, writers ports.VaultWriters, index Levels, now ports.Clock) (Edit, func() error) {
+func NewEdit(readers ports.VaultReaders, writers ports.VaultWriters, index IndexUpdater, now ports.Clock) (Edit, func() error) {
 	failures := &releaseFailures{mu: sync.Mutex{}, err: nil}
 	return edit.Edit{
 		Open: func(v domain.Vault) (edit.Files, error) {
@@ -161,14 +161,14 @@ func (u Read) Execute(ctx context.Context, v domain.Vault, path string) (Content
 type Write struct {
 	readers ports.VaultReaders
 	writers ports.VaultWriters
-	index   Levels
+	index   IndexUpdater
 	now     ports.Clock
 	// Bound is the most the file may be, measured as it goes to disk. Zero is MaxBytes.
 	Bound int
 }
 
 // NewWrite is the writer a note goes to disk through.
-func NewWrite(readers ports.VaultReaders, writers ports.VaultWriters, index Levels, now ports.Clock) Write {
+func NewWrite(readers ports.VaultReaders, writers ports.VaultWriters, index IndexUpdater, now ports.Clock) Write {
 	return Write{readers: readers, writers: writers, index: index, now: now, Bound: 0}
 }
 
@@ -194,13 +194,13 @@ func (u Write) Execute(
 type EditLinks struct {
 	readers ports.VaultReaders
 	writers ports.VaultWriters
-	index   Levels
+	index   IndexUpdater
 	now     ports.Clock
 	stat    domain.FileStat
 }
 
 // NewEditLinks is what a note's relationships are written through.
-func NewEditLinks(readers ports.VaultReaders, writers ports.VaultWriters, index Levels, now ports.Clock) EditLinks {
+func NewEditLinks(readers ports.VaultReaders, writers ports.VaultWriters, index IndexUpdater, now ports.Clock) EditLinks {
 	return EditLinks{readers: readers, writers: writers, index: index, now: now, stat: domain.FileStat{}}
 }
 

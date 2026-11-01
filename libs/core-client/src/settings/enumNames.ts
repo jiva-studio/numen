@@ -16,7 +16,7 @@ export const getNames = <W extends string, E extends number>(
   const reversed = Object.fromEntries(named) as Record<W, E>
   // The reverse table is typed as holding every word, and nothing on the way
   // here checks that. Two values sharing a word leave one of them with no key,
-  // and reading it back gives undefined wearing the enum's type.
+  // and reading it back gives undefined typed as the enum.
   if (Object.keys(reversed).length !== named.length) {
     throw new Error(
       `two values of this enum answer to one word: ${named.map(([w]) => w).join(', ')}`,

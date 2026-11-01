@@ -1,5 +1,5 @@
 /**
- * Settings configuration, theme dressing, and palette lists for the window.
+ * Settings configuration, theme application, and palette lists for the window.
  */
 import { computed, watch } from 'vue'
 import { themes } from '@/entities/settings'
@@ -312,14 +312,14 @@ export function useSettings({
   getSettingsViews,
   catalog,
 }: SettingsDeps) {
-  const writeWornMessage = log.getWriter('worn')
+  const writeAppearanceMessage = log.getWriter('appearance')
   const sync = syncSetting(core, words, log.getWriter('named'))
   const writeSettingsMessage = log.getWriter('configured')
   const rest = createSettingsStore(core, words, writeSettingsMessage)
   const appearance = createWindowAppearance({
     core: themes,
     words,
-    write: writeWornMessage,
+    write: writeAppearanceMessage,
     getPluginName: (pluginId) =>
       rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId,
   })

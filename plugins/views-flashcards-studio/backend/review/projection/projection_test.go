@@ -1088,11 +1088,11 @@ func TestADateIsPacedOverTheDaysThePresetAdmits(t *testing.T) {
 func TestNoFigureOfAProjectionIsUnreadable(t *testing.T) {
 	now := getDayStart(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	// One review card with zero stability, among forty unbegun cards.
-	aged := review.Schedule{
+	overdue := review.Schedule{
 		Last: now.AddDate(0, 0, -1), Due: now.AddDate(0, 0, -1),
 		Difficulty: 9, Reps: 300, Lapses: 300, Phase: 2,
 	}
-	pos := map[review.CardID]review.Schedule{{Card: "worn", Template: "Say it"}: aged}
+	pos := map[review.CardID]review.Schedule{{Card: "overdue", Template: "Say it"}: overdue}
 
 	p := review.Defaults()
 	p.Goal, p.MinutesADay = review.GoalMinutes, 1440

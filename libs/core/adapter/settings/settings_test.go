@@ -65,7 +65,7 @@ func TestAnUntouchedInstallationIsGeneratedAsDesigned(t *testing.T) {
 		t.Errorf("the colours are read as %q", cfg.Appearance.Mode)
 	}
 	if cfg.Appearance.Theme != settings.DefaultTheme {
-		t.Errorf("wears %q", cfg.Appearance.Theme)
+		t.Errorf("applied %q", cfg.Appearance.Theme)
 	}
 }
 
@@ -408,7 +408,7 @@ func TestWhatIsSavedBackNamesTheSettingThisBuildReads(t *testing.T) {
 	}
 }
 
-func TestAWindowIsDressedByWhatTheFileNames(t *testing.T) {
+func TestAWindowAppliesTheThemeTheFileNames(t *testing.T) {
 	cfg, err := openAt(write(t, `{"appearance":{"mode":"dark","theme":"mine:dracula"}}`))
 	if err != nil {
 		t.Fatal(err)

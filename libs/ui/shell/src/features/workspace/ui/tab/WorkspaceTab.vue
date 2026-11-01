@@ -87,7 +87,7 @@ defineExpose({ focus: () => root.value?.focus() })
       <span class="tab__mark shrink-0" role="img" :aria-label="mark" :title="mark" />
     </slot>
 
-    <!-- Reached from the tab it stands on, and only from that one: a strip
+    <!-- Reached from the tab it is on, and only from that one: a strip
          walked with the arrows is one stop, not two for every tab in it. -->
     <button
       class="tab__close rounded-pill shrink-0"

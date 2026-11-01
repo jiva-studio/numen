@@ -43,7 +43,7 @@ A change to a wire message reaches both the Go side and the generated TypeScript
 
 - `ctx` not first, named otherwise, or stored in a struct; not propagated to something that blocks; cancellation observed only between loop iterations and not inside one.
 - An error wrapped without `%w`, or wrapped with nothing that locates the failure.
-- An error both logged and returned, or swallowed into an empty branch.
+- An error both logged and returned, or dropped in an empty branch.
 - A sentinel compared by string instead of `errors.Is`; a type not reached with `errors.As`.
 - `panic` for bad input or a missing file.
 - `defer` missing on something opened; `rows.Err()` unchecked; `defer tx.Rollback()` without the commit last; `Close` unchecked where the write matters.

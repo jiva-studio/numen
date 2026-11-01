@@ -102,7 +102,7 @@ func TestAScaleThatMovedBuysTheVectorsAgain(t *testing.T) {
 	}
 	for _, hash := range hashes {
 		if _, target := retained[hex.EncodeToString(hash)]; target {
-			t.Errorf("a vector quantised at another scale is handed back for %x", hash)
+			t.Errorf("a vector quantised at another scale is returned for %x", hash)
 		}
 	}
 }

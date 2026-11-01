@@ -31,7 +31,7 @@ const themesResponse = {
       mode: string,
       sizes: { interfaceScale: number; textScale: number },
     ) => {
-      requests.worn.push(`${name} ${mode} ${sizes.interfaceScale}/${sizes.textScale}`)
+      requests.applied.push(`${name} ${mode} ${sizes.interfaceScale}/${sizes.textScale}`)
       return mockVaultState.writeError
     },
     watchThemes: pendingStream,

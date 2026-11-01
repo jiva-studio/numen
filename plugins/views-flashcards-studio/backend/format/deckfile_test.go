@@ -371,7 +371,7 @@ func TestAddCard(t *testing.T) {
 }
 
 // A heading is a projection and a card id is given where the deck is written, so
-// a card handed over with neither is written with neither.
+// a card passed with neither is written with neither.
 func TestAddCardWithNoHeadingAndNoMark(t *testing.T) {
 	f, err := format.OpenDeck([]byte(deck))
 	if err != nil {

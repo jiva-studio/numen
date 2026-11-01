@@ -50,7 +50,7 @@ func getProgramModels(useAt []string, programs []agentport.AgentProgram) []setti
 	}
 	return append(models, settingsport.Model{
 		Path:      useAt,
-		Title:     "Nothing answers",
+		Title:     "No agent responds",
 		IsDefault: !hasDefault,
 		Writes:    []settingsport.Setting{newSetting(useAt, "")},
 		Presence:  settingsport.NothingToFetch,

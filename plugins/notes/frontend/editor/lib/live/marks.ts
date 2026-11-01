@@ -11,7 +11,7 @@ import { Decoration, type DecorationSet, type WidgetType } from '@codemirror/vie
 import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common'
 import { findChild } from '../extensions/address'
 import { getGrid } from '../table/grid'
-import { BULLET, HEADING, HIDDEN, INLINE, line, mark, SHY } from './styles'
+import { BULLET, HEADING, HIDDEN, INLINE, line, mark, CARET_ONLY } from './styles'
 import { Box, Bullet, Picture, Rule } from './widgets'
 
 /** The block nodes that hold other blocks; a Table or a HorizontalRule is allowed only in these. */
@@ -165,7 +165,7 @@ class MarkBuilder {
   }
 
   takeShy(node: SyntaxNodeRef): boolean | null {
-    if (SHY.has(node.name)) {
+    if (CARET_ONLY.has(node.name)) {
       if (!this.isParentSelected(node)) this.found.push(HIDDEN.range(node.from, node.to))
       return false
     }

@@ -1,6 +1,6 @@
 # Search Relevance
 
-Chooses how similar a note has to be to your search before it shows up. Matches below the threshold are left out of the results.
+Sets how similar a note must be to your search to appear in the results. Matches below the threshold are left out of the results.
 
 <!-- more -->
 

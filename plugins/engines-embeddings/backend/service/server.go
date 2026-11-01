@@ -395,7 +395,7 @@ func (s *embeddingServer) isRemoteProvider() bool {
 	return !s.isMock && s.provider != "" && s.provider != providerLocal
 }
 
-// getService returns the key Configure handed over and the endpoint of the
+// getService returns the key Configure passed and the endpoint of the
 // remote service: the configured one, else the one in NUMEN_EMBEDDING_URL. The
 // remote service answers only when both are set.
 func (s *embeddingServer) getService() (key, baseURL string) {

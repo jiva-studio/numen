@@ -150,7 +150,7 @@ func (o *OpenVaults[C, I]) UpdateIndex(ctx context.Context, v domain.Vault, path
 	}
 	defer o.running.Done()
 
-	err := o.getOpenedVault(ctx, v).opening.Level(ctx, v, paths)
+	err := o.getOpenedVault(ctx, v).opening.UpdateIndex(ctx, v, paths)
 	return errors.Join(err, o.takeOutputError())
 }
 

@@ -144,14 +144,14 @@ const measureToken = (token: Token): number => {
 /** The root's own font size, which is what the interface multiplier sets. */
 const root = () => Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
 
-/** Both multipliers as the page is wearing them. An empty string is neither. */
+/** Both multipliers as the page applies them. An empty string is neither. */
 const getScales = () => ({
   interfaceScale: document.documentElement.style.getPropertyValue('--numen-interface-scale'),
   textScale: document.documentElement.style.getPropertyValue('--numen-text-scale'),
 })
 
 /** Put the two on the page, the way the served page carries them. */
-const wear = (interfaceScale: string, textScale: string) => {
+const applyScales = (interfaceScale: string, textScale: string) => {
   const style = document.documentElement.style
   for (const [name, size] of [
     ['--numen-interface-scale', interfaceScale],
@@ -189,7 +189,7 @@ export const Playground: Story = {
         ['1', '1'],
       ]
       for (const [interfaceScale, textScale] of asDesigned) {
-        wear(interfaceScale, textScale)
+        applyScales(interfaceScale, textScale)
         await expect(root()).toBe(ROOT_AS_DESIGNED)
         await showEach(CHROME, 1)
         await showEach(READING, 1)
@@ -198,7 +198,7 @@ export const Playground: Story = {
 
       // The interface magnifies the window, and what is read is in the window.
       for (const times of [0.8, 1.25, 1.5, 2]) {
-        wear(String(times), '')
+        applyScales(String(times), '')
         await expect(root()).toBeCloseTo(ROOT_AS_DESIGNED * times, 1)
         await showEach(CHROME, times)
         await showEach(READING, times)
@@ -207,7 +207,7 @@ export const Playground: Story = {
 
       // The text multiplier moves what is read and leaves the chrome.
       for (const times of [0.8, 1.25, 1.5, 1.75]) {
-        wear('', String(times))
+        applyScales('', String(times))
         await expect(root()).toBe(ROOT_AS_DESIGNED)
         await showEach(READING, times)
         await showEach(CHROME, 1)
@@ -222,13 +222,13 @@ export const Playground: Story = {
         [1.5, 1.5],
       ]
       for (const [interfaceScale, textScale] of ends) {
-        wear(String(interfaceScale), String(textScale))
+        applyScales(String(interfaceScale), String(textScale))
         await showEach(NEITHER, 1)
         await showEach(CHROME, interfaceScale)
         await showEach(READING, interfaceScale * textScale)
       }
     } finally {
-      wear(target.interfaceScale, target.textScale)
+      applyScales(target.interfaceScale, target.textScale)
     }
   },
 }

@@ -39,7 +39,7 @@ export type Manifest = Message<"numen.v1.Manifest"> & {
   version: string;
 
   /**
-   * protocol is the plugin protocol the plugin speaks. Absent means 1.
+   * protocol is the plugin protocol the plugin uses. Absent means 1.
    *
    * @generated from field: int32 protocol = 4;
    */

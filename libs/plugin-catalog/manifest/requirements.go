@@ -13,7 +13,7 @@ type IncompatibleReason string
 const (
 	// ReasonTarget is a plugin that does not run in the window the application opens.
 	ReasonTarget IncompatibleReason = "target"
-	// ReasonProtocol is a plugin that speaks a newer plugin protocol than the application.
+	// ReasonProtocol is a plugin that uses a newer plugin protocol than the application.
 	ReasonProtocol IncompatibleReason = "protocol"
 )
 
@@ -47,7 +47,7 @@ type Environment struct {
 type Requirements struct {
 	// Targets are the windows the plugin runs in. Empty is every window.
 	Targets []string
-	// Protocol is the plugin protocol the plugin speaks. Zero is the first.
+	// Protocol is the plugin protocol the plugin uses. Zero is the first.
 	Protocol int
 }
 
@@ -63,7 +63,7 @@ func (r Requirements) Check(env Environment) error {
 		return &IncompatibleError{Reason: ReasonTarget, Detail: fmt.Sprintf("runs in %v, not in %q", r.Targets, env.Target)}
 	}
 	if r.Protocol > ProtocolVersion {
-		return &IncompatibleError{Reason: ReasonProtocol, Detail: fmt.Sprintf("speaks protocol %d, the application speaks up to %d", r.Protocol, ProtocolVersion)}
+		return &IncompatibleError{Reason: ReasonProtocol, Detail: fmt.Sprintf("uses protocol %d, the application supports up to %d", r.Protocol, ProtocolVersion)}
 	}
 	return nil
 }

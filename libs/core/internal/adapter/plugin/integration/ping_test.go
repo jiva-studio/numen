@@ -37,14 +37,14 @@ func launchAnsweringPing(t *testing.T, protocol int32, procs *[]*os.Process) plu
 	}
 }
 
-func TestAPluginThatSpeaksAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
+func TestAPluginThatUsesAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
 	cases := []struct {
 		name     string
 		protocol int32
 		want     string
 	}{
-		{"a newer protocol", pluginport.PluginProtocolVersion + 1, "speaks protocol 2, its manifest declares 1"},
-		{"no protocol reported", 0, "speaks protocol 0, its manifest declares 1"},
+		{"a newer protocol", pluginport.PluginProtocolVersion + 1, "uses protocol 2, its manifest declares 1"},
+		{"no protocol reported", 0, "uses protocol 0, its manifest declares 1"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -77,7 +77,7 @@ func TestAPluginThatSpeaksAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
 	}
 }
 
-func TestAPluginThatSpeaksTheHostsProtocolIsActivated(t *testing.T) {
+func TestAPluginThatUsesTheHostsProtocolIsActivated(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var procs []*os.Process
 	host.SetLauncher(launchAnsweringPing(t, pluginport.PluginProtocolVersion, &procs))
@@ -97,7 +97,7 @@ func TestCheckPluginProtocol_RejectsUnsupportedProtocol(t *testing.T) {
 	manifest := manifest.Manifest{ID: "md.numen.newer", Protocol: newer}
 
 	err := transport.CheckPluginProtocol(t.Context(), manifest, endpoint)
-	if !errors.Is(err, pluginport.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), "this host speaks 1") {
+	if !errors.Is(err, pluginport.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), "this host uses 1") {
 		t.Fatalf("checkPluginProtocol() = %v, want %v naming the host's protocol", err, pluginport.ErrUnsupportedProtocol)
 	}
 }

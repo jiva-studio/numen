@@ -161,7 +161,7 @@ CREATE INDEX problems_by_note ON problems (note_id);
 -- whose hash is already on a row keeps that row, and its full-text row with it.
 -- It is also how the vector made from that text is found.
 --
--- `location` is where the chunk sits in the source's own numbering — a chapter,
+-- `location` is where the chunk is in the source's own numbering — a chapter,
 -- a printed page. It is a projection of whatever the format offered, so it is
 -- nullable, and "nothing was written" stays a different answer from "an empty
 -- value was written".

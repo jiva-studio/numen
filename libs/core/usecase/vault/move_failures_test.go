@@ -125,7 +125,7 @@ func TestAMoveOntoItselfIsNothingCompleted(t *testing.T) {
 	if moved.From != "physics/Entropy.md" || moved.To != "physics/Entropy.md" {
 		t.Errorf("the answer names the move as %q to %q", moved.From, moved.To)
 	}
-	if moved.IsLanded {
+	if moved.IsMoved {
 		t.Error("a move onto itself says it landed")
 	}
 	if got := f.read(t, "physics/Entropy.md"); got != "# Entropy\n" {
@@ -194,7 +194,7 @@ func TestEveryNoteOfAFolderIsReportedWhereItWent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !moved.IsLanded {
+	if !moved.IsMoved {
 		t.Fatal("the folder did not land")
 	}
 
@@ -259,7 +259,7 @@ func TestAMoveOfAPathThatContainsNothingIsNoNote(t *testing.T) {
 	if !errors.Is(err, note.ErrNoNote) {
 		t.Fatalf("got %v", err)
 	}
-	if moved.IsLanded {
+	if moved.IsMoved {
 		t.Error("the move says it landed")
 	}
 	if moved.From != "physics/Missing.md" || moved.To != "archive/Missing.md" {
@@ -280,7 +280,7 @@ func TestAMoveThatCannotFileTheSourcesIsAnErrorAfterTheFileLanded(t *testing.T) 
 	if !errors.Is(err, cannot) {
 		t.Fatalf("got %v", err)
 	}
-	if !moved.IsLanded || !f.exists("archive/Entropy.md") {
+	if !moved.IsMoved || !f.exists("archive/Entropy.md") {
 		t.Error("the file is not where it was sent")
 	}
 }
@@ -402,7 +402,7 @@ func TestANoteThatCannotBeSettledIsAnErrorAfterTheFileLanded(t *testing.T) {
 	if !errors.Is(err, cannot) {
 		t.Fatalf("got %v", err)
 	}
-	if !moved.IsLanded {
+	if !moved.IsMoved {
 		t.Error("the file is not where it was sent")
 	}
 }
@@ -430,7 +430,7 @@ func TestATitleThatCouldNotBeSavedOnARenameIsAnError(t *testing.T) {
 	f := openFiling(t, map[string]string{
 		"physics/Entropy.md": "---\ntitle: Entropy\n---\nA measure of disorder.\n",
 	})
-	cannot := errors.New("the index cannot be levelled")
+	cannot := errors.New("the index cannot be updated")
 	w := f.wiring()
 	w.index = func(context.Context, domain.Vault, []string) error { return cannot }
 
@@ -438,7 +438,7 @@ func TestATitleThatCouldNotBeSavedOnARenameIsAnError(t *testing.T) {
 	if !errors.Is(err, cannot) {
 		t.Fatalf("got %v", err)
 	}
-	if !moved.IsLanded || !f.exists("physics/Thermo.md") {
+	if !moved.IsMoved || !f.exists("physics/Thermo.md") {
 		t.Error("the file is not where it was sent")
 	}
 }

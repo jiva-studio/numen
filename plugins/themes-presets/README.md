@@ -11,7 +11,7 @@ Twelve ready-made color themes for the editor and the flashcards window.
 
 ## Turning It Off
 
-Disable the plugin in the plugin settings to remove its themes from the list. A window that wears one of them falls back to the default theme.
+Disable the plugin in the plugin settings to remove its themes from the list. A window that applies one of them falls back to the default theme.
 
 ## For Authors
 

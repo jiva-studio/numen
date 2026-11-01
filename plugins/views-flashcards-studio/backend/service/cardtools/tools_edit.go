@@ -189,7 +189,7 @@ func (t *Tools) addCardSectionAdd(registry *tools.Registry) error {
 		Description: "Write a section at the end of a deck. A section is a name a person " +
 			"gives one run of a deck, and it is a name and nothing else: it carries no " +
 			"field, no card model and no schedule. `card_add` writes a card at the end of " +
-			"one, and `card_read` says which section each card stands under. The " +
+			"one, and `card_read` says which section each card is under. The " +
 			"fingerprint from `card_read` is required, and a write lands only on the deck " +
 			"that fingerprint names.",
 	}, func(ctx context.Context, in cardSectionAddInput) (WriteOutcome, error) {
@@ -201,7 +201,7 @@ func (t *Tools) addCardSectionAdd(registry *tools.Registry) error {
 
 type cardSectionRenameInput struct {
 	Path        string `json:"path" jsonschema:"the deck the section is in"`
-	Section     int    `json:"section" jsonschema:"where the section stands in the deck's sections, counted from the first, as card_read gives them"`
+	Section     int    `json:"section" jsonschema:"where the section is in the deck's sections, counted from the first, as card_read gives them"`
 	Name        string `json:"name" jsonschema:"what it is called from now on"`
 	Fingerprint string `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
@@ -214,7 +214,7 @@ func (t *Tools) addCardSectionRename(registry *tools.Registry) error {
 		Description: "Give one of a deck's sections a different name. Only the heading " +
 			"line is written: the cards standing under it stay where they are, keep their " +
 			"card ids and keep what they hold, and what a person wrote beneath the heading is " +
-			"left as it stands. The section is named by where it stands in the deck, " +
+			"left as it stands. The section is named by where it is in the deck, " +
 			"counted from the first, which is what `card_read` gives under `sections`. The " +
 			"fingerprint from `card_read` is required, and a write lands only on the deck " +
 			"that fingerprint names.",
@@ -227,7 +227,7 @@ func (t *Tools) addCardSectionRename(registry *tools.Registry) error {
 
 type cardSectionRemoveInput struct {
 	Path        string `json:"path" jsonschema:"the deck the section is in"`
-	Section     int    `json:"section" jsonschema:"where the section stands in the deck's sections, counted from the first, as card_read gives them"`
+	Section     int    `json:"section" jsonschema:"where the section is in the deck's sections, counted from the first, as card_read gives them"`
 	Fingerprint string `json:"fingerprint" jsonschema:"the deck fingerprint returned by card_read; a write against a changed deck is rejected"`
 }
 
@@ -239,7 +239,7 @@ func (t *Tools) addCardSectionRemove(registry *tools.Registry) error {
 		Description: "Remove the heading of one of a deck's sections. A section is a name " +
 			"and nothing else, so this takes away the name alone: no card is removed, and " +
 			"the cards that stood under the heading stay in the file, in the order they " +
-			"were, under whatever section now stands above them. What a person wrote " +
+			"were, under whatever section now is above them. What a person wrote " +
 			"beneath the heading stays there too. The section is named by where it stands " +
 			"in the deck, counted from the first, which is what `card_read` gives under " +
 			"`sections`. The fingerprint from `card_read` is required, and a write lands " +
@@ -265,7 +265,7 @@ func (t *Tools) addCardCardModelEdit(registry *tools.Registry) error {
 		Name:  "card_model_edit",
 		Title: "Edit a card model",
 		Description: "Change a card model in place: its fields and the templates a card cut by " +
-			"it is shown through. Hand back the fingerprint from `card_model_read` so " +
+			"it is shown through. Return the fingerprint from `card_model_read` so " +
 			"the write fails if the card model has changed in the meantime.",
 	}, t.writeCardCardModelEdit)
 }

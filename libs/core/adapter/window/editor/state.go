@@ -161,18 +161,18 @@ func (s *State) reportTask(pos run.Task) { s.Window.AddTask(pos) }
 // finishTask takes one piece of work out of that list.
 func (s *State) finishTask(id string) { s.Window.RemoveTask(id) }
 
-// isUnlevelled reports whether a write reached the vault but the index did not
+// isIndexOutdated reports whether a write reached the vault but the index did not
 // follow. The result is returned to the client that saved, and the pending
-// task is shown until a later write brings the index level again.
-func (s *State) isUnlevelled(err error) bool {
+// task is shown until a later write updates the index again.
+func (s *State) isIndexOutdated(err error) bool {
 	if err == nil {
-		s.finishTask(levellingTheIndex)
+		s.finishTask(updatingIndex)
 		return false
 	}
-	if !errors.Is(err, note.ErrUnlevelled) {
+	if !errors.Is(err, note.ErrIndexOutdated) {
 		return false
 	}
-	s.reportTask(run.Task{ID: levellingTheIndex, Title: "Bringing the index level", Error: err.Error()})
+	s.reportTask(run.Task{ID: updatingIndex, Title: "Update index", Error: err.Error()})
 	return true
 }
 

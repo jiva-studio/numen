@@ -30,7 +30,7 @@ type noteChange struct {
 type connectionEditor struct {
 	readers   vaultport.VaultReaders
 	writers   vaultport.VaultWriters
-	index     Levels
+	index     IndexUpdater
 	now       machineport.Clock
 	links     noteport.LinkQueries
 	addresses *GetLinkAddress
@@ -179,7 +179,7 @@ func (e connectionEditor) apply(ctx context.Context, v domain.Vault, changes []n
 		}
 		stats = append(stats, stat)
 	}
-	return e.level(ctx, v, changes)
+	return e.updateIndex(ctx, v, changes)
 }
 
 // restore writes the original content back into the notes already written.
@@ -199,14 +199,14 @@ func (e connectionEditor) restore(
 			failures = append(failures, fmt.Errorf("restore %s: %w", landed[i].path, err))
 		}
 	}
-	if err := e.level(ctx, v, landed); err != nil {
+	if err := e.updateIndex(ctx, v, landed); err != nil {
 		failures = append(failures, err)
 	}
 	return errors.Join(failures...)
 }
 
-// level brings the index level with the notes written.
-func (e connectionEditor) level(ctx context.Context, v domain.Vault, changes []noteChange) error {
+// updateIndex updates the index for the notes written.
+func (e connectionEditor) updateIndex(ctx context.Context, v domain.Vault, changes []noteChange) error {
 	if e.index == nil {
 		return nil
 	}
@@ -214,7 +214,7 @@ func (e connectionEditor) level(ctx context.Context, v domain.Vault, changes []n
 	for i, c := range changes {
 		paths[i] = c.path
 	}
-	return WrapUnlevelled(e.index(ctx, v, paths), paths...)
+	return WrapIndexOutdated(e.index(ctx, v, paths), paths...)
 }
 
 // getKind is the type the records of a connection are addressed by: the type of
@@ -236,9 +236,9 @@ type SaveConnection struct {
 }
 
 // NewSaveConnection builds the use case over the vault, the index that is brought
-// level after a write, the link queries, and the clock.
+// index updater after a write, the link queries, and the clock.
 func NewSaveConnection(
-	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index Levels,
+	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater,
 	now machineport.Clock, links noteport.LinkQueries, addresses *GetLinkAddress,
 ) SaveConnection {
 	return SaveConnection{editor: connectionEditor{
@@ -272,7 +272,7 @@ type RemoveConnection struct {
 // NewRemoveConnection builds the use case over the same collaborators as
 // NewSaveConnection.
 func NewRemoveConnection(
-	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index Levels,
+	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater,
 	now machineport.Clock, links noteport.LinkQueries, addresses *GetLinkAddress,
 ) RemoveConnection {
 	return RemoveConnection{editor: connectionEditor{
@@ -304,7 +304,7 @@ type RemoveSide struct {
 // NewRemoveSide builds the use case over the same collaborators as
 // NewSaveConnection.
 func NewRemoveSide(
-	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index Levels,
+	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater,
 	now machineport.Clock, links noteport.LinkQueries, addresses *GetLinkAddress,
 ) RemoveSide {
 	return RemoveSide{editor: connectionEditor{
@@ -333,7 +333,7 @@ type Join struct {
 
 // NewJoin builds the use case over the same collaborators as NewSaveConnection.
 func NewJoin(
-	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index Levels,
+	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater,
 	now machineport.Clock, links noteport.LinkQueries, addresses *GetLinkAddress,
 ) Join {
 	return Join{editor: connectionEditor{

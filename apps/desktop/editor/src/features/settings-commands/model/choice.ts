@@ -25,7 +25,7 @@ export interface ChoiceDeps {
   readonly settings: Ref<Sizes>
   readonly bounds: Ref<Ranges>
   /** The theme and the mode named, applied at once. */
-  readonly wear: (theme: string, half: Mode) => Promise<void>
+  readonly applyTheme: (theme: string, half: Mode) => Promise<void>
 }
 
 interface WriteSizeDeps {
@@ -55,24 +55,24 @@ async function writeSizeChoice(choice: ScaleChoice, deps: WriteSizeDeps, onReset
 }
 
 export function useAppearanceChoice(on: ChoiceDeps) {
-  const { core, write, list, applied, mode, settings, bounds, wear } = on
+  const { core, write, list, applied, mode, settings, bounds, applyTheme } = on
   const status = ref('')
   const pendingItem = ref<ScaleChoice | null>(null)
   let hold: ReturnType<typeof setTimeout> | undefined
 
   const isTheme = (item: string): boolean => item !== '' && !parseMode(item) && !parseSize(item)
-  const aged = computed(() => (isTheme(status.value) ? status.value : applied.value))
+  const current = computed(() => (isTheme(status.value) ? status.value : applied.value))
   const half = computed<Mode>(() => parseMode(status.value) ?? mode.value)
   const sized = computed<Sizes>(() => {
     const scaleChoice = pendingItem.value
     return scaleChoice ? onto(settings.value, scaleChoice.which, scaleChoice.size) : settings.value
   })
   const isPinned = computed(() => {
-    const theme = list.value.find((one) => one.name === aged.value)
+    const theme = list.value.find((one) => one.name === current.value)
     return theme?.isPinned ?? false
   })
 
-  const applyAppearance = () => wear(aged.value, half.value)
+  const applyAppearance = () => applyTheme(current.value, half.value)
 
   const previewItem = (item: string) => {
     status.value = item
@@ -116,5 +116,5 @@ export function useAppearanceChoice(on: ChoiceDeps) {
 
   const close = () => clearTimeout(hold)
 
-  return { worn: aged, half, sized, isPinned, previewItem, chooseItem, close }
+  return { current, half, sized, isPinned, previewItem, chooseItem, close }
 }

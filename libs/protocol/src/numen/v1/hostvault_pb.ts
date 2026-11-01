@@ -426,7 +426,7 @@ export type LockVaultResponse = Message<"numen.v1.LockVaultResponse"> & {
   error: HostVaultErrorCode;
 
   /**
-   * The lock to hand back to UnlockVault.
+   * The lock to return to UnlockVault.
    *
    * @generated from field: string lock = 2;
    */
@@ -1530,8 +1530,7 @@ export const HostIndexStateSchema: GenEnum<HostIndexState> = /*@__PURE__*/
  * that shows no vault of its own, or a plugin counting every vault, reaches them.
  *
  * The vault is the host's own: the plugin reads and writes its files through
- * the host, so the index, the watcher, the file stats and the trash all stay
- * level with what the plugin did.
+ * the host, so the index, the watcher, the file stats and the trash all stay// up to date with what the plugin did.
  *
  * @generated from service numen.v1.HostVaultService
  */
@@ -1635,7 +1634,7 @@ export const HostVaultService: GenService<{
     output: typeof UnlockVaultResponseSchema;
   },
   /**
-   * ScanFiles brings the index level with the files named, after the plugin
+   * ScanFiles updates the index for the files named, after the plugin
    * changed them.
    *
    * @generated from rpc numen.v1.HostVaultService.ScanFiles

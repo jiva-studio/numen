@@ -20,7 +20,7 @@ func (s cardModelsOf) GetCardModels(context.Context, domain.VaultID) ([]ports.Ca
 }
 
 // An index that cannot name the card models is an error of the listing, and no list
-// is handed over beside it.
+// is passed beside it.
 func TestAListingWhoseIndexCannotNameTheCardModelsIsAnError(t *testing.T) {
 	vs := newVaults(t)
 
@@ -35,7 +35,7 @@ func TestAListingWhoseIndexCannotNameTheCardModelsIsAnError(t *testing.T) {
 }
 
 // A card model the vault cannot look at is an error of the listing, and no list is
-// handed over beside it.
+// passed beside it.
 func TestAListingWhoseCardModelCannotBeLookedAtIsAnError(t *testing.T) {
 	vs := newVaults(t)
 	readers := faulty{inner: vs.ports.Readers, stat: map[string]error{"Animal.md": errOutOfReach}}

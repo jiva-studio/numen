@@ -568,7 +568,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 // case bound.
 func newBareServices() *Services { return createServices(&State{}) }
 
-// newThemedServices is that window, dressed in these themes.
+// newThemedServices is that window, with these themes.
 func newThemedServices(themes numenv1connect.ThemeServiceHandler) *Services {
 	services := newBareServices()
 	services.Themes = themes
@@ -748,10 +748,10 @@ func TestTheWindowAsksTheSameHandlerAboutItsThemes(t *testing.T) {
 		t.Fatal(err)
 	}
 	if answer.Msg.GetApplied() != adapterSettings.DefaultTheme {
-		t.Errorf("wears %q", answer.Msg.GetApplied())
+		t.Errorf("applied %q", answer.Msg.GetApplied())
 	}
 	if len(answer.Msg.GetThemes()) == 0 {
-		t.Error("nothing to wear")
+		t.Error("no themes")
 	}
 
 	text, err := client.ReadTheme(t.Context(),
@@ -760,7 +760,7 @@ func TestTheWindowAsksTheSameHandlerAboutItsThemes(t *testing.T) {
 		t.Fatal(err)
 	}
 	if text.Msg.GetCss() == "" {
-		t.Error("the theme it wears has no text")
+		t.Error("the applied theme has no text")
 	}
 }
 
@@ -806,7 +806,7 @@ func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 		t.Fatal(err)
 	}
 	if answer.Msg.GetApplied() != "mine:nord" || answer.Msg.GetMode() != v1.Mode_MODE_DARK {
-		t.Errorf("wears %q, read as %v", answer.Msg.GetApplied(), answer.Msg.GetMode())
+		t.Errorf("applied %q, read as %v", answer.Msg.GetApplied(), answer.Msg.GetMode())
 	}
 }
 

@@ -14,7 +14,7 @@ Opening another vault unmakes the second half and makes it again. One database h
 
 Every page writes what only it holds before anything is taken away. This is the settling a window closing does, asked for a second reason.
 
-**A page holding text a person has to answer for calls the swap off.** The window stays on the vault it had, and the question stands. A page that says nothing has three seconds to hand over what it holds.
+**A page holding text a person has to answer for calls the swap off.** The window stays on the vault it had, and the question stands. A page that says nothing has three seconds to pass what it holds.
 
 **One settling runs at a time.** A swap and a close each ask for one, and the second to arrive is rejected with an error message. A close requested during a swap is rejected and is not retried; the person presses close a second time.
 
@@ -85,7 +85,7 @@ A vault carries its identity inside its own folder, so it is recognised wherever
 
 **Forgetting** takes a vault off the list and out of the index. The folder stays where it is with the identity it carries, and adding it again brings back the same vault.
 
-**Erasing** forgets it and puts the folder in the place this machine keeps what a person deleted. The folder is the person's own writing, so it goes where deleted things go and comes back from there. A machine with nowhere to put it fails with an error, and a folder that no longer carries this vault's identity stays where it is. A path with nothing at it any more is forgotten and nothing is moved.
+**Erasing** forgets it and puts the folder in the trash of this machine. The folder is the person's own writing, so it goes where deleted things go and comes back from there. A machine with no trash fails with an error, and a folder that no longer carries this vault's identity stays where it is. A path with nothing at it any more is forgotten and nothing is moved.
 
 **Neither may close the vault currently displayed in the window, and neither may take the last vault an installation has.** The window always operates on an active vault. The use cases are not informed which vault is active; the window manages that state and handles rejections.
 

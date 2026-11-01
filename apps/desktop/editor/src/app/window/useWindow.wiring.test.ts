@@ -131,7 +131,7 @@ beforeEach(() => {
     },
     settings: {
       kept: {},
-      dressed: {},
+      appearance: {},
       oneName: {},
       nesting: {},
       rest: {},

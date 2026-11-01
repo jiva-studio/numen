@@ -35,7 +35,7 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 		t.Error("the vaults arrived in no day")
 	}
 	if first.Counted != nil {
-		t.Errorf("a count stands beside the vaults: %+v", first.Counted)
+		t.Errorf("a count is beside the vaults: %+v", first.Counted)
 	}
 	if len(first.Vaults) != len(target) {
 		t.Fatalf("overview returned %d of %d vaults", len(first.Vaults), len(target))

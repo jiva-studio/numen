@@ -192,7 +192,7 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 		return RefreshResult{}, err
 	}
 	// A note is filed under the vault's row, and a vault nothing has walked yet
-	// has none: a note written into a vault the moment it opens is levelled
+	// has none: a note written into a vault the moment it opens is indexed
 	// here or nowhere.
 	if err := u.vaults.Register(ctx, v.ID); err != nil {
 		return RefreshResult{}, fmt.Errorf("register vault: %w", err)

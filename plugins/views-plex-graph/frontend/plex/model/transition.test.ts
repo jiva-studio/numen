@@ -265,7 +265,7 @@ describe('what counts as a change to the arrangement', () => {
     expect(isMoving.value).toBe(true)
   })
 
-  it('is not a change when the same settings are handed over again', async () => {
+  it('is not a change when the same settings are passed again', async () => {
     const world = stubClock()
     const input = ref<ArrangeInput>(base)
     const { isMoving } = inScope(() =>

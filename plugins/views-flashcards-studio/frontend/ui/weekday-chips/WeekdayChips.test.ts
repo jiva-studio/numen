@@ -26,7 +26,7 @@ const mountChips = (props: Partial<ChipsProps> = {}) =>
     attachTo: document.body,
   })
 
-/** Every day the row has handed back, with the level chosen for it. */
+/** Every day the row has returned, with the level chosen for it. */
 const getChosen = (row: ReturnType<typeof mountChips>): readonly unknown[][] =>
   (row.emitted('choose') ?? []) as unknown[][]
 

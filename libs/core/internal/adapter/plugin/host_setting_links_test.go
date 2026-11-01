@@ -54,7 +54,7 @@ func TestRequirementsFollowTheModelSetting(t *testing.T) {
 		t.Errorf("requirements = %v, want the large weights", got)
 	}
 	if _, ok := host.GetPluginSettings("md.numen.sample")["url"]; ok {
-		t.Error("the url is handed over while its condition fails")
+		t.Error("the url is passed while its condition fails")
 	}
 
 	if err := host.UpdatePluginSetting(t.Context(), "md.numen.sample", "model", "small"); err != nil {

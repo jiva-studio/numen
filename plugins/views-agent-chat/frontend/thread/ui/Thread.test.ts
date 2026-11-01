@@ -34,7 +34,7 @@ describe('what is drawn', () => {
     ).toHaveLength(3)
   })
 
-  it('keeps the turns in the order they were handed over', () => {
+  it('keeps the turns in the order they were passed', () => {
     const wrapper = thread([createRequested('1', 'first'), createResponded('2', 'second')])
     const turns = wrapper.findAll('.thread__turn')
     expect(turns[0]?.text()).toContain('first')

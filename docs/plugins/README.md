@@ -12,7 +12,7 @@ A plugin's backend lives in the package `backend/service`, whose `Mount(s *serve
 
 ### The vault, through the host
 
-A plugin never opens the vault folder. A plugin that holds `vault:read` calls `HostVaultService` on the host endpoint (`NUMEN_HOST_PORT`, authenticated by `NUMEN_PLUGIN_TOKEN`) to read a file with its file stat, to ask what the index says of notes, links and backlinks, to read its cache, and to watch the vault for changed files. One that holds `vault:write` also writes a file over the file stat it read (a file that moved is answered `STALE`), makes a file, holds the vault's writers and brings the index level with the files it changed. The vault is the one the window is showing; the host answers `NO_VAULT` while it shows none. A call that carries the header `Numen-Vault` works the vault of that identity instead (`ListHostVaults` lists them, and an unknown identity is answered not found), which is how a window that shows no vault of its own is served. `EnsureVaultIndexed` starts reading a vault into the index and says where that stands, and `WatchMoves` tells that something moved in some vault. `plugin-sdk-go/host` is the client: `Client.With(id)` works another vault, and `hosttest.Vault` is one held in memory for tests.
+A plugin never opens the vault folder. A plugin that holds `vault:read` calls `HostVaultService` on the host endpoint (`NUMEN_HOST_PORT`, authenticated by `NUMEN_PLUGIN_TOKEN`) to read a file with its file stat, to ask what the index says of notes, links and backlinks, to read its cache, and to watch the vault for changed files. One that holds `vault:write` also writes a file over the file stat it read (a file that moved is answered `STALE`), makes a file, holds the vault's writers and updates the index for the files it changed. The vault is the one the window is showing; the host answers `NO_VAULT` while it shows none. A call that carries the header `Numen-Vault` works the vault of that identity instead (`ListHostVaults` lists them, and an unknown identity is answered not found), which is how a window that shows no vault of its own is served. `EnsureVaultIndexed` starts reading a vault into the index and says where that stands, and `WatchMoves` tells that something moved in some vault. `plugin-sdk-go/host` is the client: `Client.With(id)` works another vault, and `hosttest.Vault` is one held in memory for tests.
 
 ### The plugin's folder
 
@@ -43,7 +43,7 @@ Plugins communicating over Connect-RPC use loopback TCP:
   ```
   NUMEN_READY port=12345
   ```
-- All plugins implement the `numen.v1.PluginLifecycleService` providing `Ping` and `Shutdown` endpoints. `Ping` answers with the protocol version the plugin speaks; the Go SDK fills it in.
+- All plugins implement the `numen.v1.PluginLifecycleService` providing `Ping` and `Shutdown` endpoints. `Ping` answers with the protocol version the plugin uses; the Go SDK fills it in.
 - After the handshake the host calls `Ping`. A plugin whose protocol differs from its manifest's `protocol` or from the host's is stopped and reported failed at once.
 - The host stops every plugin process after 180 seconds without a lease. A lease is held for each call into the plugin that has not returned, for each open stream, and for each of the plugin's own pending jobs: a plugin keeps itself alive by reporting its work to the host as a task (`HostQueueService.ReportTask`, until the task counts to its total, fails, or `FinishTask` ends it) or by holding a queue turn (`HostQueueService.EnqueueWork`, until the stream ends). Each open task id holds one lease. The host drops the leases of a plugin whose process exits. The host sets no CPU or memory limit on a plugin process.
 
@@ -150,7 +150,7 @@ The manifest declares identity, activation rules, required permissions, and serv
 - **`id`**: Unique identifier of two or more dot-separated segments of letters, digits, `_` or `-`; reverse-DNS (`md.numen.<plugin-name>`).
 - **`name`**: User-facing display title.
 - **`version`**: `<year>.<month>.<build>` (`2026.10.3`): the year and month of the change, and its number within that month, starting at 1. A change to a plugin raises its version: in the same month `build` goes up by one, in a new month the version starts at `<year>.<month>.1`. `make plugin_versions_bump` writes the next version and CI (`make plugin_versions_check`) fails a changed plugin that keeps its version; changes to markdown and test files do not count. A plugin with a `package.json` carries the same version there, and CI fails when the two differ. The host reads the value as semver (`X.Y.Z`, optional pre-release and build parts).
-- **`protocol`**: The plugin protocol version the plugin was written against. The host speaks protocol 1 and rejects a manifest that names a newer one. Absent means 1.
+- **`protocol`**: The plugin protocol version the plugin was written against. The host uses protocol 1 and rejects a manifest that names a newer one. Absent means 1.
 - **`capabilities`**: The capabilities the host resolves a plugin by (`embedding`, `tools` and `ai.agent.provider`, the marker of an agent plugin that serves tasks and lists the programs it runs). The host refuses any other name when it reads the manifest.
 - **`targets`**: Allowed client environments (`desktop.editor`, `desktop.flashcards`).
 - **`activationEvents`**: The events the plugin subscribes to; the only value is `*`. With `*` the host activates the plugin on every event it emits and hands it the event through `DeliverEvent` when it serves `numen.v1.PluginEventService`; a plugin built on the Go SDK serves it when it passes `server.WithEventHandler`. A plugin that rejects an event answers with `error` set to `PLUGIN_EVENT_ERROR_CODE_REFUSED` and its `reason`, and the host reports the rejection with the event and the plugin id. The host emits `onFile:<extension>` when a window opens a file and `onVectorsReady:<vault id>` after an indexing pass leaves no vector pending. A plugin with a backend that does not declare `*` is handed only `onFile:<extension>`, for a file whose content type one of its `contributes.readers` or `contributes.handles` takes. A manifest with any other value is refused.
@@ -338,7 +338,7 @@ A plugin declares its commands in `commands` of the manifest and runs them in it
   {
     "id": "create-deck",
     "title": "New deck",
-    "arguments": [{ "name": "title", "title": "What is it called", "type": "string", "required": true }]
+    "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]
   }
 ]
 ```

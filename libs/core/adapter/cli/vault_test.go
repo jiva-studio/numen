@@ -273,7 +273,7 @@ func TestErasingReturnsWhereTheFolderWent(t *testing.T) {
 	s.trash(nil)
 
 	out := s.mustRun("vault", "erase", "erased", "--yes")
-	want := "erased erased\n  " + s.vault + " went to the trash this machine keeps\n"
+	want := "erased erased\n  " + s.vault + " went to the trash\n"
 	if out != want {
 		t.Errorf("vault erase said\n%q\nwant\n%q", out, want)
 	}

@@ -273,7 +273,7 @@ The curve flattens after eight while the coarse pass costs close to linear in k:
 
 The rerank is 0.4 ms of that: one `json_each` join, 160 int8 blobs, 160×1024 dot products, a sort. The 7 ms is the wider coarse pass, less the 0.7 ms saved by resolving 20 enclosing chunks where there were 100.
 
-The words half measures 1.1 ms median and about 39 ms p95 on a long natural language query, where the FTS expression becomes a wide OR. A search running both halves on such a query stands over the 50 ms target above, and did before this.
+The words half measures 1.1 ms median and about 39 ms p95 on a long natural language query, where the FTS expression becomes a wide OR. A search running both halves on such a query is over the 50 ms target above, and did before this.
 
 ### A partition key charges for every partition
 
@@ -751,7 +751,7 @@ That leaves the half second, and it is the same half second every time a page is
 
 ## Finding the section a question is about
 
-Recorded 2026-08-20 over the same 546-page scan. 700 questions drawn from the book's own parts: for each of 350 parts whose heading the recogniser read as words, one question is that heading — a person asking where the book speaks about a thing — and one is seven words from the middle of the part. The right answer is that part either way.
+Recorded 2026-08-20 over the same 546-page scan. 700 questions drawn from the book's own parts: for each of 350 parts whose heading the recogniser read as words, one question is that heading — a person asking where the book discusses a thing — and one is seven words from the middle of the part. The right answer is that part either way.
 
 |                                   | right section | opened at its start |
 | --------------------------------- | ------------- | ------------------- |
@@ -789,7 +789,7 @@ The cheap model reports lines it did not change, which is where its output goes.
 
 A queue is half the price of asking a page at a time and waiting.
 
-Folding diacritics before embedding measures +0.08 to +0.11 of cosine for a person who types plainly. It is not general: it eats `q̇`, a vector arrow and a bar, which in a book of mathematics are the content.
+Folding diacritics before embedding measures +0.08 to +0.11 of cosine for a person who types plainly. It is not general: it removes `q̇`, a vector arrow and a bar, which in a book of mathematics are the content.
 
 ## Changing how large the window is drawn
 
@@ -800,7 +800,7 @@ Recorded 2026-08-25 in Chrome 149, over a window holding a 400-line editor and t
 | `--numen-interface-scale` | 27–39 ms      |
 | `--numen-text-scale`      | 4–6 ms        |
 
-The interface is the root's font size, so every length written in `rem` is measured again and the whole document is laid out. The reading size is written in `rem` as well, so the interface carries the editor and marked-up text along with everything else: what the reading size moves stands inside what the interface moves, and not beside it.
+The interface is the root's font size, so every length written in `rem` is measured again and the whole document is laid out. The reading size is written in `rem` as well, so the interface carries the editor and marked-up text along with everything else: what the reading size moves is inside what the interface moves, and not beside it.
 
 The editor draws only the lines that are on screen — thirty-six of the four hundred — so what it adds to either is a screen of text, whatever the note is worth. Marked-up text draws all of it. The same window with four hundred blocks of a note on screen, over the whole stylesheet rather than the tokens alone:
 
@@ -811,7 +811,7 @@ The editor draws only the lines that are on screen — thirty-six of the four hu
 
 Those two columns are read against each other. A page carrying the whole stylesheet costs more to recalculate than one carrying the tokens, which is why neither column meets the table above.
 
-A held arrow key crosses a row of the size list every 40 ms, and a size is worn once the keyboard has stood on a row for 150 ms.
+A held arrow key crosses a row of the size list every 40 ms, and a size is applied once the keyboard has stayed on a row for 150 ms.
 
 ## What a name of the derived store costs
 
@@ -962,7 +962,7 @@ Both columns are the median of two runs of three on an idle machine. **The alloc
 
 **The Before column is this machine on this day.** Its 50 000 row reads 17.6 s where the section above wrote 15.5 s, on the same build and the same allocation to a hundredth of a per cent. It is what the After beside it is read against and not a figure to carry anywhere else.
 
-**A card is worked out, not tabulated.** The scheduling library settles a card by building a scheduler, a map, and an entry for each of the four ratings, and formats a string for a fuzz seed on every call — these parameters carry no fuzz and nothing reads the seed. A projection asks about two ratings. The arithmetic now stands beside the port, on the library's own weights: at fifty thousand review cards a request allocated 92.2 million times and now allocates 3.3 million.
+**A card is worked out, not tabulated.** The scheduling library settles a card by building a scheduler, a map, and an entry for each of the four ratings, and formats a string for a fuzz seed on every call — these parameters carry no fuzz and nothing reads the seed. A projection asks about two ratings. The arithmetic now is beside the port, on the library's own weights: at fifty thousand review cards a request allocated 92.2 million times and now allocates 3.3 million.
 
 **87 % was the estimate and 87 % is the measurement.** A profile before the change put 87 % of every byte a request allocates inside the library. The four rows totaled 86.5, 88.3, 87.8 and 87.0 per cent.
 
@@ -1075,7 +1075,7 @@ The two copies of `@vue/runtime-core` went the same way, and the editor's `vue-t
 
 ## A recipe that moved, and whether it settles
 
-The quantisation scale now stands in the recipe a vector is kept under, so every vector made before it is made again. Read 2026-09-06, from the code rather than the clock.
+The quantisation scale now is in the recipe a vector is kept under, so every vector made before it is made again. Read 2026-09-06, from the code rather than the clock.
 
 **It settles.** `port.EmbeddingModel.Recipe` is a `Sprintf` over the model's five fields, the name of the quantisation and `port.Int8Scale`. The five fields come from the settings file; the other two are constants. Nothing in it is read from the clock, from a random source, or from a path that differs between launches, so two runs of one installation ask for the same recipe and the second finds every vector the first bought. The cost is once, and `TestAScaleThatMovedBuysTheVectorsAgain` is what holds it there.
 

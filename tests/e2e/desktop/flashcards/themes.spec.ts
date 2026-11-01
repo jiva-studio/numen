@@ -15,7 +15,7 @@ const getServedThemeStyle = async (page: Page): Promise<string> => {
   return /<style data-appearance="theme">([^<]*)<\/style>/.exec(html)?.[1] ?? ''
 }
 
-/** Wears the theme of that title through the command palette. */
+/** Applies the theme of that title through the command palette. */
 const chooseTheme = async (page: Page, title: string): Promise<void> => {
   await page.keyboard.press('Control+p')
   const field = page.locator('input[data-palette="field"]').first()

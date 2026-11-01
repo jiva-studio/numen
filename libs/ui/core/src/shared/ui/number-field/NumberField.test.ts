@@ -1,7 +1,7 @@
 /**
  * What the field does with what is typed into it.
  *
- * The negatives matter most: a line that is not a number is not swallowed and
+ * The negatives matter most: a line that is not a number is not discarded and
  * is not handed on, and a number past the bounds is neither.
  */
 import { mount } from '@vue/test-utils'

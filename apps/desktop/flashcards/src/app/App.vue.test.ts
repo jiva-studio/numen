@@ -307,7 +307,7 @@ describe('the appearance palette', () => {
     expect(document.body.textContent).toContain('numen')
   })
 
-  it('writes the theme chosen and dresses the page in it', async () => {
+  it('writes the theme chosen and applies it to the page', async () => {
     wire.readTheme.mockResolvedValue({ css: ':root { color-scheme: dark; }' })
     await openPalette()
     const rows = [...document.body.querySelectorAll<HTMLElement>('[role="option"]')]

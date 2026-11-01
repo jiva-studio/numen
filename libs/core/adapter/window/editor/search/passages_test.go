@@ -195,7 +195,7 @@ func TestAPassageIsSplitToWhatCanBeReadAtAGlance(t *testing.T) {
 			t.Errorf("cut opens on %q, want the beginning of the passage", trimmedItem[:20])
 		}
 		if strings.HasPrefix(trimmedItem, "…") {
-			t.Errorf("cut %q says something stands before the beginning", trimmedItem[:6])
+			t.Errorf("cut %q says something is before the beginning", trimmedItem[:6])
 		}
 		if len(retainedItem) != 0 {
 			t.Errorf("kept %+v, want nothing marked", retainedItem)

@@ -31,7 +31,7 @@ type Manifest struct {
 	Id      string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name    string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Version string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
-	// protocol is the plugin protocol the plugin speaks. Absent means 1.
+	// protocol is the plugin protocol the plugin uses. Absent means 1.
 	Protocol     int32    `protobuf:"varint,4,opt,name=protocol,proto3" json:"protocol,omitempty"`
 	Description  string   `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
 	Capabilities []string `protobuf:"bytes,6,rep,name=capabilities,proto3" json:"capabilities,omitempty"`

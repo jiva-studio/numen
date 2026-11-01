@@ -22,7 +22,7 @@ const reloadWindow = async (page: Page): Promise<void> => {
   await expect(page.getByRole('tabpanel').first()).toBeVisible()
 }
 
-/** Wears the theme of that title through the palette. */
+/** Applies the theme of that title through the palette. */
 const chooseTheme = async (page: Page, title: string): Promise<void> => {
   await runCommand(page, 'Change theme', /^Change theme/)
   await page
@@ -47,7 +47,7 @@ const setPresetThemesEnabled = async (page: Page, isEnabled: boolean): Promise<v
 test.describe('A theme of the preset themes plugin', () => {
   test.describe.configure({ timeout: 120_000 })
 
-  test('is worn at once, is in the first paint after a reload, and gives way to the default when the plugin is disabled', async ({
+  test('is applied at once, is in the first paint after a reload, and gives way to the default when the plugin is disabled', async ({
     page,
   }) => {
     await openWorkspace(page)

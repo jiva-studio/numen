@@ -32,20 +32,20 @@ type Create struct {
 	writers ports.VaultWriters
 	// index updates the index with the new file, which makes it visible to a caller
 	// that creates a deck and then lists the vault's decks.
-	index note.Levels
+	index note.IndexUpdater
 	// now is when this is happening. An identifier carries it.
 	now ports.Clock
 }
 
 // NewCreate is what a deck, a card model or a preset is made through: the vault it
-// is written into, what brings the new file level in the index, and what time
+// is written into, what updates the index for the new file, and what time
 // it is.
-func NewCreate(writers ports.VaultWriters, index note.Levels, now ports.Clock) Create {
+func NewCreate(writers ports.VaultWriters, index note.IndexUpdater, now ports.Clock) Create {
 	return Create{writers: writers, index: index, now: now}
 }
 
 // WithIndex replaces the index function.
-func (u Create) WithIndex(index note.Levels) Create {
+func (u Create) WithIndex(index note.IndexUpdater) Create {
 	u.index = index
 	return u
 }
@@ -154,5 +154,5 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 	if u.index == nil {
 		return made, nil
 	}
-	return made, note.WrapUnlevelled(u.index(ctx, v, []string{path}), path)
+	return made, note.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)
 }

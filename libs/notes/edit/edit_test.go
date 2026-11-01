@@ -222,14 +222,14 @@ func TestEdit_EnforcesSizeLimit(t *testing.T) {
 	}
 }
 
-func TestAWriteThatLandedIsReportedAlongsideALevellingThatFailed(t *testing.T) {
+func TestAWriteThatLandedIsReportedAlongsideAnIndexUpdateThatFailed(t *testing.T) {
 	f := newFiles(map[string]string{"A.md": "# A\n"})
 	e := editing(f)
 	e.Index = func(context.Context, domain.Vault, []string) error { return errors.New("index is busy") }
 
 	res, err := e.Apply(t.Context(), getVault(), "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
 
-	if !errors.Is(err, edit.ErrUnlevelled) || res.Size == 0 || !strings.HasSuffix(f.content["A.md"], "# B\n") {
+	if !errors.Is(err, edit.ErrIndexOutdated) || res.Size == 0 || !strings.HasSuffix(f.content["A.md"], "# B\n") {
 		t.Errorf("got %+v (%v)", res, err)
 	}
 }

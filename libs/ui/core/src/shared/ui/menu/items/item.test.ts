@@ -45,7 +45,7 @@ describe('where a menu goes', () => {
     expect(menuPlacement).toStrictEqual({ x: 52, y: 32 })
   })
 
-  it('sits at the near edge when it is larger than the area it is placed in', () => {
+  it('is at the near edge when it is larger than the area it is placed in', () => {
     const menuPlacement = placeMenu({
       at: { x: 40, y: 40 },
       size: SIZE,

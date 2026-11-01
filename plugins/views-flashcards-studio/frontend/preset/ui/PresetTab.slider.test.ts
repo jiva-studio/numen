@@ -395,7 +395,7 @@ describe('what the control remains at', () => {
 
   // The figure is the probability of recall when a card is due, shown as a
   // percentage and labelled as remembered.
-  it('speaks the share as a percentage, and of remembering', () => {
+  it('shows the share as a percentage, and of remembering', () => {
     expect(words.value('retention', 0.9, '')).toBe('90% remembered')
     expect(words.formatGoalValue('retention', 0.9)).toBe('90%')
     expect(words.fieldDetail('retention')).toContain('recall')

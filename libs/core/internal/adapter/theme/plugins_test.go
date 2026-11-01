@@ -148,28 +148,28 @@ func TestACatalogueWithoutPluginsAnswersForNoPluginName(t *testing.T) {
 func TestAStoredPluginThemeThatNoLongerResolvesFallsBackToTheDefaultAndWarns(t *testing.T) {
 	plugins := createFakePlugins()
 	name := theme.PluginName(pluginID, "night")
-	aged := createFakeAppearances(t, theme.Appearance{ThemeName: name})
-	aged.service.Catalogue = aged.service.Catalogue.WithPlugins(plugins)
-	if applied := aged.themes(t).GetApplied(); applied != name {
-		t.Fatalf("wears %q before the plugin is disabled", applied)
+	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: name})
+	fakeSettings.service.Catalogue = fakeSettings.service.Catalogue.WithPlugins(plugins)
+	if applied := fakeSettings.themes(t).GetApplied(); applied != name {
+		t.Fatalf("applied %q before the plugin is disabled", applied)
 	}
 
 	plugins.disable()
 
-	if applied := aged.themes(t).GetApplied(); applied != theme.Default {
-		t.Errorf("wears %q after the plugin is disabled", applied)
+	if applied := fakeSettings.themes(t).GetApplied(); applied != theme.Default {
+		t.Errorf("applied %q after the plugin is disabled", applied)
 	}
-	if len(aged.reply) != 2 || aged.reply[0] != "" || !strings.Contains(aged.reply[1], name) {
-		t.Errorf("said %v, want an empty text for the first list and then the warning", aged.reply)
+	if len(fakeSettings.reply) != 2 || fakeSettings.reply[0] != "" || !strings.Contains(fakeSettings.reply[1], name) {
+		t.Errorf("said %v, want an empty text for the first list and then the warning", fakeSettings.reply)
 	}
 }
 
 func TestListThemesCarriesThePluginAndTheAppearanceOfAPluginTheme(t *testing.T) {
-	aged := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default})
-	aged.service.Catalogue = aged.service.Catalogue.WithPlugins(createFakePlugins())
+	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default})
+	fakeSettings.service.Catalogue = fakeSettings.service.Catalogue.WithPlugins(createFakePlugins())
 
 	found := map[string]*v1.Theme{}
-	for _, one := range aged.themes(t).GetThemes() {
+	for _, one := range fakeSettings.themes(t).GetThemes() {
 		found[one.GetName()] = one
 	}
 
@@ -185,24 +185,24 @@ func TestListThemesCarriesThePluginAndTheAppearanceOfAPluginTheme(t *testing.T) 
 }
 
 func TestChoosingAPluginThemeWritesItsName(t *testing.T) {
-	aged := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default})
-	aged.service.Catalogue = aged.service.Catalogue.WithPlugins(createFakePlugins())
+	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default})
+	fakeSettings.service.Catalogue = fakeSettings.service.Catalogue.WithPlugins(createFakePlugins())
 	name := theme.PluginName(pluginID, "night")
 
-	if failed := aged.choose(t, name, v1.Mode_MODE_DARK); failed != "" {
+	if failed := fakeSettings.choose(t, name, v1.Mode_MODE_DARK); failed != "" {
 		t.Fatalf("failed: %s", failed)
 	}
 
-	if len(aged.content) != 1 || aged.content[0].ThemeName != name {
-		t.Errorf("written: %+v", aged.content)
+	if len(fakeSettings.content) != 1 || fakeSettings.content[0].ThemeName != name {
+		t.Errorf("written: %+v", fakeSettings.content)
 	}
 }
 
 func TestReadThemeAnswersWithTheStylesheetOfAPluginTheme(t *testing.T) {
-	aged := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default})
-	aged.service.Catalogue = aged.service.Catalogue.WithPlugins(createFakePlugins())
+	fakeSettings := createFakeAppearances(t, theme.Appearance{ThemeName: theme.Default})
+	fakeSettings.service.Catalogue = fakeSettings.service.Catalogue.WithPlugins(createFakePlugins())
 
-	answer, err := aged.service.ReadTheme(t.Context(),
+	answer, err := fakeSettings.service.ReadTheme(t.Context(),
 		connect.NewRequest(&v1.ReadThemeRequest{Name: theme.PluginName(pluginID, "night")}))
 
 	if err != nil || answer.Msg.GetCss() != nightCSS {

@@ -3,7 +3,7 @@
  *
  * An address in the text is written for wherever that text lives, and
  * following one is the application's business. So is keeping the text: the
- * editor holds a document and has nowhere to put it.
+ * editor holds a document and has no place to store it.
  */
 import { Facet } from '@codemirror/state'
 

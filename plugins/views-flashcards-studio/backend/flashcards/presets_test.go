@@ -150,10 +150,10 @@ func TestSession_DeckWithTwoPresetsUsesFirstBudget(t *testing.T) {
 	}
 }
 
-// A levelling that failed is not a write that failed. The file stat of the
+// An index update that failed is not a write that failed. The file stat of the
 // file the write produced comes back with it, and the caller's next save lands
 // on that file.
-func TestAPresetSavedWithNoLevellingPassesBackItsFingerprint(t *testing.T) {
+func TestAPresetSavedWithNoIndexUpdatePassesBackItsFingerprint(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getPointing())
 	presets := flashcards.NewPresets(
@@ -169,16 +169,16 @@ func TestAPresetSavedWithNoLevellingPassesBackItsFingerprint(t *testing.T) {
 	settings.MinutesADay = 35
 
 	pos, err := presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, target.FileStat)
-	if !errors.Is(err, note.ErrUnlevelled) {
-		t.Fatalf("a levelling that failed came back as %v", err)
+	if !errors.Is(err, note.ErrIndexOutdated) {
+		t.Fatalf("an index update that failed came back as %v", err)
 	}
 	if pos.IsZero() {
-		t.Fatal("the write handed back no fingerprint")
+		t.Fatal("the write returned no fingerprint")
 	}
 
 	settings.MinutesADay = 40
 	if _, err := presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, pos); err != nil &&
-		!errors.Is(err, note.ErrUnlevelled) {
+		!errors.Is(err, note.ErrIndexOutdated) {
 		t.Fatalf("the next save failed: %v", err)
 	}
 	if raw := read(t, s.vault, "Sanskrit.md"); !strings.Contains(raw, "minutes_a_day: 40") {
@@ -186,9 +186,9 @@ func TestAPresetSavedWithNoLevellingPassesBackItsFingerprint(t *testing.T) {
 	}
 }
 
-// A write that does not reach the vault does not return `note.ErrUnlevelled`: the
+// A write that does not reach the vault does not return `note.ErrIndexOutdated`: the
 // note is unchanged and the save returns an error.
-func TestAPresetLeftAloneIsNotAnUnlevelledWrite(t *testing.T) {
+func TestAPresetLeftAloneIsNotAnIndexOutdatedWrite(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getPointing())
 	was := read(t, s.vault, "Sanskrit.md")
@@ -205,8 +205,8 @@ func TestAPresetLeftAloneIsNotAnUnlevelledWrite(t *testing.T) {
 	settings.MinutesADay = 35
 
 	_, err = s.presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, staleFileStat)
-	if errors.Is(err, note.ErrUnlevelled) {
-		t.Errorf("a write that did not land came back as a levelling: %v", err)
+	if errors.Is(err, note.ErrIndexOutdated) {
+		t.Errorf("a write that did not land came back as an index update: %v", err)
 	}
 	if err == nil {
 		t.Fatal("a stale fingerprint was written over")

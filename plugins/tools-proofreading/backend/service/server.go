@@ -88,7 +88,7 @@ func defaultProofreadingConfig() proofreadingConfig {
 // mockEnabled is the value of EnvMockML that selects the mock model.
 const mockEnabled = "true"
 
-// settings is the configuration the host last handed over.
+// settings is the configuration the host last passed.
 type settings struct {
 	mu  sync.RWMutex
 	cfg proofreadingConfig

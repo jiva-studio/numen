@@ -96,8 +96,8 @@ func TestAFolderIsBroughtInWhole(t *testing.T) {
 		t.Fatalf("files stayed outside: %v", brought.Errors)
 	}
 	// Four files, and the folder itself with the three under it.
-	if len(brought.Landed) != 8 {
-		t.Errorf("%d files and folders landed", len(brought.Landed))
+	if len(brought.Imported) != 8 {
+		t.Errorf("%d files and folders landed", len(brought.Imported))
 	}
 
 	if body := readArrived(t, v.Path, "scans/pages/Two.png"); body != "TWO" {
@@ -152,7 +152,7 @@ func TestAFolderContainingTheVaultIsRefused(t *testing.T) {
 	if len(brought.Errors) != 1 {
 		t.Fatalf("what stayed outside: %v", brought.Errors)
 	}
-	if len(brought.Landed) != 0 {
-		t.Errorf("%d files landed", len(brought.Landed))
+	if len(brought.Imported) != 0 {
+		t.Errorf("%d files landed", len(brought.Imported))
 	}
 }

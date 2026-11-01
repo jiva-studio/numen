@@ -125,7 +125,7 @@ export const WORDS = {
   setting: 'Reading size',
   /** The themes could not be listed, and a theme's file could not be read. */
   unlisted: 'Themes unavailable',
-  unworn: 'Theme unreadable',
+  themeUnreadable: 'Theme unreadable',
   /** The group the setting is drawn in, and the two it is. */
   syncingGroup: 'Sync title and filename',
   on: 'On',

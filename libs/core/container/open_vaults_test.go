@@ -57,11 +57,11 @@ func TestClosingWindowUpdatesNothing(t *testing.T) {
 
 	err := vaults.UpdateIndex(t.Context(), target[0], []string{"samples/Words.md"})
 	if !errors.Is(err, ErrClosing) {
-		t.Errorf("a levelling asked for while closing came back with %v", err)
+		t.Errorf("an index update asked for while closing came back with %v", err)
 	}
 }
 
-// A vault is levelled through the opening it was walked with, and neither opens
+// A vault index is updated through the opening it was walked with, and neither opens
 // the vault a second time.
 func TestUpdateIndexUsesTheVaultsOwnOpenedVault(t *testing.T) {
 	vaults, target := makeOpenVaults(t)
@@ -74,7 +74,7 @@ func TestUpdateIndexUsesTheVaultsOwnOpenedVault(t *testing.T) {
 		t.Fatal(err)
 	}
 	if vaults.OpenedCount() != 1 {
-		t.Errorf("levelling and walking opened the vault %d times", vaults.OpenedCount())
+		t.Errorf("updating and walking opened the vault %d times", vaults.OpenedCount())
 	}
 }
 

@@ -33,7 +33,7 @@ type searchScenarioAssembly interface {
 // ScenarioAssembly is what this window requires for scenarios, search, and refresh.
 type ScenarioAssembly interface {
 	GetClock() machineport.Clock
-	OpenNotes(index note.Levels) note.Scenarios
+	OpenNotes(index note.IndexUpdater) note.Scenarios
 	searchScenarioAssembly
 	textScenarioAssembly
 	fileScenarioAssembly

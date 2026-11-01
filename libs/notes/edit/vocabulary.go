@@ -24,10 +24,10 @@ var (
 	ErrNotANote = errors.New("not a note this vault holds")
 	// ErrNoNote is returned when the vault holds no note at the given path.
 	ErrNoNote = errors.New("the vault holds no note at this path")
-	// ErrUnlevelled is returned when a file was written but the index could not
+	// ErrIndexOutdated is returned when a file was written but the index could not
 	// be updated. The vault holds the written content, and the next scan
 	// updates the index for the path.
-	ErrUnlevelled = errors.New("the vault was written and the index was not brought level with it")
+	ErrIndexOutdated = errors.New("the vault was written and the index was not updated")
 	// ErrTooLarge is returned for a note over MaxBytes. Nothing is written. The
 	// limit applies to the whole file to be stored, as it does for a read.
 	ErrTooLarge = errors.New("this is more text than a note is written with")
@@ -60,14 +60,14 @@ func IsNoNote(err error) bool {
 	return errors.Is(err, fs.ErrNotExist) || errors.Is(err, ErrNotANote)
 }
 
-// WrapUnlevelled wraps an index update failure in ErrUnlevelled, which
+// WrapIndexOutdated wraps an index update failure in ErrIndexOutdated, which
 // distinguishes it from a write that failed. The paths are the ones the index
 // update covered.
-func WrapUnlevelled(err error, paths ...string) error {
+func WrapIndexOutdated(err error, paths ...string) error {
 	if err == nil {
 		return nil
 	}
-	return fmt.Errorf("%w: %s: %w", ErrUnlevelled, strings.Join(paths, ", "), err)
+	return fmt.Errorf("%w: %s: %w", ErrIndexOutdated, strings.Join(paths, ", "), err)
 }
 
 // MapMissingNote returns ErrNoNote when the vault holds no note at the path,

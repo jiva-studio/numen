@@ -169,16 +169,16 @@ func (h *fileHandler) MoveFile(
 
 	moved, err := h.move.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetTo())
 	out := &v1.MoveFileResponse{}
-	if moved.IsLanded {
+	if moved.IsMoved {
 		out.Moved = newMoveResult(moved)
 	}
-	out.IsUnlevelled = h.state.isUnlevelled(err)
-	if err != nil && !out.GetIsUnlevelled() {
+	out.IsIndexOutdated = h.state.isIndexOutdated(err)
+	if err != nil && !out.GetIsIndexOutdated() {
 		reason, ok := wire.GetErrorCode(err)
 		switch {
 		case ok:
 			out.Error = &reason
-		case !moved.IsLanded:
+		case !moved.IsMoved:
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		// The file is where it was sent, so where it went and which links were
@@ -223,8 +223,8 @@ func (h *fileHandler) RemoveFile(
 	defer h.state.Writing.finish()
 
 	removed, err := h.removal(ctx, showing, r.Msg.GetPath(), r.Msg.GetDestroy())
-	unlevelled := h.state.isUnlevelled(err)
-	if err != nil && !unlevelled {
+	indexOutdated := h.state.isIndexOutdated(err)
+	if err != nil && !indexOutdated {
 		reason, ok := wire.GetErrorCode(err)
 		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
@@ -237,7 +237,7 @@ func (h *fileHandler) RemoveFile(
 	return connect.NewResponse(&v1.RemoveFileResponse{
 		Trashed:      removed.Trashed,
 		Dangling:     removed.Dangling,
-		IsUnlevelled: unlevelled,
+		IsIndexOutdated: indexOutdated,
 	}), nil
 }
 

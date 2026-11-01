@@ -50,7 +50,7 @@ func hasTheme(themes []theme.Theme, name string) bool {
 // nothing falls back to, are one palette.
 func TestTheSettingAnInstallationStartsOnIsThisProductsOwnPalette(t *testing.T) {
 	if settings.DefaultTheme != theme.Default {
-		t.Errorf("the settings start on %q and a name matching nothing wears %q",
+		t.Errorf("the settings start on %q and a name matching nothing falls back to %q",
 			settings.DefaultTheme, theme.Default)
 	}
 }
@@ -190,7 +190,7 @@ func TestGetApplied_UnknownNameFallsBackToDefaultAndReportsName(t *testing.T) {
 	catalogue := createThemeFolder(t)
 	applied, missing := catalogue.GetApplied("mine:the-one-i-deleted")
 	if applied != theme.Default {
-		t.Errorf("wears %q", applied)
+		t.Errorf("applied %q", applied)
 	}
 	if missing != "mine:the-one-i-deleted" {
 		t.Errorf("says %q could not be found", missing)
@@ -198,10 +198,10 @@ func TestGetApplied_UnknownNameFallsBackToDefaultAndReportsName(t *testing.T) {
 
 	writeTheme(t, catalogue, "kept.css", ":root {}")
 	if applied, missing := catalogue.GetApplied("mine:kept"); applied != "mine:kept" || missing != "" {
-		t.Errorf("wears %q, missing %q", applied, missing)
+		t.Errorf("applied %q, missing %q", applied, missing)
 	}
 	if applied, missing := catalogue.GetApplied(""); applied != theme.Default || missing != "" {
-		t.Errorf("an installation nobody dressed wears %q, missing %q", applied, missing)
+		t.Errorf("an installation with no themes applied %q, missing %q", applied, missing)
 	}
 }
 
@@ -222,7 +222,7 @@ func TestAFolderThatCannotBeReadIsAListOfWhatShips(t *testing.T) {
 
 	themes := catalogue.Themes()
 	if !hasTheme(themes, theme.Default) {
-		t.Errorf("nothing to wear: %v", getNames(themes))
+		t.Errorf("no themes: %v", getNames(themes))
 	}
 	for _, one := range themes {
 		if one.Origin == theme.Mine {
@@ -230,16 +230,16 @@ func TestAFolderThatCannotBeReadIsAListOfWhatShips(t *testing.T) {
 		}
 	}
 	if applied, _ := catalogue.GetApplied("mine:dracula"); applied != theme.Default {
-		t.Errorf("wears %q", applied)
+		t.Errorf("applied %q", applied)
 	}
 }
 
-// A machine with no configuration folder is a window wearing what ships.
+// A machine with no configuration folder applies the theme that ships.
 func TestCatalogue_NoFolderYieldsBundledThemes(t *testing.T) {
 	var catalogue theme.Catalogue
 	themes := catalogue.Themes()
 	if !hasTheme(themes, theme.Default) {
-		t.Errorf("nothing to wear: %v", getNames(themes))
+		t.Errorf("no themes: %v", getNames(themes))
 	}
 	if _, err := catalogue.Text("mine:dracula"); err == nil {
 		t.Error("a theme was read out of a folder that is not there")

@@ -3,7 +3,7 @@ import { IS_MODE, IS_SIZES, IS_THEME, MARKER, addAfter, getStyleElements } from 
 
 const createSheet = () => document.implementation.createHTMLDocument('numen')
 
-describe('the elements a page is dressed in', () => {
+describe('the style elements of a page', () => {
   it('are marked as the one each is, on a page served in nothing', () => {
     const sheet = createSheet()
 

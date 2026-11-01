@@ -27,7 +27,7 @@ const speechInstruction = `You are proofreading text a machine heard in a record
 The text is speech as prose, with every stretch of it numbered: ` + Opens + `12` + Closes + ` opens the
 line numbered 12, and that line runs to the next mark.
 
-What the recording holds stands before the first mark: how the speech opens,
+What the recording holds is before the first mark: how the speech opens,
 and the words that recur through it as the machine heard them. It is there to
 be read and is answered for by nothing.
 
@@ -45,7 +45,7 @@ as the first and the last of them:
   missing or wrong, numbers and names.
 - Put a sentence broken across lines back together as one line. The run is
   every line it covers, from first to last, with none left out.
-- A line where one sentence ends and the next begins stands in the run of
+- A line where one sentence ends and the next begins is in the run of
   both, and that run is answered with every sentence it covers.
 - A line is answered for once: two runs never share a line, and a run says
   everything its lines say.

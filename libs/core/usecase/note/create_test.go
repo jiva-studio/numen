@@ -135,7 +135,7 @@ func TestANoteMadeBeforeTheIndexFailsIsStillReported(t *testing.T) {
 
 	created, err := create.Execute(t.Context(), c.vault, note.NewNote{Title: "Heat"})
 
-	if !errors.Is(err, note.ErrUnlevelled) || !errors.Is(err, errDiskGone) {
+	if !errors.Is(err, note.ErrIndexOutdated) || !errors.Is(err, errDiskGone) {
 		t.Errorf("want the index failure named as one, got %v", err)
 	}
 	if created.Path != "Heat.md" || created.ID == "" || created.Title != "Heat" {

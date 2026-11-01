@@ -1,17 +1,17 @@
 /**
  * What the manual shows, and from which story.
  *
- * The list stands on its own so that reading it costs nothing: the check that
+ * The list is on its own so that reading it costs nothing: the check that
  * every name here is still a story runs on a bare node, and a camera nobody
  * has installed is no reason for the names to go unchecked.
  *
  * A window is drawn narrower than the column it lands in, so the application's
  * own text is larger on the page than it is on screen and can be read at a
- * glance. What stands alone is drawn at about the size it stands at.
+ * glance. What stands alone is drawn at about the size it is at.
  *
  * `over` names what the pointer is left on: the picture is taken once whatever
  * a hand resting there brings out is all the way out. `preset` names a palette
- * that ships with the application, which the window is drawn wearing. `drawn`
+ * that ships with the application, which the window is drawn with. `drawn`
  * is the fewest bytes the picture comes to, for a screen that is mostly empty.
  */
 export const SHOTS = [

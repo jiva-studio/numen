@@ -32,11 +32,11 @@ func CheckPluginProtocol(ctx context.Context, m manifest.Manifest, endpoint Endp
 	}
 	reported := int(resp.Msg.GetProtocol())
 	if declared := m.GetProtocol(); reported != declared {
-		return fmt.Errorf("%w: plugin %s speaks protocol %d, its manifest declares %d",
+		return fmt.Errorf("%w: plugin %s uses protocol %d, its manifest declares %d",
 			pluginport.ErrUnsupportedProtocol, m.ID, reported, declared)
 	}
 	if reported != pluginport.PluginProtocolVersion {
-		return fmt.Errorf("%w: plugin %s speaks protocol %d, this host speaks %d",
+		return fmt.Errorf("%w: plugin %s uses protocol %d, this host uses %d",
 			pluginport.ErrUnsupportedProtocol, m.ID, reported, pluginport.PluginProtocolVersion)
 	}
 	return nil

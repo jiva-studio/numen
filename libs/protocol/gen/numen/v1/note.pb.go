@@ -1045,7 +1045,7 @@ func (x *NoteHeadings) GetHeadings() []*Heading {
 	return nil
 }
 
-// Heading is one line of a note that names what stands below it.
+// Heading is one line of a note that names what is below it.
 type Heading struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Text  string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
@@ -1344,12 +1344,12 @@ type WriteNoteResponse struct {
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
 	At *FileStat `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
-	// Set when the prose is on disk and the index would not come level with it.
+	// Set when the prose is on disk and the index could not be updated for it.
 	// The write happened and `at` stands; search answers about this note as it
 	// read it last, until a walk goes past.
-	IsUnlevelled  bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	IsIndexOutdated bool `protobuf:"varint,3,opt,name=is_index_outdated,json=isIndexOutdated,proto3" json:"is_index_outdated,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *WriteNoteResponse) Reset() {
@@ -1396,9 +1396,9 @@ func (x *WriteNoteResponse) GetAt() *FileStat {
 	return nil
 }
 
-func (x *WriteNoteResponse) GetIsUnlevelled() bool {
+func (x *WriteNoteResponse) GetIsIndexOutdated() bool {
 	if x != nil {
-		return x.IsUnlevelled
+		return x.IsIndexOutdated
 	}
 	return false
 }
@@ -1563,10 +1563,10 @@ type CreateNoteResponse struct {
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when nothing was made, and why.
 	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
-	// Set when the note is on disk and the index would not come level with it.
+	// Set when the note is on disk and the index could not be updated for it.
 	// The note was made and `path` stands; search does not answer about it until
 	// a walk goes past.
-	IsUnlevelled bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
+	IsIndexOutdated bool `protobuf:"varint,3,opt,name=is_index_outdated,json=isIndexOutdated,proto3" json:"is_index_outdated,omitempty"`
 	// Set when no title was given and every numbered untitled name is taken.
 	IsNameExhausted bool `protobuf:"varint,4,opt,name=is_name_exhausted,json=isNameExhausted,proto3" json:"is_name_exhausted,omitempty"`
 	unknownFields   protoimpl.UnknownFields
@@ -1617,9 +1617,9 @@ func (x *CreateNoteResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *CreateNoteResponse) GetIsUnlevelled() bool {
+func (x *CreateNoteResponse) GetIsIndexOutdated() bool {
 	if x != nil {
-		return x.IsUnlevelled
+		return x.IsIndexOutdated
 	}
 	return false
 }
@@ -2539,8 +2539,8 @@ type CreateRelatedNoteResponse struct {
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when nothing was made, and why.
 	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
-	// Set when the note is on disk and the index would not come level with it.
-	IsUnlevelled bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
+	// Set when the note is on disk and the index could not be updated for it.
+	IsIndexOutdated bool `protobuf:"varint,3,opt,name=is_index_outdated,json=isIndexOutdated,proto3" json:"is_index_outdated,omitempty"`
 	// Set when every numbered untitled name is taken.
 	IsNameExhausted bool `protobuf:"varint,4,opt,name=is_name_exhausted,json=isNameExhausted,proto3" json:"is_name_exhausted,omitempty"`
 	unknownFields   protoimpl.UnknownFields
@@ -2591,9 +2591,9 @@ func (x *CreateRelatedNoteResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *CreateRelatedNoteResponse) GetIsUnlevelled() bool {
+func (x *CreateRelatedNoteResponse) GetIsIndexOutdated() bool {
 	if x != nil {
-		return x.IsUnlevelled
+		return x.IsIndexOutdated
 	}
 	return false
 }
@@ -2860,12 +2860,12 @@ type RenameNoteResponse struct {
 	// written: `path`, `title` and `by` say what stands. A note holding prose the
 	// caller never saw is ERROR_CODE_STALE, and nothing was written at all.
 	Error *ErrorCode `protobuf:"varint,5,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
-	// Set when the rename reached the vault and the index would not come level
+	// Set when the rename reached the vault and the index could not be updated
 	// with it. Search answers about these files as it read them last, until a
 	// walk goes past.
-	IsUnlevelled  bool `protobuf:"varint,6,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	IsIndexOutdated bool `protobuf:"varint,6,opt,name=is_index_outdated,json=isIndexOutdated,proto3" json:"is_index_outdated,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *RenameNoteResponse) Reset() {
@@ -2933,9 +2933,9 @@ func (x *RenameNoteResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *RenameNoteResponse) GetIsUnlevelled() bool {
+func (x *RenameNoteResponse) GetIsIndexOutdated() bool {
 	if x != nil {
-		return x.IsUnlevelled
+		return x.IsIndexOutdated
 	}
 	return false
 }
@@ -3136,11 +3136,11 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04body\x18\x02 \x01(\tR\x04body\x127\n" +
 	"\bbaseline\x18\x03 \x01(\v2\x16.numen.v1.ReadBaselineH\x00R\bbaseline\x88\x01\x01B\v\n" +
-	"\t_baseline\"\xa2\x01\n" +
+	"\t_baseline\"\xa9\x01\n" +
 	"\x11WriteNoteResponse\x12.\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12'\n" +
-	"\x02at\x18\x02 \x01(\v2\x12.numen.v1.FileStatH\x01R\x02at\x88\x01\x01\x12#\n" +
-	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
+	"\x02at\x18\x02 \x01(\v2\x12.numen.v1.FileStatH\x01R\x02at\x88\x01\x01\x12*\n" +
+	"\x11is_index_outdated\x18\x03 \x01(\bR\x0fisIndexOutdatedB\b\n" +
 	"\x06_errorB\x05\n" +
 	"\x03_at\"\xa2\x01\n" +
 	"\x04Link\x12\x0e\n" +
@@ -3153,11 +3153,11 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x11CreateNoteRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12$\n" +
-	"\x05links\x18\x03 \x03(\v2\x0e.numen.v1.LinkR\x05links\"\xb3\x01\n" +
+	"\x05links\x18\x03 \x03(\v2\x0e.numen.v1.LinkR\x05links\"\xba\x01\n" +
 	"\x12CreateNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12#\n" +
-	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelled\x12*\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
+	"\x11is_index_outdated\x18\x03 \x01(\bR\x0fisIndexOutdated\x12*\n" +
 	"\x11is_name_exhausted\x18\x04 \x01(\bR\x0fisNameExhaustedB\b\n" +
 	"\x06_error\"J\n" +
 	"\x10WriteLinkRequest\x12\x12\n" +
@@ -3232,11 +3232,11 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04role\x18\x02 \x01(\x0e2\x0e.numen.v1.RoleR\x04role\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x12\n" +
 	"\x04type\x18\x04 \x01(\tR\x04type\x12(\n" +
-	"\x06marker\x18\x05 \x01(\x0e2\x10.numen.v1.MarkerR\x06marker\"\xba\x01\n" +
+	"\x06marker\x18\x05 \x01(\x0e2\x10.numen.v1.MarkerR\x06marker\"\xc1\x01\n" +
 	"\x19CreateRelatedNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12#\n" +
-	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelled\x12*\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
+	"\x11is_index_outdated\x18\x03 \x01(\bR\x0fisIndexOutdated\x12*\n" +
 	"\x11is_name_exhausted\x18\x04 \x01(\bR\x0fisNameExhaustedB\b\n" +
 	"\x06_error\"*\n" +
 	"\x14ListBacklinksRequest\x12\x12\n" +
@@ -3253,15 +3253,15 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\tbacklinks\x18\x01 \x03(\v2\x12.numen.v1.BacklinkR\tbacklinks\"=\n" +
 	"\x11RenameNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\x8f\x02\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"\x96\x02\n" +
 	"\x12RenameNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x125\n" +
 	"\vname_source\x18\x03 \x01(\x0e2\x14.numen.v1.NameSourceR\n" +
 	"nameSource\x12/\n" +
 	"\x05moved\x18\x04 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x12.\n" +
-	"\x05error\x18\x05 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12#\n" +
-	"\ris_unlevelled\x18\x06 \x01(\bR\fisUnlevelledB\b\n" +
+	"\x05error\x18\x05 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12*\n" +
+	"\x11is_index_outdated\x18\x06 \x01(\bR\x0fisIndexOutdatedB\b\n" +
 	"\x06_movedB\b\n" +
 	"\x06_error\"\x13\n" +
 	"\x11WatchEditsRequest\"\x96\x01\n" +

@@ -133,14 +133,14 @@ func TestANoteIsNotMadeInAVaultThatCannotBeSaved(t *testing.T) {
 	}
 }
 
-// The index a creation is given brings the new file level, with its path.
+// The index a creation is given updates the index for the new file, with its path.
 func TestANewNoteIsBroughtLevelInTheIndexItWasGiven(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
-	var levelled []string
+	var updated []string
 	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock()).WithIndex(
 		func(_ context.Context, _ domain.Vault, paths []string) error {
-			levelled = append(levelled, paths...)
+			updated = append(updated, paths...)
 			return nil
 		})
 
@@ -148,7 +148,7 @@ func TestANewNoteIsBroughtLevelInTheIndexItWasGiven(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(levelled) != 1 || levelled[0] != made.Path {
-		t.Errorf("the index was brought level with %v, want %s", levelled, made.Path)
+	if len(updated) != 1 || updated[0] != made.Path {
+		t.Errorf("the index was updated for %v, want %s", updated, made.Path)
 	}
 }

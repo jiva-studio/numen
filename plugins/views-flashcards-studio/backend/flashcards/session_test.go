@@ -1457,7 +1457,7 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 			pointReviews := curve.Points[curve.Now.Index].Reviews
 			reviewCards := s.countDayCards(t, getToday(), getNextAdmittedDay(read.Settings, getToday(), getSaturday()))
 			if pointReviews != float64(reviewCards) {
-				t.Errorf("the curve draws %v and the day hands over %d", pointReviews, reviewCards)
+				t.Errorf("the curve draws %v and the day passes %d", pointReviews, reviewCards)
 			}
 		})
 	}
@@ -1871,12 +1871,12 @@ func TestOneDeckIsHandedNoMoreThanTheDayContains(t *testing.T) {
 		whole += target
 	}
 	if whole != 30 {
-		t.Errorf("the whole vault hands over %d review cards, and the day holds 30", whole)
+		t.Errorf("the whole vault passes %d review cards, and the day holds 30", whole)
 	}
 	for d := range 3 {
 		deck := fmt.Sprintf("decks/D%d.md", d)
 		if got := len(runSession(flashcards.Scope{Deck: deck}).Queue); got > 30 {
-			t.Errorf("%s alone hands over %d review cards, and the day holds 30", deck, got)
+			t.Errorf("%s alone passes %d review cards, and the day holds 30", deck, got)
 		}
 	}
 }
@@ -2002,7 +2002,7 @@ func TestADeckThatCannotUseItsSharePreservesItToTheOthers(t *testing.T) {
 	}
 	whole := got[deckAt(0)] + got[deckAt(1)] + got[deckAt(2)]
 	if whole != 60 {
-		t.Errorf("the day hands over %d and twenty minutes buys 60", whole)
+		t.Errorf("the day passes %d and twenty minutes buys 60", whole)
 	}
 }
 

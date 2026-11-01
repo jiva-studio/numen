@@ -14,7 +14,7 @@ A note's tab carries one word beside its title when it is not simply saved.
 | --- | --- |
 | `unsaved` | what you see has not reached the file yet. It will in a moment; <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>S</kbd> makes it now. |
 | `overtaken` | the file changed underneath the tab, so saving stopped. Answer with **keep mine** or **take the file's**, and it starts again. Nothing you typed is lost while it waits. |
-| `gone` | the file is no longer at the name this tab stands at. What is on screen is still yours: **keep mine** writes the note back into existence there. |
+| `gone` | the file is no longer at the name this tab is at. What is on screen is still yours: **keep mine** writes the note back into existence there. |
 | `stuck` | this note cannot be read or written, and the tab says which of the reasons below it is. |
 
 *These notes stopped saving because their files changed. The window waits.* — the same thing, said
@@ -29,7 +29,7 @@ about more than one tab at once, usually after a sync client has been through th
 | *that file is not text* | not valid UTF-8, so it is not opened here. |
 | *that note is longer than this writes* | over a megabyte. Split it, or edit it elsewhere. |
 | *the frontmatter of that note cannot be read* | the block between the `---` lines is not valid YAML. numen will not repair it, because repairing means guessing at what you wrote. Fix the block and everything works again. |
-| *that text cannot be written into a note* | what was handed over as the body of a note begins with a frontmatter block, and a body is the prose below one. |
+| *that text cannot be written into a note* | what was passed as the body of a note begins with a frontmatter block, and a body is the prose below one. |
 | *a note cannot be called that* | the title leaves nothing a file could be named after, or carries a line break. |
 | *a note of that name is filed there, so the note was renamed and its file was not* | the new title took, but something already sits where the file would go. Free the name and rename again. |
 
@@ -45,8 +45,8 @@ about more than one tab at once, usually after a sync client has been through th
 | *that folder is a copy of a vault this installation already holds* | two folders carrying one identity are not two vaults. Delete `.numen/` from the copy and add it again — see [vaults](/vault/#moving-the-folder). |
 | *that folder is inside a vault already added, or holds one* | vaults do not overlap. One file belongs to one vault. |
 | *a vault is already called that* | names on the list are unique. |
-| *that is the vault in front of you* / *that is the only vault this installation has* | neither can be forgotten or erased; the window always stands on something. |
-| *this machine has nowhere to put what is deleted* | erasing moves the folder to the machine's own place for deleted things, and this machine has none. Nothing was moved. |
+| *that is the vault in front of you* / *that is the only vault this installation has* | neither can be forgotten or erased; the window is always on something. |
+| *this machine has no trash* | erasing moves the folder to the machine's own place for deleted things, and this machine has none. Nothing was moved. |
 | *a tab is holding text you have to answer for, so the window stayed where it was* | a vault swap was called off by an `overtaken` tab. Answer it, then switch. |
 
 ## About links
@@ -85,7 +85,7 @@ Each is filed against the note you would open to settle it:
 | | |
 | --- | --- |
 | *the themes could not be listed* | the `themes/` folder is not there or cannot be read. What ships is still available. |
-| *that theme could not be read, so it is not worn* | the file named in the settings is missing or unreadable. numen falls back to its own palette and says which name it could not find; putting the file back is all it takes. |
+| *Theme unreadable* | the file named in the settings is missing or unreadable. numen falls back to its own palette and says which name it could not find; putting the file back is all it takes. |
 
 ## About the settings
 

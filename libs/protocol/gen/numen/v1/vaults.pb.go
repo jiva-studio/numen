@@ -49,7 +49,7 @@ const (
 	VaultsErrorCode_VAULTS_ERROR_CODE_SHOWING    VaultsErrorCode = 6
 	// No vault of that identity is on the list.
 	VaultsErrorCode_VAULTS_ERROR_CODE_UNKNOWN VaultsErrorCode = 7
-	// This machine has nowhere to put what is deleted, so the folder stays where
+	// This machine has no trash, so the folder stays where
 	// it is and the vault stays on the list.
 	VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH VaultsErrorCode = 8
 	// A tab is holding text the person has to answer for, so the window stayed
@@ -602,7 +602,7 @@ type RemoveVaultRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault to remove, by its identity.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Trash sends the folder to the place this machine keeps what a person
+	// Trash sends the folder to the trash of this machine, where a person
 	// deleted. A folder no longer carrying this vault's identity stays where it
 	// is and the vault stays on the list.
 	Trash         bool `protobuf:"varint,2,opt,name=trash,proto3" json:"trash,omitempty"`

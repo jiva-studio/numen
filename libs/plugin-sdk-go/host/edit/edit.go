@@ -12,7 +12,7 @@ type Files = notesedit.Files
 type Contents = notesedit.Contents
 type ReadOutcome = notesedit.ReadOutcome
 type Edit = notesedit.Edit
-type Levels = notesedit.Levels
+type IndexUpdater = notesedit.IndexUpdater
 
 const (
 	MaxBytes   = notesedit.MaxBytes
@@ -31,7 +31,7 @@ var (
 	ErrAnchored       = notesedit.ErrAnchored
 	ErrBodyUnwritable = notesedit.ErrBodyUnwritable
 	ErrStale          = notesedit.ErrStale
-	ErrUnlevelled     = notesedit.ErrUnlevelled
+	ErrIndexOutdated     = notesedit.ErrIndexOutdated
 )
 
 func CheckSize(path string, size, maxSize int) error { return notesedit.CheckSize(path, size, maxSize) }
@@ -46,4 +46,4 @@ func GetAddress(
 	return notesedit.GetAddress(ctx, names, vaultID, path)
 }
 
-func WrapUnlevelled(err error, paths ...string) error { return notesedit.WrapUnlevelled(err, paths...) }
+func WrapIndexOutdated(err error, paths ...string) error { return notesedit.WrapIndexOutdated(err, paths...) }

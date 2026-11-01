@@ -85,4 +85,4 @@ where it is, and adding it again brings back the same vault.
 can still fetch it back from there.
 
 Neither can take away the vault you are looking at, and neither can take the last one you have —
-the window always stands on something.
+the window is always on something.

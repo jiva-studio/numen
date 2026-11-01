@@ -8,7 +8,7 @@
 // put one in, take one out, remove one — and nothing else. Anything that answers
 // a question across many of them, in a shape that is not an aggregate, is a
 // query: matches and counts are read models, and asking a repository for them
-// turns it into a service wearing a repository's name.
+// turns it into a service named after a repository.
 //
 // One sub-package holds one domain's ports: agentport, completionport,
 // settingsport, pluginport, playbackport, contenttypeport, embeddingport,

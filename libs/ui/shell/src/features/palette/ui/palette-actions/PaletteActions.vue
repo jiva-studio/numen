@@ -27,7 +27,7 @@ const open = defineModel<boolean>('open', { default: false })
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
-  /** An action was chosen. The identifier is the caller's, handed back as given. */
+  /** An action was chosen. The identifier is the caller's, returned as given. */
   (event: 'choose', action: string): void
 }>()
 

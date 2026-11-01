@@ -24,7 +24,7 @@ import (
 type EditLinks struct {
 	readers vaultport.VaultReaders
 	writers vaultport.VaultWriters
-	index   Levels
+	index   IndexUpdater
 	now     machineport.Clock
 }
 
@@ -36,7 +36,7 @@ type EditLinks struct {
 // that is not indexed cannot be queried, and timestamps come from the injected
 // clock and not from the machine clock directly.
 func NewEditLinks(
-	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index Levels, now machineport.Clock,
+	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater, now machineport.Clock,
 ) EditLinks {
 	return EditLinks{readers: readers, writers: writers, index: index, now: now}
 }
@@ -97,7 +97,7 @@ func (u EditLinks) Update(
 	change domain.Link, stat domain.FileStat,
 ) (domain.FileStat, error) {
 	if change.Role != "" && !domain.IsKnownRole(change.Role) {
-		return domain.FileStat{}, fmt.Errorf("%q is not a role a link can carry", change.Role)
+		return domain.FileStat{}, fmt.Errorf("%q is not a role a link can have", change.Role)
 	}
 	e := u.newEdit()
 	e.FileStat = stat
@@ -158,10 +158,10 @@ func (u EditLinks) Remove(
 // CheckWritable is what a link must carry before anything will write it.
 func CheckWritable(link domain.Link) error {
 	if !domain.IsKnownRole(link.Role) {
-		return fmt.Errorf("%q is not a role a link can carry", link.Role)
+		return fmt.Errorf("%q is not a role a link can have", link.Role)
 	}
 	if !domain.IsWritableMarker(link.Marker) {
-		return fmt.Errorf("%q is not a marker a link can carry", link.Marker)
+		return fmt.Errorf("%q is not a marker a link can have", link.Marker)
 	}
 	if link.Target.Value == "" {
 		return errors.New("a link needs somewhere to go")

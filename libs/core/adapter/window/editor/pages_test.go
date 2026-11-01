@@ -77,7 +77,7 @@ func writeAppearance(t *testing.T, themes numenv1connect.ThemeServiceHandler, re
 // size is a size a choice names.
 func size(response float64) *float64 { return &response }
 
-// getResponse is what comes back at exactly this path. The page is handed over as
+// getResponse is what comes back at exactly this path. The page is passed as
 // the empty path as well, which no URL parses to.
 func getResponse(t testing.TB, handler http.Handler, path string) *httptest.ResponseRecorder {
 	r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
@@ -177,7 +177,7 @@ func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 }
 
 // The page is served with the theme applied at every address.
-func TestThePageOpensWearingTheTheme(t *testing.T) {
+func TestThePageOpensWithTheTheme(t *testing.T) {
 	cfg := newConfig(t)
 	handler, themes := newPageHandler(t, cfg)
 	writeTheme(t, cfg, "sea.css", mine)
@@ -193,7 +193,7 @@ func TestThePageOpensWearingTheTheme(t *testing.T) {
 				t.Errorf("came back as %q", response)
 			}
 			if !strings.Contains(out.Body.String(), mine) {
-				t.Error("the page is not wearing the theme")
+				t.Error("the page does not apply the theme")
 			}
 			if responseVal := out.Header().Get("Content-Length"); responseVal != strconv.Itoa(out.Body.Len()) {
 				t.Errorf("%s bytes were announced and %d written", responseVal, out.Body.Len())
@@ -232,15 +232,15 @@ func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 	link := strings.LastIndex(head, "<link")
 	mode := strings.Index(head,
 		`<style data-appearance="mode">`+":root { color-scheme: dark; }</style>")
-	aged := strings.Index(head, mine)
+	mineAt := strings.Index(head, mine)
 	sizes := strings.Index(head, rendered)
-	if link < 0 || mode < 0 || aged < 0 || sizes < 0 {
+	if link < 0 || mode < 0 || mineAt < 0 || sizes < 0 {
 		t.Fatalf("the link is at %d, the mode at %d, the theme at %d, the sizes at %d",
-			link, mode, aged, sizes)
+			link, mode, mineAt, sizes)
 	}
-	if link > mode || mode > aged || aged > sizes {
+	if link > mode || mode > mineAt || mineAt > sizes {
 		t.Errorf("the link is at %d, the mode at %d, the theme at %d, the sizes at %d",
-			link, mode, aged, sizes)
+			link, mode, mineAt, sizes)
 	}
 	if after := strings.TrimSpace(head[sizes+len(rendered):]); after != "" {
 		t.Errorf("the head ends with %q", after)
@@ -299,17 +299,17 @@ func TestTheHeadIsReadForEachRequest(t *testing.T) {
 	writeTheme(t, cfg, "sea.css", mine)
 
 	if strings.Contains(getResponse(t, handler, "/").Body.String(), mine) {
-		t.Fatal("the page is wearing a theme nobody chose")
+		t.Fatal("the page applies a theme nobody chose")
 	}
 	choose(t, themes, "mine:sea", v1.Mode_MODE_DARK)
 	if !strings.Contains(getResponse(t, handler, "/").Body.String(), mine) {
-		t.Error("the page is still wearing what it opened in")
+		t.Error("the page still applies the theme it opened with")
 	}
 
 	// The file behind the name is read again as well.
 	writeTheme(t, cfg, "sea.css", ":root{--numen-surface:#040506}")
 	if !strings.Contains(getResponse(t, handler, "/").Body.String(), "#040506") {
-		t.Error("the page is wearing the file as it was")
+		t.Error("the page applies the file as it was")
 	}
 }
 

@@ -167,16 +167,16 @@ func TestEveryRefreshOfAnIndexSharesItsLedger(t *testing.T) {
 		"Two.md": "---\ntitle: Two\n---\n\n# Two\n",
 	})
 
-	if err := cfg.VaultOpener(db).Level(t.Context(), v, []string{"One.md"}); err != nil {
+	if err := cfg.VaultOpener(db).UpdateIndex(t.Context(), v, []string{"One.md"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := db.Ledger().Len(); got != 1 {
 		t.Fatalf("the opener's refresh left %d notes in the index's ledger", got)
 	}
-	if err := cfg.Level(db)(t.Context(), v, []string{"Two.md"}); err != nil {
+	if err := cfg.UpdateIndex(db)(t.Context(), v, []string{"Two.md"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := db.Ledger().Len(); got != 2 {
-		t.Errorf("the levelling left %d notes in the index's ledger", got)
+		t.Errorf("the update left %d notes in the index's ledger", got)
 	}
 }

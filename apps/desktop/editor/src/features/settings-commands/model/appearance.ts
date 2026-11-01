@@ -28,7 +28,7 @@ export interface WindowAppearanceDeps {
   wait?: (ms: number) => Promise<unknown>
 }
 
-interface ThemeWearDeps {
+interface ThemeApplierDeps {
   core: Themes
   styleElements: ReturnType<typeof getStyleElements>
   write: MessageWriter
@@ -36,7 +36,7 @@ interface ThemeWearDeps {
   applied: Ref<string>
 }
 
-function createThemeWear(deps: ThemeWearDeps) {
+function createThemeApplier(deps: ThemeApplierDeps) {
   const { core, styleElements, write, words, applied } = deps
   const files = new Map<string, string>()
   const guard = createRequestGuard()
@@ -49,7 +49,7 @@ function createThemeWear(deps: ThemeWearDeps) {
     return css
   }
 
-  const wear = async (theme: string, half: Mode) => {
+  const applyTheme = async (theme: string, half: Mode) => {
     if (!applied.value) return
     const mine = guard.acquireRequest()
     styleElements.mode.textContent = `:root { color-scheme: ${SCHEMES[half]}; }`
@@ -57,11 +57,11 @@ function createThemeWear(deps: ThemeWearDeps) {
       const css = await fileOf(theme)
       if (mine.isCurrent) styleElements.theme.textContent = css
     } catch {
-      if (mine.isCurrent) write(words.unworn, 'error')
+      if (mine.isCurrent) write(words.themeUnreadable, 'error')
     }
   }
 
-  return { files, wear }
+  return { files, applyTheme }
 }
 
 function createSizesWriter(styleElements: ReturnType<typeof getStyleElements>, sheet: Document) {
@@ -138,7 +138,7 @@ function createThemeWatcher(deps: {
         if (!names.length) return
         for (const name of names) deps.files.delete(name)
         await deps.loadAppearance()
-        if (names.includes(deps.choice.worn.value)) await deps.applyAppearance()
+        if (names.includes(deps.choice.current.value)) await deps.applyAppearance()
       },
     )
 
@@ -185,7 +185,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
   const styleElements = getStyleElements(sheet)
   const served = styleElements.theme.textContent ?? ''
   const state = initAppearanceState()
-  const { files, wear } = createThemeWear({
+  const { files, applyTheme } = createThemeApplier({
     core,
     styleElements,
     write,
@@ -196,7 +196,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
   const choice = useAppearanceChoice({
     core,
     write,
-    wear,
+    applyTheme,
     list: state.list,
     applied: state.applied,
     mode: state.mode,
@@ -204,7 +204,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     bounds: state.bounds,
   })
 
-  const applyAppearance = () => wear(choice.worn.value, choice.half.value)
+  const applyAppearance = () => applyTheme(choice.current.value, choice.half.value)
   const writeSizes = createSizesWriter(styleElements, sheet)
   const targetDrawing = watch(choice.sized, writeSizes)
 

@@ -30,7 +30,7 @@ type Move struct {
 	// sources is the index's file registry. A move records that the file at one
 	// path is now at another.
 	sources sourceport.SourceRepository
-	index   Levels
+	index   IndexUpdater
 	// now is when this is happening. Bringing a note's title into line with its
 	// filename is an edit, and an edit stamps the identifier a note arrived
 	// without.
@@ -46,7 +46,7 @@ type Move struct {
 // NewMove returns a Move that files a note at another path. It takes the vault
 // readers and writers, the link queries that find links to the note, the name
 // queries that decide which name resolves to it, the index file registry, the
-// level that syncs the repaired notes with the index, and the clock.
+// index updater that syncs the repaired notes with the index, and the clock.
 // MoveDeps is what NewMove takes.
 type MoveDeps struct {
 	Readers vaultport.VaultReaders
@@ -54,7 +54,7 @@ type MoveDeps struct {
 	Links   noteport.LinkQueries
 	Names   NameQueries
 	Sources sourceport.SourceRepository
-	Index   Levels
+	Index   IndexUpdater
 	Now     machineport.Clock
 }
 
@@ -116,7 +116,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 	if err := writer.Move(ctx, from, to); err != nil {
 		return res, mapMissingNote(err)
 	}
-	res.IsLanded = true
+	res.IsMoved = true
 	if err := u.moveInIndex(ctx, v, from, to); err != nil {
 		return res, err
 	}
@@ -135,7 +135,7 @@ func (u Move) moveInIndex(ctx context.Context, v domain.Vault, from, to string) 
 //
 // pointing holds the links that resolved to the note before the move.
 func (u Move) RepairLinks(ctx context.Context, v domain.Vault, from, to string, pointing []domain.ResolvedLink) (MoveResult, error) {
-	res := MoveResult{From: from, To: to, IsLanded: true}
+	res := MoveResult{From: from, To: to, IsMoved: true}
 
 	// The file is at its new path and the index is in sync. A view still showing
 	// the old name refers to a path with no file.
@@ -160,7 +160,7 @@ func (u Move) RepairLinks(ctx context.Context, v domain.Vault, from, to string, 
 		}
 	}
 	if len(res.Repaired) > 0 {
-		if err := u.level(ctx, v, res.Repaired...); err != nil {
+		if err := u.updateIndex(ctx, v, res.Repaired...); err != nil {
 			return res, err
 		}
 	}
@@ -305,11 +305,11 @@ func (u Move) repair(
 	return linkRepaired, nil
 }
 
-func (u Move) level(ctx context.Context, v domain.Vault, paths ...string) error {
+func (u Move) updateIndex(ctx context.Context, v domain.Vault, paths ...string) error {
 	if u.index == nil {
 		return nil
 	}
-	return WrapUnlevelled(u.index(ctx, v, paths), paths...)
+	return WrapIndexOutdated(u.index(ctx, v, paths), paths...)
 }
 
 // GetPathUnder is where a note lands when it is filed under a folder, keeping

@@ -60,7 +60,7 @@ func (v *Vault) rescan(paths ...string) {
 	}
 }
 
-// Reindex brings the index level with every file, as a walk of the vault does.
+// Reindex updates the index for every file, as a walk of the vault does.
 func (v *Vault) Reindex() {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()

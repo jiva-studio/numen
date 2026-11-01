@@ -83,7 +83,7 @@ func newVaults(t *testing.T) vaulted {
 	}
 }
 
-// index brings the index level with what the vault now holds, as a walk of it does.
+// index updates the index for what the vault now holds, as a walk of it does.
 func (vs vaulted) index(t *testing.T) func(context.Context, domain.Vault, []string) error {
 	t.Helper()
 	return func(_ context.Context, v domain.Vault, _ []string) error {
@@ -92,7 +92,7 @@ func (vs vaulted) index(t *testing.T) func(context.Context, domain.Vault, []stri
 	}
 }
 
-// indexNothing brings nothing level: these tests read the file back and not the
+// indexNothing updates nothing: these tests read the file back and not the
 // index. The ones that ask the index level it with a whole scan.
 func indexNothing(context.Context, domain.Vault, []string) error { return nil }
 

@@ -113,7 +113,7 @@ type moveParts struct {
 	names    note.NameQueries
 	readers  vaultport.VaultReaders
 	writers  vaultport.VaultWriters
-	index    note.Levels
+	index    note.IndexUpdater
 	hasIndex bool
 }
 
@@ -161,7 +161,7 @@ func TestMovingANoteToItsOwnPathAnswersWithThatPath(t *testing.T) {
 	if res.From != "physics/Entropy.md" || res.To != "physics/Entropy.md" {
 		t.Errorf("the answer names %q and %q", res.From, res.To)
 	}
-	if res.IsLanded {
+	if res.IsMoved {
 		t.Error("nothing moved and the answer says the file landed")
 	}
 }
@@ -206,7 +206,7 @@ func TestAMoveThatStopsBeforeTheFileMovedReturnsSo(t *testing.T) {
 			if res.From != c.from || res.To != "archive/Thermodynamics.md" {
 				t.Errorf("the answer names %q and %q", res.From, res.To)
 			}
-			if res.IsLanded {
+			if res.IsMoved {
 				t.Error("the file did not move and the answer says it landed")
 			}
 			if !c2.exists("physics/Entropy.md") {
@@ -253,11 +253,11 @@ func TestAMoveNothingPointsAtAsksNothingAboutLinks(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.IsLanded || len(res.Repaired) != 0 || len(res.Dangling) != 0 {
+	if !res.IsMoved || len(res.Repaired) != 0 || len(res.Dangling) != 0 {
 		t.Errorf("got %+v", res)
 	}
 	if len(request) != 0 {
-		t.Errorf("the index was brought level with %v", request)
+		t.Errorf("the index was updated for %v", request)
 	}
 }
 
@@ -315,11 +315,11 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 			parts:  func(changing) moveParts { return moveParts{} },
 			want:   markdown.ErrUnterminated,
 		},
-		"the index cannot be brought level": {
+		"the index cannot be updated": {
 			parts: func(changing) moveParts {
 				return moveParts{hasIndex: true, index: func(context.Context, domain.Vault, []string) error { return boom }}
 			},
-			want:       note.ErrUnlevelled,
+			want:       note.ErrIndexOutdated,
 			isRepaired: true,
 		},
 	} {
@@ -334,7 +334,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 			if !errors.Is(err, c.want) {
 				t.Fatalf("want %v, got %v", c.want, err)
 			}
-			if !res.IsLanded {
+			if !res.IsMoved {
 				t.Error("the file landed and the answer says it did not")
 			}
 			if !c2.exists("archive/Thermodynamics.md") {
@@ -422,7 +422,7 @@ func TestALinkInTheBlockAndOneInTheProseAreBothRepaired(t *testing.T) {
 	}
 }
 
-// An installation with no index to bring level repairs all the same.
+// An installation with no index to update repairs all the same.
 func TestARepairNeedsNoIndexToBringLevel(t *testing.T) {
 	c := openLinked(t)
 
@@ -444,7 +444,7 @@ func TestANoteNoLinkReachesCanStillBeMoved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.IsLanded {
+	if !res.IsMoved {
 		t.Error("the file did not land")
 	}
 	if len(res.Repaired) != 0 {

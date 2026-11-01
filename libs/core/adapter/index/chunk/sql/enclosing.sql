@@ -1,6 +1,6 @@
--- The large chunk one chunk sits inside, where to read its text from, and
--- where the small one stands inside it. A chunk with nothing enclosing it is
--- its own, and stands at its own beginning.
+-- The large chunk one chunk is inside, where to read its text from, and
+-- where the small one is inside it. A chunk with nothing enclosing it is
+-- its own, and is at its own beginning.
 SELECT s.path, s.kind, COALESCE(s.producer, ''), COALESCE(s.hash, ''),
        COALESCE(p.start, c.start),
        COALESCE(p.length, c.length),

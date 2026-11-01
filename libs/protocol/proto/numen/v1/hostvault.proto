@@ -15,8 +15,7 @@ option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;num
 // that shows no vault of its own, or a plugin counting every vault, reaches them.
 //
 // The vault is the host's own: the plugin reads and writes its files through
-// the host, so the index, the watcher, the file stats and the trash all stay
-// level with what the plugin did.
+// the host, so the index, the watcher, the file stats and the trash all stay// up to date with what the plugin did.
 service HostVaultService {
   // GetHostVault names the vault the host is showing. A host showing none answers
   // with the vault unset.
@@ -53,7 +52,7 @@ service HostVaultService {
   // UnlockVault lets the writers go.
   rpc UnlockVault(UnlockVaultRequest) returns (UnlockVaultResponse);
 
-  // ScanFiles brings the index level with the files named, after the plugin
+  // ScanFiles updates the index for the files named, after the plugin
   // changed them.
   rpc ScanFiles(ScanFilesRequest) returns (ScanFilesResponse);
 
@@ -262,7 +261,7 @@ message LockVaultRequest {}
 
 message LockVaultResponse {
   HostVaultErrorCode error = 1;
-  // The lock to hand back to UnlockVault.
+  // The lock to return to UnlockVault.
   string lock = 2;
 }
 

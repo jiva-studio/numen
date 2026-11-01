@@ -44,7 +44,7 @@ func getUserTrashDir() string {
 
 // moveToUserOrVolumeTrash puts the folder in the trash of this login, and in the trash at the root
 // of its own volume when a rename cannot reach the first. A volume that has no
-// trash and takes none has nowhere to put it.
+// trash and takes none cannot receive the folder.
 func moveToUserOrVolumeTrash(path, home string, deletedOn time.Time) error {
 	if home != "" {
 		if err := moveIntoTrash(home, path, path, deletedOn); !errors.Is(err, syscall.EXDEV) {

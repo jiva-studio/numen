@@ -183,7 +183,7 @@ describe('the keys a session is done with', () => {
     ).toEqual({ does: 'shut' })
   })
 
-  it('swallows only the keys the page would act on itself', () => {
+  it('handles only the keys the page would act on itself', () => {
     expect(shouldConsumeKey(getSessionKeyIntent(createPress(' '), { isShown: false }))).toBe(true)
     // The page scrolls itself on space, and the reading is what is scrolled.
     expect(
@@ -195,7 +195,7 @@ describe('the keys a session is done with', () => {
 
   // The field a panel opens takes the keyboard, and the letter that opened it
   // would be the first thing typed into it.
-  it('swallows the letters that bring the panels in', () => {
+  it('handles the letters that bring the panels in', () => {
     expect(
       shouldConsumeKey(getSessionKeyIntent(createPress('a', { ctrlKey: true }), { isShown: true })),
     ).toBe(true)

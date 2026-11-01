@@ -485,7 +485,7 @@ type embedder struct {
 
 	mu        sync.Mutex
 	calls     int
-	seenCount []string // every text handed over, in the order it arrived
+	seenCount []string // every text passed, in the order it arrived
 }
 
 func (e *embedder) GetModel() embeddingport.EmbeddingModel {

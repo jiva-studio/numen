@@ -19,7 +19,7 @@ Two things are not settings and are not in here: which files count as notes, and
 
 ### `appearance`
 
-How the window is drawn.
+Holds the theme, the mode and the sizes of the window.
 
 | | | |
 | --- | --- | --- |
@@ -30,20 +30,20 @@ How the window is drawn.
 
 ### `indexing.embedding`
 
-How the index cuts notes into chunks and stores their vectors.
+How notes are split into chunks and how the vectors of the chunks are stored.
 
 | | | |
 | --- | --- | --- |
-| `max_tokens` | a number | the input limit, in tokens, of one chunk the index stores a vector of. |
+| `max_tokens` | a number | the input limit, in tokens, of one chunk that gets a vector. |
 
 ### `agent`
 
-Selects the agent that answers in the panel and configures how each program runs.
+Selects the agent the panel uses and configures how each program runs.
 
 | | | |
 | --- | --- | --- |
-| `use` | text | names the program that answers. When absent, the program that the providers mark as default answers. |
-| `serve_tools` | yes or no | exposes the tools on a port, which lets an agent that the user runs externally reach this vault. |
+| `use` | text | names the program the panel uses. When absent, the program that the providers mark as default is used. |
+| `serve_tools` | yes or no | serves the tools on a port, so that an agent the user runs externally can use this vault. |
 
 ### `naming`
 
@@ -55,7 +55,7 @@ Whether a note's title and its filename are kept in sync.
 
 ### `performance`
 
-The settings section for workload and resource calibration.
+The settings section for workload and resource profile.
 
 | | | |
 | --- | --- | --- |
@@ -63,11 +63,11 @@ The settings section for workload and resource calibration.
 
 ### `ai.default`
 
-The agent and the model that answer a plugin whose own setting names no agent, and how many questions one agent answers at once.
+The agent and the model that handle the questions of a plugin whose own setting names no agent, and how many questions one agent handles at once.
 
 | | | |
 | --- | --- | --- |
-| `agent` | text | the id of the agent plugin that answers. Empty selects the provider with the lowest id. |
-| `model` | text | the model the agent answers with. Empty leaves the choice to the agent. |
-| `concurrency` | a number | how many questions one agent answers at once. |
+| `agent` | text | the id of the agent plugin to use. Empty selects the provider with the lowest id. |
+| `model` | text | the model the agent uses. Empty leaves the choice to the agent. |
+| `concurrency` | a number | how many questions one agent handles at once. |
 <!-- END AUTOGEN -->

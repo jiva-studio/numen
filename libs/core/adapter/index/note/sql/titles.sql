@@ -6,7 +6,7 @@
 -- line in it called that, whatever either score says. `is_heading` holds that
 -- order.
 --
--- `line` is -1 for a title, which stands on no line of the prose.
+-- `line` is -1 for a title, which is on no line of the prose.
 --
 -- `marked` is the name with the run that matched wrapped in the two marks bound
 -- to the query, which is the index saying where it matched. A word reached by

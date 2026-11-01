@@ -231,7 +231,7 @@ func (m Manifest) ListIssues() []error {
 	var issues []error
 	issues = append(issues, m.listIdentityIssues()...)
 	if m.Protocol < 0 || m.Protocol > ProtocolVersion {
-		issues = append(issues, fmt.Errorf("%w: %d, this host speaks up to %d", ErrUnsupportedProtocol, m.Protocol, ProtocolVersion))
+		issues = append(issues, fmt.Errorf("%w: %d, this host supports up to %d", ErrUnsupportedProtocol, m.Protocol, ProtocolVersion))
 	}
 	issues = append(issues, m.listCapabilityIssues()...)
 	issues = append(issues, m.listActivationEventIssues()...)

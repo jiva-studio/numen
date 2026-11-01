@@ -13,7 +13,7 @@ import Shot from '../../components/Shot.astro'
   caption="The window's own settings at the top, and under them a page for each plugin."
 />
 
-Turning a control writes it down. There is no separate save, and nothing is applied later: a theme chosen here is worn before your hand leaves the mouse.
+Turning a control writes it down. There is no separate save, and nothing is applied later: a theme chosen here is applied before your hand leaves the mouse.
 
 ## System
 
@@ -23,7 +23,7 @@ At the head of **System** is the path of the file the page is a face onto, and *
 
 | | |
 | --- | --- |
-| **Theme** | the stylesheet the window wears, in two origins: the ones that ship with numen, and yours. See [themes](/themes/). |
+| **Theme** | the stylesheet the window applies, in two origins: the ones that ship with numen, and yours. See [themes](/themes/). |
 | **Light or dark** | follow the system, or pin one. A theme that declares light and dark itself leaves nothing to choose here, and the control says so. |
 | **Interface size** | how large the chrome, the controls and the type in them are drawn. 1 is as designed. |
 | **Reading size** | how large the text you read is set, over the size above. |
@@ -55,7 +55,7 @@ A row on the page and the command of the same name go through one piece of code,
 
 ## The file
 
-Every setting stands in one file, `numen.json`, in [the folder numen keeps its own things in](/install/#where-numen-keeps-its-own-files). **Open the file**, at the head of **System** on the settings page, opens it in a tab of its own, drawn as the JSON it is. Unlike a note it is not written as you type: <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>S</kbd> keeps it, which is the chord a note is kept by.
+Every setting is in one file, `numen.json`, in [the folder numen keeps its own things in](/install/#where-numen-keeps-its-own-files). **Open the file**, at the head of **System** on the settings page, opens it in a tab of its own, drawn as the JSON it is. Unlike a note it is not written as you type: <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>S</kbd> keeps it, which is the chord a note is kept by.
 
 A file changed underneath the tab stops saving there and then and asks the same two questions a note does: [keep mine, or take the file's](/editor/#when-the-file-changed-underneath-you). Content that does not match recognized configuration schemas is rejected, and the tab reports an error without saving invalid changes.
 

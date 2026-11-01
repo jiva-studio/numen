@@ -67,11 +67,11 @@ func titles(t *testing.T, db *container.Index, v domain.Vault, query string) []s
 	return out
 }
 
-// TestANoteIsLevelledInAVaultNothingHasWalked checks that a note is stored
+// TestANoteIsIndexedInAVaultNothingHasWalked checks that a note is stored
 // under the vault's row in the index, and that a vault that has not been walked
 // has none. A write at the moment a vault opens races the first walk, and the
 // note is findable either way.
-func TestANoteIsLevelledInAVaultNothingHasWalked(t *testing.T) {
+func TestANoteIsIndexedInAVaultNothingHasWalked(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",

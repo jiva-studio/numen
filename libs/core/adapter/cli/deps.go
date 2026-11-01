@@ -36,9 +36,9 @@ type Deps struct {
 	// a path or an identity, and the list resolves it to a vault.
 	Vaults func() (Vaults, error)
 
-	// Scan opens the walk that brings the index level with one vault, the
+	// Scan opens the walk that updates the index for one vault, the
 	// extraction of the text of its other files and the making of its vectors. rebuild reads every
-	// file, whatever the index remembers.
+	// file, whatever the index already holds.
 	Scan func(ctx context.Context, v domain.Vault, rebuild bool) (Scan, error)
 
 	// Search opens the search that answers a query about v. errorHandler receives

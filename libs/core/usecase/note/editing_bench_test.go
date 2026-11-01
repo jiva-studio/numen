@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// indexNothing brings nothing level. What is measured here is the file being
+// indexNothing updates nothing. What is measured here is the file being
 // replaced; what the index then costs is a refresh, and is measured as one.
 func indexNothing(context.Context, domain.Vault, []string) error { return nil }
 

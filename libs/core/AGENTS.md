@@ -14,7 +14,7 @@ Each test verifies adherence to structural rules.
 
 | The rule | The test |
 |---|---|
-| A package stands on the layer its path says, and reaches only downward | `TestTheLayersAreWhatTheyAre` |
+| A package is on the layer its path says, and reaches only downward | `TestTheLayersAreWhatTheyAre` |
 | Nothing the core is compiled from reaches an adapter | `TestNothingTheCoreIsCompiledFromReachesOutward` |
 | A use case builds only on the use cases `useCaseEdges` declares for it | `TestUseCaseImportsFollowDeclaredEdges` |
 | An adapter does not name the port it answers | `TestNoAdapterNamesThePortItSatisfies` |

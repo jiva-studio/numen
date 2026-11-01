@@ -45,7 +45,7 @@ type Services struct {
 	// Text serves the live text of a file and its edits to the views.
 	Text *texts.Handler
 
-	// Themes are the stylesheets the window may be dressed in. They belong to
+	// Themes are the stylesheets the window may apply. They belong to
 	// the installation, so they arrive here from whatever put the window
 	// together. A build put together without a catalogue serves no ThemeService.
 	Themes numenv1connect.ThemeServiceHandler

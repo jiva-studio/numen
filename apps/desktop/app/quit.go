@@ -8,7 +8,7 @@ import (
 )
 
 // visibility is the window going out of sight and coming back into it. Hiding
-// leaves the page drawing and answering, so what only it holds is handed over
+// leaves the page drawing and answering, so what only it holds is passed
 // after the window is gone from the screen.
 type visibility struct {
 	hide func()

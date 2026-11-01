@@ -365,7 +365,7 @@ func TestADeckOverTheBoundReturnsItsSize(t *testing.T) {
 }
 
 // A file the vault's own rules leave alone is not a note, and its bytes are not
-// handed over.
+// passed.
 func TestAFileTheVaultPreservesAloneIsNotADeck(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "decks/.Hidden.md", "---\ntype: deck\n---\n\n## Wren\n\n[[Animal]]\n")

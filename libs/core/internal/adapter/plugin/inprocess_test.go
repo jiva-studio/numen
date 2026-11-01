@@ -381,7 +381,7 @@ func (newerProtocolLifecycle) Ping(
 	return connect.NewResponse(&v1.PingResponse{Status: "ok", Protocol: pluginport.PluginProtocolVersion + 1}), nil
 }
 
-func TestABuiltInPluginThatSpeaksAnotherProtocolIsRefused(t *testing.T) {
+func TestABuiltInPluginThatUsesAnotherProtocolIsRefused(t *testing.T) {
 	host := newBuiltInHost(t)
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), func(map[string]string) (http.Handler, error) {
 		mux := http.NewServeMux()
@@ -390,7 +390,7 @@ func TestABuiltInPluginThatSpeaksAnotherProtocolIsRefused(t *testing.T) {
 	})
 
 	_, err := host.EnsureActive(t.Context(), firstBuiltInID)
-	if !errors.Is(err, pluginport.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), firstBuiltInID+" speaks protocol 2") {
+	if !errors.Is(err, pluginport.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), firstBuiltInID+" uses protocol 2") {
 		t.Fatalf("EnsureActive() = %v, want %v naming the plugin", err, pluginport.ErrUnsupportedProtocol)
 	}
 }

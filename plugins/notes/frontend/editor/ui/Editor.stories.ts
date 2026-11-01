@@ -88,7 +88,7 @@ const getLineOf = (text: string) => EVERY.indexOf(text) * 2 + 1
 const PARKED = EVERY.length * 2 + 1
 
 /* A heading is set at the tightest line in the editor, and how far a letter
-   stands above and below its baseline is the font's answer. These are the
+   is above and below its baseline is the font's answer. These are the
    machine's own sans cut twice: one face reaching past that line, one well
    inside it. */
 const SANS =

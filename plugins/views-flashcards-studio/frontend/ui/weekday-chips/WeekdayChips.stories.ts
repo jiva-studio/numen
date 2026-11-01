@@ -77,7 +77,7 @@ const meta: Meta<Knobs> = {
     template: `
       <div style="padding: 2rem">
         <WeekdayChips
-          aria-label="The level each day stands at"
+          aria-label="The level each day is at"
           :days="days"
           :levels="args.levels"
           :is-disabled="args.isDisabled"

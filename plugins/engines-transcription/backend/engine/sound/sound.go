@@ -140,7 +140,7 @@ func parseWav(raw []byte) (riffWave, error) {
 	if !observed {
 		return out, fmt.Errorf("the wav recording has no header")
 	}
-	// A sample narrower than a byte is a compressed container wearing a wav
+	// A sample narrower than a byte is a compressed container with a wav
 	// header, which this reads none of.
 	if out.channels <= 0 || out.rate <= 0 || out.bits < 8 {
 		return out, fmt.Errorf("the wav recording is %d channels of %d bits at %d hertz",

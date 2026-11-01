@@ -424,7 +424,7 @@ func (d *DerivedStore) checkVaultIdentity() error {
 		return fmt.Errorf("%s: %w", d.vault, err)
 	}
 	if id != d.id {
-		return fmt.Errorf("%s carries %q and not %q: %w", d.vault, id, d.id, ErrNotThisVault)
+		return fmt.Errorf("%s has %q and not %q: %w", d.vault, id, d.id, ErrNotThisVault)
 	}
 	// A folder without an identity has none after it is removed, so the
 	// folder's existence is checked directly.

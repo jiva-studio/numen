@@ -48,7 +48,7 @@ type vaulted struct {
 	logs      ports.LogStores
 	notes     ports.NoteQueries
 	links     ports.LinkQueries
-	// scan brings the index level with what the vault now holds.
+	// scan updates the index for what the vault now holds.
 	scan func(ctx context.Context, v domain.Vault, paths []string) error
 }
 
@@ -91,7 +91,7 @@ func openVault(t testing.TB, notes map[string]string) vaulted {
 	}
 }
 
-// write puts a file into the vault and brings the index level with it, which is
+// write puts a file into the vault and updates the index for it, which is
 func write(t *testing.T, s vaulted, path, body string) {
 	t.Helper()
 	pos := filepath.Join(s.vault.Path, filepath.FromSlash(path))

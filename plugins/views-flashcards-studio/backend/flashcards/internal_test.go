@@ -302,12 +302,12 @@ func TestWhatNoDeckCouldUseGoesToTheDeckContainingMost(t *testing.T) {
 
 	got := countHandedOver([]deckLoad{{path: one, unbegun: 1}, {path: five, unbegun: 5}}, keeps)
 	if want := (map[string]int{five: 3}); !maps.Equal(got, want) {
-		t.Fatalf("a day of one minute handed over %v, want %v", got, want)
+		t.Fatalf("a day of one minute passed %v, want %v", got, want)
 	}
 	// The same two decks under swapped names yield the same cards.
 	got = countHandedOver([]deckLoad{{path: five, unbegun: 1}, {path: one, unbegun: 5}}, keeps)
 	if want := (map[string]int{one: 3}); !maps.Equal(got, want) {
-		t.Fatalf("a day of one minute over the same decks renamed handed over "+
+		t.Fatalf("a day of one minute over the same decks renamed passed "+
 			"%v, want %v", got, want)
 	}
 }
@@ -333,7 +333,7 @@ func TestTheWalkOfAVaultDoesNotChangeWhatADayPassesOver(t *testing.T) {
 		was := getTakenCards(load, places, keeps)
 		now := getTakenCards(load, rapid.Permutation(places).Draw(t, "walk"), keeps)
 		if !maps.Equal(was, now) {
-			t.Fatalf("a day of %d new and %d reviews over %v hands over %v "+
+			t.Fatalf("a day of %d new and %d reviews over %v passes %v "+
 				"walked in order and %v walked otherwise",
 				keeps.New, keeps.Reviews, load, was, now)
 		}

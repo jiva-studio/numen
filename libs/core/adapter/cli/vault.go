@@ -209,7 +209,7 @@ func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) (e
 
 	went := fmt.Sprintf("nothing was at %s", v.Path)
 	if res.IsTrashed {
-		went = fmt.Sprintf("%s went to the trash this machine keeps", v.Path)
+		went = fmt.Sprintf("%s went to the trash", v.Path)
 	}
 	r := newReporter(out)
 	r.Printf("erased %s\n  %s\n", v.Name, went)
@@ -220,7 +220,7 @@ func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) (e
 // terminal it was invoked on. Only "yes" confirms.
 func confirmErase(out io.Writer, v domain.Vault) (bool, error) {
 	r := newReporter(out)
-	r.Printf("erase %s?\n  %s goes to the trash this machine keeps\n"+
+	r.Printf("erase %s?\n  %s goes to the trash\n"+
 		"  the vault leaves the list and the index\ntype yes to erase it: ", v.Name, v.Path)
 	if err := r.Err(); err != nil {
 		return false, err

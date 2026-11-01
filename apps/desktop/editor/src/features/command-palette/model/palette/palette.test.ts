@@ -576,7 +576,7 @@ describe('a command that offers a list the window holds', () => {
       title: 'Light and dark',
       items: [
         { id: 'mode:system', title: 'System', isDisabled: true },
-        { id: 'mode:light', title: 'Light', detail: 'The theme worn sets this itself' },
+        { id: 'mode:light', title: 'Light', detail: 'The applied theme sets this itself' },
       ],
     },
   ]

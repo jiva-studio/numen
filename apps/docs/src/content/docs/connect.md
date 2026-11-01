@@ -1,6 +1,6 @@
 ---
 title: MCP server
-description: The window serves your vault to any agent that speaks MCP — where it listens, what it needs, and how to shut the door.
+description: The window serves your vault to any agent that supports MCP — where it listens, what it needs, and how to shut the door.
 ---
 
 The [panel's agent](/agent/) is not the only one that can work in your vault. While the window is open it serves the same tools over MCP, so an assistant you already use — in your terminal, in your editor — can search your notes, read them, write them and connect them.

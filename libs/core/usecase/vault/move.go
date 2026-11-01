@@ -99,7 +99,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (dom
 	} else if err != nil {
 		return res, err
 	}
-	res.IsLanded = true
+	res.IsMoved = true
 
 	// Notes and books are filed under their new paths in one write, and what was
 	// derived from each of them moves with it.

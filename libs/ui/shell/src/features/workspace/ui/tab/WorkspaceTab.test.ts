@@ -10,7 +10,7 @@ const mountTab = (props: Record<string, unknown> = {}, slots: Record<string, str
     attachTo: document.body,
   })
 
-/** A press on the tab itself, handed back for what became of it. */
+/** A press on the tab itself, returned for what became of it. */
 const pressOn = (tab: ReturnType<typeof mountTab>, button: number) => {
   const press = new PointerEvent('pointerdown', { button, bubbles: true, cancelable: true })
   tab.element.dispatchEvent(press)

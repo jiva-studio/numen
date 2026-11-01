@@ -44,7 +44,7 @@ func (h lifecycleHandler) Configure(
 type PingResult struct {
 	// Status is "ok" for a healthy plugin.
 	Status string
-	// Protocol is the protocol version the plugin speaks.
+	// Protocol is the protocol version the plugin uses.
 	Protocol int32
 }
 

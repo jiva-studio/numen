@@ -126,7 +126,7 @@ func TestListReviewDays_EmptyVaultHasNoDueDays(t *testing.T) {
 	}
 }
 
-// The days are drawn along a line of time, so they are handed over along one,
+// The days are drawn along a line of time, so they are passed along one,
 // whatever order they were counted in.
 func TestTheDaysComeBackOldestFirst(t *testing.T) {
 	response := sortReviewDays([]*api.ReviewDay{

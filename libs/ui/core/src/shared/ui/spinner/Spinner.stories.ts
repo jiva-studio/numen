@@ -16,8 +16,8 @@ const meta = {
           'Something is still filling and more of it is on its way. It says ' +
           'nothing about how much is left: what is coming is counted ' +
           'somewhere or it is not, and a length that guesses is worse than ' +
-          'one making no claim. It takes the size of the line it stands on ' +
-          'and the colour of whatever it stands in.',
+          'one making no claim. It takes the size of the line it is on ' +
+          'and the colour of whatever it is in.',
       },
     },
   },

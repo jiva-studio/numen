@@ -18,28 +18,28 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// dressing is the themes an installation holds, as this window requests them.
-type dressing struct{ wearing string }
+// themeList is the themes an installation has, as this window requests them.
+type themeList struct{ applied string }
 
-func (d dressing) ListThemes(
+func (d themeList) ListThemes(
 	context.Context, *connect.Request[v1.ListThemesRequest],
 ) (*connect.Response[v1.ListThemesResponse], error) {
-	return connect.NewResponse(&v1.ListThemesResponse{Applied: d.wearing}), nil
+	return connect.NewResponse(&v1.ListThemesResponse{Applied: d.applied}), nil
 }
 
-func (dressing) ReadTheme(
+func (themeList) ReadTheme(
 	context.Context, *connect.Request[v1.ReadThemeRequest],
 ) (*connect.Response[v1.ReadThemeResponse], error) {
 	return connect.NewResponse(&v1.ReadThemeResponse{}), nil
 }
 
-func (dressing) WriteAppearance(
+func (themeList) WriteAppearance(
 	context.Context, *connect.Request[v1.WriteAppearanceRequest],
 ) (*connect.Response[v1.WriteAppearanceResponse], error) {
 	return connect.NewResponse(&v1.WriteAppearanceResponse{}), nil
 }
 
-func (dressing) WatchThemes(
+func (themeList) WatchThemes(
 	context.Context, *connect.Request[v1.WatchThemesRequest], *connect.ServerStream[v1.WatchThemesResponse],
 ) error {
 	return nil
@@ -47,9 +47,9 @@ func (dressing) WatchThemes(
 
 // The window uses the installation's themes, so a theme chosen in the editor
 // is applied here as well.
-func TestTheWindowIsDressedFromTheInstallationsThemes(t *testing.T) {
+func TestTheWindowAppliesTheInstallationsThemes(t *testing.T) {
 	api := newAPI(t)
-	api.Themes = dressing{wearing: "Evening"}
+	api.Themes = themeList{applied: "Evening"}
 
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
@@ -60,7 +60,7 @@ func TestTheWindowIsDressedFromTheInstallationsThemes(t *testing.T) {
 		t.Fatal(err)
 	}
 	if out.Msg.GetApplied() != "Evening" {
-		t.Errorf("the window is dressed in %q", out.Msg.GetApplied())
+		t.Errorf("the window applies %q", out.Msg.GetApplied())
 	}
 }
 

@@ -50,7 +50,7 @@ export interface MenuProps {
 }
 
 export interface MenuEvents {
-  /** An item was chosen. The identifier is the caller's, handed back as given. */
+  /** An item was chosen. The identifier is the caller's, returned as given. */
   (event: 'choose', id: string): void
   /** The menu requests to be closed. */
   (event: 'dismiss'): void

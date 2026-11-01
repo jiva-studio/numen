@@ -90,7 +90,7 @@ const typedManually = "---\ntype: deck\nlinks:\n" +
 	"\n### Meaning\n\nA green woodpecker\n"
 
 // Starting a session gives a card id to the card that carries none, and the deck it
-// writes is level in the index by the time the session is handed over. Nothing
+// writes is level in the index by the time the session is passed. Nothing
 // else is running over the vault, and nothing rescans it.
 func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
 	handler, target := newAPI(t, getHandwritten())

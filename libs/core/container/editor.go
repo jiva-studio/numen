@@ -85,7 +85,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		SetPluginSearchFn: func(embedder embeddingport.Embedder, handleError func(error)) {
 			cfg.SetPluginSearch(db, embedder, handleError)
 		},
-		OpenNotesFn: func(index note.Levels) note.Scenarios {
+		OpenNotesFn: func(index note.IndexUpdater) note.Scenarios {
 			return cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), index)
 		},
 		OpenVaultsFn: func(moves note.Move) vault.Scenarios {

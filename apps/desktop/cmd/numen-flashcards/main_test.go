@@ -114,7 +114,7 @@ func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
 	}
 }
 
-// A vault the index was brought level with is counted again, and the walk of a
+// A vault the index was updated for is counted again, and the walk of a
 // vault is the one the window's own opening makes.
 func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 	cfg, db, vaults, _, target := makeWindow(t)
@@ -124,7 +124,7 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 	bindVaultIndexer(t.Context(), api, vaults)
 
 	if vaults.RecordVault == nil {
-		t.Fatal("a vault brought level is recorded nowhere")
+		t.Fatal("a vault updated is recorded nowhere")
 	}
 	vaults.RecordVault(target[0])
 }

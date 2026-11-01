@@ -75,7 +75,7 @@ export function verifyPluginIsolation() {
   failOnFindings("A plugin names another plugin", findPluginCrossings(sources, packageNames));
 }
 
-/** The schema files of plugins: a plugin speaks to the core through the SDK and declares no schema of its own. */
+/** The schema files of plugins: a plugin reaches the core through the SDK and declares no schema of its own. */
 export function findPluginSchemas(files) {
   return files.filter((file) => getPluginCapture(file) && file.endsWith(".proto")).map((file) => ({ file, line: 1, symbol: "a plugin holds a protobuf schema" }));
 }

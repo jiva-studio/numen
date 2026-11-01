@@ -145,7 +145,7 @@ func readAlphabet(model, dict string) (string, error) {
 	}
 	characters, err := readMetadata(model, alphabetKey)
 	if err != nil {
-		return "", fmt.Errorf("%s carries no alphabet, and none was configured: %w", model, err)
+		return "", fmt.Errorf("%s has no alphabet, and none was configured: %w", model, err)
 	}
 	return characters, nil
 }

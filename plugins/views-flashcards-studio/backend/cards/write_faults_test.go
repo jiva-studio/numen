@@ -86,14 +86,14 @@ func TestAStaleWritePassesBackNothing(t *testing.T) {
 	}
 }
 
-// A deck written to disk whose index could not be brought level is an error
-func TestADeckSavedAndNotLevelledPassesBackWhatItExistsAt(t *testing.T) {
+// A deck written to disk whose index could not be updated is an error
+func TestADeckSavedAndNotIndexedPassesBackWhatItExistsAt(t *testing.T) {
 	vs := newVaults(t)
 	w := newWriteForDeck(t, vs, "decks/Wrens.md", wrenDeck).
 		WithIndex(func(_ context.Context, _ domain.Vault, _ []string) error { return errOutOfReach })
 
 	got, err := w.Deck(t.Context(), vs.first, "decks/Wrens.md", wrenDeck, domain.FileStat{})
-	if !errors.Is(err, note.ErrUnlevelled) || !errors.Is(err, errOutOfReach) {
+	if !errors.Is(err, note.ErrIndexOutdated) || !errors.Is(err, errOutOfReach) {
 		t.Fatalf("write = %v, want the file written and the index not level", err)
 	}
 	if got.FileStat.Path != "decks/Wrens.md" || got.FileStat.Size == 0 {

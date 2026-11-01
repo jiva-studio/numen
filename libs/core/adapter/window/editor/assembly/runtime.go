@@ -65,7 +65,7 @@ type Runtime[H, V any] struct {
 	OpenEmbeddersFn          func(ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.Embedder, closer func() error, why error)
 	NewSearchFn              func(asking embeddingport.Embedder, handleError func(error)) search.Search
 	SetPluginSearchFn        func(embedder embeddingport.Embedder, handleError func(error))
-	OpenNotesFn              func(index note.Levels) note.Scenarios
+	OpenNotesFn              func(index note.IndexUpdater) note.Scenarios
 	OpenVaultsFn             func(moves note.Move) vaults.Scenarios
 	GetRefreshFn             func() vaults.Refresh
 	ReadWholeVaultFn         func(ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool) (vaults.ReadWholeVault, error)
@@ -131,7 +131,7 @@ func (e Runtime[H, V]) SetPluginSearch(embedder embeddingport.Embedder, handleEr
 	}
 	e.SetPluginSearchFn(embedder, handleError)
 }
-func (e Runtime[H, V]) OpenNotes(index note.Levels) note.Scenarios  { return e.OpenNotesFn(index) }
+func (e Runtime[H, V]) OpenNotes(index note.IndexUpdater) note.Scenarios  { return e.OpenNotesFn(index) }
 func (e Runtime[H, V]) OpenVaults(moves note.Move) vaults.Scenarios { return e.OpenVaultsFn(moves) }
 func (e Runtime[H, V]) GetRefresh() vaults.Refresh                  { return e.GetRefreshFn() }
 func (e Runtime[H, V]) ReadWholeVault(ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool) (vaults.ReadWholeVault, error) {

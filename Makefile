@@ -576,7 +576,8 @@ check_knip: ## check dead code and unused dependencies of every TS package and p
 	npx knip
 
 .PHONY: lint_narrative
-lint_narrative: ## reject narrative identifiers, test names and comments across the repository
+lint_narrative: ## reject narrative identifiers, test names, comments, documents and the strings a person reads across the repository
+	node --test $(NARRATIVE)/scan.test.mjs
 	node $(NARRATIVE)/scan.mjs . --check
 
 .PHONY: check_typecheck
@@ -585,7 +586,7 @@ check_typecheck: lib_ui_build ## typecheck every frontend package and plugin wit
 	for dir in plugins/*/; do if [ -f "$$dir/package.json" ] && grep -q '"typecheck"' "$$dir/package.json"; then (cd "$$dir" && npm run typecheck) || exit 1; fi; done
 
 .PHONY: check_gate
-check_gate: lib_protocol_generate_check check_typecheck ## run every architectural check and the quality gates on changed files (pre-push gate)
+check_gate: lib_protocol_generate_check check_typecheck lint_narrative ## run every architectural check and the quality gates on changed files (pre-push gate)
 	node $(LAYERS)/check.mjs
 	node $(QUALITY)/check.mjs --changed-only $(opts)
 

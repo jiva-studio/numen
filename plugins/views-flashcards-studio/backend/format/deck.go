@@ -213,7 +213,7 @@ func findDuplicateCardIDs(cs []Card) []Problem {
 	for item, c := range cs {
 		if c.CardID != "" && carried[c.CardID] > 1 {
 			out = append(out, newCardProblem(item, FaultDuplicateCardID,
-				"another card in this deck carries the card id "+string(c.CardID)))
+				"another card in this deck has the card id "+string(c.CardID)))
 		}
 	}
 	return out

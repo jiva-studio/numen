@@ -190,7 +190,7 @@ const getRole = (node: PlacedNode): GestureRole => {
       <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
     </PlexNodeView>
 
-    <!-- The line under the hand, drawn after the boxes so it stands over
+    <!-- The line under the hand, drawn after the boxes so it is over
          them, and with it the title it carries. -->
     <g v-if="lifted.length" class="plex__lift" aria-hidden="true">
       <template v-for="line in lifted" :key="line.key">

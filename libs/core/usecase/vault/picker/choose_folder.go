@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 )
 
-// ErrNoTrash is a machine with nowhere to put what is deleted.
+// ErrNoTrash is a machine with no trash.
 var ErrNoTrash = machineport.ErrNoTrash
 
 // ChooseFolder shows this machine's folder dialog with the given title and

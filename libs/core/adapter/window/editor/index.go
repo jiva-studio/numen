@@ -51,7 +51,7 @@ func (e indexEvents) ReportTexts(v domain.Vault, res filetext.IndexResult) {
 // newFloorErrorReporter reports a store of floors that cannot be read as a task.
 func newFloorErrorReporter(state *State) func(error) {
 	return func(err error) {
-		state.reportTask(run.Task{ID: readingTheFloor, Title: "Reading the search floor", Error: err.Error()})
+		state.reportTask(run.Task{ID: readingTheFloor, Title: "Read search floor", Error: err.Error()})
 	}
 }
 

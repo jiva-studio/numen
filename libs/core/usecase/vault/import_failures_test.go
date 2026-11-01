@@ -91,7 +91,7 @@ func aFolderOfTwo() handedOver {
 	}
 }
 
-// Nothing handed over is nothing done, whether or not the vault can be written.
+// Nothing passed is nothing done, whether or not the vault can be written.
 func TestNothingHandedOverIsNothingCompleted(t *testing.T) {
 	isolateHome(t)
 	v := testsupport.NewVault(t, nil)
@@ -101,7 +101,7 @@ func TestNothingHandedOverIsNothingCompleted(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an empty drop failed: %v", err)
 	}
-	if len(brought.Landed) != 0 || len(brought.Errors) != 0 {
+	if len(brought.Imported) != 0 || len(brought.Errors) != 0 {
 		t.Errorf("an empty drop came to %+v", brought)
 	}
 }
@@ -134,7 +134,7 @@ func TestACancelledDropEndsWithTheCancellation(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("got %v", err)
 	}
-	if len(brought.Errors) != 0 || len(brought.Landed) != 0 {
+	if len(brought.Errors) != 0 || len(brought.Imported) != 0 {
 		t.Errorf("a cancelled drop came to %+v", brought)
 	}
 }
@@ -153,8 +153,8 @@ func TestADropCancelledInsideAFolderRestoresNothingBelowIt(t *testing.T) {
 		t.Fatal(broughtErr)
 	}
 
-	if len(brought.Landed) != 1 || brought.Landed[0] != "scans" {
-		t.Errorf("what landed: %v", brought.Landed)
+	if len(brought.Imported) != 1 || brought.Imported[0] != "scans" {
+		t.Errorf("what landed: %v", brought.Imported)
 	}
 	for _, name := range []string{"Cover.png", "Kelvin.md"} {
 		if _, err := os.Stat(filepath.Join(v.Path, "scans", name)); err == nil {
@@ -184,8 +184,8 @@ func TestAHandleThatCannotBeReadStaysOutsideWithItsError(t *testing.T) {
 	if len(brought.Errors) != 1 || brought.Errors[0].Name != "Gone.png" || !errors.Is(brought.Errors[0].Why, removed) {
 		t.Errorf("what stayed outside: %+v", brought.Errors)
 	}
-	if len(brought.Landed) != 0 {
-		t.Errorf("what landed: %v", brought.Landed)
+	if len(brought.Imported) != 0 {
+		t.Errorf("what landed: %v", brought.Imported)
 	}
 }
 
@@ -202,8 +202,8 @@ func TestAFolderOntoAFileOfTheSameNameStaysOutside(t *testing.T) {
 	if len(brought.Errors) != 1 || !errors.Is(brought.Errors[0].Why, vaultport.ErrAlreadyExists) {
 		t.Fatalf("what stayed outside: %+v", brought.Errors)
 	}
-	if len(brought.Landed) != 0 {
-		t.Errorf("what landed: %v", brought.Landed)
+	if len(brought.Imported) != 0 {
+		t.Errorf("what landed: %v", brought.Imported)
 	}
 }
 
@@ -304,8 +304,8 @@ func TestNothingBelowAFolderIsBroughtOnceTheDropIsCancelled(t *testing.T) {
 		t.Fatal(broughtErr)
 	}
 
-	if len(brought.Landed) != 1 {
-		t.Errorf("what landed: %v", brought.Landed)
+	if len(brought.Imported) != 1 {
+		t.Errorf("what landed: %v", brought.Imported)
 	}
 }
 
@@ -322,8 +322,8 @@ func TestADropCancelledAfterOneHandleReportsWhatArrived(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("got %v", err)
 	}
-	if len(brought.Landed) != 1 || brought.Landed[0] != "scans" {
-		t.Errorf("what landed: %v", brought.Landed)
+	if len(brought.Imported) != 1 || brought.Imported[0] != "scans" {
+		t.Errorf("what landed: %v", brought.Imported)
 	}
 }
 
@@ -345,7 +345,7 @@ func TestSomethingNeitherFileNorFolderStaysOutside(t *testing.T) {
 		!strings.Contains(brought.Errors[0].Why.Error(), "neither a file nor a folder") {
 		t.Errorf("what stayed outside: %+v", brought.Errors)
 	}
-	if len(brought.Landed) != 0 {
-		t.Errorf("what landed: %v", brought.Landed)
+	if len(brought.Imported) != 0 {
+		t.Errorf("what landed: %v", brought.Imported)
 	}
 }

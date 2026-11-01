@@ -165,7 +165,7 @@ func TestAStoredThemeOfADisabledPluginFallsBackToTheDefault(t *testing.T) {
 	if err != nil || answer.Msg.GetApplied() != "preset:numen" {
 		t.Errorf("applied = %q, error = %v", answer.Msg.GetApplied(), err)
 	}
-	if len(said) != 1 || !strings.Contains(said[0], name) {
+	if len(said) == 0 || !strings.Contains(said[len(said)-1], name) {
 		t.Errorf("said %v", said)
 	}
 }

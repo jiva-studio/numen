@@ -48,7 +48,7 @@ type Vault struct {
 	Moved func(ctx context.Context) (<-chan struct{}, error)
 	// Written is called after a plugin has changed the vault.
 	Written func()
-	// Index brings the index level with the paths a plugin changed. Without it nothing is done.
+	// Index updates the index for the paths a plugin changed. Without it nothing is done.
 	Index func(ctx context.Context, v domain.Vault, paths []string) error
 }
 
@@ -381,7 +381,7 @@ func (a Vault) CreateInRelation(ctx context.Context, in domain.RelatedNote) (str
 // notifyAfterWrite tells the host a plugin changed the vault when the write reached it.
 // An index that could not follow a write that landed is still a write.
 func (a Vault) notifyAfterWrite(err error) error {
-	if err == nil || errors.Is(err, edit.ErrUnlevelled) {
+	if err == nil || errors.Is(err, edit.ErrIndexOutdated) {
 		a.notifyFileWritten()
 	}
 	return err

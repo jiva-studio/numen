@@ -3,7 +3,7 @@
   "name": "Update Notifier",
   "version": "2026.10.4",
   "protocol": 1,
-  "description": "Tells when a newer build of Numen is published",
+  "description": "Notifies when a newer build of Numen is published",
   "targets": ["desktop.editor"],
   "contributes": {
     "category": "tools",
@@ -22,7 +22,7 @@
       "description": "Which builds are announced",
       "default": "stable",
       "options": [
-        { "value": "stable", "title": "Stable", "detail": "Releases made once they are tested" },
+        { "value": "stable", "title": "Stable", "detail": "Tested releases" },
         { "value": "beta", "title": "Beta", "detail": "Builds published ahead of the next release" }
       ]
     },

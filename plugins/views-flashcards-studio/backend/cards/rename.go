@@ -64,7 +64,7 @@ type RenameField struct {
 	// 	// links resolves the wikilink by which a card names its card model, which
 	// 	// identifies the card model that generates the card.
 	links ports.LinkQueries
-	index note.Levels
+	index note.IndexUpdater
 	// now is when this is happening. An identifier written here carries it.
 	now ports.Clock
 }
@@ -85,7 +85,7 @@ func NewRenameField(
 	writers ports.VaultWriters,
 	notes TypeQueries,
 	links ports.LinkQueries,
-	index note.Levels,
+	index note.IndexUpdater,
 	now ports.Clock,
 ) RenameField {
 	return RenameField{
@@ -135,7 +135,7 @@ func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Re
 		return out, err
 	}
 	content := append([]string{in.CardModel}, out.Decks...)
-	return out, note.WrapUnlevelled(u.index(ctx, v, content), content...)
+	return out, note.WrapIndexOutdated(u.index(ctx, v, content), content...)
 }
 
 // MaxDecksPerRename is the most decks an agent's rename reads and writes at once.

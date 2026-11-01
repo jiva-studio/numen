@@ -83,7 +83,7 @@ func (u ListReviewCards) WithReaders(readers ports.VaultReaders) ListReviewCards
 
 // ErrNotCarried is what a vault the index does not carry gets. It is the signal
 // to read that vault, and a window holding one reads it.
-var ErrNotCarried = errors.New("the index does not carry this vault yet")
+var ErrNotCarried = errors.New("the index does not contain this vault yet")
 
 // Execute lists the review cards of a vault. A vault the index does not carry gets ErrNotCarried.
 func (u ListReviewCards) Execute(ctx context.Context, v domain.Vault) ([]ReviewCard, error) {

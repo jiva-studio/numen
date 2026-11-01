@@ -1,7 +1,7 @@
 /**
  * The appearance commands of the window: the themes the application lists and the three modes of
  * a color pair, offered as items of the shell's command palette. Choosing one writes it to the
- * settings through the theme service and dresses the page in it.
+ * settings through the theme service and applies it to the page.
  */
 import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import {
@@ -126,7 +126,7 @@ function createPaletteGroups({ themes, applied, mode, getPluginName }: Appearanc
     ]
   }
 
-  /** The three modes. None can be chosen while the theme worn pins light or dark. */
+  /** The three modes. None can be chosen while the applied theme pins light or dark. */
   const getModeGroups = (): readonly PaletteGroup[] => [
     {
       id: 'half',
@@ -158,14 +158,14 @@ export function createAppearance(deps: AppearanceDeps) {
   const applied = ref('')
   const mode = ref<Mode>('system')
 
-  /** The page dressed in a theme and a mode. */
-  const dress = async (name: string, half: Mode) => {
+  /** The page with a theme and a mode applied. */
+  const applyTheme = async (name: string, half: Mode) => {
     const css = await client.readTheme(name)
     findStyle(IS_MODE, page).textContent = `:root { color-scheme: ${SCHEMES[half]}; }`
     findStyle(IS_THEME, page).textContent = css
   }
 
-  /** The themes and the choice read again, and the page dressed where the choice changed. */
+  /** The themes and the choice read again, and the theme and mode applied to the page where the choice changed. */
   const refresh = async () => {
     const before = { applied: applied.value, mode: mode.value }
     try {
@@ -174,13 +174,13 @@ export function createAppearance(deps: AppearanceDeps) {
       applied.value = answer.applied
       mode.value = getModeWord(answer.mode)
       const isChanged = before.applied !== '' && before.applied !== applied.value
-      if (isChanged || before.mode !== mode.value) await dress(applied.value, mode.value)
+      if (isChanged || before.mode !== mode.value) await applyTheme(applied.value, mode.value)
     } catch (error) {
       onError(`${WORDS.themesUnlisted} ${formatErrorMessage(error)}`)
     }
   }
 
-  /** Writes a choice, and dresses the page in it where it was written. */
+  /** Writes a choice, and applies it to the page where it was written. */
   const choose = async (name: string, half: Mode) => {
     try {
       const reason = await client.writeAppearance(name, MODE_CODES[half])
@@ -190,7 +190,7 @@ export function createAppearance(deps: AppearanceDeps) {
       }
       applied.value = name
       mode.value = half
-      await dress(name, half)
+      await applyTheme(name, half)
     } catch (error) {
       onError(formatErrorMessage(error))
     }

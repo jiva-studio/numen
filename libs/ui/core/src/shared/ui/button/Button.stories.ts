@@ -49,7 +49,7 @@ const meta: Meta<Knobs> = {
       description: {
         component:
           'A button in the sizes and colours the tokens name. Hover mixes a ' +
-          "little of the variant's own text into its ground, and focus wears " +
+          "little of the variant's own text into its ground, and focus uses " +
           'the ring at the width the tokens give it.',
       },
     },

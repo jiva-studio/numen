@@ -99,7 +99,7 @@ func (b *Backend) build(dayStart func() time.Duration) *Scenarios {
 	if cores <= 0 {
 		cores = runtime.GOMAXPROCS(0)
 	}
-	// What a window writes is levelled in the index by the paths it touched, and the index is the host's.
+	// What a window writes is updated in the index by the paths it touched, and the index is the host's.
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {
 		return cfg.Vault.With(v.ID).Scan(ctx, paths)
 	}

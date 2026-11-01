@@ -507,7 +507,7 @@ func TestAMachineWithNowhereToInsertWhatIsDeletedErasesNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := out.Msg.GetError(); got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH {
-		t.Errorf("a machine with nowhere to put it was answered %v", got)
+		t.Errorf("a machine with no trash was answered %v", got)
 	}
 	onList(t, f.getList(t), string(f.second.ID))
 	if got := f.rows.getForgotten(); len(got) != 0 {

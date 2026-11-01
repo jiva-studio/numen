@@ -19,7 +19,7 @@ const (
 // DefaultPerformanceProfile is the default workload preset for untouched installations.
 const DefaultPerformanceProfile = ProfileBalanced
 
-// Performance is the settings section for workload and resource calibration.
+// Performance is the settings section for workload and resource profile.
 type Performance struct {
 	// Profile is the active preset.
 	Profile string `json:"profile"`

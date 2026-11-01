@@ -455,7 +455,7 @@ func TestAMachineWithNowhereToInsertItDeletesNothing(t *testing.T) {
 		t.Fatalf("erasing gave %v, want %v\n%s", err, machineport.ErrNoTrash, out)
 	}
 	if _, err := os.Stat(s.vault); err != nil {
-		t.Errorf("the folder went with nowhere to put it: %v", err)
+		t.Errorf("the folder went on a machine with no trash: %v", err)
 	}
 	if items := s.mustRun("vault", "list"); !strings.Contains(items, "kept") {
 		t.Errorf("the vault left the list:\n%s", items)

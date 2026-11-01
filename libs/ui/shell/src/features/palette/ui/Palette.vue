@@ -184,7 +184,7 @@ function reveal(): void {
       <slot name="silence" />
     </p>
 
-    <!-- Everything the lit item offers, by name. It stands over the foot of
+    <!-- Everything the lit item offers, by name. It is over the foot of
          the palette, and the list underneath stays where it was. -->
     <PaletteActions
       v-if="isPanelOpen"
@@ -194,7 +194,7 @@ function reveal(): void {
       @choose="chooseAction"
     />
 
-    <!-- What the item now lit can be asked. An item offering one action says
+    <!-- The actions of the highlighted item. An item with one action shows
          one key, and the last word opens the rest. -->
     <PaletteKeyHints
       v-if="actions.length"

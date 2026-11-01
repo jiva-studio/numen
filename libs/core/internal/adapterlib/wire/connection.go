@@ -126,7 +126,7 @@ func ConvertConnectionFromWire(c *v1.Connection) (domain.Connection, error) {
 	joined = joined.FillRoles(role)
 	for _, side := range [...]*domain.Side{joined.AB, joined.BA} {
 		if side != nil && side.Role == "" {
-			return domain.Connection{}, fmt.Errorf("%w: a record carries no role and the connection gives none", ErrBadWireValue)
+			return domain.Connection{}, fmt.Errorf("%w: a record has no role and the connection gives none", ErrBadWireValue)
 		}
 	}
 	return joined, nil

@@ -659,7 +659,7 @@ func TestASearchByMeaningAnswersNearestFirstWithWhereEachExists(t *testing.T) {
 	first := got[0]
 	if first.Kind != domain.KindFile || first.Producer != "ocr" || first.SourceHash != "h-lib/near.epub" ||
 		first.Start != 100 || first.Length != 100 || first.Location != "chapter 1" {
-		t.Errorf("the nearest is %+v, want the large chunk it sits inside", first)
+		t.Errorf("the nearest is %+v, want the large chunk it is inside", first)
 	}
 	hits := []int{got[0].HitAt, got[1].HitAt}
 	slices.Sort(hits)
@@ -799,7 +799,7 @@ func TestAPassageIsWhereOneChunkIsReadFrom(t *testing.T) {
 		t.Fatalf("the large chunk is not found: %v", err)
 	}
 	if large.Chunk != small.Parent || large.Start != 100 || large.Length != 100 || large.Location != "chapter 7" || large.Parent != 0 {
-		t.Errorf("the large chunk is %+v, and sits inside nothing", large)
+		t.Errorf("the large chunk is %+v, and is inside nothing", large)
 	}
 
 	for name, ask := range map[string]struct {

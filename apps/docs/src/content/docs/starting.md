@@ -17,13 +17,13 @@ numen -vault Research
 | `-index` | Path to the index database. |
 | `-registry` | Path to the vault list. |
 | `-vault` | The vault to open: a name, a path or an identity; the one opened last by default. |
-| `-mcp-addr` | Where agents reach this vault; anything but a loopback address opens it to the network. |
-| `-no-mcp` | Do not let agents reach this vault. |
-| `-interface-scale` | How large the interface is drawn, 1 being as designed; this launch alone. |
-| `-text-scale` | How large the text a person reads is set, 1 being as designed; this launch alone. |
-| `-rebuild-index` | Read every file and put it in the index again, whatever the index remembers. |
+| `-mcp-addr` | Address agents connect to; any address other than loopback opens the vault to the network. |
+| `-no-mcp` | Do not let agents connect to this vault. |
+| `-interface-scale` | Scale of the interface (controls and spacing); 1 is the default; this launch only. |
+| `-text-scale` | Scale of note and book text; 1 is the default; this launch only. |
+| `-rebuild-index` | Read every file again and rewrite its index entries, whatever the index already holds. |
 | `-safe-mode` | Disable plugins for emergency recovery. |
-| `-version` | Say what this build is and stop. |
+| `-version` | Print the version and exit. |
 <!-- END AUTOGEN -->
 
 ## The ones worth knowing

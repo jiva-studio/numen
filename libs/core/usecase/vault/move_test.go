@@ -22,7 +22,7 @@ import (
 )
 
 // filing is a scanned vault whose files can be moved about, with the index kept
-// level as a real caller keeps it.
+// up to date as a real caller keeps it.
 type filing struct {
 	db    *container.Index
 	vault domain.Vault
@@ -117,7 +117,7 @@ func TestAFolderMovesWithTheNotesBelowIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !moved.IsLanded {
+	if !moved.IsMoved {
 		t.Fatal("the folder did not land")
 	}
 
@@ -263,7 +263,7 @@ func TestAMoveOntoATakenNameMovesNothing(t *testing.T) {
 	if !errors.Is(err, vaultport.ErrAlreadyExists) {
 		t.Fatalf("want ErrAlreadyExists, got %v", err)
 	}
-	if moved.IsLanded {
+	if moved.IsMoved {
 		t.Error("the move says it landed")
 	}
 	if moved.From != "physics" || moved.To != "archive/physics" {

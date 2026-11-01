@@ -71,7 +71,7 @@ paru -S numen-bin        # or: yay -S numen-bin
 
 ### Nix, NixOS
 
-The flake stands beside the builds.
+The flake is beside the builds.
 
 ```sh
 nix run tarball+https://dl.numen.md/latest/numen-nix.tar.gz
@@ -96,7 +96,7 @@ A `.tar.gz` holding the program alone. Unpack it wherever you keep such things a
 
 ## Updating
 
-While a newer build is published, a version badge stands at the right end of the status bar. It
+While a newer build is published, a version badge is at the right end of the status bar. It
 opens the release date, the way to install on your system and the release notes. It comes from the
 Update Notifier plugin, whose settings choose the channel (**Stable** or **Beta**), the address of
 the release feed and the hours between two checks. A machine without a network shows nothing.

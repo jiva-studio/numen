@@ -342,7 +342,7 @@ var ErrInline = errors.New("this frontmatter is written on one line, and cannot 
 // An anchor is read by an alias somewhere else in the block, and a splice puts
 // down a value carrying no anchor. The alias then points at nothing, and the
 // note stops opening at all.
-var ErrAnchored = errors.New("this frontmatter carries a YAML anchor, and cannot be changed a key at a time")
+var ErrAnchored = errors.New("this frontmatter has a YAML anchor, and cannot be changed a key at a time")
 
 // hasAnchor reports whether anything in a subtree carries an anchor.
 func hasAnchor(node *yaml.Node) bool {

@@ -7,7 +7,7 @@ const createBuffers = (): FileBuffers => ({
 })
 
 describe('the mock buffer host', () => {
-  it('holds the buffers handed over until they are release', () => {
+  it('holds the buffers passed until they are release', () => {
     const host = createMockBufferHost()
     const buffers = createBuffers()
 

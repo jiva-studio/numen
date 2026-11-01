@@ -6,20 +6,20 @@ import "encoding/json"
 // say nothing about it.
 const DefaultAgentSteps = 100
 
-// Agent selects the agent that answers in the panel and configures how each
-// program runs.
+// Agent selects the agent the panel uses and configures how each program
+// runs.
 //
 // A program's section is kept whether or not the program is selected, so
 // switching to another agent preserves the settings of the previous one. The
 // programs are the ones listed by the plugins that provide agents.
 type Agent struct {
-	// Use names the program that answers. When absent, the program that the
-	// providers mark as default answers. When empty, no program answers and the
+	// Use names the program the panel uses. When absent, the program that the
+	// providers mark as default is used. When empty, no program is used and the
 	// panel reports it.
 	Use *string `json:"use"`
 
-	// ShouldServeTools exposes the tools on a port, which lets an agent that the
-	// user runs externally reach this vault. It defaults to off; the agent
+	// ShouldServeTools serves the tools on a port, so that an agent the user
+	// runs externally can use this vault. It defaults to off; the agent
 	// named by Use is served on the port in either case.
 	ShouldServeTools bool `json:"serve_tools"`
 
@@ -34,7 +34,7 @@ type AgentProgram struct {
 	// folders its installers write to.
 	Command []string `json:"command"`
 
-	// Model is the model that answers, by the name the program uses for it.
+	// Model is the model the program uses, by the name the program gives it.
 	Model string `json:"model"`
 
 	// Reasoning is the reasoning depth last selected for the program, by the
@@ -187,23 +187,24 @@ func (p AgentProgram) MarshalJSON() ([]byte, error) {
 	return json.Marshal(content)
 }
 
-// AI is the section of the settings file that selects the agent that answers
-// for a plugin whose own setting names none.
+// AI is the section of the settings file that selects the agent that handles
+// the questions of a plugin whose own setting names none.
 type AI struct {
-	// Default is the agent and the model that answer a plugin whose own setting
-	// names no agent, and how many questions one agent answers at once.
+	// Default is the agent and the model that handle the questions of a plugin
+	// whose own setting names no agent, and how many questions one agent handles
+	// at once.
 	Default AIRoute `json:"default"`
 }
 
-// AIRoute is an agent, the model it answers with, and the limit of its questions.
+// AIRoute is an agent, the model it uses, and the limit of its questions.
 type AIRoute struct {
-	// Agent is the id of the agent plugin that answers. Empty selects the
-	// provider with the lowest id.
+	// Agent is the id of the agent plugin to use. Empty selects the provider with
+	// the lowest id.
 	Agent string `json:"agent,omitempty"`
-	// Model is the model the agent answers with. Empty leaves the choice to the
+	// Model is the model the agent uses. Empty leaves the choice to the
 	// agent.
 	Model string `json:"model,omitempty"`
-	// Concurrency is how many questions one agent answers at once. Below one
+	// Concurrency is how many questions one agent handles at once. Below one
 	// is one.
 	Concurrency int `json:"concurrency,omitempty"`
 }

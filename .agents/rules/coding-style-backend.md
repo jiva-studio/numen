@@ -45,7 +45,7 @@ apps/desktop/         # the window's host: cmd/ and internal/
 ### Interfaces
 
 - Declared by the code that needs them, not beside the code that satisfies them.
-- Small — one to three methods. An interface with one implementation and eight methods is a struct wearing a costume.
+- Small — one to three methods. An interface with one implementation and eight methods is a struct with a name that claims more than it does.
 - Accepted as parameters, returned as concrete types.
 - Not introduced "for testing" when the concrete type is already testable.
 

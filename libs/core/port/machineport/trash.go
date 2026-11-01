@@ -9,7 +9,7 @@ type Trash interface {
 	Trash(path string) error
 }
 
-// ErrNoTrash is a machine with nowhere to put what is deleted. A folder on a
+// ErrNoTrash is a machine with no trash. A folder on a
 // mounted volume of its own has a trash of its own, and where that cannot be
 // made there is none.
-var ErrNoTrash = errors.New("this machine has nowhere to put what is deleted")
+var ErrNoTrash = errors.New("this machine has no trash")

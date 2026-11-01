@@ -163,7 +163,7 @@ func TestNoPortNamesATypeFromInternal(t *testing.T) {
 		read++
 		rel := "port/" + item.name
 		for _, one := range internalTypes(file) {
-			t.Errorf("%s names %s: a port speaks in the core's own types", rel, one)
+			t.Errorf("%s names %s: a port uses the core own types", rel, one)
 		}
 	}
 

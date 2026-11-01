@@ -107,16 +107,16 @@ func parseFlags() (*Options, error) {
 		fs.StringVar(&opts.Vault, "vault", "",
 			"the vault to open: a name, a path or an identity; the one opened last by default")
 		fs.StringVar(&opts.McpAddr, "mcp-addr", DefaultAgentAddr,
-			"where agents reach this vault; anything but a loopback address opens it to the network")
-		fs.BoolVar(&opts.NoMcp, "no-mcp", false, "do not let agents reach this vault")
+			"address agents connect to; any address other than loopback opens the vault to the network")
+		fs.BoolVar(&opts.NoMcp, "no-mcp", false, "do not let agents connect to this vault")
 		fs.Float64Var(&opts.InterfaceScale, "interface-scale", 0,
-			"how large the interface is drawn, 1 being as designed; this launch alone")
+			"scale of the interface (controls and spacing); 1 is the default; this launch only")
 		fs.Float64Var(&opts.TextScale, "text-scale", 0,
-			"how large the text a person reads is set, 1 being as designed; this launch alone")
+			"scale of note and book text; 1 is the default; this launch only")
 		fs.BoolVar(&opts.RebuildIndex, "rebuild-index", false,
-			"read every file and put it in the index again, whatever the index remembers")
+			"read every file again and rewrite its index entries, whatever the index already holds")
 		fs.BoolVar(&opts.SafeMode, "safe-mode", false, "disable plugins for emergency recovery")
-		fs.BoolVar(&opts.ShowVersion, "version", false, "say what this build is and stop")
+		fs.BoolVar(&opts.ShowVersion, "version", false, "print the version and exit")
 		RegisterDebugFlags(fs, opts)
 		if err := fs.Parse(os.Args[1:]); err != nil {
 			return nil, err
