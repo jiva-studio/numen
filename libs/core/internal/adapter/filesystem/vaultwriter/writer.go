@@ -455,7 +455,7 @@ func getWriteMode(root *os.Root, name, path string, stat domain.FileStat) (fs.Fi
 	}
 }
 
-// checkMoveTarget reports an error where a file already stands at the target
+// checkMoveTarget returns an error when a file already exists at the target
 // name and is not the source itself.
 func checkMoveTarget(root *os.Root, leaves, arrives, from, to string) error {
 	there, err := root.Lstat(arrives)
