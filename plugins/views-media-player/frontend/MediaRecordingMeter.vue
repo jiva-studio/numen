@@ -39,7 +39,7 @@ const liveBars = computed(() => getWaveformBars(props.elapsedMs, props.isRecordi
   gap: 1rem;
   padding: 2rem;
   background: var(--numen-field-bg);
-  border-radius: var(--numen-radius-card);
+  border-radius: var(--numen-radius);
 }
 
 .media-recorder__timer {

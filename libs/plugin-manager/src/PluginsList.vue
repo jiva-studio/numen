@@ -109,7 +109,7 @@ function isPluginEnabled(pluginId: string): boolean {
   padding: 0.5rem 0.75rem;
   background-color: var(--numen-field-bg);
   border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius-small);
+  border-radius: var(--numen-radius-tight);
   color: var(--numen-ink);
   font-family: inherit;
   font-size: var(--numen-text-2);

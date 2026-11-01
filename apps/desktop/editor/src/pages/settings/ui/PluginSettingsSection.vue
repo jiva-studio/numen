@@ -163,7 +163,7 @@ function getStringSetting(pluginId: string, key: string, fallback: unknown): str
   padding: 0.25rem 0.5rem;
   background-color: var(--numen-surface);
   border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius-small);
+  border-radius: var(--numen-radius-tight);
   color: var(--numen-ink);
   font-family: inherit;
   font-size: var(--numen-text-2);

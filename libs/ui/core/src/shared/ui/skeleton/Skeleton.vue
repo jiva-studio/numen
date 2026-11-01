@@ -49,7 +49,7 @@ const skeletonStyle = computed(() => ({
 }
 
 .skeleton--pill {
-  border-radius: var(--numen-radius-isPill);
+  border-radius: var(--numen-radius-pill);
 }
 
 @keyframes skeleton-breathe {

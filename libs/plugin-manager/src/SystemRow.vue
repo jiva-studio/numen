@@ -60,7 +60,7 @@ function onKeydown(e: KeyboardEvent): void {
   transition:
     background-color 0.15s ease,
     opacity 0.15s ease;
-  border-radius: var(--numen-radius-small);
+  border-radius: var(--numen-radius-tight);
 }
 
 .plugin-row:last-child {

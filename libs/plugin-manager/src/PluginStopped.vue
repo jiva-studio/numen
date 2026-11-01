@@ -58,7 +58,7 @@ function onDisable(): void {
   margin-block-end: var(--settings-apart, 1.75rem);
   padding: 0.5rem 0.75rem;
   border: var(--numen-stroke) solid var(--numen-alarm);
-  border-radius: var(--numen-radius-small);
+  border-radius: var(--numen-radius-tight);
   color: var(--numen-ink);
 }
 

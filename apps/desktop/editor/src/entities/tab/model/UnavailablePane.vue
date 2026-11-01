@@ -96,7 +96,7 @@ function onAct(): void {
   font-size: var(--numen-text-2);
   font-family: inherit;
   font-weight: 500;
-  border-radius: var(--numen-radius-small);
+  border-radius: var(--numen-radius-tight);
   border: var(--numen-stroke) solid var(--numen-rule);
   background: var(--numen-surface);
   color: var(--numen-ink);

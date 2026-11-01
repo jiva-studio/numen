@@ -93,7 +93,7 @@ function onAction(type: RecordAction) {
   padding: 0.625rem 1.25rem;
   font-size: 0.9375rem;
   font-weight: 600;
-  border-radius: var(--numen-radius-button);
+  border-radius: var(--numen-radius);
   border: none;
   cursor: pointer;
   transition: all 0.15s ease;

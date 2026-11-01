@@ -135,7 +135,7 @@ function onChooseMenuItem(id: string): void {
   transition:
     background-color 0.15s ease,
     opacity 0.15s ease;
-  border-radius: var(--numen-radius-small);
+  border-radius: var(--numen-radius-tight);
 }
 
 .plugin-row:last-child {
@@ -224,7 +224,7 @@ function onChooseMenuItem(id: string): void {
 .plugin-row__badge {
   font-size: var(--numen-text-1);
   padding: 0.125rem 0.375rem;
-  border-radius: var(--numen-radius-small);
+  border-radius: var(--numen-radius-tight);
 }
 
 .plugin-row__badge--available {
