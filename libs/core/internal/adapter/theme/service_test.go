@@ -257,6 +257,17 @@ func TestThemes_MissingSettingsThemeReportsAndUsesDefault(t *testing.T) {
 	}
 }
 
+// The warning about a missing theme is withdrawn once the theme the settings name is found again.
+func TestThemes_FoundThemeWithdrawsTheEarlierWarning(t *testing.T) {
+	aged := createFakeAppearances(t, theme.Appearance{ThemeName: "mine:the-one-i-deleted", Mode: appearance.Light})
+	aged.themes(t)
+	aged.appearance = theme.Appearance{ThemeName: theme.Default, Mode: appearance.Light}
+	aged.themes(t)
+	if len(aged.reply) != 2 || aged.reply[1] != "" {
+		t.Errorf("said %v, want the warning and then an empty text", aged.reply)
+	}
+}
+
 // A build with no settings behind it still lists what it ships.
 func TestThemes_NoSettingsUsesDefaultPalette(t *testing.T) {
 	service := &theme.Service{Catalogue: createThemeFolder(t)}

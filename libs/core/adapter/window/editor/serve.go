@@ -250,8 +250,13 @@ const (
 	levellingTheIndex = "levelling the index"
 )
 
-// SayTheme records a theme warning task.
+// SayTheme records a theme warning task, and takes the task out of the list for an empty message,
+// which says the theme the settings name is found now.
 func (o *Installation) SayTheme(message string) {
+	if message == "" {
+		o.State.finishTask(wearingATheme)
+		return
+	}
 	o.State.reportTask(run.Task{ID: wearingATheme, Title: "Wearing a theme", Error: message})
 }
 

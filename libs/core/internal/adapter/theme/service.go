@@ -43,7 +43,8 @@ type Appearances interface {
 	// rejected without writing.
 	Write(Appearance) error
 
-	// Warn reports non-fatal configuration issues or missing themes.
+	// Warn reports non-fatal configuration issues or missing themes. An empty text withdraws the
+	// warning an earlier call reported, because nothing is missing now.
 	Warn(string)
 }
 
@@ -74,6 +75,8 @@ func (s *Service) ListThemes(
 	applied, missing := s.Catalogue.GetApplied(aged.ThemeName)
 	if missing != "" {
 		s.warn(fmt.Sprintf("there is no theme called %s, so the window wears %s", missing, applied))
+	} else {
+		s.warn("")
 	}
 
 	themes := s.Catalogue.Themes()

@@ -123,7 +123,11 @@ func run(cfg container.Config, debug debugOptions) error {
 	defer target.Run()
 
 	followChanges(ctx, cfg, api)
-	api.Themes = themes.Load(cfg.Themes, func(response string) { fmt.Fprintln(os.Stderr, "themes:", response) }, os.Stderr)
+	api.Themes = themes.Load(cfg.Themes, func(response string) {
+		if response != "" {
+			fmt.Fprintln(os.Stderr, "themes:", response)
+		}
+	}, os.Stderr)
 
 	pages, err := shell.Pages()
 	if err != nil {
