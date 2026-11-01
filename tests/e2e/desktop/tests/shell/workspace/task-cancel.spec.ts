@@ -77,25 +77,39 @@ test.describe('Cancelling a background task', () => {
       const cancel = row.getByRole('button', { name: 'Cancel task' })
       await expect(cancel).toBeVisible()
 
-      // The button is transparent in its slot until the pointer reaches the row, and showing it
-      // moves nothing.
+      // The ring and the button are stacked in one slot, in the same box. The button is transparent
+      // until the pointer reaches the row, then it takes the place of the ring and moves nothing.
       const readGeometry = () =>
         row.evaluate((element) =>
-          [element, ...element.querySelectorAll('.task-item__indicator, .task-item__action button')]
+          [
+            element,
+            ...element.querySelectorAll('.task-item__slot, .task-item__indicator, .task-item__btn'),
+          ]
             .map((part) => {
               const box = part.getBoundingClientRect()
               return `${box.x},${box.y},${box.width},${box.height}`
             })
             .join(';'),
         )
+      const ring = row.locator('.task-item__indicator')
       await trigger.hover()
       await expect(cancel).toHaveCSS('opacity', '0')
+      await expect(ring).toHaveCSS('opacity', '1')
       const geometry = await readGeometry()
+      const boxes = await row.evaluate((element) => {
+        const read = (selector: string) => {
+          const box = element.querySelector(selector)?.getBoundingClientRect()
+          return box ? [box.x, box.y, box.width, box.height] : []
+        }
+        return [read('.task-item__indicator'), read('.task-item__btn')]
+      })
+      expect(boxes[0]).toHaveLength(4)
+      expect(boxes[1]).toEqual(boxes[0])
 
       await row.hover()
       await expect(cancel).toHaveCSS('opacity', '1')
+      await expect(ring).toHaveCSS('opacity', '0')
       expect(await readGeometry()).toBe(geometry)
-      await expect(row.locator('.task-item__indicator')).toHaveCSS('opacity', '1')
       // Records every DOM change in the row and the visibility of its parts on each frame, for a
       // second while the pointer rests on it.
       const record = await row.evaluate(async (element) => {
@@ -114,7 +128,7 @@ test.describe('Cancelling a background task', () => {
         while (performance.now() < end) {
           const parts = [
             element.querySelector('.task-item__indicator'),
-            element.querySelector('.task-item__action button'),
+            element.querySelector('.task-item__btn'),
           ]
           frames.add(
             parts

@@ -192,9 +192,9 @@ export const NoRingOnFocus: Story = {
   },
 }
 
-/** The geometry and display of each part of a row. */
+/** The position, size and display of the row and of each part of its slot. */
 const readRowGeometry = (row: Element): string =>
-  [row, ...row.querySelectorAll('.task-item__indicator, .task-item__action button')]
+  [row, ...row.querySelectorAll('.task-item__slot, .task-item__indicator, .task-item__btn')]
     .map((part) => {
       const box = part.getBoundingClientRect()
       const style = getComputedStyle(part)
@@ -226,39 +226,34 @@ function isMatchedWithoutHover(selector: string, parts: readonly Element[]): boo
   }
 }
 
-/**
- * The `:hover` rules of the page that change the layout of a part of the row,
- * or the opacity of a part other than the action button.
- */
-function findHoverLayoutRules(
-  rules: CSSRuleList,
-  parts: readonly Element[],
-  fadedParts: readonly Element[],
-): string[] {
+/** The `:hover` rules of the page that change the layout of one of the parts. */
+function findHoverLayoutRules(rules: CSSRuleList, parts: readonly Element[]): string[] {
   const found: string[] = []
   for (const rule of rules) {
     if (rule instanceof CSSStyleRule) {
-      const names = Array.from(rule.style)
-      const isLayout = names.some((name) => LAYOUT_PROPERTIES.some((one) => name.startsWith(one)))
-      const isFade = names.includes('opacity')
-      if (
-        (isLayout && isMatchedWithoutHover(rule.selectorText, parts)) ||
-        (isFade && isMatchedWithoutHover(rule.selectorText, fadedParts))
-      ) {
-        found.push(rule.cssText)
-      }
+      const isLayout = Array.from(rule.style).some((name) =>
+        LAYOUT_PROPERTIES.some((one) => name.startsWith(one)),
+      )
+      if (isLayout && isMatchedWithoutHover(rule.selectorText, parts)) found.push(rule.cssText)
     }
     if ('cssRules' in rule && rule.cssRules instanceof CSSRuleList) {
-      found.push(...findHoverLayoutRules(rule.cssRules, parts, fadedParts))
+      found.push(...findHoverLayoutRules(rule.cssRules, parts))
     }
   }
   return found
 }
 
+const getBox = (element: Element) => {
+  const box = element.getBoundingClientRect()
+  return { x: box.x, y: box.y, width: box.width, height: box.height }
+}
+
 /**
- * The cancel button keeps its slot whether or not it is shown: the pointer on
- * the row, or keyboard focus inside it, changes only the button's opacity, and
- * the progress stays drawn.
+ * The progress ring and the cancel button are stacked in one slot, in the same
+ * box. The row decides which one shows, and only their opacity changes: at rest
+ * the ring shows, and with focus inside the row (the synthetic hover does not
+ * start CSS `:hover`) the button shows in its place. No `:hover` rule changes
+ * the layout of the row.
  */
 export const HoverKeepsTheRow: Story = {
   args: { tasks: [INDEXING] },
@@ -269,28 +264,63 @@ export const HoverKeepsTheRow: Story = {
     const row = cancel.closest('.task-item')
     const indicator = row?.querySelector('.task-item__indicator')
     if (!row || !indicator) throw new Error('the cancel button is outside a row with progress')
+
+    await expect(getBox(cancel)).toEqual(getBox(indicator))
     const before = readRowGeometry(row)
-    await expect(getComputedStyle(cancel).opacity).toBe('0')
     await expect(getComputedStyle(indicator).opacity).toBe('1')
+    await expect(getComputedStyle(cancel).opacity).toBe('0')
 
     cancel.focus()
     await expect(cancel).toHaveFocus()
     await waitFor(() => expect(getComputedStyle(cancel).opacity).toBe('1'))
+    await waitFor(() => expect(getComputedStyle(indicator).opacity).toBe('0'))
     await expect(readRowGeometry(row)).toBe(before)
-    await expect(getComputedStyle(indicator).opacity).toBe('1')
+    await expect(getBox(cancel)).toEqual(getBox(indicator))
     cancel.blur()
 
     const parts = [row, ...row.querySelectorAll('*')]
-    const buttonParts = new Set<Element>([cancel, ...cancel.querySelectorAll('*')])
-    const fadedParts = parts.filter((part) => !buttonParts.has(part))
     const hoverRules = Array.from(document.styleSheets).flatMap((sheet) =>
-      findHoverLayoutRules(sheet.cssRules, parts, fadedParts),
+      findHoverLayoutRules(sheet.cssRules, parts),
     )
     await expect(hoverRules).toEqual([])
+  },
+}
 
-    const showRules = Array.from(document.styleSheets).flatMap((sheet) =>
-      findHoverLayoutRules(sheet.cssRules, [], [cancel]),
+/** A task that cannot be cancelled has only the ring in its slot. */
+export const NotCancellableHasOnlyTheRing: Story = {
+  args: { tasks: [{ ...INDEXING, canCancel: false }] },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(await canvas.findByRole('button', { name: /active/ }))
+    await waitFor(() => expect(canvasElement.querySelector('.task-item__slot')).not.toBeNull())
+    const slot = canvasElement.querySelector('.task-item__slot')
+    await expect(slot?.querySelectorAll('button')).toHaveLength(0)
+    await expect(slot?.querySelectorAll('.task-item__indicator')).toHaveLength(1)
+  },
+}
+
+/**
+ * The tasks of the application come first with no header, and the tasks of a
+ * plugin follow under a header with the name of the plugin alone.
+ */
+export const OnlyPluginsHaveAHeader: Story = {
+  args: {
+    tasks: [
+      { ...INDEXING, id: 'reader', group: 'Example Reader' },
+      { id: 'core', label: 'Walking the notes', state: 'running' },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(await canvas.findByRole('button', { name: /active/ }))
+    await waitFor(() => expect(canvasElement.querySelectorAll('.task-item')).toHaveLength(2))
+    const rows = Array.from(canvasElement.querySelectorAll('.task-item')).map((row) =>
+      row.getAttribute('data-task-id'),
     )
-    await expect(showRules.length).toBeGreaterThan(0)
+    await expect(rows).toEqual(['core', 'reader'])
+    const headers = Array.from(canvasElement.querySelectorAll('.task-group__header')).map(
+      (header) => header.textContent?.trim(),
+    )
+    await expect(headers).toEqual(['Example Reader'])
   },
 }

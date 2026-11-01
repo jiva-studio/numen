@@ -1,7 +1,7 @@
 /**
  * Pure calculations for aggregate status bar progress and group arrangements.
  */
-import type { StatusBarAggregate, StatusBarTask, TaskGroupData } from './types'
+import type { StatusBarAggregate, StatusBarTask, TaskGroupData, TaskListing } from './types'
 
 interface ActiveAccumulator {
   determinateSum: number
@@ -51,12 +51,18 @@ export function calculateAggregate(tasks: readonly StatusBarTask[]): StatusBarAg
 }
 
 /**
- * Groups tasks by category name preserving order of first appearance.
+ * Separates the application's own tasks from the tasks of plugins, and groups the latter by plugin
+ * name in the order of first appearance.
  */
-export function groupTasks(tasks: readonly StatusBarTask[]): readonly TaskGroupData[] {
+export function groupTasks(tasks: readonly StatusBarTask[]): TaskListing {
+  const coreTasks: StatusBarTask[] = []
   const map = new Map<string, StatusBarTask[]>()
 
   for (const task of tasks) {
+    if (!task.group) {
+      coreTasks.push(task)
+      continue
+    }
     const list = map.get(task.group)
     if (list) {
       list.push(task)
@@ -65,10 +71,11 @@ export function groupTasks(tasks: readonly StatusBarTask[]): readonly TaskGroupD
     }
   }
 
-  return Array.from(map.entries()).map(([name, groupTasks]) => ({
+  const groups: TaskGroupData[] = Array.from(map.entries()).map(([name, groupTasks]) => ({
     name,
     tasks: groupTasks,
   }))
+  return { coreTasks, groups }
 }
 
 /**

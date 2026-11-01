@@ -2,8 +2,9 @@
 /**
  * Single task row in the background tasks popover.
  *
- * The row draws the same elements whether or not the pointer is over it: the
- * progress indicator and the action button each keep a fixed slot.
+ * The progress ring and the action button share one slot, stacked in one grid cell. The row draws
+ * the same elements whether or not the pointer is over it; the pointer on the row, or focus inside
+ * it, changes only their opacity.
  */
 import { computed } from 'vue'
 import { RotateCw, X } from '@lucide/vue'
@@ -37,6 +38,9 @@ const isCancelShown = computed(
     props.task.canCancel !== false,
 )
 const isCancelling = computed(() => props.task.state === 'cancelling')
+const hasAction = computed(
+  () => isCancelShown.value || props.task.state === 'failed' || props.task.state === 'completed',
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onCancel() {
@@ -75,15 +79,15 @@ function onAction() {
       </div>
     </div>
 
-    <CircularProgress
-      class="task-item__indicator"
-      :progress="task.progress"
-      :state="task.state"
-      :size="18"
-      :stroke-width="2.2"
-    />
+    <div class="task-item__slot" :class="{ 'task-item__slot--swaps': hasAction }">
+      <CircularProgress
+        class="task-item__indicator"
+        :progress="task.progress"
+        :state="task.state"
+        :size="20"
+        :stroke-width="2.2"
+      />
 
-    <div class="task-item__action">
       <Button
         v-if="isCancelShown"
         variant="ghost"

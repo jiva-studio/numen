@@ -40,7 +40,6 @@ function onAction(id: string) {
   <div class="task-group">
     <div class="task-group__header">
       <span class="task-group__title">{{ group.name }}</span>
-      <span class="task-group__count">{{ group.tasks.length }}</span>
     </div>
 
     <div class="task-group__items">
@@ -67,7 +66,6 @@ function onAction(id: string) {
 .task-group__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 0.25rem 0.5rem;
   font-size: var(--numen-text-1);
   font-weight: 600;
@@ -75,11 +73,6 @@ function onAction(id: string) {
   letter-spacing: 0.05em;
   color: var(--numen-hushed);
   border-bottom: 1px solid var(--numen-rule);
-}
-
-.task-group__count {
-  font-variant-numeric: tabular-nums;
-  opacity: 0.8;
 }
 
 .task-group__items {

@@ -73,12 +73,24 @@ describe('groupTasks', () => {
       { id: '2', label: 'Task 2', group: 'Audio', state: 'running' },
       { id: '3', label: 'Task 3', group: 'Books', state: 'running' },
     ]
-    const groups = groupTasks(tasks)
+    const { coreTasks, groups } = groupTasks(tasks)
+    expect(coreTasks).toEqual([])
     expect(groups).toHaveLength(2)
     expect(groups[0]?.name).toBe('Books')
     expect(groups[0]?.tasks).toHaveLength(2)
     expect(groups[1]?.name).toBe('Audio')
     expect(groups[1]?.tasks).toHaveLength(1)
+  })
+
+  it("lists the tasks without a group as the application's own, apart from the plugin groups", () => {
+    const tasks: StatusBarTask[] = [
+      { id: '1', label: 'Plugin task', group: 'Reader', state: 'running' },
+      { id: '2', label: 'Core task', state: 'running' },
+      { id: '3', label: 'Empty group name', group: '', state: 'running' },
+    ]
+    const { coreTasks, groups } = groupTasks(tasks)
+    expect(coreTasks.map((one) => one.id)).toEqual(['2', '3'])
+    expect(groups.map((one) => one.name)).toEqual(['Reader'])
   })
 })
 

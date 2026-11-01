@@ -4,7 +4,6 @@
 import { computed, ref, watch, type Ref } from 'vue'
 import type { StatusBarTask } from '@numen/shell'
 import type { Task } from '@/shared/notices/task'
-import { WORDS as words } from '@/shared/words'
 
 export interface WindowStatusBarDeps {
   tasks: Ref<readonly Task[]>
@@ -18,9 +17,9 @@ export interface WindowStatusBarDeps {
   resolveAction?: (task: Task) => { label?: string; pluginId?: string | undefined } | undefined
 }
 
-/** The group a task is listed under: the plugin that reported it, or the core. */
-export function getTaskGroup(task: Task): string {
-  return task.pluginName || task.pluginId || words.coreTasks
+/** The group a task is listed under: the plugin that reported it, and none for the core's own tasks. */
+export function getTaskGroup(task: Task): string | undefined {
+  return task.pluginName || task.pluginId || undefined
 }
 
 function getTaskCounting(counting: string): string | undefined {

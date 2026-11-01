@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { useWindowStatusBar } from './useWindowStatusBar'
 import type { Task } from '@/shared/notices/task'
-import { WORDS as words } from '@/shared/words'
 import { pick } from '@/testing/pick'
 
 const base: Task = {
@@ -66,7 +65,7 @@ describe('useWindowStatusBar groups', () => {
     expect(first({ ...base, pluginId: 'md.example.first' }).group).toBe('md.example.first')
   })
 
-  it('groups the core work under one group whatever its label says', () => {
+  it('leaves the core work without a group whatever its label says', () => {
     const tasks = ref<readonly Task[]>([
       { ...base, id: 'a', label: 'Transcribing speech' },
       { ...base, id: 'b', label: 'Recognising a scan' },
@@ -74,7 +73,7 @@ describe('useWindowStatusBar groups', () => {
 
     const groups = useWindowStatusBar({ tasks }).tasks.value.map((one) => one.group)
 
-    expect(groups).toEqual([words.coreTasks, words.coreTasks])
+    expect(groups).toEqual([undefined, undefined])
   })
 })
 

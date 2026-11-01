@@ -70,17 +70,20 @@ describe('TaskItem row layout', () => {
   const running: StatusBarTask = {
     id: 'vectors',
     label: 'Indexing',
-    group: 'Core tasks',
     about: 'Books/Atlas of Imaginary Rivers.pdf',
     progress: 12,
     state: 'running',
     canCancel: true,
   }
 
-  it('draws the progress and the cancel button before the pointer reaches the row', () => {
+  it('draws the progress and the cancel button in one slot before the pointer reaches the row', () => {
     const wrapper = mount(TaskItem, { props: { task: running } })
 
-    expect(wrapper.find('.task-item__indicator').exists()).toBe(true)
+    const slot = wrapper.find('.task-item__slot')
+    expect(slot.classes()).toContain('task-item__slot--swaps')
+    expect(slot.findAll('.task-item__indicator')).toHaveLength(1)
+    expect(slot.findAll('button')).toHaveLength(1)
+    expect(wrapper.findAll('.task-item__indicator')).toHaveLength(1)
     const cancel = wrapper.find('button[aria-label="Cancel task"]')
     expect(cancel.exists()).toBe(true)
     expect(cancel.attributes('disabled')).toBeUndefined()
@@ -128,6 +131,8 @@ describe('TaskItem row layout', () => {
     const wrapper = mount(TaskItem, { props: { task: { ...running, canCancel: false } } })
 
     expect(wrapper.find('button[aria-label="Cancel task"]').exists()).toBe(false)
-    expect(wrapper.find('.task-item__action').exists()).toBe(true)
+    expect(wrapper.find('.task-item__slot').classes()).not.toContain('task-item__slot--swaps')
+    expect(wrapper.findAll('.task-item__slot button')).toHaveLength(0)
+    expect(wrapper.findAll('.task-item__indicator')).toHaveLength(1)
   })
 })

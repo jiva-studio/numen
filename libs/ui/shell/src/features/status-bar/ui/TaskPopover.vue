@@ -35,7 +35,10 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const taskList = computed(() => props.tasks ?? [])
-const groups = computed(() => groupTasks(taskList.value))
+const listing = computed(() => groupTasks(taskList.value))
+const isEmpty = computed(
+  () => listing.value.coreTasks.length === 0 && listing.value.groups.length === 0,
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onCancel(id: string) {
@@ -75,31 +78,29 @@ function onClose() {
       </Button>
     </div>
 
-    <div v-if="groups.length === 0" class="task-popover__empty">
+    <div v-if="isEmpty" class="task-popover__empty">
       {{ emptyLabel }}
     </div>
 
     <div v-else class="task-popover__body">
-      <template v-for="group in groups" :key="group.name">
-        <TaskGroup
-          v-if="group.tasks.length > 1"
-          :group="group"
-          @cancel="onCancel"
-          @retry="onRetry"
-          @dismiss="onDismiss"
-          @action="onAction"
-        />
-        <TaskItem
-          v-for="task in group.tasks"
-          v-else
-          :key="task.id"
-          :task="task"
-          @cancel="onCancel"
-          @retry="onRetry"
-          @dismiss="onDismiss"
-          @action="onAction"
-        />
-      </template>
+      <TaskItem
+        v-for="task in listing.coreTasks"
+        :key="task.id"
+        :task="task"
+        @cancel="onCancel"
+        @retry="onRetry"
+        @dismiss="onDismiss"
+        @action="onAction"
+      />
+      <TaskGroup
+        v-for="group in listing.groups"
+        :key="group.name"
+        :group="group"
+        @cancel="onCancel"
+        @retry="onRetry"
+        @dismiss="onDismiss"
+        @action="onAction"
+      />
     </div>
   </div>
 </template>
