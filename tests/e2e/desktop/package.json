@@ -14,7 +14,6 @@
     "lint": "eslint ."
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@types/node": "^26.6.5",
     "eslint": "^10.10.0",
     "eslint-plugin-playwright": "^2.12.1",
