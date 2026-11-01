@@ -14,6 +14,12 @@ type skipSet struct {
 	// is a cancel no pass has seen the source under since.
 	vectors map[string]*string
 	texts   map[string]bool
+	// chunks is how many chunks the last vector pass that ran to its end left
+	// without a vector for the sources listed. A change of the list sets it to
+	// zero until the next such pass counts them again, and generation counts the
+	// changes, so a pass that ran across one records nothing.
+	chunks     int64
+	generation uint64
 }
 
 func newSkipSet() *skipSet {
@@ -27,6 +33,7 @@ func (c *skipSet) addVectors(path string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.vectors[path] = nil
+	c.forgetChunks()
 }
 
 func (c *skipSet) addTexts(path string) {
@@ -54,6 +61,7 @@ func (c *skipSet) isVectorSkipped(path, hash string) bool {
 		return true
 	default:
 		delete(c.vectors, path)
+		c.forgetChunks()
 		return false
 	}
 }
@@ -73,4 +81,39 @@ func (c *skipSet) clear(paths []string) {
 		delete(c.vectors, path)
 		delete(c.texts, path)
 	}
+	c.forgetChunks()
+}
+
+// forgetChunks drops the count of skipped chunks after a change of the list.
+// The caller holds mu.
+func (c *skipSet) forgetChunks() {
+	c.chunks = 0
+	c.generation++
+}
+
+// getGeneration returns the number of changes of the list so far, which a
+// vector pass reads when it starts.
+func (c *skipSet) getGeneration() uint64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.generation
+}
+
+// setSkippedChunks records how many chunks a vector pass that ran to its end
+// left without a vector for the sources listed. A pass that started at another
+// generation counted another list, and records nothing.
+func (c *skipSet) setSkippedChunks(n int, generation uint64) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if generation == c.generation {
+		c.chunks = int64(n)
+	}
+}
+
+// getSkippedChunks returns how many chunks the sources listed hold without a
+// vector, as the last vector pass that ran to its end counted them.
+func (c *skipSet) getSkippedChunks() int64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.chunks
 }

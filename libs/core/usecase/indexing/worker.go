@@ -53,8 +53,9 @@ type ReadNotes func(ctx context.Context, during func()) (int, error)
 // many carry one.
 type GetVectorCounts func(ctx context.Context, v domain.Vault) (held, embedded int64, err error)
 
-// VectorsReady is told that all the vectors of a vault exist. It is told after every pass that
-// leaves no vector pending, so it is told more than once for a vault.
+// VectorsReady is told that all the vectors of a vault exist, but those of the sources whose indexing
+// a person cancelled: those stay without vectors until they change. It is told after every pass that
+// leaves no other vector pending, so it is told more than once for a vault.
 type VectorsReady func(ctx context.Context, v domain.Vault)
 
 // Config is what a worker is made from.
@@ -399,8 +400,8 @@ func (p *pass) embed(ctx context.Context) {
 	if w.embedder == nil {
 		return
 	}
-	pending, hasPending := w.getPendingVectors(ctx, p.v)
-	if !hasPending {
+	plan := w.planVectors(ctx, p.v)
+	if !plan.hasPending {
 		w.events.FinishTask(MakingVectors)
 		p.reportVectorsReady(ctx)
 		return
@@ -409,13 +410,13 @@ func (p *pass) embed(ctx context.Context) {
 	limit, stop := stopOnWake(ctx, w.read, w.sources)
 	defer stop()
 
-	if p.makeVectors(ctx, limit, pending) {
+	if p.makeVectors(ctx, limit, plan) {
 		p.reportVectorsReady(ctx)
 	}
 }
 
-// reportVectorsReady tells the worker's listener that the pass has left no vector pending. A stopped
-// pass tells nobody.
+// reportVectorsReady tells the worker's listener that the pass has left no vector pending but the
+// vectors of the sources a person cancelled. A stopped pass tells nobody.
 func (p *pass) reportVectorsReady(ctx context.Context) {
 	w := p.worker
 	if w.vectorsReady == nil || ctx.Err() != nil {
@@ -424,19 +425,48 @@ func (p *pass) reportVectorsReady(ctx context.Context) {
 	w.vectorsReady(ctx, p.v)
 }
 
-// getPendingVectors returns the number of vectors a pass must create, computed once
-// before the pass starts. Chunks are discovered a few hundred at a time, so a
-// total derived during the pass would keep growing.
-func (w *Worker) getPendingVectors(ctx context.Context, v domain.Vault) (pending int64, hasPending bool) {
+// vectorPlan is what a vector pass must create, computed once before the pass starts. Chunks are
+// discovered a few hundred at a time, so a total derived during the pass would keep growing.
+type vectorPlan struct {
+	// pending is the number of vectors to create, the chunks of the sources a person cancelled left
+	// out; zero where the counts are unknown.
+	pending    int64
+	hasPending bool
+	// skipped is the number of chunks of the sources a person cancelled that pending leaves out, and
+	// generation the list of those sources it was counted for.
+	skipped    int64
+	generation uint64
+}
+
+// planVectors returns what a vector pass over v must create. A vault whose only chunks without a
+// vector belong to sources a person cancelled has none pending.
+func (w *Worker) planVectors(ctx context.Context, v domain.Vault) vectorPlan {
+	plan := vectorPlan{generation: w.skips.getGeneration()}
+	plan.skipped = w.skips.getSkippedChunks()
 	if w.vectorCounts == nil {
-		return 0, true
+		plan.hasPending = true
+		return plan
 	}
 	target, embedded, err := w.vectorCounts(ctx, v)
 	if err != nil {
-		return 0, true
+		plan.hasPending = true
+		return plan
 	}
-	pending = max(0, target-embedded)
-	return pending, pending > 0
+	plan.skipped = min(plan.skipped, max(0, target-embedded))
+	plan.pending = max(0, target-embedded-plan.skipped)
+	plan.hasPending = plan.pending > 0
+	return plan
+}
+
+// getTotal returns the number of vectors the pass counts its progress against once res is known: the
+// pending of the plan less the chunks of cancelled sources this pass found beyond those the plan left
+// out. Zero is a total that is unknown.
+func (plan vectorPlan) getTotal(res vaultreading.EmbedResult) int64 {
+	if plan.pending == 0 {
+		return 0
+	}
+	found := max(0, int64(res.Skipped)-plan.skipped)
+	return max(int64(res.Embedded), plan.pending-found)
 }
 
 // stopOnWake returns the context a pass runs under, which is cancelled when a
@@ -468,7 +498,7 @@ func stopOnWake(ctx context.Context, wakes ...chan struct{}) (context.Context, f
 
 // makeVectors creates the pending vectors of a vault, reporting the source being
 // embedded. It reports whether the pass ended with no vector pending.
-func (p *pass) makeVectors(ctx, items context.Context, pending int64) bool {
+func (p *pass) makeVectors(ctx, items context.Context, plan vectorPlan) bool {
 	events := p.worker.events
 	failed := func(err error) {
 		events.ReportTask(vaultreading.Task{ID: MakingVectors, Title: "Indexing", Error: err.Error()})
@@ -489,13 +519,14 @@ func (p *pass) makeVectors(ctx, items context.Context, pending int64) bool {
 		current.set(res.CurrentSource)
 		pos := vaultreading.Task{ID: MakingVectors, Title: "Indexing", About: res.CurrentSource, Cancel: cancel.request}
 		if res.Embedded > 0 {
-			pos.Count, pos.Total = int64(res.Embedded), pending
+			pos.Count, pos.Total = int64(res.Embedded), plan.getTotal(res)
 		}
 		events.ReportTask(pos)
 	}
 
-	switch _, err := making.MakeVectors(items, p.v); {
+	switch res, err := making.MakeVectors(items, p.v); {
 	case err == nil:
+		p.worker.skips.setSkippedChunks(res.Skipped, plan.generation)
 		events.FinishTask(MakingVectors)
 		return true
 	case errors.Is(err, context.Canceled):

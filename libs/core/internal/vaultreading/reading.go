@@ -91,6 +91,7 @@ type EmbedResult struct {
 	Reused        int    // chunks whose cached vector was claimed
 	Vanished      int    // whose source the vault no longer holds
 	Displaced     int    // whose place is not in the text their source holds now
+	Skipped       int    // left without a vector, since a person cancelled the indexing of their source
 	CurrentSource string // the source open now
 	IsBusy        bool   // somebody else is embedding this vault, and nothing was done
 }

@@ -383,6 +383,9 @@ func (u Embed) read(
 
 	for _, p := range pending {
 		if u.IsSkipped != nil && u.IsSkipped(p.Source, p.SourceHash) {
+			mu.Lock()
+			res.Skipped++
+			mu.Unlock()
 			continue
 		}
 		mu.Lock()

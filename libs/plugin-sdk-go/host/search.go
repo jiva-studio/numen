@@ -150,7 +150,8 @@ type SearchPolicy interface {
 }
 
 // GetVectorsReadyEvent is the event the host emits to plugins when every chunk of the vault of the
-// identity carries a vector under the model in use.
+// identity carries a vector under the model in use, but the chunks of a source whose indexing a person
+// cancelled, which stay without one until the source changes.
 func GetVectorsReadyEvent(id VaultID) string {
 	return protocol.GetVectorsReadyEvent(string(id))
 }
