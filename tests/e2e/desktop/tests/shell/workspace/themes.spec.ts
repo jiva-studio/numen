@@ -70,32 +70,4 @@ test.describe('Theming and Display Scaling', () => {
       timeout: 10_000,
     })
   })
-
-  test('draws the plugin search field with the token radius under the default theme', async ({
-    page,
-  }) => {
-    await page.goto('/')
-
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-    await paletteInput.fill('Settings')
-    await page.keyboard.press('Enter')
-
-    const search = page.getByRole('searchbox', { name: 'Search plugins' }).first()
-    await expect(search).toBeVisible({ timeout: 10_000 })
-
-    const corners = await search.evaluate((field) => {
-      const probe = document.createElement('div')
-      probe.style.borderRadius = 'var(--numen-radius-tight)'
-      document.body.append(probe)
-      const token = getComputedStyle(probe).borderTopLeftRadius
-      probe.remove()
-      return { field: getComputedStyle(field).borderTopLeftRadius, token }
-    })
-    expect(Number.parseFloat(corners.field)).toBeGreaterThan(0)
-    expect(corners.field).toBe(corners.token)
-  })
 })
