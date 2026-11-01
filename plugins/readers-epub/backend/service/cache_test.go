@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
@@ -19,7 +20,7 @@ func newCountingServer(t *testing.T, files *hosttest.Vault) (*BookServer, *atomi
 	books := NewBookServer(files)
 	t.Cleanup(books.Close)
 	var opens atomic.Int64
-	books.books.readFile = func(ctx context.Context, v host.Vault, path string) ([]byte, host.FileStat, error) {
+	books.books.readFile = func(ctx context.Context, v host.Vault, path string) ([]byte, domain.FileStat, error) {
 		opens.Add(1)
 		return v.Read(ctx, path)
 	}

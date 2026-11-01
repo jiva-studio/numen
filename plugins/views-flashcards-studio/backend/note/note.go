@@ -7,6 +7,8 @@ package note
 import (
 	"context"
 	"crypto/rand"
+	"errors"
+	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
@@ -63,8 +65,11 @@ func GetAddress(ctx context.Context, names ports.NoteQueries, vaultID domain.Vau
 }
 
 // NewEdit is what a change to an existing note is made through: the vault it is read and written
-// through, what brings it level in the index, and what time it is.
-func NewEdit(readers ports.VaultReaders, writers ports.VaultWriters, index Levels, now ports.Clock) Edit {
+// through, what brings it level in the index, and what time it is. The function returned with it
+// returns the failures to release the write lock of the changes made through it, which edit.Files
+// releases without an error.
+func NewEdit(readers ports.VaultReaders, writers ports.VaultWriters, index Levels, now ports.Clock) (Edit, func() error) {
+	failures := &releaseFailures{mu: sync.Mutex{}, err: nil}
 	return edit.Edit{
 		Open: func(v domain.Vault) (edit.Files, error) {
 			reader, err := readers.Open(v)
@@ -75,7 +80,7 @@ func NewEdit(readers ports.VaultReaders, writers ports.VaultWriters, index Level
 			if err != nil {
 				return nil, err
 			}
-			return files{reader: reader, writer: writer, writers: writers, vault: v}, nil
+			return files{reader: reader, writer: writer, writers: writers, vault: v, failures: failures}, nil
 		},
 		Index:           index,
 		Clock:           now,
@@ -84,15 +89,34 @@ func NewEdit(readers ports.VaultReaders, writers ports.VaultWriters, index Level
 		ShouldOverwrite: false,
 		Bound:           0,
 		Baseline:        nil,
-	}
+	}, failures.getError
 }
 
 // files are the files of one vault, read and written through the ports.
 type files struct {
-	reader  ports.VaultReader
-	writer  ports.VaultWriter
-	writers ports.VaultWriters
-	vault   domain.Vault
+	reader   ports.VaultReader
+	writer   ports.VaultWriter
+	writers  ports.VaultWriters
+	vault    domain.Vault
+	failures *releaseFailures
+}
+
+// releaseFailures joins the failures to release a write lock.
+type releaseFailures struct {
+	mu  sync.Mutex
+	err error
+}
+
+func (r *releaseFailures) addError(err error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.err = errors.Join(r.err, err)
+}
+
+func (r *releaseFailures) getError() error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.err
 }
 
 func (f files) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
@@ -107,7 +131,13 @@ func (f files) Write(ctx context.Context, path string, content []byte, stat doma
 	return f.writer.Write(ctx, path, content, stat)
 }
 
-func (f files) Lock(ctx context.Context) (func(), error) { return f.writers.Lock(ctx, f.vault) }
+func (f files) Lock(ctx context.Context) (func(), error) {
+	release, err := f.writers.Lock(ctx, f.vault)
+	if err != nil {
+		return nil, err
+	}
+	return func() { f.failures.addError(release()) }, nil
+}
 
 // Read returns the prose of one note.
 type Read struct {
@@ -150,13 +180,14 @@ func (u Write) Execute(
 	if markdown.IsFrontmatterStart(body) {
 		return domain.FileStat{}, ErrBodyUnwritable
 	}
-	e := NewEdit(u.readers, u.writers, u.index, u.now)
+	e, getReleaseError := NewEdit(u.readers, u.writers, u.index, u.now)
 	e.FileStat = stat
 	e.Bound = u.Bound
 	if e.Bound == 0 {
 		e.Bound = MaxBytes
 	}
-	return e.Apply(ctx, v, path, func(doc *markdown.Document) error { return doc.SetBody(body) })
+	written, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error { return doc.SetBody(body) })
+	return written, errors.Join(err, getReleaseError())
 }
 
 // EditLinks writes the relationships one note declares.
@@ -177,9 +208,10 @@ func (u EditLinks) PointAt(
 	ctx context.Context, v domain.Vault, from, of string,
 	to domain.Address, role domain.LinkRole, stat domain.FileStat,
 ) (domain.FileStat, error) {
-	e := NewEdit(u.readers, u.writers, u.index, u.now)
+	e, getReleaseError := NewEdit(u.readers, u.writers, u.index, u.now)
 	e.FileStat = stat
-	return e.PointAt(ctx, v, from, of, to, role)
+	written, err := e.PointAt(ctx, v, from, of, to, role)
+	return written, errors.Join(err, getReleaseError())
 }
 
 // Links is what one note is joined to: what it points at, and what points at it.

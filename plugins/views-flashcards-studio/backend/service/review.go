@@ -548,14 +548,23 @@ func (h *reviewHandler) WatchReloads(
 			if err := send(&api.WatchReloadsResponse{Reload: false}); err != nil {
 				return err
 			}
-		case _, open := <-moved:
+		case move, open := <-moved:
 			if !open {
 				return nil
 			}
-			h.scenarios().flash.ReviewCards.InvalidateAll()
-			if err := send(&api.WatchReloadsResponse{Reload: true}); err != nil {
+			if err := h.sendReload(move, send); err != nil {
 				return err
 			}
 		}
 	}
+}
+
+// sendReload drops the cached review cards and tells the page to reload after a move, and returns the
+// failure that ended the watch of moves.
+func (h *reviewHandler) sendReload(move host.Move, send func(*api.WatchReloadsResponse) error) error {
+	if move.Err != nil {
+		return newError(server.CodeUnavailable, move.Err)
+	}
+	h.scenarios().flash.ReviewCards.InvalidateAll()
+	return send(&api.WatchReloadsResponse{Reload: true})
 }

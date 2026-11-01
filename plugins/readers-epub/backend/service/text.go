@@ -143,12 +143,12 @@ func (s *TextServer) finish(key string) {
 // the text is written again.
 func (s *TextServer) writeText(ctx context.Context, req host.TextCreation) {
 	task := host.Task{
-		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), About: req.Path,
-		Done: 0, Total: 0, Unit: 0, Error: "", IsUserStarted: false,
+		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), Detail: req.Path,
+		CompletedCount: 0, TotalCount: 0, Unit: 0, FailureReason: "", IsUserStarted: false,
 	}
 	err := s.putText(ctx, req, task)
 	if err != nil && ctx.Err() == nil {
-		task.Error = err.Error()
+		task.FailureReason = err.Error()
 		if reportErr := s.queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {
 			fmt.Fprintf(os.Stderr, "readers-epub: show the task %s: %v\n", task.ID, reportErr)
 		}
@@ -161,12 +161,12 @@ func (s *TextServer) writeText(ctx context.Context, req host.TextCreation) {
 
 // putText reports the text of a book as a version made from the file. A file that is no book, a
 // locked book and a book with no text get no version.
-func (s *TextServer) putText(ctx context.Context, req host.TextCreation, task host.Task) error {
+func (s *TextServer) putText(ctx context.Context, req host.TextCreation, task host.Task) (err error) {
 	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: false, OnWaiting: nil})
 	if err != nil {
 		return fmt.Errorf("wait for a turn to read %s: %w", req.Path, err)
 	}
-	defer turn.Release()
+	defer func() { err = errors.Join(err, turn.Release()) }()
 	if err := s.queue.ReportTask(ctx, task); err != nil {
 		return err
 	}

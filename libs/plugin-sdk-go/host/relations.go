@@ -3,6 +3,7 @@ package host
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
@@ -11,16 +12,16 @@ type ConnectionReader interface {
 	// GetConnection returns the records two notes write about each other. A note
 	// that writes none has a nil side. The empty type selects the records that
 	// carry none.
-	GetConnection(ctx context.Context, first, second, kind string) (Connection, error)
+	GetConnection(ctx context.Context, first, second, kind string) (domain.Connection, error)
 	// ListBacklinks lists the links written in other notes that point at a note.
-	ListBacklinks(ctx context.Context, to string) ([]Backlink, error)
+	ListBacklinks(ctx context.Context, to string) ([]domain.Backlink, error)
 }
 
 // ConnectionWriter writes the relationships between the notes of the vault.
 type ConnectionWriter interface {
 	// SaveConnection makes the records between two notes exactly the ones given,
 	// in both notes or in neither.
-	SaveConnection(ctx context.Context, c Connection) error
+	SaveConnection(ctx context.Context, c domain.Connection) error
 	// RemoveSide removes the records of the type that one note writes about
 	// another and leaves the other note alone.
 	RemoveSide(ctx context.Context, from, to, kind string) error
@@ -28,7 +29,7 @@ type ConnectionWriter interface {
 	RemoveConnection(ctx context.Context, first, second, kind string) error
 	// Join makes one note write a record about another and keeps the record the
 	// other note already writes.
-	Join(ctx context.Context, from, to string, side Side) error
+	Join(ctx context.Context, from, to string, side domain.Side) error
 }
 
 // Relations reads and writes the relationships between the notes of the vault.
@@ -38,60 +39,60 @@ type Relations interface {
 	ConnectionReader
 	ConnectionWriter
 	// CreateInRelation creates a note joined to an existing one and returns its path.
-	CreateInRelation(ctx context.Context, in RelatedNote) (string, error)
+	CreateInRelation(ctx context.Context, in domain.RelatedNote) (string, error)
 }
 
 var _ Relations = (*Client)(nil)
 
-func writeRole(role LinkRole) v1.Role {
+func writeRole(role domain.LinkRole) v1.Role {
 	switch role {
-	case RoleParent:
+	case domain.RoleParent:
 		return v1.Role_ROLE_PARENT
-	case RoleChild:
+	case domain.RoleChild:
 		return v1.Role_ROLE_CHILD
-	case RoleJump:
+	case domain.RoleJump:
 		return v1.Role_ROLE_JUMP
-	case RoleRef:
+	case domain.RoleRef:
 		return v1.Role_ROLE_REF
-	case RoleAttachment:
+	case domain.RoleAttachment:
 		return v1.Role_ROLE_ATTACHMENT
 	default:
 		return v1.Role_ROLE_UNSPECIFIED
 	}
 }
 
-func readRole(role v1.Role) LinkRole {
+func readRole(role v1.Role) domain.LinkRole {
 	switch role {
 	case v1.Role_ROLE_PARENT:
-		return RoleParent
+		return domain.RoleParent
 	case v1.Role_ROLE_CHILD:
-		return RoleChild
+		return domain.RoleChild
 	case v1.Role_ROLE_JUMP:
-		return RoleJump
+		return domain.RoleJump
 	case v1.Role_ROLE_REF:
-		return RoleRef
+		return domain.RoleRef
 	case v1.Role_ROLE_ATTACHMENT:
-		return RoleAttachment
+		return domain.RoleAttachment
 	default:
 		return ""
 	}
 }
 
-func writeMarker(marker LinkMarker) v1.Marker {
-	if marker == MarkerArrow {
+func writeMarker(marker domain.LinkMarker) v1.Marker {
+	if marker == domain.MarkerArrow {
 		return v1.Marker_MARKER_ARROW
 	}
 	return v1.Marker_MARKER_UNSPECIFIED
 }
 
-func readMarker(marker v1.Marker) LinkMarker {
+func readMarker(marker v1.Marker) domain.LinkMarker {
 	if marker == v1.Marker_MARKER_ARROW {
-		return MarkerArrow
+		return domain.MarkerArrow
 	}
-	return MarkerNone
+	return domain.MarkerNone
 }
 
-func writeSide(side *Side) *v1.ConnectionSide {
+func writeSide(side *domain.Side) *v1.ConnectionSide {
 	if side == nil {
 		return nil
 	}
@@ -101,34 +102,34 @@ func writeSide(side *Side) *v1.ConnectionSide {
 	}
 }
 
-func readSide(side *v1.ConnectionSide) *Side {
+func readSide(side *v1.ConnectionSide) *domain.Side {
 	if side == nil {
 		return nil
 	}
-	return &Side{
+	return &domain.Side{
 		Role: readRole(side.GetRole()), Type: side.GetType(), Why: side.GetNote(),
 		Label: side.GetLabel(), Marker: readMarker(side.GetMarker()),
 	}
 }
 
-func (c *Client) GetConnection(ctx context.Context, first, second, kind string) (Connection, error) {
+func (c *Client) GetConnection(ctx context.Context, first, second, kind string) (domain.Connection, error) {
 	res, err := c.rpc.GetConnection(ctx, request(c, &v1.HostVaultServiceGetConnectionRequest{
 		First: first, Second: second, Type: kind,
 	}))
 	if err != nil {
-		return Connection{}, readError(err)
+		return domain.Connection{}, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
-		return Connection{}, err
+		return domain.Connection{}, err
 	}
 	got := res.Msg.GetConnection()
-	return Connection{
+	return domain.Connection{
 		A: got.GetFirst(), B: got.GetSecond(),
 		AB: readSide(got.GetFirstSide()), BA: readSide(got.GetSecondSide()),
 	}, nil
 }
 
-func (c *Client) SaveConnection(ctx context.Context, conn Connection) error {
+func (c *Client) SaveConnection(ctx context.Context, conn domain.Connection) error {
 	res, err := c.rpc.SaveConnection(ctx, request(c, &v1.HostVaultServiceSaveConnectionRequest{
 		Connection: &v1.Connection{
 			First: conn.A, Second: conn.B,
@@ -161,7 +162,7 @@ func (c *Client) RemoveConnection(ctx context.Context, first, second, kind strin
 	return fail(res.Msg.GetError())
 }
 
-func (c *Client) Join(ctx context.Context, from, to string, side Side) error {
+func (c *Client) Join(ctx context.Context, from, to string, side domain.Side) error {
 	res, err := c.rpc.JoinNotes(ctx, request(c, &v1.HostVaultServiceJoinNotesRequest{
 		From: from, To: to, Side: writeSide(&side),
 	}))
@@ -171,7 +172,7 @@ func (c *Client) Join(ctx context.Context, from, to string, side Side) error {
 	return fail(res.Msg.GetError())
 }
 
-func (c *Client) CreateInRelation(ctx context.Context, in RelatedNote) (string, error) {
+func (c *Client) CreateInRelation(ctx context.Context, in domain.RelatedNote) (string, error) {
 	res, err := c.rpc.CreateRelatedNote(ctx, request(c, &v1.HostVaultServiceCreateRelatedNoteRequest{
 		From: in.From, Role: writeRole(in.Role), Title: in.Title, Type: in.Type,
 		Marker: writeMarker(in.Marker),
@@ -185,7 +186,7 @@ func (c *Client) CreateInRelation(ctx context.Context, in RelatedNote) (string, 
 	return res.Msg.GetPath(), nil
 }
 
-func (c *Client) ListBacklinks(ctx context.Context, to string) ([]Backlink, error) {
+func (c *Client) ListBacklinks(ctx context.Context, to string) ([]domain.Backlink, error) {
 	res, err := c.rpc.GetBacklinks(ctx, request(c, &v1.GetBacklinksRequest{Path: to}))
 	if err != nil {
 		return nil, readError(err)
@@ -193,9 +194,9 @@ func (c *Client) ListBacklinks(ctx context.Context, to string) ([]Backlink, erro
 	if err := fail(res.Msg.GetError()); err != nil {
 		return nil, err
 	}
-	out := make([]Backlink, 0, len(res.Msg.GetLinks()))
+	out := make([]domain.Backlink, 0, len(res.Msg.GetLinks()))
 	for _, one := range res.Msg.GetLinks() {
-		out = append(out, Backlink{ResolvedLink: readLink(one), RoleFromHere: readRole(one.GetRoleFromHere())})
+		out = append(out, domain.Backlink{ResolvedLink: readLink(one), RoleFromHere: readRole(one.GetRoleFromHere())})
 	}
 	return out, nil
 }

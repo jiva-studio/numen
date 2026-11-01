@@ -7,8 +7,10 @@ import (
 	"sync"
 	"time"
 
+	notesdomain "github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/textfile"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
 // Texts is the text versions of a vault in memory, used as a plugin uses them through the
@@ -24,15 +26,15 @@ type Texts struct {
 // textHost is the texts of every vault one host keeps, by identity.
 type textHost struct {
 	mu     sync.Mutex
-	worlds map[host.VaultID]*textWorld
+	worlds map[domain.VaultID]*textWorld
 }
 
 // textWorld is what every plugin's view of one vault's texts shares.
 type textWorld struct {
 	mu       sync.Mutex
 	all      *textHost
-	vault    host.VaultID
-	versions []host.TextVersion
+	vault    domain.VaultID
+	versions []domain.TextVersion
 	files    map[string][]byte
 	stores   map[string]host.Store
 	changes  []string
@@ -42,13 +44,13 @@ type textWorld struct {
 var _ host.Texts = (*Texts)(nil)
 
 // NewTexts is the texts of the vault of the identity, as the plugin of the id works them.
-func NewTexts(vault host.VaultID, pluginID string) *Texts {
-	vaults := &textHost{worlds: map[host.VaultID]*textWorld{}}
+func NewTexts(vault domain.VaultID, pluginID string) *Texts {
+	vaults := &textHost{worlds: map[domain.VaultID]*textWorld{}}
 	return &Texts{world: vaults.getWorld(vault), pluginID: pluginID}
 }
 
 // getWorld is the texts of the vault, made empty on first use.
-func (h *textHost) getWorld(vault host.VaultID) *textWorld {
+func (h *textHost) getWorld(vault domain.VaultID) *textWorld {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	w, ok := h.worlds[vault]
@@ -62,7 +64,7 @@ func (h *textHost) getWorld(vault host.VaultID) *textWorld {
 	return w
 }
 
-func (t *Texts) With(id host.VaultID) host.Texts {
+func (t *Texts) With(id domain.VaultID) host.Texts {
 	return &Texts{world: t.world.all.getWorld(id), pluginID: t.pluginID}
 }
 
@@ -110,23 +112,23 @@ func (t *Texts) TakeChanges() []string {
 	return out
 }
 
-func (t *Texts) PutVersion(ctx context.Context, params host.TextPut) (host.TextVersion, error) {
+func (t *Texts) PutVersion(ctx context.Context, params host.TextPut) (domain.TextVersion, error) {
 	w := t.world
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if params.Path == "" || params.Key == "" || params.Kind == "" || params.File == "" {
-		return host.TextVersion{}, host.ErrInvalidVersion
+		return domain.TextVersion{}, host.ErrInvalidVersion
 	}
-	version := host.TextVersion{
+	version := domain.TextVersion{
 		Path: params.Path, PluginID: t.pluginID, Key: params.Key, Source: params.Source, Kind: params.Kind,
 		File: params.File, SourceHash: params.SourceHash,
 	}
 	if params.Source == version.GetID() || (params.Source != "" && w.indexOf(params.Path, params.Source) < 0) {
-		return host.TextVersion{}, host.ErrInvalidVersion
+		return domain.TextVersion{}, host.ErrInvalidVersion
 	}
 	_, hash, err := w.readFile(ctx, version)
 	if err != nil {
-		return host.TextVersion{}, errors.Join(host.ErrInvalidVersion, err)
+		return domain.TextVersion{}, errors.Join(host.ErrInvalidVersion, err)
 	}
 	version.Hash = hash
 	if i := w.indexOf(params.Path, version.GetID()); i >= 0 {
@@ -145,8 +147,8 @@ func (t *Texts) RemoveVersion(_ context.Context, path, key string) error {
 	w := t.world
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	id := host.NewTextVersionID(t.pluginID, key)
-	w.versions = slices.DeleteFunc(w.versions, func(v host.TextVersion) bool { return v.Path == path && v.GetID() == id })
+	id := notesdomain.NewTextVersionID(t.pluginID, key)
+	w.versions = slices.DeleteFunc(w.versions, func(v domain.TextVersion) bool { return v.Path == path && v.GetID() == id })
 	w.changes = append(w.changes, path)
 	return nil
 }
@@ -161,18 +163,18 @@ func (t *Texts) ListVersions(ctx context.Context, path string) (host.TextListing
 			listing.Versions = append(listing.Versions, v)
 		}
 	}
-	isIntact := func(v host.TextVersion) bool {
+	isIntact := func(v domain.TextVersion) bool {
 		_, hash, err := w.readFile(ctx, v)
 		return err == nil && hash == v.Hash
 	}
-	if live, ok := host.FindLiveVersion(listing.Versions, host.HashContent(w.files[path]), isIntact); ok {
+	if live, ok := notesdomain.FindLiveVersion(listing.Versions, domain.HashContent(w.files[path]), isIntact); ok {
 		listing.Live = live.GetID()
 	}
 	return listing, nil
 }
 
 // ReadText returns every segment of the version in one page.
-func (t *Texts) ReadText(ctx context.Context, path string, id host.TextVersionID, _ string) (host.TextPage, error) {
+func (t *Texts) ReadText(ctx context.Context, path string, id domain.TextVersionID, _ string) (host.TextPage, error) {
 	w := t.world
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -188,7 +190,7 @@ func (t *Texts) ReadText(ctx context.Context, path string, id host.TextVersionID
 }
 
 // readFile is the segments of a version's file and the hash of its bytes. The caller holds the lock.
-func (w *textWorld) readFile(ctx context.Context, v host.TextVersion) ([]host.TextSegment, string, error) {
+func (w *textWorld) readFile(ctx context.Context, v domain.TextVersion) ([]domain.TextSegment, string, error) {
 	raw, err := w.getStore(v.PluginID).Read(ctx, v.File)
 	if err != nil {
 		return nil, "", err
@@ -197,9 +199,9 @@ func (w *textWorld) readFile(ctx context.Context, v host.TextVersion) ([]host.Te
 	if err != nil {
 		return nil, "", err
 	}
-	return segments, host.HashContent(raw), nil
+	return segments, domain.HashContent(raw), nil
 }
 
-func (w *textWorld) indexOf(path string, id host.TextVersionID) int {
-	return slices.IndexFunc(w.versions, func(v host.TextVersion) bool { return v.Path == path && v.GetID() == id })
+func (w *textWorld) indexOf(path string, id domain.TextVersionID) int {
+	return slices.IndexFunc(w.versions, func(v domain.TextVersion) bool { return v.Path == path && v.GetID() == id })
 }

@@ -60,8 +60,9 @@ type VaultWriter interface {
 // VaultWriters opens one vault's files for writing.
 type VaultWriters interface {
 	Open(v domain.Vault) (VaultWriter, error)
-	// Lock holds the vault's writers until the release is called.
-	Lock(ctx context.Context, v domain.Vault) (release func(), err error)
+	// Lock holds the vault's writers until the release is called. The release returns the failure to
+	// release.
+	Lock(ctx context.Context, v domain.Vault) (release func() error, err error)
 }
 
 // NoteQueries is what the index provides about a vault's notes.

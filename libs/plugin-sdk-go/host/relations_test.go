@@ -8,8 +8,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
@@ -95,8 +95,8 @@ func relationsTo(t *testing.T, r *relating) host.Relations {
 func TestAConnectionIsReadWithItsSides(t *testing.T) {
 	got, err := relationsTo(t, &relating{}).GetConnection(t.Context(), "a.md", "b.md", "requires")
 
-	want := host.Side{
-		Role: host.RoleParent, Type: "requires", Why: "why", Label: "l", Marker: host.MarkerArrow,
+	want := domain.Side{
+		Role: domain.RoleParent, Type: "requires", Why: "why", Label: "l", Marker: domain.MarkerArrow,
 	}
 	if err != nil || got.A != "a.md" || got.B != "b.md" || got.AB == nil || *got.AB != want || got.BA != nil {
 		t.Errorf("got %+v (%v)", got, err)
@@ -106,10 +106,10 @@ func TestAConnectionIsReadWithItsSides(t *testing.T) {
 func TestASavedConnectionCarriesBothSidesToTheHost(t *testing.T) {
 	r := &relating{}
 
-	err := relationsTo(t, r).SaveConnection(t.Context(), host.Connection{
+	err := relationsTo(t, r).SaveConnection(t.Context(), domain.Connection{
 		A: "a.md", B: "b.md",
-		AB: &host.Side{Role: host.RoleJump, Marker: host.MarkerArrow},
-		BA: &host.Side{Role: host.RoleJump, Label: "back"},
+		AB: &domain.Side{Role: domain.RoleJump, Marker: domain.MarkerArrow},
+		BA: &domain.Side{Role: domain.RoleJump, Label: "back"},
 	})
 
 	if err != nil {
@@ -129,12 +129,12 @@ func TestEachFailureOfAConnectionIsItsOwnError(t *testing.T) {
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED:     host.ErrNoFreeName,
 	}
 	for code, want := range cases {
-		err := relationsTo(t, &relating{code: code}).SaveConnection(t.Context(), host.Connection{A: "a", B: "b"})
+		err := relationsTo(t, &relating{code: code}).SaveConnection(t.Context(), domain.Connection{A: "a", B: "b"})
 		if !errors.Is(err, want) {
 			t.Errorf("code %s: got %v, want %v", code, err, want)
 		}
 	}
-	if !errors.Is(host.ErrHierarchyCycle, domain.ErrHierarchyCycle) {
+	if !errors.Is(host.ErrHierarchyCycle, host.ErrHierarchyCycle) {
 		t.Error("the cycle error of the SDK is not the one of the notes library")
 	}
 }
@@ -149,11 +149,11 @@ func TestSidesAreRemovedAndJoinedAndNotesCreatedInARelation(t *testing.T) {
 	if err := client.RemoveConnection(t.Context(), "a.md", "b.md", ""); err != nil {
 		t.Fatal(err)
 	}
-	if err := client.Join(t.Context(), "a.md", "b.md", host.Side{Role: host.RoleChild, Label: "l"}); err != nil {
+	if err := client.Join(t.Context(), "a.md", "b.md", domain.Side{Role: domain.RoleChild, Label: "l"}); err != nil {
 		t.Fatal(err)
 	}
-	path, err := client.CreateInRelation(t.Context(), host.RelatedNote{
-		From: "a.md", Role: host.RoleParent, Type: "series",
+	path, err := client.CreateInRelation(t.Context(), domain.RelatedNote{
+		From: "a.md", Role: domain.RoleParent, Type: "series",
 	})
 
 	if err != nil || path != "Untitled note.md" {
@@ -177,8 +177,8 @@ func TestABacklinkCarriesItsRoleFromTheNoteAskedAbout(t *testing.T) {
 		t.Fatalf("got %+v (%v)", got, err)
 	}
 	b := got[0]
-	if b.From != "idea.md" || b.Role != host.RoleParent || b.RoleFromHere != host.RoleChild ||
-		b.Marker != host.MarkerArrow || b.Why != "n" {
+	if b.From != "idea.md" || b.Role != domain.RoleParent || b.RoleFromHere != domain.RoleChild ||
+		b.Marker != domain.MarkerArrow || b.Why != "n" {
 		t.Errorf("backlink = %+v", b)
 	}
 }

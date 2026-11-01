@@ -1,6 +1,7 @@
 package pdf
 
 import (
+	"context"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"os"
 	"strings"
@@ -8,12 +9,34 @@ import (
 
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/responses"
+	"github.com/tetratelabs/wazero"
 )
+
+// compilationDirVariable names the folder TestMain, in pdf_test.go, makes for the compiled PDFium of the
+// test binary.
+const compilationDirVariable = "NUMEN_PDF_TEST_COMPILATION_DIR"
+
+// newCompilation returns a cache of the compiled PDFium in the folder of the test binary, closed when the
+// test ends.
+func newCompilation(t testing.TB) wazero.CompilationCache {
+	t.Helper()
+	compilation, err := wazero.NewCompilationCacheWithDir(os.Getenv(compilationDirVariable))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := compilation.Close(context.WithoutCancel(t.Context())); err != nil {
+			t.Error(err)
+		}
+	})
+	return compilation
+}
 
 // newWorkers returns a pool that is closed when the test ends.
 func newWorkers(t testing.TB) *Workers {
 	t.Helper()
 	workers := NewWorkers()
+	workers.SetCompilationCache(newCompilation(t))
 	t.Cleanup(func() {
 		if err := workers.Close(); err != nil {
 			t.Error(err)
@@ -73,11 +96,16 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 // where reads a fixture and returns the highlight boxes for some of its pages.
 func where(t *testing.T, name string, pages ...int) (*Book, []HighlightBox) {
 	t.Helper()
+	return whereOn(t, newWorkers(t), name, pages...)
+}
+
+// whereOn is where on the pool given.
+func whereOn(t *testing.T, workers *Workers, name string, pages ...int) (*Book, []HighlightBox) {
+	t.Helper()
 	raw, err := os.ReadFile("testdata/" + name)
 	if err != nil {
 		t.Fatal(err)
 	}
-	workers := newWorkers(t)
 	book, err := workers.Read(raw)
 	if err != nil {
 		t.Fatal(err)
@@ -112,9 +140,10 @@ func TestABoxCoversTheWordsItNames(t *testing.T) {
 // Every box of every document covers one word: the offsets are in the text of
 // the document as read, and a word is the unit the user sees.
 func TestEveryBoxCoversOneWord(t *testing.T) {
+	workers := newWorkers(t)
 	for _, name := range []string{"tiny.pdf", "outline.pdf", "labels.pdf", "turned.pdf"} {
 		t.Run(name, func(t *testing.T) {
-			book, boxes := where(t, name, pagesOf(t, name)...)
+			book, boxes := whereOn(t, workers, name, pagesOf(t, workers, name)...)
 			if len(boxes) == 0 {
 				t.Fatal("a document with a text layer lit nothing")
 			}
@@ -138,9 +167,9 @@ func TestEveryBoxCoversOneWord(t *testing.T) {
 func isSpace(r rune) bool { return strings.ContainsRune(" \t\r\n\f", r) }
 
 // pagesOf is every page of a fixture.
-func pagesOf(t *testing.T, name string) []int {
+func pagesOf(t *testing.T, workers *Workers, name string) []int {
 	t.Helper()
-	book, _ := where(t, name)
+	book, _ := whereOn(t, workers, name)
 	pages := make([]int, len(book.Pages))
 	for i := range pages {
 		pages[i] = i
@@ -159,11 +188,12 @@ func TestAScanLightsNothing(t *testing.T) {
 }
 
 func TestARectangleIsAFractionOfThePage(t *testing.T) {
+	workers := newWorkers(t)
 	// A page drawn at any size lines up by multiplying, so a rectangle is
 	// somewhere between nothing and the whole page.
 	for _, name := range []string{"tiny.pdf", "outline.pdf", "labels.pdf", "turned.pdf"} {
 		t.Run(name, func(t *testing.T) {
-			_, boxes := where(t, name, pagesOf(t, name)...)
+			_, boxes := whereOn(t, workers, name, pagesOf(t, workers, name)...)
 			for _, box := range boxes {
 				if box.MinX < 0 || box.MinY < 0 || box.MaxX > 1 || box.MaxY > 1 {
 					t.Errorf("a box covers %v, which is off the page", box)

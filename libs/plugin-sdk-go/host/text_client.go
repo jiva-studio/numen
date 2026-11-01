@@ -7,6 +7,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
@@ -50,7 +51,7 @@ func NewTextClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint
 	return &TextClient{rpc: numenv1connect.NewHostTextServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
 }
 
-func (c *TextClient) With(id VaultID) Texts {
+func (c *TextClient) With(id domain.VaultID) Texts {
 	linked := *c
 	linked.vault = string(id)
 	return &linked
@@ -81,16 +82,16 @@ func failText(code v1.TextErrorCode) error {
 	return fmt.Errorf("host: rejected with code %s", code)
 }
 
-func (c *TextClient) PutVersion(ctx context.Context, params TextPut) (TextVersion, error) {
+func (c *TextClient) PutVersion(ctx context.Context, params TextPut) (domain.TextVersion, error) {
 	res, err := c.rpc.PutTextVersion(ctx, newTextRequest(c, &v1.PutTextVersionRequest{
 		Path: params.Path, Key: params.Key, SourceVersionId: string(params.Source), Kind: string(params.Kind),
 		SourceHash: params.SourceHash, File: params.File,
 	}))
 	if err != nil {
-		return TextVersion{}, readError(err)
+		return domain.TextVersion{}, readError(err)
 	}
 	if err := failText(res.Msg.GetError()); err != nil {
-		return TextVersion{}, err
+		return domain.TextVersion{}, err
 	}
 	return readTextVersion(res.Msg.GetVersion()), nil
 }
@@ -111,14 +112,14 @@ func (c *TextClient) ListVersions(ctx context.Context, path string) (TextListing
 	if err := failText(res.Msg.GetError()); err != nil {
 		return TextListing{}, err
 	}
-	listing := TextListing{Live: TextVersionID(res.Msg.GetLiveVersionId())}
+	listing := TextListing{Live: domain.TextVersionID(res.Msg.GetLiveVersionId())}
 	for _, one := range res.Msg.GetVersions() {
 		listing.Versions = append(listing.Versions, readTextVersion(one))
 	}
 	return listing, nil
 }
 
-func (c *TextClient) ReadText(ctx context.Context, path string, id TextVersionID, cursor string) (TextPage, error) {
+func (c *TextClient) ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (TextPage, error) {
 	res, err := c.rpc.ReadText(ctx, newTextRequest(c, &v1.ReadTextRequest{Path: path, VersionId: string(id), Cursor: cursor}))
 	if err != nil {
 		return TextPage{}, readError(err)
@@ -129,18 +130,18 @@ func (c *TextClient) ReadText(ctx context.Context, path string, id TextVersionID
 	return TextPage{Segments: readTextSegments(res.Msg.GetSegments()), NextCursor: res.Msg.GetNextCursor()}, nil
 }
 
-func readTextVersion(v *v1.TextVersion) TextVersion {
-	return TextVersion{
-		Path: v.GetPath(), PluginID: v.GetPluginId(), Key: v.GetKey(), Source: TextVersionID(v.GetSourceVersionId()),
-		Kind: TextKind(v.GetKind()), File: v.GetFile(), SourceHash: v.GetSourceHash(), Hash: v.GetHash(),
+func readTextVersion(v *v1.TextVersion) domain.TextVersion {
+	return domain.TextVersion{
+		Path: v.GetPath(), PluginID: v.GetPluginId(), Key: v.GetKey(), Source: domain.TextVersionID(v.GetSourceVersionId()),
+		Kind: domain.TextKind(v.GetKind()), File: v.GetFile(), SourceHash: v.GetSourceHash(), Hash: v.GetHash(),
 		CreateTime: time.UnixMilli(v.GetCreateTimeUnixMs()),
 	}
 }
 
-func readTextSegments(segments []*v1.TextSegment) []TextSegment {
-	out := make([]TextSegment, 0, len(segments))
+func readTextSegments(segments []*v1.TextSegment) []domain.TextSegment {
+	out := make([]domain.TextSegment, 0, len(segments))
 	for _, s := range segments {
-		out = append(out, TextSegment{Text: s.GetText(), Heading: s.GetHeading(), Selector: RawSelector(s.GetSelector())})
+		out = append(out, domain.TextSegment{Text: s.GetText(), Heading: s.GetHeading(), Selector: domain.Selector(s.GetSelector())})
 	}
 	return out
 }

@@ -249,7 +249,7 @@ func TestCopyDeletesThePartialFileOnFailure(t *testing.T) {
 		t.Errorf("the folder keeps %+v (%v)", files, err)
 	}
 	tasks := w.queue.ListTasks()
-	if len(tasks) != 1 || tasks[0].Error == "" || tasks[0].About != made.Path {
+	if len(tasks) != 1 || tasks[0].FailureReason == "" || tasks[0].Detail != made.Path {
 		t.Errorf("the failure is shown as %+v", tasks)
 	}
 	if _, err := w.links.Copy(t.Context(), w.create(t, articleAddress)); !errors.Is(err, link.ErrNotCopyable) {

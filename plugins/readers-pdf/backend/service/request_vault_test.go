@@ -147,7 +147,9 @@ func TestCreateTextWritesTheLayerInATurnOfTheQueue(t *testing.T) {
 	if len(listing.Versions) != 0 {
 		t.Fatalf("versions %v while the queue is held, want none", listing.Versions)
 	}
-	held.Release()
+	if err := held.Release(); err != nil {
+		t.Fatal(err)
+	}
 	server.Wait()
 
 	listing, err = texts.ListVersions(t.Context(), "tiny.pdf")

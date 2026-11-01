@@ -114,9 +114,9 @@ func (u Write) CardModel(
 		return domain.FileStat{}, note.ErrBodyUnwritable
 	}
 
-	e := note.NewEdit(u.readers, u.writers, u.index, u.now)
+	e, getReleaseError := note.NewEdit(u.readers, u.writers, u.index, u.now)
 	e.FileStat, e.Bound = stat, note.MaxBytes
-	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
+	written, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		if err := doc.SetBody(body); err != nil {
 			return err
 		}
@@ -127,6 +127,7 @@ func (u Write) CardModel(
 		}
 		return nil
 	})
+	return written, errors.Join(err, getReleaseError())
 }
 
 // read at.

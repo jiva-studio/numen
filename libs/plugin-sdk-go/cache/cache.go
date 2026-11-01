@@ -420,7 +420,16 @@ func (c *Cache[V]) cachePath() (string, error) {
 	if c.dir != "" {
 		return filepath.Join(c.dir, c.name+".json"), nil
 	}
-	pluginID := c.pluginID
+	dir, err := GetPluginDir(c.pluginID)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, c.name+".json"), nil
+}
+
+// GetPluginDir returns the folder of the user cache directory that belongs to the plugin, without
+// creating it. An empty pluginID is the NUMEN_PLUGIN_ID the host gives the process.
+func GetPluginDir(pluginID string) (string, error) {
 	if pluginID == "" {
 		pluginID = os.Getenv("NUMEN_PLUGIN_ID")
 	}
@@ -431,7 +440,7 @@ func (c *Cache[V]) cachePath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(base, "numen", "plugins", pluginID, c.name+".json"), nil
+	return filepath.Join(base, "numen", "plugins", pluginID), nil
 }
 
 func getUserCacheDir() (string, error) {

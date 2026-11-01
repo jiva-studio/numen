@@ -1,26 +1,16 @@
 package agentmcpserver
 
 import (
-	"encoding/json"
 	"slices"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/plugintest"
 )
 
 func TestManifestValid(t *testing.T) {
 	t.Parallel()
 
-	var manifest struct {
-		ID           string   `json:"id"`
-		Name         string   `json:"name"`
-		Version      string   `json:"version"`
-		Protocol     int      `json:"protocol"`
-		Capabilities []string `json:"capabilities"`
-		Services     []string `json:"services"`
-	}
-
-	if err := json.Unmarshal(Manifest, &manifest); err != nil {
-		t.Fatalf("failed to unmarshal manifest: %v", err)
-	}
+	manifest := plugintest.ReadManifest(t, Manifest)
 
 	if manifest.ID != "md.numen.agents.mcp.server" {
 		t.Errorf("got ID %q, want %q", manifest.ID, "md.numen.agents.mcp.server")

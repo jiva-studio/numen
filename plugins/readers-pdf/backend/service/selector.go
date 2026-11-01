@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
@@ -39,7 +38,7 @@ func readPageSelector(raw domain.Selector) (pageSelector, error) {
 // getBoxes returns the rectangles of the segments a run of a version's text overlaps, in the order
 // of the segments. Each box carries the page its selector names, counted from zero, and the run of
 // the segment it covers. A segment whose selector names no page has no boxes.
-func getBoxes(text host.VersionText, run pdf.ByteRange) []pdf.HighlightBox {
+func getBoxes(text domain.VersionText, run pdf.ByteRange) []pdf.HighlightBox {
 	if run.Start >= run.End {
 		return nil
 	}

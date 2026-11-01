@@ -1,57 +1,35 @@
 package updater
 
 import (
-	"encoding/json"
 	"slices"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/plugintest"
 )
-
-type manifestShape struct {
-	Targets     []string `json:"targets"`
-	Permissions []string `json:"permissions"`
-	Services    []string `json:"services"`
-	Contributes struct {
-		StatusViews []struct {
-			ID string `json:"id"`
-		} `json:"statusViews"`
-	} `json:"contributes"`
-	Settings []struct {
-		Key string `json:"key"`
-	} `json:"settings"`
-}
-
-func readManifest(t *testing.T) manifestShape {
-	t.Helper()
-	var shape manifestShape
-	if err := json.Unmarshal(Manifest, &shape); err != nil {
-		t.Fatal(err)
-	}
-	return shape
-}
 
 // The plugin runs in the editor, asks the network for the release feed, and draws one view in the
 // status bar.
 func TestTheManifestDeclaresTheStatusViewTheTargetAndThePermission(t *testing.T) {
-	shape := readManifest(t)
+	manifest := plugintest.ReadManifest(t, Manifest)
 
-	if !slices.Equal(shape.Targets, []string{"desktop.editor"}) {
-		t.Errorf("targets = %v", shape.Targets)
+	if !slices.Equal(manifest.Targets, []string{"desktop.editor"}) {
+		t.Errorf("targets = %v", manifest.Targets)
 	}
-	if !slices.Equal(shape.Permissions, []string{"network:outbound"}) {
-		t.Errorf("permissions = %v", shape.Permissions)
+	if !slices.Equal(manifest.Permissions, []string{"network:outbound"}) {
+		t.Errorf("permissions = %v", manifest.Permissions)
 	}
-	if !slices.Equal(shape.Services, []string{"md.numen.tools.updater"}) {
-		t.Errorf("services = %v", shape.Services)
+	if !slices.Equal(manifest.Services, []string{"md.numen.tools.updater"}) {
+		t.Errorf("services = %v", manifest.Services)
 	}
-	if len(shape.Contributes.StatusViews) != 1 || shape.Contributes.StatusViews[0].ID != "update" {
-		t.Errorf("status views = %+v", shape.Contributes.StatusViews)
+	if len(manifest.Contributes.StatusViews) != 1 || manifest.Contributes.StatusViews[0].ID != "update" {
+		t.Errorf("status views = %+v", manifest.Contributes.StatusViews)
 	}
 }
 
 // The settings are the ones the backend and the frontend read.
 func TestTheManifestDeclaresTheSettingsThePluginReads(t *testing.T) {
 	var keys []string
-	for _, one := range readManifest(t).Settings {
+	for _, one := range plugintest.ReadManifest(t, Manifest).Settings {
 		keys = append(keys, one.Key)
 	}
 	slices.Sort(keys)

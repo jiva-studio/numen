@@ -284,7 +284,7 @@ func TestAFailureOfTheModelIsShownAsATask(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 	tasks := s.queue.ListTasks()
-	if len(tasks) != 1 || !strings.Contains(tasks[0].Error, "the model is away") || tasks[0].About != scanPath {
+	if len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "the model is away") || tasks[0].Detail != scanPath {
 		t.Errorf("tasks %+v", tasks)
 	}
 	if _, live := s.readLive(t, scanPath); live.PluginID != ocrID {

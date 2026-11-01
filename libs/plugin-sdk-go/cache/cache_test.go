@@ -265,3 +265,25 @@ func TestErrorHandlerReceivesDiskWriteError(t *testing.T) {
 		t.Errorf("the memory entry = %v, %v, %v, want it kept", v, ok, err)
 	}
 }
+
+func TestGetPluginDirIsUnderTheUserCacheDirOfThePlugin(t *testing.T) {
+	base := t.TempDir()
+	t.Setenv("XDG_CACHE_HOME", base)
+	t.Setenv("HOME", base)
+	t.Setenv("LocalAppData", base)
+	t.Setenv("NUMEN_PLUGIN_ID", "md.numen.sample")
+
+	own, ownErr := cache.GetPluginDir("")
+	named, namedErr := cache.GetPluginDir("md.numen.other")
+
+	if ownErr != nil || namedErr != nil {
+		t.Fatalf("got errors %v and %v", ownErr, namedErr)
+	}
+	if filepath.Base(own) != "md.numen.sample" || filepath.Base(named) != "md.numen.other" || filepath.Dir(own) != filepath.Dir(named) {
+		t.Errorf("got %q and %q", own, named)
+	}
+	t.Setenv("NUMEN_PLUGIN_ID", "")
+	if _, err := cache.GetPluginDir(""); err == nil {
+		t.Error("a plugin with no id got a folder")
+	}
+}

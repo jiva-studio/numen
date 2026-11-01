@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/protocol"
 )
 
@@ -113,7 +114,7 @@ type SearchFloor struct {
 type Search interface {
 	// With is the search of the vault of the identity. A call on it returns ErrUnknownVault when the
 	// installation has no such vault.
-	With(id VaultID) Search
+	With(id domain.VaultID) Search
 	SearchIndex
 	SearchPolicy
 }
@@ -152,7 +153,7 @@ type SearchPolicy interface {
 // GetVectorsReadyEvent is the event the host emits to plugins when every chunk of the vault of the
 // identity carries a vector under the model in use, but the chunks of a source whose indexing a person
 // cancelled, which stay without one until the source changes.
-func GetVectorsReadyEvent(id VaultID) string {
+func GetVectorsReadyEvent(id domain.VaultID) string {
 	return protocol.GetVectorsReadyEvent(string(id))
 }
 
@@ -160,7 +161,7 @@ func GetVectorsReadyEvent(id VaultID) string {
 // every chunk embedded, and false for any other event. The host emits the event after each indexing
 // pass that leaves no vector pending, so it repeats: a handler reads the state again and acts only on
 // what is not done.
-func ReadVectorsReadyEvent(event string) (VaultID, bool) {
+func ReadVectorsReadyEvent(event string) (domain.VaultID, bool) {
 	vaultID, found := protocol.ReadVectorsReadyEvent(event)
-	return VaultID(vaultID), found
+	return domain.VaultID(vaultID), found
 }

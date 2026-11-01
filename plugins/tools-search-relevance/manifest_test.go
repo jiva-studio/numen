@@ -1,40 +1,15 @@
 package searchrelevance
 
 import (
-	"encoding/json"
 	"slices"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/plugintest"
 )
-
-type manifestFile struct {
-	ID               string    `json:"id"`
-	Capabilities     []string  `json:"capabilities"`
-	Permissions      []string  `json:"permissions"`
-	ActivationEvents []string  `json:"activationEvents"`
-	Targets          []string  `json:"targets"`
-	Services         []string  `json:"services"`
-	Frontend         *struct{} `json:"frontend"`
-	SettingsViews    []struct {
-		ID    string `json:"id"`
-		Title string `json:"title"`
-	} `json:"settingsViews"`
-	Settings []struct {
-		Key string `json:"key"`
-	} `json:"settings"`
-}
-
-func readManifest(t *testing.T) manifestFile {
-	t.Helper()
-	var manifest manifestFile
-	if err := json.Unmarshal(Manifest, &manifest); err != nil {
-		t.Fatal(err)
-	}
-	return manifest
-}
 
 // The plugin reads the search index and sets the floor, and provides no model of its own.
 func TestManifestDeclaresTheIndexAndTheFloorPermissionsAndNoCapability(t *testing.T) {
-	manifest := readManifest(t)
+	manifest := plugintest.ReadManifest(t, Manifest)
 	if manifest.ID != "md.numen.tools.search.relevance" {
 		t.Errorf("id = %q", manifest.ID)
 	}
@@ -48,14 +23,14 @@ func TestManifestDeclaresTheIndexAndTheFloorPermissionsAndNoCapability(t *testin
 
 // The events of the host reach the plugin, which measures a vault once its vectors exist.
 func TestManifestSubscribesToEveryEvent(t *testing.T) {
-	if manifest := readManifest(t); !slices.Equal(manifest.ActivationEvents, []string{"*"}) {
+	if manifest := plugintest.ReadManifest(t, Manifest); !slices.Equal(manifest.ActivationEvents, []string{"*"}) {
 		t.Errorf("activationEvents = %v, want *", manifest.ActivationEvents)
 	}
 }
 
 // The window reaches the plugin through the service its manifest names.
 func TestManifestServesTheRelevanceService(t *testing.T) {
-	manifest := readManifest(t)
+	manifest := plugintest.ReadManifest(t, Manifest)
 	if !slices.Equal(manifest.Services, []string{"md.numen.tools.search.relevance"}) {
 		t.Errorf("services = %v, want md.numen.tools.search.relevance only", manifest.Services)
 	}
@@ -63,7 +38,7 @@ func TestManifestServesTheRelevanceService(t *testing.T) {
 
 // The settings page mounts the relevance panel, which is the whole of the plugin's settings.
 func TestManifestDeclaresTheFloorSettingsViewAndNoSetting(t *testing.T) {
-	manifest := readManifest(t)
+	manifest := plugintest.ReadManifest(t, Manifest)
 	if !slices.Contains(manifest.Targets, "desktop.editor") || manifest.Frontend == nil {
 		t.Errorf("targets %v and frontend %v, want desktop.editor and a frontend", manifest.Targets, manifest.Frontend)
 	}

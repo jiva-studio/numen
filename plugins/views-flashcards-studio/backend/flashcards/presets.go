@@ -454,12 +454,12 @@ func (u Presets) Save(
 func (u Presets) save(
 	ctx context.Context, v domain.Vault, path string, settings review.Preset,
 	stat domain.FileStat,
-) (domain.FileStat, error) {
+) (saved domain.FileStat, err error) {
 	release, err := u.writers.Lock(ctx, v)
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	defer release()
+	defer func() { err = errors.Join(err, release()) }()
 
 	reader, err := u.readers.Open(v)
 	if err != nil {

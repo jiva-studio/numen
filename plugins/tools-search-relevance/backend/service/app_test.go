@@ -272,7 +272,7 @@ func TestAFailedMeasurementIsListedAsATaskAndAFinishedOneRemovesIt(t *testing.T)
 		t.Fatalf("got %v, want the failure of the model", err)
 	}
 	tasks := f.queue.ListTasks()
-	if len(tasks) != 1 || tasks[0].Error == "" {
+	if len(tasks) != 1 || tasks[0].FailureReason == "" {
 		t.Fatalf("tasks %v, want the failure listed", tasks)
 	}
 

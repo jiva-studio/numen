@@ -218,7 +218,7 @@ func TestTranscribeReportsUnopenableRecording(t *testing.T) {
 	}
 
 	tasks := s.queue.ListTasks()
-	if len(tasks) != 1 || tasks[0].About != lecture || !strings.Contains(tasks[0].Error, "cannot be opened") {
+	if len(tasks) != 1 || tasks[0].Detail != lecture || !strings.Contains(tasks[0].FailureReason, "cannot be opened") {
 		t.Errorf("the tasks are %+v, want one saying the recording cannot be opened", tasks)
 	}
 	listing, err := s.texts.ListVersions(t.Context(), lecture)
@@ -253,10 +253,12 @@ func TestTranscribeWaitsForQueueTurn(t *testing.T) {
 	result := make(chan error, 1)
 	go func() { result <- s.transcriber.Transcribe(t.Context(), s.vault.Vault().ID, lecture) }()
 	waitUntil(t, func() bool { return len(s.queue.ListTasks()) == 1 })
-	if tasks := s.queue.ListTasks(); tasks[0].About != lecture {
+	if tasks := s.queue.ListTasks(); tasks[0].Detail != lecture {
 		t.Fatalf("the tasks are %+v once the transcription was asked for, want it shown", tasks)
 	}
-	held.Release()
+	if err := held.Release(); err != nil {
+		t.Fatal(err)
+	}
 	if err := <-result; err != nil {
 		t.Fatal(err)
 	}

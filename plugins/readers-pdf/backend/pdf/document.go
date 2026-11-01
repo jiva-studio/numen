@@ -15,6 +15,9 @@ import (
 	"github.com/klippa-app/go-pdfium/references"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/webassembly"
+	"github.com/tetratelabs/wazero"
+	"github.com/tetratelabs/wazero/api"
+	"github.com/tetratelabs/wazero/experimental"
 )
 
 // PDFium is reached as WebAssembly, so it is Go the way the rest of this is Go:
@@ -51,14 +54,36 @@ type Workers struct {
 	afterFunc func(time.Duration, func()) Timer
 	// idleRelease is how long an unused pool keeps its workers.
 	idleRelease time.Duration
+	// compilation holds the compiled PDFium module across pools; nil compiles it for each pool.
+	compilation wazero.CompilationCache
 }
 
 // NewWorkers returns a pool that has not started, of one worker per CPU, keeping no idle worker.
 func NewWorkers() *Workers {
 	return &Workers{
 		mu: sync.Mutex{}, pool: nil, size: 0, idle: 0, open: 0, isWarmed: false, release: nil,
-		afterFunc: nil, idleRelease: defaultIdleRelease,
+		afterFunc: nil, idleRelease: defaultIdleRelease, compilation: nil,
 	}
+}
+
+// SetCompilationCache makes the pools started afterwards compile PDFium into cache, so pools that
+// share a cache compile it once. It has no effect on a pool that has started.
+func (w *Workers) SetCompilationCache(cache wazero.CompilationCache) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.compilation = cache
+}
+
+// getRuntimeConfig is the runtime configuration the pool starts with, or nil for the default of the
+// library. The caller holds the lock.
+func (w *Workers) getRuntimeConfig() wazero.RuntimeConfig {
+	if w.compilation == nil {
+		return nil
+	}
+	// The bundled PDFium module needs the exception handling feature.
+	return wazero.NewRuntimeConfig().
+		WithCoreFeatures(api.CoreFeaturesV2 | experimental.CoreFeaturesExceptionHandling).
+		WithCompilationCache(w.compilation)
 }
 
 // SetAfterFunc sets the timer factory that releases idle workers.
@@ -147,7 +172,7 @@ func (w *Workers) acquirePool() (pdfium.Pool, error) {
 			MaxIdle:       min(w.idle, total),
 			WASM:          nil,
 			FSConfig:      nil,
-			RuntimeConfig: nil,
+			RuntimeConfig: w.getRuntimeConfig(),
 			Stdout:        nil,
 			Stderr:        nil,
 			RandomSource:  nil,

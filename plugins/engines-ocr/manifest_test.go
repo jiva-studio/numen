@@ -1,26 +1,15 @@
 package ocr
 
 import (
-	"encoding/json"
 	"slices"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/plugintest"
 )
 
 // The plugin declares the ONNX Runtime as a runtime dependency and model dependencies.
 func TestManifestDeclaresDependencies(t *testing.T) {
-	var manifest struct {
-		Runtimes     []string `json:"runtimes"`
-		Dependencies []struct {
-			ID   string `json:"id"`
-			Kind string `json:"kind"`
-		} `json:"dependencies"`
-	}
-	if err := json.Unmarshal(Manifest, &manifest); err != nil {
-		t.Fatal(err)
-	}
-	if len(manifest.Runtimes) != 0 {
-		t.Errorf("runtimes = %v, want none", manifest.Runtimes)
-	}
+	manifest := plugintest.ReadManifest(t, Manifest)
 	var ids []string
 	for _, dep := range manifest.Dependencies {
 		ids = append(ids, dep.ID)

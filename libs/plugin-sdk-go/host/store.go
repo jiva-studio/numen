@@ -2,6 +2,8 @@ package host
 
 import (
 	"context"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
 // StoreFile is a file of the plugin's folder: its name, and how many bytes it holds.
@@ -20,7 +22,7 @@ type StoreFile struct {
 type Store interface {
 	// With returns the folder in the vault with the given identity. A call on it
 	// returns ErrUnknownVault when the installation has no such vault.
-	With(id VaultID) Store
+	With(id domain.VaultID) Store
 	StoreReader
 	StoreWriter
 }

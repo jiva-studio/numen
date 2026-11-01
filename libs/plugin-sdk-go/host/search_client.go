@@ -6,6 +6,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
@@ -49,7 +50,7 @@ func NewSearchClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoi
 	return &SearchClient{rpc: numenv1connect.NewHostSearchServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
 }
 
-func (c *SearchClient) With(id VaultID) Search {
+func (c *SearchClient) With(id domain.VaultID) Search {
 	linked := *c
 	linked.vault = string(id)
 	return &linked

@@ -137,6 +137,9 @@ type queueTurn struct {
 	once  sync.Once
 }
 
-func (t *queueTurn) Release() { t.once.Do(t.queue.release) }
+func (t *queueTurn) Release() error {
+	t.once.Do(t.queue.release)
+	return nil
+}
 
 func (t *queueTurn) WatchWaiting() <-chan struct{} { return t.queue.watchWaiting() }

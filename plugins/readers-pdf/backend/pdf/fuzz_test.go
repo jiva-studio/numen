@@ -43,12 +43,7 @@ func FuzzRead(f *testing.F) {
 	f.Add([]byte("1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n"))
 	f.Add([]byte(""))
 
-	workers := pdf.NewWorkers()
-	f.Cleanup(func() {
-		if err := workers.Close(); err != nil {
-			f.Error(err)
-		}
-	})
+	workers := newWorkers(f)
 	f.Fuzz(func(t *testing.T, raw []byte) {
 		book, err := workers.Read(raw)
 		if err != nil {

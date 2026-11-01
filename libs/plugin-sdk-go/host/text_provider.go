@@ -7,13 +7,14 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 // TextCreation is a request for text of a file.
 type TextCreation struct {
-	Vault VaultID
+	Vault domain.VaultID
 	Path  string
 }
 
@@ -55,7 +56,7 @@ func (s providerService) CreateText(
 ) (*connect.Response[v1.TextProviderServiceCreateTextResponse], error) {
 	m := req.Msg
 	code, err := writeTextError(s.provider.CreateText(ctx, TextCreation{
-		Vault: VaultID(m.GetVaultId()), Path: m.GetPath(),
+		Vault: domain.VaultID(m.GetVaultId()), Path: m.GetPath(),
 	}))
 	if err != nil {
 		return nil, err

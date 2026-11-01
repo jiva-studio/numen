@@ -327,7 +327,7 @@ type shut struct {
 	open      error
 }
 
-func (s shut) Lock(ctx context.Context, v domain.Vault) (func(), error) {
+func (s shut) Lock(ctx context.Context, v domain.Vault) (func() error, error) {
 	if s.isWatched {
 		s.t.Error("a rename took the write lock")
 	}

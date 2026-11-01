@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
 // defaultSearchFloor is the floor a search applies where no other source answers.
@@ -27,15 +28,15 @@ type SearchModel struct {
 // ErrUnknownVault. With returns the search of another vault of the same host.
 type Search struct {
 	all   *searchHost
-	vault host.VaultID
+	vault domain.VaultID
 }
 
 // searchHost is the index of every vault one host keeps.
 type searchHost struct {
 	mu      sync.Mutex
-	current host.VaultID
+	current domain.VaultID
 	hasShow bool
-	vaults  map[host.VaultID]*searchVault
+	vaults  map[domain.VaultID]*searchVault
 	model   *SearchModel
 	embed   func(text string) []float32
 	failure error
@@ -64,16 +65,16 @@ var _ host.Search = (*Search)(nil)
 
 // NewSearch is the search of a host that shows the vault given, and also knows the others. The host has
 // no model until SetModel is called.
-func NewSearch(current host.VaultID, others ...host.VaultID) *Search {
-	all := &searchHost{current: current, hasShow: true, vaults: map[host.VaultID]*searchVault{}, denied: map[string]bool{}}
-	for _, id := range append([]host.VaultID{current}, others...) {
+func NewSearch(current domain.VaultID, others ...domain.VaultID) *Search {
+	all := &searchHost{current: current, hasShow: true, vaults: map[domain.VaultID]*searchVault{}, denied: map[string]bool{}}
+	for _, id := range append([]domain.VaultID{current}, others...) {
 		all.vaults[id] = &searchVault{passages: map[string][]SearchPassage{}, floors: map[string]float64{}}
 	}
 	return &Search{all: all}
 }
 
 // With is the search of the vault of the identity. The vault is unknown to the host unless NewSearch named it.
-func (s *Search) With(id host.VaultID) host.Search {
+func (s *Search) With(id domain.VaultID) host.Search {
 	return &Search{all: s.all, vault: id}
 }
 

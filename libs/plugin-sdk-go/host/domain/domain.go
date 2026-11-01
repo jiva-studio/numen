@@ -16,8 +16,12 @@ type ResolvedLink = notesdomain.ResolvedLink
 type Link = notesdomain.Link
 type Address = notesdomain.Address
 type LinkRole = notesdomain.LinkRole
+type LinkMarker = notesdomain.LinkMarker
+type Connection = notesdomain.Connection
+type Side = notesdomain.Side
+type RelatedNote = notesdomain.RelatedNote
+type Backlink = notesdomain.Backlink
 type VaultProblem = notesdomain.VaultProblem
-type Check = notesdomain.Check
 type TextVersion = notesdomain.TextVersion
 type TextVersionID = notesdomain.TextVersionID
 type TextKind = notesdomain.TextKind
@@ -27,44 +31,28 @@ type VersionText = notesdomain.VersionText
 type ByteRange = notesdomain.ByteRange
 
 const (
-	KindFile      = notesdomain.KindFile
-	KindNote      = notesdomain.KindNote
-	NoteExtension = notesdomain.NoteExtension
-	TypeNote      = notesdomain.TypeNote
-	RoleRef       = notesdomain.RoleRef
-	SchemeName    = notesdomain.SchemeName
-	SchemeNote    = notesdomain.SchemeNote
-	CheckParse    = notesdomain.CheckParse
+	KindFile       = notesdomain.KindFile
+	KindNote       = notesdomain.KindNote
+	NoteExtension  = notesdomain.NoteExtension
+	TypeNote       = notesdomain.TypeNote
+	RoleParent     = notesdomain.RoleParent
+	RoleChild      = notesdomain.RoleChild
+	RoleJump       = notesdomain.RoleJump
+	RoleRef        = notesdomain.RoleRef
+	RoleAttachment = notesdomain.RoleAttachment
+	MarkerNone     = notesdomain.MarkerNone
+	MarkerArrow    = notesdomain.MarkerArrow
+	SchemeName     = notesdomain.SchemeName
+	SchemeNote     = notesdomain.SchemeNote
+	CheckParse     = notesdomain.CheckParse
 )
 
 var ErrInvalidName = notesdomain.ErrInvalidName
-
-func GetBasename(path string) string {
-	return notesdomain.Basename(path)
-}
 
 func Basename(path string) string { return notesdomain.Basename(path) }
 
 func Filename(title string) (filename string, exact bool, err error) {
 	return notesdomain.Filename(title)
-}
-
-func FoldName(name string) string { return notesdomain.FoldName(name) }
-
-func LinkName(target string) string { return notesdomain.LinkName(target) }
-
-func ChooseMatch(from, name string, candidates []string) (bestMatch string, ambiguous bool) {
-	return notesdomain.ChooseMatch(from, name, candidates)
-}
-
-func ParseAddress(raw string) Address { return notesdomain.ParseAddress(raw) }
-
-func FindLiveVersion(versions []TextVersion, fileHash string, isIntact func(TextVersion) bool) (TextVersion, bool) {
-	return notesdomain.FindLiveVersion(versions, fileHash, isIntact)
-}
-
-func NewTextVersionID(pluginID, key string) TextVersionID {
-	return notesdomain.NewTextVersionID(pluginID, key)
 }
 
 func NewVersionText(version TextVersion, segments []TextSegment) VersionText {

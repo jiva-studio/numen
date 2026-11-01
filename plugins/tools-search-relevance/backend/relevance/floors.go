@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
 // defaultFloor is the floor shown where the installation has no model to take one from. The host
@@ -85,7 +86,7 @@ type scope struct {
 
 // open returns the scope of the vault of the identity, and of the vault the host shows where the
 // identity is empty.
-func (f *Floors) open(vault host.VaultID) scope {
+func (f *Floors) open(vault domain.VaultID) scope {
 	search, notes, store := f.host.Search, f.host.Vault, f.host.Store
 	if vault != "" {
 		search, notes, store = search.With(vault), notes.With(vault), store.With(vault)
@@ -94,7 +95,7 @@ func (f *Floors) open(vault host.VaultID) scope {
 }
 
 // Get returns the floor in force for the vault. An installation with no model has the default floor.
-func (f *Floors) Get(ctx context.Context, vault host.VaultID) (State, error) {
+func (f *Floors) Get(ctx context.Context, vault domain.VaultID) (State, error) {
 	s := f.open(vault)
 	state, err := s.search.GetEmbeddingState(ctx)
 	if errors.Is(err, host.ErrNoModel) {
@@ -162,7 +163,7 @@ func getAutomaticFloor(record Record, applied host.SearchFloor) float64 {
 
 // Calibrate measures the vault and keeps the result. The host applies the measured floor unless the
 // person set one. A vault with too few notes is unchanged.
-func (f *Floors) Calibrate(ctx context.Context, vault host.VaultID) (Outcome, State, error) {
+func (f *Floors) Calibrate(ctx context.Context, vault domain.VaultID) (Outcome, State, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	s := f.open(vault)
@@ -199,7 +200,7 @@ func (f *Floors) keep(ctx context.Context, s scope, recipe string, calibration C
 }
 
 // Set puts the floor of the person in force, or returns to the automatic floor. A cleared floor is kept as zero.
-func (f *Floors) Set(ctx context.Context, vault host.VaultID, isManual bool, floor float64) (State, error) {
+func (f *Floors) Set(ctx context.Context, vault domain.VaultID, isManual bool, floor float64) (State, error) {
 	if isManual && !(floor > 0 && floor <= 1) {
 		return State{}, host.ErrInvalidFloor
 	}
@@ -255,7 +256,7 @@ func apply(ctx context.Context, s scope, record Record) error {
 
 // Probe embeds the query and measures the nearest passage of the vault. A query of no words is not
 // embedded and has no passage near it.
-func (f *Floors) Probe(ctx context.Context, vault host.VaultID, query string) (ProbeResult, error) {
+func (f *Floors) Probe(ctx context.Context, vault domain.VaultID, query string) (ProbeResult, error) {
 	s := f.open(vault)
 	embedding, err := s.search.GetEmbeddingState(ctx)
 	if err != nil {
@@ -286,7 +287,7 @@ func (f *Floors) Probe(ctx context.Context, vault host.VaultID, query string) (P
 // and nothing is kept for the model in use, the vault is measured, and where a record exists the host
 // is made to apply what it stands for. A vault that is not embedded is left as it is, and so is a vault with too few
 // notes to measure, which is measured again at the next call. Calling it again changes nothing that is done.
-func (f *Floors) Ensure(ctx context.Context, vault host.VaultID) error {
+func (f *Floors) Ensure(ctx context.Context, vault domain.VaultID) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	s := f.open(vault)

@@ -2,12 +2,16 @@ package pdf_test
 
 import (
 	"bytes"
+	"context"
 	"errors"
+	"fmt"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"image"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/tetratelabs/wazero"
 
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
@@ -30,18 +34,6 @@ const (
 	vast    = "vast.pdf"    // one page of the largest box the format allows
 	prose   = "prose.txt"   // not a document
 )
-
-// newWorkers returns a pool that is closed when the test ends.
-func newWorkers(t testing.TB) *pdf.Workers {
-	t.Helper()
-	workers := pdf.NewWorkers()
-	t.Cleanup(func() {
-		if err := workers.Close(); err != nil {
-			t.Error(err)
-		}
-	})
-	return workers
-}
 
 func read(t *testing.T, name string) *pdf.Book {
 	t.Helper()
@@ -397,3 +389,49 @@ type bytesFile struct{ *bytes.Reader }
 func (bytesFile) Close() error { return nil }
 
 func readerOf(raw []byte) bytesFile { return bytesFile{bytes.NewReader(raw)} }
+
+// compilationDirVariable names the folder TestMain makes for the compiled PDFium of the test binary.
+const compilationDirVariable = "NUMEN_PDF_TEST_COMPILATION_DIR"
+
+// newWorkers returns a pool that is closed when the test ends. The pools of the binary compile PDFium
+// into one folder, so it is compiled once and not for each pool, which costs minutes under the race
+// detector.
+func newWorkers(t testing.TB) *pdf.Workers {
+	t.Helper()
+	workers := pdf.NewWorkers()
+	compilation, err := wazero.NewCompilationCacheWithDir(os.Getenv(compilationDirVariable))
+	if err != nil {
+		t.Fatal(err)
+	}
+	workers.SetCompilationCache(compilation)
+	t.Cleanup(func() {
+		if err := errors.Join(workers.Close(), compilation.Close(context.WithoutCancel(t.Context()))); err != nil {
+			t.Error(err)
+		}
+	})
+	return workers
+}
+
+// TestMain makes the folder the pools of the tests keep the compiled PDFium in, for the packages pdf and
+// pdf_test alike.
+func TestMain(m *testing.M) {
+	os.Exit(runTests(m))
+}
+
+func runTests(m *testing.M) int {
+	dir, err := os.MkdirTemp("", "numen-pdf-compilation-")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "make the compilation folder: %v\n", err)
+		return 1
+	}
+	if err := os.Setenv(compilationDirVariable, dir); err != nil {
+		fmt.Fprintf(os.Stderr, "set %s: %v\n", compilationDirVariable, err)
+		return 1
+	}
+	code := m.Run()
+	if err := os.RemoveAll(dir); err != nil {
+		fmt.Fprintf(os.Stderr, "remove the compilation folder: %v\n", err)
+		code = 1
+	}
+	return code
+}

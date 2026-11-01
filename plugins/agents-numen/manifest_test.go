@@ -1,30 +1,27 @@
 package agent
 
 import (
-	"encoding/json"
 	"slices"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/plugintest"
 )
 
 // The model setting suggests models, and the model it defaults to is one of them.
 func TestManifest_ModelSettingSuggestsItsDefault(t *testing.T) {
-	var manifest struct {
-		Settings []struct {
-			Key     string   `json:"key"`
-			Default any      `json:"default"`
-			Options []string `json:"options"`
-		} `json:"settings"`
-	}
-	if err := json.Unmarshal(Manifest, &manifest); err != nil {
-		t.Fatal(err)
-	}
+	manifest := plugintest.ReadManifest(t, Manifest)
 	for _, one := range manifest.Settings {
-		if one.Key == "model" {
-			if defaultModel, isText := one.Default.(string); !isText || !slices.Contains(one.Options, defaultModel) {
-				t.Errorf("the model setting suggests %v, which lack its default %q", one.Options, one.Default)
-			}
-			return
+		if one.Key != "model" {
+			continue
 		}
+		var values []string
+		for _, option := range one.Options {
+			values = append(values, option.Value)
+		}
+		if defaultModel, isText := one.Default.(string); !isText || !slices.Contains(values, defaultModel) {
+			t.Errorf("the model setting suggests %v, which lack its default %q", values, one.Default)
+		}
+		return
 	}
 	t.Error("the plugin declares no model setting")
 }

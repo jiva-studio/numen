@@ -145,8 +145,8 @@ func (a *App) reportFailure(ctx context.Context, queue host.Queue, failure error
 		return failure
 	}
 	task := host.Task{
-		ID: calibratingTask, Title: "Calibrating the search", About: "", Done: 0, Total: 0,
-		Unit: host.UnitThings, Error: failure.Error(), IsUserStarted: false,
+		ID: calibratingTask, Title: "Calibrating the search", Detail: "", CompletedCount: 0, TotalCount: 0,
+		Unit: host.UnitThings, FailureReason: failure.Error(), IsUserStarted: false,
 	}
 	if err := queue.ReportTask(ctx, task); err != nil {
 		return errors.Join(failure, fmt.Errorf("report the task of the calibration: %w", err))

@@ -3,6 +3,7 @@ package cards
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"math"
 
@@ -157,12 +158,12 @@ func (u RenameField) checkDeckCount(ctx context.Context, v domain.Vault) error {
 
 // rename is the whole of the writing, under this vault's write lock from before
 // the card model is read until after the last deck is replaced.
-func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (RenameResult, error) {
+func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (result RenameResult, err error) {
 	release, err := u.writers.Lock(ctx, v)
 	if err != nil {
 		return RenameResult{}, err
 	}
-	defer release()
+	defer func() { err = errors.Join(err, release()) }()
 
 	reader, err := u.readers.Open(v)
 	if err != nil {

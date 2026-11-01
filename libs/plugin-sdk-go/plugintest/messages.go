@@ -1,5 +1,5 @@
 // Package plugintest holds the checks that plugin tests share: the request and response messages of a
-// method and the fixtures a plugin and its frontend agree on.
+// method, the fixtures a plugin and its frontend agree on, and the manifest as the host reads it.
 package plugintest
 
 import (

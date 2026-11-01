@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/plugintest"
 	transcription "github.com/jiva-studio/numen/plugins/engines-transcription"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
 )
@@ -54,18 +54,7 @@ func TestEveryModelOfTheManifestIsOneTheEngineRuns(t *testing.T) {
 
 func readManifestModels(t *testing.T) []string {
 	t.Helper()
-	type option struct {
-		Value string `json:"value"`
-	}
-	var manifest struct {
-		Settings []struct {
-			Key     string   `json:"key"`
-			Options []option `json:"options"`
-		} `json:"settings"`
-	}
-	if err := json.Unmarshal(transcription.Manifest, &manifest); err != nil {
-		t.Fatal(err)
-	}
+	manifest := plugintest.ReadManifest(t, transcription.Manifest)
 	var models []string
 	for _, setting := range manifest.Settings {
 		if setting.Key == "model" {

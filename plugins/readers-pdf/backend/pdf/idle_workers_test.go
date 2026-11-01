@@ -41,6 +41,7 @@ func TestTheIdleWorkersFitTheAvailableMemory(t *testing.T) {
 func startIdlePool(t *testing.T, idle int, period time.Duration) *Workers {
 	t.Helper()
 	workers := NewWorkers()
+	workers.SetCompilationCache(newCompilation(t))
 	t.Cleanup(workers.releasePool)
 	workers.SetIdleWorkers(idle)
 	workers.SetAfterFunc(func(d time.Duration, f func()) Timer { return time.AfterFunc(d, f) })

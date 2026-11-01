@@ -344,8 +344,8 @@ func (l *Links) FetchText(ctx context.Context, link Link, isUserStarted bool) er
 		}
 	}
 	task := host.Task{
-		ID: getTaskID("text", link.Path), Title: fetchingText, About: link.Path,
-		Done: 0, Total: 0, Unit: host.UnitThings, Error: "", IsUserStarted: isUserStarted,
+		ID: getTaskID("text", link.Path), Title: fetchingText, Detail: link.Path,
+		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: isUserStarted,
 	}
 	l.reportTask(ctx, task)
 	err := l.fetchText(ctx, folder, link)
@@ -452,8 +452,8 @@ func (l *Links) Copy(ctx context.Context, link Link) (int64, error) {
 		return 0, ErrNotCopyable
 	}
 	task := host.Task{
-		ID: getTaskID("copy", link.Path), Title: copyingVideo, About: link.Path,
-		Done: 0, Total: 0, Unit: host.UnitBytes, Error: "", IsUserStarted: true,
+		ID: getTaskID("copy", link.Path), Title: copyingVideo, Detail: link.Path,
+		CompletedCount: 0, TotalCount: 0, Unit: host.UnitBytes, FailureReason: "", IsUserStarted: true,
 	}
 	l.reportTask(ctx, task)
 	size, err := l.copy(ctx, fetcher, settings, link, task)
@@ -461,7 +461,7 @@ func (l *Links) Copy(ctx context.Context, link Link) (int64, error) {
 	return size, err
 }
 
-func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, link Link, task host.Task) (int64, error) {
+func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, link Link, task host.Task) (size int64, err error) {
 	meta, err := fetcher.GetMetadata(ctx, string(link.Address))
 	if err != nil {
 		return 0, err
@@ -473,7 +473,7 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 	if err != nil {
 		return 0, err
 	}
-	defer turn.Release()
+	defer func() { err = errors.Join(err, turn.Release()) }()
 
 	part := link.Hash + partExt
 	store := l.getStore(link)
@@ -486,7 +486,7 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 			return store.Append(ctx, part, chunk)
 		},
 		report: func(byteCount int64) {
-			task.Done, task.Total = byteCount, meta.Bytes
+			task.CompletedCount, task.TotalCount = byteCount, meta.Bytes
 			l.reportTask(ctx, task)
 		},
 		pending:   nil,
@@ -578,7 +578,7 @@ func (l *Links) endTask(ctx context.Context, task host.Task, err error) {
 		}
 		return
 	}
-	task.Error = err.Error()
+	task.FailureReason = err.Error()
 	l.reportTask(ctx, task)
 }
 

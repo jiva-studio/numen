@@ -13,7 +13,6 @@ type Contents = notesedit.Contents
 type ReadOutcome = notesedit.ReadOutcome
 type Edit = notesedit.Edit
 type Levels = notesedit.Levels
-type Clock = notesedit.Clock
 
 const (
 	MaxBytes   = notesedit.MaxBytes
@@ -29,9 +28,6 @@ var (
 	ErrNoNote         = notesedit.ErrNoNote
 	ErrNotANote       = notesedit.ErrNotANote
 	ErrTooLarge       = notesedit.ErrTooLarge
-	ErrUnreadable     = notesedit.ErrUnreadable
-	ErrUnterminated   = notesedit.ErrUnterminated
-	ErrInline         = notesedit.ErrInline
 	ErrAnchored       = notesedit.ErrAnchored
 	ErrBodyUnwritable = notesedit.ErrBodyUnwritable
 	ErrStale          = notesedit.ErrStale

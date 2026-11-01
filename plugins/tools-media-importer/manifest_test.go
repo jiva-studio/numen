@@ -1,22 +1,14 @@
 package downloader
 
 import (
-	"encoding/json"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/plugintest"
 )
 
 // The plugin declares yt_dlp and ffmpeg settings replacing core importing settings.
 func TestManifestDeclaresDownloaderSettings(t *testing.T) {
-	var manifest struct {
-		Settings []struct {
-			Key      string   `json:"key"`
-			Type     string   `json:"type"`
-			Replaces []string `json:"replaces"`
-		} `json:"settings"`
-	}
-	if err := json.Unmarshal(Manifest, &manifest); err != nil {
-		t.Fatal(err)
-	}
+	manifest := plugintest.ReadManifest(t, Manifest)
 	found := make(map[string][]string)
 	for _, one := range manifest.Settings {
 		found[one.Key] = one.Replaces
@@ -32,12 +24,7 @@ func TestManifestDeclaresDownloaderSettings(t *testing.T) {
 // The plugin declares no program as a dependency: an article is read without yt-dlp and ffmpeg, so
 // a machine without them starts the plugin, and only copies no video.
 func TestManifestDeclaresNoProgramTheHostMustFind(t *testing.T) {
-	var manifest struct {
-		Dependencies []json.RawMessage `json:"dependencies"`
-	}
-	if err := json.Unmarshal(Manifest, &manifest); err != nil {
-		t.Fatal(err)
-	}
+	manifest := plugintest.ReadManifest(t, Manifest)
 	if len(manifest.Dependencies) != 0 {
 		t.Errorf("the plugin declares %d dependencies", len(manifest.Dependencies))
 	}

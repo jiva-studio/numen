@@ -13,9 +13,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/schematest"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/protocol/schematest"
 )
 
 // searchHost is a host whose search index answers with fixed values, and that records the vault and

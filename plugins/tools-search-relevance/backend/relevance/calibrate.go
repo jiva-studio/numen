@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
 const (
@@ -137,7 +138,7 @@ type noteTitle struct {
 // readTitles reads the titles of the first notes of the vault, at most titleSample of them, in the
 // order the host lists the paths. A note with a blank title is left out.
 func readTitles(ctx context.Context, notes host.NoteLookup) ([]noteTitle, error) {
-	paths, err := notes.GetPathsOfType(ctx, host.TypeNote)
+	paths, err := notes.GetPathsOfType(ctx, domain.TypeNote)
 	if err != nil {
 		return nil, fmt.Errorf("list the notes: %w", err)
 	}

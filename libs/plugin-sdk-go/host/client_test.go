@@ -10,8 +10,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
@@ -25,6 +25,8 @@ type answering struct {
 	unlocked   string
 	named      string
 	baselines  []*v1.HostFileStat
+	// watchFailure, when set, ends each watch after its first message.
+	watchFailure error
 }
 
 func (a *answering) StatFile(_ context.Context, req *connect.Request[v1.StatFileRequest]) (*connect.Response[v1.StatFileResponse], error) {
@@ -56,6 +58,9 @@ func (a *answering) WatchMoves(ctx context.Context, _ *connect.Request[v1.WatchM
 		if err := stream.Send(&v1.WatchMovesResponse{}); err != nil {
 			return err
 		}
+		if a.watchFailure != nil {
+			return a.watchFailure
+		}
 	}
 	<-ctx.Done()
 	return nil
@@ -85,6 +90,9 @@ func (a *answering) WatchVault(ctx context.Context, _ *connect.Request[v1.WatchV
 	for _, response := range []*v1.WatchVaultResponse{{}, {Paths: []string{"x.md"}}, {IsVaultChanged: true}} {
 		if err := stream.Send(response); err != nil {
 			return err
+		}
+		if a.watchFailure != nil {
+			return a.watchFailure
 		}
 	}
 	<-ctx.Done()
@@ -160,7 +168,9 @@ func TestReleasingTheLockPassesItBack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	release()
+	if err := release(); err != nil {
+		t.Fatal(err)
+	}
 
 	if a.unlocked != "L1" {
 		t.Errorf("unlocked %q", a.unlocked)
@@ -235,6 +245,38 @@ func TestAWatchOfMovesBeginsAfterTheFirstMessage(t *testing.T) {
 	}
 	cancel()
 	for range moves {
+	}
+}
+
+func TestAWatchThatFailsSendsTheFailureLast(t *testing.T) {
+	failure := connect.NewError(connect.CodeUnavailable, errors.New("host gone"))
+	changes, err := clientTo(t, &answering{watchFailure: failure}).Watch(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var last host.Change
+	for change := range changes {
+		last = change
+	}
+	if connect.CodeOf(last.Err) != connect.CodeUnavailable {
+		t.Errorf("the last change was %+v, want the failure of the watch", last)
+	}
+}
+
+func TestAWatchOfMovesThatFailsSendsTheFailureLast(t *testing.T) {
+	failure := connect.NewError(connect.CodeUnavailable, errors.New("host gone"))
+	moves, err := clientTo(t, &answering{watchFailure: failure}).WatchMoves(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var last host.Move
+	for move := range moves {
+		last = move
+	}
+	if connect.CodeOf(last.Err) != connect.CodeUnavailable {
+		t.Errorf("the last move was %+v, want the failure of the watch", last)
 	}
 }
 

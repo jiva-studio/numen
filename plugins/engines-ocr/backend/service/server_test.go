@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"os"
 	"strings"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/plugintest"
 	ocr "github.com/jiva-studio/numen/plugins/engines-ocr"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
@@ -138,22 +138,7 @@ func TestTheRecogniserOpensWithTheModelOfTheSettings(t *testing.T) {
 
 // Each model the manifest offers is one the engine runs, fetched from the engine's own address.
 func TestEveryModelOfTheManifestIsOneTheEngineRuns(t *testing.T) {
-	var manifest struct {
-		Dependencies []struct {
-			ID        string `json:"id"`
-			SourceURL string `json:"sourceUrl"`
-		} `json:"dependencies"`
-		Settings []struct {
-			Key     string `json:"key"`
-			Options []struct {
-				Value        string   `json:"value"`
-				Dependencies []string `json:"dependencies"`
-			} `json:"options"`
-		} `json:"settings"`
-	}
-	if err := json.Unmarshal(ocr.Manifest, &manifest); err != nil {
-		t.Fatal(err)
-	}
+	manifest := plugintest.ReadManifest(t, ocr.Manifest)
 	sources := map[string]string{}
 	for _, one := range manifest.Dependencies {
 		sources[one.ID] = one.SourceURL

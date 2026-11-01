@@ -72,7 +72,7 @@ func (w Writers) Open(v domain.Vault) (ports.VaultWriter, error) {
 }
 
 // Lock takes the write lock of the vault v and returns the function that releases it.
-func (w Writers) Lock(ctx context.Context, v domain.Vault) (func(), error) {
+func (w Writers) Lock(ctx context.Context, v domain.Vault) (func() error, error) {
 	return w.Vault.With(v.ID).Lock(ctx)
 }
 

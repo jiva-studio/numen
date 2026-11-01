@@ -300,7 +300,7 @@ func TestRecogniseFailureReportsTaskError(t *testing.T) {
 		t.Fatal("a recogniser that failed recognised the file")
 	}
 	tasks := s.queue.ListTasks()
-	if len(tasks) != 1 || !strings.Contains(tasks[0].Error, "out of memory") || !tasks[0].IsUserStarted {
+	if len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "out of memory") || !tasks[0].IsUserStarted {
 		t.Fatalf("tasks %+v, want the failure pageCount", tasks)
 	}
 

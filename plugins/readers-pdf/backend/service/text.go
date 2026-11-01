@@ -134,12 +134,12 @@ func (s *TextServer) finish(key string) {
 // until the layer is written again.
 func (s *TextServer) writeLayer(ctx context.Context, req host.TextCreation) {
 	task := host.Task{
-		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), About: req.Path,
-		Done: 0, Total: 0, Unit: host.UnitThings, Error: "", IsUserStarted: false,
+		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), Detail: req.Path,
+		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: false,
 	}
 	err := s.putLayer(ctx, req, task)
 	if err != nil && ctx.Err() == nil {
-		task.Error = err.Error()
+		task.FailureReason = err.Error()
 		if reportErr := s.queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {
 			fmt.Fprintf(os.Stderr, "readers-pdf: show the task %s: %v\n", task.ID, reportErr)
 		}
@@ -152,12 +152,12 @@ func (s *TextServer) writeLayer(ctx context.Context, req host.TextCreation) {
 
 // putLayer reports the text layer of a file as a version made from the file. A file that is no PDF,
 // a locked one and a scan have no text layer, and get no version.
-func (s *TextServer) putLayer(ctx context.Context, req host.TextCreation, task host.Task) error {
+func (s *TextServer) putLayer(ctx context.Context, req host.TextCreation, task host.Task) (err error) {
 	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: false, OnWaiting: nil})
 	if err != nil {
 		return fmt.Errorf("wait for a turn to read %s: %w", req.Path, err)
 	}
-	defer turn.Release()
+	defer func() { err = errors.Join(err, turn.Release()) }()
 	if err := s.queue.ReportTask(ctx, task); err != nil {
 		return err
 	}

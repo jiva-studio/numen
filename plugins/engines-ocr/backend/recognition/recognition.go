@@ -108,12 +108,12 @@ func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error
 		on = reach{vault: on.vault.With(req.Vault), store: on.store.With(req.Vault), texts: on.texts.With(req.Vault)}
 	}
 	task := host.Task{
-		ID: "recognise:" + req.Path, Title: "Recognising " + path.Base(req.Path), About: req.Path,
-		Done: 0, Total: 0, Unit: host.UnitThings, Error: "", IsUserStarted: req.IsUserStarted,
+		ID: "recognise:" + req.Path, Title: "Recognising " + path.Base(req.Path), Detail: req.Path,
+		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: req.IsUserStarted,
 	}
 	res, err := r.recognise(ctx, on, req, &task)
 	if err != nil && ctx.Err() == nil {
-		task.Error = err.Error()
+		task.FailureReason = err.Error()
 		if reportErr := r.host.Queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {
 			return res, errors.Join(err, reportErr)
 		}
@@ -161,7 +161,7 @@ func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task
 	if err != nil {
 		return Result{}, fmt.Errorf("wait for a turn to recognise %s: %w", req.Path, err)
 	}
-	defer turn.Release()
+	defer func() { err = errors.Join(err, turn.Release()) }()
 	recogniser, err := r.open(ctx)
 	if err != nil {
 		return Result{}, fmt.Errorf("open the recogniser: %w", err)
@@ -190,7 +190,7 @@ type pageReading struct {
 // readPages reads the pages the record does not hold yet, keeping them a batch at a time and showing
 // how far it came in the task.
 func (r *Recognition) readPages(ctx context.Context, on pageReading, rec *record) error {
-	on.task.Total, on.task.Done = int64(rec.PageCount), int64(len(rec.Pages))
+	on.task.TotalCount, on.task.CompletedCount = int64(rec.PageCount), int64(len(rec.Pages))
 	if err := r.host.Queue.ReportTask(ctx, *on.task); err != nil {
 		return err
 	}
@@ -209,7 +209,7 @@ func (r *Recognition) readPages(ctx context.Context, on pageReading, rec *record
 				return err
 			}
 		}
-		on.task.Done = int64(index + 1)
+		on.task.CompletedCount = int64(index + 1)
 		if err := r.host.Queue.ReportTask(ctx, *on.task); err != nil {
 			return err
 		}
