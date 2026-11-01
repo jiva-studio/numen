@@ -25,13 +25,13 @@ function listScopes(repoRoot) {
 
 function runJscpd({ repoRoot, scope, outDir }) {
   const binary = path.join(repoRoot, "node_modules/.bin/jscpd");
-  const hasLocal = fs.existsSync(binary);
-  const cmd = hasLocal ? binary : "npx";
-  const args = hasLocal ? [] : ["--yes", "jscpd"];
-  args.push(...scope.paths, "--ignore", IGNORE, "--reporters", "json", "--output", outDir);
+  if (!fs.existsSync(binary)) {
+    return Promise.resolve({ scope: scope.name, error: "node_modules/.bin/jscpd is missing; run npm ci" });
+  }
+  const args = [...scope.paths, "--ignore", IGNORE, "--reporters", "json", "--output", outDir];
 
   return new Promise((resolve) => {
-    const child = spawn(cmd, args, { cwd: repoRoot, stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(binary, args, { cwd: repoRoot, stdio: ["ignore", "pipe", "pipe"] });
     let output = "";
     child.stdout.on("data", (d) => (output += d.toString()));
     child.stderr.on("data", (d) => (output += d.toString()));

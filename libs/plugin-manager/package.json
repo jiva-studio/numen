@@ -13,8 +13,7 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "vue-tsc --noEmit",
-    "lint": "eslint .",
-    "knip": "knip"
+    "lint": "eslint ."
   },
   "peerDependencies": {
     "vue": "^3.5.44"
@@ -30,7 +29,6 @@
     "eslint": "^10.10.0",
     "eslint-import-resolver-typescript": "^4.4.5",
     "jsdom": "^30.1.3",
-    "knip": "^6.41.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.2",
     "vite": "^8.3.4",

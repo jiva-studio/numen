@@ -1,3 +1,7 @@
+# Go, Node, golangci-lint, buf and the Go protobuf plugins are taken from PATH.
+# `nix develop` puts the versions CI runs there (see flake.nix); `make tool_versions`
+# prints the ones on PATH.
+
 # ---------------------------------- Modules -----------------------------------
 CORE     := libs/core
 NOTES    := libs/notes
@@ -44,6 +48,15 @@ help: ## show available targets
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_-]+:.*?## / {printf "  \033[36m%-28s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 # ------------------------------- Workflow & CI --------------------------------
+.PHONY: tool_versions
+tool_versions: ## print the versions of the tools on PATH (nix develop provides the pinned ones)
+	go version
+	node --version
+	golangci-lint --version
+	buf --version
+	protoc-gen-go --version
+	protoc-gen-connect-go --version
+
 .PHONY: install
 install: ## fetch all workspace dependencies
 	$(INSTALL)
@@ -106,8 +119,9 @@ plugins_clean: ## remove what every plugin built
 	$(call run_in_plugins,clean)
 
 .PHONY: plugins_stories
-plugins_stories: lib_ui_build ## draw the stories of every plugin in Chromium and WebKit
-	cd $(PLUGIN_SDK)/stories && npx vitest run
+plugins_stories: lib_ui_build ## draw the stories of every plugin, one engine at a time
+	cd $(PLUGIN_SDK)/stories && npx vitest run --browser=chromium
+	cd $(PLUGIN_SDK)/stories && npx vitest run --browser=webkit
 
 .PHONY: plugins_package
 plugins_package: plugins_build ## package every plugin into a zip archive
@@ -227,6 +241,10 @@ lib_ui_compile: lib_ui_typecheck lib_ui_build
 lib_ui_test: lib_ui_build ## run UI unit tests
 	cd $(UI) && npm run test:unit
 
+.PHONY: lib_ui_stories
+lib_ui_stories: ## draw the stories of the UI components, one engine at a time
+	cd $(UI) && npm run test:stories
+
 .PHONY: lib_ui_lint
 lib_ui_lint: ## lint UI components
 	cd $(UI) && npm run lint
@@ -234,7 +252,7 @@ lib_ui_lint: ## lint UI components
 
 .PHONY: lib_ui_knip
 lib_ui_knip: ## check dead code and unused dependencies with knip
-	cd $(UI) && npm run knip
+	npx knip --workspace $(UI)
 
 # --------------------------------- Lib: Shell ---------------------------------
 .PHONY: lib_shell_build
@@ -254,9 +272,7 @@ lib_shell_test: lib_ui_build ## run shell unit tests
 
 .PHONY: lib_shell_stories
 lib_shell_stories: lib_ui_build ## draw the stories of the shell, one engine at a time
-	@set -e; for engine in chromium webkit; do \
-		(cd $(SHELL_LIB) && npx vitest run --project "stories ($$engine)"); \
-	done
+	cd $(SHELL_LIB) && npm run test:stories
 
 .PHONY: lib_shell_lint
 lib_shell_lint: lib_ui_build ## lint the shell package
@@ -264,7 +280,7 @@ lib_shell_lint: lib_ui_build ## lint the shell package
 
 .PHONY: lib_shell_knip
 lib_shell_knip: ## check dead code and unused dependencies of the shell with knip
-	cd $(SHELL_LIB) && npm run knip
+	npx knip --workspace $(SHELL_LIB)
 
 # ------------------------------ Lib: Core Client ------------------------------
 .PHONY: lib_core_client_typecheck
@@ -284,7 +300,7 @@ lib_core_client_lint: ## lint the core-client package
 
 .PHONY: lib_core_client_knip
 lib_core_client_knip: ## check dead code and unused dependencies of the core client with knip
-	cd $(CORE_CLIENT) && npm run knip
+	npx knip --workspace $(CORE_CLIENT)
 
 # ------------------------------ Lib: Plugin Host ------------------------------
 .PHONY: lib_plugin_host_typecheck
@@ -320,7 +336,7 @@ lib_plugin_manager_lint: lib_ui_build ## lint the plugin-manager package
 
 .PHONY: lib_plugin_manager_knip
 lib_plugin_manager_knip: ## check dead code and unused dependencies of the plugin manager with knip
-	cd $(PLUGIN_MANAGER) && npm run knip
+	npx knip --workspace $(PLUGIN_MANAGER)
 
 # ------------------------------ Lib: Plugin SDK -------------------------------
 .PHONY: lib_plugin_sdk_typecheck
@@ -431,17 +447,12 @@ app_desktop_compile: lib_shell_build ## compile desktop Go code and typecheck fr
 .PHONY: app_desktop_test
 app_desktop_test: lib_shell_build ## run desktop tests
 	cd $(DESKTOP) && go test ./... -race
-	cd $(DESKTOP)/editor && npm run test:unit
-	@set -e; for engine in chromium webkit; do \
-		(cd $(DESKTOP)/editor && npx vitest run --project "stories ($$engine)"); \
-	done
+	cd $(DESKTOP)/editor && npm test
 	cd $(DESKTOP)/flashcards && npm test
 
 .PHONY: app_desktop_stories
 app_desktop_stories: lib_shell_build ## draw the stories of the editor, one engine at a time
-	@set -e; for engine in chromium webkit; do \
-		(cd $(DESKTOP)/editor && npx vitest run --project "stories ($$engine)"); \
-	done
+	cd $(DESKTOP)/editor && npm run test:stories
 
 .PHONY: app_desktop_e2e
 app_desktop_e2e: lib_shell_build app_desktop_editor_build app_desktop_flashcards_build plugins_build ## run desktop end-to-end tests
@@ -551,6 +562,10 @@ check_layers tool_layers_check: ## validate architectural layer boundaries (usag
 .PHONY: check_quality
 check_quality: ## validate code quality metrics (usage: make check_quality [check=<name>] [opts=...])
 	node $(QUALITY)/check.mjs $(if $(check),--check=$(check),) $(opts)
+
+.PHONY: check_knip
+check_knip: ## check dead code and unused dependencies of every TS package and plugin with knip
+	npx knip
 
 .PHONY: lint_narrative
 lint_narrative: ## reject narrative identifiers, test names and comments across the repository

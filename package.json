@@ -12,7 +12,8 @@
   ],
   "scripts": {
     "format": "prettier --write \"{libs,apps}/**/*.{ts,vue,json,css}\"",
-    "format:check": "prettier --check \"{libs,apps}/**/*.{ts,vue,json,css}\""
+    "format:check": "prettier --check \"{libs,apps}/**/*.{ts,vue,json,css}\"",
+    "knip": "knip"
   },
   "devDependencies": {
     "@babel/types": "^7.29.8",
@@ -22,6 +23,8 @@
     "@vitest/coverage-v8": "^5.0.3",
     "@vue/compiler-sfc": "^3.5.44",
     "eslint-config-prettier": "^10.1.8",
+    "jscpd": "^5.4.2",
+    "knip": "^6.41.0",
     "lightningcss": "^1.33.0",
     "postcss": "^8.5.29",
     "prettier": "^3.9.10",

@@ -17,6 +17,24 @@ export function compareGoVersions(a, b) {
   return 0;
 }
 
+/** The golangci-lint release the repository is linted with; flake.nix and .github/workflows pin the same one. */
+export const GOLANGCI_LINT_VERSION = "2.14.0";
+
+/** The release `golangci-lint --version` reports, or undefined. */
+export function parseLinterVersion(output) {
+  return /golangci-lint has version v?(\d+\.\d+\.\d+)/.exec(output)?.[1];
+}
+
+/** Why the linter is not the pinned release, or "" when it is. */
+export function getLinterVersionGap(versionOutput) {
+  const version = parseLinterVersion(versionOutput);
+  if (!version) return "the linter does not report its version";
+  if (version !== GOLANGCI_LINT_VERSION) {
+    return `golangci-lint is ${version}, the repository is linted with ${GOLANGCI_LINT_VERSION}; run the check inside nix develop`;
+  }
+  return "";
+}
+
 /** The Go version `golangci-lint --version` reports it was built with, or undefined. */
 export function parseBuiltWithGo(output) {
   return /built with go(\d+\.\d+(?:\.\d+)?)/.exec(output)?.[1];
@@ -39,13 +57,13 @@ export function getLinterBuildGap(versionOutput, directive) {
   return "";
 }
 
-/** Fails when the installed golangci-lint is built with a Go older than the workspace's. */
+/** Fails when the installed golangci-lint is not the pinned release or is built with a Go older than the workspace's. */
 export function assertGolangciLintBuild() {
   const run = spawnSync("golangci-lint", ["--version"], { cwd: REPO_ROOT, encoding: "utf8" });
   if (run.error || run.status !== 0) {
     throw new Error("golangci-lint is not installed or does not run: " + (run.error?.message ?? run.stderr));
   }
   const directive = parseGoDirective(fs.readFileSync(path.join(REPO_ROOT, "go.work"), "utf8"));
-  const gap = getLinterBuildGap(run.stdout, directive);
+  const gap = getLinterVersionGap(run.stdout) || getLinterBuildGap(run.stdout, directive);
   if (gap) throw new Error(gap);
 }

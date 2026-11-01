@@ -67,7 +67,7 @@ func PluginName(pluginID, themeID string) string {
 // Theme is one theme as the list refers to it.
 type Theme struct {
 	// Name is the origin and the identifier, `preset:numen`, `mine:dracula` or
-	// `plugin:md.numen.themes.presets/dracula`, and it identifies the theme in
+	// `plugin:org.example.themes/dark`, and it identifies the theme in
 	// later requests.
 	Name string
 

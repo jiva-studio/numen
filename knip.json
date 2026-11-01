@@ -1,0 +1,142 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "rules": {
+    "files": "error",
+    "dependencies": "error",
+    "unlisted": "error",
+    "exports": "warn",
+    "types": "warn"
+  },
+  "ignoreWorkspaces": [
+    ".",
+    "libs/protocol",
+    "tools/*"
+  ],
+  "workspaces": {
+    "libs/ui/core": {
+      "entry": [
+        "src/index.ts!",
+        "src/**/*.stories.ts",
+        "src/**/*.test.ts",
+        ".storybook/**/*.{ts,js}"
+      ],
+      "project": [
+        "src/**/*.{ts,vue,mdx,css}",
+        ".storybook/**/*.{ts,js}"
+      ]
+    },
+    "libs/ui/shell": {
+      "entry": [
+        "src/index.ts!",
+        "src/**/*.stories.ts",
+        "src/**/*.test.ts",
+        ".storybook/**/*.{ts,js}"
+      ],
+      "project": [
+        "src/**/*.{ts,vue,mdx,css}",
+        ".storybook/**/*.{ts,js}"
+      ]
+    },
+    "libs/core-client": {
+      "entry": [
+        "src/**/*.test.ts"
+      ],
+      "project": [
+        "src/**/*.ts"
+      ]
+    },
+    "libs/plugin-host-ts": {
+      "entry": [
+        "src/**/*.test.ts"
+      ],
+      "project": [
+        "src/**/*.ts"
+      ]
+    },
+    "libs/plugin-manager": {
+      "entry": [
+        "src/**/*.test.ts"
+      ],
+      "project": [
+        "src/**/*.{ts,vue}"
+      ]
+    },
+    "libs/plugin-sdk-ts": {
+      "entry": [
+        "src/**/*.test.ts",
+        "test/**/*.test.ts",
+        "stories/vitest.config.ts",
+        "stories/.storybook/**/*.{ts,js}"
+      ],
+      "project": [
+        "src/**/*.{ts,vue}",
+        "test/**/*.ts",
+        "stories/**/*.{ts,js}"
+      ]
+    },
+    "apps/desktop/editor": {
+      "entry": [
+        "src/**/*.stories.ts",
+        "src/**/*.test.ts",
+        ".storybook/**/*.{ts,js}"
+      ],
+      "project": [
+        "src/**/*.{ts,vue}",
+        ".storybook/**/*.{ts,js}"
+      ]
+    },
+    "apps/desktop/flashcards": {
+      "entry": [
+        "src/**/*.test.ts"
+      ],
+      "project": [
+        "src/**/*.{ts,vue}"
+      ]
+    },
+    "apps/mobile": {
+      "entry": [
+        "src/main.ts",
+        "src/**/*.test.ts"
+      ],
+      "project": [
+        "src/**/*.{ts,vue}"
+      ],
+      "ignoreDependencies": [
+        "vue-router"
+      ]
+    },
+    "apps/docs": {
+      "entry": [
+        "tools/*.mjs"
+      ],
+      "project": [
+        "src/**/*.{ts,astro,vue}",
+        "tools/**/*.mjs"
+      ],
+      "ignoreDependencies": [
+        "@fontsource-variable/newsreader",
+        "@fontsource/ibm-plex-mono",
+        "@fontsource/ibm-plex-sans"
+      ]
+    },
+    "apps/landing": {
+      "entry": [
+        "tools/*.mjs"
+      ],
+      "project": [
+        "src/**/*.{ts,astro,vue}",
+        "tools/**/*.mjs"
+      ]
+    },
+    "plugins/*": {
+      "entry": [
+        "frontend/index.ts",
+        "frontend/**/*.stories.ts",
+        "frontend/**/*.test.ts"
+      ],
+      "project": [
+        "frontend/**/*.{ts,vue}"
+      ]
+    }
+  }
+}

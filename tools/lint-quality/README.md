@@ -17,7 +17,7 @@ Automated verification of code quality, duplication, complexity, and symbol hygi
      - `funlen`: <= 80 lines / 50 statements.
 
 3. **Dead Code & Unused Symbols (`knip` & `unparam`)**:
-   - **Frontend (TS/Vue)**: runs `knip` across UI modules to catch unused exported functions, constants, and types.
+   - **Frontend (TS/Vue)**: runs `knip` once with the root `knip.json`, whose workspaces name every TS package and plugin frontend. Unused files, unused and unlisted dependencies fail; unused exports and types are reported. A missing `knip` binary, a missing `knip.json` or a frontend package outside its workspaces fails the check.
    - **Backend (Go)**: runs `unparam` to detect unused function parameters and dead return values.
 
 4. **Interface Segregation & Sizing (`interfacebloat`)**:
