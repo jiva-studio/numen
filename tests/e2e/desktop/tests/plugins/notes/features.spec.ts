@@ -1,111 +1,84 @@
-import { test, expect } from '../../support/test.js'
+import { test, expect, readSavedStates } from '../../support/test.js'
 import { openWorkspace } from '../../support/workspace.js'
+import {
+  createNote,
+  createUniqueTitle,
+  destroyNote,
+  getNoteTab,
+  getTabName,
+  getNoteText,
+  openNote,
+  readNote,
+  typeAtEnd,
+  waitForSavedBody,
+  writeNote,
+} from '../../support/vault.js'
 
-test.describe('Note editor features and editing', () => {
-  test('triggers wikilink autocomplete dropdown on bracket input', async ({ page }) => {
-    await page.goto('/')
+test.describe('Note editor', () => {
+  test('saves a typed note to disk without Ctrl+S, and shows it after a reload', async ({
+    page,
+    request,
+  }) => {
+    const notePath = await createNote(request, createUniqueTitle('Brine kettle'))
+    try {
+      await writeNote(request, notePath, 'The kettle boils seawater for salt.\n')
+      await openWorkspace(page)
+      const text = await openNote(page, notePath)
+      await expect(text).toContainText('The kettle boils seawater for salt.')
 
-    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
-      timeout: 15_000,
-    })
+      await typeAtEnd(page, text, '\nThe pans dry in the wind.')
 
-    // 1. Open notes folder and Entropy.md
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
+      await waitForSavedBody(request, notePath, 'The pans dry in the wind.')
+      expect((await readNote(request, notePath)).body).toContain(
+        'The kettle boils seawater for salt.',
+      )
+      await expect.poll(async () => (await readSavedStates(request)).has(notePath)).toBe(true)
 
-    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
-    await expect(entropyRow).toBeVisible()
-    await entropyRow.press('Enter')
+      await page.reload()
 
-    const cmContent = page.locator('.cm-content').first()
-    await expect(cmContent).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('.cm-lineWrapping').first()).toBeVisible()
-    await expect(page.locator('.cm-lineNumbers')).toHaveCount(0)
-
-    // 2. Click editor, move to end, type wikilink trigger "[["
-    await cmContent.click()
-    await page.keyboard.press('End')
-    await page.keyboard.type('\n[[')
-
-    // 3. Verify autocomplete tooltip appears or wikilink options are presented
-    const autocompleteTooltip = page
-      .locator('.cm-tooltip-autocomplete')
-      .or(page.locator('[role="listbox"]'))
-    if (await autocompleteTooltip.isVisible()) {
-      await expect(autocompleteTooltip).toBeVisible()
-    } else {
-      await expect(cmContent).toContainText('[[')
+      await expect(getNoteText(page, notePath)).toContainText('The pans dry in the wind.')
+    } finally {
+      await destroyNote(request, notePath)
     }
   })
 
-  test('formats markdown headings and applies syntax styling', async ({ page }) => {
-    await page.goto('/')
+  test('writes what was typed to disk when the tab is closed at once', async ({
+    page,
+    request,
+  }) => {
+    const notePath = await createNote(request, createUniqueTitle('Salt pan'))
+    try {
+      await writeNote(request, notePath, 'The pan is raked at noon.\n')
+      await openWorkspace(page)
+      const text = await openNote(page, notePath)
+      await expect(text).toContainText('The pan is raked at noon.')
 
-    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
-      timeout: 15_000,
-    })
+      await typeAtEnd(page, text, ' The crust is lifted at dusk.')
+      await page.getByRole('button', { name: `Close ${getTabName(notePath)}`, exact: true }).click()
+      await expect(getNoteTab(page, notePath)).toHaveCount(0)
 
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
-
-    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
-    await expect(entropyRow).toBeVisible()
-    await entropyRow.press('Enter')
-
-    const cmContent = page.locator('.cm-content').first()
-    await expect(cmContent).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('.cm-lineWrapping').first()).toBeVisible()
-    await expect(page.locator('.cm-lineNumbers')).toHaveCount(0)
-
-    // Type a heading
-    await cmContent.click()
-    await page.keyboard.press('End')
-    await page.keyboard.type('\n### Fundamental Conservation\n')
-
-    // Verify heading text is in editor
-    await expect(cmContent).toContainText('Fundamental Conservation')
+      await waitForSavedBody(request, notePath, 'The crust is lifted at dusk.')
+    } finally {
+      await destroyNote(request, notePath)
+    }
   })
 
-  test('saves note edits with keyboard shortcut control s', async ({ page }) => {
-    await openWorkspace(page)
+  test('draws a typed heading as a heading and saves its markup', async ({ page, request }) => {
+    const notePath = await createNote(request, createUniqueTitle('Evaporation pond'))
+    try {
+      await writeNote(request, notePath, 'Shallow ponds lose water fastest.\n')
+      await openWorkspace(page)
+      const text = await openNote(page, notePath)
+      await expect(text).toContainText('Shallow ponds lose water fastest.')
 
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
+      await typeAtEnd(page, text, '\n### Fundamental Conservation\n')
 
-    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
-    await expect(entropyRow).toBeVisible()
-    await entropyRow.press('Enter')
-
-    // The note is typed into once it is read and the editor accepts input
-    const cmContent = page.locator('.cm-content').first()
-    await expect(cmContent).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('.cm-lineWrapping').first()).toBeVisible()
-    await expect(page.locator('.cm-lineNumbers')).toHaveCount(0)
-    await expect(cmContent).toContainText('A measure of uncertainty')
-    await expect(cmContent).toHaveAttribute('contenteditable', 'true')
-
-    // Edit content and press Control+s
-    await cmContent.click()
-    await page.keyboard.press('End')
-    await page.keyboard.type(' Saved verification stamp.')
-    await page.keyboard.press('Control+s')
-
-    await expect(cmContent).toContainText('Saved verification stamp.')
-
-    // Close note tab and reopen to verify persisted content from disk
-    const entropyTab = page.getByRole('tab', { name: /Entropy/i }).first()
-    await page.locator('button[aria-label="Close Entropy"]').first().click()
-    await expect(entropyTab).not.toBeVisible({ timeout: 5_000 })
-
-    await entropyRow.press('Enter')
-    const reloadedContent = page.locator('.cm-content').first()
-    await expect(reloadedContent).toBeVisible({ timeout: 10_000 })
-    await expect(reloadedContent).toContainText('Saved verification stamp.')
+      await expect(
+        text.locator('.cm-heading-3', { hasText: 'Fundamental Conservation' }),
+      ).toBeVisible()
+      await waitForSavedBody(request, notePath, '### Fundamental Conservation')
+    } finally {
+      await destroyNote(request, notePath)
+    }
   })
 })

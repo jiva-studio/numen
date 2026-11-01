@@ -25,6 +25,7 @@ import {
   type VaultRef,
 } from '@/features/command-palette'
 import { createCommandDeps } from './commandDeps'
+import type { TabsHold } from './leaveVault'
 import type { DeclaredCommands } from './declaredCommands'
 import type { FileMenuCommands } from './fileMenuCommands'
 import type { IndexCoverage } from '@/shared/notices/coverage'
@@ -53,6 +54,7 @@ export interface CommandsDepsOptions {
   making: NoteCreator
   setVaultName: (vault: VaultRef) => void
   reload: () => void
+  tabsHold?: TabsHold
   reached: Notes
   appearance: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }

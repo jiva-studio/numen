@@ -10,6 +10,7 @@ interface MockParts {
     flush: unknown
     has: (id: string) => boolean
     getPath: (id: string) => string
+    getOpenIds?: () => readonly string[]
     stale: () => null
     flushPending: unknown
     close: unknown
@@ -72,6 +73,7 @@ beforeEach(() => {
       flush: { name: 'notes.flush' },
       has: (id: string) => id === 'known-note',
       getPath: (id: string) => 'title of ' + id,
+      getOpenIds: () => ['known-note', 'titled-note'],
       stale: () => null,
       flushPending: vi.fn(),
       close: vi.fn(),
@@ -89,7 +91,10 @@ const create = () => {
   }
   const core = { name: 'core' }
   const tabOpeners = { name: 'openers' }
-  const windowTabs = { tabs: { value: [] }, getTab: vi.fn() }
+  const windowTabs = {
+    tabs: { value: [{ id: 'titled-note', title: 'Tide table' }] },
+    getTab: vi.fn(),
+  }
   const editors = createNoteEditors({ core, log, tabOpeners, windowTabs } as unknown as Parameters<
     typeof createNoteEditors
   >[0])
@@ -147,5 +152,22 @@ describe('the note editors', () => {
     editors.close()
 
     expect(h.parts.fileFlush.close).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('the store of open notes, as the palette reads it', () => {
+  it('names a note by the title of the tab it is open in', () => {
+    const { editors } = create()
+    h.parts.notes.has = (id: string) => id === 'titled-note'
+
+    expect(editors.getTitle('titled-note')).toBe('Tide table')
+  })
+
+  it('finds the tab a path is open in, and none for a path no tab holds', () => {
+    const { editors } = create()
+    const store = editors.stores[0]!
+
+    expect(store.getTabAt('title of titled-note')).toBe('titled-note')
+    expect(store.getTabAt('notes/Elsewhere.md')).toBeNull()
   })
 })

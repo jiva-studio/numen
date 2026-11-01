@@ -20,6 +20,7 @@ import { useCrossWindowTabs } from '../tabs/useCrossWindowTabs'
 import { createNoteEditors } from '../tabs/useNoteEditors'
 import { useSettings } from './useSettings'
 import { useVaults } from './useVaults'
+import type { TabsHold } from '../commands/leaveVault'
 import { parseSavedTabs, useOpenTabs } from '../tabs/useOpenTabs'
 import { useCommands } from '../commands/useCommands'
 import { useDeclaredCommands } from '../commands/declaredCommands'
@@ -43,6 +44,7 @@ import type { PluginServices } from '../plugins/pluginServices'
 import type { MessageWriter } from '@/shared/notices/messages'
 
 interface WindowCommandsOptions {
+  tabsHold: TabsHold
   windowTabs: ReturnType<typeof useWindowTabs>
   getTarget: () => CommandTarget
   knows: NoteLookup
@@ -80,6 +82,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     making: editing.making,
     setVaultName: vaultsModule.setVaultName,
     reload: vaultsModule.reload,
+    tabsHold: deps.tabsHold,
     reached: editing.reached,
     appearance: settings.appearance,
     oneName: settings.oneName,
@@ -213,6 +216,10 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
       )
     },
     ...pluginNotes,
+    resolveLink: async (from, address) => {
+      const written = address.replace(/^name:\/\//, '')
+      return (await core.resolveLinks(from, `[[${written}]]`))[0]?.path ?? ''
+    },
   })
   return {
     log,
@@ -235,6 +242,8 @@ interface WindowContext {
   commands?: ReturnType<typeof useCommands>
   kinds?: ReturnType<typeof useWindowKinds>
   vaults?: ReturnType<typeof useVaults>
+  /** Holds the open tabs back while the vault is switched; bound once the tabs are written. */
+  tabsHold?: TabsHold
 }
 
 function getCommands(ctx: WindowContext): NonNullable<WindowContext['commands']> {
@@ -352,6 +361,10 @@ function initWindowKindsAndCommands(
   const knows: NoteLookup = createNoteLookup(editing, base.windowTabs)
 
   ctx.commands = initWindowCommands({
+    tabsHold: {
+      pause: async () => ctx.tabsHold?.pause(),
+      resume: () => ctx.tabsHold?.resume(),
+    },
     windowTabs: base.windowTabs,
     getTarget,
     knows,
@@ -412,6 +425,8 @@ export const useWindow = () => {
     reportError: (error) =>
       base.writeMessage(`The open tabs were not saved: ${formatErrorMessage(error)}`, 'error'),
   })
+
+  ctx.tabsHold = openTabs
 
   const closeTab = (id: string, hold?: () => void) => {
     base.tabLinks.removeClosedTab(id)

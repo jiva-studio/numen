@@ -35,6 +35,7 @@ import {
 import { createNoteWriter, startNoteRead } from './customTabNote'
 import type { PluginHostDeps } from './types'
 import { pickDeclaredHooks } from './pluginTabKind'
+import { BUFFERED_FIELDS, NOTE_KIND, createBufferedNoteState } from './customTabBuffer'
 
 export function createPluginPaneWrapper(
   pluginIdOrComponent: string | unknown,
@@ -168,6 +169,7 @@ const FORBIDDEN_ACTION_NAMES = new Set([
   'updateBody',
   'save',
   'navigate',
+  ...BUFFERED_FIELDS,
 ])
 
 function bindCustomTabHandlers(
@@ -321,8 +323,15 @@ export function createCustomTabKind(
   return {
     kind: registration.kind,
     pluginId,
-    open: (targetPath: string) =>
-      createCustomTabState(targetPath, { pluginId, registration, hostDeps: deps }),
+    open: (targetPath: string, id: string) => {
+      const buffer = registration.kind === NOTE_KIND ? deps?.getNoteBuffer?.() : undefined
+      if (!buffer) return createCustomTabState(targetPath, { pluginId, registration, hostDeps: deps })
+      return createBufferedNoteState(targetPath, id, buffer, {
+        pluginId,
+        actions: createTabActions(targetPath, registration, deps),
+        deps,
+      })
+    },
     getTitle: (state: unknown) => {
       const s = state as { title?: unknown; at?: string; path?: string } | undefined
       const titleVal = extractTitleValue(s?.title)

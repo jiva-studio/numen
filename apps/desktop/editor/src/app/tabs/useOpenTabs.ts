@@ -59,11 +59,8 @@ export function useOpenTabs({
 
   const open = computed<OpenTabs>(() => getOpenTabs())
   let pendingWrite: OpenTabs | null = null
-  let isSending = false
-  const flushOpenTabs = async (next: OpenTabs): Promise<void> => {
-    pendingWrite = next
-    if (isSending) return
-    isSending = true
+  let sending: Promise<void> | null = null
+  const sendPending = async (): Promise<void> => {
     while (pendingWrite) {
       const current = pendingWrite
       pendingWrite = null
@@ -75,16 +72,37 @@ export function useOpenTabs({
         // meanwhile. There is no user action to take here.
       }
     }
-    isSending = false
+    sending = null
   }
+  const flushOpenTabs = (next: OpenTabs): Promise<void> => {
+    pendingWrite = next
+    sending ??= sendPending()
+    return sending
+  }
+  /** Whether the writes are held back, because the vault the tabs belong to is being left. */
+  const isPaused = ref(false)
   watch(
-    [open, isWriting],
-    ([now, isOn]) => {
-      if (!isOn) return
+    [open, isWriting, isPaused],
+    ([now, isOn, isHeld]) => {
+      if (!isOn || isHeld) return
       runInBackground(flushOpenTabs(now), reportError)
     },
     { immediate: true },
   )
+
+  /**
+   * Writes the tabs as they are now, waits until every write has reached the core, and holds
+   * later writes back. A write made after the core shows another vault would be kept for that vault.
+   */
+  const pause = async (): Promise<void> => {
+    if (isWriting.value) await flushOpenTabs(open.value)
+    isPaused.value = true
+  }
+
+  /** Lets the tabs be written again, where the vault was not left. */
+  const resume = (): void => {
+    isPaused.value = false
+  }
 
   /** The icon the tab's kind declares, or the one the window keeps for that kind. */
   const getTabIcon = (id: string): Component | null => {
@@ -95,6 +113,8 @@ export function useOpenTabs({
 
   return {
     open,
+    pause,
+    resume,
     getActiveTabId,
     getTabIcon,
   }

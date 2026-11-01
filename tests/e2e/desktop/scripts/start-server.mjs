@@ -73,7 +73,7 @@ function createPagedPdf(targetPath, pageCount) {
 }
 
 // Create isolated temporary vault from template.
-const tmpVault = fs.mkdtempSync(path.join(os.tmpdir(), 'numen-e2e-vault-'))
+const tmpVault = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'numen-e2e-vault-')))
 fs.cpSync(sourceVault, tmpVault, { recursive: true })
 createSampleWav(path.join(tmpVault, 'assets', 'sample.wav'))
 createPagedPdf(path.join(tmpVault, 'assets', 'pages.pdf'), 40)
@@ -174,6 +174,7 @@ fs.writeFileSync(
 )
 
 function cleanup() {
+  fs.rmSync(vaultPathFile, { force: true })
   standIns.close()
   try {
     fs.rmSync(tmpVault, { recursive: true, force: true })
@@ -195,6 +196,10 @@ const pages = http.createServer((req, res) => {
   res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(fs.readFileSync(page))
 })
 pages.listen(pagesPort, host)
+
+// The tests read the folder of the run's vault from here: the file is named by the port the server listens on.
+const vaultPathFile = path.join(os.tmpdir(), `numen-e2e-vault-path-${port}`)
+fs.writeFileSync(vaultPathFile, tmpVault)
 
 const child = spawn(
   binaryPath,

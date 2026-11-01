@@ -146,3 +146,58 @@ key: value:
     expect(wrapper.find('.caution__text').text()).toBe('write failed')
   })
 })
+
+describe('MarkdownNoteEditor over a note whose file changed on disk', () => {
+  it('offers to keep the typed text or take the file, and passes the choice to the tab', async () => {
+    const fileConflict = ref<string | null>('stale')
+    const chosen: string[] = []
+    const wrapper = mount(MarkdownNoteEditor, {
+      props: {
+        filePath: 'notes/Tide.md',
+        state: {
+          fileConflict,
+          keepMine: () => chosen.push('keep'),
+          takeFile: () => chosen.push('take'),
+        },
+      },
+    })
+    await nextTick()
+
+    const banner = wrapper.get('[role="alert"]')
+    expect(banner.text()).toContain('Saving paused: the file changed on disk.')
+    const answers = banner.findAll('button')
+    expect(answers.map((one) => one.text())).toStrictEqual(['Keep my version', 'Use disk version'])
+    await answers[0]!.trigger('click')
+    await answers[1]!.trigger('click')
+    expect(chosen).toStrictEqual(['keep', 'take'])
+
+    fileConflict.value = null
+    await nextTick()
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('offers to write the text again when the file was removed', async () => {
+    const wrapper = mount(MarkdownNoteEditor, {
+      props: { filePath: 'notes/Tide.md', state: { fileConflict: 'gone' } },
+    })
+    await nextTick()
+
+    const banner = wrapper.get('[role="alert"]')
+    expect(banner.text()).toContain('the note was removed from the vault')
+    expect(banner.findAll('button').map((one) => one.text())).toStrictEqual(['Recreate it'])
+  })
+})
+
+describe('MarkdownNoteEditor over a tab that offers links', () => {
+  it('draws the completion of wikilinks from the tab', async () => {
+    const wrapper = mount(MarkdownNoteEditor, {
+      props: {
+        filePath: 'notes/Tide.md',
+        state: { wikilinks: { search: async () => [{ title: 'Entropy', type: 'note' }] } },
+      },
+    })
+    await nextTick()
+
+    expect(wrapper.findComponent({ name: 'Editor' }).props('extensions')).toBeDefined()
+  })
+})

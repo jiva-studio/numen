@@ -1,83 +1,90 @@
-import { test, expect } from '../../support/test.js'
-import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
+import { test, expect, readActivePath } from '../../support/test.js'
+import { getGraph, getPaletteField, openWorkspace, runPaletteCommand } from '../../support/workspace.js'
+import {
+  createNote,
+  createUniqueTitle,
+  destroyNote,
+  getNoteTab,
+  getNoteText,
+  listBacklinks,
+  listFilePaths,
+  openNote,
+  readNote,
+  typeAtEnd,
+  waitForSavedBody,
+  writeNote,
+} from '../../support/vault.js'
 
 test.describe('Note Creation and Wikilinks', () => {
-  test('creates new note via command palette naming flow', async ({ page }) => {
-    await openWorkspace(page)
+  test('makes a note on disk with New note and opens it in front', async ({ page, request }) => {
+    const title = createUniqueTitle('Quantum')
+    let made = ''
+    try {
+      await openWorkspace(page)
 
-    // Choose New note command
-    await runPaletteCommand(page, 'New note', 'New note')
+      await runPaletteCommand(page, 'New note', 'New note')
+      await expect(page.locator('[data-palette="crumb"]')).toBeVisible()
+      await getPaletteField(page).fill(title)
+      await expect(page.getByRole('option', { selected: true })).toContainText(title)
+      await page.keyboard.press('Enter')
 
-    // The naming step is drawn, and the name is offered back once typed
-    await expect(page.locator('[data-palette="crumb"]')).toBeVisible()
-    await page.locator('input[data-palette="field"]').first().fill('Quantum')
-    await expect(page.locator('[role="option"][aria-selected="true"]')).toContainText('Quantum')
-    await page.keyboard.press('Enter')
-
-    // Verify new note tab opened and is the one shown
-    await expect(page.getByRole('tab', { name: /Quantum/i }).first()).toHaveAttribute(
-      'aria-selected',
-      'true',
-    )
+      await expect.poll(() => readActivePath(request)).toMatch(new RegExp(`${title}\\.md$`))
+      made = await readActivePath(request)
+      await expect(
+        page.getByRole('tab', { name: `${title} Close ${title}`, exact: true }),
+      ).toHaveAttribute('aria-selected', 'true')
+      await expect(getGraph(page).getByRole('img', { name: `${title}, focus` })).toBeAttached()
+      const folder = made.includes('/') ? made.slice(0, made.lastIndexOf('/')) : ''
+      expect(await listFilePaths(request, folder)).toContain(made)
+      expect((await readNote(request, made)).error).toBe('')
+    } finally {
+      if (made) await destroyNote(request, made)
+    }
   })
 
-  test('renders wikilink syntax in markdown editor', async ({ page }) => {
-    await page.goto('/')
+  test('completes a typed wikilink from the notes of the vault, and the core reads it as a link', async ({
+    page,
+    request,
+  }) => {
+    const notePath = await createNote(request, createUniqueTitle('Heat engine'))
+    try {
+      await writeNote(request, notePath, 'Work from a difference in temperature.\n')
+      await openWorkspace(page)
+      const text = await openNote(page, notePath)
+      await expect(text).toContainText('Work from a difference in temperature.')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+      await typeAtEnd(page, text, '\nSee [[Entr')
+      const completion = page.locator('.cm-tooltip-autocomplete').getByRole('option', {
+        name: /^Entropy/,
+      }).first()
+      await expect(completion).toBeVisible()
+      await completion.click()
 
-    // Open notes folder
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
-
-    // Open Entropy.md
-    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
-    await expect(entropyRow).toBeVisible()
-    await entropyRow.press('Enter')
-
-    const noteEditor = page.locator('.note__text .cm-content').first()
-    await expect(noteEditor).toBeVisible({ timeout: 10_000 })
-
-    // Type a wikilink
-    await noteEditor.click()
-    await page.keyboard.press('End')
-    await page.keyboard.type('\n[[Thermodynamics]]')
-
-    // Verify wikilink text is rendered in CodeMirror
-    await expect(noteEditor).toContainText('Thermodynamics')
+      await waitForSavedBody(request, notePath, 'See [[Entropy]]')
+      await expect.poll(() => listBacklinks(request, 'notes/Entropy.md')).toContain(notePath)
+    } finally {
+      await destroyNote(request, notePath)
+    }
   })
 
-  test('navigates to target note upon clicking wikilink', async ({ page }) => {
-    await page.goto('/')
+  test('opens the note a wikilink names when it is clicked with Ctrl', async ({
+    page,
+    request,
+  }) => {
+    const notePath = await createNote(request, createUniqueTitle('Carnot cycle'))
+    try {
+      await writeNote(request, notePath, 'The cycle is bounded by [[Entropy]] alone.\n')
+      await openWorkspace(page)
+      const text = await openNote(page, notePath)
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+      await text.getByText('Entropy', { exact: false }).first().click({ modifiers: ['ControlOrMeta'] })
 
-    // Open notes folder
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
-
-    // Open Entropy.md
-    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
-    await expect(entropyRow).toBeVisible()
-    await entropyRow.press('Enter')
-
-    await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
-
-    // Open Thermodynamics tab from neighbourhood / link
-    const linkBtn = page
-      .locator('.plex')
-      .getByRole('button', { name: /Thermodynamics/i })
-      .or(page.locator('.plex .plex__title', { hasText: 'Thermodynamics' }))
-      .first()
-    await expect(linkBtn).toBeVisible({ timeout: 10_000 })
-    await linkBtn.dblclick({ force: true })
-
-    await expect(page.getByRole('tab', { name: /Thermodynamics/i }).first()).toBeVisible({
-      timeout: 10_000,
-    })
+      await expect(getNoteTab(page, 'notes/Entropy.md')).toHaveAttribute('aria-selected', 'true')
+      await expect(getNoteText(page, 'notes/Entropy.md')).toContainText(
+        'A measure of uncertainty',
+      )
+    } finally {
+      await destroyNote(request, notePath)
+    }
   })
 })

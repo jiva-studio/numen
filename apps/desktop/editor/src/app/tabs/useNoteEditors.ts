@@ -47,16 +47,17 @@ function createNoted(windowTabs: ReturnType<typeof useWindowTabs>) {
 
 function createNotedStore(
   notes: ReturnType<typeof openNotes>,
+  windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'tabs'>,
   reportError: (error: unknown) => void,
 ): Store {
   return {
     has: (id) => notes.has(id),
     getPath: (id) => notes.getPath(id),
-    getTitle: (id) => notes.getPath(id),
+    getTitle: (id) => windowTabs.tabs.value.find((one) => one.id === id)?.title || notes.getPath(id),
     asking: (id) => notes.stale(id) !== null,
     flushPending: (id) => notes.flushPending(id),
     close: (id) => runInBackground(notes.close(id), reportError),
-    getTabAt: () => null,
+    getTabAt: (path) => notes.getOpenIds().find((id) => notes.getPath(id) === path) ?? null,
   }
 }
 
@@ -71,7 +72,7 @@ export function createNoteEditors({ core, log, tabOpeners, windowTabs }: NoteEdi
 
   raiseConflicts(notes, fileFlush)
 
-  const notedStore = createNotedStore(notes, (error) =>
+  const notedStore = createNotedStore(notes, windowTabs, (error) =>
     log.getWriter('editing')(`A note did not close: ${formatErrorMessage(error)}`, 'error'),
   )
   const stores: readonly Store[] = [notedStore]

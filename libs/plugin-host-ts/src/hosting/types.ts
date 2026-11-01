@@ -108,6 +108,10 @@ export interface PluginHostDeps {
   readonly getAgent?: () => AgentHost | undefined
   /** The open files of the window, once the window has made them. */
   readonly getBuffers?: () => BufferHost | undefined
+  /** The window's store of open notes, which the tabs of the note kind read and write through. */
+  readonly getNoteBuffer?: () => NoteBuffer | undefined
+  /** The vault path an address written in a note lands on, empty where it lands on none. */
+  readonly resolveLink?: (from: string, address: string) => Promise<string>
   /** The text versions of the shown vault, as the views of one plugin read and edit them. */
   readonly getTexts?: (pluginId: string) => VaultTexts
   /** The notices one plugin shows in the window's corner. */
@@ -120,6 +124,29 @@ export interface PluginHostDeps {
   readonly app?: AppInfo
   /** Opens an address in the system browser. */
   readonly openExternal?: (url: string) => Promise<void>
+}
+
+/**
+ * The window's store of open notes, by the id of the tab each is open in: it writes after typing
+ * settles, against the file the tab read, and holds the text when the file changed on disk.
+ */
+export interface NoteBuffer {
+  open(id: string, path: string): void
+  reload(id: string, path: string): void
+  close(id: string): Promise<boolean>
+  setBody(id: string, body: string): void
+  save(id: string): void
+  /** Writes the text on screen over the file that changed on disk. */
+  keep(id: string): void
+  /** Reads the file that changed on disk, dropping the text on screen. */
+  take(id: string): void
+  flushPending(id: string): Promise<void>
+  getOpenNote(id: string): {
+    readonly path: string
+    readonly body: string
+    readonly state: string
+  }
+  getErrorMessage(id: string): string
 }
 
 export interface PluginContextHost {

@@ -1,4 +1,5 @@
 import { formatErrorMessage } from '@numen/core-client'
+import { openAfterSavingTabs, type TabsHold } from './leaveVault'
 import { runInBackground } from '@numen/ui'
 import { vaults, type VaultCore } from '../vault'
 import type {
@@ -19,6 +20,8 @@ export interface CommandDepsOptions {
   making: NoteCreator
   setVaultName: (vault: VaultRef) => void
   reload: () => void
+  /** Holds the open tabs back while the vault is switched; the tabs are written as they come where absent. */
+  tabsHold?: TabsHold
   reached: Notes
   appearance: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }
@@ -141,12 +144,14 @@ export function createCommandNotes(
 }
 
 export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
-  const { core, making, setVaultName, reload, reached, windowTabs, runs, writeMessage } = options
+  const { core, making, setVaultName, reload, reached, windowTabs, runs, writeMessage, tabsHold } =
+    options
 
   return {
     files: createFileCommands(core, making),
     vaults: {
       ...vaults,
+      ...(tabsHold ? { open: openAfterSavingTabs(vaults.open, tabsHold) } : {}),
       setVaultName,
       reload,
     },

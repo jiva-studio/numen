@@ -5,8 +5,15 @@
 import { computed, ref, useTemplateRef, watch, type Ref } from 'vue'
 import { Editor } from './editor'
 import type { Extension } from '@codemirror/state'
+import { createWikilinkExtension, type WikilinkOptions } from './extensions/wikilinks'
 import { editorPreferences } from './preferences'
-import { getEditorLanguage, useMarkdownDocument, type EditorHandle } from './useMarkdownDocument'
+import {
+  getEditorLanguage,
+  readFileConflict,
+  useMarkdownDocument,
+  type EditorHandle,
+} from './useMarkdownDocument'
+import { WORDS } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
 interface Props {
@@ -63,19 +70,39 @@ watch(displayErrorMessage, () => {
   isDismissed.value = false
 })
 
+/** The completion of wikilinks over the notes the host offers, unless the caller passes extensions. */
+const editorExtensions = computed(() => {
+  if (props.extensions) return props.extensions as Extension
+  const links = props.state?.['wikilinks'] as Pick<WikilinkOptions, 'search' | 'headings'> | undefined
+  return links ? createWikilinkExtension(links) : undefined
+})
+
 const editorLanguage = computed(() => getEditorLanguage(props))
+const fileConflict = computed(() => readFileConflict(props.state?.['fileConflict']))
 
 const softWrap = computed(() => props.softWrap ?? editorPreferences.softWrap)
 const lineNumbers = computed(() => props.lineNumbers ?? editorPreferences.lineNumbers)
 const tabSize = computed(() => props.tabSize ?? editorPreferences.tabSize)
 
 /* -------------------------------- Handlers -------------------------------- */
+function onKeep() {
+  const keep = props.state?.['keepMine']
+  if (typeof keep === 'function') keep()
+}
+
+function onTake() {
+  const take = props.state?.['takeFile']
+  if (typeof take === 'function') take()
+}
+
 function onDismiss() {
   isDismissed.value = true
 }
 
 function onOpen(url: string) {
   emit('open', url)
+  const follow = props.state?.['followLink']
+  if (typeof follow === 'function') follow(url)
 }
 
 defineExpose({
@@ -91,7 +118,16 @@ defineExpose({
 
 <template>
   <div class="markdown-note-editor note">
-    <div v-if="displayErrorMessage && !isDismissed" class="caution" role="alert">
+    <div v-if="fileConflict" class="caution" role="alert">
+      <span class="caution__text">{{ WORDS[fileConflict] }}</span>
+      <button type="button" class="caution__answer" @click="onKeep">
+        {{ fileConflict === 'gone' ? WORDS.makeAgain : WORDS.keep }}
+      </button>
+      <button v-if="fileConflict === 'stale'" type="button" class="caution__answer" @click="onTake">
+        {{ WORDS.take }}
+      </button>
+    </div>
+    <div v-else-if="displayErrorMessage && !isDismissed" class="caution" role="alert">
       <span class="caution__text">{{ displayErrorMessage }}</span>
       <button type="button" class="caution__dismiss" aria-label="Dismiss banner" @click="onDismiss">
         &times;
@@ -106,7 +142,7 @@ defineExpose({
       :soft-wrap="softWrap"
       :line-numbers="lineNumbers"
       :tab-size="tabSize"
-      v-bind="props.extensions ? { extensions: props.extensions as Extension } : {}"
+      v-bind="editorExtensions ? { extensions: editorExtensions } : {}"
       class="markdown-note-editor__pane note__text"
       @update:model-value="onUpdateModelValue"
       @save="onSave"
@@ -139,6 +175,20 @@ defineExpose({
 
 .caution__text {
   flex: 1;
+}
+
+.caution__answer {
+  padding: 0.125rem 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: var(--numen-radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.caution__answer:hover {
+  background-color: var(--numen-highlight);
 }
 
 .caution__dismiss {

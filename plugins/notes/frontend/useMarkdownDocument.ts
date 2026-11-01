@@ -58,6 +58,18 @@ function extractErrorString(source: unknown): string {
   return ''
 }
 
+/** Why the host stopped saving the note: its file changed on disk, or is gone. */
+export type FileConflict = 'stale' | 'gone'
+
+/** The conflict a tab state holds, as a value or a ref; null where there is none. */
+export function readFileConflict(source: unknown): FileConflict | null {
+  const value =
+    typeof source === 'object' && source !== null && 'value' in source
+      ? (source as { value: unknown }).value
+      : source
+  return value === 'stale' || value === 'gone' ? value : null
+}
+
 interface DelimiterState {
   inSingleQuote: boolean
   inDoubleQuote: boolean

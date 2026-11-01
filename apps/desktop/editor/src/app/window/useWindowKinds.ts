@@ -114,6 +114,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     files: createVaultFiles({ ...deps, making: editing.making }),
     agent: createAgentHost({ port: agentPort, ...deps }),
     buffers: createBufferHost({ fileFlush: editing.fileFlush }),
+    noteBuffer: editing.notes,
   }
 
   return {

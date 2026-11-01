@@ -23,6 +23,7 @@ import type { NotePort } from '@/app/ports/notes'
 import type { useSettings } from '../window/useSettings'
 import { createPathCommandHost, type PathCommandDeps } from './fileServices'
 import type { PluginNotes } from './pluginNotes'
+import type { NoteBuffer } from '@numen/plugin-host'
 
 /** The window and the notes a plugin is given, once the window has made them. */
 export interface PluginServices {
@@ -32,6 +33,8 @@ export interface PluginServices {
   files?: VaultFiles
   agent?: AgentHost
   buffers?: BufferHost
+  /** The window's store of open notes, which the tabs of the note kind read and write through. */
+  noteBuffer?: NoteBuffer
   /** The window's task list, which each plugin's task host reads. */
   taskList?: Readonly<Ref<readonly Task[]>>
 }
