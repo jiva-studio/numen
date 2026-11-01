@@ -101,14 +101,14 @@ export function createBufferedNoteState(
     body: computed(() => note.value.body),
     isLoading: computed(() => note.value.state === 'loading'),
     errorMessage: computed(() => buffer.getErrorMessage(id)),
-    wikilinks: createWikilinks(options.deps, () => state.path),
-    followLink: createLinkFollower(options.deps, () => state.path),
+    wikilinks: createWikilinks(options.deps, (): string => state.path),
+    followLink: createLinkFollower(options.deps, (): string => state.path),
     fileConflict: computed(() => getFileConflict(note.value.state)),
     keepMine: () => buffer.keep(id),
     takeFile: () => buffer.take(id),
     updateBody: (body: string) => buffer.setBody(id, body),
     save: () => buffer.save(id),
-    navigate: (nextPath: string, nextTitle?: string) => {
+    navigate: (nextPath: string, nextTitle?: string): void => {
       if (!nextPath || nextPath === state.path) return
       buffer
         .flushPending(id)
