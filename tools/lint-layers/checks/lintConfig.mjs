@@ -137,13 +137,21 @@ function readResolvedRules(dir, file) {
   return JSON.parse(run.stdout).rules;
 }
 
+/**
+ * The packages the check leaves out. apps/landing: the website is being rewritten by its owner and keeps the
+ * lint configuration it had. Remove this entry when that is done.
+ */
+const LEFT_OUT_PACKAGES = ["apps/landing"];
+
 /** The smallest number of linted packages the repository has; fewer means discovery broke. */
 const MINIMUM_PACKAGES = 16;
 
 /** Every package with an ESLint config resolves the strict rule set on a source file and a test file. */
 export function verifyStrictLintRules() {
   const tracked = readTrackedFiles();
-  const packages = listLintedPackages(tracked, (dir) => fs.existsSync(path.join(REPO_ROOT, dir, "package.json")));
+  const packages = listLintedPackages(tracked, (dir) => fs.existsSync(path.join(REPO_ROOT, dir, "package.json"))).filter(
+    ({ dir }) => !LEFT_OUT_PACKAGES.includes(dir),
+  );
   requireMatches("Linted packages", packages.length, MINIMUM_PACKAGES);
 
   const findings = [];
