@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"os/exec"
 	"time"
 )
@@ -27,12 +28,12 @@ func supervise(cmd *exec.Cmd) {
 func waitForExit(cmd *exec.Cmd, stop func()) error {
 	exited := make(chan error, 1)
 	go func() { exited <- cmd.Wait() }()
-	timer := time.NewTimer(exitGrace)
-	defer timer.Stop()
+	grace, release := context.WithTimeout(context.Background(), exitGrace)
+	defer release()
 	select {
 	case err := <-exited:
 		return err
-	case <-timer.C:
+	case <-grace.Done():
 		stop()
 		return <-exited
 	}
