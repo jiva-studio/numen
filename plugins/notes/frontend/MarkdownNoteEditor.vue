@@ -2,7 +2,7 @@
 /**
  * Standalone Markdown and plain text editor tab component using CodeMirror 6.
  */
-import { computed, ref, useTemplateRef, watch } from 'vue'
+import { computed, ref, useTemplateRef, watch, type Ref } from 'vue'
 import { Editor } from './editor'
 import type { Extension } from '@codemirror/state'
 import { editorPreferences } from './preferences'
@@ -13,7 +13,8 @@ interface Props {
   readonly modelValue?: string
   readonly path?: string
   readonly filePath?: string
-  readonly errorMessage?: string
+  /** A tab of the host passes the error ref of its state. */
+  readonly errorMessage?: string | Readonly<Ref<string>>
   readonly isReadOnly?: boolean
   readonly extensions?: Extension | readonly Extension[] | undefined
   readonly state?: Record<string, unknown> | undefined

@@ -27,7 +27,7 @@ export interface DocumentOptions {
   readonly modelValue?: string
   readonly path?: string
   readonly filePath?: string
-  readonly errorMessage?: string
+  readonly errorMessage?: string | Readonly<Ref<string>>
   readonly state?: DocumentState | undefined
 }
 
@@ -253,7 +253,7 @@ export function useMarkdownDocument(
   })
 
   const displayErrorMessage = computed<string>(() => {
-    const propErr = props.errorMessage?.trim() ?? ''
+    const propErr = extractErrorString(props.errorMessage)
     if (propErr) return propErr
     const stateErr = extractErrorString(props.state?.errorMessage)
     if (stateErr) return stateErr

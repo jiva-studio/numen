@@ -129,4 +129,20 @@ key: value:
     })
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
   })
+
+  it('reads the error ref a host tab passes as errorMessage', () => {
+    const errorMessage = ref('')
+    const wrapper = mount(MarkdownNoteEditor, {
+      props: { filePath: 'test.md', errorMessage, state: { errorMessage } },
+    })
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('displays the caution banner for an error ref a host tab passes', () => {
+    const errorMessage = ref('write failed')
+    const wrapper = mount(MarkdownNoteEditor, {
+      props: { filePath: 'test.md', errorMessage },
+    })
+    expect(wrapper.find('.caution__text').text()).toBe('write failed')
+  })
 })
