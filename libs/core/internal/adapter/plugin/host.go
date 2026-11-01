@@ -1208,8 +1208,9 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 	result := maps.Clone(rawStored)
 	if p, ok := h.plugins[pluginID]; ok {
 		result = p.Manifest.ResolveSettings(result)
-		if _, hasStored := rawStored[keyExecutablePath]; !hasStored && h.hasExecutablePathSetting(p.Manifest) {
-			if paths := resolveDiscoveredACPPaths(); paths != "" {
+		if _, hasStored := rawStored[keyExecutablePath]; !hasStored && isACPPathsSetting(pluginID, keyExecutablePath) &&
+			h.hasExecutablePathSetting(p.Manifest) {
+			if paths := joinOptionValues(resolveDiscoveredACPOptions()); paths != "" {
 				result[keyExecutablePath] = paths
 			}
 		}
@@ -1422,19 +1423,28 @@ func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) er
 	return secretsErr
 }
 
-func toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []pluginport.PluginSetting {
+func toPluginSettings(pluginID string, manifestSettings []pluginport.PluginManifestSetting) []pluginport.PluginSetting {
 	settings := make([]pluginport.PluginSetting, 0, len(manifestSettings))
 	for _, s := range manifestSettings {
-		defVal := resolveSettingDefault(s)
+		options := s.Options
+		var defVal any
+		if isACPPathsSetting(pluginID, s.Key) {
+			discovered := resolveDiscoveredACPOptions()
+			if len(options) == 0 {
+				options = discovered
+			}
+			defVal = s.Default
+			if paths := joinOptionValues(discovered); s.Default == "" && paths != "" {
+				defVal = paths
+			}
+		} else {
+			defVal = resolveSettingDefault(s)
+		}
 		defJSON := ""
 		if defVal != nil {
 			if b, err := json.Marshal(defVal); err == nil {
 				defJSON = string(b)
 			}
-		}
-		options := s.Options
-		if s.Key == keyExecutablePath && len(options) == 0 {
-			options = resolveDiscoveredACPOptions()
 		}
 		settings = append(settings, pluginport.PluginSetting{
 			Key:         s.Key,
@@ -1467,7 +1477,7 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 	result := make([]pluginport.PluginInfo, 0, len(h.plugins))
 	for _, p := range h.getPluginsInOrderLocked() {
 		isActive := h.isPluginActiveLocked(p.Manifest.ID)
-		settings := toPluginSettings(p.Manifest.Settings)
+		settings := toPluginSettings(p.Manifest.ID, p.Manifest.Settings)
 
 		result = append(result, pluginport.PluginInfo{
 			ID:            p.Manifest.ID,
@@ -1501,10 +1511,6 @@ func resolveSettingDefault(s pluginport.PluginManifestSetting) any {
 			if path, err := exec.LookPath("ffmpeg"); err == nil {
 				return path
 			}
-		case keyExecutablePath:
-			if paths := resolveDiscoveredACPPaths(); paths != "" {
-				return paths
-			}
 		}
 	}
 	return s.Default
@@ -1517,6 +1523,8 @@ type acpExecutableCandidate struct {
 }
 
 const (
+	// acpPluginID is the one plugin whose executable paths are the ACP agents found on the machine.
+	acpPluginID       = "md.numen.agents.acp"
 	acpSubcommand     = "acp"
 	acpFlag           = "--acp"
 	keyExecutablePath = "executable_path"
@@ -1533,8 +1541,13 @@ var acpExecutableCandidates = []acpExecutableCandidate{
 	{title: "Qwen Code", binary: "qwen", arg: acpFlag},
 }
 
-func resolveDiscoveredACPPaths() string {
-	options := resolveDiscoveredACPOptions()
+// isACPPathsSetting reports whether a setting of a plugin holds ACP agent executables.
+func isACPPathsSetting(pluginID, key string) bool {
+	return pluginID == acpPluginID && key == keyExecutablePath
+}
+
+// joinOptionValues returns the values of the options, one per line.
+func joinOptionValues(options []pluginport.PluginSettingOption) string {
 	paths := make([]string, 0, len(options))
 	for _, option := range options {
 		paths = append(paths, option.Value)

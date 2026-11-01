@@ -6,11 +6,12 @@
  * other writes it. The vault reads the setting as each rename is made, so the
  * rename after the choice is the first one it answers.
  */
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { formatErrorMessage } from '@numen/core-client'
+import { createRemoteValues } from '@numen/ui'
 import type { StepGroup } from '@/shared/steps'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { SyncWords } from '../words'
-import { createWriteGuard } from '../lib/writeGuard'
 
 /** The command whose step offers the two. */
 export const SYNCING = 'syncing'
@@ -18,6 +19,15 @@ export const SYNCING = 'syncing'
 /** The two rows, by the name each is chosen under. */
 export const ON = 'on'
 export const OFF = 'off'
+
+const KEY = 'naming.sync_title_and_filename'
+
+/** The vault answered why it did not write the setting. */
+class SettingRefused extends Error {
+  constructor(readonly reason: string) {
+    super(reason)
+  }
+}
 
 /** The vault operations this needs. */
 export interface SyncDeps {
@@ -29,18 +39,25 @@ export interface SyncDeps {
 
 export function syncSetting(core: SyncDeps, words: SyncWords, write: MessageWriter) {
   /**
-   * Whether the title and filename are one name. It starts with the default of
-   * an installation without configuration, and is read from the vault when the
-   * window opens.
+   * Whether the title and filename are one name, as the vault last answered. It starts with the
+   * default of an installation without configuration, and is read when the window opens.
    */
-  const isEnabled = ref(true)
-  const guard = createWriteGuard()
+  const confirmed = ref(true)
+  const requested = createRemoteValues<boolean>(async (values) => {
+    const isOn = values.get(KEY)
+    if (isOn === undefined) return
+    const failed = await core.setSyncEnabled(isOn)
+    if (failed !== null) throw new SettingRefused(failed)
+    confirmed.value = isOn
+  })
+  const isEnabled = computed(() => requested.getRequested(KEY)?.value ?? confirmed.value)
 
   /** Reads the setting from the vault once the window is up. */
   const start = async (): Promise<void> => {
+    const ticket = requested.beginRead()
     try {
       const target = await core.getSyncEnabled()
-      if (guard.isIdle()) isEnabled.value = target
+      requested.takeRead(ticket, () => (confirmed.value = target))
     } catch {
       // If the vault cannot be read, the setting keeps its current value.
     }
@@ -64,21 +81,20 @@ export function syncSetting(core: SyncDeps, words: SyncWords, write: MessageWrit
 
   /**
    * Writes the chosen row to the settings. If the setting cannot be written,
-   * the error is reported and the window reverts to the stored value.
+   * the error is reported and the window shows the stored value.
    */
   const choose = async (item: string): Promise<void> => {
     if (item !== ON && item !== OFF) return
-    const was = isEnabled.value
     const now = item === ON
-    if (now === was) return
+    if (now === isEnabled.value) return
     write('')
-    isEnabled.value = now
-    const { failed, isLatest } = await guard.run(guard.beginChoice(), () =>
-      core.setSyncEnabled(now),
-    )
-    if (!failed) return
-    write(`${words.unturned} ${failed}`, 'error')
-    if (isLatest) isEnabled.value = was
+    try {
+      await requested.requestWrite(new Map([[KEY, now]]))
+    } catch (caughtError) {
+      const reason =
+        caughtError instanceof SettingRefused ? caughtError.reason : formatErrorMessage(caughtError)
+      write(`${words.unturned} ${reason}`, 'error')
+    }
   }
 
   return { isEnabled, start, getSyncingGroups, choose }

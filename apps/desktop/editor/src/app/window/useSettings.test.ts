@@ -158,9 +158,8 @@ describe('the settings tab', () => {
     const { settings } = createSettings()
     const { installation } = settings.configured.state
     const sync = vi.spyOn(settings.sync, 'choose').mockResolvedValue()
-    settings.sync.isEnabled.value = false
 
-    expect(installation.isSyncing.value).toBe(false)
+    expect(installation.isSyncing.value).toBe(settings.sync.isEnabled.value)
 
     installation.isSyncing.value = true
     installation.isSyncing.value = false

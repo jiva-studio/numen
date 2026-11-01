@@ -1,0 +1,127 @@
+import { describe, expect, it } from 'vitest'
+import { shallowRef, watch } from 'vue'
+
+import { createRemoteValues, createWriteOrder } from './remoteValues'
+
+/** A promise settled from outside, and the values it was sent with. */
+const createDeferred = () => {
+  let resolve: () => void = () => undefined
+  let reject: (error: unknown) => void = () => undefined
+  const promise = new Promise<void>((yes, no) => {
+    resolve = yes
+    reject = no
+  })
+  return { promise, resolve, reject }
+}
+
+/** A remote store of one switch: its confirmed value, the writes sent, and every value shown. */
+const createSwitch = (confirmed: boolean) => {
+  const remote = shallowRef(confirmed)
+  const sent: {
+    values: ReadonlyMap<string, boolean>
+    answer: ReturnType<typeof createDeferred>
+  }[] = []
+  const values = createRemoteValues<boolean>((batch) => {
+    const answer = createDeferred()
+    sent.push({ values: batch, answer })
+    return answer.promise
+  })
+  const shown: boolean[] = []
+  const getShownValue = () => values.getRequested('on')?.value ?? remote.value
+  watch(getShownValue, (value) => shown.push(value), { flush: 'sync' })
+  /** Answers a read begun now with the value the remote holds now, once `answer` is called. */
+  const beginRead = () => {
+    const ticket = values.beginRead()
+    const answered = remote.value
+    return (value = answered) => {
+      values.takeRead(ticket, () => (remote.value = value))
+    }
+  }
+  return { remote, values, sent, shown, getShownValue, beginRead }
+}
+
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0))
+
+describe('a switch bound to a remote value', () => {
+  it('shows the requested value until a read begun after the write is taken', async () => {
+    const one = createSwitch(false)
+    const before = one.beginRead()
+    const written = one.values.requestWrite(new Map([['on', true]]))
+    const during = one.beginRead()
+    before()
+    during()
+    one.sent[0]?.answer.resolve()
+    await written
+    expect(one.getShownValue()).toBe(true)
+    one.beginRead()(true)
+    expect(one.shown).toEqual([true])
+    expect(one.values.getRequested('on')).toBeUndefined()
+  })
+
+  it('shows the confirmed value again where the write failed', async () => {
+    const one = createSwitch(false)
+    const written = one.values.requestWrite(new Map([['on', true]]))
+    one.sent[0]?.answer.reject(new Error('refused'))
+    await expect(written).rejects.toThrow('refused')
+    expect(one.shown).toEqual([true, false])
+  })
+
+  it('sends the newest value requested during a write after it, once', async () => {
+    const one = createSwitch(false)
+    const first = one.values.requestWrite(new Map([['on', true]]))
+    const second = one.values.requestWrite(new Map([['on', false]]))
+    const third = one.values.requestWrite(new Map([['on', true]]))
+    expect(one.sent).toHaveLength(1)
+    one.sent[0]?.answer.resolve()
+    await first
+    await settle()
+    expect(one.sent.map((write) => write.values.get('on'))).toEqual([true, true])
+    one.sent[1]?.answer.resolve()
+    await Promise.all([second, third])
+    expect(one.shown).toEqual([true, false, true])
+    expect(one.values.isWriteInFlight()).toBe(false)
+  })
+
+  it('keeps a later request where an earlier write fails', async () => {
+    const one = createSwitch(false)
+    const first = one.values.requestWrite(new Map([['on', true]]))
+    const second = one.values.requestWrite(new Map([['on', false]]))
+    one.sent[0]?.answer.reject(new Error('refused'))
+    await expect(first).rejects.toThrow('refused')
+    expect(one.getShownValue()).toBe(false)
+    await settle()
+    one.sent[1]?.answer.resolve()
+    await second
+    expect(one.shown).toEqual([true, false])
+  })
+
+  it('takes reads in the order they began', () => {
+    const one = createSwitch(false)
+    const older = one.beginRead()
+    const newer = one.beginRead()
+    newer(true)
+    older(false)
+    expect(one.remote.value).toBe(true)
+  })
+})
+
+describe('the order of reads and writes', () => {
+  it('says a read overlapped a write where one was in flight when it began or finished since', () => {
+    const order = createWriteOrder()
+    const before = order.beginRead()
+    const settleWrite = order.beginWrite()
+    const during = order.beginRead()
+    settleWrite()
+    const after = order.beginRead()
+    expect([before, during, after].map(order.isReadAfterWrites)).toEqual([false, false, true])
+  })
+
+  it('settles a write once', () => {
+    const order = createWriteOrder()
+    const settleWrite = order.beginWrite()
+    settleWrite()
+    settleWrite()
+    expect(order.getSettledWrites()).toBe(1)
+    expect(order.isWriteInFlight()).toBe(false)
+  })
+})

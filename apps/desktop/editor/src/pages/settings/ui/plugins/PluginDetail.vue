@@ -2,16 +2,19 @@
 /**
  * The page of one plugin in the settings tab: the plugin manager's page, with the README and the
  * data of the plugin read here, and the declarative settings and secrets drawn in its slot.
+ *
+ * The README and the file count are read for the plugin shown; an answer for another plugin is
+ * dropped.
  */
 import { computed, ref, watch } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
 import { PluginDetail as PluginDetailView } from '@numen/plugin-manager'
 import { createManagedFromEntries } from '@/shared/pluginListing'
-import { runInBackground } from '@numen/ui'
+import { createRequestGuard, runInBackground } from '@numen/ui'
 import PluginFields from './PluginFields.vue'
 import type { SettingsTabState } from '../../types'
 import { createSettingFields, write, type PluginInfo } from '@/entities/settings'
-import { hasPluginSettings } from '../../lib/pluginSettings'
+import { getShownConsent, hasPluginSettings } from '../../lib/pluginSettings'
 import { fetchPluginReadme } from '../../lib/readme'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -28,22 +31,26 @@ const emit = defineEmits<{
 const installation = computed(() => props.state.installation)
 const fields = createSettingFields(() => props.state.installation)
 
+const read = (key: string) => installation.value.getSetting(['plugins', props.plugin.id, key])
+
 const managed = computed(() => {
   const [one] = createManagedFromEntries([props.plugin], installation.value.catalog?.value ?? [])
-  return one
+  if (!one?.info) return one
+  return { ...one, info: { ...one.info, consent: getShownConsent(props.plugin, read) } }
 })
 
 const isEnabled = computed<boolean>(() => {
-  const val = installation.value.getSetting(['plugins', props.plugin.id, 'enabled'])
+  const val = read('enabled')
   return typeof val === 'boolean' ? val : true
 })
 
-const read = (key: string) => installation.value.getSetting(['plugins', props.plugin.id, key])
 const hasSettings = computed(() => hasPluginSettings(props.plugin, read))
 /** How many files the plugin keeps in the shown vault; zero hides the delete action. */
 const fileCount = ref(0)
 const deleteProblem = ref('')
 const readmeText = ref('')
+const countReads = createRequestGuard()
+const readmeReads = createRequestGuard()
 
 /* -------------------------------- Handlers -------------------------------- */
 function onBack(): void {
@@ -65,22 +72,29 @@ function onConsentChange(isAllowed: boolean): void {
 }
 
 async function onDeleteData(): Promise<void> {
-  deleteProblem.value = (await installation.value.deletePluginData?.(props.plugin.id)) ?? ''
-  await readFileCount()
+  const pluginId = props.plugin.id
+  const problem = (await installation.value.deletePluginData?.(pluginId)) ?? ''
+  if (props.plugin.id !== pluginId) return
+  deleteProblem.value = problem
+  await readFileCount(pluginId)
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-async function readFileCount(): Promise<void> {
+async function readFileCount(pluginId: string): Promise<void> {
+  const request = countReads.acquireRequest()
+  let count = 0
   try {
-    fileCount.value = (await installation.value.getPluginData?.(props.plugin.id)) ?? 0
+    count = (await installation.value.getPluginData?.(pluginId)) ?? 0
   } catch {
-    fileCount.value = 0
+    count = 0
   }
+  if (request.isCurrent) fileCount.value = count
 }
 
 async function readReadme(pluginId: string): Promise<void> {
+  const request = readmeReads.acquireRequest()
   const text = await fetchPluginReadme(pluginId)
-  if (text !== '' && props.plugin.id === pluginId) readmeText.value = text
+  if (request.isCurrent) readmeText.value = text
 }
 
 watch(
@@ -88,10 +102,10 @@ watch(
   (pluginId) => {
     deleteProblem.value = ''
     readmeText.value = ''
-    runInBackground(
-      Promise.all([readFileCount(), readReadme(pluginId)]),
-      (error) => (deleteProblem.value = formatErrorMessage(error)),
-    )
+    fileCount.value = 0
+    runInBackground(Promise.all([readFileCount(pluginId), readReadme(pluginId)]), (error) => {
+      if (props.plugin.id === pluginId) deleteProblem.value = formatErrorMessage(error)
+    })
   },
   { immediate: true },
 )

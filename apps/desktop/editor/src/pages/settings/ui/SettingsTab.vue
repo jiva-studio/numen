@@ -59,6 +59,7 @@ function onBack(): void {
         <SystemDetail v-if="selectedPluginId === 'system'" :state="props.state" @back="onBack" />
         <PluginDetail
           v-else-if="selectedPlugin"
+          :key="selectedPlugin.id"
           :state="props.state"
           :plugin="selectedPlugin"
           @back="onBack"

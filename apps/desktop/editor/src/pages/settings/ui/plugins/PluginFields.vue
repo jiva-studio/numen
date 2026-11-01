@@ -43,8 +43,10 @@ function onSettingChange(key: string, value: unknown): void {
 }
 
 async function onPathChoose(setting: PluginSettingInfo): Promise<void> {
+  const pluginId = props.plugin.id
   const previous = getStringSetting(setting.key, setting.default)
-  const problem = await installation.value.choosePath(props.plugin.id, setting.key)
+  const problem = await installation.value.choosePath(pluginId, setting.key)
+  if (props.plugin.id !== pluginId) return
   pathProblems.value = { ...pathProblems.value, [setting.key]: problem }
   if (problem === '' && previous !== '' && hasManyPaths(setting)) {
     onSettingChange(setting.key, appendPathEntry(previous, getStringSetting(setting.key, '')))

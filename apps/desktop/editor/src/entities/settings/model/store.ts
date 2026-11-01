@@ -1,15 +1,14 @@
 /**
- * through it, the models a setting that names one can be set to, and one
- * setting written at its current position.
- *
- * leaves out.
+ * Every setting as the vault holds it, with the value a control requested shown from the request
+ * until the vault reads it back; the models a setting that names one can be set to; and settings
+ * written at their current position, one batch at a time.
  */
 import { ref, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
+import { createRemoteValues } from '@numen/ui'
 import type { Model, PluginInfo, SettingEdit } from '../lib/configuration'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { write } from '../lib/write'
-import { createPendingWrites } from './pending'
 
 /** Every label shown in the window. */
 export interface Words {
@@ -40,6 +39,19 @@ export const getSettingAt = (settings: unknown, at: readonly string[]): unknown 
   return value
 }
 
+const PATH_JOIN = '\u0000'
+
+const getPathKey = (path: readonly string[]): string => path.join(PATH_JOIN)
+
+/** The value an edit writes, and nothing where its text is not JSON. */
+const readEditValue = (edit: SettingEdit): unknown => {
+  try {
+    return JSON.parse(edit.value)
+  } catch {
+    return undefined
+  }
+}
+
 /** The default a plugin declares for the setting at a path, and nothing where it declares none. */
 const getPluginDefault = (plugins: readonly PluginInfo[], path: readonly string[]): unknown => {
   if (path.length !== 3 || path[0] !== 'plugins') return undefined
@@ -56,10 +68,13 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   const models = shallowRef<readonly Model[]>([])
   const plugins = shallowRef<readonly PluginInfo[]>([])
 
-  const pending = createPendingWrites()
-  /** The settings values, requested once the window is up. */
+  const requested = createRemoteValues<SettingEdit>((values) =>
+    core.updateSettings([...values.values()]),
+  )
+
+  /** The settings values, requested once the window is up and after every write. */
   const start = async (): Promise<void> => {
-    const place = pending.beginRead()
+    const ticket = requested.beginRead()
     let answer: Awaited<ReturnType<SettingsStoreDeps['getSettings']>>
     try {
       answer = await core.getSettings()
@@ -68,9 +83,9 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
       // window already reports the lost connection to the vault.
       return
     }
-    if (!pending.takeRead(place)) return
+    let written: unknown
     try {
-      target.value = JSON.parse(answer.written)
+      written = JSON.parse(answer.written)
     } catch {
       // The vault answered with something no settings can be read out of. It is
       // not a vault that has gone away, and a write followed by this leaves the
@@ -78,13 +93,17 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
       say(words.unreadSettings, 'error')
       return
     }
-    path.value = answer.path
-    models.value = answer.models
-    plugins.value = answer.plugins ?? []
+    requested.takeRead(ticket, () => {
+      target.value = written
+      path.value = answer.path
+      models.value = answer.models
+      plugins.value = answer.plugins ?? []
+    })
   }
 
   const getSetting = (path: readonly string[]): unknown => {
-    const value = pending.getPending(path)?.value ?? getSettingAt(target.value, path)
+    const edit = requested.getRequested(getPathKey(path))?.value
+    const value = (edit && readEditValue(edit)) ?? getSettingAt(target.value, path)
     return value !== undefined ? value : getPluginDefault(plugins.value, path)
   }
 
@@ -102,17 +121,12 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     if (edits.length === 0) return
     say('')
 
-    const token = pending.add(edits)
     try {
-      await core.updateSettings(edits)
+      await requested.requestWrite(new Map(edits.map((one) => [getPathKey(one.at), one])))
     } catch (caughtError) {
       say(`${words.unturned} ${formatErrorMessage(caughtError)}`, 'error')
     }
-    try {
-      await start()
-    } finally {
-      pending.release(edits, token)
-    }
+    await start()
   }
 
   /** One setting written, by what is to stand there. */

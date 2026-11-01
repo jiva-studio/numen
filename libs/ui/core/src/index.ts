@@ -41,6 +41,13 @@ export {
   type RequestGuard,
 } from './shared/lib/async/requestGuard'
 
+/** A value of another process shown by a control from the request until the write settles. */
+export {
+  createRemoteValues,
+  createWriteOrder,
+  type WriteOrder,
+} from './shared/lib/async/remoteValues'
+
 /** Runs a promise without awaiting it and passes its rejection to a callback. */
 export { runInBackground } from './shared/lib/async/background'
 
