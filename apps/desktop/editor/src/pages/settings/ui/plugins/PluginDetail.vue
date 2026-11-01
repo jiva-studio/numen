@@ -82,7 +82,7 @@ async function onDeleteData(): Promise<void> {
 /* -------------------------------- Helpers --------------------------------- */
 async function readFileCount(pluginId: string): Promise<void> {
   const request = countReads.acquireRequest()
-  let count = 0
+  let count: number
   try {
     count = (await installation.value.getPluginData?.(pluginId)) ?? 0
   } catch {
