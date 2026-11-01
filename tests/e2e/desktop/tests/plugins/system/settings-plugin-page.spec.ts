@@ -17,9 +17,9 @@ declare global {
   }
 }
 
-const writeSetting = async (page: Page, at: string[], value: unknown): Promise<void> => {
+const writeSetting = async (page: Page, path: string[], value: unknown): Promise<void> => {
   const answer = await page.request.post('/numen.v1.SettingsService/WriteSettings', {
-    data: { settings: [{ at, value: JSON.stringify(value) }] },
+    data: { settings: [{ at: path, value: JSON.stringify(value) }] },
     headers: { 'Content-Type': 'application/json' },
   })
   expect(answer.ok()).toBe(true)

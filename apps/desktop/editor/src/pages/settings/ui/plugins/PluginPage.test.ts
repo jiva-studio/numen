@@ -73,13 +73,13 @@ describe('the page of a plugin opened after another', () => {
       props: { state: { installation, initialPluginId } },
       attachTo: document.body,
     })
-    const shown: string[] = []
+    const history: string[] = []
     const record = () => {
       const page = wrapper.element as HTMLElement
       if (!page.textContent?.includes(SECOND.name)) return
-      shown.push(page.textContent ?? '')
+      history.push(page.textContent ?? '')
       for (const one of page.querySelectorAll('[title]'))
-        shown.push(one.getAttribute('title') ?? '')
+        history.push(one.getAttribute('title') ?? '')
     }
     const observer = new MutationObserver(record)
     observer.observe(wrapper.element, { subtree: true, childList: true, characterData: true })
@@ -96,7 +96,7 @@ describe('the page of a plugin opened after another', () => {
     await flushPromises()
     observer.disconnect()
 
-    const text = shown.join('\n')
+    const text = history.join('\n')
     expect(text).toContain('second-cli')
     expect(text).toContain('Second agent readme.')
     expect(text).toContain('2 files')

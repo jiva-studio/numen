@@ -61,9 +61,9 @@ const createHeldVault = (isEnabled: boolean) => {
   const core = {
     getSettings: () =>
       new Promise<{ written: string; path: string; models: []; plugins: [] }>((resolve, reject) => {
-        const written = JSON.stringify(file)
+        const settingsText = JSON.stringify(file)
         reads.push({
-          resolve: () => resolve({ written, path: '/f', models: [], plugins: [] }),
+          resolve: () => resolve({ written: settingsText, path: '/f', models: [], plugins: [] }),
           reject,
         })
       }),
@@ -86,13 +86,13 @@ describe('the enabled switch of a plugin', () => {
   it('shows each requested value from the click on, with reads out of order and a failed read-back', async () => {
     const vault = createHeldVault(false)
     const store = createSettingsStore(vault.core, { unturned: 'u', unreadSettings: 'r' }, vi.fn())
-    const opened = store.start()
+    const firstRead = store.start()
     vault.reads[0]?.resolve()
-    await opened
-    const shown: unknown[] = [store.getSetting(AT)]
+    await firstRead
+    const history: unknown[] = [store.getSetting(AT)]
     watch(
       () => store.getSetting(AT),
-      (v) => shown.push(v),
+      (v) => history.push(v),
       { flush: 'sync' },
     )
 
@@ -100,14 +100,14 @@ describe('the enabled switch of a plugin', () => {
       // A refresh that began before the click answers after the write's own read-back.
       const refresh = store.start()
       const before = vault.reads.at(-1)
-      const written = store.writeSetting(AT, isEnabled)
+      const write = store.writeSetting(AT, isEnabled)
       await vi.waitFor(() => expect(vault.writes).toHaveLength(index + 1))
       // The vault answers the write once the plugin has started or stopped.
       vault.writes.at(-1)?.resolve()
       await vi.waitFor(() => expect(vault.reads.at(-1)).not.toBe(before))
       // The read-back fails while the host still lists the plugin as starting or stopping.
       vault.reads.at(-1)?.reject(new Error('busy'))
-      await written
+      await write
       before?.resolve()
       await refresh
       const later = store.start()
@@ -116,6 +116,6 @@ describe('the enabled switch of a plugin', () => {
       expect(vault.isActive()).toBe(isEnabled)
     }
 
-    expect(shown).toEqual([false, true, false])
+    expect(history).toEqual([false, true, false])
   })
 })

@@ -10,7 +10,7 @@
 import { shallowRef } from 'vue'
 
 /** One read in flight: its place in the order of reads, and the writes when it began. */
-export interface ReadTicket {
+export interface PendingRead {
   readonly place: number
   readonly settledWrites: number
   readonly isWriting: boolean
@@ -41,20 +41,20 @@ export function createWriteOrder() {
   /** The number of writes settled so far. */
   const getSettledWrites = (): number => settledWrites
 
-  const beginRead = (): ReadTicket => ({
+  const beginRead = (): PendingRead => ({
     place: ++lastRead,
     settledWrites,
     isWriting: writesInFlight > 0,
   })
 
   /** Whether no write was in flight while the read ran: its answer cannot predate a write. */
-  const isReadAfterWrites = (ticket: ReadTicket): boolean =>
-    !ticket.isWriting && writesInFlight === 0 && ticket.settledWrites === settledWrites
+  const isReadAfterWrites = (pendingRead: PendingRead): boolean =>
+    !pendingRead.isWriting && writesInFlight === 0 && pendingRead.settledWrites === settledWrites
 
   /** Whether the answer of the read is newer than every answer taken; a newer one is taken. */
-  const takeRead = (ticket: ReadTicket): boolean => {
-    if (ticket.place < lastTaken) return false
-    lastTaken = ticket.place
+  const takeRead = (pendingRead: PendingRead): boolean => {
+    if (pendingRead.place < lastTaken) return false
+    lastTaken = pendingRead.place
     return true
   }
 
@@ -134,24 +134,24 @@ export function createRemoteValues<V>(send: (values: ReadonlyMap<string, V>) => 
       queued.set(key, { token, value })
     }
     requested.value = next
-    const settled = new Promise<void>((resolve, reject) => waiters.push({ resolve, reject }))
+    const completion = new Promise<void>((resolve, reject) => waiters.push({ resolve, reject }))
     active ??= drain()
-    return settled
+    return completion
   }
 
   /** A read of every value begins. */
-  const beginRead = (): ReadTicket => order.beginRead()
+  const beginRead = (): PendingRead => order.beginRead()
 
   /**
    * Runs `apply` where the answer of the read is newer than every answer taken, and then ends the
    * requested values whose write settled before the read began. Returns whether it was taken.
    */
-  const takeRead = (ticket: ReadTicket, apply: () => void): boolean => {
-    if (!order.takeRead(ticket)) return false
+  const takeRead = (pendingRead: PendingRead, apply: () => void): boolean => {
+    if (!order.takeRead(pendingRead)) return false
     apply()
     const next = new Map(requested.value)
     for (const [key, one] of next) {
-      if (one.settledAt !== null && one.settledAt <= ticket.settledWrites) next.delete(key)
+      if (one.settledAt !== null && one.settledAt <= pendingRead.settledWrites) next.delete(key)
     }
     if (next.size !== requested.value.size) requested.value = next
     return true

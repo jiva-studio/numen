@@ -47,10 +47,10 @@ const readEnabled = async (page: Page): Promise<boolean> => {
     data: {},
     headers: { 'Content-Type': 'application/json' },
   })
-  const written = JSON.parse((await answer.json()).written) as {
+  const settingsFile = JSON.parse((await answer.json()).written) as {
     plugins?: Record<string, { enabled?: boolean }>
   }
-  return written.plugins?.[PLUGIN_ID]?.enabled !== false
+  return settingsFile.plugins?.[PLUGIN_ID]?.enabled !== false
 }
 
 const toggleAndRecord = async (page: Page, toggle: Locator, isEnabled: boolean) => {

@@ -74,7 +74,7 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
 
   /** The settings values, requested once the window is up and after every write. */
   const start = async (): Promise<void> => {
-    const ticket = requested.beginRead()
+    const pendingRead = requested.beginRead()
     let answer: Awaited<ReturnType<SettingsStoreDeps['getSettings']>>
     try {
       answer = await core.getSettings()
@@ -83,9 +83,9 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
       // window already reports the lost connection to the vault.
       return
     }
-    let written: unknown
+    let settingsFile: unknown
     try {
-      written = JSON.parse(answer.written)
+      settingsFile = JSON.parse(answer.written)
     } catch {
       // The vault answered with something no settings can be read out of. It is
       // not a vault that has gone away, and a write followed by this leaves the
@@ -93,8 +93,8 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
       say(words.unreadSettings, 'error')
       return
     }
-    requested.takeRead(ticket, () => {
-      target.value = written
+    requested.takeRead(pendingRead, () => {
+      target.value = settingsFile
       path.value = answer.path
       models.value = answer.models
       plugins.value = answer.plugins ?? []

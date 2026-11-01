@@ -54,10 +54,10 @@ export function syncSetting(core: SyncDeps, words: SyncWords, write: MessageWrit
 
   /** Reads the setting from the vault once the window is up. */
   const start = async (): Promise<void> => {
-    const ticket = requested.beginRead()
+    const pendingRead = requested.beginRead()
     try {
       const target = await core.getSyncEnabled()
-      requested.takeRead(ticket, () => (confirmed.value = target))
+      requested.takeRead(pendingRead, () => (confirmed.value = target))
     } catch {
       // If the vault cannot be read, the setting keeps its current value.
     }

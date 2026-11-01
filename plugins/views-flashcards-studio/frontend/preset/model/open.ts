@@ -53,7 +53,7 @@ export interface ReadPresetContext {
 export const readPreset = async (one: OpenPreset, context: ReadPresetContext): Promise<void> => {
   const { core, bounds, titles, today } = context
   const queue = one.writeQueue
-  const ticket = queue.order.beginRead()
+  const pendingRead = queue.order.beginRead()
   let answer
   try {
     answer = await core.read(one.path.value)
@@ -65,7 +65,7 @@ export const readPreset = async (one: OpenPreset, context: ReadPresetContext): P
   }
   // A read that overlapped a write may predate it; the file change the write
   // makes starts a read that does not.
-  if (!queue.order.isReadAfterWrites(ticket)) return
+  if (!queue.order.isReadAfterWrites(pendingRead)) return
   one.writeQueue.errorMessage.value = answer.ok ? '' : words.notRead(answer.error)
   one.writeQueue.hasExternalChange.value = false
   one.curves.answers.clear()
