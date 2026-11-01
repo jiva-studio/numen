@@ -11,7 +11,7 @@ const getPanes = (page: Page): Locator => page.locator('section[data-workspace-p
  * loaded and is not one flat colour. A page outside the visible part of the row is a black area
  * to the person.
  */
-const isDrawnInView = (page: Page, at: number): Promise<boolean> =>
+const isDrawnInView = (page: Page, pageIndex: number): Promise<boolean> =>
   page.locator('.reader__viewport:visible').evaluate(async (area, index) => {
     const frame = area.getBoundingClientRect()
     const centre = frame.left + frame.width / 2
@@ -27,11 +27,11 @@ const isDrawnInView = (page: Page, at: number): Promise<boolean> =>
     context.drawImage(picture, 0, 0, 64, 64)
     const data = context.getImageData(0, 0, 64, 64).data
     const colours = new Set<number>()
-    for (let at = 0; at < data.length; at += 4) {
-      colours.add((data[at]! << 16) | (data[at + 1]! << 8) | data[at + 2]!)
+    for (let offset = 0; offset < data.length; offset += 4) {
+      colours.add((data[offset]! << 16) | (data[offset + 1]! << 8) | data[offset + 2]!)
     }
     return colours.size > 2
-  }, at)
+  }, pageIndex)
 
 test.describe('A PDF tab that is moved', () => {
   test('still draws the page it was on after it is dragged to the other pane', async ({ page }) => {
@@ -44,25 +44,26 @@ test.describe('A PDF tab that is moved', () => {
     await expect.poll(() => isDrawnInView(page, 11), { timeout: 20_000 }).toBe(true)
 
     // Panes are taken by position: a locator that filters on the tab would follow it.
-    const holderAt = await getPanes(page).evaluateAll((panes) =>
+    const holderIndex = await getPanes(page).evaluateAll((panes) =>
       panes.findIndex((one) =>
         [...one.querySelectorAll('[role="tab"]')].some((tab) =>
           /pages\.pdf/.test(tab.textContent ?? ''),
         ),
       ),
     )
-    expect(holderAt).toBeGreaterThanOrEqual(0)
-    const holder = getPanes(page).nth(holderAt)
-    const other = getPanes(page).nth(holderAt === 0 ? 1 : 0)
+    expect(holderIndex).toBeGreaterThanOrEqual(0)
+    const panes = await getPanes(page).all()
+    const sourcePane = panes[holderIndex]!
+    const targetPane = panes[holderIndex === 0 ? 1 : 0]!
     const from = await readBox(getTab(page, 'pages.pdf'))
-    const to = await readBox(other)
+    const to = await readBox(targetPane)
     await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
     await page.mouse.down()
     await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 15 })
     await page.mouse.up()
 
-    await expect(other.getByRole('tab', { name: /pages\.pdf/ })).toHaveCount(1)
-    await expect(holder.getByRole('tab', { name: /pages\.pdf/ })).toHaveCount(0)
+    await expect(targetPane.getByRole('tab', { name: /pages\.pdf/ })).toHaveCount(1)
+    await expect(sourcePane.getByRole('tab', { name: /pages\.pdf/ })).toHaveCount(0)
 
     // The page is drawn without the page being turned.
     await expect(field).toHaveValue('12')

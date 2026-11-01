@@ -89,7 +89,7 @@ describe('a document drawn', () => {
   })
 })
 
-describe('a document asked for and not yet arrived', () => {
+describe('a document requested and not yet arrived', () => {
   it('is dropped when the reader has since stayed in the document in front', async () => {
     const { doc, pending } = create()
     const first = doc.draw(FIRST)
@@ -105,7 +105,7 @@ describe('a document asked for and not yet arrived', () => {
     expect(doc.markup.value).toContain('first')
   })
 
-  it('is dropped when the document in front is asked for again', async () => {
+  it('is dropped when the document in front is requested again', async () => {
     const { doc, pending } = create()
     const first = doc.draw(FIRST)
     pending.get(FIRST.path)?.resolve('<p>first</p>')

@@ -134,20 +134,20 @@ watch(
 )
 
 /** The point kept through zooms whose redraw has not run yet, so a second zoom keeps the first one's. */
-let kept: { anchor: Anchor | undefined; across: number } | undefined
+let pendingZoom: { anchor: Anchor | undefined; across: number } | undefined
 
 // Zooming keeps the point under the centre of the viewport where it is. Every
 // page changes width, so the scroll position shifts. A row with no pages before
 // it has no point to keep, and the current page is shown instead.
 watch(pageLayout, (now, was) => {
   if (now.height === was.height) return
-  kept ??= {
+  pendingZoom ??= {
     anchor: getAnchor(was, viewport.value, getScrollOffset()),
     across: getAcrossShare(was, viewport.value, area.value?.scrollTop ?? 0),
   }
   props.paint(() => {
-    const point = kept
-    kept = undefined
+    const point = pendingZoom
+    pendingZoom = undefined
     if (!point) return
     const to = point.anchor && getAnchorScroll(pageLayout.value, viewport.value, point.anchor)
     if (to === undefined) stand(props.at, 'auto')

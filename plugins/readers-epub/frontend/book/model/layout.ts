@@ -130,15 +130,15 @@ export interface BookSettlingOptions {
  * columns count as standing only for the markup and the span they were set for.
  */
 function holdUntilStood<T>(isStood: () => boolean, read: () => T): Readonly<Ref<T>> {
-  const held = shallowRef(read()) as Ref<T>
+  const followed = shallowRef(read()) as Ref<T>
   watch(
     [isStood, read],
     () => {
-      if (isStood()) held.value = read()
+      if (isStood()) followed.value = read()
     },
     { flush: 'sync' },
   )
-  return held
+  return followed
 }
 
 /** Handles re-settling and watching dimensions / links in book layout. */

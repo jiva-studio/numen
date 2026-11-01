@@ -17,7 +17,7 @@ export function findPending(text: HTMLElement): HTMLImageElement[] {
  * and once only.
  */
 export function whenArrived(pictures: readonly HTMLImageElement[], run: () => void): void {
-  let left = pictures.length
+  let remaining = pictures.length
   let isDone = false
   const finish = () => {
     if (isDone) return
@@ -27,8 +27,8 @@ export function whenArrived(pictures: readonly HTMLImageElement[], run: () => vo
   }
   const limit = setTimeout(finish, PICTURES_WAIT)
   const onSettled = () => {
-    left -= 1
-    if (left <= 0) finish()
+    remaining -= 1
+    if (remaining <= 0) finish()
   }
   for (const one of pictures) {
     one.addEventListener('load', onSettled, { once: true })

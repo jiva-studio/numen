@@ -86,9 +86,9 @@ test.describe('PDF Document Reader Advanced Controls', () => {
     ] as const) {
       // The centre line of the viewport is put one pixel either side of where the second page
       // begins, measured and scrolled to in one step so no layout change comes between.
-      await viewport.evaluate((element: HTMLElement, by: number) => {
+      await viewport.evaluate((element: HTMLElement, offset: number) => {
         const next = element.querySelector<HTMLElement>('.reader__page[data-page="1"]')!
-        element.scrollLeft = next.offsetLeft - element.clientWidth / 2 + by
+        element.scrollLeft = next.offsetLeft - element.clientWidth / 2 + offset
       }, shift)
       await expect(numberField).toHaveValue(expected)
 

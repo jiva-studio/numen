@@ -149,14 +149,14 @@ func TestPageRouteRequiresTheHostToken(t *testing.T) {
 func TestPageRouteDrawsThePageAsWideAsAsked(t *testing.T) {
 	web := newLinkedPages(t, newTestdataVault(t))
 
-	for _, wide := range []int{200, 400, 1000} {
-		got := getPage(t, web, "/plugin/pages/0?path=tiny.pdf&wide="+strconv.Itoa(wide))
+	for _, pixelWidth := range []int{200, 400, 1000} {
+		got := getPage(t, web, "/plugin/pages/0?path=tiny.pdf&wide="+strconv.Itoa(pixelWidth))
 		drawing, err := jpeg.Decode(bytes.NewReader(got.body))
 		if err != nil {
-			t.Fatalf("wide=%d: the page is no JPEG: %v", wide, err)
+			t.Fatalf("wide=%d: the page is no JPEG: %v", pixelWidth, err)
 		}
-		if drawing.Bounds().Dx() != wide {
-			t.Errorf("wide=%d was drawn %d pixels across", wide, drawing.Bounds().Dx())
+		if drawing.Bounds().Dx() != pixelWidth {
+			t.Errorf("wide=%d was drawn %d pixels across", pixelWidth, drawing.Bounds().Dx())
 		}
 	}
 }

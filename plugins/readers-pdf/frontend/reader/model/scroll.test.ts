@@ -47,15 +47,28 @@ describe('a row sent somewhere', () => {
     expect(scroll.along.value).toBe(100)
   })
 
-  it('stays where it is when it is within a pixel of the place', () => {
+  it('is sent at once when it is within a pixel of the place', () => {
     const { scroll, scrollTo } = createScroll(10)
 
     scroll.send(11, 'smooth')
     scroll.send(9, 'smooth')
     scroll.send(10, 'smooth')
 
-    expect(scrollTo).not.toHaveBeenCalled()
+    expect(scrollTo).toHaveBeenCalledTimes(3)
+    expect(scrollTo).toHaveBeenLastCalledWith({ left: 10, behavior: 'auto' })
     expect(scroll.getScrollOffset()).toBe(10)
+  })
+
+  it('replaces a travel in flight when it is sent to the place it is at', () => {
+    const { scroll, scrollTo, element } = createScroll(100)
+
+    scroll.send(500, 'smooth')
+    element.scrollLeft = 100.5
+    scroll.send(100, 'smooth')
+
+    expect(scrollTo).toHaveBeenCalledTimes(2)
+    expect(scrollTo).toHaveBeenLastCalledWith({ left: 100, behavior: 'auto' })
+    expect(scroll.getScrollOffset()).toBe(100.5)
   })
 
   it('moves when the place is two pixels away', () => {

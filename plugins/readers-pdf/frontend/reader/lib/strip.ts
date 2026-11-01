@@ -259,7 +259,7 @@ export const SHARP = 0.5
  */
 export interface Anchor {
   readonly page: number
-  readonly along: number
+  readonly fraction: number
 }
 
 /** The point of the row under the centre line of the viewport. */
@@ -267,7 +267,7 @@ export function getAnchor(row: Row, viewport: Size, offset: number): Anchor | un
   if (row.starts.length === 0) return undefined
   const page = getCurrentPage(row, viewport, offset)
   const width = row.widths[page]!
-  return { page, along: (offset + viewport.width / 2 - row.starts[page]!) / width }
+  return { page, fraction: (offset + viewport.width / 2 - row.starts[page]!) / width }
 }
 
 /** How far the row is scrolled to put the anchor under the centre line, held inside the row. */
@@ -275,7 +275,7 @@ export function getAnchorScroll(row: Row, viewport: Size, anchor: Anchor): numbe
   const begins = row.starts[anchor.page]
   const width = row.widths[anchor.page]
   if (begins === undefined || width === undefined) return undefined
-  const target = Math.round(begins + anchor.along * width - viewport.width / 2)
+  const target = Math.round(begins + anchor.fraction * width - viewport.width / 2)
   return Math.min(Math.max(target, 0), Math.max(row.length - viewport.width, 0))
 }
 

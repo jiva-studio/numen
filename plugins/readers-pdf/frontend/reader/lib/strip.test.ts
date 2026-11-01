@@ -399,7 +399,7 @@ describe('the point kept under the centre line of the viewport', () => {
     const anchor = getAnchor(before, viewport, centre - viewport.width / 2)
 
     expect(anchor?.page).toBe(1)
-    expect(anchor?.along).toBeCloseTo(0.25)
+    expect(anchor?.fraction).toBeCloseTo(0.25)
   })
 
   it('is nothing in a row with no pages', () => {
@@ -418,14 +418,14 @@ describe('the point kept under the centre line of the viewport', () => {
     expect((centre - after.starts[1]!) / after.widths[1]!).toBeCloseTo(0.25, 1)
   })
 
-  it('is held inside the row', () => {
+  it('is clamped to the row', () => {
     const after = row(pages, viewport, 1)
 
-    expect(getAnchorScroll(after, viewport, { page: 1, along: 5 })).toBe(
+    expect(getAnchorScroll(after, viewport, { page: 1, fraction: 5 })).toBe(
       Math.max(after.length - viewport.width, 0),
     )
-    expect(getAnchorScroll(after, viewport, { page: 0, along: -5 })).toBe(0)
-    expect(getAnchorScroll(after, viewport, { page: 9, along: 0 })).toBeUndefined()
+    expect(getAnchorScroll(after, viewport, { page: 0, fraction: -5 })).toBe(0)
+    expect(getAnchorScroll(after, viewport, { page: 9, fraction: 0 })).toBeUndefined()
   })
 
   it('keeps the share of the page height under the centre line across', () => {
@@ -453,11 +453,11 @@ describe('the pages requested at the settled width', () => {
       1,
     )
 
-    const drawn = getPagesWithin(long, viewport, 2000)
+    const allPages = getPagesWithin(long, viewport, 2000)
     const sharp = getPagesWithin(long, viewport, 2000, SHARP)
 
-    expect(sharp.length).toBeLessThan(drawn.length)
-    expect(sharp.every((page) => drawn.includes(page))).toBe(true)
+    expect(sharp.length).toBeLessThan(allPages.length)
+    expect(sharp.every((page) => allPages.includes(page))).toBe(true)
     expect(sharp.length).toBeGreaterThan(0)
   })
 })

@@ -544,7 +544,7 @@ describe('the text set again for a picture or a face that arrives', () => {
     expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(KEPT), 'auto')
   })
 
-  it('is asked for when a face finishes loading', () => {
+  it('is requested when a face finishes loading', () => {
     const listeners = new Map<string, () => void>()
     Object.defineProperty(document, 'fonts', {
       configurable: true,

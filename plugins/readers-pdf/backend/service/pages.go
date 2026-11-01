@@ -47,8 +47,8 @@ func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "path required", http.StatusBadRequest)
 		return
 	}
-	wide, err := strconv.Atoi(r.URL.Query().Get("wide"))
-	if err != nil || wide <= 0 {
+	pixelWidth, err := strconv.Atoi(r.URL.Query().Get("wide"))
+	if err != nil || pixelWidth <= 0 {
 		http.Error(w, "invalid wide", http.StatusBadRequest)
 		return
 	}
@@ -62,7 +62,7 @@ func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusRequestTimeout)
 		return
 	}
-	image, err := renderPage(r.Context(), s.workers, raw, index, wide)
+	image, err := renderPage(r.Context(), s.workers, raw, index, pixelWidth)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
@@ -74,8 +74,8 @@ func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// renderPage draws one page of the PDF bytes raw as JPEG bytes, wide pixels across or as wide as fits.
-func renderPage(ctx context.Context, workers *pdf.Workers, raw []byte, index, wide int) (encoded []byte, err error) {
+// renderPage draws one page of the PDF bytes raw as JPEG bytes, pixelWidth pixels across or as large as fits.
+func renderPage(ctx context.Context, workers *pdf.Workers, raw []byte, index, pixelWidth int) (encoded []byte, err error) {
 	scan, err := workers.OpenBytes(raw)
 	if err != nil {
 		return nil, err
@@ -85,7 +85,7 @@ func renderPage(ctx context.Context, workers *pdf.Workers, raw []byte, index, wi
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	fitting, err := scan.GetFittingWidth(index, wide, mostPixels)
+	fitting, err := scan.GetFittingWidth(index, pixelWidth, mostPixels)
 	if err != nil {
 		return nil, err
 	}

@@ -27,9 +27,9 @@ afterEach(() => {
 
 describe('the pictures that have not arrived', () => {
   it('are the ones not complete', () => {
-    const waiting = picture(false)
+    const notArrived = picture(false)
 
-    expect(findPending(textWith(picture(true), waiting))).toStrictEqual([waiting])
+    expect(findPending(textWith(picture(true), notArrived))).toStrictEqual([notArrived])
   })
 
   it('are none in a text without pictures', () => {

@@ -74,19 +74,19 @@ test.describe('PDF reader zoom', () => {
     const first = await openPages(page)
     const picture = first.locator('.reader__picture')
     const before = await readNaturalWidth(picture)
-    const held = await holdPageRequests(page)
+    const pending = await holdPageRequests(page)
     await watchForBlankPage(first)
 
     await page.getByRole('button', { name: 'Zoom in' }).click()
     await page.getByRole('button', { name: 'Zoom in' }).click()
-    await expect.poll(() => held.requested.length).toBeGreaterThan(0)
+    await expect.poll(() => pending.requested.length).toBeGreaterThan(0)
     // The old picture is scaled up meanwhile, and nothing covers it.
     await expect(picture).toBeVisible()
     await expect(first.locator('.reader__spinner')).toHaveCount(0)
     expect(await readNaturalWidth(picture)).toBe(before)
 
-    held.release()
-    const last = held.requested.filter((one) => getPageIndex(one.url()) === 0).at(-1)!
+    pending.release()
+    const last = pending.requested.filter((one) => getPageIndex(one.url()) === 0).at(-1)!
     await expect.poll(() => readNaturalWidth(picture)).toBe(getWide(last.url()))
     expect(getWide(last.url())).toBeGreaterThan(before)
     expect(await readBlankFrames(page)).toBe(0)
@@ -96,46 +96,46 @@ test.describe('PDF reader zoom', () => {
     page,
   }) => {
     await openPages(page)
-    const drawn = await page.locator('.reader__page').count()
-    const held = await holdPageRequests(page)
+    const pageCount = await page.locator('.reader__page').count()
+    const pending = await holdPageRequests(page)
 
     await page.getByRole('button', { name: 'Zoom in' }).click()
-    await expect.poll(() => held.requested.length).toBeGreaterThan(0)
+    await expect.poll(() => pending.requested.length).toBeGreaterThan(0)
     await page.waitForTimeout(DEBOUNCE_MS * 3)
 
-    const asked = new Set(held.requested.map((one) => getPageIndex(one.url())))
+    const requestedPages = new Set(pending.requested.map((one) => getPageIndex(one.url())))
     const frame = (await page.locator('.reader__viewport').boundingBox())!
-    for (const index of asked) {
+    for (const index of requestedPages) {
       const box = (await page.locator(`.reader__page[data-page="${index}"]`).boundingBox())!
       expect(box.x + box.width).toBeGreaterThan(frame.x - frame.width * 0.6)
       expect(box.x).toBeLessThan(frame.x + frame.width * 1.6)
     }
-    expect(asked.size).toBeLessThan(drawn)
-    held.release()
+    expect(requestedPages.size).toBeLessThan(pageCount)
+    pending.release()
   })
 
   test('asks once for the width a run of presses ends at, and shows the width of the last press', async ({
     page,
   }) => {
     await openPages(page)
-    const held = await holdPageRequests(page)
+    const pending = await holdPageRequests(page)
 
     await page.getByRole('button', { name: 'Zoom in' }).click()
-    await expect.poll(() => held.requested.length).toBeGreaterThan(0)
-    const stale = held.requested.map((one) => one.url())
+    await expect.poll(() => pending.requested.length).toBeGreaterThan(0)
+    const firstUrls = pending.requested.map((one) => one.url())
     await page.getByRole('button', { name: 'Zoom in' }).click()
-    await expect.poll(() => held.requested.length).toBeGreaterThan(stale.length)
+    await expect.poll(() => pending.requested.length).toBeGreaterThan(firstUrls.length)
 
-    const latest = held.requested.slice(stale.length).map((one) => getWide(one.url()))
+    const latest = pending.requested.slice(firstUrls.length).map((one) => getWide(one.url()))
     expect(new Set(latest).size).toBe(1)
-    expect(latest[0]).toBeGreaterThan(getWide(stale[0]!))
-    held.release()
+    expect(latest[0]).toBeGreaterThan(getWide(firstUrls[0]!))
+    pending.release()
     const picture = page.locator('.reader__page[data-page="0"] .reader__picture')
     await expect.poll(() => readNaturalWidth(picture)).toBe(latest[0])
     await expect(picture).toHaveAttribute('src', new RegExp(`wide=${latest[0]}\\b`))
     // WebKit does not report a request it was holding as cancelled.
     if (test.info().project.name === 'chromium') {
-      expect(stale.every((url) => held.failed.includes(url))).toBe(true)
+      expect(firstUrls.every((url) => pending.failed.includes(url))).toBe(true)
     }
   })
 
@@ -150,7 +150,7 @@ test.describe('PDF reader zoom', () => {
           for (const one of root.querySelectorAll('.reader__page')) {
             const box = one.getBoundingClientRect()
             if (box.left <= centre && centre <= box.right) {
-              return { page: one.getAttribute('data-page'), along: (centre - box.left) / box.width }
+              return { page: one.getAttribute('data-page'), fraction: (centre - box.left) / box.width }
             }
           }
           return null
@@ -165,8 +165,8 @@ test.describe('PDF reader zoom', () => {
     await expect.poll(() => readWidth(first)).toBeGreaterThan(width * 1.5)
 
     await expect
-      .poll(async () => (await readCentre())?.along ?? -1)
-      .toBeCloseTo(before?.along ?? 0, 1)
+      .poll(async () => (await readCentre())?.fraction ?? -1)
+      .toBeCloseTo(before?.fraction ?? 0, 1)
     expect((await readCentre())?.page).toBe(before?.page)
   })
 })

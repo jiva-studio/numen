@@ -22,7 +22,7 @@ export interface Sample {
   /** The offset the drawn chapter begins at. */
   readonly chapter: number
   /** Whether the columns are hidden until they stand at their spread. */
-  readonly hidden: boolean
+  readonly isHidden: boolean
   /** How far the reading area itself is scrolled, which should stay zero. */
   readonly scrolled: number
   /** How wide the columns run in all, which changes only where the text is laid out again. */
@@ -64,7 +64,7 @@ export const startProbe = async (page: Page): Promise<void> => {
       const box = area.getBoundingClientRect()
       const [shift = '0'] = getComputedStyle(paper).translate.split(' ')
       const [target = '0'] = paper.style.translate.split(' ')
-      const hidden = getComputedStyle(paper).visibility === 'hidden'
+      const isHidden = getComputedStyle(paper).visibility === 'hidden'
       const run = runs.find((one) => {
         const rect = one.getClientRects()[0]
         return !!rect && rect.right > box.left + 1 && rect.left < box.right && rect.bottom > box.top
@@ -73,11 +73,11 @@ export const startProbe = async (page: Page): Promise<void> => {
         t: Math.round(performance.now() - began),
         source,
         count: count.textContent ?? '',
-        offset: run && !hidden ? Number(run.dataset['offset']) : null,
+        offset: run && !isHidden ? Number(run.dataset['offset']) : null,
         shift: Number.parseFloat(shift) || 0,
         target: Number.parseFloat(target) || 0,
         chapter: Number(paper.querySelector<HTMLElement>('[data-offset]')?.dataset['offset'] ?? -1),
-        hidden,
+        isHidden,
         scrolled: area.scrollLeft,
         width: paper.scrollWidth,
         size: `${area.clientWidth}x${area.clientHeight}`,
@@ -185,10 +185,10 @@ export const describeSamples = (samples: readonly Sample[]): string =>
  * chapter begins again at zero.
  */
 const findTargetReturns = (samples: readonly Sample[], way: Direction): string[] => {
-  const shown = samples.filter((one) => !one.hidden)
-  const chapters = new Set(shown.map((one) => one.chapter))
+  const visible = samples.filter((one) => !one.isHidden)
+  const chapters = new Set(visible.map((one) => one.chapter))
   return [...chapters].flatMap((chapter) => {
-    const own = shown.filter((one) => one.chapter === chapter)
+    const own = visible.filter((one) => one.chapter === chapter)
     const sizes = getSentTargets(own).map((one) => -one)
     return findReturns(sizes, way, 1).map((one) => `target ${one} in chapter ${chapter}`)
   })
@@ -199,10 +199,10 @@ const findTargetReturns = (samples: readonly Sample[], way: Direction): string[]
  * reading area took another size. A turn changes neither.
  */
 const findLayoutChanges = (samples: readonly Sample[]): string[] => {
-  const shown = samples.filter((one) => !one.hidden)
+  const visible = samples.filter((one) => !one.isHidden)
   const found: string[] = []
-  for (let index = 1; index < shown.length; index += 1) {
-    const [before, now] = [shown[index - 1], shown[index]]
+  for (let index = 1; index < visible.length; index += 1) {
+    const [before, now] = [visible[index - 1], visible[index]]
     if (!before || !now || before.chapter !== now.chapter) continue
     if (
       isStanding(before) &&
@@ -230,10 +230,10 @@ const isStanding = (sample: Sample): boolean =>
 
 /** The steps where the offset at the top left went back, each with the two samples around it. */
 const findOffsetReturns = (samples: readonly Sample[], way: Direction): string[] => {
-  const shown = samples.filter((one) => one.offset !== null)
+  const visible = samples.filter((one) => one.offset !== null)
   const found: string[] = []
-  for (let index = 1; index < shown.length; index += 1) {
-    const [before, now] = [shown[index - 1], shown[index]]
+  for (let index = 1; index < visible.length; index += 1) {
+    const [before, now] = [visible[index - 1], visible[index]]
     if (!before || !now || before.chapter !== now.chapter) continue
     const step = (now.offset ?? 0) - (before.offset ?? 0)
     if (way === 'forward' ? step < 0 : step > 0) {

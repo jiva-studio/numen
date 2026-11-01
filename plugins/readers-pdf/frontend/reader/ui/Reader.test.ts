@@ -247,10 +247,10 @@ describe('the pages requested', () => {
     })
     await room(wrapper, 1000, 800)
 
-    const drawn = wrapper.findAll('.reader__page').length
+    const renderedCount = wrapper.findAll('.reader__page').length
     const requested = wrapper.findAll('.reader__incoming[src]').length
     expect(requested).toBeGreaterThan(0)
-    expect(requested).toBeLessThan(drawn)
+    expect(requested).toBeLessThan(renderedCount)
   })
 
   it('changes by the settled width alone, not by the zoom pressed', async () => {

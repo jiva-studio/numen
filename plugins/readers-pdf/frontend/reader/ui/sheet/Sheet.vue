@@ -50,8 +50,8 @@ const ATTEMPTS = 3
 const tries = ref(0)
 
 /** The URL of the image shown. Nothing until the first image has loaded. */
-const shown = ref('')
-const isLoaded = computed(() => shown.value !== '')
+const shownUrl = ref('')
+const isLoaded = computed(() => shownUrl.value !== '')
 const incoming = useTemplateRef<HTMLImageElement>('incoming')
 
 /** Whether the retries are exhausted. */
@@ -66,7 +66,7 @@ const imageUrl = computed(() => {
 
 /** The URL being loaded: the one wanted, unless it is the one shown. */
 const loading = computed(() =>
-  imageUrl.value === shown.value ? undefined : imageUrl.value || undefined,
+  imageUrl.value === shownUrl.value ? undefined : imageUrl.value || undefined,
 )
 
 /* ---------------------------------- Hooks --------------------------------- */
@@ -96,7 +96,7 @@ const getBoxStyle = (one: Rect) => ({
     <img
       v-if="isLoaded"
       class="reader__picture block size-full object-contain"
-      :src="shown"
+      :src="shownUrl"
       :alt="`${page} ${at + 1}`"
       draggable="false"
     />
@@ -107,7 +107,7 @@ const getBoxStyle = (one: Rect) => ({
       :src="loading"
       draggable="false"
       @error="tries += 1"
-      @load="shown = imageUrl"
+      @load="shownUrl = imageUrl"
     />
     <div v-if="!isLoaded" class="reader__spinner absolute inset-0 grid place-items-center">
       <span v-if="givenUp" class="px-inset text-small text-hushed text-center">

@@ -140,7 +140,7 @@ func (s *Scan) RenderPageAtWidth(index, width, maxPixels int) (drawing image.Ima
 }
 
 // GetFittingWidth is the widest a page can be drawn with no more than maxPixels pixels, but never
-// wider than want and never under one pixel.
+// larger than want and never under one pixel.
 func (s *Scan) GetFittingWidth(index, want, maxPixels int) (int, error) {
 	pageWidth, pageHeight, err := s.GetPageSize(index)
 	if err != nil {

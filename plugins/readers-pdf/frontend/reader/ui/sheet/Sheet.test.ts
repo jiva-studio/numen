@@ -15,7 +15,7 @@ const sheet = (picture = SMALL) =>
 
 /** The image being loaded, which is hidden, and the one shown. */
 const incoming = (page: VueWrapper) => page.find('.reader__incoming')
-const shown = (page: VueWrapper) => page.find('.reader__picture')
+const getPicture = (page: VueWrapper) => page.find('.reader__picture')
 
 describe('a page still coming', () => {
   it('shows no picture', () => {
@@ -24,7 +24,7 @@ describe('a page still coming', () => {
     // page.
     const page = sheet()
 
-    expect(shown(page).exists()).toBe(false)
+    expect(getPicture(page).exists()).toBe(false)
     expect(incoming(page).attributes('src')).toBe(SMALL)
   })
 
@@ -50,7 +50,7 @@ describe('a page that has come', () => {
   }
 
   it('shows the picture', async () => {
-    expect(shown(await loadPage()).attributes('src')).toBe(SMALL)
+    expect(getPicture(await loadPage()).attributes('src')).toBe(SMALL)
   })
 
   it('stops loading it again', async () => {
@@ -129,7 +129,7 @@ describe('a page pointed somewhere else', () => {
 
     await page.setProps({ picture: LARGE })
 
-    expect(shown(page).attributes('src')).toBe(SMALL)
+    expect(getPicture(page).attributes('src')).toBe(SMALL)
     expect(page.find('.reader__spinner').exists()).toBe(false)
     expect(incoming(page).attributes('src')).toBe(LARGE)
   })
@@ -141,7 +141,7 @@ describe('a page pointed somewhere else', () => {
 
     await incoming(page).trigger('load')
 
-    expect(shown(page).attributes('src')).toBe(LARGE)
+    expect(getPicture(page).attributes('src')).toBe(LARGE)
     expect(incoming(page).attributes('src')).toBeUndefined()
   })
 
@@ -163,7 +163,7 @@ describe('a page pointed somewhere else', () => {
     await page.setProps({ picture: '' })
 
     expect(incoming(page).attributes('src')).toBeUndefined()
-    expect(shown(page).attributes('src')).toBe(SMALL)
+    expect(getPicture(page).attributes('src')).toBe(SMALL)
   })
 
   it('does not load the picture it shows again', async () => {
