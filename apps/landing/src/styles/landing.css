@@ -1,6 +1,17 @@
-@import './theme/palette.css';
-
 :root {
+  color-scheme: light dark;
+
+  --paper: light-dark(#faf4e8, #161311);
+  --raised: light-dark(#fffbf2, #27221d);
+  --ink: light-dark(#3a322a, #ece0cd);
+  --muted: light-dark(#8a7f70, #a1968a);
+  --rule: light-dark(#e0d6c4, #373029);
+  --ring: light-dark(#b45f16, #e9a23b);
+
+  --parent: light-dark(#2f6a94, #7ab4d8);
+  --child: light-dark(#5a7a2e, #a6c46b);
+  --jump: light-dark(#b5522f, #e8836b);
+
   --display: 'Newsreader Variable', 'Newsreader', Georgia, 'Times New Roman', serif;
   --sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
@@ -236,7 +247,7 @@ svg {
 }
 
 .stage--band .shot {
-  box-shadow: var(--shadow-band);
+  box-shadow: 0 18px 44px light-dark(rgb(25 27 30 / 0.1), rgb(0 0 0 / 0.38));
 }
 
 .stage--narrow {
@@ -264,7 +275,7 @@ svg {
   border-radius: 8px;
   overflow: hidden;
   background: var(--raised);
-  box-shadow: var(--shadow-shot);
+  box-shadow: 0 30px 70px light-dark(rgb(25 27 30 / 0.13), rgb(0 0 0 / 0.5));
 }
 
 .shot img {
@@ -506,7 +517,7 @@ svg {
 }
 
 .band__shot {
-  box-shadow: var(--shadow-band);
+  box-shadow: 0 18px 44px light-dark(rgb(25 27 30 / 0.1), rgb(0 0 0 / 0.38));
 }
 
 .feature h3 {
@@ -582,7 +593,7 @@ svg {
 
 .drawing__edges path {
   fill: none;
-  stroke: var(--edge);
+  stroke: light-dark(#c9ccd2, #3d424a);
   stroke-width: 1.25;
 }
 
@@ -834,16 +845,8 @@ svg {
     transform 640ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
-/* The delay a line of the hero waits before it rises, which the page sets on
-   each; a line that sets none rises at once. */
-@property --wait {
-  syntax: '<time>';
-  inherits: false;
-  initial-value: 0ms;
-}
-
 :root[data-motion] .hero .rise {
-  transition-delay: var(--wait);
+  transition-delay: var(--wait, 0ms);
 }
 
 :root[data-motion] .rise[data-shown] {
