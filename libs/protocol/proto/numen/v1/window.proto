@@ -37,6 +37,12 @@ service WindowService {
   // windows are open on one installation and each shows what it shows, so it is
   // the window that is asked and not the list of vaults.
   rpc GetCurrentVault(GetCurrentVaultRequest) returns (GetCurrentVaultResponse);
+
+  // CancelTask stops one task that WatchTasks lists as cancellable. The task
+  // stays in the list until its work has stopped, and WatchTasks then reports
+  // the list without it. A task that is not listed, or cannot be cancelled,
+  // answers NOT_FOUND.
+  rpc CancelTask(CancelTaskRequest) returns (CancelTaskResponse);
 }
 
 message WatchTasksRequest {
@@ -86,6 +92,9 @@ message Task {
   // name from the manifest. Both are empty for the core's own work.
   string plugin_id = 9;
   string plugin_name = 10;
+
+  // Set for work that CancelTask can stop.
+  bool is_cancellable = 11;
 }
 
 // Unit is what a piece of work counts. Bytes are read out in the sizes a
@@ -157,3 +166,14 @@ message GetCurrentVaultResponse {
   // any one vault.
   string vault = 1;
 }
+
+message CancelTaskRequest {
+  // The window this is asked of. A question naming another window than the one
+  // answering it is not answered.
+  string window = 1;
+
+  // The id that WatchTasks lists the task under.
+  string id = 2;
+}
+
+message CancelTaskResponse {}

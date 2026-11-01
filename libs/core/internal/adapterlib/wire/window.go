@@ -22,6 +22,10 @@ const Editor = "editor"
 // ErrAnotherWindow is a question naming a window other than the one it reached.
 var ErrAnotherWindow = errors.New("that is another window")
 
+// ErrNoCancellableTask is a cancel naming a task that is not listed or cannot
+// be cancelled.
+var ErrNoCancellableTask = errors.New("no cancellable task has that id")
+
 // A Reason is a human-readable cause for a degraded window state, written by the
 // component that detects it and read by the UI.
 //
@@ -187,6 +191,20 @@ func (w *Window) GetCurrentVault(
 	return connect.NewResponse(out), nil
 }
 
+// CancelTask stops the listed task with the id the request names.
+func (w *Window) CancelTask(
+	_ context.Context,
+	r *connect.Request[v1.CancelTaskRequest],
+) (*connect.Response[v1.CancelTaskResponse], error) {
+	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
+		return nil, err
+	}
+	if w.Tasking == nil || !w.Tasking.Cancel(r.Msg.GetId()) {
+		return nil, connect.NewError(connect.CodeNotFound, ErrNoCancellableTask)
+	}
+	return connect.NewResponse(&v1.CancelTaskResponse{}), nil
+}
+
 // checkWindowName returns an error unless the request names this window.
 func (w *Window) checkWindowName(named string) error {
 	if named == w.Named {
@@ -257,6 +275,7 @@ func describeTasks(list []run.Task) []*v1.Task {
 			Unit:          convertUnit(item.Unit),
 			PluginId:      item.PluginID,
 			PluginName:    item.PluginName,
+			IsCancellable: item.Cancel != nil,
 		})
 	}
 	return out

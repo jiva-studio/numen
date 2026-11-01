@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 	"time"
 
@@ -112,7 +113,7 @@ func TestReportTaskUsesCallerPluginID(t *testing.T) {
 		ID: "plugin:md.numen.a:scan.pdf", Title: "Recognising", About: "scan.pdf", Count: 2, Total: 9,
 		Unit: run.Bytes, IsUserStarted: true, PluginID: "md.numen.a",
 	}
-	if got := tasks.List(); len(got) != 1 || got[0] != want {
+	if got := tasks.List(); len(got) != 1 || !reflect.DeepEqual(got[0], want) {
 		t.Fatalf("got %+v, want %+v", got, want)
 	}
 

@@ -191,3 +191,106 @@ export const NoRingOnFocus: Story = {
     await expect(getComputedStyle(trigger).outlineStyle).toBe('none')
   },
 }
+
+/** The geometry and display of each part of a row. */
+const readRowGeometry = (row: Element): string =>
+  [row, ...row.querySelectorAll('.task-item__indicator, .task-item__action button')]
+    .map((part) => {
+      const box = part.getBoundingClientRect()
+      const style = getComputedStyle(part)
+      return `${box.x},${box.y},${box.width},${box.height},${style.display},${style.visibility}`
+    })
+    .join(';')
+
+/** Properties that move a box, or take it out of the layout or the tab order. */
+const LAYOUT_PROPERTIES = [
+  'display',
+  'visibility',
+  'position',
+  'inset',
+  'width',
+  'height',
+  'margin',
+  'padding',
+]
+
+/** Reports whether the selector, read without its `:hover`, matches one of the parts. */
+function isMatchedWithoutHover(selector: string, parts: readonly Element[]): boolean {
+  if (!selector.includes(':hover')) return false
+  const selectorWithoutHover = selector.replaceAll(':hover', '')
+  try {
+    return parts.some((part) => part.matches(selectorWithoutHover))
+  } catch {
+    // A selector that is only `:hover` is invalid once stripped, and matches no part.
+    return false
+  }
+}
+
+/**
+ * The `:hover` rules of the page that change the layout of a part of the row,
+ * or the opacity of a part other than the action button.
+ */
+function findHoverLayoutRules(
+  rules: CSSRuleList,
+  parts: readonly Element[],
+  fadedParts: readonly Element[],
+): string[] {
+  const found: string[] = []
+  for (const rule of rules) {
+    if (rule instanceof CSSStyleRule) {
+      const names = Array.from(rule.style)
+      const isLayout = names.some((name) => LAYOUT_PROPERTIES.some((one) => name.startsWith(one)))
+      const isFade = names.includes('opacity')
+      if (
+        (isLayout && isMatchedWithoutHover(rule.selectorText, parts)) ||
+        (isFade && isMatchedWithoutHover(rule.selectorText, fadedParts))
+      ) {
+        found.push(rule.cssText)
+      }
+    }
+    if ('cssRules' in rule && rule.cssRules instanceof CSSRuleList) {
+      found.push(...findHoverLayoutRules(rule.cssRules, parts, fadedParts))
+    }
+  }
+  return found
+}
+
+/**
+ * The cancel button keeps its slot whether or not it is shown: the pointer on
+ * the row, or keyboard focus inside it, changes only the button's opacity, and
+ * the progress stays drawn.
+ */
+export const HoverKeepsTheRow: Story = {
+  args: { tasks: [INDEXING] },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(await canvas.findByRole('button', { name: /active/ }))
+    const cancel = await canvas.findByRole('button', { name: 'Cancel task' })
+    const row = cancel.closest('.task-item')
+    const indicator = row?.querySelector('.task-item__indicator')
+    if (!row || !indicator) throw new Error('the cancel button is outside a row with progress')
+    const before = readRowGeometry(row)
+    await expect(getComputedStyle(cancel).opacity).toBe('0')
+    await expect(getComputedStyle(indicator).opacity).toBe('1')
+
+    cancel.focus()
+    await expect(cancel).toHaveFocus()
+    await waitFor(() => expect(getComputedStyle(cancel).opacity).toBe('1'))
+    await expect(readRowGeometry(row)).toBe(before)
+    await expect(getComputedStyle(indicator).opacity).toBe('1')
+    cancel.blur()
+
+    const parts = [row, ...row.querySelectorAll('*')]
+    const buttonParts = new Set<Element>([cancel, ...cancel.querySelectorAll('*')])
+    const fadedParts = parts.filter((part) => !buttonParts.has(part))
+    const hoverRules = Array.from(document.styleSheets).flatMap((sheet) =>
+      findHoverLayoutRules(sheet.cssRules, parts, fadedParts),
+    )
+    await expect(hoverRules).toEqual([])
+
+    const showRules = Array.from(document.styleSheets).flatMap((sheet) =>
+      findHoverLayoutRules(sheet.cssRules, [], [cancel]),
+    )
+    await expect(showRules.length).toBeGreaterThan(0)
+  },
+}

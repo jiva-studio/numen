@@ -54,6 +54,10 @@ type Embed struct {
 
 	// OnProgress, if set, is called each time a group of vectors is written.
 	OnProgress func(EmbedResult)
+
+	// IsSkipped, if set, names the sources, by path and content hash, whose
+	// chunks are left without vectors.
+	IsSkipped func(path, hash string) bool
 }
 
 func (u Embed) inferWorkers() int {
@@ -78,10 +82,17 @@ func NewEmbed(
 // EmbedResult reports what embedding did.
 type EmbedResult = vaultreading.EmbedResult
 
-// EmbedWithProgress runs Execute with onProgress reporting each step when non-nil.
-func (u Embed) EmbedWithProgress(ctx context.Context, v domain.Vault, onProgress func(EmbedResult)) (EmbedResult, error) {
+// EmbedWithProgress runs Execute with onProgress reporting each step when
+// non-nil, and leaves without vectors the chunks of every source isSkipped
+// names when non-nil.
+func (u Embed) EmbedWithProgress(
+	ctx context.Context, v domain.Vault, onProgress func(EmbedResult), isSkipped func(path, hash string) bool,
+) (EmbedResult, error) {
 	if onProgress != nil {
 		u.OnProgress = onProgress
+	}
+	if isSkipped != nil {
+		u.IsSkipped = isSkipped
 	}
 	return u.Execute(ctx, v)
 }
@@ -371,6 +382,9 @@ func (u Embed) read(
 	texts := make([]string, 0, len(pending))
 
 	for _, p := range pending {
+		if u.IsSkipped != nil && u.IsSkipped(p.Source, p.SourceHash) {
+			continue
+		}
 		mu.Lock()
 		if p.Source != res.CurrentSource {
 			res.CurrentSource = p.Source

@@ -397,6 +397,9 @@ export const useWindow = () => {
   })
   const statusBar = useWindowStatusBar({
     tasks: window.tasks,
+    cancelTask: (id) => core.cancelTask(id),
+    reportCancelError: (error) =>
+      base.writeMessage(`The task was not cancelled: ${formatErrorMessage(error)}`, 'error'),
     resolveAction: resolveTaskAction,
     onAction: (pluginId) => settings.configured.openSettings(pluginId),
   })

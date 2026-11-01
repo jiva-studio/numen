@@ -58,6 +58,9 @@ type Index struct {
 	// one is written. It reports progress on libraries that take minutes.
 	OnProgress func(IndexResult)
 
+	// IsSkipped, if set, names the sources the run leaves uncut.
+	IsSkipped func(path string) bool
+
 	// ErrorHandler receives each source whose text could not be read or
 	// requested. The source is counted as unreadable and the run continues. Nil
 	// ignores such errors.
@@ -79,10 +82,16 @@ func NewIndex(
 // IndexResult reports what indexing did.
 type IndexResult = vaultreading.IndexResult
 
-// IndexWithProgress runs Execute with onProgress reporting each step when non-nil.
-func (u Index) IndexWithProgress(ctx context.Context, v domain.Vault, onProgress func(IndexResult)) (IndexResult, error) {
+// IndexWithProgress runs Execute with onProgress reporting each step when
+// non-nil, and leaves uncut every source isSkipped names when non-nil.
+func (u Index) IndexWithProgress(
+	ctx context.Context, v domain.Vault, onProgress func(IndexResult), isSkipped func(path string) bool,
+) (IndexResult, error) {
 	if onProgress != nil {
 		u.OnProgress = onProgress
+	}
+	if isSkipped != nil {
+		u.IsSkipped = isSkipped
 	}
 	return u.Execute(ctx, v)
 }
@@ -347,6 +356,9 @@ func (u Index) chunkNewPaths(
 			continue
 		}
 		tried[path] = true
+		if u.IsSkipped != nil && u.IsSkipped(path) {
+			continue
+		}
 		freshCount++
 		if err := ctx.Err(); err != nil {
 			return freshCount, err

@@ -20,6 +20,7 @@ const task = (id: string, pluginId: string, pluginName: string): Task => ({
   isUserStarted: false,
   pluginId,
   pluginName,
+  isCancellable: true,
 })
 
 /** Two tasks in each group, since the popover draws a group heading only over more than one. */

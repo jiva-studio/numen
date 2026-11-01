@@ -1,9 +1,12 @@
 package engine
 
 import (
+	"context"
+	"errors"
 	"math"
 	"slices"
 	"testing"
+	"time"
 )
 
 // floor is the cosine a passage must reach to answer a search by meaning.
@@ -15,6 +18,30 @@ func cosine(a, b []float32) float64 {
 		sum += float64(a[i]) * float64(b[i])
 	}
 	return sum
+}
+
+func TestMockEmbedderBlocksABatchWithTheHoldWordUntilCancel(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	ended := make(chan error, 1)
+	go func() {
+		_, err := MockEmbedder{}.Embed(ctx, []string{"a note", "a Note with NumenMockHold in it"})
+		ended <- err
+	}()
+
+	select {
+	case err := <-ended:
+		t.Fatalf("the held batch returned before its context ended: %v", err)
+	case <-time.After(50 * time.Millisecond):
+	}
+	cancel()
+	if err := <-ended; !errors.Is(err, context.Canceled) {
+		t.Errorf("the held batch ended with %v, want context.Canceled", err)
+	}
+
+	vectors, err := MockEmbedder{}.Embed(t.Context(), []string{"a note"})
+	if err != nil || len(vectors) != 1 {
+		t.Errorf("a batch without the hold word answered %d vectors and %v", len(vectors), err)
+	}
 }
 
 func TestEmbedMock_ParaphraseQuestionNearPassage(t *testing.T) {

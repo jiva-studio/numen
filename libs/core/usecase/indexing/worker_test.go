@@ -538,3 +538,71 @@ func TestVersionChangeOfANoteKeepsItsChunks(t *testing.T) {
 			embedded, target, unembedded, unembedded)
 	}
 }
+
+// blocking is a model whose every call runs until its context ends, as a call
+// to an embedding plugin does on a long book.
+type blocking struct {
+	*fakeEmbedder
+	started chan struct{}
+	stopped chan error
+}
+
+func (b *blocking) Embed(ctx context.Context, _ []string) ([][]float32, error) {
+	signal(b.started)
+	<-ctx.Done()
+	select {
+	case b.stopped <- ctx.Err():
+	default:
+	}
+	return nil, ctx.Err()
+}
+
+func (*blocking) Concurrency() int { return 1 }
+
+// Cancelling the vector pass by its task id cancels the context of the embed
+// call in flight, the call returns, and the pass takes its task out of the list.
+func TestCancellingTheVectorTaskEndsTheEmbedCall(t *testing.T) {
+	events := newRecorder()
+	model := &blocking{
+		fakeEmbedder: &fakeEmbedder{dims: 64},
+		started:      make(chan struct{}, 1),
+		stopped:      make(chan error, 1),
+	}
+	made, db := reading(t)
+	fit(t, db, model)
+
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	cut(t, made, db, v)
+
+	ended := make(chan struct{})
+	go func() {
+		defer close(ended)
+		newPass(made, db, events, model, model.GetModel().Recipe(), v).embed(t.Context())
+	}()
+
+	select {
+	case <-model.started:
+	case <-time.After(10 * time.Second):
+		t.Fatal("the pass never called the model")
+	}
+	if !events.tasks.Cancel(MakingVectors) {
+		t.Fatalf("the running vector pass is not cancellable: %+v", events.tasks.List())
+	}
+
+	select {
+	case err := <-model.stopped:
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("the embed call ended with %v, want context.Canceled", err)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("the embed call in flight was not cancelled")
+	}
+	select {
+	case <-ended:
+	case <-time.After(10 * time.Second):
+		t.Fatal("the pass did not return after its task was cancelled")
+	}
+	if pos := findTask(t, events, MakingVectors); pos != nil {
+		t.Errorf("the cancelled pass is still listed: %+v", *pos)
+	}
+}

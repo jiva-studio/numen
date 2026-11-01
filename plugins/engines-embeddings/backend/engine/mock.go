@@ -44,13 +44,26 @@ func GetMockModel() ModelInfo {
 	}
 }
 
-// Embed returns one unit vector per text.
-func (MockEmbedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
+// MockHoldWord is the word that makes a mock call run until its context ends.
+// End-to-end tests write it into a note to hold a vector pass open.
+const MockHoldWord = "numenmockhold"
+
+// Embed returns one unit vector per text. A batch with a text that contains
+// MockHoldWord returns only when ctx ends, with its error.
+func (MockEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+	if slices.ContainsFunc(texts, isHeld) {
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
 	out := make([][]float32, len(texts))
 	for i, text := range texts {
 		out[i] = embedMock(text)
 	}
 	return out, nil
+}
+
+func isHeld(text string) bool {
+	return strings.Contains(strings.ToLower(text), MockHoldWord)
 }
 
 // Concurrency is how many batches the mock runs in parallel.

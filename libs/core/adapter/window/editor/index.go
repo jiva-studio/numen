@@ -148,7 +148,9 @@ func newErrorReporter(state *State) windowport.ErrorHandler {
 func newChangeReporter(state *State, worker *indexing.Worker) func(paths, assets []string, reload bool) {
 	return func(paths, assets []string, reload bool) {
 		// A client shows every file in the vault, so an asset is reported as a note is.
-		state.ChangeEvents.publish(change{paths: slices.Concat(paths, assets), shouldReload: reload})
+		changePaths := slices.Concat(paths, assets)
+		state.ChangeEvents.publish(change{paths: changePaths, shouldReload: reload})
+		worker.ClearSkips(changePaths)
 		if reload || len(assets) > 0 {
 			// A book added to an open vault is read without a request.
 			worker.WakeSources()

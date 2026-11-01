@@ -13,6 +13,7 @@ const failed: Task = {
   isUserStarted: false,
   pluginId: 'md.example.engine',
   pluginName: 'Example Engine',
+  isCancellable: false,
 }
 
 describe('isConfigurableError', () => {

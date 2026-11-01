@@ -127,8 +127,11 @@
   white-space: normal;
 }
 
+.task-item__indicator {
+  flex-shrink: 0;
+}
+
 .task-item__action {
-  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -137,70 +140,24 @@
   flex-shrink: 0;
 }
 
-.task-item__indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: opacity 0.15s ease;
-}
-
+/* The button stays in the layout and the tab order while it is transparent. */
 .task-item__btn {
-  display: none;
-  position: absolute;
-  inset: 0;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  color: var(--numen-hushed);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  z-index: 2;
+  width: 1.25rem;
+  height: 1.25rem;
   padding: 0;
-  transition:
-    color 0.15s ease,
-    background 0.15s ease;
-}
-
-.task-item__btn--cancel::before,
-.task-item__btn--cancel::after,
-.task-item__btn--dismiss::before,
-.task-item__btn--dismiss::after {
-  content: '';
-  position: absolute;
-  width: 10px;
-  height: 1.5px;
-  background-color: currentColor;
-}
-
-.task-item__btn--cancel::before,
-.task-item__btn--dismiss::before {
-  transform: rotate(45deg);
-}
-
-.task-item__btn--cancel::after,
-.task-item__btn--dismiss::after {
-  transform: rotate(-45deg);
-}
-
-.task-item__btn--retry::before {
-  content: '↻';
-  font-size: 13px;
-  line-height: 1;
-  font-weight: 600;
-}
-
-.task-item:hover .task-item__btn {
-  display: inline-flex;
-}
-
-.task-item:hover .task-item__indicator {
+  color: var(--numen-hushed);
   opacity: 0;
+}
+
+.task-item:hover .task-item__btn,
+.task-item:focus-within .task-item__btn,
+.task-item--cancelling .task-item__btn,
+.task-item--failed .task-item__btn {
+  opacity: 1;
 }
 
 .task-item__btn:hover {
   color: var(--numen-ink);
-  background: var(--numen-raised);
 }
 
 .text-alarm {

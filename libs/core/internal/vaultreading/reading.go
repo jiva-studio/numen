@@ -42,6 +42,10 @@ type Task struct {
 	// PluginID is the plugin that reported the task, and PluginName its name
 	// from the manifest. Both are empty for the core's own work.
 	PluginID, PluginName string
+
+	// Cancel stops the work. The work takes its task out of the list once it
+	// has stopped. Nil is work that cannot be cancelled.
+	Cancel context.CancelFunc
 }
 
 // Unit is what a piece of work counts. Bytes are read out in the sizes a
@@ -98,13 +102,17 @@ type NoteScanner interface {
 
 // TextIndexer indexes the file texts of a vault.
 type TextIndexer interface {
-	IndexWithProgress(ctx context.Context, v domain.Vault, onProgress func(IndexResult)) (IndexResult, error)
+	IndexWithProgress(
+		ctx context.Context, v domain.Vault, onProgress func(IndexResult), isSkipped func(path string) bool,
+	) (IndexResult, error)
 	IndexOne(ctx context.Context, v domain.Vault, path string) (IndexResult, error)
 }
 
 // VectorEmbedder embeds the chunks of a vault.
 type VectorEmbedder interface {
-	EmbedWithProgress(ctx context.Context, v domain.Vault, onProgress func(EmbedResult)) (EmbedResult, error)
+	EmbedWithProgress(
+		ctx context.Context, v domain.Vault, onProgress func(EmbedResult), isSkipped func(path, hash string) bool,
+	) (EmbedResult, error)
 }
 
 // ReadWholeVault makes a vault answer: its notes are read, the text versions of
@@ -123,6 +131,12 @@ type ReadWholeVault struct {
 
 	// OnVectorsProgress, if set, is called as each source is embedded.
 	OnVectorsProgress func(EmbedResult)
+
+	// IsTextSkipped, if set, names the sources the text pass leaves uncut, and
+	// IsVectorSkipped the sources, with their content hash, whose chunks the
+	// vector pass leaves without vectors.
+	IsTextSkipped   func(path string) bool
+	IsVectorSkipped func(path, hash string) bool
 }
 
 // NewReadWholeVault is the three passes, in the order they stand in: the notes
@@ -164,7 +178,7 @@ func (u ReadWholeVault) Execute(ctx context.Context, v domain.Vault) (ReadWholeV
 
 // IndexTexts cuts the live text version of every file of the vault that has one.
 func (u ReadWholeVault) IndexTexts(ctx context.Context, v domain.Vault) (IndexResult, error) {
-	res, err := u.texts.IndexWithProgress(ctx, v, u.OnTextsProgress)
+	res, err := u.texts.IndexWithProgress(ctx, v, u.OnTextsProgress, u.IsTextSkipped)
 	if err != nil {
 		return res, fmt.Errorf("indexing the file texts of %s: %w", v.Name, err)
 	}
@@ -173,7 +187,7 @@ func (u ReadWholeVault) IndexTexts(ctx context.Context, v domain.Vault) (IndexRe
 
 // MakeVectors embeds every chunk that lacks a vector.
 func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault) (EmbedResult, error) {
-	res, err := u.vectors.EmbedWithProgress(ctx, v, u.OnVectorsProgress)
+	res, err := u.vectors.EmbedWithProgress(ctx, v, u.OnVectorsProgress, u.IsVectorSkipped)
 	if err != nil {
 		return res, fmt.Errorf("embedding %s: %w", v.Name, err)
 	}

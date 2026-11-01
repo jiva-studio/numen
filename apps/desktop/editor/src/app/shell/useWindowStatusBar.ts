@@ -1,14 +1,17 @@
 /**
  * Adapts domain background tasks into status bar representations and handles interactions.
  */
-import { computed, ref, type Ref } from 'vue'
+import { computed, ref, watch, type Ref } from 'vue'
 import type { StatusBarTask } from '@numen/shell'
 import type { Task } from '@/shared/notices/task'
 import { WORDS as words } from '@/shared/words'
 
 export interface WindowStatusBarDeps {
   tasks: Ref<readonly Task[]>
-  onCancel?(id: string): void
+  /** Asks the core to stop the task; resolves once the core has cancelled it. */
+  cancelTask?(id: string): Promise<void>
+  /** Receives the error of a cancel the core did not accept. */
+  reportCancelError?(error: unknown): void
   onRetry?(id: string): void
   /** Opens the settings of the plugin whose task action was pressed. */
   onAction?(pluginId: string): void
@@ -25,8 +28,14 @@ function getTaskCounting(counting: string): string | undefined {
   return counting
 }
 
+function getTaskState(task: Task, isCancelling: boolean): StatusBarTask['state'] {
+  if (task.error) return 'failed'
+  return isCancelling ? 'cancelling' : 'running'
+}
+
 function createStatusBarTask(
   task: Task,
+  isCancelling: boolean,
   action?: { label?: string; pluginId?: string | undefined },
 ): StatusBarTask {
   const hasTotal = task.total > 0
@@ -41,8 +50,8 @@ function createStatusBarTask(
     done: hasTotal ? task.completedCount : undefined,
     total: hasTotal ? task.total : undefined,
     counting: getTaskCounting(task.counting),
-    state: isFailed ? 'failed' : 'running',
-    canCancel: !isFailed,
+    state: getTaskState(task, isCancelling),
+    canCancel: !isFailed && task.isCancellable,
     error: isFailed ? task.error : undefined,
     actionLabel: action ? action.label : undefined,
     actionId: action ? action.pluginId : undefined,
@@ -51,24 +60,41 @@ function createStatusBarTask(
 
 export function useWindowStatusBar({
   tasks,
-  onCancel,
+  cancelTask,
+  reportCancelError,
   onRetry,
   onAction,
   resolveAction,
 }: WindowStatusBarDeps) {
   const dismissedIds = ref(new Set<string>())
+  // A task stays in this set from the press of Cancel until the core takes it out of the list.
+  const cancellingIds = ref(new Set<string>())
 
   const statusBarTasks = computed<readonly StatusBarTask[]>(() => {
     return tasks.value
       .filter((task) => !dismissedIds.value.has(task.id))
       .map((task): StatusBarTask => {
         const action = task.error && resolveAction ? resolveAction(task) : undefined
-        return createStatusBarTask(task, action)
+        return createStatusBarTask(task, cancellingIds.value.has(task.id), action)
       })
   })
 
-  function onCancelTask(id: string) {
-    onCancel?.(id)
+  watch(tasks, (list) => {
+    const listedIds = new Set(list.map((task) => task.id))
+    for (const id of cancellingIds.value) {
+      if (!listedIds.has(id)) cancellingIds.value.delete(id)
+    }
+  })
+
+  async function onCancelTask(id: string) {
+    if (!cancelTask || cancellingIds.value.has(id)) return
+    cancellingIds.value.add(id)
+    try {
+      await cancelTask(id)
+    } catch (error) {
+      cancellingIds.value.delete(id)
+      reportCancelError?.(error)
+    }
   }
 
   function onRetryTask(id: string) {

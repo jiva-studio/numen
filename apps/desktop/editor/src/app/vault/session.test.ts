@@ -13,6 +13,7 @@ const request = vi.hoisted(() => ({
   watchVaultChanges: vi.fn(),
   watchFocus: vi.fn(),
   watchTasks: vi.fn(),
+  cancelTask: vi.fn(),
   watchQuit: vi.fn(),
   detachTab: vi.fn(),
 }))
@@ -149,6 +150,7 @@ describe('the streams a window follows', () => {
             isUserStarted: true,
             pluginId: 'md.example.scans',
             pluginName: 'Scan reader',
+            isCancellable: true,
           },
           {
             id: 'later',
@@ -161,6 +163,7 @@ describe('the streams a window follows', () => {
             isUserStarted: false,
             pluginId: '',
             pluginName: '',
+            isCancellable: false,
           },
         ],
       }
@@ -179,6 +182,7 @@ describe('the streams a window follows', () => {
           isUserStarted: true,
           pluginId: 'md.example.scans',
           pluginName: 'Scan reader',
+          isCancellable: true,
         },
         {
           id: 'later',
@@ -191,10 +195,25 @@ describe('the streams a window follows', () => {
           isUserStarted: false,
           pluginId: '',
           pluginName: '',
+          isCancellable: false,
         },
       ],
     ])
     expect(request.watchTasks).toHaveBeenCalledWith({ window: 'editor' }, { signal })
+  })
+
+  it('asks the core of this window to cancel a task by its id', async () => {
+    request.cancelTask.mockResolvedValue({})
+
+    await sessionCore.cancelTask('making the vectors')
+
+    expect(request.cancelTask).toHaveBeenCalledWith({ window: 'editor', id: 'making the vectors' })
+  })
+
+  it('rejects when the core does not cancel the task', async () => {
+    request.cancelTask.mockRejectedValue(new Error('not found'))
+
+    await expect(sessionCore.cancelTask('gone')).rejects.toThrow('not found')
   })
 })
 

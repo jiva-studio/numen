@@ -28,4 +28,6 @@ export interface Task {
   /** The plugin that reported the work and its name; both empty for the core's own work. */
   readonly pluginId: string
   readonly pluginName: string
+  /** Whether the core can stop this work when asked by its id. */
+  readonly isCancellable: boolean
 }

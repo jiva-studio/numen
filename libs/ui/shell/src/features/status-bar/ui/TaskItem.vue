@@ -1,8 +1,13 @@
 <script setup lang="ts">
 /**
  * Single task row in the background tasks popover.
+ *
+ * The row draws the same elements whether or not the pointer is over it: the
+ * progress indicator and the action button each keep a fixed slot.
  */
 import { computed } from 'vue'
+import { RotateCw, X } from '@lucide/vue'
+import { Button } from '@numen/ui'
 import type { StatusBarTask } from '../model/types'
 import CircularProgress from './CircularProgress.vue'
 
@@ -26,6 +31,12 @@ const subtext = computed(() => {
   }
   return props.task.about || ''
 })
+const isCancelShown = computed(
+  () =>
+    (props.task.state === 'running' || props.task.state === 'cancelling') &&
+    props.task.canCancel !== false,
+)
+const isCancelling = computed(() => props.task.state === 'cancelling')
 
 /* -------------------------------- Handlers -------------------------------- */
 function onCancel() {
@@ -64,41 +75,51 @@ function onAction() {
       </div>
     </div>
 
-    <div class="task-item__action">
-      <button
-        v-if="task.state === 'running' && task.canCancel !== false"
-        type="button"
-        class="task-item__btn task-item__btn--cancel"
-        title="Cancel task"
-        aria-label="Cancel task"
-        @click.stop="onCancel"
-      />
+    <CircularProgress
+      class="task-item__indicator"
+      :progress="task.progress"
+      :state="task.state"
+      :size="18"
+      :stroke-width="2.2"
+    />
 
-      <button
+    <div class="task-item__action">
+      <Button
+        v-if="isCancelShown"
+        variant="ghost"
+        size="icon-small"
+        class="task-item__btn"
+        :disabled="isCancelling"
+        :title="isCancelling ? 'Cancelling' : 'Cancel task'"
+        :aria-label="isCancelling ? 'Cancelling' : 'Cancel task'"
+        @click.stop="onCancel"
+      >
+        <X :size="12" aria-hidden="true" />
+      </Button>
+
+      <Button
         v-else-if="task.state === 'failed'"
-        type="button"
-        class="task-item__btn task-item__btn--retry"
+        variant="ghost"
+        size="icon-small"
+        class="task-item__btn"
         title="Retry task"
         aria-label="Retry task"
         @click.stop="onRetry"
-      />
+      >
+        <RotateCw :size="12" aria-hidden="true" />
+      </Button>
 
-      <button
+      <Button
         v-else-if="task.state === 'completed'"
-        type="button"
-        class="task-item__btn task-item__btn--dismiss"
+        variant="ghost"
+        size="icon-small"
+        class="task-item__btn"
         title="Dismiss"
         aria-label="Dismiss"
         @click.stop="onDismiss"
-      />
-
-      <CircularProgress
-        class="task-item__indicator"
-        :progress="task.progress"
-        :state="task.state"
-        :size="18"
-        :stroke-width="2.2"
-      />
+      >
+        <X :size="12" aria-hidden="true" />
+      </Button>
     </div>
   </div>
 </template>

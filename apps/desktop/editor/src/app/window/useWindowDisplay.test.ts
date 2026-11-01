@@ -58,6 +58,7 @@ function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
     watchTasks: async function* () {
       await waitForever()
     },
+    cancelTask: vi.fn(() => Promise.resolve()),
     read: async () => asValue({ body: '' }),
     write: async () => asValue({ body: '' }),
     create: async () => ({ ok: true, value: { path: '' } }),
@@ -511,6 +512,7 @@ describe('what the application is doing', () => {
     isUserStarted: true,
     pluginId: '',
     pluginName: '',
+    isCancellable: false,
   })
 
   it('is what the stream last returned, whole', async () => {

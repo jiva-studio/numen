@@ -45,6 +45,7 @@ const createTask = (overrides: Partial<Task> = {}): Task => ({
   isUserStarted: true,
   pluginId: '',
   pluginName: '',
+  isCancellable: false,
   ...overrides,
 })
 

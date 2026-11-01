@@ -261,8 +261,10 @@ type Task struct {
 	Unit Unit `protobuf:"varint,8,opt,name=unit,proto3,enum=numen.v1.Unit" json:"unit,omitempty"`
 	// The plugin that reported the task, as the core knows the caller, and its
 	// name from the manifest. Both are empty for the core's own work.
-	PluginId      string `protobuf:"bytes,9,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
-	PluginName    string `protobuf:"bytes,10,opt,name=plugin_name,json=pluginName,proto3" json:"plugin_name,omitempty"`
+	PluginId   string `protobuf:"bytes,9,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	PluginName string `protobuf:"bytes,10,opt,name=plugin_name,json=pluginName,proto3" json:"plugin_name,omitempty"`
+	// Set for work that CancelTask can stop.
+	IsCancellable bool `protobuf:"varint,11,opt,name=is_cancellable,json=isCancellable,proto3" json:"is_cancellable,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -365,6 +367,13 @@ func (x *Task) GetPluginName() string {
 		return x.PluginName
 	}
 	return ""
+}
+
+func (x *Task) GetIsCancellable() bool {
+	if x != nil {
+		return x.IsCancellable
+	}
+	return false
 }
 
 type WatchQuitRequest struct {
@@ -662,6 +671,97 @@ func (x *GetCurrentVaultResponse) GetVault() string {
 	return ""
 }
 
+type CancelTaskRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The window this is asked of. A question naming another window than the one
+	// answering it is not answered.
+	Window string `protobuf:"bytes,1,opt,name=window,proto3" json:"window,omitempty"`
+	// The id that WatchTasks lists the task under.
+	Id            string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelTaskRequest) Reset() {
+	*x = CancelTaskRequest{}
+	mi := &file_numen_v1_window_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelTaskRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelTaskRequest) ProtoMessage() {}
+
+func (x *CancelTaskRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_window_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelTaskRequest.ProtoReflect.Descriptor instead.
+func (*CancelTaskRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_window_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *CancelTaskRequest) GetWindow() string {
+	if x != nil {
+		return x.Window
+	}
+	return ""
+}
+
+func (x *CancelTaskRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type CancelTaskResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelTaskResponse) Reset() {
+	*x = CancelTaskResponse{}
+	mi := &file_numen_v1_window_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelTaskResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelTaskResponse) ProtoMessage() {}
+
+func (x *CancelTaskResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_window_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelTaskResponse.ProtoReflect.Descriptor instead.
+func (*CancelTaskResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_window_proto_rawDescGZIP(), []int{10}
+}
+
 var File_numen_v1_window_proto protoreflect.FileDescriptor
 
 const file_numen_v1_window_proto_rawDesc = "" +
@@ -670,7 +770,7 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x11WatchTasksRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\":\n" +
 	"\x12WatchTasksResponse\x12$\n" +
-	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\x8c\x02\n" +
+	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\xb3\x02\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
@@ -683,7 +783,8 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\tplugin_id\x18\t \x01(\tR\bpluginId\x12\x1f\n" +
 	"\vplugin_name\x18\n" +
 	" \x01(\tR\n" +
-	"pluginName\"*\n" +
+	"pluginName\x12%\n" +
+	"\x0eis_cancellable\x18\v \x01(\bR\risCancellable\"*\n" +
 	"\x10WatchQuitRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\"?\n" +
 	"\x11WatchQuitResponse\x12\x14\n" +
@@ -697,7 +798,11 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x16GetCurrentVaultRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\"/\n" +
 	"\x17GetCurrentVaultResponse\x12\x14\n" +
-	"\x05vault\x18\x01 \x01(\tR\x05vault*O\n" +
+	"\x05vault\x18\x01 \x01(\tR\x05vault\";\n" +
+	"\x11CancelTaskRequest\x12\x16\n" +
+	"\x06window\x18\x01 \x01(\tR\x06window\x12\x0e\n" +
+	"\x02id\x18\x02 \x01(\tR\x02id\"\x14\n" +
+	"\x12CancelTaskResponse*O\n" +
 	"\x04Unit\x12\x14\n" +
 	"\x10UNIT_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vUNIT_THINGS\x10\x01\x12\x0e\n" +
@@ -708,13 +813,15 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x18FLUSH_RESULT_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14FLUSH_RESULT_NOTHING\x10\x01\x12\x18\n" +
 	"\x14FLUSH_RESULT_WRITTEN\x10\x02\x12\x17\n" +
-	"\x13FLUSH_RESULT_ASKING\x10\x032\xc6\x02\n" +
+	"\x13FLUSH_RESULT_ASKING\x10\x032\x8f\x03\n" +
 	"\rWindowService\x12I\n" +
 	"\n" +
 	"WatchTasks\x12\x1b.numen.v1.WatchTasksRequest\x1a\x1c.numen.v1.WatchTasksResponse0\x01\x12F\n" +
 	"\tWatchQuit\x12\x1a.numen.v1.WatchQuitRequest\x1a\x1b.numen.v1.WatchQuitResponse0\x01\x12J\n" +
 	"\vReportFlush\x12\x1c.numen.v1.ReportFlushRequest\x1a\x1d.numen.v1.ReportFlushResponse\x12V\n" +
-	"\x0fGetCurrentVault\x12 .numen.v1.GetCurrentVaultRequest\x1a!.numen.v1.GetCurrentVaultResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x0fGetCurrentVault\x12 .numen.v1.GetCurrentVaultRequest\x1a!.numen.v1.GetCurrentVaultResponse\x12G\n" +
+	"\n" +
+	"CancelTask\x12\x1b.numen.v1.CancelTaskRequest\x1a\x1c.numen.v1.CancelTaskResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_window_proto_rawDescOnce sync.Once
@@ -729,7 +836,7 @@ func file_numen_v1_window_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_window_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_numen_v1_window_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_numen_v1_window_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_numen_v1_window_proto_goTypes = []any{
 	(Unit)(0),                       // 0: numen.v1.Unit
 	(FlushResult)(0),                // 1: numen.v1.FlushResult
@@ -742,6 +849,8 @@ var file_numen_v1_window_proto_goTypes = []any{
 	(*ReportFlushResponse)(nil),     // 8: numen.v1.ReportFlushResponse
 	(*GetCurrentVaultRequest)(nil),  // 9: numen.v1.GetCurrentVaultRequest
 	(*GetCurrentVaultResponse)(nil), // 10: numen.v1.GetCurrentVaultResponse
+	(*CancelTaskRequest)(nil),       // 11: numen.v1.CancelTaskRequest
+	(*CancelTaskResponse)(nil),      // 12: numen.v1.CancelTaskResponse
 }
 var file_numen_v1_window_proto_depIdxs = []int32{
 	4,  // 0: numen.v1.WatchTasksResponse.tasks:type_name -> numen.v1.Task
@@ -751,12 +860,14 @@ var file_numen_v1_window_proto_depIdxs = []int32{
 	5,  // 4: numen.v1.WindowService.WatchQuit:input_type -> numen.v1.WatchQuitRequest
 	7,  // 5: numen.v1.WindowService.ReportFlush:input_type -> numen.v1.ReportFlushRequest
 	9,  // 6: numen.v1.WindowService.GetCurrentVault:input_type -> numen.v1.GetCurrentVaultRequest
-	3,  // 7: numen.v1.WindowService.WatchTasks:output_type -> numen.v1.WatchTasksResponse
-	6,  // 8: numen.v1.WindowService.WatchQuit:output_type -> numen.v1.WatchQuitResponse
-	8,  // 9: numen.v1.WindowService.ReportFlush:output_type -> numen.v1.ReportFlushResponse
-	10, // 10: numen.v1.WindowService.GetCurrentVault:output_type -> numen.v1.GetCurrentVaultResponse
-	7,  // [7:11] is the sub-list for method output_type
-	3,  // [3:7] is the sub-list for method input_type
+	11, // 7: numen.v1.WindowService.CancelTask:input_type -> numen.v1.CancelTaskRequest
+	3,  // 8: numen.v1.WindowService.WatchTasks:output_type -> numen.v1.WatchTasksResponse
+	6,  // 9: numen.v1.WindowService.WatchQuit:output_type -> numen.v1.WatchQuitResponse
+	8,  // 10: numen.v1.WindowService.ReportFlush:output_type -> numen.v1.ReportFlushResponse
+	10, // 11: numen.v1.WindowService.GetCurrentVault:output_type -> numen.v1.GetCurrentVaultResponse
+	12, // 12: numen.v1.WindowService.CancelTask:output_type -> numen.v1.CancelTaskResponse
+	8,  // [8:13] is the sub-list for method output_type
+	3,  // [3:8] is the sub-list for method input_type
 	3,  // [3:3] is the sub-list for extension type_name
 	3,  // [3:3] is the sub-list for extension extendee
 	0,  // [0:3] is the sub-list for field type_name
@@ -773,7 +884,7 @@ func file_numen_v1_window_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_window_proto_rawDesc), len(file_numen_v1_window_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -14,6 +14,7 @@ const createTask = (id: string, pluginId: string): Task => ({
   isUserStarted: false,
   pluginId,
   pluginName: pluginId ? 'Example' : '',
+  isCancellable: false,
 })
 
 describe('createPluginTasks', () => {
