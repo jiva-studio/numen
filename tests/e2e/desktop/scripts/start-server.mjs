@@ -185,7 +185,6 @@ function cleanup() {
 
 // The proxy every plain-http fetch of the binary and its plugins goes through. It serves PAGES by
 // host and answers every other host 404, so a page a test imports is never fetched from the network.
-const pagesPort = Number(port) + 1
 const PAGES = new Map([['tidal-mills.numen.test', path.join(fixturesDir, 'article.html')]])
 const pages = http.createServer((req, res) => {
   const page = PAGES.get(new URL(req.url ?? '/', 'http://' + req.headers.host).hostname)
@@ -195,11 +194,18 @@ const pages = http.createServer((req, res) => {
   }
   res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(fs.readFileSync(page))
 })
-pages.listen(pagesPort, host)
+// The port is the system's to give: the next port after the server's is another run's server.
+await new Promise((resolve, reject) => {
+  pages.once('error', reject)
+  pages.listen(0, host, resolve)
+})
+const pagesPort = pages.address().port
 
 // The tests read the folder of the run's vault from here: the file is named by the port the server listens on.
 const vaultPathFile = path.join(os.tmpdir(), `numen-e2e-vault-path-${port}`)
 fs.writeFileSync(vaultPathFile, tmpVault)
+
+let stopping = false
 
 const child = spawn(
   binaryPath,
@@ -221,14 +227,25 @@ const child = spawn(
   },
 )
 
-child.on('exit', (code) => {
+child.on('error', (error) => {
+  console.error(`start-server: cannot start ${binaryPath}: ${error.message}`)
   pages.close()
   cleanup()
-  process.exit(code ?? 0)
+  process.exit(1)
+})
+
+child.on('exit', (code, signal) => {
+  // A server that ends before the run stops it leaves every test with a refused connection.
+  if (!stopping)
+    console.error(`start-server: the server ended on its own (code ${code}, signal ${signal})`)
+  pages.close()
+  cleanup()
+  process.exit(code ?? (signal ? 1 : 0))
 })
 
 for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, () => {
+    stopping = true
     cleanup()
     child.kill(sig)
   })

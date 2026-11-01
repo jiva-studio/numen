@@ -123,18 +123,21 @@ defineExpose({
 })
 
 /* ---------------------------------- Hooks --------------------------------- */
+/** The point kept through zooms whose redraw has not run yet, so a second zoom keeps the first one's. */
+let pendingZoom: { anchor: Anchor | undefined; across: number } | undefined
+
 // A page requested from outside is scrolled to. A page reached by the user's
 // scrolling is already in view.
 watch(
   () => props.at,
   (page) => {
-    if (page !== getCurrentPage(pageLayout.value, viewport.value, getScrollOffset()))
-      stand(page, 'smooth')
+    if (page === getCurrentPage(pageLayout.value, viewport.value, getScrollOffset())) return
+    // A redraw that has not run yet holds the place the row was at when the layout changed, and
+    // would send the row back there once the turn has started. The turn is where the row goes.
+    if (pendingZoom) pendingZoom.anchor = undefined
+    stand(page, 'smooth')
   },
 )
-
-/** The point kept through zooms whose redraw has not run yet, so a second zoom keeps the first one's. */
-let pendingZoom: { anchor: Anchor | undefined; across: number } | undefined
 
 // Zooming keeps the point under the centre of the viewport where it is. Every
 // page changes width, so the scroll position shifts. A row with no pages before

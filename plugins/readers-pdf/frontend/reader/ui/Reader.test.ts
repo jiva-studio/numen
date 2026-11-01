@@ -166,6 +166,36 @@ describe('the page it says it relies on', () => {
     expect(dispatched[0]).toBeGreaterThan(0)
     expect(dispatched[1]).toBe(0)
   })
+
+  it('keeps the turn when the layout changed in the frame before it and is redrawn after it', async () => {
+    // A pane that is still being laid out reports a new size, and the redraw that holds the row in
+    // place waits for the next frame. A page typed in that frame is where the row goes, and the redraw
+    // must not send the row back to the place it held.
+    const frame: (() => void)[] = []
+    const target = mount(Reader, {
+      props: {
+        pages: PAGES,
+        picture: (page: number) => `/p/${page}`,
+        paint: (draw: () => void) => frame.push(draw),
+      },
+      attachTo: document.body,
+    })
+    await room(target, 1000, 800)
+    frame.splice(0).forEach((draw) => draw())
+
+    await room(target, 1000, 600)
+    const area = target.find('.reader__viewport').element as HTMLElement
+    const dispatched: { left: number; behavior: string }[] = []
+    area.scrollTo = ((to: ScrollToOptions) => {
+      dispatched.push({ left: to.left ?? 0, behavior: String(to.behavior) })
+      if (to.behavior === 'auto') area.scrollLeft = to.left ?? 0
+    }) as typeof area.scrollTo
+    await target.setProps({ at: 4 })
+    frame.splice(0).forEach((draw) => draw())
+
+    expect(dispatched.at(0)?.behavior).toBe('smooth')
+    expect(dispatched.at(-1)?.left).toBeGreaterThan(0)
+  })
 })
 
 /** The handle the reader exposes to the host of the page it depends on. */

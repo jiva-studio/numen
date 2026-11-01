@@ -121,18 +121,26 @@ export const dragRowOnto = async (page: Page, row: Locator, onto: Locator): Prom
 export const readWidth = async (element: Locator): Promise<number> =>
   element.evaluate((one) => one.getBoundingClientRect().width)
 
+/** How many samples in turn, a tenth of a second apart, must agree for a width to be settled. */
+const SETTLED_SAMPLES = 5
+
 /**
- * Waits until the element has the same width in two samples in turn, and gives that width. A
+ * Waits until the element has the same width in several samples in turn, and gives that width. A
  * reader fits its pages to the pane it is measured in, and the pane keeps changing until it has
- * been laid out, so a width read before then is not the one the document is drawn at.
+ * been laid out, so a width read before then is not the one the document is drawn at. Two samples
+ * can agree before the pane has reported its new size, so a run of them is asked for.
  */
 export const readSettledWidth = async (element: Locator): Promise<number> => {
   const widths: number[] = []
   await expect
-    .poll(async () => {
-      widths.push(await readWidth(element))
-      return widths.at(-1) === widths.at(-2)
-    })
+    .poll(
+      async () => {
+        widths.push(await readWidth(element))
+        const run = widths.slice(-SETTLED_SAMPLES)
+        return run.length === SETTLED_SAMPLES && run.every((one) => one === run[0])
+      },
+      { intervals: [100] },
+    )
     .toBe(true)
   return widths.at(-1) ?? 0
 }

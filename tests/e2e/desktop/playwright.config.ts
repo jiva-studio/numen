@@ -28,7 +28,14 @@ export default defineConfig({
     command: `node "${fileURLToPath(new URL('./scripts/start-server.mjs', import.meta.url))}"`,
     url: baseURL,
     ignoreHTTPSErrors: true,
-    reuseExistingServer: !process.env.CI,
+    // A server this run did not start belongs to another run, which stops it and its vault while
+    // this run still uses them, and every test then fails at once. A taken port fails the start
+    // instead.
+    reuseExistingServer: false,
+    // The log of the server shows in the report, so a server that did not start or went away is
+    // explained by what it printed.
+    stdout: 'pipe',
+    stderr: 'pipe',
     timeout: 30_000,
   },
   // The window is WebKitGTK on Linux and WKWebView on macOS. `scripts/run-offline.mjs` runs each

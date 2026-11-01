@@ -4,6 +4,7 @@ package trash
 
 import (
 	"fmt"
+	"runtime"
 	"time"
 	"unsafe"
 
@@ -54,7 +55,12 @@ func moveToTrash(path string, _ time.Time) error {
 	sel := registerSelectors()
 
 	// Every object made here is autoreleased, and this is the pool it drains
-	// into. A goroutine carries none of its own.
+	// into. The pool belongs to the thread that made it, and a goroutine moves
+	// between threads at any call into C, so the goroutine stays on one thread
+	// until the pool is drained. Drained on another thread, the pool is not on
+	// that thread's stack and the drain crashes.
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
 	pool := objc.ID(objc.GetClass("NSAutoreleasePool")).Send(sel.alloc).Send(sel.begin)
 	defer pool.Send(sel.drain)
 
