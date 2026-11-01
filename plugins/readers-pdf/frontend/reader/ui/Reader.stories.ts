@@ -351,3 +351,21 @@ export const Pulled: Story = {
     await waitFor(async () => await expect(room.scrollLeft).toBeGreaterThan(0))
   },
 }
+
+/**
+ * The focused strip draws no ring of its own, neither an outline nor an inset
+ * shadow: the pages fill it to its edges.
+ */
+export const FocusedWithoutARing: Story = {
+  render: book(),
+  play: async ({ canvasElement }) => {
+    const area = getFreeSpace(canvasElement)
+
+    area.focus()
+
+    await waitFor(async () => await expect(area).toHaveFocus())
+    const style = getComputedStyle(area)
+    await expect(style.boxShadow).toBe('none')
+    await expect(style.outlineStyle === 'none' || style.outlineWidth === '0px').toBe(true)
+  },
+}

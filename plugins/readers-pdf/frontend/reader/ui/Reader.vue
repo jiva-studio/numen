@@ -53,7 +53,7 @@ const chosenZoom = ref<number | null>(null)
 const area = useTemplateRef<HTMLElement>('area')
 
 /** The viewport the pages are read in, taken again whenever it changes. */
-const { viewport, measure } = useViewport(area)
+const { viewport, measure: measureViewport } = useViewport(area)
 
 /** Row scroll state, and pointer and wheel handling. */
 const {
@@ -61,6 +61,7 @@ const {
   isDragging,
   getScrollOffset,
   send,
+  restore,
   isStill,
   onPointerDown,
   onPointerMove,
@@ -93,11 +94,18 @@ const rowStyle = computed(() => ({
   blockSize: `${pageLayout.value.height + 2 * GAP}px`,
 }))
 
+/**
+ * Re-measures the viewport and puts the row back where it was. A reader
+ * rendered while hidden has no viewport, and a row that was hidden or moved
+ * in the document is scrolled to its start by the browser, so the caller
+ * invokes this when the reader becomes visible.
+ */
+const measure = (): void => {
+  measureViewport()
+  props.paint(restore)
+}
+
 defineExpose({
-  /**
-   * Re-measures the viewport. A reader rendered while hidden has none, so the
-   * caller invokes this when the reader becomes visible.
-   */
   measure,
   handleKey: (event: KeyboardEvent) => onKey(event),
   /** Focuses the pages so key events reach them. */
@@ -123,6 +131,12 @@ watch(
     props.paint(() => stand(props.at, 'auto'))
   },
 )
+
+// A viewport that is reported again was hidden or moved, and the browser
+// scrolled its row to the start without a scroll event.
+watch(viewport, () => {
+  props.paint(restore)
+})
 
 /* -------------------------------- Handlers -------------------------------- */
 /**
@@ -211,11 +225,8 @@ const getBoxStyle = (page: number) => ({
 </template>
 
 <style scoped>
-/* The row scrolls under the arrows, so the keyboard is drawn at its current position.
-   Inside, because the row fills the reader to its edges. */
 .reader__viewport:focus-visible {
   outline: none;
-  box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
 }
 
 /* The row is draggable: the grab cursor shows before and while it is dragged. */

@@ -357,3 +357,36 @@ describe('a wheel turned over the row', () => {
     expect(preventDefault).not.toHaveBeenCalled()
   })
 })
+
+describe('a row the browser scrolled back to its start', () => {
+  it('is put back where it was last scrolled to', () => {
+    const { scroll, element } = createScroll(0)
+    element.scrollLeft = 480
+    scroll.isStill()
+    element.scrollLeft = 0
+
+    scroll.restore()
+
+    expect(element.scrollLeft).toBe(480)
+  })
+
+  it('is left alone while it travels to a page', () => {
+    const { scroll, element } = createScroll(0)
+
+    scroll.send(900, 'smooth')
+    scroll.restore()
+
+    expect(element.scrollLeft).toBe(0)
+  })
+
+  it('is left alone when it is where it was', () => {
+    const { scroll, element } = createScroll(0)
+    element.scrollLeft = 300
+    scroll.isStill()
+    element.scrollLeft = 300.5
+
+    scroll.restore()
+
+    expect(element.scrollLeft).toBe(300.5)
+  })
+})

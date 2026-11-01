@@ -25,6 +25,11 @@ export interface PanScroll {
   /** The row sent to a place along itself, travelling or at once. */
   readonly send: (to: number, how: ScrollBehavior) => void
   /**
+   * The row put back at the last offset it was scrolled to, when the browser
+   * has moved it since without a scroll event.
+   */
+  readonly restore: () => void
+  /**
    * Whether the strip is stationary. A strip scrolling towards a target passes
    * pages the user did not navigate to.
    */
@@ -110,6 +115,12 @@ export function usePanScroll(area: Readonly<ShallowRef<HTMLElement | null>>): Pa
     area.value.scrollTo({ left: to, behavior: how })
   }
 
+  const restore = (): void => {
+    if (!area.value || heading !== undefined) return
+    if (Math.abs(area.value.scrollLeft - axisOffset.value) <= THERE) return
+    area.value.scrollLeft = axisOffset.value
+  }
+
   const isStill = (): boolean => {
     if (!area.value) return false
     axisOffset.value = area.value.scrollLeft
@@ -132,6 +143,7 @@ export function usePanScroll(area: Readonly<ShallowRef<HTMLElement | null>>): Pa
     isDragging,
     getScrollOffset,
     send,
+    restore,
     isStill,
     onPointerDown,
     onPointerMove,
