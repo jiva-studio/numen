@@ -7,7 +7,14 @@
  */
 import type { LinkMarker } from '@numen/plugin-sdk'
 import type { Neighbourhood, NoteHeading, NoteRelation, NoteType } from '../types'
-import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexHeading } from '../plex'
+import type {
+  EdgeArrow,
+  EdgeLabel,
+  PlexEdge,
+  PlexNeighbourhood,
+  PlexNode,
+  PlexHeading,
+} from '../plex'
 
 /**
  * plex draws a note of a plugin-declared type with that type's icon.
@@ -20,24 +27,61 @@ export function getNoteTypes(neighbourhood: Neighbourhood): ReadonlyMap<string, 
   return found
 }
 
+/** The two records of a neighbour: the one the focus writes, and the one the neighbour writes. */
+interface NeighbourRecords {
+  readonly label: string
+  readonly reverseLabel: string
+  readonly isMutual: boolean
+  readonly marker: LinkMarker | null
+  readonly reverseMarker: LinkMarker | null
+}
+
 /**
- * The ends of an edge that carry an arrowhead. The marker of the record the focus
- * writes is drawn at the neighbour, and the marker of the record the neighbour
- * writes at the focus. A parent or a jump edge runs from the neighbour to the focus,
- * and a child edge from the focus to the neighbour. A sibling hangs off a shared
- * parent, and no record of the focus is drawn on it.
+ * The end of the edge each record points at: the record the focus writes points
+ * at the neighbour, and the record the neighbour writes at the focus. A parent or
+ * a jump edge runs from the neighbour to the focus, and a child edge from the
+ * focus to the neighbour. A record without a marker points at neither end.
  */
-function getEdgeArrows(
+function getRecordEnds(
   relation: NoteRelation,
-  markers: { readonly marker: LinkMarker | null; readonly reverseMarker: LinkMarker | null },
-): readonly EdgeArrow[] {
-  if (relation === 'sibling') return []
+  records: NeighbourRecords,
+): { readonly focus?: EdgeArrow; readonly neighbour?: EdgeArrow } {
   const atNeighbour: EdgeArrow = relation === 'child' ? 'to' : 'from'
   const atFocus: EdgeArrow = relation === 'child' ? 'from' : 'to'
+  return {
+    ...(records.marker === 'arrow' ? { focus: atNeighbour } : {}),
+    ...(records.reverseMarker === 'arrow' ? { neighbour: atFocus } : {}),
+  }
+}
+
+const createLabel = (text: string, end: EdgeArrow | undefined): EdgeLabel =>
+  end ? { text, end } : { text }
+
+/**
+ * The labels of an edge, each near the end its record points at, or in the
+ * middle for a record without a marker.
+ *
+ * A neighbour that only one note names has one record, and its label is that
+ * record's. For two records the core gives the label of the neighbour's record
+ * in place of an empty one of the focus, so a label equal to the reverse one is
+ * drawn once, as the neighbour's.
+ */
+function getEdgeLabels(relation: NoteRelation, records: NeighbourRecords): EdgeLabel[] {
+  const ends = getRecordEnds(relation, records)
+  if (!records.isMutual) {
+    return records.label ? [createLabel(records.label, ends.focus ?? ends.neighbour)] : []
+  }
+  const own = records.label === records.reverseLabel ? '' : records.label
   return [
-    ...(markers.marker === 'arrow' ? [atNeighbour] : []),
-    ...(markers.reverseMarker === 'arrow' ? [atFocus] : []),
+    ...(own ? [createLabel(own, ends.focus)] : []),
+    ...(records.reverseLabel ? [createLabel(records.reverseLabel, ends.neighbour)] : []),
   ]
+}
+
+/** The ends of an edge that carry an arrowhead: each end a record points at. */
+function getEdgeArrows(relation: NoteRelation, records: NeighbourRecords): EdgeArrow[] {
+  const ends = getRecordEnds(relation, records)
+  return [...(ends.focus ? [ends.focus] : []), ...(ends.neighbour ? [ends.neighbour] : [])]
 }
 
 /**
@@ -48,7 +92,8 @@ function getEdgeArrows(
  * the focus at all: it is another of a parent's children, so it hangs off that
  * parent. Which parent that is comes from the vault, and this file names it.
  *
- * An arrowhead is drawn at each end whose record carries a marker, and nowhere else.
+ * An arrowhead is drawn at each end whose record carries a marker, and nowhere
+ * else, and the label of each record is placed near its arrowhead.
  */
 export function convertNeighbourhood(
   neighbourhood: Neighbourhood,
@@ -65,10 +110,8 @@ export function convertNeighbourhood(
   const items: {
     id: string
     relation: NoteRelation
-    label: string
     through: string
-    marker: LinkMarker | null
-    reverseMarker: LinkMarker | null
+    records: NeighbourRecords
   }[] = []
   // Stryker restore ArrayDeclaration
   /** The path of every note this picture draws, the note in focus included. */
@@ -80,30 +123,36 @@ export function convertNeighbourhood(
     items.push({
       id,
       relation: related.relation,
+      through: related.through,
       // The text on the link. A line with no text carries nothing: a word added
       // by the application would be read as written by the user.
-      label: related.label,
-      through: related.through,
-      marker: related.marker,
-      reverseMarker: related.reverseMarker,
+      records: {
+        label: related.label,
+        reverseLabel: related.reverseLabel ?? '',
+        isMutual: related.isMutual,
+        marker: related.marker,
+        reverseMarker: related.reverseMarker,
+      },
     })
   }
 
-  const edges: PlexEdge[] = items.flatMap(
-    ({ id, relation, label, through, marker, reverseMarker }) => {
-      const line = label ? { label } : {}
-      const arrows = getEdgeArrows(relation, { marker, reverseMarker })
-      const head = arrows.length > 0 ? { arrows } : {}
-
-      if (relation === 'parent' || relation === 'jump') {
-        return [{ from: id, to: focus.id, ...line, ...head }]
-      }
-      if (relation === 'child') {
-        return [{ from: focus.id, to: id, ...line, ...head }]
-      }
+  const edges: PlexEdge[] = items.flatMap(({ id, relation, through, records }) => {
+    if (relation === 'sibling') {
+      // A sibling hangs off a shared parent, and no record of the focus is drawn on it.
+      const line = records.label ? { labels: [{ text: records.label }] } : {}
       return visiblePaths.has(through) ? [{ from: token(through), to: id, ...line }] : []
-    },
-  )
+    }
+
+    const labels = getEdgeLabels(relation, records)
+    const arrows = getEdgeArrows(relation, records)
+    const line = {
+      ...(labels.length > 0 ? { labels } : {}),
+      ...(arrows.length > 0 ? { arrows } : {}),
+    }
+    return relation === 'child'
+      ? [{ from: focus.id, to: id, ...line }]
+      : [{ from: id, to: focus.id, ...line }]
+  })
 
   return { nodes, edges }
 }

@@ -4,7 +4,7 @@
  * Where a line runs is settled in `routing.ts`; this is only how that is
  * written down.
  */
-import { ARROW_LENGTH, type EdgeCurve, type PlacedArrow, type PlacedEdge } from '../../edge'
+import { ARROW_LENGTH, type EdgeCurve, type EdgeHeading, type PlacedArrow } from '../../edge'
 import type { Position } from '@numen/ui'
 
 /** The curve, from where it leaves to where it arrives. */
@@ -14,9 +14,9 @@ export const createPath = (edge: EdgeCurve): string =>
   ` ${edge.control2.x} ${edge.control2.y}` +
   ` ${edge.toPoint.x} ${edge.toPoint.y}`
 
-/** The same curve, running the way its words are read. */
-export const createReadingPath = (edge: PlacedEdge): string =>
-  edge.heading === 'against'
+/** The same curve, running the way the words of a title are read. */
+export const createReadingPath = (edge: EdgeCurve, heading: EdgeHeading): string =>
+  heading === 'against'
     ? `M ${edge.toPoint.x} ${edge.toPoint.y}` +
       ` C ${edge.control2.x} ${edge.control2.y}` +
       ` ${edge.control1.x} ${edge.control1.y}` +

@@ -7,7 +7,7 @@ import {
   createThreadPath,
   ARROWHEAD_PATH,
 } from './paths'
-import { ARROW_LENGTH, type EdgeCurve, type PlacedEdge } from '../../edge'
+import { ARROW_LENGTH, type EdgeCurve } from '../../edge'
 
 const CURVE: EdgeCurve = {
   fromPoint: { x: 0, y: 0 },
@@ -15,15 +15,6 @@ const CURVE: EdgeCurve = {
   control2: { x: 20, y: 30 },
   toPoint: { x: 30, y: 30 },
 }
-
-const edge = (heading: PlacedEdge['heading']): PlacedEdge => ({
-  ...CURVE,
-  from: 'a',
-  to: 'b',
-  opacity: 1,
-  heading,
-  wordsAt: 0.5,
-})
 
 /** The numbers in the order the string names them. */
 const getNumbers = (path: string): number[] =>
@@ -41,15 +32,15 @@ describe('a curve as a path', () => {
 
 describe('the line a title is set along', () => {
   it('runs the way the curve does where the words read along it', () => {
-    expect(createReadingPath(edge('along'))).toBe(createPath(CURVE))
+    expect(createReadingPath(CURVE, 'along')).toBe(createPath(CURVE))
   })
 
   it('runs the other way where the words would be upside down', () => {
-    expect(getNumbers(createReadingPath(edge('against')))).toEqual([30, 30, 20, 30, 10, 0, 0, 0])
+    expect(getNumbers(createReadingPath(CURVE, 'against'))).toEqual([30, 30, 20, 30, 10, 0, 0, 0])
   })
 
   it('ends where the curve begins where it is taken the other way', () => {
-    const reversed = getNumbers(createReadingPath(edge('against')))
+    const reversed = getNumbers(createReadingPath(CURVE, 'against'))
     expect(reversed.slice(-2)).toEqual([CURVE.fromPoint.x, CURVE.fromPoint.y])
   })
 })

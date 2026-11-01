@@ -79,8 +79,6 @@ export interface LinkInspectorRequest {
   readonly nodeA: LinkInspectorNode
   readonly nodeB: LinkInspectorNode
   readonly connection: Connection
-  /** The kinds of link the connection can be. */
-  readonly roles: readonly ConnectionRole[]
   readonly at: { readonly x: number; readonly y: number }
 }
 

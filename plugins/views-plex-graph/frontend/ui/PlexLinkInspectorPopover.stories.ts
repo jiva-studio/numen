@@ -1,65 +1,148 @@
 /**
- * The popover that edits the connection between two notes: the kind of link, and for each note
- * whether it writes a record, its label and its arrow.
+ * The popover that edits the connection between two notes: one row per record, each with its
+ * direction, its description and a button that removes it.
  *
  * The widths of the rows and the pixels the controls land on are the browser's answer.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
+import type { Connection } from '@numen/plugin-sdk'
 import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
+import { WORDS as words } from '../words'
+
+const createConnection = (more: Partial<Connection>): Connection => ({
+  first: 'Harbour.md',
+  second: 'Lighthouse.md',
+  role: 'jump',
+  type: '',
+  firstSide: null,
+  secondSide: null,
+  ...more,
+})
+
+const createRequest = (connection: Connection) => ({
+  nodeA: { id: 'a', title: 'Harbour', path: 'Harbour.md' },
+  nodeB: { id: 'b', title: 'Lighthouse', path: 'Lighthouse.md' },
+  connection,
+  at: { x: 300, y: 260 },
+})
 
 const meta = {
   title: 'Plex/Link Inspector Popover',
   component: PlexLinkInspectorPopover,
   parameters: { layout: 'fullscreen' },
   args: {
-    request: {
-      nodeA: { id: 'a', title: 'Ontology', path: 'Ontology.md' },
-      nodeB: { id: 'b', title: 'Being', path: 'Being.md' },
-      connection: {
-        first: 'Ontology.md',
-        second: 'Being.md',
-        role: 'child',
-        type: '',
-        firstSide: { label: 'studies', marker: 'arrow', reason: '' },
-        secondSide: null,
-      },
-      roles: ['parent', 'child', 'jump'],
-      at: { x: 300, y: 260 },
-    },
+    request: createRequest(
+      createConnection({ firstSide: { label: 'guides ships in', marker: null, reason: '' } }),
+    ),
   },
 } satisfies Meta<typeof PlexLinkInspectorPopover>
 
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** One note writes a record with an arrow; the other writes none, so its fields are off. */
-export const OneSide: Story = {
+/** The direction buttons, by the direction each one shows. */
+const getDirections = (canvasElement: HTMLElement) =>
+  [...canvasElement.querySelectorAll('.plex-link-row__dir-btn')].map((button) =>
+    button.getAttribute('data-direction'),
+  )
+
+/** One record without a marker: one row, no kind of link and no checkbox. */
+export const NoDirection: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const fields = canvas.getAllByRole('textbox')
 
-    await expect(fields[0]).toBeEnabled()
-    await expect(fields[1]).toBeDisabled()
-    await expect(canvas.getAllByRole('button', { name: 'Arrow' })[0]).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
+    await expect(getDirections(canvasElement)).toStrictEqual(['none'])
+    await expect(canvas.getByRole('textbox')).toHaveValue('guides ships in')
+    await expect(canvas.getByRole('button', { name: words.removeLink })).toBeVisible()
+    await expect(canvas.queryByRole('combobox')).toBeNull()
+    await expect(canvas.queryByRole('checkbox')).toBeNull()
   },
 }
 
-/** Writing a record for the second note turns its fields on, and its arrow starts off. */
-export const AddTheOtherSide: Story = {
+/** The record of the first note, pointing at the second. */
+export const Forward: Story = {
+  args: {
+    request: createRequest(
+      createConnection({ firstSide: { label: 'guides ships in', marker: 'arrow', reason: '' } }),
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    await expect(getDirections(canvasElement)).toStrictEqual(['forward'])
+  },
+}
+
+/** The record of the second note, pointing at the first. */
+export const Backward: Story = {
+  args: {
+    request: createRequest(
+      createConnection({ secondSide: { label: 'shelters', marker: 'arrow', reason: '' } }),
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    await expect(getDirections(canvasElement)).toStrictEqual(['backward'])
+  },
+}
+
+/** A record each way: two rows with fixed arrows, each with its own description. */
+export const BothDirections: Story = {
+  args: {
+    request: createRequest(
+      createConnection({
+        firstSide: { label: 'guides ships in', marker: 'arrow', reason: '' },
+        secondSide: { label: 'shelters', marker: 'arrow', reason: '' },
+      }),
+    ),
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const [, second] = canvas.getAllByRole('checkbox')
 
-    await userEvent.click(second!)
+    await expect(getDirections(canvasElement)).toStrictEqual(['forward', 'backward'])
+    for (const button of canvasElement.querySelectorAll('.plex-link-row__dir-btn')) {
+      await expect(button).toBeDisabled()
+    }
+    await expect(canvas.queryByText(words.addReverseDirection, { exact: false })).toBeNull()
+  },
+}
 
-    await expect(canvas.getAllByRole('textbox')[1]).toBeEnabled()
-    await expect(canvas.getAllByRole('button', { name: 'Arrow' })[1]).toHaveAttribute(
-      'aria-pressed',
-      'false',
+/** The direction button turns through none, forward, backward and none again. */
+export const CycleDirection: Story = {
+  play: async ({ canvasElement }) => {
+    const button = canvasElement.querySelector<HTMLButtonElement>('.plex-link-row__dir-btn')!
+    const directions = [button.getAttribute('data-direction')]
+    for (let step = 0; step < 3; step += 1) {
+      await userEvent.click(button)
+      directions.push(button.getAttribute('data-direction'))
+    }
+
+    await expect(directions).toStrictEqual(['none', 'forward', 'backward', 'none'])
+  },
+}
+
+/** Adding the reverse direction gives a second row with an empty description. */
+export const AddReverseDirection: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    await userEvent.click(
+      canvas.getByRole('button', { name: new RegExp(words.addReverseDirection) }),
     )
+
+    await expect(getDirections(canvasElement)).toStrictEqual(['forward', 'backward'])
+    await expect(
+      canvas.getAllByRole('textbox').map((field) => (field as HTMLInputElement).value),
+    ).toStrictEqual(['guides ships in', ''])
+  },
+}
+
+/** With the last record removed, the popover says the link goes and offers to add one. */
+export const NoRecordLeft: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+
+    await userEvent.click(canvas.getByRole('button', { name: words.removeLink }))
+
+    await expect(canvas.getByText(words.linkWillBeRemoved)).toBeVisible()
+    await expect(canvas.getByRole('button', { name: new RegExp(words.addLink) })).toBeVisible()
   },
 }

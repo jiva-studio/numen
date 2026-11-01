@@ -3,11 +3,18 @@ import type { Position } from './node'
 /** The end of a line an arrowhead is drawn at, pointing out of the line there. */
 export type EdgeArrow = 'from' | 'to'
 
+/** Words set along an edge, and the end of the line they are placed near. */
+export interface EdgeLabel {
+  readonly text: string
+  /** The end the words are placed near, where that end carries an arrowhead; the middle where none. */
+  readonly end?: EdgeArrow
+}
+
 export interface PlexEdge {
   readonly from: string
   readonly to: string
   /** Drawn along the line when present; the plex never invents one. */
-  readonly label?: string
+  readonly labels?: readonly EdgeLabel[]
   /** The ends an arrowhead is drawn at. A line given none carries none. */
   readonly arrows?: readonly EdgeArrow[]
 }
@@ -42,20 +49,30 @@ export interface PlacedArrow {
   readonly angle: number
 }
 
-/** An edge routed between two placed nodes. */
-export interface PlacedEdge extends PlexEdge, EdgeCurve {
-  readonly opacity: number
+/** One label of an edge as it is drawn. */
+export interface EdgeTitle {
+  /** The end the label is placed near; the middle of the line where none. */
+  readonly end?: EdgeArrow | undefined
+  /** Which way round the curve the words are read. */
   readonly heading: EdgeHeading
   /**
    * The label as it is drawn: cut to the length of the curve and ended in an
    * ellipsis. The whole of it where nothing measured the words.
    */
-  readonly words?: string | undefined
+  readonly words: string
   /**
-   * Position of the label's midpoint as a fraction of the line's length: the
-   * middle of the line, unless the title was shifted along it to find space.
+   * Position of the label's midpoint as a fraction of the line's length, along
+   * the curve as it is read: the position of its end, unless the title was
+   * shifted along it to find space.
    */
   readonly wordsAt: number
+}
+
+/** An edge routed between two placed nodes. */
+export interface PlacedEdge extends PlexEdge, EdgeCurve {
+  readonly opacity: number
+  /** The labels that are drawn, each at its position. A label with no room is left out. */
+  readonly titles: readonly EdgeTitle[]
   /** Where each arrowhead goes and which way it is aimed, for an edge with any. */
   readonly arrowheads?: readonly PlacedArrow[] | undefined
 }

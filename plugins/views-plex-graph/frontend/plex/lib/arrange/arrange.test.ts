@@ -241,11 +241,11 @@ describe('a label is as long as its words', () => {
       { id: 'focus', title: 'Here', relation: 'focus' },
       { id: 'aside', title: 'Aside', relation: 'jump' },
     ],
-    edges: [{ from: 'aside', to: 'focus', label: 'the scene in the assembly' }],
+    edges: [{ from: 'aside', to: 'focus', labels: [{ text: 'the scene in the assembly' }] }],
   }
 
   const getWords = (measureLabel?: (label: string) => number) =>
-    arrangePlex(labelled, { measureLabel }).edges[0]!.words
+    arrangePlex(labelled, { measureLabel }).edges[0]!.titles[0]?.words
 
   it('asks the measurer for the words a line carries, and for no others', () => {
     const request: string[] = []

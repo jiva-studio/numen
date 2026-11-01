@@ -1,18 +1,20 @@
 <script setup lang="ts">
 /**
- * In-Plex popover for editing the connection between two notes: the kind of link, and for each of
- * the two notes whether it writes a record, its label and whether it draws an arrow.
+ * In-Plex popover for the connection between two notes: the direction and description of each
+ * record, adding the reverse direction, and removing a record or the whole link.
  */
-import { computed, ref, useId, useTemplateRef } from 'vue'
-import { ArrowLeftRight, Trash2, X } from '@lucide/vue'
+import { computed, ref, useTemplateRef } from 'vue'
+import { ArrowLeftRight, X } from '@lucide/vue'
 import { useOutsidePress } from '@numen/ui'
-import type { Connection, ConnectionRole } from '@numen/plugin-sdk'
+import type { Connection } from '@numen/plugin-sdk'
 import type { LinkInspectorRequest } from '../types'
 import {
-  setRole,
+  addReverseSide,
+  cycleDirection,
+  getRows,
+  isConnectionEmpty,
+  removeSide,
   setSideLabel,
-  setSidePresent,
-  toggleSideArrow,
   type SideKey,
 } from '../model/connectionDraft'
 import { usePopoverPosition } from '../model/usePopoverPosition'
@@ -32,29 +34,12 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const popover = useTemplateRef<HTMLDivElement>('popover')
 const draft = ref<Connection>(props.request.connection)
-const roleFieldId = useId()
-
-const rows = computed(() => [
-  {
-    key: 'first' as const,
-    side: draft.value.firstSide,
-    from: props.request.nodeA.title,
-    to: props.request.nodeB.title,
-    isBackward: false,
-  },
-  {
-    key: 'second' as const,
-    side: draft.value.secondSide,
-    from: props.request.nodeB.title,
-    to: props.request.nodeA.title,
-    isBackward: true,
-  },
-])
+const rows = computed(() => getRows(draft.value))
 
 const { positionStyle } = usePopoverPosition({
   target: popover,
   at: () => props.request.at,
-  watchTriggers: [() => props.request],
+  watchTriggers: [() => props.request, () => rows.value.length],
 })
 
 useOutsidePress(popover, onDone)
@@ -72,32 +57,36 @@ function onKeyDown(event: KeyboardEvent) {
   } else if (event.key === 'Enter') {
     event.stopPropagation()
     event.preventDefault()
-    onDone()
+    if (event.ctrlKey || event.metaKey) {
+      onAddReverse()
+    } else {
+      onDone()
+    }
   }
 }
 
-function onRoleChange(event: Event) {
-  draft.value = setRole(draft.value, (event.target as HTMLSelectElement).value as ConnectionRole)
-}
-
-function onPresentChanged(key: SideKey, isPresent: boolean) {
-  draft.value = setSidePresent(draft.value, key, isPresent)
+function onCycleDirection() {
+  draft.value = cycleDirection(draft.value)
 }
 
 function onLabelChanged(key: SideKey, label: string) {
   draft.value = setSideLabel(draft.value, key, label)
 }
 
-function onArrowToggled(key: SideKey) {
-  draft.value = toggleSideArrow(draft.value, key)
+function onAddReverse() {
+  draft.value = addReverseSide(draft.value)
+}
+
+function onRemoveRow(key: SideKey) {
+  draft.value = removeSide(draft.value, key)
 }
 
 function onDone() {
-  emit('save', draft.value)
-}
-
-function onRemove() {
-  emit('remove')
+  if (isConnectionEmpty(draft.value)) {
+    emit('remove')
+  } else {
+    emit('save', draft.value)
+  }
 }
 </script>
 
@@ -121,44 +110,37 @@ function onRemove() {
     </div>
 
     <div class="plex-link-popover__body">
-      <div class="plex-link-popover__kind">
-        <label :for="roleFieldId" class="plex-link-popover__kind-label">{{ words.linkKind }}</label>
-        <select
-          :id="roleFieldId"
-          class="plex-link-popover__kind-select"
-          :value="draft.role ?? ''"
-          @change="onRoleChange"
-        >
-          <option v-if="draft.role === null" value="" disabled>{{ words.noLinkKind }}</option>
-          <option v-for="role in props.request.roles" :key="role" :value="role">
-            {{ words.linkKindOption(props.request.nodeB.title, role, props.request.nodeA.title) }}
-          </option>
-        </select>
+      <div v-if="rows.length === 0" class="plex-link-popover__empty-state">
+        {{ words.linkWillBeRemoved }}
       </div>
-
+      <!-- Keyed by place: the one row keeps its button and its focus while its
+           record moves from one note to the other. -->
       <PlexLinkInspectorRow
-        v-for="row in rows"
-        :key="row.key"
-        :side="row.side"
-        :from="row.from"
-        :to="row.to"
-        :is-backward="row.isBackward"
-        @update:present="onPresentChanged(row.key, $event)"
+        v-for="(row, index) in rows"
+        :key="index"
+        :label="row.side.label"
+        :direction="row.direction"
+        :is-static="rows.length > 1"
+        @cycle-direction="onCycleDirection"
         @update:label="onLabelChanged(row.key, $event)"
-        @toggle-arrow="onArrowToggled(row.key)"
+        @remove="onRemoveRow(row.key)"
         @done="onDone"
+        @add-reverse="onAddReverse"
       />
     </div>
 
     <div class="plex-link-popover__footer">
       <button
+        v-if="rows.length < 2"
         type="button"
-        class="plex-link-popover__btn plex-link-popover__btn--remove"
-        @click="onRemove"
+        class="plex-link-popover__btn plex-link-popover__btn--add"
+        :title="rows.length === 0 ? words.addLink : words.addReverseDirection"
+        @click="onAddReverse"
       >
-        <Trash2 class="plex-link-popover__icon" />
-        <span>{{ words.removeConnection }}</span>
+        <span>+ {{ rows.length === 0 ? words.addLink : words.addReverseDirection }}</span>
+        <span class="plex-link-popover__shortcut">Ctrl ↵</span>
       </button>
+      <div v-else class="plex-link-popover__add-spacer" />
 
       <button
         type="button"

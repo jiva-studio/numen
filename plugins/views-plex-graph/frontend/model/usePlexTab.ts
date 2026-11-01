@@ -231,7 +231,7 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const { readHeadings, getHeadings } = usePlexHeadings(drawnNodes, types, deps, map)
   const linkInspectorModel = useLinkInspector(
     view,
-    { editor: deps.editor, roles: deps.creatable, showMessage: deps.showMessage },
+    { editor: deps.editor, showMessage: deps.showMessage },
     map,
     getName,
   )

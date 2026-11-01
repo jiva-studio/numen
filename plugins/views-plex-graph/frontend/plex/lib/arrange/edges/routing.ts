@@ -2,7 +2,9 @@ import {
   getArrow,
   getHeading,
   getLength,
+  type EdgeArrow,
   type EdgeCurve,
+  type EdgeTitle,
   type PlacedEdge,
   type PlexEdge,
 } from '../../edge'
@@ -52,8 +54,33 @@ export function createRouting(
 /** The one character a cut title ends in. */
 const ELLIPSIS = '…'
 
-/** The middle of a line, where a title is set until something is in the way. */
+/** The middle of a line, where a title with no end is set until something is in the way. */
 export const MIDDLE = 0.5
+
+/** How far from its end a title placed near an end is set, as a fraction of the line. */
+const NEAR_END = 0.2
+
+/**
+ * The position a title is set at, as a fraction of the line's length from its
+ * `from` end: near the end it names, or the middle where it names none.
+ */
+export const getLabelPosition = (end: EdgeArrow | undefined): number => {
+  if (end === 'from') return NEAR_END
+  if (end === 'to') return 1 - NEAR_END
+  return MIDDLE
+}
+
+/**
+ * The title set at a fraction of the curve from its `from` end, measured along
+ * the curve the way its words are read.
+ */
+export function createTitle(
+  curve: EdgeCurve,
+  ...[position, words, end]: [position: number, words: string, end: EdgeArrow | undefined]
+): EdgeTitle {
+  const heading = getHeading(curve, position)
+  return { end, heading, words, wordsAt: heading === 'against' ? 1 - position : position }
+}
 
 /**
  * The longest prefix of the label that fits the curve, including the ellipsis.
@@ -149,12 +176,22 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
 }
 
 /**
- * The words a curve carries. A title is set about the middle of its line and an
+ * The titles a curve carries, each at the position of its end. The labels of
+ * one line share its length, less the room kept for the arrowheads.
  */
-function cutLabel(edge: PlexEdge, curve: EdgeCurve, routing: Routing): string | undefined {
-  if (edge.label === undefined || !routing.labelWidth) return edge.label
-  const room = getLength(curve) - (edge.arrows?.length ? 2 * routing.arrowClearance : 0)
-  return cutToFit(edge.label, room, routing.labelWidth)
+function createTitles(edge: PlexEdge, curve: EdgeCurve, routing: Routing): EdgeTitle[] {
+  const labels = (edge.labels ?? []).filter((label) => label.text)
+  const room =
+    (getLength(curve) - (edge.arrows?.length ? 2 * routing.arrowClearance : 0)) / labels.length
+  const { labelWidth } = routing
+  return labels.map((label) =>
+    createTitle(
+      curve,
+      getLabelPosition(label.end),
+      labelWidth ? cutToFit(label.text, room, labelWidth) : label.text,
+      label.end,
+    ),
+  )
 }
 
 export interface RouteEdgeOptions {
@@ -185,9 +222,7 @@ export function routeEdge(
     ...edge,
     ...curve,
     opacity,
-    heading: getHeading(curve, MIDDLE),
-    words: cutLabel(edge, curve, routingOptions),
-    wordsAt: MIDDLE,
+    titles: createTitles(edge, curve, routingOptions),
     arrowheads: edge.arrows?.map((end) => getArrow(curve, end)),
   }
 }

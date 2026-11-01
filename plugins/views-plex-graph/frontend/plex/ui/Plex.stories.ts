@@ -190,8 +190,8 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
       links.value = [
         ...links.value,
         relation === 'parent' || relation === 'jump'
-          ? { from: id, to: from, label: relation === 'jump' ? 'see also' : 'is a' }
-          : { from, to: id, label: 'contains' },
+          ? { from: id, to: from, labels: [{ text: relation === 'jump' ? 'see also' : 'is a' }] }
+          : { from, to: id, labels: [{ text: 'contains' }] },
       ]
     }
 
@@ -729,11 +729,11 @@ const titledLines: PlexNeighbourhood = {
     { id: 'sibling', title: 'The hedge', relation: 'sibling' },
   ],
   edges: [
-    { from: 'parent', to: 'focus', label: 'is a' },
-    { from: 'parent', to: 'sibling', label: 'contains' },
-    { from: 'earlier', to: 'focus', label: 'see also' },
-    { from: 'across', to: 'focus', label: 'the minutes of the meeting' },
-    { from: 'later', to: 'focus', label: 'and also' },
+    { from: 'parent', to: 'focus', labels: [{ text: 'is a' }] },
+    { from: 'parent', to: 'sibling', labels: [{ text: 'contains' }] },
+    { from: 'earlier', to: 'focus', labels: [{ text: 'see also' }] },
+    { from: 'across', to: 'focus', labels: [{ text: 'the minutes of the meeting' }] },
+    { from: 'later', to: 'focus', labels: [{ text: 'and also' }] },
   ],
 }
 
@@ -963,9 +963,9 @@ const arrowedLines: PlexNeighbourhood = {
   ],
   edges: [
     { from: 'allotments', to: 'alice', arrows: ['from'] },
-    { from: 'bram', to: 'alice', label: 'the oldest tenant', arrows: ['from'] },
-    { from: 'cora', to: 'alice', label: 'keys, hoses, the gate' },
-    { from: 'allotments', to: 'rota', label: 'the minutes of the meeting' },
+    { from: 'bram', to: 'alice', labels: [{ text: 'the oldest tenant' }], arrows: ['from'] },
+    { from: 'cora', to: 'alice', labels: [{ text: 'keys, hoses, the gate' }] },
+    { from: 'allotments', to: 'rota', labels: [{ text: 'the minutes of the meeting' }] },
   ],
 }
 

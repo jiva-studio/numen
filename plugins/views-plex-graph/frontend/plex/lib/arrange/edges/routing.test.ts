@@ -2,9 +2,17 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from '../arrange'
 import { DEFAULT_OPTIONS } from '../options'
-import { cutToFit, routeEdge, routeEdges, createRouting } from './routing'
+import { cutToFit, getLabelPosition, MIDDLE, routeEdge, routeEdges, createRouting } from './routing'
 import { neighbourhoods } from '../../../fixtures/neighbourhoods'
-import { ARROW_LENGTH, getArrow, getLength, createPointOnCurve, type EdgeArrow } from '../../edge'
+import {
+  ARROW_LENGTH,
+  getArrow,
+  getHeading,
+  getLength,
+  createPointOnCurve,
+  type EdgeArrow,
+  type PlexEdge,
+} from '../../edge'
 import type { PlexNeighbourhood } from '../../neighbourhood'
 import type { PlacedNode } from '../../node'
 import type { PlexNodeRelation } from '../../relation'
@@ -89,7 +97,7 @@ describe('edges', () => {
     const layout = arrangePlex(neighbourhoods.diamond)
     const edge = layout.edges.find((e) => e.from === 'parent-0' && e.to === 'parent-1')
     expect(edge).toBeDefined()
-    expect(edge!.label).toBe('contains')
+    expect(edge!.labels?.[0]?.text).toBe('contains')
 
     const leftNode = layout.nodes.find((n) => n.id === 'parent-0')!
     const right = layout.nodes.find((n) => n.id === 'parent-1')!
@@ -105,13 +113,13 @@ describe('edges', () => {
     // A sibling is below a parent, and its line runs left to right.
     for (const sibling of getNodesByRelation(layout, 'sibling')) {
       const edge = layout.edges.find((e) => e.to === sibling.id)!
-      expect(edge.heading, `sibling ${sibling.id}`).toBe('along')
+      expect(getHeading(edge, MIDDLE), `sibling ${sibling.id}`).toBe('along')
     }
 
     // A jump is offset sideways, and its line arrives from the left.
     for (const jump of getNodesByRelation(layout, 'jump')) {
       const edge = layout.edges.find((e) => e.from === jump.id)!
-      expect(edge.heading, `jump ${jump.id}`).toBe('along')
+      expect(getHeading(edge, MIDDLE), `jump ${jump.id}`).toBe('along')
     }
   })
 
@@ -120,7 +128,7 @@ describe('edges', () => {
     const layout = arrangePlex(neighbourhoods.typical)
     const down = layout.edges.find((e) => e.to === 'focus' && e.from === 'parent-0')!
     expect(down.fromPoint.y).toBeLessThan(down.toPoint.y)
-    expect(down.heading).toBe('along')
+    expect(getHeading(down, MIDDLE)).toBe('along')
 
     // The same pair written the other way about runs up it, and is read down.
     const up = arrangePlex({
@@ -131,7 +139,7 @@ describe('edges', () => {
       edges: [{ from: 'focus', to: 'over' }],
     })
     expect(up.edges[0]!.fromPoint.y).toBeGreaterThan(up.edges[0]!.toPoint.y)
-    expect(up.edges[0]!.heading).toBe('against')
+    expect(getHeading(up.edges[0]!, MIDDLE)).toBe('against')
   })
 
   it('takes the reading direction from the curve, not from which end is which', () => {
@@ -144,9 +152,9 @@ describe('edges', () => {
     const outward = arrangePlex({ nodes, edges: [{ from: 'focus', to: 'aside' }] })
     const inward = arrangePlex({ nodes, edges: [{ from: 'aside', to: 'focus' }] })
 
-    expect(outward.edges[0]!.heading).toBe('against')
+    expect(getHeading(outward.edges[0]!, MIDDLE)).toBe('against')
     expect(outward.edges[0]!.fromPoint.x).toBeGreaterThan(outward.edges[0]!.toPoint.x)
-    expect(inward.edges[0]!.heading).toBe('along')
+    expect(getHeading(inward.edges[0]!, MIDDLE)).toBe('along')
     expect(inward.edges[0]!.fromPoint.x).toBeLessThan(inward.edges[0]!.toPoint.x)
   })
 
@@ -167,7 +175,7 @@ describe('a title cut to the line it is set on', () => {
       { id: 'focus', title: 'Here', relation: 'focus' },
       { id: 'aside', title: 'Aside', relation: 'jump' },
     ],
-    edges: [{ from: 'aside', to: 'focus', label: 'the scene in the assembly' }],
+    edges: [{ from: 'aside', to: 'focus', labels: [{ text: 'the scene in the assembly' }] }],
   }
 
   const placedPlex = arrangePlex(sideways)
@@ -196,32 +204,32 @@ describe('a title cut to the line it is set on', () => {
 
   it('draws the whole label where it fits the curve', () => {
     const edge = routeWithLabel(perLetter(1))
-    expect(edge.words).toBe('the scene in the assembly')
-    expect(edge.label).toBe('the scene in the assembly')
+    expect(edge.titles[0]?.words).toBe('the scene in the assembly')
+    expect(edge.labels?.[0]?.text).toBe('the scene in the assembly')
   })
 
   it('draws the whole label where nothing measured it', () => {
-    expect(routeWithLabel().words).toBe('the scene in the assembly')
+    expect(routeWithLabel().titles[0]?.words).toBe('the scene in the assembly')
   })
 
   it('cuts words longer than the curve, and ends them in an ellipsis', () => {
     const width = perLetter(arc / 10)
     const edge = routeWithLabel(width)
 
-    expect(edge.words).not.toBe(edge.label)
-    expect(edge.words!.endsWith('…')).toBe(true)
-    expect(edge.label!.startsWith(edge.words!.slice(0, -1))).toBe(true)
-    expect(width(edge.words!)).toBeLessThanOrEqual(arc)
+    expect(edge.titles[0]?.words).not.toBe(edge.labels?.[0]?.text)
+    expect(edge.titles[0]!.words.endsWith('…')).toBe(true)
+    expect(edge.labels![0]!.text.startsWith(edge.titles[0]!.words.slice(0, -1))).toBe(true)
+    expect(width(edge.titles[0]!.words)).toBeLessThanOrEqual(arc)
   })
 
   it('leaves no space hanging before the ellipsis', () => {
     // Space for ten letters; the tenth letter of this label is a space.
     const edge = routeWithLabel(perLetter(arc / 10))
-    expect(edge.words).toBe('the scene…')
+    expect(edge.titles[0]?.words).toBe('the scene…')
   })
 
   it('carries the ellipsis alone where there is room for nothing', () => {
-    expect(routeWithLabel(perLetter(arc)).words).toBe('…')
+    expect(routeWithLabel(perLetter(arc)).titles[0]?.words).toBe('…')
   })
 
   it('measures the words it carries, and no other', () => {
@@ -237,7 +245,7 @@ describe('a title cut to the line it is set on', () => {
     const label = 'a'.repeat(400)
     const request: string[] = []
     routeEdges(
-      [{ from: 'aside', to: 'focus', label }],
+      [{ from: 'aside', to: 'focus', labels: [{ text: label }] }],
       byId,
       createRouting(DEFAULT_OPTIONS, (words) => {
         request.push(words)
@@ -351,13 +359,13 @@ describe('the arrowhead a line carries', () => {
           {
             from: 'focus',
             to: 'below',
-            label: 'the scene in the assembly',
+            labels: [{ text: 'the scene in the assembly' }],
             ...(arrow ? { arrows: [arrow] } : {}),
           },
         ],
         byId,
         createRouting(DEFAULT_OPTIONS, measure),
-      )[0]!.words!
+      )[0]!.titles[0]!.words
 
     const room = getLength(routeWithArrow()) - 2 * DEFAULT_OPTIONS.routing.arrowClearance
     expect(measure(words('to'))).toBeLessThanOrEqual(room)
@@ -539,5 +547,103 @@ describe('the run of a line between two boxes', () => {
       routeEdges([{ from: 'a', to: 'b' }], byId, { routing: edgeRouting, opacity: () => 0.25 })[0]!
         .opacity,
     ).toBe(0.25)
+  })
+})
+
+/**
+ * The position of a label along its line: near the arrowhead of its record,
+ * or in the middle of a line for a record without one.
+ */
+describe('the position of a label', () => {
+  const box = (id: string, x: number): PlacedNode => ({
+    id,
+    title: id,
+    relation: 'jump',
+    x,
+    y: 0,
+    width: 100,
+    height: 20,
+    order: 0,
+    opacity: 1,
+  })
+  const harbour = box('harbour', 0)
+  const lighthouse = box('lighthouse', 400)
+  const byId = new Map([harbour, lighthouse].map((node) => [node.id, node]))
+
+  /** The titles of one line: words, the end named, and the place from the `from` end. */
+  const getPlaces = (edge: PlexEdge) => {
+    const routed = routeEdge(edge, byId, createRouting(DEFAULT_OPTIONS))!
+    return routed.titles.map((title) => [
+      title.words,
+      title.end,
+      title.heading === 'against' ? 1 - title.wordsAt : title.wordsAt,
+    ])
+  }
+
+  it('is the middle of the line for a label that names no end', () => {
+    expect(getLabelPosition(undefined)).toBe(MIDDLE)
+    expect(getPlaces({ from: 'harbour', to: 'lighthouse', labels: [{ text: 'guides' }] })).toEqual([
+      ['guides', undefined, MIDDLE],
+    ])
+  })
+
+  it('is near the end the label names, on either end', () => {
+    expect(getLabelPosition('to')).toBeGreaterThan(MIDDLE)
+    expect(getLabelPosition('from')).toBeLessThan(MIDDLE)
+    expect(getLabelPosition('to') + getLabelPosition('from')).toBeCloseTo(1)
+
+    const edge: PlexEdge = {
+      from: 'harbour',
+      to: 'lighthouse',
+      labels: [
+        { text: 'guides', end: 'to' },
+        { text: 'shelters', end: 'from' },
+      ],
+      arrows: ['to', 'from'],
+    }
+    expect(getPlaces(edge)).toEqual([
+      ['guides', 'to', getLabelPosition('to')],
+      ['shelters', 'from', getLabelPosition('from')],
+    ])
+  })
+
+  it('stays near the same note on a line that runs right to left', () => {
+    const edge: PlexEdge = {
+      from: 'lighthouse',
+      to: 'harbour',
+      labels: [{ text: 'guides', end: 'to' }],
+      arrows: ['to'],
+    }
+    const routed = routeEdge(edge, byId, createRouting(DEFAULT_OPTIONS))!
+
+    expect(routed.titles[0]!.heading).toBe('against')
+    expect(routed.titles[0]!.wordsAt).toBeCloseTo(1 - getLabelPosition('to'))
+    expect(getPlaces(edge)).toEqual([['guides', 'to', getLabelPosition('to')]])
+  })
+
+  it('draws no title for a label with no words', () => {
+    expect(getPlaces({ from: 'harbour', to: 'lighthouse', labels: [{ text: '' }] })).toEqual([])
+  })
+
+  it('shares the room of the line between two labels', () => {
+    const measure = (words: string) => 4 * [...words].length
+    const long = 'the long way round the headland'
+    const routed = routeEdge(
+      {
+        from: 'harbour',
+        to: 'lighthouse',
+        labels: [
+          { text: long, end: 'to' },
+          { text: long, end: 'from' },
+        ],
+        arrows: ['to', 'from'],
+      },
+      byId,
+      createRouting(DEFAULT_OPTIONS, measure),
+    )!
+    const room = (getLength(routed) - 2 * DEFAULT_OPTIONS.routing.arrowClearance) / 2
+
+    expect(routed.titles).toHaveLength(2)
+    for (const title of routed.titles) expect(measure(title.words)).toBeLessThanOrEqual(room)
   })
 })

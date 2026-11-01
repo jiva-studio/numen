@@ -77,7 +77,7 @@ export const diamond: PlexNeighbourhood = neighbourhood(
     { id: 'child-0', title: 'Cycle detection', relation: 'child' },
     { id: 'child-1', title: 'Topological order', relation: 'child' },
   ],
-  [{ from: 'parent-0', to: 'parent-1', label: 'contains' }],
+  [{ from: 'parent-0', to: 'parent-1', labels: [{ text: 'contains' }] }],
 )
 
 /** Nothing above it. The top of a hierarchy has to look deliberate, not broken. */
@@ -141,12 +141,12 @@ export const labelledRows: PlexNeighbourhood = {
   ],
   edges: [
     { from: 'parent-0', to: 'focus' },
-    { from: 'focus', to: 'child-0', label: 'the seed shed' },
-    { from: 'focus', to: 'child-1', label: 'the minutes of the meeting' },
-    { from: 'focus', to: 'child-2', label: 'the rule they quoted there' },
-    { from: 'focus', to: 'child-3', label: 'when a plot is taken back' },
-    { from: 'focus', to: 'child-4', label: 'the chair since May' },
-    { from: 'focus', to: 'child-5', label: 'in the rules' },
+    { from: 'focus', to: 'child-0', labels: [{ text: 'the seed shed' }] },
+    { from: 'focus', to: 'child-1', labels: [{ text: 'the minutes of the meeting' }] },
+    { from: 'focus', to: 'child-2', labels: [{ text: 'the rule they quoted there' }] },
+    { from: 'focus', to: 'child-3', labels: [{ text: 'when a plot is taken back' }] },
+    { from: 'focus', to: 'child-4', labels: [{ text: 'the chair since May' }] },
+    { from: 'focus', to: 'child-5', labels: [{ text: 'in the rules' }] },
     { from: 'jump-0', to: 'focus' },
     { from: 'parent-0', to: 'sibling-0' },
     { from: 'parent-0', to: 'sibling-1' },

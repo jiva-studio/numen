@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import type { Connection } from '@numen/plugin-sdk'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import { createVault, viewOn } from '../fixtures'
-import { setSideLabel, setSidePresent, toggleSideArrow } from './connectionDraft'
+import { addReverseSide, cycleDirection, setSideLabel } from './connectionDraft'
 import { useLinkInspector } from './useLinkInspector'
 
 /** The connection the core reports between Root.md and Child.md. */
@@ -28,7 +28,6 @@ const inspecting = (connection: Connection | null = reported, takes = true) => {
     plex.view,
     {
       editor: vault.editor,
-      roles: ['parent', 'child', 'jump'],
       showMessage: (text) => messages.push(text),
     },
     map,
@@ -43,7 +42,7 @@ const inspecting = (connection: Connection | null = reported, takes = true) => {
 }
 
 describe('opening the link inspector', () => {
-  it('shows the connection the core reports, with the kinds of link the host offers', async () => {
+  it('shows the connection the core reports', async () => {
     const one = inspecting()
 
     const request = await one.open()
@@ -51,7 +50,6 @@ describe('opening the link inspector', () => {
     expect(request?.nodeA).toMatchObject({ title: 'Root', path: 'Root.md' })
     expect(request?.nodeB).toMatchObject({ title: 'Child', path: 'Child.md' })
     expect(request?.connection).toEqual(reported)
-    expect(request?.roles).toStrictEqual(['parent', 'child', 'jump'])
   })
 
   it('shows a pair that no record joins as a connection with no records', async () => {
@@ -84,7 +82,6 @@ describe('opening the link inspector', () => {
           ...one.editor,
           getConnection: async () => ({ ok: false, error: 'unreadable' }),
         },
-        roles: [],
         showMessage: (text) => messages.push(text),
       },
       map,
@@ -114,7 +111,7 @@ describe('saving the link inspector', () => {
   it('saves the connection in one call and shows the picture again', async () => {
     const one = inspecting()
     const request = await one.open()
-    const edited = toggleSideArrow(setSideLabel(request!.connection, 'first', 'holds'), 'first')
+    const edited = cycleDirection(setSideLabel(request!.connection, 'first', 'holds'))
 
     await one.saveLinkInspector(edited)
 
@@ -131,7 +128,7 @@ describe('saving the link inspector', () => {
   it('saves a record that carries an arrow and an empty label', async () => {
     const one = inspecting(null)
     const request = await one.open()
-    const edited = toggleSideArrow(setSidePresent(request!.connection, 'second', true), 'second')
+    const edited = cycleDirection(cycleDirection(addReverseSide(request!.connection)))
 
     await one.saveLinkInspector(edited)
 
@@ -192,6 +189,17 @@ describe('removing the connection', () => {
 
     expect(one.removed).toEqual([['Root.md', 'Child.md']])
     expect(one.went).toStrictEqual(['Root.md'])
+    expect(one.linkInspector.value).toBeNull()
+  })
+
+  it('closes without asking the core where the pair had no record to remove', async () => {
+    const one = inspecting(null)
+    await one.open()
+
+    await one.removeLinkInspector()
+
+    expect(one.removed).toEqual([])
+    expect(one.went).toStrictEqual([])
     expect(one.linkInspector.value).toBeNull()
   })
 

@@ -6,18 +6,17 @@ import { ref } from 'vue'
 import { getRelationErrorWords, type Connection } from '@numen/plugin-sdk'
 import type { NodeIdMap } from '../lib/nodeIdMap'
 import type { LinkInspectorRequest, PlexEditor, PlexView } from '../types'
-import { areConnectionsEqual } from './connectionDraft'
+import { areConnectionsEqual, isConnectionEmpty } from './connectionDraft'
 
 export function useLinkInspector(
   view: PlexView,
   options: {
     readonly editor: PlexEditor
-    readonly roles: LinkInspectorRequest['roles']
     readonly showMessage: (text: string) => void
   },
   ...[map, getName]: [map: NodeIdMap, getName: (path: string) => string]
 ) {
-  const { editor, roles, showMessage } = options
+  const { editor, showMessage } = options
   const linkInspector = ref<LinkInspectorRequest | null>(null)
 
   const openLinkInspector = async (pair: string, position: { x: number; y: number }) => {
@@ -35,7 +34,6 @@ export function useLinkInspector(
       nodeA: { id: idA, title: getName(pathA), path: pathA },
       nodeB: { id: idB, title: getName(pathB), path: pathB },
       connection: read.value,
-      roles,
       at: position,
     }
   }
@@ -68,6 +66,10 @@ export function useLinkInspector(
   const removeLinkInspector = async () => {
     const open = linkInspector.value
     if (!open) return
+    if (isConnectionEmpty(open.connection)) {
+      dismissLinkInspector()
+      return
+    }
 
     const removed = await editor.removeConnection(
       open.nodeA.path,

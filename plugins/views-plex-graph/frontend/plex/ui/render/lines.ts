@@ -13,11 +13,18 @@ export interface EdgeLine {
   readonly d: string
   /** Each head, by the end of the line it is drawn at, with the transform that puts it there. */
   readonly arrows: readonly { readonly end: EdgeArrow; readonly transform: string }[]
-  /** The path the title is set along, named, and nothing for a line with no title. */
-  readonly titlePath: string | null
-  readonly titleLine: string
+  /** Each title the line carries; none for a line with no title. */
+  readonly titles: readonly TitleLine[]
+}
+
+/** One title of a line, with the path it is set along. */
+export interface TitleLine {
+  readonly words: string
+  /** The name of the path the title is set along. */
+  readonly path: string
+  readonly line: string
   /** How far along that path the middle of the title is. */
-  readonly titleAt: string
+  readonly at: string
 }
 
 /**
@@ -38,9 +45,12 @@ export const getLines = (edges: readonly PlacedEdge[], uid: string): readonly Ed
       end: head.end,
       transform: createArrowTransform(head),
     })),
-    titlePath: edge.words ? `${uid}-title-${index}` : null,
-    titleLine: createReadingPath(edge),
-    titleAt: `${100 * edge.wordsAt}%`,
+    titles: edge.titles.map((title, slot) => ({
+      words: title.words,
+      path: `${uid}-title-${index}-${slot}`,
+      line: createReadingPath(edge, title.heading),
+      at: `${100 * title.wordsAt}%`,
+    })),
   }))
 
 /**

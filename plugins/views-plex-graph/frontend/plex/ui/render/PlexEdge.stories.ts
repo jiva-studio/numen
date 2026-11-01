@@ -1,5 +1,5 @@
 /**
- * One edge and the title along it, at rest and lifted over the boxes.
+ * One edge and the titles along it, at rest and lifted over the boxes.
  *
  * Inside a plex an edge is a hairline below all other elements, which makes it
  * hard to judge whether the lifted edge differs from the resting one. Both
@@ -12,55 +12,72 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
-import type { EdgeLine } from './lines'
-import { createArrowTransform, createPath, createReadingPath } from '../../lib/arrange'
-import type { PlacedEdge } from '../../lib/edge'
+import { getLines } from './lines'
+import { createTitle, getLabelPosition } from '../../lib/arrange'
+import { getArrow, type EdgeArrow, type EdgeCurve, type PlacedEdge } from '../../lib/edge'
 import { lightness } from '../../../fixtures/colour'
 import { DARK, expectDark } from '../../../fixtures/theme'
 
+/**
+ * Which records the edge draws: one without a marker, one pointing at the `to`
+ * end, one pointing at the `from` end, or one of each.
+ */
+type Direction = 'none' | 'forward' | 'backward' | 'both'
+
 interface Knobs {
-  /** The words set along the line. Nothing draws no title at all. */
+  /** The words of the record that points at the `to` end, or of the only record. */
   words: string
-  /** The position along the line of the middle of the words. */
-  wordsAt: number
+  /** The words of the record that points at the `from` end, drawn where both are. */
+  reverseWords: string
+  direction: Direction
   /** Below one, the edge is on its way in or out. */
   opacity: number
-  /** Whether the line ends in a head. */
-  isArrow: boolean
 }
 
-const createEdge = (args: Knobs): PlacedEdge => ({
-  from: 'one',
-  to: 'two',
-  label: args.words,
-  ...(args.isArrow ? { arrows: ['to' as const] } : {}),
+const CURVE: EdgeCurve = {
   fromPoint: { x: -200, y: -40 },
   toPoint: { x: 200, y: 40 },
   control1: { x: -60, y: -40 },
   control2: { x: 60, y: 40 },
-  opacity: args.opacity,
-  heading: 'along',
-  words: args.words || undefined,
-  wordsAt: args.wordsAt,
-  ...(args.isArrow
-    ? { arrowheads: [{ end: 'to' as const, at: { x: 200, y: 40 }, angle: 12 }] }
-    : {}),
-})
+}
 
-/** The edge with the properties that the drawing requires, as the plex computes them. */
-const createLine = (edge: PlacedEdge): EdgeLine => ({
-  edge,
-  key: `${edge.from}->${edge.to}`,
-  pair: `${edge.from}|${edge.to}`,
-  d: createPath(edge),
-  arrows: (edge.arrowheads ?? []).map((head) => ({
-    end: head.end,
-    transform: createArrowTransform(head),
-  })),
-  titlePath: edge.words ? 'edge-title' : null,
-  titleLine: createReadingPath(edge),
-  titleAt: `${100 * edge.wordsAt}%`,
-})
+/** Each record the edge draws: its words and the end it points at, none for no marker. */
+const getRecords = (args: Knobs): { words: string; end?: EdgeArrow }[] => {
+  switch (args.direction) {
+    case 'none':
+      return [{ words: args.words }]
+    case 'forward':
+      return [{ words: args.words, end: 'to' }]
+    case 'backward':
+      return [{ words: args.words, end: 'from' }]
+    case 'both':
+      return [
+        { words: args.words, end: 'to' },
+        { words: args.reverseWords, end: 'from' },
+      ]
+  }
+}
+
+/** The edge as the arrangement places it, every title at the position of its end. */
+const createEdge = (args: Knobs): PlacedEdge => {
+  const records = getRecords(args)
+  const ends = records.flatMap((record) => (record.end ? [record.end] : []))
+  const labelled = records.filter((record) => record.words)
+  return {
+    from: 'one',
+    to: 'two',
+    ...CURVE,
+    labels: labelled.map((record) =>
+      record.end ? { text: record.words, end: record.end } : { text: record.words },
+    ),
+    arrows: ends,
+    opacity: args.opacity,
+    titles: labelled.map((record) =>
+      createTitle(CURVE, getLabelPosition(record.end), record.words, record.end),
+    ),
+    arrowheads: ends.map((end) => getArrow(CURVE, end)),
+  }
+}
 
 /**
  * The pair drawn twice over one window: at rest, and lifted. Each is wrapped in
@@ -68,11 +85,11 @@ const createLine = (edge: PlacedEdge): EdgeLine => ({
  */
 const createBoth = (args: Knobs) => ({
   components: { PlexEdgeLine, PlexEdgeTitle },
-  setup: () => ({ line: createLine(createEdge(args)) }),
+  setup: () => ({ line: getLines([createEdge(args)], 'edge')[0]! }),
   template: `
     <div data-ground style="height:100vh;display:grid;place-items:center;background:var(--numen-surface)">
       <svg class="numen" width="480" height="180" viewBox="-240 -90 480 180" style="font-family:var(--numen-font-sans)">
-        <defs><path :id="line.titlePath" :d="line.titleLine" /></defs>
+        <defs><path v-for="title in line.titles" :key="title.path" :id="title.path" :d="title.line" /></defs>
         <g data-edge="resting">
           <PlexEdgeLine :line="line" />
           <PlexEdgeTitle :line="line" />
@@ -96,19 +113,20 @@ const meta: Meta<Knobs> = {
     docs: {
       description: {
         component:
-          'One edge: the curve, the head it ends in, and the title set along ' +
-          'it over a halo. Lifted, it is drawn over the boxes, in the ' +
-          'colours and the weight that stand out against them.',
+          'One edge: the curve, the heads it ends in, and the titles set along ' +
+          'it over a halo, each near the head of its record or in the middle ' +
+          'for a record without one. Lifted, it is drawn over the boxes, in ' +
+          'the colours and the weight that stand out against them.',
       },
     },
   },
   argTypes: {
     words: { control: 'text' },
-    wordsAt: { control: { type: 'range', min: 0.1, max: 0.9, step: 0.05 } },
+    reverseWords: { control: 'text' },
+    direction: { control: 'inline-radio', options: ['none', 'forward', 'backward', 'both'] },
     opacity: { control: { type: 'range', min: 0, max: 1, step: 0.05 } },
-    isArrow: { control: 'boolean' },
   },
-  args: { words: 'refers to', wordsAt: 0.5, opacity: 1, isArrow: true },
+  args: { words: 'refers to', reverseWords: 'cited by', direction: 'forward', opacity: 1 },
   render: createBoth,
 }
 
@@ -118,12 +136,76 @@ type Story = StoryObj<Knobs>
 /** The pair at rest above, and lifted below. */
 export const Playground: Story = {}
 
+/** The resting drawing: the arrowheads by where they are put, and the titles by their place on the path. */
+const getResting = (canvas: HTMLElement) => {
+  const group = canvas.querySelector('[data-edge="resting"]')!
+  const heads = [...group.querySelectorAll('.plex__edge-arrow')].map((head) =>
+    head.getAttribute('transform'),
+  )
+  const titles = [...group.querySelectorAll('.plex__edge-label--letters textPath')].map((path) => [
+    path.textContent?.trim(),
+    path.getAttribute('startOffset'),
+  ])
+  return { heads, titles }
+}
+
+const AT_TO = `translate(${CURVE.toPoint.x} ${CURVE.toPoint.y})`
+const AT_FROM = `translate(${CURVE.fromPoint.x} ${CURVE.fromPoint.y})`
+
+/** A record without a marker: no head, and its title in the middle of the line. */
+export const NoDirection: Story = {
+  args: { direction: 'none' },
+  play: async ({ canvasElement }) => {
+    const { heads, titles } = getResting(canvasElement)
+    await expect(heads).toStrictEqual([])
+    await expect(titles).toStrictEqual([['refers to', '50%']])
+  },
+}
+
+/** A record pointing at the `to` end: the head there, and its title near it. */
+export const Forward: Story = {
+  args: { direction: 'forward' },
+  play: async ({ canvasElement }) => {
+    const { heads, titles } = getResting(canvasElement)
+    await expect(heads).toHaveLength(1)
+    await expect(heads[0]).toContain(AT_TO)
+    await expect(titles).toStrictEqual([['refers to', '80%']])
+  },
+}
+
+/** A record pointing at the `from` end: the head there, and its title near it. */
+export const Backward: Story = {
+  args: { direction: 'backward' },
+  play: async ({ canvasElement }) => {
+    const { heads, titles } = getResting(canvasElement)
+    await expect(heads).toHaveLength(1)
+    await expect(heads[0]).toContain(AT_FROM)
+    await expect(titles).toStrictEqual([['refers to', '20%']])
+  },
+}
+
+/** A record each way: a head at each end, and each title near its own head. */
+export const BothDirections: Story = {
+  args: { direction: 'both' },
+  play: async ({ canvasElement }) => {
+    const { heads, titles } = getResting(canvasElement)
+    await expect(heads).toHaveLength(2)
+    await expect(heads[0]).toContain(AT_TO)
+    await expect(heads[1]).toContain(AT_FROM)
+    await expect(titles).toStrictEqual([
+      ['refers to', '80%'],
+      ['cited by', '20%'],
+    ])
+  },
+}
+
 /** A line carrying no words, which draws no title and no path to set one on. */
 export const NoTitle: Story = {
   args: { words: '' },
   play: async ({ canvasElement }) => {
     await expect(canvasElement.querySelectorAll('text')).toHaveLength(0)
     await expect(canvasElement.querySelectorAll('[data-edge] path')).toHaveLength(4)
+    await expect(canvasElement.querySelectorAll('defs path')).toHaveLength(0)
   },
 }
 

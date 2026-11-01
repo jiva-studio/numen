@@ -141,7 +141,7 @@ const getRole = (node: PlacedNode): GestureRole => {
   >
     <defs v-if="showEdgeLabels">
       <template v-for="line in lines" :key="`along:${line.key}`">
-        <path v-if="line.titlePath" :id="line.titlePath" :d="line.titleLine" />
+        <path v-for="title in line.titles" :id="title.path" :key="title.path" :d="title.line" />
       </template>
     </defs>
 

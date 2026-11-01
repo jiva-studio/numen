@@ -1,101 +1,161 @@
 import { describe, expect, it } from 'vitest'
-import type { Connection } from '@numen/plugin-sdk'
+import type { Connection, ConnectionSide } from '@numen/plugin-sdk'
 import {
   NEW_LINK_ROLE,
+  addReverseSide,
   areConnectionsEqual,
-  setRole,
+  cycleDirection,
+  getRows,
+  isConnectionEmpty,
+  removeSide,
   setSideLabel,
-  setSidePresent,
-  toggleSideArrow,
 } from './connectionDraft'
 
 const connection = (more: Partial<Connection> = {}): Connection => ({
-  first: 'A.md',
-  second: 'B.md',
-  role: null,
+  first: 'Harbour.md',
+  second: 'Lighthouse.md',
+  role: 'child',
   type: '',
   firstSide: null,
   secondSide: null,
   ...more,
 })
 
-describe('adding a record', () => {
-  it('adds a blank record and gives a connection with no role the new link role', () => {
-    const draft = setSidePresent(connection(), 'first', true)
+const side = (label: string, marker: ConnectionSide['marker'] = null): ConnectionSide => ({
+  label,
+  marker,
+  reason: 'kept',
+})
 
+const undirected = connection({ firstSide: side('guides') })
+const forward = connection({ firstSide: side('guides', 'arrow') })
+const backward = connection({ secondSide: side('guides', 'arrow') })
+
+describe('getRows', () => {
+  it('gives no row for a connection with no record', () => {
+    expect(getRows(connection())).toStrictEqual([])
+  })
+
+  it('gives the direction of one record from the note that writes it and its marker', () => {
+    expect(getRows(undirected).map((row) => [row.key, row.direction])).toEqual([['first', 'none']])
+    expect(getRows(forward).map((row) => [row.key, row.direction])).toEqual([['first', 'forward']])
+    expect(getRows(backward).map((row) => [row.key, row.direction])).toEqual([
+      ['second', 'backward'],
+    ])
+  })
+
+  it('gives a record of the second note without a marker no direction', () => {
+    const draft = connection({ secondSide: side('guides') })
+    expect(getRows(draft).map((row) => row.direction)).toEqual(['none'])
+  })
+
+  it('gives the record of the first note before that of the second', () => {
+    const both = connection({ firstSide: side('one', 'arrow'), secondSide: side('two', 'arrow') })
+    expect(getRows(both).map((row) => [row.key, row.side.label, row.direction])).toEqual([
+      ['first', 'one', 'forward'],
+      ['second', 'two', 'backward'],
+    ])
+  })
+})
+
+describe('cycleDirection', () => {
+  it('turns no direction into a record of the first note with an arrow', () => {
+    expect(cycleDirection(undirected)).toStrictEqual(forward)
+  })
+
+  it('moves a forward record to the second note with its label and reason', () => {
+    expect(cycleDirection(forward)).toStrictEqual(backward)
+  })
+
+  it('moves a backward record to the first note without an arrow', () => {
+    expect(cycleDirection(backward)).toStrictEqual(undirected)
+  })
+
+  it('returns to the first direction after three steps and keeps the role', () => {
+    const parent = connection({ role: 'parent', firstSide: side('above') })
+    const steps = [cycleDirection(parent)]
+    steps.push(cycleDirection(steps[0]!), cycleDirection(cycleDirection(steps[0]!)))
+
+    expect(steps.map((step) => getRows(step)[0]?.direction)).toEqual([
+      'forward',
+      'backward',
+      'none',
+    ])
+    expect(steps.every((step) => step.role === 'parent')).toBe(true)
+    expect(steps[2]).toStrictEqual(parent)
+  })
+
+  it('leaves a draft with two records or none as it is', () => {
+    const both = connection({ firstSide: side('one', 'arrow'), secondSide: side('two', 'arrow') })
+    expect(cycleDirection(both)).toBe(both)
+    const empty = connection()
+    expect(cycleDirection(empty)).toBe(empty)
+  })
+})
+
+describe('addReverseSide', () => {
+  it('adds the record of the second note with an empty label and points both records', () => {
+    expect(addReverseSide(undirected)).toStrictEqual(
+      connection({
+        firstSide: side('guides', 'arrow'),
+        secondSide: { label: '', marker: 'arrow', reason: '' },
+      }),
+    )
+  })
+
+  it('adds the record of the first note when only the second writes one', () => {
+    expect(addReverseSide(backward)).toStrictEqual(
+      connection({
+        firstSide: { label: '', marker: 'arrow', reason: '' },
+        secondSide: side('guides', 'arrow'),
+      }),
+    )
+  })
+
+  it('adds an undirected record of the first note to a draft with none', () => {
+    const draft = addReverseSide(connection())
     expect(draft.firstSide).toStrictEqual({ label: '', marker: null, reason: '' })
     expect(draft.secondSide).toBeNull()
-    expect(draft.role).toBe(NEW_LINK_ROLE)
-  })
-
-  it('keeps the role and the record a connection already has', () => {
-    const had = connection({
-      role: 'parent',
-      firstSide: { label: 'under', marker: 'arrow', reason: 'why' },
-    })
-
-    expect(setSidePresent(had, 'first', true)).toBe(had)
-    expect(setSidePresent(had, 'second', true).role).toBe('parent')
-  })
-
-  it('takes a record away and keeps the role', () => {
-    const had = connection({
-      role: 'child',
-      firstSide: { label: 'x', marker: null, reason: '' },
-    })
-
-    const draft = setSidePresent(had, 'first', false)
-
-    expect(draft.firstSide).toBeNull()
     expect(draft.role).toBe('child')
   })
-})
 
-describe('editing a record', () => {
-  const had = connection({
-    role: 'jump',
-    firstSide: { label: 'see', marker: null, reason: 'why' },
+  it('gives a connection with no role the role of a new link', () => {
+    expect(addReverseSide(connection({ role: null })).role).toBe(NEW_LINK_ROLE)
   })
 
-  it('replaces the label and keeps the marker and the reason', () => {
-    expect(setSideLabel(had, 'first', 'also').firstSide).toStrictEqual({
-      label: 'also',
-      marker: null,
-      reason: 'why',
-    })
-  })
-
-  it('changes nothing for a record that is not there', () => {
-    expect(setSideLabel(had, 'second', 'x')).toBe(had)
-    expect(toggleSideArrow(had, 'second')).toBe(had)
-  })
-
-  it('switches an arrow on and off without touching the label', () => {
-    const on = toggleSideArrow(had, 'first')
-    expect(on.firstSide).toStrictEqual({ label: 'see', marker: 'arrow', reason: 'why' })
-    expect(toggleSideArrow(on, 'first').firstSide?.marker).toBeNull()
-  })
-
-  it('leaves a record with an arrow and an empty label in the draft', () => {
-    const draft = toggleSideArrow(setSidePresent(connection(), 'second', true), 'second')
-
-    expect(draft.secondSide).toStrictEqual({ label: '', marker: 'arrow', reason: '' })
-  })
-
-  it('replaces the kind of link without touching the records', () => {
-    expect(setRole(had, 'parent')).toStrictEqual({ ...had, role: 'parent' })
+  it('leaves a draft with two records as it is', () => {
+    const both = addReverseSide(forward)
+    expect(addReverseSide(both)).toBe(both)
   })
 })
 
-describe('comparing drafts', () => {
-  it('finds a draft equal to its copy and unequal after any edit', () => {
-    const one = connection({ role: 'jump', firstSide: { label: '', marker: null, reason: '' } })
+describe('removeSide and setSideLabel', () => {
+  it('removes the record of one note and keeps the other', () => {
+    const both = addReverseSide(forward)
+    expect(removeSide(both, 'second')).toStrictEqual(forward)
+    expect(getRows(removeSide(both, 'first')).map((row) => row.direction)).toEqual(['backward'])
+  })
 
-    expect(areConnectionsEqual(one, { ...one })).toBe(true)
-    expect(areConnectionsEqual(one, setRole(one, 'child'))).toBe(false)
-    expect(areConnectionsEqual(one, toggleSideArrow(one, 'first'))).toBe(false)
-    expect(areConnectionsEqual(one, setSideLabel(one, 'first', 'x'))).toBe(false)
-    expect(areConnectionsEqual(one, setSidePresent(one, 'second', true))).toBe(false)
-    expect(areConnectionsEqual(one, { ...one, type: 'preset' })).toBe(false)
+  it('replaces the label of one record and ignores a note that writes none', () => {
+    expect(setSideLabel(forward, 'first', 'lights').firstSide?.label).toBe('lights')
+    expect(setSideLabel(forward, 'second', 'lights')).toBe(forward)
+  })
+
+  it('is empty for a connection without records', () => {
+    expect(isConnectionEmpty(connection())).toBe(true)
+    expect(isConnectionEmpty(backward)).toBe(false)
+  })
+})
+
+describe('areConnectionsEqual', () => {
+  it('compares the role, the type and both records', () => {
+    expect(areConnectionsEqual(forward, connection({ firstSide: side('guides', 'arrow') }))).toBe(
+      true,
+    )
+    expect(areConnectionsEqual(forward, { ...forward, role: 'jump' })).toBe(false)
+    expect(areConnectionsEqual(forward, { ...forward, type: 'requires' })).toBe(false)
+    expect(areConnectionsEqual(forward, undirected)).toBe(false)
+    expect(areConnectionsEqual(forward, backward)).toBe(false)
+    expect(areConnectionsEqual(forward, setSideLabel(forward, 'first', 'x'))).toBe(false)
   })
 })

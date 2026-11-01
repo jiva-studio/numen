@@ -39,8 +39,8 @@ const titled: PlexNeighbourhood = {
     { id: 'aside', title: 'Aside', relation: 'jump' },
   ],
   edges: [
-    { from: 'focus', to: 'below', label: 'holds' },
-    { from: 'focus', to: 'aside', label: 'the scene in the assembly' },
+    { from: 'focus', to: 'below', labels: [{ text: 'holds' }] },
+    { from: 'focus', to: 'aside', labels: [{ text: 'the scene in the assembly' }] },
   ],
 }
 
@@ -315,15 +315,15 @@ describe('the line under the hand', () => {
     })
     const edge = arrangedPlex.edges[acrossIndex]!
 
-    expect(edge.label).toBe('the scene in the assembly')
-    expect(edge.words!.endsWith('…')).toBe(true)
-    expect(title(view, acrossIndex)[0]!.text()).toBe(edge.words)
+    expect(edge.labels?.[0]?.text).toBe('the scene in the assembly')
+    expect(edge.titles[0]!.words.endsWith('…')).toBe(true)
+    expect(title(view, acrossIndex)[0]!.text()).toBe(edge.titles[0]?.words)
   })
 
   it('sets a title on a line running the way the words are read', () => {
     const view = mountTitled()
     const edge = titledFrame.edges[acrossIndex]!
-    expect(edge.heading).toBe('against')
+    expect(edge.titles[0]!.heading).toBe('against')
 
     const href = title(view, acrossIndex)[0]!.get('textPath').attributes('href')!
     const line = view.get(`defs path[id="${href.slice(1)}"]`)
@@ -349,8 +349,8 @@ describe('two lines between one pair', () => {
       { id: 'aside', title: 'Aside', relation: 'jump' },
     ],
     edges: [
-      { from: 'focus', to: 'aside', label: 'out' },
-      { from: 'aside', to: 'focus', label: 'back' },
+      { from: 'focus', to: 'aside', labels: [{ text: 'out' }] },
+      { from: 'aside', to: 'focus', labels: [{ text: 'back' }] },
     ],
   })
 
@@ -469,9 +469,9 @@ describe('the arrow on a line', () => {
       { id: 'aside', title: 'Aside', relation: 'jump' },
     ],
     edges: [
-      { from: 'focus', to: 'below', label: 'holds', arrows: ['to'] },
+      { from: 'focus', to: 'below', labels: [{ text: 'holds' }], arrows: ['to'] },
       { from: 'above', to: 'focus', arrows: ['from'] },
-      { from: 'aside', to: 'focus', label: 'see also' },
+      { from: 'aside', to: 'focus', labels: [{ text: 'see also' }] },
     ],
   }
 

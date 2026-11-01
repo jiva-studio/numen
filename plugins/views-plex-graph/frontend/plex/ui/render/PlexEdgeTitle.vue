@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * The title an edge carries, set along the line it belongs to.
+ * The titles an edge carries, each set along the line it belongs to.
  *
- * It is painted twice, with the halo finished before any letter is drawn. Each
+ * Each is painted twice, with the halo finished before any letter is drawn. Each
  * glyph set along a path is a separate run, and a halo painted together with the
  * letters would overlap the adjacent letter.
  */
@@ -22,7 +22,8 @@ const LAYERS = ['halo', 'letters'] as const
 
 <template>
   <g
-    v-if="line.titlePath"
+    v-for="title in line.titles"
+    :key="title.path"
     class="plex__edge-title"
     :class="{ 'plex__edge-title--lifted': isRaised }"
   >
@@ -35,8 +36,8 @@ const LAYERS = ['halo', 'letters'] as const
       text-anchor="middle"
       dominant-baseline="middle"
     >
-      <textPath :href="`#${line.titlePath}`" :startOffset="line.titleAt">
-        {{ line.edge.words }}
+      <textPath :href="`#${title.path}`" :startOffset="title.at">
+        {{ title.words }}
       </textPath>
     </text>
   </g>

@@ -1,39 +1,30 @@
 <script setup lang="ts">
 /**
- * One record of the connection in PlexLinkInspectorPopover: the note that writes it, whether it
- * is written, its label and whether it draws an arrow at the other note.
+ * One record of the connection in PlexLinkInspectorPopover: its direction, its description and
+ * the button that removes it.
  */
 import { useId } from 'vue'
-import { ArrowLeft, ArrowRight, Minus } from '@lucide/vue'
-import type { ConnectionSide } from '@numen/plugin-sdk'
+import { ArrowLeft, ArrowRight, Minus, Trash2 } from '@lucide/vue'
+import type { LinkDirection } from '../model/connectionDraft'
 import { WORDS as words } from '../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
-  side: ConnectionSide | null
-  /** The title of the note that writes the record. */
-  from: string
-  /** The title of the note the record is about. */
-  to: string
-  /** Whether the record points back, against the order the two notes are shown in. */
-  isBackward: boolean
+  label: string
+  direction: LinkDirection
+  /** Whether the direction is fixed, as it is while both notes write a record. */
+  isStatic: boolean
 }>()
 
 const emit = defineEmits<{
-  (event: 'toggle-arrow' | 'done'): void
-  (event: 'update:present', isPresent: boolean): void
+  (event: 'cycle-direction' | 'remove' | 'done' | 'add-reverse'): void
   (event: 'update:label', label: string): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const presentFieldId = useId()
 const labelFieldId = useId()
 
 /* -------------------------------- Handlers -------------------------------- */
-function onPresentChange(event: Event) {
-  emit('update:present', (event.target as HTMLInputElement).checked)
-}
-
 function onInput(event: Event) {
   emit('update:label', (event.target as HTMLInputElement).value)
 }
@@ -42,90 +33,68 @@ function onInputKeyDown(event: KeyboardEvent) {
   if (event.key === 'Enter') {
     event.stopPropagation()
     event.preventDefault()
-    emit('done')
+    if (event.ctrlKey || event.metaKey) {
+      emit('add-reverse')
+    } else {
+      emit('done')
+    }
   }
 }
 </script>
 
 <template>
-  <div class="plex-link-row" :class="{ 'plex-link-row--absent': props.side === null }">
-    <label :for="presentFieldId" class="plex-link-row__writer">
-      <input
-        :id="presentFieldId"
-        type="checkbox"
-        class="plex-link-row__present"
-        :checked="props.side !== null"
-        @change="onPresentChange"
+  <div class="plex-link-row">
+    <button
+      type="button"
+      class="plex-link-row__dir-btn plex-link-popover__dir-btn"
+      :class="{
+        'plex-link-row__dir-btn--static': props.isStatic,
+        'plex-link-popover__dir-btn--static': props.isStatic,
+      }"
+      :data-direction="props.direction"
+      :disabled="props.isStatic"
+      :title="props.isStatic ? undefined : words.changeDirection"
+      :aria-label="words.direction[props.direction]"
+      @click="emit('cycle-direction')"
+    >
+      <ArrowRight
+        v-if="props.direction === 'forward'"
+        class="plex-link-row__icon plex-link-popover__icon"
       />
-      <span class="plex-link-row__names">
-        <span class="plex-link-row__name">{{ props.from }}</span>
-        <ArrowLeft v-if="props.isBackward" class="plex-link-row__icon" />
-        <ArrowRight v-else class="plex-link-row__icon" />
-        <span class="plex-link-row__name">{{ props.to }}</span>
-      </span>
-    </label>
+      <ArrowLeft
+        v-else-if="props.direction === 'backward'"
+        class="plex-link-row__icon plex-link-popover__icon"
+      />
+      <Minus v-else class="plex-link-row__icon plex-link-popover__icon" />
+    </button>
 
-    <div class="plex-link-row__fields">
-      <label :for="labelFieldId" class="sr-only">{{ words.linkDescription }}</label>
-      <input
-        :id="labelFieldId"
-        :value="props.side?.label ?? ''"
-        :disabled="props.side === null"
-        type="text"
-        class="plex-link-row__input"
-        :placeholder="words.linkDescriptionPlaceholder"
-        @input="onInput"
-        @keydown="onInputKeyDown"
+    <label :for="labelFieldId" class="sr-only">{{ words.linkDescription }}</label>
+    <input
+      :id="labelFieldId"
+      :value="props.label"
+      type="text"
+      class="plex-link-row__input plex-link-popover__input"
+      :placeholder="words.linkDescriptionPlaceholder"
+      @input="onInput"
+      @keydown="onInputKeyDown"
+    />
+
+    <button
+      type="button"
+      class="plex-link-row__delete-btn plex-link-popover__delete-btn"
+      :title="words.removeLink"
+      :aria-label="words.removeLink"
+      @click="emit('remove')"
+    >
+      <Trash2
+        class="plex-link-row__icon plex-link-row__icon--trash plex-link-popover__icon plex-link-popover__icon--trash"
       />
-      <button
-        type="button"
-        class="plex-link-row__arrow-btn"
-        :class="{ 'plex-link-row__arrow-btn--on': props.side?.marker === 'arrow' }"
-        :disabled="props.side === null"
-        :aria-pressed="props.side?.marker === 'arrow'"
-        :title="words.toggleArrow"
-        :aria-label="words.toggleArrow"
-        @click="emit('toggle-arrow')"
-      >
-        <Minus v-if="props.side?.marker !== 'arrow'" class="plex-link-row__icon" />
-        <ArrowLeft v-else-if="props.isBackward" class="plex-link-row__icon" />
-        <ArrowRight v-else class="plex-link-row__icon" />
-      </button>
-    </div>
+    </button>
   </div>
 </template>
 
 <style scoped>
 .plex-link-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  min-inline-size: 0;
-}
-.plex-link-row__writer {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  color: var(--numen-ink);
-  font-size: var(--numen-text-2);
-  cursor: pointer;
-}
-.plex-link-row--absent .plex-link-row__writer {
-  color: var(--numen-hushed);
-}
-.plex-link-row__names {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  min-inline-size: 0;
-}
-.plex-link-row__name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-inline-size: 9rem;
-}
-.plex-link-row__fields {
   display: flex;
   align-items: center;
   gap: 0.375rem;
@@ -137,13 +106,11 @@ function onInputKeyDown(event: KeyboardEvent) {
   transition: border-color var(--numen-motion-hover) ease;
   min-inline-size: 0;
 }
-.plex-link-row__fields:focus-within {
+.plex-link-row:focus-within {
   border-color: var(--numen-ring);
 }
-.plex-link-row--absent .plex-link-row__fields {
-  opacity: 0.5;
-}
-.plex-link-row__arrow-btn {
+.plex-link-row__dir-btn,
+.plex-link-row__delete-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -157,18 +124,32 @@ function onInputKeyDown(event: KeyboardEvent) {
   padding: 0;
   transition: color var(--numen-motion-hover) ease;
 }
-.plex-link-row__arrow-btn:hover:not(:disabled),
-.plex-link-row__arrow-btn--on {
+.plex-link-row__dir-btn:hover:not(:disabled) {
+  background: transparent;
   color: var(--numen-ink);
 }
-.plex-link-row__arrow-btn:disabled {
+.plex-link-row__dir-btn:disabled,
+.plex-link-row__dir-btn--static {
   cursor: default;
+  opacity: 0.5;
+}
+.plex-link-row__delete-btn:hover {
+  background: transparent;
+  color: var(--numen-alarm);
 }
 .plex-link-row__icon {
   inline-size: 0.95rem;
   block-size: 0.95rem;
   stroke-width: 2;
-  flex-shrink: 0;
+}
+.plex-link-row__icon--trash {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  opacity: 0.6;
+  transition: opacity var(--numen-motion-hover) ease;
+}
+.plex-link-row__delete-btn:hover .plex-link-row__icon--trash {
+  opacity: 1;
 }
 .plex-link-row__input {
   flex: 1;

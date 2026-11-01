@@ -223,21 +223,27 @@ describe('the edges follow the boxes', () => {
  */
 describe('the title a line carries while the picture moves', () => {
   const getEdgeKey = (edge: { from: string; to: string }) => `${edge.from}->${edge.to}`
+  const withLabels = (neighbourhood: PlexNeighbourhood): PlexNeighbourhood => ({
+    ...neighbourhood,
+    edges: neighbourhood.edges.map((edge) => ({ ...edge, labels: [{ text: 'contains' }] })),
+  })
+  const from = arrangePlex(withLabels(before))
+  const to = arrangePlex(withLabels(after))
 
   it('holds the way round the words are read', () => {
-    const resolved = new Map(to.edges.map((edge) => [getEdgeKey(edge), edge.heading]))
+    const resolved = new Map(to.edges.map((edge) => [getEdgeKey(edge), edge.titles[0]!.heading]))
 
     // A child promoted to the focus swings its edge across the page, and
     // halfway over it runs the other way round from the way it ends.
     const swung = interpolatePlex(from, to, 0.5).edges.find((e) => e.to === 'a')!
-    expect(swung.heading).toBe('along')
+    expect(swung.titles[0]!.heading).toBe('along')
     expect(getHeading(swung, MIDDLE)).toBe('against')
 
     for (let t = 0.05; t < 1; t += 0.05) {
       for (const edge of interpolatePlex(from, to, t).edges) {
         const heading = resolved.get(getEdgeKey(edge))
         if (heading === undefined) continue
-        expect(edge.heading, `${getEdgeKey(edge)} at ${t.toFixed(2)}`).toBe(heading)
+        expect(edge.titles[0]!.heading, `${getEdgeKey(edge)} at ${t.toFixed(2)}`).toBe(heading)
       }
     }
   })
@@ -251,7 +257,7 @@ describe('the title a line carries while the picture moves', () => {
           ...neighbourhood,
           edges: neighbourhood.edges.map((edge) => ({
             ...edge,
-            label: 'the scene in the assembly',
+            labels: [{ text: 'the scene in the assembly' }],
           })),
         },
         { measureLabel: measureLabelWidth },
@@ -259,12 +265,12 @@ describe('the title a line carries while the picture moves', () => {
 
     const start = arrangeWithLabels(before)
     const end = arrangeWithLabels(after)
-    const trimmedWords = end.edges.find((e) => e.to === 'a')!.words!
+    const trimmedWords = end.edges.find((e) => e.to === 'a')!.titles[0]!.words
     expect(trimmedWords.endsWith('…')).toBe(true)
 
     for (let t = 0.05; t < 1; t += 0.05) {
       const edge = interpolatePlex(start, end, t).edges.find((e) => e.to === 'a')!
-      expect(edge.words, `at ${t.toFixed(2)}`).toBe(trimmedWords)
+      expect(edge.titles[0]?.words, `at ${t.toFixed(2)}`).toBe(trimmedWords)
     }
   })
 
@@ -277,7 +283,7 @@ describe('the title a line carries while the picture moves', () => {
       arrangePlex(
         {
           ...neighbourhood,
-          edges: neighbourhood.edges.map((edge) => ({ ...edge, label: 'contains' })),
+          edges: neighbourhood.edges.map((edge) => ({ ...edge, labels: [{ text: 'contains' }] })),
         },
         {
           measureLabel: measureLabelWidth,
@@ -303,17 +309,17 @@ describe('the title a line carries while the picture moves', () => {
 
     const start = arrangeWithTitles(before)
     const end = arrangeWithTitles(fanned)
-    const resolved = new Map(end.edges.map((edge) => [getEdgeKey(edge), edge.wordsAt]))
+    const resolved = new Map(end.edges.map((edge) => [getEdgeKey(edge), edge.titles[0]!.wordsAt]))
 
     // Some of the lines out of one node had to move their titles to stand
     // clear, and those are the ones a movement could set crawling.
-    expect(end.edges.some((edge) => edge.wordsAt !== 0.5)).toBe(true)
+    expect(end.edges.some((edge) => edge.titles[0]!.wordsAt !== 0.5)).toBe(true)
 
     for (let t = 0.05; t < 1; t += 0.05) {
       for (const edge of interpolatePlex(start, end, t).edges) {
         const offset = resolved.get(getEdgeKey(edge))
         if (offset === undefined) continue
-        expect(edge.wordsAt, `${getEdgeKey(edge)} at ${t.toFixed(2)}`).toBe(offset)
+        expect(edge.titles[0]!.wordsAt, `${getEdgeKey(edge)} at ${t.toFixed(2)}`).toBe(offset)
       }
     }
   })
@@ -322,13 +328,18 @@ describe('the title a line carries while the picture moves', () => {
     const marked: PlexFrame = {
       ...from,
       edges: from.edges.map((edge) =>
-        edge.to === 'b' ? { ...edge, heading: 'against' as const, words: 'went that way…' } : edge,
+        edge.to === 'b'
+          ? {
+              ...edge,
+              titles: [{ heading: 'against' as const, words: 'went that way…', wordsAt: 0.5 }],
+            }
+          : edge,
       ),
     }
     const going = interpolatePlex(marked, to, 0.5).edges.find((e) => e.to === 'b')!
 
-    expect(going.heading).toBe('against')
-    expect(going.words).toBe('went that way…')
+    expect(going.titles[0]!.heading).toBe('against')
+    expect(going.titles[0]?.words).toBe('went that way…')
     expect(getHeading(going, MIDDLE)).toBe('along')
   })
 })

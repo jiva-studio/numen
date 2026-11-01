@@ -96,15 +96,17 @@ export function createNeighbourhood(id: string): PlexNeighbourhood {
   return {
     nodes: [{ id, title: focus.title, relation: 'focus' }, ...related],
     edges: related.flatMap((node): PlexEdge[] => {
-      if (node.relation === 'parent') return [{ from: node.id, to: id, label: 'is a' }]
-      if (node.relation === 'jump') return [{ from: node.id, to: id, label: 'see also' }]
-      if (node.relation === 'child') return [{ from: id, to: node.id, label: 'contains' }]
+      if (node.relation === 'parent') return [{ from: node.id, to: id, labels: [{ text: 'is a' }] }]
+      if (node.relation === 'jump')
+        return [{ from: node.id, to: id, labels: [{ text: 'see also' }] }]
+      if (node.relation === 'child')
+        return [{ from: id, to: node.id, labels: [{ text: 'contains' }] }]
 
       // A sibling hangs off the parent it shares with the focus, not off the
       // focus. Working out which parent is a question about relationships, so
       // it belongs here and not in the plex.
       const shared = getParents(id).find((parent) => getParents(node.id).includes(parent))
-      return shared ? [{ from: shared, to: node.id, label: 'contains' }] : []
+      return shared ? [{ from: shared, to: node.id, labels: [{ text: 'contains' }] }] : []
     }),
   }
 }

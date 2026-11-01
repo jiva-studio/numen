@@ -42,7 +42,8 @@ const renderImage = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
 const getEdges = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
   const { plex, note } = renderImage(neighbourhood)
   return plex.edges.map(
-    (edge) => `${note(edge.from)} -> ${note(edge.to)}${edge.label ? ` (${edge.label})` : ''}`,
+    (edge) =>
+      `${note(edge.from)} -> ${note(edge.to)}${edge.labels ? ` (${edge.labels.map((label) => label.text).join(', ')})` : ''}`,
   )
 }
 
@@ -62,7 +63,7 @@ describe('what the plex is handed', () => {
   it('writes nothing on a line the person wrote nothing on', () => {
     // A line carries only the label the user put on it.
     const [line] = renderImage(createNeighbourhood('Here', [['Below', 'child', '', '']])).plex.edges
-    expect(line?.label).toBeUndefined()
+    expect(line?.labels).toBeUndefined()
   })
 
   it('hangs a sibling off the parent, not off the focus', () => {
@@ -245,6 +246,106 @@ describe('the markers on the line', () => {
       'Marrowfield allotments -> Alice Fenn, The Chair: from',
       'Marrowfield allotments -> The question of the rota: no arrow',
     ])
+  })
+})
+
+/** A focus with one neighbour, either of which may write a record of the other. */
+const createPair = (
+  relation: NoteRelation,
+  records: {
+    label?: string
+    reverseLabel?: string
+    isMutual?: boolean
+    marker?: LinkMarker | null
+    reverseMarker?: LinkMarker | null
+  },
+): Neighbourhood => ({
+  focus: { path: 'Harbour', title: 'Harbour' },
+  focusType: 'note',
+  related: [
+    {
+      path: 'Lighthouse',
+      title: 'Lighthouse',
+      type: 'note',
+      relation,
+      label: records.label ?? '',
+      reverseLabel: records.reverseLabel ?? '',
+      through: '',
+      isMutual: records.isMutual ?? false,
+      marker: records.marker ?? null,
+      reverseMarker: records.reverseMarker ?? null,
+    },
+  ],
+})
+
+/** The labels of the only edge, each as its text and the note at the end it is placed near. */
+const getLabelEnds = (neighbourhood: Neighbourhood) => {
+  const { plex, note } = renderImage(neighbourhood)
+  const [edge] = plex.edges
+  return (edge?.labels ?? []).map((label) => {
+    if (!label.end) return `${label.text}: middle`
+    return `${label.text}: ${note(label.end === 'to' ? edge!.to : edge!.from)}`
+  })
+}
+
+describe('where the labels are placed', () => {
+  it('sets the label of a record without a marker in the middle of the line', () => {
+    expect(getLabelEnds(createPair('jump', { label: 'guides ships' }))).toEqual([
+      'guides ships: middle',
+    ])
+  })
+
+  it('sets the label of the record the focus writes near the arrow at the neighbour', () => {
+    for (const relation of ['jump', 'child', 'parent'] as const) {
+      expect(
+        getLabelEnds(createPair(relation, { label: 'guides ships', marker: 'arrow' })),
+      ).toEqual(['guides ships: Lighthouse'])
+    }
+  })
+
+  it('sets the label of the record the neighbour writes near the arrow at the focus', () => {
+    for (const relation of ['jump', 'child', 'parent'] as const) {
+      expect(
+        getLabelEnds(createPair(relation, { label: 'shelters it', reverseMarker: 'arrow' })),
+      ).toEqual(['shelters it: Harbour'])
+    }
+  })
+
+  it('sets two labels near the two arrows where both notes write a record', () => {
+    const both = createPair('jump', {
+      label: 'guides ships',
+      reverseLabel: 'shelters it',
+      isMutual: true,
+      marker: 'arrow',
+      reverseMarker: 'arrow',
+    })
+
+    expect(getLabelEnds(both)).toEqual(['guides ships: Lighthouse', 'shelters it: Harbour'])
+    expect(renderImage(both).plex.edges[0]?.arrows).toEqual(['from', 'to'])
+  })
+
+  it('draws one label where only the neighbour labelled its record of two', () => {
+    // The core answers with the neighbour's label in place of an empty one of the focus.
+    const one = createPair('jump', {
+      label: 'shelters it',
+      reverseLabel: 'shelters it',
+      isMutual: true,
+      marker: 'arrow',
+      reverseMarker: 'arrow',
+    })
+
+    expect(getLabelEnds(one)).toEqual(['shelters it: Harbour'])
+  })
+
+  it('draws the label of the focus alone where the neighbour labelled nothing', () => {
+    const one = createPair('child', {
+      label: 'guides ships',
+      isMutual: true,
+      marker: 'arrow',
+      reverseMarker: 'arrow',
+    })
+
+    expect(getLabelEnds(one)).toEqual(['guides ships: Lighthouse'])
   })
 })
 
