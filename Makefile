@@ -431,7 +431,10 @@ app_desktop_compile: lib_shell_build ## compile desktop Go code and typecheck fr
 .PHONY: app_desktop_test
 app_desktop_test: lib_shell_build ## run desktop tests
 	cd $(DESKTOP) && go test ./... -race
-	cd $(DESKTOP)/editor && npm test
+	cd $(DESKTOP)/editor && npm run test:unit
+	@set -e; for engine in chromium webkit; do \
+		(cd $(DESKTOP)/editor && npx vitest run --project "stories ($$engine)"); \
+	done
 	cd $(DESKTOP)/flashcards && npm test
 
 .PHONY: app_desktop_stories
