@@ -73,16 +73,14 @@ test("the libraries of this repository are read, each with a module path", () =>
 
 const PACKAGE_MATRIX = { "@numen/base": [], "@numen/mid": ["@numen/base"] };
 
-const pkg = (name, declared = [], imports = []) => ({
+const pkg = (name, declared = []) => ({
   dir: `libs/${name}`,
   name: `@numen/${name}`,
   declared: declared.map((one) => `@numen/${one}`),
-  imports: imports.map((one, index) => ({ file: `libs/${name}/src/a.ts`, line: index + 1, name: `@numen/${one}` })),
 });
 
-test("a package that declares and imports the packages its row lists is clean", () => {
-  const packages = [pkg("base"), pkg("mid", ["base"], ["base", "mid"])];
-  assert.deepEqual(findPackageViolations(packages, PACKAGE_MATRIX), []);
+test("a package that declares the packages its row lists is clean", () => {
+  assert.deepEqual(findPackageViolations([pkg("base"), pkg("mid", ["base"])], PACKAGE_MATRIX), []);
 });
 
 test("a package that declares a package its row omits is reported", () => {
@@ -90,13 +88,6 @@ test("a package that declares a package its row omits is reported", () => {
   assert.equal(found.length, 1);
   assert.match(found[0].symbol, /@numen\/base declares @numen\/mid/);
   assert.equal(found[0].file, "libs/base/package.json");
-});
-
-test("a package that imports a package its row omits is reported with the line", () => {
-  const found = findPackageViolations([pkg("base", [], ["base", "mid"])], PACKAGE_MATRIX);
-  assert.equal(found.length, 1);
-  assert.match(found[0].symbol, /@numen\/base imports @numen\/mid/);
-  assert.equal(found[0].line, 2);
 });
 
 test("a package with no row is reported", () => {
@@ -109,7 +100,6 @@ test("the packages of this repository are read, the plugin manager among them", 
   const packages = readPackages();
   const manager = packages.find((one) => one.name === "@numen/plugin-manager");
   assert.deepEqual([...manager.declared].sort(), ["@numen/ui"]);
-  assert.ok(manager.imports.length > 0);
   assert.deepEqual(findPackageViolations(packages, PACKAGE_DEPENDENCIES), []);
 });
 
@@ -120,24 +110,9 @@ test("the rows allow the plugin manager the UI library, the plugin host the SDK 
   assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/core-client"], ["@numen/protocol"]);
 });
 
-test("a plugin host that declares or imports the schema is reported", () => {
-  const host = { dir: "libs/plugin-host-ts", name: "@numen/plugin-host", declared: ["@numen/plugin-sdk", "@numen/core-client", "@numen/protocol"], imports: [{ file: "libs/plugin-host-ts/src/a.ts", line: 2, name: "@numen/protocol" }] };
+test("a plugin host that declares the schema is reported", () => {
+  const host = { dir: "libs/plugin-host-ts", name: "@numen/plugin-host", declared: ["@numen/plugin-sdk", "@numen/core-client", "@numen/protocol"] };
   const found = findPackageViolations([host], PACKAGE_DEPENDENCIES);
-  assert.equal(found.length, 2);
+  assert.equal(found.length, 1);
   assert.match(found[0].symbol, /declares @numen\/protocol/);
-  assert.match(found[1].symbol, /imports @numen\/protocol/);
-});
-
-test("a core client that declares or imports the SDK is reported", () => {
-  const client = { dir: "libs/core-client", name: "@numen/core-client", declared: ["@numen/protocol", "@numen/plugin-sdk"], imports: [{ file: "libs/core-client/src/a.ts", line: 4, name: "@numen/plugin-sdk" }] };
-  const found = findPackageViolations([client], PACKAGE_DEPENDENCIES);
-  assert.equal(found.length, 2);
-});
-
-test("a plugin manager that declares or imports the protocol or the SDK is reported", () => {
-  const manager = { dir: "libs/plugin-manager", name: "@numen/plugin-manager", declared: ["@numen/ui", "@numen/protocol"], imports: [{ file: "libs/plugin-manager/src/a.ts", line: 3, name: "@numen/plugin-sdk" }] };
-  const found = findPackageViolations([manager], PACKAGE_DEPENDENCIES);
-  assert.equal(found.length, 2);
-  assert.match(found[0].symbol, /declares @numen\/protocol/);
-  assert.match(found[1].symbol, /imports @numen\/plugin-sdk/);
 });

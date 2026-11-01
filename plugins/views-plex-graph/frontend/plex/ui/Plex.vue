@@ -140,7 +140,7 @@ const overflow = computed(() =>
 )
 
 const frameStyle = computed(() => ({
-  '--numen-plex-move': `${props.duration}ms`,
+  '--plex-move': `${props.duration}ms`,
 }))
 
 defineExpose({

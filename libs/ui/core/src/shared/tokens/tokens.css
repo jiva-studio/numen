@@ -93,15 +93,20 @@
  */
 
 /* How large the interface is drawn. A page carrying no multiplier is drawn as
-   it is designed. */
+   it is designed; the multiplier a window serves on `:root` replaces this one. */
 :where(:root) {
-  font-size: calc(16px * var(--numen-interface-scale, 1));
+  --numen-interface-scale: 1;
+  font-size: calc(16px * var(--numen-interface-scale));
 }
 
 :where(:root) {
   --numen-font-sans:
     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans',
     'Noto Sans Devanagari', 'Noto Sans Arabic', sans-serif;
+  /* The face a path, a command or an identifier is set in, so that a character
+     is told from its neighbour by its shape. */
+  --numen-font-mono:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
   /* The type scale. Every size drawn in the interface is one of these four
      steps and nothing between them, so a screen has one ladder and not a size
      invented wherever one was wanted.
@@ -186,12 +191,14 @@
  * a second multiplier over that.
  */
 
-/* A page carrying no multiplier sets it as it is designed. */
+/* A page carrying no multiplier sets it as it is designed; the multiplier a
+   window serves on `:root` replaces this one. */
 :where(:root) {
-  --numen-reading-size: calc(0.8125rem * var(--numen-text-scale, 1));
+  --numen-text-scale: 1;
+  --numen-reading-size: calc(0.8125rem * var(--numen-text-scale));
   /* Marked-up text is set a shade above a plain line of it. An answer and a
      card are read at this. */
-  --numen-prose-size: calc(0.875rem * var(--numen-text-scale, 1));
+  --numen-prose-size: calc(0.875rem * var(--numen-text-scale));
 }
 
 /*

@@ -17,22 +17,19 @@
  *   apps      - Application FSD layer hierarchies (desktop editor, flashcards)
  *
  * Modules:
- *   core, libraries, notes, protocol, ui, shell, host, sdk, lint, docs, plugins, boundary, desktop, editor, flashcards
+ *   the `module` of each verifier; `node check.mjs --help` lists them
  */
-import { spawnSync } from "node:child_process";
 import process from "node:process";
 import { CORE_VERIFIERS } from "./checks/core.mjs";
 import { CORE_CLIENT_VERIFIERS } from "./checks/coreClient.mjs";
-import { DOCS_VERIFIERS } from "./checks/docs.mjs";
-import { FRONTEND_VERIFIERS } from "./checks/frontend.mjs";
-import { REPO_ROOT } from "./checks/helpers.mjs";
+import { DEPENDENCY_VERIFIERS } from "./checks/dependencies.mjs";
 import { DISCIPLINE_VERIFIERS } from "./checks/discipline.mjs";
+import { FRONTEND_VERIFIERS } from "./checks/frontend.mjs";
 import { LIBRARY_VERIFIERS } from "./checks/libraries.mjs";
 import { LINT_CONFIG_VERIFIERS } from "./checks/lintConfig.mjs";
-import { MANIFEST_VERIFIERS } from "./checks/manifests.mjs";
 import { PLUGIN_VERIFIERS } from "./checks/plugins.mjs";
-import { PROTOCOL_VERIFIERS } from "./checks/protocol.mjs";
 import { SDK_VERIFIERS } from "./checks/sdkProtocol.mjs";
+import { STYLE_VERIFIERS } from "./checks/styles.mjs";
 import { assertGolangciLintBuild } from "./checks/tools.mjs";
 
 const VERIFIERS = [
@@ -40,11 +37,10 @@ const VERIFIERS = [
   ...SDK_VERIFIERS,
   ...LIBRARY_VERIFIERS,
   ...CORE_CLIENT_VERIFIERS,
-  ...MANIFEST_VERIFIERS,
-  ...DOCS_VERIFIERS,
+  ...DEPENDENCY_VERIFIERS,
+  ...STYLE_VERIFIERS,
   ...FRONTEND_VERIFIERS.filter((v) => v.scope === "libs"),
   ...LINT_CONFIG_VERIFIERS,
-  ...PROTOCOL_VERIFIERS,
   ...DISCIPLINE_VERIFIERS.filter((v) => v.scope === "libs"),
   ...PLUGIN_VERIFIERS,
   ...DISCIPLINE_VERIFIERS.filter((v) => v.scope === "plugins"),
@@ -83,68 +79,8 @@ if (flags.has("--list")) {
   process.exit(0);
 }
 
-function getChangedModules() {
-  const currentBranch = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
-    cwd: REPO_ROOT,
-    encoding: "utf8",
-  }).stdout?.trim();
-
-  const uncommitted =
-    spawnSync("git", ["diff", "--name-only", "HEAD"], {
-      cwd: REPO_ROOT,
-      encoding: "utf8",
-    }).stdout?.split("\n").map((f) => f.trim()).filter(Boolean) || [];
-
-  let base = process.env.BASE_REF;
-  if (!base) {
-    base = currentBranch === "main" ? "HEAD~1" : "origin/main";
-  }
-
-  let res = spawnSync("git", ["diff", "--name-only", `${base}...HEAD`], {
-    cwd: REPO_ROOT,
-    encoding: "utf8",
-  });
-  if (res.status !== 0) {
-    res = spawnSync("git", ["diff", "--name-only", "HEAD~1...HEAD"], {
-      cwd: REPO_ROOT,
-      encoding: "utf8",
-    });
-  }
-
-  const committed = (res.stdout || "").split("\n").map((f) => f.trim()).filter(Boolean);
-  const files = Array.from(new Set([...uncommitted, ...committed]));
-
-  const matched = new Set();
-  for (const file of files) {
-    if (/\.go$|(^|\/)go\.(mod|work)$/.test(file)) matched.add("machine-clock");
-    if (file.startsWith("libs/core/")) matched.add("core");
-    if (file.startsWith("libs/notes/")) matched.add("notes");
-    if (file.startsWith("libs/")) matched.add("libraries");
-    if (file.startsWith("libs/protocol/") || file.startsWith("tools/lint-layers/")) matched.add("protocol");
-    if (file.startsWith("tools/lint-layers/")) ["ui", "plugins"].forEach((one) => matched.add(one));
-    if (file.startsWith("libs/plugin-sdk-go/") || file.startsWith("libs/plugin-sdk-ts/") || file.startsWith("libs/protocol/")) matched.add("sdk");
-    if (file.startsWith("libs/ui/core/")) matched.add("ui");
-    if (file.startsWith("libs/ui/shell/")) matched.add("shell");
-    if (file.startsWith("libs/plugin-host-ts/")) matched.add("host");
-    if (/^(libs\/(core-client|plugin-sdk-ts)\/|tools\/lint-layers\/|\.github\/workflows\/)/.test(file) || /(^|\/)package\.json$/.test(file)) matched.add("boundary");
-    if (/(^|\/)(eslint\.config\.js|tsconfig\.json)$/.test(file) || file.startsWith("tools/lint-layers/")) matched.add("lint");
-    if (file.startsWith("plugins/")) matched.add("plugins");
-    if (file.startsWith("apps/desktop/")) matched.add("desktop");
-    if (file.startsWith("apps/")) matched.add("apps");
-    if (file.startsWith("apps/") || file.startsWith("plugins/")) matched.add("boundary");
-  }
-  return Array.from(matched);
-}
-
-/** The verifiers a scope, a module, a changed file set or the full run selects. */
+/** The verifiers a scope, a module, a verifier id or the full run selects. */
 function resolveSelectedVerifiers(targets) {
-  if (targets.includes("--changed-only")) {
-    const changedModules = getChangedModules();
-    if (changedModules.length === 0) {
-      return [];
-    }
-    return VERIFIERS.filter((v) => changedModules.includes(v.module));
-  }
   if (targets.length === 0 || targets.includes("all")) {
     return VERIFIERS;
   }
@@ -169,12 +105,6 @@ function resolveSelectedVerifiers(targets) {
 }
 
 const activeVerifiers = resolveSelectedVerifiers(args);
-
-if (activeVerifiers.length === 0) {
-  console.log("\x1b[1mNumen Architectural Layer & Boundary Validator\x1b[0m");
-  console.log("No architectural checks required for changed files.\n");
-  process.exit(0);
-}
 
 console.log("\x1b[1mNumen Architectural Layer & Boundary Validator\x1b[0m");
 console.log("Selected targets: " + (args.length === 0 ? "all" : args.join(", ")));
@@ -202,7 +132,7 @@ for (const verifier of activeVerifiers) {
   const start = Date.now();
   process.stdout.write("  • " + verifier.name + "... ");
   try {
-    verifier.run();
+    await verifier.run();
     const duration = ((Date.now() - start) / 1000).toFixed(1) + "s";
     console.log("\x1b[32m[PASS]\x1b[0m (" + duration + ")");
     results.push({ name: verifier.name, status: "PASS", duration });

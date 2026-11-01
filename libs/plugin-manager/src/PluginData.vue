@@ -86,8 +86,8 @@ function onConfirm(): void {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--settings-near, 0.375rem);
-  margin-block-start: var(--settings-near, 0.375rem);
+  gap: 0.375rem;
+  margin-block-start: 0.375rem;
   padding: 0.5rem 0.75rem;
   border: var(--numen-stroke) solid var(--numen-alarm);
   border-radius: var(--numen-radius-tight);
@@ -96,11 +96,11 @@ function onConfirm(): void {
 
 .plugin-data__answers {
   display: flex;
-  gap: var(--settings-near, 0.375rem);
+  gap: 0.375rem;
 }
 
 .plugin-data__problem {
-  margin: var(--settings-near, 0.375rem) 0 0;
+  margin: 0.375rem 0 0;
   color: var(--numen-alarm);
   font-size: var(--numen-text-1);
 }

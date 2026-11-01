@@ -101,20 +101,20 @@ function onAction(type: RecordAction) {
 }
 
 .media-recorder__btn--record {
-  background: var(--numen-danger);
+  background: var(--numen-alarm);
 }
 
 .media-recorder__btn--record:hover {
-  background: var(--numen-danger);
+  background: var(--numen-alarm);
 }
 
 .media-recorder__btn--pause {
-  background: var(--numen-warning);
+  background: var(--numen-caution-bg);
   color: var(--numen-ink);
 }
 
 .media-recorder__btn--resume {
-  background: var(--numen-success);
+  background: var(--numen-accent);
 }
 
 .media-recorder__btn--stop {

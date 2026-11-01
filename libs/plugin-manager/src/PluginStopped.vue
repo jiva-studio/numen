@@ -55,7 +55,7 @@ function onDisable(): void {
   column-gap: var(--numen-panel-gap);
   row-gap: 0.125rem;
   align-items: start;
-  margin-block-end: var(--settings-apart, 1.75rem);
+  margin-block-end: 1.75rem;
   padding: 0.5rem 0.75rem;
   border: var(--numen-stroke) solid var(--numen-alarm);
   border-radius: var(--numen-radius-tight);
@@ -99,6 +99,6 @@ function onDisable(): void {
 .plugin-stopped__actions {
   grid-area: actions;
   display: flex;
-  gap: var(--settings-near, 0.375rem);
+  gap: 0.375rem;
 }
 </style>

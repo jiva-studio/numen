@@ -143,7 +143,7 @@ function onChooseMenuItem(id: string): void {
 }
 
 .plugin-row:hover {
-  background-color: var(--numen-surface-hover);
+  background-color: var(--numen-bubble-bg);
 }
 
 .plugin-row:focus-visible {
@@ -229,12 +229,12 @@ function onChooseMenuItem(id: string): void {
 
 .plugin-row__badge--available {
   color: var(--numen-hushed);
-  background-color: var(--numen-surface-hover);
+  background-color: var(--numen-bubble-bg);
 }
 
 .plugin-row__badge--stopped {
-  color: var(--numen-danger);
-  background-color: var(--numen-danger-soft);
+  color: var(--numen-alarm);
+  background-color: var(--numen-alarm-bg);
 }
 
 .plugin-row__chevron {

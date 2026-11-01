@@ -18,12 +18,12 @@ const PROTOCOL_FILES = {
 
 const SDK_PACKAGE = JSON.stringify({ name: "sdk", exports: { ".": "./index.ts" } });
 
-/** Writes the files into a new directory and returns the findings for the SDK entry in it. */
-function readExposures(sdkSource) {
+/** Writes the files into a new directory and returns the findings for the SDK entries in it. */
+function readExposures(sdkSource, sdkFiles = { "sdk/package.json": SDK_PACKAGE }) {
   // TypeScript reports real paths, and the temporary directory of macOS is a symbolic link.
   const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "sdk-protocol-")));
   try {
-    const files = { ...PROTOCOL_FILES, "sdk/package.json": SDK_PACKAGE, "sdk/index.ts": sdkSource };
+    const files = { ...PROTOCOL_FILES, ...sdkFiles, "sdk/index.ts": sdkSource };
     for (const [name, text] of Object.entries(files)) {
       fs.mkdirSync(path.dirname(path.join(root, name)), { recursive: true });
       fs.writeFileSync(path.join(root, name), text);
@@ -89,6 +89,15 @@ test("declarations that name no protocol declaration in their type are accepted"
   assert.deepEqual(result.findings, []);
   assert.equal(result.exported, 3);
   assert.ok(result.protocolFiles >= 1);
+});
+
+test("a protocol declaration exposed by an entry besides the main one is reported", () => {
+  const result = readExposures("export const name = 'sdk'\n", {
+    "sdk/package.json": JSON.stringify({ name: "sdk", exports: { ".": "./index.ts", "./testing": { types: "./testing.ts" }, "./styles.css": "./styles.css" } }),
+    "sdk/testing.ts": "import type { Message } from 'proto'\nexport function fake(): Message { return { text: '' } }\n",
+  });
+  assert.equal(result.entries, 2);
+  assert.deepEqual(getSubjects(result), ["fake"]);
 });
 
 test("the plugin SDK of this repository reads enough declarations and exposes no protocol declaration", () => {

@@ -69,6 +69,6 @@ const liveBars = computed(() => getWaveformBars(props.elapsedMs, props.isRecordi
 }
 
 .media-recorder__waveform-bar--active {
-  background: var(--numen-danger);
+  background: var(--numen-alarm);
 }
 </style>

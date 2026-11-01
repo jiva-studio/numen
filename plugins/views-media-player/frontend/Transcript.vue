@@ -133,7 +133,7 @@ function onSave() {
 }
 
 .transcript__ask:hover {
-  background: var(--numen-field-bg-hover);
+  background: var(--numen-bubble-bg);
 }
 
 .transcript .transcript__text {

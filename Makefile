@@ -559,6 +559,14 @@ plugin_versions_test: ## test the plugin version check
 check_layers tool_layers_check: ## validate architectural layer boundaries (usage: make check_layers [target=libs|plugins|apps|<module>])
 	node $(LAYERS)/check.mjs $(target)
 
+.PHONY: check_dependencies
+check_dependencies: ## run dependency-cruiser over the frontend sources: package boundaries, segment direction, import cycles
+	node $(LAYERS)/check.mjs dependency-graph
+
+.PHONY: check_styles
+check_styles: ## run stylelint over every stylesheet and component style: tokens, no colour literal, no var() fallback
+	node $(LAYERS)/check.mjs styles-use-tokens
+
 .PHONY: check_quality
 check_quality: ## validate code quality metrics (usage: make check_quality [check=<name>] [opts=...])
 	node $(QUALITY)/check.mjs $(if $(check),--check=$(check),) $(opts)
@@ -577,8 +585,8 @@ check_typecheck: lib_ui_build ## typecheck every frontend package and plugin wit
 	for dir in plugins/*/; do if [ -f "$$dir/package.json" ] && grep -q '"typecheck"' "$$dir/package.json"; then (cd "$$dir" && npm run typecheck) || exit 1; fi; done
 
 .PHONY: check_gate
-check_gate: lib_protocol_generate_check check_typecheck ## run architectural and quality gates on changed files (fast pre-push gate)
-	node $(LAYERS)/check.mjs --changed-only
+check_gate: lib_protocol_generate_check check_typecheck ## run every architectural check and the quality gates on changed files (pre-push gate)
+	node $(LAYERS)/check.mjs
 	node $(QUALITY)/check.mjs --changed-only $(opts)
 
 .PHONY: gate

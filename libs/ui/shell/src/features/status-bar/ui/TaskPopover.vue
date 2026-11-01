@@ -114,9 +114,7 @@ function onClose() {
   color: var(--numen-ink);
   border: 1px solid var(--numen-rule);
   border-radius: var(--numen-radius-panel);
-  box-shadow:
-    0 10px 25px -5px var(--numen-backdrop),
-    0 8px 10px -6px var(--numen-backdrop);
+  box-shadow: var(--numen-panel-shadow);
   overflow: hidden;
   z-index: 50;
 }

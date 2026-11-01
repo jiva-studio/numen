@@ -1,14 +1,7 @@
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import {
-  REPO_ROOT,
-  failOnFindings,
-  getImportSpecifiers,
-  getVueScript,
-  parsePackageJson,
-  requireMatches,
-} from "./helpers.mjs";
-import { spawnSync } from "node:child_process";
+import { REPO_ROOT, failOnFindings, parsePackageJson, requireMatches } from "./helpers.mjs";
 
 /** The package that holds the generated schema. */
 const PROTOCOL = "@numen/protocol";
@@ -16,35 +9,16 @@ const PROTOCOL = "@numen/protocol";
 /** The first-party client of the core: the only package besides the plugin SDK that names the schema. */
 const CORE_CLIENT = "@numen/core-client";
 
-/** The packages that may import or declare the schema. */
+/** The packages that may declare the schema. */
 export const PROTOCOL_USERS = ["@numen/plugin-sdk", CORE_CLIENT];
 
 const DEPENDENCY_FIELDS = ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"];
 
-const SOURCE_FILE = /\.(ts|tsx|mts|cts|js|mjs|cjs|vue)$/;
+/** The fields of the dependencies a package brings to whoever installs it. */
+const INSTALLED_FIELDS = ["dependencies", "peerDependencies", "optionalDependencies"];
 
-/** Generated code, installed packages and build output, which are not source of a package. */
-const NOT_SOURCE = /(^|\/)(node_modules|dist|gen)\//;
-
-/** True for a module specifier that names the schema package or a path inside it. */
-function isProtocolSpecifier(specifier) {
-  return specifier === PROTOCOL || specifier.startsWith(PROTOCOL + "/");
-}
-
-/**
- * Lists the findings for `references` given as `{ file, line, owner, symbol }`: every import or
- * declaration of the schema package by a package that is not in `allowed`. `owner` is the name of
- * the package the file belongs to.
- */
-export function findProtocolViolations(references, allowed = PROTOCOL_USERS) {
-  return references
-    .filter((reference) => !allowed.includes(reference.owner))
-    .map(({ file, line, owner, symbol }) => ({
-      file,
-      line,
-      symbol: `${owner} names ${PROTOCOL} (${symbol}); only ${allowed.join(" and ")} may`,
-    }));
-}
+/** Installed packages, build output, generated code and fixtures, which are not packages of the repository. */
+const NOT_SOURCE = /(^|\/)(node_modules|dist|gen|testdata)\//;
 
 /** The package.json files below `dirs`, each with the parsed manifest and its directory. */
 function readManifests(dirs) {
@@ -55,104 +29,94 @@ function readManifests(dirs) {
     .map((file) => ({ file, dir: path.dirname(file), manifest: parsePackageJson(fs.readFileSync(path.join(REPO_ROOT, file), "utf8")) }));
 }
 
-/** The tracked source files below `dirs`, tests included. */
-function listSourceFiles(dirs) {
-  const listed = spawnSync("git", ["ls-files", "--", ...dirs], { cwd: REPO_ROOT, encoding: "utf8" });
-  return (listed.stdout || "")
-    .split("\n")
-    .filter((file) => file && SOURCE_FILE.test(file) && !NOT_SOURCE.test(file) && fs.existsSync(path.join(REPO_ROOT, file)));
-}
-
-/** Reads every declaration and every import of the schema package outside `libs/protocol`. */
-export function readProtocolReferences() {
-  const dirs = ["apps", "libs", "plugins", "tools"];
-  const manifests = readManifests(dirs).filter((one) => one.manifest.name !== PROTOCOL);
-  const ownerOf = (file) =>
-    manifests.filter((one) => file.startsWith(one.dir + "/")).sort((a, b) => b.dir.length - a.dir.length)[0];
-  const references = [];
-  for (const one of manifests) {
-    for (const field of DEPENDENCY_FIELDS) {
-      if (PROTOCOL in (one.manifest[field] ?? {})) {
-        references.push({ file: one.file, line: 1, owner: one.manifest.name, symbol: `${field}: ${PROTOCOL}` });
-      }
-    }
-  }
-  let examined = 0;
-  for (const file of listSourceFiles(dirs)) {
-    const owner = ownerOf(file);
-    if (!owner) continue;
-    examined += 1;
-    const text = fs.readFileSync(path.join(REPO_ROOT, file), "utf8");
-    const script = file.endsWith(".vue") ? getVueScript(text) : text;
-    for (const specifier of getImportSpecifiers(script).filter(isProtocolSpecifier)) {
-      const line = script.slice(0, Math.max(0, script.indexOf(specifier))).split("\n").length;
-      references.push({ file, line, owner: owner.manifest.name, symbol: `import ${JSON.stringify(specifier)}` });
-    }
-  }
-  return { references, examined, packages: manifests.length };
-}
-
-/** Only the plugin SDK and the core client import or declare the schema; every other package reaches the core through one of them. */
-export function verifyProtocolImportedOnlyByClients() {
-  const { references, examined, packages } = readProtocolReferences();
-  requireMatches("packages read for the schema boundary", packages, 15);
-  requireMatches("source files read for the schema boundary", examined, 500);
-  requireMatches(
-    "imports of the schema by the SDK and the core client",
-    references.filter((reference) => PROTOCOL_USERS.includes(reference.owner)).length,
-    10,
-  );
-  failOnFindings(
-    "A package other than the plugin SDK and the core client names @numen/protocol",
-    findProtocolViolations(references),
-  );
-}
-
-/** The directory of the core client package. */
-const CORE_CLIENT_DIR = "libs/core-client";
-
 /**
- * Lists the findings for `manifests` given as `{ file, manifest }`: the core client, the manifest in
- * `libs/core-client`, must be private, and no package that is not private may declare it as a dependency.
+ * Lists the findings for `manifests` given as `{ file, manifest }`: every declaration of the schema
+ * package by a package that is not in `allowed`. The imports are checked by `dependency-graph`.
  */
-export function findCoreClientPublishViolations(manifests) {
-  const client = manifests.find((one) => one.file === `${CORE_CLIENT_DIR}/package.json`);
-  if (!client) return [{ file: `${CORE_CLIENT_DIR}/package.json`, line: 1, symbol: "the core client has no package.json" }];
+export function findProtocolDeclarations(manifests, allowed = PROTOCOL_USERS) {
   const found = [];
-  if (client.manifest.private !== true) {
-    found.push({ file: client.file, line: 1, symbol: `${client.manifest.name} is not "private": true` });
-  }
   for (const { file, manifest } of manifests) {
-    if (manifest.private === true || file === client.file) continue;
+    if (manifest.name === PROTOCOL || allowed.includes(manifest.name)) continue;
     for (const field of DEPENDENCY_FIELDS) {
-      if (client.manifest.name in (manifest[field] ?? {})) {
-        found.push({ file, line: 1, symbol: `${manifest.name} is published and declares ${client.manifest.name} in ${field}` });
+      if (PROTOCOL in (manifest[field] ?? {})) {
+        found.push({ file, line: 1, symbol: `${manifest.name} declares ${PROTOCOL} in ${field}; only ${allowed.join(" and ")} may` });
       }
     }
   }
   return found;
 }
 
-/** The core client is never published: it is private and no published package depends on it. */
+/** Only the plugin SDK and the core client declare the schema; every other package reaches the core through one of them. */
+export function verifyProtocolDeclaredOnlyByClients() {
+  const manifests = readManifests(["apps", "libs", "plugins", "tools"]);
+  requireMatches("packages read for the schema boundary", manifests.length, 15);
+  requireMatches(
+    "declarations of the schema by the SDK and the core client",
+    manifests.filter(({ manifest }) => PROTOCOL_USERS.includes(manifest.name) && DEPENDENCY_FIELDS.some((field) => PROTOCOL in (manifest[field] ?? {}))).length,
+    PROTOCOL_USERS.length,
+  );
+  failOnFindings("A package other than the plugin SDK and the core client declares @numen/protocol", findProtocolDeclarations(manifests));
+}
+
+/**
+ * The first-party packages plugins rely on: those a plugin's `package.json` declares, and those they bring in
+ * turn through their installed dependencies. `manifests` are `{ file, manifest }`; a plugin is a manifest
+ * below `plugins/`.
+ */
+export function findPluginReliedPackages(manifests) {
+  const byName = new Map(manifests.map((one) => [one.manifest.name, one]));
+  const relied = new Set();
+  const queue = [];
+  const take = (manifest, fields) => {
+    for (const field of fields) {
+      for (const name of Object.keys(manifest[field] ?? {})) {
+        if (byName.has(name) && !relied.has(name)) {
+          relied.add(name);
+          queue.push(name);
+        }
+      }
+    }
+  };
+  for (const { file, manifest } of manifests) if (file.startsWith("plugins/")) take(manifest, DEPENDENCY_FIELDS);
+  while (queue.length > 0) take(byName.get(queue.pop()).manifest, INSTALLED_FIELDS);
+  return relied;
+}
+
+/**
+ * Lists the findings for `manifests`: the core client must be private, and no package plugins rely on may be
+ * the core client. Fails when plugins rely on no package, since the rule would then hold over nothing.
+ */
+export function findCoreClientPublishViolations(manifests) {
+  const client = manifests.find((one) => one.manifest.name === CORE_CLIENT);
+  if (!client) return [{ file: "package.json", line: 1, symbol: `no package is named ${CORE_CLIENT}` }];
+  const relied = findPluginReliedPackages(manifests);
+  if (relied.size === 0) return [{ file: "plugins", line: 1, symbol: "plugins rely on no first-party package; the published set is empty" }];
+  const found = [];
+  if (client.manifest.private !== true) found.push({ file: client.file, line: 1, symbol: `${CORE_CLIENT} is not "private": true` });
+  if (relied.has(CORE_CLIENT)) found.push({ file: client.file, line: 1, symbol: `plugins rely on ${CORE_CLIENT}` });
+  return found;
+}
+
+/** The core client is never published: it is private, and nothing plugins rely on is or brings it. */
 export function verifyCoreClientIsPrivate() {
   const manifests = readManifests(["apps", "libs", "plugins", "tools", "tests"]);
   requireMatches("packages read for the publish boundary", manifests.length, 15);
-  failOnFindings("The core client is public or a published package depends on it", findCoreClientPublishViolations(manifests));
+  failOnFindings("The core client is public or plugins rely on it", findCoreClientPublishViolations(manifests));
 }
 
 export const CORE_CLIENT_VERIFIERS = [
   {
-    id: "protocol-imported-only-by-clients",
+    id: "protocol-declared-only-by-clients",
     scope: "libs",
     module: "boundary",
-    name: "Applications Reach the Core Only Through the Core Client (only @numen/plugin-sdk and @numen/core-client import or declare @numen/protocol)",
-    run: verifyProtocolImportedOnlyByClients,
+    name: "Only @numen/plugin-sdk and @numen/core-client Declare @numen/protocol (package.json; the imports are dependency-graph's)",
+    run: verifyProtocolDeclaredOnlyByClients,
   },
   {
     id: "core-client-private",
     scope: "libs",
     module: "boundary",
-    name: "Core Client Is Private (libs/core-client is \"private\": true and no package that is not private depends on it)",
+    name: "Core Client Is Private (libs/core-client is \"private\": true and is not among the packages plugins rely on)",
     run: verifyCoreClientIsPrivate,
   },
 ];

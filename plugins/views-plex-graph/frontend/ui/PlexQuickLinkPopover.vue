@@ -192,7 +192,7 @@ function submitHighlighted() {
 }
 .plex-quick-link__node,
 .plex-quick-link__dropdown {
-  background: var(--numen-surface-raised);
+  background: var(--numen-raised);
   border: var(--numen-stroke) solid var(--relation-color);
   border-radius: var(--radius);
 }
@@ -205,7 +205,7 @@ function submitHighlighted() {
   padding-inline: var(--numen-node-padding);
   display: flex;
   align-items: center;
-  box-shadow: var(--numen-shadow);
+  box-shadow: var(--numen-panel-shadow);
 }
 .plex-quick-link__input,
 .plex-quick-link__option {
@@ -235,7 +235,7 @@ function submitHighlighted() {
   display: flex;
   flex-direction: column;
   padding: 0.25rem;
-  box-shadow: var(--numen-shadow);
+  box-shadow: var(--numen-panel-shadow);
   gap: 0.125rem;
 }
 .plex-quick-link__option {

@@ -162,7 +162,7 @@ function onDeleteData(): void {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  max-inline-size: var(--settings-measure, 54rem);
+  max-inline-size: 54rem;
   margin-inline: auto;
 }
 

@@ -68,7 +68,7 @@ function onKeydown(e: KeyboardEvent): void {
 }
 
 .plugin-row:hover {
-  background-color: var(--numen-surface-hover);
+  background-color: var(--numen-bubble-bg);
 }
 
 .plugin-row:focus-visible {

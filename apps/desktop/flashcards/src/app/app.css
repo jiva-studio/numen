@@ -1,5 +1,5 @@
 body {
-  font-family: var(--numen-font-sans, system-ui, sans-serif);
+  font-family: var(--numen-font-sans);
   /* One size for the interface, from the tokens, so that what a person set
      once is what every window is drawn at. What is set from here is a ratio of
      it and never a length of its own. */

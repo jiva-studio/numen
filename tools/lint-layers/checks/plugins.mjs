@@ -5,19 +5,12 @@ import { readPluginManifests } from "../../shared/manifests.mjs";
 import {
   MODULES_DIR,
   REPO_ROOT,
-  SCRIPT_EXTENSIONS,
   exec,
   failOnFindings,
-  findBoundaryReferences,
-  findCrossings,
   getGoReferences,
-  getImportSpecifiers,
-  getPackageNames,
-  getVueScript,
-  isWithin,
+  getModuleSpecifiers,
   parsePackageJson,
   listShippedFiles,
-  readScript,
   readSource,
   requireMatches,
 } from "./helpers.mjs";
@@ -36,112 +29,6 @@ export function verifyPluginsStatic() {
   if (nonCommentLeaks.length > 0) {
     throw new Error("Plugin imports core package:\n" + nonCommentLeaks.join("\n"));
   }
-}
-
-/** A plugin knows no application: it compiles, imports, aliases and reads nothing under `apps/`. */
-export function verifyPluginsReachNoApp() {
-  const crossings = findCrossings("plugins", "apps", [
-    "github\\.com/jiva-studio/numen/apps\\b",
-    "['\"]apps/",
-    "['\"]@/",
-    "['\"]@['\"]",
-  ]);
-  if (crossings.length > 0) {
-    throw new Error("A plugin reaches into apps/:\n" + crossings.join("\n"));
-  }
-}
-
-/** A plugin takes components from `@numen/ui` and never reaches the window shell or the plugin loader. */
-export function verifyPluginsReachNoShell() {
-  const crossings = [
-    ...findCrossings("plugins", "libs/ui/shell", ["['\"]@numen/shell\\b"]),
-    ...findCrossings("plugins", "libs/plugin-host-ts", ["['\"]@numen/plugin-host\\b"]),
-  ];
-  if (crossings.length > 0) {
-    throw new Error("A plugin reaches @numen/shell or @numen/plugin-host:\n" + crossings.join("\n"));
-  }
-}
-
-/** True for a module name that is the package `name` or a path inside it. */
-function isPackageName(value, name) {
-  return value === name || value.startsWith(name + "/");
-}
-
-/** The first-party packages a plugin never names: the schema, the first-party client of the core, and the wire. */
-const PLUGIN_FORBIDDEN_PACKAGES = ["@numen/protocol", "@numen/core-client", "@numen/wire"];
-
-/**
- * Lists the findings of one plugin file that is a `package.json` or a script: a dependency on, or a
- * module name or path of, a package in PLUGIN_FORBIDDEN_PACKAGES or of `libs/protocol`,
- * `libs/core-client` or `libs/wire`.
- */
-export function findPluginForbiddenPackageUses(file, text) {
-  const found = [];
-  if (path.basename(file) === "package.json") {
-    const manifest = parsePackageJson(text);
-    for (const field of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
-      for (const name of Object.keys(manifest[field] ?? {})) {
-        if (PLUGIN_FORBIDDEN_PACKAGES.includes(name)) found.push({ file, line: 1, symbol: `${field}: ${name}` });
-      }
-    }
-  } else if (SCRIPT_EXTENSIONS.has(path.extname(file)) && path.basename(file) !== "eslint.config.js") {
-    const source = file.endsWith(".vue") ? readScript(getVueScript(text)) : readScript(text);
-    for (const { line, value } of source.literals) {
-      if (
-        PLUGIN_FORBIDDEN_PACKAGES.some((name) => isPackageName(value, name)) ||
-        value.includes("libs/protocol") ||
-        value.includes("libs/core-client") ||
-        value.includes("libs/wire")
-      ) {
-        found.push({ file, line, symbol: JSON.stringify(value) });
-      }
-    }
-  }
-  return found;
-}
-
-/** Every reference a plugin makes to `libs/protocol`, `libs/core-client`, `numen/v1/*.proto`, `@numen/protocol`, `@numen/core-client` or `@numen/wire`. */
-function findPluginProtocolAndWireLeaks() {
-  const found = [];
-  const listed = spawnSync("git", ["ls-files", "--", "plugins"], { cwd: REPO_ROOT, encoding: "utf8" });
-  const files = (listed.stdout || "").split("\n").filter((f) => f && !/\/frontend\/gen\/|\.pb\.go$|\.connect\.go$/.test(f));
-  for (const file of files) {
-    const abs = path.join(REPO_ROOT, file);
-    if (!fs.existsSync(abs)) continue;
-    const text = fs.readFileSync(abs, "utf8");
-    if (path.basename(file) === "go.mod") {
-      text.split("\n").forEach((line, idx) => {
-        if (!line.trim().startsWith("//") && line.includes("github.com/jiva-studio/numen/libs/protocol")) {
-          found.push({ file, line: idx + 1, symbol: line.trim() });
-        }
-      });
-    } else if (file.endsWith(".go")) {
-      const { imports } = getGoReferences(text);
-      for (const { line, value } of imports) {
-        if (value.startsWith("github.com/jiva-studio/numen/libs/protocol")) {
-          found.push({ file, line, symbol: `import "${value}"` });
-        }
-      }
-    } else if (file.endsWith(".proto")) {
-      text.split("\n").forEach((line, idx) => {
-        const m = line.match(/^\s*import\s+"(numen\/v1\/[^"]+)"/);
-        if (m) found.push({ file, line: idx + 1, symbol: `import "${m[1]}"` });
-      });
-    } else {
-      found.push(...findPluginForbiddenPackageUses(file, text));
-    }
-  }
-  return found;
-}
-
-/** A plugin depends on the SDK and `@numen/ui`, and knows nothing of `libs/protocol`, `@numen/core-client` or `@numen/wire`. */
-export function verifyPluginsNoProtocolOrWire() {
-  requireMatches(
-    "plugin sources read for the schema boundary",
-    listShippedFiles(["plugins"]).filter((file) => /\.(ts|vue)$/.test(file)).length,
-    100,
-  );
-  failOnFindings("A plugin depends on libs/protocol, numen/v1/*.proto, @numen/protocol, @numen/core-client or @numen/wire", findPluginProtocolAndWireLeaks());
 }
 
 /** The packages a plugin depends on; their `package.json` `exports` declare the entries a plugin may name. */
@@ -205,104 +92,6 @@ export function verifyPluginsUseMainEntry() {
   }
   requireMatches("plugin references to the plugin packages", named, 100);
   failOnFindings("A plugin reaches past the main entry of @numen/plugin-sdk or @numen/ui", findPluginEntryViolations(files, exportsByPackage));
-}
-
-/**
- * Every tie in `plugins/` to the surrounding monorepo that prevents moving `plugins/<name>` into its
- * own repository.
- */
-/**
- * Lists the findings of the `go.mod` of a plugin: a relative `replace`, and a direct requirement
- * or a replacement of the notes library. A requirement marked `// indirect` is the notes library
- * reached through the SDK and passes.
- */
-export function findPluginGoModViolations(file, text) {
-  const found = [];
-  text.split("\n").forEach((line, idx) => {
-    const trimmed = line.trim();
-    if (trimmed.startsWith("//")) return;
-    if (/=>\s*\.\.\//.test(trimmed)) {
-      found.push({ file, line: idx + 1, symbol: `relative replace in go.mod: ${trimmed}` });
-    }
-    const isIndirect = /\/\/\s*indirect\b/.test(trimmed);
-    if (trimmed.includes("github.com/jiva-studio/numen/libs/notes") && !isIndirect) {
-      found.push({ file, line: idx + 1, symbol: `direct libs/notes requirement in go.mod: ${trimmed}` });
-    }
-  });
-  return found;
-}
-
-/** Lists the imports of a plugin Go file (`imports` as `{ line, value }`) that name the notes library. */
-export function findPluginNotesImports(file, imports) {
-  return imports
-    .filter(({ value }) => value.startsWith("github.com/jiva-studio/numen/libs/notes"))
-    .map(({ line, value }) => ({ file, line, symbol: `import "${value}"` }));
-}
-
-function findPluginStandaloneViolations() {
-  const found = [];
-  for (const shared of ["plugins/vite.shared.ts", "plugins/vite.styles.ts", "plugins/vitest.config.ts"]) {
-    if (fs.existsSync(path.join(REPO_ROOT, shared))) {
-      found.push({ file: shared, line: 1, symbol: "shared file outside plugin directory" });
-    }
-  }
-  const pluginsDir = path.join(MODULES_DIR, "plugins");
-  const pluginNames = fs
-    .readdirSync(pluginsDir, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules")
-    .map((e) => e.name);
-  const listed = spawnSync("git", ["ls-files", "--", "plugins"], { cwd: REPO_ROOT, encoding: "utf8" });
-  for (const file of (listed.stdout || "").split("\n").filter(Boolean)) {
-    const parts = file.split("/");
-    const plugin = parts[1];
-    if (!pluginNames.includes(plugin)) continue;
-    const pluginRoot = path.join(REPO_ROOT, "plugins", plugin);
-    const abs = path.join(REPO_ROOT, file);
-    if (!fs.existsSync(abs)) continue;
-    const base = path.basename(file);
-    if (base.endsWith(".proto") || base === "buf.gen.yaml") {
-      found.push({ file, line: 1, symbol: `${base} (plugins communicate via SDK without own protobuf schema)` });
-      continue;
-    }
-    if (/\/frontend\/gen\/|\.pb\.go$|\.connect\.go$/.test(file)) continue;
-    const text = fs.readFileSync(abs, "utf8");
-    if (base === "go.mod") {
-      found.push(...findPluginGoModViolations(file, text));
-      continue;
-    }
-    if (file.endsWith(".go")) {
-      const { imports, literals } = getGoReferences(text);
-      found.push(...findPluginNotesImports(file, imports));
-      for (const { line, value } of literals) {
-        if (/^\.\.\//.test(value) && !isWithin(path.resolve(path.dirname(abs), value), pluginRoot)) {
-          found.push({ file, line, symbol: `relative path escapes plugins/${plugin}: ${JSON.stringify(value)}` });
-        }
-      }
-      continue;
-    }
-    if (base === "eslint.config.js") {
-      for (const specifier of getImportSpecifiers(text)) {
-        if (specifier.startsWith(".") && !isWithin(path.resolve(path.dirname(abs), specifier), pluginRoot)) {
-          found.push({ file, line: 1, symbol: `relative import escapes plugins/${plugin}: ${JSON.stringify(specifier)}` });
-        }
-      }
-      continue;
-    }
-    const source = readSource(file);
-    if (!source) continue;
-    for (const { line, value } of source.literals) {
-      const cleanVal = value.split("?")[0];
-      if (/^\.\.\//.test(cleanVal) && !isWithin(path.resolve(path.dirname(abs), cleanVal), pluginRoot)) {
-        found.push({ file, line, symbol: `relative path escapes plugins/${plugin}: ${JSON.stringify(value)}` });
-      }
-    }
-  }
-  return found;
-}
-
-/** Every plugin directory `plugins/<name>` is self-contained and movable to a standalone repository. */
-export function verifyPluginsStandaloneRepo() {
-  failOnFindings("A plugin is tied to the monorepo by relative paths, libs/notes, or its own .proto", findPluginStandaloneViolations());
 }
 
 /** Plugin backend internal layers (inner packages under backend/<pkg> must not import backend/service or backend/engine). */
@@ -377,7 +166,7 @@ function findPluginConfigDrift() {
         found.push({ file: "plugins/.example/eslint.config.js", line: 1, symbol: `missing rule selector '${token}' from base-eslint.mjs` });
       }
     }
-    if (getImportSpecifiers(exText).some((s) => s.startsWith(".")) || exText.includes("@numen/plugin-sdk/eslint")) {
+    if (getModuleSpecifiers(exampleEslint, exText).some((s) => s.startsWith(".")) || exText.includes("@numen/plugin-sdk/eslint")) {
       found.push({ file: "plugins/.example/eslint.config.js", line: 1, symbol: "plugins/.example/eslint.config.js must be 100% self-contained without ../ paths or SDK coupling" });
     }
   }
@@ -452,20 +241,6 @@ export function verifyPluginConfigGoldenParity() {
   failOnFindings("Plugin configuration missing or drifted from golden template plugins/.example/", findPluginConfigDrift());
 }
 
-/**
- * The application compiles nothing from `plugins/`, and a plugin compiles nothing from `apps/`.
- * The window reaches a plugin only through `/plugin/<id>/` at runtime.
- */
-export function verifyAppPluginBoundary() {
-  const findings = [
-    ...findBoundaryReferences("apps", "plugins", /^@plugins(\/|$)/, getPackageNames("plugins")),
-    ...findBoundaryReferences("plugins", "apps", /^@(\/|$)/, getPackageNames("apps")),
-  ];
-  if (findings.length > 0) {
-    throw new Error("Application and plugins reach into each other:\n    " + findings.join("\n    "));
-  }
-}
-
 /** Runs ESLint across each frontend plugin directory using its own `eslint.config.js`. */
 export function verifyPluginsFrontend() {
   const pluginsDir = path.join(REPO_ROOT, "plugins");
@@ -536,46 +311,11 @@ export const PLUGIN_VERIFIERS = [
     run: verifyPluginsStatic,
   },
   {
-    id: "plugins-reach-no-app",
-    scope: "plugins",
-    module: "plugins",
-    name: "Plugins Reach No Application (no path, alias or import into apps/)",
-    run: verifyPluginsReachNoApp,
-  },
-  {
-    id: "plugins-reach-no-shell",
-    scope: "plugins",
-    module: "plugins",
-    name: "Plugins Reach No Shell or Plugin Host (no @numen/shell, no @numen/plugin-host, no path into either)",
-    run: verifyPluginsReachNoShell,
-  },
-  {
-    id: "plugins-no-protocol-or-wire",
-    scope: "plugins",
-    module: "plugins",
-    name: "Plugins Never Import @numen/protocol, @numen/core-client or the Wire (no libs/protocol, libs/core-client, numen/v1/*.proto, @numen/protocol, @numen/core-client or @numen/wire in source or package.json)",
-    run: verifyPluginsNoProtocolOrWire,
-  },
-  {
     id: "plugins-use-main-entry",
     scope: "plugins",
     module: "plugins",
     name: "Plugins Import the SDK and UI Through Their Main Entry (only the test entry, stylesheets and build entries a package declares in exports)",
     run: verifyPluginsUseMainEntry,
-  },
-  {
-    id: "plugins-standalone-repo",
-    scope: "plugins",
-    module: "plugins",
-    name: "Plugins Are Standalone-Repo Ready (no ../ escapes, no vite.shared, no go.mod replace ../, no libs/notes, no plugin .proto)",
-    run: verifyPluginsStandaloneRepo,
-  },
-  {
-    id: "apps-plugins-boundary",
-    scope: "plugins",
-    module: "boundary",
-    name: "Application & Plugin Separation (apps compile nothing from plugins, plugins nothing from apps)",
-    run: verifyAppPluginBoundary,
   },
   {
     id: "plugins-frontend",

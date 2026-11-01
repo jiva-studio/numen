@@ -27,6 +27,7 @@ export default defineConfig({
         '@fontsource/ibm-plex-sans/600.css',
         '@fontsource/ibm-plex-mono/400.css',
         '@fontsource/ibm-plex-mono/500.css',
+        './src/styles/theme/palette.css',
         './src/styles/manual.css',
       ],
       // The manual is read, not contributed to: the repository is private, and

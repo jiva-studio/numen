@@ -85,7 +85,7 @@ const { open, box, handle } = useOpenBox({
  * One hue per relation, from a token named after it.
  */
 const hue = computed(() => ({
-  '--numen-relation-hue': `var(--numen-relation-${props.node.relation})`,
+  '--relation-hue': `var(--numen-relation-${props.node.relation})`,
 }))
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -184,8 +184,8 @@ defineExpose({ focus: () => group.value?.focus() })
 
 [data-moving] .plex__node :deep(.plex__box) {
   transition:
-    fill var(--numen-plex-move) var(--numen-easing),
-    stroke var(--numen-plex-move) var(--numen-easing);
+    fill var(--plex-move) var(--numen-easing),
+    stroke var(--plex-move) var(--numen-easing);
 }
 
 /* The node a link would be made to, while the pointer is still on it. */
@@ -204,7 +204,7 @@ defineExpose({ focus: () => group.value?.focus() })
 
 .plex__node--ghost :deep(.plex__box) {
   fill: none;
-  stroke: var(--numen-relation-hue);
+  stroke: var(--relation-hue);
   stroke-dasharray: var(--ghost-dash);
   transition: none;
 }

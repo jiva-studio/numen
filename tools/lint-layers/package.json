@@ -4,12 +4,20 @@
   "private": true,
   "type": "module",
   "description": "Validation and enforcement of architectural layer boundaries across backend, plugins, and frontend.",
+  "dependencies": {
+    "@vue/compiler-sfc": "^3.5.44",
+    "dependency-cruiser": "^18.7.0",
+    "postcss": "^8.5.29",
+    "postcss-html": "^2.0.0",
+    "postcss-value-parser": "^4.2.0",
+    "stylelint": "^17.16.0",
+    "typescript": "^6.0.3"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^10.10.0",
     "globals": "^17.12.0",
-    "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.2"
   },
   "scripts": {

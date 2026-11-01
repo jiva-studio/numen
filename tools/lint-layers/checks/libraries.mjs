@@ -7,8 +7,6 @@ import {
   failOnFindings,
   getGoModReferences,
   getGoReferences,
-  getImportSpecifiers,
-  getVueScript,
   listShippedFiles,
   requireMatches,
 } from "./helpers.mjs";
@@ -131,9 +129,9 @@ export function verifyLibraryMatrix() {
 /**
  * The TypeScript libraries and the libraries each one may depend on, by package name.
  *
- * A library is a directory under `libs/` that holds a `package.json`. It declares and imports only the
- * first-party packages its row lists, and a library with no row fails, so a new library states its
- * place before it builds.
+ * A library is a directory under `libs/` that holds a `package.json`. It declares only the first-party
+ * packages its row lists, and a library with no row fails, so a new library states its place before it
+ * builds. `dependency-graph` holds its imports to the same row.
  */
 export const PACKAGE_DEPENDENCIES = {
   "@numen/ui": [],
@@ -150,9 +148,8 @@ const FIRST_PARTY = /^(@numen\/[^/]+)/;
 const DEPENDENCY_FIELDS = ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"];
 
 /**
- * Lists the findings for packages given as `{ dir, name, declared, imports }`: `declared` holds the
- * first-party package names its `package.json` names, and `imports` the first-party packages its
- * sources import, each as `{ file, line, name }`.
+ * Lists the findings for packages given as `{ dir, name, declared }`: `declared` holds the first-party
+ * package names its `package.json` names.
  */
 export function findPackageViolations(packages, matrix = PACKAGE_DEPENDENCIES) {
   const found = [];
@@ -165,14 +162,11 @@ export function findPackageViolations(packages, matrix = PACKAGE_DEPENDENCIES) {
     for (const name of one.declared.filter((declared) => declared !== one.name && !allowed.includes(declared))) {
       found.push({ file: `${one.dir}/package.json`, line: 1, symbol: `${one.name} declares ${name}, which the package matrix does not allow` });
     }
-    for (const { file, line, name } of one.imports.filter((entry) => entry.name !== one.name && !allowed.includes(entry.name))) {
-      found.push({ file, line, symbol: `${one.name} imports ${name}, which the package matrix does not allow` });
-    }
   }
   return found;
 }
 
-/** Reads every package under `libs/` with the first-party packages it declares and imports. */
+/** Reads every package under `libs/` with the first-party packages it declares. */
 export function readPackages() {
   const dirs = listShippedFiles(["libs"])
     .filter((file) => path.basename(file) === "package.json" && !file.includes("node_modules/"))
@@ -180,23 +174,14 @@ export function readPackages() {
   return dirs.map((dir) => {
     const manifest = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, dir, "package.json"), "utf8"));
     const declared = DEPENDENCY_FIELDS.flatMap((field) => Object.keys(manifest[field] ?? {})).filter((name) => FIRST_PARTY.test(name));
-    const imports = [];
-    for (const file of listShippedFiles([`${dir}/src`]).filter((one) => /\.(ts|vue)$/.test(one))) {
-      const text = fs.readFileSync(path.join(REPO_ROOT, file), "utf8");
-      const script = file.endsWith(".vue") ? getVueScript(text) : text;
-      for (const specifier of getImportSpecifiers(script)) {
-        const name = FIRST_PARTY.exec(specifier)?.[1];
-        if (name) imports.push({ file, line: script.slice(0, Math.max(0, script.indexOf(specifier))).split("\n").length, name });
-      }
-    }
-    return { dir, name: manifest.name, declared, imports };
+    return { dir, name: manifest.name, declared };
   });
 }
 
 export function verifyPackageMatrix() {
   const packages = readPackages();
   requireMatches("TypeScript libraries read", packages.length, 5);
-  requireMatches("first-party imports of TypeScript libraries", packages.reduce((total, one) => total + one.imports.length, 0), 10);
+  requireMatches("first-party declarations of TypeScript libraries", packages.reduce((total, one) => total + one.declared.length, 0), 5);
   failOnFindings("A TypeScript library is outside the package matrix or reaches a library it may not", findPackageViolations(packages));
 }
 
@@ -212,7 +197,7 @@ export const LIBRARY_VERIFIERS = [
     id: "package-matrix",
     scope: "libs",
     module: "libraries",
-    name: "TypeScript Libraries Depend Only on the Libraries the Matrix Allows (every package.json under libs/ has a row in the package matrix)",
+    name: "TypeScript Libraries Declare Only the Libraries the Matrix Allows (every package.json under libs/ has a row in the package matrix)",
     run: verifyPackageMatrix,
   },
 ];

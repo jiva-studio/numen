@@ -26,7 +26,7 @@ interface Knobs {
 
 /** What a node puts on itself, and the handle inherits. */
 const hue = (relation: PlexNodeRelation) => ({
-  '--numen-relation-hue': `var(--numen-relation-${relation})`,
+  '--relation-hue': `var(--numen-relation-${relation})`,
 })
 
 const renderScene =

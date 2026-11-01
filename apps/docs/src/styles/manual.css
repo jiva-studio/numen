@@ -2,10 +2,10 @@
  * The manual, painted in the application's own values.
  *
  * Starlight draws everything through its own custom properties, so the first
- * half of this file is that whole set given numen's colours, faces and sizes —
- * dark on `:root`, light replacing it, which is the order Starlight sets them
- * in. The second half is the few places a property cannot reach: the shape of
- * the sidebar, the tables, and where the column of text sits.
+ * half of this file gives that set numen's faces and sizes; the colours are in
+ * `theme/palette.css`. The second half is the few places a property cannot
+ * reach: the shape of the sidebar, the tables, and where the column of text
+ * sits.
  *
  * Colour means direction and appears only where direction is meant — the three
  * roles a link carries. Everything else is ink on paper.
@@ -16,7 +16,7 @@
      sections; everything read at length is set in Plex. */
   --sl-font: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --sl-font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
-  --numen-display: 'Newsreader Variable', 'Newsreader', Georgia, 'Times New Roman', serif;
+  --manual-display: 'Newsreader Variable', 'Newsreader', Georgia, 'Times New Roman', serif;
 
   /* One step of 1.22 from the body upwards, so a heading is larger than what
      it heads and no larger. */
@@ -32,75 +32,14 @@
   --sl-line-height: 1.7;
   --sl-line-height-headings: 1.25;
 
-  --numen-sidebar-text: 0.9375rem;
-  --numen-toc-text: 0.875rem;
+  --manual-sidebar-text: 0.9375rem;
+  --manual-toc-text: 0.875rem;
 
   /* The room the page is laid out in. */
   --sl-nav-height: 4.25rem;
   --sl-sidebar-width: 17rem;
   --sl-content-width: 47rem;
   --sl-content-pad-x: 2rem;
-
-  /* Dark, which is where this palette starts. A warm ink on warm ground, and
-     three grounds a step apart so the page, the sidebar and what floats over
-     them are told apart without a border doing the work. */
-  --sl-color-white: #f6efe2;
-  --sl-color-gray-1: #ece0cd;
-  --sl-color-gray-2: #cfc2ab;
-  --sl-color-gray-3: #a1968a;
-  --sl-color-gray-4: #7d7266;
-  --sl-color-gray-5: #423a31;
-  --sl-color-gray-6: #2b2520;
-  --sl-color-gray-7: #221d19;
-  --sl-color-black: #1a1613;
-
-  --sl-color-accent-low: #33260f;
-  --sl-color-accent: #e9a23b;
-  --sl-color-accent-high: #f3ce93;
-
-  --sl-color-bg: #1a1613;
-  --sl-color-bg-nav: #1e1916;
-  --sl-color-bg-sidebar: #1e1916;
-  --sl-color-bg-inline-code: #2b2520;
-  --sl-color-hairline: #2c2620;
-  --sl-color-hairline-light: #373029;
-  --sl-color-hairline-shade: #141110;
-
-  --numen-hover: #262019;
-  --numen-current: #33281a;
-  --numen-up: #7ab4d8;
-  --numen-down: #a6c46b;
-  --numen-across: #e8836b;
-}
-
-:root[data-theme='light'] {
-  --sl-color-white: #2e261e;
-  --sl-color-gray-1: #3a322a;
-  --sl-color-gray-2: #4f463b;
-  --sl-color-gray-3: #7a7061;
-  --sl-color-gray-4: #a2988a;
-  --sl-color-gray-5: #ddd3c1;
-  --sl-color-gray-6: #ece3d2;
-  --sl-color-gray-7: #f5eddf;
-  --sl-color-black: #fffbf2;
-
-  --sl-color-accent-low: #f7e9c8;
-  --sl-color-accent: #a2540f;
-  --sl-color-accent-high: #7a3f0b;
-
-  --sl-color-bg: #faf4e8;
-  --sl-color-bg-nav: #fffbf2;
-  --sl-color-bg-sidebar: #f5eddf;
-  --sl-color-bg-inline-code: #f0e6d4;
-  --sl-color-hairline: #e0d6c4;
-  --sl-color-hairline-light: #ece3d2;
-  --sl-color-hairline-shade: #e0d6c4;
-
-  --numen-hover: #f2e9d8;
-  --numen-current: #f7e4c6;
-  --numen-up: #2f6a94;
-  --numen-down: #5a7a2e;
-  --numen-across: #b5522f;
 }
 
 /* Everything below stands after Starlight's own layers, so it is the last word
@@ -113,7 +52,7 @@ header.header {
 }
 
 .site-title {
-  font-family: var(--numen-display);
+  font-family: var(--manual-display);
   font-size: 1.35rem;
   font-weight: 600;
   letter-spacing: -0.012em;
@@ -166,7 +105,7 @@ header.header {
 }
 
 .sidebar-content a {
-  font-size: var(--numen-sidebar-text);
+  font-size: var(--manual-sidebar-text);
   padding: 0.34rem 0.6rem;
   border-radius: 6px;
   color: var(--sl-color-gray-2);
@@ -174,21 +113,21 @@ header.header {
 
 /* A page reached from the top level is a page, drawn as one. */
 .sidebar-content .top-level > li > a.large {
-  font-size: var(--numen-sidebar-text);
+  font-size: var(--manual-sidebar-text);
   font-weight: 500;
   color: var(--sl-color-gray-1);
 }
 
 .sidebar-content a:hover,
 .sidebar-content a:focus {
-  background: var(--numen-hover);
+  background: var(--manual-hover);
   color: var(--sl-color-white);
 }
 
 .sidebar-content a[aria-current='page'],
 .sidebar-content a[aria-current='page']:hover,
 .sidebar-content a[aria-current='page']:focus {
-  background: var(--numen-current);
+  background: var(--manual-current);
   color: var(--sl-color-accent-high);
   font-weight: 500;
 }
@@ -207,7 +146,7 @@ header.header {
 
 /* What is on this page: quiet, and only as wide as it needs to be. */
 .right-sidebar starlight-toc a {
-  font-size: var(--numen-toc-text);
+  font-size: var(--manual-toc-text);
   color: var(--sl-color-gray-3);
   padding-block: 0.28rem;
 }
@@ -232,7 +171,7 @@ header.header {
 
 .content-panel h1,
 .sl-markdown-content h2 {
-  font-family: var(--numen-display);
+  font-family: var(--manual-display);
   font-weight: 500;
   /* The size a heading is set at decides which cut of the face draws it. */
   font-optical-sizing: auto;
@@ -368,7 +307,7 @@ header.header {
 }
 
 .hero h1 {
-  font-family: var(--numen-display);
+  font-family: var(--manual-display);
   font-weight: 500;
   font-optical-sizing: auto;
   font-size: clamp(2.4rem, 5vw, 3.2rem);
@@ -389,7 +328,7 @@ header.header {
 }
 
 .card .title {
-  font-family: var(--numen-display);
+  font-family: var(--manual-display);
   font-weight: 500;
   color: var(--sl-color-white);
 }
@@ -447,15 +386,15 @@ header.header {
 
 /* The three directions a link is drawn in, wherever one is named in the text. */
 .up {
-  color: var(--numen-up);
+  color: var(--manual-up);
 }
 
 .down {
-  color: var(--numen-down);
+  color: var(--manual-down);
 }
 
 .across {
-  color: var(--numen-across);
+  color: var(--manual-across);
 }
 
 :is(.up, .down, .across) code {
