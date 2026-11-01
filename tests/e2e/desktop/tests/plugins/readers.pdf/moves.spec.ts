@@ -54,7 +54,7 @@ test.describe('A PDF tab that is moved', () => {
     expect(holderIndex).toBeGreaterThanOrEqual(0)
     const panes = await getPanes(page).all()
     const sourcePane = panes[holderIndex]!
-    const targetPane = panes[holderIndex === 0 ? 1 : 0]!
+    const targetPane = panes[1 - holderIndex]!
     const from = await readBox(getTab(page, 'pages.pdf'))
     const to = await readBox(targetPane)
     await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)

@@ -5,6 +5,7 @@
  */
 import type { Page } from 'playwright/test'
 import { test, expect, readSavedStates } from '../../support/test.js'
+import { observeFor } from '../../support/browser.js'
 import { openLedger, getAreaPoint, LEDGER } from './ledger.js'
 import {
   describeSamples,
@@ -67,29 +68,26 @@ const playRun = async (page: Page, run: Run): Promise<string[]> => {
   await takeSamples(page)
   for (let time = 0; time < run.times; time += 1) {
     await press(page, run.key)
-    if (run.pause > 0) await page.waitForTimeout(run.pause)
+    if (run.pause > 0) await observeFor(page, run.pause)
     if (slow) found.push(...(await judge(page, run)))
   }
-  await page.waitForTimeout(SETTLE_MS)
+  await observeFor(page, SETTLE_MS)
   if (!slow) found.push(...(await judge(page, run)))
   return found
 }
 
 const judge = async (page: Page, run: Run): Promise<string[]> => {
   const samples = await takeSamples(page)
-  if (process.env['PROBE_LOG'])
-    console.log(
-      `${run.key} ${run.way}: ${describeSamples(samples)} | shifts ${getShiftSeries(samples)}`,
-    )
   const returns = findReturnsOf(samples, run.way)
   if (returns.length === 0) return []
-  return [`${run.key} ${run.way}: ${returns.join(', ')} :: ${describeSamples(samples)}`]
+  const report = `${describeSamples(samples)} | shifts ${getShiftSeries(samples)}`
+  return [`${run.key} ${run.way}: ${returns.join(', ')} :: ${report}`]
 }
 
 /** Goes to the first or the last page of the chapter in front, and waits for the reader to rest there. */
 const goToChapterEdge = async (page: Page, key: 'Home' | 'End'): Promise<void> => {
   await page.keyboard.press(key)
-  await page.waitForTimeout(SETTLE_MS)
+  await observeFor(page, SETTLE_MS)
 }
 
 /** The widths of the window: one column of text fits across it, and two. */
@@ -150,9 +148,9 @@ test.describe('EPUB page turns made while the backend is slow', () => {
 
     // The next chapter is asked for, and the person turns back before it arrives.
     await page.keyboard.press('ArrowRight')
-    await page.waitForTimeout(150)
+    await observeFor(page, 150)
     await page.keyboard.press('ArrowLeft')
-    await page.waitForTimeout(2 * SETTLE_MS)
+    await observeFor(page, 2 * SETTLE_MS)
     const samples = await takeSamples(page)
     const chapters = new Set(samples.filter((one) => !one.isHidden).map((one) => one.chapter))
     expect(chapters.size, describeSamples(samples)).toBe(1)

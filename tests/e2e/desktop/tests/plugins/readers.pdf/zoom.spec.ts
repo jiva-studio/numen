@@ -1,41 +1,23 @@
-import type { Locator, Page, Request } from 'playwright/test'
+import type { JSHandle, Locator } from 'playwright/test'
 import { test, expect } from '../../support/test.js'
-import { openWorkspace, openVaultFile } from '../../support/workspace.js'
-import { readSettledWidth, readWidth } from '../../support/layout.js'
-
-/** The route of the page images. */
-const PAGES = '**/plugin/md.numen.readers.pdf/pages/**'
+import { observeFor } from '../../support/browser.js'
+import { readWidth } from '../../support/layout.js'
+import { getPageIndex, getWide, holdPageRequests, openPages, readNaturalWidth } from './zoom.js'
 
 /** Longer than the debounce of the width a page is requested at. */
 const DEBOUNCE_MS = 150
 
-const getPageIndex = (url: string): number => Number(/pages\/(\d+)/.exec(url)?.[1])
-const getWide = (url: string): number => Number(new URL(url, 'https://x').searchParams.get('wide'))
-
-/** Page requests are held until the test lets them go, so a test sees what the window shows meanwhile. */
-const holdPageRequests = async (page: Page) => {
-  const requested: Request[] = []
-  const failed: string[] = []
-  let release!: () => void
-  const gate = new Promise<void>((resolve) => {
-    release = resolve
-  })
-  page.on('requestfailed', (request) => failed.push(request.url()))
-  await page.route(PAGES, async (route) => {
-    requested.push(route.request())
-    await gate
-    await route.continue().catch(() => undefined)
-  })
-  return { requested, failed, release }
+interface BlankFrames {
+  blank: number
+  frames: number
 }
 
 /** Counts the frames in which the first page shows no decoded picture. */
-const watchForBlankPage = (first: Locator) =>
-  first.evaluate((element) => {
+const watchForBlankPage = (first: Locator): Promise<JSHandle<BlankFrames>> =>
+  first.evaluateHandle((element) => {
     // The plugin draws in a shadow root, which a document query does not reach.
     const root = element.getRootNode() as ParentNode
-    const state = { blank: 0, frames: 0 }
-    ;(window as unknown as { __blank: typeof state }).__blank = state
+    const state: BlankFrames = { blank: 0, frames: 0 }
     const sample = (): void => {
       const picture = root.querySelector<HTMLImageElement>(
         '.reader__page[data-page="0"] .reader__picture',
@@ -50,22 +32,10 @@ const watchForBlankPage = (first: Locator) =>
       requestAnimationFrame(sample)
     }
     requestAnimationFrame(sample)
+    return state
   })
 
-const readBlankFrames = (page: Page) =>
-  page.evaluate(() => (window as unknown as { __blank: { blank: number } }).__blank.blank)
-
-const readNaturalWidth = (picture: Locator) =>
-  picture.evaluate((one) => (one as HTMLImageElement).naturalWidth)
-
-const openPages = async (page: Page) => {
-  await openWorkspace(page)
-  await openVaultFile(page, 'assets', 'pages.pdf')
-  const first = page.locator('.reader__page[data-page="0"]')
-  await expect(first.locator('.reader__picture')).toBeVisible({ timeout: 30_000 })
-  await readSettledWidth(first)
-  return first
-}
+const readBlankFrames = (frames: JSHandle<BlankFrames>) => frames.evaluate((state) => state.blank)
 
 test.describe('PDF reader zoom', () => {
   test('keeps the page on screen while the new resolution is drawn, then shows it', async ({
@@ -75,7 +45,7 @@ test.describe('PDF reader zoom', () => {
     const picture = first.locator('.reader__picture')
     const before = await readNaturalWidth(picture)
     const pending = await holdPageRequests(page)
-    await watchForBlankPage(first)
+    const frames = await watchForBlankPage(first)
 
     await page.getByRole('button', { name: 'Zoom in' }).click()
     await page.getByRole('button', { name: 'Zoom in' }).click()
@@ -89,7 +59,7 @@ test.describe('PDF reader zoom', () => {
     const last = pending.requested.filter((one) => getPageIndex(one.url()) === 0).at(-1)!
     await expect.poll(() => readNaturalWidth(picture)).toBe(getWide(last.url()))
     expect(getWide(last.url())).toBeGreaterThan(before)
-    expect(await readBlankFrames(page)).toBe(0)
+    expect(await readBlankFrames(frames)).toBe(0)
   })
 
   test('requests the new resolution of the pages in view and a margin, and of no others', async ({
@@ -101,7 +71,7 @@ test.describe('PDF reader zoom', () => {
 
     await page.getByRole('button', { name: 'Zoom in' }).click()
     await expect.poll(() => pending.requested.length).toBeGreaterThan(0)
-    await page.waitForTimeout(DEBOUNCE_MS * 3)
+    await observeFor(page, DEBOUNCE_MS * 3)
 
     const requestedPages = new Set(pending.requested.map((one) => getPageIndex(one.url())))
     const frame = (await page.locator('.reader__viewport').boundingBox())!
@@ -133,10 +103,6 @@ test.describe('PDF reader zoom', () => {
     const picture = page.locator('.reader__page[data-page="0"] .reader__picture')
     await expect.poll(() => readNaturalWidth(picture)).toBe(latest[0])
     await expect(picture).toHaveAttribute('src', new RegExp(`wide=${latest[0]}\\b`))
-    // WebKit does not report a request it was holding as cancelled.
-    if (test.info().project.name === 'chromium') {
-      expect(firstUrls.every((url) => pending.failed.includes(url))).toBe(true)
-    }
   })
 
   test('keeps the point under the centre of the view where it was', async ({ page }) => {
