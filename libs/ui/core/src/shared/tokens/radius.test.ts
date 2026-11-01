@@ -1,7 +1,7 @@
 // @vitest-environment node
 /**
  * The corner radii the default theme renders with, and every radius token the
- * repository's components name.
+ * components of this library name.
  *
  * A `var()` naming an undeclared property without a fallback makes the whole
  * declaration compute to its initial value, which for `border-radius` is 0.
@@ -11,9 +11,8 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
-const ROOT = fileURLToPath(new URL('../../../../../../', import.meta.url))
+const SOURCE = fileURLToPath(new URL('../../', import.meta.url))
 const TOKENS = readFileSync(fileURLToPath(new URL('./tokens.css', import.meta.url)), 'utf8')
-const SCANNED = ['apps', 'libs', 'plugins']
 const SKIPPED = new Set(['node_modules', 'dist', 'build', 'built', 'gen', 'coverage', 'testdata'])
 const STYLED = /\.(vue|css)$/
 
@@ -56,12 +55,10 @@ describe('the radius tokens', () => {
   it('cover every radius a component names without a fallback', () => {
     const radii = getDeclaredRadii()
     const undeclared: string[] = []
-    for (const area of SCANNED) {
-      for (const path of listStyledFiles(join(ROOT, area))) {
-        for (const found of readFileSync(path, 'utf8').matchAll(NAMED)) {
-          const name = found[1] ?? ''
-          if (!radii.has(name)) undeclared.push(`${path.slice(ROOT.length)}: ${name}`)
-        }
+    for (const path of listStyledFiles(SOURCE)) {
+      for (const found of readFileSync(path, 'utf8').matchAll(NAMED)) {
+        const name = found[1] ?? ''
+        if (!radii.has(name)) undeclared.push(`${path.slice(SOURCE.length)}: ${name}`)
       }
     }
     expect(undeclared).toEqual([])
