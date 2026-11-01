@@ -271,28 +271,12 @@ function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
   }
 }
 
-export function useSettings({
-  core,
-  words,
-  log,
-  windowTabs,
-  onSizeChanged,
-  getSettingsViews,
-  catalog,
-}: SettingsDeps) {
-  const writeWornMessage = log.getWriter('worn')
-  const sync = syncSetting(core, words, log.getWriter('named'))
-  const writeSettingsMessage = log.getWriter('configured')
-  const rest = createSettingsStore(core, words, writeSettingsMessage)
-  const appearance = createWindowAppearance({
-    core: themes,
-    words,
-    write: writeWornMessage,
-    getPluginName: (pluginId) =>
-      rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId,
-  })
+/** The reads of the settings that follow a change, which the plugins take a while to show. */
+function createRefreshSchedule(
+  rest: { start: () => Promise<void> },
+  reportError: (error: unknown) => void,
+) {
   const refreshTimers: ReturnType<typeof setTimeout>[] = []
-  const reportError = (error: unknown) => writeSettingsMessage(formatErrorMessage(error), 'error')
 
   const clearRefreshTimers = () => {
     while (refreshTimers.length > 0) {
@@ -315,6 +299,35 @@ export function useSettings({
     await rest.start()
     scheduleRefresh()
   }
+
+  return { scheduleRefresh, clearRefreshTimers, refreshAndSchedule }
+}
+
+export function useSettings({
+  core,
+  words,
+  log,
+  windowTabs,
+  onSizeChanged,
+  getSettingsViews,
+  catalog,
+}: SettingsDeps) {
+  const writeWornMessage = log.getWriter('worn')
+  const sync = syncSetting(core, words, log.getWriter('named'))
+  const writeSettingsMessage = log.getWriter('configured')
+  const rest = createSettingsStore(core, words, writeSettingsMessage)
+  const appearance = createWindowAppearance({
+    core: themes,
+    words,
+    write: writeWornMessage,
+    getPluginName: (pluginId) =>
+      rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId,
+  })
+  const reportError = (error: unknown) => writeSettingsMessage(formatErrorMessage(error), 'error')
+  const { scheduleRefresh, clearRefreshTimers, refreshAndSchedule } = createRefreshSchedule(
+    rest,
+    reportError,
+  )
 
   const secrets = createSecretStore(core, {
     words,

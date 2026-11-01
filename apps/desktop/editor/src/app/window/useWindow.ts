@@ -389,6 +389,49 @@ function isSecondaryWindow(): boolean {
   return params.get('window') === 'secondary' || params.has('secondary')
 }
 
+type WindowSettings = ReturnType<typeof useSettings>
+
+function createStatusBar(
+  base: WindowCore,
+  window: WindowServices['window'],
+  settings: WindowSettings,
+) {
+  return useWindowStatusBar({
+    tasks: window.tasks,
+    cancelTask: (id) => core.cancelTask(id),
+    reportCancelError: (error) =>
+      base.writeMessage(`The task was not cancelled: ${formatErrorMessage(error)}`, 'error'),
+    resolveAction: resolveTaskAction,
+    onAction: (pluginId) => settings.configured.openSettings(pluginId),
+  })
+}
+
+/** The dismissal of a notice from the log and from the plugins' notices. */
+function createNoticeDismisser(base: WindowCore) {
+  return (id: string) => {
+    base.log.dismiss(id)
+    base.pluginNotices.dismiss(id)
+  }
+}
+
+/** The closing of a tab: its links go, and the hold runs where the tab stays open. */
+function createTabCloser(base: WindowCore) {
+  return (id: string, hold?: () => void) => {
+    base.tabLinks.removeClosedTab(id)
+    if (!base.windowTabs.releaseTab(id)) hold?.()
+  }
+}
+
+/** The tabs the vault placed, opened in the background; what fails is reported. */
+function openPlacedTabs(base: WindowCore) {
+  return runInBackground(
+    base.windowTabs.openPlacedTabs((kind, error) =>
+      base.writeMessage(`The ${kind} tab did not open: ${formatErrorMessage(error)}`, 'error'),
+    ),
+    (error) => base.writeMessage(`The tabs did not open: ${formatErrorMessage(error)}`, 'error'),
+  )
+}
+
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
   const settingsHolder: { current?: ReturnType<typeof useSettings> } = {}
@@ -408,14 +451,7 @@ export const useWindow = () => {
     settings,
     vaults: getVaults(ctx),
   })
-  const statusBar = useWindowStatusBar({
-    tasks: window.tasks,
-    cancelTask: (id) => core.cancelTask(id),
-    reportCancelError: (error) =>
-      base.writeMessage(`The task was not cancelled: ${formatErrorMessage(error)}`, 'error'),
-    resolveAction: resolveTaskAction,
-    onAction: (pluginId) => settings.configured.openSettings(pluginId),
-  })
+  const statusBar = createStatusBar(base, window, settings)
   const isWritingTabs = ref(false)
   const isLayoutReady = ref(false)
   const openTabs = useOpenTabs({
@@ -428,10 +464,7 @@ export const useWindow = () => {
 
   ctx.tabsHold = openTabs
 
-  const closeTab = (id: string, hold?: () => void) => {
-    base.tabLinks.removeClosedTab(id)
-    if (!base.windowTabs.releaseTab(id)) hold?.()
-  }
+  const closeTab = createTabCloser(base)
 
   useAppHotkeys(getCommands(ctx).onKeyDown)
   const crossWindowTabs = useCrossWindowTabs({
@@ -454,14 +487,7 @@ export const useWindow = () => {
 
   const api = {
     runCommand,
-    openCurrentVault: () =>
-      runInBackground(
-        base.windowTabs.openPlacedTabs((kind, error) =>
-          base.writeMessage(`The ${kind} tab did not open: ${formatErrorMessage(error)}`, 'error'),
-        ),
-        (error) =>
-          base.writeMessage(`The tabs did not open: ${formatErrorMessage(error)}`, 'error'),
-      ),
+    openCurrentVault: () => openPlacedTabs(base),
     isLayoutReady,
     openSettings: (pluginId?: string, filter?: string) =>
       settings.configured.openSettings(pluginId, filter),
@@ -475,10 +501,7 @@ export const useWindow = () => {
     vaultList: getVaults(ctx).vaultList,
     log: base.log,
     notices,
-    dismissNotice: (id: string) => {
-      base.log.dismiss(id)
-      base.pluginNotices.dismiss(id)
-    },
+    dismissNotice: createNoticeDismisser(base),
     statusBar,
     statusViews: base.pluginHost.statusViews,
     palette: getCommands(ctx).palette,

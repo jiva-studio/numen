@@ -886,6 +886,8 @@ export function createBaseConfig(dirname, options = {}) {
         'max-depth': ['error', 3],
         complexity: ['error', 12],
         'max-params': ['error', 4],
+        'max-lines-per-function': ['error', { max: 80, skipBlankLines: true, skipComments: true, IIFEs: true }],
+        'max-statements': ['error', 50],
         'numen/max-composable-return-properties': ['error', { max: 8 }],
         'numen/enforce-vue-reactivity-in-composable': 'error',
         'numen/no-double-type-assertion': 'error',
@@ -1096,6 +1098,16 @@ export function createBaseConfig(dirname, options = {}) {
         'max-depth': 'off',
         complexity: 'off',
         'max-params': 'off',
+        'max-lines-per-function': 'off',
+        'max-statements': 'off',
+      },
+    },
+
+    {
+      files: ['**/*.spec.ts', '**/testing/**', '**/fixtures/**'],
+      rules: {
+        'max-lines-per-function': 'off',
+        'max-statements': 'off',
       },
     },
 

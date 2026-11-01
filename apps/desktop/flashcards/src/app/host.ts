@@ -5,7 +5,7 @@
  * notices; and the views declared for the list of vaults. Every other registration has no slot in
  * this window.
  */
-import { computed, effectScope, shallowRef, type EffectScope } from 'vue'
+import { computed, effectScope, shallowRef, type EffectScope, type ShallowRef } from 'vue'
 import type { Manifest } from '@numen/core-client'
 import {
   createAppInfo,
@@ -76,6 +76,34 @@ function createWindowTab(front: () => PluginView | null) {
   return { tab, openTab, closeTab }
 }
 
+/** The view the window draws, and nothing while no plugin offers one. */
+function createFrontView(views: Readonly<ShallowRef<readonly PluginView[]>>) {
+  return computed<PluginView | null>(() => {
+    const mainViews = views.value.filter((one) => one.registration.placement?.pane === 'main')
+    mainViews.sort(
+      (a, b) => (a.registration.placement?.order ?? 0) - (b.registration.placement?.order ?? 0),
+    )
+    return mainViews[0] ?? null
+  })
+}
+
+/** What the window gives a plugin to register and read, none of which it has a use for. */
+const UNUSED_CAPABILITIES = {
+  registerReader: () => NOTHING,
+  registerCommand: () => NOTHING,
+  registerContextMenu: () => NOTHING,
+  registerAgentProvider: () => NOTHING,
+  registerSettingsView: () => NOTHING,
+  registerStatusView: () => NOTHING,
+  getSetting: () => undefined,
+  onSettingChange: () => NOTHING,
+  onVaultChange: () => NOTHING,
+  onFileSelect: () => NOTHING,
+  // The window raises no vault or file events of its own.
+  emitVaultChange: () => undefined,
+  emitFileSelect: () => undefined,
+} satisfies Partial<PluginContext>
+
 /** The host of the window, whose plugins are given the agent where the window has one. */
 export function createShellHost(agent?: AgentHost) {
   const views = shallowRef<readonly PluginView[]>([])
@@ -83,14 +111,7 @@ export function createShellHost(agent?: AgentHost) {
   const declaredViews = createViewRegistry()
   const notices = createNoticeQueue()
 
-  /** The view the window draws, and nothing while no plugin offers one. */
-  const front = computed<PluginView | null>(() => {
-    const mainViews = views.value.filter((one) => one.registration.placement?.pane === 'main')
-    mainViews.sort(
-      (a, b) => (a.registration.placement?.order ?? 0) - (b.registration.placement?.order ?? 0),
-    )
-    return mainViews[0] ?? null
-  })
+  const front = createFrontView(views)
   const { tab, openTab, closeTab } = createWindowTab(() => front.value)
 
   const addView = (view: PluginView): Disposable => {
@@ -116,12 +137,7 @@ export function createShellHost(agent?: AgentHost) {
       openExternal: createExternalOpener((url) => openExternalUrl(url)),
       registerTabKind: (registration) =>
         add(addView({ pluginId, registration: registration as TabKindRegistration })),
-      registerReader: () => NOTHING,
-      registerCommand: () => NOTHING,
-      registerContextMenu: () => NOTHING,
-      registerAgentProvider: () => NOTHING,
-      registerSettingsView: () => NOTHING,
-      registerStatusView: () => NOTHING,
+      ...UNUSED_CAPABILITIES,
       registerView: (registration) => add(declaredViews.registerView(pluginId, registration)),
       mountView: (capability, element, viewContext) => {
         const view = declaredViews.mountView(capability, element, viewContext)
@@ -129,13 +145,6 @@ export function createShellHost(agent?: AgentHost) {
         return view
       },
       closeTab: (id) => closeTab(id),
-      getSetting: () => undefined,
-      onSettingChange: () => NOTHING,
-      onVaultChange: () => NOTHING,
-      onFileSelect: () => NOTHING,
-      // The window raises no vault or file events of its own.
-      emitVaultChange: () => undefined,
-      emitFileSelect: () => undefined,
       hasPermission: (permission) => manifest?.permissions?.includes(permission) ?? false,
       notices: createPluginNotices(notices, pluginId),
       ...(agent ? { agent } : {}),

@@ -57,38 +57,34 @@ export interface MenuNavigationState {
   readonly onResetNavigation: () => void
 }
 
-export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigationState {
-  const activeSubmenu = ref<ActiveSubmenu | null>(null)
-  const submenuTrigger = ref<MenuTrigger>('pointer')
+/** The submenu that is open, and what opening, closing and choosing do with it. */
+function useSubmenuActions(options: MenuNavigationOptions) {
+  const active = ref<ActiveSubmenu | null>(null)
+  const trigger = ref<MenuTrigger>('pointer')
   const rowElements = new Map<string, { getElement?: () => HTMLElement | null }>()
 
-  const onRegisterRow = (id: string, row: unknown): void => {
-    holdRow(id, row)
-    rowElements.set(id, row as { getElement?: () => HTMLElement | null })
-  }
-
-  const onOpenSubmenu = (item: MenuItem, trigger: MenuTrigger = 'pointer'): void => {
+  const onOpenSubmenu = (item: MenuItem, how: MenuTrigger = 'pointer'): void => {
     if (!item.children || item.children.length === 0) return
     const rowInst = rowElements.get(item.id)
     const el = rowInst?.getElement?.() ?? null
     const position = options.getSubmenuPosition(el) ?? options.getFallbackPosition()
-    activeSubmenu.value = {
+    active.value = {
       id: item.id,
       items: item.children,
       at: position,
       from: el,
     }
-    submenuTrigger.value = trigger
+    trigger.value = how
   }
 
   const onCloseSubmenu = (): void => {
-    activeSubmenu.value = null
+    active.value = null
   }
 
   const onRowHover = (item: MenuItem): void => {
     if (item.children && item.children.length > 0) {
       onOpenSubmenu(item, 'pointer')
-    } else if (activeSubmenu.value && activeSubmenu.value.id !== item.id) {
+    } else if (active.value && active.value.id !== item.id) {
       onCloseSubmenu()
     }
   }
@@ -107,6 +103,27 @@ export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigatio
     }
     options.onEmitChoose(item.id)
     options.onEmitDismiss()
+  }
+
+  return {
+    active,
+    trigger,
+    rowElements,
+    onOpenSubmenu,
+    onCloseSubmenu,
+    onRowHover,
+    onSubmenuChoose,
+    onChoose,
+  }
+}
+
+export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigationState {
+  const submenuActions = useSubmenuActions(options)
+  const { onOpenSubmenu, onCloseSubmenu, onChoose } = submenuActions
+
+  const onRegisterRow = (id: string, row: unknown): void => {
+    holdRow(id, row)
+    submenuActions.rowElements.set(id, row as { getElement?: () => HTMLElement | null })
   }
 
   const {
@@ -147,12 +164,12 @@ export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigatio
   }
 
   const submenu: MenuSubmenuState = {
-    active: activeSubmenu,
-    trigger: submenuTrigger,
+    active: submenuActions.active,
+    trigger: submenuActions.trigger,
     onRegisterRow,
-    onRowHover,
+    onRowHover: submenuActions.onRowHover,
     onChoose,
-    onSubmenuChoose,
+    onSubmenuChoose: submenuActions.onSubmenuChoose,
     onClose: onCloseSubmenu,
   }
 

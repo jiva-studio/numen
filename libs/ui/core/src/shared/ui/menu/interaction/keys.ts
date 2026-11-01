@@ -31,6 +31,56 @@ export interface MenuSubmenuActions {
   readonly onDismissSubmenu?: (() => void) | undefined
 }
 
+/** The arrow keys that open or dismiss a submenu; true where one was taken. */
+function onSubmenuKey(
+  event: KeyboardEvent,
+  item: MenuItem | undefined,
+  actions: MenuSubmenuActions | undefined,
+): boolean {
+  if (event.key === 'ArrowRight' && actions?.onOpenSubmenu) {
+    if (item && item.children && item.children.length > 0) {
+      event.preventDefault()
+      actions.onOpenSubmenu(item)
+      return true
+    }
+  }
+  if (event.key === 'ArrowLeft' && actions?.onDismissSubmenu) {
+    event.preventDefault()
+    actions.onDismissSubmenu()
+    return true
+  }
+  return false
+}
+
+/** The keys that move the keyboard along the items; true where one was taken. */
+function onStepKey(
+  event: KeyboardEvent,
+  stepForward: () => void,
+  stepBack: () => void,
+  step: (delta: number, from: number) => void,
+): boolean {
+  switch (event.key) {
+    case 'ArrowDown':
+      stepForward()
+      return true
+    case 'ArrowUp':
+      stepBack()
+      return true
+    case 'Home':
+      step(1, -1)
+      return true
+    case 'End':
+      step(-1, 0)
+      return true
+    case 'Tab':
+      if (event.shiftKey) stepBack()
+      else stepForward()
+      return true
+    default:
+      return false
+  }
+}
+
 export function useMenuKeys(
   items: () => readonly MenuItem[],
   menu: Readonly<ShallowRef<HTMLElement | null>>,
@@ -65,51 +115,6 @@ export function useMenuKeys(
     if (jumped.at !== null) goTo(jumped.at)
   }
 
-  const onSubmenuKey = (event: KeyboardEvent): boolean => {
-    if (event.key === 'ArrowRight' && submenuActions?.onOpenSubmenu) {
-      const item = items()[here.value]
-      if (item && item.children && item.children.length > 0) {
-        event.preventDefault()
-        submenuActions.onOpenSubmenu(item)
-        return true
-      }
-    }
-    if (event.key === 'ArrowLeft' && submenuActions?.onDismissSubmenu) {
-      event.preventDefault()
-      submenuActions.onDismissSubmenu()
-      return true
-    }
-    return false
-  }
-
-  const onStepKey = (
-    event: KeyboardEvent,
-    stepForward: () => void,
-    stepBack: () => void,
-    step: (delta: number, from: number) => void,
-  ): boolean => {
-    switch (event.key) {
-      case 'ArrowDown':
-        stepForward()
-        return true
-      case 'ArrowUp':
-        stepBack()
-        return true
-      case 'Home':
-        step(1, -1)
-        return true
-      case 'End':
-        step(-1, 0)
-        return true
-      case 'Tab':
-        if (event.shiftKey) stepBack()
-        else stepForward()
-        return true
-      default:
-        return false
-    }
-  }
-
   const onKey = (event: KeyboardEvent): void => {
     const step = (delta: number, from: number): void => {
       event.preventDefault()
@@ -119,7 +124,7 @@ export function useMenuKeys(
     // Counting back from no item is counting back from the first.
     const stepBack = (): void => step(-1, Math.max(here.value, 0))
 
-    if (onSubmenuKey(event)) return
+    if (onSubmenuKey(event, items()[here.value], submenuActions)) return
     if (onStepKey(event, stepForward, stepBack, step)) return
     if (isLetter(event)) {
       event.preventDefault()

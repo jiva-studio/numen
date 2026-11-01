@@ -81,31 +81,7 @@ export function useWindowTabs(unavailable: UnavailableServices = {}) {
   const handle = createWindowHandle({ ...openers, ...queries })
   const navigation = createTabNavigation(open, openers)
   const request = createKindQuestions(byKind)
-  /** A kind whose tab fails to open is reported to `onError` and omitted from the layout. */
-  const openPlacedTabs = async (onError: PlacementError) => {
-    const earlier = getPanes(layout.value.root).flatMap((one) => one.tabs)
-    layout.value = await createPlacedWorkspace([...byKind.values()], openers.createTab, onError)
-    const placedItems = new Set(getPanes(layout.value.root).flatMap((one) => one.tabs))
-    for (const id of earlier) {
-      if (open.value.has(id) && !placedItems.has(id)) layout.value = openTab(layout.value, id)
-    }
-  }
-  /**
-   * The tabs the core kept, opened again with the state each kind saved and laid out by the
-   * placement of their kind. A tab whose kind is not registered opens as a placeholder.
-   */
-  const restoreTabs = (saved: readonly SavedTab[], activeId: string) => {
-    const main: string[] = []
-    const aside: string[] = []
-    for (const one of saved) {
-      if (!open.value.has(one.id)) openers.openSavedTab(one)
-      const kind = byKind.get(one.kind)
-      if (kind?.placement?.pane === 'aside') aside.push(one.id)
-      else main.push(one.id)
-    }
-    layout.value = createWorkspace(main, aside)
-    if (open.value.has(activeId)) layout.value = openTab(layout.value, activeId)
-  }
+  const { openPlacedTabs, restoreTabs } = createTabPlacement({ open, layout, byKind }, openers)
   const onKeyPress = (event: KeyboardEvent): boolean =>
     dispatchTabKeyPress(layout.value, open.value, event)
 
@@ -270,6 +246,40 @@ interface TabOpenerContext extends TabStoreContext {
   byKind: Map<string, AnyTabKind>
   scopes: Map<string, EffectScope>
   unavailable: UnavailableServices
+}
+
+/** The tabs laid out as their kinds place them, and the tabs the core kept laid out again. */
+function createTabPlacement(
+  ctx: Pick<TabOpenerContext, 'open' | 'layout' | 'byKind'>,
+  openers: ReturnType<typeof createTabOpeners>,
+) {
+  const { open, layout, byKind } = ctx
+  /** A kind whose tab fails to open is reported to `onError` and omitted from the layout. */
+  const openPlacedTabs = async (onError: PlacementError) => {
+    const earlier = getPanes(layout.value.root).flatMap((one) => one.tabs)
+    layout.value = await createPlacedWorkspace([...byKind.values()], openers.createTab, onError)
+    const placedItems = new Set(getPanes(layout.value.root).flatMap((one) => one.tabs))
+    for (const id of earlier) {
+      if (open.value.has(id) && !placedItems.has(id)) layout.value = openTab(layout.value, id)
+    }
+  }
+  /**
+   * The tabs the core kept, opened again with the state each kind saved and laid out by the
+   * placement of their kind. A tab whose kind is not registered opens as a placeholder.
+   */
+  const restoreTabs = (saved: readonly SavedTab[], activeId: string) => {
+    const main: string[] = []
+    const aside: string[] = []
+    for (const one of saved) {
+      if (!open.value.has(one.id)) openers.openSavedTab(one)
+      const kind = byKind.get(one.kind)
+      if (kind?.placement?.pane === 'aside') aside.push(one.id)
+      else main.push(one.id)
+    }
+    layout.value = createWorkspace(main, aside)
+    if (open.value.has(activeId)) layout.value = openTab(layout.value, activeId)
+  }
+  return { openPlacedTabs, restoreTabs }
 }
 
 /** Queries for inspecting tabs in the window. */

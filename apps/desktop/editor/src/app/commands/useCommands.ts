@@ -2,16 +2,11 @@
  * Command palette, keyboard shortcut dispatch, and command execution.
  */
 
-import { computed, watch, type Component } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
-import type { CommandNote, MenuEntry } from '@numen/plugin-host'
-import type { WelcomeAction } from '@numen/shell'
 import { runInBackground } from '@numen/ui'
 import {
   isChord,
   findChordCommand,
-  findShortcutKeys,
-  registerCommand,
   runInvocation,
   useCommandPalette,
   useSearch,
@@ -25,6 +20,8 @@ import {
   type VaultRef,
 } from '@/features/command-palette'
 import { createCommandDeps } from './commandDeps'
+import { usePluginCommands } from './usePluginCommands'
+import { watchCommandLists } from './watchCommandLists'
 import type { TabsHold } from './leaveVault'
 import type { DeclaredCommands } from './declaredCommands'
 import type { FileMenuCommands } from './fileMenuCommands'
@@ -35,7 +32,6 @@ import { WORDS } from '@/shared/words'
 import { createPluginSettingCommands } from '../window/useSettings'
 import type { NoteCreator } from '@/entities/note'
 import type { VaultCore } from '../vault'
-import type { PluginPaletteCommand } from '@numen/plugin-host'
 
 type Words = typeof WORDS
 
@@ -80,17 +76,14 @@ export function useCommands(options: CommandsDepsOptions) {
   const { core, words, windowTabs, getTarget, knows, kept, runs, coverage, writeMessage } = options
   const { pluginHost } = options
 
-  const getPluginCommands = () => pluginHost?.getPaletteCommands() ?? []
-  /** How a plugin's command is drawn: its keystroke and its icon, where it declares them. */
-  const getPluginLooks = (cmd: PluginPaletteCommand) => {
-    const keys = cmd.shortcut ? findShortcutKeys(cmd.shortcut, navigator.userAgent) : undefined
-    return {
-      ...(keys ? { keys } : {}),
-      ...(cmd.icon ? { icon: cmd.icon as Component } : {}),
-    }
-  }
-  /** The command a plugin declares to put a note in front, and nothing where none does. */
-  const findNoteDestination = () => getPluginCommands().find((cmd) => cmd.isNoteDestination)
+  const {
+    getPaletteEntries,
+    findNoteDestination,
+    getCommandNote,
+    showNote,
+    getNoteCommands,
+    pluginWays,
+  } = usePluginCommands(core, pluginHost)
 
   const palette = useSearch(core, words, {
     coverage,
@@ -100,86 +93,10 @@ export function useCommands(options: CommandsDepsOptions) {
     ...createPluginSettingCommands(options.rest.plugins?.value ?? []),
     ...(options.declaredCommands?.paletteCommands.value ?? []),
     ...(options.fileMenuCommands?.paletteCommands.value ?? []),
-    ...getPluginCommands().map((cmd) => ({
-      id: cmd.id,
-      text: cmd.title,
-      ...getPluginLooks(cmd),
-      group: cmd.scope === 'note' ? ('note' as const) : ('window' as const),
-      isAvailable: (target: CommandTarget) =>
-        cmd.scope !== 'note' || (target.isReady && target.path !== ''),
-    })),
+    ...getPaletteEntries(),
   ])
 
-  /**
-   * The commands the plugins declare over the window with a keystroke of their
-   * own, as the screen of a window with no tab offers them.
-   */
-  const pluginWays = computed<readonly WelcomeAction[]>(() =>
-    getPluginCommands()
-      .filter((cmd) => cmd.scope !== 'note' && cmd.shortcut)
-      .map((cmd) => ({ id: cmd.id, text: cmd.title, ...getPluginLooks(cmd) })),
-  )
-
-  /** The commands the plugins declare over one note, in the words the palette offers them by. */
-  const getNoteCommands = (): readonly MenuEntry[] =>
-    getPluginCommands()
-      .filter((cmd) => cmd.scope === 'note')
-      .map((cmd) => ({ id: cmd.id, text: cmd.title, group: 'note' }))
-
-  const getCommandNote = async (path: string, title: string): Promise<CommandNote> => ({
-    path,
-    title,
-    type: path === '' ? 'note' : ((await core.fileKinds([path])).get(path)?.type ?? 'note'),
-  })
-
-  /** The note put in front by the command a plugin declares for it; false where none declares one. */
-  const showNote = async (path: string): Promise<boolean> => {
-    const destination = findNoteDestination()
-    if (!destination || !pluginHost) return false
-    return pluginHost.executeCommand(destination.id, await getCommandNote(path, ''))
-  }
-
-  if (pluginHost) {
-    let unregisterAll: readonly (() => void)[] = []
-    watch(
-      () => pluginHost.getPaletteCommands(),
-      (list) => {
-        for (const unregister of unregisterAll) unregister()
-        unregisterAll = list.map((cmd) =>
-          registerCommand(cmd.id, async (invocation) => {
-            await pluginHost.executeCommand(
-              cmd.id,
-              await getCommandNote(invocation.path, invocation.title),
-            )
-          }),
-        )
-      },
-      { immediate: true },
-    )
-  }
-
-  const { declaredCommands } = options
-  if (declaredCommands) {
-    const loadDeclared = () => {
-      declaredCommands
-        .load()
-        .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
-    }
-    loadDeclared()
-    watch(commands.open, (isOpen) => {
-      if (isOpen) loadDeclared()
-    })
-  }
-
-  const { fileMenuCommands } = options
-  if (fileMenuCommands) {
-    watch(commands.open, (isOpen) => {
-      if (!isOpen) return
-      fileMenuCommands
-        .load(getTarget().file)
-        .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
-    })
-  }
+  watchCommandLists(options, commands.open, getTarget)
 
   const commandDeps: CommandDeps = createCommandDeps({
     ...options,

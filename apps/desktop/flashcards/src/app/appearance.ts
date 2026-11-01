@@ -3,7 +3,7 @@
  * a color pair, offered as items of the shell's command palette. Choosing one writes it to the
  * settings through the theme service and dresses the page in it.
  */
-import { ref, shallowRef } from 'vue'
+import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import {
   THEME_MODE,
   THEME_ORIGIN,
@@ -90,52 +90,16 @@ function getModeWord(code: ThemeModeCode): Mode {
   return MODES.find((word) => MODE_CODES[word] === code) ?? 'system'
 }
 
-/** The state of the appearance, the palette groups it offers, and the choices made from them. */
-export function createAppearance(deps: AppearanceDeps) {
-  const { client, getPluginName, onError, document: page = document } = deps
-  const themes = shallowRef<readonly ThemeEntry[]>([])
-  const applied = ref('')
-  const mode = ref<Mode>('system')
+interface AppearanceState {
+  readonly themes: Readonly<ShallowRef<readonly ThemeEntry[]>>
+  readonly applied: Readonly<Ref<string>>
+  readonly mode: Readonly<Ref<Mode>>
+  readonly getPluginName: (pluginId: string) => string
+}
 
+/** The palette groups the themes and the modes make, filtered by the text typed. */
+function createPaletteGroups({ themes, applied, mode, getPluginName }: AppearanceState) {
   const isPinned = () => themes.value.find((one) => one.name === applied.value)?.isPinned ?? false
-
-  /** The page dressed in a theme and a mode. */
-  const dress = async (name: string, half: Mode) => {
-    const css = await client.readTheme(name)
-    findStyle(IS_MODE, page).textContent = `:root { color-scheme: ${SCHEMES[half]}; }`
-    findStyle(IS_THEME, page).textContent = css
-  }
-
-  /** The themes and the choice read again, and the page dressed where the choice changed. */
-  const refresh = async () => {
-    const before = { applied: applied.value, mode: mode.value }
-    try {
-      const answer = await client.listThemes()
-      themes.value = answer.themes
-      applied.value = answer.applied
-      mode.value = getModeWord(answer.mode)
-      const isChanged = before.applied !== '' && before.applied !== applied.value
-      if (isChanged || before.mode !== mode.value) await dress(applied.value, mode.value)
-    } catch (error) {
-      onError(`${WORDS.themesUnlisted} ${formatErrorMessage(error)}`)
-    }
-  }
-
-  /** Writes a choice, and dresses the page in it where it was written. */
-  const choose = async (name: string, half: Mode) => {
-    try {
-      const reason = await client.writeAppearance(name, MODE_CODES[half])
-      if (reason !== '') {
-        onError(reason)
-        return
-      }
-      applied.value = name
-      mode.value = half
-      await dress(name, half)
-    } catch (error) {
-      onError(formatErrorMessage(error))
-    }
-  }
 
   const getThemeItem = (one: ThemeEntry): PaletteItem => ({
     id: THEME_PREFIX + one.name,
@@ -178,13 +142,61 @@ export function createAppearance(deps: AppearanceDeps) {
   ]
 
   /** The groups whose items contain the text, ignoring case. */
-  const getGroups = (typed: string): readonly PaletteGroup[] => {
+  return (typed: string): readonly PaletteGroup[] => {
     const needle = typed.trim().toLowerCase()
     return [...getThemeGroups(), ...getModeGroups()].map((group) => ({
       ...group,
       items: group.items.filter((one) => one.title.toLowerCase().includes(needle)),
     }))
   }
+}
+
+/** The state of the appearance, the palette groups it offers, and the choices made from them. */
+export function createAppearance(deps: AppearanceDeps) {
+  const { client, getPluginName, onError, document: page = document } = deps
+  const themes = shallowRef<readonly ThemeEntry[]>([])
+  const applied = ref('')
+  const mode = ref<Mode>('system')
+
+  /** The page dressed in a theme and a mode. */
+  const dress = async (name: string, half: Mode) => {
+    const css = await client.readTheme(name)
+    findStyle(IS_MODE, page).textContent = `:root { color-scheme: ${SCHEMES[half]}; }`
+    findStyle(IS_THEME, page).textContent = css
+  }
+
+  /** The themes and the choice read again, and the page dressed where the choice changed. */
+  const refresh = async () => {
+    const before = { applied: applied.value, mode: mode.value }
+    try {
+      const answer = await client.listThemes()
+      themes.value = answer.themes
+      applied.value = answer.applied
+      mode.value = getModeWord(answer.mode)
+      const isChanged = before.applied !== '' && before.applied !== applied.value
+      if (isChanged || before.mode !== mode.value) await dress(applied.value, mode.value)
+    } catch (error) {
+      onError(`${WORDS.themesUnlisted} ${formatErrorMessage(error)}`)
+    }
+  }
+
+  /** Writes a choice, and dresses the page in it where it was written. */
+  const choose = async (name: string, half: Mode) => {
+    try {
+      const reason = await client.writeAppearance(name, MODE_CODES[half])
+      if (reason !== '') {
+        onError(reason)
+        return
+      }
+      applied.value = name
+      mode.value = half
+      await dress(name, half)
+    } catch (error) {
+      onError(formatErrorMessage(error))
+    }
+  }
+
+  const getGroups = createPaletteGroups({ themes, applied, mode, getPluginName })
 
   /** Applies the item the palette reports chosen; an item of neither kind changes nothing. */
   const chooseItem = async (id: string) => {
