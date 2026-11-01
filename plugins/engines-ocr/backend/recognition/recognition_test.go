@@ -16,9 +16,30 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
+	"github.com/tetratelabs/wazero"
 )
 
 const pluginID = "md.numen.engines.ocr"
+
+// cacheEnv names the folder the tests of this package compile PDFium into once.
+const cacheEnv = "NUMEN_TEST_WASM_CACHE"
+
+// TestMain gives every reader of the tests one folder to cache the compiled PDFium in, because each
+// reader compiles it again otherwise and a run under the race detector takes minutes for each.
+func TestMain(m *testing.M) {
+	dir, err := os.MkdirTemp("", "numen-ocr-wasm-")
+	if err != nil {
+		os.Exit(1)
+	}
+	if err := os.Setenv(cacheEnv, dir); err != nil {
+		os.Exit(1)
+	}
+	code := m.Run()
+	if err := os.RemoveAll(dir); err != nil && code == 0 {
+		code = 1
+	}
+	os.Exit(code)
+}
 
 // pages returns "page N" for the Nth page, in one block whose two lines are in the top
 // and the bottom half of the page, and counts the pages.
@@ -102,6 +123,16 @@ func newScene(t *testing.T) *scene {
 	if err != nil {
 		t.Fatal(err)
 	}
+	compilation, err := wazero.NewCompilationCacheWithDir(os.Getenv(cacheEnv))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := compilation.Close(context.WithoutCancel(t.Context())); err != nil {
+			t.Error(err)
+		}
+	})
+	run.SetCompilationCache(compilation)
 	s.run = run
 	return s
 }

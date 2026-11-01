@@ -19,6 +19,7 @@ import (
 	"github.com/klippa-app/go-pdfium/references"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/webassembly"
+	"github.com/tetratelabs/wazero"
 	_ "golang.org/x/image/webp" // a scan saved as WebP
 )
 
@@ -45,11 +46,13 @@ type Document interface {
 type Reader struct {
 	mu      sync.Mutex
 	workers pdfium.Pool
+	// compilationCache holds the compiled PDFium for the worker that starts; nil compiles it there.
+	compilationCache wazero.CompilationCache
 }
 
 // NewReader returns a reader that has started no worker.
 func NewReader() *Reader {
-	return &Reader{mu: sync.Mutex{}, workers: nil}
+	return &Reader{mu: sync.Mutex{}, workers: nil, compilationCache: nil}
 }
 
 // Open opens the bytes of the file at the path, by its extension.
@@ -89,7 +92,7 @@ func (r *Reader) getWorker() (pdfium.Pdfium, error) {
 	if r.workers == nil {
 		started, err := webassembly.Init(webassembly.Config{
 			Context: nil, MinIdle: 0, MaxIdle: 0, MaxTotal: 1, WASM: nil, FSConfig: nil,
-			RuntimeConfig: nil, Stdout: nil, Stderr: nil, RandomSource: nil, ReuseWorkers: false,
+			RuntimeConfig: r.getRuntimeConfig(), Stdout: nil, Stderr: nil, RandomSource: nil, ReuseWorkers: false,
 		})
 		if err != nil {
 			return nil, err

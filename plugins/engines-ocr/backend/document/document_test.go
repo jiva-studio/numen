@@ -2,6 +2,7 @@ package document_test
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"image"
@@ -10,11 +11,55 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/document"
+	"github.com/tetratelabs/wazero"
 )
+
+// cacheEnv names the folder the tests of this package compile PDFium into once.
+const cacheEnv = "NUMEN_TEST_WASM_CACHE"
+
+// TestMain gives every reader of the tests one folder to cache the compiled PDFium in, because each
+// reader compiles it again otherwise and a run under the race detector takes minutes for each.
+func TestMain(m *testing.M) {
+	dir, err := os.MkdirTemp("", "numen-ocr-wasm-")
+	if err != nil {
+		os.Exit(1)
+	}
+	if err := os.Setenv(cacheEnv, dir); err != nil {
+		os.Exit(1)
+	}
+	code := m.Run()
+	if err := os.RemoveAll(dir); err != nil && code == 0 {
+		code = 1
+	}
+	os.Exit(code)
+}
+
+// newCompilation returns the compilation cache of this test run, closed when the test ends.
+func newCompilation(t *testing.T) wazero.CompilationCache {
+	t.Helper()
+	compilation, err := wazero.NewCompilationCacheWithDir(os.Getenv(cacheEnv))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := compilation.Close(context.WithoutCancel(t.Context())); err != nil {
+			t.Error(err)
+		}
+	})
+	return compilation
+}
+
+// newReader returns a reader that compiles PDFium through the cache of this test run.
+func newReader(t *testing.T) *document.Reader {
+	t.Helper()
+	reader := document.NewReader()
+	reader.SetCompilationCache(newCompilation(t))
+	return reader
+}
 
 func open(t *testing.T, path string, raw []byte) document.Document {
 	t.Helper()
-	doc, err := document.NewReader().Open(path, raw)
+	doc, err := newReader(t).Open(path, raw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +117,7 @@ func TestImageIsOnePage(t *testing.T) {
 }
 
 func TestOpenRejectsInvalidBytes(t *testing.T) {
-	reader := document.NewReader()
+	reader := newReader(t)
 	for path, raw := range map[string][]byte{
 		"a.pdf": []byte("INVALID_PDF_HEADER"), "b.pdf": nil, "c.png": []byte("not an image"),
 	} {

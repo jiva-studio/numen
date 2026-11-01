@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/document"
+	"github.com/tetratelabs/wazero"
 )
 
 // VersionKey is the key the plugin keeps the recognition of a file under: one recognition a file.
@@ -78,6 +79,11 @@ func New(h Host, open func(ctx context.Context) (Recogniser, error)) (*Recogniti
 		return nil, errors.New("a recognition needs the vault, the store, the texts, the queue and a recogniser")
 	}
 	return &Recognition{host: h, open: open, documents: document.NewReader()}, nil
+}
+
+// SetCompilationCache makes the reader of documents compile PDFium through cache.
+func (r *Recognition) SetCompilationCache(cache wazero.CompilationCache) {
+	r.documents.SetCompilationCache(cache)
 }
 
 // Request is one file to recognise. Vault is the vault that contains it, and is
