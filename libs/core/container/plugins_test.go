@@ -62,7 +62,7 @@ func TestWhatThePluginGoModRulesReject(t *testing.T) {
 	const head = "module " + pluginsPrefix + "sample\n\ngo 1.26\n\n"
 	for _, one := range []struct {
 		name, text string
-		rejected    int
+		rejected   int
 	}{
 		{"the SDK and third-party code", head + "require (\n\t" + sdkModule + " v0.0.0\n\t" + sdkModule + "/host v0.0.0\n\tgolang.org/x/net v0.1.0\n)\n", 0},
 		{"the notes library as Go records it for the SDK", head + "require " + notesModule + " v0.0.0 // indirect\n", 0},
