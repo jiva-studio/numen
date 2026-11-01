@@ -79,6 +79,15 @@ export const writePluginSetting = (
 ): Promise<void> => writeSetting(request, ['plugins', plugin, key], value)
 
 /**
+ * Stops a plugin and starts it again, which takes the tasks it reported out of the list: the core
+ * lists a failed task until the plugin ends it or stops.
+ */
+export const restartPlugin = async (request: APIRequestContext, plugin: string): Promise<void> => {
+  await writePluginSetting(request, plugin, 'enabled', false)
+  await writePluginSetting(request, plugin, 'enabled', true)
+}
+
+/**
  * The origin of the stand-ins `scripts/stand-ins.mjs` starts, read from the release feed address
  * the run's settings give the updater plugin.
  */

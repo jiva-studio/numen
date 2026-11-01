@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '../../support/test.js'
 import { getPaletteField, openWorkspace, runCommand } from '../../support/workspace.js'
-import { deleteVaultFiles, listPluginFiles } from '../../support/media.js'
+import { deleteVaultFiles, listPluginFiles, restartPlugin } from '../../support/media.js'
 import { listFilePaths } from '../../support/vault.js'
 
 /** The plugin that imports links, and keeps their copies in its folder of the vault. */
@@ -87,8 +87,10 @@ test.describe('a link to a video', () => {
 test.describe('a link to an address that answers 404', () => {
   const made: string[] = []
 
-  test.afterEach(() => {
+  // The failed fetch stays in the list of tasks until the importer stops.
+  test.afterEach(async ({ request }) => {
     deleteVaultFiles(...made.splice(0))
+    await restartPlugin(request, IMPORTER)
   })
 
   test('reports that its text was not fetched', async ({ page, request }) => {

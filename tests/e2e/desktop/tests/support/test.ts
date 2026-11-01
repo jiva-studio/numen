@@ -3,7 +3,8 @@
  * The window opens the tabs the core kept, and every test shares the vault, so each one starts
  * from the tabs a new vault opens with.
  */
-import { test as base, type APIRequestContext } from 'playwright/test'
+import https from 'node:https'
+import { expect, test as base, type APIRequestContext } from 'playwright/test'
 
 export * from 'playwright/test'
 
@@ -41,7 +42,58 @@ export const readActivePath = async (request: APIRequestContext): Promise<string
   return tabs.find((one) => one.id === activeId)?.path ?? ''
 }
 
-export const test = base.extend<{ isFreshTabs: void }>({
+/** The vault fixture whose text cannot be read, which the core reports as a failed task in every run. */
+const UNREADABLE_FIXTURE = 'corrupted.pdf'
+
+/** The first list of tasks the editor window of the debug server reports, as a Connect stream. */
+const readTasks = (baseURL: string): Promise<{ title?: string; about?: string; error?: string }[]> =>
+  new Promise((resolve, reject) => {
+    const origin = new URL(baseURL)
+    const json = Buffer.from(JSON.stringify({ window: 'editor' }))
+    const header = Buffer.alloc(5)
+    header.writeUInt32BE(json.length, 1)
+    const call = https.request(
+      {
+        host: origin.hostname,
+        port: Number(origin.port),
+        path: '/numen.v1.WindowService/WatchTasks',
+        method: 'POST',
+        rejectUnauthorized: false,
+        headers: { 'Content-Type': 'application/connect+json' },
+      },
+      (answer) => {
+        let received = Buffer.alloc(0)
+        answer.on('data', (chunk: Buffer) => {
+          received = Buffer.concat([received, chunk])
+          if (received.length < 5 || received.length < 5 + received.readUInt32BE(1)) return
+          call.destroy()
+          const message = JSON.parse(received.subarray(5, 5 + received.readUInt32BE(1)).toString())
+          resolve((message as { tasks?: { title?: string; about?: string; error?: string }[] }).tasks ?? [])
+        })
+        answer.on('error', reject)
+      },
+    )
+    call.on('error', reject)
+    call.end(Buffer.concat([header, json]))
+  })
+
+/** The tasks that ended in failure, each as its title, what it is about and why it failed. */
+export const readFailedTasks = async (baseURL: string): Promise<string[]> =>
+  (await readTasks(baseURL))
+    .filter((one) => one.error)
+    .map((one) => [one.title, one.about, one.error].filter(Boolean).join(': '))
+    .filter((text) => !text.includes(UNREADABLE_FIXTURE))
+
+export const test = base.extend<{ isFreshTabs: void; hasNoFailedTask: void }>({
+  hasNoFailedTask: [
+    async ({ baseURL }, use) => {
+      await use()
+      await expect
+        .poll(() => readFailedTasks(baseURL ?? ''), { message: 'the test leaves a failed task in the status bar' })
+        .toEqual([])
+    },
+    { auto: true },
+  ],
   isFreshTabs: [
     async ({ request }, use) => {
       await forgetOpenTabs(request)
