@@ -25,7 +25,7 @@
     "build": "vue-tsc --build && vite build",
     "test": "npm run test:unit && npm run test:stories",
     "test:unit": "vitest run --project unit",
-    "test:stories": "vitest run --project \"stories (chromium)\" && vitest run --project \"stories (webkit)\"",
+    "test:stories": "node ../../../tools/ci-stories/run.mjs libs/ui/shell libs/ui/shell/src",
     "typecheck": "vue-tsc --build --force",
     "lint": "eslint ."
   },

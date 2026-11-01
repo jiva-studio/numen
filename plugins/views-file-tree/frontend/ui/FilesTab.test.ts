@@ -7,7 +7,7 @@ import { Menu, Tree } from '@numen/ui'
 import type { Entry } from '../types'
 import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
-import { useFileTree, ROOT } from '../model/useFileTree'
+import { createFileTree, ROOT } from '../model/useFileTree'
 import { renderDeps } from '../fixtures/host'
 
 const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
@@ -32,7 +32,7 @@ const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 /** Mounts a tab of that vault, and records what it requested from the window. */
 const mountFiles = async (open: readonly string[] = []) => {
   const isDone: string[] = []
-  const list = useFileTree({ list: async (folderPath: string) => target[folderPath] ?? [] })
+  const list = createFileTree({ list: async (folderPath: string) => target[folderPath] ?? [] })
   const tab: FilesTabState = useFilesTab(list, {
     ...renderDeps,
     openEntry: (entry) => {
@@ -260,7 +260,7 @@ describe('the menu on a row', () => {
 
 describe('a folder that could not be read', () => {
   it('is returned in the tab', async () => {
-    const list = useFileTree({
+    const list = createFileTree({
       list: async () => {
         throw new Error('the vault is not there')
       },

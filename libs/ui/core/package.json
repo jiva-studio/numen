@@ -28,7 +28,7 @@
     "storybook:build": "storybook build",
     "test": "npm run test:unit && npm run test:stories",
     "test:unit": "vitest run --project unit",
-    "test:stories": "vitest run --project \"stories (chromium)\" && vitest run --project \"stories (webkit)\"",
+    "test:stories": "node ../../../tools/ci-stories/run.mjs libs/ui/core libs/ui/core/src",
     "test:watch": "vitest --project unit",
     "typecheck": "vue-tsc --build --force",
     "lint": "eslint ."

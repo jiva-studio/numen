@@ -149,5 +149,3 @@ export function createCardModelTabs(cards: Cards, options: CardModelTabsOptions)
     store,
   }
 }
-
-export const useCardModelTabs = createCardModelTabs

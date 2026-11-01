@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
-import { useFileTree, ROOT } from '../model/useFileTree'
+import { createFileTree, ROOT } from '../model/useFileTree'
 import type { Entry } from '../types'
 import { renderDeps } from '../fixtures/host'
 
@@ -36,7 +36,7 @@ const VAULT: Record<string, readonly Entry[]> = {
 
 /** A tab of that vault, reading the folders named as it is drawn. */
 const createFilesTab = (open: readonly string[]): FilesTabState => {
-  const list = useFileTree({ list: async (folderPath: string) => VAULT[folderPath] ?? [] })
+  const list = createFileTree({ list: async (folderPath: string) => VAULT[folderPath] ?? [] })
   const state: FilesTabState = useFilesTab(list, {
     ...renderDeps,
     openEntry: () => undefined,

@@ -60,6 +60,7 @@ export const ReadOnly: Story = { render: renderEditor(MARKED_UP, { isReadonly: t
    line after it, and a line at the end to park the caret on. */
 const BULLET = '- a bullet'
 const TASK = '- [ ] something to do'
+const RULE = '---'
 const CONCEALED = [
   '# Heading one',
   '## Heading two',
@@ -72,11 +73,12 @@ const CONCEALED = [
   '> A quotation.',
   BULLET,
   TASK,
+  RULE,
 ]
 
-/* Two constructs drawn as something other than text. What is drawn takes its
-   own height, which is not the height of the line it was written on. */
-const REDRAWN = ['---', `![a picture](${PICTURE})`]
+/* A construct drawn as something other than text. What is drawn takes its own
+   height, which is not the height of the line it was written on. */
+const REDRAWN = [`![a picture](${PICTURE})`]
 
 const EVERY = [...CONCEALED, ...REDRAWN]
 const STEADY = `${EVERY.join('\n\n')}\n\nSomething well away from all of it.\n`
@@ -122,9 +124,9 @@ const reach = (name: string) => {
 
 /**
  * The line a construct is written on, measured with the marks concealed and
- * with them back. Text drawn as text keeps its height; a rule and a picture
- * are drawn as themselves and take their own. Every measurement is made under
- * the machine's font and under both cut faces.
+ * with them back. Text drawn as text keeps its height, and so does a rule, which
+ * is drawn in the height of a line; a picture is drawn as itself and takes its
+ * own. Every measurement is made under the machine's font and under both cut faces.
  */
 export const Steady: Story = {
   render: renderEditor(STEADY),
@@ -181,6 +183,12 @@ export const Steady: Story = {
           same: false,
         })
       }
+
+      // The rule is drawn until the caret is on it.
+      await setCaret(PARKED, 0)
+      await expect(view.contentDOM.querySelectorAll('.cm-rule')).toHaveLength(1)
+      await setCaret(getLineOf(RULE), 1)
+      await expect(view.contentDOM.querySelectorAll('.cm-rule')).toHaveLength(0)
 
       // the caret to be drawn, and a click there lands on that line.
       await setCaret(PARKED, 0)

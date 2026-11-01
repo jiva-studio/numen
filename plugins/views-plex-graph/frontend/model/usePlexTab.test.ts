@@ -7,7 +7,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { ref, type Component } from 'vue'
-import { usePlexTab, type PlexTabState, type PlexTabDeps } from './usePlexTab'
+import { createPlexTab, type PlexTabState, type PlexTabDeps } from './usePlexTab'
 import { ITEMS, NEW_NOTE, NONE } from '../lib/menu'
 import { usePlexView as viewing, type PlexView } from './usePlexView'
 import { WORDS as words } from '../words'
@@ -74,7 +74,7 @@ const tab = (
     },
     creatable: ['parent', 'child', 'jump'],
   }
-  const state = usePlexTab(plex.view, deps)
+  const state = createPlexTab(plex.view, deps)
   /** The label of a note in the graph, which a gesture on it carries. */
   const node = (path: string) => getNode(state, path.replace(/\.md$/, ''))
   return {
@@ -233,7 +233,7 @@ describe('a plex drawing nothing', () => {
       followMoves: () => undefined,
       close: () => undefined,
     }
-    return usePlexTab(view as unknown as PlexView, {
+    return createPlexTab(view as unknown as PlexView, {
       editor: createVault().editor,
       isReady: ref(true),
       isNesting: ref(true),
@@ -333,7 +333,7 @@ describe('what a note in the picture is called', () => {
 describe('the picture', () => {
   it('is nothing while the window has nothing true to draw', () => {
     const plex = viewOn('Root.md')
-    const state = usePlexTab(plex.view, {
+    const state = createPlexTab(plex.view, {
       editor: createVault().editor,
       isReady: ref(false),
       isNesting: ref(true),
@@ -509,7 +509,7 @@ describe('the headings a node nests', () => {
     // change followed while a travel is still out.
     const answers: ((target: ReadonlyMap<string, readonly NoteHeading[]>) => void)[] = []
     const one = tab('Root.md')
-    const plex = usePlexTab(one.state.view, {
+    const plex = createPlexTab(one.state.view, {
       editor: createVault().editor,
       isReady: ref(true),
       isNesting: ref(true),
@@ -711,7 +711,7 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
       }
     },
   })
-  const state = usePlexTab(view, {
+  const state = createPlexTab(view, {
     editor: vault.editor,
     isReady: ref(true),
     isNesting: ref(true),
@@ -1131,7 +1131,7 @@ describe('quick-link popover from a node handle', () => {
     const searchMock = vi.fn().mockResolvedValue([{ path: 'Note.md', title: 'Note' }])
     const plex = viewOn('Root.md', [])
     const vault = createVault()
-    const stateWithSearch = usePlexTab(plex.view, {
+    const stateWithSearch = createPlexTab(plex.view, {
       editor: vault.editor,
       isReady: ref(true),
       isNesting: ref(true),
@@ -1155,7 +1155,7 @@ describe('quick-link popover from a node handle', () => {
     expect(searchMock).toHaveBeenCalledWith('test')
     expect(results).toEqual([{ path: 'Note.md', title: 'Note' }])
 
-    const stateNoSearch = usePlexTab(plex.view, {
+    const stateNoSearch = createPlexTab(plex.view, {
       editor: vault.editor,
       isReady: ref(true),
       isNesting: ref(true),
@@ -1212,7 +1212,7 @@ describe('quick-link popover from a node handle', () => {
   })
 })
 
-describe('usePlexTab edge cases and helpers', () => {
+describe('createPlexTab edge cases and helpers', () => {
   it('covers openHeading edge cases, dismissals and menu choices', async () => {
     const one = tab('Root.md', ['Child.md'])
     one.state.openHeading('unknown-node', '12')

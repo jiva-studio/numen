@@ -2,7 +2,7 @@ import { Gauge, Layers, LayoutTemplate } from '@lucide/vue'
 import { definePlugin, NOTE_SCOPE, type PluginContext } from '@numen/plugin-sdk'
 import { cards, presets } from './cards'
 import { useDeckTabs } from './deck/model/useDeckTabs'
-import { useCardModelTabs } from './card-model/kind'
+import { createCardModelTabs } from './card-model/kind'
 import { usePresetTab } from './preset/kind'
 import { WORDS as presetWords } from './preset/words'
 import {
@@ -19,7 +19,7 @@ export { default as DeckTab } from './deck/ui/DeckTab.vue'
 export { default as CardModelTab } from './card-model/ui/CardModelTab.vue'
 export { default as PresetTab } from './preset/ui/PresetTab.vue'
 export { useDeckTabs } from './deck/model/useDeckTabs'
-export { useCardModelTabs } from './card-model/kind'
+export { createCardModelTabs } from './card-model/kind'
 export { usePresetTab } from './preset/kind'
 export type { DeckTabState } from './deck/types'
 export type { CardModelTabState } from './card-model/types'
@@ -59,7 +59,7 @@ export function activate(context: PluginContext): void {
     closeTab,
     writeMessage: workspace.getMessageWriter('deck'),
   })
-  const cardModels = useCardModelTabs(cards, {
+  const cardModels = createCardModelTabs(cards, {
     buffers,
     closeTab,
     writeMessage: workspace.getMessageWriter('card-model'),

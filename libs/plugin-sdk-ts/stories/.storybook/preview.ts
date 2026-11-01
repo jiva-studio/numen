@@ -13,10 +13,11 @@ import './preview.css'
 configure({ asyncUtilTimeout: 5_000 })
 
 /**
- * The story the plugins' walk is proved against. The number is the whole of
- * its tab order, counted in both engines.
+ * The story the plugins' walk is proved against. The number is the fewest stops
+ * of its tab order in either engine: WebKit on macOS does not stop on buttons,
+ * so WebKit finds six stops there where Chromium finds seven.
  */
-const PROOF: Proof = { story: 'plex-quick-link-popover--only-create', stops: 2 }
+const PROOF: Proof = { story: 'flash-cards-card--what-is-wrong-with-it', stops: 6 }
 
 const preview: Preview = {
   parameters: {

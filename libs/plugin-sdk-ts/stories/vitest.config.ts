@@ -10,25 +10,14 @@ import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
 import { getStoryBrowser } from '../../ui/core/.storybook/browser'
-import { createStoryUtilitiesPlugin, getPluginAliases } from '../src/vite'
-
-const alias = getPluginAliases([
-  '@plugins',
-  '@numen/plugin-sdk/testing',
-  '@numen/plugin-sdk',
-  '@numen/protocol/numen/v1',
-  '@numen/protocol',
-  '@numen/ui/styles.css',
-  '@numen/ui',
-])
+import { createStoryUtilitiesPlugin } from '../src/vite'
 
 export default defineConfig({
   plugins: [
     vue(),
-    createStoryUtilitiesPlugin(),
+    createStoryUtilitiesPlugin(fileURLToPath(new URL('../../../plugins', import.meta.url))),
     storybookTest({ configDir: fileURLToPath(new URL('./.storybook', import.meta.url)) }),
   ],
-  resolve: { alias },
   test: {
     name: 'stories',
     // Every story is drawn twice, and the frames of all of them come off one

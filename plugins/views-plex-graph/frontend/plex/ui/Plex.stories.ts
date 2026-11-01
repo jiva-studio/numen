@@ -808,8 +808,12 @@ export const TitledLines: Story = {
     )
     await userEvent.hover(band!)
 
-    const lifted = canvasElement.querySelectorAll<SVGTextElement>('.plex__lift .plex__edge-label')
-    await expect(lifted).toHaveLength(2)
+    // The raised layer is drawn a render after the pointer enters.
+    const lifted = await waitFor(() => {
+      const found = canvasElement.querySelectorAll<SVGTextElement>('.plex__lift .plex__edge-label')
+      if (found.length !== 2) throw new Error(`${found.length} raised titles, not 2`)
+      return found
+    })
     await expect(getComputedStyle(lifted[0]!).fill).toBe('none')
     await expect(getComputedStyle(lifted[1]!).stroke).toBe('none')
     await expect(Number.parseFloat(getComputedStyle(lifted[0]!).strokeWidth)).toBeGreaterThan(

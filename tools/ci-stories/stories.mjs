@@ -35,6 +35,19 @@ const ROOTS = [
   { at: join(root, 'plugins'), book: 'plugins', only: /^[^/]+\/frontend\// },
 ]
 
+/** The stories declared under `at`, counted by the same declaration `stories` reads. */
+export const countStories = async (at) => {
+  const files = (await readdir(at, { recursive: true })).filter(
+    (name) => name.endsWith('.stories.ts') && !name.includes('node_modules'),
+  )
+  let count = 0
+  for (const file of files) {
+    const source = await readFile(join(at, file), 'utf8')
+    count += [...source.matchAll(/^export const [A-Z][A-Za-z0-9]*\s*:/gm)].length
+  }
+  return count
+}
+
 /**
  * Every story id the tree declares, spelled as Storybook spells it — the meta's
  * own title and the export's name, each cut to lower case and dashes — against

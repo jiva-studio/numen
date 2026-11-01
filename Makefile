@@ -120,8 +120,7 @@ plugins_clean: ## remove what every plugin built
 
 .PHONY: plugins_stories
 plugins_stories: lib_ui_build ## draw the stories of every plugin, one engine at a time
-	cd $(PLUGIN_SDK)/stories && npx vitest run --browser=chromium
-	cd $(PLUGIN_SDK)/stories && npx vitest run --browser=webkit
+	node $(STORIES)/run.mjs $(PLUGIN_SDK)/stories plugins
 
 .PHONY: plugins_package
 plugins_package: plugins_build ## package every plugin into a zip archive

@@ -277,5 +277,3 @@ export function createFileTree(core: Folders): FileTree {
     close,
   }
 }
-
-export const useFileTree = createFileTree

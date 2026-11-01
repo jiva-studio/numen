@@ -34,5 +34,3 @@ export function isExternalHref(href: string): boolean {
     return false
   }
 }
-
-export const isOutwardHref = isExternalHref

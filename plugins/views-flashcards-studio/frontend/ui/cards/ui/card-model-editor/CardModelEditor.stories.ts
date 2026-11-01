@@ -402,7 +402,7 @@ export const FarTooMany: Story = {
     await expect(getDrawnFields(canvasElement)).toHaveLength(40)
     await expect(canvasElement.querySelectorAll('[data-template]')).toHaveLength(12)
 
-    const editor = found(canvasElement, '.cardModel')
+    const editor = found(canvasElement, '.card-model')
     await expect(editor.scrollWidth).toBeLessThanOrEqual(editor.clientWidth + 1)
   },
 }
@@ -450,7 +450,7 @@ export const WhatIsWrong: Story = {
 export const Narrow: Story = {
   args: { width: '22rem' },
   play: async ({ canvasElement }) => {
-    const editor = found(canvasElement, '.cardModel')
+    const editor = found(canvasElement, '.card-model')
     await expect(editor.scrollWidth).toBeLessThanOrEqual(editor.clientWidth + 1)
   },
 }

@@ -2,13 +2,13 @@ import { FolderOpen, FolderTree } from '@lucide/vue'
 import { definePlugin, NOTE_SCOPE, type PluginContext } from '@numen/plugin-sdk'
 import FilesTab from './ui/FilesTab.vue'
 import { createFilesKind, FILES } from './kind'
-import { useFileTree } from './model/useFileTree'
+import { createFileTree } from './model/useFileTree'
 import { WORDS } from './words'
 
 export { FilesTab }
 export { createFilesKind, FILES } from './kind'
 export { createMenuItems, NEW_FOLDER, NEW_NOTE, RENAME } from './lib/menu'
-export { ROOT, createFileTree, useFileTree } from './model/useFileTree'
+export { ROOT, createFileTree } from './model/useFileTree'
 export { useFilesTab } from './model/useFilesTab'
 export type { FilesTabDeps, FilesTabState } from './types'
 export * from './words'
@@ -19,7 +19,7 @@ export function activate(context: PluginContext): void {
     throw new Error('a files tab needs the window it is drawn in and the files of the vault')
   }
   const trees = createFilesKind({ workspace, files, ...(drops ? { drops } : {}) }, () =>
-    useFileTree(files),
+    createFileTree(files),
   )
   context.registerTabKind(trees.kind)
   context.onVaultChange((event) => trees.refresh(event))

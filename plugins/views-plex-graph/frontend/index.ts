@@ -16,7 +16,7 @@ import { WORDS } from './words'
 
 export { PlexGraphView, PlexGraphView as PlexTab }
 export { createPlexKind, PLEX } from './kind'
-export { usePlexTab } from './model/usePlexTab'
+export { createPlexTab } from './model/usePlexTab'
 export { usePlexView } from './model/usePlexView'
 export { ITEMS, NONE, OFFERED, NEW_NOTE } from './lib/menu'
 export * from './types'

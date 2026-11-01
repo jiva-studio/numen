@@ -289,5 +289,3 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
   return tabState
 }
-
-export const usePlexTab = createPlexTab

@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Entry } from '../types'
 import { useFilesTab } from './useFilesTab'
-import { getFolderPath, ROOT, useFileTree } from './useFileTree'
+import { getFolderPath, ROOT, createFileTree } from './useFileTree'
 import { NEW_FOLDER, NEW_NOTE, RENAME } from '../lib/menu'
 import { WORDS as words } from '../words'
 
@@ -56,7 +56,7 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
   const sources: boolean[] = []
   const folders: boolean[] = []
   const vault: Record<string, readonly Entry[]> = { ...target, ...extra }
-  const list = useFileTree({
+  const list = createFileTree({
     list: async (folderPath: string) => {
       request.push(folderPath)
       return vault[folderPath] ?? []
@@ -285,7 +285,7 @@ describe('rows release', () => {
 
   it('read the folders again once, when all of them are done', async () => {
     const request: string[] = []
-    const list = useFileTree({
+    const list = createFileTree({
       list: async (folderPath: string) => {
         request.push(folderPath)
         return target[folderPath] ?? []

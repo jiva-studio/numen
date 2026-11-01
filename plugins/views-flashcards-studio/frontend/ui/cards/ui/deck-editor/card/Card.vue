@@ -130,6 +130,7 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
 .card {
   /* The name of a value, the box it is typed in and its error message share
      one inline edge. */
+  --box-air: 0.5rem;
   --box-pad-inline: var(--numen-box-air);
 
   position: relative;

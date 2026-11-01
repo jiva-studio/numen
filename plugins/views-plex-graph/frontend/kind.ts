@@ -9,7 +9,7 @@ import { watch } from 'vue'
 import { Waypoints } from '@lucide/vue'
 import { isNotePath, type TabKindRegistration, type VaultChangeEvent } from '@numen/plugin-sdk'
 import PlexGraphView from './PlexGraphView.vue'
-import { usePlexTab } from './model/usePlexTab'
+import { createPlexTab } from './model/usePlexTab'
 import { createPlexTabDeps, type PlexHost } from './model/tabDeps'
 import { WORDS as words } from './words'
 import type { PlexTabState, PlexView } from './types'
@@ -100,7 +100,7 @@ export function createPlexKind(host: PlexHost, createView: () => PlexView) {
         targetPath ||
         tabs.getCurrentPath() ||
         host.workspace.openingPath.value
-      const state = usePlexTab(createView(), createPlexTabDeps(host, id))
+      const state = createPlexTab(createView(), createPlexTabDeps(host, id))
       tabs.add(id, state)
       if (from) state.view.go(from).catch(state.reportFailure)
       watch(state.view.here, (path) => {
