@@ -24,7 +24,7 @@ func writeSettings(t *testing.T, output string) (Config, string) {
 	if err := os.WriteFile(path, []byte(output), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	return Config{SettingsPath: path}, path
+	return NewConfig(Config{SettingsPath: path}), path
 }
 
 // What the window is given is every setting, so a setting the file leaves out
@@ -115,7 +115,7 @@ func TestSettingsWithNowhereToLiveAreRefused(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", "")
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 
-	target, why := Config{}.Settings()
+	target, why := NewConfig(Config{}).Settings()
 	if why == nil {
 		t.Fatal("no reason")
 	}
@@ -159,7 +159,7 @@ func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 	response.Agent.Use = settings.UseProgram("claude")
 	response.Performance = hardware.Performance{Profile: hardware.ProfileEco}
 
-	got := Config{}.SetSettings(response)
+	got := NewConfig(Config{}).SetSettings(response)
 
 	if got.Agent.GetUse() != "claude" {
 		t.Errorf("the agent is %q", got.Agent.GetUse())
@@ -204,7 +204,7 @@ func TestGetSettingsOrDefaults_FallsBackToDefaultsWhenUnreadable(t *testing.T) {
 
 	t.Setenv("HOME", "")
 	t.Setenv("XDG_CONFIG_HOME", "")
-	if got := (Config{}).getSettingsOrDefaults(); !reflect.DeepEqual(got, DefaultSettings()) {
+	if got := (NewConfig(Config{})).getSettingsOrDefaults(); !reflect.DeepEqual(got, DefaultSettings()) {
 		t.Errorf("a machine with nowhere for settings gave %+v", got)
 	}
 }

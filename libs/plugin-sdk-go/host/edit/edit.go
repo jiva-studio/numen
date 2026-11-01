@@ -2,6 +2,9 @@
 package edit
 
 import (
+	"context"
+
+	notesdomain "github.com/jiva-studio/numen/libs/notes/domain"
 	notesedit "github.com/jiva-studio/numen/libs/notes/edit"
 )
 
@@ -35,9 +38,16 @@ var (
 	ErrUnlevelled     = notesedit.ErrUnlevelled
 )
 
-var (
-	CheckSize      = notesedit.CheckSize
-	Read           = notesedit.Read
-	GetAddress     = notesedit.GetAddress
-	WrapUnlevelled = notesedit.WrapUnlevelled
-)
+func CheckSize(path string, size, maxSize int) error { return notesedit.CheckSize(path, size, maxSize) }
+
+func Read(ctx context.Context, files notesedit.Reader, path string) (Contents, error) {
+	return notesedit.Read(ctx, files, path)
+}
+
+func GetAddress(
+	ctx context.Context, names notesedit.NameQueries, vaultID notesdomain.VaultID, path string,
+) (notesdomain.Address, error) {
+	return notesedit.GetAddress(ctx, names, vaultID, path)
+}
+
+func WrapUnlevelled(err error, paths ...string) error { return notesedit.WrapUnlevelled(err, paths...) }

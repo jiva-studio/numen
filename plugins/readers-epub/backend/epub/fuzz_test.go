@@ -366,7 +366,7 @@ func checkHTML(t *testing.T, book *epub.Book, doc epub.Document, markup *epub.Ma
 				a.Key == "srcset", a.Namespace != "":
 				t.Fatalf("a %s of %s carries %s=%q", n.Data, doc.Path, a.Key, a.Val)
 			case a.Key == "href", a.Key == "src":
-				if named := strings.ToLower(schemeOf(a.Val)); named != "" && !sendable[named] {
+				if named := strings.ToLower(schemeOf(a.Val)); named != "" && !isSendable(named) {
 					t.Fatalf("a %s of %s points at %q", n.Data, doc.Path, a.Val)
 				}
 			}
@@ -387,10 +387,14 @@ func checkHTML(t *testing.T, book *epub.Book, doc epub.Document, markup *epub.Ma
 	}
 }
 
-// sendable are the schemes an address the markup carries may name. A picture
-// written into the markup is the one that is not an address at all.
-var sendable = map[string]bool{
-	"http": true, "https": true, "mailto": true, "tel": true, "data": true,
+// isSendable reports whether an address the markup carries may name the scheme. A picture written
+// into the markup is the one that is not an address at all.
+func isSendable(scheme string) bool {
+	switch scheme {
+	case "http", "https", "mailto", "tel", "data":
+		return true
+	}
+	return false
 }
 
 // schemeOf is the scheme an address names, and empty for one that names none.

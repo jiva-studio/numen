@@ -22,7 +22,7 @@ const OpensAt = "index.html"
 
 // OpenedAt lists the addresses under which a window requests the page itself:
 // empty, "/" and "/index.html".
-var OpenedAt = []string{"", "/", "/" + OpensAt}
+func GetOpenedAt() []string { return []string{"", "/", "/" + OpensAt} }
 
 // GetInterface returns the built interface, or an error explaining how to build
 // it when the binary has none.

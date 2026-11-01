@@ -90,15 +90,13 @@ type padding struct {
 	ids, mask, types []int64
 }
 
-var paddings = sync.Pool{New: func() any { return &padding{ids: nil, mask: nil, types: nil} }}
-
-// releasePadding hands a padding back for the next batch.
-func releasePadding(p *padding) {
-	paddings.Put(p)
+// newPaddingPool returns a pool of the paddings of batches, reused from one batch to the next.
+func newPaddingPool() *sync.Pool {
+	return &sync.Pool{New: func() any { return &padding{ids: nil, mask: nil, types: nil} }}
 }
 
-// padBatch lays a batch out as the model takes it.
-func padBatch(batch [][]int, pad, limit int) (rows, seq int, in *padding) {
+// padBatch lays a batch out as the model takes it, in a padding taken from paddings.
+func padBatch(paddings *sync.Pool, batch [][]int, pad, limit int) (rows, seq int, in *padding) {
 	rows = len(batch)
 	seq = roundUpToBucket(getLongest(batch), limit)
 

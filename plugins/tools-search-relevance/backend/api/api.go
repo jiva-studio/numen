@@ -3,7 +3,7 @@
 package api
 
 // Service is the service name the manifest declares.
-const Service = "numen.relevance"
+const Service = "md.numen.tools.search.relevance"
 
 // Method names of the service.
 const (

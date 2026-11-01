@@ -83,9 +83,11 @@ func (p *Proxy) Serves(urlPath string) bool {
 }
 
 // hopHeaders are the headers of one connection and not of the call.
-var hopHeaders = []string{
-	"Connection", "Proxy-Connection", "Keep-Alive", "Proxy-Authenticate", "Proxy-Authorization",
-	"Te", "Trailer", "Transfer-Encoding", "Upgrade",
+func getHopHeaders() []string {
+	return []string{
+		"Connection", "Proxy-Connection", "Keep-Alive", "Proxy-Authenticate", "Proxy-Authorization",
+		"Te", "Trailer", "Transfer-Encoding", "Upgrade",
+	}
 }
 
 // ServeHTTP forwards the call to the plugin that serves its service.
@@ -133,7 +135,7 @@ func copyHeaders(to, from http.Header) {
 	for name, values := range from {
 		to[name] = append([]string(nil), values...)
 	}
-	for _, name := range hopHeaders {
+	for _, name := range getHopHeaders() {
 		to.Del(name)
 	}
 }

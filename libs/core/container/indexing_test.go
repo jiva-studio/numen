@@ -11,7 +11,7 @@ import (
 func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 	response := container.DefaultIndexing()
 	target := container.Settings{Indexing: response}
-	cfg := container.Config{IndexPath: "/somewhere/index.db"}.SetSettings(target)
+	cfg := container.NewConfig(container.Config{IndexPath: "/somewhere/index.db"}).SetSettings(target)
 
 	if !reflect.DeepEqual(cfg.Embedding, response.Embedding) {
 		t.Error("the embedding section did not arrive")

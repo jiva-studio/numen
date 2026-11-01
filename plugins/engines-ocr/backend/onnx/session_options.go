@@ -9,16 +9,10 @@ import (
 	ort "github.com/getcharzp/onnxruntime_purego"
 )
 
-func init() {
-	Register(initGraphOptimization)
-}
-
 type graphOptimization struct {
 	mu       sync.Mutex
 	setLevel func(options uintptr, level uint32) uintptr
 }
-
-var graphOpt graphOptimization
 
 type ortAPIBase struct {
 	GetAPI           uintptr
@@ -30,10 +24,11 @@ type ortAPI struct {
 	SetSessionGraphOptimizationLevel uintptr
 }
 
-func initGraphOptimization(libPath string) error {
-	graphOpt.mu.Lock()
-	defer graphOpt.mu.Unlock()
-	if graphOpt.setLevel != nil {
+// bindGraphOptimization resolves the call that sets the graph optimization level of a session.
+func (l *Library) bindGraphOptimization(libPath string) error {
+	l.graph.mu.Lock()
+	defer l.graph.mu.Unlock()
+	if l.graph.setLevel != nil {
 		return nil
 	}
 	if libPath == "" {
@@ -65,24 +60,24 @@ func initGraphOptimization(libPath string) error {
 
 	var setOptLevel func(options uintptr, level uint32) uintptr
 	purego.RegisterFunc(&setOptLevel, api.SetSessionGraphOptimizationLevel)
-	graphOpt.setLevel = setOptLevel
+	l.graph.setLevel = setOptLevel
 	return nil
 }
 
-func setGraphOptimizationLevel(opts *ort.SessionOptions, level uint32) error {
-	graphOpt.mu.Lock()
-	fn := graphOpt.setLevel
-	graphOpt.mu.Unlock()
+func (l *Library) setGraphOptimizationLevel(opts *ort.SessionOptions, level uint32) error {
+	l.graph.mu.Lock()
+	fn := l.graph.setLevel
+	l.graph.mu.Unlock()
 
 	if fn == nil {
-		_, loadedPath := runtimeState.GetLoaded()
+		_, loadedPath := l.runtime.GetLoaded()
 
-		if err := initGraphOptimization(loadedPath); err != nil {
+		if err := l.bindGraphOptimization(loadedPath); err != nil {
 			return err
 		}
-		graphOpt.mu.Lock()
-		fn = graphOpt.setLevel
-		graphOpt.mu.Unlock()
+		l.graph.mu.Lock()
+		fn = l.graph.setLevel
+		l.graph.mu.Unlock()
 	}
 
 	optHandle := *(*uintptr)(unsafe.Pointer(opts))
@@ -99,7 +94,7 @@ func setGraphOptimizationLevel(opts *ort.SessionOptions, level uint32) error {
 
 // NewSessionOptions creates and configures session options according to the
 // requested provider, applying hardware acceleration with fallback to CPU.
-func NewSessionOptions(engine *ort.Engine, s SessionSettings) (*ort.SessionOptions, Provider, error) {
+func (l *Library) NewSessionOptions(engine *ort.Engine, s SessionSettings) (*ort.SessionOptions, Provider, error) {
 	opts, err := engine.NewSessionOptions()
 	if err != nil {
 		return nil, "", err
@@ -119,12 +114,12 @@ func NewSessionOptions(engine *ort.Engine, s SessionSettings) (*ort.SessionOptio
 		return nil, "", err
 	}
 
-	if err := setGraphOptimizationLevel(opts, 99); err != nil {
+	if err := l.setGraphOptimizationLevel(opts, 99); err != nil {
 		opts.Destroy()
 		return nil, "", err
 	}
 
-	if err := disableSpinning(opts); err != nil {
+	if err := l.disableSpinning(opts); err != nil {
 		opts.Destroy()
 		return nil, "", err
 	}
@@ -134,7 +129,7 @@ func NewSessionOptions(engine *ort.Engine, s SessionSettings) (*ort.SessionOptio
 		return nil, "", err
 	}
 
-	used, err := applyProvider(opts, s.Provider, s.ComputeUnits)
+	used, err := l.applyProvider(opts, s.Provider, s.ComputeUnits)
 	if err != nil {
 		if s.Provider != ProviderAuto && s.Provider != "" {
 			opts.Destroy()

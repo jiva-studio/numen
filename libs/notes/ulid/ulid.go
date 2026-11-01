@@ -6,7 +6,9 @@ package ulid
 
 import (
 	"errors"
+	"fmt"
 	"io"
+	"strings"
 	"time"
 )
 
@@ -14,22 +16,29 @@ import (
 // aloud or retyped from a file.
 const alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 
-// isAlphabet holds, for each byte, whether it is a character of the alphabet.
-var isAlphabet = createTable(alphabet)
+// ErrInvalid is returned by callers that read an identifier from a file.
+var ErrInvalid = errors.New("not a valid ULID")
 
-// DefaultEntropy is the entropy source used when none is passed to New.
-var DefaultEntropy io.Reader
+// ErrNoEntropy is returned by a generator that was given no entropy source.
+var ErrNoEntropy = errors.New("no entropy source for a ULID")
 
-func createTable(characters string) (table [256]bool) {
-	for i := range len(characters) {
-		table[characters[i]] = true
-	}
-	return table
+// Generator creates identifiers whose random bits are read from one entropy source.
+type Generator struct {
+	entropy io.Reader
 }
 
-// New returns a ULID for the given instant: 48 bits of milliseconds followed by
-// 80 bits of randomness, encoded as 26 characters.
-func New(t time.Time, entropy ...io.Reader) string {
+// NewGenerator returns a generator that reads the random bits of each identifier from
+// entropy. A generator over crypto/rand.Reader is safe for concurrent use.
+func NewGenerator(entropy io.Reader) Generator {
+	return Generator{entropy: entropy}
+}
+
+// NewID returns a ULID for the given instant: 48 bits of milliseconds followed by
+// 80 bits read from the entropy source, encoded as 26 characters.
+func (g Generator) NewID(t time.Time) (string, error) {
+	if g.entropy == nil {
+		return "", ErrNoEntropy
+	}
 	var b [16]byte
 	ms := uint64(t.UTC().UnixMilli())
 	b[0] = byte(ms >> 40)
@@ -38,17 +47,14 @@ func New(t time.Time, entropy ...io.Reader) string {
 	b[3] = byte(ms >> 16)
 	b[4] = byte(ms >> 8)
 	b[5] = byte(ms)
-
-	source := DefaultEntropy
-	if len(entropy) > 0 && entropy[0] != nil {
-		source = entropy[0]
+	if _, err := io.ReadFull(g.entropy, b[6:]); err != nil {
+		return "", fmt.Errorf("read the random bits of a ULID: %w", err)
 	}
-	if source != nil {
-		if _, err := io.ReadFull(source, b[6:]); err != nil {
-			clear(b[6:])
-		}
-	}
+	return encode(b), nil
+}
 
+// encode writes 128 bits as 26 base32 characters, most significant first.
+func encode(b [16]byte) string {
 	out := make([]byte, 26)
 	// 26 base32 characters carry 130 bits; the value is left-padded into them.
 	var carry uint16
@@ -72,19 +78,16 @@ func New(t time.Time, entropy ...io.Reader) string {
 	return string(out)
 }
 
-// Valid reports whether s could have been produced by New. It is deliberately
+// Valid reports whether s could have been produced by NewID. It is deliberately
 // strict: an identifier that is almost right points at a corrupted file.
 func Valid(s string) bool {
 	if len(s) != 26 {
 		return false
 	}
 	for i := range len(s) {
-		if !isAlphabet[s[i]] {
+		if strings.IndexByte(alphabet, s[i]) < 0 {
 			return false
 		}
 	}
 	return true
 }
-
-// ErrInvalid is returned by callers that read an identifier from a file.
-var ErrInvalid = errors.New("not a valid ULID")

@@ -63,7 +63,7 @@ func TestUpdateConfigReopensEngine(t *testing.T) {
 
 func TestOpenEngineReturnsMockRecogniser(t *testing.T) {
 	t.Setenv(EnvMockML, "true")
-	opened, err := openEngine(t.Context(), engine.Defaults())
+	opened, err := newEngineOpener(engine.NewLibrary())(t.Context(), engine.Defaults())
 	if err != nil {
 		t.Fatal(err)
 	}

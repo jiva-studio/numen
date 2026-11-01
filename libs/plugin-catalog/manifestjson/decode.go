@@ -18,10 +18,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
-// The wire reader takes the keys the schema names; a key it does not name is removed and reported
-// before the reader runs.
-var wireReader = protojson.UnmarshalOptions{}
-
 // Read decodes a manifest from JSON input and validates it.
 func Read(r io.Reader) (manifest.Manifest, error) {
 	data, err := io.ReadAll(r)
@@ -35,6 +31,9 @@ func Read(r io.Reader) (manifest.Manifest, error) {
 	if err := m.Validate(); err != nil {
 		return manifest.Manifest{}, err
 	}
+	if issues := listServiceNameIssues(m); len(issues) > 0 {
+		return manifest.Manifest{}, errors.Join(issues...)
+	}
 	return m, nil
 }
 
@@ -45,7 +44,7 @@ func Decode(data []byte) (manifest.Manifest, error) {
 		return manifest.Manifest{}, err
 	}
 	var wire v1.Manifest
-	if err := wireReader.Unmarshal(canonical, &wire); err != nil {
+	if err := protojson.Unmarshal(canonical, &wire); err != nil {
 		return manifest.Manifest{}, err
 	}
 	m, err := newManifest(&wire)
@@ -260,7 +259,7 @@ func newSettingOption(object *structpb.Struct) (manifest.SettingOption, error) {
 		return manifest.SettingOption{}, fmt.Errorf("%w: %w", errOptionShape, err)
 	}
 	var wire v1.ManifestSettingOption
-	if err := wireReader.Unmarshal(data, &wire); err != nil {
+	if err := protojson.Unmarshal(data, &wire); err != nil {
 		return manifest.SettingOption{}, fmt.Errorf("%w: %w", errOptionShape, err)
 	}
 	return manifest.SettingOption{

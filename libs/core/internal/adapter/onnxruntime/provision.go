@@ -93,7 +93,7 @@ func (p *Provisioner) ProvisionWithProgress(ctx context.Context, pluginDir strin
 	}
 	if found.isPinned && provider.isGPU() {
 		return "", "", fmt.Errorf("the onnx runtime: the %s provider needs a GPU build, and this machine holds none that opens: install one and name it in %s, or use the cpu provider%s",
-			provider, libraryEnvs[0], found.describeSkipped())
+			provider, getLibraryEnvs()[0], found.describeSkipped())
 	}
 	p.ready[pluginDir] = answer{library: found.library, provider: provider}
 	return found.library, string(provider), nil

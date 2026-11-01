@@ -1,12 +1,11 @@
 package security
 
 import (
+	"crypto/rand"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync/atomic"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -225,14 +224,11 @@ func TestValidateExecutablePath(t *testing.T) {
 	})
 }
 
-// pluginDirCounter makes the names of the directories createPluginTestDir creates distinct.
-var pluginDirCounter atomic.Int64
-
 // createPluginTestDir creates a directory below the package directory. The system temporary
 // directory is rejected by validateExecutablePath, so t.TempDir cannot hold a plugin.
 func createPluginTestDir(t *testing.T, pattern string) string {
 	t.Helper()
-	name := strings.ReplaceAll(pattern, "*", fmt.Sprintf("%d-%d", os.Getpid(), pluginDirCounter.Add(1)))
+	name := strings.ReplaceAll(pattern, "*", rand.Text())
 	if err := os.Mkdir(name, 0o755); err != nil {
 		t.Fatal(err)
 	}

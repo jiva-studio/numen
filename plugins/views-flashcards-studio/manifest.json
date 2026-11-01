@@ -28,7 +28,7 @@
     ]
   },
   "permissions": ["vault:read", "vault:write"],
-  "services": ["numen.flashcards"],
+  "services": ["md.numen.views.flashcards.studio"],
   "commands": [
     {
       "id": "create-deck",

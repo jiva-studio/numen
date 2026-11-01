@@ -342,22 +342,24 @@ func convertResponseStep(msg *v1.AskAgentResponse) agentport.Step {
 }
 
 // stepKindWords are what a call does to the vault, in the words the plugins report it in.
-var stepKindWords = map[domain.StepKind]string{
-	domain.StepRead:   "read",
-	domain.StepEdit:   "edit",
-	domain.StepRemove: "remove",
-	domain.StepMove:   "move",
-	domain.StepSearch: "search",
+func getStepKindWords() map[domain.StepKind]string {
+	return map[domain.StepKind]string{
+		domain.StepRead:   "read",
+		domain.StepEdit:   "edit",
+		domain.StepRemove: "remove",
+		domain.StepMove:   "move",
+		domain.StepSearch: "search",
+	}
 }
 
 // getKindWord returns the word that identifies to a plugin what a call does. A
 // kind that does not act on the vault maps to the empty word.
-func getKindWord(kind domain.StepKind) string { return stepKindWords[kind] }
+func getKindWord(kind domain.StepKind) string { return getStepKindWords()[kind] }
 
 // getStepKind is what a call does to the vault, by the word the plugin reports it in. A word the
 // core does not know is a call of unknown effect.
 func getStepKind(kind string) domain.StepKind {
-	for effect, word := range stepKindWords {
+	for effect, word := range getStepKindWords() {
 		if word == kind {
 			return effect
 		}

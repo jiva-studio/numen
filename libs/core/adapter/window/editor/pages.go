@@ -193,7 +193,7 @@ func (s *Services) serveAdjacent(w http.ResponseWriter, r *http.Request, isWhole
 		}
 		defer s.state.questions.finish()
 		s.serveAsset(w, r)
-	case slices.Contains(wire.OpenedAt, r.URL.Path):
+	case slices.Contains(wire.GetOpenedAt(), r.URL.Path):
 		wire.WritePage(w, r, pages, s.Themes, files)
 	default:
 		files.ServeHTTP(w, r)

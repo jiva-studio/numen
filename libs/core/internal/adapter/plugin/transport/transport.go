@@ -22,23 +22,32 @@ var (
 	ErrHandshakeTimeout = errors.New("timeout waiting for plugin handshake")
 )
 
-// DefaultPluginTransport is the HTTP transport for plugin endpoints.
-var DefaultPluginTransport = &http.Transport{
-	Proxy: http.ProxyFromEnvironment,
-	DialContext: (&net.Dialer{
-		Timeout:   15 * time.Second,
-		KeepAlive: 30 * time.Second,
-	}).DialContext,
-	ForceAttemptHTTP2:     true,
-	MaxIdleConns:          100,
-	MaxIdleConnsPerHost:   20,
-	IdleConnTimeout:       90 * time.Second,
-	TLSHandshakeTimeout:   10 * time.Second,
-	ExpectContinueTimeout: 1 * time.Second,
+// NetworkTransport is the HTTP transport of one plugin process: the connections to its port are
+// pooled for the life of the process.
+type NetworkTransport struct{ *http.Transport }
+
+// RoundTripTransport marks NetworkTransport as a PluginTransport.
+func (NetworkTransport) RoundTripTransport() {}
+
+// NewNetworkTransport returns the transport for a plugin process that listens on a port.
+func NewNetworkTransport() NetworkTransport {
+	return NetworkTransport{Transport: newHTTPTransport()}
 }
 
-var defaultPluginClient = &http.Client{
-	Transport: DefaultPluginTransport,
+func newHTTPTransport() *http.Transport {
+	return &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   15 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   20,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
 }
 
 // PluginTransport is an in-process or custom transport for a plugin endpoint.
@@ -52,7 +61,10 @@ func EndpointClient(e Endpoint) *http.Client {
 			return &http.Client{Transport: rt}
 		}
 	}
-	return defaultPluginClient
+	// An endpoint without a transport of its own keeps no connection open after the call.
+	unpooled := newHTTPTransport()
+	unpooled.DisableKeepAlives = true
+	return &http.Client{Transport: unpooled}
 }
 
 // Endpoint holds connection parameters and credentials for an active plugin.

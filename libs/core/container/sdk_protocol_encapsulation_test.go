@@ -11,9 +11,6 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// protocolGenPrefix is the import path prefix of the generated protocol packages.
-const protocolGenPrefix = numenModules + "libs/protocol/gen/"
-
 // protocolLeak is a protocol type mentioned by the type of an exported identifier of a public package.
 type protocolLeak struct {
 	// subject is the qualified name of the exported identifier or the exported type that mentions the protocol type.
@@ -24,8 +21,9 @@ type protocolLeak struct {
 
 // leakWalk collects the protocol types that the public API of one set of packages mentions.
 type leakWalk struct {
-	// protocolPrefix is the import path prefix of the protocol packages.
-	protocolPrefix string
+	// protocolRoot is the import path of the protocol module; every package at or below it is a
+	// protocol package.
+	protocolRoot string
 	// familyPrefix is the import path prefix of the packages whose declarations are part of the API.
 	familyPrefix string
 	subject      string
@@ -40,7 +38,7 @@ func isInternalPackage(path string) bool {
 
 // isProtocolPackage reports whether the package path is a protocol package.
 func (w *leakWalk) isProtocolPackage(path string) bool {
-	return strings.HasPrefix(path, w.protocolPrefix)
+	return isWithin(path, w.protocolRoot)
 }
 
 // walkNamed records a protocol type, and descends into the declaration of a type of the family.
@@ -125,14 +123,14 @@ func (w *leakWalk) walk(t types.Type) {
 
 // getProtocolLeaks returns the protocol types that the exported identifiers of the public (non-internal)
 // packages of pkgs mention in their types, along with the number of exported identifiers examined.
-// A protocol type is a type declared in a package whose path starts with protocolPrefix; the API
+// A protocol type is a type declared in a package whose path is protocolRoot or one below it; the API
 // includes every type declared under familyPrefix that an exported identifier reaches.
-func getProtocolLeaks(pkgs []*packages.Package, protocolPrefix, familyPrefix string) ([]protocolLeak, int) {
+func getProtocolLeaks(pkgs []*packages.Package, protocolRoot, familyPrefix string) ([]protocolLeak, int) {
 	walk := &leakWalk{
-		protocolPrefix: protocolPrefix,
-		familyPrefix:   familyPrefix,
-		visited:        map[*types.TypeName]bool{},
-		found:          map[protocolLeak]bool{},
+		protocolRoot: protocolRoot,
+		familyPrefix: familyPrefix,
+		visited:      map[*types.TypeName]bool{},
+		found:        map[protocolLeak]bool{},
 	}
 	examined := 0
 	for _, pkg := range pkgs {
@@ -184,7 +182,7 @@ func loadAPIPackages(t *testing.T, dir string, env []string) []*packages.Package
 }
 
 // The exported identifiers of the public packages of the plugin SDK and its feature modules mention no
-// type declared in the generated protocol: a plugin that compiles against the SDK names no protocol type.
+// type declared in the protocol module: a plugin that compiles against the SDK names no protocol type.
 func TestSDKProtocolRule_RejectsProtocolTypesInTheSDK(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks every module of the plugin SDK")
@@ -206,7 +204,7 @@ func TestSDKProtocolRule_RejectsProtocolTypesInTheSDK(t *testing.T) {
 		modules++
 		pkgs = append(pkgs, loadAPIPackages(t, dir, nil)...)
 	}
-	leaks, examined := getProtocolLeaks(pkgs, protocolGenPrefix, sdkModule)
+	leaks, examined := getProtocolLeaks(pkgs, wire, sdkModule)
 	for _, one := range leaks {
 		t.Errorf("%s mentions the protocol type %s", one.subject, one.protocolType)
 	}
@@ -216,7 +214,7 @@ func TestSDKProtocolRule_RejectsProtocolTypesInTheSDK(t *testing.T) {
 	importsProtocol := 0
 	for _, pkg := range pkgs {
 		for path := range pkg.Imports {
-			if strings.HasPrefix(path, protocolGenPrefix) {
+			if isWithin(path, wire) {
 				importsProtocol++
 				break
 			}
@@ -407,5 +405,47 @@ func Convert(m gen.Message) gen.Message { return m }
 	}
 	if examined < 2 {
 		t.Errorf("%d exported identifiers examined, want at least 2", examined)
+	}
+}
+
+// A type of any package of the protocol module is a protocol type, the generated ones and the ones
+// written by hand beside them; a package whose path only starts like the module is not.
+func TestSDKProtocolRule_RejectsTypesOfEveryPackageOfTheProtocolModule(t *testing.T) {
+	dir := writeFiles(t, map[string]string{
+		"protocol/gen/gen.go": `package gen
+
+type Message struct{ Text string }
+`,
+		"protocol/schema/schema.go": `package schema
+
+type Enum interface{ String() string }
+`,
+		"protocolx/other.go": `package protocolx
+
+type Other struct{}
+`,
+		"api/api.go": `package api
+
+import (
+	"fixture/protocol/gen"
+	"fixture/protocol/schema"
+	"fixture/protocolx"
+)
+
+func Send(m gen.Message) {}
+
+func Check(e schema.Enum) {}
+
+func Keep(o protocolx.Other) {}
+`,
+	})
+	leaks, _ := getProtocolLeaks(loadAPIPackages(t, dir, []string{"GOWORK=off"}), "fixture/protocol", "fixture/api")
+	var got []string
+	for _, one := range leaks {
+		got = append(got, strings.TrimPrefix(one.subject, "fixture/")+" "+strings.TrimPrefix(one.protocolType, "fixture/"))
+	}
+	want := []string{"api.Check protocol/schema.Enum", "api.Send protocol/gen.Message"}
+	if !slices.Equal(got, want) {
+		t.Errorf("leaks %v, want %v", got, want)
 	}
 }

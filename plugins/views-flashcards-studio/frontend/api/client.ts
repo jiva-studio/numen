@@ -1,5 +1,5 @@
 /**
- * The client of the `numen.flashcards` service: one function for each method of the backend. A
+ * The client of the `md.numen.views.flashcards.studio` service: one function for each method of the backend. A
  * function answers with the response of its method and throws an `ApiFailure` when the method fails.
  * A stream function yields each response as it arrives and throws when the stream ends in failure.
  */
@@ -55,7 +55,7 @@ import type {
 } from './types'
 
 /** The name the manifest declares for the service. */
-export const SERVICE = 'numen.flashcards'
+export const SERVICE = 'md.numen.views.flashcards.studio'
 
 /** Options of one call. */
 export interface CallOptions {

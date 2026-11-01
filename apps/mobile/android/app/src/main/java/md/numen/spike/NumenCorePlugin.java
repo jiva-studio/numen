@@ -10,6 +10,8 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 @CapacitorPlugin(name = "NumenCore")
 public class NumenCorePlugin extends Plugin {
 
+    private final bind.Core core = bind.Bind.newCore();
+
     @PluginMethod
     public void start(PluginCall call) {
         // Opening a vault reads every file in it, so it happens off the thread
@@ -17,7 +19,7 @@ public class NumenCorePlugin extends Plugin {
         new Thread(() -> {
             try {
                 String dir = getContext().getFilesDir().getAbsolutePath();
-                long port = bind.Bind.start(dir);
+                long port = core.start(dir);
                 JSObject said = new JSObject();
                 said.put("port", port);
                 said.put("dir", dir);
@@ -32,7 +34,7 @@ public class NumenCorePlugin extends Plugin {
     public void stop(PluginCall call) {
         new Thread(() -> {
             try {
-                bind.Bind.stop();
+                core.stop();
                 call.resolve();
             } catch (Exception why) {
                 call.reject(why.getMessage(), why);

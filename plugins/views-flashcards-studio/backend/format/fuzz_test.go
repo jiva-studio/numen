@@ -14,20 +14,22 @@ import (
 // heading has fallen out of step with its first field, a heading of the deeper
 // level a value may hold, a card id-shaped run that is not a card id, other scripts,
 // carriage returns, and bytes that are no deck at all.
-var deckSeeds = []string{
-	"# Roots\n\n## a card\n\n[[Word]]\n\n### Word\n\nkaru\n\n### Meaning\n\nto do\n",
-	"## a card before any section\n\n### Word\n\nkaru\n",
-	"## a card ^0123456789\n\n### Word\n\nkaru\n",
-	"## an old heading ^0123456789\n\n[[Word]]\n\n### Word\n\nthe new one\n",
-	"## a card\n\n### Word\n\n#### a heading inside a value\n\nkaru\n",
-	"## a card ^iloubadchar\n\n### Word\n\nkaru\n",
-	"## карточка\n\n### Слово\n\nкару\n",
-	"## a card\r\n\r\n### Word\r\n\r\nkaru\r\n",
-	"##\n",
-	"## \n## \n## \n",
-	"prose above every card\n",
-	"\x00\xff\xfe",
-	"",
+func getDeckSeeds() []string {
+	return []string{
+		"# Roots\n\n## a card\n\n[[Word]]\n\n### Word\n\nkaru\n\n### Meaning\n\nto do\n",
+		"## a card before any section\n\n### Word\n\nkaru\n",
+		"## a card ^0123456789\n\n### Word\n\nkaru\n",
+		"## an old heading ^0123456789\n\n[[Word]]\n\n### Word\n\nthe new one\n",
+		"## a card\n\n### Word\n\n#### a heading inside a value\n\nkaru\n",
+		"## a card ^iloubadchar\n\n### Word\n\nkaru\n",
+		"## карточка\n\n### Слово\n\nкару\n",
+		"## a card\r\n\r\n### Word\r\n\r\nkaru\r\n",
+		"##\n",
+		"## \n## \n## \n",
+		"prose above every card\n",
+		"\x00\xff\xfe",
+		"",
+	}
 }
 
 // A deck passes here once, on its way to the vault, and what comes out is
@@ -37,7 +39,7 @@ var deckSeeds = []string{
 // Passing what came out through again changes nothing and gives no card id, so the
 // pass is safe to make on every write.
 func FuzzWhole(f *testing.F) {
-	for _, seed := range deckSeeds {
+	for _, seed := range getDeckSeeds() {
 		f.Add(seed, "Word")
 	}
 	f.Add("## a card\n\n[[Стенсил]]\n\n### Слово\n\nкару\n", "Слово")

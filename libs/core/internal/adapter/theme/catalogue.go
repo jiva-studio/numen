@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/watchhub"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugintheme/themecontract"
 )
 
@@ -100,27 +101,28 @@ type Theme struct {
 type Catalogue struct {
 	dir     string
 	plugins themecontract.PluginThemes
+	hub     *watchhub.Hub
 }
 
 // Open returns the catalogue at the folder where this desktop keeps its
 // configuration. The themes folder is created empty if it does not exist.
-func Open() (Catalogue, error) {
+func Open(hub *watchhub.Hub) (Catalogue, error) {
 	dir, err := os.UserConfigDir()
 	if err != nil {
 		return Catalogue{}, err
 	}
-	return OpenAt(filepath.Join(dir, "numen", "themes"))
+	return OpenAt(filepath.Join(dir, "numen", "themes"), hub)
 }
 
-// OpenAt is Open with an explicit path.
-func OpenAt(dir string) (Catalogue, error) {
+// OpenAt is Open with an explicit path. Watch places its watch through the hub.
+func OpenAt(dir string, hub *watchhub.Hub) (Catalogue, error) {
 	made := os.MkdirAll(dir, 0o755)
 	// The folder is where the links lead. The paths the operating system
 	// reports changes at are resolved, and they are named against this.
 	if resolved, err := filepath.EvalSymlinks(dir); err == nil {
 		dir = resolved
 	}
-	return Catalogue{dir: dir}, made
+	return Catalogue{dir: dir, hub: hub}, made
 }
 
 // WithPlugins returns the catalogue that also offers the themes of the plugins

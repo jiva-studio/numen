@@ -11,12 +11,14 @@ import (
 )
 
 // counting is the day as the application counts one.
-var counting = review.Day{Starts: review.DayStartTime}
+func getCounting() review.Day {
+	return review.Day{Starts: review.DayStartTime}
+}
 
 // What a vault was answered on comes back a day at a time, oldest first,
 // because what draws it draws it along a line of time.
 func TestListReviewDays_ReturnsDaysOldestFirst(t *testing.T) {
-	handler, target := newAPI(t, deck)
+	handler, target := newAPI(t, getDeck())
 	v := target[0]
 
 	session := startSession(t, handler, v)
@@ -45,15 +47,15 @@ func TestListReviewDays_ReturnsDaysOldestFirst(t *testing.T) {
 	if len(response.Days) != 1 {
 		t.Fatalf("answered on %d days, want the one", len(response.Days))
 	}
-	if got := response.Days[0]; got.Day != counting.GetName(vaulttest.Epoch) {
-		t.Errorf("the day is %q, want %q", got.Day, counting.GetName(vaulttest.Epoch))
+	if got := response.Days[0]; got.Day != getCounting().GetName(vaulttest.GetEpoch()) {
+		t.Errorf("the day is %q, want %q", got.Day, getCounting().GetName(vaulttest.GetEpoch()))
 	}
 }
 
 // A vault with no answers has no days to draw; this is an empty result and not an
 // error.
 func TestListReviewDays_EmptyVaultHasNoDays(t *testing.T) {
-	handler, target := newAPI(t, deck)
+	handler, target := newAPI(t, getDeck())
 
 	out, err := handler.ListReviewDays(t.Context(),
 		&api.ListReviewDaysRequest{Vault: string(target[0].ID)})
@@ -68,7 +70,7 @@ func TestListReviewDays_EmptyVaultHasNoDays(t *testing.T) {
 // What is still to come is counted by the day it falls on, so the grid draws a
 // week ahead as well as the weeks behind. A card answered easily is sent days
 func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
-	handler, target := newAPI(t, deck)
+	handler, target := newAPI(t, getDeck())
 	v := target[0]
 
 	session := startSession(t, handler, v)
@@ -99,7 +101,7 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 		t.Errorf("%d cards fall on %s, want the one", coming.Reviewed, coming.Day)
 	}
 	// A day is formatted to sort as text in the same order as in time.
-	if today := counting.GetName(vaulttest.Epoch); coming.Day <= today {
+	if today := getCounting().GetName(vaulttest.GetEpoch()); coming.Day <= today {
 		t.Errorf("what is coming falls on %s, which is not after %s", coming.Day, today)
 	}
 	// What was answered is still answered: the two are counted apart.
@@ -112,7 +114,7 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 // not fail: a user who answered everything this morning has an empty past grid
 // and a full upcoming one.
 func TestListReviewDays_EmptyVaultHasNoDueDays(t *testing.T) {
-	handler, target := newAPI(t, deck)
+	handler, target := newAPI(t, getDeck())
 
 	out, err := handler.ListReviewDays(t.Context(),
 		&api.ListReviewDaysRequest{Vault: string(target[0].ID)})
@@ -157,7 +159,7 @@ func TestAVaultNobodyContainsIsRefused(t *testing.T) {
 // A stretch containing no answers returns empty lists: a day outside the
 // requested range is in neither list.
 func TestAStretchNothingFallsInReachesBackEmpty(t *testing.T) {
-	handler, target := newAPI(t, deck)
+	handler, target := newAPI(t, getDeck())
 	v := target[0]
 
 	session := startSession(t, handler, v)

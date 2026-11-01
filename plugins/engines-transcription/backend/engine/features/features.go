@@ -41,7 +41,7 @@ func GetLogMel(samples []float32, workers int) ([]float32, int) {
 	}
 
 	bins := fftSize/2 + 1
-	bank := filters()
+	bank := getMelBank()
 	out := make([]float32, MelBands*frames)
 
 	workers = signal.GetWorkerCount(workers, MelBands)
@@ -117,7 +117,8 @@ func spectrogram(x []float64, workers int) ([]float64, int) {
 	}
 	padded := padReflect(x, fftSize/2)
 	frames := len(x)/hopSize + 1
-	window := hann()
+	window := getHannWindow()
+	twiddles := getTwiddles()
 	bins := fftSize/2 + 1
 
 	out := make([]float64, frames*bins)
@@ -136,7 +137,7 @@ func spectrogram(x []float64, workers int) ([]float64, int) {
 				for i := 0; i < fftSize; i++ {
 					buf[i] = complex(padded[pos+i]*window[i], 0)
 				}
-				fft(buf)
+				fft(buf, twiddles)
 				offset := t * bins
 				for i := 0; i < bins; i++ {
 					re, im := real(buf[i]), imag(buf[i])
@@ -177,16 +178,16 @@ func getMirroredIndex(i, n int) int {
 	return i
 }
 
-// hann is the analysis window: a periodic raised cosine over the window's own
+// getHannWindow returns the analysis window: a periodic raised cosine over the window's own
 // length, sitting in the middle of the transform.
-var hann = sync.OnceValue(func() []float64 {
+func getHannWindow() []float64 {
 	out := make([]float64, fftSize)
 	offset := (fftSize - windowSize) / 2
 	for i := 0; i < windowSize; i++ {
 		out[offset+i] = 0.5 - 0.5*math.Cos(2*math.Pi*float64(i)/float64(windowSize))
 	}
 	return out
-})
+}
 
 // melFilter is one triangular frequency filter in the mel bank, holding its
 // non-zero weights from firstBin upward.
@@ -195,10 +196,10 @@ type melFilter struct {
 	weights  []float64
 }
 
-// filters is the mel bank: for each band, what share of each frequency bin it
+// getMelBank returns the mel bank: for each band, what share of each frequency bin it
 // carries. The triangles are laid out on the Slaney mel scale and each is
 // scaled by the width of the frequencies it spans.
-var filters = sync.OnceValue(func() []melFilter {
+func getMelBank() []melFilter {
 	bins := fftSize/2 + 1
 	edges := make([]float64, MelBands+2)
 	low, high := hzToMel(melFloor), hzToMel(melCeiling)
@@ -237,7 +238,7 @@ var filters = sync.OnceValue(func() []melFilter {
 		}
 	}
 	return out
-})
+}
 
 // The Slaney mel scale: linear below a thousand hertz and logarithmic above it.
 const (
@@ -245,25 +246,28 @@ const (
 	melKnee   = 1000.0
 )
 
-var melStep = math.Log(6.4) / 27.0
+// getMelStep returns the width of one mel above the knee, in the logarithm of hertz.
+func getMelStep() float64 {
+	return math.Log(6.4) / 27.0
+}
 
 func hzToMel(hz float64) float64 {
 	if hz >= melKnee {
-		return melKnee/melLinear + math.Log(hz/melKnee)/melStep
+		return melKnee/melLinear + math.Log(hz/melKnee)/getMelStep()
 	}
 	return hz / melLinear
 }
 
 func melToHz(mel float64) float64 {
 	if knee := melKnee / melLinear; mel >= knee {
-		return melKnee * math.Exp(melStep*(mel-knee))
+		return melKnee * math.Exp(getMelStep()*(mel-knee))
 	}
 	return mel * melLinear
 }
 
-// fft transforms one frame in place. The size is a power of two, which is the
-// only size this is ever given.
-func fft(a []complex128) {
+// fft transforms one frame in place with the twiddles of getTwiddles. The size is a power of two,
+// which is the only size this is ever given.
+func fft(a, w []complex128) {
 	n := len(a)
 	for i, j := 1, 0; i < n; i++ {
 		bit := n >> 1
@@ -275,7 +279,6 @@ func fft(a []complex128) {
 			a[i], a[j] = a[j], a[i]
 		}
 	}
-	w := twiddles()
 	for length := 2; length <= n; length <<= 1 {
 		stride := n / length
 		for i := 0; i < n; i += length {
@@ -287,12 +290,12 @@ func fft(a []complex128) {
 	}
 }
 
-// twiddles are the roots of unity one transform turns on, each computed from
+// getTwiddles returns the roots of unity one transform turns on, each computed from
 // its own angle.
-var twiddles = sync.OnceValue(func() []complex128 {
+func getTwiddles() []complex128 {
 	out := make([]complex128, fftSize/2)
 	for k := range out {
 		out[k] = cmplx.Rect(1, -2*math.Pi*float64(k)/float64(fftSize))
 	}
 	return out
-})
+}

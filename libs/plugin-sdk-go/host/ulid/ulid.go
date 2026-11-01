@@ -2,20 +2,19 @@
 package ulid
 
 import (
-	"crypto/rand"
 	"io"
-	"time"
 
 	notesulid "github.com/jiva-studio/numen/libs/notes/ulid"
 )
 
-func init() {
-	notesulid.DefaultEntropy = rand.Reader
-}
+// Generator creates identifiers whose random bits are read from one entropy source.
+type Generator = notesulid.Generator
 
-func New(t time.Time, entropy ...io.Reader) string {
-	if len(entropy) == 0 {
-		return notesulid.New(t, rand.Reader)
-	}
-	return notesulid.New(t, entropy...)
+// ErrNoEntropy is returned by a generator that was given no entropy source.
+var ErrNoEntropy = notesulid.ErrNoEntropy
+
+// NewGenerator returns a generator that reads the random bits of each identifier from
+// entropy, usually crypto/rand.Reader.
+func NewGenerator(entropy io.Reader) Generator {
+	return notesulid.NewGenerator(entropy)
 }

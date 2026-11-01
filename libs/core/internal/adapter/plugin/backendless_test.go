@@ -37,7 +37,7 @@ func newFrontendOnlyHost(t *testing.T) (*Host, *int) {
 	if err := os.WriteFile(filepath.Join(pluginDir, "manifest.json"), []byte(frontendOnlyManifest), 0o600); err != nil {
 		t.Fatalf("write manifest: %v", err)
 	}
-	host := NewHost(testsupport.Machine, "desktop.editor", dir)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", dir)
 	host.SetContentTypeTable(sharedmimeinfo.Open())
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)

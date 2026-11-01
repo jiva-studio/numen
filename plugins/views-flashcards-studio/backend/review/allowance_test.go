@@ -24,8 +24,8 @@ func TestWhichSettingsAGoalReads(t *testing.T) {
 		{review.GoalDate, false},
 	} {
 		p := review.Defaults()
-		p.Goal, p.By, p.Backlog = one.goal, testEpoch.AddDate(0, 0, 30), 40
-		admits := p.GetAllowance(day, testEpoch, review.Spent{}, 0, 0)
+		p.Goal, p.By, p.Backlog = one.goal, getTestEpoch().AddDate(0, 0, 30), 40
+		admits := p.GetAllowance(day, getTestEpoch(), review.Spent{}, 0, 0)
 
 		if got := admits.Limits.Backlog != ""; got != one.shouldRead {
 			t.Errorf("under %s the share is read %v, want %v", one.goal, got, one.shouldRead)
@@ -49,8 +49,8 @@ func TestADaysSpendIsOffWhatItStillAdmits(t *testing.T) {
 	p.Goal, p.MinutesADay = review.GoalMinutes, 1
 	p.NewADay, p.ReviewsADay = 20, 20
 
-	initialAllowance := p.GetAllowance(day, testEpoch, review.Spent{}, 0, 0)
-	after := p.GetAllowance(day, testEpoch, review.Spent{
+	initialAllowance := p.GetAllowance(day, getTestEpoch(), review.Spent{}, 0, 0)
+	after := p.GetAllowance(day, getTestEpoch(), review.Spent{
 		Answered: 3, New: 3, Reviews: 3, Took: 18 * time.Second,
 	}, 0, 0)
 
@@ -105,10 +105,10 @@ func TestADayAtNoneOfTheLoadIsAPause(t *testing.T) {
 	if pos.Weekday() != time.Sunday {
 		t.Fatalf("%v is a %v", pos, pos.Weekday())
 	}
-	if !p.GetAllowance(ahead, pos, review.Spent{}, 0, 0).IsPaused() {
+	if !p.GetAllowance(getAhead(), pos, review.Spent{}, 0, 0).IsPaused() {
 		t.Error("a day at none of the load is not a pause")
 	}
-	if p.GetAllowance(ahead, pos.AddDate(0, 0, 1), review.Spent{}, 0, 0).IsPaused() {
+	if p.GetAllowance(getAhead(), pos.AddDate(0, 0, 1), review.Spent{}, 0, 0).IsPaused() {
 		t.Error("the day after it is a pause")
 	}
 }

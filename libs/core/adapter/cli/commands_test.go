@@ -28,7 +28,9 @@ import (
 var errRefused = errors.New("rejected on purpose")
 
 // notebook is the vault every command here operates on.
-var notebook = domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}
+func getNotebook() domain.Vault {
+	return domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}
+}
 
 // runWithDeps runs the terminal on the values it is handed.
 func runWithDeps(deps cli.Deps, args ...string) (string, error) {
@@ -58,7 +60,7 @@ func (failingLinkQueries) ResolveLinks(context.Context, domain.VaultID, string, 
 
 func createLinkDeps(links, backlinks []domain.ResolvedLink) cli.Deps {
 	return cli.Deps{
-		Vaults: createVaultList(notebook),
+		Vaults: createVaultList(getNotebook()),
 		Links: func(context.Context) (cli.Links, error) {
 			return cli.Links{Show: note.NewShowLinks(fixedLinkQueries{links: links, backlinks: backlinks})}, nil
 		},
@@ -80,11 +82,11 @@ func TestLinksReturnsWhatWentWrong(t *testing.T) {
 			Vaults: func() (cli.Vaults, error) { return cli.Vaults{}, errRefused },
 		},
 		"the links cannot be opened": {
-			Vaults: createVaultList(notebook),
+			Vaults: createVaultList(getNotebook()),
 			Links:  func(context.Context) (cli.Links, error) { return cli.Links{}, errRefused },
 		},
 		"the index cannot say what a note points at": {
-			Vaults: createVaultList(notebook),
+			Vaults: createVaultList(getNotebook()),
 			Links: func(context.Context) (cli.Links, error) {
 				return cli.Links{Show: note.NewShowLinks(failingLinkQueries{})}, nil
 			},
@@ -145,7 +147,7 @@ func TestLinksDescribesWhereEachLinkGoes(t *testing.T) {
 	crossed := newResolvedLink(domain.RoleChild, domain.SchemeName, "Hives", "Hives.md")
 	crossed.ToVault = "vlt-02"
 	home := newResolvedLink(domain.RoleChild, domain.SchemeName, "Hives", "Hives.md")
-	home.ToVault = notebook.ID
+	home.ToVault = getNotebook().ID
 	refLink := newResolvedLink(domain.RoleRef, domain.SchemeName, "Hives", "Hives.md")
 	refLink.Type = "kin"
 	reasoned := newResolvedLink(domain.RoleRef, domain.SchemeName, "Hives", "Hives.md")
@@ -210,7 +212,7 @@ func (fixedProblemQueries) GetDanglingLinks(context.Context, domain.VaultID) ([]
 
 func problemsDeps(queries problemport.ProblemQueries) cli.Deps {
 	return cli.Deps{
-		Vaults: createVaultList(notebook),
+		Vaults: createVaultList(getNotebook()),
 		Problems: func(context.Context) (cli.Problems, error) {
 			return cli.Problems{Problems: queries}, nil
 		},
@@ -283,7 +285,7 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 		},
 		"the problems cannot be opened": {
 			cli.Deps{
-				Vaults:   createVaultList(notebook),
+				Vaults:   createVaultList(getNotebook()),
 				Problems: func(context.Context) (cli.Problems, error) { return cli.Problems{}, errRefused },
 			},
 			[]string{"problems", "notebook"},
@@ -400,7 +402,7 @@ func TestAFlagMistypedAfterTheCommandIsAnError(t *testing.T) {
 		{"vault", "erase", "--no-such-flag"},
 		{"vault", "erase", "notebook", "--no-such-flag"},
 	} {
-		_, err := runWithDeps(cli.Deps{Vaults: createVaultList(notebook)}, args...)
+		_, err := runWithDeps(cli.Deps{Vaults: createVaultList(getNotebook())}, args...)
 		if err == nil || !strings.Contains(err.Error(), "no-such-flag") {
 			t.Errorf("%v answered %v", args, err)
 		}

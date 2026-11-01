@@ -14,9 +14,11 @@ import (
 // wire is the module the schema is generated into.
 const wire = "github.com/jiva-studio/numen/libs/protocol"
 
-// outward is what the core may not be compiled from: an adapter, the place
-var outward = []string{
-	module + "adapter", module + "internal/adapter", module + "container", wire,
+// listOutward returns what the core may not be compiled from: an adapter, the place
+func listOutward() []string {
+	return []string{
+		module + "adapter", module + "internal/adapter", module + "container", wire,
+	}
 }
 
 // getRefusedImports is what a package of this module may not be compiled from,
@@ -37,7 +39,7 @@ func getRefusedImports(path string) (forbidden []string, named bool) {
 		isShared(target):
 		return nil, false
 	}
-	return outward, false
+	return listOutward(), false
 }
 
 // isEdgeRefused reports whether a package fails the check for the edge it has;
@@ -101,14 +103,16 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 	}
 }
 
-// shipped are the platforms this product is built for. A file kept for one of
+// listShippedPlatforms returns the platforms this product is built for. A file kept for one of
 // them is compiled nowhere else, so a listing read on the machine the test runs
 // on is a rule checked against one platform's files. Every platform is read.
-var shipped = []struct{ goos, goarch string }{
-	{"linux", "amd64"},
-	{"darwin", "arm64"},
-	{"windows", "amd64"},
-	{"android", "arm64"},
+func listShippedPlatforms() []struct{ goos, goarch string } {
+	return []struct{ goos, goarch string }{
+		{"linux", "amd64"},
+		{"darwin", "arm64"},
+		{"windows", "amd64"},
+		{"android", "arm64"},
+	}
 }
 
 // Imports point inward. The test reads the build's resolved imports, so a
@@ -117,7 +121,7 @@ var shipped = []struct{ goos, goarch string }{
 // A test file is excluded: a test is outside the package it exercises and
 // builds the adapters that replace the real ones.
 func TestNothingTheCoreIsCompiledFromReachesOutward(t *testing.T) {
-	for _, one := range shipped {
+	for _, one := range listShippedPlatforms() {
 		t.Run(one.goos+"/"+one.goarch, func(t *testing.T) {
 			inward(t, one.goos, one.goarch)
 		})

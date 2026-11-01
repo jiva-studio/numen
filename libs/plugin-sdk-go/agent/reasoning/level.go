@@ -26,16 +26,16 @@ type Model struct {
 	DefaultReasoning string
 }
 
-// order lists the level names from the least reasoning to the most.
-var order = []string{"minimal", "low", "medium", "high", "xhigh", "max", "ultra"}
-
-var titles = map[string]string{"xhigh": "Extra high"}
+// listLevelNames returns the level names from the least reasoning to the most.
+func listLevelNames() []string {
+	return []string{"minimal", "low", "medium", "high", "xhigh", "max", "ultra"}
+}
 
 // NewLevel returns the level for a name, with a display title.
 func NewLevel(name string) Level {
 	name = strings.ToLower(strings.TrimSpace(name))
-	if title, found := titles[name]; found {
-		return Level{Name: name, Title: title}
+	if name == "xhigh" {
+		return Level{Name: name, Title: "Extra high"}
 	}
 	title := name
 	if name != "" {
@@ -55,7 +55,7 @@ func NewLevels(names ...string) []Level {
 
 // IsKnown is whether the name is one of the level names.
 func IsKnown(name string) bool {
-	return slices.Contains(order, strings.ToLower(strings.TrimSpace(name)))
+	return slices.Contains(listLevelNames(), strings.ToLower(strings.TrimSpace(name)))
 }
 
 // Contains is whether a level of the name is among the levels.
@@ -65,6 +65,7 @@ func Contains(levels []Level, name string) bool {
 
 // Sort orders the levels from the least reasoning to the most, a name outside the known ones last.
 func Sort(levels []Level) {
+	order := listLevelNames()
 	rank := func(one Level) int {
 		if place := slices.Index(order, one.Name); place >= 0 {
 			return place

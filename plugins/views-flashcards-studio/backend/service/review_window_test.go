@@ -48,56 +48,67 @@ func newCardModelDeck(cardModel, pos string, cards, from int) string {
 // between them, and review cards in the hundreds.
 //
 // Verbs uses the two-template card model, so it holds twice as many review cards as cards.
-var lived = map[string]string{
-	"Both.md": bothWays,
-	"One.md":  oneWay,
-	"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 12\n" +
-		"new_a_day: 15\nreviews_a_day: 120\nretention: 0.9\ncounts: cards\n---\n\n# Sanskrit\n",
-	"Grammar.md": "---\ntype: preset\ngoal: retention\nretention: 0.9\n" +
-		"new_a_day: 10\nreviews_a_day: 40\nminutes_a_day: 15\ncounts: cards\n---\n\n# Grammar\n",
-	"decks/Verbs.md": newCardModelDeck("Both", "Sanskrit", 150, 0),
-	"decks/Nouns.md": newCardModelDeck("One", "Sanskrit", 120, 1000),
-	"decks/Roots.md": newCardModelDeck("One", "Grammar", 150, 2000),
-	"decks/Loose.md": newCardModelDeck("One", "", 60, 3000),
+func getLived() map[string]string {
+	return map[string]string{
+		"Both.md": bothWays,
+		"One.md":  oneWay,
+		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 12\n" +
+			"new_a_day: 15\nreviews_a_day: 120\nretention: 0.9\ncounts: cards\n---\n\n# Sanskrit\n",
+		"Grammar.md": "---\ntype: preset\ngoal: retention\nretention: 0.9\n" +
+			"new_a_day: 10\nreviews_a_day: 40\nminutes_a_day: 15\ncounts: cards\n---\n\n# Grammar\n",
+		"decks/Verbs.md": newCardModelDeck("Both", "Sanskrit", 150, 0),
+		"decks/Nouns.md": newCardModelDeck("One", "Sanskrit", 120, 1000),
+		"decks/Roots.md": newCardModelDeck("One", "Grammar", 150, 2000),
+		"decks/Loose.md": newCardModelDeck("One", "", 60, 3000),
+	}
 }
 
 // The review cards of the lived vault, by the deck they stand in.
-var reviewCardsIn = map[string]int{
-	"decks/Verbs.md": 300,
-	"decks/Nouns.md": 120,
-	"decks/Roots.md": 150,
-	"decks/Loose.md": 60,
+func getReviewCardsIn() map[string]int {
+	return map[string]int{
+		"decks/Verbs.md": 300,
+		"decks/Nouns.md": 120,
+		"decks/Roots.md": 150,
+		"decks/Loose.md": 60,
+	}
 }
 
 // underSanskrit and underGrammar are the decks each preset schedules.
-var (
-	underSanskrit = []string{"decks/Nouns.md", "decks/Verbs.md"}
-	underGrammar  = []string{"decks/Roots.md"}
-)
+func getUnderSanskrit() []string {
+	return []string{"decks/Nouns.md", "decks/Verbs.md"}
+}
+
+func getUnderGrammar() []string {
+	return []string{"decks/Roots.md"}
+}
 
 // reviewDay is the day the counts of this file stand in: a boundary four hours
 // past midnight, counted in one zone whatever machine runs the test.
-var reviewDay = review.Day{Starts: 4 * time.Hour, In: time.UTC}
+func getReviewDay() review.Day {
+	return review.Day{Starts: 4 * time.Hour, In: time.UTC}
+}
 
 // firstMorning is the instant the history begins at, well inside its review day.
-var firstMorning = time.Date(2026, 4, 6, 9, 0, 0, 0, time.UTC)
+func getFirstMorning() time.Time {
+	return time.Date(2026, 4, 6, 9, 0, 0, 0, time.UTC)
+}
 
 // setNow synchronizes window time, review day calculation, and scenario clocks to now.
 func setNow(handler *API, now time.Time) {
 	pos := clock.NewFake(now)
 	handler.now = pos
-	handler.scenarios().day = reviewDay
+	handler.scenarios().day = getReviewDay()
 	handler.scenarios().flash.Record = flashcards.NewRecord(pos)
-	handler.scenarios().flash.CardsDue = handler.scenarios().flash.CardsDue.WithDay(reviewDay).WithNow(pos)
-	handler.scenarios().flash.Session = handler.scenarios().flash.Session.WithDay(reviewDay).WithNow(pos)
-	handler.scenarios().flash.GetReviewDays = handler.scenarios().flash.GetReviewDays.WithDay(reviewDay).WithNow(pos)
+	handler.scenarios().flash.CardsDue = handler.scenarios().flash.CardsDue.WithDay(getReviewDay()).WithNow(pos)
+	handler.scenarios().flash.Session = handler.scenarios().flash.Session.WithDay(getReviewDay()).WithNow(pos)
+	handler.scenarios().flash.GetReviewDays = handler.scenarios().flash.GetReviewDays.WithDay(getReviewDay()).WithNow(pos)
 }
 
 // runDays simulates consecutive daily review sessions across a vault.
 func runDays(t *testing.T, handler *API, v domain.Vault, days int) {
 	t.Helper()
 	for day := range days {
-		morning := firstMorning.AddDate(0, 0, day)
+		morning := getFirstMorning().AddDate(0, 0, day)
 		setNow(handler, morning)
 		if day%5 == 4 {
 			continue
@@ -229,10 +240,10 @@ func TestCurveAndDeckScreen_ShareSameDay(t *testing.T) {
 		},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			handler, target := newAPI(t, lived)
+			handler, target := newAPI(t, getLived())
 			v := target[0]
 			runDays(t, handler, v, 14)
-			setNow(handler, firstMorning.AddDate(0, 0, 14))
+			setNow(handler, getFirstMorning().AddDate(0, 0, 14))
 
 			p := readPresetConfig(t, handler, v, "Sanskrit.md")
 			p.Goal = one.goal
@@ -252,7 +263,7 @@ func TestCurveAndDeckScreen_ShareSameDay(t *testing.T) {
 						value, curveResp.Grid[item])
 				}
 				draws := int(curveResp.At[item].Reviews)
-				if got := countSessionCards(getVaultCount(t, handler, v), underSanskrit); got != draws {
+				if got := countSessionCards(getVaultCount(t, handler, v), getUnderSanskrit()); got != draws {
 					t.Errorf("at %v the curve draws %d cards for the day and the deck "+
 						"screen offers %d", value, draws, got)
 				}
@@ -265,29 +276,31 @@ func TestCurveAndDeckScreen_ShareSameDay(t *testing.T) {
 // distinguishes a preset with nothing scheduled from one whose day is fully
 // used.
 func TestTheCurveCarriesWhatThePresetSchedules(t *testing.T) {
-	handler, target := newAPI(t, lived)
+	handler, target := newAPI(t, getLived())
 	v := target[0]
-	setNow(handler, firstMorning)
+	setNow(handler, getFirstMorning())
 
 	curveResp := getCurve(t, handler, v, "Sanskrit.md", readPresetConfig(t, handler, v, "Sanskrit.md"))
-	want := reviewCardsIn["decks/Verbs.md"] + reviewCardsIn["decks/Nouns.md"]
-	if int(curveResp.Decks) != len(underSanskrit) || int(curveResp.Cards) != want {
+	want := getReviewCardsIn()["decks/Verbs.md"] + getReviewCardsIn()["decks/Nouns.md"]
+	if int(curveResp.Decks) != len(getUnderSanskrit()) || int(curveResp.Cards) != want {
 		t.Errorf("curve deck count = %d, review card count = %d, want %d and %d",
-			curveResp.Decks, curveResp.Cards, len(underSanskrit), want)
+			curveResp.Decks, curveResp.Cards, len(getUnderSanskrit()), want)
 	}
 }
 
 // sole are the decks that are the only deck of their preset, so the daily budget
 // allocated to that preset went to this deck.
-var sole = map[string]bool{"decks/Roots.md": true, "decks/Loose.md": true}
+func getSole() map[string]bool {
+	return map[string]bool{"decks/Roots.md": true, "decks/Loose.md": true}
+}
 
 // The cards each deck offers add up to the cards the vault offers, and a
 // session on one deck requests only that deck's share.
 func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
-	handler, target := newAPI(t, lived)
+	handler, target := newAPI(t, getLived())
 	v := target[0]
 	runDays(t, handler, v, 14)
-	setNow(handler, firstMorning.AddDate(0, 0, 14))
+	setNow(handler, getFirstMorning().AddDate(0, 0, 14))
 
 	response := getVaultCount(t, handler, v)
 	if int(response.ReviewCards) != 630 {
@@ -295,9 +308,9 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 	}
 	due, newCards := 0, 0
 	for _, one := range response.Decks {
-		if got := int(one.ReviewCards); got != reviewCardsIn[one.Deck] {
+		if got := int(one.ReviewCards); got != getReviewCardsIn()[one.Deck] {
 			t.Errorf("%s holds %d review cards, want %d",
-				one.Deck, got, reviewCardsIn[one.Deck])
+				one.Deck, got, getReviewCardsIn()[one.Deck])
 		}
 		due += int(one.Due)
 		newCards += int(one.New)
@@ -310,7 +323,7 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 		}
 		want := int(one.Due) + int(one.New)
 		got := len(sat.Cards)
-		if sole[one.Deck] && got != want {
+		if getSole()[one.Deck] && got != want {
 			t.Errorf("%s offers %d review cards and its session asks %d",
 				one.Deck, want, got)
 		}
@@ -333,12 +346,12 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 
 // TestVaultCount_ReturnsReviewedTodayPerDeck verifies answered count metrics per deck.
 func TestVaultCount_ReturnsReviewedTodayPerDeck(t *testing.T) {
-	handler, target := newAPI(t, lived)
+	handler, target := newAPI(t, getLived())
 	v := target[0]
 	runDays(t, handler, v, 14)
 
 	// A new day, with nothing answered in it yet.
-	setNow(handler, firstMorning.AddDate(0, 0, 14))
+	setNow(handler, getFirstMorning().AddDate(0, 0, 14))
 	for _, one := range getVaultCount(t, handler, v).Decks {
 		if one.Reviewed != 0 {
 			t.Errorf("nothing was answered today and %s counts %d",
@@ -380,8 +393,8 @@ func TestVaultCount_ReturnsReviewedTodayPerDeck(t *testing.T) {
 
 // CardsDue summary includes each vault once.
 func TestCardsDueSummaryContainsEachVaultOnce(t *testing.T) {
-	handler, target := newAPI(t, lived, deck)
-	setNow(handler, firstMorning)
+	handler, target := newAPI(t, getLived(), getDeck())
+	setNow(handler, getFirstMorning())
 
 	rows := front(t, handler).Vaults
 	if len(rows) != len(target) {
@@ -422,29 +435,29 @@ func TestCardsDueSummaryContainsEachVaultOnce(t *testing.T) {
 // A higher retention target gives shorter intervals, so the same history leaves
 // more cards due today.
 func TestVaultCount_RecomputesAfterRetentionChange(t *testing.T) {
-	handler, target := newAPI(t, lived)
+	handler, target := newAPI(t, getLived())
 	v := target[0]
 	runDays(t, handler, v, 14)
-	setNow(handler, firstMorning.AddDate(0, 0, 14))
+	setNow(handler, getFirstMorning().AddDate(0, 0, 14))
 
 	p := readPresetConfig(t, handler, v, "Grammar.md")
-	p.Retention = review.RetentionBounds.Min
+	p.Retention = review.GetRetentionBounds().Min
 	writePreset(t, handler, v, "Grammar.md", p)
 	// The first count is what writes the working out down, so the second is the
 	// one that could be answered from it.
-	least := countSessionCards(getVaultCount(t, handler, v), underGrammar)
+	least := countSessionCards(getVaultCount(t, handler, v), getUnderGrammar())
 
-	p.Retention = review.RetentionBounds.Max
+	p.Retention = review.GetRetentionBounds().Max
 	writePreset(t, handler, v, "Grammar.md", p)
-	most := countSessionCards(getVaultCount(t, handler, v), underGrammar)
+	most := countSessionCards(getVaultCount(t, handler, v), getUnderGrammar())
 
 	if most <= least {
 		t.Errorf("asking for %v of the cards back offers %d, and %v offers %d",
-			review.RetentionBounds.Max, most, review.RetentionBounds.Min, least)
+			review.GetRetentionBounds().Max, most, review.GetRetentionBounds().Min, least)
 	}
 
 	// The adjacent preset, whose target is unchanged, keeps its count.
-	if got := countSessionCards(getVaultCount(t, handler, v), underSanskrit); got == 0 {
+	if got := countSessionCards(getVaultCount(t, handler, v), getUnderSanskrit()); got == 0 {
 		t.Error("the preset nobody touched offers nothing")
 	}
 }

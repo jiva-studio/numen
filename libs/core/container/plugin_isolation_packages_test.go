@@ -2,7 +2,6 @@ package container
 
 import (
 	"path/filepath"
-	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -10,15 +9,16 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// pluginCapture matches the package path of a plugin and captures the plugin directory name.
-var pluginCapture = regexp.MustCompile(`^` + regexp.QuoteMeta(pluginsPrefix) + `([^/]+?)(?:\.test|_test)?(?:/|$)`)
-
-// getPluginCapture returns the plugin directory a package path belongs to, or "" for any other package.
+// getPluginCapture returns the plugin directory a package path belongs to, or "" for any other
+// package. The test binary of a plugin package carries a .test or _test suffix.
 func getPluginCapture(pkgPath string) string {
-	if match := pluginCapture.FindStringSubmatch(pkgPath); match != nil {
-		return match[1]
+	rest, isPlugin := strings.CutPrefix(pkgPath, pluginsPrefix)
+	if !isPlugin {
+		return ""
 	}
-	return ""
+	dir, _, _ := strings.Cut(rest, "/")
+	dir = strings.TrimSuffix(strings.TrimSuffix(dir, ".test"), "_test")
+	return dir
 }
 
 // isForeignToPlugins reports whether a package may be reached by no plugin, directly or through another

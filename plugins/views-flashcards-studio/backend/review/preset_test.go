@@ -61,7 +61,7 @@ func TestZeroIsAPauseBelowTheGoalThatNamesIt(t *testing.T) {
 		if len(problems) != 0 {
 			t.Fatalf("problems = %v", problems)
 		}
-		got := p.IsPaused(review.Day{Starts: review.DayStartTime}, testEpoch)
+		got := p.IsPaused(review.Day{Starts: review.DayStartTime}, getTestEpoch())
 		if got != one.isPaused {
 			t.Errorf("%q is paused %v, want %v", one.front, got, one.isPaused)
 		}
@@ -653,22 +653,24 @@ func TestAWholeDaysLoadIsWhatTheCorpusReturns(t *testing.T) {
 	if review.FullLoad != want {
 		t.Errorf("a whole day's load is %d, want %d", review.FullLoad, want)
 	}
-	if review.LoadBounds.Max != float64(want) {
-		t.Errorf("a day is loaded up to %g, want %d", review.LoadBounds.Max, want)
+	if review.GetLoadBounds().Max != float64(want) {
+		t.Errorf("a day is loaded up to %g, want %d", review.GetLoadBounds().Max, want)
 	}
 }
 
 func TestRetentionGoesAsFarAsTheCorpusReturns(t *testing.T) {
 	want := readPresetCorpus(t).RetentionBounds
 
-	if review.RetentionBounds.Min != want.Min || review.RetentionBounds.Max != want.Max {
+	if review.GetRetentionBounds().Min != want.Min || review.GetRetentionBounds().Max != want.Max {
 		t.Errorf("retention runs %g to %g, want %g to %g",
-			review.RetentionBounds.Min, review.RetentionBounds.Max, want.Min, want.Max)
+			review.GetRetentionBounds().Min, review.GetRetentionBounds().Max, want.Min, want.Max)
 	}
 }
 
 // lastAnswer is the instant the schedules below were last answered at.
-var lastAnswer = time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
+func getLastAnswer() time.Time {
+	return time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
+}
 
 // genSchedule generates the schedule of one review card after the answers so far:
 // the interval until it is due, and its stability. A card that was never answered
@@ -679,11 +681,11 @@ func genSchedule(t *rapid.T) review.Schedule {
 	away := time.Duration(rapid.IntRange(0, 400).Draw(t, "away"))*24*time.Hour +
 		time.Duration(rapid.SampledFrom([]int{0, 0, 0, 1, 59, 1439}).Draw(t, "minutes"))*time.Minute
 	out := review.Schedule{
-		Due:       lastAnswer.Add(away),
+		Due:       getLastAnswer().Add(away),
 		Stability: float64(rapid.IntRange(0, 500).Draw(t, "stability")),
 	}
 	if rapid.Bool().Draw(t, "seen") {
-		out.Last = lastAnswer
+		out.Last = getLastAnswer()
 	}
 	return out
 }
@@ -709,7 +711,7 @@ func TestIsLearned_UnansweredCardIsNeverLearned(t *testing.T) {
 		p := ruleNamed(t)
 		s := genSchedule(t)
 		s.Last = time.Time{}
-		pos := lastAnswer.Add(time.Duration(rapid.IntRange(-1000, 1000).Draw(t, "days")) * 24 * time.Hour)
+		pos := getLastAnswer().Add(time.Duration(rapid.IntRange(-1000, 1000).Draw(t, "days")) * 24 * time.Hour)
 		if p.IsLearned(s, pos) {
 			t.Fatalf("a review card unanswered counts learned under %+v "+
 				"at %v, standing at %+v", p, pos, s)
@@ -727,16 +729,16 @@ func TestAValueTheRuleCannotHoldCountsByTheDefault(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		p := ruleNamed(t)
 		s := genSchedule(t)
-		pos := lastAnswer.Add(time.Duration(rapid.IntRange(0, 1000).Draw(t, "days")) * 24 * time.Hour)
+		pos := getLastAnswer().Add(time.Duration(rapid.IntRange(0, 1000).Draw(t, "days")) * 24 * time.Hour)
 
 		standard := review.Defaults()
 		if review.IsKnownRule(p.Rule) {
 			standard.Rule = p.Rule
 		}
-		if review.IntervalBounds.Contains(float64(p.Interval)) {
+		if review.GetIntervalBounds().Contains(float64(p.Interval)) {
 			standard.Interval = p.Interval
 		}
-		if review.RetentionBounds.Contains(p.Retention) {
+		if review.GetRetentionBounds().Contains(p.Retention) {
 			standard.Retention = p.Retention
 		}
 		if got, want := p.IsLearned(s, pos), standard.IsLearned(s, pos); got != want {
@@ -758,7 +760,7 @@ func TestALongerIntervalIsLearnedByEveryShorterOne(t *testing.T) {
 		s := genSchedule(t)
 		short := rapid.IntRange(1, 365).Draw(t, "shorter")
 		long := rapid.IntRange(short, 365).Draw(t, "longer")
-		pos := lastAnswer.Add(time.Duration(rapid.IntRange(0, 1000).Draw(t, "days")) * 24 * time.Hour)
+		pos := getLastAnswer().Add(time.Duration(rapid.IntRange(0, 1000).Draw(t, "days")) * 24 * time.Hour)
 
 		delta := func(days int) review.Preset {
 			return review.Preset{Rule: review.RuleInterval, Interval: days}
@@ -792,7 +794,7 @@ func TestRecallIsAStateAndNotAMilestone(t *testing.T) {
 		soon := rapid.IntRange(0, 1000).Draw(t, "sooner")
 		late := rapid.IntRange(soon, 1000).Draw(t, "later")
 		day := func(days int) time.Time {
-			return lastAnswer.Add(time.Duration(days) * 24 * time.Hour)
+			return getLastAnswer().Add(time.Duration(days) * 24 * time.Hour)
 		}
 		if p.IsLearned(s, day(late)) && !p.IsLearned(s, day(soon)) {
 			t.Fatalf("a review card at a stability of %v counts learned %d days "+

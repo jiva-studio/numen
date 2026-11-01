@@ -18,7 +18,8 @@ import (
 //go:embed sql/*.sql
 var files embed.FS
 
-var stmt = sqlfile.Load(files, "sql")
+// getStatement returns the statement in sql/<name>.sql.
+func getStatement(name string) string { return sqlfile.Read(files, "sql", name) }
 
 // Repository is the floors of every vault. Reads go through read and writes
 // through write, the pools the index database opens.
@@ -36,7 +37,7 @@ func NewRepository(read, write *sql.DB) *Repository {
 // where none is kept.
 func (r *Repository) ReadFloor(ctx context.Context, v domain.Vault, recipe string) (float64, bool, error) {
 	var floor float64
-	err := r.read.QueryRowContext(ctx, stmt.Get("read"), string(v.ID), recipe).Scan(&floor)
+	err := r.read.QueryRowContext(ctx, getStatement("read"), string(v.ID), recipe).Scan(&floor)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, false, nil
 	}
@@ -48,7 +49,7 @@ func (r *Repository) ReadFloor(ctx context.Context, v domain.Vault, recipe strin
 
 // WriteFloor keeps the floor, replacing the one kept.
 func (r *Repository) WriteFloor(ctx context.Context, v domain.Vault, recipe string, floor float64) error {
-	if _, err := sqlwrite.Exec(ctx, r.write, stmt.Get("save"), string(v.ID), recipe, floor); err != nil {
+	if _, err := sqlwrite.Exec(ctx, r.write, getStatement("save"), string(v.ID), recipe, floor); err != nil {
 		return fmt.Errorf("write the floor of %s: %w", v.ID, err)
 	}
 	return nil
@@ -56,7 +57,7 @@ func (r *Repository) WriteFloor(ctx context.Context, v domain.Vault, recipe stri
 
 // DeleteFloor removes the floor kept.
 func (r *Repository) DeleteFloor(ctx context.Context, v domain.Vault, recipe string) error {
-	if _, err := sqlwrite.Exec(ctx, r.write, stmt.Get("delete"), string(v.ID), recipe); err != nil {
+	if _, err := sqlwrite.Exec(ctx, r.write, getStatement("delete"), string(v.ID), recipe); err != nil {
 		return fmt.Errorf("delete the floor of %s: %w", v.ID, err)
 	}
 	return nil

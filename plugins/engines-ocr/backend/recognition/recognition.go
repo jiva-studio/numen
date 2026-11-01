@@ -67,8 +67,9 @@ type Host struct {
 
 // Recognition reads files with the recogniser it opens.
 type Recognition struct {
-	host Host
-	open func(ctx context.Context) (Recogniser, error)
+	host      Host
+	open      func(ctx context.Context) (Recogniser, error)
+	documents *document.Reader
 }
 
 // New is the recognition through the host, with what opens the recogniser when a page is first read.
@@ -76,7 +77,7 @@ func New(h Host, open func(ctx context.Context) (Recogniser, error)) (*Recogniti
 	if h.Vault == nil || h.Store == nil || h.Texts == nil || h.Queue == nil || open == nil {
 		return nil, errors.New("a recognition needs the vault, the store, the texts, the queue and a recogniser")
 	}
-	return &Recognition{host: h, open: open}, nil
+	return &Recognition{host: h, open: open, documents: document.NewReader()}, nil
 }
 
 // Request is one file to recognise. Vault is the vault that contains it, and is
@@ -147,7 +148,7 @@ func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task
 	if err != nil {
 		return Result{}, err
 	}
-	doc, err := document.Open(req.Path, raw)
+	doc, err := r.documents.Open(req.Path, raw)
 	if err != nil {
 		return Result{}, err
 	}

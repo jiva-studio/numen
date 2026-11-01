@@ -56,8 +56,8 @@ func TestManifestSubscribesToEveryEvent(t *testing.T) {
 // The window reaches the plugin through the service its manifest names.
 func TestManifestServesTheRelevanceService(t *testing.T) {
 	manifest := readManifest(t)
-	if !slices.Equal(manifest.Services, []string{"numen.relevance"}) {
-		t.Errorf("services = %v, want numen.relevance only", manifest.Services)
+	if !slices.Equal(manifest.Services, []string{"md.numen.tools.search.relevance"}) {
+		t.Errorf("services = %v, want md.numen.tools.search.relevance only", manifest.Services)
 	}
 }
 

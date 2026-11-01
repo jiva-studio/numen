@@ -44,7 +44,7 @@ func recordReview(t *testing.T, handler *API, vault string, session *api.StartSe
 // state: it has been seen, and it has a due instant the page can parse. A card
 // never answered carries neither.
 func TestStartSession_ReviewedCardHasScheduleState(t *testing.T) {
-	handler, target := newAPI(t, deck)
+	handler, target := newAPI(t, getDeck())
 	v := target[0]
 
 	first := startSession(t, handler, v)
@@ -76,7 +76,7 @@ func TestStartSession_ReviewedCardHasScheduleState(t *testing.T) {
 // A mistaken answer is withdrawn, and a withdrawn answer is not part of the
 // answered count.
 func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
-	handler, target := newAPI(t, deck)
+	handler, target := newAPI(t, getDeck())
 	v := target[0]
 
 	session := startSession(t, handler, v)
@@ -103,7 +103,7 @@ func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 
 // one.
 func TestTakingBackWithoutNamingAnAnswerIsRefused(t *testing.T) {
-	handler, target := newAPI(t, deck)
+	handler, target := newAPI(t, getDeck())
 	v := target[0]
 	session := startSession(t, handler, v)
 
@@ -118,7 +118,7 @@ func TestTakingBackWithoutNamingAnAnswerIsRefused(t *testing.T) {
 // An answer is taken back on the run it was given on. A run this window never
 // opened is not one to write into.
 func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
-	handler, target := newAPI(t, deck)
+	handler, target := newAPI(t, getDeck())
 	v := target[0]
 	session := startSession(t, handler, v)
 	provided := recordReview(t, handler, string(v.ID), session)
@@ -134,7 +134,7 @@ func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
 // An answer names the vault it belongs to. One the installation does not hold
 // fails before a line is written into anybody's review.
 func TestAnsweringAVaultNobodyContainsIsRefused(t *testing.T) {
-	handler, _ := newAPI(t, deck)
+	handler, _ := newAPI(t, getDeck())
 
 	_, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 		Vault: "nothing", Run: "nothing",
@@ -175,7 +175,7 @@ func TestAWindowThatCannotReadTheVaultsReturnsSo(t *testing.T) {
 
 // A vault the installation does not hold fails before anything is written.
 func TestTakingBackOnAVaultNobodyContainsIsRefused(t *testing.T) {
-	handler, _ := newAPI(t, deck)
+	handler, _ := newAPI(t, getDeck())
 
 	_, err := handler.UndoReview(t.Context(), &api.UndoReviewRequest{
 		Vault: "nothing", Run: "nothing", Answer: "nothing",
@@ -222,7 +222,7 @@ func TestSomethingMovingReachesThePage(t *testing.T) {
 // A deck edited in place keeps its size and its stamp, and the window keeps no
 // review card of it past a report that something moved.
 func TestAReportedChangeForgetsTheCardsAlreadyParsed(t *testing.T) {
-	handler, target, installation := newAPIOn(t, deck)
+	handler, target, installation := newAPIOn(t, getDeck())
 	v := target[0]
 	reviewCards := handler.scenarios().flash.CardsDue.ReviewCards()
 
@@ -236,7 +236,7 @@ func TestAReportedChangeForgetsTheCardsAlreadyParsed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	edited := strings.Replace(deck["decks/Words.md"], "### Word\n\nLeaf mould", "### Word\n\nMould leaf", 1)
+	edited := strings.Replace(getDeck()["decks/Words.md"], "### Word\n\nLeaf mould", "### Word\n\nMould leaf", 1)
 	if err := os.WriteFile(pos, []byte(edited), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -282,7 +282,7 @@ func (unopenable) Open(domain.Vault) (ports.LogStore, error) {
 // A session whose run cannot be opened is an internal error, and the page is
 // handed no run to answer on.
 func TestASessionWhoseRunCannotBeOpenedIsRefused(t *testing.T) {
-	handler, target := newAPI(t, deck)
+	handler, target := newAPI(t, getDeck())
 	handler.scenarios().flash.Log = flashcards.Log{Stores: unopenable{}}
 
 	out, err := handler.StartSession(t.Context(),
@@ -298,9 +298,9 @@ func TestASessionWhoseRunCannotBeOpenedIsRefused(t *testing.T) {
 // A vault whose answers cannot be counted is an internal error and no list of
 // days.
 func TestAVaultWhoseAnswersCannotBeCountedIsRefused(t *testing.T) {
-	handler, target := newAPI(t, deck)
+	handler, target := newAPI(t, getDeck())
 	handler.scenarios().flash.GetReviewDays = flashcards.NewGetReviewDays(
-		flashcards.NewCountReviews(unopenable{}, handler.scenarios().flash.Schedules, reviewDay, vaulttest.NewClock()))
+		flashcards.NewCountReviews(unopenable{}, handler.scenarios().flash.Schedules, getReviewDay(), vaulttest.NewClock()))
 
 	out, err := handler.ListReviewDays(t.Context(),
 		&api.ListReviewDaysRequest{Vault: string(target[0].ID)})
@@ -315,7 +315,7 @@ func TestAVaultWhoseAnswersCannotBeCountedIsRefused(t *testing.T) {
 // An answer for a vault that does not exist fails as an unknown vault, and not
 // as an unopened run.
 func TestAnAnswerAndATakingBackNameTheVaultNobodyContains(t *testing.T) {
-	handler, _ := newAPI(t, deck)
+	handler, _ := newAPI(t, getDeck())
 
 	_, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 		Vault: "nothing", Run: "nothing", Rating: api.RatingGood,
@@ -334,7 +334,7 @@ func TestAnAnswerAndATakingBackNameTheVaultNobodyContains(t *testing.T) {
 
 // Taking an answer back answers with a response, which is empty.
 func TestUndoReview_ReturnsEmptyResponse(t *testing.T) {
-	handler, target := newAPI(t, deck)
+	handler, target := newAPI(t, getDeck())
 	v := target[0]
 	session := startSession(t, handler, v)
 	answer := recordReview(t, handler, string(v.ID), session)
@@ -368,7 +368,7 @@ func TestACardWithNoProjectionCarriesNone(t *testing.T) {
 // A range covers every day of a long history, answered and upcoming: the days
 // outside it do not end the walk through the days inside it.
 func TestListReviewDays_RangeCoversLongHistory(t *testing.T) {
-	handler, target := newAPI(t, lived)
+	handler, target := newAPI(t, getLived())
 	v := target[0]
 	runDays(t, handler, v, 14)
 
@@ -420,7 +420,7 @@ func (refusingStores) Open(domain.Vault) (ports.LogStore, error) { return append
 // An answer the run's file would not take is an internal error, and so is the
 // taking back of one.
 func TestAnAnswerTheRunCannotWriteIsRefused(t *testing.T) {
-	handler, target := newAPI(t, deck)
+	handler, target := newAPI(t, getDeck())
 	handler.scenarios().flash.Log = flashcards.Log{Stores: refusingStores{}}
 	v := target[0]
 	session := startSession(t, handler, v)
@@ -444,7 +444,7 @@ func TestAnAnswerTheRunCannotWriteIsRefused(t *testing.T) {
 
 // A session that cannot be worked out is an internal error and opens no run.
 func TestASessionThatCannotBeWorkedOutIsRefused(t *testing.T) {
-	handler, target := newAPI(t, deck)
+	handler, target := newAPI(t, getDeck())
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 

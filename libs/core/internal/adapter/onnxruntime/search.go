@@ -12,7 +12,7 @@ import (
 
 // libraryEnvs lists the environment variables that name the ONNX runtime
 // library. The first one that is set is used as given.
-var libraryEnvs = []string{"NUMEN_ONNX_RUNTIME_LIB", "NUMEN_ONNX_RUNTIME"}
+func getLibraryEnvs() []string { return []string{"NUMEN_ONNX_RUNTIME_LIB", "NUMEN_ONNX_RUNTIME"} }
 
 // getLibraryName returns what the library is called on an operating system.
 func getLibraryName(goos string) string {
@@ -27,7 +27,7 @@ func getLibraryName(goos string) string {
 
 // getEnvLibrary returns the library path named in the environment, or empty.
 func getEnvLibrary() string {
-	for _, name := range libraryEnvs {
+	for _, name := range getLibraryEnvs() {
 		if pos := os.Getenv(name); pos != "" {
 			return pos
 		}

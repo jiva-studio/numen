@@ -7,14 +7,33 @@ import (
 	ort "github.com/getcharzp/onnxruntime_purego"
 )
 
-// runtimeState is the runtime this process runs, opened once for its life.
-var runtimeState Runtime[*ort.Engine]
+// Library is the ONNX Runtime a process runs, opened once for its life, and the calls of it this
+// package resolves. One engine serves every caller of a Library.
+//
+// The binding gives every tensor to the engine made last and stamps it on for that tensor's life,
+// so one made on a library's first use moves what everything already running was building its
+// tensors through. A process makes one Library and passes it to everything that runs a model.
+type Library struct {
+	runtime Runtime[*ort.Engine]
+	graph   graphOptimization
+	entries configEntryResolver
+}
 
-// Open returns the engine of the library at, opened on the first call. One
-// engine serves every caller here, and every library registered makes its own
-// engine in the same step.
-func Open(ctx context.Context, libPath string) (*ort.Engine, string, error) {
-	return runtimeState.Open(ctx, libPath, openEngine)
+// NewLibrary returns a library that is not open yet. Each hook is called once, with the library
+// the engine is opened from, in the same step that records the engine: a library that creates an
+// engine of its own makes it there. A hook that returns an error fails the open.
+func NewLibrary(hooks ...func(libPath string) error) *Library {
+	library := new(Library)
+	library.runtime.Register(library.bindGraphOptimization)
+	for _, hook := range hooks {
+		library.runtime.Register(hook)
+	}
+	return library
+}
+
+// Open returns the engine of the library at libPath, opened on the first call.
+func (l *Library) Open(ctx context.Context, libPath string) (*ort.Engine, string, error) {
+	return l.runtime.Open(ctx, libPath, openEngine)
 }
 
 // openEngine loads the library at.
@@ -27,25 +46,13 @@ func openEngine(libPath string) (*ort.Engine, error) {
 	return engine, nil
 }
 
-// Register registers a library that creates an engine of its own, created where this
-// process initializes its runtime and passed the library it opened. It must be called
-// from an init, before anything opens an engine. A hook that returns an error fails the open.
-//
-// The binding gives every tensor to the engine made last and stamps it on for
-// that tensor's life, so one made on a library's first use moves what everything
-// already running was building its tensors through.
-func Register(also func(libPath string) error) {
-	runtimeState.Register(also)
+// IsAvailable reports whether the library is open, or the library at libPath is there to open. It
+// opens nothing, so it is answered while another caller is opening one.
+func (l *Library) IsAvailable(libPath string) bool {
+	return l.runtime.IsAvailable(libPath)
 }
 
-// IsAvailable reports whether this process has its runtime, or the library at
-// is there to make one from. It opens nothing, so it is answered while another
-// caller is opening one.
-func IsAvailable(libPath string) bool {
-	return runtimeState.IsAvailable(libPath)
-}
-
-// HasRegistration reports whether any library has registered an initialisation hook.
-func HasRegistration() bool {
-	return runtimeState.HasRegistration()
+// HasRegistration reports whether any hook runs when the library opens.
+func (l *Library) HasRegistration() bool {
+	return l.runtime.HasRegistration()
 }

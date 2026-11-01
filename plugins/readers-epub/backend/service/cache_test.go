@@ -66,7 +66,7 @@ func TestReadBookEntryReopensTheBookWhenTheFileChanged(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if bytes.Equal(resp.Body, pngBytes) {
+	if bytes.Equal(resp.Body, getPNGBytes()) {
 		t.Error("the entry is the picture of the book before the file changed")
 	}
 	if got := opens.Load(); got != 2 {
@@ -108,7 +108,7 @@ func TestReadBookEntryAnswersConcurrentRequests(t *testing.T) {
 					t.Error(err)
 					return
 				}
-				if !bytes.Equal(resp.Body, pngBytes) {
+				if !bytes.Equal(resp.Body, getPNGBytes()) {
 					t.Errorf("the entry is %q, want the picture's bytes", resp.Body)
 					return
 				}
@@ -147,7 +147,7 @@ func TestCloseKeepsTheFileOpenForAReadingRequest(t *testing.T) {
 	}
 	books.Close()
 	body, err := book.archive.Entry("EPUB/cover.png")
-	if err != nil || !bytes.Equal(body, pngBytes) {
+	if err != nil || !bytes.Equal(body, getPNGBytes()) {
 		t.Fatalf("entry = %q, %v, want the picture's bytes while the request reads", body, err)
 	}
 	books.books.release(book)

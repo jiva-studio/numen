@@ -38,17 +38,21 @@ type TextServer struct {
 	isClosed bool
 	last     layer
 	running  map[string]context.CancelFunc
+
+	workers *pdf.Workers
 }
 
 var _ host.TextProvider = (*TextServer)(nil)
 
 // NewTextServer is the text layers of the files read through files, written into store and reported
 // to texts, each written in a turn of queue.
-func NewTextServer(files host.Vault, texts host.Texts, store host.Store, queue host.Queue) *TextServer {
+func NewTextServer(
+	files host.Vault, texts host.Texts, store host.Store, queue host.Queue, workers *pdf.Workers,
+) *TextServer {
 	return &TextServer{
 		files: files, texts: texts, store: store, queue: queue,
 		wg: sync.WaitGroup{}, mu: sync.Mutex{}, isClosed: false, last: layer{hash: "", raw: nil, book: nil},
-		running: map[string]context.CancelFunc{},
+		running: map[string]context.CancelFunc{}, workers: workers,
 	}
 }
 
@@ -90,7 +94,7 @@ func (s *TextServer) readLayer(ctx context.Context, files host.Vault, path strin
 	if last.book != nil && last.hash == hash {
 		return last, nil
 	}
-	book, err := pdf.Read(raw)
+	book, err := s.workers.Read(raw)
 	if err != nil {
 		return layer{}, err
 	}
@@ -171,7 +175,7 @@ func (s *TextServer) putLayer(ctx context.Context, req host.TextCreation, task h
 	if !read.hasText() {
 		return nil
 	}
-	segments, err := read.getSegments()
+	segments, err := read.getSegments(s.workers)
 	if err != nil {
 		return fmt.Errorf("read the words of %s: %w", req.Path, err)
 	}
@@ -186,7 +190,7 @@ func (s *TextServer) putLayer(ctx context.Context, req host.TextCreation, task h
 }
 
 // getSegments is the text layer of every page of the file, cut pagesPerBatch pages at a time.
-func (l layer) getSegments() ([]domain.TextSegment, error) {
+func (l layer) getSegments(workers *pdf.Workers) ([]domain.TextSegment, error) {
 	var segments []domain.TextSegment
 	pages := len(l.book.Pages)
 	for first := 0; first < pages; first += pagesPerBatch {
@@ -195,7 +199,7 @@ func (l layer) getSegments() ([]domain.TextSegment, error) {
 		for i := first; i < last; i++ {
 			wanted = append(wanted, i)
 		}
-		boxes, err := l.book.Highlights(l.raw, wanted)
+		boxes, err := l.book.Highlights(workers, l.raw, wanted)
 		if err != nil {
 			return nil, err
 		}

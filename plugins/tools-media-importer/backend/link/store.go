@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"path"
-	"slices"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -28,9 +27,6 @@ const (
 	noneExt   = ".none"
 	partExt   = ".part"
 )
-
-// copyExts are the containers a copy is kept in.
-var copyExts = []string{".mp4", ".m4a", ".webm", ".mp3", ".ogg", ".wav", ".flac"}
 
 // The kinds of the text versions of links.
 const (
@@ -157,7 +153,14 @@ func isCopyOf(name, hash string) bool {
 	return strings.TrimSuffix(name, ext) == hash && isCopyExt(strings.ToLower(ext))
 }
 
-func isCopyExt(ext string) bool { return slices.Contains(copyExts, ext) }
+// isCopyExt reports whether a copy is kept in the container of the extension.
+func isCopyExt(ext string) bool {
+	switch ext {
+	case ".mp4", ".m4a", ".webm", ".mp3", ".ogg", ".wav", ".flac":
+		return true
+	}
+	return false
+}
 
 // deleteCopy takes away the copy kept under the hash, whole or arriving.
 func (f folder) deleteCopy(ctx context.Context, hash string) error {

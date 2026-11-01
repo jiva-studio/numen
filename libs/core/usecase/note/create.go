@@ -2,6 +2,7 @@ package note
 
 import (
 	"context"
+	"crypto/rand"
 	pathpkg "path"
 	"strings"
 
@@ -80,7 +81,10 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 		}
 	}
 
-	identifier := ulid.New(u.now.Now())
+	identifier, err := ulid.NewGenerator(rand.Reader).NewID(u.now.Now())
+	if err != nil {
+		return CreateResult{}, err
+	}
 
 	content, err := writeTitle(markdown.Create(identifier, in.Body), title, exact)
 	if err != nil {

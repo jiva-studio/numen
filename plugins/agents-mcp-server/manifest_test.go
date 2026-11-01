@@ -32,7 +32,7 @@ func TestManifestValid(t *testing.T) {
 		t.Errorf("manifest declares the tools capability: %v", manifest.Capabilities)
 	}
 
-	if !slices.Equal(manifest.Services, []string{"numen.v1.McpServerService"}) {
-		t.Errorf("got services %v, want %q", manifest.Services, "numen.v1.McpServerService")
+	if !slices.Equal(manifest.Services, []string{"md.numen.agents.mcp.server"}) {
+		t.Errorf("got services %v, want %q", manifest.Services, "md.numen.agents.mcp.server")
 	}
 }

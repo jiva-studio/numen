@@ -52,7 +52,7 @@ func newHostWithGemini(t *testing.T) (*Host, string) {
 			t.Fatal(err)
 		}
 	}
-	host := NewHost(testsupport.Machine, "desktop.editor", root)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", root)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}

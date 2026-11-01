@@ -10,12 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
 )
 
 // askAgent sends the task and returns the response text and the stop reason.
@@ -343,7 +342,7 @@ func TestAskAgentStopsTheAgentWhenCancelled(t *testing.T) {
 			t.Errorf("a cancelled task said %v", stream.Msg())
 		}
 	}
-	if connect.CodeOf(stream.Err()) != connect.CodeDeadlineExceeded && connect.CodeOf(stream.Err()) != connect.CodeCanceled {
+	if rpcerror.GetCode(stream.Err()) != rpcerror.DeadlineExceeded && rpcerror.GetCode(stream.Err()) != rpcerror.Canceled {
 		t.Errorf("the stream ended with %v", stream.Err())
 	}
 }

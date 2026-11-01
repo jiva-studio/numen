@@ -93,8 +93,8 @@ const SettingStoredSecrets = "storedSecrets"
 // manifest uses the name.
 const SettingAIConsent = "aiConsent"
 
-// reservedSettingKeys are the settings of a plugin the host keeps for itself.
-var reservedSettingKeys = []string{SettingStoredSecrets, SettingAIConsent}
+// listReservedSettingKeys returns the settings of a plugin the host keeps for itself.
+func listReservedSettingKeys() []string { return []string{SettingStoredSecrets, SettingAIConsent} }
 
 var (
 	manifestIDPattern       = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)
@@ -113,7 +113,10 @@ const SettingTypeEnum = "enum"
 // SettingTypeFile is the type of a setting that holds a file path on this machine.
 const SettingTypeFile = "file"
 
-var validSettingTypes = []string{"boolean", SettingTypeString, "number", SettingTypeEnum, "range", SettingTypeFile}
+// listSettingTypes returns the types a setting may have.
+func listSettingTypes() []string {
+	return []string{"boolean", SettingTypeString, "number", SettingTypeEnum, "range", SettingTypeFile}
+}
 
 // Backend describes the server-side executable of a plugin.
 type Backend struct {
@@ -440,7 +443,7 @@ func (m Manifest) listSecretIssues() []error {
 		switch {
 		case !manifestSecretPattern.MatchString(name):
 			issues = append(issues, fmt.Errorf("%w: %q is not letters, digits, _ or -", ErrInvalidSecret, name))
-		case slices.Contains(reservedSettingKeys, name):
+		case slices.Contains(listReservedSettingKeys(), name):
 			issues = append(issues, fmt.Errorf("%w: secret %q", ErrReservedSettingKey, name))
 		case observed[name]:
 			issues = append(issues, fmt.Errorf("%w: %q is declared twice", ErrInvalidSecret, name))
@@ -461,7 +464,7 @@ func listManifestSettingIssues(settings []Setting) []error {
 			issues = append(issues, ErrEmptySettingKey)
 			continue
 		}
-		if slices.Contains(reservedSettingKeys, key) {
+		if slices.Contains(listReservedSettingKeys(), key) {
 			issues = append(issues, fmt.Errorf("%w: %s", ErrReservedSettingKey, key))
 			continue
 		}
@@ -485,7 +488,7 @@ func listManifestSettingIssue(s Setting, key string) []error {
 	if strings.TrimSpace(s.Title) == "" {
 		issues = append(issues, fmt.Errorf("%w: %s", ErrEmptySettingTitle, key))
 	}
-	if !slices.Contains(validSettingTypes, s.Type) {
+	if !slices.Contains(listSettingTypes(), s.Type) {
 		issues = append(issues, fmt.Errorf("%w: %q for %s", ErrInvalidSettingType, s.Type, key))
 	}
 	if s.Type == SettingTypeEnum && len(s.Options) == 0 && s.OptionsBy == nil {

@@ -36,38 +36,27 @@ func TestTheIdleWorkersFitTheAvailableMemory(t *testing.T) {
 	}
 }
 
-// startIdlePool releases any running pool and sets the idle count and period
-// the next pool starts with.
-func startIdlePool(t *testing.T, idle int, period time.Duration) {
+// startIdlePool returns a pool that keeps idle workers alive and releases them after period. The
+// pool is released when the test ends.
+func startIdlePool(t *testing.T, idle int, period time.Duration) *Workers {
 	t.Helper()
-	workers.Lock()
-	before, beforePeriod, beforeAfter := workers.idle, idleRelease, workers.afterFunc
-	workers.Unlock()
-	t.Cleanup(func() {
-		releasePool()
-		SetIdleWorkers(before)
-		workers.Lock()
-		idleRelease = beforePeriod
-		workers.afterFunc = beforeAfter
-		workers.Unlock()
-	})
-	releasePool()
-	SetIdleWorkers(idle)
-	SetAfterFunc(func(d time.Duration, f func()) Timer { return time.AfterFunc(d, f) })
-	workers.Lock()
-	idleRelease = period
-	workers.Unlock()
+	workers := NewWorkers()
+	t.Cleanup(workers.releasePool)
+	workers.SetIdleWorkers(idle)
+	workers.SetAfterFunc(func(d time.Duration, f func()) Timer { return time.AfterFunc(d, f) })
+	workers.idleRelease = period
+	return workers
 }
 
 func TestAnIdleWorkerIsReusedByTheNextDocument(t *testing.T) {
-	startIdlePool(t, 2, time.Hour)
-	first, err := openPath("testdata/tiny.pdf")
+	workers := startIdlePool(t, 2, time.Hour)
+	first, err := openPath(workers, "testdata/tiny.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
 	worker := first.worker.GetImplementation()
 	cleanup.Close(t, first)
-	second, err := openPath("testdata/tiny.pdf")
+	second, err := openPath(workers, "testdata/tiny.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,14 +70,14 @@ func TestAnIdleWorkerIsReusedByTheNextDocument(t *testing.T) {
 }
 
 func TestWithNoIdleCountEveryDocumentStartsAWorker(t *testing.T) {
-	startIdlePool(t, 0, time.Hour)
-	first, err := openPath("testdata/tiny.pdf")
+	workers := startIdlePool(t, 0, time.Hour)
+	first, err := openPath(workers, "testdata/tiny.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
 	worker := first.worker.GetImplementation()
 	cleanup.Close(t, first)
-	second, err := openPath("testdata/tiny.pdf")
+	second, err := openPath(workers, "testdata/tiny.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,32 +87,32 @@ func TestWithNoIdleCountEveryDocumentStartsAWorker(t *testing.T) {
 	}
 }
 
-func hasPool() bool {
-	workers.Lock()
-	defer workers.Unlock()
+func hasPool(workers *Workers) bool {
+	workers.mu.Lock()
+	defer workers.mu.Unlock()
 	return workers.pool != nil
 }
 
 func TestTheWorkersAreReleasedAfterTheIdlePeriod(t *testing.T) {
-	startIdlePool(t, 2, 50*time.Millisecond)
-	doc, err := openPath("testdata/tiny.pdf")
+	workers := startIdlePool(t, 2, 50*time.Millisecond)
+	doc, err := openPath(workers, "testdata/tiny.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
 	time.Sleep(150 * time.Millisecond)
-	if !hasPool() {
+	if !hasPool(workers) {
 		t.Fatal("the pool was released while a document was open")
 	}
 	cleanup.Close(t, doc)
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
-	for hasPool() && ctx.Err() == nil {
+	for hasPool(workers) && ctx.Err() == nil {
 		time.Sleep(10 * time.Millisecond)
 	}
-	if hasPool() {
+	if hasPool(workers) {
 		t.Fatal("the pool was not released after the idle period")
 	}
-	again, err := openPath("testdata/tiny.pdf")
+	again, err := openPath(workers, "testdata/tiny.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,20 +120,20 @@ func TestTheWorkersAreReleasedAfterTheIdlePeriod(t *testing.T) {
 }
 
 func TestReleasingThePoolClosesEveryWorker(t *testing.T) {
-	startIdlePool(t, 2, time.Hour)
-	doc, err := openPath("testdata/tiny.pdf")
+	workers := startIdlePool(t, 2, time.Hour)
+	doc, err := openPath(workers, "testdata/tiny.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
 	cleanup.Close(t, doc)
-	releasePool()
-	if hasPool() {
+	workers.releasePool()
+	if hasPool(workers) {
 		t.Fatal("the pool is still held after it was released")
 	}
 }
 
 func TestAnOpenRacingTheIdleReleaseStartsAFreshPool(t *testing.T) {
-	startIdlePool(t, 2, time.Microsecond)
+	workers := startIdlePool(t, 2, time.Microsecond)
 	var wg sync.WaitGroup
 	errs := make(chan error, 4)
 	for range 4 {
@@ -152,7 +141,7 @@ func TestAnOpenRacingTheIdleReleaseStartsAFreshPool(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for range 150 {
-				doc, err := openPath("testdata/tiny.pdf")
+				doc, err := openPath(workers, "testdata/tiny.pdf")
 				if err != nil {
 					errs <- err
 					return
@@ -169,73 +158,69 @@ func TestAnOpenRacingTheIdleReleaseStartsAFreshPool(t *testing.T) {
 }
 
 func TestAReleaseCannotCloseAPoolADocumentHasAcquired(t *testing.T) {
-	startIdlePool(t, 2, time.Hour)
-	p, err := acquirePool()
+	workers := startIdlePool(t, 2, time.Hour)
+	p, err := workers.acquirePool()
 	if err != nil {
 		t.Fatal(err)
 	}
-	releasePool()
-	if !hasPool() {
-		markDocumentClosed()
+	workers.releasePool()
+	if !hasPool(workers) {
+		workers.markDocumentClosed()
 		t.Fatal("the pool was released while a document had acquired it")
 	}
 	worker, err := p.GetInstance(time.Minute)
 	if err != nil {
-		markDocumentClosed()
+		workers.markDocumentClosed()
 		t.Fatal(err)
 	}
-	if err := putWorker(worker); err != nil {
+	if err := workers.putWorker(worker); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func openPath(path string) (*document, error) {
+func openPath(workers *Workers, path string) (*document, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("pdf: %w", err)
 	}
-	return openReader(file)
+	return workers.openReader(file)
 }
 
 func TestSetIdleWorkersNegativeKeepsNone(t *testing.T) {
-	workers.Lock()
-	before := workers.idle
-	workers.Unlock()
-	t.Cleanup(func() { SetIdleWorkers(before) })
-
-	SetIdleWorkers(-1)
-	workers.Lock()
+	workers := NewWorkers()
+	workers.SetIdleWorkers(-1)
+	workers.mu.Lock()
 	idle := workers.idle
-	workers.Unlock()
+	workers.mu.Unlock()
 	if idle != 0 {
 		t.Errorf("SetIdleWorkers(-1) set idle to %d, want 0", idle)
 	}
 }
 
 func TestAcquiringDocumentCancelsPendingIdleRelease(t *testing.T) {
-	startIdlePool(t, 2, time.Hour)
-	doc, err := openPath("testdata/tiny.pdf")
+	workers := startIdlePool(t, 2, time.Hour)
+	doc, err := openPath(workers, "testdata/tiny.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
 	cleanup.Close(t, doc)
 
-	workers.Lock()
+	workers.mu.Lock()
 	hasTimer := workers.release != nil
-	workers.Unlock()
+	workers.mu.Unlock()
 	if !hasTimer {
 		t.Fatal("expected pending idle release timer after closing document")
 	}
 
-	again, err := openPath("testdata/tiny.pdf")
+	again, err := openPath(workers, "testdata/tiny.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer cleanup.Close(t, again)
 
-	workers.Lock()
+	workers.mu.Lock()
 	timerStopped := workers.release == nil
-	workers.Unlock()
+	workers.mu.Unlock()
 	if !timerStopped {
 		t.Error("expected release timer to be cancelled and cleared upon acquiring document")
 	}

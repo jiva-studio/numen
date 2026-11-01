@@ -21,7 +21,8 @@ import (
 //go:embed sql/*.sql
 var files embed.FS
 
-var stmt = sqlfile.Load(files, "sql")
+// getStatement returns the statement in sql/<name>.sql.
+func getStatement(name string) string { return sqlfile.Read(files, "sql", name) }
 
 // kind is what a note is among the sources the index holds. Everything this
 // package writes and reads is one, and a path naming a file of another kind
@@ -40,7 +41,7 @@ func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 // error from one of the many statements in a transaction does not locate the
 // schema fault.
 func exec(ctx context.Context, tx *sqlwrite.Transaction, name string, args ...any) error {
-	if _, err := tx.ExecContext(ctx, stmt.Get(name), args...); err != nil {
+	if _, err := tx.ExecContext(ctx, getStatement(name), args...); err != nil {
 		return fmt.Errorf("%s: %w", name, err)
 	}
 	return nil
@@ -124,7 +125,7 @@ func saveSourceAndNote(
 
 	var row int64
 	var updated bool
-	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
+	if err := tx.QueryRowContext(ctx, getStatement("save_source"),
 		vault, n.FileStat.Path, kind, n.FileStat.Size, chunk.ConvertTimeToNanos(n.FileStat.ModTime),
 		nil, nil, nil,
 	).Scan(&row, &updated); err != nil {
@@ -150,7 +151,7 @@ func saveSourceAndNote(
 // insertLinks stores what a note points at, in the order it names them.
 func insertLinks(ctx context.Context, tx *sqlwrite.Transaction, row int64, links []domain.Link) error {
 	for i, l := range links {
-		if _, err := tx.ExecContext(ctx, stmt.Get("insert_link"), row, i,
+		if _, err := tx.ExecContext(ctx, getStatement("insert_link"), row, i,
 			l.Target.Scheme, l.Target.Value, domain.FoldName(domain.LinkName(l.Target.Value)),
 			string(l.Role), newNullable(l.Type), newNullable(l.Why), newNullable(l.Label),
 			newNullable(string(l.Marker)),
@@ -182,7 +183,7 @@ func (r *Repository) Remove(ctx context.Context, vaultID domain.VaultID, paths [
 // removeNote deletes the note at a path, and its rows in the virtual tables.
 func removeNote(ctx context.Context, tx *sqlwrite.Transaction, vault int64, path string) error {
 	var row int64
-	err := tx.QueryRowContext(ctx, stmt.Get("identify"), vault, path).Scan(&row)
+	err := tx.QueryRowContext(ctx, getStatement("identify"), vault, path).Scan(&row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}

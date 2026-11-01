@@ -70,8 +70,8 @@ func locateModel(explicitPath, envVar, fileName, dir string) (string, error) {
 	return "", fmt.Errorf("model %s not found", fileName)
 }
 
-func locateModels(ctx context.Context, cfg Config) (*ort.Engine, string, paths, error) {
-	engine, pos, err := onnx.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
+func locateModels(ctx context.Context, library *onnx.Library, cfg Config) (*ort.Engine, string, paths, error) {
+	engine, pos, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
 	if err != nil {
 		return nil, "", paths{}, err
 	}

@@ -13,7 +13,7 @@ func TestRenderPageDefaultDPIRendersAt300DPI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	scan, err := OpenReader(&trackingCloser{Reader: bytes.NewReader(raw)})
+	scan, err := newWorkers(t).OpenReader(&trackingCloser{Reader: bytes.NewReader(raw)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func TestRenderPageScanDefaultDPI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	scan, err := OpenReader(&trackingCloser{Reader: bytes.NewReader(raw)})
+	scan, err := newWorkers(t).OpenReader(&trackingCloser{Reader: bytes.NewReader(raw)})
 	if err != nil {
 		t.Fatal(err)
 	}

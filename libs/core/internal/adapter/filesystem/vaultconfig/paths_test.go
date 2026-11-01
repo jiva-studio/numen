@@ -10,28 +10,30 @@ import (
 // paths is every shape a path can arrive in, whether or not any file of that
 // name exists. The rules are about the text of a path, and the two of them
 // have to answer every one of these between them.
-var paths = []string{
-	"note.md",
-	"notes/Entropy.md",
-	"assets/paper.pdf",
-	".obsidian/note.md",
-	".numen",
-	".numen/config.json",
-	".numen/ocr/abc.txt",
-	".numen/../notes/a.md",
-	"notes/../.numen/config.json",
-	".NUMEN/config.json",
-	"NUL",
-	"c:notes.md",
-	"notes/../../etc/passwd",
-	"..",
-	".",
-	"../outside.md",
-	"/absolute.md",
-	"",
-	"with\x00nul.md",
-	"./note.md",
-	"a//b.md",
+func getPaths() []string {
+	return []string{
+		"note.md",
+		"notes/Entropy.md",
+		"assets/paper.pdf",
+		".obsidian/note.md",
+		".numen",
+		".numen/config.json",
+		".numen/ocr/abc.txt",
+		".numen/../notes/a.md",
+		"notes/../.numen/config.json",
+		".NUMEN/config.json",
+		"NUL",
+		"c:notes.md",
+		"notes/../../etc/passwd",
+		"..",
+		".",
+		"../outside.md",
+		"/absolute.md",
+		"",
+		"with\x00nul.md",
+		"./note.md",
+		"a//b.md",
+	}
 }
 
 // TestOneOfTheTwoRulesAnswers is the property the pair exists for: a path is
@@ -45,7 +47,7 @@ func TestOneOfTheTwoRulesAnswers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, path := range paths {
+	for _, path := range getPaths() {
 		t.Run(path, func(t *testing.T) {
 			isVault, _, vaultErr := resolveVaultPath(resolved, path, DefaultServiceDir)
 			isOurs, _, oursErr := resolveServicePath(resolved, path, DefaultServiceDir)

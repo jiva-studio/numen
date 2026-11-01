@@ -16,7 +16,7 @@ import (
 
 // named are files the walk has to have reached: the binding the phone starts
 // the core through. A count does not identify which files were read.
-var named = []string{"bind/mobile.go"}
+func getNamed() []string { return []string{"bind/mobile.go"} }
 
 // standing is a file of this application, parsed.
 type standing struct {
@@ -56,7 +56,7 @@ func readSources(t *testing.T) []standing {
 		t.Fatal(err)
 	}
 
-	for _, one := range named {
+	for _, one := range getNamed() {
 		if !slices.ContainsFunc(found, func(target standing) bool { return target.path == one }) {
 			t.Fatalf("the walk did not read %s, so the rule stops before it", one)
 		}
@@ -67,13 +67,15 @@ func readSources(t *testing.T) []standing {
 // logging are the words a package that keeps a record is named by, read off the
 // last element of an import path. The standard library holds two of them, and
 // the rest are the libraries reached for when one of those will not do.
-var logging = map[string]bool{
-	"log": true, "slog": true, "logrus": true, "zap": true,
-	"zerolog": true, "logr": true, "glog": true, "klog": true,
+func getLogging() map[string]bool {
+	return map[string]bool{
+		"log": true, "slog": true, "logrus": true, "zap": true,
+		"zerolog": true, "logr": true, "glog": true, "klog": true,
+	}
 }
 
 // logs answers whether an import is a logger.
-func logs(to string) bool { return logging[to[strings.LastIndex(to, "/")+1:]] }
+func logs(to string) bool { return getLogging()[to[strings.LastIndex(to, "/")+1:]] }
 
 // Nothing here logs. The binding is where the process's own streams are named,
 // and what it writes to standard error is for whatever the platform collects;

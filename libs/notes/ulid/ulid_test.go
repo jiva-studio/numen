@@ -2,19 +2,52 @@ package ulid_test
 
 import (
 	"crypto/rand"
+	"errors"
+	"io"
 	"strings"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/ulid"
 )
 
-func init() {
-	ulid.DefaultEntropy = rand.Reader
+// newID returns an identifier for the instant with random bits from crypto/rand.
+func newID(t *testing.T, at time.Time) string {
+	t.Helper()
+	id, err := ulid.NewGenerator(rand.Reader).NewID(at)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return id
+}
+
+func TestAFailedReadOfTheEntropyIsReturned(t *testing.T) {
+	broken := errors.New("entropy exhausted")
+	id, err := ulid.NewGenerator(iotest.ErrReader(broken)).NewID(time.UnixMilli(1469918176385))
+	if !errors.Is(err, broken) {
+		t.Fatalf("got %q, %v; want the read error", id, err)
+	}
+	if id != "" {
+		t.Errorf("an identifier %q was returned with the error", id)
+	}
+}
+
+func TestAShortEntropySourceIsAnError(t *testing.T) {
+	if _, err := ulid.NewGenerator(strings.NewReader("short")).NewID(time.UnixMilli(1469918176385)); err == nil {
+		t.Fatal("five bytes of entropy gave an identifier, want an error")
+	}
+}
+
+func TestAGeneratorWithoutEntropyIsAnError(t *testing.T) {
+	var unset io.Reader
+	if _, err := ulid.NewGenerator(unset).NewID(time.UnixMilli(1)); !errors.Is(err, ulid.ErrNoEntropy) {
+		t.Fatalf("got %v, want ErrNoEntropy", err)
+	}
 }
 
 func TestShapeAndAlphabet(t *testing.T) {
-	id := ulid.New(time.Date(2026, time.August, 15, 12, 0, 0, 0, time.UTC))
+	id := newID(t, time.Date(2026, time.August, 15, 12, 0, 0, 0, time.UTC))
 	if len(id) != 26 {
 		t.Fatalf("len = %d, want 26 (%s)", len(id), id)
 	}
@@ -32,8 +65,8 @@ func TestOrderMatchesTime(t *testing.T) {
 	// Lexicographic order equalling chronological order is why ULID was chosen
 	// over UUID, so it is worth a test and not a comment.
 	base := time.Date(2026, 8, 15, 12, 0, 0, 0, time.UTC)
-	earlier := ulid.New(base)
-	later := ulid.New(base.Add(time.Second))
+	earlier := newID(t, base)
+	later := newID(t, base.Add(time.Second))
 	if !(earlier < later) {
 		t.Errorf("%s should sort before %s", earlier, later)
 	}
@@ -43,7 +76,7 @@ func TestDistinctWithinTheSameMillisecond(t *testing.T) {
 	stamp := time.Date(2026, time.August, 15, 12, 0, 0, 0, time.UTC)
 	observed := map[string]bool{}
 	for range 1000 {
-		id := ulid.New(stamp)
+		id := newID(t, stamp)
 		if observed[id] {
 			t.Fatalf("duplicate within one millisecond: %s", id)
 		}
@@ -52,7 +85,7 @@ func TestDistinctWithinTheSameMillisecond(t *testing.T) {
 }
 
 func TestValidRejectsNearMisses(t *testing.T) {
-	good := ulid.New(time.Date(2026, time.August, 15, 12, 0, 0, 0, time.UTC))
+	good := newID(t, time.Date(2026, time.August, 15, 12, 0, 0, 0, time.UTC))
 	for _, bad := range []string{
 		"", good[:25], good + "0",
 		strings.Replace(good, string(good[10]), "I", 1),
@@ -98,7 +131,7 @@ func TestTheFirstTenCharactersAreTheMillisecond(t *testing.T) {
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			for range 16 {
-				id := ulid.New(time.UnixMilli(c.ms))
+				id := newID(t, time.UnixMilli(c.ms))
 				if got := id[:10]; got != c.want {
 					t.Fatalf("%s starts %s, want %s", id, got, c.want)
 				}
@@ -114,7 +147,7 @@ func TestEveryRandomBitVaries(t *testing.T) {
 	stamp := time.UnixMilli(1469918176385)
 	var isSet, isClear [130]bool
 	for range 64 {
-		id := ulid.New(stamp)
+		id := newID(t, stamp)
 		for bit := 50; bit < 130; bit++ {
 			value := strings.IndexByte(alphabet, id[bit/5])
 			if value>>(4-bit%5)&1 == 1 {

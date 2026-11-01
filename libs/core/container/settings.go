@@ -45,7 +45,7 @@ func (c Config) Settings() (Settings, error) {
 // getSettingsAt is that document read from an explicit file.
 func (c Config) getSettingsAt(path string) (Settings, error) {
 	target := DefaultSettings()
-	if err := settings.OpenAt(path, &target); err != nil {
+	if err := c.getResources().settingsFiles.OpenAt(path, &target); err != nil {
 		return Settings{}, err
 	}
 	return target, nil

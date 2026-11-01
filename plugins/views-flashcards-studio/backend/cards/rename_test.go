@@ -534,7 +534,7 @@ func TestARenameOfACardModelThatWillNotOpenWritesNothing(t *testing.T) {
 // concurrent save of the card model by the user is preserved.
 func TestARenameDoesNotWriteOverACardModelSavedWhileItRan(t *testing.T) {
 	vs := newVaults(t)
-	saved := animals["Animal.md"] + "\nA line written while the rename ran.\n"
+	saved := getAnimals()["Animal.md"] + "\nA line written while the rename ran.\n"
 	readers := faulty{inner: vs.ports.Readers, saved: map[string]string{"Animal.md": saved}, root: vs.first.Path}
 	u := cards.NewRenameField(
 		readers, vs.ports.Writers, vs.queries, vs.queries, indexNothing, vaulttest.NewClock(), cards.UnboundedDecks,

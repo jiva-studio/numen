@@ -46,7 +46,7 @@ func NewFSRS() FSRS {
 func NewFSRSAt(retention float64) FSRS {
 	p := fsrs.DefaultParam()
 	p.EnableFuzz = false
-	p.RequestRetention = math.Min(math.Max(retention, RetentionBounds.Min), RetentionBounds.Max)
+	p.RequestRetention = math.Min(math.Max(retention, GetRetentionBounds().Min), GetRetentionBounds().Max)
 	return FSRS{p: p, name: FSRSName + "." + hashParameters(p)}
 }
 
@@ -147,7 +147,7 @@ type atAnswer struct {
 // answered. An unanswered card starts in the phase the scheduler begins cards in,
 // with zero stability and zero difficulty.
 func (f FSRS) readAtAnswer(s Schedule, pos time.Time) atAnswer {
-	one := atAnswer{phase: fsrs.New, away: 0, last: noSchedule, out: noSchedule}
+	one := atAnswer{phase: fsrs.New, away: 0, last: newUnansweredSchedule(), out: newUnansweredSchedule()}
 	if !s.IsNew() {
 		one.last, one.phase = s, fsrs.State(s.Phase)
 	}

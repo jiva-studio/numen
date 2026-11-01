@@ -145,8 +145,8 @@ func TestARunContinuesWhileACallerRemainsAndStopsWhenAllLeave(t *testing.T) {
 	if err := <-errs; !errors.Is(err, context.Canceled) {
 		t.Fatalf("err = %v, want canceled", err)
 	}
-	deadline := testsupport.Machine.Now().Add(2 * time.Second)
-	for registry.flights.isRunning(getFlightKey(req)) && testsupport.Machine.Now().Before(deadline) {
+	deadline := testsupport.GetMachine().Now().Add(2 * time.Second)
+	for registry.flights.isRunning(getFlightKey(req)) && testsupport.GetMachine().Now().Before(deadline) {
 		time.Sleep(5 * time.Millisecond)
 	}
 	if registry.flights.isRunning(getFlightKey(req)) {

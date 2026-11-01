@@ -2,23 +2,30 @@ package vaultwriter
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// locks is one lock per vault root, keyed by the folder on disk. Every writer
-// opened on a folder takes the same lock.
+// Locks is one write lock per vault root, keyed by the folder on disk. Writers that share a Locks
+// take the same lock for a folder.
 //
-// Entries are never removed. It holds one channel per vault root this process has
-// written to, and the key is the folder as the filesystem resolves it, so no
-// spelling of a root adds a second entry: the number of vaults bounds the map.
-// Removing an entry would require counting its waiters, to save a few channels.
-var locks = struct {
-	sync.Mutex
-	activeItem map[string]chan struct{}
-}{activeItem: map[string]chan struct{}{}}
+// Entries are never removed. It holds one channel per vault root written to, and the key is the
+// folder as the filesystem resolves it, so no spelling of a root adds a second entry: the number
+// of vaults bounds the map. Removing an entry would require counting its waiters, to save a few
+// channels.
+type Locks struct {
+	mu     sync.Mutex
+	byRoot map[string]chan struct{}
+}
+
+// NewLocks returns a set of locks that no folder holds yet.
+func NewLocks() *Locks { return &Locks{byRoot: map[string]chan struct{}{}} }
+
+// ErrNoLocks is returned by writers that were given no Locks to share.
+var ErrNoLocks = errors.New("vault writers were given no locks")
 
 // Lock takes this vault's write lock, waiting while another holder has it.
 //
@@ -28,7 +35,10 @@ func (w VaultWriters) Lock(ctx context.Context, v domain.Vault) (func(), error) 
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	lock := lockFor(v.Path)
+	if w.Locks == nil {
+		return nil, ErrNoLocks
+	}
+	lock := w.Locks.getLock(v.Path)
 	select {
 	case lock <- struct{}{}:
 		return func() { <-lock }, nil
@@ -37,14 +47,14 @@ func (w VaultWriters) Lock(ctx context.Context, v domain.Vault) (func(), error) 
 	}
 }
 
-func lockFor(root string) chan struct{} {
+func (l *Locks) getLock(root string) chan struct{} {
 	key := getLockKey(root)
-	locks.Lock()
-	defer locks.Unlock()
-	lock, found := locks.activeItem[key]
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	lock, found := l.byRoot[key]
 	if !found {
 		lock = make(chan struct{}, 1)
-		locks.activeItem[key] = lock
+		l.byRoot[key] = lock
 	}
 	return lock
 }

@@ -241,9 +241,9 @@ func TestRead_StopsOnContextCancelWithoutLeakedGoroutines(t *testing.T) {
 // waitForGoroutines waits for the goroutines to be no more than `before`.
 func waitForGoroutines(t *testing.T, before int) {
 	t.Helper()
-	deadline := testsupport.Machine.Now().Add(5 * time.Second)
+	deadline := testsupport.GetMachine().Now().Add(5 * time.Second)
 	for runtime.NumGoroutine() > before {
-		if testsupport.Machine.Now().After(deadline) {
+		if testsupport.GetMachine().Now().After(deadline) {
 			t.Fatalf("%d goroutines are running, there were %d before the read", runtime.NumGoroutine(), before)
 		}
 		time.Sleep(time.Millisecond)

@@ -14,7 +14,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/vault"
 )
 
-var pngBytes = []byte("\x89PNG\r\n\x1a\nnot really a picture")
+const pngText = "\x89PNG\r\n\x1a\nnot really a picture"
+
+// getPNGBytes returns the bytes of a file that starts as a PNG.
+func getPNGBytes() []byte {
+	return []byte(pngText)
+}
 
 func createZipEpub(t *testing.T, entries map[string][]byte) []byte {
 	t.Helper()
@@ -62,7 +67,7 @@ func createImageEpub(t *testing.T) []byte {
 		"EPUB/c2.xhtml": []byte(`<?xml version="1.0"?>
 <html xmlns="http://www.w3.org/1999/xhtml"><head><title>Two</title></head>
 <body><h1>Second part</h1><p>Goodbye reader epub</p></body></html>`),
-		"EPUB/cover.png": pngBytes,
+		"EPUB/cover.png": getPNGBytes(),
 	})
 }
 
@@ -91,7 +96,7 @@ func TestReadBookEntryAnswersTheBytesOfTheEntry(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !bytes.Equal(resp.Body, pngBytes) {
+	if !bytes.Equal(resp.Body, getPNGBytes()) {
 		t.Errorf("the entry is %q, want the picture's bytes", resp.Body)
 	}
 }

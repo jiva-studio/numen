@@ -10,7 +10,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -42,8 +41,8 @@ type Table struct {
 	others []glob
 }
 
-// Open is the snapshot.
-var Open = sync.OnceValue(func() Table { return parseTable(globs2) })
+// Open parses the snapshot.
+func Open() Table { return parseTable(globs2) }
 
 func parseTable(text string) Table {
 	var all []glob

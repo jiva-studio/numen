@@ -11,13 +11,10 @@ import (
 // One name each, composed and decomposed. The two forms are computed rather
 // than typed out, so an editor that composed this file on the way in leaves the
 // tests testing what they say they test.
-var (
-	hangulComposed   = norm.NFC.String("한글")
-	hangulDecomposed = norm.NFD.String("한글")
-	kanaComposed     = norm.NFC.String("がき")
-	kanaDecomposed   = norm.NFD.String("がき")
-	cafeComposed     = norm.NFC.String("Café")
-	cafeDecomposed   = norm.NFD.String("Café")
+const (
+	hangul = "한글"
+	kana   = "がき"
+	cafe   = "Café"
 )
 
 // Two names are one name under the fold, across the scripts a vault is written
@@ -36,10 +33,10 @@ func TestNamesThatAreOneName(t *testing.T) {
 		{"Greek", "ΣΙΓΜΑ", "σιγμα"},
 		{"a Greek final sigma", "ὈΔΥΣΣΕΎΣ", "ὀδυσσεύς"},
 		{"a German sharp s", "STRASSE", "straße"},
-		{"a Korean syllable against its jamo", hangulComposed, hangulDecomposed},
-		{"a Japanese voiced mark", kanaComposed, kanaDecomposed},
-		{"a decomposed acute", cafeComposed, cafeDecomposed},
-		{"case and composition together", "CAFÉ", cafeDecomposed},
+		{"a Korean syllable against its jamo", norm.NFC.String(hangul), norm.NFD.String(hangul)},
+		{"a Japanese voiced mark", norm.NFC.String(kana), norm.NFD.String(kana)},
+		{"a decomposed acute", norm.NFC.String(cafe), norm.NFD.String(cafe)},
+		{"case and composition together", "CAFÉ", norm.NFD.String(cafe)},
 	} {
 		if one.a == one.b {
 			t.Fatalf("%s: the two sides are the same bytes, so nothing is tested", one.what)
@@ -75,7 +72,7 @@ func TestNamesThatAreTwoNames(t *testing.T) {
 // a key again gives the key back.
 func TestTheKeyIsComposed(t *testing.T) {
 	for _, name := range []string{
-		"İstanbul", "ЭНТРОПИЯ", cafeDecomposed, hangulDecomposed, kanaDecomposed,
+		"İstanbul", "ЭНТРОПИЯ", norm.NFD.String(cafe), norm.NFD.String(hangul), norm.NFD.String(kana),
 	} {
 		key := domain.FoldName(name)
 		if !norm.NFC.IsNormalString(key) {

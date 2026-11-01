@@ -66,7 +66,7 @@ func TestReady_ChecksLocalModelFiles(t *testing.T) {
 				Segmenter: segmenter.Model{Path: segmenterPath},
 			}
 			c.change(t, &cfg)
-			if got := Ready(cfg); got != c.isReady {
+			if got := Ready(NewRuntime(), cfg); got != c.isReady {
 				t.Errorf("ready: %v", got)
 			}
 		})

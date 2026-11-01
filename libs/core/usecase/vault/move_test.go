@@ -64,7 +64,7 @@ func (f filing) moveApart() vaults.Move { return f.newMove(false) }
 
 func (f filing) newMove(preserved note.SyncTitleAndFilename) vaults.Move {
 	notes := note.NewMove(
-		f.readers, vaultwriter.VaultWriters{},
+		f.readers, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
 		f.db.Links(), f.db.Queries(), f.db.Sources(), f.index, testsupport.NewClock(),
 	)
 	notes.Sync = func() note.SyncTitleAndFilename { return preserved }
@@ -73,7 +73,7 @@ func (f filing) newMove(preserved note.SyncTitleAndFilename) vaults.Move {
 		return nil
 	}
 	return vaults.NewMove(
-		vaultwriter.VaultWriters{},
+		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
 		f.db.Links(), f.db.SourcesKnown(), f.db.Sources(), notes,
 	)
 }

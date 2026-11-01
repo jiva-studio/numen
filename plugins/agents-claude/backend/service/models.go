@@ -52,12 +52,14 @@ func (m claudeModel) toProto() *reasoning.Model {
 	return reasoning.NewModel(m.Value, m.DisplayName, m.getLevels(), "")
 }
 
-// fallbackModels are the aliases the program accepts for --model, offered with no depth of reasoning
-// when the program does not answer the request for its models.
-var fallbackModels = []claudeModel{
-	{Value: "sonnet", DisplayName: "Sonnet", SupportsEffort: false, EffortLevels: nil},
-	{Value: "opus", DisplayName: "Opus", SupportsEffort: false, EffortLevels: nil},
-	{Value: "haiku", DisplayName: "Haiku", SupportsEffort: false, EffortLevels: nil},
+// getFallbackModels returns the aliases the program accepts for --model, offered with no depth of
+// reasoning when the program does not answer the request for its models.
+func getFallbackModels() []claudeModel {
+	return []claudeModel{
+		{Value: "sonnet", DisplayName: "Sonnet", SupportsEffort: false, EffortLevels: nil},
+		{Value: "opus", DisplayName: "Opus", SupportsEffort: false, EffortLevels: nil},
+		{Value: "haiku", DisplayName: "Haiku", SupportsEffort: false, EffortLevels: nil},
+	}
 }
 
 // parseModels reads the models out of the lines the program writes: the answer to the request
@@ -171,7 +173,7 @@ func (s *agentServer) getModels(ctx context.Context, command, env []string) ([]c
 		return nil, err
 	}
 	if !found && modelCache.HasFailed(key) {
-		return fallbackModels, nil
+		return getFallbackModels(), nil
 	}
 	return models, nil
 }

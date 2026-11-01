@@ -21,13 +21,15 @@ const (
 	repoVaultB domain.VaultID = "01VAULTB"
 )
 
-var repoTemplate = testsupport.NewTemplate(func(ctx context.Context, path string) error {
-	db, err := index.Open(ctx, path)
-	if err != nil {
-		return err
-	}
-	return db.Close()
-})
+func newRepoTemplate() *testsupport.Template {
+	return testsupport.NewTemplate(func(ctx context.Context, path string) error {
+		db, err := index.Open(ctx, path)
+		if err != nil {
+			return err
+		}
+		return db.Close()
+	})
+}
 
 // store is an index holding two empty vaults, and a second connection to the
 // same file that a test reads and breaks it through.
@@ -44,7 +46,7 @@ func newStore(t *testing.T) *store {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 
 	path := filepath.Join(t.TempDir(), "index.db")
-	repoTemplate.CopyTo(t, path)
+	newRepoTemplate().CopyTo(t, path)
 	db, err := index.Open(t.Context(), path)
 	if err != nil {
 		t.Fatal(err)

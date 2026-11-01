@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwatch"
+	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/watchhub"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -31,7 +32,7 @@ func TestAFolderTooLargeToWalkIsTheWholeVault(t *testing.T) {
 		}
 	}
 
-	_, missing, err := vaultwatch.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
+	_, missing, err := vaultwatch.Watcher{Hub: watchhub.NewHub()}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}

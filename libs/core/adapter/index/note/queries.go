@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/sqlwrite"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
@@ -26,7 +27,7 @@ func (q *Queries) GetFileStats(ctx context.Context, vaultID domain.VaultID) (_ m
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("file_stats"), vault, kind)
+	rows, err := q.db.QueryContext(ctx, getStatement("file_stats"), vault, kind)
 	if err != nil {
 		return nil, err
 	}
@@ -66,14 +67,14 @@ func (q *Queries) GetSummary(ctx context.Context, vaultID domain.VaultID) (domai
 	if err != nil {
 		return s, err
 	}
-	err = q.db.QueryRowContext(ctx, stmt.Get("summary"), vault, vault).Scan(&s.Notes, &s.Headings)
+	err = q.db.QueryRowContext(ctx, getStatement("summary"), vault, vault).Scan(&s.Notes, &s.Headings)
 	return s, err
 }
 
 // Statements exposes the SQL this package runs, so a test can ask the database
 // how it plans to execute each statement. A package cannot check a plan about
 // itself: it needs a migrated database, which lives one level up.
-func Statements() map[string]string { return stmt.All() }
+func Statements() map[string]string { return sqlfile.Load(files, "sql").All() }
 
 // GetNamedPaths is every note filed under one name. A name that answers for
 // more than one note is what makes a link written by that name ambiguous, and
@@ -87,7 +88,7 @@ func (q *Queries) GetNamedPaths(ctx context.Context, vaultID domain.VaultID, nam
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("named"), vault, domain.FoldName(name))
+	rows, err := q.db.QueryContext(ctx, getStatement("named"), vault, domain.FoldName(name))
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +134,7 @@ func (q *Queries) GetNameMatches(ctx context.Context, vaultID domain.VaultID, qu
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("titles"),
+	rows, err := q.db.QueryContext(ctx, getStatement("titles"),
 		opening, closing, words, vault, limit,
 		opening, closing, words, vault, mostPerNote, limit)
 	if err != nil {

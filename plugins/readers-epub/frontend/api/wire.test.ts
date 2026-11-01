@@ -1,5 +1,5 @@
 /**
- * The spine of a book and the markup of one document of it, through the numen.epub JSON API.
+ * The spine of a book and the markup of one document of it, through the md.numen.readers.epub JSON API.
  *
  * Each method is proved against the fixtures in testdata/api that the Go messages are proved
  * against: the request a method sends equals the request fixture, and the response fixture is read

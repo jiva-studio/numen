@@ -8,10 +8,6 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// folder case folds a name. It is stateless, and any number of goroutines may
-// use it at once.
-var folder = cases.Fold()
-
 // FoldName is the key under which two names are one name: composed, case
 // folded, and composed again, since folding `İ` yields `i` and a combining dot.
 // Every decision that two names are the same is this key compared.
@@ -28,7 +24,7 @@ func FoldName(name string) string {
 
 // foldGeneral is the fold of any name.
 func foldGeneral(name string) string {
-	return norm.NFC.String(folder.String(norm.NFC.String(name)))
+	return norm.NFC.String(cases.Fold().String(norm.NFC.String(name)))
 }
 
 // foldASCII folds a name made only of ASCII, where composing changes nothing and

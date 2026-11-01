@@ -9,12 +9,13 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/theme"
+	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/watchhub"
 )
 
 // createThemeFolder creates a user's themes folder the way the first run does.
 func createThemeFolder(t *testing.T) theme.Catalogue {
 	t.Helper()
-	catalogue, err := theme.OpenAt(filepath.Join(t.TempDir(), "numen", "themes"))
+	catalogue, err := theme.OpenAt(filepath.Join(t.TempDir(), "numen", "themes"), watchhub.NewHub())
 	if err != nil {
 		t.Fatal(err)
 	}

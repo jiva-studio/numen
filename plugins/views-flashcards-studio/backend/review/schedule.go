@@ -3,8 +3,6 @@ package review
 import (
 	"math"
 	"time"
-
-	fsrs "github.com/open-spaced-repetition/go-fsrs/v3"
 )
 
 // LeastStability is the least a projected review card is taken to stand at, in
@@ -33,9 +31,11 @@ type Schedule struct {
 	Phase uint8
 }
 
-// noSchedule is the schedule of a review card that has not been answered.
-var noSchedule = Schedule{
-	Due: time.Time{}, Last: time.Time{}, Reps: 0, Lapses: 0, Stability: 0, Difficulty: 0, Phase: 0,
+// newUnansweredSchedule returns the schedule of a review card that has not been answered.
+func newUnansweredSchedule() Schedule {
+	return Schedule{
+		Due: time.Time{}, Last: time.Time{}, Reps: 0, Lapses: 0, Stability: 0, Difficulty: 0, Phase: 0,
+	}
 }
 
 // IsNew reports whether this review card has never been answered, which defines
@@ -71,11 +71,9 @@ type Scheduler interface {
 	IsSpaced(s Schedule) bool
 }
 
-// The forgetting curve a projection reads a stability by.
-var (
-	recallFactor = fsrs.DefaultParam().Factor
-	recallDecay  = fsrs.DefaultParam().Decay
-)
+// recallDecay is the decay of the forgetting curve a projection reads a stability by, the one of
+// fsrs.DefaultParam.
+const recallDecay = -0.5
 
 // Recall is the share of cards at this stability that are recalled after this
 // long away. A stability of zero or less yields zero.
@@ -84,7 +82,9 @@ func Recall(away time.Duration, stability float64) float64 {
 		return 0
 	}
 	days := math.Max(away.Hours()/24, 0)
-	return math.Pow(1+recallFactor*days/stability, recallDecay)
+	// The factor is computed as fsrs.DefaultParam computes it, so the curve is the library's to the bit.
+	factor := math.Pow(0.9, 1/recallDecay) - 1
+	return math.Pow(1+factor*days/stability, recallDecay)
 }
 
 // RecallChance is the recall probability a projection assumes: how likely a

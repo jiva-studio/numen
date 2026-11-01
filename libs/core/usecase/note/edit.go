@@ -2,6 +2,7 @@ package note
 
 import (
 	"context"
+	"crypto/rand"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/edit"
@@ -84,6 +85,7 @@ func (e Edit) shared() edit.Edit {
 		Open:            e.openFiles,
 		Index:           e.index,
 		Clock:           e.now,
+		Entropy:         rand.Reader,
 		FileStat:        e.FileStat,
 		ShouldOverwrite: e.ShouldOverwrite,
 		Bound:           e.Bound,

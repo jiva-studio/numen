@@ -15,7 +15,7 @@ import (
 var pages embed.FS
 
 // policy is what this window may load. A plugin draws pictures it carries as `data:` URIs.
-var policy = csp.Sources{Images: []string{"data:"}}.Policy()
+func getPolicy() string { return csp.Sources{Images: []string{"data:"}}.Policy() }
 
 // Pages is the interface itself, built by `make interface` and embedded in the
 // binary. A binary built without it reports that.
@@ -38,7 +38,7 @@ func (a *API) NewHandler(files http.Handler) http.Handler {
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Security-Policy", policy)
+		w.Header().Set("Content-Security-Policy", getPolicy())
 		switch {
 		case strings.HasPrefix(r.URL.Path, windowRoute):
 			window.ServeHTTP(w, r)
@@ -59,7 +59,7 @@ func (a *API) NewHandler(files http.Handler) http.Handler {
 			}
 		case a.PluginServices != nil && a.PluginServices.Serves(r.URL.Path):
 			a.PluginServices.ServeHTTP(w, r)
-		case slices.Contains(wire.OpenedAt, r.URL.Path):
+		case slices.Contains(wire.GetOpenedAt(), r.URL.Path):
 			wire.WritePage(w, r, pages, a.Themes, files)
 		default:
 			files.ServeHTTP(w, r)

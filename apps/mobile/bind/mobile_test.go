@@ -50,14 +50,15 @@ func writeGraph(t *testing.T, root string) {
 // TestStartAnswers is the whole of what a phone does: the core comes up, the
 // listing arrives, a note is made, and the listing has it.
 func TestStartAnswers(t *testing.T) {
+	core := bind.NewCore()
 	dir := t.TempDir()
 	writeGraph(t, filepath.Join(dir, "vault"))
-	port, err := bind.Start(dir)
+	port, err := core.Start(dir)
 	if err != nil {
 		t.Fatalf("starting: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := bind.Stop(); err != nil {
+		if err := core.Stop(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -176,15 +177,16 @@ func TestThePageIsServedFromTheOriginTheCoreAnswers(t *testing.T) {
 }
 
 func TestTheSocketAnswersThePagesOwnOriginAndNoOther(t *testing.T) {
+	core := bind.NewCore()
 	if bind.Page != page {
 		t.Fatalf("the page is served from %q and this reads %q", bind.Page, page)
 	}
-	port, err := bind.Start(t.TempDir())
+	port, err := core.Start(t.TempDir())
 	if err != nil {
 		t.Fatalf("starting: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := bind.Stop(); err != nil {
+		if err := core.Stop(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -220,19 +222,20 @@ func TestTheSocketAnswersThePagesOwnOriginAndNoOther(t *testing.T) {
 // process on the phone can reach this socket, so a program acting for itself
 // must not be able to read files off the disk or run a model through it.
 func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
-	port, err := bind.Start(t.TempDir())
+	core := bind.NewCore()
+	port, err := core.Start(t.TempDir())
 	if err != nil {
 		t.Fatalf("starting: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := bind.Stop(); err != nil {
+		if err := core.Stop(); err != nil {
 			t.Error(err)
 		}
 	})
 
 	for _, item := range []string{
 		"/assets/Physics.md",
-		"/numen.pdf/GetDocument",
+		"/md.numen.readers.pdf/GetDocument",
 		"/numen.v1.MediaService/GetMediaSource",
 		"/numen.v1.TextService/ReadLiveText",
 		"/numen.v1.TextService/CreateTextEdit",
@@ -294,6 +297,7 @@ func TestThePlatformDoesNotCarryTheVaultOffThePhone(t *testing.T) {
 // This build mounts no service for it, so nothing here reads that file out to a
 // caller or overwrites it.
 func TestTheSettingsFileIsNotServedToThePhone(t *testing.T) {
+	core := bind.NewCore()
 	dir := t.TempDir()
 	secret := "sk-the-persons-own"
 	content := fmt.Sprintf(`{"indexing":{"proofreading":{"profiles":{
@@ -303,12 +307,12 @@ func TestTheSettingsFileIsNotServedToThePhone(t *testing.T) {
 		t.Fatalf("writing the settings: %v", err)
 	}
 
-	port, err := bind.Start(dir)
+	port, err := core.Start(dir)
 	if err != nil {
 		t.Fatalf("starting: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := bind.Stop(); err != nil {
+		if err := core.Stop(); err != nil {
 			t.Error(err)
 		}
 	})

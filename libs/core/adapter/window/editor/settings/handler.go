@@ -95,7 +95,7 @@ func NewWireModels(target []setting.Model) []*v1.Model {
 			Group:            one.Group,
 			IsDefault:        one.IsDefault,
 			Writes:           newWireSettings(one.Writes),
-			Presence:         Presences[one.Presence],
+			Presence:         GetPresences()[one.Presence],
 			ReasoningLevels:  newWireReasoningLevels(one.ReasoningLevels),
 			DefaultReasoning: one.DefaultReasoning,
 		})
@@ -105,10 +105,12 @@ func NewWireModels(target []setting.Model) []*v1.Model {
 
 // Presences is what a model's files are on this machine, as the wire carries
 // it.
-var Presences = map[setting.Presence]v1.Presence{
-	setting.NothingToFetch: v1.Presence_PRESENCE_NOTHING_TO_FETCH,
-	setting.Present:        v1.Presence_PRESENCE_PRESENT,
-	setting.NotFetched:     v1.Presence_PRESENCE_NOT_FETCHED,
+func GetPresences() map[setting.Presence]v1.Presence {
+	return map[setting.Presence]v1.Presence{
+		setting.NothingToFetch: v1.Presence_PRESENCE_NOTHING_TO_FETCH,
+		setting.Present:        v1.Presence_PRESENCE_PRESENT,
+		setting.NotFetched:     v1.Presence_PRESENCE_NOT_FETCHED,
+	}
 }
 
 // newWireSettings is what choosing a model writes, as the wire carries it.
@@ -156,7 +158,7 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 			Secrets:      newWireSecrets(one.Secrets),
 			// The names of the stored secrets travel, and a key never does.
 			StoredSecrets:     one.StoredSecrets,
-			CompletionConsent: Consents[one.Consent],
+			CompletionConsent: GetConsents()[one.Consent],
 			Failure:           newWirePluginFailure(one.Failure),
 			HasFrontend:       one.HasFrontend,
 			Readers:           newWireReaders(one.Readers),
@@ -167,12 +169,14 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 }
 
 // Consents maps whether the user lets a plugin query a model to its wire value.
-var Consents = map[setting.Consent]v1.CompletionConsent{
-	setting.ConsentNone:      v1.CompletionConsent_COMPLETION_CONSENT_UNSPECIFIED,
-	setting.ConsentPending:   v1.CompletionConsent_COMPLETION_CONSENT_PENDING,
-	setting.ConsentRequested: v1.CompletionConsent_COMPLETION_CONSENT_REQUESTED,
-	setting.ConsentAllowed:   v1.CompletionConsent_COMPLETION_CONSENT_ALLOWED,
-	setting.ConsentDenied:    v1.CompletionConsent_COMPLETION_CONSENT_DENIED,
+func GetConsents() map[setting.Consent]v1.CompletionConsent {
+	return map[setting.Consent]v1.CompletionConsent{
+		setting.ConsentNone:      v1.CompletionConsent_COMPLETION_CONSENT_UNSPECIFIED,
+		setting.ConsentPending:   v1.CompletionConsent_COMPLETION_CONSENT_PENDING,
+		setting.ConsentRequested: v1.CompletionConsent_COMPLETION_CONSENT_REQUESTED,
+		setting.ConsentAllowed:   v1.CompletionConsent_COMPLETION_CONSENT_ALLOWED,
+		setting.ConsentDenied:    v1.CompletionConsent_COMPLETION_CONSENT_DENIED,
+	}
 }
 
 // WritePluginSecret stores the key of a secret a plugin declares. A secret the

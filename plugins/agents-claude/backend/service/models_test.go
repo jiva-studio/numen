@@ -119,7 +119,7 @@ func TestGetModels_FallbackWhenListFails(t *testing.T) {
 		t.Fatal(err)
 	}
 	for place, one := range got[0].Models {
-		if one.Name != fallbackModels[place].Value || len(one.ReasoningLevels) != 0 {
+		if one.Name != getFallbackModels()[place].Value || len(one.ReasoningLevels) != 0 {
 			t.Errorf("the model %v is not a fallback alias", one)
 		}
 	}
@@ -176,7 +176,7 @@ func TestModelCache_AsyncReturnsEmptyThenFallbackOnFailure(t *testing.T) {
 		time.Sleep(5 * time.Millisecond)
 	}
 	got, err = s.getModels(t.Context(), []string{script}, nil)
-	if err != nil || len(got) != len(fallbackModels) {
+	if err != nil || len(got) != len(getFallbackModels()) {
 		t.Fatalf("failed async cache returned %v, %v", got, err)
 	}
 }

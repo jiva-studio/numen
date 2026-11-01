@@ -11,10 +11,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 )
 
-var realClock clock.System
+func getRealClock() clock.System { return clock.System{} }
 
 func TestEventBusDebounceTyping(t *testing.T) {
-	bus := New(nil, realClock, 50*time.Millisecond, 200*time.Millisecond)
+	bus := New(nil, getRealClock(), 50*time.Millisecond, 200*time.Millisecond)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -41,7 +41,7 @@ func TestEventBusDebounceTyping(t *testing.T) {
 }
 
 func TestEventBusThrottle(t *testing.T) {
-	bus := New(nil, realClock, 40*time.Millisecond, 100*time.Millisecond)
+	bus := New(nil, getRealClock(), 40*time.Millisecond, 100*time.Millisecond)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -55,8 +55,8 @@ func TestEventBusThrottle(t *testing.T) {
 	})
 	defer unsub()
 
-	start := realClock.Now()
-	for realClock.Now().Sub(start) < 250*time.Millisecond {
+	start := getRealClock().Now()
+	for getRealClock().Now().Sub(start) < 250*time.Millisecond {
 		bus.Publish("onVaultModify")
 		time.Sleep(10 * time.Millisecond)
 	}
@@ -70,18 +70,18 @@ func TestEventBusThrottle(t *testing.T) {
 }
 
 func TestEventBusNonBlocking(t *testing.T) {
-	bus := New(nil, realClock, 50*time.Millisecond, 200*time.Millisecond)
+	bus := New(nil, getRealClock(), 50*time.Millisecond, 200*time.Millisecond)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
 		}
 	}()
 
-	start := realClock.Now()
+	start := getRealClock().Now()
 	for i := 0; i < 100; i++ {
 		bus.Publish("onTyping")
 	}
-	elapsed := realClock.Now().Sub(start)
+	elapsed := getRealClock().Now().Sub(start)
 
 	if elapsed > 50*time.Millisecond {
 		t.Fatalf("Publish blocked the caller for %v", elapsed)
@@ -89,7 +89,7 @@ func TestEventBusNonBlocking(t *testing.T) {
 }
 
 func TestEventBusFlush(t *testing.T) {
-	bus := New(nil, realClock, 500*time.Millisecond, 1000*time.Millisecond)
+	bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -120,7 +120,7 @@ func TestEventBusFlush(t *testing.T) {
 }
 
 func TestEventBusUnsubscribe(t *testing.T) {
-	bus := New(nil, realClock, 10*time.Millisecond, 50*time.Millisecond)
+	bus := New(nil, getRealClock(), 10*time.Millisecond, 50*time.Millisecond)
 	defer func() {
 		if err := bus.Close(t.Context()); err != nil {
 			t.Error(err)
@@ -249,7 +249,7 @@ func TestEventBusDeterministicDebounce(t *testing.T) {
 }
 
 func TestEventBusConfigurableKeyExtractor(t *testing.T) {
-	bus := New(nil, realClock, 500*time.Millisecond, 1000*time.Millisecond,
+	bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond,
 		WithKeyExtractor(func(event string) string {
 			if strings.HasPrefix(event, "customGroup:") {
 				return "customGroup"
@@ -287,7 +287,7 @@ func TestEventBusConfigurableKeyExtractor(t *testing.T) {
 }
 
 func TestEventBusDebounceRule(t *testing.T) {
-	bus := New(nil, realClock, 500*time.Millisecond, 1000*time.Millisecond,
+	bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond,
 		WithDebounceRule(func(event string) (string, bool) {
 			if strings.HasPrefix(event, "ruleA:") {
 				return "ruleA-shared", true
@@ -328,7 +328,7 @@ func TestEventBusErrorHandling(t *testing.T) {
 	expectedErr := context.DeadlineExceeded
 	var asyncErr atomic.Pointer[error]
 
-	bus := New(nil, realClock, 10*time.Millisecond, 50*time.Millisecond,
+	bus := New(nil, getRealClock(), 10*time.Millisecond, 50*time.Millisecond,
 		WithErrorHandler(func(err error) {
 			asyncErr.Store(&err)
 		}),

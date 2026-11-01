@@ -10,7 +10,7 @@ import (
 )
 
 func TestEveryFaultIsSavedFromOne(t *testing.T) {
-	enumtest.CheckProduced(t, api.ProblemKindValues, map[api.ProblemKind]format.Fault{
+	enumtest.CheckProduced(t, api.GetProblemKindValues(), map[api.ProblemKind]format.Fault{
 		api.ProblemKindFieldDeclaredTwice:     format.FaultTwoFields,
 		api.ProblemKindCardModelWithoutFields: format.FaultNoFields,
 		api.ProblemKindTemplateMissingASide:   format.FaultTemplateSide,

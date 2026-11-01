@@ -13,7 +13,7 @@ import (
 )
 
 func (c changing) replace() note.Replace {
-	return note.NewReplace(vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, testsupport.NewClock())
+	return note.NewReplace(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
 }
 
 // The requested span is replaced and every other byte is unchanged.

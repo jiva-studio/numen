@@ -36,7 +36,7 @@ func write(t *testing.T, body string) string {
 // owns, and the section each adapter is configured by, which is read into that
 // adapter's own shape where every adapter is bound.
 func openAt(path string) (container.Settings, error) {
-	return container.Config{SettingsPath: path}.Settings()
+	return container.NewConfig(container.Config{SettingsPath: path}).Settings()
 }
 
 // newDocument is the complete settings file of an unconfigured installation.
@@ -107,7 +107,7 @@ func TestASizeOutsideWhatItGoesToIsRefused(t *testing.T) {
 	if outside.At != "appearance.text_scale" || outside.Number != 3 {
 		t.Errorf("failed %+v", outside)
 	}
-	if outside.Min != settings.TextScaleBounds.Min || outside.Max != settings.TextScaleBounds.Max {
+	if outside.Min != settings.GetTextScaleBounds().Min || outside.Max != settings.GetTextScaleBounds().Max {
 		t.Errorf("said the setting goes from %v to %v", outside.Min, outside.Max)
 	}
 	// The error message states the value and the allowed range.

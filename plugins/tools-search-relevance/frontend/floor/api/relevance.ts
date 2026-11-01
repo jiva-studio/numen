@@ -4,7 +4,7 @@
  */
 
 /** The service name the manifest declares. */
-export const SERVICE = 'numen.relevance'
+export const SERVICE = 'md.numen.tools.search.relevance'
 
 /** Where the floor in force comes from. */
 export type FloorSource = 'manual' | 'calibrated' | 'model' | 'default'

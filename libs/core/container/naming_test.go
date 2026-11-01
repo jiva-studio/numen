@@ -19,7 +19,7 @@ func writeSettings(t *testing.T, body string) container.Config {
 			t.Fatal(err)
 		}
 	}
-	return container.Config{RegistryPath: filepath.Join(target, "vaults.json")}
+	return container.NewConfig(container.Config{RegistryPath: filepath.Join(target, "vaults.json")})
 }
 
 // The setting is read at each rename, so changing it in the palette applies

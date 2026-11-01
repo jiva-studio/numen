@@ -36,11 +36,11 @@ func GetHome() (string, error) {
 
 // IsOffline reports whether EnvOffline forbids fetching.
 func IsOffline() bool {
-	return slices.Contains(offlineValues, strings.ToLower(strings.TrimSpace(os.Getenv(EnvOffline))))
+	return slices.Contains(getOfflineValues(), strings.ToLower(strings.TrimSpace(os.Getenv(EnvOffline))))
 }
 
 // offlineValues are the spellings of EnvOffline that forbid fetching.
-var offlineValues = []string{"1", "true", "yes", "on"}
+func getOfflineValues() []string { return []string{"1", "true", "yes", "on"} }
 
 // FromEnvironment returns the configuration the environment names: the
 // provider, and whether fetching is forbidden. The models home is resolved when

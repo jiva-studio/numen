@@ -2,6 +2,7 @@ package note
 
 import (
 	"context"
+	"crypto/rand"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/ulid"
@@ -23,7 +24,10 @@ func (tell TellEdit) beginChange(ctx context.Context, now machineport.Clock, res
 	if tell == nil {
 		return func() error { return nil }, nil
 	}
-	name := ulid.New(now.Now())
+	name, err := ulid.NewGenerator(rand.Reader).NewID(now.Now())
+	if err != nil {
+		return nil, err
+	}
 	response.Change = name
 	if err := tell(ctx, response); err != nil {
 		return nil, err

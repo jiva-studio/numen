@@ -137,7 +137,7 @@ func TestAThemeFileLinkedInsideThePluginFolderIsRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	text, err := manifest.ReadThemeFile(dir, "n.css")
+	text, err := manifestjson.ReadThemeFile(dir, "n.css")
 
 	if err != nil || text != "a{}" {
 		t.Errorf("text = %q, error = %v", text, err)

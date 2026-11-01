@@ -4,11 +4,16 @@ package schematest
 import (
 	"testing"
 
+	"google.golang.org/protobuf/reflect/protoreflect"
+
 	protoschematest "github.com/jiva-studio/numen/libs/protocol/schematest"
 )
 
 // SchemaEnum is one enum of the schema, as the generated code declares it.
-type SchemaEnum = protoschematest.SchemaEnum
+type SchemaEnum interface {
+	~int32
+	protoreflect.Enum
+}
 
 // CheckHandled fails for every value of the enum that is not handled on the way in.
 func CheckHandled[E SchemaEnum](t *testing.T, reading func(E) bool) {

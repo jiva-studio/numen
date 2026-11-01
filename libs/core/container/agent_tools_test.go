@@ -247,7 +247,7 @@ func hostOver(t *testing.T, plugins ...testPlugin) *plugin.Host {
 		ports[one.id] = addr.Port
 	}
 
-	host := plugin.NewHost(testsupport.Machine, "desktop.editor", tmp)
+	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -324,7 +324,7 @@ func TestAnEditorRunCallsTheToolsOfThePluginsWithItsContext(t *testing.T) {
 		{name: "card_current", arguments: `{}`},
 	}}
 	host, vault, cards := vaultAndCards(t, agent)
-	assembly := container.NewEditorAssembly(container.Config{PluginHost: host}, nil, nil)
+	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
 
 	requestContext := map[string]string{cardKey: "c-7"}
 	steps := runToEnd(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha", Context: requestContext})
@@ -399,7 +399,7 @@ func TestOnlyTheToolsTheWindowAllowsAreServed(t *testing.T) {
 			mount: func(mux *http.ServeMux) { mux.Handle(numenv1connect.NewPluginToolServiceHandler(undeclared)) },
 		},
 	)
-	assembly := container.NewEditorAssembly(container.Config{PluginHost: host}, nil, nil)
+	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
 
 	runToEnd(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha"})
 
@@ -415,7 +415,7 @@ func TestOnlyTheToolsTheWindowAllowsAreServed(t *testing.T) {
 func TestARunWithNoToolPluginIsGivenNoEndpoint(t *testing.T) {
 	agent := &toolAgent{}
 	host := hostOver(t, agentAt(agent))
-	assembly := container.NewEditorAssembly(container.Config{PluginHost: host}, nil, nil)
+	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
 
 	runToEnd(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha"})
 
@@ -428,7 +428,7 @@ func TestARunWithNoToolPluginIsGivenNoEndpoint(t *testing.T) {
 func TestTheEndpointClosesWhenTheRunStops(t *testing.T) {
 	agent := &toolAgent{}
 	host, _, _ := vaultAndCards(t, agent)
-	assembly := container.NewEditorAssembly(container.Config{PluginHost: host}, nil, nil)
+	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
 
 	runToEnd(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha"})
 
@@ -445,7 +445,7 @@ func TestTheEndpointClosesWhenTheRunStops(t *testing.T) {
 func TestToolsEndpoint_RejectsWrongToken(t *testing.T) {
 	agent := &toolAgent{}
 	host, _, _ := vaultAndCards(t, agent)
-	run, err := container.NewEditorAssembly(container.Config{PluginHost: host}, nil, nil).GetAgent().
+	run, err := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil).GetAgent().
 		StartRun(t.Context(), agentport.Task{Question: "q", Agent: "alpha"})
 	if err != nil {
 		t.Fatal(err)
@@ -475,7 +475,7 @@ func TestToolsEndpoint_RejectsWrongToken(t *testing.T) {
 func TestACardToolCallCarriesTheVaultOfTheRun(t *testing.T) {
 	agent := &toolAgent{calls: []toolCall{{name: "card_current", arguments: `{}`}}}
 	host, _, cards := vaultAndCards(t, agent)
-	assembly := container.NewEditorAssembly(container.Config{PluginHost: host}, nil, nil)
+	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
 
 	runToEnd(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha", Vault: "v-garden"})
 

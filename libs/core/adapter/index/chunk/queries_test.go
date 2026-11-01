@@ -28,13 +28,15 @@ const (
 )
 
 // migrated is the schema, built once for this binary.
-var migrated = testsupport.NewTemplate(func(ctx context.Context, path string) error {
-	db, err := index.Open(ctx, path)
-	if err != nil {
-		return err
-	}
-	return db.Close()
-})
+func newMigrated() *testsupport.Template {
+	return testsupport.NewTemplate(func(ctx context.Context, path string) error {
+		db, err := index.Open(ctx, path)
+		if err != nil {
+			return err
+		}
+		return db.Close()
+	})
+}
 
 // seedBits is a coarse vector: one bit per dimension, every byte the seed.
 func seedBits(seed byte) []byte {
@@ -79,7 +81,7 @@ func openIndexAt(t *testing.T) (*index.DB, string) {
 	t.Setenv("XDG_CACHE_HOME", home)
 	t.Setenv("XDG_CONFIG_HOME", home)
 	path := filepath.Join(t.TempDir(), "index.db")
-	migrated.CopyTo(t, path)
+	newMigrated().CopyTo(t, path)
 	db, err := index.Open(t.Context(), path)
 	if err != nil {
 		t.Fatal(err)

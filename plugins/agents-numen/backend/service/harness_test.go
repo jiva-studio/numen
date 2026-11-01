@@ -840,7 +840,7 @@ func TestTheDepthsAModelConsumesAreReadFromTheListingOfTheChatAPI(t *testing.T) 
 		t.Errorf("the field is %q", luna.ReasoningField)
 	}
 	router := byName["typesafe/jev-router"]
-	if len(router.ReasoningLevels) != len(commonLevels) || router.DefaultReasoning != "" {
+	if len(router.ReasoningLevels) != len(getCommonLevels()) || router.DefaultReasoning != "" {
 		t.Errorf("a model of fields and no depths offers %v", router.ReasoningLevels)
 	}
 	if unreasoningModel := byName["unbiased/pareto-26.10"]; len(unreasoningModel.ReasoningLevels) != 0 || unreasoningModel.ReasoningField != "" {

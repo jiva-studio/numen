@@ -1,25 +1,41 @@
 package api
 
-// ErrorCodeValues lists every ErrorCode except the unspecified value.
-var ErrorCodeValues = []ErrorCode{ErrorCodeMissing, ErrorCodeNotANote, ErrorCodeNotText, ErrorCodeTooLarge, ErrorCodeBodyUnwritable, ErrorCodeUnreadable, ErrorCodeAlreadyExists, ErrorCodeInvalidName, ErrorCodeNotACardModel, ErrorCodeNotADeck, ErrorCodeDeckTooLarge, ErrorCodeNotAPreset, ErrorCodeStale}
+// GetErrorCodeValues returns every ErrorCode except the unspecified value.
+func GetErrorCodeValues() []ErrorCode {
+	return []ErrorCode{ErrorCodeMissing, ErrorCodeNotANote, ErrorCodeNotText, ErrorCodeTooLarge, ErrorCodeBodyUnwritable, ErrorCodeUnreadable, ErrorCodeAlreadyExists, ErrorCodeInvalidName, ErrorCodeNotACardModel, ErrorCodeNotADeck, ErrorCodeDeckTooLarge, ErrorCodeNotAPreset, ErrorCodeStale}
+}
 
-// ProblemKindValues lists every ProblemKind except the unspecified value.
-var ProblemKindValues = []ProblemKind{ProblemKindFieldDeclaredTwice, ProblemKindCardModelWithoutFields, ProblemKindTemplateMissingASide, ProblemKindPlaceholderUndeclared, ProblemKindCardWithoutACardModel, ProblemKindCardModelIsNotOne, ProblemKindFieldWrittenTwice, ProblemKindFieldNotRenamed, ProblemKindCardIDCarriedTwice}
+// GetProblemKindValues returns every ProblemKind except the unspecified value.
+func GetProblemKindValues() []ProblemKind {
+	return []ProblemKind{ProblemKindFieldDeclaredTwice, ProblemKindCardModelWithoutFields, ProblemKindTemplateMissingASide, ProblemKindPlaceholderUndeclared, ProblemKindCardWithoutACardModel, ProblemKindCardModelIsNotOne, ProblemKindFieldWrittenTwice, ProblemKindFieldNotRenamed, ProblemKindCardIDCarriedTwice}
+}
 
-// GoalValues lists every Goal except the unspecified value.
-var GoalValues = []Goal{GoalMinutesADay, GoalRetention, GoalByDate}
+// GetGoalValues returns every Goal except the unspecified value.
+func GetGoalValues() []Goal {
+	return []Goal{GoalMinutesADay, GoalRetention, GoalByDate}
+}
 
-// RuleValues lists every Rule except the unspecified value.
-var RuleValues = []Rule{RuleInterval, RuleRetention}
+// GetRuleValues returns every Rule except the unspecified value.
+func GetRuleValues() []Rule {
+	return []Rule{RuleInterval, RuleRetention}
+}
 
-// BudgetUnitValues lists every BudgetUnit except the unspecified value.
-var BudgetUnitValues = []BudgetUnit{BudgetUnitCards, BudgetUnitShows}
+// GetBudgetUnitValues returns every BudgetUnit except the unspecified value.
+func GetBudgetUnitValues() []BudgetUnit {
+	return []BudgetUnit{BudgetUnitCards, BudgetUnitShows}
+}
 
-// StopReasonValues lists every StopReason except the unspecified value.
-var StopReasonValues = []StopReason{StopReasonNothing, StopReasonNoMinutes, StopReasonNoCards, StopReasonNoDay, StopReasonPastDay, StopReasonNoLoad, StopReasonNoWeek}
+// GetStopReasonValues returns every StopReason except the unspecified value.
+func GetStopReasonValues() []StopReason {
+	return []StopReason{StopReasonNothing, StopReasonNoMinutes, StopReasonNoCards, StopReasonNoDay, StopReasonPastDay, StopReasonNoLoad, StopReasonNoWeek}
+}
 
-// BudgetNameValues lists every BudgetName except the unspecified value.
-var BudgetNameValues = []BudgetName{BudgetNameMinutesADay, BudgetNameNewADay, BudgetNameReviewsADay, BudgetNameByDate, BudgetNameBacklog, BudgetNamePaused}
+// GetBudgetNameValues returns every BudgetName except the unspecified value.
+func GetBudgetNameValues() []BudgetName {
+	return []BudgetName{BudgetNameMinutesADay, BudgetNameNewADay, BudgetNameReviewsADay, BudgetNameByDate, BudgetNameBacklog, BudgetNamePaused}
+}
 
-// RatingValues lists every Rating except the unspecified value.
-var RatingValues = []Rating{RatingAgain, RatingHard, RatingGood, RatingEasy}
+// GetRatingValues returns every Rating except the unspecified value.
+func GetRatingValues() []Rating {
+	return []Rating{RatingAgain, RatingHard, RatingGood, RatingEasy}
+}

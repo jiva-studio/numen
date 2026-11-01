@@ -430,19 +430,23 @@ func TestEveryPluginHasAReadme(t *testing.T) {
 	}
 }
 
-// validPluginKinds is every plugin kind known to numen.
-var validPluginKinds = []string{
-	"agents",
-	"readers",
-	"editors",
-	"views",
-	"engines",
-	"tools",
-	"themes",
+// listValidPluginKinds returns every plugin kind known to numen.
+func listValidPluginKinds() []string {
+	return []string{
+		"agents",
+		"readers",
+		"editors",
+		"views",
+		"engines",
+		"tools",
+		"themes",
+	}
 }
 
-// domainPlugins are plugins named by the domain they hold whole, with no kind.
-var domainPlugins = []string{"notes"}
+// listDomainPlugins returns plugins named by the domain they hold whole, with no kind.
+func listDomainPlugins() []string {
+	return []string{"notes"}
+}
 
 // listPluginNamingIssues lists what a plugin folder and id break: the id starts
 // with md.numen., matches the folder name (with hyphens mapped to dots),
@@ -459,10 +463,10 @@ func listPluginNamingIssues(folder, id string) []string {
 		issues = append(issues, fmt.Sprintf("folder %q differs from id %q without md.numen.", folder, id))
 	}
 	parts := strings.Split(dotFolder, ".")
-	if slices.Contains(domainPlugins, dotFolder) {
+	if slices.Contains(listDomainPlugins(), dotFolder) {
 		return issues
 	}
-	if len(parts) < 2 || !slices.Contains(validPluginKinds, parts[0]) {
+	if len(parts) < 2 || !slices.Contains(listValidPluginKinds(), parts[0]) {
 		issues = append(issues, fmt.Sprintf("kind %q in folder %q is not a known plugin kind", parts[0], folder))
 	}
 	return issues

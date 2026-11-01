@@ -1,233 +1,99 @@
 package container
 
 import (
-	"go/parser"
-	"go/token"
-	"io/fs"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 	"testing"
+
+	"golang.org/x/mod/modfile"
 )
 
-// numenModules is what every module of this repository is named under.
-const numenModules = "github.com/jiva-studio/numen/"
-
-// pluginContract are the modules a plugin may name besides its own.
-var pluginContract = []string{
-	numenModules + "libs/plugin-sdk-go",
-	numenModules + "libs/protocol",
-	numenModules + "libs/notes",
-}
-
-// getPluginRefusal returns why a plugin module may not name dep, or "" when it may.
-// A plugin names its own module, the plugin contract and third-party code.
-func getPluginRefusal(plugin, dep string) string {
-	if !strings.HasPrefix(dep, numenModules) {
-		return ""
-	}
-	own := numenModules + "plugins/" + plugin
-	if dep == own || strings.HasPrefix(dep, own+"/") {
-		return ""
-	}
-	for _, allowed := range pluginContract {
-		if dep == allowed || strings.HasPrefix(dep, allowed+"/") {
-			return ""
-		}
-	}
-	if strings.HasPrefix(dep, numenModules+"plugins/") {
-		return "a plugin names no other plugin"
-	}
-	return "a plugin names the plugin contract and no other module of the repository"
-}
-
-// What getPluginRefusal returns is the whole of the rule, so it is tested directly.
-func TestWhatThePluginRulesRefuse(t *testing.T) {
-	for _, one := range []struct {
-		plugin, dep string
-		isRefused   bool
-	}{
-		{"ocr", numenModules + "libs/core/port", true},
-		{"ocr", numenModules + "libs/notes/domain", false},
-		{"ocr", numenModules + "libs/core", true},
-		{"ocr", numenModules + "libs/ui/core", true},
-		{"ocr", numenModules + "plugins/embeddings/backend/engine", true},
-		{"agent", numenModules + "plugins/agent-acp/backend", true},
-		{"agent-acp", numenModules + "plugins/agent", true},
-		{"agent-codex", numenModules + "plugins/agent-antigravity/backend", true},
-		{"agent-antigravity", numenModules + "plugins/agent-codex", true},
-		{"ocr", numenModules + "plugins/ocr/backend/engine", false},
-		{"ocr", numenModules + "libs/plugin-sdk-go/server", false},
-		{"ocr", numenModules + "libs/protocol/gen/numen/v1", false},
-		{"ocr", "github.com/connectrpc/connect", false},
-		{"ocr", "net/http", false},
-	} {
-		if got := getPluginRefusal(one.plugin, one.dep) != ""; got != one.isRefused {
-			t.Errorf("%s names %s: failure is %v, want %v", one.plugin, one.dep, got, one.isRefused)
-		}
-	}
-}
-
-// A plugin module requires and imports only its own packages, the plugin
-// contract and third-party code.
-func TestNoPluginNamesAnotherModuleOfTheRepository(t *testing.T) {
-	root := filepath.Join("..", "..", "..", "plugins")
-	entries, err := os.ReadDir(root)
+// readGoMod parses the go.mod at path.
+func readGoMod(t *testing.T, path string) *modfile.File {
+	t.Helper()
+	text, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	plugins := 0
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-		plugin := entry.Name()
-		dir := filepath.Join(root, plugin)
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err != nil {
-			continue
-		}
-		plugins++
-		text, err := os.ReadFile(filepath.Join(dir, "go.mod"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, why := range getGoModRefusals(plugin, parseGoMod(string(text))) {
-			t.Errorf("%s %s", plugin, why)
-		}
-		err = filepath.WalkDir(dir, func(path string, e fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			if e.IsDir() {
-				if e.Name() == "node_modules" {
-					return filepath.SkipDir
-				}
-				return nil
-			}
-			if !strings.HasSuffix(path, ".go") {
-				return nil
-			}
-			file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
-			if err != nil {
-				return err
-			}
-			for _, one := range file.Imports {
-				dep, err := strconv.Unquote(one.Path.Value)
-				if err != nil {
-					continue
-				}
-				if why := getPluginRefusal(plugin, dep); why != "" {
-					t.Errorf("%s imports %s: %s", path, dep, why)
-				}
-			}
-			return nil
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
+	file, err := modfile.Parse(path, text, nil)
+	if err != nil {
+		t.Fatal(err)
 	}
-	// A listing of nothing is a rule checked against nothing.
-	if plugins == 0 {
-		t.Fatal("no plugin module found")
-	}
+	return file
 }
 
-// goMod is what a go.mod declares about the modules it names: the ones it
-// requires, and the local directories it substitutes for a module.
-type goMod struct {
-	requires []string
-	// replaced maps a module path to the module path or local directory it is built from.
-	replaced map[string]string
-}
-
-// parseGoMod reads the require and replace directives of a go.mod, in single
-// lines and in blocks, with trailing comments removed.
-func parseGoMod(text string) goMod {
-	mod := goMod{replaced: map[string]string{}}
-	block := ""
-	for _, line := range strings.Split(text, "\n") {
-		line, _, _ = strings.Cut(line, "//")
-		line = strings.TrimSpace(line)
-		fields := unquoteAll(strings.Fields(line))
-		switch {
-		case len(fields) == 0:
-		case line == ")":
-			block = ""
-		case len(fields) == 2 && fields[1] == "(":
-			block = fields[0]
-		case block != "":
-			mod.read(block, fields)
-		default:
-			mod.read(fields[0], fields[1:])
-		}
+// getModulePath returns the path a go.mod declares in its module directive, or "" when it has none.
+func getModulePath(file *modfile.File) string {
+	if file.Module == nil {
+		return ""
 	}
-	return mod
+	return file.Module.Mod.Path
 }
 
-// unquoteAll removes the quotes Go allows around a path in a go.mod.
-func unquoteAll(fields []string) []string {
-	for i, field := range fields {
-		if unquoted, err := strconv.Unquote(field); err == nil {
-			fields[i] = unquoted
-		}
-	}
-	return fields
-}
-
-// read records one directive of the given kind.
-func (mod *goMod) read(kind string, fields []string) {
-	switch kind {
-	case "require":
-		if len(fields) > 0 {
-			mod.requires = append(mod.requires, fields[0])
-		}
-	case "replace":
-		for i, field := range fields {
-			if field == "=>" && i+1 < len(fields) {
-				mod.replaced[fields[0]] = fields[i+1]
-			}
-		}
-	}
-}
-
-// getGoModRefusals returns why a plugin's go.mod is not allowed: it requires a
-// module of the repository the plugin may not name, or builds any module from
-// a local directory other than the one the repository's own module is at.
-func getGoModRefusals(plugin string, mod goMod) []string {
+// getPluginGoModRefusals returns why the go.mod of the plugin in the folder named dir is refused: a
+// module path other than the one of the folder, a direct requirement getPluginDependencyRefusal
+// refuses, or a module built from a local folder. An indirect requirement is what Go records of
+// the requirements of the SDK and is allowed.
+func getPluginGoModRefusals(dir string, file *modfile.File) []string {
 	var refusals []string
-	for _, dep := range mod.requires {
-		if why := getPluginRefusal(plugin, dep); why != "" {
-			refusals = append(refusals, "requires "+dep+": "+why)
+	mod := getModulePath(file)
+	if want := pluginsPrefix + dir; mod != want {
+		refusals = append(refusals, "declares module "+mod+", want "+want)
+	}
+	for _, required := range file.Require {
+		if required.Indirect {
+			continue
+		}
+		if why := getPluginDependencyRefusal(mod, required.Mod.Path); why != "" {
+			refusals = append(refusals, "requires "+required.Mod.Path+": "+why)
 		}
 	}
-	for from, to := range mod.replaced {
-		if why := getPluginRefusal(plugin, from); why != "" {
-			refusals = append(refusals, "replaces "+from+" with "+to+": "+why)
-		} else if why := getPluginRefusal(plugin, to); why != "" {
-			refusals = append(refusals, "replaces "+from+" with "+to+": "+why)
-		} else if strings.HasPrefix(to, ".") && !strings.HasPrefix(from, numenModules) {
-			refusals = append(refusals, "replaces "+from+" with "+to+": third-party code is built from its own module")
+	for _, replaced := range file.Replace {
+		if replaced.New.Version == "" {
+			refusals = append(refusals, "builds "+replaced.Old.Path+" from the folder "+replaced.New.Path+
+				": a plugin builds in a repository of its own")
 		}
 	}
 	return refusals
 }
 
+// getPluginGoModRefusals defines the whole rule, so it is tested directly.
 func TestWhatThePluginGoModRulesRefuse(t *testing.T) {
+	const head = "module " + pluginsPrefix + "sample\n\ngo 1.26\n\n"
 	for _, one := range []struct {
 		name, text string
-		rejected   int
+		refused    int
 	}{
-		{"a core requirement in a block", "require (\n\t" + numenModules + "libs/core v0.0.0\n)", 1},
-		{"a block opener with a comment", "require ( // deps\n\t" + numenModules + "plugins/ocr v0.0.0\n)", 1},
-		{"a single-line requirement", "require " + numenModules + "plugins/ocr v0.0.0", 1},
-		{"a third-party module built from core", "require example.com/x v1.0.0\nreplace example.com/x => ../../libs/core", 1},
-		{"a quoted requirement", "require \"" + numenModules + "libs/core\" v0.0.0", 1},
-		{"a module-path replacement by core", "require example.com/x v1.0.0\nreplace example.com/x v1.0.0 => " + numenModules + "libs/core v0.0.0", 1},
-		{"the contract", "require (\n\t" + numenModules + "libs/protocol v0.0.0\n\texample.com/x v1.0.0\n)\nreplace " + numenModules + "libs/protocol => ../../libs/protocol", 0},
+		{"the SDK and third-party code", head + "require (\n\t" + sdkModule + " v0.0.0\n\t" + sdkModule + "/host v0.0.0\n\tgolang.org/x/net v0.1.0\n)\n", 0},
+		{"the notes library as Go records it for the SDK", head + "require " + notesModule + " v0.0.0 // indirect\n", 0},
+		{"the RPC library as Go records it for the SDK", head + "require connectrpc.com/connect v1.0.0 // indirect\n", 0},
+		{"a direct requirement of the notes library", head + "require " + notesModule + " v0.0.0\n", 1},
+		{"a direct requirement of the protocol", head + "require (\n\t" + wire + " v0.0.0\n)\n", 1},
+		{"a direct requirement of the RPC library", head + "require connectrpc.com/connect v1.0.0\n", 1},
+		{"a direct requirement of protobuf", head + "require google.golang.org/protobuf v1.0.0\n", 1},
+		{"a direct requirement of another plugin", head + "require " + pluginsPrefix + "other v0.0.0\n", 1},
+		{"a direct requirement of the core", head + "require " + module + "port v0.0.0\n", 1},
+		{"a module built from a folder", head + "require example.com/x v1.0.0\nreplace example.com/x => ../x\n", 1},
+		{"a module replaced by a published one", head + "require example.com/x v1.0.0\nreplace example.com/x => example.com/y v1.0.0\n", 0},
+		{"another module path", "module " + pluginsPrefix + "other\n", 1},
 	} {
-		if got := len(getGoModRefusals("agent", parseGoMod(one.text))); got != one.rejected {
-			t.Errorf("%s: %d refusals, want %d", one.name, got, one.rejected)
+		file, err := modfile.Parse("go.mod", []byte(one.text), nil)
+		if err != nil {
+			t.Fatalf("%s: %v", one.name, err)
+		}
+		if got := getPluginGoModRefusals("sample", file); len(got) != one.refused {
+			t.Errorf("%s: refusals %v, want %d", one.name, got, one.refused)
+		}
+	}
+}
+
+// The go.mod of every plugin declares the module of its folder and requires directly only the
+// plugin SDK and third-party code.
+func TestNoPluginModuleRequiresMoreThanTheSDK(t *testing.T) {
+	for _, dir := range listPluginModules(t) {
+		file := readGoMod(t, filepath.Join(dir, "go.mod"))
+		for _, why := range getPluginGoModRefusals(filepath.Base(dir), file) {
+			t.Errorf("%s/go.mod %s", dir, why)
 		}
 	}
 }

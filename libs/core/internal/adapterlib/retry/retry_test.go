@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
-var now = time.Date(2026, 10, 11, 12, 0, 0, 0, time.UTC)
+func getNow() time.Time { return time.Date(2026, 10, 11, 12, 0, 0, 0, time.UTC) }
 
 func TestRetryAfterIsReadInSecondsAndAsADate(t *testing.T) {
 	for name, tc := range map[string]struct {
@@ -20,14 +20,14 @@ func TestRetryAfterIsReadInSecondsAndAsADate(t *testing.T) {
 	}{
 		"seconds":     {"7", 7 * time.Second},
 		"padded":      {" 7 ", 7 * time.Second},
-		"a date":      {now.Add(12 * time.Second).Format(http.TimeFormat), 12 * time.Second},
-		"a past date": {now.Add(-time.Minute).Format(http.TimeFormat), 0},
+		"a date":      {getNow().Add(12 * time.Second).Format(http.TimeFormat), 12 * time.Second},
+		"a past date": {getNow().Add(-time.Minute).Format(http.TimeFormat), 0},
 		"negative":    {"-3", 0},
 		"absent":      {"", 0},
 		"unreadable":  {"soon", 0},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if got := retry.ParseAfter(tc.value, now); got != tc.want {
+			if got := retry.ParseAfter(tc.value, getNow()); got != tc.want {
 				t.Errorf("got %v, want %v", got, tc.want)
 			}
 		})
@@ -37,11 +37,11 @@ func TestRetryAfterIsReadInSecondsAndAsADate(t *testing.T) {
 func TestAWaitEndsWithItsContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	start := testsupport.Machine.Now()
+	start := testsupport.GetMachine().Now()
 	if err := retry.Wait(ctx, time.Hour); !errors.Is(err, context.Canceled) {
 		t.Fatalf("got %v", err)
 	}
-	if testsupport.Machine.Now().Sub(start) > 5*time.Second {
+	if testsupport.GetMachine().Now().Sub(start) > 5*time.Second {
 		t.Error("the wait did not end with the context")
 	}
 }
@@ -64,7 +64,7 @@ func TestAWaitElapses(t *testing.T) {
 }
 
 func TestRetryAfterOfMinusOneSecondIsNoWait(t *testing.T) {
-	if got := retry.ParseAfter("-1", now); got != 0 {
+	if got := retry.ParseAfter("-1", getNow()); got != 0 {
 		t.Errorf("got %v, want no wait", got)
 	}
 }

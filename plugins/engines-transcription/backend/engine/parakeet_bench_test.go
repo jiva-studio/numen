@@ -11,7 +11,7 @@ import (
 func BenchmarkParakeetGreedyLoop(b *testing.B) {
 	cfg := Defaults()
 	cfg.ShouldDownload = false
-	delta, err := Open(b.Context(), cfg)
+	delta, err := Open(b.Context(), NewRuntime(), cfg)
 	if err != nil {
 		b.Skipf("parakeet models not available: %v", err)
 	}
@@ -44,7 +44,7 @@ func BenchmarkParakeetGreedyLoop(b *testing.B) {
 func BenchmarkSileroVAD(b *testing.B) {
 	cfg := Defaults()
 	cfg.ShouldDownload = false
-	delta, err := Open(b.Context(), cfg)
+	delta, err := Open(b.Context(), NewRuntime(), cfg)
 	if err != nil {
 		b.Skipf("silero VAD model not available: %v", err)
 	}

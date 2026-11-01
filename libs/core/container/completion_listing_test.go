@@ -31,7 +31,7 @@ func TestTheListingOfProgramsForAQuestionHasALimit(t *testing.T) {
 	provider := &listingProvider{}
 	programs := completion.NewPrograms(provider, func() completion.AgentSettings { return completion.AgentSettings{} })
 
-	before := testsupport.Machine.Now()
+	before := testsupport.GetMachine().Now()
 	_, err := programs.GetProgram(t.Context(), "claude")
 
 	if !errors.Is(err, completionport.ErrUnavailable) {

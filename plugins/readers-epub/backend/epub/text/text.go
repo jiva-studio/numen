@@ -89,7 +89,7 @@ func (x *Extractor) writeNode(n *html.Node) {
 		return
 	}
 
-	if skippedElements[n.DataAtom] {
+	if isSkipped(n.DataAtom) {
 		// Not text of the book.
 		return
 	}
@@ -102,7 +102,7 @@ func (x *Extractor) writeNode(n *html.Node) {
 		return
 	}
 
-	block := blocks[n.DataAtom]
+	block := isBlock(n.DataAtom)
 	if block {
 		x.breakLine()
 		if x.isPlacing {
@@ -259,7 +259,7 @@ func (t *tokenizer) handleText() {
 
 func (t *tokenizer) shouldSkipStartTag(tt html.TokenType, a atom.Atom) bool {
 	if t.skipAtom != 0 {
-		if blocks[a] {
+		if isBlock(a) {
 			t.skipAtom = 0
 		} else {
 			return true
@@ -300,7 +300,7 @@ func (t *tokenizer) handleStartTag(tt html.TokenType) {
 		return
 	}
 
-	block := blocks[a]
+	block := isBlock(a)
 	if block {
 		t.x.breakLine()
 	}
@@ -373,7 +373,7 @@ func (t *tokenizer) handleEndTag() {
 	found := t.findStackFrame(a)
 	if found >= 0 {
 		t.popFramesUntil(found)
-	} else if blocks[a] {
+	} else if isBlock(a) {
 		t.x.breakLine()
 	}
 }
@@ -429,20 +429,22 @@ func (x *Extractor) closeFrame(f frame) {
 }
 
 // isVoidTag reports whether an HTML element has no closing tag.
-func isVoidTag(a atom.Atom) bool {
-	return voidTags[a]
+func isVoidTag(key atom.Atom) bool {
+	switch key {
+	case atom.Area, atom.Base, atom.Br, atom.Col, atom.Embed, atom.Hr, atom.Img, atom.Input,
+		atom.Keygen, atom.Link, atom.Meta, atom.Param, atom.Source, atom.Track, atom.Wbr:
+		return true
+	}
+	return false
 }
 
-// voidTags are the HTML elements that have no closing tag.
-var voidTags = map[atom.Atom]bool{
-	atom.Area: true, atom.Base: true, atom.Br: true, atom.Col: true, atom.Embed: true,
-	atom.Hr: true, atom.Img: true, atom.Input: true, atom.Keygen: true, atom.Link: true,
-	atom.Meta: true, atom.Param: true, atom.Source: true, atom.Track: true, atom.Wbr: true,
-}
-
-// skippedElements are the elements whose content is not text of the book.
-var skippedElements = map[atom.Atom]bool{
-	atom.Head: true, atom.Script: true, atom.Style: true, atom.Title: true,
+// isSkipped reports whether the content of the element is not text of the book.
+func isSkipped(key atom.Atom) bool {
+	switch key {
+	case atom.Head, atom.Script, atom.Style, atom.Title:
+		return true
+	}
+	return false
 }
 
 func (x *Extractor) breakLine() {
@@ -530,47 +532,33 @@ func GetAttribute(n *html.Node, name string) string {
 
 // parseHeadingLevel returns the level of a heading element, and 0 for anything else.
 func parseHeadingLevel(a atom.Atom) int {
-	return headingLevels[a]
+	switch a {
+	case atom.H1:
+		return 1
+	case atom.H2:
+		return 2
+	case atom.H3:
+		return 3
+	case atom.H4:
+		return 4
+	case atom.H5:
+		return 5
+	case atom.H6:
+		return 6
+	}
+	return 0
 }
 
-// headingLevels maps each heading element to its level.
-var headingLevels = map[atom.Atom]int{
-	atom.H1: 1, atom.H2: 2, atom.H3: 3, atom.H4: 4, atom.H5: 5, atom.H6: 6,
-}
-
-// blocks are the elements whose text relies on a line of its own.
-var blocks = map[atom.Atom]bool{
-	atom.Address:    true,
-	atom.Article:    true,
-	atom.Aside:      true,
-	atom.Blockquote: true,
-	atom.Body:       true,
-	atom.Caption:    true,
-	atom.Dd:         true,
-	atom.Div:        true,
-	atom.Dl:         true,
-	atom.Dt:         true,
-	atom.Figcaption: true,
-	atom.Figure:     true,
-	atom.Footer:     true,
-	atom.H1:         true,
-	atom.H2:         true,
-	atom.H3:         true,
-	atom.H4:         true,
-	atom.H5:         true,
-	atom.H6:         true,
-	atom.Header:     true,
-	atom.Hr:         true,
-	atom.Li:         true,
-	atom.Main:       true,
-	atom.Nav:        true,
-	atom.Ol:         true,
-	atom.P:          true,
-	atom.Pre:        true,
-	atom.Section:    true,
-	atom.Table:      true,
-	atom.Tr:         true,
-	atom.Ul:         true,
+// isBlock reports whether the text of the element relies on a line of its own.
+func isBlock(key atom.Atom) bool {
+	switch key {
+	case atom.Address, atom.Article, atom.Aside, atom.Blockquote, atom.Body, atom.Caption, atom.Dd,
+		atom.Div, atom.Dl, atom.Dt, atom.Figcaption, atom.Figure, atom.Footer, atom.H1, atom.H2, atom.H3,
+		atom.H4, atom.H5, atom.H6, atom.Header, atom.Hr, atom.Li, atom.Main, atom.Nav, atom.Ol, atom.P,
+		atom.Pre, atom.Section, atom.Table, atom.Tr, atom.Ul:
+		return true
+	}
+	return false
 }
 
 // GetText is the text of every document read so far.

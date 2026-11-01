@@ -20,7 +20,7 @@ import type {
 } from './types'
 
 /** The service name the manifest declares. */
-export const API_SERVICE = 'numen.pdf'
+export const API_SERVICE = 'md.numen.readers.pdf'
 
 /** Where the plugin's backend answers the window: the core forwards /plugin/<id>/ to it. */
 const PLUGIN_ROUTE = '/plugin/md.numen.readers.pdf'

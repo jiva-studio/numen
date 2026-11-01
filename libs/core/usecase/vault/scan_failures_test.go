@@ -130,11 +130,11 @@ func noteFile(modTime time.Time) scanFile {
 	return scanFile{kind: domain.KindNote, size: 10, modTime: modTime}
 }
 
-var epoch = time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+func getEpoch() time.Time { return time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC) }
 
 func TestAScanOfACancelledContextTouchesNothing(t *testing.T) {
 	t.Parallel()
-	m := &scanVault{files: map[string]scanFile{"a.md": noteFile(epoch)}}
+	m := &scanVault{files: map[string]scanFile{"a.md": noteFile(getEpoch())}}
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
@@ -167,7 +167,7 @@ func TestAScanStopsAtTheFirstStepThatFails(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			m := &scanVault{files: map[string]scanFile{"a.md": noteFile(epoch)}}
+			m := &scanVault{files: map[string]scanFile{"a.md": noteFile(getEpoch())}}
 			tc.set(m)
 
 			res, err := m.scan().Execute(t.Context(), domain.Vault{ID: "v", Name: "named"})
@@ -189,7 +189,7 @@ func TestAFailedGroupWriteKeepsWhatEarlierGroupsCounted(t *testing.T) {
 	const perGroup = 500
 	m := &scanVault{files: map[string]scanFile{}, saveErr: errors.New("disk full"), failSaveAt: 2}
 	for i := range perGroup + 1 {
-		m.files[fmt.Sprintf("n%04d.md", i)] = noteFile(epoch.Add(time.Duration(i) * time.Second))
+		m.files[fmt.Sprintf("n%04d.md", i)] = noteFile(getEpoch().Add(time.Duration(i) * time.Second))
 	}
 
 	res, err := m.scan().Execute(t.Context(), domain.Vault{ID: "v", Name: "v"})
@@ -208,9 +208,9 @@ func TestAFailedWriteNamesTheFirstAndLastNoteOfTheGroup(t *testing.T) {
 	t.Parallel()
 	m := &scanVault{
 		files: map[string]scanFile{
-			"a.md": noteFile(epoch.Add(3 * time.Second)),
-			"b.md": noteFile(epoch.Add(2 * time.Second)),
-			"c.md": noteFile(epoch.Add(1 * time.Second)),
+			"a.md": noteFile(getEpoch().Add(3 * time.Second)),
+			"b.md": noteFile(getEpoch().Add(2 * time.Second)),
+			"c.md": noteFile(getEpoch().Add(1 * time.Second)),
 		},
 		saveErr: errors.New("disk full"), failSaveAt: 1,
 	}
@@ -223,7 +223,7 @@ func TestAFailedWriteNamesTheFirstAndLastNoteOfTheGroup(t *testing.T) {
 
 func TestAScanGoesOnPastWhatItCannotIndex(t *testing.T) {
 	t.Parallel()
-	newest := epoch.Add(time.Hour)
+	newest := getEpoch().Add(time.Hour)
 	cases := []struct {
 		name  string
 		first scanFile
@@ -238,8 +238,8 @@ func TestAScanGoesOnPastWhatItCannotIndex(t *testing.T) {
 			t.Parallel()
 			m := &scanVault{files: map[string]scanFile{
 				"first.md":  tc.first,
-				"second.md": noteFile(epoch.Add(2 * time.Minute)),
-				"third.md":  noteFile(epoch.Add(time.Minute)),
+				"second.md": noteFile(getEpoch().Add(2 * time.Minute)),
+				"third.md":  noteFile(getEpoch().Add(time.Minute)),
 			}}
 
 			res, err := m.scan().Execute(t.Context(), domain.Vault{ID: "v", Name: "v"})
@@ -259,8 +259,8 @@ func TestAScanGoesOnPastWhatItCannotIndex(t *testing.T) {
 func TestARebuildReadsWhatTheIndexRemembers(t *testing.T) {
 	t.Parallel()
 	m := &scanVault{
-		files:      map[string]scanFile{"a.md": noteFile(epoch)},
-		indexedVal: map[string]domain.FileStat{"a.md": {Path: "a.md", Size: 10, ModTime: epoch}},
+		files:      map[string]scanFile{"a.md": noteFile(getEpoch())},
+		indexedVal: map[string]domain.FileStat{"a.md": {Path: "a.md", Size: 10, ModTime: getEpoch()}},
 	}
 
 	scan := m.scan()
@@ -286,7 +286,7 @@ func TestTheIndexIsMeasuredAfterTheSmallestChange(t *testing.T) {
 	t.Parallel()
 	t.Run("one note indexed", func(t *testing.T) {
 		t.Parallel()
-		m := &scanVault{files: map[string]scanFile{"a.md": noteFile(epoch)}}
+		m := &scanVault{files: map[string]scanFile{"a.md": noteFile(getEpoch())}}
 		if _, err := m.scan().Execute(t.Context(), domain.Vault{ID: "v", Name: "v"}); err != nil {
 			t.Fatal(err)
 		}
@@ -298,7 +298,7 @@ func TestTheIndexIsMeasuredAfterTheSmallestChange(t *testing.T) {
 		t.Parallel()
 		m := &scanVault{
 			files:      map[string]scanFile{},
-			indexedVal: map[string]domain.FileStat{"gone.md": {Path: "gone.md", Size: 10, ModTime: epoch}},
+			indexedVal: map[string]domain.FileStat{"gone.md": {Path: "gone.md", Size: 10, ModTime: getEpoch()}},
 		}
 		res, err := m.scan().Execute(t.Context(), domain.Vault{ID: "v", Name: "v"})
 		if err != nil {
@@ -316,7 +316,7 @@ func TestAGroupThatFailsWhenFullStopsTheScanWithWhatWasCounted(t *testing.T) {
 	boom := errors.New("disk full")
 	m := &scanVault{files: map[string]scanFile{}, saveErr: boom, failSaveAt: 1}
 	for i := range perGroup + 1 {
-		m.files[fmt.Sprintf("n%04d.md", i)] = noteFile(epoch.Add(time.Duration(i) * time.Second))
+		m.files[fmt.Sprintf("n%04d.md", i)] = noteFile(getEpoch().Add(time.Duration(i) * time.Second))
 	}
 
 	res, err := m.scan().Execute(t.Context(), domain.Vault{ID: "v", Name: "v"})

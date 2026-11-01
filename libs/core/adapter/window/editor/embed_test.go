@@ -42,10 +42,13 @@ import (
 // The two vocabularies a note in these tests is written in. A save changes
 // which one it holds, so the text the model received identifies which body
 // reached it.
-var (
-	before = []string{"river", "mountain", "forest", "meadow", "harbour", "valley", "island", "desert"}
-	after  = []string{"lantern", "compass", "anchor", "harvest", "cinder", "willow", "amber", "thistle"}
-)
+func getBefore() []string {
+	return []string{"river", "mountain", "forest", "meadow", "harbour", "valley", "island", "desert"}
+}
+
+func getAfter() []string {
+	return []string{"lantern", "compass", "anchor", "harvest", "cinder", "willow", "amber", "thistle"}
+}
 
 // prose is n words of one vocabulary, which is what a buffer holds: the text
 // under the frontmatter, and no frontmatter of its own.
@@ -208,7 +211,7 @@ func TestANoteSavedGetsItsVectorsBack(t *testing.T) {
 	model := &fakeEmbedder{dims: 64}
 
 	f := openingWith(t, map[string]string{
-		"Note.md": noteWith(before, 200),
+		"Note.md": noteWith(getBefore(), 200),
 	}, watcher, readers, model, 20*time.Millisecond)
 
 	waitFor(t, "the note was never embedded at all", func() bool {
@@ -217,12 +220,12 @@ func TestANoteSavedGetsItsVectorsBack(t *testing.T) {
 	})
 	walks := readers.walks.Load()
 
-	write(t, f.vault, "Note.md", noteWith(after, 200))
+	write(t, f.vault, "Note.md", noteWith(getAfter(), 200))
 	sendChange(t, watcher, "Note.md")
 
 	waitFor(t, "the note stayed out of search by meaning", func() bool {
 		targetVal, embedded := getVectorProgress(t, f, model)
-		return targetVal > 0 && targetVal == embedded && model.saw(after[0])
+		return targetVal > 0 && targetVal == embedded && model.saw(getAfter()[0])
 	})
 	if got := readers.walks.Load(); got != walks {
 		t.Errorf("the vault was walked %d times over to embed one note", got-walks)
@@ -240,7 +243,7 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 	model := &fakeEmbedder{dims: 64}
 
 	f := openingWith(t, map[string]string{
-		"Note.md": noteWith(before, 200),
+		"Note.md": noteWith(getBefore(), 200),
 	}, watcher, readers, model, time.Second)
 
 	waitFor(t, "the note was never embedded at all", func() bool {
@@ -252,13 +255,13 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 	// Every save lengthens the note by a word, so each one needs a vector the
 	// previous save did not.
 	for i := range saves {
-		write(t, f.vault, "Note.md", noteWith(after, 200+i))
+		write(t, f.vault, "Note.md", noteWith(getAfter(), 200+i))
 		sendChange(t, watcher, "Note.md")
 	}
 
 	waitFor(t, "the saves were never embedded", func() bool {
 		targetVal, embedded := getVectorProgress(t, f, model)
-		return targetVal > 0 && targetVal == embedded && model.saw(after[0])
+		return targetVal > 0 && targetVal == embedded && model.saw(getAfter()[0])
 	})
 
 	switch passes := model.times() - first; {
@@ -278,7 +281,7 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 	model := newSulking(64, 1)
 
 	f := openingWith(t, map[string]string{
-		"Note.md": noteWith(before, 200),
+		"Note.md": noteWith(getBefore(), 200),
 	}, unwatchable{}, newWalking(), model, 20*time.Millisecond)
 
 	waitFor(t, "the model was never asked at all", func() bool { return model.getTurnedDown() > 0 })
@@ -292,11 +295,11 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 
 	// Longer than the file on disk, so every chunk position is within the saved
 	// note.
-	save(t, f, "Note.md", prose(after, 240))
+	save(t, f, "Note.md", prose(getAfter(), 240))
 
 	waitFor(t, "what was saved stayed out of search by meaning", func() bool {
 		targetVal, embedded := getVectorProgress(t, f, model)
-		return targetVal > 0 && targetVal == embedded && model.saw(after[0])
+		return targetVal > 0 && targetVal == embedded && model.saw(getAfter()[0])
 	})
 }
 
@@ -307,19 +310,19 @@ func TestANoteSavedAfterTheScanFailedIsEmbedded(t *testing.T) {
 	model := &fakeEmbedder{dims: 64}
 
 	f := openingWith(t, map[string]string{
-		"Note.md": noteWith(before, 200),
+		"Note.md": noteWith(getBefore(), 200),
 	}, watcher, unwalkable{VaultReaders: vaultreader.Readers{}}, model, 20*time.Millisecond)
 
 	waitFor(t, "the scan was not reported as failed", func() bool {
 		return f.api.state.Error.Why() != ""
 	})
 
-	write(t, f.vault, "Note.md", noteWith(after, 200))
+	write(t, f.vault, "Note.md", noteWith(getAfter(), 200))
 	sendChange(t, watcher, "Note.md")
 
 	waitFor(t, "what was written stayed out of search by meaning", func() bool {
 		target, embedded := getVectorProgress(t, f, model)
-		return target > 0 && target == embedded && model.saw(after[0])
+		return target > 0 && target == embedded && model.saw(getAfter()[0])
 	})
 }
 
@@ -351,14 +354,14 @@ func (s *mockEmbeddingServer) EmbedBatch(
 func vaultConfig(t *testing.T, embedding container.EmbeddingConfig) container.Config {
 	t.Helper()
 	root := t.TempDir()
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
-	cfg := container.Config{
+	cfg := container.NewConfig(container.Config{
 		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
 		Embedding:    embedding,
-	}
+	})
 	registry, err := cfg.Registry()
 	if err != nil {
 		t.Fatal(err)
@@ -400,7 +403,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	}
 	serverPort := serverAddress.Port
 
-	host := plugin.NewHost(testsupport.Machine, "desktop.editor", tmp)
+	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}

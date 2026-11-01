@@ -9,16 +9,16 @@ import (
 
 // openBreakingDB is an index whose both pools go through the breaking driver,
 // holding the first vault and nothing else.
-func openBreakingDB(t *testing.T) *DB {
+func openBreakingDB(t *testing.T) (*DB, *faults) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "index.db")
-	migrated.CopyTo(t, path)
-	pool := openBreaking(t, path)
+	newMigrated().CopyTo(t, path)
+	pool, faults := openBreaking(t, path)
 	db := &DB{write: pool, read: pool}
-	if err := db.Vaults().Register(t.Context(), first.ID); err != nil {
+	if err := db.Vaults().Register(t.Context(), getFirst().ID); err != nil {
 		t.Fatal(err)
 	}
-	return db
+	return db, faults
 }
 
 // readWidth is the width the vector index holds and the recipe recorded as
@@ -53,18 +53,18 @@ func TestAFitThatFailsPreservesTheVectorIndexAsItWas(t *testing.T) {
 	} {
 		t.Run(step.name, func(t *testing.T) {
 			ctx := t.Context()
-			db := openBreakingDB(t)
+			db, faults := openBreakingDB(t)
 			if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 				t.Fatal(err)
 			}
-			embedAtWidth(t, db, first, 384)
+			embedAtWidth(t, db, getFirst(), 384)
 			if err := db.FitVectors(ctx, 1024, narrowRecipe(1024)); err != nil {
 				t.Fatal(err)
 			}
-			breakWhere(t, step.breaks)
+			faults.breakWhere(t, step.breaks)
 
 			err := db.FitVectors(ctx, 384, narrowRecipe(384))
-			stopBreaking()
+			faults.stop()
 			if !errors.Is(err, errBroken) {
 				t.Fatalf("fitting answered %v", err)
 			}
@@ -159,10 +159,10 @@ func TestAnIndexWithoutAVectorIndexContainsNoWidth(t *testing.T) {
 // A width that cannot be read is absent, and the report states why.
 func TestAWidthThatCannotBeReadIsNothing(t *testing.T) {
 	t.Run("the catalogue cannot be read", func(t *testing.T) {
-		db := openBreakingDB(t)
-		breakOn(t, "name = 'chunks_vec'")
+		db, faults := openBreakingDB(t)
+		faults.breakOn(t, "name = 'chunks_vec'")
 		width, err := getVectorWidth(t.Context(), db.write)
-		stopBreaking()
+		faults.stop()
 		if width != 0 || !errors.Is(err, errBroken) {
 			t.Errorf("got %d, %v", width, err)
 		}
@@ -187,10 +187,10 @@ func TestAWidthThatCannotBeReadIsNothing(t *testing.T) {
 // A recipe that cannot be read is reported, with the recipe nothing and none
 // recorded.
 func TestARecipeThatCannotBeReadIsReported(t *testing.T) {
-	db := openBreakingDB(t)
-	breakOn(t, "SELECT recipe FROM coarse_recipe")
+	db, faults := openBreakingDB(t)
+	faults.breakOn(t, "SELECT recipe FROM coarse_recipe")
 	recipe, recorded, err := coarseRecipe(t.Context(), db.write)
-	stopBreaking()
+	faults.stop()
 	if !errors.Is(err, errBroken) || recipe != "" || recorded {
 		t.Errorf("got %q, %v, %v", recipe, recorded, err)
 	}
@@ -207,15 +207,15 @@ func TestFitVectors_PreservesIndexOnReadFailure(t *testing.T) {
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			ctx := t.Context()
-			db := openBreakingDB(t)
+			db, faults := openBreakingDB(t)
 			if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 				t.Fatal(err)
 			}
-			embedAtWidth(t, db, first, 384)
+			embedAtWidth(t, db, getFirst(), 384)
 			if err := db.FitVectors(ctx, 1024, narrowRecipe(1024)); err != nil {
 				t.Fatal(err)
 			}
-			breakRows(t, "FROM vectors v JOIN chunks", c.unreadable)
+			faults.breakRows(t, "FROM vectors v JOIN chunks", c.unreadable)
 
 			err := db.FitVectors(ctx, 384, narrowRecipe(384))
 			if err == nil || !strings.Contains(err.Error(), "the vectors the recipe holds") {

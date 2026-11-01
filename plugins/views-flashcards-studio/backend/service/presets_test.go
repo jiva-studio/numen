@@ -48,10 +48,12 @@ const roots = "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    typ
 const terms = "---\ntype: deck\n---\n\n## Term ^3f4g5h6j7k\n"
 
 // pointed is that vault, as every test here opens it.
-var pointed = map[string]string{
-	"Sanskrit.md":    sanskrit,
-	"decks/Roots.md": roots,
-	"decks/Terms.md": terms,
+func getPointed() map[string]string {
+	return map[string]string{
+		"Sanskrit.md":    sanskrit,
+		"decks/Roots.md": roots,
+		"decks/Terms.md": terms,
+	}
 }
 
 // settings is what a preset holds, as a write hands them over.
@@ -73,7 +75,7 @@ func settings() *api.Settings {
 // TestASettingOutsideItsBoundsIsNotWritten. A retention target outside what
 // memory does is a number to correct, and the file is not opened to find out.
 func TestASettingOutsideItsBoundsIsNotSaved(t *testing.T) {
-	f := newScheduling(t, pointed)
+	f := newScheduling(t, getPointed())
 
 	targetSettings := settings()
 	targetSettings.Retention = 1.5
@@ -89,7 +91,7 @@ func TestASettingOutsideItsBoundsIsNotSaved(t *testing.T) {
 }
 
 func TestWritingAPresetPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) {
-	f := newScheduling(t, pointed)
+	f := newScheduling(t, getPointed())
 
 	read, err := f.client.ReadPreset(t.Context(), &api.ReadPresetRequest{
 		Path: "Sanskrit.md",
@@ -119,7 +121,7 @@ func TestWritingAPresetPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) 
 }
 
 func TestADeckNamingNoPresetIsScheduledByTheDefaults(t *testing.T) {
-	f := newScheduling(t, pointed)
+	f := newScheduling(t, getPointed())
 
 	answer, err := f.client.GetDeckPreset(t.Context(), &api.GetDeckPresetRequest{
 		Deck: "decks/Terms.md",
@@ -258,7 +260,7 @@ func TestAClientNamingNoCountsIsRefused(t *testing.T) {
 // setting to the suggested setting, so a curve missing either place cannot be
 // drawn.
 func TestACurveReachesBackWithItsTwoPlaces(t *testing.T) {
-	f := newScheduling(t, pointed)
+	f := newScheduling(t, getPointed())
 
 	answer, err := f.client.ComputeCurve(t.Context(), &api.ComputeCurveRequest{
 		Path: "Sanskrit.md", Settings: settings(),
@@ -320,7 +322,7 @@ func TestThePresetsOfTheVaultAreListed(t *testing.T) {
 // and has the preset type from the moment it exists. It writes none of its
 // settings, so every setting takes its default.
 func TestAPresetMadeIsAPresetToRead(t *testing.T) {
-	f := newScheduling(t, pointed)
+	f := newScheduling(t, getPointed())
 
 	made, err := f.client.CreatePreset(t.Context(), &api.CreatePresetRequest{
 		Title: "Prosody", Path: "presets",
@@ -383,7 +385,7 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 // TestAPresetMadeIsOneTheVaultLists. The list a deck's preset is chosen from
 // holds a preset the moment it is made.
 func TestAPresetMadeIsOneTheVaultLists(t *testing.T) {
-	f := newScheduling(t, pointed)
+	f := newScheduling(t, getPointed())
 
 	if _, err := f.client.CreatePreset(t.Context(), &api.CreatePresetRequest{
 		Title: "Prosody", Path: "presets",
@@ -407,7 +409,7 @@ func TestAPresetMadeIsOneTheVaultLists(t *testing.T) {
 // TestADeckIsPutOnAPresetAndTakenOffAgain. Choosing a preset writes the deck's
 // one entry, and choosing the defaults takes it out.
 func TestADeckIsInsertOnAPresetAndTakenOffAgain(t *testing.T) {
-	f := newScheduling(t, pointed)
+	f := newScheduling(t, getPointed())
 
 	placed, err := f.client.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Preset: "Sanskrit.md",
@@ -485,7 +487,7 @@ func TestADeckIsNotScheduledByANoteThatIsNotAPreset(t *testing.T) {
 
 // TestSchedulingAPresetThatIsNotThere. A path the vault holds no note at is
 func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
-	f := newScheduling(t, pointed)
+	f := newScheduling(t, getPointed())
 
 	answer, err := f.client.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Preset: "Pali.md",
@@ -504,7 +506,7 @@ func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
 // TestSchedulingPreservesAloneADeckThatChangedSinceItWasRead: a concurrent
 // edit of the deck takes precedence over a client holding an outdated read.
 func TestSchedulingPreservesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
-	f := newScheduling(t, pointed)
+	f := newScheduling(t, getPointed())
 
 	read, err := f.client.ScheduleDeck(t.Context(), &api.ScheduleDeckRequest{
 		Deck: "decks/Roots.md", Preset: "Sanskrit.md",

@@ -17,18 +17,26 @@ import (
 // DocumentServer answers the document methods of the plugin API. Each call works the vault its Numen-Vault
 // header names.
 type DocumentServer struct {
-	files host.Vault
-	texts host.Texts
+	files   host.Vault
+	texts   host.Texts
+	workers *pdf.Workers
 }
 
-// NewDocumentServer configures the worker pool and returns a DocumentServer that reads files from
-// files and text versions from texts.
-func NewDocumentServer(files host.Vault, texts host.Texts) *DocumentServer {
-	pdf.SetAfterFunc(clock.AfterFunc)
-	pdf.SetWorkers(runtime.NumCPU())
-	pdf.SetIdleWorkers(max(2, min(runtime.NumCPU(), 4)))
-	go pdf.Warmup()
-	return &DocumentServer{files: files, texts: texts}
+// newWorkers returns the worker pool of the plugin, started at once: one worker per CPU, a few of
+// them kept while idle, released by the plugin's clock.
+func newWorkers() *pdf.Workers {
+	workers := pdf.NewWorkers()
+	workers.SetAfterFunc(clock.AfterFunc)
+	workers.SetWorkers(runtime.NumCPU())
+	workers.SetIdleWorkers(max(2, min(runtime.NumCPU(), 4)))
+	go workers.Warmup()
+	return workers
+}
+
+// NewDocumentServer returns a DocumentServer that reads files from files on the workers, and text
+// versions from texts.
+func NewDocumentServer(files host.Vault, texts host.Texts, workers *pdf.Workers) *DocumentServer {
+	return &DocumentServer{files: files, texts: texts, workers: workers}
 }
 
 // Mount registers the document methods on api and returns the first failure to mount one.
@@ -48,7 +56,7 @@ func (s *DocumentServer) GetDocument(ctx context.Context, req GetDocumentRequest
 		return GetDocumentResponse{}, readVaultError(err)
 	}
 
-	scan, err := pdf.OpenBytes(raw)
+	scan, err := s.workers.OpenBytes(raw)
 	if err != nil {
 		return GetDocumentResponse{}, server.NewAPIError(server.CodeFailedPrecondition, fmt.Sprintf("read pdf: %v", err))
 	}

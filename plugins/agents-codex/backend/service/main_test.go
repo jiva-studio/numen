@@ -156,14 +156,15 @@ func TestModels_FailedListingIsRequeried(t *testing.T) {
 	}
 }
 
-// withoutAgentsAnywhere makes this machine hold none of the programs, wherever they are searched for.
+// withoutAgentsAnywhere empties PATH and HOME, where the program is searched for first, and skips
+// the test on a machine that holds Codex in a system-wide place.
 func withoutAgentsAnywhere(t *testing.T) {
 	t.Helper()
 	t.Setenv("PATH", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	was := codexPlaces
-	codexPlaces = nil
-	t.Cleanup(func() { codexPlaces = was })
+	if found := FindCodex(); found != "codex" {
+		t.Skipf("Codex is installed at %s", found)
+	}
 }
 
 // The run is started from the request: the command line, the folder, the model and the tools it is

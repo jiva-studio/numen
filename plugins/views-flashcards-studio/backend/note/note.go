@@ -6,6 +6,7 @@ package note
 
 import (
 	"context"
+	"crypto/rand"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
@@ -78,7 +79,7 @@ func NewEdit(readers ports.VaultReaders, writers ports.VaultWriters, index Level
 		},
 		Index:           index,
 		Clock:           now,
-		Entropy:         nil,
+		Entropy:         rand.Reader,
 		FileStat:        domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}},
 		ShouldOverwrite: false,
 		Bound:           0,

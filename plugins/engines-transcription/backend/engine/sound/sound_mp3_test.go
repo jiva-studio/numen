@@ -34,11 +34,13 @@ func (w *bitWriter) write(value uint32, width int) {
 	}
 }
 
-// The codes of the first Huffman table for the pairs it holds, as bits and
+// getPairCodes returns the codes of the first Huffman table for the pairs it holds, as bits and
 // width, for the pair (x, y) with each of x and y in {0, 1}.
-var pairCodes = [2][2][2]uint32{
-	{{1, 1}, {1, 3}},
-	{{2, 3}, {0, 3}},
+func getPairCodes() [2][2][2]uint32 {
+	return [2][2][2]uint32{
+		{{1, 1}, {1, 3}},
+		{{2, 3}, {0, 3}},
+	}
 }
 
 // The bytes of one 44.1 kHz stereo frame at 128 kbit/s, no padding.
@@ -88,7 +90,7 @@ func encodeMP3(count int, seed int64) []byte {
 func writeGranules(random *rand.Rand, main *bitWriter) {
 	for range 100 {
 		x, y := random.Intn(2), random.Intn(2)
-		code := pairCodes[x][y]
+		code := getPairCodes()[x][y]
 		main.write(code[0], int(code[1]))
 		if x == 1 {
 			main.write(uint32(random.Intn(2)), 1)

@@ -25,21 +25,7 @@ import (
 // tokenVar names the variable holding the token the host authenticates with.
 const tokenVar = "NUMEN_PLUGIN_TOKEN"
 
-type defaultFlags struct {
-	mu   sync.Mutex
-	port int
-}
-
-var (
-	flags       defaultFlags
-	exitProcess           = os.Exit
-	exitOutput  io.Writer = os.Stderr
-)
-
 func parseDefaultFlags() int {
-	flags.mu.Lock()
-	defer flags.mu.Unlock()
-
 	port := readFlagPort()
 	if port == 0 {
 		port = readEnvPort()
@@ -50,10 +36,9 @@ func parseDefaultFlags() int {
 func readFlagPort() int {
 	if !flag.Parsed() {
 		if flag.CommandLine.Lookup("port") == nil {
-			flag.IntVar(&flags.port, "port", 0, "Port to listen on")
+			flag.Int("port", 0, "Port to listen on")
 		}
 		flag.Parse()
-		return flags.port
 	}
 	f := flag.CommandLine.Lookup("port")
 	if f == nil {
@@ -194,24 +179,26 @@ func NewLinkedHandler(vars map[string]string, mount func(*Server) error) (http.H
 // Run starts a server, mounts services, and serves until shutdown.
 // When mounting or serving fails, Run writes the error to standard error and exits with code 1.
 func Run(mount func(*Server) error, opts ...Option) {
-	s := New(opts...)
-	if err := mount(s); err != nil {
-		exitWithError(err)
-		return
-	}
-	if err := s.Serve(); err != nil {
-		exitWithError(err)
-		return
+	if code := run(os.Stderr, mount, opts...); code != 0 {
+		os.Exit(code)
 	}
 }
 
-// exitWithError writes err to the exit output and exits with code 1, or code 2 when the write fails.
-func exitWithError(err error) {
-	code := 1
-	if _, writeErr := fmt.Fprintf(exitOutput, "server error: %v\n", err); writeErr != nil {
-		code = 2
+// run starts a server, mounts services and serves until shutdown. It returns the exit code: 0 after
+// a clean shutdown, 1 after an error written to errOut, and 2 when that write fails.
+func run(errOut io.Writer, mount func(*Server) error, opts ...Option) int {
+	s := New(opts...)
+	err := mount(s)
+	if err == nil {
+		err = s.Serve()
 	}
-	exitProcess(code)
+	if err == nil {
+		return 0
+	}
+	if _, writeErr := fmt.Fprintf(errOut, "server error: %v\n", err); writeErr != nil {
+		return 2
+	}
+	return 1
 }
 
 func newServer(port int, token string, opts []Option, linked bool) *Server {

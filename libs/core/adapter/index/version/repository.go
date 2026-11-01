@@ -17,7 +17,8 @@ import (
 //go:embed sql/*.sql
 var files embed.FS
 
-var stmt = sqlfile.Load(files, "sql")
+// getStatement returns the statement in sql/<name>.sql.
+func getStatement(name string) string { return sqlfile.Read(files, "sql", name) }
 
 // Repository is the text versions of every vault. Reads go through read and
 // writes through write, the pools the index database opens.
@@ -43,7 +44,7 @@ func (r *Repository) ListVersions(ctx context.Context, vaultID domain.VaultID) (
 
 // SaveVersion records a version, replacing the record of the same path, plugin and key in its place.
 func (r *Repository) SaveVersion(ctx context.Context, vaultID domain.VaultID, v domain.TextVersion) error {
-	_, err := sqlwrite.Exec(ctx, r.write, stmt.Get("save"),
+	_, err := sqlwrite.Exec(ctx, r.write, getStatement("save"),
 		string(vaultID), v.Path, v.PluginID, v.Key, string(v.Source), string(v.Kind), v.File,
 		v.SourceHash, v.Hash, v.CreateTime.UnixNano())
 	if err != nil {
@@ -54,7 +55,7 @@ func (r *Repository) SaveVersion(ctx context.Context, vaultID domain.VaultID, v 
 
 // RemoveVersion removes the record of a version. A version that is not there is removed.
 func (r *Repository) RemoveVersion(ctx context.Context, vaultID domain.VaultID, path, pluginID, key string) error {
-	if _, err := sqlwrite.Exec(ctx, r.write, stmt.Get("remove"), string(vaultID), path, pluginID, key); err != nil {
+	if _, err := sqlwrite.Exec(ctx, r.write, getStatement("remove"), string(vaultID), path, pluginID, key); err != nil {
 		return fmt.Errorf("remove version %s/%s of %s: %w", pluginID, key, path, err)
 	}
 	return nil
@@ -65,11 +66,11 @@ func (r *Repository) RemoveVersion(ctx context.Context, vaultID domain.VaultID, 
 func (r *Repository) RemovePluginVersions(ctx context.Context, vaultID domain.VaultID, pluginID string) ([]domain.TextVersion, error) {
 	var removed []domain.TextVersion
 	err := sqlwrite.InTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
-		listed, err := scan(tx.QueryContext(ctx, stmt.Get("list_plugin"), string(vaultID), pluginID))
+		listed, err := scan(tx.QueryContext(ctx, getStatement("list_plugin"), string(vaultID), pluginID))
 		if err != nil {
 			return err
 		}
-		if _, err := tx.ExecContext(ctx, stmt.Get("remove_plugin"), string(vaultID), pluginID); err != nil {
+		if _, err := tx.ExecContext(ctx, getStatement("remove_plugin"), string(vaultID), pluginID); err != nil {
 			return fmt.Errorf("remove the versions of %s: %w", pluginID, err)
 		}
 		removed = listed
@@ -91,13 +92,13 @@ func (r *Repository) MoveVersions(ctx context.Context, vaultID domain.VaultID, f
 	return sqlwrite.InTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
 		toFirst, toPast := getRangeUnder(to)
 		fromFirst, fromPast := getRangeUnder(from)
-		if _, err := tx.ExecContext(ctx, stmt.Get("clear_target"),
+		if _, err := tx.ExecContext(ctx, getStatement("clear_target"),
 			string(vaultID), to, toFirst, toPast, from, fromFirst, fromPast); err != nil {
 			return fmt.Errorf("clear the versions at %s: %w", to, err)
 		}
 		// substr counts characters from one.
 		fromLen := utf8.RuneCountInString(from) + 1
-		if _, err := tx.ExecContext(ctx, stmt.Get("move"),
+		if _, err := tx.ExecContext(ctx, getStatement("move"),
 			to, fromLen, string(vaultID), from, fromFirst, fromPast); err != nil {
 			return fmt.Errorf("move the versions of %s to %s: %w", from, to, err)
 		}
@@ -112,7 +113,7 @@ func getRangeUnder(folder string) (first, past string) {
 }
 
 func (r *Repository) query(ctx context.Context, name string, args ...any) ([]domain.TextVersion, error) {
-	return scan(r.read.QueryContext(ctx, stmt.Get(name), args...))
+	return scan(r.read.QueryContext(ctx, getStatement(name), args...))
 }
 
 func scan(rows *sql.Rows, queryErr error) (out []domain.TextVersion, err error) {

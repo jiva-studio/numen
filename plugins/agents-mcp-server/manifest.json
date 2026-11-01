@@ -10,7 +10,7 @@
   "activationEvents": ["*"],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "backend": { "entrypoint": "bin/agents-mcp-server" },
-  "services": ["numen.v1.McpServerService"],
+  "services": ["md.numen.agents.mcp.server"],
   "settings": [
     {
       "key": "port",

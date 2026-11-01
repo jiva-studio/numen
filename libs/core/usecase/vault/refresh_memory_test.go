@@ -17,9 +17,11 @@ import (
 
 var (
 	errMemory = errors.New("the memory vault failed")
-	memBase   = time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
-	memVault  = domain.Vault{ID: "memory", Name: "memory", Path: "/memory"}
 )
+
+func getMemBase() time.Time { return time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC) }
+
+func getMemVault() domain.Vault { return domain.Vault{ID: "memory", Name: "memory", Path: "/memory"} }
 
 // memFile is one path of a vault held in memory: what a stat answers, what a
 // read answers, and the failures either gives instead.
@@ -62,7 +64,7 @@ type memWorld struct {
 
 func newMemWorld() *memWorld {
 	w := &memWorld{files: map[string]*memFile{}, item: map[string][]domain.FileStat{}}
-	w.clock = func() time.Time { return memBase }
+	w.clock = getMemBase
 	return w
 }
 
@@ -202,7 +204,7 @@ func (s memSources) RemoveSources(_ context.Context, _ domain.VaultID, kind doma
 
 func execute(t *testing.T, refresh vaults.Refresh, paths ...string) vaults.RefreshResult {
 	t.Helper()
-	res, err := refresh.Execute(t.Context(), memVault, paths)
+	res, err := refresh.Execute(t.Context(), getMemVault(), paths)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +216,7 @@ func TestARefreshOfNoPathsOpensNothing(t *testing.T) {
 	w := newMemWorld()
 	w.openErr = errMemory
 
-	res, err := w.refresh().Execute(t.Context(), memVault, nil)
+	res, err := w.refresh().Execute(t.Context(), getMemVault(), nil)
 	if err != nil {
 		t.Fatalf("no paths were named, yet: %v", err)
 	}
@@ -230,9 +232,9 @@ func TestARefreshFailsWhenTheVaultCannotBeOpened(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
 	w.openErr = errMemory
-	w.addNote("Note.md", "entropy", memBase.Add(-time.Hour))
+	w.addNote("Note.md", "entropy", getMemBase().Add(-time.Hour))
 
-	_, err := w.refresh().Execute(t.Context(), memVault, []string{"Note.md"})
+	_, err := w.refresh().Execute(t.Context(), getMemVault(), []string{"Note.md"})
 	if !errors.Is(err, errMemory) {
 		t.Fatalf("got %v", err)
 	}
@@ -245,9 +247,9 @@ func TestARefreshFailsWhenTheVaultCannotBeRegistered(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
 	w.registerErr = errMemory
-	w.addNote("Note.md", "entropy", memBase.Add(-time.Hour))
+	w.addNote("Note.md", "entropy", getMemBase().Add(-time.Hour))
 
-	_, err := w.refresh().Execute(t.Context(), memVault, []string{"Note.md"})
+	_, err := w.refresh().Execute(t.Context(), getMemVault(), []string{"Note.md"})
 	if !errors.Is(err, errMemory) {
 		t.Fatalf("got %v", err)
 	}
@@ -259,11 +261,11 @@ func TestARefreshFailsWhenTheVaultCannotBeRegistered(t *testing.T) {
 func TestACancelledRefreshSavesNothing(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
-	w.addNote("Note.md", "entropy", memBase.Add(-time.Hour))
+	w.addNote("Note.md", "entropy", getMemBase().Add(-time.Hour))
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	_, err := w.refresh().Execute(ctx, memVault, []string{"Note.md"})
+	_, err := w.refresh().Execute(ctx, getMemVault(), []string{"Note.md"})
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("got %v", err)
 	}
@@ -275,7 +277,7 @@ func TestACancelledRefreshSavesNothing(t *testing.T) {
 func TestEveryNamedPathIsSortedIntoItsOutcome(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
-	old := memBase.Add(-time.Hour)
+	old := getMemBase().Add(-time.Hour)
 	w.addNote("Settled.md", "settled", old)
 	w.index("Settled.md")
 	w.files["Gone.md"] = &memFile{statErr: fs.ErrNotExist}
@@ -320,9 +322,9 @@ func TestARefreshFailsWhenTheIndexCannotSaveTheLastGroup(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
 	w.saveFailures = 1
-	w.addNote("Note.md", "entropy", memBase.Add(-time.Hour))
+	w.addNote("Note.md", "entropy", getMemBase().Add(-time.Hour))
 
-	res, err := w.refresh().Execute(t.Context(), memVault, []string{"Note.md"})
+	res, err := w.refresh().Execute(t.Context(), getMemVault(), []string{"Note.md"})
 	if !errors.Is(err, errMemory) {
 		t.Fatalf("got %v", err)
 	}
@@ -338,11 +340,11 @@ func TestARefreshFailsWhenTheIndexCannotSaveAFullGroup(t *testing.T) {
 	paths := make([]string, 0, 1200)
 	for i := range 1200 {
 		path := fmt.Sprintf("note-%04d.md", i)
-		w.addNote(path, "entropy", memBase.Add(-time.Hour))
+		w.addNote(path, "entropy", getMemBase().Add(-time.Hour))
 		paths = append(paths, path)
 	}
 
-	res, err := w.refresh().Execute(t.Context(), memVault, paths)
+	res, err := w.refresh().Execute(t.Context(), getMemVault(), paths)
 	if !errors.Is(err, errMemory) {
 		t.Fatalf("got %v", err)
 	}
@@ -357,7 +359,7 @@ func TestARefreshFailsWhenTheIndexCannotRemoveANote(t *testing.T) {
 	w.removeErr = errMemory
 	w.files["Gone.md"] = &memFile{statErr: fs.ErrNotExist}
 
-	res, err := w.refresh().Execute(t.Context(), memVault, []string{"Gone.md"})
+	res, err := w.refresh().Execute(t.Context(), getMemVault(), []string{"Gone.md"})
 	if !errors.Is(err, errMemory) {
 		t.Fatalf("got %v", err)
 	}
@@ -372,7 +374,7 @@ func TestRefresh_ErrorsWhenSourceListingFailsForRemovedPath(t *testing.T) {
 	w.queriesErr = errMemory
 	w.files["Gone.md"] = &memFile{statErr: fs.ErrNotExist}
 
-	res, err := w.refresh().Execute(t.Context(), memVault, []string{"Gone.md"})
+	res, err := w.refresh().Execute(t.Context(), getMemVault(), []string{"Gone.md"})
 	if !errors.Is(err, errMemory) {
 		t.Fatalf("got %v", err)
 	}
@@ -388,7 +390,7 @@ func TestARefreshFailsWhenASourceCannotBeRemoved(t *testing.T) {
 	w.files["Gone"] = &memFile{statErr: fs.ErrNotExist}
 	w.item["Gone"] = []domain.FileStat{{Path: "Gone/b.epub", Kind: domain.KindFile}}
 
-	_, err := w.refresh().Execute(t.Context(), memVault, []string{"Gone"})
+	_, err := w.refresh().Execute(t.Context(), getMemVault(), []string{"Gone"})
 	if !errors.Is(err, errMemory) {
 		t.Fatalf("got %v", err)
 	}
@@ -416,7 +418,7 @@ func TestRefresh_RemovedFolderRemovesSourcesByKind(t *testing.T) {
 
 func TestOnlyAnIndexedNoteOfThatPathIsTakenForCurrent(t *testing.T) {
 	t.Parallel()
-	old := memBase.Add(-time.Hour)
+	old := getMemBase().Add(-time.Hour)
 	other := domain.FileStat{Path: "Other.md", Kind: domain.KindNote, Size: 7, ModTime: old}
 	asBook := domain.FileStat{Path: "Note.md", Kind: domain.KindFile, Size: 7, ModTime: old}
 	asNote := domain.FileStat{Path: "Note.md", Kind: domain.KindNote, Size: 7, ModTime: old}
@@ -457,9 +459,9 @@ func TestANoteIsRecentWhileItIsYoungerThanTheGranularity(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			w := newMemWorld()
-			w.addNote("Note.md", "entropy", memBase)
+			w.addNote("Note.md", "entropy", getMemBase())
 			w.index("Note.md")
-			w.setNow(memBase.Add(tc.age))
+			w.setNow(getMemBase().Add(tc.age))
 
 			execute(t, w.refresh(), "Note.md")
 
@@ -473,7 +475,7 @@ func TestANoteIsRecentWhileItIsYoungerThanTheGranularity(t *testing.T) {
 func TestLedger_RetainsRecentNoteWithinWindow(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
-	w.addNote("Note.md", "entropy", memBase.Add(-time.Second))
+	w.addNote("Note.md", "entropy", getMemBase().Add(-time.Second))
 	refresh := w.refresh()
 
 	execute(t, refresh, "Note.md")
@@ -493,7 +495,7 @@ func TestLedger_RetainsRecentNoteWithinWindow(t *testing.T) {
 func TestTheLedgerLetsGoOfANoteOnceItsFileHasLeftTheWindow(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
-	w.addNote("Note.md", "entropy", memBase.Add(-time.Second))
+	w.addNote("Note.md", "entropy", getMemBase().Add(-time.Second))
 	refresh := w.refresh()
 	execute(t, refresh, "Note.md")
 
@@ -501,9 +503,9 @@ func TestTheLedgerLetsGoOfANoteOnceItsFileHasLeftTheWindow(t *testing.T) {
 	w.clock = func() time.Time {
 		calls++
 		if calls == 1 {
-			return memBase
+			return getMemBase()
 		}
-		return memBase.Add(3 * time.Second)
+		return getMemBase().Add(3 * time.Second)
 	}
 	execute(t, refresh, "Note.md")
 
@@ -515,11 +517,11 @@ func TestTheLedgerLetsGoOfANoteOnceItsFileHasLeftTheWindow(t *testing.T) {
 func TestANoteTheIndexChangedBelowTheLedgerIsSavedAgain(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
-	f := w.addNote("Note.md", "entropy", memBase.Add(-time.Second))
+	f := w.addNote("Note.md", "entropy", getMemBase().Add(-time.Second))
 	refresh := w.refresh()
 	execute(t, refresh, "Note.md")
 
-	f.fp.ModTime = memBase.Add(-500 * time.Millisecond)
+	f.fp.ModTime = getMemBase().Add(-500 * time.Millisecond)
 	w.index("Note.md")
 	execute(t, refresh, "Note.md")
 
@@ -531,7 +533,7 @@ func TestANoteTheIndexChangedBelowTheLedgerIsSavedAgain(t *testing.T) {
 func TestANoteThatCannotBeReadAgainIsNotTakenForCurrent(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
-	f := w.addNote("Empty.md", "", memBase.Add(-time.Second))
+	f := w.addNote("Empty.md", "", getMemBase().Add(-time.Second))
 	refresh := w.refresh()
 	execute(t, refresh, "Empty.md")
 
@@ -546,13 +548,13 @@ func TestANoteThatCannotBeReadAgainIsNotTakenForCurrent(t *testing.T) {
 func TestLedger_EvictsOutOfWindowEntryOnSave(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
-	w.addNote("A.md", "entropy", memBase)
-	w.addNote("B.md", "entropy", memBase.Add(vaults.TimestampGranularity))
-	w.setNow(memBase.Add(time.Second))
+	w.addNote("A.md", "entropy", getMemBase())
+	w.addNote("B.md", "entropy", getMemBase().Add(vaults.TimestampGranularity))
+	w.setNow(getMemBase().Add(time.Second))
 	refresh := w.refresh()
 	execute(t, refresh, "A.md")
 
-	w.setNow(memBase.Add(vaults.TimestampGranularity))
+	w.setNow(getMemBase().Add(vaults.TimestampGranularity))
 	execute(t, refresh, "B.md")
 
 	if n := refresh.Ledger.Len(); n != 1 {
@@ -563,14 +565,14 @@ func TestLedger_EvictsOutOfWindowEntryOnSave(t *testing.T) {
 func TestLedger_EvictsOutOfWindowEntryOnLookup(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
-	w.addNote("A.md", "entropy", memBase)
-	w.addNote("C.md", "entropy", memBase.Add(-time.Hour))
+	w.addNote("A.md", "entropy", getMemBase())
+	w.addNote("C.md", "entropy", getMemBase().Add(-time.Hour))
 	w.index("C.md")
-	w.setNow(memBase.Add(time.Second))
+	w.setNow(getMemBase().Add(time.Second))
 	refresh := w.refresh()
 	execute(t, refresh, "A.md")
 
-	w.setNow(memBase.Add(3 * time.Second))
+	w.setNow(getMemBase().Add(3 * time.Second))
 	execute(t, refresh, "C.md")
 
 	if n := refresh.Ledger.Len(); n != 0 {
@@ -581,11 +583,11 @@ func TestLedger_EvictsOutOfWindowEntryOnLookup(t *testing.T) {
 func TestTheLedgerForgetsANoteThatIsSavedOutsideTheWindow(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
-	f := w.addNote("Note.md", "entropy", memBase.Add(-time.Second))
+	f := w.addNote("Note.md", "entropy", getMemBase().Add(-time.Second))
 	refresh := w.refresh()
 	execute(t, refresh, "Note.md")
 
-	f.fp.ModTime = memBase.Add(-time.Hour)
+	f.fp.ModTime = getMemBase().Add(-time.Hour)
 	f.fp.Size++
 	execute(t, refresh, "Note.md")
 
@@ -598,10 +600,10 @@ func TestEveryRecentNoteIsRecordedWhateverTheOthersAre(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
 	paths := []string{"Recent.md"}
-	w.addNote("Recent.md", "entropy", memBase.Add(-500*time.Millisecond))
+	w.addNote("Recent.md", "entropy", getMemBase().Add(-500*time.Millisecond))
 	for i := range 8 {
 		path := fmt.Sprintf("Old%d.md", i)
-		w.addNote(path, "entropy", memBase.Add(-time.Hour))
+		w.addNote(path, "entropy", getMemBase().Add(-time.Hour))
 		paths = append(paths, path)
 	}
 	refresh := w.refresh()
@@ -619,13 +621,13 @@ func TestEveryRecentNoteIsRecordedWhateverTheOthersAre(t *testing.T) {
 func TestARefreshWithoutALedgerSavesARecentNoteEveryTime(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
-	f := w.addNote("Note.md", "entropy", memBase.Add(-time.Second))
+	f := w.addNote("Note.md", "entropy", getMemBase().Add(-time.Second))
 	refresh := w.refresh()
 	refresh.Ledger = nil
 
 	execute(t, refresh, "Note.md")
 	execute(t, refresh, "Note.md")
-	f.fp.ModTime = memBase.Add(-time.Hour)
+	f.fp.ModTime = getMemBase().Add(-time.Hour)
 	f.fp.Size++
 	execute(t, refresh, "Note.md")
 
@@ -640,12 +642,12 @@ func TestARefreshWithoutALedgerSavesARecentNoteEveryTime(t *testing.T) {
 func TestACancelledRefreshReportsWhatItDidFirst(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
-	w.addNote("First.md", "entropy", memBase.Add(-time.Hour))
-	w.addNote("Second.md", "entropy", memBase.Add(-time.Hour))
+	w.addNote("First.md", "entropy", getMemBase().Add(-time.Hour))
+	w.addNote("Second.md", "entropy", getMemBase().Add(-time.Hour))
 	ctx, cancel := context.WithCancel(t.Context())
 	w.afterRead = cancel
 
-	res, err := w.refresh().Execute(ctx, memVault, []string{"First.md", "Second.md"})
+	res, err := w.refresh().Execute(ctx, getMemVault(), []string{"First.md", "Second.md"})
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("got %v", err)
 	}
@@ -657,7 +659,7 @@ func TestACancelledRefreshReportsWhatItDidFirst(t *testing.T) {
 func TestARefreshWithoutALedgerConsumesASettledNoteForCurrent(t *testing.T) {
 	t.Parallel()
 	w := newMemWorld()
-	w.addNote("Note.md", "entropy", memBase.Add(-time.Hour))
+	w.addNote("Note.md", "entropy", getMemBase().Add(-time.Hour))
 	w.index("Note.md")
 	refresh := w.refresh()
 	refresh.Ledger = nil

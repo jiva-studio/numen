@@ -1,7 +1,10 @@
 // Package plugincontract re-exports the plugin port contract.
 package plugincontract
 
-import "github.com/jiva-studio/numen/libs/core/port/pluginport"
+import (
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+)
 
 type (
 	CommandFailedError     = pluginport.CommandFailedError
@@ -184,9 +187,14 @@ var (
 	ErrReservedSettingKey     = pluginport.ErrReservedSettingKey
 	ErrUnavailable            = pluginport.ErrUnavailable
 	ErrUnsupportedProtocol    = pluginport.ErrUnsupportedProtocol
-	FormatSettingValue        = pluginport.FormatSettingValue
-	GetDependencyKinds        = pluginport.GetDependencyKinds
-	NormalizePermission       = pluginport.NormalizePermission
-	PluginCapabilities        = pluginport.PluginCapabilities
-	PluginPermissions         = pluginport.PluginPermissions
 )
+
+func FormatSettingValue(value any) string { return pluginport.FormatSettingValue(value) }
+
+func GetDependencyKinds() []manifest.DependencyKind { return pluginport.GetDependencyKinds() }
+
+func NormalizePermission(permission string) string { return pluginport.NormalizePermission(permission) }
+
+func PluginCapabilities() []string { return pluginport.PluginCapabilities() }
+
+func PluginPermissions() []string { return pluginport.PluginPermissions() }

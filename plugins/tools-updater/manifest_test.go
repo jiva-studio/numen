@@ -40,7 +40,7 @@ func TestTheManifestDeclaresTheStatusViewTheTargetAndThePermission(t *testing.T)
 	if !slices.Equal(shape.Permissions, []string{"network:outbound"}) {
 		t.Errorf("permissions = %v", shape.Permissions)
 	}
-	if !slices.Equal(shape.Services, []string{"numen.updater"}) {
+	if !slices.Equal(shape.Services, []string{"md.numen.tools.updater"}) {
 		t.Errorf("services = %v", shape.Services)
 	}
 	if len(shape.Contributes.StatusViews) != 1 || shape.Contributes.StatusViews[0].ID != "update" {

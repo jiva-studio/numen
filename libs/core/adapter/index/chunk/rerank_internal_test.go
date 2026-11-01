@@ -73,11 +73,11 @@ func signed(values ...int8) []byte {
 
 func idsOf(ids ...int64) []int64 { return ids }
 
-var scriptedQuery = []float32{1, 0, 0, 0}
+func getScriptedQuery() []float32 { return []float32{1, 0, 0, 0} }
 
 func TestRerankAnswersNothingForNoCandidates(t *testing.T) {
 	q := scripted(t, nil, nil)
-	got, err := q.rerank(t.Context(), "r", scriptedQuery, nil, nil, -2)
+	got, err := q.rerank(t.Context(), "r", getScriptedQuery(), nil, nil, -2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +88,7 @@ func TestRerankAnswersNothingForNoCandidates(t *testing.T) {
 
 func TestRerankAnswersASingleCandidate(t *testing.T) {
 	q := scripted(t, [][]driver.Value{{int64(7), signed(127, 0, 0, 0)}}, nil)
-	got, err := q.rerank(t.Context(), "r", scriptedQuery, idsOf(7), nil, -2)
+	got, err := q.rerank(t.Context(), "r", getScriptedQuery(), idsOf(7), nil, -2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +105,7 @@ func TestRerankOrdersByDescendingSimilarity(t *testing.T) {
 		{int64(40), signed(127, 127, 0, 0)},
 		{int64(50), signed(-127, 0, 0, 0)},
 	}, nil)
-	got, err := q.rerank(t.Context(), "r", scriptedQuery, idsOf(10, 20, 30, 40, 50), nil, -2)
+	got, err := q.rerank(t.Context(), "r", getScriptedQuery(), idsOf(10, 20, 30, 40, 50), nil, -2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,7 +132,7 @@ func TestRerankKeepsTheArrivalOrderAmongEqualSimilarities(t *testing.T) {
 		}
 	}
 	q := scripted(t, data, nil)
-	got, err := q.rerank(t.Context(), "r", scriptedQuery, candidates, nil, -2)
+	got, err := q.rerank(t.Context(), "r", getScriptedQuery(), candidates, nil, -2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,17 +143,17 @@ func TestRerankKeepsTheArrivalOrderAmongEqualSimilarities(t *testing.T) {
 
 func TestRerankKeepsACandidateAtTheFloor(t *testing.T) {
 	stored := signed(127, 127, 0, 0)
-	pos := vector.SimilarityBytes(scriptedQuery, stored)
+	pos := vector.SimilarityBytes(getScriptedQuery(), stored)
 	q := scripted(t, [][]driver.Value{{int64(1), stored}}, nil)
 
-	got, err := q.rerank(t.Context(), "r", scriptedQuery, idsOf(1), nil, pos)
+	got, err := q.rerank(t.Context(), "r", getScriptedQuery(), idsOf(1), nil, pos)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Equal(got, idsOf(1)) {
 		t.Errorf("at the floor: got %v, want [1]", got)
 	}
-	got, err = q.rerank(t.Context(), "r", scriptedQuery, idsOf(1), nil, math.Nextafter(pos, 2))
+	got, err = q.rerank(t.Context(), "r", getScriptedQuery(), idsOf(1), nil, math.Nextafter(pos, 2))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -164,7 +164,7 @@ func TestRerankKeepsACandidateAtTheFloor(t *testing.T) {
 
 func TestRerank_RejectsVectorOfWrongWidth(t *testing.T) {
 	q := scripted(t, [][]driver.Value{{int64(9), signed(1, 2, 3)}}, nil)
-	got, err := q.rerank(t.Context(), "r", scriptedQuery, idsOf(9), nil, -2)
+	got, err := q.rerank(t.Context(), "r", getScriptedQuery(), idsOf(9), nil, -2)
 	if err == nil {
 		t.Fatalf("got %v and no error", got)
 	}
@@ -175,7 +175,7 @@ func TestRerank_RejectsVectorOfWrongWidth(t *testing.T) {
 
 func TestRerankReportsARowThatCannotBeRead(t *testing.T) {
 	q := scripted(t, [][]driver.Value{{"not a number", signed(127, 0, 0, 0)}}, nil)
-	got, err := q.rerank(t.Context(), "r", scriptedQuery, idsOf(1), nil, -2)
+	got, err := q.rerank(t.Context(), "r", getScriptedQuery(), idsOf(1), nil, -2)
 	if err == nil {
 		t.Fatalf("got %v and no error", got)
 	}
@@ -190,7 +190,7 @@ func TestRerankReportsARowThatCannotBeRead(t *testing.T) {
 func TestRerankReportsARowSetThatEndsInFailure(t *testing.T) {
 	broken := errors.New("the cursor broke")
 	q := scripted(t, [][]driver.Value{{int64(1), signed(127, 0, 0, 0)}}, broken)
-	got, err := q.rerank(t.Context(), "r", scriptedQuery, idsOf(1), nil, -2)
+	got, err := q.rerank(t.Context(), "r", getScriptedQuery(), idsOf(1), nil, -2)
 	if !errors.Is(err, broken) {
 		t.Fatalf("got error %v, want %v", err, broken)
 	}

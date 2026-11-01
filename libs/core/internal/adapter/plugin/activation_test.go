@@ -22,7 +22,7 @@ func newDiscoveredHost(t *testing.T) *Host {
 	t.Helper()
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
-	host := NewHost(testsupport.Machine, "desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -163,7 +163,7 @@ func TestACanceledCallerDoesNotCountAsAFailedActivation(t *testing.T) {
 	if _, err := host.EnsureActive(ctx, "org.example.sample"); err == nil {
 		t.Fatal("expected the activation to fail")
 	}
-	if err := host.supervisors["org.example.sample"].CheckActivationAllowed(testsupport.Machine.Now()); err != nil {
+	if err := host.supervisors["org.example.sample"].CheckActivationAllowed(testsupport.GetMachine().Now()); err != nil {
 		t.Fatalf("a canceled caller put the plugin into backoff: %v", err)
 	}
 }

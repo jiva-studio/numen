@@ -42,7 +42,7 @@ func TestGetModelProfileOfAnUnknownModelKeepsTheBGEM3Numbers(t *testing.T) {
 }
 
 func TestEveryProfileIsAValidIdentity(t *testing.T) {
-	for model, profile := range modelProfiles {
+	for model, profile := range getModelProfiles() {
 		identity := ModelInfo{Name: model, Dimensions: profile.Dimensions, MaxTokens: profile.MaxTokens, Pooling: profile.Pooling}
 		if err := CheckIdentity(identity, model); err != nil {
 			t.Errorf("%s: %v", model, err)

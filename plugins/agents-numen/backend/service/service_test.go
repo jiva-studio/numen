@@ -8,10 +8,9 @@ import (
 	"strconv"
 	"testing"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
@@ -42,19 +41,10 @@ func startPlugin(t *testing.T) string {
 	return "http://127.0.0.1:" + strconv.Itoa(port)
 }
 
-func withToken() connect.ClientOption {
-	return connect.WithInterceptors(connect.UnaryInterceptorFunc(func(next connect.UnaryFunc) connect.UnaryFunc {
-		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-			req.Header().Set("Authorization", "Bearer "+testToken)
-			return next(ctx, req)
-		}
-	}))
-}
-
 func TestThePluginAnswersPingWithTheProtocolVersion(t *testing.T) {
 	pos := startPlugin(t)
 
-	res, err := server.NewLifecycleClient(http.DefaultClient, pos, withToken()).Ping(t.Context())
+	res, err := server.NewLifecycleClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).Ping(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,11 +64,11 @@ func TestConfigure_PropagatesSettingsToAgent(t *testing.T) {
 	defer chat.Close()
 	pos := startPlugin(t)
 
-	if _, err := server.NewLifecycleClient(http.DefaultClient, pos, withToken()).
+	if _, err := server.NewLifecycleClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).
 		Configure(t.Context(), map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}); err != nil {
 		t.Fatal(err)
 	}
-	res, err := agentrun.NewClient(http.DefaultClient, pos, withToken()).
+	res, err := agentrun.NewClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).
 		GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
@@ -105,11 +95,11 @@ func TestNewHandler_PropagatesSettingsToAgent(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
-	if _, err := server.NewLifecycleClient(web.Client(), web.URL, withToken()).
+	if _, err := server.NewLifecycleClient(web.Client(), web.URL, hostcall.WithBearer(testToken)).
 		Configure(t.Context(), map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}); err != nil {
 		t.Fatal(err)
 	}
-	res, err := agentrun.NewClient(web.Client(), web.URL, withToken()).
+	res, err := agentrun.NewClient(web.Client(), web.URL, hostcall.WithBearer(testToken)).
 		GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)

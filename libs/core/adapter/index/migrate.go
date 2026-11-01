@@ -24,14 +24,19 @@ var files embed.FS
 // dropping is the order in which objects are dropped from the index. Virtual
 // tables come first because they own auxiliary tables that are listed in the
 // catalogue and dropped with them; views come before the tables they read.
-var dropping = []struct {
+func getDropping() []struct {
 	kind  string
 	where string
-}{
-	{"TRIGGER", `type = 'trigger'`},
-	{"VIEW", `type = 'view'`},
-	{"TABLE", `type = 'table' AND sql LIKE 'CREATE VIRTUAL TABLE%'`},
-	{"TABLE", `type = 'table'`},
+} {
+	return []struct {
+		kind  string
+		where string
+	}{
+		{"TRIGGER", `type = 'trigger'`},
+		{"VIEW", `type = 'view'`},
+		{"TABLE", `type = 'table' AND sql LIKE 'CREATE VIRTUAL TABLE%'`},
+		{"TABLE", `type = 'table'`},
+	}
 }
 
 // resetIndex takes everything out of the index and puts its version back to nothing,
@@ -62,7 +67,7 @@ func resetIndex(ctx context.Context, db *sql.DB) error {
 
 // dropEverything takes every object the catalogue names out of the index.
 func dropEverything(ctx context.Context, db *sql.DB) error {
-	for _, one := range dropping {
+	for _, one := range getDropping() {
 		for {
 			var name string
 			err := db.QueryRowContext(ctx,

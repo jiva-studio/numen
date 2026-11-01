@@ -39,7 +39,7 @@ func newTwoVaults(t *testing.T) twoVaults {
 	}
 	chemistry.File("tiny.pdf", raw)
 	chemistry.SetStore(pluginID, other.Store())
-	server := NewTextServer(current, texts, current.Store(), hosttest.NewQueue())
+	server := NewTextServer(current, texts, current.Store(), hosttest.NewQueue(), newTestWorkers(t))
 	t.Cleanup(server.Close)
 	createText(t, server, host.TextCreation{Vault: "Chemistry", Path: "tiny.pdf"})
 	return twoVaults{current: current, other: other, texts: texts, server: server}
@@ -72,7 +72,7 @@ func postAPI(t *testing.T, documents *DocumentServer, method, vault, body string
 
 func TestGetHighlightsReadsTheTextOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
-	documents := NewDocumentServer(v.current, v.texts)
+	documents := NewDocumentServer(v.current, v.texts, newTestWorkers(t))
 	var res GetHighlightsResponse
 
 	code := postAPI(t, documents, "GetHighlights", "Chemistry", `{"path":"tiny.pdf","ranges":[{"start":0,"end":4}]}`, &res)
@@ -87,7 +87,7 @@ func TestGetHighlightsReadsTheTextOfTheVaultTheRequestNames(t *testing.T) {
 
 func TestGetDocumentOpensTheFileOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
-	documents := NewDocumentServer(v.current, v.texts)
+	documents := NewDocumentServer(v.current, v.texts, newTestWorkers(t))
 	var res GetDocumentResponse
 
 	code := postAPI(t, documents, "GetDocument", "Chemistry", `{"path":"tiny.pdf"}`, &res)
@@ -102,7 +102,7 @@ func TestGetDocumentOpensTheFileOfTheVaultTheRequestNames(t *testing.T) {
 
 func TestPageServerDrawsThePageOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
-	pages := NewPageServer(v.current)
+	pages := NewPageServer(v.current, newTestWorkers(t))
 	mux := http.NewServeMux()
 	mux.Handle("GET /"+pagesPattern, pages)
 
@@ -134,7 +134,7 @@ func TestCreateTextWritesTheLayerInATurnOfTheQueue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := NewTextServer(files, texts, texts.GetStore(pluginID), queue)
+	server := NewTextServer(files, texts, texts.GetStore(pluginID), queue, newTestWorkers(t))
 	t.Cleanup(server.Close)
 
 	if err := server.CreateText(t.Context(), host.TextCreation{Path: "tiny.pdf"}); err != nil {

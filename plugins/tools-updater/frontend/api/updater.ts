@@ -6,7 +6,7 @@
 import type { Platform } from '../types'
 
 /** The service name the manifest declares. */
-export const SERVICE = 'numen.updater'
+export const SERVICE = 'md.numen.tools.updater'
 
 /** What the last check found. */
 export type State = 'unchecked' | 'current' | 'available' | 'unreachable'

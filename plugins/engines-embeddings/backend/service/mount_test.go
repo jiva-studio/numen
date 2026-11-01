@@ -1,14 +1,12 @@
 package service
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/embedding"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
@@ -27,12 +25,7 @@ func TestTheLinkedHandlerEmbedsThroughTheServiceItsConfigureNames(t *testing.T) 
 	}
 	web := httptest.NewServer(handler)
 	defer web.Close()
-	token := connect.WithInterceptors(connect.UnaryInterceptorFunc(func(next connect.UnaryFunc) connect.UnaryFunc {
-		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-			req.Header().Set("Authorization", "Bearer linked-token")
-			return next(ctx, req)
-		}
-	}))
+	token := hostcall.WithBearer("linked-token")
 
 	_, err = server.NewLifecycleClient(web.Client(), web.URL, token).Configure(t.Context(),
 		map[string]string{"baseUrl": remote.URL, "apiKey": "remote-key"})

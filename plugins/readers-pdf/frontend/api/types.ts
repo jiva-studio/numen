@@ -1,5 +1,5 @@
 /**
- * The JSON bodies of the methods the plugin's backend serves under the service `numen.pdf`.
+ * The JSON bodies of the methods the plugin's backend serves under the service `md.numen.readers.pdf`.
  */
 
 /** The identity of the bytes of a file. */

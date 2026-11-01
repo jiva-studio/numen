@@ -78,7 +78,7 @@ func (f filing) wiring() wiring {
 		links:   f.db.Links(),
 		queries: f.db.SourcesKnown(),
 		sources: f.db.Sources(),
-		writers: vaultwriter.VaultWriters{},
+		writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
 		index:   f.index,
 	}
 }
@@ -87,7 +87,7 @@ func (f filing) wiring() wiring {
 // the test supplies.
 func (f filing) moveOver(w wiring) vaults.Move {
 	notes := note.NewMove(
-		f.readers, vaultwriter.VaultWriters{},
+		f.readers, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
 		w.links, f.db.Queries(), f.db.Sources(), w.index, testsupport.NewClock(),
 	)
 	notes.Sync = func() note.SyncTitleAndFilename { return true }

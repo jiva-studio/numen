@@ -521,9 +521,6 @@ func TestVectorsGoInBatchesEachCommittedOnItsOwn(t *testing.T) {
 	for _, size := range []int{1, 2, 3, 4, 7} {
 		t.Run(fmt.Sprintf("batch of %d", size), func(t *testing.T) {
 			s := newStore(t)
-			was := chunk.VectorBatchSize
-			chunk.VectorBatchSize = size
-			t.Cleanup(func() { chunk.VectorBatchSize = was })
 			var trimmed []chunk.Chunk
 			for i := range 6 {
 				trimmed = append(trimmed, chunk.Chunk{Start: i * 5, Length: 5, Text: fmt.Sprintf("chunk %d", i)})
@@ -534,7 +531,7 @@ func TestVectorsGoInBatchesEachCommittedOnItsOwn(t *testing.T) {
 				vectors = append(vectors, s.vectorFor(row, "m", 1))
 			}
 
-			if err := s.db.Chunks().SaveVectors(t.Context(), vectors); err != nil {
+			if err := s.db.Chunks().SaveVectorsInBatches(t.Context(), vectors, size); err != nil {
 				t.Fatal(err)
 			}
 
@@ -550,9 +547,6 @@ func TestVectorsGoInBatchesEachCommittedOnItsOwn(t *testing.T) {
 
 func TestAVectorThatFailsPreservesTheBatchesBeforeItSaved(t *testing.T) {
 	s := newStore(t)
-	was := chunk.VectorBatchSize
-	chunk.VectorBatchSize = 2
-	t.Cleanup(func() { chunk.VectorBatchSize = was })
 	var trimmed []chunk.Chunk
 	for i := range 5 {
 		trimmed = append(trimmed, chunk.Chunk{Start: i * 5, Length: 5, Text: fmt.Sprintf("chunk %d", i)})
@@ -565,7 +559,7 @@ func TestAVectorThatFailsPreservesTheBatchesBeforeItSaved(t *testing.T) {
 		s.vectorFor(rows[2], "m", 1), s.vectorFor(rows[3], "poison", 1), s.vectorFor(rows[4], "m", 1),
 	}
 
-	err := s.db.Chunks().SaveVectors(t.Context(), vectors)
+	err := s.db.Chunks().SaveVectorsInBatches(t.Context(), vectors, 2)
 
 	wantSQLiteError(t, err, "keep_vector: ")
 	if n := s.count(`SELECT count(*) FROM vectors`); n != 2 {

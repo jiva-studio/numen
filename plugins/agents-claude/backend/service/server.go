@@ -13,13 +13,12 @@ import (
 	"strings"
 	"sync"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/process"
 )
@@ -96,7 +95,7 @@ func (s *agentServer) prepareClaudeArgs(
 	if len(toolNames) > 0 {
 		configFile, err = writeMcpConfig(msg.ToolsURL, msg.ToolsToken)
 		if err != nil {
-			return nil, "", connect.NewError(connect.CodeInternal, fmt.Errorf("write mcp config: %w", err))
+			return nil, "", rpcerror.New(rpcerror.Internal, fmt.Errorf("write mcp config: %w", err))
 		}
 	}
 	model := msg.Model
@@ -172,7 +171,7 @@ func (s *agentServer) streamClaude(
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="work.Output is unused because agent-claude writes responses directly to the stream"
 	work := agentrun.NewWork(conversation, 0, agentrun.StopByCancel(cancel))
 	if !s.registry.Add(work) {
-		return connect.NewError(connect.CodeUnavailable, errors.New("this agent is closing"))
+		return rpcerror.New(rpcerror.Unavailable, errors.New("this agent is closing"))
 	}
 	defer s.registry.Remove(work)
 	defer work.End()
@@ -221,14 +220,14 @@ func (s *agentServer) launchAgentCmd(
 
 	out, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, nil, nil, connect.NewError(connect.CodeInternal, fmt.Errorf("stdout pipe: %w", err))
+		return nil, nil, nil, rpcerror.New(rpcerror.Internal, fmt.Errorf("stdout pipe: %w", err))
 	}
 
 	var stderrBuf strings.Builder
 	cmd.Stderr = &stderrBuf
 
 	if err := cmd.Start(); err != nil {
-		return nil, nil, nil, connect.NewError(connect.CodeInternal, fmt.Errorf("start claude: %w", err))
+		return nil, nil, nil, rpcerror.New(rpcerror.Internal, fmt.Errorf("start claude: %w", err))
 	}
 	return cmd, out, &stderrBuf, nil
 }
@@ -376,7 +375,7 @@ func (s *agentServer) listModels(ctx context.Context, command string, extra []st
 	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "list models of claude: %v\n", err)
-		models = fallbackModels
+		models = getFallbackModels()
 	}
 	out := make([]*reasoning.Model, 0, len(models))
 	for _, one := range models {

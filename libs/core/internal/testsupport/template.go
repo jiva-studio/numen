@@ -10,8 +10,8 @@ import (
 	"testing"
 )
 
-// Template is a database built once for a whole test binary and handed out as
-// copies. Each copy is a file of its own, so tests that run in parallel share
+// Template is a database built once, on the first copy requested, and handed out
+// as copies. Each copy is a file of its own, so tests that run in parallel share
 // nothing.
 type Template struct {
 	build func(ctx context.Context, path string) error

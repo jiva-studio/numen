@@ -44,15 +44,17 @@ func (host) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) {
 }
 
 // contentTypes are the types the host gives the names of the tests.
-var contentTypes = map[string]domain.ContentType{
-	".md":   "text/markdown",
-	".mp3":  "audio/mpeg",
-	".mp4":  "video/mp4",
-	".json": "application/json",
+func getContentTypes() map[string]domain.ContentType {
+	return map[string]domain.ContentType{
+		".md":   "text/markdown",
+		".mp3":  "audio/mpeg",
+		".mp4":  "video/mp4",
+		".json": "application/json",
+	}
 }
 
 func (host) GetContentType(name string) domain.ContentType {
-	if found, ok := contentTypes[strings.ToLower(path.Ext(name))]; ok {
+	if found, ok := getContentTypes()[strings.ToLower(path.Ext(name))]; ok {
 		return found
 	}
 	return domain.UnknownContentType

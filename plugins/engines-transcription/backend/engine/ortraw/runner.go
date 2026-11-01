@@ -10,7 +10,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/onnx"
 )
 
-type runtimeRunner struct {
+// Runner holds the entry points of the runtime a Graph is run through, resolved by Bind from the
+// library the runtime opens.
+type Runner struct {
 	mu     sync.Mutex
 	ortRun func(
 		session, runOptions, inputNames, inputValues, inputCount, outputNames, outputCount, outputValues uintptr,
@@ -21,8 +23,6 @@ type runtimeRunner struct {
 	ortGetErrorCode         func(status uintptr) int32
 	ortGetErrorMessage      func(status uintptr) unsafe.Pointer
 }
-
-var runner runtimeRunner
 
 type ortAPIBase struct {
 	GetAPI           uintptr
@@ -43,11 +43,14 @@ type ortAPITable struct {
 	ReleaseValue         uintptr
 }
 
-func init() {
-	onnx.Register(initRunner)
+// NewRunner returns a runner that has resolved no entry point. It is given to onnx.NewLibrary as
+// the hook Bind.
+func NewRunner() *Runner {
+	return new(Runner)
 }
 
-func initRunner(pos string) error {
+// Bind resolves the entry points of the library at pos.
+func (runner *Runner) Bind(pos string) error {
 	runner.mu.Lock()
 	defer runner.mu.Unlock()
 	if runner.ortRun != nil {
@@ -89,7 +92,7 @@ func initRunner(pos string) error {
 	return nil
 }
 
-func checkStatus(status uintptr) error {
+func (runner *Runner) checkStatus(status uintptr) error {
 	if status == 0 {
 		return nil
 	}
@@ -109,7 +112,7 @@ func checkStatus(status uintptr) error {
 
 // ObserveRelease calls observe with every value the runtime releases, and
 // returns the function that stops it.
-func ObserveRelease(observe func(value uintptr)) (restore func()) {
+func (runner *Runner) ObserveRelease(observe func(value uintptr)) (restore func()) {
 	runner.mu.Lock()
 	defer runner.mu.Unlock()
 	original := runner.ortReleaseValue

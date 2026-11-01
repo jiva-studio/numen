@@ -58,8 +58,11 @@ func (f vaultFiles) ReadFile(ctx context.Context, vault domain.VaultID, path str
 // openModel opens the recogniser of the configuration.
 type openModel func(ctx context.Context, cfg engine.Config) (engine.TranscriberPort, error)
 
-func openParakeet(ctx context.Context, cfg engine.Config) (engine.TranscriberPort, error) {
-	return engine.Open(ctx, cfg)
+// newParakeetOpener returns what opens the recogniser of a configuration through the runtime.
+func newParakeetOpener(runtime engine.Runtime) openModel {
+	return func(ctx context.Context, cfg engine.Config) (engine.TranscriberPort, error) {
+		return engine.Open(ctx, runtime, cfg)
+	}
 }
 
 // models opens the model once, under the configuration the settings last named, and keeps it until
@@ -135,7 +138,7 @@ func NewConfig(modelsDir, runtime string) engine.Config {
 // Mount registers the text provider on s over the host given. The model
 // is the mock one where isMock is set. The transcriptions and the model end with s.
 func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) error {
-	model := &models{mu: sync.Mutex{}, cfg: cfg, isMock: isMock, open: openParakeet, current: nil}
+	model := &models{mu: sync.Mutex{}, cfg: cfg, isMock: isMock, open: newParakeetOpener(engine.NewRuntime()), current: nil}
 	transcriber := NewTranscriber(vaultFiles{vault: hosted.Vault}, hosted.Store, hosted.Texts, hosted.Queue, model.get)
 	s.SetUpdateConfig(model.updateConfig)
 	commands := command.New()

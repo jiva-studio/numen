@@ -39,7 +39,7 @@ func TestAWalkAnswersHowManyNotesTheVaultContains(t *testing.T) {
 
 // A walk that cannot open the vault returns the error and reports no notes as read.
 func TestAWalkThatCannotOpenTheVaultReturnsSo(t *testing.T) {
-	cfg, db, v := openVault(t, note)
+	cfg, db, v := openVault(t, getNote())
 	broken := errors.New("the disk is gone")
 	open := cfg.VaultOpenerWith(db, unopenable{err: broken}, cfg.VaultWatcher()).Begin(t.Context(), v)
 
@@ -54,7 +54,7 @@ func TestAWalkThatCannotOpenTheVaultReturnsSo(t *testing.T) {
 
 // A vault that cannot be watched has nothing to run, and running it returns.
 func TestRunningAVaultThatCannotBeWatchedReturns(t *testing.T) {
-	cfg, db, v := openVault(t, note)
+	cfg, db, v := openVault(t, getNote())
 	open := cfg.VaultOpenerWith(db, cfg.VaultReaders(), refusing{}).Begin(t.Context(), v)
 
 	isDone := make(chan struct{})
@@ -67,7 +67,7 @@ func TestRunningAVaultThatCannotBeWatchedReturns(t *testing.T) {
 
 // The walk of an opener rebuilds the index exactly when the opener requests it.
 func TestTheWalkRebuildsTheIndexWhenTheOpenerReturnsSo(t *testing.T) {
-	cfg, db, _ := openVault(t, note)
+	cfg, db, _ := openVault(t, getNote())
 	opening := cfg.VaultOpener(db)
 
 	if opening.GetScan().ShouldRebuildIndex {
@@ -86,7 +86,7 @@ func TestTheWalkRebuildsTheIndexWhenTheOpenerReturnsSo(t *testing.T) {
 // Errors raised while the vault is followed reach the opener's handler, as does
 // the end of the follow.
 func TestVaultOpener_ReportsFollowErrorsAndEnd(t *testing.T) {
-	cfg, db, v := openVault(t, note)
+	cfg, db, v := openVault(t, getNote())
 	watcher := makeWatcher()
 	opening := cfg.VaultOpenerWith(db, cfg.VaultReaders(), watcher)
 	received := make(chan error, 4)
@@ -113,7 +113,7 @@ func TestAnIndexPathBelowAFileCannotBeOpened(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	db, err := container.Config{IndexPath: filepath.Join(file, "index.db")}.OpenIndex(t.Context())
+	db, err := container.NewConfig(container.Config{IndexPath: filepath.Join(file, "index.db")}).OpenIndex(t.Context())
 	if err == nil {
 		testsupport.Close(t, db)
 		t.Fatal("an index was opened below a file")
@@ -126,7 +126,7 @@ func TestAnIndexPathBelowAFileCannotBeOpened(t *testing.T) {
 // A folder is not an index, and opening one returns an error.
 func TestAFolderCannotBeOpenedAsAnIndex(t *testing.T) {
 	isolate(t)
-	db, err := container.Config{IndexPath: t.TempDir()}.OpenIndex(t.Context())
+	db, err := container.NewConfig(container.Config{IndexPath: t.TempDir()}).OpenIndex(t.Context())
 	if err == nil {
 		testsupport.Close(t, db)
 		t.Fatal("a folder was opened as an index")
@@ -138,7 +138,7 @@ func TestAFolderCannotBeOpenedAsAnIndex(t *testing.T) {
 
 // Every port an index answers is there to be used.
 func TestAnIndexAnswersEveryPortItNames(t *testing.T) {
-	_, db, _ := openVault(t, note)
+	_, db, _ := openVault(t, getNote())
 
 	if db.Vectors() == nil || db.VectorQueries() == nil || db.Sources() == nil || db.SourcesKnown() == nil {
 		t.Error("a port of the index answers nothing")
@@ -147,7 +147,7 @@ func TestAnIndexAnswersEveryPortItNames(t *testing.T) {
 
 // An index serves every port it names and returns the path of its file.
 func TestAnIndexReturnsWhereItsFileIsAndAnswersItsPorts(t *testing.T) {
-	cfg, db, _ := openVault(t, note)
+	cfg, db, _ := openVault(t, getNote())
 
 	if db.Path() != cfg.IndexPath {
 		t.Errorf("the index is at %q, not %q", db.Path(), cfg.IndexPath)
@@ -159,7 +159,7 @@ func TestAnIndexReturnsWhereItsFileIsAndAnswersItsPorts(t *testing.T) {
 
 // Compacting an open index succeeds, and compacting a closed one returns an error.
 func TestCompact_SucceedsOpenAndFailsClosed(t *testing.T) {
-	_, db, _ := openVault(t, note)
+	_, db, _ := openVault(t, getNote())
 
 	if err := db.Compact(t.Context()); err != nil {
 		t.Fatalf("an open index rejected: %v", err)
@@ -180,7 +180,7 @@ func TestWatchingAnIndexWithNoFolderReturnsSo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	moves, err := container.Config{IndexPath: filepath.Join(file, "index.db")}.Moves(t.Context())
+	moves, err := container.NewConfig(container.Config{IndexPath: filepath.Join(file, "index.db")}).Moves(t.Context())
 	if err == nil {
 		t.Error("an index below a file was watched")
 	}
@@ -210,7 +210,7 @@ func TestShouldReadAssets_TrueForAssetsOrReload(t *testing.T) {
 
 // The refresh an opener hands out brings named notes up to date.
 func TestTheRefreshAnOpenerPassesOutIndexesNamedNotes(t *testing.T) {
-	cfg, db, v := openVault(t, note)
+	cfg, db, v := openVault(t, getNote())
 
 	res, err := cfg.VaultOpener(db).GetRefresh().Execute(t.Context(), v, []string{"Leaf.md"})
 	if err != nil {

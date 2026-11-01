@@ -18,14 +18,16 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-// note is one vault of one note.
-var note = map[string]string{"Leaf.md": "---\ntitle: Leaf\n---\n\n# Leaf\n"}
+// getNote returns one vault of one note.
+func getNote() map[string]string {
+	return map[string]string{"Leaf.md": "---\ntitle: Leaf\n---\n\n# Leaf\n"}
+}
 
 // A note written while the vault is being walked is read again after it, so the
 // newest copy of it lands last. A walk writes in groups from what it read, and
 // its copy of a note lands whenever the group does.
 func TestANoteSavedBelowTheWalkIsReadAgain(t *testing.T) {
-	cfg, db, v := openVault(t, note)
+	cfg, db, v := openVault(t, getNote())
 	opening := cfg.VaultOpener(db)
 	open := opening.Begin(t.Context(), v)
 
@@ -49,7 +51,7 @@ func TestANoteSavedBelowTheWalkIsReadAgain(t *testing.T) {
 // vault whose first walk failed is walked again on the opening it already has,
 // and a note written under that walk is read again after it.
 func TestASecondWalkContainsWhatIsSavedBelowIt(t *testing.T) {
-	cfg, db, v := openVault(t, note)
+	cfg, db, v := openVault(t, getNote())
 
 	target := makeGatedReaders()
 	opening := cfg.VaultOpenerWith(db, target, cfg.VaultWatcher())
@@ -92,7 +94,7 @@ func TestASecondWalkContainsWhatIsSavedBelowIt(t *testing.T) {
 
 // A vault that cannot be watched is still opened, and the error is reported.
 func TestAVaultThatCannotBeWatchedIsOpenedAndReturnsSo(t *testing.T) {
-	cfg, db, v := openVault(t, note)
+	cfg, db, v := openVault(t, getNote())
 	open := cfg.VaultOpenerWith(db, cfg.VaultReaders(), refusing{}).Begin(t.Context(), v)
 
 	if open.GetUnwatchedReason() == nil {
@@ -111,7 +113,7 @@ func TestAVaultThatCannotBeWatchedIsOpenedAndReturnsSo(t *testing.T) {
 // after the first walk ends. The note on disk is what the index contains
 // afterwards, however old the copy held by the first walk.
 func TestARescanDoesNotRunAdjacentTheFirstWalk(t *testing.T) {
-	cfg, db, v := openVault(t, note)
+	cfg, db, v := openVault(t, getNote())
 
 	watcher := makeWatcher()
 	readers := makeStagedReaders()
@@ -326,7 +328,7 @@ func (refusing) WatchVault(context.Context, domain.Vault) (<-chan []string, <-ch
 func openVault(t *testing.T, notes map[string]string) (container.Config, *container.Index, domain.Vault) {
 	t.Helper()
 
-	cfg := container.Config{IndexPath: indexfile.Path(t)}
+	cfg := container.NewConfig(container.Config{IndexPath: indexfile.Path(t)})
 	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)

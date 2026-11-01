@@ -32,7 +32,7 @@ func (q *Queries) getProblems(ctx context.Context, vaultID domain.VaultID, state
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get(statement), vault)
+	rows, err := q.db.QueryContext(ctx, getStatement(statement), vault)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (q *Queries) GetDanglingLinks(ctx context.Context, vaultID domain.VaultID) 
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("dangling"), vault)
+	rows, err := q.db.QueryContext(ctx, getStatement("dangling"), vault)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (q *Queries) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID)
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("shared_name_links"), vault, vault)
+	rows, err := q.db.QueryContext(ctx, getStatement("shared_name_links"), vault, vault)
 	if err != nil {
 		return nil, err
 	}

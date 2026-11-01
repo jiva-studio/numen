@@ -13,8 +13,19 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 )
 
-// update rewrites the goldens and compares against none of them.
-var update = flag.Bool("update", false, "write the goldens of the corpus again")
+// updateFlag names the flag that rewrites the goldens and compares against none of them.
+const updateFlag = "update"
+
+func TestMain(m *testing.M) {
+	flag.Bool(updateFlag, false, "write the goldens of the corpus again")
+	flag.Parse()
+	os.Exit(m.Run())
+}
+
+// isUpdating reports whether the run was asked to write the goldens again.
+func isUpdating() bool {
+	return flag.Lookup(updateFlag).Value.String() == "true"
+}
 
 // spineCorpus is one spine document as this package emits it, which the window
 // that renders it is tested against. It is stored with the corpora both sides
@@ -37,7 +48,7 @@ const textGolden = "testdata/seam.text"
 // the diff is what it moved.
 func TestABookIsReadAsTheGoldenReturnsItIs(t *testing.T) {
 	got := formatGolden(read(t, seamBook(t)))
-	if *update {
+	if isUpdating() {
 		if err := os.WriteFile(textGolden, []byte(got), 0o644); err != nil {
 			t.Fatal(err)
 		}
@@ -78,7 +89,7 @@ func formatGolden(book *epub.Book) string {
 // and the diff is what it moved.
 func TestASpineDocumentCrossesAsTheCorpusReturnsItDoes(t *testing.T) {
 	got := seamMarkup(t).HTML() + "\n"
-	if *update {
+	if isUpdating() {
 		if err := os.WriteFile(spineCorpus, []byte(got), 0o644); err != nil {
 			t.Fatal(err)
 		}

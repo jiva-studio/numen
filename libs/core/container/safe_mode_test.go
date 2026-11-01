@@ -25,22 +25,22 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 		t.Fatal(err)
 	}
 	manifest := `{
-		"id": "md.numen.pdf",
+		"id": "md.numen.readers.pdf",
 		"name": "PDF",
 		"version": "1.0.0",
 		"capabilities": ["embedding"],
 		"targets": ["desktop.editor"],
 		"permissions": ["vault:read"],
-		"services": ["numen.sample.v1.SampleService"], "backend": {"entrypoint": "bin/doc"}
+		"services": ["md.numen.readers.pdf.SampleService"], "backend": {"entrypoint": "bin/doc"}
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
-	cfg := Config{
+	cfg := NewConfig(Config{
 		SafeMode:   true,
 		PluginHost: NewPluginHost("desktop.editor", tmp),
-	}
+	})
 
 	ctx := t.Context()
 
@@ -83,7 +83,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 // An installation without a plugin host has no plugin installed, and its
 // plugins are set and stopped without one.
 func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
-	cfg := Config{}
+	cfg := NewConfig(Config{})
 	_, err := cfg.resolvePlugin(bridge.CapabilityEmbedding)
 	var missing *pluginport.UnavailableError
 	if !errors.As(err, &missing) || missing.Reason != pluginport.PluginNotInstalled || missing.Capability != bridge.CapabilityEmbedding {
@@ -111,7 +111,7 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 		t.Fatal(err)
 	}
 	host := NewPluginHost("desktop.editor", tmp)
-	cfg := Config{PluginHost: host}
+	cfg := NewConfig(Config{PluginHost: host})
 
 	cfg.SetPluginVaultPath("vault")
 	if got := host.GetVaultPath(); got != "vault" {

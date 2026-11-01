@@ -16,22 +16,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/packagecache"
 )
 
-var isDev bool
-
-func init() {
-	if os.Getenv("NUMEN_DEV") == "1" || os.Getenv("NUMEN_DEV") == "true" {
-		isDev = true
-	}
-}
-
-// IsDev reports whether plugins are discovered from development directories.
+// IsDev reports whether plugins are discovered from development directories: NUMEN_DEV is 1 or true.
 func IsDev() bool {
-	return isDev
-}
-
-// SetDev sets whether plugins are discovered from development directories.
-func SetDev(v bool) {
-	isDev = v
+	value := os.Getenv("NUMEN_DEV")
+	return value == "1" || value == "true"
 }
 
 // The windows a plugin names as the places it works in.
@@ -55,6 +43,7 @@ func GetConfigFor(target string) container.Config {
 		PluginDirs:    dirs,
 		PluginCatalog: getCatalogConfig(target, dirs),
 		KeyStore:      keychain.Store{},
+		Resources:     container.NewResources(),
 	}
 	// A machine with no data folder leaves the path empty, and the core fails to start.
 	if path, err := GetIndexPath(); err == nil {
@@ -63,8 +52,8 @@ func GetConfigFor(target string) container.Config {
 	return cfg
 }
 
-// devPluginsDirs are the plugin folders of a source checkout, relative to the working directory.
-var devPluginsDirs = []string{"modules/plugins", "plugins"}
+// getDevPluginsDirs is the plugin folders of a source checkout, relative to the working directory.
+func getDevPluginsDirs() []string { return []string{"modules/plugins", "plugins"} }
 
 // getCatalogConfig is the catalog of plugins as this machine keeps it: installs go to the plugin folder
 // of the user, and the downloaded packages are kept in the cache folder every window shares. The
@@ -89,7 +78,7 @@ func getIndexSource(pluginDirs []string) *indexsource.Source {
 	}
 	var manifestDirs []string
 	if IsDev() {
-		manifestDirs = devPluginsDirs
+		manifestDirs = getDevPluginsDirs()
 	}
 	return indexsource.New(indexPaths, manifestDirs)
 }
@@ -127,7 +116,7 @@ func getPluginsDirs() []string {
 	}
 
 	if IsDev() {
-		for _, dir := range devPluginsDirs {
+		for _, dir := range getDevPluginsDirs() {
 			addDir(dir)
 		}
 	}

@@ -15,7 +15,9 @@ import (
 )
 
 // connectionRoles are the roles whose records make up a connection.
-var connectionRoles = [...]domain.LinkRole{domain.RoleParent, domain.RoleChild, domain.RoleJump}
+func getConnectionRoles() [3]domain.LinkRole {
+	return [...]domain.LinkRole{domain.RoleParent, domain.RoleChild, domain.RoleJump}
+}
 
 // noteChange is the edit one note of a connection receives.
 type noteChange struct {
@@ -111,7 +113,7 @@ func (e connectionEditor) setChange(
 	change := func(doc *markdown.Document) error {
 		if side == nil {
 			for _, target := range addresses {
-				for _, role := range connectionRoles {
+				for _, role := range getConnectionRoles() {
 					if _, err := doc.RemoveLink(domain.LinkKey{Target: target, Role: role, Type: kind}); err != nil {
 						return err
 					}

@@ -95,7 +95,7 @@ func readPresets(t *testing.T) map[string]string {
 		t.Fatal(err)
 	}
 	for _, one := range declared.Contributes.Themes {
-		text, err := manifest.ReadThemeFile(presetsPlugin, one.File)
+		text, err := manifestjson.ReadThemeFile(presetsPlugin, one.File)
 		if err != nil {
 			t.Fatal(err)
 		}

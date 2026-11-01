@@ -17,9 +17,11 @@ import (
 )
 
 // notes is a vault holding two notes.
-var notes = map[string]string{
-	"Leaf mould.md":  "# Leaf mould\n\nCompost made of fallen leaves alone.\n",
-	"garden/Beds.md": "# Beds\n\n[[Leaf mould]] goes on in autumn.\n",
+func getNotes() map[string]string {
+	return map[string]string{
+		"Leaf mould.md":  "# Leaf mould\n\nCompost made of fallen leaves alone.\n",
+		"garden/Beds.md": "# Beds\n\n[[Leaf mould]] goes on in autumn.\n",
+	}
 }
 
 // makeWindow is this window as the binary builds it: an installation of its own, an index it may
@@ -30,10 +32,10 @@ func makeWindow(
 	t.Helper()
 
 	state := t.TempDir()
-	cfg := container.Config{
+	cfg := container.NewConfig(container.Config{
 		IndexPath:    filepath.Join(state, "index.db"),
 		RegistryPath: filepath.Join(state, "vaults.json"),
-	}
+	})
 	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -64,7 +66,7 @@ func vaultOf(t *testing.T, cfg container.Config) string {
 	if _, err := cfg.VaultIdentity().EnsureIdentity(root, time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)); err != nil {
 		t.Fatal(err)
 	}
-	for name, body := range notes {
+	for name, body := range getNotes() {
 		path := filepath.Join(root, filepath.FromSlash(name))
 		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 			t.Fatal(err)

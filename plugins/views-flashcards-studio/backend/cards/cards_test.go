@@ -22,8 +22,8 @@ import (
 // The two vaults every test here uses. They share no word: a heading renamed in
 // one is recognisable in the other, and so is a card model listed from the wrong
 // place.
-var (
-	animals = map[string]string{
+func getAnimals() map[string]string {
+	return map[string]string{
 		"Animal.md": "---\n" +
 			"type: card-model\n" +
 			"mine: keep me verbatim\n" +
@@ -48,7 +48,10 @@ var (
 			"\n## Wren ^3f4g5h6j7k\n\n[[Animal]]\n\n### Name\n\nWren\n\n### Height\n\nabout 4\"\n",
 		"Weather.md": "# Weather\n\nNo card in here.\n",
 	}
-	minerals = map[string]string{
+}
+
+func getMinerals() map[string]string {
+	return map[string]string{
 		"Mineral.md": "---\ntype: card-model\nfields:\n  - Sample\n  - Height\n---\n" +
 			"\n## Spot it\n\n### Front\n\n{{Sample}}\n\n### Back\n\n{{Height}}\n",
 		// A card of this vault's own card model, and a card naming the other
@@ -59,7 +62,7 @@ var (
 			"\n## Llama ^q1w2e3r4t5\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n" +
 			"\n### Name\n\nLlama\n",
 	}
-)
+}
 
 // vaulted is two vaults on disk, and the ports every scenario is built out of.
 type vaulted struct {
@@ -72,7 +75,7 @@ type vaulted struct {
 
 func newVaults(t *testing.T) vaulted {
 	t.Helper()
-	first, second := vaulttest.New(t, animals), vaulttest.New(t, minerals)
+	first, second := vaulttest.New(t, getAnimals()), vaulttest.New(t, getMinerals())
 	first.Host.Beside(second.Host)
 	return vaulted{
 		first: first.Vault, second: second.Vault, ports: first.Ports, queries: first.Queries,

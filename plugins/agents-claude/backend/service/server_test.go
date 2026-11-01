@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
@@ -59,12 +59,7 @@ func TestLifecycleServer(t *testing.T) {
 	testServer := httptest.NewServer(handler)
 	defer testServer.Close()
 
-	token := connect.WithInterceptors(connect.UnaryInterceptorFunc(func(next connect.UnaryFunc) connect.UnaryFunc {
-		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-			req.Header().Set("Authorization", "Bearer linked-token")
-			return next(ctx, req)
-		}
-	}))
+	token := hostcall.WithBearer("linked-token")
 	client := server.NewLifecycleClient(http.DefaultClient, testServer.URL, token)
 	ctx := t.Context()
 
@@ -445,17 +440,18 @@ func TestGetAgentPrograms_ExplicitCommandInstallation(t *testing.T) {
 	}
 }
 
-// withoutClaudeAnywhere makes this machine hold no Claude Code, wherever the program is searched
-// for.
+// withoutClaudeAnywhere empties PATH, HOME and the command variables, where the program is
+// searched for first, and skips the test on a machine that holds Claude Code in a system-wide
+// place.
 func withoutClaudeAnywhere(t *testing.T) {
 	t.Helper()
 	t.Setenv("PATH", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("NUMEN_CLAUDE_COMMAND", "")
 	t.Setenv("CLAUDE_COMMAND", "")
-	was := claudeSearchPlaces
-	claudeSearchPlaces = nil
-	t.Cleanup(func() { claudeSearchPlaces = was })
+	if found := findClaude(); found != "" {
+		t.Skipf("Claude Code is installed at %s", found)
+	}
 }
 
 func TestGetAgentProgramsIgnoresCommandsForOtherPrograms(t *testing.T) {
@@ -594,7 +590,7 @@ func TestAskAgent_McpConfigWriteFailure(t *testing.T) {
 	}
 	for stream.Receive() {
 	}
-	if connect.CodeOf(stream.Err()) != connect.CodeInternal {
+	if rpcerror.GetCode(stream.Err()) != rpcerror.Internal {
 		t.Fatalf("expected CodeInternal when mcp config cannot be written, got: %v", stream.Err())
 	}
 }
@@ -638,7 +634,7 @@ func TestTheProgramListNeedsNoKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if models := got[0].Models; len(models) != len(fallbackModels) {
+	if models := got[0].Models; len(models) != len(getFallbackModels()) {
 		t.Errorf("the models are %v", models)
 	}
 }

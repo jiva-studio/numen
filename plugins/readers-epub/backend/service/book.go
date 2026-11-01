@@ -1,4 +1,4 @@
-// Package service implements the methods of the numen.epub plugin service.
+// Package service implements the methods of the md.numen.readers.epub plugin service.
 package service
 
 import (
@@ -28,7 +28,7 @@ func (s *BookServer) readBookFile(ctx context.Context, path string) ([]byte, err
 	return raw, nil
 }
 
-// BookServer implements the methods of the numen.epub service. Each call works the vault its context
+// BookServer implements the methods of the md.numen.readers.epub service. Each call works the vault its context
 // names with withRequestVault.
 type BookServer struct {
 	files host.Vault

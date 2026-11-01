@@ -21,7 +21,7 @@ func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
 		t.Fatalf("expected StateDormant, got %v", sup.GetState())
 	}
 
-	err := sup.Attach(t.Context(), nil, testsupport.Epoch)
+	err := sup.Attach(t.Context(), nil, testsupport.GetEpoch())
 	if err == nil {
 		t.Fatal("expected error attaching nil process, got nil")
 	}
@@ -31,7 +31,7 @@ func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
 		t.Fatalf("failed to start mock process: %v", err)
 	}
 
-	now := testsupport.Epoch
+	now := testsupport.GetEpoch()
 	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach process: %v", err)
 	}
@@ -84,7 +84,7 @@ func TestSupervisorTeardownGraceful(t *testing.T) {
 	}
 
 	sup := New(testsupport.NewClock())
-	if err := sup.Attach(t.Context(), cmd.Process, testsupport.Epoch); err != nil {
+	if err := sup.Attach(t.Context(), cmd.Process, testsupport.GetEpoch()); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
 
@@ -107,7 +107,7 @@ func TestSupervisorTeardownGraceful(t *testing.T) {
 func TestSupervisorTeardownInProcessCallsRPC(t *testing.T) {
 	sup := New(testsupport.NewClock())
 	sup.SetActivating()
-	sup.ActivateInProcess(testsupport.Epoch)
+	sup.ActivateInProcess(testsupport.GetEpoch())
 
 	rpcCalled := false
 	err := sup.Teardown(t.Context(), 50*time.Millisecond, func(_ context.Context) error {
@@ -132,7 +132,7 @@ func TestSupervisorTeardownForceKill(t *testing.T) {
 	}
 
 	sup := New(testsupport.NewClock())
-	if err := sup.Attach(t.Context(), cmd.Process, testsupport.Epoch); err != nil {
+	if err := sup.Attach(t.Context(), cmd.Process, testsupport.GetEpoch()); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
 
@@ -178,7 +178,7 @@ func TestSupervisorProcessCrashTriggersOnExit(t *testing.T) {
 		close(onExitCh)
 	})
 
-	if err := sup.Attach(t.Context(), cmd.Process, testsupport.Epoch); err != nil {
+	if err := sup.Attach(t.Context(), cmd.Process, testsupport.GetEpoch()); err != nil {
 		t.Fatalf("attach process: %v", err)
 	}
 
@@ -282,7 +282,7 @@ func TestAcquire_RejectsDeactivatingPlugin(t *testing.T) {
 		plugintest.KillProcess(t, cmd.Process)
 	}()
 	sup := New(testsupport.NewClock())
-	now := testsupport.Epoch
+	now := testsupport.GetEpoch()
 	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
@@ -308,7 +308,7 @@ func TestADeactivationDoesNotBeginOnAHeldPlugin(t *testing.T) {
 		plugintest.KillProcess(t, cmd.Process)
 	}()
 	sup := New(testsupport.NewClock())
-	now := testsupport.Epoch
+	now := testsupport.GetEpoch()
 	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}

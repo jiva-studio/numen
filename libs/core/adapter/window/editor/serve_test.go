@@ -196,7 +196,7 @@ func openingWith(
 	t.Helper()
 
 	v := testsupport.NewVault(t, notes)
-	cfg := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}
+	cfg := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
 	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -204,7 +204,7 @@ func openingWith(
 	testsupport.CloseAfter(t, db)
 
 	writing := note.NewWrite(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, levelNothing, testsupport.NewClock())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock())
 	read := note.NewRead(vaultreader.Readers{})
 	api := createServices(&State{
 		ChangeEvents: newChangeBroadcaster(),
@@ -514,11 +514,11 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	testsupport.WriteBook(t, v.Path, target)
 
-	cfg := container.Config{
+	cfg := container.NewConfig(container.Config{
 		IndexPath:          filepath.Join(t.TempDir(), "index.db"),
 		ShouldRebuildIndex: true,
 		TextReaders:        testsupport.Texts{Readers: vaultreader.Readers{}},
-	}
+	})
 	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -689,7 +689,7 @@ func TestEveryPresenceIsSavedFromOne(t *testing.T) {
 		v1.Presence_PRESENCE_PRESENT:          settingsport.Present,
 		v1.Presence_PRESENCE_NOT_FETCHED:      settingsport.NotFetched,
 		v1.Presence_PRESENCE_NOTHING_TO_FETCH: settingsport.NothingToFetch,
-	}, func(is settingsport.Presence) v1.Presence { return editorSettings.Presences[is] })
+	}, func(is settingsport.Presence) v1.Presence { return editorSettings.GetPresences()[is] })
 }
 
 func TestEveryCompletionConsentIsSavedFromOne(t *testing.T) {
@@ -698,7 +698,7 @@ func TestEveryCompletionConsentIsSavedFromOne(t *testing.T) {
 		v1.CompletionConsent_COMPLETION_CONSENT_REQUESTED: coreSettings.ConsentRequested,
 		v1.CompletionConsent_COMPLETION_CONSENT_ALLOWED:   coreSettings.ConsentAllowed,
 		v1.CompletionConsent_COMPLETION_CONSENT_DENIED:    coreSettings.ConsentDenied,
-	}, func(is coreSettings.Consent) v1.CompletionConsent { return editorSettings.Consents[is] })
+	}, func(is coreSettings.Consent) v1.CompletionConsent { return editorSettings.GetConsents()[is] })
 }
 
 func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
@@ -737,7 +737,7 @@ func newThemeClient(t *testing.T, cfg container.Config) numenv1connect.ThemeServ
 // own, which is what pointing the registry somewhere does.
 func newConfig(t *testing.T) container.Config {
 	t.Helper()
-	return container.Config{RegistryPath: filepath.Join(t.TempDir(), "vaults.json")}
+	return container.NewConfig(container.Config{RegistryPath: filepath.Join(t.TempDir(), "vaults.json")})
 }
 
 func TestTheWindowAsksTheSameHandlerAboutItsThemes(t *testing.T) {
@@ -786,7 +786,7 @@ func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	}
 
 	response := container.DefaultSettings()
-	if err := adapterSettings.OpenAt(file, &response); err != nil {
+	if err := adapterSettings.NewFiles().OpenAt(file, &response); err != nil {
 		t.Fatal(err)
 	}
 	if response.Appearance.Theme != "mine:nord" || response.Appearance.Mode != adapterSettings.ModeDark {
@@ -830,7 +830,7 @@ func TestASizeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	}
 
 	response := container.DefaultSettings()
-	if err := adapterSettings.OpenAt(file, &response); err != nil {
+	if err := adapterSettings.NewFiles().OpenAt(file, &response); err != nil {
 		t.Fatal(err)
 	}
 	if response.Appearance.InterfaceScale != 1.5 || response.Appearance.TextScale != 1 {

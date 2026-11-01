@@ -140,7 +140,7 @@ func TestWatchCardsDue_SaveFailureEndsStream(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			handler, _ := newAPI(t, deck)
+			handler, _ := newAPI(t, getDeck())
 			front(t, handler)
 
 			returned := make(chan error, 1)
@@ -161,7 +161,7 @@ func TestWatchCardsDue_SaveFailureEndsStream(t *testing.T) {
 // A page found gone while a count is still running ends the stream, which is
 // the only report there is.
 func TestWatchCardsDue_MissingPageDuringCountEndsStream(t *testing.T) {
-	handler, _ := newAPI(t, deck)
+	handler, _ := newAPI(t, getDeck())
 	front(t, handler)
 
 	target := make(chan struct{})
@@ -202,7 +202,7 @@ func (g gated) Open(v domain.Vault) (ports.VaultReader, error) {
 // A stream that sent a count does not send the list again immediately:
 // the wait before the list restarts after every count.
 func TestWatchCardsDue_ListWaitRestartsAfterEachCount(t *testing.T) {
-	handler, target := newAPI(t, deck, other)
+	handler, target := newAPI(t, getDeck(), getOther())
 	front(t, handler)
 
 	first, second := make(chan struct{}), make(chan struct{})
@@ -247,7 +247,7 @@ func TestWatchCardsDue_ListWaitRestartsAfterEachCount(t *testing.T) {
 
 // Four vaults are counted alongside each other, and the rest wait for a place.
 func TestFourVaultsAreCountedAtOnce(t *testing.T) {
-	handler, target := newAPI(t, deck, deck, deck, deck, deck, deck)
+	handler, target := newAPI(t, getDeck(), getDeck(), getDeck(), getDeck(), getDeck(), getDeck())
 	front(t, handler)
 
 	until := make(chan struct{})
@@ -301,7 +301,7 @@ func TestFourVaultsAreCountedAtOnce(t *testing.T) {
 // A stream whose client has disconnected waits for the counts already running
 // before it ends, so no count outlives the call that started it.
 func TestWatchCardsDue_EndsAfterRunningCountsFinish(t *testing.T) {
-	handler, target := newAPI(t, deck, deck, deck, deck, deck, deck)
+	handler, target := newAPI(t, getDeck(), getDeck(), getDeck(), getDeck(), getDeck(), getDeck())
 	front(t, handler)
 
 	until := make(chan struct{})
@@ -386,7 +386,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 // stream saying nothing until a count lands leaves those counters reading for a
 // window that has gone, and reloading the page stacks another four on them.
 func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
-	handler, _ := newAPI(t, deck)
+	handler, _ := newAPI(t, getDeck())
 	// The vault is read when the window opens it, and what a count that will not
 	// come back does to the stream is what is under test here.
 	front(t, handler)

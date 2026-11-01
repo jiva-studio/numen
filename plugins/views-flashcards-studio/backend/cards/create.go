@@ -2,6 +2,7 @@ package cards
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	pathpkg "path"
@@ -115,7 +116,10 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 	}
 	path := pathpkg.Join(in.Path, name+domain.NoteExtension)
 
-	identifier := ulid.New(u.now.Now())
+	identifier, err := ulid.NewGenerator(rand.Reader).NewID(u.now.Now())
+	if err != nil {
+		return CreateNoteResult{}, err
+	}
 	doc, err := markdown.Open(markdown.Create(identifier, in.Body))
 	if err != nil {
 		return CreateNoteResult{}, err

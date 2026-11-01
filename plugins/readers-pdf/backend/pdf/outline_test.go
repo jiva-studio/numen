@@ -7,7 +7,7 @@ import (
 )
 
 func TestOutlineWithInvalidStarts(t *testing.T) {
-	doc, err := openBytes(fixture(t, "outline.pdf"))
+	doc, err := newWorkers(t).openBytes(fixture(t, "outline.pdf"))
 	if err != nil {
 		t.Fatal(err)
 	}

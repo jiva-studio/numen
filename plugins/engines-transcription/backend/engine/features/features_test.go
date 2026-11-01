@@ -76,7 +76,7 @@ func TestFFTAgainstDefinition(t *testing.T) {
 
 	got := make([]complex128, n)
 	copy(got, a)
-	fft(got)
+	fft(got, getTwiddles())
 	for k := range want {
 		if math.Abs(real(got[k])-real(want[k])) > 1e-9 || math.Abs(imag(got[k])-imag(want[k])) > 1e-9 {
 			t.Fatalf("bin %d is %v, and the definition says %v", k, got[k], want[k])

@@ -27,7 +27,7 @@ func (s *Samples) ListSmallChunkVectors(ctx context.Context, v domain.Vault, rec
 }
 
 func (s *Samples) readPassages(ctx context.Context, v domain.Vault, recipe string, limit int) (out []searchpolicyport.Passage, err error) {
-	rows, err := s.db.QueryContext(ctx, stmt.Get("passages"), string(v.ID), recipe, limit)
+	rows, err := s.db.QueryContext(ctx, getStatement("passages"), string(v.ID), recipe, limit)
 	if err != nil {
 		return nil, err
 	}

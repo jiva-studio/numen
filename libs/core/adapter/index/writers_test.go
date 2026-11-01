@@ -22,15 +22,17 @@ const (
 	presetType domain.NoteType = "preset"
 )
 
-var profiles = map[domain.NoteType]domain.NoteProfile{
-	sampleType: {HeadingLevels: []int{1, 2}, IDHeadingLevels: []int{2}, IDPattern: regexp.MustCompile("^[0-9a-hjkmnp-tv-z]{10}$")},
-	formType:   {HeadingLevels: []int{}},
+func getProfiles() map[domain.NoteType]domain.NoteProfile {
+	return map[domain.NoteType]domain.NoteProfile{
+		sampleType: {HeadingLevels: []int{1, 2}, IDHeadingLevels: []int{2}, IDPattern: regexp.MustCompile("^[0-9a-hjkmnp-tv-z]{10}$")},
+		formType:   {HeadingLevels: []int{}},
+	}
 }
 
 // saveCut stores notes cut at the default sizes, the way a scan hands them over.
 func saveCut(ctx context.Context, db *DB, vaultID domain.VaultID, notes []domain.Note) error {
 	cutNotes := notecase.CutNotes{Profiles: func(t domain.NoteType) (domain.NoteProfile, bool) {
-		profile, declared := profiles[t]
+		profile, declared := getProfiles()[t]
 		return profile, declared
 	}}
 	return db.Notes().Save(ctx, vaultID, cutNotes.Execute(notes))
@@ -40,7 +42,7 @@ func saveCut(ctx context.Context, db *DB, vaultID domain.VaultID, notes []domain
 func saveNote(t *testing.T, db *DB, v domain.Vault, path, title string) error {
 	t.Helper()
 	return saveCut(t.Context(), db, v.ID, []domain.Note{{
-		FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: int64(len(title)), ModTime: walked},
+		FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: int64(len(title)), ModTime: getWalked()},
 		Title:    title,
 		Type:     domain.TypeNote,
 	}})
@@ -58,11 +60,11 @@ func TestASecondOpeningReadsWhatTheFirstWrote(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, two)
 
-	if err := saveNote(t, one, first, "notes/entropy.md", "Entropy"); err != nil {
+	if err := saveNote(t, one, getFirst(), "notes/entropy.md", "Entropy"); err != nil {
 		t.Fatal(err)
 	}
 
-	found, err := two.NoteQueries().GetNotes(t.Context(), first.ID, []string{"notes/entropy.md"})
+	found, err := two.NoteQueries().GetNotes(t.Context(), getFirst().ID, []string{"notes/entropy.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +96,7 @@ func TestTwoWritersOverOneIndexLoseNothing(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				name := fmt.Sprintf("%s-%d", who, i)
-				err := saveNote(t, db, first, "notes/"+name+".md", name)
+				err := saveNote(t, db, getFirst(), "notes/"+name+".md", name)
 				if err != nil {
 					mu.Lock()
 					failed = append(failed, err)
@@ -117,7 +119,7 @@ func TestTwoWritersOverOneIndexLoseNothing(t *testing.T) {
 			want = append(want, fmt.Sprintf("notes/%s-%d.md", who, i))
 		}
 	}
-	found, err := one.NoteQueries().GetNotes(t.Context(), first.ID, want)
+	found, err := one.NoteQueries().GetNotes(t.Context(), getFirst().ID, want)
 	if err != nil {
 		t.Fatal(err)
 	}

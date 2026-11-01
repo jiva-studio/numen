@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/watchhub"
 	"github.com/rjeczalik/notify"
 )
 
@@ -37,7 +36,7 @@ func (c Catalogue) Watch(ctx context.Context, hold time.Duration) (<-chan []stri
 	}
 
 	raw := make(chan notify.EventInfo, Backlog)
-	stop, err := watchhub.Watch(c.dir, false, raw)
+	stop, err := c.hub.Watch(c.dir, false, raw)
 	if err != nil {
 		return nil, err
 	}

@@ -21,7 +21,7 @@ import (
 func newIndexedVault(t *testing.T, notes map[string]string) (*container.Index, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
-	db, err := container.Config{IndexPath: indexfile.Path(t)}.OpenIndex(t.Context())
+	db, err := container.NewConfig(container.Config{IndexPath: indexfile.Path(t)}).OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

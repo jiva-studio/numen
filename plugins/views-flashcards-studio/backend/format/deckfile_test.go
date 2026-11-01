@@ -727,16 +727,18 @@ func TestDeckBody_ErrorsOnUnknownSection(t *testing.T) {
 // rough is a deck body with manually authored formatting: CRLF endings, doubled blank
 // lines, and trailing whitespace on lines. The format writes none of it, and a
 // write preserves all of it.
-var rough = strings.ReplaceAll(
-	"Cards I am learning.\n\n\n"+
-		"# The ones with fur\n\n"+
-		"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n\n"+
-		"## Alpaca ^3n8vr4tqch\n\n[[Animal]]\n\n\nsomebody's prose   \n   \n\n"+
-		"### Name\n\n\nAlpaca  \n\n\n### Height\n\nabout 36\"   \n\n\n"+
-		"## Vicuna ^9wq2ktr5bd\n\n[[Animal]]\n\n### Name\n\nVicuna \n\n\n### Height\n\nabout 34\"\n\n"+
-		"## Guanaco ^5xz1hbn7ty\n\n[[Animal]]\n\n### Name\n\nGuanaco\n\n"+
-		"# The ones without\n",
-	"\n", "\r\n")
+func getRough() string {
+	return strings.ReplaceAll(
+		"Cards I am learning.\n\n\n"+
+			"# The ones with fur\n\n"+
+			"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n\n"+
+			"## Alpaca ^3n8vr4tqch\n\n[[Animal]]\n\n\nsomebody's prose   \n   \n\n"+
+			"### Name\n\n\nAlpaca  \n\n\n### Height\n\nabout 36\"   \n\n\n"+
+			"## Vicuna ^9wq2ktr5bd\n\n[[Animal]]\n\n### Name\n\nVicuna \n\n\n### Height\n\nabout 34\"\n\n"+
+			"## Guanaco ^5xz1hbn7ty\n\n[[Animal]]\n\n### Name\n\nGuanaco\n\n"+
+			"# The ones without\n",
+		"\n", "\r\n")
+}
 
 // The card ids of the two cards no change below names.
 const (
@@ -781,13 +783,13 @@ func TestChangingOneCardPreservesEveryOtherTheBytesItWas(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			file := format.OpenDeckBody(rough)
+			file := format.OpenDeckBody(getRough())
 			if err := change(file); err != nil {
 				t.Fatalf("change: %v", err)
 			}
 			content := file.Body()
 			for _, cardID := range []cardid.ID{alpaca, vicuna} {
-				was := cardRun(t, rough, cardID)
+				was := cardRun(t, getRough(), cardID)
 				if !strings.Contains(content, was) {
 					t.Errorf("the card of %s was rewritten\n was %q\n now %q",
 						cardID, was, cardRun(t, content, cardID))
@@ -856,7 +858,7 @@ func TestRemovingTheLastCardPreservesNoBlankLine(t *testing.T) {
 // A card addressed into a section the deck does not hold fails, as a written
 // card does.
 func TestAddCardBelowASectionTheDeckDoesNotHold(t *testing.T) {
-	file := format.OpenDeckBody(rough)
+	file := format.OpenDeckBody(getRough())
 	if err := file.AddCardUnder(9, format.Card{Heading: "Camel"}); !errors.Is(err, format.ErrNoSuchSection) {
 		t.Errorf("add = %v, want ErrNoSuchSection", err)
 	}

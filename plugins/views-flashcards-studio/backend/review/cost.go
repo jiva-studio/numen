@@ -32,8 +32,10 @@ type AnswerCost struct {
 	ShouldReadNew, ShouldReadReview bool
 }
 
-// DefaultCost is what a vault holding no answer times is projected at.
-var DefaultCost = AnswerCost{New: 20 * time.Second, Review: 8 * time.Second, ShouldReadNew: false, ShouldReadReview: false}
+// GetDefaultCost returns what a vault holding no answer times is projected at.
+func GetDefaultCost() AnswerCost {
+	return AnswerCost{New: 20 * time.Second, Review: 8 * time.Second, ShouldReadNew: false, ShouldReadReview: false}
+}
 
 // GetCostUnder returns how long an answer takes under each preset, keyed by the
 // path the review cards are grouped under.
@@ -83,7 +85,7 @@ func (t *answerTimes) addAnswer(spaced bool, took time.Duration) {
 // cost returns the cost these answers imply for each half of an answer, with each
 // half set to the default where the history is too short.
 func (t *answerTimes) cost() AnswerCost {
-	out := DefaultCost
+	out := GetDefaultCost()
 	if middle, read := getMedian(t.begun); read {
 		out.New, out.ShouldReadNew = middle, true
 	}

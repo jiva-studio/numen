@@ -14,7 +14,7 @@
     "readers": [{ "id": "reader-pdf", "contentTypes": ["application/pdf"], "rank": "default" }]
   },
   "permissions": ["vault:read", "vault:write"],
-  "services": ["numen.pdf"],
+  "services": ["md.numen.readers.pdf"],
   "backend": { "entrypoint": "bin/readers-pdf" },
   "frontend": {},
   "settings": [

@@ -11,10 +11,12 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
-// omittedFields are the protocol fields that the types of this package do not carry, because no
+// getOmittedFields returns the protocol fields that the types of this package do not carry, because no
 // plugin reads them.
-var omittedFields = map[protoreflect.FullName]bool{
-	"numen.v1.AskAgentRequest.vault_id": true,
+func getOmittedFields() map[protoreflect.FullName]bool {
+	return map[protoreflect.FullName]bool{
+		"numen.v1.AskAgentRequest.vault_id": true,
+	}
 }
 
 // collectFields adds the full names of the fields that msg sets, and those of the messages inside
@@ -52,7 +54,7 @@ func requireAllFields(t *testing.T, descriptor protoreflect.MessageDescriptor, c
 		visited[message.FullName()] = true
 		for i := range message.Fields().Len() {
 			field := message.Fields().Get(i)
-			if !covered[field.FullName()] && !omittedFields[field.FullName()] {
+			if !covered[field.FullName()] && !getOmittedFields()[field.FullName()] {
 				t.Errorf("the conversion does not carry the protocol field %s", field.FullName())
 			}
 			switch {

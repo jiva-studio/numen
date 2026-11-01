@@ -16,11 +16,11 @@ import (
 	"sync"
 	"time"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/embedding"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 )
 
 const (
@@ -64,12 +64,15 @@ const providerLocal = "local"
 // envMockML names the variable that selects the mock embedder for automated tests.
 const envMockML = "NUMEN_MOCK_ML"
 
-func openLocalModel(ctx context.Context, info engine.ModelInfo, local engine.LocalModel) (textEmbedder, error) {
-	emb, err := engine.Open(ctx, info, local, nil)
-	if err != nil {
-		return nil, err
+// newLocalModelOpener returns what loads a model on this machine through the library.
+func newLocalModelOpener(library *onnx.Library) openEmbedder {
+	return func(ctx context.Context, info engine.ModelInfo, local engine.LocalModel) (textEmbedder, error) {
+		emb, err := engine.Open(ctx, library, info, local, nil)
+		if err != nil {
+			return nil, err
+		}
+		return emb, nil
 	}
-	return emb, nil
 }
 
 func openMockModel(context.Context, engine.ModelInfo, engine.LocalModel) (textEmbedder, error) {
@@ -194,7 +197,7 @@ func newEmbeddingServer() *embeddingServer {
 	return &embeddingServer{
 		modelInfo:   info,
 		localModel:  local,
-		open:        openLocalModel,
+		open:        newLocalModelOpener(onnx.NewLibrary()),
 		isMock:      false,
 		mu:          sync.Mutex{},
 		embedder:    nil,
@@ -329,22 +332,22 @@ func (s *embeddingServer) EmbedTexts(ctx context.Context, texts []string) ([][]f
 	}
 	if s.isRemoteProvider() {
 		if baseURL == "" {
-			return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("embedding service URL is not configured"))
+			return nil, rpcerror.New(rpcerror.FailedPrecondition, errors.New("embedding service URL is not configured"))
 		}
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("embedding API key is not configured"))
+		return nil, rpcerror.New(rpcerror.FailedPrecondition, errors.New("embedding API key is not configured"))
 	}
 
 	emb, err := s.getEmbedder(ctx)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, rpcerror.New(rpcerror.Internal, err)
 	}
 
 	denseVectors, err := emb.Embed(ctx, texts)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("embed batch: %w", err))
+		return nil, rpcerror.New(rpcerror.Internal, fmt.Errorf("embed batch: %w", err))
 	}
 	if len(denseVectors) != len(texts) {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("expected %d vectors, got %d", len(texts), len(denseVectors)))
+		return nil, rpcerror.New(rpcerror.Internal, fmt.Errorf("expected %d vectors, got %d", len(texts), len(denseVectors)))
 	}
 
 	return denseVectors, nil
@@ -356,7 +359,7 @@ func (s *embeddingServer) embedRemoteTexts(ctx context.Context, key, baseURL str
 	for i, t := range texts {
 		vec, err := computeServiceVector(ctx, key, baseURL, model, t)
 		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("service text %d: %w", i, err))
+			return nil, rpcerror.New(rpcerror.Internal, fmt.Errorf("service text %d: %w", i, err))
 		}
 		if len(vec) > 0 {
 			s.mu.Lock()

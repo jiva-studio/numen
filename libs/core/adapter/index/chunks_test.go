@@ -21,10 +21,9 @@ import (
 
 // The two vaults every scoping test here uses. Their content shares nothing, so
 // a row that arrives from the wrong one is recognisable.
-var (
-	first  = domain.Vault{ID: "01FIRST", Name: "first", Path: "/first"}
-	second = domain.Vault{ID: "01SECOND", Name: "second", Path: "/second"}
-)
+func getFirst() domain.Vault { return domain.Vault{ID: "01FIRST", Name: "first", Path: "/first"} }
+
+func getSecond() domain.Vault { return domain.Vault{ID: "01SECOND", Name: "second", Path: "/second"} }
 
 // bits is a coarse vector: one bit per dimension over 1024 dimensions. The seed
 // fills every byte, so two different seeds are far apart and the same seed is at
@@ -63,13 +62,15 @@ func getPreciseBytes(v []float32) []byte {
 
 // migrated is the schema, built once for this binary. A test that only needs an
 // index to exist is handed a copy of the file.
-var migrated = testsupport.NewTemplate(func(ctx context.Context, path string) error {
-	db, err := Open(ctx, path)
-	if err != nil {
-		return err
-	}
-	return db.Close()
-})
+func newMigrated() *testsupport.Template {
+	return testsupport.NewTemplate(func(ctx context.Context, path string) error {
+		db, err := Open(ctx, path)
+		if err != nil {
+			return err
+		}
+		return db.Close()
+	})
+}
 
 func openDB(t *testing.T) *DB {
 	t.Helper()
@@ -79,14 +80,14 @@ func openDB(t *testing.T) *DB {
 // openDBAt is an index at the path given, holding both vaults and nothing else.
 func openDBAt(t *testing.T, path string) *DB {
 	t.Helper()
-	migrated.CopyTo(t, path)
+	newMigrated().CopyTo(t, path)
 	db, err := Open(t.Context(), path)
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
 
-	for _, v := range []domain.Vault{first, second} {
+	for _, v := range []domain.Vault{getFirst(), getSecond()} {
 		if err := db.Vaults().Register(t.Context(), v.ID); err != nil {
 			t.Fatal(err)
 		}
@@ -190,8 +191,8 @@ func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
 	// nearer ones and a lost filter puts them first.
 	ctx := t.Context()
 	db := openDB(t)
-	book(t, db, first, "library/first.epub", 0xfe)
-	book(t, db, second, "library/second.epub", 0xff)
+	book(t, db, getFirst(), "library/first.epub", 0xfe)
+	book(t, db, getSecond(), "library/second.epub", 0xff)
 
 	queries := db.ChunkQueries()
 
@@ -208,12 +209,12 @@ func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
 
 	// Queried with the second vault's vector, the first vault must still
 	// return its own passages.
-	for _, m := range nearVal(first, 0xff) {
+	for _, m := range nearVal(getFirst(), 0xff) {
 		if !strings.HasPrefix(m.Source, "library/first") {
 			t.Errorf("the first vault answered with %s, which belongs to the second", m.Source)
 		}
 	}
-	for _, m := range nearVal(second, 0xfe) {
+	for _, m := range nearVal(getSecond(), 0xfe) {
 		if !strings.HasPrefix(m.Source, "library/second") {
 			t.Errorf("the second vault answered with %s, which belongs to the first", m.Source)
 		}
@@ -226,13 +227,13 @@ func TestASearchByWordsStaysInsideItsVault(t *testing.T) {
 	// it answers with another vault's passages.
 	ctx := t.Context()
 	db := openDB(t)
-	book(t, db, first, "library/first.epub", 0x00)
-	book(t, db, second, "library/second.epub", 0xff)
+	book(t, db, getFirst(), "library/first.epub", 0x00)
+	book(t, db, getSecond(), "library/second.epub", 0xff)
 
 	queries := db.ChunkQueries()
 
 	// "opening" is in both vaults, so what separates them is the filter.
-	shared, err := queries.FindLexical(ctx, first.ID, "opening", nil, 10, false)
+	shared, err := queries.FindLexical(ctx, getFirst().ID, "opening", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -246,7 +247,7 @@ func TestASearchByWordsStaysInsideItsVault(t *testing.T) {
 	}
 
 	// A word only the other vault holds is not in this one.
-	leaked, err := queries.FindLexical(ctx, first.ID, "second", nil, 10, false)
+	leaked, err := queries.FindLexical(ctx, getFirst().ID, "second", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -260,10 +261,10 @@ func TestAHitReachesBackAsTheChunkThatIsRead(t *testing.T) {
 	// result arrives with enough text around it to be understood.
 	ctx := t.Context()
 	db := openDB(t)
-	book(t, db, first, "library/first.epub", 0x00)
+	book(t, db, getFirst(), "library/first.epub", 0x00)
 
 	queries := db.ChunkQueries()
-	dense, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
+	dense, err := queries.FindNearest(ctx, getFirst().ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -272,7 +273,7 @@ func TestAHitReachesBackAsTheChunkThatIsRead(t *testing.T) {
 	}
 	// The words half finds the small chunks, which is one row per small chunk
 	// of the book.
-	lexical, err := queries.FindLexical(ctx, first.ID, "first", nil, 10, false)
+	lexical, err := queries.FindLexical(ctx, getFirst().ID, "first", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -300,10 +301,10 @@ func TestAHitReachesBackAsTheChunkThatIsRead(t *testing.T) {
 func TestAPassageReturnsWhatItWasReadOutOf(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
-	source(t, db, first, "library/talk.epub", domain.KindFile, "opening words")
-	source(t, db, first, "talks/lecture.mp3", domain.KindFile, "opening words")
-	source(t, db, first, "Entropy.md", domain.KindNote, "opening words")
-	saveSeededVectors(t, db, first, 0x00)
+	source(t, db, getFirst(), "library/talk.epub", domain.KindFile, "opening words")
+	source(t, db, getFirst(), "talks/lecture.mp3", domain.KindFile, "opening words")
+	source(t, db, getFirst(), "Entropy.md", domain.KindNote, "opening words")
+	saveSeededVectors(t, db, getFirst(), 0x00)
 
 	queries := db.ChunkQueries()
 	want := map[string]domain.SourceKind{
@@ -312,15 +313,15 @@ func TestAPassageReturnsWhatItWasReadOutOf(t *testing.T) {
 		"Entropy.md":        domain.KindNote,
 	}
 
-	lexical, err := queries.FindLexical(ctx, first.ID, "opening", nil, 10, false)
+	lexical, err := queries.FindLexical(ctx, getFirst().ID, "opening", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	named, err := queries.GetNamedPassages(ctx, first.ID, "opening", nil, 10, false)
+	named, err := queries.GetNamedPassages(ctx, getFirst().ID, "opening", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	dense, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
+	dense, err := queries.FindNearest(ctx, getFirst().ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -362,7 +363,7 @@ func TestSplittingASourceTwiceDoesNotDoubleIt(t *testing.T) {
 	// chunks and the rows in both virtual tables are cleared explicitly.
 
 	db := openDB(t)
-	book(t, db, first, "library/first.epub", 0x00)
+	book(t, db, getFirst(), "library/first.epub", 0x00)
 
 	chunks := countRows(t, db, `SELECT COUNT(*) FROM chunks`)
 	vectors := countRows(t, db, `SELECT COUNT(*) FROM vectors`)
@@ -373,7 +374,7 @@ func TestSplittingASourceTwiceDoesNotDoubleIt(t *testing.T) {
 			chunks, vectors, vec, fts)
 	}
 
-	book(t, db, first, "library/first.epub", 0x00)
+	book(t, db, getFirst(), "library/first.epub", 0x00)
 
 	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks`); got != chunks {
 		t.Errorf("%d chunks after cutting the same source twice, want %d", got, chunks)
@@ -397,11 +398,11 @@ func TestResavingANoteConsumesItsChunksWithIt(t *testing.T) {
 	db := openDB(t)
 
 	note := domain.Note{
-		FileStat: domain.FileStat{Path: "notes/Entropy.md", Size: 14, ModTime: walked},
+		FileStat: domain.FileStat{Path: "notes/Entropy.md", Size: 14, ModTime: getWalked()},
 		Title:    "Entropy",
 		Body:     "the first body",
 	}
-	if err := saveCut(ctx, db, first.ID, []domain.Note{note}); err != nil {
+	if err := saveCut(ctx, db, getFirst().ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -413,7 +414,7 @@ func TestResavingANoteConsumesItsChunksWithIt(t *testing.T) {
 	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks WHERE parent_id IS NOT NULL`); got == 0 {
 		t.Fatal("a note has no small chunks, so nothing about it can be embedded")
 	}
-	saveSeededVectors(t, db, first, 0x00)
+	saveSeededVectors(t, db, getFirst(), 0x00)
 	was := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`)
 	if was == 0 {
 		t.Fatal("the note was not embedded, so this test would pass either way")
@@ -421,7 +422,7 @@ func TestResavingANoteConsumesItsChunksWithIt(t *testing.T) {
 
 	note.FileStat.Size = 23
 	note.Body = "the second body, longer"
-	if err := saveCut(ctx, db, first.ID, []domain.Note{note}); err != nil {
+	if err := saveCut(ctx, db, getFirst().ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -441,14 +442,14 @@ func TestResavingANoteConsumesItsChunksWithIt(t *testing.T) {
 		t.Errorf("%d rows in the vector index describe a note that has been rewritten", got)
 	}
 	// The words of the note currently now are what the full-text index holds.
-	found, err := db.ChunkQueries().FindLexical(ctx, first.ID, "longer", nil, 10, false)
+	found, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, "longer", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(found) == 0 || found[0].Source != note.FileStat.Path {
 		t.Errorf("the rewritten note is not findable by its new words: %+v", found)
 	}
-	if stale, err := db.ChunkQueries().FindLexical(ctx, first.ID, "first", nil, 10, false); err != nil {
+	if stale, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, "first", nil, 10, false); err != nil {
 		t.Fatal(err)
 	} else if len(stale) != 0 {
 		t.Errorf("the words of the note before it was rewritten still answer: %+v", stale)
@@ -467,15 +468,15 @@ func TestANoteIsSplitIntoChunksThatCanCarryAVector(t *testing.T) {
 
 	body := strings.Repeat("entropy is the measure of disorder in a closed system. ", 8)
 	note := domain.Note{
-		FileStat: domain.FileStat{Path: "notes/Entropy.md", Size: int64(len(body)), ModTime: walked},
+		FileStat: domain.FileStat{Path: "notes/Entropy.md", Size: int64(len(body)), ModTime: getWalked()},
 		Title:    "Entropy",
 		Body:     body,
 	}
-	if err := saveCut(ctx, db, first.ID, []domain.Note{note}); err != nil {
+	if err := saveCut(ctx, db, getFirst().ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
 	}
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 100)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", 0, 0, 0, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -495,21 +496,21 @@ func TestRemovingASourcePreservesNothingSearchable(t *testing.T) {
 	// reader to a file that is gone.
 	ctx := t.Context()
 	db := openDB(t)
-	book(t, db, first, "library/first.epub", 0x00)
-	book(t, db, second, "library/second.epub", 0xff)
+	book(t, db, getFirst(), "library/first.epub", 0x00)
+	book(t, db, getSecond(), "library/second.epub", 0xff)
 
-	if err := db.Chunks().RemoveSources(ctx, first.ID, "book", []string{"library/first.epub"}); err != nil {
+	if err := db.Chunks().RemoveSources(ctx, getFirst().ID, "book", []string{"library/first.epub"}); err != nil {
 		t.Fatal(err)
 	}
 
-	matches, err := db.ChunkQueries().FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
+	matches, err := db.ChunkQueries().FindNearest(ctx, getFirst().ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(matches) != 0 {
 		t.Errorf("a removed book still answers a search: %+v", matches)
 	}
-	words, err := db.ChunkQueries().FindLexical(ctx, first.ID, "first", nil, 10, false)
+	words, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, "first", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -533,22 +534,22 @@ func TestRemovingANoteConsumesItsIndexedRows(t *testing.T) {
 	db := openDB(t)
 
 	note := domain.Note{
-		FileStat: domain.FileStat{Path: "notes/Entropy.md", Size: 6, ModTime: walked},
+		FileStat: domain.FileStat{Path: "notes/Entropy.md", Size: 6, ModTime: getWalked()},
 		Title:    "Entropy",
 		Body:     "a body",
 	}
-	if err := saveCut(ctx, db, first.ID, []domain.Note{note}); err != nil {
+	if err := saveCut(ctx, db, getFirst().ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().ReplaceChunks(ctx, first.ID, "note", note.FileStat.Path, []chunk.Chunk{{
+	if err := db.Chunks().ReplaceChunks(ctx, getFirst().ID, "note", note.FileStat.Path, []chunk.Chunk{{
 		Start: 0, Length: 6, Text: note.Body,
 		Small: []chunk.Chunk{{Start: 0, Length: 6, Text: note.Body}},
 	}}); err != nil {
 		t.Fatal(err)
 	}
-	saveSeededVectors(t, db, first, 0x00)
+	saveSeededVectors(t, db, getFirst(), 0x00)
 
-	if err := db.Notes().Remove(ctx, first.ID, []string{note.FileStat.Path}); err != nil {
+	if err := db.Notes().Remove(ctx, getFirst().ID, []string{note.FileStat.Path}); err != nil {
 		t.Fatal(err)
 	}
 	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
@@ -568,25 +569,25 @@ func TestANoteScanDoesNotSeeABook(t *testing.T) {
 	// sources names a kind.
 	ctx := t.Context()
 	db := openDB(t)
-	book(t, db, first, "library/first.epub", 0x00)
+	book(t, db, getFirst(), "library/first.epub", 0x00)
 
 	note := domain.Note{
-		FileStat: domain.FileStat{Path: "notes/Entropy.md", Size: 20, ModTime: walked},
+		FileStat: domain.FileStat{Path: "notes/Entropy.md", Size: 20, ModTime: getWalked()},
 		Title:    "Entropy",
 		Body:     "a body",
 	}
-	if err := saveCut(ctx, db, first.ID, []domain.Note{note}); err != nil {
+	if err := saveCut(ctx, db, getFirst().ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
 	}
 
-	recognized, err := db.NoteQueries().GetFileStats(ctx, first.ID)
+	recognized, err := db.NoteQueries().GetFileStats(ctx, getFirst().ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(recognized) != 1 {
 		t.Errorf("a note scan sees %v, want only the note", recognized)
 	}
-	books, err := db.ChunkQueries().GetFileStats(ctx, first.ID, "book")
+	books, err := db.ChunkQueries().GetFileStats(ctx, getFirst().ID, "book")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -595,7 +596,7 @@ func TestANoteScanDoesNotSeeABook(t *testing.T) {
 	}
 
 	// A name resolves to a note, and a book is not one.
-	if paths, err := db.NoteQueries().GetNamedPaths(ctx, first.ID, "first"); err != nil {
+	if paths, err := db.NoteQueries().GetNamedPaths(ctx, getFirst().ID, "first"); err != nil {
 		t.Fatal(err)
 	} else if len(paths) != 0 {
 		t.Errorf("the name of a book resolves to %v", paths)
@@ -621,7 +622,7 @@ func TestAChunkCannotClaimAnotherVault(t *testing.T) {
 	// key ties it to its source's vault.
 	ctx := t.Context()
 	db := openDB(t)
-	book(t, db, first, "library/first.epub", 0x00)
+	book(t, db, getFirst(), "library/first.epub", 0x00)
 
 	var source, mine, theirs int64
 	if err := db.read.QueryRowContext(ctx,
@@ -646,15 +647,15 @@ func TestStaleQueries_FileRecipeAndModelKeys(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	// The file: a source the index holds and has not cut.
-	if err := db.Chunks().SaveSource(ctx, first.ID, chunk.Source{
+	if err := db.Chunks().SaveSource(ctx, getFirst().ID, chunk.Source{
 		Path: "library/uncut.epub", Kind: "book", Size: 10, MTime: 1,
 	}); err != nil {
 		t.Fatal(err)
 	}
-	book(t, db, first, "library/cut.epub", 0x00)
-	book(t, db, second, "library/other.epub", 0xff)
+	book(t, db, getFirst(), "library/cut.epub", 0x00)
+	book(t, db, getSecond(), "library/other.epub", 0xff)
 
-	uncut, err := queries.GetUnchunkedSources(ctx, first.ID, "book", 10)
+	uncut, err := queries.GetUnchunkedSources(ctx, getFirst().ID, "book", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -663,7 +664,7 @@ func TestStaleQueries_FileRecipeAndModelKeys(t *testing.T) {
 	}
 
 	// The recipe: the same books read by a reader that has since changed.
-	byOther, err := queries.GetSourcesWithOtherRecipe(ctx, first.ID, "book", []string{"epub-2"}, 10)
+	byOther, err := queries.GetSourcesWithOtherRecipe(ctx, getFirst().ID, "book", []string{"epub-2"}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -675,7 +676,7 @@ func TestStaleQueries_FileRecipeAndModelKeys(t *testing.T) {
 			t.Errorf("the first vault answered with %s, which belongs to the second", path)
 		}
 	}
-	same, err := queries.GetSourcesWithOtherRecipe(ctx, first.ID, "book", []string{"epub"}, 10)
+	same, err := queries.GetSourcesWithOtherRecipe(ctx, getFirst().ID, "book", []string{"epub"}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -684,7 +685,7 @@ func TestStaleQueries_FileRecipeAndModelKeys(t *testing.T) {
 	}
 
 	// The model: chunks whose vectors were made by a different one.
-	unembedded, err := queries.GetUnembeddedChunks(ctx, first.ID, "another-model", 0, 0, 0, 10)
+	unembedded, err := queries.GetUnembeddedChunks(ctx, getFirst().ID, "another-model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -696,7 +697,7 @@ func TestStaleQueries_FileRecipeAndModelKeys(t *testing.T) {
 			t.Errorf("the first vault answered with %s", p.Path)
 		}
 	}
-	if isDone, err := queries.GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10); err != nil {
+	if isDone, err := queries.GetUnembeddedChunks(ctx, getFirst().ID, "model", 0, 0, 0, 10); err != nil {
 		t.Fatal(err)
 	} else if len(isDone) != 0 {
 		t.Errorf("%d chunks need a vector from the model that made theirs", len(isDone))
@@ -708,20 +709,20 @@ func TestGetUnembeddedChunks_ResumesFromLastID(t *testing.T) {
 	// last id of the previous batch.
 	ctx := t.Context()
 	db := openDB(t)
-	book(t, db, first, "library/first.epub", 0x00)
+	book(t, db, getFirst(), "library/first.epub", 0x00)
 	if _, err := db.write.ExecContext(ctx, `DELETE FROM vectors`); err != nil {
 		t.Fatal(err)
 	}
 
 	queries := db.ChunkQueries()
-	firstBatch, err := queries.GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 1)
+	firstBatch, err := queries.GetUnembeddedChunks(ctx, getFirst().ID, "model", 0, 0, 0, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(firstBatch) != 1 {
 		t.Fatalf("a batch of one gave %d", len(firstBatch))
 	}
-	next, err := queries.GetUnembeddedChunks(ctx, first.ID, "model", firstBatch[0].MTime, firstBatch[0].Source, firstBatch[0].Chunk, 10)
+	next, err := queries.GetUnembeddedChunks(ctx, getFirst().ID, "model", firstBatch[0].MTime, firstBatch[0].Source, firstBatch[0].Chunk, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -773,7 +774,7 @@ func hasLeadingColumn(ctx context.Context, t *testing.T, db *DB, table, column s
 func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
-	vault := first
+	vault := getFirst()
 
 	if err := db.Chunks().SaveSource(ctx, vault.ID, chunk.Source{
 		Path: "library/one.epub", Kind: "book", Size: 1000, MTime: 1,
@@ -867,11 +868,11 @@ func TestAChunkThatWentIsSavedNoVectorAndStopsNothing(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 
-	cutInto(t, db, first, "library/kept.epub", "kept passage")
-	cutInto(t, db, first, "library/recut.epub", "the passage as it was")
+	cutInto(t, db, getFirst(), "library/kept.epub", "kept passage")
+	cutInto(t, db, getFirst(), "library/recut.epub", "the passage as it was")
 
 	// What a pass is given, before anything moves under it.
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -879,7 +880,7 @@ func TestAChunkThatWentIsSavedNoVectorAndStopsNothing(t *testing.T) {
 		t.Fatalf("%d chunks need a vector, want the two that were cut", len(unembedded))
 	}
 
-	cutInto(t, db, first, "library/recut.epub", "the passage as it is now")
+	cutInto(t, db, getFirst(), "library/recut.epub", "the passage as it is now")
 
 	vectors := make([]chunk.Vector, 0, len(unembedded))
 	for _, p := range unembedded {
@@ -922,10 +923,10 @@ func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
 	// farther than the floor is not a match.
 	ctx := t.Context()
 	db := openDB(t)
-	book(t, db, first, "library/first.epub", 0x00)
+	book(t, db, getFirst(), "library/first.epub", 0x00)
 	queries := db.ChunkQueries()
 
-	far, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0xff), nil, 10, search.DefaultFloor)
+	far, err := queries.FindNearest(ctx, getFirst().ID, "model", getVectorForSeed(0xff), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -934,7 +935,7 @@ func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
 	}
 
 	// The same vault, queried with a vector it contains.
-	val, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
+	val, err := queries.FindNearest(ctx, getFirst().ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -950,10 +951,10 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 	// vectors rank first.
 	ctx := t.Context()
 	db := openDB(t)
-	cutInto(t, db, first, "library/coarse.epub", "the passage the bits prefer")
-	cutInto(t, db, first, "library/true.epub", "the passage the vectors prefer")
+	cutInto(t, db, getFirst(), "library/coarse.epub", "the passage the bits prefer")
+	cutInto(t, db, getFirst(), "library/true.epub", "the passage the vectors prefer")
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -978,7 +979,7 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 		}
 	}
 
-	data, err := db.ChunkQueries().FindNearest(ctx, first.ID, "model", getVectorForSeed(0xff), nil, 1, search.DefaultFloor)
+	data, err := db.ChunkQueries().FindNearest(ctx, getFirst().ID, "model", getVectorForSeed(0xff), nil, 1, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -998,9 +999,9 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 func TestAVectorIsCachedByTheTextItWasMadeFrom(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
-	cutInto(t, db, first, "library/kept.epub", "the passage that was paid for")
+	cutInto(t, db, getFirst(), "library/kept.epub", "the passage that was paid for")
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1057,10 +1058,10 @@ func TestAVectorIsCachedByTheTextItWasMadeFrom(t *testing.T) {
 func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
-	cutInto(t, db, first, "library/first.epub", "a passage two models read")
+	cutInto(t, db, getFirst(), "library/first.epub", "a passage two models read")
 	queries := db.ChunkQueries()
 
-	unembedded, err := queries.GetUnembeddedChunks(ctx, first.ID, "another-model", 0, 0, 0, 10)
+	unembedded, err := queries.GetUnembeddedChunks(ctx, getFirst().ID, "another-model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1080,7 +1081,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 
 	// The coarse pass matches because the bits are present. The follow-up
 	// full-precision query is model-specific, and this vector belongs to another model.
-	itemVal, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, 0.5)
+	itemVal, err := queries.FindNearest(ctx, getFirst().ID, "model", getVectorForSeed(0x00), nil, 10, 0.5)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1089,7 +1090,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 	}
 
 	// Queried with the model that created them, the same rows match.
-	its, err := queries.FindNearest(ctx, first.ID, "another-model", getVectorForSeed(0x00), nil, 10, 0.5)
+	its, err := queries.FindNearest(ctx, getFirst().ID, "another-model", getVectorForSeed(0x00), nil, 10, 0.5)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1107,10 +1108,10 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 func TestTextThatWentConsumesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
-	cutInto(t, db, first, "library/edited.epub", "a passage that will be rewritten")
-	cutInto(t, db, first, "library/gone.epub", "a passage in a book that goes")
+	cutInto(t, db, getFirst(), "library/edited.epub", "a passage that will be rewritten")
+	cutInto(t, db, getFirst(), "library/gone.epub", "a passage in a book that goes")
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1141,7 +1142,7 @@ func TestTextThatWentConsumesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 	}
 
 	// The book that went from the vault.
-	if err := db.Chunks().RemoveSources(ctx, first.ID, "book", []string{"library/gone.epub"}); err != nil {
+	if err := db.Chunks().RemoveSources(ctx, getFirst().ID, "book", []string{"library/gone.epub"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := countRows(t, db, `SELECT COUNT(*) FROM vectors`); got != 2 {
@@ -1149,7 +1150,7 @@ func TestTextThatWentConsumesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 	}
 
 	// The book that was rewritten.
-	cutInto(t, db, first, "library/edited.epub", "a passage as it is written now")
+	cutInto(t, db, getFirst(), "library/edited.epub", "a passage as it is written now")
 	if got := countRows(t, db, `SELECT COUNT(*) FROM vectors`); got != 1 {
 		t.Errorf("%d vectors are left after the text was replaced, want 1", got)
 	}
@@ -1163,10 +1164,10 @@ func TestAVectorStaysWhileAnyChunkStillContainsItsText(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 	shared := "the same passage, standing in two books"
-	cutInto(t, db, first, "library/one.epub", shared)
-	cutInto(t, db, first, "library/two.epub", shared)
+	cutInto(t, db, getFirst(), "library/one.epub", shared)
+	cutInto(t, db, getFirst(), "library/two.epub", shared)
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1198,7 +1199,7 @@ func TestAVectorStaysWhileAnyChunkStillContainsItsText(t *testing.T) {
 	}
 
 	// One book rewritten; the other still holds the passage.
-	cutInto(t, db, first, "library/one.epub", "something else entirely")
+	cutInto(t, db, getFirst(), "library/one.epub", "something else entirely")
 
 	sum := sha256.Sum256([]byte(shared))
 	retained, err := db.ChunkQueries().GetKeptVectors(ctx, "model", [][]byte{sum[:]})
@@ -1233,16 +1234,16 @@ func saveRecognisedSource(t *testing.T, db *DB, vault domain.Vault, path, hash s
 func TestRecognisedStaysInsideItsVault(t *testing.T) {
 	db := openDB(t)
 
-	saveRecognisedSource(t, db, first, "library/first.pdf", "hash-first")
-	saveRecognisedSource(t, db, second, "library/second.pdf", "hash-second")
-	book(t, db, first, "library/plain.epub", 1)
+	saveRecognisedSource(t, db, getFirst(), "library/first.pdf", "hash-first")
+	saveRecognisedSource(t, db, getSecond(), "library/second.pdf", "hash-second")
+	book(t, db, getFirst(), "library/plain.epub", 1)
 
 	for _, c := range []struct {
 		vault domain.Vault
 		want  chunk.SourceText
 	}{
-		{first, chunk.SourceText{Path: "library/first.pdf", Producer: "ocr", Hash: "hash-first"}},
-		{second, chunk.SourceText{Path: "library/second.pdf", Producer: "ocr", Hash: "hash-second"}},
+		{getFirst(), chunk.SourceText{Path: "library/first.pdf", Producer: "ocr", Hash: "hash-first"}},
+		{getSecond(), chunk.SourceText{Path: "library/second.pdf", Producer: "ocr", Hash: "hash-second"}},
 	} {
 		found, err := db.ChunkQueries().GetRecognisedSources(t.Context(), c.vault.ID, "book")
 		if err != nil {
@@ -1307,10 +1308,10 @@ func TestASectionIsFoundByItsName(t *testing.T) {
 	// not the section about it.
 	ctx := t.Context()
 	db := openDB(t)
-	saveSectionedBook(t, db, first, "library/chaitanya.pdf")
+	saveSectionedBook(t, db, getFirst(), "library/chaitanya.pdf")
 	queries := db.ChunkQueries()
 
-	lexical, err := queries.FindLexical(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
+	lexical, err := queries.FindLexical(ctx, getFirst().ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1321,7 +1322,7 @@ func TestASectionIsFoundByItsName(t *testing.T) {
 		t.Fatal("the words half already answers with the section, and this proves nothing")
 	}
 
-	named, err := queries.GetNamedPassages(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
+	named, err := queries.GetNamedPassages(ctx, getFirst().ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1345,9 +1346,9 @@ func TestOnlyTheChunkThatOpensASectionCarriesItsName(t *testing.T) {
 	// is the same location.
 	ctx := t.Context()
 	db := openDB(t)
-	saveSectionedBook(t, db, first, "library/chaitanya.pdf")
+	saveSectionedBook(t, db, getFirst(), "library/chaitanya.pdf")
 
-	named, err := db.ChunkQueries().GetNamedPassages(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1359,10 +1360,10 @@ func TestOnlyTheChunkThatOpensASectionCarriesItsName(t *testing.T) {
 func TestASearchByNameStaysInsideItsVault(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
-	saveSectionedBook(t, db, first, "library/chaitanya.pdf")
-	saveSectionedBook(t, db, second, "library/chaitanya.pdf")
+	saveSectionedBook(t, db, getFirst(), "library/chaitanya.pdf")
+	saveSectionedBook(t, db, getSecond(), "library/chaitanya.pdf")
 
-	named, err := db.ChunkQueries().GetNamedPassages(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1377,12 +1378,12 @@ func TestASectionNamePreservesWithTheSourceItCameFrom(t *testing.T) {
 	db := openDB(t)
 	chunks := db.Chunks()
 
-	if err := chunks.SaveSource(ctx, first.ID, chunk.Source{
+	if err := chunks.SaveSource(ctx, getFirst().ID, chunk.Source{
 		Path: "library/gone.pdf", Kind: "book", Size: 1000, MTime: 1, Hash: "hash-gone", Recipe: "pdf",
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := chunks.ReplaceChunks(ctx, first.ID, "book", "library/gone.pdf", []chunk.Chunk{{
+	if err := chunks.ReplaceChunks(ctx, getFirst().ID, "book", "library/gone.pdf", []chunk.Chunk{{
 		Start: 0, Length: 100, Location: "Thermodynamics",
 		Opens: []string{"Thermodynamics"},
 		Text:  "Heat moves one way.",
@@ -1390,18 +1391,18 @@ func TestASectionNamePreservesWithTheSourceItCameFrom(t *testing.T) {
 	}}); err != nil {
 		t.Fatal(err)
 	}
-	if err := chunks.RemoveSources(ctx, first.ID, "book", []string{"library/gone.pdf"}); err != nil {
+	if err := chunks.RemoveSources(ctx, getFirst().ID, "book", []string{"library/gone.pdf"}); err != nil {
 		t.Fatal(err)
 	}
 
 	// The next book's chunks take the numbers the first one left, and this book
 	// names no section of its own to write over them.
-	if err := chunks.SaveSource(ctx, first.ID, chunk.Source{
+	if err := chunks.SaveSource(ctx, getFirst().ID, chunk.Source{
 		Path: "library/next.pdf", Kind: "book", Size: 1000, MTime: 1, Hash: "hash-next", Recipe: "pdf",
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := chunks.ReplaceChunks(ctx, first.ID, "book", "library/next.pdf", []chunk.Chunk{{
+	if err := chunks.ReplaceChunks(ctx, getFirst().ID, "book", "library/next.pdf", []chunk.Chunk{{
 		Start: 0, Length: 100, Location: "Whales",
 		Text:  "A whale breathes air.",
 		Small: []chunk.Chunk{{Start: 0, Length: 100, Text: "A whale breathes air."}},
@@ -1409,7 +1410,7 @@ func TestASectionNamePreservesWithTheSourceItCameFrom(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	named, err := db.ChunkQueries().GetNamedPassages(ctx, first.ID, "Thermodynamics", nil, 10, false)
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, "Thermodynamics", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1424,10 +1425,10 @@ func TestASectionSplitAwayIsNotFoundByItsName(t *testing.T) {
 	// matches by name returns a passage opening where nothing begins.
 	ctx := t.Context()
 	db := openDB(t)
-	saveSectionedBook(t, db, first, "library/chaitanya.pdf")
+	saveSectionedBook(t, db, getFirst(), "library/chaitanya.pdf")
 
 	// Cut again, and this time nothing opens a section.
-	if err := db.Chunks().ReplaceChunks(ctx, first.ID, "book", "library/chaitanya.pdf",
+	if err := db.Chunks().ReplaceChunks(ctx, getFirst().ID, "book", "library/chaitanya.pdf",
 		[]chunk.Chunk{{
 			Start: 0, Length: 100, Location: "Madhavendra Puri",
 			Text:  "Madhavendra Puri appeared in the fourteenth century.",
@@ -1436,7 +1437,7 @@ func TestASectionSplitAwayIsNotFoundByItsName(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	named, err := db.ChunkQueries().GetNamedPassages(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1452,10 +1453,10 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 
-	if err := db.Sources().SaveExtraction(ctx, first.ID, domain.SourceChunks{
+	if err := db.Sources().SaveExtraction(ctx, getFirst().ID, domain.SourceChunks{
 		Source: domain.Source{
 			FileStat: domain.FileStat{
-				Path: "library/chaitanya.pdf", Kind: domain.KindFile, Size: 1000, ModTime: walked,
+				Path: "library/chaitanya.pdf", Kind: domain.KindFile, Size: 1000, ModTime: getWalked(),
 			},
 			Hash:   "hash",
 			Recipe: "pdf",
@@ -1470,7 +1471,7 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	named, err := db.ChunkQueries().GetNamedPassages(ctx, first.ID, "Madhavendra Puri", nil, 10, false)
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, "Madhavendra Puri", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1488,31 +1489,31 @@ func TestRecentlyModifiedSourcesAreEmbeddedFirst(t *testing.T) {
 	db := openDB(t)
 
 	chunks := db.Chunks()
-	if err := chunks.SaveSource(ctx, first.ID, chunk.Source{
+	if err := chunks.SaveSource(ctx, getFirst().ID, chunk.Source{
 		Path: "library/old.epub", Kind: "book", Size: 1000, MTime: 100, Hash: "hash-old", Recipe: "epub",
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := chunks.ReplaceChunks(ctx, first.ID, "book", "library/old.epub", []chunk.Chunk{{
+	if err := chunks.ReplaceChunks(ctx, getFirst().ID, "book", "library/old.epub", []chunk.Chunk{{
 		Start: 0, Length: 100, Text: "old book whole",
 		Small: []chunk.Chunk{{Start: 0, Length: 50, Text: "old passage 1"}, {Start: 50, Length: 50, Text: "old passage 2"}},
 	}}); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := chunks.SaveSource(ctx, first.ID, chunk.Source{
+	if err := chunks.SaveSource(ctx, getFirst().ID, chunk.Source{
 		Path: "notes/recent.md", Kind: "note", Size: 500, MTime: 200, Hash: "hash-recent",
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := chunks.ReplaceChunks(ctx, first.ID, "note", "notes/recent.md", []chunk.Chunk{{
+	if err := chunks.ReplaceChunks(ctx, getFirst().ID, "note", "notes/recent.md", []chunk.Chunk{{
 		Start: 0, Length: 100, Text: "recent note whole",
 		Small: []chunk.Chunk{{Start: 0, Length: 50, Text: "recent passage 1"}, {Start: 50, Length: 50, Text: "recent passage 2"}},
 	}}); err != nil {
 		t.Fatal(err)
 	}
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, "model", 0, 0, 0, 10)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", 0, 0, 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1532,7 +1533,7 @@ func TestRecentlyModifiedSourcesAreEmbeddedFirst(t *testing.T) {
 		t.Errorf("expected ascending chunk IDs within source, got %d and %d", unembedded[2].Chunk, unembedded[3].Chunk)
 	}
 
-	firstPage, cursor1, err := db.Sources().GetUnembeddedChunks(ctx, first.ID, benchModel, "", 2)
+	firstPage, cursor1, err := db.Sources().GetUnembeddedChunks(ctx, getFirst().ID, getBenchModel(), "", 2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1540,7 +1541,7 @@ func TestRecentlyModifiedSourcesAreEmbeddedFirst(t *testing.T) {
 		t.Fatalf("page 1 unexpected: %+v", firstPage)
 	}
 
-	secondPage, _, err := db.Sources().GetUnembeddedChunks(ctx, first.ID, benchModel, cursor1, 2)
+	secondPage, _, err := db.Sources().GetUnembeddedChunks(ctx, getFirst().ID, getBenchModel(), cursor1, 2)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -11,7 +11,7 @@ import (
 func TestADependencyCannotNameAVariableTheHostOwnsOrAMalformedOne(t *testing.T) {
 	for _, name := range []string{"NUMEN_PLUGIN_TOKEN", "NUMEN_PLUGIN_PORT", "NUMEN_HOST_PORT", "NUMEN_VAULT_PATH", "A=B", "", "BAD NAME", "X\x00Y"} {
 		t.Run(name, func(t *testing.T) {
-			host := NewHost(testsupport.Machine, "desktop.editor")
+			host := NewHost(testsupport.GetMachine(), "desktop.editor")
 			t.Cleanup(func() {
 				if err := host.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 					t.Error(err)

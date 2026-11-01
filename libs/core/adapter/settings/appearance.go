@@ -70,18 +70,17 @@ const AsDesigned = 1
 // The interface range keeps the smallest control a usable pointer target and a
 // 1280-pixel-wide window able to lay out its panes side by side. The text range
 // keeps the smallest text legible and a line of typing within its input row.
-var (
-	InterfaceScaleBounds = Bounds{Min: 0.8, Max: 2}
-	TextScaleBounds      = Bounds{Min: 0.8, Max: 1.75}
-)
+func GetInterfaceScaleBounds() Bounds { return Bounds{Min: 0.8, Max: 2} }
+
+func GetTextScaleBounds() Bounds { return Bounds{Min: 0.8, Max: 1.75} }
 
 // GetOutsideBounds is every number the section holds that its setting does not take,
 // in the order the section names them.
 func (a Appearance) GetOutsideBounds() []*OutsideBounds {
 	var found []*OutsideBounds
 	for _, err := range []error{
-		InterfaceScaleBounds.Check("appearance.interface_scale", a.InterfaceScale),
-		TextScaleBounds.Check("appearance.text_scale", a.TextScale),
+		GetInterfaceScaleBounds().Check("appearance.interface_scale", a.InterfaceScale),
+		GetTextScaleBounds().Check("appearance.text_scale", a.TextScale),
 	} {
 		var outside *OutsideBounds
 		if errors.As(err, &outside) {
@@ -112,7 +111,7 @@ const DefaultTheme = "preset:numen"
 // used as the default.
 func getDesktopScale() float64 {
 	scale, err := strconv.ParseFloat(os.Getenv("GDK_DPI_SCALE"), 64)
-	if err != nil || !InterfaceScaleBounds.Contains(scale) {
+	if err != nil || !GetInterfaceScaleBounds().Contains(scale) {
 		return AsDesigned
 	}
 	return scale

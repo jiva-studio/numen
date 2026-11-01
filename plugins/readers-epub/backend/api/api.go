@@ -1,10 +1,10 @@
-// Package api holds the JSON messages of the numen.epub service: the requests and responses of the
+// Package api holds the JSON messages of the md.numen.readers.epub service: the requests and responses of the
 // methods the plugin's backend serves to its frontend. Field names are the lowerCamelCase keys of the
 // JSON; 64-bit integers are JSON numbers (except FileStat.Mtime) and byte strings are base64 text.
 package api
 
 // Service is the service name of the plugin's JSON methods, as the manifest declares it.
-const Service = "numen.epub"
+const Service = "md.numen.readers.epub"
 
 // FileStat names the bytes of a file: its size and its modification time in nanoseconds. A time of
 // zero names no time. The time is a JSON string because a nanosecond count exceeds the integers a

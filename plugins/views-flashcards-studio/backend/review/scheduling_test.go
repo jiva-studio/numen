@@ -153,7 +153,9 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 // places a card it has begun and a card it has answered again, and they are one
 // step. A third function here would be a third arithmetic, kept consistent with
 // these two only by tests and drifting whenever one of them changes.
-var scheduling = []string{"History.Replay", "Simulation.step"}
+func getScheduling() []string {
+	return []string{"History.Replay", "Simulation.step"}
+}
 
 // A day is chosen in one function, and a caller wanting one evaluates to it. The
 // walk is over this package's own files, because AssignDueDay is where a day is
@@ -194,11 +196,11 @@ func TestTheSessionAndTheProjectionAreWhatScheduleADay(t *testing.T) {
 	slices.Sort(calls)
 	calls = slices.Compact(calls)
 	for _, one := range calls {
-		if !slices.Contains(scheduling, one) {
+		if !slices.Contains(getScheduling(), one) {
 			t.Errorf("%s places a card's day: one function places it and everything else comes to that one", one)
 		}
 	}
-	for _, one := range scheduling {
+	for _, one := range getScheduling() {
 		if !slices.Contains(calls, one) {
 			t.Errorf("%s is named here as an arithmetic scheduling a day and places none", one)
 		}

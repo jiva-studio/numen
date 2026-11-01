@@ -25,23 +25,27 @@ import (
 
 // deck is one vault of one card model and one deck, whose single card yields one
 // review card.
-var deck = map[string]string{
-	"Term.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
-		"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
-	"decks/Words.md": "---\ntype: deck\n---\n" +
-		"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
-		"\n### Meaning\n\nCompost made of fallen leaves alone\n",
+func getDeck() map[string]string {
+	return map[string]string{
+		"Term.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
+			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
+		"decks/Words.md": "---\ntype: deck\n---\n" +
+			"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
+			"\n### Meaning\n\nCompost made of fallen leaves alone\n",
+	}
 }
 
 // other is a second vault sharing nothing with the first: another card model,
 // another review card, another card id, another word. A claim about one vault not
 // reaching another is worth nothing when both hold the same cards.
-var other = map[string]string{
-	"Bird.md": "---\ntype: card-model\nfields:\n  - Call\n  - Who\n---\n" +
-		"\n## Whose call\n\n### Front\n\n{{Call}}\n\n### Back\n\n{{Who}}\n",
-	"decks/Calls.md": "---\ntype: deck\n---\n" +
-		"\n## Yaffle ^zpqrstvwxy\n\n[[Bird]]\n\n### Call\n\nA laugh across the field\n" +
-		"\n### Who\n\nGreen woodpecker\n",
+func getOther() map[string]string {
+	return map[string]string{
+		"Bird.md": "---\ntype: card-model\nfields:\n  - Call\n  - Who\n---\n" +
+			"\n## Whose call\n\n### Front\n\n{{Call}}\n\n### Back\n\n{{Who}}\n",
+		"decks/Calls.md": "---\ntype: deck\n---\n" +
+			"\n## Yaffle ^zpqrstvwxy\n\n[[Bird]]\n\n### Call\n\nA laugh across the field\n" +
+			"\n### Who\n\nGreen woodpecker\n",
+	}
 }
 
 // API is the review as these tests ask it.
@@ -144,7 +148,7 @@ func startSession(t *testing.T, handler *API, v domain.Vault) *api.StartSessionR
 // A run belongs to the vault it was opened on, and an answer naming another
 // vault's run fails.
 func TestRecordReview_ErrorsOnRunOfOtherVault(t *testing.T) {
-	handler, target, installation := newAPIOn(t, deck, other)
+	handler, target, installation := newAPIOn(t, getDeck(), getOther())
 	one, two := target[0], target[1]
 
 	session := startSession(t, handler, one)
@@ -190,7 +194,7 @@ func getRunFiles(t *testing.T, store host.Store) []string {
 // A session that is over is over: the run it wrote is never appended to again,
 // so a page holding its name from an hour ago writes nothing.
 func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
-	handler, target := newAPI(t, deck)
+	handler, target := newAPI(t, getDeck())
 	v := target[0]
 
 	was := startSession(t, handler, v)
@@ -219,7 +223,7 @@ func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
 // another: the two vaults share no card id, no review card and no word, so nothing
 // can pass between them by similarity.
 func TestAnAnswerInOneVaultPreservesTheOtherVaultDueCards(t *testing.T) {
-	handler, target, installation := newAPIOn(t, deck, other)
+	handler, target, installation := newAPIOn(t, getDeck(), getOther())
 	one, two := target[0], target[1]
 
 	was := findVaultCount(t, front(t, handler), string(two.ID))
@@ -264,7 +268,7 @@ func findVaultCount(t *testing.T, resp *api.WatchCardsDueResponse, id string) *a
 // An answer is written to the run's own file, and the identifier it comes back
 // with is what taking it back names.
 func TestAnAnswerIsSavedAndCanBeTakenBack(t *testing.T) {
-	handler, target, installation := newAPIOn(t, deck)
+	handler, target, installation := newAPIOn(t, getDeck())
 	v := target[0]
 
 	session := startSession(t, handler, v)
@@ -300,7 +304,7 @@ func TestAnAnswerIsSavedAndCanBeTakenBack(t *testing.T) {
 
 // An answer outside the four is the caller's mistake and fails as one.
 func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
-	handler, target := newAPI(t, deck)
+	handler, target := newAPI(t, getDeck())
 	v := target[0]
 	session := startSession(t, handler, v)
 	card := session.Cards[0]
@@ -318,7 +322,7 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 // Every vault the review counts is in the index before it is counted: a vault being read into the
 // index has nothing to show, and its numbers arrive with the count that follows.
 func TestAVaultIsIndexedBeforeItIsCounted(t *testing.T) {
-	handler, target, installation := newAPIOn(t, deck, deck)
+	handler, target, installation := newAPIOn(t, getDeck(), getDeck())
 	installation.Of(target[1].ID).SetIndexState(host.IndexState{Status: host.Indexing})
 
 	// A vault whose index walk is incomplete has no count, and its row reports that.
@@ -344,7 +348,7 @@ func TestAVaultIsIndexedBeforeItIsCounted(t *testing.T) {
 
 // A vault the index could not read is uncounted, and the row reports why.
 func TestAVaultTheIndexCouldNotReadIsUncountedAndReturnsWhy(t *testing.T) {
-	handler, target, installation := newAPIOn(t, deck)
+	handler, target, installation := newAPIOn(t, getDeck())
 	installation.Of(target[0].ID).SetIndexState(host.IndexState{Status: host.IndexFailed, Reason: "the disk is full"})
 
 	one := front(t, handler).Vaults[0]
@@ -356,7 +360,7 @@ func TestAVaultTheIndexCouldNotReadIsUncountedAndReturnsWhy(t *testing.T) {
 
 // A session opened on a vault the index does not carry fails with an error.
 func TestSessionDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
-	handler, target, installation := newAPIOn(t, deck)
+	handler, target, installation := newAPIOn(t, getDeck())
 	installation.Of(target[0].ID).SetIndexState(host.IndexState{Status: host.Indexing})
 
 	_, err := handler.StartSession(t.Context(),
@@ -385,7 +389,7 @@ func TestAQuestionAboutAVaultNobodyContainsIsRefused(t *testing.T) {
 // What each of the four would do to the card is worked out with the card, so a
 // person choosing between them is shown what they are choosing between.
 func TestStartSession_CardsCarryRatingIntervals(t *testing.T) {
-	handler, target := newAPI(t, deck)
+	handler, target := newAPI(t, getDeck())
 	session := startSession(t, handler, target[0])
 	ahead := session.Cards[0].Intervals
 
@@ -421,7 +425,7 @@ func TestTheFourRatingsAreCarriedAcross(t *testing.T) {
 // missing cards are identifiable.
 func TestASessionReturnsWhichDecksItCouldNotMark(t *testing.T) {
 	handler, target, installation := newAPIOn(t, map[string]string{
-		"Term.md": deck["Term.md"],
+		"Term.md": getDeck()["Term.md"],
 		// The card carries no card id, so the deck is written to give it one.
 		"decks/Own.md": "---\ntype: deck\n---\n" +
 			"\n## Leaf mould\n\n[[Term]]\n\n### Word\n\nLeaf mould\n\n### Meaning\n\nLeaves\n",
@@ -443,7 +447,7 @@ func TestASessionReturnsWhichDecksItCouldNotMark(t *testing.T) {
 
 // TestWatchCardsDue_CountsEveryVault verifies all vaults are reported.
 func TestWatchCardsDue_CountsEveryVault(t *testing.T) {
-	handler, target := newAPI(t, deck, other)
+	handler, target := newAPI(t, getDeck(), getOther())
 
 	out := front(t, handler)
 	if len(out.Vaults) != len(target) {
@@ -459,7 +463,7 @@ func TestWatchCardsDue_CountsEveryVault(t *testing.T) {
 // Counting cards does not modify vault files.
 func TestWatchCardsDue_DoesNotModifyVaultFiles(t *testing.T) {
 	handwritten := map[string]string{
-		"Term.md": deck["Term.md"],
+		"Term.md": getDeck()["Term.md"],
 		"decks/Own.md": "---\ntype: deck\n---\n" +
 			"\n## Leaf mould\n\n[[Term]]\n\n### Word\n\nLeaf mould\n\n### Meaning\n\nLeaves\n",
 	}
@@ -481,19 +485,21 @@ func TestWatchCardsDue_DoesNotModifyVaultFiles(t *testing.T) {
 }
 
 // pointed is the one deck of a vault scheduled by a preset of its own.
-var pointed = map[string]string{
-	"Term.md": deck["Term.md"],
-	"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
-		"new_a_day: 8\nreviews_a_day: 45\n---\n\n# Sanskrit\n",
-	"decks/Words.md": "---\ntype: deck\nlinks:\n" +
-		"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n" +
-		"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
-		"\n### Meaning\n\nCompost made of fallen leaves alone\n",
+func getPointed() map[string]string {
+	return map[string]string{
+		"Term.md": getDeck()["Term.md"],
+		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
+			"new_a_day: 8\nreviews_a_day: 45\n---\n\n# Sanskrit\n",
+		"decks/Words.md": "---\ntype: deck\nlinks:\n" +
+			"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n" +
+			"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
+			"\n### Meaning\n\nCompost made of fallen leaves alone\n",
+	}
 }
 
 // WatchCardsDue returns daily progress and limits for each preset.
 func TestWatchCardsDue_ReturnsDailyProgressPerPreset(t *testing.T) {
-	handler, target := newAPI(t, pointed)
+	handler, target := newAPI(t, getPointed())
 	v := target[0]
 
 	session := startSession(t, handler, v)
@@ -525,7 +531,7 @@ func TestWatchCardsDue_ReturnsDailyProgressPerPreset(t *testing.T) {
 // A deck naming no preset comes under the defaults, which is what a vault
 // holding no preset at all evaluates to.
 func TestADeckNamingNoPresetReachesBelowTheDefaults(t *testing.T) {
-	handler, _ := newAPI(t, deck)
+	handler, _ := newAPI(t, getDeck())
 
 	presets := front(t, handler).Vaults[0].Presets
 	if len(presets) != 1 {
@@ -542,28 +548,30 @@ func TestADeckNamingNoPresetReachesBelowTheDefaults(t *testing.T) {
 
 // twoPresets is one vault studying two subjects: a preset of one card a day, a
 // preset of two, and a deck of three cards under each.
-var twoPresets = map[string]string{
-	"Term.md": deck["Term.md"],
-	"Roots.md": "---\ntype: preset\ngoal: retention\nnew_a_day: 1\nreviews_a_day: 0\n" +
-		"minutes_a_day: 0\n---\n\n# Roots\n",
-	"Mantras.md": "---\ntype: preset\ngoal: retention\nnew_a_day: 2\nreviews_a_day: 0\n" +
-		"minutes_a_day: 0\n---\n\n# Mantras\n",
-	"decks/Roots.md": "---\ntype: deck\nlinks:\n" +
-		"  - to: Roots\n    role: ref\n    type: preset\n---\n" +
-		"\n## bhu ^k7m2xq9fzp\n\n[[Term]]\n\n### Word\n\nbhu\n\n### Meaning\n\nto be\n" +
-		"\n## gam ^zpqrstvwxy\n\n[[Term]]\n\n### Word\n\ngam\n\n### Meaning\n\nto go\n" +
-		"\n## kr ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nkr\n\n### Meaning\n\nto do\n",
-	"decks/Mantras.md": "---\ntype: deck\nlinks:\n" +
-		"  - to: Mantras\n    role: ref\n    type: preset\n---\n" +
-		"\n## one ^m4n5b6v7c8\n\n[[Term]]\n\n### Word\n\ngayatri\n\n### Meaning\n\na metre\n" +
-		"\n## two ^q1w2e3r4t5\n\n[[Term]]\n\n### Word\n\nmaha\n\n### Meaning\n\ngreat\n" +
-		"\n## three ^y6u7i8o9p0\n\n[[Term]]\n\n### Word\n\nsanti\n\n### Meaning\n\npeace\n",
+func getTwoPresets() map[string]string {
+	return map[string]string{
+		"Term.md": getDeck()["Term.md"],
+		"Roots.md": "---\ntype: preset\ngoal: retention\nnew_a_day: 1\nreviews_a_day: 0\n" +
+			"minutes_a_day: 0\n---\n\n# Roots\n",
+		"Mantras.md": "---\ntype: preset\ngoal: retention\nnew_a_day: 2\nreviews_a_day: 0\n" +
+			"minutes_a_day: 0\n---\n\n# Mantras\n",
+		"decks/Roots.md": "---\ntype: deck\nlinks:\n" +
+			"  - to: Roots\n    role: ref\n    type: preset\n---\n" +
+			"\n## bhu ^k7m2xq9fzp\n\n[[Term]]\n\n### Word\n\nbhu\n\n### Meaning\n\nto be\n" +
+			"\n## gam ^zpqrstvwxy\n\n[[Term]]\n\n### Word\n\ngam\n\n### Meaning\n\nto go\n" +
+			"\n## kr ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nkr\n\n### Meaning\n\nto do\n",
+		"decks/Mantras.md": "---\ntype: deck\nlinks:\n" +
+			"  - to: Mantras\n    role: ref\n    type: preset\n---\n" +
+			"\n## one ^m4n5b6v7c8\n\n[[Term]]\n\n### Word\n\ngayatri\n\n### Meaning\n\na metre\n" +
+			"\n## two ^q1w2e3r4t5\n\n[[Term]]\n\n### Word\n\nmaha\n\n### Meaning\n\ngreat\n" +
+			"\n## three ^y6u7i8o9p0\n\n[[Term]]\n\n### Word\n\nsanti\n\n### Meaning\n\npeace\n",
+	}
 }
 
 // A session over a vault of two presets is the union of them: each deck is held
 // to its own preset's budget, and one preset running out closes its own decks.
 func TestASessionOverTwoPresetsIsTheUnionOfTheirBudgets(t *testing.T) {
-	handler, target := newAPI(t, twoPresets)
+	handler, target := newAPI(t, getTwoPresets())
 
 	got := make(map[string]int)
 	for _, one := range startSession(t, handler, target[0]).Cards {
@@ -582,7 +590,7 @@ func TestASessionOverTwoPresetsIsTheUnionOfTheirBudgets(t *testing.T) {
 
 // WatchCardsDue returns settings for each preset independently.
 func TestWatchCardsDue_ReturnsSettingsPerPreset(t *testing.T) {
-	handler, _ := newAPI(t, twoPresets)
+	handler, _ := newAPI(t, getTwoPresets())
 
 	got := make(map[string]int32)
 	for _, one := range front(t, handler).Vaults[0].Presets {
@@ -618,12 +626,14 @@ func newDeck(pos string, cards, from int) string {
 
 // backlogged is a vault of more material than a day of its preset carries, and
 // a deck beside it on the defaults.
-var backlogged = map[string]string{
-	"Term.md": deck["Term.md"],
-	"Steady.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 10\n" +
-		"new_a_day: 12\nreviews_a_day: 1\nretention: 0.9\ncounts: cards\n---\n\n# Steady\n",
-	"decks/Steady.md": newDeck("Steady", 60, 0),
-	"decks/Loose.md":  newDeck("", 20, 1000),
+func getBacklogged() map[string]string {
+	return map[string]string{
+		"Term.md": getDeck()["Term.md"],
+		"Steady.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 10\n" +
+			"new_a_day: 12\nreviews_a_day: 1\nretention: 0.9\ncounts: cards\n---\n\n# Steady\n",
+		"decks/Steady.md": newDeck("Steady", 60, 0),
+		"decks/Loose.md":  newDeck("", 20, 1000),
+	}
 }
 
 // The deck screen and the preset tab are one arithmetic, under every goal.
@@ -664,14 +674,14 @@ func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 		},
 		{
 			what: "a date", goal: review.GoalDate, learned: review.RuleRetention,
-			byDate: vaulttest.Epoch.AddDate(0, 0, 6), closed: review.ClosedDate, isSameDay: true,
+			byDate: vaulttest.GetEpoch().AddDate(0, 0, 6), closed: review.ClosedDate, isSameDay: true,
 			never: []review.BudgetName{
 				review.ClosedNew, review.ClosedReviews, review.ClosedMinutes,
 			},
 		},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			handler, target := newAPI(t, backlogged)
+			handler, target := newAPI(t, getBacklogged())
 			v := target[0]
 
 			p := readPresetConfig(t, handler, v, "Steady.md")
@@ -717,7 +727,7 @@ func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 // Under a goal of minutes a day long enough for the whole of the material is
 // closed by nothing: the material itself ran out, and no card limit is named.
 func TestGetCurve_LongDayHasNoClosingLimit(t *testing.T) {
-	handler, target := newAPI(t, backlogged)
+	handler, target := newAPI(t, getBacklogged())
 	v := target[0]
 
 	curveResp := getCurve(t, handler, v, "Steady.md", readPresetConfig(t, handler, v, "Steady.md"))
@@ -734,10 +744,10 @@ func TestGetCurve_LongDayHasNoClosingLimit(t *testing.T) {
 // presents may already be the whole count: a card that returns within the day is the
 // same card, and the repeated showings it takes exhaust the clock.
 func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
-	handler, target := newAPI(t, lived)
+	handler, target := newAPI(t, getLived())
 	v := target[0]
 	runDays(t, handler, v, 14)
-	setNow(handler, firstMorning.AddDate(0, 0, 14))
+	setNow(handler, getFirstMorning().AddDate(0, 0, 14))
 
 	p := readPresetConfig(t, handler, v, "Sanskrit.md")
 	p.Goal = review.GoalMinutes
@@ -774,14 +784,14 @@ func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 //
 // The overdue count applies across the whole curve and does not change with the goal.
 func TestWhatIsOverdueExistsOverTheWholeCurve(t *testing.T) {
-	handler, target := newAPI(t, lived)
+	handler, target := newAPI(t, getLived())
 	v := target[0]
 	runDays(t, handler, v, 14)
-	setNow(handler, firstMorning.AddDate(0, 0, 14))
+	setNow(handler, getFirstMorning().AddDate(0, 0, 14))
 
 	dueTotal := 0
 	for _, one := range getVaultCount(t, handler, v).Decks {
-		for _, deck := range underSanskrit {
+		for _, deck := range getUnderSanskrit() {
 			if one.Deck == deck {
 				dueTotal += int(one.Due)
 			}
@@ -822,7 +832,7 @@ func TestWhatIsOverdueExistsOverTheWholeCurve(t *testing.T) {
 
 // A vault with no review history has nothing overdue.
 func TestGetCurve_UnansweredVaultHasNothingOverdue(t *testing.T) {
-	handler, target := newAPI(t, backlogged)
+	handler, target := newAPI(t, getBacklogged())
 	v := target[0]
 
 	curveResp := getCurve(t, handler, v, "Steady.md", readPresetConfig(t, handler, v, "Steady.md"))
@@ -840,20 +850,22 @@ func TestGetCurve_UnansweredVaultHasNothingOverdue(t *testing.T) {
 // spread is a lived-in vault of three scopes: a preset closing its day on the
 // minutes, one closing it on the counts, and the defaults over two decks, so a
 // budget shared between decks is one of the three.
-var spread = map[string]string{
-	"Both.md": bothWays,
-	"One.md":  oneWay,
-	// Its counts stand at what an earlier goal left them, and its minutes are
-	// what it is steered by now.
-	"Timed.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 6\n" +
-		"new_a_day: 2\nreviews_a_day: 1\nretention: 0.9\ncounts: cards\n---\n\n# Timed\n",
-	"Counted.md": "---\ntype: preset\ngoal: retention\nretention: 0.9\n" +
-		"new_a_day: 8\nreviews_a_day: 30\nminutes_a_day: 15\ncounts: cards\n---\n\n# Counted\n",
-	"decks/Verbs.md": newCardModelDeck("Both", "Timed", 100, 0),
-	"decks/Nouns.md": newCardModelDeck("One", "Timed", 80, 1000),
-	"decks/Roots.md": newCardModelDeck("One", "Counted", 100, 2000),
-	"decks/Loose.md": newCardModelDeck("One", "", 60, 3000),
-	"decks/Odds.md":  newCardModelDeck("One", "", 60, 4000),
+func getSpread() map[string]string {
+	return map[string]string{
+		"Both.md": bothWays,
+		"One.md":  oneWay,
+		// Its counts stand at what an earlier goal left them, and its minutes are
+		// what it is steered by now.
+		"Timed.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 6\n" +
+			"new_a_day: 2\nreviews_a_day: 1\nretention: 0.9\ncounts: cards\n---\n\n# Timed\n",
+		"Counted.md": "---\ntype: preset\ngoal: retention\nretention: 0.9\n" +
+			"new_a_day: 8\nreviews_a_day: 30\nminutes_a_day: 15\ncounts: cards\n---\n\n# Counted\n",
+		"decks/Verbs.md": newCardModelDeck("Both", "Timed", 100, 0),
+		"decks/Nouns.md": newCardModelDeck("One", "Timed", 80, 1000),
+		"decks/Roots.md": newCardModelDeck("One", "Counted", 100, 2000),
+		"decks/Loose.md": newCardModelDeck("One", "", 60, 3000),
+		"decks/Odds.md":  newCardModelDeck("One", "", 60, 4000),
+	}
 }
 
 // The tile over a preset and the session it opens are one number.
@@ -861,10 +873,10 @@ var spread = map[string]string{
 // A preset is the whole scope of its own budget, so the cards the count leaves
 // for it are the cards a session over it presents, and the count reports that figure.
 func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
-	handler, target := newAPI(t, spread)
+	handler, target := newAPI(t, getSpread())
 	v := target[0]
 	runDays(t, handler, v, 14)
-	setNow(handler, firstMorning.AddDate(0, 0, 14))
+	setNow(handler, getFirstMorning().AddDate(0, 0, 14))
 
 	response := getVaultCount(t, handler, v)
 	// Which decks each preset schedules, so the cards a session presents can be checked
@@ -934,12 +946,12 @@ func TestTheCountNeverAllocatesPastTheBudgetItSpends(t *testing.T) {
 	for _, one := range []struct {
 		what  string
 		notes map[string]string
-	}{{"lived", lived}, {"spread", spread}} {
+	}{{"lived", getLived()}, {"spread", getSpread()}} {
 		t.Run(one.what, func(t *testing.T) {
 			handler, target := newAPI(t, one.notes)
 			v := target[0]
 			runDays(t, handler, v, 14)
-			now := firstMorning.AddDate(0, 0, 14)
+			now := getFirstMorning().AddDate(0, 0, 14)
 			setNow(handler, now)
 
 			past := 0
@@ -981,10 +993,10 @@ func TestTheCountNeverAllocatesPastTheBudgetItSpends(t *testing.T) {
 // Overdue, unbegun and the cards whose day is still to come are three separate
 // counts of the one material, and the band begins where the overdue pile does.
 func TestTheCurveCarriesTheBacklogDayByDay(t *testing.T) {
-	handler, target := newAPI(t, lived)
+	handler, target := newAPI(t, getLived())
 	v := target[0]
 	runDays(t, handler, v, 14)
-	setNow(handler, firstMorning.AddDate(0, 0, 14))
+	setNow(handler, getFirstMorning().AddDate(0, 0, 14))
 
 	p := readPresetConfig(t, handler, v, "Sanskrit.md")
 	p.Goal = review.GoalMinutes
@@ -1055,10 +1067,10 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 		{"counts that never bind", 50, 200, review.BudgetUnitCards, true},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			handler, target := newAPI(t, lived)
+			handler, target := newAPI(t, getLived())
 			v := target[0]
 			runDays(t, handler, v, 14)
-			setNow(handler, firstMorning.AddDate(0, 0, 14))
+			setNow(handler, getFirstMorning().AddDate(0, 0, 14))
 
 			p := readPresetConfig(t, handler, v, "Sanskrit.md")
 			p.Goal = review.GoalRetention
@@ -1127,10 +1139,10 @@ func TestTheBacklogShareMovesTheSessionAndTheProjectionTogether(t *testing.T) {
 	bands := make(map[int][]int32, 2)
 
 	for _, share := range []int{100, 0} {
-		handler, made := newAPI(t, lived)
+		handler, made := newAPI(t, getLived())
 		v := made[0]
 		runDays(t, handler, v, 20)
-		setNow(handler, firstMorning.AddDate(0, 0, 20))
+		setNow(handler, getFirstMorning().AddDate(0, 0, 20))
 
 		p := readPresetConfig(t, handler, v, "Sanskrit.md")
 		p.Goal, p.Backlog = review.GoalMinutes, share
@@ -1176,5 +1188,5 @@ func TestTheBacklogShareMovesTheSessionAndTheProjectionTogether(t *testing.T) {
 // zero, which the use case rejects; a button press would be reported as not an
 // answer.
 func TestEveryRatingIsRead(t *testing.T) {
-	enumtest.CheckHandled(t, api.RatingValues, func(r api.Rating) bool { return parseRating(r) != 0 })
+	enumtest.CheckHandled(t, api.GetRatingValues(), func(r api.Rating) bool { return parseRating(r) != 0 })
 }

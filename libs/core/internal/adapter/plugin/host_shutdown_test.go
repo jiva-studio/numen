@@ -145,7 +145,7 @@ func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 // ResolveCapability reports why no plugin responds: none declares the
 // capability, or those that do are disabled or turned off by safe mode.
 func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
-	host := NewHost(testsupport.Machine, "desktop.editor")
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	for _, id := range []string{"md.numen.b", "md.numen.a"} {
 		host.plugins[id] = pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Capabilities: []string{"org.example.widget"}}}
 	}
@@ -194,7 +194,7 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 // A plugin EnsureActive cannot start is distinguished from one that is absent
 // or turned off.
 func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
-	host := NewHost(testsupport.Machine, "desktop.editor")
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	host.plugins["md.numen.a"] = pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.a"}}
 	if err := host.SetPluginEnabled(t.Context(), "md.numen.a", false); err != nil {
 		t.Fatal(err)
@@ -212,7 +212,7 @@ func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 }
 
 func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
-	host := NewHost(testsupport.Machine, "desktop.editor")
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	for _, id := range []string{"a.failing", "b.working"} {
 		host.plugins[id] = pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, ActivationEvents: []string{pluginport.ActivationEventAll}, Backend: pluginport.PluginBackend{Entrypoint: "bin/plugin"}}}
 	}
@@ -264,7 +264,7 @@ func TestADisableThatCannotBePersistedPreservesThePluginRunning(t *testing.T) {
 }
 
 func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
-	host := NewHost(testsupport.Machine, "desktop.editor")
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	var reported []error
 	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
 	cmd := plugintest.NewIdleCommand(t.Context())
@@ -272,8 +272,8 @@ func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
 		t.Fatalf("start process: %v", err)
 	}
 	t.Cleanup(func() { plugintest.KillProcess(t, cmd.Process) })
-	sup := lifecycle.New(testsupport.Machine)
-	if err := sup.Attach(t.Context(), cmd.Process, testsupport.Machine.Now()); err != nil {
+	sup := lifecycle.New(testsupport.GetMachine())
+	if err := sup.Attach(t.Context(), cmd.Process, testsupport.GetMachine().Now()); err != nil {
 		t.Fatalf("attach: %v", err)
 	}
 	sup.BeginTeardown()

@@ -87,9 +87,14 @@ var (
 	ErrRangeInvalidBounds     = manifest.ErrRangeInvalidBounds
 	ErrReservedSettingKey     = manifest.ErrReservedSettingKey
 	ErrUnsupportedProtocol    = manifest.ErrUnsupportedProtocol
-	FormatSettingValue        = manifest.FormatSettingValue
-	GetDependencyKinds        = manifest.GetDependencyKinds
-	NormalizePermission       = manifest.NormalizePermission
-	PluginCapabilities        = manifest.PluginCapabilities
-	PluginPermissions         = manifest.PluginPermissions
 )
+
+func FormatSettingValue(value any) string { return manifest.FormatSettingValue(value) }
+
+func GetDependencyKinds() []manifest.DependencyKind { return manifest.GetDependencyKinds() }
+
+func NormalizePermission(permission string) string { return manifest.NormalizePermission(permission) }
+
+func PluginCapabilities() []string { return manifest.PluginCapabilities() }
+
+func PluginPermissions() []string { return manifest.PluginPermissions() }

@@ -13,15 +13,16 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwatch"
+	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/watchhub"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
 // watchVault follows a vault and gives back a function that waits for the next
 // batch of changed paths.
-func watchVault(t *testing.T, root string) func() []string {
+func watchVault(t *testing.T, hub *watchhub.Hub, root string) func() []string {
 	t.Helper()
-	changes, _, err := vaultwatch.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
+	changes, _, err := vaultwatch.Watcher{Hub: hub}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +54,7 @@ func write(t *testing.T, root, name, body string) {
 // it, and nothing behind it.
 func TestOneSaveIsOneReport(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	changes, _, err := vaultwatch.Watcher{Options: vaultconfig.Options{DebounceDelay: 200 * time.Millisecond}}.WatchVault(t.Context(), domain.Vault{Path: root})
+	changes, _, err := vaultwatch.Watcher{Hub: watchhub.NewHub(), Options: vaultconfig.Options{DebounceDelay: 200 * time.Millisecond}}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +87,7 @@ func TestWatchVault_RequestsReloadWhenFolderRemoved(t *testing.T) {
 		"projects/Plan.md":   "# Plan\n",
 		"projects/deep/A.md": "# A\n",
 	}, nil)
-	changes, missing, err := vaultwatch.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
+	changes, missing, err := vaultwatch.Watcher{Hub: watchhub.NewHub()}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,9 +119,9 @@ func TestAFolderAlreadyThereIsNotItsWholeContents(t *testing.T) {
 	// already in it, and these cannot be distinguished from newly arrived
 	// files.
 	time.Sleep(500 * time.Millisecond)
-	next := watchVault(t, root)
+	next := watchVault(t, watchhub.NewHub(), root)
 
-	now := testsupport.Machine.Now()
+	now := testsupport.GetMachine().Now()
 	if err := os.Chtimes(root, now, now); err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +140,7 @@ func TestAFolderWithADotInItsNameIsStillAFolder(t *testing.T) {
 		"Note.md":              "# Note\n",
 		"2026.archive/Kept.md": "# Kept\n",
 	}, nil)
-	changes, missing, err := vaultwatch.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
+	changes, missing, err := vaultwatch.Watcher{Hub: watchhub.NewHub()}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -173,7 +174,7 @@ func TestAFolderWithADotInItsNameIsStillAFolder(t *testing.T) {
 // lose later events.
 func TestDebouncingGoesOnWhileNobodyIsListening(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	changes, _, err := vaultwatch.Watcher{Options: vaultconfig.Options{DebounceDelay: 50 * time.Millisecond}}.WatchVault(t.Context(), domain.Vault{Path: root})
+	changes, _, err := vaultwatch.Watcher{Hub: watchhub.NewHub(), Options: vaultconfig.Options{DebounceDelay: 50 * time.Millisecond}}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,7 +208,7 @@ func TestDebouncingGoesOnWhileNobodyIsListening(t *testing.T) {
 // TestAnEditIsReported.
 func TestAnEditIsReported(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	next := watchVault(t, root)
+	next := watchVault(t, watchhub.NewHub(), root)
 
 	write(t, root, "Note.md", "# Note\n\nedited\n")
 
@@ -220,7 +221,7 @@ func TestAnEditIsReported(t *testing.T) {
 // the original, renamed over the top.
 func TestASaveThroughATemporaryFileReportsTheNoteOnce(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	next := watchVault(t, root)
+	next := watchVault(t, watchhub.NewHub(), root)
 
 	temp := filepath.Join(root, "Note.md.tmp")
 	if err := os.WriteFile(temp, []byte("# Note\n\nedited\n"), 0o644); err != nil {
@@ -239,7 +240,7 @@ func TestASaveThroughATemporaryFileReportsTheNoteOnce(t *testing.T) {
 // made after it started is part of that tree.
 func TestANewNoteInANewFolderIsReported(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	next := watchVault(t, root)
+	next := watchVault(t, watchhub.NewHub(), root)
 
 	write(t, root, "later/Added.md", "# Added\n")
 
@@ -255,7 +256,7 @@ func TestABookAppearingIsReported(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(root, "library"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	changes, _, err := vaultwatch.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
+	changes, _, err := vaultwatch.Watcher{Hub: watchhub.NewHub()}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -287,7 +288,7 @@ func TestABookAppearingIsReported(t *testing.T) {
 // regular file the vault does not ignore, whatever its type.
 func TestAnImageAppearingIsReported(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	next := watchVault(t, root)
+	next := watchVault(t, watchhub.NewHub(), root)
 
 	write(t, root, "assets/scan.png", "PNG\n")
 	write(t, root, "Note.md", "# Note\n\nedited\n")
@@ -302,7 +303,7 @@ func TestAnImageAppearingIsReported(t *testing.T) {
 // found the file.
 func TestWhatTheVaultIgnoresIsNotReported(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{"Note.md": "# Note\n"}, []string{"archive/"})
-	next := watchVault(t, root)
+	next := watchVault(t, watchhub.NewHub(), root)
 
 	write(t, root, "archive/Old.md", "# Old\n")
 	write(t, root, ".#Note.md", "lock\n")
@@ -323,7 +324,7 @@ func TestAFileIsFollowedThroughBeingReplaced(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	moved, err := vaultwatch.Watcher{}.File(t.Context(), pos)
+	moved, err := vaultwatch.Watcher{Hub: watchhub.NewHub()}.File(t.Context(), pos)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -382,7 +383,7 @@ func TestAFolderTheVaultIgnoresGoingAwayIsNotALoss(t *testing.T) {
 		"node_modules/left/A.md": "# A\n",
 		"archive/deep/Buried.md": "# Buried\n",
 	}, []string{"node_modules/", "archive/"})
-	changes, missing, err := vaultwatch.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
+	changes, missing, err := vaultwatch.Watcher{Hub: watchhub.NewHub()}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -415,7 +416,7 @@ func TestAFolderTheVaultIgnoresGoingAwayIsNotALoss(t *testing.T) {
 // folder the walk stops at, so neither half of that is the vault's.
 func TestAFolderTheVaultIgnoresArrivingIsNotRemembered(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{"Note.md": "# Note\n"}, nil)
-	changes, missing, err := vaultwatch.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: root})
+	changes, missing, err := vaultwatch.Watcher{Hub: watchhub.NewHub()}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -463,7 +464,7 @@ func TestAVaultReachedThroughALinkIsFollowedLikeAnyOther(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changes, missing, err := vaultwatch.Watcher{}.WatchVault(t.Context(), domain.Vault{Path: link})
+	changes, missing, err := vaultwatch.Watcher{Hub: watchhub.NewHub()}.WatchVault(t.Context(), domain.Vault{Path: link})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -487,6 +488,7 @@ func TestAVaultReachedThroughALinkIsFollowedLikeAnyOther(t *testing.T) {
 func TestAVaultThatIsNeverStillIsStillReported(t *testing.T) {
 	root := vaultfixture.CreateVault(t, map[string]string{"Note.md": "# Note\n"}, nil)
 	changes, _, err := vaultwatch.Watcher{
+		Hub:     watchhub.NewHub(),
 		Options: vaultconfig.Options{DebounceDelay: 200 * time.Millisecond},
 	}.WatchVault(t.Context(), domain.Vault{Path: root})
 	if err != nil {

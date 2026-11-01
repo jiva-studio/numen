@@ -13,10 +13,13 @@ const (
 	modelRecipe = "test|test-model|4|0|mean|int8@0.4"
 )
 
-var measuredAt = time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC)
+// getMeasuredAt returns the instant every measurement of these tests is taken at.
+func getMeasuredAt() time.Time {
+	return time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC)
+}
 
-// newClock is a clock that reports measuredAt.
-func newClock() *clock.Fake { return clock.NewFake(measuredAt) }
+// newClock is a clock that reports getMeasuredAt().
+func newClock() *clock.Fake { return clock.NewFake(getMeasuredAt()) }
 
 // newHost is a host that shows the vault "physics", knows "chemistry" and runs the test model, with
 // every title embedded as the unit vector along the first dimension.

@@ -15,8 +15,10 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// clockReaders lists the functions of package time that read the machine clock.
-var clockReaders = []string{"Now", "Since", "Until"}
+// listClockReaders returns the functions of package time that read the machine clock.
+func listClockReaders() []string {
+	return []string{"Now", "Since", "Until"}
+}
 
 // clockRead is a reference to a machine clock reader found in the source.
 type clockRead struct {
@@ -102,7 +104,7 @@ func isClockMethod(decl *ast.FuncDecl, info *types.Info, ports []*types.Interfac
 // isClockReader reports whether object is time.Now, time.Since or time.Until.
 func isClockReader(object types.Object) bool {
 	function, ok := object.(*types.Func)
-	if !ok || function.Pkg() == nil || function.Pkg().Path() != "time" || !slices.Contains(clockReaders, function.Name()) {
+	if !ok || function.Pkg() == nil || function.Pkg().Path() != "time" || !slices.Contains(listClockReaders(), function.Name()) {
 		return false
 	}
 	sig, ok := function.Type().(*types.Signature)

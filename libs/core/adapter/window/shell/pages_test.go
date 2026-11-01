@@ -118,8 +118,8 @@ func TestHandler_ServesPageAtRootAndIndex(t *testing.T) {
 // anywhere, and nothing fetched off the machine.
 func TestHandler_AppliesOneContentSecurityPolicy(t *testing.T) {
 	target := csp.Sources{Images: []string{"data:"}}.Policy()
-	if policy != target {
-		t.Errorf("the policy reads %q", policy)
+	if getPolicy() != target {
+		t.Errorf("the policy reads %q", getPolicy())
 	}
 
 	handler := (&API{}).NewHandler(http.NotFoundHandler())
@@ -137,7 +137,7 @@ func TestHandler_AppliesOneContentSecurityPolicy(t *testing.T) {
 // A call for a service a plugin serves is forwarded to the plugin, and a path no plugin serves falls
 // through to the files.
 func TestTheServicesPluginsServeAreForwarded(t *testing.T) {
-	forwarded := &forwarding{serves: map[string]bool{"/numen.epub/GetBook": true}}
+	forwarded := &forwarding{serves: map[string]bool{"/md.numen.readers.epub/GetBook": true}}
 	api := &API{PluginServices: forwarded}
 	handler := api.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		if _, err := w.Write([]byte("the files")); err != nil {
@@ -146,8 +146,8 @@ func TestTheServicesPluginsServeAreForwarded(t *testing.T) {
 	}))
 
 	for path, want := range map[string]string{
-		"/numen.epub/GetBook": "a plugin",
-		"/built/index.css":    "the files",
+		"/md.numen.readers.epub/GetBook": "a plugin",
+		"/built/index.css":               "the files",
 	} {
 		out := httptest.NewRecorder()
 		handler.ServeHTTP(out, httptest.NewRequestWithContext(t.Context(), http.MethodPost, path, nil))

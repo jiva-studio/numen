@@ -25,7 +25,7 @@ func (c changing) addresses() *note.GetLinkAddress {
 
 func (c changing) saveConnection() note.SaveConnection {
 	return note.NewSaveConnection(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, testsupport.NewClock(), c.db.Links(), c.addresses())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), c.db.Links(), c.addresses())
 }
 
 func (c changing) saveConnectionWith(writers vaultport.VaultWriters) note.SaveConnection {
@@ -35,17 +35,17 @@ func (c changing) saveConnectionWith(writers vaultport.VaultWriters) note.SaveCo
 
 func (c changing) removeConnection() note.RemoveConnection {
 	return note.NewRemoveConnection(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, testsupport.NewClock(), c.db.Links(), c.addresses())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), c.db.Links(), c.addresses())
 }
 
 func (c changing) removeSide() note.RemoveSide {
 	return note.NewRemoveSide(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, testsupport.NewClock(), c.db.Links(), c.addresses())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), c.db.Links(), c.addresses())
 }
 
 func (c changing) join() note.Join {
 	return note.NewJoin(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, testsupport.NewClock(), c.db.Links(), c.addresses())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), c.db.Links(), c.addresses())
 }
 
 func (c changing) connection(t *testing.T, a, b string) domain.Connection {
@@ -215,7 +215,7 @@ func (w pathFailingWriter) Write(
 func TestAWriteThatFailsAfterTheFirstNoteLandedRestoresTheFirstNote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": heatNote, "Entropy.md": entropyNote})
-	writers := pathFailingWriters{VaultWriters: vaultwriter.VaultWriters{}, path: "Entropy.md"}
+	writers := pathFailingWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, path: "Entropy.md"}
 
 	err := c.saveConnectionWith(writers).Execute(t.Context(), c.vault, domain.Connection{
 		A: "Heat.md", B: "Entropy.md",

@@ -13,27 +13,29 @@ import (
 // typedSeeds are inputs a user types into a search box: words, punctuation
 // FTS5 treats as syntax, its own operators, an unclosed quote, a column
 // reference, a phrase, other scripts, and the empty string.
-var typedSeeds = []string{
-	"entropy",
-	"entropy shannon",
-	"state-function",
-	"C++",
-	`say"hello`,
-	`"entropy`,
-	`"""`,
-	"a:b",
-	"one (two)",
-	"NEAR(a b, 2)",
-	"a OR b AND NOT c",
-	"^entropy",
-	"*",
-	"наставник",
-	"शब्द",
-	"a\x00b",
-	"\xff\xfe",
-	strings.Repeat("a ", 200),
-	"   ",
-	"",
+func getTypedSeeds() []string {
+	return []string{
+		"entropy",
+		"entropy shannon",
+		"state-function",
+		"C++",
+		`say"hello`,
+		`"entropy`,
+		`"""`,
+		"a:b",
+		"one (two)",
+		"NEAR(a b, 2)",
+		"a OR b AND NOT c",
+		"^entropy",
+		"*",
+		"наставник",
+		"शब्द",
+		"a\x00b",
+		"\xff\xfe",
+		strings.Repeat("a ", 200),
+		"   ",
+		"",
+	}
 }
 
 // maxQueryLength is how much of what was typed is put to a database.
@@ -58,7 +60,7 @@ func FuzzExpression(f *testing.F) {
 		f.Fatal(err)
 	}
 
-	for _, seed := range typedSeeds {
+	for _, seed := range getTypedSeeds() {
 		f.Add(seed, true)
 		f.Add(seed, false)
 	}

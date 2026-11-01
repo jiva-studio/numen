@@ -16,7 +16,7 @@ func TestTheSourceRowContainsNanosecondsSinceTheEpoch(t *testing.T) {
 	const nanos = 1788433445123456789
 
 	db := openDB(t)
-	if err := saveCut(t.Context(), db, first.ID, []domain.Note{{
+	if err := saveCut(t.Context(), db, getFirst().ID, []domain.Note{{
 		FileStat: domain.FileStat{
 			Path: "notes/Compost.md", Kind: domain.KindNote, Size: 12, ModTime: pos,
 		},
@@ -35,7 +35,7 @@ func TestTheSourceRowContainsNanosecondsSinceTheEpoch(t *testing.T) {
 		t.Errorf("the row holds modified_at %d, want %d", target, nanos)
 	}
 
-	found, err := db.NoteQueries().GetFileStats(t.Context(), first.ID)
+	found, err := db.NoteQueries().GetFileStats(t.Context(), getFirst().ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,19 +48,19 @@ func TestTheSourceRowContainsNanosecondsSinceTheEpoch(t *testing.T) {
 // carries neither. A file read back off the index is still the file that was
 // walked, or every scan indexes the whole vault again.
 func TestAFileStampedByAClockIsUnchangedThroughTheIndex(t *testing.T) {
-	pos := testsupport.Machine.Now()
+	pos := testsupport.GetMachine().Now()
 	db := openDB(t)
 
 	ref := domain.FileStat{
 		Path: "notes/Leaves.md", Kind: domain.KindNote, Size: 12, ModTime: pos,
 	}
-	if err := saveCut(t.Context(), db, first.ID, []domain.Note{{
+	if err := saveCut(t.Context(), db, getFirst().ID, []domain.Note{{
 		FileStat: ref, Title: "Leaves", Body: "Turned and rotted down.",
 	}}); err != nil {
 		t.Fatal(err)
 	}
 
-	found, err := db.NoteQueries().GetFileStats(t.Context(), first.ID)
+	found, err := db.NoteQueries().GetFileStats(t.Context(), getFirst().ID)
 	if err != nil {
 		t.Fatal(err)
 	}

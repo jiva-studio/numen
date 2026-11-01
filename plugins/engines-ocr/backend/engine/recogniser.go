@@ -31,13 +31,13 @@ type Recogniser struct {
 	model  Model
 }
 
-// Open loads the layout and PaddleOCR recognition models.
-func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
-	engine, pos, found, err := locateModels(ctx, cfg)
+// Open loads the layout and PaddleOCR recognition models through the library.
+func Open(ctx context.Context, library *onnx.Library, cfg Config) (*Recogniser, error) {
+	engine, pos, found, err := locateModels(ctx, library, cfg)
 	if err != nil {
 		return nil, err
 	}
-	options, _, err := onnx.NewSessionOptions(engine, onnx.SessionSettings{
+	options, _, err := library.NewSessionOptions(engine, onnx.SessionSettings{
 		Provider: onnx.GetSessionProvider(),
 		Threads:  cfg.threads(),
 

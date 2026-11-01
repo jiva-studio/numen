@@ -44,13 +44,13 @@ const (
 //
 // A page whose text layer is empty yields no boxes, and a scan yields none at
 // all.
-func (b *Book) Highlights(raw []byte, pages []int) (boxes []HighlightBox, err error) {
+func (b *Book) Highlights(workers *Workers, raw []byte, pages []int) (boxes []HighlightBox, err error) {
 	wanted := getOrderedPages(pages, len(b.Pages))
 	if len(wanted) == 0 {
 		return nil, nil
 	}
 
-	doc, err := openBytes(raw)
+	doc, err := workers.openBytes(raw)
 	if err != nil {
 		return nil, err
 	}

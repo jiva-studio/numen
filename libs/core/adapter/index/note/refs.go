@@ -27,7 +27,7 @@ func (q *Queries) GetNotes(ctx context.Context, vaultID domain.VaultID, paths []
 
 	// One prepared statement is executed repeatedly: the query text is the same
 	// for any number of paths.
-	statement, err := q.db.PrepareContext(ctx, stmt.Get("notes_at"))
+	statement, err := q.db.PrepareContext(ctx, getStatement("notes_at"))
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (q *Queries) GetTypes(ctx context.Context, vaultID domain.VaultID, paths []
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("types_at"), vault, string(wanted))
+	rows, err := q.db.QueryContext(ctx, getStatement("types_at"), vault, string(wanted))
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (q *Queries) GetPathsOfType(ctx context.Context, vaultID domain.VaultID, of
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("notes_of_type"), vault, string(of))
+	rows, err := q.db.QueryContext(ctx, getStatement("notes_of_type"), vault, string(of))
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func (q *Queries) GetHeadings(ctx context.Context, vaultID domain.VaultID, paths
 
 	// One prepared statement is executed repeatedly: the query text is the same
 	// for any number of paths.
-	statement, err := q.db.PrepareContext(ctx, stmt.Get("headings_of"))
+	statement, err := q.db.PrepareContext(ctx, getStatement("headings_of"))
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +180,7 @@ func (q *Queries) GetOpeningNote(ctx context.Context, vaultID domain.VaultID) (d
 		return ref, false, err
 	}
 
-	err = q.db.QueryRowContext(ctx, stmt.Get("opening"), vault).
+	err = q.db.QueryRowContext(ctx, getStatement("opening"), vault).
 		Scan(&ref.Path, &ref.Title, &ref.ID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ref, false, nil

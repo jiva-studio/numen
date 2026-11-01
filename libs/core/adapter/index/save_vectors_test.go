@@ -11,7 +11,7 @@ func TestSaveVectorsBatchedCommit(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 
-	vault := first.ID
+	vault := getFirst().ID
 	path := "doc.md"
 
 	if err := db.Chunks().SaveSource(ctx, vault, chunk.Source{
@@ -54,11 +54,6 @@ func TestSaveVectorsBatchedCommit(t *testing.T) {
 			Coarse: make([]byte, 1024/8),
 		}
 	}
-
-	// Ensure our batch size is applied
-	originalBatchSize := chunk.VectorBatchSize
-	chunk.VectorBatchSize = 1000
-	defer func() { chunk.VectorBatchSize = originalBatchSize }()
 
 	if err := db.Chunks().SaveVectors(ctx, vectors); err != nil {
 		t.Fatalf("batched insertion failed: %v", err)

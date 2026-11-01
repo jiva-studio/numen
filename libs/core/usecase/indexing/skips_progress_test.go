@@ -55,7 +55,7 @@ func cancelledPass(t *testing.T, events *progressLog, log *readyLog) (*pass, *ho
 	fit(t, db, model)
 	recipe := model.GetModel().Recipe()
 
-	v := testsupport.NewVault(t, map[string]string{"Held.md": noteWith(heldWords, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Held.md": noteWith(getHeldWords(), 200)})
 	cut(t, made, db, v)
 	heldChunks, _, err := db.Progress().GetProgress(t.Context(), v.ID, recipe)
 	if err != nil {
@@ -84,7 +84,7 @@ func cancelledPass(t *testing.T, events *progressLog, log *readyLog) (*pass, *ho
 	}
 	model.setBlocking(false)
 
-	writeNote(t, v.Path, "Other.md", noteWith(before, 200))
+	writeNote(t, v.Path, "Other.md", noteWith(getBefore(), 200))
 	cut(t, made, db, v)
 	return p, model, heldChunks
 }

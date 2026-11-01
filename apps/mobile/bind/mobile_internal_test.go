@@ -28,15 +28,15 @@ import (
 
 // startIn starts the core under dir and stops it when the test ends. The
 // environment the start rewrites is put back with it.
-func startIn(t *testing.T, dir string) int {
+func startIn(t *testing.T, core *Core, dir string) int {
 	t.Helper()
 	keepEnvironment(t)
-	port, err := Start(dir)
+	port, err := core.Start(dir)
 	if err != nil {
 		t.Fatalf("starting: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := Stop(); err != nil {
+		if err := core.Stop(); err != nil {
 			t.Error(err)
 		}
 	})
@@ -88,22 +88,24 @@ func setUmask(t *testing.T, mask int) {
 }
 
 func TestStart_WhenAlreadyRunning_ReturnsAssignedPort(t *testing.T) {
-	first := startIn(t, t.TempDir())
-	second, err := Start(t.TempDir())
+	core := NewCore()
+	first := startIn(t, core, t.TempDir())
+	second, err := core.Start(t.TempDir())
 	if err != nil {
 		t.Fatalf("starting again: %v", err)
 	}
 	if second != first {
 		t.Errorf("started again on %d, want the port %d it already has", second, first)
 	}
-	if got := Port(); got != first {
+	if got := core.Port(); got != first {
 		t.Errorf("Port() = %d, want %d", got, first)
 	}
 }
 
 func TestStartPointsEveryFolderLookupAtTheFolderItWasGiven(t *testing.T) {
+	core := NewCore()
 	dir := t.TempDir()
-	startIn(t, dir)
+	startIn(t, core, dir)
 	for _, named := range []string{"HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME"} {
 		if got := os.Getenv(named); got != dir {
 			t.Errorf("%s = %q, want %q", named, got, dir)
@@ -112,27 +114,29 @@ func TestStartPointsEveryFolderLookupAtTheFolderItWasGiven(t *testing.T) {
 }
 
 func TestStart_ReturnsSetenvError(t *testing.T) {
+	core := NewCore()
 	keepEnvironment(t)
-	port, err := Start("a\x00folder")
+	port, err := core.Start("a\x00folder")
 	var sysErr *os.SyscallError
 	if !errors.As(err, &sysErr) || sysErr.Syscall != "setenv" || port != 0 {
 		t.Fatalf("Start answered %d, %v, want 0 and the error of setting the environment", port, err)
 	}
-	if Port() != 0 {
-		t.Errorf("a start that failed listens on %d", Port())
+	if core.Port() != 0 {
+		t.Errorf("a start that failed listens on %d", core.Port())
 	}
 }
 
 func TestStartAnswersTheErrorOfAFolderItCannotMakeAVaultIn(t *testing.T) {
+	core := NewCore()
 	keepEnvironment(t)
 	file := filepath.Join(t.TempDir(), "a-file")
 	if err := os.WriteFile(file, nil, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	port, err := Start(file)
+	port, err := core.Start(file)
 	var failed *fs.PathError
 	if !errors.As(err, &failed) || failed.Op != "mkdir" || port != 0 {
-		if err := Stop(); err != nil {
+		if err := core.Stop(); err != nil {
 			t.Error(err)
 		}
 		t.Fatalf("Start answered %d, %v for a folder that is a file, want 0 and the error of making the vault folder", port, err)
@@ -140,9 +144,10 @@ func TestStartAnswersTheErrorOfAFolderItCannotMakeAVaultIn(t *testing.T) {
 }
 
 func TestStartCreatesAnEmptyVaultFolderReadableByEveryone(t *testing.T) {
+	core := NewCore()
 	setUmask(t, 0)
 	dir := t.TempDir()
-	startIn(t, dir)
+	startIn(t, core, dir)
 	root := filepath.Join(dir, "vault")
 	info, err := os.Stat(root)
 	if err != nil {
@@ -163,6 +168,7 @@ func TestStartCreatesAnEmptyVaultFolderReadableByEveryone(t *testing.T) {
 }
 
 func TestStartAnswersTheErrorOfAVaultFolderItCannotRead(t *testing.T) {
+	core := NewCore()
 	if os.Geteuid() == 0 {
 		t.Skip("a superuser reads any folder")
 	}
@@ -177,10 +183,10 @@ func TestStartAnswersTheErrorOfAVaultFolderItCannotRead(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	port, err := Start(dir)
+	port, err := core.Start(dir)
 	var failed *fs.PathError
 	if !errors.As(err, &failed) || failed.Op != "open" || !errors.Is(err, fs.ErrPermission) || port != 0 {
-		if err := Stop(); err != nil {
+		if err := core.Stop(); err != nil {
 			t.Error(err)
 		}
 		t.Fatalf("Start answered %d, %v for a vault folder it cannot read, want 0 and the error of reading it", port, err)
@@ -189,34 +195,36 @@ func TestStartAnswersTheErrorOfAVaultFolderItCannotRead(t *testing.T) {
 }
 
 func TestStartAnswersTheErrorOfAVaultListItCannotRead(t *testing.T) {
+	core := NewCore()
 	keepEnvironment(t)
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "vaults.json"), []byte("{not json"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	port, err := Start(dir)
+	port, err := core.Start(dir)
 	var failed *json.SyntaxError
 	if !errors.As(err, &failed) || port != 0 {
-		if err := Stop(); err != nil {
+		if err := core.Stop(); err != nil {
 			t.Error(err)
 		}
 		t.Fatalf("Start answered %d, %v for a vault list that is not JSON, want 0 and the error of reading it", port, err)
 	}
 	checkNoIndexOpened(t, dir)
-	if Port() != 0 {
-		t.Errorf("a start that failed listens on %d", Port())
+	if core.Port() != 0 {
+		t.Errorf("a start that failed listens on %d", core.Port())
 	}
 }
 
 func TestStartAnswersTheErrorOfAnIndexItCannotOpen(t *testing.T) {
+	core := NewCore()
 	keepEnvironment(t)
 	dir := t.TempDir()
 	if err := os.Mkdir(filepath.Join(dir, "index.db"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	port, err := Start(dir)
+	port, err := core.Start(dir)
 	if err == nil || !strings.Contains(err.Error(), "unable to open database file") || port != 0 {
-		if err := Stop(); err != nil {
+		if err := core.Stop(); err != nil {
 			t.Error(err)
 		}
 		t.Fatalf("Start answered %d, %v for an index that is a folder, want 0 and the error of opening it", port, err)
@@ -224,48 +232,53 @@ func TestStartAnswersTheErrorOfAnIndexItCannotOpen(t *testing.T) {
 }
 
 func TestStart_ThemesFolderCreationFailure_LogsAndStarts(t *testing.T) {
+	core := NewCore()
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "themes"), nil, 0o600); err != nil {
 		t.Fatal(err)
 	}
 	read := captureStderr(t)
-	startIn(t, dir)
+	startIn(t, core, dir)
 	if response := read(); !strings.Contains(response, "themes:") {
 		t.Errorf("nothing said the themes folder could not be made: %q", response)
 	}
 }
 
 func TestStart_ThemesFolderExists_NoThemesErrorLogged(t *testing.T) {
+	core := NewCore()
 	read := captureStderr(t)
-	startIn(t, t.TempDir())
+	startIn(t, core, t.TempDir())
 	if response := read(); strings.Contains(response, "themes:") {
 		t.Errorf("themes were complained of: %q", response)
 	}
 }
 
 func TestStart_InstallsThemesForWindow(t *testing.T) {
-	startIn(t, t.TempDir())
-	mu.Lock()
-	defer mu.Unlock()
-	if running.opened.Services.Themes == nil {
+	core := NewCore()
+	startIn(t, core, t.TempDir())
+	core.mu.Lock()
+	defer core.mu.Unlock()
+	if core.running.opened.Services.Themes == nil {
 		t.Error("the installation holds no themes")
 	}
 }
 
 func TestStopWithNothingRunningDoesNothing(t *testing.T) {
-	if err := Stop(); err != nil {
+	core := NewCore()
+	if err := core.Stop(); err != nil {
 		t.Fatalf("Stop() = %v", err)
 	}
 }
 
 func TestStopEndsTheServerAndFreesTheCoreToStartAgain(t *testing.T) {
+	core := NewCore()
 	read := captureStderr(t)
 	dir := t.TempDir()
-	port := startIn(t, dir)
-	if err := Stop(); err != nil {
+	port := startIn(t, core, dir)
+	if err := core.Stop(); err != nil {
 		t.Fatalf("Stop() = %v", err)
 	}
-	if got := Port(); got != 0 {
+	if got := core.Port(); got != 0 {
 		t.Errorf("Port() = %d after stopping", got)
 	}
 	if conn, err := (&net.Dialer{Timeout: time.Second}).DialContext(t.Context(), "tcp", fmt.Sprintf("127.0.0.1:%d", port)); err == nil {
@@ -274,14 +287,14 @@ func TestStopEndsTheServerAndFreesTheCoreToStartAgain(t *testing.T) {
 		}
 		t.Errorf("port %d still answers after stopping", port)
 	}
-	again, err := Start(dir)
+	again, err := core.Start(dir)
 	if err != nil {
 		t.Fatalf("starting after stopping: %v", err)
 	}
-	if again == 0 || Port() != again {
-		t.Errorf("started again on %d with Port() = %d", again, Port())
+	if again == 0 || core.Port() != again {
+		t.Errorf("started again on %d with core.Port() = %d", again, core.Port())
 	}
-	if err := Stop(); err != nil {
+	if err := core.Stop(); err != nil {
 		t.Fatalf("Stop() = %v", err)
 	}
 	// A server closed by Stop did not fail, so no failure is reported.
@@ -317,11 +330,12 @@ func isProgressLine(line string) bool {
 }
 
 func TestPortIsZeroOnceTheServerEndedOnItsOwn(t *testing.T) {
-	startIn(t, t.TempDir())
-	mu.Lock()
-	running.isDown.Store(true)
-	mu.Unlock()
-	if got := Port(); got != 0 {
+	core := NewCore()
+	startIn(t, core, t.TempDir())
+	core.mu.Lock()
+	core.running.isDown.Store(true)
+	core.mu.Unlock()
+	if got := core.Port(); got != 0 {
 		t.Errorf("Port() = %d for a server that ended", got)
 	}
 }
@@ -550,9 +564,10 @@ func feedVaultList(t *testing.T, dir string, list []byte) {
 }
 
 func TestStart_ErrorsOnUnreadableVaultList(t *testing.T) {
+	core := NewCore()
 	dir := t.TempDir()
-	startIn(t, dir)
-	if err := Stop(); err != nil {
+	startIn(t, core, dir)
+	if err := core.Stop(); err != nil {
 		t.Fatalf("Stop() = %v", err)
 	}
 	list, err := os.ReadFile(filepath.Join(dir, "vaults.json"))
@@ -570,16 +585,16 @@ func TestStart_ErrorsOnUnreadableVaultList(t *testing.T) {
 	}
 	feedVaultList(t, dir, list)
 
-	port, err := Start(dir)
+	port, err := core.Start(dir)
 	var failed *json.SyntaxError
 	if !errors.As(err, &failed) || port != 0 {
-		if err := Stop(); err != nil {
+		if err := core.Stop(); err != nil {
 			t.Error(err)
 		}
 		t.Fatalf("Start answered %d, %v for a vault list that stopped being JSON, want 0 and the error of reading it", port, err)
 	}
-	if Port() != 0 {
-		t.Errorf("a start that failed listens on %d", Port())
+	if core.Port() != 0 {
+		t.Errorf("a start that failed listens on %d", core.Port())
 	}
 }
 
@@ -594,6 +609,7 @@ func countOpenFiles() int {
 }
 
 func TestStart_SocketError_FailsAndCleansUp(t *testing.T) {
+	core := NewCore()
 	keepEnvironment(t)
 	var before syscall.Rlimit
 	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &before); err != nil {
@@ -612,10 +628,10 @@ func TestStart_SocketError_FailsAndCleansUp(t *testing.T) {
 		if err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &limit); err != nil {
 			t.Skipf("the open files limit cannot be lowered: %v", err)
 		}
-		port, err := Start(dir)
+		port, err := core.Start(dir)
 		restore()
 		if err == nil {
-			if err := Stop(); err != nil {
+			if err := core.Stop(); err != nil {
 				t.Error(err)
 			}
 			t.Fatalf("Start answered %d with %d files to spare, and was never denied a socket", port, extra)
@@ -627,8 +643,8 @@ func TestStart_SocketError_FailsAndCleansUp(t *testing.T) {
 		if !errors.Is(err, syscall.EMFILE) || port != 0 {
 			t.Fatalf("Start answered %d, %v, want 0 and the error of listening", port, err)
 		}
-		if Port() != 0 {
-			t.Errorf("a start that failed listens on %d", Port())
+		if core.Port() != 0 {
+			t.Errorf("a start that failed listens on %d", core.Port())
 		}
 		return
 	}
@@ -636,16 +652,17 @@ func TestStart_SocketError_FailsAndCleansUp(t *testing.T) {
 }
 
 func TestStop_CancelsCoreContext(t *testing.T) {
-	startIn(t, t.TempDir())
-	mu.Lock()
-	cancel := running.stop
+	core := NewCore()
+	startIn(t, core, t.TempDir())
+	core.mu.Lock()
+	cancel := core.running.stop
 	cancelled := false
-	running.stop = func() {
+	core.running.stop = func() {
 		cancelled = true
 		cancel()
 	}
-	mu.Unlock()
-	if err := Stop(); err != nil {
+	core.mu.Unlock()
+	if err := core.Stop(); err != nil {
 		t.Fatalf("Stop() = %v", err)
 	}
 	if !cancelled {
@@ -672,7 +689,8 @@ func (l refusingListener) Close() error {
 }
 
 func TestStopAnswersTheErrorOfAServerThatWillNotClose(t *testing.T) {
-	startIn(t, t.TempDir())
+	core := NewCore()
+	startIn(t, core, t.TempDir())
 	var listenConfig net.ListenConfig
 	inner, err := listenConfig.Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
@@ -688,21 +706,21 @@ func TestStopAnswersTheErrorOfAServerThatWillNotClose(t *testing.T) {
 	}()
 	<-accepted
 
-	mu.Lock()
-	live := running.server
-	running.server = stubborn
-	mu.Unlock()
+	core.mu.Lock()
+	live := core.running.server
+	core.running.server = stubborn
+	core.mu.Unlock()
 	t.Cleanup(func() {
 		if err := live.Close(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			t.Error(err)
 		}
 	})
 
-	if err := Stop(); !errors.Is(err, closeErr) {
+	if err := core.Stop(); !errors.Is(err, closeErr) {
 		t.Errorf("Stop() = %v, want the error of closing the server", err)
 	}
-	if Port() != 0 {
-		t.Errorf("a core that was stopped listens on %d", Port())
+	if core.Port() != 0 {
+		t.Errorf("a core that was stopped listens on %d", core.Port())
 	}
 }
 
@@ -748,7 +766,7 @@ func TestRegisterVault_ErrorsWithoutConfigFolder(t *testing.T) {
 	t.Setenv("XDG_DATA_HOME", t.TempDir())
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	filed, err := registerVault(container.Config{}, t.TempDir())
+	filed, err := registerVault(container.NewConfig(container.Config{}), t.TempDir())
 	if err == nil || filed != "" {
 		t.Errorf("registerVault answered %q, %v for a machine with no configuration folder, want no path and an error", filed, err)
 	}
@@ -797,22 +815,23 @@ func closeListenersOf(t *testing.T, server *http.Server) {
 }
 
 func TestPort_ZeroAndErrorLoggedAfterServerStopsAccepting(t *testing.T) {
+	core := NewCore()
 	read := captureStderr(t)
-	startIn(t, t.TempDir())
-	mu.Lock()
-	server := running.server
-	mu.Unlock()
+	startIn(t, core, t.TempDir())
+	core.mu.Lock()
+	server := core.running.server
+	core.mu.Unlock()
 	closeListenersOf(t, server)
 
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
-	for Port() != 0 && ctx.Err() == nil {
+	for core.Port() != 0 && ctx.Err() == nil {
 		time.Sleep(10 * time.Millisecond)
 	}
-	if got := Port(); got != 0 {
+	if got := core.Port(); got != 0 {
 		t.Errorf("Port() = %d for a server that stopped accepting", got)
 	}
-	if err := Stop(); err != nil {
+	if err := core.Stop(); err != nil {
 		t.Logf("Stop() = %v", err)
 	}
 	if response := read(); !strings.Contains(response, "numen: accept") {

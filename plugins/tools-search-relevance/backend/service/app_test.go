@@ -25,7 +25,10 @@ const (
 	modelRecipe = "test|test-model|4|0|mean|int8@0.4"
 )
 
-var measuredAt = time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC)
+// getMeasuredAt returns the instant every measurement of these tests is taken at.
+func getMeasuredAt() time.Time {
+	return time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC)
+}
 
 // fixture is a plugin over a host that shows an embedded vault of 25 notes.
 type fixture struct {
@@ -70,7 +73,7 @@ func newFixture(t *testing.T, hint float64) *fixture {
 	app := service.NewAppOver(service.Hosts{
 		Floors: relevance.Host{Search: search, Vault: vault, Store: vault.Store()},
 		Queue:  queue,
-	}, clock.NewFake(measuredAt))
+	}, clock.NewFake(getMeasuredAt()))
 
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, app.Mount)
 	if err != nil {
@@ -144,7 +147,7 @@ func TestTheServiceCalibratesSetsAndReadsTheFloor(t *testing.T) {
 	}
 	c := state.Calibration
 	if c == nil || c.QueryCount != 25 || c.PassageCount != 60 || len(c.Histogram) != 20 || c.Histogram[10] != 25*60 ||
-		c.CalibratedAt != measuredAt.Unix() {
+		c.CalibratedAt != getMeasuredAt().Unix() {
 		t.Errorf("calibration %+v", c)
 	}
 

@@ -190,5 +190,9 @@ func (e Edit) addIdentifier(doc *markdown.Document) error {
 	if _, carried := doc.Identifier(); carried || e.ShouldOverwrite {
 		return nil
 	}
-	return doc.SetIdentifier(ulid.New(e.Clock.Now(), e.Entropy))
+	identifier, err := ulid.NewGenerator(e.Entropy).NewID(e.Clock.Now())
+	if err != nil {
+		return err
+	}
+	return doc.SetIdentifier(identifier)
 }

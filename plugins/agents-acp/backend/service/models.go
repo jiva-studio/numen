@@ -55,7 +55,7 @@ func (s *agentServer) getACPAgents() []acpAgent {
 
 func buildCustomACPAgent(execPath string, isMulti bool) acpAgent {
 	baseName := getExecutableProgramName(execPath)
-	for _, candidate := range knownACPAgents {
+	for _, candidate := range getKnownACPAgents() {
 		if candidate.binary == baseName {
 			command := make([]string, 0, 1+len(candidate.args))
 			command = append(command, execPath)

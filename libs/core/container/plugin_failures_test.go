@@ -21,7 +21,7 @@ const sampleManifest = `{
 	"capabilities": [],
 	"targets": ["desktop.editor"],
 	"permissions": ["vault:read"],
-	"services": ["numen.sample.v1.SampleService"], "backend": {"entrypoint": "bin/sample"}
+	"services": ["md.numen.sample.SampleService"], "backend": {"entrypoint": "bin/sample"}
 }`
 
 func newFailingConfig(t *testing.T) Config {
@@ -38,7 +38,7 @@ func newFailingConfig(t *testing.T) Config {
 	host.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
 		return nil, nil, errors.New("exec format error")
 	})
-	return Config{PluginHost: host}
+	return NewConfig(Config{PluginHost: host})
 }
 
 func TestReportPluginFailures_TaskPersistsUntilRecovery(t *testing.T) {
@@ -67,7 +67,7 @@ func TestReportPluginFailures_TaskPersistsUntilRecovery(t *testing.T) {
 
 // An installation with no plugin host has nothing to retry and nothing to report.
 func TestAnInstallationWithNoPluginHostRetriesNothing(t *testing.T) {
-	cfg := Config{}
+	cfg := NewConfig(Config{})
 	cfg.ReportPluginFailures(run.NewTasks())
 
 	_, err := cfg.GetPluginRetrier()(t.Context(), "md.numen.sample")

@@ -35,7 +35,7 @@ func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *contain
 		db.Vaults(),
 		db.Notes(),
 		db.SourcesKnown(),
-		db.Sources(), testsupport.Machine,
+		db.Sources(), testsupport.GetMachine(),
 	), db, v
 }
 
@@ -78,7 +78,7 @@ func TestANoteIsLevelledInAVaultNothingHasWalked(t *testing.T) {
 	})
 	db := openIndex(t)
 	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), testsupport.Machine)
+		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), testsupport.GetMachine())
 
 	if _, err := refresh.Execute(t.Context(), v, []string{"Note.md"}); err != nil {
 		t.Fatal(err)
@@ -277,7 +277,7 @@ func TestOneUnreadableFileDoesNotCostTheRest(t *testing.T) {
 		db.Vaults(),
 		db.Notes(),
 		db.SourcesKnown(),
-		db.Sources(), testsupport.Machine,
+		db.Sources(), testsupport.GetMachine(),
 	)
 	res, err := refresh.Execute(t.Context(), v, []string{"Locked.md", "Note.md"})
 	if err != nil {
@@ -311,7 +311,7 @@ func TestARefreshWritesInGroups(t *testing.T) {
 	db := openIndex(t)
 	content := &countingNotes{}
 	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, &indexRows{}, content, db.SourcesKnown(), db.Sources(), testsupport.Machine,
+		vaultreader.Readers{}, &indexRows{}, content, db.SourcesKnown(), db.Sources(), testsupport.GetMachine(),
 	)
 
 	if _, err := refresh.Execute(t.Context(), v, paths); err != nil {
@@ -361,7 +361,7 @@ func TestANoteThatVanishesMidReadKeepsItsRow(t *testing.T) {
 		db.Vaults(),
 		db.Notes(),
 		db.SourcesKnown(),
-		db.Sources(), testsupport.Machine,
+		db.Sources(), testsupport.GetMachine(),
 	)
 	res, err := refresh.Execute(t.Context(), v, []string{"Note.md"})
 	if err != nil {
@@ -402,14 +402,14 @@ func newCounted(t *testing.T, notes map[string]string) (vaults.Refresh, *savesCo
 	}
 	saves := &savesCounted{NoteRepository: db.Notes()}
 	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), testsupport.Machine,
+		vaultreader.Readers{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), testsupport.GetMachine(),
 	)
 	return refresh, saves, db, v
 }
 
 func backdate(t *testing.T, v domain.Vault, name string) {
 	t.Helper()
-	pos := testsupport.Machine.Now().Add(-time.Hour)
+	pos := testsupport.GetMachine().Now().Add(-time.Hour)
 	if err := os.Chtimes(filepath.Join(v.Path, name), pos, pos); err != nil {
 		t.Fatal(err)
 	}
@@ -466,7 +466,7 @@ func TestRefresh_IndexesNoteWithChangedModTime(t *testing.T) {
 	refresh, saves, db, v := newCounted(t, map[string]string{"Note.md": settledNote})
 
 	rewrite(t, v, "Note.md", "---\ntitle: Note\n---\n\n# Note\n\nenthalpy\n")
-	pos := testsupport.Machine.Now().Add(-30 * time.Minute)
+	pos := testsupport.GetMachine().Now().Add(-30 * time.Minute)
 	if err := os.Chtimes(filepath.Join(v.Path, "Note.md"), pos, pos); err != nil {
 		t.Fatal(err)
 	}
@@ -503,7 +503,7 @@ func TestARecentNoteTheLedgerDoesNotHoldIsSaved(t *testing.T) {
 		t.Fatal(err)
 	}
 	saves := &savesCounted{NoteRepository: db.Notes()}
-	refresh := vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), testsupport.Machine)
+	refresh := vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), testsupport.GetMachine())
 
 	refreshOne(t, refresh, v, "Note.md")
 
@@ -593,7 +593,7 @@ func TestRefresh_LongSaveRunKeepsOnlyRecentLedgerWindow(t *testing.T) {
 		t.Fatal(err)
 	}
 	var tick atomic.Int64
-	start := testsupport.Epoch
+	start := testsupport.GetEpoch()
 	ticking := tickingClock{start: start, tick: &tick}
 	refresh := vaults.NewRefresh(
 		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), ticking)

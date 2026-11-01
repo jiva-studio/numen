@@ -26,7 +26,10 @@ var (
 // joined by hyphens, as a command line spells a subcommand and a flag.
 var manifestCommandPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
 
-var commandArgumentTypes = []string{CommandArgumentString, CommandArgumentNumber, CommandArgumentBoolean}
+// listCommandArgumentTypes returns the types a command argument may have.
+func listCommandArgumentTypes() []string {
+	return []string{CommandArgumentString, CommandArgumentNumber, CommandArgumentBoolean}
+}
 
 // CommandArgumentVersion names the argument the host gives a command that has a When condition: the
 // id of the context the command is offered over.
@@ -180,8 +183,8 @@ func listCommandArgumentIssues(command Command) []error {
 		if argument.IsHiddenInPalette && argument.IsRequired {
 			issues = append(issues, fmt.Errorf("%w: %q takes %q, which is required and hidden in the palette", ErrInvalidCommandArgument, command.ID, argument.Name))
 		}
-		if !slices.Contains(commandArgumentTypes, argument.Type) {
-			issues = append(issues, fmt.Errorf("%w: %q takes %q of type %q, expected one of %s", ErrInvalidCommandArgument, command.ID, argument.Name, argument.Type, strings.Join(commandArgumentTypes, ", ")))
+		if types := listCommandArgumentTypes(); !slices.Contains(types, argument.Type) {
+			issues = append(issues, fmt.Errorf("%w: %q takes %q of type %q, expected one of %s", ErrInvalidCommandArgument, command.ID, argument.Name, argument.Type, strings.Join(types, ", ")))
 		}
 	}
 	return issues

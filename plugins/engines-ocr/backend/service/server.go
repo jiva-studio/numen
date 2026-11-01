@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 
@@ -28,12 +29,15 @@ type recogniser interface {
 	Close() error
 }
 
-// openEngine opens the models of the configuration, or the mock where the host runs on mock models.
-func openEngine(ctx context.Context, cfg engine.Config) (recogniser, error) {
-	if os.Getenv(EnvMockML) == "true" {
-		return engine.MockRecogniser{}, nil
+// newEngineOpener returns what opens the models of the configuration through the library, or the
+// mock where the host runs on mock models.
+func newEngineOpener(library *onnx.Library) engineFactory {
+	return func(ctx context.Context, cfg engine.Config) (recogniser, error) {
+		if os.Getenv(EnvMockML) == "true" {
+			return engine.MockRecogniser{}, nil
+		}
+		return engine.Open(ctx, library, cfg)
 	}
-	return engine.Open(ctx, cfg)
 }
 
 // engines holds the recogniser, opened when a page is first read and opened again once a setting
@@ -130,7 +134,7 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	return mount(s, recognition.Host{Vault: vault, Store: store, Texts: texts, Queue: queue}, newEngines(getConfig(), openEngine))
+	return mount(s, recognition.Host{Vault: vault, Store: store, Texts: texts, Queue: queue}, newEngines(getConfig(), newEngineOpener(engine.NewLibrary())))
 }
 
 // getConfig is the configuration the environment of the process names.

@@ -38,8 +38,8 @@ type Setting struct {
 // value of the wrong shape or a number outside its setting's bounds is
 // rejected. `into` defines the shape of the whole file, so a value written into
 // any section is validated by reading the result back before it is saved.
-func Save(path string, into Document, settings ...Setting) error {
-	return runOnFile(path, func(path string) error {
+func (f *Files) Save(path string, into Document, settings ...Setting) error {
+	return f.run(path, func(path string) error {
 		raw, err := os.ReadFile(path)
 		if errors.Is(err, fs.ErrNotExist) {
 			raw = []byte("{}\n")
@@ -102,8 +102,8 @@ func isFieldCovered(pos []string, field string) bool {
 //
 // A file that has not got the field is left alone. A field whose new name the
 // section already holds is left alone as well: one section holds one of a name.
-func renameField(path string, pos []string, to string) error {
-	return runOnFile(path, func(path string) error {
+func (f *Files) renameField(path string, pos []string, to string) error {
+	return f.run(path, func(path string) error {
 		raw, err := os.ReadFile(path)
 		if err != nil {
 			return err
@@ -397,22 +397,25 @@ func resolvePath(path string) string {
 	return filepath.Join(dir, filepath.Base(abs))
 }
 
-type fileAccess struct {
+// Files reads and writes settings files one at a time: each work reads a file and writes it back
+// whole, and two at once would write over each other's change. Every writer of one file shares
+// one Files.
+type Files struct {
 	mu sync.Mutex
 }
 
-var files fileAccess
+// ErrNoFiles is returned by a settings read or write that was given no Files.
+var ErrNoFiles = errors.New("settings access was given no files")
 
-// runOnFile hands the work the file the path leads to, with the folder that
-// link is followed once and the rest of the way is the file itself.
-//
-// One work runs at a time: each reads the file and writes it back whole, and two at once would
-// write over each other's change.
-func runOnFile(path string, work func(path string) error) error {
-	return files.run(path, work)
-}
+// NewFiles returns the access to settings files that one composition root holds.
+func NewFiles() *Files { return &Files{} }
 
-func (f *fileAccess) run(path string, work func(path string) error) error {
+// run hands the work the file the path leads to, with the folder that link is followed once and
+// the rest of the way is the file itself.
+func (f *Files) run(path string, work func(path string) error) error {
+	if f == nil {
+		return ErrNoFiles
+	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	resolved := resolvePath(path)
@@ -432,7 +435,7 @@ func splice(raw []byte, from, to int, with []byte) []byte {
 // writeFileAtomically writes the file next to its target and renames it over the
 // target, so a crash mid-write leaves the settings intact. The file mode is 0600.
 //
-// The path is the one runOnFile hands its work: the file itself, with every link
+// The path is the one run hands its work: the file itself, with every link
 // on the way to it already followed.
 func writeFileAtomically(path string, content []byte) (err error) {
 	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")

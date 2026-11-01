@@ -19,4 +19,4 @@ The plugin checks quietly. A machine without a network connection, or a feed tha
 
 ## How It Works
 
-The plugin's backend requests the release feed and compares its build number with the running build; where the running build has no number, versions are compared. The window shows the result in the status bar. Its service `numen.updater` has the methods `Check` and `GetStatus`; a check runs only after the application has configured the plugin with its settings.
+The plugin's backend requests the release feed and compares its build number with the running build; where the running build has no number, versions are compared. The window shows the result in the status bar. Its service `md.numen.tools.updater` has the methods `Check` and `GetStatus`; a check runs only after the application has configured the plugin with its settings.

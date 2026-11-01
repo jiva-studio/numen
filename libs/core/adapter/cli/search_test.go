@@ -66,7 +66,7 @@ func runWithStderr(t *testing.T, deps cli.Deps, args ...string) (out, stderr str
 func TestSearchNeedsAVaultAndAQuery(t *testing.T) {
 	t.Parallel()
 	for _, args := range [][]string{{"search"}, {"search", "shelf"}} {
-		_, err := runWithDeps(cli.Deps{Vaults: createVaultList(notebook)}, args...)
+		_, err := runWithDeps(cli.Deps{Vaults: createVaultList(getNotebook())}, args...)
 		if err == nil || !strings.Contains(err.Error(), "usage: numen-cli search <vault> <query>") {
 			t.Errorf("%v answered %v", args, err)
 		}

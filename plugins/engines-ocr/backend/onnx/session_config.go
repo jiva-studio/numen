@@ -42,8 +42,6 @@ type configEntryResolver struct {
 	calls    *configEntryTable
 }
 
-var configEntries configEntryResolver
-
 // loadConfigEntryTable resolves the config-entry calls of the library at path.
 // It returns a nil table when the library does not carry them.
 func loadConfigEntryTable(libPath string) (*configEntryTable, error) {
@@ -78,22 +76,22 @@ func loadConfigEntryTable(libPath string) (*configEntryTable, error) {
 
 // getConfigEntryTable returns the config-entry calls of the loaded runtime,
 // resolving them on first use.
-func getConfigEntryTable() (*configEntryTable, error) {
-	_, loadedPath := runtimeState.GetLoaded()
+func (l *Library) getConfigEntryTable() (*configEntryTable, error) {
+	_, loadedPath := l.runtime.GetLoaded()
 	if loadedPath == "" {
 		return nil, fmt.Errorf("onnx runtime not loaded")
 	}
 
-	configEntries.mu.Lock()
-	defer configEntries.mu.Unlock()
-	if configEntries.isLoaded {
-		return configEntries.calls, nil
+	l.entries.mu.Lock()
+	defer l.entries.mu.Unlock()
+	if l.entries.isLoaded {
+		return l.entries.calls, nil
 	}
 	table, err := loadConfigEntryTable(loadedPath)
 	if err != nil {
 		return nil, err
 	}
-	configEntries.calls, configEntries.isLoaded = table, true
+	l.entries.calls, l.entries.isLoaded = table, true
 	return table, nil
 }
 
@@ -143,12 +141,12 @@ func readCString(p *byte) string {
 // disableSpinning stops the session's idle intra-op threads from busy-waiting.
 // Idle threads do not spin because the application shares the CPU with its
 // interface.
-func disableSpinning(opts *ort.SessionOptions) error {
+func (l *Library) disableSpinning(opts *ort.SessionOptions) error {
 	optHandle := *(*uintptr)(unsafe.Pointer(opts))
 	if optHandle == 0 {
 		return fmt.Errorf("invalid session options handle")
 	}
-	table, err := getConfigEntryTable()
+	table, err := l.getConfigEntryTable()
 	if err != nil {
 		return fmt.Errorf("resolve session config calls: %w", err)
 	}

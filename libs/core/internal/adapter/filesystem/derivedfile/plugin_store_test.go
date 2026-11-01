@@ -22,7 +22,7 @@ const pluginID = "md.numen.a"
 func openPluginStore(t *testing.T) (pluginport.PluginStore, string) {
 	t.Helper()
 	root := t.TempDir()
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
 	store, err := derivedfile.PluginStores{}.Open(domain.Vault{ID: "v", Path: root}, pluginID)

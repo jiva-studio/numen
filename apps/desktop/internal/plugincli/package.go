@@ -73,7 +73,7 @@ func isSamePath(path, absDest string) bool {
 }
 
 // shippedPaths are the entries of a plugin directory an archive holds.
-var shippedPaths = []string{"manifest.json", "bin", "dist"}
+func getShippedPaths() []string { return []string{"manifest.json", "bin", "dist"} }
 
 // isArchive reports whether the file is an archive in the top level of the dist folder.
 func isArchive(pluginDir, path string) bool {
@@ -147,7 +147,7 @@ func createArchive(pluginDir, destPath string, extra []string) (count int, err e
 		count:     0,
 	}
 
-	for _, shipped := range slices.Concat(shippedPaths, filterOutsideShipped(extra)) {
+	for _, shipped := range slices.Concat(getShippedPaths(), filterOutsideShipped(extra)) {
 		root := filepath.Join(pluginDir, shipped)
 		if _, err := os.Stat(root); errors.Is(err, fs.ErrNotExist) {
 			continue
@@ -164,7 +164,7 @@ func filterOutsideShipped(files []string) []string {
 	var outside []string
 	for _, file := range files {
 		top, _, _ := strings.Cut(file, string(filepath.Separator))
-		if !slices.Contains(shippedPaths, top) {
+		if !slices.Contains(getShippedPaths(), top) {
 			outside = append(outside, file)
 		}
 	}

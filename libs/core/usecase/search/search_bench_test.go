@@ -99,10 +99,10 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	model := embeddingport.EmbeddingModel{Name: "bench", Dimensions: 384, MaxTokens: embedCfg.MaxTokens, Pooling: "mean"}
 
 	dbPath := filepath.Join(b.TempDir(), "search_bench.db")
-	cfg := container.Config{
+	cfg := container.NewConfig(container.Config{
 		IndexPath: dbPath,
 		Embedding: embedCfg,
-	}
+	})
 	db, err := cfg.OpenIndex(ctx)
 	if err != nil {
 		b.Fatal(err)

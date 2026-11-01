@@ -23,7 +23,7 @@ func openCachedTranscriber(t testing.TB) *Transcriber {
 	if dir := os.Getenv("NUMEN_MODELS"); dir != "" {
 		cfg.Dir = dir
 	}
-	delta, err := Open(t.Context(), cfg)
+	delta, err := Open(t.Context(), NewRuntime(), cfg)
 	if err != nil {
 		t.Skipf("parakeet models not available: %v", err)
 	}
@@ -102,13 +102,13 @@ func TestDecodingOnTheRawRuntimeReleasesEveryOutputItCreated(t *testing.T) {
 	frames := makeFrames(t, 20)
 
 	var released int
-	t.Cleanup(ortraw.ObserveRelease(func(uintptr) { released++ }))
+	t.Cleanup(delta.runner.ObserveRelease(func(uintptr) { released++ }))
 
 	if _, err := delta.decodeWith(t.Context(), frames, true); err != nil {
 		t.Fatal(err)
 	}
 	// The predictor answers three values and the joiner one.
-	if want := len(decoderOutputs) + len(joinerOutputs); released != want {
+	if want := len(getDecoderOutputs()) + len(getJoinerOutputs()); released != want {
 		t.Errorf("released %d outputs, want %d", released, want)
 	}
 }
@@ -147,12 +147,12 @@ func openPosition(t *testing.T, delta *Transcriber) *position {
 	p.decoderInputs = map[string]*ort.Value{inputTargets: targetT, inputTargetN: countT, inputState: stateT, inputCell: cellT}
 	p.joinerInputs = map[string]*ort.Value{inputEncoded: frameT, inputDecoded: predictionT}
 
-	calls, ok := ortraw.GetCalls()
+	calls, ok := delta.runner.GetCalls()
 	if !ok {
 		t.Skip("the raw runtime is not registered")
 	}
-	p.decoderRun, _ = ortraw.NewGraph(calls, delta.decoder, decoderInputNames, decoderOutputs, []*ort.Value{targetT, countT, stateT, cellT})
-	p.joiner, _ = ortraw.NewGraph(calls, delta.joiner, joinerInputNames, joinerOutputs, []*ort.Value{frameT, predictionT})
+	p.decoderRun, _ = ortraw.NewGraph(calls, delta.decoder, getDecoderInputNames(), getDecoderOutputs(), []*ort.Value{targetT, countT, stateT, cellT})
+	p.joiner, _ = ortraw.NewGraph(calls, delta.joiner, getJoinerInputNames(), getJoinerOutputs(), []*ort.Value{frameT, predictionT})
 	if p.decoderRun == nil || p.joiner == nil {
 		t.Skip("the sessions hold no handle to run by")
 	}

@@ -39,8 +39,8 @@ func TestCalibrateMeasuresTheNoise(t *testing.T) {
 	if len(got.Histogram) != 20 || got.Histogram[10] != 25*60 {
 		t.Errorf("histogram %v, want %d pairs in bin 10", got.Histogram, 25*60)
 	}
-	if !got.CalibratedTime.Equal(measuredAt) {
-		t.Errorf("calibrated at %v, want the injected clock's %v", got.CalibratedTime, measuredAt)
+	if !got.CalibratedTime.Equal(getMeasuredAt()) {
+		t.Errorf("calibrated at %v, want the injected clock's %v", got.CalibratedTime, getMeasuredAt())
 	}
 	if batches := search.EmbeddedBatches(); len(batches) != 1 || len(batches[0]) != 25 {
 		t.Errorf("titles were embedded in %d calls, want one call of 25", len(batches))

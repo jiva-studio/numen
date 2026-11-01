@@ -61,3 +61,13 @@ func rejected(reason string) string {
 
 // All returns a copy of the statements keyed by name.
 func (s Statements) All() map[string]string { return maps.Clone(s.byName) }
+
+// Read returns the statement in the file dir/name.sql of fsys, with the whitespace around it
+// taken off. A file that cannot be read yields a statement the database rejects, naming the cause.
+func Read(fsys fs.FS, dir, name string) string {
+	raw, err := fs.ReadFile(fsys, dir+"/"+name+".sql")
+	if err != nil {
+		return rejected("sqlfile: read " + name + ": " + err.Error())
+	}
+	return strings.TrimSpace(string(raw))
+}

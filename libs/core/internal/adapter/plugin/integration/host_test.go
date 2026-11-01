@@ -12,7 +12,7 @@ func newDiscoveredHost(t *testing.T) *plugin.Host {
 	t.Helper()
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
-	host := plugin.NewHost(testsupport.Machine, "desktop.editor", tmp)
+	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}

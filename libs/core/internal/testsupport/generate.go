@@ -37,7 +37,7 @@ func GenerateVault(tb testing.TB, n int) domain.Vault {
 		}
 	}
 
-	cfg, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, Epoch)
+	cfg, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, GetEpoch())
 	if err != nil {
 		tb.Fatal(err)
 	}
@@ -47,9 +47,11 @@ func GenerateVault(tb testing.TB, n int) domain.Vault {
 // RareTerm appears in one generated note in a thousand.
 const RareTerm = "hapaxlegomenon"
 
-var vocabulary = strings.Fields(`entropy thermodynamics shannon information measure
+func getVocabulary() []string {
+	return strings.Fields(`entropy thermodynamics shannon information measure
 	system description observer probability distribution ensemble equilibrium
 	temperature energy conservation reversible irreversible statistical mechanics`)
+}
 
 func note(r *rand.Rand, i, total int) string {
 	var b strings.Builder
@@ -78,7 +80,7 @@ func note(r *rand.Rand, i, total int) string {
 	for s := range sections {
 		fmt.Fprintf(&b, "## Section %d\n\n", s+1)
 		for range 10 + r.IntN(90) {
-			b.WriteString(vocabulary[r.IntN(len(vocabulary))])
+			b.WriteString(getVocabulary()[r.IntN(len(getVocabulary()))])
 			b.WriteByte(' ')
 		}
 		// Two or three references into the rest of the vault, spread far enough

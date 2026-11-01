@@ -44,11 +44,11 @@ func writeThemesPlugin(t *testing.T, root, id, targets string) string {
 func openThemesConfig(t *testing.T, target string, pluginRoot string) Config {
 	t.Helper()
 	dir := t.TempDir()
-	return Config{
+	return NewConfig(Config{
 		PluginHost:   NewPluginHost(target, pluginRoot),
 		ThemesPath:   filepath.Join(dir, "themes"),
 		SettingsPath: filepath.Join(dir, "settings.json"),
-	}
+	})
 }
 
 func listThemeNames(t *testing.T, cfg Config) []string {
@@ -197,7 +197,7 @@ func TestAPluginThemeLinkedOutOfThePluginFolderIsNotRead(t *testing.T) {
 // A config with no plugin host offers the default theme alone.
 func TestListThemesOfAConfigWithoutAPluginHostOffersTheDefaultAlone(t *testing.T) {
 	dir := t.TempDir()
-	cfg := Config{ThemesPath: filepath.Join(dir, "themes"), SettingsPath: filepath.Join(dir, "settings.json")}
+	cfg := NewConfig(Config{ThemesPath: filepath.Join(dir, "themes"), SettingsPath: filepath.Join(dir, "settings.json")})
 
 	names := listThemeNames(t, cfg)
 

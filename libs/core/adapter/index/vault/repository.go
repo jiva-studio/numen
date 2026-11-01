@@ -16,7 +16,8 @@ import (
 //go:embed sql/*.sql
 var files embed.FS
 
-var stmt = sqlfile.Load(files, "sql")
+// getStatement returns the statement in sql/<name>.sql.
+func getStatement(name string) string { return sqlfile.Read(files, "sql", name) }
 
 // Repository is the collection of vaults. Rows elsewhere point at these, which
 // is why a vault is registered before anything is stored for it.
@@ -27,15 +28,17 @@ func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 // Register creates a row for the vault that other rows reference. A vault the
 // index already tracks keeps its existing row.
 func (r *Repository) Register(ctx context.Context, vaultID domain.VaultID) error {
-	_, err := sqlwrite.Exec(ctx, r.db, stmt.Get("register"), string(vaultID))
+	_, err := sqlwrite.Exec(ctx, r.db, getStatement("register"), string(vaultID))
 	return err
 }
 
 // forgetting is the order a vault is taken out in. The five virtual tables go
 // first: nothing cascades into one, and the numbers four of them are addressed
 // by are read from the tables the last statement takes away.
-var forgetting = []string{
-	"clear_vec", "clear_fts", "clear_sections", "clear_title_names", "clear_heading_names", "delete",
+func getForgetting() []string {
+	return []string{
+		"clear_vec", "clear_fts", "clear_sections", "clear_title_names", "clear_heading_names", "delete",
+	}
 }
 
 // Unregister takes everything the index holds for one vault, and the vault's
@@ -46,15 +49,15 @@ var forgetting = []string{
 func (r *Repository) Unregister(ctx context.Context, vaultID domain.VaultID) error {
 	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
 		var row int64
-		err := tx.QueryRowContext(ctx, stmt.Get("vault_row"), string(vaultID)).Scan(&row)
+		err := tx.QueryRowContext(ctx, getStatement("vault_row"), string(vaultID)).Scan(&row)
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil
 		}
 		if err != nil {
 			return fmt.Errorf("which row this vault is filed under: %w", err)
 		}
-		for _, name := range forgetting {
-			if _, err := tx.ExecContext(ctx, stmt.Get(name), row); err != nil {
+		for _, name := range getForgetting() {
+			if _, err := tx.ExecContext(ctx, getStatement(name), row); err != nil {
 				return fmt.Errorf("%s: %w", name, err)
 			}
 		}

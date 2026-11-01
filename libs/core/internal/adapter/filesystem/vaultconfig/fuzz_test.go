@@ -55,7 +55,7 @@ func vault(tb testing.TB) string {
 // address bar, so the bytes are untrusted.
 func FuzzInside(f *testing.F) {
 	root := vault(f)
-	for _, path := range paths {
+	for _, path := range getPaths() {
 		f.Add(path)
 	}
 	for _, path := range []string{
@@ -143,19 +143,21 @@ func checkRule(t *testing.T, root, path, rule string, application bool, target, 
 // letter short, a name written twice, an object holding nothing, a bare null,
 // the file as something other than an object, and bytes that are no
 // configuration at all.
-var configSeeds = []string{
-	"{\n  \"v\": 1,\n  \"id\": \"01JQ8ZP4T7MXVN2K5H9RBCDEFG\"\n}\n",
-	"{\"v\":1,\"id\":\"01JQ8ZP4T7MXVN2K5H9RBCDEFG\",\"ignore\":[\"attachments/\",\"*.tmp\"]}",
-	"{\"v\":1,\"id\":\"01JQ8ZP4T7MXV",
-	"{\"v\":1,\"id\":\"01JQ8ZP4T7MXVN2K5H9RBCDEFU\"}",
-	"{\"v\":1,\"id\":\"01JQ8ZP4T7MXVN2K5H9RBCDEF\"}",
-	"{\"v\":1,\"id\":\"01JQ8ZP4T7MXVN2K5H9RBCDEFG\",\"id\":\"01JQ8ZP4T7MXVN2K5H9RBCDEFH\"}",
-	"{}",
-	"null",
-	"[1, 2, 3]",
-	"\xef\xbb\xbf{\"v\":1,\"id\":\"01JQ8ZP4T7MXVN2K5H9RBCDEFG\"}",
-	"\x00\xff\xfe",
-	"",
+func getConfigSeeds() []string {
+	return []string{
+		"{\n  \"v\": 1,\n  \"id\": \"01JQ8ZP4T7MXVN2K5H9RBCDEFG\"\n}\n",
+		"{\"v\":1,\"id\":\"01JQ8ZP4T7MXVN2K5H9RBCDEFG\",\"ignore\":[\"attachments/\",\"*.tmp\"]}",
+		"{\"v\":1,\"id\":\"01JQ8ZP4T7MXV",
+		"{\"v\":1,\"id\":\"01JQ8ZP4T7MXVN2K5H9RBCDEFU\"}",
+		"{\"v\":1,\"id\":\"01JQ8ZP4T7MXVN2K5H9RBCDEF\"}",
+		"{\"v\":1,\"id\":\"01JQ8ZP4T7MXVN2K5H9RBCDEFG\",\"id\":\"01JQ8ZP4T7MXVN2K5H9RBCDEFH\"}",
+		"{}",
+		"null",
+		"[1, 2, 3]",
+		"\xef\xbb\xbf{\"v\":1,\"id\":\"01JQ8ZP4T7MXVN2K5H9RBCDEFG\"}",
+		"\x00\xff\xfe",
+		"",
+	}
 }
 
 // A folder carries an identity or it does not, and ReadConfig reports which. An
@@ -163,7 +165,7 @@ var configSeeds = []string{
 //
 // Bytes that cannot be parsed are rejected as unreadable.
 func FuzzReadConfig(f *testing.F) {
-	for _, seed := range configSeeds {
+	for _, seed := range getConfigSeeds() {
 		f.Add(seed)
 	}
 	// One folder is written over and over: a vault for each of a million inputs

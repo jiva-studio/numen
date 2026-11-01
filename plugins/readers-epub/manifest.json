@@ -16,7 +16,7 @@
     ]
   },
   "permissions": ["vault:read", "vault:write"],
-  "services": ["numen.epub"],
+  "services": ["md.numen.readers.epub"],
   "backend": { "entrypoint": "bin/readers-epub" },
   "frontend": {}
 }

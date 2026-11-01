@@ -13,8 +13,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
 )
 
-func init() {
-	onnx.Register(bindRuntime)
+// NewLibrary returns the ONNX Runtime library a page is read through, which binds the go-ocr runtime
+// when it opens.
+func NewLibrary() *onnx.Library {
+	return onnx.NewLibrary(bindRuntime)
 }
 
 // bindRuntime binds the go-ocr runtime to the library at libPath. paddle.NewEngine binds the
@@ -38,13 +40,13 @@ func missingDictionaryPath() string {
 	return filepath.Join(os.TempDir(), "numen-ocr-bind-probe", "missing-dictionary.txt")
 }
 
-// IsPrepared reports whether this process created the runtime.
-func IsPrepared() bool { return onnx.IsAvailable("") }
+// IsPrepared reports whether the library is open.
+func IsPrepared(library *onnx.Library) bool { return library.IsAvailable("") }
 
 // Prepare makes the runtime a page is read through.
-func Prepare(ctx context.Context, cfg Config) error {
+func Prepare(ctx context.Context, library *onnx.Library, cfg Config) error {
 	cfg.ShouldDownload = false
-	if _, _, err := onnx.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir)); err != nil {
+	if _, _, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir)); err != nil {
 		return err
 	}
 	return nil

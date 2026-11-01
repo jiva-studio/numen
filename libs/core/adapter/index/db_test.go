@@ -18,7 +18,7 @@ import (
 )
 
 // walked is the modification time that the scan reports for every file these tests add.
-var walked = time.Unix(0, 1)
+func getWalked() time.Time { return time.Unix(0, 1) }
 
 func TestEveryConnectionGetsThePragmas(t *testing.T) {
 	// The bug this guards against is invisible to an ordinary test: executing
@@ -134,7 +134,7 @@ func TestTheVectorIndexIsFittedToTheModel(t *testing.T) {
 		t.Fatalf("fitting to the width it already holds: %v", err)
 	}
 
-	embedAtWidth(t, db, first, 384)
+	embedAtWidth(t, db, getFirst(), 384)
 }
 
 // Fitting the coarse index to another width leaves what was made standing, and
@@ -149,7 +149,7 @@ func TestFittingToAnotherWidthKeepsWhatWasMade(t *testing.T) {
 	if err := db.FitVectors(ctx, 384, narrowRecipe(384)); err != nil {
 		t.Fatal(err)
 	}
-	embedAtWidth(t, db, first, 384)
+	embedAtWidth(t, db, getFirst(), 384)
 	made := countRows(t, db, `SELECT count(*) FROM vectors`)
 	if made == 0 {
 		t.Fatal("nothing was kept for the text that was embedded")

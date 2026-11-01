@@ -31,7 +31,7 @@ func TestEntriesRoute_ServesBookImageFromRequestedVault(t *testing.T) {
 	answer := httptest.NewRecorder()
 	mux.ServeHTTP(answer, req)
 
-	if answer.Code != http.StatusOK || !bytes.Equal(answer.Body.Bytes(), pngBytes) {
+	if answer.Code != http.StatusOK || !bytes.Equal(answer.Body.Bytes(), getPNGBytes()) {
 		t.Fatalf("the picture answered %d with %d bytes", answer.Code, answer.Body.Len())
 	}
 	current := httptest.NewRecorder()

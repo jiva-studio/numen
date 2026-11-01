@@ -63,7 +63,7 @@ func TestAPluginTravelsWithItsConsent(t *testing.T) {
 	for _, consent := range []setting.Consent{
 		setting.ConsentNone, setting.ConsentPending, setting.ConsentRequested, setting.ConsentAllowed, setting.ConsentDenied,
 	} {
-		if _, found := Consents[consent]; !found {
+		if _, found := GetConsents()[consent]; !found {
 			t.Errorf("consent %v has no wire value", consent)
 		}
 	}

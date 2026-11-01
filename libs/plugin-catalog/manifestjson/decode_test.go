@@ -351,18 +351,25 @@ func TestAnAgentSettingTypeIsNotInTheSchema(t *testing.T) {
 	}
 }
 
-// A service a plugin serves to the windows is a full name of dot-separated words, listed once.
+// A service a plugin serves to the windows is a full name of dot-separated words, listed once, that
+// starts with the id of the plugin or is a service the protocol declares.
 func TestTheServicesAPluginServesAreFullNamesListedOnce(t *testing.T) {
 	cases := []struct {
 		name     string
 		services string
 		wrong    bool
 	}{
-		{"a full name", `["numen.v1.SampleService"]`, false},
-		{"two names", `["numen.v1.SampleService","numen.v1.PresetsService"]`, false},
+		{"a full name", `["a.b.SampleService"]`, false},
+		{"two names", `["a.b.SampleService","a.b.PresetsService"]`, false},
+		{"the id itself", `["a.b"]`, false},
+		{"a service of the protocol", `["numen.v1.AgentService"]`, false},
 		{"a bare name", `["SampleService"]`, true},
-		{"a path", `["/numen.v1.SampleService"]`, true},
-		{"a name listed twice", `["numen.v1.SampleService","numen.v1.SampleService"]`, true},
+		{"a path", `["/a.b.SampleService"]`, true},
+		{"a name listed twice", `["a.b.SampleService","a.b.SampleService"]`, true},
+		{"a name of another plugin", `["c.d.SampleService"]`, true},
+		{"a name that only starts like the id", `["a.bc.SampleService"]`, true},
+		{"a name of the protocol the protocol does not declare", `["numen.v1.SketchService"]`, true},
+		{"a short name outside the id", `["numen.epub"]`, true},
 		{"an empty name", `[""]`, true},
 	}
 	for _, one := range cases {
@@ -374,7 +381,7 @@ func TestTheServicesAPluginServesAreFullNamesListedOnce(t *testing.T) {
 			if one.wrong != errors.Is(err, manifest.ErrInvalidService) {
 				t.Errorf("error = %v, want invalid service: %v", err, one.wrong)
 			}
-			if !one.wrong && !parsed.HasService("numen.v1.SampleService") {
+			if !one.wrong && len(parsed.Services) == 0 {
 				t.Errorf("the services came out as %v", parsed.Services)
 			}
 		})

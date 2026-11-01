@@ -344,8 +344,11 @@ func (w *VaultWriter) isWritableNote(path string) bool {
 // Root is where this vault is on disk.
 func (w *VaultWriter) Root() string { return w.root }
 
-// VaultWriters opens vaults for writing.
-type VaultWriters struct{ Options vaultconfig.Options }
+// VaultWriters opens vaults for writing. Writers that must exclude each other share Locks.
+type VaultWriters struct {
+	Options vaultconfig.Options
+	Locks   *Locks
+}
 
 func (w VaultWriters) Open(v domain.Vault) (vaultport.VaultWriter, error) {
 	return OpenForWriting(v.Path, w.Options)

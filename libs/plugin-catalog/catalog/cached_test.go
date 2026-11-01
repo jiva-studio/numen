@@ -9,7 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalogtest"
 )
 
-var epoch = time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)
+// getEpoch returns the instant every test of the cache starts at.
+func getEpoch() time.Time { return time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC) }
 
 type clock struct{ now time.Time }
 
@@ -18,7 +19,7 @@ func (c *clock) Now() time.Time { return c.now }
 func TestAnEmptyCacheFillsFromTheSource(t *testing.T) {
 	source := catalogtest.NewFakeSource("remote", entry("org.example.a", "1.0.0", catalog.StateAvailable))
 	cache := &catalogtest.FakeCache{}
-	now := &clock{now: epoch}
+	now := &clock{now: getEpoch()}
 	cached := catalog.NewCachedSource(source, cache, time.Hour, now.Now)
 
 	entries, err := cached.List(t.Context())
@@ -27,15 +28,15 @@ func TestAnEmptyCacheFillsFromTheSource(t *testing.T) {
 		t.Fatalf("List = %v, %v; want the entry of the source", entries, err)
 	}
 	snapshot, readErr := cache.Read(t.Context())
-	if readErr != nil || !snapshot.At.Equal(epoch) || len(snapshot.Entries) != 1 {
-		t.Errorf("snapshot = %+v, %v; want the listing taken at %v", snapshot, readErr, epoch)
+	if readErr != nil || !snapshot.At.Equal(getEpoch()) || len(snapshot.Entries) != 1 {
+		t.Errorf("snapshot = %+v, %v; want the listing taken at %v", snapshot, readErr, getEpoch())
 	}
 }
 
 func TestAnEmptyCacheAndAFailingSourceReturnTheFailure(t *testing.T) {
 	source := catalogtest.NewFakeSource("remote")
 	source.Err = errors.New("offline")
-	now := &clock{now: epoch}
+	now := &clock{now: getEpoch()}
 	cached := catalog.NewCachedSource(source, &catalogtest.FakeCache{}, time.Hour, now.Now)
 
 	entries, err := cached.List(t.Context())
@@ -48,13 +49,13 @@ func TestAnEmptyCacheAndAFailingSourceReturnTheFailure(t *testing.T) {
 func TestAFreshSnapshotIsNotReadFromTheSourceAgain(t *testing.T) {
 	source := catalogtest.NewFakeSource("remote", entry("org.example.a", "1.0.0", catalog.StateAvailable))
 	cache := &catalogtest.FakeCache{}
-	now := &clock{now: epoch}
+	now := &clock{now: getEpoch()}
 	cached := catalog.NewCachedSource(source, cache, time.Hour, now.Now)
 	if _, err := cached.List(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	source.Err = errors.New("offline")
-	now.now = epoch.Add(59 * time.Minute)
+	now.now = getEpoch().Add(59 * time.Minute)
 
 	entries, err := cached.List(t.Context())
 
@@ -65,13 +66,13 @@ func TestAFreshSnapshotIsNotReadFromTheSourceAgain(t *testing.T) {
 
 func TestAStaleSnapshotAnswersWhenTheSourceCannot(t *testing.T) {
 	source := catalogtest.NewFakeSource("remote", entry("org.example.a", "1.0.0", catalog.StateAvailable))
-	now := &clock{now: epoch}
+	now := &clock{now: getEpoch()}
 	cached := catalog.NewCachedSource(source, &catalogtest.FakeCache{}, time.Hour, now.Now)
 	if _, err := cached.List(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	source.Err = errors.New("offline")
-	now.now = epoch.Add(2 * time.Hour)
+	now.now = getEpoch().Add(2 * time.Hour)
 
 	entries, err := cached.List(t.Context())
 
@@ -83,12 +84,12 @@ func TestAStaleSnapshotAnswersWhenTheSourceCannot(t *testing.T) {
 func TestAnExpiredSnapshotIsReplacedByTheSource(t *testing.T) {
 	source := catalogtest.NewFakeSource("remote", entry("org.example.a", "1.0.0", catalog.StateAvailable))
 	cache := &catalogtest.FakeCache{}
-	now := &clock{now: epoch}
+	now := &clock{now: getEpoch()}
 	cached := catalog.NewCachedSource(source, cache, time.Hour, now.Now)
 	if _, err := cached.List(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	now.now = epoch.Add(2 * time.Hour)
+	now.now = getEpoch().Add(2 * time.Hour)
 
 	_, err := cached.List(t.Context())
 
@@ -101,7 +102,7 @@ func TestAnExpiredSnapshotIsReplacedByTheSource(t *testing.T) {
 func TestAWriteFailureOfTheCacheIsReportedWithTheEntries(t *testing.T) {
 	source := catalogtest.NewFakeSource("remote", entry("org.example.a", "1.0.0", catalog.StateAvailable))
 	cache := &catalogtest.FakeCache{WriteErr: errors.New("disk full")}
-	now := &clock{now: epoch}
+	now := &clock{now: getEpoch()}
 	cached := catalog.NewCachedSource(source, cache, time.Hour, now.Now)
 
 	entries, err := cached.List(t.Context())
@@ -113,7 +114,7 @@ func TestAWriteFailureOfTheCacheIsReportedWithTheEntries(t *testing.T) {
 
 func TestACachedSourceGetsOneEntry(t *testing.T) {
 	source := catalogtest.NewFakeSource("remote", entry("org.example.a", "1.0.0", catalog.StateAvailable))
-	now := &clock{now: epoch}
+	now := &clock{now: getEpoch()}
 	cached := catalog.NewCachedSource(source, &catalogtest.FakeCache{}, time.Hour, now.Now)
 
 	got, err := cached.Get(t.Context(), "org.example.a")
@@ -129,7 +130,7 @@ func TestACachedSourceGetsOneEntry(t *testing.T) {
 
 func TestACachedSourceSatisfiesTheSourceContract(t *testing.T) {
 	catalogtest.RunSourceContract(t, func(_ *testing.T, entries []catalog.Entry) catalog.Source {
-		now := &clock{now: epoch}
+		now := &clock{now: getEpoch()}
 		return catalog.NewCachedSource(catalogtest.NewFakeSource("remote", entries...), &catalogtest.FakeCache{}, time.Hour, now.Now)
 	}, catalogtest.OfferedEntries())
 }

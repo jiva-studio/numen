@@ -7,6 +7,7 @@ package link
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"io"
@@ -180,7 +181,11 @@ func (l *Links) Create(ctx context.Context, folder, raw string) (Link, error) {
 	if err != nil {
 		return Link{}, err
 	}
-	doc, err := markdown.Open(markdown.Create(ulid.New(l.clock.Now()), ""))
+	identifier, err := ulid.NewGenerator(rand.Reader).NewID(l.clock.Now())
+	if err != nil {
+		return Link{}, err
+	}
+	doc, err := markdown.Open(markdown.Create(identifier, ""))
 	if err != nil {
 		return Link{}, err
 	}

@@ -8,7 +8,7 @@
   "contributes": { "category": "tools" },
   "activationEvents": ["*"],
   "permissions": ["index:read", "search:policy", "vault:read"],
-  "services": ["numen.relevance"],
+  "services": ["md.numen.tools.search.relevance"],
   "backend": { "entrypoint": "bin/tools-search-relevance" },
   "frontend": {},
   "settingsViews": [{ "id": "floor", "title": "Search relevance" }]

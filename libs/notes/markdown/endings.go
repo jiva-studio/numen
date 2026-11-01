@@ -13,12 +13,10 @@ func Normalise(text string) string {
 	if !strings.ContainsRune(text, '\r') {
 		return text
 	}
-	return breaks.Replace(text)
+	// A carriage return before a newline is one break, and a carriage return on its
+	// own is one as well.
+	return strings.ReplaceAll(strings.ReplaceAll(text, "\r\n", "\n"), "\r", "\n")
 }
-
-// A carriage return before a newline is one break, and a carriage return on its
-// own is one as well.
-var breaks = strings.NewReplacer("\r\n", "\n", "\r", "\n")
 
 // lineEnding is what this file separates its lines with. Every break in it is
 // looked at: a file whose breaks are all CRLF keeps CRLF, and a file with any

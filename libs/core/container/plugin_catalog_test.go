@@ -52,10 +52,9 @@ func TestAPluginThatRegistersTabsDeclaresThemInItsManifest(t *testing.T) {
 	}
 }
 
-// indexPath is the plugin index make plugins_index writes next to the manifests of the plugins.
-var indexPath = filepath.Join(modulesRoot, "plugins", indexsource.FileName)
-
 func TestTheGeneratedPluginIndexEqualsTheManifests(t *testing.T) {
+	// The plugin index make plugins_index writes next to the manifests of the plugins.
+	indexPath := filepath.Join(modulesRoot, "plugins", indexsource.FileName)
 	manifests := getPluginManifests(t)
 	if _, err := os.Stat(indexPath); err != nil {
 		t.Fatalf("the plugin index is missing (%v): run make plugins_index", err)
@@ -105,11 +104,11 @@ func TestTheCatalogListsThePluginsOnDiskWithTheirEnabledFlagAndTheOfferedOnes(t 
 	writeCatalogPlugin(t, offeredDir, "org.example.offered", `"desktop.editor"`)
 	host := NewPluginHost("desktop.editor", dir)
 	host.SetSettings(map[string]map[string]any{"org.example.off": {"enabled": false}})
-	cfg := Config{
+	cfg := NewConfig(Config{
 		PluginHost:    host,
 		PluginDirs:    []string{dir},
 		PluginCatalog: catalog.Config{Target: "desktop.editor", Sources: []catalog.Source{indexsource.New(nil, []string{offeredDir})}, InstallDir: "", CacheDir: ""},
-	}
+	})
 
 	service := cfg.GetPluginCatalog()
 	if service == nil {
@@ -150,7 +149,7 @@ func findEntry(listing catalog.Listing, id string) (catalog.Entry, bool) {
 }
 
 func TestAnInstallationThatNamesNoTargetHasNoCatalog(t *testing.T) {
-	cfg := Config{PluginHost: NewPluginHost("desktop.editor", t.TempDir())}
+	cfg := NewConfig(Config{PluginHost: NewPluginHost("desktop.editor", t.TempDir())})
 
 	if cfg.GetPluginCatalog() != nil {
 		t.Error("a catalog was made with no target")

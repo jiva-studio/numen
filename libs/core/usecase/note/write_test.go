@@ -193,7 +193,7 @@ func TestAWriteThroughReplacedPortsUsesThem(t *testing.T) {
 	levelled := 0
 	w := note.NewWrite(brokenReaders{open: errDiskGone}, brokenWriters{hold: errDiskGone}, nil, testsupport.NewClock()).
 		WithReaders(vaultreader.Readers{}).
-		WithWriters(vaultwriter.VaultWriters{}).
+		WithWriters(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}).
 		WithIndex(func(context.Context, domain.Vault, []string) error {
 			levelled++
 			return nil

@@ -35,7 +35,7 @@ func vaultAt(t *testing.T, root string) (domain.Vault, vaultport.VaultReaders) {
 
 func openIndex(t *testing.T) *container.Index {
 	t.Helper()
-	db, err := container.Config{IndexPath: indexfile.Path(t)}.OpenIndex(t.Context())
+	db, err := container.NewConfig(container.Config{IndexPath: indexfile.Path(t)}).OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,14 +44,14 @@ func openIndex(t *testing.T) *container.Index {
 }
 
 // notesOnly keeps a search to what the vault holds as notes.
-var notesOnly = []domain.SourceKind{domain.KindNote}
+func getNotesOnly() []domain.SourceKind { return []domain.SourceKind{domain.KindNote} }
 
 // searchNotes is the notes of a vault whose text matches the words typed, by
 // path. The words are indexed over chunks, so a note matching in more than one
 // of its own is named once.
 func searchNotes(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
 	t.Helper()
-	found, err := db.Passages().FindLexical(t.Context(), v.ID, query, notesOnly, 20, false)
+	found, err := db.Passages().FindLexical(t.Context(), v.ID, query, getNotesOnly(), 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -272,7 +272,7 @@ func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
 	}
 	// Modification time is the invalidation key, and a test can write twice
 	// within one timestamp tick.
-	future := testsupport.Machine.Now().Add(2 * time.Second)
+	future := testsupport.GetMachine().Now().Add(2 * time.Second)
 	if err := os.Chtimes(edited, future, future); err != nil {
 		t.Fatal(err)
 	}
@@ -602,7 +602,7 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 	db := openIndex(t)
 
 	newest := filepath.Join(root, "edge", "unicode.md")
-	pos := testsupport.Machine.Now().Add(time.Hour)
+	pos := testsupport.GetMachine().Now().Add(time.Hour)
 	if err := os.Chtimes(newest, pos, pos); err != nil {
 		t.Fatal(err)
 	}

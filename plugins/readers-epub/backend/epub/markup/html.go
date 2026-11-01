@@ -11,9 +11,14 @@ import (
 // A window reads an offset off the markup and counts none itself.
 const OffsetAttribute = "data-offset"
 
-// alone are the elements that hold nothing, and are written without a closing
-// tag.
-var alone = map[string]bool{"br": true, "col": true, "hr": true, "img": true}
+// isAlone reports whether an element holds nothing and is written without a closing tag.
+func isAlone(key string) bool {
+	switch key {
+	case "br", "col", "hr", "img":
+		return true
+	}
+	return false
+}
 
 // HTML is the document as the markup a window draws it from, every run of text
 // wrapped in a span carrying its offset.
@@ -46,7 +51,7 @@ func write(out *strings.Builder, nodes []Node) {
 			out.WriteString(`"`)
 		}
 		out.WriteString(">")
-		if alone[node.Name] {
+		if isAlone(node.Name) {
 			continue
 		}
 		write(out, node.Children)

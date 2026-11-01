@@ -4,9 +4,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
 )
 
 // The handler a host that links the plugin in serves answers the agent service with the token it
@@ -27,7 +26,7 @@ func TestTheLinkedHandlerAnswersTheAgentService(t *testing.T) {
 
 	client.Header.Del("Authorization")
 	_, err = client.GetPrograms(t.Context(), nil)
-	if connect.CodeOf(err) != connect.CodeUnauthenticated {
+	if rpcerror.GetCode(err) != rpcerror.Unauthenticated {
 		t.Fatalf("call without the token = %v, want unauthenticated", err)
 	}
 }

@@ -26,11 +26,12 @@ import (
 //go:embed sql/*.sql
 var files embed.FS
 
-var stmt = sqlfile.Load(files, "sql")
+// getStatement returns the statement in sql/<name>.sql.
+func getStatement(name string) string { return sqlfile.Read(files, "sql", name) }
 
 // Statements exposes the SQL this package runs, for tests that inspect the
 // query plan of each statement.
-func Statements() map[string]string { return stmt.All() }
+func Statements() map[string]string { return sqlfile.Load(files, "sql").All() }
 
 // errNoVault is returned when the index has no record of the requested vault.
 // Every query for an unknown vault has the same result, an empty one, so
@@ -121,7 +122,7 @@ func (r *Repository) SaveSource(ctx context.Context, vaultID domain.VaultID, s S
 			return err
 		}
 		var row int64
-		if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
+		if err := tx.QueryRowContext(ctx, getStatement("save_source"),
 			vault, s.Path, s.Kind, s.Size, s.MTime, newNullable(s.Hash), newNullable(s.Recipe), newNullable(s.Producer)).Scan(&row); err != nil {
 			return fmt.Errorf("record the source %s: %w", s.Path, err)
 		}
@@ -141,7 +142,7 @@ func (r *Repository) SaveExtraction(ctx context.Context, vaultID domain.VaultID,
 			return err
 		}
 		var source int64
-		if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
+		if err := tx.QueryRowContext(ctx, getStatement("save_source"),
 			vault, s.Path, s.Kind, s.Size, s.MTime, newNullable(s.Hash), newNullable(s.Recipe), newNullable(s.Producer)).Scan(&source); err != nil {
 			return fmt.Errorf("record the source %s: %w", s.Path, err)
 		}
@@ -255,7 +256,7 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 // hasSourcesUnder is whether the vault holds a source at the path or under it.
 func hasSourcesUnder(ctx context.Context, tx *sqlwrite.Transaction, vault int64, path string) (_ bool, err error) {
 	first, past := getRangeUnder(path)
-	rows, err := tx.QueryContext(ctx, stmt.Get("sources_under"), vault, path, first, past)
+	rows, err := tx.QueryContext(ctx, getStatement("sources_under"), vault, path, first, past)
 	if err != nil {
 		return false, fmt.Errorf("what the vault holds at %s and under it: %w", path, err)
 	}
@@ -299,7 +300,7 @@ func getDisplacedSources(
 	ctx context.Context, tx *sqlwrite.Transaction, vault int64, from, to string,
 ) (displaced []int64, err error) {
 	first, past := getRangeUnder(to)
-	rows, err := tx.QueryContext(ctx, stmt.Get("sources_under"), vault, to, first, past)
+	rows, err := tx.QueryContext(ctx, getStatement("sources_under"), vault, to, first, past)
 	if err != nil {
 		return nil, fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
 	}
@@ -339,7 +340,7 @@ func updateNoteName(ctx context.Context, tx *sqlwrite.Transaction, vault int64, 
 
 	var title string
 	var named bool
-	err := tx.QueryRowContext(ctx, stmt.Get("note_naming"), vault, from).Scan(&title, &named)
+	err := tx.QueryRowContext(ctx, getStatement("note_naming"), vault, from).Scan(&title, &named)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
@@ -400,7 +401,7 @@ func Replace(ctx context.Context, tx *sqlwrite.Transaction, source, vault int64,
 	}
 	// A chunk with unchanged text keeps its row, so section names are cleared per
 	// source and not with the chunks.
-	if _, err := tx.ExecContext(ctx, stmt.Get("clear_sections"), source); err != nil {
+	if _, err := tx.ExecContext(ctx, getStatement("clear_sections"), source); err != nil {
 		return fmt.Errorf("take the names of this source's sections out of the index: %w", err)
 	}
 
@@ -431,7 +432,7 @@ func upsertChunk(
 ) (int64, error) {
 	key := textID{hash: computeHash(c.Text), isSmall: parent != nil}
 	if row, hasRow := target.takeUnusedRow(key); hasRow {
-		if _, err := tx.ExecContext(ctx, stmt.Get("move_chunk"),
+		if _, err := tx.ExecContext(ctx, getStatement("move_chunk"),
 			c.Start, c.Length, parent, newNullable(c.Location), row); err != nil {
 			return 0, fmt.Errorf("move a chunk to where its text now is: %w", err)
 		}
@@ -442,13 +443,13 @@ func upsertChunk(
 	}
 
 	var row int64
-	err := tx.QueryRowContext(ctx, stmt.Get("insert_chunk"),
+	err := tx.QueryRowContext(ctx, getStatement("insert_chunk"),
 		source, vault, c.Start, c.Length, parent, newNullable(c.Location), key.hash).Scan(&row)
 	if err != nil {
 		return 0, fmt.Errorf("store a chunk of this source: %w", err)
 	}
 	if isLeaf {
-		if _, err := tx.ExecContext(ctx, stmt.Get("insert_fts"), row, c.Text); err != nil {
+		if _, err := tx.ExecContext(ctx, getStatement("insert_fts"), row, c.Text); err != nil {
 			return 0, fmt.Errorf("index a chunk for the words in it: %w", err)
 		}
 	}
@@ -464,7 +465,7 @@ func writeSectionNames(ctx context.Context, tx *sqlwrite.Transaction, row int64,
 	if len(c.Opens) == 0 {
 		return nil
 	}
-	if _, err := tx.ExecContext(ctx, stmt.Get("insert_section"), row, strings.Join(c.Opens, "\n")); err != nil {
+	if _, err := tx.ExecContext(ctx, getStatement("insert_section"), row, strings.Join(c.Opens, "\n")); err != nil {
 		return fmt.Errorf("index the names of the sections a chunk opens: %w", err)
 	}
 	return nil
@@ -487,7 +488,7 @@ type rows struct {
 }
 
 func chunksOf(ctx context.Context, tx *sqlwrite.Transaction, source int64) (_ *rows, err error) {
-	cursor, err := tx.QueryContext(ctx, stmt.Get("chunks_of"), source)
+	cursor, err := tx.QueryContext(ctx, getStatement("chunks_of"), source)
 	if err != nil {
 		return nil, fmt.Errorf("the chunks this source is already cut into: %w", err)
 	}
@@ -557,7 +558,7 @@ func computeHash(s string) string {
 
 // exec runs a named statement and wraps an error with the statement name.
 func exec(ctx context.Context, tx *sqlwrite.Transaction, name string, args ...any) error {
-	if _, err := tx.ExecContext(ctx, stmt.Get(name), args...); err != nil {
+	if _, err := tx.ExecContext(ctx, getStatement(name), args...); err != nil {
 		return fmt.Errorf("%s: %w", name, err)
 	}
 	return nil
@@ -572,7 +573,7 @@ type querier interface {
 // number this database files it under.
 func vaultRow(ctx context.Context, db querier, identifier domain.VaultID) (int64, error) {
 	var row int64
-	err := db.QueryRowContext(ctx, stmt.Get("vault_row"), string(identifier)).Scan(&row)
+	err := db.QueryRowContext(ctx, getStatement("vault_row"), string(identifier)).Scan(&row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, errNoVault
 	}
@@ -582,7 +583,7 @@ func vaultRow(ctx context.Context, db querier, identifier domain.VaultID) (int64
 // getSourceRow is the row number of one source of one kind.
 func getSourceRow(ctx context.Context, db querier, vault int64, kind, path string) (int64, error) {
 	var row int64
-	err := db.QueryRowContext(ctx, stmt.Get("identify"), vault, kind, path).Scan(&row)
+	err := db.QueryRowContext(ctx, getStatement("identify"), vault, kind, path).Scan(&row)
 	return row, err
 }
 

@@ -62,7 +62,7 @@ func TestOpenReaderClosesFileOnSeekError(t *testing.T) {
 				failOnSeekEnd:   tc.failOnSeekEnd,
 				failOnSeekStart: tc.failOnSeekStart,
 			}
-			doc, err := openReader(fc)
+			doc, err := newWorkers(t).openReader(fc)
 			if err == nil {
 				if doc != nil {
 					cleanup.Close(t, doc)
@@ -94,7 +94,7 @@ func (t *trackingCloser) Close() error {
 
 func TestOpenReaderEmptyFileClosesFile(t *testing.T) {
 	fc := &trackingCloser{Reader: bytes.NewReader(nil)}
-	_, err := openReader(fc)
+	_, err := newWorkers(t).openReader(fc)
 	if !errors.Is(err, ErrNotPDF) {
 		t.Errorf("expected ErrNotPDF for empty file, got %v", err)
 	}
@@ -105,7 +105,7 @@ func TestOpenReaderEmptyFileClosesFile(t *testing.T) {
 
 func TestOpenReaderInvalidContentClosesFile(t *testing.T) {
 	fc := &trackingCloser{Reader: bytes.NewReader([]byte("not a valid pdf content"))}
-	_, err := openReader(fc)
+	_, err := newWorkers(t).openReader(fc)
 	if !errors.Is(err, ErrNotPDF) {
 		t.Errorf("expected ErrNotPDF for invalid file, got %v", err)
 	}
@@ -120,7 +120,7 @@ func TestDocumentCloseClosesFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	fc := &trackingCloser{Reader: bytes.NewReader(raw)}
-	doc, err := openReader(fc)
+	doc, err := newWorkers(t).openReader(fc)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +138,7 @@ func TestDocumentTextInvalidPageIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	doc, err := openBytes(raw)
+	doc, err := newWorkers(t).openBytes(raw)
 	if err != nil {
 		t.Fatal(err)
 	}

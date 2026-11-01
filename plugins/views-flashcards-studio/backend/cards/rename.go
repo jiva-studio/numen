@@ -2,6 +2,7 @@ package cards
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"math"
 
@@ -107,7 +108,9 @@ func (u RenameField) WithNotes(notes TypeQueries) RenameField {
 
 // createIdentifier is the identifier a file this rename writes is to carry
 // where it carries none.
-func (u RenameField) createIdentifier() string { return ulid.New(u.now.Now()) }
+func (u RenameField) createIdentifier() (string, error) {
+	return ulid.NewGenerator(rand.Reader).NewID(u.now.Now())
+}
 
 // Execute renames the field, in the card model first and then in the vault.
 //
@@ -239,7 +242,11 @@ func (u RenameField) writeCardModelField(
 // writeIdentifier writes an identifier into a file that carries none, which is
 // what the application changing what a note holds does.
 func (u RenameField) writeIdentifier(into func(string) (bool, error)) error {
-	_, err := into(u.createIdentifier())
+	identifier, err := u.createIdentifier()
+	if err != nil {
+		return err
+	}
+	_, err = into(identifier)
 	return err
 }
 

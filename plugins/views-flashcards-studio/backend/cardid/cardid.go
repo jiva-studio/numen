@@ -8,6 +8,8 @@
 package cardid
 
 import (
+	"strings"
+
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 )
 
@@ -19,17 +21,6 @@ const alphabet = "0123456789abcdefghjkmnpqrstvwxyz"
 // 1.1 × 10¹⁵ identifiers, so a vault of a hundred thousand cards meets a
 // collision about once in two hundred thousand vaults.
 const Length = 10
-
-// isAlphabet holds, for each byte, whether it is a character of the alphabet.
-var isAlphabet = createTable(alphabet)
-
-// gomutants:disable-next-line INTEGER_INCREMENT reason="a byte indexes the table, so a 257th slot is never read"
-func createTable(characters string) (table [256]bool) {
-	for i := range len(characters) {
-		table[characters[i]] = true
-	}
-	return table
-}
 
 // New mints an identifier.
 func New() ID {
@@ -52,7 +43,7 @@ func IsValid(s ID) bool {
 		return false
 	}
 	for i := range len(s) {
-		if !isAlphabet[s[i]] {
+		if strings.IndexByte(alphabet, s[i]) < 0 {
 			return false
 		}
 	}

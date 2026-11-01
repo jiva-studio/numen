@@ -16,7 +16,8 @@ func TestEverySpellingOfAVaultRootIsTheOneLock(t *testing.T) {
 		t.Skipf("this machine does not make symlinks: %v", err)
 	}
 
-	want := lockFor(root)
+	locks := NewLocks()
+	want := locks.getLock(root)
 	for _, spelling := range []string{
 		root,
 		root + string(filepath.Separator),
@@ -24,7 +25,7 @@ func TestEverySpellingOfAVaultRootIsTheOneLock(t *testing.T) {
 		filepath.Join(root, "notes", ".."),
 		linked,
 	} {
-		if got := lockFor(spelling); got != want {
+		if got := locks.getLock(spelling); got != want {
 			t.Errorf("%q is locked under a second lock of its own", spelling)
 		}
 	}

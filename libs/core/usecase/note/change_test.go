@@ -50,24 +50,24 @@ func (c changing) search() search.Search {
 }
 
 func (c changing) create() note.Create {
-	return note.NewCreate(vaultwriter.VaultWriters{}, c.db.Queries(), c.index, testsupport.NewClock())
+	return note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.Queries(), c.index, testsupport.NewClock())
 }
 
 func (c changing) move() note.Move {
 	return note.NewMove(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{},
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
 		c.db.Links(), c.db.Queries(), c.db.Sources(), c.index, testsupport.NewClock(),
 	)
 }
 
 func (c changing) remove() note.Remove {
 	return note.NewRemove(
-		vaultwriter.VaultWriters{}, c.db.Links(), c.db.SourcesKnown(), c.index)
+		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.Links(), c.db.SourcesKnown(), c.index)
 }
 
 func (c changing) newEditLinks() note.EditLinks {
 	return note.NewEditLinks(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, testsupport.NewClock())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
 }
 
 func (c changing) read(t *testing.T, path string) string {
@@ -561,7 +561,7 @@ func TestWrite_RejectsStaleEdit(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.NewWrite(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, testsupport.NewClock())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
 
 	reader, err := (vaultreader.Readers{}).Open(c.vault)
 	if err != nil {
@@ -593,7 +593,7 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.NewWrite(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, testsupport.NewClock())
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
 
 	reader, err := (vaultreader.Readers{}).Open(c.vault)
 	if err != nil {

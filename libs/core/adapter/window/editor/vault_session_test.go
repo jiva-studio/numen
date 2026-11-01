@@ -56,10 +56,10 @@ type showing struct {
 func openTwoVaults(t *testing.T) *showing {
 	t.Helper()
 
-	cfg := container.Config{
+	cfg := container.NewConfig(container.Config{
 		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
-	}
+	})
 	registry, err := cfg.Registry()
 	if err != nil {
 		t.Fatal(err)
@@ -115,7 +115,7 @@ func newListedVault(
 			t.Fatal(err)
 		}
 	}
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
 	v, err := vaults.NewAdd(cfg.VaultIdentity(), registry, testsupport.NewClock()).Execute(root, name)
@@ -749,16 +749,16 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 func openInstallation(t *testing.T) *editor.Installation {
 	t.Helper()
 
-	cfg := container.Config{
+	cfg := container.NewConfig(container.Config{
 		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
-	}
+	})
 	registry, err := cfg.Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
 	root := t.TempDir()
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
 	add := vaults.NewAdd(cfg.VaultIdentity(), registry, testsupport.NewClock())
@@ -831,10 +831,10 @@ func openEmptyWindow(t *testing.T) *nothing {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("XDG_DOCUMENTS_DIR", elsewhere)
 
-	cfg := container.Config{
+	cfg := container.NewConfig(container.Config{
 		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
-	}
+	})
 	installation, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "", os.Stderr)
 	if err != nil {
 		t.Fatalf("an installation holding no vault would not open: %v", err)
@@ -1130,7 +1130,7 @@ func TestAVaultAddedToAWindowActiveOnNothingIsShown(t *testing.T) {
 	); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
 

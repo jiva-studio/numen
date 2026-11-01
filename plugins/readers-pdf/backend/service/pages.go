@@ -22,12 +22,13 @@ const pageDPI = 150
 
 // PageServer draws the pages of the PDF files in a vault as JPEG images.
 type PageServer struct {
-	files host.Vault
+	files   host.Vault
+	workers *pdf.Workers
 }
 
-// NewPageServer returns a PageServer that reads files from files.
-func NewPageServer(files host.Vault) *PageServer {
-	return &PageServer{files: files}
+// NewPageServer returns a PageServer that reads files from files and draws them on the workers.
+func NewPageServer(files host.Vault, workers *pdf.Workers) *PageServer {
+	return &PageServer{files: files, workers: workers}
 }
 
 // ServeHTTP answers a request for one page: the index is the path value "page", counted from zero,
@@ -48,7 +49,7 @@ func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), getStatus(err))
 		return
 	}
-	image, err := renderPage(raw, index)
+	image, err := renderPage(s.workers, raw, index)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
@@ -61,8 +62,8 @@ func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // renderPage draws one page of the PDF bytes raw as JPEG bytes.
-func renderPage(raw []byte, index int) (encoded []byte, err error) {
-	scan, err := pdf.OpenBytes(raw)
+func renderPage(workers *pdf.Workers, raw []byte, index int) (encoded []byte, err error) {
+	scan, err := workers.OpenBytes(raw)
 	if err != nil {
 		return nil, err
 	}

@@ -128,7 +128,7 @@ func TestACancelledDropEndsWithTheCancellation(t *testing.T) {
 	v := testsupport.NewVault(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	bring := vaults.NewImport(vaultwriter.VaultWriters{}, aFolderOfTwo())
+	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, aFolderOfTwo())
 
 	brought, err := bring.Execute(ctx, v, "", []string{"content://held/2"})
 	if !errors.Is(err, context.Canceled) {
@@ -146,7 +146,7 @@ func TestADropCancelledInsideAFolderRestoresNothingBelowIt(t *testing.T) {
 	v := testsupport.NewVault(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
 	machine := flawed{handedOver: aFolderOfTwo(), onList: cancel}
-	bring := vaults.NewImport(vaultwriter.VaultWriters{}, machine)
+	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, machine)
 
 	brought, broughtErr := bring.Execute(ctx, v, "", []string{"content://held/1"})
 	if broughtErr != nil {
@@ -175,7 +175,7 @@ func TestAHandleThatCannotBeReadStaysOutsideWithItsError(t *testing.T) {
 		handedOver: handedOver{names: map[string]string{"content://held/9": "Gone.png"}},
 		statFails:  map[string]error{"content://held/9": removed},
 	}
-	bring := vaults.NewImport(vaultwriter.VaultWriters{}, machine)
+	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, machine)
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{"content://held/9"})
 	if err != nil {
@@ -193,7 +193,7 @@ func TestAHandleThatCannotBeReadStaysOutsideWithItsError(t *testing.T) {
 func TestAFolderOntoAFileOfTheSameNameStaysOutside(t *testing.T) {
 	isolateHome(t)
 	v := testsupport.NewVault(t, map[string]string{"scans": "a file"})
-	bring := vaults.NewImport(vaultwriter.VaultWriters{}, aFolderOfTwo())
+	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, aFolderOfTwo())
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{"content://held/1"})
 	if err != nil {
@@ -217,7 +217,7 @@ func TestAFolderThatCannotBeListedIsNamedWithTheError(t *testing.T) {
 		handedOver: aFolderOfTwo(),
 		listFails:  map[string]error{"content://held/1": unlistable},
 	}
-	bring := vaults.NewImport(vaultwriter.VaultWriters{}, machine)
+	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, machine)
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{"content://held/1"})
 	if err != nil {
@@ -238,7 +238,7 @@ func TestOneFileOfAFolderThatCannotBeReadIsNamedAndTheRestArrive(t *testing.T) {
 		handedOver: aFolderOfTwo(),
 		openFails:  map[string]error{"content://held/2": denied},
 	}
-	bring := vaults.NewImport(vaultwriter.VaultWriters{}, machine)
+	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, machine)
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{"content://held/1"})
 	if err != nil {
@@ -264,7 +264,7 @@ func TestAnEntryOfAFolderThatCannotBeExaminedIsNamed(t *testing.T) {
 		handedOver: aFolderOfTwo(),
 		statFails:  map[string]error{"content://held/3": removed},
 	}
-	bring := vaults.NewImport(vaultwriter.VaultWriters{}, machine)
+	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, machine)
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{"content://held/1"})
 	if err != nil {
@@ -297,7 +297,7 @@ func TestNothingBelowAFolderIsBroughtOnceTheDropIsCancelled(t *testing.T) {
 	v := testsupport.NewVault(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
 	machine := flawed{handedOver: aFolderOfTwo(), onList: cancel}
-	bring := vaults.NewImport(ignoringContext{vaultwriter.VaultWriters{}}, machine)
+	bring := vaults.NewImport(ignoringContext{vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}}, machine)
 
 	brought, broughtErr := bring.Execute(ctx, v, "", []string{"content://held/1"})
 	if broughtErr != nil {
@@ -316,7 +316,7 @@ func TestADropCancelledAfterOneHandleReportsWhatArrived(t *testing.T) {
 	v := testsupport.NewVault(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
 	machine := flawed{handedOver: aFolderOfTwo(), onList: cancel}
-	bring := vaults.NewImport(vaultwriter.VaultWriters{}, machine)
+	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, machine)
 
 	brought, err := bring.Execute(ctx, v, "", []string{"content://held/1", "content://held/3"})
 	if !errors.Is(err, context.Canceled) {
@@ -335,7 +335,7 @@ func TestSomethingNeitherFileNorFolderStaysOutside(t *testing.T) {
 		handedOver: handedOver{names: map[string]string{"content://held/7": "Socket"}},
 		neither:    map[string]bool{"content://held/7": true},
 	}
-	bring := vaults.NewImport(vaultwriter.VaultWriters{}, machine)
+	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, machine)
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{"content://held/7"})
 	if err != nil {

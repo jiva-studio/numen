@@ -20,10 +20,10 @@ func (c Config) Themes(say func(string)) (*theme.Service, error) {
 			say,
 		),
 		InterfaceScaleBounds: theme.Bounds{
-			Min: settings.InterfaceScaleBounds.Min, Max: settings.InterfaceScaleBounds.Max,
+			Min: settings.GetInterfaceScaleBounds().Min, Max: settings.GetInterfaceScaleBounds().Max,
 		},
 		TextScaleBounds: theme.Bounds{
-			Min: settings.TextScaleBounds.Min, Max: settings.TextScaleBounds.Max,
+			Min: settings.GetTextScaleBounds().Min, Max: settings.GetTextScaleBounds().Max,
 		},
 	}, err
 }
@@ -31,12 +31,12 @@ func (c Config) Themes(say func(string)) (*theme.Service, error) {
 // CheckInterfaceScale is an error naming the scale where the interface scale setting does not take
 // it.
 func CheckInterfaceScale(name string, scale float64) error {
-	return settings.InterfaceScaleBounds.Check(name, scale)
+	return settings.GetInterfaceScaleBounds().Check(name, scale)
 }
 
 // CheckTextScale is an error naming the scale where the text scale setting does not take it.
 func CheckTextScale(name string, scale float64) error {
-	return settings.TextScaleBounds.Check(name, scale)
+	return settings.GetTextScaleBounds().Check(name, scale)
 }
 
 func (c Config) getCatalogue() (theme.Catalogue, error) {
@@ -49,12 +49,12 @@ func (c Config) getCatalogue() (theme.Catalogue, error) {
 
 func (c Config) openCatalogue() (theme.Catalogue, error) {
 	if c.ThemesPath != "" {
-		return theme.OpenAt(c.ThemesPath)
+		return theme.OpenAt(c.ThemesPath, c.getResources().watches)
 	}
 	if folder, selected := c.getAdjacentPath("themes"); selected {
-		return theme.OpenAt(folder)
+		return theme.OpenAt(folder, c.getResources().watches)
 	}
-	return theme.Open()
+	return theme.Open(c.getResources().watches)
 }
 
 func (c Config) readAppearance(scales *theme.Scales) (theme.Appearance, error) {
@@ -88,7 +88,7 @@ func (c Config) writeAppearance(selectedVal theme.Appearance, scales *theme.Scal
 		{At: []string{appearancePrefix, "mode"}, Written: settings.GetModeName(selectedVal.Mode)},
 	}
 	if selectedVal.InterfaceScale > 0 {
-		err := settings.InterfaceScaleBounds.Check("appearance.interface_scale", selectedVal.InterfaceScale)
+		err := settings.GetInterfaceScaleBounds().Check("appearance.interface_scale", selectedVal.InterfaceScale)
 		if err != nil {
 			return err
 		}
@@ -96,14 +96,14 @@ func (c Config) writeAppearance(selectedVal theme.Appearance, scales *theme.Scal
 			settings.Setting{At: []string{appearancePrefix, "interface_scale"}, Written: selectedVal.InterfaceScale})
 	}
 	if selectedVal.TextScale > 0 {
-		if err := settings.TextScaleBounds.Check("appearance.text_scale", selectedVal.TextScale); err != nil {
+		if err := settings.GetTextScaleBounds().Check("appearance.text_scale", selectedVal.TextScale); err != nil {
 			return err
 		}
 		writing = append(writing,
 			settings.Setting{At: []string{appearancePrefix, "text_scale"}, Written: selectedVal.TextScale})
 	}
 	into := DefaultSettings()
-	if err := settings.Save(path, &into, writing...); err != nil {
+	if err := c.getResources().settingsFiles.Save(path, &into, writing...); err != nil {
 		return err
 	}
 	scales.ClearSizes(selectedVal)

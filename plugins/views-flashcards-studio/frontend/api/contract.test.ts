@@ -146,7 +146,7 @@ describe('the client', () => {
 
     const answer = await cardsService.readDeck(request as { path: string })
 
-    expect(requests).toEqual([{ url: 'http://numen.invalid/numen.flashcards/ReadDeck', body: request }])
+    expect(requests).toEqual([{ url: 'http://numen.invalid/md.numen.views.flashcards.studio/ReadDeck', body: request }])
     expect(answer).toEqual(response)
   })
 

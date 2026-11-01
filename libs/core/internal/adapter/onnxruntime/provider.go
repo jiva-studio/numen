@@ -19,16 +19,18 @@ const (
 )
 
 // providerNames maps each accepted spelling to its provider. The empty name is auto.
-var providerNames = map[string]Provider{
-	"": ProviderAuto, "auto": ProviderAuto, "cpu": ProviderCPU,
-	"coreml": ProviderCoreML, "core-ml": ProviderCoreML, "cuda": ProviderCUDA,
-	"directml": ProviderDirectML, "direct-ml": ProviderDirectML, "dml": ProviderDirectML,
-	"rocm": ProviderROCm,
+func getProviderNames() map[string]Provider {
+	return map[string]Provider{
+		"": ProviderAuto, "auto": ProviderAuto, "cpu": ProviderCPU,
+		"coreml": ProviderCoreML, "core-ml": ProviderCoreML, "cuda": ProviderCUDA,
+		"directml": ProviderDirectML, "direct-ml": ProviderDirectML, "dml": ProviderDirectML,
+		"rocm": ProviderROCm,
+	}
 }
 
 // ParseProvider converts a name into a Provider, ignoring case and surrounding space.
 func ParseProvider(name string) (Provider, error) {
-	if provider, ok := providerNames[normalize(name)]; ok {
+	if provider, ok := getProviderNames()[normalize(name)]; ok {
 		return provider, nil
 	}
 	return "", fmt.Errorf("unknown execution provider %q, expected one of: auto, cpu, coreml, cuda, directml, rocm", name)

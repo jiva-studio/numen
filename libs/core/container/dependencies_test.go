@@ -14,7 +14,7 @@ import (
 )
 
 func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
-	host := plugin.NewHost(testsupport.Machine, "desktop.editor")
+	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
 		if err := host.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
@@ -23,7 +23,7 @@ func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
 	registry := newDependencies()
 	host.SetDependencies(registry)
 	tasks := run.NewTasks()
-	Config{PluginHost: host}.ReportDependencies(tasks)
+	NewConfig(Config{PluginHost: host}).ReportDependencies(tasks)
 	req := pluginport.DependencyRequirement{ID: "whisper", Kind: pluginport.DependencyKindModel}
 
 	registry.Observe(req, pluginport.DependencyStatus{State: pluginport.DependencyStateProvisioning, BytesDownloaded: 5, BytesTotal: 10})

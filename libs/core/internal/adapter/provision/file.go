@@ -50,7 +50,7 @@ func NewFileProvisioner(cfg Config) *FileProvisioner {
 		cfg.Discovery = newDiscovery()
 	}
 	if cfg.Backoff.attempts == 0 {
-		cfg.Backoff = defaultBackoff
+		cfg.Backoff = newDefaultBackoff()
 	}
 	return &FileProvisioner{cfg: cfg}
 }

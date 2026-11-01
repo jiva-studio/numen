@@ -38,11 +38,11 @@ func newBuilder(base string) *builder {
 // openElement starts an element and reports whether one was started. An element that
 // is not drawn is passed through to its children.
 func (b *builder) openElement(n *html.Node, offset int) bool {
-	if !drawn[n.DataAtom] {
+	if !isDrawn(n.DataAtom) {
 		return false
 	}
 	opening := markup.Node{Name: n.Data, Text: "", Offset: offset, Attributes: b.convertAttributes(n), Children: nil}
-	if cells[opening.Name] && len(b.waiting) > 0 {
+	if isCell(opening.Name) && len(b.waiting) > 0 {
 		opening.Children, opening.Offset = b.waiting, b.waiting[0].Offset
 		b.waiting = nil
 	}
@@ -55,7 +55,7 @@ func (b *builder) close() {
 	b.stack = b.stack[:len(b.stack)-1]
 	// A table that opened no cell keeps the runs written inside it, in the
 	// order they stand.
-	if len(b.waiting) > 0 && tabular[isDone.Name] && !tabular[b.stack[len(b.stack)-1].Name] {
+	if len(b.waiting) > 0 && isTabular(isDone.Name) && !isTabular(b.stack[len(b.stack)-1].Name) {
 		isDone.Children, isDone.Offset = append(b.waiting, isDone.Children...), b.waiting[0].Offset
 		b.waiting = nil
 	}
@@ -75,7 +75,7 @@ func (b *builder) run(offset int) {
 	switch cell := findLastCell(top); {
 	case cell != nil:
 		cell.Children = append(cell.Children, markup.Node{Name: "", Text: "", Offset: offset, Attributes: nil, Children: nil})
-	case tabular[top.Name]:
+	case isTabular(top.Name):
 		b.waiting = append(b.waiting, markup.Node{Name: "", Text: "", Offset: offset, Attributes: nil, Children: nil})
 	default:
 		b.appendChild(markup.Node{Name: "", Text: "", Offset: offset, Attributes: nil, Children: nil})
@@ -85,9 +85,9 @@ func (b *builder) run(offset int) {
 // findLastCell returns the last cell opened under an element, and nil where the
 // element is no part of a table or holds no cell yet.
 func findLastCell(in *markup.Node) *markup.Node {
-	for tabular[in.Name] && len(in.Children) > 0 {
+	for isTabular(in.Name) && len(in.Children) > 0 {
 		last := &in.Children[len(in.Children)-1]
-		if cells[last.Name] {
+		if isCell(last.Name) {
 			return last
 		}
 		in = last
@@ -95,14 +95,19 @@ func findLastCell(in *markup.Node) *markup.Node {
 	return nil
 }
 
-// tabular are the elements that hold rows and cells and no text of their own,
-// and cells are the ones that hold text.
-var (
-	tabular = map[string]bool{
-		"table": true, "thead": true, "tbody": true, "tfoot": true, "tr": true,
+// isTabular reports whether the element holds rows and cells and no text of its own.
+func isTabular(name string) bool {
+	switch name {
+	case "table", "thead", "tbody", "tfoot", "tr":
+		return true
 	}
-	cells = map[string]bool{"td": true, "th": true}
-)
+	return false
+}
+
+// isCell reports whether the element is a cell of a table, which holds text.
+func isCell(name string) bool {
+	return name == "td" || name == "th"
+}
 
 func (b *builder) appendChild(n markup.Node) {
 	top := &b.stack[len(b.stack)-1]
@@ -156,7 +161,7 @@ func (b *builder) convertAttributes(n *html.Node) []markup.Attribute {
 	var out []markup.Attribute
 	for _, a := range n.Attr {
 		name := strings.ToLower(a.Key)
-		if !anyElement[name] && !slices.Contains(ownAttributes[n.DataAtom], name) {
+		if !isAnyElementAttribute(name) && !slices.Contains(getOwnAttributes(n.DataAtom), name) {
 			continue
 		}
 		value := a.Val
@@ -183,7 +188,7 @@ func (b *builder) convertAttributes(n *html.Node) []markup.Attribute {
 // crosses as the fragment it is.
 func resolveLinkAddress(base, url string) string {
 	if named := parseScheme(removeSpacesAndControls(url)); named != "" {
-		if reachable[named] {
+		if isReachable(named) {
 			return removeSpacesAndControls(url)
 		}
 		return ""
@@ -209,12 +214,13 @@ func resolveImageSource(base, url string) string {
 	return ""
 }
 
-// reachable are the schemes a link may name.
-var reachable = map[string]bool{
-	"http":   true,
-	"https":  true,
-	"mailto": true,
-	"tel":    true,
+// isReachable reports whether a link may name the scheme.
+func isReachable(key string) bool {
+	switch key {
+	case "http", "https", "mailto", "tel":
+		return true
+	}
+	return false
 }
 
 // isInlineImage reports whether an address is a base64 image written into the markup.
@@ -251,96 +257,51 @@ func parseScheme(url string) string {
 	return ""
 }
 
-// anyElement are the attributes any element may carry. An id is how a link
+// isAnyElementAttribute reports whether any element may carry the attribute. An id is how a link
 // inside the book lands on the element it names.
-var anyElement = map[string]bool{
-	"id":    true,
-	"dir":   true,
-	"lang":  true,
-	"title": true,
+func isAnyElementAttribute(key string) bool {
+	switch key {
+	case "id", "dir", "lang", "title":
+		return true
+	}
+	return false
 }
 
-// ownAttributes are what an element may carry beyond those.
-var ownAttributes = map[atom.Atom][]string{
-	atom.A:        {hrefAttribute},
-	atom.Img:      {"src", "alt", "width", "height"},
-	atom.Td:       {"colspan", "rowspan"},
-	atom.Th:       {"colspan", "rowspan", "scope"},
-	atom.Ol:       {"start", "reversed"},
-	atom.Time:     {"datetime"},
-	atom.Col:      {"span"},
-	atom.Colgroup: {"span"},
+// getOwnAttributes returns what an element may carry beyond those.
+func getOwnAttributes(element atom.Atom) []string {
+	switch element {
+	case atom.A:
+		return []string{hrefAttribute}
+	case atom.Img:
+		return []string{"src", "alt", "width", "height"}
+	case atom.Td:
+		return []string{"colspan", "rowspan"}
+	case atom.Th:
+		return []string{"colspan", "rowspan", "scope"}
+	case atom.Ol:
+		return []string{"start", "reversed"}
+	case atom.Time:
+		return []string{"datetime"}
+	case atom.Col, atom.Colgroup:
+		return []string{"span"}
+	}
+	return nil
 }
 
-// drawn are the elements a book is drawn from.
-var drawn = map[atom.Atom]bool{
-	atom.A:          true,
-	atom.Abbr:       true,
-	atom.Address:    true,
-	atom.Article:    true,
-	atom.Aside:      true,
-	atom.B:          true,
-	atom.Bdi:        true,
-	atom.Bdo:        true,
-	atom.Blockquote: true,
-	atom.Br:         true,
-	atom.Caption:    true,
-	atom.Cite:       true,
-	atom.Code:       true,
-	atom.Col:        true,
-	atom.Colgroup:   true,
-	atom.Dd:         true,
-	atom.Del:        true,
-	atom.Dfn:        true,
-	atom.Div:        true,
-	atom.Dl:         true,
-	atom.Dt:         true,
-	atom.Em:         true,
-	atom.Figcaption: true,
-	atom.Figure:     true,
-	atom.Footer:     true,
-	atom.H1:         true,
-	atom.H2:         true,
-	atom.H3:         true,
-	atom.H4:         true,
-	atom.H5:         true,
-	atom.H6:         true,
-	atom.Header:     true,
-	atom.Hr:         true,
-	atom.I:          true,
-	atom.Img:        true,
-	atom.Ins:        true,
-	atom.Kbd:        true,
-	atom.Li:         true,
-	atom.Main:       true,
-	atom.Mark:       true,
-	atom.Nav:        true,
-	atom.Ol:         true,
-	atom.P:          true,
-	atom.Pre:        true,
-	atom.Q:          true,
-	atom.Rp:         true,
-	atom.Rt:         true,
-	atom.Ruby:       true,
-	atom.S:          true,
-	atom.Samp:       true,
-	atom.Section:    true,
-	atom.Small:      true,
-	atom.Span:       true,
-	atom.Strong:     true,
-	atom.Sub:        true,
-	atom.Sup:        true,
-	atom.Table:      true,
-	atom.Tbody:      true,
-	atom.Td:         true,
-	atom.Tfoot:      true,
-	atom.Th:         true,
-	atom.Thead:      true,
-	atom.Time:       true,
-	atom.Tr:         true,
-	atom.U:          true,
-	atom.Ul:         true,
-	atom.Var:        true,
+// isDrawn reports whether a book is drawn from the element.
+func isDrawn(key atom.Atom) bool {
+	switch key {
+	case atom.A, atom.Abbr, atom.Address, atom.Article, atom.Aside, atom.B, atom.Bdi, atom.Bdo,
+		atom.Blockquote, atom.Br, atom.Caption, atom.Cite, atom.Code, atom.Col, atom.Colgroup, atom.Dd,
+		atom.Del, atom.Dfn, atom.Div, atom.Dl, atom.Dt, atom.Em, atom.Figcaption, atom.Figure,
+		atom.Footer, atom.H1, atom.H2, atom.H3, atom.H4, atom.H5, atom.H6, atom.Header, atom.Hr, atom.I,
+		atom.Img, atom.Ins, atom.Kbd, atom.Li, atom.Main, atom.Mark, atom.Nav, atom.Ol, atom.P, atom.Pre,
+		atom.Q, atom.Rp, atom.Rt, atom.Ruby, atom.S, atom.Samp, atom.Section, atom.Small, atom.Span,
+		atom.Strong, atom.Sub, atom.Sup, atom.Table, atom.Tbody, atom.Td, atom.Tfoot, atom.Th, atom.Thead,
+		atom.Time, atom.Tr, atom.U, atom.Ul, atom.Var:
+		return true
+	}
+	return false
 }
 
 // ReadNodes reads one document as the elements it is drawn from. The offsets of

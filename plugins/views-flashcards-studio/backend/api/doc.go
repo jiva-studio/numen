@@ -1,5 +1,5 @@
 // Package api declares the JSON messages that the backend of the flashcards-studio plugin
-// exchanges with its frontend under the `numen.flashcards` service.
+// exchanges with its frontend under the `md.numen.views.flashcards.studio` service.
 //
 // A field is named in lowerCamelCase on the wire. An enumeration is a string whose zero value is
 // the empty string. A scalar field is always present; a message-typed field or a scalar behind a

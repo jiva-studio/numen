@@ -112,6 +112,9 @@ type Config struct {
 	// Now provides current time for timestamping and scheduling. Defaults to the system clock if nil.
 	Now machineport.Clock
 
+	// Resources are shared by every part the container assembles. NewResources makes them.
+	Resources *Resources
+
 	agentProvider agentport.AgentProvider
 }
 
@@ -193,7 +196,7 @@ func (c Config) writeSettings(entries []settingsport.Setting) error {
 		return err
 	}
 	into := DefaultSettings()
-	if err := settings.Save(path, &into, target...); err != nil {
+	if err := c.getResources().settingsFiles.Save(path, &into, target...); err != nil {
 		return err
 	}
 	notifyPluginSettings(c.PluginHost, entries, c.handleError)
@@ -274,7 +277,7 @@ func (c Config) VaultReaders() vaultport.VaultReaders {
 
 // VaultWriters opens vaults for write operations.
 func (c Config) VaultWriters() vaultport.VaultWriters {
-	return vaultwriter.VaultWriters{Options: c.vaultOptions()}
+	return vaultwriter.VaultWriters{Options: c.vaultOptions(), Locks: c.getResources().vaultLocks}
 }
 
 // GetImportedFiles opens files imported from outside the vault.
@@ -284,7 +287,7 @@ func (c Config) GetImportedFiles() sourceport.ImportedFiles {
 
 // VaultWatcher monitors vaults for external filesystem changes.
 func (c Config) VaultWatcher() vaultport.VaultWatcher {
-	return vaultwatch.Watcher{Options: c.vaultOptions()}
+	return vaultwatch.Watcher{Options: c.vaultOptions(), Hub: c.getResources().watches}
 }
 
 // VaultIdentity provides vault identification.

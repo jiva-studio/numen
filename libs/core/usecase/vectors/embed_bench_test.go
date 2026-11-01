@@ -30,7 +30,7 @@ func BenchmarkEmbedDuplicates(b *testing.B) {
 			uniqueCount := max(1, int(float64(tc.chunks)*(1.0-tc.dupsRatio)))
 			uniqueParts := make([]string, uniqueCount)
 			for i := range uniqueCount {
-				uniqueParts[i] = fmt.Sprintf("Unique section %d %s", i, words(sanskrit, 150))
+				uniqueParts[i] = fmt.Sprintf("Unique section %d %s", i, words(getSanskrit(), 150))
 			}
 
 			parts := make([]string, tc.chunks)
@@ -46,14 +46,14 @@ func BenchmarkEmbedDuplicates(b *testing.B) {
 			for b.Loop() {
 				b.StopTimer()
 				index := newStore()
-				cutBooks(b, index, shelf, first)
+				cutBooks(b, index, shelf, getFirst())
 				model := &embedder{dims: dimensions}
-				embed := newEmbed(vaults{first.ID: shelf}, index, index)
+				embed := newEmbed(vaults{getFirst().ID: shelf}, index, index)
 				embed.Embedder = model
 				embed.BatchCharacters = 4000
 				b.StartTimer()
 
-				if _, err := embed.Execute(b.Context(), first); err != nil {
+				if _, err := embed.Execute(b.Context(), getFirst()); err != nil {
 					b.Fatal(err)
 				}
 			}
@@ -82,7 +82,7 @@ func BenchmarkEmbedBatchDuplicates(b *testing.B) {
 			uniqueCount := max(1, int(float64(tc.chunks)*(1.0-tc.dupsRatio)))
 			uniqueTexts := make([]string, uniqueCount)
 			for i := range uniqueCount {
-				uniqueTexts[i] = fmt.Sprintf("Unique chunk %d %s", i, words(sanskrit, 50))
+				uniqueTexts[i] = fmt.Sprintf("Unique chunk %d %s", i, words(getSanskrit(), 50))
 			}
 
 			texts := make([]string, tc.chunks)

@@ -26,7 +26,7 @@ func saveTypedNoteWithHeadings(
 		body += headings[i].Text + "\n"
 	}
 	n := domain.Note{
-		FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: int64(len(body)), ModTime: walked},
+		FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: int64(len(body)), ModTime: getWalked()},
 		Title:    path,
 		Type:     kind,
 		Body:     body,
@@ -61,17 +61,17 @@ func headingTexts(t *testing.T, db *DB, vault domain.Vault, path string) []strin
 // A type that its plugin declares as not cut keeps its body out of the chunks.
 func TestATypeWithoutChunksContributesNoChunkAndNoVector(t *testing.T) {
 	db := openDB(t)
-	saveTypedNoteWithHeadings(t, db, first, "samples/mammals.md", sampleType,
+	saveTypedNoteWithHeadings(t, db, getFirst(), "samples/mammals.md", sampleType,
 		domain.Heading{Level: 1, Text: "Roots"},
 		domain.Heading{Level: 2, Text: "Compost, what is it made of ^k7m2xq9fzp"},
 		domain.Heading{Level: 3, Text: "Summary"},
 		domain.Heading{Level: 3, Text: "Source"},
 	)
 
-	if got := chunksOfNote(t, db, first, "samples/mammals.md"); got != 0 {
+	if got := chunksOfNote(t, db, getFirst(), "samples/mammals.md"); got != 0 {
 		t.Errorf("a sample holds %d chunks, want none", got)
 	}
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), first.ID, "model", 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), getFirst().ID, "model", 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,15 +83,15 @@ func TestATypeWithoutChunksContributesNoChunkAndNoVector(t *testing.T) {
 // A type that keeps no heading is not cut either.
 func TestATypeKeepingNoHeadingsContributesNoChunkAndNoVector(t *testing.T) {
 	db := openDB(t)
-	saveTypedNoteWithHeadings(t, db, first, "forms/term.md", formType,
+	saveTypedNoteWithHeadings(t, db, getFirst(), "forms/term.md", formType,
 		domain.Heading{Level: 1, Text: "Layout"},
 		domain.Heading{Level: 2, Text: "Header"},
 	)
 
-	if got := chunksOfNote(t, db, first, "forms/term.md"); got != 0 {
+	if got := chunksOfNote(t, db, getFirst(), "forms/term.md"); got != 0 {
 		t.Errorf("a form holds %d chunks, want none", got)
 	}
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), first.ID, "model", 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), getFirst().ID, "model", 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,12 +103,12 @@ func TestATypeKeepingNoHeadingsContributesNoChunkAndNoVector(t *testing.T) {
 // A note of the default type is cut.
 func TestAnOrdinaryNoteIsStillSplit(t *testing.T) {
 	db := openDB(t)
-	saveTypedNoteWithHeadings(t, db, first, "notes/entropy.md", domain.TypeNote,
+	saveTypedNoteWithHeadings(t, db, getFirst(), "notes/entropy.md", domain.TypeNote,
 		domain.Heading{Level: 1, Text: "What it is"},
 		domain.Heading{Level: 2, Text: "Where it came from"},
 	)
 
-	if got := chunksOfNote(t, db, first, "notes/entropy.md"); got == 0 {
+	if got := chunksOfNote(t, db, getFirst(), "notes/entropy.md"); got == 0 {
 		t.Error("an ordinary note holds no chunk")
 	}
 }
@@ -116,17 +116,17 @@ func TestAnOrdinaryNoteIsStillSplit(t *testing.T) {
 // A note saved again as a type that is not cut loses the chunks it held as a note.
 func TestARetypedNoteLosesItsChunks(t *testing.T) {
 	db := openDB(t)
-	saveTypedNoteWithHeadings(t, db, first, "samples/mammals.md", domain.TypeNote,
+	saveTypedNoteWithHeadings(t, db, getFirst(), "samples/mammals.md", domain.TypeNote,
 		domain.Heading{Level: 1, Text: "Roots"},
 	)
-	if got := chunksOfNote(t, db, first, "samples/mammals.md"); got == 0 {
+	if got := chunksOfNote(t, db, getFirst(), "samples/mammals.md"); got == 0 {
 		t.Fatal("the note held no chunk to begin with")
 	}
 
-	saveTypedNoteWithHeadings(t, db, first, "samples/mammals.md", sampleType,
+	saveTypedNoteWithHeadings(t, db, getFirst(), "samples/mammals.md", sampleType,
 		domain.Heading{Level: 1, Text: "Roots"},
 	)
-	if got := chunksOfNote(t, db, first, "samples/mammals.md"); got != 0 {
+	if got := chunksOfNote(t, db, getFirst(), "samples/mammals.md"); got != 0 {
 		t.Errorf("a note read again as a sample holds %d chunks, want none", got)
 	}
 }
@@ -135,7 +135,7 @@ func TestARetypedNoteLosesItsChunks(t *testing.T) {
 // third level here repeats the same names under every second-level heading.
 func TestATypeKeepsOnlyItsDeclaredHeadingLevels(t *testing.T) {
 	db := openDB(t)
-	saveTypedNoteWithHeadings(t, db, first, "samples/mammals.md", sampleType,
+	saveTypedNoteWithHeadings(t, db, getFirst(), "samples/mammals.md", sampleType,
 		domain.Heading{Level: 1, Text: "Roots"},
 		domain.Heading{Level: 2, Text: "Compost, what is it made of ^k7m2xq9fzp"},
 		domain.Heading{Level: 3, Text: "Summary"},
@@ -145,7 +145,7 @@ func TestATypeKeepsOnlyItsDeclaredHeadingLevels(t *testing.T) {
 		domain.Heading{Level: 3, Text: "Source"},
 	)
 
-	got := headingTexts(t, db, first, "samples/mammals.md")
+	got := headingTexts(t, db, getFirst(), "samples/mammals.md")
 	want := []string{"Roots", "Compost, what is it made of", "Leaf mould, how long"}
 	if len(got) != len(want) {
 		t.Fatalf("the sample holds %v, want %v", got, want)
@@ -165,14 +165,14 @@ func TestATypeKeepsOnlyItsDeclaredHeadingLevels(t *testing.T) {
 // A type whose profile keeps no heading level contributes no heading.
 func TestATypeKeepingNoHeadingsContributesNone(t *testing.T) {
 	db := openDB(t)
-	saveTypedNoteWithHeadings(t, db, first, "forms/term.md", formType,
+	saveTypedNoteWithHeadings(t, db, getFirst(), "forms/term.md", formType,
 		domain.Heading{Level: 1, Text: "Layout"},
 		domain.Heading{Level: 1, Text: "Variant"},
 		domain.Heading{Level: 2, Text: "Header"},
 		domain.Heading{Level: 2, Text: "Footer"},
 	)
 
-	if got := headingTexts(t, db, first, "forms/term.md"); len(got) != 0 {
+	if got := headingTexts(t, db, getFirst(), "forms/term.md"); len(got) != 0 {
 		t.Errorf("a form holds the headings %v, want none", got)
 	}
 	if n := countRows(t, db, `SELECT COUNT(*) FROM headings_fts WHERE headings_fts MATCH 'Header'`); n != 0 {
@@ -184,7 +184,7 @@ func TestATypeKeepingNoHeadingsContributesNone(t *testing.T) {
 // person reading a list.
 func TestAHeadingIsStoredWithoutItsBlockID(t *testing.T) {
 	db := openDB(t)
-	saveTypedNoteWithHeadings(t, db, first, "samples/mammals.md", sampleType,
+	saveTypedNoteWithHeadings(t, db, getFirst(), "samples/mammals.md", sampleType,
 		// A mark, and four endings that are not one: too short, too long, an
 		// alphabet the id pattern does not take, and no space before the caret.
 		domain.Heading{Level: 2, Text: "Compost, what is it made of ^k7m2xq9fzp"},
@@ -194,7 +194,7 @@ func TestAHeadingIsStoredWithoutItsBlockID(t *testing.T) {
 		domain.Heading{Level: 2, Text: "Joined^k7m2xq9fzp"},
 	)
 
-	got := headingTexts(t, db, first, "samples/mammals.md")
+	got := headingTexts(t, db, getFirst(), "samples/mammals.md")
 	want := []string{
 		"Compost, what is it made of",
 		"Short ^k7m2xq9f",
@@ -220,14 +220,14 @@ func TestAHeadingIsStoredWithoutItsBlockID(t *testing.T) {
 // its text.
 func TestAHeadingOfOnlyABlockIDContributesNoHeading(t *testing.T) {
 	db := openDB(t)
-	saveTypedNoteWithHeadings(t, db, first, "samples/mammals.md", sampleType,
+	saveTypedNoteWithHeadings(t, db, getFirst(), "samples/mammals.md", sampleType,
 		domain.Heading{Level: 1, Text: "Roots"},
 		domain.Heading{Level: 2, Text: "^k7m2xq9fzp"},
 		domain.Heading{Level: 3, Text: "Summary"},
 		domain.Heading{Level: 2, Text: "Leaf mould, how long ^0123456789"},
 	)
 
-	got := headingTexts(t, db, first, "samples/mammals.md")
+	got := headingTexts(t, db, getFirst(), "samples/mammals.md")
 	want := []string{"Roots", "Leaf mould, how long"}
 	if len(got) != len(want) {
 		t.Fatalf("the sample holds %v, want %v", got, want)
@@ -248,14 +248,14 @@ func TestAHeadingOfOnlyABlockIDContributesNoHeading(t *testing.T) {
 // in a sample is heading text in a note.
 func TestAnOrdinaryNoteKeepsEveryHeadingItHas(t *testing.T) {
 	db := openDB(t)
-	saveTypedNoteWithHeadings(t, db, first, "notes/entropy.md", domain.TypeNote,
+	saveTypedNoteWithHeadings(t, db, getFirst(), "notes/entropy.md", domain.TypeNote,
 		domain.Heading{Level: 1, Text: "What it is"},
 		domain.Heading{Level: 2, Text: "Where it came from"},
 		domain.Heading{Level: 3, Text: "Source"},
 		domain.Heading{Level: 3, Text: "An anchor ^k7m2xq9fzp"},
 	)
 
-	got := headingTexts(t, db, first, "notes/entropy.md")
+	got := headingTexts(t, db, getFirst(), "notes/entropy.md")
 	want := []string{"What it is", "Where it came from", "Source", "An anchor ^k7m2xq9fzp"}
 	if len(got) != len(want) {
 		t.Fatalf("the note holds %v, want %v", got, want)
@@ -272,7 +272,7 @@ func TestAnOrdinaryNoteKeepsEveryHeadingItHas(t *testing.T) {
 func TestATypedNoteIsANoteInEveryOtherWay(t *testing.T) {
 	db := openDB(t)
 	n := domain.Note{
-		FileStat: domain.FileStat{Path: "samples/mammals.md", Kind: domain.KindNote, Size: 100, ModTime: walked},
+		FileStat: domain.FileStat{Path: "samples/mammals.md", Kind: domain.KindNote, Size: 100, ModTime: getWalked()},
 		Title:    "Mammals",
 		Type:     sampleType,
 		ID:       "01HQXMAMMALS",
@@ -283,11 +283,11 @@ func TestATypedNoteIsANoteInEveryOtherWay(t *testing.T) {
 		}},
 		Headings: []domain.Heading{{Level: 2, Text: "Compost ^k7m2xq9fzp"}},
 	}
-	if err := saveCut(t.Context(), db, first.ID, []domain.Note{n}); err != nil {
+	if err := saveCut(t.Context(), db, getFirst().ID, []domain.Note{n}); err != nil {
 		t.Fatal(err)
 	}
 
-	target, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{"samples/mammals.md"})
+	target, err := db.NoteQueries().GetTypes(t.Context(), getFirst().ID, []string{"samples/mammals.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -296,10 +296,10 @@ func TestATypedNoteIsANoteInEveryOtherWay(t *testing.T) {
 	}
 	if got := countRows(t, db, `SELECT COUNT(*) FROM notes n JOIN vaults v ON v.id = n.vault_id
 	                          WHERE v.identifier = ? AND n.title = 'Mammals'
-	                            AND n.identifier = '01HQXMAMMALS'`, first.ID); got != 1 {
+	                            AND n.identifier = '01HQXMAMMALS'`, getFirst().ID); got != 1 {
 		t.Error("the sample's row does not carry its title and its identifier")
 	}
-	links, err := db.NoteQueries().GetLinks(t.Context(), first.ID, "samples/mammals.md")
+	links, err := db.NoteQueries().GetLinks(t.Context(), getFirst().ID, "samples/mammals.md")
 	if err != nil {
 		t.Fatal(err)
 	}

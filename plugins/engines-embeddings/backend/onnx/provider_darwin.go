@@ -17,13 +17,13 @@ const (
 	coreMLFlagCreateMLProgram  uint32 = 0x010
 )
 
-func applyProvider(opts *ort.SessionOptions, requested Provider, units ComputeUnits) (Provider, error) {
+func (l *Library) applyProvider(opts *ort.SessionOptions, requested Provider, units ComputeUnits) (Provider, error) {
 	switch requested {
 	case ProviderCPU:
 		return ProviderCPU, nil
 	case ProviderCoreML, ProviderAuto:
 		if runtime.GOARCH == "arm64" {
-			if err := enableCoreML(opts, units); err == nil {
+			if err := l.enableCoreML(opts, units); err == nil {
 				return ProviderCoreML, nil
 			} else if requested == ProviderCoreML {
 				return ProviderCPU, err
@@ -42,8 +42,8 @@ func applyProvider(opts *ort.SessionOptions, requested Provider, units ComputeUn
 	}
 }
 
-func enableCoreML(opts *ort.SessionOptions, units ComputeUnits) error {
-	engine, loadedPath := runtimeState.GetLoaded()
+func (l *Library) enableCoreML(opts *ort.SessionOptions, units ComputeUnits) error {
+	engine, loadedPath := l.runtime.GetLoaded()
 
 	if engine == nil || loadedPath == "" {
 		return fmt.Errorf("onnx runtime not loaded")

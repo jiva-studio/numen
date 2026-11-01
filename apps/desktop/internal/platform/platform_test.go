@@ -23,8 +23,7 @@ func TestGetPluginsDirs(t *testing.T) {
 }
 
 func TestPluginDiscoveryReleaseMode(t *testing.T) {
-	SetDev(false)
-	defer SetDev(false)
+	t.Setenv("NUMEN_DEV", "")
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -42,8 +41,7 @@ func TestPluginDiscoveryReleaseMode(t *testing.T) {
 }
 
 func TestPluginDiscoveryDevMode(t *testing.T) {
-	SetDev(true)
-	defer SetDev(false)
+	t.Setenv("NUMEN_DEV", "1")
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -82,7 +80,7 @@ func TestGetConfigNamesTheSystemKeychain(t *testing.T) {
 }
 
 func TestGetConfigOffersThePluginsOfTheIndex(t *testing.T) {
-	SetDev(false)
+	t.Setenv("NUMEN_DEV", "")
 	dir := t.TempDir()
 	t.Setenv("NUMEN_PLUGINS_PATH", dir)
 	index := `{"plugins":[{"id":"org.example.offered","name":"Offered","version":"1.0.0"}]}`

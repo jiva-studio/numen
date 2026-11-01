@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 )
 
-// mountMethods mounts the methods of the numen.epub service on s. A method works the vault the
+// mountMethods mounts the methods of the md.numen.readers.epub service on s. A method works the vault the
 // Numen-Vault header of its request names.
 func mountMethods(s *server.Server, books *BookServer) error {
 	a := s.NewAPI(api.Service)

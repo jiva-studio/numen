@@ -13,7 +13,7 @@ import (
 )
 
 func newReaderHost(manifests ...pluginport.PluginManifest) *Host {
-	host := NewHost(testsupport.Machine, "desktop.editor")
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	host.SetContentTypeTable(sharedmimeinfo.Open())
 	for _, manifest := range manifests {
 		manifest.Frontend = &pluginport.PluginFrontend{}

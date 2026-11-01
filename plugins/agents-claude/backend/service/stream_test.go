@@ -11,9 +11,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 )
 
-var testWords = map[string]toolcall.Declaration{
-	"note_edit": {Title: "Edit a note", Kind: "edit", About: "path", Match: "stood", Text: "becomes"},
-	"note_read": {Title: "Read notes", Kind: "read", About: "paths", Element: "path"},
+func getTestWords() map[string]toolcall.Declaration {
+	return map[string]toolcall.Declaration{
+		"note_edit": {Title: "Edit a note", Kind: "edit", About: "path", Match: "stood", Text: "becomes"},
+		"note_read": {Title: "Read notes", Kind: "read", About: "paths", Element: "path"},
+	}
 }
 
 // steppingClock advances by step on every reading.
@@ -61,7 +63,7 @@ func quote(text string) string {
 }
 
 func TestADeclaredToolIsShownByItsTitleAndEffect(t *testing.T) {
-	steps, _ := parseLines(t, testWords, startEdit, delta(`{"path":"Note.md","stood":"a"}`),
+	steps, _ := parseLines(t, getTestWords(), startEdit, delta(`{"path":"Note.md","stood":"a"}`),
 		`{"type":"stream_event","event":{"type":"content_block_stop"}}`)
 
 	calls := toolCalls(steps)
@@ -72,7 +74,7 @@ func TestADeclaredToolIsShownByItsTitleAndEffect(t *testing.T) {
 }
 
 func TestEveryReportOfOneCallCarriesTheNameTheAgentGaveIt(t *testing.T) {
-	steps, _ := parseLines(t, testWords, startEdit, delta(`{"path":"Note.md"}`),
+	steps, _ := parseLines(t, getTestWords(), startEdit, delta(`{"path":"Note.md"}`),
 		`{"type":"stream_event","event":{"type":"content_block_stop"}}`)
 
 	for _, c := range toolCalls(steps) {
@@ -93,7 +95,7 @@ func TestAnUndeclaredToolIsNamedWithoutItsServerPrefix(t *testing.T) {
 }
 
 func TestACollectionCallIsAboutItsFirstElementAndTheRest(t *testing.T) {
-	steps, _ := parseLines(t, testWords,
+	steps, _ := parseLines(t, getTestWords(),
 		`{"type":"assistant","message":{"content":[{"type":"tool_use","id":"c","name":"mcp__numen__note_read","input":{"paths":[{"path":"A.md"},{"path":"B.md"},{"path":"C.md"}]}}]}}`)
 
 	calls := toolCalls(steps)
@@ -103,7 +105,7 @@ func TestACollectionCallIsAboutItsFirstElementAndTheRest(t *testing.T) {
 }
 
 func TestACallNamingARunOfTextCarriesItsSpan(t *testing.T) {
-	steps, _ := parseLines(t, testWords,
+	steps, _ := parseLines(t, getTestWords(),
 		`{"type":"assistant","message":{"content":[{"type":"tool_use","id":"c","name":"mcp__numen__note_edit","input":{"path":"N.md","start":4,"length":6}}]}}`)
 
 	span := toolCalls(steps)[0].Range
@@ -123,7 +125,7 @@ func editProgress(steps []*agentrun.Response) []*agentrun.EditProgress {
 }
 
 func TestNoChangeIsReportedBeforeItsReplacementBegins(t *testing.T) {
-	steps, _ := parseLines(t, testWords, startEdit, delta(`{"path":"Note.md",`), delta(`"stood":"A hedgehog`), delta(` is named"`))
+	steps, _ := parseLines(t, getTestWords(), startEdit, delta(`{"path":"Note.md",`), delta(`"stood":"A hedgehog`), delta(` is named"`))
 
 	if got := editProgress(steps); len(got) != 0 {
 		t.Fatalf("reported early: %+v", got)
@@ -131,7 +133,7 @@ func TestNoChangeIsReportedBeforeItsReplacementBegins(t *testing.T) {
 }
 
 func TestAChangeIsReportedAsItsReplacementArrives(t *testing.T) {
-	steps, _ := parseLines(t, testWords, startEdit,
+	steps, _ := parseLines(t, getTestWords(), startEdit,
 		delta(`{"path":"Note.md","stood":"A hedgehog",`), delta(`"becomes":"An axe`), delta(`, two-bladed"}`))
 
 	got := editProgress(steps)
@@ -150,7 +152,7 @@ func TestChangesCloserThanTheIntervalAreReportedOnce(t *testing.T) {
 	var got []*agentrun.Response
 	p := &streamParser{
 		send:  func(r *agentrun.Response) error { got = append(got, r); return nil },
-		words: testWords,
+		words: getTestWords(),
 		clock: clock.NewFake(time.Unix(100, 0)),
 	}
 	p.tool, p.callID = "mcp__numen__note_edit", "c"

@@ -23,10 +23,13 @@ const (
 
 var errNoOutput = errors.New("the program ended without output")
 
-// disabledFeatures are the tools of Codex's own that a run naming no tool is started without.
-var disabledFeatures = []string{
-	"shell_tool", "unified_exec", "view_image", "multi_agent", "apps", "browser_use",
-	"computer_use", "plugins", "image_generation", "hooks",
+// getDisabledFeatures returns the tools of Codex's own that a run naming no tool is started
+// without.
+func getDisabledFeatures() []string {
+	return []string{
+		"shell_tool", "unified_exec", "view_image", "multi_agent", "apps", "browser_use",
+		"computer_use", "plugins", "image_generation", "hooks",
+	}
 }
 
 type spec struct {
@@ -261,7 +264,7 @@ func makeAnswerCommand(runCtx context.Context, req *agentrun.Request, customPath
 		"--sandbox", "read-only",
 		"-c", `web_search="disabled"`,
 	)
-	for _, feature := range disabledFeatures {
+	for _, feature := range getDisabledFeatures() {
 		args = append(args, "--disable", feature)
 	}
 	args = appendModelArguments(args, req)

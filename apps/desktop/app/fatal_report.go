@@ -103,7 +103,7 @@ func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
 	}
 
 	var out strings.Builder
-	if err := fatalPage.Execute(&out, response); err != nil {
+	if err := getFatalPage().Execute(&out, response); err != nil {
 		return nil, err
 	}
 	return []byte(out.String()), nil
@@ -241,7 +241,8 @@ func getSettingsPath(cfg container.Config) string {
 	return path
 }
 
-var fatalPage = template.Must(template.New("fatal").Parse(`<!doctype html>
+func getFatalPage() *template.Template {
+	return template.Must(template.New("fatal").Parse(`<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -282,3 +283,4 @@ var fatalPage = template.Must(template.New("fatal").Parse(`<!doctype html>
 </body>
 </html>
 `))
+}

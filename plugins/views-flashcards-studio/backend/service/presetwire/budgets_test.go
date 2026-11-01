@@ -23,7 +23,7 @@ func TestEveryBudgetTheSchemaNamesIsOneTheCoreContains(t *testing.T) {
 		api.BudgetNamePaused:      review.ClosedPaused,
 	}
 
-	for _, named := range api.BudgetNameValues {
+	for _, named := range api.GetBudgetNameValues() {
 		one, reply := target[named]
 		if !reply {
 			t.Errorf("the schema names %s and nothing in the core answers to it", named)

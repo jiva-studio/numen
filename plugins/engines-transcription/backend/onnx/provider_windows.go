@@ -11,7 +11,7 @@ import (
 	ort "github.com/getcharzp/onnxruntime_purego"
 )
 
-func applyProvider(opts *ort.SessionOptions, requested Provider, _ ComputeUnits) (Provider, error) {
+func (l *Library) applyProvider(opts *ort.SessionOptions, requested Provider, _ ComputeUnits) (Provider, error) {
 	switch requested {
 	case ProviderCPU:
 		return ProviderCPU, nil
@@ -21,7 +21,7 @@ func applyProvider(opts *ort.SessionOptions, requested Provider, _ ComputeUnits)
 		}
 		return ProviderCUDA, nil
 	case ProviderDirectML:
-		if err := enableDirectML(opts); err != nil {
+		if err := l.enableDirectML(opts); err != nil {
 			return ProviderCPU, err
 		}
 		return ProviderDirectML, nil
@@ -31,7 +31,7 @@ func applyProvider(opts *ort.SessionOptions, requested Provider, _ ComputeUnits)
 		if err := opts.EnableCUDA(); err == nil {
 			return ProviderCUDA, nil
 		}
-		if err := enableDirectML(opts); err == nil {
+		if err := l.enableDirectML(opts); err == nil {
 			return ProviderDirectML, nil
 		}
 		return ProviderCPU, nil
@@ -40,8 +40,8 @@ func applyProvider(opts *ort.SessionOptions, requested Provider, _ ComputeUnits)
 	}
 }
 
-func enableDirectML(opts *ort.SessionOptions) error {
-	engine, loadedPath := runtimeState.GetLoaded()
+func (l *Library) enableDirectML(opts *ort.SessionOptions) error {
+	engine, loadedPath := l.runtime.GetLoaded()
 
 	if engine == nil || loadedPath == "" {
 		return fmt.Errorf("onnx runtime not loaded")

@@ -9,7 +9,9 @@
 # live in a configuration that does not load tests.
 #
 # A rule here has no path exclusion, no exclusion preset and no suppression
-# comment. Reads of the machine clock are not a forbidigo rule: a type-aware test in
+# comment. gochecknoglobals keeps its allowances: error values, compiled regular
+# expressions, embedded files and blank identifiers. Reads of the machine clock are not
+# a forbidigo rule: a type-aware test in
 # libs/core/container (clock_port_test.go) permits them only inside the Now method
 # of a clock port implementation. Plugin directories and libs/plugin-sdk-go carry
 # byte-identical copies of both files; tools/lint-layers verifies the copies.
@@ -41,6 +43,9 @@ linters:
     - revive
     - depguard
     - wastedassign
+    - gochecknoinits
+    - gochecknoglobals
+    - reassign
 
   settings:
     depguard:
@@ -399,21 +404,100 @@ linters:
 
         # A plugin reaches the host through the plugin SDK. The rule covers every
         # file outside libs/ and apps/, which includes a plugin checked out alone.
+        # The longer match wins, so the SDK is allowed under the denied libs/.
         plugin-isolation:
           list-mode: lax
           files:
             - "$all"
             - "!**/libs/**"
             - "!**/apps/**"
+          allow:
+            - "github.com/jiva-studio/numen/libs/plugin-sdk-go"
           deny:
-            - pkg: "github.com/jiva-studio/numen/libs/core"
-              desc: "a plugin names the plugin SDK and no core package"
-            - pkg: "github.com/jiva-studio/numen/libs/notes"
-              desc: "a plugin reaches notes through the plugin SDK"
-            - pkg: "github.com/jiva-studio/numen/libs/protocol"
-              desc: "a plugin communicates through the plugin SDK and imports no raw protocol"
+            - pkg: "github.com/jiva-studio/numen/libs"
+              desc: "a plugin depends on the plugin SDK and on no other library of this repository"
             - pkg: "github.com/jiva-studio/numen/apps"
               desc: "a plugin reaches no application"
+            - pkg: "connectrpc.com/connect"
+              desc: "a plugin calls and answers the core through the plugin SDK"
+            - pkg: "google.golang.org/protobuf"
+              desc: "a plugin calls and answers the core through the plugin SDK"
+
+        # The plugin catalog: manifest is the model, catalog the service over it, and
+        # every other package an adapter that depends inward.
+        plugin-catalog-manifest:
+          list-mode: lax
+          files:
+            - "**/libs/plugin-catalog/manifest/**"
+            - "!$test"
+          deny:
+            - pkg: "github.com/jiva-studio/numen/libs/plugin-catalog"
+              desc: "the manifest model depends on no other package of the catalog"
+            - pkg: "github.com/jiva-studio/numen/libs/protocol"
+              desc: "the manifest model knows no wire format"
+            - pkg: "google.golang.org/protobuf"
+              desc: "the manifest model knows no wire format"
+            - pkg: "encoding/json"
+              desc: "the manifest model knows no wire format"
+            - pkg: "os"
+              desc: "the manifest model performs no I/O"
+            - pkg: "io/fs"
+              desc: "the manifest model performs no I/O"
+            - pkg: "path/filepath"
+              desc: "the manifest model uses slash-separated paths and performs no I/O"
+            - pkg: "net"
+              desc: "the manifest model performs no I/O"
+        plugin-catalog-service:
+          list-mode: lax
+          files:
+            - "**/libs/plugin-catalog/catalog/**"
+            - "!$test"
+          allow:
+            - "github.com/jiva-studio/numen/libs/plugin-catalog/manifest$"
+          deny:
+            - pkg: "github.com/jiva-studio/numen/libs"
+              desc: "the catalog service depends on the manifest model only"
+            - pkg: "google.golang.org/protobuf"
+              desc: "the catalog service knows no wire format"
+            - pkg: "os"
+              desc: "the catalog service reaches files through its ports"
+            - pkg: "net"
+              desc: "the catalog service reaches the network through its ports"
+        plugin-catalog-format:
+          list-mode: lax
+          files:
+            - "**/libs/plugin-catalog/manifestjson/**"
+            - "!$test"
+          deny:
+            - pkg: "github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
+              desc: "the manifest format depends on the manifest model only"
+            - pkg: "github.com/jiva-studio/numen/libs/plugin-catalog/localsource"
+              desc: "an adapter does not use another adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/plugin-catalog/indexsource"
+              desc: "an adapter does not use another adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/plugin-catalog/packagecache"
+              desc: "an adapter does not use another adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/plugin-catalog/snapshotcache"
+              desc: "an adapter does not use another adapter"
+        plugin-catalog-adapter:
+          list-mode: lax
+          files:
+            - "**/libs/plugin-catalog/localsource/**"
+            - "**/libs/plugin-catalog/indexsource/**"
+            - "**/libs/plugin-catalog/packagecache/**"
+            - "**/libs/plugin-catalog/snapshotcache/**"
+            - "!$test"
+          deny:
+            - pkg: "github.com/jiva-studio/numen/libs/plugin-catalog/localsource"
+              desc: "an adapter does not use another adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/plugin-catalog/indexsource"
+              desc: "an adapter does not use another adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/plugin-catalog/packagecache"
+              desc: "an adapter does not use another adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/plugin-catalog/snapshotcache"
+              desc: "an adapter does not use another adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/plugin-catalog/catalogtest"
+              desc: "production code does not use the test doubles"
 
         # The plugin SDK and its feature modules import no core package and no application.
         sdk-isolation:

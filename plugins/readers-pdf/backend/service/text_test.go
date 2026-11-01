@@ -14,6 +14,18 @@ import (
 
 const pluginID = "md.numen.readers.pdf"
 
+// newTestWorkers returns a pool that is closed when the test ends.
+func newTestWorkers(t testing.TB) *pdf.Workers {
+	t.Helper()
+	workers := pdf.NewWorkers()
+	t.Cleanup(func() {
+		if err := workers.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	return workers
+}
+
 // newVault is a vault holding one file under name with the bytes of a fixture, the texts of that
 // vault with the plugin providing, and the plugin's text server.
 func newVault(t *testing.T, name, fixture string) (*hosttest.Texts, *TextServer, []byte) {
@@ -30,7 +42,7 @@ func newVaultOf(t *testing.T, name string, raw []byte) (*hosttest.Texts, *TextSe
 	files := hosttest.OnDisk(t, "vault", map[string]string{name: string(raw)})
 	texts := hosttest.NewTexts("vault", pluginID)
 	texts.File(name, raw)
-	server := NewTextServer(files, texts, texts.GetStore(pluginID), hosttest.NewQueue())
+	server := NewTextServer(files, texts, texts.GetStore(pluginID), hosttest.NewQueue(), newTestWorkers(t))
 	t.Cleanup(server.Close)
 	return texts, server, raw
 }
@@ -108,7 +120,7 @@ func TestARunOfTheLayerIsLitOverTheWordsItCovers(t *testing.T) {
 func TestTheOutlineOpensTheSectionsOfTheLayer(t *testing.T) {
 	texts, server, raw := newVault(t, "outline.pdf", "outline.pdf")
 	createText(t, server, host.TextCreation{Path: "outline.pdf"})
-	book, err := pdf.Read(raw)
+	book, err := newTestWorkers(t).Read(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +142,8 @@ func TestPagesOfTheLayerJoinIntoTheWholeText(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	book, err := pdf.Read(raw)
+	workers := newTestWorkers(t)
+	book, err := workers.Read(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +151,7 @@ func TestPagesOfTheLayerJoinIntoTheWholeText(t *testing.T) {
 	for i := range all {
 		all[i] = i
 	}
-	boxes, err := book.Highlights(raw, all)
+	boxes, err := book.Highlights(workers, raw, all)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -248,7 +261,7 @@ func TestGetHighlightsPlacesNothingWithoutLiveVersion(t *testing.T) {
 
 // newDocumentServer is the document service of the vault the text server reads.
 func newDocumentServer(server *TextServer, texts host.Texts) *DocumentServer {
-	return NewDocumentServer(server.files, texts)
+	return NewDocumentServer(server.files, texts, server.workers)
 }
 
 func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
@@ -267,7 +280,7 @@ func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	}
 	other.File("tiny.pdf", raw)
 	other.SetStore(pluginID, chemistry.Store())
-	server := NewTextServer(physics, texts, physics.Store(), hosttest.NewQueue())
+	server := NewTextServer(physics, texts, physics.Store(), hosttest.NewQueue(), newTestWorkers(t))
 	t.Cleanup(server.Close)
 
 	createText(t, server, host.TextCreation{Vault: "Chemistry", Path: "tiny.pdf"})

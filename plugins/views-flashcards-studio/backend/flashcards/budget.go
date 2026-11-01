@@ -70,7 +70,7 @@ func getBudgets(
 	for path, p := range survey.settings {
 		cost, target := costed[path]
 		if !target {
-			cost = review.DefaultCost
+			cost = review.GetDefaultCost()
 		}
 		// Target date goals scale daily review allowances by learning duration.
 		learn := 0

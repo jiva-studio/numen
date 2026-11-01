@@ -16,66 +16,73 @@ import (
 
 // coarse is a vector of the shape the vector index holds: one bit per dimension
 // over 1024 dimensions.
-var coarse = make([]byte, 128)
+func getCoarse() []byte { return make([]byte, 128) }
 
 // The queries the index runs, and the index each must be answered through.
-var expectedPlans = []struct {
+func getExpectedPlans() []struct {
 	statements map[string]string
 	name       string
 	args       []any
-	// An index name, or the columns for a primary key: SQLite names those
-	// itself, and the name changes when a constraint is added.
-	endPos []string
-}{
-	{note.Statements(), "candidates", []any{1, "a", 1, "b", 1, "c"}, []string{"notes_by_folded_name"}},
-	{note.Statements(), "backlink_candidates", []any{"id", 1, "base", 1}, []string{"links_by_target", "links_by_name"}},
-	{note.Statements(), "note_by_identifier", []any{"id"}, []string{"notes_by_identifier"}},
-	{note.Statements(), "links_of", []any{1}, []string{"(note_id=?)"}},
-	{note.Statements(), "identify", []any{1, "p"}, []string{"(vault_id=? AND path=?)"}},
-	{note.Statements(), "addressing", []any{1, "p"}, []string{"(vault_id=? AND path=?)"}},
-	{note.Statements(), "file_stats", []any{1, "note"}, []string{"sources_by_fingerprint"}},
-	{note.Statements(), "notes_of_type", []any{1, "sample"}, []string{"notes_by_type"}},
-	{note.Statements(), "types_at", []any{1, `["p"]`}, []string{"(vault_id=? AND path=?)"}},
+	endPos     []string
+} {
+	return []struct {
+		statements map[string]string
+		name       string
+		args       []any
+		// An index name, or the columns for a primary key: SQLite names those
+		// itself, and the name changes when a constraint is added.
+		endPos []string
+	}{
+		{note.Statements(), "candidates", []any{1, "a", 1, "b", 1, "c"}, []string{"notes_by_folded_name"}},
+		{note.Statements(), "backlink_candidates", []any{"id", 1, "base", 1}, []string{"links_by_target", "links_by_name"}},
+		{note.Statements(), "note_by_identifier", []any{"id"}, []string{"notes_by_identifier"}},
+		{note.Statements(), "links_of", []any{1}, []string{"(note_id=?)"}},
+		{note.Statements(), "identify", []any{1, "p"}, []string{"(vault_id=? AND path=?)"}},
+		{note.Statements(), "addressing", []any{1, "p"}, []string{"(vault_id=? AND path=?)"}},
+		{note.Statements(), "file_stats", []any{1, "note"}, []string{"sources_by_fingerprint"}},
+		{note.Statements(), "notes_of_type", []any{1, "sample"}, []string{"notes_by_type"}},
+		{note.Statements(), "types_at", []any{1, `["p"]`}, []string{"(vault_id=? AND path=?)"}},
 
-	{chunk.Statements(), "identify", []any{1, "book", "p"}, []string{"(vault_id=? AND path=?)"}},
-	{chunk.Statements(), "file_stats", []any{1, "book"}, []string{"sources_by_fingerprint"}},
-	{chunk.Statements(), "source_text", []any{1, "library/note.epub"}, []string{"(vault_id=? AND path=?)"}},
-	{chunk.Statements(), "file_stats_under", []any{1, "folder", 1, "folder/", "folder0"}, []string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"}},
-	{chunk.Statements(), "sources_under", []any{1, "folder", "folder/", "folder0"}, []string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"}},
-	// A folder and everything under it are filed at their new paths through the
-	// same two lookups, and the note at the path itself is renamed by its own.
-	{chunk.Statements(), "move_sources", []any{"science/folder", 7, 1, "folder", "folder/", "folder0"}, []string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"}},
-	{chunk.Statements(), "note_naming", []any{1, "folder/note-00001.md"}, []string{"(vault_id=? AND path=?)", "INTEGER PRIMARY KEY"}},
-	{chunk.Statements(), "rename_note", []any{"Entropy", "Entropy", 1, "folder/note-00001.md"}, []string{"(vault_id=? AND path=?)"}},
-	{chunk.Statements(), "unchunked", []any{1, "book", 50}, []string{"sources_by_fingerprint", "chunks_by_source"}},
-	{chunk.Statements(), "stale_recipe", []any{1, "book", `["epub-1","pdf-1"]`, 50}, []string{"sources_by_fingerprint"}},
-	{chunk.Statements(), "unembedded", []any{"model", 1, int64(math.MaxInt64), int64(math.MaxInt64), int64(math.MaxInt64), int64(math.MaxInt64), int64(math.MaxInt64), 0, 50}, []string{"sources_by_modified", "vectors_by_hash"}},
-	{chunk.Statements(), "passage", []any{1, 1}, []string{"INTEGER PRIMARY KEY"}},
-	{chunk.Statements(), "enclosing", []any{1, 1}, []string{"INTEGER PRIMARY KEY"}},
-	{chunk.Statements(), "progress", []any{"model", 1}, []string{"chunks_by_vault_parent", "vectors_by_hash"}},
-	// A search by words reads the full-text index and then the row each hit
-	// names. A virtual table reports itself as a scan and has no named index.
-	{chunk.Statements(), "lexical", []any{`"entropy"`, 1, 20}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
-	{chunk.Statements(), "lexical_kinds", []any{`"entropy"`, 1, `["note"]`, 20}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
-	// A search by name reads its own full-text index the same way.
-	{chunk.Statements(), "sections", []any{`"entropy"`, 1, 20}, []string{"sections_fts", "INTEGER PRIMARY KEY"}},
-	{chunk.Statements(), "sections_kinds", []any{`"entropy"`, 1, `["note"]`, 20}, []string{"sections_fts", "INTEGER PRIMARY KEY"}},
-	{chunk.Statements(), "clear_sections", []any{1}, []string{"chunks_by_source"}},
-	{chunk.Statements(), "clear_fts", []any{1}, []string{"chunks_by_source"}},
-	// Cutting a source again reads what it holds now, and then moves, writes or
-	// takes out one row at a time.
-	{chunk.Statements(), "chunks_of", []any{1}, []string{"chunks_by_source"}},
-	{chunk.Statements(), "move_chunk", []any{0, 10, 1, nil, 1}, []string{"INTEGER PRIMARY KEY"}},
-	{chunk.Statements(), "delete_chunk", []any{1}, []string{"INTEGER PRIMARY KEY"}},
-	// The coarse pass reads the vector index. That it stays inside one vault is
-	// asserted in TestTheCoarsePassIsConstrainedInsideTheQuery and
-	// TestTheCoarsePassStaysInsideItsVault.
-	{chunk.Statements(), "coarse", []any{coarse, 1, 10}, []string{"chunks_vec"}},
+		{chunk.Statements(), "identify", []any{1, "book", "p"}, []string{"(vault_id=? AND path=?)"}},
+		{chunk.Statements(), "file_stats", []any{1, "book"}, []string{"sources_by_fingerprint"}},
+		{chunk.Statements(), "source_text", []any{1, "library/note.epub"}, []string{"(vault_id=? AND path=?)"}},
+		{chunk.Statements(), "file_stats_under", []any{1, "folder", 1, "folder/", "folder0"}, []string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"}},
+		{chunk.Statements(), "sources_under", []any{1, "folder", "folder/", "folder0"}, []string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"}},
+		// A folder and everything under it are filed at their new paths through the
+		// same two lookups, and the note at the path itself is renamed by its own.
+		{chunk.Statements(), "move_sources", []any{"science/folder", 7, 1, "folder", "folder/", "folder0"}, []string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"}},
+		{chunk.Statements(), "note_naming", []any{1, "folder/note-00001.md"}, []string{"(vault_id=? AND path=?)", "INTEGER PRIMARY KEY"}},
+		{chunk.Statements(), "rename_note", []any{"Entropy", "Entropy", 1, "folder/note-00001.md"}, []string{"(vault_id=? AND path=?)"}},
+		{chunk.Statements(), "unchunked", []any{1, "book", 50}, []string{"sources_by_fingerprint", "chunks_by_source"}},
+		{chunk.Statements(), "stale_recipe", []any{1, "book", `["epub-1","pdf-1"]`, 50}, []string{"sources_by_fingerprint"}},
+		{chunk.Statements(), "unembedded", []any{"model", 1, int64(math.MaxInt64), int64(math.MaxInt64), int64(math.MaxInt64), int64(math.MaxInt64), int64(math.MaxInt64), 0, 50}, []string{"sources_by_modified", "vectors_by_hash"}},
+		{chunk.Statements(), "passage", []any{1, 1}, []string{"INTEGER PRIMARY KEY"}},
+		{chunk.Statements(), "enclosing", []any{1, 1}, []string{"INTEGER PRIMARY KEY"}},
+		{chunk.Statements(), "progress", []any{"model", 1}, []string{"chunks_by_vault_parent", "vectors_by_hash"}},
+		// A search by words reads the full-text index and then the row each hit
+		// names. A virtual table reports itself as a scan and has no named index.
+		{chunk.Statements(), "lexical", []any{`"entropy"`, 1, 20}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
+		{chunk.Statements(), "lexical_kinds", []any{`"entropy"`, 1, `["note"]`, 20}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},
+		// A search by name reads its own full-text index the same way.
+		{chunk.Statements(), "sections", []any{`"entropy"`, 1, 20}, []string{"sections_fts", "INTEGER PRIMARY KEY"}},
+		{chunk.Statements(), "sections_kinds", []any{`"entropy"`, 1, `["note"]`, 20}, []string{"sections_fts", "INTEGER PRIMARY KEY"}},
+		{chunk.Statements(), "clear_sections", []any{1}, []string{"chunks_by_source"}},
+		{chunk.Statements(), "clear_fts", []any{1}, []string{"chunks_by_source"}},
+		// Cutting a source again reads what it holds now, and then moves, writes or
+		// takes out one row at a time.
+		{chunk.Statements(), "chunks_of", []any{1}, []string{"chunks_by_source"}},
+		{chunk.Statements(), "move_chunk", []any{0, 10, 1, nil, 1}, []string{"INTEGER PRIMARY KEY"}},
+		{chunk.Statements(), "delete_chunk", []any{1}, []string{"INTEGER PRIMARY KEY"}},
+		// The coarse pass reads the vector index. That it stays inside one vault is
+		// asserted in TestTheCoarsePassIsConstrainedInsideTheQuery and
+		// TestTheCoarsePassStaysInsideItsVault.
+		{chunk.Statements(), "coarse", []any{getCoarse(), 1, 10}, []string{"chunks_vec"}},
+	}
 }
 
 // growing is the tables that grow with the vault. A question answered by
 // reading one of them whole is a question that gets slower as the user writes.
-var growing = []string{"sources", "notes", "links", "chunks", "vectors"}
+func getGrowing() []string { return []string{"sources", "notes", "links", "chunks", "vectors"} }
 
 // readsEverything reports whether a plan step reads a whole table.
 //
@@ -103,7 +110,7 @@ func TestQueryPlans_UseIndexes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, q := range expectedPlans {
+	for _, q := range getExpectedPlans() {
 		plan := planFor(ctx, t, db, q.statements[q.name], q.args)
 		t.Logf("%s:\n    %s", q.name, strings.Join(plan, "\n    "))
 
@@ -116,7 +123,7 @@ func TestQueryPlans_UseIndexes(t *testing.T) {
 		for _, step := range plan {
 			if readsEverything(step) {
 				t.Errorf("%s reads a table whole, and every table it reads is one of %v: %s",
-					q.name, growing, step)
+					q.name, getGrowing(), step)
 			}
 		}
 	}
@@ -129,7 +136,7 @@ func TestQueryPlans_UseIndexes(t *testing.T) {
 func openPopulatedDB(t *testing.T) *DB {
 	t.Helper()
 	ctx := t.Context()
-	db, err := Open(ctx, migrated.Path(t))
+	db, err := Open(ctx, newMigrated().Path(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -225,12 +232,12 @@ func cut(t *testing.T, tx *sql.Tx, source, vault int64) {
 		index(t, tx, small, "entropy and the observer")
 		if _, err := tx.ExecContext(ctx,
 			`INSERT OR IGNORE INTO vectors (hash, recipe, embedding) VALUES (unhex((SELECT hash FROM chunks WHERE id = ?)), 'model', ?)`,
-			small, coarse); err != nil {
+			small, getCoarse()); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := tx.ExecContext(ctx,
 			`INSERT INTO chunks_vec (chunk_id, vault_id, coarse) VALUES (?, ?, vec_bit(?))`,
-			small, vault, coarse); err != nil {
+			small, vault, getCoarse()); err != nil {
 			t.Fatal(err)
 		}
 	}

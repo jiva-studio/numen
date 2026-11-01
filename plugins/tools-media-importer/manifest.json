@@ -17,7 +17,7 @@
     "frameOrigins": ["https://www.youtube-nocookie.com"]
   },
   "permissions": ["vault:read", "vault:write", "network:outbound"],
-  "services": ["numen.importer"],
+  "services": ["md.numen.tools.media.importer"],
   "commands": [
     {
       "id": "import",

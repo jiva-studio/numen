@@ -71,5 +71,5 @@ func (c Config) Moves(ctx context.Context) (<-chan struct{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return vaultwatch.Watcher{Options: c.vaultOptions()}.File(ctx, path)
+	return vaultwatch.Watcher{Options: c.vaultOptions(), Hub: c.getResources().watches}.File(ctx, path)
 }

@@ -9,11 +9,13 @@ import (
 // fixtureDir holds the request and response fixtures the frontend contract test reads as well.
 const fixtureDir = "../../testdata/api"
 
-var contracts = map[string]plugintest.MessageContract{
-	MethodCheck:     {Request: func() any { return &CheckRequest{} }, Response: func() any { return &Status{} }},
-	MethodGetStatus: {Request: func() any { return &GetStatusRequest{} }, Response: func() any { return &Status{} }},
+func getContracts() map[string]plugintest.MessageContract {
+	return map[string]plugintest.MessageContract{
+		MethodCheck:     {Request: func() any { return &CheckRequest{} }, Response: func() any { return &Status{} }},
+		MethodGetStatus: {Request: func() any { return &GetStatusRequest{} }, Response: func() any { return &Status{} }},
+	}
 }
 
 func TestMessagesMatchFixtures(t *testing.T) {
-	plugintest.CheckMessageFixtures(t, fixtureDir, contracts)
+	plugintest.CheckMessageFixtures(t, fixtureDir, getContracts())
 }

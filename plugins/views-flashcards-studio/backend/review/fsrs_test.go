@@ -175,30 +175,38 @@ func TestASchedulerReturnsWhichItIs(t *testing.T) {
 }
 
 // libraryNow is the instant the schedules below are answered at.
-var libraryNow = time.Date(2026, 3, 2, 9, 41, 0, 0, time.UTC)
+func getLibraryNow() time.Time {
+	return time.Date(2026, 3, 2, 9, 41, 0, 0, time.UTC)
+}
 
 // libraryGaps are the elapsed times before a review card is answered: none, a few
 // minutes (within the learning steps), and days, months and years.
-var libraryGaps = []time.Duration{
-	0,
-	time.Minute,
-	10 * time.Minute,
-	time.Hour,
-	23 * time.Hour,
-	24 * time.Hour,
-	3 * 24 * time.Hour,
-	17 * 24 * time.Hour,
-	200 * 24 * time.Hour,
-	3 * 365 * 24 * time.Hour,
+func getLibraryGaps() []time.Duration {
+	return []time.Duration{
+		0,
+		time.Minute,
+		10 * time.Minute,
+		time.Hour,
+		23 * time.Hour,
+		24 * time.Hour,
+		3 * 24 * time.Hour,
+		17 * 24 * time.Hour,
+		200 * 24 * time.Hour,
+		3 * 365 * 24 * time.Hour,
+	}
 }
 
 // libraryRatings are the four answers, in the library's own vocabulary.
-var libraryRatings = []fsrs.Rating{fsrs.Again, fsrs.Hard, fsrs.Good, fsrs.Easy}
+func getLibraryRatings() []fsrs.Rating {
+	return []fsrs.Rating{fsrs.Again, fsrs.Hard, fsrs.Good, fsrs.Easy}
+}
 
 // libraryRetentions are the target retentions the scheduler is exercised with: its
 // published parameters, both ends of the range a preset may hold, and a few values
 // in between.
-var libraryRetentions = []float64{0, 0.7, 0.85, 0.87, 0.9, 0.97, 0.99}
+func getLibraryRetentions() []float64 {
+	return []float64{0, 0.7, 0.85, 0.87, 0.9, 0.97, 0.99}
+}
 
 // The scheduler works an interval out from its parameters, and what it works
 // out is what the library those parameters come from works out.
@@ -210,7 +218,7 @@ var libraryRetentions = []float64{0, 0.7, 0.85, 0.87, 0.9, 0.97, 0.99}
 // Test coverage includes sequences generated across review phases from new
 // cards, and synthetic boundary schedules covering clamping limits.
 func TestASchedulerWorksOutWhatTheLibraryWorksOut(t *testing.T) {
-	for _, retention := range libraryRetentions {
+	for _, retention := range getLibraryRetentions() {
 		delta, engine := makeSchedulers(retention)
 		for _, s := range libraryWalked(engine) {
 			libraryAgrees(t, retention, delta, engine, s)
@@ -231,7 +239,7 @@ func makeSchedulers(retention float64) (review.FSRS, *fsrs.FSRS) {
 		return review.NewFSRS(), fsrs.NewFSRS(p)
 	}
 	p.RequestRetention = math.Min(math.Max(retention,
-		review.RetentionBounds.Min), review.RetentionBounds.Max)
+		review.GetRetentionBounds().Min), review.GetRetentionBounds().Max)
 	return review.NewFSRSAt(retention), fsrs.NewFSRS(p)
 }
 
@@ -255,24 +263,24 @@ func libraryAgrees(
 		return
 	}
 	status := clampLastAnswer(s)
-	for _, r := range libraryRatings {
-		want := asSchedule(engine.Next(asCard(status), libraryNow, r).Card)
-		got := delta.Next(s, libraryNow, review.Rating(r))
+	for _, r := range getLibraryRatings() {
+		want := asSchedule(engine.Next(asCard(status), getLibraryNow(), r).Card)
+		got := delta.Next(s, getLibraryNow(), review.Rating(r))
 		sameSchedule(t, fmt.Sprintf("at %.2f, %s of %s", retention, r, describe(s)), got, want)
 	}
-	good, again := delta.Endings(s, libraryNow)
+	good, again := delta.Endings(s, getLibraryNow())
 	sameSchedule(t, fmt.Sprintf("at %.2f, the ending it came back on of %s", retention, describe(s)),
-		good, asSchedule(engine.Next(asCard(status), libraryNow, fsrs.Good).Card))
+		good, asSchedule(engine.Next(asCard(status), getLibraryNow(), fsrs.Good).Card))
 	sameSchedule(t, fmt.Sprintf("at %.2f, the ending it did not of %s", retention, describe(s)),
-		again, asSchedule(engine.Next(asCard(status), libraryNow, fsrs.Again).Card))
+		again, asSchedule(engine.Next(asCard(status), getLibraryNow(), fsrs.Again).Card))
 }
 
 // clampLastAnswer returns the schedule with its last answer limited to the
 // evaluation instant, so a review card answered no earlier than that instant has
 // zero elapsed days.
 func clampLastAnswer(s review.Schedule) review.Schedule {
-	if !s.IsNew() && libraryNow.Before(s.Last) {
-		s.Last = libraryNow
+	if !s.IsNew() && getLibraryNow().Before(s.Last) {
+		s.Last = getLibraryNow()
 	}
 	return s
 }
@@ -288,24 +296,24 @@ func TestFSRSNext_ClampsElapsedDaysToZero(t *testing.T) {
 	// A review card in the review phase whose last answer is after the evaluation
 	// instant.
 	ahead := delta.Next(delta.Next(review.Schedule{},
-		libraryNow.AddDate(0, 0, -30), review.Good),
-		libraryNow.AddDate(0, 0, 1), review.Good)
+		getLibraryNow().AddDate(0, 0, -30), review.Good),
+		getLibraryNow().AddDate(0, 0, 1), review.Good)
 	if fsrs.State(ahead.Phase) != fsrs.Review {
 		t.Fatalf("review card phase = %d, want %d", ahead.Phase, fsrs.Review)
 	}
 
 	// The same review card with its last answer at the evaluation instant.
 	status := ahead
-	status.Last = libraryNow
+	status.Last = getLibraryNow()
 
-	for _, r := range libraryRatings {
-		want := asSchedule(engine.Next(asCard(status), libraryNow, r).Card)
+	for _, r := range getLibraryRatings() {
+		want := asSchedule(engine.Next(asCard(status), getLibraryNow(), r).Card)
 		for _, dur := range []time.Duration{
 			time.Second, time.Hour, 24 * time.Hour, 400 * 24 * time.Hour,
 		} {
 			reviewCard := ahead
-			reviewCard.Last = libraryNow.Add(dur)
-			got := delta.Next(reviewCard, libraryNow, review.Rating(r))
+			reviewCard.Last = getLibraryNow().Add(dur)
+			got := delta.Next(reviewCard, getLibraryNow(), review.Rating(r))
 			sameSchedule(t, fmt.Sprintf("%s of a review card answered %s ahead", r, dur), got, want)
 		}
 	}
@@ -323,12 +331,12 @@ func libraryWalked(engine *fsrs.FSRS) []review.Schedule {
 		timePoint time.Time
 	}
 	out := []review.Schedule{{}}
-	frontier := []step{{timePoint: libraryNow.Add(-libraryWalkOpens)}}
+	frontier := []step{{timePoint: getLibraryNow().Add(-getLibraryWalkOpens())}}
 	for depth := range 7 {
 		var next []step
 		for _, f := range frontier {
-			for i, r := range libraryRatings {
-				pos := f.timePoint.Add(libraryGaps[(depth+i)%len(libraryGaps)])
+			for i, r := range getLibraryRatings() {
+				pos := f.timePoint.Add(getLibraryGaps()[(depth+i)%len(getLibraryGaps())])
 				one := asSchedule(engine.Next(asCard(f.s), pos, r).Card)
 				out = append(out, one)
 				next = append(next, step{one, pos})
@@ -339,16 +347,16 @@ func libraryWalked(engine *fsrs.FSRS) []review.Schedule {
 	return out
 }
 
-// libraryWalkOpens is the interval before the evaluation instant at which a walk
+// getLibraryWalkOpens returns the interval before the evaluation instant at which a walk
 // of seven answers starts. It is the sum of all gaps, which is at least the sum of
 // any seven, so no answer of the walk falls after that instant.
-var libraryWalkOpens = func() time.Duration {
+func getLibraryWalkOpens() time.Duration {
 	var all time.Duration
-	for _, g := range libraryGaps {
+	for _, g := range getLibraryGaps() {
 		all += g
 	}
 	return all
-}()
+}
 
 // libraryMade is a grid of review cards outside the reach of a walk: at the
 // stability a run of lapses reduces a card to and at the stability of an unmodified
@@ -375,8 +383,8 @@ func libraryMade() []review.Schedule {
 			for i, gap := range gaps {
 				for j, phase := range phases {
 					out = append(out, review.Schedule{
-						Due:        libraryNow.Add(time.Duration(j) * 24 * time.Hour),
-						Last:       libraryNow.Add(-gap),
+						Due:        getLibraryNow().Add(time.Duration(j) * 24 * time.Hour),
+						Last:       getLibraryNow().Add(-gap),
 						Reps:       1 + i*13 + j,
 						Lapses:     j * 3,
 						Stability:  stability,

@@ -1,6 +1,6 @@
 /**
  * The JSON messages the frontend exchanges with the backend of this plugin under the
- * `numen.flashcards` service.
+ * `md.numen.views.flashcards.studio` service.
  *
  * A request field is optional: a field left out is the zero value. A response field is present,
  * except a message-typed field or an optional scalar, which is absent when it has no value.

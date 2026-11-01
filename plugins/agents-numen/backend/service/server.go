@@ -9,11 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
 )
 
 // ProgramName is the identifier a task uses to select the agent, and the key of its settings section.
@@ -122,7 +121,7 @@ func (s *Server) Ask(ctx context.Context, task *agentrun.Request, send func(*age
 	conversation := task.Conversation
 	work := agentrun.NewWork(conversation, 0, agentrun.StopByCancel(cancel))
 	if !s.registry.Add(work) {
-		return connect.NewError(connect.CodeUnavailable, errClosing)
+		return rpcerror.New(rpcerror.Unavailable, errClosing)
 	}
 	defer s.registry.Remove(work)
 	defer work.End()
@@ -200,7 +199,7 @@ func (s *Server) appendConversation(conversation string, transcript []message) {
 // history.
 func (s *Server) FinishConversation(ctx context.Context, conversation string) error {
 	if err := s.registry.EndConversation(ctx, conversation); err != nil {
-		return connect.NewError(connect.CodeInternal, err)
+		return rpcerror.New(rpcerror.Internal, err)
 	}
 	s.mu.Lock()
 	delete(s.conversations, conversation)

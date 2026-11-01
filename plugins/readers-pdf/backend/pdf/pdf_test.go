@@ -31,9 +31,21 @@ const (
 	prose   = "prose.txt"   // not a document
 )
 
+// newWorkers returns a pool that is closed when the test ends.
+func newWorkers(t testing.TB) *pdf.Workers {
+	t.Helper()
+	workers := pdf.NewWorkers()
+	t.Cleanup(func() {
+		if err := workers.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	return workers
+}
+
 func read(t *testing.T, name string) *pdf.Book {
 	t.Helper()
-	book, err := pdf.Read(fixture(t, name))
+	book, err := newWorkers(t).Read(fixture(t, name))
 	if err != nil {
 		t.Fatalf("%s: %v", name, err)
 	}
@@ -212,11 +224,12 @@ func TestTheSameBytesGiveTheSameText(t *testing.T) {
 	// file has to agree with the first.
 	raw := fixture(t, outline)
 
-	first, err := pdf.Read(raw)
+	workers := newWorkers(t)
+	first, err := workers.Read(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := pdf.Read(raw)
+	second, err := workers.Read(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -245,7 +258,7 @@ func TestWhatIsNotADocument(t *testing.T) {
 	}
 	for _, c := range tests {
 		t.Run(c.name, func(t *testing.T) {
-			book, err := pdf.Read(c.raw)
+			book, err := newWorkers(t).Read(c.raw)
 			if !errors.Is(err, c.want) {
 				t.Fatalf("error is %v, want %v", err, c.want)
 			}
@@ -260,11 +273,12 @@ func TestReadingIsSafeFromSeveralGoroutines(t *testing.T) {
 	// A vault is walked by one goroutine today and by more later, and the library
 	// holds a document per worker.
 	raw := fixture(t, tiny)
+	workers := newWorkers(t)
 
 	isDone := make(chan string, 8)
 	for i := 0; i < cap(isDone); i++ {
 		go func() {
-			book, err := pdf.Read(raw)
+			book, err := workers.Read(raw)
 			if err != nil {
 				isDone <- "error: " + err.Error()
 				return
@@ -283,7 +297,7 @@ func TestReadingIsSafeFromSeveralGoroutines(t *testing.T) {
 // A page is drawn up to a number of pixels and no further. The same page at a
 // resolution that keeps it inside the bound is drawn.
 func TestAPageTooLargeToDrawIsRefused(t *testing.T) {
-	target, err := pdf.OpenReader(readerOf(fixture(t, vast)))
+	target, err := newWorkers(t).OpenReader(readerOf(fixture(t, vast)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -307,7 +321,7 @@ func TestAPageTooLargeToDrawIsRefused(t *testing.T) {
 func TestAPageReturnsHowBigItIs(t *testing.T) {
 	for _, name := range []string{tiny, turned, labels} {
 		t.Run(name, func(t *testing.T) {
-			target, err := pdf.OpenReader(readerOf(fixture(t, name)))
+			target, err := newWorkers(t).OpenReader(readerOf(fixture(t, name)))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -371,7 +385,7 @@ func TestAPageReturnsHowBigItIs(t *testing.T) {
 }
 
 func TestOpenReaderInvalid(t *testing.T) {
-	_, err := pdf.OpenReader(readerOf(fixture(t, prose)))
+	_, err := newWorkers(t).OpenReader(readerOf(fixture(t, prose)))
 	if err == nil {
 		t.Error("OpenReader succeeded on invalid bytes")
 	}

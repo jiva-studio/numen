@@ -44,7 +44,7 @@ func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 	var vaults []domain.Vault
 	commands := plugincommand.NewCommands(declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil)
 	deps := cli.Deps{
-		Vaults: createVaultList(notebook),
+		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
 				List: commands.List,
@@ -66,7 +66,7 @@ func TestPluginCommand_DeclaredCommandRunsWithArgumentFlags(t *testing.T) {
 	if err != nil || out != "ran create-sample\n" {
 		t.Fatalf("the command answered %q, %v", out, err)
 	}
-	if len(*vaults) != 1 || (*vaults)[0].ID != notebook.ID {
+	if len(*vaults) != 1 || (*vaults)[0].ID != getNotebook().ID {
 		t.Errorf("the plugins were opened over %+v", *vaults)
 	}
 	call := declared.calls[0]
@@ -156,7 +156,7 @@ func TestACommandNoPluginDeclaresIsUnknown(t *testing.T) {
 // line neither runs nor mentions one.
 func TestTheCoreHasNoCommandOfADomain(t *testing.T) {
 	domainCommands := []string{"transcribe", "recognise", "import", "proofread"}
-	deps := cli.Deps{Vaults: createVaultList(notebook)}
+	deps := cli.Deps{Vaults: createVaultList(getNotebook())}
 
 	help, err := runWithDeps(deps, "help")
 	if err != nil {
@@ -180,7 +180,7 @@ func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
 	}}}
 	commands := plugincommand.NewCommands(declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil)
 	deps := cli.Deps{
-		Vaults: createVaultList(notebook),
+		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{
 				List: commands.List,
@@ -231,7 +231,7 @@ func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
 	}}}
 	commands := plugincommand.NewCommands(declared, fileTypes{}, nil)
 	deps := cli.Deps{
-		Vaults: createVaultList(notebook),
+		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
 			return cli.PluginCommands{List: commands.List}
 		},

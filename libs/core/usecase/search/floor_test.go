@@ -38,7 +38,7 @@ func (s *floorSpy) FindNearest(_ context.Context, _ domain.VaultID, recipe strin
 func TestSearchResolvesFloorFromTheFirstSourceThatNamesOne(t *testing.T) {
 	vault := domain.Vault{ID: "01VAULT"}
 	source := func(_ context.Context, v domain.Vault, recipe string) float64 {
-		if v.ID != vault.ID || recipe != model.Recipe() {
+		if v.ID != vault.ID || recipe != getModel().Recipe() {
 			t.Errorf("the source was queried for %s under %q", v.ID, recipe)
 		}
 		return 0.41
@@ -69,7 +69,7 @@ func TestSearchResolvesFloorFromTheFirstSourceThatNamesOne(t *testing.T) {
 			if len(spy.floors) != 1 || spy.floors[0] != tc.want {
 				t.Errorf("FindNearest was called with floors %v, want [%v]", spy.floors, tc.want)
 			}
-			if spy.recipes[0] != model.Recipe() {
+			if spy.recipes[0] != getModel().Recipe() {
 				t.Errorf("FindNearest was called under %q, want the model's recipe", spy.recipes[0])
 			}
 		})
@@ -140,7 +140,7 @@ func hintOf(value float64) search.FloorHint {
 
 func TestFloorPolicyPrefersTheStoredFloorToTheHintAndTheHintToTheDefault(t *testing.T) {
 	vault := domain.Vault{ID: "01VAULT"}
-	recipe := model.Recipe()
+	recipe := getModel().Recipe()
 
 	for _, tc := range []struct {
 		name       string

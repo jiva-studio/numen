@@ -22,7 +22,7 @@ import (
 )
 
 func (c changing) newWrite() note.Write {
-	return note.NewWrite(vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, testsupport.NewClock())
+	return note.NewWrite(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
 }
 
 // openNote is a tab that has read a note: the prose it received and the
@@ -193,7 +193,7 @@ func TestTheSameBytesSavedAgainAreNotAChange(t *testing.T) {
 	if err := os.WriteFile(on, raw, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	later := testsupport.Machine.Now().Add(time.Hour)
+	later := testsupport.GetMachine().Now().Add(time.Hour)
 	if err := os.Chtimes(on, later, later); err != nil {
 		t.Fatal(err)
 	}
@@ -314,6 +314,8 @@ func TestALinkSavedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		"Heat.md":    "# Heat\n\nWhat was there.\n",
 	})
 
+	// Both writers take the same lock.
+	locks := vaultwriter.NewLocks()
 	agentRead := make(chan struct{})
 	agentMayWrite := make(chan struct{})
 	agent := note.NewEditLinks(
@@ -323,7 +325,7 @@ func TestALinkSavedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 				<-agentMayWrite
 			}
 		}},
-		vaultwriter.VaultWriters{},
+		vaultwriter.VaultWriters{Locks: locks},
 		c.index,
 		testsupport.NewClock(),
 	)
@@ -338,7 +340,7 @@ func TestALinkSavedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 				<-saveMayWrite
 			}
 		}},
-		watchedWriters{inner: vaultwriter.VaultWriters{}, hold: func() { close(saveAsking) }},
+		watchedWriters{inner: vaultwriter.VaultWriters{Locks: locks}, hold: func() { close(saveAsking) }},
 		c.index,
 		testsupport.NewClock(),
 	)
@@ -402,6 +404,8 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 			"# Heat\n\nWhat was there.\n",
 	})
 
+	// Both writers take the same lock.
+	locks := vaultwriter.NewLocks()
 	var readOnce sync.Once
 	mendRead := make(chan struct{})
 	mendMayWrite := make(chan struct{})
@@ -413,7 +417,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 			readOnce.Do(func() { close(mendRead) })
 			<-mendMayWrite
 		}},
-		vaultwriter.VaultWriters{},
+		vaultwriter.VaultWriters{Locks: locks},
 		c.db.Links(),
 		c.db.Queries(),
 		c.db.Sources(),
@@ -431,7 +435,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 				<-saveMayWrite
 			}
 		}},
-		watchedWriters{inner: vaultwriter.VaultWriters{}, hold: func() { close(saveAsking) }},
+		watchedWriters{inner: vaultwriter.VaultWriters{Locks: locks}, hold: func() { close(saveAsking) }},
 		c.index,
 		testsupport.NewClock(),
 	)

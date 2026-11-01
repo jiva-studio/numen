@@ -61,15 +61,15 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 			t.Fatal(err)
 		}
 	}
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
 
-	settings := container.Config{
+	settings := container.NewConfig(container.Config{
 		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
 		TextReaders:  testsupport.Texts{Readers: vaultreader.Readers{}},
-	}
+	})
 	registry, err := settings.Registry()
 	if err != nil {
 		t.Fatal(err)
@@ -322,15 +322,15 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 			t.Fatal(err)
 		}
 	}
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
 
-	cfg := container.Config{
+	cfg := container.NewConfig(container.Config{
 		IndexPath:       filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath:    filepath.Join(t.TempDir(), "vaults.json"),
 		PluginCachePath: filepath.Join(t.TempDir(), "plugins"),
-	}
+	})
 	writeNamingSettings(t, cfg.RegistryPath, sync)
 	registry, err := cfg.Registry()
 	if err != nil {
@@ -622,11 +622,11 @@ func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), linked)
 	defer cancel()
 
-	began := testsupport.Machine.Now()
+	began := testsupport.GetMachine().Now()
 	if !f.installation.FlushPending(ctx) {
 		t.Fatal("the vault never settled")
 	}
-	took := testsupport.Machine.Now().Sub(began)
+	took := testsupport.GetMachine().Now().Sub(began)
 
 	if took < linked {
 		t.Errorf("the quit gave the page %v of the %v it is unembedded", took, linked)
@@ -748,11 +748,11 @@ func TestAPageWithAQuestionActiveDoesNotLetTheWindowGo(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 
-	began := testsupport.Machine.Now()
+	began := testsupport.GetMachine().Now()
 	if f.installation.FlushPending(ctx) {
 		t.Fatal("the vault settled with a question standing")
 	}
-	if took := testsupport.Machine.Now().Sub(began); took > 5*time.Second {
+	if took := testsupport.GetMachine().Now().Sub(began); took > 5*time.Second {
 		t.Errorf("a page that had answered was waited on for %v", took)
 	}
 
@@ -879,11 +879,11 @@ func TestFlushPending_BoundsWaitForDepartedPageWithQuestion(t *testing.T) {
 	ctx, endsAt := context.WithTimeout(t.Context(), linked)
 	defer endsAt()
 
-	began := testsupport.Machine.Now()
+	began := testsupport.GetMachine().Now()
 	if !f.installation.FlushPending(ctx) {
 		t.Fatal("the vault never settled after the page went")
 	}
-	took := testsupport.Machine.Now().Sub(began)
+	took := testsupport.GetMachine().Now().Sub(began)
 
 	if took < linked {
 		t.Errorf("the quit gave the page %v of the %v it is unembedded", took, linked)

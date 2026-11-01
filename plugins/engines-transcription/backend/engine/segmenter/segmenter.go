@@ -22,14 +22,6 @@ const (
 	speechAfter = "stateN"
 )
 
-var (
-	speechInputCStr = []byte("input\x00")
-	speechStateCStr = []byte("state\x00")
-	speechRateCStr  = []byte("sr\x00")
-	speechScoreCStr = []byte("output\x00")
-	speechAfterCStr = []byte("stateN\x00")
-)
-
 // The model takes the recording in windows of this many samples, and carries
 // this much state from one to the next. At 16 kHz a window is 32 milliseconds,
 // and that is how finely a span can be cut.
@@ -52,11 +44,13 @@ type Segmenter struct {
 	session *ort.Session
 	model   Model
 	lock    sync.Locker
+	runner  *ortraw.Runner
 }
 
-// New returns a Segmenter that runs session with the parameters of model.
-func New(session *ort.Session, model Model, lock sync.Locker) *Segmenter {
-	return &Segmenter{session: session, model: model, lock: lock}
+// New returns a Segmenter that runs session with the parameters of model, calling the runtime
+// directly through runner where it offers the entry points.
+func New(session *ort.Session, model Model, lock sync.Locker, runner *ortraw.Runner) *Segmenter {
+	return &Segmenter{session: session, model: model, lock: lock, runner: runner}
 }
 
 // Split cuts one recording into the segments that carry speech.
@@ -121,14 +115,14 @@ func (s *Segmenter) scoreSpeech(ctx context.Context, sound []float32) ([]float32
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	pass, err := newSpeechPass(sound)
+	pass, err := newSpeechPass(sound, ort.NewTensor)
 	if err != nil {
 		return nil, err
 	}
 	defer pass.destroy()
 
 	var out []float32
-	if calls, ok := ortraw.GetCalls(); ok && ortraw.GetSessionHandle(s.session) != 0 {
+	if calls, ok := s.runner.GetCalls(); ok && ortraw.GetSessionHandle(s.session) != 0 {
 		out, err = s.scoreNative(ctx, pass, calls)
 	} else {
 		out, err = s.scoreManaged(ctx, pass)
@@ -153,10 +147,11 @@ type speechPass struct {
 	input, memory, sampling *ort.Value
 }
 
-var newTensor = ort.NewTensor
+// tensorMaker makes a tensor of the shape over the data.
+type tensorMaker func(shape []int64, data any) (*ort.Value, error)
 
-// newSpeechPass makes the tensors over the buffers of a recording.
-func newSpeechPass(sound []float32) (*speechPass, error) {
+// newSpeechPass makes the tensors over the buffers of a recording with newTensor.
+func newSpeechPass(sound []float32, newTensor tensorMaker) (*speechPass, error) {
 	p := &speechPass{
 		sound:  sound,
 		window: make([]float32, speechWindow),
@@ -209,17 +204,18 @@ func (p *speechPass) keepAlive() {
 
 // scoreNative scores every window by calling the runtime directly.
 func (s *Segmenter) scoreNative(ctx context.Context, pass *speechPass, calls ortraw.Calls) ([]float32, error) {
+	names := ortraw.MakeCNames(speechInput, speechState, speechRate, speechScore, speechAfter)
 	run := &speechRun{
 		calls:   calls,
 		session: ortraw.GetSessionHandle(s.session),
 		inNames: [3]unsafe.Pointer{
-			unsafe.Pointer(&speechInputCStr[0]),
-			unsafe.Pointer(&speechStateCStr[0]),
-			unsafe.Pointer(&speechRateCStr[0]),
+			unsafe.Pointer(&names[0][0]),
+			unsafe.Pointer(&names[1][0]),
+			unsafe.Pointer(&names[2][0]),
 		},
 		outNames: [2]unsafe.Pointer{
-			unsafe.Pointer(&speechScoreCStr[0]),
-			unsafe.Pointer(&speechAfterCStr[0]),
+			unsafe.Pointer(&names[3][0]),
+			unsafe.Pointer(&names[4][0]),
 		},
 		inputs: [3]uintptr{
 			ortraw.GetValueHandle(pass.input),

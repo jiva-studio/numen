@@ -3,7 +3,6 @@ module github.com/jiva-studio/numen/plugins/engines-transcription
 go 1.26.9
 
 require (
-	connectrpc.com/connect v1.21.1
 	github.com/ebitengine/purego v0.11.2
 	github.com/ebitengine/purego v0.11.2
 	github.com/getcharzp/onnxruntime_purego v1.25.0
@@ -14,6 +13,7 @@ require (
 )
 
 require (
+	connectrpc.com/connect v1.21.1 // indirect
 	github.com/icza/bitio v1.1.0 // indirect
 	github.com/mewkiz/pkg v0.0.0-20250417130911-3f050ff8c56d // indirect
 	github.com/mewpkg/term v0.0.0-20241026122259-37a80af23985 // indirect

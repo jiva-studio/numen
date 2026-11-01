@@ -343,16 +343,16 @@ func TestFindClaude_LookupPriority(t *testing.T) {
 		t.Skip("the places are unix paths")
 	}
 	withoutClaudeAnywhere(t)
-	if got := findClaude(); got != "" {
+	places := []string{"~/.local/bin/claude"}
+	if got := findClaudeIn(places); got != "" {
 		t.Fatalf("found %q on an empty machine", got)
 	}
 
 	home := t.TempDir()
 	t.Setenv("HOME", home)
-	claudeSearchPlaces = []string{"~/.local/bin/claude"}
 	inPlace := filepath.Join(home, ".local", "bin", "claude")
 	writeRunnable(t, inPlace)
-	if got := findClaude(); got != inPlace {
+	if got := findClaudeIn(places); got != inPlace {
 		t.Fatalf("found %q, want %q", got, inPlace)
 	}
 
@@ -360,16 +360,16 @@ func TestFindClaude_LookupPriority(t *testing.T) {
 	t.Setenv("PATH", bin)
 	onPath := filepath.Join(bin, "claude")
 	writeRunnable(t, onPath)
-	if got := findClaude(); got != onPath {
+	if got := findClaudeIn(places); got != onPath {
 		t.Fatalf("found %q, want %q", got, onPath)
 	}
 
 	t.Setenv("CLAUDE_COMMAND", "/opt/claude-a")
-	if got := findClaude(); got != "/opt/claude-a" {
+	if got := findClaudeIn(places); got != "/opt/claude-a" {
 		t.Fatalf("found %q", got)
 	}
 	t.Setenv("NUMEN_CLAUDE_COMMAND", "/opt/claude-b")
-	if got := findClaude(); got != "/opt/claude-b" {
+	if got := findClaudeIn(places); got != "/opt/claude-b" {
 		t.Fatalf("found %q", got)
 	}
 }

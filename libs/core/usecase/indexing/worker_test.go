@@ -21,7 +21,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 )
 
-var before = []string{"river", "mountain", "forest", "meadow", "harbour", "valley", "island", "desert"}
+func getBefore() []string {
+	return []string{"river", "mountain", "forest", "meadow", "harbour", "valley", "island", "desert"}
+}
 
 // noteWith is a note of n words of one vocabulary, long enough to be cut into
 // windows that carry a vector.
@@ -63,7 +65,7 @@ func findTask(t *testing.T, r *recorder, id string) *run.Task {
 func reading(t *testing.T) (container.EditorAssembly, *container.Index) {
 	t.Helper()
 
-	cfg := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}
+	cfg := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
 	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -166,7 +168,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	made, db := reading(t)
 	fit(t, db, model)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 	events := newRecorder()
 
@@ -187,7 +189,7 @@ func TestAPassThatEmbeddedPreservesTheList(t *testing.T) {
 	made, db := reading(t)
 	fit(t, db, model)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 	events := newRecorder()
 
@@ -239,7 +241,7 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	made, db := reading(t)
 	fit(t, db, watching)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	newPass(made, db, events, watching, watching.GetModel().Recipe(), v).embed(t.Context())
@@ -257,7 +259,7 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 // the pass is left standing under what stopped it.
 func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 	made, db := reading(t)
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	events := newRecorder()
 	// The index queried for pending vectors is closed, so the query fails.
 	if err := db.Close(); err != nil {
@@ -319,7 +321,7 @@ func TestIndexingIsNeverAWordWithNothingBelowIt(t *testing.T) {
 	made, db := reading(t)
 	fit(t, db, model)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	overVal := &overheard{fakeEmbedder: model, tasks: events.tasks}
@@ -374,7 +376,7 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	made, db := reading(t)
 	fit(t, db, model)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
@@ -426,7 +428,7 @@ func TestAChangeOfSourcesStopsTheVectorPass(t *testing.T) {
 	made, db := reading(t)
 	fit(t, db, model)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
@@ -490,7 +492,7 @@ func TestVersionChange_EmbedsPendingVaultContent(t *testing.T) {
 	made, db := reading(t)
 	fit(t, db, model)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
@@ -514,7 +516,7 @@ func TestVersionChangeOfANoteKeepsItsChunks(t *testing.T) {
 	made, db := reading(t)
 	fit(t, db, model)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 	unembedded, _, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
@@ -571,7 +573,7 @@ func TestCancellingTheVectorTaskEndsTheEmbedCall(t *testing.T) {
 	made, db := reading(t)
 	fit(t, db, model)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	ended := make(chan struct{})

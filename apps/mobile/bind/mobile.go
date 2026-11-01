@@ -24,12 +24,15 @@ import (
 	"github.com/jiva-studio/numen/libs/core/container"
 )
 
-// running is the one server this process holds. Starting again while active
+// Core holds the one server the platform starts. Starting again while active
 // answers with the port it already has.
-var (
+type Core struct {
 	mu      sync.Mutex
 	running *runningCore
-)
+}
+
+// NewCore returns a core with no server running.
+func NewCore() *Core { return &Core{} }
 
 type runningCore struct {
 	port int
@@ -46,11 +49,11 @@ type runningCore struct {
 //
 // dir is the folder the platform provides for application data. The vault, the
 // index and the settings are stored under it.
-func Start(dir string) (int, error) {
-	mu.Lock()
-	defer mu.Unlock()
-	if running != nil {
-		return running.port, nil
+func (c *Core) Start(dir string) (int, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.running != nil {
+		return c.running.port, nil
 	}
 
 	if err := setHomeFolders(dir); err != nil {
@@ -112,13 +115,13 @@ func Start(dir string) (int, error) {
 			numenv1connect.FileServiceName,
 		)),
 	}
-	running = &runningCore{
+	c.running = &runningCore{
 		port:   listener.port,
 		stop:   stop,
 		opened: opened,
 		server: server,
 	}
-	current := running
+	current := c.running
 	// Start has already returned the port, so a serve that ends on its own
 	// leaves the caller with a port that has no listener. The error is written to
 	// the stream the platform collects, and the port is reported as 0.
@@ -130,7 +133,7 @@ func Start(dir string) (int, error) {
 		current.isDown.Store(true)
 		cfg.ErrorHandler(err)
 	}()
-	return running.port, nil
+	return c.running.port, nil
 }
 
 // setHomeFolders points the libraries that resolve user folders at this
@@ -166,14 +169,14 @@ func listenLocal(ctx context.Context) (localListener, error) {
 
 // Stop closes the server and the vault behind it. Stopping what is not running
 // does nothing.
-func Stop() error {
-	mu.Lock()
-	defer mu.Unlock()
-	if running == nil {
+func (c *Core) Stop() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.running == nil {
 		return nil
 	}
-	current := running
-	running = nil
+	current := c.running
+	c.running = nil
 	err := current.server.Close()
 	current.stop()
 	if closed := current.opened.Close(); err == nil {
@@ -183,13 +186,13 @@ func Stop() error {
 }
 
 // Port returns the listening port of the server, or zero when none is running.
-func Port() int {
-	mu.Lock()
-	defer mu.Unlock()
-	if running == nil || running.isDown.Load() {
+func (c *Core) Port() int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.running == nil || c.running.isDown.Load() {
 		return 0
 	}
-	return running.port
+	return c.running.port
 }
 
 // makeConfig returns the configuration for this installation: all stored data
@@ -200,6 +203,7 @@ func makeConfig(dir string, out io.Writer) container.Config {
 		IndexPath:    filepath.Join(dir, "index.db"),
 		RegistryPath: filepath.Join(dir, "vaults.json"),
 		ThemesPath:   filepath.Join(dir, "themes"),
+		Resources:    container.NewResources(),
 		ErrorHandler: func(err error) {
 			if _, writeErr := fmt.Fprintln(out, "numen:", err); writeErr != nil {
 				return

@@ -83,7 +83,7 @@ func Defaults() Config {
 		Workers:  0,
 		Language: "",
 		Progress: nil,
-		Model:    models[0],
+		Model:    getModels()[0],
 		Segmenter: segmenter.Model{
 			Name:      "silero-vad",
 			Repo:      segmenterDefault,

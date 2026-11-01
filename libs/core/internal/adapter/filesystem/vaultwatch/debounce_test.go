@@ -63,7 +63,7 @@ func feed(t *testing.T, raw chan notify.EventInfo, root string, from, notes int)
 // debouncing is determined by the burst and not by timing.
 func waitForQueue(t *testing.T, q *queue, is func() bool) {
 	t.Helper()
-	deadline := testsupport.Machine.Now().Add(5 * time.Second)
+	deadline := testsupport.GetMachine().Now().Add(5 * time.Second)
 	for {
 		q.mu.Lock()
 		isDone := is()
@@ -71,7 +71,7 @@ func waitForQueue(t *testing.T, q *queue, is func() bool) {
 		if isDone {
 			return
 		}
-		if testsupport.Machine.Now().After(deadline) {
+		if testsupport.GetMachine().Now().After(deadline) {
 			t.Fatal("the burst never reached the queue")
 		}
 		time.Sleep(time.Millisecond)

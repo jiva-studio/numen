@@ -236,18 +236,20 @@ func TestOrderAnswers_SingleOrderingServesAllQueries(t *testing.T) {
 // truncated in the middle of a line, a line with an unknown version, a line
 // missing a required field, a blank line, a timestamp with an offset, JSON that
 // is not a line, and bytes that are not a log.
-var logSeeds = []string{
-	`{"v":1,"id":"a","card":"0123456789","template":"Word","at":"2026-01-01T00:00:00.000Z","rating":3,"ms":1200}` + "\n",
-	`{"v":1,"id":"b","at":"2026-01-01T00:00:01.000Z","undo":"a"}` + "\n",
-	`{"v":1,"id":"a","card":"c","template":"f","at":"2026-01-01T00:00:00.000Z","rating":3}` + "\n" + `{"v":1,"id":"b","car`,
-	`{"v":2,"id":"a","card":"c","template":"f","at":"2026-01-01T00:00:00.000Z","rating":3}` + "\n",
-	`{"v":1,"id":"a","card":"c","at":"2026-01-01T00:00:00.000Z","rating":3}` + "\n",
-	`{"v":1,"id":"a","card":"c","template":"f","at":"2026-01-01T00:00:00.000Z","rating":9}` + "\n",
-	`{"v":1,"id":"a","card":"c","template":"f","at":"2026-01-01T03:00:00.000+03:00","rating":3}` + "\n",
-	"\n\n\n",
-	"[]\n",
-	"\x00\xff\xfe\n",
-	"",
+func getLogSeeds() []string {
+	return []string{
+		`{"v":1,"id":"a","card":"0123456789","template":"Word","at":"2026-01-01T00:00:00.000Z","rating":3,"ms":1200}` + "\n",
+		`{"v":1,"id":"b","at":"2026-01-01T00:00:01.000Z","undo":"a"}` + "\n",
+		`{"v":1,"id":"a","card":"c","template":"f","at":"2026-01-01T00:00:00.000Z","rating":3}` + "\n" + `{"v":1,"id":"b","car`,
+		`{"v":2,"id":"a","card":"c","template":"f","at":"2026-01-01T00:00:00.000Z","rating":3}` + "\n",
+		`{"v":1,"id":"a","card":"c","at":"2026-01-01T00:00:00.000Z","rating":3}` + "\n",
+		`{"v":1,"id":"a","card":"c","template":"f","at":"2026-01-01T00:00:00.000Z","rating":9}` + "\n",
+		`{"v":1,"id":"a","card":"c","template":"f","at":"2026-01-01T03:00:00.000+03:00","rating":3}` + "\n",
+		"\n\n\n",
+		"[]\n",
+		"\x00\xff\xfe\n",
+		"",
+	}
 }
 
 // No line is dropped without being counted: every line of a log is either an
@@ -257,7 +259,7 @@ var logSeeds = []string{
 // between machines by software that does not know its format, so its bytes are
 // untrusted input.
 func FuzzReadLog(f *testing.F) {
-	for _, seed := range logSeeds {
+	for _, seed := range getLogSeeds() {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, raw string) {

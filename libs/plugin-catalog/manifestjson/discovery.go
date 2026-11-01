@@ -96,7 +96,7 @@ func scanPluginDir(pluginDir string, seenCount map[string]string) (manifest.Disc
 	}
 
 	for _, theme := range m.Contributes.Themes {
-		if _, err := manifest.ReadThemeFile(pluginDir, theme.File); err != nil {
+		if _, err := ReadThemeFile(pluginDir, theme.File); err != nil {
 			return manifest.Discovered{}, false, fmt.Errorf("theme %q of %s: %w", theme.ID, manifestPath, err)
 		}
 	}

@@ -6,8 +6,8 @@ import (
 
 // Ready reports whether everything needed to recognise a page is on this
 // machine.
-func Ready(cfg Config) bool {
-	if !onnx.IsAvailable(onnx.ResolveLibrary(cfg.Runtime, cfg.Dir)) {
+func Ready(library *onnx.Library, cfg Config) bool {
+	if !library.IsAvailable(onnx.ResolveLibrary(cfg.Runtime, cfg.Dir)) {
 		return false
 	}
 	if _, err := locateModel(cfg.Layout.Path, "NUMEN_DEPENDENCY_PP_DOCLAYOUT", "pp-doclayout.onnx", cfg.Dir); err != nil {

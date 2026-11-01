@@ -3,8 +3,7 @@
 package vaulttest
 
 import (
-	"fmt"
-	"sync/atomic"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -14,12 +13,14 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/hostports"
 )
 
-// Epoch is the moment that the clock of a test reports.
-var Epoch = time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)
+// GetEpoch returns the moment that the clock of a test reports.
+func GetEpoch() time.Time {
+	return time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)
+}
 
-// NewClock creates a clock that reports Epoch until it is moved.
+// NewClock creates a clock that reports GetEpoch until it is moved.
 func NewClock() *clock.Fake {
-	return clock.NewFake(Epoch)
+	return clock.NewFake(GetEpoch())
 }
 
 // Queries answers queries about a vault's notes, links and parse problems from
@@ -44,17 +45,19 @@ type Env struct {
 	Queries Queries
 }
 
-type vaultCounter struct {
-	made atomic.Int64
-}
-
-var vaults vaultCounter
-
 // New is a vault of the notes given.
 func New(tb testing.TB, notes map[string]string) Env {
 	tb.Helper()
-	host := hosttest.OnDisk(tb, fmt.Sprintf("vault-%d", vaults.made.Add(1)), notes)
+	host := hosttest.OnDisk(tb, createVaultName(tb), notes)
 	return Of(host)
+}
+
+// createVaultName returns a name no other vault of the process has: the name of a new folder of the
+// test, which is unique among the folders of every test.
+func createVaultName(tb testing.TB) string {
+	tb.Helper()
+	own := tb.TempDir()
+	return "vault-" + filepath.Base(filepath.Dir(own)) + "-" + filepath.Base(own)
 }
 
 // Of is the ports over a vault the test made.
@@ -97,7 +100,7 @@ func NewInstallation() Installation {
 // Add makes a vault of the notes given, known to the host.
 func (i Installation) Add(tb testing.TB, notes map[string]string) domain.Vault {
 	tb.Helper()
-	added := hosttest.OnDisk(tb, fmt.Sprintf("vault-%d", vaults.made.Add(1)), notes)
+	added := hosttest.OnDisk(tb, createVaultName(tb), notes)
 	i.Host.Beside(added)
 	i.vaults[added.Vault().ID] = added
 	return added.Vault()

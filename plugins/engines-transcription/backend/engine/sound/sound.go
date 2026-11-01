@@ -16,11 +16,11 @@ import (
 )
 
 // The first bytes of each container this reads.
-var (
-	riff = []byte("RIFF")
-	wave = []byte("WAVE")
-	fLaC = []byte("fLaC")
-	id3  = []byte("ID3")
+const (
+	riff = "RIFF"
+	wave = "WAVE"
+	fLaC = "fLaC"
+	id3  = "ID3"
 )
 
 // GetDuration is how long a recording is, in milliseconds, out of its header
@@ -34,7 +34,7 @@ func GetDuration(raw []byte) (ms int, err error) {
 		}
 		return signal.GetMillis(len(found.samples)/(found.channels*found.bits/8), found.rate), nil
 
-	case bytes.HasPrefix(raw, fLaC):
+	case bytes.HasPrefix(raw, []byte(fLaC)):
 		stream, err := flac.New(bytes.NewReader(raw))
 		if err != nil {
 			return 0, fmt.Errorf("the flac recording: %w", err)
@@ -69,7 +69,7 @@ func Read(raw []byte) ([]float32, int, error) {
 		}
 		return mono(sound, found.channels), found.rate, nil
 
-	case bytes.HasPrefix(raw, fLaC):
+	case bytes.HasPrefix(raw, []byte(fLaC)):
 		return fromFlac(raw)
 
 	case isMP3(raw):
@@ -79,13 +79,13 @@ func Read(raw []byte) ([]float32, int, error) {
 }
 
 func isWav(raw []byte) bool {
-	return len(raw) >= 12 && bytes.HasPrefix(raw, riff) && bytes.Equal(raw[8:12], wave)
+	return len(raw) >= 12 && bytes.HasPrefix(raw, []byte(riff)) && string(raw[8:12]) == wave
 }
 
 // isMP3 reports whether a file is an mp3: it starts with a tag, or with a
 // frame sync mark.
 func isMP3(raw []byte) bool {
-	if bytes.HasPrefix(raw, id3) {
+	if bytes.HasPrefix(raw, []byte(id3)) {
 		return true
 	}
 	return len(raw) >= 2 && raw[0] == 0xFF && raw[1]&0xE0 == 0xE0

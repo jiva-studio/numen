@@ -26,7 +26,7 @@ import (
 func openWriter(t *testing.T) (vaultport.VaultWriter, string) {
 	t.Helper()
 	root := t.TempDir()
-	w, err := vaultwriter.VaultWriters{}.Open(domain.Vault{Path: root})
+	w, err := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}.Open(domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -227,7 +227,7 @@ func TestWritingThroughALinkPreservesTheLink(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	writer, err := (vaultwriter.VaultWriters{}).Open(v)
+	writer, err := (vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}).Open(v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,7 +291,7 @@ func TestStatingAFileOpensNothing(t *testing.T) {
 // One vault is locked by one writer at a time, and locking one vault does not
 // affect another.
 func TestLock_AllowsOneWriterPerVault(t *testing.T) {
-	writers := vaultwriter.VaultWriters{}
+	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
 	here := testsupport.NewVault(t, nil)
 	elsewhere := testsupport.NewVault(t, nil)
 
@@ -347,7 +347,7 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			w, err := vaultwriter.VaultWriters{}.Open(domain.Vault{Path: root})
+			w, err := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}.Open(domain.Vault{Path: root})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -510,7 +510,7 @@ func TestAVaultReachedThroughALinkIsSavedLikeAnyOther(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	w, err := vaultwriter.VaultWriters{}.Open(domain.Vault{Path: link})
+	w, err := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}.Open(domain.Vault{Path: link})
 	if err != nil {
 		t.Fatal(err)
 	}

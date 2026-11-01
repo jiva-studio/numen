@@ -7,7 +7,7 @@ import (
 
 func TestMigrationLinkMarkerAddsTheMarkerColumnToLinks(t *testing.T) {
 	ctx := t.Context()
-	db := openBreaking(t, filepath.Join(t.TempDir(), "index.db"))
+	db, _ := openBreaking(t, filepath.Join(t.TempDir(), "index.db"))
 	all, err := loadMigrations()
 	if err != nil {
 		t.Fatal(err)

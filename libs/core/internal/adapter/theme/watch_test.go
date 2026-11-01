@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/theme"
+	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/watchhub"
 )
 
 // waited is how long a test gives the operating system to report a change. It
@@ -63,7 +64,7 @@ func TestAThemeFolderReachedThroughALinkIsWatched(t *testing.T) {
 		t.Skipf("this machine does not make links: %v", err)
 	}
 
-	catalogue, err := theme.OpenAt(link)
+	catalogue, err := theme.OpenAt(link, watchhub.NewHub())
 	if err != nil {
 		t.Fatal(err)
 	}

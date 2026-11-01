@@ -14,7 +14,7 @@ import (
 
 func openPluginVault(t *testing.T, notes map[string]string) (domain.Vault, func() (domain.Vault, bool), container.EditorAssembly) {
 	t.Helper()
-	cfg := container.Config{IndexPath: indexfile.Path(t), PluginCachePath: t.TempDir(), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")}
+	cfg := container.NewConfig(container.Config{IndexPath: indexfile.Path(t), PluginCachePath: t.TempDir(), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")})
 	registry, err := cfg.Registry()
 	if err != nil {
 		t.Fatal(err)
@@ -32,7 +32,7 @@ func openPluginVault(t *testing.T, notes map[string]string) (domain.Vault, func(
 }
 
 func TestAPluginNoteIsInTheIndexOnceItsFileIsScanned(t *testing.T) {
-	v, current, assembly := openPluginVault(t, note)
+	v, current, assembly := openPluginVault(t, getNote())
 	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{})
 	if err != nil {
 		t.Fatal(err)
@@ -52,7 +52,7 @@ func TestAPluginNoteIsInTheIndexOnceItsFileIsScanned(t *testing.T) {
 }
 
 func TestAPluginKeepsItsFolderAndItsCacheApart(t *testing.T) {
-	_, current, assembly := openPluginVault(t, note)
+	_, current, assembly := openPluginVault(t, getNote())
 	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{})
 	if err != nil {
 		t.Fatal(err)
@@ -78,7 +78,7 @@ func TestAPluginKeepsItsFolderAndItsCacheApart(t *testing.T) {
 }
 
 func TestAnotherVaultOfTheInstallationIsWorkedByItsIdentity(t *testing.T) {
-	v, _, assembly := openPluginVault(t, note)
+	v, _, assembly := openPluginVault(t, getNote())
 	nothing := func() (domain.Vault, bool) { return domain.Vault{}, false }
 	shared, err := assembly.OpenPluginVault(nothing, container.PluginVaultHooks{})
 	if err != nil {
@@ -104,7 +104,7 @@ func TestAnotherVaultOfTheInstallationIsWorkedByItsIdentity(t *testing.T) {
 }
 
 func TestAWriteByAPluginIsReportedToTheWindow(t *testing.T) {
-	_, current, assembly := openPluginVault(t, note)
+	_, current, assembly := openPluginVault(t, getNote())
 	notifyCount := 0
 	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Written: func() { notifyCount++ }})
 	if err != nil {

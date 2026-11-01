@@ -9,15 +9,17 @@ import (
 // fixtureDir holds the request and response fixtures the frontend contract test reads as well.
 const fixtureDir = "../../testdata/api"
 
-var contracts = map[string]plugintest.MessageContract{
-	MethodGetLink:     {Request: func() any { return &GetLinkRequest{} }, Response: func() any { return &GetLinkResponse{} }},
-	MethodReadArticle: {Request: func() any { return &ReadArticleRequest{} }, Response: func() any { return &ReadArticleResponse{} }},
-	MethodFetchText:   {Request: func() any { return &FetchTextRequest{} }, Response: func() any { return &FetchTextResponse{} }},
-	MethodCopyVideo:   {Request: func() any { return &CopyVideoRequest{} }, Response: func() any { return &CopyVideoResponse{} }},
-	MethodDeleteCopy:  {Request: func() any { return &DeleteCopyRequest{} }, Response: func() any { return &DeleteCopyResponse{} }},
-	MethodCreateLinks: {Request: func() any { return &CreateLinksRequest{} }, Response: func() any { return &CreateLinksResponse{} }},
+func getContracts() map[string]plugintest.MessageContract {
+	return map[string]plugintest.MessageContract{
+		MethodGetLink:     {Request: func() any { return &GetLinkRequest{} }, Response: func() any { return &GetLinkResponse{} }},
+		MethodReadArticle: {Request: func() any { return &ReadArticleRequest{} }, Response: func() any { return &ReadArticleResponse{} }},
+		MethodFetchText:   {Request: func() any { return &FetchTextRequest{} }, Response: func() any { return &FetchTextResponse{} }},
+		MethodCopyVideo:   {Request: func() any { return &CopyVideoRequest{} }, Response: func() any { return &CopyVideoResponse{} }},
+		MethodDeleteCopy:  {Request: func() any { return &DeleteCopyRequest{} }, Response: func() any { return &DeleteCopyResponse{} }},
+		MethodCreateLinks: {Request: func() any { return &CreateLinksRequest{} }, Response: func() any { return &CreateLinksResponse{} }},
+	}
 }
 
 func TestMessagesMatchFixtures(t *testing.T) {
-	plugintest.CheckMessageFixtures(t, fixtureDir, contracts)
+	plugintest.CheckMessageFixtures(t, fixtureDir, getContracts())
 }

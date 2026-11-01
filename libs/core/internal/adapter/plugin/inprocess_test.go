@@ -104,7 +104,7 @@ func newBuiltInBackend() *builtInBackend {
 
 func newBuiltInHost(t *testing.T, dirs ...string) *Host {
 	t.Helper()
-	host := NewHost(testsupport.Machine, "desktop.editor", dirs...)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", dirs...)
 	t.Cleanup(func() {
 		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
@@ -227,7 +227,7 @@ func TestABuiltInPluginIsRefusedTwiceAndForAnotherTarget(t *testing.T) {
 	if err := host.RegisterBuiltIn(newBuiltInManifest(firstBuiltInID), serve); !errors.Is(err, errBuiltInRegistered) {
 		t.Errorf("second registration = %v, want errBuiltInRegistered", err)
 	}
-	other := NewHost(testsupport.Machine, "mobile.reader")
+	other := NewHost(testsupport.GetMachine(), "mobile.reader")
 	t.Cleanup(func() {
 		if err := other.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)

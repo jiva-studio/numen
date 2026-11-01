@@ -26,14 +26,14 @@ func getPathsUnder(t *testing.T, db *DB, vault domain.Vault, path string) []stri
 // with the folder's is not under it.
 func TestWhatIsBelowAFolderIsEverythingItContains(t *testing.T) {
 	db := openDB(t)
-	saveNamedNote(t, db, first, "physics/Entropy.md", "Entropy")
-	saveNamedNote(t, db, first, "physics/heat/Heat.md", "Heat")
-	saveNamedNote(t, db, first, "physics-old/Stray.md", "Stray")
-	saveNamedNote(t, db, first, "Outside.md", "Outside")
-	book(t, db, first, "physics/A Book.epub", 1)
+	saveNamedNote(t, db, getFirst(), "physics/Entropy.md", "Entropy")
+	saveNamedNote(t, db, getFirst(), "physics/heat/Heat.md", "Heat")
+	saveNamedNote(t, db, getFirst(), "physics-old/Stray.md", "Stray")
+	saveNamedNote(t, db, getFirst(), "Outside.md", "Outside")
+	book(t, db, getFirst(), "physics/A Book.epub", 1)
 
 	want := []string{"physics/A Book.epub", "physics/Entropy.md", "physics/heat/Heat.md"}
-	if got := getPathsUnder(t, db, first, "physics"); !slices.Equal(got, want) {
+	if got := getPathsUnder(t, db, getFirst(), "physics"); !slices.Equal(got, want) {
 		t.Errorf("the folder holds %v, want %v", got, want)
 	}
 }
@@ -41,11 +41,11 @@ func TestWhatIsBelowAFolderIsEverythingItContains(t *testing.T) {
 // A file is what is at its own path, and holds nothing.
 func TestWhatIsBelowAFileIsTheFile(t *testing.T) {
 	db := openDB(t)
-	saveNamedNote(t, db, first, "physics/Entropy.md", "Entropy")
-	saveNamedNote(t, db, first, "physics/Entropy.md.bak.md", "A copy")
+	saveNamedNote(t, db, getFirst(), "physics/Entropy.md", "Entropy")
+	saveNamedNote(t, db, getFirst(), "physics/Entropy.md.bak.md", "A copy")
 
 	want := []string{"physics/Entropy.md"}
-	if got := getPathsUnder(t, db, first, "physics/Entropy.md"); !slices.Equal(got, want) {
+	if got := getPathsUnder(t, db, getFirst(), "physics/Entropy.md"); !slices.Equal(got, want) {
 		t.Errorf("the path holds %v, want %v", got, want)
 	}
 }
@@ -54,11 +54,11 @@ func TestWhatIsBelowAFileIsTheFile(t *testing.T) {
 // between a note and a book.
 func TestWhatIsBelowAPathReturnsWhichKindEachSourceIs(t *testing.T) {
 	db := openDB(t)
-	saveNamedNote(t, db, first, "physics/Entropy.md", "Entropy")
-	book(t, db, first, "physics/A Book.epub", 1)
+	saveNamedNote(t, db, getFirst(), "physics/Entropy.md", "Entropy")
+	book(t, db, getFirst(), "physics/A Book.epub", 1)
 
 	target := map[string]domain.SourceKind{}
-	found, err := db.Sources().GetSourcesUnder(t.Context(), first.ID, "physics")
+	found, err := db.Sources().GetSourcesUnder(t.Context(), getFirst().ID, "physics")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,13 +77,13 @@ func TestWhatIsBelowAPathReturnsWhichKindEachSourceIs(t *testing.T) {
 // them. Both vaults file something under the same folder name.
 func TestWhatIsBelowAPathIsOneVaultsAlone(t *testing.T) {
 	db := openDB(t)
-	saveNamedNote(t, db, first, "physics/Entropy.md", "Entropy")
-	saveNamedNote(t, db, second, "physics/Quasar.md", "Quasar")
+	saveNamedNote(t, db, getFirst(), "physics/Entropy.md", "Entropy")
+	saveNamedNote(t, db, getSecond(), "physics/Quasar.md", "Quasar")
 
-	if got := getPathsUnder(t, db, first, "physics"); !slices.Equal(got, []string{"physics/Entropy.md"}) {
+	if got := getPathsUnder(t, db, getFirst(), "physics"); !slices.Equal(got, []string{"physics/Entropy.md"}) {
 		t.Errorf("the first vault holds %v", got)
 	}
-	if got := getPathsUnder(t, db, second, "physics"); !slices.Equal(got, []string{"physics/Quasar.md"}) {
+	if got := getPathsUnder(t, db, getSecond(), "physics"); !slices.Equal(got, []string{"physics/Quasar.md"}) {
 		t.Errorf("the second vault holds %v", got)
 	}
 }

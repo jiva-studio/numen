@@ -65,7 +65,7 @@ func writeReady(ctx context.Context, dir, primary, sum string) error {
 	if err := os.WriteFile(tmp, []byte(primary+"\n"+sum+"\n"), 0o644); err != nil {
 		return err
 	}
-	return renameWithRetry(ctx, tmp, filepath.Join(dir, readyName), defaultBackoff)
+	return renameWithRetry(ctx, tmp, filepath.Join(dir, readyName), newDefaultBackoff())
 }
 
 // readReady returns the primary file the sentinel names and the checksum the
@@ -96,7 +96,9 @@ type backoff struct {
 	sleep    func(context.Context, time.Duration) error
 }
 
-var defaultBackoff = backoff{attempts: 6, first: 50 * time.Millisecond, sleep: sleepContext}
+func newDefaultBackoff() backoff {
+	return backoff{attempts: 6, first: 50 * time.Millisecond, sleep: sleepContext}
+}
 
 func sleepContext(ctx context.Context, wait time.Duration) error {
 	timer := time.NewTimer(wait)

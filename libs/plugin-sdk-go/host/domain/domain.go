@@ -43,13 +43,32 @@ func GetBasename(path string) string {
 	return notesdomain.Basename(path)
 }
 
-var Basename = notesdomain.Basename
-var Filename = notesdomain.Filename
-var FoldName = notesdomain.FoldName
-var LinkName = notesdomain.LinkName
-var ChooseMatch = notesdomain.ChooseMatch
-var ParseAddress = notesdomain.ParseAddress
-var FindLiveVersion = notesdomain.FindLiveVersion
-var NewTextVersionID = notesdomain.NewTextVersionID
-var NewVersionText = notesdomain.NewVersionText
-var HashContent = notesdomain.HashContent
+func Basename(path string) string { return notesdomain.Basename(path) }
+
+func Filename(title string) (filename string, exact bool, err error) {
+	return notesdomain.Filename(title)
+}
+
+func FoldName(name string) string { return notesdomain.FoldName(name) }
+
+func LinkName(target string) string { return notesdomain.LinkName(target) }
+
+func ChooseMatch(from, name string, candidates []string) (bestMatch string, ambiguous bool) {
+	return notesdomain.ChooseMatch(from, name, candidates)
+}
+
+func ParseAddress(raw string) Address { return notesdomain.ParseAddress(raw) }
+
+func FindLiveVersion(versions []TextVersion, fileHash string, isIntact func(TextVersion) bool) (TextVersion, bool) {
+	return notesdomain.FindLiveVersion(versions, fileHash, isIntact)
+}
+
+func NewTextVersionID(pluginID, key string) TextVersionID {
+	return notesdomain.NewTextVersionID(pluginID, key)
+}
+
+func NewVersionText(version TextVersion, segments []TextSegment) VersionText {
+	return notesdomain.NewVersionText(version, segments)
+}
+
+func HashContent(raw []byte) string { return notesdomain.HashContent(raw) }

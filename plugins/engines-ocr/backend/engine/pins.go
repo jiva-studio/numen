@@ -11,16 +11,18 @@ const (
 // RecogniserCustom is the recogniser the user selects by its file.
 const RecogniserCustom = "custom"
 
-// recognisers are the recognition models the plugin provisions, by the name the settings give each,
-// with the address each is fetched from. Each carries its alphabet in its metadata.
-var recognisers = map[string]string{
-	"pp-ocrv6-tiny":       recogDefault,
-	"pp-ocrv6-small":      rapidOCR + "PP-OCRv6/rec/PP-OCRv6_rec_small.onnx",
-	"pp-ocrv5-latin":      rapidOCR + "PP-OCRv5/rec/latin_PP-OCRv5_rec_mobile.onnx",
-	"pp-ocrv5-eslav":      rapidOCR + "PP-OCRv5/rec/eslav_PP-OCRv5_rec_mobile.onnx",
-	"pp-ocrv5-cyrillic":   rapidOCR + "PP-OCRv5/rec/cyrillic_PP-OCRv5_rec_mobile.onnx",
-	"pp-ocrv5-devanagari": rapidOCR + "PP-OCRv5/rec/devanagari_PP-OCRv5_rec_mobile.onnx",
-	"pp-ocrv5-greek":      rapidOCR + "PP-OCRv5/rec/el_PP-OCRv5_rec_mobile.onnx",
+// getRecognisers returns the recognition models the plugin provisions, by the name the settings give
+// each, with the address each is fetched from. Each carries its alphabet in its metadata.
+func getRecognisers() map[string]string {
+	return map[string]string{
+		"pp-ocrv6-tiny":       recogDefault,
+		"pp-ocrv6-small":      rapidOCR + "PP-OCRv6/rec/PP-OCRv6_rec_small.onnx",
+		"pp-ocrv5-latin":      rapidOCR + "PP-OCRv5/rec/latin_PP-OCRv5_rec_mobile.onnx",
+		"pp-ocrv5-eslav":      rapidOCR + "PP-OCRv5/rec/eslav_PP-OCRv5_rec_mobile.onnx",
+		"pp-ocrv5-cyrillic":   rapidOCR + "PP-OCRv5/rec/cyrillic_PP-OCRv5_rec_mobile.onnx",
+		"pp-ocrv5-devanagari": rapidOCR + "PP-OCRv5/rec/devanagari_PP-OCRv5_rec_mobile.onnx",
+		"pp-ocrv5-greek":      rapidOCR + "PP-OCRv5/rec/el_PP-OCRv5_rec_mobile.onnx",
+	}
 }
 
 // FindRecogniser returns the address of the recognition model the settings name, and false for a
@@ -29,6 +31,6 @@ func FindRecogniser(name string) (string, bool) {
 	if name == RecogniserCustom {
 		return "", true
 	}
-	address, ok := recognisers[name]
+	address, ok := getRecognisers()[name]
 	return address, ok
 }

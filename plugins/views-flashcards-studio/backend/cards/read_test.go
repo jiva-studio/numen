@@ -247,7 +247,7 @@ func TestACardModelNamedTwoWaysIsOpenedOnce(t *testing.T) {
 // A card model exactly at a note's bound is read.
 func TestACardModelAtTheBoundIsRead(t *testing.T) {
 	vs := newVaults(t)
-	raw := animals["Animal.md"] + "\n"
+	raw := getAnimals()["Animal.md"] + "\n"
 	raw += strings.Repeat("x", note.MaxBytes-len(raw)-1) + "\n"
 	write(t, vs.first, "Animal.md", raw)
 

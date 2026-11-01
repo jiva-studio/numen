@@ -69,7 +69,7 @@ func TestMultipleACPAgentsFromConfigAndAutoDiscovery(t *testing.T) {
 
 func discoverACPAgentsWithLookup(lookup func(binary string) (string, bool)) []acpAgent {
 	var agents []acpAgent
-	for _, candidate := range knownACPAgents {
+	for _, candidate := range getKnownACPAgents() {
 		binaryPath, ok := lookup(candidate.binary)
 		if !ok || binaryPath == "" {
 			continue

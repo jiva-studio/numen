@@ -14,10 +14,14 @@ import (
 )
 
 // heldWords is the vocabulary of the note whose indexing a person cancels.
-var heldWords = []string{"lighthouse", "beacon", "keeper", "lantern", "reef", "fog", "signal", "cliff"}
+func getHeldWords() []string {
+	return []string{"lighthouse", "beacon", "keeper", "lantern", "reef", "fog", "signal", "cliff"}
+}
 
 // afterWords is the vocabulary of that note once it is edited.
-var afterWords = []string{"orchard", "pear", "ladder", "basket", "bloom", "frost", "graft", "hedge"}
+func getAfterWords() []string {
+	return []string{"orchard", "pear", "ladder", "basket", "bloom", "frost", "graft", "hedge"}
+}
 
 // holdingModel blocks every batch with a text of the held note while isBlocking
 // is set, and otherwise embeds it and counts the call.
@@ -31,7 +35,7 @@ type holdingModel struct {
 }
 
 func (m *holdingModel) Embed(ctx context.Context, texts []string) ([][]float32, error) {
-	isHeld := slices.ContainsFunc(texts, func(text string) bool { return strings.Contains(text, heldWords[0]) })
+	isHeld := slices.ContainsFunc(texts, func(text string) bool { return strings.Contains(text, getHeldWords()[0]) })
 	m.mu.Lock()
 	isBlocking := m.isBlocking
 	if isHeld && !isBlocking {
@@ -76,7 +80,7 @@ func TestCancelledNoteIsSkippedUntilItChanges(t *testing.T) {
 	fit(t, db, model)
 	recipe := model.GetModel().Recipe()
 
-	v := testsupport.NewVault(t, map[string]string{"Held.md": noteWith(heldWords, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Held.md": noteWith(getHeldWords(), 200)})
 	cut(t, made, db, v)
 	heldChunks, _, err := db.Progress().GetProgress(t.Context(), v.ID, recipe)
 	if err != nil {
@@ -108,7 +112,7 @@ func TestCancelledNoteIsSkippedUntilItChanges(t *testing.T) {
 
 	// The next wake embeds the other note and leaves the cancelled one alone.
 	model.setBlocking(false)
-	writeNote(t, v.Path, "Other.md", noteWith(before, 200))
+	writeNote(t, v.Path, "Other.md", noteWith(getBefore(), 200))
 	cut(t, made, db, v)
 	p.embed(t.Context())
 
@@ -124,7 +128,7 @@ func TestCancelledNoteIsSkippedUntilItChanges(t *testing.T) {
 	}
 
 	// An edit of the note, reported as the vault watch reports it, indexes it again.
-	writeNote(t, v.Path, "Held.md", noteWith(slices.Concat(afterWords, heldWords[:1]), 300))
+	writeNote(t, v.Path, "Held.md", noteWith(slices.Concat(getAfterWords(), getHeldWords()[:1]), 300))
 	p.worker.ClearSkips([]string{"Held.md"})
 	cut(t, made, db, v)
 	p.embed(t.Context())

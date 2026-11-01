@@ -144,7 +144,7 @@ func TestSilenceProducesNoSpans(t *testing.T) {
 }
 
 func TestSpeechPassLoad(t *testing.T) {
-	if pass, err := newSpeechPass(make([]float32, 1024)); err == nil {
+	if pass, err := newSpeechPass(make([]float32, 1024), ort.NewTensor); err == nil {
 		defer pass.destroy()
 		if len(pass.window) != 512 {
 			t.Errorf("newSpeechPass window len = %d, want 512", len(pass.window))
@@ -207,11 +207,9 @@ func TestSplitLongSpanWhenLongestIsTwo(t *testing.T) {
 
 // A recording's window count covers every sample, rounding up to the next full window.
 func TestNewSpeechPassCount(t *testing.T) {
-	orig := newTensor
-	newTensor = func(_ []int64, _ any) (*ort.Value, error) {
+	newTensor := func(_ []int64, _ any) (*ort.Value, error) {
 		return &ort.Value{}, nil
 	}
-	t.Cleanup(func() { newTensor = orig })
 
 	for _, tc := range []struct {
 		samples int
@@ -225,7 +223,7 @@ func TestNewSpeechPassCount(t *testing.T) {
 		{1024, 2},
 		{1025, 3},
 	} {
-		pass, err := newSpeechPass(make([]float32, tc.samples))
+		pass, err := newSpeechPass(make([]float32, tc.samples), newTensor)
 		if err != nil {
 			t.Fatalf("samples %d: unexpected error: %v", tc.samples, err)
 		}
@@ -244,15 +242,13 @@ func TestNewSpeechPassCount(t *testing.T) {
 
 // Tensor construction prepares input, memory, and sampling tensors with expected shapes.
 func TestNewSpeechPassTensorShapes(t *testing.T) {
-	orig := newTensor
 	var shapes [][]int64
-	newTensor = func(shape []int64, _ any) (*ort.Value, error) {
+	newTensor := func(shape []int64, _ any) (*ort.Value, error) {
 		shapes = append(shapes, shape)
 		return &ort.Value{}, nil
 	}
-	t.Cleanup(func() { newTensor = orig })
 
-	pass, err := newSpeechPass(make([]float32, 513))
+	pass, err := newSpeechPass(make([]float32, 513), newTensor)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -274,7 +270,7 @@ func TestNewSpeechPassTensorShapes(t *testing.T) {
 
 // Tensor construction fails when no runtime engine is initialized.
 func TestNewSpeechPassWithoutEngineFails(t *testing.T) {
-	pass, err := newSpeechPass(make([]float32, 513))
+	pass, err := newSpeechPass(make([]float32, 513), ort.NewTensor)
 	if err == nil {
 		defer pass.destroy()
 		t.Fatal("expected error when engine is uninitialized, got nil")
@@ -286,13 +282,10 @@ func TestNewSpeechPassWithoutEngineFails(t *testing.T) {
 
 // Construction failure at any tensor allocation cleans up and returns the error.
 func TestNewSpeechPassConstructorErrors(t *testing.T) {
-	orig := newTensor
-	t.Cleanup(func() { newTensor = orig })
-
 	errBoom := errors.New("boom")
 	for _, failStep := range []int{0, 1, 2} {
 		step := 0
-		newTensor = func(_ []int64, _ any) (*ort.Value, error) {
+		newTensor := func(_ []int64, _ any) (*ort.Value, error) {
 			if step == failStep {
 				step++
 				return nil, errBoom
@@ -301,7 +294,7 @@ func TestNewSpeechPassConstructorErrors(t *testing.T) {
 			return &ort.Value{}, nil
 		}
 
-		pass, err := newSpeechPass(make([]float32, 513))
+		pass, err := newSpeechPass(make([]float32, 513), newTensor)
 		if !errors.Is(err, errBoom) {
 			t.Errorf("step %d: err = %v, want %v", failStep, err, errBoom)
 		}

@@ -20,20 +20,22 @@ import (
 
 // joined is a vault whose deck points at a prose note, the way cards are cut
 // from a user's own writing.
-var joined = map[string]string{
-	"Term.md": deck["Term.md"],
-	"Mould.md": "---\ntype: note\n---\n" +
-		"\n# Leaf mould\n\nLeaves left in a heap for two winters, and nothing else.\n",
-	"decks/Words.md": "---\ntype: deck\n---\n" +
-		"\nFrom [[Mould]].\n" +
-		"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
-		"\n### Meaning\n\nCompost made of fallen leaves alone\n",
+func getJoined() map[string]string {
+	return map[string]string{
+		"Term.md": getDeck()["Term.md"],
+		"Mould.md": "---\ntype: note\n---\n" +
+			"\n# Leaf mould\n\nLeaves left in a heap for two winters, and nothing else.\n",
+		"decks/Words.md": "---\ntype: deck\n---\n" +
+			"\nFrom [[Mould]].\n" +
+			"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
+			"\n### Meaning\n\nCompost made of fallen leaves alone\n",
+	}
 }
 
 // Reading around a deck covers only the vaults this installation holds, and a
 // query about another vault fails.
 func TestGetDeckNeighbourhood_UnknownVaultReturnsNotFound(t *testing.T) {
-	handler, _ := newAPI(t, joined)
+	handler, _ := newAPI(t, getJoined())
 
 	_, err := handler.GetDeckNeighbourhood(t.Context(), &api.GetDeckNeighbourhoodRequest{
 		Vault: "no-vault-of-this-identity",
@@ -53,7 +55,7 @@ func TestGetDeckNeighbourhood_UnknownVaultReturnsNotFound(t *testing.T) {
 // A note the deck points at that cannot be read is reported with the same error
 // the editor reports, so a rejected note has one vocabulary across the windows.
 func TestGetDeckNeighbourhood_UnreadableNoteMatchesEditorError(t *testing.T) {
-	handler, target := newAPI(t, joined)
+	handler, target := newAPI(t, getJoined())
 	v := target[0]
 
 	// The index still resolves the link; the file behind it is gone. This is the
@@ -98,19 +100,21 @@ func (brokenLinks) GetLinks(context.Context, domain.VaultID, string) ([]domain.R
 
 // backlinked is a vault whose deck points at one note and is pointed at by
 // another.
-var backlinked = map[string]string{
-	"Term.md": deck["Term.md"],
-	"Mould.md": "---\ntype: note\n---\n" +
-		"\n# Leaf mould\n\nLeaves left in a heap for two winters, and nothing else.\n",
-	"Mention.md": "---\ntype: note\n---\n" +
-		"\n# Mention\n\nSee [[Words]] for the cards.\n",
-	"decks/Words.md": joined["decks/Words.md"],
+func getBacklinked() map[string]string {
+	return map[string]string{
+		"Term.md": getDeck()["Term.md"],
+		"Mould.md": "---\ntype: note\n---\n" +
+			"\n# Leaf mould\n\nLeaves left in a heap for two winters, and nothing else.\n",
+		"Mention.md": "---\ntype: note\n---\n" +
+			"\n# Mention\n\nSee [[Words]] for the cards.\n",
+		"decks/Words.md": getJoined()["decks/Words.md"],
+	}
 }
 
 // The index being out of reach is an internal failure and not an empty
 // neighbourhood.
 func TestAnIndexOutOfReachIsAnInternalFailureForReadingAround(t *testing.T) {
-	handler, target := newAPI(t, joined)
+	handler, target := newAPI(t, getJoined())
 	handler.scenarios().neighbourhood = flashcards.NewShowNeighbourhood(
 		note.NewShowLinks(brokenLinks{}), nil, note.NewRead(handler.ports.Readers))
 
@@ -125,7 +129,7 @@ func TestAnIndexOutOfReachIsAnInternalFailureForReadingAround(t *testing.T) {
 // A note the deck points at is marked as linked from the deck, and a note
 // pointing at the deck is not. Every entry is a note of the vault.
 func TestGetDeckNeighbourhood_MarksOnlyDeckLinkedNotes(t *testing.T) {
-	handler, target := newAPI(t, backlinked)
+	handler, target := newAPI(t, getBacklinked())
 
 	out, err := handler.GetDeckNeighbourhood(t.Context(), &api.GetDeckNeighbourhoodRequest{
 		Vault: string(target[0].ID), Deck: "decks/Words.md",

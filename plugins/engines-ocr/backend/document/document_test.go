@@ -14,7 +14,7 @@ import (
 
 func open(t *testing.T, path string, raw []byte) document.Document {
 	t.Helper()
-	doc, err := document.Open(path, raw)
+	doc, err := document.NewReader().Open(path, raw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,10 +72,11 @@ func TestImageIsOnePage(t *testing.T) {
 }
 
 func TestOpenRejectsInvalidBytes(t *testing.T) {
+	reader := document.NewReader()
 	for path, raw := range map[string][]byte{
 		"a.pdf": []byte("INVALID_PDF_HEADER"), "b.pdf": nil, "c.png": []byte("not an image"),
 	} {
-		if _, err := document.Open(path, raw); !errors.Is(err, document.ErrUnreadable) {
+		if _, err := reader.Open(path, raw); !errors.Is(err, document.ErrUnreadable) {
 			t.Errorf("%s opened with %v", path, err)
 		}
 	}

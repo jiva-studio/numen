@@ -70,7 +70,7 @@ func (b *Backend) Configure(values map[string]string) {
 }
 
 // ServiceName is the name of the API service the backend serves; the manifest declares it.
-const ServiceName = "numen.flashcards"
+const ServiceName = "md.numen.views.flashcards.studio"
 
 // Mount registers the API, the tools and the commands on s.
 func (b *Backend) Mount(s *server.Server) error {

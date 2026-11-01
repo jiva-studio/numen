@@ -23,7 +23,7 @@ func newLinkedPages(t *testing.T, files host.Vault) *httptest.Server {
 		"NUMEN_PLUGIN_TOKEN": "linked-token",
 		"NUMEN_HOST_PORT":    "1",
 	}, func(s *server.Server) error {
-		s.RegisterRoute(pagesPattern, NewPageServer(files))
+		s.RegisterRoute(pagesPattern, NewPageServer(files, newTestWorkers(t)))
 		return nil
 	})
 	if err != nil {

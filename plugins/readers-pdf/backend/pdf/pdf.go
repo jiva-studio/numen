@@ -108,9 +108,9 @@ var (
 	ErrEncrypted = errors.New("pdf: the file is encrypted")
 )
 
-// Read extracts one document from the bytes of a PDF file.
-func Read(raw []byte) (*Book, error) {
-	doc, err := openBytes(raw)
+// Read extracts one document from the bytes of a PDF file, read on a worker of the pool.
+func (w *Workers) Read(raw []byte) (*Book, error) {
+	doc, err := w.openBytes(raw)
 	if err != nil {
 		return nil, err
 	}

@@ -54,14 +54,22 @@ const (
 	layers  = 2
 )
 
-// The names the predictor and the joiner are run by, as the C strings the
-// runtime reads them from.
-var (
-	decoderInputNames = ortraw.MakeCNames(inputTargets, inputTargetN, inputState, inputCell)
-	decoderOutputs    = ortraw.MakeCNames(outputFrames, outputState, outputCell)
-	joinerInputNames  = ortraw.MakeCNames(inputEncoded, inputDecoded)
-	joinerOutputs     = ortraw.MakeCNames(outputFrames)
-)
+// getDecoderInputNames returns the names the predictor is run over, as the C strings the runtime
+// reads them from.
+func getDecoderInputNames() [][]byte {
+	return ortraw.MakeCNames(inputTargets, inputTargetN, inputState, inputCell)
+}
+
+// getDecoderOutputs returns the names of the outputs of the predictor, as C strings.
+func getDecoderOutputs() [][]byte {
+	return ortraw.MakeCNames(outputFrames, outputState, outputCell)
+}
+
+// getJoinerInputNames returns the names the joiner is run over, as C strings.
+func getJoinerInputNames() [][]byte { return ortraw.MakeCNames(inputEncoded, inputDecoded) }
+
+// getJoinerOutputs returns the names of the outputs of the joiner, as C strings.
+func getJoinerOutputs() [][]byte { return ortraw.MakeCNames(outputFrames) }
 
 // blankPiece is the token the model emits when a frame carries no token. It is
 // the last entry in the pieces file, after every token the model can emit.
@@ -82,6 +90,9 @@ type Transcriber struct {
 	segmenter *ort.Session
 	cutter    *segmenter.Segmenter
 
+	// runner calls the runtime directly where it offers the entry points.
+	runner *ortraw.Runner
+
 	// workers is how many goroutines share the signal processing of a stretch.
 	workers int
 
@@ -90,13 +101,13 @@ type Transcriber struct {
 	mu sync.Mutex
 }
 
-// Open loads the models and compiles them, reading the weights. The result is
+// Open loads the models through the runtime and compiles them, reading the weights. The result is
 // used for any number of recordings until it is closed.
-func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
+func Open(ctx context.Context, runtime Runtime, cfg Config) (*Transcriber, error) {
 	if err := cfg.checkLanguage(); err != nil {
 		return nil, err
 	}
-	engine, found, err := locateModels(ctx, cfg)
+	engine, found, err := locateModels(ctx, runtime.library, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -118,6 +129,7 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		blank:     blank,
 		segmenter: nil,
 		cutter:    nil,
+		runner:    runtime.runner,
 		workers:   cfg.Workers,
 		mu:        sync.Mutex{},
 	}
@@ -133,19 +145,19 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		{&out.joiner, found.joiner, "joiner", threads.joiner},
 		{&out.segmenter, found.segmenter, "segmenter model", threads.segmenter},
 	} {
-		session, err := openSession(engine, one.path, one.threads)
+		session, err := openSession(runtime.library, engine, one.path, one.threads)
 		if err != nil {
 			return nil, errors.Join(fmt.Errorf("the %s %s: %w", one.kind, one.path, err), out.Close())
 		}
 		*one.dst = session
 	}
-	out.cutter = segmenter.New(out.segmenter, cfg.Segmenter, &out.mu)
+	out.cutter = segmenter.New(out.segmenter, cfg.Segmenter, &out.mu, runtime.runner)
 	return out, nil
 }
 
 // openSession compiles the model at path with the given intra-op thread count.
-func openSession(engine *ort.Engine, path string, threads int) (*ort.Session, error) {
-	options, _, err := onnx.NewSessionOptions(engine, onnx.SessionSettings{
+func openSession(library *onnx.Library, engine *ort.Engine, path string, threads int) (*ort.Session, error) {
+	options, _, err := library.NewSessionOptions(engine, onnx.SessionSettings{
 		Provider:     onnx.GetSessionProvider(),
 		Threads:      threads,
 		ComputeUnits: onnx.ComputeUnitsDefault,
@@ -417,13 +429,13 @@ func (b *decodeBuffers) getJoinerInputs() map[string]*ort.Value {
 // makeRawRuns are the predictor and the joiner run through the raw runtime, or
 // nothing for each where useRaw does not hold or the runtime does not offer it.
 func (t *Transcriber) makeRawRuns(b *decodeBuffers, useRaw bool) (decoderRun, joinerRun *ortraw.Graph) {
-	calls, ok := ortraw.GetCalls()
+	calls, ok := t.runner.GetCalls()
 	if !ok || !useRaw {
 		return nil, nil
 	}
-	decoderRun, _ = ortraw.NewGraph(calls, t.decoder, decoderInputNames, decoderOutputs,
+	decoderRun, _ = ortraw.NewGraph(calls, t.decoder, getDecoderInputNames(), getDecoderOutputs(),
 		[]*ort.Value{b.targetTensor, b.countTensor, b.stateTensor, b.cellTensor})
-	joinerRun, _ = ortraw.NewGraph(calls, t.joiner, joinerInputNames, joinerOutputs,
+	joinerRun, _ = ortraw.NewGraph(calls, t.joiner, getJoinerInputNames(), getJoinerOutputs(),
 		[]*ort.Value{b.frameTensor, b.predictionTensor})
 	return decoderRun, joinerRun
 }

@@ -40,7 +40,7 @@ func Validate(targetPath string) ([]string, error) {
 func listThemeFileIssues(themes []manifest.Theme, pluginDir string) []string {
 	var issues []string
 	for _, theme := range themes {
-		if _, err := manifest.ReadThemeFile(pluginDir, theme.File); err != nil {
+		if _, err := manifestjson.ReadThemeFile(pluginDir, theme.File); err != nil {
 			issues = append(issues, fmt.Sprintf("theme %q: %v", theme.ID, err))
 		}
 	}

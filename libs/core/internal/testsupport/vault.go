@@ -63,7 +63,7 @@ func NewVault(t testing.TB, notes map[string]string) domain.Vault {
 			t.Fatal(err)
 		}
 	}
-	cfg, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, Epoch)
+	cfg, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, GetEpoch())
 	if err != nil {
 		t.Fatal(err)
 	}

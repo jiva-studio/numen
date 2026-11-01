@@ -4,8 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"connectrpc.com/connect"
-
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 )
@@ -179,7 +178,7 @@ func TestRemoteProviderWithoutKeyDoesNotOpenLocalEmbedder(t *testing.T) {
 	})
 
 	_, err := srv.EmbedTexts(t.Context(), []string{"hello"})
-	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
+	if rpcerror.GetCode(err) != rpcerror.FailedPrecondition {
 		t.Fatalf("err = %v, want FailedPrecondition", err)
 	}
 	if hasOpenCall {

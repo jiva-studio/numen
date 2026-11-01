@@ -16,10 +16,14 @@ const (
 // effortNone is the entry in a list of depths that means reasoning is disabled.
 const effortNone = "none"
 
-// commonLevels are the depths offered for a model whose listing names the field that takes the depth and
-// no depths. OpenAI-compatible servers list the field and nothing more, so these are the depths the
-// field is documented to take.
-var commonLevels = reasoning.NewLevels("low", "medium", "high")
+// getCommonLevels returns the depths offered for a model whose listing names the field that takes
+// the
+// depth and no depths. OpenAI-compatible servers list the field and nothing more, so these are the
+// depths
+// the field is documented to take.
+func getCommonLevels() []reasoning.Level {
+	return reasoning.NewLevels("low", "medium", "high")
+}
 
 // reasoningListing is the reasoning object a chat API lists for a model: OpenRouter names the depths the
 // model takes and the one it works at unasked.
@@ -86,7 +90,7 @@ func newModel(name, title string, supported []string, listing *reasoningListing)
 		return one
 	}
 	if one.ReasoningField != "" {
-		one.ReasoningLevels = commonLevels
+		one.ReasoningLevels = getCommonLevels()
 	}
 	return one
 }

@@ -5,14 +5,16 @@ import (
 	"testing"
 )
 
-var testWords = IndexDeclarations([]ToolDeclaration{
-	{Name: "note_edit", Title: "Edit a note", Kind: "edit", About: "path", Match: "stood", Text: "becomes"},
-	{Name: "note_read", Title: "Read notes", Kind: "read", About: "paths", Element: "path"},
-	{Name: "vault_list", Title: "List the vault", Kind: "read"},
-})
+func getTestWords() map[string]Declaration {
+	return IndexDeclarations([]ToolDeclaration{
+		{Name: "note_edit", Title: "Edit a note", Kind: "edit", About: "path", Match: "stood", Text: "becomes"},
+		{Name: "note_read", Title: "Read notes", Kind: "read", About: "paths", Element: "path"},
+		{Name: "vault_list", Title: "List the vault", Kind: "read"},
+	})
+}
 
 func TestADeclaredCallIsShownByItsTitleEffectAndPath(t *testing.T) {
-	got := Describe(testWords, "note_edit", "c1", `{"path":"Ideas/Plan.md","start":4,"length":3}`)
+	got := Describe(getTestWords(), "note_edit", "c1", `{"path":"Ideas/Plan.md","start":4,"length":3}`)
 	if got.Tool != "Edit a note" || got.Kind != "edit" || got.Call != "c1" {
 		t.Errorf("got %+v", got)
 	}
@@ -25,14 +27,14 @@ func TestADeclaredCallIsShownByItsTitleEffectAndPath(t *testing.T) {
 }
 
 func TestACollectionIsShownByItsFirstElementAndTheCountOfTheRest(t *testing.T) {
-	got := Describe(testWords, "note_read", "c", `{"paths":[{"path":"A.md"},{"path":"B.md"},{"path":"C.md"}]}`)
+	got := Describe(getTestWords(), "note_read", "c", `{"paths":[{"path":"A.md"},{"path":"B.md"},{"path":"C.md"}]}`)
 	if got.About != "A.md and 2 more" || got.Path != "" {
 		t.Errorf("got %+v", got)
 	}
 }
 
 func TestACallOfAToolThatIsAboutNothingCountsNothingSaved(t *testing.T) {
-	got := Describe(testWords, "vault_list", "c", `{"depth":2}`)
+	got := Describe(getTestWords(), "vault_list", "c", `{"depth":2}`)
 	if got.Length != 0 || got.About != "" {
 		t.Errorf("got %+v", got)
 	}
@@ -82,7 +84,7 @@ func TestPartialFieldIsReadAtEveryTruncation(t *testing.T) {
 
 func TestASpanOutsideTheTextIsNoSpan(t *testing.T) {
 	for _, args := range []string{`{"path":"a.md","start":-4,"length":3}`, `{"path":"a.md","start":2147483647,"length":3}`} {
-		if span := Describe(testWords, "note_edit", "c", args).Range; span != nil {
+		if span := Describe(getTestWords(), "note_edit", "c", args).Range; span != nil {
 			t.Errorf("%s: span %+v", args, span)
 		}
 	}

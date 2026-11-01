@@ -6,7 +6,7 @@ import (
 	"errors"
 	"io/fs"
 
-	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugintheme/themecontract"
@@ -61,7 +61,7 @@ func (t Themes) ReadTheme(pluginID, themeID string) (string, error) {
 		if declared.ID != themeID {
 			continue
 		}
-		text, err := manifest.ReadThemeFile(plugin.Dir, declared.File)
+		text, err := manifestjson.ReadThemeFile(plugin.Dir, declared.File)
 		if errors.Is(err, fs.ErrNotExist) {
 			return "", themecontract.ErrNoTheme
 		}

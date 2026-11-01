@@ -93,7 +93,7 @@ func TestScanWrites_LongNoteClosesBatchEarly(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	cfg, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch)
+	cfg, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch())
 	if err != nil {
 		t.Fatal(err)
 	}

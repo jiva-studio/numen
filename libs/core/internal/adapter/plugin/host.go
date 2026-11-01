@@ -764,9 +764,10 @@ func (h *Host) startPluginProcess(ctx context.Context, p manifest.Discovered, su
 	}()
 
 	endpoint := transport.Endpoint{
-		Host:  "127.0.0.1",
-		Port:  actualPort,
-		Token: token,
+		Host:      "127.0.0.1",
+		Port:      actualPort,
+		Token:     token,
+		Transport: transport.NewNetworkTransport(),
 	}
 	if err := transport.CheckPluginProtocol(ctx, p.Manifest, endpoint); err != nil {
 		h.cleanupAbortedProcess(proc, stdout, p.Manifest.ID)
@@ -1528,15 +1529,17 @@ const (
 	keyExecutablePath = "executable_path"
 )
 
-var acpExecutableCandidates = []acpExecutableCandidate{
-	{title: "Claude Code (ACP)", binary: "claude-code-acp"},
-	{title: "Codex (ACP)", binary: "codex-acp"},
-	{title: "Cursor Agent", binary: "cursor-agent", arg: acpSubcommand},
-	{title: "Gemini CLI", binary: "gemini", arg: acpFlag},
-	{title: "Goose", binary: "goose", arg: acpSubcommand},
-	{title: "Kimi CLI", binary: "kimi", arg: acpSubcommand},
-	{title: "OpenCode", binary: "opencode", arg: acpSubcommand},
-	{title: "Qwen Code", binary: "qwen", arg: acpFlag},
+func getAcpExecutableCandidates() []acpExecutableCandidate {
+	return []acpExecutableCandidate{
+		{title: "Claude Code (ACP)", binary: "claude-code-acp"},
+		{title: "Codex (ACP)", binary: "codex-acp"},
+		{title: "Cursor Agent", binary: "cursor-agent", arg: acpSubcommand},
+		{title: "Gemini CLI", binary: "gemini", arg: acpFlag},
+		{title: "Goose", binary: "goose", arg: acpSubcommand},
+		{title: "Kimi CLI", binary: "kimi", arg: acpSubcommand},
+		{title: "OpenCode", binary: "opencode", arg: acpSubcommand},
+		{title: "Qwen Code", binary: "qwen", arg: acpFlag},
+	}
 }
 
 // isACPPathsSetting reports whether a setting holds ACP agent executables: the executable path
@@ -1556,7 +1559,7 @@ func joinOptionValues(options []pluginport.PluginSettingOption) string {
 
 func resolveDiscoveredACPOptions() []pluginport.PluginSettingOption {
 	var options []pluginport.PluginSettingOption
-	for _, candidate := range acpExecutableCandidates {
+	for _, candidate := range getAcpExecutableCandidates() {
 		binaryPath, err := exec.LookPath(candidate.binary)
 		if err != nil || binaryPath == "" {
 			continue

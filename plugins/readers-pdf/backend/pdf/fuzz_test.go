@@ -43,8 +43,14 @@ func FuzzRead(f *testing.F) {
 	f.Add([]byte("1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n"))
 	f.Add([]byte(""))
 
+	workers := pdf.NewWorkers()
+	f.Cleanup(func() {
+		if err := workers.Close(); err != nil {
+			f.Error(err)
+		}
+	})
 	f.Fuzz(func(t *testing.T, raw []byte) {
-		book, err := pdf.Read(raw)
+		book, err := workers.Read(raw)
 		if err != nil {
 			if !errors.Is(err, pdf.ErrNotPDF) && !errors.Is(err, pdf.ErrEncrypted) {
 				t.Fatalf("a file of %d bytes failed as %v, which says nothing about it",

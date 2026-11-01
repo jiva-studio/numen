@@ -21,19 +21,24 @@ type Vector struct {
 	Coarse []byte
 }
 
-// VectorBatchSize is the number of vectors written in a single transaction before
+// vectorBatchSize is the number of vectors written in a single transaction before
 // committing and checkpointing the WAL, to keep its footprint bounded.
-var VectorBatchSize = 1000
+const vectorBatchSize = 1000
 
 // A vector for a chunk that is not in the index is not written, and the
 // rest of the group is written.
 func (r *Repository) SaveVectors(ctx context.Context, vectors []Vector) error {
+	return r.SaveVectorsInBatches(ctx, vectors, vectorBatchSize)
+}
+
+// SaveVectorsInBatches is SaveVectors with size vectors written in each transaction.
+func (r *Repository) SaveVectorsInBatches(ctx context.Context, vectors []Vector, size int) error {
 	if len(vectors) == 0 {
 		return nil
 	}
 
-	for i := 0; i < len(vectors); i += VectorBatchSize {
-		end := i + VectorBatchSize
+	for i := 0; i < len(vectors); i += size {
+		end := i + size
 		if end > len(vectors) {
 			end = len(vectors)
 		}

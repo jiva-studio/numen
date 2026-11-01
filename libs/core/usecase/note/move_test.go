@@ -128,7 +128,7 @@ func (c changing) moveOf(p moveParts) note.Move {
 		p.readers = vaultreader.Readers{}
 	}
 	if p.writers == nil {
-		p.writers = vaultwriter.VaultWriters{}
+		p.writers = vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
 	}
 	if !p.hasIndex {
 		p.index = c.index
@@ -183,7 +183,7 @@ func TestAMoveThatStopsBeforeTheFileMovedReturnsSo(t *testing.T) {
 			from: "physics/Entropy.md",
 			parts: func(changing) moveParts {
 				return moveParts{writers: failingWriters{
-					VaultWriters: vaultwriter.VaultWriters{}, openErr: boom, failOpen: 1, opened: new(int),
+					VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, openErr: boom, failOpen: 1, opened: new(int),
 				}}
 			},
 			want: boom,
@@ -282,7 +282,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 		"the vault cannot be held": {
 			parts: func(changing) moveParts {
 				return moveParts{writers: failingWriters{
-					VaultWriters: vaultwriter.VaultWriters{}, holdErr: boom, opened: new(int),
+					VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, holdErr: boom, opened: new(int),
 				}}
 			},
 			want: boom,
@@ -294,7 +294,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 		"the vault cannot be opened again for the repair": {
 			parts: func(changing) moveParts {
 				return moveParts{writers: failingWriters{
-					VaultWriters: vaultwriter.VaultWriters{}, openErr: boom, failOpen: 2, opened: new(int),
+					VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, openErr: boom, failOpen: 2, opened: new(int),
 				}}
 			},
 			want: boom,
@@ -302,7 +302,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 		"the repaired note cannot be written": {
 			parts: func(changing) moveParts {
 				return moveParts{writers: failingWriters{
-					VaultWriters: vaultwriter.VaultWriters{}, writeErr: boom, opened: new(int),
+					VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, writeErr: boom, opened: new(int),
 				}}
 			},
 			want: boom,
@@ -507,7 +507,7 @@ func TestANoteWithInlineFrontmatterIsReportedAndNotSaved(t *testing.T) {
 // back as it was set.
 func TestAMovePassesBackTheCollaboratorsItWasGiven(t *testing.T) {
 	c := openLinked(t)
-	readers, writers := brokenReaders{}, &failingWriters{VaultWriters: vaultwriter.VaultWriters{}, opened: new(int)}
+	readers, writers := brokenReaders{}, &failingWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, opened: new(int)}
 	sources := sulking{SourceRepository: c.db.Sources()}
 
 	mover := c.move().WithReaders(readers).WithWriters(writers).WithSources(sources)

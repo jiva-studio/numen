@@ -256,29 +256,32 @@ func (v *ytDLP) Download(ctx context.Context, target string, into io.Writer) (re
 // mediaTypeMP4Audio is the media type of the audio containers of MPEG-4.
 const mediaTypeMP4Audio = "audio/mp4"
 
-var mediaTypes = map[string]string{
-	".aac":  "audio/aac",
-	".aif":  "audio/aiff",
-	".aiff": "audio/aiff",
-	".alac": "audio/alac",
-	".flac": "audio/flac",
-	".m4a":  mediaTypeMP4Audio,
-	".m4b":  mediaTypeMP4Audio,
-	".m4p":  mediaTypeMP4Audio,
-	".mp3":  "audio/mpeg",
-	".mp4":  "video/mp4",
-	".oga":  "audio/ogg",
-	".ogg":  "audio/ogg",
-	".opus": "audio/opus",
-	".wav":  "audio/wav",
-	".weba": "audio/webm",
-	".webm": "video/webm",
-}
-
 func getMediaType(name string) string {
-	ext := strings.ToLower(filepath.Ext(name))
-	if mt, ok := mediaTypes[ext]; ok {
-		return mt
+	switch strings.ToLower(filepath.Ext(name)) {
+	case ".aac":
+		return "audio/aac"
+	case ".aif", ".aiff":
+		return "audio/aiff"
+	case ".alac":
+		return "audio/alac"
+	case ".flac":
+		return "audio/flac"
+	case ".m4a", ".m4b", ".m4p":
+		return mediaTypeMP4Audio
+	case ".mp3":
+		return "audio/mpeg"
+	case ".mp4":
+		return "video/mp4"
+	case ".oga", ".ogg":
+		return "audio/ogg"
+	case ".opus":
+		return "audio/opus"
+	case ".wav":
+		return "audio/wav"
+	case ".weba":
+		return "audio/webm"
+	case ".webm":
+		return "video/webm"
 	}
 	return "application/octet-stream"
 }
@@ -308,18 +311,14 @@ func matchLanguage(language string) func(string) bool {
 
 func isOriginalTrack(track string) bool { return strings.HasSuffix(track, "-orig") }
 
-var videoSites = map[string]bool{
-	"youtube.com":          true,
-	"m.youtube.com":        true,
-	"music.youtube.com":    true,
-	"youtube-nocookie.com": true,
-	"youtu.be":             true,
-}
-
 func isVideoSite(pos string) bool {
 	address, err := url.Parse(pos)
 	if err != nil {
 		return false
 	}
-	return videoSites[strings.TrimPrefix(address.Hostname(), "www.")]
+	switch strings.TrimPrefix(address.Hostname(), "www.") {
+	case "youtube.com", "m.youtube.com", "music.youtube.com", "youtube-nocookie.com", "youtu.be":
+		return true
+	}
+	return false
 }

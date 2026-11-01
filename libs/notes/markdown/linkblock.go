@@ -16,10 +16,14 @@ import (
 // in the error and left as written.
 var ErrNotOwned = fmt.Errorf("this link carries something the application does not own")
 
-// owned is every key an entry of the `links:` block may carry. Anything else is
-// content the application does not own.
-var owned = map[string]bool{
-	"to": true, "role": true, "type": true, "note": true, "label": true, "marker": true,
+// isOwnedKey reports whether key is one an entry of the `links:` block may carry.
+// Anything else is content the application does not own.
+func isOwnedKey(key string) bool {
+	switch key {
+	case "to", "role", "type", "note", "label", "marker":
+		return true
+	}
+	return false
 }
 
 // entry is one record of the `links:` block: its content and the bytes it occupies.
@@ -491,7 +495,7 @@ func hasOnlyOwnedKeys(item *yaml.Node) bool {
 		return false
 	}
 	for i := 0; i+1 < len(item.Content); i += 2 {
-		if !owned[item.Content[i].Value] {
+		if !isOwnedKey(item.Content[i].Value) {
 			return false
 		}
 	}

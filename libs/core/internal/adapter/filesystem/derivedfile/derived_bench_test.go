@@ -13,7 +13,7 @@ import (
 func opening(b *testing.B) *derivedfile.DerivedStore {
 	b.Helper()
 	root := b.TempDir()
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.Epoch); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		b.Fatal(err)
 	}
 	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, testArea)

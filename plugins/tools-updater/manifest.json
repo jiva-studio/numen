@@ -11,7 +11,7 @@
     "handles": [{ "purpose": "text-provider" }]
   },
   "permissions": ["network:outbound"],
-  "services": ["numen.updater"],
+  "services": ["md.numen.tools.updater"],
   "backend": { "entrypoint": "bin/tools-updater" },
   "frontend": {},
   "settings": [

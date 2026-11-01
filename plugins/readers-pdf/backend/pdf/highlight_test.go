@@ -10,6 +10,18 @@ import (
 	"github.com/klippa-app/go-pdfium/responses"
 )
 
+// newWorkers returns a pool that is closed when the test ends.
+func newWorkers(t testing.TB) *Workers {
+	t.Helper()
+	workers := NewWorkers()
+	t.Cleanup(func() {
+		if err := workers.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	return workers
+}
+
 func fixture(t *testing.T, name string) []byte {
 	t.Helper()
 	raw, err := os.ReadFile("testdata/" + name)
@@ -30,7 +42,7 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			doc, err := openBytes(raw)
+			doc, err := newWorkers(t).openBytes(raw)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -65,11 +77,12 @@ func where(t *testing.T, name string, pages ...int) (*Book, []HighlightBox) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	book, err := Read(raw)
+	workers := newWorkers(t)
+	book, err := workers.Read(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
-	boxes, err := book.Highlights(raw, pages)
+	boxes, err := book.Highlights(workers, raw, pages)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -316,30 +329,31 @@ func TestGetPagePointRotations(t *testing.T) {
 
 func TestHighlightsEmptyPagesOrInvalid(t *testing.T) {
 	raw := fixture(t, "tiny.pdf")
-	book, err := Read(raw)
+	workers := newWorkers(t)
+	book, err := workers.Read(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Empty wanted pages
-	boxes, err := book.Highlights(raw, nil)
+	boxes, err := book.Highlights(workers, raw, nil)
 	if err != nil || boxes != nil {
 		t.Errorf("Highlights(nil) got %v, err %v; want nil, nil", boxes, err)
 	}
-	boxes, err = book.Highlights(raw, []int{})
+	boxes, err = book.Highlights(workers, raw, []int{})
 	if err != nil || boxes != nil {
 		t.Errorf("Highlights([]) got %v, err %v; want nil, nil", boxes, err)
 	}
 
 	// Invalid PDF bytes
-	_, err = book.Highlights([]byte("not a pdf"), []int{0})
+	_, err = book.Highlights(workers, []byte("not a pdf"), []int{0})
 	if err == nil {
 		t.Error("expected error for invalid PDF bytes in Highlights")
 	}
 }
 
 func TestDocumentWordsInvalidPage(t *testing.T) {
-	doc, err := openBytes(fixture(t, "tiny.pdf"))
+	doc, err := newWorkers(t).openBytes(fixture(t, "tiny.pdf"))
 	if err != nil {
 		t.Fatal(err)
 	}

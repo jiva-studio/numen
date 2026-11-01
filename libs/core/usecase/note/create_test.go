@@ -99,7 +99,7 @@ func TestATitleTheFilenameCarriesWritesNoTitleKey(t *testing.T) {
 func TestCreatingNeedsNoIndexToLeaveTheNoteSaved(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, nil)
-	create := note.NewCreate(vaultwriter.VaultWriters{}, c.db.Queries(), nil, testsupport.NewClock())
+	create := note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.Queries(), nil, testsupport.NewClock())
 
 	created, err := create.Execute(t.Context(), c.vault, note.NewNote{Title: "Heat"})
 	if err != nil {
@@ -114,7 +114,7 @@ func TestCreatingNeedsNoIndexToLeaveTheNoteSaved(t *testing.T) {
 func TestCreatingInAVaultThatWillNotOpenForWritingMakesNothing(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, nil)
-	writers := brokenWriters{VaultWriters: vaultwriter.VaultWriters{}, open: errDiskGone}
+	writers := brokenWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, open: errDiskGone}
 	create := note.NewCreate(writers, c.db.Queries(), c.index, testsupport.NewClock())
 
 	created, err := create.Execute(t.Context(), c.vault, note.NewNote{Title: "Heat"})
@@ -149,7 +149,7 @@ func TestANoteMadeBeforeTheIndexFailsIsStillReported(t *testing.T) {
 func TestCreate_ReportsNoteBeforeVaultNamesAvailable(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, nil)
-	create := note.NewCreate(vaultwriter.VaultWriters{}, unreachable{}, c.index, testsupport.NewClock())
+	create := note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, unreachable{}, c.index, testsupport.NewClock())
 
 	created, err := create.Execute(t.Context(), c.vault, note.NewNote{Title: "Heat"})
 

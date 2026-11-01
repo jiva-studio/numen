@@ -32,7 +32,7 @@ func TestHostSafeMode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	host := plugin.NewHost(testsupport.Machine, "desktop.editor", tmp)
+	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	host.SetSafeMode(true)
 
 	if !host.IsSafeMode() {

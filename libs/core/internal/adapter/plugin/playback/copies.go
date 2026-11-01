@@ -85,7 +85,7 @@ func (c Copies) OpenProxy(ctx context.Context, v domain.Vault, path string, note
 }
 
 // playedTypes are the masks of the types a copy is played as.
-var playedTypes = []domain.ContentType{"audio/*", "video/*"}
+func getPlayedTypes() []domain.ContentType { return []domain.ContentType{"audio/*", "video/*"} }
 
 // openIn opens the copy named by the hash in one plugin's folder, or returns ErrNoProxy.
 func (c Copies) openIn(ctx context.Context, store pluginport.PluginStore, hash string) (playbackport.Copy, error) {
@@ -114,7 +114,7 @@ func (c Copies) openIn(ctx context.Context, store pluginport.PluginStore, hash s
 }
 
 func isPlayed(contentType domain.ContentType) bool {
-	for _, mask := range playedTypes {
+	for _, mask := range getPlayedTypes() {
 		if mask.Matches(contentType) {
 			return true
 		}

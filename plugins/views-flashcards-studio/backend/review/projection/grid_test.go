@@ -16,7 +16,7 @@ func TestHowFarACurveOfMinutesRuns(t *testing.T) {
 		{load: 100, keeping: 0, want: 200},
 		{load: 0, keeping: 100, want: 200},
 		{load: 30.5, keeping: 0, want: 61},
-		{load: 5000, keeping: 0, want: MinutesADayBounds.Max},
+		{load: 5000, keeping: 0, want: GetMinutesADayBounds().Max},
 	} {
 		if got := getMinutesUpperBound(one.load, one.keeping); got != one.want {
 			t.Errorf("a load of %v minutes under a day of %v runs to %v, want %v",
@@ -34,8 +34,8 @@ func TestThePlaceOfTheGridAValueFallsAt(t *testing.T) {
 		value         float64
 		expectedIndex int
 	}{
-		{value: 9, expectedIndex: OutsideGrid.Index},
-		{value: 41, expectedIndex: OutsideGrid.Index},
+		{value: 9, expectedIndex: GetOutsideGrid().Index},
+		{value: 41, expectedIndex: GetOutsideGrid().Index},
 		{value: 10, expectedIndex: 0},
 		{value: 15, expectedIndex: 0},
 		{value: 24, expectedIndex: 1},
@@ -45,7 +45,7 @@ func TestThePlaceOfTheGridAValueFallsAt(t *testing.T) {
 			t.Errorf("%v falls at place %d of %v, want %d", one.value, got, grid, one.expectedIndex)
 		}
 	}
-	if got := findNearest(nil, 10); got != OutsideGrid.Index {
+	if got := findNearest(nil, 10); got != GetOutsideGrid().Index {
 		t.Errorf("a value falls at place %d of a grid of no places", got)
 	}
 }

@@ -52,9 +52,9 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 		t.Fatal("the client went away and the stream is still standing")
 	}
 
-	deadline := testsupport.Machine.Now().Add(10 * time.Second)
+	deadline := testsupport.GetMachine().Now().Add(10 * time.Second)
 	for isWatchingFolder() {
-		if testsupport.Machine.Now().After(deadline) {
+		if testsupport.GetMachine().Now().After(deadline) {
 			t.Fatal("the stream ended and the folder watch is still running")
 		}
 		time.Sleep(10 * time.Millisecond)

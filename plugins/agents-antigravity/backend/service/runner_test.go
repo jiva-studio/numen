@@ -14,8 +14,8 @@ func TestResolveCommandWithEmptyCommand(t *testing.T) {
 	withoutAgentsAnywhere(t)
 
 	bin, args := resolveCommand(nil)
-	if bin != "agy" || len(args) != 0 {
-		t.Errorf("expected agy and empty args, got %s, %v", bin, args)
+	if want := FindAntigravity(); bin != want || len(args) != 0 {
+		t.Errorf("expected %s and empty args, got %s, %v", want, bin, args)
 	}
 }
 

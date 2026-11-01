@@ -19,7 +19,7 @@ import (
 var errPlainToken = errors.New("the vault's tools are reached only over https, or over http on this machine")
 
 // emptySchema is the parameters of a tool whose server declares none.
-var emptySchema = json.RawMessage(`{"type":"object","properties":{}}`)
+const emptySchema = `{"type":"object","properties":{}}`
 
 // toolbox is the vault's tool server as seen by one run, and the tools of it the
 // run may call. A toolbox with no session offers nothing.
@@ -92,7 +92,7 @@ func readFunctionTool(tool *sdk.Tool) functionTool {
 	proposed.Type = "function"
 	proposed.Function.Name = tool.Name
 	proposed.Function.Description = tool.Description
-	proposed.Function.Parameters = emptySchema
+	proposed.Function.Parameters = json.RawMessage(emptySchema)
 	if tool.InputSchema != nil {
 		if schema, err := json.Marshal(tool.InputSchema); err == nil {
 			proposed.Function.Parameters = schema

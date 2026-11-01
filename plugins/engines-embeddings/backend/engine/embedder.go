@@ -22,8 +22,10 @@ const (
 	tokenTypeIDs  = "token_type_ids"
 )
 
-// The outputs a vector is read from, best first.
-var outputs = []string{"sentence_embedding", "last_hidden_state"}
+// getOutputs returns the outputs a vector is read from, best first.
+func getOutputs() []string {
+	return []string{"sentence_embedding", "last_hidden_state"}
+}
 
 // Embedder is one model, loaded.
 type Embedder struct {
@@ -42,10 +44,13 @@ type Embedder struct {
 	isHeadPooled bool
 
 	sessions *sessionPool[*ort.Session]
+	paddings *sync.Pool
 }
 
 // Open loads the model, fetching it first where this machine does not hold it.
-func Open(ctx context.Context, identity ModelInfo, cfg LocalModel, progress FetchProgress) (*Embedder, error) {
+func Open(
+	ctx context.Context, library *onnx.Library, identity ModelInfo, cfg LocalModel, progress FetchProgress,
+) (*Embedder, error) {
 	if err := CheckIdentity(identity, cfg.Name); err != nil {
 		return nil, err
 	}
@@ -58,11 +63,11 @@ func Open(ctx context.Context, identity ModelInfo, cfg LocalModel, progress Fetc
 		return nil, err
 	}
 
-	engine, _, err := onnx.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, ""))
+	engine, _, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, ""))
 	if err != nil {
 		return nil, err
 	}
-	options, provider, err := onnx.NewSessionOptions(engine, onnx.SessionSettings{
+	options, provider, err := library.NewSessionOptions(engine, onnx.SessionSettings{
 		Provider: cfg.GetProvider(),
 		Threads:  cfg.GetThreads(),
 
@@ -104,6 +109,7 @@ func Open(ctx context.Context, identity ModelInfo, cfg LocalModel, progress Fetc
 		output:       "",
 		isTyped:      false,
 		sessions:     newSessionPool(sessions, passes, (*ort.Session).Destroy),
+		paddings:     newPaddingPool(),
 		isHeadPooled: identity.Pooling == PoolHead,
 	}
 	if pad, err := tokenizer.SpecialTokenID(api.TokPad); err == nil {
@@ -270,8 +276,8 @@ func (e *Embedder) encode(text string) []int {
 }
 
 func (e *Embedder) forward(ctx context.Context, batch [][]int) ([][]float32, error) {
-	rows, seq, padded := padBatch(batch, e.pad, e.window)
-	defer releasePadding(padded)
+	rows, seq, padded := padBatch(e.paddings, batch, e.pad, e.window)
+	defer e.paddings.Put(padded)
 
 	session, err := e.sessions.acquire(ctx)
 	if err != nil {
@@ -354,6 +360,7 @@ func splitRows(flat []float32, rows, dimensions int) ([][]float32, error) {
 }
 
 func chooseOutput(named []string) (string, error) {
+	outputs := getOutputs()
 	for _, want := range outputs {
 		if slices.Contains(named, want) {
 			return want, nil

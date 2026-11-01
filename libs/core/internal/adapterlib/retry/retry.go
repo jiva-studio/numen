@@ -17,7 +17,7 @@ func ParseAfter(value string, now time.Time) time.Duration {
 	if seconds, err := strconv.Atoi(value); err == nil {
 		return max(0, time.Duration(seconds)*time.Second)
 	}
-	for _, layout := range dateLayouts {
+	for _, layout := range getDateLayouts() {
 		if pos, err := time.Parse(layout, value); err == nil {
 			return max(0, pos.Sub(now))
 		}
@@ -43,8 +43,10 @@ func Wait(ctx context.Context, d time.Duration) error {
 }
 
 // dateLayouts are the three forms of an HTTP date.
-var dateLayouts = []string{
-	"Mon, 02 Jan 2006 15:04:05 GMT",
-	time.RFC850,
-	time.ANSIC,
+func getDateLayouts() []string {
+	return []string{
+		"Mon, 02 Jan 2006 15:04:05 GMT",
+		time.RFC850,
+		time.ANSIC,
+	}
 }

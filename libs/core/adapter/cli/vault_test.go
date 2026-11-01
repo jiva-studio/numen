@@ -80,7 +80,7 @@ func (s *session) runBroken(adjust func(*cli.Vaults), args ...string) (string, e
 
 func TestVaultCommand_RequiresSubcommand(t *testing.T) {
 	t.Parallel()
-	_, err := runWithDeps(cli.Deps{Vaults: createVaultList(notebook)}, "vault")
+	_, err := runWithDeps(cli.Deps{Vaults: createVaultList(getNotebook())}, "vault")
 	if err == nil || !strings.Contains(err.Error(), "usage:\n  numen-cli vault add <path>") {
 		t.Errorf("vault with no command answered %v", err)
 	}
@@ -95,7 +95,7 @@ func TestAVaultCommandNeedsItsArguments(t *testing.T) {
 		"usage: numen-cli vault erase <vault> [--yes]":      {"vault", "erase"},
 		"usage: numen-cli vault open <vault>":               {"vault", "open"},
 	} {
-		out, err := runWithDeps(cli.Deps{Vaults: createVaultList(notebook)}, args...)
+		out, err := runWithDeps(cli.Deps{Vaults: createVaultList(getNotebook())}, args...)
 		if err == nil || err.Error() != usage {
 			t.Errorf("%v answered %v, want %q", args, err, usage)
 		}

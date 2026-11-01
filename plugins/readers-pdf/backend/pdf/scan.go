@@ -17,8 +17,8 @@ type Scan struct {
 // OpenReader opens a PDF for page rendering, reading from the file as the
 // library requests. The scan owns the file and closes it with the scan, or
 // immediately if the document does not open.
-func OpenReader(file io.ReadSeekCloser) (*Scan, error) {
-	doc, err := openReader(file)
+func (w *Workers) OpenReader(file io.ReadSeekCloser) (*Scan, error) {
+	doc, err := w.openReader(file)
 	if err != nil {
 		return nil, err
 	}
@@ -26,8 +26,8 @@ func OpenReader(file io.ReadSeekCloser) (*Scan, error) {
 }
 
 // OpenBytes opens a PDF from raw bytes for page rendering.
-func OpenBytes(raw []byte) (*Scan, error) {
-	doc, err := openBytes(raw)
+func (w *Workers) OpenBytes(raw []byte) (*Scan, error) {
+	doc, err := w.openBytes(raw)
 	if err != nil {
 		return nil, err
 	}

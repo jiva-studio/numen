@@ -46,14 +46,28 @@ const (
 	CheckParse     = notesdomain.CheckParse
 )
 
-var (
-	NewTextVersionID = notesdomain.NewTextVersionID
-	NewVersionText   = notesdomain.NewVersionText
-	FindLiveVersion  = notesdomain.FindLiveVersion
-	HashContent      = notesdomain.HashContent
-	ParseAddress     = notesdomain.ParseAddress
-	FoldName         = notesdomain.FoldName
-	Basename         = notesdomain.Basename
-	LinkName         = notesdomain.LinkName
-	ChooseMatch      = notesdomain.ChooseMatch
-)
+func NewTextVersionID(pluginID, key string) TextVersionID {
+	return notesdomain.NewTextVersionID(pluginID, key)
+}
+
+func NewVersionText(version TextVersion, segments []TextSegment) VersionText {
+	return notesdomain.NewVersionText(version, segments)
+}
+
+func FindLiveVersion(versions []TextVersion, fileHash string, isIntact func(TextVersion) bool) (TextVersion, bool) {
+	return notesdomain.FindLiveVersion(versions, fileHash, isIntact)
+}
+
+func HashContent(raw []byte) string { return notesdomain.HashContent(raw) }
+
+func ParseAddress(raw string) Address { return notesdomain.ParseAddress(raw) }
+
+func FoldName(name string) string { return notesdomain.FoldName(name) }
+
+func Basename(path string) string { return notesdomain.Basename(path) }
+
+func LinkName(target string) string { return notesdomain.LinkName(target) }
+
+func ChooseMatch(from, name string, candidates []string) (bestMatch string, ambiguous bool) {
+	return notesdomain.ChooseMatch(from, name, candidates)
+}

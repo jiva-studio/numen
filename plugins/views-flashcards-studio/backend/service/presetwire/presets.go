@@ -23,13 +23,13 @@ import (
 // with the limits the domain enforces.
 func GetSettingsBounds() *api.SettingsBounds {
 	return &api.SettingsBounds{
-		MinutesADay: getBounds(review.MinutesADayBounds),
-		NewADay:     getBounds(review.NewADayBounds),
-		ReviewsADay: getBounds(review.ReviewsADayBounds),
-		Retention:   getBounds(review.RetentionBounds),
-		Backlog:     getBounds(review.BacklogBounds),
-		Interval:    getBounds(review.IntervalBounds),
-		Load:        getBounds(review.LoadBounds),
+		MinutesADay: getBounds(review.GetMinutesADayBounds()),
+		NewADay:     getBounds(review.GetNewADayBounds()),
+		ReviewsADay: getBounds(review.GetReviewsADayBounds()),
+		Retention:   getBounds(review.GetRetentionBounds()),
+		Backlog:     getBounds(review.GetBacklogBounds()),
+		Interval:    getBounds(review.GetIntervalBounds()),
+		Load:        getBounds(review.GetLoadBounds()),
 	}
 }
 

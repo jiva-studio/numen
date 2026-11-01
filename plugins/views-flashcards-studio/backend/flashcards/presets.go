@@ -590,7 +590,7 @@ func readShares(entries []string, load, read map[time.Weekday]int) []markdown.En
 		content[weekday] = true
 		out = append(out, markdown.Entry{Key: name, Value: share, IsVerbatim: false})
 	}
-	for _, weekday := range week {
+	for _, weekday := range getWeek() {
 		if share, named := load[weekday]; named && !content[weekday] {
 			out = append(out, markdown.Entry{Key: review.DayName(weekday), Value: share, IsVerbatim: false})
 		}
@@ -615,10 +615,12 @@ func getDayEntries(entries []string, read map[time.Weekday]int) map[time.Weekday
 	return out
 }
 
-// week is the days of the week in the order a preset writes them.
-var week = []time.Weekday{
-	time.Monday, time.Tuesday, time.Wednesday, time.Thursday,
-	time.Friday, time.Saturday, time.Sunday,
+// getWeek returns the days of the week in the order a preset writes them.
+func getWeek() []time.Weekday {
+	return []time.Weekday{
+		time.Monday, time.Tuesday, time.Wednesday, time.Thursday,
+		time.Friday, time.Saturday, time.Sunday,
+	}
 }
 
 // checkBounds is what in the settings may not be written, and is nil when all
@@ -644,12 +646,12 @@ func checkBounds(p review.Preset) error {
 		value  float64
 		bounds review.Bounds
 	}{
-		{minutesADayKey, float64(p.MinutesADay), review.MinutesADayBounds},
-		{newADayKey, float64(p.NewADay), review.NewADayBounds},
-		{reviewsADayKey, float64(p.ReviewsADay), review.ReviewsADayBounds},
-		{retentionKey, p.Retention, review.RetentionBounds},
-		{intervalKey, float64(p.Interval), review.IntervalBounds},
-		{backlogKey, float64(p.Backlog), review.BacklogBounds},
+		{minutesADayKey, float64(p.MinutesADay), review.GetMinutesADayBounds()},
+		{newADayKey, float64(p.NewADay), review.GetNewADayBounds()},
+		{reviewsADayKey, float64(p.ReviewsADay), review.GetReviewsADayBounds()},
+		{retentionKey, p.Retention, review.GetRetentionBounds()},
+		{intervalKey, float64(p.Interval), review.GetIntervalBounds()},
+		{backlogKey, float64(p.Backlog), review.GetBacklogBounds()},
 	} {
 		if !one.bounds.Contains(one.value) {
 			return fmt.Errorf("%w: %s %g is outside %g to %g",
@@ -662,12 +664,12 @@ func checkBounds(p review.Preset) error {
 // checkLoad is what in the week's load may not be written, and is nil when all
 // of it may.
 func checkLoad(load map[time.Weekday]int) error {
-	for _, weekday := range week {
+	for _, weekday := range getWeek() {
 		share, named := load[weekday]
-		if named && !review.LoadBounds.Contains(float64(share)) {
+		if named && !review.GetLoadBounds().Contains(float64(share)) {
 			return fmt.Errorf("%w: the load of %s, %d, is outside %g to %g",
 				ErrOutOfBounds, review.DayName(weekday), share,
-				review.LoadBounds.Min, review.LoadBounds.Max)
+				review.GetLoadBounds().Min, review.GetLoadBounds().Max)
 		}
 	}
 	for weekday := range load {

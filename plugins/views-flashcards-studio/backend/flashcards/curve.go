@@ -29,8 +29,8 @@ const Ahead = projection.Ahead
 // MostAhead is how far ahead a goal of a date is projected.
 const MostAhead = projection.MostAhead
 
-// OutsideGrid indicates a point falling outside the grid.
-var OutsideGrid = projection.OutsideGrid
+// GetOutsideGrid returns the point falling outside the grid.
+func GetOutsideGrid() CurvePoint { return projection.GetOutsideGrid() }
 
 // ProjectCurve is the simulator behind the one control of a preset.
 //
@@ -74,9 +74,9 @@ func checkGoal(p review.Preset) error {
 	var key string
 	switch p.Goal {
 	case review.GoalMinutes:
-		value, bounds, key = float64(p.MinutesADay), review.MinutesADayBounds, minutesADayKey
+		value, bounds, key = float64(p.MinutesADay), review.GetMinutesADayBounds(), minutesADayKey
 	case review.GoalRetention:
-		value, bounds, key = p.Retention, review.RetentionBounds, retentionKey
+		value, bounds, key = p.Retention, review.GetRetentionBounds(), retentionKey
 	case review.GoalDate:
 		return nil
 	default:
@@ -135,7 +135,7 @@ func (u ProjectCurve) Execute(
 
 	cost, costed := review.GetCostUnder(u.schedules.scheduler, target.Answers, presets)[path]
 	if !costed {
-		cost = review.DefaultCost
+		cost = review.GetDefaultCost()
 	}
 	now := u.now.Now()
 	// The projection runs with the scheduler this preset requests, which is the one

@@ -71,12 +71,12 @@ func fit(t *testing.T, db *DB, recipe string) {
 
 func TestCoarseRecipe_SwitchBackRestoresFirstModelBits(t *testing.T) {
 	db := openDB(t)
-	cutBook(t, db, first, "library/tale.epub")
+	cutBook(t, db, getFirst(), "library/tale.epub")
 	fit(t, db, testRecipe)
-	small := saveSeededVectorsUnder(t, db, first, testRecipe, 0x0f)
+	small := saveSeededVectorsUnder(t, db, getFirst(), testRecipe, 0x0f)
 
 	fit(t, db, otherRecipe)
-	if got := saveSeededVectorsUnder(t, db, first, otherRecipe, 0xf0); got != small {
+	if got := saveSeededVectorsUnder(t, db, getFirst(), otherRecipe, 0xf0); got != small {
 		t.Fatalf("%d of %d chunks were unembedded under the other recipe", got, small)
 	}
 	for id, got := range storedBits(t, db) {
@@ -95,14 +95,14 @@ func TestCoarseRecipe_SwitchBackRestoresFirstModelBits(t *testing.T) {
 			t.Errorf("chunk %d holds %x, want the bits of the recipe in use", id, got[:2])
 		}
 	}
-	if unembedded := saveSeededVectorsUnder(t, db, first, testRecipe, 0xaa); unembedded != 0 {
+	if unembedded := saveSeededVectorsUnder(t, db, getFirst(), testRecipe, 0xaa); unembedded != 0 {
 		t.Errorf("%d chunks are unembedded under a recipe that holds every vector", unembedded)
 	}
 }
 
 func TestFitRecipe_SameRecipeAndWidthKeepsCoarseIndex(t *testing.T) {
 	db := openDB(t)
-	book(t, db, first, "library/tale.epub", 0x0f)
+	book(t, db, getFirst(), "library/tale.epub", 0x0f)
 	fit(t, db, testRecipe)
 
 	// A row no chunk owns survives only if the index is not rebuilt.
@@ -123,7 +123,7 @@ func TestFitRecipe_SameRecipeAndWidthKeepsCoarseIndex(t *testing.T) {
 
 func TestAnIndexThatRecordsNoRecipeIsFilledOnceAndThenRecorded(t *testing.T) {
 	db := openDB(t)
-	book(t, db, first, "library/tale.epub", 0x0f)
+	book(t, db, getFirst(), "library/tale.epub", 0x0f)
 	fit(t, db, testRecipe)
 
 	// An index from before the recipe was recorded, holding another model's bits.
@@ -156,14 +156,14 @@ func TestAnIndexThatRecordsNoRecipeIsFilledOnceAndThenRecorded(t *testing.T) {
 
 func TestAChunkTheNewRecipeContainsNoVectorForGetsNoCoarseRow(t *testing.T) {
 	db := openDB(t)
-	book(t, db, first, "library/tale.epub", 0x0f)
+	book(t, db, getFirst(), "library/tale.epub", 0x0f)
 	fit(t, db, testRecipe)
 
 	fit(t, db, otherRecipe)
 	if rows := len(storedBits(t, db)); rows != 0 {
 		t.Errorf("%d coarse rows hold another recipe's bits", rows)
 	}
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), first.ID, otherRecipe, 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), getFirst().ID, otherRecipe, 0, 0, 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}

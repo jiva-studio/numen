@@ -28,7 +28,7 @@ func diskVault(t *testing.T, files map[string]string) (Vault, domain.Vault) {
 	return Vault{
 		Current: func() (domain.Vault, bool) { return v, true },
 		Readers: vaultreader.Readers{},
-		Writers: vaultwriter.VaultWriters{},
+		Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
 		Stores:  derivedfile.PluginStores{},
 		Cache:   appstate.PluginCachesAt(t.TempDir()),
 	}, v

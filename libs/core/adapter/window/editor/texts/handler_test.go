@@ -38,14 +38,14 @@ func (f *fileText) CreateEdit(_ context.Context, _ domain.Vault, edit textversio
 	return version, nil
 }
 
-var vault = shownVault{v: domain.Vault{ID: "v1"}}
+func getVault() shownVault { return shownVault{v: domain.Vault{ID: "v1"}} }
 
 func TestReadLiveTextReturnsTheVersionAndItsSegments(t *testing.T) {
 	text := &fileText{isSet: true, live: domain.NewVersionText(
 		domain.TextVersion{Path: "a.mp3", PluginID: "p.t", Key: "k", Kind: "transcript"},
 		[]domain.TextSegment{{Text: "Hello.\n", Selector: `{"t":[0,1]}`}},
 	)}
-	res, err := NewHandler(vault, text).ReadLiveText(t.Context(), connect.NewRequest(&v1.ReadLiveTextRequest{Path: "a.mp3"}))
+	res, err := NewHandler(getVault(), text).ReadLiveText(t.Context(), connect.NewRequest(&v1.ReadLiveTextRequest{Path: "a.mp3"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func TestReadLiveTextReturnsTheVersionAndItsSegments(t *testing.T) {
 }
 
 func TestReadLiveTextOfAFileWithoutOneIsEmpty(t *testing.T) {
-	res, err := NewHandler(vault, &fileText{}).ReadLiveText(t.Context(), connect.NewRequest(&v1.ReadLiveTextRequest{Path: "a.mp3"}))
+	res, err := NewHandler(getVault(), &fileText{}).ReadLiveText(t.Context(), connect.NewRequest(&v1.ReadLiveTextRequest{Path: "a.mp3"}))
 	if err != nil || res.Msg.GetVersion() != nil {
 		t.Fatalf("got %v (%v), want no version", res.Msg, err)
 	}
@@ -63,7 +63,7 @@ func TestReadLiveTextOfAFileWithoutOneIsEmpty(t *testing.T) {
 
 func TestCreateTextEditRecordsTheEditForThePlugin(t *testing.T) {
 	text := &fileText{isSet: true, live: domain.NewVersionText(domain.TextVersion{PluginID: "p.t", Key: "k"}, nil)}
-	h := NewHandler(vault, text)
+	h := NewHandler(getVault(), text)
 	res, err := h.CreateTextEdit(t.Context(), connect.NewRequest(&v1.CreateTextEditRequest{
 		PluginId: "p.view", Path: "a.mp3", SourceVersionId: "p.t/k",
 		Segments: []*v1.TextSegment{{Text: "Hello there.\n", Selector: `{"t":[0,1]}`}},

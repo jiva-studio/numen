@@ -7,8 +7,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/settings"
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
+	setting "github.com/jiva-studio/numen/libs/core/usecase/settings"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
@@ -26,7 +28,7 @@ func (s *Services) SetFileMove(move *vaults.Move)  { s.File.move = move }
 func (s *Services) SetNoteWrite(write *note.Write) { s.Note.write = write }
 
 // NewWireModels is the models as the wire carries them.
-var NewWireModels = settings.NewWireModels
+func NewWireModels(target []setting.Model) []*v1.Model { return settings.NewWireModels(target) }
 
 // NewAssembly is the window's assembly over a configuration, bound the way an
 // application binds one. The index it opens is the window's to close.

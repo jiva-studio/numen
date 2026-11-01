@@ -23,7 +23,7 @@ func TestThePagesLoadOnlyThePluginsThatDeclareAFrontend(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	cfg := Config{PluginHost: NewPluginHost("desktop.editor", root)}
+	cfg := NewConfig(Config{PluginHost: NewPluginHost("desktop.editor", root)})
 
 	if got := cfg.GetFrontendPluginIDs(); !slices.Equal(got, []string{"md.numen.view"}) {
 		t.Fatalf("GetFrontendPluginIDs() = %v, want [md.numen.view]", got)

@@ -57,7 +57,7 @@ func TestAPlaceWithNoDayToNameCarriesNone(t *testing.T) {
 			{Learns: review.NeverLearns},
 			{Learns: 12},
 		},
-		Now: projection.OutsideGrid, Suggested: projection.OutsideGrid,
+		Now: projection.GetOutsideGrid(), Suggested: projection.GetOutsideGrid(),
 	})
 
 	if pos := got.At[0]; pos.Learns != nil {

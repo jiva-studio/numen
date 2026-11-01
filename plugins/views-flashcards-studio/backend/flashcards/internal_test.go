@@ -226,7 +226,7 @@ func getTakenCards(load []deckLoad, order []int, keeps review.Budget) map[review
 				Limits:  limits,
 				Backlog: review.AllBacklog,
 			},
-			cost:   review.DefaultCost,
+			cost:   review.GetDefaultCost(),
 			counts: review.BudgetUnitCards,
 		}},
 		decks:         make(map[string]string),

@@ -232,7 +232,7 @@ jobs:
           # -s -w drop the debugging tables, which are a quarter of the binary
           # and reach nobody: a panic is symbolised from the pcln table, which
           # neither flag touches.
-          stamp="-s -w -X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
+          stamp="-s -w -X '$into.version=$VERSION (build $BUILD, commit $COMMIT)'"
 
           CGO_ENABLED=1 go build -trimpath -ldflags "$stamp" \
             -o "$RUNNER_TEMP/numen" ./cmd/numen
@@ -630,7 +630,7 @@ jobs:
           # -s -w drop the debugging tables, which are a quarter of the binary
           # and reach nobody: a panic is symbolised from the pcln table, which
           # neither flag touches.
-          stamp="-s -w -X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
+          stamp="-s -w -X '$into.version=$VERSION (build $BUILD, commit $COMMIT)'"
 
           # The two windows are always the same build: they ship together, one
           # version, one installer. A resource is linked into the command it is
@@ -749,7 +749,7 @@ jobs:
           # -s -w drop the debugging tables, which are a quarter of the binary
           # and reach nobody: a panic is symbolised from the pcln table, which
           # neither flag touches.
-          stamp="-s -w -X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
+          stamp="-s -w -X '$into.version=$VERSION (build $BUILD, commit $COMMIT)'"
           # The two windows are always the same build: they ship together, one
           # version, one image.
           for window in numen numen-flashcards; do

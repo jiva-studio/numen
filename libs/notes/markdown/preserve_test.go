@@ -11,49 +11,55 @@ import (
 )
 
 // byteOrderMark is what another editor may put in front of a note's first line.
-var byteOrderMark = string(rune(0xFEFF))
+const byteOrderMark = "\uFEFF"
 
-// theirs are frontmatter blocks whose keys this application does not own: the
+// listTheirs returns frontmatter blocks whose keys this application does not own: the
 // user's own keys, a comment, a list, a flow sequence, a key with no value, and
 // a key whose value would parse as a mapping if it were not quoted.
-var theirs = []string{
-	"mine: keep me verbatim\n",
-	"# a note to myself\n",
-	"zebra: 1\n",
-	"read:\n  - one\n  - two\n",
-	"aliases: [a, b]\n",
-	"empty:\n",
-	"quoted: \"a: b\"\n",
-	"folded: >\n  a line\n  and another\n",
+func listTheirs() []string {
+	return []string{
+		"mine: keep me verbatim\n",
+		"# a note to myself\n",
+		"zebra: 1\n",
+		"read:\n  - one\n  - two\n",
+		"aliases: [a, b]\n",
+		"empty:\n",
+		"quoted: \"a: b\"\n",
+		"folded: >\n  a line\n  and another\n",
+	}
 }
 
 // ours are the keys this application owns, as a note that has been written here
 // already carries them.
-// identifiers are ULIDs, which is what an owned `id` holds.
-var identifiers = []string{
-	"01J8F3K2M9QRSTVWXYZ0123456",
-	"7ZZZZZZZZZZZZZZZZZZZZZZZZZ",
-	"00000000000000000000000000",
+// listIdentifiers returns ULIDs, which is what an owned `id` holds.
+func listIdentifiers() []string {
+	return []string{
+		"01J8F3K2M9QRSTVWXYZ0123456",
+		"7ZZZZZZZZZZZZZZZZZZZZZZZZZ",
+		"00000000000000000000000000",
+	}
 }
 
-var ours = []string{
-	"id: " + identifiers[0] + "\n",
-	"title: Old\n",
-	"type: note\n",
-	"fields:\n  - Height\n  - Weight\n",
+func listOurs() []string {
+	return []string{
+		"id: " + listIdentifiers()[0] + "\n",
+		"title: Old\n",
+		"type: note\n",
+		"fields:\n  - Height\n  - Weight\n",
+	}
 }
 
 // drawNote generates a note: a frontmatter block of some of those keys in some
 // order, and prose under it.
 func drawNote(t *rapid.T) (raw string, foreign []string) {
-	blocks := append(append([]string{}, theirs...), ours...)
+	blocks := append(append([]string{}, listTheirs()...), listOurs()...)
 	order := rapid.Permutation(blocks).Draw(t, "keys")
 	keys := order[:rapid.IntRange(0, len(order)).Draw(t, "member")]
 
 	var front strings.Builder
 	for _, one := range keys {
 		front.WriteString(one)
-		if !strings.HasPrefix(one, "#") && !contains(ours, one) {
+		if !strings.HasPrefix(one, "#") && !contains(listOurs(), one) {
 			foreign = append(foreign, one)
 		}
 	}
@@ -125,7 +131,7 @@ func TestWhatTheApplicationDoesNotOwnIsCachedVerbatim(t *testing.T) {
 					"Entropy", "TCP/IP", "a: b", "  spaced  ", "многословие",
 				}).Draw(t, "title"))
 			case "id":
-				err = doc.SetIdentifier(identifiers[at%len(identifiers)])
+				err = doc.SetIdentifier(listIdentifiers()[at%len(listIdentifiers())])
 			case "fields":
 				err = doc.SetList("fields", rapid.SliceOfN(rapid.SampledFrom([]string{
 					"Height", "Weight", "Shoulder height",
@@ -192,7 +198,7 @@ func TestAnOwnedKeyReadsBackAsItWasSaved(t *testing.T) {
 		names := rapid.SliceOfN(rapid.SampledFrom([]string{
 			"Height", "Weight", "a: b", "über",
 		}), 0, 3).Draw(t, "names")
-		identifier := rapid.SampledFrom(identifiers).Draw(t, "id")
+		identifier := rapid.SampledFrom(listIdentifiers()).Draw(t, "id")
 
 		if err := doc.SetTitle(title); err != nil {
 			return
