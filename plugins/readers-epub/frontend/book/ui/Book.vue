@@ -103,7 +103,7 @@ defineExpose({
    * Lays out the text again. A reader rendered off screen has no reading area, and
    * the caller signals when it is on screen.
    */
-  measure: () => layout.settle(layout.getKeptOffset()),
+  measure: () => layout.settle(layout.getKeptOffset),
   /** A key the tab caught: true where it turned the page. */
   handleKey: onKey,
 })

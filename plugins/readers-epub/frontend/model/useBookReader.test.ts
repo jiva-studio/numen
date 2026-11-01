@@ -298,6 +298,27 @@ describe('where the person is standing', () => {
     expect(readItem.documentSpan.value).toStrictEqual({ start: 3_000, end: 6_000 })
   })
 
+  it('drops a CFI offset that arrives after a page turn', async () => {
+    const { books } = shelf()
+    let answerOffset!: (offset: number) => void
+    books.findOffset = () =>
+      new Promise<number>((resolve) => {
+        answerOffset = resolve
+      })
+    const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
+    await settle()
+    const jump = readItem.target.value
+
+    const restore = readItem.goToCfi('epubcfi(/8/2!/4/2/1:100)')
+    await settle()
+    await readItem.moveTo(2_500)
+    answerOffset(100)
+
+    expect(await restore).toBe(false)
+    expect(readItem.offset.value).toBe(2_500)
+    expect(readItem.target.value).toBe(jump)
+  })
+
   it('draws nothing again where the offset stays in the document on screen', async () => {
     const { books, markupCalls } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)

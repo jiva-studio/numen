@@ -144,7 +144,7 @@ describe('setting the columns', () => {
     turns().stand.mockClear()
     fake.frames.length = 0
 
-    layout().settle(40)
+    layout().settle(() => 40)
 
     expect(columns().measure).toHaveBeenCalledTimes(1)
     flushFrames()
@@ -159,7 +159,7 @@ describe('setting the columns', () => {
     const { layout } = room()
     columns().measure.mockClear()
 
-    layout().settle(40)
+    layout().settle(() => 40)
 
     expect(columns().measure).toHaveBeenCalledTimes(1)
     expect(fake.frames).toHaveLength(0)
@@ -170,7 +170,7 @@ describe('setting the columns', () => {
     const { layout } = room({ hasArea: false })
     fake.frames.length = 0
 
-    layout().settle(40)
+    layout().settle(() => 40)
     flushFrames()
 
     expect(columns().readColumns).not.toHaveBeenCalled()
@@ -182,7 +182,7 @@ describe('setting the columns', () => {
     const { layout } = room({ hasPaper: false })
     fake.frames.length = 0
 
-    layout().settle(40)
+    layout().settle(() => 40)
     flushFrames()
 
     expect(columns().readColumns).not.toHaveBeenCalled()
@@ -197,7 +197,7 @@ describe('the place a link led to', () => {
     columns().findFragmentOffset.mockReturnValue(150)
     fake.frames.length = 0
 
-    layout().settle(40, { path: 'ch1.xhtml', fragment: 'here' })
+    layout().settle(() => 40, { path: 'ch1.xhtml', fragment: 'here' })
     flushFrames()
 
     expect(columns().findFragmentOffset).toHaveBeenCalledWith('here')
@@ -211,7 +211,7 @@ describe('the place a link led to', () => {
     columns().findFragmentOffset.mockReturnValue(0)
     fake.frames.length = 0
 
-    layout().settle(40, { path: '', fragment: 'top' })
+    layout().settle(() => 40, { path: '', fragment: 'top' })
     flushFrames()
 
     expect(columns().findFragmentOffset).toHaveBeenCalledWith('top')
@@ -224,7 +224,7 @@ describe('the place a link led to', () => {
     columns().findFragmentOffset.mockReturnValue(150)
     fake.frames.length = 0
 
-    layout().settle(40, { path: 'ch2.xhtml', fragment: 'here' })
+    layout().settle(() => 40, { path: 'ch2.xhtml', fragment: 'here' })
     flushFrames()
 
     expect(columns().findFragmentOffset).not.toHaveBeenCalled()
@@ -237,7 +237,7 @@ describe('the place a link led to', () => {
     columns().findFragmentOffset.mockReturnValue(undefined)
     fake.frames.length = 0
 
-    layout().settle(40, { path: '', fragment: 'missing' })
+    layout().settle(() => 40, { path: '', fragment: 'missing' })
     flushFrames()
 
     expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(40), 'auto')
@@ -248,7 +248,7 @@ describe('the place a link led to', () => {
     const { layout, onMove } = room()
     fake.frames.length = 0
 
-    layout().settle(40)
+    layout().settle(() => 40)
     flushFrames()
 
     expect(columns().findFragmentOffset).not.toHaveBeenCalled()
@@ -295,6 +295,19 @@ describe('the room or the type changing size', () => {
     expect(columns().measure).toHaveBeenCalledTimes(1)
     flushFrames()
     expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(KEPT), 'auto')
+  })
+
+  it('keeps the offset of a page turned between the change and the frame', async () => {
+    room()
+    fake.frames.length = 0
+    columns().viewport.value = { ...columns().viewport.value, width: 640 }
+    await nextTick()
+
+    const TURNED = KEPT + 50
+    turns().getKeptOffset.mockReturnValue(TURNED)
+    flushFrames()
+
+    expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(TURNED), 'auto')
   })
 
   it('leaves the columns as they are while none of the three changes', async () => {

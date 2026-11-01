@@ -52,9 +52,13 @@ function useBookNavigation(deps: BookNavigationDeps) {
   const offset = ref(0)
   /** The latest jump. Each jump is a new object, so a repeated offset still changes the value. */
   const target = shallowRef<{ readonly offset: number } | null>(null)
+  /** How many moves were requested: jumps and page turns. */
+  let moveCount = 0
+  const getMoveCount = () => moveCount
 
   /** Jumps to an offset, drawing the document it falls in. */
   const goToOffset = async (targetOffset: number) => {
+    moveCount += 1
     await deps.getShape()
     if (!deps.isOpen() || deps.documents.value.length === 0) return
     const last = Math.max(deps.span.value.end - 1, deps.span.value.start)
@@ -69,6 +73,7 @@ function useBookNavigation(deps: BookNavigationDeps) {
    * drawn document is already showing, so it sets no target.
    */
   const moveTo = async (reported: number) => {
+    moveCount += 1
     await deps.getShape()
     const { start, end } = deps.bookDocument.documentSpan.value
     if (reported >= start && reported < end) {
@@ -85,7 +90,7 @@ function useBookNavigation(deps: BookNavigationDeps) {
     await goToOffset(targetDoc.span.start)
   }
 
-  return { offset, target, goToOffset, moveTo, followLink }
+  return { offset, target, getMoveCount, goToOffset, moveTo, followLink }
 }
 
 async function loadBookData(
@@ -215,10 +220,12 @@ export function useBookReader(
 
   // A saved place and a search hit name the book by EPUB CFI, which the plugin's backend reads.
   const getCfi = (offset: number) => books.getCfi(path, offset)
+  // An answer that arrives after a page turn or another jump is dropped.
   const goToCfi = async (cfi: string) => {
+    const request = nav.getMoveCount()
     await shape
     const offset = await books.findOffset(path, cfi)
-    if (offset === null || !isOpen) return false
+    if (offset === null || !isOpen || nav.getMoveCount() !== request) return false
     await marks.focusSpans({ start: offset, end: offset })
     return true
   }

@@ -81,6 +81,7 @@ createPagedPdf(path.join(tmpVault, 'assets', 'pages.pdf'), 40)
 // Copy dynamic fixtures into isolated vault to prevent template fixture pollution.
 fs.copyFileSync(path.join(fixturesDir, 'sample.pdf'), path.join(tmpVault, 'assets', 'sample.pdf'))
 fs.copyFileSync(path.join(fixturesDir, 'sample.epub'), path.join(tmpVault, 'assets', 'sample.epub'))
+fs.copyFileSync(path.join(fixturesDir, 'ledger.epub'), path.join(tmpVault, 'assets', 'ledger.epub'))
 for (const name of [
   'regenerative-braking.pdf',
   'flywheel.pdf',

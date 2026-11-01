@@ -31,7 +31,7 @@ export interface BookLayoutOptions {
 }
 
 interface BookWatchContext {
-  readonly settle: (keep: number, led?: BookLink) => void
+  readonly settle: (getKeep: () => number, led?: BookLink) => void
   readonly getKeptOffset: () => number
   readonly takeLed: () => BookLink | undefined
   readonly standing: { value: number }
@@ -52,7 +52,7 @@ function watchBookLayout(
       () => signals.textSize.value,
     ],
     () => {
-      context.settle(context.getKeptOffset())
+      context.settle(context.getKeptOffset)
     },
   )
 
@@ -62,7 +62,7 @@ function watchBookLayout(
       const place = context.takeLed()
       context.isStood.value = false
       context.standing.value = 0
-      context.settle(props.at, place)
+      context.settle(() => props.at, place)
     },
   )
 
@@ -78,8 +78,8 @@ function watchBookLayout(
   )
 
   onMounted(() => {
-    context.settle(props.at)
-    const settleKept = () => context.settle(context.getKeptOffset())
+    context.settle(() => props.at)
+    const settleKept = () => context.settle(context.getKeptOffset)
     doc.fonts?.ready.then(settleKept, settleKept)
   })
 }
@@ -112,13 +112,15 @@ export interface BookSettlingOptions {
 
 /** Handles re-settling and watching dimensions / links in book layout. */
 export function createBookSettling(options: BookSettlingOptions) {
-  const settle = (keep: number, led?: BookLink) => {
+  /** `getKeep` is read on the frame, before the columns are read again, so a turn made since the request is kept. */
+  const settle = (getKeep: () => number, led?: BookLink) => {
     options.column.measure()
     if (!options.column.isMeasured.value) return
     onNextFrame(() => {
       const box = options.area.value
       const text = options.paper.value
       if (!box || !text) return
+      const keep = getKeep()
       options.column.readColumns(box, text)
       const landed =
         led && (led.path === '' || led.path === options.props.path)
