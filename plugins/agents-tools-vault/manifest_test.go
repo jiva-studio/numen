@@ -1,14 +1,36 @@
 package vaulttools_test
 
 import (
+	"encoding/json"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/plugintest"
 	vaulttools "github.com/jiva-studio/numen/plugins/agents-tools-vault"
 )
 
+type manifestDoc struct {
+	ID           string   `json:"id"`
+	Name         string   `json:"name"`
+	Version      string   `json:"version"`
+	Protocol     int      `json:"protocol"`
+	Description  string   `json:"description"`
+	Capabilities []string `json:"capabilities"`
+	Targets      []string `json:"targets"`
+	Permissions  []string `json:"permissions"`
+	Backend      struct {
+		Type       string `json:"type"`
+		Entrypoint string `json:"entrypoint"`
+	} `json:"backend"`
+}
+
 func TestManifest(t *testing.T) {
-	m := plugintest.ReadManifest(t, vaulttools.Manifest)
+	if len(vaulttools.Manifest) == 0 {
+		t.Fatal("manifest is empty")
+	}
+
+	var m manifestDoc
+	if err := json.Unmarshal(vaulttools.Manifest, &m); err != nil {
+		t.Fatalf("unmarshal manifest: %v", err)
+	}
 
 	if m.ID != "md.numen.agents.tools.vault" {
 		t.Errorf("manifest id = %q, want %q", m.ID, "md.numen.agents.tools.vault")

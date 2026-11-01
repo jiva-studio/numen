@@ -1,14 +1,28 @@
 package window
 
 import (
+	"encoding/json"
 	"slices"
 	"testing"
-
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/plugintest"
 )
 
 func TestManifestIsValid(t *testing.T) {
-	manifest := plugintest.ReadManifest(t, Manifest)
+	var manifest struct {
+		ID           string   `json:"id"`
+		Name         string   `json:"name"`
+		Version      string   `json:"version"`
+		Protocol     int      `json:"protocol"`
+		Capabilities []string `json:"capabilities"`
+		Targets      []string `json:"targets"`
+		Permissions  []string `json:"permissions"`
+		Backend      struct {
+			Type       string `json:"type"`
+			Entrypoint string `json:"entrypoint"`
+		} `json:"backend"`
+	}
+	if err := json.Unmarshal(Manifest, &manifest); err != nil {
+		t.Fatalf("unmarshal manifest: %v", err)
+	}
 
 	if manifest.ID != "md.numen.agents.tools.window" {
 		t.Errorf("manifest.ID = %q, want md.numen.agents.tools.window", manifest.ID)

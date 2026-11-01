@@ -1,12 +1,12 @@
 package service_test
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/plugintest"
 	flashcardsstudio "github.com/jiva-studio/numen/plugins/views-flashcards-studio"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service"
@@ -72,7 +72,14 @@ func TestCreateDeck_ErrorsWhenFileExists(t *testing.T) {
 }
 
 func TestEveryCommandTheManifestDeclaresIsRun(t *testing.T) {
-	manifest := plugintest.ReadManifest(t, flashcardsstudio.Manifest)
+	var manifest struct {
+		Commands []struct {
+			ID string `json:"id"`
+		} `json:"commands"`
+	}
+	if err := json.Unmarshal(flashcardsstudio.Manifest, &manifest); err != nil {
+		t.Fatal(err)
+	}
 	commands, _ := newCommands(t)
 
 	for _, declared := range manifest.Commands {
