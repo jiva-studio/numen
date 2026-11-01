@@ -1,9 +1,21 @@
+import { mkdir, writeFile } from 'node:fs/promises'
+import { dirname } from 'node:path'
 import { test, expect, type Page } from '../../support/test.js'
 import { openWorkspace, runCommand } from '../../support/workspace.js'
 
 const FIRST = { id: 'md.numen.agents.antigravity', name: 'Antigravity Agent' }
 const SECOND = { id: 'md.numen.agents.claude', name: 'Claude Code Agent' }
-const FIRST_PATH = '/opt/invented/antigravity/bin/gemini'
+
+/**
+ * Writes an invented executable into the output folder of the test and returns its path. The
+ * core takes a path for a file setting only when the file exists.
+ */
+const createExecutable = async (): Promise<string> => {
+  const path = test.info().outputPath('antigravity', 'bin', 'gemini')
+  await mkdir(dirname(path), { recursive: true })
+  await writeFile(path, '#!/bin/sh\n', { mode: 0o755 })
+  return path
+}
 
 /** The slowest first render of a plugin page the scenario accepts, in milliseconds. */
 const FIRST_RENDER_LIMIT_MS = 1_000
@@ -56,13 +68,14 @@ test.describe('The page of a plugin', () => {
   })
 
   test('shows none of the values of the plugin page opened before it', async ({ page }) => {
-    await writeSetting(page, ['plugins', FIRST.id, 'executable_path'], FIRST_PATH)
+    const firstPath = await createExecutable()
+    await writeSetting(page, ['plugins', FIRST.id, 'executable_path'], firstPath)
     await openWorkspace(page)
     await runCommand(page, 'Settings', /^Settings$/)
     const settings = page.getByRole('tabpanel', { name: /Settings/ })
 
     await settings.getByRole('button', { name: new RegExp(FIRST.name) }).click()
-    await expect(settings.getByTestId('setting-path')).toHaveAttribute('title', FIRST_PATH)
+    await expect(settings.getByTestId('setting-path')).toHaveAttribute('title', firstPath)
     await settings.getByRole('button', { name: 'All plugins' }).click()
 
     await recordPage(page, SECOND.name)
