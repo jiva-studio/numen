@@ -48,7 +48,7 @@ src/plex/
 
 What an application may use is re-exported from `src/index.ts`, and that list is narrower than what the module contains: how a component is built is not how it is used.
 
-**A component is split when it holds a second responsibility** — a section with independent state, or a part rendered on its own elsewhere. Length is not a rule and is never a review finding.
+**A component is split when it holds a second responsibility** — a section with independent state, or a part rendered on its own elsewhere. The length limits of a function and of a block are in [`architecture.md`](architecture.md) §8.
 
 **A polymorphic component dispatches, it does not inline.** Where a component renders distinct variants by kind, the parent is a shallow dispatcher and each variant is its own component; a heavy dependency — an editor, a composer, a form — is never imported into something that renders a high-frequency row.
 

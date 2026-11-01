@@ -26,8 +26,8 @@ numen/
 │   │   └── ulid/                 # the identifiers a note is given
 │   ├── protocol/                 # the schema, and the Go and TypeScript generated from it
 │   ├── plugin-sdk-go/            # Go: what a native plugin backend is built from
-│   ├── plugin-sdk-ts/            # TypeScript: what a plugin frontend is built from; published
-│   ├── core-client/              # TypeScript: the first-party client of the core, for applications and the plugin host; private
+│   ├── plugin-sdk-ts/            # TypeScript: what a plugin frontend is built from
+│   ├── core-client/              # TypeScript: the client of the core for the windows and the plugin host; private
 │   ├── plugin-host-ts/           # TypeScript: the loader of plugin frontends
 │   ├── plugin-manager/           # Vue: the plugin list and the plugin page, data by props and answers by events
 │   └── ui/                       # Vue 3: `core` holds components that know nothing about the domain, `shell` the window chrome
@@ -103,11 +103,21 @@ For every field parsed, column stored, syntax accepted or option offered there i
 
 Equally: do not abstract before there is a second case, and do not leave a genuinely needed seam missing.
 
-## 8. Size is not a rule
+## 8. Size and complexity limits
 
-File length, import counts and block sizes are not limits here and are never a review finding. The limits lint enforces measure branching, not size: cyclomatic complexity (12), nesting depth (3), parameter count (4) and the properties a composable returns (8). A function over one of them is split by responsibility.
+Cyclomatic complexity, nesting depth and function length are rules. Go, TypeScript and Vue take one set of limits:
 
-A file is split when it holds a second responsibility — a section with its own state, a part rendered on its own elsewhere, a concern that can be exercised separately. What is a finding is a folder that collects a kind rather than a thing: every entity in one file, every use case in one package, readable at five and unreadable at fifty.
+| Limit                               | Maximum | Go (`.golangci-structure.yml`) | TypeScript and Vue (`tools/lint-layers/base-eslint.mjs`) |
+| ----------------------------------- | ------- | ------------------------------ | -------------------------------------------------------- |
+| Cyclomatic complexity of a function | 15      | `cyclop` `max-complexity`      | `complexity`                                             |
+| Nesting depth of control blocks     | 4       | revive `max-control-nesting`   | `max-depth`                                              |
+| Function length in lines            | 250     | `funlen` `lines`               | `max-lines-per-function`                                 |
+| Function length in statements       | 50      | `funlen` `statements`          | `max-statements`                                         |
+| Parameters of a function            | 10      | revive `argument-limit`        | `max-params`                                             |
+
+A configuration may set a lower value than the table and never a higher one. The TypeScript configuration sets complexity 12, depth 3 and parameters 4 today; the Go configuration also runs `gocognit` (15), `nestif` (4) and `maintidx`. `max-control-nesting`, `argument-limit`, `max-lines-per-function` and `max-statements` are not configured yet. A Vue file also has limits for its blocks: the script block 100 lines, the template 140 lines, template depth 4, 6 inline props, 3 statements in a `computed`, and 8 properties a composable returns. Test files (`_test.go`, `*.test.ts`, `*.stories.ts`) are outside these limits. A function over a limit is split by responsibility.
+
+File length and import counts have no limit. A file is split when it holds a second responsibility: a section with its own state, a part rendered on its own elsewhere, a concern that can be exercised separately. A folder that collects a kind rather than a thing is a finding: every entity in one file, every use case in one package, readable at five and unreadable at fifty.
 
 ## 9. Zero exceptions
 
@@ -115,50 +125,73 @@ A rule has no exception. There is no `nolint`, `eslint-disable`, `@ts-ignore`, `
 
 ## 10. Rules that hold the boundaries
 
-`tools/lint-layers` states each rule once, over a capture or a set derived from the repository, and declares a minimum of what it examines, so a check over nothing fails. Each rule has a violation fixture in `tools/lint-layers/checks.test.mjs`.
+A check decides by structure. Where an off-the-shelf tool exists, the check is that tool with a configuration: dependency-cruiser for package boundaries and import cycles, depguard and gomodguard for Go imports and `go.mod` requires, golangci-lint linters, stylelint for style sheets. A hand-written check works only on syntax trees, import graphs and type information. A check does not match a word, a regular expression or a list of names against code or comments.
 
-- **Plugins** (`plugins-isolation-capture`, `plugins-leakage`, `plugins-no-protocol-or-wire`, `plugins-use-main-entry`, `protocol-imported-only-by-clients`, `core-client-private`, `plugins-standalone-repo`, `plugins-reach-no-app`, `plugins-reach-no-shell`, `plugins-share-no-frontend-file`): a file under `plugins/(X)/` references no other plugin; a plugin depends on the plugin SDKs, the UI library, the Go protocol module and third-party code, never on `libs/core`, `libs/notes`, the shell, the plugin host or an application, and reaches notes through the SDK. `libs/core/container/plugin_independence_test.go` states the Go dependency rule and `plugin_isolation_packages_test.go` applies it to the type-checked import graph. No file repeats a file of another plugin; shared code lives in `@numen/ui` or the plugin SDK.
-- **Permissions** (`host_permission_test.go`): the core refuses a call whose permission the plugin's manifest does not declare, for any client of the host endpoint.
-- **Notes** (`notes-hexagon`, `notes-depguard`, `library-matrix`): `libs/notes` depends on nothing of this repository.
-- **UI** (`ui-isolation`, `shell-isolation`, `plugin-host-isolation`): `libs/ui/core` knows no domain, protocol or application; the shell reaches components through `@numen/ui`; the plugin host knows Vue, the plugin SDK and the core client only.
-- **Applications** (`apps-reach-no-plugin`): an application reaches no plugin.
-- **SDK encapsulation** (`sdk-encapsulates-protocol`, `sdk-ts-encapsulates-protocol`): the public API of the plugin SDKs mentions no protocol type. The Go rule loads the type information of `libs/plugin-sdk-go` and its submodules (`sdk_protocol_encapsulation_test.go`); the TypeScript rule walks the type graph of the exports of `@numen/plugin-sdk` with the compiler API (`checks/sdkProtocol.mjs`).
-- **Contracts** (`protocol-holds-only-host-contracts`): every service, message and enum of `numen.v1` is used by the core, a client, an SDK, the plugin host, the UI or an application. A rule decides by the import graph, the folder layout or the shape of the public surface, and does not match a word, a regular expression or a list of names against code or comments. A rule works on structure: import specifiers and the dependency graph, `package.json` and `go.mod` data, directory layout, syntax trees and type information, ESLint rules, or the shape of a schema.
-- **Fail-closed**: `every-path-has-a-layer` and `workspace-lists-every-module` fail on a module no layer owns and on a `go.mod` that `go.work` omits.
+`tools/lint-layers` states each rule once, over a capture or a set derived from the repository, and declares a minimum of what it examines, so a check over nothing fails. Each rule has a violation fixture in `tools/lint-layers/checks.test.mjs`. `node tools/lint-layers/check.mjs --list` prints the registered verifiers:
 
-## 11. Plugin boundary
+- **Go core and libraries**: `core-hexagon` (`layers_test.go`: the core layers point inward), `core-depguard` (`.golangci.yml`: domain and use case imports), `machine-clock` (§5), `notes-hexagon` and `notes-depguard` (`libs/notes` layers, and `libs/notes` depends on nothing of this repository), `library-matrix` (every `go.mod` under `libs/` depends only on the families its row allows), `workspace-lists-every-module` (`go.work` lists every `go.mod`).
+- **Plugin SDK**: `sdk-isolation` (the Go SDK imports no core and no application), `sdk-encapsulates-protocol` (no exported identifier of a public package of `libs/plugin-sdk-go` mentions a type of `libs/protocol/gen`; `sdk_protocol_encapsulation_test.go`), `sdk-ts-encapsulates-protocol` (no exported declaration of `@numen/plugin-sdk` reaches a declaration of `libs/protocol`; `checks/sdkProtocol.mjs` walks the type graph with the compiler API).
+- **TypeScript libraries**: `package-matrix` (every `package.json` under `libs/` depends only on its row), `protocol-imported-only-by-clients` (only `@numen/plugin-sdk` and `@numen/core-client` import or declare `@numen/protocol`), `core-client-private` (`libs/core-client` is private and no package that is not private depends on it), `ui-isolation` (`libs/ui/core` knows no domain, protocol, wire, shell or application), `shell-isolation` (the shell knows no domain, protocol, wire or application), `plugin-host-isolation` (the plugin host imports only `vue`, `@numen/plugin-sdk` and `@numen/core-client`).
+- **Protocol**: `protocol-holds-only-host-contracts` (every service, message and enum of `numen.v1` is used by the core, a client, an SDK, the plugin host, the UI or an application).
+- **Lint and quality**: `all-ts-packages-eslint` (every TypeScript package has ESLint configured), `strict-lint-rules` (every package resolves `no-void`, `no-empty`, `no-empty-function`, `no-floating-promises` and `no-misused-promises`), `no-suppressions` (§9), `frontend-no-import-cycle` (no import cycle in applications, libraries and plugin frontends), `manifest-parsed-in-one-place` (a manifest is decoded through the generated schema only), `docs-list-verifiers` (`tools/lint-layers/README.md` lists every verifier).
+- **Fail-closed**: `every-path-has-a-layer` fails on a module no layer owns.
+- **Plugins**: `plugins-isolation-capture` (a file under `plugins/(X)/` references no other plugin), `plugins-independence` (`plugin_independence_test.go` and `plugin_isolation_packages_test.go` apply the dependency rule of §11 to the type-checked import graph on 14 platform targets), `plugins-leakage` (manifest schema and static non-leakage), `plugins-no-protocol-or-wire` (no `@numen/protocol`, `@numen/core-client`, wire or `libs/protocol` in a plugin), `plugins-use-main-entry` (the SDK and the UI library are imported through their declared entries), `plugins-reach-no-app`, `plugins-reach-no-shell` (no shell and no plugin host), `apps-plugins-boundary` (applications compile nothing from plugins, plugins nothing from applications), `plugins-frontend` (no `@/**` and no `@plugins/**` in a plugin frontend), `plugins-standalone-repo` (no `../` escape, no shared Vite config, no `replace ../`, no direct `libs/notes` require, no `.proto`), `plugin-backend-layers` (the layers inside a plugin backend), `plugin-config-golden-parity` (plugin lint configurations match `plugins/.example/` and the root `.golangci.yml`), `plugins-share-no-frontend-file` (fails on a TypeScript or Vue file copied from another plugin; it contradicts §11(e) and is removed).
+- **Applications**: `apps-reach-no-plugin`, `desktop-editor-fsd` and `desktop-flashcards-fsd` (§4), `frontend-segments-and-entities` (segment direction and no `@x` cross-import).
 
-These rules bind every change to `libs/plugin-sdk-go`, `libs/plugin-sdk-ts`, `libs/core-client`, `libs/ui`, `libs/plugin-host-ts`, `libs/plugin-manager`, `libs/core` and `plugins/`.
+Outside `tools/lint-layers`, `host_permission_test.go` holds the permission rule: the core refuses a call whose permission the plugin's manifest does not declare, for any client of the host endpoint.
 
-**(a) A plugin depends on two libraries.** A plugin depends on the plugin SDK (Go: `libs/plugin-sdk-go`; TypeScript: `@numen/plugin-sdk`) and on `@numen/ui`, plus third-party code. Plugins live in other repositories and may not use any other shared library. There are no "kits": no third shared library for plugins exists, and none is proposed. The Go SDK may depend on `libs/notes` and passes the note types, the note parser, the editor and the identifiers on to plugins through `host/domain`, `host/markdown`, `host/edit` and `host/ulid`; `libs/notes` is published and tagged together with the SDK. A plugin never imports `libs/notes` and never requires it directly in its `go.mod`; an `// indirect` line that appears because the SDK requires it is allowed (`plugins-standalone-repo`).
+## 11. Plugin model
 
-**(b) The SDK contains what plugins use.** The SDK holds only code that at least one plugin imports, plus the contracts of capabilities (agent provider, embedding). It knows nothing about implementations:
+These rules bind every change to `libs/plugin-sdk-go`, `libs/plugin-sdk-ts`, `libs/core-client`, `libs/ui`, `libs/plugin-host-ts`, `libs/plugin-manager`, `libs/core`, `apps/*` and `plugins/`.
 
-- no concrete agents, engines or runtimes (for example ONNX);
-- no application-side API: the catalog client, the manifest parser, the transport and the raw core clients that only windows use. Those live in `@numen/core-client`.
+**(a) The core routes every call.**
 
-The SDK is for plugins and is published. `@numen/core-client` is the internal first-party client of the core for applications and the plugin host; it is private and never published. A curated plugin API kept apart from the application's own access to the core is how VS Code, Obsidian and JetBrains separate extensions from the application, which is a first-party client of its core. Every SDK export has a plugin that uses it, or is the contract of a capability an application implements.
+```mermaid
+graph LR
+    Window["Window (editor, flashcards, mobile)"] -->|"@numen/core-client"| Core
+    Frontend["Plugin frontend"] -->|"@numen/plugin-sdk"| Core
+    Core -->|"service declared in the manifest"| Backend["Plugin backend"]
+    Backend -->|"libs/plugin-sdk-go, host endpoint"| Core
+```
 
-**(c) Implementation code is duplicated between plugins.** Code of one implementation family that several plugins use is copied into each of those plugins. Duplication between plugins is preferred over growth of the SDK. No check may push implementation code into a shared library; a check that does so is wrong and is corrected.
+- A window of the application (editor, flashcards, mobile) reaches the core only through `@numen/core-client`.
+- A plugin's frontend is part of the plugin. It reaches the core only through `@numen/plugin-sdk`.
+- A plugin's backend is a process the core starts. It reaches the core only through `libs/plugin-sdk-go`.
+- A window or a plugin frontend calls a plugin's service through the core. The core forwards the call to the backend whose manifest declares the service.
+- A backend calls the host endpoint of the core. The core checks the call against the permissions of the plugin's manifest.
+- Windows and plugins never call each other directly.
+- A plugin's own service is named after its plugin id. A shared service, such as `numen.v1.AgentService`, is declared by the core, and a plugin implements it.
+- Plugins are trusted code. The core runs no plugin in an iframe or a sandbox and gives a frontend no capability token. The token the core gives a backend process tells the core which plugin calls; it is not a sandbox.
 
-**(d) Who may use `@numen/protocol`.**
+**(b) A plugin depends on the SDK only.** A plugin depends on the plugin SDK (Go: `libs/plugin-sdk-go`; TypeScript: `@numen/plugin-sdk`) and on third-party code. Its frontend also depends on `@numen/ui`. A plugin never imports or requires `libs/notes`, `libs/protocol`, `@numen/core-client`, `@connectrpc` or another library of this repository. The rule is about direct requires and imports: an `// indirect` line for `libs/notes` or `libs/protocol` in a plugin's `go.mod` comes from Go, because the SDK depends on them.
 
-- Only `@numen/plugin-sdk` and `@numen/core-client` import or declare `@numen/protocol`. Applications (`apps/*`) and host libraries (`libs/plugin-host-ts`) reach the core through `@numen/core-client`; plugins reach it through `@numen/plugin-sdk`. The package matrix gives `@numen/core-client` the row `[@numen/protocol]` and `@numen/plugin-host` the row `[@numen/plugin-sdk, @numen/core-client]`, and no plugin imports `@numen/core-client`.
+**(c) The SDK contains what plugins use.** The SDK holds only code that at least one plugin imports, plus the contracts of capabilities (agent provider, embedding). It holds no concrete agent, engine or runtime (for example ONNX), and no application-side API: the catalog client, the manifest parser, the transport and the raw core clients that only windows use live in `@numen/core-client`. A type of the SDK may be an alias of a `libs/notes` type. Each type has one name in the SDK; there is no second set of names for the same types.
+
+**(d) No protocol inside a plugin.** A plugin has no `.proto` file and no protobuf code. Its backend answers its own frontend with JSON methods (`server.Handle` and `server.Stream` of the Go SDK, `createApi` of `@numen/plugin-sdk`).
+
+**(e) Code may be duplicated between plugins.** Code that several plugins use may be copied into each of them. No check pushes code into the SDK or `@numen/ui`; a check that does so is wrong and is corrected.
+
+**(f) Who may use `@numen/protocol` and `@numen/core-client`.** Plugins rely on the SDK and `@numen/ui`. `@numen/core-client` and the protocol are for the windows and the SDK:
+
+- Only `@numen/plugin-sdk` and `@numen/core-client` import or declare `@numen/protocol`. The package matrix gives `@numen/core-client` the row `[@numen/protocol]` and `@numen/plugin-host` the row `[@numen/plugin-sdk, @numen/core-client]`.
+- `@numen/core-client` is private. Applications (`apps/*`) and the plugin host (`libs/plugin-host-ts`) use it; no plugin does.
 - `libs/plugin-manager` is a component library. It depends on `@numen/ui` only, takes data by props and emits events. It owns the view-model logic (filters, query parsing, states) and declares a port interface for the gateway; the application implements the gateway.
 
-**(e) The core knows no plugin by name.** Plugins are discovered through their manifests. A manifest declares what it contributes (`contributes`: `tabKinds`, `settingsViews`, `statusViews`, `themes`, `readers`, and the rest listed in `docs/plugins/README.md`). A plugin id appears nowhere in `libs/core`, `apps/*` or `libs/ui`. The plugin index is generated from the manifests at build time.
+**(g) The core knows no plugin by name.** Plugins are discovered through their manifests. A manifest declares what it contributes (`contributes`: `tabKinds`, `settingsViews`, `statusViews`, `themes`, `readers`, and the rest listed in `docs/plugins/README.md`). A plugin id appears nowhere in `libs/core`, `apps/*` or `libs/ui`. The plugin index is generated from the manifests at build time.
 
-**(f) The kernel keeps defaults only.** The kernel keeps the default theme, the effective search floor and its default value. Calibration, update checks and preset themes are plugins.
+**(h) The kernel keeps defaults only.** The kernel keeps the default theme, the effective search floor and its default value. Calibration, update checks and preset themes are plugins.
 
-**(g) Time, randomness and identifiers are ports.** There is one sanctioned clock per language. In Go it is a method `Now() time.Time` that implements a declared clock port. In TypeScript it is `getNow()`. The structural checks in §5 enforce this.
+**(i) Time, randomness and identifiers are ports.** Logic that depends on time takes a clock as a port, so a test controls the time. In Go a plugin takes the clock of the SDK package `clock` or declares its own; the check in §5 accepts a read of the machine clock inside any method `Now() time.Time` that implements a declared clock port. In TypeScript the time comes from `getNow()` of `@numen/ui` or from an injected clock.
+
+**(j) Nothing is published for now.** The SDK, `@numen/ui` and `libs/notes` are built inside this repository. Each plugin is built as if it had a repository of its own (`plugins-standalone-repo`). Later, when the SDK is released: publishing of the SDK and `@numen/ui`, tooling for API compatibility, and iframe isolation of plugin frontends.
 
 ### Comparison with established architectures
 
-- **Clean Architecture dependency rule.** Source code dependencies point inward. Here the plugins are the outermost ring. The SDK is the published interface between the core and the plugins. The core loads plugins by manifest and never imports them. Composition roots (`libs/core/container`, the application entry points) wire the concrete parts together.
-- **VS Code extension API.** VS Code exposes a curated, stable API surface and runs extensions in a separate extension host process. New API is added through a deliberate review. The equivalent rule here: every SDK export needs a plugin that uses it, and each plugin runs as its own process.
+- **Clean Architecture dependency rule.** Source code dependencies point inward. Here the plugins are the outermost ring. The SDK is the interface between the core and the plugins. The core loads plugins by manifest and never imports them. Composition roots (`libs/core/container`, the application entry points) wire the concrete parts together.
+- **VS Code extension API.** VS Code exposes a curated API surface and runs extensions in a separate extension host process. New API is added through a deliberate review. The equivalent rule here: every SDK export needs a plugin that uses it, and each plugin backend runs as its own process.
 
 The VS Code points come from its public documentation, and the Clean Architecture points from the book and its commentary. Both are secondary sources for this repository; the rules above are binding, the comparison is context.
 
 ### Why duplication
 
-Plugins are independent deployables in separate repositories. A shared implementation library couples their release cycles and their dependencies: a change for one plugin forces a rebuild and a re-test of every other plugin that imports it. A copy changes with its plugin only. The cost of a copy is bounded by the plugin; the cost of shared-code coupling grows with every plugin added.
+A shared implementation library couples the plugins that use it: a change for one plugin forces a rebuild and a re-test of every other plugin that imports it. A copy changes with its plugin only. The cost of a copy is bounded by the plugin; the cost of shared-code coupling grows with every plugin added.

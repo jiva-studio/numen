@@ -354,13 +354,20 @@ To prevent linguistic contagion and degraded code readability, pseudo-literary p
 
 ## 15. Rules for agents learned from review
 
-1. Never add to the plugin SDK what no plugin uses. Every SDK export has a plugin that imports it.
-2. Never propose a third shared library for plugins. Plugins depend on the SDK and `@numen/ui` only.
-3. Prefer duplicating implementation code between plugins over moving it into the SDK.
-4. Never add or keep a check that forces code into a shared library without checking it against the plugin boundary rules in [`.agents/rules/architecture.md`](.agents/rules/architecture.md) §11.
-5. Checks never get weaker: no exclusion, no workaround that dodges a rule (such as obtaining the time through `time.After(0)`), and no name lists in checks. Derive sets from structure.
-6. Tell the owner a design decision before writing it into a plan file or implementing it. Do not present a guess as agreed.
-7. Do the work first. Run the heavy checks (full lint-layers, tests across modules, linters) once at the end.
-8. Commit messages carry no `Co-Authored-By` line and no session trailer.
-9. Write comments and docs in plain technical English (§1, §13).
-10. Lint checks decide by structure: import specifiers and the dependency graph, `package.json` and `go.mod` data, directory layout, syntax trees and type information, ESLint rules, or schema shape. A check never decides by a regular expression over source text, a list of names or a list of files ([`.agents/rules/architecture.md`](.agents/rules/architecture.md) §10).
+The plugin model is [`.agents/rules/architecture.md`](.agents/rules/architecture.md) §11.
+
+1. A window (editor, flashcards, mobile) reaches the core only through `@numen/core-client`. A plugin frontend reaches it only through `@numen/plugin-sdk`, a plugin backend only through `libs/plugin-sdk-go`. The core routes every call; windows and plugins never call each other directly.
+2. A plugin depends on the SDK and third-party code, and its frontend also on `@numen/ui`. Never add a direct import or require of `libs/notes`, `libs/protocol`, `@numen/core-client`, `@connectrpc` or another library to a plugin. `// indirect` lines in a plugin's `go.mod` come from the SDK and are allowed.
+3. Never add to the plugin SDK what no plugin uses. Every SDK export has a plugin that imports it. Never propose a third shared library for plugins.
+4. An SDK type may be an alias of a `libs/notes` type. Each type has one name; never add a second set of names.
+5. A plugin has no `.proto` file and no protobuf code. Its backend answers its frontend with JSON methods. A plugin's own service is named after its plugin id; shared services such as `numen.v1.AgentService` are declared by the core.
+6. Code may be duplicated between plugins. Never add or keep a check that pushes code into the SDK or `@numen/ui`.
+7. Logic that depends on time takes a clock as a port. A plugin takes the SDK clock or declares its own.
+8. Size and complexity limits are rules, with one set for Go, TypeScript and Vue ([`.agents/rules/architecture.md`](.agents/rules/architecture.md) §8).
+9. Nothing is published for now. Publishing, API compatibility tooling and iframe isolation come later, when the SDK is released.
+10. Checks are structural. Use an off-the-shelf tool with configuration where one exists (dependency-cruiser, depguard and gomodguard, golangci-lint linters, stylelint). Write a check by hand only over syntax trees, import graphs and type information. A check never decides by a regular expression over source text, a list of names or a list of files ([`.agents/rules/architecture.md`](.agents/rules/architecture.md) §10).
+11. Checks never get weaker: no exclusion and no workaround that dodges a rule (such as obtaining the time through `time.After(0)`). Derive sets from structure.
+12. Tell the owner a design decision before writing it into a plan file or implementing it. Do not present a guess as agreed.
+13. Do the work first. Run the heavy checks (full lint-layers, tests across modules, linters) once at the end.
+14. Commit messages carry no `Co-Authored-By` line and no session trailer.
+15. Write comments and docs in plain technical English (§1, §13).

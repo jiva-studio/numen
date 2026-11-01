@@ -12,9 +12,10 @@ import (
 // the packages it constructs.
 type System struct{}
 
-// Now gets the current wall-clock time. This is the only read of the machine
-// clock in the workspace; TestTheMachineClockIsReadOnlyByAClockPortImplementation
-// enforces it.
+// Now gets the current wall-clock time. A plugin may take this clock or
+// declare its own; TestTheMachineClockIsReadOnlyByAClockPortImplementation
+// accepts a read of the machine clock only inside a method that implements a
+// clock port.
 func (System) Now() time.Time {
 	return time.Now()
 }
