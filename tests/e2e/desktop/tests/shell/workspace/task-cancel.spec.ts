@@ -52,9 +52,14 @@ test.describe('Cancelling a background task', () => {
     await page.goto('/')
     const trigger = page.locator('.status-bar__trigger')
     await expect(trigger).toBeVisible()
-    await expect(page.locator('.status-bar__badge--alarm')).toHaveText(/^1 failed$/, {
-      timeout: 120_000,
-    })
+    // The failed tasks are read from the popover, so a second failure is named in the report.
+    const readFailedTasks = async (): Promise<string[]> => {
+      await trigger.click()
+      const failed = await page.locator('.task-item--failed').allTextContents()
+      await page.keyboard.press('Escape')
+      return failed.map((text) => text.replace(/\s+/g, ' ').trim())
+    }
+    await expect.poll(readFailedTasks, { timeout: 120_000 }).toHaveLength(1)
     await expect.poll(() => isIndexed(request), { timeout: 120_000 }).toBe(true)
     await expect(page.locator('.status-bar__summary')).not.toHaveText(/^[1-9]\d* active$/)
 
