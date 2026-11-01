@@ -938,14 +938,16 @@ type ManifestSetting struct {
 	Palette     bool                   `protobuf:"varint,6,opt,name=palette,proto3" json:"palette,omitempty"`
 	Icon        string                 `protobuf:"bytes,7,opt,name=icon,proto3" json:"icon,omitempty"`
 	// options is a JSON list of options.
-	Options       *structpb.ListValue `protobuf:"bytes,8,opt,name=options,proto3" json:"options,omitempty"`
-	Min           *float64            `protobuf:"fixed64,9,opt,name=min,proto3,oneof" json:"min,omitempty"`
-	Max           *float64            `protobuf:"fixed64,10,opt,name=max,proto3,oneof" json:"max,omitempty"`
-	Step          *float64            `protobuf:"fixed64,11,opt,name=step,proto3,oneof" json:"step,omitempty"`
-	Replaces      []string            `protobuf:"bytes,13,rep,name=replaces,proto3" json:"replaces,omitempty"`
-	OptionsBy     *ManifestOptionsBy  `protobuf:"bytes,14,opt,name=options_by,json=optionsBy,proto3" json:"options_by,omitempty"`
-	When          *ManifestCondition  `protobuf:"bytes,15,opt,name=when,proto3" json:"when,omitempty"`
-	Accept        []string            `protobuf:"bytes,16,rep,name=accept,proto3" json:"accept,omitempty"`
+	Options   *structpb.ListValue `protobuf:"bytes,8,opt,name=options,proto3" json:"options,omitempty"`
+	Min       *float64            `protobuf:"fixed64,9,opt,name=min,proto3,oneof" json:"min,omitempty"`
+	Max       *float64            `protobuf:"fixed64,10,opt,name=max,proto3,oneof" json:"max,omitempty"`
+	Step      *float64            `protobuf:"fixed64,11,opt,name=step,proto3,oneof" json:"step,omitempty"`
+	Replaces  []string            `protobuf:"bytes,13,rep,name=replaces,proto3" json:"replaces,omitempty"`
+	OptionsBy *ManifestOptionsBy  `protobuf:"bytes,14,opt,name=options_by,json=optionsBy,proto3" json:"options_by,omitempty"`
+	When      *ManifestCondition  `protobuf:"bytes,15,opt,name=when,proto3" json:"when,omitempty"`
+	Accept    []string            `protobuf:"bytes,16,rep,name=accept,proto3" json:"accept,omitempty"`
+	// multiple makes a file setting hold a list of paths, one per line.
+	Multiple      bool `protobuf:"varint,17,opt,name=multiple,proto3" json:"multiple,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1083,6 +1085,13 @@ func (x *ManifestSetting) GetAccept() []string {
 		return x.Accept
 	}
 	return nil
+}
+
+func (x *ManifestSetting) GetMultiple() bool {
+	if x != nil {
+		return x.Multiple
+	}
+	return false
 }
 
 type ManifestSecret struct {
@@ -1661,7 +1670,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1a.google.protobuf.ListValueR\x05value:\x028\x01\"=\n" +
 	"\x11ManifestCondition\x12\x18\n" +
 	"\asetting\x18\x01 \x01(\tR\asetting\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\x97\x04\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\xb3\x04\n" +
 	"\x0fManifestSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -1679,7 +1688,8 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\n" +
 	"options_by\x18\x0e \x01(\v2\x1b.numen.v1.ManifestOptionsByR\toptionsBy\x12/\n" +
 	"\x04when\x18\x0f \x01(\v2\x1b.numen.v1.ManifestConditionR\x04when\x12\x16\n" +
-	"\x06accept\x18\x10 \x03(\tR\x06acceptB\x06\n" +
+	"\x06accept\x18\x10 \x03(\tR\x06accept\x12\x1a\n" +
+	"\bmultiple\x18\x11 \x01(\bR\bmultipleB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
 	"\x05_stepJ\x04\b\f\x10\rR\tmodels_of\"\x8d\x01\n" +

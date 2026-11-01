@@ -531,7 +531,7 @@ describe('PluginDetail with settings that follow one another', () => {
     })
   })
 
-  it('hides the path label when no path is chosen and supports multiple paths', async () => {
+  it('hides the path label when no path is chosen and lists each path of a multiple setting', async () => {
     const emptyDetail = createDetail(LINKED)
     const emptyRow = findRow(emptyDetail.wrapper, 'dictionary')!
     expect(emptyRow.find('[data-testid="setting-path"]').exists()).toBe(false)
@@ -540,9 +540,10 @@ describe('PluginDetail with settings that follow one another', () => {
       ...createPluginInfo('test.acp', 'ACP Agents'),
       settings: [
         {
-          key: 'executable_path',
+          key: 'programs',
           type: 'file',
-          title: 'Executable Paths',
+          multiple: true,
+          title: 'Programs',
           description: '',
           default: '/usr/local/bin/gemini\n/usr/local/bin/opencode',
         },
@@ -560,11 +561,64 @@ describe('PluginDetail with settings that follow one another', () => {
     expect(acpClearButtons).toHaveLength(2)
     await acpClearButtons[0]!.trigger('click')
     expect(acpDetail.recordedWrites).toContainEqual({
-      at: ['plugins', 'test.acp', 'executable_path'],
+      at: ['plugins', 'test.acp', 'programs'],
       value: '"/usr/local/bin/opencode"',
     })
     const addButton = acpRow.findAll('button').find((btn) => btn.text() === words.pathAdd)
     expect(addButton).toBeDefined()
+  })
+
+  const createPathPlugin = (multiple: boolean): PluginInfo => ({
+    ...createPluginInfo('test.paths', 'Paths'),
+    settings: [
+      {
+        key: 'executable_path',
+        type: 'file',
+        ...(multiple ? { multiple: true } : {}),
+        title: 'Executable Paths',
+        description: '',
+        default: '',
+      },
+    ],
+  })
+
+  it('draws a file setting that is not multiple as one path, whatever its title and key', () => {
+    const { wrapper } = createDetail(createPathPlugin(false), {
+      plugins: { 'test.paths': { executable_path: '/opt/one\n/opt/two' } },
+    })
+    const row = wrapper.findAllComponents(SettingRow)[0]!
+
+    expect(row.findAll('[data-testid="setting-path"]')).toHaveLength(1)
+    expect(row.findAll('button').map((btn) => btn.text())).not.toContain(words.pathAdd)
+  })
+
+  /** Chooses /opt/two in the picker, which the host stores in place of the setting's value. */
+  const chooseSecondPath = async (multiple: boolean) => {
+    const stored = { executable_path: '/opt/one' }
+    const detail = createDetail(createPathPlugin(multiple), { plugins: { 'test.paths': stored } })
+    detail.installation.choosePath = vi.fn(async () => {
+      stored.executable_path = '/opt/two'
+      return ''
+    })
+    const row = detail.wrapper.findAllComponents(SettingRow)[0]!
+    const label = multiple ? words.pathAdd : words.pathChoose
+    await row
+      .findAll('button')
+      .find((btn) => btn.text() === label)!
+      .trigger('click')
+    await flushPromises()
+    return detail.recordedWrites
+  }
+
+  it('adds the chosen path to the paths a multiple setting holds', async () => {
+    expect(await chooseSecondPath(true)).toContainEqual({
+      at: ['plugins', 'test.paths', 'executable_path'],
+      value: '"/opt/one\\n/opt/two"',
+    })
+  })
+
+  it('replaces the path of a setting that is not multiple', async () => {
+    expect(await chooseSecondPath(false)).toStrictEqual([])
   })
 })
 

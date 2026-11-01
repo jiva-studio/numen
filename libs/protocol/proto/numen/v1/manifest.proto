@@ -169,6 +169,8 @@ message ManifestSetting {
   ManifestOptionsBy options_by = 14;
   ManifestCondition when = 15;
   repeated string accept = 16;
+  // multiple makes a file setting hold a list of paths, one per line.
+  bool multiple = 17;
 }
 
 message ManifestSecret {

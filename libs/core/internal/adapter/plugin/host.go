@@ -1452,6 +1452,7 @@ func toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []plu
 			OptionsBy:   s.OptionsBy,
 			When:        s.When,
 			Accept:      s.Accept,
+			Multiple:    s.Multiple,
 		})
 	}
 	return settings

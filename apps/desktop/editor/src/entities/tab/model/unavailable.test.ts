@@ -6,7 +6,9 @@ import {
   createMockPluginCatalog,
   type MockCatalogEntryOptions,
 } from '@numen/core-client/testing'
+import { createDeferred } from '@/testing/deferred'
 import { createUnavailableKind, type UnavailableServices } from './unavailable'
+import { getUnavailableView } from './unavailableView'
 
 const notesOptions: MockCatalogEntryOptions = {
   name: 'Notes',
@@ -177,5 +179,80 @@ describe('the pane of a tab no plugin in the catalog provides', () => {
     const view = await mountPane({})
 
     expect(view.text()).toContain('Plugin unavailable')
+  })
+})
+
+describe('getUnavailableView', () => {
+  it('has no view while the catalog has not answered', () => {
+    expect(getUnavailableView({ status: 'pending' }, false)).toBeUndefined()
+  })
+
+  it('names no plugin for a kind the catalog does not know', () => {
+    expect(getUnavailableView({ status: 'missing' }, false)).toMatchObject({
+      heading: 'Plugin unavailable',
+      pluginId: undefined,
+    })
+  })
+})
+
+describe('the pane while the catalog has not answered', () => {
+  /** A catalog whose answer about a kind waits until the test opens the gate. */
+  const createSlowServices = () => {
+    const gate = createDeferred<void>()
+    const catalog = createMockPluginCatalog([createMockCatalogEntry('sample.notes', notesOptions)])
+    const services: UnavailableServices = {
+      catalog: {
+        ...catalog,
+        findByTabKind: async (kind) => {
+          await gate.promise
+          return catalog.findByTabKind(kind)
+        },
+      },
+    }
+    return { gate, services }
+  }
+
+  it('shows the loading state and no placeholder text until the answer arrives', async () => {
+    const { gate, services } = createSlowServices()
+    const kind = createUnavailableKind('reader:viewer', undefined, services)
+    const host = document.createElement('div')
+    document.body.append(host)
+    const texts: string[] = []
+    const observer = new MutationObserver(() => texts.push(host.textContent ?? ''))
+    observer.observe(host, { childList: true, subtree: true, characterData: true })
+    const view = mount(kind.pane, {
+      props: { state: kind.open('cards/Place.md', 'tab') },
+      attachTo: host,
+    })
+    await flushPromises()
+
+    expect(view.find('[aria-busy="true"]').exists()).toBe(true)
+    expect(view.find('h3').exists()).toBe(false)
+    expect(view.find('button').exists()).toBe(false)
+
+    gate.answer()
+    await flushPromises()
+    observer.disconnect()
+
+    expect(view.find('h3').text()).toBe('Plugin disabled')
+    expect(view.find('button').text()).toBe('Enable Notes')
+    expect(texts.length).toBeGreaterThan(0)
+    expect(texts.filter((text) => text.includes('Plugin unavailable'))).toStrictEqual([])
+    expect(texts.filter((text) => text.includes('Open Settings'))).toStrictEqual([])
+    view.unmount()
+    host.remove()
+  })
+
+  it('shows the missing-plugin text when the lookup fails', async () => {
+    const services: UnavailableServices = {
+      catalog: {
+        ...createMockPluginCatalog(),
+        findByTabKind: () => Promise.reject(new Error('core gone')),
+      },
+    }
+
+    const view = await mountPane(services)
+
+    expect(view.find('h3').text()).toBe('Plugin unavailable')
   })
 })

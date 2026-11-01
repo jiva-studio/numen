@@ -122,6 +122,7 @@ export const settingsCore: SettingsPort = {
               : undefined,
             when: readCondition(s.when),
             accept: s.accept,
+            ...(s.multiple ? { multiple: true } : {}),
             min: s.min,
             max: s.max,
             step: s.step,

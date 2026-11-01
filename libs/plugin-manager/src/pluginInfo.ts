@@ -50,6 +50,8 @@ export interface PluginSettingInfo {
   readonly when?: PluginSettingCondition | undefined
   /** The file extensions a setting of type file takes, each with its leading dot. Empty takes any file. */
   readonly accept?: readonly string[] | undefined
+  /** Whether a setting of type file holds a list of paths, one per line. */
+  readonly multiple?: boolean | undefined
   readonly min?: number | undefined
   readonly max?: number | undefined
   readonly step?: number | undefined

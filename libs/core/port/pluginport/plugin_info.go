@@ -16,10 +16,11 @@ type PluginSetting struct {
 	// Replaces are the places in the settings file the setting was kept before the plugin took it
 	// over, as the keys that lead to each joined by dots.
 	Replaces []string
-	// OptionsBy, When and Accept are as the manifest declares them.
+	// OptionsBy, When, Accept and Multiple are as the manifest declares them.
 	OptionsBy *PluginSettingOptionsBy
 	When      *PluginSettingCondition
 	Accept    []string
+	Multiple  bool
 }
 
 // PluginInfo describes a discovered plugin and its declarative settings.

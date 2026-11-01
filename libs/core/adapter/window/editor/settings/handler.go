@@ -141,6 +141,7 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 				OptionsBy:   newWireOptionsBy(s.OptionsBy),
 				When:        newWireCondition(s.When),
 				Accept:      s.Accept,
+				Multiple:    s.Multiple,
 			})
 		}
 		infos = append(infos, &v1.PluginInfo{

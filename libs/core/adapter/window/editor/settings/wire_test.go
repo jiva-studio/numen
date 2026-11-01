@@ -32,3 +32,18 @@ func TestNewWirePluginInfos_CarriesSettingsViews(t *testing.T) {
 		t.Errorf("the settings views carry %v", got)
 	}
 }
+
+func TestNewWirePluginInfos_CarriesMultiple(t *testing.T) {
+	wire := NewWirePluginInfos([]setting.PluginInfo{{
+		ID: "a.b",
+		Settings: []setting.PluginSetting{
+			{Key: "programs", Type: "file", Multiple: true},
+			{Key: "dictionary", Type: "file"},
+		},
+	}})
+
+	got := wire[0].GetSettings()
+	if !got[0].GetMultiple() || got[1].GetMultiple() {
+		t.Errorf("the settings carry %v and %v", got[0], got[1])
+	}
+}

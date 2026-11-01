@@ -60,6 +60,8 @@ message PluginSetting {
   repeated string accept = 14;
   // The icon the setting shows in the palette, by its Lucide name. Empty shows the default setting icon.
   string icon = 15;
+  // Whether a setting of type file holds a list of paths, one per line.
+  bool multiple = 16;
 }
 
 // PluginSettingOption is one value an enum setting can hold.

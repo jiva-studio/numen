@@ -223,6 +223,7 @@ func newSettings(wire []*v1.ManifestSetting) ([]manifest.Setting, error) {
 			OptionsBy:   optionsBy,
 			When:        newCondition(one.GetWhen()),
 			Accept:      one.GetAccept(),
+			Multiple:    one.GetMultiple(),
 		})
 	}
 	return out, nil

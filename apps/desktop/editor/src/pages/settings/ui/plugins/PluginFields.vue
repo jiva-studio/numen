@@ -46,7 +46,7 @@ async function onPathChoose(setting: PluginSettingInfo): Promise<void> {
   const previous = getStringSetting(setting.key, setting.default)
   const problem = await installation.value.choosePath(props.plugin.id, setting.key)
   pathProblems.value = { ...pathProblems.value, [setting.key]: problem }
-  if (problem === '' && previous !== '' && setting.key === 'executable_path') {
+  if (problem === '' && previous !== '' && hasManyPaths(setting)) {
     onSettingChange(setting.key, appendPathEntry(previous, getStringSetting(setting.key, '')))
   }
 }
@@ -66,6 +66,10 @@ function onSecretDelete(name: string): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
+function hasManyPaths(setting: PluginSettingInfo): boolean {
+  return setting.type === 'file' && setting.multiple === true
+}
+
 function readSetting(key: string): unknown {
   return installation.value.getSetting(['plugins', props.plugin.id, key])
 }
@@ -169,7 +173,7 @@ function getStringSetting(key: string, fallback: unknown): string {
         :path="getStringSetting(setting.key, setting.default)"
         :problem="pathProblems[setting.key] ?? ''"
         :labelled-by="labelledBy"
-        :is-multi="setting.title === 'Executable Paths'"
+        :is-multi="hasManyPaths(setting)"
         :words="words"
         @choose="onPathChoose(setting)"
         @clear="(targetPath) => onPathClear(setting, targetPath)"
@@ -259,7 +263,7 @@ function getStringSetting(key: string, fallback: unknown): string {
   block-size: var(--numen-action-size);
   padding: 0.25rem 0.625rem;
   background-color: var(--numen-field-bg);
-  border: var(--numen-stroke) solid var(--numen-field-rule);
+  border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius);
   color: var(--numen-ink);
   font-family: inherit;

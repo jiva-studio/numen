@@ -14,7 +14,7 @@ export interface UnavailableView {
   readonly pluginId: string | undefined
 }
 
-const GENERIC: UnavailableView = {
+const MISSING: UnavailableView = {
   heading: 'Plugin unavailable',
   message: 'The plugin for this tab is disabled or missing.',
   action: 'inspect',
@@ -61,12 +61,16 @@ const createNotRunning = (entry: CatalogEntry, feature: string): UnavailableView
   pluginId: entry.id,
 })
 
-/** What the placeholder of a tab says, read from the catalog entry of the plugin that provides its kind. */
-export function describeUnavailable(
+/**
+ * What the placeholder of a tab says, read from the catalog entry of the plugin that provides its
+ * kind. A lookup the catalog has not answered has no view.
+ */
+export function getUnavailableView(
   lookup: UnavailableLookup,
   isEnabling: boolean,
-): UnavailableView {
-  if (lookup.status !== 'found') return GENERIC
+): UnavailableView | undefined {
+  if (lookup.status === 'pending') return undefined
+  if (lookup.status === 'missing') return MISSING
   const { entry } = lookup
   if (isIncompatible(entry)) return createIncompatible(entry)
   const feature = entry.contributes?.feature || entry.name

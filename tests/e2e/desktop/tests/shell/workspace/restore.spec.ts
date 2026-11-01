@@ -93,6 +93,49 @@ test.describe('The tabs of the window after a restart', () => {
     await page.getByRole('tab', { name: /shore/i }).click()
     await expect(getPageField(page, /shore/i)).toHaveValue('2')
   })
+
+  test('show only the disabled text on a restored tab of a disabled plugin, and enable it from there', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      const texts: string[] = []
+      Object.assign(window, { placeholderTexts: texts })
+      const record = () => {
+        for (const one of document.querySelectorAll('.tab-unavailable h3, .tab-unavailable p')) {
+          const text = one.textContent?.trim() ?? ''
+          if (text !== '' && !texts.includes(text)) texts.push(text)
+        }
+      }
+      new MutationObserver(record).observe(document, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      })
+    })
+    await openWorkspace(page)
+    await openVaultFile(page, 'assets', 'shore.pdf')
+    await expect(getPageField(page, /shore/i)).toHaveValue('1')
+    await setPdfReaderEnabled(page, false)
+    await page.getByRole('tab', { name: /shore/i }).click()
+
+    await page.reload()
+
+    const panel = page.getByRole('tabpanel', { name: /shore/i })
+    await expect(panel.getByRole('heading', { name: 'Plugin disabled' })).toBeVisible()
+    const placeholderTexts = await page.evaluate(
+      () => (window as unknown as { placeholderTexts: string[] }).placeholderTexts,
+    )
+    expect(placeholderTexts).toStrictEqual([
+      'Plugin disabled',
+      'The plugin for PDF documents is disabled.',
+    ])
+
+    const enable = panel.getByRole('button', { name: 'Enable PDF Reader' })
+    await expect(enable).toHaveAttribute('data-slot', 'button')
+    await enable.click()
+
+    await expect(getPageField(page, /shore/i)).toHaveValue('1')
+  })
 })
 
 test.describe('A search hit in a PDF', () => {

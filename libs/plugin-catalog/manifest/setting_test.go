@@ -168,6 +168,7 @@ func TestTheValidatorRejectsLinksThatLeadNowhere(t *testing.T) {
 		"an option of no dependency": `{"key":"a","type":"enum","title":"A","options":[{"value":"x","dependencies":["none"]}]}`,
 		"extensions of a string":     `{"key":"a","type":"string","title":"A","accept":[".txt"]}`,
 		"an extension with no dot":   `{"key":"a","type":"file","title":"A","accept":["txt"]}`,
+		"several paths of a string":  `{"key":"a","type":"string","title":"A","multiple":true}`,
 	} {
 		_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","settings":[` + settings + `]}`))
 		if !errors.Is(err, ErrInvalidSetting) {

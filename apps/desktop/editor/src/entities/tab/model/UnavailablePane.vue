@@ -1,13 +1,15 @@
 <script setup lang="ts">
 /**
  * Placeholder displayed when a tab's kind belongs to a disabled, stopped or missing plugin. The
- * plugin's name, feature and state come from the catalog.
+ * plugin's name, feature and state come from the catalog; until the catalog answers, the pane shows
+ * the loading state.
  */
 import { computed, ref } from 'vue'
-import { runInBackground } from '@numen/ui'
+import { TriangleAlert } from '@lucide/vue'
+import { Button, LoadingIndicator, runInBackground } from '@numen/ui'
 import { formatErrorMessage } from '@numen/core-client'
 import type { UnavailableState } from './unavailable'
-import { describeUnavailable } from './unavailableView'
+import { getUnavailableView, type UnavailableView } from './unavailableView'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -17,11 +19,11 @@ const props = defineProps<{
 /* --------------------------------- State ---------------------------------- */
 const isEnabling = ref(false)
 const problem = ref('')
-const view = computed(() => describeUnavailable(props.state.lookup.value, isEnabling.value))
+const view = computed(() => getUnavailableView(props.state.lookup.value, isEnabling.value))
 
 /* -------------------------------- Handlers -------------------------------- */
-function onAct(): void {
-  const { pluginId, action } = view.value
+function onAct(target: UnavailableView): void {
+  const { pluginId, action } = target
   const { services } = props.state
   if (action === 'enable' && pluginId !== undefined && services.enablePlugin) {
     isEnabling.value = true
@@ -37,15 +39,21 @@ function onAct(): void {
 </script>
 
 <template>
-  <div class="tab-unavailable" role="status">
+  <LoadingIndicator v-if="view === undefined" />
+  <div v-else class="tab-unavailable" role="status">
     <div class="tab-unavailable__content">
-      <div class="tab-unavailable__icon" aria-hidden="true">&#9888;</div>
+      <TriangleAlert class="tab-unavailable__icon" aria-hidden="true" />
       <h3 class="tab-unavailable__title">{{ view.heading }}</h3>
       <p class="tab-unavailable__message">{{ view.message }}</p>
       <p v-if="problem" class="tab-unavailable__message" role="alert">{{ problem }}</p>
-      <button type="button" class="tab-unavailable__button" :disabled="isEnabling" @click="onAct">
+      <Button
+        class="tab-unavailable__action"
+        :disabled="isEnabling"
+        :aria-busy="isEnabling"
+        @click="onAct(view)"
+      >
         {{ view.actionText }}
-      </button>
+      </Button>
     </div>
   </div>
 </template>
@@ -70,10 +78,10 @@ function onAct(): void {
 }
 
 .tab-unavailable__icon {
-  font-size: 2.5rem;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
   margin-block-end: 0.75rem;
-  line-height: 1;
-  color: var(--numen-warning);
+  color: var(--numen-caution-fg);
 }
 
 .tab-unavailable__title {
@@ -90,25 +98,7 @@ function onAct(): void {
   line-height: 1.4;
 }
 
-.tab-unavailable__button {
+.tab-unavailable__action {
   margin-block-start: 0.5rem;
-  padding: 0.5rem 1.25rem;
-  font-size: var(--numen-text-2);
-  font-family: inherit;
-  font-weight: 500;
-  border-radius: var(--numen-radius-tight);
-  border: var(--numen-stroke) solid var(--numen-rule);
-  background: var(--numen-surface);
-  color: var(--numen-ink);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.tab-unavailable__button:hover {
-  background-color: var(--numen-surface-hover);
-}
-
-.tab-unavailable__button:active {
-  background-color: var(--numen-surface-active);
 }
 </style>

@@ -151,6 +151,8 @@ type Setting struct {
 	// Accept are the file extensions a setting of type file takes, each with its leading dot. Empty
 	// takes any file.
 	Accept []string
+	// Multiple is a setting of type file that holds a list of paths, one per line.
+	Multiple bool
 }
 
 // Manifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.
@@ -492,14 +494,18 @@ func listManifestSettingIssue(s Setting, key string) []error {
 	if s.Type == "range" && s.Min != nil && s.Max != nil && *s.Min > *s.Max {
 		issues = append(issues, fmt.Errorf("%w: %s", ErrRangeInvalidBounds, key))
 	}
-	return append(issues, listAcceptIssues(s, key)...)
+	return append(issues, listFileSettingIssues(s, key)...)
 }
 
-// listAcceptIssues checks that only a file setting accepts extensions, each with its leading dot.
-func listAcceptIssues(s Setting, key string) []error {
+// listFileSettingIssues checks that only a file setting accepts extensions, each with its leading dot,
+// or holds several paths.
+func listFileSettingIssues(s Setting, key string) []error {
 	var issues []error
 	if len(s.Accept) > 0 && s.Type != SettingTypeFile {
 		issues = append(issues, fmt.Errorf("%w: %s accepts extensions and holds no file", ErrInvalidSetting, key))
+	}
+	if s.Multiple && s.Type != SettingTypeFile {
+		issues = append(issues, fmt.Errorf("%w: %s holds several paths and is no file setting", ErrInvalidSetting, key))
 	}
 	for _, extension := range s.Accept {
 		if len(extension) < 2 || !strings.HasPrefix(extension, ".") {
