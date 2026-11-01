@@ -42,6 +42,7 @@ func Open(ctx context.Context, library *onnx.Library, cfg Config) (*Recogniser, 
 		Threads:  cfg.threads(),
 
 		ComputeUnits: onnx.ComputeUnitsDefault,
+		ModelPath:    found.layout,
 	})
 	if err != nil {
 		return nil, err

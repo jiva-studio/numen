@@ -5,6 +5,7 @@ go 1.26.9
 require (
 	github.com/jiva-studio/numen/libs/plugin-sdk-go v0.0.0
 	github.com/jiva-studio/numen/libs/plugin-sdk-go/host v0.0.0
+	github.com/jiva-studio/numen/libs/plugin-sdk-go/wasm v0.0.0
 	github.com/klippa-app/go-pdfium v1.21.3
 	github.com/tetratelabs/wazero v1.12.0
 )

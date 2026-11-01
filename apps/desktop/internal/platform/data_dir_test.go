@@ -1,6 +1,7 @@
 package platform
 
 import (
+	"errors"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -48,5 +49,30 @@ func TestGetConfigNamesTheIndexInTheDataFolder(t *testing.T) {
 	t.Setenv("XDG_DATA_HOME", data)
 	if got, want := GetConfig().IndexPath, filepath.Join(data, "numen", "index.db"); got != want {
 		t.Errorf("index path %q, want %q", got, want)
+	}
+}
+
+func TestStorageRootsAreUnderTheCacheAndDataFolders(t *testing.T) {
+	cache := func() (string, error) { return "/cache", nil }
+	home := func() (string, error) { return "/home/user", nil }
+	env := func(string) string { return "" }
+
+	cacheRoot, dataRoot := getStorageRoots("linux", env, cache, home)
+
+	if want := "/cache/numen/plugin-storage"; cacheRoot != want {
+		t.Errorf("cache root %q, want %q", cacheRoot, want)
+	}
+	if want := "/home/user/.local/share/numen/plugin-storage"; dataRoot != want {
+		t.Errorf("data root %q, want %q", dataRoot, want)
+	}
+}
+
+func TestAFolderTheMachineDoesNotProvideLeavesItsRootEmpty(t *testing.T) {
+	fail := func() (string, error) { return "", errors.New("no folder") }
+
+	cacheRoot, dataRoot := getStorageRoots("linux", func(string) string { return "" }, fail, fail)
+
+	if cacheRoot != "" || dataRoot != "" {
+		t.Errorf("roots %q and %q, want both empty", cacheRoot, dataRoot)
 	}
 }

@@ -124,7 +124,7 @@ type Config struct {
 func NewPluginHost(target string, dirs ...string) *plugin.Host {
 	host := plugin.NewHost(clock.System{}, target, dirs...)
 	host.SetContentTypeTable(sharedmimeinfo.Open())
-	host.SetDependencies(newDependencies())
+	host.SetDependencies(newDependencies(""))
 	if err := host.Discover(); err != nil {
 		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", err)
 	}

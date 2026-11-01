@@ -18,7 +18,6 @@ import (
 type Option func(*config)
 
 type config struct {
-	pluginID       string
 	dir            string
 	ttl            time.Duration
 	failureBackoff time.Duration
@@ -32,11 +31,6 @@ type config struct {
 // WithErrorHandler sets the function that receives background and disk persistence errors.
 func WithErrorHandler(handler func(error)) Option {
 	return func(c *config) { c.onError = handler }
-}
-
-// WithPluginID sets the plugin identifier that locates the disk cache directory.
-func WithPluginID(id string) Option {
-	return func(c *config) { c.pluginID = id }
 }
 
 // WithDir sets an explicit directory for disk cache files.
@@ -95,7 +89,6 @@ type Cache[V any] struct {
 	mu             sync.Mutex
 	diskMu         sync.Mutex
 	name           string
-	pluginID       string
 	dir            string
 	ttl            time.Duration
 	failureBackoff time.Duration
@@ -123,7 +116,6 @@ func New[V any](name string, opts ...Option) *Cache[V] {
 	}
 	return &Cache[V]{
 		name:           name,
-		pluginID:       cfg.pluginID,
 		dir:            cfg.dir,
 		ttl:            cfg.ttl,
 		failureBackoff: cfg.failureBackoff,
@@ -420,39 +412,70 @@ func (c *Cache[V]) cachePath() (string, error) {
 	if c.dir != "" {
 		return filepath.Join(c.dir, c.name+".json"), nil
 	}
-	dir, err := GetPluginDir(c.pluginID)
+	dir, err := GetPluginDir()
 	if err != nil {
 		return "", err
 	}
 	return filepath.Join(dir, c.name+".json"), nil
 }
 
-// GetPluginDir returns the folder of the user cache directory that belongs to the plugin, without
-// creating it. An empty pluginID is the NUMEN_PLUGIN_ID the host gives the process.
-func GetPluginDir(pluginID string) (string, error) {
-	if pluginID == "" {
-		pluginID = os.Getenv("NUMEN_PLUGIN_ID")
-	}
-	if pluginID == "" {
-		return "", errors.New("plugin ID is empty")
-	}
-	base, err := getUserCacheDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(base, "numen", "plugins", pluginID), nil
-}
+const (
+	// EnvCacheDir names the variable the host sets to the cache directory of the plugin.
+	EnvCacheDir = "NUMEN_PLUGIN_CACHE_DIR"
 
-func getUserCacheDir() (string, error) {
-	dir, err := os.UserCacheDir()
-	if err == nil && dir != "" {
+	// EnvDataDir names the variable the host sets to the data directory of the plugin.
+	EnvDataDir = "NUMEN_PLUGIN_DATA_DIR"
+
+	// EnvSharedDir names the variable the host sets to the directory all plugins share.
+	EnvSharedDir = "NUMEN_SHARED_CACHE_DIR"
+
+	// EnvSharedDataDir names the variable the host sets to the directory all plugins share for what they cannot compute again.
+	EnvSharedDataDir = "NUMEN_SHARED_DATA_DIR"
+)
+
+// GetPluginDir returns the cache directory the host granted the plugin. The host owns the directory:
+// it creates it, keeps it apart from every other plugin, and removes it when the plugin is
+// uninstalled or updated. What the plugin keeps there can be recomputed.
+func GetPluginDir() (string, error) { return getGrantedDir(EnvCacheDir) }
+
+// GetDataDir returns the data directory the host granted the plugin. What the plugin keeps there
+// stays across updates of the plugin.
+func GetDataDir() (string, error) { return getGrantedDir(EnvDataDir) }
+
+// GetSharedDir returns the directory the host shares between all plugins for what can be computed again. Plugins write there only
+// content that is named by its digest, write it to a temporary file in the same directory and rename it
+// once its digest is verified, and never delete what is there: the host owns its lifetime.
+func GetSharedDir() (string, error) { return getGrantedDir(EnvSharedDir) }
+
+// GetSharedDataDir returns the directory the host shares between all plugins for what is downloaded or made
+// and cannot be computed again, such as models. The same rules hold as for GetSharedDir. The OS never
+// purges it as it may a cache.
+func GetSharedDataDir() (string, error) { return getGrantedDir(EnvSharedDataDir) }
+
+// GetSharedDataDirOrPluginDataDir returns the shared data directory, and the plugin's own data directory
+// where the host granted no shared one.
+func GetSharedDataDirOrPluginDataDir() (string, error) {
+	if dir, err := GetSharedDataDir(); err == nil {
 		return dir, nil
 	}
-	home, homeErr := os.UserHomeDir()
-	if homeErr != nil {
-		return "", err
+	return GetDataDir()
+}
+
+// GetSharedDirOrPluginDir returns the shared directory, and the plugin's own cache directory where the
+// host granted no shared one.
+func GetSharedDirOrPluginDir() (string, error) {
+	if dir, err := GetSharedDir(); err == nil {
+		return dir, nil
 	}
-	return filepath.Join(home, ".cache"), nil
+	return GetPluginDir()
+}
+
+func getGrantedDir(name string) (string, error) {
+	dir := os.Getenv(name)
+	if dir == "" {
+		return "", fmt.Errorf("the host granted no directory: %s is not set", name)
+	}
+	return dir, nil
 }
 
 func (c *Cache[V]) readDiskEntry(key string) (V, bool) {

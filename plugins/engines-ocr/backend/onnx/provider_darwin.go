@@ -17,13 +17,13 @@ const (
 	coreMLFlagCreateMLProgram  uint32 = 0x010
 )
 
-func (l *Library) applyProvider(opts *ort.SessionOptions, requested Provider, units ComputeUnits) (Provider, error) {
+func (l *Library) applyProvider(opts *ort.SessionOptions, requested Provider, units ComputeUnits, modelPath string) (Provider, error) {
 	switch requested {
 	case ProviderCPU:
 		return ProviderCPU, nil
 	case ProviderCoreML, ProviderAuto:
 		if runtime.GOARCH == "arm64" {
-			if err := l.enableCoreML(opts, units); err == nil {
+			if err := l.enableCoreML(opts, units, modelPath); err == nil {
 				return ProviderCoreML, nil
 			} else if requested == ProviderCoreML {
 				return ProviderCPU, err
@@ -42,7 +42,7 @@ func (l *Library) applyProvider(opts *ort.SessionOptions, requested Provider, un
 	}
 }
 
-func (l *Library) enableCoreML(opts *ort.SessionOptions, units ComputeUnits) error {
+func (l *Library) enableCoreML(opts *ort.SessionOptions, units ComputeUnits, modelPath string) error {
 	engine, loadedPath := l.runtime.GetLoaded()
 
 	if engine == nil || loadedPath == "" {
@@ -59,7 +59,7 @@ func (l *Library) enableCoreML(opts *ort.SessionOptions, units ComputeUnits) err
 		return fmt.Errorf("invalid session options handle")
 	}
 
-	if appendCoreMLCached(handle, optHandle, units) {
+	if appendCoreMLCached(handle, optHandle, units, modelPath) {
 		return nil
 	}
 	if units != ComputeUnitsDefault && units != ComputeUnitsAll {
@@ -88,8 +88,8 @@ type ortAPIProviderTable struct {
 // appendCoreMLCached appends CoreML with compiled models kept in the cache
 // directory. It reports false when anything it needs is missing, and leaves the
 // options untouched.
-func appendCoreMLCached(handle, optHandle uintptr, units ComputeUnits) bool {
-	dir, err := GetCoreMLCacheDir()
+func appendCoreMLCached(handle, optHandle uintptr, units ComputeUnits, modelPath string) bool {
+	dir, err := GetCoreMLCacheDir(modelPath)
 	if err != nil {
 		return false
 	}

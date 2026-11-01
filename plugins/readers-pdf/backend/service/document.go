@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"runtime"
 	"slices"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/wasm"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
@@ -26,22 +26,18 @@ type DocumentServer struct {
 	workers *pdf.Workers
 }
 
-// pluginID is the id of the plugin in its manifest. It names the plugin's folder of the user cache directory.
+// pluginID is the id of the plugin in its manifest.
 const pluginID = "md.numen.readers.pdf"
 
-// newCompilationCache returns the cache the compiled PDFium is kept in. It is a folder of the plugin's
-// user cache directory, so only the first start after an install or an update compiles PDFium; where
-// the folder cannot be used, the compiled module is kept in memory for the life of the process.
+// newCompilationCache returns the cache the compiled PDFium is kept in. It is kept in the cache
+// directory the host granted the plugin, so only the first start after an install or an update
+// compiles PDFium; without that directory the compiled module is kept in memory.
 func newCompilationCache() wazero.CompilationCache {
-	dir, err := cache.GetPluginDir(pluginID)
+	dir, err := cache.GetPluginDir()
 	if err != nil {
-		return wazero.NewCompilationCache()
+		return wasm.NewCompilationCache("")
 	}
-	diskCache, err := wazero.NewCompilationCacheWithDir(filepath.Join(dir, "wazero"))
-	if err != nil {
-		return wazero.NewCompilationCache()
-	}
-	return diskCache
+	return wasm.NewCompilationCache(dir)
 }
 
 // newWorkers returns the worker pool of the plugin, started at once: one worker per CPU, a few of

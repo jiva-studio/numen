@@ -450,18 +450,14 @@ func TestFromEnvironmentReadsTheProviderAndTheOfflineSwitch(t *testing.T) {
 	}
 }
 
-func TestGetHomeIsTheSharedModelsFolder(t *testing.T) {
+func TestGetHomeIsTheEnvironmentFolderAndNothingElse(t *testing.T) {
 	t.Setenv(onnxruntime.EnvDir, "/srv/models")
 	if got, err := onnxruntime.GetHome(); err != nil || got != "/srv/models" {
 		t.Fatalf("GetHome() = %q, %v", got, err)
 	}
 	t.Setenv(onnxruntime.EnvDir, "")
-	t.Setenv("XDG_CONFIG_HOME", "/srv/config")
-	t.Setenv("HOME", "/srv/home")
-	t.Setenv("AppData", "/srv/config")
-	got, err := onnxruntime.GetHome()
-	if err != nil || !strings.HasSuffix(filepath.ToSlash(got), "numen/models") {
-		t.Fatalf("GetHome() = %q, %v", got, err)
+	if got, err := onnxruntime.GetHome(); !errors.Is(err, onnxruntime.ErrNoHome) {
+		t.Fatalf("GetHome() = %q, %v, want ErrNoHome", got, err)
 	}
 }
 

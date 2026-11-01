@@ -97,7 +97,6 @@ type acpListing struct {
 func newACPModelCache(isAsync bool) *cache.Cache[acpListing] {
 	return cache.New[acpListing](
 		"models",
-		cache.WithPluginID("agents-acp"),
 		cache.WithTimeout(acpListLimit),
 		cache.WithFailureBackoff(acpFailureBackoff),
 		cache.WithAsync(isAsync),

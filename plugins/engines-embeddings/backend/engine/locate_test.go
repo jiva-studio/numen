@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/gomlx/go-huggingface/hub"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 )
 
 func TestLocate_ErrorsWhenOffline(t *testing.T) {
@@ -230,10 +231,8 @@ func TestLocateFromDir(t *testing.T) {
 
 func TestLocateErrorsWhenModelsHomeFails(t *testing.T) {
 	t.Setenv(EnvDir, "")
-	t.Setenv("XDG_CONFIG_HOME", "")
-	t.Setenv("HOME", "")
-	t.Setenv("APPDATA", "")
-	t.Setenv("LOCALAPPDATA", "")
+	t.Setenv(cache.EnvSharedDataDir, "")
+	t.Setenv(cache.EnvDataDir, "")
 	_, err := Locate(t.Context(), LocalModel{Name: "owner/repo", ShouldDownload: true}, nil)
 	if err == nil || !strings.Contains(err.Error(), "models folder") {
 		t.Fatalf("Locate() error = %v, want models folder error", err)
@@ -324,5 +323,33 @@ func TestLocatePassesRevision(t *testing.T) {
 	}
 	if !strings.Contains(getPath(), "/revision/main") {
 		t.Fatalf("requested path = %q, want default revision main", getPath())
+	}
+}
+
+func TestAFileThatMissesItsPinnedSumIsRemovedWithItsBlobAndFetchedAgain(t *testing.T) {
+	dir := t.TempDir()
+	blob := filepath.Join(dir, "blobs", "etag")
+	link := filepath.Join(dir, "snapshots", "rev", "tokenizer.json")
+	for _, folder := range []string{filepath.Dir(blob), filepath.Dir(link)} {
+		if err := os.MkdirAll(folder, 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(blob, []byte("truncated"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(blob, link); err != nil {
+		t.Skipf("symlinks are not available: %v", err)
+	}
+
+	err := checkPinned(map[string]string{TokenizerFile: strings.Repeat("0", 64)}, TokenizerFile, link)
+
+	if err == nil {
+		t.Fatal("checkPinned() accepted a file that holds another sum")
+	}
+	for _, path := range []string{blob, link} {
+		if _, statErr := os.Lstat(path); !errors.Is(statErr, fs.ErrNotExist) {
+			t.Errorf("%s stays after the file missed its sum: %v", path, statErr)
+		}
 	}
 }

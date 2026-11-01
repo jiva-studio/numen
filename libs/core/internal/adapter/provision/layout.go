@@ -13,26 +13,10 @@ import (
 	"time"
 )
 
-// EnvDir names the folder dependencies are kept in.
-const EnvDir = "NUMEN_DEPENDENCIES_DIR"
-
 // readyName is the marker file whose presence means the folder next to it contains a complete dependency.
 const readyName = ".ready"
 
 var unsafeNameChars = regexp.MustCompile(`[^A-Za-z0-9._-]`)
-
-// GetRoot returns the folder dependencies are kept in: EnvDir, or
-// .numen/dependencies under the home folder.
-func GetRoot() (string, error) {
-	if dir := os.Getenv(EnvDir); dir != "" {
-		return dir, nil
-	}
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(home, ".numen", "dependencies"), nil
-}
 
 // getDependencyDir returns the folder one version of a dependency is kept in on
 // this platform: <root>/<kind>/<id>/<version>-<os>-<arch>.

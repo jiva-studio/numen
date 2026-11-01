@@ -15,7 +15,7 @@ import (
 
 // Config is what the runtime is provisioned from.
 type Config struct {
-	// Dir is the models home the downloaded library is kept under. Empty is GetHome.
+	// Dir is the models home the downloaded library is kept under. Empty is GetHome, which names the environment folder or fails.
 	Dir string
 	// Provider names the execution provider. Empty is auto.
 	Provider string

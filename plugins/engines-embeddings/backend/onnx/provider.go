@@ -97,6 +97,8 @@ type SessionSettings struct {
 	Provider     Provider
 	Threads      int
 	ComputeUnits ComputeUnits
+	// ModelPath is the model the options open. CoreML keeps the compiled form of it in a folder named by it.
+	ModelPath string
 }
 
 // GetDefaultThreads returns the default intra-op thread count for ONNX sessions.

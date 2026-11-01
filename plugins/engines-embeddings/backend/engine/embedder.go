@@ -72,6 +72,7 @@ func Open(
 		Threads:  cfg.GetThreads(),
 
 		ComputeUnits: onnx.ComputeUnitsDefault,
+		ModelPath:    paths.Model,
 	})
 	if err != nil {
 		return nil, err

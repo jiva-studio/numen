@@ -1,8 +1,8 @@
 package onnxruntime
 
 import (
+	"errors"
 	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 
@@ -21,17 +21,15 @@ const (
 	EnvProvider = "NUMEN_ONNX_PROVIDER"
 )
 
-// GetHome returns the models home: EnvDir, or numen/models under the
-// application data directory.
+// ErrNoHome is a library asked for where no models home is set.
+var ErrNoHome = errors.New("no models folder: the host granted none and NUMEN_MODELS_DIR is not set")
+
+// GetHome returns the models home EnvDir names, or ErrNoHome. The application passes the folder it granted through Config.Dir.
 func GetHome() (string, error) {
 	if dir := os.Getenv(EnvDir); dir != "" {
 		return dir, nil
 	}
-	config, err := os.UserConfigDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(config, "numen", "models"), nil
+	return "", ErrNoHome
 }
 
 // IsOffline reports whether EnvOffline forbids fetching.

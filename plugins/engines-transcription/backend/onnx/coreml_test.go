@@ -5,21 +5,31 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 )
 
-func setCacheHome(t *testing.T) {
+// grantModel gives the test a shared directory and a model file in it, and returns the model's path.
+func grantModel(t *testing.T) (shared, model string) {
 	t.Helper()
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, "cache"))
-	t.Setenv("LocalAppData", filepath.Join(home, "local"))
+	shared = t.TempDir()
+	t.Setenv(cache.EnvSharedDir, shared)
+	t.Setenv(cache.EnvCacheDir, t.TempDir())
+	model = filepath.Join(t.TempDir(), "model.onnx")
+	if err := os.WriteFile(model, []byte("weights"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return shared, model
 }
 
 func TestGetCoreMLCacheDirIsMadeForThisUserAlone(t *testing.T) {
-	setCacheHome(t)
-	dir, err := GetCoreMLCacheDir()
+	shared, model := grantModel(t)
+	dir, err := GetCoreMLCacheDir(model)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if filepath.Dir(filepath.Dir(dir)) != shared || filepath.Base(filepath.Dir(dir)) != "coreml" {
+		t.Errorf("folder %s is not coreml/<key> in the shared directory %s", dir, shared)
 	}
 	info, err := os.Stat(dir)
 	if err != nil || !info.IsDir() {
@@ -30,23 +40,59 @@ func TestGetCoreMLCacheDirIsMadeForThisUserAlone(t *testing.T) {
 	}
 }
 
+func TestACompiledModelIsKeptOncePerModelAndNotPerPlugin(t *testing.T) {
+	_, model := grantModel(t)
+	first, err := GetCoreMLCacheDir(model)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(cache.EnvCacheDir, t.TempDir())
+
+	second, err := GetCoreMLCacheDir(model)
+
+	if err != nil || second != first {
+		t.Errorf("GetCoreMLCacheDir() = %q, %v, want %q", second, err, first)
+	}
+	if err := os.WriteFile(model, []byte("changed weights"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if changed, err := GetCoreMLCacheDir(model); err != nil || changed == first {
+		t.Errorf("a changed model got the folder %q again, %v", changed, err)
+	}
+}
+
+func TestAHostThatSharesNothingKeepsTheCompiledModelInThePluginFolder(t *testing.T) {
+	_, model := grantModel(t)
+	t.Setenv(cache.EnvSharedDir, "")
+	own := os.Getenv(cache.EnvCacheDir)
+
+	dir, err := GetCoreMLCacheDir(model)
+
+	if err != nil || filepath.Dir(filepath.Dir(dir)) != own {
+		t.Errorf("GetCoreMLCacheDir() = %q, %v, want it inside %s", dir, err, own)
+	}
+}
+
 func TestDeleteCoreMLCache_EmptiesDirAndReportsContent(t *testing.T) {
-	setCacheHome(t)
-	if DeleteCoreMLCache() {
+	_, model := grantModel(t)
+	if DeleteCoreMLCache(model) {
 		t.Error("an empty cache held something")
 	}
-	dir, err := GetCoreMLCacheDir()
+	dir, err := GetCoreMLCacheDir(model)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err := os.MkdirAll(filepath.Join(dir, "model.mlmodelc"), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if !DeleteCoreMLCache() {
+	if err := os.WriteFile(filepath.Join(dir, lockName), nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if !DeleteCoreMLCache(model) {
 		t.Error("a cache with a compiled model held nothing")
 	}
-	if entries, err := os.ReadDir(dir); err != nil || len(entries) != 0 {
-		t.Errorf("the cache holds %v, %v after it was emptied", entries, err)
+	if entries, err := os.ReadDir(dir); err != nil || len(entries) != 1 || entries[0].Name() != lockName {
+		t.Errorf("the cache holds %v, %v after it was emptied, want only the lock", entries, err)
 	}
 }
 

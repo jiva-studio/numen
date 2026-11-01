@@ -129,7 +129,7 @@ func (l *Library) NewSessionOptions(engine *ort.Engine, s SessionSettings) (*ort
 		return nil, "", err
 	}
 
-	used, err := l.applyProvider(opts, s.Provider, s.ComputeUnits)
+	used, err := l.applyProvider(opts, s.Provider, s.ComputeUnits, s.ModelPath)
 	if err != nil {
 		if s.Provider != ProviderAuto && s.Provider != "" {
 			opts.Destroy()

@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/plugintest"
 )
 
 // initializeFixture is the answer of Claude Code 2.1.303 to the initialize request, cut to its models.
@@ -162,8 +163,7 @@ func TestModels_CachedListIsNotRequeried(t *testing.T) {
 // to its error handler after it has recorded it, so waiting for the report is waiting for the
 // failure.
 func TestModelCache_AsyncReturnsEmptyThenFallbackOnFailure(t *testing.T) {
-	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	t.Setenv("HOME", t.TempDir())
+	plugintest.GrantStorage(t)
 	fail := make(chan struct{})
 	reported := make(chan error, 2)
 	s := &agentServer{

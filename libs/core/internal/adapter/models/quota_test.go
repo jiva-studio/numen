@@ -175,29 +175,6 @@ func TestReservationDoesNotCountTheBytesOfItsPartTwice(t *testing.T) {
 	}
 }
 
-func TestGetHomeNamesTheEnvironmentFolder(t *testing.T) {
-	t.Setenv(EnvDir, "/srv/models")
-	got, err := GetHome()
-	if err != nil || got != "/srv/models" {
-		t.Fatalf("GetHome() = %q, %v", got, err)
-	}
-}
-
-func TestGetHomeIsBelowTheApplicationDataDirectory(t *testing.T) {
-	cache := t.TempDir()
-	t.Setenv(EnvDir, "")
-	t.Setenv("XDG_CONFIG_HOME", cache)
-	t.Setenv("AppData", cache)
-	t.Setenv("HOME", cache)
-	got, err := GetHome()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.HasSuffix(filepath.ToSlash(got), "numen/models") || !strings.HasPrefix(got, cache) {
-		t.Fatalf("GetHome() = %q", got)
-	}
-}
-
 func TestIsOffline(t *testing.T) {
 	tests := []struct {
 		value string

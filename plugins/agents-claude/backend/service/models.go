@@ -145,7 +145,6 @@ func newModelCache(isAsync bool, extra ...cache.Option) *cache.Cache[[]claudeMod
 	return cache.New[[]claudeModel](
 		"models",
 		slices.Concat([]cache.Option{
-			cache.WithPluginID("agents-claude"),
 			cache.WithTTL(modelsLifetime),
 			cache.WithTimeout(modelsTimeout),
 			cache.WithAsync(isAsync),

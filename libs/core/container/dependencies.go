@@ -19,19 +19,21 @@ const envMockML = "NUMEN_MOCK_ML"
 
 // newDependencies returns the provisioners together: the ONNX Runtime, and any
 // other dependency that is a file with a pinned checksum. Fetching follows
-// NUMEN_OFFLINE, and the folder follows NUMEN_MODELS_DIR when it is set. Plugins
+// NUMEN_OFFLINE, and the folder is NUMEN_MODELS_DIR when it is set, else defaultDir; with neither, nothing is provisioned. Plugins
 // on mock models open no model and load no runtime, so then every dependency is
 // an empty placeholder and nothing is fetched.
-func newDependencies() *provision.Registry {
+func newDependencies(defaultDir string) *provision.Registry {
 	if os.Getenv(envMockML) == "true" {
 		return provision.NewRegistry(newPlaceholders())
 	}
-	dir := ""
+	dir := defaultDir
 	if models := os.Getenv(onnxruntime.EnvDir); models != "" {
-		dir = filepath.Join(models, "dependencies")
+		dir = models
 	}
+	runtimeConfig := onnxruntime.FromEnvironment(clock.System{})
+	runtimeConfig.Dir = dir
 	return provision.NewRegistry(
-		onnxruntime.NewONNXProvisioner(onnxruntime.FromEnvironment(clock.System{})),
+		onnxruntime.NewONNXProvisioner(runtimeConfig),
 		provision.NewFileProvisioner(provision.Config{Dir: dir, Offline: onnxruntime.IsOffline(), Clock: clock.System{}}),
 	)
 }
@@ -51,7 +53,10 @@ func newPlaceholders() *provision.PlaceholderProvisioner {
 
 // NewDependencies returns the provisioners as the environment names them now: a
 // host made before NUMEN_MOCK_ML was set is handed these again.
-func NewDependencies() pluginport.DependencyCatalog { return newDependencies() }
+func NewDependencies() pluginport.DependencyCatalog { return newDependencies("") }
+
+// NewDependenciesIn is NewDependencies with the dependencies kept in dir where NUMEN_MODELS_DIR names no folder.
+func NewDependenciesIn(dir string) pluginport.DependencyCatalog { return newDependencies(dir) }
 
 // ReportDependencies keeps one task in the list for each dependency being provisioned. The
 // task counts bytes, and is taken out when the dependency is ready; one that failed stays with its error.

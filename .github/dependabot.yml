@@ -20,6 +20,7 @@ updates:
       - /libs/protocol
       - /libs/plugin-sdk-go
       - /libs/plugin-sdk-go/agent
+      - /libs/plugin-sdk-go/wasm
       - /libs/plugin-sdk-go/models
       - /libs/plugin-sdk-go/vault
       - /apps/desktop

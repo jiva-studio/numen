@@ -15,12 +15,15 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
+// ErrNoFolder is a dependency asked for where no folder is set to keep dependencies in.
+var ErrNoFolder = errors.New("no folder to keep dependencies in")
+
 // ErrOffline is a dependency that is not on this machine while fetching is forbidden.
 var ErrOffline = errors.New("fetching is forbidden")
 
 // Config is what dependencies are provisioned from.
 type Config struct {
-	// Dir is the folder dependencies are kept in. Empty is GetRoot.
+	// Dir is the folder dependencies are kept in. Empty keeps none: nothing is provisioned.
 	Dir string
 	// Offline forbids fetching.
 	Offline bool
@@ -64,10 +67,7 @@ func (p *FileProvisioner) CanProvision(req pluginport.DependencyRequirement) boo
 func (p *FileProvisioner) getDir(req pluginport.DependencyRequirement) (string, error) {
 	root := p.cfg.Dir
 	if root == "" {
-		var err error
-		if root, err = GetRoot(); err != nil {
-			return "", err
-		}
+		return "", ErrNoFolder
 	}
 	return getDependencyDir(root, string(req.Kind), req.ID, req.Version), nil
 }

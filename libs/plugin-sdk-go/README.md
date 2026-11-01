@@ -8,15 +8,19 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 
 | Module | Packages | Provides |
 |---|---|---|
-| `plugin-sdk-go` | `server`, `ai`, `tools`, `hostcall`, `vault` | the server lifecycle every native plugin runs under; `ai` model completions; `tools` agent tools; `hostcall` the clients of the host; `vault` the plugin's reads of the vault |
+| `plugin-sdk-go` | `server`, `ai`, `tools`, `hostcall`, `vault`, `cache`, `shared`, `plugintest` | the server lifecycle every native plugin runs under; `ai` model completions; `tools` agent tools; `hostcall` the clients of the host; `vault` the plugin's reads of the vault |
 | `plugin-sdk-go/host` | `host`, `host/hosttest` | working the vault through the host |
 | `plugin-sdk-go/agent` | `agent/agentrun`, `agent/reasoning`, `agent/toolcall` | running an external agent program |
+| `plugin-sdk-go/wasm` | `wasm` | the compilation cache of a plugin that runs WebAssembly |
 
 `make lib_plugin_sdk_go_lint`, `lib_plugin_sdk_go_build` and `lib_plugin_sdk_go_test` run over every module.
 
 ## Capabilities
 
 - Automatic CLI flag parsing (`-port`, `-token`) with `NUMEN_PLUGIN_PORT` and `NUMEN_PLUGIN_TOKEN` environment variable fallbacks.
+- `cache.GetPluginDir()`, `cache.GetDataDir()`, `cache.GetSharedDir()` and `cache.GetSharedDataDir()` return the directories the host created, from `NUMEN_PLUGIN_CACHE_DIR`, `NUMEN_PLUGIN_DATA_DIR`, `NUMEN_SHARED_CACHE_DIR` and `NUMEN_SHARED_DATA_DIR`, and an error where the host gave none; `cache.GetSharedDirOrPluginDir()` and `cache.GetSharedDataDirOrPluginDataDir()` fall back to the private directory for an older host. The first two are private to the plugin. The shared ones hold one copy of what every plugin uses: compiled CoreML models in the cache one, models in the data one (the OS may purge a cache, and a model is gigabytes), named by digest, written atomically, never deleted by a plugin. A plugin never computes a platform path. `plugintest.GrantStorage` sets all four for a test.
+- `shared.Lock(dir)` takes the operating-system file lock of a directory of the shared directory, so two processes that compile or write the same entry take turns; `shared.GetModelKey(path)` is the digest that names the data derived from a model.
+- `wasm.NewCompilationCache(dir)` is the compilation cache of a plugin that runs WebAssembly, kept in a folder of the directory the host granted and in memory where that folder cannot be used.
 - Host handshake signaling via `NUMEN_READY port=<port>`.
 - Connect-RPC Bearer token authentication interceptor for unary and streaming RPCs.
 - Graceful lifecycle management (`Ping`, `Configure`, `Shutdown`) without unowned goroutines or sleep synchronization.

@@ -2,8 +2,13 @@ package container
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
@@ -20,7 +25,7 @@ func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	registry := newDependencies()
+	registry := newDependencies("")
 	host.SetDependencies(registry)
 	tasks := run.NewTasks()
 	NewConfig(Config{PluginHost: host}).ReportDependencies(tasks)
@@ -46,7 +51,7 @@ func TestProvision_MockModelsReturnPlaceholders(t *testing.T) {
 	t.Setenv(envMockML, "true")
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	registry := newDependencies()
+	registry := newDependencies("")
 
 	model := pluginport.DependencyRequirement{
 		ID: "pp-ocr-det", Kind: pluginport.DependencyKindModel,
@@ -72,5 +77,32 @@ func TestProvision_MockModelsReturnPlaceholders(t *testing.T) {
 	}
 	if resolved.EnvVars["NUMEN_ONNX_RUNTIME_LIB"] != resolved.PrimaryPath || resolved.EnvVars["NUMEN_ONNX_PROVIDER"] != "cpu" {
 		t.Errorf("the runtime is named %v", resolved.EnvVars)
+	}
+}
+
+func TestAModelIsFetchedIntoTheFolderTheHostShares(t *testing.T) {
+	t.Setenv(envMockML, "")
+	t.Setenv("NUMEN_MODELS_DIR", "")
+	body := []byte("model weights")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		if _, err := w.Write(body); err != nil {
+			t.Error(err)
+		}
+	}))
+	t.Cleanup(server.Close)
+	sum := sha256.Sum256(body)
+	models := t.TempDir()
+	req := pluginport.DependencyRequirement{
+		ID: "shared-model", Kind: pluginport.DependencyKindModel,
+		SourceURL: server.URL + "/model.onnx", ChecksumSHA256: hex.EncodeToString(sum[:]),
+	}
+
+	resolved, err := newDependencies(models).Provision(t.Context(), req, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if rel, err := filepath.Rel(models, resolved.PrimaryPath); err != nil || strings.HasPrefix(rel, "..") {
+		t.Errorf("the model is at %s, not under %s", resolved.PrimaryPath, models)
 	}
 }

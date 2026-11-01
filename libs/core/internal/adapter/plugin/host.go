@@ -112,6 +112,7 @@ type Host struct {
 	contentTypes   contentTypeTable
 	typeCache      contentTypeCache
 	clock          machineport.Clock
+	storage        storageRoots
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.

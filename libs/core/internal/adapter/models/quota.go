@@ -17,15 +17,12 @@ import (
 )
 
 const (
-	// EnvDir names the folder plugins keep their models in.
-	EnvDir = "NUMEN_MODELS_DIR"
 	// EnvOffline forbids fetching a model when set.
 	EnvOffline = "NUMEN_OFFLINE"
 	// EnvQuota is the maximum bytes the models folder may hold.
 	EnvQuota = "NUMEN_MODELS_QUOTA"
 	// DefaultQuota is the size of the models folder when EnvQuota names none.
 	DefaultQuota int64 = 32 << 30
-	homeDir            = "numen/models"
 )
 
 const (
@@ -36,18 +33,6 @@ const (
 	staleReservation = 10 * time.Minute
 	touchInterval    = staleReservation / 4
 )
-
-// GetHome returns the shared models folder.
-func GetHome() (string, error) {
-	if dir := os.Getenv(EnvDir); dir != "" {
-		return dir, nil
-	}
-	base, err := os.UserConfigDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(base, filepath.FromSlash(homeDir)), nil
-}
 
 // IsOffline reports whether EnvOffline forbids fetching.
 func IsOffline() bool {

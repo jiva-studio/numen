@@ -11,7 +11,7 @@ import (
 	ort "github.com/getcharzp/onnxruntime_purego"
 )
 
-func (l *Library) applyProvider(opts *ort.SessionOptions, requested Provider, _ ComputeUnits) (Provider, error) {
+func (l *Library) applyProvider(opts *ort.SessionOptions, requested Provider, _ ComputeUnits, _ string) (Provider, error) {
 	switch requested {
 	case ProviderCPU:
 		return ProviderCPU, nil

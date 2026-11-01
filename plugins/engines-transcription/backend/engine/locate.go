@@ -8,11 +8,13 @@ import (
 	"strings"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/onnx"
 )
 
-// EnvDir names the folder plugins keep their models in.
+// EnvDir names the folder plugins keep their models in. The host sets it, to the folder a user chose or
+// to models in the shared data directory.
 const EnvDir = "NUMEN_MODELS_DIR"
 
 // paths are the files this run transcribes with, and where they were found.
@@ -41,8 +43,8 @@ func findInHome(fileName string) string {
 			return found
 		}
 	}
-	if base, err := os.UserConfigDir(); err == nil {
-		return findInFolder(filepath.Join(base, "numen", "models"), fileName)
+	if base, err := cache.GetSharedDataDirOrPluginDataDir(); err == nil {
+		return findInFolder(filepath.Join(base, "models"), fileName)
 	}
 	return ""
 }

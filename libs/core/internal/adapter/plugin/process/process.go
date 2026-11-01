@@ -171,6 +171,8 @@ type LaunchEnvironment struct {
 	HostPort    int
 	Token       string
 	RuntimeVars []string
+	// StorageVars name the directories the host grants the plugin.
+	StorageVars []string
 }
 
 // GetPluginVars is the environment variables the host sets for a plugin
@@ -188,6 +190,7 @@ func GetPluginVars(pluginID string, launch LaunchEnvironment) []string {
 	if launch.HostPort > 0 {
 		vars = append(vars, "NUMEN_HOST_PORT="+strconv.Itoa(launch.HostPort))
 	}
+	vars = append(vars, launch.StorageVars...)
 	return append(vars, launch.RuntimeVars...)
 }
 

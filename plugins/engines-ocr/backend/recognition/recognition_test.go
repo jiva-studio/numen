@@ -15,8 +15,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/wasm"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
-	"github.com/tetratelabs/wazero"
 )
 
 const pluginID = "md.numen.engines.ocr"
@@ -123,10 +123,7 @@ func newScene(t *testing.T) *scene {
 	if err != nil {
 		t.Fatal(err)
 	}
-	compilation, err := wazero.NewCompilationCacheWithDir(os.Getenv(cacheEnv))
-	if err != nil {
-		t.Fatal(err)
-	}
+	compilation := wasm.NewCompilationCache(os.Getenv(cacheEnv))
 	t.Cleanup(func() {
 		if err := compilation.Close(context.WithoutCancel(t.Context())); err != nil {
 			t.Error(err)

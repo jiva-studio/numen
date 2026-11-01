@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/plugintest"
 )
 
 func TestSyncGetCachesHitsAndExpiresAfterTTL(t *testing.T) {
@@ -81,14 +82,12 @@ func TestSyncFailureBackoffSkipsReloadUntilBackoffElapses(t *testing.T) {
 }
 
 func TestAsyncGet_ServesStaleWhileRevalidating(t *testing.T) {
-	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	t.Setenv("HOME", t.TempDir())
+	plugintest.GrantStorage(t)
 
 	now := clock.NewFake(time.Unix(3000, 0))
 
 	c := cache.New[[]string](
 		"models",
-		cache.WithPluginID("test-plugin"),
 		cache.WithTTL(5*time.Minute),
 		cache.WithAsync(true),
 		cache.WithClock(now),
@@ -136,10 +135,9 @@ func TestAsyncGet_ServesStaleWhileRevalidating(t *testing.T) {
 }
 
 func TestAsyncGetRecordsFailureAfterBackgroundError(t *testing.T) {
-	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	t.Setenv("HOME", t.TempDir())
+	plugintest.GrantStorage(t)
 
-	c := cache.New[[]string]("models", cache.WithPluginID("test-plugin"), cache.WithAsync(true))
+	c := cache.New[[]string]("models", cache.WithAsync(true))
 	gate := make(chan struct{})
 
 	val, found, err := c.Get(t.Context(), "k1", func(context.Context) ([]string, error) {
@@ -266,24 +264,122 @@ func TestErrorHandlerReceivesDiskWriteError(t *testing.T) {
 	}
 }
 
-func TestGetPluginDirIsInTheUserCacheDirOfThePlugin(t *testing.T) {
-	base := t.TempDir()
-	t.Setenv("XDG_CACHE_HOME", base)
-	t.Setenv("HOME", base)
-	t.Setenv("LocalAppData", base)
-	t.Setenv("NUMEN_PLUGIN_ID", "md.numen.sample")
+func TestGetPluginDirIsTheDirectoryTheHostGranted(t *testing.T) {
+	cacheDir, _ := plugintest.GrantStorage(t)
 
-	own, ownErr := cache.GetPluginDir("")
-	named, namedErr := cache.GetPluginDir("md.numen.other")
+	got, err := cache.GetPluginDir()
 
-	if ownErr != nil || namedErr != nil {
-		t.Fatalf("got errors %v and %v", ownErr, namedErr)
+	if err != nil || got != cacheDir {
+		t.Errorf("GetPluginDir() = %q, %v, want %q", got, err, cacheDir)
 	}
-	if filepath.Base(own) != "md.numen.sample" || filepath.Base(named) != "md.numen.other" || filepath.Dir(own) != filepath.Dir(named) {
-		t.Errorf("got %q and %q", own, named)
+}
+
+func TestGetDataDirIsTheDirectoryTheHostGranted(t *testing.T) {
+	_, dataDir := plugintest.GrantStorage(t)
+
+	got, err := cache.GetDataDir()
+
+	if err != nil || got != dataDir {
+		t.Errorf("GetDataDir() = %q, %v, want %q", got, err, dataDir)
 	}
-	t.Setenv("NUMEN_PLUGIN_ID", "")
-	if _, err := cache.GetPluginDir(""); err == nil {
-		t.Error("a plugin with no id got a folder")
+}
+
+func TestAPluginTheHostGrantedNoDirectoryGetsAnError(t *testing.T) {
+	t.Setenv(cache.EnvCacheDir, "")
+	t.Setenv(cache.EnvDataDir, "")
+
+	if dir, err := cache.GetPluginDir(); err == nil {
+		t.Errorf("GetPluginDir() = %q, want an error", dir)
+	}
+	if dir, err := cache.GetDataDir(); err == nil {
+		t.Errorf("GetDataDir() = %q, want an error", dir)
+	}
+}
+
+func TestAMemoryCacheOfAPluginWithoutADirectoryReportsTheDiskFailure(t *testing.T) {
+	t.Setenv(cache.EnvCacheDir, "")
+	var reported []error
+	c := cache.New[[]string]("models", cache.WithDisk(true), cache.WithErrorHandler(func(err error) { reported = append(reported, err) }))
+
+	c.Put("k", []string{"v"})
+
+	if len(reported) != 1 {
+		t.Errorf("reported %v, want one error", reported)
+	}
+}
+
+func TestTheDiskCacheIsKeptInTheGrantedDirectory(t *testing.T) {
+	cacheDir, _ := plugintest.GrantStorage(t)
+	first := cache.New[[]string]("models", cache.WithDisk(true))
+	first.Put("k", []string{"v"})
+
+	second := cache.New[[]string]("models", cache.WithDisk(true))
+	got, found, err := second.Get(t.Context(), "k", nil)
+
+	if err != nil || !found || !slices.Equal(got, []string{"v"}) {
+		t.Errorf("Get() = %v, %v, %v, want the entry the first cache wrote", got, found, err)
+	}
+	if _, err := os.Stat(filepath.Join(cacheDir, "models.json")); err != nil {
+		t.Errorf("the cache file is not in the granted directory: %v", err)
+	}
+}
+
+func TestGetSharedDirIsTheDirectoryTheHostShares(t *testing.T) {
+	shared := plugintest.GrantSharedStorage(t)
+
+	got, err := cache.GetSharedDir()
+	own, ownErr := cache.GetSharedDirOrPluginDir()
+
+	if err != nil || got != shared || ownErr != nil || own != shared {
+		t.Errorf("GetSharedDir() = %q, %v; GetSharedDirOrPluginDir() = %q, %v; want %q", got, err, own, ownErr, shared)
+	}
+}
+
+func TestAnOlderHostThatSharesNothingLeavesThePluginItsOwnDirectory(t *testing.T) {
+	cacheDir, _ := plugintest.GrantStorage(t)
+	t.Setenv(cache.EnvSharedDir, "")
+
+	if dir, err := cache.GetSharedDir(); err == nil {
+		t.Errorf("GetSharedDir() = %q, want an error", dir)
+	}
+	got, err := cache.GetSharedDirOrPluginDir()
+
+	if err != nil || got != cacheDir {
+		t.Errorf("GetSharedDirOrPluginDir() = %q, %v, want %q", got, err, cacheDir)
+	}
+}
+
+func TestAHostThatGrantedNothingLeavesNoDirectoryAtAll(t *testing.T) {
+	t.Setenv(cache.EnvSharedDir, "")
+	t.Setenv(cache.EnvCacheDir, "")
+
+	if dir, err := cache.GetSharedDirOrPluginDir(); err == nil {
+		t.Errorf("GetSharedDirOrPluginDir() = %q, want an error", dir)
+	}
+}
+
+func TestGetSharedDataDirIsTheDataDirectoryTheHostShares(t *testing.T) {
+	plugintest.GrantStorage(t)
+	shared := os.Getenv(cache.EnvSharedDataDir)
+
+	got, err := cache.GetSharedDataDir()
+	own, ownErr := cache.GetSharedDataDirOrPluginDataDir()
+
+	if err != nil || got != shared || ownErr != nil || own != shared || shared == os.Getenv(cache.EnvSharedDir) {
+		t.Errorf("GetSharedDataDir() = %q, %v; OrPluginDataDir = %q, %v; want %q", got, err, own, ownErr, shared)
+	}
+}
+
+func TestAnOlderHostThatSharesNoDataLeavesThePluginItsOwnDataDirectory(t *testing.T) {
+	_, dataDir := plugintest.GrantStorage(t)
+	t.Setenv(cache.EnvSharedDataDir, "")
+
+	if dir, err := cache.GetSharedDataDir(); err == nil {
+		t.Errorf("GetSharedDataDir() = %q, want an error", dir)
+	}
+	got, err := cache.GetSharedDataDirOrPluginDataDir()
+
+	if err != nil || got != dataDir {
+		t.Errorf("GetSharedDataDirOrPluginDataDir() = %q, %v, want %q", got, err, dataDir)
 	}
 }

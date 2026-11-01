@@ -10,6 +10,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/wasm"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/document"
 	"github.com/tetratelabs/wazero"
 )
@@ -37,10 +38,7 @@ func TestMain(m *testing.M) {
 // newCompilation returns the compilation cache of this test run, closed when the test ends.
 func newCompilation(t *testing.T) wazero.CompilationCache {
 	t.Helper()
-	compilation, err := wazero.NewCompilationCacheWithDir(os.Getenv(cacheEnv))
-	if err != nil {
-		t.Fatal(err)
-	}
+	compilation := wasm.NewCompilationCache(os.Getenv(cacheEnv))
 	t.Cleanup(func() {
 		if err := compilation.Close(context.WithoutCancel(t.Context())); err != nil {
 			t.Error(err)

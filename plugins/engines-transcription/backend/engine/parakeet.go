@@ -161,6 +161,7 @@ func openSession(library *onnx.Library, engine *ort.Engine, path string, threads
 		Provider:     onnx.GetSessionProvider(),
 		Threads:      threads,
 		ComputeUnits: onnx.ComputeUnitsDefault,
+		ModelPath:    path,
 	})
 	if err != nil {
 		return nil, err

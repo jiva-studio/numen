@@ -36,6 +36,12 @@ func (h *Host) Discover() error {
 	}
 	for _, id := range stalePlugins {
 		h.retirePlugin(id)
+		h.mu.RLock()
+		isInstalled := h.onDisk[id]
+		h.mu.RUnlock()
+		if !isInstalled {
+			h.removeCacheDir(id)
+		}
 	}
 	return nil
 }

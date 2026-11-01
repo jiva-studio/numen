@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/gomlx/go-huggingface/hub"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/clock"
 )
 
@@ -63,19 +64,19 @@ const (
 	EnvDir = "NUMEN_MODELS_DIR"
 	// EnvOffline forbids fetching a model when set.
 	EnvOffline = "NUMEN_OFFLINE"
-	homeDir    = "numen/models"
 )
 
-// GetHome returns the shared models folder.
+// GetHome returns the models folder: NUMEN_MODELS_DIR, or models inside the data directory the host shares
+// between plugins.
 func GetHome() (string, error) {
 	if dir := os.Getenv(EnvDir); dir != "" {
 		return dir, nil
 	}
-	base, err := os.UserConfigDir()
+	base, err := cache.GetSharedDataDirOrPluginDataDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(base, filepath.FromSlash(homeDir)), nil
+	return filepath.Join(base, "models"), nil
 }
 
 // IsOffline reports whether EnvOffline forbids fetching.
@@ -312,9 +313,29 @@ func checkPinned(sums map[string]string, name, path string) error {
 		return nil
 	}
 	if err := verifyFile(path, sum); err != nil {
-		return fmt.Errorf("%s: %w", name, err)
+		return errors.Join(fmt.Errorf("%s: %w", name, err), discardDownload(path))
 	}
 	return nil
+}
+
+// discardDownload removes a file that does not hold its pinned sum, and the blob its link points to, so
+// the next start fetches it again. The downloader moves a file into place before its sum is checked, and
+// finds a file that is in place complete.
+func discardDownload(path string) error {
+	target, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		target = path
+	}
+	var removed []error
+	for _, one := range []string{path, target} {
+		if err := os.Remove(one); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			removed = append(removed, err)
+		}
+		if target == path {
+			break
+		}
+	}
+	return errors.Join(removed...)
 }
 
 // locateCached returns the files of a snapshot that the cache already holds. A

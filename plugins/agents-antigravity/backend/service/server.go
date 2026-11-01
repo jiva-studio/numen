@@ -23,7 +23,6 @@ type agentServer struct {
 func newModelCache(isAsync bool) *cache.Cache[[]antigravityModel] {
 	return cache.New[[]antigravityModel](
 		"models",
-		cache.WithPluginID("agents-antigravity"),
 		cache.WithTimeout(modelListLimit),
 		cache.WithFailureBackoff(failureBackoff),
 		cache.WithAsync(isAsync),
