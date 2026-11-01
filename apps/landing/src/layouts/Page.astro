@@ -1,19 +1,10 @@
 ---
 /**
  * The document around a page: what the browser is told, and nothing else.
- *
- * The faces are carried by the site, so reading the page asks nothing of
- * anybody else's server.
  */
-// Both axes: a heading set at 50 pixels is drawn with the letterforms cut for
-// that size, and the weight still varies. The face's default is the cut for
-// text, and a text cut enlarged is what reads as uneven.
-import '@fontsource-variable/newsreader/standard.css'
-import '@fontsource-variable/newsreader/standard-italic.css'
-import '@fontsource/ibm-plex-sans/400.css'
-import '@fontsource/ibm-plex-sans/500.css'
-import '@fontsource/ibm-plex-sans/600.css'
-import '@fontsource/ibm-plex-mono/500.css'
+import '@numen/ui/styles.css'
+import '@numen/ui-shell/styles.css'
+import 'virtual:plugin-utilities.css'
 import '../styles/landing.css'
 
 interface Props {
@@ -22,12 +13,11 @@ interface Props {
 }
 
 const { title, description } = Astro.props
-// The page's address without the file the build happens to write it to.
 const canonical = new URL(Astro.url.pathname.replace(/index\.html$/, ''), Astro.site)
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light" data-palette="numen" data-app="numen">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -43,35 +33,31 @@ const canonical = new URL(Astro.url.pathname.replace(/index\.html$/, ''), Astro.
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="generator" content={Astro.generator} />
     <script is:inline>
-      // Said before the first paint, so nothing is hidden that this document
-      // is not about to bring in.
-      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        document.documentElement.setAttribute('data-motion', '')
+      try {
+        const storedTheme = localStorage.getItem('numen-theme')
+        const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches
+        const theme = storedTheme === 'dark' || storedTheme === 'light'
+          ? storedTheme
+          : prefersDark
+            ? 'dark'
+            : 'light'
+        document.documentElement.setAttribute('data-theme', theme)
+
+        const params = new URLSearchParams(location.search)
+        const queryPalette = params.get('palette')
+        const storedPalette = localStorage.getItem('numen-palette')
+        const palette = queryPalette === 'edgar' || queryPalette === 'numen'
+          ? queryPalette
+          : storedPalette === 'edgar' || storedPalette === 'numen'
+            ? storedPalette
+            : 'numen'
+        document.documentElement.setAttribute('data-palette', palette)
+      } catch {
+        // Ignore storage errors in private mode.
       }
     </script>
   </head>
   <body>
     <slot />
-
-    <script>
-      // What rises, rises once, and only in a document that hid it.
-      if (document.documentElement.hasAttribute('data-motion')) {
-        const watching = new IntersectionObserver(
-          (entries) => {
-            for (const entry of entries) {
-              if (!entry.isIntersecting) continue
-              entry.target.setAttribute('data-shown', '')
-              watching.unobserve(entry.target)
-            }
-          },
-          // A fixed margin rather than a share of the viewport: what stands at
-          // the foot of a page that cannot scroll any further still arrives.
-          { rootMargin: '0px 0px -60px 0px' },
-        )
-        document
-          .querySelectorAll<HTMLElement>('.rise')
-          .forEach((element) => watching.observe(element))
-      }
-    </script>
   </body>
 </html>

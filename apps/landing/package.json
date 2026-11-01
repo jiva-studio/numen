@@ -6,8 +6,10 @@
   "description": "The page the product is read about on. Knows nothing about a vault.",
   "scripts": {
     "dev": "astro dev",
+    "prebuild": "(test -f ../../libs/ui/core/dist/index.js || npm run build --prefix ../../libs/ui/core) && (test -f ../../libs/ui/shell/dist/index.js || npm run build --prefix ../../libs/ui/shell)",
     "build": "astro build",
     "preview": "astro preview",
+    "pretypecheck": "(test -f ../../libs/ui/core/dist/index.d.ts || npm run build --prefix ../../libs/ui/core) && (test -f ../../libs/ui/shell/dist/index.d.ts || npm run build --prefix ../../libs/ui/shell)",
     "typecheck": "astro check",
     "lint": "eslint .",
     "stories:check": "node tools/stories.mjs",
