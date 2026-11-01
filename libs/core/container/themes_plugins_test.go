@@ -145,7 +145,11 @@ func TestAStoredThemeOfADisabledPluginFallsBackToTheDefault(t *testing.T) {
 	cfg := openThemesConfig(t, "desktop.editor", root)
 	name := "plugin:" + themesPluginID + "/night"
 	var said []string
-	service, err := cfg.Themes(func(text string) { said = append(said, text) })
+	service, err := cfg.Themes(func(text string) {
+		if text != "" {
+			said = append(said, text)
+		}
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
