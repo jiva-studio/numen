@@ -326,7 +326,7 @@ export function createCustomTabKind(
     open: (targetPath: string, id: string) => {
       const buffer = registration.kind === NOTE_KIND ? deps?.getNoteBuffer?.() : undefined
       if (!buffer) return createCustomTabState(targetPath, { pluginId, registration, hostDeps: deps })
-      return createBufferedNoteState(targetPath, id, buffer, {
+      return createBufferedNoteState({ targetPath, id, buffer }, {
         pluginId,
         actions: createTabActions(targetPath, registration, deps),
         deps,

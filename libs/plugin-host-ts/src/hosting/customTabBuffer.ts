@@ -36,14 +36,53 @@ export interface LinkChoice {
   readonly type: 'note'
 }
 
+/** The note a buffered tab opens: its path, the id it has in the store, and the store. */
+export interface BufferedNoteTarget {
+  readonly targetPath: string
+  readonly id: string
+  readonly buffer: NoteBuffer
+}
+
+/** The wikilink completion of a note tab: the notes a link can name, and the headings of one. */
+function createWikilinks(deps: PluginHostDeps | undefined, getPath: () => string) {
+  return {
+    search: async (query: string): Promise<readonly LinkChoice[]> =>
+      ((await deps?.getNotes?.()?.findNotes(query, 20)) ?? []).map((one) => ({
+        title: one.title,
+        type: 'note' as const,
+      })),
+    headings: async (noteTitle: string): Promise<readonly string[]> => {
+      const notes = deps?.getNotes?.()
+      if (!notes) return []
+      const found = noteTitle
+        ? (await notes.findNotes(noteTitle, 5)).find((one) => one.title.toLowerCase() === noteTitle.toLowerCase())?.path
+        : getPath()
+      if (!found) return []
+      return ((await notes.getHeadings([found])).get(found) ?? []).map((one) => one.text)
+    },
+  }
+}
+
+/** Opens the note a link address names beside the tab. */
+function createLinkFollower(deps: PluginHostDeps | undefined, getPath: () => string) {
+  return (address: string): void => {
+    const resolve = deps?.resolveLink
+    const workspace = deps?.getWorkspace?.()
+    if (!resolve || !workspace) return
+    resolve(getPath(), address)
+      .then((path) => {
+        if (path) workspace.openFile(path, { placement: 'split' })
+      })
+      .catch(() => undefined)
+  }
+}
+
 /**
  * Opens the note at `targetPath` in the store under the tab id, and closes it there when the tab's
  * scope ends. The store writes what is unsaved before it lets the note go.
  */
 export function createBufferedNoteState(
-  targetPath: string,
-  id: string,
-  buffer: NoteBuffer,
+  { targetPath, id, buffer }: BufferedNoteTarget,
   options: BufferedNoteOptions,
 ) {
   buffer.open(id, targetPath)
@@ -62,32 +101,8 @@ export function createBufferedNoteState(
     body: computed(() => note.value.body),
     isLoading: computed(() => note.value.state === 'loading'),
     errorMessage: computed(() => buffer.getErrorMessage(id)),
-    wikilinks: {
-      search: async (query: string): Promise<readonly LinkChoice[]> =>
-        ((await options.deps?.getNotes?.()?.findNotes(query, 20)) ?? []).map((one) => ({
-          title: one.title,
-          type: 'note',
-        })),
-      headings: async (noteTitle: string): Promise<readonly string[]> => {
-        const notes = options.deps?.getNotes?.()
-        if (!notes) return []
-        const found = noteTitle
-          ? (await notes.findNotes(noteTitle, 5)).find((one) => one.title.toLowerCase() === noteTitle.toLowerCase())?.path
-          : state.path
-        if (!found) return []
-        return ((await notes.getHeadings([found])).get(found) ?? []).map((one) => one.text)
-      },
-    },
-    followLink: (address: string): void => {
-      const resolve = options.deps?.resolveLink
-      const workspace = options.deps?.getWorkspace?.()
-      if (!resolve || !workspace) return
-      resolve(state.path, address)
-        .then((path) => {
-          if (path) workspace.openFile(path, { placement: 'split' })
-        })
-        .catch(() => undefined)
-    },
+    wikilinks: createWikilinks(options.deps, () => state.path),
+    followLink: createLinkFollower(options.deps, () => state.path),
     fileConflict: computed(() => getFileConflict(note.value.state)),
     keepMine: () => buffer.keep(id),
     takeFile: () => buffer.take(id),
