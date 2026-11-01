@@ -1,13 +1,15 @@
 package service
 
 import (
+	"context"
+	"errors"
 	"os"
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 )
 
 // initializeFixture is the answer of Claude Code 2.1.303 to the initialize request, cut to its models.
@@ -156,26 +158,37 @@ func TestModels_CachedListIsNotRequeried(t *testing.T) {
 	}
 }
 
+// The load runs in the background and fails when the test lets it. The cache reports the failure
+// to its error handler after it has recorded it, so waiting for the report is waiting for the
+// failure.
 func TestModelCache_AsyncReturnsEmptyThenFallbackOnFailure(t *testing.T) {
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	gate := t.TempDir() + "/gate"
-	script := writeScript(t, "claude", "while [ ! -f "+gate+" ]; do sleep 0.01; done\nexit 1\n")
-	s := &agentServer{models: newModelCache(true)}
-	got, err := s.getModels(t.Context(), []string{script}, nil)
+	fail := make(chan struct{})
+	reported := make(chan error, 2)
+	s := &agentServer{
+		models: newModelCache(true, cache.WithErrorHandler(func(err error) { reported <- err })),
+		fetch: func(ctx context.Context, _, _ []string) ([]claudeModel, error) {
+			select {
+			case <-fail:
+				return nil, errors.New("the program lists no model")
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+		},
+	}
+	command := []string{"claude"}
+	got, err := s.getModels(t.Context(), command, nil)
 	if err != nil || len(got) != 0 {
 		t.Fatalf("in-flight async cache returned %v, %v", got, err)
 	}
-	if err := os.WriteFile(gate, nil, 0o600); err != nil {
-		t.Fatal(err)
+	close(fail)
+	select {
+	case <-reported:
+	case <-t.Context().Done():
+		t.Fatal("the load did not report its failure")
 	}
-	for range 600 {
-		if s.getModelCache().HasFailed(script) {
-			break
-		}
-		time.Sleep(5 * time.Millisecond)
-	}
-	got, err = s.getModels(t.Context(), []string{script}, nil)
+	got, err = s.getModels(t.Context(), command, nil)
 	if err != nil || len(got) != len(getFallbackModels()) {
 		t.Fatalf("failed async cache returned %v, %v", got, err)
 	}

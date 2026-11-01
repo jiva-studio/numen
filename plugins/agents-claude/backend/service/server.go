@@ -47,6 +47,9 @@ type agentServer struct {
 	// models are the models the program listed.
 	models *cache.Cache[[]claudeModel]
 
+	// fetch lists the models of the program started as command with env; nil starts the program.
+	fetch func(ctx context.Context, command, env []string) ([]claudeModel, error)
+
 	// clock paces the reports of a change being written.
 	clock timeSource
 }

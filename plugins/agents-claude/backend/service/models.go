@@ -141,13 +141,15 @@ func fetchModels(ctx context.Context, command, env []string) (models []claudeMod
 	return parseModels(out, requestID)
 }
 
-func newModelCache(isAsync bool) *cache.Cache[[]claudeModel] {
+func newModelCache(isAsync bool, extra ...cache.Option) *cache.Cache[[]claudeModel] {
 	return cache.New[[]claudeModel](
 		"models",
-		cache.WithPluginID("agents-claude"),
-		cache.WithTTL(modelsLifetime),
-		cache.WithTimeout(modelsTimeout),
-		cache.WithAsync(isAsync),
+		slices.Concat([]cache.Option{
+			cache.WithPluginID("agents-claude"),
+			cache.WithTTL(modelsLifetime),
+			cache.WithTimeout(modelsTimeout),
+			cache.WithAsync(isAsync),
+		}, extra)...,
 	)
 }
 
@@ -166,8 +168,12 @@ func (s *agentServer) getModels(ctx context.Context, command, env []string) ([]c
 	modelCache := s.getModelCache()
 	cmdCopy := slices.Clone(command)
 	envCopy := slices.Clone(env)
+	fetch := s.fetch
+	if fetch == nil {
+		fetch = fetchModels
+	}
 	models, found, err := modelCache.Get(ctx, key, func(ctx context.Context) ([]claudeModel, error) {
-		return fetchModels(ctx, cmdCopy, envCopy)
+		return fetch(ctx, cmdCopy, envCopy)
 	})
 	if err != nil {
 		return nil, err
