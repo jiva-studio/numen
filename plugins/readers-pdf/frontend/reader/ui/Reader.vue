@@ -17,6 +17,12 @@ import {
   GAP,
   READER_WORDS,
   getPagesWithin,
+  getAnchor,
+  getAnchorScroll,
+  getAcrossScroll,
+  getAcrossShare,
+  type Anchor,
+  SHARP,
   getCurrentPage,
   row,
   getScrollTarget,
@@ -81,6 +87,10 @@ const pageLayout = computed(() => row(props.pages, viewport.value, zoom.value))
 const visiblePages = computed(() =>
   getPagesWithin(pageLayout.value, viewport.value, scrollOffset.value),
 )
+/** The pages that are requested at the settled width. The rest keep what they show. */
+const sharpPages = computed(
+  () => new Set(getPagesWithin(pageLayout.value, viewport.value, scrollOffset.value, SHARP)),
+)
 const middle = computed(() => getCurrentPage(pageLayout.value, viewport.value, scrollOffset.value))
 
 /** Width at which each page is requested. */
@@ -123,14 +133,30 @@ watch(
   },
 )
 
-// Zooming keeps the current page in view. Every page changes width, so the
-// scroll position along the row shifts.
-watch(
-  () => pageLayout.value.height,
-  () => {
-    props.paint(() => stand(props.at, 'auto'))
-  },
-)
+/** The point kept through zooms whose redraw has not run yet, so a second zoom keeps the first one's. */
+let kept: { anchor: Anchor | undefined; across: number } | undefined
+
+// Zooming keeps the point under the centre of the viewport where it is. Every
+// page changes width, so the scroll position shifts. A row with no pages before
+// it has no point to keep, and the current page is shown instead.
+watch(pageLayout, (now, was) => {
+  if (now.height === was.height) return
+  kept ??= {
+    anchor: getAnchor(was, viewport.value, getScrollOffset()),
+    across: getAcrossShare(was, viewport.value, area.value?.scrollTop ?? 0),
+  }
+  props.paint(() => {
+    const point = kept
+    kept = undefined
+    if (!point) return
+    const to = point.anchor && getAnchorScroll(pageLayout.value, viewport.value, point.anchor)
+    if (to === undefined) stand(props.at, 'auto')
+    else send(to, 'auto')
+    if (area.value && point.anchor) {
+      area.value.scrollTop = getAcrossScroll(pageLayout.value, viewport.value, point.across)
+    }
+  })
+})
 
 // A viewport that is reported again was hidden or moved, and the browser
 // scrolled its row to the start without a scroll event.
@@ -161,8 +187,9 @@ const onKey = (event: KeyboardEvent): boolean => {
 }
 
 /* --------------------------------- Helpers -------------------------------- */
-/** Where one page is drawn, once a width has been settled on. */
-const getImageUrl = (page: number) => (drawnWidth.value > 0 ? props.picture(page) : '')
+/** Where one page is drawn, once a width has been settled on. A page past the margin has none. */
+const getImageUrl = (page: number) =>
+  drawnWidth.value > 0 && sharpPages.value.has(page) ? props.picture(page) : ''
 
 /** Scrolls the row to show the page, so that it becomes the current page. */
 const stand = (page: number, how: Parameters<PanScroll['send']>[1]) => {

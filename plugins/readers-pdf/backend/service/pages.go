@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"image/jpeg"
@@ -17,8 +18,9 @@ import (
 // The window requests /plugin/md.numen.readers.pdf/pages/<index>?path=<vault path>.
 const pagesPattern = "pages/{page}"
 
-// pageDPI is the resolution a page image is drawn at.
-const pageDPI = 150
+// mostPixels is the most pixels one page image has. A page asked for wider is drawn as wide as fits,
+// and the window scales the image up.
+const mostPixels = 1 << 24
 
 // PageServer draws the pages of the PDF files in a vault as JPEG images.
 type PageServer struct {
@@ -32,7 +34,8 @@ func NewPageServer(files host.Vault, workers *pdf.Workers) *PageServer {
 }
 
 // ServeHTTP answers a request for one page: the index is the path value "page", counted from zero,
-// and the file is the query parameter "path", relative to the vault the Numen-Vault header names.
+// the file is the query parameter "path", relative to the vault the Numen-Vault header names, and the
+// query parameter "wide" is how many pixels across the page is drawn.
 func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	index, err := strconv.Atoi(r.PathValue("page"))
 	if err != nil || index < 0 {
@@ -44,12 +47,22 @@ func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "path required", http.StatusBadRequest)
 		return
 	}
+	wide, err := strconv.Atoi(r.URL.Query().Get("wide"))
+	if err != nil || wide <= 0 {
+		http.Error(w, "invalid wide", http.StatusBadRequest)
+		return
+	}
 	raw, _, err := getVault(s.files, r.Header).Read(r.Context(), path)
 	if err != nil {
 		http.Error(w, err.Error(), getStatus(err))
 		return
 	}
-	image, err := renderPage(s.workers, raw, index)
+	// A window that asked for another width, or left the page, no longer wants this one.
+	if err := r.Context().Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusRequestTimeout)
+		return
+	}
+	image, err := renderPage(r.Context(), s.workers, raw, index, wide)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
@@ -61,14 +74,22 @@ func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// renderPage draws one page of the PDF bytes raw as JPEG bytes.
-func renderPage(workers *pdf.Workers, raw []byte, index int) (encoded []byte, err error) {
+// renderPage draws one page of the PDF bytes raw as JPEG bytes, wide pixels across or as wide as fits.
+func renderPage(ctx context.Context, workers *pdf.Workers, raw []byte, index, wide int) (encoded []byte, err error) {
 	scan, err := workers.OpenBytes(raw)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = errors.Join(err, scan.Close()) }()
-	drawing, err := scan.RenderPage(index, pageDPI)
+	// The wait for a worker can outlast the window's interest in the page.
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	fitting, err := scan.GetFittingWidth(index, wide, mostPixels)
+	if err != nil {
+		return nil, err
+	}
+	drawing, err := scan.RenderPageAtWidth(index, fitting, mostPixels)
 	if err != nil {
 		return nil, err
 	}

@@ -2,6 +2,8 @@ package service
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"image/jpeg"
 	"io"
 	"net/http"
@@ -9,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -97,7 +100,7 @@ func TestPageRouteRejectsAFileOutsideTheVault(t *testing.T) {
 	web := newLinkedPages(t, files)
 
 	for _, path := range []string{outside, "../" + filepath.Base(filepath.Dir(outside)) + "/outside.pdf"} {
-		got := getPage(t, web, "/plugin/pages/0?path="+url.QueryEscape(path))
+		got := getPage(t, web, "/plugin/pages/0?path="+url.QueryEscape(path)+"&wide=400")
 		if got.status != http.StatusForbidden {
 			t.Errorf("%q was answered %d", path, got.status)
 		}
@@ -108,11 +111,14 @@ func TestPageRouteRejectsABadRequest(t *testing.T) {
 	web := newLinkedPages(t, newTestdataVault(t))
 
 	for path, want := range map[string]int{
-		"/plugin/pages/0":                 http.StatusBadRequest,
-		"/plugin/pages/x?path=tiny.pdf":   http.StatusBadRequest,
-		"/plugin/pages/-1?path=tiny.pdf":  http.StatusBadRequest,
-		"/plugin/pages/0?path=gone.pdf":   http.StatusNotFound,
-		"/plugin/pages/999?path=tiny.pdf": http.StatusUnprocessableEntity,
+		"/plugin/pages/0":                          http.StatusBadRequest,
+		"/plugin/pages/0?path=tiny.pdf":            http.StatusBadRequest,
+		"/plugin/pages/0?path=tiny.pdf&wide=0":     http.StatusBadRequest,
+		"/plugin/pages/0?path=tiny.pdf&wide=x":     http.StatusBadRequest,
+		"/plugin/pages/x?path=tiny.pdf&wide=400":   http.StatusBadRequest,
+		"/plugin/pages/-1?path=tiny.pdf&wide=400":  http.StatusBadRequest,
+		"/plugin/pages/0?path=gone.pdf&wide=400":   http.StatusNotFound,
+		"/plugin/pages/999?path=tiny.pdf&wide=400": http.StatusUnprocessableEntity,
 	} {
 		if got := getPage(t, web, path); got.status != want {
 			t.Errorf("%s was answered %d, want %d: %s", path, got.status, want, got.body)
@@ -123,7 +129,7 @@ func TestPageRouteRejectsABadRequest(t *testing.T) {
 func TestPageRouteRequiresTheHostToken(t *testing.T) {
 	web := newLinkedPages(t, newTestdataVault(t))
 
-	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, web.URL+"/plugin/pages/0?path=tiny.pdf", nil)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, web.URL+"/plugin/pages/0?path=tiny.pdf&wide=400", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,5 +143,48 @@ func TestPageRouteRequiresTheHostToken(t *testing.T) {
 
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Errorf("answered %d", resp.StatusCode)
+	}
+}
+
+func TestPageRouteDrawsThePageAsWideAsAsked(t *testing.T) {
+	web := newLinkedPages(t, newTestdataVault(t))
+
+	for _, wide := range []int{200, 400, 1000} {
+		got := getPage(t, web, "/plugin/pages/0?path=tiny.pdf&wide="+strconv.Itoa(wide))
+		drawing, err := jpeg.Decode(bytes.NewReader(got.body))
+		if err != nil {
+			t.Fatalf("wide=%d: the page is no JPEG: %v", wide, err)
+		}
+		if drawing.Bounds().Dx() != wide {
+			t.Errorf("wide=%d was drawn %d pixels across", wide, drawing.Bounds().Dx())
+		}
+	}
+}
+
+func TestPageRouteDrawsAPageNoLargerThanTheMostPixels(t *testing.T) {
+	web := newLinkedPages(t, newTestdataVault(t))
+
+	got := getPage(t, web, "/plugin/pages/0?path=tiny.pdf&wide=100000")
+	drawing, err := jpeg.Decode(bytes.NewReader(got.body))
+	if err != nil {
+		t.Fatalf("the page is no JPEG: %v", err)
+	}
+	if pixels := drawing.Bounds().Dx() * drawing.Bounds().Dy(); pixels > mostPixels || pixels < mostPixels/2 {
+		t.Errorf("the page has %d pixels, want just under %d", pixels, mostPixels)
+	}
+}
+
+func TestRenderPageDrawsNothingForARequestThatWasGivenUp(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("..", "pdf", "testdata", "tiny.pdf"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	encoded, err := renderPage(ctx, newTestWorkers(t), raw, 0, 400)
+
+	if !errors.Is(err, context.Canceled) || len(encoded) != 0 {
+		t.Errorf("drew %d bytes, error %v", len(encoded), err)
 	}
 }

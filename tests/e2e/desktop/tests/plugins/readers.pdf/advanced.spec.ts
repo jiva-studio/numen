@@ -70,22 +70,26 @@ test.describe('PDF Document Reader Advanced Controls', () => {
 
     const viewport = page.locator('.reader__viewport')
     const numberField = page.getByLabel('Page', { exact: true })
-    await expect(page.locator('.reader__page[data-page="1"]')).toBeAttached({ timeout: 20_000 })
-
-    // The centre line of the viewport is put one pixel either side of where the
-    // second page begins.
-    const border = await viewport.evaluate((element: HTMLElement) => {
-      const second = element.querySelector<HTMLElement>('.reader__page[data-page="1"]')!
-      return second.offsetLeft - element.clientWidth / 2
+    const second = page.locator('.reader__page[data-page="1"]')
+    await expect(second).toBeAttached({ timeout: 20_000 })
+    // The row is laid out again while the viewport is measured and the page sizes arrive, and a
+    // place measured before then is not the border any more. The first picture is drawn once the
+    // width has settled.
+    await expect(page.locator('.reader__page[data-page="0"] .reader__picture')).toBeVisible({
+      timeout: 20_000,
     })
+    await readSettledWidth(second)
 
     for (const [shift, expected] of [
       [-1, '1'],
       [1, '2'],
     ] as const) {
-      await viewport.evaluate((element: HTMLElement, left: number) => {
-        element.scrollLeft = left
-      }, border + shift)
+      // The centre line of the viewport is put one pixel either side of where the second page
+      // begins, measured and scrolled to in one step so no layout change comes between.
+      await viewport.evaluate((element: HTMLElement, by: number) => {
+        const next = element.querySelector<HTMLElement>('.reader__page[data-page="1"]')!
+        element.scrollLeft = next.offsetLeft - element.clientWidth / 2 + by
+      }, shift)
       await expect(numberField).toHaveValue(expected)
 
       const values: string[] = []

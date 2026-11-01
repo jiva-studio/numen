@@ -12,6 +12,11 @@ import {
   getScrollTarget,
   getTurnTarget,
   getFitZoom,
+  getAnchor,
+  getAnchorScroll,
+  getAcrossScroll,
+  getAcrossShare,
+  SHARP,
   type Page,
 } from './strip'
 import type { Size } from '@numen/ui'
@@ -377,5 +382,82 @@ describe('the zoom a document opens at', () => {
 
   it('draws a whole page in a viewport with no height', () => {
     expect(getFitZoom('width', book(4), { width: 900, height: 0 })).toBe(FURTHEST)
+  })
+})
+
+describe('the point kept under the centre line of the viewport', () => {
+  const viewport = { width: 400, height: 300 }
+  const pages = [
+    { width: 100, height: 200 },
+    { width: 100, height: 200 },
+  ]
+
+  it('is a page and a share of its width', () => {
+    const before = row(pages, viewport, 1)
+    const centre = before.starts[1]! + before.widths[1]! / 4
+
+    const anchor = getAnchor(before, viewport, centre - viewport.width / 2)
+
+    expect(anchor?.page).toBe(1)
+    expect(anchor?.along).toBeCloseTo(0.25)
+  })
+
+  it('is nothing in a row with no pages', () => {
+    expect(getAnchor(row([], viewport, 1), viewport, 0)).toBeUndefined()
+  })
+
+  it('stays under the centre line when every page is wider', () => {
+    const before = row(pages, viewport, 1)
+    const after = row(pages, viewport, 2)
+    const offset = before.starts[1]! + before.widths[1]! / 4 - viewport.width / 2
+    const anchor = getAnchor(before, viewport, offset)!
+
+    const to = getAnchorScroll(after, viewport, anchor)!
+
+    const centre = to + viewport.width / 2
+    expect((centre - after.starts[1]!) / after.widths[1]!).toBeCloseTo(0.25, 1)
+  })
+
+  it('is held inside the row', () => {
+    const after = row(pages, viewport, 1)
+
+    expect(getAnchorScroll(after, viewport, { page: 1, along: 5 })).toBe(
+      Math.max(after.length - viewport.width, 0),
+    )
+    expect(getAnchorScroll(after, viewport, { page: 0, along: -5 })).toBe(0)
+    expect(getAnchorScroll(after, viewport, { page: 9, along: 0 })).toBeUndefined()
+  })
+
+  it('keeps the share of the page height under the centre line across', () => {
+    const before = row(pages, viewport, 1)
+    const after = row(pages, viewport, 2)
+    const share = getAcrossShare(
+      before,
+      viewport,
+      Math.max(Math.round(GAP + 0.5 * before.height - viewport.height / 2), 0),
+    )
+
+    const to = getAcrossScroll(after, viewport, share)
+
+    expect((to + viewport.height / 2 - GAP) / after.height).toBeCloseTo(0.5, 1)
+    expect(getAcrossShare(row(pages, { width: 400, height: 0 }, 1), viewport, 0)).toBe(0.5)
+  })
+})
+
+describe('the pages requested at the settled width', () => {
+  it('are fewer than the pages drawn, with a smaller margin', () => {
+    const viewport = { width: 400, height: 300 }
+    const long = row(
+      Array.from({ length: 40 }, () => ({ width: 100, height: 200 })),
+      viewport,
+      1,
+    )
+
+    const drawn = getPagesWithin(long, viewport, 2000)
+    const sharp = getPagesWithin(long, viewport, 2000, SHARP)
+
+    expect(sharp.length).toBeLessThan(drawn.length)
+    expect(sharp.every((page) => drawn.includes(page))).toBe(true)
+    expect(sharp.length).toBeGreaterThan(0)
   })
 })

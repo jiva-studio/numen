@@ -3,11 +3,14 @@
  * One page of a document in the reader row: the page image, the highlights over
  * it, and a spinner while it loads.
  *
- * Nothing is painted until the page image has loaded, and highlights are placed
- * in fractions of the page, so zoom scales them. A page that fails to load is
- * requested again a few times, each request carrying a distinct `again` number.
+ * A new picture is loaded in a hidden image and replaces the one shown only once
+ * it has loaded, so a page never goes blank while it is drawn again. A picture
+ * that is no longer wanted is dropped from the hidden image, which cancels the
+ * request. Highlights are placed in fractions of the page, so zoom scales them.
+ * A page that fails to load is requested again a few times, each request
+ * carrying a distinct `again` number.
  */
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import { Spinner } from '@numen/ui'
 import type { Rect } from '../../lib/strip'
 
@@ -43,9 +46,13 @@ const props = withDefaults(
 /** Maximum number of retries after a page fails to load. */
 const ATTEMPTS = 3
 
-/** Number of retries so far, and whether the image loaded. */
+/** Number of retries so far. */
 const tries = ref(0)
-const isLoaded = ref(false)
+
+/** The URL of the image shown. Nothing until the first image has loaded. */
+const shown = ref('')
+const isLoaded = computed(() => shown.value !== '')
+const incoming = useTemplateRef<HTMLImageElement>('incoming')
 
 /** Whether the retries are exhausted. */
 const givenUp = computed(() => tries.value > ATTEMPTS)
@@ -57,15 +64,22 @@ const imageUrl = computed(() => {
   return tries.value === 0 ? props.picture : `${props.picture}${separator}again=${tries.value}`
 })
 
+/** The URL being loaded: the one wanted, unless it is the one shown. */
+const loading = computed(() =>
+  imageUrl.value === shown.value ? undefined : imageUrl.value || undefined,
+)
+
 /* ---------------------------------- Hooks --------------------------------- */
-// Reset retry state when the page image URL changes.
+// Reset retry state when the page image URL changes. What is shown stays until the new image loads.
 watch(
   () => props.picture,
   () => {
     tries.value = 0
-    isLoaded.value = false
   },
 )
+
+// A request in flight when the page is removed is cancelled.
+onBeforeUnmount(() => incoming.value?.removeAttribute('src'))
 
 /* --------------------------------- Helpers -------------------------------- */
 /** One rectangle, as a share of the page it is drawn over. */
@@ -80,14 +94,20 @@ const getBoxStyle = (one: Rect) => ({
 <template>
   <figure class="reader__page rounded-node absolute top-0 overflow-hidden" :data-page="at">
     <img
-      v-if="imageUrl"
+      v-if="isLoaded"
       class="reader__picture block size-full object-contain"
-      :class="{ invisible: !isLoaded }"
-      :src="imageUrl"
+      :src="shown"
       :alt="`${page} ${at + 1}`"
       draggable="false"
+    />
+    <img
+      ref="incoming"
+      class="reader__incoming hidden"
+      alt=""
+      :src="loading"
+      draggable="false"
       @error="tries += 1"
-      @load="isLoaded = true"
+      @load="shown = imageUrl"
     />
     <div v-if="!isLoaded" class="reader__spinner absolute inset-0 grid place-items-center">
       <span v-if="givenUp" class="px-inset text-small text-hushed text-center">

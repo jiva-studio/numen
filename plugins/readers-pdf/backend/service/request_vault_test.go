@@ -106,7 +106,7 @@ func TestPageServerDrawsThePageOfTheVaultTheRequestNames(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.Handle("GET /"+pagesPattern, pages)
 
-	named := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/pages/0?path=tiny.pdf", nil)
+	named := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/pages/0?path=tiny.pdf&wide=400", nil)
 	named.Header.Set("Numen-Vault", "Chemistry")
 	page := httptest.NewRecorder()
 	mux.ServeHTTP(page, named)
@@ -115,7 +115,7 @@ func TestPageServerDrawsThePageOfTheVaultTheRequestNames(t *testing.T) {
 	}
 
 	current := httptest.NewRecorder()
-	mux.ServeHTTP(current, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/pages/0?path=tiny.pdf", nil))
+	mux.ServeHTTP(current, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/pages/0?path=tiny.pdf&wide=400", nil))
 	if current.Code == http.StatusOK {
 		t.Error("a request naming no vault drew a file the current vault does not hold")
 	}

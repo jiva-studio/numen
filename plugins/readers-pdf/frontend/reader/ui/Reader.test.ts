@@ -236,6 +236,38 @@ describe('where the keyboard remains', () => {
   })
 })
 
+describe('the pages requested', () => {
+  it('are the pages in the room and a margin, and the pages drawn past it ask for nothing', async () => {
+    const wrapper = mount(Reader, {
+      props: {
+        pages: Array.from({ length: 40 }, () => ({ width: 612, height: 792 })),
+        picture: (page: number) => `/p/${page}`,
+      },
+      attachTo: document.body,
+    })
+    await room(wrapper, 1000, 800)
+
+    const drawn = wrapper.findAll('.reader__page').length
+    const requested = wrapper.findAll('.reader__incoming[src]').length
+    expect(requested).toBeGreaterThan(0)
+    expect(requested).toBeLessThan(drawn)
+  })
+
+  it('changes by the settled width alone, not by the zoom pressed', async () => {
+    vi.useFakeTimers()
+    const wrapper = await reader(1000, 800)
+    const before = getWidths(wrapper).length
+
+    await wrapper.find('[aria-label="Closer"]').trigger('click')
+    await wrapper.find('[aria-label="Closer"]').trigger('click')
+
+    expect(getWidths(wrapper)).toHaveLength(before)
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(getWidths(wrapper)).toHaveLength(before + 1)
+    vi.useRealTimers()
+  })
+})
+
 describe('a reader hidden or moved in the document', () => {
   it('scrolls its row back to the page it was on when it is measured again', async () => {
     // A tab moved to another pane is detached and attached again. The browser

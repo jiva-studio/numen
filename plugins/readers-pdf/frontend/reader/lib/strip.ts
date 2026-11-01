@@ -118,9 +118,14 @@ function getSize(pages: readonly Page[], page: number): Page {
  * A book has five hundred pages at half a megabyte each. Drawing all of them
  * would allocate a book's worth of pixels to show one page.
  */
-export function getPagesWithin(row: Row, viewport: Size, offset: number): number[] {
-  const from = offset - viewport.width * BEYOND
-  const to = offset + viewport.width * (1 + BEYOND)
+export function getPagesWithin(
+  row: Row,
+  viewport: Size,
+  offset: number,
+  beyond = BEYOND,
+): number[] {
+  const from = offset - viewport.width * beyond
+  const to = offset + viewport.width * (1 + beyond)
   const out: number[] = []
   for (const [page, begins] of row.starts.entries()) {
     if (begins > to) break
@@ -239,4 +244,48 @@ export function getFitZoom(fit: Fit, pages: readonly Page[], viewport: Size): nu
       ? ((viewport.width - 2 * GAP) * size.height) / size.width
       : size.height * PIXELS_PER_POINT
   return Math.min(drawnHeight / fullHeight, CLOSEST)
+}
+
+/**
+ * How far beyond the viewport edge pages are requested at the width the row
+ * settled on, as a fraction of the viewport. A page past it keeps what it shows,
+ * so a zoom re-renders what can be seen and what is about to be, not the strip.
+ */
+export const SHARP = 0.5
+
+/**
+ * A point in the row: a page and how far along it, as a fraction of its width.
+ * The point survives a zoom, which changes every page width and every start.
+ */
+export interface Anchor {
+  readonly page: number
+  readonly along: number
+}
+
+/** The point of the row under the centre line of the viewport. */
+export function getAnchor(row: Row, viewport: Size, offset: number): Anchor | undefined {
+  if (row.starts.length === 0) return undefined
+  const page = getCurrentPage(row, viewport, offset)
+  const width = row.widths[page]!
+  return { page, along: (offset + viewport.width / 2 - row.starts[page]!) / width }
+}
+
+/** How far the row is scrolled to put the anchor under the centre line, held inside the row. */
+export function getAnchorScroll(row: Row, viewport: Size, anchor: Anchor): number | undefined {
+  const begins = row.starts[anchor.page]
+  const width = row.widths[anchor.page]
+  if (begins === undefined || width === undefined) return undefined
+  const target = Math.round(begins + anchor.along * width - viewport.width / 2)
+  return Math.min(Math.max(target, 0), Math.max(row.length - viewport.width, 0))
+}
+
+/** The share of the page height that is above the centre line of the viewport. */
+export function getAcrossShare(row: Row, viewport: Size, offset: number): number {
+  return row.height <= 0 ? 0.5 : (offset + viewport.height / 2 - GAP) / row.height
+}
+
+/** How far the row is scrolled across to put that share of the page height under the centre line. */
+export function getAcrossScroll(row: Row, viewport: Size, share: number): number {
+  const target = Math.round(GAP + share * row.height - viewport.height / 2)
+  return Math.min(Math.max(target, 0), Math.max(row.height + 2 * GAP - viewport.height, 0))
 }
