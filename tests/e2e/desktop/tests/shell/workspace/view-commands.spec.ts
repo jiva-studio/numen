@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '../../support/test.js'
-import { openWorkspace, runPaletteCommand } from '../../support/workspace'
+import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 
 /**
  * Every view a plugin draws in a tab of its own, the command that opens it from the palette, and

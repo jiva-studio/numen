@@ -28,6 +28,12 @@ export function createDisplayOptions(deps: DisplayWiring) {
   return {
     onVaultChanged: (paths: readonly string[], renamed: readonly PathRename[]) => {
       editing.notes.applyPathChanges(paths, renamed)
+      // Every open tab on a moved or renamed file is navigated to the new path.
+      for (const one of renamed) {
+        runInBackground(Promise.resolve(getKinds().leavePath(one.from, one.to)), (error) =>
+          writeMessage(formatErrorMessage(error), 'error'),
+        )
+      }
       getCommands().commands.applyRenames(renamed)
       notifyPlugins({ paths, renamed })
     },

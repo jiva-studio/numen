@@ -12,7 +12,10 @@ import os from 'node:os'
 /** The folder of the run's vault, which the server script wrote under the port it listens on. */
 export const getVaultPath = (): string =>
   fs
-    .readFileSync(path.join(os.tmpdir(), `numen-e2e-vault-path-${process.env.NUMEN_TEST_PORT ?? '3456'}`), 'utf8')
+    .readFileSync(
+      path.join(os.tmpdir(), `numen-e2e-vault-path-${process.env.NUMEN_TEST_PORT ?? '3456'}`),
+      'utf8',
+    )
     .trim()
 
 /** The vault of the installation list that is the run's vault. */
@@ -193,8 +196,10 @@ export const listVaults = async (request: APIRequestContext): Promise<Vault[]> =
 }
 
 /** The text of a file of the vault as it is on disk, frontmatter included. */
-export const readVaultFile = async (request: APIRequestContext, notePath: string): Promise<string> =>
-  fs.readFileSync(path.join(getVaultPath(), notePath), 'utf8')
+export const readVaultFile = async (
+  request: APIRequestContext,
+  notePath: string,
+): Promise<string> => fs.readFileSync(path.join(getVaultPath(), notePath), 'utf8')
 
 /** Adds a folder of this machine to the installation's vaults, and gives back the vault. */
 export const addVault = async (

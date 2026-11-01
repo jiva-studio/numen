@@ -17,13 +17,13 @@ import (
 
 // DebugOptions holds test settings for debug builds.
 type DebugOptions struct {
-	HttpAddr string
+	HTTPAddr string
 	IsMockML bool
 }
 
 // RegisterDebugFlags registers debug flags on the flag set.
 func RegisterDebugFlags(fs *flag.FlagSet, opts *Options) {
-	fs.StringVar(&opts.Debug.HttpAddr, "debug-http-addr", "", "serve the window over HTTP without opening an OS window")
+	fs.StringVar(&opts.Debug.HTTPAddr, "debug-http-addr", "", "serve the window over HTTP without opening an OS window")
 	fs.BoolVar(&opts.Debug.IsMockML, "debug-mock-ml", false,
 		"use fast mock ML models, and an empty placeholder file for every dependency a plugin declares")
 }
@@ -33,11 +33,14 @@ type dependencySetter interface {
 	SetDependencies(pluginport.DependencyCatalog)
 }
 
-// apply makes the plugins started by this run use mock models when the flag
-// requests them. The plugin host is created before the flag is read, so it
-// receives the dependencies a mock-model run provisions: placeholders, with
-// nothing fetched.
-func (d *DebugOptions) apply(cfg container.Config) error {
+// apply keeps the keys of a run served over HTTP in memory, and makes the plugins started by this
+// run use mock models when the flag requests them. The plugin host is created before the flag is
+// read, so it receives the dependencies a mock-model run provisions: placeholders, with nothing
+// fetched.
+func (d *DebugOptions) apply(cfg *container.Config) error {
+	if d.isServingHTTP() {
+		cfg.KeyStore = debugserve.NewKeyStore()
+	}
 	if !d.IsMockML {
 		return nil
 	}
@@ -55,7 +58,7 @@ func (d *DebugOptions) ensureVault(cfg container.Config, vaultPath string) error
 }
 
 func (d *DebugOptions) isServingHTTP() bool {
-	return d.HttpAddr != ""
+	return d.HTTPAddr != ""
 }
 
 func (d *DebugOptions) serveHTTP(
@@ -69,5 +72,5 @@ func (d *DebugOptions) serveHTTP(
 		cfg.SetPluginVaultPath(v.Path)
 		return opened.Show(ctx, v)
 	}
-	return debugserve.Serve(ctx, cfg.Clock(), d.HttpAddr, opened.Services.NewHandler(pages), os.Stdout)
+	return debugserve.Serve(ctx, cfg.Clock(), d.HTTPAddr, opened.Services.NewHandler(pages), os.Stdout)
 }

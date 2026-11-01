@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '../../support/test.js'
-import { openWorkspace } from '../../support/workspace'
+import { openWorkspace } from '../../support/workspace.js'
 
 /** A deck or a card model made through the palette, under the name typed on its step. */
 const make = async (page: Page, command: string, name: string): Promise<void> => {

@@ -1,94 +1,82 @@
-import { test, expect } from '../../support/test.js'
+import { test, expect, type Page } from '../../support/test.js'
+import { openWorkspace, runCommand, runPaletteCommand } from '../../support/workspace.js'
+import { readSettings, writeSetting } from '../../support/vault.js'
+
+/** The profile the palette opens its list on, which is the one in force, by the name of its row. */
+const readCurrentProfile = async (page: Page): Promise<string> => {
+  await runPaletteCommand(page, 'Set performance profile', 'Set performance profile')
+  const current = page.getByRole('option', { selected: true })
+  await expect(current).toHaveCount(1)
+  const name = (await current.locator('[data-palette="name"]').textContent()) ?? ''
+  await page.keyboard.press('Escape')
+  return name.trim()
+}
 
 test.describe('App Updates, Performance Profiles and OCR Settings', () => {
-  test('switches application performance profile via command palette', async ({ page }) => {
-    await page.goto('/')
+  test.describe.configure({ timeout: 90_000 })
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+  let profile: unknown
+  let mode: unknown
 
-    // Trigger command palette
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
+  test.beforeEach(async ({ request }) => {
+    const settings = await readSettings(request)
+    profile = (settings['performance'] as Record<string, unknown> | undefined)?.['profile']
+    mode = (settings['appearance'] as Record<string, unknown> | undefined)?.['mode']
+  })
 
-    // Choose Performance profile command
-    await paletteInput.fill('Set performance profile')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
+  test.afterEach(async ({ request }) => {
+    await writeSetting(request, ['performance', 'profile'], profile)
+    await writeSetting(request, ['appearance', 'mode'], mode)
+  })
 
-    // Verify option choices are rendered and select Balanced
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-    await paletteInput.fill('Balanced')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
+  test('keeps the performance profile chosen in the palette in the settings, also after a reload', async ({
+    page,
+    request,
+  }) => {
+    const other = profile === 'eco' ? 'Maximum' : 'Eco'
+    await openWorkspace(page)
 
-    // Verify command executes and palette closes
-    await expect(paletteInput).not.toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('.status-bar')).toBeVisible({ timeout: 10_000 })
+    await runPaletteCommand(page, 'Set performance profile', 'Set performance profile')
+    await page.getByRole('option', { name: new RegExp(`^${other}`) }).click()
+
+    await expect
+      .poll(async () => (await readSettings(request))['performance'])
+      .toMatchObject({ profile: other.toLowerCase() })
+
+    await page.reload()
+    expect(await readCurrentProfile(page)).toBe(other)
   })
 
   test('inspects ocr engine language options in settings tab', async ({ page }) => {
-    await page.goto('/')
+    await openWorkspace(page)
+    await runCommand(page, 'Settings', /^Settings$/)
+    const settings = page.getByRole('tabpanel', { name: /Settings/ })
 
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    // Open settings tab via command palette
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-
-    await paletteInput.fill('Settings')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
-
-    await expect(page.getByRole('tab', { name: /Settings/i })).toBeVisible({ timeout: 10_000 })
-
-    // In master-detail settings, click Document OCR row
-    const ocrButton = page.getByRole('button', { name: /Document OCR/i }).first()
-    await expect(ocrButton).toBeVisible({ timeout: 10_000 })
-    await ocrButton.click()
-
-    // Verify OCR settings section is rendered
-    const ocrSection = page
-      .getByRole('region', { name: /Optical character recognition|Document OCR|OCR/i })
-      .or(page.getByRole('heading', { name: /Optical character recognition|Document OCR|OCR/i }))
+    await settings
+      .getByRole('button', { name: /Document OCR/i })
       .first()
-    await expect(ocrSection).toBeVisible({ timeout: 10_000 })
+      .click()
+
+    await expect(settings.locator('.plugin-detail__title')).toContainText(/OCR/)
   })
 
-  test('persists interface scale and theme across full application reload', async ({ page }) => {
-    await page.goto('/')
+  test('persists the dark mode across a full application reload', async ({ page, request }) => {
+    await openWorkspace(page)
+    await runPaletteCommand(page, 'Light or dark', 'Light or dark')
+    await page.getByRole('option', { name: /^Dark/ }).click()
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await expect
+      .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).colorScheme))
+      .toContain('dark')
+    await expect
+      .poll(async () => (await readSettings(request))['appearance'])
+      .toMatchObject({ mode: 'dark' })
 
-    // Change theme mode to Dark via palette
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
+    await page.reload()
+    await expect(page.getByRole('group', { name: 'Neighbourhood' })).toBeVisible()
 
-    await paletteInput.fill('Light or dark')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
-
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-    await paletteInput.fill('Dark')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
-    await expect(paletteInput).not.toBeVisible({ timeout: 5_000 })
-
-    // Verify dark mode is applied to root element
-    const colorSchemeBefore = await page.evaluate(
-      () => getComputedStyle(document.documentElement).colorScheme,
-    )
-    expect(colorSchemeBefore).toContain('dark')
-
-    // Reload page and verify setting persists
-    await page.goto('/')
-    await expect(page.locator('text=Ready')).toBeVisible({ timeout: 10_000 })
-
-    const colorSchemeAfter = await page.evaluate(
-      () => getComputedStyle(document.documentElement).colorScheme,
-    )
-    expect(colorSchemeAfter).toContain('dark')
+    expect(
+      await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme),
+    ).toContain('dark')
   })
 })

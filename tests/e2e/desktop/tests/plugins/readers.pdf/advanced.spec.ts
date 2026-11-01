@@ -1,77 +1,54 @@
-import { test, expect } from '../../support/test.js'
+import { test, expect, readSavedStates } from '../../support/test.js'
+import { openWorkspace, openVaultFile } from '../../support/workspace.js'
+import { readWidth } from '../../support/layout.js'
 
 test.describe('PDF Document Reader Advanced Controls', () => {
-  test('zooms pdf document in and out via reader zoom controls', async ({ page }) => {
-    await page.goto('/')
+  test('draws the pages wider with each press of Zoom in and narrower with Zoom out', async ({
+    page,
+  }) => {
+    await openWorkspace(page)
+    await openVaultFile(page, 'assets', 'pages.pdf')
+    const firstPage = page.locator('.reader__page[data-page="0"]')
+    await expect(firstPage).toBeAttached({ timeout: 20_000 })
+    const base = await readWidth(firstPage)
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await page.getByRole('button', { name: 'Zoom in' }).click()
+    await expect.poll(() => readWidth(firstPage)).toBeCloseTo(base * 1.25, -1)
+    await page.getByRole('button', { name: 'Zoom in' }).click()
+    await expect.poll(() => readWidth(firstPage)).toBeCloseTo(base * 1.25 * 1.25, -1)
 
-    // 1. Open assets folder and sample.pdf
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    const pdfRow = page.locator('[data-tree-row="assets/sample.pdf"]')
-    await expect(pdfRow).toBeVisible()
-    await pdfRow.press('Enter')
-
-    const reader = page.locator('.reader')
-    await expect(reader).toBeVisible({ timeout: 10_000 })
-
-    // 2. Identify zoom controls
-    const zoomInBtn = page.getByRole('button', { name: 'Zoom in' })
-    const zoomOutBtn = page.getByRole('button', { name: 'Zoom out' })
-
-    await expect(zoomInBtn).toBeVisible({ timeout: 5_000 })
-    await expect(zoomOutBtn).toBeVisible({ timeout: 5_000 })
-
-    // 3. Zoom in and verify zoom button state
-    await zoomInBtn.click()
-    await page.waitForTimeout(200)
-    await zoomInBtn.click()
-    await page.waitForTimeout(200)
-
-    // Zoom out button should be enabled after zooming in
-    await expect(zoomOutBtn).toBeEnabled()
-
-    // 4. Zoom out back towards base level
-    await zoomOutBtn.click()
-    await page.waitForTimeout(200)
-    await expect(reader).toBeVisible()
+    await page.getByRole('button', { name: 'Zoom out' }).click()
+    await expect.poll(() => readWidth(firstPage)).toBeCloseTo(base * 1.25, -1)
+    await page.getByRole('button', { name: 'Zoom out' }).click()
+    await expect.poll(() => readWidth(firstPage)).toBeCloseTo(base, -1)
+    await expect(page.getByRole('button', { name: 'Zoom out' })).toBeDisabled()
   })
 
-  test('jumps directly to specific pdf page using page number input', async ({ page }) => {
-    await page.goto('/')
-
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    const pdfRow = page.locator('[data-tree-row="assets/sample.pdf"]')
-    await expect(pdfRow).toBeVisible()
-    await pdfRow.press('Enter')
-
-    await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
-
-    // Locate page input
-    const pageInput = page
-      .getByRole('spinbutton', { name: 'Page' })
-      .or(page.locator('input[aria-label="Page"]'))
-    await expect(pageInput).toBeVisible({ timeout: 5_000 })
-
-    // Current page starts at 1
+  test('scrolls to the page typed in the page field and keeps it in view', async ({ page }) => {
+    await openWorkspace(page)
+    await openVaultFile(page, 'assets', 'pages.pdf')
+    const viewport = page.locator('.reader__viewport')
+    const pageInput = page.locator('input[aria-label="Page"]')
     await expect(pageInput).toHaveValue('1')
 
-    // Fill page number 2 and submit with Enter
-    await pageInput.fill('2')
+    await pageInput.fill('12')
     await pageInput.press('Enter')
 
-    // Verify page input retains value 2
-    await expect(pageInput).toHaveValue('2')
+    await expect(pageInput).toHaveValue('12')
+    const target = page.locator('.reader__page[data-page="11"]')
+    await expect(target).toBeAttached({ timeout: 20_000 })
+    await expect
+      .poll(async () => {
+        const box = await target.boundingBox()
+        const frame = await viewport.boundingBox()
+        if (!box || !frame) return false
+        const centre = frame.x + frame.width / 2
+        return box.x <= centre && centre <= box.x + box.width
+      })
+      .toBe(true)
+    await expect
+      .poll(async () => (await readSavedStates(page.request)).get('assets/pages.pdf'))
+      .toContain('"page":12')
   })
 
   test('keeps one page number while the view rests on the border between two pages', async ({

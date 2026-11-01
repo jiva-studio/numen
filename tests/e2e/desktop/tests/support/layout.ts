@@ -1,0 +1,126 @@
+/**
+ * What the tree, layout and settings scenarios read back from the core on top of `vault.ts`, and
+ * the gestures they make in the window.
+ */
+import { expect, type APIRequestContext, type Locator, type Page } from 'playwright/test'
+import { callRPC, destroyNote, getConnection, createNote, writeNote } from './vault.js'
+
+/** Creates a note of that title in the folder holding the body given, and returns its path. */
+export const createNoteWithBody = async (
+  request: APIRequestContext,
+  title: string,
+  folder: string,
+  body: string,
+): Promise<string> => {
+  const path = await createNote(request, title, folder)
+  await writeNote(request, path, body)
+  return path
+}
+
+/** Takes the notes off the disk, ignoring what is not there. A test cleans up with it. */
+export const destroyNotes = async (
+  request: APIRequestContext,
+  paths: readonly string[],
+): Promise<void> => {
+  for (const path of paths) await destroyNote(request, path)
+}
+
+/** Makes an empty folder at the path. */
+export const createFolder = async (request: APIRequestContext, path: string): Promise<void> => {
+  await callRPC(request, 'FileService/CreateFolder', { path })
+}
+
+/** Moves a file or a folder into the trash of the vault. */
+export const trashFiles = async (
+  request: APIRequestContext,
+  paths: readonly string[],
+): Promise<void> => {
+  for (const path of paths) await callRPC(request, 'FileService/RemoveFile', { path })
+}
+
+/** The paths of what the folder holds, folders included. */
+export const listPaths = async (request: APIRequestContext, folder: string): Promise<string[]> =>
+  (
+    ((await callRPC(request, 'FileService/ListFiles', { path: folder }))['entries'] ?? []) as {
+      path?: string
+    }[]
+  ).map((one) => one.path ?? '')
+
+/** Whether each of two notes writes a record about the other. */
+export const getConnectionSides = async (
+  request: APIRequestContext,
+  first: string,
+  second: string,
+): Promise<{ first: boolean; second: boolean }> => {
+  const connection = await getConnection(request, first, second)
+  return { first: connection.firstSide !== undefined, second: connection.secondSide !== undefined }
+}
+
+/** One tab as the core keeps it for the vault in the window. */
+export interface OpenTab {
+  readonly id: string
+  readonly kind: string
+  readonly path: string
+  readonly title: string
+}
+
+/** The tabs the core keeps for the vault in the window, and the id of the active one. */
+export const readOpenTabs = async (
+  request: APIRequestContext,
+): Promise<{ tabs: OpenTab[]; activeId: string }> => {
+  const answer = await callRPC(request, 'WorkspaceService/ReadOpenTabs', {})
+  const tabs = ((answer['tabs'] ?? []) as Partial<OpenTab>[]).map((one) => ({
+    id: one.id ?? '',
+    kind: one.kind ?? '',
+    path: one.path ?? '',
+    title: one.title ?? '',
+  }))
+  return { tabs, activeId: String(answer['activeId'] ?? '') }
+}
+
+/**
+ * The tab of that title in the window. A linked tab is announced with "Linked tab" before its
+ * title, and every tab with its close button after it.
+ */
+export const getTab = (page: Page, title: string): Locator => {
+  const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return page.getByRole('tab', { name: new RegExp(`^(Linked tab )?${escaped} Close ${escaped}$`) })
+}
+
+/** The row of a file or folder in the files tab, by its path. */
+export const getRow = (page: Page, path: string): Locator =>
+  page.locator(`[data-tree-row="${path}"]`)
+
+/** Shows the files tab, and opens the folders on the way to `path` in it. */
+export const showInFiles = async (page: Page, folders: readonly string[]): Promise<void> => {
+  await getTab(page, 'Files').click()
+  for (const folder of folders) {
+    const row = getRow(page, folder)
+    await expect(row).toBeVisible()
+    if ((await row.getAttribute('aria-expanded')) !== 'true') await row.press('Enter')
+    await expect(row).toHaveAttribute('aria-expanded', 'true')
+  }
+}
+
+/**
+ * Presses a row, carries it past the drag threshold and lets go over the middle of another row,
+ * the way a pointer drags a row onto a folder.
+ */
+export const dragRowOnto = async (page: Page, row: Locator, onto: Locator): Promise<void> => {
+  const from = await row.boundingBox()
+  const to = await onto.boundingBox()
+  if (!from || !to) throw new Error('a row to drag is not drawn')
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2 - 12, { steps: 4 })
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 12 })
+  await page.mouse.up()
+}
+
+/** The width of an element as laid out, in CSS pixels. */
+export const readWidth = async (element: Locator): Promise<number> =>
+  element.evaluate((one) => one.getBoundingClientRect().width)
+
+/** The font size the browser computed for an element, in CSS pixels. */
+export const readComputedFontSize = async (element: Locator): Promise<number> =>
+  element.evaluate((one) => Number.parseFloat(getComputedStyle(one).fontSize))

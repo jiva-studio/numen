@@ -2,7 +2,13 @@
  * What one files tab requests from the window, served by the host's workspace
  * and the files of the vault.
  */
-import { isNotePath, type DropHost, type VaultFiles, type WorkspaceHost } from '@numen/plugin-sdk'
+import {
+  getFileStem,
+  isNotePath,
+  type DropHost,
+  type VaultFiles,
+  type WorkspaceHost,
+} from '@numen/plugin-sdk'
 import type { FilesTabDeps } from '../types'
 
 /** The host services a files tab is made from. */
@@ -15,7 +21,7 @@ export interface FileTreeHost {
 
 /**
  * What the files tab `id` requests from the window. A note it opens or selects
- * goes to the tabs linked to it first.
+ * goes to the tabs linked to it first, titled by its file name without the extension.
  */
 export function createFilesTabDeps(
   { workspace, files, drops }: FileTreeHost,
@@ -23,13 +29,13 @@ export function createFilesTabDeps(
 ): FilesTabDeps {
   return {
     openEntry: ({ path, name }) => {
-      if (isNotePath(path) && workspace.syncPath(id, path, name)) return
+      if (isNotePath(path) && workspace.syncPath(id, path, getFileStem(name))) return
       workspace.openFile(path, { title: name || path, placement: 'current' })
     },
     onSelectPath: (path, state) => {
       const entry = state.list.getEntryAt(path)
       if (entry && !entry.isFolder && (entry.isNote || isNotePath(path))) {
-        workspace.syncPath(id, path, entry.name)
+        workspace.syncPath(id, path, getFileStem(entry.name))
       }
     },
     runCommand: (command, paths, { name, isNote, isFolder }) =>

@@ -12,6 +12,7 @@ import type { TextRange } from './types'
 import type { DocumentTabState } from './model/useDocumentTab'
 import { useDocumentTab } from './model/useDocumentTab'
 import { useDocumentReader } from './model/useDocumentReader'
+import { readerPreferences } from './model/preferences'
 
 /* --------------------------------- Props ---------------------------------- */
 interface Props {
@@ -129,6 +130,7 @@ function onSetPageHandle(reader: unknown) {
       :highlights="activeState.getHighlightsOn"
       :other-highlights="activeState.getOtherHighlightsOn"
       :words="words"
+      :fit="readerPreferences.defaultZoom"
       @go="onGoToPage"
       @measure="onWiden"
     >

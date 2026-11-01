@@ -8,7 +8,8 @@
     "libs/ui/*",
     "apps/*",
     "apps/desktop/*",
-    "tools/*"
+    "tools/*",
+    "tests/e2e/desktop"
   ],
   "scripts": {
     "format": "prettier --write \"{libs,apps}/**/*.{ts,vue,json,css}\"",

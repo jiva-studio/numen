@@ -1,101 +1,99 @@
-import { test, expect } from '../../support/test.js'
+import { test, expect, type Page } from '../../support/test.js'
+import { getGraph, openWorkspace } from '../../support/workspace.js'
+import { createNoteWithBody, destroyNotes, getRow, getTab, readOpenTabs, showInFiles } from '../../support/layout.js'
 
-test.describe('Tab Linking and Split Pane Coordination', () => {
-  test('opens note alongside current reader tab via alongside command', async ({ page }) => {
-    await page.goto('/')
+/** The paths of the note tabs the core keeps for the vault in the window, in their order. */
+const readNoteTabPaths = async (page: Page): Promise<string[]> =>
+  (await readOpenTabs(page.request)).tabs
+    .filter((one) => one.kind === 'note')
+    .map((one) => one.path)
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+/** Links the tab of that title to the note tab of that title, from the menu on the first. */
+const linkTab = async (page: Page, from: string, to: string): Promise<void> => {
+  await getTab(page, from).click({ button: 'right' })
+  await page.getByRole('menuitem', { name: `${to} note` }).click()
+  await expect(page.getByRole('tab', { name: new RegExp(`^Linked tab ${from} `) })).toBeVisible()
+}
 
-    // 1. Open notes folder and Entropy.md
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
+const WEIR = '# Weir notes\n\nThe weir holds the river at the height of the wheel.\n'
+const FLUME = '# Flume notes\n\nThe flume carries the water onto the wheel.\n'
 
-    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
-    await expect(entropyRow).toBeVisible()
-    await entropyRow.press('Enter')
+test.describe('Linked tabs', () => {
+  let weir = ''
+  let flume = ''
 
-    await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
-
-    // 2. Open palette and choose Beside command
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-
-    await paletteInput.fill('Beside')
-    await page.keyboard.press('Enter')
-
-    // 3. Verify split separator is active
-    await expect(page.getByRole('separator', { name: 'Resize panes' })).toBeVisible({
-      timeout: 10_000,
-    })
+  test.beforeEach(async ({ request }) => {
+    weir = await createNoteWithBody(request, 'Weir notes', 'notes', WEIR)
+    flume = await createNoteWithBody(request, 'Flume notes', 'notes', FLUME)
   })
 
-  test('links tabs across split panes into coordinated group', async ({ page }) => {
-    await page.goto('/')
-
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    // Open sample.pdf
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    const pdfRow = page.locator('[data-tree-row="assets/sample.pdf"]')
-    await expect(pdfRow).toBeVisible()
-    await pdfRow.press('Enter')
-
-    // Open notes and Entropy.md
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
-
-    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
-    await expect(entropyRow).toBeVisible()
-    await entropyRow.press('Enter')
-
-    // Verify both tab headers exist in tablists
-    await expect(page.getByRole('tab', { name: /sample\.pdf/i }).first()).toBeVisible({
-      timeout: 10_000,
-    })
-    const entropyTab = page.getByRole('tab', { name: /Entropy/i }).first()
-    await expect(entropyTab).toBeVisible({
-      timeout: 10_000,
-    })
-
-    // Right-click Files tab and verify the Note tab is offered under "Link with tab"
-    const filesTab = page.getByRole('tab', { name: /^Files/ }).first()
-    await filesTab.click({ button: 'right' })
-    const linkMenuItem = page.getByRole('menuitem', { name: /Entropy/i }).first()
-    await expect(linkMenuItem).toBeVisible({ timeout: 5_000 })
-    await linkMenuItem.click()
+  test.afterEach(async ({ request }) => {
+    await destroyNotes(request, [weir, flume])
   })
 
-  test('cleans up tab link group when one linked tab is closed', async ({ page }) => {
-    await page.goto('/')
+  test('opens a note from the files tab in the note tab it is linked to', async ({ page }) => {
+    await openWorkspace(page)
+    await showInFiles(page, ['notes'])
+    await getRow(page, weir).press('Enter')
+    await expect(getTab(page, 'Weir notes')).toBeVisible()
+    await linkTab(page, 'Files', 'Weir notes')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await getTab(page, 'Files').click()
+    await getRow(page, flume).press('Enter')
 
-    // Open sample.epub
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const epubRow = page.locator('[data-tree-row="assets/sample.epub"]')
-    if (!(await epubRow.isVisible())) {
-      const assetsRow = page.locator('[data-tree-row="assets"]')
-      await expect(assetsRow).toBeVisible()
-      await assetsRow.press('Enter')
-    }
+    await expect.poll(() => readNoteTabPaths(page)).toEqual([flume])
+    await expect(getTab(page, 'Flume notes')).toBeVisible()
+    await expect(getTab(page, 'Weir notes')).toHaveCount(0)
+    await getTab(page, 'Flume notes').click()
+    await expect(page.getByRole('tabpanel', { name: /Flume notes/ })).toContainText(
+      'The flume carries the water onto the wheel.',
+    )
+  })
 
-    await expect(epubRow).toBeVisible({ timeout: 5_000 })
-    await epubRow.press('Enter')
+  test('opens a note in a tab of its own once the files tab is unlinked', async ({ page }) => {
+    await openWorkspace(page)
+    await showInFiles(page, ['notes'])
+    await getRow(page, weir).press('Enter')
+    await linkTab(page, 'Files', 'Weir notes')
 
-    const epubTab = page.getByRole('tab', { name: /Test Book|sample\.epub/i }).first()
-    await expect(epubTab).toBeVisible({ timeout: 10_000 })
+    await getTab(page, 'Files').click({ button: 'right' })
+    await page.getByRole('menuitem', { name: /^Unlink tab/ }).click()
+    await expect(getTab(page, 'Files')).toHaveAccessibleName('Files Close Files')
 
-    // Close epub tab
-    await page.keyboard.press('Control+Shift+w')
-    await expect(epubTab).not.toBeVisible({ timeout: 5_000 })
+    await getTab(page, 'Files').click()
+    await getRow(page, flume).press('Enter')
+
+    await expect.poll(() => readNoteTabPaths(page)).toEqual([weir, flume])
+    await expect(getTab(page, 'Weir notes')).toBeVisible()
+    await expect(getTab(page, 'Flume notes')).toBeVisible()
+  })
+
+  test('drops the link when the linked note tab is closed', async ({ page }) => {
+    await openWorkspace(page)
+    await showInFiles(page, ['notes'])
+    await getRow(page, weir).press('Enter')
+    await linkTab(page, 'Files', 'Weir notes')
+
+    await page.getByRole('button', { name: 'Close Weir notes' }).click()
+    await expect(getTab(page, 'Weir notes')).toHaveCount(0)
+    await expect(getTab(page, 'Files')).toHaveAccessibleName('Files Close Files')
+
+    await getTab(page, 'Files').click()
+    await getRow(page, flume).press('Enter')
+    await expect.poll(() => readNoteTabPaths(page)).toEqual([flume])
+  })
+
+  test('moves the note tab linked to the plex to the note chosen in the plex', async ({ page }) => {
+    await openWorkspace(page)
+    await showInFiles(page, ['notes'])
+    await getRow(page, weir).press('Enter')
+    await expect(getTab(page, 'Weir notes')).toBeVisible()
+    await linkTab(page, 'Thermodynamics', 'Weir notes')
+
+    await getGraph(page).getByRole('button', { name: 'Entropy, child' }).click()
+
+    await expect.poll(() => readNoteTabPaths(page)).toEqual(['notes/Entropy.md'])
+    await expect(page.locator('[data-workspace-tab^="note:"]')).toHaveText(/Entropy/)
+    await expect(getTab(page, 'Weir notes')).toHaveCount(0)
   })
 })

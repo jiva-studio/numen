@@ -52,16 +52,3 @@ export interface PageHandle {
   /** Gives the pages keyboard focus, so key presses reach them. */
   focusPages(): void
 }
-
-export interface PDFReaderPreferences {
-  defaultZoom: 'page' | 'width' | '100%'
-}
-
-export function readPDFReaderPreferences(
-  getSetting?: (path: readonly string[]) => unknown,
-): PDFReaderPreferences {
-  return {
-    defaultZoom:
-      (getSetting?.(['default_zoom']) as 'page' | 'width' | '100%' | undefined) ?? 'page',
-  }
-}

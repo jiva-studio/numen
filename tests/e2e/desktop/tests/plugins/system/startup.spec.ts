@@ -1,5 +1,5 @@
 import { test, expect } from '../../support/test.js'
-import { openWorkspace } from '../../support/workspace'
+import { openWorkspace } from '../../support/workspace.js'
 
 /** The words a plugin that did not start is reported in, as a notice or as a task. */
 const PLUGIN_FAILURE = /stopped:|Plugin stopped|failed to start|failed to load/i

@@ -30,7 +30,7 @@ func newHandler(handler http.Handler) http.Handler {
 		switch {
 		case r.URL.Path == fetchRoute:
 			w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
-			_, _ = w.Write(fetchScript)
+			writeBody(w, fetchScript)
 		case r.Method == http.MethodPut:
 			r.Method = http.MethodPost
 			handler.ServeHTTP(w, r)
@@ -61,7 +61,15 @@ func writePage(w http.ResponseWriter, r *http.Request, handler http.Handler) {
 	}
 	w.Header().Set("Content-Length", strconv.Itoa(len(body)))
 	w.WriteHeader(rec.Code)
-	_, _ = w.Write(body)
+	writeBody(w, body)
+}
+
+// writeBody writes body as the end of the answer. A write that fails means the browser closed the
+// connection, and there is no one left to answer.
+func writeBody(w http.ResponseWriter, body []byte) {
+	if _, err := w.Write(body); err != nil {
+		return
+	}
 }
 
 // addScript puts the script at fetchRoute first in the head of page. A page with no head is

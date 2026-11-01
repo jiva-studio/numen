@@ -21,6 +21,7 @@ import {
   row,
   getScrollTarget,
   getTurnTarget,
+  getFitZoom,
 } from '../lib/strip'
 import type { ReaderProps } from './Reader.types'
 
@@ -34,6 +35,7 @@ const props = withDefaults(defineProps<ReaderProps>(), {
   words: () => READER_WORDS,
   undrawn: 'Failed to load page',
   paint: onNextFrame,
+  fit: 'page',
 })
 
 /* --------------------------------- Events --------------------------------- */
@@ -45,8 +47,8 @@ const emit = defineEmits<{
 }>()
 
 /* ---------------------------------- State --------------------------------- */
-/** How close a page is drawn. What that may be is `strip.ts`. */
-const zoom = ref(1)
+/** The zoom the person chose with the toolbar. Until one is chosen the document is drawn at its fit. */
+const chosenZoom = ref<number | null>(null)
 
 const area = useTemplateRef<HTMLElement>('area')
 
@@ -65,6 +67,14 @@ const {
   letGo,
   onWheel,
 } = usePanScroll(area)
+
+/** How close a page is drawn. What that may be is `strip.ts`. */
+const zoom = computed({
+  get: () => chosenZoom.value ?? getFitZoom(props.fit, props.pages, viewport.value),
+  set: (value: number) => {
+    chosenZoom.value = value
+  },
+})
 
 const pageLayout = computed(() => row(props.pages, viewport.value, zoom.value))
 const visiblePages = computed(() =>

@@ -11,6 +11,7 @@ import {
   findPageScroll,
   getScrollTarget,
   getTurnTarget,
+  getFitZoom,
   type Page,
 } from './strip'
 import type { Size } from '@numen/ui'
@@ -341,5 +342,40 @@ describe('the page a key turns to', () => {
   it('turns nowhere for a key that turns no page, or a document with none', () => {
     expect(getTurnTarget('k', 1, 5)).toBeUndefined()
     expect(getTurnTarget('ArrowRight', 0, 0)).toBeUndefined()
+  })
+})
+
+describe('the zoom a document opens at', () => {
+  it('draws a whole page in the viewport for the page fit', () => {
+    expect(getFitZoom('page', book(4), VIEWPORT)).toBe(FURTHEST)
+  })
+
+  it('draws the first page as wide as the viewport for the width fit', () => {
+    const wide: Size = { width: 1600, height: 800 }
+    const zoom = getFitZoom('width', book(4), wide)
+
+    expect(row(book(4), wide, zoom).widths[0]).toBeCloseTo(wide.width - 2 * GAP, -1)
+  })
+
+  it('draws the first page at its printed size for the 100% fit', () => {
+    const zoom = getFitZoom('100%', book(4), VIEWPORT)
+
+    expect(row(book(4), VIEWPORT, zoom).height).toBe(Math.round((792 * 96) / 72))
+  })
+
+  it('draws the page smaller than a whole page in a viewport narrower than it', () => {
+    const narrow: Size = { width: 300, height: 800 }
+    const zoom = getFitZoom('width', book(4), narrow)
+
+    expect(zoom).toBeLessThan(FURTHEST)
+    expect(row(book(4), narrow, zoom).widths[0]).toBeCloseTo(narrow.width - 2 * GAP, -1)
+  })
+
+  it('never draws the page closer than the closest zoom', () => {
+    expect(getFitZoom('width', book(4), { width: 9000, height: 300 })).toBe(CLOSEST)
+  })
+
+  it('draws a whole page in a viewport with no height', () => {
+    expect(getFitZoom('width', book(4), { width: 900, height: 0 })).toBe(FURTHEST)
   })
 })

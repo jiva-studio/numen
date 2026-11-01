@@ -215,3 +215,28 @@ export const WIDTH_DEBOUNCE = 150
 export function clampZoom(zoom: number): number {
   return Math.min(Math.max(zoom, FURTHEST), CLOSEST)
 }
+
+/**
+ * How a document is drawn when it opens: a whole page in the viewport, a page as wide
+ * as the viewport, or a page at its printed size.
+ */
+export type Fit = 'page' | 'width' | '100%'
+
+/** CSS pixels per point of a page: 96 CSS pixels and 72 points to the inch. */
+const PIXELS_PER_POINT = 96 / 72
+
+/**
+ * The zoom at which the first page is drawn to the fit in the viewport, never past CLOSEST. A
+ * viewport narrower than the page draws it narrower than a whole page by height, so the zoom
+ * can be below FURTHEST; only a zoom chosen with the toolbar is held to that.
+ */
+export function getFitZoom(fit: Fit, pages: readonly Page[], viewport: Size): number {
+  const fullHeight = viewport.height - 2 * GAP
+  if (fit === 'page' || fullHeight <= 0 || viewport.width <= 2 * GAP) return FURTHEST
+  const size = getSize(pages, 0)
+  const drawnHeight =
+    fit === 'width'
+      ? ((viewport.width - 2 * GAP) * size.height) / size.width
+      : size.height * PIXELS_PER_POINT
+  return Math.min(drawnHeight / fullHeight, CLOSEST)
+}

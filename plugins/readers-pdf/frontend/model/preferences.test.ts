@@ -1,0 +1,37 @@
+import { describe, expect, it } from 'vitest'
+import {
+  bindPDFReaderPreferences,
+  readPDFReaderPreferences,
+  readerPreferences,
+} from './preferences'
+
+describe('the PDF reader settings', () => {
+  it('reads the default zoom the settings name', () => {
+    const settings: Record<string, unknown> = { default_zoom: 'width' }
+
+    expect(readPDFReaderPreferences((key) => settings[key])).toStrictEqual({ defaultZoom: 'width' })
+  })
+
+  it('opens a whole page where the setting is missing or names no fit', () => {
+    expect(readPDFReaderPreferences()).toStrictEqual({ defaultZoom: 'page' })
+    expect(readPDFReaderPreferences(() => 'half')).toStrictEqual({ defaultZoom: 'page' })
+  })
+
+  it('follows a change of the default zoom', () => {
+    const handlers = new Map<string, (value: unknown) => void>()
+    bindPDFReaderPreferences({
+      getSetting: <T>() => '100%' as T,
+      onSettingChange: <T>(key: string, handler: (value: T) => void) => {
+        handlers.set(key, handler as (value: unknown) => void)
+        return { dispose: () => handlers.delete(key) }
+      },
+    })
+    expect(readerPreferences.defaultZoom).toBe('100%')
+
+    handlers.get('default_zoom')?.('width')
+    expect(readerPreferences.defaultZoom).toBe('width')
+
+    handlers.get('default_zoom')?.(null)
+    expect(readerPreferences.defaultZoom).toBe('page')
+  })
+})

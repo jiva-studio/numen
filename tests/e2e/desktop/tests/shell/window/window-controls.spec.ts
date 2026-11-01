@@ -1,97 +1,95 @@
-import { test, expect } from '../../support/test.js'
+import { test, expect, type Page } from '../../support/test.js'
+import { getGraph, openWorkspace, runPaletteCommand } from '../../support/workspace.js'
+import { getRow, getTab, readComputedFontSize, readOpenTabs, showInFiles } from '../../support/layout.js'
+import { readSettings, writeSetting } from '../../support/vault.js'
+
+const PLEX_ID = 'md.numen.views.plex.graph'
+
+/** The editor of the open note of that title. */
+const getEditor = (page: Page, title: string) =>
+  page.getByRole('tabpanel', { name: new RegExp(title) }).locator('.cm-editor')
+
+/** Picks a value in the list a palette command opens on, by the start of its name. */
+const chooseValue = async (page: Page, value: string): Promise<void> => {
+  await page.getByRole('option', { name: new RegExp(`^${value}`) }).click()
+  await expect(page.getByRole('dialog', { name: 'Search the vault' })).toHaveCount(0)
+}
 
 test.describe('Window Controls and Display Preferences', () => {
-  test('closes active tab cleanly via close command', async ({ page }) => {
-    await page.goto('/')
-
-    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
-      timeout: 15_000,
-    })
-
-    // 1. Open notes and Entropy.md
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
-
-    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
-    await expect(entropyRow).toBeVisible()
-    await entropyRow.press('Enter')
-
-    const entropyTab = page.getByRole('tab', { name: /Entropy/i }).first()
-    await expect(entropyTab).toBeVisible({ timeout: 10_000 })
-
-    // 2. Open palette and execute Close command (Close tab)
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-
-    await paletteInput.fill('Close tab')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
-
-    // 3. Verify Entropy tab is closed
-    await expect(entropyTab).not.toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
-      timeout: 10_000,
-    })
+  test.afterEach(async ({ request }) => {
+    await writeSetting(request, ['appearance', 'text_scale'], 1)
+    await writeSetting(request, ['plugins', PLEX_ID, 'nest_headings'], true)
   })
 
-  test('adjusts reading font size via command palette', async ({ page }) => {
-    await page.goto('/')
+  test('closes the active tab with Close tab', async ({ page, request }) => {
+    await openWorkspace(page)
+    await showInFiles(page, ['notes'])
+    await getRow(page, 'notes/Entropy.md').press('Enter')
+    await expect(getTab(page, 'Entropy')).toHaveAttribute('aria-selected', 'true')
+    await expect
+      .poll(async () => (await readOpenTabs(request)).tabs.map((one) => one.path))
+      .toContain('notes/Entropy.md')
 
-    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
-      timeout: 15_000,
-    })
+    await runPaletteCommand(page, 'Close tab', 'Close tab')
 
-    // 1. Open palette and search "Reading font size"
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-
-    await paletteInput.fill('Reading font size')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
-
-    // 2. Selection options are presented
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-    await page.keyboard.press('ArrowDown')
-    await page.keyboard.press('Enter')
-
-    // 3. Verify palette closes cleanly upon choice selection
-    await expect(paletteInput).not.toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
-      timeout: 10_000,
-    })
+    await expect(getTab(page, 'Entropy')).toHaveCount(0)
+    await expect
+      .poll(async () => (await readOpenTabs(request)).tabs.map((one) => one.path))
+      .not.toContain('notes/Entropy.md')
   })
 
-  test('toggles the plex heading nesting setting of the Plex Graph plugin via command palette', async ({
+  test('draws note text at the reading font size chosen in the palette, also after a reload', async ({
     page,
+    request,
   }) => {
-    await page.goto('/')
+    await openWorkspace(page)
+    await showInFiles(page, ['notes'])
+    await getRow(page, 'notes/Entropy.md').press('Enter')
+    const editor = getEditor(page, 'Entropy')
+    await expect(editor).toBeVisible()
+    const before = await readComputedFontSize(editor)
 
-    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
-      timeout: 15_000,
-    })
+    await runPaletteCommand(page, 'Reading font size', 'Reading font size')
+    await chooseValue(page, '150%')
 
-    // 1. Open palette and search the plugin's setting command
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
+    await expect.poll(async () => readComputedFontSize(editor)).toBeCloseTo(before * 1.5, 0)
+    await expect
+      .poll(async () => (await readSettings(request))['appearance'])
+      .toMatchObject({ text_scale: 1.5 })
 
-    await paletteInput.fill('Plex Graph: Nest headings under notes')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
+    await page.reload()
 
-    // 2. Select first offered setting value
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-    await page.keyboard.press('ArrowDown')
-    await page.keyboard.press('Enter')
+    const reloaded = getEditor(page, 'Entropy')
+    await expect(reloaded).toBeVisible()
+    await expect.poll(async () => readComputedFontSize(reloaded)).toBeCloseTo(before * 1.5, 0)
+  })
 
-    // 3. Verify palette closes cleanly and workspace remains stable
-    await expect(paletteInput).not.toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('text=Ready').or(page.locator('.status-bar')).first()).toBeVisible({
-      timeout: 10_000,
-    })
+  test('shows or hides the headings under the notes of the plex with the Nest headings setting', async ({
+    page,
+    request,
+  }) => {
+    await openWorkspace(page)
+    const headings = getGraph(page).locator('.plex__heading-text')
+    const focusNode = getGraph(page).getByRole('img', { name: 'Thermodynamics, focus' })
+    await focusNode.hover()
+    await expect(headings.filter({ hasText: 'First law' })).toBeVisible()
+
+    await runPaletteCommand(page, 'Nest headings', 'Plex Graph: Nest headings under notes')
+    await chooseValue(page, 'Off')
+    await expect
+      .poll(async () => (await readSettings(request))['plugins'])
+      .toMatchObject({ [PLEX_ID]: { nest_headings: false } })
+
+    await page.mouse.move(0, 0)
+    await focusNode.hover()
+    // Longer than a hovered node takes to open its headings while they are on.
+    await page.waitForTimeout(1_500)
+    await expect(headings).toHaveCount(0)
+
+    await runPaletteCommand(page, 'Nest headings', 'Plex Graph: Nest headings under notes')
+    await chooseValue(page, 'On')
+    await page.mouse.move(0, 0)
+    await focusNode.hover()
+    await expect(headings.filter({ hasText: 'First law' })).toBeVisible()
   })
 })

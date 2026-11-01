@@ -9,6 +9,12 @@
     "test:headed": "playwright test --headed",
     "test:video": "PLAYWRIGHT_VIDEO=1 node scripts/run-offline.mjs",
     "test:report": "playwright show-report",
-    "test:flashcards": "node scripts/run-offline.mjs -c playwright.flashcards.config.ts"
+    "test:flashcards": "node scripts/run-offline.mjs -c playwright.flashcards.config.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "playwright": "^1.64.1",
+    "typescript": "^6.0.3"
   }
 }

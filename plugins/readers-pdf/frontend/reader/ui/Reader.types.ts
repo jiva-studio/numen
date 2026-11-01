@@ -1,5 +1,5 @@
 import type { Paint } from '@numen/ui'
-import type { Page, ReaderWords, Rect } from '../lib/strip'
+import type { Fit, Page, ReaderWords, Rect } from '../lib/strip'
 
 export interface ReaderProps {
   /** How big each page is, in its own units. */
@@ -18,4 +18,6 @@ export interface ReaderProps {
   undrawn?: string
   /** When the row is put on the screen again. The next frame by default. */
   paint?: Paint
+  /** How the document is drawn when it opens. A whole page in the viewport by default. */
+  fit?: Fit
 }
