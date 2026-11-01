@@ -46,20 +46,12 @@ test.describe('Cancelling a background task', () => {
     request,
   }) => {
     // The vector pass is one task that names the source it last embedded, and it embeds the pending
-    // chunks source by source. The row of the held note is the row of the pass only once the
-    // fixtures are indexed, the text of their PDFs included: the core reports the PDF that cannot
-    // be read as failed once its text pass has got there, and the chunks of the others follow.
+    // chunks source by source. Other specs leave failed tasks in the status bar (a link that answers
+    // 404, a theme whose plugin was turned off), so the row of the pass is found by the path of the
+    // held note and the start waits for the fixtures to be indexed and no task to be running.
     await page.goto('/')
     const trigger = page.locator('.status-bar__trigger')
     await expect(trigger).toBeVisible()
-    // The failed tasks are read from the popover, so a second failure is named in the report.
-    const readFailedTasks = async (): Promise<string[]> => {
-      await trigger.click()
-      const failed = await page.locator('.task-item--failed').allTextContents()
-      await page.keyboard.press('Escape')
-      return failed.map((text) => text.replace(/\s+/g, ' ').trim())
-    }
-    await expect.poll(readFailedTasks, { timeout: 120_000 }).toHaveLength(1)
     await expect.poll(() => isIndexed(request), { timeout: 120_000 }).toBe(true)
     await expect(page.locator('.status-bar__summary')).not.toHaveText(/^[1-9]\d* active$/)
 
