@@ -36,12 +36,13 @@ func TestServeKeepsServingWhenOutputCannotSync(t *testing.T) {
 		<-serveErrCh
 	})
 
-	deadline := time.Now().Add(5 * time.Second)
+	deadline := time.After(5 * time.Second)
 	for !strings.Contains(stdout.String(), fmt.Sprintf("NUMEN_READY port=%d\n", port)) {
-		if time.Now().After(deadline) {
+		select {
+		case <-deadline:
 			t.Fatalf("no ready line, stdout %q", stdout.String())
+		case <-time.After(10 * time.Millisecond):
 		}
-		time.Sleep(10 * time.Millisecond)
 	}
 	select {
 	case err := <-serveErrCh:
