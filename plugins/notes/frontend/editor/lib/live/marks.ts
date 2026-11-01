@@ -13,6 +13,11 @@ import { findChild } from '../extensions/address'
 import { getGrid } from '../table/grid'
 import { BULLET, HEADING, HIDDEN, INLINE, line, mark, CARET_ONLY } from './styles'
 import { Box, Bullet, Picture, Rule } from './widgets'
+import { drawWikilink, findDrawnWikilinks, isLinkSelected, isWithin } from './wikilinks'
+import type { Wikilink } from '../extensions/wikilink'
+
+/** The nodes the markdown parser makes of the inner brackets of a wikilink. */
+const LINK_NODES = new Set(['Link', 'LinkMark', 'LinkLabel', 'URL', 'LinkTitle'])
 
 /** The block nodes that hold other blocks; a Table or a HorizontalRule is allowed only in these. */
 const BLOCK_CONTAINERS = new Set([
@@ -43,6 +48,7 @@ interface MarkSpan {
 
 class MarkBuilder {
   readonly found: Range<Decoration>[] = []
+  links: readonly Wikilink[] = []
   private readonly doc: Text
   private readonly blocks: boolean
 
@@ -206,6 +212,7 @@ class MarkBuilder {
     const asBlock = this.takeBlock(node)
     if (asBlock !== null) return asBlock
     if (this.blocks) return BLOCK_CONTAINERS.has(node.name)
+    if (LINK_NODES.has(node.name) && isWithin(this.links, node.from, node.to)) return false
 
     return (
       this.takeLine(node) ??
@@ -221,6 +228,12 @@ class MarkBuilder {
 
 const build = (state: EditorState, span: MarkSpan, pass: 'blocks' | 'getMarks'): DecorationSet => {
   const builder = new MarkBuilder(state, pass)
+  if (pass === 'getMarks') {
+    builder.links = findDrawnWikilinks(state, span.from, span.to)
+    for (const link of builder.links) {
+      builder.found.push(...drawWikilink(link, isLinkSelected(state, link)))
+    }
+  }
   syntaxTree(state).iterate({
     from: span.from,
     to: span.to,

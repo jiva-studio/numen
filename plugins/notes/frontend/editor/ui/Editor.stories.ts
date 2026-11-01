@@ -5,6 +5,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { createApp, ref } from 'vue'
+import { autocompletion, startCompletion } from '@codemirror/autocomplete'
 import { undo } from '@codemirror/commands'
 import { EditorSelection } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
@@ -826,4 +827,142 @@ export const AWholeDocumentOfCode: Story = {
 /** A language no fence answers to leaves the document plain. */
 export const ALanguageNothingAnswersTo: Story = {
   render: renderEditor(SETTINGS, { isLive: false, language: 'not-a-language' }),
+}
+
+/* ------------------------------- Wikilinks -------------------------------- */
+
+/** One of each form of a wikilink on its own line, then a line to park the caret on. */
+const WIKILINKS =
+  '[[Entropy]]\n\n[[Entropy|disorder]]\n\n[[Entropy#Heat]]\n\nA [[Carnot]] and [[Kelvin]] side by side.\n\n[[unfinished\n\nelsewhere\n'
+
+/** Whether the computed value of `property` on the node is what the token paints. */
+const expectPaintedFrom = async (
+  node: Element,
+  property: 'color' | 'backgroundColor',
+  token: string,
+) => {
+  const probe = document.createElement('div')
+  probe.style.setProperty(property === 'color' ? 'color' : 'background-color', `var(${token})`)
+  node.append(probe)
+  const expected = getComputedStyle(probe)[property]
+  probe.remove()
+  await expect(getComputedStyle(node)[property]).toBe(expected)
+}
+
+const playWikilinksAway = async (canvasElement: HTMLElement) => {
+  const view = getView(canvasElement)
+  view.dispatch({ selection: EditorSelection.single(view.state.doc.length) })
+  await nextFrame()
+
+  const lines = Array.from(view.contentDOM.querySelectorAll('.cm-line')).map(
+    (one) => one.textContent,
+  )
+  await expect(lines).toContain('Entropy')
+  await expect(lines).toContain('disorder')
+  await expect(lines).toContain('Entropy#Heat')
+  await expect(lines).toContain('A Carnot and Kelvin side by side.')
+  await expect(lines).toContain('[[unfinished')
+
+  const links = Array.from(view.contentDOM.querySelectorAll('.cm-wikilink'))
+  await expect(links.map((one) => one.textContent)).toEqual([
+    'Entropy',
+    'disorder',
+    'Entropy#Heat',
+    'Carnot',
+    'Kelvin',
+  ])
+  for (const one of links) await expectPaintedFrom(one, 'color', '--numen-ring')
+  await expect(view.contentDOM.querySelectorAll('.cm-wikilink-mark')).toHaveLength(0)
+  await expect(view.contentDOM.querySelectorAll('.cm-link')).toHaveLength(0)
+}
+
+/** Away from the caret a wikilink shows its target, or its alias, as one link and nothing else. */
+export const WikilinksAway: Story = {
+  render: renderEditor(WIKILINKS),
+  play: ({ canvasElement }) => playWikilinksAway(canvasElement),
+}
+
+export const WikilinksAwayInDark: Story = {
+  render: renderEditor(WIKILINKS),
+  globals: { theme: 'dark' },
+  play: ({ canvasElement }) => playWikilinksAway(canvasElement),
+}
+
+const playWikilinkTouched = async (canvasElement: HTMLElement) => {
+  const view = getView(canvasElement)
+  for (const caret of [0, 5, 11]) {
+    view.dispatch({ selection: EditorSelection.single(caret) })
+    await nextFrame()
+
+    const first = view.contentDOM.querySelector('.cm-line') as HTMLElement
+    await expect(first.textContent).toBe('[[Entropy]]')
+    const brackets = Array.from(first.querySelectorAll('.cm-wikilink-mark'))
+    await expect(brackets.map((one) => one.textContent)).toEqual(['[[', ']]'])
+    for (const one of brackets) await expectPaintedFrom(one, 'color', '--numen-syntax-mark')
+    await expectPaintedFrom(first.querySelector('.cm-wikilink') as Element, 'color', '--numen-ring')
+    await expect(view.contentDOM.querySelectorAll('.cm-matchingBracket')).toHaveLength(0)
+    await expect(view.contentDOM.querySelectorAll('.cm-nonmatchingBracket')).toHaveLength(0)
+  }
+}
+
+/** With the caret in or touching the link its brackets are back, both muted alike. */
+export const WikilinkTouched: Story = {
+  render: renderEditor(WIKILINKS),
+  play: ({ canvasElement }) => playWikilinkTouched(canvasElement),
+}
+
+export const WikilinkTouchedInDark: Story = {
+  render: renderEditor(WIKILINKS),
+  globals: { theme: 'dark' },
+  play: ({ canvasElement }) => playWikilinkTouched(canvasElement),
+}
+
+/* ---------------------------- The completion list --------------------------- */
+
+const completionOf = autocompletion({
+  override: [
+    (context) => ({
+      from: context.pos - 2,
+      filter: false,
+      options: [
+        { label: 'Entropy', detail: 'note', type: 'class' },
+        { label: 'Entropy and heat', detail: 'note', type: 'class' },
+      ],
+    }),
+  ],
+})
+
+const playCompletionColours = async (canvasElement: HTMLElement) => {
+  const view = getView(canvasElement)
+  view.focus()
+  view.dispatch({ selection: EditorSelection.single(view.state.doc.length) })
+  startCompletion(view)
+
+  const list = await waitFor(() => {
+    const found = canvasElement.ownerDocument.querySelector('.cm-tooltip-autocomplete')
+    if (!found) throw new Error('the completion list is not open')
+    return found
+  })
+  await expectPaintedFrom(list, 'backgroundColor', '--numen-raised')
+  await expectPaintedFrom(list, 'color', '--numen-ink')
+  const current = list.querySelector('li[aria-selected]') as Element
+  await expectPaintedFrom(current, 'backgroundColor', '--numen-bubble-bg')
+  await expectPaintedFrom(current, 'color', '--numen-ink')
+  await expectPaintedFrom(
+    list.querySelector('.cm-completionDetail') as Element,
+    'color',
+    '--numen-hushed',
+  )
+}
+
+/** The completion list is drawn with the tokens of the menus of the interface. */
+export const CompletionOpen: Story = {
+  render: renderEditor('See [[En', { extensions: completionOf }),
+  play: ({ canvasElement }) => playCompletionColours(canvasElement),
+}
+
+export const CompletionOpenInDark: Story = {
+  render: renderEditor('See [[En', { extensions: completionOf }),
+  globals: { theme: 'dark' },
+  play: ({ canvasElement }) => playCompletionColours(canvasElement),
 }

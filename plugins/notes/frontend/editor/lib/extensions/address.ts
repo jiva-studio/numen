@@ -17,7 +17,7 @@ export const findChild = (node: SyntaxNode, name: string): SyntaxNode | null => 
 }
 
 /** Whether the syntax node is enclosed within code formatting. */
-const isCode = (node: SyntaxNode): boolean => {
+export const isCode = (node: SyntaxNode): boolean => {
   for (let one: SyntaxNode | null = node; one; one = one.parent) {
     if (one.name === 'FencedCode' || one.name === 'CodeBlock' || one.name === 'InlineCode') {
       return true

@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { test, expect, readActivePath } from '../../support/test.js'
+import { test, expect, readActivePath, type Locator } from '../../support/test.js'
 import {
   getGraph,
   getPaletteField,
@@ -18,6 +18,7 @@ import {
   readNote,
   typeAtEnd,
   waitForSavedBody,
+  writeSetting,
   writeNote,
 } from '../../support/vault.js'
 
@@ -100,4 +101,113 @@ test.describe('Note Creation and Wikilinks', () => {
       await destroyNote(request, notePath)
     }
   })
+})
+
+/** The computed value of `property` on `node`, and of the same property painted from a token. */
+const getPainted = (
+  node: Locator,
+  property: 'color' | 'backgroundColor',
+  token: string,
+): Promise<{ painted: string; expected: string }> =>
+  node.evaluate(
+    (element, [name, custom]) => {
+      const probe = document.createElement('div')
+      probe.style.setProperty(name === 'color' ? 'color' : 'background-color', `var(${custom})`)
+      element.append(probe)
+      const expected = getComputedStyle(probe)[name as 'color']
+      probe.remove()
+      return { painted: getComputedStyle(element)[name as 'color'], expected }
+    },
+    [property, token],
+  )
+
+const expectPaintedFrom = async (
+  node: Locator,
+  property: 'color' | 'backgroundColor',
+  token: string,
+): Promise<void> => {
+  const { painted, expected } = await getPainted(node, property, token)
+  expect(painted).toBe(expected)
+}
+
+test.describe('Wikilink in the editor', () => {
+  test('draws a finished wikilink as one link and opens its note from the shown text', async ({
+    page,
+    request,
+  }) => {
+    const notePath = await createNote(request, createUniqueTitle('Link design'))
+    try {
+      await openWorkspace(page)
+      const text = await openNote(page, notePath)
+
+      await typeAtEnd(page, text, '[[Entropy]]')
+      await page.keyboard.press('Escape')
+      await page.keyboard.type('\nnext line')
+
+      await expect(text.locator('.cm-line').first()).toHaveText('Entropy')
+      await expect(text.locator('.cm-wikilink')).toHaveText('Entropy')
+      await expect(text.locator('.cm-wikilink-mark')).toHaveCount(0)
+
+      await text.locator('.cm-wikilink').click({ modifiers: ['ControlOrMeta'] })
+
+      await expect(getNoteTab(page, 'notes/Entropy.md')).toHaveAttribute('aria-selected', 'true')
+    } finally {
+      await destroyNote(request, notePath)
+    }
+  })
+
+  test('shows both brackets muted and alike while the caret touches the link', async ({
+    page,
+    request,
+  }) => {
+    const notePath = await createNote(request, createUniqueTitle('Link brackets'))
+    try {
+      await writeNote(request, notePath, '[[Entropy]] stays.')
+      await openWorkspace(page)
+      const text = await openNote(page, notePath)
+      await text.click()
+      await page.keyboard.press('ControlOrMeta+End')
+      await expect(text.locator('.cm-line').first()).toHaveText('Entropy stays.')
+
+      await page.keyboard.press('ControlOrMeta+Home')
+
+      await expect(text.locator('.cm-line').first()).toHaveText('[[Entropy]] stays.')
+      const brackets = text.locator('.cm-wikilink-mark')
+      await expect(brackets).toHaveCount(2)
+      await expectPaintedFrom(brackets.first(), 'color', '--numen-syntax-mark')
+      await expectPaintedFrom(brackets.last(), 'color', '--numen-syntax-mark')
+      await expectPaintedFrom(text.locator('.cm-wikilink'), 'color', '--numen-ring')
+      await expect(text.locator('.cm-matchingBracket')).toHaveCount(0)
+      await expect(text.locator('.cm-nonmatchingBracket')).toHaveCount(0)
+    } finally {
+      await destroyNote(request, notePath)
+    }
+  })
+
+  for (const mode of ['light', 'dark'] as const) {
+    test(`draws the completion list in the colours of the ${mode} theme`, async ({
+      page,
+      request,
+    }) => {
+      const notePath = await createNote(request, createUniqueTitle('Completion colours'))
+      await writeSetting(request, ['appearance', 'mode'], mode)
+      try {
+        await openWorkspace(page)
+        const text = await openNote(page, notePath)
+
+        await typeAtEnd(page, text, 'See [[Entr')
+
+        const list = page.locator('.cm-tooltip-autocomplete')
+        const current = list.getByRole('option', { selected: true })
+        await expect(current).toBeVisible()
+        await expectPaintedFrom(list, 'backgroundColor', '--numen-raised')
+        await expectPaintedFrom(list, 'color', '--numen-ink')
+        await expectPaintedFrom(current, 'backgroundColor', '--numen-bubble-bg')
+        await expectPaintedFrom(current, 'color', '--numen-ink')
+      } finally {
+        await writeSetting(request, ['appearance', 'mode'], 'system')
+        await destroyNote(request, notePath)
+      }
+    })
+  }
 })

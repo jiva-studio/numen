@@ -22,6 +22,7 @@ import {
 } from '@codemirror/view'
 import { moveBlock } from '../table/grid'
 import { type BlockNode, blockMarks, findBlocks, getMarks } from './marks'
+import { getWikilinkMarks } from './wikilinks'
 
 /**
  * How far beyond the visible lines the marks are drawn, in characters. Resizing
@@ -183,4 +184,25 @@ export const live = ViewPlugin.fromClass(
     provide: (plugin) =>
       EditorView.atomicRanges.of((view) => view.plugin(plugin)?.decorations ?? Decoration.none),
   },
+)
+
+/** The wikilinks of a document shown as written, with the marks muted, where live preview is off. */
+export const sourceWikilinks = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet
+
+    constructor(view: EditorView) {
+      this.decorations = this.draw(view)
+    }
+
+    update(update: ViewUpdate) {
+      if (update.docChanged || update.viewportChanged) this.decorations = this.draw(update.view)
+    }
+
+    draw(view: EditorView): DecorationSet {
+      const span = getDrawnRange(view)
+      return span ? getWikilinkMarks(view.state, span.from, span.to, false) : Decoration.none
+    }
+  },
+  { decorations: (plugin) => plugin.decorations },
 )

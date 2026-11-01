@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import MarkdownNoteEditor from './MarkdownNoteEditor.vue'
 
 describe('MarkdownNoteEditor', () => {
@@ -199,5 +199,40 @@ describe('MarkdownNoteEditor over a tab that offers links', () => {
     await nextTick()
 
     expect(wrapper.findComponent({ name: 'Editor' }).props('extensions')).toBeDefined()
+  })
+})
+
+describe('MarkdownNoteEditor with the body from its tab', () => {
+  const FILE = '---\nid: 01M4JWCXZ3X193ZQBKPWWRVAJT\n---\n'
+
+  const mountHosted = (body: ReturnType<typeof ref<string>>) =>
+    mount(MarkdownNoteEditor, {
+      props: { filePath: 'notes/Test.md', state: { body, isLoading: ref(false) } },
+    })
+
+  it('does not read the file, frontmatter included, when the note has no body', async () => {
+    const fetched = vi.fn(() => Promise.resolve(new Response(FILE)))
+    vi.stubGlobal('fetch', fetched)
+    try {
+      const wrapper = mountHosted(ref(''))
+      await flushPromises()
+
+      expect(fetched).not.toHaveBeenCalled()
+      expect(wrapper.vm.getContent()).toBe('')
+      expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('shows a body that becomes empty, as when the file is rewritten without prose', async () => {
+    const body = ref('First lines.')
+    const wrapper = mountHosted(body)
+    expect(wrapper.vm.getContent()).toBe('First lines.')
+
+    body.value = ''
+    await nextTick()
+
+    expect(wrapper.vm.getContent()).toBe('')
   })
 })

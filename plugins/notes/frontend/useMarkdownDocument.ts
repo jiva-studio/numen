@@ -248,6 +248,9 @@ export function useMarkdownDocument(
     return ''
   }
 
+  /** A host tab supplies the body from its store, so the editor does not read the file itself. */
+  const isHostOwned = (): boolean => props.state !== undefined
+
   const docContent = ref(getInitialBody())
   const initialContent = ref(getInitialBody())
 
@@ -284,7 +287,7 @@ export function useMarkdownDocument(
       return ''
     },
     (next) => {
-      if (next && next !== docContent.value) {
+      if ((next || isHostOwned()) && next !== docContent.value) {
         docContent.value = next
         initialContent.value = next
       }
@@ -326,7 +329,7 @@ export function useMarkdownDocument(
 
   onMounted(() => {
     syncEditorState(editorRef.value)
-    if (!docContent.value && activePath.value) {
+    if (!docContent.value && activePath.value && !isHostOwned()) {
       loadContentFromPath(activePath.value)
     }
   })
@@ -337,7 +340,7 @@ export function useMarkdownDocument(
       docContent.value = nextBody
       initialContent.value = nextBody
     }
-    if (newPath && !docContent.value) {
+    if (newPath && !docContent.value && !isHostOwned()) {
       loadContentFromPath(newPath)
     }
   })

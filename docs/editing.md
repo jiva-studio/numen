@@ -80,6 +80,10 @@ A name is marked gone when a read of it finds nothing, and a read that finds the
 
 A link in the prose is followed with the platform's modifier held down. `[[Entropy]]` and `[[note://<identifier>]]` are read as an address, resolved the way every link in the vault is, and the note the address resolves to opens in a tab beside this one. An address that resolves to no note opens nothing.
 
+## How a wikilink is drawn
+
+`[[target]]`, `[[target|alias]]` and `[[target#heading]]` are each one link. With the caret and selection away from it, the brackets are hidden and the link shows its target, or its alias when it has one, in the link colour. With the caret inside or touching it, and with live preview off, the brackets and the target of an alias are shown in the muted mark colour inside the link. The brackets of a wikilink are never highlighted as a matching pair, and an unfinished `[[b` is plain text.
+
 ## Smart wikilink autocomplete and instant creation
 
 Typing `[[` inside the editor opens an autocomplete list of matching notes across the vault.
