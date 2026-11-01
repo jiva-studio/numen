@@ -15,6 +15,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    setupFiles: ['./frontend/testing/noLayout.ts'],
     testTimeout: 30_000,
   },
 })

@@ -119,11 +119,11 @@ key: value:
     expect(wrapper.find('.caution__text').text()).toBe('frontmatter unreadable')
   })
 
-  it('does not display caution banner when errorMessage is an empty ref or empty string', () => {
+  it('does not display caution banner when errorMessage and the state error are empty', () => {
     const wrapper = mount(MarkdownNoteEditor, {
       props: {
         filePath: 'test.md',
-        errorMessage: ref('') as unknown as string,
+        errorMessage: '',
         state: { errorMessage: ref('') },
       },
     })

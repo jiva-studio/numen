@@ -17,7 +17,7 @@ export const MIN_DURATION = 4_000
 export const PER_WORD = 400
 
 /** The length past which a notice is not read in passing. */
-export const TOO_MUCH = 20
+const TOO_MUCH = 20
 
 /**
  * How long a notice is displayed to be read, in milliseconds.

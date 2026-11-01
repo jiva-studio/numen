@@ -190,14 +190,22 @@ func (p AgentProgram) MarshalJSON() ([]byte, error) {
 // AI is the section of the settings file that selects the agent that answers
 // for a plugin whose own setting names none.
 type AI struct {
+	// Default is the agent and the model that answer a plugin whose own setting
+	// names no agent, and how many questions one agent answers at once.
 	Default AIRoute `json:"default"`
 }
 
 // AIRoute is an agent, the model it answers with, and the limit of its questions.
 type AIRoute struct {
-	Agent       string `json:"agent,omitempty"`
-	Model       string `json:"model,omitempty"`
-	Concurrency int    `json:"concurrency,omitempty"`
+	// Agent is the id of the agent plugin that answers. Empty selects the
+	// provider with the lowest id.
+	Agent string `json:"agent,omitempty"`
+	// Model is the model the agent answers with. Empty leaves the choice to the
+	// agent.
+	Model string `json:"model,omitempty"`
+	// Concurrency is how many questions one agent answers at once. Below one
+	// is one.
+	Concurrency int `json:"concurrency,omitempty"`
 }
 
 // UnmarshalJSON reads the section. A file of an older shape holds its default

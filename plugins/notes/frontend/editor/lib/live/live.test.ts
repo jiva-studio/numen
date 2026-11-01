@@ -9,11 +9,6 @@ import { blockMarks, getMarks } from './marks'
 import { Box, Bullet, Picture, Rule } from './widgets'
 import { createState } from '../../fixtures/state'
 
-// Nothing here has a size, and the editor measures anyway.
-Range.prototype.getClientRects = () =>
-  Object.assign([], { item: () => null }) as unknown as DOMRectList
-Range.prototype.getBoundingClientRect = () => new DOMRect()
-
 interface Drawn {
   readonly from: number
   readonly to: number

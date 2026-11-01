@@ -105,4 +105,96 @@ const { polite, assertive } = useAnnouncer(() => notices.value)
   </div>
 </template>
 
-<style scoped src="./Notices.css"></style>
+<style scoped>
+/* Over the corner, never in the way of a pointer that is not on a card. */
+.notices {
+  --gap: 0.5rem;
+
+  position: fixed;
+  inset-block-end: var(--numen-inset-wide);
+  inset-inline-start: var(--numen-inset-wide);
+  z-index: var(--numen-lift-notice);
+  pointer-events: none;
+}
+
+.notices__stack {
+  gap: var(--gap);
+}
+
+.notice {
+  --room: 24rem;
+
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  inline-size: var(--room);
+  max-inline-size: calc(100vw - 2 * var(--numen-inset-wide));
+  padding-block: 0.5rem;
+  padding-inline: 0.75rem 0.5rem;
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-radius-panel);
+  background: var(--numen-raised);
+  color: var(--numen-ink);
+  box-shadow: var(--numen-shadow-card);
+  text-align: start;
+}
+
+.notice[data-severity='warning'] {
+  background: var(--numen-caution-bg);
+  color: var(--numen-caution-fg);
+  border-color: color-mix(in oklab, currentColor 25%, transparent);
+}
+
+.notice[data-severity='error'] {
+  background: var(--numen-alarm-bg);
+  color: var(--numen-alarm);
+  border-color: color-mix(in oklab, currentColor 25%, transparent);
+}
+
+.notice__folded {
+  margin: 0;
+  opacity: 0.7;
+}
+
+.notice__folded:hover,
+.notice__folded:focus-visible {
+  opacity: 1;
+}
+
+.notice-enter-active,
+.notice-leave-active,
+.notice-move {
+  transition:
+    opacity var(--numen-motion) var(--numen-easing),
+    transform var(--numen-motion) var(--numen-easing);
+}
+
+.notice-enter-from,
+.notice-leave-to {
+  opacity: 0;
+  transform: translateY(0.5rem);
+}
+
+/* A card on its way out is out of the stack, so the ones above it come down
+   while it goes. */
+.notice-leave-active {
+  position: absolute;
+  inset-inline-start: 0;
+}
+
+/* A card is a card whether or not it arrived moving. */
+@media (prefers-reduced-motion: reduce) {
+  .notice-enter-active,
+  .notice-leave-active,
+  .notice-move {
+    transition: none;
+  }
+
+  .notice-enter-from,
+  .notice-leave-to {
+    opacity: 1;
+    transform: none;
+  }
+}
+</style>

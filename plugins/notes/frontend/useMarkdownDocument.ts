@@ -253,7 +253,7 @@ export function useMarkdownDocument(
   })
 
   const displayErrorMessage = computed<string>(() => {
-    const propErr = extractErrorString(props.errorMessage)
+    const propErr = props.errorMessage?.trim() ?? ''
     if (propErr) return propErr
     const stateErr = extractErrorString(props.state?.errorMessage)
     if (stateErr) return stateErr

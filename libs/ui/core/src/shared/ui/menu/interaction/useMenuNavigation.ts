@@ -13,14 +13,14 @@ import {
 import { useMenuKeys } from './keys'
 import { useMenuSearch } from '../items/search'
 
-export interface ActiveSubmenu {
+interface ActiveSubmenu {
   readonly id: string
   readonly items: readonly MenuItem[]
   readonly at: Position
   readonly from: HTMLElement | null
 }
 
-export interface MenuSubmenuState {
+interface MenuSubmenuState {
   readonly active: Ref<ActiveSubmenu | null>
   readonly trigger: Ref<MenuTrigger>
   readonly onRegisterRow: (id: string, row: unknown) => void

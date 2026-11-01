@@ -4,8 +4,6 @@
 
 import type { Tally, TallyUnit, Severity } from './tally'
 
-export type { Severity }
-
 /**
  * How long a notice is displayed.
  *

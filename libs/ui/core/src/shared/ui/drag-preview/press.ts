@@ -9,7 +9,7 @@ import type { Position } from '@/shared/lib/math/geometry'
 import type { Clock } from '@/shared/lib/time/clock'
 
 /** What is being carried, and whether the pointer has gone far enough to mean it. */
-export interface Drag<Item> {
+interface Drag<Item> {
   readonly item: Item
   readonly hasMoved: boolean
 }

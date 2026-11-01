@@ -92,7 +92,7 @@ export interface MenuTriggerDescriptor {
   readonly hasInitialFocus: boolean
 }
 
-export const MENU_TRIGGERS = {
+const MENU_TRIGGERS = {
   pointer: { hasInitialFocus: false },
   keyboard: { hasInitialFocus: true },
 } as const satisfies Record<string, MenuTriggerDescriptor>

@@ -20,7 +20,8 @@ const SDK_PACKAGE = JSON.stringify({ name: "sdk", exports: { ".": "./index.ts" }
 
 /** Writes the files into a new directory and returns the findings for the SDK entry in it. */
 function readExposures(sdkSource) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "sdk-protocol-"));
+  // TypeScript reports real paths, and the temporary directory of macOS is a symbolic link.
+  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "sdk-protocol-")));
   try {
     const files = { ...PROTOCOL_FILES, "sdk/package.json": SDK_PACKAGE, "sdk/index.ts": sdkSource };
     for (const [name, text] of Object.entries(files)) {

@@ -34,12 +34,5 @@ export const LONG =
   'the graph, and it does not need to. When what a link is finally gets decided, ' +
   'the adapter in the application changes and nothing here does.'
 
-export const MULTILINE =
-  'Three things follow:\n\n' +
-  '  1. a decision cannot break a component\n' +
-  '  2. a component cannot answer a question about the graph\n' +
-  '  3. the dependency runs one way\n\n' +
-  'and they are the point.'
-
 /** One character each to a reader; several code units each to a machine. */
 export const GRAPHEMES = '👩‍👩‍👧‍👦 👋🏽 🇮🇳 é'

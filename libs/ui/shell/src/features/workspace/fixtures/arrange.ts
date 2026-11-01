@@ -14,7 +14,7 @@ export interface ArrangeOptions {
   readonly gap: number
 }
 
-export const DEFAULT_ARRANGE: ArrangeOptions = { gap: 0 }
+const DEFAULT_ARRANGE: ArrangeOptions = { gap: 0 }
 
 interface PlaceContext {
   workspace: Workspace

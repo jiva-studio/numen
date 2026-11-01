@@ -14,8 +14,8 @@ Two things are not settings and are not in here: which files count as notes, and
 <!-- BEGIN AUTOGEN -->
 | | | |
 | --- | --- | --- |
-| `v` | a number | the shape of the file. Nothing reads it yet, and it is written so that the day a section changes shape there is something to tell the two apart. |
-| `plugins` |  | the configuration for modular plugins, keyed by plugin ID. |
+| `v` | a number | the format version of the file. Nothing reads it yet. |
+| `plugins` |  | holds the settings of each plugin, keyed by plugin id. |
 
 ### `appearance`
 
@@ -23,27 +23,27 @@ How the window is drawn.
 
 | | | |
 | --- | --- | --- |
-| `interface_scale` | a number | how large the window is drawn: its chrome, its controls, the spacing between them and the type in them. |
-| `text_scale` | a number | how large the text a person reads is set: a note, a book, an answer, the editor. |
+| `interface_scale` | a number | the scale of the window: its chrome, its controls, the spacing between them and the type in them. |
+| `text_scale` | a number | the scale of reading text: a note, a book, an answer, the editor. |
 | `mode` | text | which half of a colour pair the window takes: `system`, `light` or `dark`. |
 | `theme` | text | the stylesheet applied to the window, named by its origin and its identifier: `preset:numen` ships here, `mine:dracula` is the person's file, and `plugin:md.numen.themes.presets/dracula` is a theme of an enabled plugin. |
 
 ### `indexing.embedding`
 
-How the index keeps and asks vectors.
+How the index cuts notes into chunks and stores their vectors.
 
 | | | |
 | --- | --- | --- |
-| `max_tokens` | a number | the input bound, in tokens, of a chunk the index keeps a vector of. |
+| `max_tokens` | a number | the input limit, in tokens, of one chunk the index stores a vector of. |
 
 ### `agent`
 
-Which agent answers in the panel, and what it may reach.
+Selects the agent that answers in the panel and configures how each program runs.
 
 | | | |
 | --- | --- | --- |
-| `use` | text | names the program that answers. Absent, the program the providers mark as the default answers. |
-| `serve_tools` | yes or no | puts the tools on a port, which is how an agent a person runs themselves reaches this vault. |
+| `use` | text | names the program that answers. When absent, the program that the providers mark as default answers. |
+| `serve_tools` | yes or no | exposes the tools on a port, which lets an agent that the user runs externally reach this vault. |
 
 ### `naming`
 
@@ -51,11 +51,11 @@ Whether a note's title and its filename are kept in sync.
 
 | | | |
 | --- | --- | --- |
-| `sync_title_and_filename` | yes or no | whether renaming either of the two brings the other into line. |
+| `sync_title_and_filename` | yes or no | whether renaming either the title or the filename updates the other. |
 
 ### `performance`
 
-The workload and resource calibration profile.
+The settings section for workload and resource calibration.
 
 | | | |
 | --- | --- | --- |
@@ -63,11 +63,11 @@ The workload and resource calibration profile.
 
 ### `ai.default`
 
-The agent and the model a plugin naming no agent is answered by, and how many questions one agent answers at once.
+The agent and the model that answer a plugin whose own setting names no agent, and how many questions one agent answers at once.
 
 | | | |
 | --- | --- | --- |
-| `agent` | text | the id of the agent plugin that answers. Empty is the provider with the lowest id. |
-| `model` | text | the model the agent answers with. Empty leaves it to the agent. |
+| `agent` | text | the id of the agent plugin that answers. Empty selects the provider with the lowest id. |
+| `model` | text | the model the agent answers with. Empty leaves the choice to the agent. |
 | `concurrency` | a number | how many questions one agent answers at once. |
 <!-- END AUTOGEN -->

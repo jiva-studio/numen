@@ -16,11 +16,6 @@ import { addressOpener, addressResolver } from '../lib/outside'
 type Props = InstanceType<typeof Editor>['$props']
 type EditorHandle = { focus: () => void; measure: () => void; reveal: (line: number) => boolean }
 
-// Nothing here has a size, and the editor measures anyway.
-Range.prototype.getClientRects = () =>
-  Object.assign([], { item: () => null }) as unknown as DOMRectList
-Range.prototype.getBoundingClientRect = () => new DOMRect()
-
 const renderedViews: { unmount: () => void }[] = []
 
 const editor = (props: Partial<Props> = {}) => {

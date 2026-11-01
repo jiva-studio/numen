@@ -30,7 +30,7 @@ export const SHOTS = [
   },
   { name: 'commands', story: 'application-window--commanding', width: 1180, height: 740 },
   { name: 'writing', story: 'application-window--writing', width: 1180, height: 740 },
-  { name: 'table', story: 'application-window--tabling', width: 1180, height: 740 },
+  { name: 'table', story: 'notes-editor--table', width: 1180, height: 740 },
   { name: 'reader', story: 'reading-book--reading', width: 1180, height: 740 },
   { name: 'files', story: 'application-window--filing', width: 1180, height: 740 },
   { name: 'settings', story: 'desktop-window--settings', width: 1180, height: 740 },

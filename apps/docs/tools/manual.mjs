@@ -193,18 +193,6 @@ const spoken = (declared, command) => {
   return found[1]
 }
 
-/**
- * The menu the text versions of the file in front make, as the palette names
- * each entry: by the plugin that does it.
- */
-const readFileMenu = async () => {
-  const source = await read(APP, 'commands/fileMenuCommands.ts')
-  const words = await read(UI, 'words.ts')
-  const named = [...source.matchAll(/return WORDS\.([A-Za-z]+)\(entry\.pluginName\)/g)]
-  if (named.length === 0) die('fileMenuCommands.ts names no entry of the menu')
-  return Promise.all(named.map(async ([, key]) => ({ text: await said(words, key), group: 'file' })))
-}
-
 /** That the window still draws a plugin's palette setting as its name and the setting's title. */
 const checkSettingCommands = async () => {
   const source = await read(APP, 'window/useSettings.ts')
@@ -243,7 +231,6 @@ const commands = async () => {
     ...own,
     ...plugins.flatMap((one) => one.settings),
     ...plugins.flatMap((one) => one.declared),
-    ...(await readFileMenu()),
     ...plugins.flatMap((one) =>
       one.commands.map(({ text, group, chord }) => ({ text, group, key: chord ? chordOf(chord) : '' })),
     ),
@@ -376,7 +363,7 @@ const meaning = (doc, name, keys) => {
     .replace(/^(is|are)\s+/, '')
     .replace(`${name} `, '')
 
-  const sentences = said.match(/[^.!?]+[.!?]?/g) ?? []
+  const sentences = said.match(/(?:[^.!?]|[.!?](?=\S))+[.!?]?/g) ?? []
   let out = ''
   for (const sentence of sentences) {
     out += sentence
@@ -395,7 +382,6 @@ const meaning = (doc, name, keys) => {
  * nobody listed here stops the build.
  */
 const PACKAGES = {
-  container: 'container',
   settings: 'adapter/settings',
   hardware: 'adapter/settings/hardware',
   completion: 'usecase/completion',
@@ -516,7 +502,7 @@ const settings = async () => {
   // still walked into, and a key added to one turns up here. It is declared
   // where every adapter is bound, because the file is the union of their
   // sections and the sections about the window.
-  const keys = await keysOf(PACKAGES.container, 'Settings', '')
+  const keys = await keysOf(PACKAGES.settings, 'File', '')
 
   const row = (key, section) =>
     `| \`${section ? key.path.slice(section.length + 1) : key.path}\` | ${key.kind} | ${key.meaning} |`

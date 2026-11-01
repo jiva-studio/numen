@@ -14,7 +14,7 @@ import { clock } from '@numen/ui'
  * `resting` has words and no work: something worth knowing that nothing is
  * going to change by itself. It is drawn without the marks of progress.
  */
-export type ActivityState = 'quiet' | 'working' | 'resting' | 'failed'
+type ActivityState = 'quiet' | 'working' | 'resting' | 'failed'
 
 /**
  * How a line is classified.
