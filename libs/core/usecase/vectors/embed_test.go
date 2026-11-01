@@ -564,8 +564,10 @@ func TestProgressNamesTheSourceBeingEmbedded(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Fatal("the run never reached the second source")
 	}
-	deadline := time.Now().Add(10 * time.Second)
-	for log.getLast().Embedded < aChunks && time.Now().Before(deadline) {
+	for range 2000 {
+		if log.getLast().Embedded >= aChunks {
+			break
+		}
 		time.Sleep(5 * time.Millisecond)
 	}
 	if got := log.getLast().Embedded; got != aChunks {
