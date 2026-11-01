@@ -130,10 +130,11 @@ export function getPagesWithin(row: Row, viewport: Size, offset: number): number
 }
 
 /**
- * The page in front: the one at the middle of the viewport. A page scrolled
- * halfway out of view is not the page being read.
+ * The current page: the last page that begins at or before the vertical centre
+ * line of the viewport. A centre line in the gap after a page belongs to that
+ * page.
  */
-export function inFront(row: Row, viewport: Size, offset: number): number {
+export function getCurrentPage(row: Row, viewport: Size, offset: number): number {
   const center = offset + viewport.width / 2
   let page = 0
   for (let i = 0; i < row.starts.length; i++) {
@@ -150,15 +151,23 @@ export function findPageScroll(row: Row, page: number): number | undefined {
 }
 
 /**
- * How far the row is scrolled to bring a page against the left edge, held
- * inside the row: the last page cannot be brought further left than the end of
- * it. Nothing for a page the row does not hold.
+ * How far the row is scrolled to show a page, held inside the row. Nothing for a
+ * page the row does not hold.
+ *
+ * The page is put against the left edge when the centre line of the viewport
+ * then falls on it, and centred in the viewport otherwise. Either way
+ * `getCurrentPage` at the returned offset is the page, unless the offset was
+ * clamped at an end of the row.
  */
 export function getScrollTarget(row: Row, viewport: Size, page: number): number | undefined {
-  const begins = findPageScroll(row, page)
-  if (begins === undefined) return undefined
-  const getFurthest = Math.max(row.length - viewport.width, 0)
-  return Math.min(Math.max(begins, 0), getFurthest)
+  const leftEdge = findPageScroll(row, page)
+  const begins = row.starts[page]
+  const width = row.widths[page]
+  if (leftEdge === undefined || begins === undefined || width === undefined) return undefined
+  const isCentreOnPage = leftEdge + viewport.width / 2 < begins + width
+  const target = isCentreOnPage ? leftEdge : Math.round(begins + width / 2 - viewport.width / 2)
+  const furthest = Math.max(row.length - viewport.width, 0)
+  return Math.min(Math.max(target, 0), furthest)
 }
 
 /**

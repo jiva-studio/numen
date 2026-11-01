@@ -6,7 +6,7 @@ import {
   NEARER,
   clampZoom,
   getPagesWithin,
-  inFront,
+  getCurrentPage,
   row,
   findPageScroll,
   getScrollTarget,
@@ -168,22 +168,22 @@ describe('which page is in front', () => {
     // viewport is over the page after it.
     const half = stripLayout.starts[4]! - stripLayout.widths[4]! / 2
 
-    expect(inFront(stripLayout, VIEWPORT, stripLayout.starts[4]!)).toBe(4)
+    expect(getCurrentPage(stripLayout, VIEWPORT, stripLayout.starts[4]!)).toBe(4)
     expect(
-      inFront(stripLayout, { width: stripLayout.widths[0]!, height: VIEWPORT.height }, half),
+      getCurrentPage(stripLayout, { width: stripLayout.widths[0]!, height: VIEWPORT.height }, half),
     ).toBe(4)
   })
 
   it('is the last page at the end of the row', () => {
     const stripLayout = row(book(20), VIEWPORT, 1)
 
-    expect(inFront(stripLayout, VIEWPORT, stripLayout.length)).toBe(19)
+    expect(getCurrentPage(stripLayout, VIEWPORT, stripLayout.length)).toBe(19)
   })
 
   it('is the first page at the beginning of the row', () => {
     const stripLayout = row(book(20), VIEWPORT, 1)
 
-    expect(inFront(stripLayout, VIEWPORT, 0)).toBe(0)
+    expect(getCurrentPage(stripLayout, VIEWPORT, 0)).toBe(0)
   })
 })
 
@@ -208,6 +208,16 @@ describe('where the row remains', () => {
     expect(getScrollTarget(stripLayout, VIEWPORT, 5)).toBe(stripLayout.starts[5]! - GAP)
   })
 
+  it('centres a page narrower than half the viewport', () => {
+    const broadViewport: Size = { width: 1600, height: 800 }
+    const stripLayout = row(book(20), broadViewport, 1)
+    const target = getScrollTarget(stripLayout, broadViewport, 5)!
+
+    const centre = target + broadViewport.width / 2
+    const pageCentre = stripLayout.starts[5]! + stripLayout.widths[5]! / 2
+    expect(Math.abs(centre - pageCentre)).toBeLessThanOrEqual(0.5)
+  })
+
   it('scrolls nowhere for a page the row does not hold', () => {
     expect(getScrollTarget(row(book(4), VIEWPORT, 1), VIEWPORT, 9)).toBeUndefined()
   })
@@ -219,6 +229,57 @@ describe('where the row remains', () => {
         0,
       ),
     ).toBe(0)
+  })
+})
+
+describe('the current page after a scroll to a page', () => {
+  const VIEWPORTS: readonly Size[] = [
+    { width: 300, height: 800 },
+    { width: 900, height: 800 },
+    { width: 1250, height: 800 },
+    { width: 1600, height: 800 },
+    { width: 2600, height: 700 },
+  ]
+
+  it('is the page scrolled to, in every viewport width', () => {
+    for (const viewport of VIEWPORTS) {
+      const stripLayout = row(book(40), viewport, 1)
+      const furthest = stripLayout.length - viewport.width
+      for (let page = 0; page < 40; page++) {
+        const target = getScrollTarget(stripLayout, viewport, page)!
+        if (target === 0 || target === furthest) continue
+        expect({ viewport, page, current: getCurrentPage(stripLayout, viewport, target) }).toEqual({
+          viewport,
+          page,
+          current: page,
+        })
+      }
+    }
+  })
+
+  it('stays the same page when the viewport height changes and the row is scrolled to it again', () => {
+    const before: Size = { width: 1400, height: 800 }
+    const after: Size = { width: 1400, height: 760 }
+    const page = getCurrentPage(
+      row(book(40), before, 1),
+      before,
+      getScrollTarget(row(book(40), before, 1), before, 12)!,
+    )
+    const afterLayout = row(book(40), after, 1)
+
+    expect(getCurrentPage(afterLayout, after, getScrollTarget(afterLayout, after, page)!)).toBe(
+      page,
+    )
+  })
+
+  it('is one page on either side of a border, and changes exactly at it', () => {
+    const stripLayout = row(book(40), VIEWPORT, 1)
+    const border = stripLayout.starts[12]! - VIEWPORT.width / 2
+
+    expect(getCurrentPage(stripLayout, VIEWPORT, border - 1)).toBe(11)
+    expect(getCurrentPage(stripLayout, VIEWPORT, border - 0.5)).toBe(11)
+    expect(getCurrentPage(stripLayout, VIEWPORT, border)).toBe(12)
+    expect(getCurrentPage(stripLayout, VIEWPORT, border + 0.5)).toBe(12)
   })
 })
 

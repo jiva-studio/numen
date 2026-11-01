@@ -132,6 +132,22 @@ describe('the page it says it relies on', () => {
     expect(getTurns(target).at(-1)).toBeGreaterThan(0)
   })
 
+  it('asks for no other page once the row has arrived at the page it was turned to', async () => {
+    // The viewport holds more than two pages, so a page against the left edge
+    // would leave the centre line on the page after it.
+    const target = await reader(1600, 800)
+    const area = target.find('.reader__viewport').element as HTMLElement
+    area.scrollTo = ((to: ScrollToOptions) => {
+      area.scrollLeft = to.left ?? 0
+    }) as typeof area.scrollTo
+
+    await target.setProps({ at: 4 })
+    await target.find('.reader__viewport').trigger('scroll')
+
+    expect(area.scrollLeft).toBeGreaterThan(0)
+    expect(getTurns(target)).toStrictEqual([])
+  })
+
   it('turns again when the page changes before the row has returned it arrived', async () => {
     // The container size changes first and the resize event follows. A turn
     // requested in between targets a page the row is not on.

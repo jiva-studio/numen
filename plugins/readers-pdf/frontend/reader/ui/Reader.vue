@@ -17,7 +17,7 @@ import {
   GAP,
   READER_WORDS,
   getPagesWithin,
-  inFront,
+  getCurrentPage,
   row,
   getScrollTarget,
   getTurnTarget,
@@ -70,7 +70,7 @@ const pageLayout = computed(() => row(props.pages, viewport.value, zoom.value))
 const visiblePages = computed(() =>
   getPagesWithin(pageLayout.value, viewport.value, scrollOffset.value),
 )
-const middle = computed(() => inFront(pageLayout.value, viewport.value, scrollOffset.value))
+const middle = computed(() => getCurrentPage(pageLayout.value, viewport.value, scrollOffset.value))
 
 /** Width at which each page is requested. */
 const { drawnWidth } = usePageWidth(
@@ -100,7 +100,8 @@ defineExpose({
 watch(
   () => props.at,
   (page) => {
-    if (page !== inFront(pageLayout.value, viewport.value, getScrollOffset())) stand(page, 'smooth')
+    if (page !== getCurrentPage(pageLayout.value, viewport.value, getScrollOffset()))
+      stand(page, 'smooth')
   },
 )
 
@@ -139,7 +140,7 @@ const onKey = (event: KeyboardEvent): boolean => {
 /** Where one page is drawn, once a width has been settled on. */
 const getImageUrl = (page: number) => (drawnWidth.value > 0 ? props.picture(page) : '')
 
-/** Scrolls the row so the page is at the left edge. */
+/** Scrolls the row to show the page, so that it becomes the current page. */
 const stand = (page: number, how: Parameters<PanScroll['send']>[1]) => {
   const to = getScrollTarget(pageLayout.value, viewport.value, page)
   if (to !== undefined) send(to, how)

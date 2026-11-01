@@ -42,10 +42,41 @@ function createSampleWav(targetPath) {
   fs.writeFileSync(targetPath, buffer)
 }
 
+// A US Letter PDF of pageCount pages, each with its number printed on it.
+function createPagedPdf(targetPath, pageCount) {
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+  ]
+  const kids = []
+  for (let page = 1; page <= pageCount; page++) {
+    const content = `BT /F1 96 Tf 220 380 Td (${page}) Tj ET`
+    objects.push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`)
+    objects.push(
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents ${objects.length} 0 R >>`,
+    )
+    kids.push(`${objects.length} 0 R`)
+  }
+  objects[1] = `<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${pageCount} >>`
+  let body = '%PDF-1.4\n'
+  const offsets = []
+  for (const [index, object] of objects.entries()) {
+    offsets.push(body.length)
+    body += `${index + 1} 0 obj\n${object}\nendobj\n`
+  }
+  const xref = body.length
+  body += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`
+  body += offsets.map((offset) => `${String(offset).padStart(10, '0')} 00000 n \n`).join('')
+  body += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`
+  fs.writeFileSync(targetPath, body, 'latin1')
+}
+
 // Create isolated temporary vault from template.
 const tmpVault = fs.mkdtempSync(path.join(os.tmpdir(), 'numen-e2e-vault-'))
 fs.cpSync(sourceVault, tmpVault, { recursive: true })
 createSampleWav(path.join(tmpVault, 'assets', 'sample.wav'))
+createPagedPdf(path.join(tmpVault, 'assets', 'pages.pdf'), 40)
 
 // Copy dynamic fixtures into isolated vault to prevent template fixture pollution.
 fs.copyFileSync(path.join(fixturesDir, 'sample.pdf'), path.join(tmpVault, 'assets', 'sample.pdf'))
