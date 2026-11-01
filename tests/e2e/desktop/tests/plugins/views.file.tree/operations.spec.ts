@@ -58,7 +58,7 @@ test.describe('Moving files in the files tab', () => {
     request,
   }) => {
     const twin = await createNoteWithBody(request, '2026-08-15', 'notes', '# 2026-08-15\n\nA second log.\n')
-    const kept = (await readNote(request, 'daily/2026-08-15.md')).body
+    const bodyBefore = (await readNote(request, 'daily/2026-08-15.md')).body
     try {
       await openWorkspace(page)
       await showInFiles(page, ['notes'])
@@ -70,7 +70,7 @@ test.describe('Moving files in the files tab', () => {
       )
       expect(await listPaths(request, 'notes')).toContain(twin)
       expect((await readNote(request, twin)).body).toBe('# 2026-08-15\n\nA second log.\n')
-      expect((await readNote(request, 'daily/2026-08-15.md')).body).toBe(kept)
+      expect((await readNote(request, 'daily/2026-08-15.md')).body).toBe(bodyBefore)
     } finally {
       await destroyNotes(request, [twin])
     }

@@ -11,7 +11,7 @@ const getPaneOf = (page: Page, title: string): Locator =>
   getPanes(page).filter({ has: getTab(page, title) })
 
 test.describe('Workspace Layout and Split Panes', () => {
-  test('opens the note in front in a pane of its own beside the others with Open beside', async ({
+  test('opens the note in front in a pane of its own next to the others with Open Aside', async ({
     page,
   }) => {
     await openWorkspace(page)
@@ -46,8 +46,8 @@ test.describe('Workspace Layout and Split Panes', () => {
   }) => {
     await openWorkspace(page)
     const separator = page.getByRole('separator', { name: 'Resize panes' })
-    const main = getPanes(page).nth(0)
-    const aside = getPanes(page).nth(1)
+    const main = getPanes(page).first()
+    const aside = getPanes(page).last()
     const mainBefore = await readWidth(main)
     const asideBefore = await readWidth(aside)
     const box = await readBox(separator)

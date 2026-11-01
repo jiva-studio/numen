@@ -55,7 +55,7 @@ func listCached(t *testing.T, dir string) map[string]os.FileInfo {
 	return files
 }
 
-func TestACompiledModuleIsKeptInTheGrantedDirectory(t *testing.T) {
+func TestACompiledModuleIsStoredInTheGrantedDirectory(t *testing.T) {
 	dir := t.TempDir()
 
 	compile(t, wasm.NewCompilationCache(dir))
@@ -84,7 +84,7 @@ func TestASecondRuntimeLoadsTheModuleFromTheCache(t *testing.T) {
 	}
 }
 
-func TestADirectoryThatCannotBeUsedLeavesTheCacheInMemory(t *testing.T) {
+func TestADirectoryThatCannotBeUsedMakesTheCacheInMemory(t *testing.T) {
 	blocked := filepath.Join(t.TempDir(), "file")
 	if err := os.WriteFile(blocked, []byte("x"), 0o600); err != nil {
 		t.Fatal(err)
@@ -97,7 +97,7 @@ func TestADirectoryThatCannotBeUsedLeavesTheCacheInMemory(t *testing.T) {
 	}
 }
 
-func TestAnEmptyDirectoryLeavesTheCacheInMemory(t *testing.T) {
+func TestAnEmptyDirectoryMakesTheCacheInMemory(t *testing.T) {
 	t.Chdir(t.TempDir())
 
 	compile(t, wasm.NewCompilationCache(""))

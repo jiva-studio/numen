@@ -9,7 +9,7 @@ import (
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 )
 
-func TestKeyStoreReturnsTheKeySetUnderAName(t *testing.T) {
+func TestKeyStoreReturnsTheKeySetByName(t *testing.T) {
 	store := NewKeyStore()
 	if err := store.SetKey(t.Context(), "plugin/apiKey", "first"); err != nil {
 		t.Fatalf("set: %v", err)
@@ -23,7 +23,7 @@ func TestKeyStoreReturnsTheKeySetUnderAName(t *testing.T) {
 	}
 }
 
-func TestKeyStoreHoldsNoKeyAfterItIsDeleted(t *testing.T) {
+func TestKeyStoreHasNoKeyAfterDeletion(t *testing.T) {
 	store := NewKeyStore()
 	if err := store.SetKey(t.Context(), "plugin/apiKey", "first"); err != nil {
 		t.Fatalf("set: %v", err)

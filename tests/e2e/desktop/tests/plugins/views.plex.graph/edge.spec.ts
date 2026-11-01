@@ -337,7 +337,7 @@ test.describe('Plex Edge and Link Inspector', () => {
       fields.map((field) => (field as HTMLInputElement).value),
     )
     expect([...values].sort()).toStrictEqual(['', 'warms'])
-    const added = inputs.nth(values.indexOf(''))
+    const added = values.indexOf('') === 0 ? inputs.first() : inputs.last()
     await added.fill('measures')
     await added.press('Enter')
     await expect(popover).toBeHidden()

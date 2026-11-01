@@ -75,7 +75,7 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
     const contentsNav = page.getByRole('navigation', { name: 'Contents' })
     const chapters = contentsNav.locator('button.contents__line')
     await expect(chapters).toHaveText(['Dawn tide', 'Dusk tide'])
-    await chapters.nth(1).click()
+    await chapters.last().click()
 
     await expect(contentsNav).toBeHidden()
     await expect(pages.getByRole('heading', { name: 'Dusk tide' })).toBeVisible()

@@ -308,7 +308,7 @@ func TestAMemoryCacheOfAPluginWithoutADirectoryReportsTheDiskFailure(t *testing.
 	}
 }
 
-func TestTheDiskCacheIsKeptInTheGrantedDirectory(t *testing.T) {
+func TestTheDiskCacheIsStoredInTheGrantedDirectory(t *testing.T) {
 	cacheDir, _ := plugintest.GrantStorage(t)
 	first := cache.New[[]string]("models", cache.WithDisk(true))
 	first.Put("k", []string{"v"})
@@ -335,7 +335,7 @@ func TestGetSharedDirIsTheDirectoryTheHostShares(t *testing.T) {
 	}
 }
 
-func TestAnOlderHostThatSharesNothingLeavesThePluginItsOwnDirectory(t *testing.T) {
+func TestAnOlderHostThatSharesNothingMakesThePluginUseItsOwnDirectory(t *testing.T) {
 	cacheDir, _ := plugintest.GrantStorage(t)
 	t.Setenv(cache.EnvSharedDir, "")
 
@@ -349,7 +349,7 @@ func TestAnOlderHostThatSharesNothingLeavesThePluginItsOwnDirectory(t *testing.T
 	}
 }
 
-func TestAHostThatGrantedNothingLeavesNoDirectoryAtAll(t *testing.T) {
+func TestAHostThatGrantedNothingProvidesNoDirectoryAtAll(t *testing.T) {
 	t.Setenv(cache.EnvSharedDir, "")
 	t.Setenv(cache.EnvCacheDir, "")
 
@@ -370,7 +370,7 @@ func TestGetSharedDataDirIsTheDataDirectoryTheHostShares(t *testing.T) {
 	}
 }
 
-func TestAnOlderHostThatSharesNoDataLeavesThePluginItsOwnDataDirectory(t *testing.T) {
+func TestAnOlderHostThatSharesNoDataMakesThePluginUseItsOwnDataDirectory(t *testing.T) {
 	_, dataDir := plugintest.GrantStorage(t)
 	t.Setenv(cache.EnvSharedDataDir, "")
 

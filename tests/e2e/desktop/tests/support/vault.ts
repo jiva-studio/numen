@@ -227,11 +227,11 @@ export const removeVault = async (request: APIRequestContext, id: string): Promi
 /** Writes one setting of numen.json, the value given as JSON. */
 export const writeSetting = async (
   request: APIRequestContext,
-  at: readonly string[],
+  keyPath: readonly string[],
   value: unknown,
 ): Promise<void> => {
   await callRPC(request, 'SettingsService/WriteSettings', {
-    settings: [{ at, value: JSON.stringify(value) }],
+    settings: [{ at: keyPath, value: JSON.stringify(value) }],
   })
 }
 

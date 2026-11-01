@@ -18,18 +18,18 @@ const WRITE_NOTE = '**/numen.v1.NoteService/WriteNote'
  * Holds the writes the window makes until the returned function lets them go, so a change made on
  * disk lands between what the tab read and what it writes.
  */
-const holdWrites = async (page: Page): Promise<{ held: Route[]; release: () => Promise<void> }> => {
-  const held: Route[] = []
+const blockWrites = async (page: Page): Promise<{ pendingRoutes: Route[]; release: () => Promise<void> }> => {
+  const pendingRoutes: Route[] = []
   let isHolding = true
   await page.route(WRITE_NOTE, async (route) => {
-    if (isHolding) held.push(route)
+    if (isHolding) pendingRoutes.push(route)
     else await route.continue()
   })
   return {
-    held,
+    pendingRoutes,
     release: async () => {
       isHolding = false
-      for (const route of held) await route.continue()
+      for (const route of pendingRoutes) await route.continue()
     },
   }
 }
@@ -41,9 +41,9 @@ const raiseConflict = async (page: Page, notePath: string) => {
   const text = await openNote(page, notePath)
   await expect(text).toContainText('The lock gate opens at high water.')
 
-  const writes = await holdWrites(page)
+  const writes = await blockWrites(page)
   await typeAtEnd(page, text, ' Typed in the window.')
-  await expect.poll(() => writes.held.length).toBeGreaterThan(0)
+  await expect.poll(() => writes.pendingRoutes.length).toBeGreaterThan(0)
   await writeNote(page.request, notePath, 'Written by another program.\n')
   await writes.release()
 

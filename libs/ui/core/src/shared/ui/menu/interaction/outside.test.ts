@@ -50,7 +50,7 @@ describe('a press outside', () => {
     expect(onOutside).toHaveBeenCalledTimes(1)
   })
 
-  it('is not reported inside an open shadow root the element stands in', () => {
+  it('is not reported inside an open shadow root the element is in', () => {
     const host = createElement()
     const root = host.attachShadow({ mode: 'open' })
     const inside = document.createElement('div')
@@ -64,7 +64,7 @@ describe('a press outside', () => {
     expect(onOutside).not.toHaveBeenCalled()
   })
 
-  it('is reported on the host of a shadow root the element stands in', () => {
+  it('is reported on the host of a shadow root the element is in', () => {
     const host = createElement()
     const root = host.attachShadow({ mode: 'open' })
     const inside = document.createElement('div')

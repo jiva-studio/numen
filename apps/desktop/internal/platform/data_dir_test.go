@@ -52,7 +52,7 @@ func TestGetConfigNamesTheIndexInTheDataFolder(t *testing.T) {
 	}
 }
 
-func TestStorageRootsAreUnderTheCacheAndDataFolders(t *testing.T) {
+func TestStorageRootsAreInsideTheCacheAndDataFolders(t *testing.T) {
 	cache := func() (string, error) { return "/cache", nil }
 	home := func() (string, error) { return "/home/user", nil }
 	env := func(string) string { return "" }
@@ -67,7 +67,7 @@ func TestStorageRootsAreUnderTheCacheAndDataFolders(t *testing.T) {
 	}
 }
 
-func TestAFolderTheMachineDoesNotProvideLeavesItsRootEmpty(t *testing.T) {
+func TestAFolderTheMachineDoesNotProvideHasNoRoot(t *testing.T) {
 	fail := func() (string, error) { return "", errors.New("no folder") }
 
 	cacheRoot, dataRoot := getStorageRoots("linux", func(string) string { return "" }, fail, fail)

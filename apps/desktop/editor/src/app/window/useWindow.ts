@@ -217,8 +217,8 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     },
     ...pluginNotes,
     resolveLink: async (from, address) => {
-      const written = address.replace(/^name:\/\//, '')
-      return (await core.resolveLinks(from, `[[${written}]]`))[0]?.path ?? ''
+      const rawName = address.replace(/^name:\/\//, '')
+      return (await core.resolveLinks(from, `[[${rawName}]]`))[0]?.path ?? ''
     },
   })
   return {

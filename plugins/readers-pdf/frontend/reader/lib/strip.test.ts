@@ -73,7 +73,7 @@ describe('the row a document makes', () => {
 
     expect(stripLayout.starts[1]).toBeGreaterThan(stripLayout.starts[0]!)
     expect(stripLayout.starts[2]).toBeGreaterThan(stripLayout.starts[1]!)
-    expect(stripLayout.widths.every((wide) => wide > 0)).toBe(true)
+    expect(stripLayout.widths.every((landscape) => landscape > 0)).toBe(true)
   })
 
   describe('a page whose size is unusable', () => {
@@ -350,11 +350,11 @@ describe('the zoom a document opens at', () => {
     expect(getFitZoom('page', book(4), VIEWPORT)).toBe(FURTHEST)
   })
 
-  it('draws the first page as wide as the viewport for the width fit', () => {
-    const wide: Size = { width: 1600, height: 800 }
-    const zoom = getFitZoom('width', book(4), wide)
+  it('draws the first page as landscape as the viewport for the width fit', () => {
+    const landscape: Size = { width: 1600, height: 800 }
+    const zoom = getFitZoom('width', book(4), landscape)
 
-    expect(row(book(4), wide, zoom).widths[0]).toBeCloseTo(wide.width - 2 * GAP, -1)
+    expect(row(book(4), landscape, zoom).widths[0]).toBeCloseTo(landscape.width - 2 * GAP, -1)
   })
 
   it('draws the first page at its printed size for the 100% fit', () => {

@@ -38,7 +38,7 @@ interface BufferedState {
   takeFile(): void
 }
 
-/** A note tab of the notes plugin, opened in a scope over the window's store of open notes. */
+/** A note tab of the notes plugin, openCalls in a scope over the window's store of open notes. */
 function openNoteTab(path: string) {
   const { core, files } = createFiles()
   files.set(path, 'The tide turns at noon.')
@@ -77,7 +77,7 @@ describe('a note tab of the note kind', () => {
     expect(state.fileConflict.value).toBeNull()
   })
 
-  it('pauses saving when the file changed under unsaved text, and keeps the text when asked', async () => {
+  it('pauses saving when the file changed under unsaved text, and keeps the text on request', async () => {
     const { state, files } = openNoteTab('notes/Tide.md')
     await wait()
 
@@ -95,7 +95,7 @@ describe('a note tab of the note kind', () => {
     expect(state.fileConflict.value).toBeNull()
   })
 
-  it('takes the file and drops the unsaved text when asked', async () => {
+  it('takes the file and drops the unsaved text on request', async () => {
     const { state, files } = openNoteTab('notes/Tide.md')
     await wait()
     files.set('notes/Tide.md', 'Written by another program.')
@@ -145,7 +145,7 @@ describe('a note tab of the note kind', () => {
 describe('the links of a note tab of the note kind', () => {
   /** A tab whose host answers searches, headings and addresses from what a test puts in it. */
   function openLinkingTab() {
-    const opened: { path: string; placement?: string }[] = []
+    const openCalls: { path: string; placement?: string }[] = []
     const { core, files } = createFiles()
     files.set('notes/Tide.md', 'See [[Entropy]].')
     const notes = openNotes(core, { limits: { quiet: 1, bound: 5 } })
@@ -161,7 +161,7 @@ describe('the links of a note tab of the note kind', () => {
         }),
         getWorkspace: () => ({
           openFile: (path: string, options?: { placement?: string }) =>
-            opened.push({ path, ...(options?.placement ? { placement: options.placement } : {}) }),
+            openCalls.push({ path, ...(options?.placement ? { placement: options.placement } : {}) }),
         }),
         resolveLink: async (_from: string, address: string) =>
           address === 'name://Entropy' ? 'notes/Entropy.md' : '',
@@ -175,25 +175,25 @@ describe('the links of a note tab of the note kind', () => {
         headings(title: string): Promise<string[]>
       }
     }
-    return { state, opened }
+    return { state, openCalls }
   }
 
-  it('opens the note an address lands on beside the tab', async () => {
-    const { state, opened } = openLinkingTab()
+  it('opens the note an address points to next to the tab', async () => {
+    const { state, openCalls } = openLinkingTab()
 
     state.followLink('name://Entropy')
     await wait()
 
-    expect(opened).toStrictEqual([{ path: 'notes/Entropy.md', placement: 'split' }])
+    expect(openCalls).toStrictEqual([{ path: 'notes/Entropy.md', placement: 'split' }])
   })
 
   it('opens nothing for an address that lands on no note', async () => {
-    const { state, opened } = openLinkingTab()
+    const { state, openCalls } = openLinkingTab()
 
     state.followLink('name://Nowhere')
     await wait()
 
-    expect(opened).toStrictEqual([])
+    expect(openCalls).toStrictEqual([])
   })
 
   it('offers the notes of the vault by name and the headings of a named note', async () => {

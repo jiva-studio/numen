@@ -112,8 +112,8 @@ func TestTheCacheDirectoryIsEmptiedWhenThePluginVersionChanges(t *testing.T) {
 	}
 	cacheDir, dataDir := launch()
 	cached := filepath.Join(cacheDir, "compiled")
-	kept := filepath.Join(dataDir, "notes")
-	for _, path := range []string{cached, kept} {
+	notesDir := filepath.Join(dataDir, "notes")
+	for _, path := range []string{cached, notesDir} {
 		if err := os.WriteFile(path, []byte("x"), 0o600); err != nil {
 			t.Fatal(err)
 		}
@@ -134,13 +134,13 @@ func TestTheCacheDirectoryIsEmptiedWhenThePluginVersionChanges(t *testing.T) {
 	if _, err := os.Stat(cached); !os.IsNotExist(err) {
 		t.Errorf("the cache of the old version stays: %v", err)
 	}
-	if _, err := os.Stat(kept); err != nil {
+	if _, err := os.Stat(notesDir); err != nil {
 		t.Errorf("the data directory lost a file: %v", err)
 	}
 	checkPrivateDir(t, cacheDir)
 }
 
-func TestTheCacheDirectoryIsRemovedWhenThePluginLeavesTheDisk(t *testing.T) {
+func TestTheCacheDirectoryIsRemovedWhenThePluginIsRemovedFromTheDisk(t *testing.T) {
 	host, _, _ := newStorageHost(t)
 	vars, err := host.getLaunchVars(t.Context(), "org.example.sample", nil, 5, "t")
 	if err != nil {

@@ -236,10 +236,10 @@ describe('the tab icon a kind declares', () => {
 describe('the open tabs while the window leaves its vault', () => {
   it('waits for a write in flight, and writes nothing once paused', async () => {
     const target = create([{ id: 'a', title: 'A', kind: 'note', openTab: { path: 'a.md' } }])
-    const sent: string[] = []
+    const writeLog: string[] = []
     let release: () => void = () => undefined
     target.writeOpenTabs.mockImplementation((tabs: unknown) => {
-      sent.push(JSON.stringify((tabs as { tabs: { title: string }[] }).tabs.map((t) => t.title)))
+      writeLog.push(JSON.stringify((tabs as { tabs: { title: string }[] }).tabs.map((t) => t.title)))
       return new Promise<void>((resolve) => {
         release = resolve
       })
@@ -253,25 +253,25 @@ describe('the open tabs while the window leaves its vault', () => {
     release()
     await paused
 
-    expect(sent.at(-1)).toBe('["A1"]')
-    const written = sent.length
+    expect(writeLog.at(-1)).toBe('["A1"]')
+    const writeCount = writeLog.length
     target.tabs.value = [{ id: 'a', title: 'After the switch' }]
     await nextTick()
     await Promise.resolve()
-    expect(sent).toHaveLength(written)
+    expect(writeLog).toHaveLength(writeCount)
   })
 
   it('writes the tabs again once resumed', async () => {
     const target = create([{ id: 'a', title: 'A', kind: 'note', openTab: { path: 'a.md' } }])
     await target.pause()
-    const written = target.writeOpenTabs.mock.calls.length
+    const writeCount = target.writeOpenTabs.mock.calls.length
     target.tabs.value = [{ id: 'a', title: 'A2' }]
     await nextTick()
-    expect(target.writeOpenTabs).toHaveBeenCalledTimes(written)
+    expect(target.writeOpenTabs).toHaveBeenCalledTimes(writeCount)
 
     target.resume()
     await nextTick()
 
-    expect(target.writeOpenTabs).toHaveBeenCalledTimes(written + 1)
+    expect(target.writeOpenTabs).toHaveBeenCalledTimes(writeCount + 1)
   })
 })

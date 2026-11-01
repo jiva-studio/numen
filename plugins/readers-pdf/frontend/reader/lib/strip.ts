@@ -228,7 +228,7 @@ const PIXELS_PER_POINT = 96 / 72
 /**
  * The zoom at which the first page is drawn to the fit in the viewport, never past CLOSEST. A
  * viewport narrower than the page draws it narrower than a whole page by height, so the zoom
- * can be below FURTHEST; only a zoom chosen with the toolbar is held to that.
+ * can be below FURTHEST; only a zoom chosen with the toolbar is limited to that.
  */
 export function getFitZoom(fit: Fit, pages: readonly Page[], viewport: Size): number {
   const fullHeight = viewport.height - 2 * GAP

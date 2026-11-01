@@ -149,7 +149,7 @@ describe('openNotes for flashcards studio', () => {
     expect(store.getOpenNote('tab-1').state).toBe('stale')
   })
 
-  it('writes the body set once the edits pause, with no flush asked for', async () => {
+  it('writes the body set once the edits pause, with no flush requested', async () => {
     vi.useFakeTimers()
     try {
       const writes: string[] = []

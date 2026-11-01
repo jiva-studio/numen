@@ -40,7 +40,7 @@ func TestGetCoreMLCacheDirIsMadeForThisUserAlone(t *testing.T) {
 	}
 }
 
-func TestACompiledModelIsKeptOncePerModelAndNotPerPlugin(t *testing.T) {
+func TestACompiledModelIsStoredOncePerModelAndNotPerPlugin(t *testing.T) {
 	_, model := grantModel(t)
 	first, err := GetCoreMLCacheDir(model)
 	if err != nil {

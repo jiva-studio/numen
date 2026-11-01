@@ -150,14 +150,14 @@ key: value:
 describe('MarkdownNoteEditor over a note whose file changed on disk', () => {
   it('offers to keep the typed text or take the file, and passes the choice to the tab', async () => {
     const fileConflict = ref<string | null>('stale')
-    const chosen: string[] = []
+    const choices: string[] = []
     const wrapper = mount(MarkdownNoteEditor, {
       props: {
         filePath: 'notes/Tide.md',
         state: {
           fileConflict,
-          keepMine: () => chosen.push('keep'),
-          takeFile: () => chosen.push('take'),
+          keepMine: () => choices.push('keep'),
+          takeFile: () => choices.push('take'),
         },
       },
     })
@@ -169,7 +169,7 @@ describe('MarkdownNoteEditor over a note whose file changed on disk', () => {
     expect(answers.map((one) => one.text())).toStrictEqual(['Keep my version', 'Use disk version'])
     await answers[0]!.trigger('click')
     await answers[1]!.trigger('click')
-    expect(chosen).toStrictEqual(['keep', 'take'])
+    expect(choices).toStrictEqual(['keep', 'take'])
 
     fileConflict.value = null
     await nextTick()

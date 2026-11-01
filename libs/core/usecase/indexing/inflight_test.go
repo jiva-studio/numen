@@ -63,7 +63,7 @@ func (s *scriptedVectors) getEmbedded() []string {
 // the second is embedding, and the third waits. The next pass embeds the
 // first source's successor only if it was not in flight, and the held sources
 // once their change is reported.
-func TestCancelHoldsTheSourcesInFlight(t *testing.T) {
+func TestCancelMarksTheSourcesInFlight(t *testing.T) {
 	one := func(path string) (string, []string) { return path, []string{path} }
 	tests := []struct {
 		name     string

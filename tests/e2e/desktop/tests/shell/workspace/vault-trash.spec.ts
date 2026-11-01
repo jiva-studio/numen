@@ -112,7 +112,7 @@ test.describe('Removing and renaming a note', () => {
     const linker = await createNote(request, createUniqueTitle('Phase rule'), 'notes', [
       { to: target, role: 'ROLE_CHILD' },
     ])
-    const renamed = `notes/${newTitle}.md`
+    const renamedPath = `notes/${newTitle}.md`
     try {
       await writeSetting(request, SYNC_SETTING, true)
       await writeVaultFile(
@@ -125,18 +125,18 @@ test.describe('Removing and renaming a note', () => {
 
       await changeTitle(page, oldTitle, newTitle)
 
-      await expect(getNoteTab(page, renamed)).toBeVisible()
-      await expect.poll(() => listFilePaths(request, 'notes')).toContain(renamed)
+      await expect(getNoteTab(page, renamedPath)).toBeVisible()
+      await expect.poll(() => listFilePaths(request, 'notes')).toContain(renamedPath)
       expect(await listFilePaths(request, 'notes')).not.toContain(target)
-      expect((await readNote(request, renamed)).body).toContain('The work a system can do.')
-      expect(await readVaultFile(request, renamed)).toMatch(new RegExp(`title: ["']?${newTitle}`))
+      expect((await readNote(request, renamedPath)).body).toContain('The work a system can do.')
+      expect(await readVaultFile(request, renamedPath)).toMatch(new RegExp(`title: ["']?${newTitle}`))
       const links = await readVaultFile(request, linker)
       expect(links).toContain(newTitle)
       expect(links).not.toContain(oldTitle)
     } finally {
       await destroyNote(request, linker)
       await destroyNote(request, target)
-      await destroyNote(request, renamed)
+      await destroyNote(request, renamedPath)
     }
   })
 

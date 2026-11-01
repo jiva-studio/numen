@@ -15,7 +15,7 @@ import {
 } from '../../support/layout.js'
 import { getVaultPath, readNote } from '../../support/vault.js'
 
-/** Whether a file stands at the path, relative to the folder of the vault, on the disk. */
+/** Whether a file exists at the path, relative to the folder of the vault, on the disk. */
 const isOnDisk = async (vault: string, path: string): Promise<boolean> =>
   access(join(vault, path)).then(
     () => true,
@@ -125,7 +125,7 @@ test.describe('Naming, making and removing files in the files tab', () => {
   }) => {
     const first = await createNoteWithBody(request, 'Mill race', 'notes', '# Mill race\n')
     const second = await createNoteWithBody(request, 'Tail race', 'notes', '# Tail race\n')
-    const kept = await createNoteWithBody(request, 'Head race', 'notes', '# Head race\n')
+    const headRace = await createNoteWithBody(request, 'Head race', 'notes', '# Head race\n')
     const vault = getVaultPath()
     try {
       await openWorkspace(page)
@@ -143,13 +143,13 @@ test.describe('Naming, making and removing files in the files tab', () => {
           (await listPaths(request, 'notes')).filter((one) => one === first || one === second),
         )
         .toEqual([])
-      expect(await listPaths(request, 'notes')).toContain(kept)
+      expect(await listPaths(request, 'notes')).toContain(headRace)
       expect(await isOnDisk(vault, join('.trash', first))).toBe(true)
       expect(await isOnDisk(vault, join('.trash', second))).toBe(true)
       await expect(getRow(page, first)).toHaveCount(0)
       await expect(getRow(page, second)).toHaveCount(0)
     } finally {
-      await destroyNotes(request, [first, second, kept])
+      await destroyNotes(request, [first, second, headRace])
     }
   })
 
