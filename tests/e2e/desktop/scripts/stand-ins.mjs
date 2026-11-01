@@ -3,6 +3,11 @@ import http from 'node:http'
 /** The words every chat completion of the stand-in chat API answers with. */
 export const STAND_IN_REPLY = 'The stand-in chat API answered.'
 
+/** A prompt holding these words is answered after `DELAYED_REPLY_MS`, long enough to press Stop. */
+export const DELAYED_PROMPT = 'Answer after a pause'
+
+const DELAYED_REPLY_MS = 10_000
+
 /** The model the stand-in chat API lists. */
 export const STAND_IN_MODEL = 'stand-in/model'
 
@@ -32,9 +37,18 @@ const handle = (req, res) => {
       const content = raw.includes('Link to Entropy')
         ? `${STAND_IN_REPLY} See [Entropy](notes/Entropy.md).`
         : STAND_IN_REPLY
-      sendJson(res, 200, {
-        choices: [{ message: { role: 'assistant', content }, finish_reason: 'stop' }],
-      })
+      const reply = () => {
+        if (res.destroyed) return
+        sendJson(res, 200, {
+          choices: [{ message: { role: 'assistant', content }, finish_reason: 'stop' }],
+        })
+      }
+      if (!raw.includes(DELAYED_PROMPT)) {
+        reply()
+        return
+      }
+      const timer = setTimeout(reply, DELAYED_REPLY_MS)
+      res.on('close', () => clearTimeout(timer))
     })
     return
   }

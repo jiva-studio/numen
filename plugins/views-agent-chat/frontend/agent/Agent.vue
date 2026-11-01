@@ -8,7 +8,7 @@ import type { AgentProps } from './Agent.types'
 
 /* --------------------------------- Props ---------------------------------- */
 withDefaults(defineProps<AgentProps>(), {
-  isWorking: false,
+  isAnswerPending: false,
   placeholder: 'Write a message',
   isDisabled: false,
   sendLabel: 'Send',
@@ -92,7 +92,7 @@ const agentStyle = computed(() => ({ '--agent-room': room.value }))
       ref="composer"
       v-model="text"
       class="agent__composer"
-      :is-working="isWorking"
+      :is-answer-pending="isAnswerPending"
       :placeholder="placeholder"
       :is-disabled="isDisabled"
       :send-label="sendLabel"

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { COMPOSER_STATES, composerState, keyIntent, getMessage } from './state'
+import { COMPOSER_STATES, getComposerState, keyIntent, getMessage } from './state'
 
 const press = (overrides: Partial<Parameters<typeof keyIntent>[0]> = {}) => ({
   key: 'Enter',
@@ -9,32 +9,32 @@ const press = (overrides: Partial<Parameters<typeof keyIntent>[0]> = {}) => ({
 
 describe('what state a composer is in', () => {
   it('has nothing to send when nothing was typed', () => {
-    expect(composerState('', false)).toBe('empty')
+    expect(getComposerState('', false)).toBe('empty')
   })
 
   it('has nothing to send when only whitespace was typed', () => {
-    expect(composerState('   \n\t  ', false)).toBe('empty')
+    expect(getComposerState('   \n\t  ', false)).toBe('empty')
   })
 
   it('is ready once something was typed', () => {
-    expect(composerState('hello', false)).toBe('ready')
+    expect(getComposerState('hello', false)).toBe('ready')
   })
 
-  it('is writing whatever was typed, because the answer owns the end of the field', () => {
-    expect(composerState('', true)).toBe('writing')
-    expect(composerState('hello', true)).toBe('writing')
+  it('is pending whatever was typed while an answer is on its way', () => {
+    expect(getComposerState('', true)).toBe('pending')
+    expect(getComposerState('hello', true)).toBe('pending')
   })
 
   it('can be pressed with something to send, and while an answer arrives', () => {
     expect(COMPOSER_STATES.empty.canAct).toBe(false)
     expect(COMPOSER_STATES.ready.canAct).toBe(true)
-    expect(COMPOSER_STATES.writing.canAct).toBe(true)
+    expect(COMPOSER_STATES.pending.canAct).toBe(true)
   })
 
   it('stops the answer on its way, and sends the rest of the time', () => {
     expect(COMPOSER_STATES.empty.action).toBe('send')
     expect(COMPOSER_STATES.ready.action).toBe('send')
-    expect(COMPOSER_STATES.writing.action).toBe('stop')
+    expect(COMPOSER_STATES.pending.action).toBe('stop')
   })
 })
 

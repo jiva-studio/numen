@@ -35,7 +35,7 @@ const TEMPLATE = `
     v-model="text"
     class="h-full"
     :turns="turns"
-    :is-working="isWorking"
+    :is-answer-pending="isAnswerPending"
     placeholder="Ask about the vault"
     @submit="onSubmit"
     @stop="onStop"
@@ -53,7 +53,7 @@ const conversation =
     setup() {
       const turns = ref<Turn[]>([...start])
       const text = ref('')
-      const isWorking = ref(false)
+      const isAnswerPending = ref(false)
       let next = start.length
       let tick: ReturnType<typeof setInterval> | undefined
 
@@ -69,13 +69,13 @@ const conversation =
       const settle = () => {
         clearInterval(tick)
         tick = undefined
-        isWorking.value = false
+        isAnswerPending.value = false
       }
 
       const onSubmit = (message: string) => {
         turns.value.push(createRequested(`${next++}`, message))
         text.value = ''
-        isWorking.value = true
+        isAnswerPending.value = true
 
         const id = `${next++}`
         turns.value.push({ id, voice: 'response', text: '', state: 'arriving' })
@@ -99,7 +99,7 @@ const conversation =
 
       onScopeDispose(settle)
 
-      return { turns, text, isWorking, onSubmit, onStop }
+      return { turns, text, isAnswerPending, onSubmit, onStop }
     },
     template: TEMPLATE,
   })

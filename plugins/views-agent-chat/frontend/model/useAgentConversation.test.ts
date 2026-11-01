@@ -20,7 +20,7 @@ const createConversation = (locations: Record<string, { path: string; range: Tex
   const turn = ref<Turn[]>([])
   const conversation: Conversation = {
     turns: turn,
-    isWorking: ref(false),
+    isAnswerPending: ref(false),
     ask: async (text, focus) => {
       request.push([text, focus])
     },

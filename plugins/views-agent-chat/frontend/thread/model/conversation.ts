@@ -7,7 +7,7 @@
  * Every question carries the name of the conversation, and the agent answers
  * them all as one.
  */
-import { ref, type Ref } from 'vue'
+import { computed, ref, shallowRef, type Ref } from 'vue'
 import { onNextFrame, type Paint } from '@numen/ui'
 import { createAnswer, type Answer } from './answer'
 import { createWorkLine, type WorkLine } from './work'
@@ -33,8 +33,8 @@ export interface AskOptions {
 
 export interface Conversation {
   readonly turns: Ref<Turn[]>
-  /** An answer is being written; the composer shows it. */
-  readonly isWorking: Ref<boolean>
+  /** True from the moment a question is sent until its answer settles or is stopped. */
+  readonly isAnswerPending: Readonly<Ref<boolean>>
   readonly ask: (question: string, focus: string, options?: AskOptions) => Promise<void>
   /** The location in a source that a line refers to, for a line that opens one. */
   readonly getSourceLocation: (turn: string) => SourceLocation | null
@@ -58,10 +58,10 @@ export interface ConversationOptions {
 export function useConversation(options: ConversationOptions): Conversation {
   const { agent, words, conversation, paint = onNextFrame } = options
   const { turns, locations, put, drop, nextId } = useConversationTurns()
-  const { isWorking, startFlight, stop, endFlight } = useFlightState()
+  const { isAnswerPending, startFlight, stop, endFlight } = useFlightState()
 
   const ask = async (question: string, focus: string, askOptions?: AskOptions) => {
-    if (!question || isWorking.value) return
+    if (!question || isAnswerPending.value) return
     put({ id: nextId(), voice: 'prompt', text: question })
 
     const work = createWorkLine(
@@ -112,7 +112,7 @@ export function useConversation(options: ConversationOptions): Conversation {
 
   return {
     turns,
-    isWorking,
+    isAnswerPending,
     ask,
     getSourceLocation: (turn: string) => locations.get(turn) ?? null,
     stop,
@@ -177,36 +177,39 @@ function useConversationTurns() {
   return { turns, locations, put: saveTurn, drop, nextId }
 }
 
-function useFlightState() {
-  const isWorking = ref(false)
-  let inFlight: AbortController | null = null
-  let clear: (() => void) | null = null
+/** The answer in progress: what aborts it and what clears its work line. */
+interface Flight {
+  readonly controller: AbortController
+  readonly clear: () => void
+}
 
-  const startFlight = (onClear: () => void) => {
-    const flight = new AbortController()
-    inFlight = flight
-    clear = onClear
-    isWorking.value = true
-    return flight
+/**
+ * The answer on its way. `isAnswerPending` is derived from the one flight held, which is set
+ * when a question is sent and dropped once, by `stop` or by `endFlight`, whichever comes first.
+ */
+function useFlightState() {
+  const flight = shallowRef<Flight | null>(null)
+  const isAnswerPending = computed(() => flight.value !== null)
+
+  const startFlight = (clear: () => void): AbortController => {
+    const controller = new AbortController()
+    flight.value = { controller, clear }
+    return controller
   }
 
   const stop = () => {
-    inFlight?.abort()
-    inFlight = null
-    clear?.()
-    clear = null
-    isWorking.value = false
+    const current = flight.value
+    if (!current) return
+    flight.value = null
+    current.controller.abort()
+    current.clear()
   }
 
-  const endFlight = (flight: AbortController) => {
-    if (inFlight === flight) {
-      inFlight = null
-      clear = null
-      isWorking.value = false
-    }
+  const endFlight = (controller: AbortController) => {
+    if (flight.value?.controller === controller) flight.value = null
   }
 
-  return { isWorking, startFlight, stop, endFlight }
+  return { isAnswerPending, startFlight, stop, endFlight }
 }
 
 interface StepContext {

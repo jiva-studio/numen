@@ -201,7 +201,7 @@ describe('giving up', () => {
     await askPromise
 
     expect(conversation.turns.value.map((turn) => turn.text)).toEqual(['what is here?', 'Two '])
-    expect(conversation.isWorking.value).toBe(false)
+    expect(conversation.isAnswerPending.value).toBe(false)
   })
 })
 
@@ -587,7 +587,7 @@ describe('a conversation that is over', () => {
     await askPromise
 
     expect(conversation.turns.value.map((turn) => turn.text)).toEqual(['what is here?', 'Two '])
-    expect(conversation.isWorking.value).toBe(false)
+    expect(conversation.isAnswerPending.value).toBe(false)
   })
 
   it('says nothing when the agent refuses to let go', async () => {
@@ -672,7 +672,7 @@ describe('giving up on an answer', () => {
     conversation.stop()
 
     expect(conversation.turns.value.filter((turn) => turn.voice === 'doing')).toEqual([])
-    expect(conversation.isWorking.value).toBe(false)
+    expect(conversation.isAnswerPending.value).toBe(false)
 
     release()
     await askPromise
@@ -736,7 +736,7 @@ describe('an exchange that is over', () => {
     )
     await conversation.ask('hey', '')
 
-    expect(conversation.isWorking.value).toBe(false)
+    expect(conversation.isAnswerPending.value).toBe(false)
     expect(conversation.turns.value.map((turn) => [turn.voice, turn.text, turn.state])).toEqual([
       ['prompt', 'hey', undefined],
       ['response', 'Hey! How can I help you today?', undefined],
@@ -943,7 +943,7 @@ describe('a question that cannot be requested', () => {
 
     expect(request).toBe(0)
     expect(conversation.turns.value).toEqual([])
-    expect(conversation.isWorking.value).toBe(false)
+    expect(conversation.isAnswerPending.value).toBe(false)
   })
 
   it('is not requested while an answer is on its way', async () => {
@@ -963,7 +963,7 @@ describe('a question that cannot be requested', () => {
     )
     const askPromise = conversation.ask('what is here?', '')
     await flushPromises()
-    expect(conversation.isWorking.value).toBe(true)
+    expect(conversation.isAnswerPending.value).toBe(true)
 
     await conversation.ask('and below it?', '')
     release()
@@ -971,7 +971,7 @@ describe('a question that cannot be requested', () => {
 
     expect(request).toBe(1)
     expect(conversation.turns.value.filter((turn) => turn.voice === 'prompt')).toHaveLength(1)
-    expect(conversation.isWorking.value).toBe(false)
+    expect(conversation.isAnswerPending.value).toBe(false)
   })
 })
 
@@ -1068,7 +1068,7 @@ describe('while an answer is on its way', () => {
     const conversation = useConversation(
       {
         async *ask() {
-          working = conversation.isWorking.value
+          working = conversation.isAnswerPending.value
           yield createStopped()
         },
         finish: async () => undefined,
@@ -1080,7 +1080,7 @@ describe('while an answer is on its way', () => {
     await conversation.ask('what is here?', '')
 
     expect(working).toBe(true)
-    expect(conversation.isWorking.value).toBe(false)
+    expect(conversation.isAnswerPending.value).toBe(false)
   })
 })
 
@@ -1257,11 +1257,11 @@ describe('giving up on an answer in the middle', () => {
 
     holds[0]?.()
     await first
-    expect(conversation.isWorking.value).toBe(true)
+    expect(conversation.isAnswerPending.value).toBe(true)
 
     holds[1]?.()
     await second
-    expect(conversation.isWorking.value).toBe(false)
+    expect(conversation.isAnswerPending.value).toBe(false)
   })
 })
 
@@ -1312,7 +1312,7 @@ describe('a conversation that is over, while an answer is on its way', () => {
     conversation.finish()
 
     expect(signal?.aborted).toBe(true)
-    expect(conversation.isWorking.value).toBe(false)
+    expect(conversation.isAnswerPending.value).toBe(false)
     expect(getDoing(conversation)).toEqual([])
 
     release()

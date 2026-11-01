@@ -20,7 +20,7 @@ const createTab = (turn: readonly Turn[]) =>
       const { kind } = createAgentKind(createHost().host, (deps) => {
         const conversation: Conversation = {
           turns: ref([...turn]),
-          isWorking: ref(false),
+          isAnswerPending: ref(false),
           ask: async (text) => {
             request.push(text)
           },

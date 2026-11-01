@@ -9,7 +9,7 @@ import { useAgentConversation } from './useAgentConversation'
 
 const createConversation = (): Conversation => ({
   turns: ref([]),
-  isWorking: ref(false),
+  isAnswerPending: ref(false),
   ask: async () => undefined,
   getSourceLocation: () => null,
   stop: () => undefined,

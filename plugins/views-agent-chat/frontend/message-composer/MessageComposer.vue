@@ -4,13 +4,13 @@ import { Textarea } from './textarea'
 import { Disc } from './disc'
 import { AgentModelSelector, type AgentModelOption } from './model-selector'
 import { ReasoningSelector } from './reasoning-selector'
-import { COMPOSER_STATES, composerState, keyIntent, getMessage } from './state'
+import { COMPOSER_STATES, getComposerState, keyIntent, getMessage } from './state'
 import type { MessageComposerProps } from './MessageComposer.types'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<MessageComposerProps>(), {
   placeholder: 'Write a message',
-  isWorking: false,
+  isAnswerPending: false,
   isDisabled: false,
   sendLabel: 'Send',
   stopLabel: 'Stop',
@@ -39,7 +39,7 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const field = useTemplateRef<InstanceType<typeof Textarea>>('field')
 
-const state = computed(() => composerState(text.value, props.isWorking))
+const state = computed(() => getComposerState(text.value, props.isAnswerPending))
 const descriptor = computed(() => COMPOSER_STATES[state.value])
 
 /** Nothing to say, or turned off. */
@@ -98,7 +98,7 @@ function onSelectReasoning(id: string) {
           :options="options"
           :selected-agent-id="selectedAgentId"
           :selected-model-id="selectedModelId"
-          :is-disabled="isDisabled || isWorking"
+          :is-disabled="isDisabled || isAnswerPending"
           @select="onSelectModel"
         />
         <ReasoningSelector
@@ -106,7 +106,7 @@ function onSelectReasoning(id: string) {
           :levels="reasoningLevels"
           :selected-id="selectedReasoningId"
           :name="reasoningName"
-          :is-disabled="isDisabled || isWorking"
+          :is-disabled="isDisabled || isAnswerPending"
           @select="onSelectReasoning"
         />
       </div>

@@ -19,7 +19,7 @@ const window = (options: HostOptions = {}) => {
     const stopCalls: string[] = []
     const conversation: Conversation = {
       turns: turn,
-      isWorking: ref(false),
+      isAnswerPending: ref(false),
       ask: async () => undefined,
       getSourceLocation: () => null,
       stop: () => {

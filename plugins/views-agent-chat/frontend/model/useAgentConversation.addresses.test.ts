@@ -17,7 +17,7 @@ const open = (turn: Turn[] = [], notes: Record<string, string> = {}) => {
   const turns = ref<Turn[]>(turn)
   const conversation: Conversation = {
     turns,
-    isWorking: ref(false),
+    isAnswerPending: ref(false),
     ask: async () => undefined,
     getSourceLocation: () => null,
     stop: () => undefined,

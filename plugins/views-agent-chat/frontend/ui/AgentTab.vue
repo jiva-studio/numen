@@ -42,7 +42,7 @@ function onSelectReasoning(id: string) {
   <Agent
     :model-value="props.state.userQuestion.value"
     :turns="props.state.turns.value"
-    :is-working="props.state.isWorking.value"
+    :is-answer-pending="props.state.isAnswerPending.value"
     :placeholder="words.ask"
     :send-label="words.send"
     :stop-label="words.stop"
