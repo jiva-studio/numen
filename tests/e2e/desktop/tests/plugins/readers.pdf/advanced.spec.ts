@@ -1,6 +1,6 @@
 import { test, expect, readSavedStates } from '../../support/test.js'
 import { openWorkspace, openVaultFile } from '../../support/workspace.js'
-import { readWidth } from '../../support/layout.js'
+import { readSettledWidth, readWidth } from '../../support/layout.js'
 import { observeFor, waitForFrames } from '../../support/browser.js'
 
 test.describe('PDF Document Reader Advanced Controls', () => {
@@ -11,7 +11,7 @@ test.describe('PDF Document Reader Advanced Controls', () => {
     await openVaultFile(page, 'assets', 'pages.pdf')
     const firstPage = page.locator('.reader__page[data-page="0"]')
     await expect(firstPage).toBeAttached({ timeout: 20_000 })
-    const base = await readWidth(firstPage)
+    const base = await readSettledWidth(firstPage)
 
     await page.getByRole('button', { name: 'Zoom in' }).click()
     await expect.poll(() => readWidth(firstPage)).toBeCloseTo(base * 1.25, -1)
