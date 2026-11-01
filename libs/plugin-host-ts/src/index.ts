@@ -35,3 +35,15 @@ export {
 export { createAgentPort, type AgentClient } from './agentPort'
 export { resolveTextLinks, type LinkClient } from './textLinks'
 export { createPluginTexts } from './pluginTexts'
+export * from './contract'
+export { createPluginNotices, type NoticeList, type NoticeListTask } from './pluginNotices'
+export { createPluginTasks, type WindowTask } from './pluginTasks'
+export { createPluginHost, createPluginPaneWrapper, type PluginHost } from './hosting/host'
+export { createPluginContext } from './hosting/context'
+export type {
+  PluginContextHost,
+  PluginHostDeps,
+  PluginPaletteCommand,
+  TabActionHandler,
+} from './hosting/types'
+export type { AnyTabKind, OpenTab, SourceReader, TabKind, TabTarget } from './hosting/tabKinds'

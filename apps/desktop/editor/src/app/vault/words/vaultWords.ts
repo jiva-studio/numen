@@ -2,7 +2,6 @@
  * Vault domain conversions between schema representations and window models.
  */
 import type { TallyUnit } from '@numen/shell'
-import { asFailure, asValue } from '@numen/plugin-sdk'
 import {
   COMPLETION_CONSENT,
   FLUSH_RESULT,
@@ -17,6 +16,8 @@ import {
   type SearchModeCode,
   type TaskUnitCode,
   type VaultsErrorCodeValue,
+  asFailure,
+  asValue,
 } from '@numen/core-client'
 import type { SearchMode } from '@/features/command-palette'
 import type { Consent, Presence } from '@/entities/settings'

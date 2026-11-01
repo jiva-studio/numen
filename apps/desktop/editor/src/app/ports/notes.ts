@@ -9,7 +9,7 @@ import type {
   RemoveResult,
   RenameResult,
 } from '@/entities/note'
-import type { TextLink, VaultRelations } from '@numen/plugin-sdk'
+import type { TextLink, VaultRelations } from '@numen/plugin-host'
 import type { CreateResult } from '@/entities/file'
 
 export interface NotePort {

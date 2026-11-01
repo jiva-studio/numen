@@ -5,7 +5,7 @@
  * writes the record of the relation. The window reports what the core answers.
  */
 import { formatErrorMessage } from '@numen/core-client'
-import { getRelationErrorWords, type ConnectionRole, type VaultRelations } from '@numen/plugin-sdk'
+import { getRelationErrorWords, type ConnectionRole, type VaultRelations } from '@numen/plugin-host'
 import type { NewNote } from '../lib/note'
 import type { CreateResult } from '@/shared/model/fileTypes'
 import type { MessageWriter } from '@/shared/notices/messages'

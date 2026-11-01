@@ -3,7 +3,7 @@
  * in `requests`.
  */
 import { vi } from 'vitest'
-import { asValue } from '@numen/plugin-sdk'
+import { asValue } from '@numen/core-client'
 import { requests } from './requests'
 import {
   folders,

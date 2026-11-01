@@ -54,7 +54,7 @@ interface WindowCommandsOptions {
   window: ReturnType<typeof useWindowDisplay>
   writeMessage: MessageWriter
   log: ReturnType<typeof createMessageLog>
-  pluginHost?: import('@/entities/plugin').PluginHost
+  pluginHost?: import('@numen/plugin-host').PluginHost
   fileMenuCommands?: ReturnType<typeof useFileMenuCommands>
 }
 

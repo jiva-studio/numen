@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
-import type { FileBuffers } from '@numen/plugin-sdk'
+import type { FileBuffers } from '@numen/plugin-host'
 import { openNotes } from '@/entities/note'
 import { createBufferHost } from './bufferHost'
 

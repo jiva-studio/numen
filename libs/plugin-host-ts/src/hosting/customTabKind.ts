@@ -20,8 +20,8 @@ import {
   type Selector,
   type TabKindRegistration,
 } from '@numen/plugin-sdk'
-import { adoptPluginStyle } from '@numen/plugin-host'
-import type { AnyTabKind } from '@/shared/model/tabKinds'
+import { adoptPluginStyle } from '../styles'
+import type { AnyTabKind } from './tabKinds'
 import {
   attachPluginRoot,
   extractFilename,
@@ -31,7 +31,7 @@ import {
   renderWrapper,
   resolvePluginComponent,
   stripMarkdownExtension,
-} from './styles'
+} from './pluginView'
 import { createNoteWriter, startNoteRead } from './customTabNote'
 import type { PluginHostDeps } from './types'
 import { pickDeclaredHooks } from './pluginTabKind'

@@ -1,7 +1,7 @@
 /**
  * The vaults an installation holds, and the operations on the list.
  */
-import type { Result } from '@numen/plugin-sdk'
+import type { Result } from '@numen/core-client'
 
 /** One vault the installation holds, as the list has it. */
 export interface Vault {

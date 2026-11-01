@@ -3,7 +3,7 @@
  * which calls it makes, and what it reports when the list rejects the request.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { asFailure, asValue } from '@numen/plugin-sdk'
+import { asFailure, asValue } from '@numen/core-client'
 import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'
 import { createInvocation } from '../../lib/offers/invocation'
 import type { CommandInvocation, CommandTarget } from '../../types'

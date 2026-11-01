@@ -3,7 +3,7 @@
  * The vaults of the installation to choose from, on the screen both windows open on, with what the
  * plugins say beside each one.
  */
-import { VAULT_SUMMARY, type MountedView as Mounted } from '@numen/plugin-sdk'
+import { VAULT_SUMMARY, type MountedView as Mounted } from '@numen/plugin-host'
 import { Spinner } from '@numen/ui'
 import { WelcomePage, type VaultRow } from '@numen/shell'
 import { VERSION } from '@/shared/version'

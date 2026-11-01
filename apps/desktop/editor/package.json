@@ -19,7 +19,6 @@
     "@numen/core-client": "*",
     "@numen/plugin-host": "*",
     "@numen/plugin-manager": "*",
-    "@numen/plugin-sdk": "*",
     "@numen/shell": "*",
     "@numen/ui": "*",
     "vue": "^3.5.44"

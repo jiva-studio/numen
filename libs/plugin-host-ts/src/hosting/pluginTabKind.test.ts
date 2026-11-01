@@ -4,7 +4,7 @@ import { mount } from '@vue/test-utils'
 import type { PluginContext, TabKindRegistration } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginHost } from './host'
-import { registerPluginStyle, unregisterPluginStyle } from '@numen/plugin-host'
+import { registerPluginStyle, unregisterPluginStyle } from '../styles'
 import {
   createDeclaredPane,
   createDeclaredTabKind,

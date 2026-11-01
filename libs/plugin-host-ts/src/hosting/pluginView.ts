@@ -4,7 +4,7 @@
  */
 import { defineAsyncComponent, h, Teleport, type Component, type Ref, type VNodeChild } from 'vue'
 import type { PluginContext } from '@numen/plugin-sdk'
-import { createSheet, getPluginStyle } from '@numen/plugin-host'
+import { createSheet, getPluginStyle } from '../styles'
 
 type AsyncComponentRegistration = {
   type: 'async'

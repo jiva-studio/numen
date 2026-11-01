@@ -2,7 +2,7 @@
  * Search hit lookup, item formatting, and navigation destination mapping.
  */
 import type { PaletteItem } from '@numen/shell'
-import type { Selector } from '@numen/plugin-sdk'
+import type { Selector } from '@numen/plugin-host'
 import type { NoteType } from '@/entities/file'
 import type { TextRange } from '@/shared/textRange'
 import type { Words } from './search'

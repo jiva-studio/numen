@@ -6,7 +6,7 @@
  * A tab kind registers how it opens a file and holds no file state.
  */
 import type { Component } from 'vue'
-import type { Selector } from '@numen/plugin-sdk'
+import type { Selector } from '@numen/plugin-host'
 import type { FileKind, NoteType } from '@/shared/model/fileTypes'
 import type { TextRange } from '@/shared/textRange'
 

@@ -4,9 +4,9 @@
  */
 import { defineComponent, h, onBeforeUnmount, onErrorCaptured, ref, type Component } from 'vue'
 import type { TabKindRegistration } from '@numen/plugin-sdk'
-import type { AnyTabKind } from '@/shared/model/tabKinds'
-import { adoptPluginStyle, getPluginStyle } from '@numen/plugin-host'
-import { renderFallback, resolvePluginComponent } from './styles'
+import type { AnyTabKind } from './tabKinds'
+import { adoptPluginStyle, getPluginStyle } from '../styles'
+import { renderFallback, resolvePluginComponent } from './pluginView'
 
 /** A registration that declares the content of its tabs. */
 export type DeclaredTabKindRegistration = TabKindRegistration & {

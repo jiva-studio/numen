@@ -5,7 +5,7 @@
  * showing something stale, with no error and no way back.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { asFailure, asValue } from '@numen/plugin-sdk'
+import { asFailure, asValue } from '@numen/core-client'
 import { useWindowDisplay } from './useWindowDisplay'
 import type { Core } from '@/app/ports/core'
 import type { Task } from '@/shared/notices/task'

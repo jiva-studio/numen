@@ -6,22 +6,20 @@
  * this window.
  */
 import { computed, effectScope, shallowRef, type EffectScope } from 'vue'
-import type {
-  AgentHost,
-  Disposable,
-  NoticeHost,
-  PluginContext,
-  TabKindRegistration,
-} from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import {
   createAppInfo,
   createExternalOpener,
+  createPluginNotices,
   createViewRegistry,
   openExternalUrl,
   type LoaderHost,
+  type AgentHost,
+  type Disposable,
+  type PluginContext,
+  type TabKindRegistration,
 } from '@numen/plugin-host'
-import { createNoticeQueue, type NoticeQueue } from '@numen/shell'
+import { createNoticeQueue } from '@numen/shell'
 
 /** The target of this window, which names the plugins it loads. */
 export const TARGET = 'desktop.flashcards'
@@ -43,24 +41,6 @@ export interface WindowTab {
 
 // The disposable of a subscription that holds no resource.
 const NOTHING: Disposable = { dispose: () => undefined }
-
-/** The notices of one plugin, in the window's one list. */
-export const createPluginNotices = (queue: NoticeQueue, pluginId: string): NoticeHost => ({
-  show: (text, severity = 'info') => queue.show(pluginId, text, severity),
-  setTasks: (tasks) =>
-    queue.setTasks(
-      pluginId,
-      tasks.map((task) => ({
-        id: task.id,
-        label: task.label,
-        about: task.about ?? '',
-        error: task.error ?? '',
-        isUserStarted: task.isUserStarted ?? false,
-        ...(task.done === undefined ? {} : { done: task.done }),
-        ...(task.total === undefined ? {} : { total: task.total }),
-      })),
-    ),
-})
 
 /** The window's one tab: opened on a vault over the front kind, and closed back to the vaults. */
 function createWindowTab(front: () => PluginView | null) {

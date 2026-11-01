@@ -1,10 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
-import { DEFAULT_PLUGIN_ENABLED } from '@numen/plugin-host'
+import {
+  DEFAULT_PLUGIN_ENABLED,
+  type AgentHost,
+  type PluginContext,
+  type WorkspaceHost,
+} from '@numen/plugin-host'
 import { createNoticeQueue } from '@numen/shell'
 import { useWindowTabs } from '@/entities/tab'
 import type { AnyTabKind } from '@/entities/tab'
-import type { AgentHost, PluginContext, WorkspaceHost } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginSupport, getFrontendPluginIds } from './useWindowPlugins'

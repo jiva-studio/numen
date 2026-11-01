@@ -9,8 +9,8 @@ import {
   resolveTextLinks,
   type AgentClient,
   type LinkClient,
+  type AgentHost,
 } from '@numen/plugin-host'
-import type { AgentHost } from '@numen/plugin-sdk'
 import { WORDS } from '@/shared/words'
 
 /** The part of the agent service that the window uses. */

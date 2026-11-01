@@ -1,25 +1,21 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, shallowRef } from 'vue'
-import { createPluginTasks } from './pluginTasks'
-import type { Task } from '@/shared/notices/task'
+import { createPluginTasks, type WindowTask } from './pluginTasks'
 
-const createTask = (id: string, pluginId: string): Task => ({
+const createTask = (id: string, pluginId: string): WindowTask => ({
   id,
   label: 'Working',
   about: `notes/${id}.md`,
   completedCount: 1,
   total: 2,
-  counting: 'items',
   error: '',
-  isUserStarted: false,
   pluginId,
   pluginName: pluginId ? 'Example' : '',
-  isCancellable: false,
 })
 
 describe('createPluginTasks', () => {
   it('watch reports only the tasks of the calling plugin', () => {
-    const tasks = shallowRef<readonly Task[]>([
+    const tasks = shallowRef<readonly WindowTask[]>([
       createTask('a', 'md.example.mine'),
       createTask('b', 'md.example.other'),
       createTask('c', ''),
@@ -43,7 +39,7 @@ describe('createPluginTasks', () => {
   })
 
   it('watchAll reports the tasks of every plugin and not the core tasks', () => {
-    const tasks = shallowRef<readonly Task[]>([
+    const tasks = shallowRef<readonly WindowTask[]>([
       createTask('a', 'md.example.mine'),
       createTask('b', 'md.example.other'),
       createTask('c', ''),
@@ -56,7 +52,7 @@ describe('createPluginTasks', () => {
   })
 
   it('reports each change until disposed', async () => {
-    const tasks = shallowRef<readonly Task[]>([])
+    const tasks = shallowRef<readonly WindowTask[]>([])
     const handler = vi.fn()
     const watching = createPluginTasks(tasks, 'md.example.mine').watch(handler)
 

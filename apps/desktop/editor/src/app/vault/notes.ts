@@ -1,8 +1,7 @@
 /**
  * Note domain methods for the window core.
  */
-import { asFailure, asValue } from '@numen/plugin-sdk'
-import { findErrorCode, isStaleAnswer } from '@numen/core-client'
+import { findErrorCode, isStaleAnswer, asFailure, asValue } from '@numen/core-client'
 import { resolveTextLinks } from '@numen/plugin-host'
 import { notes } from '@/shared/clients'
 import {

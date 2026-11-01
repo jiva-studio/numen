@@ -4,7 +4,7 @@
 
 import { computed, watch, type Component } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
-import type { CommandNote, MenuEntry } from '@numen/plugin-sdk'
+import type { CommandNote, MenuEntry } from '@numen/plugin-host'
 import type { WelcomeAction } from '@numen/shell'
 import { runInBackground } from '@numen/ui'
 import {
@@ -34,7 +34,7 @@ import { WORDS } from '@/shared/words'
 import { createPluginSettingCommands } from '../window/useSettings'
 import type { NoteCreator } from '@/entities/note'
 import type { VaultCore } from '../vault'
-import type { PluginPaletteCommand } from '@/entities/plugin'
+import type { PluginPaletteCommand } from '@numen/plugin-host'
 
 type Words = typeof WORDS
 
@@ -67,7 +67,7 @@ export interface CommandsDepsOptions {
   leavePath: (from: string, to: string) => Promise<void> | void
   getOpeningNote: () => string
   writeMessage: MessageWriter
-  pluginHost?: import('@/entities/plugin').PluginHost | undefined
+  pluginHost?: import('@numen/plugin-host').PluginHost | undefined
   /** The commands the enabled plugins declare, read as the window starts and each time the palette opens. */
   declaredCommands?: DeclaredCommands
   /** The menu the text versions of the file in front make, read each time the palette opens. */

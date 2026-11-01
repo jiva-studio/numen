@@ -24,7 +24,7 @@ import type {
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
-import { createExternalOpener } from '@numen/plugin-host'
+import { createExternalOpener } from '../externalOpener'
 import type { PluginContextHost } from './types'
 
 function trackSubscription(subscriptions: Disposable[], disposable: Disposable): Disposable {
@@ -253,30 +253,12 @@ function guardServices(
 /** The target the editor activates its plugins in. */
 const EDITOR_TARGET = 'desktop.editor'
 
-export function createPluginContext(
-  pluginId: string,
-  host: PluginContextHost,
-  manifest?: Manifest | { permissions?: readonly string[] },
-): PluginContext {
-  const subscriptions: Disposable[] = []
-  const add = (d: Disposable) => trackSubscription(subscriptions, d)
-  const target: PermissionTarget = { pluginId, manifest }
-  const requirePerm = (p: string, op: string) => checkPermission(target, p, op)
-  const notices = host.getNotices?.(pluginId)
-  const tasks = host.getTasks?.(pluginId)
-  const texts = host.getTexts?.(pluginId)
+type Track = (disposable: Disposable) => Disposable
+type RequirePermission = (permission: string, operation: string) => void
 
+/** The registrations a plugin makes, each taken with the plugin's subscriptions. */
+function createRegistrations(pluginId: string, host: PluginContextHost, add: Track) {
   return {
-    pluginId,
-    target: EDITOR_TARGET,
-    app: host.app,
-    openExternal: createExternalOpener(host.openExternal),
-    subscriptions,
-    ...guardServices(host, requirePerm, add),
-    ...(notices ? { notices } : {}),
-    ...(tasks ? { tasks } : {}),
-    ...(texts ? { texts: guardTexts(texts, requirePerm) } : {}),
-    hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
     registerSettingsView: (reg: SettingsViewRegistration) =>
       add(host.registerSettingsView(pluginId, reg)),
@@ -295,7 +277,19 @@ export function createPluginContext(
       return { focus: () => view.focus(), ...add(view) }
     },
     registerDropHandler: (reg: DropRegistration) => add(host.registerDropHandler(pluginId, reg)),
-    drops: host.drops,
+  }
+}
+
+/** What the events of a plugin are tracked and guarded with. */
+interface EventGuard {
+  readonly requirePerm: RequirePermission
+  readonly add: Track
+}
+
+/** The settings and the vault events a plugin watches or raises, behind the permissions they need. */
+function createEvents(pluginId: string, host: PluginContextHost, guard: EventGuard) {
+  const { requirePerm, add } = guard
+  return {
     getSetting: <T = unknown>(key: string) => host.getSetting<T>(pluginId, key),
     onSettingChange: <T = unknown>(key: string, h: (v: T) => void) =>
       add(host.onSettingChange<T>(pluginId, key, h)),
@@ -315,6 +309,47 @@ export function createPluginContext(
       requirePerm('vault:read', 'emitFileSelect')
       host.emitFileSelect(pluginId, e)
     },
+  }
+}
+
+/** The services of the window that need no permission: its notices, tasks and texts. */
+function createWindowServices(
+  pluginId: string,
+  host: PluginContextHost,
+  requirePerm: RequirePermission,
+) {
+  const notices = host.getNotices?.(pluginId)
+  const tasks = host.getTasks?.(pluginId)
+  const texts = host.getTexts?.(pluginId)
+  return {
+    ...(notices ? { notices } : {}),
+    ...(tasks ? { tasks } : {}),
+    ...(texts ? { texts: guardTexts(texts, requirePerm) } : {}),
+  }
+}
+
+export function createPluginContext(
+  pluginId: string,
+  host: PluginContextHost,
+  manifest?: Manifest | { permissions?: readonly string[] },
+): PluginContext {
+  const subscriptions: Disposable[] = []
+  const add = (d: Disposable) => trackSubscription(subscriptions, d)
+  const target: PermissionTarget = { pluginId, manifest }
+  const requirePerm = (p: string, op: string) => checkPermission(target, p, op)
+
+  return {
+    pluginId,
+    target: EDITOR_TARGET,
+    app: host.app,
+    openExternal: createExternalOpener(host.openExternal),
+    subscriptions,
+    ...guardServices(host, requirePerm, add),
+    ...createWindowServices(pluginId, host, requirePerm),
+    hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
+    ...createRegistrations(pluginId, host, add),
+    drops: host.drops,
+    ...createEvents(pluginId, host, { requirePerm, add }),
     openTab: (kind: string, targetPath?: string) => host.openTab?.(kind, targetPath),
     navigateTab: (kind: string, targetPath: string) => host.navigateTab?.(kind, targetPath),
     closeTab: (id: string) => {

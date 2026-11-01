@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createCustomTabKind, createPluginPaneWrapper, createReaderTabKind } from './customTabKind'
-import { renderPaneContent } from './styles'
+import { renderPaneContent } from './pluginView'
 
 describe('createPluginPaneWrapper', () => {
   it('unwraps es module default export and forwards normalized props', async () => {

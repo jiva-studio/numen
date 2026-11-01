@@ -2,8 +2,8 @@
  * Relationship methods of the window core: the calls of the note service that read and write
  * connections between notes.
  */
-import { asFailure, asValue, type Result, type VaultRelations } from '@numen/plugin-sdk'
-import { findErrorCode } from '@numen/core-client'
+import type { VaultRelations } from '@numen/plugin-host'
+import { findErrorCode, asFailure, asValue, type Result } from '@numen/core-client'
 import { notes } from '@/shared/clients'
 import {
   CONNECTION_ROLES,

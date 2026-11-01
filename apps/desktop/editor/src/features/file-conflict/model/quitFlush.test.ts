@@ -5,7 +5,7 @@
  * that everything was written, and the last seconds of typing are lost.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { asFailure, asValue } from '@numen/plugin-sdk'
+import { asFailure, asValue } from '@numen/core-client'
 
 import { openNotes, type Notes } from '@/entities/note'
 import { createFileFlush, type Conflict, type FlushDeps, type FlushResult } from './flush'

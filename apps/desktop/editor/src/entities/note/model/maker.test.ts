@@ -6,7 +6,8 @@
  * the answer.
  */
 import { describe, expect, it } from 'vitest'
-import { asFailure, asValue, type RelatedNoteRequest, type RelationError } from '@numen/plugin-sdk'
+import { asFailure, asValue } from '@numen/core-client'
+import type { RelatedNoteRequest, RelationError } from '@numen/plugin-host'
 
 import { createNoteWriter, type NoteMaker } from './maker'
 import type { NewNote } from '@/entities/note'

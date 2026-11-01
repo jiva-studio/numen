@@ -1,9 +1,10 @@
-import type { NoteNeighbourhood, Result } from '@numen/plugin-sdk'
+import type { Result } from '@numen/core-client'
+import type { NoteNeighbourhood } from '@numen/plugin-host'
 import type { ErrorCode } from '@/shared/errors'
 import type { TextRange } from '@/shared/textRange'
 import type { MoveResult } from '@/shared/model/fileTypes'
 
-export type { NoteRelation } from '@numen/plugin-sdk'
+export type { NoteRelation } from '@numen/plugin-host'
 
 /** The prose returned by a read, with the file identity returned alongside it. */
 export interface NoteContents {

@@ -13,7 +13,7 @@ import type {
   VaultNotes,
   VaultRelations,
   WorkspaceHost,
-} from '@numen/plugin-sdk'
+} from '@numen/plugin-host'
 import type { SearchDeps } from '@/features/command-palette'
 import type { FileOpeners } from '@/entities/tab'
 import type { NoteCreator } from '@/entities/note'

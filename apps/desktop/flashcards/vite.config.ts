@@ -22,9 +22,6 @@ export default defineConfig({
       '@numen/plugin-host': fileURLToPath(
         new URL('../../../libs/plugin-host-ts/src/index.ts', import.meta.url),
       ),
-      '@numen/plugin-sdk': fileURLToPath(
-        new URL('../../../libs/plugin-sdk-ts/src/index.ts', import.meta.url),
-      ),
       '@numen/ui/styles.css': fileURLToPath(
         new URL('../../../libs/ui/core/dist/numen-ui.css', import.meta.url),
       ),

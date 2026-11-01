@@ -1,7 +1,7 @@
 /**
  * Note and file creation and mutation helpers for command execution.
  */
-import type { ConnectionRole } from '@numen/plugin-sdk'
+import type { ConnectionRole } from '@numen/plugin-host'
 import type { CommandDeps, TabContext, VaultContext, Voice } from './deps'
 import type { CommandInvocation } from '../../types'
 import type { AnswerWords } from '../../words'

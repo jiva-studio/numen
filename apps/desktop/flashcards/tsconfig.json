@@ -6,9 +6,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@numen/core-client": ["../../../libs/core-client/src/index.ts"],
-      "@numen/core-client/*": ["../../../libs/core-client/src/*"],
-      "@numen/plugin-sdk": ["../../../libs/plugin-sdk-ts/src/index.ts"],
-      "@numen/plugin-sdk/*": ["../../../libs/plugin-sdk-ts/src/*"]
+      "@numen/core-client/*": ["../../../libs/core-client/src/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts"]

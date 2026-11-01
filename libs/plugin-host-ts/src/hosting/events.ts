@@ -36,15 +36,20 @@ export function notifyListeners<E>(
   }
 }
 
+/** A command a plugin registered, with the plugin. */
+export interface CommandEntry {
+  readonly pluginId: string
+  readonly reg: CommandRegistration
+}
+
 export async function runCommand(
   deps: PluginHostDeps,
-  pluginId: string,
-  reg: CommandRegistration,
+  entry: CommandEntry,
   note: CommandNote,
 ): Promise<void> {
   try {
-    await reg.handler(note)
+    await entry.reg.handler(note)
   } catch (error) {
-    reportError(deps, pluginId, error)
+    reportError(deps, entry.pluginId, error)
   }
 }

@@ -7,7 +7,7 @@
  * names the file and the place in it, and `openers.ts` opens it.
  */
 import type { Component } from 'vue'
-import type { Selector } from '@numen/plugin-sdk'
+import type { Selector } from '@numen/plugin-host'
 import type { SearchDestination } from './search'
 
 /** The window operations that open a chosen destination. */

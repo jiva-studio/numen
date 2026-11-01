@@ -1,4 +1,4 @@
-import type { ContextMenuRegistration, ContextMenuTarget, MenuEntry } from '@numen/plugin-sdk'
+import type { ContextMenuRegistration, ContextMenuTarget, MenuEntry } from '@numen/plugin-host'
 import type {
   CommandDeps,
   CommandTarget,

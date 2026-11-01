@@ -1,12 +1,14 @@
 import { watch } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { PluginServices } from './pluginServices'
-import { createPluginHost } from '@/entities/plugin'
 import { registerNoteIcon } from '@/entities/note'
 import {
   DEFAULT_PLUGIN_ENABLED,
   createAppInfo,
+  createPluginHost,
   createPluginLoader,
+  createPluginNotices,
+  createPluginTasks,
   createPluginTexts,
   openExternalUrl,
   type PluginLoader,
@@ -15,8 +17,6 @@ import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { useTabLinks } from '@/features/tab-linking'
 import type { NoticeQueue } from '@numen/shell'
 import type { useSettings } from '../window/useSettings'
-import { createPluginNotices } from './pluginNotices'
-import { createPluginTasks } from './pluginTasks'
 import { texts } from '@/shared/clients'
 
 export interface PluginSupportDeps {

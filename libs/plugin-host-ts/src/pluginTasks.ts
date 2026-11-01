@@ -3,9 +3,20 @@
  */
 import { watch, type Ref } from 'vue'
 import type { PluginTaskStatus, TaskHost } from '@numen/plugin-sdk'
-import type { Task } from '@/shared/notices/task'
 
-const toStatus = (task: Task): PluginTaskStatus => ({
+/** One piece of work in the window's task list, as the window reports it. */
+export interface WindowTask {
+  readonly id: string
+  readonly label: string
+  readonly about: string
+  readonly completedCount: number
+  readonly total: number
+  readonly error: string
+  readonly pluginId: string
+  readonly pluginName: string
+}
+
+const toStatus = (task: WindowTask): PluginTaskStatus => ({
   id: task.id,
   pluginId: task.pluginId,
   pluginName: task.pluginName,
@@ -17,8 +28,8 @@ const toStatus = (task: Task): PluginTaskStatus => ({
 })
 
 const watchTasks = (
-  tasks: Readonly<Ref<readonly Task[]>>,
-  isIncluded: (task: Task) => boolean,
+  tasks: Readonly<Ref<readonly WindowTask[]>>,
+  isIncluded: (task: WindowTask) => boolean,
   handler: (tasks: readonly PluginTaskStatus[]) => void,
 ) => {
   const stop = watch(
@@ -31,7 +42,7 @@ const watchTasks = (
 
 /** The task host one plugin is given, over the window's one task list. */
 export const createPluginTasks = (
-  tasks: Readonly<Ref<readonly Task[]>>,
+  tasks: Readonly<Ref<readonly WindowTask[]>>,
   pluginId: string,
 ): TaskHost => ({
   watch: (handler) => watchTasks(tasks, (task) => task.pluginId === pluginId, handler),

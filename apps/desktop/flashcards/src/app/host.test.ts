@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { defineComponent, h, onScopeDispose } from 'vue'
-import { CONVERSATION, createMockAgentHost, VAULT_SUMMARY } from '@numen/plugin-sdk'
+import { CONVERSATION, VAULT_SUMMARY, createMockAgentHost } from '@numen/plugin-host'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createShellHost, TARGET } from './host'
 

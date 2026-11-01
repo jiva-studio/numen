@@ -30,7 +30,7 @@ import type {
   VaultTexts,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
-import type { AnyTabKind, SourceReader } from '@/shared/model/tabKinds'
+import type { AnyTabKind, SourceReader } from './tabKinds'
 import type { Component } from 'vue'
 
 export type {
