@@ -100,6 +100,17 @@ func (u Embed) EmbedWithProgress(
 // pipelineBufferSize is the number of batches buffered between pipeline stages.
 const pipelineBufferSize = 4
 
+// getSources returns the distinct sources of the chunks, in the order they appear.
+func getSources(chunks []domain.Passage) []string {
+	var out []string
+	for _, one := range chunks {
+		if !slices.Contains(out, one.Source) {
+			out = append(out, one.Source)
+		}
+	}
+	return out
+}
+
 // preparedBatch is one batch of chunks whose text was read and whose cached vectors were resolved.
 type preparedBatch struct {
 	model       embeddingport.EmbeddingModel
@@ -109,14 +120,16 @@ type preparedBatch struct {
 	reusedCount int
 	asking      []string
 	askingMap   []int
-	source      string
+	// sources are the distinct sources of the chunks, in order, and id the batch in the tracker.
+	sources []string
+	id      uint64
 }
 
 // completedBatch is one batch whose vectors are ready to be stored.
 type completedBatch struct {
 	vectors []embeddingport.Vector
 	reused  int
-	source  string
+	id      uint64
 }
 
 // Execute embeds the chunks of a vault that lack vectors, in batches, until none remain.
@@ -148,19 +161,15 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (res EmbedResult, er
 	}
 
 	var mu sync.Mutex
-	updateProgress := func(source string, embedded, reused int) {
-		mu.Lock()
-		if source != "" {
-			res.CurrentSource = source
-		}
-		res.Embedded += embedded
-		res.Reused += reused
-		snapshot := res
-		mu.Unlock()
-		u.progress(snapshot)
-	}
-
 	workers := max(u.inferWorkers(), 1)
+	track := newTracker(u, workers, &res, &mu)
+	updateProgress := func(comp completedBatch) {
+		track.leave(comp.id)
+		track.publish(func(r *EmbedResult) {
+			r.Embedded += len(comp.vectors)
+			r.Reused += comp.reused
+		})
+	}
 
 	g, gctx := errgroup.WithContext(ctx)
 	bufferSize := max(pipelineBufferSize, workers*2)
@@ -169,7 +178,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (res EmbedResult, er
 
 	g.Go(func() error {
 		defer close(preparedChan)
-		return u.produceBatches(gctx, v, model, &source, &res, &mu, preparedChan)
+		return u.produceBatches(gctx, v, model, &source, &res, &mu, track, preparedChan)
 	})
 	g.Go(func() error {
 		defer close(completedChan)
@@ -210,6 +219,7 @@ func (u Embed) produceBatches(
 	source *extracted,
 	res *EmbedResult,
 	mu *sync.Mutex,
+	track *tracker,
 	out chan<- preparedBatch,
 ) error {
 	var after embeddingport.ChunkCursor
@@ -232,12 +242,12 @@ func (u Embed) produceBatches(
 		mu.Unlock()
 		after = next
 
-		chunks, texts, err := u.read(ctx, source, pending, res, mu)
+		chunks, texts, err := u.read(ctx, source, pending, res, mu, track)
 		if err != nil {
 			return err
 		}
 		sortBySource(chunks, texts)
-		if err := u.sendBatches(ctx, model, chunks, texts, out); err != nil {
+		if err := u.sendBatches(ctx, model, chunks, texts, track, out); err != nil {
 			return err
 		}
 	}
@@ -249,6 +259,7 @@ func (u Embed) sendBatches(
 	model embeddingport.EmbeddingModel,
 	chunks []domain.Passage,
 	texts []string,
+	track *tracker,
 	out chan<- preparedBatch,
 ) error {
 	pos := 0
@@ -258,11 +269,13 @@ func (u Embed) sendBatches(
 			return err
 		}
 		pos += len(batch)
+		prep.id = track.enter(prep.sources)
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		case out <- prep:
 		}
+		track.publish(func(*EmbedResult) {})
 	}
 	return nil
 }
@@ -345,7 +358,7 @@ func (u Embed) runInferWorker(ctx context.Context, in <-chan preparedBatch, out 
 func (u Embed) storeBatches(
 	ctx context.Context,
 	in <-chan completedBatch,
-	updateProgress func(source string, embedded, reused int),
+	updateProgress func(comp completedBatch),
 ) error {
 	for {
 		select {
@@ -360,7 +373,7 @@ func (u Embed) storeBatches(
 					return fmt.Errorf("write %d vectors: %w", len(comp.vectors), err)
 				}
 			}
-			updateProgress(comp.source, len(comp.vectors), comp.reused)
+			updateProgress(comp)
 		}
 	}
 }
@@ -377,10 +390,12 @@ func (u Embed) read(
 	pending []domain.Passage,
 	res *EmbedResult,
 	mu *sync.Mutex,
+	track *tracker,
 ) ([]domain.Passage, []string, error) {
 	chunks := make([]domain.Passage, 0, len(pending))
 	texts := make([]string, 0, len(pending))
 
+	isFirst := true
 	for _, p := range pending {
 		if u.IsSkipped != nil && u.IsSkipped(p.Source, p.SourceHash) {
 			mu.Lock()
@@ -388,14 +403,9 @@ func (u Embed) read(
 			mu.Unlock()
 			continue
 		}
-		mu.Lock()
-		if p.Source != res.CurrentSource {
-			res.CurrentSource = p.Source
-			snapshot := *res
-			mu.Unlock()
-			u.progress(snapshot)
-		} else {
-			mu.Unlock()
+		if isFirst {
+			isFirst = false
+			track.publishNext(p.Source)
 		}
 		prose, ok, err := source.textOf(ctx, p.Source, p.Producer)
 		if err != nil {
@@ -451,7 +461,7 @@ func (u Embed) prepareBatch(
 		reused:    make(map[int]embeddingport.Vector),
 		asking:    make([]string, 0, len(texts)),
 		askingMap: make([]int, len(texts)),
-		source:    pending[len(pending)-1].Source,
+		sources:   getSources(pending),
 	}
 	var deduplicated map[string]int
 	if len(texts) > 1 {
@@ -547,7 +557,7 @@ func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBat
 	return completedBatch{
 		vectors: out,
 		reused:  prep.reusedCount,
-		source:  prep.source,
+		id:      prep.id,
 	}, nil
 }
 

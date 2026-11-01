@@ -2,8 +2,13 @@ package vectors
 
 import (
 	"context"
+	"errors"
+	"reflect"
+	"slices"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -160,7 +165,7 @@ func TestWithNoEmbedderTheTextIsSplitAndNothingFails(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a vault with no embedder is not an error: %v", err)
 	}
-	if res != (EmbedResult{}) {
+	if !reflect.DeepEqual(res, EmbedResult{}) {
 		t.Errorf("the run reports %+v, want nothing done", res)
 	}
 	if len(index.vectors) != 0 || len(index.groups) != 0 {
@@ -470,5 +475,111 @@ func TestEmbeddingWithConcurrentWorkers(t *testing.T) {
 	}
 	if len(index.vectors) != len(small) {
 		t.Fatalf("stored %d vectors, want %d", len(index.vectors), len(small))
+	}
+}
+
+// holdingEmbedder embeds every text except those of a source it is told to
+// hold: a call with one blocks until its context ends.
+type holdingEmbedder struct {
+	*embedder
+	holds   func(text string) bool
+	started chan struct{}
+}
+
+func (h *holdingEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+	if slices.ContainsFunc(texts, h.holds) {
+		select {
+		case h.started <- struct{}{}:
+		default:
+		}
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
+	return h.embedder.Embed(ctx, texts)
+}
+
+// progressLog keeps the progress reports of a run, newest last.
+type progressLog struct {
+	mu      sync.Mutex
+	reports []EmbedResult
+}
+
+func (l *progressLog) add(r EmbedResult) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.reports = append(l.reports, r)
+}
+
+func (l *progressLog) getLast() EmbedResult {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if len(l.reports) == 0 {
+		return EmbedResult{}
+	}
+	return l.reports[len(l.reports)-1]
+}
+
+// While the second of three sources is embedding, the report names that source:
+// the first has finished, and the third is only read ahead.
+func TestProgressNamesTheSourceBeingEmbedded(t *testing.T) {
+	const (
+		pathA = "library/a.epub"
+		pathB = "library/b.epub"
+		pathC = "library/c.epub"
+	)
+	third := []string{"harbour", "quay", "mast", "keel", "rope", "sail", "buoy", "tide"}
+	index, shelf := newStore(), newLibrary()
+	shelf.hold(pathA, domain.KindFile, bookOf(t, "A", words(latin, 300)), 300)
+	shelf.hold(pathB, domain.KindFile, bookOf(t, "B", words(sanskrit, 300)), 200)
+	shelf.hold(pathC, domain.KindFile, bookOf(t, "C", words(third, 300)), 100)
+	cutBooks(t, index, shelf, first)
+
+	aChunks := 0
+	for _, chunk := range index.small(first.ID) {
+		if chunk.path == pathA {
+			aChunks++
+		}
+	}
+	isB := func(text string) bool { return strings.Contains(text, sanskrit[0]) }
+	model := &holdingEmbedder{
+		embedder: &embedder{dims: dimensions}, holds: isB, started: make(chan struct{}, 1),
+	}
+	var log progressLog
+	embed := newEmbed(vaults{first.ID: shelf}, index, index)
+	embed.Embedder = model
+	embed.BatchCharacters = 1
+	embed.OnProgress = log.add
+
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	ended := make(chan error, 1)
+	go func() {
+		_, err := embed.Execute(ctx, first)
+		ended <- err
+	}()
+
+	select {
+	case <-model.started:
+	case <-time.After(10 * time.Second):
+		t.Fatal("the run never reached the second source")
+	}
+	deadline := time.Now().Add(10 * time.Second)
+	for log.getLast().Embedded < aChunks && time.Now().Before(deadline) {
+		time.Sleep(5 * time.Millisecond)
+	}
+	if got := log.getLast().Embedded; got != aChunks {
+		t.Fatalf("%d chunks of the first source are stored, want %d", got, aChunks)
+	}
+
+	last := log.getLast()
+	if last.CurrentSource != pathB {
+		t.Errorf("the report names %q while %q is embedding", last.CurrentSource, pathB)
+	}
+	if !slices.Equal(last.Active, []string{pathB}) {
+		t.Errorf("the report lists %v as in flight, want only %q", last.Active, pathB)
+	}
+	cancel()
+	if err := <-ended; !errors.Is(err, context.Canceled) {
+		t.Errorf("the run ended with %v, want context.Canceled", err)
 	}
 }

@@ -86,14 +86,15 @@ type IndexResult struct {
 
 // EmbedResult reports what embedding did.
 type EmbedResult struct {
-	Pending       int    // chunks found with no vector from the model in use
-	Embedded      int    // chunks that now carry one
-	Reused        int    // chunks whose cached vector was claimed
-	Vanished      int    // whose source the vault no longer holds
-	Displaced     int    // whose place is not in the text their source holds now
-	Skipped       int    // left without a vector, since a person cancelled the indexing of their source
-	CurrentSource string // the source open now
-	IsBusy        bool   // somebody else is embedding this vault, and nothing was done
+	Pending       int      // chunks found with no vector from the model in use
+	Embedded      int      // chunks that now carry one
+	Reused        int      // chunks whose cached vector was claimed
+	Vanished      int      // whose source the vault no longer holds
+	Displaced     int      // whose place is not in the text their source holds now
+	Skipped       int      // left without a vector, since a person cancelled the indexing of their source
+	CurrentSource string   // the source being embedded now: the first of Active, or the next one to be read
+	Active        []string // the sources of the batches being embedded now, oldest first
+	IsBusy        bool     // somebody else is embedding this vault, and nothing was done
 }
 
 // NoteScanner scans the notes of a vault.

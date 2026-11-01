@@ -3,6 +3,7 @@ package indexing
 import (
 	"context"
 	"errors"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -156,25 +157,38 @@ func (c *taskCancel) request() {
 	c.stop()
 }
 
-// currentSource is the source a pass reports it is on.
-type currentSource struct {
-	mu   sync.Mutex
-	path string
+// currentSources are the sources a pass reports it is working on. Nothing reported leaves the last
+// ones in place.
+type currentSources struct {
+	mu    sync.Mutex
+	paths []string
 }
 
-func (c *currentSource) set(path string) {
-	if path == "" {
+func (c *currentSources) set(paths []string) {
+	if len(paths) == 0 {
 		return
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.path = path
+	c.paths = slices.Clone(paths)
 }
 
-func (c *currentSource) get() string {
+func (c *currentSources) get() []string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return c.path
+	return slices.Clone(c.paths)
+}
+
+// getEmbeddingSources returns the sources the vector pass is embedding in the report: those of the
+// batches in flight, or the source it names when none is.
+func getEmbeddingSources(res vaultreading.EmbedResult) []string {
+	if len(res.Active) > 0 {
+		return res.Active
+	}
+	if res.CurrentSource != "" {
+		return []string{res.CurrentSource}
+	}
+	return nil
 }
 
 func signal(wake chan struct{}) {
@@ -326,9 +340,11 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 	}
 	texts, cancel := newTaskCancel(ctx)
 	defer cancel.stop()
-	var current currentSource
+	var current currentSources
 	making.OnTextsProgress = func(res vaultreading.IndexResult) {
-		current.set(res.CurrentSource)
+		if res.CurrentSource != "" {
+			current.set([]string{res.CurrentSource})
+		}
 		events.ReportTask(vaultreading.Task{
 			ID: IndexingTexts, Title: taskIndexingTexts, About: res.CurrentSource,
 			// Every file the walk found leaves this pass one of four ways, and all
@@ -351,7 +367,9 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 		// Stopped on request. The cut data is correct up to that point, and a
 		// source a person cancelled is left uncut until it changes.
 		if cancel.isRequested.Load() {
-			p.worker.skips.addTexts(current.get())
+			for _, path := range current.get() {
+				p.worker.skips.addTexts(path)
+			}
 		}
 		events.FinishTask(IndexingTexts)
 	default:
@@ -514,9 +532,9 @@ func (p *pass) makeVectors(ctx, items context.Context, plan vectorPlan) bool {
 	// vector has been created, counted against the total pending.
 	items, cancel := newTaskCancel(items)
 	defer cancel.stop()
-	var current currentSource
+	var current currentSources
 	making.OnVectorsProgress = func(res vaultreading.EmbedResult) {
-		current.set(res.CurrentSource)
+		current.set(getEmbeddingSources(res))
 		pos := vaultreading.Task{ID: MakingVectors, Title: "Indexing", About: res.CurrentSource, Cancel: cancel.request}
 		if res.Embedded > 0 {
 			pos.Count, pos.Total = int64(res.Embedded), plan.getTotal(res)
@@ -533,7 +551,9 @@ func (p *pass) makeVectors(ctx, items context.Context, plan vectorPlan) bool {
 		// The source a person cancelled gets no vectors until it changes; the
 		// next pass embeds the others.
 		if cancel.isRequested.Load() {
-			p.worker.skips.addVectors(current.get())
+			for _, path := range current.get() {
+				p.worker.skips.addVectors(path)
+			}
 		}
 		events.FinishTask(MakingVectors)
 	default:
