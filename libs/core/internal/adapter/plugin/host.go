@@ -1208,8 +1208,7 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 	result := maps.Clone(rawStored)
 	if p, ok := h.plugins[pluginID]; ok {
 		result = p.Manifest.ResolveSettings(result)
-		if _, hasStored := rawStored[keyExecutablePath]; !hasStored && isACPPathsSetting(pluginID, keyExecutablePath) &&
-			h.hasExecutablePathSetting(p.Manifest) {
+		if _, hasStored := rawStored[keyExecutablePath]; !hasStored && hasACPPathsSetting(p.Manifest) {
 			if paths := joinOptionValues(resolveDiscoveredACPOptions()); paths != "" {
 				result[keyExecutablePath] = paths
 			}
@@ -1228,13 +1227,9 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 	return result
 }
 
-func (h *Host) hasExecutablePathSetting(manifest pluginport.PluginManifest) bool {
-	for _, s := range manifest.Settings {
-		if s.Key == keyExecutablePath {
-			return true
-		}
-	}
-	return false
+// hasACPPathsSetting reports whether the manifest declares a setting that holds ACP agent executables.
+func hasACPPathsSetting(manifest pluginport.PluginManifest) bool {
+	return slices.ContainsFunc(manifest.Settings, isACPPathsSetting)
 }
 
 // GetPluginConfigJSON returns serialized JSON configuration for the specified plugin.
@@ -1423,23 +1418,10 @@ func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) er
 	return secretsErr
 }
 
-func toPluginSettings(pluginID string, manifestSettings []pluginport.PluginManifestSetting) []pluginport.PluginSetting {
+func toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []pluginport.PluginSetting {
 	settings := make([]pluginport.PluginSetting, 0, len(manifestSettings))
 	for _, s := range manifestSettings {
-		options := s.Options
-		var defVal any
-		if isACPPathsSetting(pluginID, s.Key) {
-			discovered := resolveDiscoveredACPOptions()
-			if len(options) == 0 {
-				options = discovered
-			}
-			defVal = s.Default
-			if paths := joinOptionValues(discovered); s.Default == "" && paths != "" {
-				defVal = paths
-			}
-		} else {
-			defVal = resolveSettingDefault(s)
-		}
+		defVal, options := resolveSettingDefaultAndOptions(s)
 		defJSON := ""
 		if defVal != nil {
 			if b, err := json.Marshal(defVal); err == nil {
@@ -1477,7 +1459,7 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 	result := make([]pluginport.PluginInfo, 0, len(h.plugins))
 	for _, p := range h.getPluginsInOrderLocked() {
 		isActive := h.isPluginActiveLocked(p.Manifest.ID)
-		settings := toPluginSettings(p.Manifest.ID, p.Manifest.Settings)
+		settings := toPluginSettings(p.Manifest.Settings)
 
 		result = append(result, pluginport.PluginInfo{
 			ID:            p.Manifest.ID,
@@ -1498,6 +1480,24 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 		})
 	}
 	return result
+}
+
+// resolveSettingDefaultAndOptions returns the default and the options of a setting as the window shows
+// them. The ACP agents found on the machine are the options of a setting that holds ACP agent
+// executables, and its default where the manifest gives none.
+func resolveSettingDefaultAndOptions(s pluginport.PluginManifestSetting) (any, pluginport.PluginSettingOptions) {
+	if !isACPPathsSetting(s) {
+		return resolveSettingDefault(s), s.Options
+	}
+	discovered := resolveDiscoveredACPOptions()
+	options := s.Options
+	if len(options) == 0 {
+		options = discovered
+	}
+	if paths := joinOptionValues(discovered); s.Default == "" && paths != "" {
+		return paths, options
+	}
+	return s.Default, options
 }
 
 func resolveSettingDefault(s pluginport.PluginManifestSetting) any {
@@ -1523,8 +1523,6 @@ type acpExecutableCandidate struct {
 }
 
 const (
-	// acpPluginID is the one plugin whose executable paths are the ACP agents found on the machine.
-	acpPluginID       = "md.numen.agents.acp"
 	acpSubcommand     = "acp"
 	acpFlag           = "--acp"
 	keyExecutablePath = "executable_path"
@@ -1541,9 +1539,10 @@ var acpExecutableCandidates = []acpExecutableCandidate{
 	{title: "Qwen Code", binary: "qwen", arg: acpFlag},
 }
 
-// isACPPathsSetting reports whether a setting of a plugin holds ACP agent executables.
-func isACPPathsSetting(pluginID, key string) bool {
-	return pluginID == acpPluginID && key == keyExecutablePath
+// isACPPathsSetting reports whether a setting holds ACP agent executables: the executable path
+// setting that takes several paths. An agent plugin of one program declares a single path.
+func isACPPathsSetting(s pluginport.PluginManifestSetting) bool {
+	return s.Key == keyExecutablePath && s.Multiple
 }
 
 // joinOptionValues returns the values of the options, one per line.
