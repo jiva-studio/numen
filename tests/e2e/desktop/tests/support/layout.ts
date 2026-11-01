@@ -122,19 +122,19 @@ export const readWidth = async (element: Locator): Promise<number> =>
   element.evaluate((one) => one.getBoundingClientRect().width)
 
 /**
- * Waits until the element has the same width in two readings in turn, and gives that width. A
+ * Waits until the element has the same width in two widths in turn, and gives that width. A
  * reader fits its pages to the pane it is measured in, and the pane keeps changing until it has
  * been laid out, so a width read before then is not the one the document is drawn at.
  */
 export const readSettledWidth = async (element: Locator): Promise<number> => {
-  const readings: number[] = []
+  const widths: number[] = []
   await expect
     .poll(async () => {
-      readings.push(await readWidth(element))
-      return readings.at(-1) === readings.at(-2)
+      widths.push(await readWidth(element))
+      return widths.at(-1) === widths.at(-2)
     })
     .toBe(true)
-  return readings.at(-1) ?? 0
+  return widths.at(-1) ?? 0
 }
 
 /** The font size the browser computed for an element, in CSS pixels. */
