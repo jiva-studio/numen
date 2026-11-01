@@ -152,6 +152,8 @@ func (s *Service) WriteAppearance(
 	if err := s.Settings.Write(selected); err != nil {
 		return respond(err.Error())
 	}
+	// The theme chosen is found, so a warning about the one that was missing is withdrawn.
+	s.warn("")
 	return connect.NewResponse(&v1.WriteAppearanceResponse{}), nil
 }
 

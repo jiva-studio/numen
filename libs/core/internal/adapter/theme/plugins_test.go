@@ -159,8 +159,8 @@ func TestAStoredPluginThemeThatNoLongerResolvesFallsBackToTheDefaultAndWarns(t *
 	if applied := aged.themes(t).GetApplied(); applied != theme.Default {
 		t.Errorf("wears %q after the plugin is disabled", applied)
 	}
-	if len(aged.reply) != 1 || !strings.Contains(aged.reply[0], name) {
-		t.Errorf("said %v", aged.reply)
+	if len(aged.reply) != 2 || aged.reply[0] != "" || !strings.Contains(aged.reply[1], name) {
+		t.Errorf("said %v, want an empty text for the first list and then the warning", aged.reply)
 	}
 }
 

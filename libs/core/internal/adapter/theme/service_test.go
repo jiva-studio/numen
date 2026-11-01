@@ -268,6 +268,16 @@ func TestThemes_FoundThemeWithdrawsTheEarlierWarning(t *testing.T) {
 	}
 }
 
+// Choosing a theme that is found withdraws the warning about the one that was missing.
+func TestThemes_WritingAFoundThemeWithdrawsTheEarlierWarning(t *testing.T) {
+	aged := createFakeAppearances(t, theme.Appearance{ThemeName: "mine:the-one-i-deleted", Mode: appearance.Light})
+	aged.themes(t)
+	aged.choose(t, theme.Default, v1.Mode_MODE_LIGHT)
+	if len(aged.reply) != 2 || aged.reply[1] != "" {
+		t.Errorf("said %v, want the warning and then an empty text", aged.reply)
+	}
+}
+
 // A build with no settings behind it still lists what it ships.
 func TestThemes_NoSettingsUsesDefaultPalette(t *testing.T) {
 	service := &theme.Service{Catalogue: createThemeFolder(t)}
