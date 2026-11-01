@@ -18,6 +18,8 @@ const expectSavedState = async (page: Page, path: string, text: string): Promise
   await expect.poll(async () => (await readSavedStates(page.request)).get(path)).toContain(text)
 }
 
+const PDF_READER_ID = 'md.numen.readers.pdf'
+
 /** Turns the PDF reader plugin on or off in the settings. */
 const setPdfReaderEnabled = async (page: Page, isEnabled: boolean): Promise<void> => {
   await runCommand(page, 'Settings', /^Settings$/)
@@ -32,6 +34,14 @@ const setPdfReaderEnabled = async (page: Page, isEnabled: boolean): Promise<void
 
 test.describe('The tabs of the window after a restart', () => {
   test.describe.configure({ timeout: 120_000 })
+
+  test.afterEach(async ({ page }) => {
+    const answer = await page.request.post('/numen.v1.SettingsService/WriteSettings', {
+      data: { settings: [{ at: ['plugins', PDF_READER_ID, 'enabled'], value: 'true' }] },
+      headers: { 'Content-Type': 'application/json' },
+    })
+    expect(answer.ok()).toBe(true)
+  })
 
   test('open a PDF at the page it was left at', async ({ page }) => {
     await openWorkspace(page)
