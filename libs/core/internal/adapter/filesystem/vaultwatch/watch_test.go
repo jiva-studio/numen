@@ -185,23 +185,26 @@ func TestDebouncingGoesOnWhileNobodyIsListening(t *testing.T) {
 	write(t, root, "Second.md", "# Second\n")
 	time.Sleep(400 * time.Millisecond)
 
-	select {
-	case paths := <-changes:
-		// A batch may report more than changed: a watch opened on a vault
-		// reports files that were already present, and these cannot be
-		// distinguished from newly arrived files.
-		for _, want := range []string{"First.md", "Second.md"} {
-			if !slices.Contains(paths, want) {
-				t.Fatalf("the first batch was %v — %s was not debounced into it", paths, want)
+	// A batch may report more than changed: a watch opened on a vault reports files that were
+	// already present, and these cannot be distinguished from newly arrived files. The operating
+	// system says when it says it, so the batches are read until both files are named; a debounce
+	// that blocked on the consumer would lose the later one, and nothing would name it.
+	named := map[string]bool{}
+	deadline := time.After(5 * time.Second)
+	for !named["First.md"] || !named["Second.md"] {
+		select {
+		case paths := <-changes:
+			sorted := slices.Clone(paths)
+			slices.Sort(sorted)
+			if len(slices.Compact(sorted)) != len(paths) {
+				t.Fatalf("the batch was %v — a path was named twice", paths)
 			}
+			for _, path := range paths {
+				named[path] = true
+			}
+		case <-deadline:
+			t.Fatalf("only %v were reported", named)
 		}
-		sorted := slices.Clone(paths)
-		slices.Sort(sorted)
-		if len(slices.Compact(sorted)) != len(paths) {
-			t.Fatalf("the batch was %v — a path was named twice", paths)
-		}
-	case <-time.After(5 * time.Second):
-		t.Fatal("nothing was reported")
 	}
 }
 
