@@ -30,11 +30,11 @@ func getModulePath(file *modfile.File) string {
 	return file.Module.Mod.Path
 }
 
-// getPluginGoModRefusals returns why the go.mod of the plugin in the folder named dir is refused: a
+// getPluginGoModViolations returns why the go.mod of the plugin in the folder named dir is refused: a
 // module path other than the one of the folder, a direct requirement getPluginDependencyRefusal
 // refuses, or a module built from a local folder. An indirect requirement is what Go records of
 // the requirements of the SDK and is allowed.
-func getPluginGoModRefusals(dir string, file *modfile.File) []string {
+func getPluginGoModViolations(dir string, file *modfile.File) []string {
 	var refusals []string
 	mod := getModulePath(file)
 	if want := pluginsPrefix + dir; mod != want {
@@ -57,12 +57,12 @@ func getPluginGoModRefusals(dir string, file *modfile.File) []string {
 	return refusals
 }
 
-// getPluginGoModRefusals defines the whole rule, so it is tested directly.
-func TestWhatThePluginGoModRulesRefuse(t *testing.T) {
+// getPluginGoModViolations defines the whole rule, so it is tested directly.
+func TestWhatThePluginGoModRulesReject(t *testing.T) {
 	const head = "module " + pluginsPrefix + "sample\n\ngo 1.26\n\n"
 	for _, one := range []struct {
 		name, text string
-		refused    int
+		rejected    int
 	}{
 		{"the SDK and third-party code", head + "require (\n\t" + sdkModule + " v0.0.0\n\t" + sdkModule + "/host v0.0.0\n\tgolang.org/x/net v0.1.0\n)\n", 0},
 		{"the notes library as Go records it for the SDK", head + "require " + notesModule + " v0.0.0 // indirect\n", 0},
@@ -81,8 +81,8 @@ func TestWhatThePluginGoModRulesRefuse(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%s: %v", one.name, err)
 		}
-		if got := getPluginGoModRefusals("sample", file); len(got) != one.refused {
-			t.Errorf("%s: refusals %v, want %d", one.name, got, one.refused)
+		if got := getPluginGoModViolations("sample", file); len(got) != one.rejected {
+			t.Errorf("%s: violations %v, want %d", one.name, got, one.rejected)
 		}
 	}
 }
@@ -92,7 +92,7 @@ func TestWhatThePluginGoModRulesRefuse(t *testing.T) {
 func TestNoPluginModuleRequiresMoreThanTheSDK(t *testing.T) {
 	for _, dir := range listPluginModules(t) {
 		file := readGoMod(t, filepath.Join(dir, "go.mod"))
-		for _, why := range getPluginGoModRefusals(filepath.Base(dir), file) {
+		for _, why := range getPluginGoModViolations(filepath.Base(dir), file) {
 			t.Errorf("%s/go.mod %s", dir, why)
 		}
 	}

@@ -13,9 +13,9 @@ import (
 )
 
 // newID returns an identifier for the instant with random bits from crypto/rand.
-func newID(t *testing.T, at time.Time) string {
+func newID(t *testing.T, when time.Time) string {
 	t.Helper()
-	id, err := ulid.NewGenerator(rand.Reader).NewID(at)
+	id, err := ulid.NewGenerator(rand.Reader).NewID(when)
 	if err != nil {
 		t.Fatal(err)
 	}

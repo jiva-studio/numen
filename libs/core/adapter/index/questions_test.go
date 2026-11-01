@@ -103,13 +103,13 @@ func openCountedDB(t *testing.T) (*DB, *note.Queries, *atomic.Int64) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	counting := tallying{Driver: base.Driver(), ran: &atomic.Int64{}}
+	tallied := tallying{Driver: base.Driver(), ran: &atomic.Int64{}}
 	if err := base.Close(); err != nil {
 		t.Fatal(err)
 	}
-	pool := sql.OpenDB(connector{name: dsn(path, settings{synchronous: shipped}), driver: counting})
+	pool := sql.OpenDB(connector{name: dsn(path, settings{synchronous: shipped}), driver: tallied})
 	testsupport.CloseAfter(t, pool)
-	return db, note.NewQueries(pool), counting.ran
+	return db, note.NewQueries(pool), tallied.ran
 }
 
 // questions is how many statements a call ran.
@@ -169,11 +169,11 @@ func TestTheNotesOfOneTypeAreOneQuestion(t *testing.T) {
 	if _, err := queries.GetPathsOfType(ctx, getFirst().ID, sampleType); err != nil {
 		t.Fatal(err)
 	}
-	if asked := questions(t, ran, func() error {
+	if questionCount := questions(t, ran, func() error {
 		_, err := queries.GetPathsOfType(ctx, getFirst().ID, sampleType)
 		return err
-	}); asked > 2 {
-		t.Errorf("the samples of a vault cost %d questions", asked)
+	}); questionCount > 2 {
+		t.Errorf("the samples of a vault cost %d questions", questionCount)
 	}
 
 	found, err := queries.GetPathsOfType(ctx, getFirst().ID, sampleType)

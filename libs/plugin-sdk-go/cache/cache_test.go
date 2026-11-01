@@ -266,7 +266,7 @@ func TestErrorHandlerReceivesDiskWriteError(t *testing.T) {
 	}
 }
 
-func TestGetPluginDirIsUnderTheUserCacheDirOfThePlugin(t *testing.T) {
+func TestGetPluginDirIsInTheUserCacheDirOfThePlugin(t *testing.T) {
 	base := t.TempDir()
 	t.Setenv("XDG_CACHE_HOME", base)
 	t.Setenv("HOME", base)

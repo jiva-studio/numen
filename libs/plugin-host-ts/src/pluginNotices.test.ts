@@ -2,24 +2,24 @@ import { describe, expect, it } from 'vitest'
 import { createPluginNotices, type NoticeList, type NoticeListTask } from './pluginNotices'
 
 const createRecordingList = () => {
-  const shown: [string, string, string][] = []
+  const showCalls: [string, string, string][] = []
   const tasks: [string, readonly NoticeListTask[]][] = []
   const list: NoticeList = {
-    show: (source, text, severity) => shown.push([source, text, severity]),
+    show: (source, text, severity) => showCalls.push([source, text, severity]),
     setTasks: (source, given) => tasks.push([source, given]),
   }
-  return { list, shown, tasks }
+  return { list, showCalls, tasks }
 }
 
 describe('the notices of one plugin', () => {
-  it('are shown in the window list under the plugin, info where no severity is given', () => {
-    const { list, shown } = createRecordingList()
+  it('are showCalls in the window list under the plugin, info where no severity is given', () => {
+    const { list, showCalls } = createRecordingList()
     const notices = createPluginNotices(list, 'md.numen.cards')
 
     notices.show('Saved.')
     notices.show('Could not save.', 'error')
 
-    expect(shown).toEqual([
+    expect(showCalls).toEqual([
       ['md.numen.cards', 'Saved.', 'info'],
       ['md.numen.cards', 'Could not save.', 'error'],
     ])
