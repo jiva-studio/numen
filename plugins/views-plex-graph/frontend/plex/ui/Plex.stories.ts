@@ -110,7 +110,11 @@ const getOptions = (a: Knobs): PlexOptionsInput => ({
   maxPerLine: a.maxPerLine,
   maxLines: a.maxLines,
   maxHeadings: a.maxHeadings,
-  routing: { curvature: a.curvature, minReach: a.minReach, arrowClearance: a.arrowClearance },
+  routing: {
+    curvature: a.curvature,
+    minReach: a.minReach,
+    arrowClearance: a.arrowClearance,
+  },
   motion: { arriveAfter: a.arriveAfter, leaveBefore: a.leaveBefore },
   direction:
     a.orientation === 'parents below'

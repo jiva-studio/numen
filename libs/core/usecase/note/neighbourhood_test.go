@@ -3,7 +3,7 @@ package note_test
 import (
 	"fmt"
 	"slices"
-	"strings"
+	"strconv"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
@@ -54,32 +54,36 @@ func TestBothEndsOfAnEdgeAreOneRelationship(t *testing.T) {
 	}
 }
 
-// describeEdge renders the line between two notes as it is seen from one of
-// them: the relation, the label where there is one, and whether the edge is mutual.
-func describeEdge(t *testing.T, files map[string]string, from, to string) string {
-	t.Helper()
-	for _, r := range neighbourhoodOf(t, files, from).Related {
-		if r.Path != to {
-			continue
-		}
-		relations := []string{string(r.Relation)}
-		if r.Label != "" {
-			relations = append(relations, r.Label)
-		}
-		if r.IsMutual {
-			relations = append(relations, "mutual")
-		}
-		return strings.Join(relations, " ")
+// describeSide renders one record of a line: its label, an arrow where it has
+// one, or "none" for a note that writes nothing about the other.
+func describeSide(s *domain.Side) string {
+	if s == nil {
+		return "none"
 	}
-	return "nothing"
+	text := strconv.Quote(s.Label)
+	if s.Marker == domain.MarkerArrow {
+		text += " arrow"
+	}
+	return text
 }
 
-// TestALabelWrittenAtEitherEndIsDrawn.
-//
-// Either end of a relationship can name it, and both ends naming it makes the
-// edge mutual. The word shown is then the one the note in focus wrote, so the
-// two notes read the same edge in their own language.
-func TestALabelSavedAtEitherEndIsGenerated(t *testing.T) {
+// describeLine renders a line as `parent>child ab=<record of the parent> ba=<record of the child>`.
+func describeLine(c domain.Connection) string {
+	return c.A + ">" + c.B + " ab=" + describeSide(c.AB) + " ba=" + describeSide(c.BA)
+}
+
+// linesOf renders every line of a neighbourhood.
+func linesOf(n domain.Neighbourhood) []string {
+	out := make([]string, 0, len(n.Connections))
+	for _, c := range n.Connections {
+		out = append(out, describeLine(c))
+	}
+	return out
+}
+
+// TestEachEndOfALineKeepsItsOwnRecord. Either end of a relationship can name it,
+// and the line carries the record each note wrote, whichever note is in focus.
+func TestEachEndOfALineKeepsItsOwnRecord(t *testing.T) {
 	t.Parallel()
 	content := func(title, links string) string {
 		if links == "" {
@@ -97,36 +101,43 @@ func TestALabelSavedAtEitherEndIsGenerated(t *testing.T) {
 			name:     "the far end alone names it",
 			area:     "  - to: \"[[Idea]]\"\n    role: parent\n",
 			idea:     "  - to: \"[[Area]]\"\n    role: child\n    label: the top plot\n",
-			fromArea: "parent the top plot mutual",
-			fromIdea: "child the top plot mutual",
+			fromArea: `Idea.md>Area.md ab="the top plot" ba=""`,
+			fromIdea: `Idea.md>Area.md ab="the top plot" ba=""`,
 		},
 		{
 			name:     "each end has its own word for it",
 			area:     "  - to: \"[[Idea]]\"\n    role: jump\n    label: the newest tenant\n",
 			idea:     "  - to: \"[[Area]]\"\n    role: jump\n    label: the oldest tenant\n",
-			fromArea: "jump the newest tenant mutual",
-			fromIdea: "jump the oldest tenant mutual",
+			fromArea: `Idea.md>Area.md ab="the oldest tenant" ba="the newest tenant"`,
+			fromIdea: `Area.md>Idea.md ab="the newest tenant" ba="the oldest tenant"`,
 		},
 		{
 			name:     "the near end alone names it",
 			area:     "  - to: \"[[Idea]]\"\n    role: parent\n    label: the site\n",
 			idea:     "  - to: \"[[Area]]\"\n    role: child\n",
-			fromArea: "parent the site mutual",
-			fromIdea: "child the site mutual",
+			fromArea: `Idea.md>Area.md ab="" ba="the site"`,
+			fromIdea: `Idea.md>Area.md ab="" ba="the site"`,
 		},
 		{
 			name:     "written at one end only",
 			area:     "  - to: \"[[Idea]]\"\n    role: parent\n    label: the site\n",
 			idea:     "",
-			fromArea: "parent the site",
-			fromIdea: "child the site",
+			fromArea: `Idea.md>Area.md ab=none ba="the site"`,
+			fromIdea: `Idea.md>Area.md ab=none ba="the site"`,
 		},
 		{
-			name:     "mutual and named by neither",
+			name:     "an arrow at the end the record points to",
+			area:     "  - to: \"[[Idea]]\"\n    role: child\n    marker: arrow\n",
+			idea:     "",
+			fromArea: `Area.md>Idea.md ab="" arrow ba=none`,
+			fromIdea: `Area.md>Idea.md ab="" arrow ba=none`,
+		},
+		{
+			name:     "named by neither",
 			area:     "  - to: \"[[Idea]]\"\n    role: parent\n",
 			idea:     "  - to: \"[[Area]]\"\n    role: child\n",
-			fromArea: "parent mutual",
-			fromIdea: "child mutual",
+			fromArea: `Idea.md>Area.md ab="" ba=""`,
+			fromIdea: `Idea.md>Area.md ab="" ba=""`,
 		},
 	} {
 		t.Run(c.name, func(t *testing.T) {
@@ -134,29 +145,30 @@ func TestALabelSavedAtEitherEndIsGenerated(t *testing.T) {
 				"Area.md": content("Area", c.area),
 				"Idea.md": content("Idea", c.idea),
 			}
-			if got := describeEdge(t, files, "Area.md", "Idea.md"); got != c.fromArea {
+			if got := linesOf(neighbourhoodOf(t, files, "Area.md")); !slices.Equal(got, []string{c.fromArea}) {
 				t.Errorf("from Area: got %q, want %q", got, c.fromArea)
 			}
-			if got := describeEdge(t, files, "Idea.md", "Area.md"); got != c.fromIdea {
+			if got := linesOf(neighbourhoodOf(t, files, "Idea.md")); !slices.Equal(got, []string{c.fromIdea}) {
 				t.Errorf("from Idea: got %q, want %q", got, c.fromIdea)
 			}
 		})
 	}
 }
 
-// TestEndsThatDisagreeAnswerNothing. A pair who are each other's parent name
-// two relationships, and the one drawn is the one whose relation wins.
-func TestEndsThatDisagreeAnswerNothing(t *testing.T) {
+// TestEndsThatDisagreeKeepOnlyTheRecordsOfTheWinningDirection. A pair who are each
+// other's parent name two relationships, and the line drawn is the one whose
+// relation wins, with the records that say the same.
+func TestEndsThatDisagreeKeepOnlyTheRecordsOfTheWinningDirection(t *testing.T) {
 	t.Parallel()
 	mutualParents := map[string]string{
 		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: parent\n    label: lays them\n---\n\n# Chicken\n",
 		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: parent\n    label: came out of one\n---\n\n# Egg\n",
 	}
-	if got := describeEdge(t, mutualParents, "Chicken.md", "Egg.md"); got != "parent lays them" {
-		t.Errorf("got %q, want the parent relation and the word written here", got)
+	if got := linesOf(neighbourhoodOf(t, mutualParents, "Chicken.md")); !slices.Equal(got, []string{`Egg.md>Chicken.md ab=none ba="lays them"`}) {
+		t.Errorf("got %q, want the neighbour as the parent and the word written here", got)
 	}
-	if got := describeEdge(t, mutualParents, "Egg.md", "Chicken.md"); got != "parent came out of one" {
-		t.Errorf("got %q, want the parent relation and the word written here", got)
+	if got := linesOf(neighbourhoodOf(t, mutualParents, "Egg.md")); !slices.Equal(got, []string{`Chicken.md>Egg.md ab=none ba="came out of one"`}) {
+		t.Errorf("got %q, want the neighbour as the parent and the word written here", got)
 	}
 
 	// Each calls the other its child, so the parent relation is earned from the far
@@ -165,11 +177,72 @@ func TestEndsThatDisagreeAnswerNothing(t *testing.T) {
 		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: child\n    label: was laid\n---\n\n# Chicken\n",
 		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: child\n    label: hatched\n---\n\n# Egg\n",
 	}
-	if got := describeEdge(t, mutualChildren, "Chicken.md", "Egg.md"); got != "parent hatched" {
-		t.Errorf("got %q, want the parent relation and the word written at the end it came from", got)
+	if got := linesOf(neighbourhoodOf(t, mutualChildren, "Chicken.md")); !slices.Equal(got, []string{`Egg.md>Chicken.md ab="hatched" ba=none`}) {
+		t.Errorf("got %q, want the word written at the end it came from", got)
 	}
-	if got := describeEdge(t, mutualChildren, "Egg.md", "Chicken.md"); got != "parent was laid" {
-		t.Errorf("got %q, want the parent relation and the word written at the end it came from", got)
+	if got := linesOf(neighbourhoodOf(t, mutualChildren, "Egg.md")); !slices.Equal(got, []string{`Chicken.md>Egg.md ab="was laid" ba=none`}) {
+		t.Errorf("got %q, want the word written at the end it came from", got)
+	}
+}
+
+// TestLinesJoinNotesThatAreNotTheFocus. Every pair of drawn notes that a record
+// joins is a line with its records, in each direction a record is written.
+func TestLinesJoinNotesThatAreNotTheFocus(t *testing.T) {
+	t.Parallel()
+	const area = "---\ntitle: Area\nlinks:\n  - to: \"[[Idea]]\"\n    role: child\n  - to: \"[[Plan]]\"\n    role: child\n---\n\n# Area\n"
+	note := func(title, links string) string {
+		if links == "" {
+			return "---\ntitle: " + title + "\n---\n\n# " + title + "\n"
+		}
+		return "---\ntitle: " + title + "\nlinks:\n" + links + "---\n\n# " + title + "\n"
+	}
+	const ideaJump = "  - to: \"[[Plan]]\"\n    role: jump\n    label: feeds\n    marker: arrow\n"
+	const planJump = "  - to: \"[[Idea]]\"\n    role: jump\n    label: needs\n"
+
+	for _, c := range []struct {
+		name, idea, plan string
+		want             string
+	}{
+		{"the earlier note writes", ideaJump, "", `Plan.md>Idea.md ab=none ba="feeds" arrow`},
+		{"the later note writes", "", planJump, `Plan.md>Idea.md ab="needs" ba=none`},
+		{"both write", ideaJump, planJump, `Plan.md>Idea.md ab="needs" ba="feeds" arrow`},
+		{"neither writes", "", "", ""},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			n := neighbourhoodOf(t, map[string]string{
+				"Area.md": area, "Idea.md": note("Idea", c.idea), "Plan.md": note("Plan", c.plan),
+			}, "Area.md")
+			want := []string{"Area.md>Idea.md ab=\"\" ba=none", "Area.md>Plan.md ab=\"\" ba=none"}
+			if c.want != "" {
+				want = append(want, c.want)
+			}
+			if got := linesOf(n); !slices.Equal(got, want) {
+				t.Errorf("got %q, want %q", got, want)
+			}
+		})
+	}
+}
+
+// TestLinesJoinSiblingsToEachOtherAndToTheirParent. A sibling is not joined to
+// the focus, yet the records it writes are lines like any other.
+func TestLinesJoinSiblingsToEachOtherAndToTheirParent(t *testing.T) {
+	t.Parallel()
+	n := neighbourhoodOf(t, map[string]string{
+		"Area.md": "---\ntitle: Area\n---\n\n# Area\n",
+		"One.md":  "---\ntitle: One\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# One\n",
+		"Two.md": "---\ntitle: Two\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n    label: part of\n    marker: arrow\n" +
+			"  - to: \"[[Three]]\"\n    role: jump\n    label: before\n    marker: arrow\n---\n\n# Two\n",
+		"Three.md": "---\ntitle: Three\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# Three\n",
+	}, "One.md")
+
+	want := []string{
+		`Area.md>One.md ab=none ba=""`,
+		`Area.md>Three.md ab=none ba=""`,
+		`Area.md>Two.md ab=none ba="part of" arrow`,
+		`Two.md>Three.md ab="before" arrow ba=none`,
+	}
+	if got := linesOf(n); !slices.Equal(got, want) {
+		t.Errorf("got %q, want %q", got, want)
 	}
 }
 
@@ -340,87 +413,5 @@ func TestAnEmptyVaultOpensOnNothing(t *testing.T) {
 	}
 	if found {
 		t.Error("an empty vault opened on something")
-	}
-}
-
-func TestMutualLinksCarryBothLabels(t *testing.T) {
-	t.Parallel()
-	files := map[string]string{
-		"Alpha.md": "---\ntitle: Alpha\nlinks:\n  - to: \"[[Beta]]\"\n    role: jump\n    label: \"111\"\n---\n\n# Alpha\n",
-		"Beta.md":  "---\ntitle: Beta\nlinks:\n  - to: \"[[Alpha]]\"\n    role: jump\n    label: \"222\"\n---\n\n# Beta\n",
-	}
-
-	aroundAlpha := neighbourhoodOf(t, files, "Alpha.md")
-	if len(aroundAlpha.Related) != 1 {
-		t.Fatalf("expected 1 related note, got %d", len(aroundAlpha.Related))
-	}
-	relAlpha := aroundAlpha.Related[0]
-	if !relAlpha.IsMutual {
-		t.Errorf("expected IsMutual to be true")
-	}
-	if relAlpha.Label != "111" {
-		t.Errorf("expected Label to be 111, got %q", relAlpha.Label)
-	}
-	if relAlpha.ReverseLabel != "222" {
-		t.Errorf("expected ReverseLabel to be 222, got %q", relAlpha.ReverseLabel)
-	}
-
-	aroundBeta := neighbourhoodOf(t, files, "Beta.md")
-	if len(aroundBeta.Related) != 1 {
-		t.Fatalf("expected 1 related note, got %d", len(aroundBeta.Related))
-	}
-	relBeta := aroundBeta.Related[0]
-	if !relBeta.IsMutual {
-		t.Errorf("expected IsMutual to be true")
-	}
-	if relBeta.Label != "222" {
-		t.Errorf("expected Label to be 222, got %q", relBeta.Label)
-	}
-	if relBeta.ReverseLabel != "111" {
-		t.Errorf("expected ReverseLabel to be 111, got %q", relBeta.ReverseLabel)
-	}
-}
-
-func TestMutualChildParentLinksCarryBothLabels(t *testing.T) {
-	t.Parallel()
-	files := map[string]string{
-		"Parent.md": "---\ntitle: Parent\nlinks:\n  - to: \"[[Child]]\"\n    role: child\n    label: \"child of parent\"\n---\n\n# Parent\n",
-		"Child.md":  "---\ntitle: Child\nlinks:\n  - to: \"[[Parent]]\"\n    role: parent\n    label: \"parent of child\"\n---\n\n# Child\n",
-	}
-
-	aroundParent := neighbourhoodOf(t, files, "Parent.md")
-	if len(aroundParent.Related) != 1 {
-		t.Fatalf("expected 1 related note, got %d", len(aroundParent.Related))
-	}
-	relParent := aroundParent.Related[0]
-	if !relParent.IsMutual {
-		t.Errorf("expected IsMutual to be true")
-	}
-	if relParent.Relation != domain.RelationChild {
-		t.Errorf("expected Relation to be child, got %v", relParent.Relation)
-	}
-	if relParent.Label != "child of parent" {
-		t.Errorf("expected Label to be 'child of parent', got %q", relParent.Label)
-	}
-	if relParent.ReverseLabel != "parent of child" {
-		t.Errorf("expected ReverseLabel to be 'parent of child', got %q", relParent.ReverseLabel)
-	}
-
-	aroundChild := neighbourhoodOf(t, files, "Child.md")
-	if len(aroundChild.Related) != 1 {
-		t.Fatalf("expected 1 related note, got %d", len(aroundChild.Related))
-	}
-	relChild := aroundChild.Related[0]
-	if !relChild.IsMutual {
-		t.Errorf("expected IsMutual to be true")
-	}
-	if relChild.Relation != domain.RelationParent {
-		t.Errorf("expected Relation to be parent, got %v", relChild.Relation)
-	}
-	if relChild.Label != "parent of child" {
-		t.Errorf("expected Label to be 'parent of child', got %q", relChild.Label)
-	}
-	if relChild.ReverseLabel != "child of parent" {
-		t.Errorf("expected ReverseLabel to be 'child of parent', got %q", relChild.ReverseLabel)
 	}
 }

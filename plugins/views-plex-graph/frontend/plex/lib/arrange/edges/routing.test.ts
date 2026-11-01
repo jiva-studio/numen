@@ -92,8 +92,9 @@ describe('edges', () => {
     }
   })
 
-  it('joins two nodes on the same line side to side, not under and back', () => {
-    // The relation is vertical, but there is no vertical space between them.
+  it('joins two nodes on the same line with no room between them by a bow, not through the boxes', () => {
+    // The relation is vertical, there is no vertical space between them, and the
+    // gap beside them is too small for a line to carry its words and heads.
     const layout = arrangePlex(neighbourhoods.diamond)
     const edge = layout.edges.find((e) => e.from === 'parent-0' && e.to === 'parent-1')
     expect(edge).toBeDefined()
@@ -101,10 +102,11 @@ describe('edges', () => {
 
     const leftNode = layout.nodes.find((n) => n.id === 'parent-0')!
     const right = layout.nodes.find((n) => n.id === 'parent-1')!
-    expect(edge!.fromPoint).toStrictEqual({ x: leftNode.x + leftNode.width / 2, y: leftNode.y })
-    expect(edge!.toPoint).toStrictEqual({ x: right.x - right.width / 2, y: right.y })
-    expect(edge!.control1.x).toBeGreaterThan(edge!.fromPoint.x)
-    expect(edge!.control2.x).toBeLessThan(edge!.toPoint.x)
+    const bottom = (node: PlacedNode) => ({ x: node.x, y: node.y + node.height / 2 })
+    expect(edge!.fromPoint).toStrictEqual(bottom(leftNode))
+    expect(edge!.toPoint).toStrictEqual(bottom(right))
+    expect(edge!.control1.y).toBeGreaterThan(edge!.fromPoint.y)
+    expect(edge!.control2.y).toBeGreaterThan(edge!.toPoint.y)
   })
 
   it('takes the heading from the curve, and not from the relation', () => {
@@ -645,5 +647,99 @@ describe('the position of a label', () => {
 
     expect(routed.titles).toHaveLength(2)
     for (const title of routed.titles) expect(measure(title.words)).toBeLessThanOrEqual(room)
+  })
+})
+
+/**
+ * Boxes too close for a straight line to carry an arrowhead and a word are joined
+ * by a bow out of their sides, so a line between two notes next to each other is
+ * drawn as fully as any other.
+ */
+describe('a line between two boxes with no room between them', () => {
+  const box = (id: string, relation: PlexNodeRelation, x: number, y: number): PlacedNode => ({
+    id,
+    title: id,
+    relation,
+    x,
+    y,
+    width: 100,
+    height: 40,
+    order: 0,
+    opacity: 1,
+  })
+
+  const measure = (words: string) => 6 * [...words].length
+  const withWords = createRouting(DEFAULT_OPTIONS, measure)
+
+  const route = (from: PlacedNode, to: PlacedNode, edge: Partial<PlexEdge> = {}) =>
+    routeEdge(
+      { from: from.id, to: to.id, ...edge },
+      new Map([from, to].map((node) => [node.id, node])),
+      withWords,
+    )!
+
+  it('bows out of the top of two boxes in a row below the focus, towards the focus', () => {
+    const edge = route(box('a', 'child', 0, 200), box('b', 'child', 116, 200))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 0, y: 180 })
+    expect(edge.toPoint).toStrictEqual({ x: 116, y: 180 })
+    expect(edge.control1.y).toBeLessThan(180)
+    expect(edge.control2.y).toBeLessThan(180)
+  })
+
+  it('bows out of the bottom of two boxes in a row above the focus, towards the focus', () => {
+    const edge = route(box('a', 'parent', 0, -200), box('b', 'parent', 116, -200))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 0, y: -180 })
+    expect(edge.control1.y).toBeGreaterThan(-180)
+  })
+
+  it('bows out of the right of two boxes in a column right of the focus, away from it', () => {
+    const edge = route(box('a', 'sibling', 300, 0), box('b', 'sibling', 300, 56))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 350, y: 0 })
+    expect(edge.toPoint).toStrictEqual({ x: 350, y: 56 })
+    expect(edge.control1.x).toBeGreaterThan(350)
+  })
+
+  it('bows out of the left of two boxes in a column left of the focus, away from it', () => {
+    const edge = route(box('a', 'jump', -300, 0), box('b', 'jump', -300, 56))
+
+    expect(edge.fromPoint).toStrictEqual({ x: -350, y: 0 })
+    expect(edge.control1.x).toBeLessThan(-350)
+  })
+
+  it('keeps the ends of the edge the caller gave, whichever box is first', () => {
+    const edge = route(box('b', 'child', 116, 200), box('a', 'child', 0, 200))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 116, y: 180 })
+    expect(edge.toPoint).toStrictEqual({ x: 0, y: 180 })
+  })
+
+  it('has room for an arrowhead at each end and a title near each', () => {
+    const edge = route(box('a', 'child', 0, 200), box('b', 'child', 116, 200), {
+      labels: [
+        { text: 'onward', end: 'to' },
+        { text: 'back', end: 'from' },
+      ],
+      arrows: ['to', 'from'],
+    })
+
+    expect(edge.arrowheads).toHaveLength(2)
+    expect(edge.titles.map((title) => title.words)).toEqual(['onward', 'back'])
+  })
+
+  it('leaves a straight line where there is room for one', () => {
+    const edge = route(box('a', 'child', 0, 200), box('b', 'child', 200, 200))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 50, y: 200 })
+    expect(edge.toPoint).toStrictEqual({ x: 150, y: 200 })
+  })
+
+  it('leaves the edges at the focus the space the focus is given', () => {
+    const edge = route(box('focus', 'focus', 0, 0), box('child', 'child', 0, 50))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 0, y: 20 })
+    expect(edge.toPoint).toStrictEqual({ x: 0, y: 30 })
   })
 })

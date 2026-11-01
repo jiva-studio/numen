@@ -208,16 +208,13 @@ func (h *noteHandler) GetNeighbourhood(
 	}
 	for _, related := range found.Related {
 		out.Related = append(out.Related, &v1.Neighbour{
-			Note:          convertNoteToWire(related.NoteRef),
-			Relation:      convertRelationToWire(related.Relation),
-			Label:         related.Label,
-			ReverseLabel:  related.ReverseLabel,
-			Marker:        wire.ConvertMarkerToWire(related.Marker),
-			ReverseMarker: wire.ConvertMarkerToWire(related.ReverseMarker),
-			Through:       related.Parent,
-			IsMutual:      related.IsMutual,
-			Type:          convertNoteTypeToWire(types[related.Path]),
+			Note:     convertNoteToWire(related.NoteRef),
+			Relation: convertRelationToWire(related.Relation),
+			Type:     convertNoteTypeToWire(types[related.Path]),
 		})
+	}
+	for _, connection := range found.Connections {
+		out.Connections = append(out.Connections, wire.ConvertConnectionToWire(connection))
 	}
 	return connect.NewResponse(out), nil
 }

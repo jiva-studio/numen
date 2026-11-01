@@ -1,36 +1,49 @@
 import { describe, expect, it } from 'vitest'
-import type { LinkMarker } from '@numen/plugin-sdk'
+import type { Connection, ConnectionSide, LinkMarker } from '@numen/plugin-sdk'
 import type { Neighbourhood, NoteRelation } from '../types'
 import { areNeighbourhoodsEqual, convertNeighbourhood, getNoteTypes } from './picture'
 import { createNodeIdMap } from './nodeIdMap'
 
-/**
- * A related note: relation, label, the note it connects through, and the
- * markers of the record the focus writes and of the record the note writes.
- */
-type NeighbourRow = [string, NoteRelation, string, string, [LinkMarker | null, LinkMarker | null]?]
+/** A related note: where it is, and how it sits relative to the focus. */
+type NeighbourRow = [path: string, relation: NoteRelation]
 
-const createNeighbourhood = (focus: string, rows: NeighbourRow[]): Neighbourhood => ({
+/** A record one note writes about the other: its label and what it draws at the other note. */
+type Stated = readonly [label: string, marker: LinkMarker | null]
+
+const toSide = (record: Stated | null): ConnectionSide | null =>
+  record === null ? null : { label: record[0], marker: record[1], reason: '' }
+
+/** The connection between two notes, running from the first to the second. */
+const createLine = (
+  first: string,
+  second: string,
+  firstRecord: Stated | null = null,
+  secondRecord: Stated | null = null,
+): Connection => ({
+  first,
+  second,
+  role: 'child',
+  type: '',
+  firstSide: toSide(firstRecord),
+  secondSide: toSide(secondRecord),
+})
+
+const createNeighbourhood = (
+  focus: string,
+  rows: NeighbourRow[],
+  lines: Connection[] = [],
+): Neighbourhood => ({
   focus: { path: focus, title: focus },
   focusType: 'note',
-  related: rows.map(([path, relation, label, through, markers]) => ({
-    path,
-    title: path,
-    type: 'note',
-    relation,
-    label,
-    through,
-    isMutual: false,
-    marker: markers?.[0] ?? null,
-    reverseMarker: markers?.[1] ?? null,
-  })),
+  related: rows.map(([path, relation]) => ({ path, title: path, type: 'note', relation })),
+  connections: lines,
 })
 
 /**
  * The graph, and the note each node ID in it identifies. Every note here has no
  * identifier, which is the case the graph has to render.
  */
-const renderImage = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
+const renderImage = (neighbourhood: Neighbourhood) => {
   const map = createNodeIdMap()
   return { plex: convertNeighbourhood(neighbourhood, map.getNodeId), note: map.getNodePath }
 }
@@ -39,7 +52,7 @@ const renderImage = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
  * Every edge, as the notes at its two ends. A token that no note holds resolves
  * to nothing, so an edge built from any other token is visible here.
  */
-const getEdges = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
+const getEdges = (neighbourhood: Neighbourhood) => {
   const { plex, note } = renderImage(neighbourhood)
   return plex.edges.map(
     (edge) =>
@@ -48,69 +61,70 @@ const getEdges = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
 }
 
 describe('what the plex is handed', () => {
-  it('runs an edge the way the relationship runs', () => {
+  it('runs an edge the way the connection runs', () => {
     expect(
       getEdges(
-        createNeighbourhood('Here', [
-          ['Above', 'parent', 'part of', ''],
-          ['Below', 'child', '', ''],
-          ['Across', 'jump', 'see also', ''],
-        ]),
+        createNeighbourhood(
+          'Here',
+          [
+            ['Above', 'parent'],
+            ['Below', 'child'],
+            ['Across', 'jump'],
+          ],
+          [
+            createLine('Above', 'Here', null, ['part of', null]),
+            createLine('Here', 'Below'),
+            createLine('Across', 'Here', ['see also', null]),
+          ],
+        ),
       ),
     ).toEqual(['Above -> Here (part of)', 'Here -> Below', 'Across -> Here (see also)'])
   })
 
   it('writes nothing on a line the person wrote nothing on', () => {
     // A line carries only the label the user put on it.
-    const [line] = renderImage(createNeighbourhood('Here', [['Below', 'child', '', '']])).plex.edges
+    const [line] = renderImage(
+      createNeighbourhood('Here', [['Below', 'child']], [createLine('Here', 'Below', ['', null])]),
+    ).plex.edges
     expect(line?.labels).toBeUndefined()
   })
 
-  it('hangs a sibling off the parent, not off the focus', () => {
+  it('draws a line from the connection that joins its notes, whichever notes they are', () => {
     expect(
       getEdges(
-        createNeighbourhood('Here', [
-          ['Above', 'parent', 'part of', ''],
-          ['Beside', 'sibling', '', 'Above'],
-        ]),
+        createNeighbourhood(
+          'Here',
+          [
+            ['Above', 'parent'],
+            ['Beside', 'sibling'],
+          ],
+          [createLine('Above', 'Here'), createLine('Above', 'Beside')],
+        ),
       ),
-    ).toEqual(['Above -> Here (part of)', 'Above -> Beside'])
+    ).toEqual(['Above -> Here', 'Above -> Beside'])
   })
 
-  it('hangs each sibling off its own parent when there are two', () => {
-    // Each sibling belongs to one of the two parents, and only the response
-    // determines which. A line drawn from the other parent would assert a
-    // parent-child relation the vault never recorded.
-    expect(
-      getEdges(
-        createNeighbourhood('Here', [
-          ['Machine learning', 'parent', '', ''],
-          ['Eigenvector', 'parent', 'needs', ''],
-          ['Clustering', 'sibling', '', 'Machine learning'],
-          ['SVD', 'sibling', '', 'Eigenvector'],
-        ]),
-      ),
-    ).toEqual([
-      'Machine learning -> Here',
-      'Eigenvector -> Here (needs)',
-      'Machine learning -> Clustering',
-      'Eigenvector -> SVD',
-    ])
-  })
-
-  it('draws no sibling edge when no parent is shown', () => {
-    // A fallback to the focus is wrong here, because a sibling is not a child.
-    expect(getEdges(createNeighbourhood('Here', [['Beside', 'sibling', '', 'Missing']]))).toEqual(
-      [],
+  it('draws no line for a connection to a note the picture does not show', () => {
+    // The note a connection names that this picture never drew is not a node.
+    const request: string[] = []
+    const plex = convertNeighbourhood(
+      createNeighbourhood('Here', [['Beside', 'sibling']], [createLine('Missing', 'Beside')]),
+      (path) => {
+        request.push(path)
+        return `#${path}`
+      },
     )
+
+    expect(plex.edges).toEqual([])
+    expect(request).not.toContain('Missing')
   })
 
   it('places every note it was given', () => {
     const { plex, note } = renderImage(
       createNeighbourhood('Here', [
-        ['Above', 'parent', 'part of', ''],
-        ['Below', 'child', '', ''],
-        ['Beside', 'sibling', '', 'Above'],
+        ['Above', 'parent'],
+        ['Below', 'child'],
+        ['Beside', 'sibling'],
       ]),
     )
     expect(plex.nodes.map((node) => `${node.relation} ${note(node.id)}`)).toEqual([
@@ -123,11 +137,15 @@ describe('what the plex is handed', () => {
 })
 
 describe('what a note is drawn under', () => {
-  const target = createNeighbourhood('Here', [
-    ['Above', 'parent', '', ''],
-    ['Below', 'child', '', ''],
-    ['Beside', 'sibling', '', 'Above'],
-  ])
+  const target = createNeighbourhood(
+    'Here',
+    [
+      ['Above', 'parent'],
+      ['Below', 'child'],
+      ['Beside', 'sibling'],
+    ],
+    [createLine('Above', 'Here'), createLine('Here', 'Below'), createLine('Above', 'Beside')],
+  )
 
   it('is the token the note holds, and never the file it is filed under', () => {
     const map = createNodeIdMap()
@@ -152,207 +170,166 @@ describe('what a note is drawn under', () => {
       '#Above -> #Beside',
     ])
   })
+})
 
-  it('mints nothing for a parent the picture does not show', () => {
-    // A sibling whose parent is off the screen hangs off nothing, and the note
-    // it named is one this picture never drew.
-    const request: string[] = []
-    convertNeighbourhood(
-      createNeighbourhood('Here', [['Beside', 'sibling', '', 'Missing']]),
-      (path) => {
-        request.push(path)
-        return `#${path}`
-      },
+/**
+ * Every kind of line the plex draws, as a picture holding it. `first` is the
+ * note the connection starts at and `second` the one it ends at.
+ */
+const LINE_KINDS: readonly {
+  readonly name: string
+  readonly rows: NeighbourRow[]
+  readonly first: string
+  readonly second: string
+}[] = [
+  { name: 'centre to parent', rows: [['Above', 'parent']], first: 'Above', second: 'Here' },
+  { name: 'centre to child', rows: [['Below', 'child']], first: 'Here', second: 'Below' },
+  { name: 'centre to jump', rows: [['Across', 'jump']], first: 'Across', second: 'Here' },
+  {
+    name: 'parent to sibling',
+    rows: [
+      ['Above', 'parent'],
+      ['Beside', 'sibling'],
+    ],
+    first: 'Above',
+    second: 'Beside',
+  },
+  {
+    name: 'sibling to sibling',
+    rows: [
+      ['Above', 'parent'],
+      ['Beside', 'sibling'],
+      ['Other', 'sibling'],
+    ],
+    first: 'Beside',
+    second: 'Other',
+  },
+  {
+    name: 'child to jump, both away from the centre',
+    rows: [
+      ['Below', 'child'],
+      ['Across', 'jump'],
+    ],
+    first: 'Below',
+    second: 'Across',
+  },
+]
+
+/** What the record of each end of a line says, and what the picture draws for it. */
+const RECORD_CASES: readonly {
+  readonly name: string
+  readonly first: Stated | null
+  readonly second: Stated | null
+  readonly arrows: readonly ('from' | 'to')[]
+  readonly labels: readonly { text: string; end?: 'from' | 'to' }[]
+}[] = [
+  {
+    name: 'only the first note writes, with an arrow',
+    first: ['onward', 'arrow'],
+    second: null,
+    arrows: ['to'],
+    labels: [{ text: 'onward', end: 'to' }],
+  },
+  {
+    name: 'only the second note writes, with an arrow',
+    first: null,
+    second: ['backward', 'arrow'],
+    arrows: ['from'],
+    labels: [{ text: 'backward', end: 'from' }],
+  },
+  {
+    name: 'both notes write, each with an arrow',
+    first: ['onward', 'arrow'],
+    second: ['backward', 'arrow'],
+    arrows: ['to', 'from'],
+    labels: [
+      { text: 'onward', end: 'to' },
+      { text: 'backward', end: 'from' },
+    ],
+  },
+  {
+    name: 'the first note writes an arrow with no words',
+    first: ['', 'arrow'],
+    second: null,
+    arrows: ['to'],
+    labels: [],
+  },
+  {
+    name: 'only the first note writes words, with no arrow',
+    first: ['onward', null],
+    second: null,
+    arrows: [],
+    labels: [{ text: 'onward' }],
+  },
+  {
+    name: 'only the second note writes words, with no arrow',
+    first: null,
+    second: ['backward', null],
+    arrows: [],
+    labels: [{ text: 'backward' }],
+  },
+  {
+    name: 'one note writes an arrow and the other words',
+    first: ['onward', 'arrow'],
+    second: ['backward', null],
+    arrows: ['to'],
+    labels: [{ text: 'onward', end: 'to' }, { text: 'backward' }],
+  },
+  {
+    name: 'neither note writes anything',
+    first: null,
+    second: null,
+    arrows: [],
+    labels: [],
+  },
+]
+
+describe.each(LINE_KINDS)('the line from $name', ({ rows, first, second }) => {
+  it.each(RECORD_CASES)('draws it when $name', ({ first: one, second: other, arrows, labels }) => {
+    const { plex, note } = renderImage(
+      createNeighbourhood('Here', rows, [createLine(first, second, one, other)]),
     )
 
-    expect(request).not.toContain('Missing')
+    expect(plex.edges).toHaveLength(1)
+    const edge = plex.edges[0]!
+    expect([note(edge.from), note(edge.to)]).toEqual([first, second])
+    expect(edge.arrows ?? []).toEqual(arrows)
+    expect(edge.labels ?? []).toEqual(labels)
+  })
+
+  it('draws one line for each connection of the neighbourhood and no other', () => {
+    const lines = [createLine(first, second, ['onward', 'arrow']), createLine('Here', 'Isolated')]
+    const { plex } = renderImage(createNeighbourhood('Here', rows, lines))
+
+    expect(plex.edges).toHaveLength(1)
   })
 })
 
-/** Every edge as the ends its arrowheads are drawn at, and the pair it joins. */
-const arrows = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
-  const { plex, note } = renderImage(neighbourhood)
-  return plex.edges.map(
-    (edge) => `${note(edge.from)} -> ${note(edge.to)}: ${edge.arrows?.join(' and ') ?? 'no arrow'}`,
-  )
-}
-
-describe('the markers on the line', () => {
-  it('draws the arrow of the focus at the child, down a line out of the focus', () => {
-    expect(
-      arrows(
-        createNeighbourhood('Marrowfield allotments', [
-          ['Alice Fenn, The Chair', 'child', 'the chair since May', '', ['arrow', null]],
-        ]),
+describe('the words and arrowheads of one line', () => {
+  it('draws two records with the same words in the same place once', () => {
+    const [edge] = renderImage(
+      createNeighbourhood(
+        'Here',
+        [['Across', 'jump']],
+        [createLine('Across', 'Here', ['near', null], ['near', null])],
       ),
-    ).toEqual(['Marrowfield allotments -> Alice Fenn, The Chair: to'])
+    ).plex.edges
+
+    expect(edge?.labels).toEqual([{ text: 'near' }])
   })
 
-  it('draws the arrow of the child at the focus', () => {
-    expect(
-      arrows(
-        createNeighbourhood('Marrowfield allotments', [
-          ['Alice Fenn, The Chair', 'child', '', '', [null, 'arrow']],
-        ]),
+  it('draws the same words at both ends where each end has its own arrow', () => {
+    const [edge] = renderImage(
+      createNeighbourhood(
+        'Here',
+        [['Across', 'jump']],
+        [createLine('Across', 'Here', ['near', 'arrow'], ['near', 'arrow'])],
       ),
-    ).toEqual(['Marrowfield allotments -> Alice Fenn, The Chair: from'])
-  })
+    ).plex.edges
 
-  it('draws the arrow of the focus at a parent, down a line into the focus', () => {
-    expect(
-      arrows(
-        createNeighbourhood('Alice Fenn, The Chair', [
-          ['Marrowfield allotments', 'parent', '', '', ['arrow', null]],
-        ]),
-      ),
-    ).toEqual(['Marrowfield allotments -> Alice Fenn, The Chair: from'])
-  })
-
-  it('draws an arrow at each end where both records carry one', () => {
-    expect(
-      arrows(
-        createNeighbourhood('Alice Fenn, The Chair', [
-          ['Bram Doyle', 'jump', 'the oldest tenant', '', ['arrow', 'arrow']],
-        ]),
-      ),
-    ).toEqual(['Bram Doyle -> Alice Fenn, The Chair: from and to'])
-  })
-
-  it('draws no arrow where neither record carries a marker, whoever wrote a record', () => {
-    expect(
-      arrows(
-        createNeighbourhood('Alice Fenn, The Chair', [
-          ['Cora Hale', 'jump', 'keys, hoses, the gate', '', [null, null]],
-          ['Child note', 'child', 'subtask', ''],
-          ['Parent note', 'parent', 'depends on', ''],
-        ]),
-      ),
-    ).toEqual([
-      'Cora Hale -> Alice Fenn, The Chair: no arrow',
-      'Alice Fenn, The Chair -> Child note: no arrow',
-      'Parent note -> Alice Fenn, The Chair: no arrow',
-    ])
-  })
-
-  it('draws no arrow on a sibling, whose line is between two other notes', () => {
-    expect(
-      arrows(
-        createNeighbourhood('Alice Fenn, The Chair', [
-          ['Marrowfield allotments', 'parent', '', '', ['arrow', null]],
-          ['The question of the rota', 'sibling', '', 'Marrowfield allotments', ['arrow', 'arrow']],
-        ]),
-      ),
-    ).toEqual([
-      'Marrowfield allotments -> Alice Fenn, The Chair: from',
-      'Marrowfield allotments -> The question of the rota: no arrow',
-    ])
-  })
-})
-
-/** A focus with one neighbour, either of which may write a record of the other. */
-const createPair = (
-  relation: NoteRelation,
-  records: {
-    label?: string
-    reverseLabel?: string
-    isMutual?: boolean
-    marker?: LinkMarker | null
-    reverseMarker?: LinkMarker | null
-  },
-): Neighbourhood => ({
-  focus: { path: 'Harbour', title: 'Harbour' },
-  focusType: 'note',
-  related: [
-    {
-      path: 'Lighthouse',
-      title: 'Lighthouse',
-      type: 'note',
-      relation,
-      label: records.label ?? '',
-      reverseLabel: records.reverseLabel ?? '',
-      through: '',
-      isMutual: records.isMutual ?? false,
-      marker: records.marker ?? null,
-      reverseMarker: records.reverseMarker ?? null,
-    },
-  ],
-})
-
-/** The labels of the only edge, each as its text and the note at the end it is placed near. */
-const getLabelEnds = (neighbourhood: Neighbourhood) => {
-  const { plex, note } = renderImage(neighbourhood)
-  const [edge] = plex.edges
-  return (edge?.labels ?? []).map((label) => {
-    if (!label.end) return `${label.text}: middle`
-    return `${label.text}: ${note(label.end === 'to' ? edge!.to : edge!.from)}`
-  })
-}
-
-describe('where the labels are placed', () => {
-  it('sets the label of a record without a marker in the middle of the line', () => {
-    expect(getLabelEnds(createPair('jump', { label: 'guides ships' }))).toEqual([
-      'guides ships: middle',
-    ])
-  })
-
-  it('sets the label of the record the focus writes near the arrow at the neighbour', () => {
-    for (const relation of ['jump', 'child', 'parent'] as const) {
-      expect(
-        getLabelEnds(createPair(relation, { label: 'guides ships', marker: 'arrow' })),
-      ).toEqual(['guides ships: Lighthouse'])
-    }
-  })
-
-  it('sets the label of the record the neighbour writes near the arrow at the focus', () => {
-    for (const relation of ['jump', 'child', 'parent'] as const) {
-      expect(
-        getLabelEnds(createPair(relation, { label: 'shelters it', reverseMarker: 'arrow' })),
-      ).toEqual(['shelters it: Harbour'])
-    }
-  })
-
-  it('sets two labels near the two arrows where both notes write a record', () => {
-    const both = createPair('jump', {
-      label: 'guides ships',
-      reverseLabel: 'shelters it',
-      isMutual: true,
-      marker: 'arrow',
-      reverseMarker: 'arrow',
-    })
-
-    expect(getLabelEnds(both)).toEqual(['guides ships: Lighthouse', 'shelters it: Harbour'])
-    expect(renderImage(both).plex.edges[0]?.arrows).toEqual(['from', 'to'])
-  })
-
-  it('draws one label where only the neighbour labelled its record of two', () => {
-    // The core answers with the neighbour's label in place of an empty one of the focus.
-    const one = createPair('jump', {
-      label: 'shelters it',
-      reverseLabel: 'shelters it',
-      isMutual: true,
-      marker: 'arrow',
-      reverseMarker: 'arrow',
-    })
-
-    expect(getLabelEnds(one)).toEqual(['shelters it: Harbour'])
-  })
-
-  it('draws the label of the focus alone where the neighbour labelled nothing', () => {
-    const one = createPair('child', {
-      label: 'guides ships',
-      isMutual: true,
-      marker: 'arrow',
-      reverseMarker: 'arrow',
-    })
-
-    expect(getLabelEnds(one)).toEqual(['guides ships: Lighthouse'])
-  })
-})
-
-describe('a sibling nested under the note in focus', () => {
-  it('runs its line from the focus, which the picture draws', () => {
-    expect(getEdges(createNeighbourhood('Here', [['Beside', 'sibling', '', 'Here']]))).toEqual([
-      'Here -> Beside',
+    expect(edge?.labels).toEqual([
+      { text: 'near', end: 'to' },
+      { text: 'near', end: 'from' },
     ])
   })
 })
@@ -362,19 +339,8 @@ describe('what each note of a neighbourhood is', () => {
     const neighbourhood: Neighbourhood = {
       focus: { path: 'Words.md', title: 'Words' },
       focusType: 'sample',
-      related: [
-        {
-          path: 'Forms.md',
-          title: 'Forms',
-          type: 'form',
-          relation: 'child',
-          label: '',
-          through: '',
-          isMutual: false,
-          marker: null,
-          reverseMarker: null,
-        },
-      ],
+      related: [{ path: 'Forms.md', title: 'Forms', type: 'form', relation: 'child' }],
+      connections: [],
     }
 
     expect([...getNoteTypes(neighbourhood)]).toStrictEqual([
@@ -388,6 +354,7 @@ describe('what each note of a neighbourhood is', () => {
       focus: { path: '', title: '' },
       focusType: 'sample',
       related: [],
+      connections: [],
     }
 
     expect(getNoteTypes(neighbourhood).size).toBe(0)
@@ -402,28 +369,12 @@ describe('two neighbourhoods drawing one picture', () => {
     focus: { path: 'Here.md', title: 'Here' },
     focusType: 'note',
     related: [
-      {
-        path: 'Above.md',
-        title: 'Above',
-        type: 'note',
-        relation: 'parent',
-        label: 'part of',
-        through: '',
-        isMutual: false,
-        marker: null,
-        reverseMarker: null,
-      },
-      {
-        path: 'Beside.md',
-        title: 'Beside',
-        type: 'note',
-        relation: 'sibling',
-        label: 'next to',
-        through: 'Above.md',
-        isMutual: true,
-        marker: null,
-        reverseMarker: null,
-      },
+      { path: 'Above.md', title: 'Above', type: 'note', relation: 'parent' },
+      { path: 'Beside.md', title: 'Beside', type: 'note', relation: 'sibling' },
+    ],
+    connections: [
+      createLine('Above.md', 'Here.md', null, ['part of', null]),
+      createLine('Above.md', 'Beside.md', ['next to', null]),
     ],
   })
 
@@ -431,6 +382,17 @@ describe('two neighbourhoods drawing one picture', () => {
   const changed = (more: Partial<Neighbour>): Neighbourhood => {
     const one = target()
     return { ...one, related: [one.related[0]!, { ...one.related[1]!, ...more }] }
+  }
+
+  /** The neighbourhood held, its connection at `index` replaced. */
+  const withLine = (index: number, line: Connection): Neighbourhood => {
+    const one = target()
+    return {
+      ...one,
+      connections: one.connections.map((current, position) =>
+        position === index ? line : current,
+      ),
+    }
   }
 
   it('are two answers with every heading the same', () => {
@@ -468,16 +430,33 @@ describe('two neighbourhoods drawing one picture', () => {
     expect(areNeighbourhoodsEqual(target(), other)).toBe(false)
   })
 
+  it('are not two answers with a different number of lines', () => {
+    const other = { ...target(), connections: target().connections.slice(0, 1) }
+
+    expect(areNeighbourhoodsEqual(target(), other)).toBe(false)
+  })
+
   it.each<[string, Partial<Neighbour>]>([
     ['path', { path: 'Across.md' }],
     ['title', { title: 'Across' }],
     ['type', { type: 'sample' }],
     ['relation', { relation: 'child' }],
-    ['label', { label: 'far from' }],
-    ['through', { through: 'Here.md' }],
-    ['marker', { marker: 'arrow' }],
-    ['reverseMarker', { reverseMarker: 'arrow' }],
   ])('are not two answers whose second note differs in its %s', (_, more) => {
     expect(areNeighbourhoodsEqual(target(), changed(more))).toBe(false)
+  })
+
+  it.each<[string, Connection]>([
+    ['first note', createLine('Other.md', 'Beside.md', ['next to', null])],
+    ['second note', createLine('Above.md', 'Other.md', ['next to', null])],
+    ['label of the first record', createLine('Above.md', 'Beside.md', ['far from', null])],
+    ['marker of the first record', createLine('Above.md', 'Beside.md', ['next to', 'arrow'])],
+    ['missing first record', createLine('Above.md', 'Beside.md')],
+    ['second record', createLine('Above.md', 'Beside.md', ['next to', null], ['beside', null])],
+    [
+      'marker of the second record',
+      createLine('Above.md', 'Beside.md', ['next to', null], ['', 'arrow']),
+    ],
+  ])('are not two answers whose line differs in its %s', (_, line) => {
+    expect(areNeighbourhoodsEqual(target(), withLine(1, line))).toBe(false)
   })
 })

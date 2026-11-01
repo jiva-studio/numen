@@ -11,7 +11,14 @@ import { createPlexTab, type PlexTabState, type PlexTabDeps } from './usePlexTab
 import { ITEMS, NEW_NOTE, NONE } from '../lib/menu'
 import { usePlexView as viewing, type PlexView } from './usePlexView'
 import { WORDS as words } from '../words'
-import { createVault, settle, viewOn, type Types, type NeighbourSpec } from '../fixtures'
+import {
+  createLine,
+  createVault,
+  settle,
+  viewOn,
+  type Types,
+  type NeighbourSpec,
+} from '../fixtures'
 import type { NoteHeading, NoteRelation, PathRename } from '../types'
 import { getRenamedPath } from '@numen/plugin-sdk'
 
@@ -702,12 +709,8 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
           title: getNoteTitle(one.path),
           type: 'note' as const,
           relation: one.relation,
-          label: '',
-          through: one.through ?? '',
-          isMutual: false,
-          marker: null,
-          reverseMarker: null,
         })),
+        connections: relatedItems.map((one) => createLine(path, one)),
       }
     },
   })

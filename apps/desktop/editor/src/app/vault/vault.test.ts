@@ -141,6 +141,7 @@ describe('notes domain', () => {
     request.getNeighbourhood.mockResolvedValue({
       focus: { path: 'a.md', title: 'A' },
       related: [],
+      connections: [],
     })
     const neigh = await core.neighbourhood('a.md')
     expect(neigh.focus.path).toBe('a.md')

@@ -43,6 +43,7 @@ export const scaleOptions = (options: PlexOptions, delta: number): PlexOptions =
     ...options.routing,
     minReach: options.routing.minReach * delta,
     arrowClearance: options.routing.arrowClearance * delta,
+    minRun: options.routing.minRun * delta,
   },
 })
 

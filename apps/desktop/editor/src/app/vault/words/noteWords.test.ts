@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import {
   NOTE_ERROR_CODE,
+  NOTE_MARKER,
   NOTE_RELATION,
+  NOTE_ROLE,
   GetNeighbourhoodResponseSchema,
   asFailure,
   asValue,
@@ -46,6 +48,7 @@ describe('mapNeighbourhood', () => {
       focus: { path: '', title: '' },
       focusType: 'note',
       related: [],
+      connections: [],
     })
   })
 
@@ -58,16 +61,21 @@ describe('mapNeighbourhood', () => {
           note: { path: 'Up.md', title: 'Up' },
           type: 'sheet',
           relation: NOTE_RELATION.PARENT,
-          label: 'part of',
-          reverseLabel: 'holds',
-          through: 'Mid.md',
-          isMutual: true,
         },
         {
           note: { path: 'NoRelation.md', title: 'NoRelation' },
           relation: NOTE_RELATION.UNSPECIFIED,
         },
         { relation: NOTE_RELATION.CHILD },
+      ],
+      connections: [
+        {
+          first: 'Up.md',
+          second: 'Here.md',
+          role: NOTE_ROLE.CHILD,
+          firstSide: { role: NOTE_ROLE.CHILD, label: 'holds', marker: NOTE_MARKER.ARROW },
+          secondSide: { role: NOTE_ROLE.PARENT, label: 'part of' },
+        },
       ],
     })
 
@@ -80,12 +88,16 @@ describe('mapNeighbourhood', () => {
           title: 'Up',
           type: 'sheet',
           relation: 'parent',
-          label: 'part of',
-          reverseLabel: 'holds',
-          through: 'Mid.md',
-          isMutual: true,
-          marker: null,
-          reverseMarker: null,
+        },
+      ],
+      connections: [
+        {
+          first: 'Up.md',
+          second: 'Here.md',
+          role: 'child',
+          type: '',
+          firstSide: { label: 'holds', marker: 'arrow', reason: '' },
+          secondSide: { label: 'part of', marker: null, reason: '' },
         },
       ],
     })

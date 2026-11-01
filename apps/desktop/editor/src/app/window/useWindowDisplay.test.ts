@@ -16,6 +16,7 @@ const answer = (path: string): Neighbourhood => ({
   focus: { path, title: path },
   focusType: 'note',
   related: [],
+  connections: [],
 })
 
 /** A stream that stays open, so a loop waiting on it is not the one under test. */

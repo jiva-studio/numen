@@ -54,12 +54,15 @@ func TestAConnectionIsSavedWithAnArrowAndNoLabelAndReadBack(t *testing.T) {
 	neighbourhood, err := f.client.GetNeighbourhood(t.Context(), connect.NewRequest(&v1.GetNeighbourhoodRequest{
 		Path: "Heat.md",
 	}))
-	if err != nil || len(neighbourhood.Msg.GetRelated()) != 1 {
+	if err != nil || len(neighbourhood.Msg.GetRelated()) != 1 || len(neighbourhood.Msg.GetConnections()) != 1 {
 		t.Fatalf("neighbourhood %v (%v)", neighbourhood.Msg, err)
 	}
-	related := neighbourhood.Msg.GetRelated()[0]
-	if related.GetMarker() != v1.Marker_MARKER_ARROW || related.GetReverseMarker() != v1.Marker_MARKER_UNSPECIFIED {
-		t.Errorf("the neighbour carries marker %v and reverse %v", related.GetMarker(), related.GetReverseMarker())
+	// A line of jumps runs from the note drawn later (Entropy) to the focus.
+	line := neighbourhood.Msg.GetConnections()[0]
+	if line.GetFirst() != "Entropy.md" || line.GetSecond() != "Heat.md" ||
+		line.GetFirstSide().GetLabel() != "back" || line.GetFirstSide().GetMarker() != v1.Marker_MARKER_UNSPECIFIED ||
+		line.GetSecondSide().GetMarker() != v1.Marker_MARKER_ARROW || line.GetSecondSide().GetLabel() != "" {
+		t.Errorf("the neighbourhood draws the line as %v", line)
 	}
 }
 

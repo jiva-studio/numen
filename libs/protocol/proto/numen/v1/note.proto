@@ -121,6 +121,13 @@ message GetNeighbourhoodResponse {
   // The `type` key of the frontmatter of the note in focus, so a client draws a note as
   // what it is. Empty for an ordinary note.
   string focus_type = 3;
+
+  // One connection for every line the client draws: a pair of the drawn notes
+  // (the focus and its neighbours) that a record joins, whether the focus is one
+  // of them or not. A hierarchical connection has the parent as first and the
+  // child as second, and each side holds the label and the marker of the record
+  // written in that note.
+  repeated Connection connections = 4;
 }
 
 // Relation is where a note sits relative to the one in focus. A sibling is written
@@ -133,34 +140,17 @@ enum Relation {
   RELATION_SIBLING = 4;
 }
 
-// Neighbour is one note joined to the one in focus, and what joins them.
+// Neighbour is one note joined to the one in focus. The records that join notes
+// are in GetNeighbourhoodResponse.connections.
 message Neighbour {
   Note note = 1;
   Relation relation = 2;
-  // What the person wrote on the link, when they wrote anything.
-  string label = 3;
-
-  // The note the relationship runs from, when that is not the one in focus: a
-  // sibling is another child of a shared parent, and this is that parent.
-  string through = 4;
-
-  // Set when both notes name this relationship, each in its own words. The
-  // label is then the one the note in focus wrote.
-  bool is_mutual = 5;
 
   // The `type` key of the note's frontmatter, so a client draws a note as what it is.
   // Empty for an ordinary note.
   string type = 6;
 
-  // What the other note wrote on its link back to this one, when is_mutual is true.
-  string reverse_label = 7;
-
-  // What the record written in the note in focus draws at this note. It is
-  // MARKER_UNSPECIFIED when that note writes no record or the record draws nothing.
-  Marker marker = 8;
-
-  // What the record written in this note draws at the note in focus.
-  Marker reverse_marker = 9;
+  reserved 3, 4, 5, 7, 8, 9;
 }
 
 message ResolveAddressesRequest {

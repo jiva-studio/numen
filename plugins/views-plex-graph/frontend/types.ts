@@ -29,14 +29,18 @@ export interface Focus {
   readonly title: string
 }
 
-/** One neighbour joined to the focus, with the markers of the records that join them. */
+/** One note joined to the focus. */
 export type Neighbour = NoteNeighbour
 
-/** A neighbourhood of a note: the note in focus, and the notes joined to it. */
+/**
+ * A neighbourhood of a note: the note in focus, the notes joined to it, and the connection of
+ * every line drawn between them.
+ */
 export interface Neighbourhood {
   readonly focus: Focus
   readonly focusType: NoteType
   readonly related: readonly Neighbour[]
+  readonly connections: readonly Connection[]
 }
 
 /** Note relation as stored in the vault. */

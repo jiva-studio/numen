@@ -193,8 +193,8 @@ func TestShowGraph_RelatesOnlyHierarchyRolesFromIncoming(t *testing.T) {
 	if relations := relationsOf(got); !slices.Equal(relations, want) {
 		t.Errorf("got %v, want %v", relations, want)
 	}
-	if !got.Related[0].IsMutual {
-		t.Error("both ends name the edge and it is not drawn as mutual")
+	if len(got.Connections) != 1 || got.Connections[0].AB == nil || got.Connections[0].BA == nil {
+		t.Errorf("both ends name the edge and the line does not hold both records: %+v", got.Connections)
 	}
 }
 
@@ -211,7 +211,7 @@ func TestTheFirstOfTwoEqualLinksIsTheOneGenerated(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Related) != 1 || got.Related[0].Label != "first" {
-		t.Errorf("got %+v", got.Related)
+	if len(got.Connections) != 1 || got.Connections[0].AB == nil || got.Connections[0].AB.Label != "first" {
+		t.Errorf("got %+v", got.Connections)
 	}
 }

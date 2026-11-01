@@ -4,20 +4,25 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor, within } from 'storybook/test'
+import type { Connection } from '@numen/plugin-sdk'
 import { defineComponent, h } from 'vue'
 import PlexGraphView from './PlexGraphView.vue'
 import { createPlexKind } from './kind'
 import { createHost } from './fixtures/host'
-import { viewOn, type NeighbourSpec } from './fixtures'
+import { createLine, viewOn, type NeighbourSpec } from './fixtures'
 
 /** A plex tab opened by the kind on a note and the notes joined to it. */
-const createTab = (focus: string, neighbours: readonly NeighbourSpec[]) =>
+const createTab = (
+  focus: string,
+  neighbours: readonly NeighbourSpec[],
+  lines: readonly Connection[] = [],
+) =>
   defineComponent({
     name: 'PlexKindTab',
     setup() {
       const { kind } = createPlexKind(
         createHost({ opening: focus }).host,
-        () => viewOn(focus, neighbours).view,
+        () => viewOn(focus, neighbours, {}, lines).view,
       )
       const state = kind.open!(focus, 'plex:story')
       return () =>
@@ -78,5 +83,48 @@ export const Alone: Story = {
     await waitFor(() =>
       expect(within(canvasElement).getAllByText('Solitude').length).toBeGreaterThan(0),
     )
+  },
+}
+
+/**
+ * A record is drawn the same way on every line: a head at the end it points at
+ * and its words near it, on a line at the focus, from a parent to a sibling,
+ * and between two children.
+ */
+export const OnEveryLine: Story = {
+  render: () => ({
+    components: {
+      Tab: createTab(
+        'Ontology.md',
+        [
+          { path: 'Philosophy.md', relation: 'parent', label: 'part of', marker: 'arrow' },
+          { path: 'Being.md', relation: 'child', marker: 'arrow' },
+          { path: 'Becoming.md', relation: 'child' },
+          {
+            path: 'Metaphysics.md',
+            relation: 'sibling',
+            through: 'Philosophy.md',
+            label: 'broader',
+            marker: 'arrow',
+          },
+        ],
+        [
+          createLine('Being.md', {
+            path: 'Becoming.md',
+            relation: 'child',
+            label: 'precedes',
+            marker: 'arrow',
+          }),
+        ],
+      ),
+    },
+    template: '<Tab />',
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    for (const words of ['part of', 'broader', 'precedes']) {
+      await waitFor(() => expect(canvas.getAllByText(words).length).toBeGreaterThan(0))
+    }
+    await expect(canvasElement.querySelectorAll('.plex__edge-arrow')).toHaveLength(4)
   },
 }

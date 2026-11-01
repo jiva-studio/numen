@@ -12,6 +12,7 @@ const answer = (path: string): Neighbourhood => ({
   focus: { path, title: path },
   focusType: 'note',
   related: [],
+  connections: [],
 })
 
 /** A neighbourhood of a note the index does not hold: a focus with no path. */
@@ -19,6 +20,7 @@ const createEmptyNeighbourhood = (): Neighbourhood => ({
   focus: { path: '', title: '' },
   focusType: 'note',
   related: [],
+  connections: [],
 })
 
 /** A vault whose neighbourhood response is supplied by the test. */
@@ -252,12 +254,8 @@ describe('a vault that changed somewhere else', () => {
           title: to,
           type: 'note' as const,
           relation: 'child' as const,
-          label: '',
-          through: '',
-          isMutual: false,
-          marker: null,
-          reverseMarker: null,
         })),
+        connections: [],
       })),
     )
     await plex.go('Entropy.md')

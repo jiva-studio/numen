@@ -52,14 +52,29 @@ const LABELS: Readonly<Record<string, string>> = {
   demon: 'costs',
 }
 
+/**
+ * A line with the record of one end: its words and an arrowhead at the end it
+ * points at, which both sit near that end.
+ */
+const createLine = (from: string, to: string, text: string, end: 'from' | 'to'): PlexEdge => ({
+  from,
+  to,
+  labels: [{ text, end }],
+  arrows: [end],
+})
+
 /** A sibling hangs off the parent it shares; everything else meets the focus. */
 const createEdge = (neighbour: PlexNode): PlexEdge => {
   const label = LABELS[neighbour.id]
   if (neighbour.relation === 'sibling') return { from: 'thermodynamics', to: neighbour.id }
   if (neighbour.relation === 'parent' || neighbour.relation === 'jump') {
-    return { from: neighbour.id, to: 'focus', ...(label ? { label } : {}) }
+    return label
+      ? createLine(neighbour.id, 'focus', label, 'from')
+      : { from: neighbour.id, to: 'focus' }
   }
-  return { from: 'focus', to: neighbour.id, ...(label ? { label } : {}) }
+  return label
+    ? createLine('focus', neighbour.id, label, 'to')
+    : { from: 'focus', to: neighbour.id }
 }
 
 const createNeighbourhood = (neighbours: readonly PlexNode[]): PlexNeighbourhood => ({
@@ -229,5 +244,56 @@ export const Nesting: Story = {
     const tops = suspendedView.map((words) => canvas.getByText(words).getBoundingClientRect().top)
     await expect(Math.min(...tops)).toBeGreaterThan(box.bottom - 1)
     await expect([...tops].sort((one, other) => one - other)).toEqual(tops)
+  },
+}
+
+/**
+ * Every kind of line the plex draws, each with a record pointing at one end:
+ * the focus with a parent, a child and a jump; a parent with a sibling; two
+ * siblings; two children. A line with a record and no arrowhead is the last.
+ */
+const EVERY_LINE: PlexNeighbourhood = {
+  nodes: [
+    node('focus', 'Entropy', 'focus'),
+    node('thermodynamics', 'Thermodynamics', 'parent'),
+    node('second-law', 'The second law', 'child'),
+    node('heat-death', 'Heat death', 'child'),
+    node('demon', "Maxwell's demon", 'jump'),
+    node('temperature', 'Temperature', 'sibling'),
+    node('pressure', 'Pressure', 'sibling'),
+  ],
+  edges: [
+    createLine('thermodynamics', 'focus', 'measures', 'from'),
+    createLine('focus', 'second-law', 'states', 'to'),
+    createLine('demon', 'focus', 'costs', 'to'),
+    createLine('thermodynamics', 'pressure', 'includes', 'to'),
+    createLine('pressure', 'temperature', 'drives', 'to'),
+    createLine('second-law', 'heat-death', 'leads to', 'to'),
+    { from: 'focus', to: 'heat-death', labels: [{ text: 'is about' }] },
+  ],
+}
+
+/** The same arrowhead and the same label are drawn on a line whichever notes it joins. */
+export const EveryLine: Story = {
+  render: () => ({
+    components: { Plex },
+    setup: () => ({ neighbourhood: ref(EVERY_LINE) }),
+    template:
+      '<div style="height: 100vh"><Plex :neighbourhood="neighbourhood" :creatable="[]" :duration="0" /></div>',
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    for (const text of [
+      'measures',
+      'states',
+      'costs',
+      'includes',
+      'drives',
+      'leads to',
+      'is about',
+    ]) {
+      await waitFor(() => expect(canvas.getAllByText(text).length).toBeGreaterThan(0))
+    }
+    await expect(canvasElement.querySelectorAll('.plex__edge-arrow')).toHaveLength(6)
   },
 }

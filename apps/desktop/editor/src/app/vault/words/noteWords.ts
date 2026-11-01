@@ -10,14 +10,13 @@ import {
   parseFingerprint,
   type NameSourceCode,
   type NoteErrorCodeValue,
-  type NoteMarkerCode,
   type NoteRelationCode,
   asFailure,
   asValue,
 } from '@numen/core-client'
 import type { Neighbourhood, NoteResult, NoteRelation, WriteResult } from '@/entities/note'
 import type { NoteType } from '@/entities/file'
-import { readMarker } from './relationWords'
+import { mapConnection, type ConnectionWire } from './relationWords'
 
 interface NeighbourhoodWire {
   readonly focus?: { readonly path: string; readonly title: string } | undefined
@@ -26,13 +25,8 @@ interface NeighbourhoodWire {
     readonly note?: { readonly path: string; readonly title: string } | undefined
     readonly type: string
     readonly relation: NoteRelationCode
-    readonly label: string
-    readonly reverseLabel: string
-    readonly through: string
-    readonly isMutual: boolean
-    readonly marker: NoteMarkerCode
-    readonly reverseMarker: NoteMarkerCode
   }[]
+  readonly connections: readonly ConnectionWire[]
 }
 
 /**
@@ -106,13 +100,8 @@ export const mapNeighbourhood = (answer: NeighbourhoodWire): Neighbourhood => ({
         title: one.note.title,
         type: mapNoteType(one.type),
         relation,
-        label: one.label,
-        reverseLabel: one.reverseLabel,
-        through: one.through,
-        isMutual: one.isMutual,
-        marker: readMarker(one.marker),
-        reverseMarker: readMarker(one.reverseMarker),
       },
     ]
   }),
+  connections: answer.connections.map((one) => mapConnection(one, '')),
 })

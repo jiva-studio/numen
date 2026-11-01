@@ -59,6 +59,7 @@ vi.mock('@/app/vault', () => ({
       focus: { path, title: path.replace(/\.md$/, '') },
       focusType: 'note' as const,
       related: [],
+      connections: [],
     }),
     read: async () => asValue({ body: 'what is written', at: 'a1' }),
     write: async () => asValue({ body: '', at: 'a2' }),

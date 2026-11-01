@@ -236,6 +236,7 @@ describe('the notes of the vault a plugin is handed', () => {
           focus: { path, title: 'Root' },
           focusType: 'note' as const,
           related: [],
+          connections: [],
         }),
       ),
       headings: vi.fn(() => Promise.resolve(new Map())),

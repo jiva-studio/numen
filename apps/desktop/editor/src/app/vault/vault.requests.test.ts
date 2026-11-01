@@ -204,6 +204,7 @@ describe('a note followed', () => {
     requestLog.getNeighbourhood.mockResolvedValue({
       focus: { path: 'a.md', title: 'A' },
       related: [],
+      connections: [],
     })
     await core.neighbourhood('a.md')
     expect(requestLog.getNeighbourhood.mock.calls.at(-1)?.[0]).toEqual({ path: 'a.md' })

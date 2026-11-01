@@ -30,27 +30,23 @@ export type NoteRelation = 'parent' | 'child' | 'jump' | 'sibling'
 // LinkMarker is what a link record draws at the end that points at its target. A link without one draws nothing there.
 export type LinkMarker = 'arrow'
 
-// NoteNeighbour is one note joined to the note in focus.
+// NoteNeighbour is one note joined to the note in focus. The records that join notes are in NoteNeighbourhood.connections.
 export interface NoteNeighbour {
   readonly path: string
   readonly title: string
   readonly relation: NoteRelation
   readonly type: NoteType
-  readonly label: string
-  readonly reverseLabel?: string
-  readonly through: string
-  readonly isMutual: boolean
-  // What the record the note in focus writes draws at this note.
-  readonly marker: LinkMarker | null
-  // What the record this note writes draws at the note in focus.
-  readonly reverseMarker: LinkMarker | null
 }
 
-// NoteNeighbourhood is a note in focus, and the notes joined to it.
+// NoteNeighbourhood is a note in focus, the notes joined to it, and one connection for every line drawn between
+// them. A line joins the note in focus to a neighbour, or two neighbours to each other. A connection of the
+// hierarchy has the parent as its first note and the child as its second; a connection of jumps has the note drawn
+// later as its first note.
 export interface NoteNeighbourhood {
   readonly focus: NoteRef
   readonly focusType: NoteType
   readonly related: readonly NoteNeighbour[]
+  readonly connections: readonly Connection[]
 }
 
 // VaultNotes is what a plugin reads of the notes of the vault, and writes to them.

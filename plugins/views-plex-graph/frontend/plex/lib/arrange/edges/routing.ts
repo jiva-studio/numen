@@ -151,24 +151,86 @@ function reverse(curve: EdgeCurve): EdgeCurve {
   }
 }
 
-/** A cubic leaving both boxes square-on, read from the caller's end. */
-function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeCurve {
-  const isVertical = isVerticalRun(from, to, routing)
-  const fromFirst = isVertical ? from.y <= to.y : from.x <= to.x
-  const [first, second] = fromFirst ? [from, to] : [to, from]
+/** The clear space between two boxes along an axis; negative where they overlap on it. */
+function getRun(a: PlacedNode, b: PlacedNode, isVertical: boolean): number {
+  return isVertical
+    ? Math.abs(b.y - a.y) - (a.height + b.height) / 2
+    : Math.abs(b.x - a.x) - (a.width + b.width) / 2
+}
 
+/** A cubic leaving both boxes square-on along the axis, read from the first box. */
+function straightBetween(
+  first: PlacedNode,
+  second: PlacedNode,
+  isVertical: boolean,
+  routing: Routing,
+): EdgeCurve {
   const firstGate = getEdgeAnchor(first, isVertical ? 'bottom' : 'right')
   const secondGate = getEdgeAnchor(second, isVertical ? 'top' : 'left')
 
   const span = isVertical ? secondGate.y - firstGate.y : secondGate.x - firstGate.x
   const reach = Math.max(routing.minReach, Math.abs(span) * routing.curvature)
 
-  const axisEdge: EdgeCurve = {
+  return {
     fromPoint: firstGate,
     control1: getControl(firstGate, isVertical, reach),
     control2: getControl(secondGate, isVertical, -reach),
     toPoint: secondGate,
   }
+}
+
+/**
+ * A line from one side of both boxes that bows out by `minRun`, for boxes with
+ * no room between them for an arrowhead and a word. A row bows towards the focus,
+ * into the space between the rows, and a column bows away from it.
+ */
+function bowBetween(
+  first: PlacedNode,
+  second: PlacedNode,
+  isColumn: boolean,
+  routing: Routing,
+): EdgeCurve {
+  const middle = isColumn ? (first.x + second.x) / 2 : (first.y + second.y) / 2
+  const isNegative = isColumn ? middle < 0 : middle >= 0
+  const [positive, negative] = isColumn
+    ? (['right', 'left'] as const)
+    : (['bottom', 'top'] as const)
+  const side = isNegative ? negative : positive
+  const firstGate = getEdgeAnchor(first, side)
+  const secondGate = getEdgeAnchor(second, side)
+  const reach = isNegative ? -routing.minRun : routing.minRun
+  const getBowControl = (gate: Position): Position =>
+    isColumn ? { x: gate.x + reach, y: gate.y } : { x: gate.x, y: gate.y + reach }
+  return {
+    fromPoint: firstGate,
+    control1: getBowControl(firstGate),
+    control2: getBowControl(secondGate),
+    toPoint: secondGate,
+  }
+}
+
+/**
+ * A cubic leaving both boxes square-on, read from the caller's end.
+ *
+ * Two boxes side by side in a row or one above the other in a column, with
+ * less than `minRun` between them and no room along the other axis, are joined
+ * by a bow out of their sides. Edges at the focus keep the space the focus is given.
+ */
+function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeCurve {
+  const isVertical = isVerticalRun(from, to, routing)
+  const run = getRun(from, to, isVertical)
+  const isBowed =
+    from.relation !== 'focus' &&
+    to.relation !== 'focus' &&
+    run >= 0 &&
+    run < routing.minRun &&
+    getRun(from, to, !isVertical) < routing.minRun
+
+  const fromFirst = isVertical ? from.y <= to.y : from.x <= to.x
+  const [first, second] = fromFirst ? [from, to] : [to, from]
+  const axisEdge = isBowed
+    ? bowBetween(first, second, isVertical, routing)
+    : straightBetween(first, second, isVertical, routing)
 
   // The caller's from and to are kept, so the curve may run right to left or
   // bottom to top.

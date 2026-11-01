@@ -526,8 +526,12 @@ func TestTheNeighbourhoodCarriesTheMarkerOfEachRecord(t *testing.T) {
 	if len(got.Related) != 1 {
 		t.Fatalf("related = %+v", got.Related)
 	}
-	r := got.Related[0]
-	if r.Marker != domain.MarkerArrow || r.ReverseMarker != domain.MarkerNone || !r.IsMutual {
-		t.Errorf("neighbour = %+v", r)
+	// A line of jumps runs from the note drawn later (Entropy) to the focus (Heat).
+	if len(got.Connections) != 1 {
+		t.Fatalf("connections = %+v", got.Connections)
+	}
+	c := got.Connections[0]
+	if c.A != "Entropy.md" || c.AB == nil || c.AB.Marker != domain.MarkerNone || c.BA == nil || c.BA.Marker != domain.MarkerArrow {
+		t.Errorf("line = %+v %+v %+v", c, c.AB, c.BA)
 	}
 }

@@ -17,11 +17,15 @@ export type Types = Record<string, NoteType>
 export interface RelatedNeighbourSpec {
   path: string
   relation?: PlexRelation
+  /** The parent a sibling hangs off. */
   through?: string
+  /** The words the note named first writes on the line: the focus, or `through` for a sibling. */
   label?: string
+  /** The words the neighbour writes on the line. */
   reverseLabel?: string
-  isMutual?: boolean
+  /** What the note named first draws at the neighbour. */
   marker?: LinkMarker
+  /** What the neighbour draws at the note named first. */
   reverseMarker?: LinkMarker
   title?: string
   type?: NoteType
@@ -29,40 +33,64 @@ export interface RelatedNeighbourSpec {
 
 export type NeighbourSpec = string | RelatedNeighbourSpec
 
+const toSide = (label: string | undefined, marker: LinkMarker | undefined) =>
+  label === undefined && marker === undefined
+    ? null
+    : { label: label ?? '', marker: marker ?? null, reason: '' }
+
+/**
+ * The line a neighbour is drawn by, as the vault answers it: from a parent to
+ * its child, and from the neighbour to the focus for a jump.
+ */
+export const createLine = (focus: string, spec: RelatedNeighbourSpec): Connection => {
+  const relation = spec.relation ?? 'child'
+  const named = relation === 'sibling' ? (spec.through ?? '') : focus
+  const ownSide = toSide(spec.label, spec.marker)
+  const neighbourSide = toSide(spec.reverseLabel, spec.reverseMarker)
+  const isNamedFirst = relation === 'child' || relation === 'sibling'
+  return {
+    first: isNamedFirst ? named : spec.path,
+    second: isNamedFirst ? spec.path : named,
+    role: relation === 'jump' ? 'jump' : 'child',
+    type: '',
+    firstSide: isNamedFirst ? ownSide : neighbourSide,
+    secondSide: isNamedFirst ? neighbourSide : ownSide,
+  }
+}
+
 /** A neighbourhood as the vault answers one: a focus, and what is around it. */
 const createNeighbourhood = (
   focus: string,
   neighbours: readonly NeighbourSpec[] = [],
   types: Types = {},
-): Neighbourhood => ({
-  focus: { path: focus, title: focus.replace(/\.md$/, '') },
-  focusType: types[focus] ?? NOTE_TYPE,
-  related: neighbours.map((item) => {
-    const spec: RelatedNeighbourSpec = typeof item === 'string' ? { path: item } : item
-    return {
+  lines: readonly Connection[] = [],
+): Neighbourhood => {
+  const specs = neighbours.map((item) => (typeof item === 'string' ? { path: item } : item))
+  return {
+    focus: { path: focus, title: focus.replace(/\.md$/, '') },
+    focusType: types[focus] ?? NOTE_TYPE,
+    related: specs.map((spec) => ({
       relation: spec.relation ?? 'child',
-      through: spec.through ?? '',
-      label: spec.label ?? '',
-      reverseLabel: spec.reverseLabel ?? '',
-      isMutual: spec.isMutual ?? false,
-      marker: spec.marker ?? null,
-      reverseMarker: spec.reverseMarker ?? null,
       path: spec.path,
       title: spec.title ?? spec.path.replace(/\.md$/, ''),
       type: spec.type ?? types[spec.path] ?? NOTE_TYPE,
-    }
-  }),
-})
+    })),
+    connections: [...specs.map((spec) => createLine(focus, spec)), ...lines],
+  }
+}
 
-/** A plex standing on a note, which records every note it was sent to. */
+/** A plex standing on a note, which records every note it was sent to. `lines` join notes other than the focus. */
 export const viewOn = (
   initialPath: string,
   neighbours: readonly NeighbourSpec[] = [],
   types: Types = {},
+  lines: readonly Connection[] = [],
 ) => {
   const went: string[] = []
   const view: PlexView = {
-    neighbourhood: ref<Neighbourhood | null>(createNeighbourhood(initialPath, neighbours, types)),
+    neighbourhood: ref<Neighbourhood | null>(
+      createNeighbourhood(initialPath, neighbours, types, lines),
+    ),
     here: ref(initialPath),
     error: ref(''),
     nextPath: ref(''),
@@ -74,6 +102,7 @@ export const viewOn = (
         path,
         path === initialPath ? neighbours : [],
         types,
+        path === initialPath ? lines : [],
       )
     },
     followMoves: (renamed: readonly PathRename[]) => {

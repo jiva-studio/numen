@@ -77,6 +77,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
       focus: { path, title: path.replace(/\.md$/, '') },
       focusType: NOTE_TYPE,
       related: [],
+      connections: [],
     }),
     getHeadings: async (paths) => {
       request.headings.push(paths)
