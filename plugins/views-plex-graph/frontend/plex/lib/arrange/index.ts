@@ -25,7 +25,7 @@ export {
   routeEdges,
   createRouting,
   createTitle,
-  getLabelPosition,
+  getLabelPositions,
   type Axis,
   type Routing,
 } from './edges/routing'

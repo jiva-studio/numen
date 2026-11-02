@@ -3,15 +3,15 @@
  * there, in plex coordinates.
  *
  * A title stays on its own line, clear of every box and of every other title:
- * at the position of its end when that position is clear (near the end its arrow
- * points at, or the middle for a title with no end), and moved along the curve
+ * at its own position when that position is clear (centred for a line with one
+ * title, one near each end for a line with two), and moved along the curve
  * to the nearest clear position, truncated to the longest clear stretch when the whole
  * text fits nowhere, and dropped when that stretch is shorter than half.
  */
 import { getLength, type EdgeTitle, type PlacedEdge } from '../../edge'
 import type { PlacedNode } from '../../node'
 import { getBox, isOverlapping, getTitleBoxes, runBoxes, type Box } from '../layout/boxes'
-import { createTitle, cutToFit, getLabelPosition, type Routing } from './routing'
+import { MIDDLE, createTitle, cutToFit, type Routing } from './routing'
 
 /** A run of one line, as fractions of its length. */
 interface Span {
@@ -63,14 +63,15 @@ export function separateTitles(
   for (const { edge, index, title, slot, metrics } of sortTightestFirst(edges, width)) {
     const boxAt = runBoxes(edge, routing.labelDepth + 2 * apart)
     const ends = (edge.arrows?.length ? routing.arrowClearance : 0) / metrics.arc
-    const clear = clearSpans(boxAt, [...boxes, ...titleBoxes], { ends, step: STEP / metrics.arc })
+    const open = clearSpans(boxAt, [...boxes, ...titleBoxes], { ends, step: STEP / metrics.arc })
+    const clear = edge.titles.length > 1 ? clipToHalf(open, title.anchor) : open
 
     const found = settle(clear, title.words, {
       metrics,
       width,
-      target: getLabelPosition(title.end),
+      target: title.anchor,
     })
-    resolved[index]![slot] = found ? createTitle(edge, found.at, found.words, title.end) : null
+    resolved[index]![slot] = found ? createTitle(edge, found.at, found.words, title.anchor) : null
     if (!found) continue
 
     const half = found.extent / 2 / metrics.arc
@@ -124,14 +125,14 @@ function sortTightestFirst(
 
 /**
  * The words that stand on a line and where: the whole of them at the clear
- * place nearest the position of its end, else as many as the longest
+ * place nearest the position it asks for, else as many as the longest
  * clear span holds, set in the middle of that span. Nothing where that span
  * holds less than `LEAST` of them.
  */
 interface SettleOptions {
   readonly metrics: TitleMetrics
   readonly width: (label: string) => number
-  /** The position of its end, as a fraction of the line from its `from` end. */
+  /** The position the title asks for, as a fraction of the line from its `from` end. */
   readonly target: number
 }
 
@@ -196,6 +197,18 @@ function clearSpans(
   if (open !== null) spans.push({ from: open, to: last })
 
   return spans
+}
+
+/**
+ * The part of the spans on the side of the middle that `anchor` is on. A line
+ * with several titles keeps each on its own half, so the order they were asked
+ * for in is the order they are read in.
+ */
+function clipToHalf(spans: readonly Span[], anchor: number): Span[] {
+  const [low, high] = anchor < MIDDLE ? [0, MIDDLE] : [MIDDLE, 1]
+  return spans
+    .map((span) => ({ from: Math.max(span.from, low), to: Math.min(span.to, high) }))
+    .filter((span) => getSpanLength(span) > 0)
 }
 
 /**

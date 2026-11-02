@@ -53,14 +53,26 @@ const LABELS: Readonly<Record<string, string>> = {
 }
 
 /**
- * A line with the record of one end: its words and an arrowhead at the end it
- * points at, which both sit near that end.
+ * A line with the record of one end: its words, in the middle of the line, and
+ * an arrowhead at the end it points at.
  */
 const createLine = (from: string, to: string, text: string, end: 'from' | 'to'): PlexEdge => ({
   from,
   to,
-  labels: [{ text, end }],
+  labels: [{ text }],
   arrows: [end],
+})
+
+/**
+ * A line with a record written by each note: the words of the first note near
+ * the start of the line, those of the second near its end, and an arrowhead at
+ * each end.
+ */
+const createPair = (from: string, to: string, texts: readonly [string, string]): PlexEdge => ({
+  from,
+  to,
+  labels: texts.map((text) => ({ text })),
+  arrows: ['to', 'from'],
 })
 
 /** A sibling hangs off the parent it shares; everything else meets the focus. */
@@ -249,8 +261,9 @@ export const Nesting: Story = {
 
 /**
  * Every kind of line the plex draws, each with a record pointing at one end:
- * the focus with a parent, a child and a jump; a parent with a sibling; two
- * siblings; two children. A line with a record and no arrowhead is the last.
+ * the focus with a parent, a child and a jump; two siblings; two children. A
+ * parent and a sibling have a record written by each note, one at either end of
+ * their line. A line with a record and no arrowhead is the last.
  */
 const EVERY_LINE: PlexNeighbourhood = {
   nodes: [
@@ -266,7 +279,7 @@ const EVERY_LINE: PlexNeighbourhood = {
     createLine('thermodynamics', 'focus', 'measures', 'from'),
     createLine('focus', 'second-law', 'states', 'to'),
     createLine('demon', 'focus', 'costs', 'to'),
-    createLine('thermodynamics', 'pressure', 'includes', 'to'),
+    createPair('thermodynamics', 'pressure', ['includes', 'part of']),
     createLine('pressure', 'temperature', 'drives', 'to'),
     createLine('second-law', 'heat-death', 'leads to', 'to'),
     { from: 'focus', to: 'heat-death', labels: [{ text: 'is about' }] },
@@ -288,12 +301,24 @@ export const EveryLine: Story = {
       'states',
       'costs',
       'includes',
+      'part of',
       'drives',
       'leads to',
       'is about',
     ]) {
       await waitFor(() => expect(canvas.getAllByText(text).length).toBeGreaterThan(0))
     }
-    await expect(canvasElement.querySelectorAll('.plex__edge-arrow')).toHaveLength(6)
+    await expect(canvasElement.querySelectorAll('.plex__edge-arrow')).toHaveLength(7)
+
+    // The two records of one line are set apart, in the order of the notes that wrote them.
+    const getBox = (text: string) => canvas.getAllByText(text)[0]!.getBoundingClientRect()
+    const own = getBox('includes')
+    const other = getBox('part of')
+    const isApart =
+      own.right <= other.left ||
+      other.right <= own.left ||
+      own.bottom <= other.top ||
+      other.bottom <= own.top
+    await expect(isApart).toBe(true)
   },
 }

@@ -3,11 +3,13 @@ import type { Position } from './node'
 /** The end of a line an arrowhead is drawn at, pointing out of the line there. */
 export type EdgeArrow = 'from' | 'to'
 
-/** Words set along an edge, and the end of the line they are placed near. */
+/**
+ * Words set along an edge. A line with one label carries it in the middle; with
+ * two, the first is the record written in the `from` note and the second the
+ * one written in the `to` note, each set at the end of its own note.
+ */
 export interface EdgeLabel {
   readonly text: string
-  /** The end the words are placed near, where that end carries an arrowhead; the middle where none. */
-  readonly end?: EdgeArrow
 }
 
 export interface PlexEdge {
@@ -51,8 +53,8 @@ export interface PlacedArrow {
 
 /** One label of an edge as it is drawn. */
 export interface EdgeTitle {
-  /** The end the label is placed near; the middle of the line where none. */
-  readonly end?: EdgeArrow | undefined
+  /** Where the label asks to be set, as a fraction of the line from its `from` end. */
+  readonly anchor: number
   /** Which way round the curve the words are read. */
   readonly heading: EdgeHeading
   /**

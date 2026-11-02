@@ -40,11 +40,20 @@ interface Point {
   readonly y: number
 }
 
+interface Box {
+  readonly x: number
+  readonly y: number
+  readonly width: number
+  readonly height: number
+}
+
 /** The line between two drawn notes: its end at each note, its middle, and the labels and heads of the plex. */
 interface LineGeometry {
   readonly ends: Readonly<Record<string, Point>>
   readonly middle: Point
   readonly labels: Readonly<Record<string, Point>>
+  /** The box each label is drawn in, on the screen. */
+  readonly boxes: Readonly<Record<string, Box>>
   readonly arrows: readonly Point[]
 }
 
@@ -87,8 +96,12 @@ const readLine = (page: Page, names: readonly [string, string]): Promise<LineGeo
       distance(line.end, titles[0]!) + distance(line.start, titles[1]!)
 
     const labels: Record<string, { x: number; y: number }> = {}
+    const boxes: Record<string, Box> = {}
     for (const letters of svg.querySelectorAll('.plex__edge-label--letters')) {
-      labels[letters.textContent?.trim() ?? ''] = centre(letters.getBoundingClientRect())
+      const box = letters.getBoundingClientRect()
+      const words = letters.textContent?.trim() ?? ''
+      labels[words] = centre(box)
+      boxes[words] = { x: box.x, y: box.y, width: box.width, height: box.height }
     }
     const arrows = [...svg.querySelectorAll('.plex__edge-arrow')].map((head) =>
       centre(head.getBoundingClientRect()),
@@ -100,6 +113,7 @@ const readLine = (page: Page, names: readonly [string, string]): Promise<LineGeo
       },
       middle: line.middle,
       labels,
+      boxes,
       arrows,
     }
   }, names)
@@ -108,7 +122,7 @@ const getDistance = (one: Point, other: Point) => Math.hypot(one.x - other.x, on
 
 /**
  * Whether the line between two notes has the only arrowhead of the plex at the end of `target`,
- * with the words `words` set nearer that end than the other.
+ * with its one label `words` in the middle of the line, within a tenth of its length.
  */
 const isPointingAt = async (
   page: Page,
@@ -124,8 +138,36 @@ const isPointingAt = async (
     label !== undefined &&
     getDistance(line.arrows[0]!, line.ends[target]!) <
       getDistance(line.arrows[0]!, line.ends[other]!) &&
-    getDistance(label, line.ends[target]!) < getDistance(label, line.ends[other]!)
+    getDistance(label, line.middle) < getDistance(line.ends[target]!, line.ends[other]!) / 10
   )
+}
+
+/**
+ * Whether the line between two notes carries the label `first` in its first third, by the end at
+ * `names[0]`, and the label `last` in its last third, by the end at `names[1]`, the two boxes
+ * clear of each other.
+ */
+const isSetAtBothEnds = async (
+  page: Page,
+  names: readonly [string, string],
+  words: { readonly first: string; readonly last: string },
+): Promise<boolean> => {
+  const line = await readLine(page, names)
+  const first = line.labels[words.first]
+  const last = line.labels[words.last]
+  if (!first || !last) return false
+  const start = line.ends[names[0]]!
+  const run = { x: line.ends[names[1]]!.x - start.x, y: line.ends[names[1]]!.y - start.y }
+  const getShare = (point: Point) =>
+    ((point.x - start.x) * run.x + (point.y - start.y) * run.y) / (run.x ** 2 + run.y ** 2)
+  const one = line.boxes[words.first]!
+  const other = line.boxes[words.last]!
+  const isApart =
+    one.x + one.width <= other.x ||
+    other.x + other.width <= one.x ||
+    one.y + one.height <= other.y ||
+    other.y + other.height <= one.y
+  return getShare(first) < 1 / 3 && getShare(last) > 2 / 3 && isApart
 }
 
 /** Whether the words of a record without an arrowhead are set in the middle of the line. */
@@ -212,5 +254,34 @@ test.describe('Lines between notes other than the one in focus', () => {
 
     await expect.poll(() => isPointingAt(page, ['Lamp', 'Mirror'], 'Mirror', 'faces')).toBe(true)
     await expect.poll(() => isSetInTheMiddle(page, ['Headland', 'Lamp'], 'raises')).toBe(true)
+  })
+
+  test('sets the two records of a line between two siblings at its two ends', async ({
+    page,
+    request,
+  }) => {
+    for (const child of ['Pharos', 'Lamp', 'Mirror']) {
+      await saveConnection(request, {
+        first: notes['Headland']!,
+        second: notes[child]!,
+        role: 'ROLE_CHILD',
+        firstSide: { label: `holds ${child}` },
+      })
+    }
+    await saveConnection(request, {
+      first: notes['Lamp']!,
+      second: notes['Mirror']!,
+      role: 'ROLE_JUMP',
+      firstSide: { label: 'lights', marker: 'MARKER_ARROW' },
+      secondSide: { label: 'lit by', marker: 'MARKER_ARROW' },
+    })
+
+    await showInPlex(page, notes['Pharos']!)
+    await expect(getGraph(page).getByRole('button', { name: 'Mirror, sibling' })).toBeAttached()
+
+    // Each record is by the note that wrote it: Lamp wrote 'lights', Mirror wrote 'lit by'.
+    await expect
+      .poll(() => isSetAtBothEnds(page, ['Lamp', 'Mirror'], { first: 'lights', last: 'lit by' }))
+      .toBe(true)
   })
 })

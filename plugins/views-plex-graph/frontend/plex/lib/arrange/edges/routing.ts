@@ -2,7 +2,6 @@ import {
   getArrow,
   getHeading,
   getLength,
-  type EdgeArrow,
   type EdgeCurve,
   type EdgeTitle,
   type PlacedEdge,
@@ -61,13 +60,17 @@ export const MIDDLE = 0.5
 const NEAR_END = 0.2
 
 /**
- * The position a title is set at, as a fraction of the line's length from its
- * `from` end: near the end it names, or the middle where it names none.
+ * Where each of `count` labels of one line is set, as a fraction of the line's
+ * length from its `from` end, in the order the labels are written: the first
+ * is the record of the `from` note. One label is centred. Several are spread
+ * from near the start to near the end, so each reads as belonging to its own end.
  */
-export const getLabelPosition = (end: EdgeArrow | undefined): number => {
-  if (end === 'from') return NEAR_END
-  if (end === 'to') return 1 - NEAR_END
-  return MIDDLE
+export const getLabelPositions = (count: number): number[] => {
+  if (count <= 1) return [MIDDLE]
+  return Array.from(
+    { length: count },
+    (_, index) => NEAR_END + ((1 - 2 * NEAR_END) * index) / (count - 1),
+  )
 }
 
 /**
@@ -76,10 +79,10 @@ export const getLabelPosition = (end: EdgeArrow | undefined): number => {
  */
 export function createTitle(
   curve: EdgeCurve,
-  ...[position, words, end]: [position: number, words: string, end: EdgeArrow | undefined]
+  ...[position, words, anchor = position]: [position: number, words: string, anchor?: number]
 ): EdgeTitle {
   const heading = getHeading(curve, position)
-  return { end, heading, words, wordsAt: heading === 'against' ? 1 - position : position }
+  return { anchor, heading, words, wordsAt: heading === 'against' ? 1 - position : position }
 }
 
 /**
@@ -216,7 +219,11 @@ function bowBetween(
  * less than `minRun` between them and no room along the other axis, are joined
  * by a bow out of their sides. Edges at the focus keep the space the focus is given.
  */
-function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeCurve {
+function curveBetween(
+  from: PlacedNode,
+  to: PlacedNode,
+  routing: Routing,
+): EdgeCurve {
   const isVertical = isVerticalRun(from, to, routing)
   const run = getRun(from, to, isVertical)
   const isBowed =
@@ -238,20 +245,20 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
 }
 
 /**
- * The titles a curve carries, each at the position of its end. The labels of
- * one line share its length, less the room kept for the arrowheads.
+ * The titles a curve carries. The labels of one line share its length, less the
+ * room kept for the arrowheads.
  */
 function createTitles(edge: PlexEdge, curve: EdgeCurve, routing: Routing): EdgeTitle[] {
   const labels = (edge.labels ?? []).filter((label) => label.text)
   const room =
     (getLength(curve) - (edge.arrows?.length ? 2 * routing.arrowClearance : 0)) / labels.length
   const { labelWidth } = routing
-  return labels.map((label) =>
+  const positions = getLabelPositions(labels.length)
+  return labels.map((label, index) =>
     createTitle(
       curve,
-      getLabelPosition(label.end),
+      positions[index]!,
       labelWidth ? cutToFit(label.text, room, labelWidth) : label.text,
-      label.end,
     ),
   )
 }

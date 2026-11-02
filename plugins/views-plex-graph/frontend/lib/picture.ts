@@ -45,18 +45,18 @@ const getRecords = (connection: Connection): Written[] => [
 const isPointing = (record: Written): boolean => record.side?.marker === 'arrow'
 
 /**
- * The label of each record, near the end its arrowhead is at, or in the middle
- * for a record without a marker. A line with no text carries nothing: a word
- * added by the application would be read as written by the user. Two records
- * with the same words in the same place are one label.
+ * The label of each record, in the order of the notes that wrote them: the plex
+ * sets one label in the middle of the line and two at opposite ends, each by its own note, whatever
+ * markers the records carry. A line with no text carries nothing: a word added
+ * by the application would be read as written by the user. Two records with the
+ * same words are one label.
  */
 function getEdgeLabels(records: readonly Written[]): EdgeLabel[] {
   const labels: EdgeLabel[] = []
   for (const record of records) {
     const text = record.side?.label ?? ''
     if (!text) continue
-    const label: EdgeLabel = isPointing(record) ? { text, end: record.end } : { text }
-    if (!labels.some((one) => one.text === label.text && one.end === label.end)) labels.push(label)
+    if (!labels.some((one) => one.text === text)) labels.push({ text })
   }
   return labels
 }
@@ -81,7 +81,7 @@ function createEdge(connection: Connection, token: (path: string) => string): Pl
  * Every line is drawn from one connection of the neighbourhood, whichever notes
  * it joins: the note in focus and a neighbour, or two other notes that are both
  * drawn. An arrowhead is drawn at each end whose record carries a marker, and
- * nowhere else, and the label of each record is placed near its arrowhead.
+ * nowhere else, and the labels of its records are set by how many there are, not by the arrowheads.
  */
 export function convertNeighbourhood(
   neighbourhood: Neighbourhood,

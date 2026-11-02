@@ -221,31 +221,28 @@ const RECORD_CASES: readonly {
   readonly first: Stated | null
   readonly second: Stated | null
   readonly arrows: readonly ('from' | 'to')[]
-  readonly labels: readonly { text: string; end?: 'from' | 'to' }[]
+  readonly labels: readonly { text: string }[]
 }[] = [
   {
     name: 'only the first note writes, with an arrow',
     first: ['onward', 'arrow'],
     second: null,
     arrows: ['to'],
-    labels: [{ text: 'onward', end: 'to' }],
+    labels: [{ text: 'onward' }],
   },
   {
     name: 'only the second note writes, with an arrow',
     first: null,
     second: ['backward', 'arrow'],
     arrows: ['from'],
-    labels: [{ text: 'backward', end: 'from' }],
+    labels: [{ text: 'backward' }],
   },
   {
     name: 'both notes write, each with an arrow',
     first: ['onward', 'arrow'],
     second: ['backward', 'arrow'],
     arrows: ['to', 'from'],
-    labels: [
-      { text: 'onward', end: 'to' },
-      { text: 'backward', end: 'from' },
-    ],
+    labels: [{ text: 'onward' }, { text: 'backward' }],
   },
   {
     name: 'the first note writes an arrow with no words',
@@ -273,7 +270,7 @@ const RECORD_CASES: readonly {
     first: ['onward', 'arrow'],
     second: ['backward', null],
     arrows: ['to'],
-    labels: [{ text: 'onward', end: 'to' }, { text: 'backward' }],
+    labels: [{ text: 'onward' }, { text: 'backward' }],
   },
   {
     name: 'neither note writes anything',
@@ -306,7 +303,7 @@ describe.each(LINE_KINDS)('the line from $name', ({ rows, first, second }) => {
 })
 
 describe('the words and arrowheads of one line', () => {
-  it('draws two records with the same words in the same place once', () => {
+  it('draws two records with the same words once', () => {
     const [edge] = renderImage(
       createNeighbourhood(
         'Here',
@@ -318,7 +315,7 @@ describe('the words and arrowheads of one line', () => {
     expect(edge?.labels).toEqual([{ text: 'near' }])
   })
 
-  it('draws the same words at both ends where each end has its own arrow', () => {
+  it('draws the same words once where each end has its own arrow', () => {
     const [edge] = renderImage(
       createNeighbourhood(
         'Here',
@@ -327,10 +324,7 @@ describe('the words and arrowheads of one line', () => {
       ),
     ).plex.edges
 
-    expect(edge?.labels).toEqual([
-      { text: 'near', end: 'to' },
-      { text: 'near', end: 'from' },
-    ])
+    expect(edge?.labels).toEqual([{ text: 'near' }])
   })
 })
 
