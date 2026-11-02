@@ -36,7 +36,9 @@ function createCardModelActions(
   const { getCardModel, applyCardModel, renameFieldOnWire } = deps
   return {
     addField: (name: string) => applyCardModel(id, addField(getCardModel(id), name)),
-    renameField: (field: string, name: string) => void renameFieldOnWire(id, field, name),
+    renameField: (field: string, name: string) => {
+      renameFieldOnWire(id, field, name)
+    },
     removeField: (field: string) => applyCardModel(id, removeField(getCardModel(id), field)),
     moveField: (field: string, target: string | null) =>
       applyCardModel(id, moveField(getCardModel(id), field, target)),

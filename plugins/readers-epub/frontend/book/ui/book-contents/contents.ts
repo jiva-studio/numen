@@ -1,6 +1,5 @@
 /**
- * The lines of a book's contents: which one holds the offset being read, and
- * which of them a typed word matches.
+ * The lines of a book's contents: which one holds the offset being read.
  *
  * Separate from the panel the way `spread.ts` is separate from the reader: both
  * are arithmetic over offsets the book supplies, and a test exercises them
@@ -27,19 +26,6 @@ export function findLineAt(entries: readonly ContentsEntry[], pos: number): numb
     found = i
   }
   return found
-}
-
-/**
- * The lines a typed word finds, in the order the book sets them. Nothing typed
- * finds every line, and the letters are folded so a name is found however it
- * was typed.
- */
-export function findEntries(
-  entries: readonly ContentsEntry[],
-  query: string,
-): readonly ContentsEntry[] {
-  const want = query.trim().toLocaleLowerCase()
-  return entries.filter((one) => one.title.toLocaleLowerCase().includes(want))
 }
 
 /** The words a book's contents is read with. */

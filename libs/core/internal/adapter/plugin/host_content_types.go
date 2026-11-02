@@ -1,18 +1,17 @@
 package plugin
 
 import (
-	"path"
 	"slices"
 	"strings"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
-// contentTypeTable gives a file the type of its name where no plugin brings one.
+// contentTypeTable gives a file the type of its name.
 type contentTypeTable interface {
 	GetContentType(name string) domain.ContentType
 	ListExtensions(mask domain.ContentType) []string
@@ -33,17 +32,14 @@ type contentTypeCache struct {
 	opened     map[string]map[string][]string
 }
 
-// contentTypeLookup is the types the enabled plugins bring, over the table.
+// contentTypeLookup is the enabled plugins over the table.
 type contentTypeLookup struct {
-	plugins []manifestfile.DiscoveredPlugin
-	// brought is the type each extension an enabled plugin brings gives a file, by the plugin of the
-	// lowest id.
-	brought map[string]domain.ContentType
+	plugins []manifest.Discovered
 	table   contentTypeTable
 }
 
-// SetContentTypeTable sets the table of the types of files. Until it is set, a file is of a type
-// an enabled plugin brings, or of an unknown one.
+// SetContentTypeTable sets the table of the types of files. Until it is set, a file is of an
+// unknown type.
 func (h *Host) SetContentTypeTable(table contentTypeTable) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -53,8 +49,7 @@ func (h *Host) SetContentTypeTable(table contentTypeTable) {
 	h.typeCache.mu.Unlock()
 }
 
-// GetContentType is the type of a file by its name: the type an enabled plugin brings for its
-// extension, and else the type the table gives it.
+// GetContentType is the type of a file by its name, as the table gives it.
 func (h *Host) GetContentType(name string) domain.ContentType {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
@@ -70,20 +65,11 @@ func (h *Host) ListExtensions(mask domain.ContentType) []string {
 }
 
 func (h *Host) getLookupLocked() contentTypeLookup {
-	lookup := contentTypeLookup{brought: map[string]domain.ContentType{}, table: h.contentTypes}
+	lookup := contentTypeLookup{table: h.contentTypes}
 	if !h.safeMode {
-		lookup.plugins = slices.DeleteFunc(h.getPluginsInOrderLocked(), func(p manifestfile.DiscoveredPlugin) bool {
+		lookup.plugins = slices.DeleteFunc(h.getPluginsInOrderLocked(), func(p manifest.Discovered) bool {
 			return !h.isPluginEnabledLocked(p.Manifest.ID)
 		})
-	}
-	for _, p := range lookup.plugins {
-		for _, declared := range p.Manifest.ContentTypes {
-			for _, extension := range declared.ListExtensions() {
-				if _, ok := lookup.brought[extension]; !ok {
-					lookup.brought[extension] = declared.Type
-				}
-			}
-		}
 	}
 	return lookup
 }
@@ -98,12 +84,6 @@ func (l contentTypeLookup) getKey() string {
 }
 
 func (l contentTypeLookup) getContentType(name string) domain.ContentType {
-	base := path.Base(name)
-	if dot := strings.LastIndexByte(base, '.'); dot >= 0 {
-		if found, ok := l.brought[strings.ToLower(base[dot+1:])]; ok {
-			return found
-		}
-	}
 	if l.table == nil {
 		return domain.UnknownContentType
 	}
@@ -135,9 +115,6 @@ func (l contentTypeLookup) listExtensionsCached(cache *contentTypeCache, mask do
 	var candidates []string
 	if l.table != nil {
 		candidates = l.table.ListExtensions(mask)
-	}
-	for extension := range l.brought {
-		candidates = append(candidates, extension)
 	}
 	slices.Sort(candidates)
 	candidates = slices.DeleteFunc(slices.Compact(candidates), func(extension string) bool {
@@ -181,20 +158,20 @@ func (h *Host) listOpenedExtensionsLocked(pluginID string) map[string][]string {
 
 // listReaderInfosLocked is each reader of the plugin with the extensions of the files it opens.
 func (h *Host) listReaderInfosLocked(manifest pluginport.PluginManifest) []pluginport.PluginReaderInfo {
-	if len(manifest.Readers) == 0 {
+	if len(manifest.Contributes.Readers) == 0 {
 		return nil
 	}
 	byReader := h.listOpenedExtensionsLocked(manifest.ID)
-	out := make([]pluginport.PluginReaderInfo, 0, len(manifest.Readers))
-	for _, reader := range manifest.Readers {
+	out := make([]pluginport.PluginReaderInfo, 0, len(manifest.Contributes.Readers))
+	for _, reader := range manifest.Contributes.Readers {
 		out = append(out, pluginport.PluginReaderInfo{ID: reader.ID, Extensions: slices.Clone(byReader[reader.ID])})
 	}
 	return out
 }
 
 // isOpeningFileLocked reports whether the event is a window opening a file whose type a reader or
-// the text input of the plugin takes, and the plugin has a backend to start.
-func (h *Host) isOpeningFileLocked(p manifestfile.DiscoveredPlugin, event string) bool {
+// a handle of the plugin takes, and the plugin has a backend to start.
+func (h *Host) isOpeningFileLocked(p manifest.Discovered, event string) bool {
 	extension, ok := strings.CutPrefix(event, eventFilePrefix)
 	if !ok || extension == "" {
 		return false

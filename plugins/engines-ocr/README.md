@@ -6,9 +6,9 @@ Reads text from scanned PDFs and images so you can search, select, quote, and co
 
 ## What You Can Do
 
-- **Turn scans into searchable documents**: Automatically recognizes pages in scanned PDFs that don't have selectable text yet, or run **Recognise text** from a file's right-click menu at any time.
+- **Make scans searchable**: Automatically recognizes pages in scanned PDFs that don't have selectable text yet, or run **Recognise text** from a file's right-click menu at any time.
 - **Select and quote from scanned pages**: Once recognized, you can highlight text right on the scanned page, copy quotes with links, and find the document in search.
-- **Pick up where it left off**: Long books are saved every few pages as they are processed, so you never lose progress if you close the app.
+- **Resume after closing**: Long books are saved every few pages while they are processed, so progress is kept if you close the app.
 
 ## Settings
 

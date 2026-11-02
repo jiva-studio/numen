@@ -1,0 +1,105 @@
+import { test, expect, type Locator } from '../../support/test.js'
+import { createUniqueTitle, destroyNote, writeSetting } from '../../support/vault.js'
+import { createNoteWithBody } from '../../support/layout.js'
+import { openWorkspace } from '../../support/workspace.js'
+
+const EMBEDDINGS_ID = 'md.numen.engines.embeddings'
+const MIN_CHUNK_LENGTH = ['plugins', EMBEDDINGS_ID, 'min_chunk_length']
+const DEFAULT_MIN_CHUNK_LENGTH = 40
+
+/** A body of 10 characters, below the default of 40. */
+const SHORT_BODY = 'Tide table'
+
+/** A body of 100 characters, above the default of 40. */
+const LONG_BODY =
+  'The ferry crosses the estuary at dawn with barley, salted fish and the post for the northern shores.'
+
+/** The status bar item that counts the vectors of the index. */
+const getItem = (page: Parameters<typeof openWorkspace>[0]): Locator =>
+  page.locator('.index-stats__label')
+
+const readVectors = async (item: Locator): Promise<number> => {
+  const text = (await item.textContent()) ?? ''
+  return Number(text.replace('⬡', '').replace(/\D/g, ''))
+}
+
+/** Whether every chunk that can carry a vector carries one: the mark of the item does not pulse. */
+const isSettled = async (item: Locator): Promise<boolean> => {
+  const text = (await item.textContent()) ?? ''
+  return /\d/.test(text) && (await item.locator('.index-stats__icon--indexing').count()) === 0
+}
+
+/** Waits until the index is embedded, and returns the number of vectors then. */
+const readSettledVectors = async (item: Locator): Promise<number> => {
+  await expect.poll(() => isSettled(item), { timeout: 45_000 }).toBe(true)
+  return readVectors(item)
+}
+
+/** The notes the index has read, from the nested Notes row of the popover of the status bar item. */
+const readNoteCount = async (popover: Locator): Promise<number> => {
+  const row = popover.locator('.index-popover__row--nested', { hasText: 'Notes' })
+  const text = (await row.textContent()) ?? ''
+  return Number(/·\s*([\d,.\s]+)\s*files/.exec(text)?.[1]?.replace(/\D/g, '') ?? 0)
+}
+
+test.describe('The smallest piece of text to index for meaning', () => {
+  const notes: string[] = []
+
+  test.afterEach(async ({ request }) => {
+    await writeSetting(request, MIN_CHUNK_LENGTH, DEFAULT_MIN_CHUNK_LENGTH)
+    for (const path of notes.splice(0)) await destroyNote(request, path)
+  })
+
+  test('gives a short piece no vector, until the setting lets it have one', async ({
+    page,
+    request,
+  }) => {
+    test.setTimeout(180_000)
+    expect(SHORT_BODY).toHaveLength(10)
+    expect(LONG_BODY).toHaveLength(100)
+    await openWorkspace(page)
+    const item = getItem(page)
+    const before = await readSettledVectors(item)
+
+    // With the default, the note of 100 characters gets a vector and the note of 10 does not.
+    const longPath = await createNoteWithBody(
+      request,
+      createUniqueTitle('Long ferry note'),
+      'notes',
+      LONG_BODY,
+    )
+    notes.push(longPath)
+    await item.click()
+    const popover = page.getByRole('dialog', { name: 'Index stats' })
+    await expect(popover).toBeVisible()
+    await expect.poll(() => readVectors(item), { timeout: 45_000 }).toBeGreaterThan(before)
+    const withLong = await readSettledVectors(item)
+    const longChunks = withLong - before
+    expect(longChunks).toBeGreaterThan(0)
+
+    const notesBefore = await readNoteCount(popover)
+    const shortPath = await createNoteWithBody(
+      request,
+      createUniqueTitle('Short tide note'),
+      'notes',
+      SHORT_BODY,
+    )
+    notes.push(shortPath)
+    // The short note is read into the index, and the count stays where it was.
+    await expect
+      .poll(() => readNoteCount(popover), { timeout: 45_000 })
+      .toBeGreaterThan(notesBefore)
+    expect(await readSettledVectors(item)).toBe(withLong)
+
+    // With 0 every piece gets a vector, the short one too.
+    await writeSetting(request, MIN_CHUNK_LENGTH, 0)
+    await expect.poll(() => readVectors(item), { timeout: 60_000 }).toBeGreaterThan(withLong)
+    const withShort = await readSettledVectors(item)
+    expect(withShort).toBeGreaterThan(withLong)
+
+    // With 40 again the sweep takes the vectors of the pieces below 40 away.
+    await writeSetting(request, MIN_CHUNK_LENGTH, DEFAULT_MIN_CHUNK_LENGTH)
+    await expect.poll(() => readVectors(item), { timeout: 60_000 }).toBe(withLong)
+    expect(await readSettledVectors(item)).toBe(withLong)
+  })
+})

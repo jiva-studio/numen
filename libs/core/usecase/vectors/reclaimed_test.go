@@ -16,14 +16,14 @@ import (
 // enters the rerank is determined by its text.
 func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 	index, shelf := newStore(), newLibrary()
-	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 900)), 1)
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(getSanskrit(), 900)), 1)
 
-	embed := newEmbed(vaults{first.ID: shelf, second.ID: shelf}, index, index)
+	embed := newEmbed(vaults{getFirst().ID: shelf, getSecond().ID: shelf}, index, index)
 	embed.Embedder = &faint{dims: dimensions}
 	embed.BatchCharacters = 4000
 
-	cutBooks(t, index, shelf, first)
-	if _, err := embed.Execute(t.Context(), first); err != nil {
+	cutBooks(t, index, shelf, getFirst())
+	if _, err := embed.Execute(t.Context(), getFirst()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -42,8 +42,8 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 	}
 
 	index.groups = nil
-	cutBooks(t, index, shelf, second)
-	res, err := embed.Execute(t.Context(), second)
+	cutBooks(t, index, shelf, getSecond())
+	res, err := embed.Execute(t.Context(), getSecond())
 	if err != nil {
 		t.Fatal(err)
 	}

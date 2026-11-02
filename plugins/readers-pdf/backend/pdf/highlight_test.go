@@ -1,14 +1,49 @@
 package pdf
 
 import (
+	"context"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"os"
 	"strings"
 	"testing"
 
-	pdfium "github.com/klippa-app/go-pdfium"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/responses"
+	"github.com/tetratelabs/wazero"
 )
+
+// compilationDirVariable names the folder TestMain, in pdf_test.go, makes for the compiled PDFium of the
+// test binary.
+const compilationDirVariable = "NUMEN_PDF_TEST_COMPILATION_DIR"
+
+// newCompilation returns a cache of the compiled PDFium in the folder of the test binary, closed when the
+// test ends.
+func newCompilation(t testing.TB) wazero.CompilationCache {
+	t.Helper()
+	compilation, err := wazero.NewCompilationCacheWithDir(os.Getenv(compilationDirVariable))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := compilation.Close(context.WithoutCancel(t.Context())); err != nil {
+			t.Error(err)
+		}
+	})
+	return compilation
+}
+
+// newWorkers returns a pool that is closed when the test ends.
+func newWorkers(t testing.TB) *Workers {
+	t.Helper()
+	workers := NewWorkers()
+	workers.SetCompilationCache(newCompilation(t))
+	t.Cleanup(func() {
+		if err := workers.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	return workers
+}
 
 func fixture(t *testing.T, name string) []byte {
 	t.Helper()
@@ -30,11 +65,11 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			doc, err := openBytes(raw)
+			doc, err := newWorkers(t).openBytes(raw)
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer doc.close()
+			defer cleanup.Close(t, doc)
 
 			for i := 0; i < doc.pages; i++ {
 				response := doc.text(i)
@@ -61,15 +96,21 @@ func TestTheCharactersOfAPageAreItsText(t *testing.T) {
 // where reads a fixture and returns the highlight boxes for some of its pages.
 func where(t *testing.T, name string, pages ...int) (*Book, []HighlightBox) {
 	t.Helper()
+	return whereOn(t, newWorkers(t), name, pages...)
+}
+
+// whereOn is where on the pool given.
+func whereOn(t *testing.T, workers *Workers, name string, pages ...int) (*Book, []HighlightBox) {
+	t.Helper()
 	raw, err := os.ReadFile("testdata/" + name)
 	if err != nil {
 		t.Fatal(err)
 	}
-	book, err := Read(raw)
+	book, err := workers.Read(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
-	boxes, err := book.Highlights(raw, pages)
+	boxes, err := book.Highlights(workers, raw, pages)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,9 +140,10 @@ func TestABoxCoversTheWordsItNames(t *testing.T) {
 // Every box of every document covers one word: the offsets are in the text of
 // the document as read, and a word is the unit the user sees.
 func TestEveryBoxCoversOneWord(t *testing.T) {
+	workers := newWorkers(t)
 	for _, name := range []string{"tiny.pdf", "outline.pdf", "labels.pdf", "turned.pdf"} {
 		t.Run(name, func(t *testing.T) {
-			book, boxes := where(t, name, pagesOf(t, name)...)
+			book, boxes := whereOn(t, workers, name, pagesOf(t, workers, name)...)
 			if len(boxes) == 0 {
 				t.Fatal("a document with a text layer lit nothing")
 			}
@@ -125,9 +167,9 @@ func TestEveryBoxCoversOneWord(t *testing.T) {
 func isSpace(r rune) bool { return strings.ContainsRune(" \t\r\n\f", r) }
 
 // pagesOf is every page of a fixture.
-func pagesOf(t *testing.T, name string) []int {
+func pagesOf(t *testing.T, workers *Workers, name string) []int {
 	t.Helper()
-	book, _ := where(t, name)
+	book, _ := whereOn(t, workers, name)
 	pages := make([]int, len(book.Pages))
 	for i := range pages {
 		pages[i] = i
@@ -146,11 +188,12 @@ func TestAScanLightsNothing(t *testing.T) {
 }
 
 func TestARectangleIsAFractionOfThePage(t *testing.T) {
+	workers := newWorkers(t)
 	// A page drawn at any size lines up by multiplying, so a rectangle is
 	// somewhere between nothing and the whole page.
 	for _, name := range []string{"tiny.pdf", "outline.pdf", "labels.pdf", "turned.pdf"} {
 		t.Run(name, func(t *testing.T) {
-			_, boxes := where(t, name, pagesOf(t, name)...)
+			_, boxes := whereOn(t, workers, name, pagesOf(t, workers, name)...)
 			for _, box := range boxes {
 				if box.MinX < 0 || box.MinY < 0 || box.MaxX > 1 || box.MaxY > 1 {
 					t.Errorf("a box covers %v, which is off the page", box)
@@ -316,34 +359,35 @@ func TestGetPagePointRotations(t *testing.T) {
 
 func TestHighlightsEmptyPagesOrInvalid(t *testing.T) {
 	raw := fixture(t, "tiny.pdf")
-	book, err := Read(raw)
+	workers := newWorkers(t)
+	book, err := workers.Read(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Empty wanted pages
-	boxes, err := book.Highlights(raw, nil)
+	boxes, err := book.Highlights(workers, raw, nil)
 	if err != nil || boxes != nil {
 		t.Errorf("Highlights(nil) got %v, err %v; want nil, nil", boxes, err)
 	}
-	boxes, err = book.Highlights(raw, []int{})
+	boxes, err = book.Highlights(workers, raw, []int{})
 	if err != nil || boxes != nil {
 		t.Errorf("Highlights([]) got %v, err %v; want nil, nil", boxes, err)
 	}
 
 	// Invalid PDF bytes
-	_, err = book.Highlights([]byte("not a pdf"), []int{0})
+	_, err = book.Highlights(workers, []byte("not a pdf"), []int{0})
 	if err == nil {
 		t.Error("expected error for invalid PDF bytes in Highlights")
 	}
 }
 
 func TestDocumentWordsInvalidPage(t *testing.T) {
-	doc, err := openBytes(fixture(t, "tiny.pdf"))
+	doc, err := newWorkers(t).openBytes(fixture(t, "tiny.pdf"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer doc.close()
+	defer cleanup.Close(t, doc)
 
 	if boxes := doc.words(9999, 0); len(boxes) != 0 {
 		t.Errorf("doc.words(9999) returned %d boxes, want 0", len(boxes))
@@ -351,7 +395,6 @@ func TestDocumentWordsInvalidPage(t *testing.T) {
 }
 
 type mockPageWorker struct {
-	pdfium.Pdfium
 	width  float64
 	height float64
 }
@@ -360,23 +403,23 @@ func (m *mockPageWorker) GetPageSize(_ *requests.GetPageSize) (*responses.GetPag
 	return &responses.GetPageSize{Width: m.width, Height: m.height}, nil
 }
 
-func (m *mockPageWorker) FPDFPage_GetRotation(_ *requests.FPDFPage_GetRotation) (*responses.FPDFPage_GetRotation, error) {
+func (m *mockPageWorker) GetPageRotation(_ *requests.FPDFPage_GetRotation) (*responses.FPDFPage_GetRotation, error) {
 	return &responses.FPDFPage_GetRotation{}, nil
 }
 
 func TestGetSheetRejectsZeroDimensions(t *testing.T) {
-	docZeroWidth := &document{worker: &mockPageWorker{width: 0, height: 100}}
-	if _, ok := docZeroWidth.getSheet(requests.Page{}); ok {
+	docZeroWidth := &mockPageWorker{width: 0, height: 100}
+	if _, ok := getSheet(docZeroWidth, requests.Page{}); ok {
 		t.Error("expected getSheet to reject zero width")
 	}
 
-	docZeroHeight := &document{worker: &mockPageWorker{width: 100, height: 0}}
-	if _, ok := docZeroHeight.getSheet(requests.Page{}); ok {
+	docZeroHeight := &mockPageWorker{width: 100, height: 0}
+	if _, ok := getSheet(docZeroHeight, requests.Page{}); ok {
 		t.Error("expected getSheet to reject zero height")
 	}
 
-	docValid := &document{worker: &mockPageWorker{width: 100, height: 200}}
-	sheet, ok := docValid.getSheet(requests.Page{})
+	docValid := &mockPageWorker{width: 100, height: 200}
+	sheet, ok := getSheet(docValid, requests.Page{})
 	if !ok || sheet.width != 100 || sheet.height != 200 {
 		t.Errorf("expected valid sheet (100, 200), got %+v, %v", sheet, ok)
 	}

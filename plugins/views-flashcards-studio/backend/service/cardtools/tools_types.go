@@ -45,9 +45,9 @@ type CardModel struct {
 // Card is one card as a deck answers with it.
 type Card struct {
 	CardID    string       `json:"cardId" jsonschema:"what the card is for as long as it exists, and how every tool here addresses it; empty for a card typed in by hand, which is given one the next time the deck is written"`
-	Section   int          `json:"section" jsonschema:"where the section this card stands under stands in the deck's sections, counted from the first; -1 for a card standing before the first section"`
+	Section   int          `json:"section" jsonschema:"where the section of this card is in the deck's sections, counted from the first; -1 for a card standing before the first section"`
 	CardModel string       `json:"cardModel,omitempty" jsonschema:"the card model this card is cut by, as the wikilink beneath its heading names it"`
-	Values    []FieldValue `json:"values,omitempty" jsonschema:"what the card holds, in the order it stands in the file"`
+	Values    []FieldValue `json:"values,omitempty" jsonschema:"what the card holds, in the order it is in the file"`
 }
 
 // FieldValue is the text of one of a card's fields.
@@ -58,13 +58,13 @@ type FieldValue struct {
 
 // Fault is one thing wrong with a deck, on the card it is against.
 type Fault struct {
-	Card int    `json:"card" jsonschema:"where the card stands in the deck, counted from its first card; -1 for a fault against no card"`
+	Card int    `json:"card" jsonschema:"where the card is in the deck, counted from its first card; -1 for a fault against no card"`
 	Why  string `json:"why" jsonschema:"what is wrong, and what the application did about it"`
 }
 
 // CurrentCard is the card the user is viewing, as reported to an agent. The deck is the file containing it.
 type CurrentCard struct {
-	Deck     string `json:"deck" jsonschema:"the deck the card stands in, by the path the vault files it under; empty when no card is in front of them"`
+	Deck     string `json:"deck" jsonschema:"the deck the card is in, by the path the vault files it under; empty when no card is in front of them"`
 	Card     string `json:"card,omitempty" jsonschema:"the card's id, as card_read gives it"`
 	Template string `json:"template,omitempty" jsonschema:"the template it is being shown through, spelled as the card model writes it"`
 }

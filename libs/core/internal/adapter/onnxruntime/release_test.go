@@ -8,10 +8,10 @@ import (
 )
 
 func TestEveryPublishedReleaseIsPinned(t *testing.T) {
-	if len(releases) == 0 {
+	if len(getReleases()) == 0 {
 		t.Fatal("no release is published")
 	}
-	for platform, release := range releases {
+	for platform, release := range getReleases() {
 		if err := release.check(); err != nil {
 			t.Errorf("%s: %v", platform, err)
 		}

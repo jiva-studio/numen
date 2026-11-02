@@ -36,7 +36,7 @@ export function useConversationView(context: ConversationContext, paint?: Paint)
   return {
     question,
     turns: conversation.turns,
-    isWorking: conversation.isWorking,
+    isAnswerPending: conversation.isAnswerPending,
     placeholder: context.placeholder ?? WORDS.ask,
     setQuestion,
     send,

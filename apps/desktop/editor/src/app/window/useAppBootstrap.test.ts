@@ -1,10 +1,15 @@
 /** What a window starts when it mounts and closes when it unmounts. */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import { useAppBootstrap, type BootstrapDeps } from './useAppBootstrap'
+import {
+  PLUGINS_WAIT_MS,
+  STEP_LIMIT_MS,
+  useAppBootstrap,
+  type BootstrapDeps,
+} from './useAppBootstrap'
 
-const setup = () => {
+const setup = (overrides: Partial<BootstrapDeps> = {}) => {
   const calls: string[] = []
   const note = (name: string) => () => {
     calls.push(name)
@@ -23,16 +28,19 @@ const setup = () => {
     closeEditing: note('closeEditing'),
     closeTabs: note('closeTabs'),
     closeSettings: note('closeSettings'),
+    reportError: vi.fn(),
+    ...overrides,
   }
+  let started: ReturnType<typeof useAppBootstrap> | undefined
   const view = mount(
     defineComponent({
       setup() {
-        useAppBootstrap(deps)
+        started = useAppBootstrap(deps)
         return () => h('div')
       },
     }),
   )
-  return { calls, view }
+  return { calls, view, bootstrap: () => started! }
 }
 
 describe('a window mounting', () => {
@@ -61,5 +69,79 @@ describe('a window unmounting', () => {
     view.unmount()
 
     expect(calls).toStrictEqual(['closeWindow', 'closeEditing', 'closeTabs', 'closeSettings'])
+  })
+})
+
+describe('a window mounting while a plugin does not start', () => {
+  it('opens the layout after the wait and lets the plugin go on starting', async () => {
+    vi.useFakeTimers()
+    try {
+      let finishPlugins: () => void = () => undefined
+      const { calls } = setup({
+        startPlugins: () =>
+          new Promise<void>((resolve) => {
+            finishPlugins = resolve
+          }),
+      })
+
+      await vi.advanceTimersByTimeAsync(PLUGINS_WAIT_MS - 1)
+      expect(calls).not.toContain('startLayout')
+      await vi.advanceTimersByTimeAsync(1)
+      expect(calls).toContain('startLayout')
+      expect(calls).toContain('startWindow')
+
+      finishPlugins()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('reports a plugin start that fails and opens the layout', async () => {
+    const failure = new Error('plugins stopped')
+    const reportError = vi.fn()
+    const { calls } = setup({ startPlugins: () => Promise.reject(failure), reportError })
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(reportError).toHaveBeenCalledWith(failure)
+    expect(calls).toContain('startLayout')
+  })
+})
+
+describe('a window mounting while the settings never answer', () => {
+  it('shows what did not load, opens nothing, and loads once the person retries', async () => {
+    vi.useFakeTimers()
+    try {
+      let answers = 0
+      const { calls, bootstrap } = setup({
+        startSettings: () => {
+          answers += 1
+          return answers === 1 ? new Promise<void>(() => undefined) : Promise.resolve()
+        },
+      })
+
+      await vi.advanceTimersByTimeAsync(STEP_LIMIT_MS - 1)
+      expect(bootstrap().failure.value).toBe('')
+      await vi.advanceTimersByTimeAsync(1)
+      expect(bootstrap().failure.value).toBe('The settings request did not answer in 10 s')
+      expect(calls).not.toContain('startLayout')
+      expect(calls).not.toContain('startWindow')
+
+      await bootstrap().retry()
+
+      expect(bootstrap().failure.value).toBe('')
+      expect(calls).toContain('startLayout')
+      expect(calls).toContain('startWindow')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('shows a vault list that fails to load', async () => {
+    const { bootstrap } = setup({ loadVaults: () => Promise.reject(new Error('no vaults')) })
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(bootstrap().failure.value).toBe('no vaults')
   })
 })

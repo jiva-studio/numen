@@ -9,7 +9,8 @@ import type { MenuTrigger } from '@numen/ui'
 import type { PlexRelation, PlexDestination } from './plex'
 import PlexQuickLinkPopover from './ui/PlexQuickLinkPopover.vue'
 import PlexLinkInspectorPopover from './ui/PlexLinkInspectorPopover.vue'
-import type { DirectionalLinkItem, PlexTabState } from './types'
+import type { Connection } from '@numen/plugin-sdk'
+import type { PlexTabState } from './types'
 import { WORDS as words } from './words'
 import { usePlexCanvas } from './model/usePlexCanvas'
 
@@ -41,15 +42,15 @@ function onActivateNode(node: string) {
 }
 
 function onCreateNode(from: string, relation: PlexRelation, at?: { x: number; y: number }) {
-  void props.state.createNode(from, relation, at ?? lastPointer.value)
+  props.state.createNode(from, relation, at ?? lastPointer.value).catch(props.state.reportFailure)
 }
 
 function onLinkNodes(from: string, to: string, relation: PlexRelation) {
-  void props.state.joinNodes(from, to, relation)
+  props.state.joinNodes(from, to, relation).catch(props.state.reportFailure)
 }
 
 function onBringNodes(nodes: readonly string[], relation: PlexRelation) {
-  void props.state.dropNodes(nodes, relation)
+  props.state.dropNodes(nodes, relation).catch(props.state.reportFailure)
 }
 
 function onOpenMenu(node: string, position: { x: number; y: number }, opening: MenuTrigger) {
@@ -77,19 +78,23 @@ function onDismissMenu() {
 }
 
 function onSelectQuickLinkNote(path: string) {
-  void props.state.confirmQuickLink(path, true)
+  props.state.confirmQuickLink(path, true).catch(props.state.reportFailure)
 }
 
 function onCreateQuickLinkNote(title: string) {
-  void props.state.confirmQuickLink(title, false)
+  props.state.confirmQuickLink(title, false).catch(props.state.reportFailure)
 }
 
 function onDismissQuickLink() {
   props.state.dismissQuickLink()
 }
 
-function onSaveLinkInspector(rows: readonly DirectionalLinkItem[]) {
-  void props.state.saveLinkInspector(rows)
+function onSaveLinkInspector(connection: Connection) {
+  props.state.saveLinkInspector(connection).catch(props.state.reportFailure)
+}
+
+function onRemoveLinkInspector() {
+  props.state.removeLinkInspector().catch(props.state.reportFailure)
 }
 
 function onDismissLinkInspector() {
@@ -173,6 +178,7 @@ function onDismissLinkInspector() {
       v-if="linkInspector"
       :request="linkInspector"
       @save="onSaveLinkInspector"
+      @remove="onRemoveLinkInspector"
       @dismiss="onDismissLinkInspector"
     />
   </div>

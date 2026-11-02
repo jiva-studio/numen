@@ -3,11 +3,12 @@ import {
   agentService,
   notes,
   pluginService,
+  theme,
   vaultsService,
   windowService,
-} from '@numen/plugin-sdk'
+} from '@numen/core-client'
 
-export { agentService, pluginService, vaultsService, windowService }
+export { agentService, pluginService, theme, vaultsService, windowService }
 
 /** Where the links of a text land, in the vault a plugin names. */
 export const noteService = notes

@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/cli"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
@@ -79,7 +80,7 @@ func (s *session) runBroken(adjust func(*cli.Vaults), args ...string) (string, e
 
 func TestVaultCommand_RequiresSubcommand(t *testing.T) {
 	t.Parallel()
-	_, err := runWithDeps(cli.Deps{Vaults: createVaultList(notebook)}, "vault")
+	_, err := runWithDeps(cli.Deps{Vaults: createVaultList(getNotebook())}, "vault")
 	if err == nil || !strings.Contains(err.Error(), "usage:\n  numen-cli vault add <path>") {
 		t.Errorf("vault with no command answered %v", err)
 	}
@@ -94,7 +95,7 @@ func TestAVaultCommandNeedsItsArguments(t *testing.T) {
 		"usage: numen-cli vault erase <vault> [--yes]":      {"vault", "erase"},
 		"usage: numen-cli vault open <vault>":               {"vault", "open"},
 	} {
-		out, err := runWithDeps(cli.Deps{Vaults: createVaultList(notebook)}, args...)
+		out, err := runWithDeps(cli.Deps{Vaults: createVaultList(getNotebook())}, args...)
 		if err == nil || err.Error() != usage {
 			t.Errorf("%v answered %v, want %q", args, err, usage)
 		}
@@ -134,7 +135,8 @@ func TestAFlagMistypedInAVaultCommandIsReportedAndNothingIsSaved(t *testing.T) {
 	}
 	was := os.Stderr
 	os.Stderr = file
-	t.Cleanup(func() { os.Stderr = was; file.Close() })
+	t.Cleanup(func() { os.Stderr = was })
+	testsupport.CloseAfter(t, file)
 
 	wasOpened := false
 	provided := cli.Deps{Vaults: func() (cli.Vaults, error) { wasOpened = true; return cli.Vaults{}, errRefused }}
@@ -152,7 +154,11 @@ func TestAFlagMistypedInAVaultCommandIsReportedAndNothingIsSaved(t *testing.T) {
 	if wasOpened {
 		t.Error("the list was opened for a command line that did not parse")
 	}
-	if response, _ := os.ReadFile(file.Name()); len(response) != 0 {
+	response, readErr := os.ReadFile(file.Name())
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if len(response) != 0 {
 		t.Errorf("the flag package wrote to the terminal:\n%s", response)
 	}
 }
@@ -267,7 +273,7 @@ func TestErasingReturnsWhereTheFolderWent(t *testing.T) {
 	s.trash(nil)
 
 	out := s.mustRun("vault", "erase", "erased", "--yes")
-	want := "erased erased\n  " + s.vault + " went to the trash this machine keeps\n"
+	want := "erased erased\n  " + s.vault + " went to the trash\n"
 	if out != want {
 		t.Errorf("vault erase said\n%q\nwant\n%q", out, want)
 	}

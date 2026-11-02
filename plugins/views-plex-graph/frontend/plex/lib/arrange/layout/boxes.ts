@@ -47,14 +47,20 @@ export function getTitleBoxes(
   return boxes
 }
 
+/** The height of the type across the line, and how far its centre is from the line. */
+export interface RunSet {
+  readonly depth: number
+  readonly shift: number
+}
+
 /**
  * The box a run of the line fills. The words follow the line, so the run is
  * sampled along it and each sample carries the depth of a line of type across
  * the line, which is where the letters stand.
  */
-export function runBoxes(edge: PlacedEdge, depth: number): (from: number, to: number) => Box {
+export function runBoxes(edge: PlacedEdge, set: RunSet): (from: number, to: number) => Box {
   const axisEdge = createPointOnCurve(edge)
-  const deep = depth / 2
+  const deep = set.depth / 2
 
   return (from, to) => {
     const run: Position[] = []
@@ -73,11 +79,14 @@ export function runBoxes(edge: PlacedEdge, depth: number): (from: number, to: nu
       const span = Math.hypot(on.x - back.x, on.y - back.y) || 1
       const acrossX = (Math.abs(on.y - back.y) / span) * deep
       const acrossY = (Math.abs(on.x - back.x) / span) * deep
+      // The right of the line taken from its start, in a y axis that points down.
+      const centreX = point.x - ((on.y - back.y) / span) * set.shift
+      const centreY = point.y + ((on.x - back.x) / span) * set.shift
 
-      minX = Math.min(minX, point.x - acrossX)
-      minY = Math.min(minY, point.y - acrossY)
-      maxX = Math.max(maxX, point.x + acrossX)
-      maxY = Math.max(maxY, point.y + acrossY)
+      minX = Math.min(minX, centreX - acrossX)
+      minY = Math.min(minY, centreY - acrossY)
+      maxX = Math.max(maxX, centreX + acrossX)
+      maxY = Math.max(maxY, centreY + acrossY)
     }
 
     return { minX, minY, maxX, maxY }

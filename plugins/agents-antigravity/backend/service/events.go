@@ -2,8 +2,10 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 )
 
 type eventReader struct {
@@ -23,7 +25,7 @@ func newEventHandler(r *reader) func(map[string]any) {
 }
 
 func (r *eventReader) handle(rawMap map[string]any) {
-	if kind, _ := rawMap["event"].(string); kind != "" {
+	if kind := getString(rawMap, "event"); kind != "" {
 		r.handleCliEvent(kind, rawMap)
 		return
 	}
@@ -39,17 +41,15 @@ func (r *eventReader) handle(rawMap map[string]any) {
 	}
 
 	if thinking, ok := rawMap["thinking"].(string); ok && thinking != "" {
-		r.reader.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_ModelStarted{
-				ModelStarted: &agentrun.ModelStarted{},
-			},
+		r.reader.Send(&agentrun.Response{
+			Step: &agentrun.ModelStartedStep{},
 		})
 	}
 	r.handleToolCalls(rawMap)
 
 	if content, ok := rawMap["content"].(string); ok && content != "" {
-		r.reader.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_Text{
+		r.reader.Send(&agentrun.Response{
+			Step: &agentrun.TextStep{
 				Text: content,
 			},
 		})
@@ -63,7 +63,7 @@ func (r *eventReader) handleStreamEvent(rawMap map[string]any) {
 	if !ok {
 		return
 	}
-	subType, _ := evObj["type"].(string)
+	subType := getString(evObj, "type")
 	switch subType {
 	case "content_block_start":
 		r.startBlock(evObj)
@@ -71,9 +71,9 @@ func (r *eventReader) handleStreamEvent(rawMap map[string]any) {
 		r.continueBlock(evObj)
 	case "content_block_stop":
 		if r.currentTool != "" {
-			r.reader.Send(&agentrun.AskAgentResponse{
-				Step: &agentrun.AskAgentResponse_ToolCall{
-					ToolCall: &agentrun.ToolCall{
+			r.reader.Send(&agentrun.Response{
+				Step: &agentrun.ToolCallStep{
+					ToolCall: &toolcall.ToolCall{
 						Tool:   r.currentTool,
 						About:  r.currentArgs.String(),
 						Length: 0, Path: "", Range: nil, Call: "", Kind: "",
@@ -92,13 +92,17 @@ func (r *eventReader) startBlock(evObj map[string]any) {
 	if !ok {
 		return
 	}
-	if cb["type"] == "tool_use" {
-		r.currentTool, _ = cb["name"].(string)
-		r.currentArgs.Reset()
-		if initInput, ok := cb["input"].(map[string]any); ok {
-			raw, _ := json.Marshal(initInput)
-			r.currentArgs.WriteString(string(raw))
-		}
+	if cb["type"] != "tool_use" {
+		return
+	}
+	r.currentTool = getString(cb, "name")
+	r.currentArgs.Reset()
+	initInput, ok := cb["input"].(map[string]any)
+	if !ok {
+		return
+	}
+	if raw, err := json.Marshal(initInput); err == nil {
+		r.currentArgs.Write(raw)
 	}
 }
 
@@ -108,8 +112,8 @@ func (r *eventReader) continueBlock(evObj map[string]any) {
 		return
 	}
 	if text, ok := delta["text"].(string); ok && text != "" {
-		r.reader.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_Text{
+		r.reader.Send(&agentrun.Response{
+			Step: &agentrun.TextStep{
 				Text: text,
 			},
 		})
@@ -129,11 +133,14 @@ func (r *eventReader) handleToolCalls(rawMap map[string]any) {
 		if !ok {
 			continue
 		}
-		name, _ := tc["name"].(string)
-		args, _ := json.Marshal(tc["arguments"])
-		r.reader.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_ToolCall{
-				ToolCall: &agentrun.ToolCall{
+		name := getString(tc, "name")
+		args, err := json.Marshal(tc["arguments"])
+		if err != nil {
+			args = nil
+		}
+		r.reader.Send(&agentrun.Response{
+			Step: &agentrun.ToolCallStep{
+				ToolCall: &toolcall.ToolCall{
 					Tool:   name,
 					About:  string(args),
 					Length: 0, Path: "", Range: nil, Call: "", Kind: "",
@@ -150,8 +157,8 @@ func (r *eventReader) handleStepUpdate(rawMap map[string]any) {
 		return
 	}
 	if text, ok := delta["text"].(string); ok && text != "" {
-		r.reader.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_Text{
+		r.reader.Send(&agentrun.Response{
+			Step: &agentrun.TextStep{
 				Text: text,
 			},
 		})
@@ -160,15 +167,15 @@ func (r *eventReader) handleStepUpdate(rawMap map[string]any) {
 
 func (r *eventReader) handleResult(rawMap map[string]any) {
 	if text, ok := rawMap["result"].(string); ok && text != "" {
-		r.reader.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_Text{
+		r.reader.Send(&agentrun.Response{
+			Step: &agentrun.TextStep{
 				Text: text,
 			},
 		})
 	}
 	if reason, ok := rawMap["stopped"].(string); ok && reason != "" {
-		r.reader.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_Stopped{
+		r.reader.Send(&agentrun.Response{
+			Step: &agentrun.StoppedStep{
 				Stopped: reason,
 			},
 		})
@@ -181,10 +188,10 @@ func (r *eventReader) handleResult(rawMap map[string]any) {
 func (r *eventReader) handleCliEvent(kind string, rawMap map[string]any) {
 	switch kind {
 	case "step_update":
-		step, _ := rawMap["step_update"].(map[string]any)
+		step := getMap(rawMap, "step_update")
 		r.handleCliStep(step)
 	case "result":
-		result, _ := rawMap["result"].(map[string]any)
+		result := getMap(rawMap, "result")
 		r.handleCliResult(result)
 	default:
 		if session, ok := rawMap["conversation_id"].(string); ok {
@@ -197,12 +204,12 @@ func (r *eventReader) handleCliStep(step map[string]any) {
 	if session, ok := step["conversation_id"].(string); ok {
 		r.reader.SetSession(session)
 	}
-	text, _ := step["text_delta"].(string)
-	if kind, _ := step["step_type"].(string); kind != "agent_response" || text == "" {
+	text := getString(step, "text_delta")
+	if kind := getString(step, "step_type"); kind != "agent_response" || text == "" {
 		return
 	}
 	r.isTextStreamed = true
-	r.reader.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: text}})
+	r.reader.Send(&agentrun.Response{Step: &agentrun.TextStep{Text: text}})
 }
 
 // handleCliResult emits the response of a run that streamed no text, and stops
@@ -212,15 +219,15 @@ func (r *eventReader) handleCliResult(result map[string]any) {
 	if session, ok := result["conversation_id"].(string); ok {
 		r.reader.SetSession(session)
 	}
-	if status, _ := result["status"].(string); status != "" && !strings.EqualFold(status, "success") {
-		reason, _ := result["error"].(string)
+	if status := getString(result, "status"); status != "" && !strings.EqualFold(status, "success") {
+		reason := getString(result, "error")
 		if reason == "" {
 			reason = "the run ended with status " + status
 		}
-		r.reader.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Stopped{Stopped: reason}})
+		r.reader.Send(&agentrun.Response{Step: &agentrun.StoppedStep{Stopped: reason}})
 		return
 	}
-	if response, _ := result["response"].(string); response != "" && !r.isTextStreamed {
-		r.reader.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: response}})
+	if response := getString(result, "response"); response != "" && !r.isTextStreamed {
+		r.reader.Send(&agentrun.Response{Step: &agentrun.TextStep{Text: response}})
 	}
 }

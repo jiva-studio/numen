@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -49,19 +50,21 @@ func createContract[B io.Closer](bridge B, err error, call func(B, context.Conte
 
 // bridgeContracts is every bridge the host opens, each with a call that invokes
 // its plugin.
-var bridgeContracts = []bridgeContract{
-	{"embedder", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
-		b, err := embedderbridge.Open(ctx, h)
-		return createContract(b, err, func(b *embedderbridge.Embedder, ctx context.Context) (bool, error) {
-			return isZeroResult(b.Embed(ctx, []string{"a"}))
-		})
-	}},
-	{"agent", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
-		b, err := agentbridge.OpenForPlugin(ctx, h, contractPluginID)
-		return createContract(b, err, func(b *agentbridge.Agent, ctx context.Context) (bool, error) {
-			return isZeroResult(b.GetPrograms(ctx, nil))
-		})
-	}},
+func getBridgeContracts() []bridgeContract {
+	return []bridgeContract{
+		{"embedder", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
+			b, err := embedderbridge.Open(ctx, h)
+			return createContract(b, err, func(b *embedderbridge.Embedder, ctx context.Context) (bool, error) {
+				return isZeroResult(b.Embed(ctx, []string{"a"}))
+			})
+		}},
+		{"agent", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
+			b, err := agentbridge.OpenForPlugin(ctx, h, contractPluginID)
+			return createContract(b, err, func(b *agentbridge.Agent, ctx context.Context) (bool, error) {
+				return isZeroResult(b.GetPrograms(ctx, nil))
+			})
+		}},
+	}
 }
 
 // contractPluginID is the plugin the bridges that are opened by id are opened on.
@@ -105,7 +108,7 @@ func isNotInstalled(err error) bool {
 }
 
 func TestEveryBridgeAnswersAPluginThatIsDownWithAnErrorAndNoValue(t *testing.T) {
-	for _, tc := range bridgeContracts {
+	for _, tc := range getBridgeContracts() {
 		t.Run(tc.name, func(t *testing.T) {
 			host := newLeaseHost(t)
 			host.EnsureErr = errors.New("the plugin is down")
@@ -120,9 +123,9 @@ func TestEveryBridgeAnswersAPluginThatIsDownWithAnErrorAndNoValue(t *testing.T) 
 }
 
 func TestBridges_UninstalledPluginReturnsUnavailable(t *testing.T) {
-	for _, tc := range bridgeContracts {
+	for _, tc := range getBridgeContracts() {
 		t.Run(tc.name, func(t *testing.T) {
-			host := plugin.NewHost("desktop.editor")
+			host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor")
 			defer func() {
 				if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 					t.Errorf("TeardownAll: %v", err)
@@ -192,7 +195,7 @@ func TestErrorCheck_RejectsBridgeWithWrongResponse(t *testing.T) {
 }
 
 func TestADoubleCloseProducesTheReferenceBackOnce(t *testing.T) {
-	for _, tc := range bridgeContracts {
+	for _, tc := range getBridgeContracts() {
 		t.Run(tc.name, func(t *testing.T) {
 			host := newLeaseHost(t)
 			bridge, _, err := tc.open(t.Context(), host)

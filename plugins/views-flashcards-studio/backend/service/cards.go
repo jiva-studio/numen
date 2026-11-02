@@ -55,7 +55,7 @@ func getCardModelLimit(limit int32) int {
 func (h *cardsHandler) CreateCardModel(
 	ctx context.Context, req *api.CreateCardModelRequest,
 ) (*api.CreateCardModelResponse, error) {
-	made, code, unlevelled, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+	made, code, indexOutdated, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		in.Fields = req.Fields
 		return h.scenarios().cards.Create.CardModel(ctx, showing, in)
 	}, req.Title, req.Path)
@@ -63,7 +63,7 @@ func (h *cardsHandler) CreateCardModel(
 		return nil, err
 	}
 	return &api.CreateCardModelResponse{
-		Path: made.Path, Error: code, IsUnlevelled: unlevelled,
+		Path: made.Path, Error: code, IsIndexOutdated: indexOutdated,
 	}, nil
 }
 
@@ -71,14 +71,14 @@ func (h *cardsHandler) CreateCardModel(
 func (h *cardsHandler) CreateDeck(
 	ctx context.Context, req *api.CreateDeckRequest,
 ) (*api.CreateDeckResponse, error) {
-	made, code, unlevelled, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+	made, code, indexOutdated, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		return h.scenarios().cards.Create.Deck(ctx, showing, in)
 	}, req.Title, req.Path)
 	if err != nil {
 		return nil, err
 	}
 	return &api.CreateDeckResponse{
-		Path: made.Path, Error: code, IsUnlevelled: unlevelled,
+		Path: made.Path, Error: code, IsIndexOutdated: indexOutdated,
 	}, nil
 }
 
@@ -93,10 +93,10 @@ func (b *Backend) createCardNote(
 		return cards.CreateNoteResult{}, api.ErrorCodeUnspecified, false, err
 	}
 	made, err := create(showing, cards.New{Title: title, Body: "", Path: folder, Fields: nil, Templates: nil})
-	if err == nil || errors.Is(err, note.ErrUnlevelled) {
+	if err == nil || errors.Is(err, note.ErrIndexOutdated) {
 		// The file is on disk under that name and nothing renumbers a second
 		// attempt, so the path is the only way back to it.
-		return made, api.ErrorCodeUnspecified, isUnlevelled(err), nil
+		return made, api.ErrorCodeUnspecified, isIndexOutdated(err), nil
 	}
 	if errors.Is(err, cards.ErrNoFields) {
 		return cards.CreateNoteResult{}, api.ErrorCodeUnspecified, false, newError(server.CodeInvalidArgument, err)
@@ -123,9 +123,9 @@ func (h *cardsHandler) RenameCardModelField(
 		CardModel: req.Path, From: req.From, To: req.To,
 		FileStat: readFileStat(req.Baseline),
 	})
-	if err == nil || errors.Is(err, note.ErrUnlevelled) {
+	if err == nil || errors.Is(err, note.ErrIndexOutdated) {
 		out := cardwire.NewRenameResponse(renamed, writeFileStat(renamed.CardModel))
-		out.IsUnlevelled = isUnlevelled(err)
+		out.IsIndexOutdated = isIndexOutdated(err)
 		return out, nil
 	}
 	// The name a rename is given is the client's: one the card model does not
@@ -138,7 +138,7 @@ func (h *cardsHandler) RenameCardModelField(
 		return nil, newError(getCode(err), err)
 	}
 	return &api.RenameCardModelFieldResponse{
-		Decks: nil, Cards: 0, NotWritten: nil, Error: reason, At: nil, IsUnlevelled: false,
+		Decks: nil, Cards: 0, NotWritten: nil, Error: reason, At: nil, IsIndexOutdated: false,
 	}, nil
 }
 
@@ -215,23 +215,23 @@ func (h *cardsHandler) WriteDeck(
 	// 	// A write that reached the vault has happened, so the response carries the
 	// 	// file stat the client presents at its next save, and reports where the
 	// 	// index did not follow.
-	unlevelled := isUnlevelled(err)
-	if err == nil || unlevelled {
+	indexOutdated := isIndexOutdated(err)
+	if err == nil || indexOutdated {
 		return &api.WriteDeckResponse{
-			Error: api.ErrorCodeUnspecified, At: writeFileStat(wrote.FileStat), Bound: 0, IsUnlevelled: unlevelled,
+			Error: api.ErrorCodeUnspecified, At: writeFileStat(wrote.FileStat), Bound: 0, IsIndexOutdated: indexOutdated,
 		}, nil
 	}
 	if errors.Is(err, note.ErrTooLarge) {
 		code := api.ErrorCodeDeckTooLarge
 		return &api.WriteDeckResponse{
-			Error: code, At: nil, Bound: cards.MaxBytes, IsUnlevelled: false,
+			Error: code, At: nil, Bound: cards.MaxBytes, IsIndexOutdated: false,
 		}, nil
 	}
 	reason, ok := getErrorCode(err)
 	if !ok {
 		return nil, newError(getCode(err), err)
 	}
-	return &api.WriteDeckResponse{Error: reason, At: nil, Bound: 0, IsUnlevelled: false}, nil
+	return &api.WriteDeckResponse{Error: reason, At: nil, Bound: 0, IsIndexOutdated: false}, nil
 }
 
 // WriteCardModel writes fields and templates into a card model. A card model that
@@ -254,17 +254,17 @@ func (h *cardsHandler) WriteCardModel(
 	// 	// A write that reached the vault has happened, so the response carries the
 	// 	// file stat the client presents at its next save, and reports where the
 	// 	// index did not follow.
-	unlevelled := isUnlevelled(err)
-	if err == nil || unlevelled {
+	indexOutdated := isIndexOutdated(err)
+	if err == nil || indexOutdated {
 		return &api.WriteCardModelResponse{
-			Error: api.ErrorCodeUnspecified, At: writeFileStat(pos), IsUnlevelled: unlevelled,
+			Error: api.ErrorCodeUnspecified, At: writeFileStat(pos), IsIndexOutdated: indexOutdated,
 		}, nil
 	}
 	reason, ok := getErrorCode(err)
 	if !ok {
 		return nil, newError(getCode(err), err)
 	}
-	return &api.WriteCardModelResponse{Error: reason, At: nil, IsUnlevelled: false}, nil
+	return &api.WriteCardModelResponse{Error: reason, At: nil, IsIndexOutdated: false}, nil
 }
 
 // errorCodeOfDeck is why a deck was not read. What holds for a note holds here,

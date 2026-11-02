@@ -108,8 +108,12 @@ func TestQueueClientKeepsTheTurnUntilRelease(t *testing.T) {
 	default:
 	}
 
-	turn.Release()
-	turn.Release()
+	if err := turn.Release(); err != nil {
+		t.Errorf("the first release failed: %v", err)
+	}
+	if err := turn.Release(); err != nil {
+		t.Errorf("the second release failed: %v", err)
+	}
 	select {
 	case <-q.ended:
 	case <-time.After(time.Second):
@@ -120,7 +124,7 @@ func TestQueueClientKeepsTheTurnUntilRelease(t *testing.T) {
 func TestQueueClientReportsAndFinishesTasks(t *testing.T) {
 	client, q := newQueueClient(t)
 
-	task := host.Task{ID: "a.mp3", Title: "Transcribing", About: "a.mp3", Done: 4, Total: 60, Unit: host.UnitSeconds, IsUserStarted: true}
+	task := host.Task{ID: "a.mp3", Title: "Transcribing", Detail: "a.mp3", CompletedCount: 4, TotalCount: 60, Unit: host.UnitSeconds, IsUserStarted: true}
 	if err := client.ReportTask(t.Context(), task); err != nil {
 		t.Fatal(err)
 	}

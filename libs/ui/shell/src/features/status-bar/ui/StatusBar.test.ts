@@ -197,4 +197,28 @@ describe('StatusBar', () => {
     expect(trailing.exists()).toBe(true)
     expect(trailing.text()).toBe('Update available')
   })
+
+  it('keeps the trigger, the popover and the row of a task through reports of it', async () => {
+    const report = (step: number): StatusBarTask[] => [
+      { id: 'vectors', label: 'Indexing', about: `file ${step}`, progress: step, state: 'running' },
+    ]
+    const wrapper = mount(StatusBar, { props: { tasks: report(1) } })
+    await wrapper.find('.status-bar__trigger').trigger('click')
+    const trigger = wrapper.find('.status-bar__trigger').element
+    const summary = wrapper.find('.status-bar__summary').element
+    const popover = wrapper.find('.task-popover').element
+    const row = wrapper.find('.task-item').element
+    const button = wrapper.find('.task-item__btn').element
+
+    for (let step = 2; step <= 20; step++) {
+      await wrapper.setProps({ tasks: report(step) })
+    }
+
+    expect(wrapper.find('.status-bar__trigger').element).toBe(trigger)
+    expect(wrapper.find('.status-bar__summary').element).toBe(summary)
+    expect(wrapper.find('.task-popover').element).toBe(popover)
+    expect(wrapper.find('.task-item').element).toBe(row)
+    expect(wrapper.find('.task-item__btn').element).toBe(button)
+    expect(wrapper.find('.task-item__detail').text()).toBe('file 20')
+  })
 })

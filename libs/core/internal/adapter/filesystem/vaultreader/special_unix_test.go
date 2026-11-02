@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
@@ -59,7 +60,7 @@ func TestSpecialFileIsNotANote(t *testing.T) {
 		}
 		if f, err := src.Open(t.Context(), "pipe.md"); !errors.Is(err, vaultport.ErrNotANote) {
 			if err == nil {
-				f.Close()
+				testsupport.Close(t, f)
 			}
 			t.Errorf("open pipe.md: %v, want ErrNotANote", err)
 		}

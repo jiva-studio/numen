@@ -2,12 +2,13 @@ package service
 
 import (
 	"bytes"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
 func getLevelNames(model AgentModel) []string {
@@ -55,13 +56,13 @@ func TestTheModelCacheCarriesTheLevelsEachModelSupports(t *testing.T) {
 }
 
 func TestTheLevelOfARequestIsHandedToTheProgramAsConfiguration(t *testing.T) {
-	got := appendModelArguments(nil, &agentrun.AskAgentRequest{Model: "deep", Reasoning: "high"})
+	got := appendModelArguments(nil, &agentrun.Request{Model: "deep", Reasoning: "high"})
 	want := []string{"--model", "deep", "-c", `model_reasoning_effort="high"`}
 	if !slices.Equal(got, want) {
 		t.Errorf("the arguments are %v, want %v", got, want)
 	}
 	for _, level := range []string{"", "bogus"} {
-		if got := appendModelArguments(nil, &agentrun.AskAgentRequest{Reasoning: level}); len(got) != 0 {
+		if got := appendModelArguments(nil, &agentrun.Request{Reasoning: level}); len(got) != 0 {
 			t.Errorf("the level %q gave %v", level, got)
 		}
 	}

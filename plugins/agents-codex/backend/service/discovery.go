@@ -9,15 +9,19 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
-var codexPlaces = []string{
-	"~/.local/bin/codex",
-	"~/.codex/bin/codex",
-	"~/.npm-global/bin/codex",
-	"~/.bun/bin/codex",
-	"/opt/homebrew/bin/codex",
-	"/usr/local/bin/codex",
-	"~/.nix-profile/bin/codex",
-	"/run/current-system/sw/bin/codex",
+// getCodexPlaces returns where the CLI is looked for after PATH. A leading ~/ is the home
+// directory.
+func getCodexPlaces() []string {
+	return []string{
+		"~/.local/bin/codex",
+		"~/.codex/bin/codex",
+		"~/.npm-global/bin/codex",
+		"~/.bun/bin/codex",
+		"/opt/homebrew/bin/codex",
+		"/usr/local/bin/codex",
+		"~/.nix-profile/bin/codex",
+		"/run/current-system/sw/bin/codex",
+	}
 }
 
 // IsCodexInstalled checks whether OpenAI Codex CLI is available on this machine.
@@ -31,6 +35,12 @@ func IsCodexInstalled(customPath ...string) bool {
 
 // FindCodex returns the path of the Codex CLI, or the bare name where not found.
 func FindCodex(customPath ...string) string {
+	return findCodexIn(getCodexPlaces(), customPath...)
+}
+
+// findCodexIn returns the path of the Codex CLI, searched in customPath, PATH and places, or the
+// bare name where not found.
+func findCodexIn(places []string, customPath ...string) string {
 	if len(customPath) > 0 && customPath[0] != "" {
 		if agentrun.IsRunnable(customPath[0]) {
 			return customPath[0]
@@ -39,8 +49,11 @@ func FindCodex(customPath ...string) string {
 	if found, err := exec.LookPath("codex"); err == nil {
 		return found
 	}
-	home, _ := os.UserHomeDir()
-	for _, p := range codexPlaces {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = ""
+	}
+	for _, p := range places {
 		resolved := p
 		if strings.HasPrefix(p, "~/") && home != "" {
 			resolved = filepath.Join(home, p[2:])
@@ -52,10 +65,10 @@ func FindCodex(customPath ...string) string {
 	return "codex"
 }
 
-func programCommand(commands []*agentrun.AgentProgramCommand, name string) []string {
+func programCommand(commands []agentrun.ProgramCommand, name string) []string {
 	for _, one := range commands {
-		if one.GetProgram() == name {
-			return one.GetCommand()
+		if one.Program == name {
+			return one.Command
 		}
 	}
 	return nil

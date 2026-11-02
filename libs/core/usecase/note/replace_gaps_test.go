@@ -30,7 +30,7 @@ func TestAnAmbiguousSpanReturnsHowManyPlaces(t *testing.T) {
 	t.Parallel()
 
 	got := note.AmbiguousSpan{Places: 3}.Error()
-	want := "this span stands in 3 places; take in enough of what is around one of them to tell it from the others"
+	want := "this span is in 3 places; take in enough of what is around one of them to tell it from the others"
 	if got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
@@ -136,7 +136,10 @@ func TestWhoeverIsDrawingTheNoteIsReportedTheStretchInUTF16(t *testing.T) {
 	c := openChanging(t, map[string]string{"Aggressor.md": "ééé 😀 target tail\n"})
 	var notified []domain.Edit
 	replacing := c.replace()
-	replacing.Drawing = func(_ context.Context, response domain.Edit) { notified = append(notified, response) }
+	replacing.Drawing = func(_ context.Context, response domain.Edit) error {
+		notified = append(notified, response)
+		return nil
+	}
 
 	if _, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "target", "goal", domain.FileStat{}); err != nil {
 		t.Fatal(err)
@@ -223,7 +226,10 @@ func TestAReplacementRefusedForItsFrontmatterDrawsNothing(t *testing.T) {
 	c := openChanging(t, map[string]string{"Aggressor.md": "---\ntitle: Aggressor\nA hedgehog.\n"})
 	var notified []domain.Edit
 	replacing := c.replace()
-	replacing.Drawing = func(_ context.Context, response domain.Edit) { notified = append(notified, response) }
+	replacing.Drawing = func(_ context.Context, response domain.Edit) error {
+		notified = append(notified, response)
+		return nil
+	}
 
 	_, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "A hedgehog", "An axe", domain.FileStat{})
 	if err == nil || !strings.HasPrefix(err.Error(), "Aggressor.md: ") {

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 func TestHostSafeMode(t *testing.T) {
@@ -21,18 +22,17 @@ func TestHostSafeMode(t *testing.T) {
 		"version": "1.0.0",
 		"capabilities": ["embedding"],
 		"targets": ["desktop.editor"],
-		"activationEvents": [],
-		"contentTypes": [{"type": "application/x-sample", "globs": ["*.sample"]}],
-		"texts": {"contentTypes": ["application/x-sample"]},
+		"contributes": {
+			"handles": [{"purpose": "text-provider", "contentTypes": ["application/pdf"]}]
+		},
 		"permissions": ["vault:read"],
-		"lifecycle": {"mode": "on-demand", "idleTimeoutSeconds": 10, "keepAliveWhileVisible": false},
-		"backend": {"type": "process", "entrypoint": "bin/sample", "serviceName": "numen.v1.TextProviderService"}
+		"services": ["numen.v1.TextProviderService"], "backend": {"entrypoint": "bin/sample"}
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
-	host := plugin.NewHost("desktop.editor", tmp)
+	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	host.SetSafeMode(true)
 
 	if !host.IsSafeMode() {
@@ -60,7 +60,7 @@ func TestHostSafeMode(t *testing.T) {
 		t.Fatalf("expected errSafeModeActive, got %v", err)
 	}
 
-	activated, err := host.TriggerEvent(ctx, "onFile:test.sample")
+	activated, err := host.TriggerEvent(ctx, "onFile:test.pdf")
 	if err != nil {
 		t.Fatalf("TriggerEvent error: %v", err)
 	}

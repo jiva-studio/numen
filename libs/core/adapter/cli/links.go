@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-func runLinksCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+func runLinksCommand(ctx context.Context, out io.Writer, deps Deps, args []string) (err error) {
 	if len(args) != 2 {
 		return errors.New("usage: numen-cli links <vault> <note>")
 	}
@@ -21,30 +21,31 @@ func runLinksCommand(ctx context.Context, out io.Writer, deps Deps, args []strin
 	if err != nil {
 		return err
 	}
-	defer closeIfOpen(open.Close)
+	defer closeInto(&err, open.Close)
 
 	links, err := open.Show.Execute(ctx, v, args[1])
 	if err != nil {
 		return err
 	}
 
+	r := newReporter(out)
 	if len(links.Links) == 0 && len(links.Backlinks) == 0 {
-		fmt.Fprintln(out, "no links either way")
-		return nil
+		r.Println("no links either way")
+		return r.Err()
 	}
 	if len(links.Links) > 0 {
-		fmt.Fprintln(out, "points at:")
+		r.Println("points at:")
 		for _, l := range links.Links {
-			fmt.Fprintf(out, "  %s\n", describeLink(v, l))
+			r.Printf("  %s\n", describeLink(v, l))
 		}
 	}
 	if len(links.Backlinks) > 0 {
-		fmt.Fprintln(out, "pointed at by:")
+		r.Println("pointed at by:")
 		for _, l := range links.Backlinks {
-			fmt.Fprintf(out, "  %-10s %s\n", l.Role, l.From)
+			r.Printf("  %-10s %s\n", l.Role, l.From)
 		}
 	}
-	return nil
+	return r.Err()
 }
 
 // describeLink reports where a link goes and, when it goes nowhere, reports

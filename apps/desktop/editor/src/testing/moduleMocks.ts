@@ -17,8 +17,8 @@ const themesResponse = {
   themes: {
     getAppearance: async () => ({
       themes: [
-        { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
-        { name: 'mine:sea', title: 'sea', isBuiltIn: false, isPinned: false },
+        { name: 'preset:numen', title: 'numen', isBuiltIn: true, pluginId: '', isPinned: false },
+        { name: 'mine:sea', title: 'sea', isBuiltIn: false, pluginId: '', isPinned: false },
       ],
       applied: mockVaultState.applied,
       mode: mockVaultState.mode,
@@ -31,7 +31,7 @@ const themesResponse = {
       mode: string,
       sizes: { interfaceScale: number; textScale: number },
     ) => {
-      requests.worn.push(`${name} ${mode} ${sizes.interfaceScale}/${sizes.textScale}`)
+      requests.applied.push(`${name} ${mode} ${sizes.interfaceScale}/${sizes.textScale}`)
       return mockVaultState.writeError
     },
     watchThemes: pendingStream,

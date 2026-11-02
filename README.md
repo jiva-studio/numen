@@ -28,7 +28,7 @@
 ## Why Numen
 
 - **Notes** — plain Markdown files on your disk, alongside the PDFs, EPUBs, recordings and videos they come from.
-- **Graph** — typed links between notes, drawn as a live map around the note you are reading.
+- **Graph** — typed links between notes, shown as a live graph around the note you are reading.
 - **Agent** — ask your vault a question and get an answer that links to the notes it used.
 - **Spaced repetition** — flashcards written inside your notes, scheduled with FSRS.
 

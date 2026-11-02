@@ -84,7 +84,7 @@ func TestOffsetsAreIntoTheTextAsItExists(t *testing.T) {
 		t.Errorf("the offsets cover %q", got)
 	}
 	if remaining := text[:spans[0].Start]; remaining != "before " {
-		t.Errorf("what stands before is %q", remaining)
+		t.Errorf("what is before is %q", remaining)
 	}
 }
 

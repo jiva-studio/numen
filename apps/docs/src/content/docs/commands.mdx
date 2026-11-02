@@ -1,43 +1,40 @@
 ---
 title: Commands
-description: Everything the window can do, as the palette offers it — over the note in front of you, over the file, over the window, and over the vault.
+description: Everything the window can do, as the palette lists it, with commands for the open note, for the file, for the window and for the vault.
 ---
 
 import Shot from '../../components/Shot.astro'
 
 <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>P</kbd> opens the commands. Type to narrow the list, <kbd>↑</kbd>
-<kbd>↓</kbd> to walk it, <kbd>Enter</kbd> to run what is highlighted.
+<kbd>↓</kbd> to move through it, <kbd>Enter</kbd> to run the highlighted command.
 
 <Shot
   name="commands"
-  alt="The commands panel listing commands, each with the keystroke that reaches it drawn on its row."
-  caption="A command that has a key of its own says so on its row, so the keyboard is learned by using the list."
+  alt="The commands panel listing commands, each with its keystroke shown on its row."
+  caption="A command that has its own key shows it on its row, so you learn the keyboard by using the list."
 />
 
 The same list is on a node in the [plex](/plex/): right-click one, or press <kbd>⇧</kbd>
-<kbd>F10</kbd> on it, and what you get is the commands over that note.
+<kbd>F10</kbd> on it, and you get the commands for that note.
 
-## What a command asks for
+## What a command prompts for
 
-A command that needs something asks for it in the same panel, one step at a time — a name to
-call a note, a note to go to, a vault to open, a value to choose. <kbd>Backspace</kbd> in the
+A command that needs input prompts for it in the same panel, one step at a time: a name for a note, a note to go to, a vault to open, a value to choose. <kbd>Backspace</kbd> in the
 empty field steps back, <kbd>Escape</kbd> leaves.
 
-Some ask you to confirm rather than to type: removing a vault says the folder stays. Destroying a
+Some ask you to confirm rather than to type: removing a vault tells you the folder stays. Destroying a
 note and erasing a vault make you type the name first.
 
-The bands say what a command acts on: **Note**, the note in front of you; **File** — the texts a
-plugin makes of the file in front of you, and the commands a plugin offers over its type;
+The bands show what a command acts on: **Note**, the open note; **File**, the texts a
+plugin creates from the open file and the commands a plugin offers for its type;
 **General**, the window; and **Vault**.
 
-Over a file, a command names the plugin that does it: each plugin that reads the file's type
+For a file, a command shows the plugin that runs it: each plugin that reads the file's type
 offers to recognise its text, each that reads the text offers to proofread it, and each text a
-plugin made can be deleted. A link (`.url`) also offers the Media Importer's commands: download
+plugin created can be deleted. A link (`.url`) also offers the Media Importer's commands: download
 the text again, download a copy to play from this disk, and delete that copy.
 
-A command that cannot act on what is in front of you stays on the list and says why —
-_nothing in front of you is a note_, _the vault is still being read_ — rather than quietly
-disappearing.
+A command that cannot act on the open tab stays on the list and shows why (_nothing in front of you is a note_, _the vault is still being read_) instead of disappearing.
 
 ## Every command
 
@@ -55,47 +52,50 @@ disappearing.
 | Remove note |  |
 | Destroy note |  |
 | Copy path |  |
-| Ask the agent |  |
-| Show in files |  |
-| Open preset |  |
-| Show in plex | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>P</kbd> |
 
 ### File
 
 | | |
 | --- | --- |
-| Download text again |  |
-| Download video |  |
-| Delete downloaded video |  |
-| Recognise text with *plugin* |  |
-| Proofread text with *plugin* |  |
-| Delete text from *plugin* |  |
+| Recognise text |  |
+| Transcribe |  |
 
 ### General
 
 | | |
 | --- | --- |
 | New note | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>N</kbd> |
-| Import link |  |
 | Close tab | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>W</kbd> |
 | Search the vault | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd> |
+| Import from URL |  |
+| Download text again |  |
+| Download video |  |
+| Delete downloaded video |  |
+| New deck |  |
+| New card model |  |
+| New preset |  |
+| Open agent tab | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>A</kbd> |
+| Ask the agent |  |
+| Open files tab | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>E</kbd> |
+| Show in files |  |
+| Open preset tab |  |
+| Record audio |  |
+| Open plex tab | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>X</kbd> |
+| Show in plex | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>P</kbd> |
+
+### Settings
+
+| | |
+| --- | --- |
 | Change theme |  |
 | Light or dark |  |
 | Interface size |  |
 | Reading font size |  |
 | Sync title and filename |  |
-| Nest headings under notes |  |
-| Headings per note |  |
 | Set performance profile |  |
 | Settings |  |
-| Audio/Video Transcription: Transcription Language |  |
-| New deck |  |
-| New card model |  |
-| New preset |  |
-| New agent | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>A</kbd> |
-| Show files | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>E</kbd> |
-| Record audio |  |
-| New plex | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>X</kbd> |
+| Audio/Video Transcription: Model |  |
+| Plex Graph: Nest headings under notes |  |
 
 ### Vault
 

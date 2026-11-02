@@ -9,6 +9,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
@@ -32,7 +33,7 @@ func openTaskStream(t *testing.T, tasks *run.Tasks) *connect.ServerStreamForClie
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = stream.Close() })
+	testsupport.CloseAfter(t, stream)
 	return stream
 }
 
@@ -89,7 +90,7 @@ func TestTasksStream_RejectsOtherWindowName(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = stream.Close() })
+	testsupport.CloseAfter(t, stream)
 	if stream.Receive() {
 		t.Fatalf("another window answered for the editor: %v", stream.Msg().GetTasks())
 	}
@@ -115,5 +116,48 @@ func TestWatchTasksSendsThePluginOfEachTask(t *testing.T) {
 	list := receiveTasks(t, stream)
 	if len(list) != 1 || list[0].GetPluginId() != "md.example.engine" || list[0].GetPluginName() != "Example Engine" {
 		t.Fatalf("got %v, want the task of md.example.engine named Example Engine", list)
+	}
+}
+
+// CancelTask cancels the context of the listed task and leaves the task in
+// the list, which its work removes once it has stopped.
+func TestCancelTaskCancelsTheTaskByID(t *testing.T) {
+	tasks := run.NewTasks()
+	work, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	tasks.Set(run.Task{ID: "indexing", Title: "Indexing", Cancel: cancel})
+	tasks.Set(run.Task{ID: "plugin:md.example.engine:one", Title: "Reading"})
+
+	route, handler := numenv1connect.NewWindowServiceHandler(&Window{Named: Editor, Tasking: tasks})
+	mux := http.NewServeMux()
+	mux.Handle(route, handler)
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	client := numenv1connect.NewWindowServiceClient(server.Client(), server.URL)
+
+	stream := openTaskStream(t, tasks)
+	list := receiveTasks(t, stream)
+	if len(list) != 2 || !list[0].GetIsCancellable() || list[1].GetIsCancellable() {
+		t.Fatalf("got %v, want the core task cancellable and the plugin task not", list)
+	}
+
+	if _, err := client.CancelTask(t.Context(), connect.NewRequest(&v1.CancelTaskRequest{
+		Window: Editor, Id: "indexing",
+	})); err != nil {
+		t.Fatal(err)
+	}
+	if work.Err() == nil {
+		t.Fatal("the task's context is not cancelled")
+	}
+
+	for _, id := range []string{"plugin:md.example.engine:one", "missing"} {
+		_, err := client.CancelTask(t.Context(), connect.NewRequest(&v1.CancelTaskRequest{Window: Editor, Id: id}))
+		if connect.CodeOf(err) != connect.CodeNotFound {
+			t.Errorf("cancelling %q answered %v, want not found", id, err)
+		}
+	}
+	_, err := client.CancelTask(t.Context(), connect.NewRequest(&v1.CancelTaskRequest{Window: "another", Id: "indexing"}))
+	if connect.CodeOf(err) != connect.CodeNotFound {
+		t.Errorf("a cancel naming another window answered %v", err)
 	}
 }

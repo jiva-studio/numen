@@ -7,7 +7,8 @@ import { computed, ref, watch } from 'vue'
 import type { SettingsTabState } from '../types'
 import type { PluginInfo } from '@/entities/settings'
 import SystemDetail from './SystemDetail.vue'
-import { PluginsList, PluginDetail } from './plugins'
+import { createManagedFromEntries } from '@/shared/pluginListing'
+import { OfferedPluginDetail, PluginsList, PluginDetail } from './plugins'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ state: SettingsTabState }>()
@@ -26,9 +27,21 @@ watch(
 )
 
 const plugins = computed<readonly PluginInfo[]>(() => props.state.installation.plugins?.value ?? [])
-const selectedPlugin = computed<PluginInfo | undefined>(() =>
-  plugins.value.find((one) => one.id === selectedPluginId.value),
+const uninstalled = computed(() =>
+  createManagedFromEntries([], props.state.installation.catalog?.value ?? []).find(
+    (one) => one.id === selectedPluginId.value,
+  ),
 )
+/**
+ * The plugin of the open page, as the last read that match it gave it. A read that does not list
+ * it, or lists nothing, does not close the page.
+ */
+let lastSelected: PluginInfo | undefined
+const selectedPlugin = computed<PluginInfo | undefined>(() => {
+  const match = plugins.value.find((one) => one.id === selectedPluginId.value)
+  if (match) lastSelected = match
+  return match ?? (lastSelected?.id === selectedPluginId.value ? lastSelected : undefined)
+})
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSelectPlugin(pluginId: string): void {
@@ -53,10 +66,12 @@ function onBack(): void {
         <SystemDetail v-if="selectedPluginId === 'system'" :state="props.state" @back="onBack" />
         <PluginDetail
           v-else-if="selectedPlugin"
+          :key="selectedPlugin.id"
           :state="props.state"
           :plugin="selectedPlugin"
           @back="onBack"
         />
+        <OfferedPluginDetail v-else-if="uninstalled" :plugin="uninstalled" @back="onBack" />
         <PluginsList
           v-else
           :state="props.state"

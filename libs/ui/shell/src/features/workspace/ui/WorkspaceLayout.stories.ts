@@ -291,11 +291,11 @@ export const DividesOnAnEdge: Story = {
 
     // The two panes share the space of the former two panes, evenly.
     const boxes = now.map(getRect)
-    expect(boxes.reduce((wide, box) => wide + box.width, 0)).toBeCloseTo(
+    await expect(boxes.reduce((wide, box) => wide + box.width, 0)).toBeCloseTo(
       main.width + before.width,
       0,
     )
-    expect(boxes[0]?.width).toBeCloseTo(boxes[1]?.width ?? 0, 0)
+    await expect(boxes[0]?.width).toBeCloseTo(boxes[1]?.width ?? 0, 0)
   },
 }
 

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
@@ -41,7 +42,7 @@ func TestTheWindowsBelowTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 
 	session := flashcards.NewSession(
 		s.assigning, s.standings, s.schedules,
-		s.presets, today, func() time.Time { return pos },
+		s.presets, getToday(), clock.NewFake(pos),
 	)
 	target, err := session.Execute(t.Context(), s.vault, flashcards.Scope{})
 	if err != nil {
@@ -90,7 +91,7 @@ func TestTheWindowsBelowTheFourNameTheDayTheCardReachesBackOn(t *testing.T) {
 		// Every review card put into review long ago, so each comes back in days
 		// and the placement has a window to move it in.
 		for _, days := range []int{40, 25} {
-			run := s.run(t, saturday.AddDate(0, 0, -days))
+			run := s.run(t, getSaturday().AddDate(0, 0, -days))
 			for i := range 60 {
 				answer(t, run, cardID(i), 4*time.Second)
 			}
@@ -102,8 +103,8 @@ func TestTheWindowsBelowTheFourNameTheDayTheCardReachesBackOn(t *testing.T) {
 		// is what is compared.
 		request, differ, worst := 0, 0, time.Duration(0)
 		for step := range 60 {
-			pos := saturday.Add(time.Duration(step) * time.Second)
-			sat := s.sessionAt(t, today, pos)
+			pos := getSaturday().Add(time.Duration(step) * time.Second)
+			sat := s.sessionAt(t, getToday(), pos)
 			if len(sat.Queue) == 0 {
 				break
 			}
@@ -123,7 +124,7 @@ func TestTheWindowsBelowTheFourNameTheDayTheCardReachesBackOn(t *testing.T) {
 			}
 			request++
 			came, names := schedules[card.ID].Due, pos.Add(response)
-			if today.GetName(came) != today.GetName(names) {
+			if getToday().GetName(came) != getToday().GetName(names) {
 				differ++
 				if off := came.Sub(names); off > worst || -off > worst {
 					worst = max(off, -off)
@@ -168,10 +169,10 @@ func TestTheDebtIsPaidOldestFirst(t *testing.T) {
 	// The cards stand in their deck in the reverse of the order they came round
 	// in: the last of them was answered longest ago.
 	for i := range 5 {
-		answer(t, s.run(t, saturday.AddDate(0, 0, -10+i)), cardID(4-i), 6*time.Second)
+		answer(t, s.run(t, getSaturday().AddDate(0, 0, -10+i)), cardID(4-i), 6*time.Second)
 	}
 
-	got := reviewCards(s.openSessionByPreset(t, today, saturday, "Two.md"))
+	got := reviewCards(s.openSessionByPreset(t, getToday(), getSaturday(), "Two.md"))
 	want := []review.CardID{getReviewCard(4), getReviewCard(3)}
 	if !slices.Equal(got, want) {
 		t.Errorf("a day of two reviews asked %v, want %v", got, want)
@@ -200,7 +201,7 @@ func TestASessionOverSeveralPresetsIsTheSameSessionTwice(t *testing.T) {
 	// A debt under each preset, so every one of them has both sides of its day
 	// to spend and none of them is handed its cards in one lump.
 	for _, days := range []int{-9, -8} {
-		record := s.run(t, saturday.AddDate(0, 0, days))
+		record := s.run(t, getSaturday().AddDate(0, 0, days))
 		for _, from := range []int{0, 100, 200, 300} {
 			for i := range 2 {
 				answer(t, record, cardID(from+i), 6*time.Second)
@@ -208,12 +209,12 @@ func TestASessionOverSeveralPresetsIsTheSameSessionTwice(t *testing.T) {
 		}
 	}
 
-	first := reviewCards(s.sessionAt(t, today, saturday))
+	first := reviewCards(s.sessionAt(t, getToday(), getSaturday()))
 	if len(first) == 0 {
 		t.Fatal("the session asked nothing")
 	}
 	for range 5 {
-		if again := reviewCards(s.sessionAt(t, today, saturday)); !slices.Equal(first, again) {
+		if again := reviewCards(s.sessionAt(t, getToday(), getSaturday())); !slices.Equal(first, again) {
 			t.Fatalf("the session asked %v, and the same request asked %v", first, again)
 		}
 	}
@@ -227,7 +228,7 @@ func (s vaulted) openSession(
 	t.Helper()
 	return flashcards.NewSession(
 		s.assigning, s.standings, s.schedules,
-		s.presets, day, func() time.Time { return now },
+		s.presets, day, clock.NewFake(now),
 	).Execute(t.Context(), s.vault, pos)
 }
 
@@ -256,7 +257,7 @@ func TestASessionOverAPresetAsksTheDecksThatPointAtIt(t *testing.T) {
 		"decks/Rivers.md": deckOf("Other", 5, 200),
 	})
 
-	got := byDeck(s.openSessionByPreset(t, today, saturday, "Steady.md"))
+	got := byDeck(s.openSessionByPreset(t, getToday(), getSaturday(), "Steady.md"))
 	want := map[string]int{"decks/Birds.md": 3, "decks/Trees.md": 4}
 	for deck, cards := range want {
 		if got[deck] != cards {
@@ -279,7 +280,7 @@ func TestASessionOverThePresetOfTheDecksNamingNone(t *testing.T) {
 		"decks/Birds.md": deckOf("Steady", 4, 100),
 	})
 
-	got := byDeck(s.openSessionByPreset(t, today, saturday, ""))
+	got := byDeck(s.openSessionByPreset(t, getToday(), getSaturday(), ""))
 	if len(got) != 1 || got["decks/Loose.md"] != 3 {
 		t.Errorf("the session held %v, want three cards of decks/Loose.md", got)
 	}
@@ -296,7 +297,7 @@ func TestSession_PresetBudgetLimitsSessionCards(t *testing.T) {
 		"decks/Trees.md": deckOf("Five", 10, 100),
 	})
 
-	if got := countQueue(s.openSessionByPreset(t, today, saturday, "Five.md")); got != 5 {
+	if got := countQueue(s.openSessionByPreset(t, getToday(), getSaturday(), "Five.md")); got != 5 {
 		t.Errorf("a preset of five new cards a day offered %d", got)
 	}
 }
@@ -310,16 +311,16 @@ func TestASecondSessionOverAPresetConsumesUpWhereTheFirstLeftOff(t *testing.T) {
 		"Five.md":       preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/Five.md": deckOf("Five", 20, 0),
 	})
-	if got := unseen(s.openSessionByPreset(t, today, saturday, "Five.md")); got != 5 {
+	if got := unseen(s.openSessionByPreset(t, getToday(), getSaturday(), "Five.md")); got != 5 {
 		t.Fatalf("the morning was asked %d new cards, want 5", got)
 	}
 
-	morning := s.run(t, saturday)
+	morning := s.run(t, getSaturday())
 	for i := range 3 {
 		answer(t, morning, cardID(i), 6*time.Second)
 	}
 
-	if got := unseen(s.openSessionByPreset(t, today, saturday.Add(2*time.Hour), "Five.md")); got != 2 {
+	if got := unseen(s.openSessionByPreset(t, getToday(), getSaturday().Add(2*time.Hour), "Five.md")); got != 2 {
 		t.Errorf("the evening was asked %d new cards, want 2", got)
 	}
 }
@@ -334,7 +335,7 @@ func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
 		"decks/Birds.md": deckOf("Steady", 3, 0),
 	})
 
-	_, err := s.openSession(t, today, saturday, flashcards.Scope{
+	_, err := s.openSession(t, getToday(), getSaturday(), flashcards.Scope{
 		Deck: "decks/Birds.md", Preset: "Steady.md", IsNamed: true,
 	})
 	if !errors.Is(err, flashcards.ErrBothNamed) {
@@ -353,7 +354,7 @@ func TestASessionOverAPresetNothingPointsAtIsRefused(t *testing.T) {
 		"decks/Birds.md": deckOf("Steady", 3, 0),
 	})
 
-	_, err := s.openSession(t, today, saturday, flashcards.Scope{Preset: "Lonely.md", IsNamed: true})
+	_, err := s.openSession(t, getToday(), getSaturday(), flashcards.Scope{Preset: "Lonely.md", IsNamed: true})
 	if !errors.Is(err, flashcards.ErrSchedulesNothing) {
 		t.Fatalf("a preset nothing points at was answered with %v", err)
 	}
@@ -370,7 +371,7 @@ func TestASessionOverAPausedPresetIsRefused(t *testing.T) {
 		"decks/Paused.md": deckOf("Paused", 6, 0),
 	})
 
-	_, err := s.openSession(t, today, saturday, flashcards.Scope{Preset: "Paused.md", IsNamed: true})
+	_, err := s.openSession(t, getToday(), getSaturday(), flashcards.Scope{Preset: "Paused.md", IsNamed: true})
 	if !errors.Is(err, flashcards.ErrSchedulesNothing) {
 		t.Fatalf("a paused preset was answered with %v", err)
 	}
@@ -391,16 +392,16 @@ func TestASessionOverAPresetWhoseDayIsSpentIsRefused(t *testing.T) {
 		"decks/Two.md":  deckOf("Two", 6, 0),
 		"decks/Rest.md": deckOf("", 6, 100),
 	})
-	if got := unseen(s.openSessionByPreset(t, today, saturday, "Two.md")); got != 2 {
+	if got := unseen(s.openSessionByPreset(t, getToday(), getSaturday(), "Two.md")); got != 2 {
 		t.Fatalf("the morning was asked %d new cards, want 2", got)
 	}
 
-	morning := s.run(t, saturday)
+	morning := s.run(t, getSaturday())
 	for i := range 2 {
 		answer(t, morning, cardID(i), 6*time.Second)
 	}
 
-	_, err := s.openSession(t, today, saturday.Add(2*time.Hour), flashcards.Scope{Preset: "Two.md", IsNamed: true})
+	_, err := s.openSession(t, getToday(), getSaturday().Add(2*time.Hour), flashcards.Scope{Preset: "Two.md", IsNamed: true})
 	if !errors.Is(err, flashcards.ErrSchedulesNothing) {
 		t.Fatalf("a spent day was answered with %v", err)
 	}
@@ -458,7 +459,7 @@ func (s vaulted) sessionAt(t *testing.T, day review.Day, now time.Time) flashcar
 	t.Helper()
 	sat, err := flashcards.NewSession(
 		s.assigning, s.standings, s.schedules,
-		s.presets, day, func() time.Time { return now },
+		s.presets, day, clock.NewFake(now),
 	).Execute(t.Context(), s.vault, flashcards.Scope{})
 	if err != nil {
 		t.Fatal(err)
@@ -504,14 +505,14 @@ func TestEachPresetIsCostedFromItsOwnAnswers(t *testing.T) {
 	// three times over two months is a history long enough to say what both
 	// kinds of answer take.
 	for _, days := range []int{90, 80, 75} {
-		before := s.run(t, saturday.AddDate(0, 0, -days))
+		before := s.run(t, getSaturday().AddDate(0, 0, -days))
 		for i := range 12 {
 			answer(t, before, cardID(i), 20*time.Second)
 			answer(t, before, cardID(100+i), 4*time.Second)
 		}
 	}
 
-	got := byDeck(s.sessionAt(t, today, saturday))
+	got := byDeck(s.sessionAt(t, getToday(), getSaturday()))
 	// Twelve due review cards in each deck. One minute pays for three of the slow
 	// ones, or all twelve of the quick ones plus three new cards.
 	if got["decks/Slow.md"] != 3 {
@@ -543,7 +544,7 @@ func TestALightDayIsReadOffTheReviewDay(t *testing.T) {
 		// And two in the morning of the Sunday is the half Saturday itself.
 		{time.Date(2026, 9, 6, 2, 0, 0, 0, time.Local), 4},
 	} {
-		got := byDeck(s.sessionAt(t, today, one.targetTime))["decks/Light.md"]
+		got := byDeck(s.sessionAt(t, getToday(), one.targetTime))["decks/Light.md"]
 		if got != one.cards {
 			t.Errorf("at %v the deck was asked %d cards, want %d", one.targetTime, got, one.cards)
 		}
@@ -571,7 +572,7 @@ func TestAPresetPastTheDayItAimsAtSchedulesNothing(t *testing.T) {
 		{time.Date(2026, 9, 6, 2, 0, 0, 0, time.Local), 20},
 		{time.Date(2026, 9, 6, 10, 0, 0, 0, time.Local), 0},
 	} {
-		got := byDeck(s.sessionAt(t, today, one.targetTime))["decks/By.md"]
+		got := byDeck(s.sessionAt(t, getToday(), one.targetTime))["decks/By.md"]
 		if got != one.cards {
 			t.Errorf("at %v the deck was asked %d cards, want %d", one.targetTime, got, one.cards)
 		}
@@ -587,16 +588,16 @@ func TestASecondSessionConsumesUpWhereTheFirstLeftOff(t *testing.T) {
 		"Five.md":       preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/Five.md": deckOf("Five", 20, 0),
 	})
-	if got := unseen(s.sessionAt(t, today, saturday)); got != 5 {
+	if got := unseen(s.sessionAt(t, getToday(), getSaturday())); got != 5 {
 		t.Fatalf("the morning was asked %d new cards, want 5", got)
 	}
 
-	morning := s.run(t, saturday)
+	morning := s.run(t, getSaturday())
 	for i := range 3 {
 		answer(t, morning, cardID(i), 6*time.Second)
 	}
 
-	if got := unseen(s.sessionAt(t, today, saturday.Add(2*time.Hour))); got != 2 {
+	if got := unseen(s.sessionAt(t, getToday(), getSaturday().Add(2*time.Hour))); got != 2 {
 		t.Errorf("the evening was asked %d new cards, want 2", got)
 	}
 }
@@ -617,17 +618,17 @@ func TestSession_CountsCardsOrShowsForRepeatedCard(t *testing.T) {
 		})
 
 		// Both cards were answered long enough ago to be due today.
-		before := s.run(t, saturday.AddDate(0, 0, -30))
+		before := s.run(t, getSaturday().AddDate(0, 0, -30))
 		answer(t, before, cardID(0), 6*time.Second)
 		answer(t, before, cardID(1), 6*time.Second)
 
 		// The first card is shown nine times in one session.
-		morning := s.run(t, saturday)
+		morning := s.run(t, getSaturday())
 		for range 9 {
 			answerAgain(t, morning, cardID(0), 4*time.Second)
 		}
 
-		got := byDeck(s.sessionAt(t, today, saturday.Add(2*time.Hour)))["decks/Two.md"]
+		got := byDeck(s.sessionAt(t, getToday(), getSaturday().Add(2*time.Hour)))["decks/Two.md"]
 		if got != one.cards {
 			t.Errorf("counting in %s the evening was asked %d cards, want %d",
 				one.counts, got, one.cards)
@@ -651,13 +652,13 @@ func TestACardTheDayHasChargedIsFreeInALaterSession(t *testing.T) {
 			"decks/One.md": deckOf("One", 2, 0),
 		})
 
-		before := s.run(t, saturday.AddDate(0, 0, -30))
+		before := s.run(t, getSaturday().AddDate(0, 0, -30))
 		answer(t, before, cardID(0), 6*time.Second)
 		answer(t, before, cardID(1), 6*time.Second)
 
-		answerAgain(t, s.run(t, saturday), cardID(0), 4*time.Second)
+		answerAgain(t, s.run(t, getSaturday()), cardID(0), 4*time.Second)
 
-		got := byDeck(s.sessionAt(t, today, saturday.Add(2*time.Hour)))["decks/One.md"]
+		got := byDeck(s.sessionAt(t, getToday(), getSaturday().Add(2*time.Hour)))["decks/One.md"]
 		if got != one.cards {
 			t.Errorf("counting in %s the evening was asked %d cards, want %d",
 				one.counts, got, one.cards)
@@ -674,18 +675,18 @@ func TestADaysCardsAreCountedInCardsAndNotShows(t *testing.T) {
 		"Three.md":       preset("new_a_day: 3\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/Three.md": deckOf("Three", 6, 0),
 	})
-	if got := unseen(s.sessionAt(t, today, saturday)); got != 3 {
+	if got := unseen(s.sessionAt(t, getToday(), getSaturday())); got != 3 {
 		t.Fatalf("the morning was asked %d new cards, want 3", got)
 	}
 
-	morning := s.run(t, saturday)
+	morning := s.run(t, getSaturday())
 	for i := range 3 {
 		for range 3 {
 			answerAgain(t, morning, cardID(i), 4*time.Second)
 		}
 	}
 
-	sat := s.sessionAt(t, today, saturday.Add(2*time.Hour))
+	sat := s.sessionAt(t, getToday(), getSaturday().Add(2*time.Hour))
 	if got := byDeck(sat)["decks/Three.md"]; got != 3 {
 		t.Errorf("the evening was asked %d cards, want the three the day began", got)
 	}
@@ -706,7 +707,7 @@ func TestTwoPresetsInOneSessionKeepTheirOwnBudgets(t *testing.T) {
 		"decks/Many.md": deckOf("Many", 10, 100),
 	})
 
-	got := byDeck(s.sessionAt(t, today, saturday))
+	got := byDeck(s.sessionAt(t, getToday(), getSaturday()))
 	want := map[string]int{"decks/Few.md": 2, "decks/Many.md": 5}
 	for deck, cards := range want {
 		if got[deck] != cards {
@@ -729,7 +730,7 @@ func TestAPresetOfNoCardsADaySchedulesNothing(t *testing.T) {
 		"decks/Running.md": deckOf("", 6, 100),
 	})
 
-	got := byDeck(s.sessionAt(t, today, saturday))
+	got := byDeck(s.sessionAt(t, getToday(), getSaturday()))
 	if got["decks/Paused.md"] != 0 {
 		t.Errorf("a paused preset was asked %d cards", got["decks/Paused.md"])
 	}
@@ -751,7 +752,7 @@ func TestALightDaySplitsTheDaysCards(t *testing.T) {
 		"decks/Plain.md": deckOf("Plain", 10, 100),
 	})
 
-	got := byDeck(s.sessionAt(t, today, saturday))
+	got := byDeck(s.sessionAt(t, getToday(), getSaturday()))
 	if got["decks/Light.md"] != 4 {
 		t.Errorf("a light Saturday was asked %d cards, want 4", got["decks/Light.md"])
 	}
@@ -771,8 +772,8 @@ func TestTheMinutesCloseTheDayBelowAGoalOfMinutes(t *testing.T) {
 		"decks/Short.md": deckOf("Short", 10, 0),
 	})
 
-	target := int(time.Minute / review.DefaultCost.New)
-	got := byDeck(s.sessionAt(t, today, saturday))
+	target := int(time.Minute / review.GetDefaultCost().New)
+	got := byDeck(s.sessionAt(t, getToday(), getSaturday()))
 	if got["decks/Short.md"] != target {
 		t.Errorf("a day of one minute was asked %d cards, want %d", got["decks/Short.md"], target)
 	}
@@ -813,7 +814,7 @@ func TestTheBudgetTheGoalDoesNotNameMovesNothing(t *testing.T) {
 				"decks/On.md": deckOf("On", 40, 0),
 			})
 
-			got := byDeck(s.sessionAt(t, today, saturday))["decks/On.md"]
+			got := byDeck(s.sessionAt(t, getToday(), getSaturday()))["decks/On.md"]
 			if got != one.cards {
 				t.Errorf("steered by its %s under %q the day was asked %d cards, want %d",
 					one.what, aside, got, one.cards)
@@ -836,12 +837,12 @@ func TestAPresetSteeredByItsMinutesKeepsAskingOnNoReviews(t *testing.T) {
 	})
 
 	// Six cards answered long enough ago to be due today, and none answered today.
-	before := s.run(t, saturday.AddDate(0, 0, -30))
+	before := s.run(t, getSaturday().AddDate(0, 0, -30))
 	for i := range 6 {
 		answer(t, before, cardID(i), 6*time.Second)
 	}
 
-	sat := s.sessionAt(t, today, saturday)
+	sat := s.sessionAt(t, getToday(), getSaturday())
 	got := byDeck(sat)
 	if got["decks/Steady.md"] != 20 {
 		t.Errorf("the preset of no reviews was asked %d cards, want its 20",
@@ -870,7 +871,7 @@ func TestAGoalOfADatePacesTheDayOverTheDaysLeft(t *testing.T) {
 		"decks/By.md": deckOf("By", 40, 0),
 	})
 
-	if got := unseen(s.sessionAt(t, today, saturday)); got != 4 {
+	if got := unseen(s.sessionAt(t, getToday(), getSaturday())); got != 4 {
 		t.Errorf("forty cards over ten days was asked %d a day, want 4", got)
 	}
 }
@@ -884,10 +885,10 @@ func TestWhatIsDueIsWhatTheSessionAsks(t *testing.T) {
 		"decks/Few.md":   deckOf("Few", 10, 0),
 		"decks/Loose.md": deckOf("", 10, 100),
 	})
-	now := func() time.Time { return saturday }
+	now := clock.NewFake(getSaturday())
 
-	sat := byDeck(s.sessionAt(t, today, saturday))
-	counts, err := s.newCountCardsDueAt(today, now).Execute(t.Context(), s.vault)
+	sat := byDeck(s.sessionAt(t, getToday(), getSaturday()))
+	counts, err := s.newCountCardsDueAt(getToday(), now).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -921,11 +922,11 @@ func TestDecksNamingNoPresetShareTheDefaultsBudget(t *testing.T) {
 	})
 
 	target := int(time.Duration(review.Defaults().MinutesADay) *
-		time.Minute / review.DefaultCost.New)
-	if got := countQueue(one.sessionAt(t, today, saturday)); got != target {
+		time.Minute / review.GetDefaultCost().New)
+	if got := countQueue(one.sessionAt(t, getToday(), getSaturday())); got != target {
 		t.Fatalf("one deck on the defaults was asked %d cards, want %d", got, target)
 	}
-	if got := countQueue(two.sessionAt(t, today, saturday)); got != target {
+	if got := countQueue(two.sessionAt(t, getToday(), getSaturday())); got != target {
 		t.Errorf("two decks on the defaults were asked %d cards, want %d", got, target)
 	}
 }
@@ -942,7 +943,7 @@ func TestDecksNamingOnePresetShareItsBudget(t *testing.T) {
 		"decks/Free.md": deckOf("", 20, 200),
 	})
 
-	got := byDeck(s.sessionAt(t, today, saturday))
+	got := byDeck(s.sessionAt(t, getToday(), getSaturday()))
 	if got["decks/One.md"]+got["decks/Two.md"] != 6 {
 		t.Errorf("the two decks of one preset were asked %d and %d, want six between them",
 			got["decks/One.md"], got["decks/Two.md"])
@@ -971,11 +972,11 @@ func TestTwoPresetsOfAMinuteEachHoldTwoMinutesOfCards(t *testing.T) {
 		"decks/Two.md": deckOf("First", 20, 100),
 	})
 
-	target := int(time.Minute / review.DefaultCost.New)
-	if got := countQueue(together.sessionAt(t, today, saturday)); got != target {
+	target := int(time.Minute / review.GetDefaultCost().New)
+	if got := countQueue(together.sessionAt(t, getToday(), getSaturday())); got != target {
 		t.Fatalf("one minute over both decks was asked %d cards, want %d", got, target)
 	}
-	if got := countQueue(apart.sessionAt(t, today, saturday)); got != 2*target {
+	if got := countQueue(apart.sessionAt(t, getToday(), getSaturday())); got != 2*target {
 		t.Errorf("a minute under each of two presets was asked %d cards, want %d", got, 2*target)
 	}
 }
@@ -992,11 +993,11 @@ func TestSession_NewCardBudgetIndependentOfReviews(t *testing.T) {
 
 	// Two cards answered long enough ago to be due today, for which the preset counts
 	// no reviews.
-	before := s.run(t, saturday.AddDate(0, 0, -30))
+	before := s.run(t, getSaturday().AddDate(0, 0, -30))
 	answer(t, before, cardID(0), 6*time.Second)
 	answer(t, before, cardID(1), 6*time.Second)
 
-	sat := s.sessionAt(t, today, saturday)
+	sat := s.sessionAt(t, getToday(), getSaturday())
 	if got := unseen(sat); got != 2 {
 		t.Errorf("the day was asked %d new cards, want the two it keeps", got)
 	}
@@ -1014,13 +1015,13 @@ func TestSession_RepointedDeckUsesNewPreset(t *testing.T) {
 		"Many.md":     preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/On.md": deckOf("Few", 20, 0),
 	})
-	if got := unseen(s.sessionAt(t, today, saturday)); got != 2 {
+	if got := unseen(s.sessionAt(t, getToday(), getSaturday())); got != 2 {
 		t.Fatalf("under the preset of two the day was asked %d new cards", got)
 	}
 
 	write(t, s, "decks/On.md", deckOf("Many", 20, 0))
 
-	if got := unseen(s.sessionAt(t, today, saturday.AddDate(0, 0, 1))); got != 5 {
+	if got := unseen(s.sessionAt(t, getToday(), getSaturday().AddDate(0, 0, 1))); got != 5 {
 		t.Errorf("under the preset of five the day was asked %d new cards, want 5", got)
 	}
 }
@@ -1036,17 +1037,17 @@ func TestADeckRepointedInTheMiddleOfADayCarriesTheDaySpent(t *testing.T) {
 		"decks/On.md": deckOf("Few", 20, 0),
 	})
 
-	morning := s.run(t, saturday)
+	morning := s.run(t, getSaturday())
 	for i := range 2 {
 		answer(t, morning, cardID(i), 6*time.Second)
 	}
-	if got := unseen(s.sessionAt(t, today, saturday.Add(time.Hour))); got != 0 {
+	if got := unseen(s.sessionAt(t, getToday(), getSaturday().Add(time.Hour))); got != 0 {
 		t.Fatalf("the preset of two was spent and the day was asked %d new cards", got)
 	}
 
 	write(t, s, "decks/On.md", deckOf("Many", 20, 0))
 
-	if got := unseen(s.sessionAt(t, today, saturday.Add(time.Hour))); got != 3 {
+	if got := unseen(s.sessionAt(t, getToday(), getSaturday().Add(time.Hour))); got != 3 {
 		t.Errorf("the day was asked %d new cards, want the five of the new preset less two", got)
 	}
 }
@@ -1061,22 +1062,22 @@ func TestALimitEditedInTheMiddleOfADayContainsAtOnce(t *testing.T) {
 		"decks/On.md": deckOf("On", 20, 0),
 	})
 
-	morning := s.run(t, saturday)
+	morning := s.run(t, getSaturday())
 	for i := range 3 {
 		answer(t, morning, cardID(i), 6*time.Second)
 	}
-	evening := saturday.Add(time.Hour)
-	if got := unseen(s.sessionAt(t, today, evening)); got != 2 {
+	evening := getSaturday().Add(time.Hour)
+	if got := unseen(s.sessionAt(t, getToday(), evening)); got != 2 {
 		t.Fatalf("five a day with three spent was asked %d new cards, want 2", got)
 	}
 
 	write(t, s, "On.md", preset("new_a_day: 8\nreviews_a_day: 0\nminutes_a_day: 0\n"))
-	if got := unseen(s.sessionAt(t, today, evening)); got != 5 {
+	if got := unseen(s.sessionAt(t, getToday(), evening)); got != 5 {
 		t.Errorf("raised to eight with three spent, the day was asked %d new cards, want 5", got)
 	}
 
 	write(t, s, "On.md", preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"))
-	if got := unseen(s.sessionAt(t, today, evening)); got != 0 {
+	if got := unseen(s.sessionAt(t, getToday(), evening)); got != 0 {
 		t.Errorf("lowered to two with three spent, the day was asked %d new cards", got)
 	}
 }
@@ -1092,24 +1093,24 @@ func TestCountsEditedInTheMiddleOfADayCountsTheDayAgain(t *testing.T) {
 		"decks/On.md": deckOf("On", 2, 0),
 	})
 
-	before := s.run(t, saturday.AddDate(0, 0, -30))
+	before := s.run(t, getSaturday().AddDate(0, 0, -30))
 	answer(t, before, cardID(0), 6*time.Second)
 	answer(t, before, cardID(1), 6*time.Second)
 
 	// One card shown three times: one card and three showings.
-	morning := s.run(t, saturday)
+	morning := s.run(t, getSaturday())
 	for range 3 {
 		answerAgain(t, morning, cardID(0), 4*time.Second)
 	}
 
-	evening := saturday.Add(2 * time.Hour)
-	if got := countQueue(s.sessionAt(t, today, evening)); got != 2 {
+	evening := getSaturday().Add(2 * time.Hour)
+	if got := countQueue(s.sessionAt(t, getToday(), evening)); got != 2 {
 		t.Fatalf("counting in cards the evening was asked %d cards, want 2", got)
 	}
 
 	write(t, s, "On.md", preset("counts: shows\nnew_a_day: 0\nreviews_a_day: 3\n"+
 		"minutes_a_day: 0\n"))
-	if got := countQueue(s.sessionAt(t, today, evening)); got != 0 {
+	if got := countQueue(s.sessionAt(t, getToday(), evening)); got != 0 {
 		t.Errorf("counting in shows the evening was asked %d cards, want none", got)
 	}
 }
@@ -1125,17 +1126,17 @@ func TestAPresetPausedInTheMiddleOfADayStopsTheCardsItBegan(t *testing.T) {
 	})
 
 	// Two cards that were not recalled, which return later in the same day.
-	morning := s.run(t, saturday)
+	morning := s.run(t, getSaturday())
 	for i := range 2 {
 		answerAgain(t, morning, cardID(i), 6*time.Second)
 	}
-	evening := saturday.Add(time.Hour)
-	if got := countQueue(s.sessionAt(t, today, evening)); got == 0 {
+	evening := getSaturday().Add(time.Hour)
+	if got := countQueue(s.sessionAt(t, getToday(), evening)); got == 0 {
 		t.Fatal("the running preset was asked nothing")
 	}
 
 	write(t, s, "On.md", preset("new_a_day: 0\nreviews_a_day: 0\nminutes_a_day: 0\n"))
-	if got := countQueue(s.sessionAt(t, today, evening)); got != 0 {
+	if got := countQueue(s.sessionAt(t, getToday(), evening)); got != 0 {
 		t.Errorf("a paused preset was asked %d cards", got)
 	}
 }
@@ -1151,13 +1152,13 @@ func TestADayMovedPriorUsStopsThePresetAtOnce(t *testing.T) {
 		"decks/On.md": deckOf("On", 20, 0),
 	})
 	// Twenty cards over the twenty-six days to the day it aims at.
-	if got := unseen(s.sessionAt(t, today, saturday)); got != 1 {
+	if got := unseen(s.sessionAt(t, getToday(), getSaturday())); got != 1 {
 		t.Fatalf("a preset aiming ahead was asked %d new cards, want 1", got)
 	}
 
 	write(t, s, "On.md", preset("goal: by_date\nby_date: 2026-09-01\nlearned: retention\n"+
 		"new_a_day: 4\nreviews_a_day: 0\nminutes_a_day: 0\n"))
-	if got := unseen(s.sessionAt(t, today, saturday)); got != 0 {
+	if got := unseen(s.sessionAt(t, getToday(), getSaturday())); got != 0 {
 		t.Errorf("a preset past the day it aims at was asked %d new cards", got)
 	}
 }
@@ -1171,13 +1172,13 @@ func TestAGoalMovedOffADayStartsThePresetAgain(t *testing.T) {
 			"new_a_day: 4\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/On.md": deckOf("On", 20, 0),
 	})
-	if got := unseen(s.sessionAt(t, today, saturday)); got != 0 {
+	if got := unseen(s.sessionAt(t, getToday(), getSaturday())); got != 0 {
 		t.Fatalf("a preset past the day it aims at was asked %d new cards", got)
 	}
 
 	write(t, s, "On.md", preset("goal: retention\nby_date: 2026-09-01\n"+
 		"new_a_day: 4\nreviews_a_day: 0\nminutes_a_day: 0\n"))
-	if got := unseen(s.sessionAt(t, today, saturday)); got != 4 {
+	if got := unseen(s.sessionAt(t, getToday(), getSaturday())); got != 4 {
 		t.Errorf("a preset steered by its retention was asked %d new cards, want 4", got)
 	}
 }
@@ -1208,7 +1209,7 @@ func TestTheBudgetIsWholeAgainWhenTheDayTurnsOver(t *testing.T) {
 		{time.Date(2026, 9, 5, 3, 0, 0, 0, time.Local), 0},
 		{time.Date(2026, 9, 5, 5, 0, 0, 0, time.Local), 5},
 	} {
-		if got := unseen(s.sessionAt(t, today, one.targetTime)); got != one.newCount {
+		if got := unseen(s.sessionAt(t, getToday(), one.targetTime)); got != one.newCount {
 			t.Errorf("at %v the day was asked %d new cards, want %d", one.targetTime, got, one.newCount)
 		}
 	}
@@ -1232,7 +1233,7 @@ func TestSession_ZeroLoadDayYieldsNoCards(t *testing.T) {
 		{time.Date(2026, 9, 6, 10, 0, 0, 0, time.Local), 0},
 		{time.Date(2026, 9, 7, 10, 0, 0, 0, time.Local), 8},
 	} {
-		got := unseen(s.sessionAt(t, today, one.targetTime))
+		got := unseen(s.sessionAt(t, getToday(), one.targetTime))
 		if got != one.cards {
 			t.Errorf("%v was asked %d new cards, want %d", one.targetTime.Weekday(), got, one.cards)
 		}
@@ -1248,17 +1249,17 @@ func TestADayIsCountedByTheTimesOfItsAnswersAndNotItsRuns(t *testing.T) {
 		"One.md":      preset("new_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/On.md": deckOf("One", 4, 0),
 	})
-	yesterday := saturday.AddDate(0, 0, -1)
+	yesterday := getSaturday().AddDate(0, 0, -1)
 
 	// Today's answer to the card, in a run named for yesterday, and yesterday's
 	// in a run named for today: the files sort the other way about from the
 	// answers in them.
-	answer(t, s.runNamed(t, yesterday, saturday.Add(-2*time.Hour)), cardID(0), 6*time.Second)
-	answer(t, s.runNamed(t, saturday, yesterday), cardID(0), 6*time.Second)
+	answer(t, s.runNamed(t, yesterday, getSaturday().Add(-2*time.Hour)), cardID(0), 6*time.Second)
+	answer(t, s.runNamed(t, getSaturday(), yesterday), cardID(0), 6*time.Second)
 
 	// The card was first answered yesterday, so today's answer to it is a
 	// review and the day's one new card is still to be taken.
-	if got := unseen(s.sessionAt(t, today, saturday)); got != 1 {
+	if got := unseen(s.sessionAt(t, getToday(), getSaturday())); got != 1 {
 		t.Errorf("the day was asked %d new cards, want the one it keeps", got)
 	}
 }
@@ -1277,7 +1278,7 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsDue(t *testing.T) {
 
 	// Three cards taken far enough to be learned, and left a week ago.
 	for day := range 3 {
-		run := s.run(t, saturday.AddDate(0, 0, day-6))
+		run := s.run(t, getSaturday().AddDate(0, 0, day-6))
 		for i := range 3 {
 			answer(t, run, cardID(i), 6*time.Second)
 		}
@@ -1288,7 +1289,7 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsDue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := countQueue(s.sessionAt(t, today, saturday)); got != 0 {
+	if got := countQueue(s.sessionAt(t, getToday(), getSaturday())); got != 0 {
 		t.Fatalf("asking for 0.7 of the cards back, %d were dueCount today", got)
 	}
 
@@ -1303,7 +1304,7 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsDue(t *testing.T) {
 	if now[on].Due.Equal(was[on].Due) {
 		t.Errorf("the target moved and the card still comes round at %v", now[on].Due)
 	}
-	if got := countQueue(s.sessionAt(t, today, saturday)); got != 3 {
+	if got := countQueue(s.sessionAt(t, getToday(), getSaturday())); got != 3 {
 		t.Errorf("asking for 0.99 of the cards back, %d were dueCount today, want 3", got)
 	}
 }
@@ -1412,21 +1413,21 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 		what: "counting cards, on a day already partly spent",
 		front: fmt.Sprintf("goal: by_date\nby_date: %s\nlearned: interval\ninterval: 5\n"+
 			"counts: cards\nnew_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 1\n",
-			saturday.AddDate(0, 0, day).Format(review.DayLayout)),
+			getSaturday().AddDate(0, 0, day).Format(review.DayLayout)),
 		cards: 40,
 		gave:  newSpentToday(20),
 	}, {
 		what: "counting showings, on a day already partly spent",
 		front: fmt.Sprintf("goal: by_date\nby_date: %s\nlearned: interval\ninterval: 5\n"+
 			"counts: shows\nnew_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 1\n",
-			saturday.AddDate(0, 0, day).Format(review.DayLayout)),
+			getSaturday().AddDate(0, 0, day).Format(review.DayLayout)),
 		cards: 40,
 		gave:  newSpentToday(20),
 	}, {
 		what: "a date",
 		front: fmt.Sprintf("goal: by_date\nby_date: %s\nlearned: interval\ninterval: 5\n"+
 			"new_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 1\n",
-			saturday.AddDate(0, 0, day).Format(review.DayLayout)),
+			getSaturday().AddDate(0, 0, day).Format(review.DayLayout)),
 		cards: 40,
 		gave:  answersAt(15, -30, review.Good),
 	}} {
@@ -1444,7 +1445,7 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			curve, err := s.curves(saturday).Execute(
+			curve, err := s.curves(getSaturday()).Execute(
 				t.Context(), s.vault, read.Path, read.Settings)
 			if err != nil {
 				t.Fatal(err)
@@ -1454,9 +1455,9 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 			}
 
 			pointReviews := curve.Points[curve.Now.Index].Reviews
-			reviewCards := s.countDayCards(t, today, getNextAdmittedDay(read.Settings, today, saturday))
+			reviewCards := s.countDayCards(t, getToday(), getNextAdmittedDay(read.Settings, getToday(), getSaturday()))
 			if pointReviews != float64(reviewCards) {
-				t.Errorf("the curve draws %v and the day hands over %d", pointReviews, reviewCards)
+				t.Errorf("the curve draws %v and the day passes %d", pointReviews, reviewCards)
 			}
 		})
 	}
@@ -1480,7 +1481,7 @@ func getNextAdmittedDay(p review.Preset, day review.Day, now time.Time) time.Tim
 func answersAt(cards, days int, r review.Rating) func(*testing.T, vaulted) {
 	return func(t *testing.T, s vaulted) {
 		t.Helper()
-		before := s.run(t, saturday.AddDate(0, 0, days))
+		before := s.run(t, getSaturday().AddDate(0, 0, days))
 		for i := range cards {
 			answerWith(t, before, cardID(i), r, 6*time.Second)
 		}
@@ -1493,7 +1494,7 @@ func newSpentToday(cards int) func(*testing.T, vaulted) {
 	return func(t *testing.T, s vaulted) {
 		t.Helper()
 		answersAt(cards, -30, review.Good)(t, s)
-		this := s.run(t, saturday.Add(-time.Hour))
+		this := s.run(t, getSaturday().Add(-time.Hour))
 		for i := range 4 {
 			answerAgain(t, this, cardID(i), 5*time.Second)
 			answer(t, this, cardID(i), 5*time.Second)
@@ -1512,7 +1513,7 @@ func newBacklogVault(t *testing.T, front string) vaulted {
 	})
 	// Twenty review cards answered long enough ago to be due today, and twenty new
 	// cards.
-	before := s.run(t, saturday.AddDate(0, 0, -30))
+	before := s.run(t, getSaturday().AddDate(0, 0, -30))
 	for i := range 20 {
 		answer(t, before, cardID(i), 6*time.Second)
 	}
@@ -1575,12 +1576,12 @@ func TestASideThatRunsShortPreservesTheDayToTheOther(t *testing.T) {
 		"decks/On.md": deckOf("On", 40, 0),
 	})
 	// Two due review cards, and thirty-eight new cards.
-	before := s.run(t, saturday.AddDate(0, 0, -30))
+	before := s.run(t, getSaturday().AddDate(0, 0, -30))
 	for i := range 2 {
 		answer(t, before, cardID(i), 6*time.Second)
 	}
 
-	sat := s.sessionAt(t, today, saturday)
+	sat := s.sessionAt(t, getToday(), getSaturday())
 	newCards := unseen(sat)
 	if dueCount := countQueue(sat) - newCards; dueCount != 2 || newCards != 20 {
 		t.Errorf("the day asked %d dueCount and %d new, want the two dueCount and its twenty new",
@@ -1595,7 +1596,7 @@ func TestAGoalOfADateReadsNoBacklogShare(t *testing.T) {
 		s := newBacklogVault(t, "goal: by_date\nby_date: 2026-09-14\nlearned: retention\n"+share+
 			"new_a_day: 1\nreviews_a_day: 1\nminutes_a_day: 0\n")
 
-		sat := s.sessionAt(t, today, saturday)
+		sat := s.sessionAt(t, getToday(), getSaturday())
 		newCards := unseen(sat)
 		// Twenty due and twenty new cards over the ten days to the target day, which is
 		// two new cards a day.
@@ -1611,7 +1612,7 @@ type session struct{ dueCount, newCount int }
 
 func s0(t *testing.T, s vaulted) session {
 	t.Helper()
-	sat := s.sessionAt(t, today, saturday)
+	sat := s.sessionAt(t, getToday(), getSaturday())
 	newCards := unseen(sat)
 	return session{dueCount: countQueue(sat) - newCards, newCount: newCards}
 }
@@ -1664,7 +1665,7 @@ func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
 		})
 		// Every review card answered long enough ago to be due today, at six seconds an
 		// answer, so a minute holds ten of them.
-		before := s.run(t, saturday.AddDate(0, 0, -30))
+		before := s.run(t, getSaturday().AddDate(0, 0, -30))
 		for i := range 40 {
 			answer(t, before, cardID(i), 6*time.Second)
 		}
@@ -1672,11 +1673,11 @@ func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
 		elapsed := time.Duration(0)
 		request := 0
 		for range 4 {
-			sat := s.sessionAt(t, today, saturday.Add(elapsed))
+			sat := s.sessionAt(t, getToday(), getSaturday().Add(elapsed))
 			if len(sat.Queue) == 0 {
 				break
 			}
-			provided := s.run(t, saturday.Add(elapsed))
+			provided := s.run(t, getSaturday().Add(elapsed))
 			for _, one := range sat.Queue {
 				answerAgain(t, provided, one.ID.Card, 6*time.Second)
 				elapsed += 6 * time.Second
@@ -1708,9 +1709,9 @@ func (s vaulted) countDayCards(t *testing.T, day review.Day, now time.Time) int 
 		}
 		record := s.run(t, now)
 		for _, one := range sat.Queue {
-			took := review.DefaultCost.Review
+			took := review.GetDefaultCost().Review
 			if one.Schedule.IsNew() {
-				took = review.DefaultCost.New
+				took = review.GetDefaultCost().New
 			}
 			reviewCards[one.ID] = true
 			answer(t, record, one.ID.Card, took)
@@ -1743,11 +1744,11 @@ func TestAGoalIsACeilingOverEveryDeckOfThePreset(t *testing.T) {
 			}
 			files[fmt.Sprintf("decks/D%d.md", d)] = deck
 		}
-		files["Term.md"] = vault["Term.md"]
+		files["Term.md"] = getVault()["Term.md"]
 
 		s := openVault(t, files)
 		now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
-		if took := s.minutes(t, today, now); took != theCeiling {
+		if took := s.minutes(t, getToday(), now); took != theCeiling {
 			t.Errorf("%d decks: the day ran %v, and the goal asks for %v", decks, took, theCeiling)
 		}
 	}
@@ -1761,16 +1762,16 @@ func (s vaulted) minutes(t *testing.T, day review.Day, now time.Time) time.Durat
 	for range 200 {
 		sat, err := flashcards.NewSession(
 			s.assigning, s.standings, s.schedules,
-			s.presets, day, func() time.Time { return now },
+			s.presets, day, clock.NewFake(now),
 		).Execute(t.Context(), s.vault, flashcards.Scope{})
 		if err != nil || len(sat.Queue) == 0 {
 			return out
 		}
 		record := s.run(t, now)
 		for _, one := range sat.Queue {
-			cost := review.DefaultCost.Review
+			cost := review.GetDefaultCost().Review
 			if one.Schedule.IsNew() {
-				cost = review.DefaultCost.New
+				cost = review.GetDefaultCost().New
 			}
 			out += cost
 			answer(t, record, one.ID.Card, cost)
@@ -1786,7 +1787,7 @@ func TestSessionDeckByDeckStaysBelowTheOneCeiling(t *testing.T) {
 	files := map[string]string{
 		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
 			"new_a_day: 9999\nreviews_a_day: 9999\n---\n\n# Sanskrit\n",
-		"Term.md": vault["Term.md"],
+		"Term.md": getVault()["Term.md"],
 	}
 	for d := range 3 {
 		deck := "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n---\n"
@@ -1806,16 +1807,16 @@ func TestSessionDeckByDeckStaysBelowTheOneCeiling(t *testing.T) {
 		for range 200 {
 			sat, err := flashcards.NewSession(
 				s.assigning, s.standings, s.schedules,
-				s.presets, today, func() time.Time { return now },
+				s.presets, getToday(), clock.NewFake(now),
 			).Execute(t.Context(), s.vault, cardScope)
 			if err != nil || len(sat.Queue) == 0 {
 				break
 			}
 			record := s.run(t, now)
 			for _, one := range sat.Queue {
-				cost := review.DefaultCost.Review
+				cost := review.GetDefaultCost().Review
 				if one.Schedule.IsNew() {
-					cost = review.DefaultCost.New
+					cost = review.GetDefaultCost().New
 				}
 				out += cost
 				answer(t, record, one.ID.Card, cost)
@@ -1840,7 +1841,7 @@ func TestOneDeckIsHandedNoMoreThanTheDayContains(t *testing.T) {
 	files := map[string]string{
 		"Sanskrit.md": "---\ntype: preset\ngoal: retention\nnew_a_day: 30\n" +
 			"reviews_a_day: 30\nretention: 0.9\n---\n\n# Sanskrit\n",
-		"Term.md": vault["Term.md"],
+		"Term.md": getVault()["Term.md"],
 	}
 	for d := range 3 {
 		deck := "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n---\n"
@@ -1857,7 +1858,7 @@ func TestOneDeckIsHandedNoMoreThanTheDayContains(t *testing.T) {
 	runSession := func(scope flashcards.Scope) flashcards.SessionResult {
 		sat, err := flashcards.NewSession(
 			s.assigning, s.standings, s.schedules,
-			s.presets, today, func() time.Time { return now },
+			s.presets, getToday(), clock.NewFake(now),
 		).Execute(t.Context(), s.vault, scope)
 		if err != nil {
 			t.Fatal(err)
@@ -1870,18 +1871,20 @@ func TestOneDeckIsHandedNoMoreThanTheDayContains(t *testing.T) {
 		whole += target
 	}
 	if whole != 30 {
-		t.Errorf("the whole vault hands over %d review cards, and the day holds 30", whole)
+		t.Errorf("the whole vault passes %d review cards, and the day holds 30", whole)
 	}
 	for d := range 3 {
 		deck := fmt.Sprintf("decks/D%d.md", d)
 		if got := len(runSession(flashcards.Scope{Deck: deck}).Queue); got > 30 {
-			t.Errorf("%s alone hands over %d review cards, and the day holds 30", deck, got)
+			t.Errorf("%s alone passes %d review cards, and the day holds 30", deck, got)
 		}
 	}
 }
 
 // when is the instant the divided days below are worked out at.
-var when = time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
+func getWhen() time.Time {
+	return time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
+}
 
 // counts is a preset whose day is closed by a count of new cards.
 const counts = "goal: retention\nnew_a_day: 30\nreviews_a_day: 0\n"
@@ -1902,7 +1905,7 @@ func newDeckVault(t testing.TB, front string, decks ...int) vaulted {
 
 func (s vaulted) rows(t *testing.T, now time.Time) map[string]int {
 	t.Helper()
-	out, err := s.newCountCardsDueAt(today, func() time.Time { return now }).Execute(t.Context(), s.vault)
+	out, err := s.newCountCardsDueAt(getToday(), clock.NewFake(now)).Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1916,7 +1919,7 @@ func (s vaulted) rows(t *testing.T, now time.Time) map[string]int {
 // pressDeck returns how many review cards starting a session on one deck returns.
 func (s vaulted) pressDeck(t *testing.T, now time.Time, deck string) int {
 	t.Helper()
-	sat, err := s.openSession(t, today, now, flashcards.Scope{Deck: deck})
+	sat, err := s.openSession(t, getToday(), now, flashcards.Scope{Deck: deck})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1930,7 +1933,7 @@ func (s vaulted) reviewDeckSession(t *testing.T, now time.Time, deck string) int
 	t.Helper()
 	reviewCards := make(map[review.CardID]bool)
 	for range 100 {
-		sat, err := s.openSession(t, today, now, flashcards.Scope{Deck: deck})
+		sat, err := s.openSession(t, getToday(), now, flashcards.Scope{Deck: deck})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1939,9 +1942,9 @@ func (s vaulted) reviewDeckSession(t *testing.T, now time.Time, deck string) int
 		}
 		record := s.run(t, now)
 		for _, one := range sat.Queue {
-			took := review.DefaultCost.Review
+			took := review.GetDefaultCost().Review
 			if one.Schedule.IsNew() {
-				took = review.DefaultCost.New
+				took = review.GetDefaultCost().New
 			}
 			reviewCards[one.ID] = true
 			answer(t, record, one.ID.Card, took)
@@ -1958,7 +1961,7 @@ func (s vaulted) reviewDeckSession(t *testing.T, now time.Time, deck string) int
 func TestDecksWithTheSameDueDivideTheDayEqually(t *testing.T) {
 	t.Parallel()
 	s := newDeckVault(t, counts, 40, 40, 40)
-	got := s.rows(t, when)
+	got := s.rows(t, getWhen())
 	for item := range 3 {
 		if got[deckAt(item)] != 10 {
 			t.Errorf("%s holds %d of a day of 30 over three equal decks, and a third is 10",
@@ -1971,7 +1974,7 @@ func TestDecksWithTheSameDueDivideTheDayEqually(t *testing.T) {
 func TestADeckWithMoreDueConsumesTheLargerShare(t *testing.T) {
 	t.Parallel()
 	s := newDeckVault(t, counts, 90, 10)
-	got := s.rows(t, when)
+	got := s.rows(t, getWhen())
 	if got[deckAt(0)] != 27 || got[deckAt(1)] != 3 {
 		t.Errorf("a deck counts 90 beside one counts 10 holds %d and %d of a day of 30, and nine times the share is 27 and 3",
 			got[deckAt(0)], got[deckAt(1)])
@@ -1988,7 +1991,7 @@ func TestADeckThatCannotUseItsSharePreservesItToTheOthers(t *testing.T) {
 	t.Parallel()
 	s := newDeckVault(t, "goal: minutes_a_day\nminutes_a_day: 20\n"+
 		"new_a_day: 9999\nreviews_a_day: 9999\n", 60, 60, 1)
-	got := s.rows(t, when)
+	got := s.rows(t, getWhen())
 	if got[deckAt(2)] != 0 {
 		t.Errorf("%s holds %d out of a share that buys no card", deckAt(2), got[deckAt(2)])
 	}
@@ -1999,7 +2002,7 @@ func TestADeckThatCannotUseItsSharePreservesItToTheOthers(t *testing.T) {
 	}
 	whole := got[deckAt(0)] + got[deckAt(1)] + got[deckAt(2)]
 	if whole != 60 {
-		t.Errorf("the day hands over %d and twenty minutes buys 60", whole)
+		t.Errorf("the day passes %d and twenty minutes buys 60", whole)
 	}
 }
 
@@ -2007,7 +2010,7 @@ func TestADeckThatCannotUseItsSharePreservesItToTheOthers(t *testing.T) {
 func TestADeckContainingNothingConsumesNoShare(t *testing.T) {
 	t.Parallel()
 	s := newDeckVault(t, counts, 0, 40, 40)
-	got := s.rows(t, when)
+	got := s.rows(t, getWhen())
 	if got[deckAt(0)] != 0 {
 		t.Errorf("a deck of no cards holds %d", got[deckAt(0)])
 	}
@@ -2022,7 +2025,7 @@ func TestADeckContainingNothingConsumesNoShare(t *testing.T) {
 func TestOneDeckConsumesTheWholeDay(t *testing.T) {
 	t.Parallel()
 	s := newDeckVault(t, counts, 40)
-	if got := s.rows(t, when)[deckAt(0)]; got != 30 {
+	if got := s.rows(t, getWhen())[deckAt(0)]; got != 30 {
 		t.Errorf("the one deck of the vault holds %d of a day of 30", got)
 	}
 }
@@ -2032,7 +2035,7 @@ func TestTheMinutesOfADayAreDividedOverTheDecksToo(t *testing.T) {
 	t.Parallel()
 	s := newDeckVault(t, "goal: minutes_a_day\nminutes_a_day: 20\n"+
 		"new_a_day: 9999\nreviews_a_day: 9999\n", 60, 60, 60)
-	got := s.rows(t, when)
+	got := s.rows(t, getWhen())
 	// A third of twenty minutes pays for twenty new cards.
 	for item := range 3 {
 		if got[deckAt(item)] != 20 {
@@ -2060,10 +2063,10 @@ func TestTheDeckRowIsWhatPressingTheDeckPassesOver(t *testing.T) {
 	} {
 		t.Run(fmt.Sprint(shape.decks), func(t *testing.T) {
 			s := newDeckVault(t, shape.front, shape.decks...)
-			got := s.rows(t, when)
+			got := s.rows(t, getWhen())
 			for item := range shape.decks {
 				deck := deckAt(item)
-				if pressed := s.pressDeck(t, when, deck); pressed != got[deck] {
+				if pressed := s.pressDeck(t, getWhen(), deck); pressed != got[deck] {
 					t.Errorf("%s is at %d on the overview and yields %d when pressed",
 						deck, got[deck], pressed)
 				}
@@ -2081,7 +2084,7 @@ func TestSessionTheDecksInAnyOrderSpendsTheOneDay(t *testing.T) {
 			s := newDeckVault(t, counts, 40, 40, 40)
 			whole, each := 0, make(map[string]int)
 			for _, item := range order {
-				took := s.reviewDeckSession(t, when, deckAt(item))
+				took := s.reviewDeckSession(t, getWhen(), deckAt(item))
 				each[deckAt(item)] = took
 				whole += took
 			}
@@ -2102,8 +2105,8 @@ func TestSessionTheDecksInAnyOrderSpendsTheOneDay(t *testing.T) {
 // so the same vault divides the same day in whatever order its files are walked.
 func TestTheDivisionDoesNotTurnOnWhereADeckExists(t *testing.T) {
 	t.Parallel()
-	first := newDeckVault(t, counts, 90, 10).rows(t, when)
-	second := newDeckVault(t, counts, 10, 90).rows(t, when)
+	first := newDeckVault(t, counts, 90, 10).rows(t, getWhen())
+	second := newDeckVault(t, counts, 10, 90).rows(t, getWhen())
 	if first[deckAt(0)] != second[deckAt(1)] || first[deckAt(1)] != second[deckAt(0)] {
 		t.Errorf("a deck of 90 beside one of 10 holds %d and %d, and the other way round %d and %d",
 			first[deckAt(0)], first[deckAt(1)], second[deckAt(0)], second[deckAt(1)])

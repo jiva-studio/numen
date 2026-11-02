@@ -144,7 +144,10 @@ func IsSystemTempDir(path string) bool {
 	if err != nil {
 		return false
 	}
-	eval, _ := filepath.EvalSymlinks(clean)
+	eval, err := filepath.EvalSymlinks(clean)
+	if err != nil {
+		eval = ""
+	}
 
 	for _, tempDir := range getSystemTempDirs() {
 		relClean, errClean := filepath.Rel(tempDir, clean)
@@ -256,7 +259,10 @@ func validateBrokenExecutableSymlink(realDir, cleanBin string, evalErr error) (s
 	if !filepath.IsAbs(target) {
 		target = filepath.Join(filepath.Dir(cleanBin), target)
 	}
-	cleanTarget, _ := filepath.Abs(filepath.Clean(target))
+	cleanTarget, absErr := filepath.Abs(filepath.Clean(target))
+	if absErr != nil {
+		return "", fmt.Errorf("resolve entrypoint symlink target: %w", absErr)
+	}
 	if IsSystemTempDir(cleanTarget) {
 		return "", ErrProhibitedTempDir
 	}

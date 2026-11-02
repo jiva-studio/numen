@@ -4,7 +4,7 @@
 
 /** Why writing or reading is impossible. */
 export type NoteErrorCode =
-  /** The file, or the body handed over, is past the ceiling. */
+  /** The file, or the body passed, is past the ceiling. */
   | 'tooLarge'
   /** The core would not take the body it was given. */
   | 'bodyUnwritable'

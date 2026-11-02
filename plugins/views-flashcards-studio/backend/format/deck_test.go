@@ -381,7 +381,7 @@ The ones I began with.
 `))
 
 	if deck.Preamble != "\nCards I am learning.\n\n" {
-		t.Errorf("preamble = %q, want what stands above the first of them", deck.Preamble)
+		t.Errorf("preamble = %q, want what is above the first of them", deck.Preamble)
 	}
 	// Two sections may carry one name, and an empty section is kept.
 	var target []string
@@ -421,7 +421,7 @@ func TestADeckOfSectionsAndNoCards(t *testing.T) {
 		t.Fatalf("cards = %v", deck.Cards)
 	}
 	if deck.Preamble != "\n" {
-		t.Errorf("preamble = %q, want what stands above the first section", deck.Preamble)
+		t.Errorf("preamble = %q, want what is above the first section", deck.Preamble)
 	}
 	if len(deck.Sections) != 1 || deck.Sections[0].Name != "Animals" {
 		t.Fatalf("sections = %+v", deck.Sections)

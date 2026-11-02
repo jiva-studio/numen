@@ -28,7 +28,7 @@ export function useBookPlace(reader: PlacedReader, getTab: () => PlacedTab | und
     () => [getTab()?.selector, reader.isLoading.value] as const,
     ([selector, isLoading]) => {
       const cfi = getSelectorCfi(selector)
-      if (!isLoading && cfi !== null) void reader.goToCfi(cfi).catch(() => false)
+      if (!isLoading && cfi !== null) reader.goToCfi(cfi).catch(() => false)
     },
     { immediate: true },
   )

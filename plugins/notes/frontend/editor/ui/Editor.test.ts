@@ -16,11 +16,6 @@ import { addressOpener, addressResolver } from '../lib/outside'
 type Props = InstanceType<typeof Editor>['$props']
 type EditorHandle = { focus: () => void; measure: () => void; reveal: (line: number) => boolean }
 
-// Nothing here has a size, and the editor measures anyway.
-Range.prototype.getClientRects = () =>
-  Object.assign([], { item: () => null }) as unknown as DOMRectList
-Range.prototype.getBoundingClientRect = () => new DOMRect()
-
 const renderedViews: { unmount: () => void }[] = []
 
 const editor = (props: Partial<Props> = {}) => {
@@ -96,12 +91,21 @@ describe('the text', () => {
 })
 
 describe('the echo of what was typed', () => {
+  const echoFailures: unknown[] = []
+
+  afterEach(() => {
+    expect(echoFailures).toEqual([])
+    echoFailures.length = 0
+  })
+
   /** A parent that hands every emitted value straight back as the prop. */
   const echoing = (modelValue: string, normalise = (value: string) => value) => {
     const handle = editor({
       modelValue,
       'onUpdate:modelValue': (value: string) => {
-        void handle.wrapper.setProps({ modelValue: normalise(value) })
+        handle.wrapper.setProps({ modelValue: normalise(value) }).catch((error: unknown) => {
+          echoFailures.push(error)
+        })
       },
     } as Partial<Props>)
     return handle

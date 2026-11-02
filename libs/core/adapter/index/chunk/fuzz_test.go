@@ -6,32 +6,36 @@ import (
 	"testing"
 
 	_ "modernc.org/sqlite"
+
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 // typedSeeds are inputs a user types into a search box: words, punctuation
 // FTS5 treats as syntax, its own operators, an unclosed quote, a column
 // reference, a phrase, other scripts, and the empty string.
-var typedSeeds = []string{
-	"entropy",
-	"entropy shannon",
-	"state-function",
-	"C++",
-	`say"hello`,
-	`"entropy`,
-	`"""`,
-	"a:b",
-	"one (two)",
-	"NEAR(a b, 2)",
-	"a OR b AND NOT c",
-	"^entropy",
-	"*",
-	"наставник",
-	"शब्द",
-	"a\x00b",
-	"\xff\xfe",
-	strings.Repeat("a ", 200),
-	"   ",
-	"",
+func getTypedSeeds() []string {
+	return []string{
+		"entropy",
+		"entropy shannon",
+		"state-function",
+		"C++",
+		`say"hello`,
+		`"entropy`,
+		`"""`,
+		"a:b",
+		"one (two)",
+		"NEAR(a b, 2)",
+		"a OR b AND NOT c",
+		"^entropy",
+		"*",
+		"наставник",
+		"शब्द",
+		"a\x00b",
+		"\xff\xfe",
+		strings.Repeat("a ", 200),
+		"   ",
+		"",
+	}
 }
 
 // maxQueryLength is how much of what was typed is put to a database.
@@ -48,15 +52,15 @@ func FuzzExpression(f *testing.F) {
 	if err != nil {
 		f.Fatal(err)
 	}
-	f.Cleanup(func() { db.Close() })
-	if _, err := db.Exec(`CREATE VIRTUAL TABLE said USING fts5(text)`); err != nil {
+	testsupport.CloseAfter(f, db)
+	if _, err := db.ExecContext(f.Context(), `CREATE VIRTUAL TABLE said USING fts5(text)`); err != nil {
 		f.Skipf("this build of SQLite has no FTS5: %v", err)
 	}
-	if _, err := db.Exec(`INSERT INTO said(text) VALUES ('entropy is a state function')`); err != nil {
+	if _, err := db.ExecContext(f.Context(), `INSERT INTO said(text) VALUES ('entropy is a state function')`); err != nil {
 		f.Fatal(err)
 	}
 
-	for _, seed := range typedSeeds {
+	for _, seed := range getTypedSeeds() {
 		f.Add(seed, true)
 		f.Add(seed, false)
 	}
@@ -73,7 +77,7 @@ func FuzzExpression(f *testing.F) {
 		expression := Expression(typed, growing)
 		if len(typed) <= maxQueryLength && !strings.ContainsRune(expression, 0) {
 			var count int
-			row := db.QueryRow(`SELECT count(*) FROM said WHERE text MATCH ?`, expression)
+			row := db.QueryRowContext(t.Context(), `SELECT count(*) FROM said WHERE text MATCH ?`, expression)
 			// An empty expression is not a query, and no search is made.
 			if expression != "" {
 				if err := row.Scan(&count); err != nil {

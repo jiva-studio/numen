@@ -1,8 +1,9 @@
 package container
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 	"go/parser"
 	"go/token"
 	"io/fs"
@@ -50,65 +51,13 @@ func getPluginManifests(t *testing.T) []pluginManifest {
 		if err != nil {
 			t.Fatal(err)
 		}
-		parsed, err := pluginport.ReadManifest(strings.NewReader(string(raw)))
+		parsed, err := manifestjson.Read(strings.NewReader(string(raw)))
 		if err != nil {
 			t.Fatalf("%s: %v", path, err)
 		}
 		manifests = append(manifests, pluginManifest{Dir: filepath.Dir(path), Raw: raw, PluginManifest: parsed})
 	}
 	return manifests
-}
-
-// listLifecycleGaps lists what a manifest with a backend leaves out of its
-// lifecycle: the idle policy and the memory limit are each declared by name.
-func listLifecycleGaps(raw []byte) []string {
-	var manifest struct {
-		Backend   *json.RawMessage `json:"backend"`
-		Lifecycle map[string]any   `json:"lifecycle"`
-	}
-	if err := json.Unmarshal(raw, &manifest); err != nil {
-		return []string{err.Error()}
-	}
-	if manifest.Backend == nil {
-		return nil
-	}
-	var gaps []string
-	if _, declared := manifest.Lifecycle["idleTimeoutSeconds"].(float64); !declared {
-		gaps = append(gaps, "idleTimeoutSeconds is not declared")
-	}
-	bytes, _ := manifest.Lifecycle["memoryLimitBytes"].(float64)
-	megabytes, _ := manifest.Lifecycle["memoryLimitMB"].(float64)
-	if bytes <= 0 && megabytes <= 0 {
-		gaps = append(gaps, "memoryLimitBytes is not declared")
-	}
-	return gaps
-}
-
-func TestPluginManifests_BackendDeclaresMemoryLimitAndIdlePolicy(t *testing.T) {
-	for _, one := range getPluginManifests(t) {
-		for _, gap := range listLifecycleGaps(one.Raw) {
-			t.Errorf("%s: %s", one.Dir, gap)
-		}
-	}
-}
-
-func TestLifecycleRule_ReportsMissingLifecycleFields(t *testing.T) {
-	for name, one := range map[string]struct {
-		manifest string
-		gaps     int
-	}{
-		"both declared":          {`{"backend":{"entrypoint":"x"},"lifecycle":{"idleTimeoutSeconds":0,"memoryLimitBytes":1}}`, 0},
-		"the limit in megabytes": {`{"backend":{"entrypoint":"x"},"lifecycle":{"idleTimeoutSeconds":60,"memoryLimitMB":512}}`, 0},
-		"no memory limit":        {`{"backend":{"entrypoint":"x"},"lifecycle":{"idleTimeoutSeconds":60}}`, 1},
-		"no idle policy":         {`{"backend":{"entrypoint":"x"},"lifecycle":{"memoryLimitBytes":1}}`, 1},
-		"no lifecycle":           {`{"backend":{"entrypoint":"x"}}`, 2},
-		"a limit of zero":        {`{"backend":{"entrypoint":"x"},"lifecycle":{"idleTimeoutSeconds":60,"memoryLimitBytes":0}}`, 1},
-		"no backend":             {`{"frontend":{"entrypoint":"x"}}`, 0},
-	} {
-		if got := listLifecycleGaps([]byte(one.manifest)); len(got) != one.gaps {
-			t.Errorf("%s: %d gaps found, want %d: %v", name, len(got), one.gaps, got)
-		}
-	}
 }
 
 var backtick = regexp.MustCompile("`([^`]+)`")
@@ -257,9 +206,12 @@ func TestTheCapabilitiesTheGuideListsAreTheValidators(t *testing.T) {
 		t.Error(difference)
 	}
 	for _, name := range valid {
-		if err := (pluginport.PluginManifest{Capabilities: []string{name}}).ValidateCapabilities(); err != nil {
-			t.Errorf("the validator refuses %s: %v", name, err)
+		if hasIssue(pluginport.PluginManifest{Capabilities: []string{name}}, pluginport.ErrInvalidCapability) {
+			t.Errorf("the validator refuses %s", name)
 		}
+	}
+	if !hasIssue(pluginport.PluginManifest{Capabilities: []string{"not-a-capability"}}, pluginport.ErrInvalidCapability) {
+		t.Error("the validator accepts a capability no host resolves")
 	}
 }
 
@@ -272,15 +224,23 @@ func TestTheActivationEventsTheGuideListsAreTheValidators(t *testing.T) {
 	if len(documented) == 0 {
 		t.Fatal("the guide lists no activation events: a rule checked against nothing")
 	}
-	valid := pluginport.PluginActivationEvents()
+	valid := []string{pluginport.ActivationEventAll}
 	for _, difference := range listDifferences(documented, valid, "activation event") {
 		t.Error(difference)
 	}
 	for _, name := range valid {
-		if err := (pluginport.PluginManifest{ActivationEvents: []string{name}}).ValidateActivationEvents(); err != nil {
-			t.Errorf("the validator refuses %s: %v", name, err)
+		if hasIssue(pluginport.PluginManifest{ActivationEvents: []string{name}}, pluginport.ErrInvalidActivationEvent) {
+			t.Errorf("the validator refuses %s", name)
 		}
 	}
+	if !hasIssue(pluginport.PluginManifest{ActivationEvents: []string{"onCommand:run"}}, pluginport.ErrInvalidActivationEvent) {
+		t.Error("the validator accepts an event no host emits to a subscriber")
+	}
+}
+
+// hasIssue reports whether the manifest breaks the rule the error names.
+func hasIssue(m pluginport.PluginManifest, rule error) bool {
+	return slices.ContainsFunc(m.ListIssues(), func(issue error) bool { return errors.Is(issue, rule) })
 }
 
 func TestWhatTheCapabilityAndEventDocumentationRulesRefuse(t *testing.T) {
@@ -298,8 +258,8 @@ func TestWhatTheCapabilityAndEventDocumentationRulesRefuse(t *testing.T) {
 	if got := readDocumentedCapabilities(guideLine); !slices.Equal(got, []string{"document", "book"}) {
 		t.Errorf("the capabilities line is read as %v", got)
 	}
-	eventGuide := "- **`activationEvents`**: Triggers:\n  - `onCommand:<id>` (e.g. ocr.scan)\n  - `*` (startup)\n- **`next`**:\n"
-	if got := readDocumentedActivationEvents(eventGuide); !slices.Equal(got, []string{"onCommand:<id>", "*"}) {
+	eventGuide := "- **`activationEvents`**: Triggers:\n  - `*` (every event)\n- **`next`**:\n"
+	if got := readDocumentedActivationEvents(eventGuide); !slices.Equal(got, []string{"*"}) {
 		t.Errorf("the activation events section is read as %v", got)
 	}
 }
@@ -403,14 +363,10 @@ func isNamedIn(source, key string) bool {
 }
 
 // listUnreadSettings lists the settings a manifest declares that none of the
-// sources name. The setting that chooses an agent is read by the host, which
-// routes by it.
+// sources name.
 func listUnreadSettings(manifest pluginport.PluginManifest, sources []string) []string {
 	var unread []string
 	for _, setting := range manifest.Settings {
-		if setting.Type == pluginport.SettingTypeAgent {
-			continue
-		}
 		if !slices.ContainsFunc(sources, func(source string) bool { return isNamedIn(source, setting.Key) }) {
 			unread = append(unread, setting.Key)
 		}
@@ -443,7 +399,7 @@ func TestEverySettingAPluginDeclaresIsReadByThePlugin(t *testing.T) {
 
 func TestSettingRule_ReportsUnreadSettings(t *testing.T) {
 	manifest := pluginport.PluginManifest{Settings: []pluginport.PluginManifestSetting{
-		{Key: "language"}, {Key: "dpi"}, {Key: "agent", Type: pluginport.SettingTypeAgent},
+		{Key: "language"}, {Key: "dpi"},
 	}}
 	if got := listUnreadSettings(manifest, []string{`values["language"]`, "const dpi = 'dpi'"}); len(got) != 0 {
 		t.Errorf("settings that are read are found unread: %v", got)
@@ -456,115 +412,12 @@ func TestSettingRule_ReportsUnreadSettings(t *testing.T) {
 	}
 }
 
-// coreCapabilities are the capabilities resolved by the core's adapters and composition root.
-var coreCapabilities = map[string]bool{
-	bridge.CapabilityEmbedding: true,
-	bridge.CapabilityTools:     true,
-	"ai.agent.provider":        true,
-}
-
-// sdkCapabilities are the capabilities resolved by the frontend SDK and tab kinds.
-var sdkCapabilities = map[string]bool{
-	"audio":     true,
-	"recording": true,
-	"media":     true,
-	"note":      true,
-}
-
-// capabilityMarkers are explicit capability markers declared by plugins.
-var capabilityMarkers = map[string]bool{
-	"agent":    true,
-	"book":     true,
-	"document": true,
-}
-
-func isResolvedCapability(capability string) bool {
-	return coreCapabilities[capability] || sdkCapabilities[capability] || capabilityMarkers[capability]
-}
-
-func TestEveryCapabilityInAManifestIsResolvedOrMarked(t *testing.T) {
-	manifests := getPluginManifests(t)
-	declared := 0
-	for _, one := range manifests {
-		for _, capability := range one.Capabilities {
-			declared++
-			if !isResolvedCapability(capability) {
-				t.Errorf("%s declares capability %q which is neither resolved nor an explicit marker", one.Dir, capability)
-			}
-		}
-	}
-	if declared == 0 {
-		t.Fatal("no plugin declares a capability: a rule checked against nothing")
-	}
-}
-
-func TestCapabilityRule_RejectsUnresolvedCapabilities(t *testing.T) {
-	var violations []string
-	for _, capability := range []string{
-		"document",
-		"audio",
-		"views.agent.chat",
-		"unknown.capability",
-		"unresolved",
-	} {
-		if !isResolvedCapability(capability) {
-			violations = append(violations, capability)
-		}
-	}
-	want := []string{"views.agent.chat", "unknown.capability", "unresolved"}
-	if !slices.Equal(violations, want) {
-		t.Errorf("the capability rule rejects %v, want %v", violations, want)
-	}
-}
-
-// isEmittedActivationEvent answers whether an activation event is one the host emits.
-func isEmittedActivationEvent(event string) bool {
-	switch {
-	case event == "*":
-		return true
-	case strings.HasPrefix(event, "onCommand:"):
-		return len(strings.TrimPrefix(event, "onCommand:")) > 0
-	default:
-		return false
-	}
-}
-
-func TestEveryActivationEventIsOneTheHostEmits(t *testing.T) {
-	manifests := getPluginManifests(t)
-	declared := 0
-	for _, one := range manifests {
-		for _, event := range one.ActivationEvents {
-			declared++
-			if !isEmittedActivationEvent(event) {
-				t.Errorf("%s declares activation event %q which is not emitted by the host", one.Dir, event)
-			}
-		}
-	}
-	if declared == 0 {
-		t.Fatal("no plugin declares an activation event: a rule checked against nothing")
-	}
-}
-
-func TestActivationEventRule_RejectsUnsupportedEvents(t *testing.T) {
-	var violations []string
-	for _, event := range []string{
-		"*",
-		"onFile:*.pdf",
-		"onCommand:ocr.recognize",
-		"onStartupFinished",
-		"onView:agent",
-		"unsupportedEvent",
-		"onFile:",
-		"onCommand:",
-		"onView:",
-	} {
-		if !isEmittedActivationEvent(event) {
-			violations = append(violations, event)
-		}
-	}
-	want := []string{"onFile:*.pdf", "onStartupFinished", "onView:agent", "unsupportedEvent", "onFile:", "onCommand:", "onView:"}
-	if !slices.Equal(violations, want) {
-		t.Errorf("the activation event rule rejects %v, want %v", violations, want)
+// The capabilities a manifest may declare are those the adapters of the core resolve a plugin by.
+func TestTheCapabilitiesAManifestMayDeclareAreTheOnesTheHostResolves(t *testing.T) {
+	want := []string{bridge.CapabilityAgentProvider, bridge.CapabilityEmbedding, bridge.CapabilityTools}
+	got := slices.Sorted(slices.Values(pluginport.PluginCapabilities()))
+	if !slices.Equal(got, want) {
+		t.Errorf("PluginCapabilities = %v, want %v", got, want)
 	}
 }
 
@@ -577,22 +430,27 @@ func TestEveryPluginHasAReadme(t *testing.T) {
 	}
 }
 
-// validPluginKinds is every plugin kind known to numen.
-var validPluginKinds = []string{
-	"agents",
-	"readers",
-	"editors",
-	"views",
-	"engines",
-	"tools",
+// listValidPluginKinds returns every plugin kind known to numen.
+func listValidPluginKinds() []string {
+	return []string{
+		"agents",
+		"readers",
+		"editors",
+		"views",
+		"engines",
+		"tools",
+		"themes",
+	}
 }
 
-// domainPlugins are plugins named by the domain they hold whole, with no kind.
-var domainPlugins = []string{"notes"}
+// listDomainPlugins returns plugins named by the domain they hold whole, with no kind.
+func listDomainPlugins() []string {
+	return []string{"notes"}
+}
 
 // listPluginNamingIssues lists what a plugin folder and id break: the id starts
 // with md.numen., matches the folder name (with hyphens mapped to dots),
-// and the kind is one of agents, readers, editors, views, engines or tools, or
+// and the kind is one of agents, readers, editors, views, engines, tools or themes, or
 // the folder is a domain plugin.
 func listPluginNamingIssues(folder, id string) []string {
 	var issues []string
@@ -605,10 +463,10 @@ func listPluginNamingIssues(folder, id string) []string {
 		issues = append(issues, fmt.Sprintf("folder %q differs from id %q without md.numen.", folder, id))
 	}
 	parts := strings.Split(dotFolder, ".")
-	if slices.Contains(domainPlugins, dotFolder) {
+	if slices.Contains(listDomainPlugins(), dotFolder) {
 		return issues
 	}
-	if len(parts) < 2 || !slices.Contains(validPluginKinds, parts[0]) {
+	if len(parts) < 2 || !slices.Contains(listValidPluginKinds(), parts[0]) {
 		issues = append(issues, fmt.Sprintf("kind %q in folder %q is not a known plugin kind", parts[0], folder))
 	}
 	return issues

@@ -160,6 +160,62 @@ export const theme = EditorView.theme({
   '.cm-em': { fontStyle: 'italic' },
   '.cm-strike': { textDecoration: 'line-through', opacity: '0.7' },
   '.cm-link': { color: 'var(--editor-link)', textDecoration: 'underline' },
+  /* A wikilink is one link: its brackets, and the target of an alias, are muted inside it. */
+  '.cm-wikilink': {
+    color: 'var(--editor-link)',
+    textDecoration: 'underline',
+    cursor: 'pointer',
+  },
+  '.cm-wikilink .cm-wikilink-mark, .cm-wikilink-mark': {
+    color: 'var(--editor-mark)',
+  },
+
+  /* Bracket matching, in the selection and alarm tokens. */
+  '&.cm-focused .cm-matchingBracket, .cm-matchingBracket': {
+    backgroundColor: 'var(--numen-selection-match)',
+  },
+  '&.cm-focused .cm-nonmatchingBracket, .cm-nonmatchingBracket': {
+    backgroundColor: 'var(--numen-alarm-bg)',
+  },
+
+  /* The completion list is drawn as the menus of the interface are. */
+  '.cm-tooltip': {
+    backgroundColor: 'var(--numen-raised)',
+    color: 'var(--numen-ink)',
+    border: '1px solid var(--numen-panel-border)',
+    borderRadius: 'var(--numen-radius)',
+    boxShadow: 'var(--numen-panel-shadow)',
+    fontFamily: 'var(--numen-font-sans)',
+    fontSize: 'var(--numen-font-size)',
+    overflow: 'hidden',
+  },
+  '.cm-tooltip.cm-tooltip-autocomplete > ul': {
+    fontFamily: 'inherit',
+    padding: '0.375rem',
+  },
+  '.cm-tooltip.cm-tooltip-autocomplete > ul > li': {
+    color: 'var(--numen-ink)',
+    padding: '0.125rem 0.5rem',
+    borderRadius: 'var(--numen-radius)',
+  },
+  '.cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected]': {
+    backgroundColor: 'var(--numen-bubble-bg)',
+    color: 'var(--numen-ink)',
+  },
+  '.cm-tooltip-autocomplete .cm-completionMatchedText': {
+    textDecoration: 'none',
+    fontWeight: '600',
+    backgroundColor: 'var(--numen-highlight)',
+    borderRadius: '2px',
+  },
+  '.cm-tooltip-autocomplete .cm-completionDetail, .cm-tooltip-autocomplete .cm-completionIcon': {
+    color: 'var(--numen-hushed)',
+    fontStyle: 'normal',
+  },
+  '.cm-tooltip.cm-completionInfo': {
+    color: 'var(--numen-ink)',
+    backgroundColor: 'var(--numen-raised)',
+  },
 
   '.cm-code-inline': {
     fontFamily: 'var(--editor-mono)',

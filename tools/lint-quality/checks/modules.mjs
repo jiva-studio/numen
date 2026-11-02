@@ -79,3 +79,24 @@ function listSubdirectories(repoRoot, relDir) {
     .filter((e) => e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules")
     .map((e) => `${relDir}/${e.name}`);
 }
+
+/**
+ * Finds the Go lint configuration a module is checked with: its own copy when it carries one, the
+ * nearest copy in a parent directory otherwise, the root copy at last.
+ *
+ * @param {string} repoRoot
+ * @param {string} moduleDir
+ * @param {string} fileName `.golangci.yml` or `.golangci-structure.yml`
+ * @returns {string}
+ */
+export function findGoLintConfig(repoRoot, moduleDir, fileName) {
+  let dir = moduleDir;
+  while (dir.startsWith(repoRoot)) {
+    const candidate = path.join(dir, fileName);
+    if (fs.existsSync(candidate)) return candidate;
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return path.join(repoRoot, fileName);
+}

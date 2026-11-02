@@ -20,7 +20,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -78,15 +78,13 @@ var ErrDuplicate = errors.New("a tool of that name is already added")
 
 // Registry is the tools one plugin offers. It serves PluginToolService.
 type Registry struct {
-	numenv1connect.UnimplementedPluginToolServiceHandler
-
 	mu    sync.RWMutex
 	tools []registered
 }
 
 type registered struct {
-	tool *numenv1.PluginTool
-	run  func(ctx context.Context, arguments []byte) *numenv1.ToolResult
+	tool *v1.PluginTool
+	run  func(ctx context.Context, arguments []byte) *v1.ToolResult
 }
 
 // New makes a registry of no tools.
@@ -108,7 +106,7 @@ func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in I
 		}
 	}
 	return r.add(registered{
-		tool: &numenv1.PluginTool{
+		tool: &v1.PluginTool{
 			Name:         spec.Name,
 			Title:        spec.Title,
 			Description:  spec.Description,
@@ -118,16 +116,16 @@ func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in I
 			Servers:      writeServers(spec.Servers),
 			Step:         writeStep(spec.Step),
 		},
-		run: func(ctx context.Context, arguments []byte) *numenv1.ToolResult {
+		run: func(ctx context.Context, arguments []byte) *v1.ToolResult {
 			var in In
 			if len(arguments) > 0 {
 				if err := json.Unmarshal(arguments, &in); err != nil {
-					return &numenv1.ToolResult{Text: fmt.Sprintf("the arguments do not fit: %v", err), IsRefusal: true}
+					return &v1.ToolResult{Text: fmt.Sprintf("the arguments do not fit: %v", err), IsRefusal: true}
 				}
 			}
 			out, err := run(ctx, in)
 			if err != nil {
-				return &numenv1.ToolResult{Text: err.Error(), IsRefusal: true}
+				return &v1.ToolResult{Text: err.Error(), IsRefusal: true}
 			}
 			return writeResult(out)
 		},
@@ -146,27 +144,36 @@ func (r *Registry) add(one registered) error {
 
 // Mount registers the registry as PluginToolService on s.
 func (r *Registry) Mount(s *server.Server) {
-	s.Register(numenv1connect.NewPluginToolServiceHandler(r, s.HandlerOptions()...))
+	s.Register(numenv1connect.NewPluginToolServiceHandler(registryHandler{registry: r}, s.HandlerOptions()...))
+}
+
+// registryHandler serves a Registry as PluginToolService.
+type registryHandler struct {
+	numenv1connect.UnimplementedPluginToolServiceHandler
+
+	registry *Registry
 }
 
 // ListTools lists the tools in the order they were added.
-func (r *Registry) ListTools(
-	context.Context, *connect.Request[numenv1.ListToolsRequest],
-) (*connect.Response[numenv1.ListToolsResponse], error) {
+func (h registryHandler) ListTools(
+	context.Context, *connect.Request[v1.ListToolsRequest],
+) (*connect.Response[v1.ListToolsResponse], error) {
+	r := h.registry
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	items := make([]*numenv1.PluginTool, 0, len(r.tools))
+	items := make([]*v1.PluginTool, 0, len(r.tools))
 	for _, one := range r.tools {
 		items = append(items, one.tool)
 	}
-	return connect.NewResponse(&numenv1.ListToolsResponse{Tools: items}), nil
+	return connect.NewResponse(&v1.ListToolsResponse{Tools: items}), nil
 }
 
 // CallTool runs the tool named. A name nothing was added under, and arguments that are no JSON
 // object, are answered with an error code.
-func (r *Registry) CallTool(
-	ctx context.Context, req *connect.Request[numenv1.CallToolRequest],
-) (*connect.Response[numenv1.CallToolResponse], error) {
+func (h registryHandler) CallTool(
+	ctx context.Context, req *connect.Request[v1.CallToolRequest],
+) (*connect.Response[v1.CallToolResponse], error) {
+	r := h.registry
 	r.mu.RLock()
 	index := slices.IndexFunc(r.tools, func(reg registered) bool { return reg.tool.GetName() == req.Msg.GetName() })
 	var one registered
@@ -175,14 +182,14 @@ func (r *Registry) CallTool(
 	}
 	r.mu.RUnlock()
 	if index < 0 {
-		return connect.NewResponse(&numenv1.CallToolResponse{Error: numenv1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL}), nil
+		return connect.NewResponse(&v1.CallToolResponse{Error: v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL}), nil
 	}
 	if arguments := req.Msg.GetArguments(); len(arguments) > 0 && !isObject(arguments) {
-		return connect.NewResponse(&numenv1.CallToolResponse{Error: numenv1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS}), nil
+		return connect.NewResponse(&v1.CallToolResponse{Error: v1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS}), nil
 	}
 	ctx = context.WithValue(ctx, callContextKey{}, req.Msg.GetContext())
 	ctx = context.WithValue(ctx, vaultKey{}, req.Msg.GetVaultId())
-	return connect.NewResponse(&numenv1.CallToolResponse{Result: one.run(ctx, req.Msg.GetArguments())}), nil
+	return connect.NewResponse(&v1.CallToolResponse{Result: one.run(ctx, req.Msg.GetArguments())}), nil
 }
 
 type callContextKey struct{}
@@ -194,14 +201,20 @@ type vaultKey struct{}
 // that wrote them and a slash. It is empty for a query with none. A tool reads
 // it as data about the call; it is not part of the arguments.
 func GetCallContext(ctx context.Context) map[string]string {
-	request, _ := ctx.Value(callContextKey{}).(map[string]string)
+	request, isMap := ctx.Value(callContextKey{}).(map[string]string)
+	if !isMap {
+		return nil
+	}
 	return request
 }
 
 // GetVault is the identity of the vault the call works: the one the agent run was started on, or for
 // a call from a program outside Numen the one the host shows. It is empty where there is none.
 func GetVault(ctx context.Context) string {
-	vault, _ := ctx.Value(vaultKey{}).(string)
+	vault, isString := ctx.Value(vaultKey{}).(string)
+	if !isString {
+		return ""
+	}
 	return vault
 }
 
@@ -232,51 +245,15 @@ func schemaOf(t reflect.Type) ([]byte, error) {
 
 // writeResult is what a tool answered, as a structured result where it is an object and as text
 // where it is not.
-func writeResult(out any) *numenv1.ToolResult {
+func writeResult(out any) *v1.ToolResult {
 	encoded, err := json.Marshal(out)
 	if err != nil {
-		return &numenv1.ToolResult{Text: fmt.Sprintf("the result cannot be encoded: %v", err), IsRefusal: true}
+		return &v1.ToolResult{Text: fmt.Sprintf("the result cannot be encoded: %v", err), IsRefusal: true}
 	}
 	if isObject(encoded) {
-		return &numenv1.ToolResult{Structured: encoded}
+		return &v1.ToolResult{Structured: encoded}
 	}
-	return &numenv1.ToolResult{Text: string(encoded)}
-}
-
-func writeEffect(effect Effect) numenv1.ToolEffect {
-	switch effect {
-	case ReadOnly:
-		return numenv1.ToolEffect_TOOL_EFFECT_READ_ONLY
-	case ReadWrite:
-		return numenv1.ToolEffect_TOOL_EFFECT_READ_WRITE
-	}
-	return numenv1.ToolEffect_TOOL_EFFECT_UNSPECIFIED
-}
-
-func writeStep(step Step) numenv1.ToolStep {
-	switch step {
-	case Search:
-		return numenv1.ToolStep_TOOL_STEP_SEARCH
-	case Remove:
-		return numenv1.ToolStep_TOOL_STEP_REMOVE
-	case Move:
-		return numenv1.ToolStep_TOOL_STEP_MOVE
-	case ByEffect:
-	}
-	return numenv1.ToolStep_TOOL_STEP_UNSPECIFIED
-}
-
-func writeServers(servers []Server) []numenv1.ToolServer {
-	wire := make([]numenv1.ToolServer, 0, len(servers))
-	for _, one := range servers {
-		switch one {
-		case Full:
-			wire = append(wire, numenv1.ToolServer_TOOL_SERVER_FULL)
-		case Reading:
-			wire = append(wire, numenv1.ToolServer_TOOL_SERVER_READING)
-		}
-	}
-	return wire
+	return &v1.ToolResult{Text: string(encoded)}
 }
 
 // ErrorCode is the result status of a tool call.
@@ -433,108 +410,9 @@ func (t *ToolInfo) GetServers() []Server {
 	return t.Servers
 }
 
-func readEffect(effect numenv1.ToolEffect) Effect {
-	switch effect {
-	case numenv1.ToolEffect_TOOL_EFFECT_READ_ONLY:
-		return ReadOnly
-	case numenv1.ToolEffect_TOOL_EFFECT_READ_WRITE:
-		return ReadWrite
-	default:
-		return 0
-	}
-}
-
-func readStep(step numenv1.ToolStep) Step {
-	switch step {
-	case numenv1.ToolStep_TOOL_STEP_SEARCH:
-		return Search
-	case numenv1.ToolStep_TOOL_STEP_REMOVE:
-		return Remove
-	case numenv1.ToolStep_TOOL_STEP_MOVE:
-		return Move
-	default:
-		return ByEffect
-	}
-}
-
-func readServers(servers []numenv1.ToolServer) []Server {
-	var out []Server
-	for _, s := range servers {
-		switch s {
-		case numenv1.ToolServer_TOOL_SERVER_FULL:
-			out = append(out, Full)
-		case numenv1.ToolServer_TOOL_SERVER_READING:
-			out = append(out, Reading)
-		}
-	}
-	return out
-}
-
-func readToolInfo(t *numenv1.PluginTool) *ToolInfo {
-	if t == nil {
-		return nil
-	}
-	return &ToolInfo{
-		Name:         t.GetName(),
-		Title:        t.GetTitle(),
-		Description:  t.GetDescription(),
-		InputSchema:  t.GetInputSchema(),
-		OutputSchema: t.GetOutputSchema(),
-		Effect:       readEffect(t.GetEffect()),
-		Step:         readStep(t.GetStep()),
-		Servers:      readServers(t.GetServers()),
-	}
-}
-
-func writeToolInfo(t *ToolInfo) *numenv1.PluginTool {
-	if t == nil {
-		return nil
-	}
-	return &numenv1.PluginTool{
-		Name:         t.Name,
-		Title:        t.Title,
-		Description:  t.Description,
-		InputSchema:  t.InputSchema,
-		OutputSchema: t.OutputSchema,
-		Effect:       writeEffect(t.Effect),
-		Step:         writeStep(t.Step),
-		Servers:      writeServers(t.Servers),
-	}
-}
-
-func readCallResponse(res *numenv1.CallToolResponse) *CallResponse {
-	if res == nil {
-		return nil
-	}
-	out := &CallResponse{Error: ErrorCode(res.GetError())}
-	if r := res.GetResult(); r != nil {
-		out.Result = &CallResult{
-			Text:       r.GetText(),
-			Structured: r.GetStructured(),
-			IsRefusal:  r.GetIsRefusal(),
-		}
-	}
-	return out
-}
-
-func writeCallResponse(res *CallResponse) *numenv1.CallToolResponse {
-	if res == nil {
-		return &numenv1.CallToolResponse{}
-	}
-	out := &numenv1.CallToolResponse{Error: numenv1.ToolErrorCode(res.Error)}
-	if res.Result != nil {
-		out.Result = &numenv1.ToolResult{
-			Text:       res.Result.Text,
-			Structured: res.Result.Structured,
-			IsRefusal:  res.Result.IsRefusal,
-		}
-	}
-	return out
-}
-
 // ListToolInfos returns the tools in the registry.
 func (r *Registry) ListToolInfos(ctx context.Context) ([]*ToolInfo, error) {
-	res, err := r.ListTools(ctx, connect.NewRequest(&numenv1.ListToolsRequest{}))
+	res, err := registryHandler{registry: r}.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
 	if err != nil {
 		return nil, err
 	}
@@ -547,7 +425,7 @@ func (r *Registry) ListToolInfos(ctx context.Context) ([]*ToolInfo, error) {
 
 // InvokeTool invokes a tool in the registry.
 func (r *Registry) InvokeTool(ctx context.Context, call Call) (*CallResponse, error) {
-	res, err := r.CallTool(ctx, connect.NewRequest(&numenv1.CallToolRequest{
+	res, err := registryHandler{registry: r}.CallTool(ctx, connect.NewRequest(&v1.CallToolRequest{
 		Name:      call.Name,
 		Arguments: call.Arguments,
 		Context:   call.Context,
@@ -577,7 +455,7 @@ func NewClient(endpoint hostcall.Endpoint) Client {
 }
 
 func (c *rpcClient) ListToolInfos(ctx context.Context) ([]*ToolInfo, error) {
-	res, err := c.rpc.ListTools(ctx, connect.NewRequest(&numenv1.ListToolsRequest{}))
+	res, err := c.rpc.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
 	if err != nil {
 		return nil, err
 	}
@@ -589,7 +467,7 @@ func (c *rpcClient) ListToolInfos(ctx context.Context) ([]*ToolInfo, error) {
 }
 
 func (c *rpcClient) InvokeTool(ctx context.Context, call Call) (*CallResponse, error) {
-	res, err := c.rpc.CallTool(ctx, connect.NewRequest(&numenv1.CallToolRequest{
+	res, err := c.rpc.CallTool(ctx, connect.NewRequest(&v1.CallToolRequest{
 		Name:      call.Name,
 		Arguments: call.Arguments,
 		Context:   call.Context,
@@ -614,23 +492,23 @@ type serviceAdapter struct {
 
 func (a *serviceAdapter) ListTools(
 	ctx context.Context,
-	req *connect.Request[numenv1.ListToolsRequest],
-) (*connect.Response[numenv1.ListToolsResponse], error) {
+	req *connect.Request[v1.ListToolsRequest],
+) (*connect.Response[v1.ListToolsResponse], error) {
 	infos, err := a.h.ListToolInfos(ctx, req.Header())
 	if err != nil {
 		return nil, err
 	}
-	wire := make([]*numenv1.PluginTool, len(infos))
+	wire := make([]*v1.PluginTool, len(infos))
 	for i, t := range infos {
 		wire[i] = writeToolInfo(t)
 	}
-	return connect.NewResponse(&numenv1.ListToolsResponse{Tools: wire}), nil
+	return connect.NewResponse(&v1.ListToolsResponse{Tools: wire}), nil
 }
 
 func (a *serviceAdapter) CallTool(
 	ctx context.Context,
-	req *connect.Request[numenv1.CallToolRequest],
-) (*connect.Response[numenv1.CallToolResponse], error) {
+	req *connect.Request[v1.CallToolRequest],
+) (*connect.Response[v1.CallToolResponse], error) {
 	res, err := a.h.InvokeTool(ctx, req.Header(), Call{
 		Name:      req.Msg.GetName(),
 		Arguments: req.Msg.GetArguments(),

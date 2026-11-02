@@ -68,6 +68,7 @@ interface ReviewActionDeps {
   state: ReturnType<typeof useReviewSession>
   agentPanel: { endConversation: () => void }
   showNotice: (text: string, severity: Severity) => void
+  reportError: (why: unknown) => void
   goToVaults: () => void
 }
 
@@ -87,13 +88,13 @@ function createReviewActions(deps: ReviewActionDeps) {
 
   const leave = async () => {
     deps.goTo('decks')
-    void deps.reviewDays.read(deps.vault)
+    deps.reviewDays.read(deps.vault).catch(deps.reportError)
     await deps.counts.count()
-    void readSchedules()
+    readSchedules().catch(deps.reportError)
   }
 
   const goToVaults = () => {
-    void deps.counts.count()
+    deps.counts.count().catch(deps.reportError)
     deps.goToVaults()
   }
 
@@ -121,6 +122,7 @@ function useChosenVault(deps: {
   vaultCount: ComputedRef<VaultCardsDue | null>
   counts: VaultCounts
   readSchedules: () => Promise<void>
+  reportError: (why: unknown) => void
 }) {
   let isRead = false
   watch(
@@ -129,7 +131,7 @@ function useChosenVault(deps: {
       if (!isCounted || isRead) return
       isRead = true
       deps.counts.stop()
-      void deps.readSchedules()
+      deps.readSchedules().catch(deps.reportError)
     },
     { immediate: true },
   )
@@ -173,6 +175,7 @@ export const useReview = (deps: ReviewDeps) => {
     state,
     agentPanel: panels.agentPanel,
     showNotice: notices.showNotice,
+    reportError: notices.reportError,
     goToVaults: deps.goToVaults,
   })
 
@@ -182,11 +185,19 @@ export const useReview = (deps: ReviewDeps) => {
     getPresetsByDeck: () => schedules.byDeck.value,
     isShown: () => state.isAnswerShown.value,
     getShowing: () => panels.showing.value,
-    start: (deck) => void actions.start(deck),
+    start: (deck) => {
+      actions.start(deck).catch(notices.reportError)
+    },
     show: state.show,
-    answer: (how) => void actions.recordReview(how),
-    takeBack: () => void state.takeBack(),
-    leave: () => void actions.leave(),
+    answer: (how) => {
+      actions.recordReview(how).catch(notices.reportError)
+    },
+    takeBack: () => {
+      state.takeBack().catch(notices.reportError)
+    },
+    leave: () => {
+      actions.leave().catch(notices.reportError)
+    },
     goToVaults: actions.goToVaults,
     toggleAgent: panels.toggleAgent,
     toggleNotes: panels.toggleNotes,
@@ -197,8 +208,13 @@ export const useReview = (deps: ReviewDeps) => {
 
   deps.counts.start()
   deps.counts.setRefresh(actions.refresh)
-  void reviewDays.read(deps.vault)
-  useChosenVault({ vaultCount, counts: deps.counts, readSchedules: actions.readSchedules })
+  reviewDays.read(deps.vault).catch(notices.reportError)
+  useChosenVault({
+    vaultCount,
+    counts: deps.counts,
+    readSchedules: actions.readSchedules,
+    reportError: notices.reportError,
+  })
 
   onScopeDispose(() => {
     deps.counts.setRefresh(null)

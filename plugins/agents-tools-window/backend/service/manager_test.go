@@ -1,13 +1,15 @@
 package service
 
 import (
-	"context"
 	"errors"
 	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 )
 
 func TestWindowManagerOpenTabs(t *testing.T) {
-	mgr := NewManager()
+	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	tabs, front := mgr.GetOpenTabs()
 	if len(tabs) != 0 || front != "" {
 		t.Fatalf("expected empty tabs initially, got len=%d front=%q", len(tabs), front)
@@ -32,7 +34,7 @@ func TestWindowManagerOpenTabs(t *testing.T) {
 }
 
 func TestWindowManagerFocusTabExisting(t *testing.T) {
-	mgr := NewManager()
+	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	initial := []TabInfo{
 		{ID: "t1", Kind: "note", Path: "notes/a.md", Title: "A"},
 		{ID: "t2", Kind: "note", Path: "notes/b.md", Title: "B"},
@@ -40,7 +42,7 @@ func TestWindowManagerFocusTabExisting(t *testing.T) {
 	mgr.SetOpenTabs(initial, "t1")
 
 	// Focus by ID
-	ctx := context.Background()
+	ctx := t.Context()
 	focused, err := mgr.FocusTab(ctx, WindowFocusTabInput{TabID: "t2"})
 	if err != nil {
 		t.Fatalf("FocusTab: %v", err)
@@ -73,8 +75,8 @@ func TestWindowManagerFocusTabExisting(t *testing.T) {
 }
 
 func TestWindowManagerFocusTabNewPath(t *testing.T) {
-	mgr := NewManager()
-	ctx := context.Background()
+	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
+	ctx := t.Context()
 
 	focused, err := mgr.FocusTab(ctx, WindowFocusTabInput{Path: "notes/new.md"})
 	if err != nil {
@@ -94,8 +96,8 @@ func TestWindowManagerFocusTabNewPath(t *testing.T) {
 }
 
 func TestWindowManagerFocusTabValidation(t *testing.T) {
-	mgr := NewManager()
-	ctx := context.Background()
+	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
+	ctx := t.Context()
 
 	_, err := mgr.FocusTab(ctx, WindowFocusTabInput{})
 	if !errors.Is(err, errMissingFocusTarget) {
@@ -109,7 +111,7 @@ func TestWindowManagerFocusTabValidation(t *testing.T) {
 }
 
 func TestWindowManagerPreviews(t *testing.T) {
-	mgr := NewManager()
+	mgr := NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	id := mgr.NextPreviewID()
 	if id == "" {
 		t.Fatal("expected non-empty preview ID")

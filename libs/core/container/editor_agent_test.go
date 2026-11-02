@@ -12,7 +12,7 @@ import (
 // plugin it was started in when another call finishes it.
 func TestEditorAgent_EndsConversationStartedInEarlierCall(t *testing.T) {
 	host, one, _ := twoProviders(t)
-	assembly := container.NewEditorAssembly(container.Config{PluginHost: host}, nil, nil)
+	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
 
 	runTask(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha", Conversation: "c-1"})
 	if err := assembly.GetAgent().EndConversation(t.Context(), "c-1"); err != nil {
@@ -28,7 +28,7 @@ func TestEditorAgent_EndsConversationStartedInEarlierCall(t *testing.T) {
 // goes straight to its plugin without listing the programs a second time.
 func TestEditorSettingsShareAgentRouter(t *testing.T) {
 	host, one, _ := twoProviders(t)
-	assembly := container.NewEditorAssembly(container.Config{PluginHost: host}, nil, nil)
+	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
 
 	if _, err := assembly.OpenGetSettings().Execute(); err != nil {
 		t.Fatal(err)

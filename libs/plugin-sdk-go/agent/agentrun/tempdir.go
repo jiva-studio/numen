@@ -12,44 +12,57 @@ import (
 )
 
 // CreateTempDir creates a temporary directory matching pattern, and returns its path and a clean-up
-// function that deletes it.
-func CreateTempDir(pattern string) (string, func(), error) {
+// function that deletes it and returns the error of the deletion.
+func CreateTempDir(pattern string) (string, func() error, error) {
 	dir, err := os.MkdirTemp("", pattern)
 	if err != nil {
-		return "", func() {}, err
+		return "", func() error { return nil }, err
 	}
-	return dir, func() { _ = os.RemoveAll(dir) }, nil
+	return dir, func() error {
+		if err := os.RemoveAll(dir); err != nil {
+			return fmt.Errorf("remove %s: %w", dir, err)
+		}
+		return nil
+	}, nil
 }
 
 // WriteTempFile creates a mode-0600 temporary file matching pattern, writes data to it, and returns
 // its path.
-func WriteTempFile(pattern string, data []byte) (string, error) {
+func WriteTempFile(pattern string, data []byte) (path string, err error) {
 	file, err := os.CreateTemp("", pattern)
 	if err != nil {
 		return "", fmt.Errorf("create temp config: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			err = errors.Join(err, fmt.Errorf("close config: %w", closeErr))
+		}
+		if err != nil {
+			if removeErr := os.Remove(file.Name()); removeErr != nil && !errors.Is(removeErr, fs.ErrNotExist) {
+				err = errors.Join(err, fmt.Errorf("remove config: %w", removeErr))
+			}
+			path = ""
+		}
+	}()
 
 	if err := file.Chmod(0o600); err != nil {
-		_ = os.Remove(file.Name())
 		return "", fmt.Errorf("chmod config: %w", err)
 	}
 	if _, err := file.Write(data); err != nil {
-		_ = os.Remove(file.Name())
 		return "", fmt.Errorf("write config: %w", err)
 	}
 	return file.Name(), nil
 }
 
-// RemoveFile removes the file at path when present.
-func RemoveFile(path string) {
-	// gomutants:disable-next-line BRANCH_IF reason="os.Remove on an empty path returns ErrNotExist which is ignored"
+// RemoveFile removes the file at path. An empty path and a missing file are not errors.
+func RemoveFile(path string) error {
 	if path == "" {
-		return
+		return nil
 	}
 	if err := os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		fmt.Fprintf(os.Stderr, "remove %s: %v\n", path, err)
+		return fmt.Errorf("remove %s: %w", path, err)
 	}
+	return nil
 }
 
 // IsRunnable reports whether path is an executable file.
@@ -80,16 +93,27 @@ func CreateDir(path string, perm os.FileMode) error {
 	return os.MkdirAll(path, perm)
 }
 
-// LinkEntries symlinks each entry in from into into, skipping except.
-func LinkEntries(from, into, except string) {
+// LinkEntries symlinks each entry in from into into, skipping except. A missing from folder and an
+// entry already present in into are not errors. A failing entry does not stop the remaining ones;
+// the failures are returned joined.
+func LinkEntries(from, into, except string) error {
 	entries, err := os.ReadDir(from)
 	if err != nil {
-		return
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil
+		}
+		return fmt.Errorf("read %s: %w", from, err)
 	}
+	var failures []error
 	for _, entry := range entries {
 		name := entry.Name()
-		if name != except {
-			_ = os.Symlink(filepath.Join(from, name), filepath.Join(into, name))
+		if name == except {
+			continue
+		}
+		target := filepath.Join(into, name)
+		if err := os.Symlink(filepath.Join(from, name), target); err != nil && !errors.Is(err, fs.ErrExist) {
+			failures = append(failures, fmt.Errorf("link %s: %w", target, err))
 		}
 	}
+	return errors.Join(failures...)
 }

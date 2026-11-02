@@ -27,7 +27,7 @@ export interface DocumentOptions {
   readonly modelValue?: string
   readonly path?: string
   readonly filePath?: string
-  readonly errorMessage?: string
+  readonly errorMessage?: string | Readonly<Ref<string>>
   readonly state?: DocumentState | undefined
 }
 
@@ -56,6 +56,18 @@ function extractErrorString(source: unknown): string {
     if (typeof val === 'string') return val.trim()
   }
   return ''
+}
+
+/** Why the host stopped saving the note: its file changed on disk, or is gone. */
+export type FileConflict = 'stale' | 'gone'
+
+/** The conflict a tab state holds, as a value or a ref; null where there is none. */
+export function readFileConflict(source: unknown): FileConflict | null {
+  const value =
+    typeof source === 'object' && source !== null && 'value' in source
+      ? (source as { value: unknown }).value
+      : source
+  return value === 'stale' || value === 'gone' ? value : null
 }
 
 interface DelimiterState {
@@ -236,11 +248,15 @@ export function useMarkdownDocument(
     return ''
   }
 
+  /** A host tab supplies the body from its store, so the editor does not read the file itself. */
+  const isHostOwned = (): boolean => props.state !== undefined
+
   const docContent = ref(getInitialBody())
   const initialContent = ref(getInitialBody())
 
   const isDirty = computed(() => docContent.value !== initialContent.value)
   const frontmatter = computed<FrontmatterResult>(() => parseFrontmatter(docContent.value))
+  const loadError = ref('')
   const frontmatterError = computed(() => checkFrontmatterError(docContent.value))
 
   const isLoading = computed(() => {
@@ -258,7 +274,7 @@ export function useMarkdownDocument(
     if (stateErr) return stateErr
     const fmErr = frontmatterError.value
     if (typeof fmErr === 'string' && fmErr.trim()) return fmErr.trim()
-    return ''
+    return loadError.value
   })
 
   watch(
@@ -271,7 +287,7 @@ export function useMarkdownDocument(
       return ''
     },
     (next) => {
-      if (next && next !== docContent.value) {
+      if ((next || isHostOwned()) && next !== docContent.value) {
         docContent.value = next
         initialContent.value = next
       }
@@ -286,7 +302,7 @@ export function useMarkdownDocument(
     }
   }
 
-  async function loadContentFromPath(filePath: string): Promise<void> {
+  async function readContentFromPath(filePath: string): Promise<void> {
     if (!filePath) return
     try {
       const res = await fetch(getAssetUrl(filePath))
@@ -302,12 +318,19 @@ export function useMarkdownDocument(
     }
   }
 
+  /** Starts reading the file; a failure outside the fetch is shown as the document error. */
+  function loadContentFromPath(filePath: string): void {
+    readContentFromPath(filePath).catch((error: unknown) => {
+      loadError.value = error instanceof Error ? error.message : String(error)
+    })
+  }
+
   watch(editorRef, (val) => syncEditorState(val), { immediate: true })
 
   onMounted(() => {
     syncEditorState(editorRef.value)
-    if (!docContent.value && activePath.value) {
-      void loadContentFromPath(activePath.value)
+    if (!docContent.value && activePath.value && !isHostOwned()) {
+      loadContentFromPath(activePath.value)
     }
   })
 
@@ -317,8 +340,8 @@ export function useMarkdownDocument(
       docContent.value = nextBody
       initialContent.value = nextBody
     }
-    if (newPath && !docContent.value) {
-      void loadContentFromPath(newPath)
+    if (newPath && !docContent.value && !isHostOwned()) {
+      loadContentFromPath(newPath)
     }
   })
 

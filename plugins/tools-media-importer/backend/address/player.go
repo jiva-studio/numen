@@ -9,21 +9,20 @@ import (
 // of its own.
 const PlayerOrigin = "https://www.youtube-nocookie.com"
 
-// playerSites lists the hosts for which GetPlayerURL has a player, written
-// without `www.`.
-var playerSites = map[string]bool{
-	"youtube.com":          true,
-	"m.youtube.com":        true,
-	"music.youtube.com":    true,
-	"youtube-nocookie.com": true,
-	"youtu.be":             true,
+// isPlayerSite reports whether GetPlayerURL has a player for the host, written without `www.`.
+func isPlayerSite(key string) bool {
+	switch key {
+	case "youtube.com", "m.youtube.com", "music.youtube.com", "youtube-nocookie.com", "youtu.be":
+		return true
+	}
+	return false
 }
 
 // GetPlayerURL is the address of the player that plays the video at the address in a frame, and
 // false where no player is known for it.
 func GetPlayerURL(link URL) (string, bool) {
 	parsed, err := url.Parse(string(link))
-	if err != nil || !playerSites[strings.TrimPrefix(parsed.Hostname(), "www.")] {
+	if err != nil || !isPlayerSite(strings.TrimPrefix(parsed.Hostname(), "www.")) {
 		return "", false
 	}
 	id := getVideoID(parsed)

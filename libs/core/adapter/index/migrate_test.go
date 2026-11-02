@@ -8,9 +8,10 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 func TestEveryMigrationIsNamedAndOrdered(t *testing.T) {
@@ -58,7 +59,7 @@ func TestFreshDatabaseIsAtTheNewestVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer testsupport.Close(t, db)
 
 	available, err := loadMigrations()
 	if err != nil {
@@ -97,7 +98,7 @@ func TestReopeningAppliesNothingAndKeepsData(t *testing.T) {
 	if err != nil {
 		t.Fatalf("reopen: %v", err)
 	}
-	defer second.Close()
+	defer testsupport.Close(t, second)
 
 	var count int
 	if err := second.write.QueryRowContext(ctx, `SELECT COUNT(*) FROM vaults`).Scan(&count); err != nil {
@@ -116,7 +117,7 @@ func TestMigrationsRunInOneTransactionEach(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer testsupport.Close(t, db)
 
 	// A statement that cannot apply must leave the version where it was, so the
 	// next start retries the whole migration and not resuming half-way.
@@ -180,7 +181,7 @@ func TestAnIndexFromALaterBuildIsEmptiedAndBuiltAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer raw.Close()
+	defer testsupport.Close(t, raw)
 
 	// the later build left is in it.
 	var pos int
@@ -229,7 +230,7 @@ func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
 
 	db, err := Open(ctx, path)
 	if err == nil {
-		db.Close()
+		testsupport.Close(t, db)
 		t.Fatal("an index whose schema does not match its number was opened")
 	}
 	t.Logf("failed with: %v", err)
@@ -239,7 +240,7 @@ func TestAnIndexWhoseSchemaDoesNotMatchItsNumberIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer back.Close()
+	defer testsupport.Close(t, back)
 	var strangers int
 	if err := back.QueryRowContext(ctx,
 		`SELECT count(*) FROM sqlite_master WHERE type='table' AND name='strangers'`).Scan(&strangers); err != nil {
@@ -270,7 +271,7 @@ func TestAnIndexOfItsOwnIsNotBuiltAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { again.Close() })
+	testsupport.CloseAfter(t, again)
 
 	var vaults int
 	if err := again.write.QueryRowContext(ctx, `SELECT count(*) FROM vaults`).Scan(&vaults); err != nil {
@@ -302,7 +303,7 @@ func TestPragmaUserVersionRollsBackWithItsTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer testsupport.Close(t, db)
 
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -327,79 +328,90 @@ func TestPragmaUserVersionRollsBackWithItsTransaction(t *testing.T) {
 	}
 }
 
-// breaksOn lists the statements that the breaking driver fails. A test that
-// uses the breaking driver sets it through breakWhere, since the driver is
-// registered once per process.
-var breaksOn atomic.Pointer[func(query string) bool]
+// faults are the statements and rows a breaking database fails, set by the test that opened it.
+type faults struct {
+	breaks atomic.Pointer[func(query string) bool]
+	rows   atomic.Pointer[rowFault]
+}
 
 // errBroken is what every statement the breaking driver fails answers with.
 var errBroken = errors.New("broken for the test")
 
-// breakingDriver registers a driver that fails the statements breaksOn names and
-// runs every other statement unchanged. A transaction's BEGIN is the statement
-// "BEGIN".
-var breakingDriver = sync.OnceValue(func() error {
-	base, err := sql.Open("sqlite", ":memory:")
-	if err != nil {
-		return err
-	}
-	defer base.Close()
-	sql.Register("sqlite-breaking", breaking{base.Driver()})
-	return nil
-})
-
 // breakWhere fails, until the test ends, every statement the predicate holds for.
-func breakWhere(t *testing.T, breaks func(query string) bool) {
+func (f *faults) breakWhere(t *testing.T, breaks func(query string) bool) {
 	t.Helper()
-	breaksOn.Store(&breaks)
-	t.Cleanup(func() { breaksOn.Store(nil) })
+	f.breaks.Store(&breaks)
+	t.Cleanup(f.stop)
 }
 
 // breakOn fails, until the test ends, every statement containing the text given.
-func breakOn(t *testing.T, text string) {
+func (f *faults) breakOn(t *testing.T, text string) {
 	t.Helper()
-	breakWhere(t, func(query string) bool { return strings.Contains(query, text) })
+	f.breakWhere(t, func(query string) bool { return strings.Contains(query, text) })
 }
 
-// openBreaking is the index file at path through the breaking driver, opened the
-// way the write pool is.
-func openBreaking(t *testing.T, path string) *sql.DB {
+// stop stops the breaking driver failing any statement.
+func (f *faults) stop() { f.breaks.Store(nil) }
+
+// openBreaking is the index file at path through a driver that fails the statements the faults
+// name and runs every other statement unchanged, opened the way the write pool is. A
+// transaction's BEGIN is the statement "BEGIN".
+func openBreaking(t *testing.T, path string) (*sql.DB, *faults) {
 	t.Helper()
-	if err := breakingDriver(); err != nil {
-		t.Fatal(err)
-	}
-	db, err := sql.Open("sqlite-breaking", writeDSN(path, settings{synchronous: shipped}))
+	base, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
 		t.Fatal(err)
 	}
+	wrapped := breaking{Driver: base.Driver(), faults: &faults{}}
+	if err := base.Close(); err != nil {
+		t.Fatal(err)
+	}
+	db := sql.OpenDB(connector{name: writeDSN(path, settings{synchronous: shipped}), driver: wrapped})
 	db.SetMaxOpenConns(1)
-	t.Cleanup(func() { db.Close() })
-	return db
+	testsupport.CloseAfter(t, db)
+	return db, wrapped.faults
 }
 
-func isBroken(query string) bool {
-	breaks := breaksOn.Load()
+// connector opens the connections of a database through one driver value, which no name
+// registers.
+type connector struct {
+	name   string
+	driver driver.Driver
+}
+
+func (c connector) Connect(context.Context) (driver.Conn, error) { return c.driver.Open(c.name) }
+
+func (c connector) Driver() driver.Driver { return c.driver }
+
+func (f *faults) isBroken(query string) bool {
+	breaks := f.breaks.Load()
 	return breaks != nil && (*breaks)(query)
 }
 
-type breaking struct{ driver.Driver }
+type breaking struct {
+	driver.Driver
+	faults *faults
+}
 
 func (d breaking) Open(name string) (driver.Conn, error) {
 	c, err := d.Driver.Open(name)
 	if err != nil {
 		return nil, err
 	}
-	return breakingConn{c}, nil
+	return breakingConn{c, d.faults}, nil
 }
 
-type breakingConn struct{ driver.Conn }
+type breakingConn struct {
+	driver.Conn
+	faults *faults
+}
 
 func (c breakingConn) Prepare(query string) (driver.Stmt, error) {
 	s, err := c.Conn.Prepare(query)
 	if err != nil {
 		return nil, err
 	}
-	return breakingStmt{s, query}, nil
+	return breakingStmt{s, query, c.faults}, nil
 }
 
 func (c breakingConn) PrepareContext(ctx context.Context, query string) (driver.Stmt, error) {
@@ -411,28 +423,37 @@ func (c breakingConn) PrepareContext(ctx context.Context, query string) (driver.
 	if err != nil {
 		return nil, err
 	}
-	return breakingStmt{s, query}, nil
+	return breakingStmt{s, query, c.faults}, nil
 }
 
 // BeginTx is where database/sql starts every transaction on this driver.
 func (c breakingConn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
-	if isBroken("BEGIN") {
+	if c.faults.isBroken("BEGIN") {
 		return nil, fmt.Errorf("%w: BEGIN", errBroken)
 	}
-	tx, err := c.Conn.(driver.ConnBeginTx).BeginTx(ctx, opts)
+	begin, ok := c.Conn.(driver.ConnBeginTx)
+	if !ok {
+		return nil, errors.New("the wrapped connection cannot begin a transaction with options")
+	}
+	tx, err := begin.BeginTx(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
-	return breakingTx{tx}, nil
+	return breakingTx{tx, c.faults}, nil
 }
 
 // breakingTx fails a commit while "COMMIT" is broken, and leaves the transaction
 // rolled back.
-type breakingTx struct{ driver.Tx }
+type breakingTx struct {
+	driver.Tx
+	faults *faults
+}
 
 func (t breakingTx) Commit() error {
-	if isBroken("COMMIT") {
-		_ = t.Tx.Rollback()
+	if t.faults.isBroken("COMMIT") {
+		if err := t.Tx.Rollback(); err != nil {
+			return errors.Join(fmt.Errorf("%w: COMMIT", errBroken), err)
+		}
 		return fmt.Errorf("%w: COMMIT", errBroken)
 	}
 	return t.Tx.Commit()
@@ -440,28 +461,37 @@ func (t breakingTx) Commit() error {
 
 type breakingStmt struct {
 	driver.Stmt
-	query string
+	query  string
+	faults *faults
 }
 
 // ExecContext and QueryContext are where every statement in this package runs,
 // so they are the one place that needs to see the fault. modernc.org/sqlite
 // implements both on every statement.
 func (s breakingStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (driver.Result, error) {
-	if isBroken(s.query) {
+	if s.faults.isBroken(s.query) {
 		return nil, fmt.Errorf("%w: %s", errBroken, strings.TrimSpace(s.query))
 	}
-	return s.Stmt.(driver.StmtExecContext).ExecContext(ctx, args)
+	exec, ok := s.Stmt.(driver.StmtExecContext)
+	if !ok {
+		return nil, errors.New("the wrapped statement cannot execute with a context")
+	}
+	return exec.ExecContext(ctx, args)
 }
 
 func (s breakingStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driver.Rows, error) {
-	if isBroken(s.query) {
+	if s.faults.isBroken(s.query) {
 		return nil, fmt.Errorf("%w: %s", errBroken, strings.TrimSpace(s.query))
 	}
-	rows, err := s.Stmt.(driver.StmtQueryContext).QueryContext(ctx, args)
+	query, ok := s.Stmt.(driver.StmtQueryContext)
+	if !ok {
+		return nil, errors.New("the wrapped statement cannot query with a context")
+	}
+	rows, err := query.QueryContext(ctx, args)
 	if err != nil {
 		return nil, err
 	}
-	if fault := rowsBreak.Load(); fault != nil && strings.Contains(s.query, fault.text) {
+	if fault := s.faults.rows.Load(); fault != nil && strings.Contains(s.query, fault.text) {
 		return breakingRows{rows, fault.unreadable}, nil
 	}
 	return rows, nil
@@ -475,14 +505,12 @@ type rowFault struct {
 	unreadable bool
 }
 
-var rowsBreak atomic.Pointer[rowFault]
-
 // breakRows fails the reading of the rows of every statement containing text,
 // until the test ends.
-func breakRows(t *testing.T, text string, unreadable bool) {
+func (f *faults) breakRows(t *testing.T, text string, unreadable bool) {
 	t.Helper()
-	rowsBreak.Store(&rowFault{text: text, unreadable: unreadable})
-	t.Cleanup(func() { rowsBreak.Store(nil) })
+	f.rows.Store(&rowFault{text: text, unreadable: unreadable})
+	t.Cleanup(func() { f.rows.Store(nil) })
 }
 
 type breakingRows struct {
@@ -524,8 +552,8 @@ func TestRememberPreservesTheOriginalTableWhenRenamingFails(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	db := openBreaking(t, path)
-	breakOn(t, "RENAME TO")
+	db, faults := openBreaking(t, path)
+	faults.breakOn(t, "RENAME TO")
 
 	if err := createBookkeeping(ctx, db); !errors.Is(err, errBroken) {
 		t.Fatalf("remember answered %v over a rename it could not make", err)
@@ -535,7 +563,7 @@ func TestRememberPreservesTheOriginalTableWhenRenamingFails(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer back.Close()
+	defer testsupport.Close(t, back)
 
 	var name string
 	if err := back.QueryRowContext(ctx,
@@ -599,7 +627,7 @@ func TestMigrationToPrefixIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer testsupport.Close(t, db)
 
 	matches, err := db.NoteQueries().GetNameMatches(ctx, "01TEST", "thermo", 10)
 	if err != nil {

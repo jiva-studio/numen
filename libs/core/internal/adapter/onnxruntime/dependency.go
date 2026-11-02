@@ -38,10 +38,10 @@ func (p *ONNXProvisioner) Provision(
 ) (pluginport.ResolvedDependency, error) {
 	var last time.Time
 	report := func(done, total int64) {
-		if onProgress == nil || (done < total && time.Since(last) < progressInterval) {
+		if onProgress == nil || (done < total && p.inner.cfg.Clock.Now().Sub(last) < progressInterval) {
 			return
 		}
-		last = time.Now()
+		last = p.inner.cfg.Clock.Now()
 		var percent float64
 		if total > 0 {
 			percent = float64(done) * 100 / float64(total)

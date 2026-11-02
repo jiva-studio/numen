@@ -1,31 +1,22 @@
 /**
  * Note domain conversions between schema representations and window models.
  */
+import { formatFingerprint } from '@numen/plugin-host'
 import {
-  asFailure,
-  asValue,
   findErrorCode,
-  formatFingerprint,
-  getNames,
   isStaleAnswer,
   NAME_SOURCE,
   NOTE_RELATION,
-  NOTE_ROLE,
   parseFingerprint,
   type NameSourceCode,
   type NoteErrorCodeValue,
   type NoteRelationCode,
-  type NoteRoleCode,
-} from '@numen/plugin-sdk'
-import type {
-  Link,
-  Neighbourhood,
-  NoteResult,
-  NoteRelation,
-  Role,
-  WriteResult,
-} from '@/entities/note'
+  asFailure,
+  asValue,
+} from '@numen/core-client'
+import type { Neighbourhood, NoteResult, NoteRelation, WriteResult } from '@/entities/note'
 import type { NoteType } from '@/entities/file'
+import { mapConnection, type ConnectionWire } from './relationWords'
 
 interface NeighbourhoodWire {
   readonly focus?: { readonly path: string; readonly title: string } | undefined
@@ -34,11 +25,8 @@ interface NeighbourhoodWire {
     readonly note?: { readonly path: string; readonly title: string } | undefined
     readonly type: string
     readonly relation: NoteRelationCode
-    readonly label: string
-    readonly reverseLabel: string
-    readonly through: string
-    readonly isMutual: boolean
   }[]
+  readonly connections: readonly ConnectionWire[]
 }
 
 /**
@@ -50,19 +38,6 @@ export const writes: Record<NameSourceCode, boolean> = {
   [NAME_SOURCE.FRONTMATTER]: true,
   [NAME_SOURCE.FILENAME]: false,
 }
-
-/** The role of a link, as named in the window. */
-const called: Record<NoteRoleCode, Role | null> = {
-  [NOTE_ROLE.UNSPECIFIED]: null,
-  [NOTE_ROLE.PARENT]: 'parent',
-  [NOTE_ROLE.CHILD]: 'child',
-  [NOTE_ROLE.JUMP]: 'jump',
-  [NOTE_ROLE.REF]: 'ref',
-  [NOTE_ROLE.ATTACHMENT]: 'attachment',
-}
-
-/** The role of a link, as named in the schema. */
-export const roles = getNames<Role, NoteRoleCode>(called)
 
 /** The position of a note relative to the focused note, as named in the window. */
 export const relationByWire: Record<NoteRelationCode, NoteRelation | null> = {
@@ -80,13 +55,6 @@ export const mapNoteType = (of: string): NoteType => of || 'note'
 export const mapRange = (range: { start: number; end: number }) => ({
   start: range.start,
   end: range.end,
-})
-
-/** A link in the shape the schema carries it. */
-export const mapLink = (link: Link) => ({
-  to: link.to,
-  role: roles[link.role],
-  label: link.label ?? '',
 })
 
 export const mapBaseline = (baseline: { prose: string; stat: string }) => ({
@@ -132,11 +100,8 @@ export const mapNeighbourhood = (answer: NeighbourhoodWire): Neighbourhood => ({
         title: one.note.title,
         type: mapNoteType(one.type),
         relation,
-        label: one.label,
-        reverseLabel: one.reverseLabel,
-        through: one.through,
-        isMutual: one.isMutual,
       },
     ]
   }),
+  connections: answer.connections.map((one) => mapConnection(one, '')),
 })

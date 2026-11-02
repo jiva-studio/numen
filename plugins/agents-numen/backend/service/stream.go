@@ -64,7 +64,7 @@ func readWholeStreamReply(reader io.Reader, emit func(string) error) (message, s
 // text sent to emit at once. A 400 or 422 response is errStreamRejected.
 func (c chat) stream(
 	ctx context.Context, model string, effort effort, messages []message, tools []functionTool, emit func(string) error,
-) (message, string, error) {
+) (reply message, reason string, err error) {
 	if err := c.checkKey(); err != nil {
 		return message{}, "", err
 	}
@@ -79,7 +79,7 @@ func (c chat) stream(
 	if err != nil {
 		return message{}, "", err
 	}
-	defer resp.Body.Close()
+	defer func() { err = errors.Join(err, resp.Body.Close()) }()
 
 	if resp.StatusCode != http.StatusOK {
 		return message{}, "", readStreamStatusError(resp)

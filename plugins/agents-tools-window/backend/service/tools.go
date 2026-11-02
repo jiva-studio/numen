@@ -9,7 +9,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
-	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/internal/adapter/clock"
 )
 
 // RegisterTools registers all window interaction and edit preview tools on the given registry.
@@ -115,7 +114,7 @@ func addEditPreview(registry *tools.Registry, manager *WindowManager, vault host
 			Diff:            diffText,
 			Additions:       additions,
 			Deletions:       deletions,
-			CreatedAt:       clock.Now(),
+			CreatedAt:       manager.GetNow(),
 		}
 		manager.SavePreview(preview)
 

@@ -1,9 +1,7 @@
 /**
- * The build every plugin frontend shares: the paths its imports resolve to,
- * and the one ES module and stylesheet it is packed into.
+ * The build every plugin frontend shares: the one ES module and stylesheet it is packed into.
  *
- * A plugin's `vite.config.ts` and `vitest.config.ts` name the aliases and
- * externals they use; the paths and the shape of the bundle are written here.
+ * A plugin resolves `@numen/plugin-sdk` and `@numen/ui` as installed packages, by their `exports`.
  */
 import { existsSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -13,33 +11,6 @@ import { LIGHTNING_CSS } from '@numen/ui/vite'
 import { createStoryUtilitiesPlugin, createUtilitiesPlugin } from './viteStyles.ts'
 
 export { createStoryUtilitiesPlugin }
-
-const modules = resolve(import.meta.dirname, '../../..')
-
-/** Every alias a plugin may resolve, in the order Vite tries them. */
-const ALIASES = {
-  '@plugins': resolve(modules, 'plugins'),
-  '@numen/plugin-sdk/testing': resolve(modules, 'libs/plugin-sdk-ts/src/testing/index.ts'),
-  '@numen/plugin-sdk': resolve(modules, 'libs/plugin-sdk-ts/src/index.ts'),
-  '@numen/protocol/numen/v1': resolve(modules, 'libs/protocol/src/numen/v1'),
-  '@numen/protocol': resolve(modules, 'libs/protocol/index.ts'),
-  '@numen/ui/styles.css': resolve(modules, 'libs/ui/core/dist/numen-ui.css'),
-  '@numen/ui': resolve(modules, 'libs/ui/core/dist/index.js'),
-} as const
-
-export type AliasName = keyof typeof ALIASES
-
-/** The named aliases and their paths, in the order of `ALIASES`. */
-export function getPluginAliases(names: readonly AliasName[]): Record<string, string> {
-  const wanted = new Set<AliasName>([
-    ...names,
-    '@numen/protocol/numen/v1',
-    '@numen/protocol',
-  ])
-  return Object.fromEntries(
-    Object.entries(ALIASES).filter(([name]) => wanted.has(name as AliasName)),
-  )
-}
 
 /** Writes an empty `dist/styles.css` when the bundle carries no stylesheet. */
 function createStylesPlugin(root: string): Plugin {
@@ -60,7 +31,6 @@ export interface PluginBuildOptions {
   readonly root: string
   /** The plugins of the build ahead of the stylesheet one, such as `vue()`. */
   readonly plugins: readonly PluginOption[]
-  readonly aliases: readonly AliasName[]
 }
 
 /**
@@ -69,8 +39,11 @@ export interface PluginBuildOptions {
  */
 export function createPluginBuildConfig(options: PluginBuildOptions): UserConfig {
   return {
-    plugins: [...options.plugins, createUtilitiesPlugin(), createStylesPlugin(options.root)],
-    resolve: { alias: getPluginAliases(options.aliases) },
+    plugins: [
+      ...options.plugins,
+      createUtilitiesPlugin(options.root),
+      createStylesPlugin(options.root),
+    ],
     css: { lightningcss: LIGHTNING_CSS },
     build: {
       outDir: 'dist',

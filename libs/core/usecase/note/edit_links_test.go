@@ -65,13 +65,13 @@ func TestEditLinks_ChecksCallerFingerprint(t *testing.T) {
 			return err
 		},
 		"pointing": func(c changing, retained domain.FileStat) error {
-			_, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Heat.md", "series",
-				domain.Address{Scheme: domain.SchemeName, Value: "Order"}, domain.RoleParent, retained)
+			_, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Heat.md", note.LinkPoint{Of: "series",
+				To: domain.Address{Scheme: domain.SchemeName, Value: "Order"}, Role: domain.RoleParent, Stat: retained})
 			return err
 		},
 		"removing": func(c changing, targetItem domain.FileStat) error {
 			_, err := c.newEditLinks().Remove(t.Context(), c.vault, "Heat.md",
-				domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, domain.RoleParent, targetItem)
+				domain.LinkKey{Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, Role: domain.RoleParent, Type: "series"}, targetItem)
 			return err
 		},
 	}
@@ -100,7 +100,7 @@ func TestEditingLinksInABlockSavedOnOneLineChangesNothing(t *testing.T) {
 
 	_, added := c.newEditLinks().Add(t.Context(), c.vault, "Heat.md", domain.FileStat{}, toEntropy(domain.RoleRef))
 	_, removed := c.newEditLinks().Remove(t.Context(), c.vault, "Heat.md",
-		domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, domain.RoleParent, domain.FileStat{})
+		domain.LinkKey{Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, Role: domain.RoleParent, Type: "series"}, domain.FileStat{})
 
 	if !errors.Is(added, markdown.ErrInline) {
 		t.Errorf("adding: want ErrInline, got %v", added)
@@ -118,7 +118,7 @@ func TestRemovingALinkThatIsNotThereIsRefused(t *testing.T) {
 	c := openChanging(t, map[string]string{"Heat.md": linkedHeat})
 
 	_, err := c.newEditLinks().Remove(t.Context(), c.vault, "Heat.md",
-		domain.Address{Scheme: domain.SchemeName, Value: "Order"}, domain.RoleParent, domain.FileStat{})
+		domain.LinkKey{Target: domain.Address{Scheme: domain.SchemeName, Value: "Order"}, Role: domain.RoleParent, Type: "series"}, domain.FileStat{})
 
 	if err == nil || !strings.Contains(err.Error(), "no link to") {
 		t.Errorf("want an error naming the missing link, got %v", err)
@@ -135,7 +135,7 @@ func TestPointingALinkNeedsATypeAndARoleThatIsKnown(t *testing.T) {
 	t.Run("no type", func(t *testing.T) {
 		t.Parallel()
 		c := openChanging(t, map[string]string{"Heat.md": linkedHeat})
-		_, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Heat.md", "", order, domain.RoleParent, domain.FileStat{})
+		_, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Heat.md", note.LinkPoint{To: order, Role: domain.RoleParent})
 		if err == nil {
 			t.Error("a link pointed at under no type was written")
 		}
@@ -146,7 +146,7 @@ func TestPointingALinkNeedsATypeAndARoleThatIsKnown(t *testing.T) {
 	t.Run("a role nobody acts on", func(t *testing.T) {
 		t.Parallel()
 		c := openChanging(t, map[string]string{"Heat.md": linkedHeat})
-		_, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Heat.md", "series", order, "sibling", domain.FileStat{})
+		_, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Heat.md", note.LinkPoint{Of: "series", To: order, Role: "sibling"})
 		if err == nil || !strings.Contains(err.Error(), "sibling") {
 			t.Errorf("want an error naming the role, got %v", err)
 		}
@@ -157,7 +157,7 @@ func TestPointingALinkNeedsATypeAndARoleThatIsKnown(t *testing.T) {
 	t.Run("a role is not asked for when the link is taken out", func(t *testing.T) {
 		t.Parallel()
 		c := openChanging(t, map[string]string{"Heat.md": linkedHeat})
-		if _, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Heat.md", "series", domain.Address{}, "", domain.FileStat{}); err != nil {
+		if _, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Heat.md", note.LinkPoint{Of: "series"}); err != nil {
 			t.Fatalf("taking a link out failed: %v", err)
 		}
 		if body := c.read(t, "Heat.md"); strings.Contains(body, "Entropy") {

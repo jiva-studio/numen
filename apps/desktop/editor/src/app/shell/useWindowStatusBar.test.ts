@@ -1,8 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { useWindowStatusBar } from './useWindowStatusBar'
 import type { Task } from '@/shared/notices/task'
-import { WORDS as words } from '@/shared/words'
 import { pick } from '@/testing/pick'
 
 const base: Task = {
@@ -16,6 +15,7 @@ const base: Task = {
   isUserStarted: false,
   pluginId: '',
   pluginName: '',
+  isCancellable: true,
 }
 
 const first = (task: Task) => pick(useWindowStatusBar({ tasks: ref([task]) }).tasks.value, 0)
@@ -65,7 +65,7 @@ describe('useWindowStatusBar groups', () => {
     expect(first({ ...base, pluginId: 'md.example.first' }).group).toBe('md.example.first')
   })
 
-  it('groups the core work under one group whatever its label says', () => {
+  it('leaves the core work without a group whatever its label says', () => {
     const tasks = ref<readonly Task[]>([
       { ...base, id: 'a', label: 'Transcribing speech' },
       { ...base, id: 'b', label: 'Recognising a scan' },
@@ -73,7 +73,7 @@ describe('useWindowStatusBar groups', () => {
 
     const groups = useWindowStatusBar({ tasks }).tasks.value.map((one) => one.group)
 
-    expect(groups).toEqual([words.coreTasks, words.coreTasks])
+    expect(groups).toEqual([undefined, undefined])
   })
 })
 
@@ -102,18 +102,58 @@ describe('useWindowStatusBar detail and unit', () => {
 })
 
 describe('useWindowStatusBar handlers', () => {
-  it('passes cancel and retry to the callbacks given, and does nothing without them', () => {
-    const onCancel = vi.fn()
+  it('passes cancel and retry to the callbacks given, and does nothing without them', async () => {
+    const cancelTask = vi.fn(() => Promise.resolve())
     const onRetry = vi.fn()
-    const bar = useWindowStatusBar({ tasks: ref([base]), onCancel, onRetry })
-    bar.onCancelTask('t')
+    const bar = useWindowStatusBar({ tasks: ref([base]), cancelTask, onRetry })
+    await bar.onCancelTask('t')
     bar.onRetryTask('t')
-    expect(onCancel).toHaveBeenCalledWith('t')
+    expect(cancelTask).toHaveBeenCalledWith('t')
     expect(onRetry).toHaveBeenCalledWith('t')
 
     const barWithoutCallbacks = useWindowStatusBar({ tasks: ref([base]) })
-    expect(() => barWithoutCallbacks.onCancelTask('t')).not.toThrow()
+    await expect(barWithoutCallbacks.onCancelTask('t')).resolves.toBeUndefined()
+    expect(barWithoutCallbacks.tasks.value[0]?.state).toBe('running')
     expect(() => barWithoutCallbacks.onRetryTask('t')).not.toThrow()
+  })
+
+  it('shows a cancelled task as cancelling until the core takes it out of the list', async () => {
+    const tasks = ref<readonly Task[]>([base])
+    const cancelTask = vi.fn(() => Promise.resolve())
+    const bar = useWindowStatusBar({ tasks, cancelTask })
+
+    await bar.onCancelTask('t')
+    expect(bar.tasks.value[0]?.state).toBe('cancelling')
+
+    await bar.onCancelTask('t')
+    expect(cancelTask).toHaveBeenCalledTimes(1)
+
+    tasks.value = [{ ...base, completedCount: 2 }]
+    expect(bar.tasks.value[0]?.state).toBe('cancelling')
+
+    tasks.value = []
+    await nextTick()
+    tasks.value = [base]
+    expect(bar.tasks.value[0]?.state).toBe('running')
+  })
+
+  it('shows the task running again and reports the error when the core does not cancel it', async () => {
+    const error = new Error('no cancellable task has that id')
+    const reportCancelError = vi.fn()
+    const bar = useWindowStatusBar({
+      tasks: ref([base]),
+      cancelTask: () => Promise.reject(error),
+      reportCancelError,
+    })
+
+    await bar.onCancelTask('t')
+
+    expect(bar.tasks.value[0]?.state).toBe('running')
+    expect(reportCancelError).toHaveBeenCalledWith(error)
+  })
+
+  it('offers no cancel for a task the core cannot cancel', () => {
+    expect(first({ ...base, isCancellable: false }).canCancel).toBe(false)
   })
 
   it('shows the action and passes the task plugin id to onAction', () => {
@@ -145,5 +185,24 @@ describe('useWindowStatusBar handlers', () => {
     statusBar.onActionTask('t')
 
     expect(onAction).not.toHaveBeenCalled()
+  })
+
+  it('lists the same ids in the same order through every report of a task', () => {
+    const report = (step: number): readonly Task[] => [
+      { ...base, id: 'vectors', label: 'Indexing', about: `file ${step}`, completedCount: step },
+      { ...base, id: 'texts', label: 'Reading', pluginName: 'Reader' },
+      { ...base, id: 'lost', error: 'The vault is gone' },
+    ]
+    const tasks = ref<readonly Task[]>(report(1))
+    const statusBar = useWindowStatusBar({ tasks })
+    const ids = () => statusBar.tasks.value.map((one) => one.id)
+    const first = ids()
+
+    for (let step = 2; step <= 20; step++) {
+      tasks.value = report(step)
+      expect(ids()).toEqual(first)
+    }
+    expect(first).toEqual(['vectors', 'texts', 'lost'])
+    expect(pick(statusBar.tasks.value, 0).about).toBe('file 20')
   })
 })

@@ -41,7 +41,7 @@ func makeAnswers(
 // not by minutes.
 func TestWhatAnAnswerCostsIsTheMiddleOfTheAnswers(t *testing.T) {
 	delta := review.NewFSRS()
-	pos := time.Now().Add(-400 * 24 * time.Hour)
+	pos := getTestEpoch().Add(-400 * 24 * time.Hour)
 
 	// Twelve review cards answered three times each: three seconds while a card
 	// review card is being learned and nine once it is scheduled in days. One of them
@@ -73,14 +73,14 @@ func TestWhatAnAnswerCostsIsTheMiddleOfTheAnswers(t *testing.T) {
 // at the default and reports it.
 func TestAHistoryTooShortToSayExistsAtTheDefault(t *testing.T) {
 	delta := review.NewFSRS()
-	pos := time.Now().Add(-400 * 24 * time.Hour)
+	pos := getTestEpoch().Add(-400 * 24 * time.Hour)
 
 	// One review card answered once, for fifty-five seconds.
 	answers := makeAnswers(pos, 1, 1, func(int, int) time.Duration { return 55 * time.Second })
 
 	cost := getCost(delta, answers)
-	if cost != review.DefaultCost {
-		t.Errorf("cost = %+v, want the default %+v", cost, review.DefaultCost)
+	if cost != review.GetDefaultCost() {
+		t.Errorf("cost = %+v, want the default %+v", cost, review.GetDefaultCost())
 	}
 	if cost.ShouldReadNew || cost.ShouldReadReview {
 		t.Errorf("cost = %+v, want neither half read from the answers", cost)
@@ -91,7 +91,7 @@ func TestAHistoryTooShortToSayExistsAtTheDefault(t *testing.T) {
 // other at the default and reports which of the two it is.
 func TestACostOfOneKindPreservesTheOtherAtTheDefault(t *testing.T) {
 	delta := review.NewFSRS()
-	pos := time.Now().Add(-400 * 24 * time.Hour)
+	pos := getTestEpoch().Add(-400 * 24 * time.Hour)
 
 	// Twelve review cards answered twice each, which is a vault holding no answer
 	// to a card that comes round in days.
@@ -101,9 +101,9 @@ func TestACostOfOneKindPreservesTheOtherAtTheDefault(t *testing.T) {
 	if cost.New != 30*time.Second || !cost.ShouldReadNew {
 		t.Errorf("a card being learned costs %v, read %t, want 30s read", cost.New, cost.ShouldReadNew)
 	}
-	if cost.Review != review.DefaultCost.Review || cost.ShouldReadReview {
+	if cost.Review != review.GetDefaultCost().Review || cost.ShouldReadReview {
 		t.Errorf("a review costs %v, read %t, want the default %v unread",
-			cost.Review, cost.ShouldReadReview, review.DefaultCost.Review)
+			cost.Review, cost.ShouldReadReview, review.GetDefaultCost().Review)
 	}
 }
 
@@ -111,7 +111,7 @@ func TestACostOfOneKindPreservesTheOtherAtTheDefault(t *testing.T) {
 // day is never priced at more cards than can be answered.
 func TestAKindOfAnswerIsNeverCostedBelowTheShortest(t *testing.T) {
 	delta := review.NewFSRS()
-	pos := time.Now().Add(-400 * 24 * time.Hour)
+	pos := getTestEpoch().Add(-400 * 24 * time.Hour)
 
 	answers := makeAnswers(pos, 12, 3, func(int, int) time.Duration { return 20 * time.Millisecond })
 
@@ -125,7 +125,7 @@ func TestAKindOfAnswerIsNeverCostedBelowTheShortest(t *testing.T) {
 // screen does not count as an hour of review.
 func TestAnAnswerNobodySatThroughIsCappedAtTheLongest(t *testing.T) {
 	delta := review.NewFSRS()
-	pos := time.Now().Add(-400 * 24 * time.Hour)
+	pos := getTestEpoch().Add(-400 * 24 * time.Hour)
 
 	// Every answer stayed on the screen for an hour, so the median of them is
 	// what one answer is capped at.
@@ -140,8 +140,8 @@ func TestAnAnswerNobodySatThroughIsCappedAtTheLongest(t *testing.T) {
 // A vault holding no answer times is projected at the default, and not at
 // nothing a minute.
 func TestAVaultContainingNoAnswerTimesIsProjectedAtTheDefault(t *testing.T) {
-	if got := getCost(review.NewFSRS(), nil); got != review.DefaultCost {
-		t.Errorf("cost = %+v, want the default %+v", got, review.DefaultCost)
+	if got := getCost(review.NewFSRS(), nil); got != review.GetDefaultCost() {
+		t.Errorf("cost = %+v, want the default %+v", got, review.GetDefaultCost())
 	}
 }
 
@@ -149,7 +149,7 @@ func TestAVaultContainingNoAnswerTimesIsProjectedAtTheDefault(t *testing.T) {
 // only the answers that carry a time determine a cost.
 func TestAnAnswerCarryingNoTimeReturnsNothingAboutItsKind(t *testing.T) {
 	delta := review.NewFSRS()
-	pos := time.Now().Add(-400 * 24 * time.Hour)
+	pos := getTestEpoch().Add(-400 * 24 * time.Hour)
 
 	// Twenty-four review cards answered three times each, at nine seconds an
 	// answer. Half the review cards were answered with no time recorded at all.
@@ -177,7 +177,7 @@ func getCost(delta review.Scheduler, answers []review.Answer) review.AnswerCost 
 	if cost, ok := costs[group]; ok {
 		return cost
 	}
-	return review.DefaultCost
+	return review.GetDefaultCost()
 }
 
 // drawDivision generates the amount each of a preset's decks has due and the

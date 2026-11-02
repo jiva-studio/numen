@@ -7,9 +7,11 @@ package link
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	pathpkg "path"
 	"strings"
 	"sync"
@@ -55,13 +57,18 @@ type Fetcher interface {
 	Download(ctx context.Context, address string, into io.Writer) (download.Copy, error)
 }
 
+// Clock gets the current time.
+type Clock interface {
+	Now() time.Time
+}
+
 // Host is what the plugin works through the host.
 type Host struct {
 	Vault host.Vault
 	Store host.Store
 	Texts host.Texts
 	Queue host.Queue
-	Now   func() time.Time
+	Clock Clock
 }
 
 // Settings are the user's fetch settings. CopyMaxSize is in bytes; zero means
@@ -77,7 +84,7 @@ type Links struct {
 	host     Host
 	fetcher  func() Fetcher
 	settings func() Settings
-	now      func() time.Time
+	clock    Clock
 
 	closing   chan struct{}
 	closeOnce sync.Once
@@ -90,12 +97,8 @@ type Links struct {
 // New returns the links service for the host. fetcher and settings are
 // evaluated on every fetch, so a changed setting applies to the next one.
 func New(h Host, fetcher func() Fetcher, settings func() Settings) *Links {
-	now := h.Now
-	if now == nil {
-		now = func() time.Time { return time.Unix(1_700_000_000, 0) }
-	}
 	return &Links{
-		host: h, fetcher: fetcher, settings: settings, now: now,
+		host: h, fetcher: fetcher, settings: settings, clock: h.Clock,
 		closing: make(chan struct{}), closeOnce: sync.Once{}, wg: sync.WaitGroup{},
 		mu: sync.Mutex{}, running: map[string]bool{},
 	}
@@ -149,8 +152,8 @@ func readLink(ctx context.Context, vault host.Vault, path string) (Link, error) 
 		return Link{}, err
 	}
 	note := markdown.Parse(domain.FileStat{Path: path, Kind: "", Size: 0, ModTime: time.Time{}}, raw)
-	value, _ := note.Frontmatter[urlKey].(string)
-	if note.Type != NoteType || value == "" {
+	value, isText := note.Frontmatter[urlKey].(string)
+	if note.Type != NoteType || !isText || value == "" {
 		return Link{}, fmt.Errorf("%s: %w", path, ErrNotALink)
 	}
 	parsed, err := address.Parse(value)
@@ -178,7 +181,11 @@ func (l *Links) Create(ctx context.Context, folder, raw string) (Link, error) {
 	if err != nil {
 		return Link{}, err
 	}
-	doc, err := markdown.Open(markdown.Create(ulid.New(l.now()), ""))
+	identifier, err := ulid.NewGenerator(rand.Reader).NewID(l.clock.Now())
+	if err != nil {
+		return Link{}, err
+	}
+	doc, err := markdown.Open(markdown.Create(identifier, ""))
 	if err != nil {
 		return Link{}, err
 	}
@@ -274,9 +281,10 @@ func (l *Links) StartFetch(ctx context.Context, link Link) {
 	l.wg.Go(func() {
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
-		_ = l.FetchText(runCtx, link, true)
+		reportBackgroundError(runCtx, "fetch the text of", link, l.FetchText(runCtx, link, true))
 		if l.IsCopyable(link.Address) {
-			_, _ = l.Copy(runCtx, link)
+			_, err := l.Copy(runCtx, link)
+			reportBackgroundError(runCtx, "copy the video of", link, err)
 		}
 	})
 }
@@ -286,7 +294,7 @@ func (l *Links) StartFetchText(ctx context.Context, link Link, isUserStarted boo
 	l.wg.Go(func() {
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
-		_ = l.FetchText(runCtx, link, isUserStarted)
+		reportBackgroundError(runCtx, "fetch the text of", link, l.FetchText(runCtx, link, isUserStarted))
 	})
 }
 
@@ -295,8 +303,19 @@ func (l *Links) StartCopy(ctx context.Context, link Link) {
 	l.wg.Go(func() {
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
 		defer cancel()
-		_, _ = l.Copy(runCtx, link)
+		_, err := l.Copy(runCtx, link)
+		reportBackgroundError(runCtx, "copy the video of", link, err)
 	})
+}
+
+// reportBackgroundError writes the failure of background work on a link to the standard error
+// stream of the plugin process. The failure is also shown as the task of the work. A work ended by
+// Close, and a work another run has, are not failures.
+func reportBackgroundError(ctx context.Context, work string, link Link, err error) {
+	if err == nil || ctx.Err() != nil || errors.Is(err, ErrBeingFetched) {
+		return
+	}
+	fmt.Fprintf(os.Stderr, "tools-media-importer: %s %s: %v\n", work, link.Path, err)
 }
 
 // taskTitles are the names of each type of work on a link in the task list.
@@ -325,8 +344,8 @@ func (l *Links) FetchText(ctx context.Context, link Link, isUserStarted bool) er
 		}
 	}
 	task := host.Task{
-		ID: getTaskID("text", link.Path), Title: fetchingText, About: link.Path,
-		Done: 0, Total: 0, Unit: host.UnitThings, Error: "", IsUserStarted: isUserStarted,
+		ID: getTaskID("text", link.Path), Title: fetchingText, Detail: link.Path,
+		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: isUserStarted,
 	}
 	l.reportTask(ctx, task)
 	err := l.fetchText(ctx, folder, link)
@@ -372,7 +391,11 @@ func (l *Links) fetchText(ctx context.Context, folder folder, link Link) error {
 	rec.Address, rec.Title, rec.Producer = string(link.Address), fetched.Title, fetched.Producer
 	rec.Downloader = model.Tool + " " + model.Version
 	rec.Kind = getKind(fetched)
-	if err := folder.writeText(ctx, link.Key, getSegments(fetched), rec); err != nil {
+	segments, err := getSegments(fetched)
+	if err != nil {
+		return err
+	}
+	if err := folder.writeText(ctx, link.Key, segments, rec); err != nil {
 		return err
 	}
 	return l.putVersion(ctx, link, rec.Kind)
@@ -429,8 +452,8 @@ func (l *Links) Copy(ctx context.Context, link Link) (int64, error) {
 		return 0, ErrNotCopyable
 	}
 	task := host.Task{
-		ID: getTaskID("copy", link.Path), Title: copyingVideo, About: link.Path,
-		Done: 0, Total: 0, Unit: host.UnitBytes, Error: "", IsUserStarted: true,
+		ID: getTaskID("copy", link.Path), Title: copyingVideo, Detail: link.Path,
+		CompletedCount: 0, TotalCount: 0, Unit: host.UnitBytes, FailureReason: "", IsUserStarted: true,
 	}
 	l.reportTask(ctx, task)
 	size, err := l.copy(ctx, fetcher, settings, link, task)
@@ -438,7 +461,7 @@ func (l *Links) Copy(ctx context.Context, link Link) (int64, error) {
 	return size, err
 }
 
-func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, link Link, task host.Task) (int64, error) {
+func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, link Link, task host.Task) (size int64, err error) {
 	meta, err := fetcher.GetMetadata(ctx, string(link.Address))
 	if err != nil {
 		return 0, err
@@ -450,7 +473,7 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 	if err != nil {
 		return 0, err
 	}
-	defer turn.Release()
+	defer func() { err = errors.Join(err, turn.Release()) }()
 
 	part := link.Hash + partExt
 	store := l.getStore(link)
@@ -463,7 +486,7 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 			return store.Append(ctx, part, chunk)
 		},
 		report: func(byteCount int64) {
-			task.Done, task.Total = byteCount, meta.Bytes
+			task.CompletedCount, task.TotalCount = byteCount, meta.Bytes
 			l.reportTask(ctx, task)
 		},
 		pending:   nil,
@@ -541,17 +564,21 @@ func (l *Links) GetTitle(ctx context.Context, link Link) (string, error) {
 
 // reportTask shows a task. A host that cannot show it leaves the work to go on unseen.
 func (l *Links) reportTask(ctx context.Context, task host.Task) {
-	_ = l.host.Queue.ReportTask(ctx, task)
+	if err := l.host.Queue.ReportTask(ctx, task); err != nil {
+		fmt.Fprintf(os.Stderr, "tools-media-importer: show the task %s: %v\n", task.ID, err)
+	}
 }
 
 // endTask takes a task out of the list, or leaves it shown with the error that ended the work.
 func (l *Links) endTask(ctx context.Context, task host.Task, err error) {
 	ctx = context.WithoutCancel(ctx)
 	if err == nil || errors.Is(err, context.Canceled) {
-		_ = l.host.Queue.FinishTask(ctx, task.ID)
+		if finishErr := l.host.Queue.FinishTask(ctx, task.ID); finishErr != nil {
+			fmt.Fprintf(os.Stderr, "tools-media-importer: finish the task %s: %v\n", task.ID, finishErr)
+		}
 		return
 	}
-	task.Error = err.Error()
+	task.FailureReason = err.Error()
 	l.reportTask(ctx, task)
 }
 

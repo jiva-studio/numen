@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
-	"github.com/jiva-studio/numen/libs/core/usecase/floor"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
@@ -83,10 +82,10 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		NewSearchFn: func(asking embeddingport.Embedder, handleError func(error)) search.Search {
 			return cfg.NewSearch(db, asking, handleError)
 		},
-		OpenFloorsFn: func(embedder embeddingport.Embedder, handleError func(error)) floor.Scenarios {
-			return cfg.NewFloors(db, embedder, handleError)
+		SetPluginSearchFn: func(embedder embeddingport.Embedder, handleError func(error)) {
+			cfg.SetPluginSearch(db, embedder, handleError)
 		},
-		OpenNotesFn: func(index note.Levels) note.Scenarios {
+		OpenNotesFn: func(index note.IndexUpdater) note.Scenarios {
 			return cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), index)
 		},
 		OpenVaultsFn: func(moves note.Move) vault.Scenarios {
@@ -103,6 +102,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		StartVaultFn:     cfg.startVault(db),
 		PluginServicesFn: cfg.GetPluginServices,
 		PluginCommandsFn: cfg.GetPluginCommands,
+		PluginCatalogFn:  cfg.getEditorCatalog,
 		AgentVal:         cfg.serveTools(provider),
 		SetTextVersionListenerFn: func(listener textport.VersionListener) {
 			if cfg.TextVersions != nil {

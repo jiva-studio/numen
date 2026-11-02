@@ -3,12 +3,12 @@ package cards_test
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/markdown"
@@ -22,7 +22,7 @@ func newRenameField(t *testing.T, vs vaulted) cards.RenameField {
 	t.Helper()
 	return cards.NewRenameField(
 		vs.ports.Readers, vs.ports.Writers,
-		vs.queries, vs.queries, vs.index(t), time.Now, cards.UnboundedDecks,
+		vs.queries, vs.queries, vs.index(t), vaulttest.NewClock(),
 	)
 }
 
@@ -327,7 +327,7 @@ type shut struct {
 	open      error
 }
 
-func (s shut) Lock(ctx context.Context, v domain.Vault) (func(), error) {
+func (s shut) Lock(ctx context.Context, v domain.Vault) (func() error, error) {
 	if s.isWatched {
 		s.t.Error("a rename took the write lock")
 	}
@@ -382,19 +382,19 @@ func TestRenamingAFieldToItsOwnNameWritesNothing(t *testing.T) {
 	}
 }
 
-// Every file a rename wrote is brought level in the index: the card model, and each
+// Every file a rename wrote is updated in the index: the card model, and each
 // deck a heading was rewritten in.
 func TestARenameLevelsEveryFileItWrote(t *testing.T) {
 	vs := newVaults(t)
-	var levelled []string
+	var updated []string
 	u := cards.NewRenameField(
 		vs.ports.Readers, vs.ports.Writers,
 		vs.queries, vs.queries,
 		func(_ context.Context, _ domain.Vault, paths []string) error {
-			levelled = append(levelled, paths...)
+			updated = append(updated, paths...)
 			return nil
 		},
-		time.Now, cards.UnboundedDecks,
+		vaulttest.NewClock(),
 	)
 
 	if _, err := u.Execute(t.Context(), vs.first, cards.Rename{
@@ -402,8 +402,8 @@ func TestARenameLevelsEveryFileItWrote(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("rename: %v", err)
 	}
-	if !slices.Equal(levelled, []string{"Animal.md", "decks/Birds.md", "decks/Mammals.md"}) {
-		t.Errorf("levelled = %v", levelled)
+	if !slices.Equal(updated, []string{"Animal.md", "decks/Birds.md", "decks/Mammals.md"}) {
+		t.Errorf("updated = %v", updated)
 	}
 }
 
@@ -412,7 +412,7 @@ func TestARenameWithNoIndexToLevelReturnsWhatItWrote(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewRenameField(
 		vs.ports.Readers, vs.ports.Writers,
-		vs.queries, vs.queries, nil, time.Now, cards.UnboundedDecks,
+		vs.queries, vs.queries, nil, vaulttest.NewClock(),
 	)
 
 	got, err := u.Execute(t.Context(), vs.first, cards.Rename{
@@ -467,7 +467,7 @@ func TestARenameInAVaultOutOfReachWritesNothing(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			cardModel, birds := read(t, vs.first, "Animal.md"), read(t, vs.first, "decks/Birds.md")
 			u := cards.NewRenameField(
-				c.readers, c.writers, vs.queries, vs.queries, indexNothing, time.Now, cards.UnboundedDecks,
+				c.readers, c.writers, vs.queries, vs.queries, indexNothing, vaulttest.NewClock(),
 			)
 
 			_, err := u.Execute(t.Context(), vs.first, cards.Rename{
@@ -497,7 +497,7 @@ func TestARenameOfACardModelOutOfReachWritesNothing(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			cardModel, birds := read(t, vs.first, "Animal.md"), read(t, vs.first, "decks/Birds.md")
 			u := cards.NewRenameField(
-				c.readers, vs.ports.Writers, vs.queries, vs.queries, indexNothing, time.Now, cards.UnboundedDecks,
+				c.readers, vs.ports.Writers, vs.queries, vs.queries, indexNothing, vaulttest.NewClock(),
 			)
 
 			_, err := u.Execute(t.Context(), vs.first, cards.Rename{
@@ -534,10 +534,10 @@ func TestARenameOfACardModelThatWillNotOpenWritesNothing(t *testing.T) {
 // concurrent save of the card model by the user is preserved.
 func TestARenameDoesNotWriteOverACardModelSavedWhileItRan(t *testing.T) {
 	vs := newVaults(t)
-	saved := animals["Animal.md"] + "\nA line written while the rename ran.\n"
+	saved := getAnimals()["Animal.md"] + "\nA line written while the rename ran.\n"
 	readers := faulty{inner: vs.ports.Readers, saved: map[string]string{"Animal.md": saved}, root: vs.first.Path}
 	u := cards.NewRenameField(
-		readers, vs.ports.Writers, vs.queries, vs.queries, indexNothing, time.Now, cards.UnboundedDecks,
+		readers, vs.ports.Writers, vs.queries, vs.queries, indexNothing, vaulttest.NewClock(),
 	)
 
 	_, err := u.Execute(t.Context(), vs.first, cards.Rename{
@@ -578,7 +578,7 @@ func TestARenameWhoseContextEndsWritesNoFurtherDeck(t *testing.T) {
 	u := cards.NewRenameField(
 		vs.ports.Readers, vs.ports.Writers,
 		decksOf{paths: []string{"decks/Birds.md", "decks/Mammals.md"}, cancel: cancel},
-		vs.queries, indexNothing, time.Now, cards.UnboundedDecks,
+		vs.queries, indexNothing, vaulttest.NewClock(),
 	)
 
 	got, err := u.Execute(ctx, vs.first, cards.Rename{
@@ -640,7 +640,7 @@ func TestADeckOutOfReachIsReportedAndLeftAsItWas(t *testing.T) {
 				links = c.links
 			}
 			u := cards.NewRenameField(
-				readers, vs.ports.Writers, vs.queries, links, indexNothing, time.Now, cards.UnboundedDecks,
+				readers, vs.ports.Writers, vs.queries, links, indexNothing, vaulttest.NewClock(),
 			)
 
 			got, err := u.Execute(t.Context(), vs.first, cards.Rename{

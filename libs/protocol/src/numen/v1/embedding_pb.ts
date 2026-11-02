@@ -2,15 +2,15 @@
 // @generated from file numen/v1/embedding.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/embedding.proto.
  */
 export const file_numen_v1_embedding: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS9lbWJlZGRpbmcucHJvdG8SCG51bWVuLnYxIhoKGEdldEVtYmVkZGluZ01vZGVsUmVxdWVzdCKZAQoZR2V0RW1iZWRkaW5nTW9kZWxSZXNwb25zZRIMCgRuYW1lGAEgASgJEhIKCmRpbWVuc2lvbnMYAiABKAUSEgoKbWF4X3Rva2VucxgDIAEoBRIPCgdwb29saW5nGAQgASgJEgwKBGZyb20YBSABKAkSEwoLY29uY3VycmVuY3kYBiABKAUSEgoKZmxvb3JfaGludBgHIAEoASIdCgtGbG9hdFZlY3RvchIOCgZ2YWx1ZXMYASADKAIiIgoRRW1iZWRCYXRjaFJlcXVlc3QSDQoFdGV4dHMYASADKAkiPAoSRW1iZWRCYXRjaFJlc3BvbnNlEiYKB3ZlY3RvcnMYASADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvcjK5AQoQRW1iZWRkaW5nU2VydmljZRJcChFHZXRFbWJlZGRpbmdNb2RlbBIiLm51bWVuLnYxLkdldEVtYmVkZGluZ01vZGVsUmVxdWVzdBojLm51bWVuLnYxLkdldEVtYmVkZGluZ01vZGVsUmVzcG9uc2USRwoKRW1iZWRCYXRjaBIbLm51bWVuLnYxLkVtYmVkQmF0Y2hSZXF1ZXN0GhwubnVtZW4udjEuRW1iZWRCYXRjaFJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChhudW1lbi92MS9lbWJlZGRpbmcucHJvdG8SCG51bWVuLnYxIhoKGEdldEVtYmVkZGluZ01vZGVsUmVxdWVzdCLFAQoZR2V0RW1iZWRkaW5nTW9kZWxSZXNwb25zZRIMCgRuYW1lGAEgASgJEhIKCmRpbWVuc2lvbnMYAiABKAUSEgoKbWF4X3Rva2VucxgDIAEoBRIPCgdwb29saW5nGAQgASgJEgwKBGZyb20YBSABKAkSEwoLY29uY3VycmVuY3kYBiABKAUSEgoKZmxvb3JfaGludBgHIAEoARIYChBtaW5fY2h1bmtfbGVuZ3RoGAggASgFEhAKCGhhbmRsaW5nGAkgASgJIh0KC0Zsb2F0VmVjdG9yEg4KBnZhbHVlcxgBIAMoAiJFChFFbWJlZEJhdGNoUmVxdWVzdBINCgV0ZXh0cxgBIAMoCRIhCgRyb2xlGAIgASgOMhMubnVtZW4udjEuRW1iZWRSb2xlIjwKEkVtYmVkQmF0Y2hSZXNwb25zZRImCgd2ZWN0b3JzGAEgAygLMhUubnVtZW4udjEuRmxvYXRWZWN0b3IqVgoJRW1iZWRSb2xlEhoKFkVNQkVEX1JPTEVfVU5TUEVDSUZJRUQQABIXChNFTUJFRF9ST0xFX0RPQ1VNRU5UEAESFAoQRU1CRURfUk9MRV9RVUVSWRACMrkBChBFbWJlZGRpbmdTZXJ2aWNlElwKEUdldEVtYmVkZGluZ01vZGVsEiIubnVtZW4udjEuR2V0RW1iZWRkaW5nTW9kZWxSZXF1ZXN0GiMubnVtZW4udjEuR2V0RW1iZWRkaW5nTW9kZWxSZXNwb25zZRJHCgpFbWJlZEJhdGNoEhsubnVtZW4udjEuRW1iZWRCYXRjaFJlcXVlc3QaHC5udW1lbi52MS5FbWJlZEJhdGNoUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * @generated from message numen.v1.GetEmbeddingModelRequest
@@ -66,6 +66,25 @@ export type GetEmbeddingModelResponse = Message<"numen.v1.GetEmbeddingModelRespo
    * @generated from field: double floor_hint = 7;
    */
   floorHint: number;
+
+  /**
+   * The fewest bytes a piece of text has to hold to be given a vector.
+   * Shorter pieces are searched by their words only. Zero embeds every piece.
+   * It is not part of the model's identity: changing it makes no vector stale.
+   *
+   * @generated from field: int32 min_chunk_length = 8;
+   */
+  minChunkLength: number;
+
+  /**
+   * A short hash of what the plugin does to a text before the model reads it and to the output
+   * after: the prefixes, the model file, the token limit and the normalisation. Two models of
+   * one name that differ in it make vectors that cannot be compared, so it is part of the
+   * identity. Empty when the plugin holds no such settings.
+   *
+   * @generated from field: string handling = 9;
+   */
+  handling: string;
 };
 
 /**
@@ -100,6 +119,13 @@ export type EmbedBatchRequest = Message<"numen.v1.EmbedBatchRequest"> & {
    * @generated from field: repeated string texts = 1;
    */
   texts: string[];
+
+  /**
+   * What the texts are embedded for. Unset embeds documents.
+   *
+   * @generated from field: numen.v1.EmbedRole role = 2;
+   */
+  role: EmbedRole;
 };
 
 /**
@@ -125,6 +151,37 @@ export type EmbedBatchResponse = Message<"numen.v1.EmbedBatchResponse"> & {
  */
 export const EmbedBatchResponseSchema: GenMessage<EmbedBatchResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_embedding, 4);
+
+/**
+ * EmbedRole is what a text is embedded for. A model that tells a question from the passage that
+ * answers it reads the two with different prefixes.
+ *
+ * @generated from enum numen.v1.EmbedRole
+ */
+export enum EmbedRole {
+  /**
+   * EMBED_ROLE_UNSPECIFIED is a document.
+   *
+   * @generated from enum value: EMBED_ROLE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: EMBED_ROLE_DOCUMENT = 1;
+   */
+  DOCUMENT = 1,
+
+  /**
+   * @generated from enum value: EMBED_ROLE_QUERY = 2;
+   */
+  QUERY = 2,
+}
+
+/**
+ * Describes the enum numen.v1.EmbedRole.
+ */
+export const EmbedRoleSchema: GenEnum<EmbedRole> = /*@__PURE__*/
+  enumDesc(file_numen_v1_embedding, 0);
 
 /**
  * EmbeddingService calculates dense vector embeddings for text passages.

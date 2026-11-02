@@ -75,7 +75,7 @@ func TestFilesAreBroughtInFromAMachineWhoseHandlesAreNotPaths(t *testing.T) {
 			"content://held/1": {"content://held/2", "content://held/3"},
 		},
 	}
-	bring := vaults.NewImport(vaultwriter.VaultWriters{}, handed)
+	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, handed)
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{"content://held/1"})
 	if err != nil {
@@ -84,8 +84,8 @@ func TestFilesAreBroughtInFromAMachineWhoseHandlesAreNotPaths(t *testing.T) {
 	if len(brought.Errors) != 0 {
 		t.Fatalf("what stayed outside: %v", brought.Errors)
 	}
-	if len(brought.Landed) != 3 {
-		t.Fatalf("what landed: %v", brought.Landed)
+	if len(brought.Imported) != 3 {
+		t.Fatalf("what landed: %v", brought.Imported)
 	}
 	if body := readArrived(t, v.Path, "scans/Cover.png"); body != "PNG" {
 		t.Errorf("the picture arrived as %q", body)

@@ -1,13 +1,15 @@
 /**
  * How a plugin module is found and read: its stylesheet, its lifecycle hooks, its loader.
  */
-import type { PluginLifecycle, PluginManifest } from '@numen/plugin-sdk'
+import { parseManifest, type Manifest } from '@numen/core-client'
+import type { PluginLifecycle } from '@numen/plugin-sdk'
 import { loadPluginStyle, unregisterPluginStyle } from './styles'
 
-function getStyleUrl(baseUrl: string, pluginId: string, stylesPath: string): string {
-  const normalizedPath = stylesPath.startsWith('/') ? stylesPath.slice(1) : stylesPath
-  return `${baseUrl}/${pluginId}/${normalizedPath}`
-}
+/** The bundle every plugin frontend builds to, relative to the plugin folder. */
+const FRONTEND_ENTRYPOINT = 'dist/index.js'
+
+/** The stylesheet every plugin frontend builds to, relative to the plugin folder. */
+const FRONTEND_STYLES = 'dist/styles.css'
 
 export function removePluginStyles(pluginId: string): void {
   unregisterPluginStyle(pluginId)
@@ -47,7 +49,7 @@ export interface LoadModuleOptions {
   readonly baseUrl: string
   readonly fetchFn: typeof fetch
   readonly importFn: (url: string) => Promise<unknown>
-  readonly manifests: Map<string, PluginManifest>
+  readonly manifests: Map<string, Manifest>
 }
 
 async function loadDynamicModule(
@@ -59,17 +61,16 @@ async function loadDynamicModule(
   if (!res.ok) {
     throw new Error(`manifest.json of plugin "${pluginId}" answered ${res.status}`)
   }
-  const manifest = (await res.json()) as PluginManifest
+  const parsed = parseManifest(await res.text())
+  if (!parsed.ok) {
+    throw new Error(`manifest.json of plugin "${pluginId}" is invalid: ${parsed.error}`)
+  }
+  const manifest = parsed.value
   manifests.set(pluginId, manifest)
   if (manifest.frontend === undefined) return undefined
-  const { styles } = manifest.frontend
-  const style = styles
-    ? loadPluginStyle(pluginId, getStyleUrl(baseUrl, pluginId, styles), fetchFn)
-    : undefined
-  const entrypoint = manifest.frontend.entrypoint ?? 'dist/index.js'
-  const normalizedEntrypoint = entrypoint.startsWith('/') ? entrypoint.slice(1) : entrypoint
+  const style = loadPluginStyle(pluginId, `${baseUrl}/${pluginId}/${FRONTEND_STYLES}`, fetchFn)
   const [loaded] = await Promise.all([
-    importFn(`${baseUrl}/${pluginId}/${normalizedEntrypoint}`),
+    importFn(`${baseUrl}/${pluginId}/${FRONTEND_ENTRYPOINT}`),
     style,
   ])
   return loaded

@@ -27,16 +27,18 @@ import (
 
 // The two vaults every test here uses. Their books share no words, so a chunk
 // that arrives from the wrong one is recognisable.
-var (
-	first  = domain.Vault{ID: "01FIRST", Name: "first", Path: "/first"}
-	second = domain.Vault{ID: "01SECOND", Name: "second", Path: "/second"}
-)
+func getFirst() domain.Vault { return domain.Vault{ID: "01FIRST", Name: "first", Path: "/first"} }
+
+func getSecond() domain.Vault { return domain.Vault{ID: "01SECOND", Name: "second", Path: "/second"} }
 
 // The vocabularies the two vaults are written in.
-var (
-	sanskrit = []string{"udyana", "vrksa", "bija", "jala", "pathin", "grama", "nadi", "parvata"}
-	latin    = []string{"aqua", "terra", "ventus", "ignis", "silva", "mons", "flumen", "campus"}
-)
+func getSanskrit() []string {
+	return []string{"udyana", "vrksa", "bija", "jala", "pathin", "grama", "nadi", "parvata"}
+}
+
+func getLatin() []string {
+	return []string{"aqua", "terra", "ventus", "ignis", "silva", "mons", "flumen", "campus"}
+}
 
 // store is the index, in memory, answering every question the way the index
 // answers it. What the two passes do next is read from those answers.

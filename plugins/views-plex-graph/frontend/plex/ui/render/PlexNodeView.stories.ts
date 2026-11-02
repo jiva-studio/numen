@@ -206,9 +206,9 @@ export const EveryRelation: Story = {
     // A node carries its relation's hue before its title. The focused node is
     // painted from that hue, so its icon takes the title's own color.
     const [child, childTitle] = ink('Below it')
-    expect(child).not.toBe(childTitle)
+    await expect(child).not.toBe(childTitle)
     const [focus, focusTitle] = ink('Where you are')
-    expect(focus).toBe(focusTitle)
+    await expect(focus).toBe(focusTitle)
   },
 }
 

@@ -1,6 +1,8 @@
+// Package markdown exposes the note parsing types of the notes library to plugins.
 package markdown
 
 import (
+	notesdomain "github.com/jiva-studio/numen/libs/notes/domain"
 	notesmarkdown "github.com/jiva-studio/numen/libs/notes/markdown"
 )
 
@@ -18,12 +20,18 @@ var (
 	ErrInline       = notesmarkdown.ErrInline
 )
 
-var (
-	Parse              = notesmarkdown.Parse
-	Open               = notesmarkdown.Open
-	OpenBody           = notesmarkdown.OpenBody
-	Create             = notesmarkdown.Create
-	IsFrontmatterStart = notesmarkdown.IsFrontmatterStart
-	Normalise          = notesmarkdown.Normalise
-	WikilinksIn        = notesmarkdown.WikilinksIn
-)
+func Parse(ref notesdomain.FileStat, raw []byte) notesdomain.Note {
+	return notesmarkdown.Parse(ref, raw)
+}
+
+func Open(raw []byte) (*Document, error) { return notesmarkdown.Open(raw) }
+
+func OpenBody(body []byte) *Document { return notesmarkdown.OpenBody(body) }
+
+func Create(identifier, body string) []byte { return notesmarkdown.Create(identifier, body) }
+
+func IsFrontmatterStart(text string) bool { return notesmarkdown.IsFrontmatterStart(text) }
+
+func Normalise(text string) string { return notesmarkdown.Normalise(text) }
+
+func WikilinksIn(line string) []notesmarkdown.Wikilink { return notesmarkdown.WikilinksIn(line) }

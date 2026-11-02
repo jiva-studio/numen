@@ -8,7 +8,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
@@ -18,6 +17,7 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
@@ -33,7 +33,7 @@ func openChanging(t *testing.T, notes map[string]string) changing {
 	t.Helper()
 	db, v := newIndexedVault(t, notes)
 	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now)
+		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), testsupport.NewClock())
 	return changing{
 		db:    db,
 		vault: v,
@@ -46,28 +46,28 @@ func openChanging(t *testing.T, notes map[string]string) changing {
 
 // search is the one search, with no embedder: the words half answers alone.
 func (c changing) search() search.Search {
-	return search.New(c.db.Passages(), vaultreader.Readers{}, nil, nil, 0, nil)
+	return search.New(c.db.Passages(), vaultreader.Readers{}, nil, nil, nil)
 }
 
 func (c changing) create() note.Create {
-	return note.NewCreate(vaultwriter.VaultWriters{}, c.db.Queries(), c.index, time.Now)
+	return note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.Queries(), c.index, testsupport.NewClock())
 }
 
 func (c changing) move() note.Move {
-	return note.NewMove(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{},
-		c.db.Links(), c.db.Queries(), c.db.Sources(), c.index, time.Now,
-	)
+	return note.NewMove(note.MoveDeps{
+		Readers: vaultreader.Readers{}, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
+		Links: c.db.Links(), Names: c.db.Queries(), Sources: c.db.Sources(), Index: c.index, Now: testsupport.NewClock(),
+	})
 }
 
 func (c changing) remove() note.Remove {
 	return note.NewRemove(
-		vaultwriter.VaultWriters{}, c.db.Links(), c.db.SourcesKnown(), c.index)
+		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.Links(), c.db.SourcesKnown(), c.index)
 }
 
 func (c changing) newEditLinks() note.EditLinks {
 	return note.NewEditLinks(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, time.Now)
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
 }
 
 func (c changing) read(t *testing.T, path string) string {
@@ -494,8 +494,8 @@ func TestPointingANoteAtAPlaceBelowATypeReplacesTheEntryItHad(t *testing.T) {
 			"  - to: Grammar\n    role: parent\n---\n# Roots\n",
 	})
 
-	pos, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Roots.md", "preset",
-		domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef, domain.FileStat{})
+	pos, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Roots.md", note.LinkPoint{Of: "preset",
+		To: domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, Role: domain.RoleRef})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -540,7 +540,7 @@ func TestRemovingALinkPreservesTheOtherNoteAlone(t *testing.T) {
 	before := c.read(t, "Entropy.md")
 
 	if _, err := c.newEditLinks().Remove(t.Context(), c.vault, "Heat.md",
-		domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, "",
+		domain.LinkKey{Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}},
 		domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
@@ -561,7 +561,7 @@ func TestWrite_RejectsStaleEdit(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.NewWrite(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, time.Now)
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
 
 	reader, err := (vaultreader.Readers{}).Open(c.vault)
 	if err != nil {
@@ -593,7 +593,7 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.NewWrite(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, time.Now)
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
 
 	reader, err := (vaultreader.Readers{}).Open(c.vault)
 	if err != nil {

@@ -50,6 +50,9 @@ const (
 	// WindowServiceGetCurrentVaultProcedure is the fully-qualified name of the WindowService's
 	// GetCurrentVault RPC.
 	WindowServiceGetCurrentVaultProcedure = "/numen.v1.WindowService/GetCurrentVault"
+	// WindowServiceCancelTaskProcedure is the fully-qualified name of the WindowService's CancelTask
+	// RPC.
+	WindowServiceCancelTaskProcedure = "/numen.v1.WindowService/CancelTask"
 )
 
 // WindowServiceClient is a client for the numen.v1.WindowService service.
@@ -75,6 +78,11 @@ type WindowServiceClient interface {
 	// windows are open on one installation and each shows what it shows, so it is
 	// the window that is asked and not the list of vaults.
 	GetCurrentVault(context.Context, *connect.Request[v1.GetCurrentVaultRequest]) (*connect.Response[v1.GetCurrentVaultResponse], error)
+	// CancelTask stops one task that WatchTasks lists as cancellable. The task
+	// stays in the list until its work has stopped, and WatchTasks then reports
+	// the list without it. A task that is not listed, or cannot be cancelled,
+	// answers NOT_FOUND.
+	CancelTask(context.Context, *connect.Request[v1.CancelTaskRequest]) (*connect.Response[v1.CancelTaskResponse], error)
 }
 
 // NewWindowServiceClient constructs a client for the numen.v1.WindowService service. By default, it
@@ -112,6 +120,12 @@ func NewWindowServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(windowServiceMethods.ByName("GetCurrentVault")),
 			connect.WithClientOptions(opts...),
 		),
+		cancelTask: connect.NewClient[v1.CancelTaskRequest, v1.CancelTaskResponse](
+			httpClient,
+			baseURL+WindowServiceCancelTaskProcedure,
+			connect.WithSchema(windowServiceMethods.ByName("CancelTask")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -121,6 +135,7 @@ type windowServiceClient struct {
 	watchQuit       *connect.Client[v1.WatchQuitRequest, v1.WatchQuitResponse]
 	reportFlush     *connect.Client[v1.ReportFlushRequest, v1.ReportFlushResponse]
 	getCurrentVault *connect.Client[v1.GetCurrentVaultRequest, v1.GetCurrentVaultResponse]
+	cancelTask      *connect.Client[v1.CancelTaskRequest, v1.CancelTaskResponse]
 }
 
 // WatchTasks calls numen.v1.WindowService.WatchTasks.
@@ -141,6 +156,11 @@ func (c *windowServiceClient) ReportFlush(ctx context.Context, req *connect.Requ
 // GetCurrentVault calls numen.v1.WindowService.GetCurrentVault.
 func (c *windowServiceClient) GetCurrentVault(ctx context.Context, req *connect.Request[v1.GetCurrentVaultRequest]) (*connect.Response[v1.GetCurrentVaultResponse], error) {
 	return c.getCurrentVault.CallUnary(ctx, req)
+}
+
+// CancelTask calls numen.v1.WindowService.CancelTask.
+func (c *windowServiceClient) CancelTask(ctx context.Context, req *connect.Request[v1.CancelTaskRequest]) (*connect.Response[v1.CancelTaskResponse], error) {
+	return c.cancelTask.CallUnary(ctx, req)
 }
 
 // WindowServiceHandler is an implementation of the numen.v1.WindowService service.
@@ -166,6 +186,11 @@ type WindowServiceHandler interface {
 	// windows are open on one installation and each shows what it shows, so it is
 	// the window that is asked and not the list of vaults.
 	GetCurrentVault(context.Context, *connect.Request[v1.GetCurrentVaultRequest]) (*connect.Response[v1.GetCurrentVaultResponse], error)
+	// CancelTask stops one task that WatchTasks lists as cancellable. The task
+	// stays in the list until its work has stopped, and WatchTasks then reports
+	// the list without it. A task that is not listed, or cannot be cancelled,
+	// answers NOT_FOUND.
+	CancelTask(context.Context, *connect.Request[v1.CancelTaskRequest]) (*connect.Response[v1.CancelTaskResponse], error)
 }
 
 // NewWindowServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -199,6 +224,12 @@ func NewWindowServiceHandler(svc WindowServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(windowServiceMethods.ByName("GetCurrentVault")),
 		connect.WithHandlerOptions(opts...),
 	)
+	windowServiceCancelTaskHandler := connect.NewUnaryHandler(
+		WindowServiceCancelTaskProcedure,
+		svc.CancelTask,
+		connect.WithSchema(windowServiceMethods.ByName("CancelTask")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.WindowService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case WindowServiceWatchTasksProcedure:
@@ -209,6 +240,8 @@ func NewWindowServiceHandler(svc WindowServiceHandler, opts ...connect.HandlerOp
 			windowServiceReportFlushHandler.ServeHTTP(w, r)
 		case WindowServiceGetCurrentVaultProcedure:
 			windowServiceGetCurrentVaultHandler.ServeHTTP(w, r)
+		case WindowServiceCancelTaskProcedure:
+			windowServiceCancelTaskHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -232,4 +265,8 @@ func (UnimplementedWindowServiceHandler) ReportFlush(context.Context, *connect.R
 
 func (UnimplementedWindowServiceHandler) GetCurrentVault(context.Context, *connect.Request[v1.GetCurrentVaultRequest]) (*connect.Response[v1.GetCurrentVaultResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.GetCurrentVault is not implemented"))
+}
+
+func (UnimplementedWindowServiceHandler) CancelTask(context.Context, *connect.Request[v1.CancelTaskRequest]) (*connect.Response[v1.CancelTaskResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.CancelTask is not implemented"))
 }

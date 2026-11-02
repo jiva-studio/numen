@@ -8,32 +8,29 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	proofreading "github.com/jiva-studio/numen/plugins/tools-proofreading"
 )
 
-func TestReadKindsReturnsTheKindsOfTheProofreadCommand(t *testing.T) {
-	kinds, err := readKinds(proofreading.Manifest)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	got := slices.Sorted(maps.Keys(kinds))
+func TestGetProofreadKindsAcceptsEveryKind(t *testing.T) {
+	got := slices.Sorted(maps.Keys(getProofreadKinds()))
 	want := []domain.TextKind{"*"}
 	if !slices.Equal(got, want) {
 		t.Errorf("kinds %v, want %v", got, want)
 	}
 }
 
-func TestReadKindsRejectsAManifestWithoutKinds(t *testing.T) {
-	if _, err := readKinds([]byte(`{"commands":[{"id":"proofread","title":"Proofread"}]}`)); !errors.Is(err, errNoKinds) {
-		t.Errorf("got %v, want %v", err, errNoKinds)
+func encodeSelector(t *testing.T, selector segmentSelector) domain.Selector {
+	t.Helper()
+	encoded, err := selector.encode()
+	if err != nil {
+		t.Fatal(err)
 	}
+	return encoded
 }
 
 func TestProofreadReadsTheKindsItIsGiven(t *testing.T) {
 	s := newScene(t)
 	s.run.kinds = map[domain.TextKind]bool{"subtitle": true}
-	cue := segmentSelector{T: []float64{0, 1}}.encode()
+	cue := encodeSelector(t, segmentSelector{T: []float64{0, 1}})
 	subtitle := s.hold(t, speechID, talkPath, "subtitle", "subtitle", "the recording", []domain.TextSegment{
 		{Text: "a flywheel spinnig\n", Selector: cue},
 	})

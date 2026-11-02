@@ -21,7 +21,7 @@
 !ifndef FLASHCARDS
   !error "FLASHCARDS is the numen-flashcards.exe to install"
 !endif
-; The flashcards window wears a mark of its own. The drawing is installed
+; The flashcards window has an icon of its own. The drawing is installed
 ; beside the program, and the Start Menu shortcut points at it there.
 !ifndef FLASHCARDS_ICON
   !error "FLASHCARDS_ICON is the numen-flashcards.ico to install"
@@ -33,7 +33,7 @@
   !error "OUTFILE is the installer to write"
 !endif
 
-; The installer and the uninstaller wear the program's mark.
+; The installer and the uninstaller use the program icon.
 !define MUI_ICON "${NUMEN_ICON}"
 !define MUI_UNICON "${NUMEN_ICON}"
 

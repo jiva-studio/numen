@@ -83,14 +83,13 @@ function formatPathLabel(rawPath: string): string {
       >
         {{ formatPathLabel(paths[0]) }}
       </span>
-      <Button variant="outline" size="small" class="settings__path-choose" @click="onChoose">
+      <Button variant="outline" size="small" @click="onChoose">
         {{ chooseButtonLabel }}
       </Button>
       <Button
         v-if="paths[0]"
-        variant="ghost"
+        variant="outline"
         size="icon-small"
-        class="settings__path-clear"
         :aria-label="words.pathClear"
         :title="words.pathClear"
         @click="onClear(paths[0])"
@@ -99,7 +98,7 @@ function formatPathLabel(rawPath: string): string {
       </Button>
     </span>
     <span v-else class="settings__path-header-action">
-      <Button variant="outline" size="small" class="settings__path-choose" @click="onChoose">
+      <Button variant="outline" size="small" @click="onChoose">
         {{ chooseButtonLabel }}
       </Button>
     </span>
@@ -112,9 +111,8 @@ function formatPathLabel(rawPath: string): string {
         {{ item }}
       </span>
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon-small"
-        class="settings__path-clear"
         :aria-label="words.pathClear"
         :title="words.pathClear"
         @click="onClear(item)"
@@ -183,19 +181,6 @@ function formatPathLabel(rawPath: string): string {
   max-inline-size: 100%;
   font-family: var(--numen-font-mono);
   font-size: var(--numen-text-2);
-}
-
-.settings__path-clear {
-  color: var(--numen-hushed);
-}
-
-.settings__path-clear:hover {
-  color: var(--numen-alarm);
-}
-
-.settings__path-choose {
-  background-color: var(--numen-field-bg);
-  border-color: var(--numen-field-rule);
 }
 
 .settings__path-problem {

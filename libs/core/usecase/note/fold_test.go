@@ -9,12 +9,13 @@ import (
 // One name each, composed and decomposed. The two forms are computed rather
 // than typed out: these become filenames, and an editor that composed this file
 // on the way in would leave the tests testing nothing.
-var (
-	hangulComposed   = norm.NFC.String("한글")
-	hangulDecomposed = norm.NFD.String("한글")
-	kanaComposed     = norm.NFC.String("がき")
-	kanaDecomposed   = norm.NFD.String("がき")
-)
+func getHangulComposed() string { return norm.NFC.String("한글") }
+
+func getHangulDecomposed() string { return norm.NFD.String("한글") }
+
+func getKanaComposed() string { return norm.NFC.String("がき") }
+
+func getKanaDecomposed() string { return norm.NFD.String("がき") }
 
 // A link written in one case resolves to the note filed under another case, in
 // every script that has cases.
@@ -54,10 +55,10 @@ func TestANameReachesItsNoteWhicheverWayItIsComposed(t *testing.T) {
 		output string
 		filed  string
 	}{
-		{"a composed link to a decomposed name", hangulComposed, hangulDecomposed + ".md"},
-		{"a decomposed link to a composed name", hangulDecomposed, hangulComposed + ".md"},
-		{"a voiced mark written as one character", kanaComposed, kanaDecomposed + ".md"},
-		{"a voiced mark written as two", kanaDecomposed, kanaComposed + ".md"},
+		{"a composed link to a decomposed name", getHangulComposed(), getHangulDecomposed() + ".md"},
+		{"a decomposed link to a composed name", getHangulDecomposed(), getHangulComposed() + ".md"},
+		{"a voiced mark written as one character", getKanaComposed(), getKanaDecomposed() + ".md"},
+		{"a voiced mark written as two", getKanaDecomposed(), getKanaComposed() + ".md"},
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			if one.output+".md" == one.filed {

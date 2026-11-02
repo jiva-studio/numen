@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"os"
 	"path/filepath"
 	"slices"
@@ -10,9 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
-
-	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 )
 
 // The program list names Codex, installed where it is found, with the models it lists under the command
@@ -31,23 +30,20 @@ func TestTheProgramListNamesCodexWithTheModelsItLists(t *testing.T) {
 			"while read -r _; do :; done\n")
 	client := agenttest.Serve(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{
-		Commands: []*agentrun.AgentProgramCommand{{Program: "codex", Command: []string{appServer}}},
-	}))
+	programs, err := client.GetPrograms(t.Context(), []agentrun.ProgramCommand{{Program: "codex", Command: []string{appServer}}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	programs := got.Msg.GetPrograms()
 	if len(programs) != 1 {
 		t.Fatalf("the programs are %v", programs)
 	}
 	codex := programs[0]
-	if codex.GetName() != "codex" || codex.GetTitle() != "OpenAI Codex" || !codex.GetIsInstalled() || codex.GetIsDefault() {
+	if codex.Name != "codex" || codex.Title != "OpenAI Codex" || !codex.IsInstalled || codex.IsDefault {
 		t.Errorf("the programs are %v", programs)
 	}
-	if models := codex.GetModels(); len(models) != 1 || models[0].GetName() != "gpt-x" ||
-		models[0].GetTitle() != "GPT X" || !models[0].GetIsDefault() {
-		t.Errorf("Codex lists %v", codex.GetModels())
+	if models := codex.Models; len(models) != 1 || models[0].Name != "gpt-x" ||
+		models[0].Title != "GPT X" || !models[0].IsDefault {
+		t.Errorf("Codex lists %v", codex.Models)
 	}
 }
 
@@ -56,12 +52,12 @@ func TestAProgramThatIsNotInstalledListsNoModels(t *testing.T) {
 	withoutAgentsAnywhere(t)
 	client := agenttest.Serve(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
+	got, err := client.GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range got.Msg.GetPrograms() {
-		if one.GetIsInstalled() || len(one.GetModels()) != 0 {
+	for _, one := range got {
+		if one.IsInstalled || len(one.Models) != 0 {
 			t.Errorf("%v", one)
 		}
 	}
@@ -76,7 +72,7 @@ func TestCodexModelCache_Retention(t *testing.T) {
 			`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+
 			"while read -r _; do :; done\n")
-	var cache codexModelCache
+	cache := codexModelCache{clock: clock.NewFake(time.Unix(1000, 0))}
 
 	for range 2 {
 		if got := cache.get(t.Context(), []string{command}); len(got) != 1 || got[0].Name != "gpt-x" {
@@ -99,7 +95,7 @@ func TestAnEndedRequestKeepsNoCodexModels(t *testing.T) {
 		`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+
 			"while read -r _; do :; done\n")
-	var cache codexModelCache
+	cache := codexModelCache{clock: clock.NewFake(time.Unix(1000, 0))}
 
 	ended, cancel := context.WithCancel(t.Context())
 	cancel()
@@ -121,14 +117,12 @@ func TestGetAgentPrograms_ExplicitCommandInstallation(t *testing.T) {
 			"while read -r _; do :; done\n")
 	client := agenttest.Serve(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{
-		Commands: []*agentrun.AgentProgramCommand{{Program: "codex", Command: []string{appServer}}},
-	}))
+	got, err := client.GetPrograms(t.Context(), []agentrun.ProgramCommand{{Program: "codex", Command: []string{appServer}}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range got.Msg.GetPrograms() {
-		if !one.GetIsInstalled() || len(one.GetModels()) != 1 {
+	for _, one := range got {
+		if !one.IsInstalled || len(one.Models) != 1 {
 			t.Errorf("codex is %v", one)
 		}
 	}
@@ -140,8 +134,8 @@ func TestModels_FailedListingIsRequeried(t *testing.T) {
 	agenttest.NeedsShell(t)
 	t.Setenv("HOME", t.TempDir())
 	failing := agenttest.WriteScript(t, "codex", "exit 1\n")
-	now := time.Unix(1000, 0)
-	cache := codexModelCache{now: func() time.Time { return now }}
+	now := clock.NewFake(time.Unix(1000, 0))
+	cache := codexModelCache{clock: now}
 
 	if got := cache.get(t.Context(), []string{failing}); got != nil {
 		t.Fatalf("a failed listing gave %+v", got)
@@ -156,20 +150,21 @@ func TestModels_FailedListingIsRequeried(t *testing.T) {
 	if got := cache.get(t.Context(), []string{failing}); got != nil {
 		t.Fatalf("a command line that just failed was asked again: %+v", got)
 	}
-	now = now.Add(codexFailureBackoff)
+	now.Advance(codexFailureBackoff)
 	if got := cache.get(t.Context(), []string{failing}); len(got) != 1 || got[0].Name != "gpt-x" {
 		t.Errorf("the next listing gave %+v", got)
 	}
 }
 
-// withoutAgentsAnywhere makes this machine hold none of the programs, wherever they are searched for.
+// withoutAgentsAnywhere empties PATH and HOME, where the program is searched for first, and skips
+// the test on a machine that holds Codex in a system-wide place.
 func withoutAgentsAnywhere(t *testing.T) {
 	t.Helper()
 	t.Setenv("PATH", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	was := codexPlaces
-	codexPlaces = nil
-	t.Cleanup(func() { codexPlaces = was })
+	if found := FindCodex(); found != "codex" {
+		t.Skipf("Codex is installed at %s", found)
+	}
 }
 
 // The run is started from the request: the command line, the folder, the model and the tools it is
@@ -178,13 +173,13 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 	root := t.TempDir()
 	script, read := agenttest.RecordingProgram(t, "codex")
 
-	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &agentrun.AskAgentRequest{
+	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &agentrun.Request{
 		Prompt:     "the question",
 		Command:    []string{script, "--first"},
 		Root:       root,
 		Model:      "gpt-x",
 		Tools:      []string{"note_read"},
-		ToolsUrl:   "http://127.0.0.1:1/mcp",
+		ToolsURL:   "http://127.0.0.1:1/mcp",
 		ToolsToken: "secret",
 	})
 
@@ -205,9 +200,9 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 // A program that fails is reported to the stream as the reason the run stopped.
 func TestAskAgentReportsAFailedRun(t *testing.T) {
 	script := agenttest.WriteScript(t, "codex", "echo 'not signed in' >&2\nexit 2\n")
-	stream, err := agenttest.Serve(t, &agentServer{}).AskAgent(t.Context(), connect.NewRequest(&agentrun.AskAgentRequest{
+	stream, err := agenttest.Serve(t, &agentServer{}).Ask(t.Context(), &agentrun.Request{
 		Command: []string{script},
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -229,13 +224,13 @@ func TestAskAgent_NoToolsWhenRequestToolsEmpty(t *testing.T) {
 	root := t.TempDir()
 	script, read := agenttest.RecordingProgram(t, "codex")
 
-	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &agentrun.AskAgentRequest{
+	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &agentrun.Request{
 		Prompt:       "the question",
 		Instructions: "be brief",
 		Command:      []string{script},
 		Root:         root,
 		Model:        "gpt-x",
-		ToolsUrl:     "http://127.0.0.1:1/mcp",
+		ToolsURL:     "http://127.0.0.1:1/mcp",
 		ToolsToken:   "secret",
 	})
 

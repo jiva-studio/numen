@@ -63,15 +63,18 @@ const (
 // the other also closed the day.
 type BudgetNames []BudgetName
 
-// closers is every budget a day may be closed by, in the order a closing names
+// getClosers returns every budget a day may be closed by, in the order a closing names
 // them.
-var closers = []BudgetName{ClosedPaused, ClosedMinutes, ClosedNew, ClosedReviews, ClosedDate}
+func getClosers() []BudgetName {
+	return []BudgetName{ClosedPaused, ClosedMinutes, ClosedNew, ClosedReviews, ClosedDate}
+}
 
 // Has reports whether this budget is one of those that closed the day.
 func (c BudgetNames) Has(one BudgetName) bool { return slices.Contains(c, one) }
 
 // Add is this closing and one budget more, named once and in the order closers
 func (c BudgetNames) Add(one BudgetName) BudgetNames {
+	closers := getClosers()
 	if !slices.Contains(closers, one) || c.Has(one) {
 		return c
 	}

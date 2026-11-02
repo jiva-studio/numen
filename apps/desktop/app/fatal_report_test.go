@@ -18,9 +18,9 @@ import (
 // installation it found.
 func TestError_MessageContainsFound(t *testing.T) {
 	pos := filepath.Join(t.TempDir(), "index.db")
-	cfg := container.Config{IndexPath: pos}
+	cfg := container.NewConfig(container.Config{IndexPath: pos})
 
-	page, err := fatalReport{}.page(cfg, settings.TextScaleBounds.Check("appearance.text_scale", 4))
+	page, err := fatalReport{}.page(cfg, settings.GetTextScaleBounds().Check("appearance.text_scale", 4))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +41,7 @@ func TestError_MessageContainsFound(t *testing.T) {
 
 // An error this build has no further information about is still reported.
 func TestError_AdditionalDetails(t *testing.T) {
-	page, err := fatalReport{}.page(container.Config{IndexPath: filepath.Join(t.TempDir(), "i.db")},
+	page, err := fatalReport{}.page(container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "i.db")}),
 		errors.New("the settings could not be read"))
 	if err != nil {
 		t.Fatal(err)
@@ -53,7 +53,7 @@ func TestError_AdditionalDetails(t *testing.T) {
 
 // A message shown to the user must not render markup the user did not write.
 func TestError_StripsMarkup(t *testing.T) {
-	page, err := fatalReport{}.page(container.Config{IndexPath: filepath.Join(t.TempDir(), "i.db")},
+	page, err := fatalReport{}.page(container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "i.db")}),
 		errors.New(`<script>alert("x")</script>`))
 	if err != nil {
 		t.Fatal(err)
@@ -89,7 +89,11 @@ func getStoppings(t *testing.T) []stopping {
 	if err := os.Mkdir(noWrite, 0o500); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { os.Chmod(noWrite, 0o755) })
+	t.Cleanup(func() {
+		if err := os.Chmod(noWrite, 0o755); err != nil {
+			t.Error(err)
+		}
+	})
 
 	unreadable := filepath.Join(t.TempDir(), "numen.json")
 	if err := os.WriteFile(unreadable, []byte("{ this is not JSON"), 0o644); err != nil {
@@ -99,33 +103,33 @@ func getStoppings(t *testing.T) []stopping {
 	return []stopping{
 		{
 			name: "an index that is not a database",
-			cfg:  container.Config{IndexPath: corrupt},
+			cfg:  container.NewConfig(container.Config{IndexPath: corrupt}),
 			why:  openIndex(t, corrupt),
 		},
 		{
 			name: "an index path that is a folder",
-			cfg:  container.Config{IndexPath: folder},
+			cfg:  container.NewConfig(container.Config{IndexPath: folder}),
 			why:  openIndex(t, folder),
 		},
 		{
 			name: "an index folder nobody may write in",
-			cfg:  container.Config{IndexPath: filepath.Join(noWrite, "index.db")},
+			cfg:  container.NewConfig(container.Config{IndexPath: filepath.Join(noWrite, "index.db")}),
 			why:  openIndex(t, filepath.Join(noWrite, "index.db")),
 		},
 		{
 			name: "a settings file that is not JSON",
-			cfg:  container.Config{SettingsPath: unreadable},
+			cfg:  container.NewConfig(container.Config{SettingsPath: unreadable}),
 			why:  read(t, unreadable),
 		},
 		{
 			name: "a size the settings file does not take",
-			cfg:  container.Config{SettingsPath: unreadable},
-			why:  settings.TextScaleBounds.Check("appearance.text_scale", 4),
+			cfg:  container.NewConfig(container.Config{SettingsPath: unreadable}),
+			why:  settings.GetTextScaleBounds().Check("appearance.text_scale", 4),
 		},
 		{
 			name: "a size the command line does not take",
-			cfg:  container.Config{},
-			why:  settings.TextScaleBounds.Check("-text-scale", 4),
+			cfg:  container.NewConfig(container.Config{}),
+			why:  settings.GetTextScaleBounds().Check("-text-scale", 4),
 		},
 	}
 }
@@ -135,7 +139,9 @@ func openIndex(t *testing.T, path string) error {
 	t.Helper()
 	db, err := index.Open(t.Context(), path)
 	if err == nil {
-		db.Close()
+		if closeErr := db.Close(); closeErr != nil {
+			t.Error(closeErr)
+		}
 		t.Fatalf("%s opened as an index", path)
 	}
 	return err
@@ -145,7 +151,7 @@ func openIndex(t *testing.T, path string) error {
 func read(t *testing.T, path string) error {
 	t.Helper()
 	target := container.DefaultSettings()
-	err := settings.OpenAt(path, &target)
+	err := settings.NewFiles().OpenAt(path, &target)
 	if err == nil {
 		t.Fatalf("%s was read as settings", path)
 	}
@@ -231,19 +237,19 @@ func TestFatalReport_DistinguishesIndexFaults(t *testing.T) {
 
 	corrupt := delta["an index that is not a database"]
 	if strings.Contains(corrupt.Sentence, "(26)") || strings.Contains(corrupt.Sentence, "not a database") {
-		t.Errorf("the page speaks sqlite's language: %q", corrupt.Sentence)
+		t.Errorf("the page uses sqlite's format: %q", corrupt.Sentence)
 	}
 }
 
 // A number a size does not take is answered where it was written: the field in
 // the file, or the flag on the command line.
 func TestSizeResponse_MatchingOffset(t *testing.T) {
-	file := getFatalReport(container.Config{}, settings.TextScaleBounds.Check("appearance.text_scale", 4))
+	file := getFatalReport(container.NewConfig(container.Config{}), settings.GetTextScaleBounds().Check("appearance.text_scale", 4))
 	if !strings.Contains(file.Remedy, "appearance.text_scale") {
 		t.Errorf("a size in the file is answered with %q", file.Remedy)
 	}
 
-	line := getFatalReport(container.Config{}, settings.TextScaleBounds.Check("-text-scale", 4))
+	line := getFatalReport(container.NewConfig(container.Config{}), settings.GetTextScaleBounds().Check("-text-scale", 4))
 	if !strings.Contains(line.Remedy, "-text-scale") {
 		t.Errorf("a size on the command line is answered with %q", line.Remedy)
 	}
@@ -252,7 +258,7 @@ func TestSizeResponse_MatchingOffset(t *testing.T) {
 // A vault named on the command line that the registry does not hold is reported by its name, without the Go error chain.
 func TestFatalReport_UnknownVault(t *testing.T) {
 	why := fmt.Errorf("open vault: %w", &container.UnknownVaultError{Name: "/home/someone/Notes"})
-	response := getFatalReport(container.Config{}, why)
+	response := getFatalReport(container.NewConfig(container.Config{}), why)
 
 	if response.Heading != startingAtAll {
 		t.Errorf("heading = %q, want %q", response.Heading, startingAtAll)
@@ -270,7 +276,7 @@ func TestFatalReport_UnknownVault(t *testing.T) {
 
 // An error with no specific report keeps its text out of the sentence and in the details.
 func TestFatalReport_UnknownErrorGoesToDetails(t *testing.T) {
-	response := getFatalReport(container.Config{}, errors.New("open thing: broken pipe"))
+	response := getFatalReport(container.NewConfig(container.Config{}), errors.New("open thing: broken pipe"))
 
 	if strings.Contains(response.Sentence, "broken pipe") {
 		t.Errorf("sentence = %q, want no Go error text", response.Sentence)

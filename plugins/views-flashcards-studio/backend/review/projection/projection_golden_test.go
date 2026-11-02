@@ -13,8 +13,20 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review/projection"
 )
 
-// update writes the projections down again, and compares against none of them.
-var update = flag.Bool("update", false, "write testdata/projection.golden again")
+// updateFlag names the flag that writes the projections down again, and compares against none of
+// them.
+const updateFlag = "update"
+
+func TestMain(m *testing.M) {
+	flag.Bool(updateFlag, false, "write testdata/projection.golden again")
+	flag.Parse()
+	os.Exit(m.Run())
+}
+
+// isUpdating reports whether the run was asked to write the projections down again.
+func isUpdating() bool {
+	return flag.Lookup(updateFlag).Value.String() == "true"
+}
 
 // The projection is the arithmetic every picture and every session rests on, so
 // what it answers over a spread of materials and settings is written down whole
@@ -26,7 +38,7 @@ var update = flag.Bool("update", false, "write testdata/projection.golden again"
 func TestAProjectionAnswersWhatItIsSavedDownAs(t *testing.T) {
 	got := projections(t)
 	path := filepath.Join("testdata", "projection.golden")
-	if *update {
+	if isUpdating() {
 		if err := os.MkdirAll("testdata", 0o755); err != nil {
 			t.Fatal(err)
 		}
@@ -60,10 +72,14 @@ func line(lines []string, i int) string {
 }
 
 // goldenDay counts days in UTC, so the golden file is identical on every machine.
-var goldenDay = review.Day{Starts: review.DayStartTime, In: time.UTC}
+func getGoldenDay() review.Day {
+	return review.Day{Starts: review.DayStartTime, In: time.UTC}
+}
 
 // goldenNow is the instant the projections open on.
-var goldenNow = time.Date(2026, 3, 2, 9, 41, 0, 0, time.UTC)
+func getGoldenNow() time.Time {
+	return time.Date(2026, 3, 2, 9, 41, 0, 0, time.UTC)
+}
 
 // projections is every projection this file holds, written out.
 func projections(t *testing.T) string {
@@ -73,7 +89,7 @@ func projections(t *testing.T) string {
 	for _, m := range goldenMaterials(delta) {
 		for _, p := range goldenPresets() {
 			run := projection.Simulation{
-				By: delta, Day: goldenDay, Days: 60, Retains: goldenDays(60),
+				By: delta, Day: getGoldenDay(), Days: 60, Retains: goldenDays(60),
 				Cost: review.AnswerCost{New: 19 * time.Second, Review: 7 * time.Second},
 				Spent: review.Spent{
 					Answered: 4, New: 1, Reviews: 3, Took: 40 * time.Second,
@@ -84,7 +100,7 @@ func projections(t *testing.T) string {
 				run.By = review.NewFSRSAt(p.preset.Retention)
 			}
 			fmt.Fprintf(&out, "== %s / %s\n", m.name, p.name)
-			ran, err := run.Run(t.Context(), goldenNow, p.preset, m.schedules, m.unreviewed)
+			ran, err := run.Run(t.Context(), getGoldenNow(), p.preset, m.schedules, m.unreviewed)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -93,7 +109,7 @@ func projections(t *testing.T) string {
 			// The day the whole material is learned is computed on a second run of the
 			// same input, with full recall, in which nothing is forgotten.
 			run.Recalls = review.GetFullRecall
-			nothing, err := run.Run(t.Context(), goldenNow, p.preset, m.schedules, m.unreviewed)
+			nothing, err := run.Run(t.Context(), getGoldenNow(), p.preset, m.schedules, m.unreviewed)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -226,7 +242,7 @@ func goldenAt(delta review.Scheduler, reviewCards, overdue int) map[review.CardI
 	out := make(map[review.CardID]review.Schedule, reviewCards)
 	for i := range reviewCards {
 		c := review.Schedule{}
-		when := goldenNow.AddDate(0, 0, -90+i%17)
+		when := getGoldenNow().AddDate(0, 0, -90+i%17)
 		for step := range 1 + i%6 {
 			rating := review.Good
 			if step > 0 && (i+step)%5 == 0 {
@@ -241,7 +257,7 @@ func goldenAt(delta review.Scheduler, reviewCards, overdue int) map[review.CardI
 		if i < overdue {
 			// A review card whose due day has passed, by more days the later it appears
 			// in the material.
-			c.Due = goldenNow.AddDate(0, 0, -1-i%30)
+			c.Due = getGoldenNow().AddDate(0, 0, -1-i%30)
 		}
 		out[review.CardID{Card: fmt.Sprintf("card%06d", i), Template: "Recognise"}] = c
 	}
@@ -292,19 +308,19 @@ func goldenPresets() []goldenPreset {
 			Counts: review.BudgetUnitShows, Backlog: 60, Load: light, IsEvenLoad: true,
 		}},
 		{"a date, forty-five days off", review.Preset{
-			Goal: review.GoalDate, By: goldenNow.AddDate(0, 0, 45),
+			Goal: review.GoalDate, By: getGoldenNow().AddDate(0, 0, 45),
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			Retention: 0.9, Rule: review.RuleInterval, Interval: 7,
 			Counts: review.BudgetUnitCards, IsEvenLoad: true,
 		}},
 		{"a date, counting showings", review.Preset{
-			Goal: review.GoalDate, By: goldenNow.AddDate(0, 0, 45),
+			Goal: review.GoalDate, By: getGoldenNow().AddDate(0, 0, 45),
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			Retention: 0.9, Rule: review.RuleInterval, Interval: 7,
 			Counts: review.BudgetUnitShows, IsEvenLoad: true,
 		}},
 		{"a date, learned by a chance of recall", review.Preset{
-			Goal: review.GoalDate, By: goldenNow.AddDate(0, 0, 20),
+			Goal: review.GoalDate, By: getGoldenNow().AddDate(0, 0, 20),
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			Retention: 0.85, Rule: review.RuleRetention,
 			Counts: review.BudgetUnitCards, Load: light,

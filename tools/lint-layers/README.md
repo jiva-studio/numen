@@ -5,57 +5,49 @@ libraries, plugins, and desktop applications.
 
 ## Invariants Checked
 
-Each check has an id, a scope (`libs`, `plugins` or `apps`) and a module; `node check.mjs --list` prints them.
+Each check has an id, a scope (`libs`, `plugins` or `apps`) and a module; `node check.mjs --list` prints them. The checks that only run the ESLint or golangci-lint configuration of a package (`ui-lint`, `shell-lint`, `plugin-host-lint`, `desktop-editor-fsd`, `desktop-flashcards-fsd`, `plugins-frontend`, `core-depguard`, `notes-depguard`, `sdk-isolation`) repeat what `tools/lint-quality` runs over every package; `--without-lint` leaves them out when the quality check runs beside it. `plugins-independence` is left out when `go-structure` runs, because that runs every test of `libs/core/container`.
 
 1. **Libraries (`libs`)**:
-   - `core-hexagon`: the layer tests of `libs/core/container` (`layers_test.go`): inward dependencies, no machine access, logging or clock reads in the core, the core's own identities, and the ports and adapters it holds.
+   - `go-structure`: every test of `libs/core/container`, the package that contains the structural Go tests. They load the modules of `go.work` with go/packages, go/types, the AST and golang.org/x/mod/modfile: the layers of the core and the direction of its imports, the machine clock read only by a clock port implementation, the plugin dependency rule over the type-checked import graph and over the direct requirements of each `plugins/*/go.mod`, and the plugin SDK encapsulating the whole `libs/protocol` module. It runs on any change to a Go file, a `go.mod` or `go.work`.
+   - `library-matrix`: every `go.mod` under `libs/` belongs to a family, the first directory under `libs/`, and the family is a row of `LIBRARY_DEPENDENCIES` in `checks/libraries.mjs`. The `go.mod` and the Go files of a library, tests included, import only the modules of their own family, the families their row lists, and nothing outside `libs/`. A library with no row fails, so a new library declares its place before it is built. The rows are `core-client` to `protocol`; `plugin-sdk` to `protocol` and `ui` (its Vite helpers); `plugin-host` to `plugin-sdk` and `core-client`; `plugin-manager` to `ui`.
+   - `protocol-declared-only-by-clients`: only `@numen/plugin-sdk` and `@numen/core-client` declare `@numen/protocol` in a `package.json` under `apps`, `libs`, `plugins` or `tools`; the imports are `dependency-graph`'s. It fails when it reads fewer than 15 packages or finds the two clients declaring the schema fewer than twice.
+   - `core-client-private`: the package named `@numen/core-client` is `"private": true`, and it is not among the packages plugins rely on: the first-party packages a `package.json` under `plugins/` declares, and those they bring in through their `dependencies`, `peerDependencies` and `optionalDependencies`. It fails when that set is empty or it reads fewer than 15 packages.
+   - `package-matrix`: every `package.json` under `libs/` is a row of `PACKAGE_DEPENDENCIES` in `checks/libraries.mjs`, keyed by package name, and declares only the first-party `@numen/*` packages its row lists. A library with no row fails, so a new library declares its place before it is built. `dependency-graph` restricts the imports of each library to the same row.
    - `core-depguard`, `notes-depguard`, `sdk-isolation`: `golangci-lint` with the depguard rules of `libs/core`, `libs/notes` and `libs/plugin-sdk-go`.
-   - `core-holds-no-plugin-package`: the core holds no package a domain plugin owns (`usecase/document`, `usecase/recognition`, `usecase/transcription`, `usecase/embedding`, `usecase/plugintool`, `internal/embedding`, `internal/ocrartifact`, `internal/transcript`, `internal/urlfile`, `internal/correction`, `internal/adapter/download`, `adapter/window/flashcards`, the transcriber, proofreader, downloader and tools bridges, `port/transcriptionport`, `port/downloadport`), and no `container` file of the recogniser, the transcriber, the proofreader, the embedder or the downloader.
-   - `core-imports-no-domain-proto`: no Go file of `libs/core` names a message, enum or service that `libs/protocol` generates from a domain proto (`transcript`, `ocr`, `article`, `artifact`, `cards`, `presets`, `flashcards`, `transcription`, `download`, `proofreading`). `recording.proto` and `embedding.proto` are the core's own contracts.
-   - `notes-names-no-producer`: no Go file of `libs/notes` outside its tests holds the string literal of a producer (`asr`, `ocr`, `captions`, `article`, `copy`, `review-log`).
-   - `ui-isolation`: `libs/ui/core/src` names no `@numen/protocol`, `@numen/wire`, `@numen/shell` or `apps`, and `npm run lint` passes in `libs/ui/core`.
-   - `ui-holds-no-plugin-view`: `libs/ui/core/src` holds none of the directories of a view a plugin owns and `src/index.ts` exports none of its names (`views-agent-chat`: `screens/agent`, `features/thread`, `features/message-composer`; `Agent`, `Thread`, `MessageComposer`, `useConversation`, `Conversation`, `Turn`, `AgentModelOption`, `AgentPort`, `AgentStep`).
-   - `ui-holds-no-shell-part`: `libs/ui/core/src` holds none of the window chrome `@numen/shell` owns (`features/workspace`, `features/palette`, `features/status-bar`, `features/notices`, `features/welcome`, `screens`) and `src/index.ts` exports none of its names (`WorkspaceLayout`, `Palette`, `StatusBar`, `Notices`, `createNoticeQueue`, `WelcomePage`, `getVaultForKey`, `VaultRow`, `WelcomeAction`).
-   - `ui-exports-no-editor`: `libs/ui/core/src` holds no `features/editor`, and `src/index.ts` exports nothing from it and no wikilink helper (`Editor`, `createTimeGutter`, `Extension`, `isNoteAddress`, `getWikilinks`). No shipped file of `libs/ui/core/src` names the note link format either: no `isNoteAddress`, `getWikilinks`, `parseAddress`, `writeAddress`, no name holding `wikilink`, no `name://` or `note://` literal. The notes plugin owns the editor; the core parses links.
-   - `protocol-holds-no-plugin-contract`: the code of `libs/protocol/proto/numen/v1` names nothing a single plugin owns: `TranscriptService`, `ArticleService`, `BookService`, `DocumentService`, `SOURCE_KIND_BOOK`, `SOURCE_KIND_RECORDING`, `SOURCE_KIND_URL`, `BookFormat`, `FILE_MENU_ACTION_RECOGNISE`, `FILE_MENU_ACTION_PROOFREAD`, `BookProgress`, `RecordingProgress`, `SetVaultInUse` and its messages, and the `mark` and `face` fields of `agent.proto`. Comments are not read.
-   - `no-file-kind-outside-plugins`: the shipped code of `libs/core`, `libs/notes`, `libs/plugin-sdk-go`, `libs/plugin-sdk-ts`, `libs/ui/core`, `libs/ui/shell` and `apps/desktop/editor/src` holds no literal of a plugin's file extension (`"pdf"`, `".epub"`, `"onFile:*.pdf"`, `".mp3"`, … in `PLUGIN_EXTENSIONS`), no literal `"book"`, `"recording"`, `"url"` or `"document"`, and no name of those kinds (`KindBook`, `TabRecording`, `CapabilityDocument`, `SOURCE_KIND_URL`, `SourceKind.BOOK`, `BookFormat`, `DefaultBookExtensions`, `BookProgress`, `ReadBooks`, `BookServiceName`, and the script constants `BOOK`, `RECORDING`, `DOCUMENT`). A double-quoted string inside a literal, such as a manifest in a Go raw string, is read too. Tests, stories, `testing/`, `testdata/`, `e2e/` and generated code are not read. The core finds a plugin by content type instead.
-   - `shell-isolation`: `libs/ui/shell/src` names no `@numen/protocol`, `@numen/wire` or `apps`, and `npm run lint` passes in `libs/ui/shell`; the shell reaches the components through `@numen/ui` alone.
-   - `plugin-host-isolation`: `libs/plugin-host-ts/src` imports only `vue` and `@numen/plugin-sdk` besides its own files (its tests also `vitest`, its `vite.ts` also `vite`), so the plugin loader knows nothing of `@numen/ui`, `@numen/shell`, the protocol, the wire or an application; and `npm run lint` passes in `libs/plugin-host-ts`.
-   - `notes-hexagon`: Notes Library Internal Hexagonal Layers (layers_test.go).
-   - `sdk-consumers`: Plugin SDK Imported Only By Plugins and Applications.
-   - `go-no-mutable-globals`: Go No Package-Level Mutable Singletons or os.Exit Outside cmd/.
+   - `dependency-graph`: dependency-cruiser (`dependency-cruiser.mjs`, rules built in `checks/dependencies.mjs` from the packages under `libs`, `apps` and `plugins`) over the `src` of every library and application and the `frontend` of every plugin, type imports included. A plugin imports only `@numen/plugin-sdk` and `@numen/ui` of the first-party packages and nothing of `@connectrpc`; an application imports every library except `@numen/plugin-sdk` and `@numen/protocol`; a library imports only the row of the package matrix; no package imports a file outside its directory by a relative path; the plugin host imports only Vue and Vite of third-party code; a `lib`, `api` or `model` segment imports no higher segment of its slice outside tests and stories; nothing imports through `@x`; and no files form a cycle of runtime imports. A package whose `tsconfig.json` declares `paths` is checked alone with it, so its aliases resolve. It fails when it reads fewer than 1000 modules.
+   - `styles-use-tokens`: stylelint (`stylelint.config.mjs` at the root, rules of its own in `stylelint-plugin.mjs`) over every tracked `.css` file and the `<style>` blocks of every `.vue` file: no hex colour, named colour or colour function outside a token file (a `tokens` directory) and a theme file (a `theme` or `themes` directory); no `--numen-` declaration outside those; no `var()` with a fallback; and no `var(--numen-…)` that no token file declares, the declared set read from the syntax trees of the token files. It fails when it reads fewer than 150 files.
+   - `ui-lint`: `npm run lint` passes in `libs/ui/core`.
+   - `shell-lint`: `npm run lint` passes in `libs/ui/shell`.
+   - `plugin-host-lint`: `npm run lint` passes in `libs/plugin-host-ts`.
+   - `notes-hexagon`: every test of the root package of `libs/notes` (`layers_test.go`, `purity_test.go`).
    - `notes-depguard`: Notes Library Depguard Boundaries.
    - `sdk-isolation`: Plugin SDK Go Isolation (no core or app imports).
-   - `sdk-encapsulates-protocol`: Plugin SDK Encapsulates Protocol (no numenv1.* or window IDs in public SDK API).
-   - `no-wire-library`: No @numen/wire Library (libs/wire removed; utilities in @numen/plugin-sdk, protocol adapters in host).
-   - `contracts-name-no-plugin`: Shared Contracts Name No Plugin (schema, SDKs, plugin host, notes: comments and documents included).
-   - `docs-name-existing-paths`: Rule Documents Name Existing Paths (AGENTS.md, .agents/rules, lint-layers README).
-   - `docs-name-existing-tests`: Rule Documents Name Declared Go Tests.
-   - `docs-list-verifiers`: Layer Validator README Lists Every Registered Verifier.
-   - `all-ts-packages-eslint`: Every TypeScript Package Has ESLint Configured.
+   - `sdk-ts-encapsulates-protocol`: `checks/sdkProtocol.mjs` builds a TypeScript program from every script entry of the `exports` of `libs/plugin-sdk-ts` (a condition object is read by its `types`, `import` or `default` target, a `*` pattern by the files it matches) and fails when the type of an exported declaration refers to a declaration located in `libs/protocol`: a re-export, a signature, a member, a type argument, a base type or a constraint, found through the type checker. It fails when it reads fewer than 2 entries, 100 exported declarations, 15 SDK source files or no file of the schema.
+   - `all-ts-packages-eslint`: every directory under `libs` or `apps` that holds a `tsconfig.json` and a `package.json` has an `eslint.config.js`; it fails when it reads fewer than 8 packages.
+   - `strict-lint-rules`: every directory with an `eslint.config.js` or `eslint.config.mjs`, and every plugin with a `package.json`, resolves (`eslint --print-config` on a source file and a test file) `no-void`, `no-empty` (`allowEmptyCatch: false`) and the typed `@typescript-eslint` rules `no-empty-function`, `no-floating-promises` (`ignoreVoid: false`), `no-misused-promises`, `await-thenable` and `switch-exhaustiveness-check` as errors. A package of scripts only (`tools/eslint.config.mjs`) resolves the untyped three (`no-void`, `no-empty`, `no-empty-function`) on a source script and a test script, from `createStrictScriptRules`. The shared definition is `createStrictRules` in `base-eslint.mjs`; `plugins/.example/eslint.config.js` contains the same block because a plugin config imports nothing outside its directory.
 2. **Plugins (`plugins`)**:
    - `plugins-independence`: the `Plugin` tests of `libs/core/container`.
-   - `plugins-leakage`: every `manifest.json` has an id, a name and a version; there is no shared plugin folder; no plugin imports `libs/core`; no plugin imports another, by a Go import, by a relative TypeScript or Vue import that resolves into another plugin's directory, or by another plugin's package name.
-   - `plugins-reach-no-app`: no plugin reaches `apps/` by a relative path, an alias or a Go import.
-   - `plugins-reach-no-shell`: no plugin names `@numen/shell` or `@numen/plugin-host`, or reaches `libs/ui/shell` or `libs/plugin-host-ts` by a relative path; a plugin takes components from `@numen/ui` and is loaded by the host, never loads itself.
-   - `plugins-draw-no-notices`: no plugin imports `Notices`, `Notice`, `createNotice`, `createNoticeQueue` or `NoticeQueue` from a package; a plugin shows notices through `ctx.notices` and the window draws them in one list.
-   - `plugins-name-no-window`: the shipped code of a plugin holds no window id literal (`"editor"`, `"flashcards"`) and names no `WindowService` or `NewWindowServiceClient`; a plugin reaches the window through the SDK.
-   - `plugins-write-data-through-host`: a shipped Go file of a plugin that names the `.numen` folder calls no `os` function that changes the file system (`os.WriteFile`, `os.MkdirAll`, `os.Rename`, `os.Remove`, …); a plugin writes its data through the host store.
-   - `apps-plugins-boundary`: an application compiles nothing from `plugins/`, and a plugin nothing from `apps/`.
+   - `plugins-leakage`: every `manifest.json` has an id, a name and a version; there is no shared plugin folder; no plugin imports `libs/core`.
+   - `plugins-hold-no-schema`: no tracked file under `plugins/(*)/` is a `.proto` schema; a plugin calls the core through the SDK.
    - `plugins-frontend`: ESLint over `plugins/`: no `@/**` or `@plugins/**` import.
    - `plugin-config-golden-parity`: Plugin Configs Match Golden Example plugins/.example/ & Root .golangci.yml.
    - `plugin-backend-layers`: Plugin Backend Internal Hexagonal Layer Direction.
-   - `plugins-no-protocol-or-wire`: Plugins Depend Only on SDK (no libs/protocol, numen/v1/*.proto, @numen/protocol or @numen/wire).
-   - `plugins-no-cross-plugin-knowledge`: Plugins Know Nothing of Other Plugins (no cross-plugin IDs, tab kinds, text kinds or command IDs).
-   - `plugins-standalone-repo`: Plugins Are Standalone-Repo Ready (no ../ escapes, no vite.shared, no go.mod replace ../, no libs/notes, no plugin .proto).
+   - `plugins-use-main-entry`: a plugin names `@numen/plugin-sdk` and `@numen/ui` through the main entry. A deep path must be an entry the package declares in `exports`, and it passes only as the `testing` entry, as a stylesheet, or from a build configuration file (`*.config.ts`). The exports are read from the `package.json` of each package, and the rule fails when it reads fewer than 100 references.
 3. **Applications (`apps`)**:
-   - `apps-reach-no-plugin`: no application reaches `plugins/` by a relative path, an alias, an `import.meta.glob`, a tsconfig path or a Go import. A path is resolved from the file and from every package root above it.
-   - `window-names-no-plugin-kind`: the editor window's sources name no plugin kind (`deck`, `card-model`, `preset`, `plex`, `agent`, `files`) as a literal, outside its tests and stories and the files listed in `CORE_NAME_FILES` (the settings entity and page and the plugin context).
    - `desktop-editor-fsd`, `desktop-flashcards-fsd`: the Feature-Sliced Design layer hierarchy (`shared` → `entities` → `features` → `widgets` → `pages` → `app`), by `npm run lint` in each window.
-   - `frontend-segments-and-entities`: Frontend Segment Direction (ui -> model -> api -> lib) & No @x Entity Cross-Imports.
-   - `vue-style-and-template`: Vue <style> Tokens & <template> Purity.
-   - `apps-no-direct-protocol`: Applications Talk to Core Through SDK (no direct @numen/protocol in apps/*/src).
    - `desktop-flashcards-fsd`: Desktop Flashcards FSD Layer Hierarchy.
+
+## Structural checks
+
+Every check below derives its subject from the repository (the manifests, `go.work`, the directories) and names no plugin, package or file. Each declares a minimum count of what it examines, so a rule over nothing fails.
+
+- `plugins-isolation-capture`: one rule over the capture `plugins/(*)/`: a Go import or a package dependency of plugin X names plugin Y only when X equals Y. The imports of scripts are `dependency-graph`'s, and the Go import graph is checked by `libs/core/container/plugin_isolation_packages_test.go`, over the type-checked packages of every plugin module.
+- `no-suppressions`: no `nolint`, `eslint-disable`, `eslint-enable`, `@ts-expect-error`, `@ts-ignore` or `@ts-nocheck` comment; no `exclusions`, `exclude-functions`, `exclude-rules`, `exclude-dirs`, `exclude-files` key in a golangci configuration; no source file named in an eslint `ignores` or `files` entry; no array of repository files, in a constant or inline, in a script of `tools/lint-layers` or `stylelint.config.mjs`. Generated code is detected by its `Code generated ... DO NOT EDIT` header and is not read. It reads comments with `typescript` and `@vue/compiler-sfc`, which `package.json` declares.
+- `every-path-has-a-layer`: every Go module and npm package is under `libs`, `plugins`, `apps` or an auxiliary root (`tools`, `tests`, `docs`); no file is directly in a layer root; every plugin directory has a `manifest.json`.
+- `workspace-lists-every-module`: `go.work` uses exactly the directories that hold a `go.mod`.
+- Before a verifier that runs `golangci-lint` starts, the linter must be built with a Go no older than the `go` line of `go.work`.
+
+The checks are tested with violation fixtures: `npm test` in this directory.
 
 ## Usage
 
@@ -66,6 +58,8 @@ make check_layers target=libs         # library layers only
 make check_layers target=plugins      # plugins isolation and boundaries
 make check_layers target=apps         # application FSD layers
 make check_layers target=core         # specific module
+make check_dependencies               # dependency-cruiser alone (dependency-graph)
+make check_styles                     # stylelint alone (styles-use-tokens)
 
 # Directly:
 node check.mjs [target...]

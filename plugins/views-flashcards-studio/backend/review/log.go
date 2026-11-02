@@ -165,23 +165,25 @@ func whole(raw []byte) int {
 	return 1
 }
 
-// noAnswer is the answer returned where a line holds none.
-var noAnswer = Answer{
-	ID: "", ReviewCard: CardID{Card: "", Template: ""}, At: time.Time{},
-	Rating: 0, Took: 0, Undoes: "",
+// newNoAnswer returns the answer returned where a line holds none.
+func newNoAnswer() Answer {
+	return Answer{
+		ID: "", ReviewCard: CardID{Card: "", Template: ""}, At: time.Time{},
+		Rating: 0, Took: 0, Undoes: "",
+	}
 }
 
 func answer(raw []byte) (Answer, bool) {
 	var l line
 	if err := json.Unmarshal(raw, &l); err != nil {
-		return noAnswer, false
+		return newNoAnswer(), false
 	}
 	if l.V != Version || l.ID == "" {
-		return noAnswer, false
+		return newNoAnswer(), false
 	}
 	pos, err := ParseTimestamp(l.At)
 	if err != nil {
-		return noAnswer, false
+		return newNoAnswer(), false
 	}
 	if l.Undo != "" {
 		return Answer{
@@ -190,7 +192,7 @@ func answer(raw []byte) (Answer, bool) {
 		}, true
 	}
 	if l.Card == "" || l.Template == "" || !Rating(l.Rating).Valid() {
-		return noAnswer, false
+		return newNoAnswer(), false
 	}
 	return Answer{
 		ID:         l.ID,

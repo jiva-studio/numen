@@ -57,7 +57,7 @@ func (u Erase) Execute(ctx context.Context, v domain.Vault) (EraseResult, error)
 	}
 	if !carriesOne || carried != v.ID {
 		return EraseResult{}, fmt.Errorf(
-			"%w: %s no longer carries the identity of the vault %s, so it stays where it is",
+			"%w: %s no longer has the identity of the vault %s, so it stays where it is",
 			ErrUnreadable, v.Path, v.Name)
 	}
 

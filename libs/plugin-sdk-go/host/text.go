@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/notes/textfile"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
 var (
@@ -13,7 +14,7 @@ var (
 	// is missing or is not JSON Lines of segments, or a source that is no other version of the file.
 	ErrInvalidVersion = errors.New("host: the version is not valid")
 	// ErrNotOwner is what a call gets for a version of another plugin, or from a plugin that declares
-	// no `texts`.
+	// no text provider handle.
 	ErrNotOwner = errors.New("host: the version is another plugin's")
 )
 
@@ -25,21 +26,21 @@ var (
 type TextPut struct {
 	Path       string
 	Key        string
-	Source     TextVersionID
-	Kind       TextKind
+	Source     domain.TextVersionID
+	Kind       domain.TextKind
 	SourceHash string
 	File       string
 }
 
 // TextListing is the versions of a file and the one the host shows, which is empty where none is live.
 type TextListing struct {
-	Versions []TextVersion
-	Live     TextVersionID
+	Versions []domain.TextVersion
+	Live     domain.TextVersionID
 }
 
 // TextPage is one page of a version's segments. An empty NextCursor is the last page.
 type TextPage struct {
-	Segments   []TextSegment
+	Segments   []domain.TextSegment
 	NextCursor string
 }
 
@@ -48,38 +49,38 @@ type TextPage struct {
 type Texts interface {
 	// With is the text versions of the vault of the identity. A call on it returns ErrUnknownVault
 	// when the installation has no such vault.
-	With(id VaultID) Texts
+	With(id domain.VaultID) Texts
 
 	// PutVersion records a version of the plugin from the file it wrote, or replaces the one it has
 	// under the key, and reindexes the file.
-	PutVersion(ctx context.Context, params TextPut) (TextVersion, error)
+	PutVersion(ctx context.Context, params TextPut) (domain.TextVersion, error)
 	// RemoveVersion removes the record of a version of the plugin.
 	RemoveVersion(ctx context.Context, path, key string) error
 	// ListVersions is the versions of a file and which of them is live.
 	ListVersions(ctx context.Context, path string) (TextListing, error)
 	// ReadText is one page of any version's segments, read by the host from the version's file, or
 	// ErrNotExist.
-	ReadText(ctx context.Context, path string, id TextVersionID, cursor string) (TextPage, error)
+	ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (TextPage, error)
 }
 
 // errRepeatedCursor is a text that returned a page with the cursor it was requested with.
 var errRepeatedCursor = errors.New("host: the same page was returned twice")
 
 // ReadWholeText is every page of a version's segments, joined.
-func ReadWholeText(ctx context.Context, texts Texts, version TextVersion) (VersionText, error) {
-	var segments []TextSegment
+func ReadWholeText(ctx context.Context, texts Texts, version domain.TextVersion) (domain.VersionText, error) {
+	var segments []domain.TextSegment
 	cursor := ""
 	for {
 		page, err := texts.ReadText(ctx, version.Path, version.GetID(), cursor)
 		if err != nil {
-			return VersionText{}, err
+			return domain.VersionText{}, err
 		}
 		segments = append(segments, page.Segments...)
 		if page.NextCursor == "" {
-			return NewVersionText(version, segments), nil
+			return domain.NewVersionText(version, segments), nil
 		}
 		if page.NextCursor == cursor {
-			return VersionText{}, fmt.Errorf("read %s of %s: %w", version.GetID(), version.Path, errRepeatedCursor)
+			return domain.VersionText{}, fmt.Errorf("read %s of %s: %w", version.GetID(), version.Path, errRepeatedCursor)
 		}
 		cursor = page.NextCursor
 	}
@@ -87,7 +88,7 @@ func ReadWholeText(ctx context.Context, texts Texts, version TextVersion) (Versi
 
 // DeleteText removes a text version the plugin of the id made: its record, then its file in the
 // plugin's folder. A version that is not there is ErrNotExist, and one of another plugin is ErrNotOwner.
-func DeleteText(ctx context.Context, texts Texts, store Store, pluginID, path string, id TextVersionID) error {
+func DeleteText(ctx context.Context, texts Texts, store Store, pluginID, path string, id domain.TextVersionID) error {
 	listing, err := texts.ListVersions(ctx, path)
 	if err != nil {
 		return err
@@ -109,7 +110,7 @@ func DeleteText(ctx context.Context, texts Texts, store Store, pluginID, path st
 
 // WriteText writes segments as a version file of the plugin's folder, replacing the file
 // atomically. The plugin puts the version after the write.
-func WriteText(ctx context.Context, store Store, name string, segments []TextSegment) error {
+func WriteText(ctx context.Context, store Store, name string, segments []domain.TextSegment) error {
 	raw, err := textfile.Encode(segments)
 	if err != nil {
 		return err
@@ -119,7 +120,7 @@ func WriteText(ctx context.Context, store Store, name string, segments []TextSeg
 
 // AppendText adds segments to the end of a version file of the plugin's folder, making the file
 // where it is not there.
-func AppendText(ctx context.Context, store Store, name string, segments []TextSegment) error {
+func AppendText(ctx context.Context, store Store, name string, segments []domain.TextSegment) error {
 	raw, err := textfile.Encode(segments)
 	if err != nil {
 		return err
@@ -128,7 +129,7 @@ func AppendText(ctx context.Context, store Store, name string, segments []TextSe
 }
 
 // ReadTextFile reads the segments of a version file of the plugin's folder.
-func ReadTextFile(ctx context.Context, store Store, name string) ([]TextSegment, error) {
+func ReadTextFile(ctx context.Context, store Store, name string) ([]domain.TextSegment, error) {
 	raw, err := store.Read(ctx, name)
 	if err != nil {
 		return nil, err

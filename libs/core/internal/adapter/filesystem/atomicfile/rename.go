@@ -7,7 +7,9 @@ import (
 )
 
 // waits is how long a rename rests before each further attempt.
-var waits = []time.Duration{10 * time.Millisecond, 40 * time.Millisecond, 160 * time.Millisecond}
+func getWaits() []time.Duration {
+	return []time.Duration{10 * time.Millisecond, 40 * time.Millisecond, 160 * time.Millisecond}
+}
 
 // Rename moves a file over another, waiting out a handle that another process
 // holds on it. A backup reader, a search indexer and a virus scanner each open
@@ -16,7 +18,7 @@ var waits = []time.Duration{10 * time.Millisecond, 40 * time.Millisecond, 160 * 
 // outside it by a link.
 func Rename(ctx context.Context, root *os.Root, from, to string) error {
 	err := root.Rename(from, to)
-	for _, wait := range waits {
+	for _, wait := range getWaits() {
 		if !isFileInUse(err) {
 			return err
 		}

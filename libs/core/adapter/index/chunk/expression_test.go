@@ -80,16 +80,18 @@ func expressionReference(typed string, growing bool) string {
 	return strings.Join(quoted, " ")
 }
 
-var expressionInputs = []string{
-	"", " ", "\t\n ", "a", "entropy", "entropy shannon", "  entropy   shannon  ",
-	"state-function", "C++", `"entropy`, `say"hello`, `""`, `"`, `a "b" c`,
-	"наставник", "энтропия Шеннона", "日本語 検索", "a\u00a0b", "a\u2003b\u3000c",
-	"a\x85b", "bad\xffbyte x\xc3", "emoji 😀 test", "one (two)", "a:b",
-	"\u200bzero", "tab\tsep\nnl\rcr\vvt\ffeed",
+func getExpressionInputs() []string {
+	return []string{
+		"", " ", "\t\n ", "a", "entropy", "entropy shannon", "  entropy   shannon  ",
+		"state-function", "C++", `"entropy`, `say"hello`, `""`, `"`, `a "b" c`,
+		"наставник", "энтропия Шеннона", "日本語 検索", "a\u00a0b", "a\u2003b\u3000c",
+		"a\x85b", "bad\xffbyte x\xc3", "emoji 😀 test", "one (two)", "a:b",
+		"\u200bzero", "tab\tsep\nnl\rcr\vvt\ffeed",
+	}
 }
 
 func TestExpressionMatchesReference(t *testing.T) {
-	for _, input := range expressionInputs {
+	for _, input := range getExpressionInputs() {
 		for _, growing := range []bool{false, true} {
 			if got, want := Expression(input, growing), expressionReference(input, growing); got != want {
 				t.Errorf("Expression(%q, %v) = %q, want %q", input, growing, got, want)

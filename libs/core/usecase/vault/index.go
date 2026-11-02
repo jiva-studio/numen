@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/port/floorport"
 	"github.com/jiva-studio/numen/libs/core/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/port/problemport"
+	"github.com/jiva-studio/numen/libs/core/port/searchpolicyport"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
@@ -19,6 +19,7 @@ type IndexBackend interface {
 	Close() error
 	FitVectors(ctx context.Context, dims int, recipe string) error
 	DeleteOtherRecipeVectors(ctx context.Context, recipe string) (int64, error)
+	ApplyMinChunkLength(ctx context.Context, length int) (int64, error)
 	Compact(ctx context.Context) error
 }
 
@@ -31,6 +32,7 @@ type IndexPorts struct {
 	Queries       noteport.NoteQueries
 	Passages      sourceport.PassageQueries
 	Progress      indexport.IndexProgress
+	Stats         indexport.IndexStats
 	Sources       sourceport.SourceRepository
 	SourcesKnown  sourceport.SourceQueries
 	Vectors       embeddingport.VectorRepository
@@ -40,9 +42,9 @@ type IndexPorts struct {
 	Problems      problemport.ProblemQueries
 	OpenTabs      windowport.OpenTabsStore
 	TextVersions  textport.VersionRepositories
-	Floors        floorport.Store
-	FloorSamples  floorport.Samples
-	Nearest       floorport.Nearest
+	SearchFloors  searchpolicyport.FloorStore
+	SearchSamples searchpolicyport.Samples
+	Nearest       searchpolicyport.Nearest
 }
 
 // Index exposes the cache as the ports the core requires.
@@ -75,6 +77,12 @@ func (i *Index) DeleteVectorsOfOtherRecipes(ctx context.Context, recipe string) 
 	return i.ports.Backend.DeleteOtherRecipeVectors(ctx, recipe)
 }
 
+// ApplyMinChunkLength sets the shortest small chunk that gets a vector and takes out the vectors of the
+// shorter ones.
+func (i *Index) ApplyMinChunkLength(ctx context.Context, length int) (int64, error) {
+	return i.ports.Backend.ApplyMinChunkLength(ctx, length)
+}
+
 // Compact reclaims the space the index does not use.
 func (i *Index) Compact(ctx context.Context) error { return i.ports.Backend.Compact(ctx) }
 
@@ -83,6 +91,7 @@ func (i *Index) Notes() noteport.NoteRepository             { return i.ports.Not
 func (i *Index) Queries() noteport.NoteQueries              { return i.ports.Queries }
 func (i *Index) Passages() sourceport.PassageQueries        { return i.ports.Passages }
 func (i *Index) Progress() indexport.IndexProgress          { return i.ports.Progress }
+func (i *Index) Stats() indexport.IndexStats                { return i.ports.Stats }
 func (i *Index) Sources() sourceport.SourceRepository       { return i.ports.Sources }
 func (i *Index) SourcesKnown() sourceport.SourceQueries     { return i.ports.SourcesKnown }
 func (i *Index) Vectors() embeddingport.VectorRepository    { return i.ports.Vectors }
@@ -93,6 +102,6 @@ func (i *Index) Links() noteport.LinkQueries                { return i.ports.Lin
 func (i *Index) Problems() problemport.ProblemQueries       { return i.ports.Problems }
 func (i *Index) OpenTabs() windowport.OpenTabsStore         { return i.ports.OpenTabs }
 func (i *Index) TextVersions() textport.VersionRepositories { return i.ports.TextVersions }
-func (i *Index) Floors() floorport.Store                    { return i.ports.Floors }
-func (i *Index) FloorSamples() floorport.Samples            { return i.ports.FloorSamples }
-func (i *Index) Nearest() floorport.Nearest                 { return i.ports.Nearest }
+func (i *Index) SearchFloors() searchpolicyport.FloorStore  { return i.ports.SearchFloors }
+func (i *Index) SearchSamples() searchpolicyport.Samples    { return i.ports.SearchSamples }
+func (i *Index) Nearest() searchpolicyport.Nearest          { return i.ports.Nearest }

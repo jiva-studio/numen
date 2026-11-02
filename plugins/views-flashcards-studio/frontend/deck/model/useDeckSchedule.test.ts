@@ -70,7 +70,7 @@ const fakeStore = () => {
   const store: ScheduledStore = {
     getPath: (id) => paths.get(id) ?? '',
     getFilePath: (id) => `/vault/${paths.get(id) ?? ''}`,
-    flushPending: async () => {},
+    flushPending: async () => undefined,
     applyPathChanges,
   }
   return { store, paths, applyPathChanges }

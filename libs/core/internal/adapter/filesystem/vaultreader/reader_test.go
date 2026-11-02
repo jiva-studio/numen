@@ -407,7 +407,7 @@ func TestOpenDoesNotWriteIntoTheFolder(t *testing.T) {
 func TestInitializeProducesAnIdentityOnceAndKeepsIt(t *testing.T) {
 	dir := t.TempDir()
 
-	first, err := vaultconfig.Initialize(dir, "", time.Now())
+	first, err := vaultconfig.Initialize(dir, "", testsupport.GetEpoch())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -420,7 +420,7 @@ func TestInitializeProducesAnIdentityOnceAndKeepsIt(t *testing.T) {
 
 	// Re-adding a vault must not mint a new identity: every row in the index
 	// points at the old one.
-	second, err := vaultconfig.Initialize(dir, "", time.Now().Add(time.Hour))
+	second, err := vaultconfig.Initialize(dir, "", testsupport.GetMachine().Now().Add(time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -431,7 +431,7 @@ func TestInitializeProducesAnIdentityOnceAndKeepsIt(t *testing.T) {
 
 func TestInitializeWritesOnlyIntoTheServiceFolder(t *testing.T) {
 	dir := t.TempDir()
-	if _, err := vaultconfig.Initialize(dir, "", time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(dir, "", testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
 	entries, err := os.ReadDir(dir)
@@ -445,7 +445,7 @@ func TestInitializeWritesOnlyIntoTheServiceFolder(t *testing.T) {
 
 func TestServiceFolderNameIsASetting(t *testing.T) {
 	dir := t.TempDir()
-	if _, err := vaultconfig.Initialize(dir, "_numen", time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(dir, "_numen", testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(filepath.Join(dir, "_numen", "config.json")); err != nil {
@@ -606,7 +606,11 @@ func TestOnlyANoteIsSavedTo(t *testing.T) {
 		if _, err := writer.Write(t.Context(), path, []byte("mine"), domain.FileStat{}); !errors.Is(err, vaultconfig.ErrNotANote) {
 			t.Errorf("write %s: want ErrNotANote, got %v", path, err)
 		}
-		if retained, _ := os.ReadFile(filepath.Join(root, filepath.FromSlash(path))); string(retained) != "theirs" {
+		retained, retainedErr := os.ReadFile(filepath.Join(root, filepath.FromSlash(path)))
+		if retainedErr != nil {
+			t.Fatal(retainedErr)
+		}
+		if string(retained) != "theirs" {
 			t.Errorf("%s was written to anyway", path)
 		}
 	}
@@ -635,7 +639,11 @@ func TestAWriteDoesNotFollowALinkOutOfTheVault(t *testing.T) {
 	if _, err := writer.Write(t.Context(), "linked/secret.md", []byte("mine"), domain.FileStat{}); !errors.Is(err, vaultconfig.ErrOutside) {
 		t.Errorf("want ErrOutside, got %v", err)
 	}
-	if retained, _ := os.ReadFile(filepath.Join(outside, "secret.md")); string(retained) != "not yours" {
+	retained, retainedErr := os.ReadFile(filepath.Join(outside, "secret.md"))
+	if retainedErr != nil {
+		t.Fatal(retainedErr)
+	}
+	if string(retained) != "not yours" {
 		t.Error("a file outside the vault was written")
 	}
 }

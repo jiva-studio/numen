@@ -45,14 +45,14 @@ const skeletonStyle = computed(() => ({
   vertical-align: middle;
   border-radius: var(--numen-radius);
   background: color-mix(in srgb, currentcolor 14%, transparent);
-  animation: skeleton-breathe var(--cycle) ease-in-out infinite;
+  animation: skeleton-pulse var(--cycle) ease-in-out infinite;
 }
 
 .skeleton--pill {
-  border-radius: var(--numen-radius-isPill);
+  border-radius: var(--numen-radius-pill);
 }
 
-@keyframes skeleton-breathe {
+@keyframes skeleton-pulse {
   50% {
     opacity: 0.5;
   }

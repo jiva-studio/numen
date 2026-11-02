@@ -9,29 +9,30 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
-	sup := New()
+	sup := New(testsupport.NewClock())
 	if sup.GetState() != StateDormant {
 		t.Fatalf("expected StateDormant, got %v", sup.GetState())
 	}
 
-	err := sup.Attach(nil, time.Now())
+	err := sup.Attach(t.Context(), nil, testsupport.GetEpoch())
 	if err == nil {
 		t.Fatal("expected error attaching nil process, got nil")
 	}
 
-	cmd := exec.Command("sleep", "1")
+	cmd := exec.CommandContext(t.Context(), "sleep", "1")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start mock process: %v", err)
 	}
 
-	now := time.Now()
-	if err := sup.Attach(cmd.Process, now); err != nil {
+	now := testsupport.GetEpoch()
+	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach process: %v", err)
 	}
 	if sup.GetState() != StateActive {
@@ -64,12 +65,12 @@ func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
 		t.Fatal("expected IsIdle to be false when ref count > 0")
 	}
 
-	_ = cmd.Process.Kill()
-	_, _ = cmd.Process.Wait()
+	testsupport.Kill(t, cmd)
+	plugintest.ReapProcess(t, cmd.Process)
 }
 
 func TestSupervisorTeardownNotRunning(t *testing.T) {
-	sup := New()
+	sup := New(testsupport.NewClock())
 	err := sup.Teardown(t.Context(), 50*time.Millisecond, nil)
 	if err == nil {
 		t.Fatal("expected error tearing down non-running supervisor, got nil")
@@ -77,13 +78,13 @@ func TestSupervisorTeardownNotRunning(t *testing.T) {
 }
 
 func TestSupervisorTeardownGraceful(t *testing.T) {
-	cmd := exec.Command("sleep", "5")
+	cmd := exec.CommandContext(t.Context(), "sleep", "5")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start process: %v", err)
 	}
 
-	sup := New()
-	if err := sup.Attach(cmd.Process, time.Now()); err != nil {
+	sup := New(testsupport.NewClock())
+	if err := sup.Attach(t.Context(), cmd.Process, testsupport.GetEpoch()); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
 
@@ -104,9 +105,9 @@ func TestSupervisorTeardownGraceful(t *testing.T) {
 }
 
 func TestSupervisorTeardownInProcessCallsRPC(t *testing.T) {
-	sup := New()
+	sup := New(testsupport.NewClock())
 	sup.SetActivating()
-	sup.ActivateInProcess(time.Now())
+	sup.ActivateInProcess(testsupport.GetEpoch())
 
 	rpcCalled := false
 	err := sup.Teardown(t.Context(), 50*time.Millisecond, func(_ context.Context) error {
@@ -125,13 +126,13 @@ func TestSupervisorTeardownInProcessCallsRPC(t *testing.T) {
 }
 
 func TestSupervisorTeardownForceKill(t *testing.T) {
-	cmd := exec.Command("sleep", "5")
+	cmd := exec.CommandContext(t.Context(), "sleep", "5")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start process: %v", err)
 	}
 
-	sup := New()
-	if err := sup.Attach(cmd.Process, time.Now()); err != nil {
+	sup := New(testsupport.NewClock())
+	if err := sup.Attach(t.Context(), cmd.Process, testsupport.GetEpoch()); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
 
@@ -145,43 +146,43 @@ func TestSupervisorTeardownForceKill(t *testing.T) {
 }
 
 func TestSupervisorPermissionNormalization(t *testing.T) {
-	sup := New()
-	sup.SetPermissions([]string{manifestfile.PermissionVaultRead, "network"})
+	sup := New(testsupport.NewClock())
+	sup.SetPermissions([]string{manifest.PermissionVaultRead, "network"})
 
-	if !sup.HasPermission(manifestfile.PermissionVaultRead) {
-		t.Errorf("expected permission %s to be present", manifestfile.PermissionVaultRead)
+	if !sup.HasPermission(manifest.PermissionVaultRead) {
+		t.Errorf("expected permission %s to be present", manifest.PermissionVaultRead)
 	}
-	if !sup.HasPermission(manifestfile.PermissionNetworkOutbound) {
-		t.Errorf("expected permission %s to be normalized and present", manifestfile.PermissionNetworkOutbound)
+	if !sup.HasPermission(manifest.PermissionNetworkOutbound) {
+		t.Errorf("expected permission %s to be normalized and present", manifest.PermissionNetworkOutbound)
 	}
 	if !sup.HasPermission("network") {
 		t.Errorf("expected alias network to return true")
 	}
-	if err := sup.CheckPermission(manifestfile.PermissionNetworkOutbound); err != nil {
-		t.Errorf("expected CheckPermission for %s to pass: %v", manifestfile.PermissionNetworkOutbound, err)
+	if err := sup.CheckPermission(manifest.PermissionNetworkOutbound); err != nil {
+		t.Errorf("expected CheckPermission for %s to pass: %v", manifest.PermissionNetworkOutbound, err)
 	}
-	if sup.HasPermission(manifestfile.PermissionVaultWrite) {
-		t.Errorf("expected undeclared permission %s to be false", manifestfile.PermissionVaultWrite)
+	if sup.HasPermission(manifest.PermissionVaultWrite) {
+		t.Errorf("expected undeclared permission %s to be false", manifest.PermissionVaultWrite)
 	}
 }
 
 func TestSupervisorProcessCrashTriggersOnExit(t *testing.T) {
-	cmd := exec.Command("sleep", "1")
+	cmd := exec.CommandContext(t.Context(), "sleep", "1")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start process: %v", err)
 	}
 
-	sup := New()
+	sup := New(testsupport.NewClock())
 	onExitCh := make(chan struct{})
 	sup.SetOnExit(func() {
 		close(onExitCh)
 	})
 
-	if err := sup.Attach(cmd.Process, time.Now()); err != nil {
+	if err := sup.Attach(t.Context(), cmd.Process, testsupport.GetEpoch()); err != nil {
 		t.Fatalf("attach process: %v", err)
 	}
 
-	_ = cmd.Process.Kill()
+	testsupport.Kill(t, cmd)
 
 	select {
 	case <-onExitCh:
@@ -195,7 +196,7 @@ func TestSupervisorProcessCrashTriggersOnExit(t *testing.T) {
 }
 
 func TestSupervisorActivationLifecycle(t *testing.T) {
-	sup := New()
+	sup := New(testsupport.NewClock())
 	if sup.GetState() != StateDormant {
 		t.Fatalf("expected StateDormant, got %v", sup.GetState())
 	}
@@ -255,7 +256,7 @@ func TestSupervisorActivationLifecycle(t *testing.T) {
 }
 
 func TestSupervisorTeardownWhileActivating(t *testing.T) {
-	sup := New()
+	sup := New(testsupport.NewClock())
 	ch := sup.SetActivating()
 
 	err := sup.Teardown(t.Context(), 50*time.Millisecond, nil)
@@ -272,149 +273,17 @@ func TestSupervisorTeardownWhileActivating(t *testing.T) {
 	}
 }
 
-func TestSupervisorMemoryTrackingAndEviction(t *testing.T) {
-	cmd := exec.Command("sleep", "10")
-	if err := cmd.Start(); err != nil {
-		t.Fatalf("failed to start mock process: %v", err)
-	}
-	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
-	}()
-
-	sup := New()
-	sup.SetMemoryLimit(100 * 1024 * 1024)
-	if sup.GetMemoryLimit() != 100*1024*1024 {
-		t.Fatalf("got memory limit %d, want %d", sup.GetMemoryLimit(), 100*1024*1024)
-	}
-
-	if err := sup.Attach(cmd.Process, time.Now()); err != nil {
-		t.Fatalf("failed to attach process: %v", err)
-	}
-
-	rss, err := sup.GetResidentMemory()
-	if err != nil {
-		t.Fatalf("GetResidentMemory failed: %v", err)
-	}
-	if rss > 100*1024*1024 {
-		t.Fatalf("expected initial RSS to be below 100MB, got %d", rss)
-	}
-	if sup.IsMemoryExceeded() {
-		t.Fatal("expected IsMemoryExceeded to be false")
-	}
-
-	// Override RSS reader to simulate memory limit exceeded
-	sup.SetRSSReader(func(_ int) (uint64, error) {
-		return 200 * 1024 * 1024, nil
-	})
-
-	if !sup.IsMemoryExceeded() {
-		t.Fatal("expected IsMemoryExceeded to be true when simulated RSS exceeds limit")
-	}
-
-	rpcCalled := make(chan struct{})
-	sup.SetRPCShutdown(func(_ context.Context) error {
-		close(rpcCalled)
-		_ = cmd.Process.Kill()
-		return nil
-	})
-	sup.SetMemoryGracePeriod(100 * time.Millisecond)
-	sup.SetMemoryMonitorInterval(10 * time.Millisecond)
-
-	// Trigger memory monitor by re-setting limit or wait for monitor tick
-	sup.SetMemoryLimit(50 * 1024 * 1024)
-
-	select {
-	case <-rpcCalled:
-	case <-time.After(2 * time.Second):
-		t.Fatal("expected graceful RPC shutdown on memory limit exceeded")
-	}
-
-	deadline := time.Now().Add(2 * time.Second)
-	for sup.GetState() != StateDormant && time.Now().Before(deadline) {
-		time.Sleep(10 * time.Millisecond)
-	}
-	if sup.GetState() != StateDormant {
-		t.Fatalf("expected StateDormant after eviction, got %v", sup.GetState())
-	}
-}
-
-func TestMemoryExceededRecordsActivationFailureAndBackoff(t *testing.T) {
-	cmd := exec.Command("sleep", "5")
-	if err := cmd.Start(); err != nil {
-		t.Fatalf("failed to start process: %v", err)
-	}
-	defer func() {
-		plugintest.KillProcess(t, cmd.Process)
-	}()
-
-	sup := New()
-	sup.SetActivationPolicy(ActivationPolicy{
-		BackoffBase: 500 * time.Millisecond,
-		BackoffMax:  time.Second,
-		MaxFailures: 2,
-	})
-	onExceededCalled := false
-	sup.SetOnMemoryExceeded(func() {
-		onExceededCalled = true
-	})
-	sup.SetRPCShutdown(func(_ context.Context) error {
-		_ = cmd.Process.Kill()
-		return nil
-	})
-	sup.SetMemoryGracePeriod(50 * time.Millisecond)
-	sup.SetMemoryMonitorInterval(10 * time.Millisecond)
-	sup.SetRSSReader(func(_ int) (uint64, error) {
-		return 200, nil
-	})
-	sup.SetMemoryLimit(100)
-
-	now := time.Now()
-	if err := sup.Attach(cmd.Process, now); err != nil {
-		t.Fatalf("failed to attach: %v", err)
-	}
-
-	deadline := time.Now().Add(2 * time.Second)
-	for sup.GetState() != StateDormant && time.Now().Before(deadline) {
-		time.Sleep(10 * time.Millisecond)
-	}
-	if sup.GetState() != StateDormant {
-		t.Fatalf("expected StateDormant after eviction, got %v", sup.GetState())
-	}
-	if !onExceededCalled {
-		t.Fatal("expected onMemoryExceeded to be called")
-	}
-	if err := sup.CheckActivationAllowed(time.Now()); err == nil {
-		t.Fatal("expected activation to be blocked by backoff")
-	}
-
-	failed, _ := sup.GetActivationFailure()
-	if failed {
-		t.Fatal("expected plugin not yet marked permanently failed after 1 failure")
-	}
-
-	// The second eviction hits MaxFailures.
-	sup.evictForMemory(nil, 10*time.Millisecond, nil)
-	failed, cause := sup.GetActivationFailure()
-	if !failed {
-		t.Fatal("expected plugin to be marked permanently failed after MaxFailures")
-	}
-	if !errors.Is(cause, ErrMemoryExceeded) {
-		t.Fatalf("expected ErrMemoryExceeded, got %v", cause)
-	}
-}
-
 func TestAcquire_RejectsDeactivatingPlugin(t *testing.T) {
-	cmd := exec.Command("sleep", "5")
+	cmd := exec.CommandContext(t.Context(), "sleep", "5")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start process: %v", err)
 	}
 	defer func() {
 		plugintest.KillProcess(t, cmd.Process)
 	}()
-	sup := New()
-	now := time.Now()
-	if err := sup.Attach(cmd.Process, now); err != nil {
+	sup := New(testsupport.NewClock())
+	now := testsupport.GetEpoch()
+	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
 	sup.Release(now)
@@ -431,16 +300,16 @@ func TestAcquire_RejectsDeactivatingPlugin(t *testing.T) {
 }
 
 func TestADeactivationDoesNotBeginOnAHeldPlugin(t *testing.T) {
-	cmd := exec.Command("sleep", "5")
+	cmd := exec.CommandContext(t.Context(), "sleep", "5")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start process: %v", err)
 	}
 	defer func() {
 		plugintest.KillProcess(t, cmd.Process)
 	}()
-	sup := New()
-	now := time.Now()
-	if err := sup.Attach(cmd.Process, now); err != nil {
+	sup := New(testsupport.NewClock())
+	now := testsupport.GetEpoch()
+	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
 	sup.Acquire(now)
@@ -458,7 +327,7 @@ func TestSupervisorPermissionsAndPathValidation(t *testing.T) {
 	}
 
 	t.Run("permission denied without vault:read", func(t *testing.T) {
-		sup := New()
+		sup := New(testsupport.NewClock())
 		sup.SetPermissions([]string{"network:outbound"})
 
 		if err := sup.CheckPermission("vault:read"); !errors.Is(err, pluginport.ErrPermissionDenied) {
@@ -471,7 +340,7 @@ func TestSupervisorPermissionsAndPathValidation(t *testing.T) {
 	})
 
 	t.Run("permission granted with vault:read", func(t *testing.T) {
-		sup := New()
+		sup := New(testsupport.NewClock())
 		sup.SetPermissions([]string{"vault:read", "vault:write"})
 
 		if err := sup.CheckPermission("vault:read"); err != nil {
@@ -488,7 +357,7 @@ func TestSupervisorPermissionsAndPathValidation(t *testing.T) {
 	})
 
 	t.Run("traversal blocked even with vault:read", func(t *testing.T) {
-		sup := New()
+		sup := New(testsupport.NewClock())
 		sup.SetPermissions([]string{"vault:read"})
 
 		_, err := sup.ValidatePath(vaultDir, "../secret.txt")

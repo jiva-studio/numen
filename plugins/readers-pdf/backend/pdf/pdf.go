@@ -108,20 +108,20 @@ var (
 	ErrEncrypted = errors.New("pdf: the file is encrypted")
 )
 
-// Read extracts one document from the bytes of a PDF file.
-func Read(raw []byte) (*Book, error) {
-	doc, err := openBytes(raw)
+// Read extracts one document from the bytes of a PDF file, read on a worker of the pool.
+func (w *Workers) Read(raw []byte) (*Book, error) {
+	doc, err := w.openBytes(raw)
 	if err != nil {
 		return nil, err
 	}
-	return readBook(doc), nil
+	return readBook(doc)
 }
 
 // readBook reads the open document and closes it.
-func readBook(doc *document) *Book {
-	defer doc.close()
+func readBook(doc *document) (book *Book, err error) {
+	defer func() { err = errors.Join(err, doc.Close()) }()
 
-	book := &Book{Title: doc.title(), Text: "", Pages: nil, Parts: nil, Structure: ""}
+	book = &Book{Title: doc.title(), Text: "", Pages: nil, Parts: nil, Structure: ""}
 
 	var text strings.Builder
 	pages := min(doc.pages, mostPages)
@@ -157,7 +157,7 @@ func readBook(doc *document) *Book {
 	sort.SliceStable(book.Parts, func(i, j int) bool {
 		return book.Parts[i].Offset < book.Parts[j].Offset
 	})
-	return book
+	return book, nil
 }
 
 // A Location is where an offset in the text falls.

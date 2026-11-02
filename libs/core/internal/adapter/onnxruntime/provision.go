@@ -2,17 +2,20 @@ package onnxruntime
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/core/port/machineport"
 )
 
 // Config is what the runtime is provisioned from.
 type Config struct {
-	// Dir is the models home the downloaded library is kept under. Empty is GetHome.
+	// Dir is the models home the downloaded library is kept under. Empty is GetHome, which names the environment folder or fails.
 	Dir string
 	// Provider names the execution provider. Empty is auto.
 	Provider string
@@ -29,6 +32,8 @@ type Config struct {
 	// path. Nil opens it with the platform loader and requests the API the
 	// plugins call.
 	Check func(targetPath string) error
+	// Clock paces the progress reports.
+	Clock machineport.Clock
 }
 
 // Provisioner finds or fetches the library once per plugin folder and hands the
@@ -88,7 +93,7 @@ func (p *Provisioner) ProvisionWithProgress(ctx context.Context, pluginDir strin
 	}
 	if found.isPinned && provider.isGPU() {
 		return "", "", fmt.Errorf("the onnx runtime: the %s provider needs a GPU build, and this machine holds none that opens: install one and name it in %s, or use the cpu provider%s",
-			provider, libraryEnvs[0], found.describeSkipped())
+			provider, getLibraryEnvs()[0], found.describeSkipped())
 	}
 	p.ready[pluginDir] = answer{library: found.library, provider: provider}
 	return found.library, string(provider), nil
@@ -118,12 +123,14 @@ func (p *Provisioner) locate(ctx context.Context, pluginDir string) (location, e
 		return location{library: named}, nil
 	}
 	release := p.cfg.Release
+	var releaseErr error
 	if release == (Release{}) {
-		release, _ = getRelease(runtime.GOOS, runtime.GOARCH)
+		release, releaseErr = getRelease(runtime.GOOS, runtime.GOARCH)
 	}
 	home := p.cfg.Dir
+	var homeErr error
 	if home == "" {
-		home, _ = GetHome()
+		home, homeErr = GetHome()
 	}
 	check := p.cfg.Check
 	if check == nil {
@@ -138,8 +145,12 @@ func (p *Provisioner) locate(ctx context.Context, pluginDir string) (location, e
 		found.library = item
 		return found, nil
 	}
+	found.isPinned = true
+	if err := errors.Join(releaseErr, homeErr); err != nil {
+		return found, err
+	}
 	library, err := p.acquire(ctx, release, home)
-	found.library, found.isPinned = library, true
+	found.library = library
 	return found, err
 }
 
@@ -169,8 +180,7 @@ func (p *Provisioner) acquire(ctx context.Context, release Release, home string)
 		return "", err
 	}
 	if err := verifyFile(library, release.LibrarySum); err != nil {
-		os.Remove(library)
-		return "", err
+		return "", errors.Join(err, os.Remove(library))
 	}
 	return library, nil
 }

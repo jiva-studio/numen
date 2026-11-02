@@ -52,7 +52,7 @@ vi.mock('./useWindowDisplay', () => ({
     return h.f.display
   },
 }))
-vi.mock('../shell/useWindowNotices', () => ({ useWindowNotices: () => ({ name: 'notices' }) }))
+vi.mock('../shell/useNoticeTasks', () => ({ useNoticeTasks: () => ({ value: [] }) }))
 vi.mock('./useWindowKinds', () => ({
   useWindowKinds: (args: unknown) => {
     h.args.kinds = args
@@ -73,6 +73,7 @@ vi.mock('../plugins/useWindowPlugins', () => ({
 vi.mock('./useAppBootstrap', () => ({
   useAppBootstrap: (args: unknown) => {
     h.args.bootstrap = args
+    return { failure: { value: '' }, retry: vi.fn() }
   },
 }))
 
@@ -96,7 +97,7 @@ beforeEach(() => {
     writer,
     log: { getWriter: vi.fn(() => writer) },
     tabLinks: { removeClosedTab: vi.fn() },
-    tabOpeners: { openFileAt: vi.fn() },
+    tabOpeners: { openFileAt: vi.fn(() => Promise.resolve()) },
     windowTabs: {
       layout: ref(null),
       tabs: ref<{ id: string; title: string }[]>([]),
@@ -116,7 +117,7 @@ beforeEach(() => {
       reached: { getTabAt: vi.fn(() => null) },
       getTitle: vi.fn(() => 'a title'),
       making: {},
-      fileFlush: { start: vi.fn() },
+      fileFlush: { start: vi.fn(() => Promise.resolve()) },
       close: vi.fn(),
     },
     display: {
@@ -131,7 +132,7 @@ beforeEach(() => {
     },
     settings: {
       kept: {},
-      dressed: {},
+      appearance: {},
       oneName: {},
       nesting: {},
       rest: {},
@@ -408,13 +409,8 @@ describe('the window started and closed', () => {
 describe('the layout started with an initial tab', () => {
   it('opens tab of kind with at payload from URL search params', async () => {
     h.f.windowTabs.openTabOfKind.mockResolvedValue('note:hello.md')
-    const originalLocation = globalThis.location
     try {
-      // @ts-expect-error mocking location for test
-      delete globalThis.location
-      globalThis.location = new URL(
-        'http://localhost/?window=secondary&tab=note:hello.md',
-      ) as unknown as Location
+      vi.stubGlobal('location', new URL('http://localhost/?window=secondary&tab=note:hello.md'))
       useWindow()
 
       await h.args.bootstrap.startLayout()
@@ -426,7 +422,7 @@ describe('the layout started with an initial tab', () => {
         focus: 'main',
       })
     } finally {
-      globalThis.location = originalLocation
+      vi.unstubAllGlobals()
     }
   })
 })

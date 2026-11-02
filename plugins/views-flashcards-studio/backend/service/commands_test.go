@@ -15,7 +15,7 @@ import (
 func newCommands(t *testing.T) (*command.Registry, string) {
 	t.Helper()
 	env := vaulttest.New(t, map[string]string{})
-	commands, err := service.New(service.Config{Vault: env.Host}).Commands()
+	commands, err := service.New(service.Config{Vault: env.Host, Now: vaulttest.NewClock()}).Commands()
 	if err != nil {
 		t.Fatal(err)
 	}

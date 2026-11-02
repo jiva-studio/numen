@@ -29,7 +29,7 @@ const createLinks = (
   fetchText: async () => ({ ok: true, value: null }),
   copyVideo: async () => ({ ok: true, value: null }),
   deleteCopy: async () => ({ ok: true, value: null }),
-  watchWork: () => () => {},
+  watchWork: () => () => undefined,
 })
 
 describe('LinkTab', () => {

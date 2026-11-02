@@ -19,11 +19,14 @@ import (
 	"github.com/klippa-app/go-pdfium/references"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/webassembly"
+	"github.com/tetratelabs/wazero"
 	_ "golang.org/x/image/webp" // a scan saved as WebP
 )
 
-// Extensions are the files the plugin recognises, with the dot.
-var Extensions = []string{".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp"}
+// GetExtensions returns the extensions, with the dot, of the files the plugin recognises.
+func GetExtensions() []string {
+	return []string{".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp"}
+}
 
 // ErrUnreadable is a file that opens as no document the plugin reads.
 var ErrUnreadable = errors.New("the file opens as no document")
@@ -35,13 +38,27 @@ type Document interface {
 	HasTextLayer() bool
 	// RenderPage draws one page, counted from zero, at the resolution given.
 	RenderPage(index, dpi int) (image.Image, error)
-	Close()
+	Close() error
+}
+
+// Reader opens documents. It starts one PDFium worker with the first PDF and keeps it for its
+// life.
+type Reader struct {
+	mu      sync.Mutex
+	workers pdfium.Pool
+	// compilationCache holds the compiled PDFium for the worker that starts; nil compiles it there.
+	compilationCache wazero.CompilationCache
+}
+
+// NewReader returns a reader that has started no worker.
+func NewReader() *Reader {
+	return &Reader{mu: sync.Mutex{}, workers: nil, compilationCache: nil}
 }
 
 // Open opens the bytes of the file at the path, by its extension.
-func Open(filePath string, raw []byte) (Document, error) {
+func (r *Reader) Open(filePath string, raw []byte) (Document, error) {
 	if strings.EqualFold(path.Ext(filePath), ".pdf") {
-		return openPDF(raw)
+		return r.openPDF(raw)
 	}
 	drawing, _, err := image.Decode(bytes.NewReader(raw))
 	if err != nil {
@@ -57,7 +74,7 @@ type picture struct {
 
 func (picture) GetPageCount() int  { return 1 }
 func (picture) HasTextLayer() bool { return false }
-func (picture) Close()             {}
+func (picture) Close() error       { return nil }
 
 func (p picture) RenderPage(index, _ int) (image.Image, error) {
 	if index != 0 {
@@ -66,29 +83,23 @@ func (p picture) RenderPage(index, _ int) (image.Image, error) {
 	return p.drawing, nil
 }
 
-// pool is the one PDFium worker of the process, started with the first PDF and kept for its life.
-var pool struct {
-	sync.Mutex
-	workers pdfium.Pool
-}
-
 // waitForWorker bounds the wait for the worker, so a worker wedged inside the library is a failure.
 const waitForWorker = 2 * time.Minute
 
-func getWorker() (pdfium.Pdfium, error) {
-	pool.Lock()
-	defer pool.Unlock()
-	if pool.workers == nil {
+func (r *Reader) getWorker() (pdfium.Pdfium, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.workers == nil {
 		started, err := webassembly.Init(webassembly.Config{
 			Context: nil, MinIdle: 0, MaxIdle: 0, MaxTotal: 1, WASM: nil, FSConfig: nil,
-			RuntimeConfig: nil, Stdout: nil, Stderr: nil, RandomSource: nil, ReuseWorkers: false,
+			RuntimeConfig: r.getRuntimeConfig(), Stdout: nil, Stderr: nil, RandomSource: nil, ReuseWorkers: false,
 		})
 		if err != nil {
 			return nil, err
 		}
-		pool.workers = started
+		r.workers = started
 	}
-	return pool.workers.GetInstance(waitForWorker)
+	return r.workers.GetInstance(waitForWorker)
 }
 
 // pdf is a PDF open on the worker, which it holds until it is closed.
@@ -98,11 +109,11 @@ type pdf struct {
 	pages  int
 }
 
-func openPDF(raw []byte) (*pdf, error) {
+func (r *Reader) openPDF(raw []byte) (*pdf, error) {
 	if len(raw) == 0 {
 		return nil, fmt.Errorf("%w: the file is empty", ErrUnreadable)
 	}
-	worker, err := getWorker()
+	worker, err := r.getWorker()
 	if err != nil {
 		return nil, fmt.Errorf("pdf: %w", err)
 	}
@@ -110,13 +121,11 @@ func openPDF(raw []byte) (*pdf, error) {
 		File: &raw, FilePath: nil, FileReader: nil, FileReaderSize: 0, Password: nil,
 	})
 	if err != nil {
-		worker.Close()
-		return nil, fmt.Errorf("%w: %w", ErrUnreadable, err)
+		return nil, errors.Join(fmt.Errorf("%w: %w", ErrUnreadable, err), worker.Close())
 	}
 	count, err := worker.FPDF_GetPageCount(&requests.FPDF_GetPageCount{Document: opened.Document})
 	if err != nil {
-		worker.Close()
-		return nil, fmt.Errorf("%w: %w", ErrUnreadable, err)
+		return nil, errors.Join(fmt.Errorf("%w: %w", ErrUnreadable, err), worker.Close())
 	}
 	return &pdf{worker: worker, ref: opened.Document, pages: count.PageCount}, nil
 }
@@ -124,7 +133,7 @@ func openPDF(raw []byte) (*pdf, error) {
 func (d *pdf) GetPageCount() int { return d.pages }
 
 // Close gives the worker back. Closing the instance closes the document with it.
-func (d *pdf) Close() { d.worker.Close() }
+func (d *pdf) Close() error { return d.worker.Close() }
 
 // HasTextLayer reports whether any page carries text that is not blank. A page whose layer cannot be
 // read carries none.

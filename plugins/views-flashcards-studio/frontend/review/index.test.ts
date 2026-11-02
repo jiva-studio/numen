@@ -27,7 +27,7 @@ vi.mock('./shared/clients', () => ({
       yield { day: '', vaults: [], counted: vault }
     },
     watchReloads: async function* () {
-      await new Promise<never>(() => {})
+      await new Promise<never>(() => undefined)
     },
   },
 }))

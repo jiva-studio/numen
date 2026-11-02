@@ -24,10 +24,9 @@ func listedPrograms() []agentport.AgentProgram {
 	}
 }
 
-var (
-	agentModelAt = []string{"agent", "alpha", "model"}
-	agentUseAt   = []string{"agent", "use"}
-)
+func getAgentModelAt() []string { return []string{"agent", "alpha", "model"} }
+
+func getAgentUseAt() []string { return []string{"agent", "use"} }
 
 // A model is usable by the window only if it provides the path it is read from
 // and the value that selecting it writes.
@@ -66,8 +65,8 @@ func TestOneModelToASettingIsTheDefault(t *testing.T) {
 				byDefault[formatPath(one.Path)]++
 			}
 		}
-		if byDefault[formatPath(agentUseAt)] != 1 {
-			t.Errorf("%s: %s has %d models by default", name, formatPath(agentUseAt), byDefault[formatPath(agentUseAt)])
+		if byDefault[formatPath(getAgentUseAt())] != 1 {
+			t.Errorf("%s: %s has %d models by default", name, formatPath(getAgentUseAt()), byDefault[formatPath(getAgentUseAt())])
 		}
 		for _, one := range programs {
 			if !one.IsInstalled {
@@ -86,7 +85,7 @@ func TestOneModelToASettingIsTheDefault(t *testing.T) {
 func TestTheProgramsTheSettingCanNameAreTheOnesThePluginsList(t *testing.T) {
 	var uses []settingsport.Model
 	for _, one := range settings.AgentModels("agent", settings.Agent{}, listedPrograms()) {
-		if formatPath(one.Path) == formatPath(agentUseAt) {
+		if formatPath(one.Path) == formatPath(getAgentUseAt()) {
 			uses = append(uses, one)
 		}
 	}
@@ -124,7 +123,7 @@ func TestWithNoProgramsNothingAnswersByDefault(t *testing.T) {
 // The models of a program are those it lists, the one it marks or else the first the default, each
 // writing where the program's section keeps its model.
 func TestAgentModels_ListedModelsWithFirstAsDefault(t *testing.T) {
-	target := modelsAt(t, settings.Agent{}, listedPrograms(), agentModelAt)
+	target := modelsAt(t, settings.Agent{}, listedPrograms(), getAgentModelAt())
 	if len(target) != 2 || target[0].Name != "big" || target[1].Name != "small" {
 		t.Fatalf("the program offers %+v", target)
 	}
@@ -148,7 +147,7 @@ func TestTheModelAProgramMarksIsTheDefault(t *testing.T) {
 		Name: "alpha", Title: "Alpha", IsInstalled: true,
 		Models: []agentport.AgentModel{{Name: "one"}, {Name: "two", IsDefault: true}},
 	}}
-	target := modelsAt(t, settings.Agent{}, programs, agentModelAt)
+	target := modelsAt(t, settings.Agent{}, programs, getAgentModelAt())
 	if target[0].IsDefault || !target[1].IsDefault {
 		t.Errorf("the default is %+v", target)
 	}
@@ -159,13 +158,13 @@ func TestTheModelAProgramMarksIsTheDefault(t *testing.T) {
 func TestTheModelTheSettingsNameIsCached(t *testing.T) {
 	named := settings.Agent{}
 	named.Programs = map[string]settings.AgentProgram{"alpha": {Model: "small"}}
-	target := modelsAt(t, named, listedPrograms(), agentModelAt)
+	target := modelsAt(t, named, listedPrograms(), getAgentModelAt())
 	if target[0].IsDefault || !target[1].IsDefault {
 		t.Errorf("the model in force is %+v", target)
 	}
 
 	named.Programs = map[string]settings.AgentProgram{"alpha": {Model: "custom-1"}}
-	target = modelsAt(t, named, listedPrograms(), agentModelAt)
+	target = modelsAt(t, named, listedPrograms(), getAgentModelAt())
 	last := target[len(target)-1]
 	if len(target) != 3 || last.Name != "custom-1" || last.Group != "Named in the settings" || last.IsDefault {
 		t.Errorf("the models are %+v", target)
@@ -238,7 +237,7 @@ func TestAModelKeepsTheLevelsOfReasoningItLists(t *testing.T) {
 			{Name: "plain"},
 		},
 	}}
-	target := modelsAt(t, settings.Agent{}, programs, agentModelAt)
+	target := modelsAt(t, settings.Agent{}, programs, getAgentModelAt())
 	if len(target[0].ReasoningLevels) != 2 || target[0].ReasoningLevels[1].Name != "high" || target[0].DefaultReasoning != "low" {
 		t.Errorf("the model offers %+v", target[0])
 	}

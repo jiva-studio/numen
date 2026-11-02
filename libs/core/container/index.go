@@ -32,6 +32,7 @@ func (c Config) OpenIndex(ctx context.Context) (*Index, error) {
 		Queries:       db.NoteQueries(),
 		Passages:      db.ChunkQueries(),
 		Progress:      db.ChunkQueries(),
+		Stats:         db.ChunkQueries(),
 		Sources:       db.Sources(),
 		SourcesKnown:  db.Sources(),
 		Vectors:       db.Sources(),
@@ -41,14 +42,14 @@ func (c Config) OpenIndex(ctx context.Context) (*Index, error) {
 		Problems:      db.NoteQueries(),
 		OpenTabs:      db.OpenTabs(),
 		TextVersions:  version.NewIndexVersions(db.TextVersions()),
-		Floors:        db.Floors(),
-		FloorSamples:  db.FloorSamples(),
+		SearchFloors:  db.SearchFloors(),
+		SearchSamples: db.SearchSamples(),
 		Nearest:       db.ChunkQueries(),
 	}), nil
 }
 
-// Level brings the notes at the paths given up to date in the index.
-func (c Config) Level(db *Index) note.Levels {
+// UpdateIndex updates the notes at the paths given up to date in the index.
+func (c Config) UpdateIndex(db *Index) note.IndexUpdater {
 	refresh := vault.NewRefresh(
 		c.VaultReaders(),
 		db.Vaults(),
@@ -71,5 +72,5 @@ func (c Config) Moves(ctx context.Context) (<-chan struct{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return vaultwatch.Watcher{Options: c.vaultOptions()}.File(ctx, path)
+	return vaultwatch.Watcher{Options: c.vaultOptions(), Hub: c.getResources().watches}.File(ctx, path)
 }

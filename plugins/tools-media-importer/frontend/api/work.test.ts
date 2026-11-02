@@ -37,7 +37,7 @@ describe('a watcher of the plugin work', () => {
   it('answers a listener added after the first list at once', () => {
     const { source, push } = createSource()
     const watcher = createWorkWatcher(source)
-    watcher.watch('b.url', () => {})
+    watcher.watch('b.url', () => undefined)
     push([{ about: 'a.url' }])
     const changes: boolean[] = []
 
@@ -49,8 +49,8 @@ describe('a watcher of the plugin work', () => {
   it('opens one subscription for every listener and closes it with the last', () => {
     const { source, counts } = createSource()
     const watcher = createWorkWatcher(source)
-    const stopA = watcher.watch('a.url', () => {})
-    const stopB = watcher.watch('b.url', () => {})
+    const stopA = watcher.watch('a.url', () => undefined)
+    const stopB = watcher.watch('b.url', () => undefined)
     stopA()
     stopB()
 

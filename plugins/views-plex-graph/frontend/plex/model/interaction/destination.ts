@@ -6,7 +6,7 @@
  * Which of the two a plex offers is the caller's, so neither is written into
  * the node.
  */
-import { win } from '../../../dom'
+import { win } from '@numen/ui'
 import { onScopeDispose, ref } from 'vue'
 
 /**

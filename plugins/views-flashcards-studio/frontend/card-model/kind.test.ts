@@ -109,7 +109,9 @@ const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animal.md
   const cardModels = createCardModelTabs(one.core, {
     buffers,
     closeTab: windowTabs.finishClose,
-    writeMessage: (text) => void messages.push(text),
+    writeMessage: (text) => {
+      messages.push(text)
+    },
   })
   windowTabs.register(cardModels.kind)
   const id = await windowTabs.openTab(CARD_MODEL, path)
@@ -147,6 +149,21 @@ describe('a field renamed in a card model', () => {
     await settle()
 
     expect(renamed).toStrictEqual(['Animal.md Height Shoulder read'])
+  })
+
+  it('writes a field added and not yet saved before the vault renames it', async () => {
+    const { tab, renamed, writtenFiles } = await open()
+
+    tab.addField('Depth')
+    tab.renameField('Depth', 'Width')
+    await settle()
+    await settle()
+
+    expect(writtenFiles).toStrictEqual([
+      'Animal.md Height, Life span, Depth | **Height:** {{Height}}',
+    ])
+    expect(renamed).toStrictEqual(['Animal.md Depth Width written'])
+    expect(tab.cardModel.value.fields).toStrictEqual(['Height', 'Life span', 'Width'])
   })
 
   it('writes the card model from the tab nowhere, so nothing goes over the vault', async () => {

@@ -7,14 +7,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"slices"
 	"strings"
+	"syscall"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/process"
 )
 
 // defaultModelName is the model the program lists for the choice of its own.
@@ -46,16 +48,18 @@ func (m claudeModel) getLevels() []reasoning.Level {
 }
 
 // toProto returns the model in the schema's words.
-func (m claudeModel) toProto() *agentrun.AgentModel {
+func (m claudeModel) toProto() *reasoning.Model {
 	return reasoning.NewModel(m.Value, m.DisplayName, m.getLevels(), "")
 }
 
-// fallbackModels are the aliases the program accepts for --model, offered with no depth of reasoning
-// when the program does not answer the request for its models.
-var fallbackModels = []claudeModel{
-	{Value: "sonnet", DisplayName: "Sonnet", SupportsEffort: false, EffortLevels: nil},
-	{Value: "opus", DisplayName: "Opus", SupportsEffort: false, EffortLevels: nil},
-	{Value: "haiku", DisplayName: "Haiku", SupportsEffort: false, EffortLevels: nil},
+// getFallbackModels returns the aliases the program accepts for --model, offered with no depth of
+// reasoning when the program does not answer the request for its models.
+func getFallbackModels() []claudeModel {
+	return []claudeModel{
+		{Value: "sonnet", DisplayName: "Sonnet", SupportsEffort: false, EffortLevels: nil},
+		{Value: "opus", DisplayName: "Opus", SupportsEffort: false, EffortLevels: nil},
+		{Value: "haiku", DisplayName: "Haiku", SupportsEffort: false, EffortLevels: nil},
+	}
 }
 
 // parseModels reads the models out of the lines the program writes: the answer to the request
@@ -93,8 +97,16 @@ func parseModels(lines io.Reader, requestID string) ([]claudeModel, error) {
 	return nil, errors.New("the program ended without listing its models")
 }
 
+// isStopped reports whether err is what Wait returns for a program that was stopped: no error, a
+// non-zero exit status, the cancellation of the program's context, or a process that is already gone.
+func isStopped(err error) bool {
+	var exit *exec.ExitError
+	return err == nil || errors.As(err, &exit) || errors.Is(err, context.Canceled) ||
+		errors.Is(err, os.ErrProcessDone) || errors.Is(err, syscall.ESRCH)
+}
+
 // fetchModels queries the program, started as command with env, for the models it offers.
-func fetchModels(ctx context.Context, command, env []string) ([]claudeModel, error) {
+func fetchModels(ctx context.Context, command, env []string) (models []claudeModel, err error) {
 	ctx, cancel := context.WithTimeout(ctx, modelsTimeout)
 	defer cancel()
 	args := slices.Concat(command[1:], []string{
@@ -103,7 +115,7 @@ func fetchModels(ctx context.Context, command, env []string) ([]claudeModel, err
 	})
 	cmd := exec.CommandContext(ctx, command[0], args...)
 	cmd.Env = buildEnvironment(env)
-	supervise(cmd)
+	process.Supervise(cmd)
 	in, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, err
@@ -116,8 +128,10 @@ func fetchModels(ctx context.Context, command, env []string) ([]claudeModel, err
 		return nil, err
 	}
 	defer func() {
-		cancel()
-		_ = cmd.Wait()
+		err = errors.Join(err, in.Close())
+		if waitErr := process.WaitForExit(cmd, cancel); !isStopped(waitErr) {
+			err = errors.Join(err, waitErr)
+		}
 	}()
 	const requestID = "numen-models"
 	request := `{"type":"control_request","request_id":"` + requestID + `","request":{"subtype":"initialize"}}` + "\n"
@@ -127,13 +141,14 @@ func fetchModels(ctx context.Context, command, env []string) ([]claudeModel, err
 	return parseModels(out, requestID)
 }
 
-func newModelCache(isAsync bool) *cache.Cache[[]claudeModel] {
+func newModelCache(isAsync bool, extra ...cache.Option) *cache.Cache[[]claudeModel] {
 	return cache.New[[]claudeModel](
 		"models",
-		cache.WithPluginID("agents-claude"),
-		cache.WithTTL(modelsLifetime),
-		cache.WithTimeout(modelsTimeout),
-		cache.WithAsync(isAsync),
+		slices.Concat([]cache.Option{
+			cache.WithTTL(modelsLifetime),
+			cache.WithTimeout(modelsTimeout),
+			cache.WithAsync(isAsync),
+		}, extra)...,
 	)
 }
 
@@ -152,14 +167,18 @@ func (s *agentServer) getModels(ctx context.Context, command, env []string) ([]c
 	modelCache := s.getModelCache()
 	cmdCopy := slices.Clone(command)
 	envCopy := slices.Clone(env)
+	fetch := s.fetch
+	if fetch == nil {
+		fetch = fetchModels
+	}
 	models, found, err := modelCache.Get(ctx, key, func(ctx context.Context) ([]claudeModel, error) {
-		return fetchModels(ctx, cmdCopy, envCopy)
+		return fetch(ctx, cmdCopy, envCopy)
 	})
 	if err != nil {
 		return nil, err
 	}
 	if !found && modelCache.HasFailed(key) {
-		return fallbackModels, nil
+		return getFallbackModels(), nil
 	}
 	return models, nil
 }

@@ -26,7 +26,7 @@ func fillVault(t *testing.T, db *DB, vault domain.Vault, stem string, seed byte)
 
 	body := stem + " heading\n" + stem + " body"
 	n := domain.Note{
-		FileStat: domain.FileStat{Path: "notes/" + stem + ".md", Kind: domain.KindNote, Size: int64(len(body)), ModTime: walked},
+		FileStat: domain.FileStat{Path: "notes/" + stem + ".md", Kind: domain.KindNote, Size: int64(len(body)), ModTime: getWalked()},
 		Title:    stem + " title",
 		Body:     body,
 		Headings: []domain.Heading{{Level: 2, Text: stem + " heading", Line: 0, Offset: 0}},
@@ -130,7 +130,11 @@ func numbers(t *testing.T, db *DB, statement string, args ...any) []int64 {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer found.Close()
+	defer func() {
+		if err := found.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var out []int64
 	for found.Next() {
@@ -163,11 +167,11 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 	// references is gone, so nothing else reports it either.
 	ctx := t.Context()
 	db := openDB(t)
-	fillVault(t, db, first, "first", 0x0f)
-	fillVault(t, db, second, "second", 0xf0)
+	fillVault(t, db, getFirst(), "first", 0x0f)
+	fillVault(t, db, getSecond(), "second", 0xf0)
 
-	removed := getVaultContents(t, db, first)
-	remainingContent := getVaultContents(t, db, second)
+	removed := getVaultContents(t, db, getFirst())
+	remainingContent := getVaultContents(t, db, getSecond())
 	goneVirtual, goneOrdinary := virtual(t, db, removed), ordinary(t, db, removed)
 	keptVirtual, keptOrdinary := virtual(t, db, remainingContent), ordinary(t, db, remainingContent)
 
@@ -190,7 +194,7 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 		}
 	}
 
-	if err := db.Vaults().Unregister(ctx, first.ID); err != nil {
+	if err := db.Vaults().Unregister(ctx, getFirst().ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -204,7 +208,7 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 			t.Errorf("%s holds %d rows of the vault that was forgotten", table, n)
 		}
 	}
-	if got := countRows(t, db, `SELECT COUNT(*) FROM vaults WHERE identifier = ?`, first.ID); got != 0 {
+	if got := countRows(t, db, `SELECT COUNT(*) FROM vaults WHERE identifier = ?`, getFirst().ID); got != 0 {
 		t.Errorf("the forgotten vault still has %d rows of its own", got)
 	}
 
@@ -218,7 +222,7 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 			t.Errorf("%s holds %d rows of the other vault, and held %d", table, n, keptOrdinary[table])
 		}
 	}
-	if now := getVaultContents(t, db, second); !slices.Equal(now.chunks, remainingContent.chunks) ||
+	if now := getVaultContents(t, db, getSecond()); !slices.Equal(now.chunks, remainingContent.chunks) ||
 		!slices.Equal(now.sources, remainingContent.sources) ||
 		!slices.Equal(now.notes, remainingContent.notes) ||
 		!slices.Equal(now.headings, remainingContent.headings) {
@@ -240,15 +244,15 @@ func TestTheVaultThatIsCachedStillAnswers(t *testing.T) {
 	// vault was filed under is what the other vault's rows are read back by.
 	ctx := t.Context()
 	db := openDB(t)
-	fillVault(t, db, first, "first", 0x0f)
-	fillVault(t, db, second, "second", 0xf0)
+	fillVault(t, db, getFirst(), "first", 0x0f)
+	fillVault(t, db, getSecond(), "second", 0xf0)
 
-	if err := db.Vaults().Unregister(ctx, first.ID); err != nil {
+	if err := db.Vaults().Unregister(ctx, getFirst().ID); err != nil {
 		t.Fatal(err)
 	}
 
 	queries := db.ChunkQueries()
-	lexical, err := queries.FindLexical(ctx, second.ID, "second", nil, 10, false)
+	lexical, err := queries.FindLexical(ctx, getSecond().ID, "second", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -261,7 +265,7 @@ func TestTheVaultThatIsCachedStillAnswers(t *testing.T) {
 		}
 	}
 
-	sections, err := queries.GetNamedPassages(ctx, second.ID, "second section", nil, 10, false)
+	sections, err := queries.GetNamedPassages(ctx, getSecond().ID, "second section", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -269,7 +273,7 @@ func TestTheVaultThatIsCachedStillAnswers(t *testing.T) {
 		t.Error("the vault that was kept answers with none of its sections")
 	}
 
-	names, err := db.NoteQueries().GetNameMatches(ctx, second.ID, "second", 20)
+	names, err := db.NoteQueries().GetNameMatches(ctx, getSecond().ID, "second", 20)
 	if err != nil {
 		t.Fatal(err)
 	}

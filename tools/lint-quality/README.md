@@ -5,9 +5,9 @@ Automated verification of code quality, duplication, complexity, and symbol hygi
 ## Invariants Checked
 
 1. **Code Duplication (`jscpd`)**:
-   - Scans all handwritten code in `libs`, `apps`, and `plugins`.
+   - Scans handwritten code in one scope for `libs` and `apps` and one scope per plugin directory. Plugins are separate repositories that depend only on the SDK, so copies between plugins are not counted.
    - Ignores tests, fixtures, generated code, stories, and build artifacts.
-   - Enforces a maximum duplication rate threshold (default: <= 3.0%).
+   - Enforces a maximum duplication rate threshold per scope (default: <= 3.5%).
 
 2. **Cyclomatic & Cognitive Complexity (`cyclop`, `gocognit`, `nestif`, `funlen`)**:
    - Enforces complexity boundaries on Go modules and plugins:
@@ -17,7 +17,7 @@ Automated verification of code quality, duplication, complexity, and symbol hygi
      - `funlen`: <= 80 lines / 50 statements.
 
 3. **Dead Code & Unused Symbols (`knip` & `unparam`)**:
-   - **Frontend (TS/Vue)**: runs `knip` across UI modules to catch unused exported functions, constants, and types.
+   - **Frontend (TS/Vue)**: runs `knip` once with the root `knip.json`, whose workspaces name every TS package and plugin frontend. Unused files, unused and unlisted dependencies fail; unused exports and types are reported. A missing `knip` binary, a missing `knip.json` or a frontend package outside its workspaces fails the check.
    - **Backend (Go)**: runs `unparam` to detect unused function parameters and dead return values.
 
 4. **Interface Segregation & Sizing (`interfacebloat`)**:

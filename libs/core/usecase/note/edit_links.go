@@ -24,7 +24,7 @@ import (
 type EditLinks struct {
 	readers vaultport.VaultReaders
 	writers vaultport.VaultWriters
-	index   Levels
+	index   IndexUpdater
 	now     machineport.Clock
 }
 
@@ -36,7 +36,7 @@ type EditLinks struct {
 // that is not indexed cannot be queried, and timestamps come from the injected
 // clock and not from the machine clock directly.
 func NewEditLinks(
-	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index Levels, now machineport.Clock,
+	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater, now machineport.Clock,
 ) EditLinks {
 	return EditLinks{readers: readers, writers: writers, index: index, now: now}
 }
@@ -97,7 +97,7 @@ func (u EditLinks) Update(
 	change domain.Link, stat domain.FileStat,
 ) (domain.FileStat, error) {
 	if change.Role != "" && !domain.IsKnownRole(change.Role) {
-		return domain.FileStat{}, fmt.Errorf("%q is not a role a link can carry", change.Role)
+		return domain.FileStat{}, fmt.Errorf("%q is not a role a link can have", change.Role)
 	}
 	e := u.newEdit()
 	e.FileStat = stat
@@ -125,30 +125,31 @@ func (u EditLinks) Update(
 // back. A write that landed answers with the file stat of the file it
 // produced.
 func (u EditLinks) PointAt(
-	ctx context.Context, v domain.Vault, from, of string,
-	to domain.Address, role domain.LinkRole, stat domain.FileStat,
+	ctx context.Context, v domain.Vault, from string, p LinkPoint,
 ) (domain.FileStat, error) {
 	e := u.newEdit()
-	e.FileStat = stat
-	return e.shared().PointAt(ctx, v, from, of, to, role)
+	e.FileStat = p.Stat
+	return e.shared().PointAt(ctx, v, from, p.Of, p.To, p.Role)
 }
 
 // Remove takes a relationship out. The note at the other end is untouched: what
 // is removed is one end's account of the relationship, which is all a link ever
 // was.
+//
+// The record is addressed by the key: its target, its type (the empty type names
+// the records that carry none), and its role when one is given.
 func (u EditLinks) Remove(
-	ctx context.Context, v domain.Vault, from string, to domain.Address,
-	role domain.LinkRole, stat domain.FileStat,
+	ctx context.Context, v domain.Vault, from string, key domain.LinkKey, stat domain.FileStat,
 ) (domain.FileStat, error) {
 	e := u.newEdit()
 	e.FileStat = stat
 	return e.Apply(ctx, v, from, func(doc *markdown.Document) error {
-		removed, err := doc.RemoveLink(to, role)
+		removed, err := doc.RemoveLink(key)
 		if err != nil {
 			return err
 		}
 		if removed == 0 {
-			return fmt.Errorf("no link to %s is written here", to)
+			return fmt.Errorf("no link to %s is written here", key.Target)
 		}
 		return nil
 	})
@@ -157,7 +158,10 @@ func (u EditLinks) Remove(
 // CheckWritable is what a link must carry before anything will write it.
 func CheckWritable(link domain.Link) error {
 	if !domain.IsKnownRole(link.Role) {
-		return fmt.Errorf("%q is not a role a link can carry", link.Role)
+		return fmt.Errorf("%q is not a role a link can have", link.Role)
+	}
+	if !domain.IsWritableMarker(link.Marker) {
+		return fmt.Errorf("%q is not a marker a link can have", link.Marker)
 	}
 	if link.Target.Value == "" {
 		return errors.New("a link needs somewhere to go")
@@ -167,4 +171,14 @@ func CheckWritable(link domain.Link) error {
 
 func (u EditLinks) newEdit() Edit {
 	return NewEdit(u.readers, u.writers, u.index, u.now)
+}
+
+// LinkPoint is the relationship PointAt writes: the block it is written in (Of),
+// the address it points at, its role, and the file stat the caller believes is on
+// disk.
+type LinkPoint struct {
+	Of   string
+	To   domain.Address
+	Role domain.LinkRole
+	Stat domain.FileStat
 }

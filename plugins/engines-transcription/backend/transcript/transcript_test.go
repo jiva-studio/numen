@@ -9,11 +9,14 @@ import (
 )
 
 func TestCuesBecomeSegmentsWithTheirSpanInSeconds(t *testing.T) {
-	segments := transcript.GetSegments([]transcript.Cue{
+	segments, err := transcript.GetSegments([]transcript.Cue{
 		{Text: "Good morning.", From: 1500, To: 4200},
 		{Text: "   ", From: 4200, To: 5000},
 		{Text: "The river is high.", From: 5000, To: 9100},
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	want := []domain.TextSegment{
 		{Text: "Good morning.\n", Selector: `{"t":[1.5,4.2]}`},
 		{Text: "The river is high.\n", Selector: `{"t":[5,9.1]}`},
@@ -25,7 +28,11 @@ func TestCuesBecomeSegmentsWithTheirSpanInSeconds(t *testing.T) {
 
 func TestSegmentsReadBackAsTheCuesTheyWere(t *testing.T) {
 	cues := []transcript.Cue{{Text: "Good morning.", From: 1500, To: 4200}, {Text: "Again.", From: 62500, To: 63001}}
-	if got := transcript.GetCues(transcript.GetSegments(cues)); !slices.Equal(got, cues) {
+	segments, err := transcript.GetSegments(cues)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := transcript.GetCues(segments); !slices.Equal(got, cues) {
 		t.Fatalf("got %+v, want %+v", got, cues)
 	}
 }

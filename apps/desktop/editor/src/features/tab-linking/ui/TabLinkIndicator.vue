@@ -22,9 +22,7 @@ const LINK_COLORS: Readonly<Record<number, string>> = {
   4: 'var(--numen-purple, #a855f7)',
 }
 
-const linkColor = computed(
-  () => LINK_COLORS[props.colorIndex ?? 1] ?? 'var(--numen-blue, #3b82f6)',
-)
+const linkColor = computed(() => LINK_COLORS[props.colorIndex ?? 1] ?? 'var(--numen-blue, #3b82f6)')
 
 const iconStyle = computed(() => ({
   color: linkColor.value,

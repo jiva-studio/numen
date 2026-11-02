@@ -26,26 +26,26 @@ type Write struct {
 	// links resolves the card model a card's wikilink names, which determines
 	// which of the card's fields is first.
 	links ports.LinkQueries
-	index note.Levels
+	index note.IndexUpdater
 	// now is when this is happening. An identifier written here carries it.
 	now ports.Clock
 }
 
 // NewWrite is what a deck or a card model goes back through: the vault it is read
 // and written through, where the wikilink each card names its card model by lands,
-// what brings the file level in the index, and what time it is.
+// what updates the index for the file, and what time it is.
 func NewWrite(
 	readers ports.VaultReaders,
 	writers ports.VaultWriters,
 	links ports.LinkQueries,
-	index note.Levels,
+	index note.IndexUpdater,
 	now ports.Clock,
 ) Write {
 	return Write{readers: readers, writers: writers, links: links, index: index, now: now}
 }
 
 // WithIndex replaces the index function.
-func (u Write) WithIndex(index note.Levels) Write {
+func (u Write) WithIndex(index note.IndexUpdater) Write {
 	u.index = index
 	return u
 }
@@ -73,10 +73,10 @@ func (u Write) Deck(
 		return WriteResult{}, err
 	}
 	pos, err := u.createNoteWriter().Execute(ctx, v, path, whole, stat)
-	if err != nil && !errors.Is(err, note.ErrUnlevelled) {
+	if err != nil && !errors.Is(err, note.ErrIndexOutdated) {
 		return WriteResult{}, err
 	}
-	// levelling that failed, and the caller can tell the two apart.
+	// index update that failed, and the caller can tell the two apart.
 	return WriteResult{FileStat: pos, Given: provided}, err
 }
 
@@ -114,9 +114,9 @@ func (u Write) CardModel(
 		return domain.FileStat{}, note.ErrBodyUnwritable
 	}
 
-	e := note.NewEdit(u.readers, u.writers, u.index, u.now)
+	e, getReleaseError := note.NewEdit(u.readers, u.writers, u.index, u.now)
 	e.FileStat, e.Bound = stat, note.MaxBytes
-	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
+	written, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		if err := doc.SetBody(body); err != nil {
 			return err
 		}
@@ -127,6 +127,7 @@ func (u Write) CardModel(
 		}
 		return nil
 	})
+	return written, errors.Join(err, getReleaseError())
 }
 
 // read at.

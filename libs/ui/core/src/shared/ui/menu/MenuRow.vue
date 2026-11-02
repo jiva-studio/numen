@@ -49,7 +49,7 @@ defineExpose({ focus, getElement: () => row.value })
 
   <button
     ref="row"
-    class="menu__item rounded-node flex w-full items-center px-2 py-1.5 text-left"
+    class="menu__item flex w-full items-center px-2 py-1.5 text-left"
     type="button"
     :role="current === null ? 'menuitem' : 'menuitemradio'"
     :aria-checked="current === null ? undefined : item.id === current"
@@ -100,6 +100,7 @@ defineExpose({ focus, getElement: () => row.value })
 }
 
 .menu__item {
+  border-radius: var(--numen-radius-popup-item);
   box-sizing: border-box;
   max-inline-size: 100%;
   cursor: default;
@@ -115,6 +116,12 @@ defineExpose({ focus, getElement: () => row.value })
 
 .menu__item:disabled {
   color: var(--numen-edge-label);
+}
+
+/* The hushed detail is too faint on the highlight; the row is read in the ink. */
+.menu__item:hover:not(:disabled) .menu__detail,
+.menu__item:focus-visible .menu__detail {
+  color: var(--numen-ink);
 }
 
 /* The icon box keeps its size whether or not the item draws an icon, so the words

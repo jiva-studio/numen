@@ -20,7 +20,20 @@ export {
   type Widths,
 } from './layout/placement'
 export { spacingAsSet, findSpacing, type Spacing } from './layout/spacing'
-export { routeEdge, routeEdges, createRouting, type Axis, type Routing } from './edges/routing'
+export {
+  routeEdge,
+  routeEdges,
+  createRouting,
+  createTitle,
+  getLabelPositions,
+  getLabelPlaces,
+  getDepth,
+  getRise,
+  getShift,
+  LABEL_GAP,
+  type Axis,
+  type Routing,
+} from './edges/routing'
 export {
   createArrowTransform,
   createPath,

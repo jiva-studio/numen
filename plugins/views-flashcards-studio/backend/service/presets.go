@@ -72,14 +72,14 @@ func (h *presetsHandler) ListPresets(
 func (h *presetsHandler) CreatePreset(
 	ctx context.Context, req *api.CreatePresetRequest,
 ) (*api.CreatePresetResponse, error) {
-	made, code, unlevelled, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+	made, code, indexOutdated, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		return h.scenarios().cards.Create.Preset(ctx, showing, in)
 	}, req.Title, req.Path)
 	if err != nil {
 		return nil, err
 	}
 	return &api.CreatePresetResponse{
-		Path: made.Path, Error: code, IsUnlevelled: unlevelled,
+		Path: made.Path, Error: code, IsIndexOutdated: indexOutdated,
 	}, nil
 }
 
@@ -98,21 +98,21 @@ func (h *presetsHandler) ScheduleDeck(
 	// A write that reached the vault has happened, so the client receives the file
 	// stat to present at its next save, and is informed where the index did not
 	// follow.
-	unlevelled := isUnlevelled(err)
-	if err == nil || unlevelled {
+	indexOutdated := isIndexOutdated(err)
+	if err == nil || indexOutdated {
 		return &api.ScheduleDeckResponse{
-			Error: api.ErrorCodeUnspecified, At: writeFileStat(pos), IsUnlevelled: unlevelled,
+			Error: api.ErrorCodeUnspecified, At: writeFileStat(pos), IsIndexOutdated: indexOutdated,
 		}, nil
 	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
 		reason := api.ErrorCodeNotAPreset
-		return &api.ScheduleDeckResponse{Error: reason, At: nil, IsUnlevelled: false}, nil
+		return &api.ScheduleDeckResponse{Error: reason, At: nil, IsIndexOutdated: false}, nil
 	}
 	reason, ok := getErrorCode(err)
 	if !ok {
 		return nil, newError(getCode(err), err)
 	}
-	return &api.ScheduleDeckResponse{Error: reason, At: nil, IsUnlevelled: false}, nil
+	return &api.ScheduleDeckResponse{Error: reason, At: nil, IsIndexOutdated: false}, nil
 }
 
 // ReadPreset is the settings of one preset.
@@ -158,10 +158,10 @@ func (h *presetsHandler) WritePreset(
 	// A write that reached the vault has happened, so the client receives the file
 	// stat to present at its next save, and is informed where the index did not
 	// follow.
-	unlevelled := isUnlevelled(err)
-	if err == nil || unlevelled {
+	indexOutdated := isIndexOutdated(err)
+	if err == nil || indexOutdated {
 		return &api.WritePresetResponse{
-			Error: api.ErrorCodeUnspecified, At: writeFileStat(pos), IsUnlevelled: unlevelled,
+			Error: api.ErrorCodeUnspecified, At: writeFileStat(pos), IsIndexOutdated: indexOutdated,
 		}, nil
 	}
 	// A value outside what a preset may hold is the client's to correct.
@@ -170,13 +170,13 @@ func (h *presetsHandler) WritePreset(
 	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
 		reason := api.ErrorCodeNotAPreset
-		return &api.WritePresetResponse{Error: reason, At: nil, IsUnlevelled: false}, nil
+		return &api.WritePresetResponse{Error: reason, At: nil, IsIndexOutdated: false}, nil
 	}
 	reason, ok := getErrorCode(err)
 	if !ok {
 		return nil, newError(getCode(err), err)
 	}
-	return &api.WritePresetResponse{Error: reason, At: nil, IsUnlevelled: false}, nil
+	return &api.WritePresetResponse{Error: reason, At: nil, IsIndexOutdated: false}, nil
 }
 
 // ComputeCurve computes what these settings amount to over the whole range of

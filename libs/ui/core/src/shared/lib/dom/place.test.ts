@@ -23,7 +23,7 @@ describe('where a thing standing alongside a span goes', () => {
     expect(span({ from: 20, to: 40, size: 200 })).toBe(32)
   })
 
-  it('sits at the near edge when it is larger than the area it is placed in', () => {
+  it('is at the near edge when it is larger than the area it is placed in', () => {
     expect(span({ size: 300 })).toBe(8)
   })
 

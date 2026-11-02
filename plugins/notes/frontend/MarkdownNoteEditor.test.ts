@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import MarkdownNoteEditor from './MarkdownNoteEditor.vue'
 
 describe('MarkdownNoteEditor', () => {
@@ -119,14 +119,120 @@ key: value:
     expect(wrapper.find('.caution__text').text()).toBe('frontmatter unreadable')
   })
 
-  it('does not display caution banner when errorMessage is an empty ref or empty string', () => {
+  it('does not display caution banner when errorMessage and the state error are empty', () => {
     const wrapper = mount(MarkdownNoteEditor, {
       props: {
         filePath: 'test.md',
-        errorMessage: ref('') as unknown as string,
+        errorMessage: '',
         state: { errorMessage: ref('') },
       },
     })
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('reads the error ref a host tab passes as errorMessage', () => {
+    const errorMessage = ref('')
+    const wrapper = mount(MarkdownNoteEditor, {
+      props: { filePath: 'test.md', errorMessage, state: { errorMessage } },
+    })
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('displays the caution banner for an error ref a host tab passes', () => {
+    const errorMessage = ref('write failed')
+    const wrapper = mount(MarkdownNoteEditor, {
+      props: { filePath: 'test.md', errorMessage },
+    })
+    expect(wrapper.find('.caution__text').text()).toBe('write failed')
+  })
+})
+
+describe('MarkdownNoteEditor over a note whose file changed on disk', () => {
+  it('offers to keep the typed text or take the file, and passes the choice to the tab', async () => {
+    const fileConflict = ref<string | null>('stale')
+    const choices: string[] = []
+    const wrapper = mount(MarkdownNoteEditor, {
+      props: {
+        filePath: 'notes/Tide.md',
+        state: {
+          fileConflict,
+          keepMine: () => choices.push('keep'),
+          takeFile: () => choices.push('take'),
+        },
+      },
+    })
+    await nextTick()
+
+    const banner = wrapper.get('[role="alert"]')
+    expect(banner.text()).toContain('Saving paused: the file changed on disk.')
+    const answers = banner.findAll('button')
+    expect(answers.map((one) => one.text())).toStrictEqual(['Keep my version', 'Use disk version'])
+    await answers[0]!.trigger('click')
+    await answers[1]!.trigger('click')
+    expect(choices).toStrictEqual(['keep', 'take'])
+
+    fileConflict.value = null
+    await nextTick()
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('offers to write the text again when the file was removed', async () => {
+    const wrapper = mount(MarkdownNoteEditor, {
+      props: { filePath: 'notes/Tide.md', state: { fileConflict: 'gone' } },
+    })
+    await nextTick()
+
+    const banner = wrapper.get('[role="alert"]')
+    expect(banner.text()).toContain('the note was removed from the vault')
+    expect(banner.findAll('button').map((one) => one.text())).toStrictEqual(['Recreate it'])
+  })
+})
+
+describe('MarkdownNoteEditor over a tab that offers links', () => {
+  it('draws the completion of wikilinks from the tab', async () => {
+    const wrapper = mount(MarkdownNoteEditor, {
+      props: {
+        filePath: 'notes/Tide.md',
+        state: { wikilinks: { search: async () => [{ title: 'Entropy', type: 'note' }] } },
+      },
+    })
+    await nextTick()
+
+    expect(wrapper.findComponent({ name: 'Editor' }).props('extensions')).toBeDefined()
+  })
+})
+
+describe('MarkdownNoteEditor with the body from its tab', () => {
+  const FILE = '---\nid: 01M4JWCXZ3X193ZQBKPWWRVAJT\n---\n'
+
+  const mountHosted = (body: ReturnType<typeof ref<string>>) =>
+    mount(MarkdownNoteEditor, {
+      props: { filePath: 'notes/Test.md', state: { body, isLoading: ref(false) } },
+    })
+
+  it('does not read the file, frontmatter included, when the note has no body', async () => {
+    const fetched = vi.fn(() => Promise.resolve(new Response(FILE)))
+    vi.stubGlobal('fetch', fetched)
+    try {
+      const wrapper = mountHosted(ref(''))
+      await flushPromises()
+
+      expect(fetched).not.toHaveBeenCalled()
+      expect(wrapper.vm.getContent()).toBe('')
+      expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('shows a body that becomes empty, as when the file is rewritten without prose', async () => {
+    const body = ref('First lines.')
+    const wrapper = mountHosted(body)
+    expect(wrapper.vm.getContent()).toBe('First lines.')
+
+    body.value = ''
+    await nextTick()
+
+    expect(wrapper.vm.getContent()).toBe('')
   })
 })

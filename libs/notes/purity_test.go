@@ -15,8 +15,10 @@ import (
 // module is what the packages of this module are named under.
 const module = "github.com/jiva-studio/numen/libs/notes"
 
-// thirdParty is the code outside the standard library these packages may name.
-var thirdParty = []string{"gopkg.in/yaml.v3", "golang.org/x/text/"}
+// listThirdParty returns the code outside the standard library these packages may name.
+func listThirdParty() []string {
+	return []string{"gopkg.in/yaml.v3", "golang.org/x/text/"}
+}
 
 // The packages here reach only each other, the standard library and the few third-party packages
 // listed: nothing they answer waits on a disk, a database or a clock.
@@ -37,7 +39,7 @@ func TestNoPackageHereReachesOutsideTheVocabulary(t *testing.T) {
 				return err
 			}
 			if strings.HasPrefix(to, module) || !strings.Contains(strings.Split(to, "/")[0], ".") ||
-				slices.ContainsFunc(thirdParty, func(allowed string) bool { return to == allowed || strings.HasPrefix(to, allowed) }) {
+				slices.ContainsFunc(listThirdParty(), func(allowed string) bool { return to == allowed || strings.HasPrefix(to, allowed) }) {
 				continue
 			}
 			t.Errorf("%s names %s", path, to)

@@ -2,6 +2,7 @@ package note
 
 import (
 	"context"
+	"crypto/rand"
 	pathpkg "path"
 	"strings"
 
@@ -23,7 +24,7 @@ type Create struct {
 	names   NameQueries
 	// index brings the named notes up to date, so a note that is created and then
 	// searched for immediately is found.
-	index Levels
+	index IndexUpdater
 	// now is when this is happening. An identifier carries it.
 	now machineport.Clock
 }
@@ -32,13 +33,13 @@ type Create struct {
 // is written into, the query for which names are taken, the index update for
 // the new file, and the clock.
 func NewCreate(
-	writers vaultport.VaultWriters, names NameQueries, index Levels, now machineport.Clock,
+	writers vaultport.VaultWriters, names NameQueries, index IndexUpdater, now machineport.Clock,
 ) Create {
 	return Create{writers: writers, names: names, index: index, now: now}
 }
 
 // WithIndex replaces the index function.
-func (u Create) WithIndex(index Levels) Create {
+func (u Create) WithIndex(index IndexUpdater) Create {
 	u.index = index
 	return u
 }
@@ -80,7 +81,10 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 		}
 	}
 
-	identifier := ulid.New(u.now())
+	identifier, err := ulid.NewGenerator(rand.Reader).NewID(u.now.Now())
+	if err != nil {
+		return CreateResult{}, err
+	}
 
 	content, err := writeTitle(markdown.Create(identifier, in.Body), title, exact)
 	if err != nil {
@@ -108,7 +112,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	// The note is on disk from here on, so everything after it answers with
 	// where it is, whether or not it succeeds.
 	made := CreateResult{Path: path, ID: identifier, Title: title}
-	if err := u.level(ctx, v, path); err != nil {
+	if err := u.updateIndex(ctx, v, path); err != nil {
 		return made, err
 	}
 	shares, err := u.names.GetNamedPaths(ctx, v.ID, domain.Basename(path))
@@ -151,11 +155,11 @@ func writeLinks(content []byte, links []domain.Link) ([]byte, error) {
 	return doc.Bytes(), nil
 }
 
-func (u Create) level(ctx context.Context, v domain.Vault, paths ...string) error {
+func (u Create) updateIndex(ctx context.Context, v domain.Vault, paths ...string) error {
 	if u.index == nil {
 		return nil
 	}
-	return WrapUnlevelled(u.index(ctx, v, paths), paths...)
+	return WrapIndexOutdated(u.index(ctx, v, paths), paths...)
 }
 
 func removePath(paths []string, path string) []string {

@@ -119,8 +119,8 @@ func TestRepositoryWrite_ErrorNamesStatementAndWrapsCause(t *testing.T) {
 		{"rename title", holdsNotes, func(s *store) { s.failOn("titles_fts", "INSERT") }, move("Old.md", "New.md"), "rename_title: "},
 		{"note naming", holdsNotes, func(s *store) { s.exec(`ALTER TABLE notes RENAME COLUMN frontmatter TO front`) }, move("Old.md", "New.md"),
 			"what the note Old.md is called: "},
-		{"displaced sources", holdsNotes, func(s *store) { s.exec(`ALTER TABLE sources RENAME COLUMN path TO filed`) }, move("Old.md", "Target.md"),
-			"what the vault holds at Target.md and under it: "},
+		{"moving sources", holdsNotes, func(s *store) { s.exec(`ALTER TABLE sources RENAME COLUMN path TO filed`) }, move("Old.md", "Target.md"),
+			"what the vault holds at Old.md and under it: "},
 		{"displaced words", holdsNotes, func(s *store) { s.failOn("chunks_fts", "DELETE") }, move("Old.md", "Target.md"), "clear_fts: "},
 		{"displaced source", holdsNotes, func(s *store) { s.failOn("sources", "DELETE") }, move("Old.md", "Target.md"), "delete_source: "},
 	} {

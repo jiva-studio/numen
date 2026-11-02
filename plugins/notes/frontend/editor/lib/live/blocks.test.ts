@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { markdown } from '@codemirror/lang-markdown'
 import { ensureSyntaxTree } from '@codemirror/language'
 import { EditorState, type ChangeSpec } from '@codemirror/state'
@@ -56,8 +56,15 @@ const apply = (state: EditorState, changes?: ChangeSpec, caret?: number) =>
 
 const calls = () => vi.mocked(blockMarks).mock.calls.length
 
+// The parser reparses an edit within a time budget read from Date.now, and a tree left partial
+// changes the tables found. A clock that does not move gives it all the time it needs.
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
   vi.mocked(blockMarks).mockClear()
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 describe('the marks of whole lines', () => {
@@ -69,6 +76,15 @@ describe('the marks of whole lines', () => {
     const next = apply(state, { from: 3, insert: 'xyz' })
     expect(calls()).toBe(before)
     expectRebuiltEqual(next)
+  })
+
+  it('are drawn again when the parser leaves the tables after an edit unparsed', () => {
+    const state = create(doc, 3)
+    const before = calls()
+    let now = 0
+    vi.spyOn(Date, 'now').mockImplementation(() => (now += 1000))
+    apply(state, { from: 3, insert: 'xyz' })
+    expect(calls()).toBe(before + 1)
   })
 
   it('keep the position of a table that typing above it has moved', () => {

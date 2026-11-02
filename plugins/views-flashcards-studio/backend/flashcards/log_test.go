@@ -3,6 +3,7 @@ package flashcards_test
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"io/fs"
 	"os"
 	"slices"
@@ -10,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
@@ -21,7 +23,7 @@ import (
 // read: every other recorded answer remains valid.
 func TestARunTakenAwayBeforeItWasReadIsMissing(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, vault)
+	s := openVault(t, getVault())
 	store, err := s.logs.Open(s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -46,16 +48,16 @@ func TestARunTakenAwayBeforeItWasReadIsMissing(t *testing.T) {
 // against.
 func TestWhatAVaultContainsIsEveryRunItWasReadFrom(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, vault)
+	s := openVault(t, getVault())
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	other := review.CardID{Card: "zpqrstvwxy", Template: "Recognise"}
 
-	if _, err := s.run(t, time.Now().AddDate(0, 0, -1)).Answer(
+	if _, err := s.run(t, vaulttest.GetEpoch().AddDate(0, 0, -1)).Answer(
 		t.Context(), on, review.Good, 0,
 	); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), other, review.Good, 0); err != nil {
+	if _, err := s.run(t, vaulttest.GetEpoch()).Answer(t.Context(), other, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -113,9 +115,9 @@ func (l listing) ListLogs(ctx context.Context) ([]ports.Entry, error) {
 // another machine tidied up while this one was reading.
 func TestARunTakenAwayIsLeftOutAndTheRestAreRead(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, vault)
+	s := openVault(t, getVault())
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
+	if _, err := s.run(t, vaulttest.GetEpoch()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -175,12 +177,12 @@ func (s *reorderedStores) Open(v domain.Vault) (ports.LogStore, error) {
 // order whatever order the store's own listing came back in.
 func TestGetLogFilesSortsWhateverOrderTheStoreLists(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, vault)
+	s := openVault(t, getVault())
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	for _, item := range []time.Time{
-		time.Now().AddDate(0, 0, -2),
-		time.Now().AddDate(0, 0, -1),
-		time.Now(),
+		vaulttest.GetEpoch().AddDate(0, 0, -2),
+		vaulttest.GetEpoch().AddDate(0, 0, -1),
+		vaulttest.GetEpoch(),
 	} {
 		if _, err := s.run(t, item).Answer(t.Context(), on, review.Good, 0); err != nil {
 			t.Fatal(err)
@@ -239,9 +241,9 @@ func (closed) ReadLog(context.Context, string) ([]byte, error) {
 // not count as zero.
 func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, vault)
+	s := openVault(t, getVault())
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
+	if _, err := s.run(t, vaulttest.GetEpoch()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -251,7 +253,7 @@ func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 		t.Errorf("a folder that cannot be read came back with %v", err)
 	}
 
-	counter := flashcards.NewCountReviews(refusing{LogStores: s.logs}, s.schedules, today, time.Now)
+	counter := flashcards.NewCountReviews(refusing{LogStores: s.logs}, s.schedules, getToday(), vaulttest.NewClock())
 	if _, err := counter.Execute(t.Context(), s.vault); !errors.Is(err, errClosed) {
 		t.Errorf("the counting came back with %v", err)
 	}
@@ -263,9 +265,9 @@ func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 // shadowed the moment the real vault comes back.
 func TestASessionIntoAVaultThatIsMissingStops(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, vault)
+	s := openVault(t, getVault())
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	writing := s.run(t, time.Now())
+	writing := s.run(t, vaulttest.GetEpoch())
 	if _, err := writing.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -324,15 +326,15 @@ func (f *filling) AppendLog(ctx context.Context, name string, content []byte) er
 // line ends, and going on would put the next answer behind whatever landed.
 func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, vault)
+	s := openVault(t, getVault())
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	full := &brimming{LogStores: s.logs}
-	run, err := flashcards.Log{Stores: full}.Open(t.Context(), s.vault, time.Now())
+	run, err := flashcards.Log{Stores: full}.Open(t.Context(), s.vault, vaulttest.GetEpoch())
 	if err != nil {
 		t.Fatal(err)
 	}
-	writing := newSitting(run, time.Now)
+	writing := newSitting(run, vaulttest.NewClock())
 
 	if _, err := writing.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -364,19 +366,19 @@ func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 // returned.
 func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, vault)
+	s := openVault(t, getVault())
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
-	yesterday := time.Now().AddDate(0, 0, -1)
+	yesterday := vaulttest.GetEpoch().AddDate(0, 0, -1)
 	yesterdayRun, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, yesterday)
 	if err != nil {
 		t.Fatal(err)
 	}
-	yesterdaySession := newSitting(yesterdayRun, func() time.Time { return yesterday })
+	yesterdaySession := newSitting(yesterdayRun, clock.NewFake(yesterday))
 	if _, err := yesterdaySession.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
+	if _, err := s.run(t, vaulttest.GetEpoch()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 	s.env.Store.Refuse(yesterdayRun.GetName()+".jsonl", fs.ErrPermission)
@@ -396,7 +398,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 			target.Skipped)
 	}
 
-	if _, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Scope{}); err != nil {
+	if _, err := s.session(getToday()).Execute(t.Context(), s.vault, flashcards.Scope{}); err != nil {
 		t.Errorf("starting a session came back with %v", err)
 	}
 	if _, err := s.counted.Execute(t.Context(), s.vault); err != nil {
@@ -408,7 +410,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 // result and not a failure.
 func TestAVaultNobodyReviewedContainsNoRuns(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, vault)
+	s := openVault(t, getVault())
 
 	target, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
 	if err != nil {
@@ -443,8 +445,8 @@ func TestALoadedLogIsInsertInOrderOnce(t *testing.T) {
 // later reads to skip.
 func TestAnAnswerReturnsWhichCardAndThroughWhichCard(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, vault)
-	record := s.run(t, time.Now())
+	s := openVault(t, getVault())
+	record := s.run(t, vaulttest.GetEpoch())
 
 	for _, on := range []review.CardID{
 		{Card: "", Template: "Recognise"},
@@ -482,9 +484,9 @@ func TestRecord_ErrorsWithoutClock(t *testing.T) {
 // which of the session's answers is meant.
 func TestTakingBackNamesTheAnswerItConsumesBack(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, vault)
+	s := openVault(t, getVault())
 
-	if _, err := s.run(t, time.Now()).TakeBack(t.Context(), ""); !errors.Is(err, flashcards.ErrNoAnswer) {
+	if _, err := s.run(t, vaulttest.GetEpoch()).TakeBack(t.Context(), ""); !errors.Is(err, flashcards.ErrNoAnswer) {
 		t.Errorf("an answer taken back without naming one came back with %v", err)
 	}
 }
@@ -493,15 +495,15 @@ func TestTakingBackNamesTheAnswerItConsumesBack(t *testing.T) {
 // against: a run of the same name and length holds the same answers.
 func TestARunIsKnownByTheFileItWrites(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, vault)
+	s := openVault(t, getVault())
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
-	now := time.Now()
+	now := vaulttest.GetEpoch()
 	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, now)
 	if err != nil {
 		t.Fatal(err)
 	}
-	record := newSitting(run, func() time.Time { return now })
+	record := newSitting(run, clock.NewFake(now))
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -591,7 +593,7 @@ func TestTheHistoryCountsTheSameDaysAtAnyHour(t *testing.T) {
 	} {
 		t.Run(item.Format("15:04"), func(t *testing.T) {
 			t.Parallel()
-			l := loadAt(t, func() time.Time { return item }, loadCards, loadDays, loadPerDay)
+			l := loadAt(t, clock.NewFake(item), loadCards, loadDays, loadPerDay)
 
 			got, err := l.review.Execute(t.Context(), l.vault)
 			if err != nil {

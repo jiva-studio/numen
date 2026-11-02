@@ -82,25 +82,44 @@ func (t types) GetContentType(name string) domain.ContentType {
 
 func (t types) ListExtensions(domain.ContentType) []string { return nil }
 
-var pdfTypes = types{".pdf": "application/pdf"}
+func getPdfTypes() types { return types{".pdf": "application/pdf"} }
 
-var (
-	recogniseCommand = pluginport.PluginCommandEntry{PluginID: ocr, PluginName: "OCR", Command: pluginport.PluginCommand{
+func getRecogniseCommand() pluginport.PluginCommandEntry {
+	return pluginport.PluginCommandEntry{PluginID: ocr, PluginName: "OCR", Command: pluginport.PluginCommand{
 		ID: "recognise", Title: "Recognise text", Icon: "scan-text", ContentTypes: []domain.ContentType{"application/pdf"},
 	}}
-	proofreadCommand = pluginport.PluginCommandEntry{PluginID: proofreader, PluginName: "Proofreading", Command: pluginport.PluginCommand{
+}
+
+func getProofreadCommand() pluginport.PluginCommandEntry {
+	return pluginport.PluginCommandEntry{PluginID: proofreader, PluginName: "Proofreading", Command: pluginport.PluginCommand{
 		ID: "proofread", Title: "Proofread", Icon: "spell-check",
-		When: &pluginport.PluginCommandWhen{LiveTextKinds: []domain.TextKind{kindPage, kindRecognition}},
+		When: liveOfKinds(string(kindPage), string(kindRecognition)),
 	}}
-	deleteProofreadingCommand = pluginport.PluginCommandEntry{PluginID: proofreader, PluginName: "Proofreading", Command: pluginport.PluginCommand{
-		ID: "delete-proofreading", Title: "Delete proofreading", When: &pluginport.PluginCommandWhen{HasOwnText: true},
+}
+
+func getDeleteProofreadingCommand() pluginport.PluginCommandEntry {
+	return pluginport.PluginCommandEntry{PluginID: proofreader, PluginName: "Proofreading", Command: pluginport.PluginCommand{
+		ID: "delete-proofreading", Title: "Delete proofreading", When: ownedBy(proofreader),
 	}}
-)
+}
+
+// liveOfKinds holds in the context of the live version when it is of one of the kinds.
+func liveOfKinds(kinds ...string) []pluginport.PluginContextCondition {
+	return []pluginport.PluginContextCondition{
+		{Key: textversion.ContextKeyLive, Is: []string{"true"}},
+		{Key: textversion.ContextKeyKind, Is: kinds},
+	}
+}
+
+// ownedBy holds in the context of a version the plugin made.
+func ownedBy(pluginID string) []pluginport.PluginContextCondition {
+	return []pluginport.PluginContextCondition{{Key: textversion.ContextKeyPlugin, Is: []string{pluginID}}}
+}
 
 func newMenu(t *testing.T, s *scene, entries ...pluginport.PluginCommandEntry) (*textversion.FileMenu, *commands) {
 	t.Helper()
 	recorder := &commands{all: entries}
-	menu, err := textversion.NewFileMenu(s.versions, recorder, pdfTypes, fileReaders(s.files))
+	menu, err := textversion.NewFileMenu(s.versions, recorder, getPdfTypes(), fileReaders(s.files))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +128,7 @@ func newMenu(t *testing.T, s *scene, entries ...pluginport.PluginCommandEntry) (
 
 func TestFileMenuListsCommandForDeclaredKind(t *testing.T) {
 	s := newScene(t)
-	menu, _ := newMenu(t, s, proofreadCommand)
+	menu, _ := newMenu(t, s, getProofreadCommand())
 	s.requestText(t)
 
 	entries, err := menu.GetMenu(t.Context(), s.vault, scanPath)
@@ -130,8 +149,8 @@ func TestFileMenuListsCommandForDeclaredKind(t *testing.T) {
 
 func TestFileMenuOmitsCommandForUndeclaredKind(t *testing.T) {
 	s := newScene(t)
-	command := proofreadCommand
-	command.Command.When = &pluginport.PluginCommandWhen{LiveTextKinds: []domain.TextKind{kindRecognition}}
+	command := getProofreadCommand()
+	command.Command.When = liveOfKinds(string(kindRecognition))
 	menu, _ := newMenu(t, s, command)
 	s.requestText(t)
 
@@ -142,8 +161,8 @@ func TestFileMenuOmitsCommandForUndeclaredKind(t *testing.T) {
 
 func TestFileMenuAcceptsAnyKindWhereTheCommandNamesAll(t *testing.T) {
 	s := newScene(t)
-	command := proofreadCommand
-	command.Command.When = &pluginport.PluginCommandWhen{LiveTextKinds: []domain.TextKind{"*"}}
+	command := getProofreadCommand()
+	command.Command.When = liveOfKinds(pluginport.ContextAnyValue)
 	menu, _ := newMenu(t, s, command)
 	s.requestText(t)
 
@@ -154,7 +173,7 @@ func TestFileMenuAcceptsAnyKindWhereTheCommandNamesAll(t *testing.T) {
 
 func TestFileMenuListsDeletionForEachPluginVersion(t *testing.T) {
 	s := newScene(t)
-	menu, _ := newMenu(t, s, deleteProofreadingCommand)
+	menu, _ := newMenu(t, s, getDeleteProofreadingCommand())
 	s.requestText(t)
 	s.runEntry(t, proofreader)
 	b := getProofreadingOf(s.getReaderVersion())
@@ -171,8 +190,8 @@ func TestFileMenuListsDeletionForEachPluginVersion(t *testing.T) {
 
 func TestFileMenuMatchesLiveVersionToCommandOwner(t *testing.T) {
 	s := newScene(t)
-	command := deleteProofreadingCommand
-	command.Command.When = &pluginport.PluginCommandWhen{LiveTextKinds: []domain.TextKind{kindPage, kindRecognition}, HasOwnText: true}
+	command := getDeleteProofreadingCommand()
+	command.Command.When = append(liveOfKinds(string(kindPage), string(kindRecognition)), ownedBy(proofreader)...)
 	menu, _ := newMenu(t, s, command)
 	s.requestText(t)
 
@@ -188,8 +207,8 @@ func TestFileMenuMatchesLiveVersionToCommandOwner(t *testing.T) {
 func TestFileMenuWithoutVersionListsTypeCommandsUnread(t *testing.T) {
 	s := newScene(t)
 	reads := 0
-	recorder := &commands{all: []pluginport.PluginCommandEntry{recogniseCommand, proofreadCommand, deleteProofreadingCommand}}
-	menu, err := textversion.NewFileMenu(s.versions, recorder, pdfTypes, readCounter{fileReaders: s.files, reads: &reads})
+	recorder := &commands{all: []pluginport.PluginCommandEntry{getRecogniseCommand(), getProofreadCommand(), getDeleteProofreadingCommand()}}
+	menu, err := textversion.NewFileMenu(s.versions, recorder, getPdfTypes(), readCounter{fileReaders: s.files, reads: &reads})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,9 +226,9 @@ func TestFileMenuWithoutVersionListsTypeCommandsUnread(t *testing.T) {
 
 func TestFileMenuOmitsCommandForOtherTypeOrArgument(t *testing.T) {
 	s := newScene(t)
-	needsArgument := recogniseCommand
+	needsArgument := getRecogniseCommand()
 	needsArgument.Command.Arguments = []pluginport.PluginCommandArgument{{Name: "address", Title: "Address", Type: pluginport.CommandArgumentString, IsRequired: true}}
-	menu, _ := newMenu(t, s, recogniseCommand, needsArgument)
+	menu, _ := newMenu(t, s, getRecogniseCommand(), needsArgument)
 	s.files["notes/a.txt"] = []byte("plain")
 
 	if entries, err := menu.GetMenu(t.Context(), s.vault, "notes/a.txt"); err != nil || len(entries) != 0 {
@@ -222,7 +241,7 @@ func TestFileMenuOmitsCommandForOtherTypeOrArgument(t *testing.T) {
 
 func TestFileMenuOfAMissingFileIsNotFound(t *testing.T) {
 	s := newScene(t)
-	menu, _ := newMenu(t, s, proofreadCommand)
+	menu, _ := newMenu(t, s, getProofreadCommand())
 	s.requestText(t)
 	delete(s.files, scanPath)
 
@@ -233,7 +252,7 @@ func TestFileMenuOfAMissingFileIsNotFound(t *testing.T) {
 
 func TestFileMenuRunsListedEntryCommand(t *testing.T) {
 	s := newScene(t)
-	menu, recorder := newMenu(t, s, proofreadCommand)
+	menu, recorder := newMenu(t, s, getProofreadCommand())
 	s.requestText(t)
 	entry := textversion.MenuEntry{PluginID: proofreader, Command: "proofread", Version: s.getReaderVersion()}
 
@@ -251,7 +270,7 @@ func TestFileMenuRunsListedEntryCommand(t *testing.T) {
 
 func TestFileMenuRunsACommandOverTheFileWithNoVersionArgument(t *testing.T) {
 	s := newScene(t)
-	menu, recorder := newMenu(t, s, recogniseCommand)
+	menu, recorder := newMenu(t, s, getRecogniseCommand())
 
 	if err := menu.RunMenuEntry(t.Context(), s.vault, scanPath, textversion.MenuEntry{PluginID: ocr, Command: "recognise"}); err != nil {
 		t.Fatal(err)
@@ -264,7 +283,7 @@ func TestFileMenuRunsACommandOverTheFileWithNoVersionArgument(t *testing.T) {
 
 func TestFileMenuRejectsRunningUnofferedEntry(t *testing.T) {
 	s := newScene(t)
-	menu, recorder := newMenu(t, s, proofreadCommand)
+	menu, recorder := newMenu(t, s, getProofreadCommand())
 	s.requestText(t)
 
 	for name, entry := range map[string]textversion.MenuEntry{
@@ -283,16 +302,16 @@ func TestFileMenuRejectsRunningUnofferedEntry(t *testing.T) {
 
 func TestNewFileMenuRequiresVersionsCommandsTypesAndReaders(t *testing.T) {
 	s := newScene(t)
-	if _, err := textversion.NewFileMenu(nil, &commands{}, pdfTypes, fileReaders{}); err == nil {
+	if _, err := textversion.NewFileMenu(nil, &commands{}, getPdfTypes(), fileReaders{}); err == nil {
 		t.Error("a file menu was made without versions")
 	}
-	if _, err := textversion.NewFileMenu(s.versions, nil, pdfTypes, fileReaders{}); err == nil {
+	if _, err := textversion.NewFileMenu(s.versions, nil, getPdfTypes(), fileReaders{}); err == nil {
 		t.Error("a file menu was made without commands")
 	}
 	if _, err := textversion.NewFileMenu(s.versions, &commands{}, nil, fileReaders{}); err == nil {
 		t.Error("a file menu was made without a content type table")
 	}
-	if _, err := textversion.NewFileMenu(s.versions, &commands{}, pdfTypes, nil); err == nil {
+	if _, err := textversion.NewFileMenu(s.versions, &commands{}, getPdfTypes(), nil); err == nil {
 		t.Error("a file menu was made without readers")
 	}
 }

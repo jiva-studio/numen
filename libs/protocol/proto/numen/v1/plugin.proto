@@ -49,9 +49,8 @@ message PluginSetting {
   optional double min = 8;
   optional double max = 9;
   optional double step = 10;
-  // The agent program whose models the setting is offered, as the program names itself. Empty is a
-  // setting offered none, and a person types its value.
-  string models_of = 11;
+  reserved 11;
+  reserved "models_of";
   // The options of an enum setting under each value of another setting. The first of a list is the
   // default under that value.
   PluginSettingOptionsBy options_by = 12;
@@ -61,6 +60,8 @@ message PluginSetting {
   repeated string accept = 14;
   // The icon the setting shows in the palette, by its Lucide name. Empty shows the default setting icon.
   string icon = 15;
+  // Whether a setting of type file holds a list of paths, one per line.
+  bool multiple = 16;
 }
 
 // PluginSettingOption is one value an enum setting can hold.
@@ -131,14 +132,14 @@ message PluginInfo {
 
 // PluginSettingsView is a component of a plugin's frontend drawn among its settings.
 message PluginSettingsView {
+  reserved 3;
+  reserved "after";
+
   // The id the frontend registers the component under.
   string id = 1;
 
   // What the component is called.
   string title = 2;
-
-  // The key of the setting the component is drawn after, empty for the top.
-  string after = 3;
 }
 
 // PluginReader is a tab of a plugin's frontend that opens files.

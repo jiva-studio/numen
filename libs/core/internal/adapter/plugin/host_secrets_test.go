@@ -3,7 +3,6 @@ package plugin
 import (
 	"context"
 	"errors"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -19,10 +18,11 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -141,20 +141,24 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 
-	host := NewHost("desktop.editor")
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
-	host.plugins[secretPluginID] = manifestfile.DiscoveredPlugin{Manifest: pluginport.PluginManifest{
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
+	host.plugins[secretPluginID] = manifest.Discovered{Manifest: pluginport.PluginManifest{
 		ID:      secretPluginID,
 		Secrets: []pluginport.PluginSecret{{Name: "apiKey", Title: "API key"}},
-		Settings: []manifestfile.Setting{
+		Settings: []manifest.Setting{
 			{Key: "model", Type: "string", Title: "Model", Default: "sonnet"},
 		},
 	}}
-	sup := lifecycle.New()
-	sup.ActivateInProcess(time.Now())
+	sup := lifecycle.New(testsupport.GetMachine())
+	sup.ActivateInProcess(testsupport.GetMachine().Now())
 	host.supervisors[secretPluginID] = sup
 	host.endpoints[secretPluginID] = transport.Endpoint{
-		Host: "127.0.0.1", Port: server.Listener.Addr().(*net.TCPAddr).Port, Token: "launch-name",
+		Host: "127.0.0.1", Port: plugintest.GetPort(t, server), Token: "launch-name",
 	}
 	if store != nil {
 		host.SetKeyStore(store)

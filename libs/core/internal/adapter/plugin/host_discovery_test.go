@@ -3,10 +3,10 @@ package plugin
 import (
 	"errors"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -23,7 +23,7 @@ func TestABrokenManifestIsSkippedAndShownAsFailed(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(broken, "manifest.json"), []byte("{not json"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	var reported []error
 	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
 
@@ -51,7 +51,7 @@ func TestABrokenManifestIsSkippedAndShownAsFailed(t *testing.T) {
 func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -81,7 +81,7 @@ func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 func TestDiscover_ChangedManifestRestartsPlugin(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -126,7 +126,7 @@ func TestDiscover_ChangedManifestRestartsPlugin(t *testing.T) {
 func TestAPluginWhoseDirectoryCannotBeReadStaysRegistered(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -156,7 +156,7 @@ func TestAPluginWhoseDirectoryCannotBeReadStaysRegistered(t *testing.T) {
 func TestConcurrentDiscoveriesLeaveTheRegistryConsistent(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 
 	var wg sync.WaitGroup
 	for range 8 {
@@ -205,27 +205,5 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 	}
 	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
-	}
-}
-
-func TestAPluginStoppedForMemoryIsReported(t *testing.T) {
-	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
-	host := NewHost("desktop.editor", tmp)
-	var reported []error
-	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
-	if err := host.Discover(); err != nil {
-		t.Fatalf("Discover failed: %v", err)
-	}
-
-	sup, _ := host.GetSupervisor("org.example.sample")
-	onExceeded := sup.GetOnMemoryExceeded()
-	if onExceeded == nil {
-		t.Fatal("the supervisor of the plugin reports no memory stop")
-	}
-	onExceeded()
-
-	if len(reported) != 1 || !strings.Contains(reported[0].Error(), "org.example.sample was stopped") {
-		t.Fatalf("expected the stop to be reported for the plugin, got %v", reported)
 	}
 }

@@ -40,32 +40,8 @@ type Message struct {
 	Text string
 }
 
-// CompletionChoice is the agent program and the model that a plugin's
-// completions go to, as the user set them in the plugin's setting of type
-// SettingTypeAgent.
-type CompletionChoice struct {
-	// Agent is the name of the agent program. Empty is the default of the
-	// settings.
-	Agent string
-	// Model is the model the program answers with. Empty is the one the settings
-	// name for the program, else the program's own.
-	Model string
-}
-
-// ReadCompletionChoice reads the value of a setting of type SettingTypeAgent. A
-// value of any other shape is the empty choice.
-func ReadCompletionChoice(value any) CompletionChoice {
-	fields, ok := value.(map[string]any)
-	if !ok {
-		return CompletionChoice{}
-	}
-	agent, _ := fields["agent"].(string)
-	model, _ := fields["model"].(string)
-	return CompletionChoice{Agent: agent, Model: model}
-}
-
-// Completer answers a question of a plugin with text, from the agent the
-// plugin's setting names, else the default of the settings.
+// Completer answers a question of a plugin with text, from the default agent
+// of the settings.
 type Completer interface {
 	// Complete answers the question of the plugin with the given id. A question
 	// no agent answers fails with ErrNoRoute, and an unreachable agent with
@@ -77,11 +53,4 @@ type Completer interface {
 type CompleterHost interface {
 	// SetCompleter sets the completer that answers plugin questions.
 	SetCompleter(completer Completer)
-}
-
-// CompletionChoices reads the choice a plugin's setting holds.
-type CompletionChoices interface {
-	// GetCompletionChoice returns the agent and the model the plugin's setting of
-	// type SettingTypeAgent holds, and the empty choice where it holds none.
-	GetCompletionChoice(pluginID string) CompletionChoice
 }

@@ -16,11 +16,13 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
@@ -28,22 +30,25 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
-	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
 
 // The two vocabularies a note in these tests is written in. A save changes
 // which one it holds, so the text the model received identifies which body
 // reached it.
-var (
-	before = []string{"river", "mountain", "forest", "meadow", "harbour", "valley", "island", "desert"}
-	after  = []string{"lantern", "compass", "anchor", "harvest", "cinder", "willow", "amber", "thistle"}
-)
+func getBefore() []string {
+	return []string{"river", "mountain", "forest", "meadow", "harbour", "valley", "island", "desert"}
+}
+
+func getAfter() []string {
+	return []string{"lantern", "compass", "anchor", "harvest", "cinder", "willow", "amber", "thistle"}
+}
 
 // prose is n words of one vocabulary, which is what a buffer holds: the text
 // under the frontmatter, and no frontmatter of its own.
@@ -206,7 +211,7 @@ func TestANoteSavedGetsItsVectorsBack(t *testing.T) {
 	model := &fakeEmbedder{dims: 64}
 
 	f := openingWith(t, map[string]string{
-		"Note.md": noteWith(before, 200),
+		"Note.md": noteWith(getBefore(), 200),
 	}, watcher, readers, model, 20*time.Millisecond)
 
 	waitFor(t, "the note was never embedded at all", func() bool {
@@ -215,12 +220,12 @@ func TestANoteSavedGetsItsVectorsBack(t *testing.T) {
 	})
 	walks := readers.walks.Load()
 
-	write(t, f.vault, "Note.md", noteWith(after, 200))
+	write(t, f.vault, "Note.md", noteWith(getAfter(), 200))
 	sendChange(t, watcher, "Note.md")
 
 	waitFor(t, "the note stayed out of search by meaning", func() bool {
 		targetVal, embedded := getVectorProgress(t, f, model)
-		return targetVal > 0 && targetVal == embedded && model.saw(after[0])
+		return targetVal > 0 && targetVal == embedded && model.saw(getAfter()[0])
 	})
 	if got := readers.walks.Load(); got != walks {
 		t.Errorf("the vault was walked %d times over to embed one note", got-walks)
@@ -238,7 +243,7 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 	model := &fakeEmbedder{dims: 64}
 
 	f := openingWith(t, map[string]string{
-		"Note.md": noteWith(before, 200),
+		"Note.md": noteWith(getBefore(), 200),
 	}, watcher, readers, model, time.Second)
 
 	waitFor(t, "the note was never embedded at all", func() bool {
@@ -250,13 +255,13 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 	// Every save lengthens the note by a word, so each one needs a vector the
 	// previous save did not.
 	for i := range saves {
-		write(t, f.vault, "Note.md", noteWith(after, 200+i))
+		write(t, f.vault, "Note.md", noteWith(getAfter(), 200+i))
 		sendChange(t, watcher, "Note.md")
 	}
 
 	waitFor(t, "the saves were never embedded", func() bool {
 		targetVal, embedded := getVectorProgress(t, f, model)
-		return targetVal > 0 && targetVal == embedded && model.saw(after[0])
+		return targetVal > 0 && targetVal == embedded && model.saw(getAfter()[0])
 	})
 
 	switch passes := model.times() - first; {
@@ -276,7 +281,7 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 	model := newSulking(64, 1)
 
 	f := openingWith(t, map[string]string{
-		"Note.md": noteWith(before, 200),
+		"Note.md": noteWith(getBefore(), 200),
 	}, unwatchable{}, newWalking(), model, 20*time.Millisecond)
 
 	waitFor(t, "the model was never asked at all", func() bool { return model.getTurnedDown() > 0 })
@@ -290,11 +295,11 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 
 	// Longer than the file on disk, so every chunk position is within the saved
 	// note.
-	save(t, f, "Note.md", prose(after, 240))
+	save(t, f, "Note.md", prose(getAfter(), 240))
 
 	waitFor(t, "what was saved stayed out of search by meaning", func() bool {
 		targetVal, embedded := getVectorProgress(t, f, model)
-		return targetVal > 0 && targetVal == embedded && model.saw(after[0])
+		return targetVal > 0 && targetVal == embedded && model.saw(getAfter()[0])
 	})
 }
 
@@ -305,19 +310,19 @@ func TestANoteSavedAfterTheScanFailedIsEmbedded(t *testing.T) {
 	model := &fakeEmbedder{dims: 64}
 
 	f := openingWith(t, map[string]string{
-		"Note.md": noteWith(before, 200),
+		"Note.md": noteWith(getBefore(), 200),
 	}, watcher, unwalkable{VaultReaders: vaultreader.Readers{}}, model, 20*time.Millisecond)
 
 	waitFor(t, "the scan was not reported as failed", func() bool {
 		return f.api.state.Error.Why() != ""
 	})
 
-	write(t, f.vault, "Note.md", noteWith(after, 200))
+	write(t, f.vault, "Note.md", noteWith(getAfter(), 200))
 	sendChange(t, watcher, "Note.md")
 
 	waitFor(t, "what was written stayed out of search by meaning", func() bool {
 		target, embedded := getVectorProgress(t, f, model)
-		return target > 0 && target == embedded && model.saw(after[0])
+		return target > 0 && target == embedded && model.saw(getAfter()[0])
 	})
 }
 
@@ -349,19 +354,19 @@ func (s *mockEmbeddingServer) EmbedBatch(
 func vaultConfig(t *testing.T, embedding container.EmbeddingConfig) container.Config {
 	t.Helper()
 	root := t.TempDir()
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
-	cfg := container.Config{
+	cfg := container.NewConfig(container.Config{
 		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
 		Embedding:    embedding,
-	}
+	})
 	registry, err := cfg.Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry, time.Now).Execute(root, "alpha"); err != nil {
+	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry, testsupport.NewClock()).Execute(root, "alpha"); err != nil {
 		t.Fatal(err)
 	}
 	return cfg
@@ -375,7 +380,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	if err := os.MkdirAll(pDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	manifest := `{
+	manifestText := `{
 		"id": "md.numen.embeddings",
 		"name": "Vector Embeddings",
 		"version": "1.0.0",
@@ -383,7 +388,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 		"targets": ["desktop.editor"],
 		"backend": {"entrypoint": "bin/embeddings"}
 	}`
-	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifestText), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
@@ -392,23 +397,30 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(&mockEmbeddingServer{}))
 	server := httptest.NewServer(mux)
 	defer server.Close()
-	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
+	serverAddress, ok := server.Listener.Addr().(*net.TCPAddr)
+	if !ok {
+		t.Fatalf("the test server listens on %T, want *net.TCPAddr", server.Listener.Addr())
+	}
+	serverPort := serverAddress.Port
 
-	host := plugin.NewHost("desktop.editor", tmp)
+	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		// The plugin host may have reaped the process already.
+		if _, err := cmd.Process.Wait(); err != nil && !errors.Is(err, syscall.ECHILD) && !errors.Is(err, os.ErrProcessDone) {
+			t.Errorf("wait: %v", err)
+		}
 	}()
 
-	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})
@@ -421,7 +433,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = installation.Close() })
+	testsupport.CloseAfter(t, installation)
 
 	if installation.Embedder == nil {
 		t.Fatal("the vault opened with no embedder on hand")
@@ -438,11 +450,41 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = installation.Close() })
+	testsupport.CloseAfter(t, installation)
 
 	if installation.Embedder != nil {
 		t.Errorf("got an embedder: %v", installation.Embedder.GetModel())
 	}
+}
+
+// gatedWalk is an assembly whose first walk of the notes starts when release is
+// closed.
+type gatedWalk struct {
+	Assembly
+
+	release <-chan struct{}
+}
+
+func (g gatedWalk) StartVault(
+	ctx context.Context, v domain.Vault, rebuild bool,
+	notified func(paths, assets []string, reload bool),
+	handleError windowport.ErrorHandler,
+) (
+	read func(ctx context.Context, during func()) (notes int, err error),
+	run func(ctx context.Context),
+	refresh vaults.Refresh,
+	unwatched error,
+) {
+	walk, run, refresh, unwatched := g.Assembly.StartVault(ctx, v, rebuild, notified, handleError)
+	read = func(ctx context.Context, during func()) (int, error) {
+		select {
+		case <-g.release:
+			return walk(ctx, during)
+		case <-ctx.Done():
+			return 0, ctx.Err()
+		}
+	}
+	return read, run, refresh, unwatched
 }
 
 // Reading a vault is work, and work is one entry in the list of operations. A
@@ -450,12 +492,16 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 // with a separate count.
 func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 	cfg := vaultConfig(t, container.EmbeddingConfig{})
+	release := make(chan struct{})
+	var releaseOnce sync.Once
+	releaseWalk := func() { releaseOnce.Do(func() { close(release) }) }
+	t.Cleanup(releaseWalk)
 
-	installation, err := Open(t.Context(), NewAssembly(t, cfg), "", os.Stderr)
+	installation, err := Open(t.Context(), gatedWalk{Assembly: NewAssembly(t, cfg), release: release}, "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = installation.Close() })
+	testsupport.CloseAfter(t, installation)
 
 	// Reported before the reading goroutine starts, so a window opening on a new
 	// vault shows the walk from its start.
@@ -472,5 +518,6 @@ func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 
 	// Each pass removes its entry when it ends, so a fully read vault reports no
 	// operations.
+	releaseWalk()
 	testsupport.WaitFor(t, func() bool { return len(installation.State.Window.Tasking.List()) == 0 })
 }

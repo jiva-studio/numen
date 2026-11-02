@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"modernc.org/sqlite"
@@ -41,6 +42,35 @@ func Begin(ctx context.Context, db *sql.DB) (*Transaction, error) {
 	return &Transaction{Tx: tx, ready: map[string]*sql.Stmt{}}, nil
 }
 
+// InTransaction begins a write transaction, calls run, and commits it. A run
+// that fails rolls the transaction back and returns its error, joined with the
+// rollback error when the rollback itself failed.
+func InTransaction(ctx context.Context, db *sql.DB, run func(tx *Transaction) error) error {
+	tx, err := Begin(ctx, db)
+	if err != nil {
+		return fmt.Errorf("begin: %w", err)
+	}
+	if err := run(tx); err != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil && !errors.Is(rollbackErr, sql.ErrTxDone) {
+			return errors.Join(err, fmt.Errorf("rollback: %w", rollbackErr))
+		}
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit: %w", err)
+	}
+	return nil
+}
+
+// JoinClose returns err joined with closeErr, which is the error of closing a
+// resource. It returns err itself when closeErr is nil.
+func JoinClose(err, closeErr error) error {
+	if closeErr == nil {
+		return err
+	}
+	return errors.Join(err, closeErr)
+}
+
 // Transaction is a write transaction and the statements prepared inside it.
 //
 // SQLite reads the text of a statement each time one is prepared, and the
@@ -55,53 +85,85 @@ type Transaction struct {
 	ready map[string]*sql.Stmt
 }
 
+// ExecContext, QueryContext and QueryRowContext start a statement only while
+// ctx is live and then run it to its end. See Uninterrupted.
 func (t *Transaction) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	//nolint:sqlclosecheck // the statement is the transaction's and is closed with it
-	prepared, err := t.prepare(ctx, query)
+	ctx, err := Uninterrupted(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return prepared.ExecContext(ctx, args...)
+	return useStatement(ctx, t, query, func(prepared *sql.Stmt) (sql.Result, error) {
+		return prepared.ExecContext(ctx, args...)
+	})
 }
 
 func (t *Transaction) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	//nolint:sqlclosecheck // the statement is the transaction's and is closed with it
-	prepared, err := t.prepare(ctx, query)
+	ctx, err := Uninterrupted(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return prepared.QueryContext(ctx, args...)
+	return useStatement(ctx, t, query, func(prepared *sql.Stmt) (*sql.Rows, error) {
+		return prepared.QueryContext(ctx, args...)
+	})
 }
 
 // QueryRowContext passes a statement that could not be prepared to the
 // transaction itself, so the error is returned to the caller: a row carries the error
 // and there is no other channel for it.
 func (t *Transaction) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
-	//nolint:sqlclosecheck // the statement is the transaction's and is closed with it
-	prepared, err := t.prepare(ctx, query)
+	ctx, err := Uninterrupted(ctx)
 	if err != nil {
 		return t.Tx.QueryRowContext(ctx, query, args...)
 	}
-	return prepared.QueryRowContext(ctx, args...)
+	row, err := useStatement(ctx, t, query, func(prepared *sql.Stmt) (*sql.Row, error) {
+		return prepared.QueryRowContext(ctx, args...), nil
+	})
+	if err != nil {
+		return t.Tx.QueryRowContext(ctx, query, args...)
+	}
+	return row
 }
 
-// prepare returns the prepared statement for this text, preparing it on first
-// use. One transaction is written by one goroutine, because the pool has a
-// single write connection.
-func (t *Transaction) prepare(ctx context.Context, query string) (*sql.Stmt, error) {
-	if target, ok := t.ready[query]; ok {
-		return target, nil
+// Uninterrupted returns the context a statement on the index runs under: ctx
+// itself with its error when ctx is already done, and otherwise a context that
+// is not cancelled while the statement runs.
+//
+// The driver answers a cancelled context by interrupting the connection. The
+// vec0 table prepares its own statements the first time a connection touches
+// it, and a prepare that the interrupt fails leaves it a nil statement that it
+// then clears, which ends the process. A statement therefore starts only while
+// ctx is live and then runs to its end. A write transaction still rolls back
+// when ctx is cancelled, between its statements.
+func Uninterrupted(ctx context.Context) (context.Context, error) {
+	if err := ctx.Err(); err != nil {
+		return ctx, err
 	}
-	prepared, err := t.Tx.PrepareContext(ctx, query)
-	if err != nil {
-		return nil, err
+	return context.WithoutCancel(ctx), nil
+}
+
+// useStatement calls run with the prepared statement for this text, preparing
+// it on first use. The transaction owns the statement and closes it on commit
+// and on rollback. One transaction is written by one goroutine, because the
+// pool has a single write connection.
+func useStatement[T any](
+	ctx context.Context, t *Transaction, query string, run func(*sql.Stmt) (T, error),
+) (T, error) {
+	prepared, ok := t.ready[query]
+	if !ok {
+		var err error
+		prepared, err = t.Tx.PrepareContext(ctx, query)
+		if err != nil {
+			var zero T
+			return zero, err
+		}
+		t.ready[query] = prepared
 	}
-	t.ready[query] = prepared
-	return prepared, nil
+	return run(prepared)
 }
 
 // Exec runs one write statement, asking again while another process holds the
-// write lock. A statement of its own is its own transaction, so one that was
+// write lock. A statement outside a transaction is its own transaction, so a
+// statement that reports the lock has made no change and runs again.
 func Exec(ctx context.Context, db *sql.DB, query string, args ...any) (sql.Result, error) {
 	var out sql.Result
 	err := retry(ctx, func() error {

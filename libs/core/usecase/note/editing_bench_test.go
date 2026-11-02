@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
@@ -13,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// indexNothing brings nothing level. What is measured here is the file being
+// indexNothing updates nothing. What is measured here is the file being
 // replaced; what the index then costs is a refresh, and is measured as one.
 func indexNothing(context.Context, domain.Vault, []string) error { return nil }
 
@@ -54,7 +53,7 @@ func BenchmarkSave(b *testing.B) {
 		b.Run(fmt.Sprintf("%d words", size), func(b *testing.B) {
 			v := testsupport.GenerateVault(b, 100)
 			write := note.NewWrite(
-				vaultreader.Readers{}, vaultwriter.VaultWriters{}, indexNothing, time.Now)
+				vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, indexNothing, testsupport.NewClock())
 			path := "01/note-000001.md"
 
 			body := ""

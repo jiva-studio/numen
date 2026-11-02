@@ -62,7 +62,7 @@ describe('a declared command in the palette', () => {
 
   it('over files is offered over a file of its extensions alone', () => {
     const [one] = createDeclaredPaletteCommands([convert])
-    const runs = { canRun: () => true, cannotRun: () => {} }
+    const runs = { canRun: () => true, cannotRun: vi.fn() }
 
     expect(one?.group).toBe('file')
     expect(one?.needs).toBeUndefined()

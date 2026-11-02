@@ -5,7 +5,7 @@
  * number the arrangement is handed. Every length here is multiplied by what
  * the type was multiplied by, so a box goes on holding its label.
  */
-import { doc, hasDocument } from '../../../dom'
+import { doc, hasDocument } from '@numen/ui'
 import { onScopeDispose, ref, type Ref } from 'vue'
 import { DEFAULT_OPTIONS, type PlexOptions, type Size } from '../../lib/arrange'
 
@@ -43,6 +43,7 @@ export const scaleOptions = (options: PlexOptions, delta: number): PlexOptions =
     ...options.routing,
     minReach: options.routing.minReach * delta,
     arrowClearance: options.routing.arrowClearance * delta,
+    minRun: options.routing.minRun * delta,
   },
 })
 

@@ -3,7 +3,7 @@ package service
 
 // APIService is the service name the plugin's JSON methods are mounted under. The manifest
 // `services` declares the same name.
-const APIService = "numen.pdf"
+const APIService = "md.numen.readers.pdf"
 
 // FileStat identifies the bytes of a file.
 type FileStat struct {

@@ -6,6 +6,7 @@
  * is applied after the keyboard has rested on the row for HELD, and the
  * settings values are restored as soon as the keyboard leaves the list.
  */
+import { formatErrorMessage } from '@numen/core-client'
 import { ref, shallowRef, watch, type Ref, type ShallowRef } from 'vue'
 import { createFollower } from '@numen/ui'
 import { createRequestGuard } from '@/shared/requestGuard'
@@ -14,18 +15,20 @@ import { DESIGNED, EMPTY_RANGE, SCHEMES } from '@/entities/settings'
 import type { Appearance, Mode, Ranges, Sizes, Theme, Themes } from '@/entities/settings'
 import type { AppearanceWords } from '../words'
 import { IS_SIZES, addAfter, getSizesCss, getStyleElements } from '../lib/head'
-import { getModeGroups, getSizeGroups, getThemeGroups } from '../lib/offers'
+import { getModeGroups, getSizeGroups, getThemeGroups, type PluginNamer } from '../lib/offers'
 import { useAppearanceChoice } from './choice'
 
 export interface WindowAppearanceDeps {
   core: Themes
   words: AppearanceWords
   write: MessageWriter
+  /** The name a plugin is listed under, given its id. */
+  getPluginName?: PluginNamer
   sheet?: Document
   wait?: (ms: number) => Promise<unknown>
 }
 
-interface ThemeWearDeps {
+interface ThemeApplierDeps {
   core: Themes
   styleElements: ReturnType<typeof getStyleElements>
   write: MessageWriter
@@ -33,7 +36,7 @@ interface ThemeWearDeps {
   applied: Ref<string>
 }
 
-function createThemeWear(deps: ThemeWearDeps) {
+function createThemeApplier(deps: ThemeApplierDeps) {
   const { core, styleElements, write, words, applied } = deps
   const files = new Map<string, string>()
   const guard = createRequestGuard()
@@ -46,7 +49,7 @@ function createThemeWear(deps: ThemeWearDeps) {
     return css
   }
 
-  const wear = async (theme: string, half: Mode) => {
+  const applyTheme = async (theme: string, half: Mode) => {
     if (!applied.value) return
     const mine = guard.acquireRequest()
     styleElements.mode.textContent = `:root { color-scheme: ${SCHEMES[half]}; }`
@@ -54,11 +57,11 @@ function createThemeWear(deps: ThemeWearDeps) {
       const css = await fileOf(theme)
       if (mine.isCurrent) styleElements.theme.textContent = css
     } catch {
-      if (mine.isCurrent) write(words.unworn, 'error')
+      if (mine.isCurrent) write(words.themeUnreadable, 'error')
     }
   }
 
-  return { files, wear }
+  return { files, applyTheme }
 }
 
 function createSizesWriter(styleElements: ReturnType<typeof getStyleElements>, sheet: Document) {
@@ -135,7 +138,7 @@ function createThemeWatcher(deps: {
         if (!names.length) return
         for (const name of names) deps.files.delete(name)
         await deps.loadAppearance()
-        if (names.includes(deps.choice.worn.value)) await deps.applyAppearance()
+        if (names.includes(deps.choice.current.value)) await deps.applyAppearance()
       },
     )
 
@@ -161,9 +164,11 @@ function createAppearanceGroups(
   state: ReturnType<typeof initAppearanceState>,
   choice: ReturnType<typeof useAppearanceChoice>,
   words: WindowAppearanceDeps['words'],
+  getPluginName: PluginNamer | undefined,
 ) {
   return {
-    getThemeGroups: () => getThemeGroups(state.list.value, state.applied.value, words),
+    getThemeGroups: () =>
+      getThemeGroups(state.list.value, state.applied.value, words, getPluginName),
     getModeGroups: () => getModeGroups(state.mode.value, choice.isPinned.value, words),
     // Stryker disable next-line StringLiteral: Default empty text evaluates to null in parseSize.
     getSizeGroups: (command: string, text = '') =>
@@ -176,11 +181,11 @@ function createAppearanceGroups(
 }
 
 export function createWindowAppearance(deps: WindowAppearanceDeps) {
-  const { core, words, write, sheet = document, wait = sleep } = deps
+  const { core, words, write, getPluginName, sheet = document, wait = sleep } = deps
   const styleElements = getStyleElements(sheet)
   const served = styleElements.theme.textContent ?? ''
   const state = initAppearanceState()
-  const { files, wear } = createThemeWear({
+  const { files, applyTheme } = createThemeApplier({
     core,
     styleElements,
     write,
@@ -191,7 +196,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
   const choice = useAppearanceChoice({
     core,
     write,
-    wear,
+    applyTheme,
     list: state.list,
     applied: state.applied,
     mode: state.mode,
@@ -199,7 +204,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     bounds: state.bounds,
   })
 
-  const applyAppearance = () => wear(choice.worn.value, choice.half.value)
+  const applyAppearance = () => applyTheme(choice.current.value, choice.half.value)
   const writeSizes = createSizesWriter(styleElements, sheet)
   const targetDrawing = watch(choice.sized, writeSizes)
 
@@ -231,12 +236,12 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     sized: choice.sized,
     isPinned: choice.isPinned,
     pinned: choice.isPinned,
-    ...createAppearanceGroups(state, choice, words),
+    ...createAppearanceGroups(state, choice, words, getPluginName),
     previewItem: choice.previewItem,
     chooseItem: choice.chooseItem,
     start: async () => {
       await loadAppearance()
-      void watcher.follow()
+      watcher.follow().catch((error: unknown) => write(formatErrorMessage(error), 'error'))
     },
     close: () => {
       watcher.stop()

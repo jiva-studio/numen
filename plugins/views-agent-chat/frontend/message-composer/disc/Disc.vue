@@ -26,18 +26,16 @@ const named = computed(() => (props.action === 'stop' ? props.stopLabel : props.
 
 <template>
   <div class="disc">
-    <Transition name="disc__swap" mode="out-in">
-      <Button
-        :key="action"
-        size="icon-small"
-        :disabled="isDisabled"
-        :aria-label="named"
-        @click="emit('press')"
-      >
-        <slot v-if="action === 'send' && $slots.glyph" name="glyph" />
-        <Glyph v-else :action="action" />
-      </Button>
-    </Transition>
+    <Button
+      size="icon-small"
+      :data-action="action"
+      :disabled="isDisabled"
+      :aria-label="named"
+      @click="emit('press')"
+    >
+      <slot v-if="action === 'send' && $slots.glyph" name="glyph" />
+      <Glyph v-else :action="action" />
+    </Button>
   </div>
 </template>
 
@@ -48,18 +46,5 @@ const named = computed(() => (props.action === 'stop' ? props.stopLabel : props.
   inline-size: 1.75rem;
   align-items: center;
   justify-content: center;
-}
-
-.disc__swap-enter-active,
-.disc__swap-leave-active {
-  transition:
-    opacity var(--numen-motion-hover) var(--numen-easing),
-    transform var(--numen-motion-hover) var(--numen-easing);
-}
-
-.disc__swap-enter-from,
-.disc__swap-leave-to {
-  opacity: 0;
-  transform: scale(0.75);
 }
 </style>

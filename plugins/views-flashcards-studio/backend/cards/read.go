@@ -261,6 +261,11 @@ func (u Read) readNote(
 		return domain.Note{}, domain.FileStat{}, "", fmt.Errorf("read %s: %w", path, err)
 	}
 
+	return parseNoteBytes(ref, raw, path)
+}
+
+// parseNoteBytes parses the bytes of the file at a path, unless they are not text or not a readable note.
+func parseNoteBytes(ref domain.FileStat, raw []byte, path string) (domain.Note, domain.FileStat, note.ReadOutcome, error) {
 	// The values of a card are sent in string fields. A browser replaces an
 	// ill-formed UTF-8 sequence with U+FFFD, and the next save would write those
 	// characters over the original bytes.

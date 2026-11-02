@@ -56,7 +56,11 @@ export function usePresetListing(presets: Presets) {
   }
 
   const listPresetsAgain = (): void => {
-    if (!presetsWereListed) void listPresets()
+    if (!presetsWereListed) {
+      listPresets().catch(() => {
+        presetsWereListed = false
+      })
+    }
   }
 
   const choices = computed<readonly Choice[]>(() => [

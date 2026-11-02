@@ -1,22 +1,23 @@
 {
   "id": "md.numen.tools.media.importer",
   "name": "Media Importer",
-  "version": "2026.10.2",
+  "version": "2026.11.1",
   "protocol": 1,
   "description": "Saves web articles and downloads online videos for offline playback",
   "targets": ["desktop.editor"],
-  "activationEvents": [],
-  "permissions": ["vault:read", "vault:write", "network:outbound"],
-  "noteTypes": [
-    {
-      "type": "link"
-    }
-  ],
-  "services": ["numen.importer"],
-  "texts": {},
-  "playback": {
-    "noteTypes": ["link"]
+  "contributes": {
+    "tabKinds": [{ "kind": "link", "title": "Link", "icon": "link" }],
+    "feature": "media links",
+    "category": "tools",
+    "handles": [
+      { "purpose": "text-provider" },
+      { "purpose": "playback-copy", "noteTypes": ["link"] }
+    ],
+    "noteTypes": [{ "type": "link" }],
+    "frameOrigins": ["https://www.youtube-nocookie.com"]
   },
+  "permissions": ["vault:read", "vault:write", "network:outbound"],
+  "services": ["md.numen.tools.media.importer"],
   "commands": [
     {
       "id": "import",
@@ -53,7 +54,7 @@
       "id": "delete-text",
       "title": "Delete text",
       "icon": "trash-2",
-      "when": { "hasOwnText": true }
+      "when": [{ "key": "version.plugin", "is": ["md.numen.tools.media.importer"] }]
     },
     {
       "id": "delete-copy",
@@ -62,20 +63,8 @@
       "noteTypes": ["link"]
     }
   ],
-  "lifecycle": {
-    "idleTimeoutSeconds": 180,
-    "keepAliveWhileVisible": false,
-    "memoryLimitBytes": 2147483648
-  },
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/tools-media-importer",
-    "serviceName": "numen.importer"
-  },
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  },
+  "backend": { "entrypoint": "bin/tools-media-importer" },
+  "frontend": {},
   "settings": [
     {
       "key": "yt_dlp",
@@ -117,6 +106,5 @@
       "max": 100000,
       "step": 50
     }
-  ],
-  "frames": ["https://www.youtube-nocookie.com"]
+  ]
 }

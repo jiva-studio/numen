@@ -119,7 +119,7 @@ const wrongWithTemplate = (id: string): readonly string[] => props.wrong.at.get(
 
 <template>
   <div
-    class="card model numen bg-surface text-ink font-sans text-base"
+    class="card card-model numen bg-surface text-ink font-sans text-base"
     role="group"
     :aria-label="name"
   >
@@ -177,7 +177,7 @@ const wrongWithTemplate = (id: string): readonly string[] => props.wrong.at.get(
 <style scoped>
 @import '../caret.css';
 
-.cardModel {
+.card-model {
   /* The space between one part and the next, and between the rows of a part. */
   --part-gap: 1.5rem;
   --row-gap: 0.5rem;

@@ -64,6 +64,19 @@ func (t *Tasks) Remove(id string) {
 	t.notifyWatchers()
 }
 
+// Cancel stops the listed task with this id and reports whether it could be
+// cancelled. The task stays listed until its work removes it.
+func (t *Tasks) Cancel(id string) bool {
+	t.mu.Lock()
+	task, isListed := t.activeItem[id]
+	t.mu.Unlock()
+	if !isListed || task.Cancel == nil {
+		return false
+	}
+	task.Cancel()
+	return true
+}
+
 // Clear takes all tasks out.
 func (t *Tasks) Clear() {
 	t.mu.Lock()

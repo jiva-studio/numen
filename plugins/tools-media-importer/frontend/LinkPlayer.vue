@@ -23,8 +23,11 @@ const isVideo = computed(() => props.source.mediaType.startsWith('video/'))
 function onToggle() {
   const element = media.value
   if (!element) return
-  if (element.paused) void element.play()
-  else element.pause()
+  if (element.paused) {
+    element.play().catch(() => {
+      isPlaying.value = false
+    })
+  } else element.pause()
 }
 
 function onTimeUpdate() {

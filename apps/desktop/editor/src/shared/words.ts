@@ -8,7 +8,7 @@
 // Stryker disable StringLiteral: interface copy
 import { keyChord } from '@numen/ui'
 import { commandKeyChord } from '@numen/shell'
-import { ERRORS } from '@numen/plugin-sdk'
+import { ERRORS } from '@numen/core-client'
 
 export { ERRORS }
 
@@ -19,8 +19,6 @@ export const WORDS = {
   /** Status corner text shown while something about the vault is wrong. */
   unwatched: 'Vault changes not watched',
   unread: 'Vault unreadable',
-  indexing: 'Indexing the vault…',
-  nothingRead: 'No notes loaded',
   going: 'Saving paused: the files of these notes changed on disk.',
   later: 'Later',
   /** The palette, and the three groups it draws. */
@@ -125,14 +123,14 @@ export const WORDS = {
   setting: 'Reading size',
   /** The themes could not be listed, and a theme's file could not be read. */
   unlisted: 'Themes unavailable',
-  unworn: 'Theme unreadable',
+  themeUnreadable: 'Theme unreadable',
   /** The group the setting is drawn in, and the two it is. */
   syncingGroup: 'Sync title and filename',
   on: 'On',
   off: 'Off',
   unturned: 'Setting not saved:',
   secretFailed: 'Key not changed:',
-  /** Plugin notices: "<Name> stopped: <reason>", and errors raised by plugin code. */
+  /** Plugin failures, shown as failed tasks: "<Name> stopped: <reason>", and errors raised by plugin code. */
   pluginStopped: (name: string, reason: string) => `${name} stopped: ${toLowerFirst(reason)}`,
   pluginRetryFailed: (name: string, message: string) => `Could not retry ${name}: ${message}`,
   pluginError: (name: string, message: string) => `${name}: ${message}`,
@@ -171,13 +169,7 @@ export const WORDS = {
   actions: 'Actions',
   findAction: 'Search actions',
   noAction: 'No actions found',
-  /** The corner where what is running behind the window is shown. */
   wordsOnly: 'Text search only: no embedding model set',
-  isWorking: 'Background work',
-  /** The status bar group of the core's own tasks. */
-  coreTasks: 'Numen',
   /** The action on a plugin task that failed for want of configuration. */
   configure: 'Configure in settings',
-  dismiss: 'Dismiss',
-  more: 'more',
 }

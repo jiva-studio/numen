@@ -60,24 +60,22 @@ func isLocalHost(host string) bool {
 	return address.IsLoopback() || address.IsUnspecified()
 }
 
-// trackingParams are the parameters that say where a visitor came from, beside every
-// name beginning `utm_`. They are the same page whatever they hold, and a
-// person who pastes one link from two places holds one file about it.
-var trackingParams = map[string]bool{
-	"fbclid":  true,
-	"gclid":   true,
-	"mc_cid":  true,
-	"mc_eid":  true,
-	"si":      true,
-	"ref_src": true,
-	"ref_url": true,
+// isTrackingParam reports whether the parameter says where a visitor came from, beside every name
+// beginning `utm_`. Such a parameter is the same page whatever it holds, and a person who pastes
+// one link from two places holds one file about it.
+func isTrackingParam(key string) bool {
+	switch key {
+	case "fbclid", "gclid", "mc_cid", "mc_eid", "si", "ref_src", "ref_url":
+		return true
+	}
+	return false
 }
 
 // removeTrackingParams is the query without them.
 func removeTrackingParams(query url.Values) url.Values {
 	for name := range query {
 		folded := strings.ToLower(name)
-		if trackingParams[folded] || strings.HasPrefix(folded, "utm_") {
+		if isTrackingParam(folded) || strings.HasPrefix(folded, "utm_") {
 			delete(query, name)
 		}
 	}

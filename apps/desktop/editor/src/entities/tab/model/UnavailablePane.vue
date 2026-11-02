@@ -1,13 +1,15 @@
 <script setup lang="ts">
 /**
- * Placeholder displayed when a tab's kind belongs to a disabled or missing plugin.
+ * Placeholder displayed when a tab's kind belongs to a disabled, stopped or missing plugin. The
+ * plugin's name, feature and state come from the catalog; until the catalog answers, the pane shows
+ * the loading state.
  */
-import { computed } from 'vue'
-import {
-  formatUnavailableFeature,
-  getUnavailablePluginFilter,
-  type UnavailableState,
-} from './unavailable'
+import { computed, ref } from 'vue'
+import { TriangleAlert } from '@lucide/vue'
+import { Button, LoadingIndicator, runInBackground } from '@numen/ui'
+import { formatErrorMessage } from '@numen/core-client'
+import type { UnavailableState } from './unavailable'
+import { getUnavailableView, type UnavailableView } from './unavailableView'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -15,29 +17,50 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const featureName = computed(() => formatUnavailableFeature(props.state.kind))
+const isEnabling = ref(false)
+const problem = ref('')
+const isStarting = computed(() => props.state.services.arePluginsStarting?.value === true)
+const view = computed(() => getUnavailableView(props.state.lookup.value, isEnabling.value))
 
 /* -------------------------------- Handlers -------------------------------- */
-function onOpenSettings(): void {
-  globalThis.dispatchEvent(
-    new CustomEvent('numen:open-settings', {
-      detail: { filter: getUnavailablePluginFilter(props.state.kind) },
-    }),
-  )
+function onAct(target: UnavailableView): void {
+  const { pluginId, action } = target
+  const { services } = props.state
+  if (action === 'enable' && pluginId !== undefined && services.enablePlugin) {
+    isEnabling.value = true
+    problem.value = ''
+    runInBackground(services.enablePlugin(pluginId), (error) => {
+      isEnabling.value = false
+      problem.value = formatErrorMessage(error)
+    })
+    return
+  }
+  services.openPlugin?.(pluginId)
 }
 </script>
 
 <template>
-  <div class="tab-unavailable" role="status">
+  <div v-if="isStarting" class="tab-unavailable" role="status" data-starting>
     <div class="tab-unavailable__content">
-      <div class="tab-unavailable__icon" aria-hidden="true">&#9888;</div>
-      <h3 class="tab-unavailable__title">Plugin disabled</h3>
-      <p class="tab-unavailable__message">
-        The plugin for {{ featureName }} is disabled or missing.
-      </p>
-      <button type="button" class="tab-unavailable__button" @click="onOpenSettings">
-        Open Settings
-      </button>
+      <LoadingIndicator />
+      <p class="tab-unavailable__message">Starting the plugin for this tab…</p>
+    </div>
+  </div>
+  <LoadingIndicator v-else-if="view === undefined" />
+  <div v-else class="tab-unavailable" role="status">
+    <div class="tab-unavailable__content">
+      <TriangleAlert class="tab-unavailable__icon" aria-hidden="true" />
+      <h3 class="tab-unavailable__title">{{ view.heading }}</h3>
+      <p class="tab-unavailable__message">{{ view.message }}</p>
+      <p v-if="problem" class="tab-unavailable__message" role="alert">{{ problem }}</p>
+      <Button
+        class="tab-unavailable__action"
+        :disabled="isEnabling"
+        :aria-busy="isEnabling"
+        @click="onAct(view)"
+      >
+        {{ view.actionText }}
+      </Button>
     </div>
   </div>
 </template>
@@ -62,10 +85,10 @@ function onOpenSettings(): void {
 }
 
 .tab-unavailable__icon {
-  font-size: 2.5rem;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
   margin-block-end: 0.75rem;
-  line-height: 1;
-  color: var(--numen-warning);
+  color: var(--numen-caution-fg);
 }
 
 .tab-unavailable__title {
@@ -82,25 +105,7 @@ function onOpenSettings(): void {
   line-height: 1.4;
 }
 
-.tab-unavailable__button {
+.tab-unavailable__action {
   margin-block-start: 0.5rem;
-  padding: 0.5rem 1.25rem;
-  font-size: var(--numen-text-2);
-  font-family: inherit;
-  font-weight: 500;
-  border-radius: var(--numen-radius-small);
-  border: var(--numen-stroke) solid var(--numen-rule);
-  background: var(--numen-surface);
-  color: var(--numen-ink);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.tab-unavailable__button:hover {
-  background-color: var(--numen-surface-hover);
-}
-
-.tab-unavailable__button:active {
-  background-color: var(--numen-surface-active);
 }
 </style>

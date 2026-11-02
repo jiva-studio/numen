@@ -68,7 +68,7 @@ const { frame, isMoving } = usePlexTransition(
     placement: props.placement,
     measure: measures.value?.node,
     measureLabel: measures.value?.label,
-    labelDepth: measures.value?.labelDepth,
+    labelType: measures.value?.labelType,
   }),
   {
     duration: () => props.duration,
@@ -140,7 +140,7 @@ const overflow = computed(() =>
 )
 
 const frameStyle = computed(() => ({
-  '--numen-plex-move': `${props.duration}ms`,
+  '--plex-move': `${props.duration}ms`,
 }))
 
 defineExpose({

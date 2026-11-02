@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -78,19 +79,27 @@ func (v *ytDLP) readInfo(ctx context.Context, pos string) ([]byte, error) {
 		return nil, err
 	}
 
-	if tempFile, err := os.CreateTemp("", "numen-info-*.json"); err == nil {
-		if _, writeErr := tempFile.Write(output); writeErr == nil {
-			_ = tempFile.Close()
-			v.infoMu.Lock()
-			v.infoCache[pos] = tempFile.Name()
-			v.infoMu.Unlock()
-		} else {
-			_ = tempFile.Close()
-			_ = os.Remove(tempFile.Name())
-		}
+	if err := v.cacheInfo(pos, output); err != nil {
+		fmt.Fprintf(os.Stderr, "tools-media-importer: keep the info of %s: %v\n", pos, err)
 	}
 
 	return output, nil
+}
+
+// cacheInfo writes the output of the probe of pos to a file. Later runs of getTarget load that file.
+func (v *ytDLP) cacheInfo(pos string, output []byte) error {
+	tempFile, err := os.CreateTemp("", "numen-info-*.json")
+	if err != nil {
+		return err
+	}
+	_, writeErr := tempFile.Write(output)
+	if err := errors.Join(writeErr, tempFile.Close()); err != nil {
+		return errors.Join(err, os.Remove(tempFile.Name()))
+	}
+	v.infoMu.Lock()
+	v.infoCache[pos] = tempFile.Name()
+	v.infoMu.Unlock()
+	return nil
 }
 
 func (v *ytDLP) getTarget(pos string) []string {
@@ -159,7 +168,7 @@ func (v *ytDLP) GetText(ctx context.Context, target string, want PreferredCaptio
 	}, nil
 }
 
-func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]Cue, error) {
+func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) (cues []Cue, err error) {
 	if language == "" {
 		return nil, ErrNothingDownloaded
 	}
@@ -167,7 +176,7 @@ func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]C
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = os.RemoveAll(into) }()
+	defer func() { err = errors.Join(err, os.RemoveAll(into)) }()
 
 	arguments := append([]string{
 		"--skip-download", "--write-subs", "--write-auto-subs",
@@ -185,7 +194,7 @@ func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]C
 	if err != nil {
 		return nil, err
 	}
-	cues, err := parseCues(raw)
+	cues, err = parseCues(raw)
 	if err != nil {
 		return nil, err
 	}
@@ -198,12 +207,12 @@ func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]C
 const copyFormat = "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/" +
 	"best[vcodec!=none][acodec!=none]/bestvideo*+bestaudio/best"
 
-func (v *ytDLP) Download(ctx context.Context, target string, into io.Writer) (Copy, error) {
+func (v *ytDLP) Download(ctx context.Context, target string, into io.Writer) (result Copy, err error) {
 	folder, err := os.MkdirTemp("", "numen-copy-")
 	if err != nil {
 		return Copy{}, err
 	}
-	defer os.RemoveAll(folder)
+	defer func() { err = errors.Join(err, os.RemoveAll(folder)) }()
 
 	arguments := []string{
 		"-f", copyFormat, "--merge-output-format", "mp4", "--no-playlist",
@@ -236,7 +245,7 @@ func (v *ytDLP) Download(ctx context.Context, target string, into io.Writer) (Co
 	if err != nil {
 		return Copy{}, err
 	}
-	defer copied.Close()
+	defer func() { err = errors.Join(err, copied.Close()) }()
 	if _, err := io.Copy(into, copied); err != nil {
 		return Copy{}, err
 	}
@@ -247,31 +256,45 @@ func (v *ytDLP) Download(ctx context.Context, target string, into io.Writer) (Co
 // mediaTypeMP4Audio is the media type of the audio containers of MPEG-4.
 const mediaTypeMP4Audio = "audio/mp4"
 
-var mediaTypes = map[string]string{
-	".aac":  "audio/aac",
-	".aif":  "audio/aiff",
-	".aiff": "audio/aiff",
-	".alac": "audio/alac",
-	".flac": "audio/flac",
-	".m4a":  mediaTypeMP4Audio,
-	".m4b":  mediaTypeMP4Audio,
-	".m4p":  mediaTypeMP4Audio,
-	".mp3":  "audio/mpeg",
-	".mp4":  "video/mp4",
-	".oga":  "audio/ogg",
-	".ogg":  "audio/ogg",
-	".opus": "audio/opus",
-	".wav":  "audio/wav",
-	".weba": "audio/webm",
-	".webm": "video/webm",
-}
-
 func getMediaType(name string) string {
-	ext := strings.ToLower(filepath.Ext(name))
-	if mt, ok := mediaTypes[ext]; ok {
-		return mt
+	extension := strings.ToLower(filepath.Ext(name))
+	if mediaType := getAudioMediaType(extension); mediaType != "" {
+		return mediaType
+	}
+	switch extension {
+	case ".mp4":
+		return "video/mp4"
+	case ".webm":
+		return "video/webm"
 	}
 	return "application/octet-stream"
+}
+
+// getAudioMediaType is the media type of an audio extension, empty for any other.
+func getAudioMediaType(extension string) string {
+	switch extension {
+	case ".aac":
+		return "audio/aac"
+	case ".aif", ".aiff":
+		return "audio/aiff"
+	case ".alac":
+		return "audio/alac"
+	case ".flac":
+		return "audio/flac"
+	case ".m4a", ".m4b", ".m4p":
+		return mediaTypeMP4Audio
+	case ".mp3":
+		return "audio/mpeg"
+	case ".oga", ".ogg":
+		return "audio/ogg"
+	case ".opus":
+		return "audio/opus"
+	case ".wav":
+		return "audio/wav"
+	case ".weba":
+		return "audio/webm"
+	}
+	return ""
 }
 
 func chooseLanguage(meta Metadata, languages []string, automatic bool) string {
@@ -299,18 +322,14 @@ func matchLanguage(language string) func(string) bool {
 
 func isOriginalTrack(track string) bool { return strings.HasSuffix(track, "-orig") }
 
-var videoSites = map[string]bool{
-	"youtube.com":          true,
-	"m.youtube.com":        true,
-	"music.youtube.com":    true,
-	"youtube-nocookie.com": true,
-	"youtu.be":             true,
-}
-
 func isVideoSite(pos string) bool {
 	address, err := url.Parse(pos)
 	if err != nil {
 		return false
 	}
-	return videoSites[strings.TrimPrefix(address.Hostname(), "www.")]
+	switch strings.TrimPrefix(address.Hostname(), "www.") {
+	case "youtube.com", "m.youtube.com", "music.youtube.com", "youtube-nocookie.com", "youtu.be":
+		return true
+	}
+	return false
 }

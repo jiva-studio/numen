@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/playbackport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -32,7 +33,9 @@ func (host) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) {
 	switch id {
 	case "org.example.links":
 		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{
-			ID: id, Playback: &pluginport.PluginPlayback{NoteTypes: []string{"link"}},
+			ID: id, Contributes: pluginport.PluginContributes{Handles: []pluginport.PluginHandle{
+				{Purpose: pluginport.HandlePlaybackCopy, NoteTypes: []string{"link"}},
+			}},
 		}}, true
 	case "org.example.other":
 		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id}}, true
@@ -41,15 +44,17 @@ func (host) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) {
 }
 
 // contentTypes are the types the host gives the names of the tests.
-var contentTypes = map[string]domain.ContentType{
-	".md":   "text/markdown",
-	".mp3":  "audio/mpeg",
-	".mp4":  "video/mp4",
-	".json": "application/json",
+func getContentTypes() map[string]domain.ContentType {
+	return map[string]domain.ContentType{
+		".md":   "text/markdown",
+		".mp3":  "audio/mpeg",
+		".mp4":  "video/mp4",
+		".json": "application/json",
+	}
 }
 
 func (host) GetContentType(name string) domain.ContentType {
-	if found, ok := contentTypes[strings.ToLower(path.Ext(name))]; ok {
+	if found, ok := getContentTypes()[strings.ToLower(path.Ext(name))]; ok {
 		return found
 	}
 	return domain.UnknownContentType
@@ -151,7 +156,7 @@ func TestTheCopyIsTheFileNamedByTheHashInAContainerThatPlays(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer found.Body.Close()
+	defer testsupport.Close(t, found.Body)
 	body, err := io.ReadAll(found.Body)
 	if err != nil {
 		t.Fatal(err)

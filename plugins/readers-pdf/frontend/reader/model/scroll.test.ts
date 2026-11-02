@@ -47,15 +47,28 @@ describe('a row sent somewhere', () => {
     expect(scroll.along.value).toBe(100)
   })
 
-  it('stays where it is when it is within a pixel of the place', () => {
+  it('is sent at once when it is within a pixel of the place', () => {
     const { scroll, scrollTo } = createScroll(10)
 
     scroll.send(11, 'smooth')
     scroll.send(9, 'smooth')
     scroll.send(10, 'smooth')
 
-    expect(scrollTo).not.toHaveBeenCalled()
+    expect(scrollTo).toHaveBeenCalledTimes(3)
+    expect(scrollTo).toHaveBeenLastCalledWith({ left: 10, behavior: 'auto' })
     expect(scroll.getScrollOffset()).toBe(10)
+  })
+
+  it('replaces a travel in flight when it is sent to the place it is at', () => {
+    const { scroll, scrollTo, element } = createScroll(100)
+
+    scroll.send(500, 'smooth')
+    element.scrollLeft = 100.5
+    scroll.send(100, 'smooth')
+
+    expect(scrollTo).toHaveBeenCalledTimes(2)
+    expect(scrollTo).toHaveBeenLastCalledWith({ left: 100, behavior: 'auto' })
+    expect(scroll.getScrollOffset()).toBe(100.5)
   })
 
   it('moves when the place is two pixels away', () => {
@@ -355,5 +368,38 @@ describe('a wheel turned over the row', () => {
 
     expect(() => scroll.onWheel(event)).not.toThrow()
     expect(preventDefault).not.toHaveBeenCalled()
+  })
+})
+
+describe('a row the browser scrolled back to its start', () => {
+  it('is put back where it was last scrolled to', () => {
+    const { scroll, element } = createScroll(0)
+    element.scrollLeft = 480
+    scroll.isStill()
+    element.scrollLeft = 0
+
+    scroll.restore()
+
+    expect(element.scrollLeft).toBe(480)
+  })
+
+  it('is left alone while it travels to a page', () => {
+    const { scroll, element } = createScroll(0)
+
+    scroll.send(900, 'smooth')
+    scroll.restore()
+
+    expect(element.scrollLeft).toBe(0)
+  })
+
+  it('is left alone when it is where it was', () => {
+    const { scroll, element } = createScroll(0)
+    element.scrollLeft = 300
+    scroll.isStill()
+    element.scrollLeft = 300.5
+
+    scroll.restore()
+
+    expect(element.scrollLeft).toBe(300.5)
   })
 })

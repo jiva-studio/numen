@@ -57,7 +57,7 @@ func TestARenamedFileCallsTheNoteByTheNameItNowCarries(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !moved.IsLanded {
+			if !moved.IsMoved {
 				t.Fatal("the file did not move")
 			}
 			body := f.read(t, "Disorder.md")
@@ -179,7 +179,7 @@ func TestARenamedFilePreservesANoteCarryingNoTitleAlone(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the rename failed: %v", err)
 	}
-	if !moved.IsLanded {
+	if !moved.IsMoved {
 		t.Error("the file is at Note #.md and the answer says it did not move")
 	}
 	if got := f.read(t, "Note #.md"); got != raw {
@@ -212,7 +212,7 @@ func TestMoveFile_PreservesNoteWithUnreadableFrontmatter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the rename failed: %v", err)
 	}
-	if !moved.IsLanded {
+	if !moved.IsMoved {
 		t.Fatal("the file did not move")
 	}
 	if got := f.read(t, "Disorder.md"); got != raw {
@@ -264,7 +264,7 @@ func TestRenamingAFileTheIndexContainsNothingAbout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !moved.IsLanded {
+	if !moved.IsMoved {
 		t.Fatal("the file did not move")
 	}
 	if got := f.read(t, "other.txt"); got != "A measure.\n" {
@@ -283,7 +283,7 @@ func TestARenameOntoATakenNamePreservesTheNoteCalledWhatItWas(t *testing.T) {
 	if !errors.Is(err, vaultport.ErrAlreadyExists) {
 		t.Fatalf("want ErrAlreadyExists, got %v", err)
 	}
-	if moved.IsLanded {
+	if moved.IsMoved {
 		t.Error("the move says it landed")
 	}
 	if got := f.read(t, "Entropy.md"); got != raw {

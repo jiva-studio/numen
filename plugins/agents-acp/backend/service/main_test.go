@@ -1,10 +1,7 @@
 package service
 
 import (
-	"context"
 	"testing"
-
-	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
@@ -13,20 +10,20 @@ func TestLifecycleServer(t *testing.T) {
 	ch := make(chan struct{})
 	srv := server.NewLifecycleServer(ch)
 
-	ctx := context.Background()
-	pingResp, err := srv.Ping(ctx, connect.NewRequest(&server.PingRequest{}))
+	ctx := t.Context()
+	status, err := srv.CheckStatus(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if pingResp.Msg.GetStatus() != "ok" {
-		t.Errorf("expected ok, got %s", pingResp.Msg.GetStatus())
+	if status != "ok" {
+		t.Errorf("expected ok, got %s", status)
 	}
 
-	shutResp, err := srv.Shutdown(ctx, connect.NewRequest(&server.ShutdownRequest{}))
+	isShutdown, err := srv.RequestShutdown(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !shutResp.Msg.GetSuccess() {
+	if !isShutdown {
 		t.Error("expected shutdown success")
 	}
 }

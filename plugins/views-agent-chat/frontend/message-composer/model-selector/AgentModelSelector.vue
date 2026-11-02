@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { measureRect } from '../../dom'
 /* --------------------------------- Props ---------------------------------- */
 import { computed, ref, useTemplateRef } from 'vue'
-import { Menu, type MenuItem } from '@numen/ui'
+import { SearchableListPopup, type ListItem, measureRect } from '@numen/ui'
 import type { Position } from '@numen/ui'
 import type { ReasoningLevelOption } from '../reasoning-selector/ReasoningSelector.vue'
 
@@ -44,11 +43,6 @@ const isOpen = ref(false)
 const trigger = useTemplateRef<HTMLButtonElement>('trigger')
 const menuPosition = ref<Position>({ x: 0, y: 0 })
 
-/** From this many options on, the list carries a line to search it by. */
-const SEARCH_FROM = 8
-
-const isSearchable = computed(() => props.options.length >= SEARCH_FROM)
-
 const currentKey = computed(() => `${props.selectedAgentId}:${props.selectedModelId}`)
 
 const currentOption = computed(() => {
@@ -65,12 +59,11 @@ const label = computed(() => {
   return `${active.agentTitle} · ${active.modelTitle}`
 })
 
-const menuItems = computed<MenuItem[]>(() =>
+const menuItems = computed<ListItem[]>(() =>
   props.options.map((one) => ({
     id: `${one.agentId}:${one.modelId}`,
     text: one.modelTitle,
     group: one.agentTitle,
-    isDisabled: false,
   })),
 )
 
@@ -122,18 +115,18 @@ function onDismiss() {
       </svg>
     </button>
 
-    <Menu
-      :is-open="isOpen"
+    <SearchableListPopup
+      v-if="isOpen"
       :items="menuItems"
       :at="menuPosition"
-      :current="currentKey"
+      :model-value="currentKey"
       :from="trigger"
-      has-groups
-      :is-searchable="isSearchable"
-      search-name="Search models"
-      name="Model"
-      @choose="onChoose"
-      @dismiss="onDismiss"
+      label="Model"
+      placeholder="Search models"
+      empty-text="No models found"
+      :max-rows="12"
+      @select="onChoose"
+      @close="onDismiss"
     />
   </div>
 </template>

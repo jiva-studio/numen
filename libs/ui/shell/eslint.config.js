@@ -87,15 +87,7 @@ export default tseslint.config(
   // Anything with a lifetime a test must hold still is a port.
   {
     files: ['src/**/*.ts'],
-    ignores: [
-      'src/**/*.test.ts',
-      'src/**/*.stories.ts',
-      'src/**/fixtures/**',
-      // The one function that turns an element into the rectangle the pure
-      // core reasons about.
-      'src/features/workspace/lib/drop.ts',
-      'src/shared/lib/dom.ts',
-    ],
+    ignores: ['src/**/*.test.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**'],
     rules: {
       'no-restricted-globals': [
         'error',

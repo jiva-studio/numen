@@ -19,11 +19,13 @@ func NewMock() *Downloader {
 // mockSeconds is how long the clip runs.
 const mockSeconds = 3
 
-// mockCues are the captions the clip is published with.
-var mockCues = []Cue{
-	{Text: "The tide comes in twice a day.", From: 0, To: 1000},
-	{Text: "The mill pond fills behind the gate.", From: 1000, To: 2000},
-	{Text: "On the ebb the wheel turns.", From: 2000, To: 3000},
+// getMockCues returns the captions the clip is published with.
+func getMockCues() []Cue {
+	return []Cue{
+		{Text: "The tide comes in twice a day.", From: 0, To: 1000},
+		{Text: "The mill pond fills behind the gate.", From: 1000, To: 2000},
+		{Text: "On the ebb the wheel turns.", From: 2000, To: 3000},
+	}
 }
 
 func (mockVideo) CanHandle(address string) bool { return isVideoSite(address) }
@@ -42,7 +44,7 @@ func (mockVideo) GetMetadata(context.Context, string) (Metadata, error) {
 func (mockVideo) GetText(context.Context, string, PreferredCaptions) (Text, error) {
 	return Text{
 		Producer: producerCaptions, Title: "Tidal mill at work", Length: mockSeconds * 1000,
-		Cues: append([]Cue(nil), mockCues...), Prose: "",
+		Cues: getMockCues(), Prose: "",
 	}, nil
 }
 

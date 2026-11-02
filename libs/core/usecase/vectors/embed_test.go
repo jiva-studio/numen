@@ -2,8 +2,13 @@ package vectors
 
 import (
 	"context"
+	"errors"
+	"reflect"
+	"slices"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -34,9 +39,9 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
 	shelf.hold(bookPath, domain.KindFile,
-		bookOf(t, "A Long Book", words(sanskrit, 4500), words(sanskrit, 4500)), 1)
+		bookOf(t, "A Long Book", words(getSanskrit(), 4500), words(getSanskrit(), 4500)), 1)
 
-	small := cutBooks(t, index, shelf, first)
+	small := cutBooks(t, index, shelf, getFirst())
 	if len(small) <= chunksPerQuery {
 		t.Fatalf("%d chunks need a vector, which one question answers with: the run would never resume", len(small))
 	}
@@ -44,10 +49,10 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 	stopCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	interrupted := &interruptedStore{store: index, cancel: cancel, after: 2}
-	embed := newEmbed(vaults{first.ID: shelf}, index, interrupted)
+	embed := newEmbed(vaults{getFirst().ID: shelf}, index, interrupted)
 	embed.Embedder = &embedder{dims: dimensions}
 	embed.BatchCharacters = 4000
-	if _, err := embed.Execute(stopCtx, first); err == nil {
+	if _, err := embed.Execute(stopCtx, getFirst()); err == nil {
 		t.Fatal("a cancelled context did not stop the run")
 	}
 
@@ -64,7 +69,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 	}
 
 	embed.vectors = index
-	res, err := embed.Execute(ctx, first)
+	res, err := embed.Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +93,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 	}
 
 	// No chunk needs a vector, so a third run does no work.
-	third, err := embed.Execute(ctx, first)
+	third, err := embed.Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,16 +105,16 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 func TestBothRepresentationsOfAVectorAreSavedTogether(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
-	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 400), words(sanskrit, 400)), 1)
-	small := cutBooks(t, index, shelf, first)
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(getSanskrit(), 400), words(getSanskrit(), 400)), 1)
+	small := cutBooks(t, index, shelf, getFirst())
 
 	var progress []EmbedResult
 	model := &embedder{dims: dimensions}
-	emb := newEmbed(vaults{first.ID: shelf}, index, index)
+	emb := newEmbed(vaults{getFirst().ID: shelf}, index, index)
 	emb.Embedder = model
 	emb.BatchCharacters = 2000
 	emb.OnProgress = func(r EmbedResult) { progress = append(progress, r) }
-	res, err := emb.Execute(ctx, first)
+	res, err := emb.Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,14 +158,14 @@ func TestBothRepresentationsOfAVectorAreSavedTogether(t *testing.T) {
 func TestWithNoEmbedderTheTextIsSplitAndNothingFails(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
-	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 400)), 1)
-	small := cutBooks(t, index, shelf, first)
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(getSanskrit(), 400)), 1)
+	small := cutBooks(t, index, shelf, getFirst())
 
-	res, err := (newEmbed(vaults{first.ID: shelf}, index, index)).Execute(ctx, first)
+	res, err := (newEmbed(vaults{getFirst().ID: shelf}, index, index)).Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatalf("a vault with no embedder is not an error: %v", err)
 	}
-	if res != (EmbedResult{}) {
+	if !reflect.DeepEqual(res, EmbedResult{}) {
 		t.Errorf("the run reports %+v, want nothing done", res)
 	}
 	if len(index.vectors) != 0 || len(index.groups) != 0 {
@@ -204,7 +209,7 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 		{
 			name: "the file holds another text now, and the version the chunks were cut from is gone",
 			replace: func(t *testing.T, shelf *library) {
-				shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 20)), 2)
+				shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(getSanskrit(), 20)), 2)
 			},
 			want: func(t *testing.T, res EmbedResult, unembedded int) {
 				if res.Vanished != unembedded || res.Embedded != 0 {
@@ -217,13 +222,13 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			ctx := t.Context()
 			index, shelf := newStore(), newLibrary()
-			shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 400)), 1)
-			small := cutBooks(t, index, shelf, first)
+			shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(getSanskrit(), 400)), 1)
+			small := cutBooks(t, index, shelf, getFirst())
 			c.replace(t, shelf)
 
-			emb := newEmbed(vaults{first.ID: shelf}, index, index)
+			emb := newEmbed(vaults{getFirst().ID: shelf}, index, index)
 			emb.Embedder = &embedder{dims: dimensions}
-			res, err := emb.Execute(ctx, first)
+			res, err := emb.Execute(ctx, getFirst())
 			if err != nil {
 				t.Fatalf("a source that moved on is not an error: %v", err)
 			}
@@ -241,26 +246,26 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 	ctx := t.Context()
 	index := newStore()
-	shelves := vaults{first.ID: newLibrary(), second.ID: newLibrary()}
-	shelves[first.ID].hold("library/sanskrit.epub", domain.KindFile,
-		bookOf(t, "Sanskrit", words(sanskrit, 400)), 1)
-	shelves[second.ID].hold("library/latin.epub", domain.KindFile,
-		bookOf(t, "Latin", words(latin, 400)), 1)
+	shelves := vaults{getFirst().ID: newLibrary(), getSecond().ID: newLibrary()}
+	shelves[getFirst().ID].hold("library/sanskrit.epub", domain.KindFile,
+		bookOf(t, "Sanskrit", words(getSanskrit(), 400)), 1)
+	shelves[getSecond().ID].hold("library/latin.epub", domain.KindFile,
+		bookOf(t, "Latin", words(getLatin(), 400)), 1)
 
 	extract := newExtract(shelves, index, index)
-	for _, v := range []domain.Vault{first, second} {
+	for _, v := range []domain.Vault{getFirst(), getSecond()} {
 		if _, err := extract.Execute(ctx, v); err != nil {
 			t.Fatal(err)
 		}
 	}
-	mine, theirs := index.small(first.ID), index.small(second.ID)
+	mine, theirs := index.small(getFirst().ID), index.small(getSecond().ID)
 	if len(mine) == 0 || len(theirs) == 0 {
 		t.Fatal("both vaults have to hold chunks for this to say anything")
 	}
 
 	embed := newEmbed(shelves, index, index)
 	embed.Embedder = &embedder{dims: dimensions}
-	if _, err := embed.Execute(ctx, first); err != nil {
+	if _, err := embed.Execute(ctx, getFirst()); err != nil {
 		t.Fatal(err)
 	}
 	for _, chunk := range mine {
@@ -274,7 +279,7 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 		}
 	}
 
-	if _, err := embed.Execute(ctx, second); err != nil {
+	if _, err := embed.Execute(ctx, getSecond()); err != nil {
 		t.Fatal(err)
 	}
 	for _, chunk := range append(append([]storedChunk{}, mine...), theirs...) {
@@ -288,18 +293,18 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 func TestEmbeddingWhileAnotherProcessClaimsVaultReportsBusy(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
-	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 400)), 1)
-	small := cutBooks(t, index, shelf, first)
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(getSanskrit(), 400)), 1)
+	small := cutBooks(t, index, shelf, getFirst())
 
 	claim := &fakeClaim{isIndexed: true}
 
 	model := &embedder{dims: dimensions}
-	embed := newEmbed(vaults{first.ID: shelf}, index, index)
+	embed := newEmbed(vaults{getFirst().ID: shelf}, index, index)
 	embed.Claim = claim
 	embed.Embedder = model
 	embed.BatchCharacters = 4000
 
-	res, err := embed.Execute(ctx, first)
+	res, err := embed.Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatalf("a claimed vault is not an error: %v", err)
 	}
@@ -314,8 +319,10 @@ func TestEmbeddingWhileAnotherProcessClaimsVaultReportsBusy(t *testing.T) {
 	}
 
 	// Once released, embedding proceeds and completes.
-	_ = claim.release()
-	secondRes, err := embed.Execute(ctx, first)
+	if err := claim.release(); err != nil {
+		t.Fatal(err)
+	}
+	secondRes, err := embed.Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -330,19 +337,19 @@ func TestEmbeddingWhileAnotherProcessClaimsVaultReportsBusy(t *testing.T) {
 func TestPipelineConcurrentBatchesWithProgress(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
-	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 1200), words(sanskrit, 1200)), 1)
-	small := cutBooks(t, index, shelf, first)
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(getSanskrit(), 1200), words(getSanskrit(), 1200)), 1)
+	small := cutBooks(t, index, shelf, getFirst())
 
 	var progressReports []EmbedResult
 	model := &embedder{dims: dimensions}
-	embed := newEmbed(vaults{first.ID: shelf}, index, index)
+	embed := newEmbed(vaults{getFirst().ID: shelf}, index, index)
 	embed.Embedder = model
 	embed.BatchCharacters = 1000
 	embed.OnProgress = func(r EmbedResult) {
 		progressReports = append(progressReports, r)
 	}
 
-	res, err := embed.Execute(ctx, first)
+	res, err := embed.Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -363,16 +370,16 @@ func TestPipelineConcurrentBatchesWithProgress(t *testing.T) {
 func TestDuplicateChunksInBatchAreDeduplicated(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
-	repeatedSection := words(sanskrit, 200)
+	repeatedSection := words(getSanskrit(), 200)
 	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", repeatedSection, repeatedSection, repeatedSection), 1)
-	small := cutBooks(t, index, shelf, first)
+	small := cutBooks(t, index, shelf, getFirst())
 
 	model := &embedder{dims: dimensions}
-	embed := newEmbed(vaults{first.ID: shelf}, index, index)
+	embed := newEmbed(vaults{getFirst().ID: shelf}, index, index)
 	embed.Embedder = model
 	embed.BatchCharacters = 50000
 
-	res, err := embed.Execute(ctx, first)
+	res, err := embed.Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -410,19 +417,19 @@ func TestDuplicateChunksInBatchAreDeduplicated(t *testing.T) {
 func TestEmbeddingPrioritizesRecentlyModifiedSources(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
-	shelf.hold("library/old.epub", domain.KindFile, bookOf(t, "Old Book", words(sanskrit, 400)), 100)
-	shelf.hold("library/recent.epub", domain.KindFile, bookOf(t, "Recent Book", words(latin, 400)), 200)
+	shelf.hold("library/old.epub", domain.KindFile, bookOf(t, "Old Book", words(getSanskrit(), 400)), 100)
+	shelf.hold("library/recent.epub", domain.KindFile, bookOf(t, "Recent Book", words(getLatin(), 400)), 200)
 
-	extract := newExtract(vaults{first.ID: shelf}, index, index)
-	if _, err := extract.Execute(ctx, first); err != nil {
+	extract := newExtract(vaults{getFirst().ID: shelf}, index, index)
+	if _, err := extract.Execute(ctx, getFirst()); err != nil {
 		t.Fatal(err)
 	}
 
 	model := &embedder{dims: dimensions}
-	embed := newEmbed(vaults{first.ID: shelf}, index, index)
+	embed := newEmbed(vaults{getFirst().ID: shelf}, index, index)
 	embed.Embedder = model
 	embed.BatchCharacters = 4000
-	if _, err := embed.Execute(ctx, first); err != nil {
+	if _, err := embed.Execute(ctx, getFirst()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -445,20 +452,20 @@ func TestEmbeddingPrioritizesRecentlyModifiedSources(t *testing.T) {
 func TestEmbeddingWithConcurrentWorkers(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
-	shelf.hold(bookPath, domain.KindFile, bookOf(t, "Concurrent Test Book", words(sanskrit, 1000), words(latin, 1000)), 1)
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "Concurrent Test Book", words(getSanskrit(), 1000), words(getLatin(), 1000)), 1)
 
-	small := cutBooks(t, index, shelf, first)
+	small := cutBooks(t, index, shelf, getFirst())
 	if len(small) == 0 {
 		t.Fatal("no chunks created")
 	}
 
 	model := &embedder{dims: dimensions}
-	embed := newEmbed(vaults{first.ID: shelf}, index, index)
+	embed := newEmbed(vaults{getFirst().ID: shelf}, index, index)
 	embed.Embedder = model
 	embed.BatchCharacters = 200
 	embed.Concurrency = 3
 
-	res, err := embed.Execute(ctx, first)
+	res, err := embed.Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatalf("concurrent execution failed: %v", err)
 	}
@@ -468,5 +475,144 @@ func TestEmbeddingWithConcurrentWorkers(t *testing.T) {
 	}
 	if len(index.vectors) != len(small) {
 		t.Fatalf("stored %d vectors, want %d", len(index.vectors), len(small))
+	}
+}
+
+// holdingEmbedder embeds every text except those of a source it is told to
+// hold: a call with one blocks until its context ends.
+type holdingEmbedder struct {
+	*embedder
+	holds   func(text string) bool
+	started chan struct{}
+}
+
+func (h *holdingEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+	if slices.ContainsFunc(texts, h.holds) {
+		select {
+		case h.started <- struct{}{}:
+		default:
+		}
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
+	return h.embedder.Embed(ctx, texts)
+}
+
+// progressLog keeps the progress reports of a run, newest last.
+type progressLog struct {
+	mu      sync.Mutex
+	reports []EmbedResult
+}
+
+func (l *progressLog) add(r EmbedResult) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.reports = append(l.reports, r)
+}
+
+func (l *progressLog) getLast() EmbedResult {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if len(l.reports) == 0 {
+		return EmbedResult{}
+	}
+	return l.reports[len(l.reports)-1]
+}
+
+// While the second of three sources is embedding, the report names that source:
+// the first has finished, and the third is only read ahead.
+func TestProgressNamesTheSourceBeingEmbedded(t *testing.T) {
+	first := getFirst()
+	const (
+		pathA = "library/a.epub"
+		pathB = "library/b.epub"
+		pathC = "library/c.epub"
+	)
+	third := []string{"harbour", "quay", "mast", "keel", "rope", "sail", "buoy", "tide"}
+	index, shelf := newStore(), newLibrary()
+	shelf.hold(pathA, domain.KindFile, bookOf(t, "A", words(getLatin(), 300)), 300)
+	shelf.hold(pathB, domain.KindFile, bookOf(t, "B", words(getSanskrit(), 300)), 200)
+	shelf.hold(pathC, domain.KindFile, bookOf(t, "C", words(third, 300)), 100)
+	cutBooks(t, index, shelf, first)
+
+	aChunks := 0
+	for _, chunk := range index.small(first.ID) {
+		if chunk.path == pathA {
+			aChunks++
+		}
+	}
+	isB := func(text string) bool { return strings.Contains(text, getSanskrit()[0]) }
+	model := &holdingEmbedder{
+		embedder: &embedder{dims: dimensions}, holds: isB, started: make(chan struct{}, 1),
+	}
+	var log progressLog
+	embed := newEmbed(vaults{first.ID: shelf}, index, index)
+	embed.Embedder = model
+	embed.BatchCharacters = 1
+	embed.OnProgress = log.add
+
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	ended := make(chan error, 1)
+	go func() {
+		_, err := embed.Execute(ctx, first)
+		ended <- err
+	}()
+
+	select {
+	case <-model.started:
+	case <-time.After(10 * time.Second):
+		t.Fatal("the run never reached the second source")
+	}
+	for range 2000 {
+		if log.getLast().Embedded >= aChunks {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	if got := log.getLast().Embedded; got != aChunks {
+		t.Fatalf("%d chunks of the first source are stored, want %d", got, aChunks)
+	}
+
+	last := log.getLast()
+	if last.CurrentSource != pathB {
+		t.Errorf("the report names %q while %q is embedding", last.CurrentSource, pathB)
+	}
+	if !slices.Equal(last.Active, []string{pathB}) {
+		t.Errorf("the report lists %v as in flight, want only %q", last.Active, pathB)
+	}
+	cancel()
+	if err := <-ended; !errors.Is(err, context.Canceled) {
+		t.Errorf("the run ended with %v, want context.Canceled", err)
+	}
+}
+
+// queryAware tells a query from a document and counts the queries it was asked for.
+type queryAware struct {
+	*embedder
+	queries int
+}
+
+func (q *queryAware) EmbedQueries(ctx context.Context, texts []string) ([][]float32, error) {
+	q.queries += len(texts)
+	return q.Embed(ctx, texts)
+}
+
+func TestEmbeddingTheChunksOfAVaultMakesDocumentVectors(t *testing.T) {
+	index, shelf := newStore(), newLibrary()
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(getSanskrit(), 400)), 1)
+	cutBooks(t, index, shelf, getFirst())
+
+	embed := newEmbed(vaults{getFirst().ID: shelf}, index, index)
+	aware := &queryAware{embedder: &embedder{dims: dimensions}}
+	embed.Embedder = aware
+	if _, err := embed.Execute(t.Context(), getFirst()); err != nil {
+		t.Fatal(err)
+	}
+	if aware.calls == 0 {
+		t.Fatal("nothing was embedded")
+	}
+	if aware.queries != 0 {
+		t.Errorf("%d chunks were embedded as queries, want every chunk embedded as a document", aware.queries)
 	}
 }

@@ -4,7 +4,7 @@
 // 	protoc        (unknown)
 // source: numen/v1/theme.proto
 
-// What a client may ask about how the window is drawn: the themes it can wear,
+// What a client may ask about how the window is drawn: the themes it can apply,
 // and how large it and the text in it are.
 //
 // A theme is one stylesheet that redeclares the tokens the interface draws
@@ -39,6 +39,8 @@ const (
 	Origin_ORIGIN_PRESET Origin = 1
 	// A `.css` file in the person's themes folder.
 	Origin_ORIGIN_MINE Origin = 2
+	// A theme an enabled plugin contributes.
+	Origin_ORIGIN_PLUGIN Origin = 3
 )
 
 // Enum value maps for Origin.
@@ -47,11 +49,13 @@ var (
 		0: "ORIGIN_UNSPECIFIED",
 		1: "ORIGIN_PRESET",
 		2: "ORIGIN_MINE",
+		3: "ORIGIN_PLUGIN",
 	}
 	Origin_value = map[string]int32{
 		"ORIGIN_UNSPECIFIED": 0,
 		"ORIGIN_PRESET":      1,
 		"ORIGIN_MINE":        2,
+		"ORIGIN_PLUGIN":      3,
 	}
 )
 
@@ -142,8 +146,9 @@ func (Mode) EnumDescriptor() ([]byte, []int) {
 // name here.
 type Theme struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Name is the origin and the filename, `preset:dracula` or `mine:dracula`,
-	// and it is how the theme is asked for again.
+	// Name is the origin and the identifier, `preset:numen`, `mine:dracula` or
+	// `plugin:md.numen.themes.presets/dracula`, and it is how the theme is asked
+	// for again.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Title is what the file is called, without the origin.
 	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
@@ -152,7 +157,12 @@ type Theme struct {
 	Origin Origin `protobuf:"varint,3,opt,name=origin,proto3,enum=numen.v1.Origin" json:"origin,omitempty"`
 	// Set for a theme that declares `color-scheme` itself. Light and dark are
 	// the theme's own, and the mode has nothing left to choose.
-	IsPinned      bool `protobuf:"varint,4,opt,name=is_pinned,json=isPinned,proto3" json:"is_pinned,omitempty"`
+	IsPinned bool `protobuf:"varint,4,opt,name=is_pinned,json=isPinned,proto3" json:"is_pinned,omitempty"`
+	// The plugin that contributes the theme. Empty for the other origins.
+	PluginId string `protobuf:"bytes,5,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	// The color scheme a plugin theme declares: `light`, `dark`, or empty for a
+	// theme that follows the mode. Empty for the other origins.
+	Appearance    string `protobuf:"bytes,6,opt,name=appearance,proto3" json:"appearance,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -213,6 +223,20 @@ func (x *Theme) GetIsPinned() bool {
 		return x.IsPinned
 	}
 	return false
+}
+
+func (x *Theme) GetPluginId() string {
+	if x != nil {
+		return x.PluginId
+	}
+	return ""
+}
+
+func (x *Theme) GetAppearance() string {
+	if x != nil {
+		return x.Appearance
+	}
+	return ""
 }
 
 type ListThemesRequest struct {
@@ -645,12 +669,16 @@ var File_numen_v1_theme_proto protoreflect.FileDescriptor
 
 const file_numen_v1_theme_proto_rawDesc = "" +
 	"\n" +
-	"\x14numen/v1/theme.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"x\n" +
+	"\x14numen/v1/theme.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\xb5\x01\n" +
 	"\x05Theme\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12(\n" +
 	"\x06origin\x18\x03 \x01(\x0e2\x10.numen.v1.OriginR\x06origin\x12\x1b\n" +
-	"\tis_pinned\x18\x04 \x01(\bR\bisPinned\"\x13\n" +
+	"\tis_pinned\x18\x04 \x01(\bR\bisPinned\x12\x1b\n" +
+	"\tplugin_id\x18\x05 \x01(\tR\bpluginId\x12\x1e\n" +
+	"\n" +
+	"appearance\x18\x06 \x01(\tR\n" +
+	"appearance\"\x13\n" +
 	"\x11ListThemesRequest\"\xc9\x02\n" +
 	"\x12ListThemesResponse\x12'\n" +
 	"\x06themes\x18\x01 \x03(\v2\x0f.numen.v1.ThemeR\x06themes\x12\x18\n" +
@@ -677,11 +705,12 @@ const file_numen_v1_theme_proto_rawDesc = "" +
 	"\x05error\x18\x01 \x01(\tR\x05error\"\x14\n" +
 	"\x12WatchThemesRequest\"+\n" +
 	"\x13WatchThemesResponse\x12\x14\n" +
-	"\x05names\x18\x01 \x03(\tR\x05names*D\n" +
+	"\x05names\x18\x01 \x03(\tR\x05names*W\n" +
 	"\x06Origin\x12\x16\n" +
 	"\x12ORIGIN_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rORIGIN_PRESET\x10\x01\x12\x0f\n" +
-	"\vORIGIN_MINE\x10\x02*L\n" +
+	"\vORIGIN_MINE\x10\x02\x12\x11\n" +
+	"\rORIGIN_PLUGIN\x10\x03*L\n" +
 	"\x04Mode\x12\x14\n" +
 	"\x10MODE_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vMODE_SYSTEM\x10\x01\x12\x0e\n" +

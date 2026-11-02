@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { useBookHighlights } from './useBookHighlights'
 
 const create = (open = true) => {
-  const goToOffset = vi.fn<(offset: number) => Promise<void>>(async () => {})
+  const goToOffset = vi.fn<(offset: number) => Promise<void>>(async () => undefined)
   const highlights = useBookHighlights(goToOffset, () => open)
   return { goToOffset, highlights }
 }

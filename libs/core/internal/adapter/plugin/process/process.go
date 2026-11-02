@@ -23,18 +23,14 @@ var (
 
 // Limits defines resource bounds for out-of-process plugins.
 // CPULimitSeconds is RLIMIT_CPU, the CPU time the process may use over its whole life; zero sets none.
-// MemoryLimitBytes specifies resident memory threshold monitored by the supervisor.
 type Limits struct {
-	CPULimitSeconds  uint64
-	MemoryLimitBytes uint64
+	CPULimitSeconds uint64
 }
 
 // DefaultLimits returns standard resource limits for plugin processes. A plugin that computes
 // runs for as long as it is kept, so the defaults set no CPU limit.
 func DefaultLimits() Limits {
-	return Limits{
-		MemoryLimitBytes: 4 * 1024 * 1024 * 1024,
-	}
+	return Limits{}
 }
 
 // ValidateWorkingDirectory verifies that workDir resides within either pluginDir or vaultRoot.
@@ -75,26 +71,29 @@ func isPathWithin(base, child string) bool {
 		return false
 	}
 
-	rel, err := filepath.Rel(cleanBase, cleanChild)
-	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+	if !isRelativeInside(cleanBase, cleanChild) {
 		return false
 	}
 
 	realBase, errB := filepath.EvalSymlinks(cleanBase)
 	realChild, errC := filepath.EvalSymlinks(cleanChild)
 	if errB == nil && errC == nil {
-		relReal, errRel := filepath.Rel(realBase, realChild)
-		if errRel != nil || relReal == ".." || strings.HasPrefix(relReal, ".."+string(filepath.Separator)) {
-			return false
-		}
+		return isRelativeInside(realBase, realChild)
 	}
 	return true
+}
+
+// isRelativeInside reports whether child lies at or below base by the names alone.
+func isRelativeInside(base, child string) bool {
+	rel, err := filepath.Rel(base, child)
+	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
 }
 
 // IsWhitelistedEnv reports whether a variable of the host environment is
 // passed to a plugin process: the system's own variables, the proxy the machine
 // uses for network access, and NUMEN_MOCK_ML, which runs a plugin on its mock
-// models.
+// models, NUMEN_MOCK_OPEN_HOLD_MS, which makes the mock model slow to open, and NUMEN_MOCK_EMBED_LOG,
+// the file the mock embedding model writes the texts it is given to.
 func IsWhitelistedEnv(key string) bool {
 	upper := strings.ToUpper(strings.TrimSpace(key))
 	if upper == "" || isSecretEnv(upper) {
@@ -103,7 +102,8 @@ func IsWhitelistedEnv(key string) bool {
 	switch upper {
 	case "PATH", "TMPDIR", "TMP", "TEMP", "HOME", "USER",
 		"SYSTEMROOT", "SYSTEMDRIVE", "APPDATA", "LOCALAPPDATA",
-		"LANG", "SSL_CERT_FILE", "SSL_CERT_DIR", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "NUMEN_MOCK_ML":
+		"LANG", "SSL_CERT_FILE", "SSL_CERT_DIR", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "NUMEN_MOCK_ML",
+		"NUMEN_MOCK_OPEN_HOLD_MS", "NUMEN_MOCK_EMBED_LOG":
 		return true
 	}
 	return strings.HasPrefix(upper, "LC_")
@@ -175,6 +175,8 @@ type LaunchEnvironment struct {
 	HostPort    int
 	Token       string
 	RuntimeVars []string
+	// StorageVars name the directories the host grants the plugin.
+	StorageVars []string
 }
 
 // GetPluginVars is the environment variables the host sets for a plugin
@@ -192,6 +194,7 @@ func GetPluginVars(pluginID string, launch LaunchEnvironment) []string {
 	if launch.HostPort > 0 {
 		vars = append(vars, "NUMEN_HOST_PORT="+strconv.Itoa(launch.HostPort))
 	}
+	vars = append(vars, launch.StorageVars...)
 	return append(vars, launch.RuntimeVars...)
 }
 

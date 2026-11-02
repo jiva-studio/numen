@@ -66,14 +66,14 @@ func TestLocateModelErrorsWhenNotFound(t *testing.T) {
 func TestLocateModelPrecedence(t *testing.T) {
 	dir := t.TempDir()
 	explicit := filepath.Join(dir, "explicit.onnx")
-	_ = os.WriteFile(explicit, []byte("explicit"), 0o644)
+	writeFile(t, explicit, []byte("explicit"), 0o644)
 
 	envPath := filepath.Join(dir, "env.onnx")
-	_ = os.WriteFile(envPath, []byte("env"), 0o644)
+	writeFile(t, envPath, []byte("env"), 0o644)
 	t.Setenv("NUMEN_DEPENDENCY_PARAKEET_ENCODER", envPath)
 
 	dirPath := filepath.Join(dir, encoderFile)
-	_ = os.WriteFile(dirPath, []byte("dir"), 0o644)
+	writeFile(t, dirPath, []byte("dir"), 0o644)
 
 	// 1. Explicit beats env and dir
 	got, err := locateModel(explicit, "https://example.invalid/repo/", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, dir)
@@ -85,5 +85,13 @@ func TestLocateModelPrecedence(t *testing.T) {
 	got, err = locateModel("", "https://example.invalid/repo/", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, dir)
 	if err != nil || got != envPath {
 		t.Errorf("env precedence failed: got %s, err %v", got, err)
+	}
+}
+
+// writeFile writes content to path and fails the test when writing fails.
+func writeFile(t *testing.T, path string, content []byte, perm os.FileMode) {
+	t.Helper()
+	if err := os.WriteFile(path, content, perm); err != nil {
+		t.Fatal(err)
 	}
 }

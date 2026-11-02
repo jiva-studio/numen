@@ -1,6 +1,6 @@
 /**
  * The JSON messages the frontend exchanges with the backend of this plugin under the
- * `numen.flashcards` service.
+ * `md.numen.views.flashcards.studio` service.
  *
  * A request field is optional: a field left out is the zero value. A response field is present,
  * except a message-typed field or an optional scalar, which is absent when it has no value.
@@ -150,7 +150,7 @@ export interface CreateCardModelRequest {
 export interface CreateCardModelResponse {
   path: string
   error?: ErrorCode
-  isUnlevelled: boolean
+  isIndexOutdated: boolean
 }
 
 /** ReadCardModelRequest is the request of the ReadCardModel method. */
@@ -179,7 +179,7 @@ export interface WriteCardModelRequest {
 export interface WriteCardModelResponse {
   error?: ErrorCode
   at?: FileStat
-  isUnlevelled: boolean
+  isIndexOutdated: boolean
 }
 
 /** RenameCardModelFieldRequest is the request of the RenameCardModelField method. */
@@ -197,7 +197,7 @@ export interface RenameCardModelFieldResponse {
   notWritten: UnwrittenDeck[]
   error?: ErrorCode
   at?: FileStat
-  isUnlevelled: boolean
+  isIndexOutdated: boolean
 }
 
 /** UnwrittenDeck is a deck that a field rename did not reach, with the problem that stopped it. */
@@ -216,8 +216,8 @@ export interface CreateDeckRequest {
 export interface CreateDeckResponse {
   path: string
   error?: ErrorCode
-  /** IsUnlevelled reports that the file was written and the index did not follow. */
-  isUnlevelled: boolean
+  /** IsIndexOutdated reports that the file was written and the index did not follow. */
+  isIndexOutdated: boolean
 }
 
 /** ReadDeckRequest is the request of the ReadDeck method. */
@@ -250,7 +250,7 @@ export interface WriteDeckResponse {
   at?: FileStat
   /** Bound is the size limit in bytes that a deck failed against; zero for any other outcome. */
   bound: number
-  isUnlevelled: boolean
+  isIndexOutdated: boolean
 }
 
 /** Goal is what a preset schedules toward. */
@@ -403,7 +403,7 @@ export interface CreatePresetRequest {
 export interface CreatePresetResponse {
   path: string
   error?: ErrorCode
-  isUnlevelled: boolean
+  isIndexOutdated: boolean
 }
 
 /** ScheduleDeckRequest is the request of the ScheduleDeck method. */
@@ -417,7 +417,7 @@ export interface ScheduleDeckRequest {
 export interface ScheduleDeckResponse {
   error?: ErrorCode
   at?: FileStat
-  isUnlevelled: boolean
+  isIndexOutdated: boolean
 }
 
 /** ReadPresetRequest is the request of the ReadPreset method. */
@@ -455,7 +455,7 @@ export interface WritePresetRequest {
 export interface WritePresetResponse {
   error?: ErrorCode
   at?: FileStat
-  isUnlevelled: boolean
+  isIndexOutdated: boolean
 }
 
 /** ComputeCurveRequest is the request of the ComputeCurve method. */

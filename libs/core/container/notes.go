@@ -23,7 +23,7 @@ func (c Config) Notes(
 	links noteport.LinkQueries,
 	sources sourceport.SourceRepository,
 	indexed sourceport.SourceQueries,
-	index note.Levels,
+	index note.IndexUpdater,
 ) note.Scenarios {
 	readers := c.VaultReaders()
 	writers := c.VaultWriters()
@@ -31,32 +31,44 @@ func (c Config) Notes(
 
 	// One note.Move settles every note that travelled, whether a rename sent it
 	// or a move did.
-	mover := note.NewMove(readers, writers, links, queries, sources, index, now)
+	mover := note.NewMove(note.MoveDeps{
+		Readers: readers, Writers: writers, Links: links, Names: queries,
+		Sources: sources, Index: index, Now: now,
+	})
 	mover.Sync = c.SyncSetting()
 
 	linking := note.NewEditLinks(readers, writers, index, now)
 	remove := note.NewRemove(writers, links, indexed, index)
+	addresses := note.NewGetLinkAddress(queries)
+	create := note.NewCreate(writers, queries, index, now)
 
 	return note.Scenarios{
-		Read:         note.NewRead(readers),
-		Write:        note.NewWrite(readers, writers, index, now),
-		Create:       note.NewCreate(writers, queries, index, now),
-		Replace:      note.NewReplace(readers, writers, index, now),
-		Linking:      linking,
-		AddLinks:     note.NewAddLinks(linking),
-		ReplaceLinks: note.NewReplaceLinks(linking, note.NewGetLinkAddress(queries)),
-		Move:         mover,
-		Rename:       note.NewRename(mover),
-		Remove:       remove,
+		Read:     note.NewRead(readers),
+		Write:    note.NewWrite(readers, writers, index, now),
+		Create:   create,
+		Replace:  note.NewReplace(readers, writers, index, now),
+		Linking:  linking,
+		AddLinks: note.NewAddLinks(linking),
+		Move:     mover,
+		Rename:   note.NewRename(mover),
+		Remove:   remove,
+
+		SaveConnection:   note.NewSaveConnection(readers, writers, index, now, links, addresses),
+		RemoveSide:       note.NewRemoveSide(readers, writers, index, now, links, addresses),
+		RemoveConnection: note.NewRemoveConnection(readers, writers, index, now, links, addresses),
+		Join:             note.NewJoin(readers, writers, index, now, links, addresses),
+		CreateInRelation: note.NewCreateInRelation(create, addresses),
 
 		Links:         note.NewShowLinks(links),
+		Connection:    note.NewGetConnection(links),
+		Backlinks:     note.NewGetBacklinks(links),
 		Neighbourhood: note.NewShowNeighbourhood(links, queries),
 		ResolveLinks:  note.NewResolveLinks(links),
 
 		GetTitles:      note.NewGetTitles(queries),
 		GetTitle:       note.NewGetTitle(queries),
 		IsVaultIndexed: note.NewIsVaultIndexed(queries),
-		GetLinkAddress: note.NewGetLinkAddress(queries),
+		GetLinkAddress: addresses,
 		RemoveNote:     note.NewRemoveNote(remove, readers),
 	}
 }

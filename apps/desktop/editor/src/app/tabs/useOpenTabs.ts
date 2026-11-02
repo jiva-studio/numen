@@ -2,6 +2,7 @@
  * What is currently open, reported to the application, and the icon each tab carries.
  */
 import { computed, ref, watch, type Component, type Ref } from 'vue'
+import { runInBackground } from '@numen/ui'
 import { findTabKindIcon } from '@/entities/tab'
 import type { OpenTabs } from '@/entities/tab'
 import type { VaultPort } from '@/app/ports/vault'
@@ -16,13 +17,20 @@ export interface OpenTabsDeps {
    * and stays false in a window a tab was detached into.
    */
   isWriting?: Readonly<Ref<boolean>>
+  /** Receives a failure of the background write that the write itself did not handle. */
+  reportError: (error: unknown) => void
 }
 
 /** The state a kind saved, as JSON, and empty where it saved none. */
 const formatSavedState = (saved: unknown): string =>
   saved === undefined || saved === null ? '' : JSON.stringify(saved)
 
-export function useOpenTabs({ core, windowTabs, isWriting = ref(true) }: OpenTabsDeps) {
+export function useOpenTabs({
+  core,
+  windowTabs,
+  isWriting = ref(true),
+  reportError,
+}: OpenTabsDeps) {
   /** Whether a tab is of a kind that takes text put to it: a conversation, with no file of its own. */
   const isTakingText = (id: string): boolean =>
     windowTabs.getTab(id)?.kind.receiveText !== undefined
@@ -51,11 +59,8 @@ export function useOpenTabs({ core, windowTabs, isWriting = ref(true) }: OpenTab
 
   const open = computed<OpenTabs>(() => getOpenTabs())
   let pendingWrite: OpenTabs | null = null
-  let isSending = false
-  const flushOpenTabs = async (next: OpenTabs): Promise<void> => {
-    pendingWrite = next
-    if (isSending) return
-    isSending = true
+  let sending: Promise<void> | null = null
+  const sendPending = async (): Promise<void> => {
     while (pendingWrite) {
       const current = pendingWrite
       pendingWrite = null
@@ -67,16 +72,37 @@ export function useOpenTabs({ core, windowTabs, isWriting = ref(true) }: OpenTab
         // meanwhile. There is no user action to take here.
       }
     }
-    isSending = false
+    sending = null
   }
+  const flushOpenTabs = (next: OpenTabs): Promise<void> => {
+    pendingWrite = next
+    sending ??= sendPending()
+    return sending
+  }
+  /** Whether the writes are held back, because the vault the tabs belong to is being left. */
+  const isPaused = ref(false)
   watch(
-    [open, isWriting],
-    ([now, isOn]) => {
-      if (!isOn) return
-      void flushOpenTabs(now)
+    [open, isWriting, isPaused],
+    ([now, isOn, isHeld]) => {
+      if (!isOn || isHeld) return
+      runInBackground(flushOpenTabs(now), reportError)
     },
     { immediate: true },
   )
+
+  /**
+   * Writes the tabs as they are now, waits until every write has reached the core, and holds
+   * later writes back. A write made after the core shows another vault would be kept for that vault.
+   */
+  const pause = async (): Promise<void> => {
+    if (isWriting.value) await flushOpenTabs(open.value)
+    isPaused.value = true
+  }
+
+  /** Lets the tabs be written again, where the vault was not left. */
+  const resume = (): void => {
+    isPaused.value = false
+  }
 
   /** The icon the tab's kind declares, or the one the window keeps for that kind. */
   const getTabIcon = (id: string): Component | null => {
@@ -87,6 +113,8 @@ export function useOpenTabs({ core, windowTabs, isWriting = ref(true) }: OpenTab
 
   return {
     open,
+    pause,
+    resume,
     getActiveTabId,
     getTabIcon,
   }

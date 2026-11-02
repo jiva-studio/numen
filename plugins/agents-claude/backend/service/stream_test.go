@@ -1,36 +1,48 @@
 package service
 
 import (
-	"context"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 )
 
-var testWords = map[string]toolcall.Declaration{
-	"note_edit": {Title: "Edit a note", Kind: "edit", About: "path", Match: "stood", Text: "becomes"},
-	"note_read": {Title: "Read notes", Kind: "read", About: "paths", Element: "path"},
+func getTestWords() map[string]toolcall.Declaration {
+	return map[string]toolcall.Declaration{
+		"note_edit": {Title: "Edit a note", Kind: "edit", About: "path", Match: "stood", Text: "becomes"},
+		"note_read": {Title: "Read notes", Kind: "read", About: "paths", Element: "path"},
+	}
 }
 
-func parseLines(t *testing.T, words map[string]toolcall.Declaration, lines ...string) ([]*agentrun.AskAgentResponse, string) {
+// steppingClock advances by step on every reading.
+type steppingClock struct {
+	tick time.Time
+	step time.Duration
+}
+
+func (c *steppingClock) Now() time.Time {
+	c.tick = c.tick.Add(c.step)
+	return c.tick
+}
+
+func parseLines(t *testing.T, words map[string]toolcall.Declaration, lines ...string) ([]*agentrun.Response, string) {
 	t.Helper()
-	var got []*agentrun.AskAgentResponse
-	send := func(r *agentrun.AskAgentResponse) error {
+	var got []*agentrun.Response
+	send := func(r *agentrun.Response) error {
 		got = append(got, r)
 		return nil
 	}
-	tick := time.Unix(0, 0)
-	reason := parseStreamWithClock(context.Background(), strings.NewReader(strings.Join(lines, "\n")+"\n"), send, words, nil,
-		func() time.Time { tick = tick.Add(time.Second); return tick })
+	reason := parseStreamWithClock(t.Context(), strings.NewReader(strings.Join(lines, "\n")+"\n"), send, words, nil,
+		&steppingClock{tick: time.Unix(0, 0), step: time.Second})
 	return got, reason
 }
 
-func toolCalls(steps []*agentrun.AskAgentResponse) []*agentrun.ToolCall {
-	var calls []*agentrun.ToolCall
+func toolCalls(steps []*agentrun.Response) []*toolcall.ToolCall {
+	var calls []*toolcall.ToolCall
 	for _, s := range steps {
 		if c := s.GetToolCall(); c != nil {
 			calls = append(calls, c)
@@ -51,23 +63,23 @@ func quote(text string) string {
 }
 
 func TestADeclaredToolIsShownByItsTitleAndEffect(t *testing.T) {
-	steps, _ := parseLines(t, testWords, startEdit, delta(`{"path":"Note.md","stood":"a"}`),
+	steps, _ := parseLines(t, getTestWords(), startEdit, delta(`{"path":"Note.md","stood":"a"}`),
 		`{"type":"stream_event","event":{"type":"content_block_stop"}}`)
 
 	calls := toolCalls(steps)
 	last := calls[len(calls)-1]
-	if last.GetTool() != "Edit a note" || last.GetKind() != "edit" || last.GetAbout() != "Note.md" || last.GetPath() != "Note.md" {
+	if last.Tool != "Edit a note" || last.Kind != "edit" || last.About != "Note.md" || last.Path != "Note.md" {
 		t.Fatalf("unexpected call: %+v", last)
 	}
 }
 
 func TestEveryReportOfOneCallCarriesTheNameTheAgentGaveIt(t *testing.T) {
-	steps, _ := parseLines(t, testWords, startEdit, delta(`{"path":"Note.md"}`),
+	steps, _ := parseLines(t, getTestWords(), startEdit, delta(`{"path":"Note.md"}`),
 		`{"type":"stream_event","event":{"type":"content_block_stop"}}`)
 
 	for _, c := range toolCalls(steps) {
-		if c.GetCall() != "toolu_01" {
-			t.Errorf("call id %q", c.GetCall())
+		if c.Call != "toolu_01" {
+			t.Errorf("call id %q", c.Call)
 		}
 	}
 }
@@ -77,32 +89,32 @@ func TestAnUndeclaredToolIsNamedWithoutItsServerPrefix(t *testing.T) {
 		`{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","id":"c","name":"mcp__numen__other_tool"}}}`)
 
 	calls := toolCalls(steps)
-	if len(calls) != 1 || calls[0].GetTool() != "other_tool" || calls[0].GetKind() != "" {
+	if len(calls) != 1 || calls[0].Tool != "other_tool" || calls[0].Kind != "" {
 		t.Fatalf("unexpected calls: %+v", calls)
 	}
 }
 
 func TestACollectionCallIsAboutItsFirstElementAndTheRest(t *testing.T) {
-	steps, _ := parseLines(t, testWords,
+	steps, _ := parseLines(t, getTestWords(),
 		`{"type":"assistant","message":{"content":[{"type":"tool_use","id":"c","name":"mcp__numen__note_read","input":{"paths":[{"path":"A.md"},{"path":"B.md"},{"path":"C.md"}]}}]}}`)
 
 	calls := toolCalls(steps)
-	if len(calls) != 1 || calls[0].GetAbout() != "A.md and 2 more" {
+	if len(calls) != 1 || calls[0].About != "A.md and 2 more" {
 		t.Fatalf("unexpected calls: %+v", calls)
 	}
 }
 
 func TestACallNamingARunOfTextCarriesItsSpan(t *testing.T) {
-	steps, _ := parseLines(t, testWords,
+	steps, _ := parseLines(t, getTestWords(),
 		`{"type":"assistant","message":{"content":[{"type":"tool_use","id":"c","name":"mcp__numen__note_edit","input":{"path":"N.md","start":4,"length":6}}]}}`)
 
-	span := toolCalls(steps)[0].GetRange()
-	if span.GetStart() != 4 || span.GetEnd() != 10 {
+	span := toolCalls(steps)[0].Range
+	if span.Start != 4 || span.End != 10 {
 		t.Fatalf("span %+v", span)
 	}
 }
 
-func editProgress(steps []*agentrun.AskAgentResponse) []*agentrun.EditProgress {
+func editProgress(steps []*agentrun.Response) []*agentrun.EditProgress {
 	var out []*agentrun.EditProgress
 	for _, s := range steps {
 		if e := s.GetEditProgress(); e != nil {
@@ -113,7 +125,7 @@ func editProgress(steps []*agentrun.AskAgentResponse) []*agentrun.EditProgress {
 }
 
 func TestNoChangeIsReportedBeforeItsReplacementBegins(t *testing.T) {
-	steps, _ := parseLines(t, testWords, startEdit, delta(`{"path":"Note.md",`), delta(`"stood":"A hedgehog`), delta(` is named"`))
+	steps, _ := parseLines(t, getTestWords(), startEdit, delta(`{"path":"Note.md",`), delta(`"stood":"A hedgehog`), delta(` is named"`))
 
 	if got := editProgress(steps); len(got) != 0 {
 		t.Fatalf("reported early: %+v", got)
@@ -121,27 +133,27 @@ func TestNoChangeIsReportedBeforeItsReplacementBegins(t *testing.T) {
 }
 
 func TestAChangeIsReportedAsItsReplacementArrives(t *testing.T) {
-	steps, _ := parseLines(t, testWords, startEdit,
+	steps, _ := parseLines(t, getTestWords(), startEdit,
 		delta(`{"path":"Note.md","stood":"A hedgehog",`), delta(`"becomes":"An axe`), delta(`, two-bladed"}`))
 
 	got := editProgress(steps)
 	if len(got) != 2 {
 		t.Fatalf("expected two reports, got %+v", got)
 	}
-	if got[0].GetPath() != "Note.md" || got[0].GetMatch() != "A hedgehog" || got[0].GetText() != "An axe" || got[0].GetCall() != "toolu_01" {
+	if got[0].Path != "Note.md" || got[0].Match != "A hedgehog" || got[0].Text != "An axe" || got[0].Call != "toolu_01" {
 		t.Errorf("first report %+v", got[0])
 	}
-	if got[1].GetText() != "An axe, two-bladed" {
+	if got[1].Text != "An axe, two-bladed" {
 		t.Errorf("second report %+v", got[1])
 	}
 }
 
 func TestChangesCloserThanTheIntervalAreReportedOnce(t *testing.T) {
-	var got []*agentrun.AskAgentResponse
+	var got []*agentrun.Response
 	p := &streamParser{
-		send:  func(r *agentrun.AskAgentResponse) error { got = append(got, r); return nil },
-		words: testWords,
-		now:   func() time.Time { return time.Unix(100, 0) },
+		send:  func(r *agentrun.Response) error { got = append(got, r); return nil },
+		words: getTestWords(),
+		clock: clock.NewFake(time.Unix(100, 0)),
 	}
 	p.tool, p.callID = "mcp__numen__note_edit", "c"
 	p.arguments.WriteString(`{"path":"N.md","stood":"x","becomes":"y`)
@@ -170,7 +182,7 @@ func TestParseLines_VaultMcpFailure(t *testing.T) {
 
 func TestParseLines_NoVaultExpected(t *testing.T) {
 	line := `{"type":"system","subtype":"init","mcp_servers":[]}`
-	reason := parseStreamWithClock(context.Background(), strings.NewReader(line+"\n"), func(*agentrun.AskAgentResponse) error { return nil }, nil, nil, time.Now, false)
+	reason := parseStream(t.Context(), strings.NewReader(line+"\n"), func(*agentrun.Response) error { return nil }, streamOptions{clock: &steppingClock{tick: time.Unix(0, 0), step: time.Second}})
 	if reason != "" {
 		t.Fatalf("expected empty reason when no vault is expected, got %q", reason)
 	}
@@ -240,11 +252,11 @@ func TestBuildEnvironment_SessionSanitization(t *testing.T) {
 }
 
 func TestAChangeIsLocatedByThePathArgumentAlone(t *testing.T) {
-	var got []*agentrun.AskAgentResponse
+	var got []*agentrun.Response
 	p := &streamParser{
-		send:  func(r *agentrun.AskAgentResponse) error { got = append(got, r); return nil },
+		send:  func(r *agentrun.Response) error { got = append(got, r); return nil },
 		words: map[string]toolcall.Declaration{"note_edit": {About: "title", Match: "stood", Text: "becomes"}},
-		now:   func() time.Time { return time.Unix(100, 0) },
+		clock: clock.NewFake(time.Unix(100, 0)),
 	}
 	p.tool, p.callID = "mcp__numen__note_edit", "c"
 	p.arguments.WriteString(`{"title":"T","stood":"x","becomes":"y`)
@@ -256,12 +268,11 @@ func TestAChangeIsLocatedByThePathArgumentAlone(t *testing.T) {
 }
 
 func TestStreamParserPreviewIntervalPacing(t *testing.T) {
-	var got []*agentrun.AskAgentResponse
-	send := func(r *agentrun.AskAgentResponse) error {
+	var got []*agentrun.Response
+	send := func(r *agentrun.Response) error {
 		got = append(got, r)
 		return nil
 	}
-	tick := time.Unix(0, 0)
 	words := map[string]toolcall.Declaration{
 		"note_edit": {About: "Edit a note", Match: "path", Text: "text"},
 	}
@@ -272,10 +283,7 @@ func TestStreamParserPreviewIntervalPacing(t *testing.T) {
 		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
 	}, "\n") + "\n")
 
-	parseStreamWithClock(context.Background(), r, send, words, nil, func() time.Time {
-		tick = tick.Add(50 * time.Millisecond)
-		return tick
-	})
+	parseStreamWithClock(t.Context(), r, send, words, nil, &steppingClock{tick: time.Unix(0, 0), step: 50 * time.Millisecond})
 
 	edits := editProgress(got)
 	if len(edits) != 2 {
@@ -284,28 +292,28 @@ func TestStreamParserPreviewIntervalPacing(t *testing.T) {
 }
 
 func TestStreamParserInitSessionRecord(t *testing.T) {
-	send := func(_ *agentrun.AskAgentResponse) error {
+	send := func(_ *agentrun.Response) error {
 		return nil
 	}
 	var recorded []string
 	record := func(sess string) { recorded = append(recorded, sess) }
 
 	r := strings.NewReader(`{"type":"system","subtype":"init","session_id":"sess-123"}` + "\n")
-	parseStreamWithClock(context.Background(), r, send, nil, record, time.Now)
+	parseStreamWithClock(t.Context(), r, send, nil, record, &steppingClock{tick: time.Unix(0, 0), step: time.Second})
 	if len(recorded) != 1 || recorded[0] != "sess-123" {
 		t.Fatalf("expected one recorded session %q, got %v", "sess-123", recorded)
 	}
 
 	r2 := strings.NewReader(`{"type":"system","subtype":"init","session_id":""}` + "\n")
-	parseStreamWithClock(context.Background(), r2, send, nil, record, time.Now)
+	parseStreamWithClock(t.Context(), r2, send, nil, record, &steppingClock{tick: time.Unix(0, 0), step: time.Second})
 	if len(recorded) != 1 {
 		t.Fatalf("expected empty session to not be recorded, got %v", recorded)
 	}
 }
 
 func TestStreamParserToolCallChunkAndReset(t *testing.T) {
-	var got []*agentrun.AskAgentResponse
-	send := func(r *agentrun.AskAgentResponse) error {
+	var got []*agentrun.Response
+	send := func(r *agentrun.Response) error {
 		got = append(got, r)
 		return nil
 	}
@@ -322,35 +330,35 @@ func TestStreamParserToolCallChunkAndReset(t *testing.T) {
 		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
 	}, "\n") + "\n")
 
-	parseStreamWithClock(context.Background(), r, send, nil, nil, time.Now)
+	parseStreamWithClock(t.Context(), r, send, nil, nil, &steppingClock{tick: time.Unix(0, 0), step: time.Second})
 
 	calls := toolCalls(got)
-	var t2Calls []*agentrun.ToolCall
+	var t2Calls []*toolcall.ToolCall
 	for _, c := range calls {
-		if c.GetTool() == "t2" {
+		if c.Tool == "t2" {
 			t2Calls = append(t2Calls, c)
 		}
 	}
 	if len(t2Calls) != 3 {
 		t.Fatalf("expected exactly 3 calls for t2, got %d (%+v)", len(t2Calls), t2Calls)
 	}
-	if t2Calls[1].GetLength() != 200 {
-		t.Errorf("expected written 200 for chunk, got %d", t2Calls[1].GetLength())
+	if t2Calls[1].Length != 200 {
+		t.Errorf("expected written 200 for chunk, got %d", t2Calls[1].Length)
 	}
-	var t3Calls []*agentrun.ToolCall
+	var t3Calls []*toolcall.ToolCall
 	for _, c := range calls {
-		if c.GetTool() == "t3" {
+		if c.Tool == "t3" {
 			t3Calls = append(t3Calls, c)
 		}
 	}
-	if len(t3Calls) == 0 || t3Calls[0].GetCall() != "" {
+	if len(t3Calls) == 0 || t3Calls[0].Call != "" {
 		t.Fatalf("expected empty call id for t3, got %+v", t3Calls)
 	}
 }
 
 func TestStreamParserAssistantMessageIgnoredWhenStreaming(t *testing.T) {
-	var got []*agentrun.AskAgentResponse
-	send := func(r *agentrun.AskAgentResponse) error {
+	var got []*agentrun.Response
+	send := func(r *agentrun.Response) error {
 		got = append(got, r)
 		return nil
 	}
@@ -359,7 +367,7 @@ func TestStreamParserAssistantMessageIgnoredWhenStreaming(t *testing.T) {
 		`{"type":"assistant","message":{"content":[{"type":"text","text":"hello"}]}}`,
 	}, "\n") + "\n")
 
-	parseStreamWithClock(context.Background(), r, send, nil, nil, time.Now)
+	parseStreamWithClock(t.Context(), r, send, nil, nil, &steppingClock{tick: time.Unix(0, 0), step: time.Second})
 
 	saids := 0
 	for _, s := range got {
@@ -373,8 +381,8 @@ func TestStreamParserAssistantMessageIgnoredWhenStreaming(t *testing.T) {
 }
 
 func TestReportEditIgnoredWhenToolHasNoTextDeclaration(t *testing.T) {
-	var got []*agentrun.AskAgentResponse
-	send := func(r *agentrun.AskAgentResponse) error {
+	var got []*agentrun.Response
+	send := func(r *agentrun.Response) error {
 		got = append(got, r)
 		return nil
 	}
@@ -387,7 +395,7 @@ func TestReportEditIgnoredWhenToolHasNoTextDeclaration(t *testing.T) {
 		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,
 	}, "\n") + "\n")
 
-	parseStreamWithClock(context.Background(), r, send, words, nil, time.Now)
+	parseStreamWithClock(t.Context(), r, send, words, nil, &steppingClock{tick: time.Unix(0, 0), step: time.Second})
 
 	for _, s := range got {
 		if ep := s.GetEditProgress(); ep != nil {

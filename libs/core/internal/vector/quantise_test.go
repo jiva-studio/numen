@@ -314,3 +314,24 @@ func TestSimilaritySumsFourElementsAStepInSinglePrecision(t *testing.T) {
 		t.Errorf("SimilarityBytes = %v, want %v", got, want)
 	}
 }
+
+// The similarity of two vectors is the same number on every architecture: arm64 may not fuse the
+// multiplications and additions of the sums. The bits are those an amd64 machine computes.
+func TestSimilarityIsTheSameOnEveryArchitecture(t *testing.T) {
+	values := rand.New(rand.NewPCG(1, 2))
+	query := make([]float32, 384)
+	passage := make([]float32, 384)
+	for i := range query {
+		query[i] = float32(values.NormFloat64())
+		passage[i] = float32(values.NormFloat64())
+	}
+	quantised := vector.Bytes(vector.Normalise(passage))
+	raw := make([]byte, len(quantised))
+	for i, q := range quantised {
+		raw[i] = byte(q)
+	}
+	got := vector.SimilarityBytes(vector.Normalise(query), raw)
+	if bits := math.Float64bits(got); bits != 0xbfa4bfceeef9c364 {
+		t.Errorf("the similarity is %v, bits %#x", got, bits)
+	}
+}

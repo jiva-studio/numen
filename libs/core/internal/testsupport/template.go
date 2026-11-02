@@ -2,6 +2,7 @@ package testsupport
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,8 +10,8 @@ import (
 	"testing"
 )
 
-// Template is a database built once for a whole test binary and handed out as
-// copies. Each copy is a file of its own, so tests that run in parallel share
+// Template is a database built once, on the first copy requested, and handed out
+// as copies. Each copy is a file of its own, so tests that run in parallel share
 // nothing.
 type Template struct {
 	build func(ctx context.Context, path string) error
@@ -54,7 +55,7 @@ func (t *Template) make() {
 		t.err = err
 		return
 	}
-	defer os.RemoveAll(dir)
+	defer func() { t.err = errors.Join(t.err, os.RemoveAll(dir)) }()
 
 	path := filepath.Join(dir, "template.db")
 	if err := t.build(context.Background(), path); err != nil {

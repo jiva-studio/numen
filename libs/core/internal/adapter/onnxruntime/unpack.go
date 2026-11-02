@@ -24,17 +24,17 @@ func unpack(archive, name, pos string) error {
 	return unpackTgz(archive, name, pos)
 }
 
-func unpackTgz(archive, name, pos string) error {
+func unpackTgz(archive, name, pos string) (err error) {
 	file, err := os.Open(archive)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer closeAndJoin(&err, file)
 	unzipped, err := gzip.NewReader(file)
 	if err != nil {
 		return fmt.Errorf("%s: %w", archive, err)
 	}
-	defer unzipped.Close()
+	defer closeAndJoin(&err, unzipped)
 
 	target := tar.NewReader(unzipped)
 	for {
@@ -52,12 +52,12 @@ func unpackTgz(archive, name, pos string) error {
 	}
 }
 
-func unpackZip(archive, name, pos string) error {
+func unpackZip(archive, name, pos string) (err error) {
 	target, err := zip.OpenReader(archive)
 	if err != nil {
 		return err
 	}
-	defer target.Close()
+	defer closeAndJoin(&err, target)
 	for _, entry := range target.File {
 		if !isLibrary(path.Base(entry.Name), name) {
 			continue
@@ -66,8 +66,7 @@ func unpackZip(archive, name, pos string) error {
 		if err != nil {
 			return err
 		}
-		defer file.Close()
-		return write(pos, file)
+		return errors.Join(write(pos, file), file.Close())
 	}
 	return fmt.Errorf("%s holds no %s", archive, name)
 }
@@ -81,13 +80,10 @@ func write(pos string, from io.Reader) error {
 		return err
 	}
 	if _, err := io.Copy(file, from); err != nil {
-		file.Close()
-		os.Remove(part)
-		return err
+		return errors.Join(err, file.Close(), os.Remove(part))
 	}
 	if err := file.Close(); err != nil {
-		os.Remove(part)
-		return err
+		return errors.Join(err, os.Remove(part))
 	}
 	return os.Rename(part, pos)
 }

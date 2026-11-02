@@ -9,7 +9,7 @@ func (p *Proxy) GetFrameOrigins(pluginID string) []string {
 	if !enabled {
 		return nil
 	}
-	return slices.Clone(found.Manifest.Frames)
+	return slices.Clone(found.Manifest.Contributes.FrameOrigins)
 }
 
 // ListFrameOrigins lists the origins the pages of every enabled plugin frame, each once, in the order

@@ -28,7 +28,10 @@ export const bindTexts = (texts: VaultTexts | undefined): void => {
   vaultTexts = texts
 }
 
-const work = createWorkWatcher((onTasks) => taskHost?.watchAll(onTasks) ?? { dispose: () => {} })
+// Without a task host there is nothing to unsubscribe.
+const work = createWorkWatcher(
+  (onTasks) => taskHost?.watchAll(onTasks) ?? { dispose: () => undefined },
+)
 
 export const recordings: Recordings = {
   getSource: (path) => getMediaSource(path),
@@ -36,4 +39,10 @@ export const recordings: Recordings = {
   getMenu: (path) => getFileMenu(path),
   runMenuEntry: (path, entry) => runFileMenuEntry(path, entry),
   watchWork: (path, onChange) => work.watch(path, onChange),
+  watchChanges: (path, onChange) => work.watchChanges(path, onChange),
+}
+
+/** Tells the open recording tabs on these paths that the vault changed them. */
+export const refreshRecordings = (paths: readonly string[]): void => {
+  work.refresh(paths)
 }

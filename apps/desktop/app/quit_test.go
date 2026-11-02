@@ -82,16 +82,16 @@ func TestVaultFlush_RetriesAfterCancelledClose(t *testing.T) {
 	vault := newSettler(false, false, true)
 	g := &vaultFlush{flush: vault.settle}
 
-	if g.flushVault() {
+	if g.flushVault(t.Context()) {
 		t.Fatal("a question standing let the window go")
 	}
 	if g.isFlushed() {
 		t.Error("a called-off close left the vault settled")
 	}
-	if g.flushVault() {
+	if g.flushVault(t.Context()) {
 		t.Fatal("the second ask let the window go with a question standing")
 	}
-	if !g.flushVault() {
+	if !g.flushVault(t.Context()) {
 		t.Fatal("the ask after the question was answered did not let the window go")
 	}
 	if !g.isFlushed() {
@@ -108,8 +108,8 @@ func TestASecondQuitStillFlushes(t *testing.T) {
 	vault := newSettler(false, true)
 	g := &vaultFlush{flush: vault.settle}
 
-	g.flushVault()
-	if !g.flushVault() {
+	g.flushVault(t.Context())
+	if !g.flushVault(t.Context()) {
 		t.Fatal("the second quit did not settle the vault")
 	}
 	if vault.getSettledCount() != 2 {
@@ -117,7 +117,7 @@ func TestASecondQuitStillFlushes(t *testing.T) {
 	}
 
 	// Settled, and asking again costs nothing.
-	if !g.flushVault() {
+	if !g.flushVault(t.Context()) {
 		t.Error("a settled vault answered that it had not")
 	}
 	if vault.getSettledCount() != 2 {
@@ -134,7 +134,7 @@ func TestConcurrentFlushesShareOneRun(t *testing.T) {
 
 	answers := make(chan bool, 2)
 	for range 2 {
-		go func() { answers <- g.flushVault() }()
+		go func() { answers <- g.flushVault(t.Context()) }()
 	}
 
 	select {
@@ -316,52 +316,34 @@ func TestQuestionRestoresWindowAndBlocksQuit(t *testing.T) {
 // TestWindowTracker tracks window counts and identifies the last remaining window.
 func TestWindowTracker(t *testing.T) {
 	tracker := newWindowTracker()
-	if !tracker.isLast() {
-		t.Error("an empty tracker should report isLast")
-	}
-	if tracker.countWindows() != 0 {
-		t.Errorf("expected 0 windows, got %d", tracker.countWindows())
+	if tracker.count != 0 {
+		t.Errorf("expected 0 windows, got %d", tracker.count)
 	}
 
 	tracker.addWindow()
-	if !tracker.isLast() {
-		t.Error("a single window should report isLast")
-	}
-	if tracker.countWindows() != 1 {
-		t.Errorf("expected 1 window, got %d", tracker.countWindows())
+	if tracker.count != 1 {
+		t.Errorf("expected 1 window, got %d", tracker.count)
 	}
 
 	tracker.addWindow()
-	if tracker.isLast() {
-		t.Error("two windows should not report isLast")
-	}
-	if tracker.countWindows() != 2 {
-		t.Errorf("expected 2 windows, got %d", tracker.countWindows())
+	if tracker.count != 2 {
+		t.Errorf("expected 2 windows, got %d", tracker.count)
 	}
 
-	if tracker.removeWindow() {
-		t.Error("removing one of two windows should not report 0 left")
-	}
-	if !tracker.isLast() {
-		t.Error("one remaining window should report isLast")
-	}
-	if !tracker.removeWindow() {
-		t.Error("removing last window should report 0 left")
-	}
-
+	tracker = newWindowTracker()
 	tracker.addWindow()
 	tracker.addWindow()
 	if !tracker.closeSecondaryWindow() {
 		t.Error("closeSecondaryWindow should succeed when more than one window remains")
 	}
-	if tracker.countWindows() != 1 {
-		t.Errorf("expected 1 window, got %d", tracker.countWindows())
+	if tracker.count != 1 {
+		t.Errorf("expected 1 window, got %d", tracker.count)
 	}
 	if tracker.closeSecondaryWindow() {
 		t.Error("closeSecondaryWindow should report false for the last window")
 	}
-	if tracker.countWindows() != 1 {
-		t.Errorf("expected window count to remain 1, got %d", tracker.countWindows())
+	if tracker.count != 1 {
+		t.Errorf("expected window count to remain 1, got %d", tracker.count)
 	}
 }
 
@@ -389,7 +371,7 @@ func TestHandleWindowClosingSecondaryWindowClosesWithoutFlushing(t *testing.T) {
 	if settler.getSettledCount() != 0 {
 		t.Errorf("vault should not have flushed on secondary window close, got %d flushes", settler.getSettledCount())
 	}
-	if !tracker.isLast() {
+	if tracker.count > 1 {
 		t.Error("tracker should now report last window remaining")
 	}
 

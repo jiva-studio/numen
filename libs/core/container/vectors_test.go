@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -15,7 +16,7 @@ import (
 // A container with no configuration builds no embedder, and the machine's own
 // settings are not read here.
 func TestAContainerNobodyGaveSettingsEmbedsWithNothing(t *testing.T) {
-	cfg := container.Config{}
+	cfg := container.NewConfig(container.Config{})
 	if cfg.EmbedderReady() {
 		t.Error("embedder is ready when no plugin host is configured")
 	}
@@ -46,7 +47,7 @@ func TestAContainerNobodyGaveSettingsEmbedsWithNothing(t *testing.T) {
 }
 
 func TestAnEmbeddingPluginIsReadyWherePluginIsAvailable(t *testing.T) {
-	cfg := container.Config{}
+	cfg := container.NewConfig(container.Config{})
 	if cfg.EmbedderReady() {
 		t.Error("embedder is ready when no plugin host is configured")
 	}
@@ -67,7 +68,7 @@ func TestAnEmbeddingPluginIsReadyWherePluginIsAvailable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	host := plugin.NewHost("desktop.editor", tmp)
+	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -81,13 +82,13 @@ func TestAnEmbeddingPluginIsReadyWherePluginIsAvailable(t *testing.T) {
 // When the embedding plugin is absent, search queries seamlessly fall back to
 // lexical full-text search without throwing errors.
 func TestSearchDegradesGracefullyWithoutPlugin(t *testing.T) {
-	db, err := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}.OpenIndex(t.Context())
+	db, err := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}).OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer testsupport.Close(t, db)
 
-	cfg := container.Config{}
+	cfg := container.NewConfig(container.Config{})
 	var lastErr error
 	s := cfg.NewSearch(db, nil, func(err error) {
 		lastErr = err
@@ -117,7 +118,7 @@ func writeEmbeddingPlugin(t *testing.T, manifest string) *plugin.Host {
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := plugin.NewHost("desktop.editor", tmp)
+	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -132,9 +133,9 @@ func TestAPluginWithoutTheEmbeddingCapabilityIsNotTheProvider(t *testing.T) {
 		"name": "Vectors",
 		"version": "1.0.0",
 		"targets": ["desktop.editor"],
-		"backend": {"type": "process", "entrypoint": "bin/vectors", "serviceName": "numen.v1.EmbeddingService"}
+		"services": ["numen.v1.EmbeddingService"], "backend": {"entrypoint": "bin/vectors"}
 	}`)
-	cfg := container.Config{PluginHost: host}
+	cfg := container.NewConfig(container.Config{PluginHost: host})
 
 	if cfg.EmbedderReady() {
 		t.Error("a plugin without the embedding capability is the provider")
@@ -153,7 +154,7 @@ func TestSearchWithDisabledEmbeddingProviderMatchesWords(t *testing.T) {
 		"version": "1.0.0",
 		"capabilities": ["embedding"],
 		"targets": ["desktop.editor"],
-		"backend": {"type": "process", "entrypoint": "bin/vectors"}
+		"backend": {"entrypoint": "bin/vectors"}
 	}`)
 	host.SetSettings(map[string]map[string]any{"test.vectors": {"enabled": false}})
 	cfg, vault := makeScannedVault(t)
@@ -163,7 +164,11 @@ func TestSearchWithDisabledEmbeddingProviderMatchesWords(t *testing.T) {
 	if why != nil || embedder != nil {
 		t.Fatalf("got embedder %v, error %v; want neither", embedder, why)
 	}
-	defer closer()
+	defer func() {
+		if err := closer(); err != nil {
+			t.Error(err)
+		}
+	}()
 	db := read(t, cfg)
 	if _, err := cfg.ReadWholeVault(t.Context(), db, embedder, vault); err != nil {
 		t.Fatal(err)

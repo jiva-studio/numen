@@ -5,15 +5,15 @@ description: Stage 2 of the numen review pipeline. Conducts a deep semantic audi
 
 # Stage 2 — Semantic Logic & Blast Radius
 
-A white-box detective looking only for **functional defects**: logic bugs, races, corrupted state, regressions.
+A white-box audit looking only for **functional defects**: logic bugs, races, corrupted state, regressions.
 
 ---
 
 ## Core principles
 
-1. **Zero style noise.** Ignore formatting, naming, placement and file size entirely — Stage 1 and the linters own those. Every finding here points at something that goes wrong at runtime.
+1. **Zero style noise.** Ignore formatting, naming, placement and file size entirely — Stage 1 and the linters cover those. Every finding here describes a failure at runtime.
 2. **Adversarial reading.** Do not read the code assuming it works. Assume the author made a subtle false assumption about state, ordering, or an edge value.
-3. **Proof of bug.** No "this could theoretically fail". Every finding carries the inputs and the state transitions that lead to the corruption or the crash.
+3. **Proof of bug.** No "this could theoretically fail". Every finding includes the inputs and the state transitions that lead to the corruption or the crash.
 
 ---
 
@@ -25,7 +25,7 @@ A white-box detective looking only for **functional defects**: logic bugs, races
    - Upstream sources of the state it reads: props, RPC responses, index rows, files on disk.
    - Downstream consumers: watchers, computed properties, event subscribers, renderers, background workers.
 
-A change to a wire message reaches both the Go side and the generated TypeScript client. A change to what the index stores reaches every query over it and needs a numbered migration.
+A change to a wire message affects both the Go side and the generated TypeScript client. A change to what the index stores affects every query over it and needs a numbered migration.
 
 ---
 
@@ -43,7 +43,7 @@ A change to a wire message reaches both the Go side and the generated TypeScript
 
 - `ctx` not first, named otherwise, or stored in a struct; not propagated to something that blocks; cancellation observed only between loop iterations and not inside one.
 - An error wrapped without `%w`, or wrapped with nothing that locates the failure.
-- An error both logged and returned, or swallowed into an empty branch.
+- An error both logged and returned, or dropped in an empty branch.
 - A sentinel compared by string instead of `errors.Is`; a type not reached with `errors.As`.
 - `panic` for bad input or a missing file.
 - `defer` missing on something opened; `rows.Err()` unchecked; `defer tx.Rollback()` without the commit last; `Close` unchecked where the write matters.
@@ -67,7 +67,7 @@ A change to a wire message reaches both the Go side and the generated TypeScript
 ### 5. Boundaries and indexes
 
 - Off-by-one in a range, a slice, a page or a cursor.
-- Bytes against UTF-16 code units: a *stretch* is bytes over the source's text, a *span* is `from`/`to` as a client counts it, and nothing crosses that boundary unconverted.
+- Bytes against UTF-16 code units: a _stretch_ is bytes over the source's text, a _span_ is `from`/`to` as a client counts it, and nothing crosses that boundary unconverted.
 - A string sliced by byte where a rune or a grapheme was meant.
 - Empty input, a single element, a trailing newline, a file with no final newline, CRLF against LF.
 
@@ -86,6 +86,6 @@ A change to a wire message reaches both the Go side and the generated TypeScript
 
 ## Output integration
 
-Every defect goes into **Stage 2** of the Unified Report in [`../SKILL.md`](../SKILL.md), as a defect card in the exact format given there, ordered by what it costs rather than by where it appears in the file. Do not output a standalone report.
+Every defect goes into **Stage 2** of the Unified Report in [`../SKILL.md`](../SKILL.md), as a defect card in the exact format given there, ordered by severity rather than by position in the file. Do not output a standalone report.
 
-Hand every unproven hypothesis to Stage 3.
+Pass every unproven hypothesis to Stage 3.

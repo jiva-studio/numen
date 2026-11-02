@@ -1,10 +1,15 @@
 package service
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/tetratelabs/wazero"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
@@ -12,7 +17,50 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
 
-const pluginID = "md.numen.readers.pdf"
+// compilationDirVariable names the folder TestMain makes for the compiled PDFium of the test binary.
+const compilationDirVariable = "NUMEN_PDF_TEST_COMPILATION_DIR"
+
+// newTestWorkers returns a pool that is closed when the test ends. The pools of the binary compile
+// PDFium into one folder, so it is compiled once and not for each pool, which costs minutes under the
+// race detector.
+func newTestWorkers(t testing.TB) *pdf.Workers {
+	t.Helper()
+	workers := pdf.NewWorkers()
+	compilation, err := wazero.NewCompilationCacheWithDir(os.Getenv(compilationDirVariable))
+	if err != nil {
+		t.Fatal(err)
+	}
+	workers.SetCompilationCache(compilation)
+	t.Cleanup(func() {
+		if err := errors.Join(workers.Close(), compilation.Close(context.WithoutCancel(t.Context()))); err != nil {
+			t.Error(err)
+		}
+	})
+	return workers
+}
+
+// TestMain makes the folder the pools of the tests keep the compiled PDFium in.
+func TestMain(m *testing.M) {
+	os.Exit(runTests(m))
+}
+
+func runTests(m *testing.M) int {
+	dir, err := os.MkdirTemp("", "numen-pdf-compilation-")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "make the compilation folder: %v\n", err)
+		return 1
+	}
+	if err := os.Setenv(compilationDirVariable, dir); err != nil {
+		fmt.Fprintf(os.Stderr, "set %s: %v\n", compilationDirVariable, err)
+		return 1
+	}
+	code := m.Run()
+	if err := os.RemoveAll(dir); err != nil {
+		fmt.Fprintf(os.Stderr, "remove the compilation folder: %v\n", err)
+		code = 1
+	}
+	return code
+}
 
 // newVault is a vault holding one file under name with the bytes of a fixture, the texts of that
 // vault with the plugin providing, and the plugin's text server.
@@ -30,7 +78,7 @@ func newVaultOf(t *testing.T, name string, raw []byte) (*hosttest.Texts, *TextSe
 	files := hosttest.OnDisk(t, "vault", map[string]string{name: string(raw)})
 	texts := hosttest.NewTexts("vault", pluginID)
 	texts.File(name, raw)
-	server := NewTextServer(files, texts, texts.GetStore(pluginID), hosttest.NewQueue())
+	server := NewTextServer(files, texts, texts.GetStore(pluginID), hosttest.NewQueue(), newTestWorkers(t))
 	t.Cleanup(server.Close)
 	return texts, server, raw
 }
@@ -108,7 +156,7 @@ func TestARunOfTheLayerIsLitOverTheWordsItCovers(t *testing.T) {
 func TestTheOutlineOpensTheSectionsOfTheLayer(t *testing.T) {
 	texts, server, raw := newVault(t, "outline.pdf", "outline.pdf")
 	createText(t, server, host.TextCreation{Path: "outline.pdf"})
-	book, err := pdf.Read(raw)
+	book, err := newTestWorkers(t).Read(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +178,8 @@ func TestPagesOfTheLayerJoinIntoTheWholeText(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	book, err := pdf.Read(raw)
+	workers := newTestWorkers(t)
+	book, err := workers.Read(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +187,7 @@ func TestPagesOfTheLayerJoinIntoTheWholeText(t *testing.T) {
 	for i := range all {
 		all[i] = i
 	}
-	boxes, err := book.Highlights(raw, all)
+	boxes, err := book.Highlights(workers, raw, all)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,7 +195,11 @@ func TestPagesOfTheLayerJoinIntoTheWholeText(t *testing.T) {
 	var joined strings.Builder
 	sections := 0
 	for page := range book.Pages {
-		for _, part := range getLayerParts(book, page, page+1, boxes) {
+		layerParts, err := getLayerParts(book, page, page+1, boxes)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, part := range layerParts {
 			if selector, err := readPageSelector(part.Selector); err != nil || selector.Page != page+1 {
 				t.Errorf("a segment of page %d has selector %s", page, part.Selector)
 			}
@@ -244,7 +297,7 @@ func TestGetHighlightsPlacesNothingWithoutLiveVersion(t *testing.T) {
 
 // newDocumentServer is the document service of the vault the text server reads.
 func newDocumentServer(server *TextServer, texts host.Texts) *DocumentServer {
-	return NewDocumentServer(server.files, texts)
+	return NewDocumentServer(server.files, texts, server.workers)
 }
 
 func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
@@ -257,10 +310,13 @@ func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	physics.Beside(chemistry)
 	chemistry.File("tiny.pdf", string(raw))
 	texts := hosttest.NewTexts("Physics", pluginID)
-	other := texts.With("Chemistry").(*hosttest.Texts)
+	other, isTexts := texts.With("Chemistry").(*hosttest.Texts)
+	if !isTexts {
+		t.Fatal("the texts of the vault are not hosttest texts")
+	}
 	other.File("tiny.pdf", raw)
 	other.SetStore(pluginID, chemistry.Store())
-	server := NewTextServer(physics, texts, physics.Store(), hosttest.NewQueue())
+	server := NewTextServer(physics, texts, physics.Store(), hosttest.NewQueue(), newTestWorkers(t))
 	t.Cleanup(server.Close)
 
 	createText(t, server, host.TextCreation{Vault: "Chemistry", Path: "tiny.pdf"})
@@ -268,7 +324,11 @@ func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	if text := readLive(t, other, "tiny.pdf"); text.Version().Kind != textKind {
 		t.Errorf("Chemistry's live version is %+v", text.Version())
 	}
-	if inShown, _ := texts.ListVersions(t.Context(), "tiny.pdf"); len(inShown.Versions) != 0 {
+	inShown, err := texts.ListVersions(t.Context(), "tiny.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(inShown.Versions) != 0 {
 		t.Errorf("the shown vault holds %+v, want no version", inShown.Versions)
 	}
 }

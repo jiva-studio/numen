@@ -2,9 +2,9 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 )
 
@@ -31,7 +31,7 @@ type acpToolCall struct {
 // readToolStep records what a tool_call or tool_call_update of this session reports about the call, and
 // returns the resulting step: the call, as far as it is known, or its end once it completed or failed.
 // Any other update is no step. A call is reported finished once.
-func (s *acpSession) readToolStep(params json.RawMessage) *agentrun.AskAgentResponse {
+func (s *acpSession) readToolStep(params json.RawMessage) *agentrun.Response {
 	var update struct {
 		SessionID string      `json:"sessionId"`
 		Update    acpToolCall `json:"update"`
@@ -54,9 +54,9 @@ func (s *acpSession) readToolStep(params json.RawMessage) *agentrun.AskAgentResp
 	}
 	if reported.Status != nil && (*reported.Status == "completed" || *reported.Status == "failed") {
 		call.isFinished = true
-		return &agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_ToolFinished{ToolFinished: &agentrun.ToolFinished{}}}
+		return &agentrun.Response{Step: &agentrun.ToolFinishedStep{}}
 	}
-	return &agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_ToolCall{
+	return &agentrun.Response{Step: &agentrun.ToolCallStep{
 		ToolCall: toolcall.Describe(s.words, call.getShownName(), reported.ToolCallID, call.arguments),
 	}}
 }

@@ -36,7 +36,7 @@ describe('what a vault was answered on', () => {
         )
       },
     }
-    const one = useReviewDays({ cards, reportError: () => {}, widest: () => 640 })
+    const one = useReviewDays({ cards, reportError: () => undefined, widest: () => 640 })
 
     await one.read('01VAULT')
 
@@ -49,7 +49,7 @@ describe('what a vault was answered on', () => {
   // A user who switched to another vault while the response was pending is looking
   // at another vault, and these days do not belong to it.
   it('is dropped when the person has moved to another vault', async () => {
-    let settle = (_: ReviewDays) => {}
+    let settle: (_: ReviewDays) => void = (_: ReviewDays) => undefined
     const cards: ReviewDaysClient = {
       listReviewDays({ vault }) {
         if (vault === '01SLOW') {
@@ -60,7 +60,7 @@ describe('what a vault was answered on', () => {
         return Promise.resolve(createReviewDays([['2026-08-29', 1]], 1))
       },
     }
-    const one = useReviewDays({ cards, reportError: () => {}, widest: () => 640 })
+    const one = useReviewDays({ cards, reportError: () => undefined, widest: () => 640 })
 
     const slow = one.read('01SLOW')
     await one.read('01OTHER')
@@ -81,7 +81,7 @@ describe('what a vault was answered on', () => {
         ])
       },
     }
-    const one = useReviewDays({ cards, reportError: () => {}, widest: () => 640 })
+    const one = useReviewDays({ cards, reportError: () => undefined, widest: () => 640 })
 
     await one.read('01VAULT')
 
@@ -94,7 +94,7 @@ describe('what a vault was answered on', () => {
     const cards: ReviewDaysClient = {
       listReviewDays: () => Promise.reject(new Error('never asked')),
     }
-    const one = useReviewDays({ cards, reportError: () => {}, widest: () => 640 })
+    const one = useReviewDays({ cards, reportError: () => undefined, widest: () => 640 })
 
     await one.read('')
 
@@ -128,7 +128,7 @@ describe('the days requested about', () => {
         return Promise.resolve({ days: [], due: [], streak: 0, reviewed: 0 })
       },
     }
-    const one = useReviewDays({ cards, reportError: () => {}, widest: () => 640 })
+    const one = useReviewDays({ cards, reportError: () => undefined, widest: () => 640 })
 
     await one.read('01VAULT')
 
@@ -139,7 +139,7 @@ describe('the days requested about', () => {
     expect(response.from < response.to).toBe(true)
 
     // A grid with less space requests a shorter range.
-    const narrow = useReviewDays({ cards, reportError: () => {}, widest: () => 200 })
+    const narrow = useReviewDays({ cards, reportError: () => undefined, widest: () => 200 })
     await narrow.read('01VAULT')
     const less = request as unknown as { from: string; to: string }
     expect(less.from > response.from).toBe(true)
@@ -178,7 +178,7 @@ describe('what is retained of a vault after another answer', () => {
         return createReviewDays([['2026-08-29', 3]], 1, [['2026-08-31', 12]])
       },
     }
-    const one = useReviewDays({ cards, reportError: () => {}, widest: () => 640 })
+    const one = useReviewDays({ cards, reportError: () => undefined, widest: () => 640 })
     await one.read('01VAULT')
 
     fails = true
@@ -191,7 +191,7 @@ describe('what is retained of a vault after another answer', () => {
   })
 
   it('keeps the vault moved to, and says nothing, when the one left fails', async () => {
-    let refuse = (_: Error) => {}
+    let refuse: (_: Error) => void = (_: Error) => undefined
     const errors: unknown[] = []
     const cards: ReviewDaysClient = {
       listReviewDays({ vault }) {

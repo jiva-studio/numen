@@ -3,7 +3,7 @@
  * response maps to an empty or zero value.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { FlushResult, Unit } from '@numen/protocol'
+import { FLUSH_RESULT, TASK_UNIT } from '@numen/core-client'
 import { sessionCore } from './session'
 
 const request = vi.hoisted(() => ({
@@ -13,6 +13,7 @@ const request = vi.hoisted(() => ({
   watchVaultChanges: vi.fn(),
   watchFocus: vi.fn(),
   watchTasks: vi.fn(),
+  cancelTask: vi.fn(),
   watchQuit: vi.fn(),
   detachTab: vi.fn(),
 }))
@@ -78,7 +79,7 @@ describe('a flush reported', () => {
     expect(request.reportFlush).toHaveBeenCalledWith({
       window: 'editor',
       token: 'token-1',
-      result: FlushResult.NOTHING,
+      result: FLUSH_RESULT.NOTHING,
     })
   })
 
@@ -88,7 +89,7 @@ describe('a flush reported', () => {
     expect(request.reportFlush).toHaveBeenCalledWith({
       window: 'editor',
       token: 'token-1',
-      result: FlushResult.WRITTEN,
+      result: FLUSH_RESULT.WRITTEN,
     })
   })
 })
@@ -115,7 +116,9 @@ describe('the streams a window follows', () => {
   })
 
   it('follows the focus, and lets go of it on the signal', () => {
-    const focus = (async function* () {})()
+    const focus = (async function* () {
+      yield* []
+    })()
     request.watchFocus.mockReturnValue(focus)
 
     expect(sessionCore.watchFocus(signal)).toBe(focus)
@@ -123,7 +126,9 @@ describe('the streams a window follows', () => {
   })
 
   it('follows a quit requested of this window', () => {
-    const quit = (async function* () {})()
+    const quit = (async function* () {
+      yield* []
+    })()
     request.watchQuit.mockReturnValue(quit)
 
     expect(sessionCore.watchQuit(signal)).toBe(quit)
@@ -140,11 +145,12 @@ describe('the streams a window follows', () => {
             about: 'library/scan.pdf',
             done: 3n,
             total: 10n,
-            unit: Unit.BYTES,
+            unit: TASK_UNIT.BYTES,
             error: '',
             isUserStarted: true,
             pluginId: 'md.example.scans',
             pluginName: 'Scan reader',
+            isCancellable: true,
           },
           {
             id: 'later',
@@ -157,6 +163,7 @@ describe('the streams a window follows', () => {
             isUserStarted: false,
             pluginId: '',
             pluginName: '',
+            isCancellable: false,
           },
         ],
       }
@@ -175,6 +182,7 @@ describe('the streams a window follows', () => {
           isUserStarted: true,
           pluginId: 'md.example.scans',
           pluginName: 'Scan reader',
+          isCancellable: true,
         },
         {
           id: 'later',
@@ -187,10 +195,25 @@ describe('the streams a window follows', () => {
           isUserStarted: false,
           pluginId: '',
           pluginName: '',
+          isCancellable: false,
         },
       ],
     ])
     expect(request.watchTasks).toHaveBeenCalledWith({ window: 'editor' }, { signal })
+  })
+
+  it('asks the core of this window to cancel a task by its id', async () => {
+    request.cancelTask.mockResolvedValue({})
+
+    await sessionCore.cancelTask('making the vectors')
+
+    expect(request.cancelTask).toHaveBeenCalledWith({ window: 'editor', id: 'making the vectors' })
+  })
+
+  it('rejects when the core does not cancel the task', async () => {
+    request.cancelTask.mockRejectedValue(new Error('not found'))
+
+    await expect(sessionCore.cancelTask('gone')).rejects.toThrow('not found')
   })
 })
 

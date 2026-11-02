@@ -1,7 +1,10 @@
 package assembly
 
 import (
+	"context"
 	"net/http"
+
+	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 
 	agentport "github.com/jiva-studio/numen/libs/core/usecase/completion/agentcontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
@@ -18,10 +21,19 @@ type PluginServices = interface {
 	GetFrameOrigins(pluginID string) []string
 }
 
+// PluginCatalog is the plugins this window lists and finds among the sources of the installation.
+type PluginCatalog = interface {
+	List(ctx context.Context) (catalog.Listing, error)
+	Get(ctx context.Context, id string) (catalog.Entry, error)
+	FindByTabKind(ctx context.Context, kind string) (catalog.Entry, error)
+}
+
 type pluginSecretAssembly interface {
 	OpenWritePluginSecret() *settings.WriteSecret
 	OpenDeletePluginSecret() *settings.DeleteSecret
 	GetPluginCommands() plugincommand.Commands
+	// GetPluginCatalog is the catalog of plugins, and nil for an installation with none.
+	GetPluginCatalog() PluginCatalog
 }
 
 type pluginWorkAssembly interface {

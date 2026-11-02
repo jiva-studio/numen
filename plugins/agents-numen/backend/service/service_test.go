@@ -2,16 +2,15 @@ package service
 
 import (
 	"context"
-	"encoding/json"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
 
-	"connectrpc.com/connect"
-
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
@@ -21,7 +20,7 @@ const testToken = "plugin-token"
 func startPlugin(t *testing.T) string {
 	t.Helper()
 	stdin, hold := io.Pipe()
-	t.Cleanup(func() { _ = hold.Close() })
+	cleanup.CloseAfter(t, hold)
 	s := server.New(server.WithPort(0), server.WithToken(testToken), server.WithStdin(stdin), server.WithStdout(io.Discard), server.WithSignals())
 	if err := Mount(s); err != nil {
 		t.Fatal(err)
@@ -30,32 +29,27 @@ func startPlugin(t *testing.T) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx, stop := context.WithCancel(context.Background())
+	ctx, stop := context.WithCancel(t.Context())
 	isDone := make(chan error, 1)
 	go func() { isDone <- s.ServeContext(ctx) }()
-	t.Cleanup(func() { stop(); <-isDone })
-	return "http://127.0.0.1:" + strconv.Itoa(port)
-}
-
-func withToken() connect.ClientOption {
-	return connect.WithInterceptors(connect.UnaryInterceptorFunc(func(next connect.UnaryFunc) connect.UnaryFunc {
-		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-			req.Header().Set("Authorization", "Bearer "+testToken)
-			return next(ctx, req)
+	t.Cleanup(func() {
+		stop()
+		if err := <-isDone; err != nil {
+			t.Error(err)
 		}
-	}))
+	})
+	return "http://127.0.0.1:" + strconv.Itoa(port)
 }
 
 func TestThePluginAnswersPingWithTheProtocolVersion(t *testing.T) {
 	pos := startPlugin(t)
 
-	res, err := server.NewPluginLifecycleServiceClient(http.DefaultClient, pos, withToken()).
-		Ping(t.Context(), connect.NewRequest(&server.PingRequest{}))
+	res, err := server.NewLifecycleClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).Ping(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Msg.GetProtocol() != server.ProtocolVersion {
-		t.Errorf("the protocol is %d", res.Msg.GetProtocol())
+	if res.Protocol != server.ProtocolVersion {
+		t.Errorf("the protocol is %d", res.Protocol)
 	}
 }
 
@@ -65,21 +59,21 @@ func TestConfigure_PropagatesSettingsToAgent(t *testing.T) {
 			http.Error(w, "no key", http.StatusUnauthorized)
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"data": []map[string]string{{"id": "m1"}}})
+		encodeJSON(t, w, map[string]any{"data": []map[string]string{{"id": "m1"}}})
 	}))
 	defer chat.Close()
 	pos := startPlugin(t)
 
-	if _, err := server.NewPluginLifecycleServiceClient(http.DefaultClient, pos, withToken()).
-		Configure(t.Context(), connect.NewRequest(&server.ConfigureRequest{Values: map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}})); err != nil {
+	if _, err := server.NewLifecycleClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).
+		Configure(t.Context(), map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}); err != nil {
 		t.Fatal(err)
 	}
-	res, err := agentrun.NewAgentServiceClient(http.DefaultClient, pos, withToken()).
-		GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
+	res, err := agentrun.NewClient(http.DefaultClient, pos, hostcall.WithBearer(testToken)).
+		GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if programs := res.Msg.GetPrograms(); len(programs) != 1 || !programs[0].GetIsInstalled() || len(programs[0].GetModels()) != 2 {
+	if programs := res; len(programs) != 1 || !programs[0].IsInstalled || len(programs[0].Models) != 2 {
 		t.Errorf("the programs are %+v", programs)
 	}
 }
@@ -91,7 +85,7 @@ func TestNewHandler_PropagatesSettingsToAgent(t *testing.T) {
 			http.Error(w, "no key", http.StatusUnauthorized)
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"data": []map[string]string{{"id": "m1"}}})
+		encodeJSON(t, w, map[string]any{"data": []map[string]string{{"id": "m1"}}})
 	}))
 	defer chat.Close()
 	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": testToken})
@@ -101,16 +95,16 @@ func TestNewHandler_PropagatesSettingsToAgent(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
-	if _, err := server.NewPluginLifecycleServiceClient(web.Client(), web.URL, withToken()).
-		Configure(t.Context(), connect.NewRequest(&server.ConfigureRequest{Values: map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}})); err != nil {
+	if _, err := server.NewLifecycleClient(web.Client(), web.URL, hostcall.WithBearer(testToken)).
+		Configure(t.Context(), map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}); err != nil {
 		t.Fatal(err)
 	}
-	res, err := agentrun.NewAgentServiceClient(web.Client(), web.URL, withToken()).
-		GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
+	res, err := agentrun.NewClient(web.Client(), web.URL, hostcall.WithBearer(testToken)).
+		GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if programs := res.Msg.GetPrograms(); len(programs) != 1 || len(programs[0].GetModels()) != 2 {
+	if programs := res; len(programs) != 1 || len(programs[0].Models) != 2 {
 		t.Errorf("the programs are %+v", programs)
 	}
 }
@@ -119,15 +113,15 @@ func TestConfigure_SetsTemperatureAndMaxTokens(t *testing.T) {
 	var receivedBody map[string]any
 	chat := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/chat/completions" {
-			_ = json.NewDecoder(r.Body).Decode(&receivedBody)
-			_ = json.NewEncoder(w).Encode(map[string]any{
+			decodeJSON(t, r.Body, &receivedBody)
+			encodeJSON(t, w, map[string]any{
 				"choices": []map[string]any{
 					{"message": map[string]any{"role": "assistant", "content": "hi"}},
 				},
 			})
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"data": []map[string]string{{"id": "m1"}}})
+		encodeJSON(t, w, map[string]any{"data": []map[string]string{{"id": "m1"}}})
 	}))
 	defer chat.Close()
 

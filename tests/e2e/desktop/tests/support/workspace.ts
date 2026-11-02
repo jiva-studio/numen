@@ -5,6 +5,15 @@ import { forgetOpenTabs } from './test.js'
 export const getGraph = (page: Page): Locator => page.getByRole('group', { name: 'Neighbourhood' })
 
 /**
+ * Waits until the window is drawn: its status bar is there. The bar says "Ready" only until the
+ * first list of tasks arrives, a moment after the page loads, and that list holds the failed task of
+ * corrupted.pdf in every run, so the label cannot be waited for.
+ */
+export const waitForWindow = async (page: Page): Promise<void> => {
+  await expect(page.getByRole('region', { name: 'Status Bar' })).toBeVisible()
+}
+
+/**
  * Loads the window with the tabs a new vault opens with, and waits until the vault is read and the
  * opening note is drawn.
  */
@@ -74,7 +83,32 @@ export const waitForPassage = async (
 ): Promise<Locator> => {
   await expect(async () => {
     const passages = await findPassages(page, query, path)
-    await expect(passages.first()).toBeVisible({ timeout: 10_000 })
+    await expect(passages.first()).toBeVisible({ timeout: 3_000 })
   }).toPass({ timeout })
   return (await findPassages(page, query, path)).first()
+}
+
+/** The window is usable within these milliseconds of loading, whatever a plugin or a download does. */
+export const USABLE_WITHIN_MS = 5_000
+
+/** The workspace is drawn: a tab bar, the panes, the plex graph of the opening note and the files. */
+export const expectWorkspaceDrawn = async (page: Page): Promise<void> => {
+  const within = { timeout: USABLE_WITHIN_MS }
+  await expect(page.getByRole('tablist').first()).toBeVisible(within)
+  await expect(page.locator('section[data-workspace-pane]')).toHaveCount(2, within)
+  for (const pane of await page.locator('section[data-workspace-pane]').all()) {
+    const box = await pane.boundingBox()
+    expect(box?.width).toBeGreaterThan(0)
+    expect(box?.height).toBeGreaterThan(0)
+  }
+  await expect(getGraph(page)).toBeVisible(within)
+  await expect(page.getByRole('tab', { name: /^Files/ })).toBeVisible(within)
+}
+
+/** Opens the list of background tasks from the status bar, where a failed action and a warning are listed. */
+export const openTaskList = async (page: Page): Promise<Locator> => {
+  await page.locator('.status-bar__trigger').click()
+  const popover = page.locator('.task-popover')
+  await expect(popover).toBeVisible()
+  return popover
 }

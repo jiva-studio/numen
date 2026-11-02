@@ -7,10 +7,15 @@
 import { onBeforeUnmount, onMounted } from 'vue'
 import type { ShallowRef } from 'vue'
 
-/** Whether an event began inside the element. */
+/**
+ * Whether an event began inside the element. A press inside an open shadow root reaches the window
+ * with the shadow host as its target, so the path of the event is read as well.
+ */
 export function isInside(element: HTMLElement | null, event: Event): boolean {
+  if (!element) return false
+  if (event.composedPath().includes(element)) return true
   const target = event.target
-  return target instanceof Node && !!element?.contains(target)
+  return target instanceof Node && element.contains(target)
 }
 
 export function useOutsidePress(

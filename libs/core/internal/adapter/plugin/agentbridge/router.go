@@ -81,12 +81,12 @@ func (r *Router) GetPrograms(
 // listPrograms queries one provider for the programs it provides.
 func (r *Router) listPrograms(
 	ctx context.Context, id string, commands map[string][]string,
-) ([]agentport.AgentProgram, error) {
+) (programs []agentport.AgentProgram, err error) {
 	agent, err := OpenForPlugin(ctx, r.host, id)
 	if err != nil {
 		return nil, err
 	}
-	defer agent.Close()
+	defer func() { err = errors.Join(err, agent.Close()) }()
 	return agent.GetPrograms(ctx, commands)
 }
 
@@ -130,7 +130,7 @@ func (r *Router) getProvider(ctx context.Context, program string, command []stri
 }
 
 // StartRun starts the task on the plugin that runs the program it names.
-func (r *Router) StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error) {
+func (r *Router) StartRun(ctx context.Context, task agentport.Task) (run agentport.Run, err error) {
 	id, err := r.getProvider(ctx, task.Agent, task.Command)
 	if err != nil {
 		return nil, err
@@ -139,8 +139,18 @@ func (r *Router) StartRun(ctx context.Context, task agentport.Task) (agentport.R
 	if err != nil {
 		return nil, err
 	}
-	defer agent.Close()
-	run, err := agent.StartRun(ctx, task)
+	defer func() {
+		closeErr := agent.Close()
+		if closeErr == nil {
+			return
+		}
+		err = errors.Join(err, closeErr)
+		if run != nil {
+			err = errors.Join(err, run.Stop())
+			run = nil
+		}
+	}()
+	run, err = agent.StartRun(ctx, task)
 	if err != nil {
 		return nil, err
 	}
@@ -189,11 +199,11 @@ func (r *Router) EndConversation(ctx context.Context, conversation string) error
 }
 
 // endConversationOn ends a conversation on one plugin.
-func (r *Router) endConversationOn(ctx context.Context, id, conversation string) error {
+func (r *Router) endConversationOn(ctx context.Context, id, conversation string) (err error) {
 	agent, err := OpenForPlugin(ctx, r.host, id)
 	if err != nil {
 		return err
 	}
-	defer agent.Close()
+	defer func() { err = errors.Join(err, agent.Close()) }()
 	return agent.EndConversation(ctx, conversation)
 }

@@ -1,13 +1,12 @@
 {
   "id": "md.numen.engines.transcription",
   "name": "Audio/Video Transcription",
-  "version": "2026.10.2",
+  "version": "2026.11.1",
   "protocol": 1,
   "description": "Offline speech-to-text transcription for audio and video recordings",
   "targets": ["desktop.editor"],
-  "activationEvents": [],
+  "contributes": { "category": "engines", "handles": [{ "purpose": "text-provider" }] },
   "permissions": ["vault:read", "vault:write", "network:outbound"],
-  "texts": {},
   "commands": [
     {
       "id": "transcribe",
@@ -19,7 +18,7 @@
       "id": "delete-transcript",
       "title": "Delete transcript",
       "icon": "trash-2",
-      "when": { "hasOwnText": true }
+      "when": [{ "key": "version.plugin", "is": ["md.numen.engines.transcription"] }]
     }
   ],
   "dependencies": [
@@ -118,16 +117,8 @@
       }
     }
   ],
-  "lifecycle": {
-    "idleTimeoutSeconds": 600,
-    "keepAliveWhileVisible": false,
-    "memoryLimitBytes": 4294967296
-  },
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/engines-transcription",
-    "serviceName": "numen.v1.TextProviderService"
-  },
+  "backend": { "entrypoint": "bin/engines-transcription" },
+  "services": ["numen.v1.TextProviderService"],
   "settings": [
     {
       "key": "model",

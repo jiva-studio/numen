@@ -201,7 +201,7 @@ jobs:
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "22"
+          node-version-file: .node-version
           cache: npm
           cache-dependency-path: package-lock.json
 
@@ -232,7 +232,7 @@ jobs:
           # -s -w drop the debugging tables, which are a quarter of the binary
           # and reach nobody: a panic is symbolised from the pcln table, which
           # neither flag touches.
-          stamp="-s -w -X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
+          stamp="-s -w -X '$into.version=$VERSION (build $BUILD, commit $COMMIT)'"
 
           CGO_ENABLED=1 go build -trimpath -ldflags "$stamp" \
             -o "$RUNNER_TEMP/numen" ./cmd/numen
@@ -398,7 +398,7 @@ jobs:
           # Nix says a hash in base64, under the name of what made it.
           hash="sha256-$(sha256sum "$archive" | cut -d' ' -f1 | xxd -r -p | base64)"
 
-          # A flake handed over as a file cannot write itself a lock, so it
+          # A flake passed as a file cannot write itself a lock, so it
           # carries the one this tree holds.
           cp flake.nix flake.lock "$flake/"
           cp tools/build-nix/numen.nix "$flake/tools/build-nix/"
@@ -601,7 +601,7 @@ jobs:
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "22"
+          node-version-file: .node-version
           cache: npm
           cache-dependency-path: package-lock.json
 
@@ -630,7 +630,7 @@ jobs:
           # -s -w drop the debugging tables, which are a quarter of the binary
           # and reach nobody: a panic is symbolised from the pcln table, which
           # neither flag touches.
-          stamp="-s -w -X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
+          stamp="-s -w -X '$into.version=$VERSION (build $BUILD, commit $COMMIT)'"
 
           # The two windows are always the same build: they ship together, one
           # version, one installer. A resource is linked into the command it is
@@ -656,6 +656,7 @@ jobs:
               if [ -d "$p/dist" ]; then cp -r "$p/dist" "$RUNNER_TEMP/plugins/$name/"; fi
             fi
           done
+          cp ../../plugins/plugins-index.json "$RUNNER_TEMP/plugins/"
           ../../../.github/scripts/check-staged-plugins.sh ../../plugins "$RUNNER_TEMP/plugins"
 
       - name: Create Windows zip archive
@@ -720,7 +721,7 @@ jobs:
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "22"
+          node-version-file: .node-version
           cache: npm
           cache-dependency-path: package-lock.json
 
@@ -748,7 +749,7 @@ jobs:
           # -s -w drop the debugging tables, which are a quarter of the binary
           # and reach nobody: a panic is symbolised from the pcln table, which
           # neither flag touches.
-          stamp="-s -w -X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
+          stamp="-s -w -X '$into.version=$VERSION (build $BUILD, commit $COMMIT)'"
           # The two windows are always the same build: they ship together, one
           # version, one image.
           for window in numen numen-flashcards; do
@@ -775,6 +776,7 @@ jobs:
               if [ -d "$p/dist" ]; then cp -r "$p/dist" "$RUNNER_TEMP/plugins/$name/"; fi
             fi
           done
+          cp ../../plugins/plugins-index.json "$RUNNER_TEMP/plugins/"
           ../../../.github/scripts/check-staged-plugins.sh ../../plugins "$RUNNER_TEMP/plugins"
 
       - name: Assemble macOS application bundle
@@ -792,10 +794,11 @@ jobs:
             if [ -d "$RUNNER_TEMP/plugins" ]; then
               mkdir -p "$APP/Contents/Resources/plugins"
               for p in "$RUNNER_TEMP/plugins/"*; do
-                if grep -q "\"$TARGET\"" "$p/manifest.json"; then
+                if [ -d "$p" ] && grep -q "\"$TARGET\"" "$p/manifest.json"; then
                   cp -r "$p" "$APP/Contents/Resources/plugins/"
                 fi
               done
+              cp "$RUNNER_TEMP/plugins/plugins-index.json" "$APP/Contents/Resources/plugins/"
             fi
             printf 'APPL????' > "$APP/Contents/PkgInfo"
             plutil -replace CFBundleShortVersionString -string "$VERSION" "$APP/Contents/Info.plist"
@@ -1098,7 +1101,7 @@ jobs:
           KEY: ${{ secrets.BUNNY_STORAGE_KEY }}
         run: |
           set -euo pipefail
-          # The key is handed over in a file. A command line is read by anything
+          # The key is passed in a file. A command line is read by anything
           # on the machine and is what an error prints.
           umask 077
           printf 'AccessKey: %s\n' "$KEY" > "$RUNNER_TEMP/storage.header"

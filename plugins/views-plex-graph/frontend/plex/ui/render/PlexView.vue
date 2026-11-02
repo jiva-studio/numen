@@ -141,7 +141,7 @@ const getRole = (node: PlacedNode): GestureRole => {
   >
     <defs v-if="showEdgeLabels">
       <template v-for="line in lines" :key="`along:${line.key}`">
-        <path v-if="line.titlePath" :id="line.titlePath" :d="line.titleLine" />
+        <path v-for="title in line.titles" :id="title.path" :key="title.path" :d="title.line" />
       </template>
     </defs>
 
@@ -173,12 +173,12 @@ const getRole = (node: PlacedNode): GestureRole => {
     <PlexNodeView
       v-for="node in renderedNodes"
       :key="node.id"
+      :ref="holdNode(node.id)"
       :node="node"
       :gesture-role="getRole(node)"
       :wide="widen?.(node) ?? null"
       :hung="hung?.(node) ?? null"
       :behaviour="behaviour"
-      :ref="holdNode(node.id)"
       @activate="emit('activate', node.id)"
       @show="emit('show', node.id, $event)"
       @reach="emit('reach', node.id, $event)"
@@ -190,7 +190,7 @@ const getRole = (node: PlacedNode): GestureRole => {
       <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
     </PlexNodeView>
 
-    <!-- The line under the hand, drawn after the boxes so it stands over
+    <!-- The line under the hand, drawn after the boxes so it is over
          them, and with it the title it carries. -->
     <g v-if="lifted.length" class="plex__lift" aria-hidden="true">
       <template v-for="line in lifted" :key="line.key">

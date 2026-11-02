@@ -72,6 +72,13 @@ export interface RoutingOptions {
    * end.
    */
   readonly arrowClearance: number
+  /**
+   * The shortest stretch between two boxes that a straight line is drawn over. Two
+   * boxes closer than this, side by side in a row or one above the other in a column,
+   * are joined by a bow out of their sides, long enough for an arrowhead at each end
+   * and for a word.
+   */
+  readonly minRun: number
 }
 
 /**
@@ -128,7 +135,7 @@ export const DEFAULT_OPTIONS: PlexOptions = {
   maxPerLine: 5,
   maxLines: 4,
   maxHeadings: 6,
-  routing: { curvature: 0.55, minReach: 22, arrowClearance: 20 },
+  routing: { curvature: 0.55, minReach: 22, arrowClearance: 20, minRun: 52 },
   motion: { arriveAfter: 0.35, leaveBefore: 0.45 },
   gesture: { verticalBias: 4 },
   direction: DEFAULT_DIRECTION,

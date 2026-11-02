@@ -3,8 +3,6 @@ package reasoning
 import (
 	"slices"
 	"strings"
-
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // Level is one depth of reasoning.
@@ -15,20 +13,29 @@ type Level struct {
 	Title string
 }
 
-type ReasoningLevel = numenv1.ReasoningLevel
+// Model is one model a program offers.
+type Model struct {
+	Name  string
+	Title string
+	// IsDefault is set where the program names the model it answers with unasked.
+	IsDefault bool
+	// ReasoningLevels are the depths of reasoning the model can be asked to work at, from the least to
+	// the most. Empty where the model offers no choice.
+	ReasoningLevels []Level
+	// DefaultReasoning is the level the model works at unasked. Empty where it names none.
+	DefaultReasoning string
+}
 
-type AgentModel = numenv1.AgentModel
-
-// order lists the level names from the least reasoning to the most.
-var order = []string{"minimal", "low", "medium", "high", "xhigh", "max", "ultra"}
-
-var titles = map[string]string{"xhigh": "Extra high"}
+// listLevelNames returns the level names from the least reasoning to the most.
+func listLevelNames() []string {
+	return []string{"minimal", "low", "medium", "high", "xhigh", "max", "ultra"}
+}
 
 // NewLevel returns the level for a name, with a display title.
 func NewLevel(name string) Level {
 	name = strings.ToLower(strings.TrimSpace(name))
-	if title, found := titles[name]; found {
-		return Level{Name: name, Title: title}
+	if name == "xhigh" {
+		return Level{Name: name, Title: "Extra high"}
 	}
 	title := name
 	if name != "" {
@@ -48,7 +55,7 @@ func NewLevels(names ...string) []Level {
 
 // IsKnown is whether the name is one of the level names.
 func IsKnown(name string) bool {
-	return slices.Contains(order, strings.ToLower(strings.TrimSpace(name)))
+	return slices.Contains(listLevelNames(), strings.ToLower(strings.TrimSpace(name)))
 }
 
 // Contains is whether a level of the name is among the levels.
@@ -58,6 +65,7 @@ func Contains(levels []Level, name string) bool {
 
 // Sort orders the levels from the least reasoning to the most, a name outside the known ones last.
 func Sort(levels []Level) {
+	order := listLevelNames()
 	rank := func(one Level) int {
 		if place := slices.Index(order, one.Name); place >= 0 {
 			return place
@@ -79,25 +87,13 @@ func GetDefault(levels []Level) string {
 	return levels[0].Name
 }
 
-// ToProto is the levels in the schema's words.
-func ToProto(levels []Level) []*ReasoningLevel {
-	if len(levels) == 0 {
-		return nil
-	}
-	out := make([]*ReasoningLevel, 0, len(levels))
-	for _, one := range levels {
-		out = append(out, &ReasoningLevel{Name: one.Name, Title: one.Title})
-	}
-	return out
-}
-
 // NewModel is a model offered with the levels. The default is empty where it is not one of them.
-func NewModel(name, title string, levels []Level, byDefault string) *AgentModel {
+func NewModel(name, title string, levels []Level, byDefault string) *Model {
 	if !Contains(levels, byDefault) {
 		byDefault = ""
 	}
-	return &AgentModel{
-		Name: name, Title: title, ReasoningLevels: ToProto(levels), DefaultReasoning: byDefault,
+	return &Model{
+		Name: name, Title: title, ReasoningLevels: levels, DefaultReasoning: byDefault,
 	}
 }
 

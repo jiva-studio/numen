@@ -31,7 +31,7 @@ const METRICS: PlexMetrics = {
   node: () => 1000,
   label: () => 0,
   heading: () => 300,
-  labelDepth: 10,
+  labelType: { ascent: 8, descent: 2, xHeight: 5 },
 }
 
 const OPTIONS = { iconWidth: 20, margin: 10, headingHeight: 20 }

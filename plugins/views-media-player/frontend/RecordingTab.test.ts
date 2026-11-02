@@ -73,7 +73,7 @@ describe('a recording tab', () => {
 
   it('says nothing about playing while the recording is still being read', async () => {
     const { recordings } = createRecordings()
-    let answer: (source: { mediaUrl: string; mediaType: string }) => void = () => {}
+    let answer: (source: { mediaUrl: string; mediaType: string }) => void = () => undefined
     recordings.getSource = () => new Promise((resolve) => (answer = resolve))
     const { tab } = mountTab(recordings, false)
     await flush()

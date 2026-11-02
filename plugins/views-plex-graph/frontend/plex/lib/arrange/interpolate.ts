@@ -13,13 +13,9 @@ import { resolveOptions, type PlexOptionsInput } from './options'
 import { routeEdges, createRouting, type Routing } from './edges/routing'
 
 /** What a settled arrangement specifies for the title an edge carries. */
-type Title = Pick<PlacedEdge, 'heading' | 'words' | 'wordsAt'>
+type Title = Pick<PlacedEdge, 'titles'>
 
-const createTitle = (edge: PlacedEdge): Title => ({
-  heading: edge.heading,
-  words: edge.words,
-  wordsAt: edge.wordsAt,
-})
+const getTitles = (edge: PlacedEdge): Title => ({ titles: edge.titles })
 
 /** Where an arriving node unfolds from: the place the new focus started at. */
 function getOrigin(to: PlexFrame, was: ReadonlyMap<string, PlacedNode>): Position {
@@ -117,8 +113,8 @@ function tweenEdges(from: PlexFrame, to: PlexFrame, context: EdgeTweenContext): 
   // edge is going, or from where it is leaving for an edge that only rests
   // there. A title held this way stays put for the length of a movement.
   const resolved = new Map<string, Title>()
-  for (const edge of from.edges) resolved.set(edgeKey(edge), createTitle(edge))
-  for (const edge of to.edges) resolved.set(edgeKey(edge), createTitle(edge))
+  for (const edge of from.edges) resolved.set(edgeKey(edge), getTitles(edge))
+  for (const edge of to.edges) resolved.set(edgeKey(edge), getTitles(edge))
 
   return routeEdges(both, byId, { routing, opacity: edgeOpacity }).map((edge) => ({
     ...edge,

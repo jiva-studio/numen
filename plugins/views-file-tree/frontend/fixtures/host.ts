@@ -86,21 +86,29 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
     openingPath: ref(''),
     readOpeningPath: async () => '',
     draggedPaths: ref([]),
-    setDraggedPaths: (paths) => void recorded.dragged.push(paths),
-    openFile: (path, options) => void recorded.opened.push([path, options]),
-    openFileAt: () => {},
+    setDraggedPaths: (paths) => {
+      recorded.dragged.push(paths)
+    },
+    openFile: (path, options) => {
+      recorded.opened.push([path, options])
+    },
+    openFileAt: () => undefined,
     getNoteInFocus: () => ({ path: '', title: '' }),
     syncPath: (tabId, path, title) => {
       recorded.synced.push([tabId, path, title])
       return linked[tabId] ?? false
     },
-    runCommand: () => {},
+    runCommand: () => undefined,
     getNoteCommands: () => [],
-    ask: () => {},
-    showError: (text) => void recorded.errors.push(text),
-    getMessageWriter: () => () => {},
+    ask: () => undefined,
+    showError: (text) => {
+      recorded.errors.push(text)
+    },
+    getMessageWriter: () => () => undefined,
     getToday: () => '2026-01-01',
-    runPathCommand: (id, target) => void recorded.commands.push([id, target]),
+    runPathCommand: (id, target) => {
+      recorded.commands.push([id, target])
+    },
     ...renderDeps,
   }
 
@@ -111,8 +119,12 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
 
   const files: FileTreeHost['files'] = {
     list: async (folder) => folders[folder] ?? [],
-    move: async (from, to) => void recorded.made.push(`move ${from} ${to}`),
-    createFolder: async (path) => void recorded.made.push(`folder ${path}`),
+    move: async (from, to) => {
+      recorded.made.push(`move ${from} ${to}`)
+    },
+    createFolder: async (path) => {
+      recorded.made.push(`folder ${path}`)
+    },
     createNote: record(NOTE_TYPE),
   }
 

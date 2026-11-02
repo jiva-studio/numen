@@ -14,10 +14,12 @@ import (
 func TestNewHandlerAddsFetchScriptToPage(t *testing.T) {
 	window := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = io.WriteString(w, `<html><head><script type="module" src="/built/index.js"></script></head></html>`)
+		if _, err := io.WriteString(w, `<html><head><script type="module" src="/built/index.js"></script></head></html>`); err != nil {
+			t.Error(err)
+		}
 	})
 	rec := httptest.NewRecorder()
-	newHandler(window).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
+	newHandler(window).ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil))
 
 	got := rec.Body.String()
 	target := `<html><head><script src="/numen-debug/fetch.js"></script><script type="module"`
@@ -33,7 +35,8 @@ func TestNewHandlerServesPUTAsPOST(t *testing.T) {
 	var method string
 	window := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { method = r.Method })
 	newHandler(window).ServeHTTP(httptest.NewRecorder(),
-		httptest.NewRequest(http.MethodPut, "/numen.v1.VaultsService/ListVaults", strings.NewReader("{}")))
+		httptest.NewRequestWithContext(t.Context(), http.MethodPut, "/numen.v1.VaultsService/ListVaults",
+			strings.NewReader("{}")))
 	if method != http.MethodPost {
 		t.Errorf("the window was asked with %s", method)
 	}
@@ -41,7 +44,7 @@ func TestNewHandlerServesPUTAsPOST(t *testing.T) {
 
 func TestNewHandlerServesFetchScript(t *testing.T) {
 	rec := httptest.NewRecorder()
-	newHandler(http.NotFoundHandler()).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, fetchRoute, nil))
+	newHandler(http.NotFoundHandler()).ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, fetchRoute, nil))
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "method: 'PUT'") {
 		t.Errorf("%d %q", rec.Code, rec.Body.String())
 	}

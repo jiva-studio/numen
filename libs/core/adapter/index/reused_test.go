@@ -35,7 +35,7 @@ func embedFromKeptVectors(t *testing.T, db *DB, vault domain.Vault) int {
 	t.Helper()
 	ctx := t.Context()
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, testRecipe, 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, testRecipe, chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,39 +76,39 @@ func TestCoarsePass_ReachesChunkWithReusedVectorText(t *testing.T) {
 		{
 			name: "the same book in a second vault",
 			placed: func(t *testing.T, db *DB) (domain.Vault, string) {
-				book(t, db, first, "library/tale.epub", 0x0f)
-				cutBook(t, db, second, "library/tale.epub")
-				return second, "library/tale.epub"
+				book(t, db, getFirst(), "library/tale.epub", 0x0f)
+				cutBook(t, db, getSecond(), "library/tale.epub")
+				return getSecond(), "library/tale.epub"
 			},
 		},
 		{
 			name: "the same book at a second path",
 			placed: func(t *testing.T, db *DB) (domain.Vault, string) {
-				book(t, db, first, "library/tale.epub", 0x0f)
-				cutBook(t, db, first, "copies/tale.epub")
-				return first, "copies/tale.epub"
+				book(t, db, getFirst(), "library/tale.epub", 0x0f)
+				cutBook(t, db, getFirst(), "copies/tale.epub")
+				return getFirst(), "copies/tale.epub"
 			},
 		},
 		{
 			name: "a second copy whose first is gone",
 			placed: func(t *testing.T, db *DB) (domain.Vault, string) {
-				book(t, db, first, "library/tale.epub", 0x0f)
-				cutBook(t, db, first, "copies/tale.epub")
-				if err := db.Chunks().RemoveSources(t.Context(), first.ID, "book", []string{"library/tale.epub"}); err != nil {
+				book(t, db, getFirst(), "library/tale.epub", 0x0f)
+				cutBook(t, db, getFirst(), "copies/tale.epub")
+				if err := db.Chunks().RemoveSources(t.Context(), getFirst().ID, "book", []string{"library/tale.epub"}); err != nil {
 					t.Fatal(err)
 				}
-				return first, "copies/tale.epub"
+				return getFirst(), "copies/tale.epub"
 			},
 		},
 		{
 			name: "a book removed and put back",
 			placed: func(t *testing.T, db *DB) (domain.Vault, string) {
-				book(t, db, first, "library/tale.epub", 0x0f)
-				if err := db.Chunks().RemoveSources(t.Context(), first.ID, "book", []string{"library/tale.epub"}); err != nil {
+				book(t, db, getFirst(), "library/tale.epub", 0x0f)
+				if err := db.Chunks().RemoveSources(t.Context(), getFirst().ID, "book", []string{"library/tale.epub"}); err != nil {
 					t.Fatal(err)
 				}
-				cutBook(t, db, first, "library/tale.epub")
-				return first, "library/tale.epub"
+				cutBook(t, db, getFirst(), "library/tale.epub")
+				return getFirst(), "library/tale.epub"
 			},
 		},
 	} {
@@ -143,7 +143,7 @@ func TestAVectorSavedBackAsItIsCachedPreservesItsRowUntouched(t *testing.T) {
 	// that never fires cannot pass.
 	ctx := t.Context()
 	db := openDB(t)
-	book(t, db, first, "library/tale.epub", 0x0f)
+	book(t, db, getFirst(), "library/tale.epub", 0x0f)
 
 	for _, statement := range []string{
 		`CREATE TABLE rewritten (hash BLOB)`,
@@ -155,8 +155,8 @@ func TestAVectorSavedBackAsItIsCachedPreservesItsRowUntouched(t *testing.T) {
 		}
 	}
 
-	cutBook(t, db, second, "library/tale.epub")
-	if wrote := embedFromKeptVectors(t, db, second); wrote == 0 {
+	cutBook(t, db, getSecond(), "library/tale.epub")
+	if wrote := embedFromKeptVectors(t, db, getSecond()); wrote == 0 {
 		t.Fatal("nothing was reclaimed")
 	}
 	if got := countRows(t, db, `SELECT COUNT(*) FROM rewritten`); got != 0 {

@@ -1,7 +1,6 @@
 package sound
 
 import (
-	"bytes"
 	"encoding/binary"
 	"math"
 	"math/rand"
@@ -11,26 +10,24 @@ import (
 // encodeWav is a wav file of one signal: a header saying what the samples are,
 // and the samples.
 func encodeWav(rate, channels int, samples []int16) []byte {
-	body := new(bytes.Buffer)
+	var body []byte
 	for _, one := range samples {
-		_ = binary.Write(body, binary.LittleEndian, one)
+		body = binary.LittleEndian.AppendUint16(body, uint16(one))
 	}
 
-	out := new(bytes.Buffer)
-	out.WriteString("RIFF")
-	_ = binary.Write(out, binary.LittleEndian, uint32(36+body.Len()))
-	out.WriteString("WAVEfmt ")
-	_ = binary.Write(out, binary.LittleEndian, uint32(16))
-	_ = binary.Write(out, binary.LittleEndian, uint16(wavInteger))
-	_ = binary.Write(out, binary.LittleEndian, uint16(channels))
-	_ = binary.Write(out, binary.LittleEndian, uint32(rate))
-	_ = binary.Write(out, binary.LittleEndian, uint32(rate*channels*2))
-	_ = binary.Write(out, binary.LittleEndian, uint16(channels*2))
-	_ = binary.Write(out, binary.LittleEndian, uint16(16))
-	out.WriteString("data")
-	_ = binary.Write(out, binary.LittleEndian, uint32(body.Len()))
-	out.Write(body.Bytes())
-	return out.Bytes()
+	out := []byte("RIFF")
+	out = binary.LittleEndian.AppendUint32(out, uint32(36+len(body)))
+	out = append(out, "WAVEfmt "...)
+	out = binary.LittleEndian.AppendUint32(out, 16)
+	out = binary.LittleEndian.AppendUint16(out, uint16(wavInteger))
+	out = binary.LittleEndian.AppendUint16(out, uint16(channels))
+	out = binary.LittleEndian.AppendUint32(out, uint32(rate))
+	out = binary.LittleEndian.AppendUint32(out, uint32(rate*channels*2))
+	out = binary.LittleEndian.AppendUint16(out, uint16(channels*2))
+	out = binary.LittleEndian.AppendUint16(out, 16)
+	out = append(out, "data"...)
+	out = binary.LittleEndian.AppendUint32(out, uint32(len(body)))
+	return append(out, body...)
 }
 
 // How long a recording is comes out of its header, before a sample is decoded.

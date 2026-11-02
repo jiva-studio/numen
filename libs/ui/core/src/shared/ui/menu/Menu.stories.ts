@@ -32,7 +32,6 @@ interface Knobs {
   hasGroups: boolean
   margin: number
   name: string
-  isSearchable?: boolean
   onChoose: (id: string) => void
   onDismiss: () => void
 }
@@ -89,7 +88,6 @@ const renderMenu = (args: Knobs) => ({
         :has-groups="args.hasGroups"
         :margin="args.margin"
         :name="args.name"
-        :is-searchable="args.isSearchable"
         @choose="args.onChoose"
         @dismiss="open = false; args.onDismiss()"
       >
@@ -340,32 +338,6 @@ export const FarTooMany: Story = {
   },
 }
 
-/** The search line is a row of its own: the items scroll under it and never into it. */
-export const SearchStaysAboveTheList: Story = {
-  args: {
-    isSearchable: true,
-    hasGroups: true,
-    items: Array.from({ length: 60 }, (_, index) => ({
-      id: `item-${index}`,
-      text: `Something to do (${index + 1})`,
-      group: index < 30 ? 'First' : 'Second',
-    })),
-  },
-  play: async () => {
-    const menu = menuElement()!
-    const bar = menu.querySelector<HTMLElement>('.menu__bar')!
-    const first = menu.querySelector<HTMLElement>('.menu__group-name')!
-    await expect(first.getBoundingClientRect().top).toBeGreaterThanOrEqual(
-      bar.getBoundingClientRect().bottom,
-    )
-    menu.scrollTop = 200
-    await expect(bar.getBoundingClientRect().top).toBeLessThanOrEqual(
-      menu.getBoundingClientRect().top + 8,
-    )
-    await expect(menu.getBoundingClientRect().height).toBeLessThanOrEqual(24 * 16)
-  },
-}
-
 /** Not Latin, and not all in one direction. */
 export const NotLatin: Story = {
   args: {
@@ -404,16 +376,18 @@ export const RequestedAtTheEdge: Story = {
   },
   play: async ({ canvasElement }) => {
     const menu = document.body.querySelector<HTMLElement>('.menu')
-    expect(menu).not.toBeNull()
+    await expect(menu).not.toBeNull()
     const lines = Array.from(document.body.querySelectorAll<HTMLElement>('.menu__text'))
-    expect(lines).toHaveLength(2)
+    await expect(lines).toHaveLength(2)
     for (const line of lines) {
       // Nothing is truncated: the line content fits its width.
-      expect(line.scrollWidth).toBeLessThanOrEqual(line.clientWidth)
+      await expect(line.scrollWidth).toBeLessThanOrEqual(line.clientWidth)
     }
     const box = menu!.getBoundingClientRect()
-    expect(box.right).toBeLessThanOrEqual(canvasElement.ownerDocument.documentElement.clientWidth)
-    expect(box.left).toBeGreaterThanOrEqual(0)
+    await expect(box.right).toBeLessThanOrEqual(
+      canvasElement.ownerDocument.documentElement.clientWidth,
+    )
+    await expect(box.left).toBeGreaterThanOrEqual(0)
   },
 }
 

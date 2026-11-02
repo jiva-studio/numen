@@ -61,7 +61,7 @@ function onPageTurnKey(event: KeyboardEvent) {
 
 function onSelectEntry(offset: number) {
   isListingOpen.value = false
-  void tabState.goToOffset(offset)
+  tabState.goToOffset(offset).catch(tabState.reportFailure)
 }
 
 function onToggleListing() {
@@ -69,11 +69,11 @@ function onToggleListing() {
 }
 
 function onMove(offset: number) {
-  void tabState.moveTo(offset)
+  tabState.moveTo(offset).catch(tabState.reportFailure)
 }
 
 function onFollow(destPath: string) {
-  void tabState.followLink(destPath)
+  tabState.followLink(destPath).catch(tabState.reportFailure)
 }
 </script>
 

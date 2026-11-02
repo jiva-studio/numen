@@ -6,7 +6,7 @@
  * and what is written to the vault, and a rule inside a component can only be
  * exercised through the screen.
  */
-import { getNow } from '../../../../dom'
+import { getNow } from '@numen/ui'
 import { computed, ref, shallowRef } from 'vue'
 import type { Ref } from 'vue'
 

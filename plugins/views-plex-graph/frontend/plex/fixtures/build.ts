@@ -70,12 +70,12 @@ export function buildAround(
   const edges: PlexEdge[] = related.flatMap((node): PlexEdge[] => {
     const label = RELATION[node.relation as PlexRelation]
     if (node.relation === 'parent' || node.relation === 'jump') {
-      return [{ from: node.id, to: focus.id, label }]
+      return [{ from: node.id, to: focus.id, labels: [{ text: label }] }]
     }
     if (node.relation === 'sibling') {
-      return firstParent ? [{ from: firstParent, to: node.id, label }] : []
+      return firstParent ? [{ from: firstParent, to: node.id, labels: [{ text: label }] }] : []
     }
-    return [{ from: focus.id, to: node.id, label }]
+    return [{ from: focus.id, to: node.id, labels: [{ text: label }] }]
   })
 
   return {

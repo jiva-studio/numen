@@ -1,10 +1,11 @@
 import { test, expect } from '../../support/test.js'
+import { waitForWindow } from '../../support/workspace.js'
 
 test.describe('Chaos, Fault Tolerance and Stress Scenarios', () => {
   test('gracefully parses malformed yaml frontmatter without editor crash', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Open notes folder
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -30,7 +31,7 @@ test.describe('Chaos, Fault Tolerance and Stress Scenarios', () => {
   test('renders high-volume document smoothly without interface freeze', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Open notes folder
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -56,7 +57,7 @@ test.describe('Chaos, Fault Tolerance and Stress Scenarios', () => {
   }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Open Files panel
     await page.getByRole('tab', { name: /^Files/ }).click()

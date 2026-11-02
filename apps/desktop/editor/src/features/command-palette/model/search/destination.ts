@@ -7,7 +7,7 @@
  * names the file and the place in it, and `openers.ts` opens it.
  */
 import type { Component } from 'vue'
-import type { Selector } from '@numen/plugin-sdk'
+import type { Selector } from '@numen/plugin-host'
 import type { SearchDestination } from './search'
 
 /** The window operations that open a chosen destination. */
@@ -29,7 +29,10 @@ export async function openDestination(
   places: DestinationDeps,
 ): Promise<void> {
   if (!destination) return
-  if (destination.at === 'locate') return void places.travel(destination.path)
+  if (destination.at === 'locate') {
+    await places.travel(destination.path)
+    return
+  }
   places.openFile(
     destination.path,
     destination.title || destination.path,

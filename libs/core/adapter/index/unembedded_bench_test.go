@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
@@ -21,11 +22,13 @@ import (
 const chunksPerPage = 200
 
 // benchVault holds every chunk these benchmarks read.
-var benchVault = domain.Vault{ID: "01BENCH", Name: "bench", Path: "/bench"}
+func getBenchVault() domain.Vault { return domain.Vault{ID: "01BENCH", Name: "bench", Path: "/bench"} }
 
 // benchModel is a model with no embeddings, so every chunk lacks a vector for it.
-var benchModel = embeddingport.EmbeddingModel{
-	Name: "bench-model", Dimensions: 1024, MaxTokens: 512, Pooling: "mean", From: "bench",
+func getBenchModel() embeddingport.EmbeddingModel {
+	return embeddingport.EmbeddingModel{
+		Name: "bench-model", Dimensions: 1024, MaxTokens: 512, Pooling: "mean", From: "bench",
+	}
 }
 
 // openUnembeddedDB is an index holding one vault of `sources` sources, each cut
@@ -35,20 +38,20 @@ func openUnembeddedDB(tb testing.TB, sources, per int) *DB {
 	ctx := tb.Context()
 
 	path := filepath.Join(tb.TempDir(), "index.db")
-	migrated.CopyTo(tb, path)
+	newMigrated().CopyTo(tb, path)
 	db, err := Open(ctx, path)
 	if err != nil {
 		tb.Fatal(err)
 	}
-	tb.Cleanup(func() { db.Close() })
-	if err := db.Vaults().Register(ctx, benchVault.ID); err != nil {
+	testsupport.CloseAfter(tb, db)
+	if err := db.Vaults().Register(ctx, getBenchVault().ID); err != nil {
 		tb.Fatal(err)
 	}
 
 	chunks := db.Chunks()
 	for s := range sources {
 		path := fmt.Sprintf("library/book-%04d.epub", s)
-		if err := chunks.SaveSource(ctx, benchVault.ID, chunk.Source{
+		if err := chunks.SaveSource(ctx, getBenchVault().ID, chunk.Source{
 			Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: "hash-" + path, Recipe: "epub",
 		}); err != nil {
 			tb.Fatal(err)
@@ -61,7 +64,7 @@ func openUnembeddedDB(tb testing.TB, sources, per int) *DB {
 				Text:   fmt.Sprintf("passage %d of book %d, some words to index", i, s),
 			})
 		}
-		if err := chunks.ReplaceChunks(ctx, benchVault.ID, "book", path, []chunk.Chunk{{
+		if err := chunks.ReplaceChunks(ctx, getBenchVault().ID, "book", path, []chunk.Chunk{{
 			Start: 0, Length: per * 50, Location: "chapter 1",
 			Text:  fmt.Sprintf("book %d whole", s),
 			Small: small,
@@ -79,20 +82,20 @@ func openUnembeddedDB(tb testing.TB, sources, per int) *DB {
 func BenchmarkUnembedded(b *testing.B) {
 	db := openUnembeddedDB(b, 200, 100)
 	ctx := b.Context()
-	recipe := benchModel.Recipe()
+	recipe := getBenchModel().Recipe()
 	rows := db.ChunkQueries()
 	passages := db.Sources()
 
 	b.Run("Rows", func(b *testing.B) {
 		for b.Loop() {
-			if _, err := rows.GetUnembeddedChunks(ctx, benchVault.ID, recipe, 0, 0, 0, chunksPerPage); err != nil {
+			if _, err := rows.GetUnembeddedChunks(ctx, getBenchVault().ID, recipe, chunk.Cursor{}, chunksPerPage); err != nil {
 				b.Fatal(err)
 			}
 		}
 	})
 	b.Run("Passages", func(b *testing.B) {
 		for b.Loop() {
-			if _, _, err := passages.GetUnembeddedChunks(ctx, benchVault.ID, benchModel, "", chunksPerPage); err != nil {
+			if _, _, err := passages.GetUnembeddedChunks(ctx, getBenchVault().ID, getBenchModel(), "", chunksPerPage); err != nil {
 				b.Fatal(err)
 			}
 		}
@@ -106,7 +109,7 @@ func BenchmarkSaveVectors(b *testing.B) {
 	db := openUnembeddedDB(b, 2, 100)
 	ctx := b.Context()
 
-	found, err := db.ChunkQueries().GetUnembeddedChunks(ctx, benchVault.ID, benchModel.Recipe(), 0, 0, 0, chunksPerPage)
+	found, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getBenchVault().ID, getBenchModel().Recipe(), chunk.Cursor{}, chunksPerPage)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -114,17 +117,17 @@ func BenchmarkSaveVectors(b *testing.B) {
 		b.Fatalf("wanted %d chunks to write vectors for, got %d", chunksPerPage, len(found))
 	}
 
-	value := make([]byte, benchModel.Dimensions)
-	coarse := make([]byte, benchModel.Dimensions/8)
+	value := make([]byte, getBenchModel().Dimensions)
+	coarse := make([]byte, getBenchModel().Dimensions/8)
 	numbered := make([]chunk.Vector, 0, len(found))
 	named := make([]embeddingport.Vector, 0, len(found))
 	for i, p := range found {
 		hash := []byte(fmt.Sprintf("%032d", i))
 		numbered = append(numbered, chunk.Vector{
-			Chunk: p.Chunk, Hash: hash, Recipe: benchModel.Recipe(), Value: value, Coarse: coarse,
+			Chunk: p.Chunk, Hash: hash, Recipe: getBenchModel().Recipe(), Value: value, Coarse: coarse,
 		})
 		named = append(named, embeddingport.Vector{
-			ChunkID: chunk.ID(p.Chunk), Hash: hash, Model: benchModel,
+			ChunkID: chunk.ID(p.Chunk), Hash: hash, Model: getBenchModel(),
 			Kind: embeddingport.QuantisedInt8, Value: value, Coarse: coarse,
 		})
 	}
@@ -150,25 +153,17 @@ func BenchmarkSaveVectors(b *testing.B) {
 // BenchmarkChunkIdentity is the conversion alone, once per chunk each way.
 func BenchmarkChunkIdentity(b *testing.B) {
 	b.Run("Name", func(b *testing.B) {
-		var id domain.ChunkID
+		// b.Loop keeps the calls in its body from being optimised away.
 		for i := 0; b.Loop(); i++ {
-			id = chunk.ID(int64(i))
+			chunk.ID(int64(i))
 		}
-		sink = string(id)
 	})
 	b.Run("Row", func(b *testing.B) {
 		id := chunk.ID(918273645)
-		var row int64
 		for b.Loop() {
-			r, err := chunk.Row(id)
-			if err != nil {
+			if _, err := chunk.Row(id); err != nil {
 				b.Fatal(err)
 			}
-			row = r
 		}
-		sink = fmt.Sprint(row)
 	})
 }
-
-// sink keeps the conversions above from being optimised away.
-var sink string

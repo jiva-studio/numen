@@ -92,7 +92,9 @@ func (h *AgentHandler) FinishConversation(
 	r *connect.Request[v1.FinishConversationRequest],
 ) (*connect.Response[v1.FinishConversationResponse], error) {
 	if taking := h.getAgent(); taking != nil && r.Msg.GetConversation() != "" {
-		_ = taking.EndConversation(ctx, r.Msg.GetConversation())
+		if err := taking.EndConversation(ctx, r.Msg.GetConversation()); err != nil {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
 	}
 	return connect.NewResponse(&v1.FinishConversationResponse{}), nil
 }

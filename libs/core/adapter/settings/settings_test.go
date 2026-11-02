@@ -3,6 +3,7 @@ package settings_test
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,7 +17,9 @@ import (
 // A file without a size uses the desktop's scale; unsetting GDK_DPI_SCALE keeps
 // the tests independent of the session environment.
 func TestMain(m *testing.M) {
-	os.Unsetenv("GDK_DPI_SCALE")
+	if err := os.Unsetenv("GDK_DPI_SCALE"); err != nil {
+		log.Fatal(err)
+	}
 	os.Exit(m.Run())
 }
 
@@ -33,7 +36,7 @@ func write(t *testing.T, body string) string {
 // owns, and the section each adapter is configured by, which is read into that
 // adapter's own shape where every adapter is bound.
 func openAt(path string) (container.Settings, error) {
-	return container.Config{SettingsPath: path}.Settings()
+	return container.NewConfig(container.Config{SettingsPath: path}).Settings()
 }
 
 // newDocument is the complete settings file of an unconfigured installation.
@@ -62,7 +65,7 @@ func TestAnUntouchedInstallationIsGeneratedAsDesigned(t *testing.T) {
 		t.Errorf("the colours are read as %q", cfg.Appearance.Mode)
 	}
 	if cfg.Appearance.Theme != settings.DefaultTheme {
-		t.Errorf("wears %q", cfg.Appearance.Theme)
+		t.Errorf("applied %q", cfg.Appearance.Theme)
 	}
 }
 
@@ -104,7 +107,7 @@ func TestASizeOutsideWhatItGoesToIsRefused(t *testing.T) {
 	if outside.At != "appearance.text_scale" || outside.Number != 3 {
 		t.Errorf("failed %+v", outside)
 	}
-	if outside.Min != settings.TextScaleBounds.Min || outside.Max != settings.TextScaleBounds.Max {
+	if outside.Min != settings.GetTextScaleBounds().Min || outside.Max != settings.GetTextScaleBounds().Max {
 		t.Errorf("said the setting goes from %v to %v", outside.Min, outside.Max)
 	}
 	// The error message states the value and the allowed range.
@@ -405,7 +408,7 @@ func TestWhatIsSavedBackNamesTheSettingThisBuildReads(t *testing.T) {
 	}
 }
 
-func TestAWindowIsDressedByWhatTheFileNames(t *testing.T) {
+func TestAWindowAppliesTheThemeTheFileNames(t *testing.T) {
 	cfg, err := openAt(write(t, `{"appearance":{"mode":"dark","theme":"mine:dracula"}}`))
 	if err != nil {
 		t.Fatal(err)
@@ -457,18 +460,25 @@ func TestOneSettingIsAValidFile(t *testing.T) {
 	}
 }
 
-// A file naming one field of one section leaves everything else alone.
-func TestAFileNamingOneFieldKeepsTheDefaultsForTheRest(t *testing.T) {
-	cfg, err := openAt(write(t, `{"indexing":{"embedding":{"floor":0.3}}}`))
+// A section the file leaves empty keeps its defaults.
+func TestAFileNamingAnEmptySectionKeepsTheDefaultsForTheRest(t *testing.T) {
+	cfg, err := openAt(write(t, `{"indexing":{"embedding":{}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	e := cfg.Indexing.Embedding
-	if e.Floor != 0.3 {
-		t.Errorf("the floor is %v", e.Floor)
+	if got := cfg.Indexing.Embedding; got != container.DefaultEmbedding() {
+		t.Errorf("the embedding section is %+v", got)
 	}
-	if e.MaxTokens != container.DefaultEmbedding().MaxTokens {
-		t.Errorf("a chunk is cut at %d tokens", e.MaxTokens)
+}
+
+// A file naming the cut of a chunk replaces the default.
+func TestAFileNamingTheTokenLimitReplacesTheDefault(t *testing.T) {
+	cfg, err := openAt(write(t, `{"indexing":{"embedding":{"max_tokens":128}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := cfg.Indexing.Embedding.MaxTokens; got != 128 {
+		t.Errorf("a chunk is cut at %d tokens", got)
 	}
 }
 

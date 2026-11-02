@@ -44,7 +44,7 @@ export const ShownAgain: Story = {
       return {
         current: pendingTab,
         NOTE_TAB,
-        text: TEXT,
+        text: ref(TEXT),
         shownTabs,
         titles: { [NOTE_TAB]: 'Note', [BESIDE]: 'Beside' },
         choose: (tab: string) => {
@@ -59,7 +59,7 @@ export const ShownAgain: Story = {
           <template #tab="{ id }">
             <textarea
               v-if="id === NOTE_TAB"
-              :value="text"
+              v-model="text"
               aria-label="Note"
               class="h-full w-full resize-none p-4 font-sans text-base text-ink"
             />
@@ -83,6 +83,7 @@ export const ShownAgain: Story = {
     await nextFrame()
 
     await expect(shownLog.textContent?.split(' ').at(-1)).toBe(NOTE_TAB)
+    await expect(note.isConnected).toBe(true)
     await expect(note.value).toContain('Kept.')
   },
 }

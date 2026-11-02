@@ -34,7 +34,7 @@ modules:
         fi
 
       # A file a flatpak hands to the desktop is named for the application it
-      # belongs to, and only such a file is handed over at all.
+      # belongs to, and only such a file is passed at all.
       - install -Dm644 md.numen.Numen.desktop -t /app/share/applications
       - install -Dm644 md.numen.Numen.Flashcards.desktop -t /app/share/applications
       - install -Dm644 md.numen.Numen.metainfo.xml -t /app/share/metainfo

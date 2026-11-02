@@ -29,7 +29,7 @@ const findStyle = (sheet: Document, is: string): HTMLStyleElement | null =>
   sheet.head.querySelector<HTMLStyleElement>(`style[${MARKER}="${is}"]`)
 
 /**
- * The elements the head ends with. A page served by something that dresses it
+ * The elements the head ends with. A page served by something that styles it
  * in nothing is given a mode's and a theme's of its own, in that order.
  */
 export const getStyleElements = (sheet: Document): StyleElements => {

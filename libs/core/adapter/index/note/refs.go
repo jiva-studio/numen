@@ -5,13 +5,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/adapter/index/sqlwrite"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
 // GetNotes returns the data needed to display each of the given paths. An empty
 // path is skipped.
-func (q *Queries) GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
+func (q *Queries) GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (_ map[string]domain.NoteRef, err error) {
 	out := map[string]domain.NoteRef{}
 	if len(paths) == 0 {
 		return out, nil
@@ -26,11 +27,11 @@ func (q *Queries) GetNotes(ctx context.Context, vaultID domain.VaultID, paths []
 
 	// One prepared statement is executed repeatedly: the query text is the same
 	// for any number of paths.
-	statement, err := q.db.PrepareContext(ctx, stmt.Get("notes_at"))
+	statement, err := q.db.PrepareContext(ctx, getStatement("notes_at"))
 	if err != nil {
 		return nil, err
 	}
-	defer statement.Close()
+	defer func() { err = sqlwrite.JoinClose(err, statement.Close()) }()
 
 	for _, path := range paths {
 		var ref domain.NoteRef
@@ -48,7 +49,7 @@ func (q *Queries) GetNotes(ctx context.Context, vaultID domain.VaultID, paths []
 
 // GetTypes returns the type of each of the given paths. A path with no indexed
 // note is omitted, so a listing shows it as a plain file.
-func (q *Queries) GetTypes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteType, error) {
+func (q *Queries) GetTypes(ctx context.Context, vaultID domain.VaultID, paths []string) (_ map[string]domain.NoteType, err error) {
 	out := map[string]domain.NoteType{}
 	if len(paths) == 0 {
 		return out, nil
@@ -67,11 +68,11 @@ func (q *Queries) GetTypes(ctx context.Context, vaultID domain.VaultID, paths []
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("types_at"), vault, string(wanted))
+	rows, err := q.db.QueryContext(ctx, getStatement("types_at"), vault, string(wanted))
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	for rows.Next() {
 		var path, target string
@@ -84,7 +85,7 @@ func (q *Queries) GetTypes(ctx context.Context, vaultID domain.VaultID, paths []
 }
 
 // GetPathsOfType is every note of one type the vault holds, by path.
-func (q *Queries) GetPathsOfType(ctx context.Context, vaultID domain.VaultID, of domain.NoteType) ([]string, error) {
+func (q *Queries) GetPathsOfType(ctx context.Context, vaultID domain.VaultID, of domain.NoteType) (_ []string, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -93,11 +94,11 @@ func (q *Queries) GetPathsOfType(ctx context.Context, vaultID domain.VaultID, of
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("notes_of_type"), vault, string(of))
+	rows, err := q.db.QueryContext(ctx, getStatement("notes_of_type"), vault, string(of))
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	var out []string
 	for rows.Next() {
@@ -111,7 +112,7 @@ func (q *Queries) GetPathsOfType(ctx context.Context, vaultID domain.VaultID, of
 }
 
 // GetHeadings answers NoteQueries.GetHeadings.
-func (q *Queries) GetHeadings(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string][]domain.Heading, error) {
+func (q *Queries) GetHeadings(ctx context.Context, vaultID domain.VaultID, paths []string) (_ map[string][]domain.Heading, err error) {
 	out := map[string][]domain.Heading{}
 	if len(paths) == 0 {
 		return out, nil
@@ -126,11 +127,11 @@ func (q *Queries) GetHeadings(ctx context.Context, vaultID domain.VaultID, paths
 
 	// One prepared statement is executed repeatedly: the query text is the same
 	// for any number of paths.
-	statement, err := q.db.PrepareContext(ctx, stmt.Get("headings_of"))
+	statement, err := q.db.PrepareContext(ctx, getStatement("headings_of"))
 	if err != nil {
 		return nil, err
 	}
-	defer statement.Close()
+	defer func() { err = sqlwrite.JoinClose(err, statement.Close()) }()
 
 	for _, path := range paths {
 		found, err := getHeadingsAt(ctx, statement, vault, path)
@@ -150,12 +151,12 @@ func getHeadingsAt(
 	statement *sql.Stmt,
 	vault int64,
 	path string,
-) ([]domain.Heading, error) {
+) (_ []domain.Heading, err error) {
 	rows, err := statement.QueryContext(ctx, vault, path)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	var out []domain.Heading
 	for rows.Next() {
@@ -179,7 +180,7 @@ func (q *Queries) GetOpeningNote(ctx context.Context, vaultID domain.VaultID) (d
 		return ref, false, err
 	}
 
-	err = q.db.QueryRowContext(ctx, stmt.Get("opening"), vault).
+	err = q.db.QueryRowContext(ctx, getStatement("opening"), vault).
 		Scan(&ref.Path, &ref.Title, &ref.ID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ref, false, nil

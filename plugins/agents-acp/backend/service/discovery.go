@@ -32,34 +32,17 @@ type knownACPAgent struct {
 	args    []string
 }
 
-var knownACPAgents = []knownACPAgent{
-	{program: "claude-code", title: "Claude Code (ACP)", binary: "claude-code-acp", args: nil},
-	{program: "codex", title: "Codex (ACP)", binary: "codex-acp", args: nil},
-	{program: "cursor-agent", title: "Cursor Agent", binary: "cursor-agent", args: []string{acpSubcommand}},
-	{program: "gemini", title: "Gemini CLI", binary: "gemini", args: []string{"--acp"}},
-	{program: "goose", title: "Goose", binary: "goose", args: []string{acpSubcommand}},
-	{program: "kimi", title: "Kimi CLI", binary: "kimi", args: []string{acpSubcommand}},
-	{program: "opencode", title: "OpenCode", binary: "opencode", args: []string{acpSubcommand}},
-	{program: "qwen", title: "Qwen Code", binary: "qwen", args: []string{"--acp"}},
-}
-
-func discoverACPAgentsWithLookup(lookup func(binary string) (string, bool)) []acpAgent {
-	var agents []acpAgent
-	for _, candidate := range knownACPAgents {
-		binaryPath, ok := lookup(candidate.binary)
-		if !ok || binaryPath == "" {
-			continue
-		}
-		command := make([]string, 0, 1+len(candidate.args))
-		command = append(command, binaryPath)
-		command = append(command, candidate.args...)
-		agents = append(agents, acpAgent{
-			Program: candidate.program,
-			Title:   candidate.title,
-			Command: command,
-		})
+func getKnownACPAgents() []knownACPAgent {
+	return []knownACPAgent{
+		{program: "claude-code", title: "Claude Code (ACP)", binary: "claude-code-acp", args: nil},
+		{program: "codex", title: "Codex (ACP)", binary: "codex-acp", args: nil},
+		{program: "cursor-agent", title: "Cursor Agent", binary: "cursor-agent", args: []string{acpSubcommand}},
+		{program: "gemini", title: "Gemini CLI", binary: "gemini", args: []string{"--acp"}},
+		{program: "goose", title: "Goose", binary: "goose", args: []string{acpSubcommand}},
+		{program: "kimi", title: "Kimi CLI", binary: "kimi", args: []string{acpSubcommand}},
+		{program: "opencode", title: "OpenCode", binary: "opencode", args: []string{acpSubcommand}},
+		{program: "qwen", title: "Qwen Code", binary: "qwen", args: []string{"--acp"}},
 	}
-	return agents
 }
 
 func getExecutableProgramName(path string) string {

@@ -23,13 +23,13 @@ import (
 
 func openIndexFor(b *testing.B) *container.Index {
 	b.Helper()
-	db, err := container.Config{
+	db, err := container.NewConfig(container.Config{
 		IndexPath: filepath.Join(b.TempDir(), "index.db"),
-	}.OpenIndex(b.Context())
+	}).OpenIndex(b.Context())
 	if err != nil {
 		b.Fatal(err)
 	}
-	b.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(b, db)
 	return db
 }
 
@@ -140,7 +140,7 @@ func BenchmarkSearch(b *testing.B) {
 			b.ResetTimer()
 			for range b.N {
 				if _, err := queries.FindLexical(
-					b.Context(), v.ID, "entropy observer", notesOnly, 20, false,
+					b.Context(), v.ID, "entropy observer", getNotesOnly(), 20, false,
 				); err != nil {
 					b.Fatal(err)
 				}
@@ -157,7 +157,7 @@ func touch(b *testing.B, path string, seed int) {
 	}
 	// Modification time is the invalidation key, and a benchmark writes faster
 	// than the clock ticks.
-	pos := time.Now().Add(time.Duration(seed+1) * time.Second)
+	pos := testsupport.GetMachine().Now().Add(time.Duration(seed+1) * time.Second)
 	if err := os.Chtimes(path, pos, pos); err != nil {
 		b.Fatal(err)
 	}
@@ -205,7 +205,7 @@ func BenchmarkSearchDuringScan(b *testing.B) {
 	queries := db.Passages()
 	b.ResetTimer()
 	for range b.N {
-		if _, err := queries.FindLexical(ctx, v.ID, "entropy observer", notesOnly, 20, false); err != nil {
+		if _, err := queries.FindLexical(ctx, v.ID, "entropy observer", getNotesOnly(), 20, false); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -215,7 +215,7 @@ func BenchmarkSearchDuringScan(b *testing.B) {
 }
 
 func touchAll(root string) error {
-	pos := time.Now()
+	pos := testsupport.GetMachine().Now()
 	return filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err

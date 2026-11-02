@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -33,7 +34,7 @@ func (a fakeSearchIndex) GetNamedPassages(context.Context, domain.VaultID, strin
 	return nil, a.err
 }
 
-func (a fakeSearchIndex) FindNearest(context.Context, domain.VaultID, string, []float32, []domain.SourceKind, int, float64) ([]domain.Passage, error) {
+func (a fakeSearchIndex) FindNearest(context.Context, domain.VaultID, sourceport.NearestQuery) ([]domain.Passage, error) {
 	return nil, a.err
 }
 
@@ -48,7 +49,7 @@ func createSearchDeps(folder string, index fakeSearchIndex, words error) cli.Dep
 		Vaults: createVaultList(newVault(folder)),
 		Search: func(context.Context, domain.Vault, windowport.ErrorHandler) (cli.Search, error) {
 			return cli.Search{
-				Search: search.New(index, vaultreader.Readers{}, nil, nil, 0, nil),
+				Search: search.New(index, vaultreader.Readers{}, nil, nil, nil),
 				Words:  words,
 			}, nil
 		},
@@ -66,7 +67,7 @@ func runWithStderr(t *testing.T, deps cli.Deps, args ...string) (out, stderr str
 func TestSearchNeedsAVaultAndAQuery(t *testing.T) {
 	t.Parallel()
 	for _, args := range [][]string{{"search"}, {"search", "shelf"}} {
-		_, err := runWithDeps(cli.Deps{Vaults: createVaultList(notebook)}, args...)
+		_, err := runWithDeps(cli.Deps{Vaults: createVaultList(getNotebook())}, args...)
 		if err == nil || !strings.Contains(err.Error(), "usage: numen-cli search <vault> <query>") {
 			t.Errorf("%v answered %v", args, err)
 		}
@@ -109,7 +110,7 @@ func TestASearchByWordsAloneReturnsWhy(t *testing.T) {
 	if out != "nothing found\n" {
 		t.Errorf("search said %q", out)
 	}
-	if copyPath != "searching by words alone: rejected on purpose\n" {
+	if copyPath != "search by words only: rejected on purpose\n" {
 		t.Errorf("search said beside its answer %q", copyPath)
 	}
 
@@ -177,7 +178,7 @@ func TestAHalfThatCannotRunIsHeardAboutAdjacentTheAnswer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if stderr != "answering by words alone: rejected on purpose\n" {
+	if stderr != "search by words only: rejected on purpose\n" {
 		t.Errorf("search said beside its answer %q", stderr)
 	}
 }

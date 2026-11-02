@@ -21,7 +21,7 @@ const reader = async (width: number, high: number) => {
 const room = async (wrapper: ReturnType<typeof mount>, width: number, height: number) => {
   const area = wrapper.find('.reader__viewport').element as HTMLElement
   // jsdom lays nothing out and scrolls nothing.
-  area.scrollTo = () => {}
+  area.scrollTo = () => undefined
   Object.defineProperty(area, 'clientWidth', { value: width, configurable: true })
   Object.defineProperty(area, 'clientHeight', { value: height, configurable: true })
   ;(wrapper.vm as unknown as { measure: () => void }).measure()
@@ -132,6 +132,22 @@ describe('the page it says it relies on', () => {
     expect(getTurns(target).at(-1)).toBeGreaterThan(0)
   })
 
+  it('asks for no other page once the row has arrived at the page it was turned to', async () => {
+    // The viewport holds more than two pages, so a page against the left edge
+    // would leave the centre line on the page after it.
+    const target = await reader(1600, 800)
+    const area = target.find('.reader__viewport').element as HTMLElement
+    area.scrollTo = ((to: ScrollToOptions) => {
+      area.scrollLeft = to.left ?? 0
+    }) as typeof area.scrollTo
+
+    await target.setProps({ at: 4 })
+    await target.find('.reader__viewport').trigger('scroll')
+
+    expect(area.scrollLeft).toBeGreaterThan(0)
+    expect(getTurns(target)).toStrictEqual([])
+  })
+
   it('turns again when the page changes before the row has returned it arrived', async () => {
     // The container size changes first and the resize event follows. A turn
     // requested in between targets a page the row is not on.
@@ -149,6 +165,36 @@ describe('the page it says it relies on', () => {
     expect(dispatched).toHaveLength(2)
     expect(dispatched[0]).toBeGreaterThan(0)
     expect(dispatched[1]).toBe(0)
+  })
+
+  it('keeps the turn when the layout changed in the frame before it and is redrawn after it', async () => {
+    // A pane that is still being laid out reports a new size, and the redraw that holds the row in
+    // place waits for the next frame. A page typed in that frame is where the row goes, and the redraw
+    // must not send the row back to the place it held.
+    const frame: (() => void)[] = []
+    const target = mount(Reader, {
+      props: {
+        pages: PAGES,
+        picture: (page: number) => `/p/${page}`,
+        paint: (draw: () => void) => frame.push(draw),
+      },
+      attachTo: document.body,
+    })
+    await room(target, 1000, 800)
+    frame.splice(0).forEach((draw) => draw())
+
+    await room(target, 1000, 600)
+    const area = target.find('.reader__viewport').element as HTMLElement
+    const dispatched: { left: number; behavior: string }[] = []
+    area.scrollTo = ((to: ScrollToOptions) => {
+      dispatched.push({ left: to.left ?? 0, behavior: String(to.behavior) })
+      if (to.behavior === 'auto') area.scrollLeft = to.left ?? 0
+    }) as typeof area.scrollTo
+    await target.setProps({ at: 4 })
+    frame.splice(0).forEach((draw) => draw())
+
+    expect(dispatched.at(0)?.behavior).toBe('smooth')
+    expect(dispatched.at(-1)?.left).toBeGreaterThan(0)
   })
 })
 
@@ -217,5 +263,55 @@ describe('where the keyboard remains', () => {
     expect(document.activeElement).toBe(region)
     expect(region.getAttribute('aria-label')).toBe(READER_WORDS.pages)
     wrapper.unmount()
+  })
+})
+
+describe('the pages requested', () => {
+  it('are the pages in the room and a margin, and the pages drawn past it ask for nothing', async () => {
+    const wrapper = mount(Reader, {
+      props: {
+        pages: Array.from({ length: 40 }, () => ({ width: 612, height: 792 })),
+        picture: (page: number) => `/p/${page}`,
+      },
+      attachTo: document.body,
+    })
+    await room(wrapper, 1000, 800)
+
+    const renderedCount = wrapper.findAll('.reader__page').length
+    const requested = wrapper.findAll('.reader__incoming[src]').length
+    expect(requested).toBeGreaterThan(0)
+    expect(requested).toBeLessThan(renderedCount)
+  })
+
+  it('changes by the settled width alone, not by the zoom pressed', async () => {
+    vi.useFakeTimers()
+    const wrapper = await reader(1000, 800)
+    const before = getWidths(wrapper).length
+
+    await wrapper.find('[aria-label="Closer"]').trigger('click')
+    await wrapper.find('[aria-label="Closer"]').trigger('click')
+
+    expect(getWidths(wrapper)).toHaveLength(before)
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(getWidths(wrapper)).toHaveLength(before + 1)
+    vi.useRealTimers()
+  })
+})
+
+describe('a reader hidden or moved in the document', () => {
+  it('scrolls its row back to the page it was on when it is measured again', async () => {
+    // A tab moved to another pane is detached and attached again. The browser
+    // scrolls its row to the start and sends no scroll event, so the pages
+    // drawn for the old offset would be outside the viewport.
+    const target = await reader(1000, 800)
+    const area = target.find('.reader__viewport').element as HTMLElement
+    area.scrollLeft = 1200
+    await target.find('.reader__viewport').trigger('scroll')
+    area.scrollLeft = 0
+
+    await room(target, 1000, 800)
+    await new Promise((done) => requestAnimationFrame(() => done(undefined)))
+
+    expect(area.scrollLeft).toBe(1200)
   })
 })

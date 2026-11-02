@@ -13,10 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/ulid"
 )
 
-func init() {
-	ulid.DefaultEntropy = rand.Reader
-}
-
 // DefaultServiceDir is where the application keeps a vault's own state. The
 // other folder it writes into a vault is TrashDir.
 const DefaultServiceDir = ".numen"
@@ -81,7 +77,10 @@ func Initialize(root, serviceDir string, now time.Time) (Config, error) {
 		return Config{}, err
 	}
 
-	id := ulid.New(now, rand.Reader)
+	id, err := ulid.NewGenerator(rand.Reader).NewID(now)
+	if err != nil {
+		return Config{}, err
+	}
 	c := Config{Version: 1, ID: id}
 
 	dir := filepath.Join(root, serviceDir)

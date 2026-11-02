@@ -2,7 +2,9 @@
  * The quick link of a plex tab: a note joined to, or made for, the one a gesture started from.
  */
 import { ref, type Ref } from 'vue'
+import { getRelationErrorWords } from '@numen/plugin-sdk'
 import type { NodeIdMap } from '../lib/nodeIdMap'
+import { findRole } from '../lib/roles'
 import type { PlexTabDeps, QuickLinkRequest, PlexView } from '../types'
 
 export function useQuickLink(view: PlexView, deps: PlexTabDeps, map: NodeIdMap) {
@@ -33,26 +35,19 @@ export function useQuickLink(view: PlexView, deps: PlexTabDeps, map: NodeIdMap) 
     const fromPath = map.getNodePath(active.from)
     if (!fromPath) return
 
+    const role = findRole(deps.creatable, active.relation)
+    if (!role) return
+
     if (isExisting) {
-      const success = await deps.editor.join(fromPath, titleOrPath, active.relation)
-      if (success) {
-        if (isNavigatingOnCreate.value) {
-          await view.go(titleOrPath)
-        } else {
-          await view.go(fromPath)
-        }
-      }
+      const joined = await deps.editor.join(fromPath, titleOrPath, { role })
+      if (!joined.ok) return deps.showMessage(getRelationErrorWords(joined.error))
+      await view.go(isNavigatingOnCreate.value ? titleOrPath : fromPath)
     } else {
       const title = titleOrPath.trim()
       if (!title) return
-      const created = await deps.editor.createWithTitle(title, fromPath, active.relation)
-      if (created) {
-        if (isNavigatingOnCreate.value) {
-          await view.go(created.path)
-        } else {
-          await view.go(fromPath)
-        }
-      }
+      const created = await deps.editor.createRelated({ from: fromPath, role, title })
+      if (!created.ok) return deps.showMessage(getRelationErrorWords(created.error))
+      await view.go(isNavigatingOnCreate.value ? created.value : fromPath)
     }
   }
 

@@ -6,15 +6,19 @@ import (
 	"errors"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"strconv"
+	"strings"
 	"syscall"
 	"testing"
 
 	"golang.org/x/sys/unix"
+
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 func TestConfigureSysProcAttrOnLinux(t *testing.T) {
-	cmd := exec.Command("sleep", "5")
+	cmd := exec.CommandContext(t.Context(), "sleep", "5")
 	ConfigureSysProcAttr(cmd)
 	if cmd.SysProcAttr == nil {
 		t.Fatal("expected non-nil SysProcAttr on linux")
@@ -28,19 +32,16 @@ func TestConfigureSysProcAttrOnLinux(t *testing.T) {
 }
 
 func TestLinuxProcessLimitsRLIMIT_ASNotSet(t *testing.T) {
-	cmd := exec.Command("sleep", "5")
+	cmd := exec.CommandContext(t.Context(), "sleep", "5")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start mock process: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
-	limits := Limits{
-		CPULimitSeconds:  10,
-		MemoryLimitBytes: 1024 * 1024 * 1024,
-	}
+	limits := Limits{CPULimitSeconds: 10}
 	if err := ApplyLimits(cmd.Process.Pid, limits); err != nil {
 		t.Fatalf("applyProcessLimits failed: %v", err)
 	}
@@ -51,47 +52,6 @@ func TestLinuxProcessLimitsRLIMIT_ASNotSet(t *testing.T) {
 	}
 	if rlim.Cur != unix.RLIM_INFINITY {
 		t.Fatalf("expected RLIMIT_AS to remain infinity, got %d", rlim.Cur)
-	}
-}
-
-func TestLinuxReadRSS(t *testing.T) {
-	cmd := exec.Command("sleep", "5")
-	if err := cmd.Start(); err != nil {
-		t.Fatalf("failed to start mock process: %v", err)
-	}
-	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
-	}()
-
-	rss, err := ReadRSS(cmd.Process.Pid)
-	if err != nil {
-		t.Fatalf("readProcessRSS failed: %v", err)
-	}
-	if rss == 0 {
-		t.Fatal("expected non-zero RSS for running process")
-	}
-}
-
-func TestLinuxProcessLimitsProcessAliveAfterMemoryLimit(t *testing.T) {
-	cmd := exec.Command("sleep", "5")
-	if err := cmd.Start(); err != nil {
-		t.Fatalf("failed to start mock process: %v", err)
-	}
-	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
-	}()
-
-	limits := Limits{
-		MemoryLimitBytes: 1024 * 1024 * 1024,
-	}
-	if err := ApplyLimits(cmd.Process.Pid, limits); err != nil {
-		t.Fatalf("applyProcessLimits failed: %v", err)
-	}
-
-	if err := cmd.Process.Signal(syscall.Signal(0)); err != nil {
-		t.Fatalf("process exited unexpectedly after applyProcessLimits: %v", err)
 	}
 }
 
@@ -107,7 +67,7 @@ func TestLinuxADefaultProcessHasNoCPULimit(t *testing.T) {
 		{"a limit of ten seconds", Limits{CPULimitSeconds: 10}, 10},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			cmd := exec.Command("sleep", "5")
+			cmd := exec.CommandContext(t.Context(), "sleep", "5")
 			if err := cmd.Start(); err != nil {
 				t.Fatalf("failed to start mock process: %v", err)
 			}
@@ -133,36 +93,25 @@ func TestLinuxADefaultProcessHasNoCPULimit(t *testing.T) {
 	}
 }
 
-func TestLinuxReadCgroupAnon(t *testing.T) {
-	dir := t.TempDir()
-	statFile := filepath.Join(dir, "memory.stat")
-	content := "file 1000\nanon 4096000\nkernel_stack 8192\n"
-	if err := os.WriteFile(statFile, []byte(content), 0o600); err != nil {
-		t.Fatalf("write memory.stat: %v", err)
+func TestHideInheritedFilesKeepsPipeOutOfChild(t *testing.T) {
+	var ends [2]int
+	if err := syscall.Pipe2(ends[:], 0); err != nil {
+		t.Fatalf("pipe2: %v", err)
 	}
+	defer func() {
+		_ = syscall.Close(ends[0])
+		_ = syscall.Close(ends[1])
+	}()
 
-	bytes, err := readCgroupAnon(dir)
+	HideInheritedFiles()
+
+	out, err := exec.CommandContext(t.Context(), "ls", "/proc/self/fd").Output()
 	if err != nil {
-		t.Fatalf("readCgroupAnon failed: %v", err)
+		t.Fatalf("list descriptors of the child: %v", err)
 	}
-	if bytes != 4096000 {
-		t.Fatalf("expected 4096000 bytes, got %d", bytes)
-	}
-
-	if err := os.WriteFile(statFile, []byte("file 1000\n"), 0o600); err != nil {
-		t.Fatalf("write memory.stat: %v", err)
-	}
-	if _, err := readCgroupAnon(dir); err == nil {
-		t.Fatal("expected error when anon is missing")
-	}
-}
-
-func TestLinuxReadProcStatusAnon(t *testing.T) {
-	bytes, err := readProcStatusAnon(os.Getpid())
-	if err != nil {
-		t.Fatalf("readProcStatusAnon for self failed: %v", err)
-	}
-	if bytes == 0 {
-		t.Fatal("expected non-zero RssAnon for self")
+	for _, line := range strings.Fields(string(out)) {
+		if n, convErr := strconv.Atoi(line); convErr == nil && (n == ends[0] || n == ends[1]) {
+			t.Errorf("the child inherited descriptor %d of the pipe", n)
+		}
 	}
 }

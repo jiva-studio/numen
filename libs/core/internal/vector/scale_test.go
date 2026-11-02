@@ -19,7 +19,7 @@ const step = embeddingport.Int8Scale / 127
 // widths are the vector widths this application admits: the default embedding
 // model produces 384 dimensions, and the settings accept any model the user
 // names, with widths up to 3072 among the models a service offers.
-var widths = []int{384, 768, 1024, 1536, 3072}
+func getWidths() []int { return []int{384, 768, 1024, 1536, 3072} }
 
 // unit is an invented vector of the width given, pointing nowhere in
 // particular. Its length is one, so its components are around 1/sqrt(d) and the
@@ -56,7 +56,7 @@ func exact(a, b []float32) float64 {
 // spent falls with the width; the answer does not move.
 func TestOneScaleServesEveryWidth(t *testing.T) {
 	rng := rand.New(rand.NewPCG(20260903, 7))
-	for _, d := range widths {
+	for _, d := range getWidths() {
 		var levels, mean, worst float64
 		const trials = 200
 		for range trials {

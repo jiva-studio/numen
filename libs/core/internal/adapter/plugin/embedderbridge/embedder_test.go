@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 
@@ -20,15 +21,26 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+
+	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
 )
+
+// The bridge makes query vectors apart from document vectors, which search relies on through the port.
+var _ embeddingport.QueryEmbedder = (*Embedder)(nil)
 
 type mockEmbeddingServer struct {
 	getModelCalls atomic.Int32
 	modelName     atomic.Value
 	dimensions    atomic.Int32
 	floorHint     atomic.Value
+	minChunk      atomic.Int32
+	handling      atomic.Value
+
+	mu    sync.Mutex
+	roles []v1.EmbedRole
 }
 
 func (s *mockEmbeddingServer) GetEmbeddingModel(
@@ -44,15 +56,24 @@ func (s *mockEmbeddingServer) GetEmbeddingModel(
 	if d := s.dimensions.Load(); d > 0 {
 		dims = d
 	}
-	hint, _ := s.floorHint.Load().(float64)
+	hint := 0.0
+	if v, ok := s.floorHint.Load().(float64); ok {
+		hint = v
+	}
+	handling := ""
+	if v, ok := s.handling.Load().(string); ok {
+		handling = v
+	}
 	return connect.NewResponse(&v1.GetEmbeddingModelResponse{
-		Name:        name,
-		Dimensions:  dims,
-		MaxTokens:   256,
-		Pooling:     "mean",
-		From:        "test-provider",
-		Concurrency: 4,
-		FloorHint:   hint,
+		Handling:       handling,
+		Name:           name,
+		Dimensions:     dims,
+		MaxTokens:      256,
+		Pooling:        "mean",
+		From:           "test-provider",
+		Concurrency:    4,
+		FloorHint:      hint,
+		MinChunkLength: s.minChunk.Load(),
 	}), nil
 }
 
@@ -61,6 +82,9 @@ func (s *mockEmbeddingServer) EmbedBatch(
 	req *connect.Request[v1.EmbedBatchRequest],
 ) (*connect.Response[v1.EmbedBatchResponse], error) {
 	texts := req.Msg.GetTexts()
+	s.mu.Lock()
+	s.roles = append(s.roles, req.Msg.GetRole())
+	s.mu.Unlock()
 	vectors := make([]*v1.FloatVector, len(texts))
 	for i := range texts {
 		vectors[i] = &v1.FloatVector{
@@ -73,8 +97,10 @@ func (s *mockEmbeddingServer) EmbedBatch(
 }
 
 func TestOpenEmbedderBridgeNoPlugin(t *testing.T) {
-	host := plugin.NewHost("desktop.editor", t.TempDir())
-	_ = host.Discover()
+	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", t.TempDir())
+	if err := host.Discover(); err != nil {
+		t.Fatal(err)
+	}
 
 	bridge, err := Open(t.Context(), host)
 	if err == nil {
@@ -88,6 +114,8 @@ func TestOpenEmbedderBridgeNoPlugin(t *testing.T) {
 func TestEmbedderBridge(t *testing.T) {
 	mockServer := &mockEmbeddingServer{}
 	mockServer.floorHint.Store(0.35)
+	mockServer.minChunk.Store(40)
+	mockServer.handling.Store("1a2b3c4d")
 	mux := http.NewServeMux()
 	testsupport.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(mockServer))
@@ -95,7 +123,7 @@ func TestEmbedderBridge(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
+	serverPort := plugintest.GetPort(t, server)
 
 	tmp := t.TempDir()
 	pDir := filepath.Join(tmp, "embeddings")
@@ -103,37 +131,33 @@ func TestEmbedderBridge(t *testing.T) {
 		t.Fatalf("mkdir failed: %v", err)
 	}
 
-	manifest := `{
+	manifestText := `{
 		"id": "md.numen.embeddings",
 		"name": "Vector Embeddings",
 		"version": "1.0.0",
 		"capabilities": ["embedding"],
 		"targets": ["desktop.editor"],
-		"backend": {
-			"type": "process",
-			"entrypoint": "bin/embeddings",
-			"serviceName": "numen.v1.EmbeddingService"
-		}
+		"services": ["numen.v1.EmbeddingService"], "backend": {"entrypoint": "bin/embeddings"}
 	}`
-	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifestText), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
-	host := plugin.NewHost("desktop.editor", tmp)
+	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
-	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})
@@ -143,7 +167,7 @@ func TestEmbedderBridge(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenEmbedderBridge failed: %v", err)
 	}
-	defer bridge.Close()
+	defer testsupport.Close(t, bridge)
 
 	model := bridge.GetModel()
 	if model.Name != "test-model" {
@@ -162,13 +186,23 @@ func TestEmbedderBridge(t *testing.T) {
 		t.Errorf("model From = %q, want test-provider", model.From)
 	}
 
+	if model.Handling != "1a2b3c4d" {
+		t.Errorf("model Handling = %q, want 1a2b3c4d", model.Handling)
+	}
+	if model.MinChunkLength != 40 {
+		t.Errorf("model MinChunkLength = %d, want 40", model.MinChunkLength)
+	}
 	if hint := bridge.GetFloorHint(ctx); hint != 0.35 {
 		t.Errorf("floor hint = %v, want 0.35", hint)
 	}
 	recipe := model.Recipe()
 	mockServer.floorHint.Store(0.42)
+	mockServer.minChunk.Store(0)
 	if refreshed := bridge.GetModel(); refreshed.Recipe() != recipe {
 		t.Errorf("a new floor hint changed the recipe: %q, was %q", refreshed.Recipe(), recipe)
+	}
+	if refreshed := bridge.GetModel(); refreshed.MinChunkLength != 0 {
+		t.Errorf("a new minimum chunk length reads as %d, want 0", refreshed.MinChunkLength)
 	}
 	if hint := bridge.GetFloorHint(ctx); hint != 0.42 {
 		t.Errorf("floor hint after a read of the model = %v, want 0.42", hint)
@@ -209,11 +243,26 @@ func TestEmbedderBridge(t *testing.T) {
 		t.Errorf("unexpected vector[1]: %v", vectors[1])
 	}
 
+	if _, err := bridge.EmbedQueries(ctx, []string{"a question"}); err != nil {
+		t.Fatalf("EmbedQueries failed: %v", err)
+	}
+	mockServer.mu.Lock()
+	gotRoles := slices.Clone(mockServer.roles)
+	mockServer.mu.Unlock()
+	if want := []v1.EmbedRole{v1.EmbedRole_EMBED_ROLE_DOCUMENT, v1.EmbedRole_EMBED_ROLE_QUERY}; !slices.Equal(gotRoles, want) {
+		t.Errorf("the plugin was asked for roles %v, want %v", gotRoles, want)
+	}
+
 	empty, err := bridge.Embed(ctx, nil)
 	if err != nil || empty != nil {
 		t.Errorf("expected nil vectors for empty input, got %v, err=%v", empty, err)
 	}
 
+	mockServer.handling.Store("ffffffff")
+	if refreshed := bridge.GetModel(); refreshed.Recipe() == recipe {
+		t.Errorf("a new handling left the recipe as it was: %q", refreshed.Recipe())
+	}
+	mockServer.handling.Store("1a2b3c4d")
 	mockServer.modelName.Store("updated-model")
 	mockServer.dimensions.Store(1024)
 	currentModel := bridge.GetModel()

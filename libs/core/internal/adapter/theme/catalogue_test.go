@@ -1,6 +1,7 @@
 package theme_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -8,12 +9,13 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/theme"
+	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/watchhub"
 )
 
 // createThemeFolder creates a user's themes folder the way the first run does.
 func createThemeFolder(t *testing.T) theme.Catalogue {
 	t.Helper()
-	catalogue, err := theme.OpenAt(filepath.Join(t.TempDir(), "numen", "themes"))
+	catalogue, err := theme.OpenAt(filepath.Join(t.TempDir(), "numen", "themes"), watchhub.NewHub())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +50,7 @@ func hasTheme(themes []theme.Theme, name string) bool {
 // nothing falls back to, are one palette.
 func TestTheSettingAnInstallationStartsOnIsThisProductsOwnPalette(t *testing.T) {
 	if settings.DefaultTheme != theme.Default {
-		t.Errorf("the settings start on %q and a name matching nothing wears %q",
+		t.Errorf("the settings start on %q and a name matching nothing falls back to %q",
 			settings.DefaultTheme, theme.Default)
 	}
 }
@@ -69,16 +71,20 @@ func TestTheFolderIsMadeEmptyOnTheFirstRun(t *testing.T) {
 	}
 }
 
-func TestThirteenPalettesShipInsideTheApplication(t *testing.T) {
-	themes := createThemeFolder(t).Themes()
-	for _, name := range []string{
-		"preset:numen", "preset:dracula", "preset:nord", "preset:solarized",
-		"preset:catppuccin", "preset:gruvbox", "preset:amber", "preset:github",
-		"preset:one-dark", "preset:monokai", "preset:tokyo-night", "preset:ayu",
-		"preset:cobalt2",
-	} {
-		if !hasTheme(themes, name) {
-			t.Errorf("no %s among %v", name, getNames(themes))
+func TestOnlyThisProductsOwnPaletteShipsInsideTheApplication(t *testing.T) {
+	catalogue := createThemeFolder(t)
+	var shipped []string
+	for _, one := range catalogue.Themes() {
+		if one.Origin == theme.Preset {
+			shipped = append(shipped, one.Name)
+		}
+	}
+	if len(shipped) != 1 || shipped[0] != theme.Default {
+		t.Errorf("the binary ships %v", shipped)
+	}
+	for _, name := range []string{"preset:dracula", "preset:nord", "preset:solarized"} {
+		if _, err := catalogue.Text(name); !errors.Is(err, theme.ErrNoTheme) {
+			t.Errorf("%s: error = %v, want ErrNoTheme", name, err)
 		}
 	}
 }
@@ -101,27 +107,16 @@ func TestThisProductsOwnPalettePreservesTheModeSomethingToChoose(t *testing.T) {
 	}
 }
 
-// A palette published in one half pins it; one published in two halves does not,
-// and the setting chooses.
-func TestAThemeReturnsWhetherItIsAPair(t *testing.T) {
-	pinned := map[string]bool{"preset:dracula": true, "preset:solarized": false}
-	for _, one := range createThemeFolder(t).Themes() {
-		want, request := pinned[one.Name]
-		if request && one.IsPinned != want {
-			t.Errorf("%s is pinned: %v", one.Name, one.IsPinned)
-		}
-	}
-}
-
-func TestAPersonsThemeExistsAdjacentThePresetItsNameIsShared(t *testing.T) {
-	catalogue := createThemeFolder(t)
-	writeTheme(t, catalogue, "dracula.css", ":root { --numen-surface: #000000 }")
+func TestAPersonsThemeExistsAdjacentAPluginThemeOfTheSameFilename(t *testing.T) {
+	catalogue := createThemeFolder(t).WithPlugins(createFakePlugins())
+	writeTheme(t, catalogue, "night.css", ":root { --numen-surface: #000000 }")
 
 	themes := catalogue.Themes()
-	if !hasTheme(themes, "preset:dracula") || !hasTheme(themes, "mine:dracula") {
+	pluginName := theme.PluginName(pluginID, "night")
+	if !hasTheme(themes, pluginName) || !hasTheme(themes, "mine:night") {
 		t.Fatalf("one hides the other: %v", getNames(themes))
 	}
-	text, err := catalogue.Text("mine:dracula")
+	text, err := catalogue.Text("mine:night")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -195,7 +190,7 @@ func TestGetApplied_UnknownNameFallsBackToDefaultAndReportsName(t *testing.T) {
 	catalogue := createThemeFolder(t)
 	applied, missing := catalogue.GetApplied("mine:the-one-i-deleted")
 	if applied != theme.Default {
-		t.Errorf("wears %q", applied)
+		t.Errorf("applied %q", applied)
 	}
 	if missing != "mine:the-one-i-deleted" {
 		t.Errorf("says %q could not be found", missing)
@@ -203,10 +198,10 @@ func TestGetApplied_UnknownNameFallsBackToDefaultAndReportsName(t *testing.T) {
 
 	writeTheme(t, catalogue, "kept.css", ":root {}")
 	if applied, missing := catalogue.GetApplied("mine:kept"); applied != "mine:kept" || missing != "" {
-		t.Errorf("wears %q, missing %q", applied, missing)
+		t.Errorf("applied %q, missing %q", applied, missing)
 	}
 	if applied, missing := catalogue.GetApplied(""); applied != theme.Default || missing != "" {
-		t.Errorf("an installation nobody dressed wears %q, missing %q", applied, missing)
+		t.Errorf("an installation with no themes applied %q, missing %q", applied, missing)
 	}
 }
 
@@ -219,11 +214,15 @@ func TestAFolderThatCannotBeReadIsAListOfWhatShips(t *testing.T) {
 	if err := os.Chmod(catalogue.Dir(), 0o000); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { os.Chmod(catalogue.Dir(), 0o755) })
+	t.Cleanup(func() {
+		if err := os.Chmod(catalogue.Dir(), 0o755); err != nil {
+			t.Error(err)
+		}
+	})
 
 	themes := catalogue.Themes()
 	if !hasTheme(themes, theme.Default) {
-		t.Errorf("nothing to wear: %v", getNames(themes))
+		t.Errorf("no themes: %v", getNames(themes))
 	}
 	for _, one := range themes {
 		if one.Origin == theme.Mine {
@@ -231,16 +230,16 @@ func TestAFolderThatCannotBeReadIsAListOfWhatShips(t *testing.T) {
 		}
 	}
 	if applied, _ := catalogue.GetApplied("mine:dracula"); applied != theme.Default {
-		t.Errorf("wears %q", applied)
+		t.Errorf("applied %q", applied)
 	}
 }
 
-// A machine with no configuration folder is a window wearing what ships.
+// A machine with no configuration folder applies the theme that ships.
 func TestCatalogue_NoFolderYieldsBundledThemes(t *testing.T) {
 	var catalogue theme.Catalogue
 	themes := catalogue.Themes()
 	if !hasTheme(themes, theme.Default) {
-		t.Errorf("nothing to wear: %v", getNames(themes))
+		t.Errorf("no themes: %v", getNames(themes))
 	}
 	if _, err := catalogue.Text("mine:dracula"); err == nil {
 		t.Error("a theme was read out of a folder that is not there")

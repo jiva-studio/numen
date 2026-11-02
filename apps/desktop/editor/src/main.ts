@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
-import { interceptExternalLinks } from '@numen/ui'
+import { openExternalUrl } from '@numen/plugin-host'
+import { interceptExternalLinks, reportFailure, runInBackground } from '@numen/ui'
 import App from './app/shell/App.vue'
 
 // The window draws its own menus. The one the webview draws carries a browser's
@@ -7,23 +8,11 @@ import App from './app/shell/App.vue'
 // everywhere leaves the right button to the application.
 document.addEventListener('contextmenu', (event) => event.preventDefault())
 
-// The window's own runtime, which is what carries a file release over the
-// page back to the application and marks the place it would land. It is served
-// beside the page by the window, and a browser reading the page has none.
-const runtime = '/wails/runtime.js'
-const wails = import(/* @vite-ignore */ runtime).catch(() => undefined)
-
 // A note can contain any link, and this window has no address bar to show the
 // current location. Links stay inside the served pages, and an external
 // address opens in the system browser.
 interceptExternalLinks((href) => {
-  void wails.then((it) => {
-    if (it?.Browser?.OpenURL) {
-      it.Browser.OpenURL(href)
-    } else {
-      window.open(href, '_blank')
-    }
-  })
+  runInBackground(openExternalUrl(href), reportFailure)
 })
 
 createApp(App).mount('#app')

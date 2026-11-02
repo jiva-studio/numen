@@ -2,13 +2,18 @@
  * The settings tab, as the window keeps it.
  */
 import { ref } from 'vue'
+import { runInBackground } from '@numen/ui'
 import type { TabKind, WindowHandle } from '@/entities/tab'
 import { SETTINGS } from '@/entities/tab'
 import SettingsTab from './ui/SettingsTab.vue'
 import type { Installation, SettingsTabState } from './types'
 import { WORDS as words } from './words'
 
-export function useSettingsTab(handle: WindowHandle, installation: Installation) {
+export function useSettingsTab(
+  handle: WindowHandle,
+  installation: Installation,
+  reportError: (error: unknown) => void,
+) {
   const isOpen = ref(false)
   const initialPluginId = ref<string | null>(null)
   const initialSearchQuery = ref('')
@@ -39,7 +44,7 @@ export function useSettingsTab(handle: WindowHandle, installation: Installation)
     } else if (pluginId !== undefined) {
       initialPluginId.value = pluginId
     }
-    void handle.openTab(SETTINGS, pluginId)
+    runInBackground(handle.openTab(SETTINGS, pluginId), reportError)
   }
 
   return { kind, state, openSettings, isOpen }

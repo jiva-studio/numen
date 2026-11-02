@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/theme"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 // TestAStreamWhoseClientWentAwayEnds. The window roots every request at the
@@ -51,9 +52,9 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 		t.Fatal("the client went away and the stream is still standing")
 	}
 
-	deadline := time.Now().Add(10 * time.Second)
+	deadline := testsupport.GetMachine().Now().Add(10 * time.Second)
 	for isWatchingFolder() {
-		if time.Now().After(deadline) {
+		if testsupport.GetMachine().Now().After(deadline) {
 			t.Fatal("the stream ended and the folder watch is still running")
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -76,6 +77,6 @@ func wrapWithProcessContext(handler http.Handler, entered, returned chan<- struc
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		entered <- struct{}{}
 		defer func() { returned <- struct{}{} }()
-		handler.ServeHTTP(w, r.WithContext(context.Background()))
+		handler.ServeHTTP(w, r.WithContext(context.WithoutCancel(r.Context())))
 	})
 }

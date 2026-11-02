@@ -8,11 +8,13 @@ import (
 	"strings"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
 )
 
-// EnvDir names the folder plugins keep their models in.
+// EnvDir names the folder plugins keep their models in. The host sets it, to the folder a user chose or
+// to models in the shared data directory.
 const EnvDir = "NUMEN_MODELS_DIR"
 
 type paths struct {
@@ -39,8 +41,8 @@ func findInHome(fileName string) string {
 			return found
 		}
 	}
-	if base, err := os.UserConfigDir(); err == nil {
-		return findInFolder(filepath.Join(base, "numen", "models"), fileName)
+	if base, err := cache.GetSharedDataDirOrPluginDataDir(); err == nil {
+		return findInFolder(filepath.Join(base, "models"), fileName)
 	}
 	return ""
 }
@@ -70,8 +72,8 @@ func locateModel(explicitPath, envVar, fileName, dir string) (string, error) {
 	return "", fmt.Errorf("model %s not found", fileName)
 }
 
-func locateModels(ctx context.Context, cfg Config) (*ort.Engine, string, paths, error) {
-	engine, pos, err := onnx.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
+func locateModels(ctx context.Context, library *onnx.Library, cfg Config) (*ort.Engine, string, paths, error) {
+	engine, pos, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
 	if err != nil {
 		return nil, "", paths{}, err
 	}

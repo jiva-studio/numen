@@ -53,7 +53,7 @@ const USE_MODELS = (defaultName: string): readonly Model[] =>
   [
     { name: 'claude', title: 'Claude Code' },
     { name: 'antigravity', title: 'Antigravity' },
-    { name: '', title: 'Nothing answers' },
+    { name: '', title: 'No agent responds' },
   ].map(({ name, title }) => ({
     namedAt: ['agent', 'use'],
     name,

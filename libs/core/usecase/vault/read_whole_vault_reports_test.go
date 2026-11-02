@@ -226,7 +226,8 @@ func TestBooksReadWholeAreFollowedByTheVectors(t *testing.T) {
 	embed.Embedder = pointing{}
 	making := vaults.NewReadWholeVault(scanner(readers, db), books, embed)
 
-	_, _ = making.Execute(ctx, v)
+	_, executeErr := making.Execute(ctx, v)
+	t.Logf("executing the whole read after its context ended gave %v", executeErr)
 
 	if counted.opened == 0 {
 		t.Error("the vectors were not tried after the books were read whole")

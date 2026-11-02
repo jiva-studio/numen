@@ -29,6 +29,6 @@ func (d debugOptions) registerVault(cfg container.Config) error {
 
 func (d debugOptions) isServingHTTP() bool { return d.httpAddr != "" }
 
-func (d debugOptions) serveHTTP(ctx context.Context, handler http.Handler) error {
-	return debugserve.Serve(ctx, d.httpAddr, handler, os.Stdout)
+func (d debugOptions) serveHTTP(ctx context.Context, cfg container.Config, handler http.Handler) error {
+	return debugserve.Serve(ctx, cfg.Clock(), d.httpAddr, handler, os.Stdout)
 }

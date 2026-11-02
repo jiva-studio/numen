@@ -27,10 +27,7 @@ func TestDiscoveryWithMockBins(t *testing.T) {
 func TestDiscoveryWithoutAgents(t *testing.T) {
 	withoutAgentsAnywhere(t)
 
-	if IsAntigravityInstalled() {
-		t.Error("expected Antigravity to be absent")
-	}
-	if got := FindAntigravity(); got != "agy" {
+	if got := findAntigravityIn(nil); got != "agy" {
 		t.Errorf("expected bare 'agy', got %q", got)
 	}
 }

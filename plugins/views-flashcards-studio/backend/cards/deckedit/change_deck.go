@@ -30,7 +30,7 @@ func changeDeck(
 		return deckChange{}, err
 	}
 	wrote, err := write.Deck(ctx, v, pos.Path, file.Body(), pos.FileStat)
-	if err != nil && !errors.Is(err, note.ErrUnlevelled) {
+	if err != nil && !errors.Is(err, note.ErrIndexOutdated) {
 		return deckChange{}, err
 	}
 	return deckChange{

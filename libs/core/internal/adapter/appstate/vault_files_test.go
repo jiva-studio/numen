@@ -114,7 +114,11 @@ func TestAFolderThatCannotBeSavedIntoFailsTheWrite(t *testing.T) {
 	if err := os.Chmod(dir, 0o500); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chmod(dir, 0o755) })
+	t.Cleanup(func() {
+		if err := os.Chmod(dir, 0o755); err != nil {
+			t.Error(err)
+		}
+	})
 
 	if err := appstate.VaultFilesAt(dir).Write(t.Context(), "vault-a", []byte("{}")); err == nil {
 		t.Error("wrote into a read-only folder")

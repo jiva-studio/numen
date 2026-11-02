@@ -100,10 +100,10 @@ func makeTree(t *testing.T, names ...string) map[string]string {
 	return dirs
 }
 
-func follow(t *testing.T, h *hub, dir string, isRecursive bool) (chan notify.EventInfo, func()) {
+func follow(t *testing.T, h *Hub, dir string, isRecursive bool) (chan notify.EventInfo, func()) {
 	t.Helper()
 	c := make(chan notify.EventInfo, 8)
-	stop, err := h.watch(dir, isRecursive, c)
+	stop, err := h.Watch(dir, isRecursive, c)
 	if err != nil {
 		t.Fatal(err)
 	}

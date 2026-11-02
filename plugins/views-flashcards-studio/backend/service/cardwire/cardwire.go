@@ -50,7 +50,7 @@ func NewRenameResponse(r cards.RenameResult, stat *api.FileStat) *api.RenameCard
 		NotWritten:   nil,
 		Error:        api.ErrorCodeUnspecified,
 		At:           stat,
-		IsUnlevelled: false,
+		IsIndexOutdated: false,
 	}
 	for _, deck := range r.NotWritten {
 		out.NotWritten = append(out.NotWritten, &api.UnwrittenDeck{

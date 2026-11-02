@@ -60,7 +60,7 @@ func getRetainedAdapters(name, src string) []string {
 					return true
 				}
 				path := underMap[offset.Name]
-				if !strings.HasPrefix(path, compilerHolds) || driving[strings.TrimPrefix(path, module)] {
+				if !strings.HasPrefix(path, compilerHolds) || getDriving()[strings.TrimPrefix(path, module)] {
 					return true
 				}
 				findings = append(findings, fn.Name.Name+" answers with "+offset.Name+"."+sel.Sel.Name+

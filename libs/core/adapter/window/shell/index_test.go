@@ -17,7 +17,9 @@ import (
 )
 
 // unread is a vault the index does not carry.
-var unread = domain.Vault{ID: "unread", Name: "Sanskrit", Path: "/vaults/Sanskrit"}
+func getUnread() domain.Vault {
+	return domain.Vault{ID: "unread", Name: "Sanskrit", Path: "/vaults/Sanskrit"}
+}
 
 // A vault being read is work the window reports, named by the vault it is on
 // and by how far it has got. A window session on a blank frame reads as broken.
@@ -29,7 +31,7 @@ func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
 		return nil
 	})
 
-	state, err := api.EnsureIndexed(t.Context(), unread)
+	state, err := api.EnsureIndexed(t.Context(), getUnread())
 	if err != nil || state.Status != pluginport.PluginIndexing || state.Reason != "" {
 		t.Fatalf("the vault came back %+v (%v)", state, err)
 	}
@@ -79,7 +81,7 @@ func TestAVaultThatCouldNotBeReadReturnsWhyAndIsLetAlone(t *testing.T) {
 		return errors.New("the folder is not there")
 	})
 	ask := func() pluginport.PluginIndexState {
-		state, err := api.EnsureIndexed(t.Context(), unread)
+		state, err := api.EnsureIndexed(t.Context(), getUnread())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -95,7 +97,7 @@ func TestAVaultThatCouldNotBeReadReturnsWhyAndIsLetAlone(t *testing.T) {
 	}
 
 	// The vault moved underneath the window, which is what lets it be tried again.
-	api.ClearIndexFailure(unread.ID)
+	api.ClearIndexFailure(getUnread().ID)
 	ask()
 	testsupport.WaitFor(t, func() bool { return tried.Load() == 2 })
 }
@@ -104,7 +106,7 @@ func TestAVaultThatCouldNotBeReadReturnsWhyAndIsLetAlone(t *testing.T) {
 func TestAVaultTheIndexDoesNotCarryIsUnreadWhereNothingReadsIt(t *testing.T) {
 	api := newAPI(t)
 
-	state, err := api.EnsureIndexed(t.Context(), unread)
+	state, err := api.EnsureIndexed(t.Context(), getUnread())
 
 	if err != nil || state.Status != pluginport.PluginIndexFailed || state.Reason == "" {
 		t.Errorf("a vault nothing reads stands as %+v (%v)", state, err)
@@ -116,14 +118,14 @@ func TestAVaultThatWasReadIsClaimedAgainOnceForgotten(t *testing.T) {
 	r := &indexRuns{}
 	r.setIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
 
-	r.record(unread, nil)
-	if read, _, _, _ := r.tryStart(unread); read != nil {
+	r.record(getUnread(), nil)
+	if read, _, _, _ := r.tryStart(getUnread()); read != nil {
 		t.Fatalf("a vault indexed clean was claimed before it was forgotten")
 	}
 
-	r.clear(unread.ID)
+	r.clear(getUnread().ID)
 
-	read, _, _, _ := r.tryStart(unread)
+	read, _, _, _ := r.tryStart(getUnread())
 	if read == nil {
 		t.Fatalf("a vault forgotten after a clean indexing was not claimable again")
 	}
@@ -141,7 +143,7 @@ func TestAWindowDoingNothingPriorItselfStillAnswers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	testsupport.CloseAfter(t, stream)
 
 	if !stream.Receive() {
 		t.Fatalf("nothing was said: %v", stream.Err())
@@ -200,7 +202,7 @@ func TestAnIndexingThatFailedStaysAsWorkWithWhy(t *testing.T) {
 		return errors.New("the folder is not there")
 	})
 
-	if _, err := api.EnsureIndexed(t.Context(), unread); err != nil {
+	if _, err := api.EnsureIndexed(t.Context(), getUnread()); err != nil {
 		t.Fatal(err)
 	}
 	testsupport.WaitFor(t, func() bool {
@@ -222,7 +224,7 @@ func TestAVaultReadWakesTheListeners(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := api.EnsureIndexed(t.Context(), unread); err != nil {
+	if _, err := api.EnsureIndexed(t.Context(), getUnread()); err != nil {
 		t.Fatal(err)
 	}
 

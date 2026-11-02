@@ -1,7 +1,10 @@
 // Package agentcontract re-exports the agent port contract for completion use cases.
 package agentcontract
 
-import "github.com/jiva-studio/numen/libs/core/port/agentport"
+import (
+	"context"
+	"github.com/jiva-studio/numen/libs/core/port/agentport"
+)
 
 type (
 	Agent              = agentport.Agent
@@ -18,7 +21,10 @@ type (
 	ToolEndpoint       = agentport.ToolEndpoint
 )
 
-var (
-	Answer            = agentport.Answer
-	GetDefaultProgram = agentport.GetDefaultProgram
-)
+func Answer(ctx context.Context, agent agentport.Starter, task agentport.Task) (string, error) {
+	return agentport.Answer(ctx, agent, task)
+}
+
+func GetDefaultProgram(programs []agentport.AgentProgram) (agentport.AgentProgram, bool) {
+	return agentport.GetDefaultProgram(programs)
+}

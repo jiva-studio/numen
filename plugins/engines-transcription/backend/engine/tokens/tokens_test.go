@@ -66,13 +66,15 @@ func createVocabularyFile(t testing.TB, words []string) string {
 	return pos
 }
 
-var vocabularyWords = []string{
-	"<unk>", "▁what", "▁the", "▁page", "▁say", "s", "▁", "▁▁", "a▁b",
-	"▁é", "ing", "▁world", "<blk>",
+func getVocabularyWords() []string {
+	return []string{
+		"<unk>", "▁what", "▁the", "▁page", "▁say", "s", "▁", "▁▁", "a▁b",
+		"▁é", "ing", "▁world", "<blk>",
+	}
 }
 
 func TestTokensTextMatchesReference(t *testing.T) {
-	loaded, err := Read(createVocabularyFile(t, vocabularyWords))
+	loaded, err := Read(createVocabularyFile(t, getVocabularyWords()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,9 +82,9 @@ func TestTokensTextMatchesReference(t *testing.T) {
 	for range 5000 {
 		response := make([]int, rng.Intn(24))
 		for i := range response {
-			response[i] = rng.Intn(len(vocabularyWords)+4) - 2
+			response[i] = rng.Intn(len(getVocabularyWords())+4) - 2
 		}
-		want := decodeReference(Pieces(vocabularyWords), response)
+		want := decodeReference(Pieces(getVocabularyWords()), response)
 		if got := loaded.GetText(response); got != want {
 			t.Fatalf("tokens %v say %q, want %q", response, got, want)
 		}

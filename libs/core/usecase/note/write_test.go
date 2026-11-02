@@ -7,8 +7,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
 	"strings"
 	"testing"
-	"time"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -92,7 +92,10 @@ func TestWrite_EnforcesWriterLimit(t *testing.T) {
 // newDrawingWrite is a writer that records what it receives while a note is being rendered.
 func (c changing) newDrawingWrite(callback *[]domain.Edit) note.Write {
 	w := c.newWrite()
-	w.Drawing = func(_ context.Context, response domain.Edit) { *callback = append(*callback, response) }
+	w.Drawing = func(_ context.Context, response domain.Edit) error {
+		*callback = append(*callback, response)
+		return nil
+	}
 	return w
 }
 
@@ -187,12 +190,12 @@ func TestWrite_SmallerWriterLimitRejectsDefaultAllowed(t *testing.T) {
 func TestAWriteThroughReplacedPortsUsesThem(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	levelled := 0
-	w := note.NewWrite(brokenReaders{open: errDiskGone}, brokenWriters{hold: errDiskGone}, nil, time.Now).
+	updated := 0
+	w := note.NewWrite(brokenReaders{open: errDiskGone}, brokenWriters{hold: errDiskGone}, nil, testsupport.NewClock()).
 		WithReaders(vaultreader.Readers{}).
-		WithWriters(vaultwriter.VaultWriters{}).
+		WithWriters(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}).
 		WithIndex(func(context.Context, domain.Vault, []string) error {
-			levelled++
+			updated++
 			return nil
 		})
 
@@ -202,7 +205,7 @@ func TestAWriteThroughReplacedPortsUsesThem(t *testing.T) {
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Mine.") {
 		t.Errorf("the note was not written:\n%s", body)
 	}
-	if levelled != 1 {
-		t.Errorf("the replaced index was called %d times, want 1", levelled)
+	if updated != 1 {
+		t.Errorf("the replaced index was called %d times, want 1", updated)
 	}
 }

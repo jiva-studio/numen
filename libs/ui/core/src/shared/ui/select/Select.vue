@@ -4,13 +4,15 @@
  * a group are shown under the group name.
  *
  * A current value that matches none of the choices is displayed as it is, and
- * no event is emitted until a choice is made.
+ * no event is emitted until a choice is made. A searchable select offers the list
+ * with a search line over it, and may take what is typed as the value.
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { ChevronDown } from '@lucide/vue'
 import { measureElementRect } from '@/shared/lib/dom'
 import { cn } from '@/shared/lib/dom/classes'
 import { Menu, type MenuItem } from '../menu'
+import { SearchableListPopup, filterItems } from '../searchable-list'
 import type { Position } from '@/shared/lib/math/geometry'
 import type { SelectProps } from './Select.types'
 
@@ -37,6 +39,17 @@ const items = computed<readonly MenuItem[]>(() =>
     ...(one.detail ? { detail: one.detail } : {}),
     ...(one.group ? { group: one.group } : {}),
   })),
+)
+
+/** What is typed on the search line of a searchable select. */
+const query = ref('')
+
+/** Whether what is typed is offered as the value: it names no choice and is not empty. */
+const isCustomOffered = computed(
+  () =>
+    props.canEnterCustom &&
+    query.value.trim() !== '' &&
+    filterItems(props.choices, query.value).length === 0,
 )
 
 /** The choice in force, and none where the value is none of them. */
@@ -71,8 +84,14 @@ const onOpenChoices = () => {
   menuAnchor.value = { at: { x: box.left, y: box.bottom }, wide: box.width }
 }
 
+const onCloseChoices = () => {
+  menuAnchor.value = null
+  query.value = ''
+}
+
 const onChoose = (id: string) => {
   model.value = id
+  onCloseChoices()
 }
 
 /** The arrows open the choices standing on the one in force. */
@@ -89,7 +108,7 @@ const onKey = (event: KeyboardEvent) => {
     v-bind="$attrs"
     type="button"
     data-slot="select"
-    aria-haspopup="menu"
+    :aria-haspopup="isSearchable ? 'listbox' : 'menu'"
     :aria-expanded="menuAnchor !== null"
     :disabled="isDisabled"
     :class="
@@ -117,8 +136,30 @@ const onKey = (event: KeyboardEvent) => {
     <ChevronDown class="select__mark shrink-0" aria-hidden="true" />
   </button>
 
+  <SearchableListPopup
+    v-if="menuAnchor && isSearchable"
+    v-model:query="query"
+    :model-value="model"
+    :items="choices"
+    :label="name"
+    :placeholder="searchName"
+    empty-text="Nothing to choose"
+    :has-action="isCustomOffered"
+    :at="menuAnchor.at"
+    :asking="menuAnchor.wide"
+    :from="element"
+    @select="onChoose"
+    @act="onChoose"
+    @close="onCloseChoices"
+  >
+    <template #action="{ query: text }">
+      <span class="select__custom">{{ text }}</span>
+      <span class="select__custom-note">Use custom value</span>
+    </template>
+  </SearchableListPopup>
+
   <Menu
-    v-if="menuAnchor"
+    v-else-if="menuAnchor"
     :items="items"
     :at="menuAnchor.at"
     :asking="menuAnchor.wide"
@@ -126,9 +167,6 @@ const onKey = (event: KeyboardEvent) => {
     :current="model"
     :name="name"
     has-groups
-    :is-searchable="isSearchable"
-    :can-enter-custom="canEnterCustom"
-    :search-name="searchName"
     is-open
     trigger="keyboard"
     @choose="onChoose"
@@ -139,6 +177,13 @@ const onKey = (event: KeyboardEvent) => {
 </template>
 
 <style scoped>
+/* The typed value, and the note that it is not one of the choices. */
+.select__custom-note {
+  margin-inline-start: auto;
+  font-size: var(--numen-text-1);
+  color: var(--numen-hushed);
+}
+
 /* One line, then an ellipsis. A model is named by a word and addressed by a
    line too long to read, and the name is what the line carries. */
 .select__reading {

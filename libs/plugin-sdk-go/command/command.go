@@ -15,7 +15,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -106,40 +106,50 @@ func (r *Registry) RunCommand(ctx context.Context, request Request) (Result, err
 
 // Mount registers the handler as PluginCommandService on s.
 func Mount(s *server.Server, handler Handler) {
-	s.Register(numenv1connect.NewPluginCommandServiceHandler(Service{Handler: handler}, s.HandlerOptions()...))
+	s.Register(numenv1connect.NewPluginCommandServiceHandler(service{handler: handler}, s.HandlerOptions()...))
 }
 
-// Service answers PluginCommandService with a Handler.
-type Service struct {
+// service answers PluginCommandService with a Handler.
+type service struct {
 	numenv1connect.UnimplementedPluginCommandServiceHandler
 
-	Handler Handler
+	handler Handler
 }
 
 // RunCommand runs the command and returns the handler's result. A failure is
 // returned as an error code with the handler's message.
-func (s Service) RunCommand(
-	ctx context.Context, req *connect.Request[numenv1.RunCommandRequest],
-) (*connect.Response[numenv1.RunCommandResponse], error) {
-	result, err := s.Handler.RunCommand(ctx, Request{
-		Command:   req.Msg.GetCommand(),
-		Path:      req.Msg.GetPath(),
-		Arguments: Arguments(req.Msg.GetArguments()),
-	})
+func (s service) RunCommand(
+	ctx context.Context, req *connect.Request[v1.RunCommandRequest],
+) (*connect.Response[v1.RunCommandResponse], error) {
+	result, err := s.handler.RunCommand(ctx, readRequest(req.Msg))
 	if err == nil {
-		return connect.NewResponse(&numenv1.RunCommandResponse{
-			Message: result.Message, OpenedPath: result.OpenedPath,
-		}), nil
+		return connect.NewResponse(writeResult(result)), nil
 	}
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return nil, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
-	code := numenv1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED
+	return connect.NewResponse(writeFailure(err)), nil
+}
+
+func readRequest(msg *v1.RunCommandRequest) Request {
+	return Request{
+		Command:   msg.GetCommand(),
+		Path:      msg.GetPath(),
+		Arguments: Arguments(msg.GetArguments()),
+	}
+}
+
+func writeResult(result Result) *v1.RunCommandResponse {
+	return &v1.RunCommandResponse{Message: result.Message, OpenedPath: result.OpenedPath}
+}
+
+func writeFailure(err error) *v1.RunCommandResponse {
+	code := v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED
 	switch {
 	case errors.Is(err, ErrUnknownCommand):
-		code = numenv1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND
+		code = v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND
 	case errors.Is(err, ErrBadArguments):
-		code = numenv1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS
+		code = v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS
 	}
-	return connect.NewResponse(&numenv1.RunCommandResponse{Error: code, Message: err.Error()}), nil
+	return &v1.RunCommandResponse{Error: code, Message: err.Error()}
 }

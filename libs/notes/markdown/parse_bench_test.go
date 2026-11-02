@@ -6,7 +6,8 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-var benchSampleNote = []byte(`---
+func getBenchSampleNote() []byte {
+	return []byte(`---
 title: Thermodynamics and Information Theory
 status: draft
 id: 01M02ACGM0FYMSXNDP29C90JNR
@@ -52,20 +53,21 @@ In statistical mechanics, entropy is related to the number of microscopic config
 As temperature approaches absolute zero, entropy approaches a minimum.
 See [[Third Law of Thermodynamics]] and [[Absolute Zero]].
 `)
+}
 
-var benchSampleLine = "See [[Entropy|entropy measure]] and [[Thermodynamics#Second Law]] for [[Details]]."
+const benchSampleLine = "See [[Entropy|entropy measure]] and [[Thermodynamics#Second Law]] for [[Details]]."
 
 func BenchmarkParseNote(b *testing.B) {
-	ref := domain.FileStat{Path: "notes/sample.md", Size: int64(len(benchSampleNote))}
+	ref := domain.FileStat{Path: "notes/sample.md", Size: int64(len(getBenchSampleNote()))}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {
-		_ = Parse(ref, benchSampleNote)
+		_ = Parse(ref, getBenchSampleNote())
 	}
 }
 
 func BenchmarkHeadings(b *testing.B) {
-	_, body, _ := splitFrontmatter(benchSampleNote)
+	_, body, _ := splitFrontmatter(getBenchSampleNote())
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {
@@ -85,12 +87,12 @@ func BenchmarkSplitFrontmatter(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {
-		_, _, _ = splitFrontmatter(benchSampleNote)
+		_, _, _ = splitFrontmatter(getBenchSampleNote())
 	}
 }
 
 func BenchmarkBodyLinks(b *testing.B) {
-	_, body, _ := splitFrontmatter(benchSampleNote)
+	_, body, _ := splitFrontmatter(getBenchSampleNote())
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {

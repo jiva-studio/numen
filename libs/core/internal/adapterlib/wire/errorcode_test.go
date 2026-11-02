@@ -79,7 +79,7 @@ func TestWhichErrorCodeAWritesErrorIs(t *testing.T) {
 			fmt.Errorf("Old.md: %w", note.ErrUnreadable),
 			v1.ErrorCode_ERROR_CODE_UNREADABLE, true,
 		},
-		"a whole note handed back as prose": {
+		"a whole note returned as prose": {
 			fmt.Errorf("Old.md: %w", note.ErrBodyUnwritable),
 			v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE, true,
 		},

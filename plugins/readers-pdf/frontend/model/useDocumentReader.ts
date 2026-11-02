@@ -87,8 +87,13 @@ export function useDocumentReader(documentsOrPath: Documents | string, maybePath
     pages.value = []
   }
 
+  const reportFailure = (caughtError: unknown) => {
+    error.value = formatErrorMessage(caughtError)
+  }
+
   const reader = {
     path,
+    reportFailure,
     pages,
     pageNumber: navigation.pageNumber,
     picture: viewport.picture,

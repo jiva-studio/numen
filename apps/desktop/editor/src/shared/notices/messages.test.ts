@@ -62,11 +62,11 @@ describe('a writer under a name', () => {
     // A stream that is down reports it every second, and a notice that arrives
     // again is a notice shown again.
     const log = createMessageLog()
-    const aged = log.getWriter('worn')
+    const writeMessage = log.getWriter('appearance')
 
-    aged('the themes stopped arriving', 'warning')
+    writeMessage('the themes stopped arriving', 'warning')
     const first = log.messages.value[0]?.id
-    aged('the themes stopped arriving', 'warning')
+    writeMessage('the themes stopped arriving', 'warning')
 
     expect(log.messages.value[0]?.id).toBe(first)
   })

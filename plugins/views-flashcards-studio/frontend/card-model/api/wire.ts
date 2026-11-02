@@ -134,7 +134,8 @@ function createCardModelReader(
   }
 }
 
-export function createCardModelWire(cards: Cards, say: MessageWriter = () => {}) {
+// Messages are dropped when the caller supplies no writer.
+export function createCardModelWire(cards: Cards, say: MessageWriter = () => undefined) {
   const state = createCardModelState()
   const { fileAnswers, titles } = state
 

@@ -4,55 +4,47 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"path/filepath"
-	"sync"
 	"sync/atomic"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/note"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// ran is how many queries have been issued to a database opened through the
-// tallying driver. A query is one statement executed, so a statement prepared
-// once and executed a hundred times counts a hundred.
-var ran atomic.Int64
-
-// tallyingDriver registers the driver the index opens, wrapped to count every
-// statement executed through it. It is registered once, because a driver name
-// is registered for the life of the process.
-var tallyingDriver = sync.OnceValue(func() error {
-	base, err := sql.Open("sqlite", ":memory:")
-	if err != nil {
-		return err
-	}
-	defer base.Close()
-	sql.Register("sqlite-tallying", tallying{base.Driver()})
-	return nil
-})
-
-type tallying struct{ driver.Driver }
+// tallying is the driver the index opens, wrapped to count in ran every statement executed
+// through it. A query is one statement executed, so a statement prepared once and executed a
+// hundred times counts a hundred.
+type tallying struct {
+	driver.Driver
+	ran *atomic.Int64
+}
 
 func (d tallying) Open(name string) (driver.Conn, error) {
 	c, err := d.Driver.Open(name)
 	if err != nil {
 		return nil, err
 	}
-	return tallyingConn{c}, nil
+	return tallyingConn{c, d.ran}, nil
 }
 
 // tallyingConn returns statements that count themselves. It offers no query of
 // its own, so every statement on this connection is prepared first and counted
 // where it runs.
-type tallyingConn struct{ driver.Conn }
+type tallyingConn struct {
+	driver.Conn
+	ran *atomic.Int64
+}
 
 func (c tallyingConn) Prepare(query string) (driver.Stmt, error) {
 	s, err := c.Conn.Prepare(query)
 	if err != nil {
 		return nil, err
 	}
-	return tallyingStmt{s}, nil
+	return tallyingStmt{s, c.ran}, nil
 }
 
 func (c tallyingConn) PrepareContext(ctx context.Context, query string) (driver.Stmt, error) {
@@ -64,60 +56,64 @@ func (c tallyingConn) PrepareContext(ctx context.Context, query string) (driver.
 	if err != nil {
 		return nil, err
 	}
-	return tallyingStmt{s}, nil
+	return tallyingStmt{s, c.ran}, nil
 }
 
-type tallyingStmt struct{ driver.Stmt }
+// errPositionalQuery is what a statement answers when the driver offers no QueryContext.
+var errPositionalQuery = errors.New("the driver offers no QueryContext")
 
-func (s tallyingStmt) Query(args []driver.Value) (driver.Rows, error) {
-	ran.Add(1)
-	return s.Stmt.Query(args)
+type tallyingStmt struct {
+	driver.Stmt
+	ran *atomic.Int64
+}
+
+// Query is never called: database/sql calls QueryContext on a statement that has it.
+func (s tallyingStmt) Query([]driver.Value) (driver.Rows, error) {
+	return nil, errPositionalQuery
 }
 
 func (s tallyingStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driver.Rows, error) {
-	ran.Add(1)
+	s.ran.Add(1)
 	queries, ok := s.Stmt.(driver.StmtQueryContext)
 	if !ok {
-		values := make([]driver.Value, 0, len(args))
-		for _, a := range args {
-			values = append(values, a.Value)
-		}
-		return s.Stmt.Query(values)
+		return nil, errPositionalQuery
 	}
 	return queries.QueryContext(ctx, args)
 }
 
 // openCountedDB is an index whose questions are counted: the database itself,
 // and the note queries over a pool of its own that does the counting.
-func openCountedDB(t *testing.T) (*DB, *note.Queries) {
+func openCountedDB(t *testing.T) (*DB, *note.Queries, *atomic.Int64) {
 	t.Helper()
-	if err := tallyingDriver(); err != nil {
-		t.Fatal(err)
-	}
 
 	path := filepath.Join(t.TempDir(), "index.db")
-	migrated.CopyTo(t, path)
+	newMigrated().CopyTo(t, path)
 	db, err := Open(t.Context(), path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
-	for _, v := range []domain.Vault{first, second} {
+	testsupport.CloseAfter(t, db)
+	for _, v := range []domain.Vault{getFirst(), getSecond()} {
 		if err := db.Vaults().Register(t.Context(), v.ID); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	pool, err := sql.Open("sqlite-tallying", dsn(path, settings{synchronous: shipped}))
+	base, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { pool.Close() })
-	return db, note.NewQueries(pool)
+	tallied := tallying{Driver: base.Driver(), ran: &atomic.Int64{}}
+	if err := base.Close(); err != nil {
+		t.Fatal(err)
+	}
+	pool := sql.OpenDB(connector{name: dsn(path, settings{synchronous: shipped}), driver: tallied})
+	testsupport.CloseAfter(t, pool)
+	return db, note.NewQueries(pool), tallied.ran
 }
 
 // questions is how many statements a call ran.
-func questions(t *testing.T, ask func() error) int64 {
+func questions(t *testing.T, ran *atomic.Int64, ask func() error) int64 {
 	t.Helper()
 	ran.Store(0)
 	if err := ask(); err != nil {
@@ -130,27 +126,27 @@ func questions(t *testing.T, ask func() error) int64 {
 // a query per entry makes a folder of five hundred notes issue five hundred
 // queries. The cost of opening a folder does not grow with the folder.
 func TestWhatEveryNoteOfAFolderIsCostsTheSameHoweverManyThereAre(t *testing.T) {
-	db, queries := openCountedDB(t)
+	db, queries, ran := openCountedDB(t)
 	ctx := t.Context()
 
 	paths := make([]string, 0, 6)
 	for i := range 6 {
 		path := fmt.Sprintf("samples/sample-%d.md", i)
-		saveTypedNote(t, db, first, path, fmt.Sprintf("Sample %d", i), sampleType)
+		saveTypedNote(t, db, getFirst(), path, fmt.Sprintf("Sample %d", i), sampleType)
 		paths = append(paths, path)
 	}
 
 	// The pool is opened and the vault looked up before anything is counted.
-	if _, err := queries.GetTypes(ctx, first.ID, paths[:1]); err != nil {
+	if _, err := queries.GetTypes(ctx, getFirst().ID, paths[:1]); err != nil {
 		t.Fatal(err)
 	}
 
-	few := questions(t, func() error {
-		_, err := queries.GetTypes(ctx, first.ID, paths[:2])
+	few := questions(t, ran, func() error {
+		_, err := queries.GetTypes(ctx, getFirst().ID, paths[:2])
 		return err
 	})
-	many := questions(t, func() error {
-		_, err := queries.GetTypes(ctx, first.ID, paths)
+	many := questions(t, ran, func() error {
+		_, err := queries.GetTypes(ctx, getFirst().ID, paths)
 		return err
 	})
 	if many != few {
@@ -161,26 +157,26 @@ func TestWhatEveryNoteOfAFolderIsCostsTheSameHoweverManyThereAre(t *testing.T) {
 // A rename reads every note of one type in the vault, and the index reports which notes those
 // are. Querying them by type is one query regardless of the vault's size.
 func TestTheNotesOfOneTypeAreOneQuestion(t *testing.T) {
-	db, queries := openCountedDB(t)
+	db, queries, ran := openCountedDB(t)
 	ctx := t.Context()
 
-	saveTypedNote(t, db, first, "samples/mammals.md", "Mammals", sampleType)
-	saveTypedNote(t, db, first, "samples/birds.md", "Birds", sampleType)
-	saveTypedNote(t, db, first, "forms/animal.md", "Animal", formType)
-	saveTypedNote(t, db, first, "notes/entropy.md", "Entropy", domain.TypeNote)
-	saveTypedNote(t, db, second, "samples/quasars.md", "Quasars", sampleType)
+	saveTypedNote(t, db, getFirst(), "samples/mammals.md", "Mammals", sampleType)
+	saveTypedNote(t, db, getFirst(), "samples/birds.md", "Birds", sampleType)
+	saveTypedNote(t, db, getFirst(), "forms/animal.md", "Animal", formType)
+	saveTypedNote(t, db, getFirst(), "notes/entropy.md", "Entropy", domain.TypeNote)
+	saveTypedNote(t, db, getSecond(), "samples/quasars.md", "Quasars", sampleType)
 
-	if _, err := queries.GetPathsOfType(ctx, first.ID, sampleType); err != nil {
+	if _, err := queries.GetPathsOfType(ctx, getFirst().ID, sampleType); err != nil {
 		t.Fatal(err)
 	}
-	if ran := questions(t, func() error {
-		_, err := queries.GetPathsOfType(ctx, first.ID, sampleType)
+	if questionCount := questions(t, ran, func() error {
+		_, err := queries.GetPathsOfType(ctx, getFirst().ID, sampleType)
 		return err
-	}); ran > 2 {
-		t.Errorf("the samples of a vault cost %d questions", ran)
+	}); questionCount > 2 {
+		t.Errorf("the samples of a vault cost %d questions", questionCount)
 	}
 
-	found, err := queries.GetPathsOfType(ctx, first.ID, sampleType)
+	found, err := queries.GetPathsOfType(ctx, getFirst().ID, sampleType)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +186,7 @@ func TestTheNotesOfOneTypeAreOneQuestion(t *testing.T) {
 	}
 	// One database holds every vault, and the second vault's sample is not this
 	// vault's.
-	other, err := queries.GetPathsOfType(ctx, second.ID, sampleType)
+	other, err := queries.GetPathsOfType(ctx, getSecond().ID, sampleType)
 	if err != nil {
 		t.Fatal(err)
 	}

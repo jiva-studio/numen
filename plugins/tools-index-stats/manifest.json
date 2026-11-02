@@ -1,0 +1,16 @@
+{
+  "id": "md.numen.tools.index.stats",
+  "name": "Index stats",
+  "version": "2026.11.1",
+  "protocol": 1,
+  "description": "Shows in the status bar how many vectors the search index holds",
+  "targets": ["desktop.editor"],
+  "contributes": {
+    "category": "tools",
+    "statusViews": [{ "id": "stats" }]
+  },
+  "permissions": ["index:read"],
+  "services": ["md.numen.tools.index.stats"],
+  "backend": { "entrypoint": "bin/tools-index-stats" },
+  "frontend": {}
+}

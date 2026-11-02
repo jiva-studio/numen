@@ -23,20 +23,19 @@ const GO_MODULES = [
   'plugins/agents-antigravity',
   'plugins/agents-claude',
   'plugins/agents-codex',
+  'plugins/tools-index-stats',
   'plugins/tools-media-importer',
   'plugins/engines-embeddings',
   'plugins/engines-ocr',
   'plugins/tools-proofreading',
+  'plugins/tools-search-relevance',
+  'plugins/tools-updater',
   'plugins/readers-epub',
   'plugins/readers-pdf',
   'plugins/engines-transcription',
 ]
 
-const TS_PACKAGES = [
-  'libs/ui/core',
-  'apps/desktop/editor',
-  'apps/desktop/flashcards',
-]
+const TS_PACKAGES = ['libs/ui/core', 'apps/desktop/editor', 'apps/desktop/flashcards']
 
 /**
  * Parses a Go coverprofile file and returns { total, covered } statements.
@@ -102,11 +101,15 @@ const collectTs = () => {
 
     try {
       console.log(`[coverage] Testing TS package: ${pkg}...`)
-      execFileSync('npx', ['vitest', 'run', '--project', 'unit', '--coverage', '--coverage.reporter=json-summary'], {
-        cwd: pkgDir,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      })
+      execFileSync(
+        'npx',
+        ['vitest', 'run', '--project', 'unit', '--coverage', '--coverage.reporter=json-summary'],
+        {
+          cwd: pkgDir,
+          encoding: 'utf8',
+          stdio: 'pipe',
+        },
+      )
 
       const summaryPath = join(pkgDir, 'coverage/coverage-summary.json')
       if (existsSync(summaryPath)) {
@@ -138,8 +141,12 @@ export const runCollection = async () => {
   const pct = total > 0 ? Math.round((100 * covered) / total) : 0
 
   console.log(`[coverage] Final Unified Coverage: ${pct}% (Total: ${covered}/${total} statements)`)
-  console.log(`[coverage]   - Go: ${go.total > 0 ? ((100 * go.covered) / go.total).toFixed(1) : 0}% (${go.covered}/${go.total})`)
-  console.log(`[coverage]   - TS: ${ts.total > 0 ? ((100 * ts.covered) / ts.total).toFixed(1) : 0}% (${ts.covered}/${ts.total})`)
+  console.log(
+    `[coverage]   - Go: ${go.total > 0 ? ((100 * go.covered) / go.total).toFixed(1) : 0}% (${go.covered}/${go.total})`,
+  )
+  console.log(
+    `[coverage]   - TS: ${ts.total > 0 ? ((100 * ts.covered) / ts.total).toFixed(1) : 0}% (${ts.covered}/${ts.total})`,
+  )
 
   rmSync(tmpDir, { recursive: true, force: true })
 

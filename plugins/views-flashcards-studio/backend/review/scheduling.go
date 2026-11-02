@@ -117,7 +117,7 @@ func (p Preset) computeDueDay(s *DueByDay, pos, due time.Time) time.Time {
 		}
 	}
 
-	// The instant is handed back in the zone it arrived in.
+	// The instant is returned in the zone it arrived in.
 	return due.In(in).AddDate(0, 0, on-dueDay).In(due.Location())
 }
 
@@ -128,13 +128,18 @@ func (p Preset) getWeight(s *DueByDay, day int) float64 {
 	return p.GetShare(weekday(day)) / float64(1+s.on[day])
 }
 
-// slacks is the tolerance on either side of an interval within which a card may
-// be moved, by interval length: the longer the interval, the larger the
+// slack is the tolerance on either side of an interval within which a card may be moved, for the
+// intervals from one length to another.
+type slack struct{ from, to, factor float64 }
+
+// getSlacks returns the tolerance by interval length: the longer the interval, the larger the
 // tolerance in days.
-var slacks = []struct{ from, to, factor float64 }{
-	{2.5, 7, 0.15},
-	{7, 20, 0.1},
-	{20, math.Inf(1), 0.05},
+func getSlacks() []slack {
+	return []slack{
+		{2.5, 7, 0.15},
+		{7, 20, 0.1},
+		{20, math.Inf(1), 0.05},
+	}
 }
 
 // window is the days either side of an interval a card may be put on, counted
@@ -145,7 +150,7 @@ func window(away time.Duration) (first, last int, opens bool) {
 		return 0, 0, false
 	}
 	slack := 1.0
-	for _, one := range slacks {
+	for _, one := range getSlacks() {
 		slack += one.factor * math.Max(math.Min(days, one.to)-one.from, 0)
 	}
 	first = int(math.Max(2, math.Round(days-slack)))

@@ -7,14 +7,16 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-var epoch = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+func getEpoch() time.Time {
+	return time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+}
 
 func isAllIntact(domain.TextVersion) bool { return true }
 
 func TestFindLiveVersionReturnsTheNewestValidVersion(t *testing.T) {
 	versions := []domain.TextVersion{
-		{Path: "a.pdf", PluginID: "reader", Key: "a", SourceHash: "file-1", Hash: "ha", CreateTime: epoch},
-		{Path: "a.pdf", PluginID: "fixer", Key: "b", Source: "reader/a", SourceHash: "ha", Hash: "hb", CreateTime: epoch.Add(time.Minute)},
+		{Path: "a.pdf", PluginID: "reader", Key: "a", SourceHash: "file-1", Hash: "ha", CreateTime: getEpoch()},
+		{Path: "a.pdf", PluginID: "fixer", Key: "b", Source: "reader/a", SourceHash: "ha", Hash: "hb", CreateTime: getEpoch().Add(time.Minute)},
 	}
 	got, ok := domain.FindLiveVersion(versions, "file-1", isAllIntact)
 	if !ok || got.GetID() != "fixer/b" {
@@ -24,8 +26,8 @@ func TestFindLiveVersionReturnsTheNewestValidVersion(t *testing.T) {
 
 func TestFindLiveVersionBreaksATieByListOrder(t *testing.T) {
 	versions := []domain.TextVersion{
-		{PluginID: "p", Key: "first", SourceHash: "f", CreateTime: epoch},
-		{PluginID: "p", Key: "second", SourceHash: "f", CreateTime: epoch},
+		{PluginID: "p", Key: "first", SourceHash: "f", CreateTime: getEpoch()},
+		{PluginID: "p", Key: "second", SourceHash: "f", CreateTime: getEpoch()},
 	}
 	got, _ := domain.FindLiveVersion(versions, "f", isAllIntact)
 	if got.Key != "second" {
@@ -35,8 +37,8 @@ func TestFindLiveVersionBreaksATieByListOrder(t *testing.T) {
 
 func TestFindLiveVersionSkipsAVersionWhoseFileChanged(t *testing.T) {
 	versions := []domain.TextVersion{
-		{PluginID: "reader", Key: "a", SourceHash: "f", Hash: "ha", CreateTime: epoch},
-		{PluginID: "fixer", Key: "b", Source: "reader/a", SourceHash: "ha", Hash: "hb", CreateTime: epoch.Add(time.Minute)},
+		{PluginID: "reader", Key: "a", SourceHash: "f", Hash: "ha", CreateTime: getEpoch()},
+		{PluginID: "fixer", Key: "b", Source: "reader/a", SourceHash: "ha", Hash: "hb", CreateTime: getEpoch().Add(time.Minute)},
 	}
 	got, ok := domain.FindLiveVersion(versions, "f", func(v domain.TextVersion) bool { return v.PluginID != "fixer" })
 	if !ok || got.GetID() != "reader/a" {

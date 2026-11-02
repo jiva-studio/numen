@@ -30,16 +30,18 @@ import (
 
 // The two vaults every test here uses. Their books share no words, so a chunk
 // that arrives from the wrong one is recognisable.
-var (
-	first  = domain.Vault{ID: "01FIRST", Name: "first", Path: "/first"}
-	second = domain.Vault{ID: "01SECOND", Name: "second", Path: "/second"}
-)
+func getFirst() domain.Vault { return domain.Vault{ID: "01FIRST", Name: "first", Path: "/first"} }
+
+func getSecond() domain.Vault { return domain.Vault{ID: "01SECOND", Name: "second", Path: "/second"} }
 
 // The vocabularies the two vaults are written in.
-var (
-	sanskrit = []string{"udyana", "vrksa", "bija", "jala", "pathin", "grama", "nadi", "parvata"}
-	latin    = []string{"aqua", "terra", "ventus", "ignis", "silva", "mons", "flumen", "campus"}
-)
+func getSanskrit() []string {
+	return []string{"udyana", "vrksa", "bija", "jala", "pathin", "grama", "nadi", "parvata"}
+}
+
+func getLatin() []string {
+	return []string{"aqua", "terra", "ventus", "ignis", "silva", "mons", "flumen", "campus"}
+}
 
 // store is the index, in memory, answering every question the way the index
 // answers it. What the two passes do next is read from those answers.
@@ -479,15 +481,16 @@ func (v vaults) Open(vault domain.Vault) (vaultport.VaultReader, error) {
 // embedder returns the same vector for the same text, so a returned vector
 // identifies its input.
 type embedder struct {
-	dims int
+	dims   int
+	minLen int
 
 	mu        sync.Mutex
 	calls     int
-	seenCount []string // every text handed over, in the order it arrived
+	seenCount []string // every text passed, in the order it arrived
 }
 
 func (e *embedder) GetModel() embeddingport.EmbeddingModel {
-	return embeddingport.EmbeddingModel{Name: "fake", Dimensions: e.dims}
+	return embeddingport.EmbeddingModel{Name: "fake", Dimensions: e.dims, MinChunkLength: e.minLen}
 }
 
 func (*embedder) Close() error { return nil }

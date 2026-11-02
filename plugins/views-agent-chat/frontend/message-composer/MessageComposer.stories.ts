@@ -30,12 +30,12 @@ const meta = {
   },
   argTypes: {
     placeholder: { control: 'text' },
-    isWorking: { control: 'boolean' },
+    isAnswerPending: { control: 'boolean' },
     isDisabled: { control: 'boolean' },
   },
   args: {
     placeholder: 'Write a message',
-    isWorking: false,
+    isAnswerPending: false,
     isDisabled: false,
     onSubmit: fn(),
     onStop: fn(),

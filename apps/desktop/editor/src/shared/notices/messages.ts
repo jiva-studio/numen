@@ -2,11 +2,11 @@
  * The messages the window displays, and how long it keeps them.
  *
  * Each part of the window that reports to the user writes under its own name,
- * and the corner renders the current messages. Nothing here depends on how they
+ * and the status bar lists the failed ones as tasks. Nothing here depends on how they
  * are rendered.
  */
 import { shallowRef, type Ref } from 'vue'
-import type { Severity, MessageWriter } from '@numen/plugin-sdk'
+import type { Severity, MessageWriter } from '@numen/plugin-host'
 
 export type { Severity, MessageWriter }
 

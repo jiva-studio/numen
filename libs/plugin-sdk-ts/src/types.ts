@@ -3,9 +3,9 @@ import type { BufferHost } from './buffers'
 import type { DropHost, DropRegistration } from './drops'
 import type { NoticeHost } from './notices'
 import type { TaskHost } from './tasks'
-import type { Selector, TextMaker, VaultTexts } from './texts'
+import type { Selector, VaultTexts } from './texts'
 import type { MountedView, ViewRegistration } from './views'
-import type { NoteType, VaultFiles, VaultNotes, WorkspaceHost } from './workspace'
+import type { NoteType, VaultFiles, VaultNotes, VaultRelations, WorkspaceHost } from './workspace'
 
 // Disposable is a handle released on teardown.
 export interface Disposable {
@@ -20,46 +20,10 @@ export interface TextRange {
 
 // Result is the discriminated outcome of a fallible operation.
 import type { Result } from './result'
-export type { Failure, Result } from './result'
-
-// SettingOption declares one choice in an enumerated setting.
-export interface SettingOption {
-  value: string
-  /** The display title for the value; when absent the value is displayed. */
-  title?: string
-  /** Text displayed under the setting while the value is selected. */
-  detail?: string
-  /** The ids of the dependencies the host provisions only while the value is in force. */
-  dependencies?: string[]
-}
-
-// SettingCondition holds while a setting holds one of the values listed.
-export interface SettingCondition {
-  setting: string
-  is: string[]
-}
-
-// SettingDeclaration declares a plugin configuration option.
-export interface SettingDeclaration {
-  key: string
-  type: 'string' | 'boolean' | 'number' | 'range' | 'enum' | 'select' | 'agent' | 'file' | 'folder'
-  title: string
-  description?: string
-  default?: unknown
-  options?: (string | SettingOption)[]
-  /** The options under each value of another enum setting; the first of a list is its default. */
-  optionsBy?: { setting: string; options: Record<string, (string | SettingOption)[]> }
-  /** The condition under which the setting is shown and handed to the plugin. */
-  when?: SettingCondition
-  /** The extensions a setting of type file takes, each with its leading dot. */
-  accept?: string[]
-  min?: number
-  max?: number
-  step?: number
-}
+export type { Result } from './result'
 
 // ReaderRegistration registers a viewer component for files. The manifest declares, under
-// `readers` with the same id, the content types it opens. The component gets a ReaderTabState as
+// `contributes.readers` with the same id, the content types it opens. The component gets a ReaderTabState as
 // its `state` prop.
 export interface ReaderRegistration {
   id: string
@@ -72,7 +36,7 @@ export interface ReaderRegistration {
 }
 
 // SettingsViewRegistration registers a component the plugin's settings page mounts. The manifest
-// declares, under `settingsViews` with the same id, its title and the setting it follows.
+// declares, under `settingsViews` with the same id, its title.
 export interface SettingsViewRegistration {
   readonly id: string
   readonly component: unknown
@@ -84,6 +48,27 @@ export interface SettingsViewProps {
   readonly pluginId: string
   /** The current value of every declared setting of the plugin, by key. */
   readonly values: Readonly<Record<string, unknown>>
+}
+
+// StatusViewRegistration registers a component the window draws in its status bar. The manifest
+// declares the same id under `contributes.statusViews`. The component gets StatusViewProps as props.
+export interface StatusViewRegistration {
+  readonly id: string
+  readonly component: unknown
+}
+
+// StatusViewProps are the props the window passes the component of a status view.
+export interface StatusViewProps {
+  readonly pluginId: string
+}
+
+// AppInfo describes the application build a plugin runs in.
+export interface AppInfo {
+  // The version the build calls itself, such as `2026.10.3` or `0.0.0-dev` for a manual build.
+  readonly version: string
+  // The build number; 0 where the build has none.
+  readonly build: number
+  readonly platform: 'darwin' | 'windows' | 'linux'
 }
 
 // ReaderTabState is the `state` prop the window passes the component of a reader tab.
@@ -253,9 +238,15 @@ export interface PluginContext {
   // The window the plugin is activated in, named as a manifest's targets name it.
   readonly target: string
   readonly subscriptions: Disposable[]
+  // The application build the plugin runs in.
+  readonly app: AppInfo
+  // Opens an http or https address in the system browser. Any other address fails.
+  openExternal(url: string): Promise<Result<null>>
   registerReader(registration: ReaderRegistration): Disposable
   // Registers the component of the settings view the manifest declares under the same id.
   registerSettingsView(registration: SettingsViewRegistration): Disposable
+  // Registers the component of the status bar view the manifest declares under the same id.
+  registerStatusView(registration: StatusViewRegistration): Disposable
   registerTabKind<State>(registration: TabKindRegistration<State>): Disposable
   registerCommand(registration: CommandRegistration): Disposable
   registerContextMenu(registration: ContextMenuRegistration): Disposable
@@ -280,6 +271,8 @@ export interface PluginContext {
   readonly workspace?: WorkspaceHost
   // The notes of the vault, where the host offers them.
   readonly notes?: VaultNotes
+  // The relationships between the notes of the vault, where the host offers them.
+  readonly relations?: VaultRelations
   // The folders and files of the vault, where the host offers them.
   readonly files?: VaultFiles
   // The agent the window talks to, when the host provides one.
@@ -296,43 +289,4 @@ export interface PluginContext {
   registerDropHandler?(registration: DropRegistration): Disposable
   // Hands a drop to the plugin that takes it, where the host offers drops.
   readonly drops?: DropHost
-}
-
-// PluginManifest describes the metadata in manifest.json.
-export interface PluginManifest {
-  id: string
-  name: string
-  version: string
-  /** The plugin protocol the plugin was written against; absent means 1. */
-  protocol?: number
-  description?: string
-  capabilities?: string[]
-  targets?: string[]
-  activationEvents?: string[]
-  permissions?: string[]
-  runtimes?: string[]
-  /** The secrets the plugin requests the host to store and pass to it in Configure. */
-  secrets?: { name: string; title: string; description?: string; when?: SettingCondition }[]
-  lifecycle?: {
-    idleTimeoutSeconds?: number
-    keepAliveWhileVisible?: boolean
-  }
-  backend?: {
-    type: 'process'
-    entrypoint: string
-    serviceName?: string
-  }
-  frontend?: {
-    entrypoint: string
-    styles?: string
-  }
-  /** What the plugin declares of the text it makes; a plugin that makes no text declares none. */
-  /** The types of file the plugin brings, each with the globs of its names, such as `*.txt`. */
-  contentTypes?: { type: string; globs: string[] }[]
-  /** The readers of the frontend, by registered id, with the content types each opens and its rank. */
-  readers?: { id: string; contentTypes: string[]; rank: 'default' | 'alternate' }[]
-  texts?: TextMaker
-  settings?: SettingDeclaration[]
-  /** The views the settings page mounts in the plugin's form, after the setting named by `after`; the top where it is empty. */
-  settingsViews?: { id: string; title: string; after?: string }[]
 }

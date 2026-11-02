@@ -2,12 +2,34 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from '../arrange'
 import { DEFAULT_OPTIONS } from '../options'
-import { cutToFit, routeEdge, routeEdges, createRouting } from './routing'
+import {
+  cutToFit,
+  getLabelPositions,
+  getLabelPlaces,
+  getRise,
+  getShift,
+  LABEL_GAP,
+  MIDDLE,
+  routeEdge,
+  routeEdges,
+  createRouting,
+} from './routing'
 import { neighbourhoods } from '../../../fixtures/neighbourhoods'
-import { ARROW_LENGTH, getArrow, getLength, createPointOnCurve, type EdgeArrow } from '../../edge'
+import {
+  ARROW_LENGTH,
+  getArrow,
+  getHeading,
+  getLength,
+  createPointOnCurve,
+  type EdgeArrow,
+  type PlexEdge,
+} from '../../edge'
 import type { PlexNeighbourhood } from '../../neighbourhood'
 import type { PlacedNode } from '../../node'
 import type { PlexNodeRelation } from '../../relation'
+
+/** The ink of the label font, as the window measures it. */
+const TYPE = { ascent: 9, descent: 3, xHeight: 6 }
 
 const getNodesByRelation = (frame: { nodes: readonly PlacedNode[] }, relation: PlexNodeRelation) =>
   frame.nodes.filter((node) => node.relation === relation)
@@ -84,19 +106,21 @@ describe('edges', () => {
     }
   })
 
-  it('joins two nodes on the same line side to side, not under and back', () => {
-    // The relation is vertical, but there is no vertical space between them.
+  it('joins two nodes on the same line with no room between them by a bow, not through the boxes', () => {
+    // The relation is vertical, there is no vertical space between them, and the
+    // gap beside them is too small for a line to carry its words and heads.
     const layout = arrangePlex(neighbourhoods.diamond)
     const edge = layout.edges.find((e) => e.from === 'parent-0' && e.to === 'parent-1')
     expect(edge).toBeDefined()
-    expect(edge!.label).toBe('contains')
+    expect(edge!.labels?.[0]?.text).toBe('contains')
 
     const leftNode = layout.nodes.find((n) => n.id === 'parent-0')!
     const right = layout.nodes.find((n) => n.id === 'parent-1')!
-    expect(edge!.fromPoint).toStrictEqual({ x: leftNode.x + leftNode.width / 2, y: leftNode.y })
-    expect(edge!.toPoint).toStrictEqual({ x: right.x - right.width / 2, y: right.y })
-    expect(edge!.control1.x).toBeGreaterThan(edge!.fromPoint.x)
-    expect(edge!.control2.x).toBeLessThan(edge!.toPoint.x)
+    const bottom = (node: PlacedNode) => ({ x: node.x, y: node.y + node.height / 2 })
+    expect(edge!.fromPoint).toStrictEqual(bottom(leftNode))
+    expect(edge!.toPoint).toStrictEqual(bottom(right))
+    expect(edge!.control1.y).toBeGreaterThan(edge!.fromPoint.y)
+    expect(edge!.control2.y).toBeGreaterThan(edge!.toPoint.y)
   })
 
   it('takes the heading from the curve, and not from the relation', () => {
@@ -105,13 +129,13 @@ describe('edges', () => {
     // A sibling is below a parent, and its line runs left to right.
     for (const sibling of getNodesByRelation(layout, 'sibling')) {
       const edge = layout.edges.find((e) => e.to === sibling.id)!
-      expect(edge.heading, `sibling ${sibling.id}`).toBe('along')
+      expect(getHeading(edge, MIDDLE), `sibling ${sibling.id}`).toBe('along')
     }
 
     // A jump is offset sideways, and its line arrives from the left.
     for (const jump of getNodesByRelation(layout, 'jump')) {
       const edge = layout.edges.find((e) => e.from === jump.id)!
-      expect(edge.heading, `jump ${jump.id}`).toBe('along')
+      expect(getHeading(edge, MIDDLE), `jump ${jump.id}`).toBe('along')
     }
   })
 
@@ -120,7 +144,7 @@ describe('edges', () => {
     const layout = arrangePlex(neighbourhoods.typical)
     const down = layout.edges.find((e) => e.to === 'focus' && e.from === 'parent-0')!
     expect(down.fromPoint.y).toBeLessThan(down.toPoint.y)
-    expect(down.heading).toBe('along')
+    expect(getHeading(down, MIDDLE)).toBe('along')
 
     // The same pair written the other way about runs up it, and is read down.
     const up = arrangePlex({
@@ -131,7 +155,7 @@ describe('edges', () => {
       edges: [{ from: 'focus', to: 'over' }],
     })
     expect(up.edges[0]!.fromPoint.y).toBeGreaterThan(up.edges[0]!.toPoint.y)
-    expect(up.edges[0]!.heading).toBe('against')
+    expect(getHeading(up.edges[0]!, MIDDLE)).toBe('against')
   })
 
   it('takes the reading direction from the curve, not from which end is which', () => {
@@ -144,9 +168,9 @@ describe('edges', () => {
     const outward = arrangePlex({ nodes, edges: [{ from: 'focus', to: 'aside' }] })
     const inward = arrangePlex({ nodes, edges: [{ from: 'aside', to: 'focus' }] })
 
-    expect(outward.edges[0]!.heading).toBe('against')
+    expect(getHeading(outward.edges[0]!, MIDDLE)).toBe('against')
     expect(outward.edges[0]!.fromPoint.x).toBeGreaterThan(outward.edges[0]!.toPoint.x)
-    expect(inward.edges[0]!.heading).toBe('along')
+    expect(getHeading(inward.edges[0]!, MIDDLE)).toBe('along')
     expect(inward.edges[0]!.fromPoint.x).toBeLessThan(inward.edges[0]!.toPoint.x)
   })
 
@@ -167,7 +191,7 @@ describe('a title cut to the line it is set on', () => {
       { id: 'focus', title: 'Here', relation: 'focus' },
       { id: 'aside', title: 'Aside', relation: 'jump' },
     ],
-    edges: [{ from: 'aside', to: 'focus', label: 'the scene in the assembly' }],
+    edges: [{ from: 'aside', to: 'focus', labels: [{ text: 'the scene in the assembly' }] }],
   }
 
   const placedPlex = arrangePlex(sideways)
@@ -196,32 +220,32 @@ describe('a title cut to the line it is set on', () => {
 
   it('draws the whole label where it fits the curve', () => {
     const edge = routeWithLabel(perLetter(1))
-    expect(edge.words).toBe('the scene in the assembly')
-    expect(edge.label).toBe('the scene in the assembly')
+    expect(edge.titles[0]?.words).toBe('the scene in the assembly')
+    expect(edge.labels?.[0]?.text).toBe('the scene in the assembly')
   })
 
   it('draws the whole label where nothing measured it', () => {
-    expect(routeWithLabel().words).toBe('the scene in the assembly')
+    expect(routeWithLabel().titles[0]?.words).toBe('the scene in the assembly')
   })
 
   it('cuts words longer than the curve, and ends them in an ellipsis', () => {
     const width = perLetter(arc / 10)
     const edge = routeWithLabel(width)
 
-    expect(edge.words).not.toBe(edge.label)
-    expect(edge.words!.endsWith('…')).toBe(true)
-    expect(edge.label!.startsWith(edge.words!.slice(0, -1))).toBe(true)
-    expect(width(edge.words!)).toBeLessThanOrEqual(arc)
+    expect(edge.titles[0]?.words).not.toBe(edge.labels?.[0]?.text)
+    expect(edge.titles[0]!.words.endsWith('…')).toBe(true)
+    expect(edge.labels![0]!.text.startsWith(edge.titles[0]!.words.slice(0, -1))).toBe(true)
+    expect(width(edge.titles[0]!.words)).toBeLessThanOrEqual(arc)
   })
 
   it('leaves no space hanging before the ellipsis', () => {
     // Space for ten letters; the tenth letter of this label is a space.
     const edge = routeWithLabel(perLetter(arc / 10))
-    expect(edge.words).toBe('the scene…')
+    expect(edge.titles[0]?.words).toBe('the scene…')
   })
 
   it('carries the ellipsis alone where there is room for nothing', () => {
-    expect(routeWithLabel(perLetter(arc)).words).toBe('…')
+    expect(routeWithLabel(perLetter(arc)).titles[0]?.words).toBe('…')
   })
 
   it('measures the words it carries, and no other', () => {
@@ -237,7 +261,7 @@ describe('a title cut to the line it is set on', () => {
     const label = 'a'.repeat(400)
     const request: string[] = []
     routeEdges(
-      [{ from: 'aside', to: 'focus', label }],
+      [{ from: 'aside', to: 'focus', labels: [{ text: label }] }],
       byId,
       createRouting(DEFAULT_OPTIONS, (words) => {
         request.push(words)
@@ -262,25 +286,35 @@ describe('the arrowhead a line carries', () => {
   const routeWithArrow = (arrow?: EdgeArrow) =>
     arrangePlex({
       nodes,
-      edges: [{ from: 'focus', to: 'below', ...(arrow ? { arrow } : {}) }],
+      edges: [{ from: 'focus', to: 'below', ...(arrow ? { arrows: [arrow] } : {}) }],
     }).edges[0]!
 
   it('sits where the line arrives, aimed the way it is going', () => {
     const edge = routeWithArrow('to')
-    expect(edge.arrowhead!.at.x).toBe(edge.toPoint.x)
-    expect(edge.arrowhead!.at.y).toBe(edge.toPoint.y)
-    expect(edge.arrowhead!.angle).toBeCloseTo(90)
+    expect(edge.arrowheads![0]!.at.x).toBe(edge.toPoint.x)
+    expect(edge.arrowheads![0]!.at.y).toBe(edge.toPoint.y)
+    expect(edge.arrowheads![0]!.angle).toBeCloseTo(90)
   })
 
   it('sits where the line leaves, aimed back out of it', () => {
     const edge = routeWithArrow('from')
-    expect(edge.arrowhead!.at.x).toBe(edge.fromPoint.x)
-    expect(edge.arrowhead!.at.y).toBe(edge.fromPoint.y)
-    expect(edge.arrowhead!.angle).toBeCloseTo(-90)
+    expect(edge.arrowheads![0]!.at.x).toBe(edge.fromPoint.x)
+    expect(edge.arrowheads![0]!.at.y).toBe(edge.fromPoint.y)
+    expect(edge.arrowheads![0]!.angle).toBeCloseTo(-90)
+  })
+
+  it('is drawn at both ends of a line given both', () => {
+    const edge = arrangePlex({
+      nodes,
+      edges: [{ from: 'focus', to: 'below', arrows: ['from', 'to'] }],
+    }).edges[0]!
+    expect(edge.arrowheads!.map((head) => head.end)).toEqual(['from', 'to'])
+    expect(edge.arrowheads![0]!.at.y).toBe(edge.fromPoint.y)
+    expect(edge.arrowheads![1]!.at.y).toBe(edge.toPoint.y)
   })
 
   it('is drawn on no line that was given no arrow', () => {
-    expect(routeWithArrow().arrowhead).toBeUndefined()
+    expect(routeWithArrow().arrowheads).toBeUndefined()
   })
 
   // A head has a body, and over its length a curve turns, so a head aimed
@@ -294,7 +328,7 @@ describe('the arrowhead a line carries', () => {
         { id: 'third', title: 'Third', relation: 'child' },
       ],
       edges: [
-        { from: 'focus', to: 'wide', arrow: 'to' },
+        { from: 'focus', to: 'wide', arrows: ['to'] },
         { from: 'focus', to: 'other' },
         { from: 'focus', to: 'third' },
       ],
@@ -307,7 +341,7 @@ describe('the arrowhead a line carries', () => {
       Math.PI
 
     expect(Math.abs(chord - 90)).toBeGreaterThan(3)
-    expect(aside.arrowhead!.angle).toBeCloseTo(chord, 1)
+    expect(aside.arrowheads![0]!.angle).toBeCloseTo(chord, 1)
 
     // The end a line leaves from is read the same way, backwards.
     const leaving = getArrow(aside, 'from')
@@ -341,13 +375,13 @@ describe('the arrowhead a line carries', () => {
           {
             from: 'focus',
             to: 'below',
-            label: 'the scene in the assembly',
-            ...(arrow ? { arrow } : {}),
+            labels: [{ text: 'the scene in the assembly' }],
+            ...(arrow ? { arrows: [arrow] } : {}),
           },
         ],
         byId,
         createRouting(DEFAULT_OPTIONS, measure),
-      )[0]!.words!
+      )[0]!.titles[0]!.words
 
     const room = getLength(routeWithArrow()) - 2 * DEFAULT_OPTIONS.routing.arrowClearance
     expect(measure(words('to'))).toBeLessThanOrEqual(room)
@@ -529,5 +563,333 @@ describe('the run of a line between two boxes', () => {
       routeEdges([{ from: 'a', to: 'b' }], byId, { routing: edgeRouting, opacity: () => 0.25 })[0]!
         .opacity,
     ).toBe(0.25)
+  })
+})
+
+/**
+ * The position of a label along its line is decided by how many labels the line
+ * carries: one is centred, two are set at opposite ends. The arrowheads do not
+ * enter into it.
+ */
+describe('the position of a label', () => {
+  const box = (id: string, x: number): PlacedNode => ({
+    id,
+    title: id,
+    relation: 'jump',
+    x,
+    y: 0,
+    width: 100,
+    height: 20,
+    order: 0,
+    opacity: 1,
+  })
+  const harbour = box('harbour', 0)
+  const lighthouse = box('lighthouse', 400)
+  const byId = new Map([harbour, lighthouse].map((node) => [node.id, node]))
+
+  /** The titles of one line: words, and the place from the `from` end. */
+  const getPlaces = (edge: PlexEdge) => {
+    const routed = routeEdge(edge, byId, createRouting(DEFAULT_OPTIONS))!
+    return routed.titles.map((title) => [
+      title.words,
+      title.heading === 'against' ? 1 - title.wordsAt : title.wordsAt,
+    ])
+  }
+
+  it('is the middle of the line for one label', () => {
+    expect(getLabelPositions(1)).toEqual([MIDDLE])
+    expect(getPlaces({ from: 'harbour', to: 'lighthouse', labels: [{ text: 'guides' }] })).toEqual([
+      ['guides', MIDDLE],
+    ])
+  })
+
+  it('is the middle for one label whatever arrowhead the line has', () => {
+    for (const arrows of [['to'], ['from'], ['to', 'from']] as const) {
+      const edge: PlexEdge = {
+        from: 'harbour',
+        to: 'lighthouse',
+        labels: [{ text: 'guides' }],
+        arrows,
+      }
+      expect(getPlaces(edge)).toEqual([['guides', MIDDLE]])
+    }
+  })
+
+  it('is one near each end for two labels, the first near the start', () => {
+    const [start, end] = getLabelPositions(2)
+    expect(start).toBeLessThan(1 / 3)
+    expect(end).toBeGreaterThan(2 / 3)
+    expect(start! + end!).toBeCloseTo(1)
+
+    const edge: PlexEdge = {
+      from: 'harbour',
+      to: 'lighthouse',
+      labels: [{ text: 'guides' }, { text: 'shelters' }],
+      arrows: ['to', 'from'],
+    }
+    expect(getPlaces(edge)).toEqual([
+      ['guides', start],
+      ['shelters', end],
+    ])
+  })
+
+  it('is the same for two labels whatever arrowheads the line has', () => {
+    const labels = [{ text: 'guides' }, { text: 'shelters' }]
+    const expected = getPlaces({ from: 'harbour', to: 'lighthouse', labels })
+
+    for (const arrows of [['to'], ['from'], ['from', 'to']] as const) {
+      expect(getPlaces({ from: 'harbour', to: 'lighthouse', labels, arrows })).toEqual(expected)
+    }
+  })
+
+  it('keeps the first label near the `from` note on a line that runs right to left', () => {
+    const edge: PlexEdge = {
+      from: 'lighthouse',
+      to: 'harbour',
+      labels: [{ text: 'guides' }, { text: 'shelters' }],
+    }
+    const routed = routeEdge(edge, byId, createRouting(DEFAULT_OPTIONS))!
+    const [start, end] = getLabelPositions(2)
+
+    // The lighthouse is the `from` note, so the label it wrote is near the lighthouse.
+    expect(routed.titles.map((title) => title.words)).toEqual(['guides', 'shelters'])
+    // The lighthouse record reads from the lighthouse to the harbour: along the curve, which runs that way.
+    expect(routed.titles[0]!.heading).toBe('along')
+    expect(routed.titles[0]!.wordsAt).toBeCloseTo(start!)
+    const places = getPlaces(edge)
+    expect(places.map(([words]) => words)).toEqual(['guides', 'shelters'])
+    expect(places[0]![1]).toBeCloseTo(start!)
+    expect(places[1]![1]).toBeCloseTo(end!)
+  })
+
+  it('sets the two labels apart, at the two ends, on every kind of line', () => {
+    const measureLabel = (words: string) => 6 * [...words].length
+    let measured = 0
+
+    for (const [name, neighbourhood] of Object.entries(neighbourhoods)) {
+      const frame = arrangePlex(
+        {
+          ...neighbourhood,
+          edges: neighbourhood.edges.map((edge) => ({
+            ...edge,
+            labels: [{ text: 'guides' }, { text: 'shelters' }],
+          })),
+        },
+        { measureLabel, labelType: TYPE },
+      )
+      for (const edge of frame.edges) {
+        const [one, other] = edge.titles
+        if (!one || !other) continue
+        measured += 1
+        const place = (title: typeof one) =>
+          title.heading === 'against' ? 1 - title.wordsAt : title.wordsAt
+        const gap = Math.abs(place(one) - place(other)) * getLength(edge)
+
+        expect(gap, `${name}: ${edge.from} to ${edge.to}`).toBeGreaterThanOrEqual(
+          (measureLabel(one.words) + measureLabel(other.words)) / 2 - 1,
+        )
+      }
+    }
+    expect(measured).toBeGreaterThan(10)
+  })
+
+  it('sets one label on the line and two on opposite sides of it', () => {
+    expect(getLabelPlaces([{ text: 'a' }]).map((place) => place.side)).toEqual([0])
+    expect(getLabelPlaces([{ text: 'a' }, { text: 'b' }]).map((place) => place.side)).toEqual([
+      -1, 1,
+    ])
+    expect(getShift(0, TYPE)).toBe(0)
+    // Half the letters and the gap, to the side each label is on.
+    expect(getShift(-1, TYPE)).toBe(-(6 + LABEL_GAP))
+    expect(getShift(1, TYPE)).toBe(-getShift(-1, TYPE))
+  })
+
+  it('sets the baseline of the one label so the middle of its lowercase letters is on the line', () => {
+    // The baseline is half the height of an x below the line, whatever else the font does.
+    expect(getRise(0, TYPE)).toBe(3)
+    expect(getRise(0, { ascent: 20, descent: 1, xHeight: 8 })).toBe(4)
+    // A label beside the line is centred by the middle of its ink, from capital to descender.
+    expect(getRise(-1, TYPE)).toBe((9 - 3) / 2)
+    expect(getRise(1, { ascent: 10, descent: 4, xHeight: 6 })).toBe(3)
+    // So the near edge of the ink is the gap from the line, on each side.
+    expect(getShift(-1, TYPE) + getRise(-1, TYPE) + TYPE.descent).toBe(-LABEL_GAP)
+    expect(getShift(1, TYPE) + getRise(1, TYPE) - TYPE.ascent).toBe(LABEL_GAP)
+  })
+
+  it('reads each of two labels in the direction of its record, whichever way the line runs', () => {
+    const labels = [{ text: 'guides' }, { text: 'shelters' }]
+    const measured = createRouting(DEFAULT_OPTIONS, undefined, TYPE)
+
+    for (const [from, to] of [
+      ['harbour', 'lighthouse'],
+      ['lighthouse', 'harbour'],
+    ] as const) {
+      const [first, second] = routeEdge({ from, to, labels }, byId, measured)!.titles
+      // The first record reads from `from` to `to`, on its left; the second the other way, on the
+      // right of the line, which is the left of its own reading.
+      expect([first!.heading, first!.side]).toEqual(['along', -1])
+      expect([second!.heading, second!.side]).toEqual(['against', 1])
+      expect(first!.shift).toBe(getShift(-1, TYPE))
+      expect(second!.shift).toBe(getShift(1, TYPE))
+    }
+  })
+
+  it('sets each of two labels near the end its head is at and reads it toward that end', () => {
+    const [start, end] = getLabelPositions(2)
+    const labels = [
+      { text: 'to-b', end: 'to' as const },
+      { text: 'to-a', end: 'from' as const },
+    ]
+    const measured = createRouting(DEFAULT_OPTIONS, undefined, TYPE)
+
+    for (const [from, to] of [
+      ['harbour', 'lighthouse'],
+      ['lighthouse', 'harbour'],
+    ] as const) {
+      const [toB, toA] = routeEdge(
+        { from, to, labels, arrows: ['to', 'from'] },
+        byId,
+        measured,
+      )!.titles
+      // The record pointing at `to` is near the `to` end and reads toward it, on the left of its reading.
+      expect([toB!.heading, toB!.side, toB!.anchor]).toEqual(['along', -1, end])
+      expect([toA!.heading, toA!.side, toA!.anchor]).toEqual(['against', 1, start])
+    }
+  })
+
+  it('sets two labels by the notes that wrote them where one record has no head', () => {
+    const [start, end] = getLabelPositions(2)
+    const labels = [{ text: 'guides', end: 'to' as const }, { text: 'shelters' }]
+    const [first, second] = routeEdge(
+      { from: 'harbour', to: 'lighthouse', labels },
+      byId,
+      createRouting(DEFAULT_OPTIONS),
+    )!.titles
+    expect([first!.anchor, second!.anchor]).toEqual([start, end])
+    expect([first!.heading, second!.heading]).toEqual(['along', 'against'])
+  })
+
+  it('reads the one label of a line along the way that is readable, centred and on the line', () => {
+    const measured = createRouting(DEFAULT_OPTIONS, undefined, TYPE)
+    const edge = { from: 'lighthouse', to: 'harbour', labels: [{ text: 'guides' }] }
+    const [only] = routeEdge(edge, byId, measured)!.titles
+
+    expect([only!.heading, only!.side, only!.shift]).toEqual(['against', 0, 0])
+    expect(only!.rise).toBe(TYPE.xHeight / 2)
+    expect(only!.anchor).toBe(MIDDLE)
+  })
+
+  it('draws no title for a label with no words', () => {
+    expect(getPlaces({ from: 'harbour', to: 'lighthouse', labels: [{ text: '' }] })).toEqual([])
+  })
+
+  it('shares the room of the line between two labels', () => {
+    const measure = (words: string) => 4 * [...words].length
+    const long = 'the long way round the headland'
+    const routed = routeEdge(
+      {
+        from: 'harbour',
+        to: 'lighthouse',
+        labels: [{ text: long }, { text: long }],
+        arrows: ['to', 'from'],
+      },
+      byId,
+      createRouting(DEFAULT_OPTIONS, measure),
+    )!
+    const room = (getLength(routed) - 2 * DEFAULT_OPTIONS.routing.arrowClearance) / 2
+
+    expect(routed.titles).toHaveLength(2)
+    for (const title of routed.titles) expect(measure(title.words)).toBeLessThanOrEqual(room)
+  })
+})
+
+/**
+ * Boxes too close for a straight line to carry an arrowhead and a word are joined
+ * by a bow out of their sides, so a line between two notes next to each other is
+ * drawn as fully as any other.
+ */
+describe('a line between two boxes with no room between them', () => {
+  const box = (id: string, relation: PlexNodeRelation, x: number, y: number): PlacedNode => ({
+    id,
+    title: id,
+    relation,
+    x,
+    y,
+    width: 100,
+    height: 40,
+    order: 0,
+    opacity: 1,
+  })
+
+  const measure = (words: string) => 6 * [...words].length
+  const withWords = createRouting(DEFAULT_OPTIONS, measure)
+
+  const route = (from: PlacedNode, to: PlacedNode, edge: Partial<PlexEdge> = {}) =>
+    routeEdge(
+      { from: from.id, to: to.id, ...edge },
+      new Map([from, to].map((node) => [node.id, node])),
+      withWords,
+    )!
+
+  it('bows out of the top of two boxes in a row below the focus, towards the focus', () => {
+    const edge = route(box('a', 'child', 0, 200), box('b', 'child', 116, 200))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 0, y: 180 })
+    expect(edge.toPoint).toStrictEqual({ x: 116, y: 180 })
+    expect(edge.control1.y).toBeLessThan(180)
+    expect(edge.control2.y).toBeLessThan(180)
+  })
+
+  it('bows out of the bottom of two boxes in a row above the focus, towards the focus', () => {
+    const edge = route(box('a', 'parent', 0, -200), box('b', 'parent', 116, -200))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 0, y: -180 })
+    expect(edge.control1.y).toBeGreaterThan(-180)
+  })
+
+  it('bows out of the right of two boxes in a column right of the focus, away from it', () => {
+    const edge = route(box('a', 'sibling', 300, 0), box('b', 'sibling', 300, 56))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 350, y: 0 })
+    expect(edge.toPoint).toStrictEqual({ x: 350, y: 56 })
+    expect(edge.control1.x).toBeGreaterThan(350)
+  })
+
+  it('bows out of the left of two boxes in a column left of the focus, away from it', () => {
+    const edge = route(box('a', 'jump', -300, 0), box('b', 'jump', -300, 56))
+
+    expect(edge.fromPoint).toStrictEqual({ x: -350, y: 0 })
+    expect(edge.control1.x).toBeLessThan(-350)
+  })
+
+  it('keeps the ends of the edge the caller gave, whichever box is first', () => {
+    const edge = route(box('b', 'child', 116, 200), box('a', 'child', 0, 200))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 116, y: 180 })
+    expect(edge.toPoint).toStrictEqual({ x: 0, y: 180 })
+  })
+
+  it('has room for an arrowhead at each end and a title near each', () => {
+    const edge = route(box('a', 'child', 0, 200), box('b', 'child', 116, 200), {
+      labels: [{ text: 'onward' }, { text: 'back' }],
+      arrows: ['to', 'from'],
+    })
+
+    expect(edge.arrowheads).toHaveLength(2)
+    expect(edge.titles.map((title) => title.words)).toEqual(['onward', 'back'])
+  })
+
+  it('leaves a straight line where there is room for one', () => {
+    const edge = route(box('a', 'child', 0, 200), box('b', 'child', 200, 200))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 50, y: 200 })
+    expect(edge.toPoint).toStrictEqual({ x: 150, y: 200 })
+  })
+
+  it('leaves the edges at the focus the space the focus is given', () => {
+    const edge = route(box('focus', 'focus', 0, 0), box('child', 'child', 0, 50))
+
+    expect(edge.fromPoint).toStrictEqual({ x: 0, y: 20 })
+    expect(edge.toPoint).toStrictEqual({ x: 0, y: 30 })
   })
 })

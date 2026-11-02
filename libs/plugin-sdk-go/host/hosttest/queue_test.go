@@ -41,7 +41,9 @@ func TestQueueRunsAPersonsRequestBeforeBackgroundWork(t *testing.T) {
 		t.Fatal("no signal for the work queued behind the turn")
 	}
 
-	first.Release()
+	if err := first.Release(); err != nil {
+		t.Fatal(err)
+	}
 	select {
 	case turn := <-requested:
 		select {
@@ -49,7 +51,9 @@ func TestQueueRunsAPersonsRequestBeforeBackgroundWork(t *testing.T) {
 			t.Fatal("background work ran beside the person's request")
 		default:
 		}
-		turn.Release()
+		if err := turn.Release(); err != nil {
+			t.Fatal(err)
+		}
 	case <-background:
 		t.Fatal("background work ran before the person's request")
 	case <-time.After(time.Second):
@@ -57,7 +61,9 @@ func TestQueueRunsAPersonsRequestBeforeBackgroundWork(t *testing.T) {
 	}
 	select {
 	case turn := <-background:
-		turn.Release()
+		if err := turn.Release(); err != nil {
+			t.Fatal(err)
+		}
 	case <-time.After(time.Second):
 		t.Fatal("background work never ran")
 	}
@@ -66,7 +72,7 @@ func TestQueueRunsAPersonsRequestBeforeBackgroundWork(t *testing.T) {
 func TestQueueListsATaskUntilItIsFinished(t *testing.T) {
 	q := hosttest.NewQueue()
 	ctx := t.Context()
-	for _, task := range []host.Task{{ID: "a", Title: "One"}, {ID: "b", Title: "Two"}, {ID: "a", Title: "One again", Done: 1, Total: 2}} {
+	for _, task := range []host.Task{{ID: "a", Title: "One"}, {ID: "b", Title: "Two"}, {ID: "a", Title: "One again", CompletedCount: 1, TotalCount: 2}} {
 		if err := q.ReportTask(ctx, task); err != nil {
 			t.Fatal(err)
 		}

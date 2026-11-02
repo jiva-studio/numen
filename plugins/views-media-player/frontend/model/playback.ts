@@ -49,9 +49,13 @@ export function usePlayback(audioPlayer: Player, plays: MediaTypeProbe, isOpen: 
 
   const readOwnDuration = (source: string) => {
     if (audioPlayer.url.value === '' || audioPlayer.url.value === source) return
-    void audioPlayer.getDuration(source).then((ms) => {
-      if (url.value === source) ownDuration.value = ms
-    })
+    audioPlayer.getDuration(source).then(
+      (ms) => {
+        if (url.value === source) ownDuration.value = ms
+      },
+      // A duration that cannot be read leaves the own duration unset.
+      () => undefined,
+    )
   }
 
   const setSource = (source: RecordingSource) => {

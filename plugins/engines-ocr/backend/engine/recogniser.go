@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"image"
 	"image/draw"
@@ -10,7 +11,7 @@ import (
 	read "github.com/getcharzp/go-ocr"
 	"github.com/getcharzp/go-ocr/paddle"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 
@@ -30,17 +31,18 @@ type Recogniser struct {
 	model  Model
 }
 
-// Open loads the layout and PaddleOCR recognition models.
-func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
-	engine, pos, found, err := locateModels(ctx, cfg)
+// Open loads the layout and PaddleOCR recognition models through the library.
+func Open(ctx context.Context, library *onnx.Library, cfg Config) (*Recogniser, error) {
+	engine, pos, found, err := locateModels(ctx, library, cfg)
 	if err != nil {
 		return nil, err
 	}
-	options, _, err := onnx.NewSessionOptions(engine, onnx.SessionSettings{
+	options, _, err := library.NewSessionOptions(engine, onnx.SessionSettings{
 		Provider: onnx.GetSessionProvider(),
 		Threads:  cfg.threads(),
 
 		ComputeUnits: onnx.ComputeUnitsDefault,
+		ModelPath:    found.layout,
 	})
 	if err != nil {
 		return nil, err
@@ -55,8 +57,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 
 	classes, dict, err := alphabet(found.recognise, cfg.Recognise)
 	if err != nil {
-		layout.Close()
-		return nil, err
+		return nil, errors.Join(err, layout.Close())
 	}
 	lines, err := paddle.NewEngine(paddle.Config{
 		OnnxRuntimeLibPath:  pos,
@@ -73,8 +74,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		UseCuda:             false,
 	})
 	if err != nil {
-		layout.Close()
-		return nil, fmt.Errorf("the recogniser: %w", err)
+		return nil, errors.Join(fmt.Errorf("the recogniser: %w", err), layout.Close())
 	}
 
 	return &Recogniser{

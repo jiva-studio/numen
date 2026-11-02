@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
@@ -21,30 +20,32 @@ import (
 
 const mammals = "decks/Mammals.md"
 
-var animals = map[string]string{
-	"Animal.md": "---\n" +
-		"type: card-model\n" +
-		"mine: keep me verbatim\n" +
-		"fields:\n" +
-		"  - Name\n" +
-		"  - Height\n" +
-		"  - Life span\n" +
-		"---\n" +
-		"\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
-	"Term.md": "---\ntype: card-model\nfields:\n  - Word\n  - Height\n---\n" +
-		"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Height}}\n",
-	"decks/Mammals.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: deck\nmine: keep me verbatim\n---\n" +
-		"\nCards I am learning.\n" +
-		"\n# The ones with fur\n" +
-		"\nThe section says something of its own.\n" +
-		"\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
-		"\n### Height\n\nabout 45\"\n" +
-		"\n### Life span\n\nabout 20 years\n" +
-		"\n## Gloss ^zpqrstvwxy\n\n[[Term]]\n\n### Height\n\nnot a length at all\n" +
-		"\n### Word\n\nGloss\n",
-	"decks/Birds.md": "---\ntype: deck\n---\n" +
-		"\n## Wren ^3f4g5h6j7k\n\n[[Animal]]\n\n### Name\n\nWren\n\n### Height\n\nabout 4\"\n",
-	"Weather.md": "# Weather\n\nNo card in here.\n",
+func getAnimals() map[string]string {
+	return map[string]string{
+		"Animal.md": "---\n" +
+			"type: card-model\n" +
+			"mine: keep me verbatim\n" +
+			"fields:\n" +
+			"  - Name\n" +
+			"  - Height\n" +
+			"  - Life span\n" +
+			"---\n" +
+			"\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
+		"Term.md": "---\ntype: card-model\nfields:\n  - Word\n  - Height\n---\n" +
+			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Height}}\n",
+		"decks/Mammals.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: deck\nmine: keep me verbatim\n---\n" +
+			"\nCards I am learning.\n" +
+			"\n# The ones with fur\n" +
+			"\nThe section says something of its own.\n" +
+			"\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
+			"\n### Height\n\nabout 45\"\n" +
+			"\n### Life span\n\nabout 20 years\n" +
+			"\n## Gloss ^zpqrstvwxy\n\n[[Term]]\n\n### Height\n\nnot a length at all\n" +
+			"\n### Word\n\nGloss\n",
+		"decks/Birds.md": "---\ntype: deck\n---\n" +
+			"\n## Wren ^3f4g5h6j7k\n\n[[Animal]]\n\n### Name\n\nWren\n\n### Height\n\nabout 4\"\n",
+		"Weather.md": "# Weather\n\nNo card in here.\n",
+	}
 }
 
 type vaulted struct {
@@ -56,7 +57,7 @@ type vaulted struct {
 
 func newVaults(t *testing.T) vaulted {
 	t.Helper()
-	first := vaulttest.New(t, animals)
+	first := vaulttest.New(t, getAnimals())
 	return vaulted{
 		first: first.Vault, ports: first.Ports, queries: first.Queries,
 		hosts: map[domain.VaultID]*hosttest.Vault{first.Vault.ID: first.Host},
@@ -92,7 +93,7 @@ func newEditing(t *testing.T) editing {
 	vs := newVaults(t)
 	read := cards.NewRead(vs.ports.Readers, vs.queries)
 	write := cards.NewWrite(
-		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, time.Now)
+		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock())
 	return editing{
 		vs: vs, read: read,
 		addCard:       deckedit.NewAddCard(read, write),

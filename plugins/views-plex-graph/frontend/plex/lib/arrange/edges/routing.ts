@@ -3,6 +3,11 @@ import {
   getHeading,
   getLength,
   type EdgeCurve,
+  type EdgeHeading,
+  type EdgeLabel,
+  type EdgeSide,
+  type EdgeTitle,
+  type LabelType,
   type PlacedEdge,
   type PlexEdge,
 } from '../../edge'
@@ -21,12 +26,17 @@ export interface Routing extends RoutingOptions {
    */
   readonly labelWidth?: ((label: string) => number) | undefined
   /**
-   * The height of one line of a title, perpendicular to the line it is set on.
-   * It is measured in the title's own type, and is zero when nothing measured
-   * it.
+   * The ink of a title's font, measured where the plex is drawn; zero when nothing
+   * measured it.
    */
-  readonly labelDepth: number
+  readonly labelType: LabelType
 }
+
+/** The ink of a font nothing measured. */
+const NO_TYPE: LabelType = { ascent: 0, descent: 0, xHeight: 0 }
+
+/** The depth of one line of a title across its line: from the top of a capital to the bottom of a descender. */
+export const getDepth = (type: LabelType): number => type.ascent + type.descent
 
 /**
  * The axis is read off the relation, not off the distance between the boxes: the
@@ -36,12 +46,12 @@ export interface Routing extends RoutingOptions {
 export function createRouting(
   options: PlexOptions,
   measureLabel?: (label: string) => number,
-  labelDepth = 0,
+  labelType: LabelType = NO_TYPE,
 ): Routing {
   return {
     ...options.routing,
     labelWidth: measureLabel,
-    labelDepth,
+    labelType,
     getAxis: (node) => {
       if (node.relation === 'focus') return 'auto'
       return isVertical(options.direction[node.relation]) ? 'vertical' : 'horizontal'
@@ -52,8 +62,108 @@ export function createRouting(
 /** The one character a cut title ends in. */
 const ELLIPSIS = '…'
 
-/** The middle of a line, where a title is set until something is in the way. */
+/** The middle of a line, where a title with no end is set until something is in the way. */
 export const MIDDLE = 0.5
+
+/** How far from its end a title placed near an end is set, as a fraction of the line. */
+const NEAR_END = 0.2
+
+/**
+ * Where each of `count` labels of one line is set, as a fraction of the line's
+ * length from its `from` end, in the order the labels are written: the first
+ * is the record of the `from` note. One label is centred. Several are spread
+ * from near the start to near the end, so each reads as belonging to its own end.
+ */
+export const getLabelPositions = (count: number): number[] => {
+  if (count <= 1) return [MIDDLE]
+  return Array.from(
+    { length: count },
+    (_, index) => NEAR_END + ((1 - 2 * NEAR_END) * index) / (count - 1),
+  )
+}
+
+/**
+ * The gap, in plex units, between the line and the near edge of the letters of
+ * a label of a pair: as close as the letters go without touching the line.
+ * It is the same for every kind of line and for both labels of a pair.
+ */
+export const LABEL_GAP = 2
+
+/**
+ * How far from the line the centre of a title is: nothing for a title on the line, whose
+ * lowercase letters are centred on it; else half of the depth of the ink and the gap, so the
+ * near edge of the letters is `LABEL_GAP` from the line.
+ */
+export const getShift = (side: EdgeSide, type: LabelType): number =>
+  side * (getDepth(type) / 2 + LABEL_GAP)
+
+/**
+ * How far below the centre of a title its baseline is, across the line. The centre of a title
+ * on the line is the middle of the x-height band, of a title beside it the middle of the ink
+ * from capital to descender. The baseline is set by this alone, so no engine's own
+ * idea of a middle decides where the letters stand.
+ */
+export const getRise = (side: EdgeSide, type: LabelType): number =>
+  side === 0 ? type.xHeight / 2 : (type.ascent - type.descent) / 2
+
+/**
+ * Where and how each label of one line is set, in the order the labels are written.
+ * One label is centred along the line and on it, its vertical middle on the line, read the readable way along it.
+ * Two labels are set near the two ends, on opposite sides, each read in the direction of its
+ * record: when both records have a head, each label is near the end its head is at and reads toward it;
+ * otherwise each is near the note that wrote it and reads away from it, the first on the left of
+ * the line taken from `from`, the second on the right.
+ */
+export function getLabelPlaces(labels: readonly EdgeLabel[]): LabelPlace[] {
+  if (labels.length <= 1) return labels.map(() => ({ position: MIDDLE, side: 0 }))
+  const positions = getLabelPositions(labels.length)
+  const isHeaded = labels.every((label) => label.end !== undefined)
+  return labels.map((label, index) => {
+    const isToward = isHeaded ? label.end === 'to' : index === 0
+    const position = isHeaded ? (isToward ? positions.at(-1)! : positions[0]!) : positions[index]!
+    const side: EdgeSide = isToward ? -1 : 1
+    return { position, side, heading: isToward ? 'along' : 'against' }
+  })
+}
+
+/** Where a label is set: its place along the line, its side, and the way it is read where its record fixes that. */
+export interface LabelPlace {
+  readonly position: number
+  readonly side: EdgeSide
+  readonly heading?: EdgeHeading
+}
+
+/**
+ * The title set at a fraction of the curve from its `from` end, measured along
+ * the curve the way its words are read.
+ */
+export function createTitle(
+  curve: EdgeCurve,
+  ...[position, words, title]: [position: number, words: string, title: TitleSetting]
+): EdgeTitle {
+  const { anchor = position, side, shift, rise } = title
+  const heading = title.heading ?? getHeading(curve, position)
+  return {
+    anchor,
+    heading,
+    side,
+    shift,
+    rise,
+    words,
+    wordsAt: heading === 'against' ? 1 - position : position,
+  }
+}
+
+/** What a title keeps wherever it is moved to along its line. */
+export interface TitleSetting {
+  /** Where the title was asked to be set; the position it is created at when omitted. */
+  readonly anchor?: number
+  /** The way the words are read where the record fixes it; the way the line runs, readable, when omitted. */
+  readonly heading?: EdgeHeading
+  readonly side: EdgeSide
+  readonly shift: number
+  readonly rise: number
+}
 
 /**
  * The longest prefix of the label that fits the curve, including the ellipsis.
@@ -124,24 +234,86 @@ function reverse(curve: EdgeCurve): EdgeCurve {
   }
 }
 
-/** A cubic leaving both boxes square-on, read from the caller's end. */
-function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeCurve {
-  const isVertical = isVerticalRun(from, to, routing)
-  const fromFirst = isVertical ? from.y <= to.y : from.x <= to.x
-  const [first, second] = fromFirst ? [from, to] : [to, from]
+/** The clear space between two boxes along an axis; negative where they overlap on it. */
+function getRun(a: PlacedNode, b: PlacedNode, isVertical: boolean): number {
+  return isVertical
+    ? Math.abs(b.y - a.y) - (a.height + b.height) / 2
+    : Math.abs(b.x - a.x) - (a.width + b.width) / 2
+}
 
+/** A cubic leaving both boxes square-on along the axis, read from the first box. */
+function straightBetween(
+  first: PlacedNode,
+  second: PlacedNode,
+  isVertical: boolean,
+  routing: Routing,
+): EdgeCurve {
   const firstGate = getEdgeAnchor(first, isVertical ? 'bottom' : 'right')
   const secondGate = getEdgeAnchor(second, isVertical ? 'top' : 'left')
 
   const span = isVertical ? secondGate.y - firstGate.y : secondGate.x - firstGate.x
   const reach = Math.max(routing.minReach, Math.abs(span) * routing.curvature)
 
-  const axisEdge: EdgeCurve = {
+  return {
     fromPoint: firstGate,
     control1: getControl(firstGate, isVertical, reach),
     control2: getControl(secondGate, isVertical, -reach),
     toPoint: secondGate,
   }
+}
+
+/**
+ * A line from one side of both boxes that bows out by `minRun`, for boxes with
+ * no room between them for an arrowhead and a word. A row bows towards the focus,
+ * into the space between the rows, and a column bows away from it.
+ */
+function bowBetween(
+  first: PlacedNode,
+  second: PlacedNode,
+  isColumn: boolean,
+  routing: Routing,
+): EdgeCurve {
+  const middle = isColumn ? (first.x + second.x) / 2 : (first.y + second.y) / 2
+  const isNegative = isColumn ? middle < 0 : middle >= 0
+  const [positive, negative] = isColumn
+    ? (['right', 'left'] as const)
+    : (['bottom', 'top'] as const)
+  const side = isNegative ? negative : positive
+  const firstGate = getEdgeAnchor(first, side)
+  const secondGate = getEdgeAnchor(second, side)
+  const reach = isNegative ? -routing.minRun : routing.minRun
+  const getBowControl = (gate: Position): Position =>
+    isColumn ? { x: gate.x + reach, y: gate.y } : { x: gate.x, y: gate.y + reach }
+  return {
+    fromPoint: firstGate,
+    control1: getBowControl(firstGate),
+    control2: getBowControl(secondGate),
+    toPoint: secondGate,
+  }
+}
+
+/**
+ * A cubic leaving both boxes square-on, read from the caller's end.
+ *
+ * Two boxes side by side in a row or one above the other in a column, with
+ * less than `minRun` between them and no room along the other axis, are joined
+ * by a bow out of their sides. Edges at the focus keep the space the focus is given.
+ */
+function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeCurve {
+  const isVertical = isVerticalRun(from, to, routing)
+  const run = getRun(from, to, isVertical)
+  const isBowed =
+    from.relation !== 'focus' &&
+    to.relation !== 'focus' &&
+    run >= 0 &&
+    run < routing.minRun &&
+    getRun(from, to, !isVertical) < routing.minRun
+
+  const fromFirst = isVertical ? from.y <= to.y : from.x <= to.x
+  const [first, second] = fromFirst ? [from, to] : [to, from]
+  const axisEdge = isBowed
+    ? bowBetween(first, second, isVertical, routing)
+    : straightBetween(first, second, isVertical, routing)
 
   // The caller's from and to are kept, so the curve may run right to left or
   // bottom to top.
@@ -149,12 +321,29 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
 }
 
 /**
- * The words a curve carries. A title is set about the middle of its line and an
+ * The titles a curve carries. The labels of one line share its length, less the
+ * room kept for the arrowheads.
  */
-function cutLabel(edge: PlexEdge, curve: EdgeCurve, routing: Routing): string | undefined {
-  if (edge.label === undefined || !routing.labelWidth) return edge.label
-  const room = getLength(curve) - (edge.arrow ? 2 * routing.arrowClearance : 0)
-  return cutToFit(edge.label, room, routing.labelWidth)
+function createTitles(edge: PlexEdge, curve: EdgeCurve, routing: Routing): EdgeTitle[] {
+  const labels = (edge.labels ?? []).filter((label) => label.text)
+  const room =
+    (getLength(curve) - (edge.arrows?.length ? 2 * routing.arrowClearance : 0)) / labels.length
+  const { labelWidth } = routing
+  const places = getLabelPlaces(labels)
+  return labels.map((label, index) => {
+    const { position, side, heading } = places[index]!
+    return createTitle(
+      curve,
+      position,
+      labelWidth ? cutToFit(label.text, room, labelWidth) : label.text,
+      {
+        side,
+        shift: getShift(side, routing.labelType),
+        rise: getRise(side, routing.labelType),
+        ...(heading ? { heading } : {}),
+      },
+    )
+  })
 }
 
 export interface RouteEdgeOptions {
@@ -185,10 +374,8 @@ export function routeEdge(
     ...edge,
     ...curve,
     opacity,
-    heading: getHeading(curve, MIDDLE),
-    words: cutLabel(edge, curve, routingOptions),
-    wordsAt: MIDDLE,
-    arrowhead: edge.arrow ? getArrow(curve, edge.arrow) : undefined,
+    titles: createTitles(edge, curve, routingOptions),
+    arrowheads: edge.arrows?.map((end) => getArrow(curve, end)),
   }
 }
 

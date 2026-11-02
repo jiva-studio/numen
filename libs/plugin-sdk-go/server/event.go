@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"connectrpc.com/connect"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -28,11 +28,11 @@ type eventServer struct {
 // that carries its text; the call itself succeeds.
 func (s eventServer) DeliverEvent(
 	ctx context.Context,
-	req *connect.Request[numenv1.DeliverEventRequest],
-) (*connect.Response[numenv1.DeliverEventResponse], error) {
-	answer := &numenv1.DeliverEventResponse{}
+	req *connect.Request[v1.DeliverEventRequest],
+) (*connect.Response[v1.DeliverEventResponse], error) {
+	answer := &v1.DeliverEventResponse{}
 	if err := s.handle(ctx, req.Msg.GetEvent()); err != nil {
-		answer.Error = numenv1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_REFUSED
+		answer.Error = v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_REFUSED
 		answer.Reason = err.Error()
 	}
 	return connect.NewResponse(answer), nil

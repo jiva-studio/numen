@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"connectrpc.com/connect"
@@ -57,17 +58,17 @@ func (h *noteHandler) WriteNote(
 	pos, err := h.write.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newBaseline(r.Msg.GetBaseline()))
 	// A write that reached the vault has happened, so the response carries the
 	// file stat the client uses at its next save. The response also sets
-	// IsUnlevelled when the index did not follow, because the prose is on disk
+	// IsIndexOutdated when the index did not follow, because the prose is on disk
 	// but search does not include it.
-	unlevelled := h.state.isUnlevelled(err)
-	if err == nil || unlevelled {
+	indexOutdated := h.state.isIndexOutdated(err)
+	if err == nil || indexOutdated {
 		// The written prose requires new vectors. The pending chunks are
 		// tracked in the index, so several saves are embedded in one pass.
 		if h.state.NotifyNoteWritten != nil {
 			h.state.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.WriteNoteResponse{
-			At: convertFileStatToWire(pos), IsUnlevelled: unlevelled,
+			At: convertFileStatToWire(pos), IsIndexOutdated: indexOutdated,
 		}), nil
 	}
 	reason, ok := wire.GetErrorCode(err)
@@ -98,18 +99,23 @@ func (h *noteHandler) CreateNote(
 	}
 	defer h.state.Writing.finish()
 
-	made, err := h.create.Execute(ctx, showing, note.NewNote{
-		Title: r.Msg.GetTitle(),
-		Path:  r.Msg.GetPath(),
-		Links: links,
-	})
-	unlevelled := h.state.isUnlevelled(err)
+	creating := note.NewNote{Title: r.Msg.GetTitle(), Path: r.Msg.GetPath(), Links: links}
+	var made note.CreateResult
+	if strings.TrimSpace(creating.Title) == "" {
+		made, err = h.create.ExecuteUntitled(ctx, showing, creating)
+		if errors.Is(err, domain.ErrNoFreeName) {
+			return connect.NewResponse(&v1.CreateNoteResponse{IsNameExhausted: true}), nil
+		}
+	} else {
+		made, err = h.create.Execute(ctx, showing, creating)
+	}
+	indexOutdated := h.state.isIndexOutdated(err)
 	if made.Path != "" {
 		// The note is on disk under that name, so the response carries it. The
 		// index catches up after the write, and the watcher repeats that
 		// update.
 		return connect.NewResponse(&v1.CreateNoteResponse{
-			Path: made.Path, IsUnlevelled: unlevelled,
+			Path: made.Path, IsIndexOutdated: indexOutdated,
 		}), nil
 	}
 	if err == nil {
@@ -151,73 +157,6 @@ func (h *noteHandler) WriteLink(
 		return connect.NewResponse(&v1.WriteLinkResponse{Error: &reason}), nil
 	}
 	return connect.NewResponse(&v1.WriteLinkResponse{}), nil
-}
-
-// RemoveLink takes one relationship out of one note.
-func (h *noteHandler) RemoveLink(
-	ctx context.Context, r *connect.Request[v1.RemoveLinkRequest],
-) (*connect.Response[v1.RemoveLinkResponse], error) {
-	showing, err := h.state.getCurrentVault()
-	if err != nil {
-		return nil, err
-	}
-	if !h.state.Writing.begin() {
-		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
-	}
-	defer h.state.Writing.finish()
-
-	role, _ := convertRoleFromWire(r.Msg.GetRole())
-	to, err := h.getAddress(ctx, r.Msg.GetTo())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
-	}
-	if _, err := h.editLinks.Remove(
-		ctx, showing, r.Msg.GetPath(), to, role, domain.FileStat{},
-	); err != nil {
-		reason, ok := wire.GetErrorCode(err)
-		if !ok {
-			return nil, connect.NewError(connect.CodeInternal, err)
-		}
-		return connect.NewResponse(&v1.RemoveLinkResponse{Error: &reason}), nil
-	}
-	return connect.NewResponse(&v1.RemoveLinkResponse{}), nil
-}
-
-// ReplaceLinks makes the links between two notes the ones the request names.
-func (h *noteHandler) ReplaceLinks(
-	ctx context.Context, r *connect.Request[v1.ReplaceLinksRequest],
-) (*connect.Response[v1.ReplaceLinksResponse], error) {
-	showing, err := h.state.getCurrentVault()
-	if err != nil {
-		return nil, err
-	}
-	links := make([]note.PairLink, 0, len(r.Msg.GetLinks()))
-	for _, l := range r.Msg.GetLinks() {
-		role, ok := convertRoleFromWire(l.GetRole())
-		if !ok {
-			err := fmt.Errorf("no link carries the role %v", l.GetRole())
-			return nil, connect.NewError(connect.CodeInvalidArgument, err)
-		}
-		links = append(links, note.PairLink{From: l.GetFrom(), To: l.GetTo(), Role: role, Label: l.GetLabel()})
-	}
-	if !h.state.Writing.begin() {
-		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
-	}
-	defer h.state.Writing.finish()
-
-	if err := h.replaceLinks.Execute(
-		ctx, showing, r.Msg.GetFirst(), r.Msg.GetSecond(), links,
-	); err != nil {
-		if errors.Is(err, note.ErrNotAPair) {
-			return nil, connect.NewError(connect.CodeInvalidArgument, err)
-		}
-		reason, ok := wire.GetErrorCode(err)
-		if !ok {
-			return nil, connect.NewError(connect.CodeInternal, err)
-		}
-		return connect.NewResponse(&v1.ReplaceLinksResponse{Error: &reason}), nil
-	}
-	return connect.NewResponse(&v1.ReplaceLinksResponse{}), nil
 }
 
 func (h *noteHandler) GetOpeningNote(
@@ -269,14 +208,13 @@ func (h *noteHandler) GetNeighbourhood(
 	}
 	for _, related := range found.Related {
 		out.Related = append(out.Related, &v1.Neighbour{
-			Note:         convertNoteToWire(related.NoteRef),
-			Relation:     convertRelationToWire(related.Relation),
-			Label:        related.Label,
-			ReverseLabel: related.ReverseLabel,
-			Through:      related.Parent,
-			IsMutual:     related.IsMutual,
-			Type:         convertNoteTypeToWire(types[related.Path]),
+			Note:     convertNoteToWire(related.NoteRef),
+			Relation: convertRelationToWire(related.Relation),
+			Type:     convertNoteTypeToWire(types[related.Path]),
 		})
+	}
+	for _, connection := range found.Connections {
+		out.Connections = append(out.Connections, wire.ConvertConnectionToWire(connection))
 	}
 	return connect.NewResponse(out), nil
 }
@@ -323,42 +261,29 @@ func (h *noteHandler) getLinks(ctx context.Context, links []*v1.Link) ([]domain.
 // How much of that path the link carries is `note.GetAddress`: a name where it
 // means one note, and the path where it would mean another.
 func (h *noteHandler) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error) {
-	role, ok := convertRoleFromWire(l.GetRole())
+	role, ok := wire.ConvertRoleFromWire(l.GetRole())
 	if !ok {
-		return domain.Link{}, fmt.Errorf("no link carries the role %v", l.GetRole())
+		return domain.Link{}, fmt.Errorf("no link has the role %v", l.GetRole())
 	}
 	if l.GetTo() == "" {
 		return domain.Link{}, errors.New("a link needs a note to go to")
+	}
+	marker, ok := wire.ConvertMarkerFromWire(l.GetMarker())
+	if !ok {
+		return domain.Link{}, fmt.Errorf("no link has the marker %v", l.GetMarker())
 	}
 	target, err := h.getAddress(ctx, l.GetTo())
 	if err != nil {
 		return domain.Link{}, err
 	}
-	return domain.Link{Target: target, Role: role, Label: l.GetLabel()}, nil
+	return domain.Link{
+		Target: target, Role: role, Type: l.GetType(), Why: l.GetNote(), Label: l.GetLabel(), Marker: marker,
+	}, nil
 }
 
 // getAddress is the note at the other end as a link carries it.
 func (h *noteHandler) getAddress(ctx context.Context, to string) (domain.Address, error) {
 	return h.getLinkAddress.Execute(ctx, h.state.GetCurrentVault(), to)
-}
-
-// convertRoleFromWire is the role a link carries, in the core's words. A link is written
-// only with a role the schema names.
-func convertRoleFromWire(role v1.Role) (domain.LinkRole, bool) {
-	switch role {
-	case v1.Role_ROLE_PARENT:
-		return domain.RoleParent, true
-	case v1.Role_ROLE_CHILD:
-		return domain.RoleChild, true
-	case v1.Role_ROLE_JUMP:
-		return domain.RoleJump, true
-	case v1.Role_ROLE_REF:
-		return domain.RoleRef, true
-	case v1.Role_ROLE_ATTACHMENT:
-		return domain.RoleAttachment, true
-	default:
-		return "", false
-	}
 }
 
 func convertNoteToWire(n domain.NoteRef) *v1.Note {
@@ -514,8 +439,8 @@ func (h *noteHandler) RenameNote(
 	if renamed.Moved != nil {
 		out.Moved = newMoveResult(*renamed.Moved)
 	}
-	out.IsUnlevelled = h.state.isUnlevelled(err)
-	if err != nil && !out.GetIsUnlevelled() {
+	out.IsIndexOutdated = h.state.isIndexOutdated(err)
+	if err != nil && !out.GetIsIndexOutdated() {
 		reason, ok := wire.GetErrorCode(err)
 		switch {
 		case ok:

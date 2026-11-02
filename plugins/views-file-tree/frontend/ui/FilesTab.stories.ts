@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test'
 import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
-import { useFileTree, ROOT } from '../model/useFileTree'
+import { createFileTree, ROOT } from '../model/useFileTree'
 import type { Entry } from '../types'
 import { renderDeps } from '../fixtures/host'
 
@@ -36,24 +36,25 @@ const VAULT: Record<string, readonly Entry[]> = {
 
 /** A tab of that vault, reading the folders named as it is drawn. */
 const createFilesTab = (open: readonly string[]): FilesTabState => {
-  const list = useFileTree({ list: async (folderPath: string) => VAULT[folderPath] ?? [] })
+  const list = createFileTree({ list: async (folderPath: string) => VAULT[folderPath] ?? [] })
   const state: FilesTabState = useFilesTab(list, {
     ...renderDeps,
-    openEntry: () => {},
-    runCommand: () => {},
-    movePath: async () => {},
-    setDraggedPaths: () => {},
-    createFolder: async () => {},
+    openEntry: () => undefined,
+    runCommand: () => undefined,
+    movePath: async () => undefined,
+    setDraggedPaths: () => undefined,
+    createFolder: async () => undefined,
     createNote: async (folder) => `${folder}Untitled note.md`,
     canDropData: () => false,
     dropData: async () => [],
-    showError: () => {},
+    showError: () => undefined,
   })
 
-  void (async () => {
+  const openFolders = async () => {
     await list.openFolder(ROOT)
     for (const folderPath of open) await list.openFolder(folderPath)
-  })()
+  }
+  openFolders().catch(state.reportFailure)
 
   return state
 }

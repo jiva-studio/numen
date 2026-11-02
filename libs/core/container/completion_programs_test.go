@@ -21,7 +21,7 @@ func serveCompletions(t *testing.T, host *plugin.Host, output string) (completio
 	if err := os.WriteFile(path, []byte(output), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	cfg := container.Config{PluginHost: host, SettingsPath: path}
+	cfg := container.NewConfig(container.Config{PluginHost: host, SettingsPath: path})
 	target, err := cfg.Settings()
 	if err != nil {
 		t.Fatal(err)
@@ -119,7 +119,7 @@ func TestAProgramThatIsNotThereIsNoRoute(t *testing.T) {
 		t.Errorf("a task was started: %v, %v", one.getRequested(), two.getRequested())
 	}
 
-	empty := hostWith(t, map[string][]string{"md.test.chatty": {"agent"}}, nil)
+	empty := hostWith(t, map[string][]string{"md.test.chatty": {"embedding"}}, nil)
 	completer, _ := serveCompletions(t, empty, `{}`)
 	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completionport.ErrNoRoute) {
 		t.Errorf("without a provider, error = %v, want port.ErrNoRoute", err)

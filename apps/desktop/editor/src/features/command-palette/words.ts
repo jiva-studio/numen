@@ -144,7 +144,7 @@ export interface Words extends EmptyWords {
   readonly typeBack: string
   readonly destroys: string
   readonly forever: string
-  /** The same, over a vault whose folder goes to the trash this machine keeps. */
+  /** The same, over a vault whose folder goes to the trash. */
   readonly typeVaultBack: string
   readonly erases: string
   readonly binned: string

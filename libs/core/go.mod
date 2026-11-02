@@ -8,6 +8,7 @@ require (
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/rjeczalik/notify v0.9.3
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
+	golang.org/x/mod v0.41.0
 	golang.org/x/sync v0.24.0
 	golang.org/x/text v0.43.0
 	google.golang.org/protobuf v1.36.12
@@ -28,6 +29,7 @@ require (
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	golang.org/x/oauth2 v0.35.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
+	golang.org/x/tools v0.51.0
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )
 
@@ -35,6 +37,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/uuid v1.6.0
 	github.com/jiva-studio/numen/libs/notes v0.0.0
+	github.com/jiva-studio/numen/libs/plugin-catalog v0.0.0
 	github.com/jiva-studio/numen/libs/protocol v0.0.0
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
@@ -48,3 +51,5 @@ require (
 replace github.com/jiva-studio/numen/libs/protocol => ../protocol
 
 replace github.com/jiva-studio/numen/libs/notes => ../notes
+
+replace github.com/jiva-studio/numen/libs/plugin-catalog => ../plugin-catalog

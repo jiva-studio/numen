@@ -3,8 +3,6 @@
  */
 import type { TallyUnit } from '@numen/shell'
 import {
-  asFailure,
-  asValue,
   COMPLETION_CONSENT,
   FLUSH_RESULT,
   getNames,
@@ -18,7 +16,9 @@ import {
   type SearchModeCode,
   type TaskUnitCode,
   type VaultsErrorCodeValue,
-} from '@numen/plugin-sdk'
+  asFailure,
+  asValue,
+} from '@numen/core-client'
 import type { SearchMode } from '@/features/command-palette'
 import type { Consent, Presence } from '@/entities/settings'
 import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'

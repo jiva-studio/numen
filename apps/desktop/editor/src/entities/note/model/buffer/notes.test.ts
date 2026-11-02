@@ -4,6 +4,11 @@ import { computed, watch } from 'vue'
 
 import { openNotes, type Notes } from './notes'
 
+/** Throws the rejection reason of a detached promise, so the test run reports it as an unhandled rejection. */
+function rethrow(error: unknown): never {
+  throw error
+}
+
 /** A file's file stat, which follows what the file holds. */
 const statFile = (body: string): string => `at:${body}`
 
@@ -706,12 +711,12 @@ describe('an id the store does not hold', () => {
     expect(await notes.close('ghost.md')).toBe(true)
   })
 
-  it('is a note still loading, standing at no file, with nothing to say', () => {
+  it('is a note still loading, standing at no path or file, with nothing to say', () => {
     const { core } = fake()
     const notes = openNotes(core, { limits: quick })
 
     expect(notes.getOpenNote('ghost.md')).toEqual({
-      path: 'ghost.md',
+      path: '',
       body: '',
       state: 'loading',
       error: null,
@@ -822,7 +827,7 @@ describe('closing a note', () => {
   it('is not answered while a write in the air is still being waited on', async () => {
     const base = fake()
     base.files.set('Heat.md', 'one')
-    let release: () => void = () => {}
+    let release: () => void = vi.fn()
     const gate = new Promise<void>((done) => {
       release = done
     })
@@ -841,7 +846,10 @@ describe('closing a note', () => {
     await settle()
     notes.setBody('Heat.md', 'one two')
     const answers: boolean[] = []
-    void notes.close('Heat.md').then((closedResult) => answers.push(closedResult))
+    notes
+      .close('Heat.md')
+      .then((closedResult) => answers.push(closedResult))
+      .catch(rethrow)
 
     notes.setBody('Heat.md', 'one two three')
     await settle()
@@ -925,5 +933,16 @@ describe('a note that could not be written, closed, and opened again', () => {
     await vi.waitFor(() => expect(notes.getOpenNote('Heat.md').state).toBe('stuck'))
 
     expect(await notes.close('Heat.md')).toBe(false)
+  })
+})
+
+describe('the open note of an id the store does not hold', () => {
+  it('has no path, so the id of a tab is never taken for one', () => {
+    const notes = openNotes({
+      read: async () => ({ ok: false, error: 'missing' }),
+      write: async () => ({ ok: false, error: 'missing' }),
+    })
+
+    expect(notes.getOpenNote('note:dd.md').path).toBe('')
   })
 })

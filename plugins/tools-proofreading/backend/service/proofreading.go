@@ -14,8 +14,8 @@ import (
 var (
 	// errNoText is a file no live version gives words to.
 	errNoText = errors.New("the file has no text to proofread")
-	// errFormat is a version of a kind the manifest does not list.
-	errFormat = errors.New("the plugin proofreads the text kinds its manifest lists")
+	// errFormat is a version of a kind the plugin does not proofread.
+	errFormat = errors.New("the plugin does not proofread this text kind")
 )
 
 // Request is one text to proofread. Source is the version read, and empty for the live one.
@@ -53,12 +53,12 @@ func newProofreading(h Host, kinds map[domain.TextKind]bool, ask askModel, getCo
 // is shown as a task until the file is proofread again.
 func (p *Proofreading) Proofread(ctx context.Context, req Request) (Result, error) {
 	task := host.Task{
-		ID: "proofread:" + req.Path, Title: "Proofreading " + path.Base(req.Path), About: req.Path,
-		Done: 0, Total: 0, Unit: host.UnitThings, Error: "", IsUserStarted: req.IsUserStarted,
+		ID: "proofread:" + req.Path, Title: "Proofreading " + path.Base(req.Path), Detail: req.Path,
+		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: req.IsUserStarted,
 	}
 	res, err := p.proofread(ctx, req, &task)
 	if err != nil && ctx.Err() == nil {
-		task.Error = err.Error()
+		task.FailureReason = err.Error()
 		if reportErr := p.host.Queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {
 			return res, errors.Join(err, reportErr)
 		}
@@ -70,7 +70,7 @@ func (p *Proofreading) Proofread(ctx context.Context, req Request) (Result, erro
 	return res, err
 }
 
-func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Task) (Result, error) {
+func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Task) (result Result, err error) {
 	store, texts := p.host.Store, p.host.Texts
 	if req.Vault != "" {
 		store, texts = store.With(req.Vault), texts.With(req.Vault)
@@ -88,10 +88,10 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 	if err != nil {
 		return Result{}, fmt.Errorf("wait for a turn to proofread %s: %w", req.Path, err)
 	}
-	defer turn.Release()
+	defer func() { err = errors.Join(err, turn.Release()) }()
 
 	lines := readLines(parts)
-	task.Total, task.Done = int64(len(lines)), 0
+	task.TotalCount, task.CompletedCount = int64(len(lines)), 0
 	if err := p.host.Queue.ReportTask(ctx, *task); err != nil {
 		return Result{}, err
 	}
@@ -173,7 +173,7 @@ func (p *Proofreading) correctSpeech(ctx context.Context, lines []Line, task *ho
 	var out []Line
 	uncorrected := 0
 	for from := 1; ; {
-		result, err := proofreadSpeech(ctx, p.ask, lines, cfg.batchSize, cfg.overlap, from, cfg.inFlight*cfg.batchSize)
+		result, err := proofreadSpeech(ctx, p.ask, lines, batchShape{size: cfg.batchSize, overlap: cfg.overlap}, from, cfg.inFlight*cfg.batchSize)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -185,7 +185,7 @@ func (p *Proofreading) correctSpeech(ctx context.Context, lines []Line, task *ho
 				next = max(next, getLastLine(line)+1)
 			}
 		}
-		task.Done = int64(min(next-1, len(lines)))
+		task.CompletedCount = int64(min(next-1, len(lines)))
 		if err := p.host.Queue.ReportTask(ctx, *task); err != nil {
 			return nil, 0, err
 		}
@@ -208,7 +208,7 @@ func (p *Proofreading) correctScan(ctx context.Context, pages []Batch, task *hos
 		}
 		out = append(out, result.corrections...)
 		uncorrected += result.uncorrected
-		task.Done = int64(page.Last())
+		task.CompletedCount = int64(page.Last())
 		if err := p.host.Queue.ReportTask(ctx, *task); err != nil {
 			return nil, 0, err
 		}
@@ -239,7 +239,11 @@ func readLines(parts []domain.TextSegment) []Line {
 func readPages(parts []domain.TextSegment, lines []Line) []Batch {
 	var out []Batch
 	for _, line := range lines {
-		selector, _ := readSegmentSelector(parts[line.Number-1].Selector)
+		selector, err := readSegmentSelector(parts[line.Number-1].Selector)
+		if err != nil {
+			// A selector that does not parse names no page.
+			selector = segmentSelector{T: nil, Page: 0, CFI: "", Boxes: nil}
+		}
 		page := selector.Page
 		if len(out) == 0 || out[len(out)-1].Number != page {
 			out = append(out, Batch{Number: page, Lines: nil, IsJoinable: false, Context: ""})

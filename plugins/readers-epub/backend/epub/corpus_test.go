@@ -21,10 +21,12 @@ const corpusEnv = "NUMEN_EPUB_CORPUS"
 //
 // Half the corpus is empty: sixteen of those twenty books carry no heading
 // at all, and four carry one heading, which names the book.
-var wantStructure = map[epub.Structure]int{
-	epub.FromNavigation: 16,
-	epub.FromHeadings:   4,
-	epub.FromNothing:    20,
+func getWantStructure() map[epub.Structure]int {
+	return map[epub.Structure]int{
+		epub.FromNavigation: 16,
+		epub.FromHeadings:   4,
+		epub.FromNothing:    20,
+	}
 }
 
 const (
@@ -67,6 +69,7 @@ func TestTheCorpusIsRead(t *testing.T) {
 		structure[epub.FromNavigation], structure[epub.FromHeadings],
 		structure[epub.FromNothing], total)
 
+	wantStructure := getWantStructure()
 	for _, tier := range []epub.Structure{epub.FromNavigation, epub.FromHeadings, epub.FromNothing} {
 		if structure[tier] != wantStructure[tier] {
 			t.Errorf("%s answered for %d books, want %d", tier, structure[tier], wantStructure[tier])

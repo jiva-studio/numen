@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jiva-studio/numen/libs/core/port/machineport"
 )
 
 // ErrChecksum is a download whose bytes do not hold the checksum the requirement pins.
@@ -33,6 +34,7 @@ type transfer struct {
 	dest       string
 	sum        string
 	backoff    backoff
+	clock      machineport.Clock
 	onProgress func(count, total int64)
 }
 
@@ -64,7 +66,7 @@ func (t transfer) fetch(ctx context.Context) error {
 	err = retry(ctx, t.backoff, isTransient, func() error { return t.append(ctx, part) })
 	if err != nil {
 		if errors.Is(err, ErrChecksum) {
-			_ = os.Remove(part)
+			return errors.Join(err, os.Remove(part))
 		}
 		return err
 	}
@@ -98,24 +100,21 @@ func claimPartial(dir string) (string, error) {
 }
 
 // append continues the partial from where it ends, then checks the checksum.
-func (t transfer) append(ctx context.Context, part string) error {
+func (t transfer) append(ctx context.Context, part string) (err error) {
 	hasher := sha256.New()
 	offset, err := hashExisting(part, hasher)
 	if err != nil {
 		return err
 	}
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, t.address, nil)
+	request, err := t.newRequest(ctx, offset)
 	if err != nil {
 		return err
-	}
-	if offset > 0 {
-		request.Header.Set("Range", "bytes="+strconv.FormatInt(offset, 10)+"-")
 	}
 	answer, err := t.client.Do(request)
 	if err != nil {
 		return fmt.Errorf("fetching %s: %w", t.address, err)
 	}
-	defer answer.Body.Close()
+	defer closeAndJoin(&err, answer.Body)
 
 	switch {
 	case answer.StatusCode == http.StatusRequestedRangeNotSatisfiable:
@@ -131,6 +130,28 @@ func (t transfer) append(ctx context.Context, part string) error {
 	if total >= 0 {
 		total += offset
 	}
+	byteCount, err := t.store(part, answer.Body, hasher, offset, total)
+	if err != nil {
+		return fmt.Errorf("fetching %s: %w", t.address, err)
+	}
+	return t.finish(hasher, offset+byteCount)
+}
+
+// newRequest asks for the file, from offset on where the partial holds bytes already.
+func (t transfer) newRequest(ctx context.Context, offset int64) (*http.Request, error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, t.address, nil)
+	if err != nil {
+		return nil, err
+	}
+	if offset > 0 {
+		request.Header.Set("Range", "bytes="+strconv.FormatInt(offset, 10)+"-")
+	}
+	return request, nil
+}
+
+// store writes the body to the partial, from its start where offset is zero and after
+// its end otherwise, feeding the hash too. It returns the bytes written.
+func (t transfer) store(part string, body io.Reader, hasher hash.Hash, offset, total int64) (int64, error) {
 	flags := os.O_WRONLY | os.O_CREATE
 	if offset == 0 {
 		flags |= os.O_TRUNC
@@ -139,16 +160,13 @@ func (t transfer) append(ctx context.Context, part string) error {
 	}
 	file, err := os.OpenFile(part, flags, 0o644)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	byteCount, err := copyProgress(io.MultiWriter(file, hasher), answer.Body, offset, total, t.onProgress)
+	byteCount, err := copyProgress(t.clock, io.MultiWriter(file, hasher), body, offset, total, t.onProgress)
 	if closeErr := file.Close(); err == nil {
 		err = closeErr
 	}
-	if err != nil {
-		return fmt.Errorf("fetching %s: %w", t.address, err)
-	}
-	return t.finish(hasher, offset+byteCount)
+	return byteCount, err
 }
 
 // finish checks the checksum of the whole file. A file that does not hold it is
@@ -164,7 +182,7 @@ func (t transfer) finish(hasher hash.Hash, size int64) error {
 }
 
 // hashExisting feeds the bytes the file holds to the hash and returns how many there are.
-func hashExisting(path string, hasher hash.Hash) (int64, error) {
+func hashExisting(path string, hasher hash.Hash) (_ int64, err error) {
 	file, err := os.Open(path)
 	if errors.Is(err, os.ErrNotExist) {
 		return 0, nil
@@ -172,16 +190,16 @@ func hashExisting(path string, hasher hash.Hash) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer file.Close()
+	defer closeAndJoin(&err, file)
 	return io.Copy(hasher, file)
 }
 
 // copyProgress copies the body to the writer and reports how far it has got no
 // more often than progressInterval.
-func copyProgress(dst io.Writer, src io.Reader, offset, total int64, onProgress func(count, total int64)) (int64, error) {
+func copyProgress(clock machineport.Clock, dst io.Writer, src io.Reader, offset, total int64, onProgress func(count, total int64)) (int64, error) {
 	buffer := make([]byte, 64*1024)
 	var byteCount int64
-	last := time.Now()
+	last := clock.Now()
 	for {
 		count, readErr := src.Read(buffer)
 		if count > 0 {
@@ -189,9 +207,9 @@ func copyProgress(dst io.Writer, src io.Reader, offset, total int64, onProgress 
 				return byteCount, err
 			}
 			byteCount += int64(count)
-			if onProgress != nil && time.Since(last) >= progressInterval {
+			if onProgress != nil && clock.Now().Sub(last) >= progressInterval {
 				onProgress(offset+byteCount, total)
-				last = time.Now()
+				last = clock.Now()
 			}
 		}
 		if errors.Is(readErr, io.EOF) {

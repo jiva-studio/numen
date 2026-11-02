@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strconv"
 	"testing"
 )
 
@@ -13,6 +14,7 @@ type vectorIndex struct {
 	dims       int
 	recipe     string
 	compactErr error
+	applied    int
 }
 
 func (x *vectorIndex) FitVectors(_ context.Context, dims int, recipe string) error {
@@ -23,6 +25,12 @@ func (x *vectorIndex) FitVectors(_ context.Context, dims int, recipe string) err
 
 func (x *vectorIndex) DeleteVectorsOfOtherRecipes(_ context.Context, recipe string) (int64, error) {
 	x.calls = append(x.calls, "delete "+recipe)
+	return 0, nil
+}
+
+func (x *vectorIndex) ApplyMinChunkLength(_ context.Context, length int) (int64, error) {
+	x.calls = append(x.calls, "min "+strconv.Itoa(length))
+	x.applied = length
 	return 0, nil
 }
 
@@ -38,8 +46,8 @@ func TestFitIndexSetsTheWidthOfTheModel(t *testing.T) {
 	if err := NewFitIndex(index).Execute(t.Context(), model); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(index.calls, []string{"fit"}) {
-		t.Errorf("calls = %v, want [fit]", index.calls)
+	if !slices.Equal(index.calls, []string{"fit", "min 0"}) {
+		t.Errorf("calls = %v, want [fit min 0]", index.calls)
 	}
 	if index.dims != 8 || index.recipe != model.GetModel().Recipe() {
 		t.Errorf("fit to %d %q", index.dims, index.recipe)
@@ -69,11 +77,34 @@ func TestFitIndexOnRebuildDeletesOtherRecipesAndReportsCompaction(t *testing.T) 
 	if err := fit.Execute(t.Context(), model); err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"fit", "delete " + model.GetModel().Recipe(), "compact"}
+	want := []string{"fit", "min 0", "delete " + model.GetModel().Recipe(), "compact"}
 	if !slices.Equal(index.calls, want) {
 		t.Errorf("calls = %v, want %v", index.calls, want)
 	}
 	if !errors.Is(reported, failed) {
 		t.Errorf("reported %v, want %v", reported, failed)
+	}
+}
+
+// The minimum the model reports is applied to the index, so the chunks shorter than it lose their
+// vectors, and it is applied after the index is fitted to the model.
+func TestFitIndexAppliesTheMinimumChunkLengthOfTheModel(t *testing.T) {
+	index := &vectorIndex{}
+	model := &embedder{dims: 8, minLen: 40}
+
+	if err := NewFitIndex(index).Execute(t.Context(), model); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(index.calls, []string{"fit", "min 40"}) {
+		t.Errorf("calls = %v, want [fit min 40]", index.calls)
+	}
+}
+
+// The minimum is not part of the recipe: changing it must not make a stored vector stale.
+func TestMinimumChunkLengthIsNotPartOfTheRecipe(t *testing.T) {
+	a := (&embedder{dims: 8, minLen: 0}).GetModel().Recipe()
+	b := (&embedder{dims: 8, minLen: 500}).GetModel().Recipe()
+	if a != b {
+		t.Errorf("recipe changed with the minimum: %q and %q", a, b)
 	}
 }

@@ -1,5 +1,5 @@
 /**
- * Wire adapter for the plugin's numen.epub JSON API and its entries route.
+ * Wire adapter for the plugin's md.numen.readers.epub JSON API and its entries route.
  */
 import { createApi, getBytesQuery } from '@numen/plugin-sdk'
 import type { Api, ApiError } from '@numen/plugin-sdk'
@@ -21,7 +21,7 @@ import type {
 const PLUGIN_ROUTE = '/plugin/md.numen.readers.epub'
 
 /** The service name the manifest declares. */
-const SERVICE = 'numen.epub'
+const SERVICE = 'md.numen.readers.epub'
 
 /** How often a method that answers `unavailable` is retried before it fails. */
 const MAX_BUSY_RETRIES = 3
@@ -57,7 +57,7 @@ const readSpineDocument = (one: SpineDocumentMessage): SpineDocument => ({
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-/** Creates the books port over the client of the numen.epub API. */
+/** Creates the books port over the client of the md.numen.readers.epub API. */
 export const createBooks = (api: Api): Books => {
   /** The response of a method, retried while the method is unavailable. */
   const call = async <Req, Res>(method: string, request: Req): Promise<Res> => {

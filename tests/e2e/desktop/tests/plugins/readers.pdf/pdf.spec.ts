@@ -1,10 +1,11 @@
 import { test, expect } from '../../support/test.js'
+import { waitForWindow } from '../../support/workspace.js'
 
 test.describe('PDF Document Reader', () => {
   test('opens PDF document and renders viewer without saving error', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -20,9 +21,9 @@ test.describe('PDF Document Reader', () => {
     await pdfRow.press('Enter')
 
     // Verify document tab opened and no error modal or error panel is shown
-    await expect(page.locator('.fallback-panel')).not.toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('text=Saving went wrong')).not.toBeVisible()
-    await expect(page.locator('text=Something went wrong')).not.toBeVisible()
+    await expect(page.locator('.fallback-panel')).toBeHidden({ timeout: 5_000 })
+    await expect(page.locator('text=Saving went wrong')).toBeHidden()
+    await expect(page.locator('text=Something went wrong')).toBeHidden()
 
     // Verify reader canvas / page rendered
     await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
@@ -31,7 +32,7 @@ test.describe('PDF Document Reader', () => {
   test('opens paper.pdf document from vault assets', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -47,8 +48,8 @@ test.describe('PDF Document Reader', () => {
     await paperRow.press('Enter')
 
     // Verify document tab opened and reader rendered
-    await expect(page.locator('.fallback-panel')).not.toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('text=something inside numen went wrong')).not.toBeVisible()
+    await expect(page.locator('.fallback-panel')).toBeHidden({ timeout: 5_000 })
+    await expect(page.locator('text=something inside numen went wrong')).toBeHidden()
     await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
 
     // The page image arrives from the plugin's own route and decodes
@@ -67,7 +68,7 @@ test.describe('PDF Document Reader', () => {
   test('handles viewport resize on PDF reader', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -92,7 +93,7 @@ test.describe('PDF Document Reader', () => {
   test('displays graceful fallback panel on corrupted PDF', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -115,7 +116,7 @@ test.describe('PDF Document Reader', () => {
   test('navigates across pages in PDF document', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -142,7 +143,7 @@ test.describe('PDF Document Reader', () => {
   test('persists PDF reader across tab switching', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()

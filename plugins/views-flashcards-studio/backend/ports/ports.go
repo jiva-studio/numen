@@ -28,8 +28,10 @@ var (
 	ErrLockedByAnother = errors.New("the file is held by another program")
 )
 
-// Clock is what time it is. A use case that takes none has none.
-type Clock func() time.Time
+// Clock gets what time it is. A use case that takes none has none.
+type Clock interface {
+	Now() time.Time
+}
 
 // VaultReader is what a use case reads of one vault's files.
 type VaultReader interface {
@@ -58,8 +60,9 @@ type VaultWriter interface {
 // VaultWriters opens one vault's files for writing.
 type VaultWriters interface {
 	Open(v domain.Vault) (VaultWriter, error)
-	// Lock holds the vault's writers until the release is called.
-	Lock(ctx context.Context, v domain.Vault) (release func(), err error)
+	// Lock holds the vault's writers until the release is called. The release returns the failure to
+	// release.
+	Lock(ctx context.Context, v domain.Vault) (release func() error, err error)
 }
 
 // NoteQueries is what the index provides about a vault's notes.

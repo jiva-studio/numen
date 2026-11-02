@@ -11,23 +11,25 @@ import (
 	"testing"
 )
 
-// useCaseEdges are the use cases each use case may build on. Under strict Clean
+// getUseCaseEdges returns the use cases each use case may build on. Under strict Clean
 // Architecture, use cases are independent application scenarios that compose
 // via ports or in the composition root, never by importing sibling usecase packages.
-var useCaseEdges = map[string][]string{
-	"note":          nil,
-	"settings":      nil,
-	"run":           nil,
-	"filetext":      nil,
-	"floor":         nil,
-	"vectors":       nil,
-	"file":          nil,
-	"search":        nil,
-	"vault":         nil,
-	"indexing":      nil,
-	"completion":    nil,
-	"plugincommand": nil,
-	"textversion":   nil,
+func getUseCaseEdges() map[string][]string {
+	return map[string][]string{
+		"note":          nil,
+		"settings":      nil,
+		"run":           nil,
+		"filetext":      nil,
+		"vectors":       nil,
+		"file":          nil,
+		"search":        nil,
+		"vault":         nil,
+		"indexing":      nil,
+		"completion":    nil,
+		"plugincommand": nil,
+		"plugintheme":   nil,
+		"textversion":   nil,
+	}
 }
 
 // getUseCaseName is the use case a package belongs to, and whether it is one.
@@ -48,7 +50,7 @@ func getUseCaseEdgeRefusal(from, to string) string {
 	if !isSource || !isTarget || source == target {
 		return ""
 	}
-	if slices.Contains(useCaseEdges[source], target) {
+	if slices.Contains(getUseCaseEdges()[source], target) {
 		return ""
 	}
 	return "a use case builds only on the use cases useCaseEdges lists for it"
@@ -105,7 +107,7 @@ func TestUseCaseImportsFollowDeclaredEdges(t *testing.T) {
 		t.Fatalf("%d edges of this module read: the walk is not reading the use cases", importsRead)
 	}
 	_ = useCaseImportsRead
-	for name := range useCaseEdges {
+	for name := range getUseCaseEdges() {
 		if !visited[name] {
 			t.Errorf("usecase/%s has no file the walk read: the rule stops at that use case", name)
 		}

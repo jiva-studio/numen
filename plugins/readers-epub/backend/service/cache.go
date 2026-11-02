@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 )
 
@@ -25,7 +26,7 @@ var errReadFile = errors.New("read file")
 // file is unchanged.
 type bookCache struct {
 	// readFile reads the file at a path of the vault.
-	readFile func(ctx context.Context, files host.Vault, path string) ([]byte, host.FileStat, error)
+	readFile func(ctx context.Context, files host.Vault, path string) ([]byte, domain.FileStat, error)
 
 	mu       sync.Mutex
 	books    []*cachedBook // least recently read first
@@ -34,7 +35,7 @@ type bookCache struct {
 
 func newBookCache() *bookCache {
 	return &bookCache{
-		readFile: func(ctx context.Context, files host.Vault, path string) ([]byte, host.FileStat, error) {
+		readFile: func(ctx context.Context, files host.Vault, path string) ([]byte, domain.FileStat, error) {
 			return files.Read(ctx, path)
 		},
 		mu:       sync.Mutex{},
@@ -58,7 +59,7 @@ type cachedBook struct {
 
 // acquire returns the cached book at path, opening it when the cache has none for the
 // file as it is now. The caller returns it with release.
-func (c *bookCache) acquire(ctx context.Context, files host.Vault, vaultID host.VaultID, path string) (*cachedBook, error) {
+func (c *bookCache) acquire(ctx context.Context, files host.Vault, vaultID domain.VaultID, path string) (*cachedBook, error) {
 	info, err := files.StatFile(ctx, path)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", errReadFile, err)

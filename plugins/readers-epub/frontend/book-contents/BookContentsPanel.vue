@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { win } from '../dom'
 /**
  * The contents of the book, standing over the page it is read on. A pointer
  * landing outside it and the Escape key both put it away.
  */
-import { onBeforeUnmount, useTemplateRef, watch } from 'vue'
-import { useOutsidePress } from '@numen/ui'
+import { onBeforeUnmount, watch } from 'vue'
+import { win } from '@numen/ui'
 import { BookContents, type ContentsEntry } from '../book'
 import { WORDS as words } from '../words'
 
@@ -22,7 +21,6 @@ const props = defineProps<{
 const emit = defineEmits<{ go: [offset: number]; dismiss: []; escape: [] }>()
 
 /* --------------------------------- State ---------------------------------- */
-const panel = useTemplateRef<HTMLElement>('panel')
 let detach: (() => void) | null = null
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -33,12 +31,6 @@ watch(
     win.addEventListener('keydown', onWindowKey, true)
     detach = () => win.removeEventListener('keydown', onWindowKey, true)
   },
-)
-
-useOutsidePress(
-  panel,
-  () => emit('dismiss'),
-  () => props.isOpen,
 )
 
 onBeforeUnmount(cleanupWindowListeners)
@@ -63,12 +55,13 @@ function cleanupWindowListeners() {
 
 <template>
   <Transition name="book-tab__over">
-    <aside v-if="props.isOpen" ref="panel" class="book-tab__contents">
+    <aside v-if="props.isOpen" class="book-tab__contents">
       <BookContents
         :entries="props.entries"
-        :offset="props.offset"
+        :at="props.offset"
         :words="words"
         @go="onSelectEntry"
+        @close="emit('dismiss')"
       />
     </aside>
   </Transition>
@@ -82,13 +75,6 @@ function cleanupWindowListeners() {
   z-index: 1;
   inline-size: 15rem;
   max-inline-size: calc(100% - 0.5rem);
-  block-size: min(26rem, calc(100% - 3rem));
-  overflow: hidden;
-  border: var(--numen-stroke) solid var(--numen-panel-border);
-  border-radius: var(--numen-radius-panel);
-  background: var(--numen-panel-bg);
-  backdrop-filter: blur(var(--numen-panel-blur));
-  box-shadow: var(--numen-panel-shadow);
 }
 
 .book-tab__over-enter-active,

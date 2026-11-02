@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -18,11 +19,13 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/onnxruntime"
 )
 
-var libraryBytes = []byte("a shared library")
+func getLibraryBytes() []byte { return []byte("a shared library") }
 
 func sum(raw []byte) string {
 	digest := sha256.Sum256(raw)
@@ -72,7 +75,9 @@ func serve(t *testing.T, body []byte) (*httptest.Server, *atomic.Int32) {
 	var hits atomic.Int32
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		hits.Add(1)
-		_, _ = w.Write(body)
+		if _, err := w.Write(body); err != nil {
+			t.Error(err)
+		}
 	}))
 	t.Cleanup(server.Close)
 	return server, &hits
@@ -85,18 +90,19 @@ func newConfig(server *httptest.Server, archive []byte) onnxruntime.Config {
 		Dir:     "",
 		Machine: []string{},
 		Client:  server.Client(),
+		Clock:   clock.NewFake(time.Unix(0, 0)),
 		Check:   func(string) error { return nil },
 		Release: onnxruntime.Release{
 			Address:    server.URL + "/onnxruntime.tgz",
 			Sum:        sum(archive),
 			Library:    "libonnxruntime.so",
-			LibrarySum: sum(libraryBytes),
+			LibrarySum: sum(getLibraryBytes()),
 		},
 	}
 }
 
 func TestProvisionFetchesAndUnpacksThePinnedLibrary(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
@@ -111,7 +117,7 @@ func TestProvisionFetchesAndUnpacksThePinnedLibrary(t *testing.T) {
 	if !strings.HasPrefix(library, cfg.Dir) || filepath.Base(library) != "libonnxruntime.so" {
 		t.Errorf("library = %q, want libonnxruntime.so under %s", library, cfg.Dir)
 	}
-	if got, err := os.ReadFile(library); err != nil || !bytes.Equal(got, libraryBytes) {
+	if got, err := os.ReadFile(library); err != nil || !bytes.Equal(got, getLibraryBytes()) {
 		t.Errorf("library holds %q, %v", got, err)
 	}
 	if hits.Load() != 1 {
@@ -120,7 +126,7 @@ func TestProvisionFetchesAndUnpacksThePinnedLibrary(t *testing.T) {
 }
 
 func TestProvisionUnpacksAZipArchive(t *testing.T) {
-	archive := buildZip(t, "onnxruntime.dll", libraryBytes)
+	archive := buildZip(t, "onnxruntime.dll", getLibraryBytes())
 	server, _ := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
@@ -131,13 +137,13 @@ func TestProvisionUnpacksAZipArchive(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Provision() = %v", err)
 	}
-	if got, err := os.ReadFile(library); err != nil || !bytes.Equal(got, libraryBytes) {
+	if got, err := os.ReadFile(library); err != nil || !bytes.Equal(got, getLibraryBytes()) {
 		t.Errorf("library holds %q, %v", got, err)
 	}
 }
 
 func TestProvision_RejectsUnpinnedArchive(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, _ := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
@@ -160,13 +166,17 @@ func TestProvision_RejectsUnpinnedLibrary(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "is pinned") {
 		t.Fatalf("Provision() = %v, want a pin mismatch", err)
 	}
-	if matches, _ := filepath.Glob(filepath.Join(cfg.Dir, "*", "*", "libonnxruntime.so")); len(matches) != 0 {
+	matches, matchesErr := filepath.Glob(filepath.Join(cfg.Dir, "*", "*", "libonnxruntime.so"))
+	if matchesErr != nil {
+		t.Fatal(matchesErr)
+	}
+	if len(matches) != 0 {
 		t.Errorf("a library that is not pinned was left at %v", matches)
 	}
 }
 
 func TestProvision_RejectsArchiveMissingLibrary(t *testing.T) {
-	archive := buildTgz(t, "libother.so", libraryBytes)
+	archive := buildTgz(t, "libother.so", getLibraryBytes())
 	server, _ := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
@@ -177,7 +187,7 @@ func TestProvision_RejectsArchiveMissingLibrary(t *testing.T) {
 }
 
 func TestProvisionOfflineFetchesNothing(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
@@ -193,7 +203,7 @@ func TestProvisionOfflineFetchesNothing(t *testing.T) {
 }
 
 func TestProvisionOfflineUsesTheLibraryAlreadyThere(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
@@ -213,7 +223,7 @@ func TestProvisionOfflineUsesTheLibraryAlreadyThere(t *testing.T) {
 }
 
 func TestProvisionOfflineUnpacksAnArchiveAlreadyThere(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
@@ -235,7 +245,7 @@ func TestProvisionOfflineUnpacksAnArchiveAlreadyThere(t *testing.T) {
 }
 
 func TestProvisionOfflineDropsAnArchiveThatIsNotPinned(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, _ := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
@@ -258,7 +268,7 @@ func TestProvisionOfflineDropsAnArchiveThatIsNotPinned(t *testing.T) {
 }
 
 func TestProvisionRunsOnceForConcurrentFirstCalls(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
@@ -286,7 +296,7 @@ func TestProvisionRunsOnceForConcurrentFirstCalls(t *testing.T) {
 }
 
 func TestProvisionAfterAFailureTriesAgain(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	var failing atomic.Bool
 	failing.Store(true)
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -294,7 +304,9 @@ func TestProvisionAfterAFailureTriesAgain(t *testing.T) {
 			http.Error(w, "not yet", http.StatusServiceUnavailable)
 			return
 		}
-		_, _ = w.Write(archive)
+		if _, err := w.Write(archive); err != nil {
+			t.Error(err)
+		}
 	}))
 	t.Cleanup(server.Close)
 	cfg := newConfig(server, archive)
@@ -312,12 +324,14 @@ func TestProvisionAfterAFailureTriesAgain(t *testing.T) {
 
 func TestProvisionWaitsAgainstItsOwnContext(t *testing.T) {
 	release := make(chan struct{})
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	entered := make(chan struct{})
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		close(entered)
 		<-release
-		_, _ = w.Write(archive)
+		if _, err := w.Write(archive); err != nil {
+			t.Error(err)
+		}
 	}))
 	t.Cleanup(server.Close)
 	cfg := newConfig(server, archive)
@@ -349,7 +363,7 @@ func TestProvision_RejectsNonHTTPSURL(t *testing.T) {
 			Address:    "http://example.invalid/onnxruntime.tgz",
 			Sum:        sum([]byte("a")),
 			Library:    "libonnxruntime.so",
-			LibrarySum: sum(libraryBytes),
+			LibrarySum: sum(getLibraryBytes()),
 		},
 	}
 	if _, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir()); err == nil || !strings.Contains(err.Error(), "https") {
@@ -364,7 +378,7 @@ func TestProvision_RejectsInvalidSHA256(t *testing.T) {
 			Address:    "https://example.invalid/onnxruntime.tgz",
 			Sum:        "abc",
 			Library:    "libonnxruntime.so",
-			LibrarySum: sum(libraryBytes),
+			LibrarySum: sum(getLibraryBytes()),
 		},
 	}
 	if _, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir()); err == nil || !strings.Contains(err.Error(), "sha256") {
@@ -379,7 +393,7 @@ func TestProvision_RejectsLibraryNameWithPath(t *testing.T) {
 			Address:    "https://example.invalid/onnxruntime.tgz",
 			Sum:        sum([]byte("a")),
 			Library:    "../libonnxruntime.so",
-			LibrarySum: sum(libraryBytes),
+			LibrarySum: sum(getLibraryBytes()),
 		},
 	}
 	if _, _, err := onnxruntime.New(cfg).Provision(t.Context(), t.TempDir()); err == nil {
@@ -395,7 +409,7 @@ func TestProvision_RejectsUnknownProvider(t *testing.T) {
 }
 
 func TestProvisionAnswersTheProviderTheConfigurationNames(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, _ := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
@@ -408,7 +422,7 @@ func TestProvisionAnswersTheProviderTheConfigurationNames(t *testing.T) {
 }
 
 func TestProvisionKeepsTheLibraryInTheModelsHome(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, _ := serve(t, archive)
 	cfg := newConfig(server, archive)
 	home := t.TempDir()
@@ -423,48 +437,50 @@ func TestProvisionKeepsTheLibraryInTheModelsHome(t *testing.T) {
 func TestFromEnvironmentReadsTheProviderAndTheOfflineSwitch(t *testing.T) {
 	t.Setenv(onnxruntime.EnvProvider, "coreml")
 	t.Setenv(onnxruntime.EnvOffline, "1")
-	cfg := onnxruntime.FromEnvironment()
+	cfg := onnxruntime.FromEnvironment(clock.NewFake(time.Unix(0, 0)))
 	if cfg.Provider != "coreml" || !cfg.Offline {
 		t.Errorf("FromEnvironment() = %+v", cfg)
 	}
 
 	t.Setenv(onnxruntime.EnvProvider, "")
 	t.Setenv(onnxruntime.EnvOffline, "no")
-	cfg = onnxruntime.FromEnvironment()
+	cfg = onnxruntime.FromEnvironment(clock.NewFake(time.Unix(0, 0)))
 	if cfg.Provider != "" || cfg.Offline {
 		t.Errorf("FromEnvironment() = %+v", cfg)
 	}
 }
 
-func TestGetHomeIsTheSharedModelsFolder(t *testing.T) {
+func TestGetHomeIsTheEnvironmentFolderAndNothingElse(t *testing.T) {
 	t.Setenv(onnxruntime.EnvDir, "/srv/models")
 	if got, err := onnxruntime.GetHome(); err != nil || got != "/srv/models" {
 		t.Fatalf("GetHome() = %q, %v", got, err)
 	}
 	t.Setenv(onnxruntime.EnvDir, "")
-	t.Setenv("XDG_CONFIG_HOME", "/srv/config")
-	t.Setenv("HOME", "/srv/home")
-	t.Setenv("AppData", "/srv/config")
-	got, err := onnxruntime.GetHome()
-	if err != nil || !strings.HasSuffix(filepath.ToSlash(got), "numen/models") {
-		t.Fatalf("GetHome() = %q, %v", got, err)
+	if got, err := onnxruntime.GetHome(); !errors.Is(err, onnxruntime.ErrNoHome) {
+		t.Fatalf("GetHome() = %q, %v, want ErrNoHome", got, err)
 	}
 }
 
 // assertNoFile fails when a file was left under dir.
 func assertNoFile(t *testing.T, dir string) {
 	t.Helper()
-	_ = filepath.WalkDir(dir, func(path string, entry os.DirEntry, err error) error {
+	err := filepath.WalkDir(dir, func(path string, entry os.DirEntry, err error) error {
 		if err == nil && !entry.IsDir() {
 			t.Errorf("%s was retained", path)
 		}
 		return nil
 	})
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestMain(m *testing.M) {
 	for _, name := range []string{"NUMEN_ONNX_RUNTIME_LIB", "NUMEN_ONNX_RUNTIME", "NUMEN_OCR_RUNTIME"} {
-		_ = os.Unsetenv(name)
+		if err := os.Unsetenv(name); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	}
 	os.Exit(m.Run())
 }
@@ -490,7 +506,7 @@ func writeLibrary(t *testing.T, dir string) string {
 }
 
 func TestProvisionNamedInTheEnvironmentIsUsedAsGiven(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
@@ -510,7 +526,7 @@ func TestProvisionNamedInTheEnvironmentIsUsedAsGiven(t *testing.T) {
 }
 
 func TestProvisionPrefersALibraryAdjacentThePlugin(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
@@ -527,7 +543,7 @@ func TestProvisionPrefersALibraryAdjacentThePlugin(t *testing.T) {
 }
 
 func TestProvisionUsesALibraryTheMachineContains(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
@@ -545,7 +561,7 @@ func TestProvisionUsesALibraryTheMachineContains(t *testing.T) {
 }
 
 func TestProvisionPassesAnyProviderOnToALibraryTheMachineContains(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, _ := serve(t, archive)
 	shared := t.TempDir()
 	writeLibrary(t, shared)
@@ -569,7 +585,7 @@ func TestProvision_GPUProviderPassesThroughEnvLibrary(t *testing.T) {
 }
 
 func TestProvisionFallsBackToThePinnedCPUBuildForAutoAndCPU(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, hits := serve(t, archive)
 	for _, name := range []string{"", "auto", "cpu"} {
 		cfg := newConfig(server, archive)
@@ -585,7 +601,7 @@ func TestProvisionFallsBackToThePinnedCPUBuildForAutoAndCPU(t *testing.T) {
 }
 
 func TestProvision_RejectsGPUProviderOnCPUBuild(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, _ := serve(t, archive)
 	for _, name := range []string{"cuda", "directml", "rocm"} {
 		cfg := newConfig(server, archive)
@@ -598,7 +614,7 @@ func TestProvision_RejectsGPUProviderOnCPUBuild(t *testing.T) {
 }
 
 func TestProvisionAsksForTheLibraryOncePerPluginFolder(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, _ := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
@@ -608,7 +624,11 @@ func TestProvisionAsksForTheLibraryOncePerPluginFolder(t *testing.T) {
 		t.Fatal(err)
 	}
 	siblingPath := writeLibrary(t, filepath.Join(first, "bin"))
-	if got, _, _ := provisioner.Provision(t.Context(), first); got == siblingPath {
+	got, _, gotErr := provisioner.Provision(t.Context(), first)
+	if gotErr != nil {
+		t.Fatal(gotErr)
+	}
+	if got == siblingPath {
 		t.Error("a folder was searched again after it was answered")
 	}
 }
@@ -634,7 +654,7 @@ func refuse(paths ...string) func(string) error {
 }
 
 func TestProvisionTriesTheNextLibraryWhenOneDoesNotOpen(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
@@ -654,7 +674,7 @@ func TestProvisionTriesTheNextLibraryWhenOneDoesNotOpen(t *testing.T) {
 }
 
 func TestProvisionTriesEveryLibraryInAFolder(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, _ := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
@@ -675,7 +695,7 @@ func TestProvisionTriesEveryLibraryInAFolder(t *testing.T) {
 }
 
 func TestProvision_FetchesPinnedLibraryWhenMachineLibsFailToOpen(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, hits := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
@@ -693,7 +713,7 @@ func TestProvision_FetchesPinnedLibraryWhenMachineLibsFailToOpen(t *testing.T) {
 }
 
 func TestProvision_GPUProviderErrorNamesUnopenableLibraries(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, _ := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()
@@ -720,7 +740,7 @@ func TestProvision_EnvLibrarySkipsOpenCheck(t *testing.T) {
 
 // NUMEN_OCR_RUNTIME belongs to the OCR plugin, which reads it itself.
 func TestProvisionIgnoresTheOcrPluginsOwnVariable(t *testing.T) {
-	archive := buildTgz(t, "libonnxruntime.so.1.23.0", libraryBytes)
+	archive := buildTgz(t, "libonnxruntime.so.1.23.0", getLibraryBytes())
 	server, _ := serve(t, archive)
 	cfg := newConfig(server, archive)
 	cfg.Dir = t.TempDir()

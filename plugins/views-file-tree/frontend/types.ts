@@ -71,7 +71,7 @@ export interface FileTree {
   loadFolder(folder: string): Promise<void>
   openFolder(folder: string): Promise<void>
   closeFolder(folder: string): void
-  toggleFolder(folder: string): void
+  toggleFolder(folder: string): Promise<void>
   selectPaths(paths: readonly string[]): void
   revealPath(path: string): Promise<void>
   refresh(): Promise<void>
@@ -91,6 +91,8 @@ export interface FilesTabState {
   activate(path: string): void
   open(path: string): void
   close(path: string): void
+  /** Shows the failure of an operation that runs in the background. */
+  reportFailure(error: unknown): void
   select(paths: readonly string[]): void
   rename(path: string, name: string): Promise<void>
   move(paths: readonly string[], target: DropPosition): Promise<void>

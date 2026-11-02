@@ -11,7 +11,7 @@ function createLinks(facts: LinkFacts) {
     calls: 0,
     fetches: [] as boolean[],
     started: [] as string[],
-    onChange: (_: boolean) => {},
+    onChange: (_: boolean): void => undefined,
     isStopped: false,
   }
   const links: Links = {

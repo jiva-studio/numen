@@ -90,7 +90,7 @@ describe('a note whose file moved', () => {
   })
 })
 
-describe('a node ID handed back', () => {
+describe('a node ID returned', () => {
   it('names the note holding it', () => {
     const map = createNodeIdMap()
 

@@ -13,6 +13,22 @@ const VIDEO_ADDRESS = 'https://www.youtube.com/watch?v=tidalmill01'
 
 const ARTICLE_TEXT = /A tidal mill stored seawater behind a sluice gate/
 
+/** A second video, so its link note is not the one the other scenario makes. */
+const SECOND_VIDEO_ADDRESS = 'https://www.youtube.com/watch?v=tidalmill02'
+
+/** The link note the importer names after the second video's address, at the root of the vault. */
+const LINK_NOTE = 'https---www.youtube.com-watch-v=tidalmill02.md'
+
+/** The paths of the tabs the core keeps for the vault, which the window opens after a reload. */
+const readOpenPaths = async (page: Page): Promise<string[]> => {
+  const answer = await page.request.post('/numen.v1.WorkspaceService/ReadOpenTabs', {
+    data: {},
+    headers: { 'Content-Type': 'application/json' },
+  })
+  const open = (await answer.json()) as { tabs?: { path?: string }[] }
+  return (open.tabs ?? []).map((tab) => tab.path ?? '')
+}
+
 const importAddress = async (page: Page, address: string): Promise<void> => {
   await runCommand(page, 'Import from URL', /^Import from URL/)
   await getPaletteField(page).fill(address)
@@ -63,5 +79,27 @@ test.describe('A link', () => {
 
     await expect(tab.getByRole('button', { name: /^Pause/ })).toBeVisible()
     await expect(tab).toContainText(/0:0[1-9]/)
+  })
+
+  test('to a video opens from the files tab with its copy and its captions', async ({ page }) => {
+    test.setTimeout(120_000)
+    await openWorkspace(page)
+    await importAddress(page, SECOND_VIDEO_ADDRESS)
+    const caption = 'The mill pond fills behind the gate.'
+    const imported = page.getByRole('tabpanel').filter({ hasText: caption })
+    await expect(imported.getByRole('button', { name: /^Play/ })).toBeVisible({ timeout: 30_000 })
+
+    await openWorkspace(page)
+    await page.getByRole('tab', { name: /^Files/ }).click()
+    await page.getByRole('treeitem', { name: LINK_NOTE, exact: true }).press('Enter')
+
+    const fromTree = page.getByRole('tabpanel').filter({ hasText: caption })
+    await expect(fromTree.getByRole('button', { name: /^Play/ })).toBeVisible({ timeout: 30_000 })
+    await expect.poll(() => readOpenPaths(page)).toContain(LINK_NOTE)
+
+    await page.reload()
+
+    const restored = page.getByRole('tabpanel').filter({ hasText: caption })
+    await expect(restored.getByRole('button', { name: /^Play/ })).toBeVisible({ timeout: 30_000 })
   })
 })

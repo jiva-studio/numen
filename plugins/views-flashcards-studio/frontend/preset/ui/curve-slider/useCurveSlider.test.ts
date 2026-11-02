@@ -55,7 +55,9 @@ const slider = (overrides: Partial<CurveSliderProps> = {}) => {
     isWaiting: false,
     ...overrides,
   })
-  const emit = (...args: unknown[]) => void emitted.push(args)
+  const emit = (...args: unknown[]) => {
+    emitted.push(args)
+  }
   const state = useCurveSlider(props, emit as unknown as Parameters<typeof useCurveSlider>[1])
   return { props, state, emitted }
 }
@@ -183,10 +185,16 @@ const createChart = (a: number, e: number, isCaptured = false) => {
   const isDone: string[] = []
   const element = Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'svg'), {
     getScreenCTM: () => ({ a, e }),
-    focus: () => void isDone.push('focus'),
-    setPointerCapture: (id: number) => void isDone.push(`capture ${id}`),
+    focus: () => {
+      isDone.push('focus')
+    },
+    setPointerCapture: (id: number) => {
+      isDone.push(`capture ${id}`)
+    },
     hasPointerCapture: () => isCaptured,
-    releasePointerCapture: (id: number) => void isDone.push(`release ${id}`),
+    releasePointerCapture: (id: number) => {
+      isDone.push(`release ${id}`)
+    },
   })
   return { element, recorded: isDone }
 }
@@ -229,7 +237,9 @@ describe('the pointer on the picture', () => {
   it('leaves the knob at its current position where there is no picture to read against', () => {
     const { state, emitted } = slider()
     state.interactions.onPointerDown(pointer(481))
-    const unscaled = Object.assign(document.createElement('div'), { setPointerCapture: () => {} })
+    const unscaled = Object.assign(document.createElement('div'), {
+      setPointerCapture: () => undefined,
+    })
     state.interactions.setChart(unscaled as unknown as SVGSVGElement)
     state.interactions.onPointerDown(pointer(481))
     expect(emitted).toStrictEqual([

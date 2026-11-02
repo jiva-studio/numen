@@ -1,40 +1,40 @@
 ---
 title: Writing notes
-description: How a note saves, what names it, renaming, removing, and what happens when a file changes underneath you.
+description: How a note saves, what names it, renaming, removing, and what happens when a file changes outside numen.
 ---
 
 import Shot from '../../components/Shot.astro'
 
 Type. There is nothing to press.
 
-A note reaches its file on its own: about a second after you stop typing, and in any case within
+A note is saved to its file automatically: about a second after you stop typing, and in any case within
 five seconds of the first change you made. <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>S</kbd> writes the unsaved
 changes at that moment, for the times you want to be sure. Closing a tab or quitting the window
 writes the unsaved changes and waits for them.
 
-Everything you write is found by name and by word as soon as it lands. Search
-[by meaning](/search/) catches up a few seconds after you stop.
+Everything you write is found by name and by word as soon as it is saved. Search
+[by meaning](/search/) is updated a few seconds after you stop typing.
 
 ## What you see as you write
 
-The note is markdown, and it is drawn as what it means: a heading is a heading, a link is a
-link, a list is a list. The marks themselves appear on the line the caret is on, so you can edit
-them, and step away and they are gone again.
+The note is markdown, and it is shown formatted: a heading is a heading, a link is a
+link, a list is a list. The markdown marks appear on the line the caret is on, so you can edit
+them, and they are hidden again when you move away.
 
 <Shot
   name="writing"
-  alt="A note being written: headings, emphasis and a link drawn as what they mean, with the markdown marks showing on the line the caret is on."
-  caption="Markdown, drawn as what it means. The marks come back on the line you are working in."
+  alt="A note being written: headings, emphasis and a link shown formatted, with the markdown marks showing on the line the caret is on."
+  caption="Markdown, shown formatted. The marks reappear on the line you are editing."
 />
 
-A table is a table you type in rather than a row of pipes and dashes: <kbd>Tab</kbd> walks the
-cells, <kbd>Tab</kbd> on the last one makes a new row, <kbd>Enter</kbd> drops to the cell below,
-and <kbd>Escape</kbd> puts you back in the text under it.
+A table is shown as a table you edit in place, not as rows of pipes and dashes. <kbd>Tab</kbd> moves between the
+cells, <kbd>Tab</kbd> in the last cell adds a new row, <kbd>Enter</kbd> moves to the cell below,
+and <kbd>Escape</kbd> returns you to the text under the table.
 
 <Shot
   name="table"
-  alt="A markdown table in a note drawn as a real table with cells you type into."
-  caption="The same pipes and dashes in the file; a table on the screen."
+  alt="A markdown table in a note shown as a table with cells you type into."
+  caption="The same pipes and dashes in the file, and a table on the screen."
 />
 
 ## Linking as you type
@@ -42,9 +42,9 @@ and <kbd>Escape</kbd> puts you back in the text under it.
 Typing `[[` opens an autocomplete list of existing notes in the vault.
 
 - Filter note titles and paths as you type.
-- <kbd>↑</kbd> and <kbd>↓</kbd> navigate choices; <kbd>Enter</kbd> or <kbd>Tab</kbd> inserts the link.
+- <kbd>↑</kbd> and <kbd>↓</kbd> navigate choices; <kbd>Enter</kbd> or <kbd>Tab</kbd> inserts the
+  link.
 - Selecting a title that does not yet exist creates a new note in the vault and inserts `[[New Note]]` without losing your place.
-
 
 ## What names a note
 
@@ -57,76 +57,76 @@ rename it, and neither does changing one. What you type in the body is the body.
 
 **New note** in the commands asks for a title, and the file is named after it. Characters a
 filename cannot hold — `/ \ : * ? " < > |` and a few more — become `-`, and a very long title is
-cut to fit.
+shortened to fit.
 
-Where the title survives that whole, the filename says it and nothing is written inside the
-note. Where it does not, the frontmatter carries your exact title under `title:`, so the name
-you meant is kept whole.
+If the title is unchanged by that, the filename is the title and nothing is written inside the
+note. Otherwise the frontmatter contains your exact title under `title:`, so the name
+you meant is kept intact.
 
-Two notes may share a name. numen says so when it happens and files both.
+Two notes may share a name. numen tells you when this happens and saves both.
 
 ## Renaming
 
-**Change title** rewrites whichever of the two names the note: the `title:` key if it has one,
+**Change title** changes whichever of the two gives the note its name: the `title:` key if it has one,
 and otherwise the filename.
 
 **The title and the filename are kept as one name.** Change the title and the file moves to
 match; rename the file — in the [files tab](/files/) or in your own file manager —
 and the new name is written into the note. A note that only has a filename is unaffected: there
-is nothing inside it to bring into line.
+is nothing inside it to update.
 
 If you would rather they were two separate things, **Sync title and filename** in the commands
-turns it off — and on again — and writes the choice down. It is
+turns it off and on again, and saves the choice. It is
 `naming.sync_title_and_filename` in [the settings](/settings/) if you would rather edit the
 file. Off, a new title stays inside the note and a renamed file stays renamed.
 
-The `title:` key is added only where a filename cannot carry the title whole, so a vault whose
-filenames say their names stays a vault without the key.
+The `title:` key is added only where a filename cannot hold the whole title, so a vault whose
+filenames match its titles has no `title:` keys.
 
-Links that pointed at the old name are looked at afterwards, and only the ones that now reach
-nothing are repaired. See [links](/links/).
+Afterwards numen checks the links that pointed to the old name and repairs only those that now point
+to nothing. See [links](/links/).
 
 ## Removing
 
 **Remove note** moves the file into `.trash/` inside the vault, keeping the path it had. It
-leaves the search, the plex and the index; nothing is destroyed, and the file is in that folder
+is removed from search, the plex and the index. Nothing is destroyed, and the file is in that folder
 if you want it back.
 
-**Destroy note** deletes it outright. You are asked to type the note's name first, and nothing
-brings it back.
+**Destroy note** deletes it outright. You are asked to type the note's name first, and it
+cannot be restored.
 
-Notes that linked to what you removed are reported and left alone. The link is not wrong — its
+Notes that linked to what you removed are reported and left alone. The link is not wrong. Its
 target is gone, and only you know what was meant.
 
 ## Your files stay yours
 
-numen is a guest in files you also edit elsewhere.
+numen shares your files with the other programs you edit them in.
 
-- **What it did not change, it does not rewrite.** Your spacing, your line endings, the order of
-  your frontmatter keys: preserved as found. A save never produces a diff you did not ask for.
-- **Frontmatter it does not own is carried across untouched** — every key your other tools
+- **What it did not change, it does not rewrite.** Your spacing, your line endings and the order of
+  your frontmatter keys are preserved as found. A save never produces a diff you did not ask for.
+- **Frontmatter that numen does not manage is kept unchanged:** every key your other tools
   write.
 - **A file it cannot parse is not repaired.** Broken frontmatter is reported, never guessed at.
 
 ## When the file changed underneath you
 
 Edit the same note in another editor, or let a sync client bring down a new version, and the tab
-notices that the file moved past what it read. It stops saving there and then, keeps every word
-you typed, and asks:
+detects that the file changed after it was read. It stops saving at once, keeps every word
+you typed, and shows two choices:
 
 - **Keep mine** — write what is in the tab over the file;
 - **Take the file's** — read the file again, replacing what is in the tab.
 
-Nothing is decided for you and nothing is lost while you decide. The same question is put again
-if you try to close the tab or quit the window, and putting it off calls the quit off.
+Nothing is decided for you and nothing is lost while you decide. The same choice is shown again
+if you try to close the tab or quit the window, and postponing it cancels the quit.
 
-If the file disappears entirely, the tab stays open showing what you were reading and says the
-note is gone. **Keep mine** writes it back into existence at that name.
+If the file disappears entirely, the tab stays open showing what you were reading and shows that the
+note is gone. **Keep mine** creates the file again with that name.
 
 ## Limits
 
-| | |
-| --- | --- |
-| One megabyte | the most a single note can be and still open here. |
-| UTF-8 | a file that is not valid UTF-8 is not opened. |
-| Prose only | a note begins below its frontmatter; text pasted in that opens with `---` is refused as a body. |
+|              |                                                                                                 |
+| ------------ | ----------------------------------------------------------------------------------------------- |
+| One megabyte | the most a single note can be and still open here.                                              |
+| UTF-8        | a file that is not valid UTF-8 is not opened.                                                   |
+| Prose only   | a note begins below its frontmatter; text pasted in that opens with `---` is refused as a body. |

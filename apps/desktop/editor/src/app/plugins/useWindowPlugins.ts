@@ -1,15 +1,22 @@
 import { watch } from 'vue'
+import { runInBackground } from '@numen/ui'
 import type { PluginServices } from './pluginServices'
-import { createPluginHost } from '@/entities/plugin'
 import { registerNoteIcon } from '@/entities/note'
-import { DEFAULT_PLUGIN_ENABLED, createPluginLoader, type PluginLoader } from '@numen/plugin-host'
+import {
+  DEFAULT_PLUGIN_ENABLED,
+  createAppInfo,
+  createPluginHost,
+  createPluginLoader,
+  createPluginNotices,
+  createPluginTasks,
+  createPluginTexts,
+  openExternalUrl,
+  type PluginLoader,
+} from '@numen/plugin-host'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { useTabLinks } from '@/features/tab-linking'
 import type { NoticeQueue } from '@numen/shell'
 import type { useSettings } from '../window/useSettings'
-import { createPluginNotices } from './pluginNotices'
-import { createPluginTasks } from './pluginTasks'
-import { createPluginTexts } from './pluginTexts'
 import { texts } from '@/shared/clients'
 
 export interface PluginSupportDeps {
@@ -23,6 +30,7 @@ export interface PluginSupportDeps {
   readonly reportError?: (pluginId: string, error: unknown) => void
   /** Reports a plugin whose frontend failed to load or activate; falls back to `reportError`. */
   readonly reportLoadError?: (pluginId: string, error: unknown) => void
+  readonly resolveLink?: (from: string, address: string) => Promise<string>
   readonly writeNote?: (path: string, body: string) => Promise<void>
   /** The window and the notes a plugin's tabs are given, filled once the window has made them. */
   readonly services?: PluginServices
@@ -30,9 +38,10 @@ export interface PluginSupportDeps {
   readonly notices?: NoticeQueue
 }
 
-function createPluginSettingsAccessor(settingsHolder: {
-  current?: ReturnType<typeof useSettings>
-}) {
+function createPluginSettingsAccessor(
+  settingsHolder: { current?: ReturnType<typeof useSettings> },
+  reportError: (pluginId: string, error: unknown) => void,
+) {
   const getSetting = (pluginId: string, key: string): unknown => {
     const rest = settingsHolder.current?.rest
     if (!rest) return undefined
@@ -50,7 +59,9 @@ function createPluginSettingsAccessor(settingsHolder: {
     watch(
       () => getSetting(pluginId, key),
       (newVal, oldVal) => {
-        if (newVal !== oldVal) void handler(newVal)
+        if (newVal !== oldVal) {
+          runInBackground(Promise.resolve(handler(newVal)), (error) => reportError(pluginId, error))
+        }
       },
     )
 
@@ -66,7 +77,10 @@ function createNoticeAccess(queue: NoticeQueue) {
 
 export function createPluginSupport(deps: PluginSupportDeps) {
   const { windowTabs, tabOpeners, settingsHolder } = deps
-  const { getSetting, onSettingChange } = createPluginSettingsAccessor(settingsHolder)
+  const { getSetting, onSettingChange } = createPluginSettingsAccessor(
+    settingsHolder,
+    (pluginId, error) => deps.reportError?.(pluginId, error),
+  )
 
   /** The tabs of a plugin that stops, kept as placeholders that hold their saved state. */
   const closeTabsForPlugin = (pluginId: string) => {
@@ -74,10 +88,16 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   }
 
   const pluginHost = createPluginHost({
+    app: createAppInfo({
+      version: import.meta.env.VITE_NUMEN_VERSION,
+      build: import.meta.env.VITE_NUMEN_BUILD,
+      userAgent: navigator.userAgent,
+    }),
+    openExternal: (url) => openExternalUrl(url),
     ...(deps.reportError !== undefined ? { onError: deps.reportError } : {}),
     registerKind: (kind) => {
       const unregisterKind = windowTabs.registerKind(kind)
-      const unregisterIcon = kind.icon ? registerNoteIcon(kind.kind, kind.icon) : () => {}
+      const unregisterIcon = kind.icon ? registerNoteIcon(kind.kind, kind.icon) : () => undefined // No icon was registered.
       return () => {
         unregisterKind()
         unregisterIcon()
@@ -101,9 +121,12 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     ...(deps.writeNote !== undefined ? { writeNote: deps.writeNote } : {}),
     getWorkspace: () => deps.services?.workspace,
     getNotes: () => deps.services?.notes,
+    getRelations: () => deps.services?.relations,
     getFiles: () => deps.services?.files,
     getAgent: () => deps.services?.agent,
     getBuffers: () => deps.services?.buffers,
+    getNoteBuffer: () => deps.services?.noteBuffer,
+    ...(deps.resolveLink !== undefined ? { resolveLink: deps.resolveLink } : {}),
     getTasks: (pluginId) => {
       const list = deps.services?.taskList
       return list ? createPluginTasks(list, pluginId) : undefined
@@ -128,11 +151,12 @@ export const getFrontendPluginIds = (
 export function watchPluginSettings(
   settings: ReturnType<typeof useSettings>,
   pluginLoader: PluginLoader,
+  reportError: (error: unknown) => void,
 ) {
   watch(
     () => settings.rest?.plugins?.value ?? [],
     (plugins) => {
-      void pluginLoader.trackPlugins(getFrontendPluginIds(plugins))
+      runInBackground(pluginLoader.trackPlugins(getFrontendPluginIds(plugins)), reportError)
     },
   )
 }

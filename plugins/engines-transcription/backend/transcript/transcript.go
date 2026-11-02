@@ -24,20 +24,20 @@ type Cue struct {
 
 // GetSegments is the cues as segments of a text version. A cue carrying no
 // words is not written: a timing over nothing is a moment the recording never had.
-func GetSegments(cues []Cue) []domain.TextSegment {
+func GetSegments(cues []Cue) ([]domain.TextSegment, error) {
 	out := make([]domain.TextSegment, 0, len(cues))
 	for _, cue := range cues {
 		text := strings.TrimSpace(cue.Text)
 		if text == "" {
 			continue
 		}
-		out = append(out, domain.TextSegment{
-			Text:     text + "\n",
-			Heading:  "",
-			Selector: timeSelector{T: []float64{toSeconds(cue.From), toSeconds(cue.To)}}.encode(),
-		})
+		selector, err := timeSelector{T: []float64{toSeconds(cue.From), toSeconds(cue.To)}}.encode()
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, domain.TextSegment{Text: text + "\n", Heading: "", Selector: selector})
 	}
-	return out
+	return out, nil
 }
 
 // GetCues is the segments of a text version as cues. A segment whose selector

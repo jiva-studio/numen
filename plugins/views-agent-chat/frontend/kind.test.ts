@@ -19,11 +19,15 @@ const window = (options: HostOptions = {}) => {
     const stopCalls: string[] = []
     const conversation: Conversation = {
       turns: turn,
-      isWorking: ref(false),
-      ask: async () => {},
+      isAnswerPending: ref(false),
+      ask: async () => undefined,
       getSourceLocation: () => null,
-      stop: () => void stopCalls.push('stop'),
-      finish: () => void stopCalls.push('finish'),
+      stop: () => {
+        stopCalls.push('stop')
+      },
+      finish: () => {
+        stopCalls.push('finish')
+      },
     }
     conversations.push({ said: turn, stopped: stopCalls })
     return useAgentConversation(conversation, deps)

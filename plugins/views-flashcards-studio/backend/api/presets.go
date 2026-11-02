@@ -161,7 +161,7 @@ type CreatePresetRequest struct {
 type CreatePresetResponse struct {
 	Path         string    `json:"path"`
 	Error        ErrorCode `json:"error,omitempty"`
-	IsUnlevelled bool      `json:"isUnlevelled"`
+	IsIndexOutdated bool      `json:"isIndexOutdated"`
 }
 
 // ScheduleDeckRequest is the request of the ScheduleDeck method.
@@ -175,7 +175,7 @@ type ScheduleDeckRequest struct {
 type ScheduleDeckResponse struct {
 	Error        ErrorCode `json:"error,omitempty"`
 	At           *FileStat `json:"at,omitempty"`
-	IsUnlevelled bool      `json:"isUnlevelled"`
+	IsIndexOutdated bool      `json:"isIndexOutdated"`
 }
 
 // ReadPresetRequest is the request of the ReadPreset method.
@@ -213,7 +213,7 @@ type WritePresetRequest struct {
 type WritePresetResponse struct {
 	Error        ErrorCode `json:"error,omitempty"`
 	At           *FileStat `json:"at,omitempty"`
-	IsUnlevelled bool      `json:"isUnlevelled"`
+	IsIndexOutdated bool      `json:"isIndexOutdated"`
 }
 
 // ComputeCurveRequest is the request of the ComputeCurve method.

@@ -1,7 +1,7 @@
 package container
 
 import (
-	"encoding/json"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -15,36 +15,42 @@ import (
 	"testing"
 
 	"gopkg.in/yaml.v3"
-
-	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
 // numenRoot is what every module of this repository is named under.
 const numenRoot = "github.com/jiva-studio/numen/"
 
-// notesModule is the module of the note model, which plugins may name.
+// notesModule is the module of the note model, which plugins do not name.
 const notesModule = numenRoot + "libs/notes"
 
 // numenModulesDir is the folder the modules live in, relative to this package.
-var numenModulesDir = filepath.Join("..", "..", "..")
+const numenModulesDir = "../../.."
+
+// isWithin reports whether path is root or a path below it.
+func isWithin(path, root string) bool {
+	return path == root || strings.HasPrefix(path, root+"/")
+}
 
 // getPluginDependencyRefusal returns why the plugin module mod may not depend on dep, in
-// a requirement or in an import, or "" when it may. A plugin may depend on the plugin
-// SDK, the protocol, third-party code, and its own packages.
+// a direct requirement or in an import, or "" when it may. A plugin depends on its own
+// packages, the plugin SDK and third-party code. It reaches notes, the core and the wire
+// through the SDK.
 func getPluginDependencyRefusal(mod, dep string) string {
 	switch {
-	case !strings.HasPrefix(dep, numenRoot), dep == mod, strings.HasPrefix(dep, mod+"/"):
+	case isWithin(dep, mod), isSDK(dep):
 		return ""
-	case isSDK(dep), dep == wire, strings.HasPrefix(dep, wire+"/"):
+	case isWithin(dep, "connectrpc.com/connect"), isWithin(dep, "google.golang.org/protobuf"):
+		return "a plugin calls and answers the core through the plugin SDK, not through the RPC library"
+	case !strings.HasPrefix(dep, numenRoot):
 		return ""
-	case dep == notesModule, strings.HasPrefix(dep, notesModule+"/"):
-		return ""
+	case isWithin(dep, notesModule):
+		return "a plugin names no package of the notes library; it reaches notes through the plugin SDK"
 	case isPlugin(dep):
 		return "a plugin names no other plugin"
-	case dep == strings.TrimSuffix(module, "/"), strings.HasPrefix(dep, module):
+	case isWithin(dep, strings.TrimSuffix(module, "/")):
 		return "a plugin names no package of the core"
 	}
-	return "a plugin names only the plugin SDK, the protocol, the notes and third-party code"
+	return "a plugin names only the plugin SDK and third-party code"
 }
 
 // getPluginDependencyRefusal defines the whole rule, so it is tested directly.
@@ -64,11 +70,17 @@ func TestPluginDependencyRule_RejectsForeignDependencies(t *testing.T) {
 		{sdkModule, false},
 		{sdkModule + "/vault", false},
 		{sdkModule + "/server", false},
-		{wire, false},
-		{notesModule, false},
-		{notesModule + "/domain", false},
-		{wire + "/gen/numen/v1", false},
-		{"connectrpc.com/connect", false},
+		{wire, true},
+		{wire + "/gen/numen/v1/numenv1connect", true},
+		{"connectrpc.com/connect", true},
+		{"google.golang.org/protobuf/proto", true},
+		{"google.golang.org/protobufx", false},
+		{notesModule, true},
+		{notesModule + "/domain", true},
+		{notesModule + "/edit", true},
+		{numenRoot + "libs/ui/shell", true},
+		{numenRoot + "tools/lint-layers", true},
+		{"golang.org/x/net/html", false},
 		{"github.com/jiva-studio/other", false},
 	} {
 		if got := getPluginDependencyRefusal(self, one.dep) != ""; got != one.isRefused {
@@ -93,25 +105,6 @@ func listPluginModules(t *testing.T) []string {
 		dirs[i] = filepath.Dir(gomod)
 	}
 	return dirs
-}
-
-// A plugin module requires the plugin SDK, the protocol and third-party code.
-func TestNoPluginModuleRequiresMoreThanTheSDKAndTheProtocol(t *testing.T) {
-	for _, dir := range listPluginModules(t) {
-		text, err := os.ReadFile(filepath.Join(dir, "go.mod"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		mod := getModulePath(string(text))
-		if want := pluginsPrefix + filepath.Base(dir); mod != want {
-			t.Errorf("%s declares module %q, want %q", dir, mod, want)
-		}
-		for _, dep := range parseGoMod(string(text)).requires {
-			if why := getPluginDependencyRefusal(mod, dep); why != "" {
-				t.Errorf("%s requires %s: %s", mod, dep, why)
-			}
-		}
-	}
 }
 
 // getImports is every path a Go file in the tree at root imports, by the file
@@ -148,8 +141,8 @@ func getImports(root string) (map[string][]string, error) {
 	return imports, err
 }
 
-// A plugin imports the plugin SDK, the protocol and third-party code, in its
-// sources and in its tests.
+// A plugin imports the plugin SDK and third-party code, in its sources and in its tests, under
+// every build constraint.
 func TestNoPluginImportsAnotherPluginOrTheCore(t *testing.T) {
 	for _, dir := range listPluginModules(t) {
 		mod := pluginsPrefix + filepath.Base(dir)
@@ -173,14 +166,16 @@ func TestNoPluginImportsAnotherPluginOrTheCore(t *testing.T) {
 // depguardRule is one rule of the depguard linter in a golangci configuration.
 type depguardRule struct {
 	Files []string `yaml:"files"`
+	Allow []string `yaml:"allow"`
 	Deny  []struct {
 		Pkg string `yaml:"pkg"`
 	} `yaml:"deny"`
 }
 
 // getDepguardGaps lists what the depguard rules of a plugin golangci
-// configuration leave open: a rule over "$all" denies the core, the notes, the
-// raw protocol and the applications.
+// configuration leave open: a rule over "$all" denies every library of the
+// repository, the applications and the RPC library, and allows the plugin SDK
+// and nothing else of the repository.
 func getDepguardGaps(config []byte) ([]string, error) {
 	var parsed struct {
 		Linters struct {
@@ -194,7 +189,7 @@ func getDepguardGaps(config []byte) ([]string, error) {
 	if err := yaml.Unmarshal(config, &parsed); err != nil {
 		return nil, err
 	}
-	var denied []string
+	var denied, allowed []string
 	for _, rule := range parsed.Linters.Settings.Depguard.Rules {
 		if !slices.Contains(rule.Files, "$all") {
 			continue
@@ -202,19 +197,25 @@ func getDepguardGaps(config []byte) ([]string, error) {
 		for _, deny := range rule.Deny {
 			denied = append(denied, deny.Pkg)
 		}
+		allowed = append(allowed, rule.Allow...)
 	}
 	if denied == nil {
 		return []string{"no depguard rule over $all"}, nil
 	}
 	var gaps []string
 	for _, pkg := range []string{
-		strings.TrimSuffix(module, "/"),
-		notesModule,
-		wire,
+		numenRoot + "libs",
 		numenRoot + "apps",
+		"connectrpc.com/connect",
+		"google.golang.org/protobuf",
 	} {
 		if !slices.Contains(denied, pkg) {
 			gaps = append(gaps, "does not deny "+pkg)
+		}
+	}
+	for _, pkg := range allowed {
+		if strings.HasPrefix(pkg, numenRoot) && !isSDK(pkg) {
+			gaps = append(gaps, "allows "+pkg)
 		}
 	}
 	return gaps, nil
@@ -229,21 +230,24 @@ linters:
       rules:
         plugin-isolation:
           files: ["$all"]
+          allow: ["` + sdkModule + `"]
           deny:
-            - pkg: "` + strings.TrimSuffix(module, "/") + `"
-            - pkg: "` + notesModule + `"
-            - pkg: "` + wire + `"
+            - pkg: "` + numenRoot + `libs"
             - pkg: "` + numenRoot + `apps"
+            - pkg: "connectrpc.com/connect"
+            - pkg: "google.golang.org/protobuf"
 `
 	gaps, err := getDepguardGaps([]byte(complete))
 	if err != nil || len(gaps) != 0 {
 		t.Fatalf("a complete configuration has gaps %v (%v)", gaps, err)
 	}
 	missingRule := strings.Replace(complete, "$all", "**/other/**", 1)
-	missingDeny := strings.Replace(complete, wire, numenRoot+"other", 1)
+	missingDeny := strings.Replace(complete, "connectrpc.com/connect", "example.com/other", 1)
+	extraAllow := strings.Replace(complete, `allow: ["`+sdkModule+`"]`, `allow: ["`+notesModule+`"]`, 1)
 	for name, config := range map[string]string{
 		"a configuration without a rule over $all": missingRule,
 		"a rule that leaves a boundary out":        missingDeny,
+		"a rule that allows another library":       extraAllow,
 	} {
 		if gaps, err := getDepguardGaps([]byte(config)); err != nil || len(gaps) == 0 {
 			t.Errorf("%s is not found (%v)", name, err)
@@ -252,7 +256,7 @@ linters:
 }
 
 // Every plugin module and the golden template have a depguard rule that denies
-// the core, the notes, the raw protocol and the applications.
+// every library but the plugin SDK, the applications and the RPC library.
 func TestPluginModules_HaveDepguardRulesDenyingCoreAndPlugins(t *testing.T) {
 	dirs := append([]string{filepath.Join(numenModulesDir, "plugins", ".example")}, listPluginModules(t)...)
 	for _, dir := range dirs {
@@ -438,11 +442,11 @@ func TestNoHostOrContainerSourceAssertsToAnAnonymousInterface(t *testing.T) {
 // getManifestIssues is every rule the manifest in data breaks, by the one
 // validator the host and the plugin command line share.
 func getManifestIssues(data []byte) []error {
-	var manifest pluginport.PluginManifest
-	if err := json.Unmarshal(data, &manifest); err != nil {
+	parsed, err := manifestjson.Decode(data)
+	if err != nil {
 		return []error{err}
 	}
-	return manifest.ListIssues()
+	return parsed.ListIssues()
 }
 
 // getManifestIssues defines the whole rule, so it is tested directly.

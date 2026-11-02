@@ -4,14 +4,12 @@ import (
 	"context"
 	"embed"
 	"errors"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
-	"time"
 
 	"connectrpc.com/connect"
 
@@ -113,6 +111,10 @@ func (s *Services) newRoutes(named []string) []served {
 			routes = append(routes, mount(one.handle(counted)))
 		}
 	}
+	// The catalog belongs to the installation, and a build put together without one serves none.
+	if s.Catalog != nil && isServed(named, numenv1connect.CatalogServiceName) {
+		routes = append(routes, mount(numenv1connect.NewCatalogServiceHandler(s.Catalog, counted)))
+	}
 	// The themes belong to the installation and arrive here from whatever put
 	// the window together, so a build put together without a catalogue serves
 	// none.
@@ -173,18 +175,10 @@ func (s *Services) newServices() []service {
 	}
 }
 
-// updateRoute is the endpoint the window requests release updates from.
-const updateRoute = "/api/app-update/latest.json"
-
-// updateEndpoint is the URL of the published release manifest.
-const updateEndpoint = "https://dl.numen.md/latest/latest.json"
-
 // serveAdjacent answers what no service does: the bytes of a file, the page the
 // interface opens at, and every other file the interface is made of.
 func (s *Services) serveAdjacent(w http.ResponseWriter, r *http.Request, isWhole bool, files http.Handler) {
 	switch {
-	case r.URL.Path == updateRoute:
-		s.serveUpdate(w, r)
 	case strings.HasPrefix(r.URL.Path, wire.PluginRoute):
 		if !s.state.questions.begin() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
@@ -199,42 +193,11 @@ func (s *Services) serveAdjacent(w http.ResponseWriter, r *http.Request, isWhole
 		}
 		defer s.state.questions.finish()
 		s.serveAsset(w, r)
-	case slices.Contains(wire.OpenedAt, r.URL.Path):
+	case slices.Contains(wire.GetOpenedAt(), r.URL.Path):
 		wire.WritePage(w, r, pages, s.Themes, files)
 	default:
 		files.ServeHTTP(w, r)
 	}
-}
-
-// serveUpdate proxies the release manifest to the window.
-func (s *Services) serveUpdate(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-	defer cancel()
-
-	endpoint := s.UpdateEndpoint
-	if endpoint == "" {
-		endpoint = updateEndpoint
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	req.Header.Set("Accept", "application/json")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadGateway)
-		return
-	}
-	defer resp.Body.Close()
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(resp.StatusCode)
-	_, _ = io.Copy(w, resp.Body)
 }
 
 // newQuestionCounter tracks every request a client makes until it completes, so

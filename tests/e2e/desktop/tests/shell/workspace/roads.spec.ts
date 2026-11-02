@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '../../support/test.js'
-import { openWorkspace } from '../../support/workspace'
+import { openWorkspace } from '../../support/workspace.js'
 
 /**
  * A path opens in the editor its file is for, whichever road it was reached by: a deck in the

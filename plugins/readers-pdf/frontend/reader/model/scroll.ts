@@ -22,8 +22,16 @@ export interface PanScroll {
    * reports it.
    */
   readonly getScrollOffset: () => number
-  /** The row sent to a place along itself, travelling or at once. */
+  /**
+   * The row sent to a place along itself, travelling or at once. A send to the place the row
+   * is at ends a travel still in flight to another place.
+   */
   readonly send: (to: number, how: ScrollBehavior) => void
+  /**
+   * The row put back at the last offset it was scrolled to, when the browser
+   * has moved it since without a scroll event.
+   */
+  readonly restore: () => void
   /**
    * Whether the strip is stationary. A strip scrolling towards a target passes
    * pages the user did not navigate to.
@@ -103,11 +111,23 @@ export function usePanScroll(area: Readonly<ShallowRef<HTMLElement | null>>): Pa
 
   const send = (to: number, how: ScrollBehavior): void => {
     if (!area.value) return
-    if (Math.abs(area.value.scrollLeft - to) <= THERE) return
+    if (Math.abs(area.value.scrollLeft - to) <= THERE) {
+      // The row is at the place already. An instant scroll there ends a travel still in flight to
+      // another place, and no target is left that no scroll event would clear.
+      heading = undefined
+      area.value.scrollTo({ left: to, behavior: 'auto' })
+      return
+    }
     heading = to
     // An instant scroll completes immediately.
     if (how === 'auto') axisOffset.value = to
     area.value.scrollTo({ left: to, behavior: how })
+  }
+
+  const restore = (): void => {
+    if (!area.value || heading !== undefined) return
+    if (Math.abs(area.value.scrollLeft - axisOffset.value) <= THERE) return
+    area.value.scrollLeft = axisOffset.value
   }
 
   const isStill = (): boolean => {
@@ -132,6 +152,7 @@ export function usePanScroll(area: Readonly<ShallowRef<HTMLElement | null>>): Pa
     isDragging,
     getScrollOffset,
     send,
+    restore,
     isStill,
     onPointerDown,
     onPointerMove,

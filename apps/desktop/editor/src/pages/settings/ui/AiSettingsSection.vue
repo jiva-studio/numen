@@ -173,7 +173,7 @@ function onSecretDelete(pluginId: string, name: string) {
   margin-block-end: var(--settings-near);
   padding: 0.5rem 0.75rem;
   border: var(--numen-stroke) solid var(--numen-accent);
-  border-radius: var(--numen-radius-small);
+  border-radius: var(--numen-radius-tight);
   color: var(--numen-ink);
 }
 

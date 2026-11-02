@@ -14,13 +14,15 @@ import (
 // vocabulary is the words a generated cutting draws its chunks from. It is small,
 // so a text repeats within a source often, and a large chunk contains what a chunk
 // inside it contains.
-var vocabulary = []string{"compost", "leaves", "peelings", "turned", "rot down", ""}
+func getVocabulary() []string {
+	return []string{"compost", "leaves", "peelings", "turned", "rot down", ""}
+}
 
 // generateChunks generates a source cut into large chunks with small chunks inside
 // them. What a chunk holds is what identifies it, so the words are what varies;
 // at its current position is what a cut moves, and it moves with the text.
 func generateChunks(t *rapid.T, name string) []chunk.Chunk {
-	word := rapid.SampledFrom(vocabulary)
+	word := rapid.SampledFrom(getVocabulary())
 	inside := rapid.Custom(func(t *rapid.T) chunk.Chunk {
 		return chunk.Chunk{Text: word.Draw(t, "small")}
 	})
@@ -79,7 +81,11 @@ func getSourceRows(t *testing.T, db *DB, source int64) map[textOf][]int64 {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cursor.Close()
+	defer func() {
+		if err := cursor.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	out := map[textOf][]int64{}
 	for cursor.Next() {
@@ -109,12 +115,12 @@ func countByText(rows map[textOf][]int64) map[textOf]int {
 // the row the source relies on.
 func cutSource(t *testing.T, db *DB, path string, chunks []chunk.Chunk) int64 {
 	t.Helper()
-	if err := db.Chunks().SaveSource(t.Context(), first.ID, chunk.Source{
+	if err := db.Chunks().SaveSource(t.Context(), getFirst().ID, chunk.Source{
 		Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: "hash-" + path, Recipe: "epub",
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().ReplaceChunks(t.Context(), first.ID, "book", path, chunks); err != nil {
+	if err := db.Chunks().ReplaceChunks(t.Context(), getFirst().ID, "book", path, chunks); err != nil {
 		t.Fatal(err)
 	}
 	var source int64
@@ -146,7 +152,7 @@ func TestReplaceChunks_RetainsRowsOfRepeatedText(t *testing.T) {
 		source := cutSource(outer, db, "library/a.epub", was)
 		before := getSourceRows(outer, db, source)
 
-		if err := db.Chunks().ReplaceChunks(outer.Context(), first.ID, "book", "library/a.epub", now); err != nil {
+		if err := db.Chunks().ReplaceChunks(outer.Context(), getFirst().ID, "book", "library/a.epub", now); err != nil {
 			t.Fatal(err)
 		}
 		after := getSourceRows(outer, db, source)

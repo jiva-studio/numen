@@ -56,7 +56,9 @@ func BenchmarkRecognisePage(b *testing.B) {
 		b.ResetTimer()
 		b.ReportAllocs()
 		for b.Loop() {
-			_, _ = r.Recognise(ctx, page)
+			if _, err := r.Recognise(ctx, page); err != nil {
+				b.Fatal(err)
+			}
 		}
 	})
 
@@ -65,7 +67,9 @@ func BenchmarkRecognisePage(b *testing.B) {
 		b.ResetTimer()
 		b.ReportAllocs()
 		for b.Loop() {
-			_, _ = r.Recognise(ctx, page)
+			if _, err := r.Recognise(ctx, page); err != nil {
+				b.Fatal(err)
+			}
 		}
 	})
 
@@ -74,7 +78,9 @@ func BenchmarkRecognisePage(b *testing.B) {
 		b.ResetTimer()
 		b.ReportAllocs()
 		for b.Loop() {
-			_, _ = r.Recognise(ctx, page)
+			if _, err := r.Recognise(ctx, page); err != nil {
+				b.Fatal(err)
+			}
 		}
 	})
 }

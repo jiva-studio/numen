@@ -37,12 +37,13 @@ func NewShowNeighbourhood(links noteport.LinkQueries, notes RefQueries) ShowNeig
 }
 
 func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path string) (domain.Neighbourhood, error) {
-	center, err := u.getNeighbours(ctx, v, path)
+	cache := &linkCache{queries: u.links, vault: v}
+	center, err := u.getNeighbours(ctx, cache, path)
 	if err != nil {
 		return domain.Neighbourhood{}, err
 	}
 
-	if err := u.addSiblings(ctx, v, center); err != nil {
+	if err := u.addSiblings(ctx, cache, center); err != nil {
 		return domain.Neighbourhood{}, err
 	}
 	center.remove(path)
@@ -63,23 +64,28 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 		return domain.Neighbourhood{}, nil
 	}
 	out := domain.Neighbourhood{Focus: focus}
+	visible := []string{path}
 	for _, s := range neighbour {
 		if note, recognizedVal := notes[s.Path]; recognizedVal {
 			out.AddNeighbour(note, s)
+			visible = append(visible, s.Path)
 		}
+	}
+	out.Connections, err = getConnections(ctx, cache, visible)
+	if err != nil {
+		return domain.Neighbourhood{}, err
 	}
 	return out, nil
 }
 
 // addSiblings adds the other children of every parent, which is the definition of a
-// sibling. Each parent is queried in turn, and the sibling keeps the parent it came
-// through: that is the note the relationship runs from.
-func (u ShowNeighbourhood) addSiblings(ctx context.Context, v domain.Vault, targetSet *neighbourSet) error {
+// sibling. Each parent is queried in turn.
+func (u ShowNeighbourhood) addSiblings(ctx context.Context, cache *linkCache, targetSet *neighbourSet) error {
 	for _, parent := range targetSet.getAll() {
 		if parent.Relation != domain.RelationParent {
 			continue
 		}
-		theirs, err := u.getNeighbours(ctx, v, parent.Path)
+		theirs, err := u.getNeighbours(ctx, cache, parent.Path)
 		if err != nil {
 			return err
 		}
@@ -90,8 +96,6 @@ func (u ShowNeighbourhood) addSiblings(ctx context.Context, v domain.Vault, targ
 			targetSet.add(domain.Neighbour{
 				NoteRef:  domain.NoteRef{Path: sibling.Path},
 				Relation: domain.RelationSibling,
-				Label:    sibling.Label,
-				Parent:   parent.Path,
 			})
 		}
 	}
@@ -103,34 +107,29 @@ func (u ShowNeighbourhood) addSiblings(ctx context.Context, v domain.Vault, targ
 // The end at which a link was written does not determine the graph's shape:
 // `parent: B` in A and `child: A` in B are the same edge, so the role is read
 // together with the direction in which the link was found.
-func (u ShowNeighbourhood) getNeighbours(ctx context.Context, v domain.Vault, path string) (*neighbourSet, error) {
+func (u ShowNeighbourhood) getNeighbours(ctx context.Context, cache *linkCache, path string) (*neighbourSet, error) {
 	found := &neighbourSet{}
 
-	links, err := u.links.GetLinks(ctx, v.ID, path)
+	links, err := cache.get(ctx, path)
 	if err != nil {
 		return nil, err
 	}
-	// The notes this one names. One that names it back makes the edge mutual,
-	// and a mutual edge takes its label from this end.
-	named := map[string]bool{}
 	for _, l := range links {
-		if l.ToVault != v.ID {
+		if l.ToVault != cache.vault.ID {
 			// A link that is dangling lands in no vault, and one that landed in
 			// another vault has no relation here: there is nothing to draw and nowhere
 			// to go.
 			continue
 		}
 		if relation, navigable := getRelation(l.Role); navigable {
-			named[l.To] = true
 			found.add(domain.Neighbour{
 				NoteRef:  domain.NoteRef{Path: l.To},
 				Relation: relation,
-				Label:    l.Label,
 			})
 		}
 	}
 
-	backlinks, err := u.links.GetBacklinks(ctx, v.ID, path)
+	backlinks, err := u.links.GetBacklinks(ctx, cache.vault.ID, path)
 	if err != nil {
 		return nil, err
 	}
@@ -141,16 +140,10 @@ func (u ShowNeighbourhood) getNeighbours(ctx context.Context, v domain.Vault, pa
 		if !navigable {
 			continue
 		}
-		neighbour := domain.Neighbour{
+		found.add(domain.Neighbour{
 			NoteRef:  domain.NoteRef{Path: l.From},
 			Relation: relation,
-			Label:    l.Label,
-		}
-		if named[l.From] {
-			found.addMutual(neighbour)
-			continue
-		}
-		found.add(neighbour)
+		})
 	}
 	return found, nil
 }
@@ -206,24 +199,6 @@ func (s *neighbourSet) add(neighbour domain.Neighbour) {
 	if domain.GetRelationRank(neighbour.Relation) < domain.GetRelationRank(s.order[i].Relation) {
 		s.order[i] = neighbour
 	}
-}
-
-// addMutual records a neighbour that the note in focus names too, and that is
-// related already. Both ends naming the same relation is one relationship named
-// twice, and the word for it is the focus's own where it wrote one.
-func (s *neighbourSet) addMutual(neighbour domain.Neighbour) {
-	i := s.targetPath[neighbour.Path]
-	current := s.order[i]
-	if current.Relation != neighbour.Relation {
-		s.add(neighbour)
-		return
-	}
-	current.IsMutual = true
-	current.ReverseLabel = neighbour.Label
-	if current.Label == "" {
-		current.Label = neighbour.Label
-	}
-	s.order[i] = current
 }
 
 // remove deletes a note from the drawing order. Nothing is added to the relations

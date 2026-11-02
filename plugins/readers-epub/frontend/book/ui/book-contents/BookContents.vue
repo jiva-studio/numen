@@ -5,14 +5,9 @@
  * Choosing an entry emits its offset. The entry containing the reading position
  * is marked, and the list scrolls to it as the reading position changes.
  */
-import { computed, ref, useTemplateRef, watch } from 'vue'
-import {
-  CONTENTS_WORDS,
-  findEntries,
-  findLineAt,
-  type ContentsEntry,
-  type ContentsWords,
-} from './contents'
+import { computed } from 'vue'
+import { SearchableList, type ListItem } from '@numen/ui'
+import { CONTENTS_WORDS, findLineAt, type ContentsEntry, type ContentsWords } from './contents'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
@@ -35,19 +30,13 @@ const props = withDefaults(
 const emit = defineEmits<{
   /** The offset of the chosen entry, in bytes of the book's text. */
   (event: 'go', pos: number): void
+  /** The list asks to be put away. */
+  (event: 'close'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-/** What is typed into the field, which the list is narrowed by. */
-const searchQuery = ref('')
-
-/** The lines as they are drawn, which the list is brought along by. */
-const lines = useTemplateRef<HTMLElement[]>('lines')
-
-const visibleEntries = computed(() => findEntries(props.entries, searchQuery.value))
-
-/** The entry containing the reading position, or none before the first entry. */
-const activeEntry = computed(() => props.entries[findLineAt(props.entries, props.at)])
+/** How many lines show before the list scrolls. */
+const VISIBLE_LINES = 10
 
 /**
  * How deep a line is set in. Past the fourth level it stops: a name set any
@@ -55,118 +44,56 @@ const activeEntry = computed(() => props.entries[findLineAt(props.entries, props
  */
 const DEEPEST = 4
 
-/* --------------------------------- Hooks ---------------------------------- */
-// The list follows the reading position, so the current entry stays visible.
-watch(activeEntry, (one) => {
-  if (!one || searchQuery.value !== '') return
-  const line = lines.value?.find((lineEl) => lineEl.dataset['at'] === String(one.at))
-  line?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+/** A line is named by its place in the book, which no other line shares. */
+const items = computed<readonly ListItem[]>(() =>
+  props.entries.map((one, index) => ({ id: String(index), text: one.title })),
+)
+
+/** The line containing the reading position, and none before the first entry. */
+const current = computed(() => {
+  const index = findLineAt(props.entries, props.at)
+  return index < 0 ? null : String(index)
 })
 
+/* -------------------------------- Handlers -------------------------------- */
+function onSelect(id: string) {
+  const entry = props.entries[Number(id)]
+  if (entry) emit('go', entry.at)
+}
+
 /* -------------------------------- Helpers --------------------------------- */
-const depth = (level: number) => Math.min(Math.max(level, 0), DEEPEST)
-const lineStyle = (level: number) => ({ '--level': depth(level) })
+const getLevel = (id: string): number =>
+  Math.min(Math.max(props.entries[Number(id)]?.level ?? 0, 0), DEEPEST)
 </script>
 
 <template>
-  <nav class="contents" :aria-label="words.contents">
-    <div class="contents__head">
-      <input
-        v-model="searchQuery"
-        class="contents__field"
-        type="text"
-        autocomplete="off"
-        spellcheck="false"
-        :aria-label="words.find"
-        :placeholder="words.find"
+  <SearchableList
+    :items="items"
+    :model-value="current"
+    :label="words.contents"
+    :placeholder="words.find"
+    :empty-text="words.nothing"
+    :max-rows="VISIBLE_LINES"
+    @select="onSelect"
+    @close="emit('close')"
+  >
+    <template #leading="{ item }">
+      <span
+        v-if="getLevel(item.id) > 0"
+        class="contents__indent"
+        :style="{ '--level': getLevel(item.id) }"
+        aria-hidden="true"
       />
-    </div>
-
-    <ol v-if="visibleEntries.length !== 0" class="contents__list">
-      <li v-for="one in visibleEntries" :key="one.at">
-        <button
-          ref="lines"
-          type="button"
-          class="contents__line"
-          :data-at="one.at"
-          :style="lineStyle(one.level)"
-          :aria-current="one.at === activeEntry?.at ? 'true' : undefined"
-          @click="emit('go', one.at)"
-        >
-          {{ one.title }}
-        </button>
-      </li>
-    </ol>
-
-    <p v-else class="contents__silence">{{ words.nothing }}</p>
-  </nav>
+    </template>
+  </SearchableList>
 </template>
 
 <style scoped>
-.contents {
-  /* The indentation of one level, and the padding at the edges of a line. */
+/* The indentation of one level. */
+.contents__indent {
   --indent: 0.875rem;
-  --pad: 0.5rem;
 
-  display: flex;
-  flex-direction: column;
-  block-size: 100%;
-  min-block-size: 0;
-  font-size: var(--numen-text-1);
-}
-
-.contents__head {
-  flex: 0 0 auto;
-  padding: var(--pad);
-  border-block-end: var(--numen-stroke) solid var(--numen-rule);
-}
-
-.contents__field {
-  inline-size: 100%;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--numen-radius-tight);
-  background: var(--numen-bubble-bg);
-  color: inherit;
-}
-
-.contents__field:focus-visible {
-  outline: none;
-}
-
-.contents__list {
-  flex: 1 1 auto;
-  min-block-size: 0;
-  overflow-y: auto;
-  padding-block: 0.25rem;
-}
-
-.contents__line {
-  display: block;
-  inline-size: 100%;
-  padding-inline: calc(var(--pad) + var(--indent) * var(--level)) var(--pad);
-  padding-block: 0.125rem;
-  text-align: start;
-  /* A name too long for the panel is cut, and the whole of it is in the book. */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.contents__line:hover {
-  background: var(--numen-bubble-bg);
-}
-
-.contents__line[aria-current='true'] {
-  background: var(--numen-accent);
-  color: var(--numen-accent-ink);
-}
-
-.contents__line:focus-visible {
-  outline: none;
-}
-
-.contents__silence {
-  padding: var(--pad);
-  color: var(--numen-hushed);
+  flex: none;
+  inline-size: calc(var(--indent) * var(--level));
 }
 </style>

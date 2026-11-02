@@ -247,7 +247,7 @@ func TestACardModelNamedTwoWaysIsOpenedOnce(t *testing.T) {
 // A card model exactly at a note's bound is read.
 func TestACardModelAtTheBoundIsRead(t *testing.T) {
 	vs := newVaults(t)
-	raw := animals["Animal.md"] + "\n"
+	raw := getAnimals()["Animal.md"] + "\n"
 	raw += strings.Repeat("x", note.MaxBytes-len(raw)-1) + "\n"
 	write(t, vs.first, "Animal.md", raw)
 
@@ -365,7 +365,7 @@ func TestADeckOverTheBoundReturnsItsSize(t *testing.T) {
 }
 
 // A file the vault's own rules leave alone is not a note, and its bytes are not
-// handed over.
+// passed.
 func TestAFileTheVaultPreservesAloneIsNotADeck(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "decks/.Hidden.md", "---\ntype: deck\n---\n\n## Wren\n\n[[Animal]]\n")

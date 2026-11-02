@@ -29,51 +29,71 @@ const once = (rows: readonly StepRow[]): readonly StepRow[] => {
 }
 
 /**
- * The themes of one origin, the one the settings name first. Where a theme comes
+ * The rows of the themes given, the one the settings name first.
  */
-/**
- * The themes of one origin, the one the settings name first. Where a theme comes
- */
-const getThemesOfOrigin = (
+const getThemeRows = (
   themes: readonly Theme[],
-  isBuiltIn: boolean,
   context: { themeName: string; words: AppearanceWords },
 ): readonly StepRow[] => {
   const { themeName, words } = context
-  const off = themes.filter((one) => one.isBuiltIn === isBuiltIn)
   const getThemeRow = (one: Theme): StepRow => ({
     id: one.name,
     title: one.title,
     ...(one.name === themeName ? { detail: words.current, isCurrent: true } : {}),
   })
   return [
-    ...off.filter((one) => one.name === themeName).map(getThemeRow),
-    ...off.filter((one) => one.name !== themeName).map(getThemeRow),
+    ...themes.filter((one) => one.name === themeName).map(getThemeRow),
+    ...themes.filter((one) => one.name !== themeName).map(getThemeRow),
   ]
 }
 
+/** Resolves the name a plugin is listed under from its id. */
+export type PluginNamer = (pluginId: string) => string
+
 /**
- * The themes in their two origin groups. The group containing the active theme
- * is first, so the list opens on the active theme.
+ * The themes in their groups: the ones that ship, one group for each plugin
+ * that contributes themes, titled with the plugin's name, and the person's own.
+ * The group containing the active theme is first, so the list opens on the
+ * active theme.
  */
 export const getThemeGroups = (
   themes: readonly Theme[],
   themeName: string,
   words: AppearanceWords,
+  getPluginName: PluginNamer = (pluginId) => pluginId,
 ): readonly StepGroup[] => {
-  const shipping = {
+  const context = { themeName, words }
+  const shipping: StepGroup = {
     id: 'shipping',
     title: words.shipping,
-    items: getThemesOfOrigin(themes, true, { themeName, words }),
+    items: getThemeRows(
+      themes.filter((one) => one.isBuiltIn),
+      context,
+    ),
   }
-  const own = {
+  const pluginIds = [
+    ...new Set(themes.filter((one) => one.pluginId !== '').map((one) => one.pluginId)),
+  ]
+  const plugins: StepGroup[] = pluginIds.map((pluginId) => ({
+    id: `plugin:${pluginId}`,
+    title: getPluginName(pluginId),
+    items: getThemeRows(
+      themes.filter((one) => one.pluginId === pluginId),
+      context,
+    ),
+  }))
+  const own: StepGroup = {
     id: 'owned',
     title: words.owned,
-    items: getThemesOfOrigin(themes, false, { themeName, words }),
+    items: getThemeRows(
+      themes.filter((one) => !one.isBuiltIn && one.pluginId === ''),
+      context,
+    ),
     silence: words.noneOwned,
   }
-  const aged = themes.find((one) => one.name === themeName)
-  return aged && !aged.isBuiltIn ? [own, shipping] : [shipping, own]
+  const groups = [shipping, ...plugins, own]
+  const active = groups.find((group) => group.items.some((item) => item.id === themeName))
+  return active ? [active, ...groups.filter((group) => group !== active)] : groups
 }
 
 /** The detail text of a mode: why it cannot be chosen, or that it is the current one. */

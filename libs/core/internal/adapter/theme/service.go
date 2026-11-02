@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"connectrpc.com/connect"
@@ -42,7 +43,8 @@ type Appearances interface {
 	// rejected without writing.
 	Write(Appearance) error
 
-	// Warn reports non-fatal configuration issues or missing themes.
+	// Warn reports non-fatal configuration issues or missing themes. An empty text withdraws the
+	// warning an earlier call reported, because nothing is missing now.
 	Warn(string)
 }
 
@@ -64,33 +66,37 @@ type Service struct {
 	DebounceDelay time.Duration
 }
 
-// ListThemes is every theme there is, and what the window is wearing out of it.
+// ListThemes returns every theme and the one applied.
 func (s *Service) ListThemes(
 	_ context.Context,
 	_ *connect.Request[v1.ListThemesRequest],
 ) (*connect.Response[v1.ListThemesResponse], error) {
-	aged := s.getAppearance()
-	applied, missing := s.Catalogue.GetApplied(aged.ThemeName)
+	current := s.getAppearance()
+	applied, missing := s.Catalogue.GetApplied(current.ThemeName)
 	if missing != "" {
-		s.warn(fmt.Sprintf("there is no theme called %s, so the window wears %s", missing, applied))
+		s.warn(fmt.Sprintf("Theme not found: %s. Applied: %s", missing, applied))
+	} else {
+		s.warn("")
 	}
 
 	themes := s.Catalogue.Themes()
 	items := make([]*v1.Theme, 0, len(themes))
 	for _, one := range themes {
 		items = append(items, &v1.Theme{
-			Name:     one.Name,
-			Title:    one.Title,
-			Origin:   encodeOrigin(one.Origin),
-			IsPinned: one.IsPinned,
+			Name:       one.Name,
+			Title:      one.Title,
+			Origin:     encodeOrigin(one.Origin),
+			IsPinned:   one.IsPinned,
+			PluginId:   one.PluginID,
+			Appearance: one.Appearance,
 		})
 	}
 	return connect.NewResponse(&v1.ListThemesResponse{
 		Themes:               items,
 		Applied:              applied,
-		Mode:                 wire.ConvertModeToWire(aged.Mode),
-		InterfaceScale:       aged.InterfaceScale,
-		TextScale:            aged.TextScale,
+		Mode:                 wire.ConvertModeToWire(current.Mode),
+		InterfaceScale:       current.InterfaceScale,
+		TextScale:            current.TextScale,
 		InterfaceScaleBounds: encodeBounds(s.InterfaceScaleBounds),
 		TextScaleBounds:      encodeBounds(s.TextScaleBounds),
 	}), nil
@@ -146,11 +152,17 @@ func (s *Service) WriteAppearance(
 	if err := s.Settings.Write(selected); err != nil {
 		return respond(err.Error())
 	}
+	// The theme current is found, so a warning about the one that was missing is withdrawn.
+	s.warn("")
 	return connect.NewResponse(&v1.WriteAppearanceResponse{}), nil
 }
 
-// WatchThemes notifies the client when the themes folder changes, until the
-// client disconnects.
+// WatchThemes notifies the client when the themes folder changes or when the
+// set of plugin themes changes, until the client disconnects.
+//
+// The set of plugin themes changes with the plugins that are enabled. It is
+// compared on each keepalive tick, and the names added or removed are reported
+// in place of the empty keepalive.
 func (s *Service) WatchThemes(
 	ctx context.Context,
 	_ *connect.Request[v1.WatchThemesRequest],
@@ -161,9 +173,14 @@ func (s *Service) WatchThemes(
 	defer stop()
 
 	changed, err := s.Catalogue.Watch(watching, s.DebounceDelay)
+	if errors.Is(err, ErrNoFolder) && s.Catalogue.HasPlugins() {
+		changed, err = nil, nil
+	}
 	if err != nil {
 		return connect.NewError(connect.CodeUnavailable, err)
 	}
+
+	previous := s.Catalogue.ListPluginThemeNames()
 
 	// Empty keepalive responses make a write to a disconnected client fail. The
 	// request context belongs to the process and does not reflect whether the page
@@ -176,7 +193,10 @@ func (s *Service) WatchThemes(
 		case <-ctx.Done():
 			return nil
 		case <-repeat.C:
-			if err := stream.Send(&v1.WatchThemesResponse{}); err != nil {
+			current := s.Catalogue.ListPluginThemeNames()
+			response := &v1.WatchThemesResponse{Names: listDifference(previous, current)}
+			previous = current
+			if err := stream.Send(response); err != nil {
 				return err
 			}
 		case names, open := <-changed:
@@ -190,6 +210,23 @@ func (s *Service) WatchThemes(
 	}
 }
 
+// listDifference returns the names present in only one of the two lists, in
+// the order the lists give them.
+func listDifference(before, after []string) []string {
+	var different []string
+	for _, name := range before {
+		if !slices.Contains(after, name) {
+			different = append(different, name)
+		}
+	}
+	for _, name := range after {
+		if !slices.Contains(before, name) {
+			different = append(different, name)
+		}
+	}
+	return different
+}
+
 // keepaliveInterval is the interval between keepalive responses. A failed write
 // is how a handler detects that its client has disconnected.
 const keepaliveInterval = time.Second
@@ -198,31 +235,31 @@ const keepaliveInterval = time.Second
 // was designed at, under the system's choice, where they say nothing or could
 // not be read.
 func (s *Service) getAppearance() Appearance {
-	aged := Appearance{
+	current := Appearance{
 		ThemeName:      Default,
 		Mode:           appearance.System,
 		InterfaceScale: AsDesigned,
 		TextScale:      AsDesigned,
 	}
 	if s.Settings == nil {
-		return aged
+		return current
 	}
 	response, err := s.Settings.Read()
 	if err != nil {
-		s.warn(fmt.Sprintf("the settings could not be read, so the window wears %s: %v", Default, err))
-		return aged
+		s.warn(fmt.Sprintf("Settings not read, applied %s: %v", Default, err))
+		return current
 	}
 	if response.ThemeName != "" {
-		aged.ThemeName = response.ThemeName
+		current.ThemeName = response.ThemeName
 	}
-	aged.Mode = response.Mode
+	current.Mode = response.Mode
 	if response.InterfaceScale > 0 {
-		aged.InterfaceScale = response.InterfaceScale
+		current.InterfaceScale = response.InterfaceScale
 	}
 	if response.TextScale > 0 {
-		aged.TextScale = response.TextScale
+		current.TextScale = response.TextScale
 	}
-	return aged
+	return current
 }
 
 func (s *Service) warn(why string) {
@@ -237,6 +274,8 @@ func encodeOrigin(origin Origin) v1.Origin {
 		return v1.Origin_ORIGIN_PRESET
 	case Mine:
 		return v1.Origin_ORIGIN_MINE
+	case Plugin:
+		return v1.Origin_ORIGIN_PLUGIN
 	}
 	return v1.Origin_ORIGIN_UNSPECIFIED
 }

@@ -93,7 +93,7 @@ function onAction(type: RecordAction) {
   padding: 0.625rem 1.25rem;
   font-size: 0.9375rem;
   font-weight: 600;
-  border-radius: var(--numen-radius-button);
+  border-radius: var(--numen-radius);
   border: none;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -101,24 +101,26 @@ function onAction(type: RecordAction) {
 }
 
 .media-recorder__btn--record {
-  background: var(--numen-danger);
+  background: var(--numen-alarm);
 }
 
 .media-recorder__btn--record:hover {
-  background: var(--numen-danger);
+  background: var(--numen-alarm);
 }
 
 .media-recorder__btn--pause {
-  background: var(--numen-warning);
+  background: var(--numen-caution-bg);
   color: var(--numen-ink);
 }
 
 .media-recorder__btn--resume {
-  background: var(--numen-success);
+  background: var(--numen-accent);
+  color: var(--numen-accent-ink);
 }
 
 .media-recorder__btn--stop {
   background: var(--numen-rule);
+  color: var(--numen-ink);
 }
 
 .media-recorder__btn--stop:hover {
@@ -127,6 +129,7 @@ function onAction(type: RecordAction) {
 
 .media-recorder__btn--new {
   background: var(--numen-accent);
+  color: var(--numen-accent-ink);
 }
 
 .media-recorder__icon {

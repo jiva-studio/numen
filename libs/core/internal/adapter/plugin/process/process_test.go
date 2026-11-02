@@ -2,7 +2,9 @@ package process
 
 import (
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/security"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -26,7 +28,7 @@ func TestEnvironmentSanitization(t *testing.T) {
 		"LC_ALL", "lc_ctype", "LC_MESSAGES",
 		"SSL_CERT_FILE", "SSL_CERT_DIR",
 		"HTTP_PROXY", "https_proxy", "NO_PROXY", "no_proxy",
-		"NUMEN_MOCK_ML",
+		"NUMEN_MOCK_ML", "NUMEN_MOCK_EMBED_LOG",
 	}
 	for _, key := range allowed {
 		if !IsWhitelistedEnv(key) {
@@ -231,26 +233,20 @@ func TestProcessLimits(t *testing.T) {
 	if defaults.CPULimitSeconds != 0 {
 		t.Errorf("the default CPU limit is %d seconds, want none", defaults.CPULimitSeconds)
 	}
-	if defaults.MemoryLimitBytes == 0 {
-		t.Error("expected non-zero default memory limit")
-	}
 
-	cmd := exec.Command("sleep", "5")
+	cmd := exec.CommandContext(t.Context(), "sleep", "5")
 	ConfigureSysProcAttr(cmd)
 
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start sleep: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
 	t.Run("apply valid limits", func(t *testing.T) {
-		limits := Limits{
-			CPULimitSeconds:  10,
-			MemoryLimitBytes: 1024 * 1024 * 1024,
-		}
+		limits := Limits{CPULimitSeconds: 10}
 		if err := ApplyLimits(cmd.Process.Pid, limits); err != nil {
 			t.Fatalf("applyProcessLimits failed: %v", err)
 		}
@@ -274,27 +270,31 @@ func TestProcessLimits(t *testing.T) {
 
 // gpuEnvironment is a host environment holding the loader and accelerator
 // variables, a secret and the host's own NUMEN variables.
-var gpuEnvironment = []string{
-	"PATH=/usr/bin",
-	"LD_LIBRARY_PATH=/opt/cuda/lib64",
-	"CUDA_VISIBLE_DEVICES=0",
-	"CUDA_PATH=/opt/cuda",
-	"CUDA_PATH_V12_4=/opt/cuda-12.4",
-	"CUDA_HOME=/opt/cuda",
-	"NVIDIA_VISIBLE_DEVICES=all",
-	"NVIDIA_DRIVER_CAPABILITIES=compute,utility",
-	"ROCR_VISIBLE_DEVICES=1",
-	"HIP_VISIBLE_DEVICES=1",
-	"CUDA_API_KEY=1",
-	"NUMEN_ONNX_PROVIDER=cuda",
-	"NUMEN_ONNX_RUNTIME_LIB=/opt/onnx/libonnxruntime.so",
-	"OPENAI_API_KEY=1",
+func getGpuEnvironment() []string {
+	return []string{
+		"PATH=/usr/bin",
+		"LD_LIBRARY_PATH=/opt/cuda/lib64",
+		"CUDA_VISIBLE_DEVICES=0",
+		"CUDA_PATH=/opt/cuda",
+		"CUDA_PATH_V12_4=/opt/cuda-12.4",
+		"CUDA_HOME=/opt/cuda",
+		"NVIDIA_VISIBLE_DEVICES=all",
+		"NVIDIA_DRIVER_CAPABILITIES=compute,utility",
+		"ROCR_VISIBLE_DEVICES=1",
+		"HIP_VISIBLE_DEVICES=1",
+		"CUDA_API_KEY=1",
+		"NUMEN_ONNX_PROVIDER=cuda",
+		"NUMEN_ONNX_RUNTIME_LIB=/opt/onnx/libonnxruntime.so",
+		"OPENAI_API_KEY=1",
+	}
 }
 
 // runtimeVarNames are the variables gpuEnvironment holds for an ONNX Runtime plugin.
-var runtimeVarNames = []string{
-	"LD_LIBRARY_PATH", "CUDA_VISIBLE_DEVICES", "CUDA_PATH", "CUDA_PATH_V12_4", "CUDA_HOME",
-	"NVIDIA_VISIBLE_DEVICES", "NVIDIA_DRIVER_CAPABILITIES", "ROCR_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES",
+func getRuntimeVarNames() []string {
+	return []string{
+		"LD_LIBRARY_PATH", "CUDA_VISIBLE_DEVICES", "CUDA_PATH", "CUDA_PATH_V12_4", "CUDA_HOME",
+		"NVIDIA_VISIBLE_DEVICES", "NVIDIA_DRIVER_CAPABILITIES", "ROCR_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES",
+	}
 }
 
 // readEnvironment returns the launch environment as a map.
@@ -310,9 +310,9 @@ func readEnvironment(env []string) map[string]string {
 
 func TestSanitizeEnvironment_ONNXPluginKeepsLoaderVariables(t *testing.T) {
 	pluginVars := []string{"NUMEN_ONNX_RUNTIME_LIB=/models/libonnxruntime.so", "NUMEN_ONNX_PROVIDER=auto"}
-	observed := readEnvironment(SanitizeEnvironment(gpuEnvironment, pluginVars, []string{"onnxruntime"}))
+	observed := readEnvironment(SanitizeEnvironment(getGpuEnvironment(), pluginVars, []string{"onnxruntime"}))
 
-	for _, name := range runtimeVarNames {
+	for _, name := range getRuntimeVarNames() {
 		if _, ok := observed[name]; !ok {
 			t.Errorf("%s is missing from the launch environment", name)
 		}
@@ -332,8 +332,8 @@ func TestSanitizeEnvironment_ONNXPluginKeepsLoaderVariables(t *testing.T) {
 
 func TestSanitizeEnvironment_NonRuntimePluginDropsAcceleratorVars(t *testing.T) {
 	for _, runtimes := range [][]string{nil, {}} {
-		observed := readEnvironment(SanitizeEnvironment(gpuEnvironment, nil, runtimes))
-		for _, name := range append(runtimeVarNames, "NUMEN_ONNX_PROVIDER", "NUMEN_ONNX_RUNTIME_LIB", "OPENAI_API_KEY") {
+		observed := readEnvironment(SanitizeEnvironment(getGpuEnvironment(), nil, runtimes))
+		for _, name := range append(getRuntimeVarNames(), "NUMEN_ONNX_PROVIDER", "NUMEN_ONNX_RUNTIME_LIB", "OPENAI_API_KEY") {
 			if _, ok := observed[name]; ok {
 				t.Errorf("%s reached a plugin that declares no runtime", name)
 			}

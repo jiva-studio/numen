@@ -9,7 +9,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-var ahead = review.Day{Starts: review.DayStartTime}
+func getAhead() review.Day {
+	return review.Day{Starts: review.DayStartTime}
+}
 
 func london(t *testing.T) *time.Location {
 	t.Helper()
@@ -75,7 +77,7 @@ func TestACardDueLaterTodayIsDueNow(t *testing.T) {
 
 func TestDayIsDue_UnansweredCard(t *testing.T) {
 	day := review.Day{Starts: review.DayStartTime}
-	if !day.IsDue(review.Schedule{}, time.Now()) {
+	if !day.IsDue(review.Schedule{}, getTestEpoch()) {
 		t.Error("a card with no answers behind it is not due")
 	}
 }
@@ -92,16 +94,18 @@ func TestADayWithNoZoneIsCountedInTheMachinesOwn(t *testing.T) {
 // zones is the spread of zones the days are counted over, taking in a clock
 // that goes forward at midnight, one that moves by half an hour, and one that
 // crossed the date line.
-var zones = []string{
-	"America/Santiago", "America/Havana", "Australia/Lord_Howe", "Pacific/Chatham",
-	"Pacific/Apia", "America/Sao_Paulo", "America/New_York", "Europe/London",
-	"Europe/Moscow", "Asia/Tehran", "Australia/Sydney",
+func getZones() []string {
+	return []string{
+		"America/Santiago", "America/Havana", "Australia/Lord_Howe", "Pacific/Chatham",
+		"Pacific/Apia", "America/Sao_Paulo", "America/New_York", "Europe/London",
+		"Europe/Moscow", "Asia/Tehran", "Australia/Sydney",
+	}
 }
 
 // A day of review is named for its own date. A day beginning at midnight where
 // the clock goes forward at midnight has no boundary to count back from.
 func TestADayOfReviewIsNamedForItsOwnDate(t *testing.T) {
-	for _, name := range zones {
+	for _, name := range getZones() {
 		in, err := time.LoadLocation(name)
 		if err != nil {
 			t.Skipf("this machine carries no zone database: %v", err)
@@ -128,7 +132,7 @@ func TestADayOfReviewIsNamedForItsOwnDate(t *testing.T) {
 // Each day of review carries away the card held on it: no two of them share a
 // number, and none of them is passed over.
 func TestEachDayOfReviewIsNumberedApartFromTheNext(t *testing.T) {
-	for _, name := range zones {
+	for _, name := range getZones() {
 		in, err := time.LoadLocation(name)
 		if err != nil {
 			t.Skipf("this machine carries no zone database: %v", err)
@@ -183,14 +187,16 @@ func TestAnHourTheDayDoesNotBeginAt(t *testing.T) {
 
 // counting is a day as the rest of the application counts one, in a zone a test
 // can say things about.
-var counting = review.Day{
-	Starts: review.DayStartTime,
-	In:     time.FixedZone("test", 0),
+func getCounting() review.Day {
+	return review.Day{
+		Starts: review.DayStartTime,
+		In:     time.FixedZone("test", 0),
+	}
 }
 
 func moment(t *testing.T, response string) time.Time {
 	t.Helper()
-	pos, err := time.ParseInLocation("2006-01-02T15:04:05", response, counting.In)
+	pos, err := time.ParseInLocation("2006-01-02T15:04:05", response, getCounting().In)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,7 +214,7 @@ func TestADayIsNamedForTheDayAPersonWouldSayItWas(t *testing.T) {
 		{"2026-08-30T03:59:00", "2026-08-29"},
 		{"2026-08-30T04:00:00", "2026-08-30"},
 	} {
-		if got := counting.GetName(moment(t, one.at)); got != one.want {
+		if got := getCounting().GetName(moment(t, one.at)); got != one.want {
 			t.Errorf("%s is named %q, want %q", one.at, got, one.want)
 		}
 	}
@@ -225,7 +231,7 @@ func TestGetDayTallies_CountsAnswersPerDay(t *testing.T) {
 	other := review.Answer{ID: "01D", ReviewCard: on, At: moment(t, "2026-08-31T09:00:00"), Rating: review.Good}
 	back := review.Answer{ID: "01E", At: moment(t, "2026-08-31T09:01:00"), Undoes: other.ID}
 
-	got := review.GetDayTallies(counting, []review.Answer{one, two, night, other, back, one})
+	got := review.GetDayTallies(getCounting(), []review.Answer{one, two, night, other, back, one})
 
 	if got["2026-08-29"].Answered != 3 {
 		t.Errorf("the evening and the night after it come to %+v, want 3", got["2026-08-29"])
@@ -248,7 +254,7 @@ func TestGetDayTallies_CountsPerRating(t *testing.T) {
 		}
 	}
 
-	got := review.GetDayTallies(counting, []review.Answer{
+	got := review.GetDayTallies(getCounting(), []review.Answer{
 		response("01A", review.Again),
 		response("01B", review.Good),
 		response("01C", review.Good),
@@ -297,7 +303,7 @@ func TestWhatADayCameToBelowEachPreset(t *testing.T) {
 		response("01G", root, "2026-08-31T09:00:00", 4*time.Second),
 	}
 
-	got := review.GetSpentUnder(counting, "2026-08-29", answers, underMap, nil)
+	got := review.GetSpentUnder(getCounting(), "2026-08-29", answers, underMap, nil)
 
 	// Each review card is new the first time it is answered, and counts once for
 	// the day however many answers it took.
@@ -328,14 +334,14 @@ func TestGetSpentTime_CountsCardsAndShows(t *testing.T) {
 		})
 	}
 
-	cards := review.GetSpentUnder(counting, "2026-08-29", answers, underMap,
+	cards := review.GetSpentUnder(getCounting(), "2026-08-29", answers, underMap,
 		map[string]review.BudgetUnit{"Steady.md": review.BudgetUnitCards})
 	want := review.Spent{Answered: 1, New: 1, Took: 36 * time.Second}
 	if cards["Steady.md"] != want {
 		t.Errorf("counting in cards the day came to %+v, want %+v", cards["Steady.md"], want)
 	}
 
-	shows := review.GetSpentUnder(counting, "2026-08-29", answers, underMap,
+	shows := review.GetSpentUnder(getCounting(), "2026-08-29", answers, underMap,
 		map[string]review.BudgetUnit{"Steady.md": review.BudgetUnitShows})
 	want = review.Spent{Answered: 9, New: 1, Reviews: 8, Took: 36 * time.Second}
 	if shows["Steady.md"] != want {
@@ -358,7 +364,7 @@ func TestTheFirstAnswerOfAReviewCardIsTheEarliestOne(t *testing.T) {
 			Rating: review.Good, Took: 7 * time.Second},
 	}
 
-	got := review.GetSpentUnder(counting, "2026-08-31", answers, underMap, nil)
+	got := review.GetSpentUnder(getCounting(), "2026-08-31", answers, underMap, nil)
 
 	want := review.Spent{Answered: 1, Reviews: 1, Took: 5 * time.Second}
 	if got["Steady.md"] != want {
@@ -371,7 +377,7 @@ func TestGetSpentTime_CapsLongAnswer(t *testing.T) {
 	on := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	underMap := map[review.CardID]string{on: ""}
 
-	got := review.GetSpentUnder(counting, "2026-08-29", []review.Answer{
+	got := review.GetSpentUnder(getCounting(), "2026-08-29", []review.Answer{
 		{ID: "01A", ReviewCard: on, At: moment(t, "2026-08-29T09:00:00"),
 			Rating: review.Good, Took: time.Hour},
 	}, underMap, nil)
@@ -391,7 +397,7 @@ func TestGetReviewed_GroupsByDayOfAnswer(t *testing.T) {
 	morning := review.CardID{Card: "3f4g5h6j7k", Template: "Recognise"}
 	back := review.CardID{Card: "m9n8b7v6c5", Template: "Recognise"}
 
-	got := review.GetReviewed(counting, "2026-08-29", []review.Answer{
+	got := review.GetReviewed(getCounting(), "2026-08-29", []review.Answer{
 		{ID: "01A", ReviewCard: evening, At: moment(t, "2026-08-29T21:00:00"), Rating: review.Good},
 		{ID: "01B", ReviewCard: night, At: moment(t, "2026-08-30T02:00:00"), Rating: review.Good},
 		{ID: "01C", ReviewCard: morning, At: moment(t, "2026-08-30T09:00:00"), Rating: review.Good},
@@ -422,7 +428,7 @@ func TestAStreakIsTheDaysUpToNowWithNoGap(t *testing.T) {
 		"2026-08-28": 9,
 		"2026-08-29": 1,
 	})
-	if got := review.Streak(counting, days, moment(t, "2026-08-29T20:00:00")); got != 3 {
+	if got := review.Streak(getCounting(), days, moment(t, "2026-08-29T20:00:00")); got != 3 {
 		t.Errorf("the streak is %d, want the three days since the gap", got)
 	}
 }
@@ -431,11 +437,11 @@ func TestAStreakIsTheDaysUpToNowWithNoGap(t *testing.T) {
 func TestStreak_OpenDayDoesNotEndStreak(t *testing.T) {
 	days := makeTallies(map[string]int{"2026-08-27": 2, "2026-08-28": 9})
 
-	if got := review.Streak(counting, days, moment(t, "2026-08-29T09:00:00")); got != 2 {
+	if got := review.Streak(getCounting(), days, moment(t, "2026-08-29T09:00:00")); got != 2 {
 		t.Errorf("the streak is %d in the morning, want the two days behind it", got)
 	}
 	// And the day after that, the streak is over.
-	if got := review.Streak(counting, days, moment(t, "2026-08-30T09:00:00")); got != 0 {
+	if got := review.Streak(getCounting(), days, moment(t, "2026-08-30T09:00:00")); got != 0 {
 		t.Errorf("the streak is %d a day later, want nothing", got)
 	}
 }
@@ -444,7 +450,7 @@ func TestStreak_OpenDayDoesNotEndStreak(t *testing.T) {
 // belongs to the day it began in.
 func TestAStreakInTheSmallHoursIsTheEveningsStill(t *testing.T) {
 	days := makeTallies(map[string]int{"2026-08-28": 3, "2026-08-29": 5})
-	if got := review.Streak(counting, days, moment(t, "2026-08-30T02:00:00")); got != 2 {
+	if got := review.Streak(getCounting(), days, moment(t, "2026-08-30T02:00:00")); got != 2 {
 		t.Errorf("the streak is %d at two in the morning, want 2", got)
 	}
 }
@@ -453,7 +459,7 @@ func TestAStreakInTheSmallHoursIsTheEveningsStill(t *testing.T) {
 // is the zone of the user's evening.
 func TestADayWithNoZoneIsTheMachinesOwn(t *testing.T) {
 	here := review.Day{Starts: review.DayStartTime}
-	now := time.Now()
+	now := getTestEpoch()
 	days := makeTallies(map[string]int{
 		here.GetName(now):                   1,
 		here.GetName(now.AddDate(0, 0, -1)): 1,
@@ -465,7 +471,7 @@ func TestADayWithNoZoneIsTheMachinesOwn(t *testing.T) {
 }
 
 func TestStreak_ZeroWithoutAnswers(t *testing.T) {
-	if got := review.Streak(counting, nil, moment(t, "2026-08-29T09:00:00")); got != 0 {
+	if got := review.Streak(getCounting(), nil, moment(t, "2026-08-29T09:00:00")); got != 0 {
 		t.Errorf("the streak is %d", got)
 	}
 }
@@ -491,7 +497,7 @@ func TestWhatCameBackIsCountedOverWhatWasLearned(t *testing.T) {
 	// Another card met for the first time on that second day.
 	response("01C", other, "2026-08-08T09:05:00", review.Again)
 
-	got := review.OrderAnswers(history).GetRetained(delta, counting)
+	got := review.OrderAnswers(history).GetRetained(delta, getCounting())
 
 	// The first day is a card being learned, so nothing was tested on it.
 	if _, target := got["2026-08-01"]; target {
@@ -513,7 +519,7 @@ func TestGetRetained_LapsedCardCountsAsNotRecalled(t *testing.T) {
 	got := review.OrderAnswers([]review.Answer{
 		{ID: "01A", ReviewCard: on, At: moment(t, "2026-08-01T09:00:00"), Rating: review.Easy},
 		{ID: "01B", ReviewCard: on, At: moment(t, "2026-08-08T09:00:00"), Rating: review.Again},
-	}).GetRetained(delta, counting)
+	}).GetRetained(delta, getCounting())
 
 	if want := (review.RecallTally{Tested: 1, Recalled: 0}); got["2026-08-08"] != want {
 		t.Errorf("the day came to %+v, want %+v", got["2026-08-08"], want)
@@ -529,7 +535,7 @@ func TestAnAnswerTakenBackIsNotCountedAsRecall(t *testing.T) {
 		{ID: "01A", ReviewCard: on, At: moment(t, "2026-08-01T09:00:00"), Rating: review.Easy},
 		{ID: "01B", ReviewCard: on, At: moment(t, "2026-08-08T09:00:00"), Rating: review.Again},
 		{ID: "01C", At: moment(t, "2026-08-08T09:00:30"), Undoes: "01B"},
-	}).GetRetained(delta, counting)
+	}).GetRetained(delta, getCounting())
 
 	if _, target := got["2026-08-08"]; target {
 		t.Errorf("an answer taken back was counted: %+v", got["2026-08-08"])

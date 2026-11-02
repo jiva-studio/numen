@@ -66,6 +66,64 @@ export const Off: Story = { args: { isOn: false } }
 /** A switch that cannot be toggled. */
 export const Disabled: Story = { args: { isDisabled: true } }
 
+/**
+ * A write in flight: the parent keeps the old value for a while and then passes the new one.
+ * The thumb must not move on the press nor while busy, must move once when the value arrives,
+ * and the track must not dim. It is sampled on every frame.
+ */
+export const BusyUntilTheAnswer: Story = {
+  render: () => ({
+    components: { Switch },
+    setup: () => {
+      const isOn = ref(true)
+      const isBusy = ref(false)
+      const onChange = (value: boolean): void => {
+        isBusy.value = true
+        setTimeout(() => {
+          isOn.value = value
+          isBusy.value = false
+        }, 300)
+      }
+      return { isOn, isBusy, onChange }
+    },
+    template: `<div style="padding: 2rem"><Switch :model-value="isOn" :is-busy="isBusy" aria-label="Busy" @update:model-value="onChange" /></div>`,
+  }),
+  play: async ({ canvasElement }) => {
+    const control = getSwitch(canvasElement)
+    const thumb = control.firstElementChild as HTMLElement
+    const getThumbLeft = () =>
+      thumb.getBoundingClientRect().left - control.getBoundingClientRect().left
+    const startLeft = getThumbLeft()
+    const samples: number[] = []
+    const opacities = new Set<string>()
+    let isSampling = true
+    const sample = (): void => {
+      if (!isSampling) return
+      samples.push(getThumbLeft())
+      opacities.add(getComputedStyle(control).opacity)
+      requestAnimationFrame(sample)
+    }
+    requestAnimationFrame(sample)
+
+    await userEvent.click(control)
+    await waitFor(() => expect(control.getAttribute('aria-busy')).toBe('true'))
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    // Pressed and waiting: nothing has moved.
+    await expect(control.getAttribute('aria-checked')).toBe('true')
+    await expect(samples.every((one) => Math.abs(one - startLeft) < 0.5)).toBe(true)
+
+    await waitFor(() => expect(control.getAttribute('aria-checked')).toBe('false'))
+    await new Promise((resolve) => setTimeout(resolve, 600))
+    isSampling = false
+
+    // One slide, off to the left, with no step back on the way, and no dimming.
+    const steps = samples.slice(1).map((one, index) => one - samples[index]!)
+    await expect(steps.every((one) => one <= 0.5)).toBe(true)
+    await expect(samples.at(-1)!).toBeLessThan(startLeft - thumb.offsetWidth / 2)
+    await expect([...opacities]).toEqual(['1'])
+  },
+}
+
 /** A name in another script. */
 export const OtherScripts: Story = { args: { label: 'Показывать сетку' } }
 
@@ -110,8 +168,8 @@ export const Dark: Story = {
 export const AnnouncedAsASwitch: Story = {
   play: async ({ canvasElement }) => {
     const control = getSwitch(canvasElement)
-    expect(control.getAttribute('role')).toBe('switch')
-    expect(control.getAttribute('aria-checked')).toBe('true')
+    await expect(control.getAttribute('role')).toBe('switch')
+    await expect(control.getAttribute('aria-checked')).toBe('true')
   },
 }
 
@@ -124,28 +182,28 @@ export const TheThumbSlidesAndTheTrackFills: Story = {
   play: async ({ canvasElement }) => {
     const control = getSwitch(canvasElement)
     const thumb = control.firstElementChild as HTMLElement
-    const getAcross = () =>
+    const getThumbLeft = () =>
       thumb.getBoundingClientRect().left - control.getBoundingClientRect().left
     const getFill = () => getComputedStyle(control).backgroundColor
 
-    const wasAcross = getAcross()
+    const wasAcross = getThumbLeft()
     const wasFilling = getFill()
 
     await userEvent.click(control)
     await waitFor(() => expect(control.getAttribute('aria-checked')).toBe('true'))
 
     // The thumb has moved the width of a thumb, and it is still on the track.
-    await waitFor(() => expect(getAcross()).toBeGreaterThan(wasAcross + thumb.offsetWidth / 2))
+    await waitFor(() => expect(getThumbLeft()).toBeGreaterThan(wasAcross + thumb.offsetWidth / 2))
     const track = control.getBoundingClientRect()
     const box = thumb.getBoundingClientRect()
-    expect(box.right).toBeLessThanOrEqual(track.right + 1)
-    expect(box.left).toBeGreaterThanOrEqual(track.left - 1)
+    await expect(box.right).toBeLessThanOrEqual(track.right + 1)
+    await expect(box.left).toBeGreaterThanOrEqual(track.left - 1)
 
     // And the track behind it is not the colour it was.
     await waitFor(() => expect(getFill()).not.toBe(wasFilling))
 
     await userEvent.click(control)
-    await waitFor(() => expect(getAcross()).toBeCloseTo(wasAcross, 0))
+    await waitFor(() => expect(getThumbLeft()).toBeCloseTo(wasAcross, 0))
     await waitFor(() => expect(getFill()).toBe(wasFilling))
   },
 }
@@ -157,13 +215,13 @@ export const TheSpaceBarTurnsIt: Story = {
     const control = getSwitch(canvasElement)
 
     await userEvent.tab()
-    expect(document.activeElement).toBe(control)
+    await expect(document.activeElement).toBe(control)
 
     await userEvent.keyboard(' ')
-    expect(control.getAttribute('aria-checked')).toBe('true')
+    await expect(control.getAttribute('aria-checked')).toBe('true')
 
     await userEvent.keyboard(' ')
-    expect(control.getAttribute('aria-checked')).toBe('false')
+    await expect(control.getAttribute('aria-checked')).toBe('false')
   },
 }
 
@@ -173,6 +231,6 @@ export const DisabledTakesNoKeyboard: Story = {
   play: async ({ canvasElement }) => {
     const control = getSwitch(canvasElement)
     await userEvent.tab()
-    expect(document.activeElement).not.toBe(control)
+    await expect(document.activeElement).not.toBe(control)
   },
 }

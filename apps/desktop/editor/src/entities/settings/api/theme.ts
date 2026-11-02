@@ -12,7 +12,7 @@ import {
   THEME_ORIGIN,
   type ThemeModeCode,
   type ThemeOriginCode,
-} from '@numen/plugin-sdk'
+} from '@numen/core-client'
 import { theme } from '@/shared/clients'
 
 import type { Bounds, Mode, Scales, Theme } from '../lib/appearance'
@@ -39,8 +39,9 @@ export interface Themes {
   readTheme(name: string): Promise<string>
   writeAppearance(name: string, mode: Mode, sizes: Sizes): Promise<string>
   /**
-   * The names of themes changed in the user's folder, until the signal aborts.
-   * A theme whose file was deleted is included.
+   * The names of themes changed in the user's folder, and of plugin themes that
+   * appeared or vanished with the enabled plugins, until the signal aborts. A
+   * theme whose file was deleted is included.
    */
   watchThemes(signal: AbortSignal): AsyncIterable<readonly string[]>
 }
@@ -54,6 +55,7 @@ export const themes: Themes = {
         name: one.name,
         title: one.title,
         isBuiltIn: ships[one.origin],
+        pluginId: one.pluginId,
         isPinned: one.isPinned,
       })),
       applied: answer.applied,
@@ -94,6 +96,7 @@ const ships: Record<ThemeOriginCode, boolean> = {
   [THEME_ORIGIN.UNSPECIFIED]: false,
   [THEME_ORIGIN.PRESET]: true,
   [THEME_ORIGIN.MINE]: false,
+  [THEME_ORIGIN.PLUGIN]: false,
 }
 
 /**

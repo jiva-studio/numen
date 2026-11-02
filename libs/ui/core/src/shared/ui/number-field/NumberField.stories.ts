@@ -90,9 +90,9 @@ export const PastTheCeiling: Story = {
   args: { value: 900, max: 240 },
   play: async ({ canvasElement }) => {
     const input = field(canvasElement)
-    expect(input.value).toBe('240')
-    expect(input.getAttribute('aria-valuenow')).toBe('240')
-    expect(input.getAttribute('aria-invalid')).toBeNull()
+    await expect(input.value).toBe('240')
+    await expect(input.getAttribute('aria-valuenow')).toBe('240')
+    await expect(input.getAttribute('aria-invalid')).toBeNull()
   },
 }
 
@@ -115,9 +115,9 @@ export const KeepsWhatWasTyped: Story = {
     await userEvent.click(input)
     await userEvent.keyboard('12x')
 
-    expect(input.value).toBe('12x')
-    expect(input.getAttribute('aria-invalid')).toBe('true')
-    expect(canvas.getByRole('spinbutton')).toBe(input)
+    await expect(input.value).toBe('12x')
+    await expect(input.getAttribute('aria-invalid')).toBe('true')
+    await expect(canvas.getByRole('spinbutton')).toBe(input)
   },
 }
 
@@ -128,11 +128,11 @@ export const BoundedOnTheWayOut: Story = {
 
     await userEvent.clear(input)
     await userEvent.type(input, '900')
-    expect(input.getAttribute('aria-invalid')).toBe('true')
+    await expect(input.getAttribute('aria-invalid')).toBe('true')
 
     await userEvent.tab()
-    expect(input.value).toBe('240')
-    expect(input.getAttribute('aria-invalid')).toBeNull()
+    await expect(input.value).toBe('240')
+    await expect(input.getAttribute('aria-invalid')).toBeNull()
   },
 }
 
@@ -145,16 +145,16 @@ export const ArrowKeysStep: Story = {
     await userEvent.click(input)
     // it onto one of them.
     await userEvent.keyboard('{ArrowUp}')
-    expect(input.value).toBe('5')
+    await expect(input.value).toBe('5')
 
     await userEvent.keyboard('{ArrowUp}')
-    expect(input.value).toBe('10')
+    await expect(input.value).toBe('10')
 
     await userEvent.keyboard('{ArrowDown}{ArrowDown}')
-    expect(input.value).toBe('0')
+    await expect(input.value).toBe('0')
 
     await userEvent.keyboard('{ArrowDown}')
-    expect(input.value).toBe('0')
+    await expect(input.value).toBe('0')
   },
 }
 
@@ -166,16 +166,16 @@ export const TheEndsAreOneKeyAway: Story = {
 
     await userEvent.click(input)
     await userEvent.keyboard('{PageUp}')
-    expect(input.value).toBe('150')
+    await expect(input.value).toBe('150')
 
     await userEvent.keyboard('{PageDown}{PageDown}')
-    expect(input.value).toBe('50')
+    await expect(input.value).toBe('50')
 
     await userEvent.keyboard('{End}')
-    expect(input.value).toBe('240')
+    await expect(input.value).toBe('240')
 
     await userEvent.keyboard('{Home}')
-    expect(input.value).toBe('0')
+    await expect(input.value).toBe('0')
   },
 }
 
@@ -187,9 +187,9 @@ export const ARefusedLineIsReadOut: Story = {
     await userEvent.click(input)
     await userEvent.keyboard('twenty')
 
-    expect(input.getAttribute('aria-invalid')).toBe('true')
-    expect(input.getAttribute('aria-valuenow')).toBeNull()
-    expect(input.getAttribute('aria-valuetext')).toBe('twenty')
+    await expect(input.getAttribute('aria-invalid')).toBe('true')
+    await expect(input.getAttribute('aria-valuenow')).toBeNull()
+    await expect(input.getAttribute('aria-valuetext')).toBe('twenty')
   },
 }
 
@@ -216,13 +216,13 @@ export const TakenAwayUnderARefusedLine: Story = {
 
     await userEvent.click(input)
     await userEvent.keyboard('twenty')
-    expect(input.getAttribute('aria-invalid')).toBe('true')
+    await expect(input.getAttribute('aria-invalid')).toBe('true')
 
     const empties = canvasElement.querySelector<HTMLElement>('[data-slot="empties"]')
     await userEvent.click(empties as HTMLElement)
 
-    expect(input.value).toBe('')
-    expect(input.getAttribute('aria-invalid')).toBeNull()
+    await expect(input.value).toBe('')
+    await expect(input.getAttribute('aria-invalid')).toBeNull()
   },
 }
 
@@ -232,11 +232,11 @@ export const TheKeyboardReachesIt: Story = {
     const input = field(canvasElement)
 
     await userEvent.tab()
-    expect(document.activeElement).toBe(input)
+    await expect(document.activeElement).toBe(input)
 
-    expect(input.getAttribute('aria-valuemin')).toBe('0')
-    expect(input.getAttribute('aria-valuemax')).toBe('240')
-    expect(input.getAttribute('aria-valuenow')).toBe('20')
+    await expect(input.getAttribute('aria-valuemin')).toBe('0')
+    await expect(input.getAttribute('aria-valuemax')).toBe('240')
+    await expect(input.getAttribute('aria-valuenow')).toBe('20')
   },
 }
 

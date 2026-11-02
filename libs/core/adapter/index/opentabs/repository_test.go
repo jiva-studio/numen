@@ -6,14 +6,14 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/opentabs"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-var (
-	first  = domain.Vault{ID: "01VAULT0000000000000000000"}
-	second = domain.Vault{ID: "01VAULT0000000000000000001"}
-)
+func getFirst() domain.Vault { return domain.Vault{ID: "01VAULT0000000000000000000"} }
+
+func getSecond() domain.Vault { return domain.Vault{ID: "01VAULT0000000000000000001"} }
 
 func openRepository(t *testing.T) *opentabs.Repository {
 	t.Helper()
@@ -21,12 +21,12 @@ func openRepository(t *testing.T) *opentabs.Repository {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	return db.OpenTabs()
 }
 
 func TestReadOpenTabsReturnsNoneForANewVault(t *testing.T) {
-	open, err := openRepository(t).ReadOpenTabs(t.Context(), first)
+	open, err := openRepository(t).ReadOpenTabs(t.Context(), getFirst())
 	if err != nil || len(open.Tabs) != 0 || open.ActiveID != "" {
 		t.Fatalf("got %+v, %v", open, err)
 	}
@@ -41,10 +41,10 @@ func TestReadOpenTabsReturnsTabsInOrderWithStateAndFront(t *testing.T) {
 		},
 		ActiveID: "reader:viewer:a.bin",
 	}
-	if err := repo.WriteOpenTabs(t.Context(), first, want); err != nil {
+	if err := repo.WriteOpenTabs(t.Context(), getFirst(), want); err != nil {
 		t.Fatal(err)
 	}
-	got, err := repo.ReadOpenTabs(t.Context(), first)
+	got, err := repo.ReadOpenTabs(t.Context(), getFirst())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,19 +56,27 @@ func TestReadOpenTabsReturnsTabsInOrderWithStateAndFront(t *testing.T) {
 func TestWriteOpenTabsReplacesTheTabsOfOneVaultOnly(t *testing.T) {
 	repo := openRepository(t)
 	otherTabs := domain.OpenTabs{Tabs: []domain.Tab{{ID: "note:b.md", Kind: "note", Path: "b.md"}}}
-	if err := repo.WriteOpenTabs(t.Context(), second, otherTabs); err != nil {
+	if err := repo.WriteOpenTabs(t.Context(), getSecond(), otherTabs); err != nil {
 		t.Fatal(err)
 	}
-	if err := repo.WriteOpenTabs(t.Context(), first, domain.OpenTabs{Tabs: []domain.Tab{{ID: "x", Kind: "x"}}}); err != nil {
+	if err := repo.WriteOpenTabs(t.Context(), getFirst(), domain.OpenTabs{Tabs: []domain.Tab{{ID: "x", Kind: "x"}}}); err != nil {
 		t.Fatal(err)
 	}
-	if err := repo.WriteOpenTabs(t.Context(), first, domain.OpenTabs{}); err != nil {
+	if err := repo.WriteOpenTabs(t.Context(), getFirst(), domain.OpenTabs{}); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := repo.ReadOpenTabs(t.Context(), first); len(got.Tabs) != 0 {
-		t.Errorf("first vault has %+v", got)
+	gotFirst, err := repo.ReadOpenTabs(t.Context(), getFirst())
+	if err != nil {
+		t.Fatal(err)
 	}
-	if got, _ := repo.ReadOpenTabs(t.Context(), second); !reflect.DeepEqual(got, otherTabs) {
+	if len(gotFirst.Tabs) != 0 {
+		t.Errorf("first vault has %+v", gotFirst)
+	}
+	got, err := repo.ReadOpenTabs(t.Context(), getSecond())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, otherTabs) {
 		t.Errorf("second vault has %+v", got)
 	}
 }

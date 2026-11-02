@@ -8,6 +8,7 @@ import (
 	_ "modernc.org/sqlite"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport/indexfile"
 )
 
@@ -47,14 +48,14 @@ func TestCopiesAreIndependent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer one.Close()
+	defer testsupport.Close(t, one)
 
 	other := indexfile.Path(t)
 	two, err := index.Open(t.Context(), other)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer two.Close()
+	defer testsupport.Close(t, two)
 
 	if err := one.Vaults().Register(t.Context(), "abcdefghijklmnop"); err != nil {
 		t.Fatal(err)
@@ -90,7 +91,11 @@ func readAppliedMigrations(t *testing.T, path string) []string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var out []string
 	for rows.Next() {
@@ -112,7 +117,7 @@ func openFile(t *testing.T, path string) *sql.DB {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	return db
 }
 

@@ -1,9 +1,10 @@
 package engine
 
 import (
+	"fmt"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 )
 
 // referenceLength is the token length at which a full configured batch is one pass.
@@ -16,7 +17,7 @@ func getAttentionBudget(batchTexts int) int {
 
 // meanPool turns a model's per-token output into one vector per text: the
 // average of the tokens the mask keeps, at unit length.
-func meanPool(flat []float32, mask []int64, rows, seq, dimensions int) [][]float32 {
+func meanPool(flat []float32, mask []int64, rows, seq, dimensions int, isNormalised bool) [][]float32 {
 	out := make([][]float32, rows)
 	backing := make([]float32, rows*dimensions)
 	for row := range rows {
@@ -48,7 +49,7 @@ func meanPool(flat []float32, mask []int64, rows, seq, dimensions int) [][]float
 				vector[d] /= k
 			}
 		}
-		out[row] = Normalise(vector)
+		out[row] = finishVector(vector, isNormalised)
 	}
 	return out
 }
@@ -72,46 +73,84 @@ func addRow(dst, src []float32) {
 	}
 }
 
-// headPool turns a model's per-token output into one vector per text: the
-// first token, at unit length.
-func headPool(flat []float32, rows, seq, dimensions int) [][]float32 {
+// tokenOutput is the per-token output of a model for a batch: rows texts of seq tokens, each token a vector
+// of dimensions values, and the mask of the tokens that are not padding.
+type tokenOutput struct {
+	flat                  []float32
+	mask                  []int64
+	rows, seq, dimensions int
+}
+
+// pool turns a model's per-token output into one vector per text, by the pooling the profile names.
+func pool(kind string, out tokenOutput, isNormalised bool) ([][]float32, error) {
+	switch kind {
+	case PoolMean:
+		return meanPool(out.flat, out.mask, out.rows, out.seq, out.dimensions, isNormalised), nil
+	case PoolCLS:
+		return headPool(out.flat, out.rows, out.seq, out.dimensions, isNormalised), nil
+	case PoolLast:
+		return lastPool(out.flat, out.mask, out.rows, out.seq, out.dimensions, isNormalised), nil
+	}
+	return nil, fmt.Errorf("a per-token output cannot be pooled as %q: the model answers one vector per text only as an output named sentence_embedding", kind)
+}
+
+// headPool takes the first token of each text.
+func headPool(flat []float32, rows, seq, dimensions int, isNormalised bool) [][]float32 {
 	out := make([][]float32, rows)
 	for row := range out {
 		pos := row * seq * dimensions
 		vector := make([]float32, dimensions)
 		copy(vector, flat[pos:pos+dimensions])
-		out[row] = Normalise(vector)
+		out[row] = finishVector(vector, isNormalised)
+	}
+	return out
+}
+
+// lastPool takes the last token the mask keeps of each text.
+func lastPool(flat []float32, mask []int64, rows, seq, dimensions int, isNormalised bool) [][]float32 {
+	out := make([][]float32, rows)
+	for row := range out {
+		last := 0
+		for token := range seq {
+			if mask[row*seq+token] != 0 {
+				last = token
+			}
+		}
+		pos := (row*seq + last) * dimensions
+		vector := make([]float32, dimensions)
+		copy(vector, flat[pos:pos+dimensions])
+		out[row] = finishVector(vector, isNormalised)
 	}
 	return out
 }
 
 // padding holds the three input tensors of a batch.
 type padding struct {
-	ids, mask, types []int64
+	ids, mask, types, positions []int64
 }
 
-var paddings = sync.Pool{New: func() any { return &padding{ids: nil, mask: nil, types: nil} }}
-
-// releasePadding hands a padding back for the next batch.
-func releasePadding(p *padding) {
-	paddings.Put(p)
+// newPaddingPool returns a pool of the paddings of batches, reused from one batch to the next.
+func newPaddingPool() *sync.Pool {
+	return &sync.Pool{New: func() any { return &padding{ids: nil, mask: nil, types: nil, positions: nil} }}
 }
 
-// padBatch lays a batch out as the model takes it.
-func padBatch(batch [][]int, pad, limit int) (rows, seq int, in *padding) {
+// padBatch lays a batch out as the model takes it, in a padding taken from paddings.
+func padBatch(paddings *sync.Pool, batch [][]int, pad, limit int) (rows, seq int, in *padding) {
 	rows = len(batch)
 	seq = roundUpToBucket(getLongest(batch), limit)
 
-	in, _ = paddings.Get().(*padding)
-	if in == nil {
-		in = &padding{ids: nil, mask: nil, types: nil}
+	in, ok := paddings.Get().(*padding)
+	if !ok || in == nil {
+		in = &padding{ids: nil, mask: nil, types: nil, positions: nil}
 	}
 	size := rows * seq
 	in.ids = resize(in.ids, size)
 	in.mask = resize(in.mask, size)
 	in.types = resize(in.types, size)
+	in.positions = resize(in.positions, size)
 	clear(in.mask)
 	clear(in.types)
+	clear(in.positions)
 	for row, one := range batch {
 		pos := row * seq
 		ids := in.ids[pos : pos+seq]
@@ -121,6 +160,7 @@ func padBatch(batch [][]int, pad, limit int) (rows, seq int, in *padding) {
 		for i, id := range one {
 			ids[i] = int64(id)
 			in.mask[pos+i] = 1
+			in.positions[pos+i] = int64(i)
 		}
 		if len(one) == 0 {
 			in.mask[pos] = 1

@@ -414,78 +414,6 @@ describe('the width it is told to keep to', () => {
   })
 })
 
-describe('searching the items', () => {
-  const getSearch = () => document.body.querySelector<HTMLInputElement>('.menu__search')
-  const texts = () => choices().map((one) => one.textContent?.trim())
-
-  const type = async (value: string) => {
-    const line = getSearch()!
-    line.value = value
-    line.dispatchEvent(new Event('input'))
-    await nextTick()
-  }
-
-  it('draws no search line unless it is requested for', async () => {
-    mountMenu()
-    await settle()
-    expect(getSearch()).toBeNull()
-  })
-
-  it('puts the keyboard on the search line as it opens', async () => {
-    mountMenu({ isSearchable: true })
-    await settle()
-    expect(document.activeElement).toBe(getSearch())
-  })
-
-  it('leaves the items that name every word typed', async () => {
-    mountMenu({ isSearchable: true })
-    await settle()
-    await type('new child')
-    expect(texts()).toStrictEqual(['New child note'])
-  })
-
-  it('says so where the words name no item', async () => {
-    mountMenu({ isSearchable: true })
-    await settle()
-    await type('zzz')
-    expect(choices()).toHaveLength(0)
-    expect(getDrawnMenu()?.querySelector('.menu__silence')).not.toBeNull()
-  })
-
-  it('chooses the first item left on Enter', async () => {
-    const menu = mountMenu({ isSearchable: true })
-    await settle()
-    await type('copy')
-    getSearch()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
-    expect(menu.emitted('choose')).toStrictEqual([['copy']])
-  })
-
-  it('does not take letters for a jump to an item while they are typed in the line', async () => {
-    mountMenu({ isSearchable: true })
-    await settle()
-    getSearch()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true }))
-    expect(document.activeElement).toBe(getSearch())
-  })
-
-  it('steps from the search line into the items on the arrow down', async () => {
-    mountMenu({ isSearchable: true })
-    await settle()
-    getSearch()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
-    expect(document.activeElement).toBe(choices()[0])
-  })
-
-  it('shows every item again after it is opened once more', async () => {
-    const menu = mountMenu({ isSearchable: true })
-    await settle()
-    await type('copy')
-    await menu.setProps({ isOpen: false })
-    await menu.setProps({ isOpen: true })
-    await settle()
-    expect(getSearch()!.value).toBe('')
-    expect(choices()).toHaveLength(3)
-  })
-})
-
 describe('how tall it grows', () => {
   const getFreeSpace = () => getDrawnMenu()?.style.getPropertyValue('--room')
 
@@ -505,45 +433,5 @@ describe('how tall it grows', () => {
     mountMenu({ viewport: { width: 900, height: 10 }, margin: 8 })
     await settle()
     expect(getFreeSpace()).toBe('0px')
-  })
-})
-
-describe('the search line and the items', () => {
-  const getBar = () => document.body.querySelector<HTMLElement>('.menu__bar')
-
-  it('draws the search line in a bar of its own, before every item', async () => {
-    mountMenu({ isSearchable: true })
-    await settle()
-    const bar = getBar()!
-    expect(bar.contains(document.body.querySelector('.menu__search'))).toBe(true)
-    expect(choices().some((one) => bar.contains(one))).toBe(false)
-    expect(
-      choices().every((one) => bar.compareDocumentPosition(one) & Node.DOCUMENT_POSITION_FOLLOWING),
-    ).toBe(true)
-  })
-
-  it('draws no bar where there is no search', async () => {
-    mountMenu()
-    await settle()
-    expect(getBar()).toBeNull()
-  })
-
-  it('draws the names of groups after the bar', async () => {
-    mountMenu({
-      isSearchable: true,
-      hasGroups: true,
-      items: [
-        { id: 'a', text: 'A', group: 'First' },
-        { id: 'b', text: 'B', group: 'Second' },
-      ],
-    })
-    await settle()
-    const names = document.body.querySelectorAll('.menu__group-name')
-    expect(names).toHaveLength(2)
-    expect(
-      Array.from(names).every(
-        (one) => getBar()!.compareDocumentPosition(one) & Node.DOCUMENT_POSITION_FOLLOWING,
-      ),
-    ).toBe(true)
   })
 })

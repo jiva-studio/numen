@@ -8,10 +8,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 // GetPluginIDByToken returns the id of the running plugin the token was given
@@ -72,6 +72,20 @@ func (h *Host) GetCompleter() completionport.Completer {
 	return h.completer
 }
 
+// SetPluginSearch is the search index and the search floor the plugins work through the host.
+func (h *Host) SetPluginSearch(search pluginport.PluginSearch) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.search = search
+}
+
+// GetPluginSearch is the search index the plugins work, or nil.
+func (h *Host) GetPluginSearch() pluginport.PluginSearch {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.search
+}
+
 // openHostEndpoint returns the port the host endpoint serves on, starting it on
 // the first call after a completer or a vault is set. It returns zero while
 // neither is set.
@@ -81,7 +95,7 @@ func (h *Host) openHostEndpoint(ctx context.Context) (int, error) {
 	if h.hostEndpoint != nil {
 		return h.hostEndpoint.GetPort(), nil
 	}
-	if (h.completer == nil && h.vault == nil && h.dependencies == nil && h.work == nil) || h.isClosed {
+	if (h.completer == nil && h.vault == nil && h.dependencies == nil && h.work == nil && h.search == nil) || h.isClosed {
 		return 0, nil
 	}
 	endpoint, err := hostendpoint.Open(ctx, h.hostAddress, h)
@@ -107,7 +121,8 @@ func (h *Host) closeHostEndpoint(ctx context.Context) error {
 // getLaunchVars is the environment variables the host sets for a plugin process
 // about to start. The host endpoint is started for it if a completer is set. An
 // endpoint that cannot start is reported and leaves the plugin without
-// NUMEN_HOST_PORT; the plugins that never call the host launch all the same. A
+// NUMEN_HOST_PORT; the plugins that never call the host launch all the same. Storage directories
+// that cannot be created are reported and left out the same way. A
 // runtime the plugin declares and the host cannot provision stops the launch.
 func (h *Host) getLaunchVars(ctx context.Context, pluginID string, requirements []pluginport.DependencyRequirement, processPort int, token string) ([]string, error) {
 	runtimeVars, err := h.getRuntimeVars(ctx, requirements)
@@ -125,15 +140,20 @@ func (h *Host) getEnvironmentVars(ctx context.Context, pluginID string, processP
 		h.reportError(fmt.Errorf("open host endpoint for plugin %s: %w", pluginID, err))
 		hostPort = 0
 	}
+	storageVars, err := h.getStorageVars(pluginID)
+	if err != nil {
+		h.reportError(err)
+	}
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return process.GetPluginVars(pluginID, process.LaunchEnvironment{
 		VaultPath: h.vaultPath, Port: processPort, HostPort: hostPort, Token: token, RuntimeVars: runtimeVars,
+		StorageVars: storageVars,
 	})
 }
 
 // RegisterPlugin adds a plugin with the supervisor that tracks it, as discovery does for a plugin found on disk.
-func (h *Host) RegisterPlugin(p manifestfile.DiscoveredPlugin, sup *lifecycle.Supervisor) {
+func (h *Host) RegisterPlugin(p manifest.Discovered, sup *lifecycle.Supervisor) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.plugins[p.Manifest.ID] = p
@@ -174,6 +194,16 @@ func (h *Host) GetPluginWork() pluginport.PluginWork {
 func (h *Host) clearPluginWork(pluginID string) {
 	if work := h.GetPluginWork(); work != nil {
 		work.ClearPlugin(pluginID)
+	}
+}
+
+// clearPluginTasks forgets the open tasks of a plugin that stopped.
+func (h *Host) clearPluginTasks(pluginID string) {
+	h.mu.RLock()
+	endpoint := h.hostEndpoint
+	h.mu.RUnlock()
+	if endpoint != nil {
+		endpoint.ClearPluginTasks(pluginID)
 	}
 }
 

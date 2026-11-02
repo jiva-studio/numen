@@ -2,7 +2,7 @@
  * Curve calculation, caching, and throttling for preset tabs.
  */
 import { ref, shallowRef, type Ref } from 'vue'
-import { createRequestGuard, type RequestGuard } from './requestGuard'
+import { createRequestGuard, type RequestGuard } from '@numen/ui'
 import {
   DEFAULTS,
   type Curve,

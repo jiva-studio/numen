@@ -6,6 +6,7 @@
  * applied once the keyboard has stayed on it for HELD, and what the settings
  * name is restored as soon as the keyboard leaves the list.
  */
+import { formatErrorMessage } from '@numen/core-client'
 import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
 import { isInBounds } from '@/entities/settings'
@@ -24,7 +25,7 @@ export interface ChoiceDeps {
   readonly settings: Ref<Sizes>
   readonly bounds: Ref<Ranges>
   /** The theme and the mode named, applied at once. */
-  readonly wear: (theme: string, half: Mode) => Promise<void>
+  readonly applyTheme: (theme: string, half: Mode) => Promise<void>
 }
 
 interface WriteSizeDeps {
@@ -54,24 +55,24 @@ async function writeSizeChoice(choice: ScaleChoice, deps: WriteSizeDeps, onReset
 }
 
 export function useAppearanceChoice(on: ChoiceDeps) {
-  const { core, write, list, applied, mode, settings, bounds, wear } = on
+  const { core, write, list, applied, mode, settings, bounds, applyTheme } = on
   const status = ref('')
   const pendingItem = ref<ScaleChoice | null>(null)
   let hold: ReturnType<typeof setTimeout> | undefined
 
   const isTheme = (item: string): boolean => item !== '' && !parseMode(item) && !parseSize(item)
-  const aged = computed(() => (isTheme(status.value) ? status.value : applied.value))
+  const current = computed(() => (isTheme(status.value) ? status.value : applied.value))
   const half = computed<Mode>(() => parseMode(status.value) ?? mode.value)
   const sized = computed<Sizes>(() => {
     const scaleChoice = pendingItem.value
     return scaleChoice ? onto(settings.value, scaleChoice.which, scaleChoice.size) : settings.value
   })
   const isPinned = computed(() => {
-    const theme = list.value.find((one) => one.name === aged.value)
+    const theme = list.value.find((one) => one.name === current.value)
     return theme?.isPinned ?? false
   })
 
-  const applyAppearance = () => wear(aged.value, half.value)
+  const applyAppearance = () => applyTheme(current.value, half.value)
 
   const previewItem = (item: string) => {
     status.value = item
@@ -82,7 +83,7 @@ export function useAppearanceChoice(on: ChoiceDeps) {
       return
     }
     pendingItem.value = null
-    void applyAppearance()
+    applyAppearance().catch((error: unknown) => write(formatErrorMessage(error), 'error'))
   }
 
   const chooseSize = (choice: ScaleChoice) =>
@@ -115,5 +116,5 @@ export function useAppearanceChoice(on: ChoiceDeps) {
 
   const close = () => clearTimeout(hold)
 
-  return { worn: aged, half, sized, isPinned, previewItem, chooseItem, close }
+  return { current, half, sized, isPinned, previewItem, chooseItem, close }
 }

@@ -5,6 +5,7 @@
  * Each note offers three resolutions, and the window waits until every note is
  * resolved or deferred.
  */
+import { Button } from '@numen/ui'
 import type { ConflictPrompt } from '../model/flush'
 
 /** The labels shown for the unsaved notes. */
@@ -26,12 +27,12 @@ const props = defineProps<{
 // --- State ---
 
 // --- Handlers ---
-function onKeep(conflict: ConflictPrompt) {
-  void conflict.keep()
+async function onKeep(conflict: ConflictPrompt) {
+  await conflict.keep()
 }
 
-function onTake(conflict: ConflictPrompt) {
-  void conflict.take()
+async function onTake(conflict: ConflictPrompt) {
+  await conflict.take()
 }
 
 function onLater(conflict: ConflictPrompt) {
@@ -47,15 +48,15 @@ function onLater(conflict: ConflictPrompt) {
     <ul class="unsaved__notes">
       <li v-for="one in props.conflicts" :key="one.note" class="unsaved__note">
         <span class="unsaved__title">{{ props.called(one.note) }}</span>
-        <button type="button" class="answer" @click="onKeep(one)">
+        <Button size="small" @click="onKeep(one)">
           {{ props.words.keep }}
-        </button>
-        <button type="button" class="answer" @click="onTake(one)">
+        </Button>
+        <Button variant="outline" size="small" @click="onTake(one)">
           {{ props.words.take }}
-        </button>
-        <button type="button" class="answer" @click="onLater(one)">
+        </Button>
+        <Button variant="ghost" size="small" @click="onLater(one)">
           {{ props.words.later }}
-        </button>
+        </Button>
       </li>
     </ul>
   </section>

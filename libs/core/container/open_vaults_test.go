@@ -7,9 +7,10 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 // A vault is walked once however many counts ask for it at the same moment.
@@ -56,11 +57,11 @@ func TestClosingWindowUpdatesNothing(t *testing.T) {
 
 	err := vaults.UpdateIndex(t.Context(), target[0], []string{"samples/Words.md"})
 	if !errors.Is(err, ErrClosing) {
-		t.Errorf("a levelling asked for while closing came back with %v", err)
+		t.Errorf("an index update asked for while closing came back with %v", err)
 	}
 }
 
-// A vault is levelled through the opening it was walked with, and neither opens
+// A vault index is updated through the opening it was walked with, and neither opens
 // the vault a second time.
 func TestUpdateIndexUsesTheVaultsOwnOpenedVault(t *testing.T) {
 	vaults, target := makeOpenVaults(t)
@@ -73,18 +74,20 @@ func TestUpdateIndexUsesTheVaultsOwnOpenedVault(t *testing.T) {
 		t.Fatal(err)
 	}
 	if vaults.OpenedCount() != 1 {
-		t.Errorf("levelling and walking opened the vault %d times", vaults.OpenedCount())
+		t.Errorf("updating and walking opened the vault %d times", vaults.OpenedCount())
 	}
 }
 
-// openVaultsSamples is a vault holding a note of type form and a note of type
+// getOpenVaultsSamples returns a vault holding a note of type form and a note of type
 // sample that links to it.
-var openVaultsSamples = map[string]string{
-	"Term.md": "---\ntype: form\n---\n" +
-		"\n## Layout\n\n### Header\n\nWord\n\n### Footer\n\nMeaning\n",
-	"samples/Words.md": "---\ntype: sample\n---\n" +
-		"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
-		"\n### Meaning\n\nCompost made of fallen leaves alone\n",
+func getOpenVaultsSamples() map[string]string {
+	return map[string]string{
+		"Term.md": "---\ntype: form\n---\n" +
+			"\n## Layout\n\n### Header\n\nWord\n\n### Footer\n\nMeaning\n",
+		"samples/Words.md": "---\ntype: sample\n---\n" +
+			"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
+			"\n### Meaning\n\nCompost made of fallen leaves alone\n",
+	}
 }
 
 // makeOpenVaults is an installation of its own, an index it may write, and two
@@ -93,15 +96,15 @@ func makeOpenVaults(t *testing.T) (*OpenVaults, []domain.Vault) {
 	t.Helper()
 
 	state := t.TempDir()
-	cfg := Config{
+	cfg := NewConfig(Config{
 		IndexPath:    filepath.Join(state, "index.db"),
 		RegistryPath: filepath.Join(state, "vaults.json"),
-	}
+	})
 	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	target := []domain.Vault{
 		{ID: "one", Name: "One", Path: makeSampleVault(t, cfg)},
@@ -120,10 +123,10 @@ func makeSampleVault(t *testing.T, cfg Config) string {
 	t.Helper()
 
 	root := t.TempDir()
-	if _, err := cfg.VaultIdentity().EnsureIdentity(root, time.Now()); err != nil {
+	if _, err := cfg.VaultIdentity().EnsureIdentity(root, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
-	for name, body := range openVaultsSamples {
+	for name, body := range getOpenVaultsSamples() {
 		path := filepath.Join(root, filepath.FromSlash(name))
 		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 			t.Fatal(err)

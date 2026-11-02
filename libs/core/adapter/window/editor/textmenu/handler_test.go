@@ -39,7 +39,7 @@ func (m *menu) RunMenuEntry(_ context.Context, _ domain.Vault, _ string, entry t
 	return m.runErr
 }
 
-var vault = shown{ID: "v1", Name: "Physics"}
+func getVault() shown { return shown{ID: "v1", Name: "Physics"} }
 
 func TestGetFileMenuReturnsEntries(t *testing.T) {
 	m := &menu{entries: []textversion.MenuEntry{
@@ -52,7 +52,7 @@ func TestGetFileMenuReturnsEntries(t *testing.T) {
 			Title: "Delete recognition", Version: "md.numen.engines.ocr/recognition",
 		},
 	}}
-	h := NewHandler(vault, m)
+	h := NewHandler(getVault(), m)
 
 	res, err := h.GetFileMenu(t.Context(), connect.NewRequest(&v1.GetFileMenuRequest{Path: "scan.pdf"}))
 	if err != nil {
@@ -82,14 +82,14 @@ func TestFileMenuWithoutVaultIsEmpty(t *testing.T) {
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition || len(m.ran) != 0 {
 		t.Errorf("a run was answered %v and ran %v", err, m.ran)
 	}
-	if res, err := NewHandler(vault, nil).GetFileMenu(t.Context(), connect.NewRequest(&v1.GetFileMenuRequest{Path: "scan.pdf"})); err != nil || len(res.Msg.GetEntries()) != 0 {
+	if res, err := NewHandler(getVault(), nil).GetFileMenu(t.Context(), connect.NewRequest(&v1.GetFileMenuRequest{Path: "scan.pdf"})); err != nil || len(res.Msg.GetEntries()) != 0 {
 		t.Errorf("a window with no menu answered %v (%v)", res.Msg.GetEntries(), err)
 	}
 }
 
 func TestRunFileMenuEntryPassesEntry(t *testing.T) {
 	m := &menu{}
-	h := NewHandler(vault, m)
+	h := NewHandler(getVault(), m)
 
 	_, err := h.RunFileMenuEntry(t.Context(), connect.NewRequest(&v1.RunFileMenuEntryRequest{
 		Path: "scan.pdf", PluginId: "p", Command: "proofread", VersionId: "q/k",
@@ -105,13 +105,13 @@ func TestRunFileMenuEntryPassesEntry(t *testing.T) {
 
 func TestRunFileMenuEntryMapsErrors(t *testing.T) {
 	for _, why := range []error{textversion.ErrInvalidVersion, textversion.ErrSourceNotAccepted, textversion.ErrNotTextPlugin, textversion.ErrNoText} {
-		h := NewHandler(vault, &menu{runErr: fmt.Errorf("run: %w", why)})
+		h := NewHandler(getVault(), &menu{runErr: fmt.Errorf("run: %w", why)})
 		_, err := h.RunFileMenuEntry(t.Context(), connect.NewRequest(&v1.RunFileMenuEntryRequest{Path: "scan.pdf"}))
 		if connect.CodeOf(err) != connect.CodeInvalidArgument {
 			t.Errorf("%v was answered %v", why, err)
 		}
 	}
-	h := NewHandler(vault, &menu{runErr: errors.New("the plugin did not answer")})
+	h := NewHandler(getVault(), &menu{runErr: errors.New("the plugin did not answer")})
 	if _, err := h.RunFileMenuEntry(t.Context(), connect.NewRequest(&v1.RunFileMenuEntryRequest{Path: "scan.pdf"})); connect.CodeOf(err) != connect.CodeInternal {
 		t.Errorf("a failed run was answered %v", err)
 	}

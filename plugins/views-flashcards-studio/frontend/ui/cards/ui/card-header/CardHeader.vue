@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { win } from '../../../../dom'
+import { win } from '@numen/ui'
 /**
  * The strip a tile or a block is dragged by.
  *

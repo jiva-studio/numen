@@ -9,8 +9,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
+
+	"golang.org/x/mod/modfile"
 )
 
 // pluginsPrefix is where the plugins are compiled from. A package under it is a
@@ -22,20 +25,33 @@ func isPlugin(importPath string) bool {
 	return strings.HasPrefix(importPath, pluginsPrefix)
 }
 
-// getPluginRequirements is every line of a go.mod that requires or replaces a
-// plugin, outside the module directive.
-func getPluginRequirements(gomod string) []string {
+// getPluginRequirements returns every requirement and replacement of a go.mod that names a plugin:
+// a module under pluginsPrefix, or a folder below a folder named plugins.
+func getPluginRequirements(file *modfile.File) []string {
 	var named []string
-	for line := range strings.SplitSeq(gomod, "\n") {
-		cleanLine := strings.TrimSpace(line)
-		if strings.HasPrefix(cleanLine, "module ") || strings.HasPrefix(cleanLine, "//") {
-			continue
+	for _, required := range file.Require {
+		if isPlugin(required.Mod.Path) {
+			named = append(named, "requires "+required.Mod.Path)
 		}
-		if strings.Contains(cleanLine, pluginsPrefix) || strings.Contains(cleanLine, "/plugins/") {
-			named = append(named, cleanLine)
+	}
+	for _, replaced := range file.Replace {
+		isPluginFolder := replaced.New.Version == "" &&
+			slices.Contains(strings.Split(filepath.ToSlash(replaced.New.Path), "/"), "plugins")
+		if isPlugin(replaced.Old.Path) || isPlugin(replaced.New.Path) || isPluginFolder {
+			named = append(named, "replaces "+replaced.Old.Path+" with "+replaced.New.Path)
 		}
 	}
 	return named
+}
+
+// parseGoMod parses the text of a go.mod written by a test.
+func parseGoMod(t *testing.T, text string) *modfile.File {
+	t.Helper()
+	file, err := modfile.Parse("go.mod", []byte(text), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return file
 }
 
 // isPlugin and getPluginRequirements are the whole rule, so they are tested
@@ -60,17 +76,18 @@ func TestPluginBoundaryRule_DetectsPluginImports(t *testing.T) {
 
 	require := "module example.com/x\n\nrequire (\n\t" + pluginsPrefix + "readers.epub v0.0.0\n)\n"
 	replace := "module example.com/x\n\nreplace " + pluginsPrefix + "readers.epub => ../../plugins/readers-epub\n"
-	for name, gomod := range map[string]string{"a require": require, "a replace": replace} {
-		if len(getPluginRequirements(gomod)) == 0 {
+	folder := "module example.com/x\n\nreplace example.com/y => ../../plugins/readers-epub\n"
+	for name, gomod := range map[string]string{"a require": require, "a replace": replace, "a plugin folder": folder} {
+		if len(getPluginRequirements(parseGoMod(t, gomod))) == 0 {
 			t.Errorf("%s of a plugin is not found", name)
 		}
 	}
 	cross := "module " + pluginsPrefix + "readers.epub\n\nrequire " + pluginsPrefix + "readers.pdf v0.0.0\n"
-	if len(getPluginRequirements(cross)) == 0 {
+	if len(getPluginRequirements(parseGoMod(t, cross))) == 0 {
 		t.Error("a requirement of one plugin by another is not found")
 	}
 	clean := "module " + pluginsPrefix + "readers.epub\n\nrequire example.com/y v1.0.0\n// " + pluginsPrefix + "x\n"
-	if got := getPluginRequirements(clean); len(got) != 0 {
+	if got := getPluginRequirements(parseGoMod(t, clean)); len(got) != 0 {
 		t.Errorf("a go.mod naming no plugin is found to name %v", got)
 	}
 }
@@ -127,10 +144,10 @@ func TestPluginBoundary_CoreAndDesktopExcludePluginsAndSDK(t *testing.T) {
 		forbidSDK bool
 		platforms []struct{ goos, goarch string }
 	}{
-		{"the core", "..", true, shipped},
-		{"notes", filepath.Join("..", "..", "notes"), true, shipped},
-		{"protocol", filepath.Join("..", "..", "protocol"), true, shipped},
-		{"the desktop", filepath.Join("..", "..", "..", "apps", "desktop"), false, shipped[:3]},
+		{"the core", "..", true, listShippedPlatforms()},
+		{"notes", filepath.Join("..", "..", "notes"), true, listShippedPlatforms()},
+		{"protocol", filepath.Join("..", "..", "protocol"), true, listShippedPlatforms()},
+		{"the desktop", filepath.Join("..", "..", "..", "apps", "desktop"), false, listShippedPlatforms()[:3]},
 	}
 	for _, build := range builds {
 		for _, one := range build.platforms {
@@ -175,11 +192,7 @@ func TestNoModuleRequiresAPlugin(t *testing.T) {
 			return err
 		}
 		dir = filepath.ToSlash(dir)
-		gomod, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		for _, line := range getPluginRequirements(string(gomod)) {
+		for _, line := range getPluginRequirements(readGoMod(t, path)) {
 			t.Errorf("%s/go.mod requires a plugin: %s", dir, line)
 		}
 		return nil

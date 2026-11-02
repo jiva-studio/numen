@@ -20,11 +20,13 @@ const createTab = (turn: readonly Turn[]) =>
       const { kind } = createAgentKind(createHost().host, (deps) => {
         const conversation: Conversation = {
           turns: ref([...turn]),
-          isWorking: ref(false),
-          ask: async (text) => void request.push(text),
+          isAnswerPending: ref(false),
+          ask: async (text) => {
+            request.push(text)
+          },
           getSourceLocation: () => null,
-          stop: () => {},
-          finish: () => {},
+          stop: () => undefined,
+          finish: () => undefined,
         }
         return useAgentConversation(conversation, deps)
       })

@@ -109,7 +109,7 @@ type CreateCardModelRequest struct {
 type CreateCardModelResponse struct {
 	Path         string    `json:"path"`
 	Error        ErrorCode `json:"error,omitempty"`
-	IsUnlevelled bool      `json:"isUnlevelled"`
+	IsIndexOutdated bool      `json:"isIndexOutdated"`
 }
 
 // ReadCardModelRequest is the request of the ReadCardModel method.
@@ -138,7 +138,7 @@ type WriteCardModelRequest struct {
 type WriteCardModelResponse struct {
 	Error        ErrorCode `json:"error,omitempty"`
 	At           *FileStat `json:"at,omitempty"`
-	IsUnlevelled bool      `json:"isUnlevelled"`
+	IsIndexOutdated bool      `json:"isIndexOutdated"`
 }
 
 // RenameCardModelFieldRequest is the request of the RenameCardModelField method.
@@ -156,7 +156,7 @@ type RenameCardModelFieldResponse struct {
 	NotWritten   []*UnwrittenDeck `json:"notWritten"`
 	Error        ErrorCode        `json:"error,omitempty"`
 	At           *FileStat        `json:"at,omitempty"`
-	IsUnlevelled bool             `json:"isUnlevelled"`
+	IsIndexOutdated bool             `json:"isIndexOutdated"`
 }
 
 // UnwrittenDeck is a deck that a field rename did not reach, with the problem that stopped it.
@@ -175,8 +175,8 @@ type CreateDeckRequest struct {
 type CreateDeckResponse struct {
 	Path  string    `json:"path"`
 	Error ErrorCode `json:"error,omitempty"`
-	// IsUnlevelled reports that the file was written and the index did not follow.
-	IsUnlevelled bool `json:"isUnlevelled"`
+	// IsIndexOutdated reports that the file was written and the index did not follow.
+	IsIndexOutdated bool `json:"isIndexOutdated"`
 }
 
 // ReadDeckRequest is the request of the ReadDeck method.
@@ -209,5 +209,5 @@ type WriteDeckResponse struct {
 	At    *FileStat `json:"at,omitempty"`
 	// Bound is the size limit in bytes that a deck failed against; zero for any other outcome.
 	Bound        int64 `json:"bound"`
-	IsUnlevelled bool  `json:"isUnlevelled"`
+	IsIndexOutdated bool  `json:"isIndexOutdated"`
 }

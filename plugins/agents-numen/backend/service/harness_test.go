@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -16,8 +16,10 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"connectrpc.com/connect"
-	"github.com/modelcontextprotocol/go-sdk/mcp"
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 )
 
 const vaultToken = "vault-token"
@@ -52,6 +54,8 @@ type fakeChat struct {
 	ignoresStream bool
 	requests      []sentRequest
 	replyCount    int
+	// t receives the failures of the handlers the fake serves.
+	t testing.TB
 }
 
 func (f *fakeChat) serveModels(w http.ResponseWriter) {
@@ -65,12 +69,12 @@ func (f *fakeChat) serveModels(w http.ResponseWriter) {
 		}
 		listing.Data = append(listing.Data, entry)
 	}
-	_ = json.NewEncoder(w).Encode(listing)
+	encodeJSON(f.t, w, listing)
 }
 
 func (f *fakeChat) serveChat(w http.ResponseWriter, r *http.Request) {
 	var got sentRequest
-	_ = json.NewDecoder(r.Body).Decode(&got)
+	decodeJSON(f.t, r.Body, &got)
 	got.Auth = r.Header.Get("Authorization")
 	f.requests = append(f.requests, got)
 	if got.Stream && f.rejectsStream {
@@ -79,19 +83,20 @@ func (f *fakeChat) serveChat(w http.ResponseWriter, r *http.Request) {
 	}
 	f.replyCount++
 	if got.Stream && f.script != nil && f.replyCount == 1 {
-		writeEvents(w, f.script)
+		writeEvents(f.t, w, f.script)
 		return
 	}
 	reply := f.replies[min(f.replyCount, len(f.replies))-1]
 	if got.Stream && !f.ignoresStream {
-		writeEvents(w, f.getPieces(reply))
+		writeEvents(f.t, w, f.getPieces(reply))
 		return
 	}
-	_ = json.NewEncoder(w).Encode(map[string]any{"choices": []map[string]any{{"message": reply, "finish_reason": f.finish}}})
+	encodeJSON(f.t, w, map[string]any{"choices": []map[string]any{{"message": reply, "finish_reason": f.finish}}})
 }
 
 func (f *fakeChat) serve(t *testing.T) *httptest.Server {
 	t.Helper()
+	f.t = t
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
 		defer f.mu.Unlock()
@@ -113,7 +118,11 @@ func (f *fakeChat) serve(t *testing.T) *httptest.Server {
 func (f *fakeChat) getPieces(reply message) []string {
 	var events []string
 	addDelta := func(delta map[string]any, finish any) {
-		event, _ := json.Marshal(map[string]any{"choices": []map[string]any{{"delta": delta, "finish_reason": finish}}})
+		event, err := json.Marshal(map[string]any{"choices": []map[string]any{{"delta": delta, "finish_reason": finish}}})
+		if err != nil {
+			f.t.Error(err)
+			return
+		}
 		events = append(events, string(event))
 	}
 	addDelta(map[string]any{"role": "assistant"}, nil)
@@ -140,11 +149,35 @@ func (f *fakeChat) getPieces(reply message) []string {
 }
 
 // writeEvents writes each data as one server-sent event, flushing after each.
-func writeEvents(w http.ResponseWriter, data []string) {
+func writeEvents(t testing.TB, w http.ResponseWriter, data []string) {
 	w.Header().Set("Content-Type", "text/event-stream")
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		t.Error("the response writer does not flush")
+		return
+	}
 	for _, one := range data {
-		_, _ = fmt.Fprintf(w, "data: %s\n\n", one)
-		w.(http.Flusher).Flush()
+		if _, err := fmt.Fprintf(w, "data: %s\n\n", one); err != nil {
+			t.Error(err)
+			return
+		}
+		flusher.Flush()
+	}
+}
+
+// encodeJSON writes value as JSON to w and reports a failure to t.
+func encodeJSON(t testing.TB, w io.Writer, value any) {
+	t.Helper()
+	if err := json.NewEncoder(w).Encode(value); err != nil {
+		t.Errorf("encode the response: %v", err)
+	}
+}
+
+// decodeJSON reads the JSON in r into target and reports a failure to t.
+func decodeJSON(t testing.TB, r io.Reader, target any) {
+	t.Helper()
+	if err := json.NewDecoder(r).Decode(target); err != nil {
+		t.Errorf("decode the request: %v", err)
 	}
 }
 
@@ -171,27 +204,27 @@ func newTextReply(text string) message {
 type fakeVault struct {
 	mu    sync.Mutex
 	calls []string
-	metas []mcp.Meta
+	metas []sdk.Meta
 }
 
 func (v *fakeVault) serve(t *testing.T) string {
 	t.Helper()
-	server := mcp.NewServer(&mcp.Implementation{Name: "numen", Version: "1"}, nil)
+	server := sdk.NewServer(&sdk.Implementation{Name: "numen", Version: "1"}, nil)
 	schema := map[string]any{"type": "object", "properties": map[string]any{"path": map[string]any{"type": "string"}}}
-	server.AddTool(&mcp.Tool{Name: "note_read", Description: "Reads a note", InputSchema: schema},
-		func(_ context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	server.AddTool(&sdk.Tool{Name: "note_read", Description: "Reads a note", InputSchema: schema},
+		func(_ context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
 			v.mu.Lock()
 			v.calls = append(v.calls, string(req.Params.Arguments))
 			v.metas = append(v.metas, req.Params.GetMeta())
 			v.mu.Unlock()
-			return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: "Plan: water the garden."}}}, nil
+			return &sdk.CallToolResult{Content: []sdk.Content{&sdk.TextContent{Text: "Plan: water the garden."}}}, nil
 		})
-	server.AddTool(&mcp.Tool{Name: "note_delete", Description: "Deletes a note", InputSchema: schema},
-		func(context.Context, *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	server.AddTool(&sdk.Tool{Name: "note_delete", Description: "Deletes a note", InputSchema: schema},
+		func(context.Context, *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
 			t.Error("a tool the task did not name was called")
-			return &mcp.CallToolResult{}, nil
+			return &sdk.CallToolResult{}, nil
 		})
-	handler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return server }, nil)
+	handler := sdk.NewStreamableHTTPHandler(func(*http.Request) *sdk.Server { return server }, nil)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer "+vaultToken {
 			http.Error(w, "no token", http.StatusUnauthorized)
@@ -210,21 +243,21 @@ func (v *fakeVault) getCalls() []string {
 }
 
 // newTask is a task that may call note_read, on the vault at url.
-func newTask(url, prompt string) *agentrun.AskAgentRequest {
-	return &agentrun.AskAgentRequest{
+func newTask(url, prompt string) *agentrun.Request {
+	return &agentrun.Request{
 		Prompt:           prompt,
 		Instructions:     "Answer from the vault.",
 		Tools:            []string{"note_read"},
-		ToolDeclarations: []*agentrun.ToolDeclaration{{Name: "note_read", Title: "Read a note", Kind: "read", About: "path"}},
-		ToolsUrl:         url,
+		ToolDeclarations: []toolcall.ToolDeclaration{{Name: "note_read", Title: "Read a note", Kind: "read", About: "path"}},
+		ToolsURL:         url,
 		ToolsToken:       vaultToken,
 	}
 }
 
-func ask(t *testing.T, s *Server, task *agentrun.AskAgentRequest) []*agentrun.AskAgentResponse {
+func ask(t *testing.T, s *Server, task *agentrun.Request) []*agentrun.Response {
 	t.Helper()
-	var steps []*agentrun.AskAgentResponse
-	if err := s.Ask(t.Context(), task, func(r *agentrun.AskAgentResponse) error {
+	var steps []*agentrun.Response
+	if err := s.Ask(t.Context(), task, func(r *agentrun.Response) error {
 		steps = append(steps, r)
 		return nil
 	}); err != nil {
@@ -234,15 +267,15 @@ func ask(t *testing.T, s *Server, task *agentrun.AskAgentRequest) []*agentrun.As
 }
 
 // describeSteps writes the steps out one word each, a run of pieces of the transcript as one.
-func describeSteps(steps []*agentrun.AskAgentResponse) string {
+func describeSteps(steps []*agentrun.Response) string {
 	words := make([]string, 0, len(steps))
 	for _, one := range steps {
 		switch {
-		case one.GetModelStarted() != nil:
+		case one.IsModelStarted():
 			words = append(words, "model")
 		case one.GetToolCall() != nil:
 			words = append(words, "call")
-		case one.GetToolFinished() != nil:
+		case one.IsToolFinished():
 			words = append(words, "finished")
 		case one.GetText() != "":
 			if len(words) == 0 || words[len(words)-1] != "said" {
@@ -256,7 +289,7 @@ func describeSteps(steps []*agentrun.AskAgentResponse) string {
 }
 
 // getSpoken is every piece of the transcript, in the order it was sent.
-func getSpoken(steps []*agentrun.AskAgentResponse) []string {
+func getSpoken(steps []*agentrun.Response) []string {
 	var response []string
 	for _, one := range steps {
 		if text := one.GetText(); text != "" {
@@ -272,13 +305,13 @@ func newServer(chatURL string) *Server {
 	return s
 }
 
-func assertToolSteps(t *testing.T, steps []*agentrun.AskAgentResponse) {
+func assertToolSteps(t *testing.T, steps []*agentrun.Response) {
 	t.Helper()
 	if got := describeSteps(steps); got != "model call finished model said stopped" {
 		t.Fatalf("steps are %q", got)
 	}
 	call := steps[1].GetToolCall()
-	if call.GetTool() != "Read a note" || call.GetKind() != "read" || call.GetCall() != "call-1" || call.GetPath() != "Plan.md" {
+	if call.Tool != "Read a note" || call.Kind != "read" || call.Call != "call-1" || call.Path != "Plan.md" {
 		t.Errorf("the call is %+v", call)
 	}
 	if response, last := strings.Join(getSpoken(steps), ""), steps[len(steps)-1]; response != "Water the garden." || last.GetStopped() != reasonDone {
@@ -400,7 +433,7 @@ func TestHarness_ConversationContinuesUntilFinished(t *testing.T) {
 	ask(t, s, task)
 	task.Prompt = "What did I ask?"
 	ask(t, s, task)
-	if _, err := s.FinishConversation(t.Context(), connect.NewRequest(&agentrun.FinishConversationRequest{Conversation: "talk-1"})); err != nil {
+	if err := s.FinishConversation(t.Context(), "talk-1"); err != nil {
 		t.Fatal(err)
 	}
 	ask(t, s, task)
@@ -419,19 +452,19 @@ func TestTheProgramIsInstalledWhileTheChatAPIListsItsModels(t *testing.T) {
 	model := &fakeChat{models: []string{"m0", "m1"}}
 	s := newServer(model.serve(t).URL)
 
-	res, err := s.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
+	res, err := s.GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	program := res.Msg.GetPrograms()[0]
-	if program.GetName() != ProgramName || !program.GetIsInstalled() || !program.GetLimitsTools() || len(program.GetModels()) != 2 {
+	program := res[0]
+	if program.Name != ProgramName || !program.IsInstalled || !program.LimitsTools || len(program.Models) != 2 {
 		t.Fatalf("the program is %+v", program)
 	}
-	if program.GetModels()[0].GetIsDefault() || !program.GetModels()[1].GetIsDefault() || program.GetModels()[1].GetTitle() != "M1" {
-		t.Errorf("the models are %+v", program.GetModels())
+	if program.Models[0].IsDefault || !program.Models[1].IsDefault || program.Models[1].Title != "M1" {
+		t.Errorf("the models are %+v", program.Models)
 	}
-	state, err := s.GetAgentState(t.Context(), connect.NewRequest(&agentrun.GetAgentStateRequest{}))
-	if err != nil || state.Msg.GetUnreachable() != "" {
+	state, err := s.GetState(t.Context())
+	if err != nil || state.Unreachable != "" {
 		t.Errorf("state %v, %v", state, err)
 	}
 }
@@ -440,15 +473,15 @@ func TestTheProgramIsNotInstalledWhileTheChatAPIRejects(t *testing.T) {
 	model := &fakeChat{status: http.StatusUnauthorized}
 	s := newServer(model.serve(t).URL)
 
-	res, err := s.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
+	res, err := s.GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Msg.GetPrograms()[0].GetIsInstalled() {
+	if res[0].IsInstalled {
 		t.Error("a refusing chat API was installed")
 	}
-	state, err := s.GetAgentState(t.Context(), connect.NewRequest(&agentrun.GetAgentStateRequest{}))
-	if err != nil || !strings.Contains(state.Msg.GetUnreachable(), "401") {
+	state, err := s.GetState(t.Context())
+	if err != nil || !strings.Contains(state.Unreachable, "401") {
 		t.Errorf("state %v, %v", state, err)
 	}
 }
@@ -458,15 +491,15 @@ func TestAskAgentStreamsTheStepsOverConnect(t *testing.T) {
 	vault := &fakeVault{}
 	s := newServer(model.serve(t).URL)
 	mux := http.NewServeMux()
-	mux.Handle(agentrun.NewAgentServiceHandler(s))
+	mux.Handle(agentrun.NewHandler(s))
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
-	stream, err := agentrun.NewAgentServiceClient(srv.Client(), srv.URL).AskAgent(t.Context(), connect.NewRequest(newTask(vault.serve(t), "Plan?")))
+	stream, err := agentrun.NewClient(srv.Client(), srv.URL).Ask(t.Context(), newTask(vault.serve(t), "Plan?"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	var steps []*agentrun.AskAgentResponse
+	var steps []*agentrun.Response
 	for stream.Receive() {
 		steps = append(steps, stream.Msg())
 	}
@@ -518,11 +551,11 @@ func TestAKeyIsNotSentOverPlainHTTPToAnotherMachine(t *testing.T) {
 }
 
 func TestAKeyIsNotFollowedToPlainHTTP(t *testing.T) {
-	err := refuseDowngrade(httptest.NewRequest(http.MethodGet, "http://192.0.2.1/v1/models", nil), nil)
+	err := refuseDowngrade(httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://192.0.2.1/v1/models", nil), nil)
 	if err == nil {
 		t.Error("a redirect to plain http was followed")
 	}
-	if err := refuseDowngrade(httptest.NewRequest(http.MethodGet, "https://example.com/v1/models", nil), nil); err != nil {
+	if err := refuseDowngrade(httptest.NewRequestWithContext(t.Context(), http.MethodGet, "https://example.com/v1/models", nil), nil); err != nil {
 		t.Errorf("a redirect to https failed: %v", err)
 	}
 }
@@ -608,7 +641,7 @@ func TestAStepThatCannotBeSentEndsTheRunWithItsError(t *testing.T) {
 	removed := errors.New("the window closed")
 	dispatched := 0
 
-	err := s.Ask(t.Context(), newTask(vault.serve(t), "Read."), func(*agentrun.AskAgentResponse) error {
+	err := s.Ask(t.Context(), newTask(vault.serve(t), "Read."), func(*agentrun.Response) error {
 		dispatched++
 		if dispatched == 2 {
 			return removed
@@ -722,13 +755,13 @@ func TestGetModels_ReasoningParameterYieldsLevels(t *testing.T) {
 	}
 	s := newServer(model.serve(t).URL)
 
-	res, err := s.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
+	res, err := s.GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var proposed []int
-	for _, one := range res.Msg.GetPrograms()[0].GetModels() {
-		proposed = append(proposed, len(one.GetReasoningLevels()))
+	for _, one := range res[0].Models {
+		proposed = append(proposed, len(one.ReasoningLevels))
 	}
 	if !slices.Equal(proposed, []int{3, 3, 0, 0}) {
 		t.Errorf("the levels offered are %v", proposed)
@@ -757,7 +790,7 @@ func TestTheLevelOfATaskGoesInTheFieldTheModelListsOrNowhere(t *testing.T) {
 		s := newServer(model.serve(t).URL)
 		task := newTask("", "Hello?")
 		task.Model, task.Reasoning = one.model, one.level
-		task.Tools, task.ToolsUrl = nil, ""
+		task.Tools, task.ToolsURL = nil, ""
 
 		ask(t, s, task)
 
@@ -780,7 +813,11 @@ func TestTheDepthsAModelConsumesAreReadFromTheListingOfTheChatAPI(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write(raw) }))
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		if _, err := w.Write(raw); err != nil {
+			t.Error(err)
+		}
+	}))
 	t.Cleanup(srv.Close)
 
 	models, err := chat{baseURL: srv.URL, client: srv.Client()}.listModels(t.Context())
@@ -803,7 +840,7 @@ func TestTheDepthsAModelConsumesAreReadFromTheListingOfTheChatAPI(t *testing.T) 
 		t.Errorf("the field is %q", luna.ReasoningField)
 	}
 	router := byName["typesafe/jev-router"]
-	if len(router.ReasoningLevels) != len(commonLevels) || router.DefaultReasoning != "" {
+	if len(router.ReasoningLevels) != len(getCommonLevels()) || router.DefaultReasoning != "" {
 		t.Errorf("a model of fields and no depths offers %v", router.ReasoningLevels)
 	}
 	if unreasoningModel := byName["unbiased/pareto-26.10"]; len(unreasoningModel.ReasoningLevels) != 0 || unreasoningModel.ReasoningField != "" {
@@ -820,14 +857,14 @@ func TestTheDepthsAModelConsumesAreReadFromTheListingOfTheChatAPI(t *testing.T) 
 // Any MCP tool from any connected MCP server can be called without requiring or stripping prefixes.
 func TestAnyMCPToolWithoutPrefixCanBeCalled(t *testing.T) {
 	model := &fakeChat{replies: []message{newCallReply("call-custom", "custom_remote_tool", `{"query":"test"}`), newTextReply("Result received.")}}
-	mcpServer := mcp.NewServer(&mcp.Implementation{Name: "custom", Version: "1"}, nil)
+	mcpServer := sdk.NewServer(&sdk.Implementation{Name: "custom", Version: "1"}, nil)
 	var calledWith string
-	mcpServer.AddTool(&mcp.Tool{Name: "custom_remote_tool", Description: "A custom MCP tool", InputSchema: map[string]any{"type": "object"}},
-		func(_ context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	mcpServer.AddTool(&sdk.Tool{Name: "custom_remote_tool", Description: "A custom MCP tool", InputSchema: map[string]any{"type": "object"}},
+		func(_ context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
 			calledWith = string(req.Params.Arguments)
-			return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: "Tool output"}}}, nil
+			return &sdk.CallToolResult{Content: []sdk.Content{&sdk.TextContent{Text: "Tool output"}}}, nil
 		})
-	handler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return mcpServer }, nil)
+	handler := sdk.NewStreamableHTTPHandler(func(*http.Request) *sdk.Server { return mcpServer }, nil)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer "+vaultToken {
 			http.Error(w, "no token", http.StatusUnauthorized)
@@ -838,11 +875,11 @@ func TestAnyMCPToolWithoutPrefixCanBeCalled(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	s := newServer(model.serve(t).URL)
-	task := &agentrun.AskAgentRequest{
+	task := &agentrun.Request{
 		Prompt:       "Run custom tool",
 		Instructions: "Follow instructions",
 		Tools:        []string{"custom_remote_tool"},
-		ToolsUrl:     srv.URL,
+		ToolsURL:     srv.URL,
 		ToolsToken:   vaultToken,
 	}
 	steps := ask(t, s, task)

@@ -21,7 +21,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 )
 
-var before = []string{"river", "mountain", "forest", "meadow", "harbour", "valley", "island", "desert"}
+func getBefore() []string {
+	return []string{"river", "mountain", "forest", "meadow", "harbour", "valley", "island", "desert"}
+}
 
 // noteWith is a note of n words of one vocabulary, long enough to be cut into
 // windows that carry a vector.
@@ -63,12 +65,12 @@ func findTask(t *testing.T, r *recorder, id string) *run.Task {
 func reading(t *testing.T) (container.EditorAssembly, *container.Index) {
 	t.Helper()
 
-	cfg := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}
+	cfg := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
 	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	return container.NewEditorAssembly(cfg, nil, db), db
 }
 
@@ -166,7 +168,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	made, db := reading(t)
 	fit(t, db, model)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 	events := newRecorder()
 
@@ -187,7 +189,7 @@ func TestAPassThatEmbeddedPreservesTheList(t *testing.T) {
 	made, db := reading(t)
 	fit(t, db, model)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 	events := newRecorder()
 
@@ -239,7 +241,7 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	made, db := reading(t)
 	fit(t, db, watching)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	newPass(made, db, events, watching, watching.GetModel().Recipe(), v).embed(t.Context())
@@ -257,7 +259,7 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 // the pass is left standing under what stopped it.
 func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 	made, db := reading(t)
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	events := newRecorder()
 	// The index queried for pending vectors is closed, so the query fails.
 	if err := db.Close(); err != nil {
@@ -319,7 +321,7 @@ func TestIndexingIsNeverAWordWithNothingBelowIt(t *testing.T) {
 	made, db := reading(t)
 	fit(t, db, model)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	overVal := &overheard{fakeEmbedder: model, tasks: events.tasks}
@@ -374,7 +376,7 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	made, db := reading(t)
 	fit(t, db, model)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
@@ -426,7 +428,7 @@ func TestAChangeOfSourcesStopsTheVectorPass(t *testing.T) {
 	made, db := reading(t)
 	fit(t, db, model)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
@@ -448,6 +450,39 @@ func TestAChangeOfSourcesStopsTheVectorPass(t *testing.T) {
 	case <-model.wake:
 	default:
 		t.Error("the wake of the sources was taken and not put back")
+	}
+}
+
+// A note written while a pass embeds a backlog does not wait for the whole of
+// it: the pass stops at its position, and the pass that follows starts from the
+// newest source, which is the note.
+func TestANoteSaveStopsTheVectorPass(t *testing.T) {
+	events := newRecorder()
+	model := &nudging{fakeEmbedder: &fakeEmbedder{dims: 64}, wake: make(chan struct{}, 1)}
+	made, db := reading(t)
+	fit(t, db, model)
+
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
+	cut(t, made, db, v)
+
+	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
+	p.worker.notes = model.wake
+	p.embed(t.Context())
+
+	target, embedded, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if target == 0 {
+		t.Fatal("the vault had no pending vector, and the pass had nothing to stop")
+	}
+	if embedded == target {
+		t.Error("the pass embedded the whole backlog while a note was written")
+	}
+	select {
+	case <-model.wake:
+	default:
+		t.Error("the wake of the note was taken and not put back")
 	}
 }
 
@@ -490,7 +525,7 @@ func TestVersionChange_EmbedsPendingVaultContent(t *testing.T) {
 	made, db := reading(t)
 	fit(t, db, model)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 
 	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
@@ -514,7 +549,7 @@ func TestVersionChangeOfANoteKeepsItsChunks(t *testing.T) {
 	made, db := reading(t)
 	fit(t, db, model)
 
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
 	unembedded, _, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
@@ -536,5 +571,73 @@ func TestVersionChangeOfANoteKeepsItsChunks(t *testing.T) {
 	if target != unembedded || embedded != target {
 		t.Errorf("after a version change of the note %d of %d chunks carry a vector, want %d of %d",
 			embedded, target, unembedded, unembedded)
+	}
+}
+
+// blocking is a model whose every call runs until its context ends, as a call
+// to an embedding plugin does on a long book.
+type blocking struct {
+	*fakeEmbedder
+	started chan struct{}
+	stopped chan error
+}
+
+func (b *blocking) Embed(ctx context.Context, _ []string) ([][]float32, error) {
+	signal(b.started)
+	<-ctx.Done()
+	select {
+	case b.stopped <- ctx.Err():
+	default:
+	}
+	return nil, ctx.Err()
+}
+
+func (*blocking) Concurrency() int { return 1 }
+
+// Cancelling the vector pass by its task id cancels the context of the embed
+// call in flight, the call returns, and the pass takes its task out of the list.
+func TestCancellingTheVectorTaskEndsTheEmbedCall(t *testing.T) {
+	events := newRecorder()
+	model := &blocking{
+		fakeEmbedder: &fakeEmbedder{dims: 64},
+		started:      make(chan struct{}, 1),
+		stopped:      make(chan error, 1),
+	}
+	made, db := reading(t)
+	fit(t, db, model)
+
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
+	cut(t, made, db, v)
+
+	ended := make(chan struct{})
+	go func() {
+		defer close(ended)
+		newPass(made, db, events, model, model.GetModel().Recipe(), v).embed(t.Context())
+	}()
+
+	select {
+	case <-model.started:
+	case <-time.After(10 * time.Second):
+		t.Fatal("the pass never called the model")
+	}
+	if !events.tasks.Cancel(MakingVectors) {
+		t.Fatalf("the running vector pass is not cancellable: %+v", events.tasks.List())
+	}
+
+	select {
+	case err := <-model.stopped:
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("the embed call ended with %v, want context.Canceled", err)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("the embed call in flight was not cancelled")
+	}
+	select {
+	case <-ended:
+	case <-time.After(10 * time.Second):
+		t.Fatal("the pass did not return after its task was cancelled")
+	}
+	if pos := findTask(t, events, MakingVectors); pos != nil {
+		t.Errorf("the cancelled pass is still listed: %+v", *pos)
 	}
 }

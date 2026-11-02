@@ -9,6 +9,7 @@
  * already carries.
  */
 import { readFileSync, readdirSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { dirname, extname, resolve, sep } from 'node:path'
 import { compile } from '@tailwindcss/node'
 import { Scanner } from '@tailwindcss/oxide'
@@ -18,11 +19,8 @@ import type { Node as BabelNode } from '@babel/types'
 import type { Plugin } from 'vite'
 import { UI_STYLES, getNormalCss, removePresent } from '@numen/ui/vite'
 
-const modules = resolve(import.meta.dirname, '../../..')
-const pluginsDir = resolve(modules, 'plugins')
-
 /** The stylesheet of `@numen/ui` the utilities are built from. */
-const THEME = resolve(modules, 'libs/ui/core/src/shared/tokens/theme.css')
+const THEME = createRequire(import.meta.url).resolve('@numen/ui/theme.css')
 
 /** The candidates Tailwind finds in the templates and scripts of these files. */
 export function getCandidates(files: readonly string[]): string[] {
@@ -43,7 +41,7 @@ export function getCandidates(files: readonly string[]): string[] {
 export async function getUtilityCss(candidates: readonly string[]): Promise<string> {
   const compiler = await compile(`@import ${JSON.stringify(THEME)};`, {
     base: dirname(THEME),
-    onDependency: () => {},
+    onDependency: () => undefined,
   })
   return getNormalCss(compiler.build([...candidates]))
 }
@@ -171,28 +169,29 @@ export async function getUndefinedUtilities(
   return missing
 }
 
-/** The source files of the bundle that belong to the plugins. */
-function getPluginFiles(moduleIds: Iterable<string>): string[] {
-  const plugins = pluginsDir + sep
+/** The source files of the bundle that lie in the plugin's directory `root`. */
+function getPluginFiles(root: string, moduleIds: Iterable<string>): string[] {
+  const prefix = resolve(root) + sep
   const files = new Set<string>()
   for (const id of moduleIds) {
     const file = id.split('?')[0]!
-    if (file.startsWith(plugins) && !file.includes(`${sep}node_modules${sep}`)) files.add(file)
+    if (file.startsWith(prefix) && !file.includes(`${sep}node_modules${sep}`)) files.add(file)
   }
   return [...files].filter((file) => /\.(vue|ts|tsx|js)$/.test(file))
 }
 
 /**
  * Appends the utilities the plugin's files use to `styles.css`, and fails the build when a
- * template names a utility that neither that file nor the build of `@numen/ui` defines.
+ * template names a utility that neither that file nor the build of `@numen/ui` defines. `root` is
+ * the plugin's directory.
  */
-export function createUtilitiesPlugin(): Plugin {
+export function createUtilitiesPlugin(root: string): Plugin {
   return {
     name: 'numen-utilities',
     apply: 'build',
     enforce: 'post',
     async generateBundle(_, bundle) {
-      const files = getPluginFiles(this.getModuleIds())
+      const files = getPluginFiles(root, this.getModuleIds())
       const ui = readFileSync(UI_STYLES, 'utf8')
       const utilities = removePresent(await getUtilityCss(getCandidates(files)), ui)
       const asset = bundle['styles.css']
@@ -214,8 +213,8 @@ export function createUtilitiesPlugin(): Plugin {
 /** The id the stories import the utilities of every plugin frontend by. */
 const STORY_UTILITIES = 'virtual:plugin-utilities.css'
 
-/** Every source file of every plugin frontend, stories and tests left out. */
-function getFrontendFiles(): string[] {
+/** Every source file of every plugin frontend under `pluginsDir`, stories and tests left out. */
+function getFrontendFiles(pluginsDir: string): string[] {
   return readdirSync(pluginsDir, { recursive: true, encoding: 'utf8' })
     .filter((path) => /^[^/]+\/frontend\/.+\.(vue|ts)$/.test(path.split(sep).join('/')))
     .filter((path) => !/\.(stories|test)\.ts$/.test(path))
@@ -225,14 +224,15 @@ function getFrontendFiles(): string[] {
 /**
  * Serves `virtual:plugin-utilities.css` to the stories: the utilities every plugin frontend uses
  * that the build of `@numen/ui` does not carry, as each plugin's `dist/styles.css` carries them.
+ * `pluginsDir` holds one directory per plugin.
  */
-export function createStoryUtilitiesPlugin(): Plugin {
+export function createStoryUtilitiesPlugin(pluginsDir: string): Plugin {
   return {
     name: 'numen-story-utilities',
     resolveId: (id) => (id === STORY_UTILITIES ? `\0${STORY_UTILITIES}` : undefined),
     async load(id) {
       if (id !== `\0${STORY_UTILITIES}`) return undefined
-      const css = await getUtilityCss(getCandidates(getFrontendFiles()))
+      const css = await getUtilityCss(getCandidates(getFrontendFiles(pluginsDir)))
       return removePresent(css, readFileSync(UI_STYLES, 'utf8'))
     },
   }

@@ -2,8 +2,11 @@
  * The window composed: the vault it reads, the kinds it declares, and the
  * few requests one kind makes of another.
  */
-import { ref } from 'vue'
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { computed, ref, type Ref } from 'vue'
+import { waitFor } from './waitFor'
+import { formatErrorMessage } from '@numen/core-client'
+import { pluginCatalog } from '@/shared/clients'
+import { runInBackground } from '@numen/ui'
 import { core } from '../vault'
 import { createNoteLookup } from '../tabs/editorTabs'
 import { runSupport, type CommandTarget, type NoteLookup } from '@/features/command-palette'
@@ -18,12 +21,13 @@ import { useCrossWindowTabs } from '../tabs/useCrossWindowTabs'
 import { createNoteEditors } from '../tabs/useNoteEditors'
 import { useSettings } from './useSettings'
 import { useVaults } from './useVaults'
+import type { TabsHold } from '../commands/leaveVault'
 import { parseSavedTabs, useOpenTabs } from '../tabs/useOpenTabs'
 import { useCommands } from '../commands/useCommands'
 import { useDeclaredCommands } from '../commands/declaredCommands'
 import { useFileMenuCommands } from '../commands/fileMenuCommands'
 import { useWindowDisplay } from './useWindowDisplay'
-import { useWindowNotices } from '../shell/useWindowNotices'
+import { useNoticeTasks } from '../shell/useNoticeTasks'
 import { useWindowKinds } from './useWindowKinds'
 import { useWindowStatusBar } from '../shell/useWindowStatusBar'
 import { resolveTaskAction } from '../shell/taskActions'
@@ -41,6 +45,7 @@ import type { PluginServices } from '../plugins/pluginServices'
 import type { MessageWriter } from '@/shared/notices/messages'
 
 interface WindowCommandsOptions {
+  tabsHold: TabsHold
   windowTabs: ReturnType<typeof useWindowTabs>
   getTarget: () => CommandTarget
   knows: NoteLookup
@@ -52,7 +57,7 @@ interface WindowCommandsOptions {
   window: ReturnType<typeof useWindowDisplay>
   writeMessage: MessageWriter
   log: ReturnType<typeof createMessageLog>
-  pluginHost?: import('@/entities/plugin').PluginHost
+  pluginHost?: import('@numen/plugin-host').PluginHost
   fileMenuCommands?: ReturnType<typeof useFileMenuCommands>
 }
 
@@ -64,6 +69,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
       deps.fileMenuCommands ??
       useFileMenuCommands({
         onRun: (file) => deps.pluginHost?.notifyVaultChange({ paths: [file] }),
+        onError: (error) => writeMessage(formatErrorMessage(error), 'error'),
       }),
     core,
     words,
@@ -77,6 +83,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     making: editing.making,
     setVaultName: vaultsModule.setVaultName,
     reload: vaultsModule.reload,
+    tabsHold: deps.tabsHold,
     reached: editing.reached,
     appearance: settings.appearance,
     oneName: settings.oneName,
@@ -96,10 +103,15 @@ interface AppLifecycleDeps {
   window: ReturnType<typeof useWindowDisplay>
   editing: ReturnType<typeof createNoteEditors>
   pluginLoader?: import('@numen/plugin-host').PluginLoader
+  /** True until every plugin the window starts has started or failed. */
+  arePluginsStarting: Ref<boolean>
   writeMessage: MessageWriter
   /** Called once the tabs the window opens with are open. */
   onLayoutStarted(): void
 }
+
+/** How long a vault with no saved tabs waits for the plugins that place tabs. */
+const NEW_VAULT_PLUGINS_WAIT_MS = 5_000
 
 /** The tabs the core stored for the vault, and none where the core cannot be queried. */
 const readSavedTabs = async () => {
@@ -112,6 +124,7 @@ const readSavedTabs = async () => {
 
 function initAppLifecycle(deps: AppLifecycleDeps) {
   const { vaultsModule, windowTabs, settings, window, editing } = deps
+  let pluginsStarted: Promise<void> = Promise.resolve()
   const startLayout = async () => {
     if (!vaultsModule.activeVault.value.id) return
     const search = typeof globalThis.location !== 'undefined' ? globalThis.location.search : ''
@@ -135,6 +148,8 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     if (saved.tabs.length > 0) {
       windowTabs.restoreTabs(parseSavedTabs(saved), saved.activeId)
     } else {
+      // A new vault places the tabs of the kinds registered, so it gives the plugins still starting a while longer.
+      await waitFor(pluginsStarted, NEW_VAULT_PLUGINS_WAIT_MS)
       await windowTabs.openPlacedTabs((kind, error) =>
         deps.writeMessage(`The ${kind} tab did not open: ${formatErrorMessage(error)}`, 'error'),
       )
@@ -142,18 +157,28 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     deps.onLayoutStarted()
   }
 
-  useAppBootstrap({
+  return useAppBootstrap({
     loadVaults: () => vaultsModule.loadVaults(),
     startSettings: () => settings.start(),
     startLayout,
     // The plugins the settings name are active before the layout opens the tabs of their kinds.
-    startPlugins: async () => {
-      const plugins = settings.rest?.plugins?.value ?? []
-      await deps.pluginLoader?.trackPlugins(getFrontendPluginIds(plugins))
-      await deps.pluginLoader?.start()
+    startPlugins: () => {
+      pluginsStarted = (async () => {
+        try {
+          const plugins = settings.rest?.plugins?.value ?? []
+          await deps.pluginLoader?.trackPlugins(getFrontendPluginIds(plugins))
+          await deps.pluginLoader?.start()
+        } finally {
+          deps.arePluginsStarting.value = false
+        }
+      })()
+      return pluginsStarted
     },
     startWindow: () => window.start(),
-    startEditing: () => void editing.fileFlush.start(),
+    startEditing: () =>
+      runInBackground(editing.fileFlush.start(), (error) =>
+        deps.writeMessage(`Saving on quit stopped: ${formatErrorMessage(error)}`, 'error'),
+      ),
     closeWindow: () => window.close(),
     closeEditing: () => editing.close(),
     closeTabs: () => windowTabs.close(),
@@ -161,6 +186,8 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     closePlugins: async () => {
       await deps.pluginLoader?.close()
     },
+    reportError: (error) =>
+      deps.writeMessage(`The window did not start cleanly: ${formatErrorMessage(error)}`, 'error'),
   })
 }
 
@@ -169,7 +196,16 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     settingsHolder.current?.rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const log = createMessageLog()
   const writeMessage = log.getWriter('command')
-  const windowTabs = useWindowTabs()
+  const arePluginsStarting = ref(true)
+  const windowTabs = useWindowTabs({
+    catalog: pluginCatalog,
+    arePluginsStarting,
+    enablePlugin: async (pluginId) => {
+      await settingsHolder.current?.rest.writeSetting(['plugins', pluginId, 'enabled'], true)
+    },
+    openPlugin: (pluginId) =>
+      globalThis.dispatchEvent(new CustomEvent('numen:open-settings', { detail: { pluginId } })),
+  })
   const tabLinks = useTabLinks()
   const tabOpeners = fileOpeners({ ...core, reconcileTab: windowTabs.reconcileTab })
   const runs = runSupport()
@@ -189,19 +225,25 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
         'error',
       ),
     reportLoadError: (pluginId, error) => {
-      // eslint-disable-next-line no-console -- the full error stays available in the devtools console
-      console.error(`plugin ${pluginId} failed to load`, error)
       log.getWriter(`plugin:${pluginId}`)(
-        words.pluginStopped(getPluginName(pluginId), words.pluginLoadFailed),
+        words.pluginStopped(
+          getPluginName(pluginId),
+          `${words.pluginLoadFailed}: ${formatErrorMessage(error)}`,
+        ),
         'error',
       )
     },
     ...pluginNotes,
+    resolveLink: async (from, address) => {
+      const rawName = address.replace(/^name:\/\//, '')
+      return (await core.resolveLinks(from, `[[${rawName}]]`))[0]?.path ?? ''
+    },
   })
   return {
     log,
     writeMessage,
     windowTabs,
+    arePluginsStarting,
     tabLinks,
     tabOpeners,
     runs,
@@ -219,6 +261,8 @@ interface WindowContext {
   commands?: ReturnType<typeof useCommands>
   kinds?: ReturnType<typeof useWindowKinds>
   vaults?: ReturnType<typeof useVaults>
+  /** Holds the open tabs back while the vault is switched; bound once the tabs are written. */
+  tabsHold?: TabsHold
 }
 
 function getCommands(ctx: WindowContext): NonNullable<WindowContext['commands']> {
@@ -263,6 +307,7 @@ function initWindowServices(
       tabOpeners: base.tabOpeners,
       getVaults: () => getVaults(ctx),
       notifyPlugins: (event) => base.pluginHost.notifyVaultChange(event),
+      writeMessage: base.writeMessage,
     }),
   )
 
@@ -272,6 +317,7 @@ function initWindowServices(
     log: base.log,
     windowTabs: base.windowTabs,
     onSizeChanged: () => editing.noted.measureAll(),
+    catalog: pluginCatalog,
     getSettingsViews: (pluginId) => base.pluginHost.getRegisteredSettingsViews(pluginId),
   })
   settingsHolder.current = settings
@@ -301,6 +347,7 @@ function initWindowKindsAndCommands(
   const runCommand = (id: string, target: CommandTarget) => getCommands(ctx).runCommand(id, target)
   const fileMenuCommands = useFileMenuCommands({
     onRun: (file) => base.pluginHost.notifyVaultChange({ paths: [file] }),
+    onError: (error) => base.writeMessage(formatErrorMessage(error), 'error'),
   })
 
   ctx.kinds = useWindowKinds({
@@ -333,6 +380,10 @@ function initWindowKindsAndCommands(
   const knows: NoteLookup = createNoteLookup(editing, base.windowTabs)
 
   ctx.commands = initWindowCommands({
+    tabsHold: {
+      pause: async () => ctx.tabsHold?.pause(),
+      resume: () => ctx.tabsHold?.resume(),
+    },
     windowTabs: base.windowTabs,
     getTarget,
     knows,
@@ -357,6 +408,47 @@ function isSecondaryWindow(): boolean {
   return params.get('window') === 'secondary' || params.has('secondary')
 }
 
+type WindowSettings = ReturnType<typeof useSettings>
+
+function createStatusBar(
+  base: WindowCore,
+  window: WindowServices['window'],
+  settings: WindowSettings,
+) {
+  const noticeTasks = useNoticeTasks({
+    log: base.log,
+    plugins: base.pluginNotices,
+    window,
+    settings,
+  })
+  return useWindowStatusBar({
+    tasks: computed(() => [...window.tasks.value, ...noticeTasks.value]),
+    cancelTask: (id) => core.cancelTask(id),
+    reportCancelError: (error) =>
+      base.writeMessage(`The task was not cancelled: ${formatErrorMessage(error)}`, 'error'),
+    resolveAction: resolveTaskAction,
+    onAction: (pluginId) => settings.configured.openSettings(pluginId),
+  })
+}
+
+/** The closing of a tab: its links go, and the hold runs where the tab stays open. */
+function createTabCloser(base: WindowCore) {
+  return (id: string, hold?: () => void) => {
+    base.tabLinks.removeClosedTab(id)
+    if (!base.windowTabs.releaseTab(id)) hold?.()
+  }
+}
+
+/** The tabs the vault placed, opened in the background; what fails is reported. */
+function openPlacedTabs(base: WindowCore) {
+  return runInBackground(
+    base.windowTabs.openPlacedTabs((kind, error) =>
+      base.writeMessage(`The ${kind} tab did not open: ${formatErrorMessage(error)}`, 'error'),
+    ),
+    (error) => base.writeMessage(`The tabs did not open: ${formatErrorMessage(error)}`, 'error'),
+  )
+}
+
 /** Everything the window is made of, made once and handed to what draws it. */
 export const useWindow = () => {
   const settingsHolder: { current?: ReturnType<typeof useSettings> } = {}
@@ -365,41 +457,38 @@ export const useWindow = () => {
   const services = initWindowServices(base, ctx, settingsHolder)
   const { getTarget, runCommand } = initWindowKindsAndCommands(base, ctx, services)
   const { editing, window, settings } = services
-  watchPluginSettings(settings, base.pluginLoader)
+  watchPluginSettings(settings, base.pluginLoader, (error) =>
+    base.writeMessage(`Plugins were not tracked: ${formatErrorMessage(error)}`, 'error'),
+  )
 
-  const notices = useWindowNotices({
-    log: base.log,
-    plugins: base.pluginNotices,
-    window,
-    settings,
-    vaults: getVaults(ctx),
-  })
-  const statusBar = useWindowStatusBar({
-    tasks: window.tasks,
-    resolveAction: resolveTaskAction,
-    onAction: (pluginId) => settings.configured.openSettings(pluginId),
-  })
+  const statusBar = createStatusBar(base, window, settings)
   const isWritingTabs = ref(false)
   const isLayoutReady = ref(false)
-  const openTabs = useOpenTabs({ core, windowTabs: base.windowTabs, isWriting: isWritingTabs })
+  const openTabs = useOpenTabs({
+    core,
+    windowTabs: base.windowTabs,
+    isWriting: isWritingTabs,
+    reportError: (error) =>
+      base.writeMessage(`The open tabs were not saved: ${formatErrorMessage(error)}`, 'error'),
+  })
 
-  const closeTab = (id: string, hold?: () => void) => {
-    base.tabLinks.removeClosedTab(id)
-    if (!base.windowTabs.releaseTab(id)) hold?.()
-  }
+  ctx.tabsHold = openTabs
+
+  const closeTab = createTabCloser(base)
 
   useAppHotkeys(getCommands(ctx).onKeyDown)
   const crossWindowTabs = useCrossWindowTabs({
     windowTabs: base.windowTabs,
     closeWindowIfEmpty: isSecondaryWindow() ? () => window.close() : undefined,
   })
-  initAppLifecycle({
+  const bootstrap = initAppLifecycle({
     vaultsModule: getVaults(ctx),
     windowTabs: base.windowTabs,
     settings,
     window,
     editing,
     pluginLoader: base.pluginLoader,
+    arePluginsStarting: base.arePluginsStarting,
     writeMessage: base.writeMessage,
     onLayoutStarted: () => {
       isLayoutReady.value = true
@@ -409,11 +498,10 @@ export const useWindow = () => {
 
   const api = {
     runCommand,
-    openCurrentVault: () =>
-      void base.windowTabs.openPlacedTabs((kind, error) =>
-        base.writeMessage(`The ${kind} tab did not open: ${formatErrorMessage(error)}`, 'error'),
-      ),
+    openCurrentVault: () => openPlacedTabs(base),
     isLayoutReady,
+    bootstrapFailure: bootstrap.failure,
+    retryBootstrap: bootstrap.retry,
     openSettings: (pluginId?: string, filter?: string) =>
       settings.configured.openSettings(pluginId, filter),
     commands: getCommands(ctx).commands,
@@ -425,12 +513,8 @@ export const useWindow = () => {
     layout: base.windowTabs.layout,
     vaultList: getVaults(ctx).vaultList,
     log: base.log,
-    notices,
-    dismissNotice: (id: string) => {
-      base.log.dismiss(id)
-      base.pluginNotices.dismiss(id)
-    },
     statusBar,
+    statusViews: base.pluginHost.statusViews,
     palette: getCommands(ctx).palette,
     destinations: getKinds(ctx).destinations,
     closeTab,

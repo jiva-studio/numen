@@ -30,7 +30,7 @@ const defaultExtractors = 4
 const lexicalCandidates = 5
 
 // DefaultFloor is the minimum cosine similarity at which a passage counts as
-// an answer where neither the settings, the user, a calibration nor the model
+// an answer where neither the query, a stored floor nor the model
 // names one.
 //
 // The similarity that a model assigns to texts about different subjects is
@@ -88,15 +88,13 @@ func (p Parameters) fill() Parameters {
 // Search answers a query within one vault, over everything the vault holds.
 //
 // One database holds every vault, so the vault is an argument of the search.
-// New sets every field; `floor` is the floor the settings file names, zero where
-// it names none. Without an embedder only the word search runs, and
+// New sets every field. Without an embedder only the word search runs, and
 // vector-based results are absent.
 type Search struct {
 	passages     sourceport.PassageQueries
 	readers      vaultport.VaultReaders
 	embedder     embeddingport.Embedder
 	texts        textport.TextReaders
-	floor        float64
 	floorSource  FloorSource
 	errorHandler windowport.ErrorHandler
 	cache        *QueryCache
@@ -112,16 +110,12 @@ type Search struct {
 // which is a complete search, since the vector index is optional and may never
 // finish filling.
 //
-// `floor` is the minimum similarity for a passage to count as an answer, in the
-// units of the model in use. It outranks every other source of the floor. Zero
-// leaves the floor to the floor source, and to DefaultFloor where there is none.
-//
 // `texts` is the text versions that sources are cut from. Nil means the
 // installation has none, and only notes return their text.
 //
 // `errorHandler` receives the error of a search mode that could not answer.
 // Nil ignores such errors.
-func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, texts textport.TextReaders, embedder embeddingport.Embedder, floor float64, errorHandler windowport.ErrorHandler) Search {
+func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, texts textport.TextReaders, embedder embeddingport.Embedder, errorHandler windowport.ErrorHandler) Search {
 	if errorHandler == nil {
 		errorHandler = func(error) {}
 	}
@@ -130,7 +124,6 @@ func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, tex
 		readers:      readers,
 		embedder:     embedder,
 		texts:        texts,
-		floor:        floor,
 		errorHandler: errorHandler,
 		cache:        NewQueryCache(defaultCacheCapacity),
 	}
@@ -144,8 +137,8 @@ func (u Search) WithExtractors(n int) Search {
 }
 
 // WithFloorSource returns a search whose floor for a query is the source's, under
-// the recipe of the model that embeds the query. It is consulted when neither the
-// query nor the settings file names a floor.
+// the recipe of the model that embeds the query. It is consulted when the query
+// names no floor.
 func (u Search) WithFloorSource(source FloorSource) Search {
 	u.floorSource = source
 	return u
@@ -276,24 +269,9 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 		return nil, err
 	}
 	recipe := u.embedder.GetModel().Recipe()
-	var vector []float32
-	if u.cache != nil {
-		if cached, ok := u.cache.Get(recipe, query); ok {
-			vector = cached
-		}
-	}
-	if vector == nil {
-		vectors, err := u.embedder.Embed(ctx, []string{query})
-		if err != nil {
-			return nil, fmt.Errorf("%w: %w", errNoVector, err)
-		}
-		if len(vectors) != 1 {
-			return nil, fmt.Errorf("%w: the embedder answered with %d vectors for one query", errNoVector, len(vectors))
-		}
-		vector = vectors[0]
-		if u.cache != nil {
-			u.cache.Put(recipe, query, vector)
-		}
+	vector, err := u.getQueryVector(ctx, recipe, query)
+	if err != nil {
+		return nil, err
 	}
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -301,17 +279,36 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 	// A vector is stored under the recipe that produced it, which covers every
 	// property of the model that determines what a vector is. A lookup under any
 	// other recipe finds no vector and this mode returns nothing.
-	return u.passages.FindNearest(ctx, v.ID, recipe, vector, p.Kinds, p.Dense, u.getFloor(ctx, v, recipe, p))
+	return u.passages.FindNearest(ctx, v.ID, sourceport.NearestQuery{Recipe: recipe, Vector: vector, Kinds: p.Kinds, Limit: p.Dense, Floor: u.getFloor(ctx, v, recipe, p)})
 }
 
-// getFloor is the floor of one query: the query's own, the settings file's, the
-// floor source's, and DefaultFloor, in that order.
+// getQueryVector returns the vector of the query from the cache, or embeds the query
+// and caches the result.
+func (u Search) getQueryVector(ctx context.Context, recipe, query string) ([]float32, error) {
+	if u.cache != nil {
+		if cached, ok := u.cache.Get(recipe, query); ok {
+			return cached, nil
+		}
+	}
+	vectors, err := embeddingport.EmbedQueries(ctx, u.embedder, []string{query})
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", errNoVector, err)
+	}
+	if len(vectors) != 1 {
+		return nil, fmt.Errorf("%w: the embedder answered with %d vectors for one query", errNoVector, len(vectors))
+	}
+	if u.cache != nil {
+		u.cache.Put(recipe, query, vectors[0])
+	}
+	return vectors[0], nil
+}
+
+// getFloor is the floor of one query: the query's own, the floor source's, and
+// DefaultFloor, in that order.
 func (u Search) getFloor(ctx context.Context, v domain.Vault, recipe string, p Parameters) float64 {
 	switch {
 	case p.Floor > 0:
 		return p.Floor
-	case u.floor > 0:
-		return u.floor
 	case u.floorSource != nil:
 		return u.floorSource(ctx, v, recipe)
 	default:
@@ -319,8 +316,8 @@ func (u Search) getFloor(ctx context.Context, v domain.Vault, recipe string, p P
 	}
 }
 
-// read fills in the text of each passage from the vault. A chunk is a position
-// in a file; the file holds the text.
+// readForQuery fills in the text of each passage from the vault. A chunk is a
+// position in a file; the file holds the text.
 //
 // A passage whose file is missing from the vault is dropped: the file is
 // authoritative and the index follows it.
@@ -330,10 +327,6 @@ func (u Search) getFloor(ctx context.Context, v domain.Vault, recipe string, p P
 // concurrently, and each source's decoded text is released once its passages
 // are filled in. The first error, or cancellation of ctx, stops the sources not
 // yet started.
-func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage) ([]domain.Passage, error) {
-	return u.readForQuery(ctx, v, "", found)
-}
-
 func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, found []domain.Passage) ([]domain.Passage, error) {
 	if len(found) == 0 {
 		return nil, nil
@@ -354,8 +347,10 @@ func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, 
 
 	groups, order := groupBySource(found)
 
-	filled := make([]domain.Passage, len(found))
-	keep := make([]bool, len(found))
+	fill := passageFill{
+		query: query, found: found,
+		filled: make([]domain.Passage, len(found)), keep: make([]bool, len(found)),
+	}
 	g, gctx := errgroup.WithContext(ctx)
 	g.SetLimit(u.GetExtractors())
 	for _, source := range order {
@@ -364,7 +359,7 @@ func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, 
 		}
 		indices := groups[source]
 		g.Go(func() error {
-			return fillSource(gctx, of, source, query, indices, found, filled, keep)
+			return fillSource(gctx, of, source, indices, fill)
 		})
 	}
 	if err := g.Wait(); err != nil {
@@ -375,9 +370,9 @@ func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, 
 	}
 
 	out := make([]domain.Passage, 0, len(found))
-	for i, k := range keep {
+	for i, k := range fill.keep {
 		if k {
-			out = append(out, filled[i])
+			out = append(out, fill.filled[i])
 		}
 	}
 	return out, nil
@@ -391,17 +386,20 @@ func (u Search) GetExtractors() int {
 	return defaultExtractors
 }
 
+// passageFill is what a search fills in: the passages found, the filled copies, the
+// flags of those to keep, and the query that located them.
+type passageFill struct {
+	query         string
+	found, filled []domain.Passage
+	keep          []bool
+}
+
 // fillSource extracts one source and fills in the passages of `found` at
 // `indices`, which name it. It writes only those indices of `filled` and `keep`.
 func fillSource(
-	ctx context.Context,
-	of sourceTexts,
-	source string,
-	query string,
-	indices []int,
-	found, filled []domain.Passage,
-	keep []bool,
+	ctx context.Context, of sourceTexts, source string, indices []int, fill passageFill,
 ) error {
+	found, filled, keep, query := fill.found, fill.filled, fill.keep, fill.query
 	if err := ctx.Err(); err != nil {
 		return err
 	}

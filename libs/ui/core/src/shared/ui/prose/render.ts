@@ -88,7 +88,7 @@ const block = (
 }
 
 /**
- * The inside of a paragraph: words, and the marks that dress them.
+ * The inside of a paragraph: words, and the marks that style them.
  *
  * Every word is a node of its own, keyed by where it falls in the answer.
  */

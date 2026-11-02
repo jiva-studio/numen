@@ -11,24 +11,15 @@ import (
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/keychain"
 	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/indexsource"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/packagecache"
 )
 
-var isDev bool
-
-func init() {
-	if os.Getenv("NUMEN_DEV") == "1" || os.Getenv("NUMEN_DEV") == "true" {
-		isDev = true
-	}
-}
-
-// IsDev reports whether plugins are discovered from development directories.
+// IsDev reports whether plugins are discovered from development directories: NUMEN_DEV is 1 or true.
 func IsDev() bool {
-	return isDev
-}
-
-// SetDev sets whether plugins are discovered from development directories.
-func SetDev(v bool) {
-	isDev = v
+	value := os.Getenv("NUMEN_DEV")
+	return value == "1" || value == "true"
 }
 
 // The windows a plugin names as the places it works in.
@@ -46,15 +37,50 @@ func GetConfig() container.Config { return GetConfigFor(TargetEditor) }
 // GetConfigFor is GetConfig for the window of a target, whose plugin host runs the plugins that name
 // that target.
 func GetConfigFor(target string) container.Config {
+	dirs := getPluginsDirs()
 	cfg := container.Config{
-		PluginHost: newPluginHost(target, getPluginsDirs()...),
-		KeyStore:   keychain.Store{},
+		PluginHost:    newPluginHost(target, dirs...),
+		PluginDirs:    dirs,
+		PluginCatalog: getCatalogConfig(target, dirs),
+		KeyStore:      keychain.Store{},
+		Resources:     container.NewResources(),
 	}
 	// A machine with no data folder leaves the path empty, and the core fails to start.
 	if path, err := GetIndexPath(); err == nil {
 		cfg.IndexPath = path
 	}
 	return cfg
+}
+
+// getDevPluginsDirs is the plugin folders of a source checkout, relative to the working directory.
+func getDevPluginsDirs() []string { return []string{"modules/plugins", "plugins"} }
+
+// getCatalogConfig is the catalog of plugins as this machine keeps it: installs go to the plugin folder
+// of the user, and the downloaded packages are kept in the cache folder every window shares. The
+// plugins that ship with the application are offered from the plugin index found in the plugin folders.
+func getCatalogConfig(target string, pluginDirs []string) catalog.Config {
+	config := catalog.Config{Target: target, Sources: []catalog.Source{getIndexSource(pluginDirs)}, InstallDir: "", CacheDir: ""}
+	if configDir, err := os.UserConfigDir(); err == nil {
+		config.InstallDir = filepath.Join(configDir, "numen", "plugins")
+	}
+	if cacheDir, err := packagecache.DefaultDir(); err == nil {
+		config.CacheDir = cacheDir
+	}
+	return config
+}
+
+// getIndexSource is the source over the plugin index of the first plugin folder that holds one. A
+// development run without an index reads the manifests of the plugin folders of the checkout.
+func getIndexSource(pluginDirs []string) *indexsource.Source {
+	indexPaths := make([]string, 0, len(pluginDirs))
+	for _, dir := range pluginDirs {
+		indexPaths = append(indexPaths, filepath.Join(dir, indexsource.FileName))
+	}
+	var manifestDirs []string
+	if IsDev() {
+		manifestDirs = getDevPluginsDirs()
+	}
+	return indexsource.New(indexPaths, manifestDirs)
 }
 
 func getPluginsDirs() []string {
@@ -90,8 +116,9 @@ func getPluginsDirs() []string {
 	}
 
 	if IsDev() {
-		addDir("modules/plugins")
-		addDir("plugins")
+		for _, dir := range getDevPluginsDirs() {
+			addDir(dir)
+		}
 	}
 
 	configDir, err := os.UserConfigDir()

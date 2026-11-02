@@ -64,13 +64,13 @@ func vaultOf(b *testing.B, notes int) map[string]string {
 func scanBenchVault(b *testing.B, notes map[string]string) (check.Checks, domain.Vault) {
 	b.Helper()
 	v := testsupport.NewVault(b, notes)
-	db, err := container.Config{
+	db, err := container.NewConfig(container.Config{
 		IndexPath: filepath.Join(b.TempDir(), "index.db"),
-	}.OpenIndex(b.Context())
+	}).OpenIndex(b.Context())
 	if err != nil {
 		b.Fatal(err)
 	}
-	b.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(b, db)
 
 	scan := vaults.NewScan(
 		vaultreader.Readers{}, db.Vaults(), db.Notes(),

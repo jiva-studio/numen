@@ -52,6 +52,8 @@ describe('the icon of an entry', () => {
   })
 
   it('is a plain file for a file no reader opens', () => {
-    expect(getEntryIcon(entry({ isNote: false, type: 'sample' }), false, () => undefined)).toBe(File)
+    expect(getEntryIcon(entry({ isNote: false, type: 'sample' }), false, () => undefined)).toBe(
+      File,
+    )
   })
 })

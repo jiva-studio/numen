@@ -18,7 +18,11 @@ func Shut(tb testing.TB, path string) {
 	if err := os.Chmod(path, 0); err != nil {
 		tb.Fatal(err)
 	}
-	tb.Cleanup(func() { os.Chmod(path, 0o644) })
+	tb.Cleanup(func() {
+		if err := os.Chmod(path, 0o644); err != nil {
+			tb.Error(err)
+		}
+	})
 }
 
 // MakeUnwritable makes a file impossible to save over and restores it when the
@@ -37,5 +41,9 @@ func MakeUnwritable(tb testing.TB, path string) {
 	if err := os.Chmod(dir, 0o555); err != nil {
 		tb.Fatal(err)
 	}
-	tb.Cleanup(func() { os.Chmod(dir, info.Mode().Perm()) })
+	tb.Cleanup(func() {
+		if err := os.Chmod(dir, info.Mode().Perm()); err != nil {
+			tb.Error(err)
+		}
+	})
 }

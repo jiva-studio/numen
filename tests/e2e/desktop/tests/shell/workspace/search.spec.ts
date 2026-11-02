@@ -1,10 +1,11 @@
 import { test, expect } from '../../support/test.js'
+import { waitForWindow } from '../../support/workspace.js'
 
 test.describe('Search and Indexing', () => {
   test('opens palette search and queries vault notes and contents', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Trigger search dialog with Control+k
     await page.keyboard.press('Control+k')

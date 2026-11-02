@@ -64,31 +64,6 @@ func resolveVaultPath(root, path, serviceDir string) (target, resolved string, e
 	return target, resolved, nil
 }
 
-// resolveServicePath is the complement of resolveVaultPath: a path that stays inside the
-// vault, and that is in the folder belonging to the application by both of the
-// same measures.
-//
-// The two overlap nowhere, which is what lets one type write a derived file
-// That property is the subject of a test. A path whose spelling and whose
-// landing disagree is neither's, and both refuse it.
-func resolveServicePath(root, path, serviceDir string) (target, resolved string, err error) {
-	clean, err := CleanPath(path)
-	if err != nil {
-		return "", "", err
-	}
-	if !isOurs(clean, serviceDir) {
-		return "", "", fmt.Errorf("%s: %w", path, ErrOutside)
-	}
-	target, resolved, landed, err := resolveContained(root, clean)
-	if err != nil {
-		return "", "", err
-	}
-	if !isOurs(landed, serviceDir) {
-		return "", "", fmt.Errorf("%s: %w", path, ErrOutside)
-	}
-	return target, resolved, nil
-}
-
 // isOurs reports whether a path is in the folder the application reserves for
 // itself.
 //

@@ -45,19 +45,40 @@ service NoteService {
 
   // CreateNote makes a note. The file is named after the title, and the links
   // the note carries are written into it as it is made, so it arrives joined.
+  // An empty title takes the lowest free "Untitled note N".
   rpc CreateNote(CreateNoteRequest) returns (CreateNoteResponse);
 
   // WriteLink writes a relationship into one note. The note at the other end is
   // left alone: a link is one end's account of a relationship.
   rpc WriteLink(WriteLinkRequest) returns (WriteLinkResponse);
 
-  // RemoveLink removes a relationship from one note. The note at the other end
-  // is left alone: a link is one end's account of a relationship.
-  rpc RemoveLink(RemoveLinkRequest) returns (RemoveLinkResponse);
+  // GetConnection is the relationship between two notes as a whole: the record
+  // each note writes about the other.
+  rpc GetConnection(GetConnectionRequest) returns (GetConnectionResponse);
 
-  // ReplaceLinks makes the links between two notes exactly the ones given: each
-  // note holds one link to the other, or none.
-  rpc ReplaceLinks(ReplaceLinksRequest) returns (ReplaceLinksResponse);
+  // SaveConnection makes the records between two notes exactly the ones given,
+  // in both notes or in neither. A connection that would put a note above
+  // itself in the hierarchy is not saved.
+  rpc SaveConnection(SaveConnectionRequest) returns (SaveConnectionResponse);
+
+  // RemoveSide removes the record one note writes about another. The other note
+  // is left alone.
+  rpc RemoveSide(RemoveSideRequest) returns (RemoveSideResponse);
+
+  // RemoveConnection removes the records two notes write about each other.
+  rpc RemoveConnection(RemoveConnectionRequest) returns (RemoveConnectionResponse);
+
+  // JoinNotes makes one note write a record about another and keeps the record
+  // the other note already writes.
+  rpc JoinNotes(JoinNotesRequest) returns (JoinNotesResponse);
+
+  // CreateRelatedNote makes a note joined to an existing one. The new note
+  // writes the record about the existing note, with the inverse role, and is
+  // filed in the folder of the existing note.
+  rpc CreateRelatedNote(CreateRelatedNoteRequest) returns (CreateRelatedNoteResponse);
+
+  // ListBacklinks lists the links written in other notes that point at a note.
+  rpc ListBacklinks(ListBacklinksRequest) returns (ListBacklinksResponse);
 
   // RenameNote gives a note a different name. A note is shown by its title,
   // else by its first level-one heading, else by its filename: whichever of the
@@ -100,6 +121,13 @@ message GetNeighbourhoodResponse {
   // The `type` key of the frontmatter of the note in focus, so a client draws a note as
   // what it is. Empty for an ordinary note.
   string focus_type = 3;
+
+  // One connection for every line the client draws: a pair of the drawn notes
+  // (the focus and its neighbours) that a record joins, whether the focus is one
+  // of them or not. A hierarchical connection has the parent as first and the
+  // child as second, and each side holds the label and the marker of the record
+  // written in that note.
+  repeated Connection connections = 4;
 }
 
 // Relation is where a note sits relative to the one in focus. A sibling is written
@@ -112,28 +140,17 @@ enum Relation {
   RELATION_SIBLING = 4;
 }
 
-// Neighbour is one note joined to the one in focus, and what joins them.
+// Neighbour is one note joined to the one in focus. The records that join notes
+// are in GetNeighbourhoodResponse.connections.
 message Neighbour {
   Note note = 1;
   Relation relation = 2;
-  // What the person wrote on the link, when they wrote anything.
-  string label = 3;
-
-  // The note the relationship runs from, when that is not the one in focus: a
-  // sibling is another child of a shared parent, and this is that parent.
-  string through = 4;
-
-  // Set when both notes name this relationship, each in its own words. The
-  // label is then the one the note in focus wrote, and the arrow drawn on the
-  // line points at the note it was written about.
-  bool is_mutual = 5;
 
   // The `type` key of the note's frontmatter, so a client draws a note as what it is.
   // Empty for an ordinary note.
   string type = 6;
 
-  // What the other note wrote on its link back to this one, when is_mutual is true.
-  string reverse_label = 7;
+  reserved 3, 4, 5, 7, 8, 9;
 }
 
 message ResolveAddressesRequest {
@@ -214,7 +231,7 @@ message NoteHeadings {
   repeated Heading headings = 2;
 }
 
-// Heading is one line of a note that names what stands below it.
+// Heading is one line of a note that names what is below it.
 message Heading {
   string text = 1;
 
@@ -272,10 +289,10 @@ message WriteNoteResponse {
   // Absent when nothing was written.
   optional FileStat at = 2;
 
-  // Set when the prose is on disk and the index would not come level with it.
+  // Set when the prose is on disk and the index could not be updated for it.
   // The write happened and `at` stands; search answers about this note as it
   // read it last, until a walk goes past.
-  bool is_unlevelled = 3;
+  bool is_index_outdated = 3;
 }
 
 // Role is what kind of relationship a link is. The list is closed: navigation
@@ -289,6 +306,14 @@ enum Role {
   ROLE_ATTACHMENT = 5;
 }
 
+// Marker is what is drawn at the end of a link that points at its target. The
+// list is closed: a value is introduced together with the code that draws it.
+// MARKER_UNSPECIFIED draws nothing.
+enum Marker {
+  MARKER_UNSPECIFIED = 0;
+  MARKER_ARROW = 1;
+}
+
 // Link is one relationship as the note it is written in declares it: the note
 // at the other end, by the path it is filed under, and what kind of
 // relationship it is.
@@ -298,10 +323,19 @@ message Link {
 
   // What the person calls this relationship, when they call it anything.
   string label = 3;
+
+  // What the link is for, as a feature reads it. Empty for an ordinary link.
+  string type = 4;
+
+  // Why the link exists, in the person's words.
+  string note = 5;
+
+  Marker marker = 6;
 }
 
 message CreateNoteRequest {
-  // What the note is called. The file is named after it.
+  // What the note is called. The file is named after it. Empty takes the
+  // lowest free "Untitled note N".
   string title = 1;
 
   // The folder it goes in, as a path relative to the root. Empty is the root.
@@ -318,10 +352,13 @@ message CreateNoteResponse {
   // Set when nothing was made, and why.
   optional ErrorCode error = 2;
 
-  // Set when the note is on disk and the index would not come level with it.
+  // Set when the note is on disk and the index could not be updated for it.
   // The note was made and `path` stands; search does not answer about it until
   // a walk goes past.
-  bool is_unlevelled = 3;
+  bool is_index_outdated = 3;
+
+  // Set when no title was given and every numbered untitled name is taken.
+  bool is_name_exhausted = 4;
 }
 
 message WriteLinkRequest {
@@ -337,42 +374,156 @@ message WriteLinkResponse {
   optional ErrorCode error = 1;
 }
 
-message RemoveLinkRequest {
-  // The note the link is removed from.
-  string path = 1;
-  string to = 2;
-  Role role = 3;
-}
-
-message RemoveLinkResponse {
-  // Set when nothing was removed, and why.
-  optional ErrorCode error = 1;
-}
-
-// PairLink is one relationship between the two notes a ReplaceLinks names: the
-// note it is written in, the note it goes to, and what kind it is.
-message PairLink {
-  string from = 1;
-  string to = 2;
-  Role role = 3;
-
-  // What the person calls this relationship, when they call it anything.
+// ConnectionSide is the record one note writes about the other in a connection.
+message ConnectionSide {
+  Role role = 1;
+  string type = 2;
+  string note = 3;
   string label = 4;
+  Marker marker = 5;
 }
 
-message ReplaceLinksRequest {
-  // The two notes the links run between.
+// Connection is the relationship between two notes as a whole. Each note writes
+// at most one record about the other; the roles of two records are inverse of
+// each other.
+message Connection {
   string first = 1;
   string second = 2;
-
-  // Every link that is to stand between them. A note written in no entry holds
-  // no link to the other.
-  repeated PairLink links = 3;
+  // What the second note is to the first. A record written without a role takes
+  // this role, or its inverse for the record of the second note. A reply always
+  // carries it when the connection holds a record.
+  Role role = 5;
+  // The record written in the first note about the second. Absent when the
+  // first note writes none.
+  optional ConnectionSide first_side = 3;
+  // The record written in the second note about the first.
+  optional ConnectionSide second_side = 4;
 }
 
-message ReplaceLinksResponse {
-  // Set when the links were not all replaced, and why.
+message GetConnectionRequest {
+  string first = 1;
+  string second = 2;
+  // Only the records of this type. Empty names the records that carry none.
+  string type = 3;
+}
+
+message GetConnectionResponse {
+  Connection connection = 1;
+  optional ErrorCode error = 2;
+}
+
+message SaveConnectionRequest {
+  Connection connection = 1;
+}
+
+message SaveConnectionResponse {
   optional ErrorCode error = 1;
+
+  // Set when the connection was not saved because it is not one: a role no
+  // connection carries, roles that are not inverse of each other, or a note
+  // joined to itself.
+  bool is_invalid = 2;
+
+  // Set when the connection was not saved because it would put a note above
+  // itself in the hierarchy.
+  bool is_cycle = 3;
+}
+
+message RemoveSideRequest {
+  // The note the record is written in.
+  string path = 1;
+  // The note the record is about.
+  string to = 2;
+  // The records removed carry this type. Empty names the records that carry none.
+  string type = 3;
+}
+
+message RemoveSideResponse {
+  optional ErrorCode error = 1;
+}
+
+message RemoveConnectionRequest {
+  string first = 1;
+  string second = 2;
+  string type = 3;
+}
+
+message RemoveConnectionResponse {
+  optional ErrorCode error = 1;
+}
+
+message JoinNotesRequest {
+  // The note that writes the record.
+  string from = 1;
+  // The note the record is about.
+  string to = 2;
+  ConnectionSide side = 3;
+}
+
+message JoinNotesResponse {
+  optional ErrorCode error = 1;
+
+  // Set when the record was not written because the connection is not valid,
+  // as in SaveConnectionResponse.
+  bool is_invalid = 2;
+
+  // Set when the record was not written because it would close a cycle in the
+  // hierarchy.
+  bool is_cycle = 3;
+}
+
+message CreateRelatedNoteRequest {
+  // The existing note the new one is joined to.
+  string from = 1;
+
+  // What the new note is to the existing one: its parent, its child, or a jump.
+  Role role = 2;
+
+  // What the note is called. Empty takes the lowest free "Untitled note N".
+  string title = 3;
+
+  // The type of the record the new note writes. Empty for an ordinary link.
+  string type = 4;
+
+  // What the record the new note writes draws at the existing note.
+  Marker marker = 5;
+}
+
+message CreateRelatedNoteResponse {
+  // Where the note is filed. Empty when nothing was made.
+  string path = 1;
+
+  // Set when nothing was made, and why.
+  optional ErrorCode error = 2;
+
+  // Set when the note is on disk and the index could not be updated for it.
+  bool is_index_outdated = 3;
+
+  // Set when every numbered untitled name is taken.
+  bool is_name_exhausted = 4;
+}
+
+message ListBacklinksRequest {
+  string path = 1;
+}
+
+// Backlink is a link written in another note that points at the note asked about.
+message Backlink {
+  // The note the link is written in.
+  Note from = 1;
+  // The role as written, which is relative to the note it is written in.
+  Role role = 2;
+  // The role of that note relative to the note asked about. ROLE_UNSPECIFIED for
+  // a role with no counterpart.
+  Role role_from_here = 3;
+  string type = 4;
+  string note = 5;
+  string label = 6;
+  Marker marker = 7;
+}
+
+message ListBacklinksResponse {
+  repeated Backlink backlinks = 1;
 }
 
 // NameSource is which of the two a note is shown by, and so which one a rename
@@ -416,10 +567,10 @@ message RenameNoteResponse {
   // caller never saw is ERROR_CODE_STALE, and nothing was written at all.
   optional ErrorCode error = 5;
 
-  // Set when the rename reached the vault and the index would not come level
+  // Set when the rename reached the vault and the index could not be updated
   // with it. Search answers about these files as it read them last, until a
   // walk goes past.
-  bool is_unlevelled = 6;
+  bool is_index_outdated = 6;
 }
 
 message WatchEditsRequest {}

@@ -166,14 +166,14 @@ func (c chat) listModels(ctx context.Context) ([]model, error) {
 
 // do sends one request to the chat API and returns its answer. An answer other than 200 OK is an
 // error.
-func (c chat) do(ctx context.Context, method, path string, body []byte) ([]byte, error) {
+func (c chat) do(ctx context.Context, method, path string, body []byte) (answer []byte, err error) {
 	resp, err := c.open(ctx, method, path, body)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { err = errors.Join(err, resp.Body.Close()) }()
 
-	answer, err := io.ReadAll(resp.Body)
+	answer, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("read chat response: %w", err)
 	}

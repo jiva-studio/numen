@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { measureRect } from '../../dom'
 /**
  * Renders the deck preset schedule bar and selector menu.
  */
 import { computed, ref, useId } from 'vue'
-import { Menu, type Position } from '@numen/ui'
+import { Menu, type Position, measureRect } from '@numen/ui'
 import { ChevronDown } from '@lucide/vue'
 import type { Choice, DeckPreset } from '../model/useDeckSchedule'
 import { WORDS as words } from '../../cards'

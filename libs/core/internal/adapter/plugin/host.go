@@ -24,12 +24,14 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/eventbus"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/security"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	completionport "github.com/jiva-studio/numen/libs/core/usecase/completion/completioncontract"
+	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 )
 
 var (
@@ -39,7 +41,7 @@ var (
 )
 
 // Launcher is a function that spawns a plugin process and provides its stdout stream.
-type Launcher func(ctx context.Context, p manifestfile.DiscoveredPlugin, port int, token string) (*os.Process, io.ReadCloser, error)
+type Launcher func(ctx context.Context, p manifest.Discovered, port int, token string) (*os.Process, io.ReadCloser, error)
 
 // PersistHandler persists a changed plugin setting to host configuration.
 type PersistHandler = pluginport.PluginPersistHandler
@@ -64,7 +66,7 @@ type Host struct {
 	mu               sync.RWMutex
 	target           string
 	dirs             []string
-	plugins          map[string]manifestfile.DiscoveredPlugin
+	plugins          map[string]manifest.Discovered
 	supervisors      map[string]*lifecycle.Supervisor
 	endpoints        map[string]transport.Endpoint
 	launcher         Launcher
@@ -72,6 +74,7 @@ type Host struct {
 	vaultPath        string
 	bus              *eventbus.Bus
 	settings         map[string]map[string]any
+	performance      string
 	persistHandler   PersistHandler
 	evictTicker      *time.Ticker
 	evictDone        chan struct{}
@@ -88,10 +91,11 @@ type Host struct {
 	onDisk           map[string]bool
 	discoverMu       sync.RWMutex
 	failedPlugins    []pluginport.PluginFailure
-	problems         []manifestfile.DiscoveryProblem
+	problems         []manifestjson.DiscoveryProblem
 	completer        completionport.Completer
 	vault            pluginport.PluginVault
 	texts            pluginport.PluginTexts
+	search           pluginport.PluginSearch
 	// consentAsks holds the plugins that requested a completion while the consent
 	// prompt was unanswered, since the host started.
 	consentAsks   map[string]bool
@@ -108,15 +112,19 @@ type Host struct {
 	builtIns       map[string]builtInPlugin
 	contentTypes   contentTypeTable
 	typeCache      contentTypeCache
+	clock          machineport.Clock
+	storage        storageRoots
 }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
-func NewHost(target string, dirs ...string) *Host {
+// The host reads the time from clock.
+func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 	h := &Host{
+		clock:            clock,
 		mu:               sync.RWMutex{},
 		target:           target,
 		dirs:             dirs,
-		plugins:          make(map[string]manifestfile.DiscoveredPlugin),
+		plugins:          make(map[string]manifest.Discovered),
 		supervisors:      make(map[string]*lifecycle.Supervisor),
 		endpoints:        make(map[string]transport.Endpoint),
 		launcher:         nil,
@@ -149,7 +157,7 @@ func NewHost(target string, dirs ...string) *Host {
 		contentTypes:     nil,
 		typeCache:        contentTypeCache{},
 	}
-	h.bus = eventbus.New(h, 50*time.Millisecond, 250*time.Millisecond)
+	h.bus = eventbus.New(h, clock, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
 	return h
 }
@@ -159,13 +167,6 @@ func (h *Host) SetProcessLimits(limits process.Limits) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.processLimits = limits
-	for id, sup := range h.supervisors {
-		if p, ok := h.plugins[id]; ok && p.Manifest.Lifecycle.MemoryLimitBytes > 0 {
-			sup.SetMemoryLimit(p.Manifest.Lifecycle.MemoryLimitBytes)
-		} else {
-			sup.SetMemoryLimit(limits.MemoryLimitBytes)
-		}
-	}
 }
 
 // SetActivationPolicy sets the activation deadline and the restart backoff of plugins.
@@ -325,7 +326,7 @@ func (h *Host) GetEventBus() *eventbus.Bus {
 }
 
 // GetPlugins returns all discovered plugins registered with the host, in the order of their ids.
-func (h *Host) GetPlugins() []manifestfile.DiscoveredPlugin {
+func (h *Host) GetPlugins() []manifest.Discovered {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
@@ -339,27 +340,27 @@ func (h *Host) GetPlugins() []manifestfile.DiscoveredPlugin {
 // getPluginsInOrderLocked returns the registered plugins in the order of their
 // ids. Every lookup and listing of the host uses this order, so the first match
 // is the plugin with the lowest id.
-func (h *Host) getPluginsInOrderLocked() []manifestfile.DiscoveredPlugin {
-	result := make([]manifestfile.DiscoveredPlugin, 0, len(h.plugins))
+func (h *Host) getPluginsInOrderLocked() []manifest.Discovered {
+	result := make([]manifest.Discovered, 0, len(h.plugins))
 	for _, p := range h.plugins {
 		result = append(result, p)
 	}
-	slices.SortFunc(result, func(a, b manifestfile.DiscoveredPlugin) int { return strings.Compare(a.Manifest.ID, b.Manifest.ID) })
+	slices.SortFunc(result, func(a, b manifest.Discovered) int { return strings.Compare(a.Manifest.ID, b.Manifest.ID) })
 	return result
 }
 
 // GetPlugin retrieves a single plugin by its unique identifier.
-func (h *Host) GetPlugin(id string) (manifestfile.DiscoveredPlugin, bool) {
+func (h *Host) GetPlugin(id string) (manifest.Discovered, bool) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	if h.safeMode {
-		return manifestfile.EmptyDiscoveredPlugin(), false
+		return manifest.Discovered{}, false
 	}
 
 	p, ok := h.plugins[id]
 	if !ok || !h.isPluginEnabledLocked(id) {
-		return manifestfile.EmptyDiscoveredPlugin(), false
+		return manifest.Discovered{}, false
 	}
 	return p, true
 }
@@ -368,7 +369,7 @@ func (h *Host) GetPlugin(id string) (manifestfile.DiscoveredPlugin, bool) {
 // capability. Where none is enabled, the error is a *port.UnavailableError: PluginDisabled when a
 // plugin declares it and it is switched off or the host is in safe mode, PluginNotInstalled when
 // none declares it.
-func (h *Host) ResolveCapability(capability string) (manifestfile.DiscoveredPlugin, error) {
+func (h *Host) ResolveCapability(capability string) (manifest.Discovered, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
@@ -387,24 +388,24 @@ func (h *Host) ResolveCapability(capability string) (manifestfile.DiscoveredPlug
 	if h.safeMode {
 		missing.Err = ErrSafeModeActive
 	}
-	return manifestfile.EmptyDiscoveredPlugin(), missing
+	return manifest.Discovered{}, missing
 }
 
 // ResolveService finds the enabled plugin with the lowest id among those that serve the service to
 // the windows.
-func (h *Host) ResolveService(service string) (manifestfile.DiscoveredPlugin, bool) {
+func (h *Host) ResolveService(service string) (manifest.Discovered, bool) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
 	if h.safeMode {
-		return manifestfile.EmptyDiscoveredPlugin(), false
+		return manifest.Discovered{}, false
 	}
 	for _, p := range h.getPluginsInOrderLocked() {
 		if p.Manifest.HasService(service) && h.isPluginEnabledLocked(p.Manifest.ID) {
 			return p, true
 		}
 	}
-	return manifestfile.EmptyDiscoveredPlugin(), false
+	return manifest.Discovered{}, false
 }
 
 // ResolveNoteProfile returns how the index stores the notes of a type, as
@@ -431,12 +432,12 @@ func getProfileOf(declared pluginport.PluginNoteType) domain.NoteProfile {
 }
 
 // FindPluginByCapability finds the plugin ResolveCapability finds, and whether there is one.
-func (h *Host) FindPluginByCapability(capability string) (manifestfile.DiscoveredPlugin, bool) {
+func (h *Host) FindPluginByCapability(capability string) (manifest.Discovered, bool) {
 	p, err := h.ResolveCapability(capability)
 	return p, err == nil
 }
 
-// TriggerEvent activates every enabled plugin whose activationEvents match the event and delivers the event to it.
+// TriggerEvent activates every enabled plugin that declares the activation event `*`, and every one with a backend that opens the file an `onFile:` event names, and delivers the event to it.
 func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error) {
 	h.mu.RLock()
 	if h.safeMode {
@@ -449,7 +450,7 @@ func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error)
 		if !h.isPluginEnabledLocked(id) {
 			continue
 		}
-		if p.Manifest.CanActivateOn(event) || h.isOpeningFileLocked(p, event) {
+		if p.Manifest.IsActivatedByAnyEvent() || h.isOpeningFileLocked(p, event) {
 			candidates = append(candidates, id)
 		}
 	}
@@ -473,17 +474,17 @@ func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error)
 	return activated, errors.Join(errs...)
 }
 
-func (h *Host) prepareSupervisorLocked(pluginID string) (manifestfile.DiscoveredPlugin, *lifecycle.Supervisor, error) {
+func (h *Host) prepareSupervisorLocked(pluginID string) (manifest.Discovered, *lifecycle.Supervisor, error) {
 	if h.isClosed {
-		return manifestfile.DiscoveredPlugin{}, nil, errHostClosed
+		return manifest.Discovered{}, nil, errHostClosed
 	}
 	if h.safeMode {
-		return manifestfile.DiscoveredPlugin{}, nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginDisabled, Err: ErrSafeModeActive}
+		return manifest.Discovered{}, nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginDisabled, Err: ErrSafeModeActive}
 	}
 
 	p, ok := h.plugins[pluginID]
 	if !ok {
-		return manifestfile.DiscoveredPlugin{}, nil, &pluginport.UnavailableError{
+		return manifest.Discovered{}, nil, &pluginport.UnavailableError{
 			PluginID: pluginID, Reason: pluginport.PluginNotInstalled, Err: errPluginNotFound,
 		}
 	}
@@ -492,10 +493,10 @@ func (h *Host) prepareSupervisorLocked(pluginID string) (manifestfile.Discovered
 	sup := h.supervisors[pluginID]
 
 	if !h.isPluginEnabledLocked(pluginID) {
-		return manifestfile.DiscoveredPlugin{}, nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginDisabled}
+		return manifest.Discovered{}, nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginDisabled}
 	}
 	if _, isBuiltIn := h.getBuiltInLocked(pluginID); !isBuiltIn && !p.Manifest.HasBackend() {
-		return manifestfile.DiscoveredPlugin{}, nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginWithoutBackend}
+		return manifest.Discovered{}, nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginWithoutBackend}
 	}
 
 	return p, sup, nil
@@ -532,13 +533,14 @@ func (h *Host) dropEndpointOfStoppedPlugin(pluginID string, sup *lifecycle.Super
 	h.mu.Unlock()
 	if isStopped {
 		h.clearPluginWork(pluginID)
+		h.clearPluginTasks(pluginID)
 	}
 }
 
 // acquireRunningLocked holds the plugin for a consumer when it is running with a usable endpoint.
 func (h *Host) acquireRunningLocked(pluginID string, sup *lifecycle.Supervisor) (transport.Endpoint, bool) {
 	endpoint := h.endpoints[pluginID]
-	if isEmptyEndpoint(endpoint) || endpoint.Token == "" || !sup.Acquire(time.Now()) {
+	if isEmptyEndpoint(endpoint) || endpoint.Token == "" || !sup.Acquire(h.clock.Now()) {
 		return emptyEndpoint(), false
 	}
 	return endpoint, true
@@ -555,8 +557,8 @@ func (h *Host) failActivation(ctx context.Context, pluginID string, sup *lifecyc
 	sup.SetDormant(cause)
 	failedNow := false
 	if ctx.Err() == nil {
-		wasFailed, _ := sup.GetActivationFailure()
-		failedNow = sup.RecordActivationFailure(time.Now(), h.activation, cause) && !wasFailed
+		wasFailed := sup.IsActivationFailed()
+		failedNow = sup.RecordActivationFailure(h.clock.Now(), h.activation, cause) && !wasFailed
 	}
 	if failedNow {
 		h.failedPlugins = append(h.failedPlugins, h.newPluginFailureLocked(pluginID, sup, cause))
@@ -659,14 +661,14 @@ func (h *Host) ensureActiveDuringDiscovery(ctx context.Context, pluginID string)
 
 // beginActivationLocked moves a dormant plugin to Activating unless it is backing off or has failed.
 func (h *Host) beginActivationLocked(pluginID string, sup *lifecycle.Supervisor) error {
-	if err := sup.CheckActivationAllowed(time.Now()); err != nil {
+	if err := sup.CheckActivationAllowed(h.clock.Now()); err != nil {
 		return fmt.Errorf("activate plugin %s: %w", pluginID, err)
 	}
 	sup.SetActivating()
 	return nil
 }
 
-func (h *Host) runActivation(ctx context.Context, p manifestfile.DiscoveredPlugin, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
+func (h *Host) runActivation(ctx context.Context, p manifest.Discovered, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
 	endpoint, err := h.activatePlugin(ctx, p, sup)
 	if err != nil {
 		h.failActivation(ctx, p.Manifest.ID, sup, err)
@@ -675,25 +677,44 @@ func (h *Host) runActivation(ctx context.Context, p manifestfile.DiscoveredPlugi
 	sup.RecordActivationSuccess()
 
 	// The plugin also receives its settings on the next change, so a failed push leaves it running.
-	_ = h.NotifyPluginConfig(ctx, p.Manifest.ID)
+	if err := h.NotifyPluginConfig(ctx, p.Manifest.ID); err != nil {
+		h.reportError(fmt.Errorf("push settings to plugin %s: %w", p.Manifest.ID, err))
+	}
 	return endpoint, nil
 }
 
 func (h *Host) cleanupAbortedProcess(proc *os.Process, stdout io.Closer, pluginID string) {
-	_ = proc.Kill()
-	_, _ = proc.Wait()
-	_ = stdout.Close()
+	h.killProcess(proc, pluginID)
+	h.closeResource("stdout of plugin "+pluginID, stdout)
 	h.closeStdin(pluginID, proc.Pid)
+}
+
+// killProcess kills a process and collects its exit status. A process that has already exited is not an error.
+func (h *Host) killProcess(proc *os.Process, pluginID string) {
+	if err := proc.Kill(); err != nil && !errors.Is(err, os.ErrProcessDone) {
+		h.reportError(fmt.Errorf("kill plugin %s: %w", pluginID, err))
+	}
+	if _, err := proc.Wait(); err != nil && !errors.Is(err, os.ErrProcessDone) {
+		h.reportError(fmt.Errorf("wait for plugin %s: %w", pluginID, err))
+	}
+}
+
+// closeResource closes c and reports a failure to the error handler. A resource that is already closed is not an error.
+func (h *Host) closeResource(name string, c io.Closer) {
+	if err := c.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
+		h.reportError(fmt.Errorf("close %s: %w", name, err))
+	}
 }
 
 // closeStdin closes and forgets the stdin pipe of one process generation of a plugin.
 func (h *Host) closeStdin(pluginID string, pid int) {
 	key := stdinKey{pluginID: pluginID, pid: pid}
 	h.stdinsMu.Lock()
-	defer h.stdinsMu.Unlock()
-	if c, ok := h.stdins[key]; ok {
-		_ = c.Close()
-		delete(h.stdins, key)
+	c, ok := h.stdins[key]
+	delete(h.stdins, key)
+	h.stdinsMu.Unlock()
+	if ok {
+		h.closeResource("stdin of plugin "+pluginID, c)
 	}
 }
 
@@ -710,8 +731,7 @@ func (h *Host) waitForReady(ctx context.Context, stdout io.Reader) (int, error) 
 	return transport.WaitForHandshake(ctx, stdout)
 }
 
-//nolint:contextcheck // background supervisor outlives request
-func (h *Host) startPluginProcess(ctx context.Context, p manifestfile.DiscoveredPlugin, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
+func (h *Host) startPluginProcess(ctx context.Context, p manifest.Discovered, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
 	token, err := transport.GenerateAuthToken()
 	if err != nil {
 		return transport.Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("generate token: %w", err)
@@ -739,21 +759,24 @@ func (h *Host) startPluginProcess(ctx context.Context, p manifestfile.Discovered
 	}
 
 	go func() {
-		defer stdout.Close()
-		_, _ = io.Copy(io.Discard, stdout)
+		if _, err := io.Copy(io.Discard, stdout); err != nil && !errors.Is(err, os.ErrClosed) {
+			h.reportError(fmt.Errorf("read output of plugin %s: %w", p.Manifest.ID, err))
+		}
+		h.closeResource("stdout of plugin "+p.Manifest.ID, stdout)
 	}()
 
 	endpoint := transport.Endpoint{
-		Host:  "127.0.0.1",
-		Port:  actualPort,
-		Token: token,
+		Host:      "127.0.0.1",
+		Port:      actualPort,
+		Token:     token,
+		Transport: transport.NewNetworkTransport(),
 	}
 	if err := transport.CheckPluginProtocol(ctx, p.Manifest, endpoint); err != nil {
 		h.cleanupAbortedProcess(proc, stdout, p.Manifest.ID)
 		return emptyEndpoint(), err
 	}
 
-	now := time.Now()
+	now := h.clock.Now()
 	h.mu.Lock()
 	if sup.GetState() != lifecycle.StateActivating {
 		h.mu.Unlock()
@@ -761,7 +784,7 @@ func (h *Host) startPluginProcess(ctx context.Context, p manifestfile.Discovered
 		return transport.Endpoint{Host: "", Port: 0, Token: ""}, lifecycle.ErrActivationAborted
 	}
 
-	if err := sup.Attach(proc, now); err != nil {
+	if err := sup.Attach(ctx, proc, now); err != nil {
 		h.mu.Unlock()
 		h.cleanupAbortedProcess(proc, stdout, p.Manifest.ID)
 		return transport.Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("attach plugin %s: %w", p.Manifest.ID, err)
@@ -781,7 +804,7 @@ func (h *Host) startPluginProcess(ctx context.Context, p manifestfile.Discovered
 	return endpoint, nil
 }
 
-func resolvePluginBinary(p manifestfile.DiscoveredPlugin) (string, error) {
+func resolvePluginBinary(p manifest.Discovered) (string, error) {
 	if p.Manifest.Backend.Entrypoint == "" {
 		return "", security.ErrEmptyEntrypoint
 	}
@@ -800,7 +823,7 @@ func resolvePluginBinary(p manifestfile.DiscoveredPlugin) (string, error) {
 
 func (h *Host) defaultLauncher(
 	ctx context.Context,
-	p manifestfile.DiscoveredPlugin,
+	p manifest.Discovered,
 	port int,
 	token string,
 ) (*os.Process, io.ReadCloser, error) {
@@ -813,10 +836,6 @@ func (h *Host) defaultLauncher(
 	vaultPath := h.vaultPath
 	limits := h.processLimits
 	h.mu.RUnlock()
-
-	if p.Manifest.Lifecycle.MemoryLimitBytes > 0 {
-		limits.MemoryLimitBytes = p.Manifest.Lifecycle.MemoryLimitBytes
-	}
 
 	workDir, err := process.ValidateWorkingDirectory(p.Dir, p.Dir, vaultPath)
 	if err != nil {
@@ -840,30 +859,22 @@ func (h *Host) defaultLauncher(
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		_ = stdin.Close()
-		return nil, nil, fmt.Errorf("pipe stdout: %w", err)
+		return nil, nil, errors.Join(fmt.Errorf("pipe stdout: %w", err), stdin.Close())
 	}
 
+	process.HideInheritedFiles()
 	if err := cmd.Start(); err != nil {
-		_ = stdin.Close()
-		_ = stdout.Close()
-		return nil, nil, fmt.Errorf("start %s: %w", binPath, err)
+		return nil, nil, errors.Join(fmt.Errorf("start %s: %w", binPath, err), stdin.Close(), stdout.Close())
 	}
 
 	if _, err := io.WriteString(stdin, token+"\n"); err != nil {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
-		_ = stdin.Close()
-		_ = stdout.Close()
-		return nil, nil, fmt.Errorf("write token: %w", err)
+		h.killProcess(cmd.Process, p.Manifest.ID)
+		return nil, nil, errors.Join(fmt.Errorf("write token: %w", err), stdin.Close(), stdout.Close())
 	}
 
 	if err := process.ApplyLimits(cmd.Process.Pid, limits); err != nil {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
-		_ = stdin.Close()
-		_ = stdout.Close()
-		return nil, nil, fmt.Errorf("apply process limits: %w", err)
+		h.killProcess(cmd.Process, p.Manifest.ID)
+		return nil, nil, errors.Join(fmt.Errorf("apply process limits: %w", err), stdin.Close(), stdout.Close())
 	}
 
 	h.stdinsMu.Lock()
@@ -882,7 +893,7 @@ func (h *Host) Acquire(pluginID string) {
 	sup, ok := h.supervisors[pluginID]
 	h.mu.RUnlock()
 	if ok {
-		sup.Acquire(time.Now())
+		sup.Acquire(h.clock.Now())
 	}
 }
 
@@ -892,7 +903,7 @@ func (h *Host) Release(pluginID string) {
 	sup, ok := h.supervisors[pluginID]
 	h.mu.RUnlock()
 	if ok {
-		sup.Release(time.Now())
+		sup.Release(h.clock.Now())
 	}
 }
 
@@ -913,23 +924,16 @@ type pluginTeardownTarget struct {
 	endpoint transport.Endpoint
 }
 
-// EvictIdle stops idle plugins whose idle duration exceeds their configured timeout.
-func (h *Host) EvictIdle(ctx context.Context, defaultThreshold, gracePeriod time.Duration) []string {
+// idleThreshold is how long a plugin without a lease may stay idle before the host stops it.
+const idleThreshold = 180 * time.Second
+
+// EvictIdle stops the plugins that hold no lease and have been idle for longer than threshold.
+func (h *Host) EvictIdle(ctx context.Context, threshold, gracePeriod time.Duration) []string {
 	h.mu.Lock()
-	now := time.Now()
+	now := h.clock.Now()
 	var targets []pluginTeardownTarget
 
 	for id, sup := range h.supervisors {
-		threshold := defaultThreshold
-		if p, ok := h.plugins[id]; ok {
-			if p.Manifest.Lifecycle.IdleTimeoutSeconds == 0 {
-				continue
-			}
-			if p.Manifest.Lifecycle.IdleTimeoutSeconds > 0 {
-				threshold = time.Duration(p.Manifest.Lifecycle.IdleTimeoutSeconds) * time.Second
-			}
-		}
-
 		pid := sup.GetProcessID()
 		if sup.BeginDeactivation(threshold, now) {
 			targets = append(targets, pluginTeardownTarget{
@@ -944,46 +948,6 @@ func (h *Host) EvictIdle(ctx context.Context, defaultThreshold, gracePeriod time
 	h.mu.Unlock()
 
 	return h.evictTargets(ctx, targets, gracePeriod)
-}
-
-// EvictMemoryExceeded stops plugins whose resident memory exceeds their configured limit.
-func (h *Host) EvictMemoryExceeded(ctx context.Context, gracePeriod time.Duration) []string {
-	h.mu.Lock()
-	var targets []pluginTeardownTarget
-
-	for id, sup := range h.supervisors {
-		if sup.IsMemoryExceeded() {
-			targets = append(targets, pluginTeardownTarget{
-				id:       id,
-				pid:      sup.GetProcessID(),
-				sup:      sup,
-				endpoint: h.endpoints[id],
-			})
-			delete(h.endpoints, id)
-		}
-	}
-	h.mu.Unlock()
-
-	evicted := h.evictTargets(ctx, targets, gracePeriod)
-	for _, target := range targets {
-		if slices.Contains(evicted, target.id) {
-			target.sup.RecordActivationFailure(time.Now(), h.activation, fmt.Errorf("%w: %d bytes", lifecycle.ErrMemoryExceeded, target.sup.GetMemoryLimit()))
-			h.reportMemoryExceeded(target.id, target.sup)
-		}
-	}
-	return evicted
-}
-
-func (h *Host) reportMemoryExceeded(pluginID string, sup *lifecycle.Supervisor) {
-	memLimit := sup.GetMemoryLimit()
-	err := fmt.Errorf("plugin %s was stopped: it used more than %d bytes of memory", pluginID, memLimit)
-	h.reportError(err)
-	h.mu.Lock()
-	if failed, cause := sup.GetActivationFailure(); failed {
-		h.failedPlugins = append(h.failedPlugins, h.newPluginFailureLocked(pluginID, sup, cause))
-	}
-	h.mu.Unlock()
-	h.deliverPluginFailures()
 }
 
 // evictTargets stops the targets and returns the ids that stopped; a failed stop is reported to the error handler.
@@ -1009,8 +973,7 @@ func (h *Host) startEvictLoop() {
 				return
 			case <-h.evictTicker.C:
 				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-				_ = h.EvictIdle(ctx, 3*time.Minute, 2*time.Second)
-				_ = h.EvictMemoryExceeded(ctx, 2*time.Second)
+				_ = h.EvictIdle(ctx, idleThreshold, 2*time.Second)
 				cancel()
 			}
 		}
@@ -1041,7 +1004,28 @@ func (h *Host) TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 		}
 	}
 
+	targets := h.takeTeardownTargets()
+
+	for _, target := range targets {
+		if err := h.teardownTarget(ctx, target, gracePeriod); err != nil && firstErr == nil &&
+			!errors.Is(err, lifecycle.ErrProcessNotRunning) {
+			firstErr = err
+		}
+	}
+	if err := h.closeAllStdins(); err != nil && firstErr == nil {
+		firstErr = err
+	}
+	if err := h.closeHostEndpoint(ctx); err != nil && firstErr == nil {
+		firstErr = err
+	}
+	return firstErr
+}
+
+// takeTeardownTargets marks the host closed and returns the plugins that are running,
+// forgetting their endpoints.
+func (h *Host) takeTeardownTargets() []pluginTeardownTarget {
 	h.mu.Lock()
+	defer h.mu.Unlock()
 	h.isClosed = true
 	var targets []pluginTeardownTarget
 	for id, sup := range h.supervisors {
@@ -1055,23 +1039,22 @@ func (h *Host) TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 			delete(h.endpoints, id)
 		}
 	}
-	h.mu.Unlock()
+	return targets
+}
 
-	for _, target := range targets {
-		if err := h.teardownTarget(ctx, target, gracePeriod); err != nil && firstErr == nil {
-			firstErr = err
+// closeAllStdins closes the stdin pipes of every plugin process generation and forgets them.
+func (h *Host) closeAllStdins() error {
+	h.stdinsMu.Lock()
+	stdins := h.stdins
+	h.stdins = nil
+	h.stdinsMu.Unlock()
+	var failed []error
+	for key, c := range stdins {
+		if err := c.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
+			failed = append(failed, fmt.Errorf("close stdin of plugin %s: %w", key.pluginID, err))
 		}
 	}
-	h.stdinsMu.Lock()
-	for key, c := range h.stdins {
-		_ = c.Close()
-		delete(h.stdins, key)
-	}
-	h.stdinsMu.Unlock()
-	if err := h.closeHostEndpoint(ctx); err != nil && firstErr == nil {
-		firstErr = err
-	}
-	return firstErr
+	return errors.Join(failed...)
 }
 
 func (h *Host) createRPCShutdown(endpoint transport.Endpoint, gracePeriod time.Duration) func(context.Context) error {
@@ -1236,11 +1219,7 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 	result := maps.Clone(rawStored)
 	if p, ok := h.plugins[pluginID]; ok {
 		result = p.Manifest.ResolveSettings(result)
-		if _, hasStored := rawStored[keyExecutablePath]; !hasStored && h.hasExecutablePathSetting(p.Manifest) {
-			if paths := resolveDiscoveredACPPaths(); paths != "" {
-				result[keyExecutablePath] = paths
-			}
-		}
+		addDiscoveredExecutable(result, rawStored, p.Manifest)
 	}
 	if result == nil {
 		result = map[string]any{}
@@ -1255,13 +1234,20 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 	return result
 }
 
-func (h *Host) hasExecutablePathSetting(manifest pluginport.PluginManifest) bool {
-	for _, s := range manifest.Settings {
-		if s.Key == keyExecutablePath {
-			return true
-		}
+// addDiscoveredExecutable fills the executable path of an ACP plugin from the agents found
+// on the machine, where the user has stored none.
+func addDiscoveredExecutable(result, stored map[string]any, manifest pluginport.PluginManifest) {
+	if _, hasStored := stored[keyExecutablePath]; hasStored || !hasACPPathsSetting(manifest) {
+		return
 	}
-	return false
+	if paths := joinOptionValues(resolveDiscoveredACPOptions()); paths != "" {
+		result[keyExecutablePath] = paths
+	}
+}
+
+// hasACPPathsSetting reports whether the manifest declares a setting that holds ACP agent executables.
+func hasACPPathsSetting(manifest pluginport.PluginManifest) bool {
+	return slices.ContainsFunc(manifest.Settings, isACPPathsSetting)
 }
 
 // GetPluginConfigJSON returns serialized JSON configuration for the specified plugin.
@@ -1377,7 +1363,10 @@ func (h *Host) TogglePluginSetting(ctx context.Context, pluginID, key string) (b
 		return false, errors.New("setting is not a boolean")
 	}
 	current := h.getPluginSettingsLocked(pluginID)
-	curVal, _ := current[key].(bool)
+	curVal := false
+	if value, isCurrentBool := current[key].(bool); isCurrentBool {
+		curVal = value
+	}
 	newVal := !curVal
 	h.mu.RUnlock()
 
@@ -1415,8 +1404,12 @@ func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) er
 	secretNames := h.getActiveSecretNamesLocked(pluginID)
 	stored := h.getStoredSecretsLocked(pluginID)
 	store := h.keyStore
+	performance := h.performance
 	h.mu.RUnlock()
 
+	if performance != "" {
+		values[pluginport.ConfigPerformanceProfile] = performance
+	}
 	secrets, failures := readPluginSecrets(ctx, store, pluginID, secretNames, stored)
 	secretsErr := h.getSecretsError(failures)
 	for name, key := range secrets {
@@ -1450,27 +1443,12 @@ func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) er
 func toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []pluginport.PluginSetting {
 	settings := make([]pluginport.PluginSetting, 0, len(manifestSettings))
 	for _, s := range manifestSettings {
-		defVal := resolveSettingDefault(s)
+		defVal, options := resolveSettingDefaultAndOptions(s)
 		defJSON := ""
 		if defVal != nil {
 			if b, err := json.Marshal(defVal); err == nil {
 				defJSON = string(b)
 			}
-		}
-		var minPtr, maxPtr, stepPtr *float64
-		if s.Min != 0 || s.Max != 0 {
-			minVal := s.Min
-			maxVal := s.Max
-			minPtr = &minVal
-			maxPtr = &maxVal
-		}
-		if s.Step != 0 {
-			stepVal := s.Step
-			stepPtr = &stepVal
-		}
-		options := s.Options
-		if s.Key == keyExecutablePath && len(options) == 0 {
-			options = resolveDiscoveredACPOptions()
 		}
 		settings = append(settings, pluginport.PluginSetting{
 			Key:         s.Key,
@@ -1481,14 +1459,14 @@ func toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []plu
 			Palette:     s.Palette,
 			Icon:        s.Icon,
 			Options:     options,
-			Min:         minPtr,
-			Max:         maxPtr,
-			Step:        stepPtr,
-			ModelsOf:    s.ModelsOf,
+			Min:         s.Min,
+			Max:         s.Max,
+			Step:        s.Step,
 			Replaces:    s.Replaces,
 			OptionsBy:   s.OptionsBy,
 			When:        s.When,
 			Accept:      s.Accept,
+			Multiple:    s.Multiple,
 		})
 	}
 	return settings
@@ -1526,6 +1504,24 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 	return result
 }
 
+// resolveSettingDefaultAndOptions returns the default and the options of a setting as the window shows
+// them. The ACP agents found on the machine are the options of a setting that holds ACP agent
+// executables, and its default where the manifest gives none.
+func resolveSettingDefaultAndOptions(s pluginport.PluginManifestSetting) (any, pluginport.PluginSettingOptions) {
+	if !isACPPathsSetting(s) {
+		return resolveSettingDefault(s), s.Options
+	}
+	discovered := resolveDiscoveredACPOptions()
+	options := s.Options
+	if len(options) == 0 {
+		options = discovered
+	}
+	if paths := joinOptionValues(discovered); s.Default == "" && paths != "" {
+		return paths, options
+	}
+	return s.Default, options
+}
+
 func resolveSettingDefault(s pluginport.PluginManifestSetting) any {
 	if s.Default == "" {
 		switch s.Key {
@@ -1536,10 +1532,6 @@ func resolveSettingDefault(s pluginport.PluginManifestSetting) any {
 		case "ffmpeg":
 			if path, err := exec.LookPath("ffmpeg"); err == nil {
 				return path
-			}
-		case keyExecutablePath:
-			if paths := resolveDiscoveredACPPaths(); paths != "" {
-				return paths
 			}
 		}
 	}
@@ -1558,19 +1550,27 @@ const (
 	keyExecutablePath = "executable_path"
 )
 
-var acpExecutableCandidates = []acpExecutableCandidate{
-	{title: "Claude Code (ACP)", binary: "claude-code-acp"},
-	{title: "Codex (ACP)", binary: "codex-acp"},
-	{title: "Cursor Agent", binary: "cursor-agent", arg: acpSubcommand},
-	{title: "Gemini CLI", binary: "gemini", arg: acpFlag},
-	{title: "Goose", binary: "goose", arg: acpSubcommand},
-	{title: "Kimi CLI", binary: "kimi", arg: acpSubcommand},
-	{title: "OpenCode", binary: "opencode", arg: acpSubcommand},
-	{title: "Qwen Code", binary: "qwen", arg: acpFlag},
+func getAcpExecutableCandidates() []acpExecutableCandidate {
+	return []acpExecutableCandidate{
+		{title: "Claude Code (ACP)", binary: "claude-code-acp"},
+		{title: "Codex (ACP)", binary: "codex-acp"},
+		{title: "Cursor Agent", binary: "cursor-agent", arg: acpSubcommand},
+		{title: "Gemini CLI", binary: "gemini", arg: acpFlag},
+		{title: "Goose", binary: "goose", arg: acpSubcommand},
+		{title: "Kimi CLI", binary: "kimi", arg: acpSubcommand},
+		{title: "OpenCode", binary: "opencode", arg: acpSubcommand},
+		{title: "Qwen Code", binary: "qwen", arg: acpFlag},
+	}
 }
 
-func resolveDiscoveredACPPaths() string {
-	options := resolveDiscoveredACPOptions()
+// isACPPathsSetting reports whether a setting holds ACP agent executables: the executable path
+// setting that takes several paths. An agent plugin of one program declares a single path.
+func isACPPathsSetting(s pluginport.PluginManifestSetting) bool {
+	return s.Key == keyExecutablePath && s.Multiple
+}
+
+// joinOptionValues returns the values of the options, one per line.
+func joinOptionValues(options []pluginport.PluginSettingOption) string {
 	paths := make([]string, 0, len(options))
 	for _, option := range options {
 		paths = append(paths, option.Value)
@@ -1580,7 +1580,7 @@ func resolveDiscoveredACPPaths() string {
 
 func resolveDiscoveredACPOptions() []pluginport.PluginSettingOption {
 	var options []pluginport.PluginSettingOption
-	for _, candidate := range acpExecutableCandidates {
+	for _, candidate := range getAcpExecutableCandidates() {
 		binaryPath, err := exec.LookPath(candidate.binary)
 		if err != nil || binaryPath == "" {
 			continue
@@ -1639,7 +1639,7 @@ func (h *Host) getFailureLocked(pluginID string) *pluginport.PluginFailure {
 // clearFailure removes the recorded activation failures of a plugin and passes
 // the cleared callback the place where the plugin had been suspended.
 func (h *Host) clearFailure(pluginID string, sup *lifecycle.Supervisor) {
-	wasFailed, _ := sup.GetActivationFailure()
+	wasFailed := sup.IsActivationFailed()
 	sup.ResetActivationFailures()
 	if !wasFailed {
 		return
@@ -1690,7 +1690,7 @@ func (h *Host) recordActivationFailure(pluginID string, cause error) *pluginport
 	}
 	policy := h.activation
 	policy.MaxFailures = 1
-	if !sup.RecordActivationFailure(time.Now(), policy, cause) {
+	if !sup.RecordActivationFailure(h.clock.Now(), policy, cause) {
 		return nil
 	}
 	failure := h.newPluginFailureLocked(pluginID, sup, cause)
@@ -1699,7 +1699,7 @@ func (h *Host) recordActivationFailure(pluginID string, cause error) *pluginport
 }
 
 // getRequirements returns the dependencies the plugin is launched with under the settings in force.
-func (h *Host) getRequirements(p manifestfile.DiscoveredPlugin) []pluginport.DependencyRequirement {
+func (h *Host) getRequirements(p manifest.Discovered) []pluginport.DependencyRequirement {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return p.Manifest.GetDependencyRequirements(p.Dir, h.getPluginSettingsLocked(p.Manifest.ID))
@@ -1734,4 +1734,27 @@ func (h *Host) getRequirementIDsLocked(pluginID string) []string {
 		ids = append(ids, req.ID)
 	}
 	return ids
+}
+
+// SetPerformanceProfile records the profile of the performance setting and pushes it to every
+// running plugin when it changed. A plugin that is not running receives it with its first
+// Configure call.
+func (h *Host) SetPerformanceProfile(ctx context.Context, profile string) {
+	h.mu.Lock()
+	if h.performance == profile {
+		h.mu.Unlock()
+		return
+	}
+	h.performance = profile
+	ids := make([]string, 0, len(h.endpoints))
+	for id := range h.endpoints {
+		ids = append(ids, id)
+	}
+	h.mu.Unlock()
+
+	for _, id := range ids {
+		if err := h.NotifyPluginConfig(ctx, id); err != nil {
+			h.reportError(fmt.Errorf("push the performance profile to plugin %s: %w", id, err))
+		}
+	}
 }

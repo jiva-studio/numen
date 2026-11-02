@@ -1,176 +1,149 @@
-import { test, expect } from '../../support/test.js'
+import { test, expect, type Locator, type Page } from '../../support/test.js'
+import {
+  findPassages,
+  openVaultFile,
+  openWorkspace,
+  runCommand,
+  waitForPassage,
+} from '../../support/workspace.js'
+import { copyVaultFile, deleteVaultFiles } from '../../support/media.js'
+import { createUniqueTitle } from '../../support/vault.js'
 
-test.describe('Audio Transcription Pipeline', () => {
-  test('opens audio recording and executes transcription with mock ML', async ({ page }) => {
-    await page.goto('/')
+/** What the mock transcriber of `-debug-mock-ml` returns for every recording. */
+const MOCK_TRANSCRIPT = 'Mock transcribed text for automated test.'
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+/** Words of the text the mock recogniser of `-debug-mock-ml` reads on every page. */
+const MOCK_RECOGNISED_WORDS = 'recovers kinetic energy'
 
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
+/** What the mock proofreader of `-debug-mock-ml` adds to the end of every line it puts right. */
+const PROOFREAD_MARK = '[proofread]'
 
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
+/**
+ * Waits until the search for the words lists a passage of `present` and none of `gone`. The
+ * passage of `present` shows the list is drawn for the words, so the missing one is missing from
+ * an answer and not from a list still loading.
+ */
+const expectPassageGone = async (
+  page: Page,
+  query: string,
+  present: string,
+  gone: string,
+): Promise<void> => {
+  await expect(async () => {
+    await expect((await findPassages(page, query, present)).first()).toBeVisible({
+      timeout: 3_000,
+    })
+    await expect(await findPassages(page, query, gone)).toHaveCount(0)
+  }).toPass({ timeout: 90_000 })
+  await page.keyboard.press('Escape')
+}
 
-    // Verify sample.wav is listed
-    const wavRow = page.locator('[data-tree-row="assets/sample.wav"]')
-    await expect(wavRow).toBeVisible()
+/** Opens a recording of the vault and has it transcribed through the palette. */
+const transcribe = async (page: Page, name: string): Promise<Locator> => {
+  await openWorkspace(page)
+  const tab = await openVaultFile(page, 'assets', name)
+  await runCommand(page, 'Transcribe', /^Transcribe/)
+  await expect(tab.getByText(MOCK_TRANSCRIPT)).toBeVisible({ timeout: 30_000 })
+  return tab
+}
 
-    // Activate sample.wav to open recording tab
-    await wavRow.press('Enter')
+/** Types words after the transcript of the open recording and saves them as an edit of it. */
+const appendToTranscript = async (page: Page, tab: Locator, words: string): Promise<void> => {
+  await tab.getByRole('textbox', { name: 'Transcript' }).click()
+  await page.keyboard.press('Control+End')
+  await page.keyboard.type(words)
+  const saved = page.waitForResponse((response) =>
+    response.url().includes('/numen.v1.TextService/CreateTextEdit'),
+  )
+  await page.keyboard.press('Control+s')
+  expect((await saved).ok()).toBe(true)
+}
 
-    // Verify recording tab is opened
-    await expect(page.locator('.recording__player')).toBeVisible()
+test.describe('the text versions of a file', () => {
+  test.describe.configure({ timeout: 240_000 })
 
-    // If transcribe button is visible, click it; background worker may auto-transcribe with mock ML
-    const transcribeBtn = page.getByRole('button', { name: 'Transcribe' })
-    try {
-      await transcribeBtn.waitFor({ state: 'visible', timeout: 3000 })
-      await transcribeBtn.click()
-    } catch {
-      // Background worker might have already triggered transcription
+  const copies: string[] = []
+
+  test.afterEach(() => {
+    deleteVaultFiles(...copies.splice(0).map((name) => `assets/${name}`))
+  })
+
+  /** Copies a fixture of `assets/` under a name of this test alone, and returns the name. */
+  const copyAsset = (fixture: string, stem: string): string => {
+    const name = `${createUniqueTitle(stem).replace(/ /g, '-')}${fixture.slice(fixture.lastIndexOf('.'))}`
+    copyVaultFile(`assets/${fixture}`, `assets/${name}`)
+    copies.push(name)
+    return name
+  }
+
+  test('Delete transcript takes the transcript away, and the search stops finding it', async ({
+    page,
+  }) => {
+    const control = copyAsset('lecture.wav', 'harbour-control')
+    const deleted = copyAsset('lecture.wav', 'harbour-deleted')
+    const controlTab = await transcribe(page, control)
+    // The search lists a passage once for words the files share, so the control has words of its own.
+    await appendToTranscript(page, controlTab, ' The harbour master logged the tide.')
+    let tab = await transcribe(page, deleted)
+    await waitForPassage(page, 'Mock transcribed', `assets/${control}`)
+    await page.keyboard.press('Escape')
+    await waitForPassage(page, 'Mock transcribed', `assets/${deleted}`)
+    await page.keyboard.press('Escape')
+
+    await runCommand(page, 'Delete transcript', /^Delete transcript$/)
+
+    await expect(tab.getByRole('button', { name: 'Transcribe' })).toBeVisible()
+    await expect(tab.getByText(MOCK_TRANSCRIPT)).toHaveCount(0)
+    await expectPassageGone(page, 'Mock transcribed', `assets/${control}`, `assets/${deleted}`)
+
+    await openWorkspace(page)
+    tab = await openVaultFile(page, 'assets', deleted)
+    await expect(tab.getByRole('button', { name: 'Transcribe' })).toBeVisible()
+    await expect(tab.getByText(MOCK_TRANSCRIPT)).toHaveCount(0)
+  })
+
+  test('Delete recognition takes the text of a scan away, and the search stops finding it', async ({
+    page,
+  }) => {
+    const control = copyAsset('regenerative-braking.pdf', 'braking-control')
+    const deleted = copyAsset('regenerative-braking.pdf', 'braking-deleted')
+    for (const name of [control, deleted]) {
+      await openWorkspace(page)
+      await openVaultFile(page, 'assets', name)
+      await runCommand(page, 'Recognise', /^Recognise/)
+      await waitForPassage(page, MOCK_RECOGNISED_WORDS, `assets/${name}`)
+      await page.keyboard.press('Escape')
     }
 
-    // Mock ML transcribes the audio and generates transcript text
-    const editor = page.locator('.transcript__text')
-    await expect(editor).toBeVisible({ timeout: 15_000 })
+    await runCommand(page, 'Delete recognition', /^Delete recognition$/)
+
+    await expectPassageGone(page, MOCK_RECOGNISED_WORDS, `assets/${control}`, `assets/${deleted}`)
   })
 
-  test('opens mp3 audio file and renders media recording player', async ({ page }) => {
-    await page.goto('/')
+  test('Delete proofreading takes the proofread version away and keeps the transcript', async ({
+    page,
+  }) => {
+    const name = copyAsset('lecture.wav', 'harbour-proofread')
+    let tab = await transcribe(page, name)
+    await runCommand(page, 'Proofread', /^Proofread/)
+    await expect(tab.getByText(/Mock transcribed text.*\[proofread\]/)).toBeVisible({
+      timeout: 90_000,
+    })
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await runCommand(page, 'Delete proofreading', /^Delete proofreading$/)
 
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
+    await expect(tab.getByText(MOCK_TRANSCRIPT)).toBeVisible()
+    await expect(tab.getByText(PROOFREAD_MARK)).toHaveCount(0)
+    await expect(async () => {
+      const passages = await findPassages(page, 'Mock transcribed', `assets/${name}`)
+      await expect(passages.first()).toBeVisible({ timeout: 10_000 })
+      await expect(passages.filter({ hasText: PROOFREAD_MARK })).toHaveCount(0)
+    }).toPass({ timeout: 90_000 })
+    await page.keyboard.press('Escape')
 
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Verify sample.mp3 is listed
-    const mp3Row = page.locator('[data-tree-row="assets/sample.mp3"]')
-    await expect(mp3Row).toBeVisible()
-
-    // Activate sample.mp3
-    await mp3Row.press('Enter')
-
-    // Verify recording player or recording note rendered
-    await expect(
-      page.locator('.recording__player').or(page.locator('.recording__note')),
-    ).toBeVisible({ timeout: 10_000 })
-  })
-
-  test('opens flac audio file and renders media recording player', async ({ page }) => {
-    await page.goto('/')
-
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Verify sample.flac is listed
-    const flacRow = page.locator('[data-tree-row="assets/sample.flac"]')
-    await expect(flacRow).toBeVisible()
-
-    // Activate sample.flac
-    await flacRow.press('Enter')
-
-    // Verify recording player or recording note rendered
-    await expect(
-      page.locator('.recording__player').or(page.locator('.recording__note')),
-    ).toBeVisible({ timeout: 10_000 })
-  })
-
-  test('supports seek and playback interaction on recording player', async ({ page }) => {
-    await page.goto('/')
-
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Open sample.wav
-    const wavRow = page.locator('[data-tree-row="assets/sample.wav"]')
-    await expect(wavRow).toBeVisible()
-    await wavRow.press('Enter')
-
-    const player = page.locator('.recording__player')
-    await expect(player).toBeVisible({ timeout: 10_000 })
-
-    // Interact with player element
-    await player.click()
-    await expect(player).toBeVisible()
-  })
-
-  test('deletes transcript artifact and resets to untranscribed state', async ({ page }) => {
-    await page.goto('/')
-
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Open sample.wav
-    const wavRow = page.locator('[data-tree-row="assets/sample.wav"]')
-    await expect(wavRow).toBeVisible()
-    await wavRow.press('Enter')
-
-    await expect(page.locator('.recording__player')).toBeVisible({ timeout: 10_000 })
-
-    // Wait for transcript
-    const editor = page.locator('.transcript__text')
-    await expect(editor).toBeVisible({ timeout: 15_000 })
-
-    // Open media more actions menu
-    const moreBtn = page.locator('.media__more')
-    if (await moreBtn.isVisible()) {
-      await moreBtn.click()
-      const deleteItem = page.getByText(/Delete transcript/i).first()
-      if (await deleteItem.isVisible()) {
-        await deleteItem.click()
-      }
-    }
-  })
-
-  test('inspects playback duration and controls on audio recording', async ({ page }) => {
-    await page.goto('/')
-
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Open sample.wav
-    const wavRow = page.locator('[data-tree-row="assets/sample.wav"]')
-    await expect(wavRow).toBeVisible()
-    await wavRow.press('Enter')
-
-    const player = page.locator('.recording__player')
-    await expect(player).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('.media__actions')).toBeVisible({ timeout: 10_000 })
+    await openWorkspace(page)
+    tab = await openVaultFile(page, 'assets', name)
+    await expect(tab.getByText(MOCK_TRANSCRIPT)).toBeVisible()
+    await expect(tab.getByText(PROOFREAD_MARK)).toHaveCount(0)
   })
 })

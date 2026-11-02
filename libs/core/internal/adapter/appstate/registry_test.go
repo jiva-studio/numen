@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/appstate"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -400,9 +401,13 @@ func TestAFailedSavePreservesTheOldRegistryIntact(t *testing.T) {
 	if err := os.Chmod(dir, 0o500); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = os.Chmod(dir, 0o700) })
+	t.Cleanup(func() {
+		if err := os.Chmod(dir, 0o700); err != nil {
+			t.Error(err)
+		}
+	})
 	if probe, err := os.CreateTemp(dir, "probe"); err == nil {
-		probe.Close()
+		testsupport.Close(t, probe)
 		t.Skip("this account writes into a folder it has no leave to write into")
 	}
 

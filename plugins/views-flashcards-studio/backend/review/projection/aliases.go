@@ -2,6 +2,8 @@
 package projection
 
 import (
+	"time"
+
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
@@ -80,15 +82,34 @@ const (
 	LearnsUnasked = review.LearnsUnasked
 )
 
-// The variables below are those of the review package.
-var (
-	DefaultCost       = review.DefaultCost
-	MinutesADayBounds = review.MinutesADayBounds
-	RetentionBounds   = review.RetentionBounds
-	NewDueByDay       = review.NewDueByDay
-	NewFSRSAt         = review.NewFSRSAt
-	GetSpentUnder     = review.GetSpentUnder
-	GetFullRecall     = review.GetFullRecall
-	GetModelledRecall = review.GetModelledRecall
-	Recall            = review.Recall
-)
+// GetDefaultCost is review.GetDefaultCost.
+func GetDefaultCost() AnswerCost { return review.GetDefaultCost() }
+
+// GetMinutesADayBounds is review.GetMinutesADayBounds.
+func GetMinutesADayBounds() Bounds { return review.GetMinutesADayBounds() }
+
+// GetRetentionBounds is review.GetRetentionBounds.
+func GetRetentionBounds() Bounds { return review.GetRetentionBounds() }
+
+// NewDueByDay is review.NewDueByDay.
+func NewDueByDay(d Day) *DueByDay { return review.NewDueByDay(d) }
+
+// NewFSRSAt is review.NewFSRSAt.
+func NewFSRSAt(retention float64) review.FSRS { return review.NewFSRSAt(retention) }
+
+// GetSpentUnder is review.GetSpentUnder.
+func GetSpentUnder(
+	d Day, day string, answers []Answer,
+	presetMap map[ReviewCardID]string, counts map[string]BudgetUnit,
+) map[string]Spent {
+	return review.GetSpentUnder(d, day, answers, presetMap, counts)
+}
+
+// GetFullRecall is review.GetFullRecall.
+func GetFullRecall(c Schedule, now time.Time) float64 { return review.GetFullRecall(c, now) }
+
+// GetModelledRecall is review.GetModelledRecall.
+func GetModelledRecall(c Schedule, now time.Time) float64 { return review.GetModelledRecall(c, now) }
+
+// Recall is review.Recall.
+func Recall(away time.Duration, stability float64) float64 { return review.Recall(away, stability) }

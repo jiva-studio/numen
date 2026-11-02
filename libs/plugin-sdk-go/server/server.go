@@ -25,45 +25,37 @@ import (
 // tokenVar names the variable holding the token the host authenticates with.
 const tokenVar = "NUMEN_PLUGIN_TOKEN"
 
-type defaultFlags struct {
-	mu   sync.Mutex
-	port int
+func parseDefaultFlags() int {
+	port := readFlagPort()
+	if port == 0 {
+		port = readEnvPort()
+	}
+	return port
 }
 
-var (
-	flags       defaultFlags
-	exitProcess           = os.Exit
-	exitOutput  io.Writer = os.Stderr
-)
-
-func parseDefaultFlags() int {
-	flags.mu.Lock()
-	defer flags.mu.Unlock()
-
-	var port int
-
-	if flag.Parsed() {
-		if f := flag.CommandLine.Lookup("port"); f != nil {
-			if p, err := strconv.Atoi(f.Value.String()); err == nil {
-				port = p
-			}
-		}
-	} else {
-		if f := flag.CommandLine.Lookup("port"); f == nil {
-			flag.IntVar(&flags.port, "port", 0, "Port to listen on")
+func readFlagPort() int {
+	if !flag.Parsed() {
+		if flag.CommandLine.Lookup("port") == nil {
+			flag.Int("port", 0, "Port to listen on")
 		}
 		flag.Parse()
-		port = flags.port
 	}
-
-	if port == 0 {
-		if envPort := os.Getenv("NUMEN_PLUGIN_PORT"); envPort != "" {
-			if p, err := strconv.Atoi(envPort); err == nil {
-				port = p
-			}
-		}
+	f := flag.CommandLine.Lookup("port")
+	if f == nil {
+		return 0
 	}
+	port, err := strconv.Atoi(f.Value.String())
+	if err != nil {
+		return 0
+	}
+	return port
+}
 
+func readEnvPort() int {
+	port, err := strconv.Atoi(os.Getenv("NUMEN_PLUGIN_PORT"))
+	if err != nil {
+		return 0
+	}
 	return port
 }
 
@@ -153,7 +145,8 @@ type Server struct {
 	onEvent           EventHandler
 
 	closeOnce sync.Once
-	closers   []func()
+	closers   []func() error
+	closeErr  error
 
 	lifecycle   *LifecycleServer
 	interceptor *AuthInterceptor
@@ -178,8 +171,7 @@ func NewLinkedHandler(vars map[string]string, mount func(*Server) error) (http.H
 	}
 	s := newServer(0, token, nil, true)
 	if err := mount(s); err != nil {
-		s.Close()
-		return nil, err
+		return nil, errors.Join(err, s.Close())
 	}
 	return s.mux, nil
 }
@@ -187,17 +179,26 @@ func NewLinkedHandler(vars map[string]string, mount func(*Server) error) (http.H
 // Run starts a server, mounts services, and serves until shutdown.
 // When mounting or serving fails, Run writes the error to standard error and exits with code 1.
 func Run(mount func(*Server) error, opts ...Option) {
+	if code := run(os.Stderr, mount, opts...); code != 0 {
+		os.Exit(code)
+	}
+}
+
+// run starts a server, mounts services and serves until shutdown. It returns the exit code: 0 after
+// a clean shutdown, 1 after an error written to errOut, and 2 when that write fails.
+func run(errOut io.Writer, mount func(*Server) error, opts ...Option) int {
 	s := New(opts...)
-	if err := mount(s); err != nil {
-		fmt.Fprintf(exitOutput, "server error: %v\n", err)
-		exitProcess(1)
-		return
+	err := mount(s)
+	if err == nil {
+		err = s.Serve()
 	}
-	if err := s.Serve(); err != nil {
-		fmt.Fprintf(exitOutput, "server error: %v\n", err)
-		exitProcess(1)
-		return
+	if err == nil {
+		return 0
 	}
+	if _, writeErr := fmt.Fprintf(errOut, "server error: %v\n", err); writeErr != nil {
+		return 2
+	}
+	return 1
 }
 
 func newServer(port int, token string, opts []Option, linked bool) *Server {
@@ -222,7 +223,7 @@ func newServer(port int, token string, opts []Option, linked bool) *Server {
 	}
 	s.lifecycle = NewLifecycleServer(make(chan struct{}), lifecycleOpts...)
 
-	s.Register(numenv1connect.NewPluginLifecycleServiceHandler(s.lifecycle, s.HandlerOptions()...))
+	s.Register(numenv1connect.NewPluginLifecycleServiceHandler(lifecycleHandler{state: s.lifecycle}, s.HandlerOptions()...))
 	if s.onEvent != nil {
 		s.Register(numenv1connect.NewPluginEventServiceHandler(eventServer{handle: s.onEvent}, s.HandlerOptions()...))
 	}
@@ -232,17 +233,19 @@ func newServer(port int, token string, opts []Option, linked bool) *Server {
 
 // OnClose adds what Close runs. A server that serves on a port runs it when Serve returns; a linked
 // server runs it when the host shuts the plugin down.
-func (s *Server) OnClose(fn func()) {
+func (s *Server) OnClose(fn func() error) {
 	s.closers = append(s.closers, fn)
 }
 
-// Close runs what OnClose added, once, last added first.
-func (s *Server) Close() {
+// Close runs what OnClose added, once, last added first. It returns the joined errors of the
+// functions; a later call returns the same result without running them again.
+func (s *Server) Close() error {
 	s.closeOnce.Do(func() {
 		for _, fn := range slices.Backward(s.closers) {
-			fn()
+			s.closeErr = errors.Join(s.closeErr, fn())
 		}
 	})
+	return s.closeErr
 }
 
 // Register mounts a service handler on the server multiplexer.
@@ -291,15 +294,24 @@ func (s *Server) SetUpdateConfig(fn func(values map[string]string)) {
 
 // Listen binds the TCP listener and records the allocated port.
 func (s *Server) Listen() (int, error) {
+	return s.listen(context.Background())
+}
+
+func (s *Server) listen(ctx context.Context) (int, error) {
 	if s.listener != nil {
 		return s.actualPort, nil
 	}
-	ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", s.port))
+	var listenConfig net.ListenConfig
+	ln, err := listenConfig.Listen(ctx, "tcp", fmt.Sprintf("127.0.0.1:%d", s.port))
 	if err != nil {
 		return 0, fmt.Errorf("listen on 127.0.0.1:%d: %w", s.port, err)
 	}
+	addr, isTCP := ln.Addr().(*net.TCPAddr)
+	if !isTCP {
+		return 0, errors.Join(fmt.Errorf("listener address %s is not a TCP address", ln.Addr()), ln.Close())
+	}
 	s.listener = ln
-	s.actualPort = ln.Addr().(*net.TCPAddr).Port
+	s.actualPort = addr.Port
 	return s.actualPort, nil
 }
 
@@ -317,9 +329,111 @@ func (s *Server) Serve() error {
 }
 
 // ServeContext runs the HTTP/2 server until context cancellation or shutdown is triggered.
-func (s *Server) ServeContext(ctx context.Context) error {
-	defer s.Close()
+func (s *Server) ServeContext(ctx context.Context) (err error) {
+	defer func() {
+		err = errors.Join(err, s.Close())
+	}()
 
+	if err := s.authenticate(); err != nil {
+		return err
+	}
+	if _, err := s.listen(ctx); err != nil {
+		return err
+	}
+	defer func() {
+		if closeErr := s.closeListener(); closeErr != nil {
+			err = errors.Join(err, closeErr)
+		}
+	}()
+
+	httpSrv := s.newHTTPServer()
+
+	serveErrCh := make(chan error, 1)
+	go serveHTTP(httpSrv, s.listener, serveErrCh)
+
+	if err := s.announceReady(); err != nil {
+		return err
+	}
+
+	stdinEOF := s.watchStdin()
+	sigCh, stopSignals := s.notifySignals()
+	defer stopSignals()
+
+	served, err := waitForStop(ctx, s.lifecycle.ShutdownTrigger(), sigCh, stdinEOF, serveErrCh)
+	if served {
+		return err
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.shutdownTimeout)
+	defer cancel()
+	if err := httpSrv.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf("shutdown: %w", err)
+	}
+
+	return nil
+}
+
+// newHTTPServer returns the server for plain TCP on loopback, speaking HTTP/1 and unencrypted HTTP/2.
+func (s *Server) newHTTPServer() *http.Server {
+	var protocols http.Protocols
+	protocols.SetHTTP1(true)
+	protocols.SetUnencryptedHTTP2(true)
+	return &http.Server{
+		Handler:           s.mux,
+		ReadHeaderTimeout: s.readHeaderTimeout,
+		Protocols:         &protocols,
+	}
+}
+
+// notifySignals subscribes to the configured signals and returns the channel and the function that
+// ends the subscription.
+func (s *Server) notifySignals() (<-chan os.Signal, func()) {
+	sigCh := make(chan os.Signal, 1)
+	if len(s.signals) == 0 {
+		return sigCh, func() {}
+	}
+	signal.Notify(sigCh, s.signals...)
+	return sigCh, func() { signal.Stop(sigCh) }
+}
+
+// waitForStop blocks until the context ends, a signal arrives, a shutdown is triggered or standard
+// input closes, and then reports served false. It reports served true with the result when the HTTP
+// server ended on its own first.
+func waitForStop(
+	ctx context.Context, shutdown <-chan struct{}, sigCh <-chan os.Signal, stdinEOF <-chan struct{}, serveErrCh <-chan error,
+) (served bool, err error) {
+	select {
+	case <-ctx.Done():
+	case <-sigCh:
+	case <-shutdown:
+	case <-stdinEOF:
+	case err := <-serveErrCh:
+		if err != nil {
+			return true, fmt.Errorf("serve: %w", err)
+		}
+		return true, nil
+	}
+	return false, nil
+}
+
+// serveHTTP serves on listener, sends a failure other than a shutdown to errs, and closes errs.
+func serveHTTP(httpSrv *http.Server, listener net.Listener, errs chan<- error) {
+	if err := httpSrv.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		errs <- err
+	}
+	close(errs)
+}
+
+// closeListener closes the listener. A listener the HTTP server already closed is not an error.
+func (s *Server) closeListener() error {
+	if err := s.listener.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+		return fmt.Errorf("close listener: %w", err)
+	}
+	return nil
+}
+
+// authenticate reads the token from standard input when none is configured and exports it.
+func (s *Server) authenticate() error {
 	if s.token == "" && s.stdin != nil {
 		line, err := readTokenLine(s.stdin)
 		if err != nil {
@@ -331,77 +445,40 @@ func (s *Server) ServeContext(ctx context.Context) error {
 	if s.token == "" {
 		return errors.New("empty auth token")
 	}
-	_ = os.Setenv(tokenVar, s.token)
-
-	if _, err := s.Listen(); err != nil {
-		return err
+	if err := os.Setenv(tokenVar, s.token); err != nil {
+		return fmt.Errorf("set %s: %w", tokenVar, err)
 	}
-	defer s.listener.Close()
+	return nil
+}
 
-	// plain TCP on loopback.
-	var protocols http.Protocols
-	protocols.SetHTTP1(true)
-	protocols.SetUnencryptedHTTP2(true)
-	httpSrv := &http.Server{
-		Handler:           s.mux,
-		ReadHeaderTimeout: s.readHeaderTimeout,
-		Protocols:         &protocols,
-	}
-
-	serveErrCh := make(chan error, 1)
-	go func() {
-		if err := httpSrv.Serve(s.listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			serveErrCh <- err
-		}
-		close(serveErrCh)
-	}()
-
-	if s.stdout != nil {
-		fmt.Fprintf(s.stdout, "NUMEN_READY port=%d\n", s.actualPort)
-		if syncer, ok := s.stdout.(interface{ Sync() error }); ok {
-			_ = syncer.Sync()
-		}
-	}
-
-	stdinEOF := make(chan struct{})
-	if s.stdin != nil {
-		go func() {
-			buf := make([]byte, 1)
-			for {
-				n, err := s.stdin.Read(buf)
-				if err != nil || n == 0 {
-					close(stdinEOF)
-					return
-				}
-			}
-		}()
-	}
-
-	sigCh := make(chan os.Signal, 1)
-	if len(s.signals) > 0 {
-		signal.Notify(sigCh, s.signals...)
-		defer signal.Stop(sigCh)
-	}
-
-	select {
-	case <-ctx.Done():
-	case <-sigCh:
-	case <-s.lifecycle.ShutdownTrigger():
-	case <-stdinEOF:
-	case err := <-serveErrCh:
-		if err != nil {
-			return fmt.Errorf("serve: %w", err)
-		}
+// announceReady writes the handshake line.
+func (s *Server) announceReady() error {
+	if s.stdout == nil {
 		return nil
 	}
-
-	shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.shutdownTimeout)
-	defer cancel()
-	if err := httpSrv.Shutdown(shutdownCtx); err != nil {
-		return fmt.Errorf("shutdown: %w", err)
+	if _, err := fmt.Fprintf(s.stdout, "NUMEN_READY port=%d\n", s.actualPort); err != nil {
+		return fmt.Errorf("write ready line: %w", err)
 	}
-
 	return nil
+}
+
+// watchStdin returns a channel closed when standard input reaches end of file.
+func (s *Server) watchStdin() <-chan struct{} {
+	stdinEOF := make(chan struct{})
+	if s.stdin == nil {
+		return stdinEOF
+	}
+	go func() {
+		buf := make([]byte, 1)
+		for {
+			n, err := s.stdin.Read(buf)
+			if err != nil || n == 0 {
+				close(stdinEOF)
+				return
+			}
+		}
+	}()
+	return stdinEOF
 }
 
 func readTokenLine(r io.Reader) (string, error) {

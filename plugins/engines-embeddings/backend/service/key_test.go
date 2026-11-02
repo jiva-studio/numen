@@ -1,11 +1,11 @@
 package service
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/embedding"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
@@ -17,7 +17,7 @@ func TestConfigure_UsesConfiguredKeyNotEnvironment(t *testing.T) {
 	var auth []string
 	service := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		auth = append(auth, r.Header.Get("Authorization"))
-		_ = json.NewEncoder(w).Encode(map[string]any{"data": []map[string]any{{"embedding": []float32{0.5, 0.25}, "index": 0}}})
+		encodeJSON(t, w, map[string]any{"data": []map[string]any{{"embedding": []float32{0.5, 0.25}, "index": 0}}})
 	}))
 	defer service.Close()
 
@@ -32,11 +32,11 @@ func TestConfigure_UsesConfiguredKeyNotEnvironment(t *testing.T) {
 
 	configure(map[string]string{"provider": "custom", "baseUrl": service.URL})
 	if key, _ := emb.getService(); key != "" {
-		t.Fatalf("key = %q while Configure handed over none", key)
+		t.Fatalf("key = %q while Configure passed none", key)
 	}
 
 	configure(map[string]string{"provider": "custom", "baseUrl": service.URL, server.SecretAPIKey: "host-key"})
-	vectors, err := emb.EmbedTexts(t.Context(), []string{"a fixture sentence"})
+	vectors, err := emb.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a fixture sentence"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,7 +44,7 @@ func TestConfigure_UsesConfiguredKeyNotEnvironment(t *testing.T) {
 		t.Errorf("vectors = %v, want the one the service answered", vectors)
 	}
 	if len(auth) != 1 || auth[0] != "Bearer host-key" {
-		t.Errorf("the service was asked with %v, want only the key Configure handed over", auth)
+		t.Errorf("the service was asked with %v, want only the key Configure passed", auth)
 	}
 
 	configure(map[string]string{"provider": "custom", "baseUrl": service.URL, server.SecretAPIKey: ""})

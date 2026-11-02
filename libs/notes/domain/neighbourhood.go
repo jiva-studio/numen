@@ -42,32 +42,25 @@ type NoteRef struct {
 	ID string
 }
 
-// Neighbour is a note, its location, and the label of the link that relates
-// it.
+// Neighbour is a note and its relation to the note in focus. The
+// records that join it to other notes are in Neighbourhood.Connections.
 type Neighbour struct {
 	NoteRef
 	Relation Relation
-
-	// Label is the text written on the link.
-	Label string
-
-	// ReverseLabel is what the other note wrote on its link back, when IsMutual is true.
-	ReverseLabel string
-
-	// IsMutual is set when both notes name this relationship, each in its own
-	// words. Label is then the word the note in focus wrote for it.
-	IsMutual bool
-
-	// Parent is the note the relationship runs from, when that is not the one
-	// in focus. A sibling is another child of a shared parent, and which parent
-	// is a fact about the vault.
-	Parent string
 }
 
 // Neighbourhood is one note and everything joined to it, seen from that note.
 type Neighbourhood struct {
 	Focus   NoteRef
 	Related []Neighbour
+
+	// Connections holds one connection for every pair of drawn notes that a
+	// record joins: the focus with a neighbour, and two neighbours with each
+	// other. A hierarchical connection runs from the parent (A) to its child
+	// (B). A connection of jumps runs from the later drawn note (A) to the
+	// earlier one (B). Records that contradict the direction or the kind of
+	// the connection are left out.
+	Connections []Connection
 }
 
 // AddNeighbour adds a note under its relation. The focus is not related to itself.

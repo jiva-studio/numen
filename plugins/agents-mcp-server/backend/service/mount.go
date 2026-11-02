@@ -22,8 +22,8 @@ func Mount(s *server.Server) error {
 		return err
 	}
 
-	s.OnClose(func() {
-		_ = srv.Close(context.Background())
+	s.OnClose(func() error {
+		return srv.Close(context.Background())
 	})
 
 	s.SetConfigure(func(ctx context.Context, values map[string]string) error {
@@ -36,10 +36,9 @@ func Mount(s *server.Server) error {
 		}
 
 		newCfg := readConfig(values)
-		_ = srv.Rebind(ctx, newCfg)
-
-		_ = srv.aggregator.SyncTools(ctx)
-		return nil
+		err := srv.Rebind(ctx, newCfg)
+		reportSyncError(srv.aggregator.SyncTools(ctx))
+		return err
 	})
 
 	s.Register("/sse", srv.Handler())
@@ -48,7 +47,7 @@ func Mount(s *server.Server) error {
 	s.Register("/mcp/", srv.Handler())
 	s.Register("/messages", srv.Handler())
 	s.Register("/messages/", srv.Handler())
-	s.Register("/numen.v1.McpServerService/", srv.Handler())
+	s.Register("/md.numen.agents.mcp.server/", srv.Handler())
 
 	return srv.Start()
 }

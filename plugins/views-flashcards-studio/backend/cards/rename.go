@@ -2,6 +2,8 @@ package cards
 
 import (
 	"context"
+	"crypto/rand"
+	"errors"
 	"fmt"
 	"math"
 
@@ -62,7 +64,7 @@ type RenameField struct {
 	// 	// links resolves the wikilink by which a card names its card model, which
 	// 	// identifies the card model that generates the card.
 	links ports.LinkQueries
-	index note.Levels
+	index note.IndexUpdater
 	// now is when this is happening. An identifier written here carries it.
 	now ports.Clock
 }
@@ -77,20 +79,25 @@ type TypeQueries interface {
 	GetPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
 }
 
-// NewRenameField renames a card model's field across its decks, refusing a vault of more than maxDecks decks.
+// NewRenameField renames a card model's field across its decks, taking a vault of any number of decks.
 func NewRenameField(
 	readers ports.VaultReaders,
 	writers ports.VaultWriters,
 	notes TypeQueries,
 	links ports.LinkQueries,
-	index note.Levels,
+	index note.IndexUpdater,
 	now ports.Clock,
-	maxDecks int,
 ) RenameField {
 	return RenameField{
 		readers: readers, writers: writers, notes: notes, links: links,
-		index: index, now: now, maxDecks: maxDecks,
+		index: index, now: now, maxDecks: UnboundedDecks,
 	}
+}
+
+// WithMaxDecks returns a copy of RenameField that refuses a vault of more than maxDecks decks.
+func (u RenameField) WithMaxDecks(maxDecks int) RenameField {
+	u.maxDecks = maxDecks
+	return u
 }
 
 // WithWriters returns a copy of RenameField with the given VaultWriters.
@@ -107,7 +114,9 @@ func (u RenameField) WithNotes(notes TypeQueries) RenameField {
 
 // createIdentifier is the identifier a file this rename writes is to carry
 // where it carries none.
-func (u RenameField) createIdentifier() string { return ulid.New(u.now()) }
+func (u RenameField) createIdentifier() (string, error) {
+	return ulid.NewGenerator(rand.Reader).NewID(u.now.Now())
+}
 
 // Execute renames the field, in the card model first and then in the vault.
 //
@@ -126,7 +135,7 @@ func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Re
 		return out, err
 	}
 	content := append([]string{in.CardModel}, out.Decks...)
-	return out, note.WrapUnlevelled(u.index(ctx, v, content), content...)
+	return out, note.WrapIndexOutdated(u.index(ctx, v, content), content...)
 }
 
 // MaxDecksPerRename is the most decks an agent's rename reads and writes at once.
@@ -154,12 +163,12 @@ func (u RenameField) checkDeckCount(ctx context.Context, v domain.Vault) error {
 
 // rename is the whole of the writing, under this vault's write lock from before
 // the card model is read until after the last deck is replaced.
-func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (RenameResult, error) {
+func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (result RenameResult, err error) {
 	release, err := u.writers.Lock(ctx, v)
 	if err != nil {
 		return RenameResult{}, err
 	}
-	defer release()
+	defer func() { err = errors.Join(err, release()) }()
 
 	reader, err := u.readers.Open(v)
 	if err != nil {
@@ -239,7 +248,11 @@ func (u RenameField) writeCardModelField(
 // writeIdentifier writes an identifier into a file that carries none, which is
 // what the application changing what a note holds does.
 func (u RenameField) writeIdentifier(into func(string) (bool, error)) error {
-	_, err := into(u.createIdentifier())
+	identifier, err := u.createIdentifier()
+	if err != nil {
+		return err
+	}
+	_, err = into(identifier)
 	return err
 }
 

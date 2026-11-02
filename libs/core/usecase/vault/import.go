@@ -21,9 +21,9 @@ type ImportFailure struct {
 // ImportResult is what a drop came to: what the vault now holds, and what it
 // does not.
 type ImportResult struct {
-	// Landed is each file and folder that arrived, by the path the vault files
+	// Imported is each file and folder that was copied in, by the path the vault files
 	// it under.
-	Landed []string
+	Imported []string
 	// Errors is each file that stayed where it was.
 	Errors []ImportFailure
 }
@@ -119,7 +119,7 @@ func (u Import) importFolder(
 	if err := writer.MakeFolder(ctx, to); err != nil {
 		return err
 	}
-	result.Landed = append(result.Landed, to)
+	result.Imported = append(result.Imported, to)
 	entries, err := u.files.List(ctx, from)
 	if err != nil {
 		return err
@@ -135,16 +135,16 @@ func (u Import) importFolder(
 // importFile copies the file at from to a path in the vault.
 func (u Import) importFile(
 	ctx context.Context, writer vaultport.VaultWriter, from, to string, result *ImportResult,
-) error {
+) (err error) {
 	file, err := u.files.Open(ctx, from)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer closeAndJoin(&err, file)
 	if err := writer.Import(ctx, to, file); err != nil {
 		return err
 	}
-	result.Landed = append(result.Landed, to)
+	result.Imported = append(result.Imported, to)
 	return nil
 }
 

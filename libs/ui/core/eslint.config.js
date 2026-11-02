@@ -7,8 +7,21 @@
 
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'
-import { createBaseConfig, lifetimes } from '../../../tools/lint-layers/base-eslint.mjs'
+import {
+  createBaseConfig,
+  createDeterminismSelectors,
+  createPureSegmentConfig,
+  lifetimes,
+} from '../../../tools/lint-layers/base-eslint.mjs'
 import { createLayerElements, createLayerPolicies } from '../../../tools/lint-layers/layers.mjs'
+
+/** The one function declaration that reads the wall clock. */
+const clockFunction = 'getNow'
+
+/** The one function declaration that reads the monotonic clock. */
+const monotonicFunction = 'getMonotonicNow'
+
+const clockFunctions = { clockFunction, monotonicFunction }
 
 const layerOrder = ['shared', 'features', 'screens']
 const sliceLayers = ['features']
@@ -47,7 +60,7 @@ const domainImports = [
 ]
 
 export default tseslint.config(
-  ...createBaseConfig(import.meta.dirname),
+  ...createBaseConfig(import.meta.dirname, clockFunctions),
 
   {
     languageOptions: {
@@ -122,14 +135,7 @@ export default tseslint.config(
   // the machine what time it is, what the window measures, or what comes next.
   {
     files: ['src/**/*.ts'],
-    ignores: [
-      'src/**/*.test.ts',
-      'src/**/*.stories.ts',
-      'src/**/fixtures/**',
-      // The port itself.
-      'src/shared/lib/time/clock.ts',
-      'src/shared/lib/dom.ts',
-    ],
+    ignores: ['src/**/*.test.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**'],
     rules: {
       'no-restricted-globals': [
         'error',
@@ -138,42 +144,9 @@ export default tseslint.config(
           message: `${name} has a lifetime a test must hold still — take ${port}`,
         })),
       ],
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: 'MemberExpression[object.name="Date"][property.name="now"]',
-          message: 'the clock is a port — take the now a Clock carries',
-        },
-        {
-          selector: 'NewExpression[callee.name="Date"][arguments.length=0]',
-          message: 'the clock is a port — take the now a Clock carries',
-        },
-        {
-          selector: 'MemberExpression[object.name="Math"][property.name="random"]',
-          message: 'the same input gives the same numbers on any machine on any day',
-        },
-        {
-          selector: 'MemberExpression[property.name="getBoundingClientRect"]',
-          message: 'what the window measures is a port — take it as a value',
-        },
-        {
-          selector: 'MemberExpression[property.name="matchMedia"]',
-          message: 'a reader who asks for less motion is answered in CSS',
-        },
-      ],
+      'no-restricted-syntax': ['error', ...createDeterminismSelectors(clockFunctions)],
     },
   },
 
-  {
-    files: ['vitest.setup.ts'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'off',
-      '@typescript-eslint/no-floating-promises': 'off',
-      '@typescript-eslint/no-misused-promises': 'off',
-      '@typescript-eslint/await-thenable': 'off',
-      'no-console': 'off',
-      'require-yield': 'off',
-    },
-  },
+  createPureSegmentConfig(clockFunctions),
 )

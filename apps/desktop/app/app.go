@@ -3,6 +3,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -57,12 +58,16 @@ func Run(opts ...*Options) error {
 	if len(opts) > 0 && opts[0] != nil {
 		opt = opts[0]
 	} else {
-		opt = parseFlags()
+		parsed, err := parseFlags()
+		if err != nil {
+			return err
+		}
+		opt = parsed
 	}
 
 	if opt.ShowVersion {
-		fmt.Fprintln(os.Stdout, version.GetVersionLine(appName))
-		return nil
+		_, err := fmt.Fprintln(os.Stdout, version.GetVersionLine(appName))
+		return err
 	}
 
 	cfg := makeConfig(os.Stderr)
@@ -80,16 +85,20 @@ func Run(opts ...*Options) error {
 		textScale:      opt.TextScale,
 	}
 
-	if err := run(cfg, opt.Vault, scaleFlags, &opt.Debug); err != nil {
-		if !opt.Debug.isServingHTTP() {
-			failWithDialog(cfg, err)
-		}
+	err := run(cfg, opt.Vault, scaleFlags, &opt.Debug)
+	if err == nil {
+		return nil
+	}
+	if opt.Debug.isServingHTTP() {
 		return err
 	}
-	return nil
+	if dialogErr := failWithDialog(cfg, err); dialogErr != nil {
+		return errors.Join(err, dialogErr)
+	}
+	return err
 }
 
-func parseFlags() *Options {
+func parseFlags() (*Options, error) {
 	opts := NewOptions()
 	fs := flag.CommandLine
 	if !fs.Parsed() {
@@ -98,25 +107,31 @@ func parseFlags() *Options {
 		fs.StringVar(&opts.Vault, "vault", "",
 			"the vault to open: a name, a path or an identity; the one opened last by default")
 		fs.StringVar(&opts.McpAddr, "mcp-addr", DefaultAgentAddr,
-			"where agents reach this vault; anything but a loopback address opens it to the network")
-		fs.BoolVar(&opts.NoMcp, "no-mcp", false, "do not let agents reach this vault")
+			"address agents connect to; any address other than loopback opens the vault to the network")
+		fs.BoolVar(&opts.NoMcp, "no-mcp", false, "do not let agents connect to this vault")
 		fs.Float64Var(&opts.InterfaceScale, "interface-scale", 0,
-			"how large the interface is drawn, 1 being as designed; this launch alone")
+			"scale of the interface (controls and spacing); 1 is the default; this launch only")
 		fs.Float64Var(&opts.TextScale, "text-scale", 0,
-			"how large the text a person reads is set, 1 being as designed; this launch alone")
+			"scale of note and book text; 1 is the default; this launch only")
 		fs.BoolVar(&opts.RebuildIndex, "rebuild-index", false,
-			"read every file and put it in the index again, whatever the index remembers")
+			"read every file again and rewrite its index entries, whatever the index already holds")
 		fs.BoolVar(&opts.SafeMode, "safe-mode", false, "disable plugins for emergency recovery")
-		fs.BoolVar(&opts.ShowVersion, "version", false, "say what this build is and stop")
+		fs.BoolVar(&opts.ShowVersion, "version", false, "print the version and exit")
 		RegisterDebugFlags(fs, opts)
-		_ = fs.Parse(os.Args[1:])
+		if err := fs.Parse(os.Args[1:]); err != nil {
+			return nil, err
+		}
 	}
-	return opts
+	return opts, nil
 }
 
 func makeConfig(out io.Writer) container.Config {
 	cfg := platform.GetConfig()
-	cfg.ErrorHandler = func(err error) { fmt.Fprintln(out, "numen:", err) }
+	cfg.ErrorHandler = func(err error) {
+		if _, writeErr := fmt.Fprintln(out, "numen:", err); writeErr != nil {
+			return
+		}
+	}
 	return cfg
 }
 
@@ -135,7 +150,7 @@ func (s scaleSettings) validate() error {
 }
 
 func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts *DebugOptions) error {
-	if err := debugOpts.apply(cfg); err != nil {
+	if err := debugOpts.apply(&cfg); err != nil {
 		return err
 	}
 	if err := debugOpts.ensureVault(cfg, vault); err != nil {
@@ -148,7 +163,9 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 		return err
 	}
 
-	setSchemasDir()
+	if err := setSchemasDir(); err != nil {
+		return err
+	}
 
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
@@ -183,7 +200,7 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 	)
 
 	defer func() {
-		going.flushVault()
+		going.flushVault(ctx)
 		shutdownSeq.Run()
 	}()
 
@@ -201,7 +218,7 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 	app := makeApplication(installation, pages, shutdownSeq, going, observed)
 	window = makeWindow(app, installation)
 	tracker.addWindow()
-	connectWindow(ctx, app, cfg, window, installation, tracker, going)
+	connectWindow(ctx, app, window, installation, windowHooks{cfg: cfg, tracker: tracker, going: going})
 
 	window.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
 		if !handleWindowClosing(ctx, tracker, going, observed, installation.WaitForFlush, window.Close) {
@@ -234,8 +251,7 @@ func openInstallation(
 	}
 	versions, err := cfg.NewTextVersions(db)
 	if err != nil {
-		_ = db.Close()
-		return shownInstallation{}, err
+		return shownInstallation{}, errors.Join(err, db.Close())
 	}
 	cfg.TextVersions = versions
 	made := container.NewEditorAssembly(cfg, registry, db)
@@ -313,9 +329,16 @@ func makeSecondaryWindow(
 	return app.Window.NewWithOptions(opts)
 }
 
+// windowHooks holds what a window needs to close and to follow the vault.
+type windowHooks struct {
+	cfg     container.Config
+	tracker *windowTracker
+	going   *vaultFlush
+}
+
 func connectWindow(
-	ctx context.Context, app *application.App, cfg container.Config, window *application.WebviewWindow, opened *editor.Installation,
-	tracker *windowTracker, going *vaultFlush,
+	ctx context.Context, app *application.App, window *application.WebviewWindow, opened *editor.Installation,
+	hooks windowHooks,
 ) {
 	opened.Services.SetFolderDialog(&folderDialog{window: window})
 
@@ -327,21 +350,21 @@ func connectWindow(
 	})
 
 	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
-		cfg.SetPluginVaultPath(v.Path)
+		hooks.cfg.SetPluginVaultPath(v.Path)
 		err := opened.Show(ctx, v)
 		naming(opened.State.GetOpenTabs())
 		return err
 	}
 
 	opened.State.DetachTab = func(_ context.Context, tabID string, x, y int) error {
-		tracker.addWindow()
+		hooks.tracker.addWindow()
 		secWindow := makeSecondaryWindow(app, opened, tabID, x, y)
 		secSeen := visibility{
 			hide: func() { secWindow.Hide() },
 			show: func() { secWindow.Show() },
 		}
 		secWindow.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
-			if !handleWindowClosing(ctx, tracker, going, secSeen, opened.WaitForFlush, secWindow.Close) {
+			if !handleWindowClosing(ctx, hooks.tracker, hooks.going, secSeen, opened.WaitForFlush, secWindow.Close) {
 				event.Cancel()
 			}
 		})

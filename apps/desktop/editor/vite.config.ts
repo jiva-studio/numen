@@ -16,13 +16,15 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@numen/core-client': fileURLToPath(
+        new URL('../../../libs/core-client/src/index.ts', import.meta.url),
+      ),
       '@numen/plugin-host': fileURLToPath(
         new URL('../../../libs/plugin-host-ts/src/index.ts', import.meta.url),
       ),
-      '@numen/plugin-sdk': fileURLToPath(
-        new URL('../../../libs/plugin-sdk-ts/src/index.ts', import.meta.url),
+      '@numen/plugin-manager': fileURLToPath(
+        new URL('../../../libs/plugin-manager/src/index.ts', import.meta.url),
       ),
-      '@numen/protocol': fileURLToPath(new URL('../../../libs/protocol/index.ts', import.meta.url)),
       '@numen/ui/styles.css': fileURLToPath(
         new URL('../../../libs/ui/core/dist/numen-ui.css', import.meta.url),
       ),

@@ -19,14 +19,30 @@
   "dependencies": {
     "@connectrpc/connect": "^2.1.2",
     "@connectrpc/connect-web": "^2.1.2",
-    "@numen/protocol": "*"
+    "@tailwindcss/node": "^4.3.3",
+    "@tailwindcss/oxide": "^4.3.3",
+    "@vue/compiler-sfc": "^3.5.44",
+    "postcss": "^8.5.29"
   },
   "peerDependencies": {
+    "@numen/ui": "*",
+    "vite": "^8.3.4",
     "vue": "^3.5.44"
   },
   "devDependencies": {
-    "@bufbuild/protobuf": "^2.14.0",
+    "@babel/types": "^7.29.8",
+    "@numen/protocol": "*",
+    "@numen/ui": "*",
+    "@storybook/addon-vitest": "^10.6.2",
+    "@storybook/vue3-vite": "^10.6.2",
+    "@types/node": "^26.6.5",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "@vitest/browser-playwright": "^5.0.5",
+    "eslint": "^10.10.0",
+    "storybook": "^10.6.2",
     "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vite": "^8.3.4",
     "vitest": "^5.0.3",
     "vue": "^3.5.44"
   }

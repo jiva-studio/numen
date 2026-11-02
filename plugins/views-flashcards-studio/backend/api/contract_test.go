@@ -12,30 +12,32 @@ import (
 )
 
 // messageTypes maps each method to a constructor of its request and of its response.
-var messageTypes = map[string]struct{ request, response func() any }{
-	"ListCardModels":       {func() any { return new(api.ListCardModelsRequest) }, func() any { return new(api.ListCardModelsResponse) }},
-	"CreateCardModel":      {func() any { return new(api.CreateCardModelRequest) }, func() any { return new(api.CreateCardModelResponse) }},
-	"ReadCardModel":        {func() any { return new(api.ReadCardModelRequest) }, func() any { return new(api.ReadCardModelResponse) }},
-	"WriteCardModel":       {func() any { return new(api.WriteCardModelRequest) }, func() any { return new(api.WriteCardModelResponse) }},
-	"RenameCardModelField": {func() any { return new(api.RenameCardModelFieldRequest) }, func() any { return new(api.RenameCardModelFieldResponse) }},
-	"CreateDeck":           {func() any { return new(api.CreateDeckRequest) }, func() any { return new(api.CreateDeckResponse) }},
-	"ReadDeck":             {func() any { return new(api.ReadDeckRequest) }, func() any { return new(api.ReadDeckResponse) }},
-	"WriteDeck":            {func() any { return new(api.WriteDeckRequest) }, func() any { return new(api.WriteDeckResponse) }},
-	"GetDeckPreset":        {func() any { return new(api.GetDeckPresetRequest) }, func() any { return new(api.GetDeckPresetResponse) }},
-	"ListPresets":          {func() any { return new(api.ListPresetsRequest) }, func() any { return new(api.ListPresetsResponse) }},
-	"CreatePreset":         {func() any { return new(api.CreatePresetRequest) }, func() any { return new(api.CreatePresetResponse) }},
-	"ScheduleDeck":         {func() any { return new(api.ScheduleDeckRequest) }, func() any { return new(api.ScheduleDeckResponse) }},
-	"ReadPreset":           {func() any { return new(api.ReadPresetRequest) }, func() any { return new(api.ReadPresetResponse) }},
-	"WritePreset":          {func() any { return new(api.WritePresetRequest) }, func() any { return new(api.WritePresetResponse) }},
-	"ComputeCurve":         {func() any { return new(api.ComputeCurveRequest) }, func() any { return new(api.ComputeCurveResponse) }},
-	"WatchCardsDue":        {func() any { return new(api.WatchCardsDueRequest) }, func() any { return new(api.WatchCardsDueResponse) }},
-	"StartSession":         {func() any { return new(api.StartSessionRequest) }, func() any { return new(api.StartSessionResponse) }},
-	"RecordReview":         {func() any { return new(api.RecordReviewRequest) }, func() any { return new(api.RecordReviewResponse) }},
-	"UndoReview":           {func() any { return new(api.UndoReviewRequest) }, func() any { return new(api.UndoReviewResponse) }},
-	"WatchReloads":         {func() any { return new(api.WatchReloadsRequest) }, func() any { return new(api.WatchReloadsResponse) }},
-	"ListReviewDays":       {func() any { return new(api.ListReviewDaysRequest) }, func() any { return new(api.ListReviewDaysResponse) }},
-	"GetDeckNeighbourhood": {func() any { return new(api.GetDeckNeighbourhoodRequest) }, func() any { return new(api.GetDeckNeighbourhoodResponse) }},
-	"GetVaultDeckPreset":   {func() any { return new(api.GetVaultDeckPresetRequest) }, func() any { return new(api.GetVaultDeckPresetResponse) }},
+func getMessageTypes() map[string]struct{ request, response func() any } {
+	return map[string]struct{ request, response func() any }{
+		"ListCardModels":       {func() any { return new(api.ListCardModelsRequest) }, func() any { return new(api.ListCardModelsResponse) }},
+		"CreateCardModel":      {func() any { return new(api.CreateCardModelRequest) }, func() any { return new(api.CreateCardModelResponse) }},
+		"ReadCardModel":        {func() any { return new(api.ReadCardModelRequest) }, func() any { return new(api.ReadCardModelResponse) }},
+		"WriteCardModel":       {func() any { return new(api.WriteCardModelRequest) }, func() any { return new(api.WriteCardModelResponse) }},
+		"RenameCardModelField": {func() any { return new(api.RenameCardModelFieldRequest) }, func() any { return new(api.RenameCardModelFieldResponse) }},
+		"CreateDeck":           {func() any { return new(api.CreateDeckRequest) }, func() any { return new(api.CreateDeckResponse) }},
+		"ReadDeck":             {func() any { return new(api.ReadDeckRequest) }, func() any { return new(api.ReadDeckResponse) }},
+		"WriteDeck":            {func() any { return new(api.WriteDeckRequest) }, func() any { return new(api.WriteDeckResponse) }},
+		"GetDeckPreset":        {func() any { return new(api.GetDeckPresetRequest) }, func() any { return new(api.GetDeckPresetResponse) }},
+		"ListPresets":          {func() any { return new(api.ListPresetsRequest) }, func() any { return new(api.ListPresetsResponse) }},
+		"CreatePreset":         {func() any { return new(api.CreatePresetRequest) }, func() any { return new(api.CreatePresetResponse) }},
+		"ScheduleDeck":         {func() any { return new(api.ScheduleDeckRequest) }, func() any { return new(api.ScheduleDeckResponse) }},
+		"ReadPreset":           {func() any { return new(api.ReadPresetRequest) }, func() any { return new(api.ReadPresetResponse) }},
+		"WritePreset":          {func() any { return new(api.WritePresetRequest) }, func() any { return new(api.WritePresetResponse) }},
+		"ComputeCurve":         {func() any { return new(api.ComputeCurveRequest) }, func() any { return new(api.ComputeCurveResponse) }},
+		"WatchCardsDue":        {func() any { return new(api.WatchCardsDueRequest) }, func() any { return new(api.WatchCardsDueResponse) }},
+		"StartSession":         {func() any { return new(api.StartSessionRequest) }, func() any { return new(api.StartSessionResponse) }},
+		"RecordReview":         {func() any { return new(api.RecordReviewRequest) }, func() any { return new(api.RecordReviewResponse) }},
+		"UndoReview":           {func() any { return new(api.UndoReviewRequest) }, func() any { return new(api.UndoReviewResponse) }},
+		"WatchReloads":         {func() any { return new(api.WatchReloadsRequest) }, func() any { return new(api.WatchReloadsResponse) }},
+		"ListReviewDays":       {func() any { return new(api.ListReviewDaysRequest) }, func() any { return new(api.ListReviewDaysResponse) }},
+		"GetDeckNeighbourhood": {func() any { return new(api.GetDeckNeighbourhoodRequest) }, func() any { return new(api.GetDeckNeighbourhoodResponse) }},
+		"GetVaultDeckPreset":   {func() any { return new(api.GetVaultDeckPresetRequest) }, func() any { return new(api.GetVaultDeckPresetResponse) }},
+	}
 }
 
 // normalize returns the canonical JSON of raw: two documents with the same content
@@ -54,7 +56,7 @@ func normalize(t *testing.T, raw []byte) string {
 }
 
 func TestEveryMethodHasFixtures(t *testing.T) {
-	for method := range messageTypes {
+	for method := range getMessageTypes() {
 		for _, kind := range []string{"request", "response"} {
 			path := filepath.Join("..", "..", "testdata", "api", method+"."+kind+".json")
 			if _, err := os.Stat(path); err != nil {
@@ -76,7 +78,7 @@ func TestFixturesRoundTripThroughTheStructs(t *testing.T) {
 		name := filepath.Base(path)
 		parts := strings.Split(strings.TrimSuffix(name, ".json"), ".")
 		method, kind := parts[0], parts[len(parts)-1]
-		types, isDeclared := messageTypes[method]
+		types, isDeclared := getMessageTypes()[method]
 		if !isDeclared {
 			t.Errorf("%s names no method", name)
 			continue

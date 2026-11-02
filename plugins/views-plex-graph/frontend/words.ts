@@ -25,9 +25,15 @@ export const WORDS = {
   /** The input placeholder for link description in inspector. */
   linkDescriptionPlaceholder: 'Link description…',
   /** Button to add reverse direction. */
-  addReverseDirection: 'Reverse',
-  /** Button to cycle direction. */
-  changeDirection: 'Change direction',
+  addReverseDirection: 'Add reverse direction',
+  /** What the arrow of a record is, by the titles of the notes it joins: where it points, or that it has none. */
+  direction: {
+    none: (_first: string, _second: string) => 'No arrow',
+    forward: (_first: string, second: string) => `Arrow to ${second}`,
+    backward: (first: string, _second: string) => `Arrow to ${first}`,
+  },
+  /** What the direction button of a record says: the arrow it shows and the one a click makes. */
+  directionButton: (now: string, next: string) => `${now}. Click for: ${next}`,
   /** Button to remove a link. */
   removeLink: 'Remove link',
   /** Button to add link when none exist. */

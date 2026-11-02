@@ -2,6 +2,7 @@ package edit_test
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"io/fs"
 	"strings"
@@ -71,12 +72,19 @@ func (f *files) Lock(context.Context) (func(), error) {
 	return func() { f.locks-- }, nil
 }
 
-var vault = domain.Vault{ID: "v1", Name: "Physics", Path: "/vaults/Physics"}
+func getVault() domain.Vault {
+	return domain.Vault{ID: "v1", Name: "Physics", Path: "/vaults/Physics"}
+}
+
+type fixedClock time.Time
+
+func (c fixedClock) Now() time.Time { return time.Time(c) }
 
 func editing(f *files) edit.Edit {
 	return edit.Edit{
-		Open: func(domain.Vault) (edit.Files, error) { return f, nil },
-		Now:  func() time.Time { return time.Unix(1_700_000_000, 0) },
+		Open:    func(domain.Vault) (edit.Files, error) { return f, nil },
+		Clock:   fixedClock(time.Unix(1_700_000_000, 0)),
+		Entropy: rand.Reader,
 	}
 }
 
@@ -121,9 +129,12 @@ func TestAReadReturnsWhatIsWrongWithTheNoteAndNotAnError(t *testing.T) {
 
 func TestApply_StampsIDAndLocksWrite(t *testing.T) {
 	f := newFiles(map[string]string{"A.md": "# A\n"})
-	read, _ := f.StatFile(t.Context(), "A.md")
+	read, err := f.StatFile(t.Context(), "A.md")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	res, err := editing(f).Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
+	res, err := editing(f).Apply(t.Context(), getVault(), "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
 
 	if err != nil || res.IsUnchanged(read) {
 		t.Fatalf("got %+v (%v)", res, err)
@@ -138,12 +149,15 @@ func TestApply_StampsIDAndLocksWrite(t *testing.T) {
 
 func TestAnEditOverANoteThatMovedIsRefused(t *testing.T) {
 	f := newFiles(map[string]string{"A.md": "# A\n"})
-	read, _ := f.StatFile(t.Context(), "A.md")
+	read, err := f.StatFile(t.Context(), "A.md")
+	if err != nil {
+		t.Fatal(err)
+	}
 	f.put("A.md", "# A, edited by somebody\n")
 	e := editing(f)
 	e.FileStat = read
 
-	_, err := e.Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
+	_, err = e.Apply(t.Context(), getVault(), "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
 
 	if !errors.Is(err, edit.ErrStale) || f.content["A.md"] != "# A, edited by somebody\n" {
 		t.Errorf("got %v and the note %q", err, f.content["A.md"])
@@ -152,13 +166,16 @@ func TestAnEditOverANoteThatMovedIsRefused(t *testing.T) {
 
 func TestABaselineOfTheSameProseLandsWhateverTheFileReturns(t *testing.T) {
 	f := newFiles(map[string]string{"A.md": "# A\n"})
-	read, _ := f.StatFile(t.Context(), "A.md")
+	read, err := f.StatFile(t.Context(), "A.md")
+	if err != nil {
+		t.Fatal(err)
+	}
 	f.put("A.md", "# A\n")
 	e := editing(f)
 	e.ShouldOverwrite = true
 	e.Baseline = &edit.Baseline{Prose: "# A\n", FileStat: read}
 
-	_, err := e.Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
+	_, err = e.Apply(t.Context(), getVault(), "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
 
 	if err != nil || f.content["A.md"] != "# B\n" {
 		t.Errorf("got %v and the note %q", err, f.content["A.md"])
@@ -171,7 +188,7 @@ func TestABaselineOfOtherProseIsStale(t *testing.T) {
 	e.ShouldOverwrite = true
 	e.Baseline = &edit.Baseline{Prose: "# A\n", FileStat: domain.FileStat{Path: "A.md", Size: 3}}
 
-	_, err := e.Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
+	_, err := e.Apply(t.Context(), getVault(), "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
 
 	if !errors.Is(err, edit.ErrStale) {
 		t.Errorf("got %v", err)
@@ -182,11 +199,11 @@ func TestApply_OverwriteCreatesMissingNoteElseErrors(t *testing.T) {
 	f := newFiles(nil)
 	e := editing(f)
 	e.ShouldOverwrite = true
-	if _, err := e.Apply(t.Context(), vault, "New.md", func(doc *markdown.Document) error { return doc.SetBody("# New\n") }); err != nil {
+	if _, err := e.Apply(t.Context(), getVault(), "New.md", func(doc *markdown.Document) error { return doc.SetBody("# New\n") }); err != nil {
 		t.Fatal(err)
 	}
 
-	_, err := editing(f).Apply(t.Context(), vault, "Other.md", func(doc *markdown.Document) error { return doc.SetBody("x") })
+	_, err := editing(f).Apply(t.Context(), getVault(), "Other.md", func(doc *markdown.Document) error { return doc.SetBody("x") })
 
 	if f.content["New.md"] != "# New\n" || !errors.Is(err, edit.ErrNoNote) {
 		t.Errorf("the new note is %q, and editing a missing one gave %v", f.content["New.md"], err)
@@ -198,21 +215,21 @@ func TestEdit_EnforcesSizeLimit(t *testing.T) {
 	e := editing(f)
 	e.Bound = 10
 
-	_, err := e.Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody(strings.Repeat("x", 50)) })
+	_, err := e.Apply(t.Context(), getVault(), "A.md", func(doc *markdown.Document) error { return doc.SetBody(strings.Repeat("x", 50)) })
 
 	if !errors.Is(err, edit.ErrTooLarge) || f.content["A.md"] != "# A\n" {
 		t.Errorf("got %v and the note %q", err, f.content["A.md"])
 	}
 }
 
-func TestAWriteThatLandedIsReportedAlongsideALevellingThatFailed(t *testing.T) {
+func TestAWriteThatLandedIsReportedAlongsideAnIndexUpdateThatFailed(t *testing.T) {
 	f := newFiles(map[string]string{"A.md": "# A\n"})
 	e := editing(f)
 	e.Index = func(context.Context, domain.Vault, []string) error { return errors.New("index is busy") }
 
-	res, err := e.Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
+	res, err := e.Apply(t.Context(), getVault(), "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
 
-	if !errors.Is(err, edit.ErrUnlevelled) || res.Size == 0 || !strings.HasSuffix(f.content["A.md"], "# B\n") {
+	if !errors.Is(err, edit.ErrIndexOutdated) || res.Size == 0 || !strings.HasSuffix(f.content["A.md"], "# B\n") {
 		t.Errorf("got %+v (%v)", res, err)
 	}
 }
@@ -221,7 +238,7 @@ func TestANoteIsPointedAtAnotherBelowAType(t *testing.T) {
 	f := newFiles(map[string]string{"Sample.md": "---\ntype: sample\n---\n\n# Sample\n"})
 	e := editing(f)
 
-	_, err := e.PointAt(t.Context(), vault, "Sample.md", "preset", domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef)
+	_, err := e.PointAt(t.Context(), getVault(), "Sample.md", "preset", domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef)
 
 	if err != nil || !strings.Contains(f.content["Sample.md"], "Slow") {
 		t.Errorf("got %v and the note %q", err, f.content["Sample.md"])
@@ -237,8 +254,14 @@ func (n names) GetNamedPaths(_ context.Context, _ domain.VaultID, name string) (
 func TestANoteIsAddressedByItsNameUnlessAnotherSharesIt(t *testing.T) {
 	shared := names{"Slow": {"a/Slow.md", "b/Slow.md"}, "Fast": {"Fast.md"}}
 
-	byName, _ := edit.GetAddress(t.Context(), shared, "v1", "Fast.md")
-	byPath, _ := edit.GetAddress(t.Context(), shared, "v1", "a/Slow.md")
+	byName, err := edit.GetAddress(t.Context(), shared, "v1", "Fast.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	byPath, err := edit.GetAddress(t.Context(), shared, "v1", "a/Slow.md")
+	if err != nil {
+		t.Fatal(err)
+	}
 	_, unreachable := edit.GetAddress(t.Context(), shared, "v1", "a/C#.md")
 
 	if byName.Value != "Fast" || byPath.Value != "a/Slow" || !errors.Is(unreachable, edit.ErrUnaddressable) {

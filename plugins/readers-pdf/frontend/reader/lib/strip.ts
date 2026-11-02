@@ -118,9 +118,14 @@ function getSize(pages: readonly Page[], page: number): Page {
  * A book has five hundred pages at half a megabyte each. Drawing all of them
  * would allocate a book's worth of pixels to show one page.
  */
-export function getPagesWithin(row: Row, viewport: Size, offset: number): number[] {
-  const from = offset - viewport.width * BEYOND
-  const to = offset + viewport.width * (1 + BEYOND)
+export function getPagesWithin(
+  row: Row,
+  viewport: Size,
+  offset: number,
+  beyond = BEYOND,
+): number[] {
+  const from = offset - viewport.width * beyond
+  const to = offset + viewport.width * (1 + beyond)
   const out: number[] = []
   for (const [page, begins] of row.starts.entries()) {
     if (begins > to) break
@@ -130,10 +135,11 @@ export function getPagesWithin(row: Row, viewport: Size, offset: number): number
 }
 
 /**
- * The page in front: the one at the middle of the viewport. A page scrolled
- * halfway out of view is not the page being read.
+ * The current page: the last page that begins at or before the vertical centre
+ * line of the viewport. A centre line in the gap after a page belongs to that
+ * page.
  */
-export function inFront(row: Row, viewport: Size, offset: number): number {
+export function getCurrentPage(row: Row, viewport: Size, offset: number): number {
   const center = offset + viewport.width / 2
   let page = 0
   for (let i = 0; i < row.starts.length; i++) {
@@ -150,15 +156,23 @@ export function findPageScroll(row: Row, page: number): number | undefined {
 }
 
 /**
- * How far the row is scrolled to bring a page against the left edge, held
- * inside the row: the last page cannot be brought further left than the end of
- * it. Nothing for a page the row does not hold.
+ * How far the row is scrolled to show a page, held inside the row. Nothing for a
+ * page the row does not hold.
+ *
+ * The page is put against the left edge when the centre line of the viewport
+ * then falls on it, and centred in the viewport otherwise. Either way
+ * `getCurrentPage` at the returned offset is the page, unless the offset was
+ * clamped at an end of the row.
  */
 export function getScrollTarget(row: Row, viewport: Size, page: number): number | undefined {
-  const begins = findPageScroll(row, page)
-  if (begins === undefined) return undefined
-  const getFurthest = Math.max(row.length - viewport.width, 0)
-  return Math.min(Math.max(begins, 0), getFurthest)
+  const leftEdge = findPageScroll(row, page)
+  const begins = row.starts[page]
+  const width = row.widths[page]
+  if (leftEdge === undefined || begins === undefined || width === undefined) return undefined
+  const isCentreOnPage = leftEdge + viewport.width / 2 < begins + width
+  const target = isCentreOnPage ? leftEdge : Math.round(begins + width / 2 - viewport.width / 2)
+  const furthest = Math.max(row.length - viewport.width, 0)
+  return Math.min(Math.max(target, 0), furthest)
 }
 
 /**
@@ -205,4 +219,73 @@ export const WIDTH_DEBOUNCE = 150
 /** How close a page is drawn, never past either end. */
 export function clampZoom(zoom: number): number {
   return Math.min(Math.max(zoom, FURTHEST), CLOSEST)
+}
+
+/**
+ * How a document is drawn when it opens: a whole page in the viewport, a page as wide
+ * as the viewport, or a page at its printed size.
+ */
+export type Fit = 'page' | 'width' | '100%'
+
+/** CSS pixels per point of a page: 96 CSS pixels and 72 points to the inch. */
+const PIXELS_PER_POINT = 96 / 72
+
+/**
+ * The zoom at which the first page is drawn to the fit in the viewport, never past CLOSEST. A
+ * viewport narrower than the page draws it narrower than a whole page by height, so the zoom
+ * can be below FURTHEST; only a zoom chosen with the toolbar is limited to that.
+ */
+export function getFitZoom(fit: Fit, pages: readonly Page[], viewport: Size): number {
+  const fullHeight = viewport.height - 2 * GAP
+  if (fit === 'page' || fullHeight <= 0 || viewport.width <= 2 * GAP) return FURTHEST
+  const size = getSize(pages, 0)
+  const drawnHeight =
+    fit === 'width'
+      ? ((viewport.width - 2 * GAP) * size.height) / size.width
+      : size.height * PIXELS_PER_POINT
+  return Math.min(drawnHeight / fullHeight, CLOSEST)
+}
+
+/**
+ * How far beyond the viewport edge pages are requested at the width the row
+ * settled on, as a fraction of the viewport. A page past it keeps what it shows,
+ * so a zoom re-renders what can be seen and what is about to be, not the strip.
+ */
+export const SHARP = 0.5
+
+/**
+ * A point in the row: a page and how far along it, as a fraction of its width.
+ * The point survives a zoom, which changes every page width and every start.
+ */
+export interface Anchor {
+  readonly page: number
+  readonly fraction: number
+}
+
+/** The point of the row under the centre line of the viewport. */
+export function getAnchor(row: Row, viewport: Size, offset: number): Anchor | undefined {
+  if (row.starts.length === 0) return undefined
+  const page = getCurrentPage(row, viewport, offset)
+  const width = row.widths[page]!
+  return { page, fraction: (offset + viewport.width / 2 - row.starts[page]!) / width }
+}
+
+/** How far the row is scrolled to put the anchor under the centre line, held inside the row. */
+export function getAnchorScroll(row: Row, viewport: Size, anchor: Anchor): number | undefined {
+  const begins = row.starts[anchor.page]
+  const width = row.widths[anchor.page]
+  if (begins === undefined || width === undefined) return undefined
+  const target = Math.round(begins + anchor.fraction * width - viewport.width / 2)
+  return Math.min(Math.max(target, 0), Math.max(row.length - viewport.width, 0))
+}
+
+/** The share of the page height that is above the centre line of the viewport. */
+export function getAcrossShare(row: Row, viewport: Size, offset: number): number {
+  return row.height <= 0 ? 0.5 : (offset + viewport.height / 2 - GAP) / row.height
+}
+
+/** How far the row is scrolled across to put that share of the page height under the centre line. */
+export function getAcrossScroll(row: Row, viewport: Size, share: number): number {
+  const target = Math.round(GAP + share * row.height - viewport.height / 2)
+  return Math.min(Math.max(target, 0), Math.max(row.height + 2 * GAP - viewport.height, 0))
 }

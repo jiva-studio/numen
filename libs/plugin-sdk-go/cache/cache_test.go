@@ -3,6 +3,8 @@ package cache_test
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -10,15 +12,17 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/plugintest"
 )
 
 func TestSyncGetCachesHitsAndExpiresAfterTTL(t *testing.T) {
-	now := time.Unix(1000, 0)
+	now := clock.NewFake(time.Unix(1000, 0))
 	var calls int
 	c := cache.New[[]string](
 		"models",
 		cache.WithTTL(10*time.Minute),
-		cache.WithClock(func() time.Time { return now }),
+		cache.WithClock(now),
 	)
 	load := func(context.Context) ([]string, error) {
 		calls++
@@ -30,13 +34,13 @@ func TestSyncGetCachesHitsAndExpiresAfterTTL(t *testing.T) {
 		t.Fatalf("first Get = %v, %v, %v (calls=%d)", got1, found1, err1, calls)
 	}
 
-	now = now.Add(5 * time.Minute)
+	now.Advance(5 * time.Minute)
 	got2, found2, err2 := c.Get(t.Context(), "k1", load)
 	if err2 != nil || !found2 || !slices.Equal(got2, []string{"m1", "m2"}) || calls != 1 {
 		t.Fatalf("second Get within TTL = %v, %v, %v (calls=%d)", got2, found2, err2, calls)
 	}
 
-	now = now.Add(6 * time.Minute)
+	now.Advance(6 * time.Minute)
 	got3, found3, err3 := c.Get(t.Context(), "k1", load)
 	if err3 != nil || !found3 || !slices.Equal(got3, []string{"m1", "m2"}) || calls != 2 {
 		t.Fatalf("third Get after TTL = %v, %v, %v (calls=%d)", got3, found3, err3, calls)
@@ -44,12 +48,12 @@ func TestSyncGetCachesHitsAndExpiresAfterTTL(t *testing.T) {
 }
 
 func TestSyncFailureBackoffSkipsReloadUntilBackoffElapses(t *testing.T) {
-	now := time.Unix(2000, 0)
+	now := clock.NewFake(time.Unix(2000, 0))
 	var calls int
 	c := cache.New[string](
 		"models",
 		cache.WithFailureBackoff(30*time.Second),
-		cache.WithClock(func() time.Time { return now }),
+		cache.WithClock(now),
 	)
 	load := func(context.Context) (string, error) {
 		calls++
@@ -64,13 +68,13 @@ func TestSyncFailureBackoffSkipsReloadUntilBackoffElapses(t *testing.T) {
 		t.Fatalf("first Get = found=%v, err=%v, failed=%v, calls=%d", found, err, c.HasFailed("k1"), calls)
 	}
 
-	now = now.Add(10 * time.Second)
+	now.Advance(10 * time.Second)
 	_, found, err = c.Get(t.Context(), "k1", load)
 	if err != nil || found || calls != 1 {
 		t.Fatalf("second Get during backoff = found=%v, err=%v, calls=%d", found, err, calls)
 	}
 
-	now = now.Add(25 * time.Second)
+	now.Advance(25 * time.Second)
 	val, found, err := c.Get(t.Context(), "k1", load)
 	if err != nil || !found || val != "ok" || c.HasFailed("k1") || calls != 2 {
 		t.Fatalf("third Get after backoff = %q, found=%v, err=%v, failed=%v, calls=%d", val, found, err, c.HasFailed("k1"), calls)
@@ -78,28 +82,15 @@ func TestSyncFailureBackoffSkipsReloadUntilBackoffElapses(t *testing.T) {
 }
 
 func TestAsyncGet_ServesStaleWhileRevalidating(t *testing.T) {
-	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	t.Setenv("HOME", t.TempDir())
+	plugintest.GrantStorage(t)
 
-	now := time.Unix(3000, 0)
-	var mu sync.Mutex
-	currentTime := func() time.Time {
-		mu.Lock()
-		defer mu.Unlock()
-		return now
-	}
-	advanceTime := func(d time.Duration) {
-		mu.Lock()
-		now = now.Add(d)
-		mu.Unlock()
-	}
+	now := clock.NewFake(time.Unix(3000, 0))
 
 	c := cache.New[[]string](
 		"models",
-		cache.WithPluginID("test-plugin"),
 		cache.WithTTL(5*time.Minute),
 		cache.WithAsync(true),
-		cache.WithClock(currentTime),
+		cache.WithClock(now),
 	)
 
 	firstGate := make(chan struct{})
@@ -116,11 +107,14 @@ func TestAsyncGet_ServesStaleWhileRevalidating(t *testing.T) {
 	close(firstGate)
 	<-firstDone
 	waitForCondition(t, func() bool {
-		v, ok, _ := c.Get(t.Context(), "k1", nil)
+		v, ok, err := c.Get(t.Context(), "k1", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
 		return ok && slices.Equal(v, []string{"v1"})
 	})
 
-	advanceTime(10 * time.Minute)
+	now.Advance(10 * time.Minute)
 	secondGate := make(chan struct{})
 	stale, found, err := c.Get(t.Context(), "k1", func(context.Context) ([]string, error) {
 		<-secondGate
@@ -132,16 +126,18 @@ func TestAsyncGet_ServesStaleWhileRevalidating(t *testing.T) {
 
 	close(secondGate)
 	waitForCondition(t, func() bool {
-		v, ok, _ := c.Get(t.Context(), "k1", nil)
+		v, ok, err := c.Get(t.Context(), "k1", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
 		return ok && slices.Equal(v, []string{"v2"})
 	})
 }
 
 func TestAsyncGetRecordsFailureAfterBackgroundError(t *testing.T) {
-	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	t.Setenv("HOME", t.TempDir())
+	plugintest.GrantStorage(t)
 
-	c := cache.New[[]string]("models", cache.WithPluginID("test-plugin"), cache.WithAsync(true))
+	c := cache.New[[]string]("models", cache.WithAsync(true))
 	gate := make(chan struct{})
 
 	val, found, err := c.Get(t.Context(), "k1", func(context.Context) ([]string, error) {
@@ -177,7 +173,10 @@ func TestDiskPersistenceAcrossTwoCacheInstances(t *testing.T) {
 	}
 	close(refreshGate)
 	waitForCondition(t, func() bool {
-		v, ok, _ := c2.Get(t.Context(), "agent-a", nil)
+		v, ok, err := c2.Get(t.Context(), "agent-a", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
 		return ok && slices.Equal(v, []string{"gamma"})
 	})
 }
@@ -232,12 +231,155 @@ func TestValuesSnapshot(t *testing.T) {
 
 func waitForCondition(t *testing.T, check func() bool) {
 	t.Helper()
-	deadline := time.Now().Add(3 * time.Second)
-	for time.Now().Before(deadline) {
+	const attempts = 600
+	for range attempts {
 		if check() {
 			return
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
 	t.Fatal("condition was not met before deadline")
+}
+
+func TestErrorHandlerReceivesDiskWriteError(t *testing.T) {
+	blocker := filepath.Join(t.TempDir(), "file")
+	if err := os.WriteFile(blocker, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var reported []error
+	c := cache.New[[]string](
+		"models",
+		cache.WithDir(filepath.Join(blocker, "sub")),
+		cache.WithDisk(true),
+		cache.WithErrorHandler(func(err error) { reported = append(reported, err) }),
+	)
+
+	c.Put("k1", []string{"m1"})
+
+	if len(reported) != 1 {
+		t.Fatalf("reported %d errors, want 1: %v", len(reported), reported)
+	}
+	if v, ok, err := c.Get(t.Context(), "k1", nil); err != nil || !ok || !slices.Equal(v, []string{"m1"}) {
+		t.Errorf("the memory entry = %v, %v, %v, want it kept", v, ok, err)
+	}
+}
+
+func TestGetPluginDirIsTheDirectoryTheHostGranted(t *testing.T) {
+	cacheDir, _ := plugintest.GrantStorage(t)
+
+	got, err := cache.GetPluginDir()
+
+	if err != nil || got != cacheDir {
+		t.Errorf("GetPluginDir() = %q, %v, want %q", got, err, cacheDir)
+	}
+}
+
+func TestGetDataDirIsTheDirectoryTheHostGranted(t *testing.T) {
+	_, dataDir := plugintest.GrantStorage(t)
+
+	got, err := cache.GetDataDir()
+
+	if err != nil || got != dataDir {
+		t.Errorf("GetDataDir() = %q, %v, want %q", got, err, dataDir)
+	}
+}
+
+func TestAPluginTheHostGrantedNoDirectoryGetsAnError(t *testing.T) {
+	t.Setenv(cache.EnvCacheDir, "")
+	t.Setenv(cache.EnvDataDir, "")
+
+	if dir, err := cache.GetPluginDir(); err == nil {
+		t.Errorf("GetPluginDir() = %q, want an error", dir)
+	}
+	if dir, err := cache.GetDataDir(); err == nil {
+		t.Errorf("GetDataDir() = %q, want an error", dir)
+	}
+}
+
+func TestAMemoryCacheOfAPluginWithoutADirectoryReportsTheDiskFailure(t *testing.T) {
+	t.Setenv(cache.EnvCacheDir, "")
+	var reported []error
+	c := cache.New[[]string]("models", cache.WithDisk(true), cache.WithErrorHandler(func(err error) { reported = append(reported, err) }))
+
+	c.Put("k", []string{"v"})
+
+	if len(reported) != 1 {
+		t.Errorf("reported %v, want one error", reported)
+	}
+}
+
+func TestTheDiskCacheIsStoredInTheGrantedDirectory(t *testing.T) {
+	cacheDir, _ := plugintest.GrantStorage(t)
+	first := cache.New[[]string]("models", cache.WithDisk(true))
+	first.Put("k", []string{"v"})
+
+	second := cache.New[[]string]("models", cache.WithDisk(true))
+	got, found, err := second.Get(t.Context(), "k", nil)
+
+	if err != nil || !found || !slices.Equal(got, []string{"v"}) {
+		t.Errorf("Get() = %v, %v, %v, want the entry the first cache wrote", got, found, err)
+	}
+	if _, err := os.Stat(filepath.Join(cacheDir, "models.json")); err != nil {
+		t.Errorf("the cache file is not in the granted directory: %v", err)
+	}
+}
+
+func TestGetSharedDirIsTheDirectoryTheHostShares(t *testing.T) {
+	shared := plugintest.GrantSharedStorage(t)
+
+	got, err := cache.GetSharedDir()
+	own, ownErr := cache.GetSharedDirOrPluginDir()
+
+	if err != nil || got != shared || ownErr != nil || own != shared {
+		t.Errorf("GetSharedDir() = %q, %v; GetSharedDirOrPluginDir() = %q, %v; want %q", got, err, own, ownErr, shared)
+	}
+}
+
+func TestAnOlderHostThatSharesNothingMakesThePluginUseItsOwnDirectory(t *testing.T) {
+	cacheDir, _ := plugintest.GrantStorage(t)
+	t.Setenv(cache.EnvSharedDir, "")
+
+	if dir, err := cache.GetSharedDir(); err == nil {
+		t.Errorf("GetSharedDir() = %q, want an error", dir)
+	}
+	got, err := cache.GetSharedDirOrPluginDir()
+
+	if err != nil || got != cacheDir {
+		t.Errorf("GetSharedDirOrPluginDir() = %q, %v, want %q", got, err, cacheDir)
+	}
+}
+
+func TestAHostThatGrantedNothingProvidesNoDirectoryAtAll(t *testing.T) {
+	t.Setenv(cache.EnvSharedDir, "")
+	t.Setenv(cache.EnvCacheDir, "")
+
+	if dir, err := cache.GetSharedDirOrPluginDir(); err == nil {
+		t.Errorf("GetSharedDirOrPluginDir() = %q, want an error", dir)
+	}
+}
+
+func TestGetSharedDataDirIsTheDataDirectoryTheHostShares(t *testing.T) {
+	plugintest.GrantStorage(t)
+	shared := os.Getenv(cache.EnvSharedDataDir)
+
+	got, err := cache.GetSharedDataDir()
+	own, ownErr := cache.GetSharedDataDirOrPluginDataDir()
+
+	if err != nil || got != shared || ownErr != nil || own != shared || shared == os.Getenv(cache.EnvSharedDir) {
+		t.Errorf("GetSharedDataDir() = %q, %v; OrPluginDataDir = %q, %v; want %q", got, err, own, ownErr, shared)
+	}
+}
+
+func TestAnOlderHostThatSharesNoDataMakesThePluginUseItsOwnDataDirectory(t *testing.T) {
+	_, dataDir := plugintest.GrantStorage(t)
+	t.Setenv(cache.EnvSharedDataDir, "")
+
+	if dir, err := cache.GetSharedDataDir(); err == nil {
+		t.Errorf("GetSharedDataDir() = %q, want an error", dir)
+	}
+	got, err := cache.GetSharedDataDirOrPluginDataDir()
+
+	if err != nil || got != dataDir {
+		t.Errorf("GetSharedDataDirOrPluginDataDir() = %q, %v, want %q", got, err, dataDir)
+	}
 }

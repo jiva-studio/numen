@@ -77,15 +77,21 @@ func (t transcripts) readReached(ctx context.Context, key string) (int, error) {
 // appendBatch adds a batch of cues to the partial transcript, and records that it reached the
 // millisecond given.
 func (t transcripts) appendBatch(ctx context.Context, key string, cues []transcript.Cue, ms int) error {
-	if err := host.AppendText(ctx, t.store, getPartialName(key), transcript.GetSegments(cues)); err != nil {
+	segments, err := transcript.GetSegments(cues)
+	if err != nil {
+		return err
+	}
+	if err := host.AppendText(ctx, t.store, getPartialName(key), segments); err != nil {
 		return err
 	}
 	partial, err := t.store.Read(ctx, getPartialName(key))
 	if err != nil {
 		return err
 	}
-	// A struct of two numbers always marshals.
-	raw, _ := json.Marshal(reached{MS: ms, Size: int64(len(partial))})
+	raw, err := json.Marshal(reached{MS: ms, Size: int64(len(partial))})
+	if err != nil {
+		return err
+	}
 	return t.store.Write(ctx, getReachedName(key), raw)
 }
 

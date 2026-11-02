@@ -1,5 +1,5 @@
 /**
- * The AI settings, and the agent setting of a plugin, drawn in a browser.
+ * The AI settings, and the settings of a plugin, drawn in a browser.
  *
  * Only a browser can verify these: that the two lists of a choice end at the
  * same edge, that the prompt shown to the user fits the page at the width of a
@@ -44,15 +44,6 @@ const PLUGINS: readonly PluginInfo[] = [
   }),
   createPlugin('sample.asking', 'Sample Asking Plugin', {
     consent: 'requested',
-    settings: [
-      {
-        key: 'agent',
-        type: 'agent',
-        title: 'Agent',
-        description: 'The agent and the model that answer this plugin',
-        default: undefined,
-      },
-    ],
   }),
 ]
 
@@ -69,9 +60,7 @@ const PROGRAMS = [
   { name: 'sample-b', title: 'Sample Agent B' },
 ]
 
-const FILE = {
-  plugins: { 'sample.asking': { agent: { agent: 'sample-a', model: 'sample-careful' } } },
-}
+const FILE = {}
 
 const installation: Installation = {
   getSetting: (path) => getSettingAt(FILE, path),
@@ -174,23 +163,5 @@ export const AKeyIsNeverDrawn: Story = {
 
     await userEvent.type(field, 'made-up-key')
     await expect(canvas.queryByText('made-up-key')).toBeNull()
-  },
-}
-
-/** A plugin's agent setting offers the default, labeled with the agent that answers it. */
-export const APluginsAgentSetting: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const agent = canvas.getByRole('button', { name: 'Agent' })
-    await expect(agent).toHaveTextContent('Sample Agent A')
-    await expect(canvas.getByRole('button', { name: 'Model' })).toHaveTextContent('Sample careful')
-
-    await userEvent.click(agent)
-    await expect(getMenuWords()).toStrictEqual([
-      'Default (Sample Agent A)',
-      'Sample Agent A',
-      'Sample Agent B',
-    ])
-    await userEvent.keyboard('{Escape}')
   },
 }

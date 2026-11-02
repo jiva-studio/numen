@@ -4,7 +4,14 @@
 import type { Component, ComputedRef, Ref } from 'vue'
 import type { MenuItem, MenuTrigger } from '@numen/ui'
 import type { PlexNeighbourhood, PlexHeading, PlexRelation, PlexDestination } from './plex'
-import type { PathRename, PluginContext } from '@numen/plugin-sdk'
+import type {
+  Connection,
+  ConnectionRole,
+  NoteNeighbour,
+  PathRename,
+  PluginContext,
+  VaultRelations,
+} from '@numen/plugin-sdk'
 
 /** What a note is: a note, or a type a plugin declares. */
 export type NoteType = string
@@ -22,23 +29,18 @@ export interface Focus {
   readonly title: string
 }
 
-/** One neighbour joined to the focus. */
-export interface Neighbour {
-  readonly path: string
-  readonly title: string
-  readonly relation: PlexRelation
-  readonly type: NoteType
-  readonly label: string
-  readonly reverseLabel?: string
-  readonly through: string
-  readonly isMutual: boolean
-}
+/** One note joined to the focus. */
+export type Neighbour = NoteNeighbour
 
-/** A neighbourhood of a note: the note in focus, and the notes joined to it. */
+/**
+ * A neighbourhood of a note: the note in focus, the notes joined to it, and the connection of
+ * every line drawn between them.
+ */
 export interface Neighbourhood {
   readonly focus: Focus
   readonly focusType: NoteType
   readonly related: readonly Neighbour[]
+  readonly connections: readonly Connection[]
 }
 
 /** Note relation as stored in the vault. */
@@ -67,48 +69,28 @@ export interface QuickLinkRequest {
   readonly at: { readonly x: number; readonly y: number }
 }
 
-/** Which of the two notes a link is written in: the first (forward) or the second (reverse). */
-export type LinkDirectionMode = 'forward' | 'reverse'
-
-/** One link between two notes in the inspector, written in the note it runs from. */
-export interface DirectionalLinkItem {
-  readonly id: string
-  readonly from: string
-  readonly to: string
-  readonly role: PlexRelation
-  readonly direction: LinkDirectionMode
-  readonly label: string
-}
-
 export interface LinkInspectorNode {
   readonly id: string
   readonly title: string
   readonly path: string
 }
 
-/** Request to open the link inspector for a connection between two nodes. */
+/**
+ * Request to open the link inspector on the connection between two nodes. The
+ * connection runs from the first node to the second.
+ */
 export interface LinkInspectorRequest {
   readonly nodeA: LinkInspectorNode
   readonly nodeB: LinkInspectorNode
-  readonly links: readonly DirectionalLinkItem[]
+  readonly connection: Connection
   readonly at: { readonly x: number; readonly y: number }
 }
 
-/** Creating a note from the plex, and linking two notes already in it. */
-export interface PlexEditor {
-  createInRelation(from: string, relation: PlexRelation): Promise<unknown>
-  createWithTitle(
-    title: string,
-    from: string,
-    relation: PlexRelation,
-  ): Promise<{ path: string } | null>
-  join(from: string, to: string, relation: PlexRelation, label?: string): Promise<boolean>
-  replaceLinks(
-    first: string,
-    second: string,
-    links: readonly { from: string; to: string; relation: PlexRelation; label: string }[],
-  ): Promise<boolean>
-}
+/** What a plex requests of the relationships between notes. */
+export type PlexEditor = Pick<
+  VaultRelations,
+  'createRelated' | 'join' | 'getConnection' | 'saveConnection' | 'removeConnection'
+>
 
 export interface OpenNoteOptions {
   title?: string
@@ -150,7 +132,7 @@ export interface PlexTabDeps {
   showMessage(text: string): void
   createUntitledNote(): Promise<string>
   readOpeningPath(): Promise<string>
-  readonly creatable: readonly PlexRelation[]
+  readonly creatable: readonly ConnectionRole[]
   searchNames?(query: string, limit?: number): Promise<readonly { path: string; title: string }[]>
   readonly isNavigatingOnCreate?: Readonly<Ref<boolean>>
 }
@@ -183,6 +165,11 @@ export interface PlexHeadingsState {
   openHeading(node: string, heading: string): void
 }
 
+/** Shows the failure of an operation that runs in the background. */
+export interface PlexFailureReporter {
+  reportFailure(error: unknown): void
+}
+
 export interface PlexNodeActions {
   activate(node: string): void
   createNode(from: string, relation: PlexRelation, at?: { x: number; y: number }): Promise<void>
@@ -205,9 +192,10 @@ export interface PlexQuickLinkState {
 
 export interface PlexLinkInspectorState {
   readonly linkInspector: Ref<LinkInspectorRequest | null>
-  openLinkInspector(pair: string, position: { x: number; y: number }): void
+  openLinkInspector(pair: string, position: { x: number; y: number }): Promise<void>
   dismissLinkInspector(): void
-  saveLinkInspector(rows: readonly DirectionalLinkItem[]): Promise<void>
+  saveLinkInspector(connection: Connection): Promise<void>
+  removeLinkInspector(): Promise<void>
 }
 
 /** What one plex tab holds. */
@@ -215,6 +203,7 @@ export type PlexTabState = PlexViewState &
   PlexMenuState &
   PlexHeadingsState &
   PlexNodeActions &
+  PlexFailureReporter &
   PlexQuickLinkState &
   PlexLinkInspectorState & {
     readonly pluginId?: string

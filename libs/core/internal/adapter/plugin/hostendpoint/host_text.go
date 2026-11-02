@@ -12,9 +12,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	textport "github.com/jiva-studio/numen/libs/core/usecase/textversion/textcontract"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 // textEndpoint answers HostTextService for the plugins that call the host.
@@ -81,7 +81,7 @@ const noTexts = v1.TextErrorCode_TEXT_ERROR_CODE_NO_VAULT
 func (e *textEndpoint) PutTextVersion(
 	ctx context.Context, req *connect.Request[v1.PutTextVersionRequest],
 ) (*connect.Response[v1.PutTextVersionResponse], error) {
-	call, err := e.begin(req.Header(), manifestfile.PermissionVaultWrite)
+	call, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (e *textEndpoint) PutTextVersion(
 func (e *textEndpoint) RemoveTextVersion(
 	ctx context.Context, req *connect.Request[v1.RemoveTextVersionRequest],
 ) (*connect.Response[v1.RemoveTextVersionResponse], error) {
-	call, err := e.begin(req.Header(), manifestfile.PermissionVaultWrite)
+	call, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (e *textEndpoint) RemoveTextVersion(
 func (e *textEndpoint) ListTextVersions(
 	ctx context.Context, req *connect.Request[v1.ListTextVersionsRequest],
 ) (*connect.Response[v1.ListTextVersionsResponse], error) {
-	call, err := e.begin(req.Header(), manifestfile.PermissionVaultRead)
+	call, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (e *textEndpoint) ListTextVersions(
 func (e *textEndpoint) ReadText(
 	ctx context.Context, req *connect.Request[v1.ReadTextRequest],
 ) (*connect.Response[v1.ReadTextResponse], error) {
-	call, err := e.begin(req.Header(), manifestfile.PermissionVaultRead)
+	call, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}

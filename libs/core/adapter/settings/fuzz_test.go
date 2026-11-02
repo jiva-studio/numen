@@ -74,7 +74,7 @@ func FuzzAt(f *testing.F) {
 		switch target.Appearance.Mode {
 		case settings.ModeSystem, settings.ModeLight, settings.ModeDark:
 		default:
-			t.Fatalf("%s was read as wearing %q, which is no half of a colour pair",
+			t.Fatalf("%s was read as %q, which is no half of a colour pair",
 				raw, target.Appearance.Mode)
 		}
 	})

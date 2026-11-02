@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"path"
-	"slices"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -28,9 +27,6 @@ const (
 	noneExt   = ".none"
 	partExt   = ".part"
 )
-
-// copyExts are the containers a copy is kept in.
-var copyExts = []string{".mp4", ".m4a", ".webm", ".mp3", ".ogg", ".wav", ".flac"}
 
 // The kinds of the text versions of links.
 const (
@@ -63,19 +59,19 @@ func getKind(fetched download.Text) domain.TextKind {
 
 // getSegments is what was fetched as the segments of a text version: one segment to a caption, with
 // its span in seconds as its selector, or the prose whole.
-func getSegments(fetched download.Text) []domain.TextSegment {
+func getSegments(fetched download.Text) ([]domain.TextSegment, error) {
 	if len(fetched.Cues) == 0 {
-		return []domain.TextSegment{{Text: fetched.Prose, Heading: "", Selector: ""}}
+		return []domain.TextSegment{{Text: fetched.Prose, Heading: "", Selector: ""}}, nil
 	}
 	segments := make([]domain.TextSegment, len(fetched.Cues))
 	for i, cue := range fetched.Cues {
-		segments[i] = domain.TextSegment{
-			Text:     cue.Text + "\n",
-			Heading:  "",
-			Selector: timeSelector{T: []float64{float64(cue.From) / 1000, float64(cue.To) / 1000}}.encode(),
+		selector, err := timeSelector{T: []float64{float64(cue.From) / 1000, float64(cue.To) / 1000}}.encode()
+		if err != nil {
+			return nil, err
 		}
+		segments[i] = domain.TextSegment{Text: cue.Text + "\n", Heading: "", Selector: selector}
 	}
-	return segments
+	return segments, nil
 }
 
 // writeText keeps the text under the key with its record, and clears the mark of an address that
@@ -157,7 +153,14 @@ func isCopyOf(name, hash string) bool {
 	return strings.TrimSuffix(name, ext) == hash && isCopyExt(strings.ToLower(ext))
 }
 
-func isCopyExt(ext string) bool { return slices.Contains(copyExts, ext) }
+// isCopyExt reports whether a copy is kept in the container of the extension.
+func isCopyExt(ext string) bool {
+	switch ext {
+	case ".mp4", ".m4a", ".webm", ".mp3", ".ogg", ".wav", ".flac":
+		return true
+	}
+	return false
+}
 
 // deleteCopy takes away the copy kept under the hash, whole or arriving.
 func (f folder) deleteCopy(ctx context.Context, hash string) error {

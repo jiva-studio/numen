@@ -10,7 +10,7 @@ The repository root is organized into top-level directories:
 - `tools/`: Development, linting, code generation, and CI scripts.
 - `tests/`: End-to-end suites and test fixtures.
 
-The repo is mixed-language by design. Each Go module owns its own build and its own tests. Frontend packages share a unified npm workspace at the repository root.
+The repo is mixed-language by design. Each Go module has its own build and its own tests. Frontend packages share a unified npm workspace at the repository root.
 
 ## Setup
 
@@ -18,7 +18,7 @@ The repo is mixed-language by design. Each Go module owns its own build and its 
 npm install
 ```
 
-That is the whole setup. The repository root is the npm workspace root, so one install fetches workspace dependencies across the repository — the interface libraries, desktop editor & flashcards windows, documentation sites, and development tools. It also wires git hooks through husky and points `commit.template` at the message template.
+That is the whole setup. The repository root is the npm workspace root, so one install fetches workspace dependencies across the repository — the interface libraries, desktop editor & flashcards windows, documentation sites, and development tools. It also configures git hooks through husky and sets `commit.template` to the message template.
 
 ## Contributing UI Features and Plugins
 
@@ -26,7 +26,7 @@ Numen's desktop core shell is minimal and domain-agnostic. New UI features, pane
 
 ## Issue labels
 
-An issue carries exactly one type and at least one area.
+An issue has exactly one type and at least one area.
 
 - **Type**: `bug` (something is broken: a wrong result, a crash, a leak), `perf` (it works, but is too slow or too heavy), `feature` (new behaviour), `task` (implementation work that is neither), `epic` (tracks a set of issues).
 - **Area**: `desktop`, `mobile`, `core`, `domain`, `protocol`, `ui`, `wire`, `vault`, `docs`, `ci`, `repo`.
@@ -38,7 +38,7 @@ Dependabot sets `dependencies`, `go`, `javascript` and `github_actions` on its o
 
 [Conventional Commits](https://www.conventionalcommits.org).
 
-Merges are squash-only: the PR title becomes the subject of the single commit that lands in `main`.
+Merges are squash-only: the PR title becomes the subject of the single commit that is added to `main`.
 
 ```
 <type>(<scope>): <subject>
@@ -61,19 +61,19 @@ feat(domain)!: drop path-based note identity
 
 ## Checks on other platforms
 
-The core suite runs on Linux for every pull request. A Windows runner costs twice a Linux one and a macOS runner ten times, so those two run only when a commit in the branch carries a `Run-On:` trailer, or when the **Core** workflow is started by hand with the platform ticked. Every commit in the branch is read for the trailer, so it goes on the commit that needed the platform.
+The core suite runs on Linux for every pull request. A Windows runner costs twice a Linux one and a macOS runner ten times, so those two run only when a commit in the branch has a `Run-On:` trailer, or when the **Core** workflow is started by hand with the platform ticked. Every commit in the branch is read for the trailer, so it goes on the commit that needed the platform.
 
 ```
-fix(core): an append that lands short is taken back
+fix(core): roll back an append that writes fewer bytes than requested
 
 Run-On: macos
 ```
 
-The values are `windows`, `macos`, the two of them separated by a comma, or `all`. What Windows and macOS say is reported and does not hold the pull request.
+The values are `windows`, `macos`, the two of them separated by a comma, or `all`. The Windows and macOS results are reported and do not block the pull request.
 
 ## Architecture
 
-Architecture conventions and technical constraints live in [`AGENTS.md`](AGENTS.md) and [`.agents/rules/`](.agents/rules/). Before proposing a significant architectural change, read those and update them in the same pull request that changes what they describe.
+Architecture conventions and technical constraints are in [`AGENTS.md`](AGENTS.md) and [`.agents/rules/`](.agents/rules/). Before proposing a significant architectural change, read those and update them in the same pull request that changes what they describe.
 
 ## Development workflow
 

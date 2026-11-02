@@ -1,109 +1,139 @@
-import { test, expect } from '../../support/test.js'
+import { test, expect, readActivePath, type Page } from '../../support/test.js'
+import {
+  getGraph,
+  getPaletteField,
+  openWorkspace,
+  runPaletteCommand,
+} from '../../support/workspace.js'
+import {
+  createNote,
+  createUniqueTitle,
+  destroyNote,
+  getConnection,
+  getNoteTab,
+  getNoteText,
+  listFilePaths,
+  openNote,
+} from '../../support/vault.js'
 
-test.describe('Note Hierarchy and Plex Graph', () => {
-  test('creates child note from active note with parent link established', async ({ page }) => {
-    await page.goto('/')
-
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    // 1. Open notes folder and Entropy.md
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
-
-    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
-    await expect(entropyRow).toBeVisible()
-    await entropyRow.press('Enter')
-
-    await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
-
-    // 2. Open palette and trigger Child command
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-
-    await paletteInput.fill('Child')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
-
-    // 3. Name child note
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-    await paletteInput.fill('Maxwell')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
-
-    // 4. Verify child tab is created and relationship is visible
-    const maxwellTab = page.getByRole('tab', { name: /Maxwell/i }).first()
-    await expect(maxwellTab).toBeVisible({ timeout: 10_000 })
-
-    // Verify parent connection is reflected in neighbourhood
-    const parentButton = page.getByRole('button', { name: /Entropy/i }).first()
-    await expect(parentButton).toBeVisible({ timeout: 10_000 })
+/** The node of the plex drawn for a note, by its title and what it is to the note in focus. */
+const getPlexNode = (page: Page, title: string, relation: string) =>
+  getGraph(page).getByRole(relation === 'focus' ? 'img' : 'button', {
+    name: `${title}, ${relation}`,
+    exact: true,
   })
 
-  test('navigates to parent note from child note header', async ({ page }) => {
-    await page.goto('/')
+/** Names the note a command makes, in the palette's naming step. */
+const nameNote = async (page: Page, title: string) => {
+  const field = getPaletteField(page)
+  await expect(field).toBeVisible()
+  await field.fill(title)
+  await expect(page.getByRole('option', { selected: true })).toContainText(title)
+  await page.keyboard.press('Enter')
+}
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+/** Waits until the note the window made is the tab in front, and gives back its path. */
+const waitForMadeNote = async (page: Page, title: string): Promise<string> => {
+  await expect.poll(() => readActivePath(page.request)).toMatch(new RegExp(`${title}\\.md$`))
+  const made = await readActivePath(page.request)
+  const folder = made.includes('/') ? made.slice(0, made.lastIndexOf('/')) : ''
+  expect(await listFilePaths(page.request, folder)).toContain(made)
+  return made
+}
 
-    // Open notes folder and Entropy.md
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
+/** Puts the note in front into the focus of the plex. */
+const showInPlex = async (page: Page, title: string) => {
+  await runPaletteCommand(page, 'Show in plex', 'Show in plex')
+  await expect(getPlexNode(page, title, 'focus')).toBeAttached()
+}
 
-    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
-    await expect(entropyRow).toBeVisible()
-    await entropyRow.press('Enter')
+test.describe('Making a related note', () => {
+  const madeNotes: string[] = []
 
-    await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
-
-    // Create child note Boltzmann
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-
-    await paletteInput.fill('Child')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
-
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-    await paletteInput.fill('Boltzmann')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
-
-    await expect(page.getByRole('tab', { name: /Boltzmann/i }).first()).toBeVisible({
-      timeout: 10_000,
-    })
-
-    // Switch back to Entropy tab
-    const entropyTab = page.getByRole('tab', { name: /Entropy/i }).first()
-    await expect(entropyTab).toBeVisible({ timeout: 10_000 })
-    await entropyTab.click()
-
-    // Verify Entropy tab is active and visible
-    await expect(entropyTab).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
+  test.afterEach(async ({ request }) => {
+    for (const one of madeNotes.splice(0)) await destroyNote(request, one)
   })
 
-  test('interacts with plex graph node to focus related note tab', async ({ page }) => {
-    await page.goto('/')
+  test('makes a child from the palette, joined below the note in front', async ({
+    page,
+    request,
+  }) => {
+    const parentTitle = createUniqueTitle('Estuary')
+    const childTitle = createUniqueTitle('Tributary')
+    const parent = await createNote(request, parentTitle)
+    try {
+      await openWorkspace(page)
+      await openNote(page, parent)
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+      await runPaletteCommand(page, 'New child note', 'New child note')
+      await nameNote(page, childTitle)
 
-    // Verify neighbourhood graph is visible
-    const neighbourhood = page.locator('.plex').first()
-    await expect(neighbourhood).toBeVisible({ timeout: 10_000 })
+      const child = await waitForMadeNote(page, childTitle)
+      madeNotes.push(child)
+      await expect(getNoteTab(page, child)).toHaveAttribute('aria-selected', 'true')
+      expect((await getConnection(request, parent, child)).role).toBe('ROLE_CHILD')
+      await showInPlex(page, childTitle)
+      await expect(getPlexNode(page, parentTitle, 'parent')).toBeAttached()
+    } finally {
+      await destroyNote(request, parent)
+    }
+  })
 
-    // Find and double click child node Entropy to open note tab
-    const childNode = page.locator('.plex__title', { hasText: 'Entropy' })
-    await expect(childNode).toBeVisible({ timeout: 10_000 })
-    await childNode.dblclick()
+  test('makes a parent from the palette, joined above the note in front', async ({
+    page,
+    request,
+  }) => {
+    const childTitle = createUniqueTitle('Delta')
+    const parentTitle = createUniqueTitle('River basin')
+    const note = await createNote(request, childTitle)
+    try {
+      await openWorkspace(page)
+      await openNote(page, note)
 
-    // Verify Entropy tab is active and visible
-    await expect(page.getByRole('tab', { name: /Entropy/i }).first()).toBeVisible({
-      timeout: 10_000,
-    })
+      await runPaletteCommand(page, 'New parent note', 'New parent note')
+      await nameNote(page, parentTitle)
+
+      const parent = await waitForMadeNote(page, parentTitle)
+      madeNotes.push(parent)
+      expect((await getConnection(request, note, parent)).role).toBe('ROLE_PARENT')
+      await showInPlex(page, parentTitle)
+      await expect(getPlexNode(page, childTitle, 'child')).toBeAttached()
+    } finally {
+      await destroyNote(request, note)
+    }
+  })
+
+  test('makes a jump from the menu of the node in focus of the plex', async ({ page, request }) => {
+    const fromTitle = createUniqueTitle('Tidal bore')
+    const jumpTitle = createUniqueTitle('Severn')
+    const from = await createNote(request, fromTitle)
+    try {
+      await openWorkspace(page)
+      await openNote(page, from)
+      await showInPlex(page, fromTitle)
+
+      await getPlexNode(page, fromTitle, 'focus').click({ button: 'right' })
+      await page.getByRole('menuitem', { name: 'New jump note' }).click()
+      await nameNote(page, jumpTitle)
+
+      const jump = await waitForMadeNote(page, jumpTitle)
+      madeNotes.push(jump)
+      expect((await getConnection(request, from, jump)).role).toBe('ROLE_JUMP')
+      await showInPlex(page, jumpTitle)
+      await expect(getPlexNode(page, fromTitle, 'jump')).toBeAttached()
+    } finally {
+      await destroyNote(request, from)
+    }
+  })
+})
+
+test.describe('A node of the plex', () => {
+  test('opens its note in a tab when double-clicked', async ({ page }) => {
+    await openWorkspace(page)
+
+    await getPlexNode(page, 'Entropy', 'child').dblclick()
+
+    await expect(getNoteTab(page, 'notes/Entropy.md')).toHaveAttribute('aria-selected', 'true')
+    await expect(getNoteText(page, 'notes/Entropy.md')).toContainText('A measure of uncertainty')
   })
 })

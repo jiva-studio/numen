@@ -11,9 +11,9 @@ import type { Entry, FilesTabState, FileTree } from './types'
 
 const createTreeOf = () => {
   const selectedPaths = ref<readonly string[]>([])
-  const openFolder = vi.fn(async (_folder: string) => {})
-  const revealPath = vi.fn(async (_path: string) => {})
-  const refreshChanged = vi.fn(async () => {})
+  const openFolder = vi.fn(async (_folder: string) => undefined)
+  const revealPath = vi.fn(async (_path: string) => undefined)
+  const refreshChanged = vi.fn(async () => undefined)
   const close = vi.fn()
   const entries = new Map<string, Entry>()
   const tree = {
@@ -166,7 +166,7 @@ describe('a change to the vault', () => {
 
 describe('a files tab a linked tab moves', () => {
   it('reveals the path it is moved to, a note or not', async () => {
-    const revealPath = vi.fn(async (_path: string) => {})
+    const revealPath = vi.fn(async (_path: string) => undefined)
     const { kind } = createKindOver(createTreeOf().tree)
     const state = { list: { revealPath } } as unknown as FilesTabState
 

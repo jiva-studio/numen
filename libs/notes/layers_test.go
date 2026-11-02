@@ -13,21 +13,25 @@ import (
 
 const notesModule = "github.com/jiva-studio/numen/libs/notes/"
 
-var allowedInternalEdges = map[string][]string{
-	"domain":   nil,
-	"ulid":     nil,
-	"markdown": {"domain", "ulid"},
-	"edit":     {"domain", "ulid", "markdown"},
+func getAllowedInternalEdges() map[string][]string {
+	return map[string][]string{
+		"domain":   nil,
+		"ulid":     nil,
+		"markdown": {"domain", "ulid"},
+		"edit":     {"domain", "ulid", "markdown"},
+	}
 }
 
-var forbiddenInfra = map[string]bool{
-	"os":            true,
-	"os/exec":       true,
-	"net":           true,
-	"net/http":      true,
-	"database/sql":  true,
-	"encoding/json": true,
-	"syscall":       true,
+func getForbiddenInfra() map[string]bool {
+	return map[string]bool{
+		"os":            true,
+		"os/exec":       true,
+		"net":           true,
+		"net/http":      true,
+		"database/sql":  true,
+		"encoding/json": true,
+		"syscall":       true,
+	}
 }
 
 func TestNotesInternalHexagonalLayers(t *testing.T) {
@@ -38,7 +42,7 @@ func TestNotesInternalHexagonalLayers(t *testing.T) {
 		}
 		dir := filepath.ToSlash(filepath.Dir(path))
 		pkg, _, _ := strings.Cut(dir, "/")
-		if _, isListed := allowedInternalEdges[pkg]; !isListed {
+		if _, isListed := getAllowedInternalEdges()[pkg]; !isListed {
 			return nil
 		}
 		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
@@ -51,12 +55,12 @@ func TestNotesInternalHexagonalLayers(t *testing.T) {
 			if err != nil {
 				continue
 			}
-			if forbiddenInfra[to] {
+			if getForbiddenInfra()[to] {
 				t.Errorf("%s imports %s: libs/notes is a pure domain/text library and performs no I/O or wire serialization", path, to)
 			}
 			if after, ok := strings.CutPrefix(to, notesModule); ok {
 				target, _, _ := strings.Cut(after, "/")
-				if target != pkg && !slices.Contains(allowedInternalEdges[pkg], target) {
+				if target != pkg && !slices.Contains(getAllowedInternalEdges()[pkg], target) {
 					t.Errorf("%s (%s) imports %s (%s): violates internal layer hierarchy edit -> markdown -> {domain, ulid}", path, pkg, to, target)
 				}
 			}

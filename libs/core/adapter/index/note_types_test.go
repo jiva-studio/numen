@@ -11,7 +11,7 @@ func saveTypedNote(t *testing.T, db *DB, vault domain.Vault, path, title string,
 	t.Helper()
 
 	n := domain.Note{
-		FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: 100, ModTime: walked},
+		FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: 100, ModTime: getWalked()},
 		Title:    title,
 		Type:     kind,
 		Body:     title,
@@ -24,9 +24,9 @@ func saveTypedNote(t *testing.T, db *DB, vault domain.Vault, path, title string,
 // A note carrying no type is a note.
 func TestANoteWhoseFileReturnsNothingIsANote(t *testing.T) {
 	db := openDB(t)
-	saveNamedNote(t, db, first, "notes/entropy.md", "Entropy")
+	saveNamedNote(t, db, getFirst(), "notes/entropy.md", "Entropy")
 
-	target, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{"notes/entropy.md"})
+	target, err := db.NoteQueries().GetTypes(t.Context(), getFirst().ID, []string{"notes/entropy.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,17 +41,17 @@ func TestANoteWhoseFileReturnsNothingIsANote(t *testing.T) {
 // path cannot be mistaken for one of this vault's.
 func TestTheNotesOfATypeInOneVaultAreNotAnotherVaultsNotes(t *testing.T) {
 	db := openDB(t)
-	saveTypedNote(t, db, first, "sheets/animal.md", "Animal", formType)
-	saveTypedNote(t, db, first, "samples/mammals.md", "Mammals", sampleType)
-	saveTypedNote(t, db, second, "patterns/quasar.md", "Quasar", formType)
-	saveTypedNote(t, db, second, "collections/pulsars.md", "Pulsars", sampleType)
+	saveTypedNote(t, db, getFirst(), "sheets/animal.md", "Animal", formType)
+	saveTypedNote(t, db, getFirst(), "samples/mammals.md", "Mammals", sampleType)
+	saveTypedNote(t, db, getSecond(), "patterns/quasar.md", "Quasar", formType)
+	saveTypedNote(t, db, getSecond(), "collections/pulsars.md", "Pulsars", sampleType)
 
 	for _, target := range []struct {
 		vault domain.Vault
 		want  string
 	}{
-		{first, "sheets/animal.md"},
-		{second, "patterns/quasar.md"},
+		{getFirst(), "sheets/animal.md"},
+		{getSecond(), "patterns/quasar.md"},
 	} {
 		found, err := db.NoteQueries().GetPathsOfType(t.Context(), target.vault.ID, formType)
 		if err != nil {
@@ -67,12 +67,12 @@ func TestTheNotesOfATypeInOneVaultAreNotAnotherVaultsNotes(t *testing.T) {
 // typed note from a plain note without opening either.
 func TestTheTypeOfEveryEntryOfAFolderIsOneQuestion(t *testing.T) {
 	db := openDB(t)
-	saveTypedNote(t, db, first, "mixed/mammals.md", "Mammals", sampleType)
-	saveTypedNote(t, db, first, "mixed/animal.md", "Animal", formType)
-	saveTypedNote(t, db, first, "mixed/reading.md", "Reading", domain.TypeNote)
-	saveTypedNote(t, db, second, "mixed/quasars.md", "Quasars", sampleType)
+	saveTypedNote(t, db, getFirst(), "mixed/mammals.md", "Mammals", sampleType)
+	saveTypedNote(t, db, getFirst(), "mixed/animal.md", "Animal", formType)
+	saveTypedNote(t, db, getFirst(), "mixed/reading.md", "Reading", domain.TypeNote)
+	saveTypedNote(t, db, getSecond(), "mixed/quasars.md", "Quasars", sampleType)
 
-	target, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{
+	target, err := db.NoteQueries().GetTypes(t.Context(), getFirst().ID, []string{
 		"mixed/mammals.md", "mixed/animal.md", "mixed/reading.md",
 		"mixed/quasars.md", "mixed/llama.jpg",
 	})
@@ -102,10 +102,10 @@ func TestTheTypeOfEveryEntryOfAFolderIsOneQuestion(t *testing.T) {
 // A note saved again with another type carries that type, and the column holds the change.
 func TestSavingANoteAgainWritesTheTypeItNowCarries(t *testing.T) {
 	db := openDB(t)
-	saveTypedNote(t, db, first, "mixed/mammals.md", "Mammals", domain.TypeNote)
-	saveTypedNote(t, db, first, "mixed/mammals.md", "Mammals", sampleType)
+	saveTypedNote(t, db, getFirst(), "mixed/mammals.md", "Mammals", domain.TypeNote)
+	saveTypedNote(t, db, getFirst(), "mixed/mammals.md", "Mammals", sampleType)
 
-	target, err := db.NoteQueries().GetTypes(t.Context(), first.ID, []string{"mixed/mammals.md"})
+	target, err := db.NoteQueries().GetTypes(t.Context(), getFirst().ID, []string{"mixed/mammals.md"})
 	if err != nil {
 		t.Fatal(err)
 	}

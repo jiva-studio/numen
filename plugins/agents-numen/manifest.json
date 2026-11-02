@@ -1,24 +1,16 @@
 {
   "id": "md.numen.agents.numen",
   "name": "Numen Agent",
-  "version": "2026.10.2",
+  "version": "2026.11.1",
   "protocol": 1,
   "description": "Built-in AI assistant for OpenRouter, OpenAI, Ollama, and LM Studio",
   "capabilities": ["ai.agent.provider"],
   "targets": ["desktop.editor", "desktop.flashcards"],
-  "activationEvents": [],
+  "contributes": { "category": "agents" },
   "permissions": ["network:outbound", "vault:read", "vault:write"],
   "secrets": [{ "name": "apiKey", "title": "API key" }],
-  "lifecycle": {
-    "idleTimeoutSeconds": 180,
-    "keepAliveWhileVisible": false,
-    "memoryLimitBytes": 4294967296
-  },
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/agents-numen",
-    "serviceName": "numen.v1.AgentService"
-  },
+  "backend": { "entrypoint": "bin/agents-numen" },
+  "services": ["numen.v1.AgentService"],
   "settings": [
     {
       "key": "baseUrl",
@@ -31,9 +23,9 @@
       "key": "model",
       "type": "string",
       "title": "Model",
-      "modelsOf": "numen",
       "description": "Model used when a task sets none",
-      "default": "openai/gpt-4o-mini"
+      "default": "openai/gpt-4o-mini",
+      "options": ["openai/gpt-4o-mini", "openai/gpt-4o", "google/gemini-2.5-flash"]
     },
     {
       "key": "temperature",

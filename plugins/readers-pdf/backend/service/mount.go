@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
 
 // Mount registers the plugin's services on s, reporting text versions to the host the environment
@@ -26,14 +27,20 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	return mount(s, files, texts, NewTextServer(files, texts, store, queue))
+	workers := newWorkers()
+	return mount(s, files, texts, NewTextServer(files, texts, store, queue, workers), workers)
 }
 
-func mount(s *server.Server, files host.Vault, texts host.Texts, provider *TextServer) error {
-	NewDocumentServer(files, texts).Mount(s.NewAPI(APIService))
-	s.RegisterRoute(pagesPattern, NewPageServer(files))
+func mount(s *server.Server, files host.Vault, texts host.Texts, provider *TextServer, workers *pdf.Workers) error {
+	if err := NewDocumentServer(files, texts, workers).Mount(s.NewAPI(APIService)); err != nil {
+		return err
+	}
+	s.RegisterRoute(pagesPattern, NewPageServer(files, workers))
 	s.Register(host.NewTextProviderHandler(provider, s.HandlerOptions()...))
-	s.OnClose(provider.Close)
+	s.OnClose(func() error {
+		provider.Close()
+		return nil
+	})
 	return nil
 }
 
@@ -57,6 +64,7 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 		if err != nil {
 			return err
 		}
-		return mount(s, files, texts, NewTextServer(files, texts, store, queue))
+		workers := newWorkers()
+		return mount(s, files, texts, NewTextServer(files, texts, store, queue, workers), workers)
 	})
 }

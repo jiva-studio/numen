@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards/deckedit"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/hostports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
@@ -40,7 +39,7 @@ type Config struct {
 	Store host.Store
 	// DayStart is how long past midnight a day of review begins. Left nil, it is the default.
 	DayStart func() time.Duration
-	// Now is what time it is. Left nil, it is this machine's clock.
+	// Now is what time it is.
 	Now ports.Clock
 	// Cores is how many decks are parsed at once. Left zero, one for each CPU.
 	Cores int
@@ -79,9 +78,6 @@ func (b *Backend) scenarios() *Scenarios { return b.scenariosStore.Load() }
 func New(cfg Config) *Backend {
 	wired := hostports.New(cfg.Vault, cfg.Store)
 	now := cfg.Now
-	if now == nil {
-		now = clock.Now
-	}
 	b := &Backend{
 		vault: cfg.Vault, ports: wired, titles: wired.Notes, now: now, cfg: cfg,
 		runs: sessions{mu: sync.Mutex{}, run: nil}, scenariosStore: atomic.Pointer[Scenarios]{},
@@ -103,7 +99,7 @@ func (b *Backend) build(dayStart func() time.Duration) *Scenarios {
 	if cores <= 0 {
 		cores = runtime.GOMAXPROCS(0)
 	}
-	// What a window writes is levelled in the index by the paths it touched, and the index is the host's.
+	// What a window writes is updated in the index by the paths it touched, and the index is the host's.
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {
 		return cfg.Vault.With(v.ID).Scan(ctx, paths)
 	}
@@ -115,9 +111,9 @@ func (b *Backend) build(dayStart func() time.Duration) *Scenarios {
 		List:        cards.NewList(wired.Readers, wired.Notes),
 		Write:       write,
 		Create:      cards.NewCreate(wired.Writers, index, now),
-		RenameField: cards.NewRenameField(wired.Readers, wired.Writers, wired.Notes, wired.Links, index, now, cards.UnboundedDecks),
+		RenameField: cards.NewRenameField(wired.Readers, wired.Writers, wired.Notes, wired.Links, index, now),
 		BoundedRenameField: cards.NewRenameField(
-			wired.Readers, wired.Writers, wired.Notes, wired.Links, index, now, cards.MaxDecksPerRename),
+			wired.Readers, wired.Writers, wired.Notes, wired.Links, index, now).WithMaxDecks(cards.MaxDecksPerRename),
 	}
 	deckEdits := deckedit.NewScenarios(read, write)
 

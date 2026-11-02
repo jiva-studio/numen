@@ -70,7 +70,7 @@ describe('WORDS axis units', () => {
 })
 
 describe('WORDS.noCards', () => {
-  it('speaks of one deck in the singular and of several by their count', () => {
+  it('names one deck in the singular and of several by their count', () => {
     expect(WORDS.noCards(1)).toBe('The deck using this preset has no cards.')
     expect(WORDS.noCards(3)).toBe('The 3 decks using this preset have no cards.')
   })

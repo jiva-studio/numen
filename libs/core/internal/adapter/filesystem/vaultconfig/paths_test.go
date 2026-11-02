@@ -1,6 +1,7 @@
 package vaultconfig
 
 import (
+	"fmt"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -9,28 +10,30 @@ import (
 // paths is every shape a path can arrive in, whether or not any file of that
 // name exists. The rules are about the text of a path, and the two of them
 // have to answer every one of these between them.
-var paths = []string{
-	"note.md",
-	"notes/Entropy.md",
-	"assets/paper.pdf",
-	".obsidian/note.md",
-	".numen",
-	".numen/config.json",
-	".numen/ocr/abc.txt",
-	".numen/../notes/a.md",
-	"notes/../.numen/config.json",
-	".NUMEN/config.json",
-	"NUL",
-	"c:notes.md",
-	"notes/../../etc/passwd",
-	"..",
-	".",
-	"../outside.md",
-	"/absolute.md",
-	"",
-	"with\x00nul.md",
-	"./note.md",
-	"a//b.md",
+func getPaths() []string {
+	return []string{
+		"note.md",
+		"notes/Entropy.md",
+		"assets/paper.pdf",
+		".obsidian/note.md",
+		".numen",
+		".numen/config.json",
+		".numen/ocr/abc.txt",
+		".numen/../notes/a.md",
+		"notes/../.numen/config.json",
+		".NUMEN/config.json",
+		"NUL",
+		"c:notes.md",
+		"notes/../../etc/passwd",
+		"..",
+		".",
+		"../outside.md",
+		"/absolute.md",
+		"",
+		"with\x00nul.md",
+		"./note.md",
+		"a//b.md",
+	}
 }
 
 // TestOneOfTheTwoRulesAnswers is the property the pair exists for: a path is
@@ -44,7 +47,7 @@ func TestOneOfTheTwoRulesAnswers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, path := range paths {
+	for _, path := range getPaths() {
 		t.Run(path, func(t *testing.T) {
 			isVault, _, vaultErr := resolveVaultPath(resolved, path, DefaultServiceDir)
 			isOurs, _, oursErr := resolveServicePath(resolved, path, DefaultServiceDir)
@@ -156,4 +159,29 @@ func TestHasReservedDeviceName(t *testing.T) {
 			t.Errorf("hasReservedDeviceName(%q) = %v, want %v", path, got, want)
 		}
 	}
+}
+
+// resolveServicePath is the complement of resolveVaultPath: a path that stays inside the
+// vault, and that is in the folder belonging to the application by both of the
+// same measures.
+//
+// The two overlap nowhere, which is what lets one type write a derived file
+// That property is the subject of a test. A path whose spelling and whose
+// landing disagree is neither's, and both refuse it.
+func resolveServicePath(root, path, serviceDir string) (target, resolved string, err error) {
+	clean, err := CleanPath(path)
+	if err != nil {
+		return "", "", err
+	}
+	if !isOurs(clean, serviceDir) {
+		return "", "", fmt.Errorf("%s: %w", path, ErrOutside)
+	}
+	target, resolved, landed, err := resolveContained(root, clean)
+	if err != nil {
+		return "", "", err
+	}
+	if !isOurs(landed, serviceDir) {
+		return "", "", fmt.Errorf("%s: %w", path, ErrOutside)
+	}
+	return target, resolved, nil
 }

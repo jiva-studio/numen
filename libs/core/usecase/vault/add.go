@@ -62,7 +62,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		return domain.Vault{}, err
 	}
 
-	id, err := u.identity.EnsureIdentity(root, u.now())
+	id, err := u.identity.EnsureIdentity(root, u.now.Now())
 	if err != nil {
 		return domain.Vault{}, fmt.Errorf("give %s an identity: %w", root, err)
 	}
@@ -79,19 +79,9 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		return domain.Vault{}, err
 	}
 	if found && existing.Path != root {
-		stillThere, carriesIt, err := u.identity.GetVaultID(existing.Path)
-		if err != nil {
+		if err := u.checkNotCopy(id, root, existing.Path); err != nil {
 			return domain.Vault{}, err
 		}
-		if carriesIt && stillThere == id {
-			return domain.Vault{}, fmt.Errorf(
-				"%w: %s and %s both carry the identity %s, so they are copies of one "+
-					"vault and cannot both be indexed. To make this a separate "+
-					"vault, delete its service folder and add it again",
-				ErrCopy, root, existing.Path, id)
-		}
-		// The old location is missing, or holds a different vault: the folder moved, and the
-		// registry must be updated.
 	}
 
 	v := domain.Vault{ID: id, Name: name, Path: root}
@@ -104,4 +94,22 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		return domain.Vault{}, err
 	}
 	return v, nil
+}
+
+// checkNotCopy reports ErrCopy where the old location of a registered identity still carries it.
+// A missing old location, or one holding a different vault, means the folder moved, and the
+// registry must be updated.
+func (u Add) checkNotCopy(id domain.VaultID, root, oldPath string) error {
+	stillThere, carriesIt, err := u.identity.GetVaultID(oldPath)
+	if err != nil {
+		return err
+	}
+	if carriesIt && stillThere == id {
+		return fmt.Errorf(
+			"%w: %s and %s both have the identity %s, so they are copies of one "+
+				"vault and cannot both be indexed. To make this a separate "+
+				"vault, delete its service folder and add it again",
+			ErrCopy, root, oldPath, id)
+	}
+	return nil
 }

@@ -1,85 +1,181 @@
-import { test, expect } from '../../support/test.js'
+import { access } from 'node:fs/promises'
+import { join } from 'node:path'
+import { test, expect, type Page } from '../../support/test.js'
+import { openWorkspace } from '../../support/workspace.js'
+import {
+  createFolder,
+  createNoteWithBody,
+  destroyNotes,
+  getRow,
+  getTab,
+  listPaths,
+  readOpenTabs,
+  showInFiles,
+  trashFiles,
+} from '../../support/layout.js'
+import { getVaultPath, readNote } from '../../support/vault.js'
 
-test.describe('File Tree Folder Expansion and Structure', () => {
-  test('creates new nested folder via file tree context menu', async ({ page }) => {
-    await page.goto('/')
+/** Whether a file exists at the path, relative to the folder of the vault, on the disk. */
+const isOnDisk = async (vault: string, path: string): Promise<boolean> =>
+  access(join(vault, path)).then(
+    () => true,
+    () => false,
+  )
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+/** The field a row's name is typed into, which the tree opens on the row being named. */
+const getNameField = (page: Page) => page.getByRole('tree').getByRole('textbox')
 
-    // 1. Open Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
+/** Chooses an item of the New submenu of the menu on a row. */
+const chooseNewItem = async (page: Page, row: string, item: string): Promise<void> => {
+  await getRow(page, row).click({ button: 'right' })
+  // The submenu opens over the item that opens it once the pointer reaches it.
+  const newItem = page.getByRole('menuitem', { name: 'New', exact: true })
+  await newItem.focus()
+  await newItem.press('ArrowRight')
+  await page.getByRole('menuitem', { name: item, exact: true }).click()
+}
 
-    // 2. Right click on notes folder row to open context menu
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.click({ button: 'right' })
+test.describe('Naming, making and removing files in the files tab', () => {
+  test('creates a folder in a folder from the New menu of its row, under the name typed', async ({
+    page,
+    request,
+  }) => {
+    await createFolder(request, 'Saltworks')
+    try {
+      await openWorkspace(page)
+      await showInFiles(page, [])
 
-    // 3. Click New folder option in menu (under New submenu)
-    const newSubmenu = page.getByRole('menuitem', { name: /^New$/i }).first()
-    if (await newSubmenu.isVisible()) {
-      await newSubmenu.hover({ force: true })
+      await chooseNewItem(page, 'Saltworks', 'New folder')
+      await expect(getNameField(page)).toBeFocused()
+      await getNameField(page).fill('Brine tanks')
+      await getNameField(page).press('Enter')
+
+      await expect
+        .poll(async () => listPaths(request, 'Saltworks'))
+        .toEqual(['Saltworks/Brine tanks'])
+      await expect(getRow(page, 'Saltworks/Brine tanks')).toBeVisible()
+    } finally {
+      await trashFiles(request, ['Saltworks'])
     }
+  })
 
-    const newFolderItem = page
-      .getByRole('menuitem', { name: /New folder/i })
-      .or(page.getByText('New folder'))
-      .first()
-    await expect(newFolderItem).toBeVisible({ timeout: 5_000 })
-    await newFolderItem.click()
+  test('creates a note in a folder from the New menu of its row, under the name typed', async ({
+    page,
+    request,
+  }) => {
+    await createFolder(request, 'Saltpans')
+    try {
+      await openWorkspace(page)
+      await showInFiles(page, [])
 
-    // 4. Verify new folder was created and appears under notes
-    const createdFolderRow = page.locator('[data-tree-row^="notes/New folder"]').first()
-    await expect(createdFolderRow).toBeVisible({ timeout: 10_000 })
+      await chooseNewItem(page, 'Saltpans', 'New note')
+      await expect(getNameField(page)).toBeFocused()
+      await getNameField(page).fill('Evaporation pans')
+      await getNameField(page).press('Enter')
+
+      await expect
+        .poll(async () => listPaths(request, 'Saltpans'))
+        .toEqual(['Saltpans/Evaporation pans.md'])
+      expect((await readNote(request, 'Saltpans/Evaporation pans.md')).error).toBe('')
+    } finally {
+      await destroyNotes(request, ['Saltpans/Evaporation pans.md'])
+      await trashFiles(request, ['Saltpans'])
+    }
+  })
+
+  test('renames a note from its row menu, and its open tab follows the file', async ({
+    page,
+    request,
+  }) => {
+    const before = await createNoteWithBody(
+      request,
+      'Sluice log',
+      'notes',
+      '# Sluice log\n\nGate opened at dawn.\n',
+    )
+    const after = 'notes/Brine pump.md'
+    try {
+      await openWorkspace(page)
+      await showInFiles(page, ['notes'])
+      await getRow(page, before).press('Enter')
+      await expect(getTab(page, 'Sluice log')).toBeVisible()
+
+      await getTab(page, 'Files').click()
+      await getRow(page, before).click({ button: 'right' })
+      await page.getByRole('menuitem', { name: 'Rename', exact: true }).click()
+      await expect(getNameField(page)).toHaveValue('Sluice log.md')
+      await getNameField(page).fill('Brine pump.md')
+      await getNameField(page).press('Enter')
+
+      await expect.poll(async () => listPaths(request, 'notes')).toContain(after)
+      expect(await listPaths(request, 'notes')).not.toContain(before)
+      expect((await readNote(request, after)).body).toBe('# Sluice log\n\nGate opened at dawn.\n')
+      await expect
+        .poll(async () => (await readOpenTabs(request)).tabs.map((one) => one.path))
+        .toContain(after)
+      expect((await readOpenTabs(request)).tabs.map((one) => one.path)).not.toContain(before)
+    } finally {
+      await destroyNotes(request, [before, after])
+    }
+  })
+
+  test('moves two notes selected with Ctrl-click to the trash with Remove', async ({
+    page,
+    request,
+  }) => {
+    const first = await createNoteWithBody(request, 'Mill race', 'notes', '# Mill race\n')
+    const second = await createNoteWithBody(request, 'Tail race', 'notes', '# Tail race\n')
+    const headRace = await createNoteWithBody(request, 'Head race', 'notes', '# Head race\n')
+    const vault = getVaultPath()
+    try {
+      await openWorkspace(page)
+      await showInFiles(page, ['notes'])
+
+      await getRow(page, first).click()
+      await getRow(page, second).click({ modifiers: ['ControlOrMeta'] })
+      await expect(getRow(page, first)).toHaveAttribute('aria-selected', 'true')
+      await expect(getRow(page, second)).toHaveAttribute('aria-selected', 'true')
+      await getRow(page, second).click({ button: 'right' })
+      await page.getByRole('menuitem', { name: 'Remove', exact: true }).click()
+
+      await expect
+        .poll(async () =>
+          (await listPaths(request, 'notes')).filter((one) => one === first || one === second),
+        )
+        .toEqual([])
+      expect(await listPaths(request, 'notes')).toContain(headRace)
+      expect(await isOnDisk(vault, join('.trash', first))).toBe(true)
+      expect(await isOnDisk(vault, join('.trash', second))).toBe(true)
+      await expect(getRow(page, first)).toHaveCount(0)
+      await expect(getRow(page, second)).toHaveCount(0)
+    } finally {
+      await destroyNotes(request, [first, second, headRace])
+    }
   })
 
   test('persists folder expansion state across navigation', async ({ page }) => {
-    await page.goto('/')
+    await openWorkspace(page)
+    await showInFiles(page, ['cards'])
+    const animalsRow = getRow(page, 'cards/Animals.md')
+    await expect(animalsRow).toBeVisible()
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await getTab(page, 'Agent').click()
+    await getTab(page, 'Files').click()
 
-    // 1. Open Files tab and expand cards directory
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const cardsRow = page.locator('[data-tree-row="cards"]')
-    await expect(cardsRow).toBeVisible()
-    await cardsRow.press('Enter')
-
-    const animalsRow = page.locator('[data-tree-row="cards/Animals.md"]')
-    await expect(animalsRow).toBeVisible({ timeout: 5_000 })
-    await expect(cardsRow).toHaveAttribute('aria-expanded', 'true')
-
-    // 2. Switch to another tab (e.g. Thermodynamics or Agent tab)
-    const otherTab = page.getByRole('tab', { name: /Thermodynamics|Agent/i }).first()
-    await otherTab.click()
-
-    // 3. Switch back to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // 4. Verify cards folder remains expanded
-    await expect(cardsRow).toBeVisible()
-    await expect(cardsRow).toHaveAttribute('aria-expanded', 'true')
+    await expect(getRow(page, 'cards')).toHaveAttribute('aria-expanded', 'true')
     await expect(animalsRow).toBeVisible()
   })
 
   test('collapses expanded folder on Enter key', async ({ page }) => {
-    await page.goto('/')
+    await openWorkspace(page)
+    await showInFiles(page, ['cards'])
+    const cardsRow = getRow(page, 'cards')
+    const animalsRow = getRow(page, 'cards/Animals.md')
+    await expect(animalsRow).toBeVisible()
 
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    // 1. Open Files tab and expand cards directory
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const cardsRow = page.locator('[data-tree-row="cards"]')
-    await expect(cardsRow).toBeVisible()
     await cardsRow.press('Enter')
 
-    const animalsRow = page.locator('[data-tree-row="cards/Animals.md"]')
-    await expect(animalsRow).toBeVisible({ timeout: 5_000 })
-    await expect(cardsRow).toHaveAttribute('aria-expanded', 'true')
-
-    // 2. Press Enter again on cards folder to collapse
-    await cardsRow.press('Enter')
-
-    // 3. Verify the cards folder is collapsed and the child file is hidden
     await expect(cardsRow).toHaveAttribute('aria-expanded', 'false')
-    await expect(animalsRow).not.toBeVisible()
+    await expect(animalsRow).toBeHidden()
   })
 })

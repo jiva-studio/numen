@@ -12,7 +12,7 @@ import (
 	"github.com/gomlx/go-huggingface/tokenizers/api"
 	"github.com/gomlx/go-huggingface/tokenizers/hftokenizer"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 )
 
 // The inputs a sentence encoder exported to ONNX requires.
@@ -22,8 +22,21 @@ const (
 	tokenTypeIDs  = "token_type_ids"
 )
 
-// The outputs a vector is read from, best first.
-var outputs = []string{"sentence_embedding", "last_hidden_state"}
+// getOutputs returns the outputs a vector is read from, best first.
+func getOutputs(pooling string) []string {
+	if pooling == PoolOutput {
+		return []string{"sentence_embedding"}
+	}
+	return []string{"last_hidden_state", "sentence_embedding"}
+}
+
+// getPooling returns the name of a pooling, with the old name of cls replaced.
+func getPooling(name string) string {
+	if name == PoolHead {
+		return PoolCLS
+	}
+	return name
+}
 
 // Embedder is one model, loaded.
 type Embedder struct {
@@ -39,13 +52,17 @@ type Embedder struct {
 	pad          int
 	output       string
 	isTyped      bool
-	isHeadPooled bool
+	isPositioned bool
+	isNormalised bool
 
 	sessions *sessionPool[*ort.Session]
+	paddings *sync.Pool
 }
 
 // Open loads the model, fetching it first where this machine does not hold it.
-func Open(ctx context.Context, identity ModelInfo, cfg LocalModel, progress FetchProgress) (*Embedder, error) {
+func Open(
+	ctx context.Context, library *onnx.Library, identity ModelInfo, cfg LocalModel, progress FetchProgress,
+) (*Embedder, error) {
 	if err := CheckIdentity(identity, cfg.Name); err != nil {
 		return nil, err
 	}
@@ -58,15 +75,16 @@ func Open(ctx context.Context, identity ModelInfo, cfg LocalModel, progress Fetc
 		return nil, err
 	}
 
-	engine, _, err := onnx.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, ""))
+	engine, _, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, ""))
 	if err != nil {
 		return nil, err
 	}
-	options, provider, err := onnx.NewSessionOptions(engine, onnx.SessionSettings{
+	options, provider, err := library.NewSessionOptions(engine, onnx.SessionSettings{
 		Provider: cfg.GetProvider(),
 		Threads:  cfg.GetThreads(),
 
 		ComputeUnits: onnx.ComputeUnitsDefault,
+		ModelPath:    paths.Model,
 	})
 	if err != nil {
 		return nil, err
@@ -96,48 +114,63 @@ func Open(ctx context.Context, identity ModelInfo, cfg LocalModel, progress Fetc
 		dimensions:   identity.Dimensions,
 		maxTokens:    identity.MaxTokens,
 		window:       getWindow(provider, identity.MaxTokens),
-		pooling:      identity.Pooling,
+		pooling:      getPooling(identity.Pooling),
 		batchTexts:   max(cfg.BatchTexts, 1),
 		passes:       passes,
 		tokenizer:    tokenizer,
 		pad:          0,
 		output:       "",
 		isTyped:      false,
+		isPositioned: false,
 		sessions:     newSessionPool(sessions, passes, (*ort.Session).Destroy),
-		isHeadPooled: identity.Pooling == PoolHead,
+		paddings:     newPaddingPool(),
+		isNormalised: identity.Handling.Normalise,
 	}
 	if pad, err := tokenizer.SpecialTokenID(api.TokPad); err == nil {
 		e.pad = pad
 	}
 
-	isTyped, err := checkInputs(cfg.Name, first.InputNames)
+	inputs, err := checkInputs(cfg.Name, first.InputNames, identity.Handling.ExtraInputs)
 	if err != nil {
 		destroySessions()
 		return nil, err
 	}
-	e.isTyped = isTyped
-	if e.output, err = chooseOutput(first.OutputNames); err != nil {
+	e.isTyped, e.isPositioned = inputs.isTyped, inputs.isPositioned
+	if e.output, err = chooseOutput(first.OutputNames, e.pooling); err != nil {
 		destroySessions()
 		return nil, fmt.Errorf("%s: %w", cfg.Name, err)
 	}
 	return e, nil
 }
 
-func checkInputs(model string, names []string) (bool, error) {
-	isTyped := false
+// modelInputs says which of the optional inputs a model takes.
+type modelInputs struct {
+	isTyped, isPositioned bool
+}
+
+func checkInputs(model string, names, extra []string) (modelInputs, error) {
+	var inputs modelInputs
 	for _, name := range names {
 		switch name {
 		case inputIDs, attentionMask:
 		case tokenTypeIDs:
-			isTyped = true
+			inputs.isTyped = true
+		case InputPositionIDs:
+			if !slices.Contains(extra, InputPositionIDs) {
+				return modelInputs{}, fmt.Errorf("%s takes %s: list it in extraInputs of its profile", model, name)
+			}
+			inputs.isPositioned = true
 		default:
-			return false, fmt.Errorf("%s requires an unsupported input: %s", model, name)
+			return modelInputs{}, fmt.Errorf("%s requires an unsupported input: %s", model, name)
 		}
 	}
 	if !slices.Contains(names, inputIDs) || !slices.Contains(names, attentionMask) {
-		return false, fmt.Errorf("%s takes %v, expected tokens and mask", model, names)
+		return modelInputs{}, fmt.Errorf("%s takes %v, expected tokens and mask", model, names)
 	}
-	return isTyped, nil
+	if slices.Contains(extra, InputPositionIDs) && !inputs.isPositioned {
+		return modelInputs{}, fmt.Errorf("%s takes no %s, but its profile lists it in extraInputs", model, InputPositionIDs)
+	}
+	return inputs, nil
 }
 
 // Close releases the model sessions.
@@ -156,13 +189,15 @@ func (e *Embedder) Concurrency() int {
 // GetModel returns the model description.
 func (e *Embedder) GetModel() ModelInfo {
 	return ModelInfo{
-		Name:        e.name,
-		Dimensions:  e.dimensions,
-		MaxTokens:   e.maxTokens,
-		Pooling:     e.pooling,
-		From:        e.origin,
-		Concurrency: e.passes,
-		FloorHint:   0,
+		Name:           e.name,
+		Dimensions:     e.dimensions,
+		MaxTokens:      e.maxTokens,
+		Pooling:        e.pooling,
+		From:           e.origin,
+		Concurrency:    e.passes,
+		FloorHint:      0,
+		MinChunkLength: 0,
+		Handling:       Handling{QueryPrefix: "", DocumentPrefix: "", File: "", Normalise: e.isNormalised, ExtraInputs: nil},
 	}
 }
 
@@ -270,8 +305,8 @@ func (e *Embedder) encode(text string) []int {
 }
 
 func (e *Embedder) forward(ctx context.Context, batch [][]int) ([][]float32, error) {
-	rows, seq, padded := padBatch(batch, e.pad, e.window)
-	defer releasePadding(padded)
+	rows, seq, padded := padBatch(e.paddings, batch, e.pad, e.window)
+	defer e.paddings.Put(padded)
 
 	session, err := e.sessions.acquire(ctx)
 	if err != nil {
@@ -288,8 +323,9 @@ func (e *Embedder) forward(ctx context.Context, batch [][]int) ([][]float32, err
 		{inputIDs, padded.ids},
 		{attentionMask, padded.mask},
 		{tokenTypeIDs, padded.types},
+		{InputPositionIDs, padded.positions},
 	} {
-		if one.name == tokenTypeIDs && !e.isTyped {
+		if (one.name == tokenTypeIDs && !e.isTyped) || (one.name == InputPositionIDs && !e.isPositioned) {
 			continue
 		}
 		value, err := ort.NewTensor(shape, one.flat)
@@ -330,37 +366,46 @@ func (e *Embedder) readVectors(target *ort.Value, rows, seq int, mask []int64) (
 	}
 
 	if len(out) == 2 {
-		return splitRows(flat, rows, e.dimensions)
+		return splitRows(flat, rows, e.dimensions, e.isNormalised)
 	}
 	if want := rows * seq * e.dimensions; len(flat) != want {
 		return nil, fmt.Errorf("%s returned %d values for %v", e.name, len(flat), out)
 	}
-	if e.isHeadPooled {
-		return headPool(flat, rows, seq, e.dimensions), nil
-	}
-	return meanPool(flat, mask, rows, seq, e.dimensions), nil
+	return pool(e.pooling, tokenOutput{flat: flat, mask: mask, rows: rows, seq: seq, dimensions: e.dimensions}, e.isNormalised)
 }
 
-func splitRows(flat []float32, rows, dimensions int) ([][]float32, error) {
+func splitRows(flat []float32, rows, dimensions int, isNormalised bool) ([][]float32, error) {
 	if len(flat) != rows*dimensions {
 		return nil, fmt.Errorf("got %d values for %d vectors of %d dimensions", len(flat), rows, dimensions)
 	}
 	out := make([][]float32, rows)
 	for row := range out {
 		vector := slices.Clone(flat[row*dimensions : (row+1)*dimensions])
-		out[row] = Normalise(vector)
+		out[row] = finishVector(vector, isNormalised)
 	}
 	return out, nil
 }
 
-func chooseOutput(named []string) (string, error) {
-	for _, want := range outputs {
-		if slices.Contains(named, want) {
-			return want, nil
+// finishVector scales the vector to unit length when the profile says so.
+func finishVector(vector []float32, isNormalised bool) []float32 {
+	if isNormalised {
+		return Normalise(vector)
+	}
+	return vector
+}
+
+// chooseOutput returns the output a vector is read from. A model pooled as output answers with
+// sentence_embedding, or with its only output; any other pooling reads last_hidden_state, and a
+// graph without one answers with its only output.
+func chooseOutput(named []string, pooling string) (string, error) {
+	want := getOutputs(pooling)
+	for _, name := range want {
+		if slices.Contains(named, name) {
+			return name, nil
 		}
 	}
 	if len(named) == 1 {
 		return named[0], nil
 	}
-	return "", fmt.Errorf("answers with %v, expected one of %v", named, outputs)
+	return "", fmt.Errorf("answers with %v, expected one of %v", named, want)
 }

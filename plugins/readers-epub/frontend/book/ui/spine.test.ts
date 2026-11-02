@@ -53,7 +53,7 @@ const readSpine = async () => {
     props: { markup: spine, path: MIDDLE, span: span(), book: span(), at: span().start },
     attachTo: document.body,
   })
-  ;(wrapper.find('.book__area').element as HTMLElement).scrollTo = () => {}
+  ;(wrapper.find('.book__area').element as HTMLElement).scrollTo = () => undefined
   await wrapper.vm.$nextTick()
   return wrapper
 }

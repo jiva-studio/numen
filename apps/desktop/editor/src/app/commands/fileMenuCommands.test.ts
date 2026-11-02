@@ -64,7 +64,7 @@ const invoke = (entry: FileMenuEntry, file: string) => ({
   tab: 'tab',
 })
 
-const runs = { canRun: () => true, cannotRun: () => {} }
+const runs = { canRun: () => true, cannotRun: vi.fn() }
 
 /** A pending request that the test resolves itself. */
 const createDeferred = <T>() => {

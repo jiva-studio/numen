@@ -4,7 +4,7 @@
  * The timestamps are in the gutter and can be clicked to seek. The caller decides
  * which line is current and whether the view scrolls to keep it visible.
  */
-import { doc } from '../dom'
+import { doc } from '@numen/ui'
 import { StateEffect, StateField, type Extension } from '@codemirror/state'
 import { Decoration, EditorView, GutterMarker, ViewPlugin, gutter } from '@codemirror/view'
 

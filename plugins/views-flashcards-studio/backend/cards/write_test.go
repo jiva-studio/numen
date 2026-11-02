@@ -2,9 +2,9 @@ package cards_test
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cardid"
@@ -48,7 +48,7 @@ func TestACardModelsTemplatesAndItsFieldsAreOneWrite(t *testing.T) {
 	vs := newVaults(t)
 	writers := &counted{VaultWriters: vs.ports.Writers}
 	u := cards.NewWrite(
-		vs.ports.Readers, writers, vs.queries, indexNothing, time.Now)
+		vs.ports.Readers, writers, vs.queries, indexNothing, vaulttest.NewClock())
 
 	body := "\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Wingspan}}\n"
 	pos, err := u.CardModel(
@@ -88,7 +88,7 @@ func TestWriteCardModel_PreservesExistingFieldDeclarations(t *testing.T) {
 
 	u := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
-		time.Now)
+		vaulttest.NewClock())
 	if _, err := u.CardModel(
 		t.Context(), vs.first, "Kept.md",
 		"\n## Recognise\n\n### Front\n\n{{Height}}\n",
@@ -116,7 +116,7 @@ func newWriteForDeck(t *testing.T, vs vaulted, path, body string) cards.Write {
 	}
 	return cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
-		time.Now)
+		vaulttest.NewClock())
 }
 
 // readDeck is the deck as the vault now holds it.
@@ -199,7 +199,7 @@ func TestAMarkIsSavedInTheFilesOwnLineEnding(t *testing.T) {
 
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
-		time.Now)
+		vaulttest.NewClock())
 	if _, err := w.Deck(t.Context(), vs.first, "decks/Crlf.md", body, domain.FileStat{}); err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -319,7 +319,7 @@ func TestWritingADeckNobodyTouchedChangesNothing(t *testing.T) {
 
 			w := cards.NewWrite(
 				vs.ports.Readers, vs.ports.Writers,
-				vs.queries, indexNothing, time.Now)
+				vs.queries, indexNothing, vaulttest.NewClock())
 			if _, err := w.Deck(
 				t.Context(), vs.first, "decks/Whole.md", body, domain.FileStat{},
 			); err != nil {

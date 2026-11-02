@@ -2,7 +2,6 @@ package container
 
 import (
 	"io/fs"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -10,7 +9,7 @@ import (
 
 // sdkModule is the base module of the plugin SDK. Each feature module is a
 // folder under it with a go.mod of its own, named after that folder.
-const sdkModule = numenModules + "libs/plugin-sdk-go"
+const sdkModule = numenRoot + "libs/plugin-sdk-go"
 
 // isSDK reports whether a package or module is part of the plugin SDK.
 func isSDK(path string) bool {
@@ -52,19 +51,9 @@ func TestWhatTheSDKModuleRulesRefuse(t *testing.T) {
 			t.Errorf("%s requires %s: failure is %v, want %v", one.mod, one.dep, got, one.isRefused)
 		}
 	}
-	if isSDK(numenModules + "libs/plugin-sdk-ts") {
+	if isSDK(numenRoot + "libs/plugin-sdk-ts") {
 		t.Error("the TypeScript SDK is taken for a module of the Go SDK")
 	}
-}
-
-// getModulePath is the path a go.mod declares in its module directive.
-func getModulePath(gomod string) string {
-	for line := range strings.SplitSeq(gomod, "\n") {
-		if path, ok := strings.CutPrefix(strings.TrimSpace(line), "module "); ok {
-			return strings.Trim(strings.TrimSpace(path), `"`)
-		}
-	}
-	return ""
 }
 
 // Every go.mod of the plugin SDK is named after its folder and requires only
@@ -77,10 +66,7 @@ func TestNoSDKModuleRequiresAFeatureModule(t *testing.T) {
 			return err
 		}
 		found++
-		text, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
+		file := readGoMod(t, path)
 		dir, err := filepath.Rel(root, filepath.Dir(path))
 		if err != nil {
 			return err
@@ -89,13 +75,13 @@ func TestNoSDKModuleRequiresAFeatureModule(t *testing.T) {
 		if dir != "." {
 			want += "/" + filepath.ToSlash(dir)
 		}
-		mod := getModulePath(string(text))
+		mod := getModulePath(file)
 		if mod != want {
 			t.Errorf("%s declares module %q, want %q", path, mod, want)
 		}
-		for _, dep := range parseGoMod(string(text)).requires {
-			if why := getSDKRefusal(mod, dep); why != "" {
-				t.Errorf("%s requires %s: %s", mod, dep, why)
+		for _, required := range file.Require {
+			if why := getSDKRefusal(mod, required.Mod.Path); why != "" {
+				t.Errorf("%s requires %s: %s", mod, required.Mod.Path, why)
 			}
 		}
 		return nil

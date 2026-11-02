@@ -1,6 +1,8 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
+    "incremental": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "jsx": "preserve",
@@ -8,10 +10,8 @@
 
     "paths": {
       "@/*": ["./src/*"],
-      "@numen/plugin-sdk": ["../../../libs/plugin-sdk-ts/src/index.ts"],
-      "@numen/plugin-sdk/*": ["../../../libs/plugin-sdk-ts/src/*"],
-      "@numen/protocol": ["../../../libs/protocol/index.ts"],
-      "@numen/protocol/*": ["../../../libs/protocol/*"]
+      "@numen/core-client": ["../../../libs/core-client/src/index.ts"],
+      "@numen/core-client/*": ["../../../libs/core-client/src/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts", "vitest.setup.ts"]

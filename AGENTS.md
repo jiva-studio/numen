@@ -25,7 +25,7 @@ flowchart LR
     Stage3 --> Report["Unified report"]
 ```
 
-1. **Gatekeeper & architecture** — [`stages/1-gatekeeper.md`](.agents/skills/review/stages/1-gatekeeper.md): module targets for touched packages (e.g. `make lib_core_lint lib_core_test`, `make lib_ui_lint lib_ui_test`), then the diff against `AGENTS.md` and the rules in `.agents/rules/`. A failing gate stops the pipeline.
+1. **Gatekeeper & architecture** — [`stages/1-gatekeeper.md`](.agents/skills/review/stages/1-gatekeeper.md): module targets for touched packages (e.g. `make lib_core_lint lib_core_test`, `make lib_ui_lint lib_ui_test`), then the diff against `AGENTS.md` and the rules in `.agents/rules/`. A failing gate stops the pipeline. Go tests run without `-race` locally; the race detector runs in CI only (`GO_RACE=1` turns it on for a make target).
 2. **Semantic logic audit** — [`stages/2-bughunter.md`](.agents/skills/review/stages/2-bughunter.md): the blast radius, and every defect proven with _Given → When → Then_.
 3. **Dynamic stress verification** — [`stages/3-adversary.md`](.agents/skills/review/stages/3-adversary.md): a test that forces the failure, and the mutation check on the change's own tests.
 4. **Synthesis** — the Unified Review Report exactly as templated in the skill.
@@ -48,7 +48,7 @@ Rewrite on sight of any of these:
 - `so that we do not…`, `to avoid…`
 - `these are those X`, `which is why this exists`
 - benchmark numbers, or any comparison with a previous implementation
-  (measurements live only in `docs/performance.md`)
+  (measurements are stored only in `docs/performance.md`)
 
 Comments must be concise, factual, and strictly technical engineering English. Avoid storytelling and literary cadence.
 
@@ -131,9 +131,9 @@ Rules:
 4. A section with independent state, or a part rendered on its own elsewhere, is extracted into its own component.
 5. Business logic does not live in a `.vue` file — it is a composable or a domain model.
 
-The components in the tree still carry the short `// --- <Name> ---` form. They
-are migrated to the banner above; until that lands, the banner is what new and
-touched components take.
+The components in the tree still use the short `// --- <Name> ---` form. They
+are being migrated to the banner above; until the migration is done, new and
+touched components use the banner.
 
 ---
 
@@ -241,15 +241,15 @@ Pick **one** word for the failure discriminant: **`error`** (never `refusal`, `r
 
 ## 9. Domain terminology
 
-A concept takes the standard term of its field (W3C, LSP, MIME, gRPC codes).
+A concept is named with the standard term of its field (W3C, LSP, MIME, gRPC codes).
 
 Specific term rules:
 
-| Wrong                | Correct              | Context                                       |
-| -------------------- | -------------------- | --------------------------------------------- |
-| `refusal`, `refused` | `error`, `errorCode` | operation error discriminants                 |
-| `spoken`, `spokenBy` | `transcript`         | audio/video transcription output              |
-| `make` (frontend)    | `create`             | factory functions in TS/Vue                   |
+| Wrong                | Correct              | Context                          |
+| -------------------- | -------------------- | -------------------------------- |
+| `refusal`, `refused` | `error`, `errorCode` | operation error discriminants    |
+| `spoken`, `spokenBy` | `transcript`         | audio/video transcription output |
+| `make` (frontend)    | `create`             | factory functions in TS/Vue      |
 
 ### Vault and link formatting rules
 
@@ -261,7 +261,7 @@ Specific term rules:
 
 ## 10. File placement — domain code stays in its domain
 
-Code that serves one domain lives inside that domain's folder under
+Code that serves one domain is in that domain's folder under
 `apps/desktop/editor/src/` (or its respective plugin under `plugins/`):
 
 | File                                             | Belongs in |
@@ -271,7 +271,7 @@ Code that serves one domain lives inside that domain's folder under
 | Flashcard review settings                        | `cards/`   |
 
 There is no `tabs/` folder and no `shared/`. What two or more domains genuinely
-use sits at the top of `src/` under the word for what it is — `transport.ts`,
+use is at the top of `src/` under the word for what it is — `transport.ts`,
 `theme.ts`, `words.ts` — and a type only one domain reads never moves there.
 
 ---
@@ -300,7 +300,7 @@ interface Correctable {
 
 A file is split when it holds a second responsibility. The unit of organisation
 is the thing, not the kind of thing: a folder collecting every type, every
-handler or every use case is a heap at fifty entries and was already one at
+handler or every use case is unstructured at fifty entries and was already unstructured at
 five.
 
 ## 12. File and directory naming (frontend — TypeScript / Vue)
@@ -313,7 +313,7 @@ Directories and files follow strict casing rules:
 
 ## 13. Absolute ban on narrative slop, participles, and Anglish metaphors (all languages)
 
-To prevent linguistic contagion and degraded code readability, pseudo-literary prose, Anglish idioms, irregular past participles as identifiers, and bare prepositions are strictly forbidden across TypeScript, Vue, and Go.
+To keep code readable, pseudo-literary prose, Anglish idioms, irregular past participles as identifiers, and bare prepositions are strictly forbidden across TypeScript, Vue, and Go.
 
 ### Forbidden variable & identifier patterns:
 
@@ -328,24 +328,47 @@ To prevent linguistic contagion and degraded code readability, pseudo-literary p
 5. **Fake turn casts**: Never write `voice: 'said'`, `state: 'done'`, or `as unknown as Turn`. Adhere strictly to the domain types `voice: 'asked' | 'answered'` and `TurnState: 'settled' | 'arriving' | 'failed'`.
 6. **Forbidden error terminology**: Never use `refused` or `refusal`. Always use `error` or `errorCode`.
 7. **Narrative comments & docstrings**: Do not write biblical or Saxon idioms (`hands back`, `comes to`, `stands on`, `where it sits`, `what holds here`). Write plain, technical engineering English.
+8. **Personification and metaphor in prose a person reads**: A task title, notice, error, manifest `title` or `description`, Markdown document or test title states the operation or the fact in standard engineering terms. A window does not `wear` a theme, a plugin does not `speak` a protocol, a page does not `hand over` a value; a task is titled `Apply theme`, not `Wearing a theme`, and its detail reads `Theme not found: dracula`. `tools/lint-narrative/scan.mjs` rejects these families (`wear`/`dress`, `hand over`/`hand back`, `speaks`, `breathe`/`eat`, `lit up`, `bring level`, `stands`/`sits` at a place, `nowhere to put`) in Markdown, comments, test titles, Go and TypeScript string literals and `manifest.json`; words inside backticks are quoted, not checked.
 
 ---
 
 ## 14. Known gotchas
 
 - **Every worktree shares one `git stash` stack.** Two agents stashing at once
-  cross: one `pop` takes the other's entry into the wrong tree. For a clean
+  mix up the entries: one `pop` takes the other's entry into the wrong tree. For a clean
   tree, commit first and `git checkout HEAD~1 -- <path>`, or copy the file
   aside.
-- **The windows reach `@numen/ui` through its build.** Run `npm run build` in
+- **The windows import `@numen/ui` from its build.** Run `npm run build` in
   `libs/ui/core` before the suites in `apps/desktop/editor` and
   `flashcards`, or they fail on `Cannot find module '@numen/ui'`.
 - **`node_modules` symlinked from the primary checkout resolves
-  `@numen/protocol` to whatever branch that checkout is parked on.** A
+  `@numen/protocol` to whatever branch that checkout has checked out.** A
   generated symbol missing there is that, not the branch under test. Install
   for real when the answer matters.
 - **`npm test` in `libs/ui/core` starts both story instances at once**, and
-  the run dies before any test executes. Take them one at a time:
+  the run fails before any test executes. Take them one at a time:
   `npm run test:unit`,
   `vitest run --project 'stories (chromium)'`,
   `vitest run --project 'stories (webkit)'`. WebKit does run on this machine.
+
+---
+
+## 15. Rules for agents learned from review
+
+The plugin model is [`.agents/rules/architecture.md`](.agents/rules/architecture.md) §11.
+
+1. A window (editor, flashcards, mobile) calls the core only through `@numen/core-client`. A plugin frontend calls it only through `@numen/plugin-sdk`, a plugin backend only through `libs/plugin-sdk-go`. The core routes every call; windows and plugins never call each other directly.
+2. A plugin depends on the SDK and third-party code, and its frontend also on `@numen/ui`. Never add a direct import or require of `libs/notes`, `libs/protocol`, `@numen/core-client`, `@connectrpc` or another library to a plugin. `// indirect` lines in a plugin's `go.mod` come from the SDK and are allowed.
+3. Never add to the plugin SDK what no plugin uses. Every SDK export has a plugin that imports it. Never propose a third shared library for plugins.
+4. An SDK type may be an alias of a `libs/notes` type. Each type has one name; never add a second set of names.
+5. A plugin has no `.proto` file and no protobuf code. Its backend exposes JSON methods to its frontend. A plugin's own service is named after its plugin id; shared services such as `numen.v1.AgentService` are declared by the core.
+6. Code may be duplicated between plugins. Never add or keep a check that pushes code into the SDK or `@numen/ui`.
+7. Logic that depends on time takes a clock as a port. A plugin takes the SDK clock or declares its own.
+8. Size and complexity limits are rules, with one set for Go, TypeScript and Vue ([`.agents/rules/architecture.md`](.agents/rules/architecture.md) §8).
+9. Nothing is published for now. Publishing, API compatibility tooling and iframe isolation come later, when the SDK is released.
+10. Checks are structural. Use an off-the-shelf tool with configuration where one exists (dependency-cruiser, depguard and gomodguard, golangci-lint linters, stylelint). Write a check by hand only over syntax trees, import graphs and type information. A check never decides by a regular expression over source text, a list of names or a list of files ([`.agents/rules/architecture.md`](.agents/rules/architecture.md) §10).
+11. Checks never get weaker: no exclusion and no workaround that bypasses a rule (such as obtaining the time through `time.After(0)`). Derive sets from structure.
+12. Tell the owner a design decision before writing it into a plan file or implementing it. Do not present a guess as agreed.
+13. Do the work first. Run the heavy checks (full lint-layers, tests across modules, linters) once at the end.
+14. Commit messages carry no `Co-Authored-By` line and no session trailer.
+15. Write comments and docs in plain technical English (§1, §13).

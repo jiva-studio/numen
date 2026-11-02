@@ -8,7 +8,7 @@ import { Button } from '@numen/ui'
 import type { SettingsTabState } from '../types'
 import { write } from '@/entities/settings'
 import type { PluginInfo } from '@/entities/settings'
-import { formatFailedAt, getFailedPlugins } from '../lib/failures'
+import { formatFailedAt, getFailedPlugins } from '@numen/plugin-manager'
 import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -94,7 +94,7 @@ function onDisable(pluginId: string) {
   margin-block-end: var(--settings-near);
   padding: 0.5rem 0.75rem;
   border: var(--numen-stroke) solid var(--numen-alarm);
-  border-radius: var(--numen-radius-small);
+  border-radius: var(--numen-radius-tight);
   color: var(--numen-ink);
 }
 

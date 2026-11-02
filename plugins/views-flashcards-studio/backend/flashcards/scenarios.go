@@ -62,8 +62,8 @@ func NewScenarios(cfg Config) Scenarios {
 	reviewCards := NewListReviewCards(cfg.Readers, cfg.Notes, cfg.Links)
 	reviewCards.Cores = cfg.Cores
 	// A deck or card model this window writes is forgotten before the index is
-	// brought level with it.
-	leveled := func(ctx context.Context, v domain.Vault, paths []string) error {
+	// updated for it.
+	updateIndex := func(ctx context.Context, v domain.Vault, paths []string) error {
 		reviewCards.Invalidate(v.ID, paths...)
 		if cfg.Index == nil {
 			return nil
@@ -71,7 +71,7 @@ func NewScenarios(cfg Config) Scenarios {
 		return cfg.Index(ctx, v, paths)
 	}
 	assigning := NewAssignCardIDs(
-		cfg.Readers, cfg.Writers, cfg.Notes, cfg.Links, leveled, cfg.Now,
+		cfg.Readers, cfg.Writers, cfg.Notes, cfg.Links, updateIndex, cfg.Now,
 	)
 	var starts time.Duration
 	if cfg.DayStart != nil {
@@ -80,8 +80,8 @@ func NewScenarios(cfg Config) Scenarios {
 	day := review.Day{Starts: starts, In: nil}
 
 	presets := NewPresets(
-		cfg.Readers, cfg.Writers, cfg.Links, cfg.Notes, leveled, day, cfg.Now,
-	)
+		cfg.Readers, cfg.Writers, cfg.Links, cfg.Notes, updateIndex, cfg.Now,
+	).WithDay(day)
 	// A link the index does not carry is accounted for in what parsing turned
 	// up.
 	presets.Problems = cfg.Problems

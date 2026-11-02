@@ -7,6 +7,7 @@
  * depends on is what the field means. What a step renders is recomputed on
  * every keystroke, so a vault changing under an open step is rendered as it is.
  */
+import { formatErrorMessage } from '@numen/core-client'
 import {
   computed,
   ref,
@@ -254,7 +255,11 @@ function createPaletteStepsAndSearch(
     text: state.typed,
     onDrop: state.drop,
     onLights: previewItem,
-    onLists: () => void loadVaults(),
+    onLists: () => {
+      loadVaults().catch((error: unknown) => {
+        state.failureMessage.value = formatErrorMessage(error)
+      })
+    },
     onClose: () => setOpen(false),
     invocation,
   })

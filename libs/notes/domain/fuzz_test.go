@@ -7,26 +7,28 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// addressSeeds are the shapes a link is written in: a bare name, a name with an
+// listAddressSeeds returns the shapes a link is written in: a bare name, a name with an
 // alias, one with a fragment, both together, the two schemes the index writes,
 // a title carrying a colon, a name that is only punctuation, and the empty
 // string.
-var addressSeeds = []string{
-	"Entropy",
-	"[[Entropy]]",
-	"[[Entropy|the measure]]",
-	"[[Entropy#Recognise]]",
-	"[[Entropy#Recognise|the measure]]",
-	"note://01J8F3K2M9QRSTVWXYZ0123456",
-	"asset://images/plate.png",
-	"TCP/IP: a history",
-	"://",
-	"|#",
-	"[[",
-	"]]",
-	"  ",
-	"",
-	"\x00\xff",
+func listAddressSeeds() []string {
+	return []string{
+		"Entropy",
+		"[[Entropy]]",
+		"[[Entropy|the measure]]",
+		"[[Entropy#Recognise]]",
+		"[[Entropy#Recognise|the measure]]",
+		"note://01J8F3K2M9QRSTVWXYZ0123456",
+		"asset://images/plate.png",
+		"TCP/IP: a history",
+		"://",
+		"|#",
+		"[[",
+		"]]",
+		"  ",
+		"",
+		"\x00\xff",
+	}
 }
 
 // Every string is an address of something: addressing is total, so no input
@@ -35,7 +37,7 @@ var addressSeeds = []string{
 // A link in a note file can be typed manually or produced by another editor, so
 // the input here is arbitrary bytes.
 func FuzzParseAddress(f *testing.F) {
-	for _, seed := range addressSeeds {
+	for _, seed := range listAddressSeeds() {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, raw string) {

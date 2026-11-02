@@ -3,6 +3,7 @@ package service
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -48,9 +49,9 @@ func readRecord(t *testing.T, record string) map[string][]map[string]any {
 		if err := json.Unmarshal([]byte(line), &message); err != nil {
 			t.Fatalf("the agent read %q: %v", line, err)
 		}
-		method, _ := message["method"].(string)
-		if method == "" {
-			method = "reply"
+		method := "reply"
+		if name, ok := message["method"].(string); ok && name != "" {
+			method = name
 		}
 		observed[method] = append(observed[method], message)
 	}
@@ -60,9 +61,15 @@ func readRecord(t *testing.T, record string) map[string][]map[string]any {
 func runFakeACPAgent(args []string, in io.Reader, out io.Writer) int {
 	behaviour, record := args[0], args[1]
 	if behaviour == "fail" {
-		if started, err := os.OpenFile(record, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600); err == nil {
-			fmt.Fprintln(started, `{"method":"started"}`)
-			_ = started.Close()
+		started, err := os.OpenFile(record, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 2
+		}
+		_, err = fmt.Fprintln(started, `{"method":"started"}`)
+		if err = errors.Join(err, started.Close()); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 2
 		}
 		fmt.Fprintln(os.Stderr, "not signed in")
 		return 1
@@ -71,11 +78,14 @@ func runFakeACPAgent(args []string, in io.Reader, out io.Writer) int {
 	if err != nil {
 		return 2
 	}
-	defer recording.Close()
 	agent := &fakeAgent{behaviour: behaviour, out: out, lines: bufio.NewScanner(in), record: recording}
 	agent.lines.Buffer(nil, 4<<20)
 	for agent.lines.Scan() {
 		agent.handle()
+	}
+	if err := errors.Join(agent.err, recording.Close()); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 2
 	}
 	return 0
 }
@@ -85,12 +95,25 @@ type fakeAgent struct {
 	out       io.Writer
 	lines     *bufio.Scanner
 	record    io.Writer
+	// err is the first failure to encode, decode or write a message.
+	err error
+}
+
+func (a *fakeAgent) fail(err error) {
+	if a.err == nil {
+		a.err = err
+	}
 }
 
 func (a *fakeAgent) send(message map[string]any) {
 	message["jsonrpc"] = "2.0"
-	raw, _ := json.Marshal(message)
-	fmt.Fprintf(a.out, "%s\n", raw)
+	raw, err := json.Marshal(message)
+	if err != nil {
+		a.fail(err)
+		return
+	}
+	_, err = fmt.Fprintf(a.out, "%s\n", raw)
+	a.fail(err)
 }
 
 // read returns the next message from the client.
@@ -102,9 +125,10 @@ func (a *fakeAgent) read() map[string]any {
 }
 
 func (a *fakeAgent) decode() map[string]any {
-	fmt.Fprintf(a.record, "%s\n", a.lines.Bytes())
+	_, err := fmt.Fprintf(a.record, "%s\n", a.lines.Bytes())
+	a.fail(err)
 	var message map[string]any
-	_ = json.Unmarshal(a.lines.Bytes(), &message)
+	a.fail(json.Unmarshal(a.lines.Bytes(), &message))
 	return message
 }
 
@@ -132,19 +156,20 @@ func (a *fakeAgent) getSession() map[string]any {
 	models := []map[string]any{{"value": "m1", "name": "Model One"}, {"value": "m2", "name": "Model Two"}}
 	switch a.behaviour {
 	case "config", "thought":
-		session["configOptions"] = []map[string]any{
+		options := []map[string]any{
 			{"id": "mode", "category": "mode", "type": "select", "currentValue": "ask", "options": []map[string]any{{"value": "ask"}}},
 			{"id": "model", "category": "model", "type": "select", "currentValue": "m1", "options": []map[string]any{
 				{"group": "g", "name": "Group", "options": models},
 			}},
 		}
 		if a.behaviour == "thought" {
-			session["configOptions"] = append(session["configOptions"].([]map[string]any), map[string]any{
+			options = append(options, map[string]any{
 				"id": "effort", "category": "thought_level", "type": "select", "currentValue": "medium", "options": []map[string]any{
 					{"value": "low", "name": "Low"}, {"value": "medium", "name": "Medium"}, {"value": "high", "name": "High"},
 				},
 			})
 		}
+		session["configOptions"] = options
 	case "legacy":
 		session["models"] = map[string]any{"currentModelId": "m1", "availableModels": []map[string]any{
 			{"modelId": "m1", "name": "Model One"}, {"modelId": "m2", "name": "Model Two"},

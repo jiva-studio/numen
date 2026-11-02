@@ -7,33 +7,35 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// spliceSeeds are notes a write has to come through byte for byte: a document
+// listSpliceSeeds returns notes a write has to come through byte for byte: a document
 // end standing inside the delimiters, a block scalar carrying a line that opens
 // with `#`, a list written flush with its key, keys and values written in other
 // scripts, and the plain shapes around them.
-var spliceSeeds = []string{
-	"---\ntitle: Old\n---\nbody\n",
-	"---\ntitle: Old\n...\nmy own scratch notes, not yaml: [[[\nkeep me\n---\nbody\n",
-	"---\n# a note to myself\ntitle: Old\n\nzebra: 1\n---\nbody\n",
-	"---\ntitle:\n- one\n- two\nzebra: 1\n---\nbody\n",
-	"---\nlinks:\n  - to: A\n    role: ref\n    note: |\n      the first thought\n      # the second one\n  - to: B\n    role: ref\n---\nbody\n",
-	"---\nзаголовок: Мхи\nlinks:\n  - to: Папоротники\n    role: ref\n---\nтекст\n",
-	"---\nτίτλος: Βρύα\nlinks:\n  - to: \"[[Φτέρες]]\"\n    role: ref\n---\nκείμενο\n",
-	"---\n标题: 苔藓\nlinks:\n  - to: 蕨类\n    role: ref\n    note: 一\n---\n正文\n",
-	"---\nё中a: a\nlinks:\n  - to: a\n    role: ref\n---\nbody\n",
-	"---\nзаметка: |\n  первая мысль\n  вторая мысль\ntitle: Мхи\n---\nтекст\n",
-	"---\n0: \n... 0\n---\nbody\n",
-	"---\n 0:\n0\n---\nbody\n",
-	"---\r\ntitle: Old\r\n---\r\nbody\r\n",
-	"---\ntitle: Old\n---",
-	"---\ntitle: Old\nnever closed\n",
-	"# no frontmatter at all\n",
-	"",
+func listSpliceSeeds() []string {
+	return []string{
+		"---\ntitle: Old\n---\nbody\n",
+		"---\ntitle: Old\n...\nmy own scratch notes, not yaml: [[[\nkeep me\n---\nbody\n",
+		"---\n# a note to myself\ntitle: Old\n\nzebra: 1\n---\nbody\n",
+		"---\ntitle:\n- one\n- two\nzebra: 1\n---\nbody\n",
+		"---\nlinks:\n  - to: A\n    role: ref\n    note: |\n      the first thought\n      # the second one\n  - to: B\n    role: ref\n---\nbody\n",
+		"---\nзаголовок: Мхи\nlinks:\n  - to: Папоротники\n    role: ref\n---\nтекст\n",
+		"---\nτίτλος: Βρύα\nlinks:\n  - to: \"[[Φτέρες]]\"\n    role: ref\n---\nκείμενο\n",
+		"---\n标题: 苔藓\nlinks:\n  - to: 蕨类\n    role: ref\n    note: 一\n---\n正文\n",
+		"---\nё中a: a\nlinks:\n  - to: a\n    role: ref\n---\nbody\n",
+		"---\nзаметка: |\n  первая мысль\n  вторая мысль\ntitle: Мхи\n---\nтекст\n",
+		"---\n0: \n... 0\n---\nbody\n",
+		"---\n 0:\n0\n---\nbody\n",
+		"---\r\ntitle: Old\r\n---\r\nbody\r\n",
+		"---\ntitle: Old\n---",
+		"---\ntitle: Old\nnever closed\n",
+		"# no frontmatter at all\n",
+		"",
+	}
 }
 
 // A write to one key leaves every byte outside that key unchanged.
 func FuzzSetTitle(f *testing.F) {
-	for _, seed := range spliceSeeds {
+	for _, seed := range listSpliceSeeds() {
 		f.Add(seed, "New")
 	}
 	f.Fuzz(func(t *testing.T, raw, title string) {
@@ -50,7 +52,7 @@ func FuzzSetTitle(f *testing.F) {
 
 // Writing a link leaves every byte outside the `links:` block unchanged.
 func FuzzAddLink(f *testing.F) {
-	for _, seed := range spliceSeeds {
+	for _, seed := range listSpliceSeeds() {
 		f.Add(seed, "Somewhere Else")
 	}
 	f.Fuzz(func(t *testing.T, raw, to string) {
@@ -70,7 +72,7 @@ func FuzzAddLink(f *testing.F) {
 // A change to a link stays inside the `links:` block, and a rejected one leaves
 // the note byte for byte.
 func FuzzUpdateLink(f *testing.F) {
-	for _, seed := range spliceSeeds {
+	for _, seed := range listSpliceSeeds() {
 		f.Add(seed, "A", "child")
 	}
 	f.Add("---\nlinks:\n  - to: A\n    role: ref\n    mine: keep me\n"+
@@ -96,7 +98,7 @@ func FuzzUpdateLink(f *testing.F) {
 
 // Writing the prose leaves the frontmatter byte for byte.
 func FuzzSetBody(f *testing.F) {
-	for _, seed := range spliceSeeds {
+	for _, seed := range listSpliceSeeds() {
 		f.Add(seed, "# A heading\n\nAnd a sentence.\n")
 	}
 	f.Fuzz(func(t *testing.T, raw, body string) {

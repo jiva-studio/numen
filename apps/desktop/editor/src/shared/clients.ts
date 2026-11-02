@@ -15,4 +15,5 @@ export {
   vaultsService,
   windowService,
   workspace,
-} from '@numen/plugin-sdk'
+  pluginCatalog,
+} from '@numen/core-client'

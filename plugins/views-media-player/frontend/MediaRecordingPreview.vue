@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { doc, getCurrentDate } from './dom'
 import { ref, useTemplateRef } from 'vue'
 import { Pause, Play } from '@lucide/vue'
-import { clock } from '@numen/ui'
+import { clock, doc, getCurrentDate } from '@numen/ui'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -29,7 +28,9 @@ function onTogglePreviewPlay() {
     previewAudioElement.value.pause()
     isPreviewPlaying.value = false
   } else {
-    void previewAudioElement.value.play()
+    previewAudioElement.value.play().catch(() => {
+      isPreviewPlaying.value = false
+    })
     isPreviewPlaying.value = true
   }
 }
@@ -110,7 +111,7 @@ function onSaveRecording() {
   gap: 0.75rem;
   padding: 1.25rem;
   background: var(--numen-field-bg);
-  border-radius: var(--numen-radius-card);
+  border-radius: var(--numen-radius);
 }
 
 .media-recorder__preview-title {
@@ -132,7 +133,7 @@ function onSaveRecording() {
   padding: 0.625rem 1.25rem;
   font-size: 0.9375rem;
   font-weight: 600;
-  border-radius: var(--numen-radius-button);
+  border-radius: var(--numen-radius);
   border: none;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -147,6 +148,7 @@ function onSaveRecording() {
   place-items: center;
   border-radius: 50%;
   background: var(--numen-accent);
+  color: var(--numen-accent-ink);
 }
 
 .media-recorder__icon {
@@ -169,10 +171,10 @@ function onSaveRecording() {
   padding: 0.5rem 1rem;
   font-size: 0.8125rem;
   font-weight: 600;
-  border-radius: var(--numen-radius-button);
+  border-radius: var(--numen-radius);
   border: 1px solid var(--numen-accent);
   background: var(--numen-accent);
-  color: var(--numen-surface);
+  color: var(--numen-accent-ink);
   cursor: pointer;
   transition: opacity 0.15s ease;
 }

@@ -394,7 +394,7 @@ export const VerseSetInAPreElement: Story = {
     await expect(activeSet.scrollHeight).toBeLessThanOrEqual(activeSet.clientHeight + 1)
     await expect(activeSet.scrollWidth).toBeLessThanOrEqual(activeSet.clientWidth + 1)
 
-    // It relies on the paper the rest of the text does. The typography dresses
+    // It relies on the paper the rest of the text does. The typography styles
     // a pre as a block of code, and a title page is not one.
     const renderedStyle = getComputedStyle(activeSet)
     await expect(renderedStyle.backgroundColor).toBe('rgba(0, 0, 0, 0)')
@@ -569,8 +569,9 @@ export const DrawnOutOfSight: Story = {
 /**
  * The turn is the columns being carried, so the page slides across the pane
  * and not jumping. A layout is not a turn and is put in place at once, and
- * a layout that left the transition switched off is a book that turns without
- * moving.
+ * a layout that left the turn out is a book that turns without moving. The turn is
+ * written frame by frame, not set to a CSS transition: the end of a transition of
+ * `translate` drew a stray frame in WebKitGTK.
  */
 export const TheTurnIsCarried: Story = {
   decorators: [WIDE],
@@ -579,12 +580,18 @@ export const TheTurnIsCarried: Story = {
     await waitForLayout(canvasElement)
 
     const paper = getPaper(canvasElement)
-    await expect(getComputedStyle(paper).transitionProperty).toContain('translate')
     await expect(paper.style.transition).toBe('')
+    await expect(paper.getAnimations()).toHaveLength(0)
 
-    // The columns carried are carried the whole way, and where they come to
-    // rest is one spread along.
+    // The columns carried are carried the whole way, over frames of their own,
+    // and where they come to rest is one spread along.
     const was = paper.getBoundingClientRect().left
+    const values = new Set<string>()
+    const watch = () => {
+      values.add(paper.style.translate)
+      frame = requestAnimationFrame(watch)
+    }
+    let frame = requestAnimationFrame(watch)
     await userEvent.keyboard('{ArrowRight}')
     await waitFor(
       async () =>
@@ -594,5 +601,7 @@ export const TheTurnIsCarried: Story = {
         ),
       { timeout: ITS_OWN_PACE },
     )
+    cancelAnimationFrame(frame)
+    await expect(values.size).toBeGreaterThan(2)
   },
 }

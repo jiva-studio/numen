@@ -11,7 +11,7 @@ func TestSaveVectorsBatchedCommit(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 
-	vault := first.ID
+	vault := getFirst().ID
 	path := "doc.md"
 
 	if err := db.Chunks().SaveSource(ctx, vault, chunk.Source{
@@ -32,7 +32,7 @@ func TestSaveVectorsBatchedCommit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault, "model", 0, 0, 0, numChunks)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault, "model", chunk.Cursor{}, numChunks)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +42,10 @@ func TestSaveVectorsBatchedCommit(t *testing.T) {
 
 	vectors := make([]chunk.Vector, len(unembedded))
 	for i, o := range unembedded {
-		hash, _ := hex.DecodeString(o.ChunkHash)
+		hash, err := hex.DecodeString(o.ChunkHash)
+		if err != nil {
+			t.Fatal(err)
+		}
 		vectors[i] = chunk.Vector{
 			Chunk:  o.Chunk,
 			Hash:   hash,
@@ -52,17 +55,12 @@ func TestSaveVectorsBatchedCommit(t *testing.T) {
 		}
 	}
 
-	// Ensure our batch size is applied
-	originalBatchSize := chunk.VectorBatchSize
-	chunk.VectorBatchSize = 1000
-	defer func() { chunk.VectorBatchSize = originalBatchSize }()
-
 	if err := db.Chunks().SaveVectors(ctx, vectors); err != nil {
 		t.Fatalf("batched insertion failed: %v", err)
 	}
 
 	// Verify all were written
-	unembeddedAfter, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault, "model", 0, 0, 0, numChunks)
+	unembeddedAfter, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault, "model", chunk.Cursor{}, numChunks)
 	if err != nil {
 		t.Fatal(err)
 	}

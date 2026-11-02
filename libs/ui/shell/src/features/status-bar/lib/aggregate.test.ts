@@ -73,12 +73,24 @@ describe('groupTasks', () => {
       { id: '2', label: 'Task 2', group: 'Audio', state: 'running' },
       { id: '3', label: 'Task 3', group: 'Books', state: 'running' },
     ]
-    const groups = groupTasks(tasks)
+    const { coreTasks, groups } = groupTasks(tasks)
+    expect(coreTasks).toEqual([])
     expect(groups).toHaveLength(2)
     expect(groups[0]?.name).toBe('Books')
     expect(groups[0]?.tasks).toHaveLength(2)
     expect(groups[1]?.name).toBe('Audio')
     expect(groups[1]?.tasks).toHaveLength(1)
+  })
+
+  it("lists the tasks without a group as the application's own, apart from the plugin groups", () => {
+    const tasks: StatusBarTask[] = [
+      { id: '1', label: 'Plugin task', group: 'Reader', state: 'running' },
+      { id: '2', label: 'Core task', state: 'running' },
+      { id: '3', label: 'Empty group name', group: '', state: 'running' },
+    ]
+    const { coreTasks, groups } = groupTasks(tasks)
+    expect(coreTasks.map((one) => one.id)).toEqual(['2', '3'])
+    expect(groups.map((one) => one.name)).toEqual(['Reader'])
   })
 })
 
@@ -149,5 +161,35 @@ describe('formatEta', () => {
   it('formats hours', () => {
     expect(formatEta(3600)).toBe('~1.0h')
     expect(formatEta(5400)).toBe('~1.5h')
+  })
+})
+
+describe('groupTasks across reports', () => {
+  const report = (step: number): StatusBarTask[] => [
+    { id: 'plugin-a', label: 'Reading', group: 'Reader', progress: step, state: 'running' },
+    { id: 'vectors', label: 'Indexing', about: `file ${step}`, progress: step, state: 'running' },
+    { id: 'plugin-b', label: 'Scanning', group: 'Reader', about: `page ${step}`, state: 'running' },
+    { id: 'walk', label: 'Walking', state: 'running' },
+  ]
+  const ids = (listing: ReturnType<typeof groupTasks>): string[] => [
+    ...listing.coreTasks.map((one) => one.id),
+    ...listing.groups.flatMap((group) => [group.name, ...group.tasks.map((one) => one.id)]),
+  ]
+
+  it('lists the same ids in the same order whatever the tasks report', () => {
+    const first = ids(groupTasks(report(1)))
+    for (let step = 2; step <= 30; step++) {
+      expect(ids(groupTasks(report(step)))).toEqual(first)
+    }
+    expect(first).toEqual(['vectors', 'walk', 'Reader', 'plugin-a', 'plugin-b'])
+  })
+
+  it('puts the updated task where it was, with its new fields', () => {
+    const before = groupTasks(report(1))
+    const after = groupTasks(report(2))
+
+    expect(after.coreTasks[0]?.id).toBe(before.coreTasks[0]?.id)
+    expect(after.coreTasks[0]?.about).toBe('file 2')
+    expect(after.groups[0]?.tasks[1]?.about).toBe('page 2')
   })
 })

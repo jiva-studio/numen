@@ -8,6 +8,7 @@
 package watchhub
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -92,8 +93,9 @@ func (notifySystem) Watch(path string, c chan<- notify.EventInfo, events ...noti
 
 func (notifySystem) Stop(c chan<- notify.EventInfo) { notify.Stop(c) }
 
-// hub is every watch the process placed.
-type hub struct {
+// Hub places the watches of one container. notify keeps one watcher per process, so the hub that
+// merges overlapping watches is one per container, and a container is one per process.
+type Hub struct {
 	system system
 
 	mu     sync.Mutex
@@ -101,19 +103,22 @@ type hub struct {
 }
 
 // newHub is a hub placing its watches through the system given.
-func newHub(watches system) *hub {
-	return &hub{system: watches, placed: make(map[*placed]struct{})}
+func newHub(watches system) *Hub {
+	return &Hub{system: watches, placed: make(map[*placed]struct{})}
 }
 
-var shared = newHub(notifySystem{})
+// ErrNoHub is returned by a watch asked of no hub.
+var ErrNoHub = errors.New("a watch was asked of no hub")
+
+// NewHub returns a hub placing its watches through notify.
+func NewHub() *Hub { return newHub(notifySystem{}) }
 
 // Watch reports to c each event at dir and the entries in it, or anywhere under it when recursive,
 // until stop is called. dir names an existing folder.
-func Watch(dir string, isRecursive bool, c chan<- notify.EventInfo) (stop func(), err error) {
-	return shared.watch(dir, isRecursive, c)
-}
-
-func (h *hub) watch(dir string, isRecursive bool, c chan<- notify.EventInfo) (func(), error) {
+func (h *Hub) Watch(dir string, isRecursive bool, c chan<- notify.EventInfo) (stop func(), err error) {
+	if h == nil {
+		return nil, ErrNoHub
+	}
 	canonical, err := getCanonicalPath(dir)
 	if err != nil {
 		return nil, err
@@ -136,7 +141,7 @@ func (h *hub) watch(dir string, isRecursive bool, c chan<- notify.EventInfo) (fu
 
 // place puts a watch over dir that takes over every watch at or under it, and over the one above it
 // when that one watches its own folder alone.
-func (h *hub) place(dir string, isRecursive bool, one *follower) error {
+func (h *Hub) place(dir string, isRecursive bool, one *follower) error {
 	dir, isRecursive, inner := h.getInnerWatches(dir, isRecursive)
 
 	// The watches inner over stop before the new one is placed: notify takes the new watch away
@@ -147,7 +152,7 @@ func (h *hub) place(dir string, isRecursive bool, one *follower) error {
 	next := &placed{dir: dir, isRecursive: isRecursive, followers: make(map[*follower]struct{})}
 	if err := h.start(next); err != nil {
 		for _, p := range inner {
-			_ = h.start(p)
+			err = errors.Join(err, h.start(p))
 		}
 		return err
 	}
@@ -162,7 +167,7 @@ func (h *hub) place(dir string, isRecursive bool, one *follower) error {
 
 // getInnerWatches is the folder and the depth a new watch is placed at to serve a follower of dir,
 // and the watches it takes over.
-func (h *hub) getInnerWatches(dir string, isRecursive bool) (string, bool, []*placed) {
+func (h *Hub) getInnerWatches(dir string, isRecursive bool) (string, bool, []*placed) {
 	for p := range h.placed {
 		if isWithin(dir, p.dir) {
 			dir, isRecursive = p.dir, true
@@ -183,7 +188,7 @@ func (h *hub) getInnerWatches(dir string, isRecursive bool) (string, bool, []*pl
 
 // start registers the watch with the system and forwards its events. A stopped
 // watch is started again on new channels.
-func (h *hub) start(p *placed) error {
+func (h *Hub) start(p *placed) error {
 	target := p.dir
 	if p.isRecursive {
 		target = filepath.Join(p.dir, "...")
@@ -199,7 +204,7 @@ func (h *hub) start(p *placed) error {
 }
 
 // unplace takes a watch away from the operating system and from the hub.
-func (h *hub) unplace(p *placed) {
+func (h *Hub) unplace(p *placed) {
 	h.system.Stop(p.raw)
 	close(p.quit)
 	delete(h.placed, p)
@@ -207,7 +212,7 @@ func (h *hub) unplace(p *placed) {
 
 // newStop returns the function that detaches the follower; repeated calls have
 // no further effect. A watch with no remaining followers is stopped.
-func (h *hub) newStop(one *follower) func() {
+func (h *Hub) newStop(one *follower) func() {
 	var once sync.Once
 	return func() {
 		once.Do(func() {

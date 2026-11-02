@@ -6,7 +6,7 @@
  * "Child 1, Child 2, Child 3" does not show whether labels wrap, collide or
  * read well at a glance, which is the purpose of inspecting one.
  */
-import { getNow } from '../../dom'
+import { getNow } from '@numen/ui'
 const NAMES = [
   'Hexagonal architecture',
   'Ports and adapters',

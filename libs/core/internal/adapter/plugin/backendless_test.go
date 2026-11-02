@@ -9,8 +9,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 const frontendOnlyManifest = `{
@@ -18,10 +20,11 @@ const frontendOnlyManifest = `{
 	"name": "Sketch",
 	"version": "1.0.0",
 	"targets": ["desktop.editor"],
-	"contentTypes": [{"type": "application/x-numen-sketch", "globs": ["*.sketch"]}],
-	"readers": [{"id": "sketch", "contentTypes": ["application/x-numen-sketch"], "rank": "default"}],
+	"contributes": {
+		"readers": [{"id": "sketch", "contentTypes": ["application/pdf"], "rank": "default"}]
+	},
 	"settings": [{"key": "grid", "type": "boolean", "title": "Grid", "default": true}],
-	"frontend": {"entrypoint": "dist/index.js"}
+	"frontend": {}
 }`
 
 func newFrontendOnlyHost(t *testing.T) (*Host, *int) {
@@ -34,12 +37,13 @@ func newFrontendOnlyHost(t *testing.T) (*Host, *int) {
 	if err := os.WriteFile(filepath.Join(pluginDir, "manifest.json"), []byte(frontendOnlyManifest), 0o600); err != nil {
 		t.Fatalf("write manifest: %v", err)
 	}
-	host := NewHost("desktop.editor", dir)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", dir)
+	host.SetContentTypeTable(sharedmimeinfo.Open())
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
 	launches := 0
-	host.SetLauncher(func(context.Context, manifestfile.DiscoveredPlugin, int, string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
 		launches++
 		return nil, nil, errors.New("no process is started in this test")
 	})
@@ -73,7 +77,7 @@ func TestAPluginWithoutABackendIsNeverLaunched(t *testing.T) {
 func TestAnEventForTheFilesOfAFrontendPluginStartsNothing(t *testing.T) {
 	host, launches := newFrontendOnlyHost(t)
 
-	activated, err := host.TriggerEvent(t.Context(), "onFile:.sketch")
+	activated, err := host.TriggerEvent(t.Context(), "onFile:pdf")
 	if err != nil {
 		t.Fatalf("TriggerEvent: %v", err)
 	}
@@ -89,7 +93,7 @@ func TestPluginInfosMarkThePluginsWithAFrontend(t *testing.T) {
 	if len(infos) != 1 || !infos[0].HasFrontend {
 		t.Fatalf("GetPluginInfos = %+v, want the sketch plugin with a frontend", infos)
 	}
-	want := []pluginport.PluginReaderInfo{{ID: "sketch", Extensions: []string{"sketch"}}}
+	want := []pluginport.PluginReaderInfo{{ID: "sketch", Extensions: []string{"pdf"}}}
 	if !reflect.DeepEqual(infos[0].Readers, want) {
 		t.Fatalf("Readers = %+v, want %+v", infos[0].Readers, want)
 	}

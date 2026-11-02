@@ -8,7 +8,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
@@ -23,7 +22,7 @@ import (
 )
 
 // filing is a scanned vault whose files can be moved about, with the index kept
-// level as a real caller keeps it.
+// up to date as a real caller keeps it.
 type filing struct {
 	db    *container.Index
 	vault domain.Vault
@@ -43,7 +42,7 @@ func openFiling(t *testing.T, notes map[string]string) filing {
 		t.Fatal(err)
 	}
 	readers := &countingReaders{VaultReaders: vaultreader.Readers{}}
-	refresh := vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now)
+	refresh := vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), testsupport.NewClock())
 	return filing{
 		db:      db,
 		vault:   v,
@@ -64,16 +63,17 @@ func (f filing) move() vaults.Move { return f.newMove(true) }
 func (f filing) moveApart() vaults.Move { return f.newMove(false) }
 
 func (f filing) newMove(preserved note.SyncTitleAndFilename) vaults.Move {
-	notes := note.NewMove(
-		f.readers, vaultwriter.VaultWriters{},
-		f.db.Links(), f.db.Queries(), f.db.Sources(), f.index, time.Now,
-	)
+	notes := note.NewMove(note.MoveDeps{
+		Readers: f.readers, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
+		Links: f.db.Links(), Names: f.db.Queries(), Sources: f.db.Sources(), Index: f.index, Now: testsupport.NewClock(),
+	})
 	notes.Sync = func() note.SyncTitleAndFilename { return preserved }
-	notes.Drawing = func(_ context.Context, went domain.Move) {
+	notes.Drawing = func(_ context.Context, went domain.Move) error {
 		*f.went = append(*f.went, went)
+		return nil
 	}
 	return vaults.NewMove(
-		vaultwriter.VaultWriters{},
+		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
 		f.db.Links(), f.db.SourcesKnown(), f.db.Sources(), notes,
 	)
 }
@@ -117,7 +117,7 @@ func TestAFolderMovesWithTheNotesBelowIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !moved.IsLanded {
+	if !moved.IsMoved {
 		t.Fatal("the folder did not land")
 	}
 
@@ -237,7 +237,7 @@ func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
 
 	// The chunks are still the source's, so a search answers with the note at
 	// the path it is filed under now.
-	searching := search.New(f.db.Passages(), vaultreader.Readers{}, nil, nil, 0, nil)
+	searching := search.New(f.db.Passages(), vaultreader.Readers{}, nil, nil, nil)
 	found, err := searching.Execute(t.Context(), f.vault, "disorder", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
@@ -263,7 +263,7 @@ func TestAMoveOntoATakenNameMovesNothing(t *testing.T) {
 	if !errors.Is(err, vaultport.ErrAlreadyExists) {
 		t.Fatalf("want ErrAlreadyExists, got %v", err)
 	}
-	if moved.IsLanded {
+	if moved.IsMoved {
 		t.Error("the move says it landed")
 	}
 	if moved.From != "physics" || moved.To != "archive/physics" {

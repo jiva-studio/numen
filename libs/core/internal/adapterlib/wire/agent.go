@@ -3,6 +3,7 @@ package wire
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"connectrpc.com/connect"
@@ -28,12 +29,12 @@ func StreamAgentTask(
 	taking agentport.Agent,
 	task agentport.Task,
 	stream *connect.ServerStream[v1.AskAgentResponse],
-) error {
+) (err error) {
 	work, err := taking.StartRun(ctx, task)
 	if err != nil {
 		return connect.NewError(connect.CodeInternal, err)
 	}
-	defer work.Stop()
+	defer func() { err = errors.Join(err, work.Stop()) }()
 
 	repeat := time.NewTicker(Again)
 	defer repeat.Stop()

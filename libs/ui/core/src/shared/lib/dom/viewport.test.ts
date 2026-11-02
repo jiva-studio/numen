@@ -217,7 +217,15 @@ const mountViewport = (area: HTMLElement | null) => {
         return () => h('div')
       },
     }),
-    { global: { config: { errorHandler: (error: unknown) => void errors.push(error) } } },
+    {
+      global: {
+        config: {
+          errorHandler: (error: unknown) => {
+            errors.push(error)
+          },
+        },
+      },
+    },
   )
   return { wrapper, errors, element, ...target.viewport! }
 }

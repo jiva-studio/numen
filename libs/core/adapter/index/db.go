@@ -9,6 +9,8 @@ package index
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
 	"net/url"
 	"runtime"
 	"slices"
@@ -20,9 +22,9 @@ import (
 	_ "modernc.org/sqlite/vec"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/adapter/index/floors"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/opentabs"
+	"github.com/jiva-studio/numen/libs/core/adapter/index/searchpolicy"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/vault"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/version"
 	"github.com/jiva-studio/numen/libs/core/internal/testonly"
@@ -42,6 +44,8 @@ import (
 type DB struct {
 	write *sql.DB
 	read  *sql.DB
+	// minimum is the shortest small chunk that gets a vector, shared by the queries of this handle.
+	minimum chunk.Minimum
 }
 
 // pragmas are carried in the connection string, so every connection in the
@@ -51,22 +55,24 @@ type DB struct {
 // every other connection with foreign keys off — and no ordinary test can see
 // it, because a sequential test keeps being handed the one connection that was
 // configured.
-var pragmas = []string{
-	// WAL so a long scan does not block readers. This one is persisted in the
-	// database header, and belongs with the rest all the same.
-	"journal_mode(WAL)",
-	// Foreign keys so removing a vault cannot leave rows pointing at nothing.
-	"foreign_keys(1)",
-	// Wait for a writer, up to five seconds, before SQLITE_BUSY. The writer being
-	// waited for may be in another process, and a write that exhausted the wait
-	// retries.
-	"busy_timeout(5000)",
-	// Pages are read from the mapped file, shared by every connection, up to
-	// 256 MiB of it.
-	"mmap_size(268435456)",
-	// Intermediate sort B-trees and temporary tables stay in memory.
-	"temp_store(MEMORY)",
-	"cache_size(-65536)",
+func getPragmas() []string {
+	return []string{
+		// WAL so a long scan does not block readers. This one is persisted in the
+		// database header, and belongs with the rest all the same.
+		"journal_mode(WAL)",
+		// Foreign keys so removing a vault cannot leave rows pointing at nothing.
+		"foreign_keys(1)",
+		// Wait for a writer, up to five seconds, before SQLITE_BUSY. The writer being
+		// waited for may be in another process, and a write that exhausted the wait
+		// retries.
+		"busy_timeout(5000)",
+		// Pages are read from the mapped file, shared by every connection, up to
+		// 256 MiB of it.
+		"mmap_size(268435456)",
+		// Intermediate sort B-trees and temporary tables stay in memory.
+		"temp_store(MEMORY)",
+		"cache_size(-65536)",
+	}
 }
 
 const (
@@ -96,19 +102,23 @@ func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
 		one(&pos)
 	}
 
-	// The sqlite driver is registered by import, so sql.Open has no error to
-	// report; the first connection reports an unusable path.
-	write, _ := sql.Open("sqlite", writeDSN(path, pos))
+	// The first connection reports an unusable path.
+	write, err := sql.Open("sqlite", writeDSN(path, pos))
+	if err != nil {
+		return nil, fmt.Errorf("open the index at %s: %w", path, err)
+	}
 	// One writer. More connections would only mean more of them failing on a
 	// busy lock.
 	write.SetMaxOpenConns(1)
 
 	if err := migrate(ctx, write); err != nil {
-		write.Close()
-		return nil, err
+		return nil, errors.Join(err, write.Close())
 	}
 
-	read, _ := sql.Open("sqlite", dsn(path, pos))
+	read, err := sql.Open("sqlite", dsn(path, pos))
+	if err != nil {
+		return nil, errors.Join(fmt.Errorf("open the index at %s: %w", path, err), write.Close())
+	}
 	read.SetMaxOpenConns(max(4, runtime.NumCPU()))
 	read.SetMaxIdleConns(max(2, runtime.NumCPU()/2))
 	return &DB{write: write, read: read}, nil
@@ -133,7 +143,7 @@ func (d *DB) Maintenance() DatabaseMaintenance { return DatabaseMaintenance{d.wr
 func (d *DB) NoteQueries() *note.Queries { return note.NewQueries(d.read) }
 
 // ChunkQueries reads, so a search answers while a scan is still writing.
-func (d *DB) ChunkQueries() *chunk.Queries { return chunk.NewQueries(d.read) }
+func (d *DB) ChunkQueries() *chunk.Queries { return chunk.NewQueriesWithMinimum(d.read, &d.minimum) }
 
 // Sources is the source and vector ports over the chunk tables. It writes and
 // reads both, through the pool each half belongs to.
@@ -149,15 +159,17 @@ func (d *DB) TextVersions() *version.Repository { return version.NewRepository(d
 // index leaves them as they are.
 func (d *DB) OpenTabs() *opentabs.Repository { return opentabs.NewRepository(d.read, d.write) }
 
-// Floors is the similarity floor of every vault under every recipe. A rebuild of
+// SearchFloors is the effective similarity floor of every vault under every recipe. A rebuild of
 // the index leaves it as it is.
-func (d *DB) Floors() *floors.Repository { return floors.NewRepository(d.read, d.write) }
+func (d *DB) SearchFloors() *searchpolicy.Repository {
+	return searchpolicy.NewRepository(d.read, d.write)
+}
 
-// FloorSamples reads the titles and vectors a calibration measures.
-func (d *DB) FloorSamples() *floors.Samples { return floors.NewSamples(d.read) }
+// SearchSamples reads the titles and vectors a plugin measures the floor with.
+func (d *DB) SearchSamples() *searchpolicy.Samples { return searchpolicy.NewSamples(d.read) }
 
 func dsn(path string, pos settings) string {
-	return dsnOf(path, append(slices.Clone(pragmas), pos.synchronous))
+	return dsnOf(path, append(slices.Clone(getPragmas()), pos.synchronous))
 }
 
 // writeDSN is what the write pool opens with. Every transaction on it takes the

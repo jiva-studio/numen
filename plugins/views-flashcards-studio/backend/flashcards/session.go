@@ -103,11 +103,11 @@ func (u Session) Execute(
 	}
 	schedules := u.schedules.getSchedulesCached(ctx, v, target, asks)
 
-	now := u.now()
-	day, err := getBudgets(
-		ctx, v, reads, u.day, reviewCards, schedules, target,
-		u.schedules.scheduler, u.schedules.getScheduler, now,
-	)
+	now := u.now.Now()
+	day, err := getBudgets(ctx, v, budgetInputs{
+		reads: reads, day: u.day, reviewCards: reviewCards, schedules: schedules, log: target,
+		delta: u.schedules.scheduler, pos: u.schedules.getScheduler, now: now,
+	})
 	if err != nil {
 		return SessionResult{}, err
 	}
@@ -122,21 +122,31 @@ func (u Session) Execute(
 	}
 
 	out := SessionResult{Queue: nil, Unwritten: assigned.Unwritten, Skipped: target.Skipped}
-	out.Queue = make([]QueuedReviewCard, 0, len(holds.dueCards)+len(holds.newCards))
+	out.Queue = queueCards(holds, schedules, asks.policy, dueTable, now)
+	return out, nil
+}
+
+// queueCards lists the due cards with their schedules, then the new cards with none.
+func queueCards(
+	holds asking, schedules map[review.CardID]review.Schedule, policy review.Assignment,
+	dueTable *review.DueByDay, now time.Time,
+) []QueuedReviewCard {
+	queue := make([]QueuedReviewCard, 0, len(holds.dueCards)+len(holds.newCards))
 	for _, one := range holds.dueCards {
 		s := schedules[one.ID]
-		out.Queue = append(out.Queue, QueuedReviewCard{
-			ReviewCard: one, Schedule: s, Ahead: getIntervals(asks.policy, dueTable, one.ID, s, now),
+		queue = append(queue, QueuedReviewCard{
+			ReviewCard: one, Schedule: s, Ahead: getIntervals(policy, dueTable, one.ID, s, now),
 		})
 	}
 	for _, one := range holds.newCards {
-		out.Queue = append(out.Queue, QueuedReviewCard{
+		unscheduled := review.Schedule{Due: time.Time{}, Last: time.Time{}, Reps: 0, Lapses: 0, Stability: 0, Difficulty: 0, Phase: 0}
+		queue = append(queue, QueuedReviewCard{
 			ReviewCard: one,
-			Schedule:   review.Schedule{Due: time.Time{}, Last: time.Time{}, Reps: 0, Lapses: 0, Stability: 0, Difficulty: 0, Phase: 0},
-			Ahead:      getIntervals(asks.policy, dueTable, one.ID, review.Schedule{Due: time.Time{}, Last: time.Time{}, Reps: 0, Lapses: 0, Stability: 0, Difficulty: 0, Phase: 0}, now),
+			Schedule:   unscheduled,
+			Ahead:      getIntervals(policy, dueTable, one.ID, unscheduled, now),
 		})
 	}
-	return out, nil
+	return queue
 }
 
 // getIntervals returns the duration until the next review for each rating.

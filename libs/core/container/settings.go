@@ -1,8 +1,10 @@
 package container
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"os"
 	"strings"
@@ -44,7 +46,7 @@ func (c Config) Settings() (Settings, error) {
 // getSettingsAt is that document read from an explicit file.
 func (c Config) getSettingsAt(path string) (Settings, error) {
 	target := DefaultSettings()
-	if err := settings.OpenAt(path, &target); err != nil {
+	if err := c.getResources().settingsFiles.OpenAt(path, &target); err != nil {
 		return Settings{}, err
 	}
 	return target, nil
@@ -76,6 +78,7 @@ func (c Config) SetSettings(s Settings) Config {
 	c.Hardware = hardware.Detect()
 	c.ResolvedCompute = hardware.ResolveCompute(s.Performance.Profile, c.Hardware)
 	if c.PluginHost != nil {
+		c.PluginHost.SetPerformanceProfile(context.Background(), c.ResolvedCompute.Profile)
 		if s.Plugins != nil {
 			c.PluginHost.SetSettings(s.Plugins)
 		}
@@ -127,6 +130,7 @@ func (c Config) listModels() []settingsport.Model {
 
 func (c Config) modelsForProvider(provider agentport.AgentProvider) func() []settingsport.Model {
 	c.agentProvider = provider
+	c.programs = &settings.ProgramList{}
 	return c.listModels
 }
 
@@ -151,8 +155,9 @@ func (c Config) MigratePluginSettings() error {
 		return err
 	}
 	var file map[string]any
-	if json.Unmarshal(raw, &file) != nil {
-		return nil //nolint:nilerr // corrupt settings file is skipped
+	if err := json.Unmarshal(raw, &file); err != nil {
+		c.handleError(fmt.Errorf("skip plugin settings migration, parse %s: %w", path, err))
+		return nil
 	}
 
 	moved := collectPluginSettingsMigrations(c.PluginHost.GetPluginInfos(), file)

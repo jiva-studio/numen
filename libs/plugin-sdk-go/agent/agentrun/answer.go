@@ -4,7 +4,7 @@ import "strings"
 
 // HasTools reports whether the request names a tool of the vault. A request naming none is one
 // answer, and the program is given no tool.
-func HasTools(req *AskAgentRequest) bool { return len(req.GetTools()) > 0 }
+func HasTools(req *Request) bool { return len(req.Tools) > 0 }
 
 // WritePrompt is the prompt with the instructions before it, for a program that takes no system
 // prompt.

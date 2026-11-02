@@ -52,14 +52,41 @@ const LABELS: Readonly<Record<string, string>> = {
   demon: 'costs',
 }
 
+/**
+ * A line with the record of one end: its words, in the middle of the line, and
+ * an arrowhead at the end it points at.
+ */
+const createLine = (from: string, to: string, text: string, end: 'from' | 'to'): PlexEdge => ({
+  from,
+  to,
+  labels: [{ text }],
+  arrows: [end],
+})
+
+/**
+ * A line with a record written by each note: the words of the first note near
+ * the start of the line, those of the second near its end, and an arrowhead at
+ * each end.
+ */
+const createPair = (from: string, to: string, texts: readonly [string, string]): PlexEdge => ({
+  from,
+  to,
+  labels: texts.map((text) => ({ text })),
+  arrows: ['to', 'from'],
+})
+
 /** A sibling hangs off the parent it shares; everything else meets the focus. */
 const createEdge = (neighbour: PlexNode): PlexEdge => {
   const label = LABELS[neighbour.id]
   if (neighbour.relation === 'sibling') return { from: 'thermodynamics', to: neighbour.id }
   if (neighbour.relation === 'parent' || neighbour.relation === 'jump') {
-    return { from: neighbour.id, to: 'focus', ...(label ? { label } : {}) }
+    return label
+      ? createLine(neighbour.id, 'focus', label, 'from')
+      : { from: neighbour.id, to: 'focus' }
   }
-  return { from: 'focus', to: neighbour.id, ...(label ? { label } : {}) }
+  return label
+    ? createLine('focus', neighbour.id, label, 'to')
+    : { from: 'focus', to: neighbour.id }
 }
 
 const createNeighbourhood = (neighbours: readonly PlexNode[]): PlexNeighbourhood => ({
@@ -192,12 +219,12 @@ export const Mapping: Story = {
       name: 'What can be done to this note',
     })
     const box = menu.getBoundingClientRect()
-    expect(box.width).toBeGreaterThan(0)
-    expect(box.left).toBeGreaterThanOrEqual(0)
-    expect(box.right).toBeLessThanOrEqual(window.innerWidth + 1)
-    expect(box.top).toBeGreaterThanOrEqual(0)
-    expect(box.bottom).toBeLessThanOrEqual(window.innerHeight + 1)
-    expect(within(menu).getAllByRole('menuitem').length).toBeGreaterThan(0)
+    await expect(box.width).toBeGreaterThan(0)
+    await expect(box.left).toBeGreaterThanOrEqual(0)
+    await expect(box.right).toBeLessThanOrEqual(window.innerWidth + 1)
+    await expect(box.top).toBeGreaterThanOrEqual(0)
+    await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight + 1)
+    await expect(within(menu).getAllByRole('menuitem').length).toBeGreaterThan(0)
   },
 }
 
@@ -221,13 +248,112 @@ export const Nesting: Story = {
     // The headings shown are the leading ones of the note, as many as fit; the
     // remainder is truncated at the end, not dropped from the middle.
     const suspendedView = suspended()
-    expect(suspendedView).toEqual(titles.slice(0, suspendedView.length))
+    await expect(suspendedView).toEqual(titles.slice(0, suspendedView.length))
 
     // The headings are under the box, in note order. The box is the node's own
     // rectangle; the surrounding group has grown to contain them.
     const box = focus.querySelector('rect')!.getBoundingClientRect()
     const tops = suspendedView.map((words) => canvas.getByText(words).getBoundingClientRect().top)
-    expect(Math.min(...tops)).toBeGreaterThan(box.bottom - 1)
-    expect([...tops].sort((one, other) => one - other)).toEqual(tops)
+    await expect(Math.min(...tops)).toBeGreaterThan(box.bottom - 1)
+    await expect([...tops].sort((one, other) => one - other)).toEqual(tops)
+  },
+}
+
+/**
+ * Every kind of line the plex draws, each with a record pointing at one end:
+ * the focus with a parent, a child and a jump; two siblings; two children. A
+ * parent and a sibling have a record written by each note, one at either end of
+ * their line. A line with a record and no arrowhead is the last.
+ */
+const EVERY_LINE: PlexNeighbourhood = {
+  nodes: [
+    node('focus', 'Entropy', 'focus'),
+    node('thermodynamics', 'Thermodynamics', 'parent'),
+    node('second-law', 'The second law', 'child'),
+    node('heat-death', 'Heat death', 'child'),
+    node('demon', "Maxwell's demon", 'jump'),
+    node('temperature', 'Temperature', 'sibling'),
+    node('pressure', 'Pressure', 'sibling'),
+  ],
+  edges: [
+    createLine('thermodynamics', 'focus', 'measures', 'from'),
+    createLine('focus', 'second-law', 'states', 'to'),
+    createLine('demon', 'focus', 'costs', 'to'),
+    createPair('thermodynamics', 'pressure', ['includes', 'part of']),
+    createLine('pressure', 'temperature', 'drives', 'to'),
+    createLine('second-law', 'heat-death', 'leads to', 'to'),
+    { from: 'focus', to: 'heat-death', labels: [{ text: 'is about' }] },
+  ],
+}
+
+/** The same arrowhead and the same label are drawn on a line whichever notes it joins. */
+export const EveryLine: Story = {
+  render: () => ({
+    components: { Plex },
+    setup: () => ({ neighbourhood: ref(EVERY_LINE) }),
+    template:
+      '<div style="height: 100vh"><Plex :neighbourhood="neighbourhood" :creatable="[]" :duration="0" /></div>',
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    for (const text of [
+      'measures',
+      'states',
+      'costs',
+      'includes',
+      'part of',
+      'drives',
+      'leads to',
+      'is about',
+    ]) {
+      await waitFor(() => expect(canvas.getAllByText(text).length).toBeGreaterThan(0))
+    }
+    await expect(canvasElement.querySelectorAll('.plex__edge-arrow')).toHaveLength(7)
+
+    // The two records of one line are set apart, in the order of the notes that wrote them, on
+    // opposite sides of the line, each read in the direction of its record.
+    const getBox = (text: string) => canvas.getAllByText(text)[0]!.getBoundingClientRect()
+    const own = getBox('includes')
+    const other = getBox('part of')
+    const isApart =
+      own.right <= other.left ||
+      other.right <= own.left ||
+      own.bottom <= other.top ||
+      other.bottom <= own.top
+    await expect(isApart).toBe(true)
+
+    // The one label of a line has its baseline half the height of an x below the line, which puts the
+    // middle of its lowercase letters on it; each of a pair is moved off it, to its own side.
+    const getAcross = (text: string) =>
+      Number(canvas.getAllByText(text)[0]!.closest('text')!.getAttribute('dy'))
+    const getXHeight = (text: string) => {
+      const style = getComputedStyle(canvas.getAllByText(text)[0]!.closest('text')!)
+      const context = canvasElement.ownerDocument.createElement('canvas').getContext('2d')!
+      context.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`
+      return context.measureText('x').actualBoundingBoxAscent
+    }
+    for (const text of ['measures', 'states', 'costs', 'drives', 'leads to', 'is about']) {
+      await expect(getAcross(text)).toBeCloseTo(getXHeight(text) / 2, 1)
+    }
+    await expect(getAcross('includes')).toBeLessThan(0)
+    await expect(getAcross('part of')).toBeLessThan(0)
+
+    const getReading = (text: string) => {
+      const set = canvas.getAllByText(text)[0]!
+      const href = set.closest('textPath')!.getAttribute('href')!
+      const path = canvasElement.ownerDocument.getElementById(
+        href.slice(1),
+      ) as unknown as SVGPathElement
+      return { dy: Number(set.closest('text')!.getAttribute('dy')), path }
+    }
+    const one = getReading('includes')
+    const two = getReading('part of')
+    await expect(one.dy).toBeLessThan(0)
+    await expect(two.dy).toBeLessThan(0)
+
+    // The first record is read along the line from its note, the second back along it.
+    const start = one.path.getPointAtLength(0)
+    const end = two.path.getPointAtLength(two.path.getTotalLength())
+    await expect(Math.hypot(start.x - end.x, start.y - end.y)).toBeLessThan(0.5)
   },
 }

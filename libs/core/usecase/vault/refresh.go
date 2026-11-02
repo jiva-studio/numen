@@ -134,7 +134,7 @@ func (l *Ledger) drop(v domain.VaultID, path string) {
 // isRecent reports whether a file modified at mtime can still be edited again
 // under the same modification time.
 func (u Refresh) isRecent(mtime time.Time) bool {
-	return u.now().Sub(mtime) < TimestampGranularity
+	return u.now.Now().Sub(mtime) < TimestampGranularity
 }
 
 // NewRefresh creates a Refresh from the vault readers, the vault repository,
@@ -192,7 +192,7 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 		return RefreshResult{}, err
 	}
 	// A note is filed under the vault's row, and a vault nothing has walked yet
-	// has none: a note written into a vault the moment it opens is levelled
+	// has none: a note written into a vault the moment it opens is indexed
 	// here or nowhere.
 	if err := u.vaults.Register(ctx, v.ID); err != nil {
 		return RefreshResult{}, fmt.Errorf("register vault: %w", err)
@@ -206,11 +206,12 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	}}
 
 	recorded := make(map[string]*ledgerEntry)
+	run := refreshRun{v: v, reader: reader, group: &group, recorded: recorded, res: &res}
 	for _, path := range paths {
 		if err := ctx.Err(); err != nil {
 			return res, err
 		}
-		if err := u.refreshPath(ctx, v, reader, path, &group, recorded, &res); err != nil {
+		if err := u.refreshPath(ctx, &run, path); err != nil {
 			return res, err
 		}
 	}
@@ -234,18 +235,20 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	return res, nil
 }
 
+// refreshRun is what one Execute shares across the paths it refreshes.
+type refreshRun struct {
+	v        domain.Vault
+	reader   vaultport.VaultReader
+	group    *grouping
+	recorded map[string]*ledgerEntry
+	res      *RefreshResult
+}
+
 // refreshPath files one path under the list of res it belongs to, and adds the
 // note it holds to the group when the index is behind the file. A note indexed
 // is recorded for the ledger: its entry when it is recent, nil when it is not.
-func (u Refresh) refreshPath(
-	ctx context.Context,
-	v domain.Vault,
-	reader vaultport.VaultReader,
-	path string,
-	group *grouping,
-	recorded map[string]*ledgerEntry,
-	res *RefreshResult,
-) error {
+func (u Refresh) refreshPath(ctx context.Context, run *refreshRun, path string) error {
+	v, reader, group, recorded, res := run.v, run.reader, run.group, run.recorded, run.res
 	ref, isNote := u.statNote(ctx, reader, path, res)
 	if !isNote {
 		return nil
@@ -320,7 +323,7 @@ func (u Refresh) writeLedger(v domain.Vault, recorded map[string]*ledgerEntry) {
 			u.Ledger.drop(v.ID, path)
 			continue
 		}
-		u.Ledger.put(u.now(), v.ID, path, *entry)
+		u.Ledger.put(u.now.Now(), v.ID, path, *entry)
 	}
 }
 
@@ -377,7 +380,7 @@ func (u Refresh) isCurrent(ctx context.Context, reader vaultport.VaultReader, v 
 	if pos < 0 || !target[pos].IsUnchanged(ref) {
 		return false
 	}
-	entry, ok := u.Ledger.get(u.now(), v.ID, ref.Path)
+	entry, ok := u.Ledger.get(u.now.Now(), v.ID, ref.Path)
 	if !ok {
 		return !u.isRecent(ref.ModTime)
 	}

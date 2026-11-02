@@ -11,25 +11,27 @@ const (
 // cannot be given one.
 const LanguageDetected = "auto"
 
-// models are the Parakeet exports the plugin provisions, by the name the settings give each. Both
-// are FastConformer-TDT transducers over 128 mel features and differ in their vocabulary: v3 recognises
-// 25 European languages and detects which, v2 recognises English.
-var models = []ParakeetModel{
-	{
-		Name: "parakeet-tdt-0.6b-v3-int8", Repo: parakeetV3,
-		Encoder: "", Decoder: "", Joiner: "", Tokens: "",
-		Languages: []string{LanguageDetected},
-	},
-	{
-		Name: "parakeet-tdt-0.6b-v2-int8", Repo: parakeetV2,
-		Encoder: "", Decoder: "", Joiner: "", Tokens: "",
-		Languages: []string{"en"},
-	},
+// getModels returns the Parakeet exports the plugin provisions, by the name the settings give each.
+// Both are FastConformer-TDT transducers over 128 mel features and differ in their vocabulary: v3
+// recognises 25 European languages and detects which, v2 recognises English.
+func getModels() []ParakeetModel {
+	return []ParakeetModel{
+		{
+			Name: "parakeet-tdt-0.6b-v3-int8", Repo: parakeetV3,
+			Encoder: "", Decoder: "", Joiner: "", Tokens: "",
+			Languages: []string{LanguageDetected},
+		},
+		{
+			Name: "parakeet-tdt-0.6b-v2-int8", Repo: parakeetV2,
+			Encoder: "", Decoder: "", Joiner: "", Tokens: "",
+			Languages: []string{"en"},
+		},
+	}
 }
 
 // FindModel returns the model the settings name.
 func FindModel(name string) (ParakeetModel, bool) {
-	for _, one := range models {
+	for _, one := range getModels() {
 		if one.Name == name {
 			return one, true
 		}

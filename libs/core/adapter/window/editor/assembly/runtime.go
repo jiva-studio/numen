@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	machineport "github.com/jiva-studio/numen/libs/core/usecase/file/machinecontract"
 	sourceport "github.com/jiva-studio/numen/libs/core/usecase/filetext/sourcecontract"
-	"github.com/jiva-studio/numen/libs/core/usecase/floor"
 	indexport "github.com/jiva-studio/numen/libs/core/usecase/indexing/indexcontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	noteport "github.com/jiva-studio/numen/libs/core/usecase/note/notecontract"
@@ -65,13 +64,14 @@ type Runtime[H, V any] struct {
 	IsRebuildingIndexVal     bool
 	OpenEmbeddersFn          func(ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.Embedder, closer func() error, why error)
 	NewSearchFn              func(asking embeddingport.Embedder, handleError func(error)) search.Search
-	OpenFloorsFn             func(embedder embeddingport.Embedder, handleError func(error)) floor.Scenarios
-	OpenNotesFn              func(index note.Levels) note.Scenarios
+	SetPluginSearchFn        func(embedder embeddingport.Embedder, handleError func(error))
+	OpenNotesFn              func(index note.IndexUpdater) note.Scenarios
 	OpenVaultsFn             func(moves note.Move) vaults.Scenarios
 	GetRefreshFn             func() vaults.Refresh
 	ReadWholeVaultFn         func(ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool) (vaults.ReadWholeVault, error)
 	StartVaultFn             StartVaultFunc
 	PluginServicesFn         func() PluginServices
+	PluginCatalogFn          func() PluginCatalog
 	PluginCommandsFn         func() plugincommand.Commands
 	AgentVal                 agentport.Agent
 	SetTextVersionListenerFn func(listener textport.VersionListener)
@@ -123,14 +123,15 @@ func (e Runtime[H, V]) NewSearch(asking embeddingport.Embedder, handleError func
 	return e.NewSearchFn(asking, handleError)
 }
 
-// OpenFloors is the floor use cases, and none where the assembly names no floors.
-func (e Runtime[H, V]) OpenFloors(embedder embeddingport.Embedder, handleError func(error)) floor.Scenarios {
-	if e.OpenFloorsFn == nil {
-		return floor.Scenarios{}
+// SetPluginSearch lends the plugins the search index and the floors, and does nothing where the
+// assembly names no search policy.
+func (e Runtime[H, V]) SetPluginSearch(embedder embeddingport.Embedder, handleError func(error)) {
+	if e.SetPluginSearchFn == nil {
+		return
 	}
-	return e.OpenFloorsFn(embedder, handleError)
+	e.SetPluginSearchFn(embedder, handleError)
 }
-func (e Runtime[H, V]) OpenNotes(index note.Levels) note.Scenarios  { return e.OpenNotesFn(index) }
+func (e Runtime[H, V]) OpenNotes(index note.IndexUpdater) note.Scenarios  { return e.OpenNotesFn(index) }
 func (e Runtime[H, V]) OpenVaults(moves note.Move) vaults.Scenarios { return e.OpenVaultsFn(moves) }
 func (e Runtime[H, V]) GetRefresh() vaults.Refresh                  { return e.GetRefreshFn() }
 func (e Runtime[H, V]) ReadWholeVault(ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool) (vaults.ReadWholeVault, error) {
@@ -148,7 +149,15 @@ func (e Runtime[H, V]) StartVault(
 ) {
 	return e.StartVaultFn(ctx, v, rebuild, notified, handleError)
 }
-func (e Runtime[H, V]) GetPluginServices() PluginServices         { return e.PluginServicesFn() }
+func (e Runtime[H, V]) GetPluginServices() PluginServices { return e.PluginServicesFn() }
+
+// GetPluginCatalog is the catalog of plugins, and nil where the assembly names none.
+func (e Runtime[H, V]) GetPluginCatalog() PluginCatalog {
+	if e.PluginCatalogFn == nil {
+		return nil
+	}
+	return e.PluginCatalogFn()
+}
 func (e Runtime[H, V]) GetPluginCommands() plugincommand.Commands { return e.PluginCommandsFn() }
 func (e Runtime[H, V]) GetAgent() agentport.Agent                 { return e.AgentVal }
 func (e Runtime[H, V]) SetTextVersionListener(listener textport.VersionListener) {

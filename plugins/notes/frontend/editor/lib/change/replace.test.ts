@@ -29,11 +29,9 @@ const caret = (doc: string, line: number, column: number) =>
 const applyChange = (doc: string, newText: string) => {
   const state = EditorState.create({ doc })
   const found: [number, number, string][] = []
-  state
-    .update(replace(state, newText))
-    .changes.iterChanges(
-      (from, to, _at, _to, insert) => void found.push([from, to, insert.toString()]),
-    )
+  state.update(replace(state, newText)).changes.iterChanges((from, to, _at, _to, insert) => {
+    found.push([from, to, insert.toString()])
+  })
   return found
 }
 

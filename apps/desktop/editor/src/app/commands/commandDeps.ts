@@ -1,3 +1,6 @@
+import { formatErrorMessage } from '@numen/core-client'
+import { openAfterSavingTabs, type TabsHold } from './leaveVault'
+import { runInBackground } from '@numen/ui'
 import { vaults, type VaultCore } from '../vault'
 import type {
   CommandDeps,
@@ -17,6 +20,8 @@ export interface CommandDepsOptions {
   making: NoteCreator
   setVaultName: (vault: VaultRef) => void
   reload: () => void
+  /** Holds the open tabs back while the vault is switched; the tabs are written as they come where absent. */
+  tabsHold?: TabsHold
   reached: Notes
   appearance: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }
@@ -45,7 +50,7 @@ function createFileCommands(core: VaultCore, making: NoteCreator): VaultWriter {
 }
 
 function createNavigationCommands(options: CommandDepsOptions): CommandDeps['navigator'] {
-  const { travel, leavePath, windowTabs, getOpeningNote, search } = options
+  const { travel, leavePath, windowTabs, getOpeningNote, search, writeMessage } = options
   return {
     travel: async (path) => {
       await travel(path)
@@ -54,9 +59,13 @@ function createNavigationCommands(options: CommandDepsOptions): CommandDeps['nav
       await leavePath(from, to)
     },
     getOpeningNote,
-    openTab: (kind) => void windowTabs.openTabOfKind(kind),
+    openTab: (kind) =>
+      runInBackground(windowTabs.openTabOfKind(kind), (error) =>
+        writeMessage(formatErrorMessage(error), 'error'),
+      ),
     closeTab: (tab) => windowTabs.requestClose(tab),
-    search: search ?? (() => {}),
+    // Without a palette to open, searching does nothing.
+    search: search ?? (() => undefined),
   }
 }
 
@@ -135,12 +144,14 @@ export function createCommandNotes(
 }
 
 export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
-  const { core, making, setVaultName, reload, reached, windowTabs, runs, writeMessage } = options
+  const { core, making, setVaultName, reload, reached, windowTabs, runs, writeMessage, tabsHold } =
+    options
 
   return {
     files: createFileCommands(core, making),
     vaults: {
       ...vaults,
+      ...(tabsHold ? { open: openAfterSavingTabs(vaults.open, tabsHold) } : {}),
       setVaultName,
       reload,
     },
@@ -148,7 +159,13 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
     settings: createSettingsCommands(options),
     notes: createCommandNotes(reached, windowTabs),
     runSupport: runs,
-    copyPath: (path) => void navigator.clipboard?.writeText(path),
+    copyPath: (path) => {
+      const clipboard = navigator.clipboard as Clipboard | undefined
+      if (!clipboard) return
+      runInBackground(clipboard.writeText(path), (error) =>
+        writeMessage(formatErrorMessage(error), 'error'),
+      )
+    },
     writeMessage,
     emitEvent: (event) => (core as { emitEvent?: (event: string) => void }).emitEvent?.(event),
   }

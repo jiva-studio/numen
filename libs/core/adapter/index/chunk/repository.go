@@ -26,11 +26,12 @@ import (
 //go:embed sql/*.sql
 var files embed.FS
 
-var stmt = sqlfile.Load(files, "sql")
+// getStatement returns the statement in sql/<name>.sql.
+func getStatement(name string) string { return sqlfile.Read(files, "sql", name) }
 
 // Statements exposes the SQL this package runs, for tests that inspect the
 // query plan of each statement.
-func Statements() map[string]string { return stmt }
+func Statements() map[string]string { return sqlfile.Load(files, "sql").All() }
 
 // errNoVault is returned when the index has no record of the requested vault.
 // Every query for an unknown vault has the same result, an empty one, so
@@ -115,25 +116,18 @@ func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
 // SaveSource records one file of one kind and what reading it produced.
 func (r *Repository) SaveSource(ctx context.Context, vaultID domain.VaultID, s Source) error {
-	tx, err := sqlwrite.Begin(ctx, r.db)
-	if err != nil {
-		return fmt.Errorf("begin: %w", err)
-	}
-	defer tx.Rollback()
-
-	vault, err := vaultRow(ctx, tx, vaultID)
-	if err != nil {
-		return err
-	}
-	var row int64
-	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
-		vault, s.Path, s.Kind, s.Size, s.MTime, newNullable(s.Hash), newNullable(s.Recipe), newNullable(s.Producer)).Scan(&row); err != nil {
-		return fmt.Errorf("record the source %s: %w", s.Path, err)
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit: %w", err)
-	}
-	return nil
+	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+		vault, err := vaultRow(ctx, tx, vaultID)
+		if err != nil {
+			return err
+		}
+		var row int64
+		if err := tx.QueryRowContext(ctx, getStatement("save_source"),
+			vault, s.Path, s.Kind, s.Size, s.MTime, newNullable(s.Hash), newNullable(s.Recipe), newNullable(s.Producer)).Scan(&row); err != nil {
+			return fmt.Errorf("record the source %s: %w", s.Path, err)
+		}
+		return nil
+	})
 }
 
 // SaveExtraction records what a file is and replaces its chunks with the ones
@@ -142,58 +136,44 @@ func (r *Repository) SaveSource(ctx context.Context, vaultID domain.VaultID, s S
 // One write, because a recipe names the sizes a source's chunks were cut into:
 // the recipe and the chunks it describes are recorded together.
 func (r *Repository) SaveExtraction(ctx context.Context, vaultID domain.VaultID, s Source, chunks []Chunk) error {
-	tx, err := sqlwrite.Begin(ctx, r.db)
-	if err != nil {
-		return fmt.Errorf("begin: %w", err)
-	}
-	defer tx.Rollback()
-
-	vault, err := vaultRow(ctx, tx, vaultID)
-	if err != nil {
-		return err
-	}
-	var source int64
-	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
-		vault, s.Path, s.Kind, s.Size, s.MTime, newNullable(s.Hash), newNullable(s.Recipe), newNullable(s.Producer)).Scan(&source); err != nil {
-		return fmt.Errorf("record the source %s: %w", s.Path, err)
-	}
-	if err := Replace(ctx, tx, source, vault, chunks); err != nil {
-		return err
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit: %w", err)
-	}
-	return nil
+	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+		vault, err := vaultRow(ctx, tx, vaultID)
+		if err != nil {
+			return err
+		}
+		var source int64
+		if err := tx.QueryRowContext(ctx, getStatement("save_source"),
+			vault, s.Path, s.Kind, s.Size, s.MTime, newNullable(s.Hash), newNullable(s.Recipe), newNullable(s.Producer)).Scan(&source); err != nil {
+			return fmt.Errorf("record the source %s: %w", s.Path, err)
+		}
+		if err := Replace(ctx, tx, source, vault, chunks); err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 // ReplaceChunks looks up the source this vault holds at a path and replaces
 // its chunks, in a transaction of its own. The source is already recorded or
 // there is nothing to replace the chunks of.
 func (r *Repository) ReplaceChunks(ctx context.Context, vaultID domain.VaultID, kind, path string, chunks []Chunk) error {
-	tx, err := sqlwrite.Begin(ctx, r.db)
-	if err != nil {
-		return fmt.Errorf("begin: %w", err)
-	}
-	defer tx.Rollback()
-
-	vault, err := vaultRow(ctx, tx, vaultID)
-	if err != nil {
-		return err
-	}
-	source, err := getSourceRow(ctx, tx, vault, kind, path)
-	if errors.Is(err, sql.ErrNoRows) {
-		return fmt.Errorf("%s is not a %s the index holds", path, kind)
-	}
-	if err != nil {
-		return err
-	}
-	if err := Replace(ctx, tx, source, vault, chunks); err != nil {
-		return err
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit: %w", err)
-	}
-	return nil
+	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+		vault, err := vaultRow(ctx, tx, vaultID)
+		if err != nil {
+			return err
+		}
+		source, err := getSourceRow(ctx, tx, vault, kind, path)
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("%s is not a %s the index holds", path, kind)
+		}
+		if err != nil {
+			return err
+		}
+		if err := Replace(ctx, tx, source, vault, chunks); err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 // RemoveSources takes out the sources of one kind whose files are gone. The
@@ -202,35 +182,34 @@ func (r *Repository) RemoveSources(ctx context.Context, vaultID domain.VaultID, 
 	if len(paths) == 0 {
 		return nil
 	}
-	tx, err := sqlwrite.Begin(ctx, r.db)
-	if err != nil {
-		return fmt.Errorf("begin: %w", err)
-	}
-	defer tx.Rollback()
-
-	vault, err := vaultRow(ctx, tx, vaultID)
-	if err != nil {
-		return err
-	}
-	for _, path := range paths {
-		source, err := getSourceRow(ctx, tx, vault, kind, path)
-		if errors.Is(err, sql.ErrNoRows) {
-			continue
-		}
+	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+		vault, err := vaultRow(ctx, tx, vaultID)
 		if err != nil {
 			return err
 		}
-		if err := Clear(ctx, tx, source); err != nil {
-			return err
+		for _, path := range paths {
+			if err := removeSource(ctx, tx, vault, kind, path); err != nil {
+				return err
+			}
 		}
-		if err := exec(ctx, tx, "delete_source", source); err != nil {
-			return err
-		}
+		return nil
+	})
+}
+
+// removeSource takes out the source of one kind at a path. A source the index
+// does not hold is already removed.
+func removeSource(ctx context.Context, tx *sqlwrite.Transaction, vault int64, kind, path string) error {
+	source, err := getSourceRow(ctx, tx, vault, kind, path)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
 	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit: %w", err)
+	if err != nil {
+		return err
 	}
-	return nil
+	if err := Clear(ctx, tx, source); err != nil {
+		return err
+	}
+	return exec(ctx, tx, "delete_source", source)
 }
 
 // MoveSources files what the vault held at one path, and everything under it,
@@ -240,36 +219,54 @@ func (r *Repository) RemoveSources(ctx context.Context, vaultID domain.VaultID, 
 // Only the file at the path itself can be called something else afterwards;
 // everything under a folder keeps the name it has.
 func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, from, to string) error {
-	tx, err := sqlwrite.Begin(ctx, r.db)
-	if err != nil {
-		return fmt.Errorf("begin: %w", err)
-	}
-	defer tx.Rollback()
-
-	vault, err := vaultRow(ctx, tx, vaultID)
-	if errors.Is(err, errNoVault) {
+	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+		vault, err := vaultRow(ctx, tx, vaultID)
+		if errors.Is(err, errNoVault) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		isMoving, err := hasSourcesUnder(ctx, tx, vault, from)
+		if err != nil {
+			return err
+		}
+		if !isMoving {
+			// A pass that ran between the move on disk and this call already replaced
+			// the rows at from with the rows at to. Those rows are the current ones.
+			return nil
+		}
+		if err := deleteMoveTarget(ctx, tx, vault, from, to); err != nil {
+			return err
+		}
+		if err := updateNoteName(ctx, tx, vault, from, to); err != nil {
+			return err
+		}
+		first, past := getRangeUnder(from)
+		// What a path keeps is counted off it in characters: that is what the
+		// statement cuts by, and a path is not Latin alone.
+		fromLen := utf8.RuneCountInString(from) + 1
+		if err := exec(ctx, tx, "move_sources", to, fromLen, vault, from, first, past); err != nil {
+			return err
+		}
 		return nil
-	}
+	})
+}
+
+// hasSourcesUnder is whether the vault holds a source at the path or under it.
+func hasSourcesUnder(ctx context.Context, tx *sqlwrite.Transaction, vault int64, path string) (_ bool, err error) {
+	first, past := getRangeUnder(path)
+	rows, err := tx.QueryContext(ctx, getStatement("sources_under"), vault, path, first, past)
 	if err != nil {
-		return err
+		return false, fmt.Errorf("what the vault holds at %s and under it: %w", path, err)
 	}
-	if err := deleteMoveTarget(ctx, tx, vault, from, to); err != nil {
-		return err
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
+
+	hasRow := rows.Next()
+	if err := rows.Err(); err != nil {
+		return false, fmt.Errorf("what the vault holds at %s and under it: %w", path, err)
 	}
-	if err := updateNoteName(ctx, tx, vault, from, to); err != nil {
-		return err
-	}
-	first, past := getRangeUnder(from)
-	// What a path keeps is counted off it in characters: that is what the
-	// statement cuts by, and a path is not Latin alone.
-	fromLen := utf8.RuneCountInString(from) + 1
-	if err := exec(ctx, tx, "move_sources", to, fromLen, vault, from, first, past); err != nil {
-		return err
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("commit: %w", err)
-	}
-	return nil
+	return hasRow, nil
 }
 
 // deleteMoveTarget deletes the rows the vault holds at the path a move lands on.
@@ -282,31 +279,10 @@ func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, fr
 // Rows that are being moved are kept: a folder moved inside itself contains
 // them, and they are the rows to be renamed.
 func deleteMoveTarget(ctx context.Context, tx *sqlwrite.Transaction, vault int64, from, to string) error {
-	first, past := getRangeUnder(to)
-	rows, err := tx.QueryContext(ctx, stmt.Get("sources_under"), vault, to, first, past)
+	displaced, err := getDisplacedSources(ctx, tx, vault, from, to)
 	if err != nil {
-		return fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
+		return err
 	}
-	defer rows.Close()
-
-	movingFirst, movingPast := getRangeUnder(from)
-	var displaced []int64
-	for rows.Next() {
-		var source int64
-		var path string
-		if err := rows.Scan(&source, &path); err != nil {
-			return fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
-		}
-		if path == from || (path >= movingFirst && path < movingPast) {
-			continue
-		}
-		displaced = append(displaced, source)
-	}
-	if err := rows.Err(); err != nil {
-		return fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
-	}
-	rows.Close()
-
 	for _, source := range displaced {
 		if err := Clear(ctx, tx, source); err != nil {
 			return err
@@ -316,6 +292,36 @@ func deleteMoveTarget(ctx context.Context, tx *sqlwrite.Transaction, vault int64
 		}
 	}
 	return nil
+}
+
+// getDisplacedSources returns the sources at the destination of a move, and
+// under it, that are not themselves moving.
+func getDisplacedSources(
+	ctx context.Context, tx *sqlwrite.Transaction, vault int64, from, to string,
+) (displaced []int64, err error) {
+	first, past := getRangeUnder(to)
+	rows, err := tx.QueryContext(ctx, getStatement("sources_under"), vault, to, first, past)
+	if err != nil {
+		return nil, fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
+	}
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
+
+	movingFirst, movingPast := getRangeUnder(from)
+	for rows.Next() {
+		var source int64
+		var path string
+		if err := rows.Scan(&source, &path); err != nil {
+			return nil, fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
+		}
+		if path == from || (path >= movingFirst && path < movingPast) {
+			continue
+		}
+		displaced = append(displaced, source)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
+	}
+	return displaced, nil
 }
 
 // updateNoteName updates the name of the note at a path after its file moved.
@@ -334,7 +340,7 @@ func updateNoteName(ctx context.Context, tx *sqlwrite.Transaction, vault int64, 
 
 	var title string
 	var named bool
-	err := tx.QueryRowContext(ctx, stmt.Get("note_naming"), vault, from).Scan(&title, &named)
+	err := tx.QueryRowContext(ctx, getStatement("note_naming"), vault, from).Scan(&title, &named)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
@@ -395,17 +401,18 @@ func Replace(ctx context.Context, tx *sqlwrite.Transaction, source, vault int64,
 	}
 	// A chunk with unchanged text keeps its row, so section names are cleared per
 	// source and not with the chunks.
-	if _, err := tx.ExecContext(ctx, stmt.Get("clear_sections"), source); err != nil {
+	if _, err := tx.ExecContext(ctx, getStatement("clear_sections"), source); err != nil {
 		return fmt.Errorf("take the names of this source's sections out of the index: %w", err)
 	}
 
+	writer := chunkWriter{tx: tx, target: target, source: source, vault: vault}
 	for _, large := range chunks {
-		row, err := upsertChunk(ctx, tx, target, source, vault, large, nil, len(large.Small) == 0)
+		row, err := writer.upsert(ctx, large, nil, len(large.Small) == 0)
 		if err != nil {
 			return err
 		}
 		for _, small := range large.Small {
-			if _, err := upsertChunk(ctx, tx, target, source, vault, small, row, true); err != nil {
+			if _, err := writer.upsert(ctx, small, row, true); err != nil {
 				return err
 			}
 		}
@@ -416,17 +423,22 @@ func Replace(ctx context.Context, tx *sqlwrite.Transaction, source, vault int64,
 	return deleteOrphanVectors(ctx, tx, target.getRemovedHashes())
 }
 
-// upsertChunk is the row one chunk is held on, and moves or writes it.
+// chunkWriter holds what writing the chunks of one source shares.
+type chunkWriter struct {
+	tx            *sqlwrite.Transaction
+	target        *rows
+	source, vault int64
+}
+
+// upsert is the row one chunk is held on, and moves or writes it.
 //
 // A chunk inside another arrives with the row enclosing it, and a large chunk
 // with nothing, which is also what the row's `parent_id` becomes.
-func upsertChunk(
-	ctx context.Context, tx *sqlwrite.Transaction, target *rows,
-	source, vault int64, c Chunk, parent any, isLeaf bool,
-) (int64, error) {
+func (w chunkWriter) upsert(ctx context.Context, c Chunk, parent any, isLeaf bool) (int64, error) {
+	tx, target, source, vault := w.tx, w.target, w.source, w.vault
 	key := textID{hash: computeHash(c.Text), isSmall: parent != nil}
 	if row, hasRow := target.takeUnusedRow(key); hasRow {
-		if _, err := tx.ExecContext(ctx, stmt.Get("move_chunk"),
+		if _, err := tx.ExecContext(ctx, getStatement("move_chunk"),
 			c.Start, c.Length, parent, newNullable(c.Location), row); err != nil {
 			return 0, fmt.Errorf("move a chunk to where its text now is: %w", err)
 		}
@@ -437,13 +449,13 @@ func upsertChunk(
 	}
 
 	var row int64
-	err := tx.QueryRowContext(ctx, stmt.Get("insert_chunk"),
+	err := tx.QueryRowContext(ctx, getStatement("insert_chunk"),
 		source, vault, c.Start, c.Length, parent, newNullable(c.Location), key.hash).Scan(&row)
 	if err != nil {
 		return 0, fmt.Errorf("store a chunk of this source: %w", err)
 	}
 	if isLeaf {
-		if _, err := tx.ExecContext(ctx, stmt.Get("insert_fts"), row, c.Text); err != nil {
+		if _, err := tx.ExecContext(ctx, getStatement("insert_fts"), row, c.Text); err != nil {
 			return 0, fmt.Errorf("index a chunk for the words in it: %w", err)
 		}
 	}
@@ -459,7 +471,7 @@ func writeSectionNames(ctx context.Context, tx *sqlwrite.Transaction, row int64,
 	if len(c.Opens) == 0 {
 		return nil
 	}
-	if _, err := tx.ExecContext(ctx, stmt.Get("insert_section"), row, strings.Join(c.Opens, "\n")); err != nil {
+	if _, err := tx.ExecContext(ctx, getStatement("insert_section"), row, strings.Join(c.Opens, "\n")); err != nil {
 		return fmt.Errorf("index the names of the sections a chunk opens: %w", err)
 	}
 	return nil
@@ -481,12 +493,12 @@ type rows struct {
 	hash map[int64]string
 }
 
-func chunksOf(ctx context.Context, tx *sqlwrite.Transaction, source int64) (*rows, error) {
-	cursor, err := tx.QueryContext(ctx, stmt.Get("chunks_of"), source)
+func chunksOf(ctx context.Context, tx *sqlwrite.Transaction, source int64) (_ *rows, err error) {
+	cursor, err := tx.QueryContext(ctx, getStatement("chunks_of"), source)
 	if err != nil {
 		return nil, fmt.Errorf("the chunks this source is already cut into: %w", err)
 	}
-	defer cursor.Close()
+	defer func() { err = sqlwrite.JoinClose(err, cursor.Close()) }()
 
 	h := &rows{candidates: map[textID][]int64{}, remainingErrs: map[int64]bool{}, hash: map[int64]string{}}
 	for cursor.Next() {
@@ -552,7 +564,7 @@ func computeHash(s string) string {
 
 // exec runs a named statement and wraps an error with the statement name.
 func exec(ctx context.Context, tx *sqlwrite.Transaction, name string, args ...any) error {
-	if _, err := tx.ExecContext(ctx, stmt.Get(name), args...); err != nil {
+	if _, err := tx.ExecContext(ctx, getStatement(name), args...); err != nil {
 		return fmt.Errorf("%s: %w", name, err)
 	}
 	return nil
@@ -567,7 +579,7 @@ type querier interface {
 // number this database files it under.
 func vaultRow(ctx context.Context, db querier, identifier domain.VaultID) (int64, error) {
 	var row int64
-	err := db.QueryRowContext(ctx, stmt.Get("vault_row"), string(identifier)).Scan(&row)
+	err := db.QueryRowContext(ctx, getStatement("vault_row"), string(identifier)).Scan(&row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, errNoVault
 	}
@@ -577,7 +589,7 @@ func vaultRow(ctx context.Context, db querier, identifier domain.VaultID) (int64
 // getSourceRow is the row number of one source of one kind.
 func getSourceRow(ctx context.Context, db querier, vault int64, kind, path string) (int64, error) {
 	var row int64
-	err := db.QueryRowContext(ctx, stmt.Get("identify"), vault, kind, path).Scan(&row)
+	err := db.QueryRowContext(ctx, getStatement("identify"), vault, kind, path).Scan(&row)
 	return row, err
 }
 

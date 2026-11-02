@@ -44,7 +44,11 @@ func (h *downEmbeddingHost) Release(string) { h.released.Add(1) }
 func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 	t.Helper()
 	server := httptest.NewServer(http.NotFoundHandler())
-	serverPort := server.Listener.Addr().(*net.TCPAddr).Port
+	addr, isTCP := server.Listener.Addr().(*net.TCPAddr)
+	if !isTCP {
+		t.Fatalf("expected *net.TCPAddr, got %T", server.Listener.Addr())
+	}
+	serverPort := addr.Port
 	server.Close()
 	return &downEmbeddingHost{endpoint: pluginport.Endpoint{Host: "127.0.0.1", Port: serverPort}}
 }
@@ -54,12 +58,12 @@ func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 func TestAnEmbeddingPluginThatIsDownPreservesTheVectorsOfTheIndex(t *testing.T) {
 	db, v := makeSwitchedIndex(t)
 	host := newDownEmbeddingHost(t)
-	target := container.Config{
+	target := container.NewConfig(container.Config{
 		Embedding:          container.DefaultEmbedding(),
 		ServiceDir:         ".numen",
 		PluginHost:         host,
 		ShouldRebuildIndex: true,
-	}
+	})
 
 	indexing, asking, _, err := target.Embedders(t.Context(), nil)
 	if err == nil {

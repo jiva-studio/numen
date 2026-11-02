@@ -30,7 +30,11 @@ export function useDeckScheduleSync(
   }
 
   const listCardModelsAgain = (): void => {
-    if (!listedOk) void listCardModels()
+    if (!listedOk) {
+      listCardModels().catch(() => {
+        listedOk = false
+      })
+    }
   }
 
   const scheduled = useDeckSchedule(presets, store)
@@ -44,9 +48,16 @@ export function useDeckScheduleSync(
       scheduled.moveFile(rename.from, rename.to)
     }
     if (store.getOpenIds().length === 0) return
-    void listCardModels()
-    void scheduled.listing.listPresets()
-    for (const one of store.getOpenIds()) void scheduled.refreshDeckPreset(store.getPath(one))
+    listCardModels().catch(() => {
+      listedOk = false
+    })
+    scheduled.listing.listPresets().catch(() => {
+      listedOk = false
+    })
+    for (const one of store.getOpenIds()) {
+      const path = store.getPath(one)
+      scheduled.refreshDeckPreset(path).catch(() => scheduled.forgetFile(path))
+    }
   }
 
   return {

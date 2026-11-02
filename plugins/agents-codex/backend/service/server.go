@@ -5,8 +5,6 @@ import (
 	"strings"
 	"sync"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 )
@@ -32,64 +30,46 @@ func (s *agentServer) getExecutablePath() string {
 	return s.executablePath
 }
 
-func (s *agentServer) AskAgent(
-	ctx context.Context,
-	req *connect.Request[agentrun.AskAgentRequest],
-	stream *connect.ServerStream[agentrun.AskAgentResponse],
-) error {
-	if err := stream.Send(&agentrun.AskAgentResponse{
-		Step: &agentrun.AskAgentResponse_ModelStarted{
-			ModelStarted: &agentrun.ModelStarted{},
-		},
-	}); err != nil {
+func (s *agentServer) Ask(ctx context.Context, req *agentrun.Request, send func(*agentrun.Response) error) error {
+	if err := send(&agentrun.Response{Step: &agentrun.ModelStartedStep{}}); err != nil {
 		return err
 	}
 
-	work, err := start(ctx, &s.Registry, newSpec(req.Msg, s.getExecutablePath()))
+	work, err := start(ctx, &s.Registry, newSpec(req, s.getExecutablePath()))
 	if err != nil {
-		return stream.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_Stopped{Stopped: err.Error()},
+		return send(&agentrun.Response{
+			Step: &agentrun.StoppedStep{Stopped: err.Error()},
 		})
 	}
-	return agentrun.ForwardResponses(ctx, work, stream)
+	return agentrun.ForwardResponses(ctx, work, send)
 }
 
-func (s *agentServer) GetAgentState(
-	_ context.Context,
-	_ *connect.Request[agentrun.GetAgentStateRequest],
-) (*connect.Response[agentrun.GetAgentStateResponse], error) {
+func (s *agentServer) GetState(_ context.Context) (*agentrun.State, error) {
 	if !IsCodexInstalled(s.getExecutablePath()) {
-		return connect.NewResponse(&agentrun.GetAgentStateResponse{
-			Unreachable: "OpenAI Codex was not found on this machine",
-		}), nil
+		return &agentrun.State{Unreachable: "OpenAI Codex was not found on this machine"}, nil
 	}
-	return connect.NewResponse(&agentrun.GetAgentStateResponse{Unreachable: ""}), nil
+	return &agentrun.State{Unreachable: ""}, nil
 }
 
-// GetAgentPrograms lists OpenAI Codex, whether it is installed, and the models it lists.
-func (s *agentServer) GetAgentPrograms(
-	ctx context.Context,
-	req *connect.Request[agentrun.GetAgentProgramsRequest],
-) (*connect.Response[agentrun.GetAgentProgramsResponse], error) {
-	command := programCommand(req.Msg.GetCommands(), "codex")
+// GetPrograms lists OpenAI Codex, whether it is installed, and the models it lists.
+func (s *agentServer) GetPrograms(ctx context.Context, commands []agentrun.ProgramCommand) ([]*agentrun.Program, error) {
+	command := programCommand(commands, "codex")
 	customPath := s.getExecutablePath()
 	if len(command) == 0 && customPath != "" {
 		command = []string{customPath}
 	}
 
-	codex := &agentrun.AgentProgram{
+	codex := &agentrun.Program{
 		Name: "codex", Title: "OpenAI Codex", IsInstalled: IsCodexInstalled(customPath) || len(command) > 0,
 		IsDefault: false, Models: nil, LimitsTools: false,
 	}
-	if codex.GetIsInstalled() {
+	if codex.IsInstalled {
 		for _, one := range s.codexModels.get(ctx, command) {
-			codex.Models = append(codex.Models, &agentrun.AgentModel{
+			codex.Models = append(codex.Models, &reasoning.Model{
 				Name: one.Name, Title: one.Title, IsDefault: one.IsDefault,
-				ReasoningLevels: reasoning.ToProto(one.Reasoning), DefaultReasoning: one.DefaultReasoning,
+				ReasoningLevels: one.Reasoning, DefaultReasoning: one.DefaultReasoning,
 			})
 		}
 	}
-	return connect.NewResponse(&agentrun.GetAgentProgramsResponse{
-		Programs: []*agentrun.AgentProgram{codex},
-	}), nil
+	return []*agentrun.Program{codex}, nil
 }

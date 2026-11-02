@@ -1,0 +1,182 @@
+/**
+ * What the plugin host holds for the plugins: the registrations of each kind, and how a plugin's
+ * registrations are taken away with it.
+ */
+import type {
+  AgentProviderRegistration,
+  CommandRegistration,
+  ContextMenuRegistration,
+  ContextMenuTarget,
+  FileSelectEvent,
+  PluginContext,
+  ReaderRegistration,
+  SettingsViewRegistration,
+  TabKindRegistration,
+  VaultChangeEvent,
+} from '@numen/plugin-sdk'
+import type { Manifest } from '@numen/core-client'
+import type { StatusViewRegistry } from '../statusViews'
+import type { PluginListener } from './events'
+import type { PluginHostDeps } from './types'
+
+export interface RegisteredReader {
+  pluginId: string
+  reg: ReaderRegistration
+  cleanup: () => void
+}
+
+export interface RegisteredTabKind {
+  pluginId: string
+  reg: TabKindRegistration
+  cleanup: () => void
+}
+
+export interface RegisteredCommand {
+  pluginId: string
+  reg: CommandRegistration
+}
+
+export interface RegisteredContextMenu {
+  pluginId: string
+  reg: ContextMenuRegistration
+}
+
+export interface RegisteredAgentProvider {
+  pluginId: string
+  reg: AgentProviderRegistration
+}
+
+export interface RegisteredSettingsView {
+  pluginId: string
+  reg: SettingsViewRegistration
+}
+
+export interface HostRegistry {
+  readonly vaultListeners: Set<PluginListener<VaultChangeEvent>>
+  readonly fileListeners: Set<PluginListener<FileSelectEvent>>
+  readonly readers: Map<string, RegisteredReader>
+  readonly tabKinds: Map<string, RegisteredTabKind>
+  readonly commands: { value: ReadonlyMap<string, RegisteredCommand> }
+  readonly contextMenus: { value: ReadonlyMap<string, RegisteredContextMenu> }
+  readonly settingsViews: { value: ReadonlyMap<string, RegisteredSettingsView> }
+  readonly agentProviders: Map<string, RegisteredAgentProvider>
+  readonly contexts: Map<string, PluginContext>
+  readonly manifests: Map<string, Manifest>
+}
+
+export interface PluginItemRegistration<T> {
+  readonly pluginId: string
+  readonly registration: T
+  readonly getContext?: () => PluginContext | undefined
+}
+
+export function clearSubscriptions(ctx?: PluginContext): void {
+  if (!ctx) return
+  while (ctx.subscriptions.length > 0) {
+    const sub = ctx.subscriptions.pop()
+    sub?.dispose()
+  }
+}
+
+export function cleanupMapItems(
+  items: Map<string, { pluginId: string; cleanup: () => void }>,
+  pluginId: string,
+): void {
+  for (const item of [...items.values()]) {
+    if (item.pluginId === pluginId) item.cleanup()
+  }
+}
+
+export function cleanupProviderItems(
+  items: Map<string, { pluginId: string }>,
+  pluginId: string,
+): void {
+  for (const [id, item] of items) {
+    if (item.pluginId === pluginId) items.delete(id)
+  }
+}
+
+/** What the disposal of a plugin's entries works on. */
+export interface DisposalParts {
+  readonly registry: HostRegistry
+  readonly statusViews: StatusViewRegistry
+  readonly deps?: PluginHostDeps | undefined
+}
+
+/** A copy of the map of a reactive holder without the entries of one plugin, set back in the holder. */
+function removePluginItems<T extends { pluginId: string }>(
+  holder: { value: ReadonlyMap<string, T> },
+  pluginId: string,
+): void {
+  const next = new Map(holder.value)
+  for (const [key, item] of next) {
+    if (item.pluginId === pluginId) next.delete(key)
+  }
+  holder.value = next
+}
+
+export function disposePluginEntry(pluginId: string, parts: DisposalParts): void {
+  const { registry, statusViews, deps } = parts
+  deps?.closeTabsForPlugin?.(pluginId)
+  deps?.clearNotices?.(pluginId)
+  clearSubscriptions(registry.contexts.get(pluginId))
+  registry.contexts.delete(pluginId)
+  registry.manifests.delete(pluginId)
+  cleanupMapItems(registry.readers, pluginId)
+  cleanupMapItems(registry.tabKinds, pluginId)
+  cleanupProviderItems(registry.agentProviders, pluginId)
+  removePluginItems(registry.commands, pluginId)
+  removePluginItems(registry.contextMenus, pluginId)
+  removePluginItems(registry.settingsViews, pluginId)
+  statusViews.disposePlugin(pluginId)
+}
+
+export function resolveCommand(
+  commands: ReadonlyMap<string, RegisteredCommand>,
+  id: string,
+): RegisteredCommand | undefined {
+  const direct = commands.get(id)
+  if (direct) return direct
+  if (id.startsWith('plugin:')) {
+    return commands.get(id.slice('plugin:'.length))
+  }
+  return undefined
+}
+
+function matchesSingleTarget(pattern: string, actual: ContextMenuTarget): boolean {
+  if (pattern === 'all') return true
+  if (pattern === 'root') return actual.path === '' || actual.path === null
+  if (pattern === 'folder') return actual.isFolder
+  if (pattern === 'file') return !actual.isFolder
+  if (pattern === 'note') return !actual.isFolder && actual.isNote
+  return false
+}
+
+export function matchesContextMenuTarget(
+  targetPattern: ContextMenuRegistration['target'],
+  actual: ContextMenuTarget,
+): boolean {
+  if (!targetPattern || targetPattern === 'all') return true
+  if (typeof targetPattern === 'string') {
+    return matchesSingleTarget(targetPattern, actual)
+  }
+  return targetPattern.some((p) => matchesSingleTarget(p, actual))
+}
+
+export function disposeAllEntries(
+  registry: HostRegistry,
+  statusViews: StatusViewRegistry,
+  deps: PluginHostDeps,
+) {
+  const allPluginIds = new Set<string>([
+    ...registry.contexts.keys(),
+    ...[...registry.readers.values()].map((r) => r.pluginId),
+    ...[...registry.tabKinds.values()].map((t) => t.pluginId),
+    ...[...registry.commands.value.values()].map((c) => c.pluginId),
+    ...[...registry.contextMenus.value.values()].map((c) => c.pluginId),
+    ...[...registry.settingsViews.value.values()].map((v) => v.pluginId),
+    ...[...registry.agentProviders.values()].map((p) => p.pluginId),
+    ...statusViews.views.value.map((v) => v.pluginId),
+  ])
+  for (const pluginId of allPluginIds) disposePluginEntry(pluginId, { registry, statusViews, deps })
+}

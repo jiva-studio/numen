@@ -30,9 +30,17 @@ func Mount(s *server.Server) error {
 }
 
 func mount(s *server.Server, books *BookServer, texts *TextServer) error {
-	s.OnClose(books.Close)
-	s.OnClose(texts.Close)
-	mountMethods(s, books)
+	s.OnClose(func() error {
+		books.Close()
+		return nil
+	})
+	s.OnClose(func() error {
+		texts.Close()
+		return nil
+	})
+	if err := mountMethods(s, books); err != nil {
+		return err
+	}
 	s.RegisterRoute(entriesPattern, NewEntryServer(books))
 	s.Register(host.NewTextProviderHandler(texts, s.HandlerOptions()...))
 	return nil

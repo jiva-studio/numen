@@ -52,16 +52,28 @@ function useBookNavigation(deps: BookNavigationDeps) {
   const offset = ref(0)
   /** The latest jump. Each jump is a new object, so a repeated offset still changes the value. */
   const target = shallowRef<{ readonly offset: number } | null>(null)
+  /** How many moves were requested: jumps and page turns. */
+  let moveCount = 0
+  /** The offset of the jump that is drawing its document, which a page turn asks for again. */
+  let pendingJump: number | null = null
+  const getMoveCount = () => moveCount
 
   /** Jumps to an offset, drawing the document it falls in. */
   const goToOffset = async (targetOffset: number) => {
-    await deps.getShape()
-    if (!deps.isOpen() || deps.documents.value.length === 0) return
-    const last = Math.max(deps.span.value.end - 1, deps.span.value.start)
-    offset.value = Math.min(Math.max(Math.trunc(targetOffset), deps.span.value.start), last)
-    target.value = { offset: offset.value }
-    const doc = getDocumentAtOffset(deps.documents.value, offset.value)
-    if (doc) await deps.bookDocument.draw(doc)
+    moveCount += 1
+    const wanted = Math.trunc(targetOffset)
+    pendingJump = wanted
+    try {
+      await deps.getShape()
+      if (!deps.isOpen() || deps.documents.value.length === 0) return
+      const last = Math.max(deps.span.value.end - 1, deps.span.value.start)
+      offset.value = Math.min(Math.max(wanted, deps.span.value.start), last)
+      target.value = { offset: offset.value }
+      const doc = getDocumentAtOffset(deps.documents.value, offset.value)
+      if (doc) await deps.bookDocument.draw(doc)
+    } finally {
+      if (pendingJump === wanted) pendingJump = null
+    }
   }
 
   /**
@@ -69,9 +81,14 @@ function useBookNavigation(deps: BookNavigationDeps) {
    * drawn document is already showing, so it sets no target.
    */
   const moveTo = async (reported: number) => {
+    // Each press at the end of a document names the start of the next one, and the document is
+    // being drawn: a second jump there would stand the new document back on its first spread.
+    if (pendingJump !== null && Math.trunc(reported) === pendingJump) return
+    moveCount += 1
     await deps.getShape()
     const { start, end } = deps.bookDocument.documentSpan.value
     if (reported >= start && reported < end) {
+      deps.bookDocument.keepDrawn()
       offset.value = Math.trunc(reported)
       return
     }
@@ -85,7 +102,7 @@ function useBookNavigation(deps: BookNavigationDeps) {
     await goToOffset(targetDoc.span.start)
   }
 
-  return { offset, target, goToOffset, moveTo, followLink }
+  return { offset, target, getMoveCount, goToOffset, moveTo, followLink }
 }
 
 async function loadBookData(
@@ -176,7 +193,8 @@ export function useBookReader(
   const path = typeof booksOrPath === 'string' ? booksOrPath : (pathOrOptions as string)
   const options =
     typeof booksOrPath === 'string' ? (pathOrOptions as BookReaderOptions) : maybeOptions!
-  const { words, writeMessage = () => {} } = options
+  // Messages are dropped when the caller supplies no writer.
+  const { words, writeMessage = () => undefined } = options
   const state = useBookState()
   let isOpen = true
 
@@ -214,10 +232,12 @@ export function useBookReader(
 
   // A saved place and a search hit name the book by EPUB CFI, which the plugin's backend reads.
   const getCfi = (offset: number) => books.getCfi(path, offset)
+  // An answer that arrives after a page turn or another jump is dropped.
   const goToCfi = async (cfi: string) => {
+    const request = nav.getMoveCount()
     await shape
     const offset = await books.findOffset(path, cfi)
-    if (offset === null || !isOpen) return false
+    if (offset === null || !isOpen || nav.getMoveCount() !== request) return false
     await marks.focusSpans({ start: offset, end: offset })
     return true
   }
@@ -226,8 +246,11 @@ export function useBookReader(
     isOpen = false
   })
 
+  const reportFailure = (error: unknown) => writeMessage(formatErrorMessage(error), 'error')
+
   const reader = {
     path,
+    reportFailure,
     ...state,
     page,
     chapter,

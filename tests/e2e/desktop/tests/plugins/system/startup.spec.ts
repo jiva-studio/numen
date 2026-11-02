@@ -1,7 +1,8 @@
+import { observeFor } from '../../support/browser.js'
 import { test, expect } from '../../support/test.js'
-import { openWorkspace } from '../../support/workspace'
+import { openWorkspace } from '../../support/workspace.js'
 
-/** The words a plugin that did not start is reported in, as a notice or as a task. */
+/** The words a plugin that did not start is reported in, as a task. */
 const PLUGIN_FAILURE = /stopped:|Plugin stopped|failed to start|failed to load/i
 
 /** The stock plugins, started with the window and queried for what they provide. */
@@ -19,9 +20,8 @@ test.describe('the stock plugins after the window starts', () => {
     await page.locator('[data-tree-row="notes/Entropy.md"]').press('Enter')
     await expect(page.locator('.note').first()).toBeVisible()
     // A failed launch for the note is reported within a second.
-    await page.waitForTimeout(1_000)
+    await observeFor(page, 1_000)
 
-    await expect(page.locator('.notice').filter({ hasText: PLUGIN_FAILURE })).toHaveCount(0)
     await page.locator('.status-bar__trigger').click()
     await expect(page.locator('.task-popover')).toBeVisible()
     // The vault holds a corrupted PDF on purpose: its failed recognition is no plugin's failure.

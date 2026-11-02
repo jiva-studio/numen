@@ -22,18 +22,18 @@ export const editor = createStub('Editor', {
 })
 
 export const reader = createStub('Reader', {
-  measure: () => {},
+  measure: () => undefined,
   // The pages record every key received and do nothing else: the window only has
   // to deliver the key to the active tab.
   handleKey: (event: KeyboardEvent) => {
     requests.pressed.push(event.key)
     return event.key.startsWith('Arrow')
   },
-  focusPages: () => {},
+  focusPages: () => undefined,
 })
 
 export const book = createStub('Book', {
-  measure: () => {},
+  measure: () => undefined,
   // The book records every key received and turns no page: the window only has to
   // deliver the key to the active book.
   handleKey: (event: KeyboardEvent) => {

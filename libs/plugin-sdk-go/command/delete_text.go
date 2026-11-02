@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
 // NewDeleteTextRun is the run of a command that deletes a text version the plugin of the id made. The
@@ -15,7 +16,7 @@ func NewDeleteTextRun(texts host.Texts, store host.Store, pluginID string) Run {
 		if id == "" {
 			return Result{}, fmt.Errorf("%w: %s needs %s", ErrBadArguments, request.Command, ArgumentVersion)
 		}
-		if err := host.DeleteText(ctx, texts, store, pluginID, request.Path, host.TextVersionID(id)); err != nil {
+		if err := host.DeleteText(ctx, texts, store, pluginID, request.Path, domain.TextVersionID(id)); err != nil {
 			return Result{}, err
 		}
 		return Result{Message: "deleted " + id + " of " + request.Path}, nil

@@ -3,14 +3,14 @@
  * the files made and moved, and the window's commands over a row.
  */
 import type { Component } from 'vue'
-import {
-  asFailure,
-  getKnownErrorCode,
-  type ContextMenuRegistration,
-  type ContextMenuTarget,
-  type VaultFiles,
-  type WorkspaceHost,
-} from '@numen/plugin-sdk'
+import { runInBackground } from '@numen/ui'
+import type {
+  ContextMenuRegistration,
+  ContextMenuTarget,
+  VaultFiles,
+  WorkspaceHost,
+} from '@numen/plugin-host'
+import { getKnownErrorCode, asFailure } from '@numen/core-client'
 import { createFileCreators, type FileOpeners, type useWindowTabs } from '@/entities/tab'
 import type { CreateResult } from '@/entities/file'
 import {
@@ -116,7 +116,7 @@ export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
     list: (folder) => core.list(folder),
     move: (from, to) => run('move', { ...getTarget(), path: from }, to),
     createFolder: (path) => run('createFolder', getTarget(), path),
-    createNote: async (folder) => (await making.createUntitled(folder, []))?.path ?? '',
+    createNote: (folder) => making.createUntitled(folder),
   }
 }
 
@@ -126,6 +126,8 @@ export interface PathCommandDeps {
   readonly runCommand: (id: string, target: CommandTarget) => void
   readonly getContextMenuItems?: (target: ContextMenuTarget) => readonly ContextMenuRegistration[]
   readonly runContextMenu?: (id: string, target: ContextMenuTarget) => Promise<boolean>
+  /** Receives the failure of a context menu item that runs after the menu closed. */
+  readonly reportError: (error: unknown) => void
   /** The entries of the menu a file's text versions make, for the file at the path. */
   readonly getFileMenuItems?: (path: string) => readonly PathContribution[]
   /** The icon a plugin draws its menu item with, and nothing for an item it draws none for. */
@@ -148,6 +150,7 @@ export function createPathCommandHost(
     getFileMenuItems,
     getContextMenuIcon,
     getPluginCommandIcon,
+    reportError,
   } = deps
   return {
     getPathCommands: ({ entry, isSeveral }) => {
@@ -178,17 +181,20 @@ export function createPathCommandHost(
         isSeveral: paths.length > 1,
       }
       if (runContextMenu) {
-        void runContextMenu(id, target).then((handled) => {
-          if (!handled) {
-            runCommand(id, {
-              ...getTarget(),
-              path,
-              title: name,
-              file: path,
-              others: paths.slice(1),
-            })
-          }
-        })
+        runInBackground(
+          runContextMenu(id, target).then((handled) => {
+            if (!handled) {
+              runCommand(id, {
+                ...getTarget(),
+                path,
+                title: name,
+                file: path,
+                others: paths.slice(1),
+              })
+            }
+          }),
+          reportError,
+        )
         return
       }
       runCommand(id, {

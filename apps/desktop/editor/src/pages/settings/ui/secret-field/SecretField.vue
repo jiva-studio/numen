@@ -93,7 +93,7 @@ function onDelete() {
   max-inline-size: 24rem;
   padding: 0.25rem 0.625rem;
   background-color: var(--numen-field-bg);
-  border: var(--numen-stroke) solid var(--numen-field-rule);
+  border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius);
   color: var(--numen-ink);
   font-family: inherit;

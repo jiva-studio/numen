@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -65,7 +66,7 @@ func TestAProgramCallsAVaultToolThroughTheHost(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = session.Close() })
+	cleanup.CloseAfter(t, session)
 
 	listed, err := session.ListTools(t.Context(), nil)
 	if err != nil {

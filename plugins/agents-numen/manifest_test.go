@@ -2,17 +2,17 @@ package agent
 
 import (
 	"encoding/json"
+	"slices"
 	"testing"
-
-	"github.com/jiva-studio/numen/plugins/agents-numen/backend/service"
 )
 
-// The model setting is offered the models of the program the plugin runs.
-func TestManifest_ModelSettingReferencesProgramModels(t *testing.T) {
+// The model setting suggests models, and the model it defaults to is one of them.
+func TestManifest_ModelSettingSuggestsItsDefault(t *testing.T) {
 	var manifest struct {
 		Settings []struct {
-			Key      string `json:"key"`
-			ModelsOf string `json:"modelsOf"`
+			Key     string   `json:"key"`
+			Default any      `json:"default"`
+			Options []string `json:"options"`
 		} `json:"settings"`
 	}
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
@@ -20,8 +20,8 @@ func TestManifest_ModelSettingReferencesProgramModels(t *testing.T) {
 	}
 	for _, one := range manifest.Settings {
 		if one.Key == "model" {
-			if one.ModelsOf != service.ProgramName {
-				t.Errorf("the model setting is offered the models of %q, want %q", one.ModelsOf, service.ProgramName)
+			if defaultModel, isText := one.Default.(string); !isText || !slices.Contains(one.Options, defaultModel) {
+				t.Errorf("the model setting suggests %v, which lack its default %q", one.Options, one.Default)
 			}
 			return
 		}

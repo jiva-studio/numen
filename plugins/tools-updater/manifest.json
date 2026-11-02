@@ -1,0 +1,57 @@
+{
+  "id": "md.numen.tools.updater",
+  "name": "Update Notifier",
+  "version": "2026.11.1",
+  "protocol": 1,
+  "description": "Notifies when a newer build of Numen is published",
+  "targets": ["desktop.editor"],
+  "contributes": {
+    "category": "tools",
+    "statusViews": [{ "id": "update" }],
+    "handles": [{ "purpose": "text-provider" }]
+  },
+  "permissions": ["network:outbound"],
+  "services": ["md.numen.tools.updater"],
+  "backend": { "entrypoint": "bin/tools-updater" },
+  "frontend": {},
+  "settings": [
+    {
+      "key": "channel",
+      "type": "enum",
+      "title": "Channel",
+      "description": "Which builds are announced",
+      "default": "stable",
+      "options": [
+        { "value": "stable", "title": "Stable", "detail": "Tested releases" },
+        {
+          "value": "beta",
+          "title": "Beta",
+          "detail": "Builds published ahead of the next release"
+        },
+        {
+          "value": "custom",
+          "title": "Custom",
+          "detail": "Builds published at the release feed address"
+        }
+      ]
+    },
+    {
+      "key": "endpoint",
+      "type": "string",
+      "title": "Release feed address",
+      "description": "Required. Address of the latest.json file to ask for the newest build of the Custom channel. The Stable and Beta channels ask their own published feeds",
+      "default": "",
+      "when": { "setting": "channel", "is": ["custom"] }
+    },
+    {
+      "key": "checkIntervalHours",
+      "type": "number",
+      "title": "Check interval",
+      "description": "Hours between two checks for a newer build",
+      "default": 4,
+      "min": 1,
+      "max": 168,
+      "step": 1
+    }
+  ]
+}

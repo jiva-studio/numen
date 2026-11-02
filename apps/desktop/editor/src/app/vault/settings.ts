@@ -5,7 +5,7 @@ import { settingsService } from '@/shared/clients'
 import { consented, fetched } from './words'
 import { getSettingAt } from '@/entities/settings'
 import { write } from '@/entities/settings'
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
 import type { Configuration, PluginSettingCondition, PluginSettingInfo } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
 
@@ -45,6 +45,49 @@ const readCondition = (
 ): PluginSettingCondition | undefined =>
   when ? { setting: when.setting, is: [...when.is] } : undefined
 
+type ServedSettings = Awaited<ReturnType<typeof settingsService.getSettings>>
+type ServedPlugin = NonNullable<ServedSettings['plugins']>[number]
+type ServedSetting = NonNullable<ServedPlugin['settings']>[number]
+
+/** One setting of a plugin as the window holds it. */
+const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
+  let defaultValue: unknown = undefined
+  if (s.defaultJson) {
+    try {
+      defaultValue = JSON.parse(s.defaultJson)
+    } catch {
+      defaultValue = undefined
+    }
+  }
+  return {
+    key: s.key,
+    type: s.type as PluginSettingInfo['type'],
+    title: s.title,
+    description: s.description,
+    default: defaultValue,
+    palette: s.palette,
+    ...(s.icon ? { icon: s.icon } : {}),
+    options: s.options.length > 0 ? s.options.map(readOption) : undefined,
+    optionsBy: s.optionsBy
+      ? {
+          setting: s.optionsBy.setting,
+          options: Object.fromEntries(
+            Object.entries(s.optionsBy.options).map(([value, list]) => [
+              value,
+              list.options.map(readOption),
+            ]),
+          ),
+        }
+      : undefined,
+    when: readCondition(s.when),
+    accept: s.accept,
+    ...(s.multiple ? { multiple: true } : {}),
+    min: s.min,
+    max: s.max,
+    step: s.step,
+  }
+}
+
 export const settingsCore: SettingsPort = {
   getSyncEnabled: async () => getSettingAt(await readSettings(), SYNCS) !== false,
   setSyncEnabled: (retained) => writeSettings([{ at: SYNCS, value: retained }]),
@@ -80,11 +123,7 @@ export const settingsCore: SettingsPort = {
         storedSecrets: p.storedSecrets,
         hasFrontend: p.hasFrontend,
         readers: (p.readers ?? []).map((one) => ({ id: one.id, extensions: one.extensions })),
-        settingsViews: (p.settingsViews ?? []).map((one) => ({
-          id: one.id,
-          title: one.title,
-          after: one.after,
-        })),
+        settingsViews: (p.settingsViews ?? []).map((one) => ({ id: one.id, title: one.title })),
         consent: consented[p.completionConsent],
         ...(p.failure
           ? {
@@ -95,43 +134,7 @@ export const settingsCore: SettingsPort = {
               },
             }
           : {}),
-        settings: (p.settings ?? []).map((s) => {
-          let defaultValue: unknown = undefined
-          if (s.defaultJson) {
-            try {
-              defaultValue = JSON.parse(s.defaultJson)
-            } catch {
-              defaultValue = undefined
-            }
-          }
-          return {
-            key: s.key,
-            type: s.type as PluginSettingInfo['type'],
-            title: s.title,
-            description: s.description,
-            default: defaultValue,
-            palette: s.palette,
-            ...(s.icon ? { icon: s.icon } : {}),
-            options: s.options.length > 0 ? s.options.map(readOption) : undefined,
-            optionsBy: s.optionsBy
-              ? {
-                  setting: s.optionsBy.setting,
-                  options: Object.fromEntries(
-                    Object.entries(s.optionsBy.options).map(([value, list]) => [
-                      value,
-                      list.options.map(readOption),
-                    ]),
-                  ),
-                }
-              : undefined,
-            when: readCondition(s.when),
-            accept: s.accept,
-            min: s.min === 0 && s.max === 0 ? undefined : s.min,
-            max: s.min === 0 && s.max === 0 ? undefined : s.max,
-            step: s.step === 0 ? undefined : s.step,
-            modelsOf: s.modelsOf,
-          }
-        }),
+        settings: (p.settings ?? []).map(readPluginSetting),
       })),
     } satisfies Configuration
   },

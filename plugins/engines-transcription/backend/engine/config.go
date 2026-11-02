@@ -5,8 +5,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/segmenter"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/onnx"
 )
 
 // Config is what a user may change about transcription: which models, where
@@ -83,7 +83,7 @@ func Defaults() Config {
 		Workers:  0,
 		Language: "",
 		Progress: nil,
-		Model:    models[0],
+		Model:    getModels()[0],
 		Segmenter: segmenter.Model{
 			Name:      "silero-vad",
 			Repo:      segmenterDefault,

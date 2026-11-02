@@ -2,10 +2,10 @@
 package service
 
 import (
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"net/http"
 	"sync"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
@@ -13,22 +13,22 @@ import (
 // the agent. The agent's tasks end when s closes.
 func Mount(s *server.Server) error {
 	agent := &Server{
-		UnimplementedAgentServiceHandler: agentrun.UnimplementedAgentServiceHandler{},
-		Client:                           nil,
-		mu:                               sync.Mutex{},
-		baseURL:                          "",
-		key:                              "",
-		model:                            "",
-		temperature:                      nil,
-		maxTokens:                        nil,
-		conversations:                    nil,
-		models:                           nil,
-		isListed:                         false,
-		registry:                         agentrun.Registry{},
+		Unimplemented: agentrun.Unimplemented{},
+		Client:        nil,
+		mu:            sync.Mutex{},
+		baseURL:       "",
+		key:           "",
+		model:         "",
+		temperature:   nil,
+		maxTokens:     nil,
+		conversations: nil,
+		models:        nil,
+		isListed:      false,
+		registry:      agentrun.Registry{},
 	}
 	s.SetUpdateConfig(agent.Configure)
-	s.Register(agentrun.NewAgentServiceHandler(agent, s.HandlerOptions()...))
-	s.OnClose(func() { _ = agent.Close() })
+	s.Register(agentrun.NewHandler(agent, s.HandlerOptions()...))
+	s.OnClose(agent.Close)
 	return nil
 }
 

@@ -72,7 +72,7 @@
 .link-player__video {
   inline-size: 100%;
   max-block-size: 60vh;
-  background: #000;
+  background: var(--numen-media-backdrop);
 }
 
 .link-player__controls {
@@ -100,5 +100,5 @@
   aspect-ratio: 16 / 9;
   max-block-size: 60vh;
   border: 0;
-  background: #000;
+  background: var(--numen-media-backdrop);
 }

@@ -4,7 +4,7 @@
  */
 
 /** The service name the manifest declares. */
-export const SERVICE = 'numen.importer'
+export const SERVICE = 'md.numen.tools.media.importer'
 
 /** The error codes of a failed method that this plugin reads. */
 export const ErrorCode = {

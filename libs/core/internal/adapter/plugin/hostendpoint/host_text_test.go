@@ -66,8 +66,11 @@ func (m *memoryTexts) ListVersions(_ context.Context, v domain.Vault, path strin
 	return listing, nil
 }
 
-func (m *memoryTexts) ReadText(_ context.Context, v domain.Vault, path string, id domain.TextVersionID, _ string) (pluginport.PluginTextPage, error) {
-	listing, _ := m.ListVersions(context.Background(), v, path)
+func (m *memoryTexts) ReadText(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, _ string) (pluginport.PluginTextPage, error) {
+	listing, err := m.ListVersions(ctx, v, path)
+	if err != nil {
+		return pluginport.PluginTextPage{}, err
+	}
 	for _, one := range listing.Versions {
 		if one.GetID() == id {
 			return pluginport.PluginTextPage{Segments: []domain.TextSegment{{Text: one.Key, Selector: `{"page":3}`}}}, nil

@@ -12,6 +12,124 @@ export const lifetimes = [
 ]
 
 /**
+ * Selectors that ban the wall clock (`Date.now()`, `new Date()`) and the monotonic clock
+ * (`performance.now()`). When `clockFunction` names a function declaration, the wall clock is
+ * allowed inside that declaration only; `monotonicFunction` does the same for `performance.now()`.
+ *
+ * @param {string | undefined} clockFunction Name of the one function that reads the wall clock
+ * @param {string | undefined} monotonicFunction Name of the one function that reads the monotonic clock
+ * @returns {Array<{ selector: string, message: string }>}
+ */
+export function createClockSelectors(clockFunction, monotonicFunction) {
+  const inside = (name) => (name ? `:not(FunctionDeclaration[id.name="${name}"] *)` : '')
+  const message = 'the clock is a port — take the now a Clock carries'
+  return [
+    { selector: `MemberExpression[object.name="Date"][property.name="now"]${inside(clockFunction)}`, message },
+    { selector: `NewExpression[callee.name="Date"][arguments.length=0]${inside(clockFunction)}`, message },
+    {
+      selector: `MemberExpression[object.name="performance"][property.name="now"]${inside(monotonicFunction)}`,
+      message,
+    },
+  ]
+}
+
+/**
+ * Selectors that ban scheduling with the machine's timers. A pure module takes the schedule it
+ * runs on from its caller.
+ *
+ * @returns {Array<{ selector: string, message: string }>}
+ */
+export function createTimerSelectors() {
+  const message = 'a timer has a lifetime a test must control — take the schedule a Clock carries'
+  return [
+    { selector: 'CallExpression[callee.name=/^(setTimeout|setInterval)$/]', message },
+    { selector: 'CallExpression[callee.property.name=/^(setTimeout|setInterval)$/]', message },
+  ]
+}
+
+/**
+ * The selectors every non-test source file obeys: the clocks, randomness and measuring the window.
+ *
+ * @param {{ clockFunction?: string, monotonicFunction?: string }} options The sanctioned clock functions
+ * @returns {Array<{ selector: string, message: string }>}
+ */
+export function createDeterminismSelectors({ clockFunction, monotonicFunction } = {}) {
+  return [
+    ...createClockSelectors(clockFunction, monotonicFunction),
+    {
+      selector: 'MemberExpression[object.name="Math"][property.name="random"]',
+      message: 'the same input gives the same numbers on any machine on any day',
+    },
+    {
+      selector: 'MemberExpression[property.name="getBoundingClientRect"]',
+      message: 'what the window measures is a port — take it as a value',
+    },
+    {
+      selector: 'MemberExpression[property.name="matchMedia"]',
+      message: 'a reader who asks for less motion is answered in CSS',
+    },
+  ]
+}
+
+/**
+ * The block for the pure segments (`lib/`, `domain/`): the determinism selectors and the timers.
+ * A package that sets `no-restricted-syntax` for its sources adds this block after its own.
+ *
+ * @param {{ clockFunction?: string, monotonicFunction?: string }} options The sanctioned clock functions
+ * @returns {object}
+ */
+export function createPureSegmentConfig(options = {}) {
+  return {
+    files: ['**/lib/**/*.ts', '**/domain/**/*.ts'],
+    ignores: ['**/*.test.ts', '**/*.stories.ts', '**/fixtures/**', '**/testing/**', '.storybook/**', ...(options.portIgnores || [])],
+    rules: {
+      'no-restricted-syntax': ['error', ...createDeterminismSelectors(options), ...createTimerSelectors()],
+    },
+  }
+}
+
+/**
+ * The rules every package enforces on every file, tests included. A promise is awaited, returned
+ * or given an error channel; `void` never discards a value; no block or function body is empty.
+ *
+ * @param {{ isTyped?: boolean }} options `isTyped` adds the rules that need type information
+ * @returns {Record<string, unknown>}
+ */
+export function createStrictRules({ isTyped = true } = {}) {
+  return {
+    'no-void': 'error',
+    'no-empty': ['error', { allowEmptyCatch: false }],
+    'no-empty-function': 'off',
+    '@typescript-eslint/no-empty-function': 'error',
+    ...(isTyped
+      ? {
+          '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: false }],
+          '@typescript-eslint/no-misused-promises': 'error',
+          '@typescript-eslint/await-thenable': 'error',
+          '@typescript-eslint/switch-exhaustiveness-check': [
+            'error',
+            { considerDefaultExhaustiveForUnions: true },
+          ],
+        }
+      : {}),
+  }
+}
+
+/**
+ * The strict rules for plain JavaScript files, which carry no TypeScript plugin and no type
+ * information.
+ *
+ * @returns {Record<string, unknown>}
+ */
+export function createStrictScriptRules() {
+  return {
+    'no-void': 'error',
+    'no-empty': ['error', { allowEmptyCatch: false }],
+    'no-empty-function': 'error',
+  }
+}
+
+/**
  * Custom rule: Enforce extracting large props interfaces into a separate *.types.ts file.
  */
 const SECTION_ORDER = {
@@ -259,7 +377,7 @@ const numenPlugin = {
               isBoolean = typeAnnotation.types.some((t) => t.type === 'TSBooleanKeyword')
             }
 
-            if (isBoolean && !/^(is|has|can)[A-Z]/.test(name)) {
+            if (isBoolean && name !== 'modelValue' && !/^(is|has|can)[A-Z]/.test(name)) {
               const capitalized = name.charAt(0).toUpperCase() + name.slice(1)
               context.report({
                 node: node.key,
@@ -388,7 +506,6 @@ const numenPlugin = {
       },
       create(context) {
         const max = context.options[0]?.max ?? 8
-        const filename = context.filename || ''
 
         // Check if file is a composable file (e.g. use*.ts) or function is use*
         function checkReturnObject(node, fnName) {
@@ -712,7 +829,7 @@ const numenPlugin = {
  * Returns the unified base ESLint flat configuration array for Vue 3 + TypeScript projects.
  *
  * @param {string} dirname The import.meta.dirname of the package
- * @param {object} options Optional overrides
+ * @param {object} options Optional overrides; `clockFunction` and `monotonicFunction` name the one function allowed to read each clock
  * @returns {Array}
  */
 export function createBaseConfig(dirname, options = {}) {
@@ -760,13 +877,7 @@ export function createBaseConfig(dirname, options = {}) {
       },
       rules: {
         'no-console': 'error',
-        ...(useProjectService
-          ? {
-              '@typescript-eslint/no-floating-promises': 'error',
-              '@typescript-eslint/no-misused-promises': 'error',
-              '@typescript-eslint/await-thenable': 'error',
-            }
-          : {}),
+        ...createStrictRules({ isTyped: useProjectService }),
         '@typescript-eslint/no-unused-vars': [
           'error',
           { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
@@ -775,6 +886,8 @@ export function createBaseConfig(dirname, options = {}) {
         'max-depth': ['error', 3],
         complexity: ['error', 12],
         'max-params': ['error', 4],
+        'max-lines-per-function': ['error', { max: 80, skipBlankLines: true, skipComments: true, IIFEs: true }],
+        'max-statements': ['error', 50],
         'numen/max-composable-return-properties': ['error', { max: 8 }],
         'numen/enforce-vue-reactivity-in-composable': 'error',
         'numen/no-double-type-assertion': 'error',
@@ -874,11 +987,6 @@ export function createBaseConfig(dirname, options = {}) {
         '**/*.stories.ts',
         '.storybook/**',
         '**/testing/**',
-        '**/clock.ts',
-        '**/drop.ts',
-        '**/dom.ts',
-        'src/entities/note/model/notes.ts',
-        'src/app/window/useWindowKinds.ts',
         ...(options.portIgnores || []),
       ],
       rules: {
@@ -891,29 +999,12 @@ export function createBaseConfig(dirname, options = {}) {
         ],
         'no-restricted-syntax': [
           'error',
-          {
-            selector: 'MemberExpression[object.name="Date"][property.name="now"]',
-            message: 'the clock is a port — take the now a Clock carries',
-          },
-          {
-            selector: 'NewExpression[callee.name="Date"][arguments.length=0]',
-            message: 'the clock is a port — take the now a Clock carries',
-          },
-          {
-            selector: 'MemberExpression[object.name="Math"][property.name="random"]',
-            message: 'the same input gives the same numbers on any machine on any day',
-          },
-          {
-            selector: 'MemberExpression[property.name="getBoundingClientRect"]',
-            message: 'what the window measures is a port — take it as a value',
-          },
-          {
-            selector: 'MemberExpression[property.name="matchMedia"]',
-            message: 'a reader who asks for less motion is answered in CSS',
-          },
+          ...createDeterminismSelectors(options),
         ],
       },
     },
+
+    createPureSegmentConfig(options),
 
     {
       files: ['**/lib/**/*.ts'],
@@ -986,20 +1077,10 @@ export function createBaseConfig(dirname, options = {}) {
     },
 
     {
-      files: ['**/safe.ts', '**/safe.stories.ts'],
-      rules: {
-        'no-control-regex': 'off',
-      },
-    },
-
-    {
       files: ['**/*.test.ts', '**/*.stories.ts', '.storybook/**'],
       rules: {
         '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-non-null-assertion': 'off',
-        '@typescript-eslint/no-floating-promises': 'off',
-        '@typescript-eslint/no-misused-promises': 'off',
-        '@typescript-eslint/await-thenable': 'off',
         'no-console': 'off',
         'no-restricted-globals': 'off',
         'require-yield': 'off',
@@ -1017,6 +1098,16 @@ export function createBaseConfig(dirname, options = {}) {
         'max-depth': 'off',
         complexity: 'off',
         'max-params': 'off',
+        'max-lines-per-function': 'off',
+        'max-statements': 'off',
+      },
+    },
+
+    {
+      files: ['**/*.spec.ts', '**/testing/**', '**/fixtures/**'],
+      rules: {
+        'max-lines-per-function': 'off',
+        'max-statements': 'off',
       },
     },
 

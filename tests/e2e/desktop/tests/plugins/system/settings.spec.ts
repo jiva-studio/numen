@@ -4,11 +4,16 @@ import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 /** The settings page of the transcription plugin, opened from the palette. The tab opens again on the plugin it last showed. */
 async function openTranscriptionSettings(page: Page): Promise<void> {
   await runPaletteCommand(page, 'Settings', 'Settings')
-  await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
-  const pluginRow = page.getByRole('button', { name: /Audio\/Video Transcription/i }).first()
-  const model = page.getByTestId('setting-model')
-  await expect(pluginRow.or(model)).toBeVisible({ timeout: 10_000 })
-  if (await pluginRow.isVisible()) await pluginRow.click()
+  await page
+    .getByRole('button', { name: /Audio\/Video Transcription/i })
+    .first()
+    .click()
+  await expect(page.getByTestId('setting-model')).toBeVisible({ timeout: 5_000 })
+}
+
+/** Opens the Settings tab again, which shows the plugin it last showed. */
+async function reopenSettings(page: Page): Promise<void> {
+  await runPaletteCommand(page, 'Settings', 'Settings')
   await expect(page.getByTestId('setting-model')).toBeVisible({ timeout: 5_000 })
 }
 
@@ -52,8 +57,8 @@ test.describe('Plugin Settings and Configuration', () => {
       .getByRole('button', { name: /Close Settings/i })
       .first()
       .click()
-    await expect(page.locator('.settings__plugins')).not.toBeVisible({ timeout: 5_000 })
-    await openTranscriptionSettings(page)
+    await expect(page.locator('.settings__plugins')).toBeHidden({ timeout: 5_000 })
+    await reopenSettings(page)
     await expect(page.getByTestId('setting-model').locator('.settings__choice')).toHaveText(
       'Parakeet TDT 0.6B v2',
     )
@@ -107,10 +112,12 @@ test.describe('OCR settings', () => {
   }) => {
     await openWorkspace(page)
     await runPaletteCommand(page, 'Settings', 'Settings')
-    const pluginRow = page.getByRole('button', { name: /Document OCR/i }).first()
+    await page
+      .getByRole('button', { name: /Document OCR/i })
+      .first()
+      .click()
     const model = page.getByTestId('setting-model')
-    await expect(pluginRow.or(model)).toBeVisible({ timeout: 10_000 })
-    if (await pluginRow.isVisible()) await pluginRow.click()
+    await expect(model).toBeVisible({ timeout: 10_000 })
 
     await expect(model.locator('.settings__choice')).toHaveText('PP-OCRv6 tiny')
     await expect(page.getByTestId('setting-dpi').locator('.settings__choice')).toHaveText('300 dpi')
@@ -149,10 +156,12 @@ test.describe('Embeddings settings', () => {
   }) => {
     await openWorkspace(page)
     await runPaletteCommand(page, 'Settings', 'Settings')
-    const pluginRow = page.getByRole('button', { name: /Vector Embeddings/i }).first()
+    await page
+      .getByRole('button', { name: /Vector Embeddings/i })
+      .first()
+      .click()
     const provider = page.getByTestId('setting-provider')
-    await expect(pluginRow.or(provider)).toBeVisible({ timeout: 10_000 })
-    if (await pluginRow.isVisible()) await pluginRow.click()
+    await expect(provider).toBeVisible({ timeout: 10_000 })
 
     await expect(provider.locator('.settings__choice')).toHaveText('Local')
     await expect(page.getByText('Service URL', { exact: true })).toHaveCount(0)

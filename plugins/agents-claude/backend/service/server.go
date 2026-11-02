@@ -13,13 +13,14 @@ import (
 	"strings"
 	"sync"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/process"
 )
 
 // programName is the name tasks use for the program, and the settings section key.
@@ -32,10 +33,10 @@ const readsHooksOption = "reads_hooks_and_skills"
 const programTitle = "Claude Code"
 
 type agentServer struct {
-	agentrun.UnimplementedAgentServiceHandler
+	agentrun.Unimplemented
 	mu             sync.RWMutex
 	systemPrompt   string
-	tools          []*agentrun.AgentToolDefinition
+	tools          []*agentrun.ToolDefinition
 	registry       agentrun.Registry
 	defaultModel   string
 	executablePath string
@@ -45,6 +46,12 @@ type agentServer struct {
 
 	// models are the models the program listed.
 	models *cache.Cache[[]claudeModel]
+
+	// fetch lists the models of the program started as command with env; nil starts the program.
+	fetch func(ctx context.Context, command, env []string) ([]claudeModel, error)
+
+	// clock paces the reports of a change being written.
+	clock timeSource
 }
 
 // getEnvironment returns the variables a program of the agent is started with.
@@ -85,20 +92,20 @@ func combineInstructions(instructions, systemPrompt string) string {
 }
 
 func (s *agentServer) prepareClaudeArgs(
-	msg *agentrun.AskAgentRequest, instructions, defaultModel string,
+	msg *agentrun.Request, instructions, defaultModel string,
 ) (claudeArgs []string, configFile string, err error) {
-	toolNames := msg.GetTools()
+	toolNames := msg.Tools
 	if len(toolNames) > 0 {
-		configFile, err = writeMcpConfig(msg.GetToolsUrl(), msg.GetToolsToken())
+		configFile, err = writeMcpConfig(msg.ToolsURL, msg.ToolsToken)
 		if err != nil {
-			return nil, "", connect.NewError(connect.CodeInternal, fmt.Errorf("write mcp config: %w", err))
+			return nil, "", rpcerror.New(rpcerror.Internal, fmt.Errorf("write mcp config: %w", err))
 		}
 	}
-	model := msg.GetModel()
+	model := msg.Model
 	if model == "" {
 		model = defaultModel
 	}
-	level := s.getReasoning(model, msg.GetReasoning())
+	level := s.getReasoning(model, msg.Reasoning)
 	if model == defaultModelName {
 		model = ""
 	}
@@ -107,36 +114,33 @@ func (s *agentServer) prepareClaudeArgs(
 		model:         model,
 		reasoning:     level,
 		configuration: configFile,
-		session:       s.registry.GetSession(msg.GetConversation()),
-		turns:         int(msg.GetMaxSteps()),
+		session:       s.registry.GetSession(msg.Conversation),
+		turns:         int(msg.MaxSteps),
 		tools:         toolNames,
-		mayReadHooks:  msg.GetOptions()[readsHooksOption] == "true",
+		mayReadHooks:  msg.Options[readsHooksOption] == "true",
 	})
 	return args, configFile, nil
 }
 
-func (s *agentServer) AskAgent(
-	ctx context.Context,
-	req *connect.Request[agentrun.AskAgentRequest],
-	stream *connect.ServerStream[agentrun.AskAgentResponse],
-) error {
-	msg := req.Msg
+func (s *agentServer) Ask(ctx context.Context, msg *agentrun.Request, send func(*agentrun.Response) error) error {
 	s.mu.RLock()
 	systemPrompt := s.systemPrompt
 	defaultModel := s.defaultModel
 	s.mu.RUnlock()
 
-	instructions := combineInstructions(msg.GetInstructions(), systemPrompt)
+	instructions := combineInstructions(msg.Instructions, systemPrompt)
 
-	cmdName, cmdArgs := s.getCommand(msg.GetCommand())
+	cmdName, cmdArgs := s.getCommand(msg.Command)
 	if cmdName == "" {
-		_ = stream.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_Text{
+		if err := send(&agentrun.Response{
+			Step: &agentrun.TextStep{
 				Text: "Claude Code CLI is not installed or not found on PATH.",
 			},
-		})
-		return stream.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_Stopped{
+		}); err != nil {
+			return err
+		}
+		return send(&agentrun.Response{
+			Step: &agentrun.StoppedStep{
 				Stopped: "claude not installed",
 			},
 		})
@@ -147,28 +151,48 @@ func (s *agentServer) AskAgent(
 		return err
 	}
 
-	conversation := msg.GetConversation()
+	runErr := s.streamClaude(ctx, send, msg, claudeCommand{name: cmdName, args: cmdArgs, claudeArgs: claudeArgs, configFile: configFile})
+	if removeErr := agentrun.RemoveFile(configFile); removeErr != nil {
+		return errors.Join(runErr, fmt.Errorf("remove the tool configuration: %w", removeErr))
+	}
+	return runErr
+}
+
+// claudeCommand is the program to start for a run and the files it works with.
+type claudeCommand struct {
+	name       string
+	args       []string
+	claudeArgs []string
+	configFile string
+}
+
+// streamClaude starts the program and streams its responses until it ends.
+func (s *agentServer) streamClaude(
+	ctx context.Context,
+	send func(*agentrun.Response) error,
+	msg *agentrun.Request,
+	cmd claudeCommand,
+) error {
+	conversation := msg.Conversation
 	runCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="work.Output is unused because agent-claude writes responses directly to the stream"
-	work := agentrun.NewWork(conversation, 0, cancel)
+	work := agentrun.NewWork(conversation, 0, agentrun.StopByCancel(cancel))
 	if !s.registry.Add(work) {
-		agentrun.RemoveFile(configFile)
-		return connect.NewError(connect.CodeUnavailable, errors.New("this agent is closing"))
+		return rpcerror.New(rpcerror.Unavailable, errors.New("this agent is closing"))
 	}
 	defer s.registry.Remove(work)
 	defer work.End()
-	defer agentrun.RemoveFile(configFile)
 
 	// The wait for the model begins with the program, and the stream opens on saying so.
-	if err := stream.Send(&agentrun.AskAgentResponse{
-		Step: &agentrun.AskAgentResponse_ModelStarted{ModelStarted: &agentrun.ModelStarted{}},
+	if err := send(&agentrun.Response{
+		Step: &agentrun.ModelStartedStep{},
 	}); err != nil {
 		return err
 	}
 
-	cmd, out, stderrBuf, err := s.launchAgentCmd(runCtx, cmdName, cmdArgs, claudeArgs, msg)
+	proc, out, stderrBuf, err := s.launchAgentCmd(runCtx, cmd.name, cmd.args, cmd.claudeArgs, msg)
 	if err != nil {
 		return err
 	}
@@ -176,16 +200,18 @@ func (s *agentServer) AskAgent(
 	recordSession := func(session string) { s.registry.SetSession(conversation, session) }
 	reasons := make(chan string, 1)
 	go func() {
-		reasons <- parseStream(runCtx, out, stream.Send, toolcall.IndexDeclarations(msg.GetToolDeclarations()), recordSession, configFile != "")
+		reasons <- parseStream(runCtx, out, send, streamOptions{
+			words: toolcall.IndexDeclarations(msg.ToolDeclarations), record: recordSession, clock: s.clock, expectsVault: cmd.configFile != "",
+		})
 	}()
 
-	stoppedReason, ok := waitAgentCompletion(runCtx, cmd, out, stderrBuf, reasons)
+	stoppedReason, ok := waitAgentCompletion(runCtx, proc, out, stderrBuf, reasons)
 	if !ok {
 		return nil
 	}
 
-	return stream.Send(&agentrun.AskAgentResponse{
-		Step: &agentrun.AskAgentResponse_Stopped{
+	return send(&agentrun.Response{
+		Step: &agentrun.StoppedStep{
 			Stopped: stoppedReason,
 		},
 	})
@@ -195,24 +221,24 @@ func (s *agentServer) launchAgentCmd(
 	ctx context.Context,
 	cmdName string,
 	cmdArgs, claudeArgs []string,
-	msg *agentrun.AskAgentRequest,
+	msg *agentrun.Request,
 ) (*exec.Cmd, io.ReadCloser, *strings.Builder, error) {
 	cmd := exec.CommandContext(ctx, cmdName, slices.Concat(cmdArgs, claudeArgs)...)
-	cmd.Dir = msg.GetRoot()
+	cmd.Dir = msg.Root
 	cmd.Env = buildEnvironment(s.getEnvironment())
-	cmd.Stdin = strings.NewReader(msg.GetPrompt())
-	supervise(cmd)
+	cmd.Stdin = strings.NewReader(msg.Prompt)
+	process.Supervise(cmd)
 
 	out, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, nil, nil, connect.NewError(connect.CodeInternal, fmt.Errorf("stdout pipe: %w", err))
+		return nil, nil, nil, rpcerror.New(rpcerror.Internal, fmt.Errorf("stdout pipe: %w", err))
 	}
 
 	var stderrBuf strings.Builder
 	cmd.Stderr = &stderrBuf
 
 	if err := cmd.Start(); err != nil {
-		return nil, nil, nil, connect.NewError(connect.CodeInternal, fmt.Errorf("start claude: %w", err))
+		return nil, nil, nil, rpcerror.New(rpcerror.Internal, fmt.Errorf("start claude: %w", err))
 	}
 	return cmd, out, &stderrBuf, nil
 }
@@ -225,14 +251,15 @@ func waitAgentCompletion(
 	reasons <-chan string,
 ) (string, bool) {
 	var failedReason string
+	var closeErr error
 	select {
 	case failedReason = <-reasons:
 	case <-runCtx.Done():
-		_ = out.Close()
+		closeErr = out.Close()
 		failedReason = <-reasons
 	}
 
-	waitErr := cmd.Wait()
+	waitErr := errors.Join(closeErr, cmd.Wait())
 	if runCtx.Err() != nil {
 		return "", false
 	}
@@ -256,41 +283,29 @@ func (s *agentServer) getCommand(command []string) (string, []string) {
 	return s.findClaude(), nil
 }
 
-func (s *agentServer) FinishConversation(
-	ctx context.Context,
-	req *connect.Request[agentrun.FinishConversationRequest],
-) (*connect.Response[agentrun.FinishConversationResponse], error) {
-	if err := s.registry.EndConversation(ctx, req.Msg.GetConversation()); err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-	return connect.NewResponse(&agentrun.FinishConversationResponse{}), nil
+func (s *agentServer) FinishConversation(ctx context.Context, conversation string) error {
+	return s.registry.FinishConversation(ctx, conversation)
 }
 
-func (s *agentServer) GetAgentState(
-	_ context.Context,
-	_ *connect.Request[agentrun.GetAgentStateRequest],
-) (*connect.Response[agentrun.GetAgentStateResponse], error) {
+func (s *agentServer) GetState(_ context.Context) (*agentrun.State, error) {
 	var unreachable string
 	if s.findClaude() == "" {
 		unreachable = "Claude Code CLI not found"
 	}
-	return connect.NewResponse(&agentrun.GetAgentStateResponse{Unreachable: unreachable}), nil
+	return &agentrun.State{Unreachable: unreachable}, nil
 }
 
-// GetAgentPrograms lists Claude Code, whether it is installed under the command line the installation
+// GetPrograms lists Claude Code, whether it is installed under the command line the installation
 // set or where it is found, and the models it accepts.
-func (s *agentServer) GetAgentPrograms(
-	ctx context.Context,
-	req *connect.Request[agentrun.GetAgentProgramsRequest],
-) (*connect.Response[agentrun.GetAgentProgramsResponse], error) {
+func (s *agentServer) GetPrograms(ctx context.Context, commands []agentrun.ProgramCommand) ([]*agentrun.Program, error) {
 	var configured []string
-	for _, one := range req.Msg.GetCommands() {
-		if one.GetProgram() == programName {
-			configured = one.GetCommand()
+	for _, one := range commands {
+		if one.Program == programName {
+			configured = one.Command
 		}
 	}
 	command, extra := s.getCommand(configured)
-	program := &agentrun.AgentProgram{
+	program := &agentrun.Program{
 		Name:        programName,
 		Title:       programTitle,
 		IsInstalled: command != "",
@@ -299,66 +314,51 @@ func (s *agentServer) GetAgentPrograms(
 		Models:      nil,
 	}
 	program.Models = s.listModels(ctx, command, extra)
-	return connect.NewResponse(&agentrun.GetAgentProgramsResponse{
-		Programs: []*agentrun.AgentProgram{program},
-	}), nil
+	return []*agentrun.Program{program}, nil
 }
 
-func (s *agentServer) RegisterTool(
-	_ context.Context,
-	req *connect.Request[agentrun.RegisterToolRequest],
-) (*connect.Response[agentrun.RegisterToolResponse], error) {
+func (s *agentServer) RegisterTool(_ context.Context, tool *agentrun.ToolDefinition) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.tools = append(s.tools, req.Msg.GetTool())
-	return connect.NewResponse(&agentrun.RegisterToolResponse{
-		Success: true,
-	}), nil
+	s.tools = append(s.tools, tool)
+	return nil
 }
 
-func (s *agentServer) ExtendSystemPrompt(
-	_ context.Context,
-	req *connect.Request[agentrun.ExtendSystemPromptRequest],
-) (*connect.Response[agentrun.ExtendSystemPromptResponse], error) {
+func (s *agentServer) ExtendSystemPrompt(_ context.Context, extension string) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.systemPrompt += req.Msg.GetExtension()
-	return connect.NewResponse(&agentrun.ExtendSystemPromptResponse{
-		Success:    true,
-		FullPrompt: s.systemPrompt,
-	}), nil
+	s.systemPrompt += extension
+	return s.systemPrompt, nil
 }
 
-func (s *agentServer) GetAgentTools(
-	_ context.Context,
-	_ *connect.Request[agentrun.GetAgentToolsRequest],
-) (*connect.Response[agentrun.GetAgentToolsResponse], error) {
+func (s *agentServer) GetTools(_ context.Context) (*agentrun.ToolSet, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	toolsCopy := make([]*agentrun.AgentToolDefinition, len(s.tools))
+	toolsCopy := make([]*agentrun.ToolDefinition, len(s.tools))
 	copy(toolsCopy, s.tools)
 
-	return connect.NewResponse(&agentrun.GetAgentToolsResponse{
+	return &agentrun.ToolSet{
 		Tools:                 toolsCopy,
 		SystemPromptExtension: s.systemPrompt,
-	}), nil
+	}, nil
 }
 
 // Mount registers the agent's services on s and hands Configure's settings to the agent.
 // The runs the agent started end when s closes.
 func Mount(s *server.Server) error {
 	agent := new(agentServer)
+	agent.clock = clock.System{}
 	agent.models = newModelCache(true)
 	return mount(s, agent)
 }
 
 func mount(s *server.Server, agentSvc *agentServer) error {
 	s.SetUpdateConfig(agentSvc.applyConfig)
-	s.Register(agentrun.NewAgentServiceHandler(agentSvc, s.HandlerOptions()...))
-	s.OnClose(func() { _ = agentSvc.registry.Close() })
+	s.Register(agentrun.NewHandler(agentSvc, s.HandlerOptions()...))
+	s.OnClose(agentSvc.registry.Close)
 	return nil
 }
 
@@ -367,6 +367,7 @@ func mount(s *server.Server, agentSvc *agentServer) error {
 func NewHandler(vars map[string]string) (http.Handler, error) {
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
 		agent := new(agentServer)
+		agent.clock = clock.System{}
 		agent.environ = getVariables(vars)
 		agent.models = newModelCache(true)
 		return mount(s, agent)
@@ -375,7 +376,7 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 
 // listModels returns the models the program offers, as it lists them. The aliases of the fallback
 // stand where it is not installed or does not answer.
-func (s *agentServer) listModels(ctx context.Context, command string, extra []string) []*agentrun.AgentModel {
+func (s *agentServer) listModels(ctx context.Context, command string, extra []string) []*reasoning.Model {
 	var models []claudeModel
 	var err error
 	if command == "" {
@@ -385,9 +386,9 @@ func (s *agentServer) listModels(ctx context.Context, command string, extra []st
 	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "list models of claude: %v\n", err)
-		models = fallbackModels
+		models = getFallbackModels()
 	}
-	out := make([]*agentrun.AgentModel, 0, len(models))
+	out := make([]*reasoning.Model, 0, len(models))
 	for _, one := range models {
 		out = append(out, one.toProto())
 	}

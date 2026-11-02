@@ -60,7 +60,7 @@ func OpenForWriting(root string, opts vaultconfig.Options) (*VaultWriter, error)
 // which may be read-only.
 const newFileMode fs.FileMode = 0o644
 
-func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error) {
+func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (_ domain.FileStat, err error) {
 	if ctx.Err() != nil {
 		return domain.FileStat{}, ctx.Err()
 	}
@@ -72,26 +72,10 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, st
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	defer root.Close()
+	defer closeAndJoin(&err, root)
 
-	mode := newFileMode
-	switch info, err := root.Stat(name); {
-	case err == nil:
-		if info.IsDir() {
-			return domain.FileStat{}, fmt.Errorf("write %s: it is a directory", path)
-		}
-		mode = info.Mode().Perm()
-		if !stat.IsZero() &&
-			(info.Size() != stat.Size || !info.ModTime().Equal(stat.ModTime)) {
-			return domain.FileStat{}, fmt.Errorf("write %s: %w", path, vaultport.ErrStale)
-		}
-	case errors.Is(err, fs.ErrNotExist):
-		// A missing note cannot have changed, so a caller holding a stat for it gets
-		// ErrStale.
-		if !stat.IsZero() {
-			return domain.FileStat{}, fmt.Errorf("write %s: %w", path, vaultport.ErrStale)
-		}
-	default:
+	mode, err := getWriteMode(root, name, path, stat)
+	if err != nil {
 		return domain.FileStat{}, err
 	}
 
@@ -106,7 +90,7 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, st
 	return contentVal, nil
 }
 
-func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
+func (w *VaultWriter) Move(ctx context.Context, from, to string) (err error) {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -132,25 +116,13 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 	if err != nil {
 		return err
 	}
-	defer root.Close()
+	defer closeAndJoin(&err, root)
 	leaves, err := w.getRelativeName(source)
 	if err != nil {
 		return err
 	}
 
-	switch there, err := root.Lstat(arrives); {
-	case err == nil:
-		// A file already at the target name is a conflict unless it is the source
-		// itself: a filesystem that ignores case or accent normalization reports the
-		// new name as the file being renamed.
-		here, err := root.Lstat(leaves)
-		if err != nil {
-			return err
-		}
-		if !os.SameFile(here, there) {
-			return fmt.Errorf("move %s to %s: %w", from, to, vaultport.ErrAlreadyExists)
-		}
-	case !errors.Is(err, fs.ErrNotExist):
+	if err := checkMoveTarget(root, leaves, arrives, from, to); err != nil {
 		return err
 	}
 
@@ -160,7 +132,7 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 	return atomicfile.Rename(ctx, root, leaves, arrives)
 }
 
-func (w *VaultWriter) MakeFolder(ctx context.Context, path string) error {
+func (w *VaultWriter) MakeFolder(ctx context.Context, path string) (err error) {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -172,7 +144,7 @@ func (w *VaultWriter) MakeFolder(ctx context.Context, path string) error {
 	if err != nil {
 		return err
 	}
-	defer root.Close()
+	defer closeAndJoin(&err, root)
 	switch info, err := root.Stat(name); {
 	case err == nil && !info.IsDir():
 		return fmt.Errorf("make %s: %w", path, vaultport.ErrAlreadyExists)
@@ -182,7 +154,7 @@ func (w *VaultWriter) MakeFolder(ctx context.Context, path string) error {
 	return atomicfile.CreateParents(root, name, path)
 }
 
-func (w *VaultWriter) Remove(ctx context.Context, path string) error {
+func (w *VaultWriter) Remove(ctx context.Context, path string) (err error) {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -194,7 +166,7 @@ func (w *VaultWriter) Remove(ctx context.Context, path string) error {
 	if err != nil {
 		return err
 	}
-	defer root.Close()
+	defer closeAndJoin(&err, root)
 	if err := root.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return err
 	}
@@ -344,8 +316,11 @@ func (w *VaultWriter) isWritableNote(path string) bool {
 // Root is where this vault is on disk.
 func (w *VaultWriter) Root() string { return w.root }
 
-// VaultWriters opens vaults for writing.
-type VaultWriters struct{ Options vaultconfig.Options }
+// VaultWriters opens vaults for writing. Writers that must exclude each other share Locks.
+type VaultWriters struct {
+	Options vaultconfig.Options
+	Locks   *Locks
+}
 
 func (w VaultWriters) Open(v domain.Vault) (vaultport.VaultWriter, error) {
 	return OpenForWriting(v.Path, w.Options)
@@ -355,7 +330,7 @@ func (w VaultWriters) Open(v domain.Vault) (vaultport.VaultWriter, error) {
 //
 // The existence check and the creation are one step, so two concurrent callers
 // cannot both succeed.
-func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) error {
+func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) (err error) {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -367,7 +342,7 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) e
 	if err != nil {
 		return err
 	}
-	defer root.Close()
+	defer closeAndJoin(&err, root)
 	if err := atomicfile.CreateParents(root, filepath.Dir(name), path); err != nil {
 		return err
 	}
@@ -380,12 +355,10 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) e
 		return err
 	}
 	if _, err := file.Write(content); err != nil {
-		file.Close()
-		return err
+		return errors.Join(err, file.Close())
 	}
 	if err := file.Sync(); err != nil {
-		file.Close()
-		return err
+		return errors.Join(err, file.Close())
 	}
 	if err := file.Close(); err != nil {
 		return err
@@ -398,7 +371,7 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) e
 // The content is streamed, so a recording or an archive of any size is imported
 // within the available memory. It is written to a temporary file next to the
 // destination and renamed over it, so the watcher reports the file once, complete.
-func (w *VaultWriter) Import(ctx context.Context, path string, content io.Reader) error {
+func (w *VaultWriter) Import(ctx context.Context, path string, content io.Reader) (err error) {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -410,7 +383,7 @@ func (w *VaultWriter) Import(ctx context.Context, path string, content io.Reader
 	if err != nil {
 		return err
 	}
-	defer root.Close()
+	defer closeAndJoin(&err, root)
 	switch _, err := root.Lstat(name); {
 	case err == nil:
 		return fmt.Errorf("bring %s: %w", path, vaultport.ErrAlreadyExists)
@@ -425,25 +398,26 @@ func (w *VaultWriter) Import(ctx context.Context, path string, content io.Reader
 
 // streamReplace streams content beside the target and renames it over the top, by the
 // same rules replace writes bytes it already holds.
-func streamReplace(ctx context.Context, root *os.Root, target string, content io.Reader) error {
+func streamReplace(ctx context.Context, root *os.Root, target string, content io.Reader) (err error) {
 	dir := filepath.Dir(target)
 	tmp, pos, err := atomicfile.CreateTempFile(root, dir, atomicfile.GetTempPattern(filepath.Base(target)))
 	if err != nil {
 		return err
 	}
-	defer root.Remove(pos)
+	defer func() {
+		if removeErr := root.Remove(pos); removeErr != nil && !errors.Is(removeErr, fs.ErrNotExist) {
+			err = errors.Join(err, removeErr)
+		}
+	}()
 
 	if _, err := io.Copy(tmp, content); err != nil {
-		tmp.Close()
-		return err
+		return errors.Join(err, tmp.Close())
 	}
 	if err := tmp.Sync(); err != nil {
-		tmp.Close()
-		return err
+		return errors.Join(err, tmp.Close())
 	}
 	if err := tmp.Chmod(newFileMode); err != nil {
-		tmp.Close()
-		return err
+		return errors.Join(err, tmp.Close())
 	}
 	if err := tmp.Close(); err != nil {
 		return err
@@ -452,4 +426,53 @@ func streamReplace(ctx context.Context, root *os.Root, target string, content io
 		return err
 	}
 	return atomicfile.SyncDirectory(root, dir)
+}
+
+// getWriteMode is the mode a note is written with and an error where the write
+// must not go ahead: the path is a folder, or the note is not the one the caller
+// has seen.
+func getWriteMode(root *os.Root, name, path string, stat domain.FileStat) (fs.FileMode, error) {
+	info, err := root.Stat(name)
+	switch {
+	case err == nil:
+		if info.IsDir() {
+			return 0, fmt.Errorf("write %s: it is a directory", path)
+		}
+		if !stat.IsZero() &&
+			(info.Size() != stat.Size || !info.ModTime().Equal(stat.ModTime)) {
+			return 0, fmt.Errorf("write %s: %w", path, vaultport.ErrStale)
+		}
+		return info.Mode().Perm(), nil
+	case errors.Is(err, fs.ErrNotExist):
+		// A missing note cannot have changed, so a caller holding a stat for it gets
+		// ErrStale.
+		if !stat.IsZero() {
+			return 0, fmt.Errorf("write %s: %w", path, vaultport.ErrStale)
+		}
+		return newFileMode, nil
+	default:
+		return 0, err
+	}
+}
+
+// checkMoveTarget returns an error when a file already exists at the target
+// name and is not the source itself.
+func checkMoveTarget(root *os.Root, leaves, arrives, from, to string) error {
+	there, err := root.Lstat(arrives)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	// A filesystem that ignores case or accent normalization reports the new name
+	// as the file being renamed.
+	here, err := root.Lstat(leaves)
+	if err != nil {
+		return err
+	}
+	if !os.SameFile(here, there) {
+		return fmt.Errorf("move %s to %s: %w", from, to, vaultport.ErrAlreadyExists)
+	}
+	return nil
 }

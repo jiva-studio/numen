@@ -49,3 +49,14 @@ describe('findWikilink', () => {
     expect(findWikilink(text, 25)).toBeNull()
   })
 })
+
+describe('getWikilinks shown stretch', () => {
+  it('shows the target, the alias after the bar, and the whole text between the brackets with a heading', () => {
+    const [plain, aliased, headed] = getWikilinks(
+      '[[Entropy]] [[Entropy|disorder]] [[Entropy#Heat]]',
+    )
+    expect([plain?.shownFrom, plain?.shownTo]).toStrictEqual([2, 9])
+    expect([aliased?.shownFrom, aliased?.shownTo]).toStrictEqual([22, 30])
+    expect([headed?.shownFrom, headed?.shownTo]).toStrictEqual([35, 47])
+  })
+})

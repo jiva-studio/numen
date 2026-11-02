@@ -14,19 +14,18 @@ import (
 const usage = `numen-cli — notes with typed links
 
 usage:
-  numen-cli vault add <path> [--name <name>]   give a folder an identity and remember it
+  numen-cli vault add <path> [--name <name>]   add a folder to the vault list
   numen-cli vault list                         show the vaults this installation knows
-  numen-cli vault rename <vault> <new name>    call a vault something else
+  numen-cli vault rename <vault> <new name>    change the name of a vault
   numen-cli vault remove <vault>               take a vault off the list, leaving its folder
-  numen-cli vault erase <vault> [--yes]        remove it, and put its folder in the trash
-  numen-cli vault open <vault>                 the vault the next window opens
-  numen-cli scan <vault> [--rebuild-index]     bring the index up to date with a vault
-                                               --rebuild-index reads every file again, forgets
-                                               the vectors of every model but the one in use,
-                                               and gives their space back
+  numen-cli vault erase <vault> [--yes]        remove it and move its folder to the trash
+  numen-cli vault open <vault>                 set the vault the next window opens
+  numen-cli scan <vault> [--rebuild-index]     update the index of a vault
+                                               --rebuild-index reads every file again and deletes the vectors
+                                               of every model except the one in use
   numen-cli search <vault> <query>             full-text search within one vault
   numen-cli links <vault> <note>               what a note points at, and what points at it
-  numen-cli problems <vault> [<check>...]      what the vault holds that was not guessed at
+  numen-cli problems <vault> [<check>...]      list notes with broken links, invalid frontmatter or ambiguous links
 
 A vault is named by its name, its path, or its identity.
 
@@ -44,7 +43,9 @@ func Main(ctx context.Context, out, errOut io.Writer, args []string,
 	open func(Locations) Deps,
 ) int {
 	if err := Run(ctx, out, errOut, args, open); err != nil {
-		fmt.Fprintln(errOut, "numen-cli:", err)
+		if _, writeErr := fmt.Fprintln(errOut, "numen-cli:", err); writeErr != nil {
+			return 2
+		}
 		return 1
 	}
 	return 0
@@ -75,8 +76,9 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 
 	rest := fs.Args()
 	if len(rest) == 0 {
-		fmt.Fprint(out, usage)
-		writePluginCommandUsage(out, deps)
+		if err := writeUsage(out, deps); err != nil {
+			return err
+		}
 		return errors.New("no command given")
 	}
 
@@ -92,15 +94,21 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	case "problems":
 		return runProblemsCommand(ctx, out, deps, rest[1:])
 	case "help", "-h", "--help":
-		fmt.Fprint(out, usage)
-		writePluginCommandUsage(out, deps)
-		return nil
+		return writeUsage(out, deps)
 	default:
 		if entry, isDeclared := findPluginCommand(deps, rest[0]); isDeclared {
 			return runPluginCommand(ctx, out, deps, entry, rest[1:])
 		}
 		return fmt.Errorf("unknown command %q", rest[0])
 	}
+}
+
+// writeUsage writes the usage text and the commands the enabled plugins declare.
+func writeUsage(out io.Writer, deps Deps) error {
+	r := newReporter(out)
+	r.Print(usage)
+	writePluginCommandUsage(r, deps)
+	return r.Err()
 }
 
 // parseInterspersed collects positional arguments wherever they appear.

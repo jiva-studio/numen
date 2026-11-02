@@ -23,11 +23,19 @@ const apps = "github.com/jiva-studio/numen/apps/"
 
 // isAssembled is what an application takes from the core: the composition root,
 // the adapters it serves something through, and the two languages both are
-// named in. Everything else the core holds is the core's own work.
+// named in, and the contract packages under usecase/, which only re-export port
+// types. Everything else the core holds is the core's own work.
 func isAssembled(pkg string) bool {
 	return pkg == "container" || pkg == "domain" || pkg == "port" ||
 		strings.HasPrefix(pkg, "port/") ||
-		strings.HasPrefix(pkg, "adapter/")
+		strings.HasPrefix(pkg, "adapter/") ||
+		isContract(pkg)
+}
+
+// isContract reports whether pkg is a contract package of a use case, such as
+// usecase/vault/vaultcontract.
+func isContract(pkg string) bool {
+	return strings.HasPrefix(pkg, "usecase/") && strings.HasSuffix(pkg, "contract")
 }
 
 // standing is a file of the applications, under the package it belongs to.
@@ -41,10 +49,12 @@ type standing struct {
 // file of its internal packages, and the mobile binding. A count measures how
 // much was read, not what, and a walk that stopped at the desktop's border would
 // still satisfy any floor the desktop's own files fill.
-var named = []string{
-	"desktop/cmd/numen/main.go",
-	"desktop/internal/platform/platform.go",
-	"mobile/bind/mobile.go",
+func getNamed() []string {
+	return []string{
+		"desktop/cmd/numen/main.go",
+		"desktop/internal/platform/platform.go",
+		"mobile/bind/mobile.go",
+	}
 }
 
 // readSources returns every hand-written Go file of the applications, parsed.
@@ -86,7 +96,7 @@ func readSources(t *testing.T) []standing {
 	if len(found) < 20 {
 		t.Fatalf("%d files read: the walk is not reading the applications", len(found))
 	}
-	for _, one := range named {
+	for _, one := range getNamed() {
 		if !slices.ContainsFunc(found, func(target standing) bool { return target.relPath == one }) {
 			t.Fatalf("the walk did not read %s, so the rule stops before it", one)
 		}
@@ -140,13 +150,15 @@ func TestNoApplicationDoesTheCoresWork(t *testing.T) {
 // logging are the words a package that keeps a record is named by, read off the
 // last element of an import path. The standard library holds two of them, and
 // the rest are the libraries reached for when one of those will not do.
-var logging = map[string]bool{
-	"log": true, "slog": true, "logrus": true, "zap": true,
-	"zerolog": true, "logr": true, "glog": true, "klog": true,
+func getLogging() map[string]bool {
+	return map[string]bool{
+		"log": true, "slog": true, "logrus": true, "zap": true,
+		"zerolog": true, "logr": true, "glog": true, "klog": true,
+	}
 }
 
 // logs answers whether an import is a logger.
-func logs(to string) bool { return logging[to[strings.LastIndex(to, "/")+1:]] }
+func logs(to string) bool { return getLogging()[to[strings.LastIndex(to, "/")+1:]] }
 
 // Nothing here logs. An entry point names the process's own streams, and the
 // one line it writes to standard error is for a terminal; everything the user

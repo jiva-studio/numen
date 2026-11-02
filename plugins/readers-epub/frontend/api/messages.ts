@@ -1,5 +1,5 @@
 /**
- * The JSON messages of the numen.epub service, as the plugin's backend serves them. The shapes
+ * The JSON messages of the md.numen.readers.epub service, as the plugin's backend serves them. The shapes
  * match backend/api/api.go and the fixtures in testdata/api.
  */
 

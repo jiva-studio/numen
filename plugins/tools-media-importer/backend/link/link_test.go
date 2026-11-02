@@ -8,7 +8,9 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
@@ -83,7 +85,7 @@ func newWorld(t *testing.T) *world {
 		vault: vault, store: vault.Store(), texts: hosttest.NewTexts(vault.Vault().ID, pluginID),
 		queue: hosttest.NewQueue(), sites: &sites{clip: bytes.Repeat([]byte("frame "), 1000)},
 	}
-	w.links = link.New(link.Host{Vault: vault, Store: w.store, Texts: w.texts, Queue: w.queue},
+	w.links = link.New(link.Host{Vault: vault, Store: w.store, Texts: w.texts, Queue: w.queue, Clock: clock.NewFake(time.Unix(1_700_000_000, 0))},
 		func() link.Fetcher { return w.sites },
 		func() link.Settings { return link.Settings{CopyMaxSize: w.limit} })
 	w.texts.SetStore(pluginID, w.store)
@@ -191,7 +193,11 @@ func TestFetchText_SkipsEmptyAddressUnlessUserStarted(t *testing.T) {
 	if err := w.links.FetchText(t.Context(), made, true); err != nil || w.sites.texts.Load() != 2 {
 		t.Errorf("a person asking again asked the address %d times in all (%v)", w.sites.texts.Load(), err)
 	}
-	if listing, _ := w.texts.ListVersions(t.Context(), made.Path); len(listing.Versions) != 0 {
+	listing, err := w.texts.ListVersions(t.Context(), made.Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Versions) != 0 {
 		t.Errorf("an address that publishes nothing has versions %+v", listing.Versions)
 	}
 }
@@ -243,7 +249,7 @@ func TestCopyDeletesThePartialFileOnFailure(t *testing.T) {
 		t.Errorf("the folder keeps %+v (%v)", files, err)
 	}
 	tasks := w.queue.ListTasks()
-	if len(tasks) != 1 || tasks[0].Error == "" || tasks[0].About != made.Path {
+	if len(tasks) != 1 || tasks[0].FailureReason == "" || tasks[0].Detail != made.Path {
 		t.Errorf("the failure is shown as %+v", tasks)
 	}
 	if _, err := w.links.Copy(t.Context(), w.create(t, articleAddress)); !errors.Is(err, link.ErrNotCopyable) {
@@ -294,7 +300,11 @@ func TestATextThePersonDeletedIsNotFetchedAgainUnlessAPersonAsks(t *testing.T) {
 	if count := w.sites.texts.Load(); count != 1 {
 		t.Errorf("a deleted text was fetched again: the address was asked %d times", count)
 	}
-	if listing, _ := w.texts.ListVersions(t.Context(), made.Path); len(listing.Versions) != 0 {
+	listing, err := w.texts.ListVersions(t.Context(), made.Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Versions) != 0 {
 		t.Errorf("a deleted text has versions %+v", listing.Versions)
 	}
 	if isDeleted, err := w.links.IsTextDeleted(t.Context(), made); err != nil || !isDeleted {

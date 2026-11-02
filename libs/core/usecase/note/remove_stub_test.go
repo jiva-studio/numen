@@ -69,13 +69,13 @@ type trashing struct {
 	writers   trashWriters
 	moves     *[]string
 	requested *[]string
-	levelled  *[][]string
+	updated  *[][]string
 	levelErr  error
 }
 
 func newTrashing() *trashing {
-	moves, request, levelled := &[]string{}, &[]string{}, &[][]string{}
-	tr := &trashing{moves: moves, requested: request, levelled: levelled}
+	moves, request, updated := &[]string{}, &[]string{}, &[][]string{}
+	tr := &trashing{moves: moves, requested: request, updated: updated}
 	tr.sources = trashSources{}
 	tr.links = trashLinks{requested: request}
 	tr.writers = trashWriters{writer: trashWriter{
@@ -90,7 +90,7 @@ func newTrashing() *trashing {
 
 func (tr *trashing) remove() note.Remove {
 	return note.NewRemove(tr.writers, tr.links, tr.sources, func(_ context.Context, _ domain.Vault, paths []string) error {
-		*tr.levelled = append(*tr.levelled, slices.Clone(paths))
+		*tr.updated = append(*tr.updated, slices.Clone(paths))
 		return tr.levelErr
 	})
 }
@@ -224,8 +224,8 @@ func TestRemove_FullTrashFailsAfter100Names(t *testing.T) {
 	if got.Path != "Entropy.md" || got.Trashed != "" {
 		t.Errorf("the answer to a rejected removal is %+v", got)
 	}
-	if len(*tr.levelled) != 0 {
-		t.Errorf("the index was levelled for a note that is still there: %v", *tr.levelled)
+	if len(*tr.updated) != 0 {
+		t.Errorf("the index was updated for a note that is still there: %v", *tr.updated)
 	}
 }
 
@@ -255,8 +255,8 @@ func TestRemovingLevelsTheIndexAtEachSourceThatWent(t *testing.T) {
 			if _, err := tr.remove().Execute(t.Context(), domain.Vault{}, tc.path); err != nil {
 				t.Fatal(err)
 			}
-			if len(*tr.levelled) != 1 || !slices.Equal((*tr.levelled)[0], tc.want) {
-				t.Errorf("the index was levelled at %v, want one call at %v", *tr.levelled, tc.want)
+			if len(*tr.updated) != 1 || !slices.Equal((*tr.updated)[0], tc.want) {
+				t.Errorf("the index was updated at %v, want one call at %v", *tr.updated, tc.want)
 			}
 		})
 	}
@@ -310,8 +310,8 @@ func TestRemovingWithNoIndexIsTheMoveAlone(t *testing.T) {
 	if _, err := removing.Destroy(t.Context(), domain.Vault{}, "Entropy.md"); err != nil {
 		t.Fatalf("a destroy with no index failed: %v", err)
 	}
-	if len(*tr.levelled) != 0 {
-		t.Errorf("an index that was not given was levelled: %v", *tr.levelled)
+	if len(*tr.updated) != 0 {
+		t.Errorf("an index that was not given was updated: %v", *tr.updated)
 	}
 }
 
@@ -325,16 +325,16 @@ func TestRemove_ReportsIndexFailureWithRemoval(t *testing.T) {
 	tr.levelErr = broken
 
 	got, err := tr.remove().Execute(t.Context(), domain.Vault{}, "Entropy.md")
-	if !errors.Is(err, note.ErrUnlevelled) || !errors.Is(err, broken) {
-		t.Fatalf("want the index's error said as unlevelled, got %v", err)
+	if !errors.Is(err, note.ErrIndexOutdated) || !errors.Is(err, broken) {
+		t.Fatalf("want the index's error said as an outdated index, got %v", err)
 	}
 	if got.Trashed != ".trash/Entropy.md" || !slices.Equal(got.Dangling, []string{"Heat.md"}) {
 		t.Errorf("the removal that landed is not reported: %+v", got)
 	}
 
 	destroyed, err := tr.remove().Destroy(t.Context(), domain.Vault{}, "Entropy.md")
-	if !errors.Is(err, note.ErrUnlevelled) || !errors.Is(err, broken) {
-		t.Fatalf("want the index's error said as unlevelled, got %v", err)
+	if !errors.Is(err, note.ErrIndexOutdated) || !errors.Is(err, broken) {
+		t.Fatalf("want the index's error said as an outdated index, got %v", err)
 	}
 	if !slices.Equal(destroyed.Dangling, []string{"Heat.md"}) {
 		t.Errorf("the destroy that landed is not reported: %+v", destroyed)
@@ -396,7 +396,7 @@ func TestDestroyingReportsAFileThatCannotBeRemoved(t *testing.T) {
 	if !errors.Is(err, note.ErrNoNote) || got.Path != "Entropy.md" {
 		t.Errorf("want ErrNoNote beside the path, got %+v and %v", got, err)
 	}
-	if len(*tr.levelled) != 0 {
-		t.Errorf("the index was levelled for a file that is still there: %v", *tr.levelled)
+	if len(*tr.updated) != 0 {
+		t.Errorf("the index was updated for a file that is still there: %v", *tr.updated)
 	}
 }

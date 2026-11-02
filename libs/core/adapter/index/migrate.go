@@ -24,14 +24,19 @@ var files embed.FS
 // dropping is the order in which objects are dropped from the index. Virtual
 // tables come first because they own auxiliary tables that are listed in the
 // catalogue and dropped with them; views come before the tables they read.
-var dropping = []struct {
+func getDropping() []struct {
 	kind  string
 	where string
-}{
-	{"TRIGGER", `type = 'trigger'`},
-	{"VIEW", `type = 'view'`},
-	{"TABLE", `type = 'table' AND sql LIKE 'CREATE VIRTUAL TABLE%'`},
-	{"TABLE", `type = 'table'`},
+} {
+	return []struct {
+		kind  string
+		where string
+	}{
+		{"TRIGGER", `type = 'trigger'`},
+		{"VIEW", `type = 'view'`},
+		{"TABLE", `type = 'table' AND sql LIKE 'CREATE VIRTUAL TABLE%'`},
+		{"TABLE", `type = 'table'`},
+	}
 }
 
 // resetIndex takes everything out of the index and puts its version back to nothing,
@@ -62,7 +67,7 @@ func resetIndex(ctx context.Context, db *sql.DB) error {
 
 // dropEverything takes every object the catalogue names out of the index.
 func dropEverything(ctx context.Context, db *sql.DB) error {
-	for _, one := range dropping {
+	for _, one := range getDropping() {
 		for {
 			var name string
 			err := db.QueryRowContext(ctx,
@@ -164,22 +169,20 @@ func createBookkeeping(ctx context.Context, db *sql.DB) error {
 	}
 	// The drop and the rename are two statements apart, so all four run as one
 	// transaction: either both happen or neither does.
-	tx, err := sqlwrite.Begin(ctx, db)
-	if err != nil {
-		return fmt.Errorf("what this index was migrated by: %w", err)
-	}
-	defer tx.Rollback()
-	for _, statement := range []string{
-		`CREATE TABLE schema_migrations_next (version INTEGER PRIMARY KEY, name TEXT NOT NULL)`,
-		`INSERT INTO schema_migrations_next (version, name) SELECT version, name FROM schema_migrations`,
-		`DROP TABLE schema_migrations`,
-		`ALTER TABLE schema_migrations_next RENAME TO schema_migrations`,
-	} {
-		if _, err := tx.ExecContext(ctx, statement); err != nil {
-			return fmt.Errorf("what this index was migrated by: %w", err)
+	err := sqlwrite.InTransaction(ctx, db, func(tx *sqlwrite.Transaction) error {
+		for _, statement := range []string{
+			`CREATE TABLE schema_migrations_next (version INTEGER PRIMARY KEY, name TEXT NOT NULL)`,
+			`INSERT INTO schema_migrations_next (version, name) SELECT version, name FROM schema_migrations`,
+			`DROP TABLE schema_migrations`,
+			`ALTER TABLE schema_migrations_next RENAME TO schema_migrations`,
+		} {
+			if _, err := tx.ExecContext(ctx, statement); err != nil {
+				return err
+			}
 		}
-	}
-	if err := tx.Commit(); err != nil {
+		return nil
+	})
+	if err != nil {
 		return fmt.Errorf("what this index was migrated by: %w", err)
 	}
 	return nil
@@ -189,30 +192,26 @@ func apply(ctx context.Context, db *sql.DB, m migration) error {
 	if err := createBookkeeping(ctx, db); err != nil {
 		return err
 	}
-	tx, err := sqlwrite.Begin(ctx, db)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	for _, stmt := range splitStatements(m.body) {
-		if _, err := tx.ExecContext(ctx, stmt); err != nil {
-			return fmt.Errorf("%w\nin statement:\n%s", err, strings.TrimSpace(stmt))
+	return sqlwrite.InTransaction(ctx, db, func(tx *sqlwrite.Transaction) error {
+		for _, stmt := range splitStatements(m.body) {
+			if _, err := tx.ExecContext(ctx, stmt); err != nil {
+				return fmt.Errorf("%w\nin statement:\n%s", err, strings.TrimSpace(stmt))
+			}
 		}
-	}
-	// PRAGMA takes no parameters, and the number is the migration's own.
-	if _, err := tx.ExecContext(ctx, fmt.Sprintf("PRAGMA user_version = %d", m.version)); err != nil {
-		return err
-	}
-	// The migration name is recorded with the version, so the state of the index
-	// can be inspected.
-	if _, err := tx.ExecContext(ctx,
-		`INSERT INTO schema_migrations (version, name) VALUES (?, ?)
+		// PRAGMA takes no parameters, and the number is the migration's own.
+		if _, err := tx.ExecContext(ctx, fmt.Sprintf("PRAGMA user_version = %d", m.version)); err != nil {
+			return err
+		}
+		// The migration name is recorded with the version, so the state of the index
+		// can be inspected.
+		if _, err := tx.ExecContext(ctx,
+			`INSERT INTO schema_migrations (version, name) VALUES (?, ?)
 		 ON CONFLICT (version) DO UPDATE SET name = excluded.name`,
-		m.version, m.name); err != nil {
-		return err
-	}
-	return tx.Commit()
+			m.version, m.name); err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 // loadMigrations reads the embedded files in file-name order, which is version
@@ -229,7 +228,10 @@ func loadMigrations() ([]migration, error) {
 		if err != nil {
 			return nil, err
 		}
-		body, _ := files.ReadFile(path.Join("migration", e.Name()))
+		body, err := files.ReadFile(path.Join("migration", e.Name()))
+		if err != nil {
+			return nil, err
+		}
 		out = append(out, migration{version: version, name: e.Name(), body: string(body)})
 	}
 	return out, nil

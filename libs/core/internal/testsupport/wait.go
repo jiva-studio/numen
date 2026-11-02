@@ -1,6 +1,7 @@
 package testsupport
 
 import (
+	"context"
 	"testing"
 	"time"
 )
@@ -18,7 +19,9 @@ const Patience = 10 * time.Second
 // WaitFor holds until something is so, and fails the test if it never is.
 func WaitFor(t *testing.T, condition func() bool) {
 	t.Helper()
-	for pos := time.Now(); time.Since(pos) < Patience; {
+	ctx, cancel := context.WithTimeout(t.Context(), Patience)
+	defer cancel()
+	for ctx.Err() == nil {
 		if condition() {
 			return
 		}

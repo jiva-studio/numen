@@ -8,7 +8,7 @@
  * offsets and they are kept in it, so the run an offset falls in is the last
  * one beginning at or before it.
  */
-import { doc } from '../../dom'
+import { doc } from '@numen/ui'
 import { countBytes, getUnitOffset } from './bytes'
 import type { TextRange } from '@numen/ui'
 import type { Mark } from './spread'

@@ -7,15 +7,25 @@
  * This module joins the two: it re-lays out the text, keeps one offset current,
  * and triggers that re-layout.
  */
-import { doc } from '../../dom'
-import { onMounted, watch } from 'vue'
-import type { ShallowRef } from 'vue'
+import { onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
+import type { Ref, ShallowRef } from 'vue'
 
-import { onNextFrame } from '@numen/ui'
+import { onNextFrame, doc } from '@numen/ui'
+import type { PageNavigationAction } from '@numen/ui'
 import { useBookColumns } from './columns'
 import { useBookTurns } from './turns'
+import { findPending, whenArrived } from '../lib/pictures'
 import type { BookLink } from '../lib/link'
 import type { SettledBookProps } from '../lib/props'
+
+/** How many turns wait for a document that is being drawn; a key held down asks for more. */
+const MAX_WAITING_TURNS = 8
+
+/** The document the columns stand for: its markup and where it begins in the book. */
+interface StoodFor {
+  readonly markup: string
+  readonly start: number
+}
 
 /**
  * The container in which one document of a book is read, and the measurements
@@ -32,7 +42,8 @@ export interface BookLayoutOptions {
 }
 
 interface BookWatchContext {
-  readonly settle: (keep: number, led?: BookLink) => void
+  readonly settle: (getKeep: () => number, led?: BookLink) => void
+  readonly settleKept: () => void
   readonly getKeptOffset: () => number
   readonly takeLed: () => BookLink | undefined
   readonly standing: { value: number }
@@ -53,7 +64,7 @@ function watchBookLayout(
       () => signals.textSize.value,
     ],
     () => {
-      context.settle(context.getKeptOffset())
+      context.settle(context.getKeptOffset)
     },
   )
 
@@ -63,7 +74,7 @@ function watchBookLayout(
       const place = context.takeLed()
       context.isStood.value = false
       context.standing.value = 0
-      context.settle(props.at, place)
+      context.settle(() => props.at, place)
     },
   )
 
@@ -79,9 +90,12 @@ function watchBookLayout(
   )
 
   onMounted(() => {
-    context.settle(props.at)
-    void doc.fonts?.ready.then(() => context.settle(context.getKeptOffset()))
+    context.settle(() => props.at)
+    doc.fonts?.ready.then(context.settleKept, context.settleKept)
+    // A face that loads once a page needs it sets the text again.
+    doc.fonts?.addEventListener?.('loadingdone', context.settleKept)
   })
+  onBeforeUnmount(() => doc.fonts?.removeEventListener?.('loadingdone', context.settleKept))
 }
 
 export interface BookSettlingOptions {
@@ -89,6 +103,8 @@ export interface BookSettlingOptions {
   readonly paper: Readonly<ShallowRef<HTMLElement | null>>
   readonly props: SettledBookProps
   readonly onMove: (pos: number) => void
+  /** The document the columns last stood for. */
+  readonly stoodFor: { value: StoodFor | null }
   readonly takeLed: () => BookLink | undefined
   readonly column: {
     readonly measure: () => void
@@ -110,29 +126,75 @@ export interface BookSettlingOptions {
   }
 }
 
+/**
+ * A value that follows `read` only while the columns stand at their spread for the markup in
+ * front. A document just drawn is carried to its spread on the next frame, and until then its
+ * spread, its marks and its span belong to two documents, so what they say together is a page the
+ * reader never stood on. The props arrive one by one before the watcher of the markup runs, so the
+ * columns count as standing only for the markup and the span they were set for.
+ */
+function holdUntilStood<T>(isStood: () => boolean, read: () => T): Readonly<Ref<T>> {
+  const followed = shallowRef(read()) as Ref<T>
+  watch(
+    [isStood, read],
+    () => {
+      if (isStood()) followed.value = read()
+    },
+    { flush: 'sync' },
+  )
+  return followed
+}
+
 /** Handles re-settling and watching dimensions / links in book layout. */
 export function createBookSettling(options: BookSettlingOptions) {
-  const settle = (keep: number, led?: BookLink) => {
+  /** `getKeep` is read when the columns are read, so a turn made since the request is kept. */
+  const lay = (getKeep: () => number, led?: BookLink) => {
+    const box = options.area.value
+    const text = options.paper.value
+    if (!box || !text) return
+    const keep = getKeep()
+    options.column.readColumns(box, text)
+    const landed =
+      led && (led.path === '' || led.path === options.props.path)
+        ? options.column.findFragmentOffset(led.fragment)
+        : undefined
+    options.turns.stand(options.turns.getSpreadOf(landed ?? keep), 'auto')
+    if (landed !== undefined) options.onMove(landed)
+    options.column.markRuns()
+    options.stoodFor.value = { markup: options.props.markup, start: options.props.span.start }
+    options.column.isStood.value = true
+  }
+
+  /** Reads the columns on the next frame, or once the pictures in them have arrived. */
+  const settle = (getKeep: () => number, led?: BookLink) => {
     options.column.measure()
     if (!options.column.isMeasured.value) return
     onNextFrame(() => {
-      const box = options.area.value
       const text = options.paper.value
-      if (!box || !text) return
-      options.column.readColumns(box, text)
-      const landed =
-        led && (led.path === '' || led.path === options.props.path)
-          ? options.column.findFragmentOffset(led.fragment)
-          : undefined
-      options.turns.stand(options.turns.getSpreadOf(landed ?? keep), 'auto')
-      if (landed !== undefined) options.onMove(landed)
-      options.column.markRuns()
-      options.column.isStood.value = true
+      const pending = text ? findPending(text) : []
+      if (pending.length === 0) lay(getKeep, led)
+      else whenArrived(pending, () => lay(getKeep, led))
+    })
+  }
+
+  /**
+   * Sets the columns again with the offset in front kept, for a change in the text that nothing
+   * resizes: a picture or a face that arrives after the columns were read. Requests made within
+   * one frame are answered once.
+   */
+  let isKeptQueued = false
+  const settleKept = () => {
+    if (isKeptQueued) return
+    isKeptQueued = true
+    onNextFrame(() => {
+      isKeptQueued = false
+      settle(options.turns.getKeptOffset)
     })
   }
 
   watchBookLayout(options.props, options.signals, {
     settle,
+    settleKept,
     getKeptOffset: options.turns.getKeptOffset,
     takeLed: options.takeLed,
     standing: options.turns.standing,
@@ -141,7 +203,7 @@ export function createBookSettling(options: BookSettlingOptions) {
     isStood: options.column.isStood,
   })
 
-  return { settle }
+  return { settle, settleKept }
 }
 
 /**
@@ -162,8 +224,30 @@ export function useBookLayout(options: BookLayoutOptions) {
     onMove: options.onMove,
   })
 
-  const { settle } = createBookSettling({
+  const stoodFor = shallowRef<StoodFor | null>(null)
+  const isStoodForMarkup = () =>
+    column.isStood.value &&
+    stoodFor.value?.markup === options.props.markup &&
+    stoodFor.value.start === options.props.span.start
+
+  /**
+   * Turns asked for while the columns are being set for the markup in front wait for them. Until
+   * then the spread and the marks belong to the document before, and a turn made from them names a
+   * place in that document, which is then drawn again.
+   */
+  const queuedTurns: PageNavigationAction[] = []
+  const turnWhenStood = (way: PageNavigationAction) => {
+    if (isStoodForMarkup() || !isMeasured.value) turn(way)
+    else if (queuedTurns.length < MAX_WAITING_TURNS) queuedTurns.push(way)
+  }
+  watch(isStoodForMarkup, (isStood) => {
+    if (!isStood) return
+    for (const way of queuedTurns.splice(0)) turn(way)
+  })
+
+  const { settle, settleKept } = createBookSettling({
     area: options.area,
+    stoodFor,
     paper: options.paper,
     props: options.props,
     onMove: options.onMove,
@@ -185,14 +269,15 @@ export function useBookLayout(options: BookLayoutOptions) {
     isMeasured,
     isStood: column.isStood,
     flow,
-    spreadCount,
-    front,
-    leftInChapter,
+    spreadCount: holdUntilStood(isStoodForMarkup, () => spreadCount.value),
+    front: holdUntilStood(isStoodForMarkup, () => front.value),
+    leftInChapter: holdUntilStood(isStoodForMarkup, () => leftInChapter.value),
     setting,
     getKeptOffset,
     settle,
+    settleKept,
     findFragmentOffset: column.findFragmentOffset,
-    turn,
+    turn: turnWhenStood,
   }
   return state
 }

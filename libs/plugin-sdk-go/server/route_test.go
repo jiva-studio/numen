@@ -10,20 +10,25 @@ import (
 // getRoute requests path from handler with the given bearer token, or none when empty.
 func getRoute(t *testing.T, handler http.Handler, method, path, token string) (int, string) {
 	t.Helper()
-	req := httptest.NewRequest(method, path, nil)
+	req := httptest.NewRequestWithContext(t.Context(), method, path, nil)
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
 	recorded := httptest.NewRecorder()
 	handler.ServeHTTP(recorded, req)
-	body, _ := io.ReadAll(recorded.Body)
+	body, err := io.ReadAll(recorded.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
 	return recorded.Code, string(body)
 }
 
 func TestRegisterRouteAnswersTheHostToken(t *testing.T) {
 	handler, err := NewLinkedHandler(map[string]string{tokenVar: "route-token"}, func(s *Server) error {
 		s.RegisterRoute("pages/{page}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, _ = io.WriteString(w, "page "+r.PathValue("page"))
+			if _, err := io.WriteString(w, "page "+r.PathValue("page")); err != nil {
+				t.Error(err)
+			}
 		}))
 		return nil
 	})

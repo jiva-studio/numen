@@ -1,0 +1,148 @@
+/**
+ * The path field of a file setting, with one path and with several, rendered in a browser in both
+ * token sets. The checks cover what jsdom cannot: the actions are the library's outline buttons, of
+ * one height and one border colour, and that border is the field border token, not the text colour.
+ */
+import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect, fn, userEvent, within } from 'storybook/test'
+import SettingRow from '../setting-row/SettingRow.vue'
+import { WORDS } from '../../words'
+import PathField from './PathField.vue'
+
+interface Knobs {
+  path: string
+  isMulti: boolean
+  problem: string
+}
+
+const onChoose = fn()
+const onClear = fn()
+
+const render = (args: Knobs) => ({
+  components: { PathField, SettingRow },
+  setup: () => ({ args, words: WORDS, onChoose, onClear }),
+  template: `
+    <div class="numen" style="container-type:inline-size;inline-size:48rem;padding:1rem;background:var(--numen-surface);--settings-choice:16rem">
+      <SettingRow v-slot="{ labelledBy }" at="path" name="Programs" detail="The programs this plugin runs.">
+        <PathField
+          :path="args.path"
+          :problem="args.problem"
+          :labelled-by="labelledBy"
+          :is-multi="args.isMulti"
+          :words="words"
+          @choose="onChoose"
+          @clear="onClear"
+        />
+      </SettingRow>
+    </div>
+  `,
+})
+
+const meta: Meta<Knobs> = {
+  title: 'Window/Path field',
+  component: PathField,
+  parameters: { layout: 'fullscreen' },
+  argTypes: {
+    path: { control: 'text' },
+    isMulti: { control: 'boolean' },
+    problem: { control: 'text' },
+  },
+  args: { path: '/opt/sample/bin/program', isMulti: false, problem: '' },
+  render,
+}
+
+export default meta
+type Story = StoryObj<Knobs>
+
+/** The field alone, without the info button of the row around it. */
+const getField = (canvasElement: HTMLElement) => {
+  const field = canvasElement.querySelector<HTMLElement>('.settings__path')
+  if (!field) throw new Error('the path field is not drawn')
+  return within(field)
+}
+
+/** Every action of the field is the library's outline button: one height, the field rule as border. */
+const expectOneButtonFamily = async (canvasElement: HTMLElement) => {
+  const buttons = getField(canvasElement).getAllByRole('button')
+  await expect(buttons.length).toBeGreaterThan(1)
+  const [first] = buttons
+  const reference = getComputedStyle(first!)
+  for (const button of buttons) {
+    const look = getComputedStyle(button)
+    await expect(button).toHaveAttribute('data-slot', 'button')
+    await expect(button.getBoundingClientRect().height).toBe(first!.getBoundingClientRect().height)
+    await expect(look.borderTopColor).toBe(reference.borderTopColor)
+    await expect(look.backgroundColor).toBe(reference.backgroundColor)
+    await expect(look.borderTopColor).not.toBe(look.color)
+  }
+}
+
+/** One path: Choose and Clear side by side, centred on one line. */
+export const OnePath: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = getField(canvasElement)
+    await expectOneButtonFamily(canvasElement)
+    const choose = canvas.getByRole('button', { name: WORDS.pathChoose })
+    const clear = canvas.getByRole('button', { name: WORDS.pathClear })
+    const middle = (box: DOMRect) => box.top + box.height / 2
+    await expect(middle(clear.getBoundingClientRect())).toBe(middle(choose.getBoundingClientRect()))
+
+    await userEvent.click(clear)
+    await expect(onClear).toHaveBeenLastCalledWith('/opt/sample/bin/program')
+    await userEvent.click(choose)
+    await expect(onChoose).toHaveBeenCalled()
+  },
+}
+
+/** No path: Choose alone, and no Clear. */
+export const NoPath: Story = {
+  args: { path: '' },
+  play: async ({ canvasElement }) => {
+    const canvas = getField(canvasElement)
+    await expect(canvas.getAllByRole('button').map((one) => one.textContent?.trim())).toStrictEqual(
+      [WORDS.pathChoose],
+    )
+  },
+}
+
+/** Several paths: Add above, and a Clear on each row in the same button family. */
+export const SeveralPaths: Story = {
+  args: {
+    path: '/opt/sample/bin/first\n/opt/sample/a-folder-name-far-too-long-to-fit/bin/second',
+    isMulti: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = getField(canvasElement)
+    await expectOneButtonFamily(canvasElement)
+    await expect(canvas.getByRole('button', { name: WORDS.pathAdd })).toBeVisible()
+    const clears = canvas.getAllByRole('button', { name: WORDS.pathClear })
+    await expect(clears).toHaveLength(2)
+    await userEvent.click(clears[1]!)
+    await expect(onClear).toHaveBeenLastCalledWith(
+      '/opt/sample/a-folder-name-far-too-long-to-fit/bin/second',
+    )
+  },
+}
+
+/** One path on the dark token set: the border is the dark field rule, not the light text. */
+export const OnePathInDark: Story = {
+  globals: { theme: 'dark' },
+  play: async ({ canvasElement }) => {
+    await expect(getComputedStyle(canvasElement.ownerDocument.documentElement).colorScheme).toBe(
+      'dark',
+    )
+    await expectOneButtonFamily(canvasElement)
+  },
+}
+
+/** Several paths on the dark token set. */
+export const SeveralPathsInDark: Story = {
+  ...SeveralPaths,
+  globals: { theme: 'dark' },
+  play: async ({ canvasElement }) => {
+    await expect(getComputedStyle(canvasElement.ownerDocument.documentElement).colorScheme).toBe(
+      'dark',
+    )
+    await expectOneButtonFamily(canvasElement)
+  },
+}

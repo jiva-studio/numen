@@ -69,12 +69,17 @@ const LongestLearning = 10 * 365
 // giving it up.
 const mostAnswers = 1000
 
-// noCost, noSpent and noSchedule are the zero values of their types.
-var (
-	noCost     = AnswerCost{New: 0, Review: 0, ShouldReadNew: false, ShouldReadReview: false}
-	noSpent    = Spent{Answered: 0, New: 0, Reviews: 0, Took: 0}
-	noSchedule = Schedule{Due: time.Time{}, Last: time.Time{}, Reps: 0, Lapses: 0, Stability: 0, Difficulty: 0, Phase: 0}
-)
+// newNoCost, newNoSpent and newNoSchedule return the zero values of their types.
+
+func newNoCost() AnswerCost {
+	return AnswerCost{New: 0, Review: 0, ShouldReadNew: false, ShouldReadReview: false}
+}
+
+func newNoSpent() Spent { return Spent{Answered: 0, New: 0, Reviews: 0, Took: 0} }
+
+func newNoSchedule() Schedule {
+	return Schedule{Due: time.Time{}, Last: time.Time{}, Reps: 0, Lapses: 0, Stability: 0, Difficulty: 0, Phase: 0}
+}
 
 // GetDaysToLearn returns how many days of review a review card begun now needs
 // before this preset counts it as learned, when every day on which the card falls
@@ -90,7 +95,7 @@ var (
 // week, so the pace holds for a review card begun on any of them.
 func GetDaysToLearn(scheduler Scheduler, d Day, p Preset, now time.Time) int {
 	s := Simulation{
-		By: scheduler, Day: d, Cost: noCost, Days: 0, Retains: nil, Recalls: nil, Spent: noSpent,
+		By: scheduler, Day: d, Cost: newNoCost(), Days: 0, Retains: nil, Recalls: nil, Spent: newNoSpent(),
 	}
 	from := d.GetStart(now)
 	out := 0
@@ -191,7 +196,7 @@ func (s Simulation) short(p Preset, cards []Schedule, unreviewed int, open time.
 			out++
 		}
 	}
-	if unreviewed > 0 && !s.canReachGoal(p, noSchedule, open, delta) {
+	if unreviewed > 0 && !s.canReachGoal(p, newNoSchedule(), open, delta) {
 		out += unreviewed
 	}
 	return out
@@ -357,18 +362,23 @@ func createEmptyAllowance() Allowance {
 	}
 }
 
+// simulationSetup is what the state of a simulated day starts from.
+type simulationSetup struct {
+	days, base  int
+	open        time.Time
+	p           Preset
+	daysToLearn int
+	cards       []Schedule
+	falls       [][]int
+	on          *DueByDay
+	reckoned    *learnedCount
+	unreviewed  int
+}
+
 // createSimulationDay initializes simulation day state across the projected days.
-func (s Simulation) createSimulationDay(
-	days, base int,
-	open time.Time,
-	p Preset,
-	daysToLearn int,
-	cards []Schedule,
-	falls [][]int,
-	on *DueByDay,
-	reckoned *learnedCount,
-	unreviewed int,
-) *simulationDay {
+func (s Simulation) createSimulationDay(in simulationSetup) *simulationDay {
+	days, base, open, p, daysToLearn := in.days, in.base, in.open, in.p, in.daysToLearn
+	cards, falls, on, reckoned, unreviewed := in.cards, in.falls, in.on, in.reckoned, in.unreviewed
 	return &simulationDay{
 		sim:          s,
 		preset:       p,
@@ -425,7 +435,7 @@ func (d *simulationDay) startDay(today int) {
 	d.reviewed = 0
 	d.closed = BudgetNames{}
 
-	removed := noSpent
+	removed := newNoSpent()
 	if today == 0 {
 		removed = d.sim.Spent
 	}
@@ -561,7 +571,7 @@ func (d *simulationDay) stepNew() {
 	d.reply++
 	d.reviewed++
 	d.remaining--
-	one := d.sim.getScheduleAfterShowing(noSchedule, d.open, d.ends, d.preset, d.on)
+	one := d.sim.getScheduleAfterShowing(newNoSchedule(), d.open, d.ends, d.preset, d.on)
 	d.cards = append(d.cards, one)
 	d.showings = append(d.showings, 1)
 	d.reckoned.countBegun(one, d.ends)
@@ -656,7 +666,10 @@ func (s Simulation) Run(
 	out.Short = s.short(p, cards, unreviewed, open)
 	daysToLearn := s.getDaysToLearnGoal(p, now)
 
-	d := s.createSimulationDay(days, base, open, p, daysToLearn, cards, falls, on, reckoned, unreviewed)
+	d := s.createSimulationDay(simulationSetup{
+		days: days, base: base, open: open, p: p, daysToLearn: daysToLearn, cards: cards,
+		falls: falls, on: on, reckoned: reckoned, unreviewed: unreviewed,
+	})
 	var elapsed time.Duration
 
 	for today := range days {

@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/vault"
 )
@@ -19,9 +20,11 @@ func withRequestVault(ctx context.Context, header http.Header) context.Context {
 }
 
 // getRequestVault returns the vault ctx carries, and empty where it names none.
-func getRequestVault(ctx context.Context) host.VaultID {
-	id, _ := ctx.Value(requestVaultKey{}).(host.VaultID)
-	return id
+func getRequestVault(ctx context.Context) domain.VaultID {
+	if id, ok := ctx.Value(requestVaultKey{}).(domain.VaultID); ok {
+		return id
+	}
+	return ""
 }
 
 // getVault returns the vault ctx names, and the shown vault where it names none.

@@ -30,10 +30,9 @@ type memoryStatusEx struct {
 // readPlatformHardware reads memory with GlobalMemoryStatusEx and cores with GetLogicalProcessorInformationEx; the performance CPUs are the cores of the highest efficiency class.
 func readPlatformHardware() Specs {
 	var hw Specs
-	status := memoryStatusEx{Length: uint32(unsafe.Sizeof(memoryStatusEx{}))}
-	if ret, _, _ := procGlobalMemoryStatusEx.Call(uintptr(unsafe.Pointer(&status))); ret != 0 {
-		hw.TotalRAMMB = int64(status.TotalPhys / bytesPerMB)
-		hw.AvailableRAMMB = int64(status.AvailPhys / bytesPerMB)
+	if total, available, err := readWindowsMemory(); err == nil {
+		hw.TotalRAMMB = total
+		hw.AvailableRAMMB = available
 	}
 	if cores, err := readWindowsCores(); err == nil && len(cores) > 0 {
 		hw.PhysicalCPUs = len(cores)
@@ -42,12 +41,22 @@ func readPlatformHardware() Specs {
 	return hw
 }
 
+// readWindowsMemory is the physical memory and the available physical memory, in megabytes.
+func readWindowsMemory() (total, available int64, err error) {
+	status := memoryStatusEx{Length: uint32(unsafe.Sizeof(memoryStatusEx{}))}
+	ret, _, callErr := procGlobalMemoryStatusEx.Call(uintptr(unsafe.Pointer(&status)))
+	if ret == 0 {
+		return 0, 0, callErr
+	}
+	return int64(status.TotalPhys / bytesPerMB), int64(status.AvailPhys / bytesPerMB), nil
+}
+
 func readWindowsCores() ([]windowsCore, error) {
 	var size uint32
 	// The first call reports the buffer size through ERROR_INSUFFICIENT_BUFFER.
-	procGetLogicalProcessorInfoEx.Call(uintptr(windowsRelationProcessorCore), 0, uintptr(unsafe.Pointer(&size)))
+	_, _, sizeErr := procGetLogicalProcessorInfoEx.Call(uintptr(windowsRelationProcessorCore), 0, uintptr(unsafe.Pointer(&size)))
 	if size == 0 {
-		return nil, windows.GetLastError()
+		return nil, sizeErr
 	}
 	buffer := make([]byte, size)
 	ret, _, err := procGetLogicalProcessorInfoEx.Call(uintptr(windowsRelationProcessorCore), uintptr(unsafe.Pointer(&buffer[0])), uintptr(unsafe.Pointer(&size)))

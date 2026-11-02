@@ -110,7 +110,11 @@ const getOptions = (a: Knobs): PlexOptionsInput => ({
   maxPerLine: a.maxPerLine,
   maxLines: a.maxLines,
   maxHeadings: a.maxHeadings,
-  routing: { curvature: a.curvature, minReach: a.minReach, arrowClearance: a.arrowClearance },
+  routing: {
+    curvature: a.curvature,
+    minReach: a.minReach,
+    arrowClearance: a.arrowClearance,
+  },
   motion: { arriveAfter: a.arriveAfter, leaveBefore: a.leaveBefore },
   direction:
     a.orientation === 'parents below'
@@ -190,8 +194,8 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
       links.value = [
         ...links.value,
         relation === 'parent' || relation === 'jump'
-          ? { from: id, to: from, label: relation === 'jump' ? 'see also' : 'is a' }
-          : { from, to: id, label: 'contains' },
+          ? { from: id, to: from, labels: [{ text: relation === 'jump' ? 'see also' : 'is a' }] }
+          : { from, to: id, labels: [{ text: 'contains' }] },
       ]
     }
 
@@ -729,11 +733,11 @@ const titledLines: PlexNeighbourhood = {
     { id: 'sibling', title: 'The hedge', relation: 'sibling' },
   ],
   edges: [
-    { from: 'parent', to: 'focus', label: 'is a' },
-    { from: 'parent', to: 'sibling', label: 'contains' },
-    { from: 'earlier', to: 'focus', label: 'see also' },
-    { from: 'across', to: 'focus', label: 'the minutes of the meeting' },
-    { from: 'later', to: 'focus', label: 'and also' },
+    { from: 'parent', to: 'focus', labels: [{ text: 'is a' }] },
+    { from: 'parent', to: 'sibling', labels: [{ text: 'contains' }] },
+    { from: 'earlier', to: 'focus', labels: [{ text: 'see also' }] },
+    { from: 'across', to: 'focus', labels: [{ text: 'the minutes of the meeting' }] },
+    { from: 'later', to: 'focus', labels: [{ text: 'and also' }] },
   ],
 }
 
@@ -806,10 +810,18 @@ export const TitledLines: Story = {
     const band = [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-hit')].find(
       (line) => line.getAttribute('d') === viewElement,
     )
-    await userEvent.hover(band!)
 
-    const lifted = canvasElement.querySelectorAll<SVGTextElement>('.plex__lift .plex__edge-label')
-    await expect(lifted).toHaveLength(2)
+    // The raised layer is drawn a render after the pointer enters. The window is
+    // measured after the first drawing, and a new drawing clears the hovered
+    // line without a new pointerenter. So the pointer leaves and enters the
+    // line again until the raised layer is there.
+    const lifted = await waitFor(async () => {
+      await userEvent.unhover(band!)
+      await userEvent.hover(band!)
+      const found = canvasElement.querySelectorAll<SVGTextElement>('.plex__lift .plex__edge-label')
+      if (found.length !== 2) throw new Error(`${found.length} raised titles, not 2`)
+      return found
+    })
     await expect(getComputedStyle(lifted[0]!).fill).toBe('none')
     await expect(getComputedStyle(lifted[1]!).stroke).toBe('none')
     await expect(Number.parseFloat(getComputedStyle(lifted[0]!).strokeWidth)).toBeGreaterThan(
@@ -962,10 +974,10 @@ const arrowedLines: PlexNeighbourhood = {
     { id: 'rota', title: 'The question of the rota', relation: 'sibling' },
   ],
   edges: [
-    { from: 'allotments', to: 'alice', arrow: 'from' },
-    { from: 'bram', to: 'alice', label: 'the oldest tenant', arrow: 'from' },
-    { from: 'cora', to: 'alice', label: 'keys, hoses, the gate' },
-    { from: 'allotments', to: 'rota', label: 'the minutes of the meeting' },
+    { from: 'allotments', to: 'alice', arrows: ['from'] },
+    { from: 'bram', to: 'alice', labels: [{ text: 'the oldest tenant' }], arrows: ['from'] },
+    { from: 'cora', to: 'alice', labels: [{ text: 'keys, hoses, the gate' }] },
+    { from: 'allotments', to: 'rota', labels: [{ text: 'the minutes of the meeting' }] },
   ],
 }
 

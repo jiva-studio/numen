@@ -5,6 +5,7 @@
  * reads the clock, measures text or touches the DOM: the width of a title is
  * supplied as a number by the renderer.
  */
+import type { LabelType } from '../edge'
 import { getExtent, type PlexFrame } from '../frame'
 import { assertNeighbourhood, type PlexNeighbourhood } from '../neighbourhood'
 import type { PlacedNode, PlexNode } from '../node'
@@ -38,15 +39,15 @@ export interface ArrangeInput {
    */
   readonly measureLabel?: ((label: string) => number) | undefined
   /**
-   * The label's extent perpendicular to its line, measured where the plex is
-   * drawn. A label uses its own font, and one with no depth takes up none.
+   * The ink of a label's font, measured where the plex is
+   * drawn. A label uses its own font, and one with no ink takes up none.
    */
-  readonly labelDepth?: number | undefined
+  readonly labelType?: LabelType | undefined
 }
 
 export function arrangePlex(
   neighbourhood: PlexNeighbourhood,
-  { options, placement = rowsAndColumns, measure, measureLabel, labelDepth }: ArrangeInput = {},
+  { options, placement = rowsAndColumns, measure, measureLabel, labelType }: ArrangeInput = {},
 ): PlexFrame {
   const request = resolveOptions(options)
   const focusNode = assertNeighbourhood(neighbourhood)
@@ -87,7 +88,7 @@ export function arrangePlex(
   const nodes = [focus, ...lay(spacing)]
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
-  const edgeRouting = createRouting(resolved, measureLabel, labelDepth)
+  const edgeRouting = createRouting(resolved, measureLabel, labelType)
   const edges = separateTitles(
     routeEdges(neighbourhood.edges, byId, edgeRouting),
     nodes,

@@ -14,9 +14,9 @@ beforeEach(() => {
   vi.stubGlobal(
     'ResizeObserver',
     class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
+      observe = vi.fn()
+      unobserve = vi.fn()
+      disconnect = vi.fn()
     },
   )
 })
@@ -113,7 +113,7 @@ describe('PluginDetail', () => {
     })
     const { wrapper, retryPlugin, recordedWrites } = createDetail(plugin)
 
-    const stoppedCard = wrapper.find('.plugin-detail__stopped')
+    const stoppedCard = wrapper.find('.plugin-stopped')
     expect(stoppedCard.exists()).toBe(true)
     expect(stoppedCard.text()).toContain('Timed out while starting')
     expect(stoppedCard.find('details summary').text()).toBe('Details')
@@ -141,7 +141,7 @@ describe('PluginDetail', () => {
     })
     const { wrapper, recordedWrites } = createDetail(plugin)
 
-    const rows = wrapper.findAllComponents(SettingRow)
+    const rows = wrapper.findAllComponents({ name: 'DetailRow' })
     const consentRow = rows.find((r) => r.props('at') === 'ai-consent-test.plugin')
     expect(consentRow).toBeDefined()
     expect(consentRow!.text()).toContain(words.consentAllowed)
@@ -358,7 +358,7 @@ describe('PluginDetail', () => {
   it('draws no stopped details disclosure when failure detail is empty', () => {
     const failure = { reason: 'Failed to start', detail: '', failedAt: 0 }
     const { wrapper } = createDetail(createPluginInfo('a', 'A', { failure }))
-    expect(wrapper.find('.plugin-detail__stopped details').exists()).toBe(false)
+    expect(wrapper.find('.plugin-stopped details').exists()).toBe(false)
   })
 })
 
@@ -531,7 +531,7 @@ describe('PluginDetail with settings that follow one another', () => {
     })
   })
 
-  it('hides the path label when no path is chosen and supports multiple paths', async () => {
+  it('hides the path label when no path is chosen and lists each path of a multiple setting', async () => {
     const emptyDetail = createDetail(LINKED)
     const emptyRow = findRow(emptyDetail.wrapper, 'dictionary')!
     expect(emptyRow.find('[data-testid="setting-path"]').exists()).toBe(false)
@@ -540,9 +540,10 @@ describe('PluginDetail with settings that follow one another', () => {
       ...createPluginInfo('test.acp', 'ACP Agents'),
       settings: [
         {
-          key: 'executable_path',
+          key: 'programs',
           type: 'file',
-          title: 'Executable Paths',
+          multiple: true,
+          title: 'Programs',
           description: '',
           default: '/usr/local/bin/gemini\n/usr/local/bin/opencode',
         },
@@ -560,11 +561,64 @@ describe('PluginDetail with settings that follow one another', () => {
     expect(acpClearButtons).toHaveLength(2)
     await acpClearButtons[0]!.trigger('click')
     expect(acpDetail.recordedWrites).toContainEqual({
-      at: ['plugins', 'test.acp', 'executable_path'],
+      at: ['plugins', 'test.acp', 'programs'],
       value: '"/usr/local/bin/opencode"',
     })
     const addButton = acpRow.findAll('button').find((btn) => btn.text() === words.pathAdd)
     expect(addButton).toBeDefined()
+  })
+
+  const createPathPlugin = (multiple: boolean): PluginInfo => ({
+    ...createPluginInfo('test.paths', 'Paths'),
+    settings: [
+      {
+        key: 'executable_path',
+        type: 'file',
+        ...(multiple ? { multiple: true } : {}),
+        title: 'Executable Paths',
+        description: '',
+        default: '',
+      },
+    ],
+  })
+
+  it('draws a file setting that is not multiple as one path, whatever its title and key', () => {
+    const { wrapper } = createDetail(createPathPlugin(false), {
+      plugins: { 'test.paths': { executable_path: '/opt/one\n/opt/two' } },
+    })
+    const row = wrapper.findAllComponents(SettingRow)[0]!
+
+    expect(row.findAll('[data-testid="setting-path"]')).toHaveLength(1)
+    expect(row.findAll('button').map((btn) => btn.text())).not.toContain(words.pathAdd)
+  })
+
+  /** Chooses /opt/two in the picker, which the host stores in place of the setting's value. */
+  const chooseSecondPath = async (multiple: boolean) => {
+    const stored = { executable_path: '/opt/one' }
+    const detail = createDetail(createPathPlugin(multiple), { plugins: { 'test.paths': stored } })
+    detail.installation.choosePath = vi.fn(async () => {
+      stored.executable_path = '/opt/two'
+      return ''
+    })
+    const row = detail.wrapper.findAllComponents(SettingRow)[0]!
+    const label = multiple ? words.pathAdd : words.pathChoose
+    await row
+      .findAll('button')
+      .find((btn) => btn.text() === label)!
+      .trigger('click')
+    await flushPromises()
+    return detail.recordedWrites
+  }
+
+  it('adds the chosen path to the paths a multiple setting holds', async () => {
+    expect(await chooseSecondPath(true)).toContainEqual({
+      at: ['plugins', 'test.paths', 'executable_path'],
+      value: '"/opt/one\\n/opt/two"',
+    })
+  })
+
+  it('replaces the path of a setting that is not multiple', async () => {
+    expect(await chooseSecondPath(false)).toStrictEqual([])
   })
 })
 
@@ -581,9 +635,9 @@ describe('the settings views of a plugin', () => {
     { key: 'last', type: 'boolean' as const, title: 'Last', description: '', default: true },
   ]
   const views = [
-    { id: 'floor', title: 'Floor', after: 'model' },
-    { id: 'top', title: 'Top', after: '' },
-    { id: 'gone', title: 'Gone', after: 'last' },
+    { id: 'floor', title: 'Floor' },
+    { id: 'top', title: 'Top' },
+    { id: 'gone', title: 'Gone' },
   ]
   const mountWith = (registered: Record<string, unknown>) => {
     const plugin = createPluginInfo('views.plugin', 'Views', { settings, settingsViews: views })
@@ -601,15 +655,7 @@ describe('the settings views of a plugin', () => {
     return { wrapper, recordedWrites }
   }
 
-  it('draws a view after the setting it follows', () => {
-    const { wrapper } = mountWith({ floor: View })
-    expect(wrapper.findAll('.view')).toHaveLength(1)
-    const html = wrapper.html()
-    expect(html.indexOf('Model')).toBeLessThan(html.indexOf('class="view"'))
-    expect(html.indexOf('class="view"')).toBeLessThan(html.indexOf('Floor'))
-  })
-
-  it('draws a view with an empty after before the settings', () => {
+  it('draws a registered view before the settings', () => {
     const { wrapper } = mountWith({ top: View })
     const html = wrapper.html()
     expect(html.indexOf('class="view"')).toBeGreaterThan(-1)
@@ -678,12 +724,12 @@ describe('the data of a plugin', () => {
 
   it('deletes the data only after the person confirms', async () => {
     const { wrapper, deletePluginData } = await createDataDetail(3)
-    expect(wrapper.find('.plugin-detail__data').exists()).toBe(true)
+    expect(wrapper.find('.plugin-data__card').exists()).toBe(true)
     expect(wrapper.text()).toContain(words.pluginDataDetail(3))
 
     await findButton(wrapper, words.pluginDataDelete)!.trigger('click')
     expect(deletePluginData).not.toHaveBeenCalled()
-    expect(wrapper.find('.plugin-detail__asking').text()).toContain(
+    expect(wrapper.find('.plugin-data__asking').text()).toContain(
       words.pluginDataAsking('Transcriber', 3),
     )
 
@@ -700,7 +746,7 @@ describe('the data of a plugin', () => {
     await findButton(wrapper, words.pluginDataKeep)!.trigger('click')
 
     expect(deletePluginData).not.toHaveBeenCalled()
-    expect(wrapper.find('.plugin-detail__asking').exists()).toBe(false)
+    expect(wrapper.find('.plugin-data__asking').exists()).toBe(false)
   })
 
   it('shows why the data was not deleted', async () => {
@@ -710,7 +756,7 @@ describe('the data of a plugin', () => {
     await findButton(wrapper, words.pluginDataConfirm)!.trigger('click')
     await flushPromises()
 
-    expect(wrapper.find('.plugin-detail__problem').text()).toBe('the vault is read-only')
+    expect(wrapper.find('.plugin-data__problem').text()).toBe('the vault is read-only')
     expect(findButton(wrapper, words.pluginDataDelete)).toBeDefined()
   })
 })

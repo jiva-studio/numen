@@ -1,25 +1,36 @@
 <script setup lang="ts">
 /**
- * Single direction and description row in PlexLinkInspectorPopover.
+ * One record of the connection in PlexLinkInspectorPopover: its direction, its description and
+ * the button that removes it.
  */
-import { useId } from 'vue'
-import { ArrowLeft, ArrowRight, Trash2 } from '@lucide/vue'
-import type { DirectionalLinkItem } from '../types'
+import { computed, useId } from 'vue'
+import { ArrowLeft, ArrowRight, Minus, Trash2 } from '@lucide/vue'
+import type { LinkDirection } from '../model/connectionDraft'
 import { WORDS as words } from '../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
-  row: DirectionalLinkItem
-  isStatic: boolean
+  label: string
+  direction: LinkDirection
+  /** The direction a press of the direction button turns this record to. */
+  nextDirection: LinkDirection
+  /** The titles of the first and the second note, which the direction names say. */
+  firstTitle: string
+  secondTitle: string
 }>()
 
 const emit = defineEmits<{
-  (event: 'toggle-direction' | 'remove' | 'done' | 'add-reverse'): void
+  (event: 'cycle-direction' | 'remove' | 'done' | 'add-reverse'): void
   (event: 'update:label', label: string): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
 const labelFieldId = useId()
+const directionWords = computed(() => {
+  const name = (direction: LinkDirection) =>
+    words.direction[direction](props.firstTitle, props.secondTitle)
+  return words.directionButton(name(props.direction), name(props.nextDirection))
+})
 
 /* -------------------------------- Handlers -------------------------------- */
 function onInput(event: Event) {
@@ -44,25 +55,26 @@ function onInputKeyDown(event: KeyboardEvent) {
     <button
       type="button"
       class="plex-link-row__dir-btn plex-link-popover__dir-btn"
-      :class="{
-        'plex-link-row__dir-btn--static': props.isStatic,
-        'plex-link-popover__dir-btn--static': props.isStatic,
-      }"
-      :disabled="props.isStatic"
-      :title="props.isStatic ? undefined : words.changeDirection"
-      @click="emit('toggle-direction')"
+      :data-direction="props.direction"
+      :title="directionWords"
+      :aria-label="directionWords"
+      @click="emit('cycle-direction')"
     >
       <ArrowRight
-        v-if="props.row.direction === 'forward'"
+        v-if="props.direction === 'forward'"
         class="plex-link-row__icon plex-link-popover__icon"
       />
-      <ArrowLeft v-else class="plex-link-row__icon plex-link-popover__icon" />
+      <ArrowLeft
+        v-else-if="props.direction === 'backward'"
+        class="plex-link-row__icon plex-link-popover__icon"
+      />
+      <Minus v-else class="plex-link-row__icon plex-link-popover__icon" />
     </button>
 
     <label :for="labelFieldId" class="sr-only">{{ words.linkDescription }}</label>
     <input
       :id="labelFieldId"
-      :value="props.row.label"
+      :value="props.label"
       type="text"
       class="plex-link-row__input plex-link-popover__input"
       :placeholder="words.linkDescriptionPlaceholder"
@@ -74,6 +86,7 @@ function onInputKeyDown(event: KeyboardEvent) {
       type="button"
       class="plex-link-row__delete-btn plex-link-popover__delete-btn"
       :title="words.removeLink"
+      :aria-label="words.removeLink"
       @click="emit('remove')"
     >
       <Trash2
@@ -114,14 +127,17 @@ function onInputKeyDown(event: KeyboardEvent) {
   padding: 0;
   transition: color var(--numen-motion-hover) ease;
 }
-.plex-link-row__dir-btn:hover:not(:disabled) {
-  background: transparent;
+.plex-link-row__dir-btn {
+  border-radius: var(--numen-radius);
+}
+.plex-link-row__dir-btn:hover {
+  background: var(--numen-raised);
   color: var(--numen-ink);
 }
-.plex-link-row__dir-btn:disabled,
-.plex-link-row__dir-btn--static {
-  cursor: default;
-  opacity: 0.5;
+.plex-link-row__dir-btn:focus-visible,
+.plex-link-row__delete-btn:focus-visible {
+  outline: var(--numen-stroke) solid var(--numen-ring);
+  outline-offset: 1px;
 }
 .plex-link-row__delete-btn:hover {
   background: transparent;

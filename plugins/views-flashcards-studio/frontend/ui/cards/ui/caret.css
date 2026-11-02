@@ -6,6 +6,12 @@
  * keeps no room lays it on the edge itself.
  */
 
+@property --caret-out {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
 .caret-above[data-before]::before,
 .caret-below[data-before]::before,
 .caret-beside[data-before]::before {
@@ -22,16 +28,16 @@
 }
 
 .caret-above[data-before]::before {
-  inset-block-start: var(--caret-out, 0px);
+  inset-block-start: var(--caret-out);
 }
 
 .caret-below[data-before]::before {
-  inset-block-end: var(--caret-out, 0px);
+  inset-block-end: var(--caret-out);
 }
 
 /* Along it, at the near side. */
 .caret-beside[data-before]::before {
   inset-block: 0;
-  inset-inline-start: var(--caret-out, 0px);
+  inset-inline-start: var(--caret-out);
   inline-size: var(--numen-caret);
 }

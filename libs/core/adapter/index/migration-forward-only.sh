@@ -81,7 +81,7 @@ self_test() {
 	unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
 	local failed=0 reached=0
 	# The trap outlives the call, so the folder it names is not a local, and it
-	# hands back the status it was reached with rather than the removal's.
+	# returns the status it was reached with rather than the removal's.
 	room=$(mktemp -d)
 	trap 'reached=$?; rm -rf "$room"; exit "$reached"' EXIT
 

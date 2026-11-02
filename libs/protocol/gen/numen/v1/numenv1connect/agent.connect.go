@@ -4,7 +4,7 @@
 
 // What a client asks an agent, and what it hears back while the agent works.
 //
-// The window hands over a person's task and draws what arrives, a step at a
+// The window passes a person's task and draws what arrives, a step at a
 // time. What the agent is and how it reaches the vault is the application's
 // business and is said nowhere here.
 package numenv1connect
@@ -62,7 +62,7 @@ const (
 
 // AgentServiceClient is a client for the numen.v1.AgentService service.
 type AgentServiceClient interface {
-	// AskAgent hands over a task and reports what the agent does, in the order it
+	// AskAgent passes a task and reports what the agent does, in the order it
 	// does it, until it is done. Letting go of the stream stops the agent.
 	AskAgent(context.Context, *connect.Request[v1.AskAgentRequest]) (*connect.ServerStreamForClient[v1.AskAgentResponse], error)
 	// FinishConversation says a conversation is over. What the agent kept of it
@@ -187,7 +187,7 @@ func (c *agentServiceClient) GetAgentPrograms(ctx context.Context, req *connect.
 
 // AgentServiceHandler is an implementation of the numen.v1.AgentService service.
 type AgentServiceHandler interface {
-	// AskAgent hands over a task and reports what the agent does, in the order it
+	// AskAgent passes a task and reports what the agent does, in the order it
 	// does it, until it is done. Letting go of the stream stops the agent.
 	AskAgent(context.Context, *connect.Request[v1.AskAgentRequest], *connect.ServerStream[v1.AskAgentResponse]) error
 	// FinishConversation says a conversation is over. What the agent kept of it

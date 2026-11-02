@@ -12,16 +12,18 @@ import (
 // cutSeeds are texts a cut has to survive: prose, a book that puts a chapter on
 // one line, a text of no letters at all, one of a single word longer than any
 // limit, one written in another script, and the empty text.
-var cutSeeds = []string{
-	"The first sentence. The second sentence.\n\nA second paragraph, longer than the first one is.\n",
-	strings.Repeat("word ", 400),
-	"..... ,,,,, ;;;;; !!!!!\n",
-	strings.Repeat("a", 4000),
-	"शब्द शब्द शब्द\nदूसरी पंक्ति\n",
-	"мысль, и ещё одна мысль\n",
-	"a\x00b\xff\xfe c",
-	string(rune(0xFEFF)) + "word word\r\nword\r\n",
-	"",
+func getCutSeeds() []string {
+	return []string{
+		"The first sentence. The second sentence.\n\nA second paragraph, longer than the first one is.\n",
+		strings.Repeat("word ", 400),
+		"..... ,,,,, ;;;;; !!!!!\n",
+		strings.Repeat("a", 4000),
+		"शब्द शब्द शब्द\nदूसरी पंक्ति\n",
+		"мысль, и ещё одна мысль\n",
+		"a\x00b\xff\xfe c",
+		string(rune(0xFEFF)) + "word word\r\nword\r\n",
+		"",
+	}
 }
 
 // Every chunk of a cut is a range of the text it was cut from: inside it, of
@@ -30,7 +32,7 @@ var cutSeeds = []string{
 //
 // The text is arbitrary: a source's text is whatever the file contained.
 func FuzzCut(f *testing.F) {
-	for _, seed := range cutSeeds {
+	for _, seed := range getCutSeeds() {
 		f.Add(seed, 8, 2, 3, 1, 40, 3)
 	}
 	f.Add("one two three four five", 2, 1, 1, 0, 4, 0)

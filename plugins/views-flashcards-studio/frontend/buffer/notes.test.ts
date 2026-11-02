@@ -148,4 +148,64 @@ describe('openNotes for flashcards studio', () => {
     store.applyPathChanges(['New.md'])
     expect(store.getOpenNote('tab-1').state).toBe('stale')
   })
+
+  it('writes the body set once the edits pause, with no flush requested', async () => {
+    vi.useFakeTimers()
+    try {
+      const writes: string[] = []
+      const notes: Notes = {
+        read: vi.fn(async () => asValue({ body: 'initial', at: 'v1' })),
+        write: vi.fn(async (_path, body) => {
+          writes.push(body)
+          return asValue({ body: '', at: 'v2' })
+        }),
+      }
+      const store = openNotes(notes, { limits: { debounceMs: 100, maxWaitMs: 1000 } })
+      store.open('tab-1', 'Decks.md')
+      await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+
+      store.setBody('tab-1', 'first edit')
+      store.setBody('tab-1', 'second edit')
+      expect(writes).toStrictEqual([])
+      await vi.advanceTimersByTimeAsync(100)
+
+      expect(writes).toStrictEqual(['second edit'])
+      expect(store.getOpenNote('tab-1').state).toBe('clean')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('keeps an edit made while a write is in flight unsaved, and writes it next', async () => {
+    vi.useFakeTimers()
+    try {
+      const writes: string[] = []
+      let finishWrite = (): void => undefined
+      const notes: Notes = {
+        read: vi.fn(async () => asValue({ body: 'initial', at: 'v1' })),
+        write: vi.fn(async (_path, body) => {
+          writes.push(body)
+          if (writes.length === 1) await new Promise<void>((resolve) => (finishWrite = resolve))
+          return asValue({ body: '', at: `v${writes.length + 1}` })
+        }),
+      }
+      const store = openNotes(notes, { limits: { debounceMs: 100, maxWaitMs: 1000 } })
+      store.open('tab-1', 'Decks.md')
+      await vi.waitFor(() => expect(store.getOpenNote('tab-1').state).toBe('clean'))
+      store.setBody('tab-1', 'first edit')
+      await vi.advanceTimersByTimeAsync(100)
+      expect(store.getOpenNote('tab-1').state).toBe('saving')
+
+      store.setBody('tab-1', 'second edit')
+      finishWrite()
+      await vi.advanceTimersByTimeAsync(0)
+      expect(store.getOpenNote('tab-1').state).toBe('unsaved')
+      await vi.advanceTimersByTimeAsync(100)
+
+      expect(writes).toStrictEqual(['first edit', 'second edit'])
+      expect(store.getOpenNote('tab-1').state).toBe('clean')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })

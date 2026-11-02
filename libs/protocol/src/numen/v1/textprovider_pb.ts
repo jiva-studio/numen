@@ -137,7 +137,7 @@ export const TextErrorCodeSchema: GenEnum<TextErrorCode> = /*@__PURE__*/
 
 /**
  * TextProviderService is served by every plugin whose manifest lists content
- * types under `texts`. The host calls it for a file of one of those types that
+ * types in a `text-provider` handle. The host calls it for a file of one of those types that
  * has no live text; plugins never call one another's.
  *
  * A plugin writes each text it makes into its own folder of the vault's store,

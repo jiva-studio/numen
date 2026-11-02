@@ -21,6 +21,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// EmbedRole is what a text is embedded for. A model that tells a question from the passage that
+// answers it reads the two with different prefixes.
+type EmbedRole int32
+
+const (
+	// EMBED_ROLE_UNSPECIFIED is a document.
+	EmbedRole_EMBED_ROLE_UNSPECIFIED EmbedRole = 0
+	EmbedRole_EMBED_ROLE_DOCUMENT    EmbedRole = 1
+	EmbedRole_EMBED_ROLE_QUERY       EmbedRole = 2
+)
+
+// Enum value maps for EmbedRole.
+var (
+	EmbedRole_name = map[int32]string{
+		0: "EMBED_ROLE_UNSPECIFIED",
+		1: "EMBED_ROLE_DOCUMENT",
+		2: "EMBED_ROLE_QUERY",
+	}
+	EmbedRole_value = map[string]int32{
+		"EMBED_ROLE_UNSPECIFIED": 0,
+		"EMBED_ROLE_DOCUMENT":    1,
+		"EMBED_ROLE_QUERY":       2,
+	}
+)
+
+func (x EmbedRole) Enum() *EmbedRole {
+	p := new(EmbedRole)
+	*p = x
+	return p
+}
+
+func (x EmbedRole) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (EmbedRole) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_embedding_proto_enumTypes[0].Descriptor()
+}
+
+func (EmbedRole) Type() protoreflect.EnumType {
+	return &file_numen_v1_embedding_proto_enumTypes[0]
+}
+
+func (x EmbedRole) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use EmbedRole.Descriptor instead.
+func (EmbedRole) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_embedding_proto_rawDescGZIP(), []int{0}
+}
+
 type GetEmbeddingModelRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -67,7 +119,16 @@ type GetEmbeddingModelResponse struct {
 	Concurrency int32                  `protobuf:"varint,6,opt,name=concurrency,proto3" json:"concurrency,omitempty"`
 	// The similarity a passage starts out having to reach to answer a query under
 	// this model, zero when the plugin knows none.
-	FloorHint     float64 `protobuf:"fixed64,7,opt,name=floor_hint,json=floorHint,proto3" json:"floor_hint,omitempty"`
+	FloorHint float64 `protobuf:"fixed64,7,opt,name=floor_hint,json=floorHint,proto3" json:"floor_hint,omitempty"`
+	// The fewest bytes a piece of text has to hold to be given a vector.
+	// Shorter pieces are searched by their words only. Zero embeds every piece.
+	// It is not part of the model's identity: changing it makes no vector stale.
+	MinChunkLength int32 `protobuf:"varint,8,opt,name=min_chunk_length,json=minChunkLength,proto3" json:"min_chunk_length,omitempty"`
+	// A short hash of what the plugin does to a text before the model reads it and to the output
+	// after: the prefixes, the model file, the token limit and the normalisation. Two models of
+	// one name that differ in it make vectors that cannot be compared, so it is part of the
+	// identity. Empty when the plugin holds no such settings.
+	Handling      string `protobuf:"bytes,9,opt,name=handling,proto3" json:"handling,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -151,6 +212,20 @@ func (x *GetEmbeddingModelResponse) GetFloorHint() float64 {
 	return 0
 }
 
+func (x *GetEmbeddingModelResponse) GetMinChunkLength() int32 {
+	if x != nil {
+		return x.MinChunkLength
+	}
+	return 0
+}
+
+func (x *GetEmbeddingModelResponse) GetHandling() string {
+	if x != nil {
+		return x.Handling
+	}
+	return ""
+}
+
 type FloatVector struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Values        []float32              `protobuf:"fixed32,1,rep,packed,name=values,proto3" json:"values,omitempty"`
@@ -196,8 +271,10 @@ func (x *FloatVector) GetValues() []float32 {
 }
 
 type EmbedBatchRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Texts         []string               `protobuf:"bytes,1,rep,name=texts,proto3" json:"texts,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Texts []string               `protobuf:"bytes,1,rep,name=texts,proto3" json:"texts,omitempty"`
+	// What the texts are embedded for. Unset embeds documents.
+	Role          EmbedRole `protobuf:"varint,2,opt,name=role,proto3,enum=numen.v1.EmbedRole" json:"role,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -237,6 +314,13 @@ func (x *EmbedBatchRequest) GetTexts() []string {
 		return x.Texts
 	}
 	return nil
+}
+
+func (x *EmbedBatchRequest) GetRole() EmbedRole {
+	if x != nil {
+		return x.Role
+	}
+	return EmbedRole_EMBED_ROLE_UNSPECIFIED
 }
 
 type EmbedBatchResponse struct {
@@ -288,7 +372,7 @@ var File_numen_v1_embedding_proto protoreflect.FileDescriptor
 const file_numen_v1_embedding_proto_rawDesc = "" +
 	"\n" +
 	"\x18numen/v1/embedding.proto\x12\bnumen.v1\"\x1a\n" +
-	"\x18GetEmbeddingModelRequest\"\xdd\x01\n" +
+	"\x18GetEmbeddingModelRequest\"\xa3\x02\n" +
 	"\x19GetEmbeddingModelResponse\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1e\n" +
 	"\n" +
@@ -300,13 +384,20 @@ const file_numen_v1_embedding_proto_rawDesc = "" +
 	"\x04from\x18\x05 \x01(\tR\x04from\x12 \n" +
 	"\vconcurrency\x18\x06 \x01(\x05R\vconcurrency\x12\x1d\n" +
 	"\n" +
-	"floor_hint\x18\a \x01(\x01R\tfloorHint\"%\n" +
+	"floor_hint\x18\a \x01(\x01R\tfloorHint\x12(\n" +
+	"\x10min_chunk_length\x18\b \x01(\x05R\x0eminChunkLength\x12\x1a\n" +
+	"\bhandling\x18\t \x01(\tR\bhandling\"%\n" +
 	"\vFloatVector\x12\x16\n" +
-	"\x06values\x18\x01 \x03(\x02R\x06values\")\n" +
+	"\x06values\x18\x01 \x03(\x02R\x06values\"R\n" +
 	"\x11EmbedBatchRequest\x12\x14\n" +
-	"\x05texts\x18\x01 \x03(\tR\x05texts\"E\n" +
+	"\x05texts\x18\x01 \x03(\tR\x05texts\x12'\n" +
+	"\x04role\x18\x02 \x01(\x0e2\x13.numen.v1.EmbedRoleR\x04role\"E\n" +
 	"\x12EmbedBatchResponse\x12/\n" +
-	"\avectors\x18\x01 \x03(\v2\x15.numen.v1.FloatVectorR\avectors2\xb9\x01\n" +
+	"\avectors\x18\x01 \x03(\v2\x15.numen.v1.FloatVectorR\avectors*V\n" +
+	"\tEmbedRole\x12\x1a\n" +
+	"\x16EMBED_ROLE_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13EMBED_ROLE_DOCUMENT\x10\x01\x12\x14\n" +
+	"\x10EMBED_ROLE_QUERY\x10\x022\xb9\x01\n" +
 	"\x10EmbeddingService\x12\\\n" +
 	"\x11GetEmbeddingModel\x12\".numen.v1.GetEmbeddingModelRequest\x1a#.numen.v1.GetEmbeddingModelResponse\x12G\n" +
 	"\n" +
@@ -324,25 +415,28 @@ func file_numen_v1_embedding_proto_rawDescGZIP() []byte {
 	return file_numen_v1_embedding_proto_rawDescData
 }
 
+var file_numen_v1_embedding_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_embedding_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_numen_v1_embedding_proto_goTypes = []any{
-	(*GetEmbeddingModelRequest)(nil),  // 0: numen.v1.GetEmbeddingModelRequest
-	(*GetEmbeddingModelResponse)(nil), // 1: numen.v1.GetEmbeddingModelResponse
-	(*FloatVector)(nil),               // 2: numen.v1.FloatVector
-	(*EmbedBatchRequest)(nil),         // 3: numen.v1.EmbedBatchRequest
-	(*EmbedBatchResponse)(nil),        // 4: numen.v1.EmbedBatchResponse
+	(EmbedRole)(0),                    // 0: numen.v1.EmbedRole
+	(*GetEmbeddingModelRequest)(nil),  // 1: numen.v1.GetEmbeddingModelRequest
+	(*GetEmbeddingModelResponse)(nil), // 2: numen.v1.GetEmbeddingModelResponse
+	(*FloatVector)(nil),               // 3: numen.v1.FloatVector
+	(*EmbedBatchRequest)(nil),         // 4: numen.v1.EmbedBatchRequest
+	(*EmbedBatchResponse)(nil),        // 5: numen.v1.EmbedBatchResponse
 }
 var file_numen_v1_embedding_proto_depIdxs = []int32{
-	2, // 0: numen.v1.EmbedBatchResponse.vectors:type_name -> numen.v1.FloatVector
-	0, // 1: numen.v1.EmbeddingService.GetEmbeddingModel:input_type -> numen.v1.GetEmbeddingModelRequest
-	3, // 2: numen.v1.EmbeddingService.EmbedBatch:input_type -> numen.v1.EmbedBatchRequest
-	1, // 3: numen.v1.EmbeddingService.GetEmbeddingModel:output_type -> numen.v1.GetEmbeddingModelResponse
-	4, // 4: numen.v1.EmbeddingService.EmbedBatch:output_type -> numen.v1.EmbedBatchResponse
-	3, // [3:5] is the sub-list for method output_type
-	1, // [1:3] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // 0: numen.v1.EmbedBatchRequest.role:type_name -> numen.v1.EmbedRole
+	3, // 1: numen.v1.EmbedBatchResponse.vectors:type_name -> numen.v1.FloatVector
+	1, // 2: numen.v1.EmbeddingService.GetEmbeddingModel:input_type -> numen.v1.GetEmbeddingModelRequest
+	4, // 3: numen.v1.EmbeddingService.EmbedBatch:input_type -> numen.v1.EmbedBatchRequest
+	2, // 4: numen.v1.EmbeddingService.GetEmbeddingModel:output_type -> numen.v1.GetEmbeddingModelResponse
+	5, // 5: numen.v1.EmbeddingService.EmbedBatch:output_type -> numen.v1.EmbedBatchResponse
+	4, // [4:6] is the sub-list for method output_type
+	2, // [2:4] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_embedding_proto_init() }
@@ -355,13 +449,14 @@ func file_numen_v1_embedding_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_embedding_proto_rawDesc), len(file_numen_v1_embedding_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_numen_v1_embedding_proto_goTypes,
 		DependencyIndexes: file_numen_v1_embedding_proto_depIdxs,
+		EnumInfos:         file_numen_v1_embedding_proto_enumTypes,
 		MessageInfos:      file_numen_v1_embedding_proto_msgTypes,
 	}.Build()
 	File_numen_v1_embedding_proto = out.File

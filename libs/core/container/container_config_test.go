@@ -9,8 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
 
@@ -35,15 +37,15 @@ func isolateWithNoHome(t *testing.T) {
 
 func TestTheClockIsTheOneTheInstallationNamed(t *testing.T) {
 	named := time.Date(2020, 2, 3, 4, 5, 6, 0, time.UTC)
-	if got := (Config{Now: func() time.Time { return named }}).Clock()(); !got.Equal(named) {
+	if got := (NewConfig(Config{Now: clock.NewFake(named)})).Clock().Now(); !got.Equal(named) {
 		t.Errorf("the clock reads %v, and the installation named %v", got, named)
 	}
 }
 
 func TestAnInstallationNamingNoClockReadsTheMachinesOwn(t *testing.T) {
-	before := time.Now()
-	got := Config{}.Clock()()
-	if got.Before(before) || got.After(time.Now()) {
+	before := testsupport.GetMachine().Now()
+	got := NewConfig(Config{}).Clock().Now()
+	if got.Before(before) || got.After(testsupport.GetMachine().Now()) {
 		t.Errorf("the clock reads %v, and it is %v", got, before)
 	}
 }
@@ -63,10 +65,10 @@ func TestReadSettings_InvalidJSONReturnsPath(t *testing.T) {
 func TestWithNoFolderForSettingsNothingIsReadOrSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
-	if _, response, err := (Config{}).ReadSettings()(); err == nil || response != "" {
+	if _, response, err := (NewConfig(Config{})).ReadSettings()(); err == nil || response != "" {
 		t.Errorf("settings were read from %q: %v", response, err)
 	}
-	err := Config{}.GetSettingsWriter()([]settingsport.Setting{
+	err := NewConfig(Config{}).GetSettingsWriter()([]settingsport.Setting{
 		{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`},
 	})
 	if err == nil {
@@ -82,7 +84,7 @@ func TestSettingsFile_DefaultsToUserConfigDir(t *testing.T) {
 	}
 	want = filepath.Join(want, "numen", "numen.json")
 
-	got, err := Config{}.settingsFile()
+	got, err := NewConfig(Config{}).settingsFile()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +97,7 @@ func TestSettingsFile_FollowsRegistryDirectory(t *testing.T) {
 	isolate(t)
 	registry := filepath.Join(t.TempDir(), "registry.json")
 
-	got, err := Config{RegistryPath: registry}.settingsFile()
+	got, err := NewConfig(Config{RegistryPath: registry}).settingsFile()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +107,7 @@ func TestSettingsFile_FollowsRegistryDirectory(t *testing.T) {
 }
 
 func TestVaultsAreOpenedForWritingWithTheOptionsOfTheInstallation(t *testing.T) {
-	cfg := Config{ServiceDir: ".mine"}
+	cfg := NewConfig(Config{ServiceDir: ".mine"})
 
 	opened, ok := cfg.VaultWriters().(vaultwriter.VaultWriters)
 	if !ok {
@@ -127,7 +129,7 @@ func TestTheIndexIsWhereTheInstallationNamedItAndItsFolderIsMade(t *testing.T) {
 	isolate(t)
 	named := filepath.Join(t.TempDir(), "nested", "deeper", "index.db")
 
-	got, err := Config{IndexPath: named}.indexPath()
+	got, err := NewConfig(Config{IndexPath: named}).indexPath()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,11 +148,11 @@ func TestAnIndexWhoseFolderCannotBeMadeIsAReason(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := Config{IndexPath: filepath.Join(file, "index.db")}.indexPath()
+	got, err := NewConfig(Config{IndexPath: filepath.Join(file, "index.db")}).indexPath()
 	if err == nil || got != "" {
 		t.Errorf("the index is at %q: %v", got, err)
 	}
-	if _, err := (Config{IndexPath: filepath.Join(file, "index.db")}).OpenIndex(t.Context()); err == nil {
+	if _, err := (NewConfig(Config{IndexPath: filepath.Join(file, "index.db")})).OpenIndex(t.Context()); err == nil {
 		t.Error("an index was opened where its folder cannot be made")
 	}
 }
@@ -159,17 +161,17 @@ func TestHandleError_CallsConfiguredHandler(t *testing.T) {
 	var notified []error
 	problem := errors.New("a vacuum that could not run")
 
-	Config{ErrorHandler: func(err error) { notified = append(notified, err) }}.handleError(problem)
+	NewConfig(Config{ErrorHandler: func(err error) { notified = append(notified, err) }}).handleError(problem)
 	if len(notified) != 1 || !errors.Is(notified[0], problem) {
 		t.Errorf("told %v", notified)
 	}
-	Config{}.handleError(problem)
+	NewConfig(Config{}).handleError(problem)
 }
 
 func TestWithNoFolderForSettingsTheFileIsNotSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
-	err := Config{}.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`}})
+	err := NewConfig(Config{}).GetSettingsWriter()([]settingsport.Setting{{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`}})
 	if err == nil || !strings.Contains(err.Error(), "HOME") {
 		t.Errorf("got %v", err)
 	}
@@ -186,7 +188,11 @@ func TestASettingThatIsNotJSONIsNotASetting(t *testing.T) {
 	if !errors.As(err, &syntax) {
 		t.Errorf("what was wrong with it is not said: %v", err)
 	}
-	if got, _ := os.ReadFile(path); string(got) != `{}` {
+	got, gotErr := os.ReadFile(path)
+	if gotErr != nil {
+		t.Fatal(gotErr)
+	}
+	if string(got) != `{}` {
 		t.Errorf("the file holds %q", got)
 	}
 }
@@ -196,7 +202,7 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 	named := filepath.Join(t.TempDir(), "vaults.json")
 	type placed interface{ Path() string }
 
-	got, err := Config{RegistryPath: named}.Registry()
+	got, err := NewConfig(Config{RegistryPath: named}).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,7 +210,7 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 		t.Errorf("the registry is %#v, and it was pointed at %q", got, named)
 	}
 
-	got, err = Config{}.Registry()
+	got, err = NewConfig(Config{}).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -219,10 +225,10 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 
 func TestEveryFolderOfTheMachineIsGivenAnIdentityAndATrash(t *testing.T) {
 	isolate(t)
-	if (Config{}).VaultIdentity() == nil {
+	if (NewConfig(Config{})).VaultIdentity() == nil {
 		t.Error("folders are given no identity")
 	}
-	if (Config{}).Trash() == nil {
+	if (NewConfig(Config{})).Trash() == nil {
 		t.Error("what is deleted has nowhere to go")
 	}
 }

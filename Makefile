@@ -1,9 +1,16 @@
+# Go, Node, golangci-lint, buf and the Go protobuf plugins are taken from PATH.
+# `nix develop` puts the versions CI runs there (see flake.nix); `make tool_versions`
+# prints the ones on PATH.
+
 # ---------------------------------- Modules -----------------------------------
 CORE     := libs/core
 NOTES    := libs/notes
+PLUGIN_CATALOG := libs/plugin-catalog
 UI       := libs/ui/core
 SHELL_LIB := libs/ui/shell
+CORE_CLIENT := libs/core-client
 PLUGIN_HOST := libs/plugin-host-ts
+PLUGIN_MANAGER := libs/plugin-manager
 PROTOCOL := libs/protocol
 PLUGIN_SDK := libs/plugin-sdk-ts
 PLUGIN_SDK_GO := libs/plugin-sdk-go
@@ -19,6 +26,7 @@ ICON     := tools/build-icons
 STORIES  := tools/ci-stories
 COMMANDS := tools/ci-commands
 PLUGIN_VERSIONS := tools/plugin-versions
+PLUGIN_INDEX := tools/build-plugin-index
 LAYERS   := tools/lint-layers
 QUALITY  := tools/lint-quality
 NARRATIVE := tools/lint-narrative
@@ -28,6 +36,18 @@ PLUGIN_DIRS := $(patsubst %/manifest.json,%,$(wildcard $(PLUGINS)/*/manifest.jso
 TESTS    := tests
 
 INSTALL  ?= npm install
+
+# The race detector runs in CI only: it makes the Go tests 3 to 4 times slower. CI passes GO_RACE=1.
+GO_RACE  ?=
+LAYERS_FLAGS ?=
+GO_TEST_FLAGS := $(if $(GO_RACE),-race,)
+
+# How many jobs the parallel targets (the gate, the plugin lint) run at once.
+JOBS     ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+# Each golangci-lint and vue-tsc of a plugin uses every core, so the plugin lint runs half as many at once.
+PLUGIN_LINT_JOBS ?= $(shell expr \( $(JOBS) + 1 \) / 2)
+# GNU make 4 keeps the output of a job together; make 3.81 on macOS has no such option.
+OUTPUT_SYNC := $(if $(filter output-sync,$(.FEATURES)),--output-sync=target,)
 
 EXE      ?=
 ifeq ($(OS),Windows_NT)
@@ -40,12 +60,21 @@ help: ## show available targets
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_-]+:.*?## / {printf "  \033[36m%-28s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 # ------------------------------- Workflow & CI --------------------------------
+.PHONY: tool_versions
+tool_versions: ## print the versions of the tools on PATH (nix develop provides the pinned ones)
+	go version
+	node --version
+	golangci-lint --version
+	buf --version
+	protoc-gen-go --version
+	protoc-gen-connect-go --version
+
 .PHONY: install
 install: ## fetch all workspace dependencies
 	$(INSTALL)
 
 .PHONY: compile
-compile: lib_core_compile lib_notes_compile lib_protocol_compile lib_ui_compile lib_plugin_sdk_compile lib_shell_compile lib_plugin_host_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
+compile: lib_core_compile lib_notes_compile lib_plugin_catalog_compile lib_protocol_compile lib_ui_compile lib_plugin_sdk_compile lib_core_client_compile lib_shell_compile lib_plugin_host_compile lib_plugin_manager_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
 
 .PHONY: build
 build: interface lib_core_build app_desktop_build ## build all application artifacts
@@ -75,13 +104,28 @@ endef
 .PHONY: plugins
 plugins: plugins_build ## build every plugin
 
+# The index of the plugins is written next to their folders before anything compiled or packaged
+# from them reads it.
+.PHONY: plugins_index
+plugins_index: ## write plugins/plugins-index.json from the manifest of every plugin
+	node $(PLUGIN_INDEX)/build.mjs
+
+.PHONY: plugins_index_test
+plugins_index_test: ## test the plugin index build
+	node --test $(PLUGIN_INDEX)/build.test.mjs
+
 .PHONY: plugins_build
-plugins_build: lib_ui_build ## build every plugin
+plugins_build: lib_ui_build plugins_index ## build every plugin
 	$(call run_in_plugins,build)
 
 .PHONY: plugins_lint
-plugins_lint: lib_ui_build ## lint every plugin
-	$(call run_in_plugins,lint)
+plugins_lint: lib_ui_build ## lint every plugin, $(PLUGIN_LINT_JOBS) at a time
+	$(MAKE) -j $(PLUGIN_LINT_JOBS) $(OUTPUT_SYNC) $(PLUGIN_LINT_TARGETS)
+
+PLUGIN_LINT_TARGETS := $(addprefix plugins_lint/,$(PLUGIN_DIRS))
+.PHONY: $(PLUGIN_LINT_TARGETS)
+$(PLUGIN_LINT_TARGETS): plugins_lint/%:
+	$(MAKE) -C $* lint
 
 .PHONY: plugins_test
 plugins_test: lib_ui_build ## test every plugin
@@ -92,8 +136,8 @@ plugins_clean: ## remove what every plugin built
 	$(call run_in_plugins,clean)
 
 .PHONY: plugins_stories
-plugins_stories: lib_ui_build ## draw the stories of every plugin in Chromium and WebKit
-	cd $(PLUGIN_SDK)/stories && npx vitest run
+plugins_stories: lib_ui_build ## draw the stories of every plugin, one engine at a time
+	node $(STORIES)/run.mjs $(PLUGIN_SDK)/stories plugins
 
 .PHONY: plugins_package
 plugins_package: plugins_build ## package every plugin into a zip archive
@@ -122,14 +166,14 @@ lib_core_build: ## build core Go library
 lib_core_compile: lib_core_build
 
 .PHONY: lib_core_test
-lib_core_test: ## run core tests with race detector
-	cd $(CORE) && go test ./... -race
+lib_core_test: plugins_index ## run core tests (GO_RACE=1 adds the race detector, which CI turns on)
+	cd $(CORE) && go test ./... $(GO_TEST_FLAGS)
 
 .PHONY: lib_core_lint
 lib_core_lint: ## run linters for core
 	$(CORE)/adapter/index/migration-forward-only.sh --self-test
 	cd $(CORE) && go vet ./...
-	cd $(CORE) && golangci-lint run ./...
+	cd $(CORE) && golangci-lint run ./... && golangci-lint run -c $(CURDIR)/.golangci-structure.yml ./...
 
 .PHONY: lib_core_vulncheck
 lib_core_vulncheck: ## scan core dependencies for vulnerabilities
@@ -144,13 +188,30 @@ lib_notes_build: ## build the Go library of what a note is and how it is written
 lib_notes_compile: lib_notes_build
 
 .PHONY: lib_notes_test
-lib_notes_test: ## run notes tests with race detector
-	cd $(NOTES) && go test ./... -race
+lib_notes_test: ## run notes tests
+	cd $(NOTES) && go test ./... $(GO_TEST_FLAGS)
 
 .PHONY: lib_notes_lint
 lib_notes_lint: ## run linters for notes
 	cd $(NOTES) && go vet ./...
-	cd $(NOTES) && golangci-lint run ./...
+	cd $(NOTES) && golangci-lint run ./... && golangci-lint run -c $(CURDIR)/.golangci-structure.yml ./...
+
+# ------------------------- Lib: Plugin Catalog --------------------------------
+.PHONY: lib_plugin_catalog_build
+lib_plugin_catalog_build: ## build the Go library of plugin manifests and the plugin catalog
+	cd $(PLUGIN_CATALOG) && go build ./...
+
+.PHONY: lib_plugin_catalog_compile
+lib_plugin_catalog_compile: lib_plugin_catalog_build
+
+.PHONY: lib_plugin_catalog_test
+lib_plugin_catalog_test: ## run plugin catalog tests
+	cd $(PLUGIN_CATALOG) && go test ./... $(GO_TEST_FLAGS)
+
+.PHONY: lib_plugin_catalog_lint
+lib_plugin_catalog_lint: ## run linters for the plugin catalog
+	cd $(PLUGIN_CATALOG) && go vet ./...
+	cd $(PLUGIN_CATALOG) && golangci-lint run ./... && golangci-lint run -c $(CURDIR)/.golangci-structure.yml ./...
 
 # ------------------------------- Lib: Protocol --------------------------------
 .PHONY: lib_protocol_generate protocol_gen
@@ -174,7 +235,7 @@ lib_protocol_test: lib_protocol_compile
 .PHONY: lib_protocol_lint
 lib_protocol_lint: ## lint protocol definitions
 	cd $(PROTOCOL) && buf lint
-	cd $(PROTOCOL) && golangci-lint run ./...
+	cd $(PROTOCOL) && golangci-lint run ./... && golangci-lint run -c $(CURDIR)/.golangci-structure.yml ./...
 
 .PHONY: lib_protocol_vulncheck
 lib_protocol_vulncheck: ## scan protocol dependencies for vulnerabilities
@@ -182,8 +243,8 @@ lib_protocol_vulncheck: ## scan protocol dependencies for vulnerabilities
 
 # ---------------------------------- Lib: UI -----------------------------------
 .PHONY: lib_ui_build
-lib_ui_build: ## build @numen/ui package
-	cd $(UI) && npm run build
+lib_ui_build: ## build @numen/ui package (SKIP_UI_BUILD=1 leaves a build that an earlier step made)
+	$(if $(SKIP_UI_BUILD),@echo "$(UI) is built",cd $(UI) && npm run build)
 
 .PHONY: lib_ui_typecheck
 lib_ui_typecheck: ## typecheck UI components
@@ -196,6 +257,10 @@ lib_ui_compile: lib_ui_typecheck lib_ui_build
 lib_ui_test: lib_ui_build ## run UI unit tests
 	cd $(UI) && npm run test:unit
 
+.PHONY: lib_ui_stories
+lib_ui_stories: ## draw the stories of the UI components, one engine at a time
+	cd $(UI) && npm run test:stories
+
 .PHONY: lib_ui_lint
 lib_ui_lint: ## lint UI components
 	cd $(UI) && npm run lint
@@ -203,7 +268,7 @@ lib_ui_lint: ## lint UI components
 
 .PHONY: lib_ui_knip
 lib_ui_knip: ## check dead code and unused dependencies with knip
-	cd $(UI) && npm run knip
+	npx knip --workspace $(UI)
 
 # --------------------------------- Lib: Shell ---------------------------------
 .PHONY: lib_shell_build
@@ -223,9 +288,7 @@ lib_shell_test: lib_ui_build ## run shell unit tests
 
 .PHONY: lib_shell_stories
 lib_shell_stories: lib_ui_build ## draw the stories of the shell, one engine at a time
-	@set -e; for engine in chromium webkit; do \
-		(cd $(SHELL_LIB) && npx vitest run --project "stories ($$engine)"); \
-	done
+	cd $(SHELL_LIB) && npm run test:stories
 
 .PHONY: lib_shell_lint
 lib_shell_lint: lib_ui_build ## lint the shell package
@@ -233,7 +296,27 @@ lib_shell_lint: lib_ui_build ## lint the shell package
 
 .PHONY: lib_shell_knip
 lib_shell_knip: ## check dead code and unused dependencies of the shell with knip
-	cd $(SHELL_LIB) && npm run knip
+	npx knip --workspace $(SHELL_LIB)
+
+# ------------------------------ Lib: Core Client ------------------------------
+.PHONY: lib_core_client_typecheck
+lib_core_client_typecheck: ## typecheck the core-client package
+	cd $(CORE_CLIENT) && npm run typecheck
+
+.PHONY: lib_core_client_compile
+lib_core_client_compile: lib_core_client_typecheck
+
+.PHONY: lib_core_client_test
+lib_core_client_test: ## run core-client tests
+	cd $(CORE_CLIENT) && npm test
+
+.PHONY: lib_core_client_lint
+lib_core_client_lint: ## lint the core-client package
+	cd $(CORE_CLIENT) && npm run lint && npm run typecheck
+
+.PHONY: lib_core_client_knip
+lib_core_client_knip: ## check dead code and unused dependencies of the core client with knip
+	npx knip --workspace $(CORE_CLIENT)
 
 # ------------------------------ Lib: Plugin Host ------------------------------
 .PHONY: lib_plugin_host_typecheck
@@ -250,6 +333,26 @@ lib_plugin_host_test: ## run plugin-host tests
 .PHONY: lib_plugin_host_lint
 lib_plugin_host_lint: ## lint the plugin-host package
 	cd $(PLUGIN_HOST) && npm run lint && npm run typecheck
+
+# ----------------------------- Lib: Plugin Manager ----------------------------
+.PHONY: lib_plugin_manager_typecheck
+lib_plugin_manager_typecheck: lib_ui_build ## typecheck the plugin-manager package
+	cd $(PLUGIN_MANAGER) && npm run typecheck
+
+.PHONY: lib_plugin_manager_compile
+lib_plugin_manager_compile: lib_plugin_manager_typecheck
+
+.PHONY: lib_plugin_manager_test
+lib_plugin_manager_test: lib_ui_build ## run plugin-manager tests
+	cd $(PLUGIN_MANAGER) && npm test
+
+.PHONY: lib_plugin_manager_lint
+lib_plugin_manager_lint: lib_ui_build ## lint the plugin-manager package
+	cd $(PLUGIN_MANAGER) && npm run lint && npm run typecheck
+
+.PHONY: lib_plugin_manager_knip
+lib_plugin_manager_knip: ## check dead code and unused dependencies of the plugin manager with knip
+	npx knip --workspace $(PLUGIN_MANAGER)
 
 # ------------------------------ Lib: Plugin SDK -------------------------------
 .PHONY: lib_plugin_sdk_typecheck
@@ -275,12 +378,12 @@ lib_plugin_sdk_go_build: ## build plugin-sdk-go Go library
 lib_plugin_sdk_go_compile: lib_plugin_sdk_go_build
 
 .PHONY: lib_plugin_sdk_go_test
-lib_plugin_sdk_go_test: ## run plugin-sdk-go tests with race detector
-	for m in $(PLUGIN_SDK_GO_MODULES); do (cd $$m && go test ./... -race) || exit 1; done
+lib_plugin_sdk_go_test: ## run plugin-sdk-go tests
+	for m in $(PLUGIN_SDK_GO_MODULES); do (cd $$m && go test ./... $(GO_TEST_FLAGS)) || exit 1; done
 
 .PHONY: lib_plugin_sdk_go_lint
 lib_plugin_sdk_go_lint: ## run linters for plugin-sdk-go
-	for m in $(PLUGIN_SDK_GO_MODULES); do (cd $$m && go vet ./... && golangci-lint run ./...) || exit 1; done
+	for m in $(PLUGIN_SDK_GO_MODULES); do (cd $$m && go vet ./... && golangci-lint run ./... && golangci-lint run -c $(CURDIR)/$(PLUGIN_SDK_GO)/.golangci-structure.yml ./...) || exit 1; done
 
 # ------------------------------ Plugins Tooling -------------------------------
 .PHONY: create_plugin
@@ -315,6 +418,7 @@ define bundle
 			done; \
 		fi; \
 	done
+	cp $(PLUGINS)/plugins-index.json "$(1).app/Contents/Resources/plugins/"
 	printf 'APPL????' > "$(1).app/Contents/PkgInfo"
 	plutil -lint "$(1).app/Contents/Info.plist"
 	codesign --force -s - "$(1).app"
@@ -355,18 +459,17 @@ app_desktop_compile: lib_shell_build ## compile desktop Go code and typecheck fr
 	cd $(DESKTOP) && go build ./...
 	cd $(DESKTOP)/editor && npm run typecheck
 	cd $(DESKTOP)/flashcards && npm run typecheck
+	cd $(TESTS)/e2e/desktop && npm run lint
 
 .PHONY: app_desktop_test
 app_desktop_test: lib_shell_build ## run desktop tests
-	cd $(DESKTOP) && go test ./... -race
+	cd $(DESKTOP) && go test ./... $(GO_TEST_FLAGS)
 	cd $(DESKTOP)/editor && npm test
 	cd $(DESKTOP)/flashcards && npm test
 
 .PHONY: app_desktop_stories
 app_desktop_stories: lib_shell_build ## draw the stories of the editor, one engine at a time
-	@set -e; for engine in chromium webkit; do \
-		(cd $(DESKTOP)/editor && npx vitest run --project "stories ($$engine)"); \
-	done
+	cd $(DESKTOP)/editor && npm run test:stories
 
 .PHONY: app_desktop_e2e
 app_desktop_e2e: lib_shell_build app_desktop_editor_build app_desktop_flashcards_build plugins_build ## run desktop end-to-end tests
@@ -378,7 +481,7 @@ app_desktop_e2e: lib_shell_build app_desktop_editor_build app_desktop_flashcards
 .PHONY: app_desktop_lint
 app_desktop_lint: ## lint desktop module
 	cd $(DESKTOP) && go vet ./...
-	cd $(DESKTOP) && golangci-lint run ./...
+	cd $(DESKTOP) && golangci-lint run ./... && golangci-lint run -c $(CURDIR)/.golangci-structure.yml ./...
 	cd $(DESKTOP)/editor && npm run lint
 	cd $(DESKTOP)/editor && npm run typecheck
 	cd $(DESKTOP)/flashcards && npm run lint
@@ -400,13 +503,13 @@ app_mobile_compile: ## compile mobile module
 
 .PHONY: app_mobile_test
 app_mobile_test: ## run mobile tests
-	cd $(MOBILE) && go test ./... -race
+	cd $(MOBILE) && go test ./... $(GO_TEST_FLAGS)
 	cd $(MOBILE) && npm test
 
 .PHONY: app_mobile_lint
 app_mobile_lint: ## lint mobile module
 	cd $(MOBILE) && go vet ./...
-	cd $(MOBILE) && golangci-lint run ./...
+	cd $(MOBILE) && golangci-lint run ./... && golangci-lint run -c $(CURDIR)/.golangci-structure.yml ./...
 	cd $(MOBILE) && npm run lint
 	cd $(MOBILE) && npm run typecheck
 
@@ -470,28 +573,78 @@ plugin_versions_test: ## test the plugin version check
 	node --test $(PLUGIN_VERSIONS)/check.test.mjs
 
 .PHONY: check_layers tool_layers_check
-check_layers tool_layers_check: ## validate architectural layer boundaries (usage: make check_layers [target=libs|plugins|apps|<module>])
-	node $(LAYERS)/check.mjs $(target)
+check_layers tool_layers_check: ## validate architectural layer boundaries (usage: make check_layers [target=libs|plugins|apps|<module>] [LAYERS_FLAGS=--without-lint])
+	node $(LAYERS)/check.mjs $(LAYERS_FLAGS) $(target)
+
+.PHONY: check_dependencies
+check_dependencies: ## run dependency-cruiser over the frontend sources: package boundaries, segment direction, import cycles
+	node $(LAYERS)/check.mjs dependency-graph
+
+.PHONY: check_styles
+check_styles: ## run stylelint over every stylesheet and component style: tokens, no colour literal, no var() fallback
+	node $(LAYERS)/check.mjs styles-use-tokens
 
 .PHONY: check_quality
 check_quality: ## validate code quality metrics (usage: make check_quality [check=<name>] [opts=...])
 	node $(QUALITY)/check.mjs $(if $(check),--check=$(check),) $(opts)
 
+.PHONY: check_knip
+check_knip: ## check dead code and unused dependencies of every TS package and plugin with knip
+	npx knip
+
 .PHONY: lint_narrative
-lint_narrative: ## reject narrative identifiers, test names and comments across the repository
+lint_narrative: ## reject narrative identifiers, test names, comments, documents and the strings a person reads across the repository
+	node --test $(NARRATIVE)/scan.test.mjs
 	node $(NARRATIVE)/scan.mjs . --check
 
+.PHONY: check_typecheck
+check_typecheck: lib_ui_build ## typecheck every frontend package and plugin with vue-tsc
+	$(MAKE) typecheck_packages
+
+# What check_typecheck does once the UI library is built, so the gate can build the library once.
+.PHONY: typecheck_packages
+typecheck_packages: typecheck_workspaces typecheck_plugins
+
+.PHONY: typecheck_workspaces
+typecheck_workspaces:
+	npm run typecheck --workspaces --if-present
+
+.PHONY: typecheck_plugins
+typecheck_plugins:
+	printf '%s\n' plugins/*/ | xargs -P $(JOBS) -I{} sh -c 'if [ -f "{}package.json" ] && grep -q "\"typecheck\"" "{}package.json"; then cd "{}" && npm run typecheck; fi'
+
+# The generated code and the UI library are made first, because every part reads them; the parts are
+# independent and run $(JOBS) at a time.
 .PHONY: check_gate
-check_gate: ## run architectural and quality gates on changed files (fast pre-push gate)
-	node $(LAYERS)/check.mjs --changed-only
+check_gate: lib_protocol_generate_check lib_ui_build ## run every architectural check and the quality gates on changed files (pre-push gate)
+	$(MAKE) -j $(JOBS) $(OUTPUT_SYNC) gate_parts
+
+.PHONY: gate_parts
+gate_parts: typecheck_workspaces typecheck_plugins lint_narrative gate_layers gate_quality
+
+.PHONY: gate_layers
+gate_layers:
+	node $(LAYERS)/check.mjs --without-lint
+
+.PHONY: gate_quality
+gate_quality:
 	node $(QUALITY)/check.mjs --changed-only $(opts)
 
 .PHONY: gate
 gate: check_gate ## alias for check_gate
 
 .PHONY: check_all
-check_all: ## run full architectural and quality suites across all modules
-	node $(LAYERS)/check.mjs
+check_all: lib_ui_build ## run full architectural and quality suites across all modules
+	$(MAKE) -j $(JOBS) $(OUTPUT_SYNC) all_parts
+
+.PHONY: all_parts
+all_parts: gate_layers all_quality all_narrative
+
+.PHONY: all_quality
+all_quality:
 	node $(QUALITY)/check.mjs $(opts)
+
+.PHONY: all_narrative
+all_narrative:
 	node $(NARRATIVE)/scan.mjs . --check
 

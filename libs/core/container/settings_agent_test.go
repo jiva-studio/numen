@@ -18,7 +18,7 @@ func openSettingsAgent(t *testing.T, host *plugin.Host, content string) agentpor
 	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	agent := (container.Config{PluginHost: host, SettingsPath: path}).GetSettingsAgent()
+	agent := (container.NewConfig(container.Config{PluginHost: host, SettingsPath: path})).GetSettingsAgent()
 	if agent == nil {
 		t.Fatal("a host with providers has no agent")
 	}
@@ -101,7 +101,7 @@ func TestSettingsAgent_RejectsTaskWhenAgentDisabled(t *testing.T) {
 }
 
 func TestNoSettingsAgentWithoutAHost(t *testing.T) {
-	if agent := (container.Config{}).GetSettingsAgent(); agent != nil {
+	if agent := (container.NewConfig(container.Config{})).GetSettingsAgent(); agent != nil {
 		t.Errorf("a configuration without a host has the agent %v", agent)
 	}
 }

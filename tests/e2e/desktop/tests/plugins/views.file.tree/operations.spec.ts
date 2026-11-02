@@ -1,62 +1,92 @@
 import { test, expect } from '../../support/test.js'
+import { openTaskList, openWorkspace } from '../../support/workspace.js'
+import {
+  createNoteWithBody,
+  destroyNotes,
+  dragRowOnto,
+  getRow,
+  getTab,
+  listPaths,
+  readOpenTabs,
+  showInFiles,
+} from '../../support/layout.js'
+import { listBacklinks, readNote } from '../../support/vault.js'
 
-test.describe('File System Operations and Organization', () => {
+const LEDGER_BODY = '# Tidewater ledger\n\nThe miller wrote the height of every spring tide.\n'
+
+test.describe('Moving files in the files tab', () => {
   test('navigates and expands folders in file tree', async ({ page }) => {
-    await page.goto('/')
+    await openWorkspace(page)
+    await showInFiles(page, ['cards', 'assets'])
 
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand cards folder
-    const cardsRow = page.locator('[data-tree-row="cards"]')
-    await expect(cardsRow).toBeVisible()
-    await cardsRow.press('Enter')
-    await expect(page.locator('[data-tree-row="cards/Animals.md"]')).toBeVisible()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-    await expect(page.locator('[data-tree-row="assets/sample.pdf"]')).toBeVisible()
+    await expect(getRow(page, 'cards/Animals.md')).toBeVisible()
+    await expect(getRow(page, 'assets/sample.pdf')).toBeVisible()
   })
 
-  test('triggers context menu on directory tree row', async ({ page }) => {
-    await page.goto('/')
+  test('moves a note into a folder by dragging its row, and its open tab and links follow', async ({
+    page,
+    request,
+  }) => {
+    const ledger = await createNoteWithBody(request, 'Tidewater ledger', 'notes', LEDGER_BODY)
+    const index = await createNoteWithBody(
+      request,
+      'Harbour index',
+      'notes',
+      '# Harbour index\n\nSee [[Tidewater ledger]].\n',
+    )
+    const moved = 'daily/Tidewater ledger.md'
+    try {
+      await openWorkspace(page)
+      await showInFiles(page, ['notes'])
+      await getRow(page, ledger).press('Enter')
+      await expect(getTab(page, 'Tidewater ledger')).toBeVisible()
+      await expect.poll(async () => listBacklinks(request, ledger)).toContain(index)
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+      await getTab(page, 'Files').click()
+      await dragRowOnto(page, getRow(page, ledger), getRow(page, 'daily'))
 
-    // Open Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
+      await expect.poll(async () => listPaths(request, 'daily')).toContain(moved)
+      expect(await listPaths(request, 'notes')).not.toContain(ledger)
+      expect((await readNote(request, moved)).body).toBe(LEDGER_BODY)
+      await expect
+        .poll(async () => (await readOpenTabs(request)).tabs.map((one) => one.path))
+        .toContain(moved)
+      await expect.poll(async () => listBacklinks(request, moved)).toContain(index)
 
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-
-    // Right-click to open row context menu
-    await notesRow.click({ button: 'right' })
-
-    // Verify context menu is displayed with file operations
-    await expect(page.getByRole('menu').or(page.locator('[role="menu"]')).first()).toBeVisible({
-      timeout: 5_000,
-    })
+      await getTab(page, 'Tidewater ledger').click()
+      await expect(page.getByRole('tabpanel', { name: /Tidewater ledger/ })).toContainText(
+        'The miller wrote the height of every spring tide.',
+      )
+    } finally {
+      await destroyNotes(request, [ledger, moved, index])
+    }
   })
 
-  test('inspects file drop targets on directory rows', async ({ page }) => {
-    await page.goto('/')
+  test('keeps a note in its folder when the folder it is dragged onto holds its name', async ({
+    page,
+    request,
+  }) => {
+    const twin = await createNoteWithBody(
+      request,
+      '2026-08-15',
+      'notes',
+      '# 2026-08-15\n\nA second log.\n',
+    )
+    const bodyBefore = (await readNote(request, 'daily/2026-08-15.md')).body
+    try {
+      await openWorkspace(page)
+      await showInFiles(page, ['notes'])
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+      await dragRowOnto(page, getRow(page, twin), getRow(page, 'daily'))
 
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Verify directory rows define drop targets for organization
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await expect(assetsRow).toHaveAttribute('data-file-drop-target', 'assets')
-
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await expect(notesRow).toHaveAttribute('data-file-drop-target', 'notes')
+      await expect(await openTaskList(page)).toContainText(
+        'Not moved, names already exist: 2026-08-15.md',
+      )
+      expect(await listPaths(request, 'notes')).toContain(twin)
+      expect((await readNote(request, twin)).body).toBe('# 2026-08-15\n\nA second log.\n')
+      expect((await readNote(request, 'daily/2026-08-15.md')).body).toBe(bodyBefore)
+    } finally {
+      await destroyNotes(request, [twin])
+    }
   })
 })

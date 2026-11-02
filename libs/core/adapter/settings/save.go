@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"syscall"
 
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
@@ -37,8 +38,8 @@ type Setting struct {
 // value of the wrong shape or a number outside its setting's bounds is
 // rejected. `into` defines the shape of the whole file, so a value written into
 // any section is validated by reading the result back before it is saved.
-func Save(path string, into Document, settings ...Setting) error {
-	return runOnFile(path, func(path string) error {
+func (f *Files) Save(path string, into Document, settings ...Setting) error {
+	return f.run(path, func(path string) error {
 		raw, err := os.ReadFile(path)
 		if errors.Is(err, fs.ErrNotExist) {
 			raw = []byte("{}\n")
@@ -101,8 +102,8 @@ func isFieldCovered(pos []string, field string) bool {
 //
 // A file that has not got the field is left alone. A field whose new name the
 // section already holds is left alone as well: one section holds one of a name.
-func renameField(path string, pos []string, to string) error {
-	return runOnFile(path, func(path string) error {
+func (f *Files) renameField(path string, pos []string, to string) error {
+	return f.run(path, func(path string) error {
 		raw, err := os.ReadFile(path)
 		if err != nil {
 			return err
@@ -205,7 +206,7 @@ func replaceValueAt(object []byte, pos []string, value []byte, outer string) ([]
 		return splice(object, one.from, one.to, section), nil
 	}
 
-	return target.appendMember(object, pos, value, outer), nil
+	return target.appendMember(object, pos, value, outer)
 }
 
 // member is one member of an object: its name, where that name is written, and
@@ -305,37 +306,54 @@ func (s shape) hasKey(key string) bool {
 // appendMember appends a member at the end of the object, using the object's
 // existing layout. A new name goes last because the order of existing members is
 // preserved.
-func (s shape) appendMember(object []byte, pos []string, value []byte, outer string) []byte {
-	name, _ := json.Marshal(pos[0])
+func (s shape) appendMember(object []byte, pos []string, value []byte, outer string) ([]byte, error) {
+	name, err := json.Marshal(pos[0])
+	if err != nil {
+		return nil, fmt.Errorf("encode the name %q: %w", pos[0], err)
+	}
 
 	if len(s.pairs) == 0 {
 		// An empty object has no layout to follow, so the member is placed on its
 		// own line, indented one step deeper than the key the object belongs to.
 		indent := outer + "  "
-		body := string(name) + ": " + string(wrapInSections(pos[1:], value, indent))
-		return splice(object, s.last, s.last, []byte("\n"+indent+body+"\n"+outer))
+		wrapped, err := wrapInSections(pos[1:], value, indent)
+		if err != nil {
+			return nil, err
+		}
+		body := string(name) + ": " + string(wrapped)
+		return splice(object, s.last, s.last, []byte("\n"+indent+body+"\n"+outer)), nil
 	}
 
-	body := string(name) + ": " + string(wrapInSections(pos[1:], value, s.indent))
-	if s.indent == "" {
-		return splice(object, s.last, s.last, []byte(", "+body))
+	wrapped, err := wrapInSections(pos[1:], value, s.indent)
+	if err != nil {
+		return nil, err
 	}
-	return splice(object, s.last, s.last, []byte(",\n"+s.indent+body))
+	body := string(name) + ": " + string(wrapped)
+	if s.indent == "" {
+		return splice(object, s.last, s.last, []byte(", "+body)), nil
+	}
+	return splice(object, s.last, s.last, []byte(",\n"+s.indent+body)), nil
 }
 
 // wrapInSections is the value a name is given, wrapped in the sections between
 // it and the field it names. A section made for a one-line object is written on
 // one line too.
-func wrapInSections(pos []string, value []byte, indent string) []byte {
+func wrapInSections(pos []string, value []byte, indent string) ([]byte, error) {
 	if len(pos) == 0 {
-		return value
+		return value, nil
 	}
-	name, _ := json.Marshal(pos[0])
-	inside := wrapInSections(pos[1:], value, indent+"  ")
+	name, err := json.Marshal(pos[0])
+	if err != nil {
+		return nil, fmt.Errorf("encode the name %q: %w", pos[0], err)
+	}
+	inside, err := wrapInSections(pos[1:], value, indent+"  ")
+	if err != nil {
+		return nil, err
+	}
 	if indent == "" {
-		return []byte("{" + string(name) + ": " + string(inside) + "}")
+		return []byte("{" + string(name) + ": " + string(inside) + "}"), nil
 	}
-	return []byte("{\n" + indent + "  " + string(name) + ": " + string(inside) + "\n" + indent + "}")
+	return []byte("{\n" + indent + "  " + string(name) + ": " + string(inside) + "\n" + indent + "}"), nil
 }
 
 // getIndent is the whitespace an object's members are laid out with, taken from
@@ -379,22 +397,25 @@ func resolvePath(path string) string {
 	return filepath.Join(dir, filepath.Base(abs))
 }
 
-type fileAccess struct {
+// Files reads and writes settings files one at a time: each work reads a file and writes it back
+// whole, and two at once would write over each other's change. Every writer of one file shares
+// one Files.
+type Files struct {
 	mu sync.Mutex
 }
 
-var files fileAccess
+// ErrNoFiles is returned by a settings read or write that was given no Files.
+var ErrNoFiles = errors.New("settings access was given no files")
 
-// runOnFile hands the work the file the path leads to, with the folder that
-// link is followed once and the rest of the way is the file itself.
-//
-// One work runs at a time: each reads the file and writes it back whole, and two at once would
-// write over each other's change.
-func runOnFile(path string, work func(path string) error) error {
-	return files.run(path, work)
-}
+// NewFiles returns the access to settings files that one composition root holds.
+func NewFiles() *Files { return &Files{} }
 
-func (f *fileAccess) run(path string, work func(path string) error) error {
+// run hands the work the file the path leads to, with the folder that link is followed once and
+// the rest of the way is the file itself.
+func (f *Files) run(path string, work func(path string) error) error {
+	if f == nil {
+		return ErrNoFiles
+	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	resolved := resolvePath(path)
@@ -414,22 +435,25 @@ func splice(raw []byte, from, to int, with []byte) []byte {
 // writeFileAtomically writes the file next to its target and renames it over the
 // target, so a crash mid-write leaves the settings intact. The file mode is 0600.
 //
-// The path is the one runOnFile hands its work: the file itself, with every link
+// The path is the one run hands its work: the file itself, with every link
 // on the way to it already followed.
-func writeFileAtomically(path string, content []byte) error {
+func writeFileAtomically(path string, content []byte) (err error) {
 	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tmp.Name())
+	// After a successful rename the temporary name no longer exists.
+	defer func() {
+		if removeErr := os.Remove(tmp.Name()); removeErr != nil && !errors.Is(removeErr, fs.ErrNotExist) {
+			err = errors.Join(err, removeErr)
+		}
+	}()
 
 	if _, err := tmp.Write(content); err != nil {
-		tmp.Close()
-		return err
+		return errors.Join(err, tmp.Close())
 	}
 	if err := tmp.Sync(); err != nil {
-		tmp.Close()
-		return err
+		return errors.Join(err, tmp.Close())
 	}
 	if err := tmp.Close(); err != nil {
 		return err
@@ -451,9 +475,25 @@ func writeFileAtomically(path string, content []byte) error {
 func syncDirectory(dir string) error {
 	folder, err := os.Open(dir)
 	if err != nil {
-		return nil
+		if isSyncUnsupported(err) {
+			return nil
+		}
+		return err
 	}
-	defer folder.Close()
-	_ = folder.Sync()
-	return nil
+	if err := folder.Sync(); err != nil && !isSyncUnsupported(err) {
+		return errors.Join(err, folder.Close())
+	}
+	return folder.Close()
+}
+
+// isSyncUnsupported is whether the filesystem refuses to flush a folder.
+func isSyncUnsupported(err error) bool {
+	return errors.Is(err, errors.ErrUnsupported) || errors.Is(err, fs.ErrPermission) ||
+		errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.ENOTSUP)
+}
+
+// isUnwritable is whether the file or its folder refuses writes. A read-only
+// installation runs with the settings it reads, so this is not reported.
+func isUnwritable(err error) bool {
+	return errors.Is(err, fs.ErrPermission) || errors.Is(err, syscall.EROFS)
 }

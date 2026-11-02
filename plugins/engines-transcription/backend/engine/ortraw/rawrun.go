@@ -28,10 +28,10 @@ type Calls struct {
 
 // GetCalls are the runtime entry points, or false when the runtime has not
 // registered them.
-func GetCalls() (Calls, bool) {
+func (runner *Runner) GetCalls() (Calls, bool) {
 	runner.mu.Lock()
 	defer runner.mu.Unlock()
-	calls := Calls{Run: runner.ortRun, GetData: runner.ortGetTensorMutableData, Release: runner.ortReleaseValue, Check: checkStatus}
+	calls := Calls{Run: runner.ortRun, GetData: runner.ortGetTensorMutableData, Release: runner.ortReleaseValue, Check: runner.checkStatus}
 	return calls, calls.Run != nil && calls.GetData != nil && calls.Release != nil
 }
 

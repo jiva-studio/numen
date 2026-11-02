@@ -25,7 +25,7 @@ describe('a file a files tab opens', () => {
 
     createFilesTabDeps(host, 'files').openEntry(entry())
 
-    expect(recorded.synced).toStrictEqual([['files', 'a.md', 'a.md']])
+    expect(recorded.synced).toStrictEqual([['files', 'a.md', 'a']])
     expect(recorded.opened).toStrictEqual([])
   })
 
@@ -63,7 +63,7 @@ describe('a path a files tab selects', () => {
     deps.onSelectPath?.('c.txt', createTabState(entry({ path: 'c.txt', name: 'c', isNote: true })))
 
     expect(recorded.synced).toStrictEqual([
-      ['files', 'a.md', 'a.md'],
+      ['files', 'a.md', 'a'],
       ['files', 'b.md', 'b'],
       ['files', 'c.txt', 'c'],
     ])

@@ -114,27 +114,27 @@ function onSave(blob: Blob) {
 }
 
 .media-recorder__status--recording {
-  background: var(--numen-danger);
+  background: var(--numen-alarm);
   color: var(--numen-surface);
   animation: pulse 1.5s infinite;
 }
 
 .media-recorder__status--paused {
-  background: var(--numen-warning);
+  background: var(--numen-caution-bg);
   color: var(--numen-ink);
 }
 
 .media-recorder__status--stopped {
-  background: var(--numen-success);
-  color: var(--numen-surface);
+  background: var(--numen-accent);
+  color: var(--numen-accent-ink);
 }
 
 .media-recorder__error {
   padding: 0.75rem 1rem;
-  background: var(--numen-danger-soft);
-  border: 1px solid var(--numen-danger);
+  background: var(--numen-alarm-bg);
+  border: 1px solid var(--numen-alarm);
   border-radius: 6px;
-  color: var(--numen-danger);
+  color: var(--numen-alarm);
   font-size: 0.875rem;
 }
 

@@ -60,7 +60,7 @@ const { counted, started, waits } = vi.hoisted(() => ({
   started: [] as { deck: string }[],
   /** A stream that stays open, so nothing the review follows ever ends. */
   async *waits(): AsyncGenerator<never> {
-    await new Promise<never>(() => {})
+    await new Promise<never>(() => undefined)
   },
 }))
 
@@ -104,7 +104,7 @@ const mountReview = async (vault: string) => {
       notices: createMockNoticeHost(),
       agent: createMockAgentHost(),
       mountView: mountNothing,
-      goToVaults: () => {},
+      goToVaults: () => undefined,
     }),
   ) as Review
   const tab: VueWrapper = mount(ReviewTab, { props: { state } })

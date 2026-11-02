@@ -42,6 +42,10 @@ type Task struct {
 	// PluginID is the plugin that reported the task, and PluginName its name
 	// from the manifest. Both are empty for the core's own work.
 	PluginID, PluginName string
+
+	// Cancel stops the work. The work takes its task out of the list once it
+	// has stopped. Nil is work that cannot be cancelled.
+	Cancel context.CancelFunc
 }
 
 // Unit is what a piece of work counts. Bytes are read out in the sizes a
@@ -82,13 +86,15 @@ type IndexResult struct {
 
 // EmbedResult reports what embedding did.
 type EmbedResult struct {
-	Pending       int    // chunks found with no vector from the model in use
-	Embedded      int    // chunks that now carry one
-	Reused        int    // chunks whose cached vector was claimed
-	Vanished      int    // whose source the vault no longer holds
-	Displaced     int    // whose place is not in the text their source holds now
-	CurrentSource string // the source open now
-	IsBusy        bool   // somebody else is embedding this vault, and nothing was done
+	Pending       int      // chunks found with no vector from the model in use
+	Embedded      int      // chunks that now carry one
+	Reused        int      // chunks whose cached vector was claimed
+	Vanished      int      // whose source the vault no longer holds
+	Displaced     int      // whose place is not in the text their source holds now
+	Skipped       int      // left without a vector, since a person cancelled the indexing of their source
+	CurrentSource string   // the source being embedded now: the first of Active, or the next one to be read
+	Active        []string // the sources of the batches being embedded now, oldest first
+	IsBusy        bool     // somebody else is embedding this vault, and nothing was done
 }
 
 // NoteScanner scans the notes of a vault.
@@ -98,13 +104,17 @@ type NoteScanner interface {
 
 // TextIndexer indexes the file texts of a vault.
 type TextIndexer interface {
-	IndexWithProgress(ctx context.Context, v domain.Vault, onProgress func(IndexResult)) (IndexResult, error)
+	IndexWithProgress(
+		ctx context.Context, v domain.Vault, onProgress func(IndexResult), isSkipped func(path string) bool,
+	) (IndexResult, error)
 	IndexOne(ctx context.Context, v domain.Vault, path string) (IndexResult, error)
 }
 
 // VectorEmbedder embeds the chunks of a vault.
 type VectorEmbedder interface {
-	EmbedWithProgress(ctx context.Context, v domain.Vault, onProgress func(EmbedResult)) (EmbedResult, error)
+	EmbedWithProgress(
+		ctx context.Context, v domain.Vault, onProgress func(EmbedResult), isSkipped func(path, hash string) bool,
+	) (EmbedResult, error)
 }
 
 // ReadWholeVault makes a vault answer: its notes are read, the text versions of
@@ -123,6 +133,12 @@ type ReadWholeVault struct {
 
 	// OnVectorsProgress, if set, is called as each source is embedded.
 	OnVectorsProgress func(EmbedResult)
+
+	// IsTextSkipped, if set, names the sources the text pass leaves uncut, and
+	// IsVectorSkipped the sources, with their content hash, whose chunks the
+	// vector pass leaves without vectors.
+	IsTextSkipped   func(path string) bool
+	IsVectorSkipped func(path, hash string) bool
 }
 
 // NewReadWholeVault is the three passes, in the order they stand in: the notes
@@ -164,7 +180,7 @@ func (u ReadWholeVault) Execute(ctx context.Context, v domain.Vault) (ReadWholeV
 
 // IndexTexts cuts the live text version of every file of the vault that has one.
 func (u ReadWholeVault) IndexTexts(ctx context.Context, v domain.Vault) (IndexResult, error) {
-	res, err := u.texts.IndexWithProgress(ctx, v, u.OnTextsProgress)
+	res, err := u.texts.IndexWithProgress(ctx, v, u.OnTextsProgress, u.IsTextSkipped)
 	if err != nil {
 		return res, fmt.Errorf("indexing the file texts of %s: %w", v.Name, err)
 	}
@@ -173,7 +189,7 @@ func (u ReadWholeVault) IndexTexts(ctx context.Context, v domain.Vault) (IndexRe
 
 // MakeVectors embeds every chunk that lacks a vector.
 func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault) (EmbedResult, error) {
-	res, err := u.vectors.EmbedWithProgress(ctx, v, u.OnVectorsProgress)
+	res, err := u.vectors.EmbedWithProgress(ctx, v, u.OnVectorsProgress, u.IsVectorSkipped)
 	if err != nil {
 		return res, fmt.Errorf("embedding %s: %w", v.Name, err)
 	}

@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
-import { ErrorCode, GetNeighbourhoodResponseSchema, Relation } from '@numen/protocol'
-import { asFailure, asValue } from '@numen/plugin-sdk'
+import {
+  NOTE_ERROR_CODE,
+  NOTE_MARKER,
+  NOTE_RELATION,
+  NOTE_ROLE,
+  GetNeighbourhoodResponseSchema,
+  asFailure,
+  asValue,
+} from '@numen/core-client'
 import { mapNeighbourhood, mapNoteResult, mapWriteResult } from './noteWords'
 
 const file = { path: 'Note.md', size: 12n, mtime: 34n }
@@ -19,7 +26,7 @@ describe('mapNoteResult', () => {
   })
 
   it('fails with the error the answer names', () => {
-    expect(mapNoteResult({ error: ErrorCode.TOO_LARGE, body: 'text' })).toEqual(
+    expect(mapNoteResult({ error: NOTE_ERROR_CODE.TOO_LARGE, body: 'text' })).toEqual(
       asFailure('tooLarge'),
     )
   })
@@ -27,7 +34,7 @@ describe('mapNoteResult', () => {
 
 describe('mapWriteResult', () => {
   it('calls a file that moved past the caller changed', () => {
-    expect(mapWriteResult({ error: ErrorCode.STALE })).toEqual(asFailure('changed'))
+    expect(mapWriteResult({ error: NOTE_ERROR_CODE.STALE })).toEqual(asFailure('changed'))
   })
 
   it('maps any other answer as a note result', () => {
@@ -41,6 +48,7 @@ describe('mapNeighbourhood', () => {
       focus: { path: '', title: '' },
       focusType: 'note',
       related: [],
+      connections: [],
     })
   })
 
@@ -52,14 +60,22 @@ describe('mapNeighbourhood', () => {
         {
           note: { path: 'Up.md', title: 'Up' },
           type: 'sheet',
-          relation: Relation.PARENT,
-          label: 'part of',
-          reverseLabel: 'holds',
-          through: 'Mid.md',
-          isMutual: true,
+          relation: NOTE_RELATION.PARENT,
         },
-        { note: { path: 'NoRelation.md', title: 'NoRelation' }, relation: Relation.UNSPECIFIED },
-        { relation: Relation.CHILD },
+        {
+          note: { path: 'NoRelation.md', title: 'NoRelation' },
+          relation: NOTE_RELATION.UNSPECIFIED,
+        },
+        { relation: NOTE_RELATION.CHILD },
+      ],
+      connections: [
+        {
+          first: 'Up.md',
+          second: 'Here.md',
+          role: NOTE_ROLE.CHILD,
+          firstSide: { role: NOTE_ROLE.CHILD, label: 'holds', marker: NOTE_MARKER.ARROW },
+          secondSide: { role: NOTE_ROLE.PARENT, label: 'part of' },
+        },
       ],
     })
 
@@ -72,10 +88,16 @@ describe('mapNeighbourhood', () => {
           title: 'Up',
           type: 'sheet',
           relation: 'parent',
-          label: 'part of',
-          reverseLabel: 'holds',
-          through: 'Mid.md',
-          isMutual: true,
+        },
+      ],
+      connections: [
+        {
+          first: 'Up.md',
+          second: 'Here.md',
+          role: 'child',
+          type: '',
+          firstSide: { label: 'holds', marker: 'arrow', reason: '' },
+          secondSide: { label: 'part of', marker: null, reason: '' },
         },
       ],
     })

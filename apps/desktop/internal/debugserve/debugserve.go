@@ -22,25 +22,39 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-
-	"github.com/jiva-studio/numen/apps/desktop/internal/adapter/clock"
 )
+
+// Clock gets the current time.
+type Clock interface {
+	Now() time.Time
+}
 
 // Serve serves handler at addr until ctx is done or the process is interrupted.
 // It serves TLS with its own certificate unless NUMEN_DEBUG_TLS is "false", and
 // writes the listening address to out once the listener is bound.
-func Serve(ctx context.Context, addr string, handler http.Handler, out io.Writer) error {
+func Serve(
+	ctx context.Context,
+	clock Clock,
+	addr string,
+	handler http.Handler,
+	out io.Writer,
+) (result error) {
 	server := &http.Server{Addr: addr, Handler: newHandler(handler)}
 
-	ln, err := net.Listen("tcp", addr)
+	ln, err := (&net.ListenConfig{}).Listen(ctx, "tcp", addr)
 	if err != nil {
 		return fmt.Errorf("listen %s: %w", addr, err)
 	}
-	defer ln.Close()
+	// Shutdown closes the listener the server holds, so a second close reports it closed already.
+	defer func() {
+		if err := ln.Close(); err != nil && !errors.Is(err, net.ErrClosed) {
+			result = errors.Join(result, fmt.Errorf("close listener: %w", err))
+		}
+	}()
 
 	scheme := "http"
 	if os.Getenv("NUMEN_DEBUG_TLS") != "false" {
-		cert, err := generateSelfSignedCert()
+		cert, err := generateSelfSignedCert(clock)
 		if err != nil {
 			return fmt.Errorf("generate debug tls cert: %w", err)
 		}
@@ -51,7 +65,9 @@ func Serve(ctx context.Context, addr string, handler http.Handler, out io.Writer
 		scheme = "https"
 	}
 
-	fmt.Fprintf(out, "numen debug server listening on %s://%s\n", scheme, ln.Addr())
+	if _, err := fmt.Fprintf(out, "numen debug server listening on %s://%s\n", scheme, ln.Addr()); err != nil {
+		return fmt.Errorf("write listening address: %w", err)
+	}
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
@@ -76,7 +92,7 @@ func Serve(ctx context.Context, addr string, handler http.Handler, out io.Writer
 	return server.Shutdown(shutdownCtx)
 }
 
-func generateSelfSignedCert() (tls.Certificate, error) {
+func generateSelfSignedCert(clock Clock) (tls.Certificate, error) {
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return tls.Certificate{}, err

@@ -5,17 +5,21 @@
  * notices; and the views declared for the list of vaults. Every other registration has no slot in
  * this window.
  */
-import { computed, effectScope, shallowRef, type EffectScope } from 'vue'
-import type {
-  AgentHost,
-  Disposable,
-  NoticeHost,
-  PluginContext,
-  PluginManifest,
-  TabKindRegistration,
-} from '@numen/plugin-sdk'
-import { createViewRegistry, type LoaderHost } from '@numen/plugin-host'
-import { createNoticeQueue, type NoticeQueue } from '@numen/shell'
+import { computed, effectScope, shallowRef, type EffectScope, type ShallowRef } from 'vue'
+import type { Manifest } from '@numen/core-client'
+import {
+  createAppInfo,
+  createExternalOpener,
+  createPluginNotices,
+  createViewRegistry,
+  openExternalUrl,
+  type LoaderHost,
+  type AgentHost,
+  type Disposable,
+  type PluginContext,
+  type TabKindRegistration,
+} from '@numen/plugin-host'
+import { createNoticeQueue } from '@numen/shell'
 
 /** The target of this window, which names the plugins it loads. */
 export const TARGET = 'desktop.flashcards'
@@ -35,25 +39,8 @@ export interface WindowTab {
   readonly scope: EffectScope
 }
 
-const NOTHING: Disposable = { dispose: () => {} }
-
-/** The notices of one plugin, in the window's one list. */
-export const createPluginNotices = (queue: NoticeQueue, pluginId: string): NoticeHost => ({
-  show: (text, severity = 'info') => queue.show(pluginId, text, severity),
-  setTasks: (tasks) =>
-    queue.setTasks(
-      pluginId,
-      tasks.map((task) => ({
-        id: task.id,
-        label: task.label,
-        about: task.about ?? '',
-        error: task.error ?? '',
-        isUserStarted: task.isUserStarted ?? false,
-        ...(task.done === undefined ? {} : { done: task.done }),
-        ...(task.total === undefined ? {} : { total: task.total }),
-      })),
-    ),
-})
+// The disposable of a subscription that holds no resource.
+const NOTHING: Disposable = { dispose: () => undefined }
 
 /** The window's one tab: opened on a vault over the front kind, and closed back to the vaults. */
 function createWindowTab(front: () => PluginView | null) {
@@ -89,6 +76,34 @@ function createWindowTab(front: () => PluginView | null) {
   return { tab, openTab, closeTab }
 }
 
+/** The view the window draws, and nothing while no plugin offers one. */
+function createFrontView(views: Readonly<ShallowRef<readonly PluginView[]>>) {
+  return computed<PluginView | null>(() => {
+    const mainViews = views.value.filter((one) => one.registration.placement?.pane === 'main')
+    mainViews.sort(
+      (a, b) => (a.registration.placement?.order ?? 0) - (b.registration.placement?.order ?? 0),
+    )
+    return mainViews[0] ?? null
+  })
+}
+
+/** What the window gives a plugin to register and read, none of which it has a use for. */
+const UNUSED_CAPABILITIES = {
+  registerReader: () => NOTHING,
+  registerCommand: () => NOTHING,
+  registerContextMenu: () => NOTHING,
+  registerAgentProvider: () => NOTHING,
+  registerSettingsView: () => NOTHING,
+  registerStatusView: () => NOTHING,
+  getSetting: () => undefined,
+  onSettingChange: () => NOTHING,
+  onVaultChange: () => NOTHING,
+  onFileSelect: () => NOTHING,
+  // The window raises no vault or file events of its own.
+  emitVaultChange: () => undefined,
+  emitFileSelect: () => undefined,
+} satisfies Partial<PluginContext>
+
 /** The host of the window, whose plugins are given the agent where the window has one. */
 export function createShellHost(agent?: AgentHost) {
   const views = shallowRef<readonly PluginView[]>([])
@@ -96,14 +111,7 @@ export function createShellHost(agent?: AgentHost) {
   const declaredViews = createViewRegistry()
   const notices = createNoticeQueue()
 
-  /** The view the window draws, and nothing while no plugin offers one. */
-  const front = computed<PluginView | null>(() => {
-    const mainViews = views.value.filter((one) => one.registration.placement?.pane === 'main')
-    mainViews.sort(
-      (a, b) => (a.registration.placement?.order ?? 0) - (b.registration.placement?.order ?? 0),
-    )
-    return mainViews[0] ?? null
-  })
+  const front = createFrontView(views)
   const { tab, openTab, closeTab } = createWindowTab(() => front.value)
 
   const addView = (view: PluginView): Disposable => {
@@ -111,7 +119,7 @@ export function createShellHost(agent?: AgentHost) {
     return { dispose: () => (views.value = views.value.filter((one) => one !== view)) }
   }
 
-  const createContext = (pluginId: string, manifest?: PluginManifest): PluginContext => {
+  const createContext = (pluginId: string, manifest?: Manifest): PluginContext => {
     const subscriptions: Disposable[] = []
     const add = (one: Disposable) => {
       subscriptions.push(one)
@@ -121,12 +129,15 @@ export function createShellHost(agent?: AgentHost) {
       pluginId,
       target: TARGET,
       subscriptions,
+      app: createAppInfo({
+        version: import.meta.env.VITE_NUMEN_VERSION,
+        build: import.meta.env.VITE_NUMEN_BUILD,
+        userAgent: navigator.userAgent,
+      }),
+      openExternal: createExternalOpener((url) => openExternalUrl(url)),
       registerTabKind: (registration) =>
         add(addView({ pluginId, registration: registration as TabKindRegistration })),
-      registerReader: () => NOTHING,
-      registerCommand: () => NOTHING,
-      registerContextMenu: () => NOTHING,
-      registerAgentProvider: () => NOTHING,
+      ...UNUSED_CAPABILITIES,
       registerView: (registration) => add(declaredViews.registerView(pluginId, registration)),
       mountView: (capability, element, viewContext) => {
         const view = declaredViews.mountView(capability, element, viewContext)
@@ -134,12 +145,6 @@ export function createShellHost(agent?: AgentHost) {
         return view
       },
       closeTab: (id) => closeTab(id),
-      getSetting: () => undefined,
-      onSettingChange: () => NOTHING,
-      onVaultChange: () => NOTHING,
-      onFileSelect: () => NOTHING,
-      emitVaultChange: () => {},
-      emitFileSelect: () => {},
       hasPermission: (permission) => manifest?.permissions?.includes(permission) ?? false,
       notices: createPluginNotices(notices, pluginId),
       ...(agent ? { agent } : {}),

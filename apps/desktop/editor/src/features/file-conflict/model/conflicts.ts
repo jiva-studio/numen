@@ -5,7 +5,6 @@
  * stops, so the window waits only for conflicts still unresolved.
  */
 import { watch } from 'vue'
-import { parseFileConflict } from '@numen/plugin-sdk'
 import type { Conflict } from './flush'
 
 /** The notes of a window, each under the identity its tab opened under. */
@@ -27,11 +26,7 @@ export function raiseConflicts(notes: Notes, raiser: ConflictRaiser): () => void
   const raised = new Map<string, () => void>()
 
   const stopWatching = watch(
-    () =>
-      notes.getOpenIds().filter((id) => {
-        const c = parseFileConflict(notes.getOpenNote(id).state)
-        return c === 'stale'
-      }),
+    () => notes.getOpenIds().filter((id) => notes.getOpenNote(id).state === 'stale'),
     (stale) => {
       for (const id of stale) {
         if (raised.has(id)) continue

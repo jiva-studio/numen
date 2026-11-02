@@ -9,7 +9,7 @@ import type { Position } from '@/shared/lib/math/geometry'
 import type { Clock } from '@/shared/lib/time/clock'
 
 /** What is being carried, and whether the pointer has gone far enough to mean it. */
-export interface Drag<Item> {
+interface Drag<Item> {
   readonly item: Item
   readonly hasMoved: boolean
 }
@@ -18,7 +18,7 @@ export interface Drag<Item> {
  * What following a press takes.
  *
  * `Item` is what the press picked up and `At` is where letting go would put it;
- * both are handed back untouched.
+ * both are returned untouched.
  */
 export interface Press<Item, At> {
   /** The distance the pointer moves before a press becomes a drag. */

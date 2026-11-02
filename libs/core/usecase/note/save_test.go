@@ -17,11 +17,12 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
 func (c changing) newWrite() note.Write {
-	return note.NewWrite(vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, time.Now)
+	return note.NewWrite(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
 }
 
 // openNote is a tab that has read a note: the prose it received and the
@@ -192,7 +193,7 @@ func TestTheSameBytesSavedAgainAreNotAChange(t *testing.T) {
 	if err := os.WriteFile(on, raw, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	later := time.Now().Add(time.Hour)
+	later := testsupport.GetMachine().Now().Add(time.Hour)
 	if err := os.Chtimes(on, later, later); err != nil {
 		t.Fatal(err)
 	}
@@ -313,6 +314,8 @@ func TestALinkSavedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		"Heat.md":    "# Heat\n\nWhat was there.\n",
 	})
 
+	// Both writers take the same lock.
+	locks := vaultwriter.NewLocks()
 	agentRead := make(chan struct{})
 	agentMayWrite := make(chan struct{})
 	agent := note.NewEditLinks(
@@ -322,9 +325,9 @@ func TestALinkSavedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 				<-agentMayWrite
 			}
 		}},
-		vaultwriter.VaultWriters{},
+		vaultwriter.VaultWriters{Locks: locks},
 		c.index,
-		time.Now,
+		testsupport.NewClock(),
 	)
 
 	saveAsking := make(chan struct{})
@@ -337,9 +340,9 @@ func TestALinkSavedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 				<-saveMayWrite
 			}
 		}},
-		watchedWriters{inner: vaultwriter.VaultWriters{}, hold: func() { close(saveAsking) }},
+		watchedWriters{inner: vaultwriter.VaultWriters{Locks: locks}, hold: func() { close(saveAsking) }},
 		c.index,
-		time.Now,
+		testsupport.NewClock(),
 	)
 
 	added := make(chan error, 1)
@@ -401,24 +404,26 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 			"# Heat\n\nWhat was there.\n",
 	})
 
+	// Both writers take the same lock.
+	locks := vaultwriter.NewLocks()
 	var readOnce sync.Once
 	mendRead := make(chan struct{})
 	mendMayWrite := make(chan struct{})
-	mover := note.NewMove(
-		watchedReaders{inner: vaultreader.Readers{}, read: func(path string) {
+	mover := note.NewMove(note.MoveDeps{
+		Readers: watchedReaders{inner: vaultreader.Readers{}, read: func(path string) {
 			if path != "physics/Heat.md" {
 				return
 			}
 			readOnce.Do(func() { close(mendRead) })
 			<-mendMayWrite
 		}},
-		vaultwriter.VaultWriters{},
-		c.db.Links(),
-		c.db.Queries(),
-		c.db.Sources(),
-		c.index,
-		time.Now,
-	)
+		Writers: vaultwriter.VaultWriters{Locks: locks},
+		Links:   c.db.Links(),
+		Names:   c.db.Queries(),
+		Sources: c.db.Sources(),
+		Index:   c.index,
+		Now:     testsupport.NewClock(),
+	})
 
 	saveAsking := make(chan struct{})
 	saveRead := make(chan struct{})
@@ -430,9 +435,9 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 				<-saveMayWrite
 			}
 		}},
-		watchedWriters{inner: vaultwriter.VaultWriters{}, hold: func() { close(saveAsking) }},
+		watchedWriters{inner: vaultwriter.VaultWriters{Locks: locks}, hold: func() { close(saveAsking) }},
 		c.index,
-		time.Now,
+		testsupport.NewClock(),
 	)
 
 	moved := make(chan error, 1)
@@ -608,7 +613,7 @@ func TestRefresh_SeparatesIgnoredFilesFromRemovedNotes(t *testing.T) {
 	}
 
 	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(), c.db.SourcesKnown(), c.db.Sources(), time.Now)
+		vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(), c.db.SourcesKnown(), c.db.Sources(), testsupport.NewClock())
 	res, err := refresh.Execute(t.Context(), c.vault, []string{".photo.png", "Gone.md", "Entropy.md"})
 	if err != nil {
 		t.Fatal(err)
@@ -683,4 +688,25 @@ func (w watchedWriters) Open(v domain.Vault) (vaultport.VaultWriter, error) {
 func (w watchedWriters) Lock(ctx context.Context, v domain.Vault) (func(), error) {
 	w.hold()
 	return w.inner.Lock(ctx, v)
+}
+
+// A tab key such as note:dd is no path. A save under a name no file can have
+// writes nothing and answers with the invalid name error.
+func TestSaveRejectsInvalidFileName(t *testing.T) {
+	t.Parallel()
+	for _, path := range []string{"note:dd.md", "notes/a*b.md", `a\b.md`, "q?.md", "dd.md ", "dd. "} {
+		t.Run(path, func(t *testing.T) {
+			t.Parallel()
+			c := openChanging(t, map[string]string{"Ideas.md": "# Ideas\n"})
+
+			_, err := c.newWrite().Save(t.Context(), c.vault, path, "text", nil)
+
+			if !errors.Is(err, domain.ErrInvalidName) {
+				t.Fatalf("Save(%q) = %v, want the invalid name error", path, err)
+			}
+			if _, statErr := os.Stat(filepath.Join(c.vault.Path, path)); statErr == nil {
+				t.Errorf("%q was written", path)
+			}
+		})
+	}
 }

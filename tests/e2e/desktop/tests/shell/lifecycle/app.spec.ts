@@ -1,4 +1,5 @@
 import { test, expect } from '../../support/test.js'
+import { waitForWindow } from '../../support/workspace.js'
 
 test.describe('Desktop Application Shell', () => {
   test('loads application and displays workspace with Plex graph and Agent panel', async ({
@@ -10,7 +11,7 @@ test.describe('Desktop Application Shell', () => {
     await expect(page).toHaveTitle('numen')
 
     // Status bar shows Ready
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Verify Plex graph rendered nodes from test vault
     await expect(page.locator('.plex__title', { hasText: 'Thermodynamics' })).toBeVisible()

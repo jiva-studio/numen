@@ -3,8 +3,8 @@ import type { ReasoningLevelOption } from './reasoning-selector'
 
 export interface MessageComposerProps {
   placeholder?: string
-  /** An answer is being written; the disc stops it. */
-  isWorking?: boolean
+  /** An answer is on its way; the disc stops it. */
+  isAnswerPending?: boolean
   isDisabled?: boolean
   /** What the disc is called while it sends. */
   sendLabel?: string

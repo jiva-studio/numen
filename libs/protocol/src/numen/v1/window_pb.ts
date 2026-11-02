@@ -17,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/window.proto.
  */
 export const file_numen_v1_window: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIrsBCgRUYXNrEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEg0KBWFib3V0GAMgASgJEgwKBGRvbmUYBCABKAMSDQoFdG90YWwYBSABKAMSDQoFZXJyb3IYBiABKAkSFwoPaXNfdXNlcl9zdGFydGVkGAcgASgIEhwKBHVuaXQYCCABKA4yDi5udW1lbi52MS5Vbml0EhEKCXBsdWdpbl9pZBgJIAEoCRITCgtwbHVnaW5fbmFtZRgKIAEoCSIiChBXYXRjaFF1aXRSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIxChFXYXRjaFF1aXRSZXNwb25zZRINCgV0b2tlbhgBIAEoCRINCgVmbHVzaBgCIAEoCCJaChJSZXBvcnRGbHVzaFJlcXVlc3QSDgoGd2luZG93GAEgASgJEg0KBXRva2VuGAIgASgJEiUKBnJlc3VsdBgDIAEoDjIVLm51bWVuLnYxLkZsdXNoUmVzdWx0IhUKE1JlcG9ydEZsdXNoUmVzcG9uc2UiKAoWR2V0Q3VycmVudFZhdWx0UmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiKAoXR2V0Q3VycmVudFZhdWx0UmVzcG9uc2USDQoFdmF1bHQYASABKAkqTwoEVW5pdBIUChBVTklUX1VOU1BFQ0lGSUVEEAASDwoLVU5JVF9USElOR1MQARIOCgpVTklUX0JZVEVTEAISEAoMVU5JVF9TRUNPTkRTEAMqeAoLRmx1c2hSZXN1bHQSHAoYRkxVU0hfUkVTVUxUX1VOU1BFQ0lGSUVEEAASGAoURkxVU0hfUkVTVUxUX05PVEhJTkcQARIYChRGTFVTSF9SRVNVTFRfV1JJVFRFThACEhcKE0ZMVVNIX1JFU1VMVF9BU0tJTkcQAzLGAgoNV2luZG93U2VydmljZRJJCgpXYXRjaFRhc2tzEhsubnVtZW4udjEuV2F0Y2hUYXNrc1JlcXVlc3QaHC5udW1lbi52MS5XYXRjaFRhc2tzUmVzcG9uc2UwARJGCglXYXRjaFF1aXQSGi5udW1lbi52MS5XYXRjaFF1aXRSZXF1ZXN0GhsubnVtZW4udjEuV2F0Y2hRdWl0UmVzcG9uc2UwARJKCgtSZXBvcnRGbHVzaBIcLm51bWVuLnYxLlJlcG9ydEZsdXNoUmVxdWVzdBodLm51bWVuLnYxLlJlcG9ydEZsdXNoUmVzcG9uc2USVgoPR2V0Q3VycmVudFZhdWx0EiAubnVtZW4udjEuR2V0Q3VycmVudFZhdWx0UmVxdWVzdBohLm51bWVuLnYxLkdldEN1cnJlbnRWYXVsdFJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrItMBCgRUYXNrEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEg0KBWFib3V0GAMgASgJEgwKBGRvbmUYBCABKAMSDQoFdG90YWwYBSABKAMSDQoFZXJyb3IYBiABKAkSFwoPaXNfdXNlcl9zdGFydGVkGAcgASgIEhwKBHVuaXQYCCABKA4yDi5udW1lbi52MS5Vbml0EhEKCXBsdWdpbl9pZBgJIAEoCRITCgtwbHVnaW5fbmFtZRgKIAEoCRIWCg5pc19jYW5jZWxsYWJsZRgLIAEoCCIiChBXYXRjaFF1aXRSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIxChFXYXRjaFF1aXRSZXNwb25zZRINCgV0b2tlbhgBIAEoCRINCgVmbHVzaBgCIAEoCCJaChJSZXBvcnRGbHVzaFJlcXVlc3QSDgoGd2luZG93GAEgASgJEg0KBXRva2VuGAIgASgJEiUKBnJlc3VsdBgDIAEoDjIVLm51bWVuLnYxLkZsdXNoUmVzdWx0IhUKE1JlcG9ydEZsdXNoUmVzcG9uc2UiKAoWR2V0Q3VycmVudFZhdWx0UmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiKAoXR2V0Q3VycmVudFZhdWx0UmVzcG9uc2USDQoFdmF1bHQYASABKAkiLwoRQ2FuY2VsVGFza1JlcXVlc3QSDgoGd2luZG93GAEgASgJEgoKAmlkGAIgASgJIhQKEkNhbmNlbFRhc2tSZXNwb25zZSpPCgRVbml0EhQKEFVOSVRfVU5TUEVDSUZJRUQQABIPCgtVTklUX1RISU5HUxABEg4KClVOSVRfQllURVMQAhIQCgxVTklUX1NFQ09ORFMQAyp4CgtGbHVzaFJlc3VsdBIcChhGTFVTSF9SRVNVTFRfVU5TUEVDSUZJRUQQABIYChRGTFVTSF9SRVNVTFRfTk9USElORxABEhgKFEZMVVNIX1JFU1VMVF9XUklUVEVOEAISFwoTRkxVU0hfUkVTVUxUX0FTS0lORxADMo8DCg1XaW5kb3dTZXJ2aWNlEkkKCldhdGNoVGFza3MSGy5udW1lbi52MS5XYXRjaFRhc2tzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoVGFza3NSZXNwb25zZTABEkYKCVdhdGNoUXVpdBIaLm51bWVuLnYxLldhdGNoUXVpdFJlcXVlc3QaGy5udW1lbi52MS5XYXRjaFF1aXRSZXNwb25zZTABEkoKC1JlcG9ydEZsdXNoEhwubnVtZW4udjEuUmVwb3J0Rmx1c2hSZXF1ZXN0Gh0ubnVtZW4udjEuUmVwb3J0Rmx1c2hSZXNwb25zZRJWCg9HZXRDdXJyZW50VmF1bHQSIC5udW1lbi52MS5HZXRDdXJyZW50VmF1bHRSZXF1ZXN0GiEubnVtZW4udjEuR2V0Q3VycmVudFZhdWx0UmVzcG9uc2USRwoKQ2FuY2VsVGFzaxIbLm51bWVuLnYxLkNhbmNlbFRhc2tSZXF1ZXN0GhwubnVtZW4udjEuQ2FuY2VsVGFza1Jlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * @generated from message numen.v1.WatchTasksRequest
@@ -138,6 +138,13 @@ export type Task = Message<"numen.v1.Task"> & {
    * @generated from field: string plugin_name = 10;
    */
   pluginName: string;
+
+  /**
+   * Set for work that CancelTask can stop.
+   *
+   * @generated from field: bool is_cancellable = 11;
+   */
+  isCancellable: boolean;
 };
 
 /**
@@ -284,6 +291,46 @@ export const GetCurrentVaultResponseSchema: GenMessage<GetCurrentVaultResponse> 
   messageDesc(file_numen_v1_window, 8);
 
 /**
+ * @generated from message numen.v1.CancelTaskRequest
+ */
+export type CancelTaskRequest = Message<"numen.v1.CancelTaskRequest"> & {
+  /**
+   * The window this is asked of. A question naming another window than the one
+   * answering it is not answered.
+   *
+   * @generated from field: string window = 1;
+   */
+  window: string;
+
+  /**
+   * The id that WatchTasks lists the task under.
+   *
+   * @generated from field: string id = 2;
+   */
+  id: string;
+};
+
+/**
+ * Describes the message numen.v1.CancelTaskRequest.
+ * Use `create(CancelTaskRequestSchema)` to create a new message.
+ */
+export const CancelTaskRequestSchema: GenMessage<CancelTaskRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_window, 9);
+
+/**
+ * @generated from message numen.v1.CancelTaskResponse
+ */
+export type CancelTaskResponse = Message<"numen.v1.CancelTaskResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.CancelTaskResponse.
+ * Use `create(CancelTaskResponseSchema)` to create a new message.
+ */
+export const CancelTaskResponseSchema: GenMessage<CancelTaskResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_window, 10);
+
+/**
  * Unit is what a piece of work counts. Bytes are read out in the sizes a
  * person reads them in, seconds as a length of time, and everything else is
  * counted one by one.
@@ -419,6 +466,19 @@ export const WindowService: GenService<{
     methodKind: "unary";
     input: typeof GetCurrentVaultRequestSchema;
     output: typeof GetCurrentVaultResponseSchema;
+  },
+  /**
+   * CancelTask stops one task that WatchTasks lists as cancellable. The task
+   * stays in the list until its work has stopped, and WatchTasks then reports
+   * the list without it. A task that is not listed, or cannot be cancelled,
+   * answers NOT_FOUND.
+   *
+   * @generated from rpc numen.v1.WindowService.CancelTask
+   */
+  cancelTask: {
+    methodKind: "unary";
+    input: typeof CancelTaskRequestSchema;
+    output: typeof CancelTaskResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_window, 0);

@@ -3,7 +3,7 @@
  *
  * An address in the text is written for wherever that text lives, and
  * following one is the application's business. So is keeping the text: the
- * editor holds a document and has nowhere to put it.
+ * editor holds a document and has no place to store it.
  */
 import { Facet } from '@codemirror/state'
 
@@ -18,10 +18,12 @@ export const addressResolver = Facet.define<Resolve, Resolve>({
 
 /** Where a drawn link goes when it is clicked. */
 export const addressOpener = Facet.define<Open, Open>({
-  combine: (all) => all[0] ?? (() => {}),
+  // A link click does nothing until an opener is configured.
+  combine: (all) => all[0] ?? (() => undefined),
 })
 
 /** Who is notified that the user requested the text to be saved now. */
 export const saveHandler = Facet.define<Save, Save>({
-  combine: (all) => all[0] ?? (() => {}),
+  // A save request does nothing until a handler is configured.
+  combine: (all) => all[0] ?? (() => undefined),
 })

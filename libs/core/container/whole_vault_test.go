@@ -19,11 +19,11 @@ import (
 // makeIndex is an index in a folder of its own.
 func makeIndex(t *testing.T) *container.Index {
 	t.Helper()
-	db, err := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}.OpenIndex(t.Context())
+	db, err := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}).OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	return db
 }
 
@@ -54,14 +54,14 @@ func missingVault(t *testing.T) domain.Vault {
 func TestAScanConsumesItsTurnsFromTheIndexAndHonoursARebuild(t *testing.T) {
 	db := makeIndex(t)
 
-	scan := container.Config{ShouldRebuildIndex: true}.Scan(db)
+	scan := container.NewConfig(container.Config{ShouldRebuildIndex: true}).Scan(db)
 	if scan.Walks != db.Walks() {
 		t.Error("the scan takes its turn from somebody other than the index it writes into")
 	}
 	if !scan.ShouldRebuildIndex {
 		t.Error("a rebuild was asked for and the scan skips files the index remembers")
 	}
-	if (container.Config{}).Scan(db).ShouldRebuildIndex {
+	if (container.NewConfig(container.Config{})).Scan(db).ShouldRebuildIndex {
 		t.Error("a rebuild was not asked for and the scan reads every file")
 	}
 }
@@ -69,7 +69,7 @@ func TestAScanConsumesItsTurnsFromTheIndexAndHonoursARebuild(t *testing.T) {
 func TestTheSplitOfASourceIsGivenWhatItReadsWith(t *testing.T) {
 	db := makeIndex(t)
 	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n"})
-	target := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen", ShouldRebuildIndex: true}
+	target := container.NewConfig(container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen", ShouldRebuildIndex: true})
 
 	trimmed, err := target.IndexTexts(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
@@ -91,7 +91,7 @@ func TestTheVectorsOfASourceAreMadeByTheModelGiven(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n"})
 	model := unit{"first"}
 
-	made, err := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}.Embed(db, model, v)
+	made, err := container.NewConfig(container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}).Embed(db, model, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +108,7 @@ func TestTheVectorsOfASourceAreMadeByTheModelGiven(t *testing.T) {
 
 func TestAVaultWhoseFolderIsMissingIsNotMadeSearchable(t *testing.T) {
 	db := makeIndex(t)
-	target := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}
+	target := container.NewConfig(container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"})
 	v := missingVault(t)
 
 	if _, err := target.IndexTexts(db.Sources(), db.SourcesKnown(), v); err == nil {
@@ -139,7 +139,7 @@ func unembeddedAfterAModelSwitch(t *testing.T, shouldRebuild bool) int {
 	t.Helper()
 	db := makeIndex(t)
 	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
-	target := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}
+	target := container.NewConfig(container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"})
 	first, second := unit{"first"}, unit{"second"}
 
 	whole, err := target.ReadWholeVault(t.Context(), db, first, v)
@@ -185,7 +185,7 @@ func makeSwitchedIndex(t *testing.T) (*container.Index, domain.Vault) {
 	t.Helper()
 	db := makeIndex(t)
 	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})
-	whole, err := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}.ReadWholeVault(t.Context(), db, unit{"first"}, v)
+	whole, err := container.NewConfig(container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}).ReadWholeVault(t.Context(), db, unit{"first"}, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,13 +203,13 @@ func TestARebuildThatCannotForgetTheOtherVectorsIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { raw.Close() })
+	testsupport.CloseAfter(t, raw)
 	if _, err := raw.ExecContext(t.Context(),
 		`CREATE TRIGGER keep_vectors BEFORE DELETE ON vectors BEGIN SELECT RAISE(ABORT, 'kept'); END`); err != nil {
 		t.Fatal(err)
 	}
 
-	target := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen", ShouldRebuildIndex: true}
+	target := container.NewConfig(container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen", ShouldRebuildIndex: true})
 	if _, err := target.ReadWholeVault(t.Context(), db, unit{"second"}, v); err == nil || !strings.Contains(err.Error(), "kept") {
 		t.Errorf("got %v", err)
 	}

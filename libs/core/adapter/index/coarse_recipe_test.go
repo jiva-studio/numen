@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -17,7 +18,7 @@ func saveSeededVectorsUnder(t *testing.T, db *DB, vault domain.Vault, recipe str
 	t.Helper()
 	ctx := t.Context()
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, recipe, 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, recipe, chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +42,11 @@ func storedBits(t *testing.T, db *DB) map[int64][]byte {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 	target := map[int64][]byte{}
 	for rows.Next() {
 		var id int64
@@ -66,12 +71,12 @@ func fit(t *testing.T, db *DB, recipe string) {
 
 func TestCoarseRecipe_SwitchBackRestoresFirstModelBits(t *testing.T) {
 	db := openDB(t)
-	cutBook(t, db, first, "library/tale.epub")
+	cutBook(t, db, getFirst(), "library/tale.epub")
 	fit(t, db, testRecipe)
-	small := saveSeededVectorsUnder(t, db, first, testRecipe, 0x0f)
+	small := saveSeededVectorsUnder(t, db, getFirst(), testRecipe, 0x0f)
 
 	fit(t, db, otherRecipe)
-	if got := saveSeededVectorsUnder(t, db, first, otherRecipe, 0xf0); got != small {
+	if got := saveSeededVectorsUnder(t, db, getFirst(), otherRecipe, 0xf0); got != small {
 		t.Fatalf("%d of %d chunks were unembedded under the other recipe", got, small)
 	}
 	for id, got := range storedBits(t, db) {
@@ -90,14 +95,14 @@ func TestCoarseRecipe_SwitchBackRestoresFirstModelBits(t *testing.T) {
 			t.Errorf("chunk %d holds %x, want the bits of the recipe in use", id, got[:2])
 		}
 	}
-	if unembedded := saveSeededVectorsUnder(t, db, first, testRecipe, 0xaa); unembedded != 0 {
+	if unembedded := saveSeededVectorsUnder(t, db, getFirst(), testRecipe, 0xaa); unembedded != 0 {
 		t.Errorf("%d chunks are unembedded under a recipe that holds every vector", unembedded)
 	}
 }
 
 func TestFitRecipe_SameRecipeAndWidthKeepsCoarseIndex(t *testing.T) {
 	db := openDB(t)
-	book(t, db, first, "library/tale.epub", 0x0f)
+	book(t, db, getFirst(), "library/tale.epub", 0x0f)
 	fit(t, db, testRecipe)
 
 	// A row no chunk owns survives only if the index is not rebuilt.
@@ -118,7 +123,7 @@ func TestFitRecipe_SameRecipeAndWidthKeepsCoarseIndex(t *testing.T) {
 
 func TestAnIndexThatRecordsNoRecipeIsFilledOnceAndThenRecorded(t *testing.T) {
 	db := openDB(t)
-	book(t, db, first, "library/tale.epub", 0x0f)
+	book(t, db, getFirst(), "library/tale.epub", 0x0f)
 	fit(t, db, testRecipe)
 
 	// An index from before the recipe was recorded, holding another model's bits.
@@ -151,14 +156,14 @@ func TestAnIndexThatRecordsNoRecipeIsFilledOnceAndThenRecorded(t *testing.T) {
 
 func TestAChunkTheNewRecipeContainsNoVectorForGetsNoCoarseRow(t *testing.T) {
 	db := openDB(t)
-	book(t, db, first, "library/tale.epub", 0x0f)
+	book(t, db, getFirst(), "library/tale.epub", 0x0f)
 	fit(t, db, testRecipe)
 
 	fit(t, db, otherRecipe)
 	if rows := len(storedBits(t, db)); rows != 0 {
 		t.Errorf("%d coarse rows hold another recipe's bits", rows)
 	}
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), first.ID, otherRecipe, 0, 0, 0, 1000)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), getFirst().ID, otherRecipe, chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,10 +181,11 @@ func TestMigrationFourAppliesOnAnIndexAtTheVersionBeforeIt(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, statement := range []string{
-		`DROP TABLE floors`,
+		`DROP TABLE search_floors`,
 		`DROP TABLE open_tabs`,
 		`DROP TABLE text_versions`,
 		`DROP TABLE coarse_recipe`,
+		`ALTER TABLE links DROP COLUMN marker`,
 		`DELETE FROM schema_migrations WHERE version >= 4`,
 		`PRAGMA user_version = 3`,
 	} {
@@ -195,7 +201,7 @@ func TestMigrationFourAppliesOnAnIndexAtTheVersionBeforeIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer again.Close()
+	defer testsupport.Close(t, again)
 	if got := getNewestVersion(t); got < 4 {
 		t.Fatalf("newest version = %d", got)
 	}

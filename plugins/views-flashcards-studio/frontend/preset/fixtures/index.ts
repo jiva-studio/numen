@@ -40,9 +40,9 @@ beforeEach(() => {
   vi.stubGlobal(
     'ResizeObserver',
     class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
+      observe = vi.fn()
+      unobserve = vi.fn()
+      disconnect = vi.fn()
     },
   )
 })
@@ -131,15 +131,23 @@ const createTab = (
     stopped: ref(StopReason.NOTHING),
     errorMessage: ref(''),
     hasExternalChange: ref(false),
-    reload: () => void isDone.push('reload'),
-    chooseGoal: (goal) => void isDone.push(`choose ${goal}`),
+    reload: () => {
+      isDone.push('reload')
+    },
+    chooseGoal: (goal) => {
+      isDone.push(`choose ${goal}`)
+    },
     moveSlider: (pos) => {
       place.value = pos
       isDone.push(`move ${pos}`)
     },
-    flushPending: () => void isDone.push('flushPending'),
-    updateSetting: (field, value) => void isDone.push(`type ${field} ${value}`),
-    close: () => {},
+    flushPending: () => {
+      isDone.push('flushPending')
+    },
+    updateSetting: (field, value) => {
+      isDone.push(`type ${field} ${value}`)
+    },
+    close: () => undefined,
   }
   return { state, recorded: isDone }
 }

@@ -95,8 +95,8 @@ const createTab = (
     },
     file: ref('/numen.json'),
     themes: ref([
-      { name: 'preset:numen', title: 'numen', isBuiltIn: true, isPinned: false },
-      { name: 'mine:sea', title: 'sea', isBuiltIn: false, isPinned: false },
+      { name: 'preset:numen', title: 'numen', isBuiltIn: true, pluginId: '', isPinned: false },
+      { name: 'mine:sea', title: 'sea', isBuiltIn: false, pluginId: '', isPinned: false },
     ]),
     applied: ref('preset:numen'),
     mode: ref('system'),
@@ -225,7 +225,7 @@ describe('the settings tab', () => {
     expect(recorded).toStrictEqual(['choose mine:sea'])
   })
 
-  it('says why the mode cannot be chosen while the theme worn pins it', async () => {
+  it('says why the mode cannot be chosen while the applied theme pins it', async () => {
     const tabPinned = createTab(true).tab
     await openSystemSettings(tabPinned)
     expect(tabPinned.text()).toContain(words.pinned)

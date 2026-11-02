@@ -41,17 +41,17 @@ func TestLoad(t *testing.T) {
 	}
 	ctx := t.Context()
 
-	generating := time.Now()
+	generating := testsupport.GetMachine().Now()
 	v := testsupport.GenerateVault(t, notes)
 	t.Logf("generated %d notes in %s", notes, getElapsed(generating))
 
-	db, err := container.Config{
+	db, err := container.NewConfig(container.Config{
 		IndexPath: filepath.Join(t.TempDir(), "index.db"),
-	}.OpenIndex(ctx)
+	}).OpenIndex(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer testsupport.Close(t, db)
 
 	scan := vaults.NewScan(
 		vaultreader.Readers{},
@@ -61,18 +61,18 @@ func TestLoad(t *testing.T) {
 		db.Maintenance(),
 	)
 
-	coldStart := time.Now()
+	coldStart := testsupport.GetMachine().Now()
 	res, err := scan.Execute(ctx, v)
 	if err != nil {
 		t.Fatal(err)
 	}
-	elapsed := time.Since(coldStart)
+	elapsed := testsupport.GetMachine().Now().Sub(coldStart)
 	t.Logf("cold scan: %d notes in %s (%.2f ms/note, %.0f notes/s)",
 		res.Indexed, elapsed.Round(time.Millisecond),
 		float64(elapsed.Milliseconds())/float64(res.Indexed),
 		float64(res.Indexed)/elapsed.Seconds())
 
-	warmStart := time.Now()
+	warmStart := testsupport.GetMachine().Now()
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
 	}
@@ -128,13 +128,13 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan va
 		go func() {
 			defer readWg.Done()
 			queries := db.Passages()
-			deadline := time.Now().Add(duration)
-			for time.Now().Before(deadline) && ctx.Err() == nil {
-				started := time.Now()
-				if _, err := queries.FindLexical(ctx, v.ID, query, notesOnly, 20, false); err != nil {
+			deadline := testsupport.GetMachine().Now().Add(duration)
+			for testsupport.GetMachine().Now().Before(deadline) && ctx.Err() == nil {
+				started := testsupport.GetMachine().Now()
+				if _, err := queries.FindLexical(ctx, v.ID, query, getNotesOnly(), 20, false); err != nil {
 					return
 				}
-				latencies[i] = append(latencies[i], time.Since(started))
+				latencies[i] = append(latencies[i], testsupport.GetMachine().Now().Sub(started))
 			}
 		}()
 	}
@@ -159,7 +159,7 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan va
 }
 
 func touchEverything(root string) error {
-	pos := time.Now()
+	pos := testsupport.GetMachine().Now()
 	return filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
@@ -168,4 +168,6 @@ func touchEverything(root string) error {
 	})
 }
 
-func getElapsed(since time.Time) time.Duration { return time.Since(since).Round(time.Millisecond) }
+func getElapsed(since time.Time) time.Duration {
+	return testsupport.GetMachine().Now().Sub(since).Round(time.Millisecond)
+}

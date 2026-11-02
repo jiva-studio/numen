@@ -95,12 +95,6 @@ type PluginFailure struct {
 // PluginPersistHandler is called when a plugin modifies its own settings.
 type PluginPersistHandler func(pluginID string, key string, value any) error
 
-// DiscoveredPlugin is a validated plugin located on disk.
-type DiscoveredPlugin struct {
-	Dir      string
-	Manifest PluginManifest
-}
-
 // PluginTransport represents an underlying communication channel for a plugin endpoint.
 type PluginTransport interface {
 	RoundTripTransport()
@@ -158,6 +152,8 @@ type PluginActivator interface {
 type PluginDiscoverer interface {
 	Discover() error
 	GetPluginInfos() []PluginInfo
+	// IsPluginEnabled reports whether the settings of the plugin leave it enabled.
+	IsPluginEnabled(pluginID string) bool
 }
 
 type pluginSecretConfigurator interface {
@@ -166,10 +162,17 @@ type pluginSecretConfigurator interface {
 	DeletePluginSecret(ctx context.Context, pluginID, name string) error
 }
 
+type pluginSettingsPush interface {
+	SetSettings(all map[string]map[string]any)
+	// SetPerformanceProfile tells every running plugin the profile of the performance setting, and
+	// gives each plugin started later the same one.
+	SetPerformanceProfile(ctx context.Context, profile string)
+}
+
 // PluginConfigurator manages configuration and settings for plugins.
 type PluginConfigurator interface {
 	pluginSecretConfigurator
-	SetSettings(all map[string]map[string]any)
+	pluginSettingsPush
 	SetPersistHandler(handler PluginPersistHandler)
 	UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error
 	CheckPluginSetting(pluginID, key string, value any) error
@@ -214,11 +217,17 @@ type pluginContentTypes interface {
 	ListExtensions(mask domain.ContentType) []string
 }
 
+// pluginHostServices receives what the host lends the plugins that call it.
+type pluginHostServices interface {
+	PluginTextHost
+	PluginSearchHost
+}
+
 // PluginManager coordinates process lifecycle, discovery, settings, and RPC routing for modular extensions.
 type PluginManager interface {
 	PluginLifecycleManager
 	PluginRegistryManager
-	PluginTextHost
+	pluginHostServices
 	pluginContentTypes
 	GetDependencies() DependencyCatalog
 }

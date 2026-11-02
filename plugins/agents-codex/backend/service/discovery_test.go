@@ -30,7 +30,7 @@ func TestDiscoveryWithoutAgents(t *testing.T) {
 	if IsCodexInstalled() {
 		t.Error("expected Codex to be absent")
 	}
-	if got := FindCodex(); got != "codex" {
+	if got := findCodexIn(nil); got != "codex" {
 		t.Errorf("expected bare 'codex', got %q", got)
 	}
 }

@@ -11,7 +11,7 @@ var ErrChoosing = errors.New("a folder picker is already open")
 
 // ErrNoFolderDialog is returned when a machine cannot show a folder picker. A folder is
 // then supplied to the application another way, and a vault is added by its path.
-var ErrNoFolderDialog = errors.New("this machine cannot put a folder picker up")
+var ErrNoFolderDialog = errors.New("this machine cannot show a folder picker")
 
 // FolderDialog lets the user pick a folder on this machine.
 //

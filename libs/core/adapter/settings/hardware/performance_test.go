@@ -11,20 +11,24 @@ type machine struct {
 	hw   hardware.Specs
 }
 
-var machines = []machine{
-	{"a sixteen-thread desktop with eight cores and 32 GB", hardware.Specs{LogicalCPUs: 16, PhysicalCPUs: 8, PerformanceCPUs: 8, TotalRAMMB: 32768, AvailableRAMMB: 24000}},
-	{"an Apple chip with four performance and six efficiency cores", hardware.Specs{LogicalCPUs: 10, PhysicalCPUs: 10, PerformanceCPUs: 4, TotalRAMMB: 16384, AvailableRAMMB: 9000, Accelerators: []string{hardware.AcceleratorCoreML}}},
-	{"a two-core laptop", hardware.Specs{LogicalCPUs: 2, PhysicalCPUs: 2, PerformanceCPUs: 2, TotalRAMMB: 4096, AvailableRAMMB: 1500}},
-	{"a 64-core server", hardware.Specs{LogicalCPUs: 128, PhysicalCPUs: 64, PerformanceCPUs: 64, TotalRAMMB: 262144, AvailableRAMMB: 200000}},
-	{"a machine whose memory is unknown", hardware.Specs{LogicalCPUs: 8, PhysicalCPUs: 4, PerformanceCPUs: 4}},
-	{"a machine that reports nothing", hardware.Specs{}},
+func getMachines() []machine {
+	return []machine{
+		{"a sixteen-thread desktop with eight cores and 32 GB", hardware.Specs{LogicalCPUs: 16, PhysicalCPUs: 8, PerformanceCPUs: 8, TotalRAMMB: 32768, AvailableRAMMB: 24000}},
+		{"an Apple chip with four performance and six efficiency cores", hardware.Specs{LogicalCPUs: 10, PhysicalCPUs: 10, PerformanceCPUs: 4, TotalRAMMB: 16384, AvailableRAMMB: 9000, Accelerators: []string{hardware.AcceleratorCoreML}}},
+		{"a two-core laptop", hardware.Specs{LogicalCPUs: 2, PhysicalCPUs: 2, PerformanceCPUs: 2, TotalRAMMB: 4096, AvailableRAMMB: 1500}},
+		{"a 64-core server", hardware.Specs{LogicalCPUs: 128, PhysicalCPUs: 64, PerformanceCPUs: 64, TotalRAMMB: 262144, AvailableRAMMB: 200000}},
+		{"a machine whose memory is unknown", hardware.Specs{LogicalCPUs: 8, PhysicalCPUs: 4, PerformanceCPUs: 4}},
+		{"a machine that reports nothing", hardware.Specs{}},
+	}
 }
 
-var profiles = []hardware.PerformanceProfile{hardware.ProfileEco, hardware.ProfileBalanced, hardware.ProfileMaximum}
+func getProfiles() []hardware.PerformanceProfile {
+	return []hardware.PerformanceProfile{hardware.ProfileEco, hardware.ProfileBalanced, hardware.ProfileMaximum}
+}
 
 func TestResolveCompute_NeverExceedsTheCoreBudgetOnAnyMachine(t *testing.T) {
-	for _, m := range machines {
-		for _, profile := range profiles {
+	for _, m := range getMachines() {
+		for _, profile := range getProfiles() {
 			t.Run(m.name+"/"+profile, func(t *testing.T) {
 				res := hardware.ResolveCompute(profile, m.hw)
 
@@ -43,7 +47,7 @@ func TestResolveCompute_NeverExceedsTheCoreBudgetOnAnyMachine(t *testing.T) {
 }
 
 func TestResolveComputeSizesWorkersToTheFullBudgetAtMaximum(t *testing.T) {
-	res := hardware.ResolveCompute(hardware.ProfileMaximum, machines[0].hw)
+	res := hardware.ResolveCompute(hardware.ProfileMaximum, getMachines()[0].hw)
 
 	if res.CoreBudget != 16 || res.Workers != 16 {
 		t.Errorf("budget %d, workers %d; want 16 and 16", res.CoreBudget, res.Workers)
@@ -51,7 +55,7 @@ func TestResolveComputeSizesWorkersToTheFullBudgetAtMaximum(t *testing.T) {
 }
 
 func TestResolveCompute_UsesHalfTheDesktopBudgetAtBalanced(t *testing.T) {
-	res := hardware.ResolveCompute(hardware.ProfileBalanced, machines[0].hw)
+	res := hardware.ResolveCompute(hardware.ProfileBalanced, getMachines()[0].hw)
 
 	if res.CoreBudget != 8 {
 		t.Errorf("CoreBudget = %d, want 8", res.CoreBudget)
@@ -62,7 +66,7 @@ func TestResolveCompute_UsesHalfTheDesktopBudgetAtBalanced(t *testing.T) {
 }
 
 func TestResolveCompute_CountsOnlyPerformanceCoresOnAnAppleChip(t *testing.T) {
-	hw := machines[1].hw
+	hw := getMachines()[1].hw
 
 	maximum := hardware.ResolveCompute(hardware.ProfileMaximum, hw)
 	balanced := hardware.ResolveCompute(hardware.ProfileBalanced, hw)
@@ -86,7 +90,7 @@ func TestResolveCompute_CountsThreadsOfPerformanceCores(t *testing.T) {
 }
 
 func TestResolveCompute_RunsEcoSingleThreaded(t *testing.T) {
-	for _, m := range machines {
+	for _, m := range getMachines() {
 		res := hardware.ResolveCompute(hardware.ProfileEco, m.hw)
 
 		if res.Workers != 1 || res.CoreBudget != 1 {
@@ -105,7 +109,7 @@ func TestResolveCompute_TreatsAnUnreportedMachineAsOneCPU(t *testing.T) {
 
 func TestResolveCompute_UnknownProfileFallsBackToBalanced(t *testing.T) {
 	for _, profile := range []hardware.PerformanceProfile{"turbo", "custom"} {
-		res := hardware.ResolveCompute(profile, machines[0].hw)
+		res := hardware.ResolveCompute(profile, getMachines()[0].hw)
 
 		if res.Profile != hardware.ProfileBalanced {
 			t.Errorf("%q resolved to %q, want balanced", profile, res.Profile)

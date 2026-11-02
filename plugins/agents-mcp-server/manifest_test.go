@@ -15,11 +15,7 @@ func TestManifestValid(t *testing.T) {
 		Version      string   `json:"version"`
 		Protocol     int      `json:"protocol"`
 		Capabilities []string `json:"capabilities"`
-		Backend      struct {
-			Type        string `json:"type"`
-			Entrypoint  string `json:"entrypoint"`
-			ServiceName string `json:"serviceName"`
-		} `json:"backend"`
+		Services     []string `json:"services"`
 	}
 
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
@@ -36,7 +32,7 @@ func TestManifestValid(t *testing.T) {
 		t.Errorf("manifest declares the tools capability: %v", manifest.Capabilities)
 	}
 
-	if manifest.Backend.ServiceName != "numen.v1.McpServerService" {
-		t.Errorf("got ServiceName %q, want %q", manifest.Backend.ServiceName, "numen.v1.McpServerService")
+	if !slices.Equal(manifest.Services, []string{"md.numen.agents.mcp.server"}) {
+		t.Errorf("got services %v, want %q", manifest.Services, "md.numen.agents.mcp.server")
 	}
 }

@@ -1,12 +1,13 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { formatErrorMessage, VAULT_SUMMARY } from '@numen/plugin-sdk'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { formatErrorMessage, THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
+import { VAULT_SUMMARY } from '@numen/plugin-host'
 import type { VaultRow } from '@numen/shell'
 
 const wire = vi.hoisted(() => {
   async function* waits(): AsyncGenerator<never> {
-    await new Promise<never>(() => {})
+    await new Promise<never>(() => undefined)
   }
   return {
     waits,
@@ -14,6 +15,9 @@ const wire = vi.hoisted(() => {
     listVaults: vi.fn(),
     tasks: (): AsyncIterable<unknown> => waits(),
     requestedTasks: [] as unknown[],
+    listThemes: vi.fn(),
+    readTheme: vi.fn(),
+    writeAppearance: vi.fn(),
   }
 })
 vi.mock('@/shared/clients', () => ({
@@ -26,6 +30,12 @@ vi.mock('@/shared/clients', () => ({
     resolveTextLinks: async () => ({ links: [] }),
   },
   pluginService: { getPlugins: wire.getPlugins },
+  theme: {
+    listThemes: wire.listThemes,
+    readTheme: wire.readTheme,
+    writeAppearance: wire.writeAppearance,
+    watchThemes: () => wire.waits(),
+  },
   vaultsService: { listVaults: wire.listVaults },
   windowService: {
     watchTasks: (request: unknown) => {
@@ -78,7 +88,7 @@ const MANIFEST = {
   id: 'md.numen.cards',
   name: 'Cards',
   version: '1.0.0',
-  frontend: { entrypoint: 'dist/index.js', styles: 'dist/styles.css' },
+  frontend: {},
 }
 
 /** What the shell is given: one plugin that draws the review, and how the vaults are listed. */
@@ -90,6 +100,18 @@ const createDeps = (listVaults: () => Promise<readonly VaultRow[]> = async () =>
 })
 
 const mounted: { unmount(): void }[] = []
+
+beforeEach(() => {
+  wire.listThemes.mockResolvedValue({
+    themes: [],
+    applied: 'preset:numen',
+    mode: THEME_MODE.SYSTEM,
+    interfaceScale: 1,
+    textScale: 1,
+  })
+  wire.readTheme.mockResolvedValue({ css: '' })
+  wire.writeAppearance.mockResolvedValue({ error: '' })
+})
 
 afterEach(() => {
   for (const one of mounted.splice(0)) one.unmount()
@@ -179,7 +201,7 @@ describe('the window over a plugin that draws the review', () => {
   })
 
   it('says the list is being read until it is', async () => {
-    let answer: (vaults: readonly VaultRow[]) => void = () => {}
+    let answer: (vaults: readonly VaultRow[]) => void = vi.fn()
     const { window } = await mountWindow(() => new Promise((then) => (answer = then)))
 
     expect(window.find('[role="status"]').text()).toBe('Loading vaults…')
@@ -190,17 +212,18 @@ describe('the window over a plugin that draws the review', () => {
     expect(window.findAll('.welcome-page__row--vault')).toHaveLength(2)
   })
 
-  it('says why the vaults could not be listed', async () => {
+  it('lists no vault and draws no card when the vaults could not be listed', async () => {
     const { window } = await mountWindow(async () => {
       throw new Error('the list is locked')
     })
 
-    expect(window.text()).toContain(formatErrorMessage(new Error('the list is locked')))
+    expect(window.findAll('.welcome-page__row--vault')).toHaveLength(0)
+    expect(window.text()).not.toContain('the list is locked')
   })
 })
 
 describe('the work behind the window', () => {
-  it("is followed for the window's own target and drawn in its notices", async () => {
+  it("is followed for the window's own target and held as notices, not drawn", async () => {
     wire.tasks = async function* () {
       yield {
         tasks: [
@@ -213,7 +236,7 @@ describe('the work behind the window', () => {
           },
         ],
       }
-      await new Promise<never>(() => {})
+      await new Promise<never>(() => undefined)
     }
     let shell: ReturnType<typeof useShell> | undefined
     mounted.push(
@@ -232,5 +255,74 @@ describe('the work behind the window', () => {
     expect(shell?.notices.notices.value.map((one) => one.text)).toStrictEqual([
       'Indexing the vault',
     ])
+  })
+})
+
+describe('the appearance palette', () => {
+  const openPalette = async () => {
+    wire.listThemes.mockResolvedValue({
+      themes: [
+        {
+          name: 'preset:numen',
+          title: 'numen',
+          origin: THEME_ORIGIN.PRESET,
+          pluginId: '',
+          isPinned: false,
+        },
+        {
+          name: 'plugin:org.example.themes/night',
+          title: 'Night',
+          origin: THEME_ORIGIN.PLUGIN,
+          pluginId: 'org.example.themes',
+          isPinned: true,
+        },
+      ],
+      applied: 'preset:numen',
+      mode: THEME_MODE.SYSTEM,
+      interfaceScale: 1,
+      textScale: 1,
+    })
+    wire.getPlugins.mockReset()
+    wire.getPlugins.mockResolvedValue({
+      plugins: [{ id: 'org.example.themes', name: 'Sample Themes' }],
+    })
+    wire.listVaults.mockResolvedValue({ vaults: [] })
+    const window = mount(App, {
+      props: { deps: { listPlugins: async () => [] } },
+      attachTo: document.body,
+    })
+    mounted.push(window)
+    await flushPromises()
+    globalThis.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, cancelable: true }),
+    )
+    await flushPromises()
+    return window
+  }
+
+  it('opens on Ctrl+P and offers the themes of a plugin under the name of the plugin', async () => {
+    await openPalette()
+
+    expect(document.body.textContent).toContain('Sample Themes')
+    expect(document.body.textContent).toContain('Night')
+    expect(document.body.textContent).toContain('numen')
+  })
+
+  it('writes the theme chosen and applies it to the page', async () => {
+    wire.readTheme.mockResolvedValue({ css: ':root { color-scheme: dark; }' })
+    await openPalette()
+    const rows = [...document.body.querySelectorAll<HTMLElement>('[role="option"]')]
+    const night = rows.find((one) => one.textContent.includes('Night'))
+
+    night?.click()
+    await flushPromises()
+
+    expect(wire.writeAppearance).toHaveBeenCalledWith({
+      name: 'plugin:org.example.themes/night',
+      mode: THEME_MODE.SYSTEM,
+    })
+    expect(document.head.querySelector('style[data-appearance="theme"]')?.textContent).toBe(
+      ':root { color-scheme: dark; }',
+    )
   })
 })

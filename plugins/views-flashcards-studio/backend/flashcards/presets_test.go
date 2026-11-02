@@ -2,6 +2,7 @@ package flashcards_test
 
 import (
 	"errors"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"reflect"
 	"slices"
 	"strings"
@@ -20,21 +21,23 @@ import (
 
 // A vault where one deck names a preset, one names an ordinary note, and one
 // is empty.
-var pointing = map[string]string{
-	"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
-		"new_a_day: 8\nreviews_a_day: 45\nretention: 0.87\nload: {sat: 50}\n---\n\n# Sanskrit\n",
-	"Grammar.md": "---\ntype: note\n---\n\n# Grammar\n",
-	"decks/Roots.md": "---\ntype: deck\nlinks:\n" +
-		"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n\n## Root ^k7m2xq9fzp\n",
-	"decks/Mantras.md": "---\ntype: deck\nlinks:\n" +
-		"  - to: Grammar\n    role: ref\n    type: preset\n---\n\n## Gayatri ^zpqrstvwxy\n",
-	"decks/Terms.md": "---\ntype: deck\n---\n\n## Term ^3f4g5h6j7k\n",
+func getPointing() map[string]string {
+	return map[string]string{
+		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
+			"new_a_day: 8\nreviews_a_day: 45\nretention: 0.87\nload: {sat: 50}\n---\n\n# Sanskrit\n",
+		"Grammar.md": "---\ntype: note\n---\n\n# Grammar\n",
+		"decks/Roots.md": "---\ntype: deck\nlinks:\n" +
+			"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n\n## Root ^k7m2xq9fzp\n",
+		"decks/Mantras.md": "---\ntype: deck\nlinks:\n" +
+			"  - to: Grammar\n    role: ref\n    type: preset\n---\n\n## Gayatri ^zpqrstvwxy\n",
+		"decks/Terms.md": "---\ntype: deck\n---\n\n## Term ^3f4g5h6j7k\n",
+	}
 }
 
 // A deck is scheduled by the preset its link names.
 func TestADeckIsScheduledByThePresetItNames(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, pointing)
+	s := openVault(t, getPointing())
 
 	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Roots.md")
 	if err != nil {
@@ -54,7 +57,7 @@ func TestADeckIsScheduledByThePresetItNames(t *testing.T) {
 // A deck naming no preset is scheduled by the defaults.
 func TestADeckNamingNoPreset(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, pointing)
+	s := openVault(t, getPointing())
 
 	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Terms.md")
 	if err != nil {
@@ -73,7 +76,7 @@ func TestADeckNamingNoPreset(t *testing.T) {
 func TestADeckWhosePresetLinkHasNoRole(t *testing.T) {
 	t.Parallel()
 	notes := map[string]string{
-		"Sanskrit.md": pointing["Sanskrit.md"],
+		"Sanskrit.md": getPointing()["Sanskrit.md"],
 		"decks/Roots.md": "---\ntype: deck\nlinks:\n" +
 			"  - to: Sanskrit\n    type: preset\n---\n\n## Root ^k7m2xq9fzp\n",
 	}
@@ -106,7 +109,7 @@ func TestADeckWhosePresetNoteIsMissingExistsOnTheDefaults(t *testing.T) {
 		"Sanskrit.md":    preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/Roots.md": deckOf("Sanskrit", 20, 0),
 	})
-	if got := unseen(s.sessionAt(t, today, saturday)); got != 2 {
+	if got := unseen(s.sessionAt(t, getToday(), getSaturday())); got != 2 {
 		t.Fatalf("under the preset the day was asked %d new cards, want 2", got)
 	}
 
@@ -127,7 +130,7 @@ func TestADeckWhosePresetNoteIsMissingExistsOnTheDefaults(t *testing.T) {
 	}
 	// The defaults are steered by their minutes, and twenty of them hold every
 	// card the deck has left.
-	if got := unseen(s.sessionAt(t, today, saturday)); got != 20 {
+	if got := unseen(s.sessionAt(t, getToday(), getSaturday())); got != 20 {
 		t.Errorf("on the defaults the day was asked %d new cards, want 20", got)
 	}
 }
@@ -142,20 +145,20 @@ func TestSession_DeckWithTwoPresetsUsesFirstBudget(t *testing.T) {
 		"decks/Roots.md": deckNaming([]string{"Few", "Many"}, 20, 0),
 	})
 
-	if got := unseen(s.sessionAt(t, today, saturday)); got != 2 {
+	if got := unseen(s.sessionAt(t, getToday(), getSaturday())); got != 2 {
 		t.Errorf("the day was asked %d new cards, want the two the first preset keeps", got)
 	}
 }
 
-// A levelling that failed is not a write that failed. The file stat of the
+// An index update that failed is not a write that failed. The file stat of the
 // file the write produced comes back with it, and the caller's next save lands
 // on that file.
-func TestAPresetSavedWithNoLevellingPassesBackItsFingerprint(t *testing.T) {
+func TestAPresetSavedWithNoIndexUpdatePassesBackItsFingerprint(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, pointing)
+	s := openVault(t, getPointing())
 	presets := flashcards.NewPresets(
 		s.env.Ports.Readers, s.env.Ports.Writers,
-		s.links, s.notes, busy, review.Day{}, time.Now,
+		s.links, s.notes, busy, vaulttest.NewClock(),
 	)
 
 	target, err := presets.Read(t.Context(), s.vault, "Sanskrit.md")
@@ -166,16 +169,16 @@ func TestAPresetSavedWithNoLevellingPassesBackItsFingerprint(t *testing.T) {
 	settings.MinutesADay = 35
 
 	pos, err := presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, target.FileStat)
-	if !errors.Is(err, note.ErrUnlevelled) {
-		t.Fatalf("a levelling that failed came back as %v", err)
+	if !errors.Is(err, note.ErrIndexOutdated) {
+		t.Fatalf("an index update that failed came back as %v", err)
 	}
 	if pos.IsZero() {
-		t.Fatal("the write handed back no fingerprint")
+		t.Fatal("the write returned no fingerprint")
 	}
 
 	settings.MinutesADay = 40
 	if _, err := presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, pos); err != nil &&
-		!errors.Is(err, note.ErrUnlevelled) {
+		!errors.Is(err, note.ErrIndexOutdated) {
 		t.Fatalf("the next save failed: %v", err)
 	}
 	if raw := read(t, s.vault, "Sanskrit.md"); !strings.Contains(raw, "minutes_a_day: 40") {
@@ -183,11 +186,11 @@ func TestAPresetSavedWithNoLevellingPassesBackItsFingerprint(t *testing.T) {
 	}
 }
 
-// A write that does not reach the vault does not return `note.ErrUnlevelled`: the
+// A write that does not reach the vault does not return `note.ErrIndexOutdated`: the
 // note is unchanged and the save returns an error.
-func TestAPresetLeftAloneIsNotAnUnlevelledWrite(t *testing.T) {
+func TestAPresetLeftAloneIsNotAnIndexOutdatedWrite(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, pointing)
+	s := openVault(t, getPointing())
 	was := read(t, s.vault, "Sanskrit.md")
 
 	target, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
@@ -202,8 +205,8 @@ func TestAPresetLeftAloneIsNotAnUnlevelledWrite(t *testing.T) {
 	settings.MinutesADay = 35
 
 	_, err = s.presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, staleFileStat)
-	if errors.Is(err, note.ErrUnlevelled) {
-		t.Errorf("a write that did not land came back as a levelling: %v", err)
+	if errors.Is(err, note.ErrIndexOutdated) {
+		t.Errorf("a write that did not land came back as an index update: %v", err)
 	}
 	if err == nil {
 		t.Fatal("a stale fingerprint was written over")
@@ -217,7 +220,7 @@ func TestAPresetLeftAloneIsNotAnUnlevelledWrite(t *testing.T) {
 // defaults is not an error.
 func TestGetForDeck_NoPresetHasNoProblems(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, pointing)
+	s := openVault(t, getPointing())
 
 	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Terms.md")
 	if err != nil {
@@ -232,7 +235,7 @@ func TestGetForDeck_NoPresetHasNoProblems(t *testing.T) {
 // reports a problem on the deck.
 func TestADeckNamingANoteThatIsNotAPreset(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, pointing)
+	s := openVault(t, getPointing())
 
 	target, err := s.presets.GetForDeck(t.Context(), s.vault, "decks/Mantras.md")
 	if err != nil {
@@ -277,12 +280,14 @@ func TestADeckNamingTwoPresets(t *testing.T) {
 
 // A vault whose preset carries keys the application does not own, an identity,
 // comments on a key it owns, and an owned key standing last in the block.
-var settled = map[string]string{
-	"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ncolour: green\ntype: preset\n" +
-		"# how long a day runs\nminutes_a_day: 20 # twenty is plenty\n" +
-		"tags:\n  - study\ngoal: minutes_a_day\n---\n\n" +
-		"# Sanskrit\n\nGrammar and vocabulary.\n",
-	"Grammar.md": "---\ntype: note\n---\n\n# Grammar\n",
+func getSettled() map[string]string {
+	return map[string]string{
+		"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ncolour: green\ntype: preset\n" +
+			"# how long a day runs\nminutes_a_day: 20 # twenty is plenty\n" +
+			"tags:\n  - study\ngoal: minutes_a_day\n---\n\n" +
+			"# Sanskrit\n\nGrammar and vocabulary.\n",
+		"Grammar.md": "---\ntype: note\n---\n\n# Grammar\n",
+	}
 }
 
 // minutes is a preset steered by how long a day runs.
@@ -313,7 +318,7 @@ func frontmatter(t *testing.T, s vaulted, path string) map[string]any {
 // they were.
 func TestAWritePreservesWhatItDoesNotOwn(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, settled)
+	s := openVault(t, getSettled())
 
 	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileStat{}); err != nil {
 		t.Fatal(err)
@@ -408,7 +413,7 @@ func TestAWriteKeepsTheLineEndingsAndTheMark(t *testing.T) {
 // A setting outside its bounds fails and the note is left alone.
 func TestASettingOutsideItsBoundsWritesNothing(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, settled)
+	s := openVault(t, getSettled())
 	was := read(t, s.vault, "Sanskrit.md")
 
 	p := minutes()
@@ -425,7 +430,7 @@ func TestASettingOutsideItsBoundsWritesNothing(t *testing.T) {
 // A note that is not a preset fails.
 func TestANoteThatIsNotAPresetIsNotSaved(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, settled)
+	s := openVault(t, getSettled())
 	was := read(t, s.vault, "Grammar.md")
 
 	_, err := s.presets.Save(t.Context(), s.vault, "Grammar.md", minutes(), domain.FileStat{})
@@ -440,7 +445,7 @@ func TestANoteThatIsNotAPresetIsNotSaved(t *testing.T) {
 // The load each day of the week carries goes in and comes back out as it was.
 func TestTheLoadReachesBackAsItWentIn(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, settled)
+	s := openVault(t, getSettled())
 
 	p := minutes()
 	p.Load = map[time.Weekday]int{time.Saturday: 50, time.Sunday: 0}
@@ -541,7 +546,7 @@ func TestASavePreservesALoadThatIsNotAWeek(t *testing.T) {
 // A goal of a day writes the day, and it is read back as the day it was.
 func TestAGoalOfADateWritesTheDay(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, settled)
+	s := openVault(t, getSettled())
 
 	p := minutes()
 	p.Goal, p.By = review.GoalDate, time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)
@@ -565,7 +570,7 @@ func TestAGoalOfADateWritesTheDay(t *testing.T) {
 // that was set under one rule is still there after a period under the other rule.
 func TestTheRuleNotNamedKeepsItsValue(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, settled)
+	s := openVault(t, getSettled())
 
 	p := minutes()
 	p.Rule, p.Interval, p.Retention = review.RuleRetention, 45, 0.87
@@ -636,7 +641,7 @@ func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 
 	// And the counts the window draws off the projection say the same.
 	run := projection.Simulation{
-		By: review.NewFSRSAt(p.Retention), Day: today, Cost: review.DefaultCost, Days: 1,
+		By: review.NewFSRSAt(p.Retention), Day: getToday(), Cost: review.GetDefaultCost(), Days: 1,
 	}
 	ran, err := run.Run(t.Context(), now, p, pos, 0)
 	if err != nil {
@@ -749,7 +754,7 @@ func TestASaveWritesTheSettingThePersonMoved(t *testing.T) {
 // A save that changes nothing leaves the file currently, comments and all.
 func TestASaveOfWhatTheNoteAlreadyReturnsWritesNothing(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, settled)
+	s := openVault(t, getSettled())
 	was := read(t, s.vault, "Sanskrit.md")
 
 	target, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
@@ -854,7 +859,7 @@ func TestSettingsAPresetMayNotHoldAreRefused(t *testing.T) {
 		reason: "the load of sat",
 	}} {
 		t.Run(one.what, func(t *testing.T) {
-			s := openVault(t, settled)
+			s := openVault(t, getSettled())
 			was := read(t, s.vault, "Sanskrit.md")
 
 			_, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", one.of(minutes()), domain.FileStat{})
@@ -873,22 +878,24 @@ func TestSettingsAPresetMayNotHoldAreRefused(t *testing.T) {
 
 // A vault of two presets and three decks: one on a preset, one on none, and one
 // on a note that is not a preset.
-var choosing = map[string]string{
-	"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n---\n\n# Sanskrit\n",
-	"presets/Slow.md": "---\ntype: preset\ntitle: Slow going\ngoal: retention\n" +
-		"retention: 0.8\n---\n\n# Slow going\n",
-	"Grammar.md": "---\ntype: note\n---\n\n# Grammar\n",
-	"decks/Roots.md": "---\ntype: deck\nlinks:\n" +
-		"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n\n## Root ^k7m2xq9fzp\n",
-	"decks/Terms.md": "---\ntype: deck\n---\n\n## Term ^3f4g5h6j7k\n",
-	"decks/Verses.md": "---\ntype: deck\nlinks:\n" +
-		"  - to: Grammar\n    role: ref\n    type: preset\n---\n\n## Verse ^zpqrstvwxy\n",
+func getChoosing() map[string]string {
+	return map[string]string{
+		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n---\n\n# Sanskrit\n",
+		"presets/Slow.md": "---\ntype: preset\ntitle: Slow going\ngoal: retention\n" +
+			"retention: 0.8\n---\n\n# Slow going\n",
+		"Grammar.md": "---\ntype: note\n---\n\n# Grammar\n",
+		"decks/Roots.md": "---\ntype: deck\nlinks:\n" +
+			"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n\n## Root ^k7m2xq9fzp\n",
+		"decks/Terms.md": "---\ntype: deck\n---\n\n## Term ^3f4g5h6j7k\n",
+		"decks/Verses.md": "---\ntype: deck\nlinks:\n" +
+			"  - to: Grammar\n    role: ref\n    type: preset\n---\n\n## Verse ^zpqrstvwxy\n",
+	}
 }
 
 // Every preset the vault holds is listed, by path and by what it is called.
 func TestThePresetsOfAVaultAreListed(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, choosing)
+	s := openVault(t, getChoosing())
 
 	target, err := s.presets.List(t.Context(), s.vault)
 	if err != nil {
@@ -909,7 +916,7 @@ func TestThePresetsOfAVaultAreListed(t *testing.T) {
 // defaults, which are no note.
 func TestAVaultOfNoPresetsListsNone(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, vault)
+	s := openVault(t, getVault())
 
 	target, err := s.presets.List(t.Context(), s.vault)
 	if err != nil {
@@ -924,11 +931,11 @@ func TestAVaultOfNoPresetsListsNone(t *testing.T) {
 // presets returns an empty list, and only that result is a fact about the vault.
 func TestPresetsList_ErrorsWithoutPresetIndex(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, choosing)
+	s := openVault(t, getChoosing())
 
 	blind := flashcards.NewPresets(
 		s.env.Ports.Readers, s.env.Ports.Writers,
-		s.links, nil, s.scan, review.Day{}, time.Now,
+		s.links, nil, s.scan, vaulttest.NewClock(),
 	)
 	if _, err := blind.List(t.Context(), s.vault); !errors.Is(err, flashcards.ErrNoPresets) {
 		t.Errorf("listing the presets of a vault it cannot reach answered %v", err)
@@ -938,7 +945,7 @@ func TestPresetsList_ErrorsWithoutPresetIndex(t *testing.T) {
 // A deck that named no preset names one, and is scheduled by it afterwards.
 func TestADeckIsInsertOnAPreset(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, choosing)
+	s := openVault(t, getChoosing())
 
 	if _, err := s.presets.Point(
 		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.FileStat{}); err != nil {
@@ -966,7 +973,7 @@ func TestADeckIsInsertOnAPreset(t *testing.T) {
 // afterwards.
 func TestADeckIsMovedFromOnePresetToAnother(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, choosing)
+	s := openVault(t, getChoosing())
 
 	if _, err := s.presets.Point(
 		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.FileStat{}); err != nil {
@@ -997,7 +1004,7 @@ func TestADeckIsMovedFromOnePresetToAnother(t *testing.T) {
 // `links:` block goes with the entry it held.
 func TestADeckIsTakenOffItsPreset(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, choosing)
+	s := openVault(t, getChoosing())
 
 	if _, err := s.presets.Point(
 		t.Context(), s.vault, "decks/Roots.md", "", domain.FileStat{}); err != nil {
@@ -1023,7 +1030,7 @@ func TestADeckIsTakenOffItsPreset(t *testing.T) {
 func TestPointingADeckPreservesTheRestOfTheFrontmatter(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
-		"Sanskrit.md": choosing["Sanskrit.md"],
+		"Sanskrit.md": getChoosing()["Sanskrit.md"],
 		"decks/Roots.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: deck\n" +
 			"tags: [grammar, roots]\n# the ones I keep coming back to\n" +
 			"links:\n  - to: Grammar\n    role: parent\n    note: where these come from\n" +
@@ -1055,8 +1062,8 @@ func TestPointingADeckPreservesTheRestOfTheFrontmatter(t *testing.T) {
 func TestMovingADeckKeepsWhatThePersonWroteOnTheEntry(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
-		"Sanskrit.md":     choosing["Sanskrit.md"],
-		"presets/Slow.md": choosing["presets/Slow.md"],
+		"Sanskrit.md":     getChoosing()["Sanskrit.md"],
+		"presets/Slow.md": getChoosing()["presets/Slow.md"],
 		"decks/Roots.md": "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n" +
 			"    type: preset\n    note: twenty minutes is as much as I have\n---\n\n## Root ^k7m2xq9fzp\n",
 	})
@@ -1079,7 +1086,7 @@ func TestMovingADeckKeepsWhatThePersonWroteOnTheEntry(t *testing.T) {
 // one and the file is left currently.
 func TestADeckIsNotPointedAtANoteThatIsNotAPreset(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, choosing)
+	s := openVault(t, getChoosing())
 	was := read(t, s.vault, "decks/Terms.md")
 
 	_, err := s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "Grammar.md", domain.FileStat{})
@@ -1093,7 +1100,7 @@ func TestADeckIsNotPointedAtANoteThatIsNotAPreset(t *testing.T) {
 
 func TestADeckIsNotPointedAtANoteThatIsNotThere(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, choosing)
+	s := openVault(t, getChoosing())
 	was := read(t, s.vault, "decks/Terms.md")
 
 	_, err := s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "Pali.md", domain.FileStat{})
@@ -1108,7 +1115,7 @@ func TestADeckIsNotPointedAtANoteThatIsNotThere(t *testing.T) {
 // A deck that was edited after the caller read it is not changed.
 func TestADeckThatChangedSinceItWasReadIsNotPointed(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, choosing)
+	s := openVault(t, getChoosing())
 
 	pos, err := s.presets.Point(
 		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.FileStat{})
@@ -1130,7 +1137,7 @@ func TestADeckThatChangedSinceItWasReadIsNotPointed(t *testing.T) {
 
 func TestTheFingerprintAPointAnswersWithIsPresentedAgain(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, choosing)
+	s := openVault(t, getChoosing())
 
 	pos, err := s.presets.Point(
 		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.FileStat{})
@@ -1176,8 +1183,8 @@ func TestPointingADeckWritesOneEntryAndNothingElse(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			s := openVault(t, map[string]string{
-				"Sanskrit.md":     choosing["Sanskrit.md"],
-				"presets/Slow.md": choosing["presets/Slow.md"],
+				"Sanskrit.md":     getChoosing()["Sanskrit.md"],
+				"presets/Slow.md": getChoosing()["presets/Slow.md"],
 				"decks/Roots.md":  deck,
 			})
 
@@ -1199,7 +1206,7 @@ func TestPointingADeckWritesOneEntryAndNothingElse(t *testing.T) {
 // note is read back as the deck it is.
 func TestABlockLeftEmptyIsTakenOutWithTheEntry(t *testing.T) {
 	t.Parallel()
-	s := openVault(t, choosing)
+	s := openVault(t, getChoosing())
 
 	if _, err := s.presets.Point(
 		t.Context(), s.vault, "decks/Roots.md", "", domain.FileStat{}); err != nil {
@@ -1223,8 +1230,8 @@ func TestABlockLeftEmptyIsTakenOutWithTheEntry(t *testing.T) {
 func TestTakingADeckOffItsPresetKeepsItsOtherLinks(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
-		"Sanskrit.md": choosing["Sanskrit.md"],
-		"Grammar.md":  choosing["Grammar.md"],
+		"Sanskrit.md": getChoosing()["Sanskrit.md"],
+		"Grammar.md":  getChoosing()["Grammar.md"],
 		"decks/Roots.md": "---\ntype: deck\nlinks:\n  - to: Grammar\n    role: parent\n" +
 			"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n\n## Root ^k7m2xq9fzp\n",
 	})
@@ -1248,8 +1255,8 @@ func TestTakingADeckOffItsPresetKeepsItsOtherLinks(t *testing.T) {
 func TestADeckNamingTwoPresetsIsLeftNamingOne(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
-		"Sanskrit.md":     choosing["Sanskrit.md"],
-		"presets/Slow.md": choosing["presets/Slow.md"],
+		"Sanskrit.md":     getChoosing()["Sanskrit.md"],
+		"presets/Slow.md": getChoosing()["presets/Slow.md"],
 		"decks/Roots.md": "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n" +
 			"  - to: Slow\n    role: ref\n    type: preset\n---\n\n## Root ^k7m2xq9fzp\n",
 	})
@@ -1278,8 +1285,8 @@ func TestPresetsPoint_BacklinksResolveAfterChoice(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
 		"Sanskrit.md":     "---\nid: 01M02ACGM0FYMSXNDP29C90JNR\ntype: preset\ngoal: minutes_a_day\n---\n\n# Sanskrit\n",
-		"presets/Slow.md": choosing["presets/Slow.md"],
-		"decks/Terms.md":  choosing["decks/Terms.md"],
+		"presets/Slow.md": getChoosing()["presets/Slow.md"],
+		"decks/Terms.md":  getChoosing()["decks/Terms.md"],
 		"decks/Roots.md": "---\ntype: deck\nlinks:\n  - to: \"note://01M02ACGM0FYMSXNDP29C90JNR\"\n" +
 			"    role: ref\n    type: preset\n---\n\n## Root ^k7m2xq9fzp\n",
 	})

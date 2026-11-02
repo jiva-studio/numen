@@ -17,19 +17,21 @@ import (
 // started are the initial notes of a run: one created by this application with
 // a title, one created by it without a title, one created in another editor,
 // and one created in another editor with a title.
-var started = []string{
-	"---\nid: 01J8F3K2M9QRSTVWXYZ0123456\ntitle: Old\n---\n\nA measure.\n",
-	"---\nid: 01J8F3K2M9QRSTVWXYZ0123456\n---\n\nA measure.\n",
-	"# Old\n\nA measure.\n",
-	"---\ntitle: Old\n---\n\nA measure.\n",
+func getStarted() []string {
+	return []string{
+		"---\nid: 01J8F3K2M9QRSTVWXYZ0123456\ntitle: Old\n---\n\nA measure.\n",
+		"---\nid: 01J8F3K2M9QRSTVWXYZ0123456\n---\n\nA measure.\n",
+		"# Old\n\nA measure.\n",
+		"---\ntitle: Old\n---\n\nA measure.\n",
+	}
 }
 
 // titles are what a note is renamed to: names a filename carries, one it cannot
 // carry, and one that is a name in another script.
-var titles = []string{"Entropy", "Order", "TCP/IP", "Энтропия", "a: b"}
+func getTitles() []string { return []string{"Entropy", "Order", "TCP/IP", "Энтропия", "a: b"} }
 
 // folders are where a note is moved to.
-var folders = []string{"", "physics", "physics/thermo"}
+func getFolders() []string { return []string{"", "physics", "physics/thermo"} }
 
 // writeNote writes one run's note into its own folder and registers it with the
 // index. One vault is shared by the whole check, because opening an index for
@@ -78,7 +80,7 @@ func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 	rapid.Check(t, func(rt *rapid.T) {
 		runs++
 		folder := fmt.Sprintf("run%04d", runs)
-		path := writeNote(rt, c, folder, rapid.SampledFrom(started).Draw(rt, "note"))
+		path := writeNote(rt, c, folder, rapid.SampledFrom(getStarted()).Draw(rt, "note"))
 		was, stamped := getIdentifier(rt, c.vault.Path, path)
 
 		for step := range rapid.IntRange(1, 6).Draw(rt, "steps") {
@@ -90,13 +92,13 @@ func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 				// A move renames the file and changes no byte in it.
 				moved = true
 				to := filepath.ToSlash(filepath.Join(folder,
-					rapid.SampledFrom(folders).Draw(rt, "folder"),
+					rapid.SampledFrom(getFolders()).Draw(rt, "folder"),
 					fmt.Sprintf("Moved %d.md", step)))
 				out, err := c.move().Execute(rt.Context(), c.vault, path, to)
 				if err != nil {
 					rt.Fatalf("move %s to %s: %v", path, to, err)
 				}
-				if out.IsLanded {
+				if out.IsMoved {
 					path = out.To
 				}
 			case "rename", "rename apart":
@@ -105,7 +107,7 @@ func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 					renaming = c.renameApart()
 				}
 				out, err := renaming.Execute(rt.Context(), c.vault, path,
-					rapid.SampledFrom(titles).Draw(rt, "title"))
+					rapid.SampledFrom(getTitles()).Draw(rt, "title"))
 				if err != nil && !errors.Is(err, note.ErrInvalidName) {
 					rt.Fatalf("rename %s: %v", path, err)
 				}
@@ -123,7 +125,7 @@ func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 			now, holds := getIdentifier(rt, c.vault.Path, path)
 			switch {
 			case stamped && (!holds || now != was):
-				rt.Fatalf("a note stamped %q stands at %q after step %d, filed at %s",
+				rt.Fatalf("a note stamped %q is at %q after step %d, filed at %s",
 					was, now, step, path)
 			case moved && !stamped && holds:
 				rt.Fatalf("a move stamped %q into a note that carried none, at %s",
@@ -148,9 +150,9 @@ func TestOnlyARenameThatWritesTheTitleStamps(t *testing.T) {
 	runs := 0
 	rapid.Check(t, func(rt *rapid.T) {
 		runs++
-		raw := rapid.SampledFrom(started).Draw(rt, "note")
+		raw := rapid.SampledFrom(getStarted()).Draw(rt, "note")
 		path := writeNote(rt, c, fmt.Sprintf("run%04d", runs), raw)
-		title := rapid.SampledFrom(titles).Draw(rt, "title")
+		title := rapid.SampledFrom(getTitles()).Draw(rt, "title")
 
 		out, err := c.rename().Execute(rt.Context(), c.vault, path, title)
 		if err != nil && !errors.Is(err, note.ErrInvalidName) {

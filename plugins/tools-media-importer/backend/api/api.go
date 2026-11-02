@@ -3,7 +3,7 @@
 package api
 
 // Service is the service name the manifest declares.
-const Service = "numen.importer"
+const Service = "md.numen.tools.media.importer"
 
 // Method names of the service.
 const (

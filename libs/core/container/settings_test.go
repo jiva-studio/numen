@@ -1,6 +1,7 @@
 package container
 
 import (
+	"context"
 	"encoding/json"
 	"math"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
 
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 )
 
@@ -24,7 +26,7 @@ func writeSettings(t *testing.T, output string) (Config, string) {
 	if err := os.WriteFile(path, []byte(output), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	return Config{SettingsPath: path}, path
+	return NewConfig(Config{SettingsPath: path}), path
 }
 
 // What the window is given is every setting, so a setting the file leaves out
@@ -115,7 +117,7 @@ func TestSettingsWithNowhereToLiveAreRefused(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", "")
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 
-	target, why := Config{}.Settings()
+	target, why := NewConfig(Config{}).Settings()
 	if why == nil {
 		t.Fatal("no reason")
 	}
@@ -159,7 +161,7 @@ func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 	response.Agent.Use = settings.UseProgram("claude")
 	response.Performance = hardware.Performance{Profile: hardware.ProfileEco}
 
-	got := Config{}.SetSettings(response)
+	got := NewConfig(Config{}).SetSettings(response)
 
 	if got.Agent.GetUse() != "claude" {
 		t.Errorf("the agent is %q", got.Agent.GetUse())
@@ -204,7 +206,7 @@ func TestGetSettingsOrDefaults_FallsBackToDefaultsWhenUnreadable(t *testing.T) {
 
 	t.Setenv("HOME", "")
 	t.Setenv("XDG_CONFIG_HOME", "")
-	if got := (Config{}).getSettingsOrDefaults(); !reflect.DeepEqual(got, DefaultSettings()) {
+	if got := (NewConfig(Config{})).getSettingsOrDefaults(); !reflect.DeepEqual(got, DefaultSettings()) {
 		t.Errorf("a machine with nowhere for settings gave %+v", got)
 	}
 }
@@ -225,5 +227,47 @@ func TestTheModelsAreListedAgainstTheSettingsInForce(t *testing.T) {
 		if len(one.Path) == 0 {
 			t.Errorf("a model stands nowhere: %+v", one)
 		}
+	}
+}
+
+// profileHost records the profiles the container gives the plugin host.
+type profileHost struct {
+	pluginport.PluginManager
+	profiles []string
+}
+
+func (p *profileHost) SetPerformanceProfile(_ context.Context, profile string) {
+	p.profiles = append(p.profiles, profile)
+}
+
+// A write of the profile reaches the plugins that run, in the name the host knows.
+func TestWritingThePerformanceProfileTellsThePluginHost(t *testing.T) {
+	cfg, _ := writeSettings(t, `{}`)
+	host := &profileHost{}
+	cfg.PluginHost = host
+
+	for _, entry := range []string{`"eco"`, `"bogus"`} {
+		err := cfg.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"performance", "profile"}, JSON: entry}})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if want := []string{"eco", "balanced"}; !slices.Equal(host.profiles, want) {
+		t.Errorf("profiles sent to the host = %v, want %v", host.profiles, want)
+	}
+}
+
+// Another setting sends no profile.
+func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
+	cfg, _ := writeSettings(t, `{}`)
+	host := &profileHost{}
+	cfg.PluginHost = host
+
+	err := cfg.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"appearance", "mode"}, JSON: `"dark"`}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(host.profiles) != 0 {
+		t.Errorf("profiles sent to the host = %v, want none", host.profiles)
 	}
 }

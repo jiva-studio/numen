@@ -2,7 +2,7 @@
  * A preset is written one write at a time: a write requested while another is in
  * progress runs after it, and a file changed externally is not overwritten.
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import type { MessageWriter } from '@numen/plugin-sdk'
 import { DEFAULTS, type Presets, type PresetWriteResult } from '../types'
 import { WORDS as words } from '../words'
@@ -12,7 +12,7 @@ const PATH = 'presets/Daily.md'
 
 /** A write the test answers when it chooses. */
 const createGate = () => {
-  let open: (answer: PresetWriteResult) => void = () => {}
+  let open: (answer: PresetWriteResult) => void = () => undefined
   const reply = new Promise<PresetWriteResult>((resolve) => {
     open = resolve
   })
@@ -37,17 +37,33 @@ const createMessages = () => {
   return {
     messages: response,
     said: response,
-    writeMessage: (text: string, kind?: string) => void response.push([text, kind]),
+    writeMessage: (text: string, kind?: string) => {
+      response.push([text, kind])
+    },
   }
 }
 
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
-const createFlightOpts = (core: Presets, writeMessage: MessageWriter = () => {}) => ({
+const createFlightOpts = (core: Presets, writeMessage: MessageWriter = () => undefined) => ({
   path: PATH,
   settings: DEFAULTS,
   core,
   writeMessage,
+})
+
+const writeFailures: unknown[] = []
+
+/** Requests a write without waiting for it; a failure is kept for the assertions of the test. */
+const requestInBackground = (...args: Parameters<typeof requestWrite>): void => {
+  requestWrite(...args).catch((error: unknown) => {
+    writeFailures.push(error)
+  })
+}
+
+afterEach(() => {
+  expect(writeFailures).toStrictEqual([])
+  writeFailures.length = 0
 })
 
 describe('a preset nothing has been written to yet', () => {
@@ -162,7 +178,7 @@ describe('a write requested for while another is out', () => {
     const { writeMessage } = createMessages()
 
     const one = requestWrite(flight, createFlightOpts(core, writeMessage))
-    void requestWrite(flight, createFlightOpts(core, writeMessage))
+    requestInBackground(flight, createFlightOpts(core, writeMessage))
     first.open({ ok: false, error: 'changed' } as PresetWriteResult)
     await one
 
@@ -207,7 +223,7 @@ describe('flushing a preset', () => {
     const first = createGate()
     const { core } = createCore(first.promise)
     const { writeMessage } = createMessages()
-    void requestWrite(flight, createFlightOpts(core, writeMessage))
+    requestInBackground(flight, createFlightOpts(core, writeMessage))
 
     let isFlushed = false
     const flushed = flushWrites(flight, createFlightOpts(core, writeMessage)).then(() => {

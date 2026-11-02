@@ -116,9 +116,15 @@ describe('vault neighbourhood responses', () => {
         {
           note: { path: 'Allotments.md', title: 'Allotments' },
           relation: 'RELATION_PARENT',
-          label: 'part of',
-          reverseLabel: 'contains rota',
-          isMutual: true,
+        },
+      ],
+      connections: [
+        {
+          first: 'Allotments.md',
+          second: 'Rota.md',
+          role: 'ROLE_CHILD',
+          firstSide: { role: 'ROLE_CHILD', label: 'contains rota', marker: 'MARKER_ARROW' },
+          secondSide: { role: 'ROLE_PARENT', label: 'part of' },
         },
       ],
     })
@@ -132,10 +138,16 @@ describe('vault neighbourhood responses', () => {
         title: 'Allotments',
         type: 'note',
         relation: 'parent',
-        label: 'part of',
-        reverseLabel: 'contains rota',
-        through: '',
-        isMutual: true,
+      },
+    ])
+    expect(neighbourhood.connections).toEqual([
+      {
+        first: 'Allotments.md',
+        second: 'Rota.md',
+        role: 'child',
+        type: '',
+        firstSide: { label: 'contains rota', marker: 'arrow', reason: '' },
+        secondSide: { label: 'part of', marker: null, reason: '' },
       },
     ])
   })

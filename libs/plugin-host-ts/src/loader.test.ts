@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { PluginContext, PluginLifecycle } from '@numen/plugin-sdk'
+import { createMockManifest } from '@numen/core-client/testing'
 import type { LoaderHost } from './host'
 import { getPluginStyle } from './styles'
-import { createPluginLoader } from './loader'
+import { createPluginLoader, PLUGIN_WAIT_MS } from './loader'
 
 /** The loader, with a module registered under each plugin id. */
 function registerModules(
@@ -15,18 +16,18 @@ function registerModules(
 
 describe('createPluginLoader', () => {
   function createMockHost(): LoaderHost & {
-    triggerSettingChange: (pluginId: string, key: string, value: unknown) => void
+    triggerSettingChange: (pluginId: string, key: string, value: unknown) => Promise<void>
     settings: Map<string, unknown>
   } {
     const contexts = new Map<string, PluginContext>()
     const settings = new Map<string, unknown>()
-    const settingListeners = new Map<string, Set<(val: unknown) => void>>()
+    const settingListeners = new Map<string, Set<(val: unknown) => void | Promise<void>>>()
 
     const getSetting: NonNullable<LoaderHost['getSetting']> = vi.fn(
       (pluginId: string, key: string) => settings.get(`${pluginId}.${key}`),
     ) as unknown as NonNullable<LoaderHost['getSetting']>
     const onSettingChange = vi.fn(
-      (pluginId: string, key: string, handler: (val: unknown) => void) => {
+      (pluginId: string, key: string, handler: (val: unknown) => void | Promise<void>) => {
         const compositeKey = `${pluginId}.${key}`
         let activeSet = settingListeners.get(compositeKey)
         if (!activeSet) {
@@ -57,11 +58,15 @@ describe('createPluginLoader', () => {
           pluginId,
           target: 'desktop.test',
           subscriptions: [],
+          app: { version: '0.0.0-test', build: 1, platform: 'linux' },
+          openExternal: vi.fn(async () => ({ ok: true as const, value: null })),
+          registerStatusView: vi.fn(() => ({ dispose: vi.fn() })),
           registerReader: vi.fn(() => ({ dispose: vi.fn() })),
           registerTabKind: vi.fn(() => ({ dispose: vi.fn() })),
           registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
           registerContextMenu: vi.fn(() => ({ dispose: vi.fn() })),
           registerView: vi.fn(() => ({ dispose: vi.fn() })),
+          registerSettingsView: vi.fn(() => ({ dispose: vi.fn() })),
           mountView: vi.fn(() => ({ focus: vi.fn(), dispose: vi.fn() })),
           registerAgentProvider: vi.fn(() => ({ dispose: vi.fn() })),
           getSetting: vi.fn((key: string) =>
@@ -90,7 +95,7 @@ describe('createPluginLoader', () => {
   const frontendManifestFetch = (async () =>
     ({
       ok: true,
-      json: async () => ({ id: 'x', frontend: {} }),
+      text: async () => JSON.stringify({ id: 'x', frontend: {} }),
     }) as Response) as unknown as typeof fetch
 
   function createTestLoader(
@@ -215,17 +220,15 @@ describe('createPluginLoader', () => {
     let deactivated = false
 
     const mockFetch = vi.fn(async (url: string | URL | Request) => {
-      manifestFetchedUrl = String(url)
+      if (String(url).endsWith('manifest.json')) manifestFetchedUrl = String(url)
       return {
         ok: true,
-        json: async () => ({
-          id: 'dynamic.sample',
-          name: 'Dynamic Sample',
-          frontend: {
-            entrypoint: 'dist/bundle.js',
-            styles: 'dist/bundle.css',
-          },
-        }),
+        text: async () =>
+          JSON.stringify({
+            id: 'dynamic.sample',
+            name: 'Dynamic Sample',
+            frontend: {},
+          }),
       } as Response
     })
 
@@ -250,11 +253,11 @@ describe('createPluginLoader', () => {
     expect(success).toBe(true)
     expect(activated).toBe(true)
     expect(manifestFetchedUrl).toBe('/plugin/dynamic.sample/manifest.json')
-    expect(dynamicImportCalledWith).toBe('/plugin/dynamic.sample/dist/bundle.js')
+    expect(dynamicImportCalledWith).toBe('/plugin/dynamic.sample/dist/index.js')
 
     expect(document.head.querySelector('link[data-plugin-id="dynamic.sample"]')).toBeNull()
     expect(document.querySelector('link[data-plugin-id="dynamic.sample"]')).toBeNull()
-    expect(getPluginStyle('dynamic.sample')).toBe('/plugin/dynamic.sample/dist/bundle.css')
+    expect(getPluginStyle('dynamic.sample')).toBe('/plugin/dynamic.sample/dist/styles.css')
     expect(host.createContext).toHaveBeenCalledWith(
       'dynamic.sample',
       expect.objectContaining({ id: 'dynamic.sample' }),
@@ -313,9 +316,13 @@ describe('createPluginLoader catalog manifests', () => {
       disposePlugin: vi.fn(),
       disposeAll: vi.fn(),
     } as unknown as LoaderHost
-    const manifest = { id: 'cat.plugin', name: 'Cat', version: '1', permissions: ['vault:read'] }
+    const manifest = createMockManifest('cat.plugin', {
+      name: 'Cat',
+      version: '1',
+      permissions: ['vault:read'],
+    })
     const loader = registerModules(createPluginLoader({ host }), {
-      'cat.plugin': async () => ({ activate: () => {} }),
+      'cat.plugin': async () => ({ activate: () => undefined }),
     })
     loader.registerPluginManifest('cat.plugin', manifest)
     await loader.activatePlugin('cat.plugin')
@@ -334,7 +341,11 @@ describe('createPluginLoader failures, order and toggles', () => {
       onSettingChange: vi.fn(
         (id: string, _key: string, handler: (value: unknown) => void | Promise<void>) => {
           listeners.set(id, handler)
-          return { dispose: () => void listeners.delete(id) }
+          return {
+            dispose: () => {
+              listeners.delete(id)
+            },
+          }
         },
       ),
     } as unknown as LoaderHost
@@ -425,6 +436,78 @@ describe('createPluginLoader failures, order and toggles', () => {
     expect(log).toStrictEqual(['a:start', 'a:end', 'b:start', 'b:end'])
   })
 
+  it('reads every plugin at once, so a slow one does not delay the reading of the others', async () => {
+    const { host } = createHost()
+    const read: string[] = []
+    const make = (id: string) => async () => {
+      read.push(id)
+      return { activate: () => undefined }
+    }
+    const loader = registerModules(createPluginLoader({ host }), {
+      a: make('a'),
+      b: make('b'),
+      c: make('c'),
+    })
+
+    const started = loader.start()
+
+    expect(read).toStrictEqual(['a', 'b', 'c'])
+    await started
+  })
+
+  it('goes on to the next plugin when one is not read within the wait, and activates it when it is read', async () => {
+    vi.useFakeTimers()
+    try {
+      const { host } = createHost()
+      const log: string[] = []
+      let finishReading: (module: unknown) => void = () => undefined
+      const slow = () =>
+        new Promise<unknown>((resolve) => {
+          finishReading = resolve
+        })
+      const quick = async () => ({
+        activate: () => {
+          log.push('quick')
+        },
+      })
+      const loader = registerModules(createPluginLoader({ host }), { slow, quick })
+
+      const started = loader.start()
+      await vi.advanceTimersByTimeAsync(PLUGIN_WAIT_MS)
+      expect(log).toStrictEqual(['quick'])
+      expect(loader.isPluginActive('slow')).toBe(false)
+
+      finishReading({
+        activate: () => {
+          log.push('slow')
+        },
+      })
+      await started
+      expect(log).toStrictEqual(['quick', 'slow'])
+      expect(loader.isPluginActive('slow')).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('reports a plugin that cannot be read and still starts the others', async () => {
+    const { host } = createHost()
+    const log: string[] = []
+    const loader = registerModules(createPluginLoader({ host }), {
+      broken: () => Promise.reject(new Error('chunk missing')),
+      fine: async () => ({
+        activate: () => {
+          log.push('fine')
+        },
+      }),
+    })
+
+    await loader.start()
+
+    expect(loader.getPluginFailure('broken')).toBe('chunk missing')
+    expect(log).toStrictEqual(['fine'])
+  })
+
   it('activates once when two activations are requested at the same time', async () => {
     const { host } = createHost()
     const activate = vi.fn(async () => {
@@ -477,7 +560,7 @@ describe('createPluginLoader failures, order and toggles', () => {
       createPluginLoader({
         host,
       }),
-      { p: async () => ({ activate: () => {} }) },
+      { p: async () => ({ activate: () => undefined }) },
     )
     await loader.start()
     await loader.trackPlugins(['p'])
@@ -497,11 +580,11 @@ describe('createPluginLoader failures, order and toggles', () => {
       fetch: (async () =>
         ({
           ok: true,
-          json: async () => ({ id: 'dyn', frontend: {} }),
+          text: async () => JSON.stringify({ id: 'dyn', frontend: {} }),
         }) as Response) as unknown as typeof fetch,
       dynamicImport: async (url) => {
         imports.push(url)
-        return { activate: () => {} }
+        return { activate: () => undefined }
       },
     })
     await loader.start()
@@ -519,11 +602,11 @@ describe('createPluginLoader failures, order and toggles', () => {
       fetch: (async () =>
         ({
           ok: true,
-          json: async () => ({ id: 'dyn', frontend: {} }),
+          text: async () => JSON.stringify({ id: 'dyn', frontend: {} }),
         }) as Response) as unknown as typeof fetch,
       dynamicImport: async (url) => {
         imports.push(url)
-        return { activate: () => {} }
+        return { activate: () => undefined }
       },
     })
     await loader.activatePlugin('dyn')
@@ -539,7 +622,10 @@ describe('createPluginLoader failures, order and toggles', () => {
     const loader = createPluginLoader({
       host,
       fetch: (async () =>
-        ({ ok: true, json: async () => ({ id: 'ocr' }) }) as Response) as unknown as typeof fetch,
+        ({
+          ok: true,
+          text: async () => JSON.stringify({ id: 'ocr' }),
+        }) as Response) as unknown as typeof fetch,
       dynamicImport,
     })
     await expect(loader.activatePlugin('ocr')).resolves.toBe(false)

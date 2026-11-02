@@ -8,7 +8,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
@@ -23,8 +22,8 @@ import (
 // The two vaults every test here uses. They share no word: a heading renamed in
 // one is recognisable in the other, and so is a card model listed from the wrong
 // place.
-var (
-	animals = map[string]string{
+func getAnimals() map[string]string {
+	return map[string]string{
 		"Animal.md": "---\n" +
 			"type: card-model\n" +
 			"mine: keep me verbatim\n" +
@@ -49,7 +48,10 @@ var (
 			"\n## Wren ^3f4g5h6j7k\n\n[[Animal]]\n\n### Name\n\nWren\n\n### Height\n\nabout 4\"\n",
 		"Weather.md": "# Weather\n\nNo card in here.\n",
 	}
-	minerals = map[string]string{
+}
+
+func getMinerals() map[string]string {
+	return map[string]string{
 		"Mineral.md": "---\ntype: card-model\nfields:\n  - Sample\n  - Height\n---\n" +
 			"\n## Spot it\n\n### Front\n\n{{Sample}}\n\n### Back\n\n{{Height}}\n",
 		// A card of this vault's own card model, and a card naming the other
@@ -60,7 +62,7 @@ var (
 			"\n## Llama ^q1w2e3r4t5\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n" +
 			"\n### Name\n\nLlama\n",
 	}
-)
+}
 
 // vaulted is two vaults on disk, and the ports every scenario is built out of.
 type vaulted struct {
@@ -73,7 +75,7 @@ type vaulted struct {
 
 func newVaults(t *testing.T) vaulted {
 	t.Helper()
-	first, second := vaulttest.New(t, animals), vaulttest.New(t, minerals)
+	first, second := vaulttest.New(t, getAnimals()), vaulttest.New(t, getMinerals())
 	first.Host.Beside(second.Host)
 	return vaulted{
 		first: first.Vault, second: second.Vault, ports: first.Ports, queries: first.Queries,
@@ -81,7 +83,7 @@ func newVaults(t *testing.T) vaulted {
 	}
 }
 
-// index brings the index level with what the vault now holds, as a walk of it does.
+// index updates the index for what the vault now holds, as a walk of it does.
 func (vs vaulted) index(t *testing.T) func(context.Context, domain.Vault, []string) error {
 	t.Helper()
 	return func(_ context.Context, v domain.Vault, _ []string) error {
@@ -90,7 +92,7 @@ func (vs vaulted) index(t *testing.T) func(context.Context, domain.Vault, []stri
 	}
 }
 
-// indexNothing brings nothing level: these tests read the file back and not the
+// indexNothing updates nothing: these tests read the file back and not the
 // index. The ones that ask the index level it with a whole scan.
 func indexNothing(context.Context, domain.Vault, []string) error { return nil }
 
@@ -134,7 +136,7 @@ func TestADeckReadAndSavedBackIsTheFileItWas(t *testing.T) {
 
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
-		time.Now)
+		vaulttest.NewClock())
 	if _, err := w.Deck(t.Context(), vs.first, "decks/Mammals.md", prose(t, before), got.FileStat); err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -295,7 +297,7 @@ func TestADeckThatChangedSinceItWasReadIsNotSavedOver(t *testing.T) {
 	vs := newVaults(t)
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
-		time.Now)
+		vaulttest.NewClock())
 
 	first, err := cards.NewRead(vs.ports.Readers, nil).Deck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
@@ -323,7 +325,7 @@ func TestADeckThatChangedSinceItWasReadIsNotSavedOver(t *testing.T) {
 // written into it.
 func TestWhatIsMadeReturnsWhatItIs(t *testing.T) {
 	vs := newVaults(t)
-	u := cards.NewCreate(vs.ports.Writers, vs.index(t), time.Now)
+	u := cards.NewCreate(vs.ports.Writers, vs.index(t), vaulttest.NewClock())
 
 	deck, err := u.Deck(t.Context(), vs.first, cards.New{Title: "Birds of prey", Path: "decks"})
 	if err != nil {
@@ -360,7 +362,7 @@ func TestWhatIsMadeReturnsWhatItIs(t *testing.T) {
 // settings.
 func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
 	vs := newVaults(t)
-	u := cards.NewCreate(vs.ports.Writers, vs.index(t), time.Now)
+	u := cards.NewCreate(vs.ports.Writers, vs.index(t), vaulttest.NewClock())
 
 	made, err := u.Preset(t.Context(), vs.first, cards.New{Title: "Prosody", Path: "presets"})
 	if err != nil {
@@ -392,7 +394,7 @@ func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
 // with one and nothing is written where there is none.
 func TestACardModelIsMadeWithAFirstField(t *testing.T) {
 	vs := newVaults(t)
-	u := cards.NewCreate(vs.ports.Writers, vs.index(t), time.Now)
+	u := cards.NewCreate(vs.ports.Writers, vs.index(t), vaulttest.NewClock())
 
 	if _, err := u.CardModel(t.Context(), vs.first, cards.New{Title: "Bird"}); !errors.Is(
 		err, cards.ErrNoFields,

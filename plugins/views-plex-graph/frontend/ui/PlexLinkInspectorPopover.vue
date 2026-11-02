@@ -1,18 +1,23 @@
 <script setup lang="ts">
 /**
- * In-Plex popover for inspecting, managing direction, dual descriptions and deletion of links.
+ * In-Plex popover for the connection between two notes: the direction and description of each
+ * record, adding the reverse direction, and removing a record or the whole link.
  */
-import { ref, useTemplateRef } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 import { ArrowLeftRight, X } from '@lucide/vue'
 import { useOutsidePress } from '@numen/ui'
-import type { DirectionalLinkItem, LinkInspectorRequest } from '../types'
+import type { Connection } from '@numen/plugin-sdk'
+import type { LinkInspectorRequest } from '../types'
 import {
-  addReverseLink,
-  getLinksToSave,
-  removeLink,
-  setLinkLabel,
-  toggleLinkDirection,
-} from '../model/linkInspector'
+  addReverseSide,
+  cycleDirection,
+  getNextDirection,
+  getRows,
+  isConnectionEmpty,
+  removeSide,
+  setSideLabel,
+  type SideKey,
+} from '../model/connectionDraft'
 import { usePopoverPosition } from '../model/usePopoverPosition'
 import { WORDS as words } from '../words'
 import PlexLinkInspectorRow from './PlexLinkInspectorRow.vue'
@@ -23,18 +28,19 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'save', rows: readonly DirectionalLinkItem[]): void
-  (event: 'dismiss'): void
+  (event: 'save', connection: Connection): void
+  (event: 'remove' | 'dismiss'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
 const popover = useTemplateRef<HTMLDivElement>('popover')
-const localRows = ref<readonly DirectionalLinkItem[]>(props.request.links)
+const draft = ref<Connection>(props.request.connection)
+const rows = computed(() => getRows(draft.value))
 
 const { positionStyle } = usePopoverPosition({
   target: popover,
   at: () => props.request.at,
-  watchTriggers: [() => props.request, () => localRows.value.length],
+  watchTriggers: [() => props.request, () => rows.value.length],
 })
 
 useOutsidePress(popover, onDone)
@@ -53,36 +59,35 @@ function onKeyDown(event: KeyboardEvent) {
     event.stopPropagation()
     event.preventDefault()
     if (event.ctrlKey || event.metaKey) {
-      onAddReverseRow()
+      onAddReverse()
     } else {
       onDone()
     }
   }
 }
 
-function onToggleDirection() {
-  localRows.value = toggleLinkDirection(localRows.value, props.request.nodeA.path)
+function onCycleDirection(key: SideKey) {
+  draft.value = cycleDirection(draft.value, key)
 }
 
-function onLabelChanged(row: DirectionalLinkItem, label: string) {
-  localRows.value = setLinkLabel(localRows.value, row.id, label)
+function onLabelChanged(key: SideKey, label: string) {
+  draft.value = setSideLabel(draft.value, key, label)
 }
 
-function onAddReverseRow() {
-  localRows.value = addReverseLink(
-    localRows.value,
-    props.request.links,
-    props.request.nodeA.path,
-    props.request.nodeB.path,
-  )
+function onAddReverse() {
+  draft.value = addReverseSide(draft.value)
 }
 
-function onRemoveRow(row: DirectionalLinkItem) {
-  localRows.value = removeLink(localRows.value, row.id)
+function onRemoveRow(key: SideKey) {
+  draft.value = removeSide(draft.value, key)
 }
 
 function onDone() {
-  emit('save', getLinksToSave(localRows.value))
+  if (isConnectionEmpty(draft.value)) {
+    emit('remove')
+  } else {
+    emit('save', draft.value)
+  }
 }
 </script>
 
@@ -106,31 +111,36 @@ function onDone() {
     </div>
 
     <div class="plex-link-popover__body">
-      <div v-if="localRows.length === 0" class="plex-link-popover__empty-state">
+      <div v-if="rows.length === 0" class="plex-link-popover__empty-state">
         {{ words.linkWillBeRemoved }}
       </div>
+      <!-- Keyed by place: the one row keeps its button and its focus while its
+           record moves from one note to the other. -->
       <PlexLinkInspectorRow
-        v-for="(row, index) in localRows"
+        v-for="(row, index) in rows"
         :key="index"
-        :row="row"
-        :is-static="localRows.length > 1"
-        @toggle-direction="onToggleDirection"
-        @update:label="onLabelChanged(row, $event)"
-        @remove="onRemoveRow(row)"
+        :label="row.side.label"
+        :direction="row.direction"
+        :next-direction="getNextDirection(row.direction, row.key, rows.length)"
+        :first-title="props.request.nodeA.title"
+        :second-title="props.request.nodeB.title"
+        @cycle-direction="onCycleDirection(row.key)"
+        @update:label="onLabelChanged(row.key, $event)"
+        @remove="onRemoveRow(row.key)"
         @done="onDone"
-        @add-reverse="onAddReverseRow"
+        @add-reverse="onAddReverse"
       />
     </div>
 
     <div class="plex-link-popover__footer">
       <button
-        v-if="localRows.length < 2"
+        v-if="rows.length < 2"
         type="button"
         class="plex-link-popover__btn plex-link-popover__btn--add"
-        :title="localRows.length === 0 ? words.addLink : words.addReverseDirection"
-        @click="onAddReverseRow"
+        :title="rows.length === 0 ? words.addLink : words.addReverseDirection"
+        @click="onAddReverse"
       >
-        <span>+ {{ localRows.length === 0 ? words.addLink : words.addReverseDirection }}</span>
+        <span>+ {{ rows.length === 0 ? words.addLink : words.addReverseDirection }}</span>
         <span class="plex-link-popover__shortcut">Ctrl ↵</span>
       </button>
       <div v-else class="plex-link-popover__add-spacer" />

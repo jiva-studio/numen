@@ -75,6 +75,8 @@ jobs:
               if [ -d "$p/frontend" ]; then mkdir -p "$built/$name/dist"; touch "$built/$name/dist/index.js"; fi
             fi
           done
+          echo '{"plugins":[]}' > "$built/plugins-index.json"
           .github/scripts/check-staged-plugins-test.sh
           .github/scripts/stage-plugins.sh "$built" "$RUNNER_TEMP/staged"
           .github/scripts/check-staged-plugins.sh plugins "$RUNNER_TEMP/staged"
+          test -f "$RUNNER_TEMP/staged/plugins-index.json"

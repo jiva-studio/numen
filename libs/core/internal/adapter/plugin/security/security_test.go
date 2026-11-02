@@ -1,9 +1,11 @@
 package security
 
 import (
+	"crypto/rand"
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -222,17 +224,20 @@ func TestValidateExecutablePath(t *testing.T) {
 	})
 }
 
+// createPluginTestDir creates a directory below the package directory. The system temporary
+// directory is rejected by validateExecutablePath, so t.TempDir cannot hold a plugin.
 func createPluginTestDir(t *testing.T, pattern string) string {
 	t.Helper()
-	//nolint:usetesting // plugin directories inside system temporary directory are rejected by validateExecutablePath
-	dir, err := os.MkdirTemp(".", pattern)
-	if err != nil {
+	name := strings.ReplaceAll(pattern, "*", rand.Text())
+	if err := os.Mkdir(name, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_ = os.RemoveAll(dir)
+		if err := os.RemoveAll(name); err != nil {
+			t.Error(err)
+		}
 	})
-	abs, err := filepath.Abs(dir)
+	abs, err := filepath.Abs(name)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,10 +6,11 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 func TestOpenIndex_RejectsConfigWithoutIndexPath(t *testing.T) {
-	cfg := container.Config{RegistryPath: filepath.Join(t.TempDir(), "vaults.json")}
+	cfg := container.NewConfig(container.Config{RegistryPath: filepath.Join(t.TempDir(), "vaults.json")})
 	if _, err := cfg.OpenIndex(t.Context()); !errors.Is(err, container.ErrNoIndexPath) {
 		t.Fatalf("OpenIndex without IndexPath: %v, want ErrNoIndexPath", err)
 	}
@@ -20,11 +21,11 @@ func TestOpenIndex_RejectsConfigWithoutIndexPath(t *testing.T) {
 
 func TestOpenIndexOpensTheNamedDatabase(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "data", "index.db")
-	db, err := container.Config{IndexPath: path}.OpenIndex(t.Context())
+	db, err := container.NewConfig(container.Config{IndexPath: path}).OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer testsupport.Close(t, db)
 	if db.Path() != path {
 		t.Errorf("opened %q, want %q", db.Path(), path)
 	}

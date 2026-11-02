@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
@@ -34,26 +35,14 @@ func CreateTestPluginTree(t *testing.T, dir string) {
 		"name": "Sample Plugin",
 		"version": "1.0.0",
 		"description": "Sample",
-		"capabilities": ["org.example.reading"],
+		"capabilities": ["tools"],
 		"targets": ["desktop.editor"],
-		"activationEvents": [],
-		"contentTypes": [{"type": "application/x-sample", "globs": ["*.sample"]}],
-		"texts": {"contentTypes": ["application/x-sample"]},
+		"contributes": {
+			"handles": [{"purpose": "text-provider", "contentTypes": ["application/pdf"]}]
+		},
 		"permissions": ["vault:read"],
-		"lifecycle": {
-			"mode": "on-demand",
-			"idleTimeoutSeconds": 1,
-			"keepAliveWhileVisible": false
-		},
-		"backend": {
-			"type": "process",
-			"entrypoint": "bin/sample",
-			"serviceName": "numen.v1.TextProviderService"
-		},
-		"frontend": {
-			"entrypoint": "dist/index.js",
-			"styles": "dist/styles.css"
-		},
+		"services": ["numen.v1.TextProviderService"], "backend": {"entrypoint": "bin/sample"},
+		"frontend": {},
 		"settings": []
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
@@ -65,6 +54,14 @@ func KillProcess(t *testing.T, p *os.Process) {
 	t.Helper()
 	if err := p.Kill(); err != nil && !errors.Is(err, os.ErrProcessDone) {
 		t.Errorf("kill process: %v", err)
+	}
+}
+
+// ReapProcess waits for a killed process to exit. A process that the host has already waited for is not an error.
+func ReapProcess(t *testing.T, p *os.Process) {
+	t.Helper()
+	if _, err := p.Wait(); err != nil && !errors.Is(err, os.ErrProcessDone) && !errors.Is(err, syscall.ECHILD) {
+		t.Errorf("wait for process: %v", err)
 	}
 }
 
@@ -86,8 +83,8 @@ func WaitUntil(t *testing.T, what string, condition func() bool) {
 const helperProcessEnv = "NUMEN_TEST_HELPER_PROCESS"
 
 // NewIdleCommand returns a command that runs a child process doing nothing until it is killed.
-func NewIdleCommand() *exec.Cmd {
-	cmd := exec.CommandContext(context.Background(), os.Args[0], "-test.run=^TestHelperProcessIdles$")
+func NewIdleCommand(ctx context.Context) *exec.Cmd {
+	cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestHelperProcessIdles$")
 	cmd.Env = append(os.Environ(), helperProcessEnv+"=idle")
 	return cmd
 }
@@ -144,14 +141,9 @@ func (s *MockAgentServer) AskAgent(
 	req *connect.Request[v1.AskAgentRequest],
 	stream *connect.ServerStream[v1.AskAgentResponse],
 ) error {
-	_ = stream.Send(&v1.AskAgentResponse{
-		Step: &v1.AskAgentResponse_ModelStarted{
-			ModelStarted: &v1.ModelStarted{},
-		},
-	})
-
-	_ = stream.Send(&v1.AskAgentResponse{
-		Step: &v1.AskAgentResponse_ToolCall{
+	steps := []*v1.AskAgentResponse{
+		{Step: &v1.AskAgentResponse_ModelStarted{ModelStarted: &v1.ModelStarted{}}},
+		{Step: &v1.AskAgentResponse_ToolCall{
 			ToolCall: &v1.ToolCall{
 				Tool:   "note_search",
 				About:  "query",
@@ -159,26 +151,16 @@ func (s *MockAgentServer) AskAgent(
 				Path:   "notes/test.md",
 				Range:  &v1.Range{Start: 0, End: 100},
 			},
-		},
-	})
-
-	_ = stream.Send(&v1.AskAgentResponse{
-		Step: &v1.AskAgentResponse_ToolFinished{
-			ToolFinished: &v1.ToolFinished{},
-		},
-	})
-
-	_ = stream.Send(&v1.AskAgentResponse{
-		Step: &v1.AskAgentResponse_Text{
-			Text: "answer: " + req.Msg.GetPrompt(),
-		},
-	})
-
-	_ = stream.Send(&v1.AskAgentResponse{
-		Step: &v1.AskAgentResponse_Stopped{
-			Stopped: "done",
-		},
-	})
+		}},
+		{Step: &v1.AskAgentResponse_ToolFinished{ToolFinished: &v1.ToolFinished{}}},
+		{Step: &v1.AskAgentResponse_Text{Text: "answer: " + req.Msg.GetPrompt()}},
+		{Step: &v1.AskAgentResponse_Stopped{Stopped: "done"}},
+	}
+	for _, step := range steps {
+		if err := stream.Send(step); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -229,7 +211,7 @@ type LeaseHost struct {
 }
 
 func (h *LeaseHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, error) {
-	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.stub"}}, nil
+	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "org.example.stub"}}, nil
 }
 
 func (h *LeaseHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {
@@ -237,7 +219,7 @@ func (h *LeaseHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {
 }
 
 func (h *LeaseHost) GetPlugin(string) (pluginport.DiscoveredPlugin, bool) {
-	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.stub"}}, true
+	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "org.example.stub"}}, true
 }
 
 func (h *LeaseHost) EnsureActive(context.Context, string) (pluginport.Endpoint, error) {
@@ -264,4 +246,14 @@ type CompleterFunc func(ctx context.Context, question completionport.Question) (
 
 func (f CompleterFunc) Complete(ctx context.Context, _ string, question completionport.Question) (string, error) {
 	return f(ctx, question)
+}
+
+// GetPort returns the port the test server listens on.
+func GetPort(tb testing.TB, server *httptest.Server) int {
+	tb.Helper()
+	addr, ok := server.Listener.Addr().(*net.TCPAddr)
+	if !ok {
+		tb.Fatalf("test server listens on %T, want a TCP address", server.Listener.Addr())
+	}
+	return addr.Port
 }

@@ -2,6 +2,7 @@ package note
 
 import (
 	"context"
+	"crypto/rand"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/edit"
@@ -15,16 +16,16 @@ import (
 // it was given. A vault that cannot be reached at all comes back as it arrived.
 var ErrNoNote = edit.ErrNoNote
 
-// ErrUnlevelled is returned when a file was written but the index could not be
+// ErrIndexOutdated is returned when a file was written but the index could not be
 // updated. The vault holds the written content, and the next scan updates the
 // index for the path.
-var ErrUnlevelled = edit.ErrUnlevelled
+var ErrIndexOutdated = edit.ErrIndexOutdated
 
-// WrapUnlevelled wraps an index update failure in ErrUnlevelled, which
+// WrapIndexOutdated wraps an index update failure in ErrIndexOutdated, which
 // distinguishes it from a write that failed. The paths are the ones the index
 // update covered.
-func WrapUnlevelled(err error, paths ...string) error {
-	return edit.WrapUnlevelled(err, paths...)
+func WrapIndexOutdated(err error, paths ...string) error {
+	return edit.WrapIndexOutdated(err, paths...)
 }
 
 // mapMissingNote returns ErrNoNote when the vault holds no note at the path,
@@ -36,9 +37,9 @@ func mapMissingNote(err error) error {
 // Baseline is the state of the note that the caller last read before saving.
 type Baseline = edit.Baseline
 
-// Levels updates the index for the named notes, so a write's changes are
+// IndexUpdater updates the index for the named notes, so a write's changes are
 // searchable before the write is reported complete.
-type Levels = edit.Levels
+type IndexUpdater = edit.IndexUpdater
 
 // Edit applies a change to the contents of an existing note.
 //
@@ -47,7 +48,7 @@ type Levels = edit.Levels
 type Edit struct {
 	readers vaultport.VaultReaders
 	writers vaultport.VaultWriters
-	index   Levels
+	index   IndexUpdater
 	now     machineport.Clock
 
 	FileStat domain.FileStat
@@ -63,12 +64,12 @@ type Edit struct {
 }
 
 // NewEdit is what a change to an existing note is made through: the vault it
-// is read and written through, what brings it level in the index, and what time
+// is read and written through, what updates the index for it, and what time
 // it is, because an edit stamps the identifier a note arrived without. What the
 // caller believes is on disk, and how much of a file it will hold, are set
 // beside it.
 func NewEdit(
-	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index Levels, now machineport.Clock,
+	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater, now machineport.Clock,
 ) Edit {
 	return Edit{readers: readers, writers: writers, index: index, now: now}
 }
@@ -83,7 +84,8 @@ func (e Edit) shared() edit.Edit {
 	return edit.Edit{
 		Open:            e.openFiles,
 		Index:           e.index,
-		Now:             e.now,
+		Clock:           e.now,
+		Entropy:         rand.Reader,
 		FileStat:        e.FileStat,
 		ShouldOverwrite: e.ShouldOverwrite,
 		Bound:           e.Bound,

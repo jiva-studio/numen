@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"testing"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
@@ -10,11 +11,11 @@ import (
 func BenchmarkParakeetGreedyLoop(b *testing.B) {
 	cfg := Defaults()
 	cfg.ShouldDownload = false
-	delta, err := Open(b.Context(), cfg)
+	delta, err := Open(b.Context(), NewRuntime(), cfg)
 	if err != nil {
 		b.Skipf("parakeet models not available: %v", err)
 	}
-	defer delta.Close()
+	defer cleanup.Close(b, delta)
 
 	const width = 100
 	data := make([]float32, encoded*width)
@@ -43,11 +44,11 @@ func BenchmarkParakeetGreedyLoop(b *testing.B) {
 func BenchmarkSileroVAD(b *testing.B) {
 	cfg := Defaults()
 	cfg.ShouldDownload = false
-	delta, err := Open(b.Context(), cfg)
+	delta, err := Open(b.Context(), NewRuntime(), cfg)
 	if err != nil {
 		b.Skipf("silero VAD model not available: %v", err)
 	}
-	defer delta.Close()
+	defer cleanup.Close(b, delta)
 
 	// 5 seconds of 16kHz audio = 80,000 samples (~156 windows of 512 samples)
 	audio := make([]float32, 16000*5)

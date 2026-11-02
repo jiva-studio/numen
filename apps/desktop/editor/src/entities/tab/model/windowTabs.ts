@@ -14,12 +14,18 @@ import {
   type Ref,
   type ShallowRef,
 } from 'vue'
-import type { Result } from '@numen/plugin-sdk'
+import type { Result } from '@numen/core-client'
 import { closeTab, openTab, openTabAdjacent, pane, paneById, getPanes } from '@numen/shell'
 import type { Tab, Workspace } from '@numen/shell'
 import type { ActiveTab, AnyTabKind, KindTab, WindowHandle, WindowTab } from './kinds'
 import { createWorkspace, generateId } from '../lib/workspace'
-import { createUnavailableKind, isUnavailableKind, type UnavailableState } from './unavailable'
+import { createRestoreFailedKind } from './restoreFailed'
+import {
+  createUnavailableKind,
+  isUnavailableKind,
+  type UnavailableServices,
+  type UnavailableState,
+} from './unavailable'
 
 /** The identity a pane made by a split is filed under. */
 const generatePaneId = () => crypto.randomUUID()
@@ -43,7 +49,8 @@ export interface SavedTab {
   readonly saved?: unknown
 }
 
-export function useWindowTabs() {
+/** The tabs of a window; `unavailable` is what the placeholder of a missing kind reads and does. */
+export function useWindowTabs(unavailable: UnavailableServices = {}) {
   const { scopes, drop } = createTabScopes()
   const open = shallowRef<ReadonlyMap<string, WindowTab>>(new Map())
   const layout = ref<Workspace>({
@@ -61,7 +68,7 @@ export function useWindowTabs() {
   )
 
   const { byKind, registerKinds, hasKind, findKind } = createTabRegistry()
-  const placeholders = createPlaceholders({ open, byKind, scopes, drop })
+  const placeholders = createPlaceholders({ open, byKind, scopes, drop, unavailable })
   const registerKind = (kind: AnyTabKind): (() => void) => {
     byKind.set(kind.kind, kind)
     placeholders.reopenTabsOf(kind)
@@ -70,36 +77,12 @@ export function useWindowTabs() {
     }
   }
   const queries = createTabQueries(open, layout)
-  const openers = createTabOpeners({ open, layout, byKind, scopes, drop })
+  const openers = createTabOpeners({ open, layout, byKind, scopes, drop, unavailable })
   const closers = createTabClosers({ open, layout, drop })
   const handle = createWindowHandle({ ...openers, ...queries })
   const navigation = createTabNavigation(open, openers)
   const request = createKindQuestions(byKind)
-  /** A kind whose tab fails to open is reported to `onError` and omitted from the layout. */
-  const openPlacedTabs = async (onError: PlacementError) => {
-    const earlier = getPanes(layout.value.root).flatMap((one) => one.tabs)
-    layout.value = await createPlacedWorkspace([...byKind.values()], openers.createTab, onError)
-    const placedItems = new Set(getPanes(layout.value.root).flatMap((one) => one.tabs))
-    for (const id of earlier) {
-      if (open.value.has(id) && !placedItems.has(id)) layout.value = openTab(layout.value, id)
-    }
-  }
-  /**
-   * The tabs the core kept, opened again with the state each kind saved and laid out by the
-   * placement of their kind. A tab whose kind is not registered opens as a placeholder.
-   */
-  const restoreTabs = (saved: readonly SavedTab[], activeId: string) => {
-    const main: string[] = []
-    const aside: string[] = []
-    for (const one of saved) {
-      if (!open.value.has(one.id)) openers.openSavedTab(one)
-      const kind = byKind.get(one.kind)
-      if (kind?.placement?.pane === 'aside') aside.push(one.id)
-      else main.push(one.id)
-    }
-    layout.value = createWorkspace(main, aside)
-    if (open.value.has(activeId)) layout.value = openTab(layout.value, activeId)
-  }
+  const { openPlacedTabs, restoreTabs } = createTabPlacement({ open, layout, byKind }, openers)
   const onKeyPress = (event: KeyboardEvent): boolean =>
     dispatchTabKeyPress(layout.value, open.value, event)
 
@@ -171,7 +154,12 @@ function createPlaceholders(ctx: Omit<TabOpenerContext, 'layout'>) {
       const path = getTabPath(one)
       if (one.kind.onDestroy) one.kind.onDestroy(one.state, id)
       else one.kind.onClose?.(one.state, id)
-      replaceTab(id, createUnavailableKind(one.kind.kind, { title, icon }), path, saved)
+      replaceTab(
+        id,
+        createUnavailableKind(one.kind.kind, { title, icon }, ctx.unavailable),
+        path,
+        saved,
+      )
     }
   }
 
@@ -258,6 +246,41 @@ interface TabStoreContext {
 interface TabOpenerContext extends TabStoreContext {
   byKind: Map<string, AnyTabKind>
   scopes: Map<string, EffectScope>
+  unavailable: UnavailableServices
+}
+
+/** The tabs laid out as their kinds place them, and the tabs the core kept laid out again. */
+function createTabPlacement(
+  ctx: Pick<TabOpenerContext, 'open' | 'layout' | 'byKind'>,
+  openers: ReturnType<typeof createTabOpeners>,
+) {
+  const { open, layout, byKind } = ctx
+  /** A kind whose tab fails to open is reported to `onError` and omitted from the layout. */
+  const openPlacedTabs = async (onError: PlacementError) => {
+    const earlier = getPanes(layout.value.root).flatMap((one) => one.tabs)
+    layout.value = await createPlacedWorkspace([...byKind.values()], openers.createTab, onError)
+    const placedItems = new Set(getPanes(layout.value.root).flatMap((one) => one.tabs))
+    for (const id of earlier) {
+      if (open.value.has(id) && !placedItems.has(id)) layout.value = openTab(layout.value, id)
+    }
+  }
+  /**
+   * The tabs the core kept, opened again with the state each kind saved and laid out by the
+   * placement of their kind. A tab whose kind is not registered opens as a placeholder.
+   */
+  const restoreTabs = (saved: readonly SavedTab[], activeId: string) => {
+    const main: string[] = []
+    const aside: string[] = []
+    for (const one of saved) {
+      if (!open.value.has(one.id)) openers.openSavedTab(one)
+      const kind = byKind.get(one.kind)
+      if (kind?.placement?.pane === 'aside') aside.push(one.id)
+      else main.push(one.id)
+    }
+    layout.value = createWorkspace(main, aside)
+    if (open.value.has(activeId)) layout.value = openTab(layout.value, activeId)
+  }
+  return { openPlacedTabs, restoreTabs }
 }
 
 /** Queries for inspecting tabs in the window. */
@@ -287,16 +310,37 @@ function createTabQueries(
   return { getTab, getTabStateIn, front, each }
 }
 
+/** A saved tab opened by its kind, or by a placeholder when its kind fails, so one bad tab never stops the others. */
+const openInIsolation = (saved: SavedTab, one: AnyTabKind) => {
+  const scope = effectScope(true)
+  try {
+    return [
+      one,
+      scope,
+      openInScope(scope, () => one.open(saved.path, saved.id, saved.saved)),
+    ] as const
+  } catch (error) {
+    scope.stop()
+    const failed = createRestoreFailedKind(saved.kind, saved.title, error)
+    const placeholderScope = effectScope(true)
+    return [
+      failed,
+      placeholderScope,
+      openInScope(placeholderScope, () => failed.open(saved.path, saved.id, saved.saved)),
+    ] as const
+  }
+}
+
 /** Operations for creating and opening tabs. */
 function createTabOpeners(ctx: TabOpenerContext) {
   /** A tab the core kept, opened under its id with the state its kind saved. */
   const openSavedTab = (saved: SavedTab) => {
     const one =
-      ctx.byKind.get(saved.kind) ?? createUnavailableKind(saved.kind, { title: saved.title })
-    const scope = effectScope(true)
-    const state = openInScope(scope, () => one.open(saved.path, saved.id, saved.saved))
+      ctx.byKind.get(saved.kind) ??
+      createUnavailableKind(saved.kind, { title: saved.title }, ctx.unavailable)
+    const [kind, scope, state] = openInIsolation(saved, one)
     ctx.scopes.set(saved.id, scope)
-    ctx.open.value = new Map(ctx.open.value).set(saved.id, { kind: one, state })
+    ctx.open.value = new Map(ctx.open.value).set(saved.id, { kind, state })
   }
 
   const findOpenTabAt = (kind: string, targetPath: string): string | undefined => {
@@ -309,7 +353,7 @@ function createTabOpeners(ctx: TabOpenerContext) {
   }
 
   const createTabSync = (kind: string, targetPath: string): string => {
-    const one = ctx.byKind.get(kind) ?? createUnavailableKind(kind)
+    const one = ctx.byKind.get(kind) ?? createUnavailableKind(kind, undefined, ctx.unavailable)
     if (targetPath && one.identity) {
       const matchedId = findOpenTabAt(kind, targetPath)
       if (matchedId) return matchedId

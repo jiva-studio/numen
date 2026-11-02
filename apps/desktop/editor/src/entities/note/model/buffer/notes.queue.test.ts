@@ -4,6 +4,11 @@ import type { Event } from './tab'
 import type { Notes } from './types'
 import { createNoteQueue, convertErrorCode } from './queue'
 
+/** Throws the rejection reason of a detached promise, so the test run reports it as an unhandled rejection. */
+function rethrow(error: unknown): never {
+  throw error
+}
+
 type ErrorCode = string
 
 describe('what a failed call is reported as', () => {
@@ -123,7 +128,10 @@ describe('the queue of an open note', () => {
       let one = false
       let other = false
       const first = queue.flushPending('a').then(() => (one = true))
-      void queue.flushPending('b').then(() => (other = true))
+      queue
+        .flushPending('b')
+        .then(() => (other = true))
+        .catch(rethrow)
 
       queue.resolveFlush('a')
       await first

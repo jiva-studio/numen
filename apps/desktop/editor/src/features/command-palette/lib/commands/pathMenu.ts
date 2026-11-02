@@ -5,7 +5,7 @@
  * A row standing for a note offers every command over a note that has a row of
  * its own in the palette; any other row offers what can be done to a file.
  */
-import type { ContextMenuTarget } from '@numen/plugin-sdk'
+import type { ContextMenuTarget } from '@numen/plugin-host'
 import type { MenuItem } from '@numen/ui'
 import { WORDS as words } from '@/shared/words'
 import { getNoteCommands } from './commands'

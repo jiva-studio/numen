@@ -2,6 +2,7 @@ package embedderbridge
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -48,8 +49,7 @@ func Open(ctx context.Context, host Host) (*Embedder, error) {
 
 	model, concurrency, floorHint, err := readClientModel(ctx, plugin.Manifest.ID, client)
 	if err != nil {
-		_ = lease.Close()
-		return nil, err
+		return nil, errors.Join(err, lease.Close())
 	}
 
 	return &Embedder{
@@ -79,21 +79,24 @@ func readClientModel(
 		concurrency = int(resp.Msg.GetConcurrency())
 	}
 	model := embeddingport.EmbeddingModel{
-		Name:       resp.Msg.GetName(),
-		Dimensions: int(resp.Msg.GetDimensions()),
-		MaxTokens:  int(resp.Msg.GetMaxTokens()),
-		Pooling:    resp.Msg.GetPooling(),
-		From:       resp.Msg.GetFrom(),
+		Name:           resp.Msg.GetName(),
+		Dimensions:     int(resp.Msg.GetDimensions()),
+		MaxTokens:      int(resp.Msg.GetMaxTokens()),
+		Pooling:        resp.Msg.GetPooling(),
+		From:           resp.Msg.GetFrom(),
+		Handling:       resp.Msg.GetHandling(),
+		MinChunkLength: int(max(resp.Msg.GetMinChunkLength(), 0)),
 	}
 	return model, concurrency, max(resp.Msg.GetFloorHint(), 0), nil
 }
 
 // GetModel returns the active model of the embedding plugin.
 func (b *Embedder) GetModel() embeddingport.EmbeddingModel {
-	if client, call, err := b.service.Open(context.Background()); err == nil {
-		model, concurrency, floorHint, readErr := readClientModel(context.Background(), b.pluginID, client)
-		_ = call.Close()
-		if readErr == nil {
+	ctx, cancel := context.WithTimeout(context.Background(), transport.ModelRefreshTimeout)
+	defer cancel()
+	if client, call, err := b.service.Open(ctx); err == nil {
+		model, concurrency, floorHint, readErr := readClientModel(ctx, b.pluginID, client)
+		if errors.Join(readErr, call.Close()) == nil {
 			b.mu.Lock()
 			b.model = model
 			b.concurrency = concurrency
@@ -115,20 +118,30 @@ func (b *Embedder) GetFloorHint(_ context.Context) float64 {
 	return b.floorHint
 }
 
-// Embed sends texts to the embedding plugin process and decodes returned vectors.
+// Embed sends texts to the embedding plugin process as documents and decodes returned vectors.
 func (b *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+	return b.embed(ctx, v1.EmbedRole_EMBED_ROLE_DOCUMENT, texts)
+}
+
+// EmbedQueries sends texts to the embedding plugin process as queries and decodes returned vectors.
+func (b *Embedder) EmbedQueries(ctx context.Context, texts []string) ([][]float32, error) {
+	return b.embed(ctx, v1.EmbedRole_EMBED_ROLE_QUERY, texts)
+}
+
+func (b *Embedder) embed(ctx context.Context, role v1.EmbedRole, texts []string) (vectors [][]float32, err error) {
 	if len(texts) == 0 {
 		return nil, nil
 	}
 
 	req := connect.NewRequest(&v1.EmbedBatchRequest{
 		Texts: texts,
+		Role:  role,
 	})
 	client, call, err := b.service.Open(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = call.Close() }()
+	defer func() { err = errors.Join(err, call.Close()) }()
 
 	resp, err := client.EmbedBatch(ctx, req)
 	if err != nil {
@@ -136,7 +149,7 @@ func (b *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, erro
 	}
 
 	protoVectors := resp.Msg.GetVectors()
-	vectors := make([][]float32, len(protoVectors))
+	vectors = make([][]float32, len(protoVectors))
 	for i, pv := range protoVectors {
 		vectors[i] = pv.GetValues()
 	}

@@ -5,8 +5,16 @@
  * a relation and edges between them and has no concept of a note; the schema
  * has no concept of drawing.
  */
-import type { Neighbourhood, NoteHeading, NoteRelation, NoteType } from '../types'
-import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexHeading } from '../plex'
+import type { Connection, ConnectionSide } from '@numen/plugin-sdk'
+import type { Neighbourhood, NoteHeading, NoteType } from '../types'
+import type {
+  EdgeArrow,
+  EdgeLabel,
+  PlexEdge,
+  PlexNeighbourhood,
+  PlexNode,
+  PlexHeading,
+} from '../plex'
 
 /**
  * plex draws a note of a plugin-declared type with that type's icon.
@@ -19,21 +27,64 @@ export function getNoteTypes(neighbourhood: Neighbourhood): ReadonlyMap<string, 
   return found
 }
 
-/** A relationship both notes named is drawn with an arrow at the end away from the focus. */
-function getEdgeArrow(relation: NoteRelation, isMutual: boolean): EdgeArrow | undefined {
-  if (isMutual) return relation === 'child' ? 'to' : 'from'
-  return undefined
+/**
+ * A record of a connection, with the end of the line its arrowhead is at: a
+ * record written in the first note points at the second, and one written in the
+ * second points at the first.
+ */
+interface Written {
+  readonly side: ConnectionSide | null
+  readonly end: EdgeArrow
+}
+
+const getRecords = (connection: Connection): Written[] => [
+  { side: connection.firstSide, end: 'to' },
+  { side: connection.secondSide, end: 'from' },
+]
+
+const isPointing = (record: Written): boolean => record.side?.marker === 'arrow'
+
+/**
+ * The label of each record, in the order of the notes that wrote them: the plex
+ * sets one label in the middle of the line and two at opposite ends and on opposite sides: where
+ * both records have a head, each near the end its head is at, and otherwise each by its own note.
+ * A record with a head names the end it points at. A line with no text carries nothing: a word added
+ * by the application would be read as written by the user. Two records with the
+ * same words are one label.
+ */
+function getEdgeLabels(records: readonly Written[]): EdgeLabel[] {
+  const labels: EdgeLabel[] = []
+  for (const record of records) {
+    const text = record.side?.label ?? ''
+    if (!text) continue
+    if (!labels.some((one) => one.text === text)) {
+      labels.push(isPointing(record) ? { text, end: record.end } : { text })
+    }
+  }
+  return labels
+}
+
+/** An edge for a connection, running from its first note to its second. */
+function createEdge(connection: Connection, token: (path: string) => string): PlexEdge {
+  const records = getRecords(connection)
+  const labels = getEdgeLabels(records)
+  const arrows = records.filter(isPointing).map((record) => record.end)
+  return {
+    from: token(connection.first),
+    to: token(connection.second),
+    ...(labels.length > 0 ? { labels } : {}),
+    ...(arrows.length > 0 ? { arrows } : {}),
+  }
 }
 
 /**
  * A node is drawn under the token its note holds, and so is each end of an
  * edge. The caller supplies the token of a note.
  *
- * An edge runs the way the relationship runs, and a sibling's does not touch
- * the focus at all: it is another of a parent's children, so it hangs off that
- * parent. Which parent that is comes from the vault, and this file names it.
- *
- * A relationship both notes named is drawn with an arrow at the end away from
+ * Every line is drawn from one connection of the neighbourhood, whichever notes
+ * it joins: the note in focus and a neighbour, or two other notes that are both
+ * drawn. An arrowhead is drawn at each end whose record carries a marker, and
+ * nowhere else, and the labels of its records are set by how many there are, not by the arrowheads.
  */
 export function convertNeighbourhood(
   neighbourhood: Neighbourhood,
@@ -46,45 +97,16 @@ export function convertNeighbourhood(
   }
 
   const nodes: PlexNode[] = [focus]
-  // Stryker disable ArrayDeclaration: an entry that is not a note with a relation has no relation, and no edge is drawn for it.
-  const items: {
-    id: string
-    relation: NoteRelation
-    label: string
-    through: string
-    isMutual: boolean
-  }[] = []
-  // Stryker restore ArrayDeclaration
   /** The path of every note this picture draws, the note in focus included. */
   const visiblePaths = new Set<string>([neighbourhood.focus.path])
   for (const related of neighbourhood.related) {
-    const id = token(related.path)
     visiblePaths.add(related.path)
-    nodes.push({ id, title: related.title, relation: related.relation })
-    items.push({
-      id,
-      relation: related.relation,
-      // The text on the link. A line with no text carries nothing: a word added
-      // by the application would be read as written by the user.
-      label: related.label,
-      through: related.through,
-      isMutual: related.isMutual,
-    })
+    nodes.push({ id: token(related.path), title: related.title, relation: related.relation })
   }
 
-  const edges: PlexEdge[] = items.flatMap(({ id, relation, label, through, isMutual }) => {
-    const line = label ? { label } : {}
-    const arrow = getEdgeArrow(relation, isMutual)
-    const head = arrow ? { arrow } : {}
-
-    if (relation === 'parent' || relation === 'jump') {
-      return [{ from: id, to: focus.id, ...line, ...head }]
-    }
-    if (relation === 'child') {
-      return [{ from: focus.id, to: id, ...line, ...head }]
-    }
-    return visiblePaths.has(through) ? [{ from: token(through), to: id, ...line }] : []
-  })
+  const edges = neighbourhood.connections
+    .filter(({ first, second }) => visiblePaths.has(first) && visiblePaths.has(second))
+    .map((connection) => createEdge(connection, token))
 
   return { nodes, edges }
 }
@@ -103,10 +125,21 @@ export function convertHeadings(headings: readonly NoteHeading[]): PlexHeading[]
   }))
 }
 
+const areSidesEqual = (one: ConnectionSide | null, other: ConnectionSide | null): boolean =>
+  one === null || other === null
+    ? one === other
+    : one.label === other.label && one.marker === other.marker
+
+const areConnectionsEqual = (one: Connection, other: Connection): boolean =>
+  one.first === other.first &&
+  one.second === other.second &&
+  areSidesEqual(one.firstSide, other.firstSide) &&
+  areSidesEqual(one.secondSide, other.secondSide)
+
 /**
  * Whether two neighbourhoods draw one graph: the note in focus, and every
- * note joined to it in arrival order, each with the label of the line between
- * them.
+ * note joined to it in arrival order, and every line between them with the
+ * label and the arrowhead of each of its records.
  *
  * A vault that changed elsewhere returns a neighbourhood equal to the one on
  * screen, and a graph equal to the one on screen is left unchanged.
@@ -120,17 +153,20 @@ export function areNeighbourhoodsEqual(
   if (one.focus.title !== other.focus.title) return false
   if (one.focusType !== other.focusType) return false
   if (one.related.length !== other.related.length) return false
+  if (one.connections.length !== other.connections.length) return false
 
-  return one.related.every((related, index) => {
-    const comparison = other.related[index]!
-    return (
-      related.path === comparison.path &&
-      related.title === comparison.title &&
-      related.type === comparison.type &&
-      related.relation === comparison.relation &&
-      related.label === comparison.label &&
-      related.through === comparison.through &&
-      related.isMutual === comparison.isMutual
+  return (
+    one.related.every((related, index) => {
+      const comparison = other.related[index]!
+      return (
+        related.path === comparison.path &&
+        related.title === comparison.title &&
+        related.type === comparison.type &&
+        related.relation === comparison.relation
+      )
+    }) &&
+    one.connections.every((connection, index) =>
+      areConnectionsEqual(connection, other.connections[index]!),
     )
-  })
+  )
 }

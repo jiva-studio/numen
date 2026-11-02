@@ -22,7 +22,7 @@ func TestTheTokenIsPresentedOnAStreamingCall(t *testing.T) {
 	conn := &fakeStreamConn{header: http.Header{}}
 	wrapped := hostcall.Bearer("s").WrapStreamingClient(func(context.Context, connect.Spec) connect.StreamingClientConn { return conn })
 
-	wrapped(context.Background(), connect.Spec{})
+	wrapped(t.Context(), connect.Spec{})
 
 	if got := conn.header.Get("Authorization"); got != "Bearer s" {
 		t.Errorf("got %q", got)
@@ -32,7 +32,7 @@ func TestTheTokenIsPresentedOnAStreamingCall(t *testing.T) {
 func TestNoTokenIsPresentedAsNone(t *testing.T) {
 	conn := &fakeStreamConn{header: http.Header{}}
 
-	hostcall.Bearer("").WrapStreamingClient(func(context.Context, connect.Spec) connect.StreamingClientConn { return conn })(context.Background(), connect.Spec{})
+	hostcall.Bearer("").WrapStreamingClient(func(context.Context, connect.Spec) connect.StreamingClientConn { return conn })(t.Context(), connect.Spec{})
 
 	if got := conn.header.Get("Authorization"); got != "" {
 		t.Errorf("got %q", got)
@@ -46,7 +46,9 @@ func TestTheTokenIsPresentedOnAUnaryCall(t *testing.T) {
 		return nil, nil
 	}
 
-	_, _ = hostcall.Bearer("u").WrapUnary(next)(context.Background(), connect.NewRequest(&struct{}{}))
+	if _, err := hostcall.Bearer("u").WrapUnary(next)(t.Context(), connect.NewRequest(&struct{}{})); err != nil {
+		t.Fatal(err)
+	}
 
 	if observed != "Bearer u" {
 		t.Errorf("got %q", observed)
@@ -57,7 +59,9 @@ func TestAStreamingHandlerIsPassedThrough(t *testing.T) {
 	called := false
 	next := func(context.Context, connect.StreamingHandlerConn) error { called = true; return nil }
 
-	_ = hostcall.Bearer("s").WrapStreamingHandler(next)(context.Background(), nil)
+	if err := hostcall.Bearer("s").WrapStreamingHandler(next)(t.Context(), nil); err != nil {
+		t.Fatal(err)
+	}
 
 	if !called {
 		t.Error("handler not called")

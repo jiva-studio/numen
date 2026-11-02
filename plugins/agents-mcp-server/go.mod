@@ -3,12 +3,12 @@ module github.com/jiva-studio/numen/plugins/agents-mcp-server
 go 1.26.9
 
 require (
-	connectrpc.com/connect v1.21.1
 	github.com/jiva-studio/numen/libs/plugin-sdk-go v0.0.0
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 )
 
 require (
+	connectrpc.com/connect v1.21.1 // indirect
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect

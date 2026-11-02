@@ -4,32 +4,33 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache/internal/adapter/clock"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 )
 
 // Option configures a Cache.
 type Option func(*config)
 
 type config struct {
-	pluginID       string
 	dir            string
 	ttl            time.Duration
 	failureBackoff time.Duration
 	timeout        time.Duration
 	isAsync        bool
 	isDiskEnabled  bool
-	now            func() time.Time
+	clock          Clock
+	onError        func(error)
 }
 
-// WithPluginID sets the plugin identifier that locates the disk cache directory.
-func WithPluginID(id string) Option {
-	return func(c *config) { c.pluginID = id }
+// WithErrorHandler sets the function that receives background and disk persistence errors.
+func WithErrorHandler(handler func(error)) Option {
+	return func(c *config) { c.onError = handler }
 }
 
 // WithDir sets an explicit directory for disk cache files.
@@ -62,9 +63,14 @@ func WithDisk(isEnabled bool) Option {
 	return func(c *config) { c.isDiskEnabled = isEnabled }
 }
 
+// Clock gets the current time.
+type Clock interface {
+	Now() time.Time
+}
+
 // WithClock sets the clock used for expiration and failure backoff.
-func WithClock(now func() time.Time) Option {
-	return func(c *config) { c.now = now }
+func WithClock(source Clock) Option {
+	return func(c *config) { c.clock = source }
 }
 
 type entry[V any] struct {
@@ -83,14 +89,14 @@ type Cache[V any] struct {
 	mu             sync.Mutex
 	diskMu         sync.Mutex
 	name           string
-	pluginID       string
 	dir            string
 	ttl            time.Duration
 	failureBackoff time.Duration
 	timeout        time.Duration
 	isAsync        bool
 	isDiskEnabled  bool
-	now            func() time.Time
+	clock          Clock
+	onError        func(error)
 	entries        map[string]entry[V]
 	failed         map[string]bool
 	failedAt       map[string]time.Time
@@ -99,22 +105,25 @@ type Cache[V any] struct {
 
 // New creates a Cache named name with the given options.
 func New[V any](name string, opts ...Option) *Cache[V] {
-	var cfg config
+	cfg := config{clock: clock.System{}}
 	for _, opt := range opts {
 		if opt != nil {
 			opt(&cfg)
 		}
 	}
+	if cfg.clock == nil {
+		cfg.clock = clock.System{}
+	}
 	return &Cache[V]{
 		name:           name,
-		pluginID:       cfg.pluginID,
 		dir:            cfg.dir,
 		ttl:            cfg.ttl,
 		failureBackoff: cfg.failureBackoff,
 		timeout:        cfg.timeout,
 		isAsync:        cfg.isAsync,
 		isDiskEnabled:  cfg.isDiskEnabled,
-		now:            cfg.now,
+		clock:          cfg.clock,
+		onError:        cfg.onError,
 		entries:        make(map[string]entry[V]),
 		failed:         make(map[string]bool),
 		failedAt:       make(map[string]time.Time),
@@ -130,9 +139,9 @@ func (c *Cache[V]) SetAsync(isAsync bool) {
 }
 
 // SetClock sets the clock used for expiration and failure backoff.
-func (c *Cache[V]) SetClock(now func() time.Time) {
+func (c *Cache[V]) SetClock(source Clock) {
 	c.mu.Lock()
-	c.now = now
+	c.clock = source
 	c.mu.Unlock()
 }
 
@@ -191,19 +200,19 @@ func (c *Cache[V]) Get(ctx context.Context, key string, load func(context.Contex
 
 func (c *Cache[V]) getNow() time.Time {
 	c.mu.Lock()
-	now := c.now
+	source := c.clock
 	c.mu.Unlock()
-	if now == nil {
-		return clock.Now()
+	if source == nil {
+		return clock.System{}.Now()
 	}
-	return now()
+	return source.Now()
 }
 
 func (c *Cache[V]) getNowLocked() time.Time {
-	if c.now == nil {
-		return clock.Now()
+	if c.clock == nil {
+		return clock.System{}.Now()
 	}
-	return c.now()
+	return c.clock.Now()
 }
 
 func (c *Cache[V]) ensureMapsLocked() {
@@ -297,7 +306,9 @@ func (c *Cache[V]) enqueueAsyncLoadLocked(key string, load func(context.Context)
 	go func() {
 		bgCtx := context.Background()
 		val, err := c.executeLoad(bgCtx, load)
-		_, _, _ = c.finishLoad(bgCtx, key, inflight, val, err)
+		if _, _, loadErr := c.finishLoad(bgCtx, key, inflight, val, err); loadErr != nil {
+			c.reportError(fmt.Errorf("load %q: %w", key, loadErr))
+		}
 	}()
 }
 
@@ -401,30 +412,70 @@ func (c *Cache[V]) cachePath() (string, error) {
 	if c.dir != "" {
 		return filepath.Join(c.dir, c.name+".json"), nil
 	}
-	pluginID := c.pluginID
-	if pluginID == "" {
-		pluginID = os.Getenv("NUMEN_PLUGIN_ID")
-	}
-	if pluginID == "" {
-		return "", errors.New("plugin ID is empty")
-	}
-	base, err := getUserCacheDir()
+	dir, err := GetPluginDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(base, "numen", "plugins", pluginID, c.name+".json"), nil
+	return filepath.Join(dir, c.name+".json"), nil
 }
 
-func getUserCacheDir() (string, error) {
-	dir, err := os.UserCacheDir()
-	if err == nil && dir != "" {
+const (
+	// EnvCacheDir names the variable the host sets to the cache directory of the plugin.
+	EnvCacheDir = "NUMEN_PLUGIN_CACHE_DIR"
+
+	// EnvDataDir names the variable the host sets to the data directory of the plugin.
+	EnvDataDir = "NUMEN_PLUGIN_DATA_DIR"
+
+	// EnvSharedDir names the variable the host sets to the directory all plugins share.
+	EnvSharedDir = "NUMEN_SHARED_CACHE_DIR"
+
+	// EnvSharedDataDir names the variable the host sets to the directory all plugins share for what they cannot compute again.
+	EnvSharedDataDir = "NUMEN_SHARED_DATA_DIR"
+)
+
+// GetPluginDir returns the cache directory the host granted the plugin. The host owns the directory:
+// it creates it, keeps it apart from every other plugin, and removes it when the plugin is
+// uninstalled or updated. What the plugin keeps there can be recomputed.
+func GetPluginDir() (string, error) { return getGrantedDir(EnvCacheDir) }
+
+// GetDataDir returns the data directory the host granted the plugin. What the plugin keeps there
+// stays across updates of the plugin.
+func GetDataDir() (string, error) { return getGrantedDir(EnvDataDir) }
+
+// GetSharedDir returns the directory the host shares between all plugins for what can be computed again. Plugins write there only
+// content that is named by its digest, write it to a temporary file in the same directory and rename it
+// once its digest is verified, and never delete what is there: the host owns its lifetime.
+func GetSharedDir() (string, error) { return getGrantedDir(EnvSharedDir) }
+
+// GetSharedDataDir returns the directory the host shares between all plugins for what is downloaded or made
+// and cannot be computed again, such as models. The same rules hold as for GetSharedDir. The OS never
+// purges it as it may a cache.
+func GetSharedDataDir() (string, error) { return getGrantedDir(EnvSharedDataDir) }
+
+// GetSharedDataDirOrPluginDataDir returns the shared data directory, and the plugin's own data directory
+// where the host granted no shared one.
+func GetSharedDataDirOrPluginDataDir() (string, error) {
+	if dir, err := GetSharedDataDir(); err == nil {
 		return dir, nil
 	}
-	home, homeErr := os.UserHomeDir()
-	if homeErr != nil {
-		return "", err
+	return GetDataDir()
+}
+
+// GetSharedDirOrPluginDir returns the shared directory, and the plugin's own cache directory where the
+// host granted no shared one.
+func GetSharedDirOrPluginDir() (string, error) {
+	if dir, err := GetSharedDir(); err == nil {
+		return dir, nil
 	}
-	return filepath.Join(home, ".cache"), nil
+	return GetPluginDir()
+}
+
+func getGrantedDir(name string) (string, error) {
+	dir := os.Getenv(name)
+	if dir == "" {
+		return "", fmt.Errorf("the host granted no directory: %s is not set", name)
+	}
+	return dir, nil
 }
 
 func (c *Cache[V]) readDiskEntry(key string) (V, bool) {
@@ -450,48 +501,63 @@ func (c *Cache[V]) readDiskEntry(key string) (V, bool) {
 	return val, true
 }
 
+func (c *Cache[V]) reportError(err error) {
+	if c.onError != nil {
+		c.onError(err)
+	}
+}
+
 func (c *Cache[V]) writeDiskEntry(key string, val V) {
 	if !isPersistable(val) {
 		return
 	}
+	if err := c.storeDiskEntry(key, val); err != nil {
+		c.reportError(fmt.Errorf("write cache entry %q: %w", key, err))
+	}
+}
+
+func (c *Cache[V]) storeDiskEntry(key string, val V) error {
 	path, err := c.cachePath()
 	if err != nil {
-		return
+		return err
 	}
 	c.diskMu.Lock()
 	defer c.diskMu.Unlock()
 
 	all := make(map[string]V)
-	if existing, err := os.ReadFile(path); err == nil {
-		_ = json.Unmarshal(existing, &all)
+	if existing, readErr := os.ReadFile(path); readErr == nil {
+		if unmarshalErr := json.Unmarshal(existing, &all); unmarshalErr != nil {
+			c.reportError(fmt.Errorf("read cache file %s: %w", path, unmarshalErr))
+			all = make(map[string]V)
+		}
 	}
 	all[key] = val
 	data, err := json.Marshal(all)
 	if err != nil {
-		return
+		return err
 	}
 	dir := filepath.Dir(path)
-	if os.MkdirAll(dir, 0o700) != nil {
-		return
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return err
 	}
-	writeFileAtomic(dir, path, data)
+	return writeFileAtomic(dir, path, data)
 }
 
-func writeFileAtomic(dir, path string, data []byte) {
+func writeFileAtomic(dir, path string, data []byte) error {
 	tmp, err := os.CreateTemp(dir, ".cache-*.tmp")
 	if err != nil {
-		return
+		return err
 	}
 	tmpName := tmp.Name()
 	_, writeErr := tmp.Write(data)
 	closeErr := tmp.Close()
-	if writeErr != nil || closeErr != nil {
-		_ = os.Remove(tmpName)
-		return
+	if err := errors.Join(writeErr, closeErr); err != nil {
+		return errors.Join(err, os.Remove(tmpName))
 	}
-	if os.Rename(tmpName, path) != nil {
-		_ = os.Remove(tmpName)
+	if err := os.Rename(tmpName, path); err != nil {
+		return errors.Join(err, os.Remove(tmpName))
 	}
+	return nil
 }
 
 func isPersistable[V any](val V) bool {

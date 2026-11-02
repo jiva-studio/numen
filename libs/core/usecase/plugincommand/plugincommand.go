@@ -122,6 +122,14 @@ func (u Run) Execute(ctx context.Context, v domain.Vault, call Call) (Result, er
 
 // checkCall reports the first way the call does not meet the declaration.
 func (u Run) checkCall(ctx context.Context, v domain.Vault, declared Command, call Call) error {
+	if err := u.checkPath(ctx, v, declared, call); err != nil {
+		return err
+	}
+	return checkArguments(declared, call)
+}
+
+// checkPath reports whether the call names a file the command can run over.
+func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, call Call) error {
 	switch {
 	case declared.HasFiles() && (call.Path == "" || strings.HasSuffix(call.Path, "/")):
 		return fmt.Errorf("%w: %s runs over a file", ErrBadArguments, declared.ID)
@@ -131,6 +139,11 @@ func (u Run) checkCall(ctx context.Context, v domain.Vault, declared Command, ca
 	case !declared.HasFiles() && call.Path != "":
 		return fmt.Errorf("%w: %s runs over no file", ErrBadArguments, declared.ID)
 	}
+	return nil
+}
+
+// checkArguments reports the first argument that is undeclared, of the wrong type or missing.
+func checkArguments(declared Command, call Call) error {
 	for _, name := range slices.Sorted(maps.Keys(call.Arguments)) {
 		argument, isDeclared := declared.GetArgument(name)
 		if !isDeclared {
@@ -165,8 +178,8 @@ func normalizeArguments(declared Command, arguments map[string]string) map[strin
 	normalized := make(map[string]string, len(arguments))
 	for name, value := range arguments {
 		if argument, _ := declared.GetArgument(name); argument.Type == ArgumentBoolean {
-			parsed, _ := strconv.ParseBool(value)
-			value = strconv.FormatBool(parsed)
+			parsed, err := strconv.ParseBool(value)
+			value = strconv.FormatBool(err == nil && parsed)
 		}
 		normalized[name] = value
 	}

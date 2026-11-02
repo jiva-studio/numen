@@ -42,6 +42,6 @@ test.describe('A scanned document', () => {
     await page.keyboard.press('Control+p')
     await getPaletteField(page).fill('Recognise')
 
-    await expect(page.getByRole('option', { name: /Document OCR/ })).toHaveCount(1)
+    await expect(page.getByRole('option', { name: /^Recognise text$/ })).toHaveCount(1)
   })
 })

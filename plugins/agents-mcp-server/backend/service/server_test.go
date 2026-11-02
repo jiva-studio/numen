@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"net/http"
 	"testing"
 	"time"
@@ -51,7 +52,9 @@ func TestServerLifecycleAndToolCall(t *testing.T) {
 		t.Fatalf("srv.Start failed: %v", err)
 	}
 	defer func() {
-		_ = srv.Close(context.Background())
+		if err := srv.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
 	}()
 
 	sseURL := srv.GetSSEURL()
@@ -61,27 +64,33 @@ func TestServerLifecycleAndToolCall(t *testing.T) {
 
 	assertUnauthorized(t, sseURL)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 
 	session := connectSSEClient(ctx, t, sseURL, "test-token-123")
 	callNoteGetTool(ctx, t, session)
 	assertDynamicDiscovery(ctx, t, session, hostClient)
 
-	_ = session.Close()
+	cleanup.Close(t, session)
 
-	if err := srv.Close(context.Background()); err != nil {
+	if err := srv.Close(t.Context()); err != nil {
 		t.Fatalf("srv.Close failed: %v", err)
 	}
 }
 
 func assertUnauthorized(t *testing.T, url string) {
 	t.Helper()
-	resp, err := http.Get(url)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
+	if err != nil {
+		t.Fatalf("http.NewRequest failed: %v", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("http.Get failed: %v", err)
 	}
-	_ = resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		t.Error(err)
+	}
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("expected 401 Unauthorized, got %d", resp.StatusCode)
 	}

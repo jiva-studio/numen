@@ -1,11 +1,13 @@
 package wire
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/fs"
 	"net/http"
 	"strconv"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -20,7 +22,7 @@ const OpensAt = "index.html"
 
 // OpenedAt lists the addresses under which a window requests the page itself:
 // empty, "/" and "/index.html".
-var OpenedAt = []string{"", "/", "/" + OpensAt}
+func GetOpenedAt() []string { return []string{"", "/", "/" + OpensAt} }
 
 // GetInterface returns the built interface, or an error explaining how to build
 // it when the binary has none.
@@ -75,7 +77,7 @@ func WritePage(
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.Itoa(len(text)))
 	w.Header().Set("Cache-Control", "no-store")
-	_, _ = w.Write(text)
+	http.ServeContent(w, r, "", time.Time{}, bytes.NewReader(text))
 }
 
 // readAppearanceSettings returns the appearance the settings specify for a
@@ -91,16 +93,16 @@ func readAppearanceSettings(
 	if themes == nil {
 		return appearance.Settings{}, false
 	}
-	aged, err := themes.ListThemes(ctx, connect.NewRequest(&v1.ListThemesRequest{}))
+	current, err := themes.ListThemes(ctx, connect.NewRequest(&v1.ListThemesRequest{}))
 	if err != nil {
 		return appearance.Settings{}, false
 	}
 	out := appearance.Settings{
-		Mode:           ConvertModeFromWire(aged.Msg.GetMode()),
-		InterfaceScale: aged.Msg.GetInterfaceScale(),
-		TextScale:      aged.Msg.GetTextScale(),
+		Mode:           ConvertModeFromWire(current.Msg.GetMode()),
+		InterfaceScale: current.Msg.GetInterfaceScale(),
+		TextScale:      current.Msg.GetTextScale(),
 	}
-	text, err := themes.ReadTheme(ctx, connect.NewRequest(&v1.ReadThemeRequest{Name: aged.Msg.GetApplied()}))
+	text, err := themes.ReadTheme(ctx, connect.NewRequest(&v1.ReadThemeRequest{Name: current.Msg.GetApplied()}))
 	if err == nil {
 		out.Theme = text.Msg.GetCss()
 	}

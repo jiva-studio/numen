@@ -3,14 +3,15 @@
  * there, in plex coordinates.
  *
  * A title stays on its own line, clear of every box and of every other title:
- * at the middle when that position is clear, and moved along the curve to the
- * nearest clear position, truncated to the longest clear stretch when the whole
+ * at its own position when that position is clear (centred for a line with one
+ * title, one near each end for a line with two), and moved along the curve
+ * to the nearest clear position, truncated to the longest clear stretch when the whole
  * text fits nowhere, and dropped when that stretch is shorter than half.
  */
-import { getHeading, getLength, type PlacedEdge } from '../../edge'
+import { getLength, type EdgeTitle, type PlacedEdge } from '../../edge'
 import type { PlacedNode } from '../../node'
 import { getBox, isOverlapping, getTitleBoxes, runBoxes, type Box } from '../layout/boxes'
-import { cutToFit, MIDDLE, type Routing } from './routing'
+import { MIDDLE, createTitle, cutToFit, getDepth, type Routing, type TitleSetting } from './routing'
 
 /** A run of one line, as fractions of its length. */
 interface Span {
@@ -54,76 +55,96 @@ export function separateTitles(
   const width = routing.labelWidth
   if (!width) return [...edges]
 
-  const apart = APART * routing.labelDepth
+  const apart = APART * getDepth(routing.labelType)
   const boxes = nodes.map((node) => getBox(node, apart))
-  const titles: Box[] = []
-  const resolved = [...edges]
+  const titleBoxes: Box[] = []
+  const resolved: (EdgeTitle | null)[][] = edges.map((edge) => [...edge.titles])
 
-  for (const { edge, index, metrics } of sortTightestFirst(edges, width)) {
-    const boxAt = runBoxes(edge, routing.labelDepth + 2 * apart)
-    const ends = (edge.arrow ? routing.arrowClearance : 0) / metrics.arc
-    const clear = clearSpans(boxAt, [...boxes, ...titles], { ends, step: STEP / metrics.arc })
+  for (const { edge, index, title, slot, metrics } of sortTightestFirst(edges, width)) {
+    const boxAt = runBoxes(edge, {
+      depth: getDepth(routing.labelType) + 2 * apart,
+      shift: title.shift,
+    })
+    const ends = (edge.arrows?.length ? routing.arrowClearance : 0) / metrics.arc
+    const open = clearSpans(boxAt, [...boxes, ...titleBoxes], { ends, step: STEP / metrics.arc })
+    const clear = edge.titles.length > 1 ? clipToHalf(open, title.anchor) : open
 
-    const found = settle(clear, edge.words!, { metrics, width })
-    if (!found) {
-      resolved[index] = { ...edge, words: undefined, wordsAt: MIDDLE }
-      continue
+    const found = settle(clear, title.words, {
+      metrics,
+      width,
+      target: title.anchor,
+    })
+    // A title of a pair keeps the reading of its record; the one title of a line reads the readable way along the line, wherever it is set.
+    const setting: TitleSetting = {
+      anchor: title.anchor,
+      side: title.side,
+      shift: title.shift,
+      rise: title.rise,
+      ...(edge.titles.length > 1 ? { heading: title.heading } : {}),
     }
+    resolved[index]![slot] = found ? createTitle(edge, found.at, found.words, setting) : null
+    if (!found) continue
 
     const half = found.extent / 2 / metrics.arc
-    titles.push(
+    titleBoxes.push(
       ...getTitleBoxes(boxAt, { from: found.at - half, to: found.at + half }, STEP / metrics.arc),
     )
-
-    // The reading direction is the tangent where the words end up, and the
-    // words of a curve taken the other way round are read from its far end.
-    const heading = getHeading(edge, found.at)
-    resolved[index] = {
-      ...edge,
-      words: found.words,
-      heading,
-      wordsAt: heading === 'against' ? 1 - found.at : found.at,
-    }
   }
 
-  return resolved
+  return edges.map((edge, index) => ({
+    ...edge,
+    titles: resolved[index]!.filter((title): title is EdgeTitle => title !== null),
+  }))
+}
+
+/** One title to place: the edge it is on, where both sit in their lists, and its metrics. */
+interface MeasuredTitle {
+  readonly edge: PlacedEdge
+  readonly index: number
+  readonly title: EdgeTitle
+  readonly slot: number
+  readonly metrics: TitleMetrics
 }
 
 /**
- * The edges with measurable text, least free space first, each with its position
- * in the graph. A line as long as its text comes before a line with free space
- * to spare, and edges with equal free space keep their input order.
+ * The titles with measurable text, least free space first. A line as long as
+ * its text comes before a line with free space to spare, and titles with equal
+ * free space keep their input order.
  */
 function sortTightestFirst(
   edges: readonly PlacedEdge[],
   width: (label: string) => number,
-): { edge: PlacedEdge; index: number; metrics: TitleMetrics }[] {
-  const measured: { edge: PlacedEdge; index: number; metrics: TitleMetrics }[] = []
+): MeasuredTitle[] {
+  const measured: MeasuredTitle[] = []
 
   for (const [index, edge] of edges.entries()) {
-    if (!edge.words) continue
     const arc = getLength(edge)
-    const extent = width(edge.words)
-    if (arc <= 0 || extent <= 0) continue
-    measured.push({ edge, index, metrics: { arc, extent } })
+    for (const [slot, title] of edge.titles.entries()) {
+      const extent = width(title.words)
+      if (arc <= 0 || extent <= 0) continue
+      measured.push({ edge, index, title, slot, metrics: { arc, extent } })
+    }
   }
 
   return measured.sort(
     (one, other) =>
       one.metrics.arc - one.metrics.extent - (other.metrics.arc - other.metrics.extent) ||
-      one.index - other.index,
+      one.index - other.index ||
+      one.slot - other.slot,
   )
 }
 
 /**
  * The words that stand on a line and where: the whole of them at the clear
- * place nearest the middle, else as many as the longest clear span holds,
- * set in the middle of that span. Nothing where that span holds less
- * than `LEAST` of them.
+ * place nearest the position it asks for, else as many as the longest
+ * clear span holds, set in the middle of that span. Nothing where that span
+ * holds less than `LEAST` of them.
  */
 interface SettleOptions {
   readonly metrics: TitleMetrics
   readonly width: (label: string) => number
+  /** The position the title asks for, as a fraction of the line from its `from` end. */
+  readonly target: number
 }
 
 function settle(
@@ -131,8 +152,8 @@ function settle(
   words: string,
   options: SettleOptions,
 ): { words: string; at: number; extent: number } | null {
-  const { metrics, width } = options
-  const whole = findNearestPlace(clear, metrics.extent / 2 / metrics.arc)
+  const { metrics, width, target } = options
+  const whole = findNearestPlace(clear, metrics.extent / 2 / metrics.arc, target)
   if (whole !== null) return { words, at: whole, extent: metrics.extent }
 
   const longest = clear.reduce<Span | null>(
@@ -190,17 +211,28 @@ function clearSpans(
 }
 
 /**
- * The position of a title of this half-length nearest the middle of the line
- * that keeps the whole text inside one clear span. Null when no span is long
- * enough.
+ * The part of the spans on the side of the middle that `anchor` is on. A line
+ * with several titles keeps each on its own half, so the order they were asked
+ * for in is the order they are read in.
  */
-function findNearestPlace(clear: readonly Span[], half: number): number | null {
+function clipToHalf(spans: readonly Span[], anchor: number): Span[] {
+  const [low, high] = anchor < MIDDLE ? [0, MIDDLE] : [MIDDLE, 1]
+  return spans
+    .map((span) => ({ from: Math.max(span.from, low), to: Math.min(span.to, high) }))
+    .filter((span) => getSpanLength(span) > 0)
+}
+
+/**
+ * The position of a title of this half-length nearest the target that keeps
+ * the whole text inside one clear span. Null when no span is long enough.
+ */
+function findNearestPlace(clear: readonly Span[], half: number, target: number): number | null {
   let nearest: number | null = null
 
   for (const span of clear) {
     if (getSpanLength(span) < 2 * half) continue
-    const pos = Math.min(Math.max(MIDDLE, span.from + half), span.to - half)
-    if (nearest === null || Math.abs(pos - MIDDLE) < Math.abs(nearest - MIDDLE)) {
+    const pos = Math.min(Math.max(target, span.from + half), span.to - half)
+    if (nearest === null || Math.abs(pos - target) < Math.abs(nearest - target)) {
       nearest = pos
     }
   }

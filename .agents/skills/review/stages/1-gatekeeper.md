@@ -38,67 +38,66 @@ npm run format:check
 
 Never run blanket checks over untouched parts of the monorepo.
 
-
 **Auto-rejection criteria**
 
 - `gofmt -l` prints a file → **REJECT** (unformatted Go).
 - `go vet`, `golangci-lint` or `govulncheck` fails → **REJECT**.
-- `npm run lint` fails → **REJECT**. A house rule refuses a thing a reader would trip over, and it is never a preference about where a line breaks.
+- `npm run lint` fails → **REJECT**. A house rule rejects code that confuses a reader, and it is never a preference about where a line breaks.
 - `npm run format:check` at the repository root reports a file → **REJECT** (not Prettier-clean). TypeScript, Vue, JSON and CSS are formatted with Prettier (`npm run format`), and its use is mandatory.
-- A formatter or a linter has touched generated output — anything under `protocol/gen`, `protocol/src` or another generator's target → **REJECT.** A generated file is whatever generated it: not hand-formatted, not linted for layout, not read for style.
-- `go test -race` fails → **REJECT** (a broken test or a data race).
+- A formatter or a linter has touched generated output — anything under `protocol/gen`, `protocol/src` or another generator's target → **REJECT.** A generated file is changed only by its generator: not hand-formatted, not linted for layout, not read for style.
+- `go test` fails, or the `-race` job of CI reports a data race → **REJECT**. The race detector runs in CI only (`GO_RACE=1` turns it on for a make target); a local gate runs without it.
 - `buf lint` fails → **REJECT** (schema violation).
-- `generate-check` fails → **REJECT** (the committed generated code is out of date; *A client is generated from the protocol*).
+- `generate-check` fails → **REJECT** (the committed generated code is out of date; _A client is generated from the protocol_).
 - `vue-tsc` fails → **REJECT** (type errors).
 - `vitest` fails, unit or stories → **REJECT**.
-- The story suites did not run in **both** engines → **REJECT the gate as incomplete.** The window is WebKit on this platform and Chromium on Windows; a review that saw one engine did not see the product.
-- The library was not rebuilt before the windows' suites → the failure is `Cannot find module '@numen/ui'`, which is the gate's own mistake. Rebuild and rerun; do not report it as a finding.
+- The story suites did not run in **both** engines → **REJECT the gate as incomplete.** The window is WebKit on this platform and Chromium on Windows; a review in one engine does not cover the product.
+- The library was not rebuilt before the windows' suites → the failure is `Cannot find module '@numen/ui'`, which means the gate was run incorrectly. Rebuild and rerun; do not report it as a finding.
 
-`usecase/flashcards` and `adapter/flashcardsui` run close to the ten-minute per-package limit under `-race`. A timeout there is the machine's load, not the code — rerun before calling it a failure.
+`usecase/flashcards` and `adapter/flashcardsui` run close to the ten-minute per-package limit under the CI `-race` job. A timeout there is the machine's load, not the code — rerun before calling it a failure.
 
-`node_modules` symlinked from the primary checkout resolves `@numen/protocol` to whatever branch that checkout is parked on. A generated symbol missing there is that, not the branch under test. Install for real when the answer matters.
+`node_modules` symlinked from the primary checkout resolves `@numen/protocol` to whatever branch that checkout has checked out. A generated symbol missing there is that, not the branch under test. Install for real when the answer matters.
 
 ---
 
 ## Level 2: Architectural inspection
 
-Read `AGENTS.md` at the root and in the touched module, and the rules distilled in [`../../../rules/architecture.md`](../../../rules/architecture.md), [`../../../rules/coding-style-backend.md`](../../../rules/coding-style-backend.md) and [`../../../rules/coding-style-frontend.md`](../../../rules/coding-style-frontend.md). Quote the rule when a change contradicts it. What follows is the short form.
+Read `AGENTS.md` at the root and in the touched module, and the rules summarized in [`../../../rules/architecture.md`](../../../rules/architecture.md), [`../../../rules/coding-style-backend.md`](../../../rules/coding-style-backend.md) and [`../../../rules/coding-style-frontend.md`](../../../rules/coding-style-frontend.md). Quote the rule when a change contradicts it. What follows is the short form.
 
 ### Go — core, adapters, the desktop host
 
 - **Dependencies point inward, and the compiler proves it.** `domain/`, `port/` and `usecase/` import nothing from `adapter/` and nothing that is a driver, a framework or a transport. An import going the wrong way is a finding whatever it is for; it is always visible in an import block.
-- **A port is named after the need, an adapter after the technology.** The core asks for somewhere to read a vault from; that the answer is a filesystem, and that the index is SQLite, is knowledge confined to `adapter/` and `container/`.
-- **Interfaces belong to whoever needs them.** The consumer declares the interface, the implementation never names it. An interface declared next to its single implementation, or an adapter importing the port package to announce it satisfies it, is ceremony.
-- **A use case is one business scenario, named as one**, and it owns the boundary of one unit of work — which is where a transaction belongs. Logic that cannot be exercised without its delivery mechanism has escaped into a handler.
-- **Driving and driven adapters are both adapters.** The core must not be able to tell which is on the other side. A use case formatting output for a terminal, or an entity that knows a column name, has crossed the line.
-- **Entities hold rules, not the world**: no I/O, no clock, no framework tags, no knowledge of how they are stored.
-- **A repository is a collection, not a service.** Put an aggregate in, take one out, remove one. A method list that reads like a menu is the finding; searches and counts are queries beside it.
+- **A port is named after the need, an adapter after the technology.** The core requires a place to read a vault from. That the place is a filesystem and that the index is SQLite is known only in `adapter/` and `container/`.
+- **The consumer of an interface declares it.** The implementation never names the interface. An interface declared next to its single implementation, or an adapter importing the port package to declare that it satisfies the port, adds nothing.
+- **A use case is one business scenario, named as one**, and it defines the boundary of one unit of work, which is the transaction boundary. Logic that cannot be exercised without its delivery mechanism is in a handler.
+- **Driving and driven adapters are both adapters.** The core must not depend on which kind of adapter is used. A use case formatting output for a terminal, or an entity that uses a column name, violates the boundary.
+- **Entities contain rules only**: no I/O, no clock, no framework tags, no knowledge of how they are stored.
+- **A repository is a collection, not a service.** Put an aggregate in, take one out, remove one. A long list of methods is the finding; searches and counts are separate queries.
 - **Constructors validate.** Sealed `New*` with required dependencies checked. `New…` for constructors, `make` for built-in allocation.
 - **Nothing is logged.** No logging library in the core; an error is returned, reported through `port.Trouble`, or streamed to the interface.
-- **Nothing exists that no decision asked for.** For every field parsed, column stored, syntax accepted or option offered there is a decision that wants it. A parsing rule nobody specified was invented by whoever wrote it, and once a vault is full of what it accepts the guess is permanent.
+- **Everything exists because a decision requires it.** For every field parsed, column stored, syntax accepted or option offered there is a decision that requires it. A parsing rule nobody specified was invented by whoever wrote it, and once a vault is full of what it accepts the guess is permanent.
 - **Do not abstract before there is a second case**, and say so equally when a genuinely needed seam is missing.
 
 ### Vue and TypeScript — the library and the windows
 
-- **`@numen/ui` knows nothing about the domain.** No component, story or fixture in `libs/ui/core` imports `@numen/protocol`, a wire type, a domain type, or anything under `apps/**`. A fixture taken from the domain is how the dependency comes back in through the door marked "tests". A prop named after a vault, a note or an RPC message is the boundary crossed even when its type is a string. The dependency runs `apps/*` → `libs/ui/core`; never back, never sideways.
-- **The core is pure and the view is humble.** What is drawn is computed from the props as plain values — every coordinate, state and derived flag — with no DOM, no Vue, no clock, no randomness and no measurement of text. A number in a template that the pure part did not produce is a broken split, and so is a `computed` reaching for `window` or `Date.now`.
-- **Anything with a lifetime is a port**: the clock, `requestAnimationFrame`, the viewport, the motion preference. Each is a parameter with a browser-shaped default.
+- **`@numen/ui` does not depend on the domain.** No component, story or fixture in `libs/ui/core` imports `@numen/protocol`, a wire type, a domain type, or anything under `apps/**`. A fixture taken from the domain brings the dependency back through test code. A prop named after a vault, a note or an RPC message is the boundary crossed even when its type is a string. The dependency runs `apps/*` → `libs/ui/core`; never back, never sideways.
+- **The core is pure and the view is humble.** What is drawn is computed from the props as plain values — every coordinate, state and derived flag — with no DOM, no Vue, no clock, no randomness and no measurement of text. A number in a template that the pure part did not produce is a broken split, and so is a `computed` that reads `window` or `Date.now`.
+- **Time and platform capabilities are ports**: the clock, `requestAnimationFrame`, the viewport, the motion preference. Each is a parameter with a default that uses the browser API.
 - **A concept is declared once.** The type union, the layout, the wording and the colour of a role or a variant all read from one declaration.
 - **A second behaviour is a function, never a mode flag** — and only where a second implementation is intended.
-- **Styling is design tokens, and only design tokens.** A literal hex, a raw `rgb()`, a hardcoded duration or a Tailwind palette class in a component is a finding. Custom properties are declared on the root alone. No `dark:` variant anywhere in the module, including in a component copied in from the registry. A hairline, a border, a focus ring and the stroke of a handle stay in `px`; what follows the interface multiplier is in `rem`.
-- **Business logic does not live in a `.vue` file.** The test is whether it can be exercised without mounting anything.
+- **Styling is design tokens, and only design tokens.** A literal hex, a raw `rgb()`, a hardcoded duration or a Tailwind palette class in a component is a finding. Custom properties are declared on the root alone. No `dark:` variant anywhere in the module, including in a component copied in from the registry. A hairline, a border, a focus ring and the stroke of a handle stay in `px`; what scales with the interface multiplier is in `rem`.
+- **Business logic is not in a `.vue` file.** The test is whether it can be exercised without mounting anything.
 - **A component is split when it holds a second responsibility** — a section with its own state, or a part rendered on its own elsewhere.
 - **Section banners** in the order the module's `AGENTS.md` states, with only the sections that exist.
 - **Naming**: handlers `on<Action>`, emits kebab-case in the template and `onItemSelected` in the script, composables `use<Feature>` in a file of the same name. Directories `kebab-case`, components `PascalCase`, other TypeScript `camelCase`.
 - **No `any`, and no `as` casting away a type the code could state.** A non-null assertion standing in for a check is the same finding.
 - **A fallible operation returns `{ ok: true; value: T } | { ok: false; error: E }`.** A bare value, an implicit `null`, or a second word for the failure discriminant is a finding.
-- **Code serving a single tab lives in that tab's folder.** `shared/` is for what two or more domains genuinely use.
+- **Code serving a single tab is in that tab's folder.** `shared/` is for what two or more domains genuinely use.
 
 ### Everywhere
 
-- **A function is named by an imperative verb phrase or a predicate**, and the reader checks it. The reader catches a gerund, a participle, a lone preposition and a third-person verb, and also the word that is neither: a bare noun (`paper`, `room`, `ceiling`), an adjective or an adverb (`plainly`, `quietest`, `harder`), and a metaphor standing where an engineering term exists (`seal`, `retire`, `wake`). Say what the operation is: `measurePage`, `hasRoom`, `getPlainRune`.
-- **One name for one thing.** A concept takes the standard term of its field. A concept under two names in two packages, or a field renamed across a boundary, is a finding.
-- **A comment states the rule that holds, and stops.** Flag a comment that restates the code or argues — `rather than X`, `instead of X`, `so that we do not…`, `otherwise somebody would…` — and any comparison with a previous implementation. Benchmark numbers live in `docs/performance.md`.
+- **A function is named by an imperative verb phrase or a predicate**, and the reader checks it. The reader checks for a gerund, a participle, a lone preposition and a third-person verb, and also the word that is neither: a bare noun (`paper`, `room`, `ceiling`), an adjective or an adverb (`plainly`, `quietest`, `harder`), and a metaphor standing where an engineering term exists (`seal`, `retire`, `wake`). Say what the operation is: `measurePage`, `hasRoom`, `getPlainRune`.
+- **One name for one thing.** A concept is named with the standard term of its field. A concept under two names in two packages, or a field renamed across a boundary, is a finding.
+- **A comment states the rule that holds, and stops.** Flag a comment that restates the code or argues — `rather than X`, `instead of X`, `so that we do not…`, `otherwise somebody would…` — and any comparison with a previous implementation. Benchmark numbers are stored in `docs/performance.md`.
 - **Anything that makes the same fact true in two places**, and any new dependency inside the core.
 
 ---

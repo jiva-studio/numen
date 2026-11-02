@@ -10,6 +10,7 @@
  * and `search`. An action is an option.
  */
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
+import { reportFailure, runInBackground } from '@numen/ui'
 import ActionRow from './ActionRow.vue'
 import { findKeptAction, placeActions, type ActionWords } from '../../lib/actions'
 import { getSteppedIndex, type PaletteAction } from '../../lib/item'
@@ -26,7 +27,7 @@ const open = defineModel<boolean>('open', { default: false })
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
-  /** An action was chosen. The identifier is the caller's, handed back as given. */
+  /** An action was chosen. The identifier is the caller's, returned as given. */
   (event: 'choose', action: string): void
 }>()
 
@@ -103,7 +104,7 @@ const onKey = (event: KeyboardEvent) => {
   const onStep = (delta: number, from = here.value) => {
     event.preventDefault()
     goTo(getSteppedIndex(actions.value.length, from, delta))
-    void reveal()
+    runInBackground(reveal(), reportFailure)
   }
   if (isActionsChord(event) || event.key === 'Escape') {
     event.preventDefault()

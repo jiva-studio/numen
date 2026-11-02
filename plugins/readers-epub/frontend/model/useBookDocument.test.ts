@@ -89,6 +89,37 @@ describe('a document drawn', () => {
   })
 })
 
+describe('a document requested and not yet arrived', () => {
+  it('is dropped when the reader has since stayed in the document in front', async () => {
+    const { doc, pending } = create()
+    const first = doc.draw(FIRST)
+    pending.get(FIRST.path)?.resolve('<p>first</p>')
+    await first
+
+    const later = doc.draw(SECOND)
+    doc.keepDrawn()
+    pending.get(SECOND.path)?.resolve('<p>second</p>')
+    await later
+
+    expect(doc.renderedChapter.value).toBe(FIRST.path)
+    expect(doc.markup.value).toContain('first')
+  })
+
+  it('is dropped when the document in front is requested again', async () => {
+    const { doc, pending } = create()
+    const first = doc.draw(FIRST)
+    pending.get(FIRST.path)?.resolve('<p>first</p>')
+    await first
+
+    const later = doc.draw(SECOND)
+    await doc.draw(FIRST)
+    pending.get(SECOND.path)?.resolve('<p>second</p>')
+    await later
+
+    expect(doc.renderedChapter.value).toBe(FIRST.path)
+  })
+})
+
 describe('a document that will not be read', () => {
   it('is returned as an error', async () => {
     const { doc, pending, messages } = create()
@@ -105,12 +136,16 @@ describe('a document that will not be read', () => {
     const { doc, pending, messages } = create()
 
     const older = doc.draw(FIRST)
-    void doc.draw(SECOND)
+    const failures: unknown[] = []
+    doc.draw(SECOND).catch((error: unknown) => {
+      failures.push(error)
+    })
     pending.get(FIRST.path)?.reject(new Error('gone'))
     await older
     await settle()
 
     expect(messages).toStrictEqual([])
+    expect(failures).toStrictEqual([])
   })
 
   it('is not returned once the tab is closed', async () => {

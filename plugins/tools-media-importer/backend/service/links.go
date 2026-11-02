@@ -16,8 +16,8 @@ type linkServer struct {
 	links *link.Links
 }
 
-// mountAPI mounts the importer API methods on s.
-func mountAPI(s *server.Server, links *link.Links) {
+// mountAPI mounts the importer API methods on s and returns the first failure to mount one.
+func mountAPI(s *server.Server, links *link.Links) error {
 	service := linkServer{links: links}
 	a := s.NewAPI(api.Service)
 	server.Handle(a, api.MethodGetLink, service.getLink)
@@ -26,6 +26,7 @@ func mountAPI(s *server.Server, links *link.Links) {
 	server.Handle(a, api.MethodCopyVideo, service.copyVideo)
 	server.Handle(a, api.MethodDeleteCopy, service.deleteCopy)
 	server.Handle(a, api.MethodCreateLinks, service.createLinks)
+	return a.Err()
 }
 
 // toAPIError returns the API failure for a link error: not_found for a path that is no link,

@@ -51,7 +51,7 @@ func TestHeadPool(t *testing.T) {
 		// row 1, token 1
 		8.0, 8.0, 8.0,
 	}
-	out := headPool(flat, 2, 2, 3)
+	out := headPool(flat, 2, 2, 3, true)
 	if len(out) != 2 {
 		t.Fatalf("expected 2 vectors, got %d", len(out))
 	}
@@ -76,7 +76,7 @@ func TestMeanPool(t *testing.T) {
 		3.0, 4.0,
 	}
 	mask := []int64{1, 1}
-	out := meanPool(flat, mask, 1, 2, 2)
+	out := meanPool(flat, mask, 1, 2, 2, true)
 	if len(out) != 1 {
 		t.Fatalf("expected 1 vector")
 	}
@@ -88,7 +88,7 @@ func TestMeanPool(t *testing.T) {
 
 	// test masking out token 1
 	maskIgnored := []int64{1, 0}
-	outIgnored := meanPool(flat, maskIgnored, 1, 2, 2)
+	outIgnored := meanPool(flat, maskIgnored, 1, 2, 2, true)
 	// only token 0 kept: [1, 2], norm = sqrt(5)
 	norm0 := float32(math.Sqrt(5))
 	if math.Abs(float64(outIgnored[0][0])-float64(1.0/norm0)) > 1e-5 {
@@ -120,7 +120,7 @@ func TestMeanPool(t *testing.T) {
 		0, 0, 0, // row 1
 	}
 
-	multiOut := meanPool(multiFlat, multiMask, rows, seq, dim)
+	multiOut := meanPool(multiFlat, multiMask, rows, seq, dim, true)
 	if len(multiOut) != 2 {
 		t.Fatalf("expected 2 vectors, got %d", len(multiOut))
 	}

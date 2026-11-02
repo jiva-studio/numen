@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/internal/adapter/process"
 )
 
 const (
@@ -26,7 +27,7 @@ type spec struct {
 	MaxSteps     int
 	Root         string
 	Token        string
-	Build        func(ctx context.Context) (*exec.Cmd, func(), error)
+	Build        func(ctx context.Context) (*exec.Cmd, func() error, error)
 	NewHandler   func(r *reader) func(event map[string]any)
 }
 
@@ -40,14 +41,14 @@ type reader struct {
 	isFinished   bool
 }
 
-func (r *reader) Send(resp *agentrun.AskAgentResponse) {
+func (r *reader) Send(resp *agentrun.Response) {
 	select {
 	case r.work.Output <- resp:
 	case <-r.work.Stopped():
 		return
 	}
 	r.sentCount++
-	if resp.GetToolFinished() != nil {
+	if resp.IsToolFinished() {
 		r.completed++
 	}
 }
@@ -67,7 +68,7 @@ func (r *reader) reportLimit() {
 }
 
 func (r *reader) reportStop(reason string) {
-	r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Stopped{Stopped: reason}})
+	r.Send(&agentrun.Response{Step: &agentrun.StoppedStep{Stopped: reason}})
 }
 
 func start(ctx context.Context, reg *agentrun.Registry, s spec) (*agentrun.Work, error) {
@@ -78,38 +79,33 @@ func start(ctx context.Context, reg *agentrun.Registry, s spec) (*agentrun.Work,
 		return nil, err
 	}
 	if cleanup == nil {
-		cleanup = func() {}
+		cleanup = func() error { return nil }
 	}
 	configureCommand(cmd, s)
 	var stderr strings.Builder
 	if cmd.Stderr == nil {
 		cmd.Stderr = &stderr
 	}
-	supervise(cmd)
+	process.Supervise(cmd)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		cleanup()
 		stop()
-		return nil, err
+		return nil, errors.Join(err, cleanup())
 	}
-	w := agentrun.NewWork(s.Conversation, outputBuffer, stop)
+	w := agentrun.NewWork(s.Conversation, outputBuffer, agentrun.StopByCancel(stop))
 	if !reg.Add(w) {
-		_ = stdout.Close()
-		cleanup()
 		stop()
-		return nil, errors.New("agent runner is terminating")
+		return nil, errors.Join(errors.New("agent runner is terminating"), stdout.Close(), cleanup())
 	}
 	if err := cmd.Start(); err != nil {
 		w.End()
 		reg.Remove(w)
-		_ = stdout.Close()
-		cleanup()
 		stop()
-		return nil, fmt.Errorf("start %s: %w", cmd.Path, err)
+		return nil, errors.Join(fmt.Errorf("start %s: %w", cmd.Path, err), stdout.Close(), cleanup())
 	}
 
-	go runReader(runCtx, stop, cmd, stdout, &stderr, w, reg, s, cleanup)
+	go runReader(runCtx, &runProcess{stop: stop, cmd: cmd, stdout: stdout, stderr: &stderr, cleanup: cleanup}, w, reg, s)
 	return w, nil
 }
 
@@ -125,29 +121,37 @@ func configureCommand(cmd *exec.Cmd, s spec) {
 	}
 }
 
-func runReader(
-	runCtx context.Context, stop func(), cmd *exec.Cmd, stdout io.ReadCloser,
-	stderr *strings.Builder, w *agentrun.Work, reg *agentrun.Registry, s spec, cleanup func(),
-) {
+// runProcess holds the started command of a run and what its reader needs to stop and release it.
+type runProcess struct {
+	stop    func()
+	cmd     *exec.Cmd
+	stdout  io.ReadCloser
+	stderr  *strings.Builder
+	cleanup func() error
+}
+
+func runReader(runCtx context.Context, p *runProcess, w *agentrun.Work, reg *agentrun.Registry, s spec) {
+	stop, cleanup, stdout, cmd, stderr := p.stop, p.cleanup, p.stdout, p.cmd, p.stderr
+	r := &reader{work: w, registry: reg, conversation: s.Conversation, limit: s.MaxSteps,
+		completed: 0, sentCount: 0, isFinished: false}
 	defer func() {
 		stop()
-		cleanup()
+		if err := cleanup(); err != nil {
+			r.reportStop(fmt.Sprintf("release the resources of the run: %v", err))
+		}
 		w.End()
 		reg.Remove(w)
 		close(w.Output)
 	}()
 	scanner := bufio.NewScanner(stdout)
 	scanner.Buffer(nil, maxLine)
-	r := &reader{work: w, registry: reg, conversation: s.Conversation, limit: s.MaxSteps,
-		completed: 0, sentCount: 0, isFinished: false}
 	isEnded := scanOutput(scanner, s.NewHandler(r), r, w, stop)
 	scanErr := scanner.Err()
 	isCancelled := runCtx.Err() != nil
 	if scanErr != nil {
 		stop()
 	}
-	_ = stdout.Close()
-	waitErr := cmd.Wait()
+	waitErr := errors.Join(stdout.Close(), cmd.Wait())
 	if isEnded || isCancelled {
 		return
 	}
@@ -163,7 +167,7 @@ func scanOutput(
 		if err := json.Unmarshal(line, &event); err == nil {
 			handle(event)
 		} else if text := strings.TrimSpace(string(line)); text != "" {
-			r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: text + "\n"}})
+			r.Send(&agentrun.Response{Step: &agentrun.TextStep{Text: text + "\n"}})
 		}
 		if r.isFinished {
 			stop()
@@ -195,24 +199,24 @@ func reportExit(r *reader, scanErr, waitErr error, stderr string) {
 }
 
 // newSpec builds the Antigravity CLI invocation for the request.
-func newSpec(req *agentrun.AskAgentRequest, reg *agentrun.Registry, customPath ...string) spec {
+func newSpec(req *agentrun.Request, reg *agentrun.Registry, customPath ...string) spec {
 	execPath := ""
 	if len(customPath) > 0 {
 		execPath = customPath[0]
 	}
 	s := spec{
-		Conversation: req.GetConversation(),
-		MaxSteps:     int(req.GetMaxSteps()),
+		Conversation: req.Conversation,
+		MaxSteps:     int(req.MaxSteps),
 		NewHandler:   newEventHandler,
 		Root:         "",
 		Token:        "",
 		Build:        nil,
 	}
 	if agentrun.HasTools(req) {
-		s.Root = req.GetRoot()
-		s.Token = req.GetToolsToken()
+		s.Root = req.Root
+		s.Token = req.ToolsToken
 	}
-	s.Build = func(ctx context.Context) (*exec.Cmd, func(), error) {
+	s.Build = func(ctx context.Context) (*exec.Cmd, func() error, error) {
 		return makeAntigravityCommand(ctx, req, reg, execPath)
 	}
 	return s
@@ -226,28 +230,28 @@ func resolveCommand(command []string, customPath ...string) (string, []string) {
 }
 
 func makeAntigravityCommand(
-	runCtx context.Context, req *agentrun.AskAgentRequest, reg *agentrun.Registry, customPath ...string,
-) (*exec.Cmd, func(), error) {
+	runCtx context.Context, req *agentrun.Request, reg *agentrun.Registry, customPath ...string,
+) (*exec.Cmd, func() error, error) {
 	if !agentrun.HasTools(req) {
 		return makeAnswerCommand(runCtx, req, reg, customPath...)
 	}
-	binName, baseArgs := resolveCommand(req.GetCommand(), customPath...)
+	binName, baseArgs := resolveCommand(req.Command, customPath...)
 	args := append([]string{}, baseArgs...)
 	args = append(args,
-		"-p", req.GetPrompt(),
+		"-p", req.Prompt,
 		"--output-format", "stream-json",
 		"--dangerously-skip-permissions",
 	)
-	if model := req.GetModel(); model != "" && model != defaultModelName {
+	if model := req.Model; model != "" && model != defaultModelName {
 		args = append(args, "--model", model)
 	}
-	if sessID := reg.GetSession(req.GetConversation()); sessID != "" {
+	if sessID := reg.GetSession(req.Conversation); sessID != "" {
 		args = append(args, "--conversation", sessID)
 	}
 
 	cmd := exec.CommandContext(runCtx, binName, args...)
-	if req.GetToolsUrl() != "" {
-		tempHome, clean, err := setupAntigravityHome(&Endpoint{URL: req.GetToolsUrl(), Token: req.GetToolsToken()})
+	if req.ToolsURL != "" {
+		tempHome, clean, err := setupAntigravityHome(&Endpoint{URL: req.ToolsURL, Token: req.ToolsToken})
 		if err != nil {
 			return nil, nil, fmt.Errorf("set up the Antigravity home: %w", err)
 		}
@@ -261,34 +265,32 @@ func makeAntigravityCommand(
 // permission granted beforehand, and an empty folder to run in. The home and the folder go when the
 // run does.
 func makeAnswerCommand(
-	runCtx context.Context, req *agentrun.AskAgentRequest, reg *agentrun.Registry, customPath ...string,
-) (*exec.Cmd, func(), error) {
+	runCtx context.Context, req *agentrun.Request, reg *agentrun.Registry, customPath ...string,
+) (*exec.Cmd, func() error, error) {
 	tempHome, cleanHome, err := setupAntigravityHome(nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("set up the Antigravity home: %w", err)
 	}
 	dir, cleanDir, err := agentrun.CreateTempDir("numen-antigravity-run-*")
 	if err != nil {
-		cleanHome()
-		return nil, nil, fmt.Errorf("create the folder to run in: %w", err)
+		return nil, nil, errors.Join(fmt.Errorf("create the folder to run in: %w", err), cleanHome())
 	}
-	binName, baseArgs := resolveCommand(req.GetCommand(), customPath...)
+	binName, baseArgs := resolveCommand(req.Command, customPath...)
 	args := append([]string{}, baseArgs...)
 	args = append(args,
-		"-p", agentrun.WritePrompt(req.GetInstructions(), req.GetPrompt()),
+		"-p", agentrun.WritePrompt(req.Instructions, req.Prompt),
 		"--output-format", "stream-json",
 	)
-	if model := req.GetModel(); model != "" && model != defaultModelName {
+	if model := req.Model; model != "" && model != defaultModelName {
 		args = append(args, "--model", model)
 	}
-	if sessID := reg.GetSession(req.GetConversation()); sessID != "" {
+	if sessID := reg.GetSession(req.Conversation); sessID != "" {
 		args = append(args, "--conversation", sessID)
 	}
 	cmd := exec.CommandContext(runCtx, binName, args...)
 	cmd.Dir = dir
 	cmd.Env = append(os.Environ(), "HOME="+tempHome)
-	return cmd, func() {
-		cleanHome()
-		cleanDir()
+	return cmd, func() error {
+		return errors.Join(cleanHome(), cleanDir())
 	}, nil
 }

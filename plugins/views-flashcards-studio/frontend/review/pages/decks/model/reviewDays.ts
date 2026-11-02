@@ -5,7 +5,7 @@
  * when that vault changes, and the state retained between loads follows a
  * rule.
  */
-import { getCurrentDate } from '../../../../dom'
+import { getCurrentDate } from '@numen/ui'
 import { ref } from 'vue'
 import { getStretch as getHeatmapStretch } from '../../../../ui/heatmap'
 import type { Tally as HeatmapTally } from '../../../../ui/heatmap'

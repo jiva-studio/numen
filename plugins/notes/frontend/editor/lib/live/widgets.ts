@@ -5,7 +5,7 @@
  * editor when it acts, so a widget kept from an earlier render still writes at
  * the correct position.
  */
-import { doc } from '../../../dom'
+import { doc } from '@numen/ui'
 import { EditorView, WidgetType } from '@codemirror/view'
 import { addressResolver } from '../outside'
 

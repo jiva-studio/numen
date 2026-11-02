@@ -7,7 +7,7 @@ import { Menu, Tree } from '@numen/ui'
 import type { Entry } from '../types'
 import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
-import { useFileTree, ROOT } from '../model/useFileTree'
+import { createFileTree, ROOT } from '../model/useFileTree'
 import { renderDeps } from '../fixtures/host'
 
 const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
@@ -32,22 +32,33 @@ const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 /** Mounts a tab of that vault, and records what it requested from the window. */
 const mountFiles = async (open: readonly string[] = []) => {
   const isDone: string[] = []
-  const list = useFileTree({ list: async (folderPath: string) => target[folderPath] ?? [] })
+  const list = createFileTree({ list: async (folderPath: string) => target[folderPath] ?? [] })
   const tab: FilesTabState = useFilesTab(list, {
     ...renderDeps,
-    openEntry: (entry) => void isDone.push(`lands file ${entry.path}`),
-    runCommand: (id, paths, details) =>
-      void isDone.push(`runs ${id} ${paths.join(' ')} ${details.name}`),
-    movePath: async (from, to) => void isDone.push(`moves ${from} ${to}`),
-    setDraggedPaths: (paths) => void isDone.push(`drags ${paths.join(' ') || '—'}`),
-    createFolder: async (path) => void isDone.push(`makes ${path}`),
+    openEntry: (entry) => {
+      isDone.push(`lands file ${entry.path}`)
+    },
+    runCommand: (id, paths, details) => {
+      isDone.push(`runs ${id} ${paths.join(' ')} ${details.name}`)
+    },
+    movePath: async (from, to) => {
+      isDone.push(`moves ${from} ${to}`)
+    },
+    setDraggedPaths: (paths) => {
+      isDone.push(`drags ${paths.join(' ') || '—'}`)
+    },
+    createFolder: async (path) => {
+      isDone.push(`makes ${path}`)
+    },
     createNote: async (folderPath) => `${folderPath}Untitled note.md`,
     canDropData: (types) => types.includes('text/uri-list'),
     dropData: async (folderPath, data) => {
       isDone.push(`drops into ${folderPath || '/'} ${data['text/uri-list']}`)
       return []
     },
-    showError: (text) => void isDone.push(`says ${text}`),
+    showError: (text) => {
+      isDone.push(`says ${text}`)
+    },
   })
   await list.openFolder(ROOT)
   for (const folderPath of open) await list.openFolder(folderPath)
@@ -249,22 +260,22 @@ describe('the menu on a row', () => {
 
 describe('a folder that could not be read', () => {
   it('is returned in the tab', async () => {
-    const list = useFileTree({
+    const list = createFileTree({
       list: async () => {
         throw new Error('the vault is not there')
       },
     })
     const tab: FilesTabState = useFilesTab(list, {
       ...renderDeps,
-      openEntry: () => {},
-      runCommand: () => {},
-      movePath: async () => {},
-      setDraggedPaths: () => {},
-      createFolder: async () => {},
+      openEntry: () => undefined,
+      runCommand: () => undefined,
+      movePath: async () => undefined,
+      setDraggedPaths: () => undefined,
+      createFolder: async () => undefined,
       createNote: async () => '',
       canDropData: () => false,
       dropData: async () => [],
-      showError: () => {},
+      showError: () => undefined,
     })
     await list.openFolder(ROOT)
 

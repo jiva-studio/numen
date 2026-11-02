@@ -58,8 +58,11 @@ func (f vaultFiles) ReadFile(ctx context.Context, vault domain.VaultID, path str
 // openModel opens the recogniser of the configuration.
 type openModel func(ctx context.Context, cfg engine.Config) (engine.TranscriberPort, error)
 
-func openParakeet(ctx context.Context, cfg engine.Config) (engine.TranscriberPort, error) {
-	return engine.Open(ctx, cfg)
+// newParakeetOpener returns what opens the recogniser of a configuration through the runtime.
+func newParakeetOpener(runtime engine.Runtime) openModel {
+	return func(ctx context.Context, cfg engine.Config) (engine.TranscriberPort, error) {
+		return engine.Open(ctx, runtime, cfg)
+	}
 }
 
 // models opens the model once, under the configuration the settings last named, and keeps it until
@@ -134,20 +137,23 @@ func NewConfig(modelsDir, runtime string) engine.Config {
 
 // Mount registers the text provider on s over the host given. The model
 // is the mock one where isMock is set. The transcriptions and the model end with s.
-func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) {
-	model := &models{mu: sync.Mutex{}, cfg: cfg, isMock: isMock, open: openParakeet, current: nil}
+func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) error {
+	model := &models{mu: sync.Mutex{}, cfg: cfg, isMock: isMock, open: newParakeetOpener(engine.NewRuntime()), current: nil}
 	transcriber := NewTranscriber(vaultFiles{vault: hosted.Vault}, hosted.Store, hosted.Texts, hosted.Queue, model.get)
 	s.SetUpdateConfig(model.updateConfig)
 	commands := command.New()
-	// The registry is new, so the one id cannot be added twice.
-	_ = commands.Add("transcribe", newTranscribeCommand(transcriber))
-	_ = commands.Add("delete-transcript", command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID))
+	if err := commands.Add("transcribe", newTranscribeCommand(transcriber)); err != nil {
+		return err
+	}
+	if err := commands.Add("delete-transcript", command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID)); err != nil {
+		return err
+	}
 	command.Mount(s, commands)
-	s.OnClose(func() {
+	s.OnClose(func() error {
 		transcriber.Close()
-		// The plugin is stopping, and a model that will not close leaves nothing to retry.
-		_ = model.close()
+		return model.close()
 	})
+	return nil
 }
 
 // newTranscribeCommand transcribes the recording the user named, in the vault the host has open, and
@@ -168,8 +174,7 @@ func MountFromEnv(s *server.Server, cfg engine.Config) error {
 		return err
 	}
 	hosted := openHostAt(endpoint)
-	Mount(s, hosted, cfg, os.Getenv(EnvMockML) == "true")
-	return nil
+	return Mount(s, hosted, cfg, os.Getenv(EnvMockML) == "true")
 }
 
 // NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
@@ -181,7 +186,6 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	}
 	hosted := openHostAt(endpoint)
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		Mount(s, hosted, NewConfig("", ""), vars[EnvMockML] == "true")
-		return nil
+		return Mount(s, hosted, NewConfig("", ""), vars[EnvMockML] == "true")
 	})
 }

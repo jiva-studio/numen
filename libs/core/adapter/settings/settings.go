@@ -83,14 +83,19 @@ func Path() (string, error) {
 
 // OpenAt reads the file into the document handed in. A file that is not there
 // is an untouched installation, and is written down as what it is doing.
-func OpenAt(path string, into Document) error {
+func (f *Files) OpenAt(path string, into Document) error {
+	if f == nil {
+		return ErrNoFiles
+	}
 	raw, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
 		// An unconfigured installation is written with its effective values, including
 		// the size the desktop requests. A machine that cannot write the file runs with
 		// the same settings.
 		into.GetAppearance().InterfaceScale = getDesktopScale()
-		_ = write(path, into)
+		if err := f.write(path, into); err != nil && !isUnwritable(err) {
+			warn(into, "the settings could not be written to %s: %v", path, err)
+		}
 		return nil
 	}
 	if err != nil {
@@ -109,7 +114,7 @@ func OpenAt(path string, into Document) error {
 	if version := into.GetVersion(); *version < DefaultVersion {
 		*version = DefaultVersion
 	}
-	readInterfaceScale(into, path, raw)
+	f.readInterfaceScale(into, path, raw)
 	if err := into.GetAppearance().Check(); err != nil {
 		return err
 	}
@@ -136,7 +141,7 @@ func checkMode(into Document) {
 //
 // A file that cannot be written is read this way at every launch and yields the
 // same size each time.
-func readInterfaceScale(into Document, path string, raw []byte) {
+func (f *Files) readInterfaceScale(into Document, path string, raw []byte) {
 	var file struct {
 		Appearance struct {
 			Zoom           *float64 `json:"zoom"`
@@ -160,14 +165,16 @@ func readInterfaceScale(into Document, path string, raw []byte) {
 	switch {
 	case zoom <= 0:
 		into.GetAppearance().InterfaceScale = getDesktopScale()
-	case InterfaceScaleBounds.Contains(zoom):
+	case GetInterfaceScaleBounds().Contains(zoom):
 		into.GetAppearance().InterfaceScale = zoom
-		_ = renameField(path, []string{"appearance", "zoom"}, "interface_scale")
+		if err := f.renameField(path, []string{"appearance", "zoom"}, "interface_scale"); err != nil && !isUnwritable(err) {
+			warn(into, "appearance.zoom could not be renamed to interface_scale in %s: %v", path, err)
+		}
 	default:
 		// Warns with the setting the number maps to and its bounds. The number remains
 		// in the file.
 		warn(into, "appearance.zoom is outside interface_scale, %v to %v",
-			InterfaceScaleBounds.Min, InterfaceScaleBounds.Max)
+			GetInterfaceScaleBounds().Min, GetInterfaceScaleBounds().Max)
 	}
 }
 
@@ -177,12 +184,12 @@ func warn(into Document, response string, about ...any) {
 
 // write puts the settings where they are read from, beside the file and
 // renamed over the top.
-func write(path string, target Document) error {
+func (f *Files) write(path string, target Document) error {
 	raw, err := json.MarshalIndent(target, "", "  ")
 	if err != nil {
 		return err
 	}
-	return runOnFile(path, func(path string) error {
+	return f.run(path, func(path string) error {
 		return writeFileAtomically(path, append(raw, '\n'))
 	})
 }

@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/adapter/index/sqlwrite"
 	"slices"
 	"strconv"
 
@@ -48,18 +49,18 @@ func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, ca
 }
 
 // rankCandidates is rerank with the similarity of each candidate kept.
-func (q *Queries) rankCandidates(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) ([]candidate, error) {
+func (q *Queries) rankCandidates(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) (_ []candidate, err error) {
 	if len(candidates) == 0 {
 		return nil, nil
 	}
 
 	ids := formatInt64s(candidates)
 	wanted := formatKinds(of)
-	rows, err := q.db.QueryContext(ctx, stmt.Get("rerank"), ids, recipe, wanted)
+	rows, err := q.db.QueryContext(ctx, getStatement("rerank"), ids, recipe, wanted)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	keptCandidates := make([]candidate, 0, len(candidates))
 	var stored []byte

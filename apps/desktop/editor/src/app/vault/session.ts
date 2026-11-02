@@ -41,6 +41,7 @@ export type SessionCore = Pick<
   | 'writeOpenTabs'
   | 'readOpenTabs'
   | 'watchTasks'
+  | 'cancelTask'
   | 'watchQuit'
   | 'reportFlush'
   | 'detachTab'
@@ -100,8 +101,12 @@ export const sessionCore: SessionCore = {
         isUserStarted: task.isUserStarted,
         pluginId: task.pluginId,
         pluginName: task.pluginName,
+        isCancellable: task.isCancellable,
       }))
     }
+  },
+  cancelTask: async (id) => {
+    await windowService.cancelTask({ window: WINDOW, id })
   },
   watchQuit: (signal) => windowService.watchQuit({ window: WINDOW }, { signal }),
   reportFlush: async (token, outcome) => {

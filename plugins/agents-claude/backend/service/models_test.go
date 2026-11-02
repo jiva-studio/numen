@@ -2,14 +2,15 @@ package service
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"errors"
 	"os"
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
-	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/plugintest"
 )
 
 // initializeFixture is the answer of Claude Code 2.1.303 to the initialize request, cut to its models.
@@ -24,10 +25,10 @@ func readFixture(t *testing.T) string {
 	return string(raw)
 }
 
-func getLevelNames(levels []*agentrun.ReasoningLevel) []string {
+func getLevelNames(levels []reasoning.Level) []string {
 	names := []string{}
 	for _, one := range levels {
-		names = append(names, one.GetName())
+		names = append(names, one.Name)
 	}
 	return names
 }
@@ -38,17 +39,17 @@ func TestTheModelsAreReadFromTheAnswerOfTheProgram(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	byName := map[string]*agentrun.AgentModel{}
+	byName := map[string]*reasoning.Model{}
 	for _, one := range models {
 		byName[one.Value] = one.toProto()
 	}
-	if got := getLevelNames(byName["opus"].GetReasoningLevels()); !slices.Equal(got, []string{"low", "medium", "high", "xhigh", "max"}) {
+	if got := getLevelNames(byName["opus"].ReasoningLevels); !slices.Equal(got, []string{"low", "medium", "high", "xhigh", "max"}) {
 		t.Errorf("opus offers %v", got)
 	}
-	if got := getLevelNames(byName["claude-sonnet-4-6"].GetReasoningLevels()); !slices.Equal(got, []string{"low", "medium", "high", "max"}) {
+	if got := getLevelNames(byName["claude-sonnet-4-6"].ReasoningLevels); !slices.Equal(got, []string{"low", "medium", "high", "max"}) {
 		t.Errorf("sonnet 4.6 offers %v", got)
 	}
-	if got := byName["claude-haiku-4-5-20251001"]; len(got.GetReasoningLevels()) != 0 || got.GetTitle() != "Haiku 4.5" {
+	if got := byName["claude-haiku-4-5-20251001"]; len(got.ReasoningLevels) != 0 || got.Title != "Haiku 4.5" {
 		t.Errorf("a model of no effort offers a level: %v", got)
 	}
 	if byName[defaultModelName] == nil {
@@ -79,11 +80,11 @@ func TestModels_QueriesProgramForModels(t *testing.T) {
 	t.Setenv("NUMEN_CLAUDE_COMMAND", script)
 	client := startAgent(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
+	got, err := client.GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	models := got.Msg.GetPrograms()[0].GetModels()
+	models := got[0].Models
 	if len(models) != 13 {
 		t.Fatalf("the models are %v", models)
 	}
@@ -96,16 +97,32 @@ func TestModels_QueriesProgramForModels(t *testing.T) {
 	}
 }
 
+// A program that exits as soon as it has answered lists its models and not the fallback: on macOS the
+// kill of its exited process group fails.
+func TestAProgramThatExitsAfterAnsweringListsItsModels(t *testing.T) {
+	answer := strings.Replace(readFixture(t), `"r1"`, `"numen-models"`, 1)
+	answer = strings.ReplaceAll(answer, "'", "")
+	script := writeScript(t, "claude", "read -r _\ncat <<'EOF'\n"+answer+"EOF\nexit 0\n")
+
+	models, err := fetchModels(t.Context(), []string{script}, os.Environ())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(models) != 13 {
+		t.Errorf("the models are %v", models)
+	}
+}
+
 func TestGetModels_FallbackWhenListFails(t *testing.T) {
 	t.Setenv("NUMEN_CLAUDE_COMMAND", writeScript(t, "claude", "exit 1\n"))
 	client := startAgent(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
+	got, err := client.GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for place, one := range got.Msg.GetPrograms()[0].GetModels() {
-		if one.GetName() != fallbackModels[place].Value || len(one.GetReasoningLevels()) != 0 {
+	for place, one := range got[0].Models {
+		if one.Name != getFallbackModels()[place].Value || len(one.ReasoningLevels) != 0 {
 			t.Errorf("the model %v is not a fallback alias", one)
 		}
 	}
@@ -136,31 +153,43 @@ func TestModels_DepthLimitedToModelLevels(t *testing.T) {
 func TestModels_CachedListIsNotRequeried(t *testing.T) {
 	s := &agentServer{}
 	s.getModelCache().Put("x", []claudeModel{{Value: "m"}})
-	got, err := s.getModels(context.Background(), []string{"x"}, nil)
+	got, err := s.getModels(t.Context(), []string{"x"}, nil)
 	if err != nil || len(got) != 1 {
 		t.Fatalf("got %v, %v", got, err)
 	}
 }
 
+// The load runs in the background and fails when the test lets it. The cache reports the failure
+// to its error handler after it has recorded it, so waiting for the report is waiting for the
+// failure.
 func TestModelCache_AsyncReturnsEmptyThenFallbackOnFailure(t *testing.T) {
-	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	t.Setenv("HOME", t.TempDir())
-	gate := t.TempDir() + "/gate"
-	script := writeScript(t, "claude", "while [ ! -f "+gate+" ]; do sleep 0.01; done\nexit 1\n")
-	s := &agentServer{models: newModelCache(true)}
-	got, err := s.getModels(context.Background(), []string{script}, nil)
+	plugintest.GrantStorage(t)
+	fail := make(chan struct{})
+	reported := make(chan error, 2)
+	s := &agentServer{
+		models: newModelCache(true, cache.WithErrorHandler(func(err error) { reported <- err })),
+		fetch: func(ctx context.Context, _, _ []string) ([]claudeModel, error) {
+			select {
+			case <-fail:
+				return nil, errors.New("the program lists no model")
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+		},
+	}
+	command := []string{"claude"}
+	got, err := s.getModels(t.Context(), command, nil)
 	if err != nil || len(got) != 0 {
 		t.Fatalf("in-flight async cache returned %v, %v", got, err)
 	}
-	if err := os.WriteFile(gate, nil, 0o600); err != nil {
-		t.Fatal(err)
+	close(fail)
+	select {
+	case <-reported:
+	case <-t.Context().Done():
+		t.Fatal("the load did not report its failure")
 	}
-	deadline := time.Now().Add(3 * time.Second)
-	for time.Now().Before(deadline) && !s.getModelCache().HasFailed(script) {
-		time.Sleep(5 * time.Millisecond)
-	}
-	got, err = s.getModels(context.Background(), []string{script}, nil)
-	if err != nil || len(got) != len(fallbackModels) {
+	got, err = s.getModels(t.Context(), command, nil)
+	if err != nil || len(got) != len(getFallbackModels()) {
 		t.Fatalf("failed async cache returned %v, %v", got, err)
 	}
 }

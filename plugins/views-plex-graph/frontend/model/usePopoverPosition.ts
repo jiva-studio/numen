@@ -1,10 +1,10 @@
 /**
  * Viewport positioning and resize tracking for link inspector popover.
  */
-import { measureRect, measureWindow, win } from '../dom'
+import { measureRect, measureWindow, win } from '@numen/ui'
 import { computed, nextTick, onMounted, onScopeDispose, ref, watch } from 'vue'
 import type { Ref } from 'vue'
-import { resolvePopoverPosition } from './linkInspector'
+import { resolvePopoverPosition } from '../lib/popoverPlacement'
 
 export interface PopoverPositionOptions {
   readonly target: Ref<HTMLElement | null>
@@ -55,9 +55,9 @@ export function usePopoverPosition(options: PopoverPositionOptions) {
 
   let resizeObserver: ResizeObserver | null = null
 
-  onMounted(() => {
+  onMounted(async () => {
     win.addEventListener('resize', updatePosition)
-    void nextTick(() => {
+    await nextTick(() => {
       updatePosition()
       if (typeof ResizeObserver !== 'undefined' && target.value) {
         resizeObserver = new ResizeObserver(() => {

@@ -1,5 +1,5 @@
 /**
- * Tests for useFileTree state and tree operations.
+ * Tests for createFileTree state and tree operations.
  */
 import { describe, expect, it } from 'vitest'
 import { watch } from 'vue'
@@ -11,7 +11,7 @@ import {
   getParentFolders,
   resolveDropFolder,
   ROOT,
-  useFileTree,
+  createFileTree,
 } from './useFileTree'
 
 const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
@@ -115,7 +115,7 @@ describe('where a row release lands', () => {
 describe('the tree as it opens', () => {
   it('draws what the root holds, in the order the vault gave it', async () => {
     const { core } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
 
     await list.openFolder(ROOT)
 
@@ -124,7 +124,7 @@ describe('the tree as it opens', () => {
 
   it('draws every file the vault holds, and not only its notes', async () => {
     const { core } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
 
     await list.openFolder(ROOT)
 
@@ -135,7 +135,7 @@ describe('the tree as it opens', () => {
 describe('a folder opened', () => {
   it('is read, and what it holds is drawn inside it', async () => {
     const { core } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
     await list.openFolder('physics')
 
@@ -150,7 +150,7 @@ describe('a folder opened', () => {
 
   it('is read again every time it opens', async () => {
     const { core, requests } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
     await list.openFolder('physics')
     list.closeFolder('physics')
@@ -164,7 +164,7 @@ describe('a folder opened', () => {
 describe('a folder closed', () => {
   it('draws nothing under it', async () => {
     const { core } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
     await list.openFolder('physics')
 
@@ -175,7 +175,7 @@ describe('a folder closed', () => {
 
   it('keeps the folders open inside it, so they are drawn again where it opens', async () => {
     const { core } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
     await list.openFolder('physics')
     await list.openFolder('physics/heat')
@@ -188,7 +188,7 @@ describe('a folder closed', () => {
 
   it('is never the root, which is the tree itself', async () => {
     const { core } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
 
     list.closeFolder(ROOT)
@@ -200,7 +200,7 @@ describe('a folder closed', () => {
 describe('a change the vault reports', () => {
   it('reads parent directory of target path', async () => {
     const { core, requests } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
     await list.openFolder('physics')
     requests.length = 0
@@ -212,7 +212,7 @@ describe('a change the vault reports', () => {
 
   it('leaves every other open folder alone', async () => {
     const { core, requests } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
     await list.openFolder('physics')
     await list.openFolder('notes')
@@ -225,7 +225,7 @@ describe('a change the vault reports', () => {
 
   it('reads nothing for a path inside a folder that is closed', async () => {
     const { core, requests } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
     requests.length = 0
 
@@ -236,7 +236,7 @@ describe('a change the vault reports', () => {
 
   it('reads the open folder above a folder it draws no row for', async () => {
     const { core, requests, puts } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
     puts(ROOT, folder('trips'))
     requests.length = 0
@@ -249,7 +249,7 @@ describe('a change the vault reports', () => {
 
   it('reads every open folder when it is empty at all', async () => {
     const { core, requests } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
     await list.openFolder('physics')
     requests.length = 0
@@ -261,7 +261,7 @@ describe('a change the vault reports', () => {
 
   it('reads the folder a file left and the folder it arrived in', async () => {
     const { core, requests } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
     await list.openFolder('physics')
     await list.openFolder('notes')
@@ -274,7 +274,7 @@ describe('a change the vault reports', () => {
 
   it('leaves each chosen row chosen at where it went', async () => {
     const { core } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
     await list.openFolder('physics')
     list.selectPaths(['physics/Entropy.md', 'Cover.png'])
@@ -288,7 +288,7 @@ describe('a change the vault reports', () => {
 describe('the window coming back to the front', () => {
   it('reads every open folder, and turns up what nothing reported', async () => {
     const { core, puts } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
     await list.openFolder('physics')
     puts('physics', file('physics/Diagram.png', { isNote: false }))
@@ -300,7 +300,7 @@ describe('the window coming back to the front', () => {
 
   it('reads no folder that is closed', async () => {
     const { core, requests } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
     requests.length = 0
 
@@ -313,7 +313,7 @@ describe('the window coming back to the front', () => {
 describe('the tree walked down to a path', () => {
   it('opens each folder above it, from the root down', async () => {
     const { core, requests } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
     requests.length = 0
 
@@ -324,7 +324,7 @@ describe('the tree walked down to a path', () => {
 
   it('draws the path it was walked down to', async () => {
     const { core } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
 
     await list.revealPath('physics/heat/Kelvin.md')
@@ -334,7 +334,7 @@ describe('the tree walked down to a path', () => {
 
   it('leaves the path the whole of what is chosen', async () => {
     const { core } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
     list.selectPaths(['Cover.png'])
 
@@ -346,7 +346,7 @@ describe('the tree walked down to a path', () => {
 
 describe('a folder that could not be read', () => {
   it('is returned in the tab, and the tree remains as it was', async () => {
-    const list = useFileTree({
+    const list = createFileTree({
       list: async () => {
         throw new Error('the vault is not there')
       },
@@ -363,7 +363,7 @@ describe('a folder that could not be read', () => {
 describe('a tab that has closed', () => {
   it('draws nothing of what it was given after it closed', async () => {
     const { core } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
 
     list.close()
@@ -373,7 +373,7 @@ describe('a tab that has closed', () => {
 
   it('keeps nothing a question answers with after it closed', async () => {
     const { core } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     const pendingOpen = list.openFolder(ROOT)
     list.close()
 
@@ -386,7 +386,7 @@ describe('a tab that has closed', () => {
 describe('a name nothing in a folder is filed under', () => {
   it('counts past what the folder already holds', async () => {
     const { core } = vault({ [ROOT]: [folder('New folder')] })
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
 
     expect(list.getUniqueNameInFolder(ROOT, 'New folder')).toBe('New folder 2')
@@ -397,7 +397,7 @@ describe('the refresh of every open folder', () => {
   /** A tree with the root, physics and notes open, and a count of the times its rows were drawn again. */
   const openTree = async (folders?: Record<string, readonly Entry[]>) => {
     const one = vault(folders)
-    const list = useFileTree(one.core)
+    const list = createFileTree(one.core)
     await list.openFolder(ROOT)
     await list.openFolder('physics')
     await list.openFolder('notes')
@@ -446,7 +446,7 @@ describe('the refresh of every open folder', () => {
   it('keeps the entries of a folder that failed and takes the others', async () => {
     const one = vault()
     let isFailing = false
-    const list = useFileTree({
+    const list = createFileTree({
       list: async (folderPath: string) => {
         if (isFailing && folderPath === 'physics') throw new Error('gone')
         return one.core.list(folderPath)
@@ -470,7 +470,7 @@ describe('the refresh of every open folder', () => {
 describe('a tree before anything is requested of it', () => {
   it('holds nothing chosen, nothing returned, and the root open', () => {
     const { core } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
 
     expect(list.selectedPaths.value).toStrictEqual([])
     expect(list.errorMessage.value).toBe('')
@@ -481,7 +481,7 @@ describe('a tree before anything is requested of it', () => {
 
   it('reads the root when every open folder is refreshed', async () => {
     const { core, requests } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
 
     await list.refresh()
 
@@ -492,7 +492,7 @@ describe('a tree before anything is requested of it', () => {
 describe('a tab that has closed, requested for more', () => {
   it('leaves only the root open', async () => {
     const { core } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder('physics')
 
     list.close()
@@ -503,7 +503,7 @@ describe('a tab that has closed, requested for more', () => {
 
   it('opens no folder and reads none', async () => {
     const { core, requests } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     list.close()
 
     await list.openFolder('physics')
@@ -517,8 +517,8 @@ describe('a tab that has closed, requested for more', () => {
       [ROOT]: [folder('physics')],
       physics: [file('physics/Entropy.md')],
     }
-    const holder: { list?: ReturnType<typeof useFileTree> } = {}
-    const list = useFileTree({
+    const holder: { list?: ReturnType<typeof createFileTree> } = {}
+    const list = createFileTree({
       list: async (folderPath: string) => {
         holder.list?.close()
         return folders[folderPath] ?? []
@@ -535,7 +535,7 @@ describe('a tab that has closed, requested for more', () => {
 describe('the root folder closed', () => {
   it('stays open', async () => {
     const { core } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
 
     list.closeFolder(ROOT)
 
@@ -547,10 +547,9 @@ describe('the root folder closed', () => {
 describe('a folder toggled', () => {
   it('opens where it was shut, and reads it', async () => {
     const { core, requests } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
 
-    list.toggleFolder('physics')
-    await Promise.resolve()
+    await list.toggleFolder('physics')
 
     expect(list.isFolderOpen('physics')).toBe(true)
     expect(requests).toContain('physics')
@@ -558,10 +557,10 @@ describe('a folder toggled', () => {
 
   it('shuts where it was open', async () => {
     const { core } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder('physics')
 
-    list.toggleFolder('physics')
+    await list.toggleFolder('physics')
 
     expect(list.isFolderOpen('physics')).toBe(false)
   })
@@ -570,7 +569,7 @@ describe('a folder toggled', () => {
 describe('a folder that could not be read, then read', () => {
   it('stops being returned in the tab', async () => {
     let fails = true
-    const list = useFileTree({
+    const list = createFileTree({
       list: async () => {
         if (fails) throw new Error('down')
         return []
@@ -599,7 +598,7 @@ describe('a listing that changes in one field of one entry', () => {
 
   it.each(changes)('is drawn again where the %s changed', async (_field, overrides) => {
     let listing: readonly Entry[] = [first, second]
-    const list = useFileTree({ list: async () => listing })
+    const list = createFileTree({ list: async () => listing })
     await list.openFolder(ROOT)
     const changed = { ...second, ...overrides }
     listing = [first, changed]
@@ -613,7 +612,7 @@ describe('a listing that changes in one field of one entry', () => {
 describe('the folder a change is drawn in', () => {
   it('is an open folder the listing above does not name', async () => {
     const { core, requests } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
     await list.openFolder('ghost')
     requests.length = 0
@@ -625,7 +624,7 @@ describe('the folder a change is drawn in', () => {
 
   it('leaves the chosen rows as they were where nothing was renamed', async () => {
     const { core } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
     list.selectPaths(['Cover.png'])
     const selected = list.selectedPaths.value
@@ -639,7 +638,7 @@ describe('the folder a change is drawn in', () => {
 describe('a change the vault reports without naming anything', () => {
   it('reads every open folder when called with no arguments', async () => {
     const { core, requests } = vault()
-    const list = useFileTree(core)
+    const list = createFileTree(core)
     await list.openFolder(ROOT)
     await list.openFolder('physics')
     requests.length = 0

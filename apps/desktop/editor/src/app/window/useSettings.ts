@@ -1,5 +1,5 @@
 /**
- * Settings configuration, theme dressing, and palette lists for the window.
+ * Settings configuration, theme application, and palette lists for the window.
  */
 import { computed, watch } from 'vue'
 import { themes } from '@/entities/settings'
@@ -23,7 +23,9 @@ import {
   type PluginSettingOption,
   type SettingEdit,
 } from '@/entities/settings'
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage, type PluginCatalog } from '@numen/core-client'
+import { useCatalogEntries } from '@/entities/plugin'
+import { runInBackground } from '@numen/ui'
 import { createPluginRetry, createSecretStore, createSettingsStore } from '@/entities/settings'
 import { useSettingsTab } from '@/pages/settings'
 import type { Installation } from '@/pages/settings'
@@ -43,6 +45,8 @@ export interface SettingsDeps {
   windowTabs: ReturnType<typeof useWindowTabs>
   onSizeChanged: () => void
   getSettingsViews?: Installation['getSettingsViews']
+  /** The catalog the plugin list reads; without it the list shows the installed plugins only. */
+  catalog?: PluginCatalog
 }
 
 function getPerformanceStepGroups(words: Words) {
@@ -163,12 +167,26 @@ interface SettingsTabConfigDeps {
   core: SettingsPort
   scheduleRefresh: () => void
   getSettingsViews?: Installation['getSettingsViews']
+  catalogEntries?: Installation['catalog']
+  reportError: (error: unknown) => void
 }
 
 function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
-  const { appearance, sync, rest, secrets, retry, core, scheduleRefresh, getSettingsViews } = deps
+  const {
+    appearance,
+    sync,
+    rest,
+    secrets,
+    retry,
+    core,
+    scheduleRefresh,
+    getSettingsViews,
+    catalogEntries,
+    reportError,
+  } = deps
   return {
     ...(getSettingsViews ? { getSettingsViews } : {}),
+    ...(catalogEntries ? { catalog: catalogEntries } : {}),
     themes: appearance.list,
     applied: appearance.applied,
     mode: appearance.mode,
@@ -178,13 +196,15 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     choose: (item: string) => appearance.chooseItem(item),
     isSyncing: computed({
       get: () => sync.isEnabled.value,
-      set: (on: boolean) => void sync.choose(on ? ON : OFF),
+      set: (on: boolean) => runInBackground(sync.choose(on ? ON : OFF), reportError),
     }),
     getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
+    getConfirmedSetting: (targetPath: readonly string[]) => rest.getCommittedSetting(targetPath),
+    isPending: (targetPath: readonly string[]) => rest.isPending(targetPath),
     getModels: (targetPath: readonly string[]) => rest.getModelsAt(targetPath),
     write: (content: readonly SettingEdit[]) => {
       const promise = rest.writeSettings(content)
-      void promise.then(scheduleRefresh)
+      runInBackground(promise.then(scheduleRefresh), reportError)
       return promise
     },
     writeSecret: (pluginId: string, name: string, key: string) =>
@@ -253,17 +273,11 @@ function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
   }
 }
 
-export function useSettings({
-  core,
-  words,
-  log,
-  windowTabs,
-  onSizeChanged,
-  getSettingsViews,
-}: SettingsDeps) {
-  const appearance = createWindowAppearance({ core: themes, words, write: log.getWriter('worn') })
-  const sync = syncSetting(core, words, log.getWriter('named'))
-  const rest = createSettingsStore(core, words, log.getWriter('configured'))
+/** The reads of the settings that follow a change, which the plugins take a while to show. */
+function createRefreshSchedule(
+  rest: { start: () => Promise<void> },
+  reportError: (error: unknown) => void,
+) {
   const refreshTimers: ReturnType<typeof setTimeout>[] = []
 
   const clearRefreshTimers = () => {
@@ -277,7 +291,7 @@ export function useSettings({
     for (const delayMs of [1500, 3500, 7000, 11000, 16000]) {
       refreshTimers.push(
         setTimeout(() => {
-          void rest.start()
+          runInBackground(rest.start(), reportError)
         }, delayMs),
       )
     }
@@ -287,6 +301,35 @@ export function useSettings({
     await rest.start()
     scheduleRefresh()
   }
+
+  return { scheduleRefresh, clearRefreshTimers, refreshAndSchedule }
+}
+
+export function useSettings({
+  core,
+  words,
+  log,
+  windowTabs,
+  onSizeChanged,
+  getSettingsViews,
+  catalog,
+}: SettingsDeps) {
+  const writeAppearanceMessage = log.getWriter('appearance')
+  const sync = syncSetting(core, words, log.getWriter('named'))
+  const writeSettingsMessage = log.getWriter('configured')
+  const rest = createSettingsStore(core, words, writeSettingsMessage)
+  const appearance = createWindowAppearance({
+    core: themes,
+    words,
+    write: writeAppearanceMessage,
+    getPluginName: (pluginId) =>
+      rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId,
+  })
+  const reportError = (error: unknown) => writeSettingsMessage(formatErrorMessage(error), 'error')
+  const { scheduleRefresh, clearRefreshTimers, refreshAndSchedule } = createRefreshSchedule(
+    rest,
+    reportError,
+  )
 
   const secrets = createSecretStore(core, {
     words,
@@ -300,6 +343,8 @@ export function useSettings({
     getName: (pluginId) => rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId,
   })
 
+  const catalogEntries = catalog ? useCatalogEntries(catalog, rest.plugins, reportError) : undefined
+
   const configured = useSettingsTab(
     windowTabs.handle,
     createSettingsTabConfig({
@@ -311,7 +356,10 @@ export function useSettings({
       core,
       scheduleRefresh,
       ...(getSettingsViews ? { getSettingsViews } : {}),
+      ...(catalogEntries ? { catalogEntries } : {}),
+      reportError,
     }),
+    reportError,
   )
 
   watch(appearance.sized, () => onSizeChanged())
@@ -321,8 +369,8 @@ export function useSettings({
   const kinds = [configured.kind]
 
   const start = async () => {
-    void appearance.start()
-    void sync.start()
+    runInBackground(appearance.start(), reportError)
+    runInBackground(sync.start(), reportError)
     // The plugins the window starts are named by what this read answers.
     await rest.start()
     scheduleRefresh()

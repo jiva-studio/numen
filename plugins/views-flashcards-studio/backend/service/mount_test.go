@@ -18,7 +18,7 @@ const mountToken = "mount-token"
 func newMountedHandler(t *testing.T, notes map[string]string) http.Handler {
 	t.Helper()
 	env := vaulttest.New(t, notes)
-	backend := service.New(service.Config{Vault: env.Host, Store: env.Store})
+	backend := service.New(service.Config{Vault: env.Host, Store: env.Store, Now: vaulttest.NewClock()})
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": mountToken}, backend.Mount)
 	if err != nil {
 		t.Fatal(err)
@@ -26,8 +26,8 @@ func newMountedHandler(t *testing.T, notes map[string]string) http.Handler {
 	return handler
 }
 
-func postMethod(handler http.Handler, method, body, token string) *httptest.ResponseRecorder {
-	req := httptest.NewRequest(http.MethodPost, "/"+service.ServiceName+"/"+method, strings.NewReader(body))
+func postMethod(t *testing.T, handler http.Handler, method, body, token string) *httptest.ResponseRecorder {
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/"+service.ServiceName+"/"+method, strings.NewReader(body))
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
@@ -39,7 +39,7 @@ func postMethod(handler http.Handler, method, body, token string) *httptest.Resp
 func TestTheServiceAnswersAMethodAsJSON(t *testing.T) {
 	handler := newMountedHandler(t, map[string]string{"Animals.md": threeCards})
 
-	recorded := postMethod(handler, "ReadDeck", `{"path":"Animals.md"}`, mountToken)
+	recorded := postMethod(t, handler, "ReadDeck", `{"path":"Animals.md"}`, mountToken)
 
 	if recorded.Code != http.StatusOK {
 		t.Fatalf("status %d: %s", recorded.Code, recorded.Body)
@@ -59,7 +59,7 @@ func TestTheServiceAnswersAMethodAsJSON(t *testing.T) {
 func TestTheServiceAnswersACollectionAsAnArray(t *testing.T) {
 	handler := newMountedHandler(t, map[string]string{})
 
-	recorded := postMethod(handler, "ListPresets", `{}`, mountToken)
+	recorded := postMethod(t, handler, "ListPresets", `{}`, mountToken)
 
 	if !strings.Contains(recorded.Body.String(), `"presets":[]`) {
 		t.Errorf("response %s", recorded.Body)
@@ -69,7 +69,7 @@ func TestTheServiceAnswersACollectionAsAnArray(t *testing.T) {
 func TestTheServiceRejectsARequestWithoutTheHostToken(t *testing.T) {
 	handler := newMountedHandler(t, map[string]string{})
 
-	if recorded := postMethod(handler, "ListPresets", `{}`, ""); recorded.Code == http.StatusOK {
+	if recorded := postMethod(t, handler, "ListPresets", `{}`, ""); recorded.Code == http.StatusOK {
 		t.Errorf("status %d without a token", recorded.Code)
 	}
 }
@@ -77,7 +77,7 @@ func TestTheServiceRejectsARequestWithoutTheHostToken(t *testing.T) {
 func TestTheServiceAnswersAFailureWithItsCode(t *testing.T) {
 	handler := newMountedHandler(t, map[string]string{})
 
-	recorded := postMethod(handler, "StartSession", `{"vault":"nothing"}`, mountToken)
+	recorded := postMethod(t, handler, "StartSession", `{"vault":"nothing"}`, mountToken)
 
 	if recorded.Code != http.StatusNotFound || !strings.Contains(recorded.Body.String(), `"code":"not_found"`) {
 		t.Errorf("status %d: %s", recorded.Code, recorded.Body)

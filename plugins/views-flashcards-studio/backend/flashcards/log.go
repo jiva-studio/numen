@@ -2,6 +2,7 @@ package flashcards
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -154,7 +155,10 @@ func (u Log) Open(_ context.Context, v domain.Vault, now time.Time) (*LogWriter,
 	if err != nil {
 		return nil, err
 	}
-	id := ulid.New(now)
+	id, err := ulid.NewGenerator(rand.Reader).NewID(now)
+	if err != nil {
+		return nil, err
+	}
 	return &LogWriter{store: store, run: id, stopped: nil}, nil
 }
 
@@ -223,8 +227,11 @@ func (u Record) Answer(
 	if u.now == nil {
 		return review.Answer{}, errNoClock
 	}
-	pos := u.now()
-	id := ulid.New(pos)
+	pos := u.now.Now()
+	id, err := ulid.NewGenerator(rand.Reader).NewID(pos)
+	if err != nil {
+		return review.Answer{}, err
+	}
 	a := review.Answer{ID: id, ReviewCard: on, At: pos, Rating: r, Took: took, Undoes: ""}
 	if err := run.Append(ctx, a); err != nil {
 		return review.Answer{}, err
@@ -241,8 +248,11 @@ func (u Record) TakeBack(ctx context.Context, run *LogWriter, id string) (review
 	if u.now == nil {
 		return review.Answer{}, errNoClock
 	}
-	pos := u.now()
-	own := ulid.New(pos)
+	pos := u.now.Now()
+	own, err := ulid.NewGenerator(rand.Reader).NewID(pos)
+	if err != nil {
+		return review.Answer{}, err
+	}
 	a := review.Answer{ID: own, ReviewCard: review.CardID{Card: "", Template: ""}, At: pos, Rating: review.Rating(0), Took: time.Duration(0), Undoes: id}
 	if err := run.Append(ctx, a); err != nil {
 		return review.Answer{}, err

@@ -8,7 +8,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
@@ -16,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
@@ -113,7 +113,7 @@ type moveParts struct {
 	names    note.NameQueries
 	readers  vaultport.VaultReaders
 	writers  vaultport.VaultWriters
-	index    note.Levels
+	index    note.IndexUpdater
 	hasIndex bool
 }
 
@@ -128,12 +128,15 @@ func (c changing) moveOf(p moveParts) note.Move {
 		p.readers = vaultreader.Readers{}
 	}
 	if p.writers == nil {
-		p.writers = vaultwriter.VaultWriters{}
+		p.writers = vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
 	}
 	if !p.hasIndex {
 		p.index = c.index
 	}
-	return note.NewMove(p.readers, p.writers, p.links, p.names, c.db.Sources(), p.index, time.Now)
+	return note.NewMove(note.MoveDeps{
+		Readers: p.readers, Writers: p.writers, Links: p.links, Names: p.names,
+		Sources: c.db.Sources(), Index: p.index, Now: testsupport.NewClock(),
+	})
 }
 
 const heatLinkedToEntropy = "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Heat\n"
@@ -158,7 +161,7 @@ func TestMovingANoteToItsOwnPathAnswersWithThatPath(t *testing.T) {
 	if res.From != "physics/Entropy.md" || res.To != "physics/Entropy.md" {
 		t.Errorf("the answer names %q and %q", res.From, res.To)
 	}
-	if res.IsLanded {
+	if res.IsMoved {
 		t.Error("nothing moved and the answer says the file landed")
 	}
 }
@@ -183,7 +186,7 @@ func TestAMoveThatStopsBeforeTheFileMovedReturnsSo(t *testing.T) {
 			from: "physics/Entropy.md",
 			parts: func(changing) moveParts {
 				return moveParts{writers: failingWriters{
-					VaultWriters: vaultwriter.VaultWriters{}, openErr: boom, failOpen: 1, opened: new(int),
+					VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, openErr: boom, failOpen: 1, opened: new(int),
 				}}
 			},
 			want: boom,
@@ -203,7 +206,7 @@ func TestAMoveThatStopsBeforeTheFileMovedReturnsSo(t *testing.T) {
 			if res.From != c.from || res.To != "archive/Thermodynamics.md" {
 				t.Errorf("the answer names %q and %q", res.From, res.To)
 			}
-			if res.IsLanded {
+			if res.IsMoved {
 				t.Error("the file did not move and the answer says it landed")
 			}
 			if !c2.exists("physics/Entropy.md") {
@@ -218,7 +221,10 @@ func TestAMoveTellsWhoIsDrawingTheNoteWhereItWent(t *testing.T) {
 	c := openLinked(t)
 	var notified []domain.Move
 	mover := c.move()
-	mover.Drawing = func(_ context.Context, went domain.Move) { notified = append(notified, went) }
+	mover.Drawing = func(_ context.Context, went domain.Move) error {
+		notified = append(notified, went)
+		return nil
+	}
 
 	if _, err := mover.Execute(t.Context(), c.vault, "physics/Entropy.md", "archive/Thermodynamics.md"); err != nil {
 		t.Fatal(err)
@@ -247,11 +253,11 @@ func TestAMoveNothingPointsAtAsksNothingAboutLinks(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.IsLanded || len(res.Repaired) != 0 || len(res.Dangling) != 0 {
+	if !res.IsMoved || len(res.Repaired) != 0 || len(res.Dangling) != 0 {
 		t.Errorf("got %+v", res)
 	}
 	if len(request) != 0 {
-		t.Errorf("the index was brought level with %v", request)
+		t.Errorf("the index was updated for %v", request)
 	}
 }
 
@@ -279,7 +285,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 		"the vault cannot be held": {
 			parts: func(changing) moveParts {
 				return moveParts{writers: failingWriters{
-					VaultWriters: vaultwriter.VaultWriters{}, holdErr: boom, opened: new(int),
+					VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, holdErr: boom, opened: new(int),
 				}}
 			},
 			want: boom,
@@ -291,7 +297,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 		"the vault cannot be opened again for the repair": {
 			parts: func(changing) moveParts {
 				return moveParts{writers: failingWriters{
-					VaultWriters: vaultwriter.VaultWriters{}, openErr: boom, failOpen: 2, opened: new(int),
+					VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, openErr: boom, failOpen: 2, opened: new(int),
 				}}
 			},
 			want: boom,
@@ -299,7 +305,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 		"the repaired note cannot be written": {
 			parts: func(changing) moveParts {
 				return moveParts{writers: failingWriters{
-					VaultWriters: vaultwriter.VaultWriters{}, writeErr: boom, opened: new(int),
+					VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, writeErr: boom, opened: new(int),
 				}}
 			},
 			want: boom,
@@ -309,11 +315,11 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 			parts:  func(changing) moveParts { return moveParts{} },
 			want:   markdown.ErrUnterminated,
 		},
-		"the index cannot be brought level": {
+		"the index cannot be updated": {
 			parts: func(changing) moveParts {
 				return moveParts{hasIndex: true, index: func(context.Context, domain.Vault, []string) error { return boom }}
 			},
-			want:       note.ErrUnlevelled,
+			want:       note.ErrIndexOutdated,
 			isRepaired: true,
 		},
 	} {
@@ -328,7 +334,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 			if !errors.Is(err, c.want) {
 				t.Fatalf("want %v, got %v", c.want, err)
 			}
-			if !res.IsLanded {
+			if !res.IsMoved {
 				t.Error("the file landed and the answer says it did not")
 			}
 			if !c2.exists("archive/Thermodynamics.md") {
@@ -416,7 +422,7 @@ func TestALinkInTheBlockAndOneInTheProseAreBothRepaired(t *testing.T) {
 	}
 }
 
-// An installation with no index to bring level repairs all the same.
+// An installation with no index to update repairs all the same.
 func TestARepairNeedsNoIndexToBringLevel(t *testing.T) {
 	c := openLinked(t)
 
@@ -438,7 +444,7 @@ func TestANoteNoLinkReachesCanStillBeMoved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.IsLanded {
+	if !res.IsMoved {
 		t.Error("the file did not land")
 	}
 	if len(res.Repaired) != 0 {
@@ -504,7 +510,7 @@ func TestANoteWithInlineFrontmatterIsReportedAndNotSaved(t *testing.T) {
 // back as it was set.
 func TestAMovePassesBackTheCollaboratorsItWasGiven(t *testing.T) {
 	c := openLinked(t)
-	readers, writers := brokenReaders{}, &failingWriters{VaultWriters: vaultwriter.VaultWriters{}, opened: new(int)}
+	readers, writers := brokenReaders{}, &failingWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, opened: new(int)}
 	sources := sulking{SourceRepository: c.db.Sources()}
 
 	mover := c.move().WithReaders(readers).WithWriters(writers).WithSources(sources)
@@ -522,5 +528,21 @@ func TestAMovePassesBackTheCollaboratorsItWasGiven(t *testing.T) {
 func TestAFolderKeepsTheNameOfTheNoteFiledBelowIt(t *testing.T) {
 	if got := note.GetPathUnder("archive", "physics/Entropy.md"); got != "archive/Entropy.md" {
 		t.Errorf("got %q", got)
+	}
+}
+
+// A move to a name no file can have leaves the note where it is.
+func TestMoveRejectsInvalidFileName(t *testing.T) {
+	for _, to := range []string{"physics/note:Entropy.md", "physics/Entropy?.md", "physics/Entropy.md "} {
+		c := openLinked(t)
+
+		res, err := c.move().Execute(t.Context(), c.vault, "physics/Entropy.md", to)
+
+		if !errors.Is(err, domain.ErrInvalidName) {
+			t.Errorf("Execute to %q = %v, want the invalid name error", to, err)
+		}
+		if res.IsMoved {
+			t.Errorf("the note moved to %q", to)
+		}
 	}
 }

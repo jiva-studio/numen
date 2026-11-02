@@ -76,7 +76,7 @@ func (p *PageProvider) GetMetadata(ctx context.Context, target string) (Metadata
 }
 
 // GetText returns the article published at the target.
-func (p *PageProvider) GetText(ctx context.Context, target string, _ PreferredCaptions) (Text, error) {
+func (p *PageProvider) GetText(ctx context.Context, target string, _ PreferredCaptions) (text Text, err error) {
 	address, err := url.Parse(target)
 	if err != nil {
 		return Text{Producer: "", Cues: nil, Prose: "", Title: "", Length: 0}, err
@@ -91,7 +91,7 @@ func (p *PageProvider) GetText(ctx context.Context, target string, _ PreferredCa
 	if err != nil {
 		return Text{Producer: "", Cues: nil, Prose: "", Title: "", Length: 0}, err
 	}
-	defer func() { _ = answer.Body.Close() }()
+	defer func() { err = errors.Join(err, answer.Body.Close()) }()
 	if answer.StatusCode != http.StatusOK {
 		return Text{Producer: "", Cues: nil, Prose: "", Title: "", Length: 0}, fmt.Errorf("%s answered %s", target, answer.Status)
 	}

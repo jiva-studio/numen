@@ -23,7 +23,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	proofreading "github.com/jiva-studio/numen/plugins/tools-proofreading"
 )
 
 // PluginID is the identity the manifest gives the plugin.
@@ -89,7 +88,7 @@ func defaultProofreadingConfig() proofreadingConfig {
 // mockEnabled is the value of EnvMockML that selects the mock model.
 const mockEnabled = "true"
 
-// settings is the configuration the host last handed over.
+// settings is the configuration the host last passed.
 type settings struct {
 	mu  sync.RWMutex
 	cfg proofreadingConfig
@@ -190,7 +189,7 @@ func resolveDirectBaseURL(cfg proofreadingConfig) string {
 	}
 }
 
-func askDirectAPI(ctx context.Context, cfg proofreadingConfig, instruction, prompt string) (string, error) {
+func askDirectAPI(ctx context.Context, cfg proofreadingConfig, instruction, prompt string) (answer string, err error) {
 	baseURL := strings.TrimSuffix(resolveDirectBaseURL(cfg), "/")
 	if baseURL == "" {
 		return "", errors.New("service URL is not configured")
@@ -224,7 +223,7 @@ func askDirectAPI(ctx context.Context, cfg proofreadingConfig, instruction, prom
 	if err != nil {
 		return "", fmt.Errorf("send chat request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { err = errors.Join(err, resp.Body.Close()) }()
 	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("read chat response: %w", err)
@@ -291,11 +290,7 @@ func mount(s *server.Server, h Host, complete completer, vars map[string]string)
 	if len(vars) > 0 {
 		config.updateConfig(vars)
 	}
-	kinds, err := readKinds(proofreading.Manifest)
-	if err != nil {
-		return err
-	}
-	run := newProofreading(h, kinds, newAskModel(complete, config.getConfig), config.getConfig)
+	run := newProofreading(h, getProofreadKinds(), newAskModel(complete, config.getConfig), config.getConfig)
 	commands := command.New()
 	if err := commands.Add("proofread", newProofreadCommand(run)); err != nil {
 		return err

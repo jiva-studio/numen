@@ -17,7 +17,7 @@ type ImportedFiles struct{}
 func (ImportedFiles) GetName(handle string) string { return filepath.Base(handle) }
 
 func (ImportedFiles) GetImportedFile(_ context.Context, handle string) (sourceport.ImportedFile, error) {
-	// A link is not followed: what it points at is not what was handed over.
+	// A link is not followed: what it points at is not what was passed.
 	info, err := os.Lstat(handle)
 	if err != nil {
 		return sourceport.ImportedFile{}, err

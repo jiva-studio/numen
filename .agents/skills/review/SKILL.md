@@ -22,7 +22,7 @@ flowchart LR
 
 ## Where the rules are
 
-**The architecture is written down, not remembered.** `AGENTS.md` at the root and in the touched module carries the naming and placement conventions, and the distilled form of the rest lives in [`../../rules/`](../../rules/). If a rule matters, it is written in one of them; if it is not written there it is not yet a rule. When a change appears to contradict one, quote it.
+**The architecture is documented in files, not kept in memory.** `AGENTS.md` at the root and in the touched module contains the naming and placement conventions, and the summarized rules are in [`../../rules/`](../../rules/). If a rule matters, it is written in one of them; if it is not written there it is not yet a rule. When a change appears to contradict one, quote it.
 
 If a change is right and the rule is wrong, say so. The finding is then "this contradicts `<file>`, and the rule looks outdated" — not silence.
 
@@ -63,26 +63,29 @@ Every worktree of this repository shares one `git stash` stack. Never stash to g
 ## Sequential execution stages
 
 ### Stage 1: Gatekeeper & architectural audit
-*Guide: [`stages/1-gatekeeper.md`](./stages/1-gatekeeper.md)*
+
+_Guide: [`stages/1-gatekeeper.md`](./stages/1-gatekeeper.md)_
 
 1. **Automated gate** — Run the modular target for each touched module from `REPO_ROOT` (e.g. `make lib_core_lint lib_core_test` for core backend, `make lib_ui_lint lib_ui_test` for UI, etc.). Never run blanket monorepo suites over untouched domains.
-2. **Fail-fast** — a type error, a lint failure, a broken existing test, or a `-race` run that did not happen marks the gate **FAIL**. Stop and reject with the exact error output, unless told to continue.
+2. **Fail-fast** — a type error, a lint failure, or a broken existing test marks the gate **FAIL**. Stop and reject with the exact error output, unless told to continue.
 3. **Architecture checklist** — dependency direction, ports and adapters, the `@numen/ui` domain boundary, the core/view split, tokens, naming, and one name per concept.
 
 ### Stage 2: Semantic logic, blast radius & spec audit
-*Guide: [`stages/2-bughunter.md`](./stages/2-bughunter.md)*
+
+_Guide: [`stages/2-bughunter.md`](./stages/2-bughunter.md)_
 
 1. **Intent & Spec conformance** — if `.agents/tasks/<slug>/intent.md` exists, verify that no Non-Goals were violated. If `spec.md` exists, verify that all acceptance criteria are covered and the diff does not exceed the blast radius.
 2. **Blast radius** — callers of every changed function, upstream sources of the state it reads, downstream watchers, renderers and subscribers.
-3. **Defect matrix** — Go concurrency, context and cancellation, error paths, SQL and resources; Vue reactivity, lifecycle leaks, out-of-order responses; boundary and index errors; wire contracts across *A client is generated from the protocol*.
-4. **Proof** — every defect carries a concrete scenario: *Given → When → Then*. No vague warnings.
+3. **Defect matrix** — Go concurrency, context and cancellation, error paths, SQL and resources; Vue reactivity, lifecycle leaks, out-of-order responses; boundary and index errors; wire contracts across _A client is generated from the protocol_.
+4. **Proof** — every defect has a concrete scenario: _Given → When → Then_. No vague warnings.
 
 ### Stage 3: Dynamic stress verification
-*Guide: [`stages/3-adversary.md`](./stages/3-adversary.md)*
+
+_Guide: [`stages/3-adversary.md`](./stages/3-adversary.md)_
 
 1. **Attack vectors** — turn each hypothesis from Stage 2 into a test that should fail.
 2. **Craft and run** — an adjacent `_test.go` or `.spec.ts`, executed. A failing test confirms the defect; a passing one confirms resilience and stays if it covers an edge nobody had covered.
-3. **Mutation check** — for a test guarding a rule, break the rule and watch the test fail. A test that passes either way is worse than no test.
+3. **Mutation check** — for a test guarding a rule, break the rule and check that the test fails. A test that passes either way is worse than no test.
 
 ---
 
@@ -98,7 +101,7 @@ Every worktree of this repository shares one `git stash` stack. Never stash to g
 
 ## Standardized unified review report template
 
-```markdown
+````markdown
 # 📋 Unified Code Review Report
 
 **Target**: `<branch / commit / file path>`
@@ -108,29 +111,33 @@ Every worktree of this repository shares one `git stash` stack. Never stash to g
 
 ## 🚦 Stage 1: Gatekeeper & Architecture
 
-| Check | Status | Details |
-| :--- | :---: | :--- |
-| **gofmt / Prettier / go vet** | `PASS / FAIL / N/A` | <details or '0 errors'> |
-| **go test -race** | `PASS / FAIL / N/A` | <per module, or why it did not run> |
-| **buf lint** | `PASS / FAIL / N/A` | <details or 'clean'> |
-| **vue-tsc typecheck** | `PASS / FAIL / N/A` | <details or '0 errors'> |
-| **Unit tests** (`vitest`) | `PASS / FAIL / N/A` | <details or 'X passed'> |
-| **Story tests** (chromium / webkit) | `PASS / FAIL / N/A` | <both engines, or which one is missing> |
-| **Architecture** (`AGENTS.md` / rules) | `PASS / FAIL` | <rule honoured or contradicted, by file and section> |
-| **Naming & placement** (`AGENTS.md`) | `PASS / FAIL` | <details or 'clean'> |
+| Check                                  |       Status        | Details                                              |
+| :------------------------------------- | :-----------------: | :--------------------------------------------------- |
+| **gofmt / Prettier / go vet**          | `PASS / FAIL / N/A` | <details or '0 errors'>                              |
+| **go test**                            | `PASS / FAIL / N/A` | <per module, or why it did not run>                  |
+| **buf lint**                           | `PASS / FAIL / N/A` | <details or 'clean'>                                 |
+| **vue-tsc typecheck**                  | `PASS / FAIL / N/A` | <details or '0 errors'>                              |
+| **Unit tests** (`vitest`)              | `PASS / FAIL / N/A` | <details or 'X passed'>                              |
+| **Story tests** (chromium / webkit)    | `PASS / FAIL / N/A` | <both engines, or which one is missing>              |
+| **Architecture** (`AGENTS.md` / rules) |    `PASS / FAIL`    | <rule honoured or contradicted, by file and section> |
+| **Naming & placement** (`AGENTS.md`)   |    `PASS / FAIL`    | <details or 'clean'>                                 |
 
-*Gatekeeper log:*
+_Gatekeeper log:_
+
 ```text
 <If failed: the exact error output.>
 <If passed: every gate ran and exited 0; name the commands.>
 ```
+````
 
 ---
 
 ## 🐞 Stage 2: Semantic Logic & Blast Radius
 
-<!-- IF DEFECTS FOUND: one card per defect, ordered by what it costs -->
+<!-- IF DEFECTS FOUND: one card per defect, ordered by severity -->
+
 ### [ CRITICAL | HIGH | MEDIUM ] <Defect title>
+
 - **Location**: `path/file.go:L12-L34`
 - **Category**: `[ Concurrency | Context | Reactivity | Boundary | Error Handling | Wire Contract | Architecture ]`
 - **Failure scenario**:
@@ -142,30 +149,37 @@ Every worktree of this repository shares one `git stash` stack. Never stash to g
 - **Direction**: <a direction, not a patch>
 
 <!-- IF NO DEFECTS FOUND: output ONLY this line: -->
-*No semantic logic defects or regressions detected.*
+
+_No semantic logic defects or regressions detected._
 
 ---
 
 ## ⚔️ Stage 3: Dynamic Stress Verification
 
-| Attack vector | Target | Test file | Outcome |
-| :--- | :--- | :--- | :---: |
+| Attack vector        | Target      | Test file               |                Outcome                |
+| :------------------- | :---------- | :---------------------- | :-----------------------------------: |
 | <attack description> | `<file.go>` | `<file_test.go or N/A>` | `[ 💥 BUG CONFIRMED / 🛡️ RESILIENT ]` |
 
-*Failure details:*
+_Failure details:_
+
 ```text
 <assertion or failure trace, if a test failed>
 ```
 
 <!-- IF RESILIENT / NO FAILURES: output ONLY this line: -->
-*All targeted stress checks passed or the code is proven resilient.*
+
+_All targeted stress checks passed or the code is proven resilient._
 
 ---
 
 ## 📝 Action Items & Recommendations
 
 1. <Concrete action item>
+
 <!-- IF APPROVED WITH NO ACTIONS: 1. None — the change is ready to merge. -->
 
 <One line: what the change does, and whether anything in it blocks merging.>
+
+```
+
 ```

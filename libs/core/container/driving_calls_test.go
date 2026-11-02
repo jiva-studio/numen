@@ -14,12 +14,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// wiring lists the files of a driving adapter that bind the ports supplied by
-// the composition root. Under strict Clean Architecture, zero files are
-// exempted: a driving adapter calls only usecase/* and never holds or calls a
-// port directly.
-var wiring []string
-
 // getPortFields are the names of the struct fields a file types port.X.
 func getPortFields(file *ast.File) []string {
 	var found []string
@@ -118,19 +112,11 @@ func TestNoDrivingAdapterCallsAPortOutsideItsWiring(t *testing.T) {
 	}
 
 	for rel, file := range files {
-		if slices.Contains(wiring, rel) {
-			continue
-		}
 		calls := getFieldCalls(file, fields[filepath.Dir(rel)])
 		if len(calls) == 0 {
 			continue
 		}
 		t.Errorf("%s calls %s: a driving adapter asks a use case, not a port", rel, calls[0])
-	}
-	for _, rel := range wiring {
-		if files[rel] == nil {
-			t.Errorf("wiring holds %s and it is not there", rel)
-		}
 	}
 }
 
@@ -194,7 +180,7 @@ func depguardFiles(t *testing.T) []string {
 // lint rule matches.
 func getUncovered(patterns []string) []string {
 	var found []string
-	for one := range driving {
+	for one := range getDriving() {
 		if !strings.HasPrefix(one, "adapter/") {
 			continue
 		}

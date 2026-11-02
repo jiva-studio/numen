@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"golang.org/x/sys/unix"
 )
@@ -51,13 +52,20 @@ func readLinuxCores() linuxCores {
 	performance := readPerformanceCPUs()
 
 	var found linuxCores
-	dirs, _ := filepath.Glob(filepath.Join(linuxCPUDir, "cpu[0-9]*"))
-	for _, dir := range dirs {
-		id, err := strconv.Atoi(filepath.Base(dir)[len("cpu"):])
+	entries, err := os.ReadDir(linuxCPUDir)
+	if err != nil {
+		return found
+	}
+	for _, entry := range entries {
+		name := entry.Name()
+		if len(name) <= len("cpu") || !strings.HasPrefix(name, "cpu") || name[len("cpu")] < '0' || name[len("cpu")] > '9' {
+			continue
+		}
+		id, err := strconv.Atoi(name[len("cpu"):])
 		if err != nil || (allowed != nil && !allowed[id]) {
 			continue
 		}
-		core, err := readCPUCore(dir)
+		core, err := readCPUCore(filepath.Join(linuxCPUDir, name))
 		if err != nil {
 			continue
 		}

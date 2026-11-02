@@ -16,7 +16,7 @@ const agent: AgentPort = {
     }
     yield { kind: 'stopped', error: '' }
   },
-  async finish() {},
+  finish: async () => undefined,
 }
 
 const meta = {

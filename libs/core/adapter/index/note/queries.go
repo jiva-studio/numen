@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/adapter/index/sqlfile"
+	"github.com/jiva-studio/numen/libs/core/adapter/index/sqlwrite"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -16,7 +18,7 @@ type Queries struct{ db *sql.DB }
 
 func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
 
-func (q *Queries) GetFileStats(ctx context.Context, vaultID domain.VaultID) (map[string]domain.FileStat, error) {
+func (q *Queries) GetFileStats(ctx context.Context, vaultID domain.VaultID) (_ map[string]domain.FileStat, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return map[string]domain.FileStat{}, nil
@@ -25,11 +27,11 @@ func (q *Queries) GetFileStats(ctx context.Context, vaultID domain.VaultID) (map
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("file_stats"), vault, kind)
+	rows, err := q.db.QueryContext(ctx, getStatement("file_stats"), vault, kind)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	out := map[string]domain.FileStat{}
 	for rows.Next() {
@@ -65,19 +67,19 @@ func (q *Queries) GetSummary(ctx context.Context, vaultID domain.VaultID) (domai
 	if err != nil {
 		return s, err
 	}
-	err = q.db.QueryRowContext(ctx, stmt.Get("summary"), vault, vault).Scan(&s.Notes, &s.Headings)
+	err = q.db.QueryRowContext(ctx, getStatement("summary"), vault, vault).Scan(&s.Notes, &s.Headings)
 	return s, err
 }
 
 // Statements exposes the SQL this package runs, so a test can ask the database
 // how it plans to execute each statement. A package cannot check a plan about
 // itself: it needs a migrated database, which lives one level up.
-func Statements() map[string]string { return stmt }
+func Statements() map[string]string { return sqlfile.Load(files, "sql").All() }
 
 // GetNamedPaths is every note filed under one name. A name that answers for
 // more than one note is what makes a link written by that name ambiguous, and
 // is worth saying out loud before it surprises anyone.
-func (q *Queries) GetNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error) {
+func (q *Queries) GetNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) (_ []string, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -86,11 +88,11 @@ func (q *Queries) GetNamedPaths(ctx context.Context, vaultID domain.VaultID, nam
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("named"), vault, domain.FoldName(name))
+	rows, err := q.db.QueryContext(ctx, getStatement("named"), vault, domain.FoldName(name))
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	var out []string
 	for rows.Next() {
@@ -112,7 +114,7 @@ const mostPerNote = 2
 // The two are ranked apart and a title comes first, so what is cut by the limit
 // is a heading of a note already named or a name matched less well. What one
 // note may contribute is settled before the limit is applied.
-func (q *Queries) GetNameMatches(ctx context.Context, vaultID domain.VaultID, query string, limit int) ([]domain.NameMatch, error) {
+func (q *Queries) GetNameMatches(ctx context.Context, vaultID domain.VaultID, query string, limit int) (_ []domain.NameMatch, err error) {
 	if limit <= 0 {
 		// The result count is the caller's decision, not a database adapter's; a
 		// missing limit is a caller error.
@@ -132,13 +134,13 @@ func (q *Queries) GetNameMatches(ctx context.Context, vaultID domain.VaultID, qu
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("titles"),
+	rows, err := q.db.QueryContext(ctx, getStatement("titles"),
 		opening, closing, words, vault, limit,
 		opening, closing, words, vault, mostPerNote, limit)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	out := make([]domain.NameMatch, 0, limit)
 	for rows.Next() {

@@ -1,7 +1,7 @@
 /**
  * The open tabs reported to the core, and each tab rendering the icon of its kind.
  */
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { findTabKindIcon } from '@/entities/tab'
 import { useOpenTabs } from './useOpenTabs'
@@ -19,7 +19,7 @@ interface Entry {
 }
 
 const create = (entries: Entry[], front: { id: string; kind: string } | null = null) => {
-  const writeOpenTabs = vi.fn(async (_tabs: unknown) => {})
+  const writeOpenTabs = vi.fn((_tabs: unknown) => Promise.resolve())
   const tabs = ref(entries.map(({ id, title }) => ({ id, title })))
   const windowTabs = {
     handle: { front: () => front },
@@ -33,12 +33,16 @@ const create = (entries: Entry[], front: { id: string; kind: string } | null = n
           kind: one.kind ?? 'note',
           icon: one.icon,
           ...(one.openTab ? { getOpenTab: () => one.openTab } : {}),
-          ...(one.takesText ? { receiveText: () => {} } : {}),
+          ...(one.takesText ? { receiveText: vi.fn() } : {}),
         },
       }
     },
   } as unknown as Parameters<typeof useOpenTabs>[0]['windowTabs']
-  return { ...useOpenTabs({ core: { writeOpenTabs }, windowTabs }), writeOpenTabs, tabs }
+  return {
+    ...useOpenTabs({ core: { writeOpenTabs }, windowTabs, reportError: vi.fn() }),
+    writeOpenTabs,
+    tabs,
+  }
 }
 
 describe('the open tabs', () => {
@@ -104,10 +108,13 @@ describe('the open tabs', () => {
     const windowTabs = {
       handle: { front: () => null },
       tabs,
-      getTab: (id: string) => ({ state: {}, kind: { kind: 'note', getOpenTab: () => ({ path: `${id}.md` }) } }),
+      getTab: (id: string) => ({
+        state: {},
+        kind: { kind: 'note', getOpenTab: () => ({ path: `${id}.md` }) },
+      }),
     } as unknown as Parameters<typeof useOpenTabs>[0]['windowTabs']
 
-    useOpenTabs({ core: { writeOpenTabs }, windowTabs })
+    useOpenTabs({ core: { writeOpenTabs }, windowTabs, reportError: vi.fn() })
     expect(writeOpenTabs).toHaveBeenCalledTimes(1)
 
     tabs.value = [
@@ -141,6 +148,7 @@ describe('the open tabs', () => {
     const rejecting = {
       core: { writeOpenTabs: () => Promise.reject(new Error('down')) },
       windowTabs: { handle: { front: () => null }, tabs: ref([]), getTab: () => undefined },
+      reportError: vi.fn(),
     } as unknown as Parameters<typeof useOpenTabs>[0]
 
     expect(() => useOpenTabs(rejecting)).not.toThrow()
@@ -222,5 +230,50 @@ describe('the tab icon a kind declares', () => {
     const target = create([{ id: 'p', title: 'P', kind: 'agent', icon }])
 
     expect(target.getTabIcon('p')).toBe(icon)
+  })
+})
+
+describe('the open tabs while the window leaves its vault', () => {
+  it('waits for a write in flight, and writes nothing once paused', async () => {
+    const target = create([{ id: 'a', title: 'A', kind: 'note', openTab: { path: 'a.md' } }])
+    const writeLog: string[] = []
+    let release: () => void = () => undefined
+    target.writeOpenTabs.mockImplementation((tabs: unknown) => {
+      writeLog.push(
+        JSON.stringify((tabs as { tabs: { title: string }[] }).tabs.map((t) => t.title)),
+      )
+      return new Promise<void>((resolve) => {
+        release = resolve
+      })
+    })
+    target.tabs.value = [{ id: 'a', title: 'A1' }]
+    await nextTick()
+
+    const paused = target.pause()
+    release()
+    await Promise.resolve()
+    release()
+    await paused
+
+    expect(writeLog.at(-1)).toBe('["A1"]')
+    const writeCount = writeLog.length
+    target.tabs.value = [{ id: 'a', title: 'After the switch' }]
+    await nextTick()
+    await Promise.resolve()
+    expect(writeLog).toHaveLength(writeCount)
+  })
+
+  it('writes the tabs again once resumed', async () => {
+    const target = create([{ id: 'a', title: 'A', kind: 'note', openTab: { path: 'a.md' } }])
+    await target.pause()
+    const writeCount = target.writeOpenTabs.mock.calls.length
+    target.tabs.value = [{ id: 'a', title: 'A2' }]
+    await nextTick()
+    expect(target.writeOpenTabs).toHaveBeenCalledTimes(writeCount)
+
+    target.resume()
+    await nextTick()
+
+    expect(target.writeOpenTabs).toHaveBeenCalledTimes(writeCount + 1)
   })
 })

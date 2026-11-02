@@ -3,7 +3,7 @@
  * in `requests`.
  */
 import { vi } from 'vitest'
-import { asValue } from '@numen/plugin-sdk'
+import { asValue } from '@numen/core-client'
 import { requests } from './requests'
 import {
   folders,
@@ -59,6 +59,7 @@ vi.mock('@/app/vault', () => ({
       focus: { path, title: path.replace(/\.md$/, '') },
       focusType: 'note' as const,
       related: [],
+      connections: [],
     }),
     read: async () => asValue({ body: 'what is written', at: 'a1' }),
     write: async () => asValue({ body: '', at: 'a2' }),
@@ -92,7 +93,7 @@ vi.mock('@/app/vault', () => ({
     },
     readOpenTabs: async () => mockVaultState.savedTabs,
     watchQuit: pendingStream,
-    reportFlush: async () => {},
+    reportFlush: () => Promise.resolve(),
     detachTab: async () => {
       if (mockVaultState.detachError) throw new Error(mockVaultState.detachError)
     },

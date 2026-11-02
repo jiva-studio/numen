@@ -1,5 +1,12 @@
 import { test, expect, type Page } from '../../support/test.js'
-import { openWorkspace, runPaletteCommand } from '../../support/workspace'
+import { observeFor } from '../../support/browser.js'
+import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
+
+declare global {
+  interface Window {
+    loadingLabels: string[]
+  }
+}
 
 /**
  * Every view a plugin draws in a tab of its own, the command that opens it from the palette, and
@@ -7,13 +14,18 @@ import { openWorkspace, runPaletteCommand } from '../../support/workspace'
  */
 const VIEWS = [
   {
-    command: 'Show files',
+    command: 'Open files tab',
     query: 'files',
     tab: /^Files/,
     keys: 'Control+Shift+e',
   },
-  { command: 'New agent', query: 'agent', tab: /^Agent/, keys: 'Control+Shift+a' },
-  { command: 'New plex', query: 'plex', tab: /^(Thermodynamics|Plex)/, keys: 'Control+Shift+x' },
+  { command: 'Open agent tab', query: 'agent', tab: /^Agent/, keys: 'Control+Shift+a' },
+  {
+    command: 'Open plex tab',
+    query: 'plex',
+    tab: /^(Thermodynamics|Plex)/,
+    keys: 'Control+Shift+x',
+  },
   { command: 'Record audio', query: 'record', tab: /^Record Audio/, keys: undefined },
 ] as const
 
@@ -55,7 +67,7 @@ test.describe('a view a plugin draws in a tab', () => {
     await openWorkspace(page)
     await page.evaluate(() => {
       const labels: string[] = []
-      ;(window as unknown as { loadingLabels: string[] }).loadingLabels = labels
+      window.loadingLabels = labels
       const look = () => {
         for (const one of document.querySelectorAll('.loading-indicator')) {
           if (one.childElementCount > 0) labels.push(one.textContent ?? '')
@@ -70,11 +82,9 @@ test.describe('a view a plugin draws in a tab', () => {
       await page.keyboard.press(keys)
       await expect(page.getByRole('tab')).toHaveCount(before + 1)
     }
-    await page.waitForTimeout(500)
+    await observeFor(page, 500)
 
-    const labels = await page.evaluate(
-      () => (window as unknown as { loadingLabels: string[] }).loadingLabels,
-    )
+    const labels = await page.evaluate(() => window.loadingLabels)
     expect(labels).toStrictEqual([])
   })
 })

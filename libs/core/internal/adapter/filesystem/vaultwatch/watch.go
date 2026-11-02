@@ -23,9 +23,17 @@ const Backlog = 65536
 // scheduling; the bound that decides anything is Backlog.
 const handover = 1024
 
+// Hub places the watches that the watchers of one container share.
+type Hub = watchhub.Hub
+
+// NewHub returns the hub of one container.
+func NewHub() *Hub { return watchhub.NewHub() }
+
 // Watcher follows vaults on disk.
 type Watcher struct {
 	Options vaultconfig.Options
+	// Hub places the watches. Every watcher of a container shares the container's hub.
+	Hub *Hub
 }
 
 // WatchVault follows one vault and reports the sources that change in it.
@@ -48,7 +56,7 @@ func (w Watcher) WatchVault(
 	shape, why := vaultreader.ReadShape(reader)
 
 	raw := make(chan notify.EventInfo, handover)
-	stop, err := watchhub.Watch(reader.Root(), true, raw)
+	stop, err := w.Hub.Watch(reader.Root(), true, raw)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -88,7 +96,7 @@ func (w Watcher) File(ctx context.Context, path string) (<-chan struct{}, error)
 	name := filepath.Base(pos)
 
 	raw := make(chan notify.EventInfo, handover)
-	stop, err := watchhub.Watch(filepath.Dir(pos), false, raw)
+	stop, err := w.Hub.Watch(filepath.Dir(pos), false, raw)
 	if err != nil {
 		return nil, err
 	}

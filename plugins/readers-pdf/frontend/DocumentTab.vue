@@ -12,6 +12,7 @@ import type { TextRange } from './types'
 import type { DocumentTabState } from './model/useDocumentTab'
 import { useDocumentTab } from './model/useDocumentTab'
 import { useDocumentReader } from './model/useDocumentReader'
+import { readerPreferences } from './model/preferences'
 
 /* --------------------------------- Props ---------------------------------- */
 interface Props {
@@ -79,10 +80,10 @@ watch(
         maxX,
         maxY,
       }))
-      void activeState.value.applyHighlights([[{ page, rects }]])
+      activeState.value.applyHighlights([[{ page, rects }]]).catch(activeState.value.reportFailure)
       return
     }
-    void activeState.value.goToPage(page)
+    activeState.value.goToPage(page).catch(activeState.value.reportFailure)
   },
   { immediate: true },
 )
@@ -102,7 +103,7 @@ onUnmounted(() => {
 
 /* -------------------------------- Handlers -------------------------------- */
 function onGoToPage(page: number) {
-  if (activeState.value) void activeState.value.goToPage(page)
+  if (activeState.value) activeState.value.goToPage(page).catch(activeState.value.reportFailure)
 }
 
 function onWiden(width: number) {
@@ -129,6 +130,7 @@ function onSetPageHandle(reader: unknown) {
       :highlights="activeState.getHighlightsOn"
       :other-highlights="activeState.getOtherHighlightsOn"
       :words="words"
+      :fit="readerPreferences.defaultZoom"
       @go="onGoToPage"
       @measure="onWiden"
     >

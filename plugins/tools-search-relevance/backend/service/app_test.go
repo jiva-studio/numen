@@ -1,0 +1,293 @@
+package service_test
+
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/api"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/relevance"
+	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/service"
+)
+
+const (
+	maxNotes    = 100
+	token       = "plugin-token"
+	modelRecipe = "test|test-model|4|0|mean|int8@0.4"
+)
+
+// getMeasuredAt returns the instant every measurement of these tests is taken at.
+func getMeasuredAt() time.Time {
+	return time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC)
+}
+
+// fixture is a plugin over a host that shows an embedded vault of 25 notes.
+type fixture struct {
+	app    *service.App
+	search *hosttest.Search
+	vault  *hosttest.Vault
+	queue  *hosttest.Queue
+	web    *httptest.Server
+}
+
+func passages(n, sources int) []hosttest.SearchPassage {
+	out := make([]hosttest.SearchPassage, n)
+	for i := range out {
+		out[i] = hosttest.SearchPassage{Path: fmt.Sprintf("source-%d.md", 100+i%sources), Vector: []float32{64, 64, 64, 64}}
+	}
+	return out
+}
+
+// setNotes makes the vault hold n notes and no other.
+func setNotes(vault *hosttest.Vault, n int) {
+	for i := 1; i <= maxNotes; i++ {
+		if i > n {
+			vault.Remove(fmt.Sprintf("note-%d.md", i))
+			continue
+		}
+		vault.File(fmt.Sprintf("note-%d.md", i), "---\ntitle: title\n---\n")
+	}
+}
+
+func newFixture(t *testing.T, hint float64) *fixture {
+	t.Helper()
+	search := hosttest.NewSearch("physics", "chemistry")
+	search.SetModel(hosttest.SearchModel{Name: "test-model", Recipe: modelRecipe, FloorHint: hint})
+	search.SetEmbedder(func(string) []float32 { return []float32{1, 0, 0, 0} })
+	search.SetPassages(modelRecipe, passages(60, 3))
+	search.SetProgress(60, 60)
+
+	vault := hosttest.New("physics")
+	vault.Beside(hosttest.New("chemistry"))
+	setNotes(vault, 25)
+	queue := hosttest.NewQueue()
+	app := service.NewAppOver(service.Hosts{
+		Floors: relevance.Host{Search: search, Vault: vault, Store: vault.Store()},
+		Queue:  queue,
+	}, clock.NewFake(getMeasuredAt()))
+
+	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, app.Mount)
+	if err != nil {
+		t.Fatal(err)
+	}
+	web := httptest.NewServer(handler)
+	t.Cleanup(web.Close)
+	return &fixture{app: app, search: search, vault: vault, queue: queue, web: web}
+}
+
+// call posts the request to a method of the service the way the window's forwarding does, and decodes
+// the answer into res when the method succeeded. It returns the status and the failure otherwise.
+func (f *fixture) call(t *testing.T, method string, req, res any) (int, server.APIError) {
+	t.Helper()
+	return f.callWith(t, token, method, req, res)
+}
+
+func (f *fixture) callWith(t *testing.T, bearer, method string, req, res any) (int, server.APIError) {
+	t.Helper()
+	body, err := json.Marshal(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, f.web.URL+"/"+api.Service+"/"+method, bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bearer != "" {
+		request.Header.Set("Authorization", "Bearer "+bearer)
+	}
+	response, err := f.web.Client().Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := response.Body.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	var failure server.APIError
+	if response.StatusCode != http.StatusOK {
+		if err := json.NewDecoder(response.Body).Decode(&failure); err != nil && response.StatusCode != http.StatusUnauthorized {
+			t.Fatalf("status %d: %v", response.StatusCode, err)
+		}
+		return response.StatusCode, failure
+	}
+	if err := json.NewDecoder(response.Body).Decode(res); err != nil {
+		t.Fatal(err)
+	}
+	return response.StatusCode, failure
+}
+
+func TestTheServiceCalibratesSetsAndReadsTheFloor(t *testing.T) {
+	f := newFixture(t, 0.4)
+
+	var got api.GetFloorResponse
+	if status, failure := f.call(t, api.MethodGetFloor, api.GetFloorRequest{}, &got); status != http.StatusOK {
+		t.Fatalf("get: %d %v", status, failure)
+	}
+	if got.Source != api.SourceModel || got.Floor != 0.4 || got.Model != "test-model" || got.Calibration != nil {
+		t.Fatalf("before anything is kept: %+v", got)
+	}
+
+	var calibrated api.CalibrateFloorResponse
+	if status, failure := f.call(t, api.MethodCalibrateFloor, api.CalibrateFloorRequest{}, &calibrated); status != http.StatusOK {
+		t.Fatalf("calibrate: %d %v", status, failure)
+	}
+	state := calibrated.State
+	if calibrated.Outcome != api.OutcomeCalibrated || state.Source != api.SourceCalibrated || state.Floor < 0.51 || state.Floor > 0.53 {
+		t.Errorf("calibrated %+v", calibrated)
+	}
+	c := state.Calibration
+	if c == nil || c.QueryCount != 25 || c.PassageCount != 60 || len(c.Histogram) != 20 || c.Histogram[10] != 25*60 ||
+		c.CalibratedAt != getMeasuredAt().Unix() {
+		t.Errorf("calibration %+v", c)
+	}
+
+	var set api.SetFloorResponse
+	if status, failure := f.call(t, api.MethodSetFloor, api.SetFloorRequest{IsManual: true, Floor: 0.7}, &set); status != http.StatusOK {
+		t.Fatalf("set: %d %v", status, failure)
+	}
+	if set.State.Source != api.SourceManual || set.State.Floor != 0.7 || !set.State.IsManual || set.State.ManualFloor != 0.7 {
+		t.Errorf("set %+v", set)
+	}
+	if stored, _ := f.search.StoredFloor(modelRecipe); stored != 0.7 {
+		t.Errorf("the host applies %v, want 0.7", stored)
+	}
+
+	f.search.SetPassages(modelRecipe, []hosttest.SearchPassage{{Path: "note-1.md", Vector: []float32{127, 0, 0, 0}}})
+	var probe api.ProbeFloorResponse
+	if status, failure := f.call(t, api.MethodProbeFloor, api.ProbeFloorRequest{Query: "entropy"}, &probe); status != http.StatusOK {
+		t.Fatalf("probe: %d %v", status, failure)
+	}
+	if probe.BestSimilarity < 0.99 || probe.Floor != 0.7 || !probe.DoesPass {
+		t.Errorf("probe %+v", probe)
+	}
+}
+
+func TestTheServiceAnswersCodesForWhatItCannotServe(t *testing.T) {
+	f := newFixture(t, 0.4)
+
+	_, failure := f.call(t, api.MethodSetFloor, api.SetFloorRequest{IsManual: true, Floor: 2}, &api.SetFloorResponse{})
+	if failure.Code != server.CodeInvalidArgument {
+		t.Errorf("a floor above one gave %+v", failure)
+	}
+	f.search.FailEmbedding(errors.New("the plugin is not running"))
+	_, failure = f.call(t, api.MethodCalibrateFloor, api.CalibrateFloorRequest{}, &api.CalibrateFloorResponse{})
+	if failure.Code != server.CodeUnavailable {
+		t.Errorf("a model that fails gave %+v", failure)
+	}
+	f.search.Deny(host.PermissionIndexRead)
+	_, failure = f.call(t, api.MethodGetFloor, api.GetFloorRequest{}, &api.GetFloorResponse{})
+	if failure.Code != server.CodePermissionDenied {
+		t.Errorf("a permission the manifest lacks gave %+v", failure)
+	}
+}
+
+func TestACallWithoutTheTokenOfTheHostIsRefused(t *testing.T) {
+	f := newFixture(t, 0.4)
+	status, _ := f.callWith(t, "", api.MethodGetFloor, api.GetFloorRequest{}, &api.GetFloorResponse{})
+	if status != http.StatusUnauthorized {
+		t.Errorf("a call without the token gave status %d", status)
+	}
+	status, _ = f.callWith(t, "another-token", api.MethodGetFloor, api.GetFloorRequest{}, &api.GetFloorResponse{})
+	if status != http.StatusUnauthorized {
+		t.Errorf("a call with another token gave status %d", status)
+	}
+}
+
+func TestAVectorsReadyEventMeasuresTheVaultOnceHoweverOftenItRepeats(t *testing.T) {
+	ctx := t.Context()
+	f := newFixture(t, 0.4)
+	event := host.GetVectorsReadyEvent("physics")
+
+	for range 3 {
+		if err := f.app.HandleEvent(ctx, event); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if batches := f.search.EmbeddedBatches(); len(batches) != 1 {
+		t.Errorf("the vault was measured %d times, want once", len(batches))
+	}
+	if stored, found := f.search.StoredFloor(modelRecipe); !found || stored < 0.51 || stored > 0.53 {
+		t.Errorf("the host applies %v (%v), want the measured floor", stored, found)
+	}
+	if f.search.FloorWrites() != 1 {
+		t.Errorf("the floor was written %d times, want once", f.search.FloorWrites())
+	}
+}
+
+func TestTheFirstEventOfAnyKindChecksAVaultWhoseVectorsAlreadyExist(t *testing.T) {
+	ctx := t.Context()
+	f := newFixture(t, 0.4)
+
+	if err := f.app.HandleEvent(ctx, "onFile:md"); err != nil {
+		t.Fatal(err)
+	}
+	if _, found := f.search.StoredFloor(modelRecipe); !found {
+		t.Fatal("a plugin that started after the vectors existed did not measure the vault")
+	}
+
+	setNotes(f.vault, 0)
+	if err := f.app.HandleEvent(ctx, "onFile:md"); err != nil {
+		t.Fatal(err)
+	}
+	if batches := f.search.EmbeddedBatches(); len(batches) != 1 {
+		t.Errorf("a later event of another kind measured again: %d measurements", len(batches))
+	}
+}
+
+func TestAnEventForAnotherVaultMeasuresThatVault(t *testing.T) {
+	ctx := t.Context()
+	f := newFixture(t, 0.4)
+	if err := f.app.HandleEvent(ctx, host.GetVectorsReadyEvent("chemistry")); err != nil {
+		t.Fatal(err)
+	}
+	if _, found := f.search.StoredFloor(modelRecipe); found {
+		t.Error("the shown vault was given the floor measured on another")
+	}
+	if batches := f.search.EmbeddedBatches(); len(batches) != 0 {
+		t.Errorf("an empty vault was measured: %d", len(batches))
+	}
+	err := f.app.HandleEvent(ctx, host.GetVectorsReadyEvent("biology"))
+	if !errors.Is(err, host.ErrUnknownVault) {
+		t.Errorf("an unknown vault gave %v", err)
+	}
+}
+
+func TestAFailedMeasurementIsListedAsATaskAndAFinishedOneRemovesIt(t *testing.T) {
+	ctx := t.Context()
+	f := newFixture(t, 0.4)
+	event := host.GetVectorsReadyEvent("physics")
+
+	f.search.FailEmbedding(errors.New("the plugin is not running"))
+	if err := f.app.HandleEvent(ctx, event); !errors.Is(err, host.ErrEmbeddingFailed) {
+		t.Fatalf("got %v, want the failure of the model", err)
+	}
+	tasks := f.queue.ListTasks()
+	if len(tasks) != 1 || tasks[0].FailureReason == "" {
+		t.Fatalf("tasks %v, want the failure listed", tasks)
+	}
+
+	f.search.FailEmbedding(nil)
+	if err := f.app.HandleEvent(ctx, event); err != nil {
+		t.Fatal(err)
+	}
+	if tasks := f.queue.ListTasks(); len(tasks) != 0 {
+		t.Errorf("tasks %v, want the failure taken out", tasks)
+	}
+}
+
+func TestAnEventBeforeTheAppIsMountedIsIgnored(t *testing.T) {
+	app := service.NewApp()
+	if err := app.HandleEvent(t.Context(), host.GetVectorsReadyEvent("physics")); err != nil {
+		t.Errorf("got %v, want the event ignored", err)
+	}
+}

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -24,13 +25,13 @@ func makeScannedVault(t *testing.T) (container.Config, domain.Vault) {
 		t.Fatal(err)
 	}
 	vault := domain.Vault{ID: "01ENTROPY", Name: "physics", Path: dir}
-	cfg := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}
+	cfg := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
 
 	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
+	defer testsupport.Close(t, db)
 
 	if err := db.Vaults().Register(t.Context(), vault.ID); err != nil {
 		t.Fatal(err)
@@ -60,7 +61,7 @@ func read(t *testing.T, cfg container.Config) *container.Index {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	return db
 }
 
@@ -103,7 +104,7 @@ func TestReopenedIndex_KeepsSources(t *testing.T) {
 // A machine where nothing has scanned reads as a vault holding nothing.
 func TestAnIndexNobodyHasBuiltAnswersEmpty(t *testing.T) {
 	pos := filepath.Join(t.TempDir(), "index.db")
-	cfg := container.Config{IndexPath: pos}
+	cfg := container.NewConfig(container.Config{IndexPath: pos})
 	vault := domain.Vault{ID: "01ENTROPY", Name: "physics", Path: t.TempDir()}
 
 	db := read(t, cfg)

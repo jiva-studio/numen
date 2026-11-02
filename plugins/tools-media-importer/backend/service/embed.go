@@ -1,9 +1,11 @@
 package service
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
 )
@@ -21,9 +23,9 @@ func getEmbedPage(link address.URL) string {
 	return embedPattern + "?" + url.Values{"address": {string(link)}}.Encode()
 }
 
-// embedTemplate is the page that holds one player and nothing else. The player is sent the origin
+// embedPage is the page that holds one player and nothing else. The player is sent the origin
 // of the page as the Referer, which the site checks before it plays.
-var embedTemplate = template.Must(template.New("embed").Parse(`<!doctype html>
+const embedPage = `<!doctype html>
 <html><head><meta charset="utf-8"><title>{{.Address}}</title>
 <style>html,body{margin:0;height:100%;background:#000}iframe{border:0;width:100%;height:100%}</style>
 </head><body>
@@ -31,7 +33,7 @@ var embedTemplate = template.Must(template.New("embed").Parse(`<!doctype html>
   referrerpolicy="strict-origin-when-cross-origin"
   sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"></iframe>
 </body></html>
-`))
+`
 
 // serveEmbed answers the page that frames the player of the video at the query's address.
 func serveEmbed(w http.ResponseWriter, r *http.Request) {
@@ -45,9 +47,17 @@ func serveEmbed(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no player is known for this address", http.StatusNotFound)
 		return
 	}
+	page, err := template.New("embed").Parse(embedPage)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = embedTemplate.Execute(w, struct {
+	err = page.Execute(w, struct {
 		Address string
 		Player  template.URL
 	}{Address: string(parsed), Player: template.URL(player)})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "tools-media-importer: write the embed page: %v\n", err)
+	}
 }

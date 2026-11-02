@@ -15,7 +15,7 @@ func TestTheEmbedPageFramesThePlayerOfTheAddress(t *testing.T) {
 		t.Fatal("a video address has no embed page")
 	}
 	recorded := httptest.NewRecorder()
-	serveEmbed(recorded, httptest.NewRequest(http.MethodGet, "/plugin/"+page, nil))
+	serveEmbed(recorded, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/plugin/"+page, nil))
 
 	body := recorded.Body.String()
 	if recorded.Code != http.StatusOK || !strings.Contains(body, `src="`+address.PlayerOrigin+`/embed/tidalmill01"`) ||
@@ -29,7 +29,7 @@ func TestAnAddressWithNoPlayerHasNoEmbedPage(t *testing.T) {
 		t.Errorf("an article has the embed page %q", page)
 	}
 	recorded := httptest.NewRecorder()
-	serveEmbed(recorded, httptest.NewRequest(http.MethodGet, "/plugin/embed?address=https%3A%2F%2Ftidal-mills.example%2F", nil))
+	serveEmbed(recorded, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/plugin/embed?address=https%3A%2F%2Ftidal-mills.example%2F", nil))
 	if recorded.Code != http.StatusNotFound {
 		t.Errorf("an article's embed page answered %d", recorded.Code)
 	}

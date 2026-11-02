@@ -4,7 +4,7 @@
  * A note opens in the editor of its type; any other file in the reader
  * registered for its extension, at the selector given.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { FileKind } from '@/shared/model/fileTypes'
 import { fileOpeners, type FileOpenerDeps } from './openers'
 
@@ -152,14 +152,14 @@ describe('a path opened', () => {
     expect(activeEditors).toStrictEqual(['sample Animals.md — current —'])
   })
 
-  it('opens nothing where no editor was handed over for the kind', async () => {
+  it('opens nothing where no editor was passed for the kind', async () => {
     const one = vault({ 'Animals.md': note('sample') })
     const tabOpeners = fileOpeners(one.core)
 
     await expect(tabOpeners.openFile('Animals.md', 'Animals')).resolves.toBeUndefined()
   })
 
-  it('opens a file in nothing where no reader was handed over for its extension', async () => {
+  it('opens a file in nothing where no reader was passed for its extension', async () => {
     const one = vault({ 'talks/Ants.bin': OTHER })
     const tabOpeners = fileOpeners(one.core)
 
@@ -220,7 +220,7 @@ describe('the icon of a file', () => {
   it('is the icon of the reader of its extension, and nothing where none reads it', () => {
     const tabOpeners = fileOpeners(vault().core)
     const icon = { name: 'Icon' }
-    tabOpeners.registerExtensionReader('.bin', () => {}, icon)
+    tabOpeners.registerExtensionReader('.bin', vi.fn(), icon)
 
     expect(tabOpeners.findFileIcon('a/b.BIN')).toBe(icon)
     expect(tabOpeners.findFileIcon('a/b.png')).toBeUndefined()
@@ -229,7 +229,7 @@ describe('the icon of a file', () => {
 })
 
 describe('a file just made here', () => {
-  it('opens in nothing where no editor was handed over for what it was made as', () => {
+  it('opens in nothing where no editor was passed for what it was made as', () => {
     const tabOpeners = fileOpeners(vault().core)
 
     expect(() => tabOpeners.openNewFile('Animals.md', 'Animals', 'sample')).not.toThrow()

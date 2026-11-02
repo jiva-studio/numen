@@ -3,14 +3,18 @@
  */
 import { computed, ref, watch, type Component } from 'vue'
 import type { PlexNeighbourhood, PlexRelation, PlexDestination } from '../plex'
-import { getFileName, NOTE_TYPE } from '@numen/plugin-sdk'
+import {
+  formatErrorMessage,
+  getFileName,
+  getRelationErrorWords,
+  NOTE_TYPE,
+} from '@numen/plugin-sdk'
 import { createNodeItems, NEW_NOTE, NONE, OFFERED } from '../lib/menu'
 import { convertNeighbourhood, getNoteTypes } from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'
+import { findRole } from '../lib/roles'
 import { WORDS as words } from '../words'
 import type {
-  DirectionalLinkItem,
-  LinkDirectionMode,
   LinkInspectorRequest,
   MenuRequest,
   PlexEditor,
@@ -26,8 +30,6 @@ import { useQuickLink } from './useQuickLink'
 import { usePlexHeadings } from './usePlexHeadings'
 
 export type {
-  DirectionalLinkItem,
-  LinkDirectionMode,
   LinkInspectorRequest,
   MenuRequest,
   PlexEditor,
@@ -35,8 +37,6 @@ export type {
   PlexTabState,
   QuickLinkRequest,
 }
-
-export { getInverseRelation } from './linkInspector'
 
 function usePlexImage(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof createNodeIdMap>) {
   const picture = computed<PlexNeighbourhood | null>(() => {
@@ -101,7 +101,7 @@ function createPlexNodeActions(options: {
   const activate = (node: string) => {
     const path = map.getNodePath(node)
     if (path) {
-      void view.go(path)
+      view.go(path).catch((error: unknown) => deps.showMessage(formatErrorMessage(error)))
       deps.onSelectPath?.(path, getName(path))
     }
   }
@@ -116,25 +116,34 @@ function createPlexNodeActions(options: {
       return
     }
     const path = map.getNodePath(from)
-    if (path && (await deps.editor.createInRelation(path, relation))) await view.go(path)
+    const role = findRole(deps.creatable, relation)
+    if (!path || !role) return
+    const made = await deps.editor.createRelated({ from: path, role })
+    if (!made.ok) return deps.showMessage(getRelationErrorWords(made.error))
+    await view.go(path)
   }
 
   const joinNodes = async (from: string, to: string, relation: PlexRelation) => {
     const one = map.getNodePath(from)
     const other = map.getNodePath(to)
-    if (one && other && (await deps.editor.join(one, other, relation))) await view.go(one)
+    const role = findRole(deps.creatable, relation)
+    if (!one || !other || !role) return
+    const joined = await deps.editor.join(one, other, { role })
+    if (!joined.ok) return deps.showMessage(getRelationErrorWords(joined.error))
+    await view.go(one)
   }
 
   const dropNodes = async (nodes: readonly string[], relation: PlexRelation) => {
     const here = view.here.value
-    if (!here) return
+    const role = findRole(deps.creatable, relation)
+    if (!here || !role) return
 
     const notJoined: string[] = []
     let hasJoinedAny = false
 
     for (const path of nodes) {
       if (path === here) continue
-      if (await deps.editor.join(here, path, relation)) hasJoinedAny = true
+      if ((await deps.editor.join(here, path, { role })).ok) hasJoinedAny = true
       else notJoined.push(getName(path))
     }
 
@@ -183,7 +192,9 @@ function usePlexMenu(options: {
     menu.value = null
     if (!on) return
     if (on.node === null) {
-      if (id === NEW_NOTE) void createNote()
+      if (id === NEW_NOTE) {
+        createNote().catch((error: unknown) => deps.showMessage(formatErrorMessage(error)))
+      }
       return
     }
     if (!OFFERED.has(id) && !declared.value.some((one) => one.id === id)) return
@@ -218,7 +229,12 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const getName = (path: string): string => getPlexNodeName(view.neighbourhood.value, path)
   const quickLinkModel = useQuickLink(view, deps, map)
   const { readHeadings, getHeadings } = usePlexHeadings(drawnNodes, types, deps, map)
-  const linkInspectorModel = useLinkInspector(view, deps.editor, map, getName)
+  const linkInspectorModel = useLinkInspector(
+    view,
+    { editor: deps.editor, showMessage: deps.showMessage },
+    map,
+    getName,
+  )
 
   const nodeActions = createPlexNodeActions({
     view,
@@ -234,8 +250,11 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     createNote: nodeActions.createNote,
   })
 
+  const reportFailure = (error: unknown): void => deps.showMessage(formatErrorMessage(error))
+
   const tabState: PlexTabState = {
     view,
+    reportFailure,
     picture,
     empty,
     dragged,
@@ -270,5 +289,3 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
 
   return tabState
 }
-
-export const usePlexTab = createPlexTab

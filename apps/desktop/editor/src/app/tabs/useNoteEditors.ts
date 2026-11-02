@@ -1,6 +1,8 @@
 /**
  * Editing, conflict handling, and flushing for open notes.
  */
+import { formatErrorMessage } from '@numen/core-client'
+import { runInBackground } from '@numen/ui'
 import { openNotes, createNoteWriter } from '@/entities/note'
 import { raiseConflicts, createFileFlush } from '@/features/file-conflict'
 import { createNotes, type SearchDeps, type Store } from '@/features/command-palette'
@@ -19,9 +21,10 @@ export interface NoteEditorsDeps {
 
 function createNullChanges() {
   return {
-    close: () => {},
-    reportChange: () => {},
-    reportNoteChange: () => {},
+    // No change listener is attached until the window supplies one.
+    close: () => undefined,
+    reportChange: () => undefined,
+    reportNoteChange: () => undefined,
   }
 }
 
@@ -42,15 +45,20 @@ function createNoted(windowTabs: ReturnType<typeof useWindowTabs>) {
   }
 }
 
-function createNotedStore(notes: ReturnType<typeof openNotes>): Store {
+function createNotedStore(
+  notes: ReturnType<typeof openNotes>,
+  windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'tabs'>,
+  reportError: (error: unknown) => void,
+): Store {
   return {
     has: (id) => notes.has(id),
     getPath: (id) => notes.getPath(id),
-    getTitle: (id) => notes.getPath(id),
+    getTitle: (id) =>
+      windowTabs.tabs.value.find((one) => one.id === id)?.title || notes.getPath(id),
     asking: (id) => notes.stale(id) !== null,
     flushPending: (id) => notes.flushPending(id),
-    close: (id) => void notes.close(id),
-    getTabAt: () => null,
+    close: (id) => runInBackground(notes.close(id), reportError),
+    getTabAt: (path) => notes.getOpenIds().find((id) => notes.getPath(id) === path) ?? null,
   }
 }
 
@@ -65,7 +73,9 @@ export function createNoteEditors({ core, log, tabOpeners, windowTabs }: NoteEdi
 
   raiseConflicts(notes, fileFlush)
 
-  const notedStore = createNotedStore(notes)
+  const notedStore = createNotedStore(notes, windowTabs, (error) =>
+    log.getWriter('editing')(`A note did not close: ${formatErrorMessage(error)}`, 'error'),
+  )
   const stores: readonly Store[] = [notedStore]
   const reached = createNotes(stores, tabOpeners)
   const getTitle = (id: string): string => stores.find((one) => one.has(id))?.getTitle(id) ?? ''

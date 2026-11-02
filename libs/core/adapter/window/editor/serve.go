@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/assembly"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/command"
+	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/plugincatalog"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/textmenu"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/texts"
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
@@ -66,7 +67,7 @@ type Installation struct {
 	models *run.Lock
 	// closing signals when the window root context ends.
 	closing <-chan struct{}
-	// indexer brings the index of the vault in the window level with it.
+	// indexer updates the index of the vault in the window.
 	indexer *indexing.Worker
 	// embedderError records the error if embedding model initialization failed.
 	embedderError error
@@ -86,8 +87,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 
 	first, err := vaults.NewGetVaultToShow(registry).Execute(targetVault)
 	if err != nil {
-		_ = made.CloseIndex()
-		return nil, err
+		return nil, errors.Join(err, made.CloseIndex())
 	}
 
 	// One task list serves every operation and the window that displays it.
@@ -102,7 +102,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 	// compiled behind this, so the window is drawn while it arrives.
 	embedder, asking, closeEmbedder, why := made.OpenEmbedders(ctx, tasks)
 	if why != nil {
-		fmt.Fprintf(out, "not embedding: %v\n", why)
+		writeDiagnostic(tasks.Set, out, "not embedding: %v\n", why)
 		// Record indexing task failure when embedding provider initialization fails.
 		tasks.Set(run.Task{ID: makingVectors, Title: "Indexing", Error: why.Error()})
 	}
@@ -119,11 +119,10 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 	// only. The degraded state is reported as a task because a window opened
 	// from a desktop entry has no terminal.
 	finds := made.NewSearch(asking, func(err error) {
-		state.reportTask(run.Task{ID: wordsAlone, Title: "Answering by words alone", Error: err.Error()})
+		state.reportTask(run.Task{ID: wordsAlone, Title: "Search by words only", Error: err.Error()})
 	})
 	services.Search.Finds = &finds
-	floors := made.OpenFloors(embedder, newFloorErrorReporter(state))
-	services.Search.Floors = &floors
+	made.SetPluginSearch(embedder, newFloorErrorReporter(state))
 
 	pool := &Installation{
 		State:         state,
@@ -146,17 +145,17 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 	// Reindexing every file applies to this launch only; it is not carried to a
 	// vault opened later.
 	if err := pool.startVault(ctx, first, made.IsRebuildingIndex()); err != nil {
-		_ = closeEmbedder()
-		_ = made.CloseIndex()
-		return nil, err
+		return nil, errors.Join(err, closeEmbedder(), made.CloseIndex())
 	}
 
 	// Recordings are served over a dedicated socket, opened after every
 	// dependency it answers through is in place. When the socket cannot be opened,
 	// the player has no address.
-	onStop := func(why error) { fmt.Fprintf(out, "recordings will no longer play: %v\n", why) }
-	if playing, why := Listen(services.server, onStop); why != nil {
-		fmt.Fprintf(out, "recordings will not play: %v\n", why)
+	onStop := func(why error) {
+		writeDiagnostic(state.reportTask, out, "recordings will no longer play: %v\n", why)
+	}
+	if playing, why := Listen(ctx, services.server, onStop); why != nil {
+		writeDiagnostic(state.reportTask, out, "recordings will not play: %v\n", why)
 	} else {
 		services.openPlaying(playing)
 	}
@@ -172,14 +171,10 @@ func (o *Installation) Close() error {
 	o.stopVault()
 	// The socket a recording was played over answers with the vault's files, so
 	// it stops before the vault does.
-	_ = o.Services.Playing.Close()
+	playingErr := o.Services.Playing.Close()
 	// The embedder goes after the work that uses it and before the database,
 	// which is the order they depend on each other in.
-	err := o.stopEmbedder()
-	if closed := o.made.CloseIndex(); err == nil {
-		err = closed
-	}
-	return err
+	return errors.Join(playingErr, o.stopEmbedder(), o.made.CloseIndex())
 }
 
 // Queries returns the window's index cache as a port; Problems, Passages and
@@ -227,10 +222,10 @@ func (o *Installation) Refresh() vaults.Refresh {
 	return o.made.GetRefresh()
 }
 
-// level brings named notes up to date in the index, through whatever is
-// following the vault they are in. A note the window makes is level before the
+// updateIndex updates the index for named notes, through whatever is
+// following the vault they are in. A note the window makes is in the index before the
 // answer comes back, so it is drawn as soon as it exists.
-func (o *Installation) level(ctx context.Context, v domain.Vault, paths []string) error {
+func (o *Installation) updateIndex(ctx context.Context, v domain.Vault, paths []string) error {
 	_, err := o.Refresh().Execute(ctx, v, paths)
 	return err
 }
@@ -242,22 +237,26 @@ const (
 	indexingTexts = indexing.IndexingTexts
 	makingVectors = indexing.MakingVectors
 	// wordsAlone is the task ID for a search that runs without semantic retrieval.
-	wordsAlone = "answering by words alone"
-	// wearingATheme is a theme the settings name that the catalogue has not.
-	wearingATheme = "wearing a theme"
-	// readingTheSettings is a name the settings file holds that this build
-	// reads under another one. Each sentence is placed under this and its place.
-	readingTheSettings = "reading the settings"
-	// readingTheFloor is a similarity floor the index holds and cannot read.
-	readingTheFloor = "reading the search floor"
-	// levellingTheIndex is a file that reached the vault and an index that did
-	// not follow it.
-	levellingTheIndex = "levelling the index"
+	wordsAlone = "search by words only"
+	// applyingTheme is the task ID for a theme the settings name that the catalogue does not have.
+	applyingTheme = "apply theme"
+	// readingTheSettings is the task ID for a settings name that this build reads under another name.
+	// Each message is appended to this ID with its position.
+	readingTheSettings = "read settings"
+	// readingTheFloor is the task ID for a similarity floor that is stored and cannot be read.
+	readingTheFloor = "read search floor"
+	// updatingIndex is the task ID for a file written to the vault that the index did not follow.
+	updatingIndex = "update index"
 )
 
-// SayTheme records a theme warning task.
+// SayTheme records a theme warning task, and takes the task out of the list for an empty message,
+// which says the theme the settings name is found now.
 func (o *Installation) SayTheme(message string) {
-	o.State.reportTask(run.Task{ID: wearingATheme, Title: "Wearing a theme", Error: message})
+	if message == "" {
+		o.State.finishTask(applyingTheme)
+		return
+	}
+	o.State.reportTask(run.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
 }
 
 // Report records configuration messages as tasks.
@@ -265,7 +264,7 @@ func (o *Installation) Report(messages []string) {
 	for item, one := range messages {
 		o.State.reportTask(run.Task{
 			ID:    fmt.Sprintf("%s %d", readingTheSettings, item),
-			Title: "Reading the settings",
+			Title: "Read settings",
 			Error: one,
 		})
 	}
@@ -324,7 +323,7 @@ func (o *Installation) wireUseCases() {
 	//
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
-	o.notes = made.OpenNotes(o.level).FollowMoves(o.State.GetWindow())
+	o.notes = made.OpenNotes(o.updateIndex).FollowMoves(o.State.GetWindow())
 	o.vaults = made.OpenVaults(o.notes.Move)
 
 	notes := &o.notes
@@ -332,16 +331,19 @@ func (o *Installation) wireUseCases() {
 	services.Note.write = &notes.Write
 	services.Note.create = &notes.Create
 	services.Note.editLinks = &notes.Linking
-	services.Note.replaceLinks = &notes.ReplaceLinks
 	services.Note.rename = &notes.Rename
 	services.Note.showNeighbourhood = &notes.Neighbourhood
 	services.Note.getLinkAddress = notes.GetLinkAddress
+	services.Note.bindConnections(notes)
 	services.File.remove = &notes.Remove
 
 	services.Settings.Get = made.OpenGetSettings()
 	services.PluginServices = made.GetPluginServices()
 	services.Playing.setPluginServices(services.PluginServices)
 	services.Command = command.NewHandler(o.State, made.GetPluginCommands())
+	if plugins := made.GetPluginCatalog(); plugins != nil {
+		services.Catalog = plugincatalog.NewHandler(plugins)
+	}
 	if menu := made.OpenFileMenu(); menu != nil {
 		services.TextVersion = textmenu.NewHandler(o.State, menu)
 	}
@@ -487,7 +489,7 @@ type WorkerAssembly = assembly.WorkerAssembly
 type ScenarioAssembly = assembly.ScenarioAssembly
 
 // importingFiles is what a drop is called in the list of what is being done.
-const importingFiles = "importing files"
+const importingFiles = "import files"
 
 // namedInAnError is how many of the files that stayed outside are named before
 // the rest are counted.
@@ -515,11 +517,11 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	}
 	defer state.Writing.finish()
 
-	pos := run.Task{ID: importingFiles + " " + into, Title: "Bringing files in", About: into}
+	pos := run.Task{ID: importingFiles + " " + into, Title: "Import files", About: into}
 	state.reportTask(pos)
 
 	imported, err := o.vaults.Import.Execute(ctx, showing, into, paths)
-	if direct := getDirectChildren(into, imported.Landed); len(direct) > 0 {
+	if direct := getDirectChildren(into, imported.Imported); len(direct) > 0 {
 		state.ChangeEvents.publish(change{paths: direct})
 	}
 	if err != nil {

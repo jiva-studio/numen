@@ -85,9 +85,18 @@ export function useTranscriptDraft(how: DraftOptions) {
       isWriting = false
       if (isOpen() && prose.value !== body) {
         isPending = true
-        writeTimer = setTimeout(() => void keep(), idleMs)
+        writeTimer = setTimeout(keepInBackground, idleMs)
       }
     }
+  }
+
+  /** Reports the failure of a write that ran in the background. */
+  const reportFailure = (failure: unknown) => {
+    error.value = formatErrorMessage(failure)
+  }
+
+  const keepInBackground = () => {
+    keep().catch(reportFailure)
   }
 
   /** Applies the user's edit. The text is saved after typing stops. */
@@ -99,9 +108,11 @@ export function useTranscriptDraft(how: DraftOptions) {
     // view does not follow a line the user moved while typing.
     typing.value = true
     clearTimeout(followTimer)
-    followTimer = setTimeout(() => void (typing.value = false), idleMs)
+    followTimer = setTimeout(() => {
+      typing.value = false
+    }, idleMs)
     clearTimeout(writeTimer)
-    writeTimer = setTimeout(() => void keep(), idleMs)
+    writeTimer = setTimeout(keepInBackground, idleMs)
   }
 
   /**
@@ -130,5 +141,5 @@ export function useTranscriptDraft(how: DraftOptions) {
     prose.value = ''
   }
 
-  return { prose, typing, keep, setProse, setText, drop, stop }
+  return { prose, typing, keep, reportFailure, setProse, setText, drop, stop }
 }

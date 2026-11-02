@@ -99,15 +99,15 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	model := embeddingport.EmbeddingModel{Name: "bench", Dimensions: 384, MaxTokens: embedCfg.MaxTokens, Pooling: "mean"}
 
 	dbPath := filepath.Join(b.TempDir(), "search_bench.db")
-	cfg := container.Config{
+	cfg := container.NewConfig(container.Config{
 		IndexPath: dbPath,
 		Embedding: embedCfg,
-	}
+	})
 	db, err := cfg.OpenIndex(ctx)
 	if err != nil {
 		b.Fatal(err)
 	}
-	b.Cleanup(func() { _ = db.Close() })
+	testsupport.CloseAfter(b, db)
 
 	if err := db.Vaults().Register(ctx, v.ID); err != nil {
 		b.Fatal(err)
@@ -296,7 +296,7 @@ func BenchmarkComponents(b *testing.B) {
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
-					res, err := c.passages.FindNearest(ctx, c.vault.ID, c.recipe, c.queryVec, nil, 20, 0.1)
+					res, err := c.passages.FindNearest(ctx, c.vault.ID, sourceport.NearestQuery{Recipe: c.recipe, Vector: c.queryVec, Limit: 20, Floor: 0.1})
 					if err != nil {
 						b.Fatal(err)
 					}

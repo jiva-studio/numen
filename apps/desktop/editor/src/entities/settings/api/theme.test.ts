@@ -6,7 +6,7 @@
  * shape.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { Mode as Modes, Origin } from '@numen/protocol'
+import { THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
 
 vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
 
@@ -25,7 +25,7 @@ const { themes } = await import('./theme')
 const createAnswer = (overrides: Record<string, unknown> = {}) => ({
   themes: [],
   applied: 'preset/Numen.css',
-  mode: Modes.SYSTEM,
+  mode: THEME_MODE.SYSTEM,
   interfaceScale: 1,
   textScale: 1,
   interfaceScaleBounds: { min: 0.8, max: 2 },
@@ -34,20 +34,46 @@ const createAnswer = (overrides: Record<string, unknown> = {}) => ({
 })
 
 describe('every theme there is', () => {
-  it('says which ship inside the application and which are the person’s own', async () => {
+  it('says which ship inside the application, which a plugin contributes and which are the person’s own', async () => {
     request.listThemes.mockResolvedValue(
       createAnswer({
         themes: [
-          { name: 'preset/Numen.css', title: 'Numen', origin: Origin.PRESET, isPinned: false },
-          { name: 'own/Dusk.css', title: 'Dusk', origin: Origin.MINE, isPinned: true },
+          {
+            name: 'preset/Numen.css',
+            title: 'Numen',
+            origin: THEME_ORIGIN.PRESET,
+            isPinned: false,
+            pluginId: '',
+          },
+          {
+            name: 'own/Dusk.css',
+            title: 'Dusk',
+            origin: THEME_ORIGIN.MINE,
+            isPinned: true,
+            pluginId: '',
+          },
+          {
+            name: 'plugin:org.example.themes/night',
+            title: 'Night',
+            origin: THEME_ORIGIN.PLUGIN,
+            isPinned: true,
+            pluginId: 'org.example.themes',
+          },
         ],
       }),
     )
 
     const { themes: every } = await themes.getAppearance()
     expect(every).toEqual([
-      { name: 'preset/Numen.css', title: 'Numen', isBuiltIn: true, isPinned: false },
-      { name: 'own/Dusk.css', title: 'Dusk', isBuiltIn: false, isPinned: true },
+      { name: 'preset/Numen.css', title: 'Numen', isBuiltIn: true, pluginId: '', isPinned: false },
+      { name: 'own/Dusk.css', title: 'Dusk', isBuiltIn: false, pluginId: '', isPinned: true },
+      {
+        name: 'plugin:org.example.themes/night',
+        title: 'Night',
+        isBuiltIn: false,
+        pluginId: 'org.example.themes',
+        isPinned: true,
+      },
     ])
   })
 })
@@ -55,9 +81,9 @@ describe('every theme there is', () => {
 describe('which half of a colour pair is read', () => {
   it('is returned in the window’s own words', async () => {
     for (const [mode, word] of [
-      [Modes.LIGHT, 'light'],
-      [Modes.DARK, 'dark'],
-      [Modes.SYSTEM, 'system'],
+      [THEME_MODE.LIGHT, 'light'],
+      [THEME_MODE.DARK, 'dark'],
+      [THEME_MODE.SYSTEM, 'system'],
     ] as const) {
       request.listThemes.mockResolvedValue(createAnswer({ mode }))
       expect((await themes.getAppearance()).mode).toBe(word)
@@ -77,7 +103,7 @@ describe('which half of a colour pair is read', () => {
 
     expect(request.writeAppearance.mock.calls[0]?.[0]).toEqual({
       name: 'own/Dusk.css',
-      mode: Modes.DARK,
+      mode: THEME_MODE.DARK,
       interfaceScale: 1.25,
       textScale: 1.5,
     })
@@ -149,10 +175,13 @@ describe('the rest of what is requested', () => {
   })
 
   it('is requested for under the signal it was given', async () => {
-    request.watchThemes.mockImplementation(async function* () {})
+    request.watchThemes.mockImplementation(async function* () {
+      yield* [] as string[][]
+    })
     const controller = new AbortController()
 
-    for await (const names of themes.watchThemes(controller.signal)) void names
+    const receivedThemes: (readonly string[])[] = []
+    for await (const names of themes.watchThemes(controller.signal)) receivedThemes.push(names)
 
     expect(request.watchThemes).toHaveBeenLastCalledWith({}, { signal: controller.signal })
   })

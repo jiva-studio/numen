@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { measureRect } from '../../dom'
 /**
  * A book rendered for a screen: its text set in columns and turned a page at a
  * time.
@@ -8,9 +7,9 @@ import { measureRect } from '../../dom'
  * into the book's text: enlarging the text lays out the columns again and the
  * offset is unchanged.
  */
-import { useTemplateRef } from 'vue'
+import { useTemplateRef, type Directive } from 'vue'
 
-import { getPageNavigationAction } from '@numen/ui'
+import { getPageNavigationAction, measureRect } from '@numen/ui'
 import { createBookPointer } from '../model/hand'
 import { useBookLayout } from '../model/layout'
 import { createBookLinks } from '../model/links'
@@ -75,6 +74,9 @@ const hand = createBookPointer({
 })
 
 /* -------------------------------- Handlers -------------------------------- */
+/** A picture arrives after the columns were read, which sets the text again. */
+const onArrival = () => layout.settleKept()
+
 const onFollow = (press: MouseEvent) => links.follow(press, layout.findFragmentOffset)
 
 /**
@@ -89,12 +91,22 @@ const onKey = (event: KeyboardEvent): boolean => {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
+/** Writes markup that was checked before it reached this component. */
+const vMarkup: Directive<HTMLElement, string> = {
+  created: (element, binding) => {
+    element.innerHTML = binding.value
+  },
+  beforeUpdate: (element, binding) => {
+    if (binding.value !== binding.oldValue) element.innerHTML = binding.value
+  },
+}
+
 defineExpose({
   /**
    * Lays out the text again. A reader rendered off screen has no reading area, and
    * the caller signals when it is on screen.
    */
-  measure: () => layout.settle(layout.getKeptOffset()),
+  measure: () => layout.settle(layout.getKeptOffset),
   /** A key the tab caught: true where it turned the page. */
   handleKey: onKey,
 })
@@ -115,16 +127,17 @@ defineExpose({
       >
         <!-- The markup reaches this component already measured against what may
              be drawn. -->
-        <!-- eslint-disable-next-line vue/no-v-html -->
         <div
           v-show="isMeasured"
           ref="paper"
+          v-markup="markup"
           class="book__paper prose prose-sm prose-numen max-w-none"
           :class="{ 'book__paper--unset': !isStood }"
           :style="setting"
+          @load.capture="onArrival"
+          @error.capture="onArrival"
           @click="onFollow"
           @auxclick="onFollow"
-          v-html="markup"
         />
       </div>
     </div>

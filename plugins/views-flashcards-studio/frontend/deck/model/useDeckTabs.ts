@@ -2,7 +2,14 @@
  * Window registration and tab state for flashcard deck tabs.
  */
 import { computed } from 'vue'
-import { asFailure, asValue, type BufferHost, type PathRename } from '@numen/plugin-sdk'
+import {
+  asFailure,
+  asValue,
+  formatErrorMessage,
+  type BufferHost,
+  type MessageWriter,
+  type PathRename,
+} from '@numen/plugin-sdk'
 import { openNotes } from '../../buffer'
 import { getFailureCode, type Cards, type Presets } from '../../cards'
 import { createDeckAnswers } from './answers'
@@ -29,10 +36,14 @@ export interface DeckTabsOptions {
   readonly buffers: BufferHost
   /** The window lets go of a tab that took its own close. */
   readonly closeTab: (id: string) => void
+  /** Where the failure of a background operation is shown. Without one the failure is not shown. */
+  readonly writeMessage?: MessageWriter | undefined
 }
 
 export function useDeckTabs(cards: Cards, presets: Presets, options: DeckTabsOptions) {
-  const { buffers, closeTab } = options
+  // Messages are dropped when the caller supplies no writer.
+  const { buffers, closeTab, writeMessage = () => undefined } = options
+  const reportFailure = (error: unknown): void => writeMessage(formatErrorMessage(error), 'error')
   const vaultAnswers = createDeckAnswers()
   const store = createDeckNoteStore(cards, vaultAnswers)
   buffers.track(store)
@@ -44,6 +55,7 @@ export function useDeckTabs(cards: Cards, presets: Presets, options: DeckTabsOpt
     vaultAnswers,
     wiring,
     closeTab,
+    reportFailure,
   })
 
   const kind = createDeckKind({
@@ -55,6 +67,7 @@ export function useDeckTabs(cards: Cards, presets: Presets, options: DeckTabsOpt
     listCardModelsAgain: wiring.listCardModelsAgain,
     listPresetsAgain: wiring.scheduled.listing.listPresetsAgain,
     refreshDeckPreset: wiring.scheduled.refreshDeckPreset,
+    reportFailure,
     createDeckTabState,
   })
 
@@ -135,10 +148,11 @@ interface DeckTabStateFactoryDeps {
   vaultAnswers: ReturnType<typeof createDeckAnswers>
   wiring: ReturnType<typeof useDeckScheduleSync>
   closeTab: (id: string) => void
+  reportFailure: (error: unknown) => void
 }
 
 function createDeckTabFactory(deps: DeckTabStateFactoryDeps) {
-  const { store, read, vaultAnswers, wiring, closeTab } = deps
+  const { store, read, vaultAnswers, wiring, closeTab, reportFailure } = deps
   const { getDeck, getMarks } = read
   const { offers, cardModels, scheduled } = wiring
   const { listing, scheduleDeck, getDeckPreset } = scheduled
@@ -177,19 +191,24 @@ function createDeckTabFactory(deps: DeckTabStateFactoryDeps) {
       ),
       scheduled: computed(() => getDeckPreset(id)),
       choices,
-      setSchedule: (preset) => void scheduleDeck(id, preset),
+      setSchedule: (preset) => {
+        scheduleDeck(id, preset).catch(reportFailure)
+      },
       ...actions,
       keepMine: () => store.keep(id),
       takeFile: () => store.take(id),
       close: (tab) => {
         const path = store.getPath(id)
-        void store.close(id).then((removed) => {
-          if (!removed) return
-          read.forgetTab(id)
-          scheduled.forgetTab(id)
-          forgetPath(path)
-          closeTab(tab)
-        })
+        store
+          .close(id)
+          .then((removed) => {
+            if (!removed) return
+            read.forgetTab(id)
+            scheduled.forgetTab(id)
+            forgetPath(path)
+            closeTab(tab)
+          })
+          .catch(reportFailure)
       },
     }
   }

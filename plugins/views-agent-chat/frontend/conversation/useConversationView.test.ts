@@ -117,7 +117,7 @@ describe('the conversation view', () => {
 describe('a question in flight', () => {
   /** A port whose answer does not arrive until the test lets it. */
   const createSlowAgent = () => {
-    let answer = () => {}
+    let answer: () => void = () => undefined
     const agent: AgentPort = {
       async *ask(query) {
         await new Promise<void>((then) => {
@@ -126,7 +126,7 @@ describe('a question in flight', () => {
         })
         yield { kind: 'text', text: 'Because of the leaves.' }
       },
-      async finish() {},
+      finish: async () => undefined,
     }
     return { agent, answer: () => answer() }
   }
@@ -136,14 +136,14 @@ describe('a question in flight', () => {
     const view = effectScope().run(() =>
       useConversationView({ agent: slow.agent, focus: '' }, (draw) => draw()),
     )!
-    expect(view.isWorking.value).toBe(false)
+    expect(view.isAnswerPending.value).toBe(false)
 
     const reply = view.send('why')
-    expect(view.isWorking.value).toBe(true)
+    expect(view.isAnswerPending.value).toBe(true)
 
     slow.answer()
     await reply
-    expect(view.isWorking.value).toBe(false)
+    expect(view.isAnswerPending.value).toBe(false)
   })
 
   it('stops working when the answer on its way is stopped', async () => {
@@ -155,7 +155,7 @@ describe('a question in flight', () => {
 
     view.stop()
 
-    expect(view.isWorking.value).toBe(false)
+    expect(view.isAnswerPending.value).toBe(false)
     await reply
   })
 })

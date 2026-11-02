@@ -4,6 +4,7 @@ package sound
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -15,16 +16,16 @@ import (
 )
 
 // The first bytes of each container this reads.
-var (
-	riff = []byte("RIFF")
-	wave = []byte("WAVE")
-	fLaC = []byte("fLaC")
-	id3  = []byte("ID3")
+const (
+	riff = "RIFF"
+	wave = "WAVE"
+	fLaC = "fLaC"
+	id3  = "ID3"
 )
 
 // GetDuration is how long a recording is, in milliseconds, out of its header
 // alone.
-func GetDuration(raw []byte) (int, error) {
+func GetDuration(raw []byte) (ms int, err error) {
 	switch {
 	case isWav(raw):
 		found, err := parseWav(raw)
@@ -33,12 +34,12 @@ func GetDuration(raw []byte) (int, error) {
 		}
 		return signal.GetMillis(len(found.samples)/(found.channels*found.bits/8), found.rate), nil
 
-	case bytes.HasPrefix(raw, fLaC):
+	case bytes.HasPrefix(raw, []byte(fLaC)):
 		stream, err := flac.New(bytes.NewReader(raw))
 		if err != nil {
 			return 0, fmt.Errorf("the flac recording: %w", err)
 		}
-		defer stream.Close()
+		defer func() { err = errors.Join(err, stream.Close()) }()
 		return signal.GetMillis(int(stream.Info.NSamples), int(stream.Info.SampleRate)), nil
 
 	case isMP3(raw):
@@ -68,7 +69,7 @@ func Read(raw []byte) ([]float32, int, error) {
 		}
 		return mono(sound, found.channels), found.rate, nil
 
-	case bytes.HasPrefix(raw, fLaC):
+	case bytes.HasPrefix(raw, []byte(fLaC)):
 		return fromFlac(raw)
 
 	case isMP3(raw):
@@ -78,13 +79,13 @@ func Read(raw []byte) ([]float32, int, error) {
 }
 
 func isWav(raw []byte) bool {
-	return len(raw) >= 12 && bytes.HasPrefix(raw, riff) && bytes.Equal(raw[8:12], wave)
+	return len(raw) >= 12 && bytes.HasPrefix(raw, []byte(riff)) && string(raw[8:12]) == wave
 }
 
 // isMP3 reports whether a file is an mp3: it starts with a tag, or with a
 // frame sync mark.
 func isMP3(raw []byte) bool {
-	if bytes.HasPrefix(raw, id3) {
+	if bytes.HasPrefix(raw, []byte(id3)) {
 		return true
 	}
 	return len(raw) >= 2 && raw[0] == 0xFF && raw[1]&0xE0 == 0xE0
@@ -139,7 +140,7 @@ func parseWav(raw []byte) (riffWave, error) {
 	if !observed {
 		return out, fmt.Errorf("the wav recording has no header")
 	}
-	// A sample narrower than a byte is a compressed container wearing a wav
+	// A sample narrower than a byte is a compressed container with a wav
 	// header, which this reads none of.
 	if out.channels <= 0 || out.rate <= 0 || out.bits < 8 {
 		return out, fmt.Errorf("the wav recording is %d channels of %d bits at %d hertz",
@@ -179,23 +180,31 @@ func (w riffWave) readSound() ([]float32, error) {
 		return out, nil
 	}
 	for i := 0; i < count; i++ {
-		raw := w.samples[i*width : (i+1)*width]
-		switch {
-		case w.format == wavFloating && w.bits == 32:
-			out[i] = math.Float32frombits(binary.LittleEndian.Uint32(raw))
-		case w.format == wavFloating && w.bits == 64:
-			out[i] = float32(math.Float64frombits(binary.LittleEndian.Uint64(raw)))
-		case w.format == wavInteger && w.bits == 8:
-			// Eight bit samples are written without a sign, silence in the
-			// middle of their range.
-			out[i] = (float32(raw[0]) - 128) / 128
-		case w.format == wavInteger:
-			out[i] = float32(readSigned(raw)) / float32(int64(1)<<(w.bits-1))
-		default:
-			return nil, fmt.Errorf("the wav recording writes its samples as %d of %d bits", w.format, w.bits)
+		value, err := w.readSample(w.samples[i*width : (i+1)*width])
+		if err != nil {
+			return nil, err
 		}
+		out[i] = value
 	}
 	return out, nil
+}
+
+// readSample is one sample of the file as floating point.
+func (w riffWave) readSample(raw []byte) (float32, error) {
+	switch {
+	case w.format == wavFloating && w.bits == 32:
+		return math.Float32frombits(binary.LittleEndian.Uint32(raw)), nil
+	case w.format == wavFloating && w.bits == 64:
+		return float32(math.Float64frombits(binary.LittleEndian.Uint64(raw))), nil
+	case w.format == wavInteger && w.bits == 8:
+		// Eight bit samples are written without a sign, silence in the
+		// middle of their range.
+		return (float32(raw[0]) - 128) / 128, nil
+	case w.format == wavInteger:
+		return float32(readSigned(raw)) / float32(int64(1)<<(w.bits-1)), nil
+	default:
+		return 0, fmt.Errorf("the wav recording writes its samples as %d of %d bits", w.format, w.bits)
+	}
 }
 
 // readInt16 fills out with little-endian 16-bit samples scaled to [-1, 1), four
@@ -261,12 +270,12 @@ func fromMP3(raw []byte) ([]float32, int, error) {
 }
 
 // fromFlac decodes a flac, frame by frame, one subframe to a channel.
-func fromFlac(raw []byte) ([]float32, int, error) {
+func fromFlac(raw []byte) (samples []float32, rate int, err error) {
 	stream, err := flac.New(bytes.NewReader(raw))
 	if err != nil {
 		return nil, 0, fmt.Errorf("the flac recording: %w", err)
 	}
-	defer stream.Close()
+	defer func() { err = errors.Join(err, stream.Close()) }()
 
 	channels := int(stream.Info.NChannels)
 	full := float32(int64(1) << (stream.Info.BitsPerSample - 1))

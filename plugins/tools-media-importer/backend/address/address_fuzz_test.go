@@ -8,24 +8,26 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
 )
 
-// webSeeds are seed address shapes: the two fetched schemes and several
+// getWebSeeds returns seed address shapes: the two fetched schemes and several
 // unfetched ones, a video address in each sharing format, a page address with a
 // tracking parameter, an address with credentials, and bytes that are not an
 // address.
-var webSeeds = []string{
-	"https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-	"https://youtu.be/dQw4w9WgXcQ?si=Ab1Cd2Ef3&t=90",
-	"http://example.com:80/a?utm_source=news#top",
-	"https://user:secret@example.com/a",
-	"https://пример.рф/статья",
-	"file:///etc/passwd",
-	"javascript:alert(1)",
-	"note://01J8F3K2M9QRSTVWXYZ0123456",
-	"https://",
-	"://",
-	"  ",
-	"",
-	"\x00\xff",
+func getWebSeeds() []string {
+	return []string{
+		"https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+		"https://youtu.be/dQw4w9WgXcQ?si=Ab1Cd2Ef3&t=90",
+		"http://example.com:80/a?utm_source=news#top",
+		"https://user:secret@example.com/a",
+		"https://пример.рф/статья",
+		"file:///etc/passwd",
+		"javascript:alert(1)",
+		"note://01J8F3K2M9QRSTVWXYZ0123456",
+		"https://",
+		"://",
+		"  ",
+		"",
+		"\x00\xff",
+	}
 }
 
 // hasUserInfo reports whether an address carries a name or a password before its host.
@@ -39,7 +41,7 @@ func hasUserInfo(raw string) bool {
 // A link note is authored manually in a file that other tools also edit, so the input
 // is untrusted bytes.
 func FuzzParseWebAddress(f *testing.F) {
-	for _, seed := range webSeeds {
+	for _, seed := range getWebSeeds() {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, raw string) {

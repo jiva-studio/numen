@@ -1,10 +1,12 @@
 package onnxruntime
 
 import (
+	"errors"
 	"os"
-	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/jiva-studio/numen/libs/core/port/machineport"
 )
 
 // The environment variables a user sets to relocate the models home, disable
@@ -19,30 +21,28 @@ const (
 	EnvProvider = "NUMEN_ONNX_PROVIDER"
 )
 
-// GetHome returns the models home: EnvDir, or numen/models under the
-// application data directory.
+// ErrNoHome is a library asked for where no models home is set.
+var ErrNoHome = errors.New("no models folder: the host granted none and NUMEN_MODELS_DIR is not set")
+
+// GetHome returns the models home EnvDir names, or ErrNoHome. The application passes the folder it granted through Config.Dir.
 func GetHome() (string, error) {
 	if dir := os.Getenv(EnvDir); dir != "" {
 		return dir, nil
 	}
-	config, err := os.UserConfigDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(config, "numen", "models"), nil
+	return "", ErrNoHome
 }
 
 // IsOffline reports whether EnvOffline forbids fetching.
 func IsOffline() bool {
-	return slices.Contains(offlineValues, strings.ToLower(strings.TrimSpace(os.Getenv(EnvOffline))))
+	return slices.Contains(getOfflineValues(), strings.ToLower(strings.TrimSpace(os.Getenv(EnvOffline))))
 }
 
 // offlineValues are the spellings of EnvOffline that forbid fetching.
-var offlineValues = []string{"1", "true", "yes", "on"}
+func getOfflineValues() []string { return []string{"1", "true", "yes", "on"} }
 
 // FromEnvironment returns the configuration the environment names: the
 // provider, and whether fetching is forbidden. The models home is resolved when
 // the runtime is provisioned.
-func FromEnvironment() Config {
-	return Config{Provider: os.Getenv(EnvProvider), Offline: IsOffline()}
+func FromEnvironment(clock machineport.Clock) Config {
+	return Config{Provider: os.Getenv(EnvProvider), Offline: IsOffline(), Clock: clock}
 }

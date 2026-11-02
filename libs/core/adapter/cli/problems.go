@@ -3,14 +3,13 @@ package cli
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-func runProblemsCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+func runProblemsCommand(ctx context.Context, out io.Writer, deps Deps, args []string) (err error) {
 	if len(args) < 1 {
 		return errors.New("usage: numen-cli problems <vault> [<check>...]")
 	}
@@ -22,7 +21,7 @@ func runProblemsCommand(ctx context.Context, out io.Writer, deps Deps, args []st
 	if err != nil {
 		return err
 	}
-	defer closeIfOpen(open.Close)
+	defer closeInto(&err, open.Close)
 
 	var named []domain.Check
 	for _, name := range args[1:] {
@@ -33,12 +32,13 @@ func runProblemsCommand(ctx context.Context, out io.Writer, deps Deps, args []st
 	if err != nil {
 		return err
 	}
+	r := newReporter(out)
 	if len(report.Found) == 0 {
-		fmt.Fprintln(out, "nothing to report")
-		return nil
+		r.Println("nothing to report")
+		return r.Err()
 	}
 	for _, p := range report.Found {
-		fmt.Fprintf(out, "%s\n  %s: %s\n", p.Path, p.Kind, p.Detail)
+		r.Printf("%s\n  %s: %s\n", p.Path, p.Kind, p.Detail)
 	}
-	return nil
+	return r.Err()
 }

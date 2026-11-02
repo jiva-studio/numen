@@ -36,7 +36,7 @@ apps/desktop/         # the window's host: cmd/ and internal/
 
 - Never discarded. `_ = fn()` is a finding.
 - Wrapped with `%w` and enough context to locate the failure: `read %s: %w`, not `error: %w`.
-- Not both logged and returned. Two lines about one failure is noise at a distance from the cause.
+- Not both logged and returned. Two log lines about one failure are noise, and the second one is far from the cause.
 - Sentinels compared with `errors.Is`, types reached with `errors.As`, never string matching. Discriminants are `ErrorCode` and `error`, never `refusal`.
 - `panic` only for a programmer error that cannot be recovered from — never for bad input or a missing file.
 - Errors from `Close` checked where the write matters, and ignored visibly where it does not.
@@ -44,8 +44,8 @@ apps/desktop/         # the window's host: cmd/ and internal/
 
 ### Interfaces
 
-- Declared by the code that needs them, not beside the code that satisfies them.
-- Small — one to three methods. An interface with one implementation and eight methods is a struct wearing a costume.
+- Declared by the code that needs them, not next to the code that satisfies them.
+- Small — one to three methods. An interface with one implementation and eight methods is a struct with an interface name that overstates what it does.
 - Accepted as parameters, returned as concrete types.
 - Not introduced "for testing" when the concrete type is already testable.
 
@@ -57,11 +57,11 @@ apps/desktop/         # the window's host: cmd/ and internal/
 
 ### Concurrency
 
-- Every goroutine has an owner that knows when it ends, and selects on `ctx.Done()`. One started and forgotten is a leak.
+- Every goroutine has an owner that knows when it ends, and selects on `ctx.Done()`. A goroutine that is started and never stopped is a leak.
 - Shared state guarded, with the guard covering every access rather than most.
 - No `time.Sleep` as synchronisation, in code or in a test.
 - No blocking channel send without a buffer or a `select` default.
-- Everything concurrent is testable under `-race`.
+- Everything concurrent is testable under `-race`. The race detector runs in CI only (`GO_RACE=1`); a local run goes without it.
 
 ### Resources and data
 
@@ -92,10 +92,10 @@ A comment describes the active behavior, invariant, or constraint. It does not a
 ## 5. Tests
 
 - `t.TempDir`, `t.Context`, `t.Cleanup`. Never the machine's real home, config or cache directory, and never the network. Where the code defaults to a platform location, the test passes an explicit path.
-- The committed fixture vault in `tests/` is read-only and awkward on purpose. A test that needs to change it works on a copy.
+- The committed fixture vault in `tests/` is read-only and deliberately irregular. A test that needs to change it works on a copy.
 - **A test must be able to fail.** For anything guarding a rule rather than a value, break the rule and watch the test fail — remove the filter, invert the condition, delete the guard. A test that passes either way is worse than no test.
 - A scoping claim is tested with two vaults whose notes share no words, asserting both directions.
-- Anything configured per connection is tested holding several connections at once; a sequential test is handed the same one every time.
+- Anything configured per connection is tested holding several connections at once; a sequential test uses the same one every time.
 - Table tests where the cases are genuinely parallel, plain tests where they are not.
 - Failure messages that say what was wrong: `got %d notes, want 7`.
 - New behaviour has a test. A bug fix has a test that fails without the fix.
@@ -107,10 +107,10 @@ A comment describes the active behavior, invariant, or constraint. It does not a
 Per module, from its own directory:
 
 ```bash
-cd libs/core     && gofmt -l . && go vet ./... && go test ./... -race
-cd apps/desktop  && gofmt -l ./cmd ./internal && go vet ./... && go test ./... -race
+cd libs/core     && gofmt -l . && go vet ./... && go test ./...
+cd apps/desktop  && gofmt -l ./cmd ./internal && go vet ./... && go test ./...
 cd libs/protocol && buf lint && npm run generate
 ```
 
 - The schema is never hand-edited. Change the `.proto`, run `make generate`, commit what comes out; `make generate-check` fails when the two drift.
-- `node_modules` symlinked from the primary checkout resolves `@numen/protocol` to whatever branch that checkout is parked on. A generated symbol missing there is that, not the branch under test.
+- `node_modules` symlinked from the primary checkout resolves `@numen/protocol` to whatever branch that checkout has checked out. A generated symbol missing there is that, not the branch under test.

@@ -2,19 +2,21 @@ package plugincli
 
 import (
 	"archive/zip"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
-	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 )
 
-// Package bundles the files a plugin ships (manifest.json, bin and dist) into a distributable zip archive.
+// Package bundles the files a plugin ships (manifest.json, bin, dist and the theme stylesheets the
+// manifest declares) into a distributable zip archive.
 func Package(targetPath, outArchive string, stdout io.Writer) (string, error) {
 	manifestPath, pluginDir, err := resolveManifestPath(targetPath)
 	if err != nil {
@@ -34,8 +36,8 @@ func Package(targetPath, outArchive string, stdout io.Writer) (string, error) {
 		return "", fmt.Errorf("read manifest: %w", err)
 	}
 
-	var m pluginport.PluginManifest
-	if err := json.Unmarshal(manifestData, &m); err != nil {
+	m, err := manifestjson.Decode(manifestData)
+	if err != nil {
 		return "", fmt.Errorf("decode manifest: %w", err)
 	}
 
@@ -44,12 +46,14 @@ func Package(targetPath, outArchive string, stdout io.Writer) (string, error) {
 		return "", fmt.Errorf("create output directory: %w", err)
 	}
 
-	fileCount, err := createArchive(pluginDir, destination)
+	fileCount, err := createArchive(pluginDir, destination, listThemeFiles(m.Contributes.Themes))
 	if err != nil {
 		return "", err
 	}
 
-	fmt.Fprintf(stdout, "Bundled %d files into %s\n", fileCount, destination)
+	if _, err := fmt.Fprintf(stdout, "Bundled %d files into %s\n", fileCount, destination); err != nil {
+		return "", fmt.Errorf("report bundle: %w", err)
+	}
 	return destination, nil
 }
 
@@ -69,7 +73,7 @@ func isSamePath(path, absDest string) bool {
 }
 
 // shippedPaths are the entries of a plugin directory an archive holds.
-var shippedPaths = []string{"manifest.json", "bin", "dist"}
+func getShippedPaths() []string { return []string{"manifest.json", "bin", "dist"} }
 
 // isArchive reports whether the file is an archive in the top level of the dist folder.
 func isArchive(pluginDir, path string) bool {
@@ -103,7 +107,17 @@ func (w *archiveWalker) Walk(path string, entry fs.DirEntry, walkErr error) erro
 	return nil
 }
 
-func createArchive(pluginDir, destPath string) (int, error) {
+// listThemeFiles returns the stylesheets the manifest declares, as paths relative to the plugin folder.
+func listThemeFiles(themes []manifest.Theme) []string {
+	files := make([]string, 0, len(themes))
+	for _, theme := range themes {
+		files = append(files, filepath.FromSlash(theme.File))
+	}
+	return files
+}
+
+// createArchive writes the shipped folders and the extra files, given relative to the plugin folder.
+func createArchive(pluginDir, destPath string, extra []string) (count int, err error) {
 	absDest, err := filepath.Abs(destPath)
 	if err != nil {
 		absDest = destPath
@@ -113,10 +127,18 @@ func createArchive(pluginDir, destPath string) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("create archive file: %w", err)
 	}
-	defer zipFile.Close()
+	defer func() {
+		if closeErr := zipFile.Close(); closeErr != nil {
+			err = errors.Join(err, fmt.Errorf("close archive file: %w", closeErr))
+		}
+	}()
 
 	archive := zip.NewWriter(zipFile)
-	defer archive.Close()
+	defer func() {
+		if closeErr := archive.Close(); closeErr != nil {
+			err = errors.Join(err, fmt.Errorf("finish archive: %w", closeErr))
+		}
+	}()
 
 	walker := archiveWalker{
 		archive:   archive,
@@ -125,7 +147,7 @@ func createArchive(pluginDir, destPath string) (int, error) {
 		count:     0,
 	}
 
-	for _, shipped := range shippedPaths {
+	for _, shipped := range slices.Concat(getShippedPaths(), filterOutsideShipped(extra)) {
 		root := filepath.Join(pluginDir, shipped)
 		if _, err := os.Stat(root); errors.Is(err, fs.ErrNotExist) {
 			continue
@@ -137,12 +159,28 @@ func createArchive(pluginDir, destPath string) (int, error) {
 	return walker.count, nil
 }
 
-func addFileToZip(archive *zip.Writer, srcPath, zipPath string) error {
+// filterOutsideShipped returns the files that no shipped folder already holds.
+func filterOutsideShipped(files []string) []string {
+	var outside []string
+	for _, file := range files {
+		top, _, _ := strings.Cut(file, string(filepath.Separator))
+		if !slices.Contains(getShippedPaths(), top) {
+			outside = append(outside, file)
+		}
+	}
+	return outside
+}
+
+func addFileToZip(archive *zip.Writer, srcPath, zipPath string) (err error) {
 	srcFile, err := os.Open(srcPath)
 	if err != nil {
 		return err
 	}
-	defer srcFile.Close()
+	defer func() {
+		if closeErr := srcFile.Close(); closeErr != nil {
+			err = errors.Join(err, closeErr)
+		}
+	}()
 
 	info, err := srcFile.Stat()
 	if err != nil {

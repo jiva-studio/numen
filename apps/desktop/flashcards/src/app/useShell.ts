@@ -4,14 +4,21 @@
  * the chosen vault.
  */
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
-import { createPluginLoader, getPluginStyle, type PluginLoaderDeps } from '@numen/plugin-host'
+import {
+  createPluginLoader,
+  getPluginStyle,
+  type PluginLoaderDeps,
+  type LinkClient,
+} from '@numen/plugin-host'
 import type { VaultRow } from '@numen/shell'
-import { formatErrorMessage, type LinkClient } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
 import { agentService, noteService, pluginService, vaultsService } from '@/shared/clients'
 import { createWindowAgent, type WindowAgentClient } from './agent'
 import { createShellHost } from './host'
 import { createWindowKeys } from './windowKeys'
+import { useExternalLinks } from './useExternalLinks'
 import { useWindowTasks, WINDOW_SOURCE } from './useWindowTasks'
+import { useAppearance, type AppearanceServices } from './useAppearance'
 
 /** What the shell is given: the plugins it loads, how a module is fetched, and the vaults. */
 export interface ShellDeps {
@@ -21,6 +28,8 @@ export interface ShellDeps {
   readonly dynamicImport?: PluginLoaderDeps['dynamicImport']
   readonly agentClient?: WindowAgentClient
   readonly linkClient?: LinkClient
+  /** The theme service and the plugin names the appearance commands are given. */
+  readonly appearance?: AppearanceServices
 }
 
 const listPlugins = async (): Promise<readonly string[]> =>
@@ -73,6 +82,8 @@ export function useShell(deps: ShellDeps = {}) {
     openVault: openTab,
   })
   useWindowTasks(notices)
+  useExternalLinks(notices)
+  const appearance = useAppearance(notices, deps.appearance)
 
   onMounted(async () => {
     window.addEventListener('keydown', onKeyDown)
@@ -87,7 +98,9 @@ export function useShell(deps: ShellDeps = {}) {
   })
   onUnmounted(() => {
     window.removeEventListener('keydown', onKeyDown)
-    void loader.close()
+    loader.close().catch((error: unknown) => {
+      listError.value = formatErrorMessage(error)
+    })
     windowAgent.dispose()
   })
 
@@ -107,5 +120,6 @@ export function useShell(deps: ShellDeps = {}) {
     plugins: { style, failures, isLoading },
     notices,
     mountView,
+    appearance,
   }
 }

@@ -2,9 +2,7 @@
  * What a notice is, as plain values. No DOM, no clock, no measurement.
  */
 
-import type { Tally, TallyUnit, Severity } from './tally'
-
-export type { Severity }
+import type { TallyUnit, Severity } from './tally'
 
 /**
  * How long a notice is displayed.
@@ -23,7 +21,7 @@ export type Stay = 'holds' | 'read' | 'kept'
  * applied to: one change counts as one, however large the changed object.
  */
 export interface Notice {
-  /** Whatever the caller addresses this notice by. Never read, only handed back. */
+  /** Whatever the caller addresses this notice by. Never read, only returned. */
   readonly id: string
   /** What is happening, in the words it is to be shown by. */
   readonly text: string
@@ -83,30 +81,4 @@ export const createNotice = (task: Task): Notice => {
       ? { done: completed, total: total, ...(task.counting ? { counting: task.counting } : {}) }
       : {}),
   }
-}
-
-/**
- * The notices worth displaying: the ones with content.
- *
- * A notice with no text is unreadable.
- */
-export const getReadable = (notices: readonly Notice[]): readonly Notice[] =>
-  notices.filter((notice) => notice.text !== '')
-
-/** What a notice counts against, for the ones that count anything. */
-export const findTally = (notice: Notice): Tally | undefined =>
-  notice.total === undefined || notice['done'] === undefined
-    ? undefined
-    : { completedCount: notice['done'], total: notice.total }
-
-/**
- * The dismissed notices that remain relevant: those still active. Work that
- * ends and begins again is a new notice and is reported as one.
- */
-export const getStillAway = (
-  away: ReadonlySet<string>,
-  notices: readonly Notice[],
-): ReadonlySet<string> => {
-  const here = new Set(getReadable(notices).map((notice) => notice.id))
-  return new Set([...away].filter((id) => here.has(id)))
 }

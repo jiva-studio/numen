@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 )
@@ -75,14 +76,22 @@ func toAPIError(err error) *APIError {
 type API struct {
 	server  *Server
 	service string
+	err     error
 }
 
-// NewAPI creates the API of the service name on the server.
+// NewAPI creates the API of the service name on the server. An invalid service name is reported by
+// Err and no method is mounted.
 func (s *Server) NewAPI(service string) *API {
+	a := &API{server: s, service: service}
 	if service == "" || strings.ContainsAny(service, "/ {}") {
-		panic(fmt.Sprintf("server: invalid API service name %q", service))
+		a.err = fmt.Errorf("server: invalid API service name %q", service)
 	}
-	return &API{server: s, service: service}
+	return a
+}
+
+// Err returns the first failure to mount the service or one of its methods, or nil.
+func (a *API) Err() error {
+	return a.err
 }
 
 type headerKey struct{}
@@ -90,8 +99,10 @@ type headerKey struct{}
 // GetHeader returns the headers of the request a method is answering, such as the Numen-Vault
 // header that names the vault the call works. It returns nil outside a method.
 func GetHeader(ctx context.Context) http.Header {
-	header, _ := ctx.Value(headerKey{}).(http.Header)
-	return header
+	if header, ok := ctx.Value(headerKey{}).(http.Header); ok {
+		return header
+	}
+	return nil
 }
 
 func withHeader(ctx context.Context, header http.Header) context.Context {
@@ -99,8 +110,12 @@ func withHeader(ctx context.Context, header http.Header) context.Context {
 }
 
 func (a *API) mount(method string, handler http.Handler) {
+	if a.err != nil {
+		return
+	}
 	if method == "" || strings.ContainsAny(method, "/ {}") {
-		panic(fmt.Sprintf("server: invalid API method name %q", method))
+		a.err = fmt.Errorf("server: invalid API method name %q", method)
+		return
 	}
 	a.server.Register(http.MethodPost+" /"+a.service+"/"+method, a.server.interceptor.RequireToken(handler))
 }
@@ -121,7 +136,7 @@ func Handle[Req, Res any](a *API, method string, fn func(ctx context.Context, re
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(res)
+		logWriteError(json.NewEncoder(w).Encode(res))
 	}))
 }
 
@@ -139,18 +154,18 @@ func Stream[Req, Res any](a *API, method string, fn func(ctx context.Context, re
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.WriteHeader(http.StatusOK)
-		_ = flusher.Flush()
+		logWriteError(flusher.Flush())
 
 		send := func(res Res) error {
 			return writeEvent(w, flusher, "", res)
 		}
 		if err := fn(withHeader(r.Context(), r.Header), req, send); err != nil {
 			if r.Context().Err() == nil {
-				_ = writeEvent(w, flusher, "error", toAPIError(err))
+				logWriteError(writeEvent(w, flusher, "error", toAPIError(err)))
 			}
 			return
 		}
-		_ = writeEvent(w, flusher, "end", struct{}{})
+		logWriteError(writeEvent(w, flusher, "end", struct{}{}))
 	}))
 }
 
@@ -165,7 +180,14 @@ func readRequest(body io.Reader, req any) error {
 func writeFailure(w http.ResponseWriter, failure *APIError) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(failure.Code.getStatus())
-	_ = json.NewEncoder(w).Encode(failure)
+	logWriteError(json.NewEncoder(w).Encode(failure))
+}
+
+// logWriteError records a failed response write; the client has usually disconnected.
+func logWriteError(err error) {
+	if err != nil {
+		slog.Debug("server: write response", "error", err)
+	}
 }
 
 func writeEvent(w http.ResponseWriter, flusher *http.ResponseController, name string, payload any) error {

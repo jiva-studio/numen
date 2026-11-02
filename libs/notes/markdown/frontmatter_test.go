@@ -90,7 +90,7 @@ func TestRemovingEveryLinkConsumesTheKeyOut(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if _, err := d.RemoveLink(domain.Address{Scheme: domain.SchemeName, Value: "Old"}, ""); err != nil {
+	if _, err := d.RemoveLink(domain.LinkKey{Target: domain.Address{Scheme: domain.SchemeName, Value: "Old"}}); err != nil {
 		t.Fatalf("remove link: %v", err)
 	}
 	if got, want := string(d.Bytes()), "---\nid: 01J8\n---\nbody\n"; got != want {

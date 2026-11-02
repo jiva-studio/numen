@@ -1,7 +1,6 @@
 package service_test
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -19,7 +18,7 @@ func setupTestVault() (*hosttest.Vault, *service.Tools) {
 }
 
 func TestNoteRead(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	_, svc := setupTestVault()
 	registry, err := svc.Registry()
 	if err != nil {
@@ -83,7 +82,7 @@ func TestNoteRead(t *testing.T) {
 }
 
 func TestNoteWrite(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	_, svc := setupTestVault()
 	registry, err := svc.Registry()
 	if err != nil {
@@ -143,7 +142,7 @@ func TestNoteWrite(t *testing.T) {
 }
 
 func TestNoteHeadings(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	_, svc := setupTestVault()
 	registry, err := svc.Registry()
 	if err != nil {
@@ -186,7 +185,7 @@ func testSearchQuery(t *testing.T, registry *tools.Registry, toolName string) {
 		Name:      toolName,
 		Arguments: []byte(`{"query":"thermodynamic"}`),
 	}
-	res, err := registry.InvokeTool(context.Background(), callReq)
+	res, err := registry.InvokeTool(t.Context(), callReq)
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
@@ -238,7 +237,7 @@ func testNeighbourhoodQuery(t *testing.T, registry *tools.Registry, toolName str
 		Name:      toolName,
 		Arguments: []byte(`{"path":"Entropy.md"}`),
 	}
-	res, err := registry.InvokeTool(context.Background(), callReq)
+	res, err := registry.InvokeTool(t.Context(), callReq)
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
@@ -280,7 +279,7 @@ func testVaultInfoQuery(t *testing.T, registry *tools.Registry, toolName string)
 		Name:      toolName,
 		Arguments: []byte(`{}`),
 	}
-	res, err := registry.InvokeTool(context.Background(), callReq)
+	res, err := registry.InvokeTool(t.Context(), callReq)
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
@@ -316,7 +315,7 @@ func TestVaultInfo(t *testing.T) {
 }
 
 func TestFileReadAndCreate(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	_, svc := setupTestVault()
 	registry, err := svc.Registry()
 	if err != nil {
@@ -372,7 +371,7 @@ func TestFileReadAndCreate(t *testing.T) {
 }
 
 func TestListTools(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	_, svc := setupTestVault()
 	registry, err := svc.Registry()
 	if err != nil {

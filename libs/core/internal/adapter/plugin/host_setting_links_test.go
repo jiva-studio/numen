@@ -6,10 +6,12 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 // newLinkedHost is a host with one plugin whose model chooses its weights, and whose path settings
-// take a dictionary file and a folder.
+// take a dictionary file.
 func newLinkedHost(t *testing.T) *Host {
 	t.Helper()
 	tmp := t.TempDir()
@@ -26,14 +28,13 @@ func newLinkedHost(t *testing.T) *Host {
 				{"value": "small", "dependencies": ["small-weights"]}
 			]},
 			{"key": "url", "type": "string", "title": "URL", "default": "https://example.org", "when": {"setting": "model", "is": ["small"]}},
-			{"key": "dictionary", "type": "file", "title": "Dictionary", "accept": [".txt"]},
-			{"key": "cache", "type": "folder", "title": "Cache"}
+			{"key": "dictionary", "type": "file", "title": "Dictionary", "accept": [".txt"]}
 		]
 	}`
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +54,7 @@ func TestRequirementsFollowTheModelSetting(t *testing.T) {
 		t.Errorf("requirements = %v, want the large weights", got)
 	}
 	if _, ok := host.GetPluginSettings("md.numen.sample")["url"]; ok {
-		t.Error("the url is handed over while its condition fails")
+		t.Error("the url is passed while its condition fails")
 	}
 
 	if err := host.UpdatePluginSetting(t.Context(), "md.numen.sample", "model", "small"); err != nil {
@@ -67,7 +68,7 @@ func TestRequirementsFollowTheModelSetting(t *testing.T) {
 	}
 }
 
-// A path setting takes nothing, or a path of the kind it holds with an extension it accepts.
+// A file setting takes nothing, or a file with an extension it accepts.
 func TestCheckPluginSettingAcceptsPathsOfItsType(t *testing.T) {
 	host := newLinkedHost(t)
 	tmp := t.TempDir()
@@ -89,8 +90,6 @@ func TestCheckPluginSettingAcceptsPathsOfItsType(t *testing.T) {
 		{"dictionary", tmp, errNotAFile},
 		{"dictionary", filepath.Join(tmp, "absent.txt"), errPathNotFound},
 		{"dictionary", 3.0, errPathNotFound},
-		{"cache", tmp, nil},
-		{"cache", text, errNotAFolder},
 		{"model", "anything", nil},
 	} {
 		err := host.CheckPluginSetting("md.numen.sample", tc.key, tc.value)

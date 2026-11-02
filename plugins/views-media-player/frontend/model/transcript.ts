@@ -45,7 +45,9 @@ function createRequestGuard() {
       const mine = ++latest
       return { isLatest: () => !isClosed && mine === latest }
     },
-    close: () => void (isClosed = true),
+    close: () => {
+      isClosed = true
+    },
   }
 }
 
@@ -106,13 +108,25 @@ export function useTranscript(
 
   const firstRead = readRecording()
 
+  /** Shows the failure of an operation that ran in the background. */
+  const reportFailure = (err: unknown) => {
+    if (isOpen) error.value = formatErrorMessage(err)
+  }
+
   /** Work on the recording began or ended: the words and the menu are read again. */
   const setWorking = (next: boolean) => {
     if (!isOpen || (!next && !isWorking.value)) return
     isWorking.value = next
-    void readRecording()
+    readRecording().catch(reportFailure)
   }
-  const stopWatching = recordings.watchWork(path, setWorking)
+  const stopWorking = recordings.watchWork(path, setWorking)
+  const stopChanges = recordings.watchChanges(path, () => {
+    if (isOpen) readRecording().catch(reportFailure)
+  })
+  const stopWatching = () => {
+    stopWorking()
+    stopChanges()
+  }
 
   const starter = computed(() => findStarter(entries.value))
   const isSettled = computed(() => !isLoading.value && !isWorking.value)
@@ -161,7 +175,7 @@ export function useTranscript(
   }
 
   const close = () => {
-    void draft.keep()
+    draft.keep().catch(reportFailure)
     playback.controls.pause()
     isOpen = false
     stopWatching()
@@ -172,6 +186,7 @@ export function useTranscript(
 
   return {
     path,
+    reportFailure,
     playback,
     draft,
     lines,
@@ -185,11 +200,13 @@ export function useTranscript(
       note,
       current,
       following,
-      setFollowing: (isOn: boolean) => void (following.value = isOn),
+      setFollowing: (isOn: boolean) => {
+        following.value = isOn
+      },
       setWorking,
       reload: () => {
         draft.drop()
-        void readRecording()
+        readRecording().catch(reportFailure)
       },
     },
     offers: {

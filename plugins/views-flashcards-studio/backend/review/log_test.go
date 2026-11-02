@@ -10,12 +10,13 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-func parseTime(s string) time.Time {
-	t, err := time.Parse(time.RFC3339, s)
+func parseTime(t *testing.T, s string) time.Time {
+	t.Helper()
+	parsed, err := time.Parse(time.RFC3339, s)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
-	return t
+	return parsed
 }
 
 // An answer written down and read back is the answer that was given.
@@ -23,7 +24,7 @@ func TestAnAnswerReachesBackAsItWasSaved(t *testing.T) {
 	provided := review.Answer{
 		ID:         "01K3ZQ7X2M9QRSTVWXYZ012345",
 		ReviewCard: review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"},
-		At:         parseTime("2026-08-29T09:12:33.412Z"),
+		At:         parseTime(t, "2026-08-29T09:12:33.412Z"),
 		Rating:     review.Good,
 		Took:       4210 * time.Millisecond,
 	}
@@ -49,7 +50,7 @@ func TestAnAnswerReachesBackAsItWasSaved(t *testing.T) {
 func TestAnAnswerTakenBackNamesTheOneItConsumesBack(t *testing.T) {
 	raw, err := review.Write(review.Answer{
 		ID:     "01K3ZQ7X8B0CDEFGHJKMNPQRST",
-		At:     parseTime("2026-08-29T09:12:41.006Z"),
+		At:     parseTime(t, "2026-08-29T09:12:41.006Z"),
 		Undoes: "01K3ZQ7X2M9QRSTVWXYZ012345",
 	})
 	if err != nil {
@@ -71,7 +72,7 @@ func TestALineThatDidNotLandWholeIsLeftOut(t *testing.T) {
 	whole, err := review.Write(review.Answer{
 		ID:         "01K3ZQ7X2M9QRSTVWXYZ012345",
 		ReviewCard: review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"},
-		At:         parseTime("2026-08-29T09:12:33.412Z"),
+		At:         parseTime(t, "2026-08-29T09:12:33.412Z"),
 		Rating:     review.Good,
 	})
 	if err != nil {
@@ -121,7 +122,7 @@ func TestAnInstantIsReadWithWhateverOffsetItCarries(t *testing.T) {
 	if len(back) != 1 || skipped != 0 {
 		t.Fatalf("read %d answers and skipped %d", len(back), skipped)
 	}
-	if want := parseTime("2026-08-29T09:12:33.412Z"); !back[0].At.Equal(want) {
+	if want := parseTime(t, "2026-08-29T09:12:33.412Z"); !back[0].At.Equal(want) {
 		t.Errorf("read %v, want the same instant as %v", back[0].At, want)
 	}
 }
@@ -235,18 +236,20 @@ func TestOrderAnswers_SingleOrderingServesAllQueries(t *testing.T) {
 // truncated in the middle of a line, a line with an unknown version, a line
 // missing a required field, a blank line, a timestamp with an offset, JSON that
 // is not a line, and bytes that are not a log.
-var logSeeds = []string{
-	`{"v":1,"id":"a","card":"0123456789","template":"Word","at":"2026-01-01T00:00:00.000Z","rating":3,"ms":1200}` + "\n",
-	`{"v":1,"id":"b","at":"2026-01-01T00:00:01.000Z","undo":"a"}` + "\n",
-	`{"v":1,"id":"a","card":"c","template":"f","at":"2026-01-01T00:00:00.000Z","rating":3}` + "\n" + `{"v":1,"id":"b","car`,
-	`{"v":2,"id":"a","card":"c","template":"f","at":"2026-01-01T00:00:00.000Z","rating":3}` + "\n",
-	`{"v":1,"id":"a","card":"c","at":"2026-01-01T00:00:00.000Z","rating":3}` + "\n",
-	`{"v":1,"id":"a","card":"c","template":"f","at":"2026-01-01T00:00:00.000Z","rating":9}` + "\n",
-	`{"v":1,"id":"a","card":"c","template":"f","at":"2026-01-01T03:00:00.000+03:00","rating":3}` + "\n",
-	"\n\n\n",
-	"[]\n",
-	"\x00\xff\xfe\n",
-	"",
+func getLogSeeds() []string {
+	return []string{
+		`{"v":1,"id":"a","card":"0123456789","template":"Word","at":"2026-01-01T00:00:00.000Z","rating":3,"ms":1200}` + "\n",
+		`{"v":1,"id":"b","at":"2026-01-01T00:00:01.000Z","undo":"a"}` + "\n",
+		`{"v":1,"id":"a","card":"c","template":"f","at":"2026-01-01T00:00:00.000Z","rating":3}` + "\n" + `{"v":1,"id":"b","car`,
+		`{"v":2,"id":"a","card":"c","template":"f","at":"2026-01-01T00:00:00.000Z","rating":3}` + "\n",
+		`{"v":1,"id":"a","card":"c","at":"2026-01-01T00:00:00.000Z","rating":3}` + "\n",
+		`{"v":1,"id":"a","card":"c","template":"f","at":"2026-01-01T00:00:00.000Z","rating":9}` + "\n",
+		`{"v":1,"id":"a","card":"c","template":"f","at":"2026-01-01T03:00:00.000+03:00","rating":3}` + "\n",
+		"\n\n\n",
+		"[]\n",
+		"\x00\xff\xfe\n",
+		"",
+	}
 }
 
 // No line is dropped without being counted: every line of a log is either an
@@ -256,7 +259,7 @@ var logSeeds = []string{
 // between machines by software that does not know its format, so its bytes are
 // untrusted input.
 func FuzzReadLog(f *testing.F) {
-	for _, seed := range logSeeds {
+	for _, seed := range getLogSeeds() {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, raw string) {

@@ -1,60 +1,52 @@
 {
   "id": "md.numen.views.flashcards.studio",
   "name": "Flashcards Studio",
-  "version": "2026.10.2",
+  "version": "2026.11.1",
   "protocol": 1,
   "description": "Flashcard deck editor, card template designer, and spaced-repetition review",
   "capabilities": ["tools"],
   "targets": ["desktop.editor", "desktop.flashcards"],
-  "activationEvents": [],
-  "permissions": ["vault:read", "vault:write"],
-  "lifecycle": {
-    "idleTimeoutSeconds": 300,
-    "keepAliveWhileVisible": true,
-    "memoryLimitBytes": 1073741824
+  "contributes": {
+    "tabKinds": [
+      { "kind": "deck", "title": "Deck", "icon": "layers" },
+      { "kind": "card-model", "title": "Card Model", "icon": "layout-template" },
+      { "kind": "preset", "title": "Preset", "icon": "gauge" },
+      { "kind": "flashcards.review", "title": "Flashcards" }
+    ],
+    "feature": "flashcards",
+    "category": "views",
+    "noteTypes": [
+      {
+        "type": "deck",
+        "chunks": false,
+        "headings": [1, 2],
+        "idHeadingLevels": [2],
+        "idPattern": "[0-9a-hjkmnp-tv-z]{10}"
+      },
+      { "type": "card-model", "chunks": false, "headings": [] },
+      { "type": "preset" }
+    ]
   },
-  "services": ["numen.flashcards"],
-  "noteTypes": [
-    {
-      "type": "deck",
-      "chunks": false,
-      "headings": [1, 2],
-      "idHeadingLevels": [2],
-      "idPattern": "[0-9a-hjkmnp-tv-z]{10}"
-    },
-    {
-      "type": "card-model",
-      "chunks": false,
-      "headings": []
-    },
-    {
-      "type": "preset"
-    }
-  ],
+  "permissions": ["vault:read", "vault:write"],
+  "services": ["md.numen.views.flashcards.studio"],
   "commands": [
     {
       "id": "create-deck",
       "title": "New deck",
       "icon": "layers",
-      "arguments": [
-        { "name": "title", "title": "What is it called", "type": "string", "required": true }
-      ]
+      "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]
     },
     {
       "id": "create-card-model",
       "title": "New card model",
       "icon": "layout-template",
-      "arguments": [
-        { "name": "title", "title": "What is it called", "type": "string", "required": true }
-      ]
+      "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]
     },
     {
       "id": "create-preset",
       "title": "New preset",
       "icon": "gauge",
-      "arguments": [
-        { "name": "title", "title": "What is it called", "type": "string", "required": true }
-      ]
+      "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]
     }
   ],
   "settings": [
@@ -67,13 +59,6 @@
       "replaces": ["review.day_start_time", "review.day_starts"]
     }
   ],
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/views-flashcards-studio",
-    "serviceName": "numen.flashcards"
-  },
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  }
+  "backend": { "entrypoint": "bin/views-flashcards-studio" },
+  "frontend": {}
 }

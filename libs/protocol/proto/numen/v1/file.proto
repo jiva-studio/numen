@@ -110,10 +110,10 @@ message MoveFileResponse {
   // Set when nothing was moved, and why.
   optional ErrorCode error = 2;
 
-  // Set when the move reached the vault and the index would not come level with
+  // Set when the move reached the vault and the index could not be updated for
   // it. Search answers about these files as it read them last, until a walk
   // goes past.
-  bool is_unlevelled = 3;
+  bool is_index_outdated = 3;
 }
 
 // MoveResult is a file under a different name, and what that did to the links
@@ -154,9 +154,9 @@ message RemoveFileResponse {
   // Set when nothing was removed, and why.
   optional ErrorCode error = 3;
 
-  // Set when the file has gone and the index would not come level with it.
+  // Set when the file has gone and the index could not be updated for it.
   // Search answers about it as it read it last, until a walk goes past.
-  bool is_unlevelled = 4;
+  bool is_index_outdated = 4;
 }
 
 message CreateFolderRequest {

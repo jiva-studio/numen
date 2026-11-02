@@ -15,16 +15,16 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 	db := openDB(t)
 	ctx := t.Context()
 
-	before := atScale(t, quantising, 0.3)
-	now := quantising.Recipe()
+	before := atScale(t, getQuantising(), 0.3)
+	now := getQuantising().Recipe()
 
-	if err := db.Chunks().SaveSource(ctx, first.ID, chunk.Source{
+	if err := db.Chunks().SaveSource(ctx, getFirst().ID, chunk.Source{
 		Path: "library/tale.epub", Kind: "book", Size: 1000, MTime: 1,
 		Hash: "hash-tale", Recipe: "epub",
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().ReplaceChunks(ctx, first.ID, "book", "library/tale.epub", []chunk.Chunk{{
+	if err := db.Chunks().ReplaceChunks(ctx, getFirst().ID, "book", "library/tale.epub", []chunk.Chunk{{
 		Start: 0, Length: 100, Text: "the tale opens and the tale goes on",
 		Small: []chunk.Chunk{
 			{Start: 0, Length: 50, Text: "the tale opens"},
@@ -34,7 +34,7 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, first.ID, before, 0, 0, 0, 100)
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, before, chunk.Cursor{}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,10 +110,10 @@ func TestForgettingAndCompactingReportTheirFailure(t *testing.T) {
 		{"compacting", "VACUUM", func(db *DB) error { return db.Compact(t.Context()) }},
 	} {
 		t.Run(step.name, func(t *testing.T) {
-			db := openBreakingDB(t)
-			breakOn(t, step.breaks)
+			db, faults := openBreakingDB(t)
+			faults.breakOn(t, step.breaks)
 			err := step.run(db)
-			stopBreaking()
+			faults.stop()
 			if !errors.Is(err, errBroken) {
 				t.Errorf("answered %v", err)
 			}

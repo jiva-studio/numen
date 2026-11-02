@@ -1,8 +1,8 @@
 /**
  * The note a search did not find, offered as one to make.
  *
- * A search that turned up nothing holds the words that were looked for and
- * nowhere to put them, so the palette offers a note under them. What is in
+ * A search that found nothing has the words that were searched for and no
+ * note to hold them, so the palette offers a note under them. What is in
  * front is what the note can be nested under as it is made.
  */
 import type { PaletteGroup } from '@numen/shell'

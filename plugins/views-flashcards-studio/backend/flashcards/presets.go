@@ -66,7 +66,7 @@ type Presets struct {
 	Problems ports.ProblemQueries
 	// index brings what a write touched up to date. Every write here calls it,
 	// and a preset short of it cannot point a deck at anything.
-	index note.Levels
+	index note.IndexUpdater
 	// day is where one day of review gives way to the next, and now what time
 	// it is. They answer whether a preset schedules anything today.
 	day review.Day
@@ -75,28 +75,33 @@ type Presets struct {
 
 // NewPresets creates the use case through which a vault's presets are read and
 // written. It takes the vault readers and writers, the deck-link resolver, the
-// note queries that identify presets and their names, the index updater, the
-// review day boundary, and the clock.
+// note queries that identify presets and their names, the index updater, and the clock.
 func NewPresets(
 	readers ports.VaultReaders,
 	writers ports.VaultWriters,
 	links ports.LinkQueries,
 	notes ports.NoteQueries,
-	index note.Levels,
-	day review.Day,
+	index note.IndexUpdater,
 	now ports.Clock,
 ) Presets {
 	return Presets{
 		readers: readers, writers: writers, links: links, notes: notes,
 		Problems: nil,
-		index:    index, day: day, now: now,
+		index:    index, day: review.Day{Starts: 0, In: nil}, now: now,
 	}
+}
+
+// WithDay returns the use case with the review day boundary that decides whether a preset
+// schedules anything today.
+func (u Presets) WithDay(day review.Day) Presets {
+	u.day = day
+	return u
 }
 
 // getStopReasons is why a preset schedules nothing, and why it schedules
 // nothing today.
 func (u Presets) getStopReasons(p review.Preset) (review.StopReason, review.StopReason) {
-	pos := u.now()
+	pos := u.now.Now()
 	return p.GetOverallStopReason(u.day, pos), p.GetStopReason(u.day, pos)
 }
 
@@ -217,27 +222,36 @@ func (r *PresetReads) getSchedulingPreset(
 		return out, nil
 	}
 
-	first := matchedLinks[0]
-	delta := first.Target.GetWritten()
-	out := CreateDefaultPreset()
-	if first.To != "" {
-		delta = first.To
-		if out, err = r.read(ctx, v, first.To); err != nil {
-			return PresetContents{}, err
-		}
-		// A note that is not a preset schedules nothing, so the deck is treated like
-		// the decks that name no preset and the problem is reported against it.
-		if out.Type != format.TypePreset {
-			out.Path = ""
-		}
-	} else {
-		out.Problems = []string{delta + " reaches no note, and the defaults stand"}
+	out, delta, err := r.readFirstLink(ctx, v, matchedLinks[0])
+	if err != nil {
+		return PresetContents{}, err
 	}
 	if len(matchedLinks) > 1 {
 		out.Problems = append(slices.Clone(out.Problems),
 			"this deck names more than one preset, and is scheduled by "+delta)
 	}
 	return out, nil
+}
+
+// readFirstLink reads the preset the link names, and returns the name of the link that schedules the deck.
+func (r *PresetReads) readFirstLink(ctx context.Context, v domain.Vault, first domain.ResolvedLink) (PresetContents, string, error) {
+	delta := first.Target.GetWritten()
+	out := CreateDefaultPreset()
+	if first.To == "" {
+		out.Problems = []string{delta + " reaches no note, and the defaults stand"}
+		return out, delta, nil
+	}
+	delta = first.To
+	out, err := r.read(ctx, v, first.To)
+	if err != nil {
+		return PresetContents{}, delta, err
+	}
+	// A note that is not a preset schedules nothing, so the deck is treated like
+	// the decks that name no preset and the problem is reported against it.
+	if out.Type != format.TypePreset {
+		out.Path = ""
+	}
+	return out, delta, nil
 }
 
 // readRolelessProblems returns what is shown against a deck that names no preset: every entry of
@@ -337,6 +351,11 @@ func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (P
 		return PresetContents{}, fmt.Errorf("read %s: %w", path, err)
 	}
 
+	return parsePresetBytes(out, ref, raw)
+}
+
+// parsePresetBytes reads the settings from the bytes of the note at the path of out.
+func parsePresetBytes(out PresetContents, ref domain.FileStat, raw []byte) (PresetContents, error) {
 	if !utf8.Valid(raw) {
 		out.Outcome = note.NotText
 		return out, nil
@@ -345,13 +364,13 @@ func (u Presets) readPreset(ctx context.Context, v domain.Vault, path string) (P
 		out.Outcome = note.Unreadable
 		return out, nil
 	} else if err != nil {
-		return PresetContents{}, fmt.Errorf("read %s: %w", path, err)
+		return PresetContents{}, fmt.Errorf("read %s: %w", out.Path, err)
 	}
 
 	n := markdown.Parse(ref, raw)
 	out.Outcome, out.Type = note.Ok, n.Type
 	if n.Type != format.TypePreset {
-		out.Problems = append(out.Problems, path+" is not a preset, and the defaults stand")
+		out.Problems = append(out.Problems, out.Path+" is not a preset, and the defaults stand")
 		return out, nil
 	}
 	out.Settings, out.Problems = review.ReadPreset(n.Frontmatter)
@@ -397,31 +416,38 @@ var ErrNoPresets = errors.New("this build cannot work the presets of a vault")
 // that has changed since it was read is left alone and port.ErrStale comes
 // back. A write that landed answers with the file stat of the file it
 // produced, which the caller presents at its next write. An index that could
-// not be brought level is note.ErrUnlevelled beside that file stat.
+// not be updated is note.ErrIndexOutdated beside that file stat.
 func (u Presets) Point(
 	ctx context.Context, v domain.Vault, deck, preset string, stat domain.FileStat,
 ) (domain.FileStat, error) {
-	var to domain.Address
-	if preset != "" {
-		if u.notes == nil {
-			return domain.FileStat{}, ErrNoPresets
-		}
-		pos, err := u.Read(ctx, v, preset)
-		if err != nil {
-			return domain.FileStat{}, err
-		}
-		switch {
-		case pos.Outcome == note.Missing:
-			return domain.FileStat{}, fmt.Errorf("%w: %s", note.ErrNoNote, preset)
-		case pos.Outcome != note.Ok || pos.Type != format.TypePreset:
-			return domain.FileStat{}, fmt.Errorf("%w: %s", ErrNotAPreset, preset)
-		}
-		if to, err = note.GetAddress(ctx, u.notes, v.ID, preset); err != nil {
-			return domain.FileStat{}, err
-		}
+	to, err := u.getPresetAddress(ctx, v, preset)
+	if err != nil {
+		return domain.FileStat{}, err
 	}
-	linking := note.NewEditLinks(u.readers, u.writers, u.index, u.now)
-	return linking.PointAt(ctx, v, deck, LinkType, to, domain.RoleRef, stat)
+	linking := note.NewEditLinks(u.readers, u.writers, u.index, u.now).WithStat(stat)
+	return linking.PointAt(ctx, v, deck, LinkType, to, domain.RoleRef)
+}
+
+// getPresetAddress is the address of the preset a deck is to point at, empty when it is to point at none.
+func (u Presets) getPresetAddress(ctx context.Context, v domain.Vault, preset string) (domain.Address, error) {
+	var to domain.Address
+	if preset == "" {
+		return to, nil
+	}
+	if u.notes == nil {
+		return to, ErrNoPresets
+	}
+	pos, err := u.Read(ctx, v, preset)
+	if err != nil {
+		return to, err
+	}
+	switch {
+	case pos.Outcome == note.Missing:
+		return to, fmt.Errorf("%w: %s", note.ErrNoNote, preset)
+	case pos.Outcome != note.Ok || pos.Type != format.TypePreset:
+		return to, fmt.Errorf("%w: %s", ErrNotAPreset, preset)
+	}
+	return note.GetAddress(ctx, u.notes, v.ID, preset)
 }
 
 // Save writes the settings into the preset at path.
@@ -434,7 +460,7 @@ func (u Presets) Point(
 // that has changed since it was read is left alone and port.ErrStale comes
 // back. A write that landed answers with the file stat of the file it
 // produced, which the caller presents at its next write. An index that could
-// not be brought level is note.ErrUnlevelled beside that file stat.
+// not be updated is note.ErrIndexOutdated beside that file stat.
 func (u Presets) Save(
 	ctx context.Context, v domain.Vault, path string, settings review.Preset,
 	stat domain.FileStat,
@@ -446,7 +472,7 @@ func (u Presets) Save(
 	if err != nil {
 		return pos, err
 	}
-	return pos, note.WrapUnlevelled(u.index(ctx, v, []string{path}), path)
+	return pos, note.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)
 }
 
 // save is the read, the change and the write, under this vault's write lock
@@ -454,12 +480,12 @@ func (u Presets) Save(
 func (u Presets) save(
 	ctx context.Context, v domain.Vault, path string, settings review.Preset,
 	stat domain.FileStat,
-) (domain.FileStat, error) {
+) (saved domain.FileStat, err error) {
 	release, err := u.writers.Lock(ctx, v)
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	defer release()
+	defer func() { err = errors.Join(err, release()) }()
 
 	reader, err := u.readers.Open(v)
 	if err != nil {
@@ -590,7 +616,7 @@ func readShares(entries []string, load, read map[time.Weekday]int) []markdown.En
 		content[weekday] = true
 		out = append(out, markdown.Entry{Key: name, Value: share, IsVerbatim: false})
 	}
-	for _, weekday := range week {
+	for _, weekday := range getWeek() {
 		if share, named := load[weekday]; named && !content[weekday] {
 			out = append(out, markdown.Entry{Key: review.DayName(weekday), Value: share, IsVerbatim: false})
 		}
@@ -615,10 +641,12 @@ func getDayEntries(entries []string, read map[time.Weekday]int) map[time.Weekday
 	return out
 }
 
-// week is the days of the week in the order a preset writes them.
-var week = []time.Weekday{
-	time.Monday, time.Tuesday, time.Wednesday, time.Thursday,
-	time.Friday, time.Saturday, time.Sunday,
+// getWeek returns the days of the week in the order a preset writes them.
+func getWeek() []time.Weekday {
+	return []time.Weekday{
+		time.Monday, time.Tuesday, time.Wednesday, time.Thursday,
+		time.Friday, time.Saturday, time.Sunday,
+	}
 }
 
 // checkBounds is what in the settings may not be written, and is nil when all
@@ -644,12 +672,12 @@ func checkBounds(p review.Preset) error {
 		value  float64
 		bounds review.Bounds
 	}{
-		{minutesADayKey, float64(p.MinutesADay), review.MinutesADayBounds},
-		{newADayKey, float64(p.NewADay), review.NewADayBounds},
-		{reviewsADayKey, float64(p.ReviewsADay), review.ReviewsADayBounds},
-		{retentionKey, p.Retention, review.RetentionBounds},
-		{intervalKey, float64(p.Interval), review.IntervalBounds},
-		{backlogKey, float64(p.Backlog), review.BacklogBounds},
+		{minutesADayKey, float64(p.MinutesADay), review.GetMinutesADayBounds()},
+		{newADayKey, float64(p.NewADay), review.GetNewADayBounds()},
+		{reviewsADayKey, float64(p.ReviewsADay), review.GetReviewsADayBounds()},
+		{retentionKey, p.Retention, review.GetRetentionBounds()},
+		{intervalKey, float64(p.Interval), review.GetIntervalBounds()},
+		{backlogKey, float64(p.Backlog), review.GetBacklogBounds()},
 	} {
 		if !one.bounds.Contains(one.value) {
 			return fmt.Errorf("%w: %s %g is outside %g to %g",
@@ -662,12 +690,12 @@ func checkBounds(p review.Preset) error {
 // checkLoad is what in the week's load may not be written, and is nil when all
 // of it may.
 func checkLoad(load map[time.Weekday]int) error {
-	for _, weekday := range week {
+	for _, weekday := range getWeek() {
 		share, named := load[weekday]
-		if named && !review.LoadBounds.Contains(float64(share)) {
+		if named && !review.GetLoadBounds().Contains(float64(share)) {
 			return fmt.Errorf("%w: the load of %s, %d, is outside %g to %g",
 				ErrOutOfBounds, review.DayName(weekday), share,
-				review.LoadBounds.Min, review.LoadBounds.Max)
+				review.GetLoadBounds().Min, review.GetLoadBounds().Max)
 		}
 	}
 	for weekday := range load {

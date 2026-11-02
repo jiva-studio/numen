@@ -5,7 +5,7 @@
  * without the editor being built again; with it off what is left is markdown
  * with its syntax coloured.
  */
-import { doc } from '../../dom'
+import { doc } from '@numen/ui'
 import { history, historyKeymap, defaultKeymap, indentLess, indentMore } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { bracketMatching, indentUnit, syntaxHighlighting, syntaxTree } from '@codemirror/language'
@@ -34,7 +34,8 @@ import { follow } from './extensions/address'
 import { pendingChange, changeMarks, createPacePlugin, type EditorChange } from './change/change'
 import { highlighting } from '../config/highlight'
 import { LANGUAGES } from '../config/languages'
-import { live, wholeLines } from './live/live'
+import { live, sourceWikilinks, wholeLines } from './live/live'
+import { renderBracketMatch } from './live/wikilinks'
 import { HEADING } from './live/styles'
 import { GFM } from '@lezer/markdown'
 import { saveHandler } from './outside'
@@ -71,7 +72,8 @@ export interface Settings {
   readonly tabSize?: number | undefined
 }
 
-export const preview = (isOn: boolean): Extension => (isOn ? [wholeLines, live, follow] : [])
+export const preview = (isOn: boolean): Extension =>
+  isOn ? [wholeLines, live, follow] : [sourceWikilinks]
 
 export const showChange = (change: EditorChange | null): Extension => pendingChange.of(change)
 
@@ -221,7 +223,7 @@ export const setup = (settings: Settings = {}): Extension => [
   history(),
   drawSelection(),
   rectangularSelection(),
-  bracketMatching(),
+  bracketMatching({ renderMatch: renderBracketMatch }),
   wrapCompartment.of(getWrapExtension(settings.softWrap ?? true)),
   lineNumbersCompartment.of(getLineNumbersExtension(settings.lineNumbers ?? false)),
   tabSizeCompartment.of(getTabSizeExtension(settings.tabSize ?? 2)),

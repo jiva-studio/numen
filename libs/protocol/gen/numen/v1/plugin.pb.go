@@ -432,9 +432,6 @@ type PluginSetting struct {
 	Min         *float64               `protobuf:"fixed64,8,opt,name=min,proto3,oneof" json:"min,omitempty"`
 	Max         *float64               `protobuf:"fixed64,9,opt,name=max,proto3,oneof" json:"max,omitempty"`
 	Step        *float64               `protobuf:"fixed64,10,opt,name=step,proto3,oneof" json:"step,omitempty"`
-	// The agent program whose models the setting is offered, as the program names itself. Empty is a
-	// setting offered none, and a person types its value.
-	ModelsOf string `protobuf:"bytes,11,opt,name=models_of,json=modelsOf,proto3" json:"models_of,omitempty"`
 	// The options of an enum setting under each value of another setting. The first of a list is the
 	// default under that value.
 	OptionsBy *PluginSettingOptionsBy `protobuf:"bytes,12,opt,name=options_by,json=optionsBy,proto3" json:"options_by,omitempty"`
@@ -443,7 +440,9 @@ type PluginSetting struct {
 	// The file extensions a setting of type file takes, each with its leading dot. Empty takes any file.
 	Accept []string `protobuf:"bytes,14,rep,name=accept,proto3" json:"accept,omitempty"`
 	// The icon the setting shows in the palette, by its Lucide name. Empty shows the default setting icon.
-	Icon          string `protobuf:"bytes,15,opt,name=icon,proto3" json:"icon,omitempty"`
+	Icon string `protobuf:"bytes,15,opt,name=icon,proto3" json:"icon,omitempty"`
+	// Whether a setting of type file holds a list of paths, one per line.
+	Multiple      bool `protobuf:"varint,16,opt,name=multiple,proto3" json:"multiple,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -548,13 +547,6 @@ func (x *PluginSetting) GetStep() float64 {
 	return 0
 }
 
-func (x *PluginSetting) GetModelsOf() string {
-	if x != nil {
-		return x.ModelsOf
-	}
-	return ""
-}
-
 func (x *PluginSetting) GetOptionsBy() *PluginSettingOptionsBy {
 	if x != nil {
 		return x.OptionsBy
@@ -581,6 +573,13 @@ func (x *PluginSetting) GetIcon() string {
 		return x.Icon
 	}
 	return ""
+}
+
+func (x *PluginSetting) GetMultiple() bool {
+	if x != nil {
+		return x.Multiple
+	}
+	return false
 }
 
 // PluginSettingOption is one value an enum setting can hold.
@@ -1040,9 +1039,7 @@ type PluginSettingsView struct {
 	// The id the frontend registers the component under.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// What the component is called.
-	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	// The key of the setting the component is drawn after, empty for the top.
-	After         string `protobuf:"bytes,3,opt,name=after,proto3" json:"after,omitempty"`
+	Title         string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1087,13 +1084,6 @@ func (x *PluginSettingsView) GetId() string {
 func (x *PluginSettingsView) GetTitle() string {
 	if x != nil {
 		return x.Title
-	}
-	return ""
-}
-
-func (x *PluginSettingsView) GetAfter() string {
-	if x != nil {
-		return x.After
 	}
 	return ""
 }
@@ -1418,7 +1408,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"C\n" +
 	"\x11ConfigureResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"\x83\x04\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\"\x93\x04\n" +
 	"\rPluginSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -1430,16 +1420,16 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x03min\x18\b \x01(\x01H\x00R\x03min\x88\x01\x01\x12\x15\n" +
 	"\x03max\x18\t \x01(\x01H\x01R\x03max\x88\x01\x01\x12\x17\n" +
 	"\x04step\x18\n" +
-	" \x01(\x01H\x02R\x04step\x88\x01\x01\x12\x1b\n" +
-	"\tmodels_of\x18\v \x01(\tR\bmodelsOf\x12?\n" +
+	" \x01(\x01H\x02R\x04step\x88\x01\x01\x12?\n" +
 	"\n" +
 	"options_by\x18\f \x01(\v2 .numen.v1.PluginSettingOptionsByR\toptionsBy\x124\n" +
 	"\x04when\x18\r \x01(\v2 .numen.v1.PluginSettingConditionR\x04when\x12\x16\n" +
 	"\x06accept\x18\x0e \x03(\tR\x06accept\x12\x12\n" +
-	"\x04icon\x18\x0f \x01(\tR\x04iconB\x06\n" +
+	"\x04icon\x18\x0f \x01(\tR\x04icon\x12\x1a\n" +
+	"\bmultiple\x18\x10 \x01(\bR\bmultipleB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
-	"\x05_step\"Y\n" +
+	"\x05_stepJ\x04\b\v\x10\fR\tmodels_of\"Y\n" +
 	"\x13PluginSettingOption\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
@@ -1477,11 +1467,10 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\afailure\x18\r \x01(\v2\x17.numen.v1.PluginFailureR\afailure\x12!\n" +
 	"\fhas_frontend\x18\x0e \x01(\bR\vhasFrontend\x120\n" +
 	"\areaders\x18\x0f \x03(\v2\x16.numen.v1.PluginReaderR\areaders\x12C\n" +
-	"\x0esettings_views\x18\x10 \x03(\v2\x1c.numen.v1.PluginSettingsViewR\rsettingsViewsJ\x04\b\v\x10\fR\x06models\"P\n" +
+	"\x0esettings_views\x18\x10 \x03(\v2\x1c.numen.v1.PluginSettingsViewR\rsettingsViewsJ\x04\b\v\x10\fR\x06models\"G\n" +
 	"\x12PluginSettingsView\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
-	"\x05after\x18\x03 \x01(\tR\x05after\">\n" +
+	"\x05title\x18\x02 \x01(\tR\x05titleJ\x04\b\x03\x10\x04R\x05after\">\n" +
 	"\fPluginReader\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1e\n" +
 	"\n" +

@@ -24,6 +24,10 @@ export { SegmentedControl } from './shared/ui/segmented'
 export { Select } from './shared/ui/select'
 export type { SelectChoice } from './shared/ui/select'
 
+/** One search line over a list of rows in one frame, drawn in the window or as a popup. */
+export { SearchableList, SearchableListPopup } from './shared/ui/searchable-list'
+export type { ListItem } from './shared/ui/searchable-list'
+
 /** Whether a key was pressed into something being written in. */
 export { isTyping } from './shared/lib/dom/typing'
 
@@ -35,6 +39,24 @@ export { clock } from './shared/lib/time/duration'
 
 /** A stream taken up again for as long as a window is open. */
 export { createFollower } from './shared/lib/async/stream'
+export {
+  createRequestGuard,
+  type InFlightRequest,
+  type RequestGuard,
+} from './shared/lib/async/requestGuard'
+
+/** A value of another process shown by a control from the request until the write settles. */
+export {
+  createRemoteValues,
+  createWriteOrder,
+  type WriteOrder,
+} from './shared/lib/async/remoteValues'
+
+/** Runs a promise without awaiting it and passes its rejection to a callback. */
+export { runInBackground } from './shared/lib/async/background'
+
+/** Rethrows a rejection of a background task as an uncaught error. */
+export { reportFailure } from './shared/lib/async/report'
 
 export { Spinner } from './shared/ui/spinner'
 
@@ -66,7 +88,24 @@ export {
   type Viewport,
 } from './shared/lib/dom/viewport'
 export { getPageNavigationAction, type PageNavigationAction } from './shared/lib/dom/pageNavigation'
-export { browserClock, onNextFrame, type Clock, type Paint } from './shared/lib/time/clock'
+export {
+  browserClock,
+  getMonotonicNow,
+  onNextFrame,
+  type Clock,
+  type Paint,
+} from './shared/lib/time/clock'
+export {
+  doc,
+  getCurrentDate,
+  getNow,
+  hasDocument,
+  hasWindow,
+  measureRect,
+  measureWindow,
+  nav,
+  win,
+} from './shared/lib/dom'
 export { createRefRegistry } from './shared/lib/dom/refs'
 export { cn } from './shared/lib/dom/classes'
 

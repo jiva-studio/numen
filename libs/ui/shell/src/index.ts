@@ -1,6 +1,6 @@
 /**
  * The chrome of a desktop window: the panes and their tabs, the command
- * palette, the status bar and the notices in the corner.
+ * palette, and the status bar.
  */
 import './styles.css'
 
@@ -19,7 +19,6 @@ export type { ActionWords, PaletteItem, PaletteGroup } from './features/palette'
 /** What a count counts, and how a notice about it reads. */
 export type { TallyUnit, Severity } from './features/notices'
 
-export { Notices } from './features/notices'
 export { createNotice } from './features/notices'
 /** One list of notices for a window, given by the parts it hosts. */
 export { createNoticeQueue, type NoticeQueue } from './features/notices'

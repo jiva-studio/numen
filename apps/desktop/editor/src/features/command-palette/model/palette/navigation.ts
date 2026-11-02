@@ -207,7 +207,7 @@ function createStepStack(options: {
     options.onDrop()
     options.text.value = step.command.getFieldText?.(step.on) ?? ''
     options.steps.value = [...options.steps.value, step]
-    if (step.step === 'vaults') void options.onLists()
+    if (step.step === 'vaults') options.onLists()
   }
 
   const popStep = () => {
@@ -215,7 +215,7 @@ function createStepStack(options: {
     options.onDrop()
     options.text.value = ''
     options.steps.value = options.steps.value.slice(0, -1)
-    if (options.here.value?.step === 'vaults') void options.onLists()
+    if (options.here.value?.step === 'vaults') options.onLists()
   }
 
   return { pushStep, popStep }

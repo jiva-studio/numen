@@ -96,7 +96,10 @@ export function adoptSheet(root: StyleRoot, sheet: CSSStyleSheet): () => void {
     if (isReleased) return
     isReleased = true
     const remaining = (counts.get(sheet) ?? 1) - 1
-    if (remaining > 0) return void counts.set(sheet, remaining)
+    if (remaining > 0) {
+      counts.set(sheet, remaining)
+      return
+    }
     counts.delete(sheet)
     root.adoptedStyleSheets = root.adoptedStyleSheets.filter((one) => one !== sheet)
   }

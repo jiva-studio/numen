@@ -99,7 +99,7 @@ func TestHeadingsAreCollectedInOrder(t *testing.T) {
 func TestAHeadingCarriesTheByteItBeginsAt(t *testing.T) {
 	// The offset addresses the body, and the frontmatter is not in the body. A
 	// heading's line number is not its offset, so both are checked against the
-	// bytes the parser handed over.
+	// bytes the parser passed.
 	raw := []byte("---\ntitle: Cut\n---\nprose\n\n## First law\n\nmore prose\n\n### Second law\n")
 	n := markdown.Parse(domain.FileStat{Path: "x.md", Size: int64(len(raw))}, raw)
 

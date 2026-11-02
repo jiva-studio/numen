@@ -1,6 +1,6 @@
 /** A tab lifted off its strip, and where letting go of it lands it. */
 import { effectScope, shallowRef } from 'vue'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useTabDrag, type TabDragState } from './drag'
 import { getPanes } from '../lib/tree'
 import type { Tab, Workspace } from '../lib/node'
@@ -67,7 +67,7 @@ function createDrag(
   document.elementFromPoint = (x: number, y: number) => state.targetElement(x, y)
 
   const workspace = shallowRef<Workspace>(withSpare())
-  const clock: Clock = { now: () => 0, schedule: () => 0, cancel: () => {} }
+  const clock: Clock = { now: () => 0, schedule: () => 0, cancel: vi.fn() }
   const scope = effectScope()
   const drag = scope.run((): TabDragState =>
     useTabDrag({

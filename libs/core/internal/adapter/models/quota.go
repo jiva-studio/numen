@@ -12,18 +12,17 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/port/machineport"
 )
 
 const (
-	// EnvDir names the folder plugins keep their models in.
-	EnvDir = "NUMEN_MODELS_DIR"
 	// EnvOffline forbids fetching a model when set.
 	EnvOffline = "NUMEN_OFFLINE"
 	// EnvQuota is the maximum bytes the models folder may hold.
 	EnvQuota = "NUMEN_MODELS_QUOTA"
 	// DefaultQuota is the size of the models folder when EnvQuota names none.
 	DefaultQuota int64 = 32 << 30
-	homeDir            = "numen/models"
 )
 
 const (
@@ -34,18 +33,6 @@ const (
 	staleReservation = 10 * time.Minute
 	touchInterval    = staleReservation / 4
 )
-
-// GetHome returns the shared models folder.
-func GetHome() (string, error) {
-	if dir := os.Getenv(EnvDir); dir != "" {
-		return dir, nil
-	}
-	base, err := os.UserConfigDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(base, filepath.FromSlash(homeDir)), nil
-}
 
 // IsOffline reports whether EnvOffline forbids fetching.
 func IsOffline() bool {
@@ -65,7 +52,7 @@ func GetQuota() int64 {
 }
 
 // GetUsage returns the bytes under dir and active reservations.
-func GetUsage(dir string) (int64, error) {
+func GetUsage(clock machineport.Clock, dir string) (int64, error) {
 	var sum int64
 	err := filepath.WalkDir(resolvePath(dir), func(name string, entry fs.DirEntry, err error) error {
 		if err != nil {
@@ -86,15 +73,15 @@ func GetUsage(dir string) (int64, error) {
 		}
 		sum += info.Size()
 		if strings.HasSuffix(name, reserveSuffix) {
-			sum += getUnwritten(name, info)
+			sum += getUnwritten(clock, name, info)
 		}
 		return nil
 	})
 	return sum, err
 }
 
-func getUnwritten(reservation string, info fs.FileInfo) int64 {
-	if time.Since(info.ModTime()) > staleReservation {
+func getUnwritten(clock machineport.Clock, reservation string, info fs.FileInfo) int64 {
+	if clock.Now().Sub(info.ModTime()) > staleReservation {
 		return 0
 	}
 	raw, err := os.ReadFile(reservation)
@@ -116,9 +103,9 @@ func getUnwritten(reservation string, info fs.FileInfo) int64 {
 }
 
 // CheckQuota returns an error when need bytes exceeds remaining space under dir.
-func CheckQuota(dir string, need int64) error {
+func CheckQuota(clock machineport.Clock, dir string, need int64) error {
 	limit := GetQuota()
-	used, err := GetUsage(dir)
+	used, err := GetUsage(clock, dir)
 	if err != nil {
 		return fmt.Errorf("counting bytes under %s: %w", dir, err)
 	}
@@ -147,7 +134,7 @@ func resolvePath(name string) string {
 	}
 }
 
-func lockQuota(ctx context.Context, root string) (func(), error) {
+func lockQuota(ctx context.Context, clock machineport.Clock, root string) (func() error, error) {
 	if err := os.MkdirAll(root, 0o755); err != nil {
 		return nil, err
 	}
@@ -155,13 +142,15 @@ func lockQuota(ctx context.Context, root string) (func(), error) {
 	for {
 		err := os.Mkdir(lock, 0o755)
 		if err == nil {
-			return func() { _ = os.Remove(lock) }, nil
+			return func() error { return os.Remove(lock) }, nil
 		}
 		if !errors.Is(err, fs.ErrExist) {
 			return nil, err
 		}
-		if info, statErr := os.Stat(lock); statErr == nil && time.Since(info.ModTime()) > staleLock {
-			_ = os.Remove(lock)
+		if info, statErr := os.Stat(lock); statErr == nil && clock.Now().Sub(info.ModTime()) > staleLock {
+			if err := os.Remove(lock); err != nil && !errors.Is(err, fs.ErrNotExist) {
+				return nil, err
+			}
 			continue
 		}
 		select {
@@ -179,21 +168,24 @@ type Reservation struct {
 	stop chan struct{}
 	wg   sync.WaitGroup
 	once sync.Once
+	// touchErr is the first error of refreshing the file; the keep-alive
+	// goroutine writes it and Release reads it after the goroutine ends.
+	touchErr error
 }
 
 // Reserve claims want bytes under root for a download.
-func Reserve(ctx context.Context, root string, want int64, part string) (*Reservation, error) {
-	return reserve(ctx, root, want, part, touchInterval)
+func Reserve(ctx context.Context, clock machineport.Clock, root string, want int64, part string) (*Reservation, error) {
+	return reserve(ctx, clock, root, want, part, touchInterval)
 }
 
-func reserve(ctx context.Context, root string, want int64, part string, touch time.Duration) (*Reservation, error) {
-	unlock, err := lockQuota(ctx, root)
+func reserve(ctx context.Context, clock machineport.Clock, root string, want int64, part string, touch time.Duration) (_ *Reservation, err error) {
+	unlock, err := lockQuota(ctx, clock, root)
 	if err != nil {
 		return nil, err
 	}
-	defer unlock()
+	defer func() { err = errors.Join(err, unlock()) }()
 
-	used, err := GetUsage(root)
+	used, err := GetUsage(clock, root)
 	if err != nil {
 		return nil, fmt.Errorf("counting bytes under %s: %w", root, err)
 	}
@@ -213,8 +205,7 @@ func reserve(ctx context.Context, root string, want int64, part string, touch ti
 		err = closeErr
 	}
 	if err != nil {
-		_ = os.Remove(file.Name())
-		return nil, err
+		return nil, errors.Join(err, os.Remove(file.Name()))
 	}
 	claim := &Reservation{Room: want, file: file.Name(), stop: make(chan struct{})}
 	claim.wg.Add(1)
@@ -231,16 +222,20 @@ func (r *Reservation) keepAlive(interval time.Duration) {
 		case <-r.stop:
 			return
 		case now := <-tick.C:
-			_ = os.Chtimes(r.file, now, now)
+			if err := os.Chtimes(r.file, now, now); err != nil && r.touchErr == nil {
+				r.touchErr = err
+			}
 		}
 	}
 }
 
-// Release surrenders the reservation claim.
-func (r *Reservation) Release() {
+// Release surrenders the reservation claim and returns the first error of
+// refreshing or removing its file. A second call returns nil.
+func (r *Reservation) Release() (err error) {
 	r.once.Do(func() {
 		close(r.stop)
 		r.wg.Wait()
-		_ = os.Remove(r.file)
+		err = errors.Join(r.touchErr, os.Remove(r.file))
 	})
+	return err
 }

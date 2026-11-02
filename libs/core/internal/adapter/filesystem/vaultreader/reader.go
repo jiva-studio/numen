@@ -215,7 +215,7 @@ func inOrder(a, b domain.Entry) int {
 	return strings.Compare(a.Name, b.Name)
 }
 
-func (s *VaultReader) Read(ctx context.Context, path string) ([]byte, error) {
+func (s *VaultReader) Read(ctx context.Context, path string) (_ []byte, err error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -227,7 +227,7 @@ func (s *VaultReader) Read(ctx context.Context, path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer closeAndJoin(&err, f)
 
 	info, err := f.Stat()
 	if err != nil {
@@ -302,12 +302,10 @@ func (s *VaultReader) openWith(
 	}
 	info, err := f.Stat()
 	if err != nil {
-		_ = f.Close()
-		return nil, err
+		return nil, errors.Join(err, f.Close())
 	}
 	if err := checkReadable(path, info); err != nil {
-		_ = f.Close()
-		return nil, err
+		return nil, errors.Join(err, f.Close())
 	}
 	return f, nil
 }

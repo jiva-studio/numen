@@ -1,6 +1,7 @@
 /** The message text for each error code a command can return. */
 import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 import { formatErrorCodeMessage } from './error'
+import type { RelationError } from '../workspace'
 import type { ErrorCode } from './errorCode'
 
 /** The error code of the schema each of the window's codes is worded by. */
@@ -22,14 +23,16 @@ const UNREACHABLE = 'vault unreachable'
 export const getErrorWords = (code: ErrorCode): string =>
   code === 'unreachable' ? UNREACHABLE : formatErrorCodeMessage(PROTO_BY_CODE[code])
 
-/** The message for each error code. */
-export const ERRORS: Record<ErrorCode, string> = {
-  ...(Object.fromEntries(
-    Object.entries(PROTO_BY_CODE).map(([code, proto]) => [code, formatErrorCodeMessage(proto)]),
-  ) as Record<Exclude<ErrorCode, 'unreachable'>, string>),
-  unreachable: UNREACHABLE,
+/** The message for a relationship operation that did not land. */
+export const getRelationErrorWords = (error: RelationError): string => {
+  switch (error) {
+    case 'invalid':
+      return 'these notes cannot be joined that way'
+    case 'cycle':
+      return 'a note cannot sit above itself in the hierarchy'
+    case 'nameExhausted':
+      return 'every untitled note name is taken'
+    default:
+      return getErrorWords(error)
+  }
 }
-
-/** The code the window words for a code given as text, and `unreadable` for one it has no words for. */
-export const getKnownErrorCode = (code: string): ErrorCode =>
-  code in ERRORS ? (code as ErrorCode) : 'unreadable'

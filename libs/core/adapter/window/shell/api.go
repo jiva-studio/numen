@@ -22,7 +22,7 @@ import (
 type API struct {
 	// IsVaultIndexed is whether the index already carries a vault.
 	IsVaultIndexed *note.IsVaultIndexed
-	// Themes are the stylesheets the window may be dressed in. They belong to the installation and
+	// Themes are the stylesheets the window may apply. They belong to the installation and
 	// not to a vault.
 	Themes numenv1connect.ThemeServiceHandler
 	// Window is this window itself: everything being done behind it, and everyone drawing it for

@@ -1,10 +1,11 @@
 import { test, expect } from '../../support/test.js'
+import { waitForWindow } from '../../support/workspace.js'
 
 test.describe('EPUB Book Reader', () => {
   test('opens EPUB book and displays reflowable reader content', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -30,7 +31,7 @@ test.describe('EPUB Book Reader', () => {
   test('toggles contents listing drawer in EPUB reader', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -49,15 +50,15 @@ test.describe('EPUB Book Reader', () => {
 
     // Click Show contents button
     const contentsBtn = page.getByRole('button', { name: 'Show contents' })
-    if (await contentsBtn.isVisible()) {
-      await contentsBtn.click()
-    }
+    await expect(contentsBtn).toBeVisible()
+    await contentsBtn.click()
+    await expect(page.getByRole('group', { name: 'Contents' })).toBeVisible()
   })
 
   test('renders book fallback on corrupted EPUB file', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -73,13 +74,13 @@ test.describe('EPUB Book Reader', () => {
     await badEpubRow.press('Enter')
 
     // Verify application does not crash
-    await expect(page.locator('text=something inside numen went wrong')).not.toBeVisible()
+    await expect(page.locator('text=something inside numen went wrong')).toBeHidden()
   })
 
   test('turns pages via keyboard navigation in EPUB reader', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -97,10 +98,10 @@ test.describe('EPUB Book Reader', () => {
     const bookTab = page.locator('.book-tab')
     await expect(bookTab).toBeVisible({ timeout: 10_000 })
 
-    // Focus the book tab and press page turn keys. In WebKit the shadow root's
-    // elementsFromPoint returns <html> above the book, so Playwright's hit
-    // check rejects a click that the page itself receives.
-    await bookTab.click({ force: true })
+    // The book tab takes the page turn keys once it holds the focus. A click is refused in
+    // WebKit, where elementsFromPoint answers <html> over the book, so the tab is focused.
+    await bookTab.focus()
+    await expect(bookTab).toBeFocused()
     await page.keyboard.press('PageDown')
     await expect(bookTab).toBeVisible()
   })
@@ -108,7 +109,7 @@ test.describe('EPUB Book Reader', () => {
   test('persists book reader across tab switching', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()

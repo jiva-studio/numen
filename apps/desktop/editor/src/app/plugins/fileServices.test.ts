@@ -73,11 +73,11 @@ describe('the files of the vault a plugin is handed', () => {
 
   it('make a note in a folder and answer at its current position, or no path where none was made', async () => {
     const { files, createUntitled } = setup()
-    createUntitled.mockResolvedValueOnce({ path: 'dir/Untitled.md' }).mockResolvedValueOnce(null)
+    createUntitled.mockResolvedValueOnce('dir/Untitled.md').mockResolvedValueOnce('')
 
     expect(await files.createNote('dir')).toBe('dir/Untitled.md')
     expect(await files.createNote('dir')).toBe('')
-    expect(createUntitled).toHaveBeenCalledWith('dir', [])
+    expect(createUntitled).toHaveBeenCalledWith('dir')
   })
 })
 
@@ -107,6 +107,7 @@ describe('the window’s commands over a row', () => {
     const host = createPathCommandHost({
       getTarget: () => target as never,
       runCommand,
+      reportError: vi.fn(),
     })
     return { host, runCommand }
   }
@@ -144,6 +145,7 @@ describe('the window’s commands over a row', () => {
     const host = createPathCommandHost({
       getTarget: () => target as never,
       runCommand: vi.fn(),
+      reportError: vi.fn(),
       getFileMenuItems,
     })
 

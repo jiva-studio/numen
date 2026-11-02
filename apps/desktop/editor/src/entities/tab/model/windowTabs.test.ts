@@ -4,7 +4,7 @@
  * The tests use a kind created for the test: the window's behaviour toward a
  * kind is all a real kind can rely on.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { effectScope, onScopeDispose } from 'vue'
 import { openTab, getPanes, paneById } from '@numen/shell'
 import type { Workspace } from '@numen/shell'
@@ -12,6 +12,11 @@ import type { FileKind } from '@/shared/model/fileTypes'
 import type { AnyTabKind, WindowHandle } from './kinds'
 import { fileOpeners } from './openers'
 import { useWindowTabs } from './windowTabs'
+
+/** Throws the rejection reason of a detached promise, so the test run reports it as an unhandled rejection. */
+function rethrow(error: unknown): never {
+  throw error
+}
 
 /**
  * A kind that records the calls it receives and the names it opened with. A
@@ -447,8 +452,12 @@ describe('reconciling tabs for a path', () => {
       fileKinds: async (paths) => new Map(paths.map((p) => [p, fileKind])),
       reconcileTab: window.reconcileTab,
     })
-    openers.registerEditor('note', (path) => void window.openTabOfKind('note', path))
-    openers.registerEditor('sample', (path) => void window.openTabOfKind('sample', path))
+    openers.registerEditor('note', (path) => {
+      window.openTabOfKind('note', path).catch(rethrow)
+    })
+    openers.registerEditor('sample', (path) => {
+      window.openTabOfKind('sample', path).catch(rethrow)
+    })
 
     await openers.openFile('Animals.md')
     expect(window.tabs.value).toHaveLength(1)
@@ -809,7 +818,7 @@ describe('the registration of a kind', () => {
     dispose()
 
     const id = await window.createTab('thing', 'a')
-    expect(window.getTab(id)?.state).toEqual({ kind: 'thing', targetPath: 'a' })
+    expect(window.getTab(id)?.state).toMatchObject({ kind: 'thing', targetPath: 'a' })
   })
 
   it('is kept when the disposer of a registration it replaced runs late', async () => {
@@ -889,7 +898,7 @@ describe('the kinds the window holds', () => {
   it('finds the first registered that answers, and none where none does', () => {
     const window = useWindowTabs()
     window.registerKind(kind().one)
-    window.registerKind(kind({ kind: 'chat', receiveText: () => {} }).one)
+    window.registerKind(kind({ kind: 'chat', receiveText: vi.fn() }).one)
 
     expect(window.findKind((one) => one.receiveText !== undefined)?.kind).toBe('chat')
     expect(window.findKind((one) => one.isTool === true)).toBeUndefined()
@@ -1192,5 +1201,38 @@ describe('the tabs of a plugin that stops', () => {
     window.closeTabsOfPlugin('viewer.plugin')
 
     expect(window.getTab('paged:a.bin')?.kind.pluginId).toBe('other.plugin')
+  })
+})
+
+describe('a saved tab whose kind fails to open it', () => {
+  it('opens as a placeholder that keeps the saved state, and the other tabs open as usual', () => {
+    const window = useWindowTabs()
+    window.registerKind({
+      ...pagedKind(),
+      open: (targetPath: string) => {
+        if (targetPath === 'bad.bin') throw new Error('cannot read bad.bin')
+        return { targetPath, page: 1 }
+      },
+    })
+
+    window.restoreTabs(
+      [
+        { id: 'paged:a.bin', kind: 'paged', path: 'a.bin' },
+        { id: 'paged:bad.bin', kind: 'paged', path: 'bad.bin', saved: { page: 7 } },
+        { id: 'paged:c.bin', kind: 'paged', path: 'c.bin' },
+      ],
+      'paged:c.bin',
+    )
+
+    expect(window.tabs.value.map((one) => one.id)).toStrictEqual([
+      'paged:a.bin',
+      'paged:bad.bin',
+      'paged:c.bin',
+    ])
+    expect(window.getTabStateIn('paged:c.bin', 'paged')).toMatchObject({ page: 1 })
+    const failed = window.getTab('paged:bad.bin')
+    expect(failed?.state).toMatchObject({ message: 'cannot read bad.bin' })
+    expect(failed?.kind.getState?.(failed.state)).toStrictEqual({ page: 7 })
+    expect(window.handle.front()?.id).toBe('paged:c.bin')
   })
 })

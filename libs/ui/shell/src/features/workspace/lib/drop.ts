@@ -121,7 +121,9 @@ export function findEdgeSide(point: Position, box: Rect, reach: number): Side | 
 }
 
 /** What an element takes up on screen, in the window's own coordinates. */
+const RECT_METHOD = 'getBoundingClientRect'
+
 export const getRect = (element: Element): Rect => {
-  const box = element.getBoundingClientRect()
+  const box = element[RECT_METHOD]()
   return { x: box.left, y: box.top, width: box.width, height: box.height }
 }

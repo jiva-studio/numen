@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-catalog/indexsource"
 )
 
 func TestGetPluginsDirs(t *testing.T) {
@@ -21,8 +23,7 @@ func TestGetPluginsDirs(t *testing.T) {
 }
 
 func TestPluginDiscoveryReleaseMode(t *testing.T) {
-	SetDev(false)
-	defer SetDev(false)
+	t.Setenv("NUMEN_DEV", "")
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -40,8 +41,7 @@ func TestPluginDiscoveryReleaseMode(t *testing.T) {
 }
 
 func TestPluginDiscoveryDevMode(t *testing.T) {
-	SetDev(true)
-	defer SetDev(false)
+	t.Setenv("NUMEN_DEV", "1")
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -76,5 +76,25 @@ func TestGetConfig(t *testing.T) {
 func TestGetConfigNamesTheSystemKeychain(t *testing.T) {
 	if GetConfigFor(TargetFlashcards).KeyStore == nil {
 		t.Error("the desktop configuration names no key store")
+	}
+}
+
+func TestGetConfigOffersThePluginsOfTheIndex(t *testing.T) {
+	t.Setenv("NUMEN_DEV", "")
+	dir := t.TempDir()
+	t.Setenv("NUMEN_PLUGINS_PATH", dir)
+	index := `{"plugins":[{"id":"org.example.offered","name":"Offered","version":"1.0.0"}]}`
+	if err := os.WriteFile(filepath.Join(dir, indexsource.FileName), []byte(index), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	sources := GetConfigFor(TargetEditor).PluginCatalog.Sources
+
+	if len(sources) != 1 {
+		t.Fatalf("%d catalog sources, want the plugin index", len(sources))
+	}
+	entries, err := sources[0].List(t.Context())
+	if err != nil || len(entries) != 1 || entries[0].ID != "org.example.offered" {
+		t.Errorf("List = %+v, %v; want the plugin of the index", entries, err)
 	}
 }

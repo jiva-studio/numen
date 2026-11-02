@@ -1,93 +1,58 @@
-import { test, expect } from '../../support/test.js'
+import { test, expect, type Page } from '../../support/test.js'
+import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
+import { deleteVaultFiles } from '../../support/media.js'
+import { createUniqueTitle, readNote, readVaultFile } from '../../support/vault.js'
 
-test.describe('Flashcard Decks and Card Lifecycle', () => {
-  test('creates new flashcard deck file via command palette', async ({ page }) => {
-    await page.goto('/')
+/** Runs `New deck` from the palette under the name given on its step. */
+const createDeck = async (page: Page, title: string): Promise<void> => {
+  await runPaletteCommand(page, 'New deck', 'New deck')
+  const field = page.locator('input[data-palette="field"]').first()
+  await expect(field).toBeVisible()
+  await field.fill(title)
+  await page.keyboard.press('Enter')
+}
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+test.describe('a deck made through the palette', () => {
+  let title: string
 
-    // 1. Open command palette and execute New deck
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-
-    await paletteInput.fill('New deck')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
-
-    // 2. Input deck name
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-    await paletteInput.fill('CosmologyDeck')
-    await page.waitForTimeout(300)
-    await page.keyboard.press('Enter')
-
-    // 3. Verify newly created deck tab and editor render
-    const deckTab = page.getByRole('tab', { name: /CosmologyDeck/i }).first()
-    await expect(deckTab).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('.deck').first()).toBeVisible({ timeout: 10_000 })
+  test.beforeEach(() => {
+    title = createUniqueTitle('Puffin colony')
   })
 
-  test('appends new card to deck via card model template selector', async ({ page }) => {
-    await page.goto('/')
-
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    // 1. Open cards folder and Animals.md
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const cardsRow = page.locator('[data-tree-row="cards"]')
-    await expect(cardsRow).toBeVisible()
-    await cardsRow.press('Enter')
-
-    const deckRow = page.locator('[data-tree-row="cards/Animals.md"]')
-    await expect(deckRow).toBeVisible()
-    await deckRow.press('Enter')
-
-    await expect(page.locator('.deck')).toBeVisible({ timeout: 10_000 })
-
-    const cards = page.locator('.card')
-    await expect(cards.first()).toBeVisible({ timeout: 10_000 })
-    const initialCount = await cards.count()
-
-    // 2. Click Add a card plus button
-    const addCardBtn = page.getByRole('button', { name: 'Add a card' }).first()
-    await expect(addCardBtn).toBeVisible({ timeout: 5_000 })
-    await addCardBtn.click()
-
-    // 3. Card model options appear
-    const cutOption = page.locator('[data-cut]').first()
-    await expect(cutOption).toBeVisible({ timeout: 5_000 })
-    await cutOption.click()
-
-    // 4. Verify card count incremented
-    await expect(cards).toHaveCount(initialCount + 1, { timeout: 10_000 })
+  test.afterEach(() => {
+    deleteVaultFiles(`${title}.md`)
   })
 
-  test('deletes card from flashcard deck', async ({ page }) => {
-    await page.goto('/')
+  test('is a deck file named after it at the root of the vault, open in the deck editor', async ({
+    page,
+    request,
+  }) => {
+    await openWorkspace(page)
+    await createDeck(page, title)
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await expect(page.getByRole('tab', { name: new RegExp(title) })).toBeVisible()
+    await expect(page.locator('.deck').first()).toBeVisible()
+    await expect(page.locator('.card')).toHaveCount(0)
+    const text = await readVaultFile(request, `${title}.md`)
+    expect(text).toMatch(/^type: deck$/m)
+  })
 
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const cardsRow = page.locator('[data-tree-row="cards"]')
-    await expect(cardsRow).toBeVisible()
-    await cardsRow.press('Enter')
+  test('writes its first card under the card model chosen for it', async ({ page, request }) => {
+    await openWorkspace(page)
+    await createDeck(page, title)
+    await expect(page.locator('.deck').first()).toBeVisible()
 
-    const deckRow = page.locator('[data-tree-row="cards/Animals.md"]')
-    await expect(deckRow).toBeVisible()
-    await deckRow.press('Enter')
+    await page.getByRole('button', { name: 'Add a card' }).first().click()
+    await page.locator('[data-cut="Animal"]').click()
+    await page
+      .getByRole('article', { name: 'Card 1' })
+      .getByRole('textbox', { name: 'Name', exact: true })
+      .fill('Puffin')
 
-    await expect(page.locator('.deck')).toBeVisible({ timeout: 10_000 })
-
-    const cards = page.locator('.card')
-    await expect(cards.first()).toBeVisible({ timeout: 10_000 })
-    const initialCount = await cards.count()
-
-    // Find first card's remove button
-    const removeBtn = page.locator('.card .remove-button').first()
-    await expect(removeBtn).toBeVisible({ timeout: 5_000 })
-    await removeBtn.click()
-
-    // Verify card count decremented
-    await expect(cards).toHaveCount(initialCount - 1, { timeout: 10_000 })
+    await expect
+      .poll(async () => (await readNote(request, `${title}.md`)).body)
+      .toContain('### Name\n\nPuffin')
+    const body = (await readNote(request, `${title}.md`)).body
+    expect(body).toMatch(/^## Puffin \^[0-9a-hjkmnp-tv-z]{10}\n\n\[\[Animal\]\]$/m)
   })
 })

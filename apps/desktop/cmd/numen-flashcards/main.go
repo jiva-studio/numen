@@ -36,12 +36,15 @@ func main() {
 	var debug debugOptions
 	flag.StringVar(&cfg.IndexPath, "index", cfg.IndexPath, "path to the index database")
 	flag.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
-	flag.BoolVar(&showVersion, "version", false, "say what this build is and stop")
+	flag.BoolVar(&showVersion, "version", false, "print the version and exit")
 	registerDebugFlags(flag.CommandLine, &debug)
 	flag.Parse()
 
 	if showVersion {
-		fmt.Println(version.GetVersionLine(appName))
+		if _, err := fmt.Fprintln(os.Stdout, version.GetVersionLine(appName)); err != nil {
+			fmt.Fprintln(os.Stderr, appName+":", err)
+			os.Exit(1)
+		}
 		return
 	}
 
@@ -55,7 +58,11 @@ func main() {
 // the core carried on past to out.
 func makeConfig(out io.Writer) container.Config {
 	cfg := platform.GetConfigFor(platform.TargetFlashcards)
-	cfg.ErrorHandler = func(err error) { fmt.Fprintln(out, appName+":", err) }
+	cfg.ErrorHandler = func(err error) {
+		if _, writeErr := fmt.Fprintln(out, appName+":", err); writeErr != nil {
+			return
+		}
+	}
 	return cfg
 }
 
@@ -116,7 +123,11 @@ func run(cfg container.Config, debug debugOptions) error {
 	defer target.Run()
 
 	followChanges(ctx, cfg, api)
-	api.Themes = themes.Load(cfg.Themes, func(response string) { fmt.Fprintln(os.Stderr, "themes:", response) }, os.Stderr)
+	api.Themes = themes.Load(cfg.Themes, func(response string) {
+		if response != "" {
+			fmt.Fprintln(os.Stderr, "themes:", response)
+		}
+	}, os.Stderr)
 
 	pages, err := shell.Pages()
 	if err != nil {
@@ -124,7 +135,7 @@ func run(cfg container.Config, debug debugOptions) error {
 	}
 	handler := api.NewHandler(pages)
 	if debug.isServingHTTP() {
-		return debug.serveHTTP(ctx, handler)
+		return debug.serveHTTP(ctx, cfg, handler)
 	}
 	return runApplication(handler, target)
 }

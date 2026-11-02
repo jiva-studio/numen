@@ -100,6 +100,13 @@ func (e *queueEndpoint) ReportTask(
 		Error:         task.GetError(),
 		IsUserStarted: task.GetIsUserStarted(),
 	})
+	if task.GetId() != "" {
+		if isTaskFinished(task) {
+			e.endpoint.tasks.release(e.endpoint.callers, pluginID, task.GetId())
+		} else {
+			e.endpoint.tasks.hold(e.endpoint.callers, pluginID, task.GetId())
+		}
+	}
 	return connect.NewResponse(&v1.ReportTaskResponse{}), nil
 }
 
@@ -111,7 +118,13 @@ func (e *queueEndpoint) FinishTask(
 		return nil, err
 	}
 	work.FinishTask(pluginID, req.Msg.GetId())
+	e.endpoint.tasks.release(e.endpoint.callers, pluginID, req.Msg.GetId())
 	return connect.NewResponse(&v1.FinishTaskResponse{}), nil
+}
+
+// isTaskFinished reports whether a report ends its task: the task failed, or it counted to its total.
+func isTaskFinished(task *v1.Task) bool {
+	return task.GetError() != "" || (task.GetTotal() > 0 && task.GetDone() >= task.GetTotal())
 }
 
 func readWireUnit(unit v1.Unit) pluginport.TaskUnit {

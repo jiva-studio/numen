@@ -37,6 +37,28 @@ describe('Switch', () => {
     expect(getEmitted(control)).toEqual([])
   })
 
+  it('keeps its look when pressed, until the parent passes the new value', async () => {
+    const control = mountSwitch({ modelValue: false })
+    await control.get('button').trigger('click')
+    expect(getEmitted(control)).toEqual([true])
+    expect(control.get('button').attributes('aria-checked')).toBe('false')
+    expect(control.get('button').attributes('data-state')).toBe('unchecked')
+    await control.setProps({ modelValue: true })
+    expect(control.get('button').attributes('aria-checked')).toBe('true')
+  })
+
+  it('ignores presses and is not drawn disabled while a change is being written', async () => {
+    const control = mountSwitch({ modelValue: true, isBusy: true })
+    await control.get('button').trigger('click')
+    await control.get('button').trigger('keydown', { key: 'Enter' })
+    expect(getEmitted(control)).toEqual([])
+    const button = control.get('button')
+    expect(button.attributes('disabled')).toBeUndefined()
+    expect(button.attributes('data-disabled')).toBeUndefined()
+    expect(button.attributes('aria-busy')).toBe('true')
+    expect(button.attributes('aria-checked')).toBe('true')
+  })
+
   it('is one stop on the way round the screen', () => {
     expect(mountSwitch().get('button').attributes('tabindex')).not.toBe('-1')
   })

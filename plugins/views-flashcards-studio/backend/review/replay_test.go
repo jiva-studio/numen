@@ -11,11 +11,11 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-func makeAnswer(id, card, reviewCard, when string, r review.Rating) review.Answer {
+func makeAnswer(t *testing.T, id, card, reviewCard, when string, r review.Rating) review.Answer {
 	return review.Answer{
 		ID:         id,
 		ReviewCard: review.CardID{Card: card, Template: reviewCard},
-		At:         parseTime(when),
+		At:         parseTime(t, when),
 		Rating:     r,
 	}
 }
@@ -24,13 +24,13 @@ func makeAnswer(id, card, reviewCard, when string, r review.Rating) review.Answe
 // ones in it. The order a schedule is worked out in is the order the answers
 // were given, and never the order the files were read.
 func TestAnswersAreCountedInTheOrderTheyWereGiven(t *testing.T) {
-	first := makeAnswer("01A", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Again)
-	second := makeAnswer("01B", "k7m2xq9fzp", "Recognise", "2026-08-21T09:00:00Z", review.Good)
-	third := makeAnswer("01C", "k7m2xq9fzp", "Recognise", "2026-08-25T09:00:00Z", review.Good)
+	first := makeAnswer(t, "01A", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Again)
+	second := makeAnswer(t, "01B", "k7m2xq9fzp", "Recognise", "2026-08-21T09:00:00Z", review.Good)
+	third := makeAnswer(t, "01C", "k7m2xq9fzp", "Recognise", "2026-08-25T09:00:00Z", review.Good)
 
 	delta := review.NewFSRS()
-	want := review.OrderAnswers([]review.Answer{first, second, third}).Replay(ahead, review.ScheduleBy(delta))
-	got := review.OrderAnswers([]review.Answer{third, first, second}).Replay(ahead, review.ScheduleBy(delta))
+	want := review.OrderAnswers([]review.Answer{first, second, third}).Replay(getAhead(), review.ScheduleBy(delta))
+	got := review.OrderAnswers([]review.Answer{third, first, second}).Replay(getAhead(), review.ScheduleBy(delta))
 
 	reviewCard := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	if got[reviewCard] != want[reviewCard] {
@@ -41,13 +41,13 @@ func TestAnswersAreCountedInTheOrderTheyWereGiven(t *testing.T) {
 // Two answers of one instant are counted in the order their identifiers were
 // minted in, so a replay of one history is one schedule however it is read.
 func TestTwoAnswersOfOneInstantKeepTheirOrder(t *testing.T) {
-	early := makeAnswer("01A", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Again)
-	late := makeAnswer("01B", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Easy)
+	early := makeAnswer(t, "01A", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Again)
+	late := makeAnswer(t, "01B", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Easy)
 
 	delta := review.NewFSRS()
 	reviewCard := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	one := review.OrderAnswers([]review.Answer{early, late}).Replay(ahead, review.ScheduleBy(delta))[reviewCard]
-	other := review.OrderAnswers([]review.Answer{late, early}).Replay(ahead, review.ScheduleBy(delta))[reviewCard]
+	one := review.OrderAnswers([]review.Answer{early, late}).Replay(getAhead(), review.ScheduleBy(delta))[reviewCard]
+	other := review.OrderAnswers([]review.Answer{late, early}).Replay(getAhead(), review.ScheduleBy(delta))[reviewCard]
 	if one != other {
 		t.Errorf("one history read two ways gave %+v and %+v", one, other)
 	}
@@ -56,10 +56,10 @@ func TestTwoAnswersOfOneInstantKeepTheirOrder(t *testing.T) {
 // An answer that was taken back is not counted as given, and both lines remain in
 // the file.
 func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
-	provided := makeAnswer("01A", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Again)
-	back := review.Answer{ID: "01B", At: parseTime("2026-08-20T09:00:04Z"), Undoes: "01A"}
+	provided := makeAnswer(t, "01A", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Again)
+	back := review.Answer{ID: "01B", At: parseTime(t, "2026-08-20T09:00:04Z"), Undoes: "01A"}
 
-	remaining := review.OrderAnswers([]review.Answer{provided, back}).Replay(ahead, review.ScheduleBy(review.NewFSRS()))
+	remaining := review.OrderAnswers([]review.Answer{provided, back}).Replay(getAhead(), review.ScheduleBy(review.NewFSRS()))
 	if len(remaining) != 0 {
 		t.Errorf("a review card whose only answer was taken back has no schedule, got %+v", remaining)
 	}
@@ -67,10 +67,10 @@ func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 
 // Each review card of a card model tests a different thing, so each has its own path.
 func TestEachCardOfACardIsScheduledOnItsOwn(t *testing.T) {
-	recognise := makeAnswer("01A", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Easy)
-	name := makeAnswer("01B", "k7m2xq9fzp", "Name it", "2026-08-20T09:00:10Z", review.Again)
+	recognise := makeAnswer(t, "01A", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Easy)
+	name := makeAnswer(t, "01B", "k7m2xq9fzp", "Name it", "2026-08-20T09:00:10Z", review.Again)
 
-	remaining := review.OrderAnswers([]review.Answer{recognise, name}).Replay(ahead, review.ScheduleBy(review.NewFSRS()))
+	remaining := review.OrderAnswers([]review.Answer{recognise, name}).Replay(getAhead(), review.ScheduleBy(review.NewFSRS()))
 	if len(remaining) != 2 {
 		t.Fatalf("two review cards answered left %d schedules", len(remaining))
 	}
@@ -85,7 +85,7 @@ func TestEachCardOfACardIsScheduledOnItsOwn(t *testing.T) {
 // gives the same answer.
 func TestReplayingOneHistoryTwiceProducesOneSchedule(t *testing.T) {
 	var history []review.Answer
-	when := parseTime("2026-01-01T09:00:00Z")
+	when := parseTime(t, "2026-01-01T09:00:00Z")
 	for i, r := range []review.Rating{review.Good, review.Again, review.Hard, review.Good, review.Easy} {
 		history = append(history, review.Answer{
 			ID:         string(rune('A'+i)) + "01",
@@ -97,7 +97,7 @@ func TestReplayingOneHistoryTwiceProducesOneSchedule(t *testing.T) {
 
 	delta := review.NewFSRS()
 	reviewCard := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	if one, other := review.OrderAnswers(history).Replay(ahead, review.ScheduleBy(delta))[reviewCard], review.OrderAnswers(history).Replay(ahead, review.ScheduleBy(delta))[reviewCard]; one != other {
+	if one, other := review.OrderAnswers(history).Replay(getAhead(), review.ScheduleBy(delta))[reviewCard], review.OrderAnswers(history).Replay(getAhead(), review.ScheduleBy(delta))[reviewCard]; one != other {
 		t.Errorf("one history gave %+v and then %+v", one, other)
 	}
 }
@@ -108,13 +108,13 @@ func TestReplayingOneHistoryTwiceProducesOneSchedule(t *testing.T) {
 // than it was earned.
 func TestALineThatExistsTwiceIsCountedOnce(t *testing.T) {
 	reviewCard := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	one := makeAnswer("01A", reviewCard.Card, reviewCard.Template, "2026-08-20T09:00:00Z", review.Good)
-	two := makeAnswer("01B", reviewCard.Card, reviewCard.Template, "2026-08-21T09:00:00Z", review.Good)
+	one := makeAnswer(t, "01A", reviewCard.Card, reviewCard.Template, "2026-08-20T09:00:00Z", review.Good)
+	two := makeAnswer(t, "01B", reviewCard.Card, reviewCard.Template, "2026-08-21T09:00:00Z", review.Good)
 
 	delta := review.NewFSRS()
-	once := review.OrderAnswers([]review.Answer{one, two}).Replay(ahead, review.ScheduleBy(delta))
+	once := review.OrderAnswers([]review.Answer{one, two}).Replay(getAhead(), review.ScheduleBy(delta))
 	// The whole run again, as a conflicted copy of the file lands beside it.
-	twice := review.OrderAnswers([]review.Answer{one, two, one, two}).Replay(ahead, review.ScheduleBy(delta))
+	twice := review.OrderAnswers([]review.Answer{one, two, one, two}).Replay(getAhead(), review.ScheduleBy(delta))
 
 	if once[reviewCard] != twice[reviewCard] {
 		t.Errorf("the same run twice left the card at %+v, once leaves it at %+v",
@@ -129,10 +129,10 @@ func TestALineThatExistsTwiceIsCountedOnce(t *testing.T) {
 // took it back arrive.
 func TestALineTakingAnAnswerBackTwiceConsumesItBackOnce(t *testing.T) {
 	reviewCard := review.CardID{Card: "k7m2xq9fzp", Template: "Recognise"}
-	provided := makeAnswer("01A", reviewCard.Card, reviewCard.Template, "2026-08-20T09:00:00Z", review.Good)
-	back := review.Answer{ID: "01B", At: parseTime("2026-08-20T09:01:00Z"), Undoes: provided.ID}
+	provided := makeAnswer(t, "01A", reviewCard.Card, reviewCard.Template, "2026-08-20T09:00:00Z", review.Good)
+	back := review.Answer{ID: "01B", At: parseTime(t, "2026-08-20T09:01:00Z"), Undoes: provided.ID}
 
-	remaining := review.OrderAnswers([]review.Answer{provided, back, provided, back}).Replay(ahead, review.ScheduleBy(review.NewFSRS()))
+	remaining := review.OrderAnswers([]review.Answer{provided, back, provided, back}).Replay(getAhead(), review.ScheduleBy(review.NewFSRS()))
 	if _, target := remaining[reviewCard]; target {
 		t.Errorf("the answer was taken back and the card is at %+v", remaining[reviewCard])
 	}
@@ -140,7 +140,7 @@ func TestALineTakingAnAnswerBackTwiceConsumesItBackOnce(t *testing.T) {
 
 // means by a new card.
 func TestReplay_UnansweredCardHasNoSchedule(t *testing.T) {
-	remaining := review.OrderAnswers(nil).Replay(ahead, review.ScheduleBy(review.NewFSRS()))
+	remaining := review.OrderAnswers(nil).Replay(getAhead(), review.ScheduleBy(review.NewFSRS()))
 	if len(remaining) != 0 {
 		t.Errorf("no answers left %d schedules", len(remaining))
 	}
@@ -223,8 +223,8 @@ func TestASchedulesDoesNotDependOnHowTheRunsWereDelivered(t *testing.T) {
 		}
 
 		delta := review.NewFSRS()
-		want := review.OrderAnswers(answers).Replay(ahead, review.ScheduleBy(delta))
-		got := review.OrderAnswers(as).Replay(ahead, review.ScheduleBy(delta))
+		want := review.OrderAnswers(answers).Replay(getAhead(), review.ScheduleBy(delta))
+		got := review.OrderAnswers(as).Replay(getAhead(), review.ScheduleBy(delta))
 		if !maps.Equal(got, want) {
 			t.Fatalf("%d answers delivered as %d gave %+v, want %+v",
 				len(answers), len(as), got, want)
@@ -272,8 +272,8 @@ func TestAnAnswerTakenBackPreservesTheScheduleItWasNeverGivenIn(t *testing.T) {
 		}
 
 		delta := review.NewFSRS()
-		want := review.OrderAnswers(expectedAnswers).Replay(ahead, review.ScheduleBy(delta))
-		got := review.OrderAnswers(with).Replay(ahead, review.ScheduleBy(delta))
+		want := review.OrderAnswers(expectedAnswers).Replay(getAhead(), review.ScheduleBy(delta))
+		got := review.OrderAnswers(with).Replay(getAhead(), review.ScheduleBy(delta))
 		if !maps.Equal(got, want) {
 			t.Fatalf("%d of %d answers taken back gave %+v, want %+v",
 				took, len(answers), got, want)

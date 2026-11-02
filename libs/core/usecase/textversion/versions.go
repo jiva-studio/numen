@@ -109,9 +109,8 @@ func (u *Versions) PutVersion(ctx context.Context, v domain.Vault, pluginID stri
 // saveVersion checks a version against its file and the other versions of its
 // path, and records it.
 func (u *Versions) saveVersion(ctx context.Context, v domain.Vault, version domain.TextVersion) (domain.TextVersion, error) {
-	if version.Path == "" || version.Key == "" || version.Kind == "" || version.File == "" {
-		return domain.TextVersion{}, fmt.Errorf("%w: path %q, key %q, kind %q, file %q",
-			textport.ErrInvalidVersion, version.Path, version.Key, version.Kind, version.File)
+	if err := checkVersionFields(version); err != nil {
+		return domain.TextVersion{}, err
 	}
 	repo, err := u.repos.Open(v)
 	if err != nil {
@@ -121,8 +120,8 @@ func (u *Versions) saveVersion(ctx context.Context, v domain.Vault, version doma
 	if err != nil {
 		return domain.TextVersion{}, err
 	}
-	if version.Source == version.GetID() || (version.Source != "" && !hasVersion(versions, version.Source)) {
-		return domain.TextVersion{}, fmt.Errorf("%w: %s is no other version of %s", textport.ErrInvalidVersion, version.Source, version.Path)
+	if err := checkVersionSource(version, versions); err != nil {
+		return domain.TextVersion{}, err
 	}
 	files, err := u.files.Open(v)
 	if err != nil {
@@ -133,7 +132,7 @@ func (u *Versions) saveVersion(ctx context.Context, v domain.Vault, version doma
 		return domain.TextVersion{}, fmt.Errorf("%w: file %s of %s: %w", textport.ErrInvalidVersion, version.File, version.PluginID, err)
 	}
 	version.Hash = file.Hash
-	version.CreateTime = u.clock()
+	version.CreateTime = u.clock.Now()
 	if i := indexOf(versions, version.GetID()); i >= 0 {
 		version.CreateTime = versions[i].CreateTime
 	}
@@ -142,6 +141,23 @@ func (u *Versions) saveVersion(ctx context.Context, v domain.Vault, version doma
 	}
 	u.reportChanged(v, version.Path)
 	return version, nil
+}
+
+// checkVersionFields reports a version that lacks a path, key, kind or file.
+func checkVersionFields(version domain.TextVersion) error {
+	if version.Path == "" || version.Key == "" || version.Kind == "" || version.File == "" {
+		return fmt.Errorf("%w: path %q, key %q, kind %q, file %q",
+			textport.ErrInvalidVersion, version.Path, version.Key, version.Kind, version.File)
+	}
+	return nil
+}
+
+// checkVersionSource reports a source that is the version itself or is no version of the path.
+func checkVersionSource(version domain.TextVersion, versions []domain.TextVersion) error {
+	if version.Source == version.GetID() || (version.Source != "" && !hasVersion(versions, version.Source)) {
+		return fmt.Errorf("%w: %s is no other version of %s", textport.ErrInvalidVersion, version.Source, version.Path)
+	}
+	return nil
 }
 
 // RemoveVersion removes the record of a version of the plugin.
@@ -249,7 +265,7 @@ func (u *Versions) CreateEdit(ctx context.Context, v domain.Vault, edit TextEdit
 	if err != nil {
 		return domain.TextVersion{}, err
 	}
-	key := editPrefix + strconv.FormatInt(u.clock().UnixNano(), 36)
+	key := editPrefix + strconv.FormatInt(u.clock.Now().UnixNano(), 36)
 	name := key + fileExtension
 	if _, err := files.WriteTextFile(ctx, edit.PluginID, name, edit.Segments); err != nil {
 		return domain.TextVersion{}, fmt.Errorf("write edit of %s: %w", edit.Path, err)
@@ -353,8 +369,4 @@ func indexOf(versions []domain.TextVersion, id domain.TextVersionID) int {
 
 func hasVersion(versions []domain.TextVersion, id domain.TextVersionID) bool {
 	return indexOf(versions, id) >= 0
-}
-
-func isKindAccepted(kinds []domain.TextKind, kind domain.TextKind) bool {
-	return slices.Contains(kinds, kind) || slices.Contains(kinds, "*")
 }

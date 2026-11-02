@@ -1,0 +1,33 @@
+{
+  "name": "@numen/core-client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The first-party client of the core: the service clients, the transport, the enum codes and the readers of the manifest and the plugin catalog, for the applications and the plugin host. Never published; plugins use @numen/plugin-sdk.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --build",
+    "test": "vitest run",
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ ."
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.14.0",
+    "@connectrpc/connect": "^2.1.2",
+    "@connectrpc/connect-web": "^2.1.2",
+    "@numen/protocol": "*"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.10.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.12.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vitest": "^5.0.3"
+  }
+}

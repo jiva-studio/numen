@@ -8,9 +8,9 @@ import {
   createAgentPort,
   resolveTextLinks,
   type AgentClient,
-  type AgentHost,
   type LinkClient,
-} from '@numen/plugin-sdk'
+  type AgentHost,
+} from '@numen/plugin-host'
 import { WORDS } from '@/shared/words'
 
 /** The part of the agent service that the window uses. */

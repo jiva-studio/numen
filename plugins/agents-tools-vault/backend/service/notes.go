@@ -123,7 +123,9 @@ func (t *Tools) writeNote(ctx context.Context, in NoteWriteInput) (NoteWriteOutp
 		return NoteWriteOutput{}, err
 	}
 
-	_ = t.vault.Scan(ctx, []string{path})
+	if err := t.vault.Scan(ctx, []string{path}); err != nil {
+		return NoteWriteOutput{}, fmt.Errorf("scan note %s: %w", path, err)
+	}
 
 	return NoteWriteOutput{
 		Path:        path,
@@ -162,7 +164,10 @@ func (t *Tools) writeOrCreate(ctx context.Context, path, content string) (domain
 	if err := t.vault.Create(ctx, path, []byte(content)); err != nil {
 		return domain.FileStat{}, fmt.Errorf("create note %s: %w", path, err)
 	}
-	newFp, _ := t.vault.StatFile(ctx, path)
+	newFp, err := t.vault.StatFile(ctx, path)
+	if err != nil {
+		return domain.FileStat{}, fmt.Errorf("stat note %s: %w", path, err)
+	}
 	return newFp, nil
 }
 

@@ -3,7 +3,6 @@ package review
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"hash"
 	"math"
 	"strconv"
@@ -47,7 +46,7 @@ func NewFSRS() FSRS {
 func NewFSRSAt(retention float64) FSRS {
 	p := fsrs.DefaultParam()
 	p.EnableFuzz = false
-	p.RequestRetention = math.Min(math.Max(retention, RetentionBounds.Min), RetentionBounds.Max)
+	p.RequestRetention = math.Min(math.Max(retention, GetRetentionBounds().Min), GetRetentionBounds().Max)
 	return FSRS{p: p, name: FSRSName + "." + hashParameters(p)}
 }
 
@@ -83,7 +82,7 @@ func hashParameters(p fsrs.Parameters) string {
 // writeNumber writes one number of the parameters into the name being worked
 // out.
 func writeNumber(sum hash.Hash, name string, value float64) {
-	fmt.Fprintf(sum, "%s=%s\n", name, strconv.FormatFloat(value, 'x', -1, 64))
+	sum.Write([]byte(name + "=" + strconv.FormatFloat(value, 'x', -1, 64) + "\n"))
 }
 
 // IsSpaced reports whether this scheduler has put a review card into review: it
@@ -148,7 +147,7 @@ type atAnswer struct {
 // answered. An unanswered card starts in the phase the scheduler begins cards in,
 // with zero stability and zero difficulty.
 func (f FSRS) readAtAnswer(s Schedule, pos time.Time) atAnswer {
-	one := atAnswer{phase: fsrs.New, away: 0, last: noSchedule, out: noSchedule}
+	one := atAnswer{phase: fsrs.New, away: 0, last: newUnansweredSchedule(), out: newUnansweredSchedule()}
 	if !s.IsNew() {
 		one.last, one.phase = s, fsrs.State(s.Phase)
 	}

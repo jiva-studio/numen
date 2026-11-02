@@ -2,11 +2,16 @@ package pdf_test
 
 import (
 	"bytes"
+	"context"
 	"errors"
+	"fmt"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 	"image"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/tetratelabs/wazero"
 
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
@@ -32,7 +37,7 @@ const (
 
 func read(t *testing.T, name string) *pdf.Book {
 	t.Helper()
-	book, err := pdf.Read(fixture(t, name))
+	book, err := newWorkers(t).Read(fixture(t, name))
 	if err != nil {
 		t.Fatalf("%s: %v", name, err)
 	}
@@ -211,11 +216,12 @@ func TestTheSameBytesGiveTheSameText(t *testing.T) {
 	// file has to agree with the first.
 	raw := fixture(t, outline)
 
-	first, err := pdf.Read(raw)
+	workers := newWorkers(t)
+	first, err := workers.Read(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := pdf.Read(raw)
+	second, err := workers.Read(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -244,7 +250,7 @@ func TestWhatIsNotADocument(t *testing.T) {
 	}
 	for _, c := range tests {
 		t.Run(c.name, func(t *testing.T) {
-			book, err := pdf.Read(c.raw)
+			book, err := newWorkers(t).Read(c.raw)
 			if !errors.Is(err, c.want) {
 				t.Fatalf("error is %v, want %v", err, c.want)
 			}
@@ -259,11 +265,12 @@ func TestReadingIsSafeFromSeveralGoroutines(t *testing.T) {
 	// A vault is walked by one goroutine today and by more later, and the library
 	// holds a document per worker.
 	raw := fixture(t, tiny)
+	workers := newWorkers(t)
 
 	isDone := make(chan string, 8)
 	for i := 0; i < cap(isDone); i++ {
 		go func() {
-			book, err := pdf.Read(raw)
+			book, err := workers.Read(raw)
 			if err != nil {
 				isDone <- "error: " + err.Error()
 				return
@@ -282,11 +289,11 @@ func TestReadingIsSafeFromSeveralGoroutines(t *testing.T) {
 // A page is drawn up to a number of pixels and no further. The same page at a
 // resolution that keeps it inside the bound is drawn.
 func TestAPageTooLargeToDrawIsRefused(t *testing.T) {
-	target, err := pdf.OpenReader(readerOf(fixture(t, vast)))
+	target, err := newWorkers(t).OpenReader(readerOf(fixture(t, vast)))
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer target.Close()
+	defer cleanup.Close(t, target)
 
 	if _, err := target.RenderPage(0, 300); err == nil {
 		t.Error("a page of 3.6 billion pixels was drawn")
@@ -306,11 +313,11 @@ func TestAPageTooLargeToDrawIsRefused(t *testing.T) {
 func TestAPageReturnsHowBigItIs(t *testing.T) {
 	for _, name := range []string{tiny, turned, labels} {
 		t.Run(name, func(t *testing.T) {
-			target, err := pdf.OpenReader(readerOf(fixture(t, name)))
+			target, err := newWorkers(t).OpenReader(readerOf(fixture(t, name)))
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer target.Close()
+			defer cleanup.Close(t, target)
 
 			for page := range target.GetPageCount() {
 				width, height, err := target.GetPageSize(page)
@@ -370,7 +377,7 @@ func TestAPageReturnsHowBigItIs(t *testing.T) {
 }
 
 func TestOpenReaderInvalid(t *testing.T) {
-	_, err := pdf.OpenReader(readerOf(fixture(t, prose)))
+	_, err := newWorkers(t).OpenReader(readerOf(fixture(t, prose)))
 	if err == nil {
 		t.Error("OpenReader succeeded on invalid bytes")
 	}
@@ -382,3 +389,49 @@ type bytesFile struct{ *bytes.Reader }
 func (bytesFile) Close() error { return nil }
 
 func readerOf(raw []byte) bytesFile { return bytesFile{bytes.NewReader(raw)} }
+
+// compilationDirVariable names the folder TestMain makes for the compiled PDFium of the test binary.
+const compilationDirVariable = "NUMEN_PDF_TEST_COMPILATION_DIR"
+
+// newWorkers returns a pool that is closed when the test ends. The pools of the binary compile PDFium
+// into one folder, so it is compiled once and not for each pool, which costs minutes under the race
+// detector.
+func newWorkers(t testing.TB) *pdf.Workers {
+	t.Helper()
+	workers := pdf.NewWorkers()
+	compilation, err := wazero.NewCompilationCacheWithDir(os.Getenv(compilationDirVariable))
+	if err != nil {
+		t.Fatal(err)
+	}
+	workers.SetCompilationCache(compilation)
+	t.Cleanup(func() {
+		if err := errors.Join(workers.Close(), compilation.Close(context.WithoutCancel(t.Context()))); err != nil {
+			t.Error(err)
+		}
+	})
+	return workers
+}
+
+// TestMain makes the folder the pools of the tests keep the compiled PDFium in, for the packages pdf and
+// pdf_test alike.
+func TestMain(m *testing.M) {
+	os.Exit(runTests(m))
+}
+
+func runTests(m *testing.M) int {
+	dir, err := os.MkdirTemp("", "numen-pdf-compilation-")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "make the compilation folder: %v\n", err)
+		return 1
+	}
+	if err := os.Setenv(compilationDirVariable, dir); err != nil {
+		fmt.Fprintf(os.Stderr, "set %s: %v\n", compilationDirVariable, err)
+		return 1
+	}
+	code := m.Run()
+	if err := os.RemoveAll(dir); err != nil {
+		fmt.Fprintf(os.Stderr, "remove the compilation folder: %v\n", err)
+		code = 1
+	}
+	return code
+}

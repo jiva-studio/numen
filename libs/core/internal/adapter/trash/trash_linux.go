@@ -24,8 +24,8 @@ const suffix = ".trashinfo"
 const deletedAt = "2006-01-02T15:04:05"
 
 // moveToTrash puts the folder in the trash the desktop reads.
-func moveToTrash(path string) error {
-	return moveToUserOrVolumeTrash(path, getUserTrashDir())
+func moveToTrash(path string, deletedOn time.Time) error {
+	return moveToUserOrVolumeTrash(path, getUserTrashDir(), deletedOn)
 }
 
 // getUserTrashDir is the trash of this login. It is empty where the machine will not say
@@ -44,10 +44,10 @@ func getUserTrashDir() string {
 
 // moveToUserOrVolumeTrash puts the folder in the trash of this login, and in the trash at the root
 // of its own volume when a rename cannot reach the first. A volume that has no
-// trash and takes none has nowhere to put it.
-func moveToUserOrVolumeTrash(path, home string) error {
+// trash and takes none cannot receive the folder.
+func moveToUserOrVolumeTrash(path, home string, deletedOn time.Time) error {
 	if home != "" {
-		if err := moveIntoTrash(home, path, path); !errors.Is(err, syscall.EXDEV) {
+		if err := moveIntoTrash(home, path, path, deletedOn); !errors.Is(err, syscall.EXDEV) {
 			return err
 		}
 	}
@@ -63,7 +63,7 @@ func moveToUserOrVolumeTrash(path, home string) error {
 	if err != nil {
 		return err
 	}
-	return moveIntoTrash(dir, path, from)
+	return moveIntoTrash(dir, path, from, deletedOn)
 }
 
 // getVolumeRoot is the root of the volume the folder is on: the last directory on the
@@ -79,18 +79,31 @@ func getVolumeRoot(path string) (string, error) {
 		if parent == pos {
 			return pos, nil
 		}
-		var up syscall.Stat_t
-		// A parent nothing here can look at is as far as this goes: what it is
-		// on cannot be compared, so the folder below it is the root.
-		if err := syscall.Lstat(parent, &up); errors.Is(err, syscall.EACCES) || errors.Is(err, syscall.EPERM) || errors.Is(err, fs.ErrPermission) || errors.Is(err, fs.ErrNotExist) {
-			return pos, nil
-		} else if err != nil {
-			return "", fmt.Errorf("stat parent %s: %w", parent, err)
-		} else if up.Dev != folder.Dev {
+		isRoot, err := isVolumeRoot(parent, folder.Dev)
+		if err != nil {
+			return "", err
+		}
+		if isRoot {
 			return pos, nil
 		}
 		pos = parent
 	}
+}
+
+// isVolumeRoot tells whether a folder is the root of its volume: its parent cannot be looked
+// at, or lies on another device than dev.
+func isVolumeRoot(parent string, dev uint64) (bool, error) {
+	var up syscall.Stat_t
+	err := syscall.Lstat(parent, &up)
+	// A parent nothing here can look at is as far as this goes: what it is
+	// on cannot be compared, so the folder below it is the root.
+	if errors.Is(err, syscall.EACCES) || errors.Is(err, syscall.EPERM) || errors.Is(err, fs.ErrPermission) || errors.Is(err, fs.ErrNotExist) {
+		return true, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("stat parent %s: %w", parent, err)
+	}
+	return up.Dev != dev, nil
 }
 
 // getVolumeTrashDir returns the trash directory at the root of a mounted
@@ -116,7 +129,7 @@ func getVolumeTrashDir(top string, uid int) (string, error) {
 //
 // The note is written first: the name is this deletion's before anything moves
 // under it. A move that fails takes the note back with it.
-func moveIntoTrash(dir, path, from string) error {
+func moveIntoTrash(dir, path, from string, deletedOn time.Time) error {
 	files := filepath.Join(dir, "files")
 	info := filepath.Join(dir, "info")
 	for _, item := range []string{files, info} {
@@ -129,7 +142,7 @@ func moveIntoTrash(dir, path, from string) error {
 	if err != nil {
 		return err
 	}
-	_, err = note.WriteString(formatTrashInfo(from))
+	_, err = note.WriteString(formatTrashInfo(from, deletedOn))
 	if closed := note.Close(); err == nil {
 		err = closed
 	}
@@ -137,8 +150,7 @@ func moveIntoTrash(dir, path, from string) error {
 		err = os.Rename(path, filepath.Join(files, name))
 	}
 	if err != nil {
-		os.Remove(filepath.Join(info, name+suffix))
-		return err
+		return errors.Join(err, os.Remove(filepath.Join(info, name+suffix)))
 	}
 	return nil
 }
@@ -168,8 +180,8 @@ func reserveTrashName(files, notes, name string) (string, *os.File, error) {
 // formatTrashInfo returns the info file content for a trashed folder: its
 // original path and deletion time. The path is URL-encoded, and is relative to
 // the volume root for a trash at that root.
-func formatTrashInfo(from string) string {
+func formatTrashInfo(from string, deletedOn time.Time) string {
 	return "[Trash Info]\n" +
 		"Path=" + (&url.URL{Path: from}).EscapedPath() + "\n" +
-		"DeletionDate=" + time.Now().Format(deletedAt) + "\n"
+		"DeletionDate=" + deletedOn.Format(deletedAt) + "\n"
 }

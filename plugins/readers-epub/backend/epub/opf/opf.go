@@ -22,13 +22,16 @@ const (
 // ErrNoPackage is returned when the package document is missing or cannot be read.
 var ErrNoPackage = errors.New("epub: no package document")
 
-// A prefix is the writer's choice, so a name that carries one is matched by its
-// namespace. These are the namespaces a title is written in; the empty one is a
-// book that declares none.
-var titleNamespaces = map[string]bool{
-	"":                                 true,
-	"http://purl.org/dc/elements/1.1/": true,
-	"http://purl.org/dc/terms/":        true,
+// isTitleNamespace reports whether a title is written in the namespace. A prefix is the writer's
+// choice, so a name that carries one is matched by its namespace; the empty namespace is a book
+// that
+// declares none.
+func isTitleNamespace(key string) bool {
+	switch key {
+	case "", "http://purl.org/dc/elements/1.1/", "http://purl.org/dc/terms/":
+		return true
+	}
+	return false
 }
 
 // A Package is the package document, read down to what a reader needs.
@@ -92,7 +95,7 @@ type manifestItem struct {
 
 func readPackageMetadata(read *Package, doc *rawPackageDocument) {
 	for _, entry := range doc.Metadata.Entries {
-		if entry.XMLName.Local == "title" && titleNamespaces[entry.XMLName.Space] &&
+		if entry.XMLName.Local == "title" && isTitleNamespace(entry.XMLName.Space) &&
 			read.Title == "" {
 			read.Title = words.NormaliseSpaces(entry.Value)
 		}

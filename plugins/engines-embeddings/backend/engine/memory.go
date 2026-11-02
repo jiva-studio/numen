@@ -1,6 +1,6 @@
 package engine
 
-import "github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
+import "github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 
 // headWidth is the width of one attention head in sentence encoders.
 const headWidth = 64

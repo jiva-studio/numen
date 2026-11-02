@@ -68,21 +68,14 @@ type run struct{ steps chan agentport.Step }
 func (r *run) GetSteps() <-chan agentport.Step { return r.steps }
 func (r *run) Stop() error                     { return nil }
 
-// choices holds the choice of each plugin's setting.
-type choices map[string]completionport.CompletionChoice
-
-func (c choices) GetCompletionChoice(pluginID string) completionport.CompletionChoice {
-	return c[pluginID]
-}
-
 // ask returns a question with one user message, as a plugin sends it.
 func ask(text string) completionport.Question {
 	return completionport.Question{Messages: []completionport.Message{{Role: "user", Text: text}}}
 }
 
-func newRouter(t *testing.T, config completion.Config, choice choices, fake *programs) *completion.Router {
+func newRouter(t *testing.T, config completion.Config, fake *programs) *completion.Router {
 	t.Helper()
-	router, err := completion.NewRouter(func() completion.Config { return config }, choice, fake)
+	router, err := completion.NewRouter(func() completion.Config { return config }, fake)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,22 +85,19 @@ func newRouter(t *testing.T, config completion.Config, choice choices, fake *pro
 // A router is made with what it needs or not at all.
 func TestARouterIsRefusedWhatItCannotWorkWithout(t *testing.T) {
 	config := func() completion.Config { return completion.Config{} }
-	if _, err := completion.NewRouter(nil, choices{}, &programs{}); err == nil {
+	if _, err := completion.NewRouter(nil, &programs{}); err == nil {
 		t.Error("a router without settings was made")
 	}
-	if _, err := completion.NewRouter(config, nil, &programs{}); err == nil {
-		t.Error("a router without choices was made")
-	}
-	if _, err := completion.NewRouter(config, choices{}, nil); err == nil {
+	if _, err := completion.NewRouter(config, nil); err == nil {
 		t.Error("a router without programs was made")
 	}
 }
 
-// A plugin naming no agent is answered by the default agent and model, through
-// a task that names no tool and no conversation.
-func TestRouter_NoAgentNamedUsesDefault(t *testing.T) {
+// A plugin is answered by the default agent and model, through a task that names
+// no tool and no conversation.
+func TestRouter_AnswersWithTheDefault(t *testing.T) {
 	fake := &programs{}
-	router := newRouter(t, completion.Config{Default: completion.Route{Agent: "agent-d", Model: "model-d"}}, choices{}, fake)
+	router := newRouter(t, completion.Config{Default: completion.Route{Agent: "agent-d", Model: "model-d"}}, fake)
 
 	got, err := router.Complete(t.Context(), "plugin.a", ask("why?"))
 	if err != nil || got != "answer to why?" {
@@ -127,62 +117,12 @@ func TestRouter_NoAgentNamedUsesDefault(t *testing.T) {
 // resolve, and leaves the model to the program.
 func TestAnEmptyDefaultPreservesTheAgentAndTheModelToThePrograms(t *testing.T) {
 	fake := &programs{}
-	router := newRouter(t, completion.Config{}, choices{}, fake)
+	router := newRouter(t, completion.Config{}, fake)
 	if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); err != nil {
 		t.Fatal(err)
 	}
 	if fake.requested[0] != "" || fake.tasks[0].Agent != defaultProgram || fake.tasks[0].Model != "" {
 		t.Errorf("asked %q, ran on %q with model %q", fake.requested[0], fake.tasks[0].Agent, fake.tasks[0].Model)
-	}
-}
-
-// A plugin whose setting names an agent is answered by that agent with the
-// model the setting names, and the default model goes with the default alone.
-func TestAPluginsOwnChoiceExistsOverTheDefault(t *testing.T) {
-	fake := &programs{}
-	router := newRouter(t,
-		completion.Config{Default: completion.Route{Agent: "agent-d", Model: "model-d"}},
-		choices{
-			"plugin.a": {Agent: "agent-a", Model: "model-a"},
-			"plugin.b": {Agent: "agent-b"},
-			"plugin.c": {Model: "ignored"},
-		},
-		fake)
-
-	for _, one := range []string{"plugin.a", "plugin.b", "plugin.c", "plugin.d"} {
-		if _, err := router.Complete(t.Context(), one, ask("why?")); err != nil {
-			t.Fatal(err)
-		}
-	}
-	wantAgents := []string{"agent-a", "agent-b", "agent-d", "agent-d"}
-	wantModels := []string{"model-a", "", "model-d", "model-d"}
-	for item := range wantAgents {
-		if fake.tasks[item].Agent != wantAgents[item] || fake.tasks[item].Model != wantModels[item] {
-			t.Errorf("question %d went to %q with %q, want %q with %q",
-				item, fake.tasks[item].Agent, fake.tasks[item].Model, wantAgents[item], wantModels[item])
-		}
-	}
-}
-
-// The agent a plugin's setting names fails the question as it fails: the
-// question is not taken to any other agent.
-func TestRouter_MissingAgentFailsWithoutFallback(t *testing.T) {
-	fake := &programs{getErr: completionport.ErrNoRoute}
-	router := newRouter(t, completion.Config{Default: completion.Route{Agent: "agent-d"}},
-		choices{"plugin.a": {Agent: "absent"}}, fake)
-
-	for range 3 {
-		if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); !errors.Is(err, completionport.ErrNoRoute) {
-			t.Fatalf("error = %v, want port.ErrNoRoute", err)
-		}
-	}
-	if len(fake.tasks) != 0 {
-		t.Errorf("started %v", fake.tasks)
-	}
-	for _, request := range fake.requested {
-		if request != "absent" {
-			t.Errorf("asked for %q", request)
-		}
 	}
 }
 
@@ -192,7 +132,7 @@ func TestAnAgentThatCannotAnswerIsUnavailable(t *testing.T) {
 		"cannot start": {startErr: errors.New("no plugin runs it")},
 		"says nothing": {answer: func(context.Context, agentport.Task) (string, error) { return " ", nil }},
 	} {
-		router := newRouter(t, completion.Config{}, choices{}, fake)
+		router := newRouter(t, completion.Config{}, fake)
 		if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); !errors.Is(err, completionport.ErrUnavailable) {
 			t.Errorf("%s: error = %v, want port.ErrUnavailable", name, err)
 		}
@@ -203,7 +143,7 @@ func TestAnAgentThatCannotAnswerIsUnavailable(t *testing.T) {
 // setting and the default do.
 func TestAQuestionCannotChooseItsRoute(t *testing.T) {
 	fake := &programs{}
-	router := newRouter(t, completion.Config{Default: completion.Route{Agent: "agent-d"}}, choices{}, fake)
+	router := newRouter(t, completion.Config{Default: completion.Route{Agent: "agent-d"}}, fake)
 	for _, purpose := range []string{"proofreading", "claude", "default"} {
 		question := ask("why?")
 		question.Purpose = purpose
@@ -222,7 +162,7 @@ func TestAQuestionCannotChooseItsRoute(t *testing.T) {
 // prompt: as written when there is one, with their roles when there are several.
 func TestTheQuestionIsTheTasksPromptAndInstructions(t *testing.T) {
 	fake := &programs{}
-	router := newRouter(t, completion.Config{}, choices{}, fake)
+	router := newRouter(t, completion.Config{}, fake)
 
 	if _, err := router.Complete(t.Context(), "plugin.a", completionport.Question{Messages: []completionport.Message{
 		{Role: "system", Text: "be brief"}, {Role: "system", Text: "be kind"}, {Text: "why?"},
@@ -245,7 +185,7 @@ func TestTheQuestionIsTheTasksPromptAndInstructions(t *testing.T) {
 
 func TestAQuestionNoAgentCanAnswerIsRefused(t *testing.T) {
 	fake := &programs{}
-	router := newRouter(t, completion.Config{}, choices{}, fake)
+	router := newRouter(t, completion.Config{}, fake)
 
 	for name, question := range map[string]completionport.Question{
 		"empty":        {},
@@ -258,31 +198,6 @@ func TestAQuestionNoAgentCanAnswerIsRefused(t *testing.T) {
 	}
 	if len(fake.requested) != 0 || len(fake.tasks) != 0 {
 		t.Errorf("asked %v, started %v", fake.requested, fake.tasks)
-	}
-}
-
-// The settings and the choices are read at every question.
-func TestAChoiceEditedInTheSettingsAppliesToTheNextQuestion(t *testing.T) {
-	fake := &programs{}
-	config := completion.Config{Default: completion.Route{Agent: "early"}}
-	selected := choices{}
-	router, err := completion.NewRouter(func() completion.Config { return config }, selected, fake)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); err != nil {
-		t.Fatal(err)
-	}
-	config = completion.Config{Default: completion.Route{Agent: "late"}}
-	if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); err != nil {
-		t.Fatal(err)
-	}
-	selected["plugin.a"] = completionport.CompletionChoice{Agent: "own"}
-	if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); err != nil {
-		t.Fatal(err)
-	}
-	if want := []string{"early", "late", "own"}; fake.tasks[0].Agent != want[0] || fake.tasks[1].Agent != want[1] || fake.tasks[2].Agent != want[2] {
-		t.Errorf("went to %v, want %v", []string{fake.tasks[0].Agent, fake.tasks[1].Agent, fake.tasks[2].Agent}, want)
 	}
 }
 
@@ -319,7 +234,7 @@ func (b *blocker) answer(ctx context.Context, _ agentport.Task) (string, error) 
 // No more questions answer at once than the limit.
 func TestAnAgentAnswersNoMoreQuestionsAtOnceThanTheLimit(t *testing.T) {
 	block := newBlocker()
-	router := newRouter(t, completion.Config{Default: completion.Route{Concurrency: 2}}, choices{}, &programs{answer: block.answer})
+	router := newRouter(t, completion.Config{Default: completion.Route{Concurrency: 2}}, &programs{answer: block.answer})
 
 	const request = 5
 	var wg sync.WaitGroup
@@ -342,31 +257,11 @@ func TestAnAgentAnswersNoMoreQuestionsAtOnceThanTheLimit(t *testing.T) {
 	}
 }
 
-// Two agents do not wait for one another.
-func TestTwoAgentsDoNotShareTheirPlaces(t *testing.T) {
-	block := newBlocker()
-	router := newRouter(t, completion.Config{},
-		choices{"plugin.a": {Agent: "a"}, "plugin.b": {Agent: "b"}}, &programs{answer: block.answer})
-
-	var wg sync.WaitGroup
-	for _, pluginID := range []string{"plugin.a", "plugin.b"} {
-		wg.Go(func() {
-			if _, err := router.Complete(t.Context(), pluginID, ask("why?")); err != nil {
-				t.Error(err)
-			}
-		})
-	}
-	<-block.started
-	<-block.started
-	close(block.release)
-	wg.Wait()
-}
-
 // A question waiting for a place ends with its context, and the question
 // answering ends with it too.
 func TestACancelledQuestionPreservesTheQueueAndStopsTheAnswer(t *testing.T) {
 	block := newBlocker()
-	router := newRouter(t, completion.Config{Default: completion.Route{Concurrency: 1}}, choices{}, &programs{answer: block.answer})
+	router := newRouter(t, completion.Config{Default: completion.Route{Concurrency: 1}}, &programs{answer: block.answer})
 
 	answering, stop := context.WithCancel(t.Context())
 	first := make(chan error, 1)
@@ -402,7 +297,7 @@ func TestACancelledQuestionPreservesTheQueueAndStopsTheAnswer(t *testing.T) {
 // A question whose context is already cancelled starts no task.
 func TestAQuestionCancelledBeforeItStartsStartsNoTask(t *testing.T) {
 	fake := &programs{}
-	router := newRouter(t, completion.Config{}, choices{}, fake)
+	router := newRouter(t, completion.Config{}, fake)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	if _, err := router.Complete(ctx, "plugin.a", ask("why?")); !errors.Is(err, context.Canceled) {
@@ -417,7 +312,7 @@ func TestAQuestionCancelledBeforeItStartsStartsNoTask(t *testing.T) {
 func TestAChangedLimitAppliesToTheNextQuestions(t *testing.T) {
 	block := newBlocker()
 	config := completion.Config{Default: completion.Route{Concurrency: 1}}
-	router, err := completion.NewRouter(func() completion.Config { return config }, choices{}, &programs{answer: block.answer})
+	router, err := completion.NewRouter(func() completion.Config { return config }, &programs{answer: block.answer})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -455,7 +350,7 @@ func TestAModelTheProgramDoesNotListIsReplaced(t *testing.T) {
 		"its first":       {[]agentport.AgentModel{{Name: "m-1"}, {Name: "m-2"}}, "m-1"},
 	} {
 		fake := &programs{models: test.models}
-		router := newRouter(t, completion.Config{}, choices{"plugin.a": {Agent: "agent-a", Model: "m-old"}}, fake)
+		router := newRouter(t, completion.Config{Default: completion.Route{Agent: "agent-a", Model: "m-old"}}, fake)
 
 		if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); err != nil {
 			t.Fatalf("%s: %v", name, err)
@@ -473,7 +368,7 @@ func TestAModelTheProgramListsIsCached(t *testing.T) {
 		"none":   nil,
 	} {
 		fake := &programs{models: models}
-		router := newRouter(t, completion.Config{}, choices{"plugin.a": {Agent: "agent-a", Model: "m-old"}}, fake)
+		router := newRouter(t, completion.Config{Default: completion.Route{Agent: "agent-a", Model: "m-old"}}, fake)
 
 		if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); err != nil {
 			t.Fatalf("%s: %v", name, err)
@@ -487,7 +382,7 @@ func TestAModelTheProgramListsIsCached(t *testing.T) {
 // A failure after a model replacement reports the requested model and the substitute.
 func TestAFailureAfterAReplacementStatesIt(t *testing.T) {
 	fake := &programs{models: []agentport.AgentModel{{Name: "m-1"}}, startErr: errors.New("the agent stopped: boom")}
-	router := newRouter(t, completion.Config{}, choices{"plugin.a": {Agent: "agent-a", Model: "m-old"}}, fake)
+	router := newRouter(t, completion.Config{Default: completion.Route{Agent: "agent-a", Model: "m-old"}}, fake)
 
 	_, err := router.Complete(t.Context(), "plugin.a", ask("why?"))
 
@@ -498,5 +393,25 @@ func TestAFailureAfterAReplacementStatesIt(t *testing.T) {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("error %q lacks %q", err, want)
 		}
+	}
+}
+
+// The settings are read at every question.
+func TestADefaultEditedInTheSettingsAppliesToTheNextQuestion(t *testing.T) {
+	fake := &programs{}
+	config := completion.Config{Default: completion.Route{Agent: "early"}}
+	router, err := completion.NewRouter(func() completion.Config { return config }, fake)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); err != nil {
+		t.Fatal(err)
+	}
+	config = completion.Config{Default: completion.Route{Agent: "late"}}
+	if _, err := router.Complete(t.Context(), "plugin.a", ask("why?")); err != nil {
+		t.Fatal(err)
+	}
+	if fake.tasks[0].Agent != "early" || fake.tasks[1].Agent != "late" {
+		t.Errorf("went to %q and %q, want early and late", fake.tasks[0].Agent, fake.tasks[1].Agent)
 	}
 }

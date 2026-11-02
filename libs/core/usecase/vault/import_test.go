@@ -48,7 +48,7 @@ func TestFilesAreBroughtIntoTheFolderTheyWereLetGoOver(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 	from := createOutsideFolder(t, map[string]string{"Cover.png": "PNG", "Notes.md": "# Notes\n"})
-	bring := vaults.NewImport(vaultwriter.VaultWriters{}, filesystem.ImportedFiles{})
+	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, filesystem.ImportedFiles{})
 
 	brought, err := bring.Execute(t.Context(), v, "physics", []string{
 		filepath.Join(from, "Cover.png"),
@@ -86,7 +86,7 @@ func TestAFolderIsBroughtInWhole(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(from, "scans", "empty"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	bring := vaults.NewImport(vaultwriter.VaultWriters{}, filesystem.ImportedFiles{})
+	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, filesystem.ImportedFiles{})
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{filepath.Join(from, "scans")})
 	if err != nil {
@@ -96,8 +96,8 @@ func TestAFolderIsBroughtInWhole(t *testing.T) {
 		t.Fatalf("files stayed outside: %v", brought.Errors)
 	}
 	// Four files, and the folder itself with the three under it.
-	if len(brought.Landed) != 8 {
-		t.Errorf("%d files and folders landed", len(brought.Landed))
+	if len(brought.Imported) != 8 {
+		t.Errorf("%d files and folders landed", len(brought.Imported))
 	}
 
 	if body := readArrived(t, v.Path, "scans/pages/Two.png"); body != "TWO" {
@@ -115,7 +115,7 @@ func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Cover.png": "MINE"})
 	from := createOutsideFolder(t, map[string]string{"Cover.png": "THEIRS", "Kelvin.md": "# Kelvin\n"})
-	bring := vaults.NewImport(vaultwriter.VaultWriters{}, filesystem.ImportedFiles{})
+	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, filesystem.ImportedFiles{})
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{
 		filepath.Join(from, "Cover.png"),
@@ -143,7 +143,7 @@ func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 func TestAFolderContainingTheVaultIsRefused(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, nil)
-	bring := vaults.NewImport(vaultwriter.VaultWriters{}, filesystem.ImportedFiles{})
+	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, filesystem.ImportedFiles{})
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{filepath.Dir(v.Path)})
 	if err != nil {
@@ -152,7 +152,7 @@ func TestAFolderContainingTheVaultIsRefused(t *testing.T) {
 	if len(brought.Errors) != 1 {
 		t.Fatalf("what stayed outside: %v", brought.Errors)
 	}
-	if len(brought.Landed) != 0 {
-		t.Errorf("%d files landed", len(brought.Landed))
+	if len(brought.Imported) != 0 {
+		t.Errorf("%d files landed", len(brought.Imported))
 	}
 }

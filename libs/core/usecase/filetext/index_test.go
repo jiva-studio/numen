@@ -25,12 +25,12 @@ func TestABookIsSplitIntoChunksRecordedWithTheRecipeThatSplitThem(t *testing.T) 
 		t.Run(c.name, func(t *testing.T) {
 			ctx := t.Context()
 			index, shelf := newStore(), newLibrary()
-			raw := bookOf(t, "A Book", words(sanskrit, 400), words(sanskrit, 400))
+			raw := bookOf(t, "A Book", words(getSanskrit(), 400), words(getSanskrit(), 400))
 			shelf.hold(bookPath, domain.KindFile, raw, 1)
 
-			extract := newIndex(vaults{first.ID: shelf}, index, index)
+			extract := newIndex(vaults{getFirst().ID: shelf}, index, index)
 			extract.Sizes = c.sizes
-			res, err := extract.Execute(ctx, first)
+			res, err := extract.Execute(ctx, getFirst())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -44,7 +44,7 @@ func TestABookIsSplitIntoChunksRecordedWithTheRecipeThatSplitThem(t *testing.T) 
 				t.Errorf("the source was written %d times, want one write", index.outBytes[bookPath])
 			}
 
-			source := index.sources[first.ID][bookPath]
+			source := index.sources[getFirst().ID][bookPath]
 			if want := recipe(versionReader, extract.sizes()); source.Recipe != want {
 				t.Errorf("recipe = %q, want %q", source.Recipe, want)
 			}
@@ -94,12 +94,12 @@ func TestABookThatWillNotParseDoesNotStopTheOthers(t *testing.T) {
 
 	// The unreadable one sorts between the two books, so a run that stops at it
 	// leaves the second uncut.
-	shelf.hold("library/a.epub", domain.KindFile, bookOf(t, "A", words(sanskrit, 200)), 1)
+	shelf.hold("library/a.epub", domain.KindFile, bookOf(t, "A", words(getSanskrit(), 200)), 1)
 	shelf.hold("library/broken.epub", domain.KindFile, []byte("this is not an archive at all"), 1)
-	shelf.hold("library/z.epub", domain.KindFile, bookOf(t, "Z", words(sanskrit, 200)), 1)
+	shelf.hold("library/z.epub", domain.KindFile, bookOf(t, "Z", words(getSanskrit(), 200)), 1)
 	shelf.hold("notes/one.md", domain.KindNote, []byte("# One\n\nA note.\n"), 1)
 
-	res, err := newIndex(vaults{first.ID: shelf}, index, index).Execute(ctx, first)
+	res, err := newIndex(vaults{getFirst().ID: shelf}, index, index).Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatalf("one book that will not parse ended the run: %v", err)
 	}
@@ -110,24 +110,24 @@ func TestABookThatWillNotParseDoesNotStopTheOthers(t *testing.T) {
 		t.Errorf("the run reports %+v, want two books extracted and one unreadable", res)
 	}
 	for _, path := range []string{"library/a.epub", "library/z.epub"} {
-		if !index.cut(first.ID, path) {
+		if !index.cut(getFirst().ID, path) {
 			t.Errorf("%s was not cut", path)
 		}
 	}
-	if index.cut(first.ID, "library/broken.epub") {
+	if index.cut(getFirst().ID, "library/broken.epub") {
 		t.Error("something that is not a book was cut into chunks")
 	}
 	if got := shelf.reads["library/broken.epub"]; got != 1 {
 		t.Errorf("the unreadable book was read %d times, want one attempt in a run", got)
 	}
-	broken, recognized := index.sources[first.ID]["library/broken.epub"]
+	broken, recognized := index.sources[getFirst().ID]["library/broken.epub"]
 	if !recognized {
 		t.Error("the file the vault holds is not a source the index knows about")
 	}
 	if broken.Recipe != "" {
 		t.Errorf("a file nothing could read claims to have been cut by %q", broken.Recipe)
 	}
-	if index.cut(first.ID, "notes/one.md") {
+	if index.cut(getFirst().ID, "notes/one.md") {
 		t.Error("a note was cut by the pass over books")
 	}
 }
@@ -135,15 +135,15 @@ func TestABookThatWillNotParseDoesNotStopTheOthers(t *testing.T) {
 func TestWhatHasNotChangedIsNotOpenedAgain(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
-	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 300)), 1)
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(getSanskrit(), 300)), 1)
 
-	extract := newIndex(vaults{first.ID: shelf}, index, index)
-	if _, err := extract.Execute(ctx, first); err != nil {
+	extract := newIndex(vaults{getFirst().ID: shelf}, index, index)
+	if _, err := extract.Execute(ctx, getFirst()); err != nil {
 		t.Fatal(err)
 	}
 	reads := shelf.reads[bookPath]
 
-	res, err := extract.Execute(ctx, first)
+	res, err := extract.Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -157,8 +157,8 @@ func TestWhatHasNotChangedIsNotOpenedAgain(t *testing.T) {
 		t.Errorf("the source was written %d times, want the one write", index.outBytes[bookPath])
 	}
 
-	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 400)), 2)
-	res, err = extract.Execute(ctx, first)
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(getSanskrit(), 400)), 2)
+	res, err = extract.Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,15 +196,15 @@ func TestIndex_RecipeFollowsSizesAndDrivesStaleness(t *testing.T) {
 	}
 
 	index, shelf := newStore(), newLibrary()
-	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 300)), 1)
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(getSanskrit(), 300)), 1)
 
-	extract := newIndex(vaults{first.ID: shelf}, index, index)
+	extract := newIndex(vaults{getFirst().ID: shelf}, index, index)
 	extract.Sizes = one
-	if _, err := extract.Execute(ctx, first); err != nil {
+	if _, err := extract.Execute(ctx, getFirst()); err != nil {
 		t.Fatal(err)
 	}
 
-	stale, err := index.GetSourcesWithOtherRecipe(ctx, first.ID, domain.KindFile, []string{recipe(versionReader, Index{Sizes: other}.sizes())}, 10)
+	stale, err := index.GetSourcesWithOtherRecipe(ctx, getFirst().ID, domain.KindFile, []string{recipe(versionReader, Index{Sizes: other}.sizes())}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -213,7 +213,7 @@ func TestIndex_RecipeFollowsSizesAndDrivesStaleness(t *testing.T) {
 	}
 
 	extract.Sizes = other
-	res, err := extract.Execute(ctx, first)
+	res, err := extract.Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -223,11 +223,11 @@ func TestIndex_RecipeFollowsSizesAndDrivesStaleness(t *testing.T) {
 	if index.outBytes[bookPath] != 2 {
 		t.Errorf("the source was written %d times, want the cut at each of the two sizes", index.outBytes[bookPath])
 	}
-	if want := recipe(versionReader, extract.sizes()); index.sources[first.ID][bookPath].Recipe != want {
-		t.Errorf("recipe = %q, want %q", index.sources[first.ID][bookPath].Recipe, want)
+	if want := recipe(versionReader, extract.sizes()); index.sources[getFirst().ID][bookPath].Recipe != want {
+		t.Errorf("recipe = %q, want %q", index.sources[getFirst().ID][bookPath].Recipe, want)
 	}
 
-	if _, err := extract.Execute(ctx, first); err != nil {
+	if _, err := extract.Execute(ctx, getFirst()); err != nil {
 		t.Fatal(err)
 	}
 	if index.outBytes[bookPath] != 2 {
@@ -239,14 +239,14 @@ func TestExtractionStaysInsideItsVault(t *testing.T) {
 	ctx := t.Context()
 	index := newStore()
 
-	shelves := vaults{first.ID: newLibrary(), second.ID: newLibrary()}
-	shelves[first.ID].hold("library/sanskrit.epub", domain.KindFile,
-		bookOf(t, "Sanskrit", words(sanskrit, 300), words(sanskrit, 300)), 1)
-	shelves[second.ID].hold("library/latin.epub", domain.KindFile,
-		bookOf(t, "Latin", words(latin, 300), words(latin, 300)), 1)
+	shelves := vaults{getFirst().ID: newLibrary(), getSecond().ID: newLibrary()}
+	shelves[getFirst().ID].hold("library/sanskrit.epub", domain.KindFile,
+		bookOf(t, "Sanskrit", words(getSanskrit(), 300), words(getSanskrit(), 300)), 1)
+	shelves[getSecond().ID].hold("library/latin.epub", domain.KindFile,
+		bookOf(t, "Latin", words(getLatin(), 300), words(getLatin(), 300)), 1)
 
 	extract := newIndex(shelves, index, index)
-	for _, v := range []domain.Vault{first, second} {
+	for _, v := range []domain.Vault{getFirst(), getSecond()} {
 		if _, err := extract.Execute(ctx, v); err != nil {
 			t.Fatal(err)
 		}
@@ -258,8 +258,8 @@ func TestExtractionStaysInsideItsVault(t *testing.T) {
 		holds  string
 		absent string
 	}{
-		{first, "library/sanskrit.epub", sanskrit[0], latin[0]},
-		{second, "library/latin.epub", latin[0], sanskrit[0]},
+		{getFirst(), "library/sanskrit.epub", getSanskrit()[0], getLatin()[0]},
+		{getSecond(), "library/latin.epub", getLatin()[0], getSanskrit()[0]},
 	}
 	for _, c := range cases {
 		t.Run(c.vault.Name, func(t *testing.T) {
@@ -296,38 +296,38 @@ func TestABookTheVaultNoLongerContainsIsTakenOut(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
 
-	shelf.hold("library/kept.epub", domain.KindFile, bookOf(t, "Kept", words(sanskrit, 200)), 1)
-	shelf.hold("library/gone.epub", domain.KindFile, bookOf(t, "Gone", words(latin, 200)), 1)
+	shelf.hold("library/kept.epub", domain.KindFile, bookOf(t, "Kept", words(getSanskrit(), 200)), 1)
+	shelf.hold("library/gone.epub", domain.KindFile, bookOf(t, "Gone", words(getLatin(), 200)), 1)
 
-	extract := newIndex(vaults{first.ID: shelf}, index, index)
-	if _, err := extract.Execute(ctx, first); err != nil {
+	extract := newIndex(vaults{getFirst().ID: shelf}, index, index)
+	if _, err := extract.Execute(ctx, getFirst()); err != nil {
 		t.Fatal(err)
 	}
-	if !index.cut(first.ID, "library/gone.epub") {
+	if !index.cut(getFirst().ID, "library/gone.epub") {
 		t.Fatal("the book was not cut, so its removal proves nothing")
 	}
 
 	delete(shelf.files, "library/gone.epub")
 
-	res, err := extract.Execute(ctx, first)
+	res, err := extract.Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if res.Removed != 1 {
 		t.Errorf("removed = %d, want the one book the vault no longer holds", res.Removed)
 	}
-	if _, recognized := index.sources[first.ID]["library/gone.epub"]; recognized {
+	if _, recognized := index.sources[getFirst().ID]["library/gone.epub"]; recognized {
 		t.Error("a book the vault does not hold is still a source the index knows about")
 	}
-	if index.cut(first.ID, "library/gone.epub") {
+	if index.cut(getFirst().ID, "library/gone.epub") {
 		t.Error("the chunks of a book that is gone are still in the index")
 	}
 
 	// The one that stayed is untouched: removal names paths.
-	if _, recognizedVal := index.sources[first.ID]["library/kept.epub"]; !recognizedVal {
+	if _, recognizedVal := index.sources[getFirst().ID]["library/kept.epub"]; !recognizedVal {
 		t.Error("the book that is still there was taken out as well")
 	}
-	if !index.cut(first.ID, "library/kept.epub") {
+	if !index.cut(getFirst().ID, "library/kept.epub") {
 		t.Error("the chunks of the book that is still there were taken out as well")
 	}
 }
@@ -340,7 +340,7 @@ func TestRebuildingTheIndexReadsEveryFile(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
 
-	was := words(latin, 200)
+	was := words(getLatin(), 200)
 	// Other words, letter for letter, so the size is the same one.
 	now := strings.Map(func(r rune) rune {
 		if r == 'a' {
@@ -356,8 +356,8 @@ func TestRebuildingTheIndexReadsEveryFile(t *testing.T) {
 
 	shelf.hold("library/A.epub", domain.KindFile, before, 1)
 
-	extract := newIndex(vaults{first.ID: shelf}, index, index)
-	if res, err := extract.Execute(ctx, first); err != nil {
+	extract := newIndex(vaults{getFirst().ID: shelf}, index, index)
+	if res, err := extract.Execute(ctx, getFirst()); err != nil {
 		t.Fatal(err)
 	} else if res.Extracted != 1 {
 		t.Fatalf("read %d books", res.Extracted)
@@ -365,14 +365,14 @@ func TestRebuildingTheIndexReadsEveryFile(t *testing.T) {
 
 	shelf.hold("library/A.epub", domain.KindFile, after, 1)
 
-	if res, err := extract.Execute(ctx, first); err != nil {
+	if res, err := extract.Execute(ctx, getFirst()); err != nil {
 		t.Fatal(err)
 	} else if res.Unchanged != 1 || res.Extracted != 0 {
 		t.Errorf("the fingerprint is the path, the size and the time: %+v", res)
 	}
 
 	extract.ShouldRebuildIndex = true
-	if res, err := extract.Execute(ctx, first); err != nil {
+	if res, err := extract.Execute(ctx, getFirst()); err != nil {
 		t.Fatal(err)
 	} else if res.Extracted != 1 {
 		t.Errorf("rebuilding read %d books: %+v", res.Extracted, res)
@@ -384,8 +384,8 @@ const talkPath = "talks/a lecture.mp3"
 // timedParts is the text a transcription plugin gives of one talk.
 func timedParts() []domain.TextSegment {
 	return []domain.TextSegment{
-		{Text: words(sanskrit, 200) + "\n", Selector: `{"t":[1.5,4]}`},
-		{Text: words(latin, 200) + "\n", Selector: `{"t":[5025,5030]}`},
+		{Text: words(getSanskrit(), 200) + "\n", Selector: `{"t":[1.5,4]}`},
+		{Text: words(getLatin(), 200) + "\n", Selector: `{"t":[5025,5030]}`},
 	}
 }
 
@@ -396,8 +396,8 @@ func TestARecordingWithNoVersionIsASourceWithNoChunks(t *testing.T) {
 	index, shelf := newStore(), newLibrary()
 	shelf.hold(talkPath, domain.KindFile, []byte("ID3 and then the samples"), 1)
 
-	extract, texts := newIndexWithTexts(vaults{first.ID: shelf}, index, index)
-	res, err := extract.Execute(ctx, first)
+	extract, texts := newIndexWithTexts(vaults{getFirst().ID: shelf}, index, index)
+	res, err := extract.Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -407,7 +407,7 @@ func TestARecordingWithNoVersionIsASourceWithNoChunks(t *testing.T) {
 	if res.Chunks != 0 || res.Extracted != 0 {
 		t.Errorf("the run cut %d chunks out of a recording with no text", res.Chunks)
 	}
-	if _, target := index.sources[first.ID][talkPath]; !target {
+	if _, target := index.sources[getFirst().ID][talkPath]; !target {
 		t.Error("the vault holds a recording the index does not")
 	}
 	if got := texts.getRequested(); !slices.Equal(got, []string{talkPath}) {
@@ -420,16 +420,16 @@ func TestIndexSkipsAFileWithNoTextSource(t *testing.T) {
 	index, shelf := newStore(), newLibrary()
 	shelf.hold("pictures/cover.sample", domain.KindFile, []byte("pixels"), 1)
 
-	run, texts := newIndexWithTexts(vaults{first.ID: shelf}, index, index)
+	run, texts := newIndexWithTexts(vaults{getFirst().ID: shelf}, index, index)
 	texts.leaveOut("pictures/cover.sample")
-	res, err := run.Execute(ctx, first)
+	res, err := run.Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if res.Seen != 0 || res.Recorded != 0 {
 		t.Errorf("the run reports %+v, want the file left out", res)
 	}
-	if _, isIndexed := index.sources[first.ID]["pictures/cover.sample"]; isIndexed {
+	if _, isIndexed := index.sources[getFirst().ID]["pictures/cover.sample"]; isIndexed {
 		t.Error("the index holds a file that has no text")
 	}
 	if got := texts.getRequested(); len(got) != 0 {
@@ -443,16 +443,16 @@ func TestARecordingIsSplitFromItsLiveVersion(t *testing.T) {
 	index, shelf := newStore(), newLibrary()
 	shelf.hold(talkPath, domain.KindFile, []byte("ID3 and then the samples"), 1)
 
-	extract, texts := newIndexWithTexts(vaults{first.ID: shelf}, index, index)
-	transcript := texts.put(first, talkPath, "test.transcriber", "transcript", timedParts())
-	res, err := extract.Execute(ctx, first)
+	extract, texts := newIndexWithTexts(vaults{getFirst().ID: shelf}, index, index)
+	transcript := texts.put(getFirst(), talkPath, "test.transcriber", "transcript", timedParts())
+	res, err := extract.Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if res.Extracted != 1 || res.Chunks == 0 {
 		t.Fatalf("the run reports %+v, want the recording cut into chunks", res)
 	}
-	src := index.sources[first.ID][talkPath]
+	src := index.sources[getFirst().ID][talkPath]
 	if src.Producer != string(transcript.GetID()) {
 		t.Errorf("the source names %q as the version it was cut from, want %q", src.Producer, transcript.GetID())
 	}
@@ -468,27 +468,27 @@ func TestSourceExtractedFromOutdatedVersionIsExtractedAgain(t *testing.T) {
 	index, shelf := newStore(), newLibrary()
 	shelf.hold(talkPath, domain.KindFile, []byte("ID3 and then the samples"), 1)
 
-	extract, texts := newIndexWithTexts(vaults{first.ID: shelf}, index, index)
-	texts.put(first, talkPath, "test.transcriber", "transcript", timedParts())
-	if _, err := extract.Execute(ctx, first); err != nil {
+	extract, texts := newIndexWithTexts(vaults{getFirst().ID: shelf}, index, index)
+	texts.put(getFirst(), talkPath, "test.transcriber", "transcript", timedParts())
+	if _, err := extract.Execute(ctx, getFirst()); err != nil {
 		t.Fatal(err)
 	}
-	if !index.cut(first.ID, talkPath) {
+	if !index.cut(getFirst().ID, talkPath) {
 		t.Fatal("the recording was not cut, so dropping its version proves nothing")
 	}
 
 	texts.drop(talkPath)
-	res, err := extract.Execute(ctx, first)
+	res, err := extract.Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if res.Outdated != 1 || res.Unreadable != 1 {
 		t.Errorf("the run reports %+v, want the source outdated and left without text", res)
 	}
-	if index.cut(first.ID, talkPath) {
+	if index.cut(getFirst().ID, talkPath) {
 		t.Error("the chunks of a version that is not live are still in the index")
 	}
-	if got := index.sources[first.ID][talkPath].Producer; got != "" {
+	if got := index.sources[getFirst().ID][talkPath].Producer; got != "" {
 		t.Errorf("the source still names %q as its version", got)
 	}
 }
@@ -499,18 +499,18 @@ func TestExtractOneUsesTheLiveVersion(t *testing.T) {
 	index, shelf := newStore(), newLibrary()
 	shelf.hold(talkPath, domain.KindFile, []byte("ID3 and then the samples"), 1)
 
-	extract, texts := newIndexWithTexts(vaults{first.ID: shelf}, index, index)
-	if _, err := extract.Execute(ctx, first); err != nil {
+	extract, texts := newIndexWithTexts(vaults{getFirst().ID: shelf}, index, index)
+	if _, err := extract.Execute(ctx, getFirst()); err != nil {
 		t.Fatal(err)
 	}
-	transcript := texts.put(first, talkPath, "test.transcriber", "transcript", timedParts())
-	if _, err := extract.IndexOne(ctx, first, talkPath); err != nil {
+	transcript := texts.put(getFirst(), talkPath, "test.transcriber", "transcript", timedParts())
+	if _, err := extract.IndexOne(ctx, getFirst(), talkPath); err != nil {
 		t.Fatal(err)
 	}
-	if got := index.sources[first.ID][talkPath].Producer; got != string(transcript.GetID()) {
+	if got := index.sources[getFirst().ID][talkPath].Producer; got != string(transcript.GetID()) {
 		t.Fatalf("the source names %q, want %q", got, transcript.GetID())
 	}
-	if !index.cut(first.ID, talkPath) {
+	if !index.cut(getFirst().ID, talkPath) {
 		t.Fatal("the new version was not cut")
 	}
 }
@@ -520,13 +520,13 @@ func TestExtractOneUsesTheLiveVersion(t *testing.T) {
 func TestATextThatCannotBeReadIsReportedAndTheRunGoesOn(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
-	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 200)), 1)
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(getSanskrit(), 200)), 1)
 
-	extract, texts := newIndexWithTexts(vaults{first.ID: shelf}, index, index)
+	extract, texts := newIndexWithTexts(vaults{getFirst().ID: shelf}, index, index)
 	texts.failure = errors.New("the plugin is not running")
 	var errs []error
 	extract.ErrorHandler = func(err error) { errs = append(errs, err) }
-	res, err := extract.Execute(ctx, first)
+	res, err := extract.Execute(ctx, getFirst())
 	if err != nil {
 		t.Fatalf("a provider that failed ended the run: %v", err)
 	}

@@ -1,7 +1,7 @@
 /**
  * The files open in a plugin's tabs, as a plugin is given the means to see them written out.
  */
-import type { BufferHost, FileBuffers } from '@numen/plugin-sdk'
+import type { BufferHost, FileBuffers } from '@numen/plugin-host'
 import { raiseConflicts, type createFileFlush, type Notes } from '@/features/file-conflict'
 
 function hasNoteConflicts(buffers: FileBuffers): buffers is FileBuffers & Notes {
@@ -17,7 +17,9 @@ export function createBufferHost({ fileFlush }: BufferHostDeps): BufferHost {
   return {
     track: (buffers) => {
       const removeHandler = fileFlush.addHandler(buffers.flush)
-      const stopRaising = hasNoteConflicts(buffers) ? raiseConflicts(buffers, fileFlush) : () => {}
+      const stopRaising = hasNoteConflicts(buffers)
+        ? raiseConflicts(buffers, fileFlush)
+        : () => undefined // Buffers without note conflicts have nothing to stop raising.
       return {
         dispose: () => {
           removeHandler()

@@ -1,35 +1,100 @@
-import { test, expect } from '../../support/test.js'
+import fs from 'node:fs'
+import path from 'node:path'
+import { test, expect, type APIRequestContext } from '../../support/test.js'
+import { getVaultPath, readNote } from '../../support/vault.js'
 
-test.describe('Plugin Security and Path Boundaries', () => {
-  test('rejects path traversal and unauthorized filesystem paths', async ({ page }) => {
-    await page.goto('/')
+/** Calls an RPC and gives back its status and its answer, refused or not. */
+const askRPC = async (request: APIRequestContext, method: string, data: object) => {
+  const answer = await request.post(`/numen.v1.${method}`, {
+    data,
+    headers: { 'Content-Type': 'application/json' },
+  })
+  const text = await answer.text()
+  return {
+    status: answer.status(),
+    body: text ? (JSON.parse(text) as Record<string, unknown>) : {},
+  }
+}
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+/** Whether an answer refused the call: an error status, or an error code in the reply. */
+const isRefused = (answer: { status: number; body: Record<string, unknown> }): boolean =>
+  answer.status !== 200 || answer.body['error'] !== undefined
 
-    // Try navigating to a note outside vault using palette
-    await page.keyboard.press('Control+p')
+test.describe('Paths outside the vault', () => {
+  test('refuses to read, write or move a note by a path that leaves the vault', async ({
+    request,
+  }) => {
+    const vault = getVaultPath()
+    const name = `outside-${Math.random().toString(36).slice(2, 7)}`
+    const outside = path.join(path.dirname(vault), `${name}.md`)
+    fs.writeFileSync(outside, 'A file beside the vault.\n')
+    try {
+      for (const target of [`../${name}.md`, outside, `notes/../../${name}.md`]) {
+        const read = await askRPC(request, 'NoteService/ReadNote', { path: target })
+        expect(isRefused(read), `ReadNote ${target}`).toBe(true)
+        expect(JSON.stringify(read.body)).not.toContain('A file beside the vault.')
 
-    const paletteInput = page.locator('input[placeholder*="Search"], input[type="text"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
+        const write = await askRPC(request, 'NoteService/WriteNote', {
+          path: target,
+          body: 'Written from the window.\n',
+        })
+        expect(isRefused(write), `WriteNote ${target}`).toBe(true)
+        expect(fs.readFileSync(outside, 'utf8')).toBe('A file beside the vault.\n')
+      }
 
-    await paletteInput.fill('../../etc/passwd')
-    await page.keyboard.press('Enter')
+      const escaped = `../${name}-moved.md`
+      const move = await askRPC(request, 'FileService/MoveFile', {
+        from: 'notes/Entropy.md',
+        to: escaped,
+      })
+      expect(isRefused(move)).toBe(true)
+      expect(fs.existsSync(path.join(path.dirname(vault), `${name}-moved.md`))).toBe(false)
+      expect((await readNote(request, 'notes/Entropy.md')).body).toContain(
+        'A measure of uncertainty',
+      )
 
-    // Verify application did not crash and sensitive files are not exposed
-    await expect(page.locator('text=root:x:0:0')).not.toBeVisible()
-    await expect(page.locator('text=something inside numen went wrong')).not.toBeVisible()
+      const created = await askRPC(request, 'NoteService/CreateNote', {
+        title: `${name} made`,
+        path: '..',
+      })
+      expect(isRefused(created)).toBe(true)
+      expect(fs.readdirSync(path.dirname(vault)).filter((one) => one.startsWith(name))).toEqual([
+        `${name}.md`,
+      ])
+    } finally {
+      for (const one of fs
+        .readdirSync(path.dirname(vault))
+        .filter((file) => file.startsWith(name))) {
+        fs.rmSync(path.join(path.dirname(vault), one), { force: true })
+      }
+    }
   })
 
-  test('gracefully handles missing and invalid file entries', async ({ page }) => {
-    await page.goto('/')
+  test('serves no file outside the vault or a plugin folder by an escaping address', async ({
+    request,
+  }) => {
+    const vault = getVaultPath()
+    // A folder whose name starts with the vault's own: a check by prefix alone takes it as inside.
+    const sibling = `${vault}-beside`
+    fs.mkdirSync(sibling, { recursive: true })
+    fs.writeFileSync(path.join(sibling, 'secret.txt'), 'Kept beside the vault.\n')
+    try {
+      const inside = await request.get('/assets/notes/Entropy.md')
+      expect(inside.status()).toBe(200)
 
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Workspace remains interactive and intact
-    await expect(page.locator('[data-tree-row="notes"]')).toBeVisible()
-    await expect(page.locator('text=something inside numen went wrong')).not.toBeVisible()
+      const escapes = [
+        `/assets/%2E%2E%2F${encodeURIComponent(path.basename(sibling))}%2Fsecret.txt`,
+        `/assets/%2E%2E%2F%2E%2E%2F${encodeURIComponent(path.basename(path.dirname(vault)))}%2F${encodeURIComponent(path.basename(sibling))}%2Fsecret.txt`,
+        '/plugin/md.numen.notes/%2E%2E%2F%2E%2E%2Fpackage.json',
+        '/plugin/md.numen.notes/..%2F..%2Fpackage.json',
+      ]
+      for (const address of escapes) {
+        const answer = await request.get(address)
+        expect(answer.status(), address).toBeGreaterThanOrEqual(400)
+        expect(await answer.text(), address).not.toContain('Kept beside the vault.')
+      }
+    } finally {
+      fs.rmSync(sibling, { recursive: true, force: true })
+    }
   })
 })

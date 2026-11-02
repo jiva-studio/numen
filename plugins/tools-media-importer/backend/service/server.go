@@ -10,12 +10,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
 )
 
@@ -32,7 +32,7 @@ func openHostAt(endpoint hostcall.Endpoint) link.Host {
 		Store: host.NewStoreClient(endpoint),
 		Texts: host.NewTextClient(endpoint),
 		Queue: host.NewQueueClient(endpoint),
-		Now:   clock.Now,
+		Clock: clock.System{},
 	}
 }
 
@@ -123,10 +123,15 @@ func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 		return err
 	}
 	s.SetUpdateConfig(f.updateConfig)
-	mountAPI(s, links)
+	if err := mountAPI(s, links); err != nil {
+		return err
+	}
 	command.Mount(s, commands)
 	s.RegisterRoute(embedPattern, http.HandlerFunc(serveEmbed))
-	s.OnClose(links.Close)
+	s.OnClose(func() error {
+		links.Close()
+		return nil
+	})
 	return nil
 }
 

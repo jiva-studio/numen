@@ -1,7 +1,7 @@
 /**
  * Open deck and card model buffer store for flashcards studio.
  */
-import { getNow } from '../dom'
+import { getNow } from '@numen/ui'
 import { shallowReactive } from 'vue'
 import type { PathRename } from '@numen/plugin-sdk'
 import type {
@@ -43,6 +43,13 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
     firstChangeTime.delete(id)
   }
 
+  function markUnreachable(id: string): void {
+    const tab = tabs.get(id)
+    if (!tab) return
+    tab.state = 'error'
+    tab.error = 'unreachable'
+  }
+
   function scheduleFlush(id: string): void {
     const existing = timers.get(id)
     if (existing) {
@@ -58,7 +65,7 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
 
     const timer = setTimeout(() => {
       clearTimer(id)
-      void writeTab(id)
+      writeTab(id).catch(() => markUnreachable(id))
     }, wait)
     timers.set(id, timer)
   }
@@ -69,15 +76,17 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
     clearTimer(id)
     tab.state = 'saving'
     const observed = tab.keepOverride ? null : tab.baseline
+    const body = tab.body
     try {
-      const res = await notes.write(tab.path, tab.body, observed)
+      const res = await notes.write(tab.path, body, observed)
       if (!tabs.has(id)) return
       if (res.ok) {
-        tab.state = 'clean'
+        // An edit made while the write was in flight stays unsaved, with its own flush scheduled.
+        if (tab.state === 'saving') tab.state = 'clean'
         tab.error = null
         tab.keepOverride = false
         tab.filePath = res.value.at ?? tab.filePath
-        tab.baseline = { prose: tab.body, stat: res.value.at ?? '' }
+        tab.baseline = { prose: body, stat: res.value.at ?? '' }
       } else {
         if (res.error === 'changed') {
           tab.state = 'stale'
@@ -105,7 +114,7 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
       keepOverride: false,
     })
     tabs.set(id, tab)
-    void notes
+    notes
       .read(path)
       .then((res) => {
         if (!tabs.has(id)) return
@@ -152,16 +161,8 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
     }
   }
 
+  /** Replaces the text of a tab, and writes it once the edits pause. */
   function setBody(id: string, body: string): void {
-    const tab = tabs.get(id)
-    if (!tab) return
-    tab.body = body
-    if (tab.state === 'clean' || tab.state === 'saving') {
-      tab.state = 'unsaved'
-    }
-  }
-
-  function saveBody(id: string, body: string): void {
     const tab = tabs.get(id)
     if (!tab) return
     tab.body = body
@@ -185,13 +186,13 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
     if (!tab) return
     tab.keepOverride = true
     tab.state = 'unsaved'
-    void writeTab(id)
+    writeTab(id).catch(() => markUnreachable(id))
   }
 
   function take(id: string): void {
     const tab = tabs.get(id)
     if (!tab) return
-    void notes
+    notes
       .read(tab.path)
       .then((res) => {
         if (!tabs.has(id)) return
@@ -247,14 +248,17 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
       if (tab.state === 'unsaved') {
         tab.state = 'stale'
       } else if (tab.state === 'clean') {
-        void notes.read(tab.path).then((res) => {
-          if (res.ok) {
-            tab.body = res.value.body
-            tab.baseline = { prose: res.value.body, stat: res.value.at ?? '' }
-            tab.filePath = res.value.at ?? tab.filePath
-            options?.onReplaced?.(tab.path)
-          }
-        })
+        notes
+          .read(tab.path)
+          .then((res) => {
+            if (res.ok) {
+              tab.body = res.value.body
+              tab.baseline = { prose: res.value.body, stat: res.value.at ?? '' }
+              tab.filePath = res.value.at ?? tab.filePath
+              options?.onReplaced?.(tab.path)
+            }
+          })
+          .catch(() => markUnreachable(tab.id))
       }
     }
 
@@ -276,7 +280,6 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
     getFilePath,
     getOpenNote,
     setBody,
-    saveBody,
     flushPending,
     flush,
     keep,

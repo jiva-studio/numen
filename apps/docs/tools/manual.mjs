@@ -20,6 +20,7 @@ import {
   readBracketed,
   readWords,
 } from '../../../tools/ci-commands/commands.mjs'
+import { hasPreset } from '../../../tools/ci-stories/presets.mjs'
 import { faults, proves, stories } from '../../../tools/ci-stories/stories.mjs'
 
 const EDITOR = new URL('../../desktop/editor/src/', import.meta.url)
@@ -192,18 +193,6 @@ const spoken = (declared, command) => {
   return found[1]
 }
 
-/**
- * The menu the text versions of the file in front make, as the palette names
- * each entry: by the plugin that does it.
- */
-const readFileMenu = async () => {
-  const source = await read(APP, 'commands/fileMenuCommands.ts')
-  const words = await read(UI, 'words.ts')
-  const named = [...source.matchAll(/return WORDS\.([A-Za-z]+)\(entry\.pluginName\)/g)]
-  if (named.length === 0) die('fileMenuCommands.ts names no entry of the menu')
-  return Promise.all(named.map(async ([, key]) => ({ text: await said(words, key), group: 'file' })))
-}
-
 /** That the window still draws a plugin's palette setting as its name and the setting's title. */
 const checkSettingCommands = async () => {
   const source = await read(APP, 'window/useSettings.ts')
@@ -228,7 +217,7 @@ const commands = async () => {
     const word = row.match(/text:\s*words\.([A-Za-z]+)/)
     const group = row.match(/group:\s*'(note|file|window|settings|vault)'/)
     if (!word) die(`no words draw the command '${id}'`)
-    if (!group) die(`the command '${id}' stands in no group`)
+    if (!group) die(`the command '${id}' is in no group`)
     const chord = table.find((one) => one.command === id)
     const key = chord ? chordOf(chord) : id === 'find' ? chordOf({ letter: 'k' }) : ''
     own.push({ text: await said(words, word[1]), group: group[1], key })
@@ -242,7 +231,6 @@ const commands = async () => {
     ...own,
     ...plugins.flatMap((one) => one.settings),
     ...plugins.flatMap((one) => one.declared),
-    ...(await readFileMenu()),
     ...plugins.flatMap((one) =>
       one.commands.map(({ text, group, chord }) => ({ text, group, key: chord ? chordOf(chord) : '' })),
     ),
@@ -277,7 +265,7 @@ const commands = async () => {
  * is every key that type declares, written at this level, which is what the
  * settings file holds and so what the manual has to say. A line that is
  * neither and is still written down — one exported, tagged with something other
- * than `-` — is handed back unread, for whoever asked to refuse it: a field
+ * than `-` — is returned unread, for whoever asked to refuse it: a field
  * shape nobody taught this to read is a setting quietly left out.
  */
 const fieldsOf = (source, name) => {
@@ -315,7 +303,7 @@ const fieldsOf = (source, name) => {
  * A type keeping its settings unexported writes the keys down on a mirror
  * struct beside it, so a type declaring none is read from its mirror: what a
  * person writes in the settings file is what the mirror says, whatever the
- * fields behind it come to be called. A type with neither hands back nothing,
+ * fields behind it come to be called. A type with neither returns nothing,
  * which the caller answers for.
  */
 const structOf = (source, name) => {
@@ -375,7 +363,7 @@ const meaning = (doc, name, keys) => {
     .replace(/^(is|are)\s+/, '')
     .replace(`${name} `, '')
 
-  const sentences = said.match(/[^.!?]+[.!?]?/g) ?? []
+  const sentences = said.match(/(?:[^.!?]|[.!?](?=\S))+[.!?]?/g) ?? []
   let out = ''
   for (const sentence of sentences) {
     out += sentence
@@ -394,7 +382,6 @@ const meaning = (doc, name, keys) => {
  * nobody listed here stops the build.
  */
 const PACKAGES = {
-  container: 'container',
   settings: 'adapter/settings',
   hardware: 'adapter/settings/hardware',
   completion: 'usecase/completion',
@@ -405,7 +392,7 @@ const held = new Map()
 /**
  * One package's Go, every file of it read as one.
  *
- * A section stands in whichever file of its package a reader put it in, so the
+ * A section is in whichever file of its package a reader put it in, so the
  * package is read whole and a type moved next door keeps its page.
  */
 const sourceOf = async (pkg) => {
@@ -515,7 +502,7 @@ const settings = async () => {
   // still walked into, and a key added to one turns up here. It is declared
   // where every adapter is bound, because the file is the union of their
   // sections and the sections about the window.
-  const keys = await keysOf(PACKAGES.container, 'Settings', '')
+  const keys = await keysOf(PACKAGES.settings, 'File', '')
 
   const row = (key, section) =>
     `| \`${section ? key.path.slice(section.length + 1) : key.path}\` | ${key.kind} | ${key.meaning} |`
@@ -599,7 +586,7 @@ const cli = async () => {
     }
     if (!holding) continue
     // Two spaces are what holds a line apart from what it says. A line with
-    // none of them that stands in under what is said carries the line above
+    // none of them that is in under what is said carries the line above
     // on; anywhere else it is a line this cannot read, and dropping it is
     // dropping a command off the page.
     const said = line.trim().match(/^(\S.*?)\s{2,}(.*)$/)
@@ -641,7 +628,6 @@ const cli = async () => {
  */
 const pictured = async () => {
   const { SHOTS } = await import('./shots.mjs')
-  const { access } = await import('node:fs/promises')
 
   const unproved = proves()
   if (unproved) die(unproved)
@@ -649,12 +635,8 @@ const pictured = async () => {
   const missing = faults(SHOTS, await stories())
   if (missing.length > 0) die(missing.join('; '))
 
-  const presets = new URL('../../../libs/core/internal/adapter/theme/presets/', import.meta.url)
   for (const shot of SHOTS) {
-    if (!shot.preset) continue
-    try {
-      await access(new URL(`${shot.preset}.css`, presets))
-    } catch {
+    if (shot.preset && !hasPreset(shot.preset)) {
       die(`no palette called ${shot.preset} — the picture of it cannot be taken again`)
     }
   }

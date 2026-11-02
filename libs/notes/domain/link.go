@@ -27,6 +27,27 @@ func IsKnownRole(r LinkRole) bool {
 	return false
 }
 
+// LinkMarker is what is drawn at the end of a link that points at its target. The
+// list is closed and a value is introduced together with the code that draws
+// it. An absent marker draws nothing.
+type LinkMarker string
+
+const (
+	MarkerNone  LinkMarker = ""
+	MarkerArrow LinkMarker = "arrow"
+)
+
+// IsKnownMarker reports whether a marker is one the application draws. The
+// absent marker is not a marker; an unknown one in a file is shown as a problem.
+func IsKnownMarker(m LinkMarker) bool {
+	return m == MarkerArrow
+}
+
+// IsWritableMarker reports whether a marker can be stored: absent or known.
+func IsWritableMarker(m LinkMarker) bool {
+	return m == MarkerNone || IsKnownMarker(m)
+}
+
 // Address is what a link points at. Every address has a scheme, so reading one
 // is a split at the first colon: a title like "Lecture 3: entropy" carries one
 // of its own, and only an explicit scheme distinguishes the two.
@@ -114,6 +135,21 @@ type Link struct {
 	// field carries the target's name, because a name kept alongside an address
 	// is a cache in the file the address is written in.
 	Label string
+
+	// Marker is what is drawn at the end of the line that points at Target. The
+	// absent marker draws nothing; the marker of the record in the other note
+	// belongs to the other end.
+	Marker LinkMarker
+}
+
+// LinkKey addresses the records of a note's `links:` block: the target, the role
+// when one is named, and the type. A type is part of the address: the empty type
+// names the records that carry none.
+type LinkKey struct {
+	Target Address
+	// Role narrows the address to one role. Empty matches every role.
+	Role LinkRole
+	Type string
 }
 
 // ResolvedLink is a link together with what it currently points at. "Currently"
@@ -145,6 +181,15 @@ func (r ResolvedLink) InVault(writtenIn VaultID) (vault VaultID, crossed bool) {
 		return writtenIn, false
 	}
 	return r.ToVault, true
+}
+
+// Backlink is a link written in another note that resolves to the note asked
+// about. The embedded link keeps the role as written, relative to the note it is
+// written in; RoleFromHere is the role of that note relative to the one asked
+// about, and is empty for a role with no counterpart.
+type Backlink struct {
+	ResolvedLink
+	RoleFromHere LinkRole
 }
 
 // AmbiguousLink is a link that several notes answer to. It resolved to the

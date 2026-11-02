@@ -54,6 +54,10 @@ type Embed struct {
 
 	// OnProgress, if set, is called each time a group of vectors is written.
 	OnProgress func(EmbedResult)
+
+	// IsSkipped, if set, names the sources, by path and content hash, whose
+	// chunks are left without vectors.
+	IsSkipped func(path, hash string) bool
 }
 
 func (u Embed) inferWorkers() int {
@@ -78,16 +82,34 @@ func NewEmbed(
 // EmbedResult reports what embedding did.
 type EmbedResult = vaultreading.EmbedResult
 
-// EmbedWithProgress runs Execute with onProgress reporting each step when non-nil.
-func (u Embed) EmbedWithProgress(ctx context.Context, v domain.Vault, onProgress func(EmbedResult)) (EmbedResult, error) {
+// EmbedWithProgress runs Execute with onProgress reporting each step when
+// non-nil, and leaves without vectors the chunks of every source isSkipped
+// names when non-nil.
+func (u Embed) EmbedWithProgress(
+	ctx context.Context, v domain.Vault, onProgress func(EmbedResult), isSkipped func(path, hash string) bool,
+) (EmbedResult, error) {
 	if onProgress != nil {
 		u.OnProgress = onProgress
+	}
+	if isSkipped != nil {
+		u.IsSkipped = isSkipped
 	}
 	return u.Execute(ctx, v)
 }
 
 // pipelineBufferSize is the number of batches buffered between pipeline stages.
 const pipelineBufferSize = 4
+
+// getSources returns the distinct sources of the chunks, in the order they appear.
+func getSources(chunks []domain.Passage) []string {
+	var out []string
+	for _, one := range chunks {
+		if !slices.Contains(out, one.Source) {
+			out = append(out, one.Source)
+		}
+	}
+	return out
+}
 
 // preparedBatch is one batch of chunks whose text was read and whose cached vectors were resolved.
 type preparedBatch struct {
@@ -98,19 +120,20 @@ type preparedBatch struct {
 	reusedCount int
 	asking      []string
 	askingMap   []int
-	source      string
+	// sources are the distinct sources of the chunks, in order, and id the batch in the tracker.
+	sources []string
+	id      uint64
 }
 
 // completedBatch is one batch whose vectors are ready to be stored.
 type completedBatch struct {
 	vectors []embeddingport.Vector
 	reused  int
-	source  string
+	id      uint64
 }
 
 // Execute embeds the chunks of a vault that lack vectors, in batches, until none remain.
-func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error) {
-	var res EmbedResult
+func (u Embed) Execute(ctx context.Context, v domain.Vault) (res EmbedResult, err error) {
 	if u.Embedder == nil {
 		return res, nil
 	}
@@ -123,7 +146,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 	if err != nil {
 		return res, err
 	}
-	defer func() { _ = release() }()
+	defer func() { err = errors.Join(err, release()) }()
 
 	model := u.Embedder.GetModel()
 	reader, err := u.readers.Open(v)
@@ -138,19 +161,15 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 	}
 
 	var mu sync.Mutex
-	updateProgress := func(source string, embedded, reused int) {
-		mu.Lock()
-		if source != "" {
-			res.CurrentSource = source
-		}
-		res.Embedded += embedded
-		res.Reused += reused
-		snapshot := res
-		mu.Unlock()
-		u.progress(snapshot)
-	}
-
 	workers := max(u.inferWorkers(), 1)
+	track := newTracker(u, workers, &res, &mu)
+	updateProgress := func(comp completedBatch) {
+		track.leave(comp.id)
+		track.publish(func(r *EmbedResult) {
+			r.Embedded += len(comp.vectors)
+			r.Reused += comp.reused
+		})
+	}
 
 	g, gctx := errgroup.WithContext(ctx)
 	bufferSize := max(pipelineBufferSize, workers*2)
@@ -159,7 +178,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 
 	g.Go(func() error {
 		defer close(preparedChan)
-		return u.produceBatches(gctx, v, model, &source, &res, &mu, preparedChan)
+		return u.produceBatches(gctx, v, model, &source, track, preparedChan)
 	})
 	g.Go(func() error {
 		defer close(completedChan)
@@ -198,10 +217,10 @@ func (u Embed) produceBatches(
 	v domain.Vault,
 	model embeddingport.EmbeddingModel,
 	source *extracted,
-	res *EmbedResult,
-	mu *sync.Mutex,
+	track *tracker,
 	out chan<- preparedBatch,
 ) error {
+	res, mu := track.res, track.mu
 	var after embeddingport.ChunkCursor
 	for {
 		if err := ctx.Err(); err != nil {
@@ -222,12 +241,12 @@ func (u Embed) produceBatches(
 		mu.Unlock()
 		after = next
 
-		chunks, texts, err := u.read(ctx, source, pending, res, mu)
+		chunks, texts, err := u.read(ctx, source, pending, res, mu, track)
 		if err != nil {
 			return err
 		}
 		sortBySource(chunks, texts)
-		if err := u.sendBatches(ctx, model, chunks, texts, out); err != nil {
+		if err := u.sendBatches(ctx, model, chunks, texts, track, out); err != nil {
 			return err
 		}
 	}
@@ -239,6 +258,7 @@ func (u Embed) sendBatches(
 	model embeddingport.EmbeddingModel,
 	chunks []domain.Passage,
 	texts []string,
+	track *tracker,
 	out chan<- preparedBatch,
 ) error {
 	pos := 0
@@ -248,11 +268,13 @@ func (u Embed) sendBatches(
 			return err
 		}
 		pos += len(batch)
+		prep.id = track.enter(prep.sources)
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		case out <- prep:
 		}
+		track.publish(func(*EmbedResult) {})
 	}
 	return nil
 }
@@ -335,7 +357,7 @@ func (u Embed) runInferWorker(ctx context.Context, in <-chan preparedBatch, out 
 func (u Embed) storeBatches(
 	ctx context.Context,
 	in <-chan completedBatch,
-	updateProgress func(source string, embedded, reused int),
+	updateProgress func(comp completedBatch),
 ) error {
 	for {
 		select {
@@ -345,14 +367,23 @@ func (u Embed) storeBatches(
 			if !ok {
 				return nil
 			}
-			if len(comp.vectors) > 0 {
-				if err := u.vectors.SaveVectors(ctx, comp.vectors); err != nil {
-					return fmt.Errorf("write %d vectors: %w", len(comp.vectors), err)
-				}
+			if err := u.saveCompleted(ctx, comp); err != nil {
+				return err
 			}
-			updateProgress(comp.source, len(comp.vectors), comp.reused)
+			updateProgress(comp)
 		}
 	}
+}
+
+// saveCompleted writes the vectors of a completed batch, if it has any.
+func (u Embed) saveCompleted(ctx context.Context, comp completedBatch) error {
+	if len(comp.vectors) == 0 {
+		return nil
+	}
+	if err := u.vectors.SaveVectors(ctx, comp.vectors); err != nil {
+		return fmt.Errorf("write %d vectors: %w", len(comp.vectors), err)
+	}
+	return nil
 }
 
 // read recovers the text of each chunk by reopening its source; the index stores
@@ -367,19 +398,22 @@ func (u Embed) read(
 	pending []domain.Passage,
 	res *EmbedResult,
 	mu *sync.Mutex,
+	track *tracker,
 ) ([]domain.Passage, []string, error) {
 	chunks := make([]domain.Passage, 0, len(pending))
 	texts := make([]string, 0, len(pending))
 
+	isFirst := true
 	for _, p := range pending {
-		mu.Lock()
-		if p.Source != res.CurrentSource {
-			res.CurrentSource = p.Source
-			snapshot := *res
+		if u.IsSkipped != nil && u.IsSkipped(p.Source, p.SourceHash) {
+			mu.Lock()
+			res.Skipped++
 			mu.Unlock()
-			u.progress(snapshot)
-		} else {
-			mu.Unlock()
+			continue
+		}
+		if isFirst {
+			isFirst = false
+			track.publishNext(p.Source)
 		}
 		prose, ok, err := source.textOf(ctx, p.Source, p.Producer)
 		if err != nil {
@@ -435,7 +469,7 @@ func (u Embed) prepareBatch(
 		reused:    make(map[int]embeddingport.Vector),
 		asking:    make([]string, 0, len(texts)),
 		askingMap: make([]int, len(texts)),
-		source:    pending[len(pending)-1].Source,
+		sources:   getSources(pending),
 	}
 	var deduplicated map[string]int
 	if len(texts) > 1 {
@@ -490,27 +524,9 @@ func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBat
 	if len(prep.pending) == 0 {
 		return completedBatch{}, nil
 	}
-	var unique []uniqueVector
-	if len(prep.asking) > 0 {
-		vectors, err := u.Embedder.Embed(ctx, prep.asking)
-		if err != nil {
-			return completedBatch{}, fmt.Errorf("embed %d chunks: %w", len(prep.asking), err)
-		}
-		if len(vectors) != len(prep.asking) {
-			return completedBatch{}, fmt.Errorf("%s answered with %d vectors for %d texts", prep.model, len(vectors), len(prep.asking))
-		}
-		unique = make([]uniqueVector, len(vectors))
-		for i, v := range vectors {
-			if len(v) != prep.model.Dimensions {
-				return completedBatch{}, fmt.Errorf("%s answered with %d dimensions", prep.model, len(v))
-			}
-			v = vector.Normalise(v)
-			quantised := vector.Bytes(v)
-			unique[i] = uniqueVector{
-				value:  packVector(quantised),
-				coarse: vector.Coarse(quantised),
-			}
-		}
+	unique, err := u.embedAsking(ctx, prep)
+	if err != nil {
+		return completedBatch{}, err
 	}
 
 	out := make([]embeddingport.Vector, len(prep.pending))
@@ -531,7 +547,7 @@ func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBat
 	return completedBatch{
 		vectors: out,
 		reused:  prep.reusedCount,
-		source:  prep.source,
+		id:      prep.id,
 	}, nil
 }
 
@@ -597,4 +613,31 @@ func (e *extracted) read(ctx context.Context, path, from string) (string, error)
 	}
 	doc, err := e.texts.GetVersionText(ctx, path, domain.TextVersionID(from))
 	return doc.Text, err
+}
+
+// embedAsking embeds the texts the batch asks for, as documents, and returns their normalised,
+// quantised vectors. A batch that asks for none returns none.
+func (u Embed) embedAsking(ctx context.Context, prep preparedBatch) ([]uniqueVector, error) {
+	if len(prep.asking) == 0 {
+		return nil, nil
+	}
+	vectors, err := u.Embedder.Embed(ctx, prep.asking)
+	if err != nil {
+		return nil, fmt.Errorf("embed %d chunks: %w", len(prep.asking), err)
+	}
+	if len(vectors) != len(prep.asking) {
+		return nil, fmt.Errorf("%s answered with %d vectors for %d texts", prep.model, len(vectors), len(prep.asking))
+	}
+	unique := make([]uniqueVector, len(vectors))
+	for i, v := range vectors {
+		if len(v) != prep.model.Dimensions {
+			return nil, fmt.Errorf("%s answered with %d dimensions", prep.model, len(v))
+		}
+		quantised := vector.Bytes(vector.Normalise(v))
+		unique[i] = uniqueVector{
+			value:  packVector(quantised),
+			coarse: vector.Coarse(quantised),
+		}
+	}
+	return unique, nil
 }

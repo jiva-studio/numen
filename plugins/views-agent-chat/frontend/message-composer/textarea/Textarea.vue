@@ -29,8 +29,8 @@ defineExpose({
 
 <template>
   <textarea
-    ref="element"
     :id="id ?? ownId"
+    ref="element"
     v-model="model"
     data-slot="textarea"
     :class="

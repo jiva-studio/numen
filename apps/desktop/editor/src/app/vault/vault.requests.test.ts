@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ErrorCode, Role, VaultsErrorCode } from '@numen/protocol'
+import { NOTE_ERROR_CODE, NOTE_MARKER, NOTE_ROLE, VAULTS_ERROR_CODE } from '@numen/core-client'
 import { core, vaults } from './index'
 import { WINDOW } from './clients'
 
@@ -10,8 +10,13 @@ const { requestLog } = vi.hoisted(() => {
     getOpeningNote: vi.fn(),
     readNote: vi.fn(),
     watchEdits: vi.fn(),
-    removeLink: vi.fn(),
-    replaceLinks: vi.fn(),
+    getConnection: vi.fn(),
+    saveConnection: vi.fn(),
+    removeSide: vi.fn(),
+    removeConnection: vi.fn(),
+    joinNotes: vi.fn(),
+    createRelatedNote: vi.fn(),
+    listBacklinks: vi.fn(),
     renameNote: vi.fn(),
     listHeadings: vi.fn(),
     resolveAddresses: vi.fn(),
@@ -47,13 +52,19 @@ vi.mock('@/shared/clients', () => ({
 describe('a note requested for', () => {
   it('is created at the path of its folder, and rejected with error of the error', async () => {
     requestLog.createNote.mockResolvedValue({ path: 'Notes/Heat.md' })
-    const created = await core.create({ title: 'Heat', folder: 'Notes', links: [] })
+    const created = await core.create({ title: 'Heat', folder: 'Notes' })
     expect(created).toEqual({ ok: true, value: { path: 'Notes/Heat.md' } })
     expect(requestLog.createNote.mock.calls.at(-1)?.[0].path).toBe('Notes')
 
-    requestLog.createNote.mockResolvedValue({ error: ErrorCode.ALREADY_EXISTS })
-    const outcome = await core.create({ title: 'Heat', folder: 'Notes', links: [] })
+    requestLog.createNote.mockResolvedValue({ error: NOTE_ERROR_CODE.ALREADY_EXISTS })
+    const outcome = await core.create({ title: 'Heat', folder: 'Notes' })
     expect(outcome).toEqual({ ok: false, error: 'alreadyExists' })
+
+    requestLog.createNote.mockResolvedValue({ isNameExhausted: true })
+    expect(await core.create({ title: '', folder: '' })).toEqual({
+      ok: false,
+      error: 'alreadyExists',
+    })
   })
 
   it('is renamed by the path it has, and a stale answer is a change under the window', async () => {
@@ -65,10 +76,10 @@ describe('a note requested for', () => {
       value: { path: 'B.md', title: 'B', hasFrontmatter: true, moved: null },
     })
 
-    requestLog.renameNote.mockResolvedValue({ error: ErrorCode.STALE })
+    requestLog.renameNote.mockResolvedValue({ error: NOTE_ERROR_CODE.STALE })
     expect(await core.rename('A.md', 'B')).toEqual({ ok: false, error: 'changed' })
 
-    requestLog.renameNote.mockResolvedValue({ error: ErrorCode.ALREADY_EXISTS })
+    requestLog.renameNote.mockResolvedValue({ error: NOTE_ERROR_CODE.ALREADY_EXISTS })
     expect(await core.rename('A.md', 'B')).toEqual({ ok: false, error: 'alreadyExists' })
   })
 
@@ -114,7 +125,7 @@ describe('a file requested for', () => {
     await core.remove('a.md', true)
     expect(requestLog.removeFile.mock.calls.at(-1)?.[0]).toEqual({ path: 'a.md', destroy: true })
 
-    requestLog.removeFile.mockResolvedValue({ error: ErrorCode.MISSING })
+    requestLog.removeFile.mockResolvedValue({ error: NOTE_ERROR_CODE.MISSING })
     expect(await core.remove('a.md')).toEqual({ ok: false, error: 'missing' })
   })
 
@@ -129,7 +140,7 @@ describe('a file requested for', () => {
     await core.move('a.md', 'b.md')
     expect(requestLog.moveFile.mock.calls.at(-1)?.[0]).toEqual({ from: 'a.md', to: 'b.md' })
 
-    requestLog.moveFile.mockResolvedValue({ error: ErrorCode.ALREADY_EXISTS })
+    requestLog.moveFile.mockResolvedValue({ error: NOTE_ERROR_CODE.ALREADY_EXISTS })
     expect(await core.move('a.md', 'b.md')).toEqual({ ok: false, error: 'alreadyExists' })
   })
 
@@ -183,7 +194,7 @@ describe('a vault requested for', () => {
   })
 
   it('fails in the words of the error', async () => {
-    requestLog.addVault.mockResolvedValue({ error: VaultsErrorCode.NAME_TAKEN })
+    requestLog.addVault.mockResolvedValue({ error: VAULTS_ERROR_CODE.NAME_TAKEN })
     expect(await vaults.add('/v', 'Name')).toEqual({ ok: false, error: 'nameTaken' })
   })
 })
@@ -193,6 +204,7 @@ describe('a note followed', () => {
     requestLog.getNeighbourhood.mockResolvedValue({
       focus: { path: 'a.md', title: 'A' },
       related: [],
+      connections: [],
     })
     await core.neighbourhood('a.md')
     expect(requestLog.getNeighbourhood.mock.calls.at(-1)?.[0]).toEqual({ path: 'a.md' })
@@ -204,28 +216,156 @@ describe('a note followed', () => {
     expect(requestLog.getOpeningNote.mock.calls.at(-1)?.[0]).toEqual({})
   })
 
-  it('has a link removed under the role it was written with, or under none', async () => {
-    requestLog.removeLink.mockResolvedValue({})
-    await core.removeLink('a.md', 'b.md', 'jump')
-    expect(requestLog.removeLink.mock.calls.at(-1)?.[0]).toEqual({
-      path: 'a.md',
-      to: 'b.md',
-      role: Role.JUMP,
+  it('has a connection read with the role the core derived, and the markers of its records', async () => {
+    requestLog.getConnection.mockResolvedValue({
+      connection: {
+        first: 'a.md',
+        second: 'b.md',
+        role: NOTE_ROLE.PARENT,
+        firstSide: { label: 'under', note: 'why', marker: NOTE_MARKER.ARROW },
+        secondSide: { label: '', note: '', marker: NOTE_MARKER.UNSPECIFIED },
+      },
     })
-    await core.removeLink('a.md', 'b.md')
-    expect(requestLog.removeLink.mock.calls.at(-1)?.[0]).toEqual({ path: 'a.md', to: 'b.md' })
-  })
 
-  it('has the links of a pair replaced in one request, each under the wire role', async () => {
-    requestLog.replaceLinks.mockResolvedValue({})
-    await core.replaceLinks('a.md', 'b.md', [
-      { from: 'a.md', to: 'b.md', role: 'jump', label: 'see' },
-    ])
-    expect(requestLog.replaceLinks.mock.calls.at(-1)?.[0]).toEqual({
+    const read = await core.relations.getConnection('a.md', 'b.md', 'preset')
+
+    expect(requestLog.getConnection.mock.calls.at(-1)?.[0]).toEqual({
       first: 'a.md',
       second: 'b.md',
-      links: [{ from: 'a.md', to: 'b.md', role: Role.JUMP, label: 'see' }],
+      type: 'preset',
     })
+    expect(read).toEqual({
+      ok: true,
+      value: {
+        first: 'a.md',
+        second: 'b.md',
+        role: 'parent',
+        type: 'preset',
+        firstSide: { label: 'under', marker: 'arrow', reason: 'why' },
+        secondSide: { label: '', marker: null, reason: '' },
+      },
+    })
+  })
+
+  it('has a connection saved in one request, with no role on its records', async () => {
+    requestLog.saveConnection.mockResolvedValue({})
+
+    const saved = await core.relations.saveConnection({
+      first: 'a.md',
+      second: 'b.md',
+      role: 'child',
+      type: '',
+      firstSide: { label: '', marker: 'arrow', reason: '' },
+      secondSide: null,
+    })
+
+    expect(saved).toEqual({ ok: true, value: undefined })
+    expect(requestLog.saveConnection.mock.calls.at(-1)?.[0]).toEqual({
+      connection: {
+        first: 'a.md',
+        second: 'b.md',
+        role: NOTE_ROLE.CHILD,
+        firstSide: { type: '', note: '', label: '', marker: NOTE_MARKER.ARROW },
+        secondSide: undefined,
+      },
+    })
+  })
+
+  it('names a connection the core refused by why it was refused', async () => {
+    const connection = {
+      first: 'a.md',
+      second: 'b.md',
+      role: null,
+      type: '',
+      firstSide: null,
+      secondSide: null,
+    } as const
+    requestLog.saveConnection.mockResolvedValueOnce({ isCycle: true })
+    expect(await core.relations.saveConnection(connection)).toEqual({ ok: false, error: 'cycle' })
+    requestLog.saveConnection.mockResolvedValueOnce({ isInvalid: true })
+    expect(await core.relations.saveConnection(connection)).toEqual({ ok: false, error: 'invalid' })
+    requestLog.saveConnection.mockResolvedValueOnce({ error: NOTE_ERROR_CODE.MISSING })
+    expect(await core.relations.saveConnection(connection)).toEqual({ ok: false, error: 'missing' })
+  })
+
+  it('has one side, or both, removed under the type of the records', async () => {
+    requestLog.removeSide.mockResolvedValue({})
+    requestLog.removeConnection.mockResolvedValue({})
+
+    await core.relations.removeSide('a.md', 'b.md', 'preset')
+    await core.relations.removeConnection('a.md', 'b.md')
+
+    expect(requestLog.removeSide.mock.calls.at(-1)?.[0]).toEqual({
+      path: 'a.md',
+      to: 'b.md',
+      type: 'preset',
+    })
+    expect(requestLog.removeConnection.mock.calls.at(-1)?.[0]).toEqual({
+      first: 'a.md',
+      second: 'b.md',
+      type: '',
+    })
+  })
+
+  it('has one record written under the wire role and marker', async () => {
+    requestLog.joinNotes.mockResolvedValue({})
+
+    await core.relations.join('a.md', 'b.md', { role: 'jump', label: 'see', marker: 'arrow' })
+
+    expect(requestLog.joinNotes.mock.calls.at(-1)?.[0]).toEqual({
+      from: 'a.md',
+      to: 'b.md',
+      side: { role: NOTE_ROLE.JUMP, type: '', note: '', label: 'see', marker: NOTE_MARKER.ARROW },
+    })
+  })
+
+  it('has a related note made by the core, which answers with its path', async () => {
+    requestLog.createRelatedNote.mockResolvedValue({ path: 'physics/Untitled note.md' })
+
+    const made = await core.relations.createRelated({ from: 'physics/a.md', role: 'child' })
+
+    expect(made).toEqual({ ok: true, value: 'physics/Untitled note.md' })
+    expect(requestLog.createRelatedNote.mock.calls.at(-1)?.[0]).toEqual({
+      from: 'physics/a.md',
+      role: NOTE_ROLE.CHILD,
+      title: '',
+      type: '',
+      marker: NOTE_MARKER.UNSPECIFIED,
+    })
+
+    requestLog.createRelatedNote.mockResolvedValue({ isNameExhausted: true })
+    expect(await core.relations.createRelated({ from: 'a.md', role: 'jump' })).toEqual({
+      ok: false,
+      error: 'nameExhausted',
+    })
+  })
+
+  it('has the backlinks of a note listed with both roles', async () => {
+    requestLog.listBacklinks.mockResolvedValue({
+      backlinks: [
+        {
+          from: { path: 'b.md', title: 'B' },
+          role: NOTE_ROLE.PARENT,
+          roleFromHere: NOTE_ROLE.CHILD,
+          type: '',
+          note: '',
+          label: 'under',
+          marker: NOTE_MARKER.ARROW,
+        },
+      ],
+    })
+
+    expect(await core.relations.listBacklinks('a.md')).toEqual([
+      {
+        from: { path: 'b.md', title: 'B' },
+        role: 'parent',
+        roleFromHere: 'child',
+        type: '',
+        reason: '',
+        label: 'under',
+        marker: 'arrow',
+      },
+    ])
   })
 
   it('has its edits read under the signal of the window, and a missing span read as the start', async () => {

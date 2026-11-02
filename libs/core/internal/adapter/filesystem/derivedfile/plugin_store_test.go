@@ -8,12 +8,12 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
@@ -22,7 +22,7 @@ const pluginID = "md.numen.a"
 func openPluginStore(t *testing.T) (pluginport.PluginStore, string) {
 	t.Helper()
 	root := t.TempDir()
-	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
 	store, err := derivedfile.PluginStores{}.Open(domain.Vault{ID: "v", Path: root}, pluginID)
@@ -98,7 +98,11 @@ func TestAPluginReachesNothingOutsideItsFolder(t *testing.T) {
 	if err := store.Append(ctx, "out", []byte("x")); !errors.Is(err, vaultconfig.ErrOutside) {
 		t.Errorf("a link out of the folder was appended to with %v", err)
 	}
-	if on, _ := os.ReadFile(filepath.Join(vault, "note.md")); string(on) != "mine" {
+	on, onErr := os.ReadFile(filepath.Join(vault, "note.md"))
+	if onErr != nil {
+		t.Fatal(onErr)
+	}
+	if string(on) != "mine" {
 		t.Errorf("the note now holds %q", on)
 	}
 }
@@ -123,7 +127,7 @@ func TestAPluginFileIsRenamedWholeAndOpenedAtAnyPart(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer body.Close()
+	defer testsupport.Close(t, body)
 	if _, err := body.Seek(4, io.SeekStart); err != nil {
 		t.Fatal(err)
 	}

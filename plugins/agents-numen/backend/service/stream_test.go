@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"net/http"
 	"net/http/httptest"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
 func TestStream_EmitsReplyChunksInOrder(t *testing.T) {
@@ -135,7 +136,7 @@ func TestAStreamCompletedWithNoReasonToStopStopsTheRun(t *testing.T) {
 func TestACancelledRunStopsReadingTheStream(t *testing.T) {
 	released := make(chan struct{})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		writeEvents(w, []string{`{"choices":[{"delta":{"content":"The plan "}}]}`})
+		writeEvents(t, w, []string{`{"choices":[{"delta":{"content":"The plan "}}]}`})
 		<-r.Context().Done()
 		close(released)
 	}))
@@ -144,8 +145,8 @@ func TestACancelledRunStopsReadingTheStream(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
-	var steps []*agentrun.AskAgentResponse
-	err := s.Ask(ctx, newTask("", "Plan?"), func(r *agentrun.AskAgentResponse) error {
+	var steps []*agentrun.Response
+	err := s.Ask(ctx, newTask("", "Plan?"), func(r *agentrun.Response) error {
 		steps = append(steps, r)
 		if r.GetText() != "" {
 			cancel()
@@ -168,7 +169,7 @@ func TestAStepThatCannotBeSentEndsTheStream(t *testing.T) {
 	removed := errors.New("the window is gone")
 
 	pieces := 0
-	err := s.Ask(t.Context(), newTask("", "Plan?"), func(r *agentrun.AskAgentResponse) error {
+	err := s.Ask(t.Context(), newTask("", "Plan?"), func(r *agentrun.Response) error {
 		if r.GetText() == "" {
 			return nil
 		}

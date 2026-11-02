@@ -2,15 +2,14 @@ package agentrun_test
 
 import (
 	"context"
+	"errors"
 	"os/exec"
 	"runtime"
 	"testing"
 	"time"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cleanup"
 )
 
 // start runs a child that waits until it is killed, and the reader that waits for it.
@@ -24,7 +23,7 @@ func start(t *testing.T, registry *agentrun.Registry, conversation string) (*age
 	}
 	cmd := exec.CommandContext(running, command, args...)
 
-	w := agentrun.NewWork(conversation, 1, cancel)
+	w := agentrun.NewWork(conversation, 1, agentrun.StopByCancel(cancel))
 	if !registry.Add(w) {
 		t.Fatal("the registry rejected work while open")
 	}
@@ -36,10 +35,14 @@ func start(t *testing.T, registry *agentrun.Registry, conversation string) (*age
 		defer w.End()
 		defer registry.Remove(w)
 		defer close(w.Output)
-		_ = cmd.Wait()
+		cleanup.Wait(t, cmd)
 		close(doneCh)
 	}()
-	t.Cleanup(func() { _ = w.Stop() })
+	t.Cleanup(func() {
+		if err := w.Stop(); err != nil {
+			t.Error(err)
+		}
+	})
 	return w, doneCh
 }
 
@@ -65,7 +68,7 @@ func TestCloseStopsEveryChildAndRejectsMore(t *testing.T) {
 	if !isOver(first) || !isOver(second) {
 		t.Errorf("a child outlived Close: first over %v, second over %v", isOver(first), isOver(second))
 	}
-	if registry.Add(agentrun.NewWork("", 1, func() {})) {
+	if registry.Add(agentrun.NewWork("", 1, func() error { return nil })) {
 		t.Error("the registry took work after Close")
 	}
 }
@@ -127,14 +130,16 @@ func TestStopEndsTheChildOnce(t *testing.T) {
 // done, even when the reader has not started.
 func TestCloseWaitsForTheReaderOfWhatWasAdded(t *testing.T) {
 	var registry agentrun.Registry
-	w := agentrun.NewWork("", 1, func() {})
+	w := agentrun.NewWork("", 1, func() error { return nil })
 	if !registry.Add(w) {
 		t.Fatal("the registry rejected work while open")
 	}
 
 	closed := make(chan struct{})
 	go func() {
-		_ = registry.Close()
+		if err := registry.Close(); err != nil {
+			t.Error(err)
+		}
 		close(closed)
 	}()
 
@@ -158,11 +163,25 @@ func TestFinishConversationEndsTheConversation(t *testing.T) {
 	var registry agentrun.Registry
 	registry.SetSession("c-1", "s-1")
 
-	res, err := registry.FinishConversation(t.Context(), connect.NewRequest(&numenv1.FinishConversationRequest{Conversation: "c-1"}))
-	if err != nil || res == nil {
-		t.Fatalf("got %v, %v", res, err)
+	if err := registry.FinishConversation(t.Context(), "c-1"); err != nil {
+		t.Fatal(err)
 	}
 	if got := registry.GetSession("c-1"); got != "" {
 		t.Errorf("the session is %q, want none", got)
+	}
+}
+
+// Close returns the error of a stop function that fails, after the reader has ended.
+func TestCloseReturnsTheErrorOfAStopFunction(t *testing.T) {
+	var registry agentrun.Registry
+	stopErr := errors.New("kill failed")
+	w := agentrun.NewWork("", 1, func() error { return stopErr })
+	if !registry.Add(w) {
+		t.Fatal("the registry rejected work while open")
+	}
+	w.End()
+
+	if err := registry.Close(); !errors.Is(err, stopErr) {
+		t.Fatalf("Close = %v, want %v", err, stopErr)
 	}
 }

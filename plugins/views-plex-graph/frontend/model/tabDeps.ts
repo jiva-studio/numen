@@ -2,7 +2,7 @@
  * What one plex tab requests of the window, served by the host's workspace and the
  * notes of the vault.
  */
-import type { VaultNotes, WorkspaceHost } from '@numen/plugin-sdk'
+import type { VaultNotes, VaultRelations, WorkspaceHost } from '@numen/plugin-sdk'
 import type { PlexTabDeps } from '../types'
 import type { Nesting } from './nesting'
 
@@ -10,20 +10,22 @@ import type { Nesting } from './nesting'
 export interface PlexHost {
   readonly workspace: WorkspaceHost
   readonly notes: VaultNotes
+  readonly relations: VaultRelations
   readonly nesting: Nesting
 }
 
 /** What the plex tab `id` requests of the window. A note it opens goes to its linked tabs first. */
 export function createPlexTabDeps(
-  { workspace, notes, nesting }: PlexHost,
+  { workspace, notes, relations, nesting }: PlexHost,
   id: string,
 ): PlexTabDeps {
   return {
     editor: {
-      createInRelation: (from, relation) => notes.createInRelation(from, relation),
-      createWithTitle: (title, from, relation) => notes.createWithTitle(title, from, relation),
-      join: (from, to, relation, label) => notes.join(from, to, relation, label),
-      replaceLinks: (first, second, links) => notes.replaceLinks(first, second, links),
+      createRelated: (request) => relations.createRelated(request),
+      join: (from, to, side) => relations.join(from, to, side),
+      getConnection: (first, second, type) => relations.getConnection(first, second, type),
+      saveConnection: (connection) => relations.saveConnection(connection),
+      removeConnection: (first, second, type) => relations.removeConnection(first, second, type),
     },
     isReady: workspace.isReady,
     isNesting: nesting.isNesting,
@@ -51,7 +53,7 @@ export function createPlexTabDeps(
     dragged: workspace.draggedPaths,
     showMessage: (text) => workspace.showError(text),
     createUntitledNote: () => notes.createUntitledNote(),
-    creatable: notes.creatableRelations,
+    creatable: relations.roles,
     searchNames: (query, limit) => notes.findNotes(query, limit),
   }
 }

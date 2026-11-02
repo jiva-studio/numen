@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { useTabLinks } from '@/features/tab-linking'
 import { createTabSync, type TabSyncDeps } from './useTabSync'
 
-type Navigate = (state: unknown, path: string, title: string) => void
+type Navigate = (state: unknown, path: string, title: string) => void | Promise<void>
 
 const createWindowTabs = (tabs: Record<string, { state?: unknown; navigate?: Navigate }>) =>
   ({

@@ -5,8 +5,6 @@ import (
 	"sync"
 
 	"connectrpc.com/connect"
-
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // Registry tracks the work an agent started that has not ended, and the session of each
@@ -42,6 +40,7 @@ func (r *Registry) Remove(w *Work) {
 	delete(r.running, w)
 }
 
+// Close stops the registered work, refuses further work, and returns the joined stop errors.
 func (r *Registry) Close() error {
 	r.mu.Lock()
 	r.isClosed = true
@@ -52,8 +51,7 @@ func (r *Registry) Close() error {
 	r.running = nil
 	r.mu.Unlock()
 
-	stopAll(running)
-	return nil
+	return stopAll(running)
 }
 
 // EndConversation stops everything still answered in the conversation, then lets go of its
@@ -72,12 +70,12 @@ func (r *Registry) EndConversation(_ context.Context, conversation string) error
 	}
 	r.mu.Unlock()
 
-	stopAll(answering)
+	stopErr := stopAll(answering)
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.sessions, conversation)
-	return nil
+	return stopErr
 }
 
 // GetSession returns the session in which the next task of the conversation runs, empty when
@@ -105,13 +103,10 @@ func (r *Registry) SetSession(conversation, session string) {
 	r.sessions[conversation] = session
 }
 
-// FinishConversation answers FinishConversation: it ends the conversation of the request.
-func (r *Registry) FinishConversation(
-	ctx context.Context,
-	req *connect.Request[numenv1.FinishConversationRequest],
-) (*connect.Response[numenv1.FinishConversationResponse], error) {
-	if err := r.EndConversation(ctx, req.Msg.GetConversation()); err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+// FinishConversation ends the conversation. A failure is reported as an internal error.
+func (r *Registry) FinishConversation(ctx context.Context, conversation string) error {
+	if err := r.EndConversation(ctx, conversation); err != nil {
+		return connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&numenv1.FinishConversationResponse{}), nil
+	return nil
 }

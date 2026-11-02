@@ -1,29 +1,22 @@
+import { fileURLToPath, URL } from 'node:url'
 import type { StorybookConfig } from '@storybook/vue3-vite'
 import vue from '@vitejs/plugin-vue'
-import { createStoryUtilitiesPlugin, getPluginAliases } from '../../src/vite.ts'
+import { createStoryUtilitiesPlugin } from '../../src/vite.ts'
 
 /**
  * A story drawn for a picture is served by `storybook dev`, which reads no
- * Vite config of the plugins: the Vue compiler and the paths a plugin's imports
- * resolve to are given here, as `vitest.config.ts` gives them to a test run.
+ * Vite config of the plugins: the Vue compiler and the utilities of the plugins
+ * are given here, as `vitest.config.ts` gives them to a test run.
  */
 const drawing = !process.env['VITEST']
 
 const reaching: NonNullable<StorybookConfig['viteFinal']> = (config) => ({
   ...config,
-  plugins: [...(config.plugins ?? []), vue(), createStoryUtilitiesPlugin()],
-  resolve: {
-    ...config.resolve,
-    alias: getPluginAliases([
-      '@plugins',
-      '@numen/plugin-sdk/testing',
-      '@numen/plugin-sdk',
-      '@numen/protocol/numen/v1',
-      '@numen/protocol',
-      '@numen/ui/styles.css',
-      '@numen/ui',
-    ]),
-  },
+  plugins: [
+    ...(config.plugins ?? []),
+    vue(),
+    createStoryUtilitiesPlugin(fileURLToPath(new URL('../../../../plugins', import.meta.url))),
+  ],
 })
 
 /** The stories every plugin writes beside its frontend. */

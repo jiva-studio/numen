@@ -1,7 +1,11 @@
 // Package vaultcontract re-exports the vault port contract.
 package vaultcontract
 
-import "github.com/jiva-studio/numen/libs/core/port/vaultport"
+import (
+	"context"
+	"github.com/jiva-studio/numen/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/libs/notes/domain"
+)
 
 type (
 	IndexClaim      = vaultport.IndexClaim
@@ -24,7 +28,12 @@ var (
 	ErrNotExist        = vaultport.ErrNotExist
 	ErrOutside         = vaultport.ErrOutside
 	ErrStale           = vaultport.ErrStale
-	IsNoNote           = vaultport.IsNoNote
-	IsNote             = vaultport.IsNote
-	ReadNoteType       = vaultport.ReadNoteType
 )
+
+func IsNoNote(err error) bool { return vaultport.IsNoNote(err) }
+
+func IsNote(path string) bool { return vaultport.IsNote(path) }
+
+func ReadNoteType(ctx context.Context, readers vaultport.VaultReaders, v domain.Vault, path string) (domain.NoteType, error) {
+	return vaultport.ReadNoteType(ctx, readers, v, path)
+}

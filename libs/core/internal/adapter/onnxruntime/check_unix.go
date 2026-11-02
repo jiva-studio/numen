@@ -4,7 +4,6 @@ package onnxruntime
 
 import (
 	"path/filepath"
-	"sync"
 
 	"github.com/ebitengine/purego"
 )
@@ -28,8 +27,9 @@ func checkLibrary(pos string) error {
 // preloadCppRuntime loads the C++ runtime into the global namespace when the
 // loader does not find it by name, from the folders shared libraries live in or
 // the package store. A build published for Linux in general names it and
-// expects the system to hold it.
-var preloadCppRuntime = sync.OnceFunc(func() {
+// expects the system to hold it. The loader counts each open of a library it holds, so a second
+// call loads nothing again.
+func preloadCppRuntime() {
 	const name = "libstdc++.so.6"
 	if _, err := purego.Dlopen(name, purego.RTLD_NOW|purego.RTLD_GLOBAL); err == nil {
 		return
@@ -44,4 +44,4 @@ var preloadCppRuntime = sync.OnceFunc(func() {
 			}
 		}
 	}
-})
+}

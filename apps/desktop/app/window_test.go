@@ -14,10 +14,10 @@ import (
 func windowOn(t *testing.T) (*editor.Installation, container.Config) {
 	t.Helper()
 
-	cfg := container.Config{
+	cfg := container.NewConfig(container.Config{
 		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
-	}
+	})
 	registry, err := cfg.Registry()
 	if err != nil {
 		t.Fatal(err)
@@ -35,7 +35,11 @@ func windowOn(t *testing.T) (*editor.Installation, container.Config) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { opened.Close() })
+	t.Cleanup(func() {
+		if err := opened.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	return opened, cfg
 }
 

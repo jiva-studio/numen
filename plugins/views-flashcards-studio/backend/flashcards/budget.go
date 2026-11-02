@@ -35,13 +35,22 @@ type allowance struct {
 	spentStats review.Spent
 }
 
+// budgetInputs is what the daily budgets are calculated from.
+type budgetInputs struct {
+	reads       *PresetReads
+	day         review.Day
+	reviewCards []ReviewCard
+	schedules   map[review.CardID]review.Schedule
+	log         ReviewLog
+	delta       review.Scheduler
+	pos         func(retention float64) review.Scheduler
+	now         time.Time
+}
+
 // getBudgets calculates daily budgets and allowances for all active presets.
-func getBudgets(
-	ctx context.Context, v domain.Vault, reads *PresetReads, day review.Day,
-	reviewCards []ReviewCard, schedules map[review.CardID]review.Schedule,
-	log ReviewLog, delta review.Scheduler, pos func(retention float64) review.Scheduler,
-	now time.Time,
-) (*budgets, error) {
+func getBudgets(ctx context.Context, v domain.Vault, in budgetInputs) (*budgets, error) {
+	reads, day, reviewCards, schedules := in.reads, in.day, in.reviewCards, in.schedules
+	log, delta, pos, now := in.log, in.delta, in.pos, in.now
 	out := &budgets{
 		reviewCardPresets: make(map[review.CardID]string, len(reviewCards)),
 		allowances:        make(map[string]*allowance),
@@ -70,7 +79,7 @@ func getBudgets(
 	for path, p := range survey.settings {
 		cost, target := costed[path]
 		if !target {
-			cost = review.DefaultCost
+			cost = review.GetDefaultCost()
 		}
 		// Target date goals scale daily review allowances by learning duration.
 		learn := 0

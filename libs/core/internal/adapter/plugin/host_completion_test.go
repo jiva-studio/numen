@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -15,15 +16,13 @@ const (
 	plainPluginID  = "md.numen.plain"
 )
 
-// newAskingHost discovers a plugin that may ask a model and declares the agent
-// setting, and one that does neither.
+// newAskingHost discovers a plugin that may ask a model, and one that may not.
 func newAskingHost(t *testing.T) *Host {
 	t.Helper()
 	root := t.TempDir()
 	for name, manifest := range map[string]string{
 		"asking": `{"id":"` + askingPluginID + `","name":"Asking","version":"1.0.0","targets":["desktop.editor"],
-			"permissions":["ai:complete"],
-			"settings":[{"key":"model","type":"agent","title":"Model"}]}`,
+			"permissions":["ai:complete"]}`,
 		"plain": `{"id":"` + plainPluginID + `","name":"Plain","version":"1.0.0","targets":["desktop.editor"]}`,
 	} {
 		dir := filepath.Join(root, name)
@@ -34,43 +33,11 @@ func newAskingHost(t *testing.T) *Host {
 			t.Fatal(err)
 		}
 	}
-	host := NewHost("desktop.editor", root)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", root)
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	return host
-}
-
-// The choice is read from the setting of type agent, as the user stored it.
-func TestTheChoiceIsTheStoredValueOfTheAgentSetting(t *testing.T) {
-	host := newAskingHost(t)
-	if got := host.GetCompletionChoice(askingPluginID); got != (completionport.CompletionChoice{}) {
-		t.Errorf("a plugin never set chose %+v", got)
-	}
-	host.SetSettings(map[string]map[string]any{
-		askingPluginID: {"model": map[string]any{"agent": "md.numen.agent-x", "model": "m"}},
-		plainPluginID:  {"model": map[string]any{"agent": "md.numen.agent-x"}},
-	})
-	if want := (completionport.CompletionChoice{Agent: "md.numen.agent-x", Model: "m"}); host.GetCompletionChoice(askingPluginID) != want {
-		t.Errorf("chose %+v, want %+v", host.GetCompletionChoice(askingPluginID), want)
-	}
-	if got := host.GetCompletionChoice(plainPluginID); got != (completionport.CompletionChoice{}) {
-		t.Errorf("a plugin declaring no agent setting chose %+v", got)
-	}
-	if got := host.GetCompletionChoice("md.numen.unknown"); got != (completionport.CompletionChoice{}) {
-		t.Errorf("an unknown plugin chose %+v", got)
-	}
-}
-
-// A value of another shape is the empty choice.
-func TestAChoiceOfAnotherShapeIsEmpty(t *testing.T) {
-	host := newAskingHost(t)
-	for _, value := range []any{"md.numen.agent-x", 3, nil, map[string]any{"agent": 7}} {
-		host.SetSettings(map[string]map[string]any{askingPluginID: {"model": value}})
-		if got := host.GetCompletionChoice(askingPluginID); got.Agent != "" {
-			t.Errorf("%v chose %+v", value, got)
-		}
-	}
 }
 
 // A plugin is served only after the user has allowed it. A plugin that is not

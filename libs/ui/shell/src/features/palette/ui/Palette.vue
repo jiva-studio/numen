@@ -11,6 +11,7 @@
  * its own parts.
  */
 import { computed, useId, useTemplateRef } from 'vue'
+import { reportFailure, runInBackground } from '@numen/ui'
 import { getUserAgent } from '@/shared/lib/dom'
 import PaletteKeyHints from './PaletteKeyHints.vue'
 import { PaletteActions } from './palette-actions'
@@ -130,7 +131,8 @@ const onOver = (pos: number, event: PointerEvent) => {
 /* --------------------------------- Helpers -------------------------------- */
 /** What is lit is brought into sight. */
 function reveal(): void {
-  void results.value?.reveal(selectedId.value)
+  const pending = results.value?.reveal(selectedId.value)
+  if (pending) runInBackground(pending, reportFailure)
 }
 </script>
 
@@ -182,7 +184,7 @@ function reveal(): void {
       <slot name="silence" />
     </p>
 
-    <!-- Everything the lit item offers, by name. It stands over the foot of
+    <!-- Everything the lit item offers, by name. It is over the foot of
          the palette, and the list underneath stays where it was. -->
     <PaletteActions
       v-if="isPanelOpen"
@@ -192,7 +194,7 @@ function reveal(): void {
       @choose="chooseAction"
     />
 
-    <!-- What the item now lit can be asked. An item offering one action says
+    <!-- The actions of the highlighted item. An item with one action shows
          one key, and the last word opens the rest. -->
     <PaletteKeyHints
       v-if="actions.length"

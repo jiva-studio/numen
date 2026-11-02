@@ -82,13 +82,14 @@ func ReadShape(reader *VaultReader) (*Folders, error) {
 
 // ReloadShape reads the shape from the vault currently now. It answers for events
 // that were dropped, some of which may have made folders or taken them away.
-// A folder the walk could not enter is missing from the shape it returns; the
-// rescan that goes with this call already answers for it.
-func (f *Folders) ReloadShape() {
-	fresh, _ := ReadShape(f.reader)
+// A folder the walk could not enter is missing from the shape it keeps, and the
+// first error the walk met is returned.
+func (f *Folders) ReloadShape() error {
+	fresh, err := ReadShape(f.reader)
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.Indexed = fresh.Indexed
+	return err
 }
 
 func (f *Folders) removeFolder(path string) {
@@ -164,9 +165,11 @@ func (f *Folders) GetConcernedPaths(absolute string) (paths []string, whole bool
 // has — the index would go on answering with files that are not there.
 func (f *Folders) GetPathsUnder(ctx context.Context, absolute string) (paths []string, whole bool) {
 	w := &underWalk{folders: f, absolute: absolute}
-	_ = filepath.WalkDir(absolute, func(p string, d fs.DirEntry, err error) error {
+	if err := filepath.WalkDir(absolute, func(p string, d fs.DirEntry, err error) error {
 		return w.visit(ctx, p, d, err)
-	})
+	}); err != nil {
+		w.short = true
+	}
 	if w.exceeded || w.short {
 		return nil, true
 	}

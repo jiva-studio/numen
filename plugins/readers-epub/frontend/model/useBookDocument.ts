@@ -25,8 +25,20 @@ export function useBookDocument(books: Books, path: string, options: BookDocumen
   /** Which ask for markup is the current one. An older answer is dropped. */
   let wanted = 0
 
+  /**
+   * Keeps the document in front: a document asked for and not yet arrived is not drawn when it
+   * does, since the reader has since turned or jumped to a place in the one in front.
+   */
+  const keepDrawn = () => {
+    wanted += 1
+  }
+
   const draw = async (document: SpineDocument | undefined) => {
-    if (!document || document.path === drawnDocument.value?.path) return
+    if (!document) return
+    if (document.path === drawnDocument.value?.path) {
+      keepDrawn()
+      return
+    }
     // Stryker disable next-line UpdateOperator: only the inequality of the tickets matters; the direction of the count does not
     const request = ++wanted
     try {
@@ -46,5 +58,5 @@ export function useBookDocument(books: Books, path: string, options: BookDocumen
     markup.value = ''
   }
 
-  return { markup, renderedChapter: picture, documentSpan, draw, close }
+  return { markup, renderedChapter: picture, documentSpan, draw, keepDrawn, close }
 }

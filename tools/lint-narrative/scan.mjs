@@ -82,7 +82,8 @@ Options:
                           regular-participles | test-assertions |
                           conversational | async | domestic |
                           error-storytelling | domestic-structs | domestic-verbs |
-                          masked-primitives | boolean-prefixes | ui-words | advisory
+                          masked-primitives | boolean-prefixes | ui-words |
+                          prose (Markdown) | ui-strings (strings, manifest.json) | advisory
   --word <name>         Filter findings by specific word (e.g. --word beside, --word refusal)
   --help, -h            Show this help message
 `)
@@ -102,7 +103,11 @@ const IGNORED_DIRS = new Set([
   'testdata',
 ])
 
-const EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.vue', '.go', '.proto', '.md', '.mdx', '.css', '.scss'])
+// Paths the scan skips, relative to the repository root. apps/landing: the owner is rewriting the website,
+// so its text is not checked. Remove this entry when that rewrite is done.
+const SKIPPED_PATHS = ['apps/landing']
+
+const EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.vue', '.go', '.proto', '.md', '.mdx', '.css', '.scss', '.mjs'])
 
 // 1. Full English irregular & narrative past participles used as identifiers
 const BANNED_PARTICIPLE_IDENTIFIERS = [
@@ -198,8 +203,51 @@ const NARRATIVE_GO_TEST_WORDS = [
   'Refusal', 'RatherThan', 'Says', 'Stands', 'Standing', 'Leaves', 'Leaving',
   'Holds', 'Holding', 'Takes', 'Brings', 'Gives', 'Comes', 'Hands', 'Put',
   'Gone', 'Written', 'Drawn', 'Seen', 'Done', 'Kept', 'Told', 'Cut',
-  'Beside', 'Under', 'Behind'
+  'Beside', 'Under', 'Behind',
+  'Wears', 'Wearing', 'Worn', 'Dressed', 'Dresses', 'Speaks', 'Breathes', 'Eats',
 ]
+
+// 5b. Plain prose. Personification and metaphor that a standard engineering term replaces.
+// Every rule is one narrow family, so a word that names a real technical sense never matches:
+// a window does not wear a theme, an object does not speak a protocol, a page does not hand things over.
+// The rules run over Markdown documents, comment lines, test titles, the strings a person reads
+// (words files, manifest.json, string literals of non-test Go/TS/Vue sources) and Go test messages.
+// Text inside backticks is quoted, not written, so a rule document can name a banned word in code font.
+const PROSE_PLACES = 'on|in|at|under|behind|beside|over|between|inside|above|below|before|after|by'
+const PROSE_RULES = [
+  { name: 'wear/dress', re: /\b(?:wear|wears|wearing|worn|dress|dresses|dressed|dressing|costume)\b/i, use: 'apply, use, show, style' },
+  { name: 'hand over/back', re: /\b(?:hands?|handed) (?:back|over)\b/i, use: 'pass, return, give' },
+  { name: 'speak', re: /\bspeaks\b/i, use: 'uses, supports, implements' },
+  // "swallowed" is not listed: a swallowed error is the standard term for an error dropped without handling.
+  { name: 'breathe/eat', re: /\b(?:breathes|breath|eats)\b/i, use: 'pause, remove' },
+  { name: 'lit up', re: /\b(?:lit up|lights up)\b/i, use: 'highlighted' },
+  { name: 'bring level', re: /\b(?:brings?|bringing|brought) (?:\w+ ){0,3}level\b/i, use: 'update' },
+  { name: 'stands/sits at a place', re: new RegExp(`\\b(?:stands|sits) (?:${PROSE_PLACES})\\b`, 'i'), use: 'is in, is at, is under' },
+  { name: 'nowhere to put', re: /\bnowhere to put\b/i, use: 'no trash, no location' },
+]
+// Figures that were found and removed from the Markdown documents. Code comments and strings are not checked against them.
+const DOC_PROSE_RULES = [
+  { name: 'idiom: personified or theatrical phrase', re: /\b(?:measures patience|never catches up|lost in the noise|says so plainly|the whole case for|what settles it|argues for|hangs? (?:off|under)|hanging under|of its own accord|brought into line|brings? into line|dragged in|mendable|keeps itself alive|behind (?:a|the) person's back|a guest in|hairball|safety catch|appetites?|takes you to|works seamlessly|navigate smoothly|smooth zooming|pick up where it left off|checks quietly|knows (?:none|nothing) (?:of|about)|calls? (?:it|the \w+) off|put right|putting [\w ]{1,20} right)\b/i, use: 'state the operation: depends on, is placed under, automatically, cancels, fixes' },
+  { name: 'ground/door/hole as a figure', re: /\b(?:the ground (?:under|beneath)|the door marked|no door at all|shutting the door|three doors|the hole was)\b/i, use: 'background, port, gap' },
+]
+const RE_INLINE_CODE = /`[^`]*`/g
+const RE_COMMENT_START = /^(?:\/\/|\/\*|\*|<!--)/
+// Task titles, notices and field values: the keys of the strings a person reads in manifest.json files.
+const MANIFEST_TEXT_KEYS = new Set(['title', 'description', 'detail', 'label', 'placeholder', 'message', 'name'])
+// A string literal of a source line, in any of the three quote forms.
+const RE_ANY_STRING = /"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|`([^`]*)`/g
+const RE_GO_TEST_MESSAGE = /\bt\.(?:Errorf|Fatalf|Fatal|Error|Logf|Log)\s*\(/
+
+/** The prose rule a text breaks, or null. Backtick-quoted words are not checked. */
+function findDocProseRule(text) {
+  const plain = text.replace(RE_INLINE_CODE, ' ')
+  return DOC_PROSE_RULES.find((rule) => rule.re.test(plain)) ?? findProseRule(text)
+}
+
+function findProseRule(text) {
+  const plain = text.replace(RE_INLINE_CODE, ' ')
+  return PROSE_RULES.find((rule) => rule.re.test(plain)) ?? null
+}
 
 // Regex builders
 const RE_TS_FAKE_CASTS = [
@@ -210,9 +258,9 @@ const RE_TS_FAKE_CASTS = [
   { name: 'case "said"', re: /\bcase\s+['"]said['"]/g },
   { name: 'data-palette="said"', re: /\bdata-palette=["']said["']/g },
   { name: 'data-day-summary', re: /\bdata-day-summary\b/g },
-  { name: 'key held:', re: /(?:^|[{,]\s*|\s{2,})held:\s*[A-Za-z_$(\[{'"`0-9]/g },
-  { name: 'key refuses:', re: /(?:^|[{,]\s*|\s{2,})refuses:\s*[A-Za-z_$(\[{'"`0-9]/g },
-  { name: 'key asked:', re: /(?:^|[{,]\s*|\s{2,})asked:\s*[A-Za-z_$(\[{'"`0-9]/g },
+  { name: 'key held:', re: /(?:^|[{,]\s*|\s{2,})held:\s*[A-Za-z_$([{'"`0-9]/g },
+  { name: 'key refuses:', re: /(?:^|[{,]\s*|\s{2,})refuses:\s*[A-Za-z_$([{'"`0-9]/g },
+  { name: 'key asked:', re: /(?:^|[{,]\s*|\s{2,})asked:\s*[A-Za-z_$([{'"`0-9]/g },
   { name: 'as unknown as Turn', re: /\bas\s+unknown\s+as\s+Turn\b/g },
   { name: 'as any as Turn', re: /\bas\s+any\s+as\s+Turn\b/g },
 ]
@@ -485,6 +533,8 @@ const RE_UI_STRING = /'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"|`([^`]*)`/g
 /** The words-file rule a UI string breaks, or null. */
 function findUiWordsRule(text) {
   const plain = text.replace(/\$\{[^}]*\}/g, 'X').trim()
+  const prose = findProseRule(plain)
+  if (prose) return { name: prose.name }
   if (!/\s/.test(plain)) return null
   return UI_WORDS_RULES.find((rule) => rule.re.test(plain)) ?? null
 }
@@ -536,6 +586,8 @@ const findings = {
   bareBooleans: [],
   huntAndOffering: [],
   uiWords: [],
+  proseDocs: [],
+  uiStrings: [],
 }
 
 const advisory = {
@@ -565,7 +617,10 @@ function scanFile(filePath) {
   const relBase = fs.existsSync(rootDir) && fs.statSync(rootDir).isFile() ? path.dirname(rootDir) : rootDir
   const relPath = path.relative(relBase, filePath) || path.basename(filePath)
   const ext = path.extname(filePath)
-  if (!EXTENSIONS.has(ext)) return
+  if (SKIPPED_PATHS.some((skipped) => relPath === skipped || relPath.startsWith(skipped + path.sep))) return
+  const baseNameOfFile = path.basename(filePath)
+  const isManifest = baseNameOfFile === 'manifest.json'
+  if (!EXTENSIONS.has(ext) && !isManifest) return
 
   const isGo = ext === '.go'
   const isTs = ext === '.ts' || ext === '.tsx' || ext === '.js' || ext === '.jsx' || ext === '.vue'
@@ -575,7 +630,7 @@ function scanFile(filePath) {
   totalScannedFiles++
 
   const baseName = path.basename(filePath)
-  if (baseName === 'scan.mjs') return
+  if (baseName === 'scan.mjs' || baseName === 'scan.test.mjs') return
   if (baseName.endsWith('_pb.ts') || baseName.endsWith('_pb.js') || baseName.endsWith('.pb.go')) return
   if (shouldCheckCategory('conversational') && baseName === 'questions.ts') {
     findings.conversationalRequests.push({
@@ -600,10 +655,15 @@ function scanFile(filePath) {
     else stats.frontendTotal++
   }
 
-  let content = ''
+  let content
   try {
     content = fs.readFileSync(filePath, 'utf8')
   } catch {
+    return
+  }
+
+  if (isManifest) {
+    scanManifest(content, relPath)
     return
   }
 
@@ -681,12 +741,54 @@ function scanFile(filePath) {
   }
 
   const lines = content.split('\n')
+  const isDoc = ext === '.md' || ext === '.mdx'
+  const isTestFile = /(?:_test\.go|\.test\.[mc]?[jt]sx?|\.stories\.[jt]s)$/.test(baseName)
+  let isInFence = false
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
     const lineNum = i + 1
     const trimmed = line.trim()
-    const isCommentLine = trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.startsWith('*')
+    const isCommentLine = trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.startsWith('*') || (!isDoc && trimmed.startsWith('<!--'))
+
+    // 23. Plain prose: Markdown documents, comments, the strings a person reads, and test messages
+    if (isDoc) {
+      if (/^\s*(?:```|~~~)/.test(line)) isInFence = !isInFence
+      else if (!isInFence && shouldCheckCategory('prose')) {
+        const rule = findDocProseRule(line)
+        if (rule) {
+          findings.proseDocs.push({ file: relPath, line: lineNum, lang: 'doc', word: rule.name, text: trimmed.slice(0, 140) })
+          stats.frontendTotal++
+        }
+      }
+    } else {
+      if (isCommentLine && shouldCheckCategory('comments')) {
+        const rule = findProseRule(line)
+        if (rule) {
+          findings.anglishComments.push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', word: rule.name, text: trimmed.slice(0, 140) })
+          if (isGo) stats.backendTotal++
+          else stats.frontendTotal++
+        }
+      } else if (isCode && !isCommentLine && shouldCheckCategory('ui-strings')) {
+        const isGoTestMessage = isGo && isTestFile && RE_GO_TEST_MESSAGE.test(line)
+        if (!isTestFile || isGoTestMessage) {
+          for (const m of line.matchAll(RE_ANY_STRING)) {
+            const rule = findProseRule(m[1] ?? m[2] ?? m[3] ?? '')
+            if (!rule) continue
+            findings.uiStrings.push({ file: relPath, line: lineNum, lang: isGo ? 'go' : 'ts', word: rule.name, text: trimmed.slice(0, 140) })
+            if (isGo) stats.backendTotal++
+            else stats.frontendTotal++
+            break
+          }
+        }
+      }
+      const testTitle = isTestFile && !isGo ? RE_TS_TEST_TITLE.exec(line)?.[1] : null
+      const titleRule = testTitle ? findProseRule(testTitle) : null
+      if (titleRule && shouldCheckCategory('tests')) {
+        findings.narrativeTestTitles.push({ file: relPath, line: lineNum, lang: 'ts', title: testTitle, text: trimmed })
+        stats.frontendTotal++
+      }
+    }
 
     // 1. Fake Turn casts (Frontend only)
     if (isTs && shouldCheckCategory('fake-casts')) {
@@ -845,7 +947,7 @@ function scanFile(filePath) {
     }
 
     // 8. Anglish narrative comments
-    if (isCommentLine && shouldCheckCategory('comments')) {
+    if (isCommentLine && ext !== '.mjs' && shouldCheckCategory('comments')) {
       if (RE_ANGLISH_COMMENT.test(line)) {
         findings.anglishComments.push({
           file: relPath,
@@ -1110,6 +1212,32 @@ function scanFile(filePath) {
   }
 }
 
+/** Checks the strings a person reads in one manifest.json: titles, descriptions, details and labels. */
+function scanManifest(content, relPath) {
+  if (!shouldCheckCategory('ui-strings')) return
+  let manifest
+  try {
+    manifest = JSON.parse(content)
+  } catch {
+    return
+  }
+  const visit = (node, key) => {
+    if (typeof node === 'string') {
+      if (!MANIFEST_TEXT_KEYS.has(key)) return
+      const rule = findProseRule(node)
+      if (rule) {
+        findings.uiStrings.push({ file: relPath, line: 1, lang: 'json', word: rule.name, text: `${key}: ${node.slice(0, 120)}` })
+        stats.frontendTotal++
+      }
+    } else if (Array.isArray(node)) {
+      for (const item of node) visit(item, key)
+    } else if (node && typeof node === 'object') {
+      for (const [name, value] of Object.entries(node)) visit(value, name)
+    }
+  }
+  visit(manifest, '')
+}
+
 function getStagedFiles() {
   try {
     const stdout = execSync('git diff --cached --name-only --diff-filter=ACM', {
@@ -1154,7 +1282,7 @@ function getGitIgnoredDirs() {
 const gitIgnoredDirs = getGitIgnoredDirs()
 
 function walk(dir) {
-  let entries = []
+  let entries
   try {
     entries = fs.readdirSync(dir, { withFileTypes: true })
   } catch {
@@ -1244,7 +1372,9 @@ const totalIssues =
   findings.maskedPrimitives.length +
   findings.bareBooleans.length +
   findings.huntAndOffering.length +
-  findings.uiWords.length
+  findings.uiWords.length +
+  findings.proseDocs.length +
+  findings.uiStrings.length
 
 const fileCounts = {}
 const countedGroups = isStrictMode ? { ...findings, ...advisory } : findings
@@ -1322,6 +1452,8 @@ console.log(`18. Masked UI interaction primitives (questions, outward)   : ${fin
 console.log(`19. Bare boolean properties (open, closed, disabled, stale): ${findings.bareBooleans.length}`)
 console.log(`20. Hunting and offering metaphors (hunt, offered, lit)    : ${findings.huntAndOffering.length}`)
 console.log(`21. Narrative UI copy in words files (that…, so…, That…)  : ${findings.uiWords.length}`)
+console.log(`22. Narrative prose in Markdown (wear, hands over, speaks...)  : ${findings.proseDocs.length}`)
+console.log(`23. Narrative prose in strings and manifests a person reads : ${findings.uiStrings.length}`)
 console.log('----------------------------------------------------------------------')
 console.log(`ADVISORY PROSE RULES${isStrictMode ? ' (counted, --strict)' : ' (not counted; use --strict)'}`)
 for (const [name, items] of Object.entries(advisory)) {

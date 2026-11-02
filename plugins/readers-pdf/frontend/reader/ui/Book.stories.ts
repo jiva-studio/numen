@@ -151,10 +151,10 @@ export const Reading: Story = {
   play: async ({ canvasElement }) => {
     // Reading means the document is open at the page the search landed on,
     // with the passage it found highlighted on it.
-    await waitFor(() => {
+    await waitFor(async () => {
       const page = canvasElement.querySelector(`.reader__page[data-page="${BOOK_FIRST}"]`)
-      expect(page).not.toBeNull()
-      expect(page?.querySelectorAll('.reader__highlight').length).toBeGreaterThan(0)
+      await expect(page).not.toBeNull()
+      await expect(page?.querySelectorAll('.reader__highlight').length).toBeGreaterThan(0)
     })
   },
 }

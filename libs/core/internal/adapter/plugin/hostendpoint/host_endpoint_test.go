@@ -16,11 +16,11 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 // callers is a host that resolves the plugins registered with it and answers
@@ -34,6 +34,7 @@ type callers struct {
 	checked   []string
 	vault     pluginport.PluginVault
 	texts     pluginport.PluginTexts
+	search    pluginport.PluginSearch
 	work      pluginport.PluginWork
 	tools     PluginTools
 	acquired  map[string]int
@@ -70,6 +71,7 @@ func (c *callers) GetCompleter() completionport.Completer { return c.completer }
 func (c *callers) GetPluginVault() pluginport.PluginVault { return c.vault }
 
 func (c *callers) GetPluginTexts() pluginport.PluginTexts        { return c.texts }
+func (c *callers) GetPluginSearch() pluginport.PluginSearch      { return c.search }
 func (c *callers) GetDependencies() pluginport.DependencyCatalog { return nil }
 func (c *callers) GetPluginWork() pluginport.PluginWork          { return c.work }
 func (c *callers) GetPluginTools() PluginTools                   { return c.tools }
@@ -213,7 +215,7 @@ func TestAHeaderThatIsNoBearerTokenIsRefused(t *testing.T) {
 	fakeCallers := newCallers(nil)
 	endpoint := &Endpoint{callers: fakeCallers}
 	for _, header := range []string{"", "token-a", "Basic token-a", "bearer token-a"} {
-		if _, err := endpoint.authorize(header, manifestfile.PermissionAIComplete); readCode(t, err) != connect.CodeUnauthenticated {
+		if _, err := endpoint.authorize(header, manifest.PermissionAIComplete); readCode(t, err) != connect.CodeUnauthenticated {
 			t.Errorf("header %q was accepted", header)
 		}
 	}
@@ -308,7 +310,11 @@ func TestHostEndpoint_BindsLoopbackAndServes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = endpoint.Close(context.WithoutCancel(t.Context())) })
+	t.Cleanup(func() {
+		if err := endpoint.Close(context.WithoutCancel(t.Context())); err != nil {
+			t.Error(err)
+		}
+	})
 	if endpoint.GetPort() <= 0 {
 		t.Fatalf("port = %d", endpoint.GetPort())
 	}

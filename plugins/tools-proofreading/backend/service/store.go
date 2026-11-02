@@ -86,5 +86,9 @@ func joinSelectors(run []domain.TextSegment) domain.Selector {
 			joined.Boxes = append(joined.Boxes, selector.Boxes...)
 		}
 	}
-	return joined.encode()
+	encoded, err := joined.encode()
+	if err != nil {
+		return run[0].Selector
+	}
+	return encoded
 }

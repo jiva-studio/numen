@@ -171,4 +171,20 @@ describe('a switch turned twice in quick succession', () => {
     core.answers[0]?.(null)
     await first
   })
+
+  it('is not moved by a read that began before a write and answers after it', async () => {
+    let answerRead: (isOn: boolean) => void = () => undefined
+    const core = {
+      getSyncEnabled: () => new Promise<boolean>((resolve) => (answerRead = resolve)),
+      setSyncEnabled: async () => null,
+    }
+    const target = syncSetting(core, words, writer().write)
+    const read = target.start()
+
+    await target.choose(OFF)
+    answerRead(true)
+    await read
+
+    expect(target.isEnabled.value).toBe(false)
+  })
 })

@@ -61,14 +61,7 @@ export default tseslint.config(
   // what time it is, what the window measures, or what comes next.
   {
     files: ['src/**/*.ts'],
-    ignores: [
-      'src/**/*.test.ts',
-      'src/**/*.stories.ts',
-      'src/testing/**',
-      // The ports' own defaults, which is where the browser is allowed in.
-      'src/entities/note/model/notes.ts',
-      'src/app/window/useWindowKinds.ts',
-    ],
+    ignores: ['src/**/*.test.ts', 'src/**/*.stories.ts', 'src/testing/**'],
     rules: {
       'no-restricted-globals': [
         'error',
@@ -108,9 +101,6 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
-      '@typescript-eslint/no-floating-promises': 'off',
-      '@typescript-eslint/no-misused-promises': 'off',
-      '@typescript-eslint/await-thenable': 'off',
       'no-console': 'off',
       'require-yield': 'off',
     },

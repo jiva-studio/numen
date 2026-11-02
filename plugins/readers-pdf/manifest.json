@@ -1,32 +1,22 @@
 {
   "id": "md.numen.readers.pdf",
   "name": "PDF Reader",
-  "version": "2026.10.2",
+  "version": "2026.11.1",
   "protocol": 1,
   "description": "PDF document reader with highlights and passage links",
   "capabilities": [],
   "targets": ["desktop.editor"],
-  "activationEvents": [],
+  "contributes": {
+    "tabKinds": [{ "kind": "reader:reader-pdf", "title": "PDF Reader", "icon": "file-text" }],
+    "feature": "PDF documents",
+    "category": "readers",
+    "handles": [{ "purpose": "text-provider", "contentTypes": ["application/pdf"] }],
+    "readers": [{ "id": "reader-pdf", "contentTypes": ["application/pdf"], "rank": "default" }]
+  },
   "permissions": ["vault:read", "vault:write"],
-  "readers": [{ "id": "reader-pdf", "contentTypes": ["application/pdf"], "rank": "default" }],
-  "texts": {
-    "contentTypes": ["application/pdf"]
-  },
-  "lifecycle": {
-    "idleTimeoutSeconds": 180,
-    "keepAliveWhileVisible": false,
-    "memoryLimitBytes": 2147483648
-  },
-  "services": ["numen.pdf"],
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/readers-pdf",
-    "serviceName": "numen.pdf"
-  },
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  },
+  "services": ["md.numen.readers.pdf"],
+  "backend": { "entrypoint": "bin/readers-pdf" },
+  "frontend": {},
   "settings": [
     {
       "key": "default_zoom",

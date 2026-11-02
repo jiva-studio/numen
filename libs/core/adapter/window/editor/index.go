@@ -3,11 +3,12 @@ package editor
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"slices"
 	"sync"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/protocol"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/usecase/indexing"
@@ -39,18 +40,18 @@ func (e indexEvents) FinishTask(id string) { e.state.finishTask(id) }
 func (e indexEvents) ReportError(err error) { e.state.Error.Store(err.Error()) }
 
 func (e indexEvents) ReportNotes(v domain.Vault, notes int) {
-	fmt.Fprintf(e.out, "%s: %d notes\n", v.Name, notes)
+	writeDiagnostic(e.state.reportTask, e.out, "%s: %d notes\n", v.Name, notes)
 	e.state.Ready.Store(true)
 }
 
 func (e indexEvents) ReportTexts(v domain.Vault, res filetext.IndexResult) {
-	fmt.Fprintf(e.out, "%s: %d file texts, %d chunks\n", v.Name, res.Extracted, res.Chunks)
+	writeDiagnostic(e.state.reportTask, e.out, "%s: %d file texts, %d chunks\n", v.Name, res.Extracted, res.Chunks)
 }
 
 // newFloorErrorReporter reports a store of floors that cannot be read as a task.
 func newFloorErrorReporter(state *State) func(error) {
 	return func(err error) {
-		state.reportTask(run.Task{ID: readingTheFloor, Title: "Reading the search floor", Error: err.Error()})
+		state.reportTask(run.Task{ID: readingTheFloor, Title: "Read search floor", Error: err.Error()})
 	}
 }
 
@@ -77,11 +78,22 @@ func newIndexWorker(
 			}
 			return indexing.GetProgress(ctx, state.Indexing.Progress, v.ID, text(&state.Indexing.Recipe))
 		},
-		Calibrate: made.OpenFloors(embedder, newFloorErrorReporter(state)).AutoCalibrate.Execute,
-		Events:    indexEvents{state: state, out: out},
-		Quiet:     idleDuration,
-		After:     time.After,
+		VectorsReady: func(_ context.Context, v domain.Vault) {
+			made.EmitEvent(protocol.GetVectorsReadyEvent(string(v.ID)))
+		},
+		Events: indexEvents{state: state, out: out},
+		Quiet:  idleDuration,
+		After:  time.After,
 	})
+}
+
+// indexJob is the vault to index and the parts that index it.
+type indexJob struct {
+	vault   domain.Vault
+	rebuild bool
+	worker  *indexing.Worker
+	session *indexing.Session
+	out     io.Writer
 }
 
 // startIndexing starts the watch and the first scan together, and returns a
@@ -91,16 +103,8 @@ func newIndexWorker(
 //
 // A vault that cannot be watched stays usable: the application keeps working
 // and reports that changes will not appear automatically.
-func startIndexing(
-	ctx context.Context,
-	v domain.Vault,
-	made Assembly,
-	state *State,
-	rebuild bool,
-	worker *indexing.Worker,
-	session *indexing.Session,
-	out io.Writer,
-) (vaults.Refresh, func()) {
+func startIndexing(ctx context.Context, made Assembly, state *State, job indexJob) (vaults.Refresh, func()) {
+	v, rebuild, worker, session, out := job.vault, job.rebuild, job.worker, job.session, job.out
 	// The task is reported before the goroutine starts, so a window opened on a new
 	// vault shows the walk from the start.
 	state.reportTask(run.Task{ID: walkingNotes, Title: "Indexing the vault"})
@@ -110,7 +114,7 @@ func startIndexing(
 	read, run, refresh, unwatched := made.StartVault(
 		ctx, v, rebuild, newChangeReporter(state, worker), newErrorReporter(state))
 	if unwatched != nil {
-		fmt.Fprintf(out, "not watching %s: %v\n", v.Name, unwatched)
+		writeDiagnostic(state.reportTask, out, "not watching %s: %v\n", v.Name, unwatched)
 		state.WatchError.Store(unwatched.Error())
 	}
 	running.Add(1)
@@ -145,7 +149,9 @@ func newErrorReporter(state *State) windowport.ErrorHandler {
 func newChangeReporter(state *State, worker *indexing.Worker) func(paths, assets []string, reload bool) {
 	return func(paths, assets []string, reload bool) {
 		// A client shows every file in the vault, so an asset is reported as a note is.
-		state.ChangeEvents.publish(change{paths: slices.Concat(paths, assets), shouldReload: reload})
+		changePaths := slices.Concat(paths, assets)
+		state.ChangeEvents.publish(change{paths: changePaths, shouldReload: reload})
+		worker.ClearSkips(changePaths)
 		if reload || len(assets) > 0 {
 			// A book added to an open vault is read without a request.
 			worker.WakeSources()

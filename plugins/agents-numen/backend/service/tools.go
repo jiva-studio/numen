@@ -5,28 +5,29 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"net/http"
 	neturl "net/url"
 	"slices"
 	"strings"
 
-	"github.com/modelcontextprotocol/go-sdk/mcp"
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
 // errPlainToken is a tool server the token would reach unencrypted.
 var errPlainToken = errors.New("the vault's tools are reached only over https, or over http on this machine")
 
 // emptySchema is the parameters of a tool whose server declares none.
-var emptySchema = json.RawMessage(`{"type":"object","properties":{}}`)
+const emptySchema = `{"type":"object","properties":{}}`
 
 // toolbox is the vault's tool server as seen by one run, and the tools of it the
 // run may call. A toolbox with no session offers nothing.
 type toolbox struct {
-	session *mcp.ClientSession
+	session *sdk.ClientSession
 	tools   []functionTool
 	// meta is the context of the task, sent as the `_meta` of every call.
-	meta mcp.Meta
+	meta sdk.Meta
 }
 
 // bearer presents the token on every request to the tool server.
@@ -44,18 +45,18 @@ func (b bearer) RoundTrip(req *http.Request) (*http.Response, error) {
 
 // openToolbox connects to the tool server of the task and lists the tools of it the task names. An
 // empty url, or a task naming no tool, is a run with no tools, and no connection is made.
-func openToolbox(ctx context.Context, task *agentrun.AskAgentRequest) (*toolbox, error) {
-	url, named := task.GetToolsUrl(), task.GetTools()
+func openToolbox(ctx context.Context, task *agentrun.Request) (*toolbox, error) {
+	url, named := task.ToolsURL, task.Tools
 	if url == "" || len(named) == 0 {
 		return &toolbox{session: nil, tools: nil, meta: nil}, nil
 	}
 	if address, err := neturl.Parse(url); err != nil || !isPrivate(address) {
 		return nil, errPlainToken
 	}
-	transport := &mcp.StreamableClientTransport{
+	transport := &sdk.StreamableClientTransport{
 		Endpoint: url,
 		HTTPClient: &http.Client{
-			Transport:     bearer{token: task.GetToolsToken(), base: http.DefaultTransport},
+			Transport:     bearer{token: task.ToolsToken, base: http.DefaultTransport},
 			CheckRedirect: refuseDowngrade,
 			Jar:           nil,
 			Timeout:       0,
@@ -65,7 +66,7 @@ func openToolbox(ctx context.Context, task *agentrun.AskAgentRequest) (*toolbox,
 		OAuthHandler:         nil,
 		MaxEventSize:         0,
 	}
-	client := mcp.NewClient(&mcp.Implementation{
+	client := sdk.NewClient(&sdk.Implementation{
 		Name: "numen-agent", Title: "", Description: "", Version: "1.0.0", WebsiteURL: "", Icons: nil,
 	}, nil)
 	session, err := client.Connect(ctx, transport, nil)
@@ -73,11 +74,10 @@ func openToolbox(ctx context.Context, task *agentrun.AskAgentRequest) (*toolbox,
 		return nil, fmt.Errorf("connect to the vault's tools: %w", err)
 	}
 
-	box := &toolbox{session: session, tools: nil, meta: readMeta(task.GetContext())}
+	box := &toolbox{session: session, tools: nil, meta: readMeta(task.Context)}
 	for tool, err := range session.Tools(ctx, nil) {
 		if err != nil {
-			_ = session.Close()
-			return nil, fmt.Errorf("list the vault's tools: %w", err)
+			return nil, errors.Join(fmt.Errorf("list the vault's tools: %w", err), session.Close())
 		}
 		if slices.Contains(named, tool.Name) {
 			box.tools = append(box.tools, readFunctionTool(tool))
@@ -87,12 +87,12 @@ func openToolbox(ctx context.Context, task *agentrun.AskAgentRequest) (*toolbox,
 }
 
 // readFunctionTool is the tool as the chat API is offered it.
-func readFunctionTool(tool *mcp.Tool) functionTool {
+func readFunctionTool(tool *sdk.Tool) functionTool {
 	var proposed functionTool
 	proposed.Type = "function"
 	proposed.Function.Name = tool.Name
 	proposed.Function.Description = tool.Description
-	proposed.Function.Parameters = emptySchema
+	proposed.Function.Parameters = json.RawMessage(emptySchema)
 	if tool.InputSchema != nil {
 		if schema, err := json.Marshal(tool.InputSchema); err == nil {
 			proposed.Function.Parameters = schema
@@ -114,7 +114,7 @@ func (b *toolbox) call(ctx context.Context, name, arguments string) string {
 	if !json.Valid(args) {
 		return "error: the arguments are not JSON"
 	}
-	result, err := b.session.CallTool(ctx, &mcp.CallToolParams{
+	result, err := b.session.CallTool(ctx, &sdk.CallToolParams{
 		Meta: b.meta, Name: name, Arguments: args, InputResponses: nil, RequestState: "",
 	})
 	if err != nil {
@@ -128,10 +128,10 @@ func (b *toolbox) call(ctx context.Context, name, arguments string) string {
 }
 
 // readResultText is the text of what a tool returned, each content written out on its own line.
-func readResultText(result *mcp.CallToolResult) string {
+func readResultText(result *sdk.CallToolResult) string {
 	parts := make([]string, 0, len(result.Content))
 	for _, content := range result.Content {
-		if text, ok := content.(*mcp.TextContent); ok {
+		if text, ok := content.(*sdk.TextContent); ok {
 			parts = append(parts, text.Text)
 			continue
 		}
@@ -147,19 +147,20 @@ func readResultText(result *mcp.CallToolResult) string {
 	return strings.Join(parts, "\n")
 }
 
-// close lets go of the tool server.
-func (b *toolbox) close() {
-	if b.session != nil {
-		_ = b.session.Close()
+// close ends the session with the tool server.
+func (b *toolbox) close() error {
+	if b.session == nil {
+		return nil
 	}
+	return b.session.Close()
 }
 
 // readMeta is the context of a task as MCP `_meta`, nil for a task with none.
-func readMeta(values map[string]string) mcp.Meta {
+func readMeta(values map[string]string) sdk.Meta {
 	if len(values) == 0 {
 		return nil
 	}
-	meta := make(mcp.Meta, len(values))
+	meta := make(sdk.Meta, len(values))
 	for key, value := range values {
 		meta[key] = value
 	}

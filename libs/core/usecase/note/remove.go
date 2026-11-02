@@ -30,20 +30,20 @@ type Remove struct {
 	// queries is what the index holds about each file, and identifies which
 	// sources lie under the path being removed.
 	queries sourceport.SourceQueries
-	index   Levels
+	index   IndexUpdater
 }
 
 // NewRemove is what takes a note out of the vault: the vault it is moved
 // within, the links that pointed at it, what the index holds about the files
-// under it, and what brings the path it left level.
+// under it, and what updates the index for the path it left.
 func NewRemove(
-	writers vaultport.VaultWriters, links noteport.LinkQueries, queries sourceport.SourceQueries, index Levels,
+	writers vaultport.VaultWriters, links noteport.LinkQueries, queries sourceport.SourceQueries, index IndexUpdater,
 ) Remove {
 	return Remove{writers: writers, links: links, queries: queries, index: index}
 }
 
 // WithIndex replaces the index function.
-func (u Remove) WithIndex(index Levels) Remove {
+func (u Remove) WithIndex(index IndexUpdater) Remove {
 	u.index = index
 	return u
 }
@@ -83,20 +83,20 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 	}
 	res.Trashed = target
 
-	// The index is brought level with what the vault held at each path, and with
+	// The index is updated for what the vault held at each path, and with
 	// the path itself where it held nothing.
-	level := make([]string, 0, len(went))
+	indexPaths := make([]string, 0, len(went))
 	inside := make(map[string]bool, len(went))
 	for _, source := range went {
-		level = append(level, source.Path)
+		indexPaths = append(indexPaths, source.Path)
 		inside[source.Path] = true
 	}
-	if len(level) == 0 {
-		level = append(level, path)
+	if len(indexPaths) == 0 {
+		indexPaths = append(indexPaths, path)
 	}
-	// The file is in the trash from here on, so the levelling result is reported
+	// The file is in the trash from here on, so the index update result is reported
 	// alongside the links that now resolve to nothing.
-	levelled := u.level(ctx, v, level...)
+	indexErr := u.updateIndex(ctx, v, indexPaths...)
 	for _, was := range pointing {
 		// A note that wrote a link and went to the trash beside its target has
 		// nothing left to reach from.
@@ -105,7 +105,7 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 		}
 		res.Dangling = append(res.Dangling, was.From)
 	}
-	return res, levelled
+	return res, indexErr
 }
 
 // getBacklinksOfNotes is the links that point at any of the notes among the
@@ -160,20 +160,20 @@ func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (Remov
 	if err := writer.Remove(ctx, path); err != nil {
 		return res, mapMissingNote(err)
 	}
-	// The file is off the disk from here on, so the levelling result is reported
+	// The file is off the disk from here on, so the index update result is reported
 	// alongside the links that now resolve to nothing.
-	levelled := u.level(ctx, v, path)
+	indexErr := u.updateIndex(ctx, v, path)
 	for _, was := range pointing {
 		res.Dangling = append(res.Dangling, was.From)
 	}
-	return res, levelled
+	return res, indexErr
 }
 
-func (u Remove) level(ctx context.Context, v domain.Vault, paths ...string) error {
+func (u Remove) updateIndex(ctx context.Context, v domain.Vault, paths ...string) error {
 	if u.index == nil {
 		return nil
 	}
-	return WrapUnlevelled(u.index(ctx, v, paths), paths...)
+	return WrapIndexOutdated(u.index(ctx, v, paths), paths...)
 }
 
 // withSuffix puts something before the extension: `note.md` and `-2` make

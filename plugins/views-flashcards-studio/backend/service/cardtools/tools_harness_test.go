@@ -23,7 +23,7 @@ type session struct {
 func newSession(t *testing.T, notes map[string]string) (*session, domain.Vault) {
 	t.Helper()
 	env := vaulttest.New(t, notes)
-	registry, err := service.New(service.Config{Vault: env.Host, Store: env.Store}).Tools()
+	registry, err := service.New(service.Config{Vault: env.Host, Store: env.Store, Now: vaulttest.NewClock()}).Tools()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,7 +96,7 @@ func TestACallWorksTheVaultTheHostNames(t *testing.T) {
 	installation := vaulttest.NewInstallation()
 	installation.Add(t, map[string]string{"Animals.md": "# Empty\n"})
 	garden := installation.Add(t, vault())
-	registry, err := service.New(service.Config{Vault: installation.Host, Store: installation.Host.Store()}).Tools()
+	registry, err := service.New(service.Config{Vault: installation.Host, Store: installation.Host.Store(), Now: vaulttest.NewClock()}).Tools()
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -66,7 +66,7 @@ func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 			problems = append(problems, "links: entry is not a mapping")
 			continue
 		}
-		to, _ := fields["to"].(string)
+		to := readText(fields["to"])
 		if strings.TrimSpace(to) == "" {
 			problems = append(problems, "links: an entry has no target")
 			continue
@@ -82,20 +82,36 @@ func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 			problems = append(problems, "links: "+to+" has an unknown role "+string(role))
 			continue
 		}
+		marker := domain.LinkMarker(str(fields["marker"]))
+		if !domain.IsWritableMarker(marker) {
+			// The list of markers is closed, so an unknown one has nothing to draw.
+			// It is reported as a problem.
+			problems = append(problems, "links: "+to+" has an unknown marker "+string(marker))
+			continue
+		}
 		out = append(out, domain.Link{
 			Target: domain.ParseAddress(to),
 			Role:   role,
 			Type:   str(fields["type"]),
 			Why:    str(fields["note"]),
 			Label:  str(fields["label"]),
+			Marker: marker,
 		})
 	}
 	return out, problems
 }
 
 func str(v any) string {
-	s, _ := v.(string)
-	return strings.TrimSpace(s)
+	return strings.TrimSpace(readText(v))
+}
+
+// readText returns v when it is a string, or "" otherwise.
+func readText(v any) string {
+	s, isString := v.(string)
+	if !isString {
+		return ""
+	}
+	return s
 }
 
 // mergeLinks puts the two sources together. The same target written in both

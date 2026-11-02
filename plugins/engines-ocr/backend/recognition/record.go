@@ -83,25 +83,32 @@ func (r *record) isFor(inputHash, recipe string) bool {
 
 // getTextSegments is the segments of one page as the version file holds them: the page counted
 // from 1 and the rectangles of each segment in its selector.
-func (r *record) getTextSegments(index int) []domain.TextSegment {
+func (r *record) getTextSegments(index int) ([]domain.TextSegment, error) {
 	out := make([]domain.TextSegment, 0, len(r.Pages[index]))
 	for _, one := range r.Pages[index] {
-		selector := pageSelector{Page: index + 1, Boxes: one.Rects}
-		out = append(out, domain.TextSegment{Text: one.Text, Heading: one.Section, Selector: selector.encode()})
+		selector, err := pageSelector{Page: index + 1, Boxes: one.Rects}.encode()
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, domain.TextSegment{Text: one.Text, Heading: one.Section, Selector: selector})
 	}
-	return out
+	return out, nil
 }
 
 // getText is the whole text of the record, as the host joins its parts.
-func (r *record) getText() domain.VersionText {
+func (r *record) getText() (domain.VersionText, error) {
 	var segments []domain.TextSegment
 	for index := range r.Pages {
-		segments = append(segments, r.getTextSegments(index)...)
+		page, err := r.getTextSegments(index)
+		if err != nil {
+			return domain.VersionText{}, err
+		}
+		segments = append(segments, page...)
 	}
 	return domain.NewVersionText(domain.TextVersion{
 		Path: "", PluginID: "", Key: "", Source: "", Kind: textKind, File: "",
 		SourceHash: "", Hash: "", CreateTime: time.Time{},
-	}, segments)
+	}, segments), nil
 }
 
 // blockGap ends every block of a page.

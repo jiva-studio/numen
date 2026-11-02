@@ -17,18 +17,12 @@ import (
 
 var errPageGone = errors.New("the page is gone")
 
-// fixedContext returns a function that always returns ctx.
-func fixedContext(ctx context.Context) func() context.Context {
-	return func() context.Context { return ctx }
-}
-
 // breaking serves a stream whose writes fail where `fails` returns true, and
-// reports what the handler returned. The handler runs under the context that
-// getContext returns.
+// reports what the handler returned. The handler runs under the context its
+// stream method is called with.
 type breaking struct {
-	fails      func(n int, msg any) bool
-	getContext func() context.Context
-	returned   chan error
+	fails    func(n int, msg any) bool
+	returned chan error
 }
 
 // breakingClient is the client of the review window over streams broken as b
@@ -47,11 +41,11 @@ func newBreakingClient(_ *testing.T, handler *API, b breaking) breakingClient {
 // breakStream runs the stream method under the breaking context, counting each
 // message sent and failing the ones b selects.
 func breakStream[Req, Res any](
-	c breakingClient, req *Req, method func(context.Context, *Req, func(*Res) error) error,
+	ctx context.Context, c breakingClient, req *Req, method func(context.Context, *Req, func(*Res) error) error,
 ) (*messageStream[Res], error) {
-	return openStream(context.WithoutCancel(c.b.getContext()), req, func(_ context.Context, req *Req, send func(*Res) error) error {
+	return openStream(context.WithoutCancel(ctx), req, func(_ context.Context, req *Req, send func(*Res) error) error {
 		count := 0
-		err := method(c.b.getContext(), req, func(res *Res) error {
+		err := method(ctx, req, func(res *Res) error {
 			count++
 			if c.b.fails(count, res) {
 				return errPageGone
@@ -65,16 +59,16 @@ func breakStream[Req, Res any](
 
 // WatchReloads opens the reload stream through the breaking writes.
 func (c breakingClient) WatchReloads(
-	_ context.Context, req *api.WatchReloadsRequest,
+	ctx context.Context, req *api.WatchReloadsRequest,
 ) (*messageStream[api.WatchReloadsResponse], error) {
-	return breakStream(c, req, c.handler.WatchReloads)
+	return breakStream(ctx, c, req, c.handler.WatchReloads)
 }
 
 // WatchCardsDue opens the count stream through the breaking writes.
 func (c breakingClient) WatchCardsDue(
-	_ context.Context, req *api.WatchCardsDueRequest,
+	ctx context.Context, req *api.WatchCardsDueRequest,
 ) (*messageStream[api.WatchCardsDueResponse], error) {
-	return breakStream(c, req, c.handler.WatchCardsDue)
+	return breakStream(ctx, c, req, c.handler.WatchCardsDue)
 }
 
 // awaitReturn is what the handler returned.
@@ -100,25 +94,26 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 		fails      func(n int, msg any) bool
 		moved      bool
 	}{
-		"opening": {fixedContext(cancelled), func(n int, _ any) bool { return n == 1 }, false},
-		// 		// Nothing changed, and the stream repeats the message until the page is
-		// 		// found gone.
-		"repeating": {fixedContext(t.Context()), func(n int, _ any) bool { return n > 1 }, false},
-		// 		// Something changed, and the page is gone by the time it is sent.
-		"reloading": {fixedContext(t.Context()), func(_ int, msg any) bool {
-			return msg.(*api.WatchReloadsResponse).Reload
+		"opening": {func() context.Context { return cancelled }, func(n int, _ any) bool { return n == 1 }, false},
+		// Nothing changed, and the stream repeats the message until the page is
+		// found gone.
+		"repeating": {t.Context, func(n int, _ any) bool { return n > 1 }, false},
+		// Something changed, and the page is gone by the time it is sent.
+		"reloading": {t.Context, func(_ int, msg any) bool {
+			reload, ok := msg.(*api.WatchReloadsResponse)
+			return ok && reload.Reload
 		}, true},
 	} {
 		t.Run(name, func(t *testing.T) {
 			handler, _, installation := newAPIOn(t)
 			returned := make(chan error, 1)
-			client := newBreakingClient(t, handler, breaking{fails: one.fails, getContext: one.getContext, returned: returned})
+			client := newBreakingClient(t, handler, breaking{fails: one.fails, returned: returned})
 
-			stream, err := client.WatchReloads(t.Context(), &api.WatchReloadsRequest{})
+			stream, err := client.WatchReloads(one.getContext(), &api.WatchReloadsRequest{})
 			if err != nil {
 				t.Fatal(err)
 			}
-			t.Cleanup(func() { stream.Close() })
+			t.Cleanup(stream.Close)
 			if one.moved {
 				if !stream.Receive() {
 					t.Fatalf("the stream said nothing: %v", stream.Err())
@@ -140,20 +135,21 @@ func TestWatchCardsDue_SaveFailureEndsStream(t *testing.T) {
 		"listing": func(n int, _ any) bool { return n == 1 },
 		// A count has come in.
 		"counting": func(_ int, msg any) bool {
-			return msg.(*api.WatchCardsDueResponse).Counted != nil
+			due, ok := msg.(*api.WatchCardsDueResponse)
+			return ok && due.Counted != nil
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			handler, _ := newAPI(t, deck)
+			handler, _ := newAPI(t, getDeck())
 			front(t, handler)
 
 			returned := make(chan error, 1)
-			client := newBreakingClient(t, handler, breaking{fails: fails, getContext: fixedContext(t.Context()), returned: returned})
+			client := newBreakingClient(t, handler, breaking{fails: fails, returned: returned})
 			stream, err := client.WatchCardsDue(t.Context(), &api.WatchCardsDueRequest{})
 			if err != nil {
 				t.Fatal(err)
 			}
-			t.Cleanup(func() { stream.Close() })
+			t.Cleanup(stream.Close)
 
 			if err := awaitReturn(t, returned); !errors.Is(err, errPageGone) {
 				t.Errorf("the stream ended with %v, want the write's error", err)
@@ -165,7 +161,7 @@ func TestWatchCardsDue_SaveFailureEndsStream(t *testing.T) {
 // A page found gone while a count is still running ends the stream, which is
 // the only report there is.
 func TestWatchCardsDue_MissingPageDuringCountEndsStream(t *testing.T) {
-	handler, _ := newAPI(t, deck)
+	handler, _ := newAPI(t, getDeck())
 	front(t, handler)
 
 	target := make(chan struct{})
@@ -174,15 +170,14 @@ func TestWatchCardsDue_MissingPageDuringCountEndsStream(t *testing.T) {
 
 	returned := make(chan error, 1)
 	client := newBreakingClient(t, handler, breaking{
-		fails:      func(n int, _ any) bool { return n > 1 },
-		getContext: fixedContext(t.Context()),
-		returned:   returned,
+		fails:    func(n int, _ any) bool { return n > 1 },
+		returned: returned,
 	})
 	stream, err := client.WatchCardsDue(t.Context(), &api.WatchCardsDueRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	t.Cleanup(stream.Close)
 
 	if err := awaitReturn(t, returned); !errors.Is(err, errPageGone) {
 		t.Errorf("the stream ended with %v, want the write's error", err)
@@ -207,7 +202,7 @@ func (g gated) Open(v domain.Vault) (ports.VaultReader, error) {
 // A stream that sent a count does not send the list again immediately:
 // the wait before the list restarts after every count.
 func TestWatchCardsDue_ListWaitRestartsAfterEachCount(t *testing.T) {
-	handler, target := newAPI(t, deck, other)
+	handler, target := newAPI(t, getDeck(), getOther())
 	front(t, handler)
 
 	first, second := make(chan struct{}), make(chan struct{})
@@ -224,7 +219,7 @@ func TestWatchCardsDue_ListWaitRestartsAfterEachCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	t.Cleanup(stream.Close)
 	if !stream.Receive() {
 		t.Fatalf("overview stream never opened: %v", stream.Err())
 	}
@@ -252,7 +247,7 @@ func TestWatchCardsDue_ListWaitRestartsAfterEachCount(t *testing.T) {
 
 // Four vaults are counted alongside each other, and the rest wait for a place.
 func TestFourVaultsAreCountedAtOnce(t *testing.T) {
-	handler, target := newAPI(t, deck, deck, deck, deck, deck, deck)
+	handler, target := newAPI(t, getDeck(), getDeck(), getDeck(), getDeck(), getDeck(), getDeck())
 	front(t, handler)
 
 	until := make(chan struct{})
@@ -273,7 +268,7 @@ func TestFourVaultsAreCountedAtOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	t.Cleanup(stream.Close)
 
 	running := map[domain.VaultID]bool{}
 	for len(running) < 4 {
@@ -306,7 +301,7 @@ func TestFourVaultsAreCountedAtOnce(t *testing.T) {
 // A stream whose client has disconnected waits for the counts already running
 // before it ends, so no count outlives the call that started it.
 func TestWatchCardsDue_EndsAfterRunningCountsFinish(t *testing.T) {
-	handler, target := newAPI(t, deck, deck, deck, deck, deck, deck)
+	handler, target := newAPI(t, getDeck(), getDeck(), getDeck(), getDeck(), getDeck(), getDeck())
 	front(t, handler)
 
 	until := make(chan struct{})
@@ -324,13 +319,13 @@ func TestWatchCardsDue_EndsAfterRunningCountsFinish(t *testing.T) {
 	defer cancel()
 	returned := make(chan error, 1)
 	client := newBreakingClient(t, handler, breaking{
-		fails: func(int, any) bool { return false }, getContext: fixedContext(ctx), returned: returned,
+		fails: func(int, any) bool { return false }, returned: returned,
 	})
-	stream, err := client.WatchCardsDue(t.Context(), &api.WatchCardsDueRequest{})
+	stream, err := client.WatchCardsDue(ctx, &api.WatchCardsDueRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	t.Cleanup(stream.Close)
 
 	running := map[domain.VaultID]bool{}
 	for len(running) < 4 {
@@ -344,8 +339,8 @@ func TestWatchCardsDue_EndsAfterRunningCountsFinish(t *testing.T) {
 
 	cancel()
 	select {
-	case <-returned:
-		t.Fatal("the stream ended while four counts were still running")
+	case err := <-returned:
+		t.Fatalf("the stream ended with %v while four counts were still running", err)
 	case <-time.After(300 * time.Millisecond):
 	}
 
@@ -363,7 +358,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	returned := make(chan error, 1)
 	firstMessage := make(chan struct{}, 1)
 	go func() {
-		returned <- handler.WatchReloads(context.Background(), &api.WatchReloadsRequest{},
+		returned <- handler.WatchReloads(t.Context(), &api.WatchReloadsRequest{},
 			func(*api.WatchReloadsResponse) error {
 				select {
 				case firstMessage <- struct{}{}:
@@ -391,7 +386,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 // stream saying nothing until a count lands leaves those counters reading for a
 // window that has gone, and reloading the page stacks another four on them.
 func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
-	handler, _ := newAPI(t, deck)
+	handler, _ := newAPI(t, getDeck())
 	// The vault is read when the window opens it, and what a count that will not
 	// come back does to the stream is what is under test here.
 	front(t, handler)

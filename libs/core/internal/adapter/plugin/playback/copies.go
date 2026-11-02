@@ -23,7 +23,7 @@ type Host interface {
 	GetContentType(name string) domain.ContentType
 }
 
-// Copies are the copies of the enabled plugins that declare playback.
+// Copies are the copies of the enabled plugins that declare a handle for the copy purpose.
 type Copies struct {
 	host   Host
 	stores pluginport.PluginStores
@@ -41,7 +41,10 @@ func (c Copies) getKeepers(path string, noteType domain.NoteType) []string {
 	var out []string
 	for _, info := range c.host.GetPluginInfos() {
 		found, ok := c.host.GetPlugin(info.ID)
-		if ok && found.Manifest.Playback != nil && found.Manifest.Playback.IsCopying(contentType, noteType) {
+		if !ok {
+			continue
+		}
+		if handle, isDeclared := found.Manifest.GetHandle(pluginport.HandlePlaybackCopy); isDeclared && handle.IsMatching(contentType, noteType) {
 			out = append(out, info.ID)
 		}
 	}
@@ -55,7 +58,10 @@ func (c Copies) IsCopied(path string, noteType domain.NoteType) bool {
 func (c Copies) IsCopyingNotes() bool {
 	for _, info := range c.host.GetPluginInfos() {
 		found, ok := c.host.GetPlugin(info.ID)
-		if ok && found.Manifest.Playback != nil && found.Manifest.Playback.HasNoteTypes() {
+		if !ok {
+			continue
+		}
+		if handle, isDeclared := found.Manifest.GetHandle(pluginport.HandlePlaybackCopy); isDeclared && handle.HasNoteTypes() {
 			return true
 		}
 	}
@@ -79,7 +85,7 @@ func (c Copies) OpenProxy(ctx context.Context, v domain.Vault, path string, note
 }
 
 // playedTypes are the masks of the types a copy is played as.
-var playedTypes = []domain.ContentType{"audio/*", "video/*"}
+func getPlayedTypes() []domain.ContentType { return []domain.ContentType{"audio/*", "video/*"} }
 
 // openIn opens the copy named by the hash in one plugin's folder, or returns ErrNoProxy.
 func (c Copies) openIn(ctx context.Context, store pluginport.PluginStore, hash string) (playbackport.Copy, error) {
@@ -108,7 +114,7 @@ func (c Copies) openIn(ctx context.Context, store pluginport.PluginStore, hash s
 }
 
 func isPlayed(contentType domain.ContentType) bool {
-	for _, mask := range playedTypes {
+	for _, mask := range getPlayedTypes() {
 		if mask.Matches(contentType) {
 			return true
 		}

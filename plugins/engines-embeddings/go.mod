@@ -3,14 +3,13 @@ module github.com/jiva-studio/numen/plugins/engines-embeddings
 go 1.26.9
 
 require (
-	connectrpc.com/connect v1.21.1
 	github.com/getcharzp/onnxruntime_purego v1.25.0
 	github.com/gomlx/go-huggingface v0.4.3
 	github.com/jiva-studio/numen/libs/plugin-sdk-go v0.0.0
-	github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx v0.0.0
 )
 
 require (
+	connectrpc.com/connect v1.21.1 // indirect
 	github.com/ebitengine/purego v0.11.2 // indirect
 	github.com/gofrs/flock v0.13.0 // indirect
 	github.com/gomlx/compute v0.1.6 // indirect

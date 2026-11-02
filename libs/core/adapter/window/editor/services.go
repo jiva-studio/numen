@@ -45,7 +45,7 @@ type Services struct {
 	// Text serves the live text of a file and its edits to the views.
 	Text *texts.Handler
 
-	// Themes are the stylesheets the window may be dressed in. They belong to
+	// Themes are the stylesheets the window may apply. They belong to
 	// the installation, so they arrive here from whatever put the window
 	// together. A build put together without a catalogue serves no ThemeService.
 	Themes numenv1connect.ThemeServiceHandler
@@ -55,6 +55,10 @@ type Services struct {
 
 	// Plugin answers questions about the plugins installed in the application.
 	Plugin numenv1connect.PluginServiceHandler
+
+	// Catalog answers which plugins the application has, which it could have, and which provides a
+	// kind of tab. A build put together without a catalog serves no CatalogService.
+	Catalog numenv1connect.CatalogServiceHandler
 
 	// openChoosePath makes the use case that puts the picker for a plugin's path setting in front of the
 	// person. Nil is a build that serves none.
@@ -66,9 +70,6 @@ type Services struct {
 	// Playing is the socket that serves recording playback. A build without one
 	// returns no address, and the window reports that playback is unavailable.
 	Playing *Loopback
-
-	// UpdateEndpoint is the URL of the release manifest. When empty, the published URL is used.
-	UpdateEndpoint string
 
 	server *fileServer
 }
@@ -125,10 +126,17 @@ type noteHandler struct {
 	write             *note.Write
 	create            *note.Create
 	editLinks         *note.EditLinks
-	replaceLinks      *note.ReplaceLinks
 	rename            *note.Rename
 	showNeighbourhood *note.ShowNeighbourhood
 	getLinkAddress    *note.GetLinkAddress
+
+	getConnection    *note.GetConnection
+	saveConnection   *note.SaveConnection
+	removeSide       *note.RemoveSide
+	removeConnection *note.RemoveConnection
+	join             *note.Join
+	createInRelation *note.CreateInRelation
+	getBacklinks     *note.GetBacklinks
 }
 
 // SetFolderDialog sets the native file and folder dialog used when a client

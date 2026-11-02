@@ -8,7 +8,7 @@ import type { AgentProps } from './Agent.types'
 
 /* --------------------------------- Props ---------------------------------- */
 withDefaults(defineProps<AgentProps>(), {
-  isWorking: false,
+  isAnswerPending: false,
   placeholder: 'Write a message',
   isDisabled: false,
   sendLabel: 'Send',
@@ -92,7 +92,7 @@ const agentStyle = computed(() => ({ '--agent-room': room.value }))
       ref="composer"
       v-model="text"
       class="agent__composer"
-      :is-working="isWorking"
+      :is-answer-pending="isAnswerPending"
       :placeholder="placeholder"
       :is-disabled="isDisabled"
       :send-label="sendLabel"
@@ -123,7 +123,7 @@ const agentStyle = computed(() => ({ '--agent-room': room.value }))
   --fade: 1.25rem;
   --lift: 0.75rem;
   /* What is left between the last turn and the composer written over it. */
-  --breath: 1.75rem;
+  --gutter: 1.75rem;
 
   position: relative;
   block-size: 100%;

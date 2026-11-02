@@ -40,26 +40,26 @@ type Work struct {
 
 // Turn is the work's hold on the queue.
 type Turn interface {
-	// Release ends the turn and lets the next work in the queue run. A turn released twice is
-	// released once.
-	Release()
+	// Release ends the turn and lets the next work in the queue run, and returns the failure the turn
+	// ended on before it was released. A turn released twice is released once.
+	Release() error
 	// WatchWaiting returns a channel closed once other work waits for the queue.
 	WatchWaiting() <-chan struct{}
 }
 
 // Task is one piece of the plugin's work as displayed to the user. ID is
-// chosen by the plugin. Done and Total are counted in Unit, and both zero means
-// there is nothing to count. A task with an Error stays listed until it is
-// finished.
+// chosen by the plugin. CompletedCount and TotalCount are counted in Unit, and
+// both zero means there is nothing to count. A task with a FailureReason stays
+// listed until it is finished.
 type Task struct {
-	ID            string
-	Title         string
-	About         string
-	Done          int64
-	Total         int64
-	Unit          Unit
-	Error         string
-	IsUserStarted bool
+	ID             string
+	Title          string
+	Detail         string
+	CompletedCount int64
+	TotalCount     int64
+	Unit           Unit
+	FailureReason  string
+	IsUserStarted  bool
 }
 
 // Unit is what a task counts.
@@ -126,7 +126,7 @@ func (c *QueueClient) EnqueueWork(ctx context.Context, work Work) (Turn, error) 
 			if stream.Msg().GetState() == v1.WorkState_WORK_STATE_CONTENDED {
 				turn.closeWaiting()
 			}
-			go turn.follow(stream)
+			go turn.follow(ctx, stream)
 			return turn, nil
 		case v1.WorkState_WORK_STATE_UNSPECIFIED:
 		}
@@ -146,11 +146,11 @@ func (c *QueueClient) ReportTask(ctx context.Context, task Task) error {
 	_, err := c.rpc.ReportTask(ctx, connect.NewRequest(&v1.ReportTaskRequest{Task: &v1.Task{
 		Id:            task.ID,
 		Title:         task.Title,
-		About:         task.About,
-		Done:          task.Done,
-		Total:         task.Total,
+		About:         task.Detail,
+		Done:          task.CompletedCount,
+		Total:         task.TotalCount,
 		Unit:          writeUnit(task.Unit),
-		Error:         task.Error,
+		Error:         task.FailureReason,
 		IsUserStarted: task.IsUserStarted,
 	}}))
 	return err
@@ -181,25 +181,31 @@ type clientTurn struct {
 	waitingOnce sync.Once
 	ended       chan struct{}
 	releaseOnce sync.Once
+	// err is the failure the stream ended on while the turn was held. It is set before ended closes.
+	err error
 }
 
-func (t *clientTurn) Release() {
+func (t *clientTurn) Release() error {
 	t.releaseOnce.Do(func() {
 		t.cancel()
 		<-t.ended
 	})
+	return t.err
 }
 
 func (t *clientTurn) WatchWaiting() <-chan struct{} { return t.waiting }
 
 func (t *clientTurn) closeWaiting() { t.waitingOnce.Do(func() { close(t.waiting) }) }
 
-func (t *clientTurn) follow(stream *connect.ServerStreamForClient[v1.EnqueueWorkResponse]) {
+func (t *clientTurn) follow(ctx context.Context, stream *connect.ServerStreamForClient[v1.EnqueueWorkResponse]) {
 	defer close(t.ended)
-	defer func() { _ = stream.Close() }()
 	for stream.Receive() {
 		if stream.Msg().GetState() == v1.WorkState_WORK_STATE_CONTENDED {
 			t.closeWaiting()
 		}
+	}
+	err := errors.Join(stream.Err(), closeStream(stream))
+	if ctx.Err() == nil {
+		t.err = err
 	}
 }

@@ -1,10 +1,11 @@
 import { test, expect } from '../../support/test.js'
+import { waitForWindow } from '../../support/workspace.js'
 
 test.describe('Command Palette Advanced Keyboard and Pointer Interactions', () => {
   test('navigates command palette options using keyboard arrow keys', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // 1. Open command palette
     await page.keyboard.press('Control+p')
@@ -26,20 +27,19 @@ test.describe('Command Palette Advanced Keyboard and Pointer Interactions', () =
     // Verify selection moved to another item
     const nextSelectedItem = page.locator('.palette__item[aria-selected="true"]').first()
     await expect(nextSelectedItem).toBeVisible({ timeout: 5_000 })
-    const nextText = await nextSelectedItem.innerText()
-    expect(nextText).not.toBe(initialText)
+    await expect(nextSelectedItem).not.toHaveText(initialText, { useInnerText: true })
 
     // 3. Press ArrowUp to return to initial item
     await page.keyboard.press('ArrowUp')
     const restoredSelectedItem = page.locator('.palette__item[aria-selected="true"]').first()
     await expect(restoredSelectedItem).toBeVisible({ timeout: 5_000 })
-    expect(await restoredSelectedItem.innerText()).toBe(initialText)
+    await expect(restoredSelectedItem).toHaveText(initialText, { useInnerText: true })
   })
 
   test('displays polite empty state on query with no matching commands', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     await page.keyboard.press('Control+p')
     const paletteInput = page.locator('input[data-palette="field"]').first()
@@ -47,7 +47,6 @@ test.describe('Command Palette Advanced Keyboard and Pointer Interactions', () =
 
     // Type completely unmatched query
     await paletteInput.fill('xyzunmatchedquery99999')
-    await page.waitForTimeout(300)
 
     // Verify no selectable item rows remain
     const items = page.locator('.palette__item')
@@ -61,7 +60,7 @@ test.describe('Command Palette Advanced Keyboard and Pointer Interactions', () =
   test('navigates multi-step palette flows and cancels step on escape', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     await page.keyboard.press('Control+p')
     const paletteInput = page.locator('input[data-palette="field"]').first()
@@ -69,11 +68,11 @@ test.describe('Command Palette Advanced Keyboard and Pointer Interactions', () =
 
     // Choose New note command
     await paletteInput.fill('New note')
-    await page.waitForTimeout(300)
+    await expect(page.getByRole('option', { selected: true })).toContainText('New note')
     await page.keyboard.press('Enter')
 
     // Second step expects the note name input
-    await page.waitForTimeout(300)
+    await expect(page.locator('[data-palette="crumb"]')).toBeVisible({ timeout: 5_000 })
     await expect(paletteInput).toBeVisible({ timeout: 5_000 })
 
     // First Escape leaves the child step and returns to root palette
@@ -89,7 +88,7 @@ test.describe('Command Palette Advanced Keyboard and Pointer Interactions', () =
   test('dismisses command palette on background scrim click', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     await page.keyboard.press('Control+p')
     const panel = page.locator('[data-palette="panel"]').first()

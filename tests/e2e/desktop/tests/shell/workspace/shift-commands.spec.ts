@@ -1,5 +1,5 @@
 import { test, expect } from '../../support/test.js'
-import { getGraph, openWorkspace } from '../../support/workspace'
+import { getGraph, openWorkspace } from '../../support/workspace.js'
 
 /** The commands triggered by a keystroke holding Shift, pressed with the palette closed. */
 test.describe('a command reached by a keystroke holding Shift', () => {

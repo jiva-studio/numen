@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"slices"
 	"testing"
+
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 )
 
 // The plugin declares the ONNX Runtime as a runtime dependency and no legacy runtimes list.
@@ -32,9 +34,6 @@ func TestManifestDeclaresTheEmbeddingCapabilityAndNoWindowService(t *testing.T) 
 	var manifest struct {
 		Capabilities []string `json:"capabilities"`
 		Services     []string `json:"services"`
-		Backend      struct {
-			ServiceName string `json:"serviceName"`
-		} `json:"backend"`
 	}
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
 		t.Fatal(err)
@@ -42,41 +41,100 @@ func TestManifestDeclaresTheEmbeddingCapabilityAndNoWindowService(t *testing.T) 
 	if !slices.Contains(manifest.Capabilities, "embedding") {
 		t.Errorf("capabilities = %v, want embedding", manifest.Capabilities)
 	}
-	if manifest.Backend.ServiceName != "" || len(manifest.Services) != 0 {
-		t.Errorf("serves %q and %v to the windows, want nothing", manifest.Backend.ServiceName, manifest.Services)
+	if len(manifest.Services) != 0 {
+		t.Errorf("serves %v to the windows, want nothing", manifest.Services)
 	}
 }
 
-// The plugin mounts the relevance panel in its settings, after the model setting.
-func TestManifestDeclaresTheFloorSettingsView(t *testing.T) {
+// The plugin reports the model and a starting floor for it and draws nothing: the search floor is
+// measured and set by another plugin.
+func TestManifestDeclaresNoFrontendAndNoSettingsView(t *testing.T) {
 	var manifest struct {
-		Targets  []string `json:"targets"`
-		Frontend struct {
-			Entrypoint string `json:"entrypoint"`
-		} `json:"frontend"`
-		SettingsViews []struct {
-			ID    string `json:"id"`
-			Title string `json:"title"`
-			After string `json:"after"`
-		} `json:"settingsViews"`
+		Frontend      map[string]any   `json:"frontend"`
+		SettingsViews []map[string]any `json:"settingsViews"`
+	}
+	if err := json.Unmarshal(Manifest, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	if len(manifest.Frontend) != 0 || len(manifest.SettingsViews) != 0 {
+		t.Errorf("frontend %v and settingsViews %v, want neither", manifest.Frontend, manifest.SettingsViews)
+	}
+}
+
+// The smallest piece of text to index is a whole number from 0 to 1000 that starts at 40, and the
+// settings page draws it as it draws any number.
+func TestManifestDeclaresTheSmallestPieceToIndex(t *testing.T) {
+	var manifest struct {
 		Settings []struct {
-			Key string `json:"key"`
+			Key         string   `json:"key"`
+			Type        string   `json:"type"`
+			Title       string   `json:"title"`
+			Description string   `json:"description"`
+			Default     any      `json:"default"`
+			Min         *float64 `json:"min"`
+			Max         *float64 `json:"max"`
+			Step        *float64 `json:"step"`
 		} `json:"settings"`
 	}
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(manifest.Targets, "desktop.editor") || manifest.Frontend.Entrypoint == "" {
-		t.Errorf("targets %v and frontend %q, want desktop.editor and an entrypoint", manifest.Targets, manifest.Frontend.Entrypoint)
+	for _, one := range manifest.Settings {
+		if one.Key != "min_chunk_length" {
+			continue
+		}
+		if one.Type != "number" || one.Default != float64(40) || one.Min == nil || *one.Min != 0 ||
+			one.Max == nil || *one.Max != 1000 || one.Step == nil || *one.Step != 1 {
+			t.Errorf("setting = %+v, want a number from 0 to 1000 by 1 that starts at 40", one)
+		}
+		if one.Title == "" || one.Description == "" {
+			t.Errorf("setting has no title or description: %+v", one)
+		}
+		return
 	}
-	if len(manifest.SettingsViews) != 1 || manifest.SettingsViews[0].ID != "floor" || manifest.SettingsViews[0].After != "model" {
-		t.Fatalf("settingsViews = %+v, want floor after model", manifest.SettingsViews)
+	t.Error("the manifest declares no min_chunk_length setting")
+}
+
+type manifestOption struct {
+	Value  string `json:"value"`
+	Title  string `json:"title"`
+	Detail string `json:"detail"`
+}
+
+// The local models of the settings are the curated profiles of the plugin, in the order of the table,
+// and the model setting defaults to the default model. Edit manifest.json to match backend/engine/profiles.json.
+func TestManifestListsTheCuratedProfilesAndDefaultsToTheDefaultModel(t *testing.T) {
+	var manifest struct {
+		Settings []struct {
+			Key       string `json:"key"`
+			Default   any    `json:"default"`
+			OptionsBy struct {
+				Options map[string][]manifestOption `json:"options"`
+			} `json:"optionsBy"`
+		} `json:"settings"`
 	}
-	isDeclared := false
+	if err := json.Unmarshal(Manifest, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	profiles, err := engine.GetShippedProfiles()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var want []manifestOption
+	for _, p := range profiles.GetCurated() {
+		want = append(want, manifestOption{Value: p.ID, Title: p.GetOptionTitle(), Detail: p.GetOptionDetail()})
+	}
 	for _, setting := range manifest.Settings {
-		isDeclared = isDeclared || setting.Key == manifest.SettingsViews[0].After
+		if setting.Key != "model" {
+			continue
+		}
+		if setting.Default != any(engine.DefaultModel) {
+			t.Errorf("model defaults to %q, want %q", setting.Default, engine.DefaultModel)
+		}
+		if got := setting.OptionsBy.Options["local"]; !slices.Equal(got, want) {
+			t.Errorf("local models = %+v, want the curated profiles %+v", got, want)
+		}
+		return
 	}
-	if !isDeclared {
-		t.Errorf("the settings view follows %q, which is not a setting", manifest.SettingsViews[0].After)
-	}
+	t.Fatal("manifest has no model setting")
 }

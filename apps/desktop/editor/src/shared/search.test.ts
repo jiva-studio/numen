@@ -9,7 +9,12 @@ beforeEach(() => {
   vi.useFakeTimers()
 })
 
-afterEach(() => {
+/** Searches started by a test and awaited after it. */
+const started: Promise<unknown>[] = []
+
+afterEach(async () => {
+  await vi.runAllTimersAsync()
+  await Promise.all(started.splice(0))
   vi.useRealTimers()
 })
 
@@ -21,12 +26,12 @@ const deferred = <T>() => {
 
 describe('a text typed', () => {
   it('is requested once, after the pause that follows the last keystroke', async () => {
-    const run = vi.fn(async (_query: string) => {})
+    const run = vi.fn((_query: string) => Promise.resolve())
     const { search } = useDebouncedSearch()
 
-    void search('q', { blank: vi.fn(), run })
+    started.push(search('q', { blank: vi.fn(), run }))
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS - 1)
-    void search(' qu ', { blank: vi.fn(), run })
+    started.push(search(' qu ', { blank: vi.fn(), run }))
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS - 1)
     expect(run).not.toHaveBeenCalled()
 
@@ -38,7 +43,7 @@ describe('a text typed', () => {
   it('is blank where it holds only space, and nothing waits', async () => {
     const blank = vi.fn()
     const pending = vi.fn()
-    const run = vi.fn(async (_query: string) => {})
+    const run = vi.fn((_query: string) => Promise.resolve())
     await useDebouncedSearch().search('  ', { blank, pending, run })
 
     expect(blank).toHaveBeenCalledTimes(1)
@@ -47,10 +52,10 @@ describe('a text typed', () => {
   })
 
   it('is cancelled by a cancel call', async () => {
-    const run = vi.fn(async (_query: string) => {})
+    const run = vi.fn((_query: string) => Promise.resolve())
     const { search, cancel } = useDebouncedSearch()
 
-    void search('q', { blank: vi.fn(), run })
+    started.push(search('q', { blank: vi.fn(), run }))
     cancel()
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
 
@@ -59,7 +64,7 @@ describe('a text typed', () => {
 
   it('waits on the clock it is handed', async () => {
     const waited: number[] = []
-    const run = vi.fn(async (_query: string) => {})
+    const run = vi.fn((_query: string) => Promise.resolve())
     await useDebouncedSearch({
       wait: async (ms) => {
         waited.push(ms)
@@ -95,7 +100,7 @@ describe('the answers to a search', () => {
     const answer = deferred<readonly string[]>()
     const { results, isLoading, setQuery } = useSearchResults(() => answer.promise)
 
-    void setQuery('q')
+    started.push(setQuery('q'))
     expect(isLoading.value).toBe(true)
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
     expect(isLoading.value).toBe(true)
@@ -112,9 +117,9 @@ describe('the answers to a search', () => {
     const search = vi.fn().mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise)
     const { results, setQuery } = useSearchResults<string>(search)
 
-    void setQuery('a')
+    started.push(setQuery('a'))
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
-    void setQuery('ab')
+    started.push(setQuery('ab'))
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
 
     second.resolve(['later'])
@@ -130,7 +135,7 @@ describe('the answers to a search', () => {
       Promise.reject(new Error('down')),
     )
 
-    void setQuery('q')
+    started.push(setQuery('q'))
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
 
     expect(results.value).toStrictEqual([])
@@ -140,7 +145,7 @@ describe('the answers to a search', () => {
   it('are cleared by a blank text', async () => {
     const { results, setQuery } = useSearchResults(async () => ['a'])
 
-    void setQuery('q')
+    started.push(setQuery('q'))
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
     expect(results.value).toStrictEqual(['a'])
 
@@ -160,12 +165,12 @@ describe('the answers to a search', () => {
       return ['prev']
     })
 
-    void setQuery('q')
+    started.push(setQuery('q'))
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
     expect(results.value).toStrictEqual(['prev'])
 
     hasFailed = true
-    void setQuery('q2')
+    started.push(setQuery('q2'))
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
     expect(results.value).toStrictEqual([])
   })

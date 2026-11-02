@@ -118,7 +118,7 @@ describe('a label half again as large', () => {
 /** A window that reports a size for the boxes it observes. */
 function stubObserver() {
   const watched: Element[] = []
-  const state = { ring: (_entries: unknown[]) => {}, disconnected: 0 }
+  const state = { ring: (_entries: unknown[]): void => undefined, disconnected: 0 }
 
   vi.stubGlobal(
     'ResizeObserver',
@@ -218,7 +218,7 @@ describe('the size a label is being set at', () => {
 
   it('is read without a warning where no scope holds it', () => {
     stubObserver()
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     useTypeSize()
     expect(warn).not.toHaveBeenCalled()
     warn.mockRestore()

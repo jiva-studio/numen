@@ -30,11 +30,11 @@ const ROOM = { width: 1000, height: 800 }
 
 /** A window of the size a test names, whatever the machine laid out. */
 const createViewport = (size: { width: number; height: number }): Viewport => ({
-  watch: () => () => {},
-  watchWhole: () => () => {},
+  watch: () => () => undefined,
+  watchWhole: () => () => undefined,
   watchFreeSpace: (took) => {
     took(size)
-    return () => {}
+    return () => undefined
   },
 })
 

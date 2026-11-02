@@ -4,6 +4,7 @@ import { configure } from 'storybook/test'
 // draws the components, so it is judged by what they are judged by.
 import { reachCheck, type Proof } from '../../../ui/core/.storybook/check'
 import { toolbar } from '../../../ui/core/.storybook/toolbar'
+import { accentCheck } from '../../../ui/core/.storybook/contrastBrowser'
 import '@numen/ui/styles.css'
 import 'virtual:plugin-utilities.css'
 import './preview.css'
@@ -13,10 +14,11 @@ import './preview.css'
 configure({ asyncUtilTimeout: 5_000 })
 
 /**
- * The story the plugins' walk is proved against. The number is the whole of
- * its tab order, counted in both engines.
+ * The story the plugins' walk is proved against. The number is the fewest stops
+ * of its tab order in either engine: WebKit on macOS does not stop on buttons,
+ * so WebKit finds six stops there where Chromium finds seven.
  */
-const PROOF: Proof = { story: 'plex-quick-link-popover--only-create', stops: 2 }
+const PROOF: Proof = { story: 'flash-cards-card--what-is-wrong-with-it', stops: 6 }
 
 const preview: Preview = {
   parameters: {
@@ -29,7 +31,7 @@ const preview: Preview = {
     },
   },
   ...toolbar,
-  afterEach: reachCheck(PROOF),
+  afterEach: [reachCheck(PROOF), accentCheck],
 }
 
 export default preview

@@ -40,7 +40,10 @@ interface VaultChangeData {
 
 async function handleVaultChange(change: VaultChangeData, deps: WindowStreamsDeps): Promise<void> {
   if (change.paths.length === 0 && !change.shouldReload && change.renamed.length === 0) return
-  if (change.shouldReload && (await deps.isVaultSwapped())) return void deps.reload()
+  if (change.shouldReload && (await deps.isVaultSwapped())) {
+    deps.reload()
+    return
+  }
   await deps.onVaultChanged(change.shouldReload ? [] : change.paths, change.renamed)
   if (change.renamed.some((went) => went.from === deps.opening.value)) {
     try {
@@ -65,7 +68,10 @@ async function handleFocusChange(
   const ranges = request.ranges
     .map((one) => ({ start: one.start, end: one.end }))
     .filter((one) => one.end > one.start)
-  if (!ranges.length) return void (await travelTo(request.path))
+  if (!ranges.length) {
+    await travelTo(request.path)
+    return
+  }
   openFileAt(request.path, ranges)
 }
 

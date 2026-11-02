@@ -161,10 +161,10 @@ func (p Preset) GetLearnedRule() (LearnedRule, int, float64) {
 	if !IsKnownRule(rule) {
 		rule = defaults.Rule
 	}
-	if !IntervalBounds.Contains(float64(interval)) {
+	if !GetIntervalBounds().Contains(float64(interval)) {
 		interval = defaults.Interval
 	}
-	if !RetentionBounds.Contains(retention) {
+	if !GetRetentionBounds().Contains(retention) {
 		retention = defaults.Retention
 	}
 	return rule, interval, retention
@@ -209,15 +209,27 @@ func (b Bounds) Contains(value float64) bool { return value >= b.Min && value <=
 // has, a retention target outside these is a scheduler asking for what memory
 // does not do, and an interval a card is learned at is a day at the least and a
 // year at the most.
-var (
-	MinutesADayBounds = Bounds{Min: 0, Max: 24 * 60}
-	NewADayBounds     = Bounds{Min: 0, Max: 9999}
-	ReviewsADayBounds = Bounds{Min: 0, Max: 9999}
-	RetentionBounds   = Bounds{Min: 0.7, Max: 0.99}
-	IntervalBounds    = Bounds{Min: 1, Max: 365}
-	BacklogBounds     = Bounds{Min: 0, Max: 100}
-	LoadBounds        = Bounds{Min: 0, Max: FullLoad}
-)
+
+// GetMinutesADayBounds returns the bounds of the minutes a day.
+func GetMinutesADayBounds() Bounds { return Bounds{Min: 0, Max: 24 * 60} }
+
+// GetNewADayBounds returns the bounds of the new cards a day.
+func GetNewADayBounds() Bounds { return Bounds{Min: 0, Max: 9999} }
+
+// GetReviewsADayBounds returns the bounds of the reviews a day.
+func GetReviewsADayBounds() Bounds { return Bounds{Min: 0, Max: 9999} }
+
+// GetRetentionBounds returns the bounds of the retention target.
+func GetRetentionBounds() Bounds { return Bounds{Min: 0.7, Max: 0.99} }
+
+// GetIntervalBounds returns the bounds of the interval a card is learned at, in days.
+func GetIntervalBounds() Bounds { return Bounds{Min: 1, Max: 365} }
+
+// GetBacklogBounds returns the bounds of the backlog.
+func GetBacklogBounds() Bounds { return Bounds{Min: 0, Max: 100} }
+
+// GetLoadBounds returns the bounds of the load.
+func GetLoadBounds() Bounds { return Bounds{Min: 0, Max: FullLoad} }
 
 // Defaults is a preset naming nothing, and how a deck pointing at no preset is
 // scheduled.
@@ -518,11 +530,11 @@ func readSchedule(front map[string]any, p *Preset, problems *[]string) {
 
 // readLimits parses review limits and intervals from frontmatter.
 func readLimits(front map[string]any, p *Preset, problems *[]string) {
-	p.MinutesADay = readWholeNumber(front, "minutes_a_day", MinutesADayBounds, p.MinutesADay, problems)
-	p.NewADay = readWholeNumber(front, "new_a_day", NewADayBounds, p.NewADay, problems)
-	p.ReviewsADay = readWholeNumber(front, "reviews_a_day", ReviewsADayBounds, p.ReviewsADay, problems)
-	p.Backlog = readWholeNumber(front, "backlog", BacklogBounds, p.Backlog, problems)
-	p.Interval = readWholeNumber(front, "interval", IntervalBounds, p.Interval, problems)
+	p.MinutesADay = readWholeNumber(front, "minutes_a_day", GetMinutesADayBounds(), p.MinutesADay, problems)
+	p.NewADay = readWholeNumber(front, "new_a_day", GetNewADayBounds(), p.NewADay, problems)
+	p.ReviewsADay = readWholeNumber(front, "reviews_a_day", GetReviewsADayBounds(), p.ReviewsADay, problems)
+	p.Backlog = readWholeNumber(front, "backlog", GetBacklogBounds(), p.Backlog, problems)
+	p.Interval = readWholeNumber(front, "interval", GetIntervalBounds(), p.Interval, problems)
 }
 
 // readRetention parses the retention target from frontmatter.
@@ -535,9 +547,9 @@ func readRetention(front map[string]any, p *Preset, problems *[]string) {
 	switch {
 	case !ok:
 		*problems = append(*problems, "retention is not a number")
-	case !RetentionBounds.Contains(value):
+	case !GetRetentionBounds().Contains(value):
 		*problems = append(*problems, fmt.Sprintf(
-			"retention %g is outside %g to %g", value, RetentionBounds.Min, RetentionBounds.Max))
+			"retention %g is outside %g to %g", value, GetRetentionBounds().Min, GetRetentionBounds().Max))
 	default:
 		p.Retention = value
 	}
@@ -570,9 +582,9 @@ func readDayShare(name string, raw any, p *Preset, daysLen int, problems *[]stri
 		*problems = append(*problems, "the load of "+name+" is not a number")
 	case share != math.Trunc(share):
 		*problems = append(*problems, "the load of "+name+" is counted in whole per cent")
-	case !LoadBounds.Contains(share):
+	case !GetLoadBounds().Contains(share):
 		*problems = append(*problems, fmt.Sprintf("the load of %s, %g, is outside %g to %g",
-			name, share, LoadBounds.Min, LoadBounds.Max))
+			name, share, GetLoadBounds().Min, GetLoadBounds().Max))
 	default:
 		if p.Load == nil {
 			p.Load = make(map[time.Weekday]int, daysLen)
@@ -618,21 +630,14 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 	return p, problems
 }
 
-// weekdays are the days of the week as a preset writes them.
-var weekdays = map[string]time.Weekday{
-	"mon": time.Monday,
-	"tue": time.Tuesday,
-	"wed": time.Wednesday,
-	"thu": time.Thursday,
-	"fri": time.Friday,
-	"sat": time.Saturday,
-	"sun": time.Sunday,
-}
-
-// Weekday is the day one of those names, and whether it names one.
+// Weekday is the day of the week a preset writes as the name, and whether the name is one.
 func Weekday(name string) (time.Weekday, bool) {
-	day, recognized := weekdays[strings.ToLower(strings.TrimSpace(name))]
-	return day, recognized
+	for day := time.Sunday; day <= time.Saturday; day++ {
+		if DayName(day) == strings.ToLower(strings.TrimSpace(name)) {
+			return day, true
+		}
+	}
+	return time.Sunday, false
 }
 
 // DayName is how a preset writes a day of the week.

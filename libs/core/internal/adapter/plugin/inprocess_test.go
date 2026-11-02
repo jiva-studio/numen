@@ -18,11 +18,12 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 const (
@@ -35,18 +36,22 @@ const (
 func newBuiltInManifest(id string, runtimes ...string) []byte {
 	declared := ""
 	if len(runtimes) > 0 {
-		declared = fmt.Sprintf(`"runtimes": [%q],`, strings.Join(runtimes, `","`))
+		dependencies := make([]string, 0, len(runtimes))
+		for _, runtime := range runtimes {
+			dependencies = append(dependencies, fmt.Sprintf(`{"id": %q, "kind": "runtime"}`, runtime))
+		}
+		declared = fmt.Sprintf(`"dependencies": [%s],`, strings.Join(dependencies, ","))
 	}
 	return fmt.Appendf(nil, `{
 		"id": %q,
 		"name": "Example Agent",
 		"version": "1.0.0",
-		"capabilities": ["agent"],
+		"capabilities": ["ai.agent.provider"],
 		"targets": ["desktop.editor"],
 		"permissions": [],
 		%s
 		"secrets": [{"name": "apiKey", "title": "API key"}],
-		"backend": {"type": "process", "entrypoint": "bin/example", "serviceName": "numen.v1.AgentService"},
+		"services": ["numen.v1.AgentService"], "backend": {"entrypoint": "bin/example"},
 		"settings": [{"key": "model", "type": "string", "title": "Model", "default": "small-model"}]
 	}`, id, declared)
 }
@@ -99,8 +104,12 @@ func newBuiltInBackend() *builtInBackend {
 
 func newBuiltInHost(t *testing.T, dirs ...string) *Host {
 	t.Helper()
-	host := NewHost("desktop.editor", dirs...)
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", dirs...)
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
 	return host
 }
 
@@ -146,7 +155,7 @@ func TestABuiltInPluginIsFoundByItsCapability(t *testing.T) {
 	host := newBuiltInHost(t)
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), newBuiltInBackend().serve("first agent"))
 
-	found, ok := host.FindPluginByCapability("agent")
+	found, ok := host.FindPluginByCapability("ai.agent.provider")
 	if !ok || found.Manifest.ID != firstBuiltInID {
 		t.Fatalf("FindPluginByCapability(agent) = %+v, %v", found, ok)
 	}
@@ -218,8 +227,12 @@ func TestABuiltInPluginIsRefusedTwiceAndForAnotherTarget(t *testing.T) {
 	if err := host.RegisterBuiltIn(newBuiltInManifest(firstBuiltInID), serve); !errors.Is(err, errBuiltInRegistered) {
 		t.Errorf("second registration = %v, want errBuiltInRegistered", err)
 	}
-	other := NewHost("mobile.reader")
-	t.Cleanup(func() { _ = other.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	other := NewHost(testsupport.GetMachine(), "mobile.reader")
+	t.Cleanup(func() {
+		if err := other.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
 	if err := other.RegisterBuiltIn(newBuiltInManifest(firstBuiltInID), serve); !errors.Is(err, errNotForTarget) {
 		t.Errorf("registration for another target = %v, want errNotForTarget", err)
 	}
@@ -237,7 +250,7 @@ func TestAPluginOnDiskThatIsNotBuiltInIsLaunched(t *testing.T) {
 		t.Fatalf("Discover: %v", err)
 	}
 	launched := make(chan string, 1)
-	host.SetLauncher(func(_ context.Context, p manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		launched <- p.Manifest.ID
 		return nil, nil, errors.New("no process in this test")
 	})
@@ -368,7 +381,7 @@ func (newerProtocolLifecycle) Ping(
 	return connect.NewResponse(&v1.PingResponse{Status: "ok", Protocol: pluginport.PluginProtocolVersion + 1}), nil
 }
 
-func TestABuiltInPluginThatSpeaksAnotherProtocolIsRefused(t *testing.T) {
+func TestABuiltInPluginThatUsesAnotherProtocolIsRefused(t *testing.T) {
 	host := newBuiltInHost(t)
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), func(map[string]string) (http.Handler, error) {
 		mux := http.NewServeMux()
@@ -377,7 +390,7 @@ func TestABuiltInPluginThatSpeaksAnotherProtocolIsRefused(t *testing.T) {
 	})
 
 	_, err := host.EnsureActive(t.Context(), firstBuiltInID)
-	if !errors.Is(err, pluginport.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), firstBuiltInID+" speaks protocol 2") {
+	if !errors.Is(err, pluginport.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), firstBuiltInID+" uses protocol 2") {
 		t.Fatalf("EnsureActive() = %v, want %v naming the plugin", err, pluginport.ErrUnsupportedProtocol)
 	}
 }
@@ -387,7 +400,9 @@ func TestAFlushSendsTheHeaderOfAStreamingHandler(t *testing.T) {
 	release := make(chan struct{})
 	defer close(release)
 	transport := NewInProcessTransport(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.(http.Flusher).Flush()
+		if err := http.NewResponseController(w).Flush(); err != nil {
+			t.Error(err)
+		}
 		<-release
 	}))
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://inprocess/", nil)
@@ -399,7 +414,9 @@ func TestAFlushSendsTheHeaderOfAStreamingHandler(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RoundTrip: %v", err)
 	}
-	_ = resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		t.Error(err)
+	}
 }
 
 // A call whose context ends after the header has been written ends with the error of the context.
@@ -417,7 +434,11 @@ func TestACallWhoseContextEndsAfterTheHeaderEndsWithThatError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RoundTrip: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	cancel()
 	read := make(chan error, 1)
@@ -482,10 +503,10 @@ func TestInProcess_RemovedBuiltInKeepsOwnPermissions(t *testing.T) {
 		t.Fatalf("Discover: %v", err)
 	}
 
-	if err := host.CheckPluginPermission("org.example.sample", manifestfile.PermissionVaultWrite); err != nil {
+	if err := host.CheckPluginPermission("org.example.sample", pluginport.PermissionVaultWrite); err != nil {
 		t.Errorf("the built-in's own permission: %v", err)
 	}
-	if err := host.CheckPluginPermission("org.example.sample", manifestfile.PermissionVaultRead); err == nil {
+	if err := host.CheckPluginPermission("org.example.sample", pluginport.PermissionVaultRead); err == nil {
 		t.Error("the permission of the copy that left is still granted")
 	}
 }

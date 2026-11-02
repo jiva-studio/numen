@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"strings"
 	"time"
@@ -54,7 +55,7 @@ func (s *agentServer) getACPAgents() []acpAgent {
 
 func buildCustomACPAgent(execPath string, isMulti bool) acpAgent {
 	baseName := getExecutableProgramName(execPath)
-	for _, candidate := range knownACPAgents {
+	for _, candidate := range getKnownACPAgents() {
 		if candidate.binary == baseName {
 			command := make([]string, 0, 1+len(candidate.args))
 			command = append(command, execPath)
@@ -96,7 +97,6 @@ type acpListing struct {
 func newACPModelCache(isAsync bool) *cache.Cache[acpListing] {
 	return cache.New[acpListing](
 		"models",
-		cache.WithPluginID("agents-acp"),
 		cache.WithTimeout(acpListLimit),
 		cache.WithFailureBackoff(acpFailureBackoff),
 		cache.WithAsync(isAsync),
@@ -114,21 +114,25 @@ func (s *agentServer) getModelCache() *cache.Cache[acpListing] {
 
 func (s *agentServer) getACPListing(ctx context.Context, agent acpAgent) acpListing {
 	key := agent.Program + "\x00" + strings.Join(agent.Command, "\x00")
-	listing, _, _ := s.getModelCache().Get(ctx, key, func(ctx context.Context) (acpListing, error) {
+	listing, _, err := s.getModelCache().Get(ctx, key, func(ctx context.Context) (acpListing, error) {
 		return readACPListing(ctx, agent)
 	})
+	if err != nil {
+		// A failed load leaves the last listing of the cache, or none, and the agent is listed with it.
+		return listing
+	}
 	return listing
 }
 
 // readACPListing opens a session with the agent and returns the models it reports for it.
-func readACPListing(ctx context.Context, agent acpAgent) (acpListing, error) {
+func readACPListing(ctx context.Context, agent acpAgent) (listing acpListing, err error) {
 	asking, stop := context.WithTimeout(ctx, acpListLimit)
 	defer stop()
 	session, err := openACPSession(asking, agent, toolEndpoint{url: "", token: "", tools: nil})
 	if err != nil {
 		return acpListing{}, err
 	}
-	defer session.close()
+	defer func() { err = errors.Join(err, session.close()) }()
 	return acpListing{
 		Models: session.models, Current: session.current, Levels: session.thoughtLevels, Level: session.thoughtCurrent,
 	}, nil

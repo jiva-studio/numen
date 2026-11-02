@@ -1,67 +1,62 @@
 ---
 title: Books and PDFs
-description: PDFs and EPUBs in the vault are read, searched and opened at the place a passage stands.
+description: PDFs and EPUBs in the vault are read, searched and opened at the place of a passage.
 ---
 
 import Shot from '../../components/Shot.astro'
 
-A vault holds more than notes. PDFs and EPUBs sitting in the folder are read as documents: their
-text is searched along with everything else, and a result opens the book at the page the words
-are on.
+A vault holds more than notes. PDFs and EPUBs in the folder are read as documents: their
+text is searched along with everything else, and a result opens the book at the page that contains the words.
 
 <Shot
   name="reader"
-  alt="A page of a scanned book with the passage a search found lit up where it stands on the page."
-  caption="What a search found, lit where it stands on the page rather than lifted out of it."
+  alt="A page of a scanned book with the passage a search found highlighted at its place on the page."
+  caption="What a search found, highlighted at its place on the page."
 />
 
 ## Reading a PDF
 
 Open a document in a tab as you would a note. It opens at the page a search sent you to, and the
-passage that matched is shown where it stands on the page — in the book, not lifted out of it.
+passage that matched is highlighted at its place on the page.
 
 Page numbers are positions in the file.
 
-The controls float over the page rather than taking a strip of the window for themselves: back
-and forward a page, the number of the page you are on — type another and press <kbd>Enter</kbd>
-to go there — and closer and further. The page starts at the size that fits the room, each press
-draws it a quarter larger, and six times that is as close as it goes.
+The controls are shown over the page and take no space in the window. They are: back and forward a page, the number of the page you are on (type another number and press <kbd>Enter</kbd> to go there), and zoom in and out. The page starts at the size that fits the available space, each press enlarges it by a quarter, and six times that is the largest zoom.
 
 ## Reading an EPUB
 
-An EPUB has no pages of its own. It is set afresh in the pane you read it in — one column where the pane is narrow, two where it is wide — and turned a page at a time by the arrow keys, by a swipe, or by pressing near either edge. It is never scrolled.
+An EPUB has no pages of its own. It is laid out again in the pane you read it in: one column where the pane is narrow, two where it is wide. You turn a page at a time by the arrow keys, by a swipe, or by pressing near either edge. It is never scrolled.
 
-The book is set in numen's own typography, in the theme you are reading in, and the two size buttons set the text rather than magnifying a picture. Setting it larger sets the columns again, and the place you were reading stays in front of you: where you are in a book is a place in its text, not a page number, so it survives the pane being dragged and the text being resized.
+The book uses numen's own typography and the theme you are reading in. The two size buttons change the text size rather than magnifying an image. A larger size lays out the columns again, and the place you were reading stays in view. Your position in a book is a place in its text, not a page number, so it is kept when the pane or the text size changes.
 
-The contents list what the book names. A book that names nothing — and many do — is listed by the pages of the printed edition it was set from, or failing those by its own chapters as the file holds them, so there is always somewhere to jump to.
+The contents show the table of contents that the book defines. Many books define none. For those, the contents list the pages of the printed edition the book was set from, or else the book's own chapters as the file has them, so there is always somewhere to jump to.
 
-Where a book carries the page breaks of the printed edition it was set from, those are shown as that edition's page numbers. They are the printed book's, and separate from the count of pages the window is showing you, which changes with the size of the pane and the size of the text.
+Where a book contains the page breaks of the printed edition it was set from, they are shown as that edition's page numbers. They belong to the printed book and are separate from the count of pages the window shows, which changes with the size of the pane and the text.
 
-Two kinds of EPUB are not read. One whose text is locked by DRM is refused rather than indexed as gibberish — a book whose fonts alone are scrambled is fine. One laid out as fixed pages, the way a comic or a picture book is, says so instead of being reflowed into nonsense.
+Two kinds of EPUB are not read. One whose text is locked by DRM is rejected rather than indexed as unreadable text. A book whose fonts alone are obfuscated is read normally. One laid out as fixed pages, like a comic or a picture book, shows a message instead of being reflowed into unreadable text.
 
 ## Scanned books
 
-A book that is scans of paper carries no text to read. The Document OCR plugin reads its pages
-here on your machine, of its own accord, once the book is in the vault: nothing is uploaded, no
+A book that is scans of paper has no text to read. The Document OCR plugin reads its pages
+on your machine automatically once the book is in the vault: nothing is uploaded, no
 account is involved.
 
 <Shot
   name="recognise"
   alt="The numen window: a scanned book open beside the file tree, with the commands offering to recognise its text."
-  caption="The run over a scan, offered in the commands under File."
+  caption="Starting OCR on a scan from the commands under File."
 />
 
-**Recognise the text with Document OCR** in the [commands](/commands/), under **File**, asks for it
-on the book in front of you, and so does asking the [agent](/agent/) to read it. What it reads
-with is on [scanned books](/reader/).
+**Recognise the text with Document OCR** in the [commands](/commands/), under **File**, starts it
+on the book you have open, and so does asking the [agent](/agent/) to read it. How the text is read is described in [scanned books](/reader/).
 
-It runs behind the window and shows its progress in the corner. The book answers searches once
-every page is read; a run that stops part way takes up again where it stopped.
+It runs behind the window and shows its progress in the status bar. The book appears in search results once
+every page is read. A run that stops part way continues where it stopped.
 
-What comes out is kept in the OCR plugin's folder inside the vault's own `.numen/` folder,
-`.numen/md.numen.engines.ocr/`, one file a document.
+The result is stored in the OCR plugin's folder inside the vault's own `.numen/` folder,
+`.numen/md.numen.engines.ocr/`, one file per document.
 
 ## Quoting into a note
 
-The agent can read a run of a document's text and write it into a note. It can also put a
-passage in front of you — the document opens at that page, at the words in question.
+The agent can read a run of a document's text and write it into a note. It can also show you a
+passage: the document opens at that page, at the words in question.

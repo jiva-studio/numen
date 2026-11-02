@@ -13,7 +13,7 @@ import { createVaultCounts } from './counts'
 const wire = vi.hoisted(() => {
   /** A stream that stays open, so nothing ends on its own. */
   async function* waits(): AsyncGenerator<never> {
-    await new Promise<never>(() => {})
+    await new Promise<never>(() => undefined)
   }
   return {
     waits,
@@ -49,7 +49,7 @@ async function* failsOnAbort(signal?: AbortSignal): AsyncGenerator<never> {
 /** A stream that yields the items it is given, and then stays open. */
 async function* sends(...items: unknown[]): AsyncGenerator<unknown> {
   yield* items
-  await new Promise<never>(() => {})
+  await new Promise<never>(() => undefined)
 }
 
 /** A stream that ends in a fault as it opens. */
@@ -148,8 +148,21 @@ describe('what the counting follows', () => {
 })
 
 describe('a deck written underneath the window', () => {
-  it('counts the vaults again on a message that carries a reload, and on no other', async () => {
+  it('counts the vaults again once the watch is open, and on a message that carries a reload', async () => {
     wire.reloads = () => sends({ reload: false }, { reload: true }, { reload: false })
+    const counts = createVaultCounts({ reportError: vi.fn() })
+
+    counts.start()
+    await settle()
+    await settle()
+    await settle()
+
+    expect(wire.countsOpened).toBe(3)
+    counts.dispose()
+  })
+
+  it('counts the vaults again when the watch opens, for a vault indexed before it did', async () => {
+    wire.reloads = () => sends({ reload: false })
     const counts = createVaultCounts({ reportError: vi.fn() })
 
     counts.start()
@@ -161,12 +174,12 @@ describe('a deck written underneath the window', () => {
   })
 
   it('is answered by the refresh the open review sets, and by counting once it is unset', async () => {
-    let send: (item: unknown) => void = () => {}
+    let send: (item: unknown) => void = () => undefined
     wire.reloads = async function* () {
       for (;;) yield await new Promise((then) => (send = then))
     }
     const counts = createVaultCounts({ reportError: vi.fn() })
-    const refresh = vi.fn(async () => {})
+    const refresh = vi.fn(async () => undefined)
     counts.start()
     await settle()
 

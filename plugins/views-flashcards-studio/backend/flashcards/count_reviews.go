@@ -3,7 +3,9 @@ package flashcards
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"maps"
+	"os"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
@@ -122,7 +124,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 
 	run.log.order = newHistory(run.log.Answers)
 	u.remember(ctx, v, run.now)
-	run.out.Streak = review.Streak(u.day, run.out.Days, u.now())
+	run.out.Streak = review.Streak(u.day, run.out.Days, u.now.Now())
 
 	// The upcoming cards and the retained cards are both computed from the answers
 	// in the order they were given, so they are requested together.
@@ -182,17 +184,17 @@ func (u CountReviews) countFile(
 		run.log.Files = append(run.log.Files, ports.Entry{Run: file.Run, Size: ran.Size})
 	}
 
-	days := one.Days
-	if isRepeated(one.IDs, run.countedIDs) {
-		if !didOpen {
-			ran, err = log.ReadFile(ctx, store, file)
-			if err != nil {
-				return err
-			}
-		}
-		days = review.GetDayTallies(u.day, getUncounted(ran.Answers, run.countedIDs))
+	if !isRepeated(one.IDs, run.countedIDs) {
+		run.addDays(one.IDs, one.Days)
+		return nil
 	}
-	run.addDays(one.IDs, days)
+	if !didOpen {
+		ran, err = log.ReadFile(ctx, store, file)
+		if err != nil {
+			return err
+		}
+	}
+	run.addDays(one.IDs, review.GetDayTallies(u.day, getUncounted(ran.Answers, run.countedIDs)))
 	return nil
 }
 
@@ -274,7 +276,7 @@ func (u CountReviews) getDueAndRetained(
 		return nil, nil, err
 	}
 
-	now := u.now()
+	now := u.now.Now()
 	ends := u.day.GetEnd(now)
 	for _, s := range schedules {
 		if s.IsNew() || s.Due.Before(ends) {
@@ -307,7 +309,8 @@ func (u CountReviews) readRemembered(ctx context.Context, v domain.Vault) map[st
 }
 
 // remember puts the counting where the next launch will find it. A cache that
-// could not be written is a launch that counts again, so nothing is reported.
+// could not be written is a launch that counts again, so the failure is written to the standard
+// error stream of the plugin process and the count goes on.
 func (u CountReviews) remember(ctx context.Context, v domain.Vault, now countCache) {
 	if u.Cache == nil {
 		return
@@ -316,7 +319,9 @@ func (u CountReviews) remember(ctx context.Context, v domain.Vault, now countCac
 	if err != nil {
 		return
 	}
-	_ = u.Cache.Write(ctx, v.ID, raw)
+	if err := u.Cache.Write(ctx, v.ID, raw); err != nil {
+		fmt.Fprintf(os.Stderr, "views-flashcards-studio: keep the count of reviews of %s: %v\n", v.ID, err)
+	}
 }
 
 // GetReviewDays is the days of a vault that fall inside a stretch.

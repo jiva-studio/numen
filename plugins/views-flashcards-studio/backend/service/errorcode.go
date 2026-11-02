@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/edit"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
@@ -46,9 +47,9 @@ func getErrorCode(err error) (api.ErrorCode, bool) {
 		return api.ErrorCodeTooLarge, true
 	case errors.Is(err, domain.ErrInvalidName):
 		return api.ErrorCodeInvalidName, true
-	case errors.Is(err, edit.ErrUnreadable),
-		errors.Is(err, edit.ErrInline),
-		errors.Is(err, edit.ErrUnterminated),
+	case errors.Is(err, markdown.ErrUnreadable),
+		errors.Is(err, markdown.ErrInline),
+		errors.Is(err, markdown.ErrUnterminated),
 		errors.Is(err, edit.ErrAnchored):
 		return api.ErrorCodeUnreadable, true
 	case errors.Is(err, edit.ErrBodyUnwritable):
@@ -77,5 +78,5 @@ func newError(code server.ErrorCode, err error) error {
 	return server.NewAPIError(code, err.Error())
 }
 
-// isUnlevelled reports whether a write reached the vault and the index was not updated.
-func isUnlevelled(err error) bool { return errors.Is(err, edit.ErrUnlevelled) }
+// isIndexOutdated reports whether a write reached the vault and the index was not updated.
+func isIndexOutdated(err error) bool { return errors.Is(err, edit.ErrIndexOutdated) }

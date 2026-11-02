@@ -8,11 +8,13 @@ import (
 	"strings"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/onnx"
 )
 
-// EnvDir names the folder plugins keep their models in.
+// EnvDir names the folder plugins keep their models in. The host sets it, to the folder a user chose or
+// to models in the shared data directory.
 const EnvDir = "NUMEN_MODELS_DIR"
 
 // paths are the files this run transcribes with, and where they were found.
@@ -41,8 +43,8 @@ func findInHome(fileName string) string {
 			return found
 		}
 	}
-	if base, err := os.UserConfigDir(); err == nil {
-		return findInFolder(filepath.Join(base, "numen", "models"), fileName)
+	if base, err := cache.GetSharedDataDirOrPluginDataDir(); err == nil {
+		return findInFolder(filepath.Join(base, "models"), fileName)
 	}
 	return ""
 }
@@ -65,12 +67,8 @@ func locateModel(explicitPath, repoAddress, envVar, defaultFileName, dir string)
 		}
 		return explicitPath, nil
 	}
-	if envVar != "" {
-		if env := os.Getenv(envVar); env != "" {
-			if _, err := os.Stat(env); err == nil {
-				return env, nil
-			}
-		}
+	if env := findInEnv(envVar); env != "" {
+		return env, nil
 	}
 	if repoAddress == "" {
 		return "", fmt.Errorf("model %s is not named: specify path or repo", defaultFileName)
@@ -85,8 +83,23 @@ func locateModel(explicitPath, repoAddress, envVar, defaultFileName, dir string)
 	return "", fmt.Errorf("model %s not found", fileName)
 }
 
-func locateModels(ctx context.Context, cfg Config) (*ort.Engine, paths, error) {
-	engine, _, err := onnx.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
+// findInEnv is the file the variable names, empty when it is unset or the file is missing.
+func findInEnv(envVar string) string {
+	if envVar == "" {
+		return ""
+	}
+	env := os.Getenv(envVar)
+	if env == "" {
+		return ""
+	}
+	if _, err := os.Stat(env); err != nil {
+		return ""
+	}
+	return env
+}
+
+func locateModels(ctx context.Context, library *onnx.Library, cfg Config) (*ort.Engine, paths, error) {
+	engine, _, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
 	if err != nil {
 		return nil, paths{}, err
 	}

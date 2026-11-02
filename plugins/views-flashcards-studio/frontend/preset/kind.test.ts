@@ -143,11 +143,15 @@ const openPresetTab = async (
   const kind = usePresetTab({
     core,
     buffers,
-    closeTab: (tab: string) => void closed.push(tab),
-    writeMessage: (text, severity) => void messages.push([text, severity]),
+    closeTab: (tab: string) => {
+      closed.push(tab)
+    },
+    writeMessage: (text, severity) => {
+      messages.push([text, severity])
+    },
     today: () => NOW,
   })
-  const state = await kind.kind.open?.('Steady.md', 'preset:Steady.md')
+  const state = kind.kind.open?.('Steady.md', 'preset:Steady.md')
   if (!state) throw new Error('review card missing')
   // The read and the curve behind it are two answers, and both are awaited.
   await Promise.resolve()
@@ -178,7 +182,7 @@ const flushPromises = async () => {
  * standing at the placeholder settings and not at the file's own.
  */
 const opening = async (file: Partial<Settings>) => {
-  let resolveRead = () => {}
+  let resolveRead: () => void = () => undefined
   const target = new Promise<void>((settle) => {
     resolveRead = settle
   })
@@ -212,8 +216,8 @@ const opening = async (file: Partial<Settings>) => {
   const kind = usePresetTab({
     core,
     buffers: createMockBufferHost(),
-    closeTab: () => {},
-    writeMessage: () => {},
+    closeTab: () => undefined,
+    writeMessage: () => undefined,
     today: () => NOW,
   })
   return {
@@ -334,7 +338,7 @@ describe('the curve behind the knob', () => {
   })
 
   it('counts the material at nothing until an answer has counted it', async () => {
-    const { state } = await openPresetTab({}, () => new Promise<Curve>(() => {}))
+    const { state } = await openPresetTab({}, () => new Promise<Curve>(() => undefined))
     expect(state.material.value).toBeNull()
   })
 
@@ -420,7 +424,10 @@ describe('the curve behind the knob', () => {
 // curve response arrives loses nothing.
 describe('the goal chosen', () => {
   it('is written without waiting on the curve behind it', async () => {
-    const { state, writtenFiles } = await openPresetTab({}, () => new Promise<Curve>(() => {}))
+    const { state, writtenFiles } = await openPresetTab(
+      {},
+      () => new Promise<Curve>(() => undefined),
+    )
     state.chooseGoal('retention')
     await flushPromises()
     expect(writtenFiles.at(-1)?.goal).toBe('retention')
@@ -535,7 +542,7 @@ describe('a curve nobody answers', () => {
   })
 
   it('reschedules review when target goal has no reviews', async () => {
-    const { state } = await openPresetTab({}, () => new Promise<Curve>(() => {}))
+    const { state } = await openPresetTab({}, () => new Promise<Curve>(() => undefined))
     state.chooseGoal('retention')
     await flushPromises()
     expect(state.isWaiting.value).toBe(true)
@@ -605,7 +612,7 @@ describe('what a tab still has unwritten for the file', () => {
   })
 
   it('is waited for by the window going, where a write is already out', async () => {
-    let resolveWrite = () => {}
+    let resolveWrite: () => void = () => undefined
     const { state, flush } = await openPresetTab(
       {},
       curve,
@@ -959,8 +966,11 @@ const createPresetRead = (settings: Settings, title = 'Steady'): ReadOver => ({
   },
 })
 
+/** A write the file rejects, so the choice stays unwritten once no write is in flight. */
+const rejectedWrite = (): WriteOver => ({ error: 'changed' })
+
 /** A write that never resolves, so the pending write stays pending. */
-const neverWritten = () => new Promise<WriteOver>(() => {})
+const neverWritten = () => new Promise<WriteOver>(() => undefined)
 
 describe('the tab a preset is drawn in', () => {
   it('is the state of the open preset, requested for by its path', async () => {
@@ -1048,8 +1058,9 @@ describe('a tab read again', () => {
 // not overwrite it.
 describe('a choice not yet written, across a read', () => {
   it('keeps the goal chosen', async () => {
-    const { state, applyPathChanges } = await openPresetTab({}, curve, () => ({}), neverWritten)
+    const { state, applyPathChanges } = await openPresetTab({}, curve, () => ({}), rejectedWrite)
     state.chooseGoal('retention')
+    await flushPromises()
     applyPathChanges(['Steady.md'])
     await flushPromises()
     expect(state.settings.value.goal).toBe('retention')
@@ -1060,9 +1071,10 @@ describe('a choice not yet written, across a read', () => {
       { byDate: '' },
       dated,
       () => ({}),
-      neverWritten,
+      rejectedWrite,
     )
     state.chooseGoal('date')
+    await flushPromises()
     applyPathChanges(['Steady.md'])
     await flushPromises()
     expect(state.settings.value.byDate).toBe('2026-09-29')
@@ -1073,9 +1085,10 @@ describe('a choice not yet written, across a read', () => {
       { byDate: '2026-12-25' },
       dated,
       (time) => (time === 0 ? {} : createPresetRead({ ...STEADY, byDate: '2027-01-01' })),
-      neverWritten,
+      rejectedWrite,
     )
     state.chooseGoal('date')
+    await flushPromises()
     applyPathChanges(['Steady.md'])
     await flushPromises()
     expect(state.settings.value.goal).toBe('date')
@@ -1202,10 +1215,9 @@ describe('the preset of a note', () => {
     core.getDeckPreset = deck(SLOW)
     const openedTabs: [string, string][] = []
 
-    await kind.openPresetOf(
-      note('Animals.md', 'deck'),
-      (one, path) => void openedTabs.push([one, path]),
-    )
+    await kind.openPresetOf(note('Animals.md', 'deck'), (one, path) => {
+      openedTabs.push([one, path])
+    })
 
     expect(openedTabs).toStrictEqual([['preset', 'presets/Slow.md']])
     expect(messages).toStrictEqual([])
@@ -1216,10 +1228,9 @@ describe('the preset of a note', () => {
     core.getDeckPreset = deck({ ...SLOW, path: '', title: '' })
     const openedTabs: [string, string][] = []
 
-    await kind.openPresetOf(
-      note('Animals.md', 'deck'),
-      (one, path) => void openedTabs.push([one, path]),
-    )
+    await kind.openPresetOf(note('Animals.md', 'deck'), (one, path) => {
+      openedTabs.push([one, path])
+    })
 
     expect(openedTabs).toStrictEqual([])
     expect(messages).toStrictEqual([[words.noPreset, 'warning']])

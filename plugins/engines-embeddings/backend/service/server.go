@@ -11,21 +11,22 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"connectrpc.com/connect"
-
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/embedding"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/performance"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 )
 
 const (
-	modelBGEM3                     = "bge-m3"
-	modelBGEM3Int8                 = "bge-m3-int8"
 	modelEmbedding3Small           = "text-embedding-3-small"
 	modelOpenRouterEmbedding3Small = "openai/text-embedding-3-small"
 )
@@ -33,9 +34,23 @@ const (
 type embeddingServer struct {
 	modelInfo  engine.ModelInfo
 	localModel engine.LocalModel
+	// localInfo is the identity of the local model the settings name, and localErr why it has none.
+	localInfo engine.ModelInfo
+	localErr  error
+	// profilesErr is why the table of profiles that ships with the plugin could not be read.
+	profilesErr error
+	// localKey changes with every property of the local model that a loaded model depends on.
+	localKey string
+
+	// profiles are the model profiles that ship with the plugin, and the owner's laid over them.
+	profiles *engine.Profiles
+	// profilesDir is where the owner's profile files are, and empty where the host granted no data directory.
+	profilesDir string
 
 	open   openEmbedder
 	isMock bool
+	// mockLog is the file the mock model records the texts it is given in.
+	mockLog string
 
 	mu       sync.Mutex
 	embedder textEmbedder
@@ -46,6 +61,14 @@ type embeddingServer struct {
 	// the settings name for a remote service.
 	localName   string
 	remoteModel string
+
+	// profile is the performance profile of the last Configure call, and isProfileSet whether one came.
+	profile      performance.Profile
+	isProfileSet bool
+	// lowerNice sets the niceness of the process.
+	lowerNice func(nice int) error
+	// opening is the load of the local model that is under way, and nil while none is.
+	opening *modelOpening
 }
 
 // textEmbedder is a model that turns texts into vectors.
@@ -64,16 +87,34 @@ const providerLocal = "local"
 // envMockML names the variable that selects the mock embedder for automated tests.
 const envMockML = "NUMEN_MOCK_ML"
 
-func openLocalModel(ctx context.Context, info engine.ModelInfo, local engine.LocalModel) (textEmbedder, error) {
-	emb, err := engine.Open(ctx, info, local, nil)
-	if err != nil {
-		return nil, err
+// envMockLog names the variable that makes the mock model append the texts it is given to a file.
+const envMockLog = "NUMEN_MOCK_EMBED_LOG"
+
+// newLocalModelOpener returns what loads a model on this machine through the library.
+func newLocalModelOpener(library *onnx.Library) openEmbedder {
+	return func(ctx context.Context, info engine.ModelInfo, local engine.LocalModel) (textEmbedder, error) {
+		emb, err := engine.Open(ctx, library, info, local, nil)
+		if err != nil {
+			return nil, err
+		}
+		return emb, nil
 	}
-	return emb, nil
 }
 
-func openMockModel(context.Context, engine.ModelInfo, engine.LocalModel) (textEmbedder, error) {
-	return engine.MockEmbedder{}, nil
+// envMockOpenHold names the variable that makes the mock model take that many milliseconds to open,
+// as a model that is still downloading.
+const envMockOpenHold = "NUMEN_MOCK_OPEN_HOLD_MS"
+
+func (s *embeddingServer) openMockModel(ctx context.Context, _ engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+	if held, err := strconv.Atoi(os.Getenv(envMockOpenHold)); err == nil && held > 0 {
+		hold, cancel := context.WithTimeout(ctx, time.Duration(held)*time.Millisecond)
+		defer cancel()
+		<-hold.Done()
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+	}
+	return engine.MockEmbedder{LogPath: s.mockLog}, nil
 }
 
 // updateConfig applies the settings of the selected provider: the host passes
@@ -82,16 +123,19 @@ func openMockModel(context.Context, engine.ModelInfo, engine.LocalModel) (textEm
 func (s *embeddingServer) updateConfig(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.applyProfileLocked(performance.Read(values))
+	s.loadProfilesLocked()
 	if provider := values["provider"]; provider != "" {
 		s.provider = provider
 	}
 	model := values["model"]
-	if model != "" && !isLocalPresetModel(model) {
+	if model != "" && !s.profiles.IsLocal(model) {
 		s.remoteModel = model
 	}
 	if s.provider != providerLocal && s.provider != "" && s.remoteModel == "" {
 		s.remoteModel = getDefaultRemoteModel(s.provider)
 	}
+	s.modelInfo.MinChunkLength = readMinChunkLength(values)
 	if key, ok := server.ReadSecret(values, server.SecretAPIKey); ok {
 		s.apiKey = key
 	}
@@ -99,23 +143,38 @@ func (s *embeddingServer) updateConfig(values map[string]string) {
 	if s.provider == providerLocal || s.provider == "" {
 		s.updateLocalModelLocked(model)
 	}
-	s.modelInfo.Name = s.localName
-	if s.provider != providerLocal && s.remoteModel != "" {
-		s.modelInfo.Name = s.remoteModel
-	}
-	if !s.isMock {
-		applyModelProfile(&s.modelInfo, s.modelInfo.Name)
-		applyDimensionEnv(&s.modelInfo)
-	}
+	s.refreshModelInfoLocked()
 }
 
-func isLocalPresetModel(model string) bool {
-	switch model {
-	case "Xenova/bge-m3", "Xenova/multilingual-e5-small", "Xenova/bge-small-en-v1.5", modelBGEM3, modelBGEM3Int8:
-		return true
-	default:
-		return false
+// loadProfilesLocked reads the profile files of the owner again, so that a file added while the
+// plugin runs takes effect with the next change of a setting.
+func (s *embeddingServer) loadProfilesLocked() {
+	shipped, err := engine.GetShippedProfiles()
+	s.profilesErr = err
+	s.profiles = shipped.WithUserProfiles(s.profilesDir, func(file string, err error) {
+		fmt.Fprintf(os.Stderr, "embeddings: skipped the model profile %s: %v\n", file, err)
+	})
+}
+
+// refreshModelInfoLocked names the model info after the selected model and loads its profile.
+func (s *embeddingServer) refreshModelInfoLocked() {
+	if s.isMock {
+		return
 	}
+	keep := s.modelInfo
+	if s.provider != providerLocal && s.remoteModel != "" {
+		profile := s.profiles.GetRemote(s.remoteModel)
+		s.modelInfo = engine.ModelInfo{
+			Name: s.remoteModel, Dimensions: profile.Dimensions, MaxTokens: profile.GetTokens(), Pooling: profile.Pooling,
+			From: keep.From, Concurrency: keep.Concurrency, FloorHint: profile.FloorHint, MinChunkLength: keep.MinChunkLength,
+			Handling: profile.GetHandling(),
+		}
+		applyDimensionEnv(&s.modelInfo)
+		return
+	}
+	s.modelInfo = s.localInfo
+	s.modelInfo.Concurrency = keep.Concurrency
+	s.modelInfo.MinChunkLength = keep.MinChunkLength
 }
 
 func getDefaultRemoteModel(provider string) string {
@@ -125,55 +184,82 @@ func getDefaultRemoteModel(provider string) string {
 	return modelEmbedding3Small
 }
 
-// applyModelProfile sets the dimensions, token limit, pooling and floor hint
-// that the profile of the model lists.
-func applyModelProfile(info *engine.ModelInfo, model string) {
-	profile := engine.GetModelProfile(model)
-	info.Dimensions = profile.Dimensions
-	info.MaxTokens = profile.MaxTokens
-	info.Pooling = profile.Pooling
-	info.FloorHint = profile.FloorHint
-}
-
+// updateLocalModelLocked takes the profile of the local model the settings name, and drops the loaded
+// model where the profile, or the model it names, changed. A model that has no profile is kept as an
+// error that GetModelInfo and EmbedTexts return.
 func (s *embeddingServer) updateLocalModelLocked(model string) {
 	if s.isMock {
 		return
 	}
-	prevRepo := s.localModel.Name
-	prevName := s.localName
-	switch model {
-	case "", "Xenova/bge-m3", modelBGEM3, modelBGEM3Int8,
-		modelOpenRouterEmbedding3Small, modelEmbedding3Small,
-		"openai/text-embedding-3-large", "text-embedding-3-large",
-		"openai/text-embedding-ada-002", "text-embedding-ada-002",
-		"baai/bge-m3", "qwen/qwen3-embedding-8b":
-		defInfo, defLocal := engine.DefaultBGEM3Config()
-		applyModelOverrides(&defInfo, &defLocal)
-		applyRuntimeEnv(&defLocal)
-		s.localModel = defLocal
-		s.localName = defInfo.Name
-	default:
-		s.localModel = s.localModel.WithRepository(model)
-		s.localModel.File = ""
+	info, local, err := s.resolveLocalModel(model)
+	if s.profilesErr != nil {
+		err = s.profilesErr
+	}
+	s.localErr = err
+	if err == nil {
+		s.localInfo, s.localModel, s.localName = info, local, info.Name
+	} else {
 		s.localName = model
 	}
-	if (s.localModel.Name != prevRepo || s.localName != prevName) && s.embedder != nil {
-		_ = s.embedder.Close()
-		s.embedder = nil
+	if key := getLocalKey(info, local, err); key != s.localKey {
+		s.localKey = key
+		s.retireOpeningLocked()
+		if s.embedder != nil {
+			s.closeRetired(s.embedder)
+			s.embedder = nil
+		}
 	}
 }
 
+// getLocalKey identifies the model a loaded model was opened for.
+func getLocalKey(info engine.ModelInfo, local engine.LocalModel, err error) string {
+	if err != nil {
+		return "error"
+	}
+	return strings.Join([]string{
+		info.Name, strconv.Itoa(info.Dimensions), strconv.Itoa(info.MaxTokens), info.Pooling,
+		info.Handling.Hash(info.MaxTokens), strings.Join(info.Handling.ExtraInputs, ","),
+		local.Name, local.Dir, local.File, local.Revision,
+	}, "|")
+}
+
+// resolveLocalModel returns the model the settings name. A setting that names no local model takes
+// NUMEN_EMBEDDING_MODEL, and then the default model.
+func (s *embeddingServer) resolveLocalModel(model string) (engine.ModelInfo, engine.LocalModel, error) {
+	if model == "" {
+		model = os.Getenv("NUMEN_EMBEDDING_MODEL")
+	}
+	if model == "" || s.profiles.IsRemote(model) {
+		model = engine.DefaultModel
+	}
+	profile, err := s.profiles.GetLocal(model)
+	if err != nil {
+		return engine.ModelInfo{}, engine.LocalModel{}, err
+	}
+	info, local := engine.NewConfig(profile)
+	applyModelOverrides(&info, &local)
+	applyDimensionEnv(&info)
+	applyRuntimeEnv(&local)
+	return info, local, nil
+}
+
 func newEmbeddingServer() *embeddingServer {
+	profilesDir := getProfilesDir()
+	var none engine.ModelInfo
+	var noLocal engine.LocalModel
 	if os.Getenv(envMockML) == "true" {
 		info := engine.GetMockModel()
-		return &embeddingServer{
+		info.MinChunkLength = defaultMinChunkLength
+		s := &embeddingServer{
 			modelInfo: info,
 			localModel: engine.LocalModel{
 				Name: "", Dir: "", File: "", BatchTexts: 0, Runtime: "", Threads: 0, Sessions: 0,
 				PassBudget: 0, PassMemory: 0, Provider: "", ShouldDownload: false, Revision: "", Sums: nil,
 			},
-			open:        openMockModel,
+			localInfo: none, localErr: nil, profilesErr: nil, localKey: "", profiles: nil, open: nil,
+			profilesDir: profilesDir,
 			isMock:      true,
+			mockLog:     os.Getenv(envMockLog),
 			mu:          sync.Mutex{},
 			embedder:    nil,
 			apiKey:      "",
@@ -181,36 +267,46 @@ func newEmbeddingServer() *embeddingServer {
 			provider:    "",
 			localName:   info.Name,
 			remoteModel: "",
+			profile:     performance.Balanced, isProfileSet: false, lowerNice: performance.SetNice, opening: nil,
 		}
+		s.open = s.openMockModel
+		s.loadProfilesLocked()
+		return s
 	}
-	info, local := engine.DefaultBGEM3Config()
-	applyModelOverrides(&info, &local)
-	info.FloorHint = engine.GetModelProfile(info.Name).FloorHint
-	applyDimensionEnv(&info)
-	applyRuntimeEnv(&local)
-
-	return &embeddingServer{
-		modelInfo:   info,
-		localModel:  local,
-		open:        openLocalModel,
+	s := &embeddingServer{
+		modelInfo: none, localModel: noLocal, localInfo: none, localErr: nil,
+		profilesErr: nil, localKey: "", profiles: nil, mockLog: "", localName: "",
+		profilesDir: profilesDir,
+		open:        newLocalModelOpener(onnx.NewLibrary()),
 		isMock:      false,
 		mu:          sync.Mutex{},
 		embedder:    nil,
 		apiKey:      "",
 		baseURL:     "",
 		provider:    "",
-		localName:   info.Name,
 		remoteModel: "",
+		profile:     performance.Balanced, isProfileSet: false, lowerNice: performance.SetNice, opening: nil,
 	}
+	s.loadProfilesLocked()
+	s.updateLocalModelLocked("")
+	s.modelInfo = s.localInfo
+	s.modelInfo.MinChunkLength = defaultMinChunkLength
+	return s
 }
 
-func applyModelOverrides(info *engine.ModelInfo, local *engine.LocalModel) {
-	if name := os.Getenv("NUMEN_EMBEDDING_MODEL"); name != "" {
-		info.Name = name
-		if name != modelBGEM3 && name != modelBGEM3Int8 {
-			*local = local.WithRepository(name)
-		}
+// getProfilesDir returns the folder of the owner's profile files, and an empty name where the host
+// granted the plugin no data directory.
+func getProfilesDir() string {
+	dir, err := cache.GetDataDir()
+	if err != nil {
+		return ""
 	}
+	return filepath.Join(dir, engine.ProfilesFolder)
+}
+
+// applyModelOverrides applies the variables that point the model at other files: a repository, a
+// directory, and a file in it.
+func applyModelOverrides(_ *engine.ModelInfo, local *engine.LocalModel) {
 	if repo := os.Getenv("NUMEN_EMBEDDING_REPO"); repo != "" {
 		*local = local.WithRepository(repo)
 	}
@@ -232,6 +328,8 @@ func parsePositiveInt(val string) int {
 	return 0
 }
 
+// applyDimensionEnv sets the dimensions, the token limit and the pooling the variables name over those
+// of the profile.
 func applyDimensionEnv(info *engine.ModelInfo) {
 	if d := parsePositiveInt(os.Getenv("NUMEN_EMBEDDING_DIMENSIONS")); d > 0 {
 		info.Dimensions = d
@@ -255,58 +353,62 @@ func applyRuntimeEnv(local *engine.LocalModel) {
 	}
 }
 
-func (s *embeddingServer) getEmbedder(ctx context.Context) (textEmbedder, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.embedder != nil {
-		return s.embedder, nil
-	}
-
-	localInfo := s.modelInfo
-	if !s.isMock {
-		localInfo.Name = s.localName
-		applyModelProfile(&localInfo, s.localName)
-		applyDimensionEnv(&localInfo)
-	}
-	emb, err := s.open(ctx, localInfo, s.localModel)
-	if err != nil {
-		return nil, fmt.Errorf("opening onnx embedding engine: %w", err)
-	}
-	s.embedder = emb
-	s.modelInfo.Concurrency = emb.Concurrency()
-	return emb, nil
-}
-
-func (s *embeddingServer) Close() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.embedder != nil {
-		err := s.embedder.Close()
-		s.embedder = nil
-		return err
-	}
-	return nil
-}
-
 func (s *embeddingServer) GetModelInfo(_ context.Context) (embedding.ModelInfo, error) {
 	s.mu.Lock()
 	info := s.modelInfo
+	localErr := s.getLocalErrLocked()
 	s.mu.Unlock()
+	if localErr != nil {
+		return embedding.ModelInfo{}, rpcerror.New(rpcerror.FailedPrecondition, localErr)
+	}
 	passes := info.Concurrency
 	if passes <= 0 {
 		passes = 4
 	}
 	return embedding.ModelInfo{
-		Name:        info.Name,
-		Dimensions:  int32(info.Dimensions),
-		MaxTokens:   int32(info.MaxTokens),
-		Pooling:     info.Pooling,
-		From:        info.From,
-		Concurrency: int32(getIndexShare(passes)),
-		FloorHint:   info.FloorHint,
+		Name:           info.Name,
+		Dimensions:     int32(info.Dimensions),
+		MaxTokens:      int32(info.MaxTokens),
+		Pooling:        info.Pooling,
+		From:           info.From,
+		Concurrency:    int32(getIndexShare(passes)),
+		FloorHint:      info.FloorHint,
+		MinChunkLength: int32(info.MinChunkLength),
+		Handling:       getHandlingHash(info),
 	}, nil
+}
+
+// getHandlingHash returns the hash of the handling of the model, and none where the model keeps no handling.
+func getHandlingHash(info engine.ModelInfo) string {
+	if info.Handling.IsZero() {
+		return ""
+	}
+	return info.Handling.Hash(info.MaxTokens)
+}
+
+// getLocalErr returns why the local model cannot run, and nil where it can or the provider is remote.
+func (s *embeddingServer) getLocalErr() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.getLocalErrLocked()
+}
+
+func (s *embeddingServer) getLocalErrLocked() error {
+	if s.isMock || (s.provider != providerLocal && s.provider != "") {
+		return nil
+	}
+	return s.localErr
+}
+
+// applyHandling puts the prefix of the role in front of each text, as the profile of the model says.
+func (s *embeddingServer) applyHandling(role embedding.Role, texts []string) []string {
+	s.mu.Lock()
+	handling := s.modelInfo.Handling
+	s.mu.Unlock()
+	if role == embedding.RoleQuery {
+		return handling.Apply(engine.RoleQuery, texts)
+	}
+	return handling.Apply(engine.RoleDocument, texts)
 }
 
 // getIndexShare returns the number of concurrent index calls allowed on a model
@@ -316,7 +418,9 @@ func getIndexShare(passes int) int {
 	return max(passes-1, 1)
 }
 
-func (s *embeddingServer) EmbedTexts(ctx context.Context, texts []string) ([][]float32, error) {
+// EmbedTexts returns one vector per text. A local model reads the texts with the prefix its profile
+// names for the role; a remote service reads them as they are.
+func (s *embeddingServer) EmbedTexts(ctx context.Context, role embedding.Role, texts []string) ([][]float32, error) {
 	if len(texts) == 0 {
 		return nil, nil
 	}
@@ -327,22 +431,32 @@ func (s *embeddingServer) EmbedTexts(ctx context.Context, texts []string) ([][]f
 	}
 	if s.isRemoteProvider() {
 		if baseURL == "" {
-			return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("embedding service URL is not configured"))
+			return nil, rpcerror.New(rpcerror.FailedPrecondition, errors.New("embedding service URL is not configured"))
 		}
-		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New("embedding API key is not configured"))
+		return nil, rpcerror.New(rpcerror.FailedPrecondition, errors.New("embedding API key is not configured"))
 	}
 
+	if err := s.getLocalErr(); err != nil {
+		return nil, rpcerror.New(rpcerror.FailedPrecondition, err)
+	}
+	texts = s.applyHandling(role, texts)
 	emb, err := s.getEmbedder(ctx)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, rpcerror.New(rpcerror.Internal, err)
 	}
 
 	denseVectors, err := emb.Embed(ctx, texts)
+	if errors.Is(err, engine.ErrClosed) {
+		// A change of the performance profile retired the model while this batch waited for a pass.
+		if emb, err = s.getEmbedder(ctx); err == nil {
+			denseVectors, err = emb.Embed(ctx, texts)
+		}
+	}
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("embed batch: %w", err))
+		return nil, rpcerror.New(rpcerror.Internal, fmt.Errorf("embed batch: %w", err))
 	}
 	if len(denseVectors) != len(texts) {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("expected %d vectors, got %d", len(texts), len(denseVectors)))
+		return nil, rpcerror.New(rpcerror.Internal, fmt.Errorf("expected %d vectors, got %d", len(texts), len(denseVectors)))
 	}
 
 	return denseVectors, nil
@@ -354,7 +468,7 @@ func (s *embeddingServer) embedRemoteTexts(ctx context.Context, key, baseURL str
 	for i, t := range texts {
 		vec, err := computeServiceVector(ctx, key, baseURL, model, t)
 		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("service text %d: %w", i, err))
+			return nil, rpcerror.New(rpcerror.Internal, fmt.Errorf("service text %d: %w", i, err))
 		}
 		if len(vec) > 0 {
 			s.mu.Lock()
@@ -385,7 +499,7 @@ func (s *embeddingServer) isRemoteProvider() bool {
 	return !s.isMock && s.provider != "" && s.provider != providerLocal
 }
 
-// getService returns the key Configure handed over and the endpoint of the
+// getService returns the key Configure passed and the endpoint of the
 // remote service: the configured one, else the one in NUMEN_EMBEDDING_URL. The
 // remote service answers only when both are set.
 func (s *embeddingServer) getService() (key, baseURL string) {
@@ -413,7 +527,7 @@ func (s *embeddingServer) getModelName() string {
 	return s.modelInfo.Name
 }
 
-func computeServiceVector(ctx context.Context, key, baseURL, model, text string) ([]float32, error) {
+func computeServiceVector(ctx context.Context, key, baseURL, model, text string) (vector []float32, err error) {
 	client := &http.Client{Transport: nil, CheckRedirect: nil, Jar: nil, Timeout: 30 * time.Second}
 	endpoint := strings.TrimSuffix(baseURL, "/") + "/embeddings"
 	reqBody, err := json.Marshal(openAIEmbeddingRequest{
@@ -435,7 +549,7 @@ func computeServiceVector(ctx context.Context, key, baseURL, model, text string)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { err = errors.Join(err, resp.Body.Close()) }()
 
 	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -462,7 +576,7 @@ func Mount(s *server.Server) error {
 	embedSrv := newEmbeddingServer()
 	s.SetUpdateConfig(embedSrv.updateConfig)
 	embedding.Mount(s, embedSrv)
-	s.OnClose(func() { _ = embedSrv.Close() })
+	s.OnClose(embedSrv.Close)
 	return nil
 }
 

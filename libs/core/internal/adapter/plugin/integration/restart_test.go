@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -21,9 +20,9 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 // restartedPlugin responds to every service a bridge calls, and counts the
@@ -82,8 +81,8 @@ type restartingLauncher struct {
 	servers []*httptest.Server
 }
 
-func (l *restartingLauncher) launch(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-	cmd := plugintest.NewIdleCommand()
+func (l *restartingLauncher) launch(ctx context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	cmd := plugintest.NewIdleCommand(context.WithoutCancel(ctx))
 	if err := cmd.Start(); err != nil {
 		return nil, nil, err
 	}
@@ -94,7 +93,7 @@ func (l *restartingLauncher) launch(_ context.Context, _ manifestfile.Discovered
 	l.plugins = append(l.plugins, plugin)
 	l.servers = append(l.servers, server)
 	l.mu.Unlock()
-	ready := fmt.Sprintf("NUMEN_READY port=%d\n", server.Listener.Addr().(*net.TCPAddr).Port)
+	ready := fmt.Sprintf("NUMEN_READY port=%d\n", plugintest.GetPort(l.t, server))
 	return cmd.Process, io.NopCloser(strings.NewReader(ready)), nil
 }
 
@@ -125,7 +124,7 @@ func writeRestartedPlugin(t *testing.T) string {
 		"capabilities": ["embedding", "tools"],
 		"targets": ["desktop.editor"],
 		"permissions": ["vault:read", "network:outbound"],
-		"backend": {"type": "process", "entrypoint": "bin/stub"}
+		"backend": {"entrypoint": "bin/stub"}
 	}`
 	if err := os.WriteFile(filepath.Join(pos, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
@@ -136,9 +135,9 @@ func writeRestartedPlugin(t *testing.T) string {
 // A bridge opened before its plugin stopped connects, at the next call, to the
 // plugin at the port it was started on again.
 func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
-	for _, tc := range bridgeContracts {
+	for _, tc := range getBridgeContracts() {
 		t.Run(tc.name, func(t *testing.T) {
-			host := plugin.NewHost("desktop.editor", writeRestartedPlugin(t))
+			host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", writeRestartedPlugin(t))
 			if err := host.Discover(); err != nil {
 				t.Fatal(err)
 			}
@@ -149,7 +148,7 @@ func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 			if err != nil {
 				t.Fatalf("open: %v", err)
 			}
-			defer func() { _ = bridge.Close() }()
+			defer testsupport.Close(t, bridge)
 			if _, err := call(t.Context()); err != nil {
 				t.Fatalf("the first call failed: %v", err)
 			}

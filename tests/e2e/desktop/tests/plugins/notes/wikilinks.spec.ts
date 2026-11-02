@@ -1,83 +1,213 @@
-import { test, expect } from '../../support/test.js'
-import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
+import path from 'node:path'
+import { test, expect, readActivePath, type Locator } from '../../support/test.js'
+import {
+  getGraph,
+  getPaletteField,
+  openWorkspace,
+  runPaletteCommand,
+} from '../../support/workspace.js'
+import {
+  createNote,
+  createUniqueTitle,
+  destroyNote,
+  getNoteTab,
+  getNoteText,
+  listBacklinks,
+  listFilePaths,
+  openNote,
+  readNote,
+  typeAtEnd,
+  waitForSavedBody,
+  writeSetting,
+  writeNote,
+} from '../../support/vault.js'
 
 test.describe('Note Creation and Wikilinks', () => {
-  test('creates new note via command palette naming flow', async ({ page }) => {
+  const madeNotes: string[] = []
+
+  test.afterEach(async ({ request }) => {
+    for (const one of madeNotes.splice(0)) await destroyNote(request, one)
+  })
+
+  test('makes a note on disk with New note and opens it in front', async ({ page, request }) => {
+    const title = createUniqueTitle('Quantum')
     await openWorkspace(page)
 
-    // Choose New note command
     await runPaletteCommand(page, 'New note', 'New note')
-
-    // The naming step is drawn, and the name is offered back once typed
     await expect(page.locator('[data-palette="crumb"]')).toBeVisible()
-    await page.locator('input[data-palette="field"]').first().fill('Quantum')
-    await expect(page.locator('[role="option"][aria-selected="true"]')).toContainText('Quantum')
+    await getPaletteField(page).fill(title)
+    await expect(page.getByRole('option', { selected: true })).toContainText(title)
     await page.keyboard.press('Enter')
 
-    // Verify new note tab opened and is the one shown
-    await expect(page.getByRole('tab', { name: /Quantum/i }).first()).toHaveAttribute(
-      'aria-selected',
-      'true',
+    await expect.poll(() => readActivePath(request)).toMatch(new RegExp(`${title}\\.md$`))
+    const made = await readActivePath(request)
+    madeNotes.push(made)
+    await expect(
+      page.getByRole('tab', { name: `${title} Close ${title}`, exact: true }),
+    ).toHaveAttribute('aria-selected', 'true')
+    await expect(getGraph(page).getByRole('img', { name: `${title}, focus` })).toBeAttached()
+    expect(await listFilePaths(request, path.posix.dirname(made).replace(/^\.$/, ''))).toContain(
+      made,
     )
+    expect((await readNote(request, made)).error).toBe('')
   })
 
-  test('renders wikilink syntax in markdown editor', async ({ page }) => {
-    await page.goto('/')
+  test('completes a typed wikilink from the notes of the vault, and the core reads it as a link', async ({
+    page,
+    request,
+  }) => {
+    const notePath = await createNote(request, createUniqueTitle('Heat engine'))
+    try {
+      await writeNote(request, notePath, 'Work from a difference in temperature.\n')
+      await openWorkspace(page)
+      const text = await openNote(page, notePath)
+      await expect(text).toContainText('Work from a difference in temperature.')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+      await typeAtEnd(page, text, '\nSee [[Entr')
+      const completion = page
+        .locator('.cm-tooltip-autocomplete')
+        .getByRole('option', {
+          name: /^Entropy/,
+        })
+        .first()
+      await expect(completion).toBeVisible()
+      await completion.click()
 
-    // Open notes folder
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
-
-    // Open Entropy.md
-    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
-    await expect(entropyRow).toBeVisible()
-    await entropyRow.press('Enter')
-
-    const noteEditor = page.locator('.note__text .cm-content').first()
-    await expect(noteEditor).toBeVisible({ timeout: 10_000 })
-
-    // Type a wikilink
-    await noteEditor.click()
-    await page.keyboard.press('End')
-    await page.keyboard.type('\n[[Thermodynamics]]')
-
-    // Verify wikilink text is rendered in CodeMirror
-    await expect(noteEditor).toContainText('Thermodynamics')
+      await waitForSavedBody(request, notePath, 'See [[Entropy]]')
+      await expect.poll(() => listBacklinks(request, 'notes/Entropy.md')).toContain(notePath)
+    } finally {
+      await destroyNote(request, notePath)
+    }
   })
 
-  test('navigates to target note upon clicking wikilink', async ({ page }) => {
-    await page.goto('/')
+  test('opens the note a wikilink names when it is clicked with Ctrl', async ({
+    page,
+    request,
+  }) => {
+    const notePath = await createNote(request, createUniqueTitle('Carnot cycle'))
+    try {
+      await writeNote(request, notePath, 'The cycle is bounded by [[Entropy]] alone.\n')
+      await openWorkspace(page)
+      const text = await openNote(page, notePath)
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+      await text
+        .getByText('Entropy', { exact: false })
+        .first()
+        .click({ modifiers: ['ControlOrMeta'] })
 
-    // Open notes folder
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
+      await expect(getNoteTab(page, 'notes/Entropy.md')).toHaveAttribute('aria-selected', 'true')
+      await expect(getNoteText(page, 'notes/Entropy.md')).toContainText('A measure of uncertainty')
+    } finally {
+      await destroyNote(request, notePath)
+    }
+  })
+})
 
-    // Open Entropy.md
-    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
-    await expect(entropyRow).toBeVisible()
-    await entropyRow.press('Enter')
+/** The computed value of `property` on `node`, and of the same property painted from a token. */
+const getPainted = (
+  node: Locator,
+  property: 'color' | 'backgroundColor',
+  token: string,
+): Promise<{ painted: string; expected: string }> =>
+  node.evaluate(
+    (element, [name, custom]) => {
+      const probe = document.createElement('div')
+      probe.style.setProperty(name === 'color' ? 'color' : 'background-color', `var(${custom})`)
+      element.append(probe)
+      const expected = getComputedStyle(probe)[name as 'color']
+      probe.remove()
+      return { painted: getComputedStyle(element)[name as 'color'], expected }
+    },
+    [property, token],
+  )
 
-    await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
+const expectPaintedFrom = async (
+  node: Locator,
+  property: 'color' | 'backgroundColor',
+  token: string,
+): Promise<void> => {
+  const { painted, expected } = await getPainted(node, property, token)
+  expect(painted).toBe(expected)
+}
 
-    // Open Thermodynamics tab from neighbourhood / link
-    const linkBtn = page
-      .locator('.plex')
-      .getByRole('button', { name: /Thermodynamics/i })
-      .or(page.locator('.plex .plex__title', { hasText: 'Thermodynamics' }))
-      .first()
-    await expect(linkBtn).toBeVisible({ timeout: 10_000 })
-    await linkBtn.dblclick({ force: true })
+test.describe('Wikilink in the editor', () => {
+  test('draws a finished wikilink as one link and opens its note from the shown text', async ({
+    page,
+    request,
+  }) => {
+    const notePath = await createNote(request, createUniqueTitle('Link design'))
+    try {
+      await openWorkspace(page)
+      const text = await openNote(page, notePath)
 
-    await expect(page.getByRole('tab', { name: /Thermodynamics/i }).first()).toBeVisible({
-      timeout: 10_000,
+      await typeAtEnd(page, text, '[[Entropy]]')
+      await page.keyboard.press('Escape')
+      await page.keyboard.type('\nnext line')
+
+      await expect(text.locator('.cm-line').first()).toHaveText('Entropy')
+      await expect(text.locator('.cm-wikilink')).toHaveText('Entropy')
+      await expect(text.locator('.cm-wikilink-mark')).toHaveCount(0)
+
+      await text.locator('.cm-wikilink').click({ modifiers: ['ControlOrMeta'] })
+
+      await expect(getNoteTab(page, 'notes/Entropy.md')).toHaveAttribute('aria-selected', 'true')
+    } finally {
+      await destroyNote(request, notePath)
+    }
+  })
+
+  test('shows both brackets muted and alike while the caret touches the link', async ({
+    page,
+    request,
+  }) => {
+    const notePath = await createNote(request, createUniqueTitle('Link brackets'))
+    try {
+      await writeNote(request, notePath, '[[Entropy]] stays.')
+      await openWorkspace(page)
+      const text = await openNote(page, notePath)
+      await text.click()
+      await page.keyboard.press('ControlOrMeta+End')
+      await expect(text.locator('.cm-line').first()).toHaveText('Entropy stays.')
+
+      await page.keyboard.press('ControlOrMeta+Home')
+
+      await expect(text.locator('.cm-line').first()).toHaveText('[[Entropy]] stays.')
+      const brackets = text.locator('.cm-wikilink-mark')
+      await expect(brackets).toHaveCount(2)
+      await expectPaintedFrom(brackets.first(), 'color', '--numen-syntax-mark')
+      await expectPaintedFrom(brackets.last(), 'color', '--numen-syntax-mark')
+      await expectPaintedFrom(text.locator('.cm-wikilink'), 'color', '--numen-ring')
+      await expect(text.locator('.cm-matchingBracket')).toHaveCount(0)
+      await expect(text.locator('.cm-nonmatchingBracket')).toHaveCount(0)
+    } finally {
+      await destroyNote(request, notePath)
+    }
+  })
+
+  for (const mode of ['light', 'dark'] as const) {
+    test(`draws the completion list in the colours of the ${mode} theme`, async ({
+      page,
+      request,
+    }) => {
+      const notePath = await createNote(request, createUniqueTitle('Completion colours'))
+      await writeSetting(request, ['appearance', 'mode'], mode)
+      try {
+        await openWorkspace(page)
+        const text = await openNote(page, notePath)
+
+        await typeAtEnd(page, text, 'See [[Entr')
+
+        const list = page.locator('.cm-tooltip-autocomplete')
+        const current = list.getByRole('option', { selected: true })
+        await expect(current).toBeVisible()
+        await expectPaintedFrom(list, 'backgroundColor', '--numen-raised')
+        await expectPaintedFrom(list, 'color', '--numen-ink')
+        await expectPaintedFrom(current, 'backgroundColor', '--numen-bubble-bg')
+        await expectPaintedFrom(current, 'color', '--numen-ink')
+      } finally {
+        await writeSetting(request, ['appearance', 'mode'], 'system')
+        await destroyNote(request, notePath)
+      }
     })
-  })
+  }
 })

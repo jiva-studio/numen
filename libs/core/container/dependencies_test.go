@@ -2,23 +2,33 @@ package container
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
 func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
-	host := plugin.NewHost("desktop.editor")
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), 0) })
-	registry := newDependencies()
+	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor")
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+			t.Error(err)
+		}
+	})
+	registry := newDependencies("")
 	host.SetDependencies(registry)
 	tasks := run.NewTasks()
-	Config{PluginHost: host}.ReportDependencies(tasks)
+	NewConfig(Config{PluginHost: host}).ReportDependencies(tasks)
 	req := pluginport.DependencyRequirement{ID: "whisper", Kind: pluginport.DependencyKindModel}
 
 	registry.Observe(req, pluginport.DependencyStatus{State: pluginport.DependencyStateProvisioning, BytesDownloaded: 5, BytesTotal: 10})
@@ -41,7 +51,7 @@ func TestProvision_MockModelsReturnPlaceholders(t *testing.T) {
 	t.Setenv(envMockML, "true")
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	registry := newDependencies()
+	registry := newDependencies("")
 
 	model := pluginport.DependencyRequirement{
 		ID: "pp-ocr-det", Kind: pluginport.DependencyKindModel,
@@ -67,5 +77,32 @@ func TestProvision_MockModelsReturnPlaceholders(t *testing.T) {
 	}
 	if resolved.EnvVars["NUMEN_ONNX_RUNTIME_LIB"] != resolved.PrimaryPath || resolved.EnvVars["NUMEN_ONNX_PROVIDER"] != "cpu" {
 		t.Errorf("the runtime is named %v", resolved.EnvVars)
+	}
+}
+
+func TestAModelIsFetchedIntoTheFolderTheHostShares(t *testing.T) {
+	t.Setenv(envMockML, "")
+	t.Setenv("NUMEN_MODELS_DIR", "")
+	body := []byte("model weights")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		if _, err := w.Write(body); err != nil {
+			t.Error(err)
+		}
+	}))
+	t.Cleanup(server.Close)
+	sum := sha256.Sum256(body)
+	models := t.TempDir()
+	req := pluginport.DependencyRequirement{
+		ID: "shared-model", Kind: pluginport.DependencyKindModel,
+		SourceURL: server.URL + "/model.onnx", ChecksumSHA256: hex.EncodeToString(sum[:]),
+	}
+
+	resolved, err := newDependencies(models).Provision(t.Context(), req, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if rel, err := filepath.Rel(models, resolved.PrimaryPath); err != nil || strings.HasPrefix(rel, "..") {
+		t.Errorf("the model is at %s, not under %s", resolved.PrimaryPath, models)
 	}
 }

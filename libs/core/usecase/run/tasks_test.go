@@ -3,7 +3,7 @@ package run
 import (
 	"context"
 	"fmt"
-	"slices"
+	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -168,7 +168,7 @@ func TestWhatAListenerIsReportedLastIsTheNewest(t *testing.T) {
 	// item received is the final state the user sees.
 	executing := tasks.List()
 	stop()
-	if last := <-ended; !slices.Equal(last, executing) {
+	if last := <-ended; !reflect.DeepEqual(last, executing) {
 		t.Errorf("left showing %+v, want what is being done, %+v", last, executing)
 	}
 }
@@ -294,5 +294,29 @@ func TestAListenerThatEndedDoesNotStopTheOthersBeingReported(t *testing.T) {
 	tasks.Set(Task{ID: "a"})
 	if list := next(t, staying); len(list) != 1 {
 		t.Errorf("the listener that stayed received %+v", list)
+	}
+}
+
+func TestCancelCancelsTheTaskAndKeepsItListed(t *testing.T) {
+	tasks := NewTasks()
+	work, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	tasks.Set(Task{ID: "indexing", Title: "Indexing", Cancel: cancel})
+	tasks.Set(Task{ID: "walk", Title: "Indexing the vault"})
+
+	if !tasks.Cancel("indexing") {
+		t.Fatal("a cancellable task was not cancelled")
+	}
+	if work.Err() == nil {
+		t.Error("the task's context is not cancelled")
+	}
+	if list := tasks.List(); len(list) != 2 {
+		t.Errorf("got %d tasks, want both listed until the work removes them", len(list))
+	}
+	if tasks.Cancel("walk") {
+		t.Error("a task without a cancel function reported it was cancelled")
+	}
+	if tasks.Cancel("missing") {
+		t.Error("a task that is not listed reported it was cancelled")
 	}
 }

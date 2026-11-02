@@ -47,7 +47,7 @@ const arranged = `{
 // with the bytes of one value replaced and nothing else changed.
 func TestAHandArrangedFileReachesBackWithOneValueChanged(t *testing.T) {
 	path := write(t, arranged)
-	if err := settings.Save(path, newDocument(), theme("mine:dracula")); err != nil {
+	if err := settings.NewFiles().Save(path, newDocument(), theme("mine:dracula")); err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(path)
@@ -64,7 +64,7 @@ func TestAHandArrangedFileReachesBackWithOneValueChanged(t *testing.T) {
 // Two settings are saved at once, and the file layout is preserved.
 func TestTheThemeAndTheModeAreSavedWithoutMovingAnythingElse(t *testing.T) {
 	path := write(t, arranged)
-	if err := settings.Save(path, newDocument(), theme("preset:nord"),
+	if err := settings.NewFiles().Save(path, newDocument(), theme("preset:nord"),
 		settings.Setting{At: []string{"appearance", "mode"}, Written: settings.ModeDark}); err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,7 @@ func TestTheTwoSizesAreSavedWithoutMovingAnythingElse(t *testing.T) {
 }
 `
 	path := write(t, sized)
-	if err := settings.Save(path, newDocument(),
+	if err := settings.NewFiles().Save(path, newDocument(),
 		settings.Setting{At: []string{"appearance", "interface_scale"}, Written: 1.25},
 		settings.Setting{At: []string{"appearance", "text_scale"}, Written: 1.5}); err != nil {
 		t.Fatal(err)
@@ -118,7 +118,7 @@ func TestASizeIsSavedAdjacentTheZoomAFileStillNames(t *testing.T) {
   }
 }
 `)
-	if err := settings.Save(path, newDocument(),
+	if err := settings.NewFiles().Save(path, newDocument(),
 		settings.Setting{At: []string{"appearance", "interface_scale"}, Written: 1.25}); err != nil {
 		t.Fatal(err)
 	}
@@ -158,7 +158,7 @@ func TestAFieldTheFileHasNotGotIsAppendedToItsSection(t *testing.T) {
   "agent": {"use": "claude"}
 }
 `)
-	if err := settings.Save(path, newDocument(), theme("mine:dracula")); err != nil {
+	if err := settings.NewFiles().Save(path, newDocument(), theme("mine:dracula")); err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(path)
@@ -187,7 +187,7 @@ func TestASectionTheFileHasNotGotIsMadeAtTheEnd(t *testing.T) {
   "agent": {"use": "claude"}
 }
 `)
-	if err := settings.Save(path, newDocument(), theme("mine:dracula")); err != nil {
+	if err := settings.NewFiles().Save(path, newDocument(), theme("mine:dracula")); err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(path)
@@ -211,7 +211,7 @@ func TestASectionTheFileHasNotGotIsMadeAtTheEnd(t *testing.T) {
 // A file written on one line takes another field on that line.
 func TestAFileOnOneLineStaysOnOneLine(t *testing.T) {
 	path := write(t, `{"appearance": {"zoom": 1.5}}`)
-	if err := settings.Save(path, newDocument(), theme("mine:dracula")); err != nil {
+	if err := settings.NewFiles().Save(path, newDocument(), theme("mine:dracula")); err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(path)
@@ -225,7 +225,7 @@ func TestAFileOnOneLineStaysOnOneLine(t *testing.T) {
 
 func TestSave_PreservesUnknownFields(t *testing.T) {
 	path := write(t, `{"v":1,"appearance":{"zoom":1.5,"tint":"warm"},"tomorrow":{"of":["a","later","build"]}}`)
-	if err := settings.Save(path, newDocument(), theme("preset:nord")); err != nil {
+	if err := settings.NewFiles().Save(path, newDocument(), theme("preset:nord")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -247,7 +247,7 @@ func TestSave_PreservesUnknownFields(t *testing.T) {
 		t.Fatal(err)
 	}
 	if file.Appearance.Theme != "preset:nord" {
-		t.Errorf("wears %q", file.Appearance.Theme)
+		t.Errorf("applied %q", file.Appearance.Theme)
 	}
 	if file.Appearance.Zoom != 1.5 || file.Appearance.Tint != "warm" {
 		t.Errorf("the window section is now %+v", file.Appearance)
@@ -261,7 +261,7 @@ func TestSave_PreservesUnknownFields(t *testing.T) {
 func TestAFileThatDoesNotParseIsNotPatched(t *testing.T) {
 	body := `{"appearance": {"zoom": 1.5,,}}`
 	path := write(t, body)
-	if err := settings.Save(path, newDocument(), theme("preset:nord")); err == nil {
+	if err := settings.NewFiles().Save(path, newDocument(), theme("preset:nord")); err == nil {
 		t.Fatal("a file nothing can read took a setting")
 	}
 	raw, err := os.ReadFile(path)
@@ -277,7 +277,7 @@ func TestAFileThatDoesNotParseIsNotPatched(t *testing.T) {
 // file that is not there writes the setting and nothing else.
 func TestSavingIntoAFileThatIsNotThereWritesTheSettingAlone(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "numen", "numen.json")
-	if err := settings.Save(path, newDocument(), theme("preset:gruvbox")); err != nil {
+	if err := settings.NewFiles().Save(path, newDocument(), theme("preset:gruvbox")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -298,7 +298,7 @@ func TestSavingIntoAFileThatIsNotThereWritesTheSettingAlone(t *testing.T) {
 		t.Fatal(err)
 	}
 	if cfg.Appearance.Theme != "preset:gruvbox" {
-		t.Errorf("wears %q", cfg.Appearance.Theme)
+		t.Errorf("applied %q", cfg.Appearance.Theme)
 	}
 	if cfg.Appearance.Mode != settings.ModeSystem || cfg.Appearance.TextScale != settings.AsDesigned {
 		t.Errorf("the rest of the file is not the defaults: %+v", cfg)
@@ -310,7 +310,7 @@ func TestTheSettingsAreLeftReadableByThePersonAlone(t *testing.T) {
 	if err := os.Chmod(path, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := settings.Save(path, newDocument(), theme("preset:nord")); err != nil {
+	if err := settings.NewFiles().Save(path, newDocument(), theme("preset:nord")); err != nil {
 		t.Fatal(err)
 	}
 	info, err := os.Stat(path)
@@ -355,7 +355,7 @@ func TestASaveLandsOnTheFileALinkLeadsTo(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := settings.Save(link, newDocument(), theme("preset:nord")); err != nil {
+		if err := settings.NewFiles().Save(link, newDocument(), theme("preset:nord")); err != nil {
 			t.Fatalf("%s: %v", what, err)
 		}
 
@@ -407,7 +407,7 @@ func TestASizeAlreadyInTheFileDoesNotBlockTheRest(t *testing.T) {
 	const target = `{"appearance":{"text_scale":9,"theme":"preset:numen"}}`
 	path := write(t, target)
 
-	if err := settings.Save(path, newDocument(), theme("preset:nord")); err != nil {
+	if err := settings.NewFiles().Save(path, newDocument(), theme("preset:nord")); err != nil {
 		t.Fatalf("a theme could not be saved beside a size out of its band: %v", err)
 	}
 	raw, err := os.ReadFile(path)
@@ -419,7 +419,7 @@ func TestASizeAlreadyInTheFileDoesNotBlockTheRest(t *testing.T) {
 		t.Errorf("the file came back as:\n%s\nand not as:\n%s", raw, want)
 	}
 
-	err = settings.Save(path, newDocument(), settings.Setting{At: []string{"appearance", "text_scale"}, Written: 9})
+	err = settings.NewFiles().Save(path, newDocument(), settings.Setting{At: []string{"appearance", "text_scale"}, Written: 9})
 	if err == nil {
 		t.Fatal("a size out of its band was written")
 	}
@@ -432,7 +432,7 @@ func TestASizeAlreadyInTheFileDoesNotBlockTheRest(t *testing.T) {
 // written whole carries the numbers inside it.
 func TestASectionHandedInIsCheckedAtTheNumbersItContains(t *testing.T) {
 	path := write(t, `{"appearance":{"theme":"preset:numen"}}`)
-	err := settings.Save(path, newDocument(), settings.Setting{
+	err := settings.NewFiles().Save(path, newDocument(), settings.Setting{
 		At:      []string{"appearance"},
 		Written: map[string]any{"theme": "preset:nord", "text_scale": 9},
 	})
@@ -459,7 +459,7 @@ func TestASectionContainsOneOfAName(t *testing.T) {
 		"a section":               `{"appearance":{"theme":"preset:numen"},"appearance":{"mode":"dark"}}`,
 	} {
 		path := write(t, body)
-		err := settings.Save(path, newDocument(), theme("preset:nord"))
+		err := settings.NewFiles().Save(path, newDocument(), theme("preset:nord"))
 		if err == nil {
 			t.Errorf("%s: a repeated name took a setting", what)
 		} else if !strings.Contains(err.Error(), "one of a name") {
@@ -477,7 +477,7 @@ func TestASectionContainsOneOfAName(t *testing.T) {
 
 func TestASettingGoesInsideASection(t *testing.T) {
 	path := write(t, `{"appearance":"warm"}`)
-	if err := settings.Save(path, newDocument(), theme("preset:nord")); err == nil {
+	if err := settings.NewFiles().Save(path, newDocument(), theme("preset:nord")); err == nil {
 		t.Fatal("a section that is a string took a field")
 	}
 	raw, err := os.ReadFile(path)
@@ -494,8 +494,9 @@ func TestSaveKeepsBothOfTwoConcurrentSaves(t *testing.T) {
 		path := write(t, arranged)
 		mode := settings.Setting{At: []string{"appearance", "mode"}, Written: "dark"}
 		results := make(chan error, 2)
-		go func() { results <- settings.Save(path, newDocument(), theme("mine:dracula")) }()
-		go func() { results <- settings.Save(path, newDocument(), mode) }()
+		files := settings.NewFiles()
+		go func() { results <- files.Save(path, newDocument(), theme("mine:dracula")) }()
+		go func() { results <- files.Save(path, newDocument(), mode) }()
 		for range 2 {
 			if err := <-results; err != nil {
 				t.Fatal(err)

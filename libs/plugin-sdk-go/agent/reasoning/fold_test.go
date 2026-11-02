@@ -81,9 +81,9 @@ func TestAChosenLevelResolvesToTheListedModel(t *testing.T) {
 	}
 }
 
-func TestTheFamilyIsSentWithItsLevelsAndDefault(t *testing.T) {
-	got := Fold(listing())[0].ToProto()
-	if len(got.GetReasoningLevels()) != 3 || got.GetDefaultReasoning() != "medium" || got.GetName() != "flash" {
+func TestTheFamilyIsOfferedWithItsLevelsAndDefault(t *testing.T) {
+	got := Fold(listing())[0].GetModel()
+	if len(got.ReasoningLevels) != 3 || got.DefaultReasoning != "medium" || got.Name != "flash" {
 		t.Errorf("got %v", got)
 	}
 }
@@ -103,10 +103,10 @@ func TestLevelHelpers(t *testing.T) {
 	if Normalize(levels, "max") != "max" || Normalize(levels, "none") != "low" {
 		t.Error("the normalized level is wrong")
 	}
-	if NewModel("m", "M", NewLevels("low", "high"), "bogus").GetDefaultReasoning() != "" || Pick(levels, "max") != "max" || Pick(levels, "none") != "" {
+	if NewModel("m", "M", NewLevels("low", "high"), "bogus").DefaultReasoning != "" || Pick(levels, "max") != "max" || Pick(levels, "none") != "" {
 		t.Error("a default outside the levels is not kept")
 	}
-	if ToProto(nil) != nil || NewLevel("").Title != "" {
+	if NewLevel("").Title != "" {
 		t.Error("empty input")
 	}
 }

@@ -37,7 +37,6 @@
   column-count: 2;
   column-gap: var(--book-gap);
   /* The spread in front is carried here, and the turn is that being carried. */
-  transition: translate var(--numen-motion) var(--numen-easing);
   column-fill: auto;
   font-size: var(--book-size);
   /* Set to the measure, broken at the syllable, as a book is. */

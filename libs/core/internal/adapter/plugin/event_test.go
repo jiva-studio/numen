@@ -20,7 +20,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
@@ -85,12 +84,12 @@ func servePlugin(t *testing.T, recorder *eventRecorder) int {
 // The host is torn down before its processes are killed.
 func newEventHost(t *testing.T, manifests map[string]pluginport.PluginManifest, ports map[string]int) *Host {
 	t.Helper()
-	host := NewHost("desktop.editor")
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	host.SetContentTypeTable(sharedmimeinfo.Open())
 	for id, manifest := range manifests {
 		manifest.ID = id
 		manifest.Backend = pluginport.PluginBackend{Entrypoint: "bin/plugin"}
-		host.plugins[id] = manifestfile.DiscoveredPlugin{Manifest: manifest}
+		host.plugins[id] = pluginport.DiscoveredPlugin{Manifest: manifest}
 	}
 	var mu sync.Mutex
 	var procs []*os.Process
@@ -101,8 +100,8 @@ func newEventHost(t *testing.T, manifests map[string]pluginport.PluginManifest, 
 			plugintest.KillProcess(t, proc)
 		}
 	})
-	host.SetLauncher(func(_ context.Context, p manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		cmd := plugintest.NewIdleCommand()
+	host.SetLauncher(func(ctx context.Context, p pluginport.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		cmd := plugintest.NewIdleCommand(context.WithoutCancel(ctx))
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}
@@ -162,7 +161,7 @@ func TestAnEventPublishedOnTheBusReachesTheSubscribedPlugin(t *testing.T) {
 
 func TestAPluginThatConsumesNoEventsIsActivatedWithoutAnError(t *testing.T) {
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{"md.test.silent": {ActivationEvents: []string{"onOpen"}}},
+		map[string]pluginport.PluginManifest{"md.test.silent": {ActivationEvents: []string{pluginport.ActivationEventAll}}},
 		map[string]int{"md.test.silent": servePlugin(t, nil)},
 	)
 
@@ -179,7 +178,7 @@ func TestTriggerEvent_PluginErrorDoesNotBlockOtherPlugins(t *testing.T) {
 	refusing := &eventRecorder{reason: "the index is closed"}
 	working := &eventRecorder{}
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{"a.refusing": {ActivationEvents: []string{"onOpen"}}, "b.working": {ActivationEvents: []string{"onOpen"}}},
+		map[string]pluginport.PluginManifest{"a.refusing": {ActivationEvents: []string{pluginport.ActivationEventAll}}, "b.working": {ActivationEvents: []string{pluginport.ActivationEventAll}}},
 		map[string]int{"a.refusing": servePlugin(t, refusing), "b.working": servePlugin(t, working)},
 	)
 
@@ -196,7 +195,7 @@ func TestTriggerEvent_PluginErrorDoesNotBlockOtherPlugins(t *testing.T) {
 func TestAPluginWhoseEventCallFailsIsReportedApartFromAError(t *testing.T) {
 	failing := &eventRecorder{failure: connect.NewError(connect.CodeInternal, errors.New("the handler panicked"))}
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{"md.test.failing": {ActivationEvents: []string{"onOpen"}}},
+		map[string]pluginport.PluginManifest{"md.test.failing": {ActivationEvents: []string{pluginport.ActivationEventAll}}},
 		map[string]int{"md.test.failing": servePlugin(t, failing)},
 	)
 
@@ -222,5 +221,7 @@ func TestReadEventErrorHandlesEveryCode(t *testing.T) {
 
 // readingType is a plugin that makes text of files of the type.
 func readingType(contentType domain.ContentType) pluginport.PluginManifest {
-	return pluginport.PluginManifest{Texts: &pluginport.PluginTextMaker{ContentTypes: []domain.ContentType{contentType}}}
+	return pluginport.PluginManifest{Contributes: pluginport.PluginContributes{Handles: []pluginport.PluginHandle{
+		{Purpose: pluginport.HandleTextProvider, ContentTypes: []domain.ContentType{contentType}},
+	}}}
 }

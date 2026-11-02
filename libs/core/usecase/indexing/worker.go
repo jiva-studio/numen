@@ -3,7 +3,9 @@ package indexing
 import (
 	"context"
 	"errors"
+	"slices"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/vaultreading"
@@ -18,9 +20,6 @@ const (
 	WalkingNotes  = "walking the notes"
 	IndexingTexts = "indexing the file texts"
 	MakingVectors = "making the vectors"
-	// CalibratingFloor is the measurement of the similarity floor that follows the
-	// last vector of a vault.
-	CalibratingFloor = "calibrating the floor"
 )
 
 const taskIndexingTexts = "Indexing file texts"
@@ -55,9 +54,10 @@ type ReadNotes func(ctx context.Context, during func()) (int, error)
 // many carry one.
 type GetVectorCounts func(ctx context.Context, v domain.Vault) (held, embedded int64, err error)
 
-// Calibrate measures the similarity floor of a vault once all its vectors exist,
-// and does nothing where the floor is already measured or set.
-type Calibrate func(ctx context.Context, v domain.Vault) error
+// VectorsReady is told that all the vectors of a vault exist, but those of the sources whose indexing
+// a person cancelled: those stay without vectors until they change. It is told after every pass that
+// leaves no other vector pending, so it is told more than once for a vault.
+type VectorsReady func(ctx context.Context, v domain.Vault)
 
 // Config is what a worker is made from.
 type Config struct {
@@ -66,9 +66,9 @@ type Config struct {
 	// VectorCounts is nil when the number of pending vectors is unknown; every pass then
 	// assumes some vectors are pending.
 	VectorCounts GetVectorCounts
-	// Calibrate is nil where no floor is calibrated.
-	Calibrate Calibrate
-	Events    Events
+	// VectorsReady is nil where nobody is told.
+	VectorsReady VectorsReady
+	Events       Events
 	// Quiet is how long the vault has to have been still before a note that was
 	// written is embedded, and After is the timer that counts it.
 	Quiet time.Duration
@@ -85,7 +85,7 @@ type Worker struct {
 	reading      OpenReading
 	embedder     embeddingport.Embedder
 	vectorCounts GetVectorCounts
-	calibrate    Calibrate
+	vectorsReady VectorsReady
 	events       Events
 	debounce     time.Duration
 	after        func(time.Duration) <-chan time.Time
@@ -93,6 +93,8 @@ type Worker struct {
 	sources chan struct{}
 	notes   chan struct{}
 	read    chan struct{}
+
+	skips *skipSet
 }
 
 func NewWorker(cfg Config) *Worker {
@@ -100,13 +102,14 @@ func NewWorker(cfg Config) *Worker {
 		reading:      cfg.Reading,
 		embedder:     cfg.Embedder,
 		vectorCounts: cfg.VectorCounts,
-		calibrate:    cfg.Calibrate,
+		vectorsReady: cfg.VectorsReady,
 		events:       cfg.Events,
 		debounce:     cfg.Quiet,
 		after:        cfg.After,
 		sources:      make(chan struct{}, 1),
 		notes:        make(chan struct{}, 1),
 		read:         make(chan struct{}, 1),
+		skips:        newSkipSet(),
 	}
 }
 
@@ -116,6 +119,77 @@ func (w *Worker) WakeSources() { signal(w.sources) }
 // WakeNotes leaves one pass over the notes' vectors waiting. Several changes at
 // once are one pass.
 func (w *Worker) WakeNotes() { signal(w.notes) }
+
+// ClearSkips indexes again the sources at the paths given whose indexing a
+// person cancelled. The vault calls it for every path it reports changed.
+func (w *Worker) ClearSkips(paths []string) { w.skips.clear(paths) }
+
+// openReading opens the passes over v with the sources a person cancelled
+// left out.
+func (w *Worker) openReading(
+	ctx context.Context, v domain.Vault, rebuild bool,
+) (vaultreading.ReadWholeVault, error) {
+	making, err := w.reading(ctx, w.embedder, v, rebuild)
+	if err != nil {
+		return making, err
+	}
+	making.IsTextSkipped = w.skips.isTextSkipped
+	making.IsVectorSkipped = w.skips.isVectorSkipped
+	return making, nil
+}
+
+// taskCancel ends the context of one pass, and records whether a person asked
+// for it through the task.
+type taskCancel struct {
+	stop        context.CancelFunc
+	isRequested atomic.Bool
+}
+
+// newTaskCancel returns the context a pass runs under and its cancel.
+func newTaskCancel(ctx context.Context) (context.Context, *taskCancel) {
+	inner, stop := context.WithCancel(ctx)
+	return inner, &taskCancel{stop: stop}
+}
+
+// request is the cancel the task reports.
+func (c *taskCancel) request() {
+	c.isRequested.Store(true)
+	c.stop()
+}
+
+// currentSources are the sources a pass reports it is working on. Nothing reported leaves the last
+// ones in place.
+type currentSources struct {
+	mu    sync.Mutex
+	paths []string
+}
+
+func (c *currentSources) set(paths []string) {
+	if len(paths) == 0 {
+		return
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.paths = slices.Clone(paths)
+}
+
+func (c *currentSources) get() []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return slices.Clone(c.paths)
+}
+
+// getEmbeddingSources returns the sources the vector pass is embedding in the report: those of the
+// batches in flight, or the source it names when none is.
+func getEmbeddingSources(res vaultreading.EmbedResult) []string {
+	if len(res.Active) > 0 {
+		return res.Active
+	}
+	if res.CurrentSource != "" {
+		return []string{res.CurrentSource}
+	}
+	return nil
+}
 
 func signal(wake chan struct{}) {
 	select {
@@ -259,23 +333,30 @@ func (p *pass) embedRecognised(ctx context.Context) {
 // not configured is the ordinary case.
 func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 	events := p.worker.events
-	making, err := p.worker.reading(ctx, p.worker.embedder, p.v, rebuild)
+	making, err := p.worker.openReading(ctx, p.v, rebuild)
 	if err != nil {
 		events.ReportTask(vaultreading.Task{ID: IndexingTexts, Title: taskIndexingTexts, Error: err.Error()})
 		return
 	}
+	texts, cancel := newTaskCancel(ctx)
+	defer cancel.stop()
+	var current currentSources
 	making.OnTextsProgress = func(res vaultreading.IndexResult) {
+		if res.CurrentSource != "" {
+			current.set([]string{res.CurrentSource})
+		}
 		events.ReportTask(vaultreading.Task{
 			ID: IndexingTexts, Title: taskIndexingTexts, About: res.CurrentSource,
 			// Every file the walk found leaves this pass one of four ways, and all
 			// four count as done.
-			Count: int64(res.Extracted + res.Unchanged + res.Unreadable + res.Vanished),
-			Total: int64(res.Seen),
+			Count:  int64(res.Extracted + res.Unchanged + res.Unreadable + res.Vanished),
+			Total:  int64(res.Seen),
+			Cancel: cancel.request,
 		})
 	}
 
-	events.ReportTask(vaultreading.Task{ID: IndexingTexts, Title: taskIndexingTexts})
-	res, read := making.IndexTexts(ctx, p.v)
+	events.ReportTask(vaultreading.Task{ID: IndexingTexts, Title: taskIndexingTexts, Cancel: cancel.request})
+	res, read := making.IndexTexts(texts, p.v)
 	switch {
 	case read == nil:
 		if res.Extracted > 0 {
@@ -283,7 +364,13 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 		}
 		events.FinishTask(IndexingTexts)
 	case errors.Is(read, context.Canceled):
-		// Stopped on request. The cut data is correct up to that point.
+		// Stopped on request. The cut data is correct up to that point, and a
+		// source a person cancelled is left uncut until it changes.
+		if cancel.isRequested.Load() {
+			for _, path := range current.get() {
+				p.worker.skips.addTexts(path)
+			}
+		}
 		events.FinishTask(IndexingTexts)
 	default:
 		// A failed pass stays in the task list until the user dismisses it.
@@ -294,14 +381,18 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 }
 
 // cutSource cuts one source again from its current text. A failure affects
-// only that source; the next batch retries it.
+// only that source; the next batch retries it. A source a person cancelled is
+// not cut.
 func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
+	if p.worker.skips.isTextSkipped(path) {
+		return
+	}
 	events := p.worker.events
 	failed := func(err error) {
 		events.ReportTask(vaultreading.Task{ID: IndexingTexts, Title: taskIndexingTexts, About: path, Error: err.Error()})
 	}
 
-	making, err := p.worker.reading(ctx, p.worker.embedder, v, false)
+	making, err := p.worker.openReading(ctx, v, false)
 	if err != nil {
 		failed(err)
 		return
@@ -318,7 +409,7 @@ func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 // embed creates the vectors for the chunks of the vault that lack one, and
 // reads no file the index does not already hold a chunk of.
 //
-// A recognition batch of pages, and a change of the sources (a book added, or
+// A recognition batch of pages, a note written, and a change of the sources (a book added, or
 // the embedding model changed), stop the pass at its current position. The
 // vectors already created are kept, and the resumed pass queries the index for
 // the chunks that still lack a vector, under the recipe in force by then.
@@ -327,50 +418,73 @@ func (p *pass) embed(ctx context.Context) {
 	if w.embedder == nil {
 		return
 	}
-	pending, hasPending := w.getPendingVectors(ctx, p.v)
-	if !hasPending {
+	plan := w.planVectors(ctx, p.v)
+	if !plan.hasPending {
 		w.events.FinishTask(MakingVectors)
-		p.calibrateFloor(ctx)
+		p.reportVectorsReady(ctx)
 		return
 	}
 
-	limit, stop := stopOnWake(ctx, w.read, w.sources)
+	limit, stop := stopOnWake(ctx, w.read, w.sources, w.notes)
 	defer stop()
 
-	if p.makeVectors(ctx, limit, pending) {
-		p.calibrateFloor(ctx)
+	if p.makeVectors(ctx, limit, plan) {
+		p.reportVectorsReady(ctx)
 	}
 }
 
-// calibrateFloor measures the similarity floor of the vault once the pass has
-// left no vector pending. A failure is reported as a task and does not fail the pass.
-func (p *pass) calibrateFloor(ctx context.Context) {
+// reportVectorsReady tells the worker's listener that the pass has left no vector pending but the
+// vectors of the sources a person cancelled. A stopped pass tells nobody.
+func (p *pass) reportVectorsReady(ctx context.Context) {
 	w := p.worker
-	if w.calibrate == nil || ctx.Err() != nil {
+	if w.vectorsReady == nil || ctx.Err() != nil {
 		return
 	}
-	switch err := w.calibrate(ctx, p.v); {
-	case err == nil:
-		w.events.FinishTask(CalibratingFloor)
-	case errors.Is(err, context.Canceled):
-	default:
-		w.events.ReportTask(vaultreading.Task{ID: CalibratingFloor, Title: "Calibrating the search", Error: err.Error()})
-	}
+	w.vectorsReady(ctx, p.v)
 }
 
-// getPendingVectors returns the number of vectors a pass must create, computed once
-// before the pass starts. Chunks are discovered a few hundred at a time, so a
-// total derived during the pass would keep growing.
-func (w *Worker) getPendingVectors(ctx context.Context, v domain.Vault) (pending int64, hasPending bool) {
+// vectorPlan is what a vector pass must create, computed once before the pass starts. Chunks are
+// discovered a few hundred at a time, so a total derived during the pass would keep growing.
+type vectorPlan struct {
+	// pending is the number of vectors to create, the chunks of the sources a person cancelled left
+	// out; zero where the counts are unknown.
+	pending    int64
+	hasPending bool
+	// skipped is the number of chunks of the sources a person cancelled that pending leaves out, and
+	// generation the list of those sources it was counted for.
+	skipped    int64
+	generation uint64
+}
+
+// planVectors returns what a vector pass over v must create. A vault whose only chunks without a
+// vector belong to sources a person cancelled has none pending.
+func (w *Worker) planVectors(ctx context.Context, v domain.Vault) vectorPlan {
+	plan := vectorPlan{generation: w.skips.getGeneration()}
+	plan.skipped = w.skips.getSkippedChunks()
 	if w.vectorCounts == nil {
-		return 0, true
+		plan.hasPending = true
+		return plan
 	}
 	target, embedded, err := w.vectorCounts(ctx, v)
 	if err != nil {
-		return 0, true
+		plan.hasPending = true
+		return plan
 	}
-	pending = max(0, target-embedded)
-	return pending, pending > 0
+	plan.skipped = min(plan.skipped, max(0, target-embedded))
+	plan.pending = max(0, target-embedded-plan.skipped)
+	plan.hasPending = plan.pending > 0
+	return plan
+}
+
+// getTotal returns the number of vectors the pass counts its progress against once res is known: the
+// pending of the plan less the chunks of cancelled sources this pass found beyond those the plan left
+// out. Zero is a total that is unknown.
+func (plan vectorPlan) getTotal(res vaultreading.EmbedResult) int64 {
+	if plan.pending == 0 {
+		return 0
+	}
+	found := max(0, int64(res.Skipped)-plan.skipped)
+	return max(int64(res.Embedded), plan.pending-found)
 }
 
 // stopOnWake returns the context a pass runs under, which is cancelled when a
@@ -402,13 +516,13 @@ func stopOnWake(ctx context.Context, wakes ...chan struct{}) (context.Context, f
 
 // makeVectors creates the pending vectors of a vault, reporting the source being
 // embedded. It reports whether the pass ended with no vector pending.
-func (p *pass) makeVectors(ctx, items context.Context, pending int64) bool {
+func (p *pass) makeVectors(ctx, items context.Context, plan vectorPlan) bool {
 	events := p.worker.events
 	failed := func(err error) {
 		events.ReportTask(vaultreading.Task{ID: MakingVectors, Title: "Indexing", Error: err.Error()})
 	}
 
-	making, err := p.worker.reading(ctx, p.worker.embedder, p.v, false)
+	making, err := p.worker.openReading(ctx, p.v, false)
 	if err != nil {
 		failed(err)
 		return false
@@ -416,19 +530,31 @@ func (p *pass) makeVectors(ctx, items context.Context, pending int64) bool {
 	// Progress is reported for the source currently open. The task enters the
 	// list when the first source opens, and a progress share is reported once a
 	// vector has been created, counted against the total pending.
+	items, cancel := newTaskCancel(items)
+	defer cancel.stop()
+	var current currentSources
 	making.OnVectorsProgress = func(res vaultreading.EmbedResult) {
-		pos := vaultreading.Task{ID: MakingVectors, Title: "Indexing", About: res.CurrentSource}
+		current.set(getEmbeddingSources(res))
+		pos := vaultreading.Task{ID: MakingVectors, Title: "Indexing", About: res.CurrentSource, Cancel: cancel.request}
 		if res.Embedded > 0 {
-			pos.Count, pos.Total = int64(res.Embedded), pending
+			pos.Count, pos.Total = int64(res.Embedded), plan.getTotal(res)
 		}
 		events.ReportTask(pos)
 	}
 
-	switch _, err := making.MakeVectors(items, p.v); {
+	switch res, err := making.MakeVectors(items, p.v); {
 	case err == nil:
+		p.worker.skips.setSkippedChunks(res.Skipped, plan.generation)
 		events.FinishTask(MakingVectors)
 		return true
 	case errors.Is(err, context.Canceled):
+		// The source a person cancelled gets no vectors until it changes; the
+		// next pass embeds the others.
+		if cancel.isRequested.Load() {
+			for _, path := range current.get() {
+				p.worker.skips.addVectors(path)
+			}
+		}
 		events.FinishTask(MakingVectors)
 	default:
 		// A vault missing vectors is searched by its text alone.

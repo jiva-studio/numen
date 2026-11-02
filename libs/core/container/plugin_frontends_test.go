@@ -13,7 +13,7 @@ func TestThePagesLoadOnlyThePluginsThatDeclareAFrontend(t *testing.T) {
 		"server": `{"id": "md.numen.server", "name": "Server", "version": "1.0.0", "targets": ["desktop.editor"],
 			"backend": {"entrypoint": "bin/server"}}`,
 		"view": `{"id": "md.numen.view", "name": "View", "version": "1.0.0", "targets": ["desktop.editor"],
-			"frontend": {"entrypoint": "dist/index.js"}}`,
+			"frontend": {}}`,
 	}
 	for dir, manifest := range manifests {
 		if err := os.MkdirAll(filepath.Join(root, dir), 0o755); err != nil {
@@ -23,7 +23,7 @@ func TestThePagesLoadOnlyThePluginsThatDeclareAFrontend(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	cfg := Config{PluginHost: NewPluginHost("desktop.editor", root)}
+	cfg := NewConfig(Config{PluginHost: NewPluginHost("desktop.editor", root)})
 
 	if got := cfg.GetFrontendPluginIDs(); !slices.Equal(got, []string{"md.numen.view"}) {
 		t.Fatalf("GetFrontendPluginIDs() = %v, want [md.numen.view]", got)

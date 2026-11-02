@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
@@ -12,18 +13,10 @@ type cfiSelector struct {
 }
 
 // encode returns the selector as the JSON a segment carries.
-func (s cfiSelector) encode() domain.Selector {
-	// A struct of strings always marshals.
-	raw, _ := json.Marshal(s)
-	return domain.Selector(raw)
-}
-
-// readCFISelector reads the CFI of a segment's selector. An empty selector has none.
-func readCFISelector(raw domain.Selector) (cfiSelector, error) {
-	var out cfiSelector
-	if raw == "" {
-		return out, nil
+func (s cfiSelector) encode() (domain.Selector, error) {
+	raw, err := json.Marshal(s)
+	if err != nil {
+		return "", fmt.Errorf("encode CFI selector: %w", err)
 	}
-	err := json.Unmarshal([]byte(raw), &out)
-	return out, err
+	return domain.Selector(raw), nil
 }

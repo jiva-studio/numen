@@ -12,25 +12,22 @@ export interface ComposerStateDescriptor {
   readonly action: ComposerAction
 }
 
-/**
- * of the field and whether it can be pressed both read from here.
- */
+/** The states of a composer. The glyph and label of the disc and whether it can be pressed read from here. */
 export const COMPOSER_STATES = {
   empty: { canAct: false, action: 'send' },
   ready: { canAct: true, action: 'send' },
-  writing: { canAct: true, action: 'stop' },
+  pending: { canAct: true, action: 'stop' },
 } as const satisfies Record<string, ComposerStateDescriptor>
 
 export type ComposerState = keyof typeof COMPOSER_STATES
 
 /**
- * Which state a composer holding this text is in.
+ * The state of a composer holding this text.
  *
- * Writing outranks the text: the end of the field belongs to the answer on
- * its way until it arrives.
+ * A pending answer outranks the text: the disc stops the answer until it settles.
  */
-export const composerState = (text: string, isWriting: boolean): ComposerState => {
-  if (isWriting) return 'writing'
+export const getComposerState = (text: string, isAnswerPending: boolean): ComposerState => {
+  if (isAnswerPending) return 'pending'
   return getMessage(text) ? 'ready' : 'empty'
 }
 

@@ -54,7 +54,7 @@ defineProps<{
   max-inline-size: 20rem;
   padding: 0.375rem 0.5rem;
   border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius-small);
+  border-radius: var(--numen-radius-tight);
   background: var(--numen-raised);
   color: var(--numen-ink);
   font-size: var(--numen-text-1);

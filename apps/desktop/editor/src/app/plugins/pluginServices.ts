@@ -2,40 +2,45 @@
  * The window and the notes of the vault, as a plugin's tabs are given them.
  */
 import { computed, type Ref, type ShallowRef } from 'vue'
-import {
-  formatErrorMessage,
-  type AgentHost,
-  type AgentPort,
-  type BufferHost,
-  type MenuEntry,
-  type NoteRef,
-  type VaultFiles,
-  type VaultNotes,
-  type WorkspaceHost,
-} from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/core-client'
+import type {
+  AgentHost,
+  AgentPort,
+  BufferHost,
+  MenuEntry,
+  NoteRef,
+  VaultFiles,
+  VaultNotes,
+  VaultRelations,
+  WorkspaceHost,
+} from '@numen/plugin-host'
 import type { SearchDeps } from '@/features/command-palette'
 import type { FileOpeners } from '@/entities/tab'
-import { CREATABLE, type NoteCreator } from '@/entities/note'
+import type { NoteCreator } from '@/entities/note'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { Task } from '@/shared/notices/task'
 import type { NotePort } from '@/app/ports/notes'
 import type { useSettings } from '../window/useSettings'
 import { createPathCommandHost, type PathCommandDeps } from './fileServices'
 import type { PluginNotes } from './pluginNotes'
+import type { NoteBuffer } from '@numen/plugin-host'
 
 /** The window and the notes a plugin is given, once the window has made them. */
 export interface PluginServices {
   workspace?: WorkspaceHost
   notes?: VaultNotes
+  relations?: VaultRelations
   files?: VaultFiles
   agent?: AgentHost
   buffers?: BufferHost
+  /** The window's store of open notes, which the tabs of the note kind read and write through. */
+  noteBuffer?: NoteBuffer
   /** The window's task list, which each plugin's task host reads. */
   taskList?: Readonly<Ref<readonly Task[]>>
 }
 
 /** What the window hands a plugin's tabs. */
-export interface WorkspaceHostDeps extends PathCommandDeps {
+export interface WorkspaceHostDeps extends Omit<PathCommandDeps, 'reportError'> {
   readonly window: {
     readonly failure: Readonly<Ref<string>>
     readonly opening: Readonly<Ref<string>>
@@ -88,7 +93,11 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
     showError: (text) => writeMessage(text, 'error'),
     getMessageWriter: (name) => deps.getMessageWriter(name),
     getToday: () => deps.today(),
-    ...createPathCommandHost({ ...deps, findFileIcon: tabOpeners.findFileIcon }),
+    ...createPathCommandHost({
+      ...deps,
+      findFileIcon: tabOpeners.findFileIcon,
+      reportError: (error) => writeMessage(formatErrorMessage(error), 'error'),
+    }),
   }
 }
 
@@ -114,14 +123,30 @@ export function createVaultNotes({
     getHeadings: (paths) => core.headings(paths),
     findNotes: async (query, limit = FOUND_LIMIT) =>
       (await search.names(query, limit)).map(({ path, title }) => ({ path, title })),
-    createUntitledNote: async () => (await making.createUntitled('', []))?.path ?? '',
-    createInRelation: (from, relation) => making.createInRelation(from, relation),
-    createWithTitle: (title, from, relation) => making.createWithTitle(title, from, relation),
-    join: (...link) => making.join(...link),
-    replaceLinks: (first, second, links) => making.replaceLinks(first, second, links),
+    createUntitledNote: () => making.createUntitled(''),
     read: (path) => pluginNotes.readNote(path),
     write: (path, body) => pluginNotes.writeNote(path, body),
-    creatableRelations: CREATABLE,
+  }
+}
+
+/** What the relationships between notes are read and written through. */
+export interface VaultRelationsDeps {
+  readonly core: Pick<NotePort, 'relations'>
+}
+
+/** The relationships a plugin reads and writes; the core derives the roles and enforces the hierarchy. */
+export function createVaultRelations({ core }: VaultRelationsDeps): VaultRelations {
+  return {
+    get roles() {
+      return core.relations.roles
+    },
+    getConnection: (first, second, type) => core.relations.getConnection(first, second, type),
+    saveConnection: (connection) => core.relations.saveConnection(connection),
+    removeSide: (from, to, type) => core.relations.removeSide(from, to, type),
+    removeConnection: (first, second, type) => core.relations.removeConnection(first, second, type),
+    join: (from, to, side) => core.relations.join(from, to, side),
+    createRelated: (request) => core.relations.createRelated(request),
+    listBacklinks: (path) => core.relations.listBacklinks(path),
   }
 }
 

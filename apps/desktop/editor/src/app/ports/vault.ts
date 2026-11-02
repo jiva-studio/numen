@@ -42,6 +42,12 @@ export interface VaultPort {
    */
   watchTasks(signal: AbortSignal): AsyncIterable<readonly Task[]>
   /**
+   * Asks the core to stop a task that `watchTasks` lists as cancellable. It resolves once the
+   * core has cancelled the work; the task leaves the list when the work has stopped. It rejects
+   * for a task that is not listed or cannot be cancelled.
+   */
+  cancelTask(id: string): Promise<void>
+  /**
    * The places another component requested to display: a source and the ranges of its text,
    * counted in bytes. A length of zero names the source and no place inside it.
    */

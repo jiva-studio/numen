@@ -27,7 +27,8 @@ export function createMockAgentHost(steps: readonly AgentStep[] = []): MockAgent
     resolveLinks: async () => [],
     getUnreachable: () => unreachable,
     getSetting: () => undefined,
-    writeSetting: async () => {},
+    // The mock host keeps no settings.
+    writeSetting: async () => undefined,
     getModelsAt: () => [],
     getQueries: () => [...queries],
     getFinished: () => [...finished],

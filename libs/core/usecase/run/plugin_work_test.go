@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 	"time"
 
@@ -117,7 +118,7 @@ func TestPluginWorkListsAPluginsTaskAndRemovesIt(t *testing.T) {
 		ID: "plugin:transcriber:a.mp3", Title: "Transcribing", About: "a.mp3", Count: 3, Total: 10,
 		Unit: Seconds, IsUserStarted: true, PluginID: "transcriber",
 	}
-	if got[0] != want {
+	if !reflect.DeepEqual(got[0], want) {
 		t.Errorf("got %+v, want %+v", got[0], want)
 	}
 	if got[1].ID == got[0].ID || got[1].Error != "no models" {

@@ -10,8 +10,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
@@ -28,6 +30,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -72,6 +75,15 @@ type Config struct {
 	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.
 	PluginHost pluginport.PluginManager
 
+	// PluginCatalog configures the catalog of plugins. A config with no Target is an installation
+	// with no catalog. The sources the container knows, the plugin folders and the plugins that ship
+	// with the application, are added to the Sources named here.
+	PluginCatalog catalog.Config
+
+	// PluginDirs are the folders the catalog reads plugins from. They are the folders the plugin host
+	// discovers in.
+	PluginDirs []string
+
 	// KeyStore is where the keys of plugin secrets are kept. The application names it; without one
 	// every secret fails with port.ErrNoKeyStore.
 	KeyStore pluginport.KeyStore
@@ -97,19 +109,24 @@ type Config struct {
 	// ErrorHandler receives asynchronous errors.
 	ErrorHandler windowport.ErrorHandler
 
-	// Now provides current time for timestamping and scheduling. Defaults to time.Now if nil.
+	// Now provides current time for timestamping and scheduling. Defaults to the system clock if nil.
 	Now machineport.Clock
 
+	// Resources are shared by every part the container assembles. NewResources makes them.
+	Resources *Resources
+
 	agentProvider agentport.AgentProvider
+	// programs keeps the programs the agent plugins listed last.
+	programs *settings.ProgramList
 }
 
 // NewPluginHost creates and initializes a plugin host for the specified target and search directories.
 // The host provisions the dependencies the plugins declare; the ONNX Runtime runs on the
 // provider NUMEN_ONNX_PROVIDER names (auto when unset).
 func NewPluginHost(target string, dirs ...string) *plugin.Host {
-	host := plugin.NewHost(target, dirs...)
+	host := plugin.NewHost(clock.System{}, target, dirs...)
 	host.SetContentTypeTable(sharedmimeinfo.Open())
-	host.SetDependencies(newDependencies())
+	host.SetDependencies(newDependencies(""))
 	if err := host.Discover(); err != nil {
 		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", err)
 	}
@@ -122,7 +139,7 @@ func (c Config) Clock() machineport.Clock {
 	if c.Now != nil {
 		return c.Now
 	}
-	return time.Now
+	return clock.System{}
 }
 
 // handleError forwards errors to ErrorHandler if configured.
@@ -135,7 +152,10 @@ func (c Config) handleError(err error) {
 // SyncSetting returns whether note title and filename synchronization is enabled.
 func (c Config) SyncSetting() note.SyncSetting {
 	return func() note.SyncTitleAndFilename {
-		target, _ := c.Settings()
+		target, err := c.Settings()
+		if err != nil {
+			c.handleError(fmt.Errorf("read settings: %w", err))
+		}
 		return note.SyncTitleAndFilename(target.Sync())
 	}
 }
@@ -178,10 +198,16 @@ func (c Config) writeSettings(entries []settingsport.Setting) error {
 		return err
 	}
 	into := DefaultSettings()
-	if err := settings.Save(path, &into, target...); err != nil {
+	if err := c.getResources().settingsFiles.Save(path, &into, target...); err != nil {
 		return err
 	}
-	notifyPluginSettings(c.PluginHost, entries)
+	notify := func() { notifyPluginSettings(c.PluginHost, entries, c.handleError) }
+	if updates := c.getResources().pluginUpdates; updates != nil {
+		updates.Go(notify)
+	} else {
+		notify()
+	}
+	c.notifyPerformanceProfile(entries)
 	return nil
 }
 
@@ -207,7 +233,8 @@ func checkPluginSettings(host pluginport.PluginConfigurator, entries []settingsp
 	return nil
 }
 
-func notifyPluginSettings(host pluginport.PluginConfigurator, entries []settingsport.Setting) {
+// notifyPluginSettings tells the host each plugin setting among the entries and passes the failure to report.
+func notifyPluginSettings(host pluginport.PluginConfigurator, entries []settingsport.Setting, report func(error)) {
 	if host == nil {
 		return
 	}
@@ -217,7 +244,9 @@ func notifyPluginSettings(host pluginport.PluginConfigurator, entries []settings
 		}
 		var val any
 		if err := json.Unmarshal([]byte(one.JSON), &val); err == nil {
-			_ = host.UpdatePluginSetting(context.Background(), one.Path[1], one.Path[2], val)
+			if err := host.UpdatePluginSetting(context.Background(), one.Path[1], one.Path[2], val); err != nil {
+				report(fmt.Errorf("update plugin setting %s: %w", strings.Join(one.Path, "."), err))
+			}
 		}
 	}
 }
@@ -256,7 +285,7 @@ func (c Config) VaultReaders() vaultport.VaultReaders {
 
 // VaultWriters opens vaults for write operations.
 func (c Config) VaultWriters() vaultport.VaultWriters {
-	return vaultwriter.VaultWriters{Options: c.vaultOptions()}
+	return vaultwriter.VaultWriters{Options: c.vaultOptions(), Locks: c.getResources().vaultLocks}
 }
 
 // GetImportedFiles opens files imported from outside the vault.
@@ -266,7 +295,7 @@ func (c Config) GetImportedFiles() sourceport.ImportedFiles {
 
 // VaultWatcher monitors vaults for external filesystem changes.
 func (c Config) VaultWatcher() vaultport.VaultWatcher {
-	return vaultwatch.Watcher{Options: c.vaultOptions()}
+	return vaultwatch.Watcher{Options: c.vaultOptions(), Hub: c.getResources().watches}
 }
 
 // VaultIdentity provides vault identification.
@@ -275,7 +304,7 @@ func (c Config) VaultIdentity() vaultport.VaultIdentity {
 }
 
 // Trash provides trash and recycling operations.
-func (c Config) Trash() machineport.Trash { return trash.New() }
+func (c Config) Trash() machineport.Trash { return trash.New(c.Clock()) }
 
 // vaultOptions returns filesystem configuration for vaults.
 func (c Config) vaultOptions() vaultconfig.Options {
@@ -320,5 +349,29 @@ func (c Config) GetWait() machineport.Wait {
 func (c Config) GetDelay() machineport.Delay {
 	return func(d time.Duration, f func()) func() bool {
 		return time.AfterFunc(d, f).Stop
+	}
+}
+
+// performanceSettingsKey and profileSettingKey are the path of the performance profile in the settings file.
+const (
+	performanceSettingsKey = "performance"
+	profileSettingKey      = "profile"
+)
+
+// notifyPerformanceProfile tells the plugin host the profile of an entry that writes it, so a
+// running plugin takes it without a restart.
+func (c Config) notifyPerformanceProfile(entries []settingsport.Setting) {
+	if c.PluginHost == nil {
+		return
+	}
+	for _, one := range entries {
+		if len(one.Path) != 2 || one.Path[0] != performanceSettingsKey || one.Path[1] != profileSettingKey {
+			continue
+		}
+		var profile string
+		if err := json.Unmarshal([]byte(one.JSON), &profile); err != nil {
+			continue
+		}
+		c.PluginHost.SetPerformanceProfile(context.Background(), hardware.ResolveCompute(profile, hardware.Specs{}).Profile)
 	}
 }

@@ -13,7 +13,7 @@ func TestNothingIsStoredAgainstAPath(t *testing.T) {
 		"insert_heading", "insert_link", "insert_problem",
 		"clear_headings", "clear_links", "clear_problems",
 	} {
-		statement := withoutComments(stmt.Get(name))
+		statement := withoutComments(getStatement(name))
 		if strings.Contains(statement, "path") || strings.Contains(statement, "vault_id") {
 			t.Errorf("%s addresses a note by where it is filed: %s", name, statement)
 		}

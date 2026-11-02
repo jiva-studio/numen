@@ -6,14 +6,18 @@
  * once for the change it made.
  */
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import ReaderToolbar from './ReaderToolbar.vue'
 import { CLOSEST, FURTHEST, NEARER, READER_WORDS } from '../../lib/strip'
 
 /** The controls over a document of that many pages, open at the first. */
 const mountToolbar = (pages = 200, pageIndex = 0) =>
   mount(ReaderToolbar, {
-    props: { pages, at: pageIndex, 'onUpdate:at': (page: number) => void page },
+    props: {
+      pages,
+      at: pageIndex,
+      'onUpdate:at': vi.fn(),
+    },
   })
 
 /**

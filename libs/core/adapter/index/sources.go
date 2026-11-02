@@ -104,7 +104,7 @@ func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID
 	if err != nil {
 		return nil, "", err
 	}
-	found, err := s.read.GetUnembeddedChunks(ctx, vaultID, model.Recipe(), from.MTime, from.Source, from.Chunk, limit)
+	found, err := s.read.GetUnembeddedChunks(ctx, vaultID, model.Recipe(), from, limit)
 	if err != nil {
 		return nil, "", err
 	}
@@ -130,9 +130,7 @@ func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID
 }
 
 // Cursor is the point in the ordering a walk carries on after.
-type Cursor struct {
-	MTime, Source, Chunk int64
-}
+type Cursor = chunk.Cursor
 
 // parseCursor is the Cursor a chunk cursor names. The empty
 // cursor starts from the beginning.

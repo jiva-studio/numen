@@ -288,7 +288,7 @@ describe('a page turned back', () => {
 
 describe('a document tab closed before the layout lands', () => {
   const deferLayout = () => {
-    let settleLayout: (layout: DocumentLayout | Error) => void = () => {}
+    let settleLayout: (layout: DocumentLayout | Error) => void = () => undefined
     const pending = new Promise<DocumentLayout>((resolve, reject) => {
       settleLayout = (layout) => (layout instanceof Error ? reject(layout) : resolve(layout))
     })

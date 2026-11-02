@@ -6,6 +6,7 @@
  * command of the same name in the palette go through one piece of code.
  */
 import type { Ref } from 'vue'
+import type { CatalogEntry } from '@numen/core-client'
 import type { Model, PluginInfo, SettingEdit } from '@/entities/settings'
 import type { Mode, Ranges, Sizes, Theme } from '@/entities/settings'
 
@@ -31,6 +32,10 @@ export interface Installation {
    * names one can be set to, and settings written where they stand.
    */
   getSetting(at: readonly string[]): unknown
+  /** A setting as the vault last answered it, never a value asked for and not yet answered. */
+  getConfirmedSetting?(at: readonly string[]): unknown
+  /** Whether the write of a setting is in flight. */
+  isPending?(at: readonly string[]): boolean
   getModels(at: readonly string[]): readonly Model[]
   write(content: readonly SettingEdit[]): void
   /**
@@ -63,6 +68,8 @@ export interface Installation {
    */
   getSettingsViews?(pluginId: string): ReadonlyMap<string, { readonly component: unknown }>
   readonly plugins?: Readonly<Ref<readonly PluginInfo[]>>
+  /** The plugins the catalog lists, the ones that are not installed among them. */
+  readonly catalog?: Readonly<Ref<readonly CatalogEntry[]>>
   /** The file the settings stand in, absolute on this machine. */
   readonly file: Readonly<Ref<string>>
 }

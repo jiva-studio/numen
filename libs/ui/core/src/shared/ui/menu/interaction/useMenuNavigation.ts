@@ -1,5 +1,5 @@
 /**
- * Navigation, search, and submenu interaction within a menu.
+ * Navigation and submenu interaction within a menu.
  */
 import { computed, ref, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 import type { Position } from '@/shared/lib/math/geometry'
@@ -11,16 +11,15 @@ import {
   type MenuTrigger,
 } from '../items/item'
 import { useMenuKeys } from './keys'
-import { useMenuSearch } from '../items/search'
 
-export interface ActiveSubmenu {
+interface ActiveSubmenu {
   readonly id: string
   readonly items: readonly MenuItem[]
   readonly at: Position
   readonly from: HTMLElement | null
 }
 
-export interface MenuSubmenuState {
+interface MenuSubmenuState {
   readonly active: Ref<ActiveSubmenu | null>
   readonly trigger: Ref<MenuTrigger>
   readonly onRegisterRow: (id: string, row: unknown) => void
@@ -32,12 +31,9 @@ export interface MenuSubmenuState {
 
 export interface MenuNavigationOptions {
   readonly items: () => readonly MenuItem[]
-  readonly isSearchable: () => boolean
-  readonly canEnterCustom?: (() => boolean) | undefined
   readonly trigger: () => MenuTrigger
   readonly current: () => string | null
   readonly clock: () => number
-  readonly searchRef: Readonly<ShallowRef<HTMLInputElement | null>>
   readonly menuRef: Readonly<ShallowRef<HTMLElement | null>>
   readonly getFallbackPosition: () => Position
   readonly getSubmenuPosition: (element: HTMLElement | null) => Position | null
@@ -47,7 +43,6 @@ export interface MenuNavigationOptions {
 }
 
 export interface MenuNavigationState {
-  readonly query: Ref<string>
   readonly visibleItems: ComputedRef<readonly MenuItem[]>
   readonly rows: ComputedRef<readonly GroupedItem[]>
   readonly here: Ref<number>
@@ -57,38 +52,34 @@ export interface MenuNavigationState {
   readonly onResetNavigation: () => void
 }
 
-export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigationState {
-  const activeSubmenu = ref<ActiveSubmenu | null>(null)
-  const submenuTrigger = ref<MenuTrigger>('pointer')
+/** The submenu that is open, and what opening, closing and choosing do with it. */
+function useSubmenuActions(options: MenuNavigationOptions) {
+  const active = ref<ActiveSubmenu | null>(null)
+  const trigger = ref<MenuTrigger>('pointer')
   const rowElements = new Map<string, { getElement?: () => HTMLElement | null }>()
 
-  const onRegisterRow = (id: string, row: unknown): void => {
-    holdRow(id, row)
-    rowElements.set(id, row as { getElement?: () => HTMLElement | null })
-  }
-
-  const onOpenSubmenu = (item: MenuItem, trigger: MenuTrigger = 'pointer'): void => {
+  const onOpenSubmenu = (item: MenuItem, how: MenuTrigger = 'pointer'): void => {
     if (!item.children || item.children.length === 0) return
     const rowInst = rowElements.get(item.id)
     const el = rowInst?.getElement?.() ?? null
     const position = options.getSubmenuPosition(el) ?? options.getFallbackPosition()
-    activeSubmenu.value = {
+    active.value = {
       id: item.id,
       items: item.children,
       at: position,
       from: el,
     }
-    submenuTrigger.value = trigger
+    trigger.value = how
   }
 
   const onCloseSubmenu = (): void => {
-    activeSubmenu.value = null
+    active.value = null
   }
 
   const onRowHover = (item: MenuItem): void => {
     if (item.children && item.children.length > 0) {
       onOpenSubmenu(item, 'pointer')
-    } else if (activeSubmenu.value && activeSubmenu.value.id !== item.id) {
+    } else if (active.value && active.value.id !== item.id) {
       onCloseSubmenu()
     }
   }
@@ -109,24 +100,28 @@ export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigatio
     options.onEmitDismiss()
   }
 
-  const {
-    query,
-    visibleItems,
-    onKey: onSearchKey,
-    focusInitial,
-  } = useMenuSearch({
-    isSearchable: options.isSearchable,
-    canEnterCustom: options.canEnterCustom,
-    items: options.items,
-    searchRef: options.searchRef,
-    menuRef: options.menuRef,
-    onRowKey: (event) => onRowKey(event),
+  return {
+    active,
+    trigger,
+    rowElements,
+    onOpenSubmenu,
+    onCloseSubmenu,
+    onRowHover,
+    onSubmenuChoose,
     onChoose,
-    onResetHere: () => {
-      here.value = -1
-    },
-    goToInitial: () => goTo(getInitialIndex(options.trigger(), options.items(), options.current())),
-  })
+  }
+}
+
+export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigationState {
+  const submenuActions = useSubmenuActions(options)
+  const { onOpenSubmenu, onCloseSubmenu, onChoose } = submenuActions
+
+  const onRegisterRow = (id: string, row: unknown): void => {
+    holdRow(id, row)
+    submenuActions.rowElements.set(id, row as { getElement?: () => HTMLElement | null })
+  }
+
+  const visibleItems = computed(() => options.items())
 
   const rows = computed(() => groupItems(visibleItems.value))
 
@@ -142,28 +137,27 @@ export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigatio
 
   const onResetNavigation = (): void => {
     here.value = -1
-    query.value = ''
     onCloseSubmenu()
   }
 
   const submenu: MenuSubmenuState = {
-    active: activeSubmenu,
-    trigger: submenuTrigger,
+    active: submenuActions.active,
+    trigger: submenuActions.trigger,
     onRegisterRow,
-    onRowHover,
+    onRowHover: submenuActions.onRowHover,
     onChoose,
-    onSubmenuChoose,
+    onSubmenuChoose: submenuActions.onSubmenuChoose,
     onClose: onCloseSubmenu,
   }
 
   return {
-    query,
     visibleItems,
     rows,
     here,
     submenu,
-    focusInitial,
-    onKey: onSearchKey,
+    focusInitial: () =>
+      goTo(getInitialIndex(options.trigger(), options.items(), options.current())),
+    onKey: onRowKey,
     onResetNavigation,
   }
 }

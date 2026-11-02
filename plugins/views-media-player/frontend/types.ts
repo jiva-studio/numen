@@ -47,4 +47,9 @@ export interface Recordings {
    * immediately and again on every change, until the returned function is called.
    */
   watchWork(path: string, onChange: (isWorking: boolean) => void): () => void
+  /**
+   * Notifies the handler when the vault reports a change to the file, such as a text version
+   * deleted from outside the tab, until the returned function is called.
+   */
+  watchChanges(path: string, onChange: () => void): () => void
 }

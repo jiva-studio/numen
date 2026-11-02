@@ -5,7 +5,7 @@
  * showing something stale, with no error and no way back.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { asValue } from '@numen/plugin-sdk'
+import { asFailure, asValue } from '@numen/core-client'
 import { useWindowDisplay } from './useWindowDisplay'
 import type { Core } from '@/app/ports/core'
 import type { Task } from '@/shared/notices/task'
@@ -16,9 +16,15 @@ const answer = (path: string): Neighbourhood => ({
   focus: { path, title: path },
   focusType: 'note',
   related: [],
+  connections: [],
 })
 
 /** A stream that stays open, so a loop waiting on it is not the one under test. */
+/** A stream that ends without an item. */
+async function* emptyStream(): AsyncGenerator<never> {
+  yield* []
+}
+
 const waitForever = () => new Promise<never>(vi.fn())
 
 const resolved = {
@@ -45,20 +51,28 @@ function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
     getInitialOpenPath: async () => ({ path: 'Opening.md' }),
     state: async () => resolved,
     agentUnreachable: async () => '',
-    watchVaultChanges: async function* () {},
-    watchFocus: async function* () {},
+    watchVaultChanges: emptyStream,
+    watchFocus: emptyStream,
     writeOpenTabs: vi.fn(() => Promise.resolve()),
     readOpenTabs: vi.fn(() => Promise.resolve({ tabs: [], activeId: '' })),
-    watchEdits: async function* () {},
+    watchEdits: emptyStream,
     watchTasks: async function* () {
       await waitForever()
     },
+    cancelTask: vi.fn(() => Promise.resolve()),
     read: async () => asValue({ body: '' }),
     write: async () => asValue({ body: '' }),
     create: async () => ({ ok: true, value: { path: '' } }),
-    join: async () => null,
-    removeLink: async () => null,
-    replaceLinks: async () => null,
+    relations: {
+      roles: ['parent', 'child', 'jump'],
+      getConnection: async () => asFailure('missing'),
+      saveConnection: async () => asValue(undefined),
+      removeSide: async () => asValue(undefined),
+      removeConnection: async () => asValue(undefined),
+      join: async () => asValue(undefined),
+      createRelated: async () => asValue(''),
+      listBacklinks: async () => [],
+    },
     rename: async (path, title) => asValue({ path, title, hasFrontmatter: false, moved: null }),
     remove: async () => asValue({ trashed: '', dangling: [] }),
     list: async () => [],
@@ -74,7 +88,7 @@ function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
     choosePluginPath: vi.fn(() => Promise.resolve({ path: '', isChosen: false, problem: '' })),
     getPluginData: vi.fn(() => Promise.resolve(0)),
     deletePluginData: vi.fn(() => Promise.resolve()),
-    watchQuit: async function* () {},
+    watchQuit: emptyStream,
     reportFlush: vi.fn(() => Promise.resolve()),
     detachTab: vi.fn(() => Promise.resolve()),
     ...overrides,
@@ -499,6 +513,7 @@ describe('what the application is doing', () => {
     isUserStarted: true,
     pluginId: '',
     pluginName: '',
+    isCancellable: false,
   })
 
   it('is what the stream last returned, whole', async () => {
@@ -767,11 +782,13 @@ describe('a vault still being read', () => {
       }),
     )
 
-    void window.start()
+    const started = window.start()
     await vi.advanceTimersByTimeAsync(0)
     expect(reads).toBe(1)
     await vi.advanceTimersByTimeAsync(100)
     window.close()
+    await vi.advanceTimersByTimeAsync(100)
+    await started
     vi.useRealTimers()
 
     expect(reads).toBe(2)

@@ -4,12 +4,10 @@ package service
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"strings"
 	"sync"
 
-	"connectrpc.com/connect"
-
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 )
@@ -29,18 +27,18 @@ type question struct {
 	// words are the declarations of the run's tools, which a call is shown by.
 	words map[string]toolcall.Declaration
 	// report sends a step of the run as it happens.
-	report func(*agentrun.AskAgentResponse) error
+	report func(*agentrun.Response) error
 }
 
 // answer poses one question to the agent in a new session, using the model the
 // agent reports for the id and the tools of the question. It reports each tool
 // call as it happens and returns the text of the answer.
-func (s *agentServer) answer(ctx context.Context, agent acpAgent, q question) (string, error) {
+func (s *agentServer) answer(ctx context.Context, agent acpAgent, q question) (text string, err error) {
 	session, err := openACPSession(ctx, agent, q.tools)
 	if err != nil {
 		return "", err
 	}
-	defer session.close()
+	defer func() { err = errors.Join(err, session.close()) }()
 	session.words, session.report = q.words, q.report
 	if err := session.setModel(q.model); err != nil {
 		return "", err
@@ -51,41 +49,34 @@ func (s *agentServer) answer(ctx context.Context, agent acpAgent, q question) (s
 	return session.ask(q.system, q.prompt)
 }
 
-// AskAgent runs the task on the ACP agent the task names, in a new session that
+// Ask runs the task on the ACP agent the task names, in a new session that
 // connects to the tools of the task at their endpoint.
-func (s *agentServer) AskAgent(
-	ctx context.Context,
-	req *connect.Request[agentrun.AskAgentRequest],
-	stream *connect.ServerStream[agentrun.AskAgentResponse],
-) error {
-	msg := req.Msg
-	if err := stream.Send(&agentrun.AskAgentResponse{
-		Step: &agentrun.AskAgentResponse_ModelStarted{ModelStarted: &agentrun.ModelStarted{}},
-	}); err != nil {
+func (s *agentServer) Ask(ctx context.Context, msg *agentrun.Request, send func(*agentrun.Response) error) error {
+	if err := send(&agentrun.Response{Step: &agentrun.ModelStartedStep{}}); err != nil {
 		return err
 	}
-	agent, err := s.findAgent(msg.GetAgent(), msg.GetCommand())
+	agent, err := s.findAgent(msg.Agent, msg.Command)
 	if err != nil {
-		return sendStopped(stream, err.Error())
+		return sendStopped(send, err.Error())
 	}
 	text, err := s.answer(ctx, agent, question{
-		model: msg.GetModel(), reasoning: msg.GetReasoning(), system: msg.GetInstructions(), prompt: msg.GetPrompt(),
-		tools: readToolEndpoint(msg), words: toolcall.IndexDeclarations(msg.GetToolDeclarations()), report: stream.Send,
+		model: msg.Model, reasoning: msg.Reasoning, system: msg.Instructions, prompt: msg.Prompt,
+		tools: readToolEndpoint(msg), words: toolcall.IndexDeclarations(msg.ToolDeclarations), report: send,
 	})
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return ctxErr
 		}
-		return sendStopped(stream, err.Error())
+		return sendStopped(send, err.Error())
 	}
-	if err := stream.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: text}}); err != nil {
+	if err := send(&agentrun.Response{Step: &agentrun.TextStep{Text: text}}); err != nil {
 		return err
 	}
-	return sendStopped(stream, reasonDone)
+	return sendStopped(send, reasonDone)
 }
 
-func sendStopped(stream *connect.ServerStream[agentrun.AskAgentResponse], reason string) error {
-	return stream.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Stopped{Stopped: reason}})
+func sendStopped(send func(*agentrun.Response) error, reason string) error {
+	return send(&agentrun.Response{Step: &agentrun.StoppedStep{Stopped: reason}})
 }
 
 // findAgent returns the agent the program names, started by the command line given, else by the one
@@ -106,16 +97,13 @@ func (s *agentServer) findAgent(program string, command []string) (acpAgent, err
 	return acpAgent{}, errAgentNotInstalled
 }
 
-// GetAgentPrograms lists, for each agent named by the command lines in the
+// GetPrograms lists, for each agent named by the command lines in the
 // settings, its program name and the models it reports, and keeps the command
 // lines.
-func (s *agentServer) GetAgentPrograms(
-	ctx context.Context,
-	req *connect.Request[agentrun.GetAgentProgramsRequest],
-) (*connect.Response[agentrun.GetAgentProgramsResponse], error) {
-	commands := make(map[string][]string, len(req.Msg.GetCommands()))
-	for _, one := range req.Msg.GetCommands() {
-		commands[one.GetProgram()] = one.GetCommand()
+func (s *agentServer) GetPrograms(ctx context.Context, requested []agentrun.ProgramCommand) ([]*agentrun.Program, error) {
+	commands := make(map[string][]string, len(requested))
+	for _, one := range requested {
+		commands[one.Program] = one.Command
 	}
 	s.mu.Lock()
 	s.commands = commands
@@ -133,10 +121,10 @@ func (s *agentServer) GetAgentPrograms(
 	}
 	group.Wait()
 
-	res := &agentrun.GetAgentProgramsResponse{Programs: nil}
+	var programs []*agentrun.Program
 	for idx, agent := range agents {
 		listing := listings[idx]
-		program := &agentrun.AgentProgram{
+		program := &agentrun.Program{
 			Name:        acpProgramPrefix + agent.Program,
 			Title:       agent.Title,
 			IsInstalled: true,
@@ -149,14 +137,14 @@ func (s *agentServer) GetAgentPrograms(
 			if title == "" {
 				title = one.ID
 			}
-			model := &agentrun.AgentModel{Name: one.ID, Title: title, IsDefault: one.ID == listing.Current, ReasoningLevels: nil, DefaultReasoning: ""}
+			model := &reasoning.Model{Name: one.ID, Title: title, IsDefault: one.ID == listing.Current, ReasoningLevels: nil, DefaultReasoning: ""}
 			if one.ID == listing.Current {
-				model.ReasoningLevels = reasoning.ToProto(listing.Levels)
+				model.ReasoningLevels = listing.Levels
 				model.DefaultReasoning = listing.Level
 			}
 			program.Models = append(program.Models, model)
 		}
-		res.Programs = append(res.Programs, program)
+		programs = append(programs, program)
 	}
-	return connect.NewResponse(res), nil
+	return programs, nil
 }

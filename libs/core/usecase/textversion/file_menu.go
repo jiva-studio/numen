@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strconv"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -31,8 +32,8 @@ type MenuEntry struct {
 
 // FileMenu is the menu of a vault file: the commands the enabled plugins
 // declare that apply to the file as it is now. A command that names content
-// types applies to a file of one of them; a command with a condition applies
-// to each version of the file that meets it.
+// types applies to a file of one of them; a command with conditions applies
+// to each version of the file in whose context they all hold.
 type FileMenu struct {
 	versions *Versions
 	commands pluginport.PluginCommands
@@ -68,8 +69,8 @@ func (u *FileMenu) GetMenu(ctx context.Context, v domain.Vault, path string) ([]
 		command := one.Command
 		entry := MenuEntry{PluginID: one.PluginID, PluginName: one.PluginName, Command: command.ID, Title: command.Title, Icon: command.Icon}
 		switch {
-		case command.When != nil:
-			for _, version := range listCandidates(one.PluginID, command.When, versions, live, hasLive) {
+		case len(command.When) > 0:
+			for _, version := range listCandidates(command, versions, live, hasLive) {
 				entry.Version, entry.IsLive = version.GetID(), hasLive && version.GetID() == live.GetID()
 				entries = append(entries, entry)
 			}
@@ -107,29 +108,36 @@ func hasRequiredArgument(command pluginport.PluginCommand) bool {
 	return false
 }
 
-// listCandidates is the versions that meet the condition: the live version
-// where it names kinds, and then only the versions the plugin made where it
-// names the plugin's own text.
-func listCandidates(
-	pluginID string, when *pluginport.PluginCommandWhen, versions []domain.TextVersion, live domain.TextVersion, hasLive bool,
-) []domain.TextVersion {
-	candidates := versions
-	if len(when.LiveTextKinds) > 0 {
-		candidates = nil
-		if hasLive && isKindAccepted(when.LiveTextKinds, live.Kind) {
-			candidates = []domain.TextVersion{live}
+// The keys of the context the menu supplies for each version of a file. A condition of a command
+// names them, and every condition has to hold in the context of one version.
+const (
+	// ContextKeyLive is "true" for the version displayed and indexed now, and "false" for the others.
+	ContextKeyLive = "version.live"
+	// ContextKeyKind is the kind of the version, as the plugin that made it names it.
+	ContextKeyKind = "version.kind"
+	// ContextKeyPlugin is the id of the plugin that made the version.
+	ContextKeyPlugin = "version.plugin"
+)
+
+// getVersionContext is the context a command is offered over for the version.
+func getVersionContext(version domain.TextVersion, isLive bool) pluginport.PluginContext {
+	return pluginport.PluginContext{
+		ContextKeyLive:   strconv.FormatBool(isLive),
+		ContextKeyKind:   string(version.Kind),
+		ContextKeyPlugin: version.PluginID,
+	}
+}
+
+// listCandidates is the versions in whose context every condition of the command holds.
+func listCandidates(command pluginport.PluginCommand, versions []domain.TextVersion, live domain.TextVersion, hasLive bool) []domain.TextVersion {
+	var candidates []domain.TextVersion
+	for _, version := range versions {
+		isLive := hasLive && version.GetID() == live.GetID()
+		if command.CanRunIn(getVersionContext(version, isLive)) {
+			candidates = append(candidates, version)
 		}
 	}
-	if !when.HasOwnText {
-		return candidates
-	}
-	var own []domain.TextVersion
-	for _, version := range candidates {
-		if version.PluginID == pluginID {
-			own = append(own, version)
-		}
-	}
-	return own
+	return candidates
 }
 
 // RunMenuEntry runs the command of an entry the file's menu offers now, over

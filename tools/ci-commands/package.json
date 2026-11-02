@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "The commands every plugin adds to a window's palette, read out of the plugins' manifests and frontends. Depends on nothing, so any machine with node runs it.",
+  "description": "The commands every plugin adds to a window's palette, read out of the plugins' manifests and frontends. Reads manifests through tools/shared/manifests.mjs, so it needs the workspace installed.",
   "scripts": {
     "check": "node --test ./*.test.mjs"
   }

@@ -62,24 +62,35 @@ func Parse(s string) (CFI, error) {
 	if err != nil {
 		return CFI{}, fmt.Errorf("%w in %q", err, s)
 	}
-	if p.peek() == ',' {
-		// A range is the parent path followed by the start's local path.
-		p.pos++
-		start, err := p.readPath()
-		if err != nil {
-			return CFI{}, fmt.Errorf("%w in %q", err, s)
-		}
-		parent = mergeRange(parent, start)
-		if p.peek() != ',' {
-			return CFI{}, fmt.Errorf("%w: %q has a range with no end", ErrSyntax, s)
-		}
-	} else if p.pos != len(p.in) {
-		return CFI{}, fmt.Errorf("%w: %q has %q after its path", ErrSyntax, s, p.in[p.pos:])
+	parent, err = p.readEnd(parent, s)
+	if err != nil {
+		return CFI{}, err
 	}
 	if len(parent.indirected) != 2 || len(parent.steps) == 0 && parent.offset >= 0 {
 		return CFI{}, fmt.Errorf("%w: %q does not step through the spine into a document", ErrSyntax, s)
 	}
 	return CFI{Package: parent.indirected, Document: parent.steps, Offset: parent.offset}, nil
+}
+
+// readEnd reads what follows the first path: a range start and the comma that opens its end, or nothing.
+func (p *parser) readEnd(parent path, s string) (path, error) {
+	if p.peek() != ',' {
+		if p.pos != len(p.in) {
+			return parent, fmt.Errorf("%w: %q has %q after its path", ErrSyntax, s, p.in[p.pos:])
+		}
+		return parent, nil
+	}
+	// A range is the parent path followed by the start's local path.
+	p.pos++
+	start, err := p.readPath()
+	if err != nil {
+		return parent, fmt.Errorf("%w in %q", err, s)
+	}
+	parent = mergeRange(parent, start)
+	if p.peek() != ',' {
+		return parent, fmt.Errorf("%w: %q has a range with no end", ErrSyntax, s)
+	}
+	return parent, nil
 }
 
 // path is a CFI path as read: the steps before the indirection, the steps after it, and the offset.

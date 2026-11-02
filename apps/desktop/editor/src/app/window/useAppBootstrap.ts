@@ -1,7 +1,9 @@
 /**
  * Bootstraps and disposes window background processes and streams.
  */
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
+import { runInBackground } from '@numen/ui'
+import { waitFor } from './waitFor'
 
 export interface BootstrapDeps {
   loadVaults(): Promise<void>
@@ -15,23 +17,72 @@ export interface BootstrapDeps {
   closeTabs(): void
   closeSettings(): void
   closePlugins?(): void | Promise<void>
+  /** Receives the failure of a start or a close that is not awaited. */
+  reportError(error: unknown): void
 }
 
-export function useAppBootstrap(deps: BootstrapDeps) {
-  onMounted(async () => {
-    await deps.loadVaults()
-    await deps.startSettings()
-    await deps.startPlugins?.()
-    await deps.startLayout()
-    void deps.startWindow()
-    deps.startEditing()
+/** How long the window waits for the plugins before it opens the tabs without the ones still starting. */
+export const PLUGINS_WAIT_MS = 2_000
+
+/** How long one of the steps the workspace depends on may take before the window says it could not load. */
+export const STEP_LIMIT_MS = 10_000
+
+/** Starts the plugins and waits for them no longer than PLUGINS_WAIT_MS; the ones still starting go on. */
+async function startPluginsWithinLimit(deps: BootstrapDeps): Promise<void> {
+  const starting = deps.startPlugins?.()
+  if (!starting) return
+  runInBackground(starting, deps.reportError)
+  await waitFor(starting, PLUGINS_WAIT_MS)
+}
+
+/** Settles with the work, or fails naming `what` once the limit passes with the work still pending. */
+async function withinLimit<T>(what: string, work: Promise<T>, limitMs: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const late = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`${what} did not answer in ${limitMs / 1000} s`)),
+      limitMs,
+    )
   })
+  try {
+    return await Promise.race([work, late])
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+export function useAppBootstrap(deps: BootstrapDeps, stepLimitMs: number = STEP_LIMIT_MS) {
+  /** Why the workspace did not load, shown with a retry; empty while it loads and once it has. */
+  const failure = ref('')
+  let attempt = 0
+
+  const run = async (): Promise<void> => {
+    const mine = ++attempt
+    failure.value = ''
+    try {
+      await withinLimit('The vault list', deps.loadVaults(), stepLimitMs)
+      await withinLimit('The settings request', deps.startSettings(), stepLimitMs)
+      await startPluginsWithinLimit(deps)
+      await withinLimit('The tab restore', deps.startLayout(), stepLimitMs)
+    } catch (error) {
+      if (mine === attempt) failure.value = error instanceof Error ? error.message : String(error)
+      return
+    }
+    if (mine !== attempt) return
+    runInBackground(deps.startWindow(), deps.reportError)
+    deps.startEditing()
+  }
+
+  onMounted(run)
 
   onUnmounted(() => {
-    void deps.closePlugins?.()
+    attempt++
+    runInBackground(Promise.resolve(deps.closePlugins?.()), deps.reportError)
     deps.closeWindow()
     deps.closeEditing()
     deps.closeTabs()
     deps.closeSettings()
   })
+
+  return { failure, retry: run }
 }

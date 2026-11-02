@@ -50,7 +50,7 @@ func writeSecretPlugin(t *testing.T) string {
 		"capabilities": ["ai.agent.provider"],
 		"targets": ["desktop.editor"],
 		"secrets": [{"name": "apiKey", "title": "API key"}],
-		"backend": {"type": "process", "entrypoint": "bin/agent", "serviceName": "numen.v1.AgentService"}
+		"services": ["numen.v1.AgentService"], "backend": {"entrypoint": "bin/agent"}
 	}`
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
@@ -64,7 +64,7 @@ func writeSecretPlugin(t *testing.T) string {
 func TestASecretSavedThroughTheContainerReachesTheKeyStore(t *testing.T) {
 	jar := keyJar{}
 	settingsPath := filepath.Join(t.TempDir(), "numen.json")
-	cfg := Config{KeyStore: jar, SettingsPath: settingsPath, PluginHost: NewPluginHost("desktop.editor", writeSecretPlugin(t))}
+	cfg := NewConfig(Config{KeyStore: jar, SettingsPath: settingsPath, PluginHost: NewPluginHost("desktop.editor", writeSecretPlugin(t))})
 	cfg = cfg.SetSettings(DefaultSettings())
 
 	if err := cfg.GetPluginSecretWriter()(t.Context(), "md.numen.agents.numen", "apiKey", "value-1"); err != nil {
@@ -90,7 +90,7 @@ func TestASecretSavedThroughTheContainerReachesTheKeyStore(t *testing.T) {
 
 func TestASecretNoPluginDeclaresIsRefused(t *testing.T) {
 	jar := keyJar{}
-	cfg := Config{KeyStore: jar, SettingsPath: filepath.Join(t.TempDir(), "numen.json"), PluginHost: NewPluginHost("desktop.editor", writeSecretPlugin(t))}
+	cfg := NewConfig(Config{KeyStore: jar, SettingsPath: filepath.Join(t.TempDir(), "numen.json"), PluginHost: NewPluginHost("desktop.editor", writeSecretPlugin(t))})
 	cfg = cfg.SetSettings(DefaultSettings())
 	if err := cfg.GetPluginSecretWriter()(t.Context(), "md.numen.agents.numen", "other", "value"); err == nil {
 		t.Error("an undeclared secret was stored")
@@ -102,7 +102,7 @@ func TestASecretNoPluginDeclaresIsRefused(t *testing.T) {
 
 // An installation without a plugin host has no plugin to keep a secret for.
 func TestWithoutAPluginHostASecretIsAnError(t *testing.T) {
-	cfg := Config{}
+	cfg := NewConfig(Config{})
 	if err := cfg.GetPluginSecretWriter()(t.Context(), "p", "n", "k"); !errors.Is(err, errNoPluginHost) {
 		t.Errorf("write: error = %v", err)
 	}
@@ -115,7 +115,7 @@ func TestWithoutAPluginHostASecretIsAnError(t *testing.T) {
 // writer fails with port.ErrNoKeyStore.
 func TestWithoutAKeyStoreASecretIsErrNoKeyStore(t *testing.T) {
 	settingsPath := filepath.Join(t.TempDir(), "numen.json")
-	cfg := Config{SettingsPath: settingsPath, PluginHost: NewPluginHost("desktop.editor", writeSecretPlugin(t))}
+	cfg := NewConfig(Config{SettingsPath: settingsPath, PluginHost: NewPluginHost("desktop.editor", writeSecretPlugin(t))})
 	cfg = cfg.SetSettings(DefaultSettings())
 	if err := cfg.GetPluginSecretWriter()(t.Context(), "md.numen.agents.numen", "apiKey", "value-1"); !errors.Is(err, pluginport.ErrNoKeyStore) {
 		t.Errorf("write: error = %v, want port.ErrNoKeyStore", err)

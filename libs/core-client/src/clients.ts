@@ -1,0 +1,105 @@
+/**
+ * The service clients of the core and the protocol enum codes, for the applications.
+ */
+import { createClient, type Client, type Transport } from '@connectrpc/connect'
+import {
+  AgentService,
+  CAPABILITY_AGENT_PROVIDER,
+  CommandErrorCode,
+  CommandService,
+  CompletionConsent,
+  ErrorCode as ProtoErrorCode,
+  FileService,
+  FlushResult,
+  Marker,
+  Mode,
+  NameSource,
+  NoteService,
+  Origin,
+  PluginService,
+  Presence,
+  Relation,
+  Role,
+  SearchMode,
+  SearchService,
+  SettingsService,
+  TextErrorCode,
+  TextService,
+  TextVersionService,
+  ThemeService,
+  Unit,
+  VaultService,
+  VaultsErrorCode,
+  VaultsService,
+  WindowService,
+  WorkspaceService,
+} from '@numen/protocol'
+import { transport } from './transport'
+
+export const createVaultClient = (customTransport: Transport = transport) =>
+  createClient(VaultService, customTransport)
+export const createNoteClient = (customTransport: Transport = transport) =>
+  createClient(NoteService, customTransport)
+
+export const vault = createVaultClient()
+export const agentService = createClient(AgentService, transport)
+export const workspace = createClient(WorkspaceService, transport)
+export const files = createClient(FileService, transport)
+export const notes = createNoteClient()
+export const search = createClient(SearchService, transport)
+export const vaultsService = createClient(VaultsService, transport)
+export const settingsService = createClient(SettingsService, transport)
+export const windowService = createClient(WindowService, transport)
+export const theme = createClient(ThemeService, transport)
+export const textVersions = createClient(TextVersionService, transport)
+export const texts = createClient(TextService, transport)
+export const pluginCommands = createClient(CommandService, transport)
+export const pluginService = createClient(PluginService, transport)
+
+export const NAME_SOURCE = NameSource
+export type NameSourceCode = NameSource
+
+export const NOTE_MARKER = Marker
+export type NoteMarkerCode = Marker
+
+export const NOTE_ROLE = Role
+export type NoteRoleCode = Role
+
+export const NOTE_RELATION = Relation
+export type NoteRelationCode = Relation
+
+export const COMPLETION_CONSENT = CompletionConsent
+export type CompletionConsentCode = CompletionConsent
+
+export const FLUSH_RESULT = FlushResult
+export type FlushResultCode = FlushResult
+
+export const MODEL_PRESENCE = Presence
+export type ModelPresenceCode = Presence
+
+export const SEARCH_MODE = SearchMode
+export type SearchModeCode = SearchMode
+
+export const TASK_UNIT = Unit
+export type TaskUnitCode = Unit
+
+export const VAULTS_ERROR_CODE = VaultsErrorCode
+export type VaultsErrorCodeValue = VaultsErrorCode
+
+export const COMMAND_ERROR_CODE = CommandErrorCode
+
+export const TEXT_ERROR_CODE = TextErrorCode
+
+export const THEME_MODE = Mode
+export type ThemeModeCode = Mode
+
+export const THEME_ORIGIN = Origin
+export type ThemeOriginCode = Origin
+
+export const NOTE_ERROR_CODE = ProtoErrorCode
+export type NoteErrorCodeValue = ProtoErrorCode
+
+export const AGENT_PROVIDER_CAPABILITY = CAPABILITY_AGENT_PROVIDER
+
+/** The calls of TextService the texts are read and edited through. */
+export type TextClient = Pick<Client<typeof TextService>, 'readLiveText' | 'createTextEdit'>

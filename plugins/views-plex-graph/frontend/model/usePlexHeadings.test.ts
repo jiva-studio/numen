@@ -3,6 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
+import { createVault } from '../fixtures'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import type { PlexTabDeps, NoteHeading, NoteType } from '../types'
 import { usePlexHeadings } from './usePlexHeadings'
@@ -16,24 +17,19 @@ const createDeps = (
     return headings
   },
 ): PlexTabDeps => ({
-  editor: {
-    createInRelation: async () => null,
-    createWithTitle: async () => null,
-    join: async () => false,
-    replaceLinks: async () => false,
-  },
+  editor: createVault(false).editor,
   isReady: ref(true),
   isNesting: ref(true),
   headings: ref(6),
-  openNote: () => {},
+  openNote: () => undefined,
   readHeadings,
   getNoteCommands: () => [],
   getCommandIcon: () => null,
   getNoteIcon: () => null,
-  runCommand: () => {},
+  runCommand: () => undefined,
   openingPath: ref(''),
   dragged: ref([]),
-  showMessage: () => {},
+  showMessage: () => undefined,
   createUntitledNote: async () => '',
   readOpeningPath: async () => '',
   creatable: [],
@@ -102,7 +98,7 @@ describe('the headings of a node', () => {
   it('are left alone by a read that failed after a newer one was requested', async () => {
     const map = createNodeIdMap()
     const node = map.getNodeId('A.md')
-    let fail = () => {}
+    let fail: () => void = () => undefined
     let calls = 0
     const plex = usePlexHeadings(
       ref(['A.md']),

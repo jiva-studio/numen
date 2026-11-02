@@ -79,9 +79,9 @@ func (s *acpSession) isRunTool(callID, name string) bool {
 
 // readToolEndpoint is where the task's tools are served. A task that names no tool, or no endpoint,
 // has none.
-func readToolEndpoint(task *agentrun.AskAgentRequest) toolEndpoint {
-	if !agentrun.HasTools(task) || task.GetToolsUrl() == "" {
+func readToolEndpoint(task *agentrun.Request) toolEndpoint {
+	if !agentrun.HasTools(task) || task.ToolsURL == "" {
 		return toolEndpoint{url: "", token: "", tools: nil}
 	}
-	return toolEndpoint{url: task.GetToolsUrl(), token: task.GetToolsToken(), tools: task.GetTools()}
+	return toolEndpoint{url: task.ToolsURL, token: task.ToolsToken, tools: task.Tools}
 }

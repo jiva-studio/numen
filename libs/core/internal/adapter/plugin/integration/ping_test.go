@@ -16,18 +16,18 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 // launchAnsweringPing returns a launcher whose process reports the port of a server answering Ping with protocol.
 func launchAnsweringPing(t *testing.T, protocol int32, procs *[]*os.Process) plugin.Launcher {
 	t.Helper()
 	pingPort := plugintest.ServePing(t, protocol)
-	return func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		cmd := plugintest.NewIdleCommand()
+	return func(ctx context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		cmd := plugintest.NewIdleCommand(context.WithoutCancel(ctx))
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}
@@ -37,14 +37,14 @@ func launchAnsweringPing(t *testing.T, protocol int32, procs *[]*os.Process) plu
 	}
 }
 
-func TestAPluginThatSpeaksAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
+func TestAPluginThatUsesAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
 	cases := []struct {
 		name     string
 		protocol int32
 		want     string
 	}{
-		{"a newer protocol", pluginport.PluginProtocolVersion + 1, "speaks protocol 2, its manifest declares 1"},
-		{"no protocol reported", 0, "speaks protocol 0, its manifest declares 1"},
+		{"a newer protocol", pluginport.PluginProtocolVersion + 1, "uses protocol 2, its manifest declares 1"},
+		{"no protocol reported", 0, "uses protocol 0, its manifest declares 1"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -77,7 +77,7 @@ func TestAPluginThatSpeaksAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
 	}
 }
 
-func TestAPluginThatSpeaksTheHostsProtocolIsActivated(t *testing.T) {
+func TestAPluginThatUsesTheHostsProtocolIsActivated(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var procs []*os.Process
 	host.SetLauncher(launchAnsweringPing(t, pluginport.PluginProtocolVersion, &procs))
@@ -94,10 +94,10 @@ func TestAPluginThatSpeaksTheHostsProtocolIsActivated(t *testing.T) {
 func TestCheckPluginProtocol_RejectsUnsupportedProtocol(t *testing.T) {
 	newer := pluginport.PluginProtocolVersion + 1
 	endpoint := transport.Endpoint{Host: "127.0.0.1", Port: plugintest.ServePing(t, int32(newer)), Token: ""}
-	manifest := manifestfile.Manifest{ID: "md.numen.newer", Protocol: newer}
+	manifest := manifest.Manifest{ID: "md.numen.newer", Protocol: newer}
 
 	err := transport.CheckPluginProtocol(t.Context(), manifest, endpoint)
-	if !errors.Is(err, pluginport.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), "this host speaks 1") {
+	if !errors.Is(err, pluginport.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), "this host uses 1") {
 		t.Fatalf("checkPluginProtocol() = %v, want %v naming the host's protocol", err, pluginport.ErrUnsupportedProtocol)
 	}
 }
@@ -111,7 +111,7 @@ func TestCheckPluginProtocolNamesAPluginThatDoesNotAnswerPing(t *testing.T) {
 	}
 	endpoint := transport.Endpoint{Host: "127.0.0.1", Port: addr.Port, Token: ""}
 
-	err := transport.CheckPluginProtocol(t.Context(), manifestfile.Manifest{ID: "md.numen.silent"}, endpoint)
+	err := transport.CheckPluginProtocol(t.Context(), manifest.Manifest{ID: "md.numen.silent"}, endpoint)
 	if err == nil || !strings.Contains(err.Error(), "ping plugin md.numen.silent") {
 		t.Fatalf("checkPluginProtocol() = %v, want the ping failure naming the plugin", err)
 	}

@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/document"
+	"github.com/tetratelabs/wazero"
 )
 
 // VersionKey is the key the plugin keeps the recognition of a file under: one recognition a file.
@@ -67,8 +68,9 @@ type Host struct {
 
 // Recognition reads files with the recogniser it opens.
 type Recognition struct {
-	host Host
-	open func(ctx context.Context) (Recogniser, error)
+	host      Host
+	open      func(ctx context.Context) (Recogniser, error)
+	documents *document.Reader
 }
 
 // New is the recognition through the host, with what opens the recogniser when a page is first read.
@@ -76,7 +78,12 @@ func New(h Host, open func(ctx context.Context) (Recogniser, error)) (*Recogniti
 	if h.Vault == nil || h.Store == nil || h.Texts == nil || h.Queue == nil || open == nil {
 		return nil, errors.New("a recognition needs the vault, the store, the texts, the queue and a recogniser")
 	}
-	return &Recognition{host: h, open: open}, nil
+	return &Recognition{host: h, open: open, documents: document.NewReader()}, nil
+}
+
+// SetCompilationCache makes the reader of documents compile PDFium through cache.
+func (r *Recognition) SetCompilationCache(cache wazero.CompilationCache) {
+	r.documents.SetCompilationCache(cache)
 }
 
 // Request is one file to recognise. Vault is the vault that contains it, and is
@@ -107,12 +114,12 @@ func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error
 		on = reach{vault: on.vault.With(req.Vault), store: on.store.With(req.Vault), texts: on.texts.With(req.Vault)}
 	}
 	task := host.Task{
-		ID: "recognise:" + req.Path, Title: "Recognising " + path.Base(req.Path), About: req.Path,
-		Done: 0, Total: 0, Unit: host.UnitThings, Error: "", IsUserStarted: req.IsUserStarted,
+		ID: "recognise:" + req.Path, Title: "Recognising " + path.Base(req.Path), Detail: req.Path,
+		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: req.IsUserStarted,
 	}
 	res, err := r.recognise(ctx, on, req, &task)
 	if err != nil && ctx.Err() == nil {
-		task.Error = err.Error()
+		task.FailureReason = err.Error()
 		if reportErr := r.host.Queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {
 			return res, errors.Join(err, reportErr)
 		}
@@ -131,7 +138,7 @@ type reach struct {
 	texts host.Texts
 }
 
-func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task *host.Task) (Result, error) {
+func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task *host.Task) (res Result, err error) {
 	raw, _, err := on.vault.Read(ctx, req.Path)
 	if err != nil {
 		return Result{}, fmt.Errorf("read %s: %w", req.Path, err)
@@ -147,11 +154,11 @@ func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task
 	if err != nil {
 		return Result{}, err
 	}
-	doc, err := document.Open(req.Path, raw)
+	doc, err := r.documents.Open(req.Path, raw)
 	if err != nil {
 		return Result{}, err
 	}
-	defer doc.Close()
+	defer func() { err = errors.Join(err, doc.Close()) }()
 	if !req.IsUserStarted && doc.HasTextLayer() {
 		return Result{Pages: doc.GetPageCount(), IsSkipped: true, IsEmpty: false}, nil
 	}
@@ -160,21 +167,27 @@ func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task
 	if err != nil {
 		return Result{}, fmt.Errorf("wait for a turn to recognise %s: %w", req.Path, err)
 	}
-	defer turn.Release()
+	defer func() { err = errors.Join(err, turn.Release()) }()
 	recogniser, err := r.open(ctx)
 	if err != nil {
 		return Result{}, fmt.Errorf("open the recogniser: %w", err)
 	}
 	model := recogniser.GetRecognitionModel()
-	recipe := fmt.Sprintf("%s|%s|%s|%d", model.From, model.Layout, model.Recogniser, model.DPI)
-	if !rec.isFor(inputHash, recipe) {
-		rec = &record{Path: req.Path, InputHash: inputHash, Recipe: recipe, PageCount: doc.GetPageCount(), Pages: nil}
-	}
+	rec = keepOrRestart(rec, req.Path, inputHash, model, doc.GetPageCount())
 
 	if err := r.readPages(ctx, pageReading{doc: doc, recogniser: recogniser, dpi: model.DPI, store: on.store, task: task}, rec); err != nil {
 		return Result{}, err
 	}
 	return putVersion(ctx, on, rec)
+}
+
+// keepOrRestart returns the record when it was made from this content with this model, else a new empty one.
+func keepOrRestart(rec *record, path, inputHash string, model Model, pageCount int) *record {
+	recipe := fmt.Sprintf("%s|%s|%s|%d", model.From, model.Layout, model.Recogniser, model.DPI)
+	if rec.isFor(inputHash, recipe) {
+		return rec
+	}
+	return &record{Path: path, InputHash: inputHash, Recipe: recipe, PageCount: pageCount, Pages: nil}
 }
 
 // pageReading is what the pages of one file are read with.
@@ -189,7 +202,7 @@ type pageReading struct {
 // readPages reads the pages the record does not hold yet, keeping them a batch at a time and showing
 // how far it came in the task.
 func (r *Recognition) readPages(ctx context.Context, on pageReading, rec *record) error {
-	on.task.Total, on.task.Done = int64(rec.PageCount), int64(len(rec.Pages))
+	on.task.TotalCount, on.task.CompletedCount = int64(rec.PageCount), int64(len(rec.Pages))
 	if err := r.host.Queue.ReportTask(ctx, *on.task); err != nil {
 		return err
 	}
@@ -208,7 +221,7 @@ func (r *Recognition) readPages(ctx context.Context, on pageReading, rec *record
 				return err
 			}
 		}
-		on.task.Done = int64(index + 1)
+		on.task.CompletedCount = int64(index + 1)
 		if err := r.host.Queue.ReportTask(ctx, *on.task); err != nil {
 			return err
 		}
@@ -221,7 +234,10 @@ func (r *Recognition) readPages(ctx context.Context, on pageReading, rec *record
 // reported as no version.
 func putVersion(ctx context.Context, on reach, rec *record) (Result, error) {
 	store := on.store
-	text := rec.getText()
+	text, err := rec.getText()
+	if err != nil {
+		return Result{}, err
+	}
 	if strings.TrimSpace(text.Text) == "" {
 		if err := store.Delete(ctx, getRecordName(rec.Path)); err != nil {
 			return Result{}, err
@@ -232,7 +248,7 @@ func putVersion(ctx context.Context, on reach, rec *record) (Result, error) {
 	if err := host.WriteText(ctx, store, file, text.GetSegments()); err != nil {
 		return Result{}, err
 	}
-	_, err := on.texts.PutVersion(ctx, host.TextPut{
+	_, err = on.texts.PutVersion(ctx, host.TextPut{
 		Path: rec.Path, Key: VersionKey, Source: "", Kind: textKind, SourceHash: rec.InputHash, File: file,
 	})
 	if err != nil {

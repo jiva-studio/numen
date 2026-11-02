@@ -1,7 +1,5 @@
 import { spawn } from "node:child_process";
-import path from "node:path";
-
-import { listGoModules } from "./modules.mjs";
+import { findGoLintConfig, listGoModules } from "./modules.mjs";
 
 /**
  * Runs golangci-lint on a single directory.
@@ -64,11 +62,10 @@ function lintPlugin(dir, configFile, pluginName) {
  */
 export async function runComplexityCheck({ repoRoot, warnOnly = false }) {
   const start = Date.now();
-  const configFile = path.join(repoRoot, ".golangci.yml");
   const targets = listGoModules(repoRoot);
 
   const results = await Promise.all(
-    targets.map(({ dir, name }) => lintPlugin(dir, configFile, name))
+    targets.map(({ dir, name }) => lintPlugin(dir, findGoLintConfig(repoRoot, dir, ".golangci-structure.yml"), name))
   );
 
   const allIssues = results.flat();

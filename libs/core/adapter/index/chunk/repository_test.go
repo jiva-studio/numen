@@ -11,13 +11,13 @@ func TestVectorRowsAreAddressedByTheChunkNumber(t *testing.T) {
 	// The vector index has no key but its rowid, which is the chunk's own
 	// number, and a delete addresses a row by it.
 	for _, name := range []string{"insert_vec", "delete_vec", "clear_vec"} {
-		statement := withoutComments(stmt.Get(name))
+		statement := withoutComments(getStatement(name))
 		if !strings.Contains(statement, "chunk_id") {
 			t.Errorf("%s does not address the row by the chunk's number: %s", name, statement)
 		}
 	}
 	for _, name := range []string{"delete_vec", "clear_vec"} {
-		statement := withoutComments(stmt.Get(name))
+		statement := withoutComments(getStatement(name))
 		if strings.Contains(statement, "vault_id") {
 			t.Errorf("%s deletes by a column the index cannot search: %s", name, statement)
 		}
@@ -30,7 +30,7 @@ func TestFullTextRowsAreAddressedByTheChunkNumber(t *testing.T) {
 	// The full-text index has no key but its rowid, which is the chunk's own
 	// number, and a delete addresses a row by it.
 	for _, name := range []string{"insert_fts", "clear_fts"} {
-		statement := withoutComments(stmt.Get(name))
+		statement := withoutComments(getStatement(name))
 		if !strings.Contains(statement, "rowid") {
 			t.Errorf("%s does not address the row by its rowid: %s", name, statement)
 		}
@@ -45,7 +45,7 @@ func TestTheCoarsePassIsConstrainedInsideTheQuery(t *testing.T) {
 	// filter applied to the result instead returns fewer than k passages, or
 	// none, and a query plan shows neither case: it shows only that the virtual
 	// table was read.
-	statement := withoutComments(stmt.Get("coarse"))
+	statement := withoutComments(getStatement("coarse"))
 	for _, want := range []string{"MATCH", "vault_id = ?", "k = ?", "ORDER BY distance"} {
 		if !strings.Contains(statement, want) {
 			t.Errorf("the coarse pass does not constrain %q: %s", want, statement)
@@ -57,7 +57,7 @@ func TestABitVectorReturnsThatItIsOne(t *testing.T) {
 	// The 128 bytes of a 1024-bit vector are also 32 float32 dimensions, and the
 	// extension reads them as the latter unless the type is named.
 	for _, name := range []string{"insert_vec", "coarse"} {
-		if !strings.Contains(withoutComments(stmt.Get(name)), "vec_bit(?)") {
+		if !strings.Contains(withoutComments(getStatement(name)), "vec_bit(?)") {
 			t.Errorf("%s does not say the blob is one bit per dimension", name)
 		}
 	}
@@ -66,7 +66,7 @@ func TestABitVectorReturnsThatItIsOne(t *testing.T) {
 func TestTheVaultOfAVectorRowReachesFromItsChunk(t *testing.T) {
 	// The vault a chunk carries comes from its source, so the two cannot
 	// disagree.
-	statement := withoutComments(stmt.Get("insert_vec"))
+	statement := withoutComments(getStatement("insert_vec"))
 	if !strings.Contains(statement, "SELECT id, vault_id, vec_bit(?) FROM chunks") {
 		t.Errorf("insert_vec takes the vault from somewhere other than the chunk: %s", statement)
 	}
@@ -78,7 +78,7 @@ func TestNothingIsStoredAgainstAPath(t *testing.T) {
 	for _, name := range []string{
 		"insert_chunk", "clear_chunks", "clear_vec", "delete_vec", "insert_fts", "clear_fts",
 	} {
-		statement := withoutComments(stmt.Get(name))
+		statement := withoutComments(getStatement(name))
 		if strings.Contains(statement, "path") {
 			t.Errorf("%s addresses a source by where it is filed: %s", name, statement)
 		}
@@ -103,11 +103,11 @@ func TestTheCoarseRowReadsTheChunkItBelongsTo(t *testing.T) {
 	// so the coarse index never names a chunk that is not there. The vector
 	// itself is kept whatever became of the chunk: it was paid for, and the
 	// text it was made from is what addresses it.
-	statement := withoutComments(stmt.Get("insert_vec"))
+	statement := withoutComments(getStatement("insert_vec"))
 	if !strings.Contains(statement, "FROM chunks WHERE id = ?") {
 		t.Errorf("insert_vec writes without reading the chunk it belongs to: %s", statement)
 	}
-	if queryText := withoutComments(stmt.Get("keep_vector")); strings.Contains(queryText, "FROM chunks") {
+	if queryText := withoutComments(getStatement("keep_vector")); strings.Contains(queryText, "FROM chunks") {
 		t.Errorf("keep_vector reads a chunk, and a vector outlives every chunk: %s", queryText)
 	}
 }

@@ -4,7 +4,7 @@ import type { Turn } from '../thread'
 export interface AgentProps {
   turns: readonly Turn[]
   /** An answer is on its way. */
-  isWorking?: boolean
+  isAnswerPending?: boolean
   placeholder?: string
   isDisabled?: boolean
   /** What the disc at the end of the field is called while it sends. */

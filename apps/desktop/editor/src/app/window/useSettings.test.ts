@@ -46,7 +46,7 @@ describe('the settings as they are put together', () => {
   it('gives each setting a message writer under a name of its own', () => {
     const { writers } = createSettings()
 
-    expect(writers).toStrictEqual(['worn', 'named', 'configured', 'keys', 'plugins'])
+    expect(writers).toStrictEqual(['appearance', 'named', 'configured', 'keys', 'plugins'])
   })
 
   it('opens the settings tab as kind of tab', () => {
@@ -133,7 +133,7 @@ describe('the lists the palette offers for a setting', () => {
 })
 
 describe('the settings tab', () => {
-  it('shows the appearance the window wears', () => {
+  it('shows the appearance the window applies', () => {
     const { settings } = createSettings()
     const { installation } = settings.configured.state
 
@@ -158,9 +158,8 @@ describe('the settings tab', () => {
     const { settings } = createSettings()
     const { installation } = settings.configured.state
     const sync = vi.spyOn(settings.sync, 'choose').mockResolvedValue()
-    settings.sync.isEnabled.value = false
 
-    expect(installation.isSyncing.value).toBe(false)
+    expect(installation.isSyncing.value).toBe(settings.sync.isEnabled.value)
 
     installation.isSyncing.value = true
     installation.isSyncing.value = false

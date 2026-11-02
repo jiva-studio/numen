@@ -8,7 +8,7 @@ export const HEADING = /^(?:ATX|Setext)Heading([1-6])$/
 export const BULLET = /^[-+*]$/
 
 /** The marks that are drawn only while the selection is in what they belong to. */
-export const SHY = new Set([
+export const CARET_ONLY = new Set([
   'EmphasisMark',
   'StrikethroughMark',
   'LinkMark',

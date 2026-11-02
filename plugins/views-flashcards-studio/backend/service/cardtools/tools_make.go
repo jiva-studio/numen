@@ -85,11 +85,11 @@ func (t *Tools) addCardFieldRename(registry *tools.Registry) error {
 		Name:  "card_field_rename",
 		Title: "Rename a field",
 		Description: "Give one of a card model's fields a different name, everywhere it is " +
-			"written. A field's name stands in the card model that declares it and as a " +
+			"written. A field's name is in the card model that declares it and as a " +
 			"heading in every card of every deck that card model cuts, so renaming it in " +
 			"one place alone leaves values under a heading nothing declares. This " +
-			"rewrites them all and leaves what stands under each heading as it was. " +
-			"Every field a card model declares stands under its own heading in every card, " +
+			"rewrites them all and leaves what is under each heading as it was. " +
+			"Every field a card model declares is under its own heading in every card, " +
 			"the first included, so renaming any of them reaches the decks. A " +
 			"deck it could not be written to comes back under `notWritten` and keeps the " +
 			"old heading. Every deck of the vault is read for this, so a vault holding " +

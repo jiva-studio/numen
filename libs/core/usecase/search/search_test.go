@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/internal/vector"
+	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -26,20 +27,25 @@ const dimensions = 1024
 
 // The two vaults every test here uses. They share one word and nothing else, so
 // a result from the wrong one is recognisable.
-var (
-	firstNotes = map[string]string{
+func getFirstNotes() map[string]string {
+	return map[string]string{
 		"notes/Entropy.md": "# Entropy\n\nA measure of disorder, shared by every closed system.\n",
 		"notes/Heat.md":    "# Heat\n\nEnergy in transit, shared between two bodies.\n",
 	}
-	secondNotes = map[string]string{
+}
+
+func getSecondNotes() map[string]string {
+	return map[string]string{
 		"notes/Quasar.md": "# Quasar\n\nA distant beacon, shared by no textbook here.\n",
 	}
+}
 
-	// A note whose prose is placed under a frontmatter block, with the words
-	// looked for on the seventh line of that prose.
-	isotherm = "---\nid: 01M0DEM0000000000000000002\n---\n" +
+// A note whose prose is placed under a frontmatter block, with the words
+// looked for on the seventh line of that prose.
+func getIsotherm() string {
+	return "---\nid: 01M0DEM0000000000000000002\n---\n" +
 		"# Isotherm\n\nA curve of one temperature.\n\n## Below\n\nThe curve holds throughout.\n"
-)
+}
 
 // corpus is two vaults, indexed and cut, and the one search over them.
 type corpus struct {
@@ -56,7 +62,7 @@ func newCorpus(t *testing.T) corpus {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	readers := vaultreader.Readers{}
 	scan := vaults.NewScan(
@@ -65,7 +71,7 @@ func newCorpus(t *testing.T) corpus {
 	)
 
 	c := corpus{db: db}
-	for i, notes := range []map[string]string{firstNotes, secondNotes} {
+	for i, notes := range []map[string]string{getFirstNotes(), getSecondNotes()} {
 		v := testsupport.NewVault(t, notes)
 		if _, err := scan.Execute(ctx, v); err != nil {
 			t.Fatal(err)
@@ -104,7 +110,7 @@ func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) 
 // given, in both of the representations a chunk carries.
 func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 	t.Helper()
-	unembedded, err := c.db.ChunkQueries().GetUnembeddedChunks(t.Context(), v.ID, model.Recipe(), 0, 0, 0, 1000)
+	unembedded, err := c.db.ChunkQueries().GetUnembeddedChunks(t.Context(), v.ID, getModel().Recipe(), chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +124,7 @@ func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 			t.Fatal(err)
 		}
 		vectors = append(vectors, chunk.Vector{
-			Chunk: p.Chunk, Hash: raw, Recipe: model.Recipe(),
+			Chunk: p.Chunk, Hash: raw, Recipe: getModel().Recipe(),
 			Value: precise(direction), Coarse: vector.Bits(direction),
 		})
 	}
@@ -138,10 +144,12 @@ func precise(v []float32) []byte {
 }
 
 func (c corpus) search(embedder embeddingport.Embedder) search.Search {
-	return search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil, embedder, 0, nil)
+	return search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil, embedder, nil)
 }
 
-var model = embeddingport.EmbeddingModel{Name: "test", Dimensions: dimensions}
+func getModel() embeddingport.EmbeddingModel {
+	return embeddingport.EmbeddingModel{Name: "test", Dimensions: dimensions}
+}
 
 // newVector is a vector whose every dimension has the sign given.
 func newVector(sign float32) []float32 {
@@ -167,7 +175,7 @@ func newNearVector() []float32 {
 // oneWay is an embedder whose vectors all point the same way.
 type oneWay struct{ direction []float32 }
 
-func (o oneWay) GetModel() embeddingport.EmbeddingModel { return model }
+func (o oneWay) GetModel() embeddingport.EmbeddingModel { return getModel() }
 
 func (o oneWay) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	out := make([][]float32, 0, len(texts))
@@ -182,7 +190,7 @@ func (oneWay) Close() error { return nil }
 // outOfReach is an embedder on the other side of a network that is not there.
 type outOfReach struct{ why error }
 
-func (outOfReach) GetModel() embeddingport.EmbeddingModel { return model }
+func (outOfReach) GetModel() embeddingport.EmbeddingModel { return getModel() }
 
 func (o outOfReach) Embed(context.Context, []string) ([][]float32, error) { return nil, o.why }
 
@@ -213,7 +221,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	// A search by meaning answers with the whole table's best k, so this is where a
 	// lost filter shows.
 	dense := c.db.ChunkQueries()
-	item, err := dense.FindNearest(ctx, c.first.ID, model.Recipe(), newVector(+1), nil, 20, search.DefaultFloor)
+	item, err := dense.FindNearest(ctx, c.first.ID, sourceport.NearestQuery{Recipe: getModel().Recipe(), Vector: newVector(+1), Limit: 20, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -222,7 +230,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	}
 	// Every note of the first vault is a fair answer; nothing of the second is.
 	for _, p := range item {
-		if _, target := firstNotes[p.Source]; !target {
+		if _, target := getFirstNotes()[p.Source]; !target {
 			t.Errorf("the dense half answered with %s, which the first vault does not hold", p.Source)
 		}
 	}
@@ -303,7 +311,7 @@ func TestAModelOutOfReachPreservesTheWordsToAnswer(t *testing.T) {
 
 	var errs []error
 	finds := search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil,
-		outOfReach{why: errors.New("dial tcp: network is unreachable")}, 0,
+		outOfReach{why: errors.New("dial tcp: network is unreachable")},
 		func(err error) { errs = append(errs, err) })
 
 	found, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{})
@@ -325,7 +333,7 @@ func TestASearchTheCallerStoppedIsNotAnAnswer(t *testing.T) {
 	c := newCorpus(t)
 
 	finds := search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil,
-		outOfReach{why: context.Canceled}, 0, func(error) {})
+		outOfReach{why: context.Canceled}, func(error) {})
 
 	if _, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{}); !errors.Is(err, context.Canceled) {
 		t.Fatalf("got %v", err)
@@ -436,7 +444,7 @@ func TestAPassageCarriesTheLineItExistsOnInTheProse(t *testing.T) {
 
 	const path = "notes/Isotherm.md"
 	const target = "The curve holds throughout."
-	v := testsupport.NewVault(t, map[string]string{path: isotherm})
+	v := testsupport.NewVault(t, map[string]string{path: getIsotherm()})
 	scan := vaults.NewScan(
 		vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(),
 		c.db.NoteQueries(), c.db.Maintenance(),
@@ -445,9 +453,9 @@ func TestAPassageCarriesTheLineItExistsOnInTheProse(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pos := strings.Index(isotherm, target)
+	pos := strings.Index(getIsotherm(), target)
 	whole := chunk.Chunk{
-		Start: 0, Length: len(isotherm), Text: isotherm,
+		Start: 0, Length: len(getIsotherm()), Text: getIsotherm(),
 		Small: []chunk.Chunk{{Start: pos, Length: len(target), Text: target}},
 	}
 	if err := c.db.Chunks().ReplaceChunks(ctx, v.ID, "note", path, []chunk.Chunk{whole}); err != nil {
@@ -522,8 +530,7 @@ func TestASearchByMeaningAsksBelowTheRecipeAVectorIsCachedBy(t *testing.T) {
 	c := newCorpus(t)
 	c.vectorise(t, c.first, newVector(+1))
 
-	limit, err := c.db.ChunkQueries().FindNearest(
-		ctx, c.first.ID, model.Recipe(), newVector(+1), nil, 10, search.DefaultFloor)
+	limit, err := c.db.ChunkQueries().FindNearest(ctx, c.first.ID, sourceport.NearestQuery{Recipe: getModel().Recipe(), Vector: newVector(+1), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -531,8 +538,7 @@ func TestASearchByMeaningAsksBelowTheRecipeAVectorIsCachedBy(t *testing.T) {
 		t.Fatal("nothing came back under the recipe the vectors were written with")
 	}
 
-	astray, err := c.db.ChunkQueries().FindNearest(
-		ctx, c.first.ID, model.String(), newVector(+1), nil, 10, search.DefaultFloor)
+	astray, err := c.db.ChunkQueries().FindNearest(ctx, c.first.ID, sourceport.NearestQuery{Recipe: getModel().String(), Vector: newVector(+1), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -607,7 +613,7 @@ func TestEveryModeIsReportedWhichKindsAQuestionIsAbout(t *testing.T) {
 		t.Errorf("a search by name answered %d sections of books in a vault of notes", len(named))
 	}
 
-	dense, err := queries.FindNearest(ctx, c.first.ID, model.Recipe(), newVector(+1), books, 20, -1)
+	dense, err := queries.FindNearest(ctx, c.first.ID, sourceport.NearestQuery{Recipe: getModel().Recipe(), Vector: newVector(+1), Kinds: books, Limit: 20, Floor: -1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -677,5 +683,36 @@ func TestASearchAbortsOnCanceledContext(t *testing.T) {
 	_, err := searching.Execute(ctx, c.first, "disorder", search.Parameters{})
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("expected context.Canceled, got %v", err)
+	}
+}
+
+// twoKindsEmbedder tells a query from a document and keeps what each was asked for.
+type twoKindsEmbedder struct {
+	oneWay
+	documents, queries []string
+}
+
+func (e *twoKindsEmbedder) Concurrency() int { return 1 }
+
+func (e *twoKindsEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+	e.documents = append(e.documents, texts...)
+	return e.oneWay.Embed(ctx, texts)
+}
+
+func (e *twoKindsEmbedder) EmbedQueries(ctx context.Context, texts []string) ([][]float32, error) {
+	e.queries = append(e.queries, texts...)
+	return e.oneWay.Embed(ctx, texts)
+}
+
+func TestASearchEmbedsTheTypedQueryAsAQuery(t *testing.T) {
+	c := newCorpus(t)
+	c.vectorise(t, c.first, newVector(+1))
+	embedder := &twoKindsEmbedder{oneWay: oneWay{direction: newVector(+1)}}
+
+	if _, err := c.search(embedder).Execute(t.Context(), c.first, "disorder", search.Parameters{}); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(embedder.queries, []string{"disorder"}) || len(embedder.documents) != 0 {
+		t.Errorf("queries %q, documents %q; the typed query must be embedded as a query and nothing as a document", embedder.queries, embedder.documents)
 	}
 }

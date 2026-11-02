@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"io"
+	"math"
 
 	"github.com/klippa-app/go-pdfium/requests"
 )
@@ -17,8 +18,8 @@ type Scan struct {
 // OpenReader opens a PDF for page rendering, reading from the file as the
 // library requests. The scan owns the file and closes it with the scan, or
 // immediately if the document does not open.
-func OpenReader(file io.ReadSeekCloser) (*Scan, error) {
-	doc, err := openReader(file)
+func (w *Workers) OpenReader(file io.ReadSeekCloser) (*Scan, error) {
+	doc, err := w.openReader(file)
 	if err != nil {
 		return nil, err
 	}
@@ -26,8 +27,8 @@ func OpenReader(file io.ReadSeekCloser) (*Scan, error) {
 }
 
 // OpenBytes opens a PDF from raw bytes for page rendering.
-func OpenBytes(raw []byte) (*Scan, error) {
-	doc, err := openBytes(raw)
+func (w *Workers) OpenBytes(raw []byte) (*Scan, error) {
+	doc, err := w.openBytes(raw)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +36,7 @@ func OpenBytes(raw []byte) (*Scan, error) {
 }
 
 // Close releases the document and its worker.
-func (s *Scan) Close() { s.doc.close() }
+func (s *Scan) Close() error { return s.doc.Close() }
 
 // GetPageCount is how many pages the document has.
 func (s *Scan) GetPageCount() int { return s.doc.pages }
@@ -100,20 +101,78 @@ func (s *Scan) RenderPage(index, dpi int) (drawing image.Image, err error) {
 	if err != nil {
 		return nil, err
 	}
-	// The library returns an image over memory it owns and a function that
-	// releases that memory. The pixels are copied out because the rendered
-	// image outlives the call that rendered it. A page is rendered in color
-	// unless a format was requested, and none is.
-	page, isColour := rendered.Result.RenderedImage.(*image.RGBA)
+	return copyRendered(index, rendered.Result.RenderedImage, rendered.Cleanup)
+}
+
+// RenderPageAtWidth is one page drawn width pixels across, as high as its shape makes it.
+//
+// A window draws a page at the width it shows it at, so a page shown small costs little and one
+// shown large is sharp. A page that would have more than maxPixels pixels at that width is an
+// error: GetFittingWidth is the widest width that fits.
+func (s *Scan) RenderPageAtWidth(index, width, maxPixels int) (drawing image.Image, err error) {
+	defer recoverPanic("drawing a page", &drawing, &err)
+	if width <= 0 {
+		return nil, fmt.Errorf("pdf: page %d cannot be drawn %d pixels across", index, width)
+	}
+	pageWidth, pageHeight, err := s.GetPageSize(index)
+	if err != nil {
+		return nil, err
+	}
+	height := getHeightAt(width, pageWidth, pageHeight)
+	if width*height > maxPixels {
+		return nil, fmt.Errorf("pdf: page %d cannot be drawn %d pixels across: it is %d pixels, and %d is the most",
+			index, width, width*height, maxPixels)
+	}
+	rendered, err := s.doc.worker.RenderPageInPixels(&requests.RenderPageInPixels{
+		Page:        requests.Page{ByIndex: &requests.PageByIndex{Document: s.doc.ref, Index: index}, ByReference: nil},
+		Width:       width,
+		Height:      height,
+		RenderFlags: 0,
+		RenderForm:  false,
+		Document:    nil,
+		Crop:        nil,
+		ImageFormat: "",
+	})
+	if err != nil {
+		return nil, err
+	}
+	return copyRendered(index, rendered.Result.RenderedImage, rendered.Cleanup)
+}
+
+// GetFittingWidth is the widest a page can be drawn with no more than maxPixels pixels, but never
+// larger than want and never under one pixel.
+func (s *Scan) GetFittingWidth(index, want, maxPixels int) (int, error) {
+	pageWidth, pageHeight, err := s.GetPageSize(index)
+	if err != nil {
+		return 0, err
+	}
+	fitting := int(math.Floor(math.Sqrt(float64(maxPixels) * pageWidth / pageHeight)))
+	// The height is rounded, so the area of the estimate can be a row over.
+	for fitting > 1 && fitting*getHeightAt(fitting, pageWidth, pageHeight) > maxPixels {
+		fitting--
+	}
+	return max(min(want, fitting), 1), nil
+}
+
+// getHeightAt is how high a page of that shape is drawn width pixels across.
+func getHeightAt(width int, pageWidth, pageHeight float64) int {
+	return max(int(math.Round(float64(width)*pageHeight/pageWidth)), 1)
+}
+
+// copyRendered copies the pixels of a rendered page out of the memory the library owns and
+// releases that memory. The copy is made because the image outlives the call that rendered it.
+// A page is rendered in color unless a format was requested, and none is.
+func copyRendered(index int, rendered image.Image, release func()) (image.Image, error) {
+	page, isColour := rendered.(*image.RGBA)
 	// gomutants:disable-next-line BRANCH_IF reason="non-RGBA render output is rejected"
 	if !isColour {
-		rendered.Cleanup()
-		return nil, fmt.Errorf("pdf: page %d was drawn as %T", index, rendered.Result.RenderedImage)
+		release()
+		return nil, fmt.Errorf("pdf: page %d was drawn as %T", index, rendered)
 	}
 	out := image.NewRGBA(page.Bounds())
 	copy(out.Pix, page.Pix)
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="worker render buffer is released after copying pixels"
-	rendered.Cleanup()
+	release()
 	return out, nil
 }
 

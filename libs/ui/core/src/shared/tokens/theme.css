@@ -156,7 +156,7 @@
   }
 }
 
-/* A rule between passages is a breath. */
+/* A rule between passages is a pause. */
 .prose-numen :where(hr) {
   margin-block: 1.5em;
   border-color: var(--numen-panel-border);
@@ -171,7 +171,7 @@
 
 /* Where the keyboard stands is said by whatever is drawing it, and nowhere
    else. Left to itself the webview rings a focused element in the machine's
-   accent colour, which belongs to no theme numen wears, on a click as well as
+   accent colour, which belongs to no theme numen applies, on a click as well as
    on a key. The rule holds for the whole window, its status bar and every
    shadow root a plugin view is drawn in. Specificity is nil, so anything that
    draws its own ring keeps it. */

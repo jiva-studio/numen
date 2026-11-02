@@ -39,7 +39,7 @@ func (p *Proxy) ServeRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	lease := &bridge.Lease{Host: p.host, PluginID: id}
-	defer func() { _ = lease.Close() }()
+	defer p.releasePlugin(lease)
 
 	target := url.URL{Path: wire.PluginRoute + rest, RawQuery: r.URL.RawQuery}
 	out, err := http.NewRequestWithContext(r.Context(), r.Method, endpoint.BaseURL()+target.RequestURI(), nil)
@@ -57,13 +57,13 @@ func (p *Proxy) ServeRoute(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return
 	}
-	defer res.Body.Close()
+	defer p.closeResponse(res)
 	// The window sets its own policy before forwarding; the plugin cannot widen it.
 	res.Header.Del("Content-Security-Policy")
 	res.Header.Del("Set-Cookie")
 	copyHeaders(w.Header(), res.Header)
 	w.WriteHeader(res.StatusCode)
-	streamBody(w, res.Body)
+	p.reportError(streamBody(w, res.Body))
 }
 
 // parseRoute splits a path of the plugin route into the plugin id and the path below it. A path

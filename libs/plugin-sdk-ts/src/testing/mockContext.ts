@@ -1,5 +1,6 @@
 import type {
   AgentProviderRegistration,
+  AppInfo,
   CommandNote,
   CommandRegistration,
   ContextMenuRegistration,
@@ -8,9 +9,11 @@ import type {
   PluginContext,
   ReaderRegistration,
   SettingsViewRegistration,
+  StatusViewRegistration,
   TabKindRegistration,
   VaultChangeEvent,
 } from '../types'
+import { asFailure, asValue, type Result } from '../result'
 import type { MountedView, ViewRegistration } from '../views'
 import type { DropRegistration } from '../drops'
 
@@ -27,6 +30,8 @@ export interface MockMountedView {
 export interface MockPluginContext extends PluginContext {
   getRegisteredReaders(): ReaderRegistration[]
   getRegisteredSettingsViews(): SettingsViewRegistration[]
+  getRegisteredStatusViews(): StatusViewRegistration[]
+  getOpenedAddresses(): string[]
   getRegisteredTabKinds(): TabKindRegistration[]
   getRegisteredCommands(): CommandRegistration[]
   getRegisteredContextMenus(): ContextMenuRegistration[]
@@ -65,9 +70,31 @@ function addSetListener<T>(listeners: Set<T>, handler: T, subscriptions: Disposa
   })
 }
 
+// Calls the listener and rethrows a rejection as an uncaught error, so a failing handler stays visible.
+function notifyListener<T>(listener: (event: T) => void | Promise<void>, event: T): void {
+  Promise.resolve(listener(event)).catch((error: unknown) => {
+    queueMicrotask(() => {
+      throw error
+    })
+  })
+}
+
+const DEFAULT_APP: AppInfo = { version: '0.0.0-test', build: 1, platform: 'linux' }
+
+// Reports whether the address is an absolute http or https address, as the window opens only those.
+function isWebAddress(url: string): boolean {
+  try {
+    const { protocol } = new URL(url)
+    return protocol === 'http:' || protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 const OPTIONAL_SERVICE_KEYS = [
   'workspace',
   'notes',
+  'relations',
   'files',
   'agent',
   'buffers',
@@ -97,6 +124,8 @@ export function createMockPluginContext(
   const init = initialValues ?? {}
   const readers: ReaderRegistration[] = []
   const settingsViews: SettingsViewRegistration[] = []
+  const statusViews: StatusViewRegistration[] = []
+  const openedAddresses: string[] = []
   const tabKinds: TabKindRegistration[] = []
   const commands: CommandRegistration[] = []
   const contextMenus: ContextMenuRegistration[] = []
@@ -114,7 +143,14 @@ export function createMockPluginContext(
     pluginId: init.pluginId ?? 'test.plugin',
     target: init.target ?? 'desktop.editor',
     subscriptions,
+    app: init.app ?? DEFAULT_APP,
     ...getOptionalServices(init),
+
+    openExternal(url: string): Promise<Result<null>> {
+      if (!isWebAddress(url)) return Promise.resolve(asFailure(`not a web address: ${url}`))
+      openedAddresses.push(url)
+      return Promise.resolve(asValue(null))
+    },
 
     registerReader(registration: ReaderRegistration): Disposable {
       return registerInList(readers, registration, subscriptions)
@@ -122,6 +158,10 @@ export function createMockPluginContext(
 
     registerSettingsView(registration: SettingsViewRegistration): Disposable {
       return registerInList(settingsViews, registration, subscriptions)
+    },
+
+    registerStatusView(registration: StatusViewRegistration): Disposable {
+      return registerInList(statusViews, registration, subscriptions)
     },
 
     registerTabKind<State>(registration: TabKindRegistration<State>): Disposable {
@@ -200,13 +240,13 @@ export function createMockPluginContext(
 
     emitVaultChange(event: VaultChangeEvent): void {
       for (const listener of vaultListeners) {
-        void listener(event)
+        notifyListener(listener, event)
       }
     },
 
     emitFileSelect(event: FileSelectEvent): void {
       for (const listener of fileSelectListeners) {
-        void listener(event)
+        notifyListener(listener, event)
       }
     },
 
@@ -226,6 +266,14 @@ export function createMockPluginContext(
 
     getRegisteredSettingsViews(): SettingsViewRegistration[] {
       return [...settingsViews]
+    },
+
+    getRegisteredStatusViews(): StatusViewRegistration[] {
+      return [...statusViews]
+    },
+
+    getOpenedAddresses(): string[] {
+      return [...openedAddresses]
     },
 
     getRegisteredTabKinds(): TabKindRegistration[] {

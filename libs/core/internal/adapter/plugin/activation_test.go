@@ -11,17 +11,18 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 func newDiscoveredHost(t *testing.T) *Host {
 	t.Helper()
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -44,7 +45,7 @@ func TestEnsureActive_KillsProcessAtActivationTimeout(t *testing.T) {
 	policy.Timeout = 50 * time.Millisecond
 	host.SetActivationPolicy(policy)
 
-	cmd := plugintest.NewIdleCommand()
+	cmd := plugintest.NewIdleCommand(t.Context())
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
@@ -55,7 +56,7 @@ func TestEnsureActive_KillsProcessAtActivationTimeout(t *testing.T) {
 			t.Errorf("close pipe: %v", err)
 		}
 	})
-	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, silent, nil
 	})
 
@@ -80,7 +81,7 @@ func TestACrashingPluginIsNotStartedAgainWithinItsBackoff(t *testing.T) {
 	host.SetActivationPolicy(policy)
 
 	launches := 0
-	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		launches++
 		return nil, nil, errors.New("exec format error")
 	})
@@ -108,7 +109,7 @@ func TestAPluginIsReportedFailedAfterTheFailureLimit(t *testing.T) {
 	var notified []string
 	host.SetOnPluginFailed(func(failure pluginport.PluginFailure) { notified = append(notified, failure.PluginID) })
 	launches := 0
-	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		launches++
 		return nil, nil, errors.New("exec format error")
 	})
@@ -154,7 +155,7 @@ func TestTheBackoffDoublesUpToItsLimit(t *testing.T) {
 
 func TestACanceledCallerDoesNotCountAsAFailedActivation(t *testing.T) {
 	host := newDiscoveredHost(t)
-	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return nil, nil, errors.New("canceled")
 	})
 	ctx, cancel := context.WithCancel(t.Context())
@@ -162,7 +163,7 @@ func TestACanceledCallerDoesNotCountAsAFailedActivation(t *testing.T) {
 	if _, err := host.EnsureActive(ctx, "org.example.sample"); err == nil {
 		t.Fatal("expected the activation to fail")
 	}
-	if err := host.supervisors["org.example.sample"].CheckActivationAllowed(time.Now()); err != nil {
+	if err := host.supervisors["org.example.sample"].CheckActivationAllowed(testsupport.GetMachine().Now()); err != nil {
 		t.Fatalf("a canceled caller put the plugin into backoff: %v", err)
 	}
 }
@@ -176,7 +177,7 @@ func TestEnsureActive_ConcurrentCallersShareBackoff(t *testing.T) {
 
 	var launches atomic.Int32
 	release := make(chan struct{})
-	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		launches.Add(1)
 		<-release
 		return nil, nil, errors.New("exec format error")

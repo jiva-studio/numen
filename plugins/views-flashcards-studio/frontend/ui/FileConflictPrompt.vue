@@ -6,6 +6,7 @@
  * two versions to retain. A file that is gone keeps the content on screen and
  * offers to recreate it. The wording of both is supplied by the tab.
  */
+import { Button } from '@numen/ui'
 import type { FileConflict } from '@numen/plugin-sdk'
 
 // --- Props & Emits ---
@@ -38,12 +39,12 @@ defineEmits<{
 
   <p v-if="conflict === 'gone'" class="caution caution--conflict" role="status">
     {{ words.gone }}
-    <button type="button" class="answer" @click="$emit('keep')">{{ words.makeAgain }}</button>
+    <Button size="small" @click="$emit('keep')">{{ words.makeAgain }}</Button>
   </p>
 
   <p v-if="conflict === 'stale'" class="caution caution--conflict" role="status">
     {{ words.stale }}
-    <button type="button" class="answer" @click="$emit('keep')">{{ words.keep }}</button>
-    <button type="button" class="answer" @click="$emit('take')">{{ words.take }}</button>
+    <Button size="small" @click="$emit('keep')">{{ words.keep }}</Button>
+    <Button variant="outline" size="small" @click="$emit('take')">{{ words.take }}</Button>
   </p>
 </template>

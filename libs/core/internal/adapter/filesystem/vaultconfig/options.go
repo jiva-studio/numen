@@ -50,7 +50,7 @@ func (i *Ignoring) MatchesPath(path string) bool {
 
 func (o Options) CompileIgnoring() *Ignoring {
 	return &Ignoring{
-		defaults: ignore.CompileIgnoreLines(DefaultIgnore...),
+		defaults: ignore.CompileIgnoreLines(GetDefaultIgnore()...),
 		vaults:   ignore.CompileIgnoreLines(o.Ignore...),
 	}
 }
@@ -76,12 +76,12 @@ func (o Options) GetDebounceDelay() time.Duration {
 
 // NoteExtensions is what counts as a note. A note of every type a plugin
 // declares is markdown, and a vault holds them under one extension.
-var NoteExtensions = []string{domain.NoteExtension}
+func GetNoteExtensions() []string { return []string{domain.NoteExtension} }
 
 // DefaultIgnore is what no vault has to ask to be left out. A name beginning
 // with a dot belongs to a tool — an editor's lock, a sync client's
 // bookkeeping.
-var DefaultIgnore = []string{".*"}
+func GetDefaultIgnore() []string { return []string{".*"} }
 
 func (o Options) GetServiceDir() string {
 	if o.ServiceDir == "" {
@@ -99,7 +99,7 @@ func (o Options) IsService(name string) bool {
 
 // Kind returns the source kind for a file name: a note or any other file.
 func (o Options) Kind(name string) domain.SourceKind {
-	if hasExtension(name, NoteExtensions) {
+	if hasExtension(name, GetNoteExtensions()) {
 		return domain.KindNote
 	}
 	return domain.KindFile

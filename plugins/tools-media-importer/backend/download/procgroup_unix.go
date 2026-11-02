@@ -4,6 +4,7 @@ package download
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"syscall"
@@ -25,7 +26,9 @@ func setProcessGroup(running *exec.Cmd) {
 		}
 		go func() {
 			time.Sleep(stopGrace)
-			_ = syscall.Kill(group, syscall.SIGKILL)
+			if err := syscall.Kill(group, syscall.SIGKILL); err != nil && !errors.Is(err, syscall.ESRCH) {
+				fmt.Fprintf(os.Stderr, "tools-media-importer: stop the process group %d: %v\n", -group, err)
+			}
 		}()
 		return nil
 	}

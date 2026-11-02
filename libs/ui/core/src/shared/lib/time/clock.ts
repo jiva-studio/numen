@@ -7,10 +7,15 @@ export interface Clock {
   readonly cancel: (handle: number) => void
 }
 
+/** Milliseconds on the monotonic clock. The only function that reads it; tests control it with fake timers. */
+export function getMonotonicNow(): number {
+  return performance.now()
+}
+
 export const browserClock: Clock = {
-  now: () => performance.now(),
-  schedule: (run) => requestAnimationFrame(run),
-  cancel: (handle) => cancelAnimationFrame(handle),
+  now: getMonotonicNow,
+  schedule: (run) => globalThis.requestAnimationFrame(run),
+  cancel: (handle) => globalThis.cancelAnimationFrame(handle),
 }
 
 /**
@@ -25,6 +30,6 @@ export type Paint = (draw: () => void) => void
  * hands in its own.
  */
 export const onNextFrame = (run: () => void): void => {
-  if (typeof requestAnimationFrame === 'function') browserClock.schedule(run)
+  if (typeof globalThis.requestAnimationFrame === 'function') browserClock.schedule(run)
   else run()
 }

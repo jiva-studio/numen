@@ -1,5 +1,5 @@
 /**
- * Stryker's settings for one run of a `ts` target, handed over by `mutate.mjs`
+ * Stryker's settings for one run of a `ts` target, passed by `mutate.mjs`
  * in `NUMEN_MUTATION`. Stryker runs from the repository root, and its sandbox holds the
  * target's package and the test data its tests read.
  */

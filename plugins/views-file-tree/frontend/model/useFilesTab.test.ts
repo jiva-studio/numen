@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Entry } from '../types'
 import { useFilesTab } from './useFilesTab'
-import { getFolderPath, ROOT, useFileTree } from './useFileTree'
+import { getFolderPath, ROOT, createFileTree } from './useFileTree'
 import { NEW_FOLDER, NEW_NOTE, RENAME } from '../lib/menu'
 import { WORDS as words } from '../words'
 
@@ -56,7 +56,7 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
   const sources: boolean[] = []
   const folders: boolean[] = []
   const vault: Record<string, readonly Entry[]> = { ...target, ...extra }
-  const list = useFileTree({
+  const list = createFileTree({
     list: async (folderPath: string) => {
       request.push(folderPath)
       return vault[folderPath] ?? []
@@ -64,14 +64,20 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
   })
   const gestures = useFilesTab(list, {
     ...windowCommands,
-    openEntry: (entry) => void isDone.push(`lands file ${entry.path}`),
+    openEntry: (entry) => {
+      isDone.push(`lands file ${entry.path}`)
+    },
     runCommand: (id, paths, target) => {
       isDone.push(`runs ${id} ${paths.join(' ')} ${target.name}`)
       sources.push(target.isNote)
       folders.push(target.isFolder)
     },
-    movePath: async (from, to) => void isDone.push(`moves ${from} ${to}`),
-    setDraggedPaths: (paths) => void isDone.push(`drags ${paths.join(' ') || '—'}`),
+    movePath: async (from, to) => {
+      isDone.push(`moves ${from} ${to}`)
+    },
+    setDraggedPaths: (paths) => {
+      isDone.push(`drags ${paths.join(' ') || '—'}`)
+    },
     createFolder: async (path) => {
       isDone.push(`makes ${path}`)
       if (fails) return
@@ -91,7 +97,9 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
       isDone.push(`drops into ${folderPath === ROOT ? '/' : folderPath} ${data['text/uri-list']}`)
       return []
     },
-    showError: (text) => void isDone.push(`says ${text}`),
+    showError: (text) => {
+      isDone.push(`says ${text}`)
+    },
   })
   return { recorded: isDone, list, one: gestures, requests: request, sources, folders }
 }
@@ -277,7 +285,7 @@ describe('rows release', () => {
 
   it('read the folders again once, when all of them are done', async () => {
     const request: string[] = []
-    const list = useFileTree({
+    const list = createFileTree({
       list: async (folderPath: string) => {
         request.push(folderPath)
         return target[folderPath] ?? []
@@ -285,15 +293,15 @@ describe('rows release', () => {
     })
     const one = useFilesTab(list, {
       ...windowCommands,
-      openEntry: () => {},
-      runCommand: () => {},
-      movePath: async () => {},
-      setDraggedPaths: () => {},
-      createFolder: async () => {},
+      openEntry: () => undefined,
+      runCommand: () => undefined,
+      movePath: async () => undefined,
+      setDraggedPaths: () => undefined,
+      createFolder: async () => undefined,
       createNote: async () => '',
       canDropData: () => false,
       dropData: async () => [],
-      showError: () => {},
+      showError: () => undefined,
     })
     await list.openFolder(ROOT)
     request.length = 0

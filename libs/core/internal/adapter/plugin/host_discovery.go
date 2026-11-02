@@ -3,7 +3,8 @@ package plugin
 import (
 	"context"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifestjson"
 	"path/filepath"
 	"reflect"
 )
@@ -14,8 +15,8 @@ func (h *Host) Discover() error {
 	h.discoverMu.Lock()
 	defer h.discoverMu.Unlock()
 
-	all, problems := manifestfile.DiscoverPlugins(h.dirs)
-	discovered := manifestfile.FilterPluginsByTarget(all, h.target)
+	all, problems := manifestjson.Discover(h.dirs)
+	discovered := manifest.FilterByTarget(all, h.target)
 
 	h.mu.Lock()
 	if h.isClosed {
@@ -35,13 +36,19 @@ func (h *Host) Discover() error {
 	}
 	for _, id := range stalePlugins {
 		h.retirePlugin(id)
+		h.mu.RLock()
+		isInstalled := h.onDisk[id]
+		h.mu.RUnlock()
+		if !isInstalled {
+			h.removeCacheDir(id)
+		}
 	}
 	return nil
 }
 
 // registerDiscoveredLocked registers the discovered plugins and returns the ids to stop, which are the plugins
 // that left the disk and the running ones whose manifest changed.
-func (h *Host) registerDiscoveredLocked(discovered []manifestfile.DiscoveredPlugin) []string {
+func (h *Host) registerDiscoveredLocked(discovered []manifest.Discovered) []string {
 	present := make(map[string]bool, len(discovered))
 	var stale []string
 	for _, p := range discovered {
@@ -86,24 +93,17 @@ func (h *Host) isCoveredByProblemLocked(pluginID string) bool {
 	return false
 }
 
-func (h *Host) registerSupervisorLocked(p manifestfile.DiscoveredPlugin) {
+func (h *Host) registerSupervisorLocked(p manifest.Discovered) {
 	id := p.Manifest.ID
 	sup, exists := h.supervisors[id]
 	if !exists {
-		sup = lifecycle.New()
+		sup = lifecycle.New(h.clock)
 		sup.SetOnExit(func() { h.dropEndpointOfStoppedPlugin(id, sup) })
+		sup.SetOnError(h.reportError)
 		h.supervisors[id] = sup
 	}
 	sup.SetPermissions(p.Manifest.Permissions)
 	sup.SetActivationPolicy(h.activation)
-	memLimit := h.processLimits.MemoryLimitBytes
-	if p.Manifest.Lifecycle.MemoryLimitBytes > 0 {
-		memLimit = p.Manifest.Lifecycle.MemoryLimitBytes
-	}
-	sup.SetMemoryLimit(memLimit)
-	sup.SetOnMemoryExceeded(func() {
-		h.reportMemoryExceeded(id, sup)
-	})
 }
 
 // retirePlugin stops a plugin whose manifest changed or vanished and forgets its supervisor once it is unregistered.

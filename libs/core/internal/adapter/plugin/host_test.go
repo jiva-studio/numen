@@ -9,12 +9,10 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"slices"
-	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -28,7 +26,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transport"
@@ -36,6 +33,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 func createNamedTestPlugin(t *testing.T, dir, id string) {
@@ -50,21 +48,11 @@ func createNamedTestPlugin(t *testing.T, dir, id string) {
 		"name": %q,
 		"version": "1.0.0",
 		"description": "test plugin",
-		"capabilities": ["test"],
+		"capabilities": ["tools"],
 		"targets": ["desktop.editor"],
 		"permissions": ["vault:read"],
-		"lifecycle": {
-			"mode": "on-demand",
-			"idleTimeoutSeconds": 10
-		},
-		"backend": {
-			"type": "process",
-			"entrypoint": "bin/test",
-			"serviceName": "numen.v1.TestService"
-		},
-		"frontend": {
-			"entrypoint": "dist/index.js"
-		},
+		"services": ["%[1]s.TestService"], "backend": {"entrypoint": "bin/test"},
+		"frontend": {},
 		"settings": []
 	}`, id, id)
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
@@ -76,7 +64,7 @@ func TestHostDiscoveryAndLookup(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -91,9 +79,9 @@ func TestHostDiscoveryAndLookup(t *testing.T) {
 		t.Fatal("expected to find org.example.sample")
 	}
 
-	capPlugin, ok := host.FindPluginByCapability("org.example.reading")
+	capPlugin, ok := host.FindPluginByCapability("tools")
 	if !ok || capPlugin.Manifest.ID != "org.example.sample" {
-		t.Fatal("expected to find plugin by capability org.example.reading")
+		t.Fatal("expected to find plugin by capability tools")
 	}
 }
 
@@ -102,22 +90,22 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	pingPort := plugintest.ServeHostPing(t)
 	plugintest.CreateTestPluginTree(t, tmp)
 
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	host.SetContentTypeTable(sharedmimeinfo.Open())
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
-	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		actualPort := port
 		if actualPort == 0 {
 			actualPort = pingPort
@@ -149,7 +137,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	host.Release("org.example.sample")
 
 	// TriggerEvent for matching event
-	activated, err := host.TriggerEvent(ctx, "onFile:test.sample")
+	activated, err := host.TriggerEvent(ctx, "onFile:test.pdf")
 	if err != nil {
 		t.Fatalf("TriggerEvent failed: %v", err)
 	}
@@ -159,7 +147,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 
 	// EvictIdle test
 	evicted := host.EvictIdle(ctx, 10*time.Millisecond, 50*time.Millisecond)
-	// Because idleTimeoutSeconds is 1s, right now it is not evicted yet
+	// The plugin holds a lease, so it is not evicted
 	if len(evicted) != 0 {
 		t.Fatalf("expected 0 evicted before threshold, got %v", evicted)
 	}
@@ -172,7 +160,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 }
 
 func TestHostEvictLoopTeardown(t *testing.T) {
-	host := NewHost("desktop.editor")
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	if host.isEvictStopped {
 		t.Fatal("expected evict loop to be running")
 	}
@@ -232,22 +220,22 @@ func TestHostEmitEventActivation(t *testing.T) {
 	pingPort := plugintest.ServeHostPing(t)
 	plugintest.CreateTestPluginTree(t, tmp)
 
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	host.SetContentTypeTable(sharedmimeinfo.Open())
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
-	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		actualPort := port
 		if actualPort == 0 {
 			actualPort = pingPort
@@ -265,8 +253,10 @@ func TestHostEmitEventActivation(t *testing.T) {
 	}
 
 	// Emit onFile event via debounced event bus
-	host.EmitEvent("onFile:document.sample")
-	host.GetEventBus().Flush(ctx)
+	host.EmitEvent("onFile:document.pdf")
+	if err := host.GetEventBus().Flush(ctx); err != nil {
+		t.Fatal(err)
+	}
 
 	// Plugin should now be activated
 	if sup.GetState() != lifecycle.StateActive && sup.GetState() != lifecycle.StateIdle {
@@ -284,18 +274,18 @@ func TestHostDrainsStdoutAfterPasseshake(t *testing.T) {
 	pingPort := plugintest.ServeHostPing(t)
 	plugintest.CreateTestPluginTree(t, tmp)
 
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
 	pr, pw, err := os.Pipe()
@@ -303,13 +293,13 @@ func TestHostDrainsStdoutAfterPasseshake(t *testing.T) {
 		t.Fatalf("create pipe failed: %v", err)
 	}
 
-	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, pr, nil
 	})
 
 	writeDone := make(chan error, 1)
 	go func() {
-		defer pw.Close()
+		defer testsupport.Close(t, pw)
 		if _, err := pw.Write([]byte(fmt.Sprintf("NUMEN_READY port=%d\n", pingPort))); err != nil {
 			writeDone <- err
 			return
@@ -352,18 +342,18 @@ func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 	pingPort := plugintest.ServeHostPing(t)
 	createNamedTestPlugin(t, tmp, "test.concurrent")
 
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
 	var launchCount atomic.Int32
@@ -371,7 +361,7 @@ func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 	allowHandshake := make(chan struct{})
 	var once sync.Once
 
-	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		launchCount.Add(1)
 		once.Do(func() {
 			close(launchStarted)
@@ -440,33 +430,33 @@ func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
 	createNamedTestPlugin(t, tmp, "plugin.slow")
 	createNamedTestPlugin(t, tmp, "plugin.fast")
 
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	cmdSlow := exec.Command("sleep", "10")
+	cmdSlow := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmdSlow.Start(); err != nil {
 		t.Fatalf("start slow proc failed: %v", err)
 	}
 	defer func() {
-		_ = cmdSlow.Process.Kill()
-		_, _ = cmdSlow.Process.Wait()
+		testsupport.Kill(t, cmdSlow)
+		plugintest.ReapProcess(t, cmdSlow.Process)
 	}()
 
-	cmdFast := exec.Command("sleep", "10")
+	cmdFast := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmdFast.Start(); err != nil {
 		t.Fatalf("start fast proc failed: %v", err)
 	}
 	defer func() {
-		_ = cmdFast.Process.Kill()
-		_, _ = cmdFast.Process.Wait()
+		testsupport.Kill(t, cmdFast)
+		plugintest.ReapProcess(t, cmdFast.Process)
 	}()
 
 	slowStarted := make(chan struct{})
 	slowAllowHandshake := make(chan struct{})
 
-	host.SetLauncher(func(_ context.Context, p manifestfile.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, p manifest.Discovered, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		if p.Manifest.ID == "plugin.slow" {
 			close(slowStarted)
 			<-slowAllowHandshake
@@ -533,7 +523,7 @@ func TestHostEnsureActiveConcurrentFailure(t *testing.T) {
 	tmp := t.TempDir()
 	createNamedTestPlugin(t, tmp, "test.fail")
 
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -543,7 +533,7 @@ func TestHostEnsureActiveConcurrentFailure(t *testing.T) {
 	var once sync.Once
 	failErr := errors.New("simulated launch failure")
 
-	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		once.Do(func() {
 			close(launchStarted)
 		})
@@ -594,24 +584,24 @@ func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
 	pingPort := plugintest.ServeHostPing(t)
 	createNamedTestPlugin(t, tmp, "test.cancel")
 
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
+		testsupport.Kill(t, cmd)
+		plugintest.ReapProcess(t, cmd.Process)
 	}()
 
 	launchStarted := make(chan struct{})
 	allowHandshake := make(chan struct{})
 
-	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, port int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		close(launchStarted)
 		<-allowHandshake
 		actualPort := port
@@ -718,7 +708,8 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 
-	host := NewHost("desktop.editor", tmp)
+	clock := testsupport.NewClock()
+	host := NewHost(clock, "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -735,22 +726,22 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	}
 	serverPort := tcpAddr.Port
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	defer func() {
 		if cmd.Process != nil {
-			_ = cmd.Process.Kill()
-			_, _ = cmd.Process.Wait()
+			testsupport.Kill(t, cmd)
+			plugintest.ReapProcess(t, cmd.Process)
 		}
 	}()
 
 	handler.onShutdown = func() {
-		_ = cmd.Process.Kill()
+		testsupport.Kill(t, cmd)
 	}
 
-	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})
@@ -769,16 +760,10 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	host.stdins[stdinKey{pluginID: "org.example.sample", pid: cmd.Process.Pid}] = closer
 	host.stdinsMu.Unlock()
 
-	host.mu.Lock()
-	p := host.plugins["org.example.sample"]
-	p.Manifest.Lifecycle.IdleTimeoutSeconds = 1
-	host.plugins["org.example.sample"] = p
-	host.mu.Unlock()
-
 	host.Release("org.example.sample")
 	host.Release("org.example.sample")
 
-	time.Sleep(1050 * time.Millisecond)
+	clock.Advance(1050 * time.Millisecond)
 
 	evicted := host.EvictIdle(ctx, 0, 500*time.Millisecond)
 	if len(evicted) != 1 || evicted[0] != "org.example.sample" {
@@ -806,156 +791,11 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	}
 }
 
-func TestHostEvictMemoryExceeded(t *testing.T) {
-	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
-
-	host := NewHost("desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
-		t.Fatalf("Discover failed: %v", err)
-	}
-
-	handler := &testLifecycleHandler{}
-	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(handler))
-	server := httptest.NewServer(mux)
-	defer server.Close()
-
-	serverURL, err := url.Parse(server.URL)
-	if err != nil {
-		t.Fatalf("parse server URL: %v", err)
-	}
-	serverPort, err := strconv.Atoi(serverURL.Port())
-	if err != nil {
-		t.Fatalf("parse port: %v", err)
-	}
-
-	cmd := exec.Command("sleep", "10")
-	if err := cmd.Start(); err != nil {
-		t.Fatalf("start sleep: %v", err)
-	}
-	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
-	}()
-
-	handler.onShutdown = func() {
-		_ = cmd.Process.Kill()
-	}
-
-	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
-		return cmd.Process, io.NopCloser(r), nil
-	})
-
-	ctx := t.Context()
-	_, err = host.EnsureActive(ctx, "org.example.sample")
-	if err != nil {
-		t.Fatalf("EnsureActive failed: %v", err)
-	}
-
-	closer := &testCloser{}
-	host.stdinsMu.Lock()
-	host.stdins[stdinKey{pluginID: "org.example.sample", pid: cmd.Process.Pid}] = closer
-	host.stdinsMu.Unlock()
-
-	sup := host.supervisors["org.example.sample"]
-	sup.SetMemoryLimit(100 * 1024 * 1024)
-
-	// Simulate RSS below limit
-	sup.SetRSSReader(func(_ int) (uint64, error) {
-		return 50 * 1024 * 1024, nil
-	})
-	evicted := host.EvictMemoryExceeded(ctx, 500*time.Millisecond)
-	if len(evicted) != 0 {
-		t.Fatalf("expected no eviction when below limit, got %v", evicted)
-	}
-
-	// Simulate RSS above limit
-	sup.SetRSSReader(func(_ int) (uint64, error) {
-		return 200 * 1024 * 1024, nil
-	})
-	evicted = host.EvictMemoryExceeded(ctx, 500*time.Millisecond)
-	if len(evicted) != 1 || evicted[0] != "org.example.sample" {
-		t.Fatalf("expected org.example.sample to be evicted for memory, got %v", evicted)
-	}
-
-	if !handler.isShutdownCalled() {
-		t.Error("expected PluginLifecycleService.Shutdown RPC to be sent")
-	}
-
-	if !closer.getIsClosed() {
-		t.Error("expected stdin closer to be closed on eviction")
-	}
-
-	if sup.GetState() != lifecycle.StateDormant {
-		t.Errorf("expected StateDormant, got %v", sup.GetState())
-	}
-}
-
-func TestHostMemoryEvictionReportsErrorAndBacksOff(t *testing.T) {
-	tmp := t.TempDir()
-	plugintest.CreateTestPluginTree(t, tmp)
-
-	host := NewHost("desktop.editor", tmp)
-	var reportedErrors []error
-	host.SetErrorHandler(func(err error) {
-		reportedErrors = append(reportedErrors, err)
-	})
-	if err := host.Discover(); err != nil {
-		t.Fatalf("Discover failed: %v", err)
-	}
-
-	cmd := exec.Command("sleep", "60")
-	if err := cmd.Start(); err != nil {
-		t.Fatalf("failed to start mock process: %v", err)
-	}
-	defer func() {
-		_ = cmd.Process.Kill()
-		_, _ = cmd.Process.Wait()
-	}()
-
-	now := time.Now()
-	ctx := t.Context()
-
-	host.mu.Lock()
-	sup := host.supervisors["org.example.sample"]
-	_ = sup.Attach(cmd.Process, now)
-	host.endpoints["org.example.sample"] = transport.Endpoint{Host: "127.0.0.1", Port: 8080, Token: "test-token"}
-	host.mu.Unlock()
-
-	sup.SetMemoryLimit(100 * 1024 * 1024)
-	sup.SetRSSReader(func(_ int) (uint64, error) {
-		return 200 * 1024 * 1024, nil
-	})
-
-	evicted := host.EvictMemoryExceeded(ctx, 100*time.Millisecond)
-	if len(evicted) != 1 || evicted[0] != "org.example.sample" {
-		t.Fatalf("expected org.example.sample evicted, got %v", evicted)
-	}
-
-	if len(reportedErrors) == 0 {
-		t.Fatal("expected error to be reported for memory eviction")
-	}
-	if !strings.Contains(reportedErrors[0].Error(), "org.example.sample was stopped") {
-		t.Fatalf("expected memory limit error message, got %v", reportedErrors[0])
-	}
-
-	// Next EnsureActive should refuse activation with backoff
-	_, err := host.EnsureActive(ctx, "org.example.sample")
-	if err == nil {
-		t.Fatal("expected EnsureActive to fail due to backoff after memory eviction")
-	}
-	if !errors.Is(err, lifecycle.ErrActivationBackoff) {
-		t.Fatalf("expected errActivationBackoff, got %v", err)
-	}
-}
-
 func TestHostTeardownAllSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -972,22 +812,22 @@ func TestHostTeardownAllSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	}
 	serverPort := tcpAddr.Port
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	defer func() {
 		if cmd.Process != nil {
-			_ = cmd.Process.Kill()
-			_, _ = cmd.Process.Wait()
+			testsupport.Kill(t, cmd)
+			plugintest.ReapProcess(t, cmd.Process)
 		}
 	}()
 
 	handler.onShutdown = func() {
-		_ = cmd.Process.Kill()
+		testsupport.Kill(t, cmd)
 	}
 
-	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})
@@ -1026,7 +866,8 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 
-	host := NewHost("desktop.editor", tmp)
+	clock := testsupport.NewClock()
+	host := NewHost(clock, "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -1043,14 +884,14 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 	}
 	serverPort := tcpAddr.Port
 
-	cmd := exec.Command("sleep", "10")
+	cmd := exec.CommandContext(t.Context(), "sleep", "10")
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	defer func() {
 		if cmd.Process != nil {
-			_ = cmd.Process.Kill()
-			_, _ = cmd.Process.Wait()
+			testsupport.Kill(t, cmd)
+			plugintest.ReapProcess(t, cmd.Process)
 		}
 	}()
 
@@ -1059,10 +900,10 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 	handler.onShutdown = func() {
 		close(rpcReceived)
 		<-releaseShutdown
-		_ = cmd.Process.Kill()
+		testsupport.Kill(t, cmd)
 	}
 
-	host.SetLauncher(func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})
@@ -1072,16 +913,10 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 
-	host.mu.Lock()
-	p := host.plugins["org.example.sample"]
-	p.Manifest.Lifecycle.IdleTimeoutSeconds = 1
-	host.plugins["org.example.sample"] = p
-	host.mu.Unlock()
-
 	host.Release("org.example.sample")
 	host.Release("org.example.sample")
 
-	time.Sleep(1050 * time.Millisecond)
+	clock.Advance(1050 * time.Millisecond)
 
 	isDone := make(chan struct{})
 	go func() {
@@ -1104,8 +939,8 @@ func startSleepLauncher(t *testing.T, started *atomic.Int32, procs *[]*os.Proces
 	t.Helper()
 	pingPort := plugintest.ServeHostPing(t)
 	var mu sync.Mutex
-	return func(_ context.Context, _ manifestfile.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		cmd := plugintest.NewIdleCommand()
+	return func(ctx context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		cmd := plugintest.NewIdleCommand(context.WithoutCancel(ctx))
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}
@@ -1123,7 +958,7 @@ func startSleepLauncher(t *testing.T, started *atomic.Int32, procs *[]*os.Proces
 func TestACrashedPluginIsStartedAgainAfterAConsumerReleasesIt(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -1168,19 +1003,19 @@ func TestACrashedPluginIsStartedAgainAfterAConsumerReleasesIt(t *testing.T) {
 }
 
 func TestAcquireAndReleaseDoNothingWithoutARunningProcess(t *testing.T) {
-	sup := lifecycle.New()
-	if sup.Acquire(time.Now()) {
+	sup := lifecycle.New(testsupport.GetMachine())
+	if sup.Acquire(testsupport.GetMachine().Now()) {
 		t.Fatal("Acquire held a dormant supervisor")
 	}
-	sup.Release(time.Now())
+	sup.Release(testsupport.GetMachine().Now())
 	if sup.GetState() != lifecycle.StateDormant {
 		t.Fatalf("Release moved a dormant supervisor to %v", sup.GetState())
 	}
 	sup.SetActivating()
-	if sup.Acquire(time.Now()) {
+	if sup.Acquire(testsupport.GetMachine().Now()) {
 		t.Fatal("Acquire held an activating supervisor")
 	}
-	sup.Release(time.Now())
+	sup.Release(testsupport.GetMachine().Now())
 	if sup.GetState() != lifecycle.StateActivating {
 		t.Fatalf("Release moved an activating supervisor to %v", sup.GetState())
 	}
@@ -1189,7 +1024,7 @@ func TestAcquireAndReleaseDoNothingWithoutARunningProcess(t *testing.T) {
 func TestEnsureActiveRetiresARunningProcessWhoseEndpointIsMissing(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -1227,15 +1062,15 @@ func TestEnsureActiveRetiresARunningProcessWhoseEndpointIsMissing(t *testing.T) 
 }
 
 func TestTheExitOfAnOldProcessKeepsTheEndpointOfItsReplacement(t *testing.T) {
-	host := NewHost("desktop.editor")
-	sup := lifecycle.New()
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	sup := lifecycle.New(testsupport.GetMachine())
 	replacement := transport.Endpoint{Host: "127.0.0.1", Port: 4321, Token: "new"}
 
 	host.mu.Lock()
 	host.endpoints["p"] = replacement
 	host.mu.Unlock()
 	sup.SetActivating()
-	sup.ActivateInProcess(time.Now())
+	sup.ActivateInProcess(testsupport.GetMachine().Now())
 	host.dropEndpointOfStoppedPlugin("p", sup)
 	host.mu.RLock()
 	endpoint := host.endpoints["p"]
@@ -1257,18 +1092,13 @@ func TestTheExitOfAnOldProcessKeepsTheEndpointOfItsReplacement(t *testing.T) {
 func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
-	host := NewHost("desktop.editor", tmp)
+	clock := testsupport.NewClock()
+	host := NewHost(clock, "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 	var started atomic.Int32
 	host.SetLauncher(startSleepLauncher(t, &started, nil))
-	host.mu.Lock()
-	p := host.plugins["org.example.sample"]
-	p.Manifest.Lifecycle.IdleTimeoutSeconds = 1
-	host.plugins["org.example.sample"] = p
-	host.mu.Unlock()
-
 	var evictions atomic.Int32
 	stop := make(chan struct{})
 	var evictor sync.WaitGroup
@@ -1307,7 +1137,7 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 		}
 		host.Release("org.example.sample")
 		if i == 0 {
-			time.Sleep(1050 * time.Millisecond)
+			clock.Advance(1050 * time.Millisecond)
 		}
 	}
 	stopEvictor()
@@ -1320,7 +1150,7 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 }
 
 func TestCloseStdin_PreservesNewerProcessStdin(t *testing.T) {
-	host := NewHost("desktop.editor")
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	oldPipe, newPipe := &testCloser{}, &testCloser{}
 	host.stdinsMu.Lock()
 	host.stdins[stdinKey{pluginID: "p", pid: 1}] = oldPipe
@@ -1343,7 +1173,7 @@ func TestCloseStdin_PreservesNewerProcessStdin(t *testing.T) {
 func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -1358,7 +1188,7 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 	sup := host.supervisors["org.example.sample"]
 	delete(host.endpoints, "org.example.sample")
 	host.mu.Unlock()
-	if !sup.BeginDeactivation(0, time.Now()) {
+	if !sup.BeginDeactivation(0, testsupport.GetMachine().Now()) {
 		t.Fatal("expected the idle plugin to begin deactivating")
 	}
 
@@ -1400,10 +1230,14 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 // that is not the order of their ids.
 func newHostOfProviders(t *testing.T) *Host {
 	t.Helper()
-	host := NewHost("desktop.editor")
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Second) })
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Second); err != nil {
+			t.Error(err)
+		}
+	})
 	for _, id := range []string{"md.numen.provider-c", "md.numen.provider-a", "md.numen.provider-b"} {
-		host.plugins[id] = manifestfile.DiscoveredPlugin{Manifest: manifestfile.Manifest{
+		host.plugins[id] = manifest.Discovered{Manifest: manifest.Manifest{
 			ID:           id,
 			Capabilities: []string{bridge.CapabilityEmbedding},
 		}}
@@ -1451,11 +1285,11 @@ func TestTheHostListsPluginsInIDOrder(t *testing.T) {
 	}
 }
 
-func TestHostEvictIdleNeverEvictsZeroTimeoutPlugin(t *testing.T) {
+func TestHostEvictIdleKeepsAPluginIdleForLessThanTheThreshold(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 
-	host := NewHost("desktop.editor", tmp)
+	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -1468,23 +1302,12 @@ func TestHostEvictIdleNeverEvictsZeroTimeoutPlugin(t *testing.T) {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 
-	host.mu.Lock()
-	p := host.plugins["org.example.sample"]
-	p.Manifest.Lifecycle.IdleTimeoutSeconds = 0
-	host.plugins["org.example.sample"] = p
-	host.mu.Unlock()
-
 	host.Release("org.example.sample")
 	host.Release("org.example.sample")
 
-	evicted := host.EvictIdle(ctx, 0, 50*time.Millisecond)
+	evicted := host.EvictIdle(ctx, idleThreshold, 50*time.Millisecond)
 	if len(evicted) != 0 {
-		t.Fatalf("expected 0 evicted for zero timeout plugin, got %v", evicted)
-	}
-
-	evicted = host.EvictIdle(ctx, 3*time.Minute, 50*time.Millisecond)
-	if len(evicted) != 0 {
-		t.Fatalf("expected 0 evicted with defaultThreshold for zero timeout plugin, got %v", evicted)
+		t.Fatalf("expected 0 evicted before the idle threshold, got %v", evicted)
 	}
 
 	host.mu.RLock()
@@ -1510,10 +1333,14 @@ type runningPlugin struct {
 
 func newRunningTestHost(t *testing.T, plugins map[string]runningPlugin) *Host {
 	t.Helper()
-	host := NewHost("desktop.editor")
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
 	for id, one := range plugins {
-		sup := lifecycle.New()
+		sup := lifecycle.New(testsupport.GetMachine())
 		sup.SetPermissions(one.perms)
 		host.supervisors[id] = sup
 		host.endpoints[id] = transport.Endpoint{Host: "127.0.0.1", Port: 1, Token: one.token}
@@ -1524,7 +1351,7 @@ func newRunningTestHost(t *testing.T, plugins map[string]runningPlugin) *Host {
 // The host names a running plugin by the token it was launched with.
 func TestTheHostNamesAPluginByItsToken(t *testing.T) {
 	host := newRunningTestHost(t, map[string]runningPlugin{
-		"md.numen.a": {"token-a", []string{manifestfile.PermissionAIComplete}},
+		"md.numen.a": {"token-a", []string{manifest.PermissionAIComplete}},
 		"md.numen.b": {"token-b", nil},
 		"md.numen.c": {"", nil},
 	})
@@ -1539,10 +1366,10 @@ func TestTheHostNamesAPluginByItsToken(t *testing.T) {
 			t.Errorf("token %q names %q", token, got)
 		}
 	}
-	if err := host.CheckPluginPermission("md.numen.b", manifestfile.PermissionAIComplete); !errors.Is(err, pluginport.ErrPermissionDenied) {
+	if err := host.CheckPluginPermission("md.numen.b", manifest.PermissionAIComplete); !errors.Is(err, pluginport.ErrPermissionDenied) {
 		t.Errorf("a plugin without the permission was allowed: %v", err)
 	}
-	if err := host.CheckPluginPermission("md.numen.a", manifestfile.PermissionAIComplete); err != nil {
+	if err := host.CheckPluginPermission("md.numen.a", manifest.PermissionAIComplete); err != nil {
 		t.Errorf("a plugin with the permission failed: %v", err)
 	}
 }
@@ -1550,7 +1377,7 @@ func TestTheHostNamesAPluginByItsToken(t *testing.T) {
 // The host endpoint serves only once something answers completions, and
 // stops when the host does.
 func TestTheHostServesItsEndpointOnceItHasACompleter(t *testing.T) {
-	host := NewHost("desktop.editor")
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	if got, err := host.openHostEndpoint(t.Context()); err != nil || got != 0 {
 		t.Fatalf("without a completer: port %d, %v", got, err)
 	}
@@ -1560,15 +1387,16 @@ func TestTheHostServesItsEndpointOnceItHasACompleter(t *testing.T) {
 	if err != nil || first <= 0 {
 		t.Fatalf("with a completer: port %d, %v", first, err)
 	}
-	if again, _ := host.openHostEndpoint(t.Context()); again != first {
-		t.Errorf("a second call opened port %d, want %d", again, first)
+	again, err := host.openHostEndpoint(t.Context())
+	if err != nil || again != first {
+		t.Errorf("a second call opened port %d, %v, want %d", again, err, first)
 	}
 
 	if err := host.TeardownAll(t.Context(), time.Millisecond); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := host.openHostEndpoint(t.Context()); got != 0 {
-		t.Errorf("a closed host opened port %d", got)
+	if got, err := host.openHostEndpoint(t.Context()); got != 0 {
+		t.Errorf("a closed host opened port %d, %v", got, err)
 	}
 }
 
@@ -1589,15 +1417,22 @@ func TestThePluginEnvironmentCarriesTheHostPort(t *testing.T) {
 
 // A plugin process launched while the host endpoint serves receives its port.
 func TestALaunchedPluginIsReportedTheHostPort(t *testing.T) {
-	host := NewHost("desktop.editor")
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
 	host.SetCompleter(plugintest.CompleterFunc(func(context.Context, completionport.Question) (string, error) { return "", nil }))
 
 	vars, err := host.getLaunchVars(t.Context(), "md.numen.a", nil, 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
-	served, _ := host.openHostEndpoint(t.Context())
+	served, err := host.openHostEndpoint(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if want := fmt.Sprintf("NUMEN_HOST_PORT=%d", served); served == 0 || !slices.Contains(vars, want) {
 		t.Errorf("environment %v lacks %s", vars, want)
 	}
@@ -1605,8 +1440,12 @@ func TestALaunchedPluginIsReportedTheHostPort(t *testing.T) {
 
 // An endpoint that cannot start is reported and does not stop a plugin from launching.
 func TestAHostEndpointThatCannotStartDoesNotStopALaunch(t *testing.T) {
-	host := NewHost("desktop.editor")
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
 	host.hostAddress = "127.0.0.1:-1"
 	host.SetCompleter(plugintest.CompleterFunc(func(context.Context, completionport.Question) (string, error) { return "", nil }))
 	var reported []error
@@ -1629,16 +1468,26 @@ func TestAHostEndpointThatCannotStartDoesNotStopALaunch(t *testing.T) {
 // The host endpoint binds the loopback interface and rejects any address that
 // would bind more.
 func TestHost_EndpointBindsLoopbackOnly(t *testing.T) {
-	host := NewHost("desktop.editor")
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	host := NewHost(testsupport.GetMachine(), "desktop.editor")
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
 	for _, address := range []string{":0", "0.0.0.0:0", "[::]:0", "localhost:0", "192.168.1.5:0", "127.0.0.1", ""} {
 		endpoint, err := hostendpoint.Open(t.Context(), address, host)
 		if err == nil {
-			_ = endpoint.Close(t.Context())
+			if closeErr := endpoint.Close(t.Context()); closeErr != nil {
+				t.Error(closeErr)
+			}
 			t.Errorf("address %q was bound", address)
 		}
 	}
-	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	t.Cleanup(func() {
+		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+			t.Error(err)
+		}
+	})
 	if host.hostAddress != "127.0.0.1:0" {
 		t.Errorf("a host listens on %q by default", host.hostAddress)
 	}
@@ -1646,19 +1495,18 @@ func TestHost_EndpointBindsLoopbackOnly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_ = endpoint.Close(t.Context())
+	if err := endpoint.Close(t.Context()); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestHostProcessLimitsConfig(t *testing.T) {
-	h := NewHost("test")
+	h := NewHost(testsupport.GetMachine(), "test")
 	if h.processLimits != process.DefaultLimits() {
 		t.Fatalf("NewHost holds %v, want the default limits", h.processLimits)
 	}
 
-	customLimits := process.Limits{
-		CPULimitSeconds:  60,
-		MemoryLimitBytes: 512 * 1024 * 1024,
-	}
+	customLimits := process.Limits{CPULimitSeconds: 60}
 	h.SetProcessLimits(customLimits)
 
 	h.mu.RLock()

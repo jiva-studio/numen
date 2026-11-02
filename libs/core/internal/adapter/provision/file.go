@@ -11,15 +11,19 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
+
+// ErrNoFolder is a dependency asked for where no folder is set to keep dependencies in.
+var ErrNoFolder = errors.New("no folder to keep dependencies in")
 
 // ErrOffline is a dependency that is not on this machine while fetching is forbidden.
 var ErrOffline = errors.New("fetching is forbidden")
 
 // Config is what dependencies are provisioned from.
 type Config struct {
-	// Dir is the folder dependencies are kept in. Empty is GetRoot.
+	// Dir is the folder dependencies are kept in. Empty keeps none: nothing is provisioned.
 	Dir string
 	// Offline forbids fetching.
 	Offline bool
@@ -29,6 +33,8 @@ type Config struct {
 	Discovery discovery
 	// Backoff is the waits between attempts. Zero is the default.
 	Backoff backoff
+	// Clock paces the progress reports.
+	Clock machineport.Clock
 }
 
 // FileProvisioner provisions a dependency that is one downloadable file with a
@@ -47,7 +53,7 @@ func NewFileProvisioner(cfg Config) *FileProvisioner {
 		cfg.Discovery = newDiscovery()
 	}
 	if cfg.Backoff.attempts == 0 {
-		cfg.Backoff = defaultBackoff
+		cfg.Backoff = newDefaultBackoff()
 	}
 	return &FileProvisioner{cfg: cfg}
 }
@@ -61,10 +67,7 @@ func (p *FileProvisioner) CanProvision(req pluginport.DependencyRequirement) boo
 func (p *FileProvisioner) getDir(req pluginport.DependencyRequirement) (string, error) {
 	root := p.cfg.Dir
 	if root == "" {
-		var err error
-		if root, err = GetRoot(); err != nil {
-			return "", err
-		}
+		return "", ErrNoFolder
 	}
 	return getDependencyDir(root, string(req.Kind), req.ID, req.Version), nil
 }
@@ -89,7 +92,7 @@ func (p *FileProvisioner) Status(_ context.Context, req pluginport.DependencyReq
 // take turns.
 func (p *FileProvisioner) Provision(
 	ctx context.Context, req pluginport.DependencyRequirement, onProgress func(pluginport.DependencyStatus),
-) (pluginport.ResolvedDependency, error) {
+) (_ pluginport.ResolvedDependency, err error) {
 	if onProgress == nil {
 		onProgress = func(pluginport.DependencyStatus) {}
 	}
@@ -110,7 +113,7 @@ func (p *FileProvisioner) Provision(
 	if err != nil {
 		return pluginport.ResolvedDependency{}, err
 	}
-	defer func() { _ = release() }()
+	defer func() { err = errors.Join(err, release()) }()
 
 	if resolved, ok := readCached(req, dir); ok {
 		return resolved, nil
@@ -125,7 +128,7 @@ func (p *FileProvisioner) Provision(
 	primary := filepath.Join(dir, name)
 	title := "Downloading " + req.ID
 	err = transfer{
-		client: p.cfg.Client, address: req.SourceURL, dest: primary, sum: req.ChecksumSHA256, backoff: p.cfg.Backoff,
+		client: p.cfg.Client, address: req.SourceURL, dest: primary, sum: req.ChecksumSHA256, backoff: p.cfg.Backoff, clock: p.cfg.Clock,
 		onProgress: func(done, total int64) {
 			onProgress(pluginport.DependencyStatus{
 				ID: req.ID, State: pluginport.DependencyStateProvisioning, BytesDownloaded: done, BytesTotal: total,
@@ -151,22 +154,30 @@ func getPercent(done, total int64) float64 {
 
 // getFileName returns what the fetched file is called in the dependency's folder.
 func getFileName(req pluginport.DependencyRequirement) (string, error) {
-	name := cleanName(req.ID)
-	if named := req.Metadata["fileName"]; named != "" {
-		name = cleanName(named)
-	} else {
-		address, err := url.Parse(req.SourceURL)
-		if err != nil {
-			return "", err
-		}
-		if base := path.Base(address.Path); base != "" && base != "." && base != "/" {
-			name = cleanName(base)
-		}
+	name, err := pickFileName(req)
+	if err != nil {
+		return "", err
 	}
 	if isReserved(name) {
 		return "", fmt.Errorf("%s %s: %q is a name the folder keeps for itself", req.Kind, req.ID, name)
 	}
 	return name, nil
+}
+
+// pickFileName is the name the requirement states, else the last segment of its
+// address, else its identifier.
+func pickFileName(req pluginport.DependencyRequirement) (string, error) {
+	if named := req.Metadata["fileName"]; named != "" {
+		return cleanName(named), nil
+	}
+	address, err := url.Parse(req.SourceURL)
+	if err != nil {
+		return "", err
+	}
+	if base := path.Base(address.Path); base != "" && base != "." && base != "/" {
+		return cleanName(base), nil
+	}
+	return cleanName(req.ID), nil
 }
 
 // readCached returns the dependency a folder with the sentinel holds, when the

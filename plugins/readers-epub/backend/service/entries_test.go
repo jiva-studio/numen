@@ -26,16 +26,16 @@ func serveEntries(t *testing.T) (*http.ServeMux, *BookServer) {
 func TestEntriesRoute_ServesBookImageFromRequestedVault(t *testing.T) {
 	mux, _ := serveEntries(t)
 
-	req := httptest.NewRequest(http.MethodGet, "/entries/EPUB/cover.png?path=pictured.epub", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/entries/EPUB/cover.png?path=pictured.epub", nil)
 	req.Header.Set("Numen-Vault", "Chemistry")
 	answer := httptest.NewRecorder()
 	mux.ServeHTTP(answer, req)
 
-	if answer.Code != http.StatusOK || !bytes.Equal(answer.Body.Bytes(), pngBytes) {
+	if answer.Code != http.StatusOK || !bytes.Equal(answer.Body.Bytes(), getPNGBytes()) {
 		t.Fatalf("the picture answered %d with %d bytes", answer.Code, answer.Body.Len())
 	}
 	current := httptest.NewRecorder()
-	mux.ServeHTTP(current, httptest.NewRequest(http.MethodGet, "/entries/EPUB/cover.png?path=pictured.epub", nil))
+	mux.ServeHTTP(current, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/entries/EPUB/cover.png?path=pictured.epub", nil))
 	if current.Code == http.StatusOK {
 		t.Error("a request naming no vault served a book the current vault does not hold")
 	}
@@ -44,7 +44,7 @@ func TestEntriesRoute_ServesBookImageFromRequestedVault(t *testing.T) {
 func TestEntriesRoute_ConflictOnChangedBook(t *testing.T) {
 	mux, _ := serveEntries(t)
 
-	req := httptest.NewRequest(http.MethodGet, "/entries/EPUB/cover.png?path=pictured.epub&size=1&mtime=1", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/entries/EPUB/cover.png?path=pictured.epub&size=1&mtime=1", nil)
 	req.Header.Set("Numen-Vault", "Chemistry")
 	answer := httptest.NewRecorder()
 	mux.ServeHTTP(answer, req)

@@ -3,12 +3,26 @@ package engine
 import (
 	"os"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/ortraw"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/onnx"
 )
 
+// Runtime is the ONNX Runtime a recording is transcribed through: the library, and the entry points
+// the decoder and the segmenter call it by directly. A process makes one.
+type Runtime struct {
+	library *onnx.Library
+	runner  *ortraw.Runner
+}
+
+// NewRuntime returns a runtime that is not open yet.
+func NewRuntime() Runtime {
+	runner := ortraw.NewRunner()
+	return Runtime{library: onnx.NewLibrary(runner.Bind), runner: runner}
+}
+
 // Ready reports whether everything a transcription needs is already on this machine.
-func Ready(cfg Config) bool {
-	if !onnx.IsAvailable(onnx.ResolveLibrary(cfg.Runtime, cfg.Dir)) {
+func Ready(runtime Runtime, cfg Config) bool {
+	if !runtime.library.IsAvailable(onnx.ResolveLibrary(cfg.Runtime, cfg.Dir)) {
 		return false
 	}
 	if _, err := locateModel(cfg.Model.Encoder, cfg.Model.Repo, "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, cfg.Dir); err != nil {

@@ -26,7 +26,7 @@ contents:
   - src: ./plugins
     dst: /usr/lib/numen/plugins
     type: tree
-  # Each window wears its own mark, under the name its desktop entry asks for.
+  # Each window uses its own icon, under the name its desktop entry requires.
   # The drawing itself is what a desktop scales to whatever it needs; the
   # rasters are for the ones that will not scale it.
   - src: ./numen.svg

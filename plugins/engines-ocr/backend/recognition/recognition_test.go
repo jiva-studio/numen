@@ -15,10 +15,31 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/wasm"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 
 const pluginID = "md.numen.engines.ocr"
+
+// cacheEnv names the folder the tests of this package compile PDFium into once.
+const cacheEnv = "NUMEN_TEST_WASM_CACHE"
+
+// TestMain gives every reader of the tests one folder to cache the compiled PDFium in, because each
+// reader compiles it again otherwise and a run under the race detector takes minutes for each.
+func TestMain(m *testing.M) {
+	dir, err := os.MkdirTemp("", "numen-ocr-wasm-")
+	if err != nil {
+		os.Exit(1)
+	}
+	if err := os.Setenv(cacheEnv, dir); err != nil {
+		os.Exit(1)
+	}
+	code := m.Run()
+	if err := os.RemoveAll(dir); err != nil && code == 0 {
+		code = 1
+	}
+	os.Exit(code)
+}
 
 // pages returns "page N" for the Nth page, in one block whose two lines are in the top
 // and the bottom half of the page, and counts the pages.
@@ -102,6 +123,13 @@ func newScene(t *testing.T) *scene {
 	if err != nil {
 		t.Fatal(err)
 	}
+	compilation := wasm.NewCompilationCache(os.Getenv(cacheEnv))
+	t.Cleanup(func() {
+		if err := compilation.Close(context.WithoutCancel(t.Context())); err != nil {
+			t.Error(err)
+		}
+	})
+	run.SetCompilationCache(compilation)
 	s.run = run
 	return s
 }
@@ -276,10 +304,18 @@ func TestRecogniseEmptyScanKeepsNothing(t *testing.T) {
 	if err != nil || !res.IsEmpty {
 		t.Fatalf("recognised %+v (%v), want nothing", res, err)
 	}
-	if listing, _ := s.texts.ListVersions(t.Context(), "books/scan.pdf"); len(listing.Versions) != 0 {
+	listing, err := s.texts.ListVersions(t.Context(), "books/scan.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Versions) != 0 {
 		t.Errorf("a scan that says nothing has versions %+v", listing.Versions)
 	}
-	if files, _ := s.store.List(t.Context()); len(files) != 0 {
+	files, err := s.store.List(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 0 {
 		t.Errorf("a scan that says nothing keeps %+v", files)
 	}
 }
@@ -292,7 +328,7 @@ func TestRecogniseFailureReportsTaskError(t *testing.T) {
 		t.Fatal("a recogniser that failed recognised the file")
 	}
 	tasks := s.queue.ListTasks()
-	if len(tasks) != 1 || !strings.Contains(tasks[0].Error, "out of memory") || !tasks[0].IsUserStarted {
+	if len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "out of memory") || !tasks[0].IsUserStarted {
 		t.Fatalf("tasks %+v, want the failure pageCount", tasks)
 	}
 
@@ -337,7 +373,10 @@ func TestRecogniseRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	s.vault.Beside(chemistry)
 	raw := readFixture(t, "scan.pdf")
 	chemistry.File("books/scan.pdf", raw)
-	other := s.texts.With("Chemistry").(*hosttest.Texts)
+	other, isTexts := s.texts.With("Chemistry").(*hosttest.Texts)
+	if !isTexts {
+		t.Fatal("the texts of Chemistry are not hosttest texts")
+	}
 	other.SetStore(pluginID, chemistry.Store())
 	other.File("books/scan.pdf", []byte(raw))
 
@@ -349,10 +388,18 @@ func TestRecogniseRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	if err != nil || inChemistry.Live == "" {
 		t.Fatalf("Chemistry lists %+v (%v), want the recognition live", inChemistry, err)
 	}
-	if inPhysics, _ := s.texts.ListVersions(t.Context(), "books/scan.pdf"); len(inPhysics.Versions) != 0 {
+	inPhysics, err := s.texts.ListVersions(t.Context(), "books/scan.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(inPhysics.Versions) != 0 {
 		t.Errorf("the shown vault holds %+v, want no version", inPhysics.Versions)
 	}
-	if names, _ := s.store.List(t.Context()); len(names) != 0 {
+	names, err := s.store.List(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(names) != 0 {
 		t.Errorf("the shown vault's folder holds %v, want nothing", names)
 	}
 }

@@ -2,7 +2,9 @@ package service
 
 import (
 	"encoding/json"
+
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 )
 
 // newEventHandler is what the run calls with each event of the Codex output.
@@ -11,21 +13,21 @@ func newEventHandler(r *reader) func(map[string]any) {
 }
 
 func handleCodexEvent(r *reader, rawMap map[string]any) {
-	evType, _ := rawMap["type"].(string)
-	item, _ := rawMap["item"].(map[string]any)
+	evType := getString(rawMap, "type")
+	item := getMap(rawMap, "item")
 	if item == nil {
 		return
 	}
 
 	switch {
 	case evType == "item.completed" && item["type"] == "agent_message":
-		if text, _ := item["text"].(string); text != "" {
-			r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: text}})
+		if text := getString(item, "text"); text != "" {
+			r.Send(&agentrun.Response{Step: &agentrun.TextStep{Text: text}})
 		}
 	case evType == "item.started" && item["type"] == "mcp_tool_call":
-		r.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_ToolCall{
-				ToolCall: &agentrun.ToolCall{
+		r.Send(&agentrun.Response{
+			Step: &agentrun.ToolCallStep{
+				ToolCall: &toolcall.ToolCall{
 					Tool:   getToolName(item),
 					About:  getToolArguments(item),
 					Length: 0,
@@ -37,24 +39,25 @@ func handleCodexEvent(r *reader, rawMap map[string]any) {
 			},
 		})
 	case evType == "item.completed" && item["type"] == "mcp_tool_call":
-		r.Send(&agentrun.AskAgentResponse{
-			Step: &agentrun.AskAgentResponse_ToolFinished{
-				ToolFinished: &agentrun.ToolFinished{},
-			},
+		r.Send(&agentrun.Response{
+			Step: &agentrun.ToolFinishedStep{},
 		})
 	}
 }
 
 // getToolName is the tool an mcp_tool_call item names: its tool, else its name.
 func getToolName(item map[string]any) string {
-	if tool, _ := item["tool"].(string); tool != "" {
+	if tool := getString(item, "tool"); tool != "" {
 		return tool
 	}
-	name, _ := item["name"].(string)
+	name := getString(item, "name")
 	return name
 }
 
 func getToolArguments(item map[string]any) string {
-	args, _ := json.Marshal(item["arguments"])
+	args, err := json.Marshal(item["arguments"])
+	if err != nil {
+		return ""
+	}
 	return string(args)
 }

@@ -1,6 +1,8 @@
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import http from 'node:http'
+import net from 'node:net'
+import https from 'node:https'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -15,6 +17,18 @@ const pluginsPath = path.resolve(repoRoot, 'plugins')
 
 const port = process.env.NUMEN_TEST_PORT ?? '3456'
 const host = '127.0.0.1'
+
+// A server this run did not start belongs to another run, which stops it and its vault while this
+// run still uses them, and every test then fails at once: a port that answers fails the start.
+const isPortTaken = await new Promise((resolve) => {
+  const probe = net.connect({ host, port: Number(port) })
+  probe.once('connect', () => (probe.destroy(), resolve(true)))
+  probe.once('error', () => resolve(false))
+})
+if (isPortTaken) {
+  console.error(`start-server: ${host}:${port} is already used; give NUMEN_TEST_PORT another port`)
+  process.exit(1)
+}
 
 function createSampleWav(targetPath) {
   const sampleRate = 16000
@@ -42,14 +56,46 @@ function createSampleWav(targetPath) {
   fs.writeFileSync(targetPath, buffer)
 }
 
+// A US Letter PDF of pageCount pages, each with its number printed on it.
+function createPagedPdf(targetPath, pageCount) {
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+  ]
+  const kids = []
+  for (let page = 1; page <= pageCount; page++) {
+    const content = `BT /F1 96 Tf 220 380 Td (${page}) Tj ET`
+    objects.push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`)
+    objects.push(
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents ${objects.length} 0 R >>`,
+    )
+    kids.push(`${objects.length} 0 R`)
+  }
+  objects[1] = `<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${pageCount} >>`
+  let body = '%PDF-1.4\n'
+  const offsets = []
+  for (const [index, object] of objects.entries()) {
+    offsets.push(body.length)
+    body += `${index + 1} 0 obj\n${object}\nendobj\n`
+  }
+  const xref = body.length
+  body += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`
+  body += offsets.map((offset) => `${String(offset).padStart(10, '0')} 00000 n \n`).join('')
+  body += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`
+  fs.writeFileSync(targetPath, body, 'latin1')
+}
+
 // Create isolated temporary vault from template.
-const tmpVault = fs.mkdtempSync(path.join(os.tmpdir(), 'numen-e2e-vault-'))
+const tmpVault = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'numen-e2e-vault-')))
 fs.cpSync(sourceVault, tmpVault, { recursive: true })
 createSampleWav(path.join(tmpVault, 'assets', 'sample.wav'))
+createPagedPdf(path.join(tmpVault, 'assets', 'pages.pdf'), 40)
 
 // Copy dynamic fixtures into isolated vault to prevent template fixture pollution.
 fs.copyFileSync(path.join(fixturesDir, 'sample.pdf'), path.join(tmpVault, 'assets', 'sample.pdf'))
 fs.copyFileSync(path.join(fixturesDir, 'sample.epub'), path.join(tmpVault, 'assets', 'sample.epub'))
+fs.copyFileSync(path.join(fixturesDir, 'ledger.epub'), path.join(tmpVault, 'assets', 'ledger.epub'))
 for (const name of [
   'regenerative-braking.pdf',
   'flywheel.pdf',
@@ -129,6 +175,7 @@ fs.writeFileSync(
       agent: { use: 'numen' },
       plugins: {
         'md.numen.agents.numen': { baseUrl: standIns.chatUrl, model: STAND_IN_MODEL },
+        'md.numen.tools.updater': { channel: 'custom', endpoint: standIns.updateUrl },
         'md.numen.agents.claude': { enabled: false },
         'md.numen.agents.codex': { enabled: false },
         'md.numen.agents.antigravity': { enabled: false },
@@ -141,6 +188,7 @@ fs.writeFileSync(
 )
 
 function cleanup() {
+  fs.rmSync(vaultPathFile, { force: true })
   standIns.close()
   try {
     fs.rmSync(tmpVault, { recursive: true, force: true })
@@ -151,7 +199,6 @@ function cleanup() {
 
 // The proxy every plain-http fetch of the binary and its plugins goes through. It serves PAGES by
 // host and answers every other host 404, so a page a test imports is never fetched from the network.
-const pagesPort = Number(port) + 1
 const PAGES = new Map([['tidal-mills.numen.test', path.join(fixturesDir, 'article.html')]])
 const pages = http.createServer((req, res) => {
   const page = PAGES.get(new URL(req.url ?? '/', 'http://' + req.headers.host).hostname)
@@ -161,17 +208,77 @@ const pages = http.createServer((req, res) => {
   }
   res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(fs.readFileSync(page))
 })
-pages.listen(pagesPort, host)
+// The port is the system's to give: the next port after the server's is another run's server.
+await new Promise((resolve, reject) => {
+  pages.once('error', reject)
+  pages.listen(0, host, resolve)
+})
+const pagesPort = pages.address().port
+
+// The tests read the folder of the run's vault from here: the file is named by the port the server listens on.
+const vaultPathFile = path.join(os.tmpdir(), `numen-e2e-vault-path-${port}`)
+fs.writeFileSync(vaultPathFile, tmpVault)
+
+/** How long the first pass over the vault may take before the server counts as failed. */
+const INDEX_LIMIT_MS = 180_000
+
+let stopping = false
+
+/** Calls the core of the server over https and gives back what it answers, or nothing while it does not. */
+const callCore = (method, body, isStream) =>
+  new Promise((resolve) => {
+    const json = Buffer.from(JSON.stringify(body))
+    // A Connect stream is a message in a five-byte envelope: the first message is all that is read.
+    const payload = isStream ? Buffer.concat([Buffer.from([0, 0, 0, 0, 0]), json]) : json
+    if (isStream) payload.writeUInt32BE(json.length, 1)
+    const call = https.request(
+      {
+        host,
+        port: Number(port),
+        path: `/numen.v1.${method}`,
+        method: 'POST',
+        rejectUnauthorized: false,
+        headers: { 'Content-Type': isStream ? 'application/connect+json' : 'application/json' },
+      },
+      (answer) => {
+        let received = Buffer.alloc(0)
+        const read = (message) => {
+          try {
+            resolve(JSON.parse(message.toString()))
+          } catch {
+            resolve(undefined)
+          }
+        }
+        answer.on('data', (chunk) => {
+          received = Buffer.concat([received, chunk])
+          if (!isStream || received.length < 5 || received.length < 5 + received.readUInt32BE(1))
+            return
+          call.destroy()
+          read(received.subarray(5, 5 + received.readUInt32BE(1)))
+        })
+        answer.on('end', () => (isStream ? resolve(undefined) : read(received)))
+        answer.on('error', () => resolve(undefined))
+      },
+    )
+    call.on('error', () => resolve(undefined))
+    call.end(payload)
+  })
+
+/** Whether the vault is read, every chunk has its vector, and no task of the window is running. */
+const readIdle = async () => {
+  const state = await callCore('VaultService/GetVaultState', {}, false)
+  const window = await callCore('WindowService/WatchTasks', { window: 'editor' }, true)
+  return (
+    state?.scan?.isReady === true &&
+    state.coverage?.chunkCount === state.coverage?.embeddedCount &&
+    window !== undefined &&
+    (window.tasks ?? []).every((task) => task.error)
+  )
+}
 
 const child = spawn(
   binaryPath,
-  [
-    `-debug-http-addr=${host}:${port}`,
-    '-debug-mock-ml',
-    `-debug-update-url=${standIns.updateUrl}`,
-    '-no-mcp',
-    `-vault=${tmpVault}`,
-  ],
+  [`-debug-http-addr=${host}:${port}`, '-debug-mock-ml', '-no-mcp', `-vault=${tmpVault}`],
   {
     stdio: 'inherit',
     env: {
@@ -189,15 +296,44 @@ const child = spawn(
   },
 )
 
-child.on('exit', (code) => {
+child.on('error', (error) => {
+  console.error(`start-server: cannot start ${binaryPath}: ${error.message}`)
   pages.close()
   cleanup()
-  process.exit(code ?? 0)
+  process.exit(1)
+})
+
+child.on('exit', (code, signal) => {
+  // A server that ends before the run stops it leaves every test with a refused connection.
+  if (!stopping)
+    console.error(`start-server: the server ended on its own (code ${code}, signal ${signal})`)
+  pages.close()
+  cleanup()
+  process.exit(code ?? (signal ? 1 : 0))
 })
 
 for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, () => {
+    stopping = true
     cleanup()
     child.kill(sig)
   })
 }
+
+// The server counts as started once the vault is read, every chunk has its vector and no task runs:
+// a test that begins while the first passes still run finds "1 active" where it waits for "Ready",
+// and searches and completes the notes it made before the passes end. Servers that start together
+// take longer for those passes than one that starts alone. The idle state must hold for four reads
+// in a row, since the next pass is reported a moment after the last ends.
+const startedAt = Date.now()
+let idleReads = 0
+while (idleReads < 4) {
+  if (Date.now() - startedAt > INDEX_LIMIT_MS) {
+    console.error(`start-server: the server was not idle in ${INDEX_LIMIT_MS / 1000} s`)
+    child.kill('SIGTERM')
+    break
+  }
+  idleReads = (await readIdle()) ? idleReads + 1 : 0
+  await new Promise((resolve) => setTimeout(resolve, 250))
+}
+console.log(`numen e2e: the vault is indexed after ${(Date.now() - startedAt) / 1000} s`)

@@ -33,8 +33,8 @@ export function createFilesKind(host: FileTreeHost, createTree: () => FileTree) 
       const deps = createFilesTabDeps(host, id)
       const state = useFilesTab(createTree(), deps)
       tabs.set(id, state)
-      void state.list.openFolder(ROOT)
-      if (targetPath) void state.list.revealPath(targetPath)
+      state.list.openFolder(ROOT).catch(state.reportFailure)
+      if (targetPath) state.list.revealPath(targetPath).catch(state.reportFailure)
       watch(state.list.selectedPaths, (paths) => {
         const path = paths[0]
         if (path) deps.onSelectPath?.(path, state)

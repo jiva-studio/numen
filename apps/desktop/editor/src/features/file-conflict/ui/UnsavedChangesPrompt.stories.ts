@@ -24,8 +24,8 @@ const UNBROKEN = `${'A note whose name nobody shortened and which runs on past '
 /** One note standing, with the three answers written down as they are given. */
 const conflict = (path: string): ConflictPrompt => ({
   note: path,
-  keep: fn(async () => {}),
-  take: fn(async () => {}),
+  keep: fn(() => Promise.resolve()),
+  take: fn(() => Promise.resolve()),
   later: fn(),
 })
 
@@ -57,8 +57,8 @@ export const TwoNotes: Story = {
     await expect(getAnswers(canvasElement)).toHaveLength(6)
 
     const answer = getComputedStyle(getAnswers(canvasElement)[0]!)
-    await expect(answer.textDecorationLine).toBe('underline')
-    await expect(answer.backgroundColor).toBe('rgba(0, 0, 0, 0)')
+    await expect(answer.textDecorationLine).toBe('none')
+    await expect(answer.backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
 
     // It overlays the work, at the bottom of the window and inside it.
     const box = response!.getBoundingClientRect()

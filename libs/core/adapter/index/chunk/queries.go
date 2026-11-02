@@ -7,19 +7,34 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/adapter/index/sqlwrite"
 	"math"
 	"strconv"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/internal/vector"
+	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
 // Queries answers questions about chunks in shapes other than chunks: where a
 // passage is read from, what matched a search, and which chunks lack a vector.
-type Queries struct{ db *sql.DB }
+type Queries struct {
+	db      *sql.DB
+	minimum *Minimum
+}
 
-func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
+func NewQueries(db *sql.DB) *Queries { return &Queries{db: db, minimum: &Minimum{}} }
+
+// NewQueriesWithMinimum creates queries that leave out the small chunks shorter than minimum, which
+// carry no vector.
+func NewQueriesWithMinimum(db *sql.DB, minimum *Minimum) *Queries {
+	return &Queries{db: db, minimum: minimum}
+}
+
+// SetMinimum sets the shortest length of a chunk that gets a vector. The queries leave out the
+// chunks that are shorter, as the count of chunks that can carry a vector does.
+func (q *Queries) SetMinimum(length int64) { q.minimum.Swap(length) }
 
 // Passage is one chunk, and where its text is read from.
 //
@@ -62,7 +77,7 @@ func Row(id domain.ChunkID) (int64, error) {
 
 // GetFileStats is what the index believes about each file of one kind, keyed by
 // path, so a scan can decide what to read again without opening anything.
-func (q *Queries) GetFileStats(ctx context.Context, vaultID domain.VaultID, kind string) (map[string]domain.FileStat, error) {
+func (q *Queries) GetFileStats(ctx context.Context, vaultID domain.VaultID, kind string) (_ map[string]domain.FileStat, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return map[string]domain.FileStat{}, nil
@@ -71,11 +86,11 @@ func (q *Queries) GetFileStats(ctx context.Context, vaultID domain.VaultID, kind
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("file_stats"), vault, kind)
+	rows, err := q.db.QueryContext(ctx, getStatement("file_stats"), vault, kind)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	out := map[string]domain.FileStat{}
 	for rows.Next() {
@@ -92,7 +107,7 @@ func (q *Queries) GetFileStats(ctx context.Context, vaultID domain.VaultID, kind
 
 // GetSourcesUnder is every source the vault holds at a path and beneath it, by
 // path: the one file, or everything a folder holds.
-func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.FileStat, error) {
+func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, path string) (_ []domain.FileStat, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -102,11 +117,11 @@ func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, p
 	}
 
 	first, past := getRangeUnder(path)
-	rows, err := q.db.QueryContext(ctx, stmt.Get("file_stats_under"), vault, path, vault, first, past)
+	rows, err := q.db.QueryContext(ctx, getStatement("file_stats_under"), vault, path, vault, first, past)
 	if err != nil {
 		return nil, fmt.Errorf("what the vault holds at %s and under it: %w", path, err)
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	var out []domain.FileStat
 	for rows.Next() {
@@ -126,7 +141,7 @@ func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, p
 //
 // The result is the large chunk enclosing each hit, which is what a result
 // displays.
-func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
+func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) (_ []domain.Passage, err error) {
 	if limit <= 0 {
 		// How many candidates to keep is a retrieval decision. The caller makes
 		// it, and arriving here without one is a mistake in the caller.
@@ -146,15 +161,15 @@ func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query
 
 	var rows *sql.Rows
 	if len(of) == 0 {
-		rows, err = q.db.QueryContext(ctx, stmt.Get("lexical"), expression, vault, limit)
+		rows, err = q.db.QueryContext(ctx, getStatement("lexical"), expression, vault, limit)
 	} else {
 		wanted := formatKinds(of)
-		rows, err = q.db.QueryContext(ctx, stmt.Get("lexical_kinds"), expression, vault, wanted, limit)
+		rows, err = q.db.QueryContext(ctx, getStatement("lexical_kinds"), expression, vault, wanted, limit)
 	}
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	var out []domain.Passage
 	for rows.Next() {
@@ -174,7 +189,7 @@ func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query
 //
 // A section is represented by the chunk it opens, so a result is the chapter
 // about the query and not the paragraph that repeats the name most often.
-func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
+func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) (_ []domain.Passage, err error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a search by name needs a positive limit, got %d", limit)
 	}
@@ -192,15 +207,15 @@ func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, 
 
 	var rows *sql.Rows
 	if len(of) == 0 {
-		rows, err = q.db.QueryContext(ctx, stmt.Get("sections"), expression, vault, limit)
+		rows, err = q.db.QueryContext(ctx, getStatement("sections"), expression, vault, limit)
 	} else {
 		wanted := formatKinds(of)
-		rows, err = q.db.QueryContext(ctx, stmt.Get("sections_kinds"), expression, vault, wanted, limit)
+		rows, err = q.db.QueryContext(ctx, getStatement("sections_kinds"), expression, vault, wanted, limit)
 	}
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	var out []domain.Passage
 	for rows.Next() {
@@ -216,16 +231,16 @@ func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, 
 }
 
 // FindNearest is a semantic search: the chunks of one vault nearest a query
-// vector, nearest first, at most `limit` of them.
+// vector, nearest first, at most `search.Limit` of them.
 //
-// The coarse pass over the bit vectors keeps several times `limit` candidates,
+// The coarse pass over the bit vectors keeps several times `search.Limit` candidates,
 // and the full-precision vectors order them. A chunk below the similarity floor
 // is not a result, so a vault without matching content returns no results.
-func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, recipe string, query []float32, of []domain.SourceKind, limit int, floor float64) ([]domain.Passage, error) {
-	if limit <= 0 {
-		return nil, fmt.Errorf("a search by meaning needs a positive limit, got %d", limit)
+func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, search sourceport.NearestQuery) ([]domain.Passage, error) {
+	if search.Limit <= 0 {
+		return nil, fmt.Errorf("a search by meaning needs a positive limit, got %d", search.Limit)
 	}
-	if len(query) == 0 {
+	if len(search.Vector) == 0 {
 		return nil, nil
 	}
 	vault, err := vaultRow(ctx, q.db, vaultID)
@@ -236,20 +251,20 @@ func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, recip
 		return nil, err
 	}
 
-	item, err := q.findNearestByBits(ctx, vault, query, limit*coarseCandidates)
+	item, err := q.findNearestByBits(ctx, vault, search.Vector, search.Limit*coarseCandidates)
 	if err != nil {
-		if q.hasOtherCoarseRecipe(ctx, recipe) {
+		if q.hasOtherCoarseRecipe(ctx, search.Recipe) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	ranked, err := q.rerank(ctx, recipe, query, item, of, floor)
+	ranked, err := q.rerank(ctx, search.Recipe, search.Vector, item, search.Kinds, search.Floor)
 	if err != nil {
 		return nil, err
 	}
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="the mutated test is >= : cutting a list of exactly limit entries to limit entries leaves it unchanged"
-	if len(ranked) > limit {
-		ranked = ranked[:limit]
+	if len(ranked) > search.Limit {
+		ranked = ranked[:search.Limit]
 	}
 	return q.getEnclosingPassages(ctx, vault, ranked)
 }
@@ -294,12 +309,16 @@ func (q *Queries) hasOtherCoarseRecipe(ctx context.Context, recipe string) bool 
 
 // findNearestByBits is the pass over the bit vectors: the chunks of one vault whose signs
 // stand nearest the query's, by Hamming distance, k of them.
-func (q *Queries) findNearestByBits(ctx context.Context, vault int64, query []float32, k int) ([]int64, error) {
-	rows, err := q.db.QueryContext(ctx, stmt.Get("coarse"), vector.Bits(query), vault, k)
+func (q *Queries) findNearestByBits(ctx context.Context, vault int64, query []float32, k int) (_ []int64, err error) {
+	ctx, err = sqlwrite.Uninterrupted(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	rows, err := q.db.QueryContext(ctx, getStatement("coarse"), vector.Bits(query), vault, k)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	var val []int64
 	for rows.Next() {
@@ -318,15 +337,15 @@ func (q *Queries) findNearestByBits(ctx context.Context, vault int64, query []fl
 // The nearest-neighbour query runs against the vector index alone, which
 // applies its own ordering and does not join. Resolving where each result is
 // read from is a separate query, run once per result.
-func (q *Queries) getEnclosingPassages(ctx context.Context, vault int64, chunks []int64) ([]domain.Passage, error) {
+func (q *Queries) getEnclosingPassages(ctx context.Context, vault int64, chunks []int64) (_ []domain.Passage, err error) {
 	if len(chunks) == 0 {
 		return nil, nil
 	}
-	enclosing, err := q.db.PrepareContext(ctx, stmt.Get("enclosing"))
+	enclosing, err := q.db.PrepareContext(ctx, getStatement("enclosing"))
 	if err != nil {
 		return nil, err
 	}
-	defer enclosing.Close()
+	defer func() { err = sqlwrite.JoinClose(err, enclosing.Close()) }()
 
 	out := make([]domain.Passage, 0, len(chunks))
 	for _, chunk := range chunks {
@@ -354,7 +373,7 @@ func (q *Queries) Passage(ctx context.Context, vaultID domain.VaultID, chunk int
 	if err != nil {
 		return Passage{}, false, err
 	}
-	p, found, err := scanPassage(q.db.QueryRowContext(ctx, stmt.Get("passage"), chunk, vault), chunk)
+	p, found, err := scanPassage(q.db.QueryRowContext(ctx, getStatement("passage"), chunk, vault), chunk)
 	return p, found, err
 }
 
@@ -390,9 +409,14 @@ func (q *Queries) GetSourcesWithOtherRecipe(ctx context.Context, vaultID domain.
 	})
 }
 
+// Cursor is the point in the ordering of unembedded chunks that a page begins after.
+type Cursor struct {
+	MTime, Source, Chunk int64
+}
+
 // GetUnembeddedChunks is the small chunks of a vault with no vector from the
 // model in use, ordered so recently modified sources are embedded first.
-func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, recipe string, afterMTime, afterSource, afterChunk int64, limit int) ([]Passage, error) {
+func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, recipe string, after Cursor, limit int) (_ []Passage, err error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a batch needs a positive limit, got %d", limit)
 	}
@@ -404,15 +428,19 @@ func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultI
 		return nil, err
 	}
 
-	if afterMTime <= 0 && afterSource <= 0 && afterChunk <= 0 {
-		afterMTime = math.MaxInt64
-		afterSource = math.MaxInt64
+	if after.MTime <= 0 && after.Source <= 0 && after.Chunk <= 0 {
+		after.MTime = math.MaxInt64
+		after.Source = math.MaxInt64
 	}
-	rows, err := q.db.QueryContext(ctx, stmt.Get("unembedded"), recipe, vault, afterMTime, afterMTime, afterSource, afterSource, afterChunk, limit)
+	ctx, err = sqlwrite.Uninterrupted(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	rows, err := q.db.QueryContext(ctx, getStatement("unembedded"), recipe, vault, after.MTime, after.MTime, after.Source, after.Source, after.Chunk, q.minimum.Get(), limit)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	var out []Passage
 	for rows.Next() {
@@ -426,7 +454,7 @@ func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultI
 }
 
 // paths answers the questions that come back as a list of paths in one vault.
-func (q *Queries) paths(ctx context.Context, vaultID domain.VaultID, statement string, limit int, args func(vault int64) []any) ([]string, error) {
+func (q *Queries) paths(ctx context.Context, vaultID domain.VaultID, statement string, limit int, args func(vault int64) []any) (_ []string, err error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("%s needs a positive limit, got %d", statement, limit)
 	}
@@ -438,11 +466,11 @@ func (q *Queries) paths(ctx context.Context, vaultID domain.VaultID, statement s
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get(statement), args(vault)...)
+	rows, err := q.db.QueryContext(ctx, getStatement(statement), args(vault)...)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	var out []string
 	for rows.Next() {
@@ -468,7 +496,11 @@ func (q *Queries) GetProgress(ctx context.Context, vaultID domain.VaultID, recip
 	if err != nil {
 		return 0, 0, err
 	}
-	err = q.db.QueryRowContext(ctx, stmt.Get("progress"), recipe, vault).
+	ctx, err = sqlwrite.Uninterrupted(ctx)
+	if err != nil {
+		return 0, 0, err
+	}
+	err = q.db.QueryRowContext(ctx, getStatement("progress"), recipe, vault, q.minimum.Get()).
 		Scan(&target, &embedded)
 	return target, embedded, err
 }
@@ -478,7 +510,7 @@ func (q *Queries) GetProgress(ctx context.Context, vaultID domain.VaultID, recip
 //
 // A vector that comes back was paid for once, and asking a model for it again
 // is buying what is already here.
-func (q *Queries) GetKeptVectors(ctx context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
+func (q *Queries) GetKeptVectors(ctx context.Context, recipe string, of [][]byte) (_ map[string][]byte, err error) {
 	if len(of) == 0 {
 		return nil, nil
 	}
@@ -497,11 +529,11 @@ func (q *Queries) GetKeptVectors(ctx context.Context, recipe string, of [][]byte
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("kept_vectors"), string(request), recipe)
+	rows, err := q.db.QueryContext(ctx, getStatement("kept_vectors"), string(request), recipe)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	out := make(map[string][]byte, len(wanted))
 	for rows.Next() {
@@ -536,7 +568,7 @@ func (q *Queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, pat
 		return SourceText{}, false, err
 	}
 	found := SourceText{Path: path}
-	err = q.db.QueryRowContext(ctx, stmt.Get("source_text"), vault, path).Scan(&found.Producer, &found.Hash, &found.Size, &found.MTime)
+	err = q.db.QueryRowContext(ctx, getStatement("source_text"), vault, path).Scan(&found.Producer, &found.Hash, &found.Size, &found.MTime)
 	if errors.Is(err, sql.ErrNoRows) {
 		return SourceText{}, false, nil
 	}
@@ -552,7 +584,7 @@ func (q *Queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, pat
 // A scan uses it to find sources whose files are gone: the store is a folder on
 // disk that the user may empty, and a source whose files are missing returns no
 // search results.
-func (q *Queries) GetRecognisedSources(ctx context.Context, vaultID domain.VaultID, kind string) ([]SourceText, error) {
+func (q *Queries) GetRecognisedSources(ctx context.Context, vaultID domain.VaultID, kind string) (_ []SourceText, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -560,11 +592,11 @@ func (q *Queries) GetRecognisedSources(ctx context.Context, vaultID domain.Vault
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.db.QueryContext(ctx, stmt.Get("recognised"), vault, kind)
+	rows, err := q.db.QueryContext(ctx, getStatement("recognised"), vault, kind)
 	if err != nil {
 		return nil, fmt.Errorf("what a model made the text of: %w", err)
 	}
-	defer rows.Close()
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	var out []SourceText
 	for rows.Next() {

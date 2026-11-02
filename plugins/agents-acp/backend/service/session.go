@@ -12,10 +12,12 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/internal/adapter/process"
 )
 
 const (
@@ -26,6 +28,8 @@ const (
 	stderrTailBytes = 8 << 10
 	// methodNotFound is the JSON-RPC error code for a method the client does not serve.
 	methodNotFound = -32601
+	// methodSessionClose is the JSON-RPC method that ends a session.
+	methodSessionClose = "session/close"
 
 	// JSON object keys and values of the protocol that more than one message uses.
 	keyName      = "name"
@@ -55,7 +59,7 @@ type acpSession struct {
 	lines    *bufio.Scanner
 	stderr   *tailBuffer
 	stop     context.CancelFunc
-	cleanDir func()
+	cleanDir func() error
 	dir      string
 	program  string
 	nextID   int
@@ -83,7 +87,7 @@ type acpSession struct {
 	// words are the declarations of the run's tools, which a call is shown by.
 	words map[string]toolcall.Declaration
 	// report sends a step of the run as it happens. Nil sends none.
-	report func(*agentrun.AskAgentResponse) error
+	report func(*agentrun.Response) error
 }
 
 // openACPSession starts the agent, initializes the connection and opens a session in an empty
@@ -112,18 +116,15 @@ func openACPSession(ctx context.Context, agent acpAgent, tools toolEndpoint) (*a
 	s.cmd.Dir = dir
 	s.cmd.Env = os.Environ()
 	s.cmd.Stderr = s.stderr
-	supervise(s.cmd)
+	process.Supervise(s.cmd)
 	if err := s.start(); err != nil {
-		s.close()
-		return nil, err
+		return nil, errors.Join(err, s.close())
 	}
 	if err := s.initialize(); err != nil {
-		s.close()
-		return nil, err
+		return nil, errors.Join(err, s.close())
 	}
 	if err := s.create(); err != nil {
-		s.close()
-		return nil, err
+		return nil, errors.Join(err, s.close())
 	}
 	return s, nil
 }
@@ -205,14 +206,7 @@ func (s *acpSession) create() error {
 		return fmt.Errorf("%s opened a session with no id", s.program)
 	}
 	s.id = reply.SessionID
-	for _, option := range reply.ConfigOptions {
-		if option.Category == "thought_level" && option.Type == "select" {
-			s.thoughtOption, s.thoughtCurrent, s.thoughtLevels = option.ID, option.CurrentValue, option.getLevels()
-		}
-		if option.Category == "model" && option.Type == "select" {
-			s.modelOption, s.current, s.models = option.ID, option.CurrentValue, option.getModels()
-		}
-	}
+	s.readConfigOptions(reply.ConfigOptions)
 	if s.modelOption == "" && reply.Models != nil {
 		s.current = reply.Models.CurrentModelID
 		for _, one := range reply.Models.AvailableModels {
@@ -220,6 +214,18 @@ func (s *acpSession) create() error {
 		}
 	}
 	return nil
+}
+
+// readConfigOptions takes the thought level and the model from the select options the agent reports.
+func (s *acpSession) readConfigOptions(options []acpConfigOption) {
+	for _, option := range options {
+		if option.Category == "thought_level" && option.Type == "select" {
+			s.thoughtOption, s.thoughtCurrent, s.thoughtLevels = option.ID, option.CurrentValue, option.getLevels()
+		}
+		if option.Category == "model" && option.Type == "select" {
+			s.modelOption, s.current, s.models = option.ID, option.CurrentValue, option.getModels()
+		}
+	}
 }
 
 // setModel makes the session answer with the model, one of those the agent reports.
@@ -301,21 +307,35 @@ func (s *acpSession) ask(system, prompt string) (string, error) {
 	return strings.TrimSpace(s.answer.String()), nil
 }
 
-// close ends the session where the agent can, then the agent, and removes the session folder.
-func (s *acpSession) close() {
+// close ends the session where the agent can, then the agent, and removes the session folder. The
+// agent is given process.ExitGrace to exit on the end of its input before its process group is
+// killed. A stopped agent is not an error.
+func (s *acpSession) close() error {
+	var err error
 	if s.canClose && s.id != "" {
-		_, _ = s.call("session/close", map[string]any{keySessionID: s.id})
+		_, err = s.call(methodSessionClose, map[string]any{keySessionID: s.id})
 	}
 	if s.stdin != nil {
-		_ = s.stdin.Close()
+		err = errors.Join(err, s.stdin.Close())
+	}
+	if s.cmd.Process != nil {
+		if waitErr := process.WaitForExit(s.cmd, s.stop); !isStopped(waitErr) {
+			err = errors.Join(err, waitErr)
+		}
 	}
 	s.stop()
-	if s.cmd.Process != nil {
-		_ = s.cmd.Wait()
-	}
 	if s.cleanDir != nil {
-		s.cleanDir()
+		err = errors.Join(err, s.cleanDir())
 	}
+	return err
+}
+
+// isStopped reports whether err is what Wait returns for an agent that was stopped: no error, a
+// non-zero exit status, the cancellation of the agent's context, or a process that is already gone.
+func isStopped(err error) bool {
+	var exit *exec.ExitError
+	return err == nil || errors.As(err, &exit) || errors.Is(err, context.Canceled) ||
+		errors.Is(err, os.ErrProcessDone) || errors.Is(err, syscall.ESRCH)
 }
 
 // rpcRequest is a JSON-RPC 2.0 request or response the client sends.

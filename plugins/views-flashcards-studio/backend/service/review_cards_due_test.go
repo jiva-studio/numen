@@ -2,12 +2,14 @@ package service
 
 import (
 	"fmt"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
@@ -16,14 +18,14 @@ import (
 // counting a vault reads every deck in it. The vaults therefore arrive with
 // their name and location, with no count and no deck information.
 func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
-	handler, target := newAPI(t, deck, other)
+	handler, target := newAPI(t, getDeck(), getOther())
 
 	stream, err := newFlashcardsClient(t, handler).WatchCardsDue(
 		t.Context(), &api.WatchCardsDueRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	t.Cleanup(stream.Close)
 	if !stream.Receive() {
 		t.Fatalf("overview stream empty: %v", stream.Err())
 	}
@@ -33,7 +35,7 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 		t.Error("the vaults arrived in no day")
 	}
 	if first.Counted != nil {
-		t.Errorf("a count stands beside the vaults: %+v", first.Counted)
+		t.Errorf("a count is beside the vaults: %+v", first.Counted)
 	}
 	if len(first.Vaults) != len(target) {
 		t.Fatalf("overview returned %d of %d vaults", len(first.Vaults), len(target))
@@ -52,7 +54,7 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 // Each vault's count is a message of its own, so a vault of fifty thousand
 // cards holds up nothing but itself.
 func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
-	handler, target := newAPI(t, deck, other)
+	handler, target := newAPI(t, getDeck(), getOther())
 
 	// The vaults are read when the window opens them, and what a count evaluates to
 	// is what is under test here.
@@ -63,7 +65,7 @@ func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	t.Cleanup(stream.Close)
 	if !stream.Receive() {
 		t.Fatalf("overview stream empty: %v", stream.Err())
 	}
@@ -95,7 +97,7 @@ func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
 // settings name, so between midnight and that hour the calendar has turned and
 // the day has not.
 func TestTheDayTheCountsStandInIsTheReviewDay(t *testing.T) {
-	handler, _ := newAPI(t, deck)
+	handler, _ := newAPI(t, getDeck())
 	handler.scenarios().day = review.Day{Starts: 4 * time.Hour, In: time.UTC}
 
 	for name, c := range map[string]struct {
@@ -113,7 +115,7 @@ func TestTheDayTheCountsStandInIsTheReviewDay(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			handler.now = func() time.Time { return c.currentTime }
+			handler.now = clock.NewFake(c.currentTime)
 			if got := front(t, handler).Day; got != c.want {
 				t.Errorf("at %v the counts stand in %q, want %q", c.currentTime, got, c.want)
 			}
@@ -124,21 +126,23 @@ func TestTheDayTheCountsStandInIsTheReviewDay(t *testing.T) {
 // learnedDecks is a vault of two decks: one on a preset that counts a card
 // learned while it is likely to be recalled, and one naming no preset, which
 // counts by the defaults and their three weeks.
-var learnedDecks = map[string]string{
-	"Word.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
-		"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
-	"Recall.md": "---\ntype: preset\ngoal: retention\nretention: 0.9\n" +
-		"learned: retention\n---\n\n# Recall\n",
-	"decks/Near.md": newCardModelDeck("Word", "Recall", 2, 5000),
-	"decks/Far.md":  newCardModelDeck("Word", "", 2, 5100),
+func getLearnedDecks() map[string]string {
+	return map[string]string{
+		"Word.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
+			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
+		"Recall.md": "---\ntype: preset\ngoal: retention\nretention: 0.9\n" +
+			"learned: retention\n---\n\n# Recall\n",
+		"decks/Near.md": newCardModelDeck("Word", "Recall", 2, 5000),
+		"decks/Far.md":  newCardModelDeck("Word", "", 2, 5100),
+	}
 }
 
 // The count includes how much of each deck is learned, so the deck screen
 // displays the core's result and applies no rule of its own.
 func TestTheCountCarriesHowMuchOfADeckExistsLearned(t *testing.T) {
-	handler, target := newAPI(t, learnedDecks)
+	handler, target := newAPI(t, getLearnedDecks())
 	v := target[0]
-	setNow(handler, firstMorning)
+	setNow(handler, getFirstMorning())
 
 	// One card of each deck answered, so the two decks differ by their rule
 	// alone and not by what was done to them.
@@ -157,7 +161,7 @@ func TestTheCountCarriesHowMuchOfADeckExistsLearned(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	setNow(handler, firstMorning.Add(time.Minute))
+	setNow(handler, getFirstMorning().Add(time.Minute))
 
 	want := map[string]int32{"decks/Near.md": 1, "decks/Far.md": 0}
 	for _, one := range getVaultCount(t, handler, v).Decks {
@@ -173,9 +177,9 @@ func TestTheCountCarriesHowMuchOfADeckExistsLearned(t *testing.T) {
 
 // screen has a nought to draw.
 func TestVaultCount_UnansweredVaultHasZeroLearned(t *testing.T) {
-	handler, target := newAPI(t, learnedDecks)
+	handler, target := newAPI(t, getLearnedDecks())
 	v := target[0]
-	setNow(handler, firstMorning)
+	setNow(handler, getFirstMorning())
 
 	for _, one := range getVaultCount(t, handler, v).Decks {
 		if one.Learned != 0 {
@@ -266,7 +270,7 @@ func BenchmarkWatchCardsDue(b *testing.B) {
 // over twenty decks like a typical vault.
 func benchDeck(cards int) map[string]string {
 	const decks = 20
-	out := map[string]string{"Term.md": deck["Term.md"]}
+	out := map[string]string{"Term.md": getDeck()["Term.md"]}
 	constructed := make([]*strings.Builder, decks)
 	for item := range constructed {
 		constructed[item] = &strings.Builder{}
@@ -300,7 +304,7 @@ func benchAnswers(b *testing.B, handler *API, v domain.Vault, cards, days, perDa
 	b.Helper()
 	ctx := b.Context()
 
-	pos := time.Now().Add(-time.Duration(days) * 24 * time.Hour)
+	pos := vaulttest.GetEpoch().Add(-time.Duration(days) * 24 * time.Hour)
 	card := 0
 	for day := range days {
 		when := pos.Add(time.Duration(day) * 24 * time.Hour)

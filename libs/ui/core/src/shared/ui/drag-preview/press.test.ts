@@ -187,7 +187,9 @@ describe('usePressDrag', () => {
   it('becomes a drag when nobody requested to hear of it', () => {
     const press = createPress(4, false)
     const faults: unknown[] = []
-    const onError = (event: ErrorEvent) => void faults.push(event.error)
+    const onError = (event: ErrorEvent) => {
+      faults.push(event.error)
+    }
     window.addEventListener('error', onError)
     press.lift('a row', pointer('pointerdown', 10, 10))
 

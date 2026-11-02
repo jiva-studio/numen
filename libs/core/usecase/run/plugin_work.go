@@ -170,14 +170,16 @@ func GetPluginTaskPrefix(pluginID string) string { return pluginTaskPrefix + plu
 func getPluginTaskID(pluginID, taskID string) string { return GetPluginTaskPrefix(pluginID) + taskID }
 
 // units are the units of the list, by the unit a plugin counts in.
-var units = map[pluginport.TaskUnit]Unit{
-	pluginport.TaskUnitThings:  Things,
-	pluginport.TaskUnitBytes:   Bytes,
-	pluginport.TaskUnitSeconds: Seconds,
+func getUnits() map[pluginport.TaskUnit]Unit {
+	return map[pluginport.TaskUnit]Unit{
+		pluginport.TaskUnitThings:  Things,
+		pluginport.TaskUnitBytes:   Bytes,
+		pluginport.TaskUnitSeconds: Seconds,
+	}
 }
 
 func readUnit(unit pluginport.TaskUnit) Unit {
-	if listed, isKnown := units[unit]; isKnown {
+	if listed, isKnown := getUnits()[unit]; isKnown {
 		return listed
 	}
 	return Things

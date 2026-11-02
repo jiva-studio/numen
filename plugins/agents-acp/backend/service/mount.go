@@ -1,29 +1,29 @@
 package service
 
 import (
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"net/http"
 	"sync"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
 // Mount registers the plugin's services on s.
 func Mount(s *server.Server) error {
 	return mount(s, &agentServer{
-		UnimplementedAgentServiceHandler: agentrun.UnimplementedAgentServiceHandler{},
-		acpAgents:                        nil,
-		discover:                         nil,
-		acpModels:                        newACPModelCache(true),
-		mu:                               sync.RWMutex{},
-		executablePaths:                  nil,
-		commands:                         nil,
+		Unimplemented:   agentrun.Unimplemented{},
+		acpAgents:       nil,
+		discover:        nil,
+		acpModels:       newACPModelCache(true),
+		mu:              sync.RWMutex{},
+		executablePaths: nil,
+		commands:        nil,
 	})
 }
 
 func mount(s *server.Server, agent *agentServer) error {
 	s.SetUpdateConfig(agent.applyConfig)
-	s.Register(agentrun.NewAgentServiceHandler(agent, s.HandlerOptions()...))
+	s.Register(agentrun.NewHandler(agent, s.HandlerOptions()...))
 	return nil
 }
 

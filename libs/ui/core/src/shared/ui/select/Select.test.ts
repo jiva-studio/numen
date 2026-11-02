@@ -140,7 +140,8 @@ describe('choosing', () => {
   it('returns the identifier it was given', async () => {
     const control = mountSelect()
     await openSelect(control)
-    await rows()[2]!.click()
+    rows()[2]!.click()
+    await nextTick()
     expect(getEmitted(control)).toStrictEqual(['large'])
   })
 
@@ -205,7 +206,16 @@ describe('how wide the choices are drawn', () => {
 })
 
 describe('searching the choices', () => {
-  const getSearch = () => document.body.querySelector<HTMLInputElement>('.menu__search')
+  const getSearch = () =>
+    document.body.querySelector<HTMLInputElement>('[data-numen-searchable-list] input')
+  const getOptions = () =>
+    Array.from(document.body.querySelectorAll<HTMLElement>('[role="option"]'))
+  const type = async (value: string) => {
+    const search = getSearch()!
+    search.value = value
+    search.dispatchEvent(new Event('input'))
+    await nextTick()
+  }
 
   it('carries no search line unless it is requested for', async () => {
     const control = mountSelect()
@@ -216,30 +226,30 @@ describe('searching the choices', () => {
   it('leaves the choices that name the words typed, and returns the one chosen', async () => {
     const control = mountSelect({ isSearchable: true })
     await openSelect(control)
-    const search = getSearch()!
-    search.value = 'lar'
-    search.dispatchEvent(new Event('input'))
-    await nextTick()
-    expect(rows().map((one) => one.textContent?.trim())).toStrictEqual(['Large'])
-    rows()[0]!.click()
+    await type('lar')
+    expect(getOptions().map((one) => one.textContent?.trim())).toStrictEqual(['Large'])
+    getOptions()[0]!.click()
     await nextTick()
     expect(control.emitted('update:modelValue')).toStrictEqual([['large']])
   })
 
-  it('offers a custom value when canEnterCustom is enabled and query matches no choice id', async () => {
+  it('offers a custom value when canEnterCustom is enabled and the query names no choice', async () => {
     const control = mountSelect({ isSearchable: true, canEnterCustom: true })
     await openSelect(control)
-    const search = getSearch()!
-    search.value = 'custom/model-v1'
-    search.dispatchEvent(new Event('input'))
-    await nextTick()
-    expect(words()).toStrictEqual(['custom/model-v1'])
-    expect(document.body.querySelector('.menu__detail')?.textContent?.trim()).toBe(
-      'Use custom value',
-    )
-    search.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    await type('custom/model-v1')
+    expect(getOptions().map((one) => one.textContent?.replace(/\s+/g, ' ').trim())).toStrictEqual([
+      'custom/model-v1Use custom value',
+    ])
+    getSearch()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
     await nextTick()
     expect(control.emitted('update:modelValue')).toStrictEqual([['custom/model-v1']])
+  })
+
+  it('offers no custom value where the query names a choice', async () => {
+    const control = mountSelect({ isSearchable: true, canEnterCustom: true })
+    await openSelect(control)
+    await type('med')
+    expect(getOptions().map((one) => one.textContent?.trim())).toStrictEqual(['Medium'])
   })
 })
 

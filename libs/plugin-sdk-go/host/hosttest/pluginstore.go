@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
 // Store is the plugin's folder in the store of a vault, held in memory. It behaves as the host does:
@@ -53,7 +54,7 @@ func (s *Store) File(name string, content []byte) {
 	s.vault.getFolder().files[name] = bytes.Clone(content)
 }
 
-func (s *Store) With(id host.VaultID) host.Store {
+func (s *Store) With(id domain.VaultID) host.Store {
 	s.vault.world.mu.Lock()
 	defer s.vault.world.mu.Unlock()
 	return &Store{vault: s.vault.find(id)}

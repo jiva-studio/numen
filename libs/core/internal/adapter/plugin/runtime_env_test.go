@@ -1,16 +1,22 @@
 package plugin
 
 import (
+	"context"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
 func TestADependencyCannotNameAVariableTheHostOwnsOrAMalformedOne(t *testing.T) {
 	for _, name := range []string{"NUMEN_PLUGIN_TOKEN", "NUMEN_PLUGIN_PORT", "NUMEN_HOST_PORT", "NUMEN_VAULT_PATH", "A=B", "", "BAD NAME", "X\x00Y"} {
 		t.Run(name, func(t *testing.T) {
-			host := NewHost("desktop.editor")
-			t.Cleanup(func() { _ = host.TeardownAll(t.Context(), 0) })
+			host := NewHost(testsupport.GetMachine(), "desktop.editor")
+			t.Cleanup(func() {
+				if err := host.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+					t.Error(err)
+				}
+			})
 			host.SetDependencies(&fakeCatalog{resolved: map[string]pluginport.ResolvedDependency{
 				"model": {ID: "model", EnvVars: map[string]string{name: "/evil"}},
 			}})

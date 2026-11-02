@@ -14,11 +14,12 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
-	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/clock"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/process"
 )
 
 // AgentModel represents an AI model available from an external agent CLI.
@@ -95,16 +96,18 @@ type codexModelCache struct {
 	failedAt  time.Time
 	inFlight  map[string]bool
 	isAsync   bool
-	// now is the clock the backoff uses. Empty is the system clock.
-	now func() time.Time
+	// clock is the time source of the backoff.
+	clock timeSource
+}
+
+// timeSource gets the current time.
+type timeSource interface {
+	Now() time.Time
 }
 
 // getNow is the time by the clock of the cache.
 func (c *codexModelCache) getNow() time.Time {
-	if c.now == nil {
-		return clock.Now()
-	}
-	return c.now()
+	return c.clock.Now()
 }
 
 // get are the models Codex lists: the cached ones, or those it lists now.
@@ -121,19 +124,24 @@ func (c *codexModelCache) get(ctx context.Context, command []string) []AgentMode
 		return nil
 	}
 	if c.isAsync {
-		if !c.inFlight[key] {
-			if c.inFlight == nil {
-				c.inFlight = make(map[string]bool)
-			}
-			c.inFlight[key] = true
-			cmdCopy := slices.Clone(command)
-			go c.fetchInBackground(context.WithoutCancel(ctx), key, cmdCopy)
-		}
+		c.startBackgroundFetch(ctx, key, command)
 		c.mu.Unlock()
 		return readCodexCache()
 	}
 	c.mu.Unlock()
 	return c.fetchAndStore(ctx, key, command)
+}
+
+// startBackgroundFetch lists the models in the background unless that is already under way. The caller holds the lock.
+func (c *codexModelCache) startBackgroundFetch(ctx context.Context, key string, command []string) {
+	if c.inFlight[key] {
+		return
+	}
+	if c.inFlight == nil {
+		c.inFlight = make(map[string]bool)
+	}
+	c.inFlight[key] = true
+	go c.fetchInBackground(context.WithoutCancel(ctx), key, slices.Clone(command))
 }
 
 func (c *codexModelCache) fetchInBackground(ctx context.Context, key string, command []string) {
@@ -162,6 +170,14 @@ func (c *codexModelCache) fetchAndStore(ctx context.Context, key string, command
 	return models
 }
 
+// isStopped reports whether err is what Wait returns for a program that was stopped: no error, a
+// non-zero exit status, the cancellation of the program's context, or a process that is already gone.
+func isStopped(err error) bool {
+	var exit *exec.ExitError
+	return err == nil || errors.As(err, &exit) || errors.Is(err, context.Canceled) ||
+		errors.Is(err, os.ErrProcessDone) || errors.Is(err, syscall.ESRCH)
+}
+
 // GetCodexModels returns models reported by codex app-server or its cache.
 func GetCodexModels(ctx context.Context, command []string) ([]AgentModel, error) {
 	models, err := askCodexModels(ctx, command)
@@ -174,7 +190,7 @@ func GetCodexModels(ctx context.Context, command []string) ([]AgentModel, error)
 	return nil, err
 }
 
-func askCodexModels(ctx context.Context, command []string) ([]AgentModel, error) {
+func askCodexModels(ctx context.Context, command []string) (models []AgentModel, err error) {
 	name, args := FindCodex(), []string(nil)
 	if len(command) > 0 {
 		name, args = command[0], command[1:]
@@ -182,7 +198,7 @@ func askCodexModels(ctx context.Context, command []string) ([]AgentModel, error)
 	running, stop := context.WithCancel(ctx)
 	defer stop()
 	cmd := exec.CommandContext(running, name, slices.Concat(args, []string{"app-server"})...)
-	supervise(cmd)
+	process.Supervise(cmd)
 	in, err := cmd.StdinPipe()
 	// gomutants:disable-next-line BRANCH_IF reason="cmd.StdinPipe cannot fail on an unstarted exec.Cmd"
 	if err != nil {
@@ -196,10 +212,12 @@ func askCodexModels(ctx context.Context, command []string) ([]AgentModel, error)
 		return nil, err
 	}
 	defer func() {
-		_ = in.Close()
-		_ = out.Close()
-		stop()
-		_ = cmd.Wait()
+		closeErr := errors.Join(in.Close(), out.Close())
+		waitErr := process.WaitForExit(cmd, stop)
+		if isStopped(waitErr) {
+			waitErr = nil
+		}
+		err = errors.Join(err, closeErr, waitErr)
 	}()
 	return listCodexModels(in, out)
 }

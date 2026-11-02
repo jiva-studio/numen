@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path"
 	"strings"
 	"sync"
@@ -37,17 +38,21 @@ type TextServer struct {
 	isClosed bool
 	last     layer
 	running  map[string]context.CancelFunc
+
+	workers *pdf.Workers
 }
 
 var _ host.TextProvider = (*TextServer)(nil)
 
 // NewTextServer is the text layers of the files read through files, written into store and reported
 // to texts, each written in a turn of queue.
-func NewTextServer(files host.Vault, texts host.Texts, store host.Store, queue host.Queue) *TextServer {
+func NewTextServer(
+	files host.Vault, texts host.Texts, store host.Store, queue host.Queue, workers *pdf.Workers,
+) *TextServer {
 	return &TextServer{
 		files: files, texts: texts, store: store, queue: queue,
 		wg: sync.WaitGroup{}, mu: sync.Mutex{}, isClosed: false, last: layer{hash: "", raw: nil, book: nil},
-		running: map[string]context.CancelFunc{},
+		running: map[string]context.CancelFunc{}, workers: workers,
 	}
 }
 
@@ -89,7 +94,7 @@ func (s *TextServer) readLayer(ctx context.Context, files host.Vault, path strin
 	if last.book != nil && last.hash == hash {
 		return last, nil
 	}
-	book, err := pdf.Read(raw)
+	book, err := s.workers.Read(raw)
 	if err != nil {
 		return layer{}, err
 	}
@@ -129,26 +134,30 @@ func (s *TextServer) finish(key string) {
 // until the layer is written again.
 func (s *TextServer) writeLayer(ctx context.Context, req host.TextCreation) {
 	task := host.Task{
-		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), About: req.Path,
-		Done: 0, Total: 0, Unit: host.UnitThings, Error: "", IsUserStarted: false,
+		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), Detail: req.Path,
+		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: false,
 	}
 	err := s.putLayer(ctx, req, task)
 	if err != nil && ctx.Err() == nil {
-		task.Error = err.Error()
-		_ = s.queue.ReportTask(context.WithoutCancel(ctx), task)
+		task.FailureReason = err.Error()
+		if reportErr := s.queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {
+			fmt.Fprintf(os.Stderr, "readers-pdf: show the task %s: %v\n", task.ID, reportErr)
+		}
 		return
 	}
-	_ = s.queue.FinishTask(context.WithoutCancel(ctx), task.ID)
+	if finishErr := s.queue.FinishTask(context.WithoutCancel(ctx), task.ID); finishErr != nil {
+		fmt.Fprintf(os.Stderr, "readers-pdf: finish the task %s: %v\n", task.ID, finishErr)
+	}
 }
 
 // putLayer reports the text layer of a file as a version made from the file. A file that is no PDF,
 // a locked one and a scan have no text layer, and get no version.
-func (s *TextServer) putLayer(ctx context.Context, req host.TextCreation, task host.Task) error {
+func (s *TextServer) putLayer(ctx context.Context, req host.TextCreation, task host.Task) (err error) {
 	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: false, OnWaiting: nil})
 	if err != nil {
 		return fmt.Errorf("wait for a turn to read %s: %w", req.Path, err)
 	}
-	defer turn.Release()
+	defer func() { err = errors.Join(err, turn.Release()) }()
 	if err := s.queue.ReportTask(ctx, task); err != nil {
 		return err
 	}
@@ -166,7 +175,7 @@ func (s *TextServer) putLayer(ctx context.Context, req host.TextCreation, task h
 	if !read.hasText() {
 		return nil
 	}
-	segments, err := read.getSegments()
+	segments, err := read.getSegments(s.workers)
 	if err != nil {
 		return fmt.Errorf("read the words of %s: %w", req.Path, err)
 	}
@@ -181,7 +190,7 @@ func (s *TextServer) putLayer(ctx context.Context, req host.TextCreation, task h
 }
 
 // getSegments is the text layer of every page of the file, cut pagesPerBatch pages at a time.
-func (l layer) getSegments() ([]domain.TextSegment, error) {
+func (l layer) getSegments(workers *pdf.Workers) ([]domain.TextSegment, error) {
 	var segments []domain.TextSegment
 	pages := len(l.book.Pages)
 	for first := 0; first < pages; first += pagesPerBatch {
@@ -190,11 +199,15 @@ func (l layer) getSegments() ([]domain.TextSegment, error) {
 		for i := first; i < last; i++ {
 			wanted = append(wanted, i)
 		}
-		boxes, err := l.book.Highlights(l.raw, wanted)
+		boxes, err := l.book.Highlights(workers, l.raw, wanted)
 		if err != nil {
 			return nil, err
 		}
-		segments = append(segments, getLayerParts(l.book, first, last, boxes)...)
+		parts, err := getLayerParts(l.book, first, last, boxes)
+		if err != nil {
+			return nil, err
+		}
+		segments = append(segments, parts...)
 	}
 	return segments, nil
 }
@@ -202,7 +215,7 @@ func (l layer) getSegments() ([]domain.TextSegment, error) {
 // getLayerParts is the text of pages [first, last) as parts: each word with the rectangle it covers,
 // the runs between words with none, and an empty part opening each outline entry where it begins.
 // The boxes are the words of those pages, ascending by offset.
-func getLayerParts(book *pdf.Book, first, last int, boxes []pdf.HighlightBox) []domain.TextSegment {
+func getLayerParts(book *pdf.Book, first, last int, boxes []pdf.HighlightBox) ([]domain.TextSegment, error) {
 	end := len(book.Text)
 	if last < len(book.Pages) {
 		end = book.Pages[last].Offset
@@ -218,9 +231,13 @@ func getLayerParts(book *pdf.Book, first, last int, boxes []pdf.HighlightBox) []
 		if page+1 < len(book.Pages) {
 			pageEnd = book.Pages[page+1].Offset
 		}
-		boxes = layers.addPage(page, book.Pages[page].Offset, pageEnd, boxes)
+		var err error
+		boxes, err = layers.addPage(page, book.Pages[page].Offset, pageEnd, boxes)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return layers.parts
+	return layers.parts, nil
 }
 
 // layerCut is the parts of a text layer cut so far, and the outline entries still to open.
@@ -232,7 +249,7 @@ type layerCut struct {
 
 // addPage cuts the text of one page, [from, to), at the words of the boxes on it, and returns the
 // boxes of the pages after it.
-func (c *layerCut) addPage(page, from, to int, boxes []pdf.HighlightBox) []pdf.HighlightBox {
+func (c *layerCut) addPage(page, from, to int, boxes []pdf.HighlightBox) ([]pdf.HighlightBox, error) {
 	pos := from
 	for len(boxes) > 0 && boxes[0].Page <= page {
 		box := boxes[0]
@@ -241,26 +258,41 @@ func (c *layerCut) addPage(page, from, to int, boxes []pdf.HighlightBox) []pdf.H
 		if box.Page < page || start >= end {
 			continue
 		}
-		c.add(pos, start, page, nil)
-		c.add(start, end, page, [][4]float32{{box.MinX, box.MinY, box.MaxX, box.MaxY}})
+		if err := c.add(pos, start, page, nil); err != nil {
+			return nil, err
+		}
+		if err := c.add(start, end, page, [][4]float32{{box.MinX, box.MinY, box.MaxX, box.MaxY}}); err != nil {
+			return nil, err
+		}
 		pos = end
 	}
-	c.add(pos, to, page, nil)
-	return boxes
+	if err := c.add(pos, to, page, nil); err != nil {
+		return nil, err
+	}
+	return boxes, nil
 }
 
 // add is the text [from, to) on a page, split where an outline entry begins inside it.
-func (c *layerCut) add(from, to, page int, boxes [][4]float32) {
+func (c *layerCut) add(from, to, page int, boxes [][4]float32) error {
 	for from < to {
 		for len(c.sections) > 0 && c.sections[0].Offset <= from {
-			c.parts = append(c.parts, domain.TextSegment{Text: "", Heading: c.sections[0].Title, Selector: pageSelector{Page: page + 1, Boxes: nil}.encode()})
+			selector, err := pageSelector{Page: page + 1, Boxes: nil}.encode()
+			if err != nil {
+				return err
+			}
+			c.parts = append(c.parts, domain.TextSegment{Text: "", Heading: c.sections[0].Title, Selector: selector})
 			c.sections = c.sections[1:]
 		}
 		end := to
 		if len(c.sections) > 0 && c.sections[0].Offset < to {
 			end = c.sections[0].Offset
 		}
-		c.parts = append(c.parts, domain.TextSegment{Text: c.text[from:end], Heading: "", Selector: pageSelector{Page: page + 1, Boxes: boxes}.encode()})
+		selector, err := pageSelector{Page: page + 1, Boxes: boxes}.encode()
+		if err != nil {
+			return err
+		}
+		c.parts = append(c.parts, domain.TextSegment{Text: c.text[from:end], Heading: "", Selector: selector})
 		from = end
 	}
+	return nil
 }

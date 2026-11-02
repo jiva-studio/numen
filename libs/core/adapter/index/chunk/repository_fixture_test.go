@@ -21,13 +21,15 @@ const (
 	repoVaultB domain.VaultID = "01VAULTB"
 )
 
-var repoTemplate = testsupport.NewTemplate(func(ctx context.Context, path string) error {
-	db, err := index.Open(ctx, path)
-	if err != nil {
-		return err
-	}
-	return db.Close()
-})
+func newRepoTemplate() *testsupport.Template {
+	return testsupport.NewTemplate(func(ctx context.Context, path string) error {
+		db, err := index.Open(ctx, path)
+		if err != nil {
+			return err
+		}
+		return db.Close()
+	})
+}
 
 // store is an index holding two empty vaults, and a second connection to the
 // same file that a test reads and breaks it through.
@@ -44,12 +46,12 @@ func newStore(t *testing.T) *store {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 
 	path := filepath.Join(t.TempDir(), "index.db")
-	repoTemplate.CopyTo(t, path)
+	newRepoTemplate().CopyTo(t, path)
 	db, err := index.Open(t.Context(), path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 	for _, id := range []domain.VaultID{repoVaultA, repoVaultB} {
 		if err := db.Vaults().Register(t.Context(), id); err != nil {
 			t.Fatal(err)
@@ -59,7 +61,7 @@ func newStore(t *testing.T) *store {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { side.Close() })
+	testsupport.CloseAfter(t, side)
 	return &store{t: t, db: db, side: side}
 }
 
@@ -85,7 +87,11 @@ func (s *store) ints(query string, args ...any) []int64 {
 	if err != nil {
 		s.t.Fatalf("%s: %v", query, err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			s.t.Error(err)
+		}
+	}()
 	var out []int64
 	for rows.Next() {
 		var n int64
@@ -106,7 +112,11 @@ func (s *store) strings(query string, args ...any) []string {
 	if err != nil {
 		s.t.Fatalf("%s: %v", query, err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			s.t.Error(err)
+		}
+	}()
 	var out []string
 	for rows.Next() {
 		var v string

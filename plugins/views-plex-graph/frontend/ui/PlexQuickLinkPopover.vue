@@ -1,11 +1,10 @@
 <script setup lang="ts">
 /**
- * Native Plex-style thought creation box and autocomplete dropdown.
+ * Native Plex-style thought creation combobox: the input and its options in one frame.
  */
-import { computed, nextTick, onMounted, ref, useId, useTemplateRef, watch } from 'vue'
-import { useOutsidePress } from '@numen/ui'
+import { computed, ref, watch } from 'vue'
+import { SearchableList, type ListItem } from '@numen/ui'
 import type { PlexRelation } from '../plex'
-import { hasExactNoteMatch } from '../lib/search'
 import { useSearchResults } from '../model/useSearchResults'
 import { WORDS as words } from '../words'
 
@@ -23,25 +22,13 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const input = useTemplateRef<HTMLInputElement>('input')
-const popover = useTemplateRef<HTMLDivElement>('popover')
-
-const queryFieldId = useId()
-
 const query = ref('')
-const highlightedIndex = ref(0)
 const { results, isLoading, setQuery } = useSearchResults((text) => props.search(text))
 
-const trimmedQuery = computed(() => query.value.trim())
-
-const hasExactMatch = computed(() => hasExactNoteMatch(results.value, trimmedQuery.value))
-
-const showCreateOption = computed(() => {
-  if (!trimmedQuery.value) return false
-  return !hasExactMatch.value
-})
-
-const totalItems = computed(() => results.value.length + (showCreateOption.value ? 1 : 0))
+/** The notes found, each named by its path and written by its title. */
+const items = computed<readonly ListItem[]>(() =>
+  results.value.map((note) => ({ id: note.path, text: note.title || note.path })),
+)
 
 const positionStyle = computed(() => ({
   left: `${Math.round(props.at.x)}px`,
@@ -50,132 +37,33 @@ const positionStyle = computed(() => ({
 }))
 
 /* --------------------------------- Hooks ---------------------------------- */
-onMounted(() => {
-  void nextTick(() => {
-    input.value?.focus()
-  })
-})
-
-useOutsidePress(popover, () => emit('dismiss'))
-
-watch(query, (text) => {
-  highlightedIndex.value = 0
-  void setQuery(text)
-})
-
-/* -------------------------------- Handlers -------------------------------- */
-function onKeyDown(event: KeyboardEvent) {
-  if (event.key === 'Escape') {
-    event.stopPropagation()
-    event.preventDefault()
-    emit('dismiss')
-    return
-  }
-
-  if (event.key === 'ArrowDown') {
-    event.preventDefault()
-    if (totalItems.value > 0) {
-      highlightedIndex.value = (highlightedIndex.value + 1) % totalItems.value
-    }
-    return
-  }
-
-  if (event.key === 'ArrowUp') {
-    event.preventDefault()
-    if (totalItems.value > 0) {
-      highlightedIndex.value = (highlightedIndex.value - 1 + totalItems.value) % totalItems.value
-    }
-    return
-  }
-
-  if (event.key === 'Enter') {
-    event.preventDefault()
-    submitHighlighted()
-  }
-}
-
-function onSelectResult(path: string) {
-  emit('select-note', path)
-}
-
-function onCreateAction() {
-  if (trimmedQuery.value.length > 0) {
-    emit('create-note', trimmedQuery.value)
-  }
-}
-
-/* -------------------------------- Helpers --------------------------------- */
-function submitHighlighted() {
-  if (highlightedIndex.value < results.value.length) {
-    const selectedItem = results.value[highlightedIndex.value]
-    if (selectedItem) {
-      onSelectResult(selectedItem.path)
-    }
-  } else if (showCreateOption.value) {
-    onCreateAction()
-  }
-}
+watch(query, (text) => setQuery(text))
 </script>
 
 <template>
   <div
-    ref="popover"
     class="plex-quick-link"
     :class="`plex-quick-link--${relation}`"
     :style="positionStyle"
     role="dialog"
     aria-label="New thought"
-    :aria-busy="isLoading"
   >
-    <!-- Plex Thought Node Box -->
-    <div class="plex-quick-link__node">
-      <label :for="queryFieldId" class="sr-only">{{ words.quickLinkLabel }}</label>
-      <input
-        :id="queryFieldId"
-        ref="input"
-        v-model="query"
-        type="text"
-        class="plex-quick-link__input"
-        :placeholder="words.quickLinkPlaceholder"
-        @keydown="onKeyDown"
-      />
-    </div>
-
-    <!-- Dropdown Autocomplete Menu -->
-    <div
-      v-if="results.length > 0 || showCreateOption"
-      class="plex-quick-link__dropdown"
-      role="listbox"
+    <SearchableList
+      v-model:query="query"
+      class="plex-quick-link__frame"
+      :items="items"
+      :label="words.quickLinkLabel"
+      :placeholder="words.quickLinkPlaceholder"
+      :is-filtered="false"
+      :is-pending="isLoading"
+      has-action
+      needs-query
+      @select="(path) => emit('select-note', path)"
+      @act="(title) => emit('create-note', title)"
+      @close="emit('dismiss')"
     >
-      <button
-        v-for="(result, index) in results"
-        :key="result.path"
-        type="button"
-        class="plex-quick-link__option"
-        :class="{
-          'plex-quick-link__option--active': highlightedIndex === index,
-        }"
-        role="option"
-        :aria-selected="highlightedIndex === index"
-        @click="onSelectResult(result.path)"
-        @pointerenter="highlightedIndex = index"
-      >
-        <span class="plex-quick-link__option-title">{{ result.title || result.path }}</span>
-      </button>
-
-      <button
-        v-if="showCreateOption"
-        type="button"
-        class="plex-quick-link__option plex-quick-link__option--create"
-        :class="{ 'plex-quick-link__option--active': highlightedIndex === results.length }"
-        role="option"
-        :aria-selected="highlightedIndex === results.length"
-        @click="onCreateAction"
-        @pointerenter="highlightedIndex = results.length"
-      >
-        <span class="plex-quick-link__option-title">{{ words.createNote(trimmedQuery) }}</span>
-      </button>
-    </div>
+      <template #action="{ query: typed }">{{ words.createNote(typed) }}</template>
+    </SearchableList>
   </div>
 </template>
 
@@ -188,75 +76,18 @@ function submitHighlighted() {
   pointer-events: auto;
   font-family: var(--numen-font-sans);
   --plex-quick-link-width: 14rem;
-  --plex-quick-link-height: 2rem;
 }
-.plex-quick-link__node,
-.plex-quick-link__dropdown {
-  background: var(--numen-surface-raised);
-  border: var(--numen-stroke) solid var(--relation-color);
-  border-radius: var(--radius);
-}
-.plex-quick-link__node {
+
+/* The frame is centred on the point of the node it was asked from, by the middle of its search line. */
+.plex-quick-link :deep(.plex-quick-link__frame) {
   position: absolute;
   margin-inline-start: calc(var(--plex-quick-link-width) / -2);
-  margin-block-start: calc(var(--plex-quick-link-height) / -2);
+  margin-block-start: calc(var(--numen-action-size) / -2);
   inline-size: var(--plex-quick-link-width);
-  block-size: var(--plex-quick-link-height);
-  padding-inline: var(--numen-node-padding);
-  display: flex;
-  align-items: center;
-  box-shadow: var(--numen-shadow);
 }
-.plex-quick-link__input,
-.plex-quick-link__option {
-  border: none;
-  background: transparent;
-  color: var(--numen-ink);
-  font: inherit;
-  font-size: var(--numen-font-size);
-}
-.plex-quick-link__input {
-  inline-size: 100%;
-  outline: none;
-  padding: 0;
-}
-.plex-quick-link__input::placeholder {
-  color: var(--numen-hushed);
-  opacity: 0.85;
-}
-.plex-quick-link__dropdown {
-  position: absolute;
-  top: calc(var(--plex-quick-link-height) / 2 + 0.375rem);
-  inset-inline-start: 50%;
-  margin-inline-start: calc(var(--plex-quick-link-width) / -2);
-  inline-size: var(--plex-quick-link-width);
-  max-block-size: 12rem;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  padding: 0.25rem;
-  box-shadow: var(--numen-shadow);
-  gap: 0.125rem;
-}
-.plex-quick-link__option {
-  display: flex;
-  align-items: center;
-  padding: 0.3125rem 0.5rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
-}
-.plex-quick-link__option--active {
-  background: var(--numen-accent);
-  color: var(--numen-accent-ink);
-}
-.plex-quick-link__option + .plex-quick-link__option--create {
-  border-top: var(--numen-stroke) solid var(--numen-rule);
-  margin-top: 0.125rem;
-  padding-top: 0.375rem;
-}
-.plex-quick-link__option-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+
+/* The frame takes the colour of the relation it makes. */
+.plex-quick-link :deep(.plex-quick-link__frame) {
+  border-color: var(--relation-color);
 }
 </style>

@@ -10,25 +10,34 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
-var claudeSearchPlaces = []string{
-	"~/.local/bin/claude",
-	"~/.claude/local/claude",
-	"~/Applications/Claude Code URL Handler.app/Contents/MacOS/claude",
-	"/Applications/Claude Code URL Handler.app/Contents/MacOS/claude",
-	"~/.bun/bin/claude",
-	"~/.volta/bin/claude",
-	"~/.npm-global/bin/claude",
-	"~/.nvm/versions/node/*/bin/claude",
-	"~/.nix-profile/bin/claude",
-	"/opt/homebrew/bin/claude",
-	"/usr/local/bin/claude",
-	"/run/current-system/sw/bin/claude",
-	"/nix/var/nix/profiles/default/bin/claude",
+// getClaudeSearchPlaces returns the glob patterns the CLI is looked for in after PATH. A leading ~/
+// is the home directory.
+func getClaudeSearchPlaces() []string {
+	return []string{
+		"~/.local/bin/claude",
+		"~/.claude/local/claude",
+		"~/Applications/Claude Code URL Handler.app/Contents/MacOS/claude",
+		"/Applications/Claude Code URL Handler.app/Contents/MacOS/claude",
+		"~/.bun/bin/claude",
+		"~/.volta/bin/claude",
+		"~/.npm-global/bin/claude",
+		"~/.nvm/versions/node/*/bin/claude",
+		"~/.nix-profile/bin/claude",
+		"/opt/homebrew/bin/claude",
+		"/usr/local/bin/claude",
+		"/run/current-system/sw/bin/claude",
+		"/nix/var/nix/profiles/default/bin/claude",
+	}
 }
 
 // findClaude returns the custom path if specified and runnable, else the command the environment
 // names, else the Claude Code CLI where it is installed. Empty is a program nowhere to be found.
 func findClaude(customPath ...string) string {
+	return findClaudeIn(getClaudeSearchPlaces(), customPath...)
+}
+
+// findClaudeIn is findClaude with the CLI looked for in places after PATH.
+func findClaudeIn(places []string, customPath ...string) string {
 	if len(customPath) > 0 && customPath[0] != "" {
 		if agentrun.IsRunnable(customPath[0]) {
 			return customPath[0]
@@ -40,7 +49,7 @@ func findClaude(customPath ...string) string {
 	if cmd := os.Getenv("CLAUDE_COMMAND"); cmd != "" {
 		return cmd
 	}
-	return locateExecutable([]string{"claude"}, claudeSearchPlaces)
+	return locateExecutable([]string{"claude"}, places)
 }
 
 func locateExecutable(names, places []string) string {

@@ -24,7 +24,7 @@ export const TRANSCRIBE_ENTRY: MenuEntry = {
 export const DELETE_ENTRY: MenuEntry = {
   pluginId: 'md.test.transcription',
   pluginName: 'Transcription',
-  command: 'delete-transcript',
+  command: 'delete-entry',
   title: 'Delete transcript',
   icon: '',
   versionId: 'md.test.transcription/abc',
@@ -58,6 +58,7 @@ export function createRecordings(
     cueTimes: new Map<number, number>(),
     readError: null as Error | null,
     onWork: null as ((isWorking: boolean) => void) | null,
+    onChange: null as (() => void) | null,
     isWatched: false,
   }
   const recordings: Recordings = {
@@ -67,14 +68,26 @@ export function createRecordings(
       if (state.readError) throw state.readError
       return state.cues
     },
-    writeTranscript: async (_, next) => void state.writes.push(next),
+    writeTranscript: async (_, next) => {
+      state.writes.push(next)
+    },
     findCueTime: async (_, span) => state.cueTimes.get(span.start) ?? null,
     getMenu: async () => state.menu,
-    runMenuEntry: async (_, entry) => void state.runs.push(entry),
+    runMenuEntry: async (_, entry) => {
+      state.runs.push(entry)
+    },
+    watchChanges: (_, onChange) => {
+      state.onChange = onChange
+      return () => {
+        state.onChange = null
+      }
+    },
     watchWork: (_, onChange) => {
       state.onWork = onChange
       state.isWatched = true
-      return () => void (state.isWatched = false)
+      return () => {
+        state.isWatched = false
+      }
     },
   }
   return { recordings, state }
@@ -91,9 +104,13 @@ export function createPlayer() {
     duration: ref(0),
     isPlaying: ref(false),
     error: ref(''),
-    load: (next) => void (url.value = next),
-    play: (next) => void (url.value = next),
-    pause: () => {},
+    load: (next) => {
+      url.value = next
+    },
+    play: (next) => {
+      url.value = next
+    },
+    pause: () => undefined,
     seek: (next, ms) => {
       url.value = next
       position.value = ms

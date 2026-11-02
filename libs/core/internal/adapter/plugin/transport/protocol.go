@@ -10,15 +10,15 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/manifestfile"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 const pingTimeout = 3 * time.Second
 
 // CheckPluginProtocol pings a started plugin and returns port.ErrUnsupportedProtocol when the protocol
 // it reports differs from the one its manifest declares or from port.PluginProtocolVersion.
-func CheckPluginProtocol(ctx context.Context, m manifestfile.Manifest, endpoint Endpoint) error {
+func CheckPluginProtocol(ctx context.Context, m manifest.Manifest, endpoint Endpoint) error {
 	client := numenv1connect.NewPluginLifecycleServiceClient(
 		EndpointClient(endpoint),
 		endpoint.BaseURL(),
@@ -32,11 +32,11 @@ func CheckPluginProtocol(ctx context.Context, m manifestfile.Manifest, endpoint 
 	}
 	reported := int(resp.Msg.GetProtocol())
 	if declared := m.GetProtocol(); reported != declared {
-		return fmt.Errorf("%w: plugin %s speaks protocol %d, its manifest declares %d",
+		return fmt.Errorf("%w: plugin %s uses protocol %d, its manifest declares %d",
 			pluginport.ErrUnsupportedProtocol, m.ID, reported, declared)
 	}
 	if reported != pluginport.PluginProtocolVersion {
-		return fmt.Errorf("%w: plugin %s speaks protocol %d, this host speaks %d",
+		return fmt.Errorf("%w: plugin %s uses protocol %d, this host uses %d",
 			pluginport.ErrUnsupportedProtocol, m.ID, reported, pluginport.PluginProtocolVersion)
 	}
 	return nil

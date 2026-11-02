@@ -224,7 +224,10 @@ const createArrangement = (next: () => number, pos: number): string => {
 }
 
 /** A URL with the spaces and control characters a scheme may be hidden behind dropped. */
-const stripControls = (url: string): string => url.replace(/[\x00-\x20]/g, '')
+const stripControls = (url: string): string =>
+  Array.from(url)
+    .filter((character) => character.charCodeAt(0) > 0x20)
+    .join('')
 
 /** How many comments the markup holds, wherever they stand. */
 const comments = (root: Node): number => {
@@ -268,7 +271,7 @@ const wrong = (element: Element): string | null => {
     const response = stripControls(src)
     if (scheme(response) === 'data:') {
       if (!INLINE_IMAGE.test(response))
-        return `a picture stands in the text as ${response.slice(0, 30)}`
+        return `a picture is in the text as ${response.slice(0, 30)}`
     } else if (scheme(response) !== null || /^[\\/]{2}/.test(response)) {
       return `a picture would be fetched from ${response.slice(0, 40)}`
     }
@@ -344,14 +347,14 @@ type Story = StoryObj
  * has not been measured against anything.
  */
 export const Arrangements: Story = {
-  play: ({ canvasElement }) => {
+  play: async ({ canvasElement }) => {
     const transcriptText = canvasElement.querySelector('[data-tally]')?.textContent ?? ''
-    expect(transcriptText).toContain(`${ARRANGEMENTS} arrangements`)
+    await expect(transcriptText).toContain(`${ARRANGEMENTS} arrangements`)
 
     const drawnCount = Number(/, (\d+) of them drawn/.exec(transcriptText)?.[1] ?? 0)
     const elements = Number(/drawn as (\d+) elements/.exec(transcriptText)?.[1] ?? 0)
-    expect(drawnCount).toBeGreaterThan(ARRANGEMENTS / 4)
-    expect(elements).toBeGreaterThan(ARRANGEMENTS)
+    await expect(drawnCount).toBeGreaterThan(ARRANGEMENTS / 4)
+    await expect(elements).toBeGreaterThan(ARRANGEMENTS)
   },
 }
 
@@ -375,7 +378,7 @@ export const NothingRuns: Story = {
     }
     await new Promise((settle) => view.requestAnimationFrame(() => view.setTimeout(settle, 0)))
 
-    expect(view.ran).toBe(0)
+    await expect(view.ran).toBe(0)
     element.remove()
   },
 }

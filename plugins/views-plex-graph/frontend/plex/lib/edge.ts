@@ -3,13 +3,26 @@ import type { Position } from './node'
 /** The end of a line an arrowhead is drawn at, pointing out of the line there. */
 export type EdgeArrow = 'from' | 'to'
 
+/**
+ * Words set along an edge. A line with one label carries it in the middle, on
+ * the line, its letters across it. With two whose records both have a head,
+ * each is set near the end its head is at, on its own side, and reads toward that end. Otherwise
+ * the first, written in the `from` note, is set near the `from` end and reads from `from` to `to`,
+ * and the second, written in the `to` note, is set near the `to` end on the other side and reads back.
+ */
+export interface EdgeLabel {
+  readonly text: string
+  /** The end of the line the record points at, where it has a head. */
+  readonly end?: EdgeArrow
+}
+
 export interface PlexEdge {
   readonly from: string
   readonly to: string
   /** Drawn along the line when present; the plex never invents one. */
-  readonly label?: string
-  /** The end an arrowhead is drawn at. A line given none carries none. */
-  readonly arrow?: EdgeArrow
+  readonly labels?: readonly EdgeLabel[]
+  /** The ends an arrowhead is drawn at. A line given none carries none. */
+  readonly arrows?: readonly EdgeArrow[]
 }
 
 /**
@@ -24,6 +37,9 @@ export interface EdgeCurve {
   readonly control2: Position
 }
 
+/** The side of a line a title is on: left, on the line, or right, looking from the `from` end. */
+export type EdgeSide = -1 | 0 | 1
+
 /**
  * Which way round a curve the words of a title are set. `against` is a curve
  * running right to left or up the page, and its title is set on the curve
@@ -36,26 +52,63 @@ export type EdgeHeading = 'along' | 'against'
  * in degrees clockwise from the positive x axis.
  */
 export interface PlacedArrow {
+  /** The end of the line the arrowhead is drawn at. */
+  readonly end: EdgeArrow
   readonly at: Position
   readonly angle: number
+}
+
+/**
+ * The ink of the font a label is set in, in plex units above and below its baseline:
+ * the height of a capital, the depth of a descender and the height of a lowercase x.
+ */
+export interface LabelType {
+  readonly ascent: number
+  readonly descent: number
+  readonly xHeight: number
+}
+
+/** One label of an edge as it is drawn. */
+export interface EdgeTitle {
+  /** Where the label asks to be set, as a fraction of the line from its `from` end. */
+  readonly anchor: number
+  /** Which way round the curve the words are read. */
+  readonly heading: EdgeHeading
+  /**
+   * The side of the line the words are set on, looking along it from its `from`
+   * end: -1 on the left, 1 on the right, 0 on the line. A title of a pair is
+   * read in the direction of its record, on the left of its own reading: the
+   * left side reads from `from` to `to`, the right side the other way.
+   */
+  readonly side: EdgeSide
+  /**
+   * How far the centre of the words is from the line, in plex units, signed as `side`: the
+   * middle of the lowercase letters for a title on the line, the middle of the whole ink
+   * for a title beside it.
+   */
+  readonly shift: number
+  /** How far the baseline is below that centre, across the line, in plex units. */
+  readonly rise: number
+  /**
+   * The label as it is drawn: cut to the length of the curve and ended in an
+   * ellipsis. The whole of it where nothing measured the words.
+   */
+  readonly words: string
+  /**
+   * Position of the label's midpoint as a fraction of the line's length, along
+   * the curve as it is read: the position of its end, unless the title was
+   * shifted along it to find space.
+   */
+  readonly wordsAt: number
 }
 
 /** An edge routed between two placed nodes. */
 export interface PlacedEdge extends PlexEdge, EdgeCurve {
   readonly opacity: number
-  readonly heading: EdgeHeading
-  /**
-   * The label as it is drawn: cut to the length of the curve and ended in an
-   * ellipsis. The whole of it where nothing measured the words.
-   */
-  readonly words?: string | undefined
-  /**
-   * Position of the label's midpoint as a fraction of the line's length: the
-   * middle of the line, unless the title was shifted along it to find space.
-   */
-  readonly wordsAt: number
-  /** Where the arrowhead goes and which way it is aimed, for an edge with one. */
-  readonly arrowhead?: PlacedArrow | undefined
+  /** The labels that are drawn, each at its position. A label with no room is left out. */
+  readonly titles: readonly EdgeTitle[]
+  /** Where each arrowhead goes and which way it is aimed, for an edge with any. */
+  readonly arrowheads?: readonly PlacedArrow[] | undefined
 }
 
 /**
@@ -198,5 +251,5 @@ export const getArrow = (edge: EdgeCurve, end: EdgeArrow): PlacedArrow => {
   const tangent = end === 'to' ? way : { x: -way.x, y: -way.y }
   const out = covered > 0 && (spanned.x !== 0 || spanned.y !== 0) ? spanned : tangent
 
-  return { at: point, angle: (Math.atan2(out.y, out.x) * 180) / Math.PI }
+  return { end, at: point, angle: (Math.atan2(out.y, out.x) * 180) / Math.PI }
 }

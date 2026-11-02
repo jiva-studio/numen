@@ -1,6 +1,6 @@
 # Frontend Coding Style & Component Guidelines
 
-The conventions for Vue 3 and TypeScript in numen: `libs/ui/core` and the windows under `apps/desktop/editor` and `apps/desktop/flashcards`. The architecture these serve is in [`architecture.md`](./architecture.md), *How an interface component is built*, *The component library is shadcn-vue* and *How this application is tested*.
+The conventions for Vue 3 and TypeScript in numen: `libs/ui/core` and the windows under `apps/desktop/editor` and `apps/desktop/flashcards`. The architecture these serve is in [`architecture.md`](./architecture.md), _How an interface component is built_, _The component library is shadcn-vue_ and _How this application is tested_.
 
 TypeScript is strict, with `exactOptionalPropertyTypes` and `noUncheckedIndexedAccess`. A component's props are a contract with another module, and an unchecked one is not a contract.
 
@@ -20,7 +20,7 @@ The dependency runs `apps/*` → `libs/ui/core`. Never back, never sideways.
 
 Every component is decoupled into logic and presentation:
 
-**Pure core logic.** Given props, pure TypeScript functions compute render properties — coordinates, states, derived flags — as plain data objects with no DOM, Vue, clock, randomness, or DOM measurement dependencies. Pure logic resides in standalone TypeScript modules alongside the component (`measure.ts`, `sizing.ts`, `model/`), each with dedicated unit tests.
+**Pure core logic.** Given props, pure TypeScript functions compute render properties — coordinates, states, derived flags — as plain data objects with no DOM, Vue, clock, randomness, or DOM measurement dependencies. Pure logic is in standalone TypeScript modules next to the component (`measure.ts`, `sizing.ts`, `model/`), each with dedicated unit tests.
 
 **Presentational views.** Vue components receive these computed values and render elements without performing business logic or calculations in templates. A template must not calculate values directly, and a computed property must not access `window`, `Date.now()`, or element dimensions directly.
 
@@ -32,23 +32,23 @@ A `computed` in a `.vue` file is a thin projection. Loops, arithmetic, string pa
 
 ## 3. Component directories
 
-A component owns a directory under `src/`, named for the thing it draws:
+A component has a directory under `src/`, named after what it draws:
 
 ```text
 src/plex/
 ├── Plex.vue              # the humble view
-├── Plex.stories.ts       # the corpus
+├── Plex.stories.ts       # the stories
 ├── Plex.test.ts          # what is emitted, and what is not
-├── carry.ts              # pure modules, each with its own test beside it
+├── carry.ts              # pure modules, each with its own test next to it
 ├── carry.test.ts
 ├── model/                # the concept: the union, and what varies with it
 ├── render/               # what the view needs to draw the computed values
-└── fixtures/             # awkward on purpose, and never taken from the domain
+└── fixtures/             # deliberately irregular data, never taken from the domain
 ```
 
 What an application may use is re-exported from `src/index.ts`, and that list is narrower than what the module contains: how a component is built is not how it is used.
 
-**A component is split when it holds a second responsibility** — a section with independent state, or a part rendered on its own elsewhere. Length is not a rule and is never a review finding.
+**A component is split when it holds a second responsibility** — a section with independent state, or a part rendered on its own elsewhere. The length limits of a function and of a block are in [`architecture.md`](architecture.md) §8.
 
 **A polymorphic component dispatches, it does not inline.** Where a component renders distinct variants by kind, the parent is a shallow dispatcher and each variant is its own component; a heavy dependency — an editor, a composer, a form — is never imported into something that renders a high-frequency row.
 
@@ -82,7 +82,7 @@ function formatValue(val: string) { ... }
 </script>
 ```
 
-**Props → Events (or Props & Emits) → State → Hooks → Handlers → Helpers**, in the 80-character banner form. The components in the tree still carry the short `// --- <Name> ---` form and are being migrated; a new or touched component takes the banner.
+**Props → Events (or Props & Emits) → State → Hooks → Handlers → Helpers**, in the 80-character banner form. The components in the tree still use the short `// --- <Name> ---` form and are being migrated; a new or touched component uses the banner.
 
 ---
 
@@ -92,12 +92,12 @@ function formatValue(val: string) { ... }
 - Every event a component emits is declared in `defineEmits<Emits>()`.
 - Emits are kebab-case in the template (`@item-selected`); the handler in the script is `onItemSelected`. `update:*` for a model.
 - **Do not declare sibling events differing only by a flag.** `annotate: [block?: boolean]`, not `annotate` and `annotateBlock`.
-- **A second behaviour is a function, never a mode flag** — and only where a second implementation is intended. A knob with one setting is a knob nobody has read.
+- **A second behaviour is a function, never a mode flag** — and only where a second implementation is intended. A flag with one value is dead configuration.
 - **A concept is declared once.** A role, a state, a variant: the type union, the layout, the wording and the colour all read from one declaration.
 - No component queries the DOM to read state. State flows through props, emits and models.
 - No mutation of a prop, and no destructuring of a reactive object or store without `toRefs()` / `storeToRefs()`.
 - A `watch` that could be a `computed` is a finding: derived state recomputed by hand goes stale.
-- Everything started has an owner that ends it — a listener, a timer, an observer, a subscription.
+- Whatever a component starts, the same component ends — a listener, a timer, an observer, a subscription.
 
 ---
 
@@ -111,7 +111,7 @@ function formatValue(val: string) { ... }
   ```
   A bare value, an implicit `null`, or a second word for the failure discriminant (`refusal`, `reason`) is a finding. The word is **`error`**.
 - No `any`. No `as` casting away a type the code could state. No non-null assertion standing in for a check.
-- No empty `catch {}`. Every catch handles, rethrows, or carries a statement saying why it is safely ignored.
+- No empty `catch {}`. Every catch handles the error, rethrows it, or has a comment saying why it is safely ignored.
 
 ---
 
@@ -130,34 +130,35 @@ function formatValue(val: string) { ... }
 ## 8. Styling
 
 - **Every colour, size, radius and duration is a design token.** A literal hex, a raw `rgb()`, a hardcoded duration or a Tailwind palette class (`bg-slate-800`) in a component is a finding.
-- **Tokens are declared on the root alone**, in `src/tokens/tokens.css`. A custom property declared on an element beats the same property inherited from the root, so a component declaring its own is a component a theme no longer reaches.
+- **Tokens are declared on the root alone**, in `src/tokens/tokens.css`. A custom property declared on an element beats the same property inherited from the root, so a component that declares its own is no longer changed by the theme.
 - **`theme.css` defines Tailwind's names from the tokens, never the reverse**, so `bg-surface` and `var(--numen-surface)` resolve to one value.
+- **Text on a ground is readable on it: 4.5:1 for text, 3:1 for large text and for marks.** Text on the accent takes `--numen-accent-ink`, never the inherited colour, `--numen-surface` or a dimmed `opacity`; a hover moves a ground away from its text, not toward it. `libs/ui/core/src/shared/ui/contrast/Contrast.stories.ts` measures every variant, size and state of the kit's controls in both token sets, and the `afterEach` of every story corpus fails a story whose text on the accent, or in the accent, falls below the ratio. A new control that draws on a solid ground gets a case in that story.
 - **No `dark:` variant anywhere in the module**, including in a component copied in from the shadcn-vue registry — the tokens are `light-dark()` pairs and `color-scheme` chooses.
-- **The root's font size is the interface multiplier.** What follows the interface is in `rem`; a hairline, a border, a focus ring and the stroke of a handle are one physical line and stay in `px`.
-- A component copied in from the registry is edited on the way in: its palette, its `dark:` variants and its types are this module's problem from that point, because the source is now this module's own.
+- **The root's font size is the interface multiplier.** What scales with the interface is in `rem`; a hairline, a border, a focus ring and the stroke of a handle are one physical line and stay in `px`.
+- A component copied in from the registry is edited when it is copied in: its palette, its `dark:` variants and its types are maintained in this module from then on, because the copied source belongs to this module.
 
 ---
 
 ## 9. Stories and tests
 
-- **A component is built in Storybook**, in isolation, before any application renders it. One built inside a screen has whatever edge cases that screen happened to contain.
-- **The stories are the corpus, and they are awkward on purpose**: empty, one, far too many, text that is not Latin, text far too long, text with nothing to break at, and no text at all.
-- **A setting is a control.** Anything reachable by turning a knob is an `argType`, and a second story differing only by the value of one is deleted.
-- **Three levels of test.** The assertions that matter sit on the pure core as plain functions. The component in jsdom covers what is emitted and what is drawn — and **the negatives belong there**, because what is *not* emitted and *not* drawn fails silently and looks right in every screenshot. The stories run as tests in a browser.
-- **Both engines.** The window is WebKit on Linux and macOS, Chromium on Windows, so every story renders in both through Playwright. A run that saw one engine did not see the product.
-- **A test must be able to fail.** Break the rule and watch: "the nodes were arranged" and "the component rendered" pass under almost any implementation.
+- **A component is built in Storybook**, in isolation, before any application renders it. One built inside a screen has only the edge cases that screen happens to contain.
+- **The stories cover the edge cases with deliberately irregular data**: empty, one, far too many, text that is not Latin, text far too long, text with nothing to break at, and no text at all.
+- **A setting is a control.** Anything a control can change is an `argType`, and a second story that differs only by the value of one is deleted.
+- **Three levels of test.** The assertions that matter are on the pure core as plain functions. The component in jsdom covers what is emitted and what is drawn — and **the negatives belong there**, because what is _not_ emitted and _not_ drawn fails silently and looks right in every screenshot. The stories run as tests in a browser.
+- **Both engines.** The window is WebKit on Linux and macOS, Chromium on Windows, so every story renders in both through Playwright. A run in one engine does not test the product.
+- **A test must be able to fail.** Break the rule and check that the test fails: "the nodes were arranged" and "the component rendered" pass under almost any implementation.
 
 ---
 
 ## 10. Code formatting (Prettier & gofmt)
 
-*TypeScript, Vue, JSON and CSS are formatted with Prettier.* Prettier is configured in `prettier.config.mjs`. Format with `npm run format` at the repository root; the check is `npm run format:check`. Prettier's use is mandatory, and a change that is not Prettier-clean is rejected. Today `format:check` runs by hand and through the pre-commit hook, which runs `npx prettier --check` on the staged files; no CI workflow and no make target runs it.
+_TypeScript, Vue, JSON and CSS are formatted with Prettier._ Prettier is configured in `prettier.config.mjs`. Format with `npm run format` at the repository root; the check is `npm run format:check`. Prettier's use is mandatory, and a change that is not Prettier-clean is rejected. Today `format:check` runs by hand and through the pre-commit hook, which runs `npx prettier --check` on the staged files; no CI workflow and no make target runs it.
 
 Go code is formatted with `gofmt` (`gofmt -l .`).
 
 - `.editorconfig` — encoding, line endings, the final newline, trailing whitespace, the indent.
-- **ESLint, with the boundary and code rules in `eslint.config.js`** — what is semantically wrong: an empty catch, a `ref` mishandled, a module reaching where it may not.
-- **A generated file is whatever generated it.** Nothing under the protocol's generated output is hand-formatted or edited.
+- **ESLint, with the boundary and code rules in `eslint.config.js`** — what is semantically wrong: an empty catch, a `ref` mishandled, a module importing what it may not import.
+- **A generated file is changed only by its generator.** Nothing under the protocol's generated output is hand-formatted or edited.
 
 ---
 
@@ -171,7 +172,7 @@ A comment describes the active behavior or invariant. It does not argue, justify
 cd libs/ui/core
 npm run typecheck
 npm run test:unit
-npm run build                                   # the windows reach @numen/ui through its build
+npm run build                                   # the windows import @numen/ui from its build
 npx vitest run --project 'stories (chromium)'
 npx vitest run --project 'stories (webkit)'
 ```

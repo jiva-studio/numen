@@ -64,7 +64,10 @@ const callWhileBusy = async <M extends keyof Methods>(
 const readOutcome = (result: Result<unknown, ApiError>): Outcome<null> =>
   result.ok ? { ok: true, value: null } : { ok: false, error: describeError(result.error) }
 
-const work = createWorkWatcher((onTasks) => taskHost?.watch(onTasks) ?? { dispose: () => {} })
+// Without a task host there is nothing to unsubscribe.
+const work = createWorkWatcher(
+  (onTasks) => taskHost?.watch(onTasks) ?? { dispose: () => undefined },
+)
 
 /** Notifies open tabs on the named paths to reload their link. */
 export const refreshLinks = (paths: readonly string[]): void => {

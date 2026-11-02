@@ -47,17 +47,17 @@ function open(settings: Record<string, string> = {}) {
   const content: [string, unknown][] = []
   const conversation: Conversation = {
     turns: ref([]),
-    isWorking: ref(false),
+    isAnswerPending: ref(false),
     ask: async (_question, _focus, options) => {
       request.push(options ?? {})
     },
     getSourceLocation: () => null,
-    stop: () => {},
-    finish: () => {},
+    stop: () => undefined,
+    finish: () => undefined,
   }
   const state = useAgentConversation(conversation, {
-    openFileAt: () => {},
-    openFileAdjacent: () => {},
+    openFileAt: () => undefined,
+    openFileAdjacent: () => undefined,
     resolveLinks: async () => [],
     unreachable: () => '',
     getSetting: (path) => settings[path.join('/')],

@@ -23,9 +23,9 @@ type Files interface {
 	Lock(ctx context.Context) (release func(), err error)
 }
 
-// Levels updates the named notes in the index. A write is reported complete
+// IndexUpdater updates the named notes in the index. A write is reported complete
 // after its changes are searchable.
-type Levels func(ctx context.Context, v domain.Vault, paths []string) error
+type IndexUpdater func(ctx context.Context, v domain.Vault, paths []string) error
 
 // Baseline is what a caller last saw of the note it is saving.
 //
@@ -50,18 +50,23 @@ func (s *Baseline) isStale(on domain.FileStat, prose string) bool {
 	return prose != s.Prose && !on.IsUnchanged(s.FileStat)
 }
 
+// Clock gets the current time.
+type Clock interface {
+	Now() time.Time
+}
+
 // Edit is what every change to the contents of an existing note needs.
 //
 // It is one function because the shape is always the same and the rules in it are easy to forget one
 // at a time: read, refuse what cannot be read, write the identifier because this is an edit, change
-// the one thing, put it back, and bring the index level.
+// the one thing, put it back, and update the index.
 type Edit struct {
 	// Open gives the files of the vault.
 	Open func(v domain.Vault) (Files, error)
-	// Index brings the index level with what was written. Nil brings nothing.
-	Index Levels
-	// Now is the time an identifier is minted at.
-	Now func() time.Time
+	// Index updates the index for what was written. Nil brings nothing.
+	Index IndexUpdater
+	// Clock gives the time an identifier is minted at.
+	Clock Clock
 	// Entropy is the randomness source for minted identifiers.
 	Entropy io.Reader
 
@@ -82,12 +87,12 @@ func (e Edit) Apply(ctx context.Context, v domain.Vault, path string, change fun
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	// The file is on disk, so the file stat is stored alongside whatever the levelling produced and a
+	// The file is on disk, so the file stat is stored alongside whatever the index update produced and a
 	// caller can tell the two apart.
 	if e.Index == nil {
 		return content, nil
 	}
-	return content, WrapUnlevelled(e.Index(ctx, v, []string{path}), path)
+	return content, WrapIndexOutdated(e.Index(ctx, v, []string{path}), path)
 }
 
 // splice is the read, the change and the write, under this vault's write lock from before the read
@@ -185,5 +190,9 @@ func (e Edit) addIdentifier(doc *markdown.Document) error {
 	if _, carried := doc.Identifier(); carried || e.ShouldOverwrite {
 		return nil
 	}
-	return doc.SetIdentifier(ulid.New(e.Now(), e.Entropy))
+	identifier, err := ulid.NewGenerator(e.Entropy).NewID(e.Clock.Now())
+	if err != nil {
+		return err
+	}
+	return doc.SetIdentifier(identifier)
 }

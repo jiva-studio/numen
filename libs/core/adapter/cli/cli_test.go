@@ -84,10 +84,11 @@ func (s *session) types(answer string) {
 	if _, err := io.WriteString(write, answer); err != nil {
 		s.t.Fatal(err)
 	}
-	write.Close()
+	testsupport.Close(s.t, write)
 	was := os.Stdin
 	os.Stdin = read
-	s.t.Cleanup(func() { os.Stdin = was; read.Close() })
+	s.t.Cleanup(func() { os.Stdin = was })
+	testsupport.CloseAfter(s.t, read)
 }
 
 // fakeTrash is a trash of this test's own: it moves what it is given into a folder the
@@ -454,7 +455,7 @@ func TestAMachineWithNowhereToInsertItDeletesNothing(t *testing.T) {
 		t.Fatalf("erasing gave %v, want %v\n%s", err, machineport.ErrNoTrash, out)
 	}
 	if _, err := os.Stat(s.vault); err != nil {
-		t.Errorf("the folder went with nowhere to put it: %v", err)
+		t.Errorf("the folder went on a machine with no trash: %v", err)
 	}
 	if items := s.mustRun("vault", "list"); !strings.Contains(items, "kept") {
 		t.Errorf("the vault left the list:\n%s", items)

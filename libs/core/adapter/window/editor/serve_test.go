@@ -17,6 +17,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
@@ -27,7 +28,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
@@ -196,15 +196,15 @@ func openingWith(
 	t.Helper()
 
 	v := testsupport.NewVault(t, notes)
-	cfg := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}
+	cfg := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
 	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	writing := note.NewWrite(
-		vaultreader.Readers{}, vaultwriter.VaultWriters{}, levelNothing, time.Now)
+		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock())
 	read := note.NewRead(vaultreader.Readers{})
 	api := createServices(&State{
 		ChangeEvents: newChangeBroadcaster(),
@@ -228,7 +228,7 @@ func openingWith(
 	api.state.NotifyNoteWritten = worker.WakeNotes
 
 	ctx, stop := context.WithCancel(t.Context())
-	_, wait := startIndexing(ctx, v, made, api.state, false, worker, worker.NewSession(), io.Discard)
+	_, wait := startIndexing(ctx, made, api.state, indexJob{vault: v, rebuild: false, worker: worker, session: worker.NewSession(), out: io.Discard})
 	t.Cleanup(func() {
 		stop()
 		wait()
@@ -514,16 +514,16 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	testsupport.WriteBook(t, v.Path, target)
 
-	cfg := container.Config{
+	cfg := container.NewConfig(container.Config{
 		IndexPath:          filepath.Join(t.TempDir(), "index.db"),
 		ShouldRebuildIndex: true,
 		TextReaders:        testsupport.Texts{Readers: vaultreader.Readers{}},
-	}
+	})
 	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	testsupport.CloseAfter(t, db)
 
 	readers := vaultreader.Readers{}
 	watcher := newManualWatcher()
@@ -540,7 +540,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	worker := newIndexWorker(made, api.state, nil, quietPeriod, out)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
-	_, wait := startIndexing(ctx, v, made, api.state, true, worker, worker.NewSession(), out)
+	_, wait := startIndexing(ctx, made, api.state, indexJob{vault: v, rebuild: true, worker: worker, session: worker.NewSession(), out: out})
 	t.Cleanup(func() {
 		stop()
 		wait()
@@ -568,7 +568,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 // case bound.
 func newBareServices() *Services { return createServices(&State{}) }
 
-// newThemedServices is that window, dressed in these themes.
+// newThemedServices is that window, with these themes.
 func newThemedServices(themes numenv1connect.ThemeServiceHandler) *Services {
 	services := newBareServices()
 	services.Themes = themes
@@ -610,6 +610,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 
 	for name, open := range streams {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
 			services := createServices(state)
 
@@ -656,13 +657,6 @@ func TestEverySearchModeIsRead(t *testing.T) {
 	})
 }
 
-func TestEveryRoleIsRead(t *testing.T) {
-	testsupport.CheckHandled(t, func(role v1.Role) bool {
-		_, named := convertRoleFromWire(role)
-		return named
-	})
-}
-
 func TestEveryRelationIsSavedFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.Relation]domain.Relation{
 		v1.Relation_RELATION_PARENT:  domain.RelationParent,
@@ -696,7 +690,7 @@ func TestEveryPresenceIsSavedFromOne(t *testing.T) {
 		v1.Presence_PRESENCE_PRESENT:          settingsport.Present,
 		v1.Presence_PRESENCE_NOT_FETCHED:      settingsport.NotFetched,
 		v1.Presence_PRESENCE_NOTHING_TO_FETCH: settingsport.NothingToFetch,
-	}, func(is settingsport.Presence) v1.Presence { return editorSettings.Presences[is] })
+	}, func(is settingsport.Presence) v1.Presence { return editorSettings.GetPresences()[is] })
 }
 
 func TestEveryCompletionConsentIsSavedFromOne(t *testing.T) {
@@ -705,7 +699,7 @@ func TestEveryCompletionConsentIsSavedFromOne(t *testing.T) {
 		v1.CompletionConsent_COMPLETION_CONSENT_REQUESTED: coreSettings.ConsentRequested,
 		v1.CompletionConsent_COMPLETION_CONSENT_ALLOWED:   coreSettings.ConsentAllowed,
 		v1.CompletionConsent_COMPLETION_CONSENT_DENIED:    coreSettings.ConsentDenied,
-	}, func(is coreSettings.Consent) v1.CompletionConsent { return editorSettings.Consents[is] })
+	}, func(is coreSettings.Consent) v1.CompletionConsent { return editorSettings.GetConsents()[is] })
 }
 
 func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
@@ -744,7 +738,7 @@ func newThemeClient(t *testing.T, cfg container.Config) numenv1connect.ThemeServ
 // own, which is what pointing the registry somewhere does.
 func newConfig(t *testing.T) container.Config {
 	t.Helper()
-	return container.Config{RegistryPath: filepath.Join(t.TempDir(), "vaults.json")}
+	return container.NewConfig(container.Config{RegistryPath: filepath.Join(t.TempDir(), "vaults.json")})
 }
 
 func TestTheWindowAsksTheSameHandlerAboutItsThemes(t *testing.T) {
@@ -755,10 +749,10 @@ func TestTheWindowAsksTheSameHandlerAboutItsThemes(t *testing.T) {
 		t.Fatal(err)
 	}
 	if answer.Msg.GetApplied() != adapterSettings.DefaultTheme {
-		t.Errorf("wears %q", answer.Msg.GetApplied())
+		t.Errorf("applied %q", answer.Msg.GetApplied())
 	}
 	if len(answer.Msg.GetThemes()) == 0 {
-		t.Error("nothing to wear")
+		t.Error("no themes")
 	}
 
 	text, err := client.ReadTheme(t.Context(),
@@ -767,7 +761,7 @@ func TestTheWindowAsksTheSameHandlerAboutItsThemes(t *testing.T) {
 		t.Fatal(err)
 	}
 	if text.Msg.GetCss() == "" {
-		t.Error("the theme it wears has no text")
+		t.Error("the applied theme has no text")
 	}
 }
 
@@ -782,8 +776,9 @@ func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	}
 
 	client := newThemeClient(t, cfg)
+	writeTheme(t, cfg, "nord.css", ":root{--numen-surface:#2e3440}")
 	selected, err := client.WriteAppearance(t.Context(),
-		connect.NewRequest(&v1.WriteAppearanceRequest{Name: "preset:nord", Mode: v1.Mode_MODE_DARK}))
+		connect.NewRequest(&v1.WriteAppearanceRequest{Name: "mine:nord", Mode: v1.Mode_MODE_DARK}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -792,10 +787,10 @@ func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	}
 
 	response := container.DefaultSettings()
-	if err := adapterSettings.OpenAt(file, &response); err != nil {
+	if err := adapterSettings.NewFiles().OpenAt(file, &response); err != nil {
 		t.Fatal(err)
 	}
-	if response.Appearance.Theme != "preset:nord" || response.Appearance.Mode != adapterSettings.ModeDark {
+	if response.Appearance.Theme != "mine:nord" || response.Appearance.Mode != adapterSettings.ModeDark {
 		t.Errorf("the file says %+v", response.Appearance)
 	}
 	// The stored API key is preserved.
@@ -811,8 +806,8 @@ func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetApplied() != "preset:nord" || answer.Msg.GetMode() != v1.Mode_MODE_DARK {
-		t.Errorf("wears %q, read as %v", answer.Msg.GetApplied(), answer.Msg.GetMode())
+	if answer.Msg.GetApplied() != "mine:nord" || answer.Msg.GetMode() != v1.Mode_MODE_DARK {
+		t.Errorf("applied %q, read as %v", answer.Msg.GetApplied(), answer.Msg.GetMode())
 	}
 }
 
@@ -836,7 +831,7 @@ func TestASizeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	}
 
 	response := container.DefaultSettings()
-	if err := adapterSettings.OpenAt(file, &response); err != nil {
+	if err := adapterSettings.NewFiles().OpenAt(file, &response); err != nil {
 		t.Fatal(err)
 	}
 	if response.Appearance.InterfaceScale != 1.5 || response.Appearance.TextScale != 1 {
@@ -1047,7 +1042,9 @@ func (p *routedPlugins) ServeRoute(w http.ResponseWriter, r *http.Request) {
 	p.routed = append(p.routed, r.URL.RequestURI())
 	p.vaults = append(p.vaults, r.Header.Get("Numen-Vault"))
 	w.Header().Set("Content-Type", "image/jpeg")
-	_, _ = io.WriteString(w, "page bytes")
+	if _, err := io.WriteString(w, "page bytes"); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func TestPluginRouteReachesThePluginServices(t *testing.T) {
@@ -1057,12 +1054,8 @@ func TestPluginRouteReachesThePluginServices(t *testing.T) {
 	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 
-	resp, err := server.Client().Get(server.URL + "/plugin/org.example.reader/pages/2?path=a.pdf")
-	if err != nil {
-		t.Fatal(err)
-	}
-	body, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
+	resp := fetch(t, server.Client(), server.URL+"/plugin/org.example.reader/pages/2?path=a.pdf")
+	body := resp.Body
 
 	if resp.StatusCode != http.StatusOK || string(body) != "page bytes" {
 		t.Fatalf("answered %d %q", resp.StatusCode, body)
@@ -1081,11 +1074,7 @@ func TestPluginRouteNamesTheVaultTheWindowShows(t *testing.T) {
 	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 
-	resp, err := server.Client().Get(server.URL + "/plugin/org.example.reader/pages/2?path=a.sample")
-	if err != nil {
-		t.Fatal(err)
-	}
-	resp.Body.Close()
+	fetch(t, server.Client(), server.URL+"/plugin/org.example.reader/pages/2?path=a.sample")
 
 	if !slices.Equal(plugins.vaults, []string{"v-garden"}) {
 		t.Errorf("forwarded with the vaults %q, want v-garden", plugins.vaults)
@@ -1099,40 +1088,10 @@ func TestPluginRouteIsNotServedByANarrowBuild(t *testing.T) {
 	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler(), numenv1connect.NoteServiceName))
 	t.Cleanup(server.Close)
 
-	resp, err := server.Client().Get(server.URL + "/plugin/org.example.reader/pages/2")
-	if err != nil {
-		t.Fatal(err)
-	}
-	resp.Body.Close()
+	resp := fetch(t, server.Client(), server.URL+"/plugin/org.example.reader/pages/2")
 
 	if resp.StatusCode != http.StatusNotFound || len(plugins.routed) != 0 {
 		t.Errorf("answered %d, forwarded %q", resp.StatusCode, plugins.routed)
-	}
-}
-
-func TestServeUpdateAsksTheEndpointTheServicesName(t *testing.T) {
-	release := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/latest.json" {
-			http.NotFound(w, r)
-			return
-		}
-		_, _ = io.WriteString(w, `{"version":"9.9.9"}`)
-	}))
-	t.Cleanup(release.Close)
-
-	services := newBareServices()
-	services.UpdateEndpoint = release.URL + "/latest.json"
-	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler()))
-	t.Cleanup(server.Close)
-
-	resp, err := server.Client().Get(server.URL + updateRoute)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode != http.StatusOK || string(body) != `{"version":"9.9.9"}` {
-		t.Errorf("answered %d %q, want 200 and the manifest of the endpoint", resp.StatusCode, body)
 	}
 }
 
@@ -1152,12 +1111,8 @@ func TestPluginRouteServesAFolderFileAndForwardsTheRest(t *testing.T) {
 		"/plugin/org.example.reader/manifest.json": `{"id":"org.example.reader"}`,
 		"/plugin/org.example.reader/pages/2":       "page bytes",
 	} {
-		resp, err := server.Client().Get(server.URL + path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		body, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		resp := fetch(t, server.Client(), server.URL+path)
+		body := resp.Body
 		if resp.StatusCode != http.StatusOK || string(body) != want {
 			t.Errorf("%s answered %d %q, want %q", path, resp.StatusCode, body, want)
 		}

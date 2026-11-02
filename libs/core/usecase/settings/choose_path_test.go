@@ -11,14 +11,12 @@ import (
 
 // pathDialog answers every picker with its configured path, and records the request.
 type pathDialog struct {
-	path     string
-	isFolder bool
-	accept   []string
+	path   string
+	accept []string
 }
 
 func (d *pathDialog) ChooseFolder(context.Context, string, string) (string, bool, error) {
-	d.isFolder = true
-	return d.path, d.path != "", nil
+	return "", false, nil
 }
 
 func (d *pathDialog) ChooseFile(_ context.Context, _, _ string, accept []string) (string, bool, error) {
@@ -30,11 +28,10 @@ func listPathPlugins() []PluginInfo {
 	return []PluginInfo{{ID: "a.b", Settings: []PluginSetting{
 		{Key: "model", Type: "enum"},
 		{Key: "dictionary", Type: pluginport.SettingTypeFile, Accept: []string{".txt"}},
-		{Key: "cache", Type: pluginport.SettingTypeFolder},
 	}}}
 }
 
-// The picker is the one of the setting's kind, and the path chosen is written at the setting.
+// The picker shows the extensions the setting accepts, and the path chosen is written at the setting.
 func TestChoosePluginPathWritesTheSetting(t *testing.T) {
 	dialog := &pathDialog{path: "/home/a/letters.txt"}
 	var written []Setting
@@ -46,15 +43,11 @@ func TestChoosePluginPathWritesTheSetting(t *testing.T) {
 	if err != nil || !chosen.IsChosen || chosen.Path != dialog.path {
 		t.Fatalf("chosen = %+v, %v", chosen, err)
 	}
-	if dialog.isFolder || !slices.Equal(dialog.accept, []string{".txt"}) {
-		t.Errorf("the picker was a folder picker or showed %v", dialog.accept)
+	if !slices.Equal(dialog.accept, []string{".txt"}) {
+		t.Errorf("the picker showed %v", dialog.accept)
 	}
 	if len(written) != 1 || !slices.Equal(written[0].Path, []string{"plugins", "a.b", "dictionary"}) || written[0].JSON != `"/home/a/letters.txt"` {
 		t.Errorf("written = %+v", written)
-	}
-
-	if _, err := choose.Execute(t.Context(), "a.b", "cache"); err != nil || !dialog.isFolder {
-		t.Errorf("the folder setting was not given a folder picker: %v", err)
 	}
 }
 

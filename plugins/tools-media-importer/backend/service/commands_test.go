@@ -4,7 +4,9 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
@@ -21,7 +23,7 @@ func newMockLinks(t *testing.T) (*link.Links, *hosttest.Store, link.Host) {
 	store := vault.Store()
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, store)
-	hosted := link.Host{Vault: vault, Store: store, Texts: texts, Queue: hosttest.NewQueue()}
+	hosted := link.Host{Vault: vault, Store: store, Texts: texts, Queue: hosttest.NewQueue(), Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
 	links := link.New(hosted,
 		func() link.Fetcher { return download.NewMock() },
 		func() link.Settings { return link.Settings{IsAutomatic: true} })

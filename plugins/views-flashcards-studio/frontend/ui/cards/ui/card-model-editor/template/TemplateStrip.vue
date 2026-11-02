@@ -87,7 +87,7 @@ const says = computed(() => {
       </div>
     </div>
 
-    <!-- What is wrong with the template stands at the end of the strip, over
+    <!-- What is wrong with the template is at the end of the strip, over
          the window under it. -->
     <div v-if="says || wrong.length" class="template__amiss">
       <ErrorMessage

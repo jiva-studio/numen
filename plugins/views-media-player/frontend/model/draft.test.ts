@@ -25,7 +25,9 @@ describe('a draft told nothing more is typed here', () => {
       error: ref(''),
       idleMs: 5,
       isOpen: () => true,
-      write: async (next) => void writes.push(next),
+      write: async (next) => {
+        writes.push(next)
+      },
     })
 
     draft.setProse('The first thing meant.\nThe second thing said.')
@@ -47,7 +49,9 @@ const createPendingWrite = () => {
   const answers: { resolve: () => void; reject: (why: Error) => void }[] = []
   const write = (next: readonly Cue[]) => {
     calls.push(next)
-    return new Promise<void>((resolve, reject) => void answers.push({ resolve, reject }))
+    return new Promise<void>((resolve, reject) => {
+      answers.push({ resolve, reject })
+    })
   }
   return { calls, answers, write }
 }

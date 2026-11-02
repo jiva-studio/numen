@@ -1,29 +1,32 @@
 {
   "id": "md.numen.views.media.player",
   "name": "Audio Player & Recorder",
-  "version": "2026.10.2",
+  "version": "2026.11.1",
   "protocol": 1,
   "description": "Audio and video player with interactive transcripts and voice recording",
-  "capabilities": ["audio", "recording"],
   "targets": ["desktop.editor"],
+  "contributes": {
+    "tabKinds": [
+      { "kind": "recording", "title": "Record Audio", "icon": "mic" },
+      { "kind": "reader:media-player", "title": "Audio Player", "icon": "audio-lines" }
+    ],
+    "feature": "audio playback and recording",
+    "category": "views",
+    "readers": [
+      {
+        "id": "media-player",
+        "contentTypes": [
+          "audio/mpeg",
+          "audio/mp4",
+          "audio/vnd.wave",
+          "audio/ogg",
+          "audio/aac",
+          "audio/flac"
+        ],
+        "rank": "default"
+      }
+    ]
+  },
   "permissions": ["vault:read", "vault:write"],
-  "readers": [
-    {
-      "id": "media-player",
-      "contentTypes": [
-        "audio/mpeg",
-        "audio/mp4",
-        "audio/vnd.wave",
-        "audio/ogg",
-        "audio/aac",
-        "audio/flac"
-      ],
-      "rank": "default"
-    }
-  ],
-  "activationEvents": [],
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  }
+  "frontend": {}
 }

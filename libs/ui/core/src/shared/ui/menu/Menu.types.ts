@@ -38,19 +38,10 @@ export interface MenuProps {
   clock?: () => number
   /** What it is announced as. */
   name?: string
-  /**
-   * Whether a search field is shown above the items. The items shown are those
-   * that contain every typed word in their text, detail or group.
-   */
-  isSearchable?: boolean
-  /** Whether a search query not matching any item is offered as a custom value. */
-  canEnterCustom?: boolean
-  /** What the search line is announced as. */
-  searchName?: string
 }
 
 export interface MenuEvents {
-  /** An item was chosen. The identifier is the caller's, handed back as given. */
+  /** An item was chosen. The identifier is the caller's, returned as given. */
   (event: 'choose', id: string): void
   /** The menu requests to be closed. */
   (event: 'dismiss'): void

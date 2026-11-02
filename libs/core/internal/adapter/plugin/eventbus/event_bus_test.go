@@ -7,11 +7,19 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/clock"
 )
 
+func getRealClock() clock.System { return clock.System{} }
+
 func TestEventBusDebounceTyping(t *testing.T) {
-	bus := New(nil, 50*time.Millisecond, 200*time.Millisecond)
-	defer bus.Close(t.Context())
+	bus := New(nil, getRealClock(), 50*time.Millisecond, 200*time.Millisecond)
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var count atomic.Int32
 	unsub := bus.Subscribe("onTyping", func(_ context.Context, _ string) error {
@@ -33,8 +41,12 @@ func TestEventBusDebounceTyping(t *testing.T) {
 }
 
 func TestEventBusThrottle(t *testing.T) {
-	bus := New(nil, 40*time.Millisecond, 100*time.Millisecond)
-	defer bus.Close(t.Context())
+	bus := New(nil, getRealClock(), 40*time.Millisecond, 100*time.Millisecond)
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var count atomic.Int32
 	unsub := bus.Subscribe("onVaultModify", func(_ context.Context, _ string) error {
@@ -43,8 +55,8 @@ func TestEventBusThrottle(t *testing.T) {
 	})
 	defer unsub()
 
-	start := time.Now()
-	for time.Since(start) < 250*time.Millisecond {
+	start := getRealClock().Now()
+	for getRealClock().Now().Sub(start) < 250*time.Millisecond {
 		bus.Publish("onVaultModify")
 		time.Sleep(10 * time.Millisecond)
 	}
@@ -58,14 +70,18 @@ func TestEventBusThrottle(t *testing.T) {
 }
 
 func TestEventBusNonBlocking(t *testing.T) {
-	bus := New(nil, 50*time.Millisecond, 200*time.Millisecond)
-	defer bus.Close(t.Context())
+	bus := New(nil, getRealClock(), 50*time.Millisecond, 200*time.Millisecond)
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
 
-	start := time.Now()
+	start := getRealClock().Now()
 	for i := 0; i < 100; i++ {
 		bus.Publish("onTyping")
 	}
-	elapsed := time.Since(start)
+	elapsed := getRealClock().Now().Sub(start)
 
 	if elapsed > 50*time.Millisecond {
 		t.Fatalf("Publish blocked the caller for %v", elapsed)
@@ -73,8 +89,12 @@ func TestEventBusNonBlocking(t *testing.T) {
 }
 
 func TestEventBusFlush(t *testing.T) {
-	bus := New(nil, 500*time.Millisecond, 1000*time.Millisecond)
-	defer bus.Close(t.Context())
+	bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond)
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -88,7 +108,9 @@ func TestEventBusFlush(t *testing.T) {
 	defer unsub()
 
 	bus.Publish("onFile:notes/test.md")
-	bus.Flush(t.Context())
+	if err := bus.Flush(t.Context()); err != nil {
+		t.Fatal(err)
+	}
 
 	wg.Wait()
 
@@ -98,8 +120,12 @@ func TestEventBusFlush(t *testing.T) {
 }
 
 func TestEventBusUnsubscribe(t *testing.T) {
-	bus := New(nil, 10*time.Millisecond, 50*time.Millisecond)
-	defer bus.Close(t.Context())
+	bus := New(nil, getRealClock(), 10*time.Millisecond, 50*time.Millisecond)
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var count atomic.Int32
 	unsub := bus.Subscribe("testEvent", func(_ context.Context, _ string) error {
@@ -108,7 +134,9 @@ func TestEventBusUnsubscribe(t *testing.T) {
 	})
 
 	bus.Publish("testEvent:1")
-	bus.Flush(t.Context())
+	if err := bus.Flush(t.Context()); err != nil {
+		t.Fatal(err)
+	}
 	if got := count.Load(); got != 1 {
 		t.Fatalf("expected 1 call before unsubscribe, got %d", got)
 	}
@@ -116,7 +144,9 @@ func TestEventBusUnsubscribe(t *testing.T) {
 	unsub()
 
 	bus.Publish("testEvent:2")
-	bus.Flush(t.Context())
+	if err := bus.Flush(t.Context()); err != nil {
+		t.Fatal(err)
+	}
 	if got := count.Load(); got != 1 {
 		t.Fatalf("expected 1 call after unsubscribe, got %d", got)
 	}
@@ -141,7 +171,7 @@ func newMockScheduler(start time.Time) *mockScheduler {
 	}
 }
 
-func (s *mockScheduler) getClock() time.Time {
+func (s *mockScheduler) Now() time.Time {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.current
@@ -186,11 +216,14 @@ func (s *mockScheduler) advance(d time.Duration) {
 
 func TestEventBusDeterministicDebounce(t *testing.T) {
 	sched := newMockScheduler(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC))
-	bus := New(nil, 50*time.Millisecond, 200*time.Millisecond,
-		WithClock(sched.getClock),
+	bus := New(nil, sched, 50*time.Millisecond, 200*time.Millisecond,
 		WithDelay(sched.scheduleDelay),
 	)
-	defer bus.Close(t.Context())
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var count atomic.Int32
 	unsub := bus.Subscribe("onTyping", func(_ context.Context, _ string) error {
@@ -216,7 +249,7 @@ func TestEventBusDeterministicDebounce(t *testing.T) {
 }
 
 func TestEventBusConfigurableKeyExtractor(t *testing.T) {
-	bus := New(nil, 500*time.Millisecond, 1000*time.Millisecond,
+	bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond,
 		WithKeyExtractor(func(event string) string {
 			if strings.HasPrefix(event, "customGroup:") {
 				return "customGroup"
@@ -224,7 +257,11 @@ func TestEventBusConfigurableKeyExtractor(t *testing.T) {
 			return event
 		}),
 	)
-	defer bus.Close(t.Context())
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var received []string
 	var mu sync.Mutex
@@ -250,7 +287,7 @@ func TestEventBusConfigurableKeyExtractor(t *testing.T) {
 }
 
 func TestEventBusDebounceRule(t *testing.T) {
-	bus := New(nil, 500*time.Millisecond, 1000*time.Millisecond,
+	bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond,
 		WithDebounceRule(func(event string) (string, bool) {
 			if strings.HasPrefix(event, "ruleA:") {
 				return "ruleA-shared", true
@@ -258,7 +295,11 @@ func TestEventBusDebounceRule(t *testing.T) {
 			return "", false
 		}),
 	)
-	defer bus.Close(t.Context())
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	var received []string
 	var mu sync.Mutex
@@ -287,12 +328,16 @@ func TestEventBusErrorHandling(t *testing.T) {
 	expectedErr := context.DeadlineExceeded
 	var asyncErr atomic.Pointer[error]
 
-	bus := New(nil, 10*time.Millisecond, 50*time.Millisecond,
+	bus := New(nil, getRealClock(), 10*time.Millisecond, 50*time.Millisecond,
 		WithErrorHandler(func(err error) {
 			asyncErr.Store(&err)
 		}),
 	)
-	defer bus.Close(t.Context())
+	defer func() {
+		if err := bus.Close(t.Context()); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	unsub := bus.Subscribe("failing", func(_ context.Context, _ string) error {
 		return expectedErr

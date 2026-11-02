@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"math"
 	"strconv"
-
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // Declaration is what the host declares about one vault tool: its title, its effect, and the
@@ -17,23 +15,41 @@ type Declaration struct {
 	Title, Kind, About, Element, Match, Text string
 }
 
-type ToolDeclaration = numenv1.ToolDeclaration
+// ToolDeclaration is the declaration of one vault tool, by the name the vault serves it under.
+type ToolDeclaration struct {
+	Name, Title, Kind, About, Element, Match, Text string
+}
 
-type ToolCall = numenv1.ToolCall
+// Range is the run of a source's text a call names, counted in bytes.
+type Range struct {
+	Start, End int32
+}
 
-type Range = numenv1.Range
+// ToolCall is a tool call as shown to the user. One call is reported more than once while its
+// arguments arrive.
+type ToolCall struct {
+	// Tool is the name of the tool, or its title where the vault declared one.
+	Tool string
+	// About is what the call is about. Empty when the call says nothing worth showing.
+	About string
+	// Length is how much of the call has been written, in characters.
+	Length int32
+	// Path is the source the call works on, by the path the vault files it under.
+	Path string
+	// Range is the run of the source's text the call names. Nil when the call names none.
+	Range *Range
+	// Call is the name the agent gave the call. Every report of one call carries the same name.
+	Call string
+	// Kind is what the call does to the vault: read, edit, remove, move or search. Empty is unknown.
+	Kind string
+}
 
 // IndexDeclarations indexes the declarations of the vault's tools by tool name.
-func IndexDeclarations(declarations []*ToolDeclaration) map[string]Declaration {
+func IndexDeclarations(declarations []ToolDeclaration) map[string]Declaration {
 	words := make(map[string]Declaration, len(declarations))
 	for _, d := range declarations {
-		words[d.GetName()] = Declaration{
-			Title:   d.GetTitle(),
-			Kind:    d.GetKind(),
-			About:   d.GetAbout(),
-			Element: d.GetElement(),
-			Match:   d.GetMatch(),
-			Text:    d.GetText(),
+		words[d.Name] = Declaration{
+			Title: d.Title, Kind: d.Kind, About: d.About, Element: d.Element, Match: d.Match, Text: d.Text,
 		}
 	}
 	return words
@@ -64,17 +80,16 @@ func Describe(words map[string]Declaration, name, call, args string) *ToolCall {
 }
 
 // readRange is the run of a source's text a call names, read once the arguments parse whole.
-func readRange(args string) *numenv1.Range {
+func readRange(args string) *Range {
 	var parsed map[string]any
 	if err := json.Unmarshal([]byte(args), &parsed); err != nil {
 		return nil
 	}
-	start, _ := parsed["start"].(float64)
-	length, _ := parsed["length"].(float64)
+	start, length := readNumber(parsed, "start"), readNumber(parsed, "length")
 	if length <= 0 || start < 0 || start > math.MaxInt32-length {
 		return nil
 	}
-	return &numenv1.Range{Start: int32(start), End: int32(start + length)}
+	return &Range{Start: int32(start), End: int32(start + length)}
 }
 
 // readAbout is what a call is about, read from the arguments as far as they have arrived.
@@ -109,7 +124,7 @@ func describeCollection(value []any, inside string) string {
 		if inside == "" {
 			return ""
 		}
-		first, _ = element[inside].(string)
+		first = readText(element[inside])
 	}
 	if first == "" {
 		return ""
@@ -122,7 +137,7 @@ func describeCollection(value []any, inside string) string {
 
 // readCallDetails is what an undeclared call is about, the file it names and the span inside it,
 // read from the arguments whole or as far as they have arrived.
-func readCallDetails(args string) (string, string, *numenv1.Range) {
+func readCallDetails(args string) (string, string, *Range) {
 	if args == "" {
 		return "", "", nil
 	}
@@ -146,20 +161,20 @@ func readCallDetails(args string) (string, string, *numenv1.Range) {
 		about = path
 	}
 
-	var span *numenv1.Range
+	var span *Range
 	start, err := strconv.ParseInt(ReadPartialField(args, "start"), 10, 32)
 	if err != nil {
 		return about, path, nil
 	}
 	length, err := strconv.ParseInt(ReadPartialField(args, "length"), 10, 32)
 	if err == nil && start >= 0 && length >= 0 && start <= math.MaxInt32-length {
-		span = &numenv1.Range{Start: int32(start), End: int32(start + length)}
+		span = &Range{Start: int32(start), End: int32(start + length)}
 	}
 	return about, path, span
 }
 
 // readWholeCallDetails is readCallDetails for arguments that parse whole.
-func readWholeCallDetails(parsed map[string]any, args string) (string, string, *numenv1.Range) {
+func readWholeCallDetails(parsed map[string]any, args string) (string, string, *Range) {
 	path, _ := readFirstString(parsed, "path", "file")
 	about, hasAbout := readFirstString(parsed, "query", "about", "title")
 	if !hasAbout {
@@ -169,17 +184,34 @@ func readWholeCallDetails(parsed map[string]any, args string) (string, string, *
 		}
 	}
 
-	startVal, hasStart := parsed["start"]
-	lenVal, hasLen := parsed["length"]
+	_, hasStart := parsed["start"]
+	_, hasLen := parsed["length"]
 	if !hasStart || !hasLen {
 		return about, path, nil
 	}
-	from, _ := startVal.(float64)
-	length, _ := lenVal.(float64)
+	from, length := readNumber(parsed, "start"), readNumber(parsed, "length")
 	if from < 0 || length < 0 || from > math.MaxInt32-length {
 		return about, path, nil
 	}
-	return about, path, &numenv1.Range{Start: int32(from), End: int32(from + length)}
+	return about, path, &Range{Start: int32(from), End: int32(from + length)}
+}
+
+// readNumber returns the number under key, or 0 when the key is absent or not a number.
+func readNumber(values map[string]any, key string) float64 {
+	number, isNumber := values[key].(float64)
+	if !isNumber {
+		return 0
+	}
+	return number
+}
+
+// readText returns value when it is a string, or "" otherwise.
+func readText(value any) string {
+	text, isString := value.(string)
+	if !isString {
+		return ""
+	}
+	return text
 }
 
 // readFirstString returns the first of keys whose value in parsed is a string.

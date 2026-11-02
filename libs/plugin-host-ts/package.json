@@ -10,16 +10,23 @@
     "./vite": "./src/vite.ts"
   },
   "scripts": {
-    "typecheck": "tsc --build --force",
+    "typecheck": "tsc --build",
     "test": "vitest run",
-    "lint": "eslint ."
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ ."
   },
   "dependencies": {
+    "@numen/core-client": "*",
     "@numen/plugin-sdk": "*",
     "vue": "^3.5.44"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@vue/test-utils": "^2.4.6",
+    "eslint": "^10.10.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.12.0",
     "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.2",
     "vite": "^8.3.4",
     "vitest": "^5.0.3"
   }

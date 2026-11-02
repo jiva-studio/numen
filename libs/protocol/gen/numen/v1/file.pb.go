@@ -417,12 +417,12 @@ type MoveFileResponse struct {
 	Moved *MoveResult `protobuf:"bytes,1,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
 	// Set when nothing was moved, and why.
 	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
-	// Set when the move reached the vault and the index would not come level with
+	// Set when the move reached the vault and the index could not be updated for
 	// it. Search answers about these files as it read them last, until a walk
 	// goes past.
-	IsUnlevelled  bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	IsIndexOutdated bool `protobuf:"varint,3,opt,name=is_index_outdated,json=isIndexOutdated,proto3" json:"is_index_outdated,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *MoveFileResponse) Reset() {
@@ -469,9 +469,9 @@ func (x *MoveFileResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *MoveFileResponse) GetIsUnlevelled() bool {
+func (x *MoveFileResponse) GetIsIndexOutdated() bool {
 	if x != nil {
-		return x.IsUnlevelled
+		return x.IsIndexOutdated
 	}
 	return false
 }
@@ -616,11 +616,11 @@ type RemoveFileResponse struct {
 	Dangling []string `protobuf:"bytes,2,rep,name=dangling,proto3" json:"dangling,omitempty"`
 	// Set when nothing was removed, and why.
 	Error *ErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
-	// Set when the file has gone and the index would not come level with it.
+	// Set when the file has gone and the index could not be updated for it.
 	// Search answers about it as it read it last, until a walk goes past.
-	IsUnlevelled  bool `protobuf:"varint,4,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	IsIndexOutdated bool `protobuf:"varint,4,opt,name=is_index_outdated,json=isIndexOutdated,proto3" json:"is_index_outdated,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *RemoveFileResponse) Reset() {
@@ -674,9 +674,9 @@ func (x *RemoveFileResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *RemoveFileResponse) GetIsUnlevelled() bool {
+func (x *RemoveFileResponse) GetIsIndexOutdated() bool {
 	if x != nil {
-		return x.IsUnlevelled
+		return x.IsIndexOutdated
 	}
 	return false
 }
@@ -797,11 +797,11 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x04type\x18\x03 \x01(\tR\x04typeJ\x04\b\x02\x10\x03J\x04\b\x04\x10\x05\"5\n" +
 	"\x0fMoveFileRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\tR\x02to\"\xac\x01\n" +
+	"\x02to\x18\x02 \x01(\tR\x02to\"\xb3\x01\n" +
 	"\x10MoveFileResponse\x12/\n" +
 	"\x05moved\x18\x01 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x12.\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12#\n" +
-	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12*\n" +
+	"\x11is_index_outdated\x18\x03 \x01(\bR\x0fisIndexOutdatedB\b\n" +
 	"\x06_movedB\b\n" +
 	"\x06_error\"h\n" +
 	"\n" +
@@ -812,12 +812,12 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\bdangling\x18\x04 \x03(\tR\bdangling\"A\n" +
 	"\x11RemoveFileRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
-	"\adestroy\x18\x02 \x01(\bR\adestroy\"\xa9\x01\n" +
+	"\adestroy\x18\x02 \x01(\bR\adestroy\"\xb0\x01\n" +
 	"\x12RemoveFileResponse\x12\x18\n" +
 	"\atrashed\x18\x01 \x01(\tR\atrashed\x12\x1a\n" +
 	"\bdangling\x18\x02 \x03(\tR\bdangling\x12.\n" +
-	"\x05error\x18\x03 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12#\n" +
-	"\ris_unlevelled\x18\x04 \x01(\bR\fisUnlevelledB\b\n" +
+	"\x05error\x18\x03 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
+	"\x11is_index_outdated\x18\x04 \x01(\bR\x0fisIndexOutdatedB\b\n" +
 	"\x06_error\")\n" +
 	"\x13CreateFolderRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"P\n" +

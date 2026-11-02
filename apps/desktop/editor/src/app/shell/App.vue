@@ -6,15 +6,16 @@
  * sees of it, and the binding between the two.
  */
 import { onMounted, onUnmounted } from 'vue'
-import { Notices, StatusBar, WorkspaceLayout } from '@numen/shell'
+import { StatusBar, WorkspaceLayout } from '@numen/shell'
 import '@numen/ui/styles.css'
 import '@numen/shell/styles.css'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
 import CoreFailureNotice from '@/shared/notices/CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
 import { TabLinkIndicator, TabLinkMenu, useTabLinkMenu } from '@/features/tab-linking'
-import { UpdateIndicator } from '@/features/app-update'
+import { StatusViewHost } from '@/features/status-views'
 import { WelcomeScreen } from '@/pages/welcome'
+import BootstrapFailure from './BootstrapFailure.vue'
 import { useWindow } from '../window/useWindow'
 import { WORDS as words } from '@/shared/words'
 import { WORDS as note } from '@/entities/note'
@@ -32,6 +33,8 @@ const {
   runCommand,
   openCurrentVault,
   isLayoutReady,
+  bootstrapFailure,
+  retryBootstrap,
   openSettings,
   commands,
   pluginWays,
@@ -42,9 +45,8 @@ const {
   layout,
   vaultList,
   log,
-  notices,
-  dismissNotice,
   statusBar,
+  statusViews,
   palette,
   destinations,
   closeTab,
@@ -65,9 +67,9 @@ const writeMessage = log.getWriter('window')
 
 /* --------------------------------- Hooks ---------------------------------- */
 function onOpenSettings(event: Event): void {
-  const filter = (event as CustomEvent<{ filter?: string }>).detail?.filter
-  if (filter && openSettings) {
-    openSettings(undefined, filter)
+  const detail = (event as CustomEvent<{ filter?: string; pluginId?: string }>).detail
+  if ((detail?.filter || detail?.pluginId) && openSettings) {
+    openSettings(detail.pluginId, detail.filter)
     return
   }
   runCommand('settings', getTarget())
@@ -97,10 +99,6 @@ async function onTearOffTab(id: string, position: { x: number; y: number }) {
 
 function onShowTab(id: string) {
   windowTabs.onTabShown(id)
-}
-
-function onDismissNotice(id: string) {
-  dismissNotice(id)
 }
 
 function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
@@ -140,8 +138,13 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       </template>
 
       <template #silence>
+        <BootstrapFailure
+          v-if="bootstrapFailure"
+          :message="bootstrapFailure"
+          @retry="retryBootstrap"
+        />
         <WelcomeScreen
-          v-if="isLayoutReady || !vaultList.showing"
+          v-else-if="isLayoutReady || !vaultList.showing"
           :vault-list="vaultList"
           :tabs="windowTabs.tabs.value"
           :commands="commands"
@@ -177,17 +180,9 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       @action="statusBar.onActionTask"
     >
       <template #trailing>
-        <UpdateIndicator />
+        <StatusViewHost :views="statusViews" />
       </template>
     </StatusBar>
-
-    <Notices
-      :notices="notices"
-      :name="words.isWorking"
-      :dismiss="words.dismiss"
-      :more="words.more"
-      @dismiss="onDismissNotice"
-    />
 
     <UnsavedChangesPrompt
       :conflicts="fileFlush.conflicts.value"

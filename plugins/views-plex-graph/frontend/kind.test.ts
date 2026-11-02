@@ -114,7 +114,7 @@ describe('a change to the vault', () => {
       usePlexView({
         neighbourhood: async (path) => {
           await new Promise<void>((resolve) => answers.push(resolve))
-          return { focus: { path, title: path }, focusType: 'note', related: [] }
+          return { focus: { path, title: path }, focusType: 'note', related: [], connections: [] }
         },
       }),
     )

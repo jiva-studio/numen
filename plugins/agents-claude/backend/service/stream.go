@@ -5,13 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"io"
 	"strings"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
-	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/clock"
 )
 
 // serverName is what the vault's tool server calls itself, and the prefix its tools arrive under.
@@ -23,10 +22,15 @@ const reportChunk = 200
 // previewInterval is the shortest time between two reports of a change being written.
 const previewInterval = 50 * time.Millisecond
 
+// timeSource gets the current time.
+type timeSource interface {
+	Now() time.Time
+}
+
 type streamParser struct {
-	send         func(*agentrun.AskAgentResponse) error
+	send         func(*agentrun.Response) error
 	words        map[string]toolcall.Declaration
-	now          func() time.Time
+	clock        timeSource
 	last         time.Time
 	record       func(string)
 	isStreaming  bool
@@ -36,6 +40,22 @@ type streamParser struct {
 	offset       int
 	reason       string
 	expectsVault bool
+	// sendErr is the first error send returned. Later reports are not sent.
+	sendErr error
+}
+
+func (p *streamParser) emit(resp *agentrun.Response) {
+	if p.sendErr == nil {
+		p.sendErr = p.send(resp)
+	}
+}
+
+// getReason returns why the stream ended: the reason the program gave, else the failure to send.
+func (p *streamParser) getReason() string {
+	if p.reason == "" && p.sendErr != nil {
+		return p.sendErr.Error()
+	}
+	return p.reason
 }
 
 type event struct {
@@ -94,37 +114,34 @@ type streamEvent struct {
 	} `json:"content_block"`
 }
 
-func parseStream(
-	ctx context.Context,
-	r io.Reader,
-	send func(*agentrun.AskAgentResponse) error,
-	words map[string]toolcall.Declaration,
-	record func(string),
-	expectsVault bool,
-) string {
-	return parseStreamWithClock(ctx, r, send, words, record, clock.Now, expectsVault)
+// streamOptions are what the parser of a stream needs besides the stream and the way to send.
+type streamOptions struct {
+	words        map[string]toolcall.Declaration
+	record       func(string)
+	clock        timeSource
+	expectsVault bool
 }
 
-// parseStreamWithClock is parseStream with the clock that paces the reports of a change.
+// parseStreamWithClock is parseStream for a run that expects the vault tools, with the clock that paces the
+// reports of a change.
 func parseStreamWithClock(
 	ctx context.Context,
 	r io.Reader,
-	send func(*agentrun.AskAgentResponse) error,
+	send func(*agentrun.Response) error,
 	words map[string]toolcall.Declaration,
 	record func(string),
-	now func() time.Time,
-	expectsVault ...bool,
+	clock timeSource,
 ) string {
-	hasVault := true
-	if len(expectsVault) > 0 {
-		hasVault = expectsVault[0]
-	}
+	return parseStream(ctx, r, send, streamOptions{words: words, record: record, clock: clock, expectsVault: true})
+}
+
+func parseStream(ctx context.Context, r io.Reader, send func(*agentrun.Response) error, opts streamOptions) string {
 	p := &streamParser{
 		send:         send,
-		words:        words,
-		now:          now,
-		record:       record,
-		expectsVault: hasVault,
+		words:        opts.words,
+		clock:        opts.clock,
+		record:       opts.record,
+		expectsVault: opts.expectsVault,
 		last:         time.Time{},
 		isStreaming:  false,
 		callID:       "",
@@ -132,6 +149,7 @@ func parseStreamWithClock(
 		arguments:    strings.Builder{},
 		offset:       0,
 		reason:       "",
+		sendErr:      nil,
 	}
 	scanner := bufio.NewReader(r)
 	for {
@@ -143,7 +161,7 @@ func parseStreamWithClock(
 			p.parseLine(ctx, content)
 		}
 		if err != nil {
-			return p.reason
+			return p.getReason()
 		}
 	}
 }
@@ -161,10 +179,8 @@ func (p *streamParser) parseLine(ctx context.Context, line string) {
 		p.parseAssistantMessage(ctx, response)
 	case "user":
 		if response.hasToolAnswer() {
-			_ = p.send(&agentrun.AskAgentResponse{
-				Step: &agentrun.AskAgentResponse_ToolFinished{
-					ToolFinished: &agentrun.ToolFinished{},
-				},
+			p.emit(&agentrun.Response{
+				Step: &agentrun.ToolFinishedStep{},
 			})
 		}
 	case "system":
@@ -189,10 +205,8 @@ func (p *streamParser) parseSystemEvent(response event) {
 		}
 	case "status":
 		if response.Status == "requesting" {
-			_ = p.send(&agentrun.AskAgentResponse{
-				Step: &agentrun.AskAgentResponse_ModelStarted{
-					ModelStarted: &agentrun.ModelStarted{},
-				},
+			p.emit(&agentrun.Response{
+				Step: &agentrun.ModelStartedStep{},
 			})
 		}
 	}
@@ -208,7 +222,7 @@ func (p *streamParser) parseStreamEvent(_ context.Context, ev streamEvent) {
 			p.arguments.Reset()
 			p.offset = 0
 			p.last = time.Time{}
-			_ = p.send(p.buildCallStep(p.callID, p.tool, ""))
+			p.emit(p.buildCallStep(p.callID, p.tool, ""))
 		}
 	case "content_block_delta":
 		switch ev.Delta.Type {
@@ -217,8 +231,8 @@ func (p *streamParser) parseStreamEvent(_ context.Context, ev streamEvent) {
 				return
 			}
 			p.isStreaming = true
-			_ = p.send(&agentrun.AskAgentResponse{
-				Step: &agentrun.AskAgentResponse_Text{
+			p.emit(&agentrun.Response{
+				Step: &agentrun.TextStep{
 					Text: ev.Delta.Text,
 				},
 			})
@@ -226,7 +240,7 @@ func (p *streamParser) parseStreamEvent(_ context.Context, ev streamEvent) {
 			p.arguments.WriteString(ev.Delta.Partial)
 			if p.arguments.Len()-p.offset >= reportChunk {
 				p.offset = p.arguments.Len()
-				_ = p.send(p.buildCallStep(p.callID, p.tool, p.arguments.String()))
+				p.emit(p.buildCallStep(p.callID, p.tool, p.arguments.String()))
 			}
 			p.reportEdit()
 		}
@@ -234,7 +248,7 @@ func (p *streamParser) parseStreamEvent(_ context.Context, ev streamEvent) {
 		if p.tool == "" {
 			return
 		}
-		_ = p.send(p.buildCallStep(p.callID, p.tool, p.arguments.String()))
+		p.emit(p.buildCallStep(p.callID, p.tool, p.arguments.String()))
 		p.callID = ""
 		p.tool = ""
 		p.arguments.Reset()
@@ -262,14 +276,14 @@ func (p *streamParser) parseAssistantMessage(_ context.Context, response event) 
 		switch block.Type {
 		case "text":
 			if block.Text != "" {
-				_ = p.send(&agentrun.AskAgentResponse{
-					Step: &agentrun.AskAgentResponse_Text{
+				p.emit(&agentrun.Response{
+					Step: &agentrun.TextStep{
 						Text: block.Text,
 					},
 				})
 			}
 		case "tool_use":
-			_ = p.send(p.buildCallStep(block.ID, block.Name, string(block.Input)))
+			p.emit(p.buildCallStep(block.ID, block.Name, string(block.Input)))
 		}
 	}
 }
@@ -292,9 +306,9 @@ func stripServerPrefix(tool string) string {
 	return tool
 }
 
-func (p *streamParser) buildCallStep(callID, tool, args string) *agentrun.AskAgentResponse {
+func (p *streamParser) buildCallStep(callID, tool, args string) *agentrun.Response {
 	call := toolcall.Describe(p.words, stripServerPrefix(tool), callID, args)
-	return &agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_ToolCall{ToolCall: call}}
+	return &agentrun.Response{Step: &agentrun.ToolCallStep{ToolCall: call}}
 }
 
 // reportEdit reports the change a call is writing, once the text that replaces the match has
@@ -312,12 +326,12 @@ func (p *streamParser) reportEdit() {
 	if path == "" || match == "" {
 		return
 	}
-	now := p.now()
+	now := p.clock.Now()
 	if now.Sub(p.last) < previewInterval {
 		return
 	}
 	p.last = now
-	_ = p.send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_EditProgress{
+	p.emit(&agentrun.Response{Step: &agentrun.EditProgressStep{
 		EditProgress: &agentrun.EditProgress{
 			Call:  p.callID,
 			Path:  path,

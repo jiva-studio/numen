@@ -11,11 +11,16 @@ const SCHEMED = /^([A-Za-z0-9+\-.]+):\/\/([\s\S]*)$/
 
 const WIKILINK = /\[\[([^[\]]+)\]\]/g
 
-/** One wikilink of a text: where its brackets begin and end, and its address as one string. */
+/**
+ * One wikilink of a text: where its brackets begin and end, its address as one string, and the
+ * stretch a reader sees when the brackets are concealed: the alias if there is one, else the target.
+ */
 export interface Wikilink {
   readonly at: number
   readonly to: number
   readonly address: string
+  readonly shownFrom: number
+  readonly shownTo: number
 }
 
 /** The address between brackets as `scheme://value`; empty for no target. */
@@ -35,8 +40,17 @@ export const getAddress = (inside: string): string => {
 export const getWikilinks = (text: string): readonly Wikilink[] => {
   const found: Wikilink[] = []
   for (const match of text.matchAll(WIKILINK)) {
-    const address = getAddress(match[0].slice(2, -2))
-    if (address) found.push({ at: match.index, to: match.index + match[0].length, address })
+    const inside = match[0].slice(2, -2)
+    const address = getAddress(inside)
+    if (!address) continue
+    const alias = inside.indexOf('|')
+    found.push({
+      at: match.index,
+      to: match.index + match[0].length,
+      address,
+      shownFrom: match.index + 2 + (alias >= 0 ? alias + 1 : 0),
+      shownTo: match.index + match[0].length - 2,
+    })
   }
   return found
 }

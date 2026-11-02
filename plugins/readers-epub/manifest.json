@@ -1,30 +1,22 @@
 {
   "id": "md.numen.readers.epub",
   "name": "EPUB Book Reader",
-  "version": "2026.10.2",
+  "version": "2026.11.1",
   "protocol": 1,
   "description": "EPUB book reader with highlights and passage links",
   "capabilities": [],
   "targets": ["desktop.editor"],
-  "activationEvents": [],
+  "contributes": {
+    "tabKinds": [{ "kind": "reader:reader-epub", "title": "EPUB Reader", "icon": "book-open" }],
+    "feature": "EPUB books",
+    "category": "readers",
+    "handles": [{ "purpose": "text-provider", "contentTypes": ["application/epub+zip"] }],
+    "readers": [
+      { "id": "reader-epub", "contentTypes": ["application/epub+zip"], "rank": "default" }
+    ]
+  },
   "permissions": ["vault:read", "vault:write"],
-  "services": ["numen.epub"],
-  "readers": [{ "id": "reader-epub", "contentTypes": ["application/epub+zip"], "rank": "default" }],
-  "texts": {
-    "contentTypes": ["application/epub+zip"]
-  },
-  "lifecycle": {
-    "idleTimeoutSeconds": 300,
-    "keepAliveWhileVisible": true,
-    "memoryLimitBytes": 2147483648
-  },
-  "backend": {
-    "type": "process",
-    "entrypoint": "bin/readers-epub",
-    "serviceName": "numen.epub"
-  },
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  }
+  "services": ["md.numen.readers.epub"],
+  "backend": { "entrypoint": "bin/readers-epub" },
+  "frontend": {}
 }

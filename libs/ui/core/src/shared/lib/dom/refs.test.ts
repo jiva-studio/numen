@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createRefRegistry } from './refs'
 
 describe('the refs of a loop', () => {
   it('passes a key the same function until its element goes', () => {
-    const { getRef } = createRefRegistry<string>(() => {})
+    const { getRef } = createRefRegistry<string>(vi.fn())
     const first = getRef('a')
 
     expect(getRef('a')).toBe(first)
@@ -29,7 +29,7 @@ describe('the refs of a loop', () => {
   })
 
   it('keeps the function of a key whose element is set again', () => {
-    const { getRef } = createRefRegistry<string>(() => {})
+    const { getRef } = createRefRegistry<string>(vi.fn())
     const first = getRef('a')
 
     first({})

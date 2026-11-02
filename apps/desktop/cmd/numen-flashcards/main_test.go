@@ -17,9 +17,11 @@ import (
 )
 
 // notes is a vault holding two notes.
-var notes = map[string]string{
-	"Leaf mould.md":  "# Leaf mould\n\nCompost made of fallen leaves alone.\n",
-	"garden/Beds.md": "# Beds\n\n[[Leaf mould]] goes on in autumn.\n",
+func getNotes() map[string]string {
+	return map[string]string{
+		"Leaf mould.md":  "# Leaf mould\n\nCompost made of fallen leaves alone.\n",
+		"garden/Beds.md": "# Beds\n\n[[Leaf mould]] goes on in autumn.\n",
+	}
 }
 
 // makeWindow is this window as the binary builds it: an installation of its own, an index it may
@@ -30,15 +32,19 @@ func makeWindow(
 	t.Helper()
 
 	state := t.TempDir()
-	cfg := container.Config{
+	cfg := container.NewConfig(container.Config{
 		IndexPath:    filepath.Join(state, "index.db"),
 		RegistryPath: filepath.Join(state, "vaults.json"),
-	}
+	})
 	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { db.Close() })
+	t.Cleanup(func() {
+		if err := db.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 
 	target := []domain.Vault{
 		{ID: "one", Name: "One", Path: vaultOf(t, cfg)},
@@ -57,10 +63,10 @@ func vaultOf(t *testing.T, cfg container.Config) string {
 	t.Helper()
 
 	root := t.TempDir()
-	if _, err := cfg.VaultIdentity().EnsureIdentity(root, time.Now()); err != nil {
+	if _, err := cfg.VaultIdentity().EnsureIdentity(root, time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)); err != nil {
 		t.Fatal(err)
 	}
-	for name, body := range notes {
+	for name, body := range getNotes() {
 		path := filepath.Join(root, filepath.FromSlash(name))
 		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 			t.Fatal(err)
@@ -108,7 +114,7 @@ func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
 	}
 }
 
-// A vault the index was brought level with is counted again, and the walk of a
+// A vault the index was updated for is counted again, and the walk of a
 // vault is the one the window's own opening makes.
 func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 	cfg, db, vaults, _, target := makeWindow(t)
@@ -118,7 +124,7 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 	bindVaultIndexer(t.Context(), api, vaults)
 
 	if vaults.RecordVault == nil {
-		t.Fatal("a vault brought level is recorded nowhere")
+		t.Fatal("a vault updated is recorded nowhere")
 	}
 	vaults.RecordVault(target[0])
 }
