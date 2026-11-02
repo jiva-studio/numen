@@ -36,7 +36,7 @@ func setupTestDB(ctx context.Context, t testing.TB, count int, dims int) (*Queri
 		location TEXT,
 		text TEXT,
 		hash TEXT,
-		parent_id INTEGER
+		parent INTEGER
 	);
 	CREATE TABLE sources (
 		id INTEGER PRIMARY KEY,
@@ -84,7 +84,7 @@ func setupTestDB(ctx context.Context, t testing.TB, count int, dims int) (*Queri
 		}
 	}()
 
-	stmtChunk, err := tx.PrepareContext(ctx, `INSERT INTO chunks (id, vault_id, source_id, start, length, location, text, hash, parent_id) VALUES (?, 1, ?, ?, ?, 'loc', 'text', ?, 0)`)
+	stmtChunk, err := tx.PrepareContext(ctx, `INSERT INTO chunks (id, vault_id, source_id, start, length, location, text, hash, parent) VALUES (?, 1, ?, ?, ?, 'loc', 'text', ?, 0)`)
 	if err != nil {
 		t.Fatal(err)
 	}

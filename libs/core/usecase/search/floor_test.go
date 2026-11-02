@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"math"
-	"slices"
 	"sync"
 	"testing"
 
@@ -68,8 +67,8 @@ func TestSearchResolvesFloorFromTheFirstSourceThatNamesOne(t *testing.T) {
 			if _, err := searching.Execute(t.Context(), vault, "disorder", p); err != nil {
 				t.Fatal(err)
 			}
-			if want := []float64{tc.want, tc.want}; !slices.Equal(spy.floors, want) {
-				t.Errorf("FindNearest was called with floors %v, want %v: once for the notes, once for the vault", spy.floors, []float64{tc.want, tc.want})
+			if len(spy.floors) != 1 || spy.floors[0] != tc.want {
+				t.Errorf("FindNearest was called with floors %v, want [%v]", spy.floors, tc.want)
 			}
 			if spy.recipes[0] != getModel().Recipe() {
 				t.Errorf("FindNearest was called under %q, want the model's recipe", spy.recipes[0])

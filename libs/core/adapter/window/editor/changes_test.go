@@ -1295,9 +1295,9 @@ func TestSearchPassages_EachModeAnswersSeparately(t *testing.T) {
 		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n\nNo engine beats a reversible engine.\n",
 	})
 
-	// No model is set here, so the meaning half has no vectors to answer with.
-	// It still lists the notes that hold the words, as a note whose vector is
-	// not made yet is listed. Both halves answer with the same shape.
+	// No model is set here, so the meaning half has nothing to answer with and
+	// the words half answers on its own. Which is which is the handler's to get
+	// right: both halves answer with the same shape.
 	words, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
 		Query: "reversible", Mode: v1.SearchMode_SEARCH_MODE_WORDS,
 	}))
@@ -1314,8 +1314,8 @@ func TestSearchPassages_EachModeAnswersSeparately(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := len(meaning.Msg.GetFound()); got != len(words.Msg.GetFound()) {
-		t.Errorf("the meaning half answered %d times with no model set, want the %d of the words", got, len(words.Msg.GetFound()))
+	if got := len(meaning.Msg.GetFound()); got != 0 {
+		t.Errorf("the meaning half answered %d times with no model set", got)
 	}
 }
 

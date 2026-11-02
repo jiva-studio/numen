@@ -54,10 +54,10 @@ func seedCoarseRanks(t *testing.T, exact int) (domain.VaultID, *chunk.Queries, [
 	}
 	var small []chunk.Chunk
 	for rank := 1; rank <= 10; rank++ {
-		small = append(small, chunk.Chunk{Start: rank * 100, Length: 60, Text: fmt.Sprintf("passage number %d", rank)})
+		small = append(small, chunk.Chunk{Start: rank * 10, Length: 10, Text: fmt.Sprintf("passage number %d", rank)})
 	}
 	if err := db.Chunks().ReplaceChunks(ctx, vault, "book", "library/ranks.epub", []chunk.Chunk{{
-		Start: 0, Length: 1200, Location: "chapter 1", Text: "the whole of it", Small: small,
+		Start: 0, Length: 200, Location: "chapter 1", Text: "the whole of it", Small: small,
 	}}); err != nil {
 		t.Fatal(err)
 	}
@@ -78,10 +78,10 @@ func seedCoarseRanks(t *testing.T, exact int) (domain.VaultID, *chunk.Queries, [
 	}
 	var vectors []chunk.Vector
 	for _, p := range unembedded {
-		if p.Length != 60 {
+		if p.Length != 10 {
 			continue
 		}
-		rank := p.Start / 100
+		rank := p.Start / 10
 		hash, err := hex.DecodeString(p.ChunkHash)
 		if err != nil {
 			t.Fatal(err)
@@ -102,7 +102,7 @@ func seedCoarseRanks(t *testing.T, exact int) (domain.VaultID, *chunk.Queries, [
 	if err := db.Chunks().SaveVectors(ctx, vectors); err != nil {
 		t.Fatal(err)
 	}
-	return vault, db.ChunkQueries(), query, exact * 100
+	return vault, db.ChunkQueries(), query, exact * 10
 }
 
 func TestTheCoarsePassKeepsEightCandidatesForEachAnswer(t *testing.T) {
