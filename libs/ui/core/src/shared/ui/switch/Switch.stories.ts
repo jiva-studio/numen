@@ -93,7 +93,7 @@ export const BusyUntilTheAnswer: Story = {
     const thumb = control.firstElementChild as HTMLElement
     const getAcross = () =>
       thumb.getBoundingClientRect().left - control.getBoundingClientRect().left
-    const onAt = getAcross()
+    const startLeft = getAcross()
     const samples: number[] = []
     const opacities = new Set<string>()
     let isSampling = true
@@ -110,16 +110,16 @@ export const BusyUntilTheAnswer: Story = {
     await new Promise((done) => setTimeout(done, 200))
     // Pressed and waiting: nothing has moved.
     await expect(control.getAttribute('aria-checked')).toBe('true')
-    await expect(samples.every((one) => Math.abs(one - onAt) < 0.5)).toBe(true)
+    await expect(samples.every((one) => Math.abs(one - startLeft) < 0.5)).toBe(true)
 
     await waitFor(() => expect(control.getAttribute('aria-checked')).toBe('false'))
     await new Promise((done) => setTimeout(done, 600))
     isSampling = false
 
     // One slide, off to the left, with no step back on the way, and no dimming.
-    const steps = samples.slice(1).map((one, at) => one - samples[at]!)
+    const steps = samples.slice(1).map((one, index) => one - samples[index]!)
     await expect(steps.every((one) => one <= 0.5)).toBe(true)
-    await expect(samples.at(-1)!).toBeLessThan(onAt - thumb.offsetWidth / 2)
+    await expect(samples.at(-1)!).toBeLessThan(startLeft - thumb.offsetWidth / 2)
     await expect([...opacities]).toEqual(['1'])
   },
 }
