@@ -16,7 +16,7 @@ export default defineConfig({
       // A story is the corpus a test run draws, not code under test.
       exclude: [...coverageConfigDefaults.exclude, '**/*.stories.ts', 'src/vite.ts'],
       reporter: ['text-summary'],
-      thresholds: { statements: 88, branches: 86, functions: 88, lines: 89 },
+      thresholds: { statements: 89, branches: 84, functions: 89, lines: 91 },
     },
     projects: [
       {

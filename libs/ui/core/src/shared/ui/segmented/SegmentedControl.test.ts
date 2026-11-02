@@ -95,3 +95,11 @@ it('passes a choice on once for one press of Home or End', async () => {
   await segments[1]?.trigger('keydown', { key: 'End' })
   expect(getEmitted(control)).toEqual(['large'])
 })
+
+describe('the other keys', () => {
+  it('leave the choice where it is for a key that is not an end', async () => {
+    const control = mountSegmentedControl({ modelValue: 'medium' })
+    await control.findAll('[role="radio"]')[1]?.trigger('keydown', { key: 'a' })
+    expect(getEmitted(control)).toEqual([])
+  })
+})

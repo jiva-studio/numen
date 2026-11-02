@@ -265,3 +265,12 @@ describe('the value written on the line', () => {
     )
   })
 })
+
+describe('what a caller reaches the line by', () => {
+  it('exposes the element and focuses it on focus()', () => {
+    const control = mountSelect()
+    expect(control.vm.element).toBe(control.get('button').element)
+    control.vm.focus()
+    expect(document.activeElement).toBe(control.get('button').element)
+  })
+})

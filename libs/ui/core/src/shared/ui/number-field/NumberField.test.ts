@@ -4,7 +4,7 @@
  * The negatives matter most: a line that is not a number is not discarded and
  * is not handed on, and a number past the bounds is neither.
  */
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { h } from 'vue'
 import { describe, expect, it } from 'vitest'
 import NumberField from './NumberField.vue'
@@ -393,5 +393,43 @@ describe('what the field is called', () => {
 
     expect(ids.every(Boolean)).toBe(true)
     expect(new Set(ids).size).toBe(2)
+  })
+})
+
+describe('the Enter key', () => {
+  it('commits the typed number and keeps the focus in the field', async () => {
+    const field = mountField({ modelValue: 20 })
+    await field.get('input').setValue('45')
+    await field.get('input').trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(getEmitted(field).at(-1)).toBe(45)
+    expect(field.emitted('commit')).toEqual([[45]])
+  })
+
+  it('brings a number off a place of the step onto one', async () => {
+    const field = mountField({ modelValue: 20 })
+    await field.get('input').setValue('47')
+    await field.get('input').trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(field.get('input').element.value).toBe('45')
+  })
+})
+
+describe('what a caller reaches the field by', () => {
+  it('exposes the element itself', () => {
+    const field = mountField()
+    expect(field.vm.element).toBe(field.get('input').element)
+  })
+
+  it('takes the keyboard when the caller asks for it', () => {
+    const field = mount(NumberField, {
+      attachTo: document.body,
+      props: { modelValue: 20, min: 0, max: 240, step: 5 },
+    })
+    field.vm.focus()
+    expect(document.activeElement).toBe(field.get('input').element)
+    field.unmount()
   })
 })
