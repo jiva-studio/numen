@@ -156,3 +156,26 @@ export const expectNoPageBeforeARapidTurnWhenBusy = async (page: Page): Promise<
   }
   expect(found).toEqual([])
 }
+
+/**
+ * Rapid turns across the end of a chapter and back, with the next chapter answered after a delay. A
+ * press made while the chapter is drawn must not stand the reader on a page of the chapter before,
+ * and the answer may land between two presses or after all of them.
+ */
+export const expectNoPageBeforeARapidTurnAcrossAChapter = async (
+  page: Page,
+  delay: number,
+): Promise<void> => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await slowDown(page, { ReadBookMarkup: delay, GetCfi: 0, FindOffset: 0 })
+  await openLedger(page)
+  const middle = await getAreaPoint(page, 0.5)
+  await page.mouse.click(middle.x, middle.y)
+  await startProbe(page)
+  const found: string[] = []
+  await goToChapterEdge(page, 'End')
+  found.push(...(await playRun(page, { key: 'PageDown', way: 'forward', times: 6, pause: 70 })))
+  await goToChapterEdge(page, 'Home')
+  found.push(...(await playRun(page, { key: 'PageUp', way: 'back', times: 6, pause: 70 })))
+  expect(found).toEqual([])
+}

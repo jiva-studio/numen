@@ -54,18 +54,26 @@ function useBookNavigation(deps: BookNavigationDeps) {
   const target = shallowRef<{ readonly offset: number } | null>(null)
   /** How many moves were requested: jumps and page turns. */
   let moveCount = 0
+  /** The offset of the jump that is drawing its document, which a page turn asks for again. */
+  let pendingJump: number | null = null
   const getMoveCount = () => moveCount
 
   /** Jumps to an offset, drawing the document it falls in. */
   const goToOffset = async (targetOffset: number) => {
     moveCount += 1
-    await deps.getShape()
-    if (!deps.isOpen() || deps.documents.value.length === 0) return
-    const last = Math.max(deps.span.value.end - 1, deps.span.value.start)
-    offset.value = Math.min(Math.max(Math.trunc(targetOffset), deps.span.value.start), last)
-    target.value = { offset: offset.value }
-    const doc = getDocumentAtOffset(deps.documents.value, offset.value)
-    if (doc) await deps.bookDocument.draw(doc)
+    const wanted = Math.trunc(targetOffset)
+    pendingJump = wanted
+    try {
+      await deps.getShape()
+      if (!deps.isOpen() || deps.documents.value.length === 0) return
+      const last = Math.max(deps.span.value.end - 1, deps.span.value.start)
+      offset.value = Math.min(Math.max(wanted, deps.span.value.start), last)
+      target.value = { offset: offset.value }
+      const doc = getDocumentAtOffset(deps.documents.value, offset.value)
+      if (doc) await deps.bookDocument.draw(doc)
+    } finally {
+      if (pendingJump === wanted) pendingJump = null
+    }
   }
 
   /**
@@ -73,6 +81,9 @@ function useBookNavigation(deps: BookNavigationDeps) {
    * drawn document is already showing, so it sets no target.
    */
   const moveTo = async (reported: number) => {
+    // Each press at the end of a document names the start of the next one, and the document is
+    // being drawn: a second jump there would stand the new document back on its first spread.
+    if (pendingJump !== null && Math.trunc(reported) === pendingJump) return
     moveCount += 1
     await deps.getShape()
     const { start, end } = deps.bookDocument.documentSpan.value

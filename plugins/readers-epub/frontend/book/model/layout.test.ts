@@ -73,6 +73,7 @@ const columns = () =>
 const turns = () =>
   fake.turns as {
     stand: ReturnType<typeof vi.fn>
+    turn: ReturnType<typeof vi.fn>
     getKeptOffset: ReturnType<typeof vi.fn>
     getSpreadOf: ReturnType<typeof vi.fn>
     standing: { value: number }
@@ -374,6 +375,74 @@ describe('another document being opened', () => {
 
     expect(columns().findFragmentOffset).toHaveBeenCalledWith('here')
     expect(onMove).toHaveBeenCalledWith(160)
+  })
+})
+
+describe('a page turned while another document is drawn', () => {
+  it('is made at once where the area has no size to set the columns in', () => {
+    const { layout } = room()
+    columns().isMeasured.value = false
+    columns().isStood.value = false
+
+    layout().turn('next')
+
+    expect(turns().turn).toHaveBeenCalledExactlyOnceWith('next')
+  })
+
+  it('is made at once where the columns stand for the markup in front', () => {
+    const { layout } = room()
+    flushFrames()
+
+    layout().turn('next')
+
+    expect(turns().turn).toHaveBeenCalledExactlyOnceWith('next')
+  })
+
+  it('waits for the columns, because the spread and the marks still belong to the document before', async () => {
+    const { props, layout } = room()
+    flushFrames()
+    props.markup = '<p>two</p>'
+    await nextTick()
+
+    layout().turn('next')
+    layout().turn('next')
+    expect(turns().turn).not.toHaveBeenCalled()
+
+    flushFrames()
+    await nextTick()
+    expect(turns().turn).toHaveBeenCalledTimes(2)
+    expect(turns().turn).toHaveBeenNthCalledWith(1, 'next')
+    expect(turns().turn).toHaveBeenNthCalledWith(2, 'next')
+  })
+
+  it('is made once, and not again by the next document drawn', async () => {
+    const { props, layout } = room()
+    flushFrames()
+    props.markup = '<p>two</p>'
+    await nextTick()
+    layout().turn('back')
+    flushFrames()
+    await nextTick()
+
+    props.markup = '<p>three</p>'
+    await nextTick()
+    flushFrames()
+    await nextTick()
+
+    expect(turns().turn).toHaveBeenCalledExactlyOnceWith('back')
+  })
+
+  it('queues eight turns at most', async () => {
+    const { props, layout } = room()
+    flushFrames()
+    props.markup = '<p>two</p>'
+    await nextTick()
+
+    for (let press = 0; press < 20; press += 1) layout().turn('next')
+    flushFrames()
+    await nextTick()
+
+    expect(turns().turn).toHaveBeenCalledTimes(8)
   })
 })
 

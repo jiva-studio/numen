@@ -319,6 +319,43 @@ describe('where the person is standing', () => {
     expect(readItem.documentSpan.value).toStrictEqual({ start: 3_000, end: 6_000 })
   })
 
+  it('jumps once to a document that a second press past the end names while it is drawn', async () => {
+    const { books, markupCalls } = shelf()
+    const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
+    await readItem.goToOffset(100)
+    let arrive!: (markup: string) => void
+    books.readMarkup = () =>
+      new Promise<string>((resolve) => {
+        arrive = resolve
+      })
+
+    const first = readItem.moveTo(3_000)
+    await settle()
+    const jump = readItem.target.value
+    const second = readItem.moveTo(3_000)
+    await settle()
+    arrive('<p data-offset="3000">next</p>')
+    await Promise.all([first, second])
+
+    expect(readItem.target.value).toBe(jump)
+    expect(markupCalls).toHaveLength(1)
+    expect(readItem.documentSpan.value).toStrictEqual({ start: 3_000, end: 6_000 })
+  })
+
+  it('jumps again to the same document once it is drawn and the person is back before it', async () => {
+    const { books } = shelf()
+    const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
+    await readItem.goToOffset(100)
+    await readItem.moveTo(3_000)
+    const jump = readItem.target.value
+
+    await readItem.moveTo(2_999)
+    await readItem.moveTo(3_000)
+
+    expect(readItem.target.value).not.toBe(jump)
+    expect(readItem.documentSpan.value).toStrictEqual({ start: 3_000, end: 6_000 })
+  })
+
   it('drops a CFI offset that arrives after a page turn', async () => {
     const { books } = shelf()
     let answerOffset!: (offset: number) => void

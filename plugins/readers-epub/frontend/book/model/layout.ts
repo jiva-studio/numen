@@ -11,11 +11,15 @@ import { onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
 import type { Ref, ShallowRef } from 'vue'
 
 import { onNextFrame, doc } from '@numen/ui'
+import type { PageNavigationAction } from '@numen/ui'
 import { useBookColumns } from './columns'
 import { useBookTurns } from './turns'
 import { findPending, whenArrived } from '../lib/pictures'
 import type { BookLink } from '../lib/link'
 import type { SettledBookProps } from '../lib/props'
+
+/** How many turns wait for a document that is being drawn; a key held down asks for more. */
+const MAX_WAITING_TURNS = 8
 
 /** The document the columns stand for: its markup and where it begins in the book. */
 interface StoodFor {
@@ -226,6 +230,21 @@ export function useBookLayout(options: BookLayoutOptions) {
     stoodFor.value?.markup === options.props.markup &&
     stoodFor.value.start === options.props.span.start
 
+  /**
+   * Turns asked for while the columns are being set for the markup in front wait for them. Until
+   * then the spread and the marks belong to the document before, and a turn made from them names a
+   * place in that document, which is then drawn again.
+   */
+  const queuedTurns: PageNavigationAction[] = []
+  const turnWhenStood = (way: PageNavigationAction) => {
+    if (isStoodForMarkup() || !isMeasured.value) turn(way)
+    else if (queuedTurns.length < MAX_WAITING_TURNS) queuedTurns.push(way)
+  }
+  watch(isStoodForMarkup, (isStood) => {
+    if (!isStood) return
+    for (const way of queuedTurns.splice(0)) turn(way)
+  })
+
   const { settle, settleKept } = createBookSettling({
     area: options.area,
     stoodFor,
@@ -258,7 +277,7 @@ export function useBookLayout(options: BookLayoutOptions) {
     settle,
     settleKept,
     findFragmentOffset: column.findFragmentOffset,
-    turn,
+    turn: turnWhenStood,
   }
   return state
 }
