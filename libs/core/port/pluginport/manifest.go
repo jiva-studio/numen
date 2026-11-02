@@ -27,6 +27,9 @@ type (
 	PluginSettingOptionsBy = manifest.OptionsBy
 )
 
+// ConfigPerformanceProfile is the entry of the Configure values that holds the performance profile; plugin-sdk-go names it performance.ConfigKey.
+const ConfigPerformanceProfile = "host.performanceProfile"
+
 const (
 	PermissionVaultRead       = manifest.PermissionVaultRead
 	PermissionVaultWrite      = manifest.PermissionVaultWrite

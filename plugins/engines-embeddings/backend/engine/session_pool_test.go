@@ -47,8 +47,8 @@ func TestSessionPool(t *testing.T) {
 	}
 
 	_, err = pool.acquire(ctx)
-	if !errors.Is(err, errClosed) {
-		t.Fatalf("expected errClosed, got %v", err)
+	if !errors.Is(err, ErrClosed) {
+		t.Fatalf("expected ErrClosed, got %v", err)
 	}
 }
 

@@ -136,6 +136,20 @@ The memory limit is a soft limit on the memory the Go runtime manages, set once 
 
 `Set performance profile` is a separate command in the palette. Choosing a profile updates the configuration immediately.
 
+### Plugin background work
+
+The core passes the profile to every running plugin, in each Configure call, as the value `host.performanceProfile` (`performance.Read` of `plugin-sdk-go` reads it, and `performance.Resolve` gives the threads and the niceness the table below lists). A change of the profile in the settings or the palette is pushed to the running plugins at once, so a plugin needs no restart. A profile that is not one of the three counts as `balanced`.
+
+The Vector Embeddings plugin sizes the local model by it while it indexes the vault. The threads are the intra-op threads of the model and the workers that tokenize; the texts are the most texts in one pass. An `NUMEN_ONNX_THREADS` in the environment of the plugin wins over the threads of the profile.
+
+|                     | Eco | Balanced _(default)_           | Maximum                |
+| ------------------- | --- | ------------------------------ | ---------------------- |
+| Threads             | 1   | a quarter of the cores, 1 to 4 | half the cores, 1 to 8 |
+| Texts in one pass   | 2   | 4                              | 8                      |
+| Niceness (priority) | 19  | 10                             | 0                      |
+
+A model open when the profile changes closes when its running batches end, and the next batch opens it with the new threads. The niceness is set on every thread of the plugin process, and the system lets a process only lower its priority: a change to a profile that asks for a higher priority than the plugin has keeps the priority in force until the plugin restarts. The mock model of the tests takes the niceness but is not sized by the profile.
+
 ## How the index keeps vectors
 
 The Vector Embeddings plugin creates the vectors: which model, where it runs, and the key of a service are its own settings. The index stores the vectors the plugin creates and searches them, and this section is about the index alone.

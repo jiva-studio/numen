@@ -179,3 +179,8 @@ func (m LocalModel) WithRepository(name string) LocalModel {
 	m.Sums = nil
 	return m
 }
+
+// GetDefaultBatchTexts is the most texts in a pass of the default model.
+func GetDefaultBatchTexts() int {
+	return bgeM3BatchTexts
+}

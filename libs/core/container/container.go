@@ -200,6 +200,7 @@ func (c Config) writeSettings(entries []settingsport.Setting) error {
 		return err
 	}
 	notifyPluginSettings(c.PluginHost, entries, c.handleError)
+	c.notifyPerformanceProfile(entries)
 	return nil
 }
 
@@ -341,5 +342,29 @@ func (c Config) GetWait() machineport.Wait {
 func (c Config) GetDelay() machineport.Delay {
 	return func(d time.Duration, f func()) func() bool {
 		return time.AfterFunc(d, f).Stop
+	}
+}
+
+// performanceSettingsKey and profileSettingKey are the path of the performance profile in the settings file.
+const (
+	performanceSettingsKey = "performance"
+	profileSettingKey      = "profile"
+)
+
+// notifyPerformanceProfile tells the plugin host the profile of an entry that writes it, so a
+// running plugin takes it without a restart.
+func (c Config) notifyPerformanceProfile(entries []settingsport.Setting) {
+	if c.PluginHost == nil {
+		return
+	}
+	for _, one := range entries {
+		if len(one.Path) != 2 || one.Path[0] != performanceSettingsKey || one.Path[1] != profileSettingKey {
+			continue
+		}
+		var profile string
+		if err := json.Unmarshal([]byte(one.JSON), &profile); err != nil {
+			continue
+		}
+		c.PluginHost.SetPerformanceProfile(context.Background(), hardware.ResolveCompute(profile, hardware.Specs{}).Profile)
 	}
 }

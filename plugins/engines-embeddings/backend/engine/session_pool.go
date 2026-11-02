@@ -6,7 +6,8 @@ import (
 	"sync"
 )
 
-var errClosed = errors.New("the embedder is closed")
+// ErrClosed is the error of a batch that meets a closed embedder.
+var ErrClosed = errors.New("the embedder is closed")
 
 // sessionPool lends a session to at most lanes callers at a time.
 type sessionPool[S any] struct {
@@ -45,13 +46,13 @@ func (p *sessionPool[S]) acquire(ctx context.Context) (S, error) {
 	select {
 	case <-p.stop:
 		// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
-		return zero, errClosed
+		return zero, ErrClosed
 	default:
 	}
 	select {
 	case <-p.stop:
 		// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
-		return zero, errClosed
+		return zero, ErrClosed
 	case <-cancelled:
 		// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
 		return zero, ctx.Err()
@@ -60,7 +61,7 @@ func (p *sessionPool[S]) acquire(ctx context.Context) (S, error) {
 		case <-p.stop:
 			p.idle <- s
 			// gomutants:disable-next-line RETURN_ZERO reason="zero is the zero value of S, identical to *new(S)"
-			return zero, errClosed
+			return zero, ErrClosed
 		default:
 			return s, nil
 		}

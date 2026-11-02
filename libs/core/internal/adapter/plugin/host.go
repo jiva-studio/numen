@@ -74,6 +74,7 @@ type Host struct {
 	vaultPath        string
 	bus              *eventbus.Bus
 	settings         map[string]map[string]any
+	performance      string
 	persistHandler   PersistHandler
 	evictTicker      *time.Ticker
 	evictDone        chan struct{}
@@ -1402,8 +1403,12 @@ func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) er
 	secretNames := h.getActiveSecretNamesLocked(pluginID)
 	stored := h.getStoredSecretsLocked(pluginID)
 	store := h.keyStore
+	performance := h.performance
 	h.mu.RUnlock()
 
+	if performance != "" {
+		values[pluginport.ConfigPerformanceProfile] = performance
+	}
 	secrets, failures := readPluginSecrets(ctx, store, pluginID, secretNames, stored)
 	secretsErr := h.getSecretsError(failures)
 	for name, key := range secrets {
@@ -1728,4 +1733,27 @@ func (h *Host) getRequirementIDsLocked(pluginID string) []string {
 		ids = append(ids, req.ID)
 	}
 	return ids
+}
+
+// SetPerformanceProfile records the profile of the performance setting and pushes it to every
+// running plugin when it changed. A plugin that is not running receives it with its first
+// Configure call.
+func (h *Host) SetPerformanceProfile(ctx context.Context, profile string) {
+	h.mu.Lock()
+	if h.performance == profile {
+		h.mu.Unlock()
+		return
+	}
+	h.performance = profile
+	ids := make([]string, 0, len(h.endpoints))
+	for id := range h.endpoints {
+		ids = append(ids, id)
+	}
+	h.mu.Unlock()
+
+	for _, id := range ids {
+		if err := h.NotifyPluginConfig(ctx, id); err != nil {
+			h.reportError(fmt.Errorf("push the performance profile to plugin %s: %w", id, err))
+		}
+	}
 }

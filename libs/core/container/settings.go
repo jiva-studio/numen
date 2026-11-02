@@ -1,6 +1,7 @@
 package container
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -77,6 +78,7 @@ func (c Config) SetSettings(s Settings) Config {
 	c.Hardware = hardware.Detect()
 	c.ResolvedCompute = hardware.ResolveCompute(s.Performance.Profile, c.Hardware)
 	if c.PluginHost != nil {
+		c.PluginHost.SetPerformanceProfile(context.Background(), c.ResolvedCompute.Profile)
 		if s.Plugins != nil {
 			c.PluginHost.SetSettings(s.Plugins)
 		}

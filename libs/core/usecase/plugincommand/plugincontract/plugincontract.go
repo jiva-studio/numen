@@ -135,6 +135,7 @@ const (
 	HandleTextProvider          = pluginport.HandleTextProvider
 	ContextAnyValue             = pluginport.ContextAnyValue
 	SettingAIConsent            = pluginport.SettingAIConsent
+	ConfigPerformanceProfile    = pluginport.ConfigPerformanceProfile
 	SettingStoredSecrets        = pluginport.SettingStoredSecrets
 	SettingTypeEnum             = pluginport.SettingTypeEnum
 	SettingTypeFile             = pluginport.SettingTypeFile

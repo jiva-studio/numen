@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/embedding"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/performance"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
@@ -46,6 +47,12 @@ type embeddingServer struct {
 	// the settings name for a remote service.
 	localName   string
 	remoteModel string
+
+	// profile is the performance profile of the last Configure call, and isProfileSet whether one came.
+	profile      performance.Profile
+	isProfileSet bool
+	// lowerNice sets the niceness of the process.
+	lowerNice func(nice int) error
 }
 
 // textEmbedder is a model that turns texts into vectors.
@@ -85,6 +92,7 @@ func openMockModel(context.Context, engine.ModelInfo, engine.LocalModel) (textEm
 func (s *embeddingServer) updateConfig(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.applyProfileLocked(performance.Read(values))
 	if provider := values["provider"]; provider != "" {
 		s.provider = provider
 	}
@@ -191,6 +199,7 @@ func newEmbeddingServer() *embeddingServer {
 			provider:    "",
 			localName:   info.Name,
 			remoteModel: "",
+			profile:     performance.Balanced, isProfileSet: false, lowerNice: performance.SetNice,
 		}
 	}
 	info, local := engine.DefaultBGEM3Config()
@@ -211,6 +220,7 @@ func newEmbeddingServer() *embeddingServer {
 		provider:    "",
 		localName:   info.Name,
 		remoteModel: "",
+		profile:     performance.Balanced, isProfileSet: false, lowerNice: performance.SetNice,
 	}
 }
 
@@ -279,9 +289,20 @@ func (s *embeddingServer) getEmbedder(ctx context.Context) (textEmbedder, error)
 		applyModelProfile(&localInfo, s.localName)
 		applyDimensionEnv(&localInfo)
 	}
-	emb, err := s.open(ctx, localInfo, s.localModel)
+	local := s.localModel
+	limits := s.getLimitsLocked()
+	if local.Threads == 0 {
+		local.Threads = limits.threads
+	}
+	local.BatchTexts = limits.batchTexts
+	emb, err := s.open(ctx, localInfo, local)
 	if err != nil {
 		return nil, fmt.Errorf("opening onnx embedding engine: %w", err)
+	}
+	// The runtime starts its threads while it opens the model, and a thread starts at the niceness of
+	// the thread that starts it.
+	if err := s.lowerNice(limits.nice); err != nil {
+		fmt.Fprintf(os.Stderr, "set the priority of the embeddings plugin: %v\n", err)
 	}
 	s.embedder = emb
 	s.modelInfo.Concurrency = emb.Concurrency()
@@ -348,6 +369,12 @@ func (s *embeddingServer) EmbedTexts(ctx context.Context, texts []string) ([][]f
 	}
 
 	denseVectors, err := emb.Embed(ctx, texts)
+	if errors.Is(err, engine.ErrClosed) {
+		// A change of the performance profile retired the model while this batch waited for a pass.
+		if emb, err = s.getEmbedder(ctx); err == nil {
+			denseVectors, err = emb.Embed(ctx, texts)
+		}
+	}
 	if err != nil {
 		return nil, rpcerror.New(rpcerror.Internal, fmt.Errorf("embed batch: %w", err))
 	}

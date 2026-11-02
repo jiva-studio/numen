@@ -166,6 +166,9 @@ type pluginSecretConfigurator interface {
 type PluginConfigurator interface {
 	pluginSecretConfigurator
 	SetSettings(all map[string]map[string]any)
+	// SetPerformanceProfile tells every running plugin the profile of the performance setting, and
+	// gives each plugin started later the same one.
+	SetPerformanceProfile(ctx context.Context, profile string)
 	SetPersistHandler(handler PluginPersistHandler)
 	UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error
 	CheckPluginSetting(pluginID, key string, value any) error
