@@ -1,5 +1,10 @@
 import { test, expect, type Page } from '../../support/test.js'
-import { getGraph, getPaletteField, openWorkspace, runPaletteCommand } from '../../support/workspace.js'
+import {
+  getGraph,
+  getPaletteField,
+  openWorkspace,
+  runPaletteCommand,
+} from '../../support/workspace.js'
 import {
   createNote,
   createUniqueTitle,
@@ -129,7 +134,9 @@ test.describe('Removing and renaming a note', () => {
       await expect.poll(() => listFilePaths(request, 'notes')).toContain(renamedPath)
       expect(await listFilePaths(request, 'notes')).not.toContain(target)
       expect((await readNote(request, renamedPath)).body).toContain('The work a system can do.')
-      expect(await readVaultFile(request, renamedPath)).toMatch(new RegExp(`title: ["']?${newTitle}`))
+      expect(await readVaultFile(request, renamedPath)).toMatch(
+        new RegExp(`title: ["']?${newTitle}`),
+      )
       const links = await readVaultFile(request, linker)
       expect(links).toContain(newTitle)
       expect(links).not.toContain(oldTitle)

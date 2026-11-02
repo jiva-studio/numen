@@ -116,7 +116,10 @@ test.describe('PDF reader zoom', () => {
           for (const one of root.querySelectorAll('.reader__page')) {
             const box = one.getBoundingClientRect()
             if (box.left <= centre && centre <= box.right) {
-              return { page: one.getAttribute('data-page'), fraction: (centre - box.left) / box.width }
+              return {
+                page: one.getAttribute('data-page'),
+                fraction: (centre - box.left) / box.width,
+              }
             }
           }
           return null

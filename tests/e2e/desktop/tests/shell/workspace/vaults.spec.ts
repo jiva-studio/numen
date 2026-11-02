@@ -1,7 +1,13 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { test, expect, readSavedStates, type APIRequestContext, type Page } from '../../support/test.js'
+import {
+  test,
+  expect,
+  readSavedStates,
+  type APIRequestContext,
+  type Page,
+} from '../../support/test.js'
 import { getPaletteField, openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 import {
   addVault,
@@ -20,7 +26,10 @@ import {
 /** A folder of this machine outside the run's vault, holding one invented note, added as a vault. */
 const addSecondVault = async (request: APIRequestContext): Promise<Vault> => {
   const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'numen-e2e-second-vault-'))
-  fs.writeFileSync(path.join(folder, 'Lighthouse.md'), '# Lighthouse\n\nThe lamp turns all night.\n')
+  fs.writeFileSync(
+    path.join(folder, 'Lighthouse.md'),
+    '# Lighthouse\n\nThe lamp turns all night.\n',
+  )
   return addVault(request, folder, createUniqueTitle('Coastline'))
 }
 

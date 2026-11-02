@@ -2,7 +2,12 @@ import { observeFor } from '../../support/browser.js'
 import { test, expect, type Page } from '../../support/test.js'
 import { getPaletteField, openWorkspace, runCommand } from '../../support/workspace.js'
 import { listFilePaths } from '../../support/vault.js'
-import { deleteVaultFiles, getStandInsOrigin, restartPlugin, writePluginSetting } from '../../support/media.js'
+import {
+  deleteVaultFiles,
+  getStandInsOrigin,
+  restartPlugin,
+  writePluginSetting,
+} from '../../support/media.js'
 
 const IMPORTER = 'md.numen.tools.media.importer'
 const UPDATER = 'md.numen.tools.updater'
@@ -11,7 +16,8 @@ const UPDATER = 'md.numen.tools.updater'
 const MISSING_PAGE_ADDRESS = 'http://unreachable.numen.test/tide-tables'
 
 /** Everything the removed corner notices were drawn with: the container, the cards and their classes. */
-const OLD_CORNER = '.notices, .notices__stack, .notice, article.notice, .notice__work, .notice__away'
+const OLD_CORNER =
+  '.notices, .notices__stack, .notice, article.notice, .notice__work, .notice__away'
 
 /** The corner region as it was announced: a status or alert region holding cards. */
 const getOldRegions = (page: Page) =>

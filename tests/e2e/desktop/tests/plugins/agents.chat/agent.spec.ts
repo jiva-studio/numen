@@ -55,9 +55,9 @@ test.describe('Agent Plugin and Interface', () => {
 
     await search.fill('no such model')
     await expect(models).toHaveCount(0)
-    await expect(
-      page.locator('[data-numen-searchable-list]').getByRole('status'),
-    ).toHaveText('No models found')
+    await expect(page.locator('[data-numen-searchable-list]').getByRole('status')).toHaveText(
+      'No models found',
+    )
 
     await search.fill('stand-in')
     await expect(models.getByRole('option')).toHaveText(['Stand-in model'])

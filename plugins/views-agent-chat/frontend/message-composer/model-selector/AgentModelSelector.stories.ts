@@ -80,9 +80,9 @@ export const Searched: Story = {
 export const OpenedDark: Story = {
   globals: { theme: 'dark' },
   play: async (context) => {
-    await expect(getComputedStyle(context.canvasElement.ownerDocument.documentElement).colorScheme).toBe(
-      'dark',
-    )
+    await expect(
+      getComputedStyle(context.canvasElement.ownerDocument.documentElement).colorScheme,
+    ).toBe('dark')
     await Opened.play!(context)
   },
 }

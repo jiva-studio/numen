@@ -51,9 +51,7 @@ export function useNoticeTasks({
       ...(window.unwatched.value
         ? [createFailedTask('unwatched', words.unwatched, window.unwatched.value)]
         : []),
-      ...(window.error.value
-        ? [createFailedTask('unread', words.unread, window.error.value)]
-        : []),
+      ...(window.error.value ? [createFailedTask('unread', words.unread, window.error.value)] : []),
       ...(reason ? [createFailedTask('lost', reason)] : []),
     ]
     const messages = log.messages.value

@@ -70,7 +70,7 @@ function onDismiss() {
       <p class="update-popover__desc">{{ platformMessage }}</p>
       <p class="update-popover__release">
         <span class="update-popover__version">v{{ update.version }}</span>
-        <template v-if="releaseDate"> · {{ words.releasedOn }} {{ releaseDate }}</template>
+        <template v-if="releaseDate">· {{ words.releasedOn }} {{ releaseDate }}</template>
       </p>
     </div>
 

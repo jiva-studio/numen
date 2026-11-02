@@ -45,7 +45,11 @@ const context = inject(LIST_CONTEXT)
     @click="$emit('choose')"
     @pointerenter="$emit('hover')"
   >
-    <component :is="context?.slots.action" v-if="row.kind === 'action'" :query="context?.getQuery() ?? ''" />
+    <component
+      :is="context?.slots.action"
+      v-if="row.kind === 'action'"
+      :query="context?.getQuery() ?? ''"
+    />
     <template v-else>
       <component :is="context?.slots.leading" :item="row.item" />
       <span class="searchable-list__words">

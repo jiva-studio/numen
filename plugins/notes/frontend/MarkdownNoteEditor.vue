@@ -74,7 +74,8 @@ watch(displayErrorMessage, () => {
 /** The completion of wikilinks over the notes the host offers, unless the caller passes extensions. */
 const editorExtensions = computed(() => {
   if (props.extensions) return props.extensions as Extension
-  const links = props.state?.['wikilinks'] as Pick<WikilinkOptions, 'search' | 'headings'> | undefined
+  const links = props.state?.['wikilinks'] as
+    Pick<WikilinkOptions, 'search' | 'headings'> | undefined
   return links ? createWikilinkExtension(links) : undefined
 })
 

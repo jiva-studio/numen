@@ -93,7 +93,13 @@ async function mountWindowWithPalette() {
 
 /** What the failed tasks of the status bar say, one string per task. */
 const cards = (window: VueWrapper): readonly string[] =>
-  (window.findComponent(StatusBar).props('tasks') as readonly { state: string; label: string; about?: string }[])
+  (
+    window.findComponent(StatusBar).props('tasks') as readonly {
+      state: string
+      label: string
+      about?: string
+    }[]
+  )
     .filter((task) => task.state === 'failed')
     .map((task) => [task.label, task.about].filter(Boolean).join(' '))
 

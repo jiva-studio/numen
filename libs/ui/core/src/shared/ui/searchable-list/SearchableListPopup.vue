@@ -4,7 +4,15 @@
  * inside the window, put away by a press outside it, a scroll, a resize and
  * Escape, and giving the keyboard back to what asked for it.
  */
-import { computed, nextTick, onBeforeUnmount, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  shallowRef,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import { measureElementRect } from '@/shared/lib/dom'
 import { useMenuDismissal, useMenuPlacement } from '../menu'
 import SearchableList from './SearchableList.vue'

@@ -10,9 +10,7 @@ export interface MarkdownEditorPreferences {
   tabSize?: number
 }
 
-export type SettingLookup =
-  | ((key: string) => unknown)
-  | ((path: readonly string[]) => unknown)
+export type SettingLookup = ((key: string) => unknown) | ((path: readonly string[]) => unknown)
 
 function readSetting(getSetting: SettingLookup | undefined, key: string): unknown {
   if (!getSetting) return undefined
@@ -30,7 +28,10 @@ export function readMarkdownEditorPreferences(
   return {
     softWrap: typeof softWrap === 'boolean' ? softWrap : true,
     lineNumbers: typeof lineNumbers === 'boolean' ? lineNumbers : false,
-    tabSize: typeof tabSize === 'number' && Number.isFinite(tabSize) ? Math.max(1, Math.trunc(tabSize)) : 2,
+    tabSize:
+      typeof tabSize === 'number' && Number.isFinite(tabSize)
+        ? Math.max(1, Math.trunc(tabSize))
+        : 2,
   }
 }
 

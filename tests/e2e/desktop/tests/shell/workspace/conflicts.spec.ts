@@ -18,7 +18,9 @@ const WRITE_NOTE = '**/numen.v1.NoteService/WriteNote'
  * Holds the writes the window makes until the returned function lets them go, so a change made on
  * disk lands between what the tab read and what it writes.
  */
-const blockWrites = async (page: Page): Promise<{ pendingRoutes: Route[]; release: () => Promise<void> }> => {
+const blockWrites = async (
+  page: Page,
+): Promise<{ pendingRoutes: Route[]; release: () => Promise<void> }> => {
   const pendingRoutes: Route[] = []
   let isHolding = true
   await page.route(WRITE_NOTE, async (route) => {
@@ -123,7 +125,15 @@ const readColour = (page: Page, css: string) =>
     return { red, green, blue, alpha: alpha / 255 }
   }, css)
 
-const getLuminance = ({ red, green, blue }: { red: number; green: number; blue: number }): number => {
+const getLuminance = ({
+  red,
+  green,
+  blue,
+}: {
+  red: number
+  green: number
+  blue: number
+}): number => {
   const [r = 0, g = 0, b = 0] = [red, green, blue].map((one) => {
     const part = one / 255
     return part <= 0.03928 ? part / 12.92 : ((part + 0.055) / 1.055) ** 2.4

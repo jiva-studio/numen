@@ -7,7 +7,12 @@
 
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'
-import { createBaseConfig, createDeterminismSelectors, createPureSegmentConfig, lifetimes } from '../../../tools/lint-layers/base-eslint.mjs'
+import {
+  createBaseConfig,
+  createDeterminismSelectors,
+  createPureSegmentConfig,
+  lifetimes,
+} from '../../../tools/lint-layers/base-eslint.mjs'
 import { createLayerElements, createLayerPolicies } from '../../../tools/lint-layers/layers.mjs'
 
 /** The one function declaration that reads the wall clock. */
@@ -130,11 +135,7 @@ export default tseslint.config(
   // the machine what time it is, what the window measures, or what comes next.
   {
     files: ['src/**/*.ts'],
-    ignores: [
-      'src/**/*.test.ts',
-      'src/**/*.stories.ts',
-      'src/**/fixtures/**',
-    ],
+    ignores: ['src/**/*.test.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**'],
     rules: {
       'no-restricted-globals': [
         'error',
@@ -143,10 +144,7 @@ export default tseslint.config(
           message: `${name} has a lifetime a test must hold still — take ${port}`,
         })),
       ],
-      'no-restricted-syntax': [
-        'error',
-        ...createDeterminismSelectors(clockFunctions),
-      ],
+      'no-restricted-syntax': ['error', ...createDeterminismSelectors(clockFunctions)],
     },
   },
 

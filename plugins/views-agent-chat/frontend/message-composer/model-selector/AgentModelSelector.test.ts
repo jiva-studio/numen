@@ -142,7 +142,9 @@ describe('AgentModelSelector', () => {
     await wrapper.find('button').trigger('click')
     await nextTick()
     expect(document.body.querySelector('[data-numen-searchable-list] input')).not.toBeNull()
-    expect(document.body.querySelectorAll('[role="option"]').length).toBe(OPTIONS.length + many.length)
+    expect(document.body.querySelectorAll('[role="option"]').length).toBe(
+      OPTIONS.length + many.length,
+    )
     wrapper.unmount()
   })
 })

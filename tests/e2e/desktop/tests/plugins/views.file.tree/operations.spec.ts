@@ -1,6 +1,15 @@
 import { test, expect } from '../../support/test.js'
 import { openWorkspace } from '../../support/workspace.js'
-import { createNoteWithBody, destroyNotes, dragRowOnto, getRow, getTab, listPaths, readOpenTabs, showInFiles } from '../../support/layout.js'
+import {
+  createNoteWithBody,
+  destroyNotes,
+  dragRowOnto,
+  getRow,
+  getTab,
+  listPaths,
+  readOpenTabs,
+  showInFiles,
+} from '../../support/layout.js'
 import { listBacklinks, readNote } from '../../support/vault.js'
 
 const LEDGER_BODY = '# Tidewater ledger\n\nThe miller wrote the height of every spring tide.\n'
@@ -57,7 +66,12 @@ test.describe('Moving files in the files tab', () => {
     page,
     request,
   }) => {
-    const twin = await createNoteWithBody(request, '2026-08-15', 'notes', '# 2026-08-15\n\nA second log.\n')
+    const twin = await createNoteWithBody(
+      request,
+      '2026-08-15',
+      'notes',
+      '# 2026-08-15\n\nA second log.\n',
+    )
     const bodyBefore = (await readNote(request, 'daily/2026-08-15.md')).body
     try {
       await openWorkspace(page)

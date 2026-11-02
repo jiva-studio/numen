@@ -48,10 +48,7 @@ test.describe('Vault Navigation and Quick Open Palette', () => {
 
     await runPaletteCommand(page, 'Show in files', 'Show in files')
 
-    await expect(page.getByRole('tab', { name: /^Files/ })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    )
+    await expect(page.getByRole('tab', { name: /^Files/ })).toHaveAttribute('aria-selected', 'true')
     await expect(page.locator('[data-tree-row="notes/Entropy.md"]')).toBeVisible()
   })
 })

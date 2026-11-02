@@ -46,7 +46,9 @@ export const readActivePath = async (request: APIRequestContext): Promise<string
 const UNREADABLE_FIXTURE = 'corrupted.pdf'
 
 /** The first list of tasks the editor window of the debug server reports, as a Connect stream. */
-const readTasks = (baseURL: string): Promise<{ title?: string; about?: string; error?: string }[]> =>
+const readTasks = (
+  baseURL: string,
+): Promise<{ title?: string; about?: string; error?: string }[]> =>
   new Promise((resolve, reject) => {
     const origin = new URL(baseURL)
     const json = Buffer.from(JSON.stringify({ window: 'editor' }))
@@ -68,7 +70,10 @@ const readTasks = (baseURL: string): Promise<{ title?: string; about?: string; e
           if (received.length < 5 || received.length < 5 + received.readUInt32BE(1)) return
           call.destroy()
           const message = JSON.parse(received.subarray(5, 5 + received.readUInt32BE(1)).toString())
-          resolve((message as { tasks?: { title?: string; about?: string; error?: string }[] }).tasks ?? [])
+          resolve(
+            (message as { tasks?: { title?: string; about?: string; error?: string }[] }).tasks ??
+              [],
+          )
         })
         answer.on('error', reject)
       },
@@ -89,7 +94,9 @@ export const test = base.extend<{ isFreshTabs: void; hasNoFailedTask: void }>({
     async ({ baseURL }, use) => {
       await use()
       await expect
-        .poll(() => readFailedTasks(baseURL ?? ''), { message: 'the test leaves a failed task in the status bar' })
+        .poll(() => readFailedTasks(baseURL ?? ''), {
+          message: 'the test leaves a failed task in the status bar',
+        })
         .toEqual([])
     },
     { auto: true },

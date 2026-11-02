@@ -155,7 +155,8 @@ export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigatio
     rows,
     here,
     submenu,
-    focusInitial: () => goTo(getInitialIndex(options.trigger(), options.items(), options.current())),
+    focusInitial: () =>
+      goTo(getInitialIndex(options.trigger(), options.items(), options.current())),
     onKey: onRowKey,
     onResetNavigation,
   }

@@ -34,25 +34,19 @@
       "id": "create-deck",
       "title": "New deck",
       "icon": "layers",
-      "arguments": [
-        { "name": "title", "title": "Title", "type": "string", "required": true }
-      ]
+      "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]
     },
     {
       "id": "create-card-model",
       "title": "New card model",
       "icon": "layout-template",
-      "arguments": [
-        { "name": "title", "title": "Title", "type": "string", "required": true }
-      ]
+      "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]
     },
     {
       "id": "create-preset",
       "title": "New preset",
       "icon": "gauge",
-      "arguments": [
-        { "name": "title", "title": "Title", "type": "string", "required": true }
-      ]
+      "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]
     }
   ],
   "settings": [

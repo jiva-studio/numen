@@ -1,6 +1,13 @@
 import { test, expect, type Page } from '../../support/test.js'
 import { getGraph, openWorkspace } from '../../support/workspace.js'
-import { createNoteWithBody, destroyNotes, getRow, getTab, readOpenTabs, showInFiles } from '../../support/layout.js'
+import {
+  createNoteWithBody,
+  destroyNotes,
+  getRow,
+  getTab,
+  readOpenTabs,
+  showInFiles,
+} from '../../support/layout.js'
 
 /** The paths of the note tabs the core keeps for the vault in the window, in their order. */
 const readNoteTabPaths = async (page: Page): Promise<string[]> =>

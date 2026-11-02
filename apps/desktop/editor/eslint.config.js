@@ -61,11 +61,7 @@ export default tseslint.config(
   // what time it is, what the window measures, or what comes next.
   {
     files: ['src/**/*.ts'],
-    ignores: [
-      'src/**/*.test.ts',
-      'src/**/*.stories.ts',
-      'src/testing/**',
-    ],
+    ignores: ['src/**/*.test.ts', 'src/**/*.stories.ts', 'src/testing/**'],
     rules: {
       'no-restricted-globals': [
         'error',

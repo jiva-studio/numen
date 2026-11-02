@@ -240,8 +240,11 @@ describe('note tab restored from the saved path', () => {
       await first.notes.flush()
       await wait()
       const saved = (
-        createCustomTabKind('md.numen.notes', { kind: 'note', component: null, title: 'Note' })
-          .getOpenTab?.(first.state) ?? { path: '' }
+        createCustomTabKind('md.numen.notes', {
+          kind: 'note',
+          component: null,
+          title: 'Note',
+        }).getOpenTab?.(first.state) ?? { path: '' }
       ).path
       expect(saved).toBe(path)
 

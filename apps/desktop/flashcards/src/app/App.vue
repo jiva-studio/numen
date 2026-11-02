@@ -19,9 +19,7 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { front, tab, openTab, vaults, plugins, mountView, appearance } = useShell(
-  props.deps,
-)
+const { front, tab, openTab, vaults, plugins, mountView, appearance } = useShell(props.deps)
 </script>
 
 <template>
@@ -58,7 +56,6 @@ const { front, tab, openTab, vaults, plugins, mountView, appearance } = useShell
     @choose="appearance.onChoose"
     @dismiss="appearance.onDismiss"
   />
-
 </template>
 
 <style scoped>

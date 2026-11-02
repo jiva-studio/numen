@@ -75,4 +75,8 @@ export const getHeadings = (rows: readonly ListRow[]): readonly (string | undefi
 
 /** The row a step from `from` lands on, wrapping at both ends; -1 where there is none. */
 export const stepRow = (count: number, from: number, step: number): number =>
-  stepTo(Array.from({ length: count }, (_, index) => index), { from, by: step }, () => true)
+  stepTo(
+    Array.from({ length: count }, (_, index) => index),
+    { from, by: step },
+    () => true,
+  )

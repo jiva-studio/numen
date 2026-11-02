@@ -159,7 +159,9 @@ describe('a field renamed in a card model', () => {
     await settle()
     await settle()
 
-    expect(writtenFiles).toStrictEqual(['Animal.md Height, Life span, Depth | **Height:** {{Height}}'])
+    expect(writtenFiles).toStrictEqual([
+      'Animal.md Height, Life span, Depth | **Height:** {{Height}}',
+    ])
     expect(renamed).toStrictEqual(['Animal.md Depth Width written'])
     expect(tab.cardModel.value.fields).toStrictEqual(['Height', 'Life span', 'Width'])
   })

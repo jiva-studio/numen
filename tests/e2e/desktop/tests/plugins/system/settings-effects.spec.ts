@@ -58,7 +58,9 @@ test.describe('Plugin settings take effect', () => {
       const viewport = page.locator('.reader__viewport')
 
       await expect
-        .poll(async () => Math.abs((await readWidth(first)) - getExpected(await readWidth(viewport))))
+        .poll(async () =>
+          Math.abs((await readWidth(first)) - getExpected(await readWidth(viewport))),
+        )
         .toBeLessThan(24)
     })
   }
@@ -88,7 +90,10 @@ test.describe('Plugin settings take effect', () => {
     const reloaded = page.getByRole('tabpanel', { name: /Settings/ })
     await reloaded.getByRole('button', { name: /Vector Embeddings/ }).click()
     await expect(reloaded.getByRole('textbox', { name: 'API key' })).toHaveValue('')
-    await expect(reloaded.getByRole('textbox', { name: 'API key' })).toHaveAttribute('placeholder', '••••••••')
+    await expect(reloaded.getByRole('textbox', { name: 'API key' })).toHaveAttribute(
+      'placeholder',
+      '••••••••',
+    )
     expect(await page.content()).not.toContain('sk-invented-harbour-key')
 
     await reloaded.getByRole('button', { name: 'Delete' }).click()

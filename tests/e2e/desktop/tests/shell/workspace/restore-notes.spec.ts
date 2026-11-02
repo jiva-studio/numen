@@ -54,14 +54,19 @@ const expectRestored = async (page: Page, notes: readonly { path: string; text: 
 /** The vault holds no file whose name a tab key could have made: one with a colon. */
 const expectNoColonFile = async (page: Page, folders: readonly string[]): Promise<void> => {
   for (const folder of folders) {
-    expect((await listFilePaths(page.request, folder)).filter((one) => one.includes(':'))).toStrictEqual([])
+    expect(
+      (await listFilePaths(page.request, folder)).filter((one) => one.includes(':')),
+    ).toStrictEqual([])
   }
 }
 
 test.describe('The note tabs of the window after a restart', () => {
   test.describe.configure({ timeout: 120_000 })
 
-  test('show each note named after its file, with its text, over two restarts', async ({ page, request }) => {
+  test('show each note named after its file, with its text, over two restarts', async ({
+    page,
+    request,
+  }) => {
     const simple = await createNote(request, createUniqueTitle('dd'))
     const nested = await createNote(request, createUniqueTitle('x'), 'cards')
     const spaced = await createNote(request, createUniqueTitle('two words here'))
@@ -74,12 +79,18 @@ test.describe('The note tabs of the window after a restart', () => {
       for (const one of notes) await writeNote(request, one.path, `${one.text}\n`)
       await openWorkspace(page)
       for (const one of notes) await openNote(page, one.path)
-      await expectSavedPaths(page, notes.map((one) => one.path))
+      await expectSavedPaths(
+        page,
+        notes.map((one) => one.path),
+      )
 
       for (let restart = 0; restart < 2; restart += 1) {
         await page.reload()
         await expectRestored(page, notes)
-        await expectSavedPaths(page, notes.map((one) => one.path))
+        await expectSavedPaths(
+          page,
+          notes.map((one) => one.path),
+        )
       }
       await expectNoColonFile(page, ['', 'notes', 'cards'])
     } finally {
@@ -87,7 +98,10 @@ test.describe('The note tabs of the window after a restart', () => {
     }
   })
 
-  test('keep the saved path of each note when the application asks the window to flush on quit', async ({ page, request }) => {
+  test('keep the saved path of each note when the application asks the window to flush on quit', async ({
+    page,
+    request,
+  }) => {
     const path = await createNote(request, createUniqueTitle('dd'))
     try {
       await writeNote(request, path, 'Text of the flushed note.\n')
@@ -115,7 +129,10 @@ test.describe('The note tabs of the window after a restart', () => {
     }
   })
 
-  test('show the note when its plugin registers after the window opened the tabs', async ({ page, request }) => {
+  test('show the note when its plugin registers after the window opened the tabs', async ({
+    page,
+    request,
+  }) => {
     const path = await createNote(request, createUniqueTitle('dd'))
     try {
       await writeNote(request, path, 'Text of the late note.\n')
