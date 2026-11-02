@@ -25,6 +25,8 @@ export interface TitleLine {
   readonly line: string
   /** How far along that path the middle of the title is. */
   readonly at: string
+  /** How far the middle of the title is moved across the path, to the right of its reading. */
+  readonly across: number
 }
 
 /**
@@ -50,6 +52,7 @@ export const getLines = (edges: readonly PlacedEdge[], uid: string): readonly Ed
       path: `${uid}-title-${index}-${slot}`,
       line: createReadingPath(edge, title.heading),
       at: `${100 * title.wordsAt}%`,
+      across: title.heading === 'against' ? -title.shift : title.shift,
     })),
   }))
 

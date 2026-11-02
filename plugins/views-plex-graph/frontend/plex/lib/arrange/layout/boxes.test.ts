@@ -91,7 +91,10 @@ describe('the room a run of a line takes', () => {
   })
 
   it('is the run itself, thickened by half the depth of the type across a level line', () => {
-    const box = runBoxes(straight({ x: 100, y: 50 }, { x: 340, y: 50 }), 10)(0.25, 0.5)
+    const box = runBoxes(straight({ x: 100, y: 50 }, { x: 340, y: 50 }), { depth: 10, shift: 0 })(
+      0.25,
+      0.5,
+    )
     expect(box.minX).toBeCloseTo(160)
     expect(box.maxX).toBeCloseTo(220)
     expect(box.minY).toBeCloseTo(45)
@@ -99,16 +102,38 @@ describe('the room a run of a line takes', () => {
   })
 
   it('is thickened across a slanted line by the share of the depth that faces each way', () => {
-    const box = runBoxes(straight({ x: 0, y: 0 }, { x: 300, y: 400 }), 10)(0.25, 0.75)
+    const box = runBoxes(straight({ x: 0, y: 0 }, { x: 300, y: 400 }), { depth: 10, shift: 0 })(
+      0.25,
+      0.75,
+    )
     expect(box.minX).toBeCloseTo(75 - 4)
     expect(box.maxX).toBeCloseTo(225 + 4)
     expect(box.minY).toBeCloseTo(100 - 3)
     expect(box.maxY).toBeCloseTo(300 + 3)
   })
 
+  it('is moved to the right of a level line by a positive shift, and to the left by a negative one', () => {
+    const level = straight({ x: 100, y: 50 }, { x: 340, y: 50 })
+    const rightBox = runBoxes(level, { depth: 10, shift: 9 })(0.25, 0.5)
+    const leftBox = runBoxes(level, { depth: 10, shift: -9 })(0.25, 0.5)
+
+    expect([rightBox.minX, rightBox.maxX]).toEqual([expect.closeTo(160), expect.closeTo(220)])
+    expect([rightBox.minY, rightBox.maxY]).toEqual([expect.closeTo(54), expect.closeTo(64)])
+    expect([leftBox.minY, leftBox.maxY]).toEqual([expect.closeTo(36), expect.closeTo(46)])
+  })
+
+  it('is moved across a line running upward by the same shift, to the right of its direction', () => {
+    const up = straight({ x: 100, y: 300 }, { x: 100, y: 0 })
+    const box = runBoxes(up, { depth: 10, shift: 9 })(0.25, 0.5)
+
+    // Looking up the page, the right is the side of larger x.
+    expect([box.minX, box.maxX]).toEqual([expect.closeTo(104), expect.closeTo(114)])
+    expect([box.minY, box.maxY]).toEqual([expect.closeTo(150), expect.closeTo(225)])
+  })
+
   it('is the point itself on a line of no length', () => {
     const point = { x: 0, y: 0 }
-    const box = runBoxes(straight(point, point), 10)(0, 1)
+    const box = runBoxes(straight(point, point), { depth: 10, shift: 0 })(0, 1)
     expect(box).toStrictEqual({ minX: 0, minY: 0, maxX: 0, maxY: 0 })
   })
 })

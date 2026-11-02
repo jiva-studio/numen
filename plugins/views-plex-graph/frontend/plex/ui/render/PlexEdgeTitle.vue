@@ -35,6 +35,7 @@ const LAYERS = ['halo', 'letters'] as const
       :opacity="line.edge.opacity"
       text-anchor="middle"
       dominant-baseline="middle"
+      :dy="title.across"
     >
       <textPath :href="`#${title.path}`" :startOffset="title.at">
         {{ title.words }}

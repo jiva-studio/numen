@@ -2,7 +2,16 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from '../arrange'
 import { DEFAULT_OPTIONS } from '../options'
-import { cutToFit, getLabelPositions, MIDDLE, routeEdge, routeEdges, createRouting } from './routing'
+import {
+  cutToFit,
+  getLabelPositions,
+  getLabelSides,
+  getShift,
+  MIDDLE,
+  routeEdge,
+  routeEdges,
+  createRouting,
+} from './routing'
 import { neighbourhoods } from '../../../fixtures/neighbourhoods'
 import {
   ARROW_LENGTH,
@@ -639,8 +648,9 @@ describe('the position of a label', () => {
 
     // The lighthouse is the `from` note, so the label it wrote is near the lighthouse.
     expect(routed.titles.map((title) => title.words)).toEqual(['guides', 'shelters'])
-    expect(routed.titles[0]!.heading).toBe('against')
-    expect(routed.titles[0]!.wordsAt).toBeCloseTo(1 - start!)
+    // The lighthouse record reads from the lighthouse to the harbour: along the curve, which runs that way.
+    expect(routed.titles[0]!.heading).toBe('along')
+    expect(routed.titles[0]!.wordsAt).toBeCloseTo(start!)
     const places = getPlaces(edge)
     expect(places.map(([words]) => words)).toEqual(['guides', 'shelters'])
     expect(places[0]![1]).toBeCloseTo(start!)
@@ -676,6 +686,41 @@ describe('the position of a label', () => {
       }
     }
     expect(measured).toBeGreaterThan(10)
+  })
+
+  it('is on the line for one label and on opposite sides of it for two', () => {
+    expect(getLabelSides(1)).toEqual([0])
+    expect(getLabelSides(2)).toEqual([-1, 1])
+    expect(getShift(0, 12)).toBe(0)
+    // Half a line of text and a gap, to the side each label is on.
+    expect(getShift(-1, 12)).toBeLessThan(-6)
+    expect(getShift(1, 12)).toBe(-getShift(-1, 12))
+  })
+
+  it('reads each of two labels in the direction of its record, whichever way the line runs', () => {
+    const labels = [{ text: 'guides' }, { text: 'shelters' }]
+    const measured = createRouting(DEFAULT_OPTIONS, undefined, 12)
+
+    for (const [from, to] of [
+      ['harbour', 'lighthouse'],
+      ['lighthouse', 'harbour'],
+    ] as const) {
+      const [first, second] = routeEdge({ from, to, labels }, byId, measured)!.titles
+      // The first record reads from `from` to `to`, on its left; the second the other way, on the
+      // right of the line, which is the left of its own reading.
+      expect([first!.heading, first!.side]).toEqual(['along', -1])
+      expect([second!.heading, second!.side]).toEqual(['against', 1])
+      expect(first!.shift).toBe(getShift(-1, 12))
+      expect(second!.shift).toBe(getShift(1, 12))
+    }
+  })
+
+  it('reads the one label of a line along the way that is readable, on the line', () => {
+    const measured = createRouting(DEFAULT_OPTIONS, undefined, 12)
+    const edge = { from: 'lighthouse', to: 'harbour', labels: [{ text: 'guides' }] }
+    const [only] = routeEdge(edge, byId, measured)!.titles
+
+    expect([only!.heading, only!.side, only!.shift]).toEqual(['against', 0, 0])
   })
 
   it('draws no title for a label with no words', () => {

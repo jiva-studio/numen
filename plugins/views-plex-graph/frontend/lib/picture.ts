@@ -46,7 +46,7 @@ const isPointing = (record: Written): boolean => record.side?.marker === 'arrow'
 
 /**
  * The label of each record, in the order of the notes that wrote them: the plex
- * sets one label in the middle of the line and two at opposite ends, each by its own note, whatever
+ * sets one label in the middle of the line and two at opposite ends and on opposite sides, each by its own note, whatever
  * markers the records carry. A line with no text carries nothing: a word added
  * by the application would be read as written by the user. Two records with the
  * same words are one label.

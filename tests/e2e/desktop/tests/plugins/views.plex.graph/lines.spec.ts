@@ -54,6 +54,16 @@ interface LineGeometry {
   readonly labels: Readonly<Record<string, Point>>
   /** The box each label is drawn in, on the screen. */
   readonly boxes: Readonly<Record<string, Box>>
+  /**
+   * How far the middle of each label is from the line, across it, in pixels: positive on the
+   * right of the line looking from the first named note to the second, negative on the left.
+   */
+  readonly across: Readonly<Record<string, number>>
+  /**
+   * How much each label is read in the direction from the first named note to the second: 1 along
+   * the line that way, -1 along it the other way, 0 across it.
+   */
+  readonly reading: Readonly<Record<string, number>>
   readonly arrows: readonly Point[]
 }
 
@@ -83,7 +93,10 @@ const readLine = (page: Page, names: readonly [string, string]): Promise<LineGeo
         const point = path.getPointAtLength(offset).matrixTransform(screen)
         return { x: point.x, y: point.y }
       }
-      return { start: getPoint(0), end: getPoint(length), middle: getPoint(length / 2) }
+      const points = Array.from({ length: Math.ceil(length / 2) + 1 }, (_, step) =>
+        getPoint(Math.min(2 * step, length)),
+      )
+      return { start: getPoint(0), end: getPoint(length), middle: getPoint(length / 2), points }
     })
     const getFit = (line: (typeof lines)[number]) =>
       Math.min(
@@ -97,11 +110,30 @@ const readLine = (page: Page, names: readonly [string, string]): Promise<LineGeo
 
     const labels: Record<string, { x: number; y: number }> = {}
     const boxes: Record<string, Box> = {}
+    const offsets: Record<string, number> = {}
+    const directions: Record<string, number> = {}
+    const way = isStartAtFirst ? 1 : -1
     for (const letters of svg.querySelectorAll('.plex__edge-label--letters')) {
       const box = letters.getBoundingClientRect()
       const words = letters.textContent?.trim() ?? ''
       labels[words] = centre(box)
       boxes[words] = { x: box.x, y: box.y, width: box.width, height: box.height }
+
+      // Measure against the line where it is nearest the label, taken from the first note to the second.
+      const middle = centre(box)
+      const nearest = line.points.reduce(
+        (best, point, step) =>
+          distance(point, middle) < distance(line.points[best]!, middle) ? step : best,
+        0,
+      )
+      const here = line.points[nearest]!
+      const back = line.points[Math.max(nearest - 1, 0)]!
+      const on = line.points[Math.min(nearest + 1, line.points.length - 1)]!
+      const run = { x: (on.x - back.x) * way, y: (on.y - back.y) * way }
+      const size = Math.hypot(run.x, run.y) || 1
+      offsets[words] = ((middle.x - here.x) * -run.y + (middle.y - here.y) * run.x) / size
+      const turn = ((letters as SVGTextContentElement).getRotationOfChar(0) * Math.PI) / 180
+      directions[words] = (Math.cos(turn) * run.x + Math.sin(turn) * run.y) / size
     }
     const arrows = [...svg.querySelectorAll('.plex__edge-arrow')].map((head) =>
       centre(head.getBoundingClientRect()),
@@ -114,6 +146,8 @@ const readLine = (page: Page, names: readonly [string, string]): Promise<LineGeo
       middle: line.middle,
       labels,
       boxes,
+      across: offsets,
+      reading: directions,
       arrows,
     }
   }, names)
@@ -145,7 +179,7 @@ const isPointingAt = async (
 /**
  * Whether the line between two notes carries the label `first` in its first third, by the end at
  * `names[0]`, and the label `last` in its last third, by the end at `names[1]`, the two boxes
- * clear of each other.
+ * clear of each other, on opposite sides of the line, each read in the direction of its record.
  */
 const isSetAtBothEnds = async (
   page: Page,
@@ -167,7 +201,17 @@ const isSetAtBothEnds = async (
     other.x + other.width <= one.x ||
     one.y + one.height <= other.y ||
     other.y + other.height <= one.y
-  return getShare(first) < 1 / 3 && getShare(last) > 2 / 3 && isApart
+  // The first record is on the left of the line looking from its note and read from it; the last is
+  // on the right, and read from the other note.
+  return (
+    getShare(first) < 1 / 3 &&
+    getShare(last) > 2 / 3 &&
+    isApart &&
+    line.across[words.first]! < -5 &&
+    line.across[words.last]! > 5 &&
+    line.reading[words.first]! > 0.5 &&
+    line.reading[words.last]! < -0.5
+  )
 }
 
 /** Whether the words of a record without an arrowhead are set in the middle of the line. */

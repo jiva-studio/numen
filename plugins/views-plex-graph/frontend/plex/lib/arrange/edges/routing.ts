@@ -3,6 +3,8 @@ import {
   getHeading,
   getLength,
   type EdgeCurve,
+  type EdgeHeading,
+  type EdgeSide,
   type EdgeTitle,
   type PlacedEdge,
   type PlexEdge,
@@ -74,15 +76,54 @@ export const getLabelPositions = (count: number): number[] => {
 }
 
 /**
+ * How far the centre of a label off the line is from it, as a part of the
+ * height of a line of text: half of it, and a gap clear of the line and of the
+ * label on the other side.
+ */
+const SHIFT = 0.8
+
+/**
+ * The side of the line each of `count` labels is set on, in the order the labels
+ * are written. One label is on the line. Two are on opposite sides: the first
+ * on the left of the line taken from its `from` end, the second on the right.
+ */
+export const getLabelSides = (count: number): EdgeSide[] => (count <= 1 ? [0] : [-1, 1])
+
+/** How far from the line the centre of a title is, for a line of text this deep. */
+export const getShift = (side: EdgeSide, depth: number): number => side * SHIFT * depth
+
+/** The way a title is read: that of its record when it is off the line. */
+function getReading(curve: EdgeCurve, position: number, side: EdgeSide): EdgeHeading {
+  if (side === 0) return getHeading(curve, position)
+  return side < 0 ? 'along' : 'against'
+}
+
+/**
  * The title set at a fraction of the curve from its `from` end, measured along
  * the curve the way its words are read.
  */
 export function createTitle(
   curve: EdgeCurve,
-  ...[position, words, anchor = position]: [position: number, words: string, anchor?: number]
+  ...[position, words, title]: [position: number, words: string, title: TitleSetting]
 ): EdgeTitle {
-  const heading = getHeading(curve, position)
-  return { anchor, heading, words, wordsAt: heading === 'against' ? 1 - position : position }
+  const { anchor = position, side, shift } = title
+  const heading = getReading(curve, position, side)
+  return {
+    anchor,
+    heading,
+    side,
+    shift,
+    words,
+    wordsAt: heading === 'against' ? 1 - position : position,
+  }
+}
+
+/** What a title keeps wherever it is moved to along its line. */
+export interface TitleSetting {
+  /** Where the title was asked to be set; the position it is created at when omitted. */
+  readonly anchor?: number
+  readonly side: EdgeSide
+  readonly shift: number
 }
 
 /**
@@ -219,11 +260,7 @@ function bowBetween(
  * less than `minRun` between them and no room along the other axis, are joined
  * by a bow out of their sides. Edges at the focus keep the space the focus is given.
  */
-function curveBetween(
-  from: PlacedNode,
-  to: PlacedNode,
-  routing: Routing,
-): EdgeCurve {
+function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeCurve {
   const isVertical = isVerticalRun(from, to, routing)
   const run = getRun(from, to, isVertical)
   const isBowed =
@@ -254,11 +291,13 @@ function createTitles(edge: PlexEdge, curve: EdgeCurve, routing: Routing): EdgeT
     (getLength(curve) - (edge.arrows?.length ? 2 * routing.arrowClearance : 0)) / labels.length
   const { labelWidth } = routing
   const positions = getLabelPositions(labels.length)
+  const sides = getLabelSides(labels.length)
   return labels.map((label, index) =>
     createTitle(
       curve,
       positions[index]!,
       labelWidth ? cutToFit(label.text, room, labelWidth) : label.text,
+      { side: sides[index]!, shift: getShift(sides[index]!, routing.labelDepth) },
     ),
   )
 }

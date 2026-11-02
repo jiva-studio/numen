@@ -61,7 +61,7 @@ export function separateTitles(
   const resolved: (EdgeTitle | null)[][] = edges.map((edge) => [...edge.titles])
 
   for (const { edge, index, title, slot, metrics } of sortTightestFirst(edges, width)) {
-    const boxAt = runBoxes(edge, routing.labelDepth + 2 * apart)
+    const boxAt = runBoxes(edge, { depth: routing.labelDepth + 2 * apart, shift: title.shift })
     const ends = (edge.arrows?.length ? routing.arrowClearance : 0) / metrics.arc
     const open = clearSpans(boxAt, [...boxes, ...titleBoxes], { ends, step: STEP / metrics.arc })
     const clear = edge.titles.length > 1 ? clipToHalf(open, title.anchor) : open
@@ -71,7 +71,7 @@ export function separateTitles(
       width,
       target: title.anchor,
     })
-    resolved[index]![slot] = found ? createTitle(edge, found.at, found.words, title.anchor) : null
+    resolved[index]![slot] = found ? createTitle(edge, found.at, found.words, title) : null
     if (!found) continue
 
     const half = found.extent / 2 / metrics.arc

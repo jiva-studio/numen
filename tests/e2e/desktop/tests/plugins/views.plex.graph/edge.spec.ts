@@ -124,6 +124,16 @@ interface EdgeGeometry {
   readonly labels: Readonly<Record<string, Point>>
   /** The box each label is drawn in, on the screen. */
   readonly boxes: Readonly<Record<string, Box>>
+  /**
+   * How far the middle of each label is from the line, across it, in pixels: positive on the
+   * right of the line looking from the first named note to the second, negative on the left.
+   */
+  readonly across: Readonly<Record<string, number>>
+  /**
+   * How much each label is read in the direction from the first named note to the second: 1 along
+   * the line that way, -1 along it the other way, 0 across it.
+   */
+  readonly reading: Readonly<Record<string, number>>
   readonly arrows: readonly Point[]
 }
 
@@ -153,7 +163,10 @@ const readEdge = (page: Page, names: readonly [Name, Name]): Promise<EdgeGeometr
         const point = path.getPointAtLength(offset).matrixTransform(screen)
         return { x: point.x, y: point.y }
       }
-      return { start: getPoint(0), end: getPoint(length), middle: getPoint(length / 2) }
+      const points = Array.from({ length: Math.ceil(length / 2) + 1 }, (_, step) =>
+        getPoint(Math.min(2 * step, length)),
+      )
+      return { start: getPoint(0), end: getPoint(length), middle: getPoint(length / 2), points }
     })
     const getFit = (line: (typeof lines)[number]) =>
       Math.min(
@@ -167,11 +180,30 @@ const readEdge = (page: Page, names: readonly [Name, Name]): Promise<EdgeGeometr
 
     const labels: Record<string, { x: number; y: number }> = {}
     const boxes: Record<string, Box> = {}
+    const offsets: Record<string, number> = {}
+    const directions: Record<string, number> = {}
+    const way = isStartAtFirst ? 1 : -1
     for (const letters of svg.querySelectorAll('.plex__edge-label--letters')) {
       const box = letters.getBoundingClientRect()
       const words = letters.textContent?.trim() ?? ''
       labels[words] = centre(box)
       boxes[words] = { x: box.x, y: box.y, width: box.width, height: box.height }
+
+      // Measure against the line where it is nearest the label, taken from the first note to the second.
+      const middle = centre(box)
+      const nearest = line.points.reduce(
+        (best, point, step) =>
+          distance(point, middle) < distance(line.points[best]!, middle) ? step : best,
+        0,
+      )
+      const here = line.points[nearest]!
+      const back = line.points[Math.max(nearest - 1, 0)]!
+      const on = line.points[Math.min(nearest + 1, line.points.length - 1)]!
+      const run = { x: (on.x - back.x) * way, y: (on.y - back.y) * way }
+      const size = Math.hypot(run.x, run.y) || 1
+      offsets[words] = ((middle.x - here.x) * -run.y + (middle.y - here.y) * run.x) / size
+      const turn = ((letters as SVGTextContentElement).getRotationOfChar(0) * Math.PI) / 180
+      directions[words] = (Math.cos(turn) * run.x + Math.sin(turn) * run.y) / size
     }
     const arrows = [...svg.querySelectorAll('.plex__edge-arrow')].map((head) =>
       centre(head.getBoundingClientRect()),
@@ -184,6 +216,8 @@ const readEdge = (page: Page, names: readonly [Name, Name]): Promise<EdgeGeometr
       middle: line.middle,
       labels,
       boxes,
+      across: offsets,
+      reading: directions,
       arrows,
     }
   }, names)
@@ -215,6 +249,17 @@ const isNearer = (edge: EdgeGeometry, point: Point, nearName: Name, farName: Nam
   getDistance(point, edge.ends[nearName]!) < getDistance(point, edge.ends[farName]!)
 
 const NAMES = ['Thermodynamics', 'Entropy'] as const
+
+/**
+ * The two labels are on opposite sides of the line and clear of it, the record of the parent on
+ * the left looking from the parent and read from the parent to the child, the record of the child
+ * on the right and read from the child to the parent.
+ */
+const isOnItsSide = (edge: EdgeGeometry) =>
+  edge.across['flows into']! < -5 &&
+  edge.across['measures']! > 5 &&
+  edge.reading['flows into']! > 0.5 &&
+  edge.reading['measures']! < -0.5
 
 test.describe('Plex Edge and Link Inspector', () => {
   test.beforeEach(async ({ request }) => {
@@ -358,7 +403,7 @@ test.describe('Plex Edge and Link Inspector', () => {
       .toBe(true)
   })
 
-  test('sets the two labels of a line apart, one at each end, and clear of each other', async ({
+  test('sets the two labels of a line apart, one at each end, on opposite sides, and clear of each other', async ({
     page,
     request,
   }) => {
@@ -369,7 +414,8 @@ test.describe('Plex Edge and Link Inspector', () => {
     await openWorkspace(page)
     await expect(page.locator('.plex-frame:not([data-moving])')).toBeAttached()
 
-    // The record of the parent is by the parent, in its first third; the record of the child by the child.
+    // The record of the parent is by the parent, in its first third; the record of the child by the
+    // child, in its last, on the other side of the line.
     await expect
       .poll(async () => {
         const edge = await readEdge(page, NAMES)
@@ -379,7 +425,8 @@ test.describe('Plex Edge and Link Inspector', () => {
         return (
           getShare(edge, parentLabel, 'Thermodynamics', 'Entropy') < 1 / 3 &&
           getShare(edge, childLabel, 'Thermodynamics', 'Entropy') > 2 / 3 &&
-          isApart(edge.boxes['flows into']!, edge.boxes['measures']!)
+          isApart(edge.boxes['flows into']!, edge.boxes['measures']!) &&
+          isOnItsSide(edge)
         )
       })
       .toBe(true)
@@ -404,7 +451,8 @@ test.describe('Plex Edge and Link Inspector', () => {
         if (!parentLabel || !childLabel || edge.arrows.length !== 0) return false
         return (
           getShare(edge, parentLabel, 'Thermodynamics', 'Entropy') < 1 / 3 &&
-          getShare(edge, childLabel, 'Thermodynamics', 'Entropy') > 2 / 3
+          getShare(edge, childLabel, 'Thermodynamics', 'Entropy') > 2 / 3 &&
+          isOnItsSide(edge)
         )
       })
       .toBe(true)
@@ -419,7 +467,12 @@ test.describe('Plex Edge and Link Inspector', () => {
       .poll(async () => {
         const edge = await readEdge(page, NAMES)
         const label = edge.labels['flows into']
-        return !!label && edge.arrows.length === 1 && isCentred(edge, label)
+        return (
+          !!label &&
+          edge.arrows.length === 1 &&
+          isCentred(edge, label) &&
+          Math.abs(edge.across['flows into']!) < 5
+        )
       })
       .toBe(true)
   })

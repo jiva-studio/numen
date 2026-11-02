@@ -310,7 +310,8 @@ export const EveryLine: Story = {
     }
     await expect(canvasElement.querySelectorAll('.plex__edge-arrow')).toHaveLength(7)
 
-    // The two records of one line are set apart, in the order of the notes that wrote them.
+    // The two records of one line are set apart, in the order of the notes that wrote them, on
+    // opposite sides of the line, each read in the direction of its record.
     const getBox = (text: string) => canvas.getAllByText(text)[0]!.getBoundingClientRect()
     const own = getBox('includes')
     const other = getBox('part of')
@@ -320,5 +321,23 @@ export const EveryLine: Story = {
       own.bottom <= other.top ||
       other.bottom <= own.top
     await expect(isApart).toBe(true)
+
+    const getReading = (text: string) => {
+      const set = canvas.getAllByText(text)[0]!
+      const href = set.closest('textPath')!.getAttribute('href')!
+      const path = canvasElement.ownerDocument.getElementById(
+        href.slice(1),
+      ) as unknown as SVGPathElement
+      return { dy: Number(set.closest('text')!.getAttribute('dy')), path }
+    }
+    const one = getReading('includes')
+    const two = getReading('part of')
+    await expect(one.dy).toBeLessThan(0)
+    await expect(two.dy).toBeLessThan(0)
+
+    // The first record is read along the line from its note, the second back along it.
+    const start = one.path.getPointAtLength(0)
+    const end = two.path.getPointAtLength(two.path.getTotalLength())
+    await expect(Math.hypot(start.x - end.x, start.y - end.y)).toBeLessThan(0.5)
   },
 }

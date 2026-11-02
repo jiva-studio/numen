@@ -26,6 +26,8 @@ export {
   createRouting,
   createTitle,
   getLabelPositions,
+  getLabelSides,
+  getShift,
   type Axis,
   type Routing,
 } from './edges/routing'

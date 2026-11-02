@@ -4,9 +4,11 @@ import type { Position } from './node'
 export type EdgeArrow = 'from' | 'to'
 
 /**
- * Words set along an edge. A line with one label carries it in the middle; with
- * two, the first is the record written in the `from` note and the second the
- * one written in the `to` note, each set at the end of its own note.
+ * Words set along an edge. A line with one label carries it in the middle, on
+ * the line. With two, the first is the record written in the `from` note: it
+ * is set near the `from` end, on one side of the line, and reads from `from`
+ * to `to`. The second is the record written in the `to` note: it is set near
+ * the `to` end, on the other side, and reads from `to` to `from`.
  */
 export interface EdgeLabel {
   readonly text: string
@@ -33,6 +35,9 @@ export interface EdgeCurve {
   readonly control2: Position
 }
 
+/** The side of a line a title is on: left, on the line, or right, looking from the `from` end. */
+export type EdgeSide = -1 | 0 | 1
+
 /**
  * Which way round a curve the words of a title are set. `against` is a curve
  * running right to left or up the page, and its title is set on the curve
@@ -57,6 +62,15 @@ export interface EdgeTitle {
   readonly anchor: number
   /** Which way round the curve the words are read. */
   readonly heading: EdgeHeading
+  /**
+   * The side of the line the words are set on, looking along it from its `from`
+   * end: -1 on the left, 1 on the right, 0 on the line. A title off the line is
+   * read in the direction of its record, on the left of its own reading: the
+   * left side reads from `from` to `to`, the right side the other way.
+   */
+  readonly side: EdgeSide
+  /** How far the centre of the words is from the line, in plex units, signed as `side`. */
+  readonly shift: number
   /**
    * The label as it is drawn: cut to the length of the curve and ended in an
    * ellipsis. The whole of it where nothing measured the words.

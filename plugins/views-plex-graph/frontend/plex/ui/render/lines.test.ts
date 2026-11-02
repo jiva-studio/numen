@@ -10,6 +10,8 @@ const edges = arrangePlex(build('A node', { parent: 1, child: 2, jump: 1 })).edg
 const title = (words: string, more: Partial<EdgeTitle> = {}): EdgeTitle => ({
   anchor: 0.5,
   heading: 'along',
+  side: 0,
+  shift: 0,
   words,
   wordsAt: 0.5,
   ...more,
@@ -58,6 +60,17 @@ describe('the line of an edge', () => {
       createReadingPath(edge!, 'along'),
       createReadingPath(edge!, 'against'),
     ])
+  })
+
+  it('moves a title across its path to the left of its reading, whichever way it is read', () => {
+    const [edge] = edges
+    const titles = [
+      title('along', { side: -1, shift: -9.6 }),
+      title('against', { heading: 'against', side: 1, shift: 9.6 }),
+      title('on the line'),
+    ]
+    const [line] = getLines([{ ...edge!, titles }], 'plex')
+    expect(line?.titles.map((one) => one.across)).toStrictEqual([-9.6, -9.6, 0])
   })
 
   it('gives a line with no title no path to set one on', () => {

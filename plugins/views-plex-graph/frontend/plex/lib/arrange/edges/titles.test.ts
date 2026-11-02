@@ -2,8 +2,17 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from '../arrange'
 import { DEFAULT_OPTIONS } from '../options'
-import { MIDDLE, createTitle, getLabelPositions, routeEdges, createRouting } from './routing'
+import {
+  MIDDLE,
+  createTitle,
+  getLabelPositions,
+  getLabelSides,
+  getShift,
+  routeEdges,
+  createRouting,
+} from './routing'
 import { separateTitles } from './titles'
+import { runBoxes } from '../layout/boxes'
 import { build } from '../../../fixtures/build'
 import { neighbourhoods } from '../../../fixtures/neighbourhoods'
 import {
@@ -305,6 +314,128 @@ describe('a title finds room on its line', () => {
 })
 
 /**
+ * The two labels of one line: one on each side of it, each read in the
+ * direction of its record, kept in its own half and clear of the other.
+ */
+describe('two titles set on opposite sides of a line', () => {
+  const TEN = perLetter(10)
+  const edgeRouting = createRouting(DEFAULT_OPTIONS, TEN, labelDepth)
+  const ANGLES = [0, 30, 90, 135, 180, 270]
+
+  const createPair = (angle: number): PlacedEdge => {
+    const radians = (angle * Math.PI) / 180
+    const from = { x: 0, y: 0 }
+    const to = { x: 400 * Math.cos(radians), y: 400 * Math.sin(radians) }
+    const pointAt = (share: number): Position => ({ x: to.x * share, y: to.y * share })
+    const curve = {
+      fromPoint: from,
+      control1: pointAt(1 / 3),
+      control2: pointAt(2 / 3),
+      toPoint: to,
+    }
+    const [first, second] = getLabelSides(2)
+    return {
+      from: 'from',
+      to: 'to',
+      labels: [{ text: 'guides' }, { text: 'shelters' }],
+      opacity: 1,
+      ...curve,
+      titles: [
+        createTitle(curve, 0.2, 'guides', { side: first!, shift: getShift(first!, labelDepth) }),
+        createTitle(curve, 0.8, 'shelters', {
+          side: second!,
+          shift: getShift(second!, labelDepth),
+        }),
+      ],
+    }
+  }
+
+  /**
+   * Where a title is drawn on a line that starts at the origin: the fraction of the line it is
+   * at, the box it fills, and the distance of the centre of that box from the line, positive on
+   * the right looking from the start of the line.
+   */
+  const getPlace = (edge: PlacedEdge, index: number) => {
+    const title = edge.titles[index]!
+    const fraction = title.heading === 'against' ? 1 - title.wordsAt : title.wordsAt
+    const length = Math.hypot(edge.toPoint.x, edge.toPoint.y)
+    const half = (title.words.length * 10) / 2 / length
+    const box = runBoxes(edge, { depth: labelDepth, shift: title.shift })(
+      fraction - half,
+      fraction + half,
+    )
+    const centre = { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 }
+    const distance = (centre.y * edge.toPoint.x - centre.x * edge.toPoint.y) / length
+    return { fraction, box, distance }
+  }
+
+  it.each(ANGLES)('puts them on opposite sides with the line between, at %i degrees', (angle) => {
+    const [guides, shelters] = separateTitles([createPair(angle)], [], edgeRouting)[0]!.titles
+
+    expect(guides!.side).toBe(-1)
+    expect(shelters!.side).toBe(1)
+    expect(guides!.shift).toBeLessThan(-labelDepth / 2)
+    expect(shelters!.shift).toBeGreaterThan(labelDepth / 2)
+
+    // Measured on the page: the boxes are on either side of the line, clear of it.
+    const edge = separateTitles([createPair(angle)], [], edgeRouting)[0]!
+    expect(getPlace(edge, 0).distance).toBeLessThan(-labelDepth / 2)
+    expect(getPlace(edge, 1).distance).toBeGreaterThan(labelDepth / 2)
+  })
+
+  it.each(ANGLES)('reads each in the direction of its record at %i degrees', (angle) => {
+    const [guides, shelters] = separateTitles([createPair(angle)], [], edgeRouting)[0]!.titles
+
+    expect(guides!.heading).toBe('along')
+    expect(shelters!.heading).toBe('against')
+  })
+
+  it.each(ANGLES)(
+    'keeps them in their own halves and clear of each other at %i degrees',
+    (angle) => {
+      const edge = separateTitles([createPair(angle)], [], edgeRouting)[0]!
+      const one = getPlace(edge, 0)
+      const other = getPlace(edge, 1)
+
+      expect(edge.titles).toHaveLength(2)
+      expect(one.fraction).toBeLessThan(MIDDLE)
+      expect(other.fraction).toBeGreaterThan(MIDDLE)
+      expect(isOverlapping(one.box, other.box)).toBe(false)
+    },
+  )
+
+  it('leaves the title of a line with one label on the line', () => {
+    const edge = createPair(0)
+    const centred = {
+      ...edge,
+      titles: [createTitle(edge, MIDDLE, 'guides', { side: 0, shift: 0 })],
+    }
+    const [title] = separateTitles([centred], [], edgeRouting)[0]!.titles
+
+    expect([title!.side, title!.shift, title!.wordsAt]).toEqual([0, 0, MIDDLE])
+  })
+
+  it('keeps the side and the reading of a title that was moved along its line', () => {
+    // A box over the start of the line pushes the first title on.
+    const blocker: PlacedNode = {
+      id: 'blocker',
+      title: 'Blocker',
+      relation: 'sibling',
+      x: 80,
+      y: 0,
+      width: 100,
+      height: 60,
+      order: 0,
+      opacity: 1,
+    }
+    const [guides] = separateTitles([createPair(0)], [blocker], edgeRouting)[0]!.titles
+
+    expect(guides!.wordsAt).not.toBeCloseTo(0.2)
+    expect([guides!.side, guides!.heading]).toEqual([-1, 'along'])
+  })
+})
+
+/**
  * Straight lines across a plain canvas, so title positions follow from
  * counting along them. A letter is 10 wide, a line of text 12 high, and a title
  * keeps a quarter of that clear of nearby boxes.
@@ -332,7 +463,9 @@ describe('a title set on a straight line', () => {
       to: 'to',
       labels: [{ text: words }],
       opacity: 1,
-      titles: [{ anchor, heading: to.x < from.x ? 'against' : 'along', words, wordsAt }],
+      titles: [
+        { anchor, heading: to.x < from.x ? 'against' : 'along', side: 0, shift: 0, words, wordsAt },
+      ],
       fromPoint: from,
       control1: pointAt(1 / 3),
       control2: pointAt(2 / 3),
@@ -531,6 +664,7 @@ describe('the titles of one line', () => {
       toPoint: TO,
     }
     const positions = getLabelPositions(labels.length)
+    const sides = getLabelSides(labels.length)
     return {
       from: 'harbour',
       to: 'lighthouse',
@@ -538,13 +672,22 @@ describe('the titles of one line', () => {
       labels,
       arrows,
       opacity: 1,
-      titles: labels.map((label, index) => createTitle(curve, positions[index]!, label.text)),
+      titles: labels.map((label, index) =>
+        createTitle(curve, positions[index]!, label.text, {
+          side: sides[index]!,
+          shift: getShift(sides[index]!, labelDepth),
+        }),
+      ),
     }
   }
 
   /** The x of the middle of each title, on a line that runs left to right. */
   const getCentres = (edge: PlacedEdge) =>
-    edge.titles.map((title) => FROM.x + (TO.x - FROM.x) * title.wordsAt)
+    edge.titles.map(
+      (title) =>
+        FROM.x +
+        (TO.x - FROM.x) * (title.heading === 'against' ? 1 - title.wordsAt : title.wordsAt),
+    )
 
   it('keeps one title in the middle when the line is clear, whatever arrowhead it has', () => {
     for (const arrows of [[], ['to'], ['from'], ['to', 'from']] as const) {
