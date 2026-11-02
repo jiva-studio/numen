@@ -18,7 +18,11 @@ func TestRepository_BindsValuesAsParameters(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { _ = db.Close() })
+	t.Cleanup(func() {
+		if err := db.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 
 	vault := domain.Vault{ID: "x'; DROP TABLE search_floors; --"}
 	recipe := "r' OR '1'='1"
@@ -36,8 +40,8 @@ func TestRepository_BindsValuesAsParameters(t *testing.T) {
 	if err := floors.DeleteFloor(t.Context(), vault, recipe); err != nil {
 		t.Fatal(err)
 	}
-	if _, found, _ := floors.ReadFloor(t.Context(), vault, recipe); found {
-		t.Fatal("the floor is still there after DeleteFloor")
+	if _, found, err := floors.ReadFloor(t.Context(), vault, recipe); err != nil || found {
+		t.Fatal("the floor is still there after DeleteFloor, or the read failed")
 	}
 	if got, err := db.SearchSamples().ListSmallChunkVectors(t.Context(), vault, recipe, 5); err != nil || len(got) != 0 {
 		t.Fatalf("ListSmallChunkVectors = %v, %v; want none", got, err)
