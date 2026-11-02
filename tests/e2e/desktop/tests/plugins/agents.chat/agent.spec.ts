@@ -7,7 +7,7 @@ import {
   TOOL_PROMPT,
 } from '../../../scripts/stand-ins.mjs'
 import { observeFor } from '../../support/browser.js'
-import { openVaultFile, openWorkspace, runCommand } from '../../support/workspace.js'
+import { openVaultFile, openWorkspace, runCommand, waitForWindow } from '../../support/workspace.js'
 import { hasVaultFile } from '../../support/media.js'
 import { callRPC, readVaultFile } from '../../support/vault.js'
 
@@ -96,7 +96,7 @@ test.describe('Agent Plugin and Interface', () => {
   }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
     await page.getByText('Agent').first().click()
 
     const input = page.getByRole('textbox', { name: 'Ask about the vault' }).first()
@@ -172,7 +172,7 @@ const TRANSITIONS_MS = 500
 
 const openAgent = async (page: Page) => {
   await page.goto('/')
-  await expect(page.locator('text=Ready')).toBeVisible()
+  await waitForWindow(page)
   await page.getByText('Agent').first().click()
   const input = page.getByRole('textbox', { name: 'Ask about the vault' }).first()
   await expect(input).toBeVisible({ timeout: 10_000 })

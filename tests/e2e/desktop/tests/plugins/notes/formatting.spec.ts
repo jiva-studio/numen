@@ -1,10 +1,11 @@
 import { test, expect } from '../../support/test.js'
+import { waitForWindow } from '../../support/workspace.js'
 
 test.describe('Note editor live formatting and styling', () => {
   test('renders markdown blockquote with cm-quote styling in editor', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // 1. Open notes folder and plain.md
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -37,7 +38,7 @@ test.describe('Note editor live formatting and styling', () => {
   test('renders markdown fenced code block with cm-code styling', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
@@ -71,7 +72,7 @@ test.describe('Note editor live formatting and styling', () => {
   test('renders bulleted list with bullet marker widget in editor', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')

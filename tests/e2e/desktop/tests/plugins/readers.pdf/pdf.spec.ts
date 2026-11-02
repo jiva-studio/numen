@@ -1,10 +1,11 @@
 import { test, expect } from '../../support/test.js'
+import { waitForWindow } from '../../support/workspace.js'
 
 test.describe('PDF Document Reader', () => {
   test('opens PDF document and renders viewer without saving error', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -31,7 +32,7 @@ test.describe('PDF Document Reader', () => {
   test('opens paper.pdf document from vault assets', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -67,7 +68,7 @@ test.describe('PDF Document Reader', () => {
   test('handles viewport resize on PDF reader', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -92,7 +93,7 @@ test.describe('PDF Document Reader', () => {
   test('displays graceful fallback panel on corrupted PDF', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -115,7 +116,7 @@ test.describe('PDF Document Reader', () => {
   test('navigates across pages in PDF document', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -142,7 +143,7 @@ test.describe('PDF Document Reader', () => {
   test('persists PDF reader across tab switching', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()

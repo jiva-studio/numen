@@ -1,5 +1,10 @@
 import { test, expect } from '../../support/test.js'
-import { openVaultFile, openWorkspace, waitForPassage } from '../../support/workspace.js'
+import {
+  openVaultFile,
+  openWorkspace,
+  waitForPassage,
+  waitForWindow,
+} from '../../support/workspace.js'
 import {
   createEpub,
   deleteVaultFiles,
@@ -18,7 +23,7 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
   test('toggles reflowable book table of contents listing', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // 1. Open assets folder and sample.epub
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -110,7 +115,7 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
   test('filters book chapters using contents search field', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     await page.getByRole('tab', { name: /^Files/ }).click()
     const assetsRow = page.locator('[data-tree-row="assets"]')

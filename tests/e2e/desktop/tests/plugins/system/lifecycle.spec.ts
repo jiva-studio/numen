@@ -1,10 +1,11 @@
 import { test, expect } from '../../support/test.js'
+import { waitForWindow } from '../../support/workspace.js'
 
 test.describe('Plugin Lifecycle and Process Management', () => {
   test('activates reader-pdf plugin on demand and cleans up on close', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -32,7 +33,7 @@ test.describe('Plugin Lifecycle and Process Management', () => {
   test('activates reader-epub plugin on demand and cleans up on close', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -60,7 +61,7 @@ test.describe('Plugin Lifecycle and Process Management', () => {
   test('re-activates plugin on second file opening after tab closure', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -92,7 +93,7 @@ test.describe('Plugin Lifecycle and Process Management', () => {
   test('manages multiple distinct plugin processes concurrently', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()

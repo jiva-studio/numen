@@ -1,10 +1,11 @@
 import { test, expect } from '../../support/test.js'
+import { waitForWindow } from '../../support/workspace.js'
 
 test.describe('Workspace Tab Management', () => {
   test('opens multiple tabs and supports tab switching', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Open Files panel
     await page.getByRole('tab', { name: /^Files/ }).click()

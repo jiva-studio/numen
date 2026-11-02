@@ -1,10 +1,11 @@
 import { test, expect } from '../../support/test.js'
+import { waitForWindow } from '../../support/workspace.js'
 
 test.describe('Notes and File Tree', () => {
   test('lists vault notes and expands directory tree', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Click on the Files tab in the right panel
     await page.getByRole('tab', { name: /^Files/ }).click()

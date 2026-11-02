@@ -3,13 +3,14 @@
  */
 import type { Page } from 'playwright/test'
 import { expect } from '../../support/test.js'
+import { waitForWindow } from '../../support/workspace.js'
 
 /** The path of the book the specs of turns open. */
 export const LEDGER = 'assets/ledger.epub'
 
 export const openLedger = async (page: Page): Promise<void> => {
   await page.goto('/')
-  await expect(page.locator('text=Ready')).toBeVisible()
+  await waitForWindow(page)
   await page.getByRole('tab', { name: /^Files/ }).click()
   const assetsRow = page.locator('[data-tree-row="assets"]')
   await expect(assetsRow).toBeVisible()

@@ -1,10 +1,11 @@
 import { test, expect } from '../../support/test.js'
+import { waitForWindow } from '../../support/workspace.js'
 
 test.describe('Keyboard Shortcuts and Navigation', () => {
   test('dismisses active palette modal on Escape key press', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Open palette
     await page.keyboard.press('Control+p')
@@ -19,7 +20,7 @@ test.describe('Keyboard Shortcuts and Navigation', () => {
   test('closes active plugin tab via Control+Shift+w keyboard shortcut', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Open sample.pdf
     await page.getByRole('tab', { name: /^Files/ }).click()

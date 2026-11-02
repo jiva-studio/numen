@@ -1,4 +1,4 @@
-import { observeFor } from '../../support/browser.js'
+import { observeFor, waitForFrames } from '../../support/browser.js'
 import { test, expect, type APIRequestContext } from '../../support/test.js'
 
 /** The word that makes the mock embedder hold a batch until it is cancelled (engine.MockHoldWord). */
@@ -39,7 +39,7 @@ const isIndexed = async (request: APIRequestContext): Promise<boolean> => {
 }
 
 test.describe('Cancelling a background task', () => {
-  test.describe.configure({ timeout: 240_000 })
+  test.describe.configure({ timeout: 90_000 })
 
   test('the row holds still under the pointer, and Cancel stops the vector pass', async ({
     page,
@@ -95,7 +95,17 @@ test.describe('Cancelling a background task', () => {
       await trigger.hover()
       await expect(cancel).toHaveCSS('opacity', '0')
       await expect(ring).toHaveCSS('opacity', '1')
-      const geometry = await readGeometry()
+      // The popover is placed on its first frames, and the boxes of the row are empty until then:
+      // the baseline is the geometry two reads a few frames apart agree on.
+      let geometry = ''
+      await expect
+        .poll(async () => {
+          const before = await readGeometry()
+          await waitForFrames(page, 3)
+          geometry = await readGeometry()
+          return before === geometry && !geometry.startsWith('0,0,0,0')
+        })
+        .toBe(true)
       const boxes = await row.evaluate((element) => {
         const read = (selector: string) => {
           const box = element.querySelector(selector)?.getBoundingClientRect()

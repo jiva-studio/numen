@@ -1,10 +1,11 @@
 import { test, expect } from '../../support/test.js'
+import { waitForWindow } from '../../support/workspace.js'
 
 test.describe('EPUB Book Reader', () => {
   test('opens EPUB book and displays reflowable reader content', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -30,7 +31,7 @@ test.describe('EPUB Book Reader', () => {
   test('toggles contents listing drawer in EPUB reader', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -57,7 +58,7 @@ test.describe('EPUB Book Reader', () => {
   test('renders book fallback on corrupted EPUB file', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -79,7 +80,7 @@ test.describe('EPUB Book Reader', () => {
   test('turns pages via keyboard navigation in EPUB reader', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()
@@ -108,7 +109,7 @@ test.describe('EPUB Book Reader', () => {
   test('persists book reader across tab switching', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // Switch to Files tab
     await page.getByRole('tab', { name: /^Files/ }).click()

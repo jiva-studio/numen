@@ -1,5 +1,5 @@
 import { test, expect, readSavedStates } from '../../support/test.js'
-import { openWorkspace, openVaultFile } from '../../support/workspace.js'
+import { openVaultFile, openWorkspace, waitForWindow } from '../../support/workspace.js'
 import { readSettledWidth, readWidth } from '../../support/layout.js'
 import { observeFor, waitForFrames } from '../../support/browser.js'
 
@@ -57,7 +57,7 @@ test.describe('PDF Document Reader Advanced Controls', () => {
   }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     await page.getByRole('tab', { name: /^Files/ }).click()
     const assetsRow = page.locator('[data-tree-row="assets"]')
@@ -104,7 +104,7 @@ test.describe('PDF Document Reader Advanced Controls', () => {
   test('shows the page it turned to after the next page button', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     await page.getByRole('tab', { name: /^Files/ }).click()
     const assetsRow = page.locator('[data-tree-row="assets"]')

@@ -11,7 +11,9 @@
     "test:report": "playwright show-report",
     "test:flashcards": "node scripts/run-offline.mjs -c playwright.flashcards.config.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "eslint ."
+    "lint": "eslint . && node scripts/check-shards.mjs",
+    "shards:check": "node scripts/check-shards.mjs",
+    "shards:measure": "node scripts/measure-shards.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

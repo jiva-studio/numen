@@ -1,10 +1,11 @@
 import { test, expect } from '../../support/test.js'
+import { waitForWindow } from '../../support/workspace.js'
 
 test.describe('Plex Graph Interaction', () => {
   test('interacts with knowledge graph nodes', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     const thermoNode = page.locator('.plex__title', { hasText: 'Thermodynamics' })
     const entropyNode = page.locator('.plex__title', { hasText: 'Entropy' })

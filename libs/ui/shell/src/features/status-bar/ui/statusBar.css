@@ -145,6 +145,8 @@
 }
 
 .task-item__indicator {
+  /* While the button shows, the transparent ring is painted above it and would take its clicks. */
+  pointer-events: none;
   opacity: 1;
   transition: opacity 0.15s ease;
 }

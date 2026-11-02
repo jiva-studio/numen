@@ -5,6 +5,15 @@ import { forgetOpenTabs } from './test.js'
 export const getGraph = (page: Page): Locator => page.getByRole('group', { name: 'Neighbourhood' })
 
 /**
+ * Waits until the window is drawn: its status bar is there. The bar says "Ready" only until the
+ * first list of tasks arrives, a moment after the page loads, and that list holds the failed task of
+ * corrupted.pdf in every run, so the label cannot be waited for.
+ */
+export const waitForWindow = async (page: Page): Promise<void> => {
+  await expect(page.getByRole('region', { name: 'Status Bar' })).toBeVisible()
+}
+
+/**
  * Loads the window with the tabs a new vault opens with, and waits until the vault is read and the
  * opening note is drawn.
  */
@@ -74,7 +83,7 @@ export const waitForPassage = async (
 ): Promise<Locator> => {
   await expect(async () => {
     const passages = await findPassages(page, query, path)
-    await expect(passages.first()).toBeVisible({ timeout: 10_000 })
+    await expect(passages.first()).toBeVisible({ timeout: 3_000 })
   }).toPass({ timeout })
   return (await findPassages(page, query, path)).first()
 }

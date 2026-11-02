@@ -1,10 +1,11 @@
 import { test, expect } from '../../support/test.js'
+import { waitForWindow } from '../../support/workspace.js'
 
 test.describe('Command Palette Advanced Keyboard and Pointer Interactions', () => {
   test('navigates command palette options using keyboard arrow keys', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     // 1. Open command palette
     await page.keyboard.press('Control+p')
@@ -38,7 +39,7 @@ test.describe('Command Palette Advanced Keyboard and Pointer Interactions', () =
   test('displays polite empty state on query with no matching commands', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     await page.keyboard.press('Control+p')
     const paletteInput = page.locator('input[data-palette="field"]').first()
@@ -59,7 +60,7 @@ test.describe('Command Palette Advanced Keyboard and Pointer Interactions', () =
   test('navigates multi-step palette flows and cancels step on escape', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     await page.keyboard.press('Control+p')
     const paletteInput = page.locator('input[data-palette="field"]').first()
@@ -87,7 +88,7 @@ test.describe('Command Palette Advanced Keyboard and Pointer Interactions', () =
   test('dismisses command palette on background scrim click', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('text=Ready')).toBeVisible()
+    await waitForWindow(page)
 
     await page.keyboard.press('Control+p')
     const panel = page.locator('[data-palette="panel"]').first()

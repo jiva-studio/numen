@@ -31,7 +31,7 @@ const expectPassageGone = async (
 ): Promise<void> => {
   await expect(async () => {
     await expect((await findPassages(page, query, present)).first()).toBeVisible({
-      timeout: 10_000,
+      timeout: 3_000,
     })
     await expect(await findPassages(page, query, gone)).toHaveCount(0)
   }).toPass({ timeout: 90_000 })

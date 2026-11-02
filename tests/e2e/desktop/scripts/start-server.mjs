@@ -1,6 +1,8 @@
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import http from 'node:http'
+import net from 'node:net'
+import https from 'node:https'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -15,6 +17,18 @@ const pluginsPath = path.resolve(repoRoot, 'plugins')
 
 const port = process.env.NUMEN_TEST_PORT ?? '3456'
 const host = '127.0.0.1'
+
+// A server this run did not start belongs to another run, which stops it and its vault while this
+// run still uses them, and every test then fails at once: a port that answers fails the start.
+const isPortTaken = await new Promise((resolve) => {
+  const probe = net.connect({ host, port: Number(port) })
+  probe.once('connect', () => (probe.destroy(), resolve(true)))
+  probe.once('error', () => resolve(false))
+})
+if (isPortTaken) {
+  console.error(`start-server: ${host}:${port} is already used; give NUMEN_TEST_PORT another port`)
+  process.exit(1)
+}
 
 function createSampleWav(targetPath) {
   const sampleRate = 16000
@@ -205,7 +219,62 @@ const pagesPort = pages.address().port
 const vaultPathFile = path.join(os.tmpdir(), `numen-e2e-vault-path-${port}`)
 fs.writeFileSync(vaultPathFile, tmpVault)
 
+/** How long the first pass over the vault may take before the server counts as failed. */
+const INDEX_LIMIT_MS = 180_000
+
 let stopping = false
+
+/** Calls the core of the server over https and gives back what it answers, or nothing while it does not. */
+const callCore = (method, body, isStream) =>
+  new Promise((resolve) => {
+    const json = Buffer.from(JSON.stringify(body))
+    // A Connect stream is a message in a five-byte envelope: the first message is all that is read.
+    const payload = isStream ? Buffer.concat([Buffer.from([0, 0, 0, 0, 0]), json]) : json
+    if (isStream) payload.writeUInt32BE(json.length, 1)
+    const call = https.request(
+      {
+        host,
+        port: Number(port),
+        path: `/numen.v1.${method}`,
+        method: 'POST',
+        rejectUnauthorized: false,
+        headers: { 'Content-Type': isStream ? 'application/connect+json' : 'application/json' },
+      },
+      (answer) => {
+        let received = Buffer.alloc(0)
+        const read = (message) => {
+          try {
+            resolve(JSON.parse(message.toString()))
+          } catch {
+            resolve(undefined)
+          }
+        }
+        answer.on('data', (chunk) => {
+          received = Buffer.concat([received, chunk])
+          if (!isStream || received.length < 5 || received.length < 5 + received.readUInt32BE(1))
+            return
+          call.destroy()
+          read(received.subarray(5, 5 + received.readUInt32BE(1)))
+        })
+        answer.on('end', () => (isStream ? resolve(undefined) : read(received)))
+        answer.on('error', () => resolve(undefined))
+      },
+    )
+    call.on('error', () => resolve(undefined))
+    call.end(payload)
+  })
+
+/** Whether the vault is read, every chunk has its vector, and no task of the window is running. */
+const readIdle = async () => {
+  const state = await callCore('VaultService/GetVaultState', {}, false)
+  const window = await callCore('WindowService/WatchTasks', { window: 'editor' }, true)
+  return (
+    state?.scan?.isReady === true &&
+    state.coverage?.chunkCount === state.coverage?.embeddedCount &&
+    window !== undefined &&
+    (window.tasks ?? []).every((task) => task.error)
+  )
+}
 
 const child = spawn(
   binaryPath,
@@ -250,3 +319,21 @@ for (const sig of ['SIGINT', 'SIGTERM']) {
     child.kill(sig)
   })
 }
+
+// The server counts as started once the vault is read, every chunk has its vector and no task runs:
+// a test that begins while the first passes still run finds "1 active" where it waits for "Ready",
+// and searches and completes the notes it made before the passes end. Servers that start together
+// take longer for those passes than one that starts alone. The idle state must hold for four reads
+// in a row, since the next pass is reported a moment after the last ends.
+const startedAt = Date.now()
+let idleReads = 0
+while (idleReads < 4) {
+  if (Date.now() - startedAt > INDEX_LIMIT_MS) {
+    console.error(`start-server: the server was not idle in ${INDEX_LIMIT_MS / 1000} s`)
+    child.kill('SIGTERM')
+    break
+  }
+  idleReads = (await readIdle()) ? idleReads + 1 : 0
+  await new Promise((resolve) => setTimeout(resolve, 250))
+}
+console.log(`numen e2e: the vault is indexed after ${(Date.now() - startedAt) / 1000} s`)
