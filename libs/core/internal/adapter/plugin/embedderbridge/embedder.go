@@ -90,8 +90,10 @@ func readClientModel(
 
 // GetModel returns the active model of the embedding plugin.
 func (b *Embedder) GetModel() embeddingport.EmbeddingModel {
-	if client, call, err := b.service.Open(context.Background()); err == nil {
-		model, concurrency, floorHint, readErr := readClientModel(context.Background(), b.pluginID, client)
+	ctx, cancel := context.WithTimeout(context.Background(), transport.ModelRefreshTimeout)
+	defer cancel()
+	if client, call, err := b.service.Open(ctx); err == nil {
+		model, concurrency, floorHint, readErr := readClientModel(ctx, b.pluginID, client)
 		if errors.Join(readErr, call.Close()) == nil {
 			b.mu.Lock()
 			b.model = model

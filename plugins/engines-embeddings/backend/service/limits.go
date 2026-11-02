@@ -61,6 +61,9 @@ func (s *embeddingServer) applyProfileLocked(profile performance.Profile) {
 		return
 	}
 	runtime.GOMAXPROCS(limits.threads)
+	if before != limits {
+		s.retireOpeningLocked()
+	}
 	if s.embedder != nil && before != limits {
 		retired := s.embedder
 		s.embedder = nil

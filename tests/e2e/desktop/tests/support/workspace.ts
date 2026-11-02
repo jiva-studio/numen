@@ -87,3 +87,20 @@ export const waitForPassage = async (
   }).toPass({ timeout })
   return (await findPassages(page, query, path)).first()
 }
+
+/** The window is usable within these milliseconds of loading, whatever a plugin or a download does. */
+export const USABLE_WITHIN_MS = 5_000
+
+/** The workspace is drawn: a tab bar, the panes, the plex graph of the opening note and the files. */
+export const expectWorkspaceDrawn = async (page: Page): Promise<void> => {
+  const within = { timeout: USABLE_WITHIN_MS }
+  await expect(page.getByRole('tablist').first()).toBeVisible(within)
+  await expect(page.locator('section[data-workspace-pane]')).toHaveCount(2, within)
+  for (const pane of await page.locator('section[data-workspace-pane]').all()) {
+    const box = await pane.boundingBox()
+    expect(box?.width).toBeGreaterThan(0)
+    expect(box?.height).toBeGreaterThan(0)
+  }
+  await expect(getGraph(page)).toBeVisible(within)
+  await expect(page.getByRole('tab', { name: /^Files/ })).toBeVisible(within)
+}

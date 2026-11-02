@@ -44,7 +44,16 @@ const isListening = (port: number): Promise<boolean> =>
   })
 
 /** Starts the debug server on a copy of the test vault with the plugins installed, and waits until it listens. */
-export const startOwnServer = async (installed: readonly InstalledPlugin[]): Promise<OwnServer> => {
+/** What a scenario sets on the server beyond the plugins it installs. */
+export interface OwnServerOptions {
+  /** Variables the server and its plugins start with. */
+  readonly env?: Readonly<Record<string, string>>
+}
+
+export const startOwnServer = async (
+  installed: readonly InstalledPlugin[],
+  options: OwnServerOptions = {},
+): Promise<OwnServer> => {
   // The core refuses to run a plugin from the temporary folder, so the run's folders are kept under the e2e folder.
   const parent = path.join(e2eRoot, 'test-results')
   fs.mkdirSync(parent, { recursive: true })
@@ -82,6 +91,7 @@ export const startOwnServer = async (installed: readonly InstalledPlugin[]): Pro
         HOME: home,
         NUMEN_MOCK_ML: 'true',
         NUMEN_PLUGINS_PATH: path.join(repoRoot, 'plugins'),
+        ...options.env,
       },
     },
   )

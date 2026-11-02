@@ -92,7 +92,7 @@ func isRelativeInside(base, child string) bool {
 // IsWhitelistedEnv reports whether a variable of the host environment is
 // passed to a plugin process: the system's own variables, the proxy the machine
 // uses for network access, and NUMEN_MOCK_ML, which runs a plugin on its mock
-// models.
+// models, and NUMEN_MOCK_OPEN_HOLD_MS, which makes the mock model slow to open.
 func IsWhitelistedEnv(key string) bool {
 	upper := strings.ToUpper(strings.TrimSpace(key))
 	if upper == "" || isSecretEnv(upper) {
@@ -101,7 +101,8 @@ func IsWhitelistedEnv(key string) bool {
 	switch upper {
 	case "PATH", "TMPDIR", "TMP", "TEMP", "HOME", "USER",
 		"SYSTEMROOT", "SYSTEMDRIVE", "APPDATA", "LOCALAPPDATA",
-		"LANG", "SSL_CERT_FILE", "SSL_CERT_DIR", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "NUMEN_MOCK_ML":
+		"LANG", "SSL_CERT_FILE", "SSL_CERT_DIR", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "NUMEN_MOCK_ML",
+		"NUMEN_MOCK_OPEN_HOLD_MS":
 		return true
 	}
 	return strings.HasPrefix(upper, "LC_")

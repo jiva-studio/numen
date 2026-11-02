@@ -59,6 +59,7 @@
   "tests/shell/lifecycle/app.spec.ts": 1,
   "tests/shell/lifecycle/chaos.spec.ts": 3,
   "tests/shell/lifecycle/perf.spec.ts": 3,
+  "tests/shell/lifecycle/slow-model.spec.ts": 8,
   "tests/shell/lifecycle/slow-plugin.spec.ts": 8,
   "tests/shell/window/layout.spec.ts": 3,
   "tests/shell/window/tab-linking.spec.ts": 5,

@@ -53,6 +53,8 @@ type embeddingServer struct {
 	isProfileSet bool
 	// lowerNice sets the niceness of the process.
 	lowerNice func(nice int) error
+	// opening is the load of the local model that is under way, and nil while none is.
+	opening *modelOpening
 }
 
 // textEmbedder is a model that turns texts into vectors.
@@ -82,7 +84,18 @@ func newLocalModelOpener(library *onnx.Library) openEmbedder {
 	}
 }
 
-func openMockModel(context.Context, engine.ModelInfo, engine.LocalModel) (textEmbedder, error) {
+// envMockOpenHold names the variable that makes the mock model take that many milliseconds to open,
+// as a model that is still downloading.
+const envMockOpenHold = "NUMEN_MOCK_OPEN_HOLD_MS"
+
+func openMockModel(ctx context.Context, _ engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+	if held, err := strconv.Atoi(os.Getenv(envMockOpenHold)); err == nil && held > 0 {
+		select {
+		case <-time.After(time.Duration(held) * time.Millisecond):
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
 	return engine.MockEmbedder{}, nil
 }
 
@@ -173,11 +186,12 @@ func (s *embeddingServer) updateLocalModelLocked(model string) {
 		s.localModel.File = ""
 		s.localName = model
 	}
-	if (s.localModel.Name != prevRepo || s.localName != prevName) && s.embedder != nil {
-		if err := s.embedder.Close(); err != nil {
-			fmt.Fprintf(os.Stderr, "close the embedder: %v\n", err)
+	if s.localModel.Name != prevRepo || s.localName != prevName {
+		s.retireOpeningLocked()
+		if s.embedder != nil {
+			s.closeRetired(s.embedder)
+			s.embedder = nil
 		}
-		s.embedder = nil
 	}
 }
 
@@ -199,7 +213,7 @@ func newEmbeddingServer() *embeddingServer {
 			provider:    "",
 			localName:   info.Name,
 			remoteModel: "",
-			profile:     performance.Balanced, isProfileSet: false, lowerNice: performance.SetNice,
+			profile:     performance.Balanced, isProfileSet: false, lowerNice: performance.SetNice, opening: nil,
 		}
 	}
 	info, local := engine.DefaultBGEM3Config()
@@ -220,7 +234,7 @@ func newEmbeddingServer() *embeddingServer {
 		provider:    "",
 		localName:   info.Name,
 		remoteModel: "",
-		profile:     performance.Balanced, isProfileSet: false, lowerNice: performance.SetNice,
+		profile:     performance.Balanced, isProfileSet: false, lowerNice: performance.SetNice, opening: nil,
 	}
 }
 
@@ -273,52 +287,6 @@ func applyRuntimeEnv(local *engine.LocalModel) {
 			local.Threads = th
 		}
 	}
-}
-
-func (s *embeddingServer) getEmbedder(ctx context.Context) (textEmbedder, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.embedder != nil {
-		return s.embedder, nil
-	}
-
-	localInfo := s.modelInfo
-	if !s.isMock {
-		localInfo.Name = s.localName
-		applyModelProfile(&localInfo, s.localName)
-		applyDimensionEnv(&localInfo)
-	}
-	local := s.localModel
-	limits := s.getLimitsLocked()
-	if local.Threads == 0 {
-		local.Threads = limits.threads
-	}
-	local.BatchTexts = limits.batchTexts
-	emb, err := s.open(ctx, localInfo, local)
-	if err != nil {
-		return nil, fmt.Errorf("opening onnx embedding engine: %w", err)
-	}
-	// The runtime starts its threads while it opens the model, and a thread starts at the niceness of
-	// the thread that starts it.
-	if err := s.lowerNice(limits.nice); err != nil {
-		fmt.Fprintf(os.Stderr, "set the priority of the embeddings plugin: %v\n", err)
-	}
-	s.embedder = emb
-	s.modelInfo.Concurrency = emb.Concurrency()
-	return emb, nil
-}
-
-func (s *embeddingServer) Close() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.embedder != nil {
-		err := s.embedder.Close()
-		s.embedder = nil
-		return err
-	}
-	return nil
 }
 
 func (s *embeddingServer) GetModelInfo(_ context.Context) (embedding.ModelInfo, error) {

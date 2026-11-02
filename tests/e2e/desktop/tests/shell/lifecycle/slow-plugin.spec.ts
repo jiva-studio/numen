@@ -1,5 +1,6 @@
-import { test, expect, type Page } from '../../support/test.js'
+import { test, expect } from '../../support/test.js'
 import { startOwnServer, type InstalledPlugin, type OwnServer } from '../../support/server.js'
+import { expectWorkspaceDrawn as expectWorkspace } from '../../support/workspace.js'
 
 /**
  * An agent plugin whose process never says it is ready. The core asks every agent plugin which
@@ -23,23 +24,6 @@ const stuckAgent: InstalledPlugin = {
     }),
     'bin/stuck': '#!/bin/sh\nexec sleep 3600\n',
   },
-}
-
-/** The window is usable within these seconds of loading, whatever a plugin does. */
-const USABLE_WITHIN_MS = 5_000
-
-/** The workspace is drawn: a tab bar, the panes, the plex graph of the opening note and the files. */
-const expectWorkspace = async (page: Page): Promise<void> => {
-  const within = { timeout: USABLE_WITHIN_MS }
-  await expect(page.getByRole('tablist').first()).toBeVisible(within)
-  await expect(page.locator('section[data-workspace-pane]')).toHaveCount(2, within)
-  for (const pane of await page.locator('section[data-workspace-pane]').all()) {
-    const box = await pane.boundingBox()
-    expect(box?.width).toBeGreaterThan(0)
-    expect(box?.height).toBeGreaterThan(0)
-  }
-  await expect(page.getByRole('group', { name: 'Neighbourhood' })).toBeVisible(within)
-  await expect(page.getByRole('tab', { name: /^Files/ })).toBeVisible(within)
 }
 
 test.describe('Start-up while a plugin does not start', () => {
