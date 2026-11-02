@@ -1,5 +1,5 @@
 /**
- * Navigation, search, and submenu interaction within a menu.
+ * Navigation and submenu interaction within a menu.
  */
 import { computed, ref, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 import type { Position } from '@/shared/lib/math/geometry'
@@ -11,7 +11,6 @@ import {
   type MenuTrigger,
 } from '../items/item'
 import { useMenuKeys } from './keys'
-import { useMenuSearch } from '../items/search'
 
 interface ActiveSubmenu {
   readonly id: string
@@ -32,12 +31,9 @@ interface MenuSubmenuState {
 
 export interface MenuNavigationOptions {
   readonly items: () => readonly MenuItem[]
-  readonly isSearchable: () => boolean
-  readonly canEnterCustom?: (() => boolean) | undefined
   readonly trigger: () => MenuTrigger
   readonly current: () => string | null
   readonly clock: () => number
-  readonly searchRef: Readonly<ShallowRef<HTMLInputElement | null>>
   readonly menuRef: Readonly<ShallowRef<HTMLElement | null>>
   readonly getFallbackPosition: () => Position
   readonly getSubmenuPosition: (element: HTMLElement | null) => Position | null
@@ -47,7 +43,6 @@ export interface MenuNavigationOptions {
 }
 
 export interface MenuNavigationState {
-  readonly query: Ref<string>
   readonly visibleItems: ComputedRef<readonly MenuItem[]>
   readonly rows: ComputedRef<readonly GroupedItem[]>
   readonly here: Ref<number>
@@ -126,24 +121,7 @@ export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigatio
     submenuActions.rowElements.set(id, row as { getElement?: () => HTMLElement | null })
   }
 
-  const {
-    query,
-    visibleItems,
-    onKey: onSearchKey,
-    focusInitial,
-  } = useMenuSearch({
-    isSearchable: options.isSearchable,
-    canEnterCustom: options.canEnterCustom,
-    items: options.items,
-    searchRef: options.searchRef,
-    menuRef: options.menuRef,
-    onRowKey: (event) => onRowKey(event),
-    onChoose,
-    onResetHere: () => {
-      here.value = -1
-    },
-    goToInitial: () => goTo(getInitialIndex(options.trigger(), options.items(), options.current())),
-  })
+  const visibleItems = computed(() => options.items())
 
   const rows = computed(() => groupItems(visibleItems.value))
 
@@ -159,7 +137,6 @@ export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigatio
 
   const onResetNavigation = (): void => {
     here.value = -1
-    query.value = ''
     onCloseSubmenu()
   }
 
@@ -174,13 +151,12 @@ export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigatio
   }
 
   return {
-    query,
     visibleItems,
     rows,
     here,
     submenu,
-    focusInitial,
-    onKey: onSearchKey,
+    focusInitial: () => goTo(getInitialIndex(options.trigger(), options.items(), options.current())),
+    onKey: onRowKey,
     onResetNavigation,
   }
 }

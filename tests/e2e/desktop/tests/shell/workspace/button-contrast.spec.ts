@@ -142,7 +142,7 @@ for (const mode of ['light', 'dark'] as const) {
         await expect(
           dialog.getByRole('option', { name: 'Jetty', exact: true }).first(),
         ).toBeVisible()
-        const frame = dialog.locator('.plex-quick-link__frame')
+        const frame = dialog.locator('[data-numen-searchable-list]')
         await frame.evaluate((el) =>
           Promise.all(el.getAnimations({ subtree: true }).map((animation) => animation.finished)),
         )

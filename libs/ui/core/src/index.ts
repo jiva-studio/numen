@@ -24,6 +24,10 @@ export { SegmentedControl } from './shared/ui/segmented'
 export { Select } from './shared/ui/select'
 export type { SelectChoice } from './shared/ui/select'
 
+/** One search line over a list of rows in one frame, drawn in the window or as a popup. */
+export { SearchableList, SearchableListPopup } from './shared/ui/searchable-list'
+export type { ListItem } from './shared/ui/searchable-list'
+
 /** Whether a key was pressed into something being written in. */
 export { isTyping } from './shared/lib/dom/typing'
 

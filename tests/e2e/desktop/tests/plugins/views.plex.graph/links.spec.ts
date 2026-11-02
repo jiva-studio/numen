@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page, type Route } from '../../support/test.js'
 import { getGraph, openWorkspace } from '../../support/workspace.js'
+import { expectSearchableList } from '../../support/searchable-list.js'
 import { createUniqueTitle } from '../../support/vault.js'
 import {
   createNoteWithBody,
@@ -37,7 +38,7 @@ const openQuickLink = async (page: Page, title: string) => {
  * panel clips its rows, so a click at the middle of a row can land on the panel instead.
  */
 const waitForQuickLinkPanel = async (dialog: Locator): Promise<void> => {
-  const frame = dialog.locator('.plex-quick-link__frame')
+  const frame = dialog.locator('[data-numen-searchable-list]')
   await frame.evaluate((el) =>
     Promise.all(el.getAnimations({ subtree: true }).map((animation) => animation.finished)),
   )
@@ -103,7 +104,7 @@ test.describe('Links between two notes in the plex', () => {
     await expect(getGraph(page).locator('.plex__edge')).toHaveCount(1)
   })
 
-  test('keeps Create as row 1 at the same place while the found notes arrive, in one rounded frame', async ({
+  test('keeps Create as row 1 at the same place while the found notes arrive, in one frame', async ({
     page,
   }) => {
     await openWorkspace(page)
@@ -127,33 +128,8 @@ test.describe('Links between two notes in the plex', () => {
     expect(after?.x).toBe(before?.x)
 
     await waitForQuickLinkPanel(dialog)
-    const frame = await field.evaluateHandle((input) => input.closest('.plex-quick-link__frame')!)
-    const frameElement = frame.asElement()!
-    expect(
-      await frameElement.evaluate(
-        (el, id) => el.contains(document.getElementById(id)),
-        (await dialog.getByRole('listbox').getAttribute('id'))!,
-      ),
-    ).toBe(true)
-    const radii = await frameElement.evaluate((el) => {
-      const probe = document.createElement('div')
-      probe.style.borderTopLeftRadius = 'var(--numen-radius-panel)'
-      document.body.append(probe)
-      const token = getComputedStyle(probe).borderTopLeftRadius
-      probe.remove()
-      const style = getComputedStyle(el)
-      return {
-        token,
-        corners: [
-          style.borderTopLeftRadius,
-          style.borderTopRightRadius,
-          style.borderBottomLeftRadius,
-          style.borderBottomRightRadius,
-        ],
-      }
-    })
-    expect(radii.corners).toEqual(Array(4).fill(radii.token))
-    expect(Number.parseFloat(radii.token)).toBeGreaterThan(0)
+    await expectSearchableList(dialog)
+    const frameElement = (await dialog.locator('[data-numen-searchable-list]').elementHandle())!
     const row = await field.boundingBox()
     const list = await dialog.getByRole('listbox').boundingBox()
     const box = await frameElement.boundingBox()

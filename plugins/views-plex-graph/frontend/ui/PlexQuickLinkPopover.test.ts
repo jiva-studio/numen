@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { SEARCH_DEBOUNCE_MS } from '../lib/search'
+import { SEARCH_DEBOUNCE_MS } from '../model/useSearchResults'
 import PlexQuickLinkPopover from './PlexQuickLinkPopover.vue'
 import { WORDS as words } from '../words'
 
@@ -34,13 +34,13 @@ describe('PlexQuickLinkPopover component', () => {
     })
   }
 
-  it('names the field it is typed into by its label', () => {
+  it('names the field it is typed into and the list it opens', () => {
     const wrapper = mountPopover()
-    const field = wrapper.get('input').element as HTMLInputElement
 
-    expect([...(field.labels ?? [])].map((label) => label.textContent)).toEqual([
+    expect(wrapper.get('input').attributes('aria-label')).toBe(words.quickLinkPlaceholder)
+    expect(wrapper.get('[data-numen-searchable-list]').attributes('aria-label')).toBe(
       words.quickLinkLabel,
-    ])
+    )
     wrapper.unmount()
   })
 
@@ -67,7 +67,7 @@ describe('PlexQuickLinkPopover component', () => {
     expect(wrapper.text()).toContain('Quantum Physics')
     expect(wrapper.text()).toContain('Create "quantum"')
 
-    const options = wrapper.findAll('.plex-quick-link__option')
+    const options = wrapper.findAll('[role="option"]')
     expect(options[0]?.text()).toBe('Create "quantum"')
     expect(options[1]?.text()).toContain('Quantum Physics')
     wrapper.unmount()
@@ -85,7 +85,7 @@ describe('PlexQuickLinkPopover component', () => {
 
     const options = wrapper.findAll('[role="option"]')
     expect(options.map((option) => option.text())).toEqual(['Books', 'Books about'])
-    expect(wrapper.find('.plex-quick-link__option--create').exists()).toBe(false)
+    expect(options.some((option) => option.text().startsWith('Create'))).toBe(false)
     expect(options[0]?.attributes('aria-selected')).toBe('true')
 
     await input.trigger('keydown', { key: 'Enter' })
@@ -115,7 +115,7 @@ describe('PlexQuickLinkPopover component', () => {
     await input.setValue('test')
     await advanceHold()
 
-    const results = wrapper.findAll('.plex-quick-link__option')
+    const results = wrapper.findAll('[role="option"]')
     const existingButton = results[1]
     expect(existingButton).toBeDefined()
     await existingButton?.trigger('click')
@@ -145,9 +145,7 @@ describe('PlexQuickLinkPopover component', () => {
     await advanceHold()
 
     // Rows: Create, Title topic, Existing Note; Create is active at first
-    expect(wrapper.get('.plex-quick-link__option--create').classes()).toContain(
-      'plex-quick-link__option--active',
-    )
+    expect(wrapper.get('[role="option"]').attributes('aria-selected')).toBe('true')
 
     // ArrowUp cycles backwards to the last row
     await input.trigger('keydown', { key: 'ArrowUp' })
@@ -168,14 +166,14 @@ describe('PlexQuickLinkPopover component', () => {
     await input.setValue('abc')
     await advanceHold()
 
-    const options = wrapper.findAll('.plex-quick-link__option')
+    const options = wrapper.findAll('[role="option"]')
     const secondOption = options[1]
     await secondOption?.trigger('pointerenter')
-    expect(secondOption?.classes()).toContain('plex-quick-link__option--active')
+    expect(secondOption?.attributes('aria-selected')).toBe('true')
 
-    const createBtn = wrapper.get('.plex-quick-link__option--create')
+    const createBtn = options[0]!
     await createBtn.trigger('pointerenter')
-    expect(createBtn.classes()).toContain('plex-quick-link__option--active')
+    expect(createBtn.attributes('aria-selected')).toBe('true')
 
     await createBtn.trigger('click')
     expect(wrapper.emitted('create-note')).toStrictEqual([['abc']])
@@ -206,12 +204,12 @@ describe('PlexQuickLinkPopover component', () => {
     // Typing with search returning no results
     await input.setValue('custom')
     await advanceHold()
-    expect(wrapper.find('.plex-quick-link__dropdown').exists()).toBe(true)
+    expect(wrapper.find('[role="listbox"]').exists()).toBe(true)
 
     // Clearing query
     await input.setValue('')
     await advanceHold()
-    expect(wrapper.find('.plex-quick-link__dropdown').exists()).toBe(false)
+    expect(wrapper.find('[role="listbox"]').exists()).toBe(false)
 
     wrapper.unmount()
   })
@@ -230,8 +228,8 @@ describe('PlexQuickLinkPopover component', () => {
     const wrapper = mountPopover()
 
     // Clicking inside popover
-    const popover = wrapper.get('.plex-quick-link')
-    popover.element.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    const frame = wrapper.get('[data-numen-searchable-list]')
+    frame.element.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
     expect(wrapper.emitted('dismiss')).toBeUndefined()
 
     // Clicking outside popover
@@ -486,7 +484,7 @@ describe('PlexQuickLinkPopover component', () => {
       await advanceHold()
 
       expect(searchMock).toHaveBeenCalledTimes(1)
-      expect(wrapper.find('.plex-quick-link__dropdown').exists()).toBe(false)
+      expect(wrapper.find('[role="listbox"]').exists()).toBe(false)
       expect(isLoading(wrapper)).toBe(false)
       wrapper.unmount()
     })
@@ -499,7 +497,7 @@ describe('PlexQuickLinkPopover component', () => {
       await advanceHold()
 
       expect(isLoading(wrapper)).toBe(false)
-      expect(wrapper.findAll('.plex-quick-link__option')).toHaveLength(1)
+      expect(wrapper.findAll('[role="option"]')).toHaveLength(1)
       wrapper.unmount()
     })
   })

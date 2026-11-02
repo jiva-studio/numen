@@ -84,7 +84,7 @@ const activeReading =
   })
 
 const getList = (canvasElement: HTMLElement) =>
-  canvasElement.querySelector('.contents__list') as HTMLElement
+  canvasElement.querySelector('[role="listbox"]') as HTMLElement
 
 const getStandingLine = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('[aria-current="true"]') as HTMLElement | null

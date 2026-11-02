@@ -24,9 +24,6 @@ const props = withDefaults(defineProps<MenuProps>(), {
   margin: 8,
   to: 'body',
   name: 'Menu',
-  isSearchable: false,
-  canEnterCustom: false,
-  searchName: 'Search',
   clock: () => getNow(),
 })
 
@@ -37,7 +34,6 @@ defineSlots<MenuSlots>()
 
 /* ---------------------------------- State --------------------------------- */
 const menu = useTemplateRef<HTMLElement>('menu')
-const search = useTemplateRef<HTMLInputElement>('search')
 
 const { setSize, resetSize, menuStyle } = useMenuPlacement({
   at: () => props.at,
@@ -52,15 +48,12 @@ const isIgnored = (event: Event): boolean =>
 
 const { listen, release } = useMenuDismissal(menu, () => emit('dismiss'), isIgnored)
 
-const { query, visibleItems, rows, here, submenu, focusInitial, onKey, onResetNavigation } =
+const { visibleItems, rows, here, submenu, focusInitial, onKey, onResetNavigation } =
   useMenuNavigation({
     items: () => props.items,
-    isSearchable: () => props.isSearchable,
-    canEnterCustom: () => props.canEnterCustom,
     trigger: () => props.trigger,
     current: () => props.current,
     clock: props.clock,
-    searchRef: search,
     menuRef: menu,
     getFallbackPosition: () => props.at,
     getSubmenuPosition: (el) => getSubmenuPosition(el),
@@ -104,26 +97,12 @@ function measure(): void {
       v-if="isMenuVisible"
       ref="menu"
       class="menu numen"
-      :class="{ 'menu--searchable': isSearchable }"
       role="menu"
       tabindex="-1"
       :aria-label="name"
       :style="menuStyle"
       @keydown="onKey"
     >
-      <div v-if="isSearchable" class="menu__bar">
-        <input
-          ref="search"
-          v-model="query"
-          class="menu__search"
-          type="search"
-          autocomplete="off"
-          spellcheck="false"
-          :aria-label="searchName"
-          :placeholder="searchName"
-        />
-      </div>
-
       <MenuRow
         v-for="(item, index) in rows"
         :ref="(row) => submenu.onRegisterRow(item.id, row)"
@@ -208,10 +187,6 @@ function measure(): void {
   box-shadow: var(--numen-panel-shadow);
 }
 
-.menu--searchable {
-  padding-block-start: 0;
-}
-
 .menu:focus-visible {
   outline: none;
 }
@@ -220,45 +195,5 @@ function measure(): void {
   margin: 0;
   padding: 0.375rem 0.5rem;
   color: var(--numen-hushed);
-}
-
-/* The search line is a row of its own at the top of the menu: it stays there
-   while the items scroll beneath, and no item shows above or beside it. */
-.menu__bar {
-  /* The padding the menu keeps around its content. */
-  --inset: 0.375rem;
-
-  box-sizing: border-box;
-  position: sticky;
-  inset-block-start: 0;
-  z-index: 2;
-  flex-shrink: 0;
-  margin: 0 calc(-1 * var(--inset)) 0.25rem;
-  padding: 0.375rem 0.5rem;
-  background-color: var(--numen-raised);
-  border-block-end: 1px solid var(--numen-panel-border);
-}
-
-.menu__search {
-  box-sizing: border-box;
-  inline-size: 100%;
-  padding: 0.125rem 0.25rem;
-  font: inherit;
-  color: var(--numen-ink);
-  background: transparent;
-  border: none;
-  outline: none;
-  box-shadow: none;
-}
-
-.menu__search::placeholder {
-  color: var(--numen-hushed);
-}
-
-.menu__search:focus,
-.menu__search:focus-visible {
-  outline: none;
-  border: none;
-  box-shadow: none;
 }
 </style>

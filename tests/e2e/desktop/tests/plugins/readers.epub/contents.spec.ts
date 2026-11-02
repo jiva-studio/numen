@@ -11,6 +11,7 @@ import {
   waitForListedFile,
   writeVaultBytes,
 } from '../../support/media.js'
+import { expectSearchableList } from '../../support/searchable-list.js'
 import { createUniqueTitle } from '../../support/vault.js'
 
 test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
@@ -45,8 +46,9 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
     await showContentsBtn.click()
 
     // 4. Verify contents drawer is open with navigation
-    const contentsNav = page.getByRole('navigation', { name: 'Contents' })
+    const contentsNav = page.getByRole('group', { name: 'Contents' })
     await expect(contentsNav).toBeVisible({ timeout: 5_000 })
+    await expectSearchableList(page)
 
     // 5. Toggle button now reflects Hide contents
     const hideContentsBtn = page.getByRole('button', { name: 'Hide contents' })
@@ -77,8 +79,8 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
     await expect(pages.getByRole('heading', { name: 'Dawn tide' })).toBeVisible({ timeout: 10_000 })
 
     await page.getByRole('button', { name: 'Show contents' }).click()
-    const contentsNav = page.getByRole('navigation', { name: 'Contents' })
-    const chapters = contentsNav.locator('button.contents__line')
+    const contentsNav = page.getByRole('group', { name: 'Contents' })
+    const chapters = contentsNav.getByRole('option')
     await expect(chapters).toHaveText(['Dawn tide', 'Dusk tide'])
     await chapters.last().click()
 
@@ -96,6 +98,36 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
     await page.keyboard.press('Escape')
   })
 
+  test('narrows the chapters by the words typed and opens the one the keyboard is on', async ({
+    page,
+    request,
+  }) => {
+    const name = `${createUniqueTitle('narrow').replace(/ /g, '-')}.epub`
+    made.push(`assets/${name}`)
+    writeVaultBytes(
+      `assets/${name}`,
+      createEpub('Tide book', [
+        { title: 'Dawn tide', text: 'The water is low at dawn. '.repeat(120) },
+        { title: 'Dusk tide', text: 'The water is high at dusk. '.repeat(120) },
+      ]),
+    )
+    await waitForListedFile(request, `assets/${name}`)
+    await openWorkspace(page)
+    await openVaultFile(page, 'assets', name)
+    const pages = page.getByRole('region', { name: 'Pages' })
+    await expect(pages.getByRole('heading', { name: 'Dawn tide' })).toBeVisible({ timeout: 10_000 })
+
+    await page.getByRole('button', { name: 'Show contents' }).click()
+    const contentsNav = page.getByRole('group', { name: 'Contents' })
+    await contentsNav.getByRole('combobox', { name: 'Find in contents' }).fill('dusk')
+    await expect(contentsNav.getByRole('option')).toHaveText(['Dusk tide'])
+    await page.keyboard.press('Enter')
+
+    await expect(contentsNav).toBeHidden()
+    await expect(pages.getByRole('heading', { name: 'Dusk tide' })).toBeVisible()
+    await waitForPassage(page, 'The water is low at dawn', `assets/${name}`)
+  })
+
   test('lists the documents of a book with no table of contents by their names, and opens one', async ({
     page,
   }) => {
@@ -105,8 +137,8 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
 
     await page.getByRole('button', { name: 'Show contents' }).click()
 
-    const contentsNav = page.getByRole('navigation', { name: 'Contents' })
-    const documents = contentsNav.locator('button.contents__line')
+    const contentsNav = page.getByRole('group', { name: 'Contents' })
+    const documents = contentsNav.getByRole('option')
     await expect(documents).toHaveText(['doc1'])
     await documents.first().click()
     await expect(contentsNav).toBeHidden()
@@ -133,11 +165,11 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
     await expect(showContentsBtn).toBeVisible({ timeout: 10_000 })
     await showContentsBtn.click()
 
-    const contentsNav = page.getByRole('navigation', { name: 'Contents' })
+    const contentsNav = page.getByRole('group', { name: 'Contents' })
     await expect(contentsNav).toBeVisible({ timeout: 5_000 })
 
     // Locate search field
-    const findField = contentsNav.getByRole('textbox', { name: 'Find in contents' })
+    const findField = contentsNav.getByRole('combobox', { name: 'Find in contents' })
     await expect(findField).toBeVisible()
 
     // Type a non-existent search query

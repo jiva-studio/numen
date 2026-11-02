@@ -52,7 +52,7 @@ test.describe('EPUB Book Reader', () => {
     const contentsBtn = page.getByRole('button', { name: 'Show contents' })
     await expect(contentsBtn).toBeVisible()
     await contentsBtn.click()
-    await expect(page.getByRole('navigation', { name: 'Contents' })).toBeVisible()
+    await expect(page.getByRole('group', { name: 'Contents' })).toBeVisible()
   })
 
   test('renders book fallback on corrupted EPUB file', async ({ page }) => {

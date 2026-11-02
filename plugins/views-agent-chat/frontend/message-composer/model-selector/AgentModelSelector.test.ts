@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import AgentModelSelector from './AgentModelSelector.vue'
 import type { AgentModelOption } from './AgentModelSelector.vue'
@@ -81,12 +82,12 @@ describe('AgentModelSelector', () => {
     const button = wrapper.find('button')
     await button.trigger('click')
 
-    const menu = wrapper.findComponent({ name: 'Menu' })
-    expect(menu.exists()).toBe(true)
-    expect(menu.props('isOpen')).toBe(true)
-
-    // Simulate choose event from Menu
-    await menu.vm.$emit('choose', 'antigravity:gemini-3.7-flash')
+    await nextTick()
+    const choice = Array.from(document.body.querySelectorAll<HTMLElement>('[role="option"]')).find(
+      (one) => one.textContent?.includes('Gemini 3.7 Flash'),
+    )
+    choice?.click()
+    await nextTick()
     expect(wrapper.emitted('select')?.[0]).toEqual([
       {
         agentId: 'antigravity',
@@ -111,13 +112,14 @@ describe('AgentModelSelector', () => {
     expect(wrapper.find('button').attributes('disabled')).toBeDefined()
   })
 
-  it('carries no search line for a short list', async () => {
+  it('carries a search line for a short list', async () => {
     const wrapper = mount(AgentModelSelector, {
       props: { options: OPTIONS, selectedAgentId: 'claude', selectedModelId: 'sonnet' },
       attachTo: document.body,
     })
     await wrapper.find('button').trigger('click')
-    expect(wrapper.findComponent({ name: 'Menu' }).props('isSearchable')).toBe(false)
+    await nextTick()
+    expect(document.body.querySelector('[data-numen-searchable-list] input')).not.toBeNull()
     wrapper.unmount()
   })
 
@@ -138,7 +140,9 @@ describe('AgentModelSelector', () => {
       attachTo: document.body,
     })
     await wrapper.find('button').trigger('click')
-    expect(wrapper.findComponent({ name: 'Menu' }).props('isSearchable')).toBe(true)
+    await nextTick()
+    expect(document.body.querySelector('[data-numen-searchable-list] input')).not.toBeNull()
+    expect(document.body.querySelectorAll('[role="option"]').length).toBe(OPTIONS.length + many.length)
     wrapper.unmount()
   })
 })

@@ -9,6 +9,7 @@ import {
 import { observeFor } from '../../support/browser.js'
 import { openVaultFile, openWorkspace, runCommand, waitForWindow } from '../../support/workspace.js'
 import { hasVaultFile } from '../../support/media.js'
+import { expectSearchableList } from '../../support/searchable-list.js'
 import { callRPC, readVaultFile } from '../../support/vault.js'
 
 /** Opens the agent panel in a freshly loaded window, and gives back its composer. */
@@ -38,11 +39,31 @@ test.describe('Agent Plugin and Interface', () => {
     const pill = page.locator('.model-selector__pill').first()
     await expect(pill).toHaveText(/ · Stand-in model$/)
     await pill.click()
+    await expectSearchableList(page)
     await expect(
-      page
-        .getByRole('menu', { name: 'Model' })
-        .getByRole('menuitemradio', { name: 'Stand-in model' }),
-    ).toHaveAttribute('aria-checked', 'true')
+      page.getByRole('listbox', { name: 'Model' }).getByRole('option', { name: 'Stand-in model' }),
+    ).toHaveAttribute('aria-current', 'true')
+  })
+
+  test('the model selector narrows its models by the words typed and chooses the one the keyboard is on', async ({
+    page,
+  }) => {
+    await openAgentPanel(page)
+    await page.locator('.model-selector__pill').first().click()
+    const search = page.getByRole('combobox', { name: 'Search models' })
+    const models = page.getByRole('listbox', { name: 'Model' })
+
+    await search.fill('no such model')
+    await expect(models).toHaveCount(0)
+    await expect(
+      page.locator('[data-numen-searchable-list]').getByRole('status'),
+    ).toHaveText('No models found')
+
+    await search.fill('stand-in')
+    await expect(models.getByRole('option')).toHaveText(['Stand-in model'])
+    await search.press('Enter')
+    await expect(search).toHaveCount(0)
+    await expect(page.locator('.model-selector__pill').first()).toHaveText(/ · Stand-in model$/)
   })
 
   test('sends the question and shows the answer of the chat API under it', async ({ page }) => {

@@ -1,7 +1,8 @@
 /**
  * The combobox a thought is named in when a link is dragged out into empty space.
  *
- * The input and the options are one rounded frame; its geometry is the browser's answer.
+ * The input and the options are one frame, the kit's searchable list; its geometry is the
+ * browser's answer.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
@@ -31,9 +32,9 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 const getFrame = (canvasElement: HTMLElement) =>
-  canvasElement.querySelector<HTMLElement>('.plex-quick-link__frame')!
+  canvasElement.querySelector<HTMLElement>('[data-numen-searchable-list]')!
 
-/** Fails unless the input and the list sit in one frame rounded by the theme on all four corners. */
+/** Fails unless the input and the list sit in one frame, the input first. */
 const expectOneFrame = async (canvasElement: HTMLElement, hasList: boolean) => {
   const canvas = within(canvasElement)
   const frame = getFrame(canvasElement)
@@ -41,30 +42,17 @@ const expectOneFrame = async (canvasElement: HTMLElement, hasList: boolean) => {
   const field = canvas.getByRole('combobox')
   await expect(frame.contains(field)).toBe(true)
 
-  const probe = document.createElement('div')
-  probe.style.borderTopLeftRadius = 'var(--numen-radius-popup)'
-  document.body.append(probe)
-  const radius = getComputedStyle(probe).borderTopLeftRadius
-  probe.remove()
-  const style = getComputedStyle(frame)
-  for (const corner of [
-    style.borderTopLeftRadius,
-    style.borderTopRightRadius,
-    style.borderBottomLeftRadius,
-    style.borderBottomRightRadius,
-  ]) {
-    await expect(corner).toBe(radius)
-    await expect(Number.parseFloat(corner)).toBeGreaterThan(0)
-  }
-  await expect(style.overflow).toBe('hidden')
+  await expect(frame.firstElementChild).toBe(field)
+  await expect(getComputedStyle(frame).overflow).toBe('hidden')
 
   if (!hasList) return
   const list = canvas.getByRole('listbox')
   await expect(frame.contains(list)).toBe(true)
   const outer = frame.getBoundingClientRect()
   const inner = list.getBoundingClientRect()
-  const row = field.closest('.plex-quick-link__node')!.getBoundingClientRect()
-  await expect(inner.top).toBeCloseTo(row.bottom, 0)
+  const row = field.getBoundingClientRect()
+  await expect(inner.top).toBeGreaterThanOrEqual(row.bottom)
+  await expect(inner.top).toBeLessThanOrEqual(row.bottom + 2)
   await expect(inner.left).toBeGreaterThanOrEqual(outer.left)
   await expect(inner.right).toBeLessThanOrEqual(outer.right)
   await expect(inner.bottom).toBeLessThanOrEqual(outer.bottom)

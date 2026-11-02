@@ -1,11 +1,10 @@
 /**
  * The lines of a book's contents.
  *
- * Finding the line that holds an offset and the lines a typed word matches are
- * the decisions under test.
+ * Finding the line that holds an offset is the decision under test.
  */
 import { describe, expect, it } from 'vitest'
-import { findEntries, findLineAt, type ContentsEntry } from './contents'
+import { findLineAt, type ContentsEntry } from './contents'
 
 /** A book naming four places, in the order its text runs. */
 const PARTS: readonly ContentsEntry[] = [
@@ -30,27 +29,5 @@ describe('the line an offset falls on', () => {
 
   it('is none where the book is empty', () => {
     expect(findLineAt([], 0)).toBe(-1)
-  })
-})
-
-describe('the lines a typed word finds', () => {
-  it('is every line where nothing is typed', () => {
-    expect(findEntries(PARTS, '   ')).toStrictEqual(PARTS)
-  })
-
-  it('finds a name however it was typed', () => {
-    expect(findEntries(PARTS, 'parva').map((one) => one.title)).toStrictEqual([
-      'Ādi Parva',
-      'Sabhā Parva',
-      'Vana Parva',
-    ])
-  })
-
-  it('finds a name written in another script', () => {
-    expect(findEntries(PARTS, 'СОЖЖЕНИИ')).toHaveLength(1)
-  })
-
-  it('finds nothing where nothing is named that', () => {
-    expect(findEntries(PARTS, 'Bhagavad')).toStrictEqual([])
   })
 })
