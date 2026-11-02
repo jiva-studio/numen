@@ -3,7 +3,10 @@
  *
  * `createWriteOrder` orders the reads and writes of one remote store. `createRemoteValues` keeps,
  * by key, the value a control requested: it is shown from the request until a read that began after
- * its write settled is taken, and a failed write shows the confirmed value again. Writes go one
+ * its write settled is taken and shows the value, and a failed write shows the confirmed value again.
+ * A caller that can tell whether a read shows the value keeps it past reads that do not, up to
+ * `MAX_UNCONFIRMED_READS` of them, so a remote that answers with the old value for a moment does not
+ * draw it. Writes go one
  * batch at a time; values requested during a write are sent together after it, the newest value of
  * each key.
  */
@@ -61,11 +64,45 @@ export function createWriteOrder() {
   return { beginWrite, isWriteInFlight, getSettledWrites, beginRead, isReadAfterWrites, takeRead }
 }
 
+/** The reads after a write that may show the old value before the requested value is let go. */
+export const MAX_UNCONFIRMED_READS = 6
+
 interface Requested<V> {
   readonly token: number
   readonly value: V
   /** The settled writes once this value was written; `null` while it is in flight. */
   readonly settledAt: number | null
+  /** The reads taken since the write settled that did not show the value. */
+  readonly unconfirmedReads: number
+}
+
+/**
+ * The requested values after a read: those whose write settled before the read began end where the
+ * read shows them, or after `MAX_UNCONFIRMED_READS` reads that do not. The same map where none ends
+ * or counts the read.
+ */
+function releaseSettled<V>(
+  requested: ReadonlyMap<string, Requested<V>>,
+  settledWrites: number,
+  isShown: ((key: string, value: V) => boolean) | undefined,
+): ReadonlyMap<string, Requested<V>> {
+  const next = new Map(requested)
+  let isChanged = false
+  for (const [key, one] of next) {
+    if (one.settledAt === null || one.settledAt > settledWrites) continue
+    isChanged = true
+    const unconfirmedReads = one.unconfirmedReads + 1
+    if (
+      isShown === undefined ||
+      isShown(key, one.value) ||
+      unconfirmedReads >= MAX_UNCONFIRMED_READS
+    ) {
+      next.delete(key)
+    } else {
+      next.set(key, { ...one, unconfirmedReads })
+    }
+  }
+  return isChanged ? next : requested
 }
 
 interface Waiter {
@@ -130,7 +167,7 @@ export function createRemoteValues<V>(send: (values: ReadonlyMap<string, V>) => 
     const token = ++lastToken
     const next = new Map(requested.value)
     for (const [key, value] of values) {
-      next.set(key, { token, value, settledAt: null })
+      next.set(key, { token, value, settledAt: null, unconfirmedReads: 0 })
       queued.set(key, { token, value })
     }
     requested.value = next
@@ -144,16 +181,19 @@ export function createRemoteValues<V>(send: (values: ReadonlyMap<string, V>) => 
 
   /**
    * Runs `apply` where the answer of the read is newer than every answer taken, and then ends the
-   * requested values whose write settled before the read began. Returns whether it was taken.
+   * requested values whose write settled before the read began and that the read shows, as
+   * `isShown` tells after `apply`; without it every such value ends. A value the read does not show
+   * ends after `MAX_UNCONFIRMED_READS` reads. Returns whether it was taken.
    */
-  const takeRead = (pendingRead: PendingRead, apply: () => void): boolean => {
+  const takeRead = (
+    pendingRead: PendingRead,
+    apply: () => void,
+    isShown?: (key: string, value: V) => boolean,
+  ): boolean => {
     if (!order.takeRead(pendingRead)) return false
     apply()
-    const next = new Map(requested.value)
-    for (const [key, one] of next) {
-      if (one.settledAt !== null && one.settledAt <= pendingRead.settledWrites) next.delete(key)
-    }
-    if (next.size !== requested.value.size) requested.value = next
+    const next = releaseSettled(requested.value, pendingRead.settledWrites, isShown)
+    if (next !== requested.value) requested.value = next
     return true
   }
 

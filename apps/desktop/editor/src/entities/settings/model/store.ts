@@ -59,6 +59,9 @@ const getPluginDefault = (plugins: readonly PluginInfo[], path: readonly string[
   return plugin?.settings.find((one) => one.key === path[2])?.default
 }
 
+/** Whether two values read out of JSON are the same value. */
+const isSame = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b)
+
 export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: MessageWriter) {
   /** Every setting currently. It holds nothing until the vault has answered. */
   const target = shallowRef<unknown>({})
@@ -93,12 +96,16 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
       say(words.unreadSettings, 'error')
       return
     }
-    requested.takeRead(pendingRead, () => {
-      target.value = settingsFile
-      path.value = answer.path
-      models.value = answer.models
-      plugins.value = answer.plugins ?? []
-    })
+    requested.takeRead(
+      pendingRead,
+      () => {
+        target.value = settingsFile
+        path.value = answer.path
+        models.value = answer.models
+        plugins.value = answer.plugins ?? []
+      },
+      (_key, edit) => isSame(getCommittedSetting(edit.at), readEditValue(edit)),
+    )
   }
 
   const getSetting = (path: readonly string[]): unknown => {

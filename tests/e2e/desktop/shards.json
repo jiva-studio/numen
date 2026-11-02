@@ -29,6 +29,7 @@
   "tests/plugins/system/settings-effects.spec.ts": 13,
   "tests/plugins/system/settings-path-buttons.spec.ts": 11,
   "tests/plugins/system/settings-plugin-page.spec.ts": 4,
+  "tests/plugins/system/settings-switch-frames.spec.ts": 120,
   "tests/plugins/system/settings-switch.spec.ts": 37,
   "tests/plugins/system/settings.spec.ts": 17,
   "tests/plugins/system/startup.spec.ts": 3,

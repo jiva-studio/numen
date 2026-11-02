@@ -118,4 +118,38 @@ describe('the enabled switch of a plugin', () => {
 
     expect(history).toEqual([false, true, false])
   })
+
+  it('keeps the requested value while reads after the write still show the old one', async () => {
+    const file = { plugins: { p: { enabled: true } } }
+    let shownEnabled = true
+    const core = {
+      getSettings: async () => ({
+        written: JSON.stringify({ plugins: { p: { enabled: shownEnabled } } }),
+        path: '/f',
+        models: [],
+        plugins: [],
+      }),
+      updateSettings: async (edits: readonly { at: readonly string[]; value: string }[]) => {
+        for (const e of edits) file.plugins.p.enabled = JSON.parse(e.value) as boolean
+      },
+    }
+    const store = createSettingsStore(core, { unturned: 'u', unreadSettings: 'r' }, vi.fn())
+    await store.start()
+    const history: unknown[] = [store.getSetting(AT)]
+    watch(
+      () => store.getSetting(AT),
+      (v) => history.push(v),
+      { flush: 'sync' },
+    )
+
+    // The core answers reads with the old value for the first three reads after the write.
+    await store.writeSetting(AT, false)
+    await store.start()
+    await store.start()
+    shownEnabled = false
+    await store.start()
+    await store.start()
+
+    expect(history).toEqual([true, false])
+  })
 })
