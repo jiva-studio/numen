@@ -172,9 +172,9 @@ describe('what a title needs', () => {
     measures.node({ id: 'b', title: 'Adapter', relation: 'parent' })
     measures.node(node('Port'))
 
-    // The sample word is measured first: the line depth is read from the type when
+    // The three letters of the ink are measured first: they are read from the type when
     // the measurer is created.
-    expect(request).toStrictEqual(['Hxg', 'Adapter', 'Port'])
+    expect(request).toStrictEqual(['H', 'g', 'x', 'Adapter', 'Port'])
   })
 })
 
@@ -215,28 +215,32 @@ describe('what a label needs', () => {
     expect(context.font).toBe('10px Test Sans, sans-serif')
   })
 
-  it('remains as deep as the font sets its letters about the baseline', () => {
+  it('takes the ink of a label from the font: a capital, a descender and a lowercase x', () => {
     const { context } = stubCanvas()
     stubStyles()
     setTheme()
+    const ascent: Record<string, number> = { H: 9.5, x: 5.25 }
+    const descent: Record<string, number> = { g: 2.5 }
     context.measureText = (text: string) =>
       ({
         width: text.length * PER_CHARACTER,
-        actualBoundingBoxAscent: 9.5,
-        actualBoundingBoxDescent: 2.5,
+        actualBoundingBoxAscent: ascent[text] ?? 0,
+        actualBoundingBoxDescent: descent[text] ?? 0,
       }) as TextMetrics
 
-    expect(widths()!.labelDepth).toBe(12)
+    expect(widths()!.labelType).toStrictEqual({ ascent: 9.5, descent: 2.5, xHeight: 5.25 })
   })
 
-  it('is as deep as a label is set, however tall a title is set', () => {
+  it('falls back to the size a label is set at, however tall a title is set, where the platform reports no ink', () => {
     // The two sizes are separate tokens, and a theme is free to raise one of
     // them alone.
     stubCanvas()
     stubStyles()
     setTheme({ '--numen-font-size': '20px', '--numen-edge-label-size': '11px' })
 
-    expect(widths()!.labelDepth).toBe(11)
+    const { ascent, descent, xHeight } = widths()!.labelType
+    expect(ascent + descent).toBeCloseTo(0.94 * 11)
+    expect(xHeight).toBeCloseTo(0.5 * 11)
   })
 })
 

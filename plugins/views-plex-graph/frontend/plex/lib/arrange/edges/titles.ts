@@ -11,7 +11,7 @@
 import { getLength, type EdgeTitle, type PlacedEdge } from '../../edge'
 import type { PlacedNode } from '../../node'
 import { getBox, isOverlapping, getTitleBoxes, runBoxes, type Box } from '../layout/boxes'
-import { MIDDLE, createTitle, cutToFit, type Routing, type TitleSetting } from './routing'
+import { MIDDLE, createTitle, cutToFit, getDepth, type Routing, type TitleSetting } from './routing'
 
 /** A run of one line, as fractions of its length. */
 interface Span {
@@ -55,13 +55,16 @@ export function separateTitles(
   const width = routing.labelWidth
   if (!width) return [...edges]
 
-  const apart = APART * routing.labelDepth
+  const apart = APART * getDepth(routing.labelType)
   const boxes = nodes.map((node) => getBox(node, apart))
   const titleBoxes: Box[] = []
   const resolved: (EdgeTitle | null)[][] = edges.map((edge) => [...edge.titles])
 
   for (const { edge, index, title, slot, metrics } of sortTightestFirst(edges, width)) {
-    const boxAt = runBoxes(edge, { depth: routing.labelDepth + 2 * apart, shift: title.shift })
+    const boxAt = runBoxes(edge, {
+      depth: getDepth(routing.labelType) + 2 * apart,
+      shift: title.shift,
+    })
     const ends = (edge.arrows?.length ? routing.arrowClearance : 0) / metrics.arc
     const open = clearSpans(boxAt, [...boxes, ...titleBoxes], { ends, step: STEP / metrics.arc })
     const clear = edge.titles.length > 1 ? clipToHalf(open, title.anchor) : open
@@ -76,6 +79,7 @@ export function separateTitles(
       anchor: title.anchor,
       side: title.side,
       shift: title.shift,
+      rise: title.rise,
       ...(edge.titles.length > 1 ? { heading: title.heading } : {}),
     }
     resolved[index]![slot] = found ? createTitle(edge, found.at, found.words, setting) : null

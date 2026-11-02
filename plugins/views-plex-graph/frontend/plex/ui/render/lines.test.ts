@@ -12,6 +12,7 @@ const title = (words: string, more: Partial<EdgeTitle> = {}): EdgeTitle => ({
   heading: 'along',
   side: 0,
   shift: 0,
+  rise: 0,
   words,
   wordsAt: 0.5,
   ...more,
@@ -62,15 +63,16 @@ describe('the line of an edge', () => {
     ])
   })
 
-  it('moves a title across its path to the left of its reading, whichever way it is read', () => {
+  it('moves a title across its path to the left of its reading, whichever way it is read, and sets its baseline its rise below that', () => {
     const [edge] = edges
     const titles = [
       title('along', { side: -1, shift: -9.6 }),
       title('against', { heading: 'against', side: 1, shift: 9.6 }),
       title('on the line'),
+      title('on the line, read back', { heading: 'against', rise: 3 }),
     ]
     const [line] = getLines([{ ...edge!, titles }], 'plex')
-    expect(line?.titles.map((one) => one.across)).toStrictEqual([-9.6, -9.6, 0])
+    expect(line?.titles.map((one) => one.across)).toStrictEqual([-9.6, -9.6, 0, 3])
   })
 
   it('gives a line with no title no path to set one on', () => {

@@ -7,6 +7,7 @@ import {
   type EdgeLabel,
   type EdgeSide,
   type EdgeTitle,
+  type LabelType,
   type PlacedEdge,
   type PlexEdge,
 } from '../../edge'
@@ -25,12 +26,17 @@ export interface Routing extends RoutingOptions {
    */
   readonly labelWidth?: ((label: string) => number) | undefined
   /**
-   * The height of one line of a title, perpendicular to the line it is set on.
-   * It is measured in the title's own type, and is zero when nothing measured
-   * it.
+   * The ink of a title's font, measured where the plex is drawn; zero when nothing
+   * measured it.
    */
-  readonly labelDepth: number
+  readonly labelType: LabelType
 }
+
+/** The ink of a font nothing measured. */
+const NO_TYPE: LabelType = { ascent: 0, descent: 0, xHeight: 0 }
+
+/** The depth of one line of a title across its line: from the top of a capital to the bottom of a descender. */
+export const getDepth = (type: LabelType): number => type.ascent + type.descent
 
 /**
  * The axis is read off the relation, not off the distance between the boxes: the
@@ -40,12 +46,12 @@ export interface Routing extends RoutingOptions {
 export function createRouting(
   options: PlexOptions,
   measureLabel?: (label: string) => number,
-  labelDepth = 0,
+  labelType: LabelType = NO_TYPE,
 ): Routing {
   return {
     ...options.routing,
     labelWidth: measureLabel,
-    labelDepth,
+    labelType,
     getAxis: (node) => {
       if (node.relation === 'focus') return 'auto'
       return isVertical(options.direction[node.relation]) ? 'vertical' : 'horizontal'
@@ -84,10 +90,21 @@ export const getLabelPositions = (count: number): number[] => {
 export const LABEL_GAP = 2
 
 /**
- * How far from the line the centre of a title is, for letters this deep: nothing on the line, else half of
- * their depth and the gap, so the near edge of the letters is `LABEL_GAP` from the line.
+ * How far from the line the centre of a title is: nothing for a title on the line, whose
+ * lowercase letters are centred on it; else half of the depth of the ink and the gap, so the
+ * near edge of the letters is `LABEL_GAP` from the line.
  */
-export const getShift = (side: EdgeSide, depth: number): number => side * (depth / 2 + LABEL_GAP)
+export const getShift = (side: EdgeSide, type: LabelType): number =>
+  side * (getDepth(type) / 2 + LABEL_GAP)
+
+/**
+ * How far below the centre of a title its baseline is, across the line. The centre of a title
+ * on the line is the middle of the x-height band, of a title beside it the middle of the ink
+ * from capital to descender. The baseline is set by this alone, so no engine's own
+ * idea of a middle decides where the letters stand.
+ */
+export const getRise = (side: EdgeSide, type: LabelType): number =>
+  side === 0 ? type.xHeight / 2 : (type.ascent - type.descent) / 2
 
 /**
  * Where and how each label of one line is set, in the order the labels are written.
@@ -124,13 +141,14 @@ export function createTitle(
   curve: EdgeCurve,
   ...[position, words, title]: [position: number, words: string, title: TitleSetting]
 ): EdgeTitle {
-  const { anchor = position, side, shift } = title
+  const { anchor = position, side, shift, rise } = title
   const heading = title.heading ?? getHeading(curve, position)
   return {
     anchor,
     heading,
     side,
     shift,
+    rise,
     words,
     wordsAt: heading === 'against' ? 1 - position : position,
   }
@@ -144,6 +162,7 @@ export interface TitleSetting {
   readonly heading?: EdgeHeading
   readonly side: EdgeSide
   readonly shift: number
+  readonly rise: number
 }
 
 /**
@@ -317,7 +336,12 @@ function createTitles(edge: PlexEdge, curve: EdgeCurve, routing: Routing): EdgeT
       curve,
       position,
       labelWidth ? cutToFit(label.text, room, labelWidth) : label.text,
-      { side, shift: getShift(side, routing.labelDepth), ...(heading ? { heading } : {}) },
+      {
+        side,
+        shift: getShift(side, routing.labelType),
+        rise: getRise(side, routing.labelType),
+        ...(heading ? { heading } : {}),
+      },
     )
   })
 }

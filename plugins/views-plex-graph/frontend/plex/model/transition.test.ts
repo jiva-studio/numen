@@ -208,7 +208,7 @@ describe('what counts as a change to the arrangement', () => {
     placement: rowsAndColumns,
     measure,
     measureLabel,
-    labelDepth: 4,
+    labelType: { ascent: 3, descent: 1, xHeight: 2 },
     options: {
       viewport: { width: 800, height: 600 },
       margin: 8,
@@ -244,7 +244,11 @@ describe('what counts as a change to the arrangement', () => {
     ['the height of the focus', withOptions({ focusSize: { width: 150, height: 44 } })],
     ['how a title is measured', { ...base, measure: () => 90 }],
     ['how a label is measured', { ...base, measureLabel: () => 12 }],
-    ['how deep a label stands', { ...base, labelDepth: 6 }],
+    ['how deep a label stands', { ...base, labelType: { ascent: 5, descent: 1, xHeight: 2 } }],
+    [
+      'how high its lowercase letters are',
+      { ...base, labelType: { ascent: 3, descent: 1, xHeight: 3 } },
+    ],
   ]
 
   it.each(changes)('is %s', async (_name, changed) => {

@@ -6,6 +6,7 @@ import {
   cutToFit,
   getLabelPositions,
   getLabelPlaces,
+  getRise,
   getShift,
   LABEL_GAP,
   MIDDLE,
@@ -26,6 +27,9 @@ import {
 import type { PlexNeighbourhood } from '../../neighbourhood'
 import type { PlacedNode } from '../../node'
 import type { PlexNodeRelation } from '../../relation'
+
+/** The ink of the label font, as the window measures it. */
+const TYPE = { ascent: 9, descent: 3, xHeight: 6 }
 
 const getNodesByRelation = (frame: { nodes: readonly PlacedNode[] }, relation: PlexNodeRelation) =>
   frame.nodes.filter((node) => node.relation === relation)
@@ -671,7 +675,7 @@ describe('the position of a label', () => {
             labels: [{ text: 'guides' }, { text: 'shelters' }],
           })),
         },
-        { measureLabel, labelDepth: 12 },
+        { measureLabel, labelType: TYPE },
       )
       for (const edge of frame.edges) {
         const [one, other] = edge.titles
@@ -694,15 +698,27 @@ describe('the position of a label', () => {
     expect(getLabelPlaces([{ text: 'a' }, { text: 'b' }]).map((place) => place.side)).toEqual([
       -1, 1,
     ])
-    expect(getShift(0, 12)).toBe(0)
+    expect(getShift(0, TYPE)).toBe(0)
     // Half the letters and the gap, to the side each label is on.
-    expect(getShift(-1, 12)).toBe(-(6 + LABEL_GAP))
-    expect(getShift(1, 12)).toBe(-getShift(-1, 12))
+    expect(getShift(-1, TYPE)).toBe(-(6 + LABEL_GAP))
+    expect(getShift(1, TYPE)).toBe(-getShift(-1, TYPE))
+  })
+
+  it('sets the baseline of the one label so the middle of its lowercase letters is on the line', () => {
+    // The baseline is half the height of an x below the line, whatever else the font does.
+    expect(getRise(0, TYPE)).toBe(3)
+    expect(getRise(0, { ascent: 20, descent: 1, xHeight: 8 })).toBe(4)
+    // A label beside the line is centred by the middle of its ink, from capital to descender.
+    expect(getRise(-1, TYPE)).toBe((9 - 3) / 2)
+    expect(getRise(1, { ascent: 10, descent: 4, xHeight: 6 })).toBe(3)
+    // So the near edge of the ink is the gap from the line, on each side.
+    expect(getShift(-1, TYPE) + getRise(-1, TYPE) + TYPE.descent).toBe(-LABEL_GAP)
+    expect(getShift(1, TYPE) + getRise(1, TYPE) - TYPE.ascent).toBe(LABEL_GAP)
   })
 
   it('reads each of two labels in the direction of its record, whichever way the line runs', () => {
     const labels = [{ text: 'guides' }, { text: 'shelters' }]
-    const measured = createRouting(DEFAULT_OPTIONS, undefined, 12)
+    const measured = createRouting(DEFAULT_OPTIONS, undefined, TYPE)
 
     for (const [from, to] of [
       ['harbour', 'lighthouse'],
@@ -713,8 +729,8 @@ describe('the position of a label', () => {
       // right of the line, which is the left of its own reading.
       expect([first!.heading, first!.side]).toEqual(['along', -1])
       expect([second!.heading, second!.side]).toEqual(['against', 1])
-      expect(first!.shift).toBe(getShift(-1, 12))
-      expect(second!.shift).toBe(getShift(1, 12))
+      expect(first!.shift).toBe(getShift(-1, TYPE))
+      expect(second!.shift).toBe(getShift(1, TYPE))
     }
   })
 
@@ -724,7 +740,7 @@ describe('the position of a label', () => {
       { text: 'to-b', end: 'to' as const },
       { text: 'to-a', end: 'from' as const },
     ]
-    const measured = createRouting(DEFAULT_OPTIONS, undefined, 12)
+    const measured = createRouting(DEFAULT_OPTIONS, undefined, TYPE)
 
     for (const [from, to] of [
       ['harbour', 'lighthouse'],
@@ -754,11 +770,12 @@ describe('the position of a label', () => {
   })
 
   it('reads the one label of a line along the way that is readable, centred and on the line', () => {
-    const measured = createRouting(DEFAULT_OPTIONS, undefined, 12)
+    const measured = createRouting(DEFAULT_OPTIONS, undefined, TYPE)
     const edge = { from: 'lighthouse', to: 'harbour', labels: [{ text: 'guides' }] }
     const [only] = routeEdge(edge, byId, measured)!.titles
 
     expect([only!.heading, only!.side, only!.shift]).toEqual(['against', 0, 0])
+    expect(only!.rise).toBe(TYPE.xHeight / 2)
     expect(only!.anchor).toBe(MIDDLE)
   })
 

@@ -7,6 +7,8 @@ import {
   createTitle,
   getLabelPlaces,
   type LabelPlace,
+  getDepth,
+  getRise,
   getShift,
   routeEdges,
   createRouting,
@@ -31,16 +33,20 @@ const perLetter = (width: number) => (label: string) => width * [...label].lengt
 
 const measureLabel = perLetter(6)
 
-/** The height of a line of label text, as measured in the window. */
-const labelDepth = 12
+/** The ink of the label font, as measured in the window. */
+const labelType = { ascent: 9, descent: 3, xHeight: 6 }
+
+/** The height of a line of label text. */
+const labelDepth = getDepth(labelType)
 
 /** What every arrangement here measures its titles with. */
-const measured = { measureLabel, labelDepth }
+const measured = { measureLabel, labelType }
 
 /** What a title keeps of the place its label was given. */
 const setting = ({ side, heading }: LabelPlace) => ({
   side,
-  shift: getShift(side, labelDepth),
+  shift: getShift(side, labelType),
+  rise: getRise(side, labelType),
   ...(heading ? { heading } : {}),
 })
 
@@ -161,7 +167,7 @@ describe('a title finds room on its line', () => {
     const pair = createOneLine('see also')
     const placedLine = arrangePlex(pair, measured)
     const byId = new Map(placedLine.nodes.map((node) => [node.id, node]))
-    const edgeRouting = createRouting(DEFAULT_OPTIONS, measureLabel, labelDepth)
+    const edgeRouting = createRouting(DEFAULT_OPTIONS, measureLabel, labelType)
     const routed = routeEdges(pair.edges, byId, edgeRouting)
 
     // A box over the whole picture, so no place on the line is clear of it.
@@ -242,7 +248,7 @@ describe('a title finds room on its line', () => {
     }
 
     const byId = new Map([far, here].map((node) => [node.id, node]))
-    const edgeRouting = createRouting(DEFAULT_OPTIONS, measureLabel, labelDepth)
+    const edgeRouting = createRouting(DEFAULT_OPTIONS, measureLabel, labelType)
     const routed = routeEdges(
       [{ from: 'here', to: 'far', labels: [{ text: 'see also' }] }],
       byId,
@@ -327,7 +333,7 @@ describe('a title finds room on its line', () => {
  */
 describe('two titles set on opposite sides of a line', () => {
   const TEN = perLetter(10)
-  const edgeRouting = createRouting(DEFAULT_OPTIONS, TEN, labelDepth)
+  const edgeRouting = createRouting(DEFAULT_OPTIONS, TEN, labelType)
   const ANGLES = [0, 30, 90, 135, 180, 270]
 
   const createPair = (angle: number): PlacedEdge => {
@@ -414,7 +420,7 @@ describe('two titles set on opposite sides of a line', () => {
     const edge = createPair(0)
     const centred = {
       ...edge,
-      titles: [createTitle(edge, MIDDLE, 'guides', { side: 0, shift: 0 })],
+      titles: [createTitle(edge, MIDDLE, 'guides', { side: 0, shift: 0, rise: 0 })],
     }
     const [title] = separateTitles([centred], [], edgeRouting)[0]!.titles
 
@@ -448,7 +454,7 @@ describe('two titles set on opposite sides of a line', () => {
  */
 describe('a title set on a straight line', () => {
   const TEN = perLetter(10)
-  const edgeRouting = createRouting(DEFAULT_OPTIONS, TEN, labelDepth)
+  const edgeRouting = createRouting(DEFAULT_OPTIONS, TEN, labelType)
 
   /** One step of the scan a line is looked at by, along the line. */
   const A_STEP = 3
@@ -470,7 +476,15 @@ describe('a title set on a straight line', () => {
       labels: [{ text: words }],
       opacity: 1,
       titles: [
-        { anchor, heading: to.x < from.x ? 'against' : 'along', side: 0, shift: 0, words, wordsAt },
+        {
+          anchor,
+          heading: to.x < from.x ? 'against' : 'along',
+          side: 0,
+          shift: 0,
+          rise: 0,
+          words,
+          wordsAt,
+        },
       ],
       fromPoint: from,
       control1: pointAt(1 / 3),
@@ -590,7 +604,7 @@ describe('a title set on a straight line', () => {
     const [resolved] = separateTitles(
       [placedLine],
       [],
-      createRouting(DEFAULT_OPTIONS, () => 0, labelDepth),
+      createRouting(DEFAULT_OPTIONS, () => 0, labelType),
     )
 
     expect(resolved!.titles[0]?.words).toBe('abcde')
@@ -654,7 +668,7 @@ describe('a title set on a straight line', () => {
  */
 describe('the titles of one line', () => {
   const TEN = perLetter(10)
-  const edgeRouting = createRouting(DEFAULT_OPTIONS, TEN, labelDepth)
+  const edgeRouting = createRouting(DEFAULT_OPTIONS, TEN, labelType)
   const FROM = { x: -200, y: 0 }
   const TO = { x: 200, y: 0 }
 

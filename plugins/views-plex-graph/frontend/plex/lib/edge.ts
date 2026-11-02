@@ -58,6 +58,16 @@ export interface PlacedArrow {
   readonly angle: number
 }
 
+/**
+ * The ink of the font a label is set in, in plex units above and below its baseline:
+ * the height of a capital, the depth of a descender and the height of a lowercase x.
+ */
+export interface LabelType {
+  readonly ascent: number
+  readonly descent: number
+  readonly xHeight: number
+}
+
 /** One label of an edge as it is drawn. */
 export interface EdgeTitle {
   /** Where the label asks to be set, as a fraction of the line from its `from` end. */
@@ -71,8 +81,14 @@ export interface EdgeTitle {
    * left side reads from `from` to `to`, the right side the other way.
    */
   readonly side: EdgeSide
-  /** How far the centre of the words is from the line, in plex units, signed as `side`. */
+  /**
+   * How far the centre of the words is from the line, in plex units, signed as `side`: the
+   * middle of the lowercase letters for a title on the line, the middle of the whole ink
+   * for a title beside it.
+   */
   readonly shift: number
+  /** How far the baseline is below that centre, across the line, in plex units. */
+  readonly rise: number
   /**
    * The label as it is drawn: cut to the length of the curve and ended in an
    * ellipsis. The whole of it where nothing measured the words.

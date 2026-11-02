@@ -132,7 +132,7 @@ function watchInputChanges(input: () => ArrangeInput | undefined, onChange: () =
       () => input()?.options?.focusSize?.height,
       () => input()?.measure,
       () => input()?.measureLabel,
-      () => input()?.labelDepth,
+      () => input()?.labelType,
     ],
     onChange,
   )

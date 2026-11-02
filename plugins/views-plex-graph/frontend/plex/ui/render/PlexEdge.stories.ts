@@ -13,7 +13,7 @@ import { expect } from 'storybook/test'
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import { getLines } from './lines'
-import { createTitle, getLabelPlaces, getShift, LABEL_GAP } from '../../lib/arrange'
+import { createTitle, getLabelPlaces, getRise, getShift, LABEL_GAP } from '../../lib/arrange'
 import { getArrow, type EdgeArrow, type EdgeCurve, type PlacedEdge } from '../../lib/edge'
 import { lightness } from '../../../fixtures/colour'
 import { DARK, expectDark } from '../../../fixtures/theme'
@@ -58,8 +58,8 @@ const getRecords = (args: Knobs): { words: string; end?: EdgeArrow }[] => {
   }
 }
 
-/** The height of a line of the label type, as the arrangement measures it. */
-const LABEL_DEPTH = 12
+/** The ink of the label font, as the arrangement measures it. */
+const LABEL_TYPE = { ascent: 9, descent: 3, xHeight: 6 }
 
 /**
  * The edge as the arrangement places it: one title centred along the line, two at
@@ -85,7 +85,8 @@ const createEdge = (args: Knobs): PlacedEdge => {
       const { position, side, heading } = places[index]!
       return createTitle(CURVE, position, record.words, {
         side,
-        shift: getShift(side, LABEL_DEPTH),
+        shift: getShift(side, LABEL_TYPE),
+        rise: getRise(side, LABEL_TYPE),
         ...(heading ? { heading } : {}),
       })
     }),
@@ -188,7 +189,7 @@ export const Forward: Story = {
     await expect(heads).toHaveLength(1)
     await expect(heads[0]).toContain(AT_TO)
     await expect(titles).toStrictEqual([['refers to', '50%']])
-    await expect(getResting(canvasElement).offsets).toStrictEqual([0])
+    await expect(getResting(canvasElement).offsets).toStrictEqual([LABEL_TYPE.xHeight / 2])
   },
 }
 
@@ -220,10 +221,11 @@ export const BothDirections: Story = {
       ['refers to', '80%'],
       ['cited by', '80%'],
     ])
-    // Each is on the left of its own reading, so they are on opposite sides of the line.
+    // Each is on the left of its own reading, so they are on opposite sides of the line, and the
+    // near edge of its ink is the gap from the line: the baseline is the gap and a descender above it.
     await expect(offsets).toStrictEqual([
-      -(LABEL_DEPTH / 2 + LABEL_GAP),
-      -(LABEL_DEPTH / 2 + LABEL_GAP),
+      -(LABEL_GAP + LABEL_TYPE.descent),
+      -(LABEL_GAP + LABEL_TYPE.descent),
     ])
   },
 }

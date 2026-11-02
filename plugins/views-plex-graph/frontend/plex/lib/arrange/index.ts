@@ -27,6 +27,8 @@ export {
   createTitle,
   getLabelPositions,
   getLabelPlaces,
+  getDepth,
+  getRise,
   getShift,
   LABEL_GAP,
   type Axis,

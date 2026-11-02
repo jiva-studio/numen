@@ -337,6 +337,7 @@ describe('the title a line carries while the picture moves', () => {
                   heading: 'against' as const,
                   side: 0,
                   shift: 0,
+                  rise: 0,
                   words: 'went that way…',
                   wordsAt: 0.5,
                 },

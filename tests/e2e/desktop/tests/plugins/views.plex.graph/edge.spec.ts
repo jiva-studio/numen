@@ -11,7 +11,10 @@ import {
   isAtSameGap,
   isHugging,
   isOnLine,
+  isThroughTheMiddle,
+  readLabelPicture,
   type LabelGap,
+  type SampledLine,
 } from '../../support/plex-labels.js'
 
 /** The note the vault opens with, and the child the fixture joins it to. */
@@ -139,6 +142,8 @@ interface EdgeGeometry {
    */
   readonly reading: Readonly<Record<string, number>>
   readonly arrows: readonly Point[]
+  /** The curve sampled on the screen. */
+  readonly line: SampledLine
 }
 
 /**
@@ -226,7 +231,8 @@ const readEdgeRaw = (page: Page, names: readonly [Name, Name]) =>
 
 const readEdge = async (page: Page, names: readonly [Name, Name]): Promise<EdgeGeometry> => {
   const { points, way, ...drawn } = await readEdgeRaw(page, names)
-  return { ...drawn, gaps: await getLabelGaps(page, { points, way: way as 1 | -1 }) }
+  const line: SampledLine = { points, way: way as 1 | -1 }
+  return { ...drawn, line, gaps: await getLabelGaps(page, line) }
 }
 
 const getDistance = (one: Point, other: Point) => Math.hypot(one.x - other.x, one.y - other.y)
@@ -554,5 +560,45 @@ test.describe('Plex Edge and Link Inspector', () => {
 
     const thermoNode = page.locator('.plex__title', { hasText: 'Thermodynamics' })
     await expect(thermoNode).toBeVisible()
+  })
+})
+
+test.describe('The one label of a line, at four pixels to a pixel', () => {
+  test.use({ deviceScaleFactor: 4 })
+
+  test.afterEach(async ({ request }) => {
+    await saveConnection(request, { Thermodynamics: { marker: ARROW } })
+  })
+
+  test('has the middle of its letters on the line, which enters and leaves the text at that middle', async ({
+    page,
+    request,
+  }) => {
+    await saveConnection(request, { Thermodynamics: { label: 'eee' } })
+    await openWorkspace(page)
+    await expect(page.locator('.plex-frame:not([data-moving])')).toBeAttached()
+
+    await expect
+      .poll(async () => {
+        const edge = await readEdge(page, NAMES)
+        return edge.gaps['eee'] !== undefined && isCentred(edge, edge.labels['eee']!)
+      })
+      .toBe(true)
+
+    // Every figure is checked and reported, so a failure shows where the letters stand.
+    const edge = await readEdge(page, NAMES)
+    const picture = await readLabelPicture(page, 'eee', edge.line)
+    const middle = (picture.before + picture.after) / 2
+    const report = JSON.stringify({ gap: edge.gaps['eee'], picture })
+
+    // The ink of the letters as read off pixels is within a pixel of the line, in either engine.
+    expect.soft(edge.gaps['eee']!.centre, report).toBeLessThan(1)
+    expect.soft(edge.gaps['eee']!.bandCentre, report).toBeLessThan(1)
+
+    // In the picture of the screen the line goes into the text and comes out of it at its middle.
+    expect.soft(picture.found.before, report).toBeGreaterThan(0)
+    expect.soft(picture.found.after, report).toBeGreaterThan(0)
+    expect.soft(Math.abs(picture.ink - middle), report).toBeLessThanOrEqual(1.5)
+    expect.soft(isThroughTheMiddle(picture), report).toBe(true)
   })
 })

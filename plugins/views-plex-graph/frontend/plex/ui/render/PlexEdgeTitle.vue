@@ -34,7 +34,6 @@ const LAYERS = ['halo', 'letters'] as const
       :class="`plex__edge-label--${layer}`"
       :opacity="line.edge.opacity"
       text-anchor="middle"
-      dominant-baseline="middle"
       :dy="title.across"
     >
       <textPath :href="`#${title.path}`" :startOffset="title.at">

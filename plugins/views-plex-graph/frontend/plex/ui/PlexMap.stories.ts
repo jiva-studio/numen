@@ -322,11 +322,18 @@ export const EveryLine: Story = {
       other.bottom <= own.top
     await expect(isApart).toBe(true)
 
-    // The one label of a line is on it, its middle on the line; each of a pair is moved off it, to its own side.
+    // The one label of a line has its baseline half the height of an x below the line, which puts the
+    // middle of its lowercase letters on it; each of a pair is moved off it, to its own side.
     const getAcross = (text: string) =>
       Number(canvas.getAllByText(text)[0]!.closest('text')!.getAttribute('dy'))
+    const getXHeight = (text: string) => {
+      const style = getComputedStyle(canvas.getAllByText(text)[0]!.closest('text')!)
+      const context = canvasElement.ownerDocument.createElement('canvas').getContext('2d')!
+      context.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`
+      return context.measureText('x').actualBoundingBoxAscent
+    }
     for (const text of ['measures', 'states', 'costs', 'drives', 'leads to', 'is about']) {
-      await expect(getAcross(text)).toBe(0)
+      await expect(getAcross(text)).toBeCloseTo(getXHeight(text) / 2, 1)
     }
     await expect(getAcross('includes')).toBeLessThan(0)
     await expect(getAcross('part of')).toBeLessThan(0)

@@ -7,6 +7,7 @@
  */
 import { doc, hasDocument } from '@numen/ui'
 import { computed, onScopeDispose, shallowRef, type Ref } from 'vue'
+import type { LabelType } from '../../lib/edge'
 import type { PlexNode } from '../../lib/node'
 
 /** The width a node's box needs, padding included. */
@@ -19,8 +20,8 @@ export interface PlexMetrics {
   readonly label: (label: string) => number
   /** The width a heading's box needs for its words, padding included. */
   readonly heading: (text: string) => number
-  /** The depth of one line of a label, perpendicular to the line it is set on. */
-  readonly labelDepth: number
+  /** The heights of the capitals, descenders and lowercase letters of the font of a label. */
+  readonly labelType: LabelType
 }
 
 /** The type and the lengths a plex is drawn with, in pixels. */
@@ -160,19 +161,23 @@ function createMetrics(type: PlexType, icon: number): PlexMetrics | undefined {
     node: (node) => Math.ceil(title(node.title) + room),
     label: (words) => Math.ceil(label(words)),
     heading: (text) => Math.ceil(label(text) + 2 * type.padding),
-    labelDepth: lineDepth(context, type.labelFont),
+    labelType: getLabelType(context, type.labelFont),
   }
 }
 
 /**
- * How deep a line of one type is: the ink of a sample with a capital and a descender,
- * from the top of the capital to the bottom of the descender. The type's size is used where the platform reports no such value.
+ * The ink of one font, measured from the font in use: the height of a capital and the
+ * depth of a descender above and below the baseline, and the height of a lowercase x.
+ * Where the platform reports none of them, proportions of the font size stand in.
  */
-function lineDepth(context: CanvasRenderingContext2D, font: string): number {
+function getLabelType(context: CanvasRenderingContext2D, font: string): LabelType {
   context.font = font
-  const line = context.measureText(SAMPLE)
-  const deep = line.actualBoundingBoxAscent + line.actualBoundingBoxDescent
-  return Math.ceil(deep) || parsePixels(font)
+  const size = parsePixels(font)
+  return {
+    ascent: context.measureText('H').actualBoundingBoxAscent || 0.72 * size,
+    descent: context.measureText('g').actualBoundingBoxDescent || 0.22 * size,
+    xHeight: context.measureText('x').actualBoundingBoxAscent || 0.5 * size,
+  }
 }
 
 /** Text in one type, each distinct string measured once. */
