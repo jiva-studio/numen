@@ -33,6 +33,8 @@ func getRunLimits(profile performance.Profile, cpus int) runLimits {
 	switch profile {
 	case performance.Eco:
 		batchTexts = ecoBatchTexts
+	case performance.Balanced:
+		batchTexts = balancedBatchTexts
 	case performance.Maximum:
 		batchTexts = engine.GetDefaultBatchTexts()
 	}

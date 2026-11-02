@@ -162,13 +162,17 @@ type pluginSecretConfigurator interface {
 	DeletePluginSecret(ctx context.Context, pluginID, name string) error
 }
 
-// PluginConfigurator manages configuration and settings for plugins.
-type PluginConfigurator interface {
-	pluginSecretConfigurator
+type pluginSettingsPush interface {
 	SetSettings(all map[string]map[string]any)
 	// SetPerformanceProfile tells every running plugin the profile of the performance setting, and
 	// gives each plugin started later the same one.
 	SetPerformanceProfile(ctx context.Context, profile string)
+}
+
+// PluginConfigurator manages configuration and settings for plugins.
+type PluginConfigurator interface {
+	pluginSecretConfigurator
+	pluginSettingsPush
 	SetPersistHandler(handler PluginPersistHandler)
 	UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error
 	CheckPluginSetting(pluginID, key string, value any) error
