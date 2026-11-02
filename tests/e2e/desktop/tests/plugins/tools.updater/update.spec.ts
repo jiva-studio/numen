@@ -6,7 +6,7 @@ import {
   type Page,
 } from '../../support/test.js'
 import { NEW_RELEASE } from '../../../scripts/stand-ins.mjs'
-import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
+import { getGraph, openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 import { getStandInsOrigin, writePluginSetting } from '../../support/media.js'
 
 const UPDATER = 'md.numen.tools.updater'
@@ -67,6 +67,40 @@ const getGaps = (row: readonly Box[]): number[] =>
 /** One computed style of an element. */
 const getStyle = (element: Locator, property: string): Promise<string> =>
   element.evaluate((node, name) => getComputedStyle(node).getPropertyValue(name), property)
+
+/** The text colour of a button and the colour it is drawn on, as the page resolves them to red, green and blue. */
+const getButtonColours = (button: Locator) =>
+  button.evaluate((node) => {
+    const style = getComputedStyle(node)
+    const toRgb = (colour: string): [number, number, number] => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 1
+      canvas.height = 1
+      const context = canvas.getContext('2d', { willReadFrequently: true })!
+      context.fillStyle = colour
+      context.fillRect(0, 0, 1, 1)
+      const [red, green, blue] = context.getImageData(0, 0, 1, 1).data
+      return [red!, green!, blue!]
+    }
+    return { text: toRgb(style.color), ground: toRgb(style.backgroundColor) }
+  })
+
+/** The WCAG contrast ratio of the text of a button against its own background. */
+const getContrast = async (button: Locator): Promise<number> => {
+  const { text, ground } = await getButtonColours(button)
+  const getLuminance = (rgb: readonly number[]): number => {
+    const [red, green, blue] = rgb.map((channel) => {
+      const value = channel / 255
+      return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+    }) as [number, number, number]
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue
+  }
+  const [lighter, darker] = [getLuminance(text), getLuminance(ground)].sort((a, b) => b - a) as [
+    number,
+    number,
+  ]
+  return (lighter + 0.05) / (darker + 0.05)
+}
 
 /** The settings page of the updater plugin, opened from the palette. */
 const openUpdaterSettings = async (page: Page): Promise<void> => {
@@ -136,13 +170,13 @@ test.describe('the update indicator', () => {
     expect(await getStyle(popover, 'border-top-style')).toBe('solid')
     expect(await getStyle(popover, 'border-top-width')).toBe('1px')
 
-    const title = popover.getByText('Update available', { exact: true })
-    const version = popover.getByText(`v${NEW_RELEASE.version}`, { exact: true })
-    const titleBox = await getBox(title)
-    const versionBox = await getBox(version)
-    await expect(title).toHaveText('Update available')
-    await expect(version).toHaveText(`v${NEW_RELEASE.version}`)
-    expect(isApart(titleBox, versionBox)).toBe(true)
+    const header = popover.locator('header')
+    await expect(header).toContainText('Update available')
+    await expect(header).not.toContainText(`${NEW_RELEASE.version}`)
+    const release = popover.getByText(`v${NEW_RELEASE.version} · Released on`)
+    await expect(release).toBeVisible()
+    const titleBox = await getBox(popover.getByText('Update available', { exact: true }))
+    expect(isApart(titleBox, await getBox(release))).toBe(true)
 
     const names = ['Download', 'Release notes', 'Dismiss']
     const boxes = []
@@ -166,6 +200,33 @@ test.describe('the update indicator', () => {
     await page.keyboard.press('Escape')
 
     await expect(popover).toHaveCount(0)
+  })
+
+  test('draws the Download button in the ink of the accent, as readable as the primary button of the link inspector', async ({
+    page,
+    request,
+  }) => {
+    await publishNewRelease(request, origin)
+    await openWorkspace(page)
+    await page.getByRole('button', { name: 'Application update available' }).click()
+    const popover = page.getByRole('dialog', { name: 'Update available' })
+    const download = popover.getByRole('button', { name: 'Download', exact: true })
+    await expect(download).toBeVisible()
+    const downloadContrast = await getContrast(download)
+    expect(downloadContrast).toBeGreaterThanOrEqual(4.5)
+    await page.keyboard.press('Escape')
+    await expect(popover).toHaveCount(0)
+
+    await page.locator('.plex-frame:not([data-moving])').waitFor({ state: 'attached' })
+    const edgeHit = getGraph(page).locator('.plex__edge-hit').first()
+    await expect(edgeHit).toBeAttached()
+    await edgeHit.dispatchEvent('click', { clientX: 300, clientY: 300 })
+    const applyButton = page.locator('.plex-link-popover__btn--done')
+    await expect(applyButton).toBeVisible()
+    const applyContrast = await getContrast(applyButton)
+
+    expect(applyContrast).toBeGreaterThanOrEqual(4.5)
+    expect(Math.abs(downloadContrast - applyContrast)).toBeLessThanOrEqual(0.5)
   })
 
   test('checks the feed again when the release feed address changes, and announces what it finds', async ({

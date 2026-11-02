@@ -16,7 +16,7 @@
 
   /* The accent: what the node in focus is filled with, and what the ring and
      the selection are drawn in as well. */
-  --numen-accent: light-dark(#b45f16, #e9a23b);
+  --numen-accent: light-dark(#a85816, #e9a23b);
   --numen-accent-ink: light-dark(#faf4e8, #2a1d0c);
 
   /* One hue per relation, carrying the meaning the position already carries: the
@@ -31,7 +31,7 @@
   --numen-edge-label: light-dark(#8a7f70, #a1968a);
   /* The name written along an edge of a plex is said in that voice. */
   --numen-hushed: var(--numen-edge-label);
-  --numen-ring: light-dark(#b45f16, #e9a23b);
+  --numen-ring: light-dark(#a85816, #e9a23b);
   /* The ground under selected text. The second is the same selection where the
      keyboard is somewhere else, the third every other place that text stands. */
   --numen-selection: light-dark(#b45f1638, #e9a23b42);
@@ -145,6 +145,10 @@
   --numen-radius: 0.375rem;
   /* The corner of a control a row is filled with: half the curve of a box. */
   --numen-radius-tight: calc(var(--numen-radius) / 2);
+  /* The corner of what opens over the page at a point: a menu, a popover. */
+  --numen-radius-popup: var(--numen-radius);
+  /* The corner of a row inside it: a menu item, the highlighted option of a list. */
+  --numen-radius-popup-item: var(--numen-radius);
 
   /* The halo that keeps an edge label legible where it crosses its own line. */
   --numen-edge-label-halo: 0.1875rem;

@@ -223,7 +223,7 @@ function getOptionId(index: number): string {
   overflow: hidden;
   background: var(--numen-raised);
   border: var(--numen-stroke) solid var(--relation-color);
-  border-radius: var(--numen-radius-panel);
+  border-radius: var(--numen-radius-popup);
   box-shadow: var(--numen-panel-shadow);
 }
 .plex-quick-link__node {
@@ -282,7 +282,7 @@ function getOptionId(index: number): string {
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0.3125rem 0.5rem;
-  border-radius: var(--numen-radius-tight);
+  border-radius: var(--numen-radius-popup-item);
   cursor: pointer;
   text-align: start;
 }

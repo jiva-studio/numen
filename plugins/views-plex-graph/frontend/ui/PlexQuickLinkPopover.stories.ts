@@ -42,7 +42,7 @@ const expectOneFrame = async (canvasElement: HTMLElement, hasList: boolean) => {
   await expect(frame.contains(field)).toBe(true)
 
   const probe = document.createElement('div')
-  probe.style.borderTopLeftRadius = 'var(--numen-radius-panel)'
+  probe.style.borderTopLeftRadius = 'var(--numen-radius-popup)'
   document.body.append(probe)
   const radius = getComputedStyle(probe).borderTopLeftRadius
   probe.remove()

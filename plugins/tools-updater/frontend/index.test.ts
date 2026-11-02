@@ -83,7 +83,8 @@ describe('the updater frontend', () => {
     await wrapper.find('.update-indicator__trigger').trigger('click')
 
     expect(wrapper.find('.update-popover__title').text()).toBe('Update available')
-    expect(wrapper.find('.update-popover__version').text()).toBe('v2026.10.1')
+    expect(wrapper.find('.update-popover__header').text()).toBe('Update available')
+    expect(wrapper.find('.update-popover__release').text()).toContain('v2026.10.1')
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     await flush()
 

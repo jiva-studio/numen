@@ -51,10 +51,7 @@ function onDismiss() {
 <template>
   <div class="update-popover" role="dialog" aria-modal="false" :aria-label="words.title">
     <header class="update-popover__header">
-      <div class="update-popover__heading">
-        <span class="update-popover__title">{{ words.title }}</span>
-        <span class="update-popover__version">v{{ update.version }}</span>
-      </div>
+      <span class="update-popover__title">{{ words.title }}</span>
       <Button
         variant="ghost"
         size="icon-small"
@@ -71,8 +68,9 @@ function onDismiss() {
 
     <div class="update-popover__body">
       <p class="update-popover__desc">{{ platformMessage }}</p>
-      <p v-if="releaseDate" class="update-popover__date">
-        {{ words.releasedOn }} {{ releaseDate }}
+      <p class="update-popover__release">
+        <span class="update-popover__version">v{{ update.version }}</span>
+        <template v-if="releaseDate"> · {{ words.releasedOn }} {{ releaseDate }}</template>
       </p>
     </div>
 

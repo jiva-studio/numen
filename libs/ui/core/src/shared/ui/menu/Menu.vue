@@ -204,7 +204,7 @@ function measure(): void {
   overscroll-behavior: contain;
   background-color: var(--numen-raised);
   border: 1px solid var(--numen-panel-border);
-  border-radius: var(--numen-radius);
+  border-radius: var(--numen-radius-popup);
   box-shadow: var(--numen-panel-shadow);
 }
 

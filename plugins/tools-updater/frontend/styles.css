@@ -38,8 +38,8 @@
   max-width: calc(100vw - 1rem);
   background: var(--numen-raised);
   color: var(--numen-ink);
-  border: 1px solid var(--numen-rule);
-  border-radius: var(--numen-radius-panel);
+  border: 1px solid var(--numen-panel-border);
+  border-radius: var(--numen-radius-popup);
   box-shadow: var(--numen-panel-shadow);
   overflow: hidden;
   z-index: 50;
@@ -55,21 +55,9 @@
   border-bottom: 1px solid var(--numen-rule);
 }
 
-.update-popover__heading {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
 .update-popover__title {
   font-size: var(--numen-text-2);
   font-weight: 600;
-}
-
-.update-popover__version {
-  font-size: var(--numen-text-1);
-  color: var(--numen-hushed);
-  font-variant-numeric: tabular-nums;
 }
 
 .update-popover__close-btn {
@@ -96,7 +84,7 @@
   line-height: 1.35;
 }
 
-.update-popover__date {
+.update-popover__release {
   margin: 0;
   font-size: var(--numen-text-1);
   color: var(--numen-hushed);

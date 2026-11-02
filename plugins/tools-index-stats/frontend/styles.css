@@ -40,8 +40,8 @@
   max-height: 28rem;
   background: var(--numen-raised);
   color: var(--numen-ink);
-  border: 1px solid var(--numen-rule);
-  border-radius: var(--numen-radius-panel);
+  border: 1px solid var(--numen-panel-border);
+  border-radius: var(--numen-radius-popup);
   box-shadow: var(--numen-panel-shadow);
   overflow: hidden;
   z-index: 50;

@@ -49,7 +49,7 @@ defineExpose({ focus, getElement: () => row.value })
 
   <button
     ref="row"
-    class="menu__item rounded-node flex w-full items-center px-2 py-1.5 text-left"
+    class="menu__item flex w-full items-center px-2 py-1.5 text-left"
     type="button"
     :role="current === null ? 'menuitem' : 'menuitemradio'"
     :aria-checked="current === null ? undefined : item.id === current"
@@ -100,6 +100,7 @@ defineExpose({ focus, getElement: () => row.value })
 }
 
 .menu__item {
+  border-radius: var(--numen-radius-popup-item);
   box-sizing: border-box;
   max-inline-size: 100%;
   cursor: default;
