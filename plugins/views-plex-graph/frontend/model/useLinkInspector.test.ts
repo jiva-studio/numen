@@ -111,7 +111,7 @@ describe('saving the link inspector', () => {
   it('saves the connection in one call and shows the picture again', async () => {
     const one = inspecting()
     const request = await one.open()
-    const edited = cycleDirection(setSideLabel(request!.connection, 'first', 'holds'))
+    const edited = cycleDirection(setSideLabel(request!.connection, 'first', 'holds'), 'first')
 
     await one.saveLinkInspector(edited)
 
@@ -128,7 +128,10 @@ describe('saving the link inspector', () => {
   it('saves a record that carries an arrow and an empty label', async () => {
     const one = inspecting(null)
     const request = await one.open()
-    const edited = cycleDirection(cycleDirection(addReverseSide(request!.connection)))
+    const edited = cycleDirection(
+      cycleDirection(addReverseSide(request!.connection), 'first'),
+      'first',
+    )
 
     await one.saveLinkInspector(edited)
 

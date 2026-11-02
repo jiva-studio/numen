@@ -169,18 +169,52 @@ describe('PlexLinkInspectorPopover component', () => {
     wrapper.unmount()
   })
 
-  it('adds the reverse direction as a second row with fixed arrows', async () => {
+  it('adds the reverse direction as a second row with both arrows', async () => {
     const wrapper = mountPopover()
     await clickAdd(wrapper)
 
     expect(getIcons(wrapper)).toEqual(['→', '←'])
-    expect(
-      directionButtons(wrapper).every((button) => button.attributes('disabled') !== undefined),
-    ).toBe(true)
     expect(wrapper.find('.plex-link-popover__btn--add').exists()).toBe(false)
+    wrapper.unmount()
+  })
 
+  it('names the arrow of a record and the one a click makes', async () => {
+    const wrapper = mountPopover()
+    const button = directionButtons(wrapper)[0]!
+
+    expect(button.attributes('aria-label')).toBe('No arrow. Click for: Arrow to Lighthouse')
+    expect(button.attributes('title')).toBe(button.attributes('aria-label'))
+    await button.trigger('click')
+    expect(button.attributes('aria-label')).toBe('Arrow to Lighthouse. Click for: Arrow to Harbour')
+    await button.trigger('click')
+    expect(button.attributes('aria-label')).toBe('Arrow to Harbour. Click for: No arrow')
+    wrapper.unmount()
+  })
+
+  it('turns the arrow of each of two undirected records on and off on its own', async () => {
+    const wrapper = mountPopover({
+      ...defaultRequest,
+      connection: {
+        ...connection,
+        secondSide: { label: 'shelters it', marker: null, reason: '' },
+      },
+    })
+    expect(getIcons(wrapper)).toEqual(['—', '—'])
+    expect(directionButtons(wrapper).every((button) => !button.attributes('disabled'))).toBe(true)
+
+    await directionButtons(wrapper)[1]!.trigger('click')
+    expect(getIcons(wrapper)).toEqual(['—', '←'])
     await directionButtons(wrapper)[0]!.trigger('click')
     expect(getIcons(wrapper)).toEqual(['→', '←'])
+    await directionButtons(wrapper)[1]!.trigger('click')
+    expect(getIcons(wrapper)).toEqual(['→', '—'])
+
+    await clickDone(wrapper)
+    expect(saved(wrapper)).toStrictEqual({
+      ...connection,
+      firstSide: { label: 'guides ships', marker: 'arrow', reason: 'kept' },
+      secondSide: { label: 'shelters it', marker: null, reason: '' },
+    })
     wrapper.unmount()
   })
 

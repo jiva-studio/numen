@@ -84,7 +84,7 @@ export const Backward: Story = {
   },
 }
 
-/** A record each way: two rows with fixed arrows, each with its own description. */
+/** A record each way: two rows with arrows, each with its own description. */
 export const BothDirections: Story = {
   args: {
     request: createRequest(
@@ -99,7 +99,7 @@ export const BothDirections: Story = {
 
     await expect(getDirections(canvasElement)).toStrictEqual(['forward', 'backward'])
     for (const button of canvasElement.querySelectorAll('.plex-link-row__dir-btn')) {
-      await expect(button).toBeDisabled()
+      await expect(button).toBeEnabled()
     }
     await expect(canvas.queryByText(words.addReverseDirection, { exact: false })).toBeNull()
   },
@@ -116,6 +116,32 @@ export const CycleDirection: Story = {
     }
 
     await expect(directions).toStrictEqual(['none', 'forward', 'backward', 'none'])
+  },
+}
+
+/** A record of each note without an arrow: each button gives its own record an arrow and takes it away. */
+export const TurnArrowsOfTwoRecords: Story = {
+  args: {
+    request: createRequest(
+      createConnection({
+        firstSide: { label: 'guides ships in', marker: null, reason: '' },
+        secondSide: { label: 'shelters', marker: null, reason: '' },
+      }),
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const [first, second] = [
+      ...canvasElement.querySelectorAll<HTMLButtonElement>('.plex-link-row__dir-btn'),
+    ]
+    await expect(getDirections(canvasElement)).toStrictEqual(['none', 'none'])
+
+    await userEvent.click(second!)
+    await expect(getDirections(canvasElement)).toStrictEqual(['none', 'backward'])
+    await userEvent.click(first!)
+    await expect(getDirections(canvasElement)).toStrictEqual(['forward', 'backward'])
+    await expect(first).toHaveAccessibleName('Arrow to Lighthouse. Click for: No arrow')
+    await userEvent.click(second!)
+    await expect(getDirections(canvasElement)).toStrictEqual(['forward', 'none'])
   },
 }
 

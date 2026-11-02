@@ -109,6 +109,30 @@ const getDirections = (popover: Locator) =>
     .locator('.plex-link-row__dir-btn')
     .evaluateAll((buttons) => buttons.map((button) => button.getAttribute('data-direction')))
 
+/**
+ * Presses the direction button of a row with the mouse at the middle of the button, after checking
+ * that the button is the topmost element there: nothing covers it, and it is not disabled.
+ */
+const getDirectionButton = async (popover: Locator, row: number) =>
+  (await popover.locator('.plex-link-row__dir-btn').all())[row]!
+
+const pressDirection = async (page: Page, popover: Locator, row: number) => {
+  const button = await getDirectionButton(popover, row)
+  await expect(button).toBeEnabled()
+  const centre = await button.evaluate((element) => {
+    const box = element.getBoundingClientRect()
+    const x = box.x + box.width / 2
+    const y = box.y + box.height / 2
+    const top = document.elementFromPoint(x, y)
+    return { x, y, isOnTop: top !== null && element.contains(top) }
+  })
+  expect(centre.isOnTop).toBe(true)
+  await page.mouse.click(centre.x, centre.y)
+}
+
+const getButtonName = async (popover: Locator, row: number) =>
+  (await getDirectionButton(popover, row)).getAttribute('aria-label')
+
 const clickDone = async (page: Page, popover: Locator) => {
   await popover.locator('.plex-link-popover__btn--done').click()
   await expect(popover).toBeHidden()
@@ -392,7 +416,7 @@ test.describe('Plex Edge and Link Inspector', () => {
 
     await popover.locator('.plex-link-popover__btn--add').click()
     expect(await getDirections(popover)).toStrictEqual(['forward', 'backward'])
-    await expect(popover.locator('.plex-link-row__dir-btn').first()).toBeDisabled()
+    await expect(popover.locator('.plex-link-row__dir-btn').first()).toBeEnabled()
     await expect(popover.locator('.plex-link-popover__btn--add')).toHaveCount(0)
 
     const inputs = popover.locator('.plex-link-row__input')
@@ -539,6 +563,83 @@ test.describe('Plex Edge and Link Inspector', () => {
 
     expect(await getRecords(request)).toEqual({ [first]: both[first], [second]: null })
     await expect.poll(async () => (await readEdge(page, NAMES)).arrows.length).toBe(1)
+  })
+
+  test('turns the arrows of two records already on disk with real clicks, one record each', async ({
+    page,
+    request,
+  }) => {
+    await saveConnection(request, {
+      Thermodynamics: { label: 'Lopata' },
+      Entropy: { label: 'ererer' },
+    })
+    const { popover, first, second } = await openLinkInspector(page)
+    expect(await getDirections(popover)).toStrictEqual(['none', 'none'])
+    expect(await getButtonName(popover, 0)).toBe(`No arrow. Click for: Arrow to ${second}`)
+    expect(await getButtonName(popover, 1)).toBe(`No arrow. Click for: Arrow to ${first}`)
+
+    await pressDirection(page, popover, 1)
+    expect(await getDirections(popover)).toStrictEqual(['none', 'backward'])
+    expect(await getButtonName(popover, 1)).toBe(`Arrow to ${first}. Click for: No arrow`)
+    await pressDirection(page, popover, 0)
+    expect(await getDirections(popover)).toStrictEqual(['forward', 'backward'])
+    expect(await getButtonName(popover, 0)).toBe(`Arrow to ${second}. Click for: No arrow`)
+    await pressDirection(page, popover, 1)
+    expect(await getDirections(popover)).toStrictEqual(['forward', 'none'])
+    await clickDone(page, popover)
+
+    const records = await getRecords(request)
+    expect(records[first]).toEqual({ label: records[first]!.label, marker: ARROW })
+    expect(records[second]).toEqual({ label: records[second]!.label })
+    await expect.poll(async () => (await readEdge(page, NAMES)).arrows.length).toBe(1)
+  })
+
+  test('takes the arrows off two directed records on disk with real clicks', async ({
+    page,
+    request,
+  }) => {
+    await saveConnection(request, {
+      Thermodynamics: { label: 'flows into', marker: ARROW },
+      Entropy: { label: 'measures', marker: ARROW },
+    })
+    const { popover, first, second } = await openLinkInspector(page)
+    expect(await getDirections(popover)).toStrictEqual(['forward', 'backward'])
+
+    await pressDirection(page, popover, 0)
+    expect(await getDirections(popover)).toStrictEqual(['none', 'backward'])
+    await pressDirection(page, popover, 1)
+    expect(await getDirections(popover)).toStrictEqual(['none', 'none'])
+    await clickDone(page, popover)
+
+    const records = await getRecords(request)
+    expect(Object.values(records).map((side) => side?.marker)).toStrictEqual([undefined, undefined])
+    expect(records[first]?.label).toBeTruthy()
+    expect(records[second]?.label).toBeTruthy()
+    await expect.poll(async () => (await readEdge(page, NAMES)).arrows.length).toBe(0)
+  })
+
+  test('cycles a lone record with real clicks and names each arrow and the next', async ({
+    page,
+    request,
+  }) => {
+    const { popover, first, second } = await openLinkInspector(page)
+    const names: (string | null)[] = [await getButtonName(popover, 0)]
+    for (let step = 0; step < 3; step += 1) {
+      await pressDirection(page, popover, 0)
+      names.push(await getButtonName(popover, 0))
+    }
+    expect(names).toStrictEqual([
+      `No arrow. Click for: Arrow to ${second}`,
+      `Arrow to ${second}. Click for: Arrow to ${first}`,
+      `Arrow to ${first}. Click for: No arrow`,
+      `No arrow. Click for: Arrow to ${second}`,
+    ])
+    await pressDirection(page, popover, 0)
+    await clickDone(page, popover)
+    expect(await getRecords(request)).toEqual({
+      [first]: { label: 'warms', marker: ARROW },
+      [second]: null,
+    })
   })
 
   test('dismisses link inspector via close button without breaking plex graph', async ({

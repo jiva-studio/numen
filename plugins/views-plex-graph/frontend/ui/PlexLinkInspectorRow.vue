@@ -3,7 +3,7 @@
  * One record of the connection in PlexLinkInspectorPopover: its direction, its description and
  * the button that removes it.
  */
-import { useId } from 'vue'
+import { computed, useId } from 'vue'
 import { ArrowLeft, ArrowRight, Minus, Trash2 } from '@lucide/vue'
 import type { LinkDirection } from '../model/connectionDraft'
 import { WORDS as words } from '../words'
@@ -12,8 +12,11 @@ import { WORDS as words } from '../words'
 const props = defineProps<{
   label: string
   direction: LinkDirection
-  /** Whether the direction is fixed, as it is while both notes write a record. */
-  isStatic: boolean
+  /** The direction a press of the direction button turns this record to. */
+  nextDirection: LinkDirection
+  /** The titles of the first and the second note, which the direction names say. */
+  firstTitle: string
+  secondTitle: string
 }>()
 
 const emit = defineEmits<{
@@ -23,6 +26,11 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const labelFieldId = useId()
+const directionWords = computed(() => {
+  const name = (direction: LinkDirection) =>
+    words.direction[direction](props.firstTitle, props.secondTitle)
+  return words.directionButton(name(props.direction), name(props.nextDirection))
+})
 
 /* -------------------------------- Handlers -------------------------------- */
 function onInput(event: Event) {
@@ -47,14 +55,9 @@ function onInputKeyDown(event: KeyboardEvent) {
     <button
       type="button"
       class="plex-link-row__dir-btn plex-link-popover__dir-btn"
-      :class="{
-        'plex-link-row__dir-btn--static': props.isStatic,
-        'plex-link-popover__dir-btn--static': props.isStatic,
-      }"
       :data-direction="props.direction"
-      :disabled="props.isStatic"
-      :title="props.isStatic ? undefined : words.changeDirection"
-      :aria-label="words.direction[props.direction]"
+      :title="directionWords"
+      :aria-label="directionWords"
       @click="emit('cycle-direction')"
     >
       <ArrowRight
@@ -124,14 +127,17 @@ function onInputKeyDown(event: KeyboardEvent) {
   padding: 0;
   transition: color var(--numen-motion-hover) ease;
 }
-.plex-link-row__dir-btn:hover:not(:disabled) {
-  background: transparent;
+.plex-link-row__dir-btn {
+  border-radius: var(--numen-radius);
+}
+.plex-link-row__dir-btn:hover {
+  background: var(--numen-raised);
   color: var(--numen-ink);
 }
-.plex-link-row__dir-btn:disabled,
-.plex-link-row__dir-btn--static {
-  cursor: default;
-  opacity: 0.5;
+.plex-link-row__dir-btn:focus-visible,
+.plex-link-row__delete-btn:focus-visible {
+  outline: var(--numen-stroke) solid var(--numen-ring);
+  outline-offset: 1px;
 }
 .plex-link-row__delete-btn:hover {
   background: transparent;

@@ -57,22 +57,47 @@ export function getRows(draft: Connection): ConnectionRow[] {
   return rows
 }
 
+/** The direction a row turns to when its button is pressed: the three in turn for a lone record, arrow or none for one of two. */
+export function getNextDirection(
+  direction: LinkDirection,
+  key: SideKey,
+  rowCount: number,
+): LinkDirection {
+  if (rowCount > 1) {
+    if (direction !== 'none') return 'none'
+    return key === 'first' ? 'forward' : 'backward'
+  }
+  switch (direction) {
+    case 'none':
+      return 'forward'
+    case 'forward':
+      return 'backward'
+    case 'backward':
+      return 'none'
+  }
+}
+
 /**
- * The draft with its only record turned to the next direction: none, then forward, then backward,
- * then none again. Forward and none are written by the first note and backward by the second, so
- * the record moves between the notes with its label. A draft with two records or none is returned
+ * The draft with one record turned to its next direction. A lone record goes none, forward,
+ * backward and none again: forward and none are written by the first note and backward by the
+ * second, so the record moves between the notes with its label. Of two records each one only
+ * gains or loses its own arrow, so none of them moves. A draft without that record is returned
  * as it is.
  */
-export function cycleDirection(draft: Connection): Connection {
-  const [row, ...rest] = getRows(draft)
-  if (!row || rest.length > 0) return draft
+export function cycleDirection(draft: Connection, key: SideKey): Connection {
+  const rows = getRows(draft)
+  const row = rows.length > 1 ? rows.find((candidate) => candidate.key === key) : rows[0]
+  if (!row) return draft
   const { side } = row
-  switch (row.direction) {
-    case 'none':
-      return { ...draft, firstSide: { ...side, marker: 'arrow' }, secondSide: null }
+  if (rows.length > 1) {
+    return withSide(draft, key, { ...side, marker: row.direction === 'none' ? 'arrow' : null })
+  }
+  switch (getNextDirection(row.direction, row.key, 1)) {
     case 'forward':
-      return { ...draft, firstSide: null, secondSide: { ...side, marker: 'arrow' } }
+      return { ...draft, firstSide: { ...side, marker: 'arrow' }, secondSide: null }
     case 'backward':
+      return { ...draft, firstSide: null, secondSide: { ...side, marker: 'arrow' } }
+    default:
       return { ...draft, firstSide: { ...side, marker: null }, secondSide: null }
   }
 }

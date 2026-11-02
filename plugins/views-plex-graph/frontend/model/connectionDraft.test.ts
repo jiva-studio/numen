@@ -5,6 +5,7 @@ import {
   addReverseSide,
   areConnectionsEqual,
   cycleDirection,
+  getNextDirection,
   getRows,
   isConnectionEmpty,
   removeSide,
@@ -60,21 +61,22 @@ describe('getRows', () => {
 
 describe('cycleDirection', () => {
   it('turns no direction into a record of the first note with an arrow', () => {
-    expect(cycleDirection(undirected)).toStrictEqual(forward)
+    expect(cycleDirection(undirected, 'first')).toStrictEqual(forward)
   })
 
   it('moves a forward record to the second note with its label and reason', () => {
-    expect(cycleDirection(forward)).toStrictEqual(backward)
+    expect(cycleDirection(forward, 'first')).toStrictEqual(backward)
   })
 
   it('moves a backward record to the first note without an arrow', () => {
-    expect(cycleDirection(backward)).toStrictEqual(undirected)
+    expect(cycleDirection(backward, 'first')).toStrictEqual(undirected)
   })
 
   it('returns to the first direction after three steps and keeps the role', () => {
     const parent = connection({ role: 'parent', firstSide: side('above') })
-    const steps = [cycleDirection(parent)]
-    steps.push(cycleDirection(steps[0]!), cycleDirection(cycleDirection(steps[0]!)))
+    const steps = [cycleDirection(parent, 'first')]
+    steps.push(cycleDirection(steps[0]!, 'first'))
+    steps.push(cycleDirection(steps[1]!, 'first'))
 
     expect(steps.map((step) => getRows(step)[0]?.direction)).toEqual([
       'forward',
@@ -85,11 +87,39 @@ describe('cycleDirection', () => {
     expect(steps[2]).toStrictEqual(parent)
   })
 
-  it('leaves a draft with two records or none as it is', () => {
-    const both = connection({ firstSide: side('one', 'arrow'), secondSide: side('two', 'arrow') })
-    expect(cycleDirection(both)).toBe(both)
+  it('gives each of two undirected records its own arrow and takes it away again', () => {
+    const both = connection({ firstSide: side('one'), secondSide: side('two') })
+
+    const first = cycleDirection(both, 'first')
+    expect(getRows(first).map((row) => [row.key, row.direction])).toEqual([
+      ['first', 'forward'],
+      ['second', 'none'],
+    ])
+    const second = cycleDirection(first, 'second')
+    expect(getRows(second).map((row) => row.direction)).toEqual(['forward', 'backward'])
+    expect(second.firstSide?.label).toBe('one')
+    expect(second.secondSide?.label).toBe('two')
+    expect(cycleDirection(cycleDirection(second, 'first'), 'second')).toStrictEqual(both)
+  })
+
+  it('leaves a draft with no record as it is', () => {
     const empty = connection()
-    expect(cycleDirection(empty)).toBe(empty)
+    expect(cycleDirection(empty, 'first')).toBe(empty)
+  })
+})
+
+describe('getNextDirection', () => {
+  it('turns a lone record through the three directions', () => {
+    expect(getNextDirection('none', 'first', 1)).toBe('forward')
+    expect(getNextDirection('forward', 'first', 1)).toBe('backward')
+    expect(getNextDirection('backward', 'second', 1)).toBe('none')
+  })
+
+  it('gives one of two records its own arrow or none', () => {
+    expect(getNextDirection('none', 'first', 2)).toBe('forward')
+    expect(getNextDirection('none', 'second', 2)).toBe('backward')
+    expect(getNextDirection('forward', 'first', 2)).toBe('none')
+    expect(getNextDirection('backward', 'second', 2)).toBe('none')
   })
 })
 

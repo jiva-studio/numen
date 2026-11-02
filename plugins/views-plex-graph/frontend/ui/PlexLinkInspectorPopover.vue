@@ -11,6 +11,7 @@ import type { LinkInspectorRequest } from '../types'
 import {
   addReverseSide,
   cycleDirection,
+  getNextDirection,
   getRows,
   isConnectionEmpty,
   removeSide,
@@ -65,8 +66,8 @@ function onKeyDown(event: KeyboardEvent) {
   }
 }
 
-function onCycleDirection() {
-  draft.value = cycleDirection(draft.value)
+function onCycleDirection(key: SideKey) {
+  draft.value = cycleDirection(draft.value, key)
 }
 
 function onLabelChanged(key: SideKey, label: string) {
@@ -120,8 +121,10 @@ function onDone() {
         :key="index"
         :label="row.side.label"
         :direction="row.direction"
-        :is-static="rows.length > 1"
-        @cycle-direction="onCycleDirection"
+        :next-direction="getNextDirection(row.direction, row.key, rows.length)"
+        :first-title="props.request.nodeA.title"
+        :second-title="props.request.nodeB.title"
+        @cycle-direction="onCycleDirection(row.key)"
         @update:label="onLabelChanged(row.key, $event)"
         @remove="onRemoveRow(row.key)"
         @done="onDone"
