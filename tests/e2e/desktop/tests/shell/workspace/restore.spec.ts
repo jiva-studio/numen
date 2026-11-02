@@ -34,7 +34,8 @@ const setPdfReaderEnabled = async (page: Page, isEnabled: boolean): Promise<void
   if (!(await toggle.isVisible())) {
     await settings.getByRole('button', { name: /PDF Reader/ }).click()
   }
-  await toggle.setChecked(isEnabled)
+  // The switch moves when the core has answered its write, so the click is not waited for to change it.
+  if ((await toggle.isChecked()) !== isEnabled) await toggle.click()
   await expect(toggle).toBeChecked({ checked: isEnabled })
 }
 

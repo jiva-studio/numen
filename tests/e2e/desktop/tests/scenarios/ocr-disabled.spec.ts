@@ -20,7 +20,8 @@ const setOcrEnabled = async (page: Page, isEnabled: boolean): Promise<void> => {
   const settings = page.getByRole('tabpanel', { name: /Settings/ })
   await settings.getByRole('button', { name: /Document OCR/ }).click()
   const toggle = settings.getByRole('switch', { name: /Enabled Document OCR/ })
-  await toggle.setChecked(isEnabled)
+  // The switch moves when the core has answered its write, so the click is not waited for to change it.
+  if ((await toggle.isChecked()) !== isEnabled) await toggle.click()
   await expect(toggle).toBeChecked({ checked: isEnabled })
 }
 

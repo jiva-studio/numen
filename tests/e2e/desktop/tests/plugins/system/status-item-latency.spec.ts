@@ -20,7 +20,7 @@ const LEAVES_WITHIN_MS = 500
 interface Frame {
   readonly elapsed: number
   readonly checked: string
-  readonly isDisabled: boolean
+  readonly isBusy: boolean
   readonly hasItem: boolean
 }
 
@@ -45,7 +45,7 @@ const clickAndSample = (page: Page, span: number): Promise<Frame[]> =>
           frames.push({
             elapsed,
             checked: toggle?.getAttribute('aria-checked') ?? '',
-            isDisabled: toggle?.hasAttribute('disabled') ?? false,
+            isBusy: toggle?.getAttribute('aria-busy') === 'true',
             hasItem: document.querySelector('.index-stats') !== null,
           })
           if (elapsed < milliseconds) requestAnimationFrame(sample)
@@ -98,19 +98,19 @@ test.describe('The switch of a plugin and its status item', () => {
 
     const off = await clickAndSample(page, 4_000)
     const pending = off.filter((one) => one.elapsed < WRITE_MS - 300)
-    expect(pending.every((one) => one.checked === 'true' && one.isDisabled)).toBe(true)
+    expect(pending.every((one) => one.checked === 'true' && one.isBusy)).toBe(true)
     expect(pending.every((one) => one.hasItem)).toBe(true)
     expect(new Set(off.map((one) => one.checked))).toEqual(new Set(['true', 'false']))
     const turnedOff = findMoments(off, 'false', false)
     expect(turnedOff.switchAt).toBeGreaterThanOrEqual(WRITE_MS - 300)
     expect(turnedOff.itemAt - turnedOff.switchAt).toBeLessThan(LEAVES_WITHIN_MS)
-    expect(off.at(-1)?.isDisabled).toBe(false)
+    expect(off.at(-1)?.isBusy).toBe(false)
 
     const on = await clickAndSample(page, 4_000)
     expect(new Set(on.map((one) => one.checked))).toEqual(new Set(['false', 'true']))
     const turnedOn = findMoments(on, 'true', true)
     expect(turnedOn.switchAt).toBeGreaterThanOrEqual(WRITE_MS - 300)
     expect(turnedOn.itemAt - turnedOn.switchAt).toBeLessThan(APPEARS_WITHIN_MS)
-    expect(on.at(-1)?.isDisabled).toBe(false)
+    expect(on.at(-1)?.isBusy).toBe(false)
   })
 })
