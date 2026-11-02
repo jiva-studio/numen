@@ -1,4 +1,4 @@
-import { test, expect, type Page, type Route } from '../../support/test.js'
+import { test, expect, type Locator, type Page, type Route } from '../../support/test.js'
 import { getGraph, openWorkspace } from '../../support/workspace.js'
 import { createUniqueTitle } from '../../support/vault.js'
 import {
@@ -30,6 +30,17 @@ const openQuickLink = async (page: Page, title: string) => {
   await handle.hover()
   await handle.click()
   return page.getByRole('dialog', { name: 'New thought' })
+}
+
+/**
+ * Waits until the options panel of the quick link has finished opening. While it opens, the
+ * panel clips its rows, so a click at the middle of a row can land on the panel instead.
+ */
+const waitForQuickLinkPanel = async (dialog: Locator): Promise<void> => {
+  const frame = dialog.locator('.plex-quick-link__frame')
+  await frame.evaluate((el) =>
+    Promise.all(el.getAnimations({ subtree: true }).map((animation) => animation.finished)),
+  )
 }
 
 /** Holds the name searches of the window until the returned function lets them go. */
@@ -115,11 +126,9 @@ test.describe('Links between two notes in the plex', () => {
     expect(after?.y).toBe(before?.y)
     expect(after?.x).toBe(before?.x)
 
+    await waitForQuickLinkPanel(dialog)
     const frame = await field.evaluateHandle((input) => input.closest('.plex-quick-link__frame')!)
     const frameElement = frame.asElement()!
-    await frameElement.evaluate((el) =>
-      Promise.all(el.getAnimations({ subtree: true }).map((animation) => animation.finished)),
-    )
     expect(
       await frameElement.evaluate(
         (el, id) => el.contains(document.getElementById(id)),
@@ -188,19 +197,27 @@ test.describe('Links between two notes in the plex', () => {
   test('creates and links a note with a click on Create', async ({ page, request }) => {
     const title = createUniqueTitle('Wharf')
     const created = `notes/${title}.md`
-    await openWorkspace(page)
-    await showInPlex(page, quay)
-    const dialog = await openQuickLink(page, 'Quay')
-    await dialog.getByRole('combobox').fill(title)
-    await dialog.getByRole('option', { name: `Create "${title}"` }).click()
+    expect(await listPaths(request, 'notes')).not.toContain(created)
+    try {
+      await openWorkspace(page)
+      await showInPlex(page, quay)
+      const dialog = await openQuickLink(page, 'Quay')
+      await dialog.getByRole('combobox').fill(title)
+      const option = dialog.getByRole('option', { name: `Create "${title}"` })
+      await expect(option).toBeVisible()
+      await waitForQuickLinkPanel(dialog)
+      await option.click()
 
-    await expect
-      .poll(async () => {
-        const sides = await getConnectionSides(request, quay, created)
-        return sides.first || sides.second
-      })
-      .toBe(true)
-    await destroyNotes(request, [created])
+      await expect.poll(async () => listPaths(request, 'notes')).toContain(created)
+      await expect
+        .poll(async () => {
+          const sides = await getConnectionSides(request, quay, created)
+          return sides.first || sides.second
+        })
+        .toBe(true)
+    } finally {
+      await destroyNotes(request, [created])
+    }
   })
 
   test('removes the link of two notes with Remove link, and the connection is gone from both', async ({
