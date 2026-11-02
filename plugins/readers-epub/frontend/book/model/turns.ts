@@ -53,6 +53,8 @@ function getTurnDuration(text: HTMLElement): number {
 
 interface RunningTurn {
   frame: number
+  /** The `translate` the turn is going to. */
+  to: string
 }
 
 const runningTurns = new WeakMap<HTMLElement, RunningTurn>()
@@ -71,8 +73,11 @@ function stopTurn(text: HTMLElement): void {
  * seemed to go back and come forward again. A turn written frame by frame has no end that the
  * compositor handles, the last frame writes the place the turn goes to as it is, and the place the
  * columns stand at is always the one in the style, so a turn started during another one goes on from it.
+ * A layout that asks for the place a turn is already going to leaves that turn running, since a
+ * layout the turn did not wait for would otherwise cut it short.
  */
 function translatePaper(text: HTMLElement, to: string, how: 'smooth' | 'auto'): void {
+  if (runningTurns.get(text)?.to === to) return
   stopTurn(text)
   const duration = how === 'smooth' ? getTurnDuration(text) : 0
   const from = Number.parseFloat(text.style.translate)
@@ -83,7 +88,7 @@ function translatePaper(text: HTMLElement, to: string, how: 'smooth' | 'auto'): 
     return
   }
   const began = performance.now()
-  const running: RunningTurn = { frame: 0 }
+  const running: RunningTurn = { frame: 0, to }
   runningTurns.set(text, running)
   const draw = (now: number): void => {
     const time = Math.min((now - began) / duration, 1)

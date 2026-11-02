@@ -452,6 +452,7 @@ describe('a note removed', () => {
     await carry(createInvocation('remove', front()), one.on)
 
     expect(one.notices).toStrictEqual([`${words.dangling} Order.md, Notes.md`])
+    expect(one.severities).toStrictEqual(['warning'])
   })
 
   it('leaves every plex standing on it at the note the vault opens with', async () => {

@@ -156,7 +156,7 @@ const removeFiles = async (
 
   if (errors.length > 0) return on.writeMessage(joinAll(...errors), 'error')
   if (isWaiting) return on.writeMessage(words.unanswered, 'warning')
-  on.writeMessage(formatNames(words.dangling, dangling))
+  on.writeMessage(formatNames(words.dangling, dangling), 'warning')
 }
 
 export * from './noteHandlers'
