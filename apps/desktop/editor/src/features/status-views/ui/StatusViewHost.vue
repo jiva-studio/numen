@@ -1,13 +1,18 @@
 <script setup lang="ts">
 /**
- * The components plugins registered for the status bar, drawn in the order they were registered.
+ * The components plugins registered for the status bar, drawn in the order they were registered,
+ * with the stylesheet of each plugin that registered one.
  */
 import type { DeclaredStatusView } from '@numen/plugin-host'
+import { usePluginStyles } from '../model/usePluginStyles'
 
 /* --------------------------------- Props ---------------------------------- */
-defineProps<{
+const props = defineProps<{
   views: readonly DeclaredStatusView[]
 }>()
+
+/* --------------------------------- Hooks ---------------------------------- */
+usePluginStyles(() => props.views)
 </script>
 
 <template>

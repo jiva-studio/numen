@@ -161,7 +161,7 @@ func TestAChangeOfTheEndpointDiscardsTheLastResult(t *testing.T) {
 	}
 }
 
-func TestTheEndpointIsTheSettingOrTheFeedOfTheChannel(t *testing.T) {
+func TestTheEndpointIsTheFeedOfTheChannelOrTheSettingOfTheCustomChannel(t *testing.T) {
 	cases := []struct {
 		name   string
 		values map[string]string
@@ -170,8 +170,10 @@ func TestTheEndpointIsTheSettingOrTheFeedOfTheChannel(t *testing.T) {
 		{"no settings", map[string]string{}, StableEndpoint},
 		{"the stable channel", map[string]string{"channel": "stable"}, StableEndpoint},
 		{"the beta channel", map[string]string{"channel": "beta"}, BetaEndpoint},
-		{"an endpoint", map[string]string{"endpoint": " http://127.0.0.1:1/latest.json ", "channel": "beta"}, "http://127.0.0.1:1/latest.json"},
-		{"an empty endpoint", map[string]string{"endpoint": "  ", "channel": "beta"}, BetaEndpoint},
+		{"the custom channel", map[string]string{"endpoint": " http://127.0.0.1:1/latest.json ", "channel": "custom"}, "http://127.0.0.1:1/latest.json"},
+		{"the custom channel without an address", map[string]string{"endpoint": "  ", "channel": "custom"}, ""},
+		{"an endpoint on the beta channel", map[string]string{"endpoint": "http://127.0.0.1:1/latest.json", "channel": "beta"}, BetaEndpoint},
+		{"an endpoint on the stable channel", map[string]string{"endpoint": "http://127.0.0.1:1/latest.json"}, StableEndpoint},
 	}
 	for _, c := range cases {
 		if got := getEndpoint(c.values); got != c.want {
@@ -225,7 +227,7 @@ func TestTheHostConfiguresThePluginThatThenAnswersTheAPI(t *testing.T) {
 		t.Fatalf("Check before Configure = %d, want 412", status)
 	}
 
-	configured := `{"values":{"endpoint":"http://127.0.0.1:9/latest.json"}}`
+	configured := `{"values":{"channel":"custom","endpoint":"http://127.0.0.1:9/latest.json"}}`
 	if status, body := post(t, web, configurePath, configured); status != http.StatusOK {
 		t.Fatalf("Configure = %d %s", status, body)
 	}
@@ -244,5 +246,20 @@ func TestTheHostConfiguresThePluginThatThenAnswersTheAPI(t *testing.T) {
 	status, body = post(t, web, "/"+api.Service+"/"+api.MethodGetStatus, `{}`)
 	if status != http.StatusOK || !strings.Contains(string(body), `"state":"available"`) {
 		t.Errorf("GetStatus = %d %s", status, body)
+	}
+}
+
+func TestTheCustomChannelWithoutAnAddressAsksNoFeedAndIsUnreachable(t *testing.T) {
+	fetcher := &fakeFetcher{manifest: newManifest()}
+	u := newUpdater(fetcher)
+	u.configure(map[string]string{"channel": "custom", "endpoint": " "})
+
+	status, err := u.check(t.Context(), api.CheckRequest{App: windowsApp(900)})
+
+	if err != nil || status.State != api.StateUnreachable {
+		t.Errorf("status = %+v, error = %v", status, err)
+	}
+	if len(fetcher.requested) != 0 {
+		t.Errorf("endpoints requested = %v, want none", fetcher.requested)
 	}
 }

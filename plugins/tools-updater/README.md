@@ -13,8 +13,8 @@ The plugin checks without showing messages. A machine without a network connecti
 
 ## Settings
 
-- **Channel**: **Stable** _(default)_ notifies about releases; **Beta** notifies about builds published ahead of the next release.
-- **Release feed address**: Address of the `latest.json` file to request the newest build. If empty, the published feed of the channel is used, `https://dl.numen.md/latest/latest.json` for the stable channel.
+- **Channel**: **Stable** _(default)_ notifies about releases; **Beta** notifies about builds published ahead of the next release; **Custom** asks the release feed address below.
+- **Release feed address**: Shown only for the **Custom** channel, which requires it: the address of the `latest.json` file to request the newest build. The Stable and Beta channels ask their own published feeds, and the stored address is kept while it is hidden.
 - **Check interval**: Hours between two checks (`4` by default).
 
 ## How It Works

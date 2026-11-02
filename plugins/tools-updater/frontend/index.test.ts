@@ -66,11 +66,29 @@ describe('the updater frontend', () => {
     const wrapper = mount(component)
     expect(wrapper.find('.update-indicator__label').text()).toBe('v2026.10.1')
     await wrapper.find('.update-indicator__trigger').trigger('click')
-    await wrapper.find('.update-popover__btn--primary').trigger('click')
+    const download = wrapper.findAll('button').find((one) => one.text() === 'Download')
+    await download?.trigger('click')
     await flush()
 
     expect(context.getOpenedAddresses()).toEqual(['https://dl.numen.md/numen-windows-setup.exe'])
     expect(wrapper.find('.update-popover').exists()).toBe(false)
+  })
+
+  it('closes the popover on Escape and keeps the title and the version apart', async () => {
+    const { context } = setup(AVAILABLE)
+    await flush()
+    const wrapper = mount(context.getRegisteredStatusViews()[0]?.component as never, {
+      attachTo: document.body,
+    })
+    await wrapper.find('.update-indicator__trigger').trigger('click')
+
+    expect(wrapper.find('.update-popover__title').text()).toBe('Update available')
+    expect(wrapper.find('.update-popover__version').text()).toBe('v2026.10.1')
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await flush()
+
+    expect(wrapper.find('.update-popover').exists()).toBe(false)
+    wrapper.unmount()
   })
 
   it('draws nothing for a build that is current', async () => {

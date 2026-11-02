@@ -1,6 +1,12 @@
-import { test, expect, type APIRequestContext } from '../../support/test.js'
+import {
+  test,
+  expect,
+  type APIRequestContext,
+  type Locator,
+  type Page,
+} from '../../support/test.js'
 import { NEW_RELEASE } from '../../../scripts/stand-ins.mjs'
-import { openWorkspace } from '../../support/workspace.js'
+import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 import { getStandInsOrigin, writePluginSetting } from '../../support/media.js'
 
 const UPDATER = 'md.numen.tools.updater'
@@ -29,16 +35,62 @@ const countManifestRequests = async (
   return counts['/latest/latest.json'] ?? 0
 }
 
+interface Box {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+/** The box of an element on the page; the test fails where it is not drawn. */
+const getBox = async (element: Locator): Promise<Box> => {
+  const box = await element.boundingBox()
+  if (!box) throw new Error('the element has no box')
+  return box
+}
+
+/** The size of the window the page is drawn in. */
+const getViewport = (page: Page): { width: number; height: number } => {
+  const viewport = page.viewportSize()
+  if (!viewport) throw new Error('the page has no viewport')
+  return viewport
+}
+
+/** Whether the boxes do not overlap: one is under the other, or beside it. */
+const isApart = (first: Box, second: Box): boolean =>
+  second.y >= first.y + first.height || second.x >= first.x + first.width
+
+/** The space between each box and the next one of a row, from left to right. */
+const getGaps = (row: readonly Box[]): number[] =>
+  row.slice(1).map((one, index) => one.x - ((row[index]?.x ?? 0) + (row[index]?.width ?? 0)))
+
+/** One computed style of an element. */
+const getStyle = (element: Locator, property: string): Promise<string> =>
+  element.evaluate((node, name) => getComputedStyle(node).getPropertyValue(name), property)
+
+/** The settings page of the updater plugin, opened from the palette. */
+const openUpdaterSettings = async (page: Page): Promise<void> => {
+  await runPaletteCommand(page, 'Settings', 'Settings')
+  await page
+    .getByRole('button', { name: /Update Notifier/i })
+    .first()
+    .click()
+  await expect(page.getByTestId('setting-channel')).toBeVisible({ timeout: 10_000 })
+}
+
 test.describe('the update indicator', () => {
   let origin: string
+  let endpoint: string
 
   test.beforeEach(async ({ request }) => {
     origin = await getStandInsOrigin(request)
+    endpoint = `${origin}/latest/latest.json`
   })
 
   test.afterEach(async ({ request }) => {
     await withdrawNewRelease(request, origin)
-    await writePluginSetting(request, UPDATER, 'channel', 'stable')
+    await writePluginSetting(request, UPDATER, 'channel', 'custom')
+    await writePluginSetting(request, UPDATER, 'endpoint', endpoint)
   })
 
   test('announces a newer release the feed names when the window opens', async ({
@@ -56,7 +108,67 @@ test.describe('the update indicator', () => {
     await expect(page.getByRole('button', { name: 'Download' })).toBeVisible()
   })
 
-  test('checks the feed again when the channel changes, and announces what it finds', async ({
+  test('opens a framed popover above the indicator, with its details laid out, and closes it on Escape', async ({
+    page,
+    request,
+  }) => {
+    await publishNewRelease(request, origin)
+    await openWorkspace(page)
+    const indicator = page.getByRole('button', { name: 'Application update available' })
+    await indicator.click()
+
+    const popover = page.getByRole('dialog', { name: 'Update available' })
+    await expect(popover).toBeVisible()
+    const box = await getBox(popover)
+    const viewport = getViewport(page)
+    expect(box.x).toBeGreaterThanOrEqual(0)
+    expect(box.y).toBeGreaterThanOrEqual(0)
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width)
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height)
+
+    const bar = await getBox(page.getByRole('region', { name: 'Status Bar' }))
+    expect(box.y + box.height).toBeLessThanOrEqual(bar.y)
+    const trigger = await getBox(indicator)
+    expect(box.x).toBeLessThan(trigger.x + trigger.width)
+    expect(box.x + box.width).toBeGreaterThan(trigger.x)
+
+    expect(await getStyle(popover, 'background-color')).not.toBe('rgba(0, 0, 0, 0)')
+    expect(await getStyle(popover, 'border-top-style')).toBe('solid')
+    expect(await getStyle(popover, 'border-top-width')).toBe('1px')
+
+    const title = popover.getByText('Update available', { exact: true })
+    const version = popover.getByText(`v${NEW_RELEASE.version}`, { exact: true })
+    const titleBox = await getBox(title)
+    const versionBox = await getBox(version)
+    await expect(title).toHaveText('Update available')
+    await expect(version).toHaveText(`v${NEW_RELEASE.version}`)
+    expect(isApart(titleBox, versionBox)).toBe(true)
+
+    const names = ['Download', 'Release notes', 'Dismiss']
+    const boxes = []
+    for (const name of names) {
+      const button = popover.getByRole('button', { name, exact: true })
+      await expect(button).toBeVisible()
+      expect(await button.evaluate((node) => node.tagName)).toBe('BUTTON')
+      expect(parseFloat(await getStyle(button, 'padding-left'))).toBeGreaterThan(0)
+      const one = await getBox(button)
+      expect(one.x).toBeGreaterThanOrEqual(box.x)
+      expect(one.x + one.width).toBeLessThanOrEqual(box.x + box.width)
+      expect(one.y + one.height).toBeLessThanOrEqual(box.y + box.height)
+      boxes.push(one)
+    }
+    expect(
+      Math.max(...boxes.map((one) => one.y)) - Math.min(...boxes.map((one) => one.y)),
+    ).toBeLessThan(4)
+    expect(getGaps(boxes).every((gap) => gap > 0)).toBe(true)
+    await expect(popover.getByRole('button', { name: /^Close/ })).toBeVisible()
+
+    await page.keyboard.press('Escape')
+
+    await expect(popover).toHaveCount(0)
+  })
+
+  test('checks the feed again when the release feed address changes, and announces what it finds', async ({
     page,
     request,
   }) => {
@@ -67,14 +179,41 @@ test.describe('the update indicator', () => {
     const requestCount = await countManifestRequests(request, origin)
     await publishNewRelease(request, origin)
 
-    await writePluginSetting(request, UPDATER, 'channel', 'beta')
+    await writePluginSetting(request, UPDATER, 'endpoint', `${endpoint}?again=1`)
 
     await expect(indicator).toHaveText(`v${NEW_RELEASE.version}`)
     expect(await countManifestRequests(request, origin)).toBeGreaterThan(requestCount)
 
     await withdrawNewRelease(request, origin)
-    await writePluginSetting(request, UPDATER, 'channel', 'stable')
+    await writePluginSetting(request, UPDATER, 'endpoint', endpoint)
 
     await expect(indicator).toHaveCount(0)
+  })
+
+  test('shows the release feed address for the Custom channel only, and keeps what was typed', async ({
+    page,
+  }) => {
+    await openWorkspace(page)
+    await openUpdaterSettings(page)
+    const channel = page.getByTestId('setting-channel').locator('.settings__choice')
+    const address = page.getByRole('textbox', { name: 'Release feed address' })
+    const newAddress = 'http://127.0.0.1:9/latest.json'
+
+    await expect(channel).toHaveText('Custom')
+    await expect(address).toBeVisible()
+    await address.fill(newAddress)
+    await address.press('Tab')
+
+    for (const name of ['Stable', 'Beta']) {
+      await channel.click()
+      await page.getByRole('menuitemradio', { name: new RegExp(`^${name}`) }).click()
+      await expect(channel).toHaveText(name)
+      await expect(page.getByText('Release feed address', { exact: true })).toHaveCount(0)
+      await expect(page.getByTestId('setting-endpoint')).toHaveCount(0)
+    }
+
+    await channel.click()
+    await page.getByRole('menuitemradio', { name: /^Custom/ }).click()
+    await expect(address).toHaveValue(newAddress)
   })
 })

@@ -3,6 +3,7 @@
  * The details of a new release and the actions on it.
  */
 import { computed } from 'vue'
+import { Button } from '@numen/ui'
 import type { Update } from './api/updater'
 import type { Platform } from './types'
 import { formatReleaseDate, getPlatformMessage } from './lib/release'
@@ -50,18 +51,22 @@ function onDismiss() {
 <template>
   <div class="update-popover" role="dialog" aria-modal="false" :aria-label="words.title">
     <header class="update-popover__header">
-      <div>
+      <div class="update-popover__heading">
         <span class="update-popover__title">{{ words.title }}</span>
-        <span class="update-popover__badge">v{{ update.version }}</span>
+        <span class="update-popover__version">v{{ update.version }}</span>
       </div>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon-small"
         class="update-popover__close-btn"
+        :title="words.close"
         :aria-label="words.close"
         @click="onClose"
       >
-        ✕
-      </button>
+        <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
+          <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.5" fill="none" />
+        </svg>
+      </Button>
     </header>
 
     <div class="update-popover__body">
@@ -72,30 +77,13 @@ function onDismiss() {
     </div>
 
     <footer class="update-popover__actions">
-      <button
-        type="button"
-        class="update-popover__btn update-popover__btn--primary"
-        @click="onDownload"
-      >
-        {{ words.download }}
-      </button>
-
-      <button
-        v-if="hasNotes"
-        type="button"
-        class="update-popover__btn update-popover__btn--ghost"
-        @click="onReleaseNotes"
-      >
+      <Button size="small" @click="onDownload">{{ words.download }}</Button>
+      <Button v-if="hasNotes" variant="outline" size="small" @click="onReleaseNotes">
         {{ words.releaseNotes }}
-      </button>
-
-      <button
-        type="button"
-        class="update-popover__btn update-popover__btn--quiet"
-        @click="onDismiss"
-      >
+      </Button>
+      <Button variant="ghost" size="small" class="update-popover__dismiss-btn" @click="onDismiss">
         {{ words.dismiss }}
-      </button>
+      </Button>
     </footer>
   </div>
 </template>

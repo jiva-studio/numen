@@ -23,6 +23,9 @@ const (
 // ChannelBeta is the value of the channel setting that selects the beta feed.
 const ChannelBeta = "beta"
 
+// ChannelCustom is the value of the channel setting that selects the endpoint setting.
+const ChannelCustom = "custom"
+
 // Fetcher requests the release manifest from an endpoint.
 type Fetcher interface {
 	Fetch(ctx context.Context, endpoint string) (release.Manifest, error)
@@ -45,16 +48,17 @@ func newUpdater(fetcher Fetcher) *updater {
 	}
 }
 
-// getEndpoint returns the endpoint the settings name: the endpoint setting where it is set, and the
-// feed of the channel otherwise.
+// getEndpoint returns the feed of the channel the settings name. The Custom channel asks the
+// endpoint setting, which is empty until the person sets it; the other channels ignore the setting.
 func getEndpoint(values map[string]string) string {
-	if endpoint := strings.TrimSpace(values["endpoint"]); endpoint != "" {
-		return endpoint
-	}
-	if strings.TrimSpace(values["channel"]) == ChannelBeta {
+	switch strings.TrimSpace(values["channel"]) {
+	case ChannelCustom:
+		return strings.TrimSpace(values["endpoint"])
+	case ChannelBeta:
 		return BetaEndpoint
+	default:
+		return StableEndpoint
 	}
-	return StableEndpoint
 }
 
 // configure applies the settings the host supplies. A check runs only after the first call, and a
@@ -104,9 +108,11 @@ func (u *updater) check(ctx context.Context, req api.CheckRequest) (api.Status, 
 		return api.Status{}, err
 	}
 	status := api.Status{State: api.StateUnreachable, Update: nil}
-	manifest, fetchErr := u.fetcher.Fetch(ctx, endpoint)
-	if fetchErr == nil {
-		status = newStatus(manifest, current)
+	if endpoint != "" {
+		manifest, fetchErr := u.fetcher.Fetch(ctx, endpoint)
+		if fetchErr == nil {
+			status = newStatus(manifest, current)
+		}
 	}
 	u.setStatus(endpoint, status)
 	return status, nil

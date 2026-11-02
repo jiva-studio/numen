@@ -13,7 +13,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@numen/plugin-sdk": "workspace:*"
+    "@numen/plugin-sdk": "workspace:*",
+    "@numen/ui": "workspace:*"
   },
   "peerDependencies": {
     "vue": "^3.5.0"

@@ -10,4 +10,6 @@ export const WORDS = {
   darwinMessage: 'Download the disk image to update Numen.',
   linuxMessage: 'Visit the download page or update via your package manager.',
   releasedOn: 'Released on',
+  missingAddress:
+    'The Custom channel needs a release feed address. Set it in the settings of Update Notifier.',
 } as const

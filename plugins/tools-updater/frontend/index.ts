@@ -7,6 +7,7 @@ import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import { updater, type UpdateApi } from './api/wire'
 import { createUpdates, type Timer, type Updates } from './model/updates'
 import UpdateIndicator from './UpdateIndicator.vue'
+import { WORDS as words } from './words'
 import './styles.css'
 
 export { UpdateIndicator }
@@ -50,6 +51,13 @@ function showFailure(context: PluginContext, opening: ReturnType<Updates['openDo
   )
 }
 
+/** Tells the person that the Custom channel has no release feed address to ask. */
+function showMissingAddress(context: PluginContext): void {
+  const address = context.getSetting<string>('endpoint')
+  if (context.getSetting<string>('channel') !== 'custom' || (address ?? '').trim() !== '') return
+  context.notices?.show(words.missingAddress, 'error')
+}
+
 export const activate = (
   context: PluginContext,
   parts: UpdateParts = { api: updater, timer: browserTimer },
@@ -63,10 +71,18 @@ export const activate = (
   })
   context.registerStatusView({ id: UPDATE_VIEW, component: createStatusView(context, updates) })
   context.onSettingChange('checkIntervalHours', () => updates.reschedule())
-  context.onSettingChange('endpoint', () => updates.checkSoon())
-  context.onSettingChange('channel', () => updates.checkSoon())
+  const warnOfMissingAddress = () => showMissingAddress(context)
+  context.onSettingChange('endpoint', () => {
+    updates.checkSoon()
+    warnOfMissingAddress()
+  })
+  context.onSettingChange('channel', () => {
+    updates.checkSoon()
+    warnOfMissingAddress()
+  })
   context.subscriptions.push({ dispose: () => updates.stop() })
   updates.start()
+  warnOfMissingAddress()
 }
 
 export default definePlugin({

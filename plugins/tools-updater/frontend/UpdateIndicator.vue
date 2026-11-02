@@ -2,7 +2,8 @@
 /**
  * The status bar indicator of a new release, and the popover with its details.
  */
-import { ref } from 'vue'
+import { ref, useTemplateRef, watch } from 'vue'
+import { useMenuDismissal } from '@numen/ui'
 import type { Update } from './api/updater'
 import type { Platform } from './types'
 import UpdatePopover from './UpdatePopover.vue'
@@ -23,6 +24,11 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
+const root = useTemplateRef<HTMLElement>('root')
+const dismissal = useMenuDismissal(root, onClose)
+
+/* --------------------------------- Hooks ---------------------------------- */
+watch(isOpen, (open) => (open ? dismissal.listen() : dismissal.release()))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle() {
@@ -50,7 +56,7 @@ function onDismiss() {
 </script>
 
 <template>
-  <div v-if="update" class="update-indicator" @keydown.esc="onClose">
+  <div v-if="update" ref="root" class="update-indicator">
     <button
       type="button"
       class="update-indicator__trigger"
@@ -61,7 +67,6 @@ function onDismiss() {
       <span class="update-indicator__label">v{{ update.version }}</span>
     </button>
 
-    <div v-if="isOpen" class="update-indicator__backdrop" @click="onClose" />
     <UpdatePopover
       v-if="isOpen"
       :update="update"

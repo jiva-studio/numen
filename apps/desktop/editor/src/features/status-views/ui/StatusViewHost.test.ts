@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { clearPluginStyles, registerPluginStyle } from '@numen/plugin-host'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import StatusViewHost from './StatusViewHost.vue'
@@ -10,6 +11,11 @@ const widget = (text: string) =>
   })
 
 describe('StatusViewHost', () => {
+  afterEach(() => {
+    clearPluginStyles()
+    document.head.querySelectorAll('link[data-plugin-id]').forEach((one) => one.remove())
+  })
+
   it('draws nothing while no plugin registered a view', () => {
     const wrapper = mount(StatusViewHost, { props: { views: [] } })
 
@@ -30,5 +36,24 @@ describe('StatusViewHost', () => {
       'first:a.one',
       'second:b.two',
     ])
+  })
+
+  it('adds the stylesheet of a plugin with a view to the window, and takes it out with the view', async () => {
+    registerPluginStyle('a.one', '/plugins/a.one/dist/styles.css')
+    registerPluginStyle('b.two', '/plugins/b.two/dist/styles.css')
+    const wrapper = mount(StatusViewHost, {
+      props: {
+        views: [{ pluginId: 'a.one', registration: { id: 'first', component: widget('first') } }],
+      },
+    })
+    const linked = () =>
+      [...document.head.querySelectorAll<HTMLLinkElement>('link[data-plugin-id]')].map(
+        (one) => one.dataset['pluginId'],
+      )
+
+    expect(linked()).toEqual(['a.one'])
+    await wrapper.setProps({ views: [] })
+
+    expect(linked()).toEqual([])
   })
 })

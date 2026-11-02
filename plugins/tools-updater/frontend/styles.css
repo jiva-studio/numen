@@ -6,12 +6,6 @@
   height: 100%;
 }
 
-.update-indicator__backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-}
-
 .update-indicator__trigger {
   display: inline-flex;
   align-items: center;
@@ -33,56 +27,56 @@
   background: var(--numen-raised);
 }
 
+/* The panel of the Background tasks popover: raised ground, rule border, panel radius and shadow. */
 .update-popover {
   position: absolute;
   bottom: calc(100% + 4px);
-  right: 0.5rem;
-  width: 18rem;
-  padding: 0.75rem;
-  background: var(--numen-surface);
-  border: 1px solid var(--numen-rule);
-  border-radius: var(--numen-radius);
-  box-shadow: var(--numen-panel-shadow);
-  color: var(--numen-ink);
-  z-index: 50;
+  right: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  width: 20rem;
+  max-width: calc(100vw - 1rem);
+  background: var(--numen-raised);
+  color: var(--numen-ink);
+  border: 1px solid var(--numen-rule);
+  border-radius: var(--numen-radius-panel);
+  box-shadow: var(--numen-panel-shadow);
+  overflow: hidden;
+  z-index: 50;
 }
 
 .update-popover__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--numen-surface);
+  border-bottom: 1px solid var(--numen-rule);
+}
+
+.update-popover__heading {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .update-popover__title {
-  font-weight: 600;
   font-size: var(--numen-text-2);
-  margin-right: 0.375rem;
+  font-weight: 600;
 }
 
-.update-popover__badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.0625rem 0.3125rem;
-  border-radius: var(--numen-radius-pill);
-  background: var(--numen-raised);
+.update-popover__version {
   font-size: var(--numen-text-1);
   color: var(--numen-hushed);
+  font-variant-numeric: tabular-nums;
 }
 
 .update-popover__close-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
   color: var(--numen-hushed);
-  font-size: 0.75rem;
-  cursor: pointer;
-  padding: 0.125rem;
-  border-radius: 0.125rem;
 }
 
 .update-popover__close-btn:hover {
@@ -93,12 +87,12 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  padding: 0.75rem;
 }
 
 .update-popover__desc {
   margin: 0;
   font-size: var(--numen-text-2);
-  color: var(--numen-ink);
   line-height: 1.35;
 }
 
@@ -111,36 +105,11 @@
 .update-popover__actions {
   display: flex;
   align-items: center;
-  gap: 0.375rem;
-  margin-top: 0.25rem;
+  gap: 0.5rem;
+  padding: 0 0.75rem 0.75rem;
 }
 
-.update-popover__btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.25rem 0.5rem;
-  border-radius: var(--numen-radius-tight);
-  font-size: var(--numen-text-1);
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-  font-family: inherit;
-  text-decoration: none;
-}
-
-.update-popover__btn--primary {
-  background: var(--numen-accent);
-  color: var(--numen-accent-ink);
-}
-
-.update-popover__btn--ghost {
-  background: var(--numen-raised);
-  color: var(--numen-ink);
-}
-
-.update-popover__btn--quiet {
-  background: transparent;
-  color: var(--numen-hushed);
+.update-popover__dismiss-btn {
   margin-left: auto;
+  color: var(--numen-hushed);
 }
