@@ -107,13 +107,13 @@ export const BusyUntilTheAnswer: Story = {
 
     await userEvent.click(control)
     await waitFor(() => expect(control.getAttribute('aria-busy')).toBe('true'))
-    await new Promise((done) => setTimeout(done, 200))
+    await new Promise((resolve) => setTimeout(resolve, 200))
     // Pressed and waiting: nothing has moved.
     await expect(control.getAttribute('aria-checked')).toBe('true')
     await expect(samples.every((one) => Math.abs(one - startLeft) < 0.5)).toBe(true)
 
     await waitFor(() => expect(control.getAttribute('aria-checked')).toBe('false'))
-    await new Promise((done) => setTimeout(done, 600))
+    await new Promise((resolve) => setTimeout(resolve, 600))
     isSampling = false
 
     // One slide, off to the left, with no step back on the way, and no dimming.
