@@ -30,7 +30,7 @@ function lintPackage(repoRoot, relDir, pkgName) {
       return;
     }
 
-    const child = spawn(eslintBin, ["-f", "json", "."], {
+    const child = spawn(eslintBin, ["--cache", "--cache-location", "node_modules/.cache/eslint/", "-f", "json", "."], {
       cwd: targetDir,
       stdio: ["ignore", "pipe", "pipe"],
     });

@@ -61,7 +61,7 @@ apps/desktop/         # the window's host: cmd/ and internal/
 - Shared state guarded, with the guard covering every access rather than most.
 - No `time.Sleep` as synchronisation, in code or in a test.
 - No blocking channel send without a buffer or a `select` default.
-- Everything concurrent is testable under `-race`.
+- Everything concurrent is testable under `-race`. The race detector runs in CI only (`GO_RACE=1`); a local run goes without it.
 
 ### Resources and data
 
@@ -107,8 +107,8 @@ A comment describes the active behavior, invariant, or constraint. It does not a
 Per module, from its own directory:
 
 ```bash
-cd libs/core     && gofmt -l . && go vet ./... && go test ./... -race
-cd apps/desktop  && gofmt -l ./cmd ./internal && go vet ./... && go test ./... -race
+cd libs/core     && gofmt -l . && go vet ./... && go test ./...
+cd apps/desktop  && gofmt -l ./cmd ./internal && go vet ./... && go test ./...
 cd libs/protocol && buf lint && npm run generate
 ```
 

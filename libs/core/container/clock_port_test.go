@@ -195,18 +195,22 @@ func getMachineClockReads(pkgs []*packages.Package) []clockRead {
 // loadPackages loads the packages matching patterns under dir with syntax and types, tests included.
 func loadPackages(t *testing.T, dir string, env []string, patterns ...string) []*packages.Package {
 	t.Helper()
-	config := &packages.Config{
+	loaded, err := packages.Load(newTypedConfig(dir, env), patterns...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return loaded
+}
+
+// newTypedConfig is the load of the packages under dir with syntax and types, tests included.
+func newTypedConfig(dir string, env []string) *packages.Config {
+	return &packages.Config{
 		Dir:   dir,
 		Env:   append(os.Environ(), env...),
 		Tests: true,
 		Mode: packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports |
 			packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo,
 	}
-	loaded, err := packages.Load(config, patterns...)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return loaded
 }
 
 // listWorkspaceModules returns the directory of every module in go.work.
@@ -238,14 +242,12 @@ func listWorkspaceModules(t *testing.T) []string {
 // The machine clock is read in one place: the body of a method Now() time.Time on a type that
 // implements a clock port. Every other reference to time.Now, time.Since or time.Until in
 // non-generated Go, tests included, takes the time from an injected clock.
-func TestTheMachineClockIsReadOnlyByAClockPortImplementation(t *testing.T) {
-	if testing.Short() {
-		t.Skip("loads and type-checks every module of the workspace")
-	}
+func checkMachineClockIsReadOnlyByAClockPortImplementation(t *testing.T, workspace workspacePackages) {
+	t.Helper()
 	var reads []clockRead
 	loaded := 0
 	for _, dir := range listWorkspaceModules(t) {
-		pkgs := loadPackages(t, dir, nil, "./...")
+		pkgs := workspace.listModule(t, dir)
 		for _, pkg := range pkgs {
 			for _, one := range pkg.Errors {
 				t.Errorf("%s does not load: %v", pkg.ID, one)

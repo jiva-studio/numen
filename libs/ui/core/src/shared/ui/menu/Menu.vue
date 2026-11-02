@@ -236,8 +236,7 @@ function measure(): void {
   margin: 0 calc(-1 * var(--inset)) 0.25rem;
   padding: 0.375rem 0.5rem;
   background-color: var(--numen-raised);
-  border-block-end: 1px solid
-    var(--numen-panel-border);
+  border-block-end: 1px solid var(--numen-panel-border);
 }
 
 .menu__search {

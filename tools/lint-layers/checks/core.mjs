@@ -1,8 +1,14 @@
 import path from "node:path";
 import { MODULES_DIR, exec } from "./helpers.mjs";
 
+/** Writes plugins/plugins-index.json, which a structural test compares with the manifests; the file is not tracked. */
+export function writePluginIndex() {
+  exec("node tools/build-plugin-index/build.mjs");
+}
+
 /** Runs every test of the package that holds the structural Go tests of the repository. */
 export function verifyGoStructure() {
+  writePluginIndex();
   exec("go test -count=1 ./container", path.join(MODULES_DIR, "libs/core"));
 }
 
@@ -25,6 +31,7 @@ export const CORE_VERIFIERS = [
   },
   {
     id: "core-depguard",
+    isLint: true,
     tools: ["golangci-lint"],
     scope: "libs",
     module: "core",
@@ -35,6 +42,7 @@ export const CORE_VERIFIERS = [
   },
   {
     id: "notes-depguard",
+    isLint: true,
     tools: ["golangci-lint"],
     scope: "libs",
     module: "notes",
@@ -45,6 +53,7 @@ export const CORE_VERIFIERS = [
   },
   {
     id: "sdk-isolation",
+    isLint: true,
     tools: ["golangci-lint"],
     scope: "libs",
     module: "sdk",

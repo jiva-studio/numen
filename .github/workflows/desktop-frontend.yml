@@ -84,9 +84,9 @@ jobs:
       - uses: ./.github/actions/setup-playwright
 
       - name: Build the components and the shell
-        run: |
-          npm run build --prefix libs/ui/core
-          npm run build --prefix libs/ui/shell
+        uses: ./.github/actions/build-ui
+        with:
+          shell: "true"
 
       - name: Verify story references
         run: npm run check --prefix tools/ci-stories

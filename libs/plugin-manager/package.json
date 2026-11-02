@@ -13,7 +13,7 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "vue-tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ ."
   },
   "peerDependencies": {
     "vue": "^3.5.44"

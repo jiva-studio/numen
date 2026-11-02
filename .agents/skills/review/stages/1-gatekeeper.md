@@ -45,7 +45,7 @@ Never run blanket checks over untouched parts of the monorepo.
 - `npm run lint` fails → **REJECT**. A house rule rejects code that confuses a reader, and it is never a preference about where a line breaks.
 - `npm run format:check` at the repository root reports a file → **REJECT** (not Prettier-clean). TypeScript, Vue, JSON and CSS are formatted with Prettier (`npm run format`), and its use is mandatory.
 - A formatter or a linter has touched generated output — anything under `protocol/gen`, `protocol/src` or another generator's target → **REJECT.** A generated file is changed only by its generator: not hand-formatted, not linted for layout, not read for style.
-- `go test -race` fails → **REJECT** (a broken test or a data race).
+- `go test` fails, or the `-race` job of CI reports a data race → **REJECT**. The race detector runs in CI only (`GO_RACE=1` turns it on for a make target); a local gate runs without it.
 - `buf lint` fails → **REJECT** (schema violation).
 - `generate-check` fails → **REJECT** (the committed generated code is out of date; _A client is generated from the protocol_).
 - `vue-tsc` fails → **REJECT** (type errors).
@@ -53,7 +53,7 @@ Never run blanket checks over untouched parts of the monorepo.
 - The story suites did not run in **both** engines → **REJECT the gate as incomplete.** The window is WebKit on this platform and Chromium on Windows; a review in one engine does not cover the product.
 - The library was not rebuilt before the windows' suites → the failure is `Cannot find module '@numen/ui'`, which means the gate was run incorrectly. Rebuild and rerun; do not report it as a finding.
 
-`usecase/flashcards` and `adapter/flashcardsui` run close to the ten-minute per-package limit under `-race`. A timeout there is the machine's load, not the code — rerun before calling it a failure.
+`usecase/flashcards` and `adapter/flashcardsui` run close to the ten-minute per-package limit under the CI `-race` job. A timeout there is the machine's load, not the code — rerun before calling it a failure.
 
 `node_modules` symlinked from the primary checkout resolves `@numen/protocol` to whatever branch that checkout has checked out. A generated symbol missing there is that, not the branch under test. Install for real when the answer matters.
 

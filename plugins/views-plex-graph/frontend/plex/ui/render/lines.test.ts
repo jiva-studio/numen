@@ -8,6 +8,7 @@ import { build } from '../../fixtures/build'
 const edges = arrangePlex(build('A node', { parent: 1, child: 2, jump: 1 })).edges
 
 const title = (words: string, more: Partial<EdgeTitle> = {}): EdgeTitle => ({
+  anchor: 0.5,
   heading: 'along',
   words,
   wordsAt: 0.5,

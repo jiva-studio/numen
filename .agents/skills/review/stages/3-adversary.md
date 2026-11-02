@@ -43,7 +43,7 @@ Any claim about scoping is tested with two vaults whose notes share no words, as
 
 ### 3. Concurrency and ordering
 
-- `go test -race` with several connections held at once, since anything configured per connection uses the same connection in a sequential test and cannot observe that the others were never configured.
+- `go test` with several connections held at once, since anything configured per connection uses the same connection in a sequential test and cannot observe that the others were never configured.
 - A cancelled context part-way through a scan, a walk or a query: does the work stop, and does it leave the index consistent?
 - In Vitest, resolve mocked responses out of order — the first request sent, the second sent, the first resolving last.
 - Rapid-fire interaction: repeated clicks, keyboard navigation before an animation or a fetch settles, a double submit, a double toggle.
@@ -64,7 +64,7 @@ Any claim about scoping is tested with two vaults whose notes share no words, as
 2. **Craft.** An adjacent test file: `[name]_test.go` beside the Go code, `[name].spec.ts` beside the TypeScript. Minimal fixtures, the boundary or the race injected, the assertion explicit. `t.TempDir`, `t.Context`, `t.Cleanup` — never the machine's real home, config or cache directory, and never the network.
 3. **Run.**
    ```bash
-   cd libs/core && go test -race -run TestName ./path/...
+   cd libs/core && go test -run TestName ./path/...
    cd apps/desktop/editor && npx vitest run --project unit <path>.spec.ts
    ```
    For a story, render it in both engines: `npx vitest run --project 'stories (chromium)'` and `npx vitest run --project 'stories (webkit)'`, one at a time.

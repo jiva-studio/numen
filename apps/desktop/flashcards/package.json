@@ -7,8 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --build && vite build",
-    "typecheck": "vue-tsc --build --force",
-    "lint": "eslint .",
+    "typecheck": "vue-tsc --build",
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ .",
     "test": "vitest run",
     "test:unit": "vitest run"
   },

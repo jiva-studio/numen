@@ -194,14 +194,13 @@ jobs:
         uses: ./.github/actions/install-node-modules
 
       - name: Build UI components
-        working-directory: libs/ui/core
-        run: npm run build
+        uses: ./.github/actions/build-ui
 
       - name: Build and test modular plugins
         working-directory: .
         run: |
-          make plugins_build
-          make plugins_test
+          make plugins_build SKIP_UI_BUILD=1
+          make plugins_test SKIP_UI_BUILD=1
 
       # A push to main writes what it built, and every other run only reads it.
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -244,7 +243,7 @@ jobs:
         run: make lib_plugin_sdk_go_lint
 
       - name: Run Go tests
-        run: make lib_plugin_sdk_go_test
+        run: make lib_plugin_sdk_go_test GO_RACE=1
 
   # The other half of the promise the two binaries make: this one is built for
   # a machine it is not being built on.

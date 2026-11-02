@@ -13,7 +13,7 @@ import { expect } from 'storybook/test'
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import { getLines } from './lines'
-import { createTitle, getLabelPosition } from '../../lib/arrange'
+import { createTitle, getLabelPositions } from '../../lib/arrange'
 import { getArrow, type EdgeArrow, type EdgeCurve, type PlacedEdge } from '../../lib/edge'
 import { lightness } from '../../../fixtures/colour'
 import { DARK, expectDark } from '../../../fixtures/theme'
@@ -58,23 +58,20 @@ const getRecords = (args: Knobs): { words: string; end?: EdgeArrow }[] => {
   }
 }
 
-/** The edge as the arrangement places it, every title at the position of its end. */
+/** The edge as the arrangement places it: one title centred, two at opposite ends. */
 const createEdge = (args: Knobs): PlacedEdge => {
   const records = getRecords(args)
   const ends = records.flatMap((record) => (record.end ? [record.end] : []))
   const labelled = records.filter((record) => record.words)
+  const positions = getLabelPositions(labelled.length)
   return {
     from: 'one',
     to: 'two',
     ...CURVE,
-    labels: labelled.map((record) =>
-      record.end ? { text: record.words, end: record.end } : { text: record.words },
-    ),
+    labels: labelled.map((record) => ({ text: record.words })),
     arrows: ends,
     opacity: args.opacity,
-    titles: labelled.map((record) =>
-      createTitle(CURVE, getLabelPosition(record.end), record.words, record.end),
-    ),
+    titles: labelled.map((record, index) => createTitle(CURVE, positions[index]!, record.words)),
     arrowheads: ends.map((end) => getArrow(CURVE, end)),
   }
 }
@@ -114,8 +111,8 @@ const meta: Meta<Knobs> = {
       description: {
         component:
           'One edge: the curve, the heads it ends in, and the titles set along ' +
-          'it over a halo, each near the head of its record or in the middle ' +
-          'for a record without one. Lifted, it is drawn over the boxes, in ' +
+          'it over a halo, one centred on the line, or two set at opposite ends ' +
+          'whatever heads the line has. Lifted, it is drawn over the boxes, in ' +
           'the colours and the weight that stand out against them.',
       },
     },
@@ -162,29 +159,29 @@ export const NoDirection: Story = {
   },
 }
 
-/** A record pointing at the `to` end: the head there, and its title near it. */
+/** A record pointing at the `to` end: the head there, and its one title in the middle. */
 export const Forward: Story = {
   args: { direction: 'forward' },
   play: async ({ canvasElement }) => {
     const { heads, titles } = getResting(canvasElement)
     await expect(heads).toHaveLength(1)
     await expect(heads[0]).toContain(AT_TO)
-    await expect(titles).toStrictEqual([['refers to', '80%']])
+    await expect(titles).toStrictEqual([['refers to', '50%']])
   },
 }
 
-/** A record pointing at the `from` end: the head there, and its title near it. */
+/** A record pointing at the `from` end: the head there, and its one title in the middle. */
 export const Backward: Story = {
   args: { direction: 'backward' },
   play: async ({ canvasElement }) => {
     const { heads, titles } = getResting(canvasElement)
     await expect(heads).toHaveLength(1)
     await expect(heads[0]).toContain(AT_FROM)
-    await expect(titles).toStrictEqual([['refers to', '20%']])
+    await expect(titles).toStrictEqual([['refers to', '50%']])
   },
 }
 
-/** A record each way: a head at each end, and each title near its own head. */
+/** A record each way: a head at each end, and the two titles at opposite ends. */
 export const BothDirections: Story = {
   args: { direction: 'both' },
   play: async ({ canvasElement }) => {
@@ -193,8 +190,8 @@ export const BothDirections: Story = {
     await expect(heads[0]).toContain(AT_TO)
     await expect(heads[1]).toContain(AT_FROM)
     await expect(titles).toStrictEqual([
-      ['refers to', '80%'],
-      ['cited by', '20%'],
+      ['refers to', '20%'],
+      ['cited by', '80%'],
     ])
   },
 }

@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { arrangePlex } from '../arrange'
 import { DEFAULT_OPTIONS } from '../options'
-import { cutToFit, getLabelPosition, MIDDLE, routeEdge, routeEdges, createRouting } from './routing'
+import { cutToFit, getLabelPositions, MIDDLE, routeEdge, routeEdges, createRouting } from './routing'
 import { neighbourhoods } from '../../../fixtures/neighbourhoods'
 import {
   ARROW_LENGTH,
@@ -553,8 +553,9 @@ describe('the run of a line between two boxes', () => {
 })
 
 /**
- * The position of a label along its line: near the arrowhead of its record,
- * or in the middle of a line for a record without one.
+ * The position of a label along its line is decided by how many labels the line
+ * carries: one is centred, two are set at opposite ends. The arrowheads do not
+ * enter into it.
  */
 describe('the position of a label', () => {
   const box = (id: string, x: number): PlacedNode => ({
@@ -572,55 +573,109 @@ describe('the position of a label', () => {
   const lighthouse = box('lighthouse', 400)
   const byId = new Map([harbour, lighthouse].map((node) => [node.id, node]))
 
-  /** The titles of one line: words, the end named, and the place from the `from` end. */
+  /** The titles of one line: words, and the place from the `from` end. */
   const getPlaces = (edge: PlexEdge) => {
     const routed = routeEdge(edge, byId, createRouting(DEFAULT_OPTIONS))!
     return routed.titles.map((title) => [
       title.words,
-      title.end,
       title.heading === 'against' ? 1 - title.wordsAt : title.wordsAt,
     ])
   }
 
-  it('is the middle of the line for a label that names no end', () => {
-    expect(getLabelPosition(undefined)).toBe(MIDDLE)
+  it('is the middle of the line for one label', () => {
+    expect(getLabelPositions(1)).toEqual([MIDDLE])
     expect(getPlaces({ from: 'harbour', to: 'lighthouse', labels: [{ text: 'guides' }] })).toEqual([
-      ['guides', undefined, MIDDLE],
+      ['guides', MIDDLE],
     ])
   })
 
-  it('is near the end the label names, on either end', () => {
-    expect(getLabelPosition('to')).toBeGreaterThan(MIDDLE)
-    expect(getLabelPosition('from')).toBeLessThan(MIDDLE)
-    expect(getLabelPosition('to') + getLabelPosition('from')).toBeCloseTo(1)
+  it('is the middle for one label whatever arrowhead the line has', () => {
+    for (const arrows of [['to'], ['from'], ['to', 'from']] as const) {
+      const edge: PlexEdge = {
+        from: 'harbour',
+        to: 'lighthouse',
+        labels: [{ text: 'guides' }],
+        arrows,
+      }
+      expect(getPlaces(edge)).toEqual([['guides', MIDDLE]])
+    }
+  })
+
+  it('is one near each end for two labels, the first near the start', () => {
+    const [start, end] = getLabelPositions(2)
+    expect(start).toBeLessThan(1 / 3)
+    expect(end).toBeGreaterThan(2 / 3)
+    expect(start! + end!).toBeCloseTo(1)
 
     const edge: PlexEdge = {
       from: 'harbour',
       to: 'lighthouse',
-      labels: [
-        { text: 'guides', end: 'to' },
-        { text: 'shelters', end: 'from' },
-      ],
+      labels: [{ text: 'guides' }, { text: 'shelters' }],
       arrows: ['to', 'from'],
     }
     expect(getPlaces(edge)).toEqual([
-      ['guides', 'to', getLabelPosition('to')],
-      ['shelters', 'from', getLabelPosition('from')],
+      ['guides', start],
+      ['shelters', end],
     ])
   })
 
-  it('stays near the same note on a line that runs right to left', () => {
+  it('is the same for two labels whatever arrowheads the line has', () => {
+    const labels = [{ text: 'guides' }, { text: 'shelters' }]
+    const expected = getPlaces({ from: 'harbour', to: 'lighthouse', labels })
+
+    for (const arrows of [['to'], ['from'], ['from', 'to']] as const) {
+      expect(getPlaces({ from: 'harbour', to: 'lighthouse', labels, arrows })).toEqual(expected)
+    }
+  })
+
+  it('keeps the first label near the `from` note on a line that runs right to left', () => {
     const edge: PlexEdge = {
       from: 'lighthouse',
       to: 'harbour',
-      labels: [{ text: 'guides', end: 'to' }],
-      arrows: ['to'],
+      labels: [{ text: 'guides' }, { text: 'shelters' }],
     }
     const routed = routeEdge(edge, byId, createRouting(DEFAULT_OPTIONS))!
+    const [start, end] = getLabelPositions(2)
 
+    // The lighthouse is the `from` note, so the label it wrote is near the lighthouse.
+    expect(routed.titles.map((title) => title.words)).toEqual(['guides', 'shelters'])
     expect(routed.titles[0]!.heading).toBe('against')
-    expect(routed.titles[0]!.wordsAt).toBeCloseTo(1 - getLabelPosition('to'))
-    expect(getPlaces(edge)).toEqual([['guides', 'to', getLabelPosition('to')]])
+    expect(routed.titles[0]!.wordsAt).toBeCloseTo(1 - start!)
+    const places = getPlaces(edge)
+    expect(places.map(([words]) => words)).toEqual(['guides', 'shelters'])
+    expect(places[0]![1]).toBeCloseTo(start!)
+    expect(places[1]![1]).toBeCloseTo(end!)
+  })
+
+  it('sets the two labels apart, at the two ends, on every kind of line', () => {
+    const measureLabel = (words: string) => 6 * [...words].length
+    let measured = 0
+
+    for (const [name, neighbourhood] of Object.entries(neighbourhoods)) {
+      const frame = arrangePlex(
+        {
+          ...neighbourhood,
+          edges: neighbourhood.edges.map((edge) => ({
+            ...edge,
+            labels: [{ text: 'guides' }, { text: 'shelters' }],
+          })),
+        },
+        { measureLabel, labelDepth: 12 },
+      )
+      for (const edge of frame.edges) {
+        const [one, other] = edge.titles
+        if (!one || !other) continue
+        measured += 1
+        const place = (title: typeof one) =>
+          title.heading === 'against' ? 1 - title.wordsAt : title.wordsAt
+        const gap = Math.abs(place(one) - place(other)) * getLength(edge)
+
+        expect(gap, `${name}: ${edge.from} to ${edge.to}`).toBeGreaterThanOrEqual(
+          (measureLabel(one.words) + measureLabel(other.words)) / 2 - 1,
+        )
+      }
+    }
+    expect(measured).toBeGreaterThan(10)
   })
 
   it('draws no title for a label with no words', () => {
@@ -634,10 +689,7 @@ describe('the position of a label', () => {
       {
         from: 'harbour',
         to: 'lighthouse',
-        labels: [
-          { text: long, end: 'to' },
-          { text: long, end: 'from' },
-        ],
+        labels: [{ text: long }, { text: long }],
         arrows: ['to', 'from'],
       },
       byId,
@@ -718,10 +770,7 @@ describe('a line between two boxes with no room between them', () => {
 
   it('has room for an arrowhead at each end and a title near each', () => {
     const edge = route(box('a', 'child', 0, 200), box('b', 'child', 116, 200), {
-      labels: [
-        { text: 'onward', end: 'to' },
-        { text: 'back', end: 'from' },
-      ],
+      labels: [{ text: 'onward' }, { text: 'back' }],
       arrows: ['to', 'from'],
     })
 

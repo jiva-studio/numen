@@ -13,7 +13,7 @@ build:
 	@if [ -f package.json ]; then npm run build; fi
 
 lint:
-	@if [ -f go.mod ]; then go vet ./... && golangci-lint run ./... && golangci-lint run -c .golangci-structure.yml ./...; fi
+	@if [ -f go.mod ]; then go vet ./... && golangci-lint run --allow-parallel-runners ./... && golangci-lint run --allow-parallel-runners -c .golangci-structure.yml ./...; fi
 	@if [ -f package.json ]; then npm run lint && npm run typecheck; fi
 
 test:

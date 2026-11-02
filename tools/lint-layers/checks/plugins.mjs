@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { readPluginManifests } from "../../shared/manifests.mjs";
+import { writePluginIndex } from "./core.mjs";
 import {
   MODULES_DIR,
   REPO_ROOT,
@@ -299,7 +300,9 @@ export const PLUGIN_VERIFIERS = [
     scope: "plugins",
     module: "plugins",
     name: "Plugin Independence Architecture Suite (14 platform targets)",
+    coveredBy: "go-structure",
     run: () => {
+      writePluginIndex();
       exec("go test -v ./container -run \"Plugin\"", path.join(MODULES_DIR, "libs/core"));
     },
   },
@@ -319,6 +322,7 @@ export const PLUGIN_VERIFIERS = [
   },
   {
     id: "plugins-frontend",
+    isLint: true,
     scope: "plugins",
     module: "plugins",
     name: "Plugin Frontend Contract & Boundaries (no @/**, no @plugins/**)",

@@ -136,7 +136,11 @@ func TestGetFittingWidthKeepsThePageWithinTheMostPixels(t *testing.T) {
 			t.Errorf("most=%d: %d wide is not the widest, %d fits", most, fitting, next)
 		}
 	}
-	if fitting, _ := scan.GetFittingWidth(0, 120, 1<<24); fitting != 120 {
+	fitting, err := scan.GetFittingWidth(0, 120, 1<<24)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fitting != 120 {
 		t.Errorf("a width that fits was changed to %d", fitting)
 	}
 }

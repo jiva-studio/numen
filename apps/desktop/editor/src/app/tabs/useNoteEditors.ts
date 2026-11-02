@@ -53,7 +53,8 @@ function createNotedStore(
   return {
     has: (id) => notes.has(id),
     getPath: (id) => notes.getPath(id),
-    getTitle: (id) => windowTabs.tabs.value.find((one) => one.id === id)?.title || notes.getPath(id),
+    getTitle: (id) =>
+      windowTabs.tabs.value.find((one) => one.id === id)?.title || notes.getPath(id),
     asking: (id) => notes.stale(id) !== null,
     flushPending: (id) => notes.flushPending(id),
     close: (id) => runInBackground(notes.close(id), reportError),

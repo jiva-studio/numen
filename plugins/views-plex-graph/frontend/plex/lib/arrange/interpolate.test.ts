@@ -331,7 +331,9 @@ describe('the title a line carries while the picture moves', () => {
         edge.to === 'b'
           ? {
               ...edge,
-              titles: [{ heading: 'against' as const, words: 'went that way…', wordsAt: 0.5 }],
+              titles: [
+                { anchor: 0.5, heading: 'against' as const, words: 'went that way…', wordsAt: 0.5 },
+              ],
             }
           : edge,
       ),

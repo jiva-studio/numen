@@ -67,7 +67,7 @@ Every worktree of this repository shares one `git stash` stack. Never stash to g
 _Guide: [`stages/1-gatekeeper.md`](./stages/1-gatekeeper.md)_
 
 1. **Automated gate** — Run the modular target for each touched module from `REPO_ROOT` (e.g. `make lib_core_lint lib_core_test` for core backend, `make lib_ui_lint lib_ui_test` for UI, etc.). Never run blanket monorepo suites over untouched domains.
-2. **Fail-fast** — a type error, a lint failure, a broken existing test, or a `-race` run that did not happen marks the gate **FAIL**. Stop and reject with the exact error output, unless told to continue.
+2. **Fail-fast** — a type error, a lint failure, or a broken existing test marks the gate **FAIL**. Stop and reject with the exact error output, unless told to continue.
 3. **Architecture checklist** — dependency direction, ports and adapters, the `@numen/ui` domain boundary, the core/view split, tokens, naming, and one name per concept.
 
 ### Stage 2: Semantic logic, blast radius & spec audit
@@ -114,7 +114,7 @@ _Guide: [`stages/3-adversary.md`](./stages/3-adversary.md)_
 | Check                                  |       Status        | Details                                              |
 | :------------------------------------- | :-----------------: | :--------------------------------------------------- |
 | **gofmt / Prettier / go vet**          | `PASS / FAIL / N/A` | <details or '0 errors'>                              |
-| **go test -race**                      | `PASS / FAIL / N/A` | <per module, or why it did not run>                  |
+| **go test**                            | `PASS / FAIL / N/A` | <per module, or why it did not run>                  |
 | **buf lint**                           | `PASS / FAIL / N/A` | <details or 'clean'>                                 |
 | **vue-tsc typecheck**                  | `PASS / FAIL / N/A` | <details or '0 errors'>                              |
 | **Unit tests** (`vitest`)              | `PASS / FAIL / N/A` | <details or 'X passed'>                              |

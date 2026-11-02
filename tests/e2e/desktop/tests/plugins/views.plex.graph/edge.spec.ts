@@ -110,11 +110,20 @@ interface Point {
   readonly y: number
 }
 
+interface Box {
+  readonly x: number
+  readonly y: number
+  readonly width: number
+  readonly height: number
+}
+
 /** The line between two drawn notes: its end at each note, its middle, its labels and its heads, on the screen. */
 interface EdgeGeometry {
   readonly ends: Readonly<Record<string, Point>>
   readonly middle: Point
   readonly labels: Readonly<Record<string, Point>>
+  /** The box each label is drawn in, on the screen. */
+  readonly boxes: Readonly<Record<string, Box>>
   readonly arrows: readonly Point[]
 }
 
@@ -157,8 +166,12 @@ const readEdge = (page: Page, names: readonly [Name, Name]): Promise<EdgeGeometr
       distance(line.end, titles[0]!) + distance(line.start, titles[1]!)
 
     const labels: Record<string, { x: number; y: number }> = {}
+    const boxes: Record<string, Box> = {}
     for (const letters of svg.querySelectorAll('.plex__edge-label--letters')) {
-      labels[letters.textContent?.trim() ?? ''] = centre(letters.getBoundingClientRect())
+      const box = letters.getBoundingClientRect()
+      const words = letters.textContent?.trim() ?? ''
+      labels[words] = centre(box)
+      boxes[words] = { x: box.x, y: box.y, width: box.width, height: box.height }
     }
     const arrows = [...svg.querySelectorAll('.plex__edge-arrow')].map((head) =>
       centre(head.getBoundingClientRect()),
@@ -170,11 +183,32 @@ const readEdge = (page: Page, names: readonly [Name, Name]): Promise<EdgeGeometr
       },
       middle: line.middle,
       labels,
+      boxes,
       arrows,
     }
   }, names)
 
 const getDistance = (one: Point, other: Point) => Math.hypot(one.x - other.x, one.y - other.y)
+
+/**
+ * How far along the line a point is, as a fraction of the way from the end at `from` to the end
+ * at `to`, taking the point's projection on the straight run between the two ends.
+ */
+const getShare = (edge: EdgeGeometry, point: Point, from: Name, to: Name) => {
+  const start = edge.ends[from]!
+  const run = { x: edge.ends[to]!.x - start.x, y: edge.ends[to]!.y - start.y }
+  return ((point.x - start.x) * run.x + (point.y - start.y) * run.y) / (run.x ** 2 + run.y ** 2)
+}
+
+const isApart = (one: Box, other: Box) =>
+  one.x + one.width <= other.x ||
+  other.x + other.width <= one.x ||
+  one.y + one.height <= other.y ||
+  other.y + other.height <= one.y
+
+/** The label is in the middle of the line, within a tenth of the line either way. */
+const isCentred = (edge: EdgeGeometry, label: Point) =>
+  Math.abs(getShare(edge, label, 'Thermodynamics', 'Entropy') - 0.5) < 0.1
 
 /** Whether a point is nearer the end of the line at `nearName` than the end at `farName`. */
 const isNearer = (edge: EdgeGeometry, point: Point, nearName: Name, farName: Name) =>
@@ -231,7 +265,7 @@ test.describe('Plex Edge and Link Inspector', () => {
         return (
           edge.arrows.length === 1 &&
           isNearer(edge, edge.arrows[0]!, second, first) &&
-          isNearer(edge, edge.labels['warms']!, second, first)
+          isCentred(edge, edge.labels['warms']!)
         )
       })
       .toBe(true)
@@ -253,7 +287,7 @@ test.describe('Plex Edge and Link Inspector', () => {
         return (
           edge.arrows.length === 1 &&
           isNearer(edge, edge.arrows[0]!, first, second) &&
-          isNearer(edge, edge.labels['warms']!, first, second)
+          isCentred(edge, edge.labels['warms']!)
         )
       })
       .toBe(true)
@@ -317,9 +351,75 @@ test.describe('Plex Edge and Link Inspector', () => {
           heads.length === 2 &&
           heads.some((head) => isNearer(edge, head, first, second)) &&
           heads.some((head) => isNearer(edge, head, second, first)) &&
-          isNearer(edge, edge.labels['flows into']!, second, first) &&
-          isNearer(edge, edge.labels['measures']!, first, second)
+          isNearer(edge, edge.labels['flows into']!, 'Thermodynamics', 'Entropy') &&
+          isNearer(edge, edge.labels['measures']!, 'Entropy', 'Thermodynamics')
         )
+      })
+      .toBe(true)
+  })
+
+  test('sets the two labels of a line apart, one at each end, and clear of each other', async ({
+    page,
+    request,
+  }) => {
+    await saveConnection(request, {
+      Thermodynamics: { label: 'flows into', marker: ARROW },
+      Entropy: { label: 'measures', marker: ARROW },
+    })
+    await openWorkspace(page)
+    await expect(page.locator('.plex-frame:not([data-moving])')).toBeAttached()
+
+    // The record of the parent is by the parent, in its first third; the record of the child by the child.
+    await expect
+      .poll(async () => {
+        const edge = await readEdge(page, NAMES)
+        const parentLabel = edge.labels['flows into']
+        const childLabel = edge.labels['measures']
+        if (!parentLabel || !childLabel) return false
+        return (
+          getShare(edge, parentLabel, 'Thermodynamics', 'Entropy') < 1 / 3 &&
+          getShare(edge, childLabel, 'Thermodynamics', 'Entropy') > 2 / 3 &&
+          isApart(edge.boxes['flows into']!, edge.boxes['measures']!)
+        )
+      })
+      .toBe(true)
+  })
+
+  test('sets the two labels at the two ends whatever the line has for heads', async ({
+    page,
+    request,
+  }) => {
+    await saveConnection(request, {
+      Thermodynamics: { label: 'flows into' },
+      Entropy: { label: 'measures' },
+    })
+    await openWorkspace(page)
+    await expect(page.locator('.plex-frame:not([data-moving])')).toBeAttached()
+
+    await expect
+      .poll(async () => {
+        const edge = await readEdge(page, NAMES)
+        const parentLabel = edge.labels['flows into']
+        const childLabel = edge.labels['measures']
+        if (!parentLabel || !childLabel || edge.arrows.length !== 0) return false
+        return (
+          getShare(edge, parentLabel, 'Thermodynamics', 'Entropy') < 1 / 3 &&
+          getShare(edge, childLabel, 'Thermodynamics', 'Entropy') > 2 / 3
+        )
+      })
+      .toBe(true)
+  })
+
+  test('centres the one label of a line that has a head at one end', async ({ page, request }) => {
+    await saveConnection(request, { Thermodynamics: { label: 'flows into', marker: ARROW } })
+    await openWorkspace(page)
+    await expect(page.locator('.plex-frame:not([data-moving])')).toBeAttached()
+
+    await expect
+      .poll(async () => {
+        const edge = await readEdge(page, NAMES)
+        const label = edge.labels['flows into']
+        return !!label && edge.arrows.length === 1 && isCentred(edge, label)
       })
       .toBe(true)
   })

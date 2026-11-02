@@ -8,7 +8,7 @@
   "types": "./frontend/index.ts",
   "scripts": {
     "build": "vite build",
-    "lint": "eslint .",
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ .",
     "typecheck": "vue-tsc --noEmit -p tsconfig.json",
     "test": "vitest run"
   },
