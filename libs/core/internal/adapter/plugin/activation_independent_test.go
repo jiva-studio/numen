@@ -56,7 +56,11 @@ func TestAnotherPluginStartsWhileAPluginIsNotReady(t *testing.T) {
 	}
 	t.Cleanup(func() { plugintest.KillProcess(t, cmd.Process) })
 	silent, writer := io.Pipe()
-	t.Cleanup(func() { _ = writer.Close() })
+	t.Cleanup(func() {
+		if err := writer.Close(); err != nil {
+			t.Errorf("close the pipe of the silent plugin: %v", err)
+		}
+	})
 	stuck := make(chan struct{})
 	host.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		if p.Manifest.ID == "org.example.sample" {
@@ -67,9 +71,10 @@ func TestAnotherPluginStartsWhileAPluginIsNotReady(t *testing.T) {
 	})
 
 	stuckDone := make(chan struct{})
+	var stuckErr error
 	go func() {
 		defer close(stuckDone)
-		_, _ = host.EnsureActive(t.Context(), "org.example.sample")
+		_, stuckErr = host.EnsureActive(t.Context(), "org.example.sample")
 	}()
 	select {
 	case <-stuck:
@@ -96,6 +101,11 @@ func TestAnotherPluginStartsWhileAPluginIsNotReady(t *testing.T) {
 	if err := cmd.Process.Kill(); err != nil {
 		t.Fatalf("kill the silent process: %v", err)
 	}
-	_ = writer.Close()
+	if err := writer.Close(); err != nil {
+		t.Fatalf("close the pipe of the silent plugin: %v", err)
+	}
 	<-stuckDone
+	if stuckErr == nil {
+		t.Error("the plugin that never became ready was expected to fail")
+	}
 }

@@ -23,6 +23,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+
+	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
 )
 
 // stuckModelServer answers the model once, and then holds every request until the test ends, as a
@@ -88,10 +90,15 @@ func TestTheModelReadDoesNotWaitForAStuckPlugin(t *testing.T) {
 	defer testsupport.Close(t, bridge)
 
 	stuck.isStuck.Store(true)
-	started := time.Now()
-	model := bridge.GetModel()
-	if took := time.Since(started); took > 5*time.Second {
-		t.Fatalf("the model read waited %v for a plugin that does not answer", took)
+	bound, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	reply := make(chan embeddingport.EmbeddingModel, 1)
+	go func() { reply <- bridge.GetModel() }()
+	var model embeddingport.EmbeddingModel
+	select {
+	case model = <-reply:
+	case <-bound.Done():
+		t.Fatal("the model read waited more than 5s for a plugin that does not answer")
 	}
 	if model.Name != "stuck-model" {
 		t.Fatalf("the read gave %q, not the model read before", model.Name)

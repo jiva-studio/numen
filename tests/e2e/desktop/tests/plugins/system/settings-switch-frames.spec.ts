@@ -23,7 +23,7 @@ interface Frame {
 
 declare global {
   interface Window {
-    frames?: Frame[]
+    recordedFrames?: Frame[]
     stopFrames?: () => void
   }
 }
@@ -143,6 +143,7 @@ const startRecording = async (page: Page, label: string): Promise<void> => {
   await page.evaluate((name) => {
     const frames: Frame[] = []
     const nodes = new WeakMap<Element, number>()
+    let nodeCount = 0
     const startedAt = performance.now()
     let isStopped = false
     const sample = (source: string): void => {
@@ -164,7 +165,7 @@ const startRecording = async (page: Page, label: string): Promise<void> => {
         })
         return
       }
-      if (!nodes.has(root)) nodes.set(root, nodes.size + 1)
+      if (!nodes.has(root)) nodes.set(root, ++nodeCount)
       const rootBox = root.getBoundingClientRect()
       const thumbBox = (root.firstElementChild ?? root).getBoundingClientRect()
       const card = header.getBoundingClientRect()
@@ -196,7 +197,7 @@ const startRecording = async (page: Page, label: string): Promise<void> => {
       requestAnimationFrame(draw)
     }
     requestAnimationFrame(draw)
-    window.frames = frames
+    window.recordedFrames = frames
     window.stopFrames = () => {
       isStopped = true
       observer.disconnect()
@@ -207,7 +208,7 @@ const startRecording = async (page: Page, label: string): Promise<void> => {
 const stopRecording = (page: Page): Promise<Frame[]> =>
   page.evaluate(() => {
     window.stopFrames?.()
-    return window.frames ?? []
+    return window.recordedFrames ?? []
   })
 
 /** The values of a list in order, each once where it repeats directly. */

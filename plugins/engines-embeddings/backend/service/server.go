@@ -90,10 +90,11 @@ const envMockOpenHold = "NUMEN_MOCK_OPEN_HOLD_MS"
 
 func openMockModel(ctx context.Context, _ engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
 	if held, err := strconv.Atoi(os.Getenv(envMockOpenHold)); err == nil && held > 0 {
-		select {
-		case <-time.After(time.Duration(held) * time.Millisecond):
-		case <-ctx.Done():
-			return nil, ctx.Err()
+		hold, cancel := context.WithTimeout(ctx, time.Duration(held)*time.Millisecond)
+		defer cancel()
+		<-hold.Done()
+		if err := ctx.Err(); err != nil {
+			return nil, err
 		}
 	}
 	return engine.MockEmbedder{}, nil
