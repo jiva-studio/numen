@@ -99,8 +99,8 @@ test.describe('a link to an address that answers 404', () => {
 
     await importAddress(page, MISSING_PAGE_ADDRESS)
 
-    const notice = page.locator('.notice[data-severity="error"]')
-    await expect(notice).toContainText('its text was not fetched')
+    await page.locator('.status-bar__trigger').click()
+    await expect(page.locator('.task-popover')).toContainText('its text was not fetched')
     const added = (await listFilePaths(request)).filter((one) => !before.includes(one))
     made.push(...added)
     expect(added).toEqual([expect.stringMatching(/unreachable\.numen\.test.*tide-tables\.md$/)])

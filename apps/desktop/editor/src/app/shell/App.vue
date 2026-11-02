@@ -6,7 +6,7 @@
  * sees of it, and the binding between the two.
  */
 import { onMounted, onUnmounted } from 'vue'
-import { Notices, StatusBar, WorkspaceLayout } from '@numen/shell'
+import { StatusBar, WorkspaceLayout } from '@numen/shell'
 import '@numen/ui/styles.css'
 import '@numen/shell/styles.css'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
@@ -42,8 +42,6 @@ const {
   layout,
   vaultList,
   log,
-  notices,
-  dismissNotice,
   statusBar,
   statusViews,
   palette,
@@ -98,10 +96,6 @@ async function onTearOffTab(id: string, position: { x: number; y: number }) {
 
 function onShowTab(id: string) {
   windowTabs.onTabShown(id)
-}
-
-function onDismissNotice(id: string) {
-  dismissNotice(id)
 }
 
 function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
@@ -181,14 +175,6 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
         <StatusViewHost :views="statusViews" />
       </template>
     </StatusBar>
-
-    <Notices
-      :notices="notices"
-      :name="words.isWorking"
-      :dismiss="words.dismiss"
-      :more="words.more"
-      @dismiss="onDismissNotice"
-    />
 
     <UnsavedChangesPrompt
       :conflicts="fileFlush.conflicts.value"

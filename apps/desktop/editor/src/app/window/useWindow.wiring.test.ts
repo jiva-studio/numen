@@ -52,7 +52,7 @@ vi.mock('./useWindowDisplay', () => ({
     return h.f.display
   },
 }))
-vi.mock('../shell/useWindowNotices', () => ({ useWindowNotices: () => ({ name: 'notices' }) }))
+vi.mock('../shell/useNoticeTasks', () => ({ useNoticeTasks: () => ({ value: [] }) }))
 vi.mock('./useWindowKinds', () => ({
   useWindowKinds: (args: unknown) => {
     h.args.kinds = args

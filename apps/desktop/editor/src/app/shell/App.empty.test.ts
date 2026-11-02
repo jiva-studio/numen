@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { cards, mountWindow, vaultState } from '@/testing/window'
 
 describe('the window with no note to show', () => {
-  it('says the vault could not be read, and that nothing was read from it', async () => {
+  it('lists the vault that could not be read as a failed task', async () => {
     vaultState.opening = null
     vaultState.error = 'the vault folder is not there'
 
@@ -13,7 +13,7 @@ describe('the window with no note to show', () => {
 
     const corner = cards(window)
     expect(corner[0]).toContain('the vault folder is not there')
-    expect(corner[1]).toBe('No notes loaded')
+    expect(corner).toHaveLength(1)
   })
 
   it('says nothing when the vault was read and holds none', async () => {

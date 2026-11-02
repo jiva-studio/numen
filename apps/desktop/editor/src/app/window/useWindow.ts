@@ -2,7 +2,7 @@
  * The window composed: the vault it reads, the kinds it declares, and the
  * few requests one kind makes of another.
  */
-import { ref, type Ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import { waitFor } from './waitFor'
 import { formatErrorMessage } from '@numen/core-client'
 import { pluginCatalog } from '@/shared/clients'
@@ -27,7 +27,7 @@ import { useCommands } from '../commands/useCommands'
 import { useDeclaredCommands } from '../commands/declaredCommands'
 import { useFileMenuCommands } from '../commands/fileMenuCommands'
 import { useWindowDisplay } from './useWindowDisplay'
-import { useWindowNotices } from '../shell/useWindowNotices'
+import { useNoticeTasks } from '../shell/useNoticeTasks'
 import { useWindowKinds } from './useWindowKinds'
 import { useWindowStatusBar } from '../shell/useWindowStatusBar'
 import { resolveTaskAction } from '../shell/taskActions'
@@ -415,22 +415,20 @@ function createStatusBar(
   window: WindowServices['window'],
   settings: WindowSettings,
 ) {
+  const noticeTasks = useNoticeTasks({
+    log: base.log,
+    plugins: base.pluginNotices,
+    window,
+    settings,
+  })
   return useWindowStatusBar({
-    tasks: window.tasks,
+    tasks: computed(() => [...window.tasks.value, ...noticeTasks.value]),
     cancelTask: (id) => core.cancelTask(id),
     reportCancelError: (error) =>
       base.writeMessage(`The task was not cancelled: ${formatErrorMessage(error)}`, 'error'),
     resolveAction: resolveTaskAction,
     onAction: (pluginId) => settings.configured.openSettings(pluginId),
   })
-}
-
-/** The dismissal of a notice from the log and from the plugins' notices. */
-function createNoticeDismisser(base: WindowCore) {
-  return (id: string) => {
-    base.log.dismiss(id)
-    base.pluginNotices.dismiss(id)
-  }
 }
 
 /** The closing of a tab: its links go, and the hold runs where the tab stays open. */
@@ -463,13 +461,6 @@ export const useWindow = () => {
     base.writeMessage(`Plugins were not tracked: ${formatErrorMessage(error)}`, 'error'),
   )
 
-  const notices = useWindowNotices({
-    log: base.log,
-    plugins: base.pluginNotices,
-    window,
-    settings,
-    vaults: getVaults(ctx),
-  })
   const statusBar = createStatusBar(base, window, settings)
   const isWritingTabs = ref(false)
   const isLayoutReady = ref(false)
@@ -520,8 +511,6 @@ export const useWindow = () => {
     layout: base.windowTabs.layout,
     vaultList: getVaults(ctx).vaultList,
     log: base.log,
-    notices,
-    dismissNotice: createNoticeDismisser(base),
     statusBar,
     statusViews: base.pluginHost.statusViews,
     palette: getCommands(ctx).palette,

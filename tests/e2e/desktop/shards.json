@@ -28,6 +28,7 @@
   "tests/plugins/readers.pdf/search.spec.ts": 2,
   "tests/plugins/readers.pdf/zoom.chromium.spec.ts": 3,
   "tests/plugins/readers.pdf/zoom.spec.ts": 11,
+  "tests/plugins/system/corner-notices.spec.ts": 10,
   "tests/plugins/system/lifecycle.spec.ts": 7,
   "tests/plugins/system/security.spec.ts": 1,
   "tests/plugins/system/settings-effects.spec.ts": 13,

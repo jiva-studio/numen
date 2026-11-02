@@ -22,7 +22,7 @@ machine's own folder picker is what chooses it. Both are in the commands —
 <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>P</kbd> — once a vault is open.
 
 The first scan runs in the background: names and words are searchable almost at once, and larger
-vaults continue to be indexed while you work. What is still being done is shown in the corner of the
+vaults continue to be indexed while you work. What is still being done is shown in the status bar of the
 window.
 
 ## What is not a note

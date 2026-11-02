@@ -50,7 +50,7 @@ describe('the window holding no tab', () => {
     ])
   })
 
-  it('says in the corner that the vaults could not be listed, and draws none', async () => {
+  it('lists as a failed task that the vaults could not be listed, and draws none', async () => {
     vaultState.listable = false
 
     const window = await mountWindow()

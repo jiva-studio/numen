@@ -212,17 +212,18 @@ describe('the window over a plugin that draws the review', () => {
     expect(window.findAll('.welcome-page__row--vault')).toHaveLength(2)
   })
 
-  it('says why the vaults could not be listed', async () => {
+  it('lists no vault and draws no card when the vaults could not be listed', async () => {
     const { window } = await mountWindow(async () => {
       throw new Error('the list is locked')
     })
 
-    expect(window.text()).toContain(formatErrorMessage(new Error('the list is locked')))
+    expect(window.findAll('.welcome-page__row--vault')).toHaveLength(0)
+    expect(window.text()).not.toContain('the list is locked')
   })
 })
 
 describe('the work behind the window', () => {
-  it("is followed for the window's own target and drawn in its notices", async () => {
+  it("is followed for the window's own target and held as notices, not drawn", async () => {
     wire.tasks = async function* () {
       yield {
         tasks: [

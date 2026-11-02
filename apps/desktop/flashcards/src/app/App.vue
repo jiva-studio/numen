@@ -1,13 +1,13 @@
 <script setup lang="ts">
 /**
  * The flashcards window: the vaults of the installation to choose from, the tab the plugins of its
- * target draw on the vault chosen, or why there is none, the notices they show, and the command
+ * target draw on the vault chosen, or why there is none, and the command
  * palette that sets the theme and the mode.
  */
 import type { Component } from 'vue'
 import '@numen/ui/styles.css'
 import '@numen/shell/styles.css'
-import { Notices, Palette } from '@numen/shell'
+import { Palette } from '@numen/shell'
 import { WORDS } from '@/shared/words'
 import VaultChooser from './VaultChooser.vue'
 import { useShell, type ShellDeps } from './useShell'
@@ -19,7 +19,7 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { front, tab, openTab, vaults, plugins, notices, mountView, appearance } = useShell(
+const { front, tab, openTab, vaults, plugins, mountView, appearance } = useShell(
   props.deps,
 )
 </script>
@@ -59,8 +59,6 @@ const { front, tab, openTab, vaults, plugins, notices, mountView, appearance } =
     @dismiss="appearance.onDismiss"
   />
 
-  <!-- What the window has to say, in the corner every window says it in. -->
-  <Notices :notices="notices.notices.value" @dismiss="notices.dismiss" />
 </template>
 
 <style scoped>

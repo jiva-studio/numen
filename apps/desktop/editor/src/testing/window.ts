@@ -8,7 +8,7 @@ import './vaultMock'
 import './moduleMocks'
 import { afterEach } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
-import { getPanes, WorkspaceLayout, type Workspace } from '@numen/shell'
+import { getPanes, StatusBar, WorkspaceLayout, type Workspace } from '@numen/shell'
 import { requests, forgetRequests } from './requests'
 import {
   folders,
@@ -91,9 +91,11 @@ async function mountWindowWithPalette() {
   return window
 }
 
-/** What the corner of the window is saying, one string per card. */
+/** What the failed tasks of the status bar say, one string per task. */
 const cards = (window: VueWrapper): readonly string[] =>
-  window.findAll('article.notice').map((card) => card.text())
+  (window.findComponent(StatusBar).props('tasks') as readonly { state: string; label: string; about?: string }[])
+    .filter((task) => task.state === 'failed')
+    .map((task) => [task.label, task.about].filter(Boolean).join(' '))
 
 /**
  * The id the plex gives the note it is focused on, carried by every gesture it
