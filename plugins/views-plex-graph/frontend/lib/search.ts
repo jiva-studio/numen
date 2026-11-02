@@ -4,17 +4,12 @@
 
 export const SEARCH_DEBOUNCE_MS = 120
 
-/** Checks whether any search result matches the query by title or note path. */
-export function hasExactNoteMatch(
-  results: readonly { readonly path: string; readonly title: string }[],
+/** The result whose title is the query, ignoring case and the space around the query. */
+export function findExactNote<T extends { readonly title: string }>(
+  results: readonly T[],
   query: string,
-): boolean {
+): T | undefined {
   const clean = query.trim().toLowerCase()
-  if (!clean) return false
-  return results.some(
-    (item) =>
-      item.title.toLowerCase() === clean ||
-      item.path.toLowerCase() === clean ||
-      item.path.toLowerCase() === `${clean}.md`,
-  )
+  if (!clean) return undefined
+  return results.find((item) => item.title.toLowerCase() === clean)
 }

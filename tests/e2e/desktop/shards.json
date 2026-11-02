@@ -50,7 +50,7 @@
   "tests/plugins/views.plex.graph/graph.spec.ts": 5,
   "tests/plugins/views.plex.graph/hierarchy.spec.ts": 25,
   "tests/plugins/views.plex.graph/lines.spec.ts": 7,
-  "tests/plugins/views.plex.graph/links.spec.ts": 8,
+  "tests/plugins/views.plex.graph/links.spec.ts": 24,
   "tests/scenarios/link.spec.ts": 10,
   "tests/scenarios/ocr-disabled.spec.ts": 16,
   "tests/scenarios/proofreading.spec.ts": 4,

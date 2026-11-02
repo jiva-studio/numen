@@ -1,11 +1,13 @@
-import { test, expect, type Page } from '../../support/test.js'
+import { test, expect, type Page, type Route } from '../../support/test.js'
 import { getGraph, openWorkspace } from '../../support/workspace.js'
+import { createUniqueTitle } from '../../support/vault.js'
 import {
   createNoteWithBody,
   destroyNotes,
   getConnectionSides,
   getRow,
   getTab,
+  listPaths,
   showInFiles,
 } from '../../support/layout.js'
 
@@ -14,6 +16,34 @@ const showInPlex = async (page: Page, path: string): Promise<void> => {
   await showInFiles(page, ['notes'])
   await getRow(page, path).click({ button: 'right' })
   await page.getByRole('menuitem', { name: 'Show in plex', exact: true }).click()
+}
+
+const SEARCH_NAMES = '**/numen.v1.SearchService/SearchNames'
+
+/** Opens the quick link field from the handle of the focused note and returns its dialog. */
+const openQuickLink = async (page: Page, title: string) => {
+  await expect(getTab(page, title)).toBeVisible()
+  await getGraph(page)
+    .getByRole('img', { name: `${title}, focus` })
+    .hover()
+  const handle = page.locator('.plex__handle').first()
+  await handle.hover()
+  await handle.click()
+  return page.getByRole('dialog', { name: 'New thought' })
+}
+
+/** Holds the name searches of the window until the returned function lets them go. */
+const holdSearches = async (page: Page): Promise<() => Promise<void>> => {
+  const parked: Route[] = []
+  let isHolding = true
+  await page.route(SEARCH_NAMES, async (route) => {
+    if (isHolding) parked.push(route)
+    else await route.continue()
+  })
+  return async () => {
+    isHolding = false
+    for (const route of parked) await route.continue()
+  }
 }
 
 test.describe('Links between two notes in the plex', () => {
@@ -46,16 +76,10 @@ test.describe('Links between two notes in the plex', () => {
     expect(await getConnectionSides(request, quay, jetty)).toEqual({ first: false, second: false })
     await openWorkspace(page)
     await showInPlex(page, quay)
-    await expect(getTab(page, 'Quay')).toBeVisible()
-    const focus = getGraph(page).getByRole('img', { name: 'Quay, focus' })
-    await focus.hover()
-    const handle = page.locator('.plex__handle').first()
-    await handle.hover()
-    await handle.click()
-
-    const field = page.getByRole('dialog', { name: 'New thought' }).getByRole('textbox')
+    const field = (await openQuickLink(page, 'Quay')).getByRole('combobox')
     await field.fill('Jett')
     await expect(page.getByRole('option', { name: 'Jetty', exact: true }).first()).toBeVisible()
+    await field.press('ArrowDown')
     await field.press('Enter')
 
     await expect
@@ -66,6 +90,117 @@ test.describe('Links between two notes in the plex', () => {
       .toBe(true)
     await expect(getGraph(page).getByRole('img', { name: /^(Quay|Jetty), focus$/ })).toBeVisible()
     await expect(getGraph(page).locator('.plex__edge')).toHaveCount(1)
+  })
+
+  test('keeps Create as row 1 at the same place while the found notes arrive, in one rounded frame', async ({
+    page,
+  }) => {
+    await openWorkspace(page)
+    await showInPlex(page, quay)
+    const release = await holdSearches(page)
+    const dialog = await openQuickLink(page, 'Quay')
+    const field = dialog.getByRole('combobox')
+    await field.fill('Jett')
+
+    const options = dialog.getByRole('option')
+    await expect(options).toHaveText(['Create "Jett"'])
+    const before = await options.first().boundingBox()
+    await expect(options.first()).toHaveAttribute('aria-selected', 'true')
+
+    await release()
+    await expect(dialog.getByRole('option', { name: 'Jetty', exact: true }).first()).toBeVisible()
+    await expect(options.first()).toHaveText('Create "Jett"')
+    await expect(options.first()).toHaveAttribute('aria-selected', 'true')
+    const after = await options.first().boundingBox()
+    expect(after?.y).toBe(before?.y)
+    expect(after?.x).toBe(before?.x)
+
+    const frame = await field.evaluateHandle((input) => input.closest('.plex-quick-link__frame')!)
+    const frameElement = frame.asElement()!
+    await frameElement.evaluate((el) =>
+      Promise.all(el.getAnimations({ subtree: true }).map((animation) => animation.finished)),
+    )
+    expect(
+      await frameElement.evaluate(
+        (el, id) => el.contains(document.getElementById(id)),
+        (await dialog.getByRole('listbox').getAttribute('id'))!,
+      ),
+    ).toBe(true)
+    const radii = await frameElement.evaluate((el) => {
+      const probe = document.createElement('div')
+      probe.style.borderTopLeftRadius = 'var(--numen-radius-panel)'
+      document.body.append(probe)
+      const token = getComputedStyle(probe).borderTopLeftRadius
+      probe.remove()
+      const style = getComputedStyle(el)
+      return {
+        token,
+        corners: [
+          style.borderTopLeftRadius,
+          style.borderTopRightRadius,
+          style.borderBottomLeftRadius,
+          style.borderBottomRightRadius,
+        ],
+      }
+    })
+    expect(radii.corners).toEqual(Array(4).fill(radii.token))
+    expect(Number.parseFloat(radii.token)).toBeGreaterThan(0)
+    const row = await field.boundingBox()
+    const list = await dialog.getByRole('listbox').boundingBox()
+    const box = await frameElement.boundingBox()
+    expect(list!.y).toBeGreaterThanOrEqual(row!.y + row!.height)
+    expect(list!.y - (row!.y + row!.height)).toBeLessThan(12)
+    expect(list!.y + list!.height).toBeLessThanOrEqual(box!.y + box!.height)
+  })
+
+  test('replaces row 1 in place with the note of exactly the typed title and links it without creating a note', async ({
+    page,
+    request,
+  }) => {
+    const before = await listPaths(request, 'notes')
+    await openWorkspace(page)
+    await showInPlex(page, quay)
+    const release = await holdSearches(page)
+    const dialog = await openQuickLink(page, 'Quay')
+    const field = dialog.getByRole('combobox')
+    await field.fill('Jetty')
+
+    const options = dialog.getByRole('option')
+    await expect(options).toHaveText(['Create "Jetty"'])
+    const row = await options.first().boundingBox()
+
+    await release()
+    await expect(options.first()).toHaveText('Jetty')
+    await expect(dialog.getByRole('option', { name: /^Create/ })).toHaveCount(0)
+    await expect(options.first()).toHaveAttribute('aria-selected', 'true')
+    expect(await options.first().boundingBox()).toEqual(row)
+
+    await field.press('Enter')
+    await expect
+      .poll(async () => {
+        const sides = await getConnectionSides(request, quay, jetty)
+        return sides.first || sides.second
+      })
+      .toBe(true)
+    expect(await listPaths(request, 'notes')).toEqual(before)
+  })
+
+  test('creates and links a note with a click on Create', async ({ page, request }) => {
+    const title = createUniqueTitle('Wharf')
+    const created = `notes/${title}.md`
+    await openWorkspace(page)
+    await showInPlex(page, quay)
+    const dialog = await openQuickLink(page, 'Quay')
+    await dialog.getByRole('combobox').fill(title)
+    await dialog.getByRole('option', { name: `Create "${title}"` }).click()
+
+    await expect
+      .poll(async () => {
+        const sides = await getConnectionSides(request, quay, created)
+        return sides.first || sides.second
+      })
+      .toBe(true)
+    await destroyNotes(request, [created])
   })
 
   test('removes the link of two notes with Remove link, and the connection is gone from both', async ({
