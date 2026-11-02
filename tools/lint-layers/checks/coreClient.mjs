@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { runTool } from "../../shared/tools.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { REPO_ROOT, failOnFindings, parsePackageJson, requireMatches } from "./helpers.mjs";
@@ -22,7 +22,7 @@ const NOT_SOURCE = /(^|\/)(node_modules|dist|gen|testdata)\//;
 
 /** The package.json files below `dirs`, each with the parsed manifest and its directory. */
 function readManifests(dirs) {
-  const listed = spawnSync("git", ["ls-files", "--", ...dirs], { cwd: REPO_ROOT, encoding: "utf8" });
+  const listed = runTool("git", ["ls-files", "--", ...dirs], { cwd: REPO_ROOT, encoding: "utf8" });
   return (listed.stdout || "")
     .split("\n")
     .filter((file) => file && path.basename(file) === "package.json" && !NOT_SOURCE.test(file) && fs.existsSync(path.join(REPO_ROOT, file)))

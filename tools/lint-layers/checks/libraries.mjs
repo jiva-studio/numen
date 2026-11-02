@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { runTool } from "../../shared/tools.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import {
@@ -80,7 +80,7 @@ export function findLibraryViolations(libraries, matrix = LIBRARY_DEPENDENCIES) 
 
 /** Lists the tracked files under `libs/` that the library check reads. */
 function listLibraryFiles() {
-  const listed = spawnSync("git", ["ls-files", "--", "libs"], { cwd: REPO_ROOT, encoding: "utf8" });
+  const listed = runTool("git", ["ls-files", "--", "libs"], { cwd: REPO_ROOT, encoding: "utf8" });
   return (listed.stdout || "")
     .split("\n")
     .filter((file) => file && !file.includes("node_modules/") && fs.existsSync(path.join(REPO_ROOT, file)));

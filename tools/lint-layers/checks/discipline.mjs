@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { runTool } from "../../shared/tools.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -8,7 +8,7 @@ const require = createRequire(import.meta.url);
 
 /** A tracked file of the repository read as text. */
 function readTrackedSources(pathspecs, accept = () => true) {
-  const listed = spawnSync("git", ["ls-files", "-z", "--", ...pathspecs], { cwd: REPO_ROOT, encoding: "utf8", maxBuffer: 1 << 28 });
+  const listed = runTool("git", ["ls-files", "-z", "--", ...pathspecs], { cwd: REPO_ROOT, encoding: "utf8", maxBuffer: 1 << 28 });
   return (listed.stdout || "")
     .split("\0")
     .filter((file) => file && accept(file) && fs.existsSync(path.join(REPO_ROOT, file)))
@@ -81,7 +81,7 @@ export function findPluginSchemas(files) {
 }
 
 export function verifyPluginsHoldNoSchema() {
-  const listed = spawnSync("git", ["ls-files", "-z", "--", "plugins"], { cwd: REPO_ROOT, encoding: "utf8", maxBuffer: 1 << 28 });
+  const listed = runTool("git", ["ls-files", "-z", "--", "plugins"], { cwd: REPO_ROOT, encoding: "utf8", maxBuffer: 1 << 28 });
   const files = (listed.stdout || "").split("\0").filter(Boolean);
   requireMatches("plugin files read", files.length, 100);
   failOnFindings("A plugin declares its own schema", findPluginSchemas(files));
@@ -240,7 +240,7 @@ export function findUnassignedPaths(files) {
 }
 
 export function verifyEveryPathHasALayer() {
-  const listed = spawnSync("git", ["ls-files", "-z"], { cwd: REPO_ROOT, encoding: "utf8", maxBuffer: 1 << 28 });
+  const listed = runTool("git", ["ls-files", "-z"], { cwd: REPO_ROOT, encoding: "utf8", maxBuffer: 1 << 28 });
   const files = (listed.stdout || "").split("\0").filter(Boolean);
   requireMatches("tracked files read", files.length, 1000);
   requireMatches("plugin manifests read", files.filter((file) => /^plugins\/[^/]+\/manifest\.json$/.test(file)).length, 2);
@@ -273,7 +273,7 @@ export function findWorkspaceGaps(workText, moduleDirs) {
 }
 
 export function verifyWorkspaceListsEveryModule() {
-  const listed = spawnSync("git", ["ls-files", "-z", "--", "go.mod", "**/go.mod"], { cwd: REPO_ROOT, encoding: "utf8" });
+  const listed = runTool("git", ["ls-files", "-z", "--", "go.mod", "**/go.mod"], { cwd: REPO_ROOT, encoding: "utf8" });
   const moduleDirs = (listed.stdout || "")
     .split("\0")
     .filter(Boolean)

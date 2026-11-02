@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { runTool } from "../../shared/tools.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { REPO_ROOT } from "./helpers.mjs";
@@ -59,7 +59,7 @@ export function getLinterBuildGap(versionOutput, directive) {
 
 /** Fails when the installed golangci-lint is not the pinned release or is built with a Go older than the workspace's. */
 export function assertGolangciLintBuild() {
-  const run = spawnSync("golangci-lint", ["--version"], { cwd: REPO_ROOT, encoding: "utf8" });
+  const run = runTool("golangci-lint", ["--version"], { cwd: REPO_ROOT, encoding: "utf8" });
   if (run.error || run.status !== 0) {
     throw new Error("golangci-lint is not installed or does not run: " + (run.error?.message ?? run.stderr));
   }

@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { runTool } from "../../shared/tools.mjs";
 import path from "node:path";
 import stylelint from "stylelint";
 import { REPO_ROOT, failOnFindings, requireMatches } from "./helpers.mjs";
@@ -20,7 +20,7 @@ function readStyleFindings(report, root = REPO_ROOT) {
 
 /** The tracked stylesheets and components of the repository. */
 function listStyleFiles() {
-  const listed = spawnSync("git", ["ls-files", "-z", "--", "*.css", "*.vue"], { cwd: REPO_ROOT, encoding: "utf8", maxBuffer: 1 << 28 });
+  const listed = runTool("git", ["ls-files", "-z", "--", "*.css", "*.vue"], { cwd: REPO_ROOT, encoding: "utf8", maxBuffer: 1 << 28 });
   return (listed.stdout || "").split("\0").filter(Boolean);
 }
 

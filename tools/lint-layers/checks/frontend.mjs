@@ -1,11 +1,11 @@
-import { spawnSync } from "node:child_process";
+import { runTool } from "../../shared/tools.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { MODULES_DIR, REPO_ROOT, exec, failOnFindings, requireMatches } from "./helpers.mjs";
 
 /** The TypeScript packages of `libs` and `apps`: each directory that holds a `tsconfig.json` and a `package.json`. */
 function listTsPackages() {
-  const listed = spawnSync("git", ["ls-files", "--", "libs/*tsconfig.json", "apps/*tsconfig.json"], { cwd: REPO_ROOT, encoding: "utf8" });
+  const listed = runTool("git", ["ls-files", "--", "libs/*tsconfig.json", "apps/*tsconfig.json"], { cwd: REPO_ROOT, encoding: "utf8" });
   return (listed.stdout || "")
     .split("\n")
     .filter((file) => path.basename(file) === "tsconfig.json")

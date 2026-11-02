@@ -1,3 +1,4 @@
+import { runTool } from "../../shared/tools.mjs";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -24,7 +25,7 @@ export function verifyPluginsStatic() {
     throw new Error("plugins/shared exists: a plugin shares code only through the SDK");
   }
 
-  const coreLeak = spawnSync("git", ["grep", "-rn", "github.com/jiva-studio/numen/libs/core", "plugins/"], { cwd: REPO_ROOT });
+  const coreLeak = runTool("git", ["grep", "-rn", "github.com/jiva-studio/numen/libs/core", "plugins/"], { cwd: REPO_ROOT });
   const lines = (coreLeak.stdout ? coreLeak.stdout.toString() : "").split("\n").filter(Boolean);
   const nonCommentLeaks = lines.filter((l) => !l.includes(".golangci.yml") && !l.includes("README"));
   if (nonCommentLeaks.length > 0) {

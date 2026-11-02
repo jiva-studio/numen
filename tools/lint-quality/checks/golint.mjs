@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawnTool } from "../../shared/tools.mjs";
 import { findGoLintConfig, listGoModules } from "./modules.mjs";
 
 const MAX_PARALLEL_MODULES = 4;
@@ -12,10 +12,16 @@ const MAX_PARALLEL_MODULES = 4;
  */
 function lintWithConfig({ name, dir }, configFile) {
   return new Promise((resolve) => {
-    const child = spawn("golangci-lint", ["run", "-c", configFile, "--allow-parallel-runners", "./..."], {
-      cwd: dir,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
+    let child;
+    try {
+      child = spawnTool("golangci-lint", ["run", "-c", configFile, "--allow-parallel-runners", "./..."], {
+        cwd: dir,
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+    } catch (error) {
+      resolve([`[${name}] cannot run golangci-lint: ${error.message}`]);
+      return;
+    }
 
     let output = "";
     child.stdout.on("data", (d) => {

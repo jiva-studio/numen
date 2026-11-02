@@ -4,7 +4,7 @@
  * calculates the unified weighted coverage percentage, and updates coverage.json
  * on branch `badges`.
  */
-import { execFileSync } from 'node:child_process'
+import { execTool } from '../shared/tools.mjs'
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -73,7 +73,7 @@ const collectGo = () => {
     const outPath = join(tmpDir, `${mod.replaceAll('/', '_')}.out`)
     try {
       console.log(`[coverage] Testing Go module: ${mod}...`)
-      execFileSync('go', ['test', `-coverprofile=${outPath}`, './...'], {
+      execTool('go', ['test', `-coverprofile=${outPath}`, './...'], {
         cwd: modDir,
         encoding: 'utf8',
         stdio: 'pipe',
@@ -101,7 +101,7 @@ const collectTs = () => {
 
     try {
       console.log(`[coverage] Testing TS package: ${pkg}...`)
-      execFileSync(
+      execTool(
         'npx',
         ['vitest', 'run', '--project', 'unit', '--coverage', '--coverage.reporter=json-summary'],
         {
