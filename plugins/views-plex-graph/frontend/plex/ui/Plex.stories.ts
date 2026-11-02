@@ -810,10 +810,14 @@ export const TitledLines: Story = {
     const band = [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-hit')].find(
       (line) => line.getAttribute('d') === viewElement,
     )
-    await userEvent.hover(band!)
 
-    // The raised layer is drawn a render after the pointer enters.
-    const lifted = await waitFor(() => {
+    // The raised layer is drawn a render after the pointer enters. The window is
+    // measured after the first drawing, and a new drawing clears the hovered
+    // line without a new pointerenter. So the pointer leaves and enters the
+    // line again until the raised layer is there.
+    const lifted = await waitFor(async () => {
+      await userEvent.unhover(band!)
+      await userEvent.hover(band!)
       const found = canvasElement.querySelectorAll<SVGTextElement>('.plex__lift .plex__edge-label')
       if (found.length !== 2) throw new Error(`${found.length} raised titles, not 2`)
       return found
