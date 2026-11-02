@@ -44,6 +44,7 @@ import {
   WorkspaceLayout,
   branch,
   closeTab,
+  commandKeyChord,
   getPanes,
   openTab,
   openTabAdjacent,
@@ -51,6 +52,7 @@ import {
   paneById,
 } from '@numen/ui-shell'
 import type {
+  ActionWords,
   PaletteAction,
   PaletteGroup,
   PaletteItem,
@@ -1831,41 +1833,77 @@ const searchGroups = computed<readonly PaletteGroup[]>(() => {
 })
 
 const KEYBOARD = 'Macintosh'
-const RUN: readonly PaletteAction[] = [{ id: 'run', text: 'Run it' }]
-
-function createCommandItem(id: string, title: string, keys?: PaletteKeys): PaletteItem {
-  return {
-    id,
-    title,
-    actions: RUN,
-    ...(keys ? { keys } : {}),
-  }
+const PALETTE_ACTION_KEY = commandKeyChord(KEYBOARD)
+const PALETTE_ACTION_WORDS: ActionWords = {
+  name: 'Actions',
+  placeholder: 'Search actions',
+  silence: 'No actions found',
 }
 
-const COMMAND_GROUPS: readonly PaletteGroup[] = [
+interface RawCommandItem {
+  readonly id: string
+  readonly title: string
+  readonly keys?: PaletteKeys
+  readonly also?: { readonly id: string; readonly text: string }
+}
+
+const RAW_COMMAND_GROUPS: readonly {
+  readonly id: string
+  readonly title: string
+  readonly items: readonly RawCommandItem[]
+}[] = [
   {
     id: 'note',
     title: 'Note',
     items: [
-      createCommandItem('read', 'Open note'),
-      createCommandItem('beside', 'Open beside'),
-      createCommandItem('travel', 'Show in plex', keyChord('p', KEYBOARD, true)),
-      createCommandItem('child', 'New child note', keyChord('c', KEYBOARD, true)),
-      createCommandItem('parent', 'New parent note'),
-      createCommandItem('ask', 'Ask the agent'),
+      { id: 'read', title: 'Open the note', also: { id: 'beside', text: 'Open beside' } },
+      { id: 'travel', title: 'Show the note', keys: keyChord('p', KEYBOARD, true) },
+      { id: 'child', title: 'New child note', keys: keyChord('c', KEYBOARD, true) },
+      { id: 'parent', title: 'New parent note' },
+      { id: 'jump', title: 'New jump note' },
+      { id: 'title', title: 'Change title' },
+      { id: 'ask', title: 'Ask the agent' },
+      { id: 'copy', title: 'Copy path' },
+      { id: 'remove', title: 'Remove note' },
     ],
   },
   {
     id: 'window',
     title: 'General',
     items: [
-      createCommandItem('note', 'New note', keyChord('n', KEYBOARD)),
-      createCommandItem('plex', 'Open plex tab'),
-      createCommandItem('files', 'Open files tab'),
-      createCommandItem('agent', 'Open agent tab', keyChord('a', KEYBOARD, true)),
+      { id: 'note', title: 'New note', keys: keyChord('n', KEYBOARD) },
+      { id: 'plex', title: 'Open plex tab' },
+      { id: 'files', title: 'Open files tab' },
+      { id: 'agent', title: 'Open agent tab', keys: keyChord('a', KEYBOARD, true) },
     ],
   },
 ]
+
+const commandGroups = computed<readonly PaletteGroup[]>(() => {
+  const q = searchTyped.value.trim().toLowerCase()
+  const groups: PaletteGroup[] = []
+  for (const group of RAW_COMMAND_GROUPS) {
+    const items: PaletteItem[] = []
+    for (const one of group.items) {
+      if (q && !one.title.toLowerCase().includes(q)) continue
+      const at = getMarks(one.title, q)
+      items.push({
+        id: one.id,
+        title: one.title,
+        ...(at.length > 0 ? { at } : {}),
+        ...(one.keys ? { keys: one.keys } : {}),
+        actions: [
+          { id: one.id, text: one.title },
+          ...(one.also ? [one.also] : []),
+        ],
+      })
+    }
+    if (items.length > 0) {
+      groups.push({ id: group.id, title: group.title, items })
+    }
+  }
+  return groups
+})
 
 const namingGroups = computed<readonly PaletteGroup[]>(() => {
   const trimmed = searchTyped.value.trim()
@@ -1889,20 +1927,47 @@ const namingGroups = computed<readonly PaletteGroup[]>(() => {
 
 const paletteGroups = computed(() => {
   if (activePanel.value === 'naming') return namingGroups.value
-  if (activePanel.value === 'commands') return COMMAND_GROUPS
+  if (activePanel.value === 'commands') return commandGroups.value
   return searchGroups.value
 })
 const palettePlaceholder = computed(() => {
   if (activePanel.value === 'naming') return 'Name'
   if (activePanel.value === 'commands') return 'Type a command'
-  return 'Search'
+  return 'Search the vault'
 })
-const paletteCrumb = computed(() =>
-  activePanel.value === 'naming' && pendingNaming.value
-    ? NAMING_LABELS[pendingNaming.value.command]
-    : '',
-)
-const paletteStep = computed(() => (activePanel.value === 'naming' ? 'Name' : ''))
+const paletteCrumb = computed(() => {
+  if (activePanel.value === 'naming' && pendingNaming.value) {
+    return NAMING_LABELS[pendingNaming.value.command]
+  }
+  if (activePanel.value === 'commands') return 'Command'
+  return ''
+})
+const paletteStep = computed(() => {
+  if (activePanel.value === 'naming' && pendingNaming.value) {
+    return `1:${pendingNaming.value.command}:naming`
+  }
+  if (activePanel.value === 'commands') return '0::commands'
+  return ''
+})
+
+function getPaletteRowIcon(id: string): Component | null {
+  if (activePanel.value === 'naming') {
+    return pendingNaming.value ? (COMMAND_ICONS[pendingNaming.value.command] ?? FileText) : FileText
+  }
+  if (activePanel.value === 'commands') {
+    if (id === 'note') return FilePlus
+    if (id === 'plex') return Waypoints
+    if (id === 'files') return FolderTree
+    if (id === 'agent') return Bot
+    return COMMAND_ICONS[id] ?? null
+  }
+  if (PDF_DOCS[id]) return BookOpen
+  if (id === RECORDING_PATH || id.endsWith('.mp3')) return AudioLines
+  if (id === YOUTUBE_LINK_PATH) return Link
+  if (id === DECK_PATH) return Layers
+  if (notesByPath[id]) return FileText
+  return null
+}
 
 /* --------------------------------- Hooks ---------------------------------- */
 function resetAgentScrollToTop() {
@@ -1936,10 +2001,20 @@ onBeforeUnmount(() => {
 function onWindowKeydown(event: KeyboardEvent) {
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
     event.preventDefault()
-    activePanel.value = activePanel.value === 'commands' ? null : 'commands'
+    if (activePanel.value === 'commands') {
+      activePanel.value = null
+    } else {
+      searchTyped.value = ''
+      activePanel.value = 'commands'
+    }
   } else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'p') {
     event.preventDefault()
-    activePanel.value = activePanel.value === 'search' ? null : 'search'
+    if (activePanel.value === 'search') {
+      activePanel.value = null
+    } else {
+      searchTyped.value = 'entrop'
+      activePanel.value = 'search'
+    }
   }
 }
 
@@ -2270,7 +2345,7 @@ function getTabIcon(id: string): Component | null {
 </script>
 
 <template>
-  <div ref="demoWindowRef" class="demo-window numen" @keydown="onWindowKeydown" @contextmenu.prevent>
+  <div ref="demoWindowRef" class="demo-window numen" tabindex="-1" @keydown="onWindowKeydown" @contextmenu.prevent>
     <WorkspaceLayout
       v-model="held"
       :tabs="tabs"
@@ -2371,15 +2446,23 @@ function getTabIcon(id: string): Component | null {
       v-if="activePanel"
       v-model="searchTyped"
       :groups="paletteGroups"
+      :from="demoWindowRef"
       :to="demoWindowRef ?? 'body'"
       :crumb="paletteCrumb"
       :step="paletteStep"
       is-open
       :placeholder="palettePlaceholder"
+      name="Search the vault"
+      :action-words="PALETTE_ACTION_WORDS"
+      :action-key="PALETTE_ACTION_KEY"
       @choose="onPaletteChoose"
       @back="onPaletteDismiss"
       @dismiss="onPaletteDismiss"
-    />
+    >
+      <template #icon="{ id }">
+        <component :is="getPaletteRowIcon(id)" v-if="getPaletteRowIcon(id)" class="command-icon" />
+      </template>
+    </Palette>
   </div>
 </template>
 
@@ -2400,8 +2483,15 @@ function getTabIcon(id: string): Component | null {
 
 .demo-window :deep(.palette) {
   position: absolute;
-  --drop: 8%;
-  --tallest: 60%;
+  --drop: 4.5rem;
+  --tallest: 20rem;
+}
+
+.command-icon {
+  inline-size: 100%;
+  block-size: 100%;
+  stroke-width: 1.75;
+  opacity: 0.75;
 }
 
 .tab-icon {

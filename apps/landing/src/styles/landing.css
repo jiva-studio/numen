@@ -170,56 +170,57 @@
   --numen-interface-scale: 1.3125;
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-size: 21px;
+  }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    user-select: auto;
+    -webkit-user-select: auto;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button {
+    font: inherit;
+  }
+
+  h1,
+  h2,
+  h3,
+  p {
+    margin-top: 0;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+
+  svg {
+    display: block;
+  }
 }
 
-html {
-  scroll-behavior: smooth;
-  font-size: 21px;
-}
-
-body {
-  margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-body);
-  -webkit-font-smoothing: antialiased;
-  user-select: auto;
-  -webkit-user-select: auto;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button {
-  font: inherit;
-}
-
-a:focus-visible,
-button:focus-visible {
+:where(.site-header, .hero-top, .stage-bar, .band, body > footer) :is(a, button):focus-visible {
   outline: 2px solid var(--rust);
   outline-offset: 3px;
-}
-
-h1,
-h2,
-h3,
-p {
-  margin-top: 0;
-}
-
-img {
-  display: block;
-  max-width: 100%;
-}
-
-svg {
-  display: block;
 }
 
 :root[data-theme='light'] .img-dark {
@@ -300,7 +301,7 @@ svg {
   color: var(--muted);
 }
 
-footer .brand-logo {
+body > footer .brand-logo {
   width: 32px;
   height: 32px;
 }
@@ -600,7 +601,7 @@ footer .brand-logo {
   background: var(--rust);
 }
 
-h1 {
+.hero h1 {
   max-width: 980px;
   margin-bottom: 24px;
   font-family: var(--font-display);
@@ -611,7 +612,7 @@ h1 {
 }
 
 /* avoid-ai-design-ignore: SD5 */
-h1 em {
+.hero h1 em {
   color: var(--rust);
   font-style: normal;
 }
@@ -1129,7 +1130,7 @@ h1 em {
 }
 
 /* --------------------------------- Footer --------------------------------- */
-footer {
+body > footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1140,31 +1141,31 @@ footer {
   border-top: 1px solid var(--footer-border);
 }
 
-footer p {
+body > footer p {
   margin: 0;
   color: var(--footer-muted);
   font-size: 17px;
 }
 
-footer p a {
+body > footer p a {
   color: #ffffff;
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-footer p a:hover {
+body > footer p a:hover {
   color: var(--lime);
 }
 
-footer > div {
+body > footer > div {
   display: flex;
   gap: 32px;
   font-size: 16px;
   font-weight: 700;
 }
 
-footer a:hover {
+body > footer a:hover {
   color: var(--lime);
 }
 
@@ -1212,7 +1213,7 @@ footer a:hover {
   .shelf-row {
     grid-template-columns: 1fr;
   }
-  footer {
+  body > footer {
     flex-direction: column;
     align-items: flex-start;
   }

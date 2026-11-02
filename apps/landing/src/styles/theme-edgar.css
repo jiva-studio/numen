@@ -450,7 +450,7 @@ svg {
   background: var(--rust);
 }
 
-h1 {
+.hero h1 {
   max-width: 760px;
   margin-bottom: 18px;
   font-family: var(--font-display);
@@ -461,7 +461,7 @@ h1 {
 }
 
 /* avoid-ai-design-ignore: SD5 */
-h1 em {
+.hero h1 em {
   color: var(--rust);
   font-style: normal;
 }
@@ -958,7 +958,7 @@ h1 em {
 }
 
 /* --------------------------------- Footer --------------------------------- */
-footer {
+body > footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -969,31 +969,31 @@ footer {
   border-top: 1px solid #1d3c32;
 }
 
-footer p {
+body > footer p {
   margin: 0;
   color: #97aaa3;
   font-size: 13px;
 }
 
-footer p a {
+body > footer p a {
   color: #ffffff;
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-footer p a:hover {
+body > footer p a:hover {
   color: var(--lime);
 }
 
-footer > div {
+body > footer > div {
   display: flex;
   gap: 25px;
   font-size: 12.5px;
   font-weight: 700;
 }
 
-footer a:hover {
+body > footer a:hover {
   color: var(--lime);
 }
 
@@ -1041,7 +1041,7 @@ footer a:hover {
   .shelf-row {
     grid-template-columns: 1fr;
   }
-  footer {
+  body > footer {
     flex-direction: column;
     align-items: flex-start;
   }
