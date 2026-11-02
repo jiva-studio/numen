@@ -39,13 +39,17 @@ const trustedPrefixes = (env) =>
     REPO_ROOT,
   ].filter(Boolean)
 
-const isInside = (dir, prefix) => dir === prefix || dir.startsWith(prefix.endsWith(sep) ? prefix : prefix + sep)
+const isInside = (dir, prefix) =>
+  dir === prefix || dir.startsWith(prefix.endsWith(sep) ? prefix : prefix + sep)
 
 /** Whether a PATH entry is an absolute directory this module trusts. */
 export const isTrustedDirectory = (dir, env = process.env) => {
   if (!isAbsolute(dir)) return false
   const extra = (env.NUMEN_TOOL_PATH ?? '').split(delimiter).filter(Boolean)
-  return [...TRUSTED_DIRECTORIES, ...extra].includes(dir) || trustedPrefixes(env).some((prefix) => isInside(dir, prefix))
+  return (
+    [...TRUSTED_DIRECTORIES, ...extra].includes(dir) ||
+    trustedPrefixes(env).some((prefix) => isInside(dir, prefix))
+  )
 }
 
 const isExecutable = (file) => {
@@ -60,7 +64,10 @@ const isExecutable = (file) => {
 
 /** The absolute path of the program `name` in the first trusted directory of PATH that holds it, or null. */
 export const findTool = (name, env = process.env) => {
-  const dirs = [...(env.PATH ?? '').split(delimiter), ...(env.NUMEN_TOOL_PATH ?? '').split(delimiter)]
+  const dirs = [
+    ...(env.PATH ?? '').split(delimiter),
+    ...(env.NUMEN_TOOL_PATH ?? '').split(delimiter),
+  ]
   for (const dir of dirs.filter(Boolean)) {
     if (!isTrustedDirectory(dir, env)) continue
     const candidate = join(dir, name)
@@ -75,7 +82,8 @@ const getMissingMessage = (name) =>
 /** Runs the program like spawnSync. A program that is not found is reported in `error`, as spawnSync does. */
 export const runTool = (name, args, options) => {
   const file = findTool(name)
-  if (!file) return { error: new Error(getMissingMessage(name)), status: null, stdout: '', stderr: '' }
+  if (!file)
+    return { error: new Error(getMissingMessage(name)), status: null, stdout: '', stderr: '' }
   return spawnSync(file, args, options)
 }
 
