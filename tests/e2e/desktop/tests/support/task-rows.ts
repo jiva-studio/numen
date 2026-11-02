@@ -62,7 +62,8 @@ export const feedTask = async (page: Page, id: string, every: number): Promise<v
       Object.assign(window, { __feed: state })
       const original = window.fetch
       window.fetch = (input, init) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
         if (!url.endsWith('/numen.v1.WindowService/WatchTasks')) return original(input, init)
         const body = new ReadableStream<Uint8Array>({
           start(controller) {

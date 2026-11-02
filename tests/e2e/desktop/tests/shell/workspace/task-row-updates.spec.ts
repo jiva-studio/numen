@@ -41,9 +41,9 @@ test.describe('A task row that is reported again', () => {
 
     const record = await recordRow(page, TASK_ID, REST_MS)
 
-    expect.soft(record.updates, 'the task was reported while the pointer rested').toBeGreaterThan(
-      REST_MS / UPDATE_MS / 2,
-    )
+    expect
+      .soft(record.updates, 'the task was reported while the pointer rested')
+      .toBeGreaterThan(REST_MS / UPDATE_MS / 2)
     expect.soft(record.frames).toBeGreaterThan(30)
     expect.soft(record.changes).toEqual([])
     expect.soft(record.heights, 'the row keeps its height').toHaveLength(1)
