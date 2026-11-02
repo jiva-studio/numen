@@ -6,7 +6,7 @@ Shows in the status bar how many vectors the search index holds, so you can watc
 
 ## What You Can Do
 
-- **Watch the index**: The status bar shows `⬡ 12 480`, the number of chunks of text that carry a vector. While the embedding model is still working it shows `⬡ 12 480 / 13 100`: the vectors present over the chunks that should carry one.
+- **Watch the index**: The status bar shows `⬡ 12 480`, the number of chunks of text that carry a vector. While chunks still wait for their vector, the mark pulses softly in green; when none wait, it stands still. The item never shows the total of chunks: the details are in the popover.
 - **See the details**: Click the item for a list of the counts and settings behind the number. Press Escape or click elsewhere to close it.
 
 The popover lists:
