@@ -25,9 +25,12 @@ const RESTLESS =
  */
 export type Reach = false | { readonly keeps: string }
 
+/** One hook that runs after a story, as a corpus lists it beside the others. */
+export type StoryCheck = Extract<NonNullable<Preview['afterEach']>, (...args: never[]) => unknown>
+
 /** The check, wired to a corpus by the story it is proved against. */
 export const reachCheck =
-  (proof: Proof): NonNullable<Preview['afterEach']> =>
+  (proof: Proof): StoryCheck =>
   async (context) => {
     if (typeof window !== 'undefined' && !('__vitest_browser__' in window)) return
     const transcriptText = context.parameters['reach'] as Reach | undefined

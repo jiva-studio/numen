@@ -16,6 +16,8 @@
     "*.config.ts",
     "../core/.storybook/browser.ts",
     "../core/.storybook/check.ts",
+    "../core/.storybook/contrast.ts",
+    "../core/.storybook/contrastBrowser.ts",
     "../core/.storybook/keyboard.ts",
     "../core/.storybook/reach.ts",
     "../core/.storybook/toolbar.ts"

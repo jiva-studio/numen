@@ -50,7 +50,7 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-/** Each plugin's tasks under the plugin's name, and the core's work under its own group. */
+/** Each plugin's tasks under the plugin's name, and the core's work first with no header. */
 export const GroupedByPlugin: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.click(await within(canvasElement).findByRole('button', { name: /active/ }))
@@ -58,7 +58,7 @@ export const GroupedByPlugin: Story = {
       const titles = [...canvasElement.querySelectorAll('.task-group__title')].map(
         (one) => one.textContent,
       )
-      return expect(titles).toEqual(['Speech to text', 'Scan reader', 'Numen'])
+      return expect(titles).toEqual(['Speech to text', 'Scan reader'])
     })
   },
 }

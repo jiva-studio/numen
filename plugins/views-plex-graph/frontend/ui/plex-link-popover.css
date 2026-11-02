@@ -113,9 +113,9 @@
   margin-inline-start: auto;
 }
 .plex-link-popover__btn--done:hover {
-  opacity: 0.9;
+  background: color-mix(in oklab, var(--numen-accent), var(--numen-ink) 8%);
 }
+/* In the accent's own ink: a dimmed hint on the accent falls below 4.5:1. */
 .plex-link-popover__shortcut {
   font-size: var(--numen-text-1);
-  opacity: 0.75;
 }

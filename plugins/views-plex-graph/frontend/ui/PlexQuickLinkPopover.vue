@@ -300,4 +300,9 @@ function getOptionId(index: number): string {
   font-size: var(--numen-text-1);
   opacity: 0.75;
 }
+
+/* On the accent the hint keeps the full ink: dimmed, it falls below 4.5:1. */
+.plex-quick-link__option--active .plex-quick-link__option-hint {
+  opacity: 1;
+}
 </style>

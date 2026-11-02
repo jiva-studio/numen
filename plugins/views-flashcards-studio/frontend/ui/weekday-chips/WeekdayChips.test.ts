@@ -59,14 +59,14 @@ describe('what is drawn', () => {
     expect(chips[0]?.attributes('aria-label')).toBe('Sunday, 100%')
   })
 
-  // The week is read at a glance: a day at the whole of it is full colour, and
-  // a day at nothing has none.
+  // The week is read at a glance: a day at the whole of it is full colour, a day
+  // at nothing has none, and a day between is a tint the ink can be read on.
   it('fills a day in step with the level it remains at', () => {
     const chips = mountChips({ days: week({ sat: 0, sun: 0.75 }) }).findAll('button')
     const getStyle = (pos: number) => chips[pos]?.attributes('style') ?? ''
     expect(getStyle(0)).toContain('var(--numen-accent) 100%')
     expect(getStyle(5)).toContain('var(--numen-accent) 0%')
-    expect(getStyle(6)).toContain('var(--numen-accent) 75%')
+    expect(getStyle(6)).toContain('var(--numen-accent) 34%')
   })
 
   it('says a day offers the levels and not turning on the spot', () => {
@@ -102,7 +102,7 @@ describe('a day standing at a level the offer does not name', () => {
     const row = mountChips({ days: week({ sat: 0.37, sun: 4 }) })
     const chips = row.findAll('button')
     expect(chips[5]?.attributes('aria-label')).toBe('Saturday, 37%')
-    expect(chips[5]?.attributes('style')).toContain('var(--numen-accent) 37%')
+    expect(chips[5]?.attributes('style')).toContain('var(--numen-accent) 17%')
     expect(chips[6]?.attributes('aria-label')).toBe('Sunday, 100%')
     expect(chips[6]?.attributes('style')).toContain('var(--numen-accent) 100%')
   })

@@ -73,7 +73,7 @@ const onKey = (event: KeyboardEvent) => {
           'duration-hover ease-numen cursor-pointer transition-[background-color,color]',
           'hover:bg-[color-mix(in_oklab,var(--numen-raised),var(--numen-ink)_8%)]',
           'data-[state=checked]:bg-accent data-[state=checked]:text-accent-ink',
-          'data-[state=checked]:hover:bg-[color-mix(in_oklab,var(--numen-accent),var(--numen-accent-ink)_8%)]',
+          'data-[state=checked]:hover:bg-[color-mix(in_oklab,var(--numen-accent),var(--numen-ink)_8%)]',
           'ring-numen outline-none',
           'disabled:cursor-not-allowed disabled:opacity-50',
         )

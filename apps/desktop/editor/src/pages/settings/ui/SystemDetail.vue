@@ -55,7 +55,6 @@ function onBack(): void {
   align-self: flex-start;
   margin-block-end: 0.75rem;
   margin-inline-start: -0.5rem;
-  color: var(--numen-hushed);
 }
 
 .system-detail__where {

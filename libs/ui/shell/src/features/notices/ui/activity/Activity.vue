@@ -86,10 +86,7 @@ const strength = computed(() => (props.severity === 'info' ? 'text-hushed' : '')
       <span class="activity__says" :class="givesSays">{{ words }}</span>
       <span v-if="about" class="activity__about" :class="givesAbout">{{ about }}</span>
     </span>
-    <span
-      v-if="percent || remainingText"
-      class="activity__count flex gap-2 tabular-nums opacity-70"
-    >
+    <span v-if="percent || remainingText" class="activity__count flex gap-2 tabular-nums">
       <span v-if="percent" class="activity__percent">{{ percent }}</span>
       <span v-if="remainingText" class="activity__left">{{ remainingText }}</span>
     </span>
@@ -106,12 +103,8 @@ const strength = computed(() => (props.severity === 'info' ? 'text-hushed' : '')
   overflow-wrap: anywhere;
 }
 
-/* The detail line is placed below the text and is rendered more
-   quietly. */
-.activity__about {
-  opacity: 0.75;
-}
-
+/* The detail line is placed below the text, in the colour of the card. A dimmed
+   line falls below 4.5:1 on the card in the light set. */
 /* Every state has the same height. */
 .activity {
   min-block-size: calc(var(--numen-line-height) * 1em);

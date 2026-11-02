@@ -126,7 +126,7 @@ function onSave(blob: Blob) {
 
 .media-recorder__status--stopped {
   background: var(--numen-accent);
-  color: var(--numen-surface);
+  color: var(--numen-accent-ink);
 }
 
 .media-recorder__error {

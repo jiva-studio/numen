@@ -118,6 +118,12 @@ defineExpose({ focus, getElement: () => row.value })
   color: var(--numen-edge-label);
 }
 
+/* The hushed detail is too faint on the highlight; the row is read in the ink. */
+.menu__item:hover:not(:disabled) .menu__detail,
+.menu__item:focus-visible .menu__detail {
+  color: var(--numen-ink);
+}
+
 /* The icon box keeps its size whether or not the item draws an icon, so the words
    line up down the menu. What is drawn in it is the caller's. */
 .menu__icon {

@@ -72,14 +72,24 @@ const onChoose = (id: string) => {
 
 /* --------------------------------- Helpers -------------------------------- */
 /**
- * How strongly a day is filled: the whole of the accent at a day standing at
- * the whole of it, and no colour at all at a day standing at nothing.
+ * The most of the accent a day short of the whole is tinted with. Past it the
+ * ink on the chip falls below 4.5:1 on either set of tokens, and the accent's
+ * own ink does not reach it until the chip is nearly all accent, so a day
+ * between is a tint under the ink and only the whole of it is the accent.
+ */
+const MOST_TINT = 45
+
+/**
+ * How strongly a day is filled: the whole of the accent, under the accent's
+ * ink, at a day standing at the whole of it; no colour at all at a day standing
+ * at nothing; and a tint of the accent, under the ink, between the two.
  */
 const getFillStyle = (level: number) => {
-  const weight = getFill(level) * 100
+  const fill = getFill(level)
+  const weight = fill >= 1 ? 100 : Math.round(fill * MOST_TINT)
   return {
     background: `color-mix(in oklab, var(--numen-raised), var(--numen-accent) ${weight}%)`,
-    color: weight > 50 ? 'var(--numen-accent-ink)' : 'var(--numen-ink)',
+    color: fill >= 1 ? 'var(--numen-accent-ink)' : 'var(--numen-ink)',
   }
 }
 </script>

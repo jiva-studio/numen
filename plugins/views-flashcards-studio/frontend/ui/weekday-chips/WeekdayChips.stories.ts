@@ -349,10 +349,11 @@ export const Dark: Story = {
       await expect(chip).toBeGreaterThan((rising[at] as number) + 1)
     }
 
-    // A day filled above half uses the accent's own text color, which on the dark
-    // set is darker than the background it is written on.
+    // A day filled to the whole of it uses the accent's own text color, which on the dark
+    // set is darker than the background it is written on. A day short of it is a tint
+    // under the ink, which is lighter.
     const heavy = getComputedStyle(all[0] as HTMLElement)
-    await expect(lightness(heavy.color)).toBeLessThan(lightness(heavy.backgroundColor))
+    await expect(lightness(heavy.color)).toBeGreaterThan(lightness(heavy.backgroundColor))
   },
 }
 

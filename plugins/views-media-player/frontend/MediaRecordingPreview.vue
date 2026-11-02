@@ -148,6 +148,7 @@ function onSaveRecording() {
   place-items: center;
   border-radius: 50%;
   background: var(--numen-accent);
+  color: var(--numen-accent-ink);
 }
 
 .media-recorder__icon {
@@ -173,7 +174,7 @@ function onSaveRecording() {
   border-radius: var(--numen-radius);
   border: 1px solid var(--numen-accent);
   background: var(--numen-accent);
-  color: var(--numen-surface);
+  color: var(--numen-accent-ink);
   cursor: pointer;
   transition: opacity 0.15s ease;
 }

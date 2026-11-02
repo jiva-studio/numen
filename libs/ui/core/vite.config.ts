@@ -9,7 +9,11 @@ export default defineConfig({
   plugins: [
     vue(),
     tailwindcss(),
-    dts({ include: ['src'], exclude: ['src/vite.ts', 'src/**/*.test.ts'], entryRoot: 'src' }),
+    dts({
+      include: ['src'],
+      exclude: ['src/vite.ts', 'src/**/*.test.ts', 'src/**/*.stories.ts'],
+      entryRoot: 'src',
+    }),
   ],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },

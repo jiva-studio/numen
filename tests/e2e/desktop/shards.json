@@ -66,6 +66,7 @@
   "tests/shell/window/tab-linking.spec.ts": 5,
   "tests/shell/window/tabs.spec.ts": 1,
   "tests/shell/window/window-controls.spec.ts": 7,
+  "tests/shell/workspace/button-contrast.spec.ts": 40,
   "tests/shell/workspace/colour-scheme.spec.ts": 11,
   "tests/shell/workspace/conflicts.spec.ts": 17,
   "tests/shell/workspace/hotkeys.spec.ts": 3,

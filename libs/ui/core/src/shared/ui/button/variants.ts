@@ -2,10 +2,13 @@ import type { VariantProps } from 'class-variance-authority'
 import { cva } from 'class-variance-authority'
 
 /**
- * Hover mixes a fraction of a variant's own text colour into its background,
- * so one expression darkens a light button and lightens a dark one. Focus draws
- * the ring at the width the tokens define, which is the treatment every
- * focusable element in this library uses.
+ * Hover moves a variant's background without losing the text on it. A ground
+ * that already stands apart from its text (the accent, the alarm tint) moves
+ * further from the text, so hovering never lowers the contrast; the outline
+ * variant, whose text is far from its ground, moves a little toward its text.
+ * `Contrast.stories.ts` measures every variant and state. Focus draws the ring
+ * at the width the tokens define, which is the treatment every focusable
+ * element in this library uses.
  */
 export const buttonVariants = cva(
   [
@@ -21,7 +24,7 @@ export const buttonVariants = cva(
       variant: {
         solid: [
           'bg-accent text-accent-ink',
-          'hover:bg-[color-mix(in_oklab,var(--numen-accent),var(--numen-accent-ink)_8%)]',
+          'hover:bg-[color-mix(in_oklab,var(--numen-accent),var(--numen-ink)_8%)]',
         ],
         outline: [
           'border-field-rule bg-field text-ink border',
@@ -29,7 +32,7 @@ export const buttonVariants = cva(
         ],
         danger: [
           'border-alarm text-alarm border bg-[var(--numen-alarm-bg)]',
-          'hover:bg-[color-mix(in_oklab,var(--numen-alarm-bg),var(--numen-alarm)_12%)]',
+          'hover:bg-[color-mix(in_oklab,var(--numen-alarm-bg),var(--numen-surface)_40%)]',
         ],
         ghost: 'text-ink hover:bg-raised',
       },

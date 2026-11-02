@@ -2,9 +2,9 @@
  * Every color and size a button is rendered in. This is also the test corpus:
  * each story is run in a browser by `@storybook/addon-vitest`.
  *
- * Hover is one expression for both token sets: part of a variant's text color
- * is mixed into its background. The result is a browser-computed value that
- * nothing else can provide.
+ * Hover is one expression for both token sets, and the result is a
+ * browser-computed value that nothing else can provide. A filled button moves
+ * away from its text and an outlined one toward it.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor, within } from 'storybook/test'
@@ -48,8 +48,8 @@ const meta: Meta<Knobs> = {
     docs: {
       description: {
         component:
-          'A button in the sizes and colours the tokens name. Hover mixes a ' +
-          "little of the variant's own text into its ground, and focus uses " +
+          'A button in the sizes and colours the tokens name. Hover moves the ground a ' +
+          'little without lowering the contrast of its text, and focus uses ' +
           'the ring at the width the tokens give it.',
       },
     },
@@ -87,10 +87,11 @@ export const Disabled: Story = {
 /**
  * The dark token set, with the pointer moved along the row.
  *
- * Hover mixes part of a button's text color into its background, so the
- * background moves toward the text color. On the dark set a filled button is
- * light and an outlined one is dark, and the one expression has to work in both
- * directions. A text-only button gains a background it did not have.
+ * A filled button's background moves away from its text color, so hovering
+ * never lowers the contrast, and an outlined one's moves toward it. On the dark
+ * set a filled button is light and an outlined one is dark, and the one
+ * expression has to work in both directions. A text-only button gains a
+ * background it did not have.
  */
 export const Dark: Story = {
   globals: DARK,
@@ -117,7 +118,8 @@ export const Dark: Story = {
       await waitFor(async () => {
         const moved = lightness(getComputedStyle(button).backgroundColor) - restingLightness
         await expect(Math.abs(moved)).toBeGreaterThan(2)
-        await expect(Math.sign(moved)).toBe(Math.sign(ink - restingLightness))
+        const toward = Math.sign(ink - restingLightness)
+        await expect(Math.sign(moved)).toBe(name === 'solid' ? -toward : toward)
       })
     }
 

@@ -115,10 +115,12 @@ function onAction(type: RecordAction) {
 
 .media-recorder__btn--resume {
   background: var(--numen-accent);
+  color: var(--numen-accent-ink);
 }
 
 .media-recorder__btn--stop {
   background: var(--numen-rule);
+  color: var(--numen-ink);
 }
 
 .media-recorder__btn--stop:hover {
@@ -127,6 +129,7 @@ function onAction(type: RecordAction) {
 
 .media-recorder__btn--new {
   background: var(--numen-accent);
+  color: var(--numen-accent-ink);
 }
 
 .media-recorder__icon {

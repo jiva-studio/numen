@@ -195,7 +195,7 @@ function onChooseMenuItem(id: string): void {
   border-radius: var(--numen-radius-pill);
   background: color-mix(in srgb, var(--numen-accent) 16%, transparent);
   border: 1px solid color-mix(in srgb, var(--numen-accent) 40%, transparent);
-  color: var(--numen-accent);
+  color: var(--numen-ink);
   font-size: var(--numen-text-1);
   font-weight: 500;
   line-height: 1;
