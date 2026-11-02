@@ -34,13 +34,14 @@ type MockEmbedder struct{}
 // GetMockModel returns the identity of the vectors MockEmbedder answers with.
 func GetMockModel() ModelInfo {
 	return ModelInfo{
-		Name:        "mock-embedding",
-		Dimensions:  mockSharedDimensions + mockWordDimensions,
-		MaxTokens:   512,
-		Pooling:     PoolMean,
-		From:        "mock",
-		Concurrency: 1,
-		FloorHint:   0,
+		Name:           "mock-embedding",
+		Dimensions:     mockSharedDimensions + mockWordDimensions,
+		MaxTokens:      512,
+		Pooling:        PoolMean,
+		From:           "mock",
+		Concurrency:    1,
+		FloorHint:      0,
+		MinChunkLength: 0,
 	}
 }
 

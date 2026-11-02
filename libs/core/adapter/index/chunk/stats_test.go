@@ -181,3 +181,46 @@ func TestGetIndexSizesFailsOnAClosedIndex(t *testing.T) {
 		t.Error("a cancelled call answered")
 	}
 }
+
+// A chunk shorter than the minimum length carries no vector, so it is left out of both counts, the
+// total and the one by extension. The smallest chunks of the fixture hold 50 bytes.
+func TestGetIndexCountsBelowTheMinimum(t *testing.T) {
+	tests := []struct {
+		name    string
+		minimum int
+		want    indexport.IndexCounts
+	}{
+		{
+			name: "at the length of the chunks all are counted", minimum: 50,
+			want: indexport.IndexCounts{
+				Chunks: 3, Vectors: 3, Sources: 1,
+				Extensions: []indexport.ExtensionCount{{Extension: "epub", Sources: 1, Chunks: 3}},
+			},
+		},
+		{
+			name: "above the length of the chunks none is counted", minimum: 51,
+			want: indexport.IndexCounts{
+				Chunks: 0, Vectors: 0, Sources: 1,
+				Extensions: []indexport.ExtensionCount{{Extension: "epub", Sources: 1, Chunks: 0}},
+			},
+		},
+	}
+	for _, one := range tests {
+		t.Run(one.name, func(t *testing.T) {
+			db := openIndex(t)
+			source{path: "lib/a.epub", large: "l", smalls: []string{"a1", "a2", "a3"}}.save(t, db)
+			embed(t, db, vaultA, "lib/a.epub", 0xF0)
+			if _, err := db.ApplyMinChunkLength(t.Context(), one.minimum); err != nil {
+				t.Fatal(err)
+			}
+
+			got, err := db.ChunkQueries().GetIndexCounts(t.Context(), vaultA, recipe)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(got, one.want) {
+				t.Errorf("got %+v, want %+v", got, one.want)
+			}
+		})
+	}
+}

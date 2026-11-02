@@ -1,6 +1,7 @@
 {
   "tests/plugins/agents.chat/agent.spec.ts": 32,
   "tests/plugins/engines.embeddings/meaning.spec.ts": 2,
+  "tests/plugins/engines.embeddings/min-chunk-length.spec.ts": 30,
   "tests/plugins/engines.embeddings/priority.spec.ts": 2,
   "tests/plugins/engines.transcription/transcribe.spec.ts": 16,
   "tests/plugins/notes/editor.spec.ts": 5,

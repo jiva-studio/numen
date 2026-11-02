@@ -2,7 +2,10 @@
 -- recently modified sources are embedded first.
 --
 -- A large chunk carries no vector, and is left out by asking for the ones that
--- sit inside something. A chunk needs when the recipe holds no vector for its
+-- sit inside something. A chunk shorter than the minimum length carries none
+-- either: it is searched by its words.
+--
+-- A chunk needs when the recipe holds no vector for its
 -- text or the coarse pass holds no row for the chunk: a vector is kept by text
 -- and a coarse row by chunk, so two chunks of one text share the first and each
 -- need the second.
@@ -13,6 +16,7 @@ LEFT JOIN vectors v ON v.hash = unhex(c.hash) AND v.recipe = ?
 WHERE s.vault_id = ?
   AND (s.modified_at < ? OR (s.modified_at = ? AND (s.id < ? OR (s.id = ? AND c.id > ?))))
   AND c.parent_id IS NOT NULL
+  AND c.length >= ?
   AND (v.hash IS NULL OR NOT EXISTS (SELECT 1 FROM chunks_vec WHERE chunk_id = c.id))
 ORDER BY s.modified_at DESC, s.id DESC, c.id ASC
 LIMIT ?;

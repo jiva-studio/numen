@@ -2,7 +2,8 @@
 -- of them need nothing under the recipe now in use.
 --
 -- Only the chunks that carry vectors are counted. A large chunk is text to
--- read once something has been found, and asks for nothing.
+-- read once something has been found, and asks for nothing. Neither does a
+-- chunk shorter than the minimum length, which is searched by its words.
 --
 -- A chunk needs nothing when the recipe holds a vector for its text and the
 -- coarse pass holds a row for the chunk, which is what the question of what is
@@ -12,4 +13,4 @@ SELECT count(*),
                    AND EXISTS (SELECT 1 FROM chunks_vec WHERE chunk_id = c.id) THEN 1 END)
   FROM chunks c
   LEFT JOIN vectors v ON v.hash = unhex(c.hash) AND v.recipe = ?
- WHERE c.vault_id = ? AND c.parent_id IS NOT NULL;
+ WHERE c.vault_id = ? AND c.parent_id IS NOT NULL AND c.length >= ?;

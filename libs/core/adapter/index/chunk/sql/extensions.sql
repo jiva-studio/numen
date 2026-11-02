@@ -19,6 +19,6 @@ WITH named AS (
 )
 SELECT p.ext, count(DISTINCT p.id), count(c.id)
   FROM plain p
-  LEFT JOIN chunks c ON c.source_id = p.id AND c.vault_id = ? AND c.parent_id IS NOT NULL
+  LEFT JOIN chunks c ON c.source_id = p.id AND c.vault_id = ? AND c.parent_id IS NOT NULL AND c.length >= ?
  GROUP BY p.ext
  ORDER BY 2 DESC, 1;

@@ -44,6 +44,8 @@ import (
 type DB struct {
 	write *sql.DB
 	read  *sql.DB
+	// minimum is the shortest small chunk that gets a vector, shared by the queries of this handle.
+	minimum chunk.Minimum
 }
 
 // pragmas are carried in the connection string, so every connection in the
@@ -141,7 +143,7 @@ func (d *DB) Maintenance() DatabaseMaintenance { return DatabaseMaintenance{d.wr
 func (d *DB) NoteQueries() *note.Queries { return note.NewQueries(d.read) }
 
 // ChunkQueries reads, so a search answers while a scan is still writing.
-func (d *DB) ChunkQueries() *chunk.Queries { return chunk.NewQueries(d.read) }
+func (d *DB) ChunkQueries() *chunk.Queries { return chunk.NewQueriesWithMinimum(d.read, &d.minimum) }
 
 // Sources is the source and vector ports over the chunk tables. It writes and
 // reads both, through the pool each half belongs to.

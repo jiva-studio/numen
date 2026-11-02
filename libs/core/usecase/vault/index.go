@@ -19,6 +19,7 @@ type IndexBackend interface {
 	Close() error
 	FitVectors(ctx context.Context, dims int, recipe string) error
 	DeleteOtherRecipeVectors(ctx context.Context, recipe string) (int64, error)
+	ApplyMinChunkLength(ctx context.Context, length int) (int64, error)
 	Compact(ctx context.Context) error
 }
 
@@ -74,6 +75,12 @@ func (i *Index) FitVectors(ctx context.Context, dims int, recipe string) error {
 // DeleteVectorsOfOtherRecipes takes out the vectors kept under any recipe but the one in use.
 func (i *Index) DeleteVectorsOfOtherRecipes(ctx context.Context, recipe string) (int64, error) {
 	return i.ports.Backend.DeleteOtherRecipeVectors(ctx, recipe)
+}
+
+// ApplyMinChunkLength sets the shortest small chunk that gets a vector and takes out the vectors of the
+// shorter ones.
+func (i *Index) ApplyMinChunkLength(ctx context.Context, length int) (int64, error) {
+	return i.ports.Backend.ApplyMinChunkLength(ctx, length)
 }
 
 // Compact reclaims the space the index does not use.

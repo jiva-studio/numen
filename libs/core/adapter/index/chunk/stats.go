@@ -35,7 +35,7 @@ func (q *Queries) GetIndexCounts(ctx context.Context, vaultID domain.VaultID, re
 }
 
 func (q *Queries) getExtensions(ctx context.Context, vault int64) (_ []indexport.ExtensionCount, err error) {
-	rows, err := q.db.QueryContext(ctx, getStatement("extensions"), vault, vault)
+	rows, err := q.db.QueryContext(ctx, getStatement("extensions"), vault, vault, q.minimum.Get())
 	if err != nil {
 		return nil, err
 	}

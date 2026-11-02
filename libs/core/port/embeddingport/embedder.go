@@ -10,7 +10,7 @@ import (
 // vector, and a vector whose model differs from the one now configured is
 // stale: its numbers describe directions another model chose.
 //
-// Every field is part of the identity. Two models of the same name at different
+// Every field but MinChunkLength is part of the identity. Two models of the same name at different
 // widths produce vectors that cannot be compared, and the width is what a
 // reader needs to know before it decodes stored bytes.
 type EmbeddingModel struct {
@@ -34,6 +34,14 @@ type EmbeddingModel struct {
 	// service reached at one address. One name is run here and served by more
 	// than one place, and each of them answers with numbers of its own.
 	From string
+
+	// MinChunkLength is the fewest bytes a small chunk holds to be given a vector; a
+	// shorter one is searched by its words. Zero gives every small chunk a vector.
+	//
+	// It is not part of the identity and is absent from Recipe: a vector made for a
+	// text is the same vector whatever the minimum is, so changing it makes no
+	// vector stale. It decides which chunks are given one.
+	MinChunkLength int
 }
 
 // String is the identity as one value, for a column that holds it.

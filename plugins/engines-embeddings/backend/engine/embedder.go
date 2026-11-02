@@ -163,13 +163,14 @@ func (e *Embedder) Concurrency() int {
 // GetModel returns the model description.
 func (e *Embedder) GetModel() ModelInfo {
 	return ModelInfo{
-		Name:        e.name,
-		Dimensions:  e.dimensions,
-		MaxTokens:   e.maxTokens,
-		Pooling:     e.pooling,
-		From:        e.origin,
-		Concurrency: e.passes,
-		FloorHint:   0,
+		Name:           e.name,
+		Dimensions:     e.dimensions,
+		MaxTokens:      e.maxTokens,
+		Pooling:        e.pooling,
+		From:           e.origin,
+		Concurrency:    e.passes,
+		FloorHint:      0,
+		MinChunkLength: 0,
 	}
 }
 

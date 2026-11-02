@@ -21,15 +21,19 @@ type ModelInfo struct {
 	From        string
 	Concurrency int32
 	FloorHint   float64
+
+	// MinChunkLength is the fewest bytes a piece of text holds to be given a vector; 0 embeds every piece.
+	MinChunkLength int32
 }
 
-func (m ModelInfo) GetName() string       { return m.Name }
-func (m ModelInfo) GetDimensions() int32  { return m.Dimensions }
-func (m ModelInfo) GetMaxTokens() int32   { return m.MaxTokens }
-func (m ModelInfo) GetPooling() string    { return m.Pooling }
-func (m ModelInfo) GetFrom() string       { return m.From }
-func (m ModelInfo) GetConcurrency() int32 { return m.Concurrency }
-func (m ModelInfo) GetFloorHint() float64 { return m.FloorHint }
+func (m ModelInfo) GetName() string          { return m.Name }
+func (m ModelInfo) GetDimensions() int32     { return m.Dimensions }
+func (m ModelInfo) GetMaxTokens() int32      { return m.MaxTokens }
+func (m ModelInfo) GetPooling() string       { return m.Pooling }
+func (m ModelInfo) GetFrom() string          { return m.From }
+func (m ModelInfo) GetConcurrency() int32    { return m.Concurrency }
+func (m ModelInfo) GetFloorHint() float64    { return m.FloorHint }
+func (m ModelInfo) GetMinChunkLength() int32 { return m.MinChunkLength }
 
 // Handler serves embedding model metadata and batches of vectors.
 type Handler interface {
@@ -76,25 +80,27 @@ func Mount(s *server.Server, h Handler) {
 
 func readModelInfo(res *v1.GetEmbeddingModelResponse) ModelInfo {
 	return ModelInfo{
-		Name:        res.GetName(),
-		Dimensions:  res.GetDimensions(),
-		MaxTokens:   res.GetMaxTokens(),
-		Pooling:     res.GetPooling(),
-		From:        res.GetFrom(),
-		Concurrency: res.GetConcurrency(),
-		FloorHint:   res.GetFloorHint(),
+		Name:           res.GetName(),
+		Dimensions:     res.GetDimensions(),
+		MaxTokens:      res.GetMaxTokens(),
+		Pooling:        res.GetPooling(),
+		From:           res.GetFrom(),
+		Concurrency:    res.GetConcurrency(),
+		FloorHint:      res.GetFloorHint(),
+		MinChunkLength: res.GetMinChunkLength(),
 	}
 }
 
 func writeModelInfo(info ModelInfo) *v1.GetEmbeddingModelResponse {
 	return &v1.GetEmbeddingModelResponse{
-		Name:        info.Name,
-		Dimensions:  info.Dimensions,
-		MaxTokens:   info.MaxTokens,
-		Pooling:     info.Pooling,
-		From:        info.From,
-		Concurrency: info.Concurrency,
-		FloorHint:   info.FloorHint,
+		Name:           info.Name,
+		Dimensions:     info.Dimensions,
+		MaxTokens:      info.MaxTokens,
+		Pooling:        info.Pooling,
+		From:           info.From,
+		Concurrency:    info.Concurrency,
+		FloorHint:      info.FloorHint,
+		MinChunkLength: info.MinChunkLength,
 	}
 }
 

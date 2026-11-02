@@ -117,6 +117,7 @@ func (s *embeddingServer) updateConfig(values map[string]string) {
 	if s.provider != providerLocal && s.provider != "" && s.remoteModel == "" {
 		s.remoteModel = getDefaultRemoteModel(s.provider)
 	}
+	s.modelInfo.MinChunkLength = readMinChunkLength(values)
 	if key, ok := server.ReadSecret(values, server.SecretAPIKey); ok {
 		s.apiKey = key
 	}
@@ -199,6 +200,7 @@ func (s *embeddingServer) updateLocalModelLocked(model string) {
 func newEmbeddingServer() *embeddingServer {
 	if os.Getenv(envMockML) == "true" {
 		info := engine.GetMockModel()
+		info.MinChunkLength = defaultMinChunkLength
 		return &embeddingServer{
 			modelInfo: info,
 			localModel: engine.LocalModel{
@@ -222,6 +224,7 @@ func newEmbeddingServer() *embeddingServer {
 	info.FloorHint = engine.GetModelProfile(info.Name).FloorHint
 	applyDimensionEnv(&info)
 	applyRuntimeEnv(&local)
+	info.MinChunkLength = defaultMinChunkLength
 
 	return &embeddingServer{
 		modelInfo:   info,
@@ -299,13 +302,14 @@ func (s *embeddingServer) GetModelInfo(_ context.Context) (embedding.ModelInfo, 
 		passes = 4
 	}
 	return embedding.ModelInfo{
-		Name:        info.Name,
-		Dimensions:  int32(info.Dimensions),
-		MaxTokens:   int32(info.MaxTokens),
-		Pooling:     info.Pooling,
-		From:        info.From,
-		Concurrency: int32(getIndexShare(passes)),
-		FloorHint:   info.FloorHint,
+		Name:           info.Name,
+		Dimensions:     int32(info.Dimensions),
+		MaxTokens:      int32(info.MaxTokens),
+		Pooling:        info.Pooling,
+		From:           info.From,
+		Concurrency:    int32(getIndexShare(passes)),
+		FloorHint:      info.FloorHint,
+		MinChunkLength: int32(info.MinChunkLength),
 	}, nil
 }
 

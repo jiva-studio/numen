@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/embedding.proto.
  */
 export const file_numen_v1_embedding: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS9lbWJlZGRpbmcucHJvdG8SCG51bWVuLnYxIhoKGEdldEVtYmVkZGluZ01vZGVsUmVxdWVzdCKZAQoZR2V0RW1iZWRkaW5nTW9kZWxSZXNwb25zZRIMCgRuYW1lGAEgASgJEhIKCmRpbWVuc2lvbnMYAiABKAUSEgoKbWF4X3Rva2VucxgDIAEoBRIPCgdwb29saW5nGAQgASgJEgwKBGZyb20YBSABKAkSEwoLY29uY3VycmVuY3kYBiABKAUSEgoKZmxvb3JfaGludBgHIAEoASIdCgtGbG9hdFZlY3RvchIOCgZ2YWx1ZXMYASADKAIiIgoRRW1iZWRCYXRjaFJlcXVlc3QSDQoFdGV4dHMYASADKAkiPAoSRW1iZWRCYXRjaFJlc3BvbnNlEiYKB3ZlY3RvcnMYASADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvcjK5AQoQRW1iZWRkaW5nU2VydmljZRJcChFHZXRFbWJlZGRpbmdNb2RlbBIiLm51bWVuLnYxLkdldEVtYmVkZGluZ01vZGVsUmVxdWVzdBojLm51bWVuLnYxLkdldEVtYmVkZGluZ01vZGVsUmVzcG9uc2USRwoKRW1iZWRCYXRjaBIbLm51bWVuLnYxLkVtYmVkQmF0Y2hSZXF1ZXN0GhwubnVtZW4udjEuRW1iZWRCYXRjaFJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChhudW1lbi92MS9lbWJlZGRpbmcucHJvdG8SCG51bWVuLnYxIhoKGEdldEVtYmVkZGluZ01vZGVsUmVxdWVzdCKzAQoZR2V0RW1iZWRkaW5nTW9kZWxSZXNwb25zZRIMCgRuYW1lGAEgASgJEhIKCmRpbWVuc2lvbnMYAiABKAUSEgoKbWF4X3Rva2VucxgDIAEoBRIPCgdwb29saW5nGAQgASgJEgwKBGZyb20YBSABKAkSEwoLY29uY3VycmVuY3kYBiABKAUSEgoKZmxvb3JfaGludBgHIAEoARIYChBtaW5fY2h1bmtfbGVuZ3RoGAggASgFIh0KC0Zsb2F0VmVjdG9yEg4KBnZhbHVlcxgBIAMoAiIiChFFbWJlZEJhdGNoUmVxdWVzdBINCgV0ZXh0cxgBIAMoCSI8ChJFbWJlZEJhdGNoUmVzcG9uc2USJgoHdmVjdG9ycxgBIAMoCzIVLm51bWVuLnYxLkZsb2F0VmVjdG9yMrkBChBFbWJlZGRpbmdTZXJ2aWNlElwKEUdldEVtYmVkZGluZ01vZGVsEiIubnVtZW4udjEuR2V0RW1iZWRkaW5nTW9kZWxSZXF1ZXN0GiMubnVtZW4udjEuR2V0RW1iZWRkaW5nTW9kZWxSZXNwb25zZRJHCgpFbWJlZEJhdGNoEhsubnVtZW4udjEuRW1iZWRCYXRjaFJlcXVlc3QaHC5udW1lbi52MS5FbWJlZEJhdGNoUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * @generated from message numen.v1.GetEmbeddingModelRequest
@@ -66,6 +66,15 @@ export type GetEmbeddingModelResponse = Message<"numen.v1.GetEmbeddingModelRespo
    * @generated from field: double floor_hint = 7;
    */
   floorHint: number;
+
+  /**
+   * The fewest bytes a piece of text has to hold to be given a vector.
+   * Shorter pieces are searched by their words only. Zero embeds every piece.
+   * It is not part of the model's identity: changing it makes no vector stale.
+   *
+   * @generated from field: int32 min_chunk_length = 8;
+   */
+  minChunkLength: number;
 };
 
 /**

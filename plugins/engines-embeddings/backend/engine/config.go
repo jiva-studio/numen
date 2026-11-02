@@ -51,6 +51,8 @@ type ModelInfo struct {
 	From        string  `json:"from"`
 	Concurrency int     `json:"concurrency"`
 	FloorHint   float64 `json:"floor_hint"`
+	// MinChunkLength is the fewest bytes a piece of text holds to be given a vector, and 0 embeds every piece.
+	MinChunkLength int `json:"min_chunk_length"`
 }
 
 // CheckIdentity verifies the model dimension, tokens, and pooling.
@@ -131,13 +133,14 @@ func (m LocalModel) GetAddress() string {
 // DefaultBGEM3Config returns the default configuration for BGE-M3.
 func DefaultBGEM3Config() (ModelInfo, LocalModel) {
 	info := ModelInfo{
-		Name:        "bge-m3",
-		Dimensions:  1024,
-		MaxTokens:   8192,
-		Pooling:     PoolHead,
-		From:        "plugin:md.numen.engines.embeddings",
-		Concurrency: bgeM3Passes,
-		FloorHint:   GetModelProfile("bge-m3").FloorHint,
+		Name:           "bge-m3",
+		Dimensions:     1024,
+		MaxTokens:      8192,
+		Pooling:        PoolHead,
+		From:           "plugin:md.numen.engines.embeddings",
+		Concurrency:    bgeM3Passes,
+		FloorHint:      GetModelProfile("bge-m3").FloorHint,
+		MinChunkLength: 0,
 	}
 	local := LocalModel{
 		Name:           "Xenova/bge-m3",

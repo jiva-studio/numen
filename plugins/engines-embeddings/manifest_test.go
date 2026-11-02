@@ -58,3 +58,37 @@ func TestManifestDeclaresNoFrontendAndNoSettingsView(t *testing.T) {
 		t.Errorf("frontend %v and settingsViews %v, want neither", manifest.Frontend, manifest.SettingsViews)
 	}
 }
+
+// The smallest piece of text to index is a whole number from 0 to 1000 that starts at 40, and the
+// settings page draws it as it draws any number.
+func TestManifestDeclaresTheSmallestPieceToIndex(t *testing.T) {
+	var manifest struct {
+		Settings []struct {
+			Key         string   `json:"key"`
+			Type        string   `json:"type"`
+			Title       string   `json:"title"`
+			Description string   `json:"description"`
+			Default     any      `json:"default"`
+			Min         *float64 `json:"min"`
+			Max         *float64 `json:"max"`
+			Step        *float64 `json:"step"`
+		} `json:"settings"`
+	}
+	if err := json.Unmarshal(Manifest, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range manifest.Settings {
+		if one.Key != "min_chunk_length" {
+			continue
+		}
+		if one.Type != "number" || one.Default != float64(40) || one.Min == nil || *one.Min != 0 ||
+			one.Max == nil || *one.Max != 1000 || one.Step == nil || *one.Step != 1 {
+			t.Errorf("setting = %+v, want a number from 0 to 1000 by 1 that starts at 40", one)
+		}
+		if one.Title == "" || one.Description == "" {
+			t.Errorf("setting has no title or description: %+v", one)
+		}
+		return
+	}
+	t.Error("the manifest declares no min_chunk_length setting")
+}

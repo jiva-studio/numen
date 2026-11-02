@@ -33,6 +33,9 @@ func (u FitIndex) Execute(ctx context.Context, embedder embeddingport.Embedder) 
 	if err := u.index.FitVectors(ctx, model.Dimensions, model.Recipe()); err != nil {
 		return err
 	}
+	if _, err := u.index.ApplyMinChunkLength(ctx, model.MinChunkLength); err != nil {
+		return err
+	}
 	if !u.ShouldRebuildIndex {
 		return nil
 	}

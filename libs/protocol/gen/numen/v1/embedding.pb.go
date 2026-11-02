@@ -67,9 +67,13 @@ type GetEmbeddingModelResponse struct {
 	Concurrency int32                  `protobuf:"varint,6,opt,name=concurrency,proto3" json:"concurrency,omitempty"`
 	// The similarity a passage starts out having to reach to answer a query under
 	// this model, zero when the plugin knows none.
-	FloorHint     float64 `protobuf:"fixed64,7,opt,name=floor_hint,json=floorHint,proto3" json:"floor_hint,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	FloorHint float64 `protobuf:"fixed64,7,opt,name=floor_hint,json=floorHint,proto3" json:"floor_hint,omitempty"`
+	// The fewest bytes a piece of text has to hold to be given a vector.
+	// Shorter pieces are searched by their words only. Zero embeds every piece.
+	// It is not part of the model's identity: changing it makes no vector stale.
+	MinChunkLength int32 `protobuf:"varint,8,opt,name=min_chunk_length,json=minChunkLength,proto3" json:"min_chunk_length,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetEmbeddingModelResponse) Reset() {
@@ -147,6 +151,13 @@ func (x *GetEmbeddingModelResponse) GetConcurrency() int32 {
 func (x *GetEmbeddingModelResponse) GetFloorHint() float64 {
 	if x != nil {
 		return x.FloorHint
+	}
+	return 0
+}
+
+func (x *GetEmbeddingModelResponse) GetMinChunkLength() int32 {
+	if x != nil {
+		return x.MinChunkLength
 	}
 	return 0
 }
@@ -288,7 +299,7 @@ var File_numen_v1_embedding_proto protoreflect.FileDescriptor
 const file_numen_v1_embedding_proto_rawDesc = "" +
 	"\n" +
 	"\x18numen/v1/embedding.proto\x12\bnumen.v1\"\x1a\n" +
-	"\x18GetEmbeddingModelRequest\"\xdd\x01\n" +
+	"\x18GetEmbeddingModelRequest\"\x87\x02\n" +
 	"\x19GetEmbeddingModelResponse\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1e\n" +
 	"\n" +
@@ -300,7 +311,8 @@ const file_numen_v1_embedding_proto_rawDesc = "" +
 	"\x04from\x18\x05 \x01(\tR\x04from\x12 \n" +
 	"\vconcurrency\x18\x06 \x01(\x05R\vconcurrency\x12\x1d\n" +
 	"\n" +
-	"floor_hint\x18\a \x01(\x01R\tfloorHint\"%\n" +
+	"floor_hint\x18\a \x01(\x01R\tfloorHint\x12(\n" +
+	"\x10min_chunk_length\x18\b \x01(\x05R\x0eminChunkLength\"%\n" +
 	"\vFloatVector\x12\x16\n" +
 	"\x06values\x18\x01 \x03(\x02R\x06values\")\n" +
 	"\x11EmbedBatchRequest\x12\x14\n" +

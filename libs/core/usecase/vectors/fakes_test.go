@@ -481,7 +481,8 @@ func (v vaults) Open(vault domain.Vault) (vaultport.VaultReader, error) {
 // embedder returns the same vector for the same text, so a returned vector
 // identifies its input.
 type embedder struct {
-	dims int
+	dims   int
+	minLen int
 
 	mu        sync.Mutex
 	calls     int
@@ -489,7 +490,7 @@ type embedder struct {
 }
 
 func (e *embedder) GetModel() embeddingport.EmbeddingModel {
-	return embeddingport.EmbeddingModel{Name: "fake", Dimensions: e.dims}
+	return embeddingport.EmbeddingModel{Name: "fake", Dimensions: e.dims, MinChunkLength: e.minLen}
 }
 
 func (*embedder) Close() error { return nil }

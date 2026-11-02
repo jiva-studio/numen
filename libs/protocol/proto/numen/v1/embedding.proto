@@ -27,6 +27,11 @@ message GetEmbeddingModelResponse {
   // The similarity a passage starts out having to reach to answer a query under
   // this model, zero when the plugin knows none.
   double floor_hint = 7;
+
+  // The fewest bytes a piece of text has to hold to be given a vector.
+  // Shorter pieces are searched by their words only. Zero embeds every piece.
+  // It is not part of the model's identity: changing it makes no vector stale.
+  int32 min_chunk_length = 8;
 }
 
 

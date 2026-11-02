@@ -19,9 +19,22 @@ import (
 
 // Queries answers questions about chunks in shapes other than chunks: where a
 // passage is read from, what matched a search, and which chunks lack a vector.
-type Queries struct{ db *sql.DB }
+type Queries struct {
+	db      *sql.DB
+	minimum *Minimum
+}
 
-func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
+func NewQueries(db *sql.DB) *Queries { return &Queries{db: db, minimum: &Minimum{}} }
+
+// NewQueriesWithMinimum creates queries that leave out the small chunks shorter than minimum, which
+// carry no vector.
+func NewQueriesWithMinimum(db *sql.DB, minimum *Minimum) *Queries {
+	return &Queries{db: db, minimum: minimum}
+}
+
+// SetMinimum sets the shortest length of a chunk that gets a vector. The queries leave out the
+// chunks that are shorter, as the count of chunks that can carry a vector does.
+func (q *Queries) SetMinimum(length int64) { q.minimum.Swap(length) }
 
 // Passage is one chunk, and where its text is read from.
 //
@@ -423,7 +436,7 @@ func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultI
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.db.QueryContext(ctx, getStatement("unembedded"), recipe, vault, after.MTime, after.MTime, after.Source, after.Source, after.Chunk, limit)
+	rows, err := q.db.QueryContext(ctx, getStatement("unembedded"), recipe, vault, after.MTime, after.MTime, after.Source, after.Source, after.Chunk, q.minimum.Get(), limit)
 	if err != nil {
 		return nil, err
 	}
@@ -487,7 +500,7 @@ func (q *Queries) GetProgress(ctx context.Context, vaultID domain.VaultID, recip
 	if err != nil {
 		return 0, 0, err
 	}
-	err = q.db.QueryRowContext(ctx, getStatement("progress"), recipe, vault).
+	err = q.db.QueryRowContext(ctx, getStatement("progress"), recipe, vault, q.minimum.Get()).
 		Scan(&target, &embedded)
 	return target, embedded, err
 }

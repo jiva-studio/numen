@@ -29,6 +29,7 @@ type mockEmbeddingServer struct {
 	modelName     atomic.Value
 	dimensions    atomic.Int32
 	floorHint     atomic.Value
+	minChunk      atomic.Int32
 }
 
 func (s *mockEmbeddingServer) GetEmbeddingModel(
@@ -49,13 +50,14 @@ func (s *mockEmbeddingServer) GetEmbeddingModel(
 		hint = v
 	}
 	return connect.NewResponse(&v1.GetEmbeddingModelResponse{
-		Name:        name,
-		Dimensions:  dims,
-		MaxTokens:   256,
-		Pooling:     "mean",
-		From:        "test-provider",
-		Concurrency: 4,
-		FloorHint:   hint,
+		Name:           name,
+		Dimensions:     dims,
+		MaxTokens:      256,
+		Pooling:        "mean",
+		From:           "test-provider",
+		Concurrency:    4,
+		FloorHint:      hint,
+		MinChunkLength: s.minChunk.Load(),
 	}), nil
 }
 
@@ -93,6 +95,7 @@ func TestOpenEmbedderBridgeNoPlugin(t *testing.T) {
 func TestEmbedderBridge(t *testing.T) {
 	mockServer := &mockEmbeddingServer{}
 	mockServer.floorHint.Store(0.35)
+	mockServer.minChunk.Store(40)
 	mux := http.NewServeMux()
 	testsupport.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(mockServer))
@@ -163,13 +166,20 @@ func TestEmbedderBridge(t *testing.T) {
 		t.Errorf("model From = %q, want test-provider", model.From)
 	}
 
+	if model.MinChunkLength != 40 {
+		t.Errorf("model MinChunkLength = %d, want 40", model.MinChunkLength)
+	}
 	if hint := bridge.GetFloorHint(ctx); hint != 0.35 {
 		t.Errorf("floor hint = %v, want 0.35", hint)
 	}
 	recipe := model.Recipe()
 	mockServer.floorHint.Store(0.42)
+	mockServer.minChunk.Store(0)
 	if refreshed := bridge.GetModel(); refreshed.Recipe() != recipe {
 		t.Errorf("a new floor hint changed the recipe: %q, was %q", refreshed.Recipe(), recipe)
+	}
+	if refreshed := bridge.GetModel(); refreshed.MinChunkLength != 0 {
+		t.Errorf("a new minimum chunk length reads as %d, want 0", refreshed.MinChunkLength)
 	}
 	if hint := bridge.GetFloorHint(ctx); hint != 0.42 {
 		t.Errorf("floor hint after a read of the model = %v, want 0.42", hint)

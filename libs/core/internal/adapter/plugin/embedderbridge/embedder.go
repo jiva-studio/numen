@@ -79,11 +79,12 @@ func readClientModel(
 		concurrency = int(resp.Msg.GetConcurrency())
 	}
 	model := embeddingport.EmbeddingModel{
-		Name:       resp.Msg.GetName(),
-		Dimensions: int(resp.Msg.GetDimensions()),
-		MaxTokens:  int(resp.Msg.GetMaxTokens()),
-		Pooling:    resp.Msg.GetPooling(),
-		From:       resp.Msg.GetFrom(),
+		Name:           resp.Msg.GetName(),
+		Dimensions:     int(resp.Msg.GetDimensions()),
+		MaxTokens:      int(resp.Msg.GetMaxTokens()),
+		Pooling:        resp.Msg.GetPooling(),
+		From:           resp.Msg.GetFrom(),
+		MinChunkLength: int(max(resp.Msg.GetMinChunkLength(), 0)),
 	}
 	return model, concurrency, max(resp.Msg.GetFloorHint(), 0), nil
 }

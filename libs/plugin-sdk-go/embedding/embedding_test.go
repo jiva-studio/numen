@@ -23,7 +23,7 @@ func (f fakeHandler) EmbedTexts(_ context.Context, texts []string) ([][]float32,
 }
 
 func TestClient_RoundTripsModelInfoAndVectorsThroughTheHandler(t *testing.T) {
-	want := ModelInfo{Name: "small", Dimensions: 2, MaxTokens: 512, Pooling: "mean", From: "hub", Concurrency: 3, FloorHint: 0.25}
+	want := ModelInfo{Name: "small", Dimensions: 2, MaxTokens: 512, Pooling: "mean", From: "hub", Concurrency: 3, FloorHint: 0.25, MinChunkLength: 40}
 	mux := http.NewServeMux()
 	mux.Handle(NewHandler(fakeHandler{info: want}))
 	web := httptest.NewServer(mux)
