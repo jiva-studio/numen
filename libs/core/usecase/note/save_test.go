@@ -689,3 +689,24 @@ func (w watchedWriters) Lock(ctx context.Context, v domain.Vault) (func(), error
 	w.hold()
 	return w.inner.Lock(ctx, v)
 }
+
+// A tab key such as note:dd is no path. A save under a name no file can have
+// writes nothing and answers with the invalid name error.
+func TestSaveRejectsInvalidFileName(t *testing.T) {
+	t.Parallel()
+	for _, path := range []string{"note:dd.md", "notes/a*b.md", `a\b.md`, "q?.md", "dd.md ", "dd. "} {
+		t.Run(path, func(t *testing.T) {
+			t.Parallel()
+			c := openChanging(t, map[string]string{"Ideas.md": "# Ideas\n"})
+
+			_, err := c.newWrite().Save(t.Context(), c.vault, path, "text", nil)
+
+			if !errors.Is(err, domain.ErrInvalidName) {
+				t.Fatalf("Save(%q) = %v, want the invalid name error", path, err)
+			}
+			if _, statErr := os.Stat(filepath.Join(c.vault.Path, path)); statErr == nil {
+				t.Errorf("%q was written", path)
+			}
+		})
+	}
+}

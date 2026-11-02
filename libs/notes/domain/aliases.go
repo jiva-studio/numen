@@ -56,3 +56,8 @@ func Basename(path string) string { return name.Basename(path) }
 // LinkName is the name a link is written by: the last segment of the text
 // between the brackets, without a note's extension.
 func LinkName(target string) string { return name.LinkName(target) }
+
+// CheckPath refuses a vault path that no file can be given on every supported platform.
+func CheckPath(path string) error {
+	return name.CheckPath(path)
+}

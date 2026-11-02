@@ -214,3 +214,42 @@ describe('the links of a note tab of the note kind', () => {
     expect(await state.wikilinks.headings('Entropy')).toStrictEqual(['Shannon formula'])
   })
 })
+
+describe('note tab path after the store closes its note', () => {
+  it.each(['dd.md', 'Books/x.md', 'notes/Мысли о приливе.md', 'notes/two words.md'])(
+    'keeps the path %s that the open tabs save',
+    async (path) => {
+      const { state, notes } = openNoteTab(path)
+      await wait()
+
+      await notes.flush()
+      await wait()
+
+      expect(state.path).toBe(path)
+      expect(state.title).toBe(path.split('/').pop()?.replace(/\.md$/, ''))
+    },
+  )
+})
+
+describe('note tab restored from the saved path', () => {
+  it.each(['dd.md', 'Books/x.md', 'notes/Мысли о приливе.md', 'notes/two words.md'])(
+    'reads %s again after the store let go of it, in two restarts',
+    async (path) => {
+      const first = openNoteTab(path)
+      await wait()
+      await first.notes.flush()
+      await wait()
+      const saved = (
+        createCustomTabKind('md.numen.notes', { kind: 'note', component: null, title: 'Note' })
+          .getOpenTab?.(first.state) ?? { path: '' }
+      ).path
+      expect(saved).toBe(path)
+
+      const second = openNoteTab(saved)
+      await wait()
+
+      expect(second.state.body.value).toBe('The tide turns at noon.')
+      expect(second.state.fileConflict.value).toBeNull()
+    },
+  )
+})

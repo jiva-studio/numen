@@ -96,6 +96,9 @@ func (u Write) WithIndex(index IndexUpdater) Write {
 func (u Write) Execute(
 	ctx context.Context, v domain.Vault, path, body string, stat domain.FileStat,
 ) (result domain.FileStat, err error) {
+	if err := domain.CheckPath(path); err != nil {
+		return domain.FileStat{}, err
+	}
 	if markdown.IsFrontmatterStart(body) {
 		return domain.FileStat{}, ErrBodyUnwritable
 	}
@@ -147,6 +150,9 @@ func (u Write) Execute(
 func (u Write) Save(
 	ctx context.Context, v domain.Vault, path, body string, baseline *Baseline,
 ) (domain.FileStat, error) {
+	if err := domain.CheckPath(path); err != nil {
+		return domain.FileStat{}, err
+	}
 	if markdown.IsFrontmatterStart(body) {
 		return domain.FileStat{}, ErrBodyUnwritable
 	}

@@ -195,7 +195,7 @@ export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
     getOpenNote: (id: string): OpenNote => {
       const tab = tabs.get(id)
       return {
-        path: tab?.path ?? id,
+        path: tab?.path ?? '',
         body: bodies.get(id) ?? '',
         state: tab ? getState(tab) : 'loading',
         error: tab?.error ?? null,

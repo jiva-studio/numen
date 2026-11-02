@@ -101,6 +101,9 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 	if from == to {
 		return res, nil
 	}
+	if err := domain.CheckPath(to); err != nil {
+		return res, err
+	}
 
 	// Backlinks are read before the move; afterwards nothing points at the old
 	// path.

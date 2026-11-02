@@ -109,3 +109,61 @@ test.describe('A note that changes on disk', () => {
     }
   })
 })
+
+/** Turns any CSS colour the browser computes into red, green, blue and alpha. */
+const readColour = (page: Page, css: string) =>
+  page.evaluate((value) => {
+    const pixel = document.createElement('canvas')
+    pixel.width = pixel.height = 1
+    const context = pixel.getContext('2d', { willReadFrequently: true })!
+    context.clearRect(0, 0, 1, 1)
+    context.fillStyle = value
+    context.fillRect(0, 0, 1, 1)
+    const [red = 0, green = 0, blue = 0, alpha = 0] = context.getImageData(0, 0, 1, 1).data
+    return { red, green, blue, alpha: alpha / 255 }
+  }, css)
+
+const getLuminance = ({ red, green, blue }: { red: number; green: number; blue: number }): number => {
+  const [r = 0, g = 0, b = 0] = [red, green, blue].map((one) => {
+    const part = one / 255
+    return part <= 0.03928 ? part / 12.92 : ((part + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+test.describe('The answers of a note banner', () => {
+  test('are filled buttons with a readable text, and Recreate it writes the note at its own path', async ({
+    page,
+    request,
+  }) => {
+    const notePath = await createNote(request, createUniqueTitle('Dyke'))
+    try {
+      await writeNote(request, notePath, 'The dyke holds the tide.\n')
+      await openWorkspace(page)
+      const text = await openNote(page, notePath)
+      await expect(text).toContainText('The dyke holds the tide.')
+
+      await destroyNote(request, notePath)
+
+      const banner = getNotePanel(page, notePath).getByRole('alert')
+      await expect(banner).toContainText('the note was removed from the vault')
+      const recreate = banner.getByRole('button', { name: 'Recreate it' })
+      const style = await recreate.evaluate((one) => {
+        const computed = getComputedStyle(one)
+        return { background: computed.backgroundColor, ink: computed.color }
+      })
+      const background = await readColour(page, style.background)
+      const ink = await readColour(page, style.ink)
+      expect(background.alpha).toBeGreaterThan(0)
+      const [lighter, darker] = [getLuminance(background), getLuminance(ink)].sort((a, b) => b - a)
+      expect(((lighter ?? 0) + 0.05) / ((darker ?? 0) + 0.05)).toBeGreaterThanOrEqual(4.5)
+
+      await recreate.click()
+
+      await waitForSavedBody(request, notePath, 'The dyke holds the tide.')
+      await expect(banner).toHaveCount(0)
+    } finally {
+      await destroyNote(request, notePath)
+    }
+  })
+})

@@ -711,12 +711,12 @@ describe('an id the store does not hold', () => {
     expect(await notes.close('ghost.md')).toBe(true)
   })
 
-  it('is a note still loading, standing at no file, with nothing to say', () => {
+  it('is a note still loading, standing at no path or file, with nothing to say', () => {
     const { core } = fake()
     const notes = openNotes(core, { limits: quick })
 
     expect(notes.getOpenNote('ghost.md')).toEqual({
-      path: 'ghost.md',
+      path: '',
       body: '',
       state: 'loading',
       error: null,
@@ -933,5 +933,16 @@ describe('a note that could not be written, closed, and opened again', () => {
     await vi.waitFor(() => expect(notes.getOpenNote('Heat.md').state).toBe('stuck'))
 
     expect(await notes.close('Heat.md')).toBe(false)
+  })
+})
+
+describe('the open note of an id the store does not hold', () => {
+  it('has no path, so the id of a tab is never taken for one', () => {
+    const notes = openNotes({
+      read: async () => ({ ok: false, error: 'missing' }),
+      write: async () => ({ ok: false, error: 'missing' }),
+    })
+
+    expect(notes.getOpenNote('note:dd.md').path).toBe('')
   })
 })

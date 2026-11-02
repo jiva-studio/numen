@@ -530,3 +530,19 @@ func TestAFolderKeepsTheNameOfTheNoteFiledBelowIt(t *testing.T) {
 		t.Errorf("got %q", got)
 	}
 }
+
+// A move to a name no file can have leaves the note where it is.
+func TestMoveRejectsInvalidFileName(t *testing.T) {
+	for _, to := range []string{"physics/note:Entropy.md", "physics/Entropy?.md", "physics/Entropy.md "} {
+		c := openLinked(t)
+
+		res, err := c.move().Execute(t.Context(), c.vault, "physics/Entropy.md", to)
+
+		if !errors.Is(err, domain.ErrInvalidName) {
+			t.Errorf("Execute to %q = %v, want the invalid name error", to, err)
+		}
+		if res.IsMoved {
+			t.Errorf("the note moved to %q", to)
+		}
+	}
+}

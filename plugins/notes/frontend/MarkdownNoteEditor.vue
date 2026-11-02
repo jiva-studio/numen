@@ -13,6 +13,7 @@ import {
   useMarkdownDocument,
   type EditorHandle,
 } from './useMarkdownDocument'
+import { Button } from '@numen/ui'
 import { WORDS } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -120,12 +121,12 @@ defineExpose({
   <div class="markdown-note-editor note">
     <div v-if="fileConflict" class="caution" role="alert">
       <span class="caution__text">{{ WORDS[fileConflict] }}</span>
-      <button type="button" class="caution__answer" @click="onKeep">
+      <Button size="small" @click="onKeep">
         {{ fileConflict === 'gone' ? WORDS.makeAgain : WORDS.keep }}
-      </button>
-      <button v-if="fileConflict === 'stale'" type="button" class="caution__answer" @click="onTake">
+      </Button>
+      <Button v-if="fileConflict === 'stale'" variant="outline" size="small" @click="onTake">
         {{ WORDS.take }}
-      </button>
+      </Button>
     </div>
     <div v-else-if="displayErrorMessage && !isDismissed" class="caution" role="alert">
       <span class="caution__text">{{ displayErrorMessage }}</span>
@@ -175,20 +176,6 @@ defineExpose({
 
 .caution__text {
   flex: 1;
-}
-
-.caution__answer {
-  padding: 0.125rem 0.5rem;
-  border: 1px solid currentColor;
-  border-radius: var(--numen-radius);
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
-.caution__answer:hover {
-  background-color: var(--numen-highlight);
 }
 
 .caution__dismiss {

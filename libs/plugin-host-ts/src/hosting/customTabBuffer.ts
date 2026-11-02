@@ -105,7 +105,10 @@ export function createBufferedNoteState(
     path: targetPath,
     pluginId: options.pluginId,
     title: options.title || getDefaultName(targetPath),
-    note: computed(() => ({ path: note.value.path, body: note.value.body })),
+    note: computed((): { path: string; body: string } => ({
+      path: note.value.path || state.path,
+      body: note.value.body,
+    })),
     body: computed(() => note.value.body),
     isLoading: computed(() => note.value.state === 'loading'),
     errorMessage: computed(() => buffer.getErrorMessage(id)),
