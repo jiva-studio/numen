@@ -163,3 +163,33 @@ describe('formatEta', () => {
     expect(formatEta(5400)).toBe('~1.5h')
   })
 })
+
+describe('groupTasks across reports', () => {
+  const report = (step: number): StatusBarTask[] => [
+    { id: 'plugin-a', label: 'Reading', group: 'Reader', progress: step, state: 'running' },
+    { id: 'vectors', label: 'Indexing', about: `file ${step}`, progress: step, state: 'running' },
+    { id: 'plugin-b', label: 'Scanning', group: 'Reader', about: `page ${step}`, state: 'running' },
+    { id: 'walk', label: 'Walking', state: 'running' },
+  ]
+  const ids = (listing: ReturnType<typeof groupTasks>): string[] => [
+    ...listing.coreTasks.map((one) => one.id),
+    ...listing.groups.flatMap((group) => [group.name, ...group.tasks.map((one) => one.id)]),
+  ]
+
+  it('lists the same ids in the same order whatever the tasks report', () => {
+    const first = ids(groupTasks(report(1)))
+    for (let step = 2; step <= 30; step++) {
+      expect(ids(groupTasks(report(step)))).toEqual(first)
+    }
+    expect(first).toEqual(['vectors', 'walk', 'Reader', 'plugin-a', 'plugin-b'])
+  })
+
+  it('puts the updated task where it was, with its new fields', () => {
+    const before = groupTasks(report(1))
+    const after = groupTasks(report(2))
+
+    expect(after.coreTasks[0]?.id).toBe(before.coreTasks[0]?.id)
+    expect(after.coreTasks[0]?.about).toBe('file 2')
+    expect(after.groups[0]?.tasks[1]?.about).toBe('page 2')
+  })
+})

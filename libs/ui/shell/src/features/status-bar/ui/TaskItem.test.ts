@@ -135,4 +135,43 @@ describe('TaskItem row layout', () => {
     expect(wrapper.findAll('.task-item__slot button')).toHaveLength(0)
     expect(wrapper.findAll('.task-item__indicator')).toHaveLength(1)
   })
+
+  it('keeps the pointer on the row through reports of the task, which change no class of the slot', async () => {
+    const wrapper = mount(TaskItem, { props: { task: running } })
+    const row = wrapper.find('.task-item')
+
+    await row.trigger('pointerenter')
+    expect(row.classes()).toContain('task-item--hovered')
+    const slotClasses = wrapper.find('.task-item__slot').classes()
+
+    for (let step = 1; step <= 20; step++) {
+      await wrapper.setProps({
+        task: { ...running, progress: step, about: `Books/File ${step}.pdf` },
+      })
+      expect(wrapper.find('.task-item').element).toBe(row.element)
+      expect(row.classes()).toContain('task-item--hovered')
+      expect(wrapper.find('.task-item__slot').classes()).toEqual(slotClasses)
+    }
+
+    await row.trigger('pointerleave')
+    expect(row.classes()).not.toContain('task-item--hovered')
+  })
+
+  it('keeps the last source in the detail line while a running task reports none', async () => {
+    const wrapper = mount(TaskItem, { props: { task: { ...running, about: 'Books/First.pdf' } } })
+    const detail = wrapper.find('.task-item__detail').element
+
+    await wrapper.setProps({ task: { ...running, about: '' } })
+    expect(wrapper.find('.task-item__detail').element).toBe(detail)
+    expect(wrapper.find('.task-item__detail').text()).toBe('Books/First.pdf')
+
+    await wrapper.setProps({ task: { ...running, about: 'Books/Second.pdf' } })
+    expect(wrapper.find('.task-item__detail').text()).toBe('Books/Second.pdf')
+  })
+
+  it('draws no detail line for a running task that has named no source', () => {
+    const wrapper = mount(TaskItem, { props: { task: { ...running, about: undefined } } })
+
+    expect(wrapper.find('.task-item__detail').exists()).toBe(false)
+  })
 })

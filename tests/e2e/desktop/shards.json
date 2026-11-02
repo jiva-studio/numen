@@ -86,6 +86,7 @@
   "tests/shell/workspace/shift-commands.spec.ts": 2,
   "tests/shell/workspace/status-bar.spec.ts": 2,
   "tests/shell/workspace/task-cancel.spec.ts": 14,
+  "tests/shell/workspace/task-row-updates.spec.ts": 12,
   "tests/shell/workspace/themes.spec.ts": 3,
   "tests/shell/workspace/vault-navigation.spec.ts": 4,
   "tests/shell/workspace/vault-trash.spec.ts": 6,

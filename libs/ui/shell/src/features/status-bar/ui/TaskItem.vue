@@ -5,8 +5,14 @@
  * The progress ring and the action button share one slot, stacked in one grid cell. The row draws
  * the same elements whether or not the pointer is over it; the pointer on the row, or focus inside
  * it, changes only their opacity.
+ *
+ * A running task is reported again many times a second. The row is one component for the life of
+ * the task and updates its text and ring in place; whether the pointer is on it is a flag of the
+ * row, set by the pointer entering and leaving, so no update decides it. The detail line keeps the
+ * last source a running task named, so a report without one does not take a line out of the row
+ * and move it from under the pointer.
  */
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { RotateCw, X } from '@lucide/vue'
 import { Button } from '@numen/ui'
 import type { StatusBarTask } from '../model/types'
@@ -26,11 +32,19 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
+const isHovered = ref(false)
+const lastAbout = ref(props.task.about ?? '')
+watch(
+  () => props.task.about,
+  (about) => {
+    if (about) lastAbout.value = about
+  },
+)
 const subtext = computed(() => {
-  if (props.task.state === 'failed' && props.task.error) {
-    return props.task.error
+  if (props.task.state === 'failed') {
+    return props.task.error || props.task.about || ''
   }
-  return props.task.about || ''
+  return props.task.about || lastAbout.value
 })
 const isCancelShown = computed(
   () =>
@@ -43,6 +57,14 @@ const hasAction = computed(
 )
 
 /* -------------------------------- Handlers -------------------------------- */
+function onPointerEnter() {
+  isHovered.value = true
+}
+
+function onPointerLeave() {
+  isHovered.value = false
+}
+
 function onCancel() {
   emit('cancel', props.task.id)
 }
@@ -61,7 +83,13 @@ function onAction() {
 </script>
 
 <template>
-  <div class="task-item" :class="`task-item--${task.state}`" :data-task-id="task.id">
+  <div
+    class="task-item"
+    :class="[`task-item--${task.state}`, { 'task-item--hovered': isHovered }]"
+    :data-task-id="task.id"
+    @pointerenter="onPointerEnter"
+    @pointerleave="onPointerLeave"
+  >
     <div class="task-item__content">
       <span class="task-item__label" :title="task.label">{{ task.label }}</span>
       <span

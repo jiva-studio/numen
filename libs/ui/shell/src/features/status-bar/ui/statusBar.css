@@ -92,7 +92,7 @@
   line-height: 1.25;
 }
 
-.task-item:hover {
+.task-item--hovered {
   background: var(--numen-selection-away);
 }
 
@@ -164,13 +164,13 @@
   color: var(--numen-ink);
 }
 
-.task-item:hover .task-item__slot--swaps .task-item__indicator,
+.task-item--hovered .task-item__slot--swaps .task-item__indicator,
 .task-item:focus-within .task-item__slot--swaps .task-item__indicator,
 .task-item--cancelling .task-item__slot--swaps .task-item__indicator {
   opacity: 0;
 }
 
-.task-item:hover .task-item__btn,
+.task-item--hovered .task-item__btn,
 .task-item:focus-within .task-item__btn,
 .task-item--cancelling .task-item__btn {
   opacity: 1;

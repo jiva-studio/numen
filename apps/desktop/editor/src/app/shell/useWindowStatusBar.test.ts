@@ -186,4 +186,23 @@ describe('useWindowStatusBar handlers', () => {
 
     expect(onAction).not.toHaveBeenCalled()
   })
+
+  it('lists the same ids in the same order through every report of a task', () => {
+    const report = (step: number): readonly Task[] => [
+      { ...base, id: 'vectors', label: 'Indexing', about: `file ${step}`, completedCount: step },
+      { ...base, id: 'texts', label: 'Reading', pluginName: 'Reader' },
+      { ...base, id: 'lost', error: 'The vault is gone' },
+    ]
+    const tasks = ref<readonly Task[]>(report(1))
+    const statusBar = useWindowStatusBar({ tasks })
+    const ids = () => statusBar.tasks.value.map((one) => one.id)
+    const first = ids()
+
+    for (let step = 2; step <= 20; step++) {
+      tasks.value = report(step)
+      expect(ids()).toEqual(first)
+    }
+    expect(first).toEqual(['vectors', 'texts', 'lost'])
+    expect(pick(statusBar.tasks.value, 0).about).toBe('file 20')
+  })
 })
