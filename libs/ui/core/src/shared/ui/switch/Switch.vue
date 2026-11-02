@@ -55,8 +55,11 @@ function onUpdate(value: boolean): void {
       :class="
         cn(
           'rounded-pill bg-raised block size-4',
-          'duration-hover ease-numen transition-transform',
-          'data-[state=checked]:translate-x-4',
+          // The thumb moves by its margin, a layout change, not by a transform: a transform
+          // transition ends with one stray frame drawn at the start in WebKitGTK, which showed as
+          // the thumb going back and moving again.
+          'duration-hover ease-numen transition-[margin-inline-start]',
+          'data-[state=checked]:ms-4',
         )
       "
     />
