@@ -35,6 +35,13 @@ const readSettledVectors = async (item: Locator): Promise<number> => {
   return readVectors(item)
 }
 
+/** The notes the index has read, from the nested Notes row of the popover of the status bar item. */
+const readNoteCount = async (popover: Locator): Promise<number> => {
+  const row = popover.locator('.index-popover__row--nested', { hasText: 'Notes' })
+  const text = (await row.textContent()) ?? ''
+  return Number(/·\s*([\d,.\s]+)\s*files/.exec(text)?.[1]?.replace(/\D/g, '') ?? 0)
+}
+
 test.describe('The smallest piece of text to index for meaning', () => {
   const notes: string[] = []
 
@@ -62,11 +69,15 @@ test.describe('The smallest piece of text to index for meaning', () => {
       LONG_BODY,
     )
     notes.push(longPath)
+    await item.click()
+    const popover = page.getByRole('dialog', { name: 'Index stats' })
+    await expect(popover).toBeVisible()
     await expect.poll(() => readVectors(item), { timeout: 45_000 }).toBeGreaterThan(before)
     const withLong = await readSettledVectors(item)
     const longChunks = withLong - before
     expect(longChunks).toBeGreaterThan(0)
 
+    const notesBefore = await readNoteCount(popover)
     const shortPath = await createNoteWithBody(
       request,
       createUniqueTitle('Short tide note'),
@@ -75,7 +86,9 @@ test.describe('The smallest piece of text to index for meaning', () => {
     )
     notes.push(shortPath)
     // The short note is read into the index, and the count stays where it was.
-    await page.waitForTimeout(5_000)
+    await expect
+      .poll(() => readNoteCount(popover), { timeout: 45_000 })
+      .toBeGreaterThan(notesBefore)
     expect(await readSettledVectors(item)).toBe(withLong)
 
     // With 0 every piece gets a vector, the short one too.
