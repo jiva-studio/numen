@@ -188,7 +188,7 @@ export const Forward: Story = {
     await expect(heads).toHaveLength(1)
     await expect(heads[0]).toContain(AT_TO)
     await expect(titles).toStrictEqual([['refers to', '50%']])
-    await expect(getResting(canvasElement).offsets).toStrictEqual([getShift(-1, LABEL_DEPTH)])
+    await expect(getResting(canvasElement).offsets).toStrictEqual([0])
   },
 }
 

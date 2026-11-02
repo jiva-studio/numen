@@ -78,27 +78,27 @@ export const getLabelPositions = (count: number): number[] => {
 
 /**
  * The gap, in plex units, between the line and the near edge of the letters of
- * a label set beside it: as close as the letters go without touching the line.
- * It is the same for every kind of line and for both labels.
+ * a label of a pair: as close as the letters go without touching the line.
+ * It is the same for every kind of line and for both labels of a pair.
  */
 export const LABEL_GAP = 2
 
 /**
- * How far from the line the centre of a title is, for letters this deep: half of
+ * How far from the line the centre of a title is, for letters this deep: nothing on the line, else half of
  * their depth and the gap, so the near edge of the letters is `LABEL_GAP` from the line.
  */
 export const getShift = (side: EdgeSide, depth: number): number => side * (depth / 2 + LABEL_GAP)
 
 /**
  * Where and how each label of one line is set, in the order the labels are written.
- * One label is centred and beside the line on its left, read the readable way along the line.
+ * One label is centred along the line and on it, its vertical middle on the line, read the readable way along it.
  * Two labels are set near the two ends, on opposite sides, each read in the direction of its
  * record: when both records have a head, each label is near the end its head is at and reads toward it;
  * otherwise each is near the note that wrote it and reads away from it, the first on the left of
  * the line taken from `from`, the second on the right.
  */
 export function getLabelPlaces(labels: readonly EdgeLabel[]): LabelPlace[] {
-  if (labels.length <= 1) return labels.map(() => ({ position: MIDDLE, side: -1 }))
+  if (labels.length <= 1) return labels.map(() => ({ position: MIDDLE, side: 0 }))
   const positions = getLabelPositions(labels.length)
   const isHeaded = labels.every((label) => label.end !== undefined)
   return labels.map((label, index) => {

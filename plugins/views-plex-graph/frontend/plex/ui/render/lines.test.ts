@@ -68,10 +68,9 @@ describe('the line of an edge', () => {
       title('along', { side: -1, shift: -9.6 }),
       title('against', { heading: 'against', side: 1, shift: 9.6 }),
       title('on the line'),
-      title('one', { heading: 'against', side: -1, shift: -8 }),
     ]
     const [line] = getLines([{ ...edge!, titles }], 'plex')
-    expect(line?.titles.map((one) => one.across)).toStrictEqual([-9.6, -9.6, 0, 8])
+    expect(line?.titles.map((one) => one.across)).toStrictEqual([-9.6, -9.6, 0])
   })
 
   it('gives a line with no title no path to set one on', () => {

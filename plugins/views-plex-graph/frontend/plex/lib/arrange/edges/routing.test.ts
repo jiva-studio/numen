@@ -689,8 +689,8 @@ describe('the position of a label', () => {
     expect(measured).toBeGreaterThan(10)
   })
 
-  it('sets one label on the left of the line and two on opposite sides of it', () => {
-    expect(getLabelPlaces([{ text: 'a' }]).map((place) => place.side)).toEqual([-1])
+  it('sets one label on the line and two on opposite sides of it', () => {
+    expect(getLabelPlaces([{ text: 'a' }]).map((place) => place.side)).toEqual([0])
     expect(getLabelPlaces([{ text: 'a' }, { text: 'b' }]).map((place) => place.side)).toEqual([
       -1, 1,
     ])
@@ -753,12 +753,13 @@ describe('the position of a label', () => {
     expect([first!.heading, second!.heading]).toEqual(['along', 'against'])
   })
 
-  it('reads the one label of a line along the way that is readable, at the distance of every label', () => {
+  it('reads the one label of a line along the way that is readable, centred and on the line', () => {
     const measured = createRouting(DEFAULT_OPTIONS, undefined, 12)
     const edge = { from: 'lighthouse', to: 'harbour', labels: [{ text: 'guides' }] }
     const [only] = routeEdge(edge, byId, measured)!.titles
 
-    expect([only!.heading, only!.side, only!.shift]).toEqual(['against', -1, getShift(-1, 12)])
+    expect([only!.heading, only!.side, only!.shift]).toEqual(['against', 0, 0])
+    expect(only!.anchor).toBe(MIDDLE)
   })
 
   it('draws no title for a label with no words', () => {

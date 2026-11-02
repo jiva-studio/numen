@@ -23,6 +23,8 @@ export interface LabelGap {
   readonly gap: number
   /** On which side of the line the letters are: positive on the right looking from the first note to the second. */
   readonly side: number
+  /** How far the middle of the ink is from the line, across it, in pixels, whichever side it is on. */
+  readonly centre: number
 }
 
 /**
@@ -40,7 +42,7 @@ export const getLabelGaps = (
       (one) => one.getBoundingClientRect().width > 0,
     )!
     const context = document.createElement('canvas').getContext('2d')!
-    const gaps: Record<string, { gap: number; side: number }> = {}
+    const gaps: Record<string, { gap: number; side: number; centre: number }> = {}
     for (const letters of svg.querySelectorAll<SVGTextElement>('.plex__edge-label--letters')) {
       const style = getComputedStyle(letters)
       context.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`
@@ -77,7 +79,7 @@ export const getLabelGaps = (
       const farthest = Math.max(top, bottom)
       const side = closest > 0 ? 1 : farthest < 0 ? -1 : 0
       const gap = side > 0 ? closest : side < 0 ? -farthest : -Math.min(farthest, -closest)
-      gaps[letters.textContent?.trim() ?? ''] = { gap, side }
+      gaps[letters.textContent?.trim() ?? ''] = { gap, side, centre: Math.abs((top + bottom) / 2) }
     }
     return gaps
   }, line)
@@ -95,3 +97,10 @@ export const isHugging = (entry: LabelGap | undefined): boolean =>
 /** Whether two labels are at the same distance from their lines. */
 export const isAtSameGap = (one: LabelGap | undefined, other: LabelGap | undefined): boolean =>
   one !== undefined && other !== undefined && Math.abs(one.gap - other.gap) < MAX_GAP_DIFFERENCE
+
+/** The most the middle of the letters of a label on its line may be from it. */
+export const MAX_CENTRE_OFFSET = 1.5
+
+/** Whether the line passes through the middle of the letters: the one label of a line is set so. */
+export const isOnLine = (entry: LabelGap | undefined): boolean =>
+  entry !== undefined && entry.centre < MAX_CENTRE_OFFSET

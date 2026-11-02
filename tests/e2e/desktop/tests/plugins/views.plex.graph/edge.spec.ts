@@ -10,6 +10,7 @@ import {
   getLabelGaps,
   isAtSameGap,
   isHugging,
+  isOnLine,
   type LabelGap,
 } from '../../support/plex-labels.js'
 
@@ -468,7 +469,10 @@ test.describe('Plex Edge and Link Inspector', () => {
       .toBe(true)
   })
 
-  test('centres the one label of a line that has a head at one end', async ({ page, request }) => {
+  test('centres the one label of a line that has a head at one end, along the line and on it', async ({
+    page,
+    request,
+  }) => {
     await saveConnection(request, { Thermodynamics: { label: 'flows into', marker: ARROW } })
     await openWorkspace(page)
     await expect(page.locator('.plex-frame:not([data-moving])')).toBeAttached()
@@ -481,43 +485,7 @@ test.describe('Plex Edge and Link Inspector', () => {
           !!label &&
           edge.arrows.length === 1 &&
           isCentred(edge, label) &&
-          isHugging(edge.gaps['flows into'])
-        )
-      })
-      .toBe(true)
-  })
-
-  test('keeps the one label of a line and each of two labels at the same distance from it, and reads the first record the same way', async ({
-    page,
-    request,
-  }) => {
-    await saveConnection(request, { Thermodynamics: { label: 'flows into', marker: ARROW } })
-    await openWorkspace(page)
-    await expect(page.locator('.plex-frame:not([data-moving])')).toBeAttached()
-    await expect
-      .poll(async () => {
-        const edge = await readEdge(page, NAMES)
-        return isHugging(edge.gaps['flows into']) && isCentred(edge, edge.labels['flows into']!)
-      })
-      .toBe(true)
-    const singleReading = (await readEdge(page, NAMES)).reading['flows into']!
-    const single = (await readEdge(page, NAMES)).gaps['flows into']!
-
-    await saveConnection(request, {
-      Thermodynamics: { label: 'flows into', marker: ARROW },
-      Entropy: { label: 'measures', marker: ARROW },
-    })
-    await openWorkspace(page)
-    await expect(page.locator('.plex-frame:not([data-moving])')).toBeAttached()
-    await expect
-      .poll(async () => {
-        const edge = await readEdge(page, NAMES)
-        const gaps = [edge.gaps['flows into'], edge.gaps['measures']]
-        return (
-          Object.keys(edge.gaps).length === 2 &&
-          gaps.every((entry) => isHugging(entry) && isAtSameGap(entry, single)) &&
-          Math.sign(edge.reading['flows into']!) === Math.sign(singleReading) &&
-          isApart(edge.boxes['flows into']!, edge.boxes['measures']!)
+          isOnLine(edge.gaps['flows into'])
         )
       })
       .toBe(true)

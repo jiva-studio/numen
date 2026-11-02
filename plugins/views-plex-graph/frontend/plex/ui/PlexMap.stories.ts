@@ -322,6 +322,15 @@ export const EveryLine: Story = {
       other.bottom <= own.top
     await expect(isApart).toBe(true)
 
+    // The one label of a line is on it, its middle on the line; each of a pair is moved off it, to its own side.
+    const getAcross = (text: string) =>
+      Number(canvas.getAllByText(text)[0]!.closest('text')!.getAttribute('dy'))
+    for (const text of ['measures', 'states', 'costs', 'drives', 'leads to', 'is about']) {
+      await expect(getAcross(text)).toBe(0)
+    }
+    await expect(getAcross('includes')).toBeLessThan(0)
+    await expect(getAcross('part of')).toBeLessThan(0)
+
     const getReading = (text: string) => {
       const set = canvas.getAllByText(text)[0]!
       const href = set.closest('textPath')!.getAttribute('href')!

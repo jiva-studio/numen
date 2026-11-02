@@ -6,6 +6,7 @@ import {
   getLabelGaps,
   isAtSameGap,
   isHugging,
+  isOnLine,
   type LabelGap,
 } from '../../support/plex-labels.js'
 
@@ -187,9 +188,7 @@ const isPointingAt = async (
  * (`way` 1 toward the second note, -1 toward the first), on the left of its own reading.
  */
 const isReadToward = (line: LineGeometry, words: string, way: 1 | -1): boolean =>
-  isHugging(line.gaps[words]) &&
-  line.gaps[words]!.side === -way &&
-  line.reading[words]! * way > 0.5
+  isHugging(line.gaps[words]) && line.gaps[words]!.side === -way && line.reading[words]! * way > 0.5
 
 /**
  * Whether the line between two notes carries the label `toFirst`, the record that points at
@@ -239,7 +238,7 @@ const isSetInTheMiddle = async (
   return (
     label !== undefined &&
     getDistance(label, line.middle) < length / 4 &&
-    isHugging(line.gaps[words])
+    isOnLine(line.gaps[words])
   )
 }
 
