@@ -11,7 +11,7 @@
  *   node check.mjs --changed-only
  *   node check.mjs --help
  */
-import { spawnSync } from "node:child_process";
+import { runTool } from "../shared/tools.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
@@ -82,13 +82,13 @@ Options:
 }
 
 function getChangedFiles() {
-  const currentBranch = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
+  const currentBranch = runTool("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
     cwd: REPO_ROOT,
     encoding: "utf8",
   }).stdout?.trim();
 
   const uncommitted =
-    spawnSync("git", ["diff", "--name-only", "HEAD"], {
+    runTool("git", ["diff", "--name-only", "HEAD"], {
       cwd: REPO_ROOT,
       encoding: "utf8",
     }).stdout?.split("\n").map((f) => f.trim()).filter(Boolean) || [];
@@ -98,13 +98,13 @@ function getChangedFiles() {
     base = currentBranch === "main" ? "HEAD~1" : "origin/main";
   }
 
-  let res = spawnSync("git", ["diff", "--name-only", `${base}...HEAD`], {
+  let res = runTool("git", ["diff", "--name-only", `${base}...HEAD`], {
     cwd: REPO_ROOT,
     encoding: "utf8",
   });
 
   if (res.status !== 0) {
-    res = spawnSync("git", ["diff", "--name-only", "HEAD~1...HEAD"], {
+    res = runTool("git", ["diff", "--name-only", "HEAD~1...HEAD"], {
       cwd: REPO_ROOT,
       encoding: "utf8",
     });

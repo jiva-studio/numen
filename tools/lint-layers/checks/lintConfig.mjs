@@ -1,3 +1,4 @@
+import { runTool } from "../../shared/tools.mjs";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -120,7 +121,7 @@ function hasTypeScript(trackedFiles, dir) {
 }
 
 function readTrackedFiles() {
-  const listed = spawnSync("git", ["ls-files"], { cwd: REPO_ROOT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  const listed = runTool("git", ["ls-files"], { cwd: REPO_ROOT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
   if (listed.status !== 0) throw new Error(`git ls-files failed: ${listed.stderr}`);
   return listed.stdout.split("\n").filter((file) => file && fs.existsSync(path.join(REPO_ROOT, file)));
 }

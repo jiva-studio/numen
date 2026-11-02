@@ -1,4 +1,5 @@
-import { execSync, spawnSync } from "node:child_process";
+import { execSync } from "node:child_process";
+import { runTool } from "../../shared/tools.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import ts from "typescript";
@@ -21,7 +22,7 @@ export function exec(cmd, cwd = REPO_ROOT) {
 
 /** The tracked files under `pathspecs` that ship: no test, story, fixture or generated file. */
 export function listShippedFiles(pathspecs) {
-  const listed = spawnSync("git", ["ls-files", "--", ...pathspecs], { cwd: REPO_ROOT, encoding: "utf8" });
+  const listed = runTool("git", ["ls-files", "--", ...pathspecs], { cwd: REPO_ROOT, encoding: "utf8" });
   return (listed.stdout || "")
     .split("\n")
     .filter((file) => file && !NOT_SHIPPED.test(file) && fs.existsSync(path.join(REPO_ROOT, file)));

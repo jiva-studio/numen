@@ -13,7 +13,7 @@
  * many commits the change has, an unchanged plugin keeps its version, and a plugin that is new on the
  * base starts at build 1 of the current month.
  */
-import { execFileSync, spawnSync } from 'node:child_process'
+import { execTool, runTool } from '../shared/tools.mjs'
 import { readFileSync, existsSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -79,12 +79,12 @@ export const checkVersion = ({ current, base, isChanged, today }) => {
   return current === next ? null : `version ${current} is raised more than once (next: ${next})`
 }
 
-const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim()
+const git = (...args) => execTool('git', args, { encoding: 'utf8' }).trim()
 
 /** The version a plugin had on `base`, and null where the plugin did not exist there. */
 const readBaseVersion = (base, dir) => {
   const source = `${base}:${dir}/${MANIFEST_FILE}`
-  const shown = spawnSync('git', ['show', source], { encoding: 'utf8' })
+  const shown = runTool('git', ['show', source], { encoding: 'utf8' })
   return shown.status === 0 ? readManifestVersion(shown.stdout, source) : null
 }
 
