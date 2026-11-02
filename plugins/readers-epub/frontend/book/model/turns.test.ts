@@ -10,7 +10,7 @@ import { computed, shallowRef } from 'vue'
 
 import type { Flow, Mark } from '../lib/spread'
 import type { SettledBookProps } from '../lib/props'
-import { useBookTurns } from './turns'
+import { getEasedProgress, useBookTurns } from './turns'
 
 const FLOW: Flow = { contentWidth: 4000, width: 1000, gap: 0, columns: 1 }
 const MARKS: readonly Mark[] = [
@@ -23,8 +23,13 @@ const MARKS: readonly Mark[] = [
 const paperWithStyle = () => {
   const writes: string[] = []
   const paper = document.createElement('div')
+  let translate = ''
   const style = {
+    get translate() {
+      return translate
+    },
     set translate(value: string) {
+      translate = value
       writes.push(`translate ${value}`)
     },
     set transition(value: string) {
@@ -76,31 +81,20 @@ describe('putting a spread in front', () => {
     expect(turns.standing.value).toBe(0)
   })
 
-  it('carries the columns to the spread at once, without a transition', () => {
+  it('carries the columns to the spread at once, with no frames between', () => {
     const { turns, writes } = setUp()
 
     turns.stand(2, 'auto')
 
-    expect(writes).toStrictEqual(['transition [none]', 'translate -2000px 0', 'transition []'])
+    expect(writes).toStrictEqual(['translate -2000px 0'])
   })
 
-  it('ends a turn under way, then carries the columns with the transition where the turn is smooth', () => {
+  it('carries the columns at once where the motion lasts no time', () => {
     const { turns, writes } = setUp()
 
     turns.stand(2, 'smooth')
 
-    expect(writes).toStrictEqual(['transition [none]', 'transition []', 'translate -2000px 0'])
-  })
-
-  it('does not read where a turn under way has carried the columns', () => {
-    const { turns } = setUp()
-    const style = vi.spyOn(window, 'getComputedStyle')
-
-    turns.stand(2, 'smooth')
-    turns.stand(3, 'smooth')
-
-    expect(style).not.toHaveBeenCalled()
-    style.mockRestore()
+    expect(writes).toStrictEqual(['translate -2000px 0'])
   })
 
   it('counts the spread without a drawn document', () => {
@@ -113,12 +107,12 @@ describe('putting a spread in front', () => {
 })
 
 describe('going to a spread', () => {
-  it('carries the columns with the transition and says what remains in front', () => {
+  it('carries the columns and says what remains in front', () => {
     const { turns, writes, onMove } = setUp()
 
     turns.goTo(1)
 
-    expect(writes).toStrictEqual(['transition [none]', 'transition []', 'translate -1000px 0'])
+    expect(writes).toStrictEqual(['translate -1000px 0'])
     expect(onMove).toHaveBeenCalledExactlyOnceWith(100)
   })
 
@@ -154,5 +148,123 @@ describe('the offset kept in front', () => {
     turns.stand(3, 'auto')
 
     expect(turns.getKeptOffset()).toBe(7)
+  })
+})
+
+describe('a turn drawn frame by frame', () => {
+  const MOTION_MS = 200
+
+  /** Runs the frames of a clock that moves 20 ms a frame, and leaves each frame to its test. */
+  const setUpFrames = () => {
+    let now = 0
+    const queue: FrameRequestCallback[] = []
+    vi.spyOn(performance, 'now').mockImplementation(() => now)
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      queue.push(callback)
+      return queue.length
+    })
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+      queue[id - 1] = () => undefined
+    })
+    vi.spyOn(window, 'getComputedStyle').mockReturnValue({
+      getPropertyValue: () => `${MOTION_MS}ms`,
+    } as unknown as CSSStyleDeclaration)
+    const frame = () => {
+      now += 20
+      queue.shift()?.(now)
+    }
+    return { frame }
+  }
+
+  const moved = (writes: readonly string[]): number[] =>
+    writes.map((one) => Number.parseFloat(one.replace('translate ', '')))
+
+  it('moves the columns toward the spread on every frame and ends exactly on it', () => {
+    const { frame } = setUpFrames()
+    const { turns, writes } = setUp()
+    turns.stand(0, 'auto')
+    writes.length = 0
+
+    turns.stand(1, 'smooth')
+    for (let index = 0; index < 20; index += 1) frame()
+
+    const places = moved(writes)
+    expect(places.length).toBeGreaterThan(5)
+    expect(places.at(-1)).toBe(-1000)
+    for (let index = 1; index < places.length; index += 1) {
+      expect(places[index]).toBeLessThanOrEqual(places[index - 1] as number)
+    }
+    expect(writes.at(-1)).toBe('translate -1000px 0')
+    vi.restoreAllMocks()
+  })
+
+  it('writes nothing after the last frame', () => {
+    const { frame } = setUpFrames()
+    const { turns, writes } = setUp()
+    turns.stand(0, 'auto')
+    writes.length = 0
+
+    turns.stand(1, 'smooth')
+    for (let index = 0; index < 20; index += 1) frame()
+    const count = writes.length
+    for (let index = 0; index < 5; index += 1) frame()
+
+    expect(writes).toHaveLength(count)
+    vi.restoreAllMocks()
+  })
+
+  it('goes on from where the columns stand when another turn is made, and never goes back', () => {
+    const { frame } = setUpFrames()
+    const { turns, writes } = setUp()
+    turns.stand(0, 'auto')
+    writes.length = 0
+
+    turns.stand(1, 'smooth')
+    frame()
+    frame()
+    turns.stand(2, 'smooth')
+    for (let index = 0; index < 20; index += 1) frame()
+
+    const places = moved(writes)
+    for (let index = 1; index < places.length; index += 1) {
+      expect(places[index]).toBeLessThanOrEqual(places[index - 1] as number)
+    }
+    expect(places.at(-1)).toBe(-2000)
+    vi.restoreAllMocks()
+  })
+
+  it('puts the columns where an unsmooth stand says, and ends a turn under way', () => {
+    const { frame } = setUpFrames()
+    const { turns, writes } = setUp()
+    turns.stand(0, 'auto')
+    writes.length = 0
+
+    turns.stand(1, 'smooth')
+    frame()
+    turns.stand(3, 'auto')
+    const count = writes.length
+    for (let index = 0; index < 20; index += 1) frame()
+
+    expect(writes.at(-1)).toBe('translate -3000px 0')
+    expect(writes).toHaveLength(count)
+    vi.restoreAllMocks()
+  })
+})
+
+describe('the curve of a turn', () => {
+  it('starts at nothing, ends at the whole, and never goes past it', () => {
+    expect(getEasedProgress(0)).toBeCloseTo(0, 5)
+    expect(getEasedProgress(1)).toBeCloseTo(1, 5)
+    let last = 0
+    for (let time = 0; time <= 1; time += 0.01) {
+      const progress = getEasedProgress(time)
+      expect(progress).toBeGreaterThanOrEqual(last - 1e-9)
+      expect(progress).toBeLessThanOrEqual(1 + 1e-9)
+      last = progress
+    }
+  })
+
+  it('goes most of the way early, as the ease-out curve of the motion tokens does', () => {
+    expect(getEasedProgress(0.2)).toBeGreaterThan(0.6)
   })
 })

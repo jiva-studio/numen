@@ -19,6 +19,7 @@
   "tests/plugins/readers.epub/flicker-two-columns.spec.ts": 62,
   "tests/plugins/readers.epub/flicker.spec.ts": 7,
   "tests/plugins/readers.epub/search.spec.ts": 2,
+  "tests/plugins/readers.epub/settled-turn.spec.ts": 20,
   "tests/plugins/readers.epub/turns.spec.ts": 24,
   "tests/plugins/readers.pdf/advanced.spec.ts": 23,
   "tests/plugins/readers.pdf/focus.spec.ts": 2,

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Records the screen of a real WebKitGTK window while the EPUB reader turns pages, and checks the
-# frames for a page that comes back after it was left.
+# frames for a page that comes back after it was left and for a stray frame at the end of a turn.
 #
 # The window is a bare WebKitGTK 6 view, set up as the numen window is, drawn by GTK's own renderer
 # in a private headless sway, so nothing appears on the desktop of the person running it. It
@@ -12,7 +12,7 @@
 # Environment: NUMEN_TEST_PORT (3456), BOOK (assets/ledger.epub, a path in the vault of the run),
 # OUTPUT_SCALE (1.5), RUN_NAME (turns), OUT_DIR (a new folder under /tmp), BACKEND_DELAY_MS (the delay of
 # the answer that carries the markup of a chapter, none by default). Needs nix and a GPU render node.
-# Exit code 1 when a page came back.
+# Exit code 1 when a page came back, or a frame other than the page turned to is drawn after the turn arrived at it.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -110,4 +110,7 @@ grep -a "PAGE OBS" "$out/browser.log" | awk '{print $3, $4}' > "$out/$name.count
 echo "page counter after each turn:"
 grep -a 'PAGE OBS' "$out/browser.log" | awk '{print $4, $5, $6}' | tr '\n' ';'
 echo
-PATH="$ffmpeg_bin:$PATH" node "$here/analyze.mjs" "$out/$name.mkv" "$out/$name.presses" "$start" "$out/$name.counts"
+status=0
+PATH="$ffmpeg_bin:$PATH" node "$here/analyze.mjs" "$out/$name.mkv" "$out/$name.presses" "$start" "$out/$name.counts" || status=1
+PATH="$ffmpeg_bin:$PATH" node "$here/settle.mjs" "$out/$name.mkv" "$out/$name.presses" "$start" || status=1
+exit $status
