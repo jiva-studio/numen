@@ -72,26 +72,26 @@
       "key": "model",
       "type": "string",
       "title": "Model",
-      "description": "Model identifier. Local models are downloaded from Hugging Face (<org>/<repo> containing onnx/model.onnx and tokenizer.json); remote providers use the model ID listed by the service.",
-      "default": "Xenova/bge-m3",
+      "description": "Model identifier. A local model needs a profile: the listed ones ship with the plugin, and a profile file of your own in the profiles folder of the plugin data directory adds more (see the plugin README). Local models are downloaded from Hugging Face; remote providers use the model ID listed by the service.",
+      "default": "Xenova/multilingual-e5-small",
       "optionsBy": {
         "setting": "provider",
         "options": {
           "local": [
             {
-              "value": "Xenova/bge-m3",
-              "title": "BGE-M3 (int8)",
-              "detail": "100+ languages, 1024 dims · Hugging Face"
-            },
-            {
               "value": "Xenova/multilingual-e5-small",
-              "title": "Multilingual E5 Small",
-              "detail": "100 languages, 384 dims · Hugging Face"
+              "title": "E5 small (default, CPU, 118 MB)",
+              "detail": "384 dims · Hugging Face"
             },
             {
-              "value": "Xenova/bge-small-en-v1.5",
-              "title": "BGE Small English v1.5",
-              "detail": "English, 384 dims · Hugging Face"
+              "value": "onnx-community/harrier-oss-v1-270m-ONNX",
+              "title": "Harrier 270M (better, 344 MB)",
+              "detail": "640 dims · Hugging Face"
+            },
+            {
+              "value": "Xenova/bge-m3",
+              "title": "BGE-M3 (large, 569 MB)",
+              "detail": "1024 dims · Hugging Face"
             }
           ],
           "openrouter": [

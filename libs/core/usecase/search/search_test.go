@@ -685,3 +685,34 @@ func TestASearchAbortsOnCanceledContext(t *testing.T) {
 		t.Fatalf("expected context.Canceled, got %v", err)
 	}
 }
+
+// twoKindsEmbedder tells a query from a document and keeps what each was asked for.
+type twoKindsEmbedder struct {
+	oneWay
+	documents, queries []string
+}
+
+func (e *twoKindsEmbedder) Concurrency() int { return 1 }
+
+func (e *twoKindsEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+	e.documents = append(e.documents, texts...)
+	return e.oneWay.Embed(ctx, texts)
+}
+
+func (e *twoKindsEmbedder) EmbedQueries(ctx context.Context, texts []string) ([][]float32, error) {
+	e.queries = append(e.queries, texts...)
+	return e.oneWay.Embed(ctx, texts)
+}
+
+func TestASearchEmbedsTheTypedQueryAsAQuery(t *testing.T) {
+	c := newCorpus(t)
+	c.vectorise(t, c.first, newVector(+1))
+	embedder := &twoKindsEmbedder{oneWay: oneWay{direction: newVector(+1)}}
+
+	if _, err := c.search(embedder).Execute(t.Context(), c.first, "disorder", search.Parameters{}); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(embedder.queries, []string{"disorder"}) || len(embedder.documents) != 0 {
+		t.Errorf("queries %q, documents %q; the typed query must be embedded as a query and nothing as a document", embedder.queries, embedder.documents)
+	}
+}

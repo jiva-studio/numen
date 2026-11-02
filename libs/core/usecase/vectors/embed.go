@@ -615,7 +615,7 @@ func (e *extracted) read(ctx context.Context, path, from string) (string, error)
 	return doc.Text, err
 }
 
-// embedAsking embeds the texts the batch asks for and returns their normalised,
+// embedAsking embeds the texts the batch asks for, as documents, and returns their normalised,
 // quantised vectors. A batch that asks for none returns none.
 func (u Embed) embedAsking(ctx context.Context, prep preparedBatch) ([]uniqueVector, error) {
 	if len(prep.asking) == 0 {

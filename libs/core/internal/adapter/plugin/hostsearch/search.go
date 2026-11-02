@@ -109,7 +109,7 @@ func (s Search) EmbedTexts(ctx context.Context, texts []string) (pluginport.Plug
 	if len(texts) == 0 {
 		return pluginport.PluginEmbeddedTexts{Recipe: recipe}, nil
 	}
-	vectors, err := s.Embedder.Embed(ctx, texts)
+	vectors, err := embeddingport.EmbedQueries(ctx, s.Embedder, texts)
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return pluginport.PluginEmbeddedTexts{}, ctxErr

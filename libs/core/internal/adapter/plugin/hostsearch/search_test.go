@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -33,6 +34,8 @@ type stubEmbedder struct {
 	hint     float64
 	switchTo *embeddingport.EmbeddingModel
 	calls    int
+	// queried holds the texts that were embedded as queries.
+	queried []string
 }
 
 func (e *stubEmbedder) GetModel() embeddingport.EmbeddingModel {
@@ -59,6 +62,14 @@ func (e *stubEmbedder) Embed(_ context.Context, texts []string) ([][]float32, er
 		e.model = *e.switchTo
 	}
 	return out, nil
+}
+
+// EmbedQueries embeds the texts as queries, and keeps them.
+func (e *stubEmbedder) EmbedQueries(ctx context.Context, texts []string) ([][]float32, error) {
+	e.mu.Lock()
+	e.queried = append(e.queried, texts...)
+	e.mu.Unlock()
+	return e.Embed(ctx, texts)
 }
 
 func (e *stubEmbedder) Concurrency() int { return 1 }
@@ -442,5 +453,15 @@ func TestTheBestSimilarityIsReadForTheModelRecipe(t *testing.T) {
 	}
 	if len(f.nearest.recipes) != 1 || f.nearest.recipes[0] != getModel().Recipe() {
 		t.Errorf("the index was asked under %v", f.nearest.recipes)
+	}
+}
+
+func TestEmbedTextsEmbedsTheTextsAsQueries(t *testing.T) {
+	f := newFixture()
+	if _, err := f.search.EmbedTexts(t.Context(), []string{"a", "abc"}); err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"a", "abc"}; !slices.Equal(f.embedder.queried, want) {
+		t.Errorf("embedded as queries %q, want %q: the texts of this call are the questions of a plugin", f.embedder.queried, want)
 	}
 }

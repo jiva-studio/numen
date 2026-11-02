@@ -32,7 +32,7 @@ func TestTheLinkedHandlerEmbedsThroughTheServiceItsConfigureNames(t *testing.T) 
 	if err != nil {
 		t.Fatalf("Configure: %v", err)
 	}
-	vectors, err := embedding.NewClient(web.Client(), web.URL, token).EmbedTexts(t.Context(), []string{"words"})
+	vectors, err := embedding.NewClient(web.Client(), web.URL, token).EmbedTexts(t.Context(), embedding.RoleDocument, []string{"words"})
 	if err != nil {
 		t.Fatalf("EmbedBatch: %v", err)
 	}
@@ -52,7 +52,7 @@ func TestTheModelIsReadWhileConfigureChangesIt(t *testing.T) {
 	go func() {
 		defer close(isDone)
 		for range 200 {
-			srv.updateConfig(map[string]string{"model": "other-model"})
+			srv.updateConfig(map[string]string{"model": "bge-m3"})
 		}
 	}()
 

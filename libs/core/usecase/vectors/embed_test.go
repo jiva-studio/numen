@@ -586,3 +586,33 @@ func TestProgressNamesTheSourceBeingEmbedded(t *testing.T) {
 		t.Errorf("the run ended with %v, want context.Canceled", err)
 	}
 }
+
+// queryAware tells a query from a document and counts the queries it was asked for.
+type queryAware struct {
+	*embedder
+	queries int
+}
+
+func (q *queryAware) EmbedQueries(ctx context.Context, texts []string) ([][]float32, error) {
+	q.queries += len(texts)
+	return q.Embed(ctx, texts)
+}
+
+func TestEmbeddingTheChunksOfAVaultMakesDocumentVectors(t *testing.T) {
+	index, shelf := newStore(), newLibrary()
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(getSanskrit(), 400)), 1)
+	cutBooks(t, index, shelf, getFirst())
+
+	embed := newEmbed(vaults{getFirst().ID: shelf}, index, index)
+	aware := &queryAware{embedder: &embedder{dims: dimensions}}
+	embed.Embedder = aware
+	if _, err := embed.Execute(t.Context(), getFirst()); err != nil {
+		t.Fatal(err)
+	}
+	if aware.calls == 0 {
+		t.Fatal("nothing was embedded")
+	}
+	if aware.queries != 0 {
+		t.Errorf("%d chunks were embedded as queries, want every chunk embedded as a document", aware.queries)
+	}
+}

@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/embedding"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
@@ -15,22 +17,22 @@ func TestEmbeddingServerGetModel(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if msg.GetName() != "bge-m3" {
-		t.Errorf("expected name bge-m3, got %s", msg.GetName())
+	if msg.GetName() != "Xenova/multilingual-e5-small" {
+		t.Errorf("expected the default model, got %s", msg.GetName())
 	}
-	if msg.GetDimensions() != 1024 {
-		t.Errorf("expected 1024 dimensions, got %d", msg.GetDimensions())
+	if msg.GetDimensions() != 384 {
+		t.Errorf("expected 384 dimensions, got %d", msg.GetDimensions())
 	}
-	if msg.GetMaxTokens() != 8192 {
-		t.Errorf("expected 8192 max tokens, got %d", msg.GetMaxTokens())
+	if msg.GetMaxTokens() != 512 {
+		t.Errorf("expected 512 max tokens, got %d", msg.GetMaxTokens())
 	}
-	if msg.GetPooling() != "head" {
-		t.Errorf("expected head pooling, got %s", msg.GetPooling())
+	if msg.GetPooling() != "mean" {
+		t.Errorf("expected mean pooling, got %s", msg.GetPooling())
 	}
 }
 
 func TestEmbeddingServerEnvOverrides(t *testing.T) {
-	t.Setenv("NUMEN_EMBEDDING_MODEL", "custom-model")
+	t.Setenv("NUMEN_EMBEDDING_MODEL", "Xenova/bge-m3")
 	t.Setenv("NUMEN_EMBEDDING_DIMENSIONS", "512")
 	t.Setenv("NUMEN_EMBEDDING_MAX_TOKENS", "1024")
 	t.Setenv("NUMEN_EMBEDDING_POOLING", "mean")
@@ -40,8 +42,8 @@ func TestEmbeddingServerEnvOverrides(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if msg.GetName() != "custom-model" {
-		t.Errorf("expected custom-model, got %s", msg.GetName())
+	if msg.GetName() != "Xenova/bge-m3" {
+		t.Errorf("expected Xenova/bge-m3, got %s", msg.GetName())
 	}
 	if msg.GetDimensions() != 512 {
 		t.Errorf("expected 512 dimensions, got %d", msg.GetDimensions())
@@ -84,7 +86,7 @@ func TestModelDimensionResolutionAcrossProviders(t *testing.T) {
 	}{
 		{provider: "local", model: "Xenova/bge-m3", wantDims: 1024},
 		{provider: "local", model: "Xenova/multilingual-e5-small", wantDims: 384},
-		{provider: "local", model: "openai/text-embedding-3-small", wantDims: 1024},
+		{provider: "local", model: "openai/text-embedding-3-small", wantDims: 384},
 		{provider: "openrouter", model: "openai/text-embedding-3-small", wantDims: 1536},
 		{provider: "openrouter", model: "Xenova/multilingual-e5-small", wantDims: 1536},
 		{provider: "openrouter", model: "openai/text-embedding-3-large", wantDims: 3072},
@@ -116,11 +118,15 @@ func TestEmbeddingServerCustomRepositoryIsNotPinned(t *testing.T) {
 	}
 }
 
-func TestEmbeddingServerCustomModelIsNotPinned(t *testing.T) {
+func TestEmbeddingServerWithoutAProfileFailsAndNamesWhereToAddOne(t *testing.T) {
 	t.Setenv("NUMEN_EMBEDDING_MODEL", "owner/model")
 	srv := newEmbeddingServer()
-	if srv.localModel.Name != "owner/model" || srv.localModel.Sums != nil {
-		t.Errorf("localModel = %+v", srv.localModel)
+	_, err := srv.GetModelInfo(t.Context())
+	if rpcerror.GetCode(err) != rpcerror.FailedPrecondition || !strings.Contains(err.Error(), "owner/model") || !strings.Contains(err.Error(), "profile") {
+		t.Fatalf("GetModelInfo error = %v, want FailedPrecondition that names the model and the profile", err)
+	}
+	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"text"}); rpcerror.GetCode(err) != rpcerror.FailedPrecondition {
+		t.Errorf("EmbedTexts error = %v, want FailedPrecondition", err)
 	}
 }
 
@@ -144,7 +150,7 @@ func TestTheMockEmbedderServesWhereTheEnvironmentAsksForIt(t *testing.T) {
 		t.Errorf("the model is from %q, want mock", model.GetFrom())
 	}
 
-	vectors, err := srv.EmbedTexts(t.Context(), []string{"boat", "ferry"})
+	vectors, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"boat", "ferry"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,7 +183,7 @@ func TestRemoteProviderWithoutKeyDoesNotOpenLocalEmbedder(t *testing.T) {
 		"model":    "openai/text-embedding-3-small",
 	})
 
-	_, err := srv.EmbedTexts(t.Context(), []string{"hello"})
+	_, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"hello"})
 	if rpcerror.GetCode(err) != rpcerror.FailedPrecondition {
 		t.Fatalf("err = %v, want FailedPrecondition", err)
 	}
@@ -205,15 +211,15 @@ func TestLocalProviderWithRemoteModelNameUsesLocalDefault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.GetName() != "bge-m3" || info.GetDimensions() != 1024 {
-		t.Fatalf("GetModelInfo = %s@%d, want bge-m3@1024", info.GetName(), info.GetDimensions())
+	if info.GetName() != engine.DefaultModel || info.GetDimensions() != 384 {
+		t.Fatalf("GetModelInfo = %s@%d, want the default model at 384", info.GetName(), info.GetDimensions())
 	}
 
-	if _, err := srv.EmbedTexts(t.Context(), []string{"hello"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"hello"}); err != nil {
 		t.Fatal(err)
 	}
-	if activeInfo.Name != "bge-m3" || activeInfo.Dimensions != 1024 || activeLocal.Name != "Xenova/bge-m3" {
-		t.Fatalf("opened %+v / %+v, want bge-m3@1024 on Xenova/bge-m3", activeInfo, activeLocal)
+	if activeInfo.Name != engine.DefaultModel || activeInfo.Dimensions != 384 || activeLocal.Name != engine.DefaultModel {
+		t.Fatalf("opened %+v / %+v, want the default model at 384", activeInfo, activeLocal)
 	}
 }
 
@@ -229,11 +235,10 @@ func TestUpdateConfigAppliesProfileOfSelectedModel(t *testing.T) {
 		description string
 	}{
 		{map[string]string{"provider": "local", "model": "Xenova/multilingual-e5-small"}, "Xenova/multilingual-e5-small", 384, 512, "mean", 0.81, "local e5"},
-		{map[string]string{"provider": "openai", "model": "text-embedding-ada-002"}, "text-embedding-ada-002", 1536, 8191, "head", 0.75, "remote ada"},
-		{map[string]string{"provider": "openrouter", "model": "qwen/qwen3-embedding-8b"}, "qwen/qwen3-embedding-8b", 4096, 32768, "head", 0, "remote qwen"},
-		{map[string]string{"provider": "local", "model": "Xenova/bge-m3"}, "bge-m3", 1024, 8192, "head", 0.30, "local bge-m3"},
+		{map[string]string{"provider": "openai", "model": "text-embedding-ada-002"}, "text-embedding-ada-002", 1536, 8191, "cls", 0.75, "remote ada"},
+		{map[string]string{"provider": "openrouter", "model": "qwen/qwen3-embedding-8b"}, "qwen/qwen3-embedding-8b", 4096, 32768, "cls", 0, "remote qwen"},
+		{map[string]string{"provider": "local", "model": "Xenova/bge-m3"}, "Xenova/bge-m3", 1024, 512, "cls", 0.30, "local bge-m3"},
 		{map[string]string{"provider": "local", "model": "Xenova/multilingual-e5-small"}, "Xenova/multilingual-e5-small", 384, 512, "mean", 0.81, "local e5 again"},
-		{map[string]string{"provider": "local", "model": "owner/unknown"}, "owner/unknown", 1024, 8192, "head", 0, "local unknown"},
 	}
 	for _, step := range steps {
 		srv.updateConfig(step.values)
@@ -258,7 +263,7 @@ func TestTheEmbedderOpensWithTheProfileOfTheLocalModel(t *testing.T) {
 		return engine.MockEmbedder{}, nil
 	}
 	srv.updateConfig(map[string]string{"provider": "local", "model": "Xenova/multilingual-e5-small"})
-	if _, err := srv.EmbedTexts(t.Context(), []string{"hello"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"hello"}); err != nil {
 		t.Fatal(err)
 	}
 	if openedInfo.Dimensions != 384 || openedInfo.MaxTokens != 512 || openedInfo.Pooling != "mean" {

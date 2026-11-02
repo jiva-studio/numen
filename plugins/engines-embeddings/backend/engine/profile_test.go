@@ -1,54 +1,345 @@
 package engine
 
-import "testing"
+import (
+	"errors"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
+	"testing"
+)
 
-func TestGetModelProfileListsEveryModelOfTheSettings(t *testing.T) {
+func getShipped(t *testing.T) *Profiles {
+	t.Helper()
+	table, err := GetShippedProfiles()
+	if err != nil {
+		t.Fatalf("GetShippedProfiles: %v", err)
+	}
+	return table
+}
+
+func writeProfile(t *testing.T, dir, name, content string) {
+	t.Helper()
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestShippedProfilesAreValid(t *testing.T) {
+	table := getShipped(t)
+	for _, id := range table.order {
+		if err := table.byID[id].Validate(); err != nil {
+			t.Errorf("%s: %v", id, err)
+		}
+	}
+}
+
+func TestShippedProfilesPinTheFilesOfEveryLocalModel(t *testing.T) {
+	table := getShipped(t)
+	for _, p := range table.GetCurated() {
+		if len(p.Revision) != 40 {
+			t.Errorf("%s: revision %q is no commit", p.ID, p.Revision)
+		}
+		for _, name := range []string{p.OnnxFile, TokenizerFile} {
+			if len(p.SHA256[name]) != 64 {
+				t.Errorf("%s: no sha256 for %s", p.ID, name)
+			}
+		}
+	}
+}
+
+func TestShippedDefaultKeepsItsPrefixes(t *testing.T) {
+	p, err := getShipped(t).GetLocal(DefaultModel)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.QueryPrefix != "query: " || p.DocumentPrefix != "passage: " {
+		t.Errorf("prefixes = %q, %q; a multilingual-e5 model needs query: and passage:", p.QueryPrefix, p.DocumentPrefix)
+	}
+	if p.Dimensions != 384 || p.Pooling != PoolMean || p.GetModelFile() != "model_quantized.onnx" {
+		t.Errorf("profile = %+v", p)
+	}
+}
+
+func TestGetLocalAcceptsAnAliasAndAnyCase(t *testing.T) {
+	table := getShipped(t)
+	for _, name := range []string{"Xenova/bge-m3", "bge-m3", "BGE-M3", "bge-m3-int8", " xenova/bge-m3 "} {
+		p, err := table.GetLocal(name)
+		if err != nil || p.ID != "Xenova/bge-m3" {
+			t.Errorf("GetLocal(%q) = %q, %v", name, p.ID, err)
+		}
+	}
+}
+
+func TestGetLocalOfAnUnknownModelNamesWhereToAddAProfile(t *testing.T) {
+	table := getShipped(t).WithUserProfiles("/data/profiles", func(string, error) {})
+	for _, name := range []string{"owner/unknown", "openai/text-embedding-3-small", ""} {
+		_, err := table.GetLocal(name)
+		if !errors.Is(err, ErrNoProfile) {
+			t.Fatalf("GetLocal(%q) error = %v, want ErrNoProfile", name, err)
+		}
+		if !strings.Contains(err.Error(), "/data/profiles") || !strings.Contains(err.Error(), ".json") {
+			t.Errorf("error %q does not name the folder to add a profile to", err)
+		}
+	}
+}
+
+func TestGetRemoteOfAnUnlistedModelUsesTheFallbackWithItsOwnID(t *testing.T) {
+	table := getShipped(t)
+	shipped := table.GetRemote("text-embedding-3-large")
+	if shipped.Dimensions != 3072 {
+		t.Errorf("dims = %d, want 3072", shipped.Dimensions)
+	}
+	other := table.GetRemote("vendor/some-embedder")
+	if other.ID != "vendor/some-embedder" || other.Dimensions != 1024 || !other.Remote {
+		t.Errorf("fallback = %+v", other)
+	}
+	if !other.GetHandling().IsZero() {
+		t.Errorf("a remote model has handling %+v, want none", other.GetHandling())
+	}
+}
+
+func TestUserProfileAddsAModel(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, "mine.json", `{"id":"owner/my-model","title":"Mine","dims":256,"maxTokens":2048,"pooling":"last","queryPrefix":"q: ","onnxFile":"onnx/model.onnx","extraInputs":["position_ids"]}`)
+	var reported []string
+	table := getShipped(t).WithUserProfiles(dir, func(file string, _ error) { reported = append(reported, file) })
+
+	p, err := table.GetLocal("owner/my-model")
+	if err != nil || len(reported) != 0 {
+		t.Fatalf("GetLocal = %v, reported %v", err, reported)
+	}
+	if p.Dimensions != 256 || p.Pooling != PoolLast || p.GetTokens() != MaxChunkTokens || !p.IsNormalised() {
+		t.Errorf("profile = %+v", p)
+	}
+	if !slices.Contains(p.ExtraInputs, InputPositionIDs) {
+		t.Errorf("extraInputs = %v", p.ExtraInputs)
+	}
+}
+
+func TestUserProfileOverridesTheFieldsItNamesAndKeepsTheRest(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, "e5.json", `[{"id":"Xenova/multilingual-e5-small","queryPrefix":"search_query: ","documentPrefix":"search_document: "}]`)
+	table := getShipped(t).WithUserProfiles(dir, func(file string, err error) { t.Errorf("reported %s: %v", file, err) })
+
+	p, err := table.GetLocal(DefaultModel)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.QueryPrefix != "search_query: " || p.DocumentPrefix != "search_document: " {
+		t.Errorf("prefixes = %q, %q", p.QueryPrefix, p.DocumentPrefix)
+	}
+	if p.Dimensions != 384 || p.Revision == "" || len(p.SHA256) == 0 {
+		t.Errorf("an unnamed field was lost: %+v", p)
+	}
+	shipped, err := getShipped(t).GetLocal(DefaultModel)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if shipped.QueryPrefix != "query: " {
+		t.Error("the override changed the shipped table")
+	}
+}
+
+func TestUserProfileThatChangesTheFileDropsThePins(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, "e5.json", `{"id":"Xenova/multilingual-e5-small","onnxFile":"onnx/model_int8.onnx"}`)
+	table := getShipped(t).WithUserProfiles(dir, func(file string, err error) { t.Errorf("reported %s: %v", file, err) })
+
+	p, err := table.GetLocal(DefaultModel)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.OnnxFile != "onnx/model_int8.onnx" || p.Revision != "" || p.SHA256 != nil {
+		t.Errorf("pins of the old file kept: %+v", p)
+	}
+}
+
+func TestUserProfileByAnAliasOverridesTheModelOfTheAlias(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, "m3.json", `{"id":"bge-m3","floorHint":0.5}`)
+	table := getShipped(t).WithUserProfiles(dir, func(string, error) {})
+
+	p, err := table.GetLocal("Xenova/bge-m3")
+	if err != nil || p.FloorHint != 0.5 {
+		t.Errorf("GetLocal = %+v, %v", p, err)
+	}
+	if n := len(table.GetCurated()); n != len(getShipped(t).GetCurated()) {
+		t.Errorf("an alias added a model: %d curated", n)
+	}
+}
+
+func TestMalformedUserFilesAreReportedAndSkipped(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, "a-broken.json", `{"id": "owner/x", `)
+	writeProfile(t, dir, "b-nodims.json", `{"id":"owner/y","maxTokens":512,"pooling":"mean","onnxFile":"onnx/m.onnx"}`)
+	writeProfile(t, dir, "c-unknown-field.json", `{"id":"owner/z","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx","querryPrefix":"x"}`)
+	writeProfile(t, dir, "d-half.json", `[{"id":"owner/ok","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx"},{"id":"owner/bad","dims":8,"maxTokens":8,"pooling":"median","onnxFile":"m.onnx"}]`)
+	writeProfile(t, dir, "e-good.json", `{"id":"owner/good","dims":8,"maxTokens":8,"pooling":"mean","onnxFile":"m.onnx"}`)
+	writeProfile(t, dir, "notes.txt", `not a profile`)
+	reported := map[string]error{}
+	table := getShipped(t).WithUserProfiles(dir, func(file string, err error) { reported[filepath.Base(file)] = err })
+
+	for _, name := range []string{"a-broken.json", "b-nodims.json", "c-unknown-field.json", "d-half.json"} {
+		if reported[name] == nil {
+			t.Errorf("%s was not reported", name)
+		}
+	}
+	if len(reported) != 4 {
+		t.Errorf("reported %v, want the four broken files", reported)
+	}
+	for _, id := range []string{"owner/x", "owner/y", "owner/z", "owner/ok", "owner/bad"} {
+		if _, err := table.GetLocal(id); err == nil {
+			t.Errorf("%s from a skipped file is listed", id)
+		}
+	}
+	if _, err := table.GetLocal("owner/good"); err != nil {
+		t.Errorf("a good file next to broken ones was skipped: %v", err)
+	}
+	if _, err := table.GetLocal(DefaultModel); err != nil {
+		t.Errorf("the shipped table lost a model: %v", err)
+	}
+}
+
+func TestMissingUserFolderIsNoError(t *testing.T) {
+	table := getShipped(t).WithUserProfiles(filepath.Join(t.TempDir(), "profiles"), func(file string, err error) {
+		t.Errorf("reported %s: %v", file, err)
+	})
+	if _, err := table.GetLocal(DefaultModel); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestPoolingHeadIsCLS(t *testing.T) {
+	dir := t.TempDir()
+	writeProfile(t, dir, "h.json", `{"id":"owner/h","dims":8,"maxTokens":8,"pooling":"head","onnxFile":"m.onnx"}`)
+	table := getShipped(t).WithUserProfiles(dir, func(string, error) {})
+	p, err := table.GetLocal("owner/h")
+	if err != nil || p.Pooling != PoolCLS {
+		t.Errorf("pooling = %q, %v; want cls", p.Pooling, err)
+	}
+}
+
+func TestGetTokensCapsALocalModelAtTheChunkLimit(t *testing.T) {
+	table := getShipped(t)
+	m3, err := table.GetLocal("Xenova/bge-m3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m3.MaxTokens != 8192 || m3.GetTokens() != MaxChunkTokens {
+		t.Errorf("bge-m3 tokens = %d of %d", m3.GetTokens(), m3.MaxTokens)
+	}
+	if got := table.GetRemote("text-embedding-3-large").GetTokens(); got != 8191 {
+		t.Errorf("a remote model is capped at %d", got)
+	}
+}
+
+func TestHandlingApplyAddsTheRolePrefixInFrontOfEveryText(t *testing.T) {
+	h := Handling{QueryPrefix: "query: ", DocumentPrefix: "passage: "}
+	texts := []string{"a", "b"}
 	cases := []struct {
-		model string
-		want  ModelProfile
+		role Role
+		want []string
 	}{
-		{"Xenova/bge-m3", ModelProfile{1024, 8192, PoolHead, 0.30}},
-		{"bge-m3", ModelProfile{1024, 8192, PoolHead, 0.30}},
-		{"baai/bge-m3", ModelProfile{1024, 8192, PoolHead, 0.30}},
-		{"Xenova/multilingual-e5-small", ModelProfile{384, 512, PoolMean, 0.81}},
-		{"Xenova/bge-small-en-v1.5", ModelProfile{384, 512, PoolHead, 0}},
-		{"openai/text-embedding-3-small", ModelProfile{1536, 8191, PoolHead, 0.30}},
-		{"text-embedding-3-small", ModelProfile{1536, 8191, PoolHead, 0.30}},
-		{"openai/text-embedding-3-large", ModelProfile{3072, 8191, PoolHead, 0.30}},
-		{"text-embedding-3-large", ModelProfile{3072, 8191, PoolHead, 0.30}},
-		{"openai/text-embedding-ada-002", ModelProfile{1536, 8191, PoolHead, 0.75}},
-		{"text-embedding-ada-002", ModelProfile{1536, 8191, PoolHead, 0.75}},
-		{"qwen/qwen3-embedding-8b", ModelProfile{4096, 32768, PoolHead, 0}},
+		{RoleDocument, []string{"passage: a", "passage: b"}},
+		{RoleQuery, []string{"query: a", "query: b"}},
 	}
 	for _, tc := range cases {
-		if got := GetModelProfile(tc.model); got != tc.want {
-			t.Errorf("%s: profile = %+v, want %+v", tc.model, got, tc.want)
+		if got := h.Apply(tc.role, texts); !slices.Equal(got, tc.want) {
+			t.Errorf("Apply(%v) = %q, want %q", tc.role, got, tc.want)
 		}
-		if !HasModelProfile(tc.model) {
-			t.Errorf("%s: HasModelProfile = false", tc.model)
+	}
+	if !slices.Equal(texts, []string{"a", "b"}) {
+		t.Errorf("Apply changed its input: %q", texts)
+	}
+	if got := (Handling{}).Apply(RoleQuery, texts); !slices.Equal(got, texts) {
+		t.Errorf("no prefix changed the texts: %q", got)
+	}
+}
+
+func TestEveryCuratedModelWithAQueryPrefixAppliesItToQueries(t *testing.T) {
+	for _, p := range getShipped(t).GetCurated() {
+		h := p.GetHandling()
+		got := h.Apply(RoleQuery, []string{"x"})[0]
+		if got != p.QueryPrefix+"x" {
+			t.Errorf("%s: a query reads %q without its prefix %q", p.ID, got, p.QueryPrefix)
+		}
+		if doc := h.Apply(RoleDocument, []string{"x"})[0]; doc != p.DocumentPrefix+"x" {
+			t.Errorf("%s: a document reads %q", p.ID, doc)
 		}
 	}
 }
 
-func TestGetModelProfileOfAnUnknownModelKeepsTheBGEM3Numbers(t *testing.T) {
-	got := GetModelProfile("owner/unknown")
-	want := ModelProfile{Dimensions: 1024, MaxTokens: 8192, Pooling: PoolHead, FloorHint: 0}
-	if got != want {
-		t.Errorf("profile = %+v, want %+v", got, want)
+func TestHandlingHashChangesWithWhatItCoversAndWithNothingElse(t *testing.T) {
+	base := Handling{QueryPrefix: "query: ", DocumentPrefix: "passage: ", File: "model.onnx", Normalise: true}
+	want := base.Hash(512)
+	if len(want) != handlingHashLength {
+		t.Errorf("hash %q is not %d characters", want, handlingHashLength)
 	}
-	if HasModelProfile("owner/unknown") {
-		t.Error("HasModelProfile = true for an unlisted model")
+	same := base
+	same.ExtraInputs = []string{InputPositionIDs}
+	if got := same.Hash(512); got != want {
+		t.Errorf("extra inputs changed the hash: %s", got)
+	}
+	changed := map[string]string{
+		"query prefix":    func() string { h := base; h.QueryPrefix = "q: "; return h.Hash(512) }(),
+		"document prefix": func() string { h := base; h.DocumentPrefix = "d: "; return h.Hash(512) }(),
+		"file":            func() string { h := base; h.File = "model_q4.onnx"; return h.Hash(512) }(),
+		"normalise":       func() string { h := base; h.Normalise = false; return h.Hash(512) }(),
+		"max tokens":      base.Hash(256),
+	}
+	for what, got := range changed {
+		if got == want {
+			t.Errorf("a change of the %s leaves the hash %s", what, want)
+		}
 	}
 }
 
-func TestEveryProfileIsAValidIdentity(t *testing.T) {
-	for model, profile := range getModelProfiles() {
-		identity := ModelInfo{Name: model, Dimensions: profile.Dimensions, MaxTokens: profile.MaxTokens, Pooling: profile.Pooling}
-		if err := CheckIdentity(identity, model); err != nil {
-			t.Errorf("%s: %v", model, err)
+func TestHandlingIsZeroOnlyWhenItChangesNothing(t *testing.T) {
+	if !(Handling{}).IsZero() {
+		t.Error("an empty handling is not zero")
+	}
+	for _, h := range []Handling{{QueryPrefix: "q"}, {DocumentPrefix: "d"}, {File: "f"}, {Normalise: true}, {ExtraInputs: []string{InputPositionIDs}}} {
+		if h.IsZero() {
+			t.Errorf("%+v is zero", h)
 		}
-		if profile.FloorHint < 0 || profile.FloorHint >= 1 {
-			t.Errorf("%s: floor hint %v outside [0, 1)", model, profile.FloorHint)
+	}
+}
+
+func TestOptionTextsNameTierSizeAndWidth(t *testing.T) {
+	p, err := getShipped(t).GetLocal(DefaultModel)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := p.GetOptionTitle(); got != "E5 small (default, CPU, 118 MB)" {
+		t.Errorf("title = %q", got)
+	}
+	if got := p.GetOptionDetail(); got != "384 dims · Hugging Face" {
+		t.Errorf("detail = %q", got)
+	}
+}
+
+func TestValidateRefusesWhatCannotRun(t *testing.T) {
+	ok := Profile{ID: "a/b", Dimensions: 4, MaxTokens: 8, Pooling: PoolMean, OnnxFile: "m.onnx"}
+	if err := ok.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	for name, mutate := range map[string]func(*Profile){
+		"no id":          func(p *Profile) { p.ID = " " },
+		"no dims":        func(p *Profile) { p.Dimensions = 0 },
+		"no tokens":      func(p *Profile) { p.MaxTokens = 0 },
+		"unknown pool":   func(p *Profile) { p.Pooling = "max" },
+		"floor too high": func(p *Profile) { p.FloorHint = 1 },
+		"unknown input":  func(p *Profile) { p.ExtraInputs = []string{"past_key_values"} },
+		"no file":        func(p *Profile) { p.OnnxFile = "" },
+	} {
+		p := ok
+		mutate(&p)
+		if err := p.Validate(); err == nil {
+			t.Errorf("%s: no error", name)
 		}
 	}
 }

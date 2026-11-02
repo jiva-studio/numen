@@ -7,19 +7,19 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 )
 
-func TestDefaultBGEM3Config(t *testing.T) {
-	info, local := DefaultBGEM3Config()
-	if info.Name != "bge-m3" {
-		t.Errorf("expected name bge-m3, got %s", info.Name)
+func TestNewConfigOfBGEM3(t *testing.T) {
+	info, local := newTestConfig(t, "Xenova/bge-m3")
+	if info.Name != "Xenova/bge-m3" {
+		t.Errorf("expected name Xenova/bge-m3, got %s", info.Name)
 	}
 	if info.Dimensions != 1024 {
 		t.Errorf("expected 1024 dimensions, got %d", info.Dimensions)
 	}
-	if info.MaxTokens != 8192 {
-		t.Errorf("expected 8192 max tokens, got %d", info.MaxTokens)
+	if info.MaxTokens != 512 {
+		t.Errorf("expected 512 max tokens, got %d", info.MaxTokens)
 	}
-	if info.Pooling != PoolHead {
-		t.Errorf("expected head pooling, got %s", info.Pooling)
+	if info.Pooling != PoolCLS {
+		t.Errorf("expected cls pooling, got %s", info.Pooling)
 	}
 	if info.Concurrency != 1 {
 		t.Errorf("expected 1 concurrency, got %d", info.Concurrency)
@@ -170,20 +170,27 @@ func TestLocalModelGetAddress(t *testing.T) {
 	}
 }
 
-func TestDefaultBGEM3ConfigIsPinned(t *testing.T) {
-	_, local := DefaultBGEM3Config()
+func TestNewConfigIsPinnedForTheCuratedModels(t *testing.T) {
+	for _, id := range []string{"Xenova/bge-m3", DefaultModel} {
+		_, local := newTestConfig(t, id)
+		requirePins(t, id, local)
+	}
+}
+
+func requirePins(t *testing.T, id string, local LocalModel) {
+	t.Helper()
 	if len(local.Revision) != 40 {
-		t.Errorf("revision %q is not a commit", local.Revision)
+		t.Errorf("%s: revision %q is not a commit", id, local.Revision)
 	}
 	for _, name := range []string{ModelFolder + "/" + local.File, TokenizerFile} {
 		if len(local.Sums[name]) != 64 {
-			t.Errorf("%s has no sha256 pinned: %q", name, local.Sums[name])
+			t.Errorf("%s: %s has no sha256 pinned: %q", id, name, local.Sums[name])
 		}
 	}
 }
 
 func TestWithRepositoryDropsThePins(t *testing.T) {
-	_, local := DefaultBGEM3Config()
+	_, local := newTestConfig(t, "Xenova/bge-m3")
 	other := local.WithRepository("owner/repo")
 	if other.Name != "owner/repo" || other.Revision != "" || other.Sums != nil {
 		t.Errorf("WithRepository() = %+v", other)
@@ -207,14 +214,28 @@ func TestLocalModel_GetProviderFallsBackToHostEnv(t *testing.T) {
 	}
 }
 
-func TestDefaultBGEM3ConfigRunsOnePassWhateverTheCPUCount(t *testing.T) {
+func TestNewConfigRunsOnePassWhateverTheCPUCount(t *testing.T) {
 	prev := runtime.GOMAXPROCS(0)
 	defer runtime.GOMAXPROCS(prev)
 	runtime.GOMAXPROCS(16)
 
-	info, local := DefaultBGEM3Config()
+	info, local := newTestConfig(t, DefaultModel)
 
 	if got := resolvePasses(local, onnx.ProviderCPU, info); got != 1 {
 		t.Errorf("expected one pass at a time, got %d", got)
 	}
+}
+
+// newTestConfig returns the configuration of a model the plugin ships a profile for.
+func newTestConfig(t *testing.T, id string) (ModelInfo, LocalModel) {
+	t.Helper()
+	profiles, err := GetShippedProfiles()
+	if err != nil {
+		t.Fatalf("GetShippedProfiles: %v", err)
+	}
+	profile, err := profiles.GetLocal(id)
+	if err != nil {
+		t.Fatalf("GetLocal(%s): %v", id, err)
+	}
+	return NewConfig(profile)
 }

@@ -84,6 +84,7 @@ func readClientModel(
 		MaxTokens:      int(resp.Msg.GetMaxTokens()),
 		Pooling:        resp.Msg.GetPooling(),
 		From:           resp.Msg.GetFrom(),
+		Handling:       resp.Msg.GetHandling(),
 		MinChunkLength: int(max(resp.Msg.GetMinChunkLength(), 0)),
 	}
 	return model, concurrency, max(resp.Msg.GetFloorHint(), 0), nil
@@ -117,14 +118,24 @@ func (b *Embedder) GetFloorHint(_ context.Context) float64 {
 	return b.floorHint
 }
 
-// Embed sends texts to the embedding plugin process and decodes returned vectors.
-func (b *Embedder) Embed(ctx context.Context, texts []string) (vectors [][]float32, err error) {
+// Embed sends texts to the embedding plugin process as documents and decodes returned vectors.
+func (b *Embedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+	return b.embed(ctx, v1.EmbedRole_EMBED_ROLE_DOCUMENT, texts)
+}
+
+// EmbedQueries sends texts to the embedding plugin process as queries and decodes returned vectors.
+func (b *Embedder) EmbedQueries(ctx context.Context, texts []string) ([][]float32, error) {
+	return b.embed(ctx, v1.EmbedRole_EMBED_ROLE_QUERY, texts)
+}
+
+func (b *Embedder) embed(ctx context.Context, role v1.EmbedRole, texts []string) (vectors [][]float32, err error) {
 	if len(texts) == 0 {
 		return nil, nil
 	}
 
 	req := connect.NewRequest(&v1.EmbedBatchRequest{
 		Texts: texts,
+		Role:  role,
 	})
 	client, call, err := b.service.Open(ctx)
 	if err != nil {

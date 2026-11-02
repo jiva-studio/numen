@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/embedding"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
@@ -35,7 +36,7 @@ func TestConfigure_UsesConfiguredKeyNotEnvironment(t *testing.T) {
 	}
 
 	configure(map[string]string{"provider": "custom", "baseUrl": service.URL, server.SecretAPIKey: "host-key"})
-	vectors, err := emb.EmbedTexts(t.Context(), []string{"a fixture sentence"})
+	vectors, err := emb.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a fixture sentence"})
 	if err != nil {
 		t.Fatal(err)
 	}

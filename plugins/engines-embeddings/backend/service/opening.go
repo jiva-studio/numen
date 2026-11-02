@@ -56,9 +56,7 @@ func (s *embeddingServer) waitForOpening(ctx context.Context) (textEmbedder, err
 func (s *embeddingServer) startOpeningLocked(caller context.Context) *modelOpening {
 	localInfo := s.modelInfo
 	if !s.isMock {
-		localInfo.Name = s.localName
-		applyModelProfile(&localInfo, s.localName)
-		applyDimensionEnv(&localInfo)
+		localInfo = s.localInfo
 	}
 	local := s.localModel
 	limits := s.getLimitsLocked()

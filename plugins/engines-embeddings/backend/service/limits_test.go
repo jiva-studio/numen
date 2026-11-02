@@ -5,6 +5,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/embedding"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/performance"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 )
@@ -89,7 +90,7 @@ func (r *openRecord) openedCount() int {
 func TestTheModelOpensWithTheThreadsOfTheProfile(t *testing.T) {
 	srv, record := newRecordedServer(t)
 	srv.updateConfig(map[string]string{performance.ConfigKey: "eco"})
-	if _, err := srv.EmbedTexts(t.Context(), []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := record.opened[0]; got.Threads != 1 || got.BatchTexts != ecoBatchTexts {
@@ -105,13 +106,13 @@ func TestTheModelOpensWithTheThreadsOfTheProfile(t *testing.T) {
 func TestAChangeOfTheProfileReachesTheRunningModel(t *testing.T) {
 	srv, record := newRecordedServer(t)
 	srv.updateConfig(map[string]string{performance.ConfigKey: "maximum"})
-	if _, err := srv.EmbedTexts(t.Context(), []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	first := record.opened[0]
 
 	srv.updateConfig(map[string]string{performance.ConfigKey: "eco"})
-	if _, err := srv.EmbedTexts(t.Context(), []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	if record.openedCount() != 2 {
@@ -131,11 +132,11 @@ func TestTheSameProfileKeepsTheRunningModel(t *testing.T) {
 	srv, record := newRecordedServer(t)
 	values := map[string]string{performance.ConfigKey: "eco"}
 	srv.updateConfig(values)
-	if _, err := srv.EmbedTexts(t.Context(), []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	srv.updateConfig(values)
-	if _, err := srv.EmbedTexts(t.Context(), []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	if record.openedCount() != 1 {
@@ -148,7 +149,7 @@ func TestTheThreadsOfTheEnvironmentWinOverTheProfile(t *testing.T) {
 	t.Setenv("NUMEN_ONNX_THREADS", "3")
 	srv, record := newRecordedServer(t)
 	srv.updateConfig(map[string]string{performance.ConfigKey: "eco", "provider": "local"})
-	if _, err := srv.EmbedTexts(t.Context(), []string{"a"}); err != nil {
+	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := record.opened[0].Threads; got != 3 {

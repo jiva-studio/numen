@@ -9,10 +9,13 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/onnx"
 )
 
-// Pooling strategies supported by sentence encoders.
+// Pooling strategies supported by sentence encoders. PoolHead is the old name of PoolCLS.
 const (
-	PoolMean = "mean"
-	PoolHead = "head"
+	PoolMean   = "mean"
+	PoolCLS    = "cls"
+	PoolLast   = "last"
+	PoolOutput = "output"
+	PoolHead   = "head"
 )
 
 // File conventions in Hugging Face model repositories.
@@ -51,6 +54,8 @@ type ModelInfo struct {
 	From        string  `json:"from"`
 	Concurrency int     `json:"concurrency"`
 	FloorHint   float64 `json:"floor_hint"`
+	// Handling is what is done to a text before the model reads it and to the output after.
+	Handling Handling `json:"handling"`
 	// MinChunkLength is the fewest bytes a piece of text holds to be given a vector, and 0 embeds every piece.
 	MinChunkLength int `json:"min_chunk_length"`
 }
@@ -63,8 +68,8 @@ func CheckIdentity(identity ModelInfo, repository string) error {
 	if identity.MaxTokens <= 0 {
 		return fmt.Errorf("%s: max tokens must be positive", repository)
 	}
-	if identity.Pooling != "" && identity.Pooling != PoolMean && identity.Pooling != PoolHead {
-		return fmt.Errorf("%s is pooled %q, expected %q or %q", identity.Name, identity.Pooling, PoolMean, PoolHead)
+	if identity.Pooling != "" && !isPooling(identity.Pooling) {
+		return fmt.Errorf("%s is pooled %q, expected %q, %q, %q or %q", identity.Name, identity.Pooling, PoolMean, PoolCLS, PoolLast, PoolOutput)
 	}
 	return nil
 }
@@ -130,48 +135,44 @@ func (m LocalModel) GetAddress() string {
 	return "local:" + pos + "/" + file
 }
 
-// DefaultBGEM3Config returns the default configuration for BGE-M3.
-func DefaultBGEM3Config() (ModelInfo, LocalModel) {
+// NewConfig returns the model identity and the location and execution parameters of a local model
+// from its profile.
+func NewConfig(profile Profile) (ModelInfo, LocalModel) {
 	info := ModelInfo{
-		Name:           "bge-m3",
-		Dimensions:     1024,
-		MaxTokens:      8192,
-		Pooling:        PoolHead,
+		Name:           profile.ID,
+		Dimensions:     profile.Dimensions,
+		MaxTokens:      profile.GetTokens(),
+		Pooling:        profile.Pooling,
 		From:           "plugin:md.numen.engines.embeddings",
-		Concurrency:    bgeM3Passes,
-		FloorHint:      GetModelProfile("bge-m3").FloorHint,
+		Concurrency:    defaultPasses,
+		FloorHint:      profile.FloorHint,
 		MinChunkLength: 0,
+		Handling:       profile.GetHandling(),
 	}
 	local := LocalModel{
-		Name:           "Xenova/bge-m3",
+		Name:           profile.ID,
 		Dir:            "",
-		File:           "model_int8.onnx",
-		BatchTexts:     bgeM3BatchTexts,
+		File:           profile.GetModelFile(),
+		BatchTexts:     defaultBatchTexts,
 		Runtime:        "",
 		Threads:        0,
 		Sessions:       0,
-		PassBudget:     bgeM3Passes,
+		PassBudget:     defaultPasses,
 		PassMemory:     0,
 		Provider:       "",
 		ShouldDownload: true,
-		Revision:       bgeM3Revision,
-		Sums: map[string]string{
-			ModelFolder + "/model_int8.onnx": "a206e10e995aa2a833924bcd725ba5dd6c3425cd34bac3cf2b5677cd2a1c51d6",
-			TokenizerFile:                    "6710678b12670bc442b99edc952c4d996ae309a7020c1fa0096dd245c2faf790",
-		},
+		Revision:       profile.Revision,
+		Sums:           profile.SHA256,
 	}
 	return info, local
 }
 
-// bgeM3BatchTexts and bgeM3Passes are the most texts in a pass, and the most passes at once, that
+// defaultBatchTexts and defaultPasses are the most texts in a pass, and the most passes at once, that
 // keep the resident memory of the plugin under the limit its manifest sets.
 const (
-	bgeM3BatchTexts = 8
-	bgeM3Passes     = 1
+	defaultBatchTexts = 8
+	defaultPasses     = 1
 )
-
-// bgeM3Revision is the commit of Xenova/bge-m3 the pinned sums belong to.
-const bgeM3Revision = "4de13258303883538bd53b696b452bf8099f0858"
 
 // WithRepository returns the model fetched from another repository. The
 // revision and sums belong to the repository they were pinned for, so they are
@@ -183,7 +184,7 @@ func (m LocalModel) WithRepository(name string) LocalModel {
 	return m
 }
 
-// GetDefaultBatchTexts is the most texts in a pass of the default model.
+// GetDefaultBatchTexts is the most texts in a pass of a local model.
 func GetDefaultBatchTexts() int {
-	return bgeM3BatchTexts
+	return defaultBatchTexts
 }

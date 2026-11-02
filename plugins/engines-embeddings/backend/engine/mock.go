@@ -2,9 +2,13 @@ package engine
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"hash/fnv"
 	"math"
 	"math/rand/v2"
+	"os"
 	"slices"
 	"strings"
 	"unicode"
@@ -29,7 +33,11 @@ const mockShare = 0.9
 // MockEmbedder answers with vectors computed from the words of a text, with no
 // model. A word listed in getConcept counts as its concept, so a text is near a
 // question that names the concept by another word.
-type MockEmbedder struct{}
+type MockEmbedder struct {
+	// LogPath, when set, is a file each batch is appended to as one line of JSON: the texts the
+	// model was given, prefixes included. End-to-end tests read it.
+	LogPath string
+}
 
 // GetMockModel returns the identity of the vectors MockEmbedder answers with.
 func GetMockModel() ModelInfo {
@@ -42,7 +50,19 @@ func GetMockModel() ModelInfo {
 		Concurrency:    1,
 		FloorHint:      0,
 		MinChunkLength: 0,
+		Handling:       getMockHandling(),
 	}
+}
+
+// Prefixes of the mock model, those of a model that tells a question from a passage. The mock
+// vector does not depend on them, so a test can read what was sent without the search changing.
+const (
+	MockQueryPrefix    = "query: "
+	MockDocumentPrefix = "passage: "
+)
+
+func getMockHandling() Handling {
+	return Handling{QueryPrefix: MockQueryPrefix, DocumentPrefix: MockDocumentPrefix, File: "", Normalise: true, ExtraInputs: nil}
 }
 
 // MockHoldWord is the word that makes a mock call run until its context ends.
@@ -51,16 +71,49 @@ const MockHoldWord = "numenmockhold"
 
 // Embed returns one unit vector per text. A batch with a text that contains
 // MockHoldWord returns only when ctx ends, with its error.
-func (MockEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+func (m MockEmbedder) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+	m.record(texts)
 	if slices.ContainsFunc(texts, isHeld) {
 		<-ctx.Done()
 		return nil, ctx.Err()
 	}
 	out := make([][]float32, len(texts))
 	for i, text := range texts {
-		out[i] = embedMock(text)
+		out[i] = embedMock(stripMockPrefix(text))
 	}
 	return out, nil
+}
+
+// stripMockPrefix removes the prefix of a role from a text.
+func stripMockPrefix(text string) string {
+	if rest, ok := strings.CutPrefix(text, MockQueryPrefix); ok {
+		return rest
+	}
+	return strings.TrimPrefix(text, MockDocumentPrefix)
+}
+
+// record appends a batch to the log, and reports on stderr a log that cannot be written.
+func (m MockEmbedder) record(texts []string) {
+	if m.LogPath == "" {
+		return
+	}
+	if err := appendLine(m.LogPath, texts); err != nil {
+		fmt.Fprintf(os.Stderr, "write the log of the mock model: %v\n", err)
+	}
+}
+
+func appendLine(path string, texts []string) (err error) {
+	line, err := json.Marshal(map[string][]string{"texts": texts})
+	if err != nil {
+		return err
+	}
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	if err != nil {
+		return err
+	}
+	defer func() { err = errors.Join(err, f.Close()) }()
+	_, err = f.Write(append(line, '\n'))
+	return err
 }
 
 func isHeld(text string) bool {

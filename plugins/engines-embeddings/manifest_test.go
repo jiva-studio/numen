@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"slices"
 	"testing"
+
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 )
 
 // The plugin declares the ONNX Runtime as a runtime dependency and no legacy runtimes list.
@@ -91,4 +93,48 @@ func TestManifestDeclaresTheSmallestPieceToIndex(t *testing.T) {
 		return
 	}
 	t.Error("the manifest declares no min_chunk_length setting")
+}
+
+type manifestOption struct {
+	Value  string `json:"value"`
+	Title  string `json:"title"`
+	Detail string `json:"detail"`
+}
+
+// The local models of the settings are the curated profiles of the plugin, in the order of the table,
+// and the model setting defaults to the default model. Edit manifest.json to match backend/engine/profiles.json.
+func TestManifestListsTheCuratedProfilesAndDefaultsToTheDefaultModel(t *testing.T) {
+	var manifest struct {
+		Settings []struct {
+			Key       string `json:"key"`
+			Default   any    `json:"default"`
+			OptionsBy struct {
+				Options map[string][]manifestOption `json:"options"`
+			} `json:"optionsBy"`
+		} `json:"settings"`
+	}
+	if err := json.Unmarshal(Manifest, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	profiles, err := engine.GetShippedProfiles()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var want []manifestOption
+	for _, p := range profiles.GetCurated() {
+		want = append(want, manifestOption{Value: p.ID, Title: p.GetOptionTitle(), Detail: p.GetOptionDetail()})
+	}
+	for _, setting := range manifest.Settings {
+		if setting.Key != "model" {
+			continue
+		}
+		if setting.Default != any(engine.DefaultModel) {
+			t.Errorf("model defaults to %q, want %q", setting.Default, engine.DefaultModel)
+		}
+		if got := setting.OptionsBy.Options["local"]; !slices.Equal(got, want) {
+			t.Errorf("local models = %+v, want the curated profiles %+v", got, want)
+		}
+		return
+	}
+	t.Fatal("manifest has no model setting")
 }

@@ -12,6 +12,16 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
+// Role is what a text is embedded for. A model that tells a question from the passage that answers
+// it reads the two with different prefixes. The zero value is RoleDocument.
+type Role int
+
+// The roles of a text.
+const (
+	RoleDocument Role = iota
+	RoleQuery
+)
+
 // ModelInfo describes the embedding model served by the plugin.
 type ModelInfo struct {
 	Name        string
@@ -24,6 +34,10 @@ type ModelInfo struct {
 
 	// MinChunkLength is the fewest bytes a piece of text holds to be given a vector; 0 embeds every piece.
 	MinChunkLength int32
+
+	// Handling is a short hash of what the plugin does to a text before the model reads it and to the output
+	// after. It is part of the identity of the vectors: a change in it makes the vectors of the model stale.
+	Handling string
 }
 
 func (m ModelInfo) GetName() string          { return m.Name }
@@ -34,11 +48,12 @@ func (m ModelInfo) GetFrom() string          { return m.From }
 func (m ModelInfo) GetConcurrency() int32    { return m.Concurrency }
 func (m ModelInfo) GetFloorHint() float64    { return m.FloorHint }
 func (m ModelInfo) GetMinChunkLength() int32 { return m.MinChunkLength }
+func (m ModelInfo) GetHandling() string      { return m.Handling }
 
 // Handler serves embedding model metadata and batches of vectors.
 type Handler interface {
 	GetModelInfo(ctx context.Context) (ModelInfo, error)
-	EmbedTexts(ctx context.Context, texts []string) ([][]float32, error)
+	EmbedTexts(ctx context.Context, role Role, texts []string) ([][]float32, error)
 }
 
 type adapter struct {
@@ -61,7 +76,7 @@ func (a *adapter) EmbedBatch(
 	ctx context.Context,
 	req *connect.Request[v1.EmbedBatchRequest],
 ) (*connect.Response[v1.EmbedBatchResponse], error) {
-	dense, err := a.h.EmbedTexts(ctx, req.Msg.GetTexts())
+	dense, err := a.h.EmbedTexts(ctx, readRole(req.Msg.GetRole()), req.Msg.GetTexts())
 	if err != nil {
 		return nil, err
 	}
@@ -88,6 +103,7 @@ func readModelInfo(res *v1.GetEmbeddingModelResponse) ModelInfo {
 		Concurrency:    res.GetConcurrency(),
 		FloorHint:      res.GetFloorHint(),
 		MinChunkLength: res.GetMinChunkLength(),
+		Handling:       res.GetHandling(),
 	}
 }
 
@@ -101,7 +117,23 @@ func writeModelInfo(info ModelInfo) *v1.GetEmbeddingModelResponse {
 		Concurrency:    info.Concurrency,
 		FloorHint:      info.FloorHint,
 		MinChunkLength: info.MinChunkLength,
+		Handling:       info.Handling,
 	}
+}
+
+// readRole returns the role a request names. A request that names none is for documents.
+func readRole(role v1.EmbedRole) Role {
+	if role == v1.EmbedRole_EMBED_ROLE_QUERY {
+		return RoleQuery
+	}
+	return RoleDocument
+}
+
+func writeRole(role Role) v1.EmbedRole {
+	if role == RoleQuery {
+		return v1.EmbedRole_EMBED_ROLE_QUERY
+	}
+	return v1.EmbedRole_EMBED_ROLE_DOCUMENT
 }
 
 func readVectors(res *v1.EmbedBatchResponse) [][]float32 {
@@ -139,9 +171,9 @@ func (c *Client) GetModelInfo(ctx context.Context) (ModelInfo, error) {
 	return readModelInfo(res.Msg), nil
 }
 
-// EmbedTexts returns one vector per text, in order.
-func (c *Client) EmbedTexts(ctx context.Context, texts []string) ([][]float32, error) {
-	res, err := c.rpc.EmbedBatch(ctx, connect.NewRequest(&v1.EmbedBatchRequest{Texts: texts}))
+// EmbedTexts returns one vector per text, in order, made for the role.
+func (c *Client) EmbedTexts(ctx context.Context, role Role, texts []string) ([][]float32, error) {
+	res, err := c.rpc.EmbedBatch(ctx, connect.NewRequest(&v1.EmbedBatchRequest{Texts: texts, Role: writeRole(role)}))
 	if err != nil {
 		return nil, err
 	}

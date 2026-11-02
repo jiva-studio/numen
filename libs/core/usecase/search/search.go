@@ -290,7 +290,7 @@ func (u Search) getQueryVector(ctx context.Context, recipe, query string) ([]flo
 			return cached, nil
 		}
 	}
-	vectors, err := u.embedder.Embed(ctx, []string{query})
+	vectors, err := embeddingport.EmbedQueries(ctx, u.embedder, []string{query})
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", errNoVector, err)
 	}

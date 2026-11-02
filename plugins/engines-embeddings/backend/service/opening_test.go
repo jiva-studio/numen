@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/embedding"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 )
 
@@ -62,7 +63,7 @@ func TestACancelledBatchDoesNotStopTheOpening(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(t.Context())
 	ended := make(chan error, 1)
-	go func() { _, err := srv.EmbedTexts(ctx, []string{"text"}); ended <- err }()
+	go func() { _, err := srv.EmbedTexts(ctx, embedding.RoleDocument, []string{"text"}); ended <- err }()
 	<-started
 	cancel()
 	if err := <-ended; err == nil {
@@ -70,7 +71,7 @@ func TestACancelledBatchDoesNotStopTheOpening(t *testing.T) {
 	}
 
 	close(release)
-	vectors, err := srv.EmbedTexts(t.Context(), []string{"text"})
+	vectors, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"text"})
 	if err != nil || len(vectors) != 1 {
 		t.Fatalf("the next batch: %v, %v", vectors, err)
 	}
@@ -82,7 +83,7 @@ func TestAChangeOfTheModelEndsTheOpeningOfTheOldOne(t *testing.T) {
 	names := make(chan string, 2)
 	srv.open = func(ctx context.Context, info engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
 		names <- info.Name
-		if info.Name == "first/model" {
+		if info.Name == "Xenova/bge-m3" {
 			<-ctx.Done()
 			return nil, ctx.Err()
 		}
@@ -90,14 +91,14 @@ func TestAChangeOfTheModelEndsTheOpeningOfTheOldOne(t *testing.T) {
 	}
 	t.Cleanup(func() { closeServer(t, srv) })
 
-	srv.updateConfig(map[string]string{"provider": "local", "model": "first/model"})
+	srv.updateConfig(map[string]string{"provider": "local", "model": "Xenova/bge-m3"})
 	go func() { embedText(t.Context(), t, srv) }()
-	if got := <-names; got != "first/model" {
+	if got := <-names; got != "Xenova/bge-m3" {
 		t.Fatalf("opened %q first", got)
 	}
 
-	srv.updateConfig(map[string]string{"provider": "local", "model": "second/model"})
-	vectors, err := srv.EmbedTexts(t.Context(), []string{"text"})
+	srv.updateConfig(map[string]string{"provider": "local", "model": engine.DefaultModel})
+	vectors, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"text"})
 	if err != nil && !errors.Is(err, context.Canceled) {
 		t.Fatalf("the batch after the change: %v", err)
 	}
@@ -116,7 +117,7 @@ func closeServer(t *testing.T, srv *embeddingServer) {
 // embedText embeds one text and ignores the outcome: the caller is a batch that may be cancelled.
 func embedText(ctx context.Context, t *testing.T, srv *embeddingServer) {
 	t.Helper()
-	if vectors, err := srv.EmbedTexts(ctx, []string{"text"}); err == nil && len(vectors) != 1 {
+	if vectors, err := srv.EmbedTexts(ctx, embedding.RoleDocument, []string{"text"}); err == nil && len(vectors) != 1 {
 		t.Errorf("vectors: %v", vectors)
 	}
 }

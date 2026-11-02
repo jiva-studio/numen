@@ -9,7 +9,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 
@@ -22,7 +24,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
+
+	embeddingport "github.com/jiva-studio/numen/libs/core/usecase/vectors/embeddingcontract"
 )
+
+// The bridge makes query vectors apart from document vectors, which search relies on through the port.
+var _ embeddingport.QueryEmbedder = (*Embedder)(nil)
 
 type mockEmbeddingServer struct {
 	getModelCalls atomic.Int32
@@ -30,6 +37,10 @@ type mockEmbeddingServer struct {
 	dimensions    atomic.Int32
 	floorHint     atomic.Value
 	minChunk      atomic.Int32
+	handling      atomic.Value
+
+	mu    sync.Mutex
+	roles []v1.EmbedRole
 }
 
 func (s *mockEmbeddingServer) GetEmbeddingModel(
@@ -49,7 +60,12 @@ func (s *mockEmbeddingServer) GetEmbeddingModel(
 	if v, ok := s.floorHint.Load().(float64); ok {
 		hint = v
 	}
+	handling := ""
+	if v, ok := s.handling.Load().(string); ok {
+		handling = v
+	}
 	return connect.NewResponse(&v1.GetEmbeddingModelResponse{
+		Handling:       handling,
 		Name:           name,
 		Dimensions:     dims,
 		MaxTokens:      256,
@@ -66,6 +82,9 @@ func (s *mockEmbeddingServer) EmbedBatch(
 	req *connect.Request[v1.EmbedBatchRequest],
 ) (*connect.Response[v1.EmbedBatchResponse], error) {
 	texts := req.Msg.GetTexts()
+	s.mu.Lock()
+	s.roles = append(s.roles, req.Msg.GetRole())
+	s.mu.Unlock()
 	vectors := make([]*v1.FloatVector, len(texts))
 	for i := range texts {
 		vectors[i] = &v1.FloatVector{
@@ -96,6 +115,7 @@ func TestEmbedderBridge(t *testing.T) {
 	mockServer := &mockEmbeddingServer{}
 	mockServer.floorHint.Store(0.35)
 	mockServer.minChunk.Store(40)
+	mockServer.handling.Store("1a2b3c4d")
 	mux := http.NewServeMux()
 	testsupport.HandlePluginLifecycle(mux)
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(mockServer))
@@ -166,6 +186,9 @@ func TestEmbedderBridge(t *testing.T) {
 		t.Errorf("model From = %q, want test-provider", model.From)
 	}
 
+	if model.Handling != "1a2b3c4d" {
+		t.Errorf("model Handling = %q, want 1a2b3c4d", model.Handling)
+	}
 	if model.MinChunkLength != 40 {
 		t.Errorf("model MinChunkLength = %d, want 40", model.MinChunkLength)
 	}
@@ -220,11 +243,26 @@ func TestEmbedderBridge(t *testing.T) {
 		t.Errorf("unexpected vector[1]: %v", vectors[1])
 	}
 
+	if _, err := bridge.EmbedQueries(ctx, []string{"a question"}); err != nil {
+		t.Fatalf("EmbedQueries failed: %v", err)
+	}
+	mockServer.mu.Lock()
+	gotRoles := slices.Clone(mockServer.roles)
+	mockServer.mu.Unlock()
+	if want := []v1.EmbedRole{v1.EmbedRole_EMBED_ROLE_DOCUMENT, v1.EmbedRole_EMBED_ROLE_QUERY}; !slices.Equal(gotRoles, want) {
+		t.Errorf("the plugin was asked for roles %v, want %v", gotRoles, want)
+	}
+
 	empty, err := bridge.Embed(ctx, nil)
 	if err != nil || empty != nil {
 		t.Errorf("expected nil vectors for empty input, got %v, err=%v", empty, err)
 	}
 
+	mockServer.handling.Store("ffffffff")
+	if refreshed := bridge.GetModel(); refreshed.Recipe() == recipe {
+		t.Errorf("a new handling left the recipe as it was: %q", refreshed.Recipe())
+	}
+	mockServer.handling.Store("1a2b3c4d")
 	mockServer.modelName.Store("updated-model")
 	mockServer.dimensions.Store(1024)
 	currentModel := bridge.GetModel()

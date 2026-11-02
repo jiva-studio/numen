@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -351,5 +352,17 @@ func TestAFileThatMissesItsPinnedSumIsRemovedWithItsBlobAndFetchedAgain(t *testi
 		if _, statErr := os.Lstat(path); !errors.Is(statErr, fs.ErrNotExist) {
 			t.Errorf("%s stays after the file missed its sum: %v", path, statErr)
 		}
+	}
+}
+
+func TestSelectModelFilesSelectsTheDataFileOfTheNamedModelOnly(t *testing.T) {
+	folder := []string{
+		"model.onnx", "model.onnx_data", "model_fp16.onnx", "model_fp16.onnx_data", "model_q4.onnx", "model_q4.onnx_data",
+		"model_quantized.onnx", "model_quantized.onnx_data",
+	}
+	got := selectModelFiles(folder, "model_quantized.onnx")
+	want := []string{"model_quantized.onnx", "model_quantized.onnx_data"}
+	if !slices.Equal(got, want) {
+		t.Errorf("selectModelFiles = %v, want %v", got, want)
 	}
 }

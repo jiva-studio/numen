@@ -35,6 +35,12 @@ type EmbeddingModel struct {
 	// than one place, and each of them answers with numbers of its own.
 	From string
 
+	// Handling is a short value that changes with what the provider does to a text before the model reads
+	// it and to the output after: the prefixes, the model file, the token limit and the normalisation. Two
+	// handlings of one model put a text in two places, so it is part of the identity. It is empty where
+	// the provider keeps none.
+	Handling string
+
 	// MinChunkLength is the fewest bytes a small chunk holds to be given a vector; a
 	// shorter one is searched by its words. Zero gives every small chunk a vector.
 	//
@@ -64,8 +70,8 @@ func (m EmbeddingModel) String() string {
 // The scale defines the grid of byte values, so a changed scale gives every
 // stored byte a different meaning, and the recipe detects the change.
 func (m EmbeddingModel) Recipe() string {
-	return fmt.Sprintf("%s|%s|%d|%d|%s|%s@%g",
-		m.From, m.Name, m.Dimensions, m.MaxTokens, m.Pooling, QuantisedInt8, Int8Scale)
+	return fmt.Sprintf("%s|%s|%d|%d|%s|%s|%s@%g",
+		m.From, m.Name, m.Dimensions, m.MaxTokens, m.Pooling, m.Handling, QuantisedInt8, Int8Scale)
 }
 
 // Embedder converts text into vectors. The core requests them and does not know
@@ -76,7 +82,8 @@ func (m EmbeddingModel) Recipe() string {
 type Embedder interface {
 	// GetModel is the identity every vector this embedder returns belongs to.
 	GetModel() EmbeddingModel
-	// Embed returns one vector per text, in the order the texts arrived.
+	// Embed returns one vector per text, made for the text as a document that is searched, in the order
+	// the texts arrived.
 	// Any number of texts may be passed: how a request to the model is
 	// bounded is the implementation's business.
 	Embed(ctx context.Context, texts []string) ([][]float32, error)
@@ -86,6 +93,24 @@ type Embedder interface {
 
 	// Close releases whatever the model holds.
 	Close() error
+}
+
+// QueryEmbedder is an Embedder that makes the vectors of queries, which a model that tells a question
+// from the passage that answers it reads with a prefix of its own. Embed makes those of documents.
+//
+// An Embedder that is no QueryEmbedder has one kind of vector, and EmbedQueries asks it for that.
+type QueryEmbedder interface {
+	Embedder
+	// EmbedQueries returns one vector per query, in the order the queries arrived.
+	EmbedQueries(ctx context.Context, queries []string) ([][]float32, error)
+}
+
+// EmbedQueries returns one vector per text, made for searching with the text as the question.
+func EmbedQueries(ctx context.Context, e Embedder, queries []string) ([][]float32, error) {
+	if q, ok := e.(QueryEmbedder); ok {
+		return q.EmbedQueries(ctx, queries)
+	}
+	return e.Embed(ctx, queries)
 }
 
 // FloorAdvisor is an Embedder that reports the similarity a passage starts out

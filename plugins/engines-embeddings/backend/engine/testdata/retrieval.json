@@ -1,0 +1,206 @@
+{
+ "docs": [
+  {
+   "id": "ru01",
+   "text": "Чтобы почистить самовар, залейте внутрь раствор лимонной кислоты и оставьте на ночь. Утром прополощите кувшин тёплой водой и протрите медные бока мягкой тряпкой."
+  },
+  {
+   "id": "ru02",
+   "text": "Маяк на мысу строили три года. Каждую ночь смотритель поднимался по винтовой лестнице и зажигал большую лампу, чтобы корабли не сели на мель."
+  },
+  {
+   "id": "ru03",
+   "text": "Заметка: купил семена для огородных культур, посеять в мае. Кабачки и укроп отдельно от моркови."
+  },
+  {
+   "id": "ru04",
+   "text": "Цепь у велосипеда провисла после зимы. Нужно смазать звенья, подтянуть заднее колесо и проверить, не гнутся ли спицы."
+  },
+  {
+   "id": "ru05",
+   "text": "Суп из чечевицы варится около сорока минут. В конце добавляют жареный лук, чеснок и немного лимонного сока, а подают с тёплым хлебом."
+  },
+  {
+   "id": "ru06",
+   "text": "Старый колодец во дворе давно высох. Дети бросали туда камешки и считали секунды, пока не услышат глухой стук о дно."
+  },
+  {
+   "id": "ru07",
+   "text": "Зимой синицы прилетают к кормушке на балконе. Им насыпают семечки и кусочки сала, но не солёное и не жареное."
+  },
+  {
+   "id": "ru08",
+   "text": "Шахматный дебют ферзевый гамбит начинается ходами d4 d5 и c4. Белые предлагают пешку, чтобы получить контроль над центром."
+  },
+  {
+   "id": "ru09",
+   "text": "Расписание электричек изменилось: первая отходит в 5:40, последняя в 23:15. По воскресеньям интервал между поездами увеличен до сорока минут."
+  },
+  {
+   "id": "ru10",
+   "text": "Рецепт яблочного пирога: четыре яблока, стакан муки, два яйца, сахар и корица. Выпекать при 180 градусах примерно сорок пять минут."
+  },
+  {
+   "id": "ru11",
+   "text": "Река разлилась в апреле и затопила нижние огороды. Лодки привязали к заборам, а картошку пришлось сажать позже обычного."
+  },
+  {
+   "id": "ru12",
+   "text": "Колокол на звоннице отлили в позапрошлом веке. Его звон слышен за десять вёрст, особенно в тихую морозную погоду."
+  },
+  {
+   "id": "ru13",
+   "text": "Записка: позвонить в мастерскую насчёт часов. Маятник останавливается через сутки, возможно, засорился механизм."
+  },
+  {
+   "id": "ru14",
+   "text": "Чтобы выучить стихотворение, разбейте его на четверостишия и повторяйте по одному перед сном. Утром проверьте, что осталось в памяти."
+  },
+  {
+   "id": "ru15",
+   "text": "Грибы собирают после тёплого дождя. Белые растут у корней сосен, а лисички прячутся во мху на краю поляны."
+  },
+  {
+   "id": "en01",
+   "text": "To descale a copper kettle, pour in a solution of citric acid and leave it overnight. Rinse with warm water in the morning and polish the outside with a soft cloth."
+  },
+  {
+   "id": "en02",
+   "text": "The lighthouse on the headland took three years to build. Every night the keeper climbed the spiral stairs and lit the big lamp so that ships would not run aground."
+  },
+  {
+   "id": "en03",
+   "text": "Note: brewed a strong pot yesterday, far too bitter. Next time steep for three minutes only."
+  },
+  {
+   "id": "en04",
+   "text": "A bicycle chain sags after winter. Lubricate the links, tighten the rear wheel and check the spokes for bends."
+  },
+  {
+   "id": "en05",
+   "text": "Lentil soup simmers for about forty minutes. Fried onion, garlic and a squeeze of lemon go in at the end, and it is served with warm bread."
+  },
+  {
+   "id": "en06",
+   "text": "The old well in the yard dried up long ago. Children dropped pebbles into it and counted the seconds until they heard a dull knock at the bottom."
+  },
+  {
+   "id": "en07",
+   "text": "In winter, tits come to the feeder on the balcony. Give them sunflower seeds and bits of fat, but nothing salted or fried."
+  },
+  {
+   "id": "en08",
+   "text": "The queen's gambit opens with the moves d4 d5 and c4. White offers a pawn to gain control of the centre."
+  },
+  {
+   "id": "en09",
+   "text": "She meditated every morning for ten minutes before breakfast. Within a month she noticed she was less irritable at work."
+  },
+  {
+   "id": "en10",
+   "text": "Mushrooms are picked after warm rain. Porcini grow near pine roots and chanterelles hide in the moss at the edge of the clearing."
+  },
+  {
+   "id": "en11",
+   "text": "The river flooded in April and covered the lower vegetable plots. Boats were tied to fences and the potatoes were planted late."
+  },
+  {
+   "id": "en12",
+   "text": "A pendulum clock that stops after a day is probably clogged with dust. Take it to a workshop and ask for the movement to be cleaned."
+  },
+  {
+   "id": "en13",
+   "text": "Memorizing a poem is easier in stanzas. Repeat one stanza before sleep and test yourself in the morning."
+  },
+  {
+   "id": "en14",
+   "text": "Timetable change: the first commuter train leaves at 5:40 and the last at 23:15. Sunday intervals are now forty minutes."
+  },
+  {
+   "id": "en15",
+   "text": "Apple pie recipe: four apples, a cup of flour, two eggs, sugar and cinnamon. Bake at 180 degrees for about forty-five minutes."
+  }
+ ],
+ "queries": [
+  {
+   "query": "how to descale a copper kettle",
+   "target": "en01"
+  },
+  {
+   "query": "lighthouse keeper lamp",
+   "target": "en02"
+  },
+  {
+   "query": "bicycle chain after winter",
+   "target": "en04"
+  },
+  {
+   "query": "lentil soup recipe",
+   "target": "en05"
+  },
+  {
+   "query": "old dried up well",
+   "target": "en06"
+  },
+  {
+   "query": "feeding birds in winter",
+   "target": "en07"
+  },
+  {
+   "query": "queen's gambit chess opening",
+   "target": "en08"
+  },
+  {
+   "query": "meditation",
+   "target": "en09"
+  },
+  {
+   "query": "mushrooms after rain",
+   "target": "en10"
+  },
+  {
+   "query": "river flood vegetable plots",
+   "target": "en11"
+  },
+  {
+   "query": "train timetable",
+   "target": "en14"
+  },
+  {
+   "query": "apple pie",
+   "target": "en15"
+  },
+  {
+   "query": "как почистить самовар",
+   "target": "ru01"
+  },
+  {
+   "query": "маяк",
+   "target": "ru02"
+  },
+  {
+   "query": "цепь велосипеда",
+   "target": "ru04"
+  },
+  {
+   "query": "суп из чечевицы",
+   "target": "ru05"
+  },
+  {
+   "query": "огород",
+   "target": "ru03"
+  },
+  {
+   "query": "колокол",
+   "target": "ru12"
+  },
+  {
+   "query": "синица",
+   "target": "ru07"
+  },
+  {
+   "query": "яблочный пирог",
+   "target": "ru10"
+  }
+ ]
+}
