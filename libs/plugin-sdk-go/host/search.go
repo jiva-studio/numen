@@ -58,6 +58,35 @@ type EmbeddingState struct {
 	IsReady bool
 }
 
+// ExtensionStats is the sources of one file extension and the chunks they hold.
+type ExtensionStats struct {
+	// Extension is in lower case, without the dot, and empty for a source with none.
+	Extension string
+	// SourceCount is how many sources have the extension, and ChunkCount how many chunks that can
+	// carry a vector belong to them.
+	SourceCount int64
+	ChunkCount  int64
+}
+
+// IndexStats is what the search index of a vault holds and the space it takes.
+type IndexStats struct {
+	// Recipe, Model and Dimensions identify the model in use.
+	Recipe     string
+	Model      string
+	Dimensions int64
+	// ChunkCount is how many chunks can carry a vector, and VectorCount how many do.
+	ChunkCount  int64
+	VectorCount int64
+	// SourceCount is the notes and files of the vault, and Extensions splits them by file extension,
+	// the extension with the most sources first.
+	SourceCount int64
+	Extensions  []ExtensionStats
+	// DatabaseBytes is the size of the index database on disk, and VectorBytes the size of the tables
+	// that hold vectors.
+	DatabaseBytes int64
+	VectorBytes   int64
+}
+
 // EmbeddedTexts are the vectors the model in use made of texts.
 type EmbeddedTexts struct {
 	Recipe  string
@@ -125,6 +154,11 @@ type SearchIndex interface {
 	// from the index at each call, so a plugin that starts after the vectors exist reads the same
 	// state as one that was running when they were made.
 	GetEmbeddingState(ctx context.Context) (EmbeddingState, error)
+	// GetIndexStats is what the index holds for the vault: its chunks, vectors and sources, the
+	// sources by file extension, the model in use and the size on disk. The host reads the counts at
+	// most once a second and the sizes at most once every half minute, so a view may ask every few
+	// seconds.
+	GetIndexStats(ctx context.Context) (IndexStats, error)
 	// EmbedTexts embeds the texts with the model in use. At most MaxEmbeddedTexts texts of at most
 	// MaxEmbeddedBytes bytes each are embedded in one call.
 	EmbedTexts(ctx context.Context, texts []string) (EmbeddedTexts, error)

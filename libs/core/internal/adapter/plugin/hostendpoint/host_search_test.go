@@ -34,6 +34,15 @@ func (s *recordingSearch) GetEmbeddingState(_ context.Context, v domain.Vault) (
 	return pluginport.PluginEmbeddingState{Recipe: "r", Model: "m", FloorHint: 0.4, ChunkCount: 5, EmbeddedCount: 5}, s.err
 }
 
+func (s *recordingSearch) GetIndexStats(_ context.Context, v domain.Vault) (pluginport.PluginIndexStats, error) {
+	s.vaults = append(s.vaults, v.ID)
+	return pluginport.PluginIndexStats{
+		Recipe: "r", Model: "m", Dimensions: 1024, Chunks: 12, Vectors: 9, Sources: 3,
+		Extensions:    []pluginport.PluginExtensionStats{{Extension: "md", Sources: 2, Chunks: 7}, {Extension: "pdf", Sources: 1, Chunks: 5}},
+		DatabaseBytes: 4096, VectorBytes: 2048,
+	}, s.err
+}
+
 func (s *recordingSearch) EmbedTexts(_ context.Context, texts []string) (pluginport.PluginEmbeddedTexts, error) {
 	vectors := make([][]float32, len(texts))
 	for i := range texts {
@@ -241,5 +250,40 @@ func TestHostSearchAnswersACodeForWhatItCannotServe(t *testing.T) {
 	failing := newSearchClient(t, newSearchCallers(&recordingSearch{err: errors.New("disk")}), "token-a")
 	if _, err := failing.GetSearchFloor(ctx, connect.NewRequest(&v1.GetSearchFloorRequest{Recipe: "r"})); readCode(t, err) != connect.CodeInternal {
 		t.Errorf("a failure the protocol does not name got %v, want internal", err)
+	}
+}
+
+func TestHostSearchAnswersTheIndexStatistics(t *testing.T) {
+	ctx := t.Context()
+	search := &recordingSearch{}
+	fakeCallers := newSearchCallers(search)
+	client := newSearchClient(t, fakeCallers, "token-a")
+
+	stats, err := client.GetIndexStats(ctx, connect.NewRequest(&v1.GetIndexStatsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := stats.Msg
+	if got.GetRecipe() != "r" || got.GetModel() != "m" || got.GetDimensions() != 1024 ||
+		got.GetChunkCount() != 12 || got.GetVectorCount() != 9 || got.GetSourceCount() != 3 ||
+		got.GetDatabaseBytes() != 4096 || got.GetVectorBytes() != 2048 {
+		t.Errorf("answered %v", got)
+	}
+	if len(got.GetExtensions()) != 2 || got.GetExtensions()[0].GetExtension() != "md" ||
+		got.GetExtensions()[0].GetSourceCount() != 2 || got.GetExtensions()[0].GetChunkCount() != 7 ||
+		got.GetExtensions()[1].GetExtension() != "pdf" {
+		t.Errorf("answered extensions %v", got.GetExtensions())
+	}
+	if !slices.Equal(fakeCallers.checked, []string{"md.numen.a index:read"}) {
+		t.Errorf("checked %v, want index:read asked once", fakeCallers.checked)
+	}
+	if !slices.Equal(search.vaults, []domain.VaultID{"v1"}) {
+		t.Errorf("the call worked the vaults %v, want the shown v1", search.vaults)
+	}
+
+	failing := newSearchClient(t, newSearchCallers(&recordingSearch{err: pluginport.ErrNoModel}), "token-a")
+	noModel, err := failing.GetIndexStats(ctx, connect.NewRequest(&v1.GetIndexStatsRequest{}))
+	if err != nil || noModel.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL || noModel.Msg.GetChunkCount() != 0 {
+		t.Errorf("an installation with no model answered %v (%v)", noModel.Msg, err)
 	}
 }

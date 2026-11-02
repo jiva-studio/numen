@@ -35,6 +35,8 @@ type (
 	PluginDiscoverer       = pluginport.PluginDiscoverer
 	PluginEmbeddedTexts    = pluginport.PluginEmbeddedTexts
 	PluginEmbeddingState   = pluginport.PluginEmbeddingState
+	PluginExtensionStats   = pluginport.PluginExtensionStats
+	PluginIndexStats       = pluginport.PluginIndexStats
 	PluginEventEmitter     = pluginport.PluginEventEmitter
 	PluginFailure          = pluginport.PluginFailure
 	PluginFloorSource      = pluginport.PluginFloorSource

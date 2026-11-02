@@ -119,14 +119,17 @@ func TestASearchCallWithoutTheManifestPermissionIsRefusedByTheCore(t *testing.T)
 		deny  bool
 	}{
 		{"token-vault", "state", callGetEmbeddingState, true},
+		{"token-vault", "stats", callGetIndexStats, true},
 		{"token-vault", "sample", callSampleSimilarities, true},
 		{"token-vault", "get floor", callGetSearchFloor, true},
 		{"token-vault", "set floor", callSetSearchFloor, true},
 		{"token-index", "state", callGetEmbeddingState, false},
+		{"token-index", "stats", callGetIndexStats, false},
 		{"token-index", "sample", callSampleSimilarities, false},
 		{"token-index", "get floor", callGetSearchFloor, true},
 		{"token-index", "set floor", callSetSearchFloor, true},
 		{"token-policy", "state", callGetEmbeddingState, true},
+		{"token-policy", "stats", callGetIndexStats, true},
 		{"token-policy", "sample", callSampleSimilarities, true},
 		{"token-policy", "get floor", callGetSearchFloor, false},
 		{"token-policy", "set floor", callSetSearchFloor, false},
@@ -168,4 +171,9 @@ func TestACallWithAnUnknownTokenIsRefusedByTheCore(t *testing.T) {
 	if connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Errorf("a forged token gave %v", err)
 	}
+}
+
+func callGetIndexStats(ctx context.Context, client numenv1connect.HostSearchServiceClient) error {
+	_, err := client.GetIndexStats(ctx, connect.NewRequest(&v1.GetIndexStatsRequest{}))
+	return err
 }

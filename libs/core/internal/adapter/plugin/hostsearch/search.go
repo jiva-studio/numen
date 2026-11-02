@@ -24,7 +24,9 @@ type Search struct {
 	Samples  searchpolicyport.Samples
 	Nearest  searchpolicyport.Nearest
 	Progress indexport.IndexProgress
-	Policy   search.FloorPolicy
+	// Stats reads what the index holds for GetIndexStats.
+	Stats  *Stats
+	Policy search.FloorPolicy
 }
 
 // getRecipe is the recipe of the model in use, or ErrNoModel.
@@ -63,6 +65,29 @@ func (s Search) GetEmbeddingState(ctx context.Context, v domain.Vault) (pluginpo
 		FloorHint:     s.Policy.Get(ctx, v, recipe).Hint,
 		ChunkCount:    held,
 		EmbeddedCount: embedded,
+	}, nil
+}
+
+// GetIndexStats reads what the index holds for the vault and the space it takes, with the model in use.
+func (s Search) GetIndexStats(ctx context.Context, v domain.Vault) (pluginport.PluginIndexStats, error) {
+	recipe, err := s.getRecipe()
+	if err != nil {
+		return pluginport.PluginIndexStats{}, err
+	}
+	counts, sizes, err := s.Stats.Get(ctx, v.ID, recipe)
+	if err != nil {
+		return pluginport.PluginIndexStats{}, fmt.Errorf("read the index statistics of %s: %w", v.ID, err)
+	}
+	model := s.Embedder.GetModel()
+	extensions := make([]pluginport.PluginExtensionStats, len(counts.Extensions))
+	for i, one := range counts.Extensions {
+		extensions[i] = pluginport.PluginExtensionStats{Extension: one.Extension, Sources: one.Sources, Chunks: one.Chunks}
+	}
+	return pluginport.PluginIndexStats{
+		Recipe: recipe, Model: model.Name, Dimensions: int64(model.Dimensions),
+		Chunks: counts.Chunks, Vectors: counts.Vectors,
+		Sources: counts.Sources, Extensions: extensions,
+		DatabaseBytes: sizes.Database, VectorBytes: sizes.Vectors,
 	}, nil
 }
 

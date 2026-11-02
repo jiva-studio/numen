@@ -113,6 +113,38 @@ func (e *searchEndpoint) GetEmbeddingState(
 	}), nil
 }
 
+func (e *searchEndpoint) GetIndexStats(
+	ctx context.Context, req *connect.Request[v1.GetIndexStatsRequest],
+) (*connect.Response[v1.GetIndexStatsResponse], error) {
+	call, err := e.begin(req.Header(), manifest.PermissionIndexRead, true)
+	if err != nil {
+		return nil, err
+	}
+	if code := call.getRefusal(true); code != 0 {
+		return connect.NewResponse(&v1.GetIndexStatsResponse{Error: code}), nil
+	}
+	stats, err := call.search.GetIndexStats(ctx, call.vault)
+	code, err := answerSearch(ctx, err)
+	if err != nil || code != 0 {
+		return connect.NewResponse(&v1.GetIndexStatsResponse{Error: code}), err
+	}
+	extensions := make([]*v1.ExtensionStats, len(stats.Extensions))
+	for i, one := range stats.Extensions {
+		extensions[i] = &v1.ExtensionStats{Extension: one.Extension, SourceCount: one.Sources, ChunkCount: one.Chunks}
+	}
+	return connect.NewResponse(&v1.GetIndexStatsResponse{
+		Recipe:        stats.Recipe,
+		Model:         stats.Model,
+		Dimensions:    stats.Dimensions,
+		ChunkCount:    stats.Chunks,
+		VectorCount:   stats.Vectors,
+		SourceCount:   stats.Sources,
+		Extensions:    extensions,
+		DatabaseBytes: stats.DatabaseBytes,
+		VectorBytes:   stats.VectorBytes,
+	}), nil
+}
+
 func (e *searchEndpoint) EmbedTexts(
 	ctx context.Context, req *connect.Request[v1.EmbedTextsRequest],
 ) (*connect.Response[v1.EmbedTextsResponse], error) {

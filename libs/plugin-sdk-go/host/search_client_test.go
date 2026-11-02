@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"slices"
 	"sync"
 	"testing"
@@ -267,5 +268,45 @@ func TestTheVectorsReadyEventNamesTheVaultAndOnlyThatEvent(t *testing.T) {
 		if id, ok := host.ReadVectorsReadyEvent(event); ok {
 			t.Errorf("%q was read as the event of the vault %q", event, id)
 		}
+	}
+}
+
+func (h *searchHost) GetIndexStats(_ context.Context, req *connect.Request[v1.GetIndexStatsRequest]) (*connect.Response[v1.GetIndexStatsResponse], error) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if err := h.begin(req.Header()); err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&v1.GetIndexStatsResponse{
+		Error: h.code, Recipe: "recipe", Model: "model", Dimensions: 1024, ChunkCount: 12, VectorCount: 9, SourceCount: 3,
+		Extensions:    []*v1.ExtensionStats{{Extension: "md", SourceCount: 2, ChunkCount: 7}, {Extension: "pdf", SourceCount: 1, ChunkCount: 5}},
+		DatabaseBytes: 4096, VectorBytes: 2048,
+	}), nil
+}
+
+func TestASearchClientReadsTheIndexStatistics(t *testing.T) {
+	ctx := t.Context()
+	h := &searchHost{}
+	c := dialSearch(t, h)
+
+	got, err := c.With("Chemistry").GetIndexStats(ctx)
+	want := host.IndexStats{
+		Recipe: "recipe", Model: "model", Dimensions: 1024, ChunkCount: 12, VectorCount: 9, SourceCount: 3,
+		Extensions:    []host.ExtensionStats{{Extension: "md", SourceCount: 2, ChunkCount: 7}, {Extension: "pdf", SourceCount: 1, ChunkCount: 5}},
+		DatabaseBytes: 4096, VectorBytes: 2048,
+	}
+	if err != nil || !reflect.DeepEqual(got, want) {
+		t.Errorf("statistics %+v (%v), want %+v", got, err, want)
+	}
+	if !slices.Equal(h.vaults, []string{"Chemistry"}) {
+		t.Errorf("the call named the vaults %q", h.vaults)
+	}
+
+	if _, err := dialSearch(t, &searchHost{code: v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL}).GetIndexStats(ctx); !errors.Is(err, host.ErrNoModel) {
+		t.Errorf("a host with no model gave %v", err)
+	}
+	denied := dialSearch(t, &searchHost{status: connect.NewError(connect.CodePermissionDenied, errors.New("denied"))})
+	if _, err := denied.GetIndexStats(ctx); !errors.Is(err, host.ErrPermissionDenied) {
+		t.Errorf("a denied read gave %v", err)
 	}
 }

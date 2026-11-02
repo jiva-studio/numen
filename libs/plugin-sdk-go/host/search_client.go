@@ -125,6 +125,31 @@ func (c *SearchClient) GetEmbeddingState(ctx context.Context) (EmbeddingState, e
 	}, nil
 }
 
+func (c *SearchClient) GetIndexStats(ctx context.Context) (IndexStats, error) {
+	res, err := c.rpc.GetIndexStats(ctx, newSearchRequest(c, &v1.GetIndexStatsRequest{}))
+	if err != nil {
+		return IndexStats{}, readSearchCallError(err)
+	}
+	if err := readSearchError(res.Msg.GetError()); err != nil {
+		return IndexStats{}, err
+	}
+	extensions := make([]ExtensionStats, len(res.Msg.GetExtensions()))
+	for i, one := range res.Msg.GetExtensions() {
+		extensions[i] = ExtensionStats{Extension: one.GetExtension(), SourceCount: one.GetSourceCount(), ChunkCount: one.GetChunkCount()}
+	}
+	return IndexStats{
+		Recipe:        res.Msg.GetRecipe(),
+		Model:         res.Msg.GetModel(),
+		Dimensions:    res.Msg.GetDimensions(),
+		ChunkCount:    res.Msg.GetChunkCount(),
+		VectorCount:   res.Msg.GetVectorCount(),
+		SourceCount:   res.Msg.GetSourceCount(),
+		Extensions:    extensions,
+		DatabaseBytes: res.Msg.GetDatabaseBytes(),
+		VectorBytes:   res.Msg.GetVectorBytes(),
+	}, nil
+}
+
 func (c *SearchClient) EmbedTexts(ctx context.Context, texts []string) (EmbeddedTexts, error) {
 	res, err := c.rpc.EmbedTexts(ctx, newSearchRequest(c, &v1.EmbedTextsRequest{Texts: texts}))
 	if err != nil {

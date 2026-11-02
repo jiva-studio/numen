@@ -99,6 +99,9 @@ type PluginSearchFloor struct {
 type PluginSearchIndex interface {
 	// GetEmbeddingState is the model in use and how far the vault is embedded under it.
 	GetEmbeddingState(ctx context.Context, v domain.Vault) (PluginEmbeddingState, error)
+	// GetIndexStats is what the index of the vault holds, with the model in use. The counts are at most
+	// one second old and the sizes at most half a minute old.
+	GetIndexStats(ctx context.Context, v domain.Vault) (PluginIndexStats, error)
 	// EmbedTexts embeds the texts with the model in use.
 	EmbedTexts(ctx context.Context, texts []string) (PluginEmbeddedTexts, error)
 	// SampleSimilarities is the cosine similarity of each query with the small chunks of the vault that
@@ -132,4 +135,31 @@ type PluginSearch interface {
 type PluginSearchHost interface {
 	// SetPluginSearch is the search index the plugins work. Nil is none.
 	SetPluginSearch(search PluginSearch)
+}
+
+// PluginExtensionStats is the sources of one file extension and the chunks they hold.
+type PluginExtensionStats struct {
+	// Extension is in lower case, without the dot, and empty for a source with none.
+	Extension string
+	Sources   int64
+	Chunks    int64
+}
+
+// PluginIndexStats is what the index of a vault holds, and the space it takes.
+type PluginIndexStats struct {
+	// Recipe, Model and Dimensions identify the model in use.
+	Recipe     string
+	Model      string
+	Dimensions int64
+	// Chunks is how many chunks can carry a vector, and Vectors how many of them do.
+	Chunks  int64
+	Vectors int64
+	// Sources is the notes and files of the vault, and Extensions splits them by file extension, the
+	// extension with the most sources first.
+	Sources    int64
+	Extensions []PluginExtensionStats
+	// DatabaseBytes is the size of the index database on disk, and VectorBytes the size of the tables
+	// that hold vectors.
+	DatabaseBytes int64
+	VectorBytes   int64
 }

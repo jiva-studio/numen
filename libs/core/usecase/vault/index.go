@@ -31,6 +31,7 @@ type IndexPorts struct {
 	Queries       noteport.NoteQueries
 	Passages      sourceport.PassageQueries
 	Progress      indexport.IndexProgress
+	Stats         indexport.IndexStats
 	Sources       sourceport.SourceRepository
 	SourcesKnown  sourceport.SourceQueries
 	Vectors       embeddingport.VectorRepository
@@ -83,6 +84,7 @@ func (i *Index) Notes() noteport.NoteRepository             { return i.ports.Not
 func (i *Index) Queries() noteport.NoteQueries              { return i.ports.Queries }
 func (i *Index) Passages() sourceport.PassageQueries        { return i.ports.Passages }
 func (i *Index) Progress() indexport.IndexProgress          { return i.ports.Progress }
+func (i *Index) Stats() indexport.IndexStats                { return i.ports.Stats }
 func (i *Index) Sources() sourceport.SourceRepository       { return i.ports.Sources }
 func (i *Index) SourcesKnown() sourceport.SourceQueries     { return i.ports.SourcesKnown }
 func (i *Index) Vectors() embeddingport.VectorRepository    { return i.ports.Vectors }

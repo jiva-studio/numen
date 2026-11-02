@@ -32,6 +32,7 @@ func (c Config) OpenIndex(ctx context.Context) (*Index, error) {
 		Queries:       db.NoteQueries(),
 		Passages:      db.ChunkQueries(),
 		Progress:      db.ChunkQueries(),
+		Stats:         db.ChunkQueries(),
 		Sources:       db.Sources(),
 		SourcesKnown:  db.Sources(),
 		Vectors:       db.Sources(),

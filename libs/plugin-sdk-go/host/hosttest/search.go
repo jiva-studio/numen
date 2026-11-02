@@ -57,6 +57,7 @@ type searchVault struct {
 	passages      map[string][]SearchPassage
 	chunkCount    int64
 	embeddedCount int64
+	stats         host.IndexStats
 	floors        map[string]float64
 	setCount      int
 }
@@ -148,6 +149,16 @@ func (s *Search) SetProgress(chunkCount, embeddedCount int64) {
 	}
 }
 
+// SetIndexStats is the sources, extensions and sizes of the vault that GetIndexStats reports. The
+// model and the counts of chunks and vectors are those of SetModel and SetProgress.
+func (s *Search) SetIndexStats(stats host.IndexStats) {
+	s.all.mu.Lock()
+	defer s.all.mu.Unlock()
+	if one, ok := s.lookupLocked(); ok {
+		one.stats = stats
+	}
+}
+
 // StoredFloor is the floor stored for the vault under the recipe, and false where none is.
 func (s *Search) StoredFloor(recipe string) (float64, bool) {
 	s.all.mu.Lock()
@@ -234,6 +245,23 @@ func (s *Search) GetEmbeddingState(_ context.Context) (host.EmbeddingState, erro
 		EmbeddedCount: one.embeddedCount,
 		IsReady:       one.chunkCount > 0 && one.embeddedCount >= one.chunkCount,
 	}, nil
+}
+
+func (s *Search) GetIndexStats(_ context.Context) (host.IndexStats, error) {
+	s.all.mu.Lock()
+	defer s.all.mu.Unlock()
+	one, err := s.openLocked(host.PermissionIndexRead)
+	if err != nil {
+		return host.IndexStats{}, err
+	}
+	if s.all.model == nil {
+		return host.IndexStats{}, host.ErrNoModel
+	}
+	stats := one.stats
+	stats.Extensions = slices.Clone(stats.Extensions)
+	stats.Recipe, stats.Model = s.all.model.Recipe, s.all.model.Name
+	stats.ChunkCount, stats.VectorCount = one.chunkCount, one.embeddedCount
+	return stats, nil
 }
 
 func (s *Search) EmbedTexts(_ context.Context, texts []string) (host.EmbeddedTexts, error) {

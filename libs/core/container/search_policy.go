@@ -27,6 +27,7 @@ func (c Config) SetPluginSearch(db *Index, embedder embeddingport.Embedder, erro
 		Samples:  db.SearchSamples(),
 		Nearest:  db.Nearest(),
 		Progress: db.Progress(),
+		Stats:    hostsearch.NewStats(db.Stats(), c.Clock()),
 		Policy:   c.NewFloorPolicy(db, embedder, errorHandler),
 	})
 }

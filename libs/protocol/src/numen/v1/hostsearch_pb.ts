@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostsearch.proto.
  */
 export const file_numen_v1_hostsearch: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9ob3N0c2VhcmNoLnByb3RvEghudW1lbi52MSIaChhHZXRFbWJlZGRpbmdTdGF0ZVJlcXVlc3QiuwEKGUdldEVtYmVkZGluZ1N0YXRlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEg4KBnJlY2lwZRgCIAEoCRINCgVtb2RlbBgDIAEoCRISCgpmbG9vcl9oaW50GAQgASgBEhMKC2NodW5rX2NvdW50GAUgASgDEhYKDmVtYmVkZGVkX2NvdW50GAYgASgDEhAKCGlzX3JlYWR5GAcgASgIIiIKEUVtYmVkVGV4dHNSZXF1ZXN0Eg0KBXRleHRzGAEgAygJInoKEkVtYmVkVGV4dHNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSDgoGcmVjaXBlGAIgASgJEiYKB3ZlY3RvcnMYAyADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvciJGCg9TaW1pbGFyaXR5UXVlcnkSJQoGdmVjdG9yGAEgASgLMhUubnVtZW4udjEuRmxvYXRWZWN0b3ISDAoEcGF0aBgCIAEoCSJXChlTYW1wbGVTaW1pbGFyaXRpZXNSZXF1ZXN0Eg4KBnJlY2lwZRgBIAEoCRIqCgdxdWVyaWVzGAIgAygLMhkubnVtZW4udjEuU2ltaWxhcml0eVF1ZXJ5Ih8KDVNpbWlsYXJpdHlSb3cSDgoGdmFsdWVzGAEgAygBIp4BChpTYW1wbGVTaW1pbGFyaXRpZXNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSFQoNcGFzc2FnZV9jb3VudBgCIAEoBRIUCgxzb3VyY2VfY291bnQYAyABKAUSJQoEcm93cxgEIAMoCzIXLm51bWVuLnYxLlNpbWlsYXJpdHlSb3ciOQoYR2V0QmVzdFNpbWlsYXJpdHlSZXF1ZXN0Eg4KBnJlY2lwZRgBIAEoCRINCgVxdWVyeRgCIAMoAiJdChlHZXRCZXN0U2ltaWxhcml0eVJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFNlYXJjaEVycm9yQ29kZRISCgpzaW1pbGFyaXR5GAIgASgBIicKFUdldFNlYXJjaEZsb29yUmVxdWVzdBIOCgZyZWNpcGUYASABKAkiwwEKFkdldFNlYXJjaEZsb29yUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEg0KBWZsb29yGAIgASgBEisKBnNvdXJjZRgDIAEoDjIbLm51bWVuLnYxLlNlYXJjaEZsb29yU291cmNlEhQKDHN0b3JlZF9mbG9vchgEIAEoARISCgpoaW50X2Zsb29yGAUgASgBEhUKDWRlZmF1bHRfZmxvb3IYBiABKAEiNgoVU2V0U2VhcmNoRmxvb3JSZXF1ZXN0Eg4KBnJlY2lwZRgBIAEoCRINCgVmbG9vchgCIAEoASJGChZTZXRTZWFyY2hGbG9vclJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFNlYXJjaEVycm9yQ29kZSrfAgoTSG9zdFNlYXJjaEVycm9yQ29kZRImCiJIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIwofSE9TVF9TRUFSQ0hfRVJST1JfQ09ERV9OT19WQVVMVBABEiMKH0hPU1RfU0VBUkNIX0VSUk9SX0NPREVfTk9fTU9ERUwQAhIqCiZIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX1JFQ0lQRV9NSVNNQVRDSBADEigKJEhPU1RfU0VBUkNIX0VSUk9SX0NPREVfSU5WQUxJRF9GTE9PUhAEEikKJUhPU1RfU0VBUkNIX0VSUk9SX0NPREVfTElNSVRfRVhDRUVERUQQBRIrCidIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX0VNQkVERElOR19GQUlMRUQQBhIoCiRIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX0lOVkFMSURfUVVFUlkQByqdAQoRU2VhcmNoRmxvb3JTb3VyY2USIwofU0VBUkNIX0ZMT09SX1NPVVJDRV9VTlNQRUNJRklFRBAAEh4KGlNFQVJDSF9GTE9PUl9TT1VSQ0VfU1RPUkVEEAESIgoeU0VBUkNIX0ZMT09SX1NPVVJDRV9NT0RFTF9ISU5UEAISHwobU0VBUkNIX0ZMT09SX1NPVVJDRV9ERUZBVUxUEAMyowQKEUhvc3RTZWFyY2hTZXJ2aWNlElwKEUdldEVtYmVkZGluZ1N0YXRlEiIubnVtZW4udjEuR2V0RW1iZWRkaW5nU3RhdGVSZXF1ZXN0GiMubnVtZW4udjEuR2V0RW1iZWRkaW5nU3RhdGVSZXNwb25zZRJHCgpFbWJlZFRleHRzEhsubnVtZW4udjEuRW1iZWRUZXh0c1JlcXVlc3QaHC5udW1lbi52MS5FbWJlZFRleHRzUmVzcG9uc2USXwoSU2FtcGxlU2ltaWxhcml0aWVzEiMubnVtZW4udjEuU2FtcGxlU2ltaWxhcml0aWVzUmVxdWVzdBokLm51bWVuLnYxLlNhbXBsZVNpbWlsYXJpdGllc1Jlc3BvbnNlElwKEUdldEJlc3RTaW1pbGFyaXR5EiIubnVtZW4udjEuR2V0QmVzdFNpbWlsYXJpdHlSZXF1ZXN0GiMubnVtZW4udjEuR2V0QmVzdFNpbWlsYXJpdHlSZXNwb25zZRJTCg5HZXRTZWFyY2hGbG9vchIfLm51bWVuLnYxLkdldFNlYXJjaEZsb29yUmVxdWVzdBogLm51bWVuLnYxLkdldFNlYXJjaEZsb29yUmVzcG9uc2USUwoOU2V0U2VhcmNoRmxvb3ISHy5udW1lbi52MS5TZXRTZWFyY2hGbG9vclJlcXVlc3QaIC5udW1lbi52MS5TZXRTZWFyY2hGbG9vclJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_embedding]);
+  fileDesc("ChludW1lbi92MS9ob3N0c2VhcmNoLnByb3RvEghudW1lbi52MSIaChhHZXRFbWJlZGRpbmdTdGF0ZVJlcXVlc3QiuwEKGUdldEVtYmVkZGluZ1N0YXRlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEg4KBnJlY2lwZRgCIAEoCRINCgVtb2RlbBgDIAEoCRISCgpmbG9vcl9oaW50GAQgASgBEhMKC2NodW5rX2NvdW50GAUgASgDEhYKDmVtYmVkZGVkX2NvdW50GAYgASgDEhAKCGlzX3JlYWR5GAcgASgIIhYKFEdldEluZGV4U3RhdHNSZXF1ZXN0Ik4KDkV4dGVuc2lvblN0YXRzEhEKCWV4dGVuc2lvbhgBIAEoCRIUCgxzb3VyY2VfY291bnQYAiABKAMSEwoLY2h1bmtfY291bnQYAyABKAMilQIKFUdldEluZGV4U3RhdHNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSDgoGcmVjaXBlGAIgASgJEg0KBW1vZGVsGAMgASgJEhIKCmRpbWVuc2lvbnMYBCABKAMSEwoLY2h1bmtfY291bnQYBSABKAMSFAoMdmVjdG9yX2NvdW50GAYgASgDEhQKDHNvdXJjZV9jb3VudBgHIAEoAxIsCgpleHRlbnNpb25zGAggAygLMhgubnVtZW4udjEuRXh0ZW5zaW9uU3RhdHMSFgoOZGF0YWJhc2VfYnl0ZXMYCSABKAMSFAoMdmVjdG9yX2J5dGVzGAogASgDIiIKEUVtYmVkVGV4dHNSZXF1ZXN0Eg0KBXRleHRzGAEgAygJInoKEkVtYmVkVGV4dHNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSDgoGcmVjaXBlGAIgASgJEiYKB3ZlY3RvcnMYAyADKAsyFS5udW1lbi52MS5GbG9hdFZlY3RvciJGCg9TaW1pbGFyaXR5UXVlcnkSJQoGdmVjdG9yGAEgASgLMhUubnVtZW4udjEuRmxvYXRWZWN0b3ISDAoEcGF0aBgCIAEoCSJXChlTYW1wbGVTaW1pbGFyaXRpZXNSZXF1ZXN0Eg4KBnJlY2lwZRgBIAEoCRIqCgdxdWVyaWVzGAIgAygLMhkubnVtZW4udjEuU2ltaWxhcml0eVF1ZXJ5Ih8KDVNpbWlsYXJpdHlSb3cSDgoGdmFsdWVzGAEgAygBIp4BChpTYW1wbGVTaW1pbGFyaXRpZXNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RTZWFyY2hFcnJvckNvZGUSFQoNcGFzc2FnZV9jb3VudBgCIAEoBRIUCgxzb3VyY2VfY291bnQYAyABKAUSJQoEcm93cxgEIAMoCzIXLm51bWVuLnYxLlNpbWlsYXJpdHlSb3ciOQoYR2V0QmVzdFNpbWlsYXJpdHlSZXF1ZXN0Eg4KBnJlY2lwZRgBIAEoCRINCgVxdWVyeRgCIAMoAiJdChlHZXRCZXN0U2ltaWxhcml0eVJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFNlYXJjaEVycm9yQ29kZRISCgpzaW1pbGFyaXR5GAIgASgBIicKFUdldFNlYXJjaEZsb29yUmVxdWVzdBIOCgZyZWNpcGUYASABKAkiwwEKFkdldFNlYXJjaEZsb29yUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0U2VhcmNoRXJyb3JDb2RlEg0KBWZsb29yGAIgASgBEisKBnNvdXJjZRgDIAEoDjIbLm51bWVuLnYxLlNlYXJjaEZsb29yU291cmNlEhQKDHN0b3JlZF9mbG9vchgEIAEoARISCgpoaW50X2Zsb29yGAUgASgBEhUKDWRlZmF1bHRfZmxvb3IYBiABKAEiNgoVU2V0U2VhcmNoRmxvb3JSZXF1ZXN0Eg4KBnJlY2lwZRgBIAEoCRINCgVmbG9vchgCIAEoASJGChZTZXRTZWFyY2hGbG9vclJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFNlYXJjaEVycm9yQ29kZSrfAgoTSG9zdFNlYXJjaEVycm9yQ29kZRImCiJIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIwofSE9TVF9TRUFSQ0hfRVJST1JfQ09ERV9OT19WQVVMVBABEiMKH0hPU1RfU0VBUkNIX0VSUk9SX0NPREVfTk9fTU9ERUwQAhIqCiZIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX1JFQ0lQRV9NSVNNQVRDSBADEigKJEhPU1RfU0VBUkNIX0VSUk9SX0NPREVfSU5WQUxJRF9GTE9PUhAEEikKJUhPU1RfU0VBUkNIX0VSUk9SX0NPREVfTElNSVRfRVhDRUVERUQQBRIrCidIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX0VNQkVERElOR19GQUlMRUQQBhIoCiRIT1NUX1NFQVJDSF9FUlJPUl9DT0RFX0lOVkFMSURfUVVFUlkQByqdAQoRU2VhcmNoRmxvb3JTb3VyY2USIwofU0VBUkNIX0ZMT09SX1NPVVJDRV9VTlNQRUNJRklFRBAAEh4KGlNFQVJDSF9GTE9PUl9TT1VSQ0VfU1RPUkVEEAESIgoeU0VBUkNIX0ZMT09SX1NPVVJDRV9NT0RFTF9ISU5UEAISHwobU0VBUkNIX0ZMT09SX1NPVVJDRV9ERUZBVUxUEAMy9QQKEUhvc3RTZWFyY2hTZXJ2aWNlElwKEUdldEVtYmVkZGluZ1N0YXRlEiIubnVtZW4udjEuR2V0RW1iZWRkaW5nU3RhdGVSZXF1ZXN0GiMubnVtZW4udjEuR2V0RW1iZWRkaW5nU3RhdGVSZXNwb25zZRJQCg1HZXRJbmRleFN0YXRzEh4ubnVtZW4udjEuR2V0SW5kZXhTdGF0c1JlcXVlc3QaHy5udW1lbi52MS5HZXRJbmRleFN0YXRzUmVzcG9uc2USRwoKRW1iZWRUZXh0cxIbLm51bWVuLnYxLkVtYmVkVGV4dHNSZXF1ZXN0GhwubnVtZW4udjEuRW1iZWRUZXh0c1Jlc3BvbnNlEl8KElNhbXBsZVNpbWlsYXJpdGllcxIjLm51bWVuLnYxLlNhbXBsZVNpbWlsYXJpdGllc1JlcXVlc3QaJC5udW1lbi52MS5TYW1wbGVTaW1pbGFyaXRpZXNSZXNwb25zZRJcChFHZXRCZXN0U2ltaWxhcml0eRIiLm51bWVuLnYxLkdldEJlc3RTaW1pbGFyaXR5UmVxdWVzdBojLm51bWVuLnYxLkdldEJlc3RTaW1pbGFyaXR5UmVzcG9uc2USUwoOR2V0U2VhcmNoRmxvb3ISHy5udW1lbi52MS5HZXRTZWFyY2hGbG9vclJlcXVlc3QaIC5udW1lbi52MS5HZXRTZWFyY2hGbG9vclJlc3BvbnNlElMKDlNldFNlYXJjaEZsb29yEh8ubnVtZW4udjEuU2V0U2VhcmNoRmxvb3JSZXF1ZXN0GiAubnVtZW4udjEuU2V0U2VhcmNoRmxvb3JSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_embedding]);
 
 /**
  * @generated from message numen.v1.GetEmbeddingStateRequest
@@ -87,6 +87,128 @@ export const GetEmbeddingStateResponseSchema: GenMessage<GetEmbeddingStateRespon
   messageDesc(file_numen_v1_hostsearch, 1);
 
 /**
+ * @generated from message numen.v1.GetIndexStatsRequest
+ */
+export type GetIndexStatsRequest = Message<"numen.v1.GetIndexStatsRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.GetIndexStatsRequest.
+ * Use `create(GetIndexStatsRequestSchema)` to create a new message.
+ */
+export const GetIndexStatsRequestSchema: GenMessage<GetIndexStatsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostsearch, 2);
+
+/**
+ * ExtensionStats is the sources of one file extension and the chunks they hold.
+ *
+ * @generated from message numen.v1.ExtensionStats
+ */
+export type ExtensionStats = Message<"numen.v1.ExtensionStats"> & {
+  /**
+   * The extension in lower case, without the dot. Empty for a file with none.
+   *
+   * @generated from field: string extension = 1;
+   */
+  extension: string;
+
+  /**
+   * How many sources have the extension.
+   *
+   * @generated from field: int64 source_count = 2;
+   */
+  sourceCount: bigint;
+
+  /**
+   * How many chunks that can carry a vector belong to those sources.
+   *
+   * @generated from field: int64 chunk_count = 3;
+   */
+  chunkCount: bigint;
+};
+
+/**
+ * Describes the message numen.v1.ExtensionStats.
+ * Use `create(ExtensionStatsSchema)` to create a new message.
+ */
+export const ExtensionStatsSchema: GenMessage<ExtensionStats> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostsearch, 3);
+
+/**
+ * @generated from message numen.v1.GetIndexStatsResponse
+ */
+export type GetIndexStatsResponse = Message<"numen.v1.GetIndexStatsResponse"> & {
+  /**
+   * @generated from field: numen.v1.HostSearchErrorCode error = 1;
+   */
+  error: HostSearchErrorCode;
+
+  /**
+   * The recipe, the name and the dimension count of the model in use.
+   *
+   * @generated from field: string recipe = 2;
+   */
+  recipe: string;
+
+  /**
+   * @generated from field: string model = 3;
+   */
+  model: string;
+
+  /**
+   * @generated from field: int64 dimensions = 4;
+   */
+  dimensions: bigint;
+
+  /**
+   * How many chunks of the vault can carry a vector, and how many of them do
+   * under the recipe.
+   *
+   * @generated from field: int64 chunk_count = 5;
+   */
+  chunkCount: bigint;
+
+  /**
+   * @generated from field: int64 vector_count = 6;
+   */
+  vectorCount: bigint;
+
+  /**
+   * How many sources, notes and files, the vault holds.
+   *
+   * @generated from field: int64 source_count = 7;
+   */
+  sourceCount: bigint;
+
+  /**
+   * The sources and chunks by extension, the most sources first.
+   *
+   * @generated from field: repeated numen.v1.ExtensionStats extensions = 8;
+   */
+  extensions: ExtensionStats[];
+
+  /**
+   * The size of the index database on disk, and of the tables that hold
+   * vectors, in bytes. Both are read at most once every 30 seconds.
+   *
+   * @generated from field: int64 database_bytes = 9;
+   */
+  databaseBytes: bigint;
+
+  /**
+   * @generated from field: int64 vector_bytes = 10;
+   */
+  vectorBytes: bigint;
+};
+
+/**
+ * Describes the message numen.v1.GetIndexStatsResponse.
+ * Use `create(GetIndexStatsResponseSchema)` to create a new message.
+ */
+export const GetIndexStatsResponseSchema: GenMessage<GetIndexStatsResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hostsearch, 4);
+
+/**
  * @generated from message numen.v1.EmbedTextsRequest
  */
 export type EmbedTextsRequest = Message<"numen.v1.EmbedTextsRequest"> & {
@@ -101,7 +223,7 @@ export type EmbedTextsRequest = Message<"numen.v1.EmbedTextsRequest"> & {
  * Use `create(EmbedTextsRequestSchema)` to create a new message.
  */
 export const EmbedTextsRequestSchema: GenMessage<EmbedTextsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 2);
+  messageDesc(file_numen_v1_hostsearch, 5);
 
 /**
  * @generated from message numen.v1.EmbedTextsResponse
@@ -132,7 +254,7 @@ export type EmbedTextsResponse = Message<"numen.v1.EmbedTextsResponse"> & {
  * Use `create(EmbedTextsResponseSchema)` to create a new message.
  */
 export const EmbedTextsResponseSchema: GenMessage<EmbedTextsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 3);
+  messageDesc(file_numen_v1_hostsearch, 6);
 
 /**
  * @generated from message numen.v1.SimilarityQuery
@@ -160,7 +282,7 @@ export type SimilarityQuery = Message<"numen.v1.SimilarityQuery"> & {
  * Use `create(SimilarityQuerySchema)` to create a new message.
  */
 export const SimilarityQuerySchema: GenMessage<SimilarityQuery> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 4);
+  messageDesc(file_numen_v1_hostsearch, 7);
 
 /**
  * @generated from message numen.v1.SampleSimilaritiesRequest
@@ -182,7 +304,7 @@ export type SampleSimilaritiesRequest = Message<"numen.v1.SampleSimilaritiesRequ
  * Use `create(SampleSimilaritiesRequestSchema)` to create a new message.
  */
 export const SampleSimilaritiesRequestSchema: GenMessage<SampleSimilaritiesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 5);
+  messageDesc(file_numen_v1_hostsearch, 8);
 
 /**
  * @generated from message numen.v1.SimilarityRow
@@ -202,7 +324,7 @@ export type SimilarityRow = Message<"numen.v1.SimilarityRow"> & {
  * Use `create(SimilarityRowSchema)` to create a new message.
  */
 export const SimilarityRowSchema: GenMessage<SimilarityRow> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 6);
+  messageDesc(file_numen_v1_hostsearch, 9);
 
 /**
  * @generated from message numen.v1.SampleSimilaritiesResponse
@@ -238,7 +360,7 @@ export type SampleSimilaritiesResponse = Message<"numen.v1.SampleSimilaritiesRes
  * Use `create(SampleSimilaritiesResponseSchema)` to create a new message.
  */
 export const SampleSimilaritiesResponseSchema: GenMessage<SampleSimilaritiesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 7);
+  messageDesc(file_numen_v1_hostsearch, 10);
 
 /**
  * @generated from message numen.v1.GetBestSimilarityRequest
@@ -260,7 +382,7 @@ export type GetBestSimilarityRequest = Message<"numen.v1.GetBestSimilarityReques
  * Use `create(GetBestSimilarityRequestSchema)` to create a new message.
  */
 export const GetBestSimilarityRequestSchema: GenMessage<GetBestSimilarityRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 8);
+  messageDesc(file_numen_v1_hostsearch, 11);
 
 /**
  * @generated from message numen.v1.GetBestSimilarityResponse
@@ -282,7 +404,7 @@ export type GetBestSimilarityResponse = Message<"numen.v1.GetBestSimilarityRespo
  * Use `create(GetBestSimilarityResponseSchema)` to create a new message.
  */
 export const GetBestSimilarityResponseSchema: GenMessage<GetBestSimilarityResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 9);
+  messageDesc(file_numen_v1_hostsearch, 12);
 
 /**
  * @generated from message numen.v1.GetSearchFloorRequest
@@ -299,7 +421,7 @@ export type GetSearchFloorRequest = Message<"numen.v1.GetSearchFloorRequest"> & 
  * Use `create(GetSearchFloorRequestSchema)` to create a new message.
  */
 export const GetSearchFloorRequestSchema: GenMessage<GetSearchFloorRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 10);
+  messageDesc(file_numen_v1_hostsearch, 13);
 
 /**
  * @generated from message numen.v1.GetSearchFloorResponse
@@ -349,7 +471,7 @@ export type GetSearchFloorResponse = Message<"numen.v1.GetSearchFloorResponse"> 
  * Use `create(GetSearchFloorResponseSchema)` to create a new message.
  */
 export const GetSearchFloorResponseSchema: GenMessage<GetSearchFloorResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 11);
+  messageDesc(file_numen_v1_hostsearch, 14);
 
 /**
  * @generated from message numen.v1.SetSearchFloorRequest
@@ -374,7 +496,7 @@ export type SetSearchFloorRequest = Message<"numen.v1.SetSearchFloorRequest"> & 
  * Use `create(SetSearchFloorRequestSchema)` to create a new message.
  */
 export const SetSearchFloorRequestSchema: GenMessage<SetSearchFloorRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 12);
+  messageDesc(file_numen_v1_hostsearch, 15);
 
 /**
  * @generated from message numen.v1.SetSearchFloorResponse
@@ -391,7 +513,7 @@ export type SetSearchFloorResponse = Message<"numen.v1.SetSearchFloorResponse"> 
  * Use `create(SetSearchFloorResponseSchema)` to create a new message.
  */
 export const SetSearchFloorResponseSchema: GenMessage<SetSearchFloorResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostsearch, 13);
+  messageDesc(file_numen_v1_hostsearch, 16);
 
 /**
  * HostSearchErrorCode is why a call on the search index was refused. The zero
@@ -503,8 +625,8 @@ export const SearchFloorSourceSchema: GenEnum<SearchFloorSource> = /*@__PURE__*/
 /**
  * HostSearchService is the search index and the search floor of a vault, as a
  * plugin reads and sets them. The host identifies the plugin by its token.
- * GetEmbeddingState, EmbedTexts, SampleSimilarities and GetBestSimilarity need
- * index:read; GetSearchFloor and SetSearchFloor need
+ * GetEmbeddingState, GetIndexStats, EmbedTexts, SampleSimilarities and
+ * GetBestSimilarity need index:read; GetSearchFloor and SetSearchFloor need
  * search:policy.
  *
  * Numen-Vault works the vault of that identity; without it a call works the
@@ -531,6 +653,19 @@ export const HostSearchService: GenService<{
     methodKind: "unary";
     input: typeof GetEmbeddingStateRequestSchema;
     output: typeof GetEmbeddingStateResponseSchema;
+  },
+  /**
+   * GetIndexStats is what the index of the vault holds: its vectors, chunks and
+   * sources, the sources and chunks by file extension, and the size on disk of
+   * the index. Counts are read at most once a second, and the sizes at most
+   * once every 30 seconds.
+   *
+   * @generated from rpc numen.v1.HostSearchService.GetIndexStats
+   */
+  getIndexStats: {
+    methodKind: "unary";
+    input: typeof GetIndexStatsRequestSchema;
+    output: typeof GetIndexStatsResponseSchema;
   },
   /**
    * EmbedTexts embeds texts with the model in use. At most 256 texts of at most

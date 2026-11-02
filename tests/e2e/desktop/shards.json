@@ -32,6 +32,7 @@
   "tests/plugins/system/settings-switch.spec.ts": 37,
   "tests/plugins/system/settings.spec.ts": 17,
   "tests/plugins/system/startup.spec.ts": 3,
+  "tests/plugins/tools.index.stats/stats.spec.ts": 25,
   "tests/plugins/tools.updater/update.spec.ts": 8,
   "tests/plugins/views.file.tree/copy-path.spec.ts": 2,
   "tests/plugins/views.file.tree/operations.spec.ts": 7,

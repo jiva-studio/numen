@@ -8,8 +8,8 @@ option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;num
 
 // HostSearchService is the search index and the search floor of a vault, as a
 // plugin reads and sets them. The host identifies the plugin by its token.
-// GetEmbeddingState, EmbedTexts, SampleSimilarities and GetBestSimilarity need
-// index:read; GetSearchFloor and SetSearchFloor need
+// GetEmbeddingState, GetIndexStats, EmbedTexts, SampleSimilarities and
+// GetBestSimilarity need index:read; GetSearchFloor and SetSearchFloor need
 // search:policy.
 //
 // Numen-Vault works the vault of that identity; without it a call works the
@@ -26,6 +26,12 @@ service HostSearchService {
   // that starts after the vectors exist reads the same state as one that was
   // running when they were made.
   rpc GetEmbeddingState(GetEmbeddingStateRequest) returns (GetEmbeddingStateResponse);
+
+  // GetIndexStats is what the index of the vault holds: its vectors, chunks and
+  // sources, the sources and chunks by file extension, and the size on disk of
+  // the index. Counts are read at most once a second, and the sizes at most
+  // once every 30 seconds.
+  rpc GetIndexStats(GetIndexStatsRequest) returns (GetIndexStatsResponse);
 
   // EmbedTexts embeds texts with the model in use. At most 256 texts of at most
   // 8192 bytes each are embedded in one call.
@@ -115,6 +121,45 @@ message GetEmbeddingStateResponse {
 
   // Whether the vault holds chunks and every one of them carries a vector.
   bool is_ready = 7;
+}
+
+message GetIndexStatsRequest {}
+
+// ExtensionStats is the sources of one file extension and the chunks they hold.
+message ExtensionStats {
+  // The extension in lower case, without the dot. Empty for a file with none.
+  string extension = 1;
+
+  // How many sources have the extension.
+  int64 source_count = 2;
+
+  // How many chunks that can carry a vector belong to those sources.
+  int64 chunk_count = 3;
+}
+
+message GetIndexStatsResponse {
+  HostSearchErrorCode error = 1;
+
+  // The recipe, the name and the dimension count of the model in use.
+  string recipe = 2;
+  string model = 3;
+  int64 dimensions = 4;
+
+  // How many chunks of the vault can carry a vector, and how many of them do
+  // under the recipe.
+  int64 chunk_count = 5;
+  int64 vector_count = 6;
+
+  // How many sources, notes and files, the vault holds.
+  int64 source_count = 7;
+
+  // The sources and chunks by extension, the most sources first.
+  repeated ExtensionStats extensions = 8;
+
+  // The size of the index database on disk, and of the tables that hold
+  // vectors, in bytes. Both are read at most once every 30 seconds.
+  int64 database_bytes = 9;
+  int64 vector_bytes = 10;
 }
 
 message EmbedTextsRequest {

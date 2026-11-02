@@ -300,3 +300,35 @@ func TestTheBestSimilarityIsTheNearestPassage(t *testing.T) {
 		t.Errorf("an empty vault gave %v (%v)", none, err)
 	}
 }
+
+func TestTheSearchReportsTheIndexStatisticsOfTheVaultForTheModelInUse(t *testing.T) {
+	ctx := t.Context()
+	search := newSearch()
+	search.SetProgress(12, 9)
+	search.SetIndexStats(host.IndexStats{
+		SourceCount: 3, Extensions: []host.ExtensionStats{{Extension: "md", SourceCount: 3, ChunkCount: 12}},
+		DatabaseBytes: 4096, VectorBytes: 2048,
+	})
+
+	got, err := search.GetIndexStats(ctx)
+	if err != nil || got.Recipe != searchRecipe || got.Model != "bge" || got.ChunkCount != 12 || got.VectorCount != 9 ||
+		got.SourceCount != 3 || len(got.Extensions) != 1 || got.DatabaseBytes != 4096 || got.VectorBytes != 2048 {
+		t.Errorf("statistics %+v (%v)", got, err)
+	}
+	other, err := search.With("chemistry").GetIndexStats(ctx)
+	if err != nil || other.ChunkCount != 0 || other.SourceCount != 0 {
+		t.Errorf("the other vault reported %+v (%v)", other, err)
+	}
+	if _, err := search.With("none").GetIndexStats(ctx); !errors.Is(err, host.ErrUnknownVault) {
+		t.Errorf("an unknown vault gave %v", err)
+	}
+	search.Deny(host.PermissionIndexRead)
+	if _, err := search.GetIndexStats(ctx); !errors.Is(err, host.ErrPermissionDenied) {
+		t.Errorf("a denied read gave %v", err)
+	}
+	search.RemoveModel()
+	search = hosttest.NewSearch("physics")
+	if _, err := search.GetIndexStats(ctx); !errors.Is(err, host.ErrNoModel) {
+		t.Errorf("a host with no model gave %v", err)
+	}
+}

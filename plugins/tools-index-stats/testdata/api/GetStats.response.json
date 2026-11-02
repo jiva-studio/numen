@@ -1,0 +1,20 @@
+{
+  "vectors": 12480,
+  "chunks": 13100,
+  "waiting": 620,
+  "sources": 84,
+  "kinds": [
+    { "kind": "notes", "sources": 70, "chunks": 4100 },
+    { "kind": "pdf", "sources": 9, "chunks": 7000 },
+    { "kind": "epub", "sources": 5, "chunks": 2000 }
+  ],
+  "model": "bge-m3",
+  "recipe": "local|bge-m3|1024|512|mean|int8@0.4",
+  "dimensions": 1024,
+  "profile": "balanced",
+  "threads": 4,
+  "speed": 18.5,
+  "changedAt": "2026-11-02T12:00:07Z",
+  "databaseBytes": 73400320,
+  "vectorBytes": 52428800
+}

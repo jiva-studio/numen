@@ -2,6 +2,7 @@ package chunk_test
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"testing"
@@ -36,8 +37,8 @@ func TestSavingVectorsCancelledAtAnyMomentDoesNotCrash(t *testing.T) {
 				cancel()
 			}()
 
-			// Finishing or being cancelled are both fine; the process surviving is the point.
-			if err := s.db.Chunks().SaveVectorsInBatches(ctx, vectors, 7); err != nil && !errors.Is(err, context.Canceled) {
+			// Finishing, being cancelled, or finding the transaction rolled back by the cancellation are all fine; the process surviving is the point.
+			if err := s.db.Chunks().SaveVectorsInBatches(ctx, vectors, 7); err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, sql.ErrTxDone) {
 				t.Error(err)
 			}
 		})

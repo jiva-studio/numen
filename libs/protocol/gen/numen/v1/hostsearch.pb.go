@@ -285,6 +285,229 @@ func (x *GetEmbeddingStateResponse) GetIsReady() bool {
 	return false
 }
 
+type GetIndexStatsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetIndexStatsRequest) Reset() {
+	*x = GetIndexStatsRequest{}
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetIndexStatsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetIndexStatsRequest) ProtoMessage() {}
+
+func (x *GetIndexStatsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetIndexStatsRequest.ProtoReflect.Descriptor instead.
+func (*GetIndexStatsRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{2}
+}
+
+// ExtensionStats is the sources of one file extension and the chunks they hold.
+type ExtensionStats struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The extension in lower case, without the dot. Empty for a file with none.
+	Extension string `protobuf:"bytes,1,opt,name=extension,proto3" json:"extension,omitempty"`
+	// How many sources have the extension.
+	SourceCount int64 `protobuf:"varint,2,opt,name=source_count,json=sourceCount,proto3" json:"source_count,omitempty"`
+	// How many chunks that can carry a vector belong to those sources.
+	ChunkCount    int64 `protobuf:"varint,3,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExtensionStats) Reset() {
+	*x = ExtensionStats{}
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExtensionStats) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExtensionStats) ProtoMessage() {}
+
+func (x *ExtensionStats) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExtensionStats.ProtoReflect.Descriptor instead.
+func (*ExtensionStats) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ExtensionStats) GetExtension() string {
+	if x != nil {
+		return x.Extension
+	}
+	return ""
+}
+
+func (x *ExtensionStats) GetSourceCount() int64 {
+	if x != nil {
+		return x.SourceCount
+	}
+	return 0
+}
+
+func (x *ExtensionStats) GetChunkCount() int64 {
+	if x != nil {
+		return x.ChunkCount
+	}
+	return 0
+}
+
+type GetIndexStatsResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Error HostSearchErrorCode    `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostSearchErrorCode" json:"error,omitempty"`
+	// The recipe, the name and the dimension count of the model in use.
+	Recipe     string `protobuf:"bytes,2,opt,name=recipe,proto3" json:"recipe,omitempty"`
+	Model      string `protobuf:"bytes,3,opt,name=model,proto3" json:"model,omitempty"`
+	Dimensions int64  `protobuf:"varint,4,opt,name=dimensions,proto3" json:"dimensions,omitempty"`
+	// How many chunks of the vault can carry a vector, and how many of them do
+	// under the recipe.
+	ChunkCount  int64 `protobuf:"varint,5,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
+	VectorCount int64 `protobuf:"varint,6,opt,name=vector_count,json=vectorCount,proto3" json:"vector_count,omitempty"`
+	// How many sources, notes and files, the vault holds.
+	SourceCount int64 `protobuf:"varint,7,opt,name=source_count,json=sourceCount,proto3" json:"source_count,omitempty"`
+	// The sources and chunks by extension, the most sources first.
+	Extensions []*ExtensionStats `protobuf:"bytes,8,rep,name=extensions,proto3" json:"extensions,omitempty"`
+	// The size of the index database on disk, and of the tables that hold
+	// vectors, in bytes. Both are read at most once every 30 seconds.
+	DatabaseBytes int64 `protobuf:"varint,9,opt,name=database_bytes,json=databaseBytes,proto3" json:"database_bytes,omitempty"`
+	VectorBytes   int64 `protobuf:"varint,10,opt,name=vector_bytes,json=vectorBytes,proto3" json:"vector_bytes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetIndexStatsResponse) Reset() {
+	*x = GetIndexStatsResponse{}
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetIndexStatsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetIndexStatsResponse) ProtoMessage() {}
+
+func (x *GetIndexStatsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetIndexStatsResponse.ProtoReflect.Descriptor instead.
+func (*GetIndexStatsResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetIndexStatsResponse) GetError() HostSearchErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *GetIndexStatsResponse) GetRecipe() string {
+	if x != nil {
+		return x.Recipe
+	}
+	return ""
+}
+
+func (x *GetIndexStatsResponse) GetModel() string {
+	if x != nil {
+		return x.Model
+	}
+	return ""
+}
+
+func (x *GetIndexStatsResponse) GetDimensions() int64 {
+	if x != nil {
+		return x.Dimensions
+	}
+	return 0
+}
+
+func (x *GetIndexStatsResponse) GetChunkCount() int64 {
+	if x != nil {
+		return x.ChunkCount
+	}
+	return 0
+}
+
+func (x *GetIndexStatsResponse) GetVectorCount() int64 {
+	if x != nil {
+		return x.VectorCount
+	}
+	return 0
+}
+
+func (x *GetIndexStatsResponse) GetSourceCount() int64 {
+	if x != nil {
+		return x.SourceCount
+	}
+	return 0
+}
+
+func (x *GetIndexStatsResponse) GetExtensions() []*ExtensionStats {
+	if x != nil {
+		return x.Extensions
+	}
+	return nil
+}
+
+func (x *GetIndexStatsResponse) GetDatabaseBytes() int64 {
+	if x != nil {
+		return x.DatabaseBytes
+	}
+	return 0
+}
+
+func (x *GetIndexStatsResponse) GetVectorBytes() int64 {
+	if x != nil {
+		return x.VectorBytes
+	}
+	return 0
+}
+
 type EmbedTextsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Texts         []string               `protobuf:"bytes,1,rep,name=texts,proto3" json:"texts,omitempty"`
@@ -294,7 +517,7 @@ type EmbedTextsRequest struct {
 
 func (x *EmbedTextsRequest) Reset() {
 	*x = EmbedTextsRequest{}
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[2]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -306,7 +529,7 @@ func (x *EmbedTextsRequest) String() string {
 func (*EmbedTextsRequest) ProtoMessage() {}
 
 func (x *EmbedTextsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[2]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -319,7 +542,7 @@ func (x *EmbedTextsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmbedTextsRequest.ProtoReflect.Descriptor instead.
 func (*EmbedTextsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{2}
+	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *EmbedTextsRequest) GetTexts() []string {
@@ -342,7 +565,7 @@ type EmbedTextsResponse struct {
 
 func (x *EmbedTextsResponse) Reset() {
 	*x = EmbedTextsResponse{}
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[3]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -354,7 +577,7 @@ func (x *EmbedTextsResponse) String() string {
 func (*EmbedTextsResponse) ProtoMessage() {}
 
 func (x *EmbedTextsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[3]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -367,7 +590,7 @@ func (x *EmbedTextsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmbedTextsResponse.ProtoReflect.Descriptor instead.
 func (*EmbedTextsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *EmbedTextsResponse) GetError() HostSearchErrorCode {
@@ -405,7 +628,7 @@ type SimilarityQuery struct {
 
 func (x *SimilarityQuery) Reset() {
 	*x = SimilarityQuery{}
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[4]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -417,7 +640,7 @@ func (x *SimilarityQuery) String() string {
 func (*SimilarityQuery) ProtoMessage() {}
 
 func (x *SimilarityQuery) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[4]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -430,7 +653,7 @@ func (x *SimilarityQuery) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SimilarityQuery.ProtoReflect.Descriptor instead.
 func (*SimilarityQuery) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *SimilarityQuery) GetVector() *FloatVector {
@@ -457,7 +680,7 @@ type SampleSimilaritiesRequest struct {
 
 func (x *SampleSimilaritiesRequest) Reset() {
 	*x = SampleSimilaritiesRequest{}
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[5]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -469,7 +692,7 @@ func (x *SampleSimilaritiesRequest) String() string {
 func (*SampleSimilaritiesRequest) ProtoMessage() {}
 
 func (x *SampleSimilaritiesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[5]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -482,7 +705,7 @@ func (x *SampleSimilaritiesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SampleSimilaritiesRequest.ProtoReflect.Descriptor instead.
 func (*SampleSimilaritiesRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *SampleSimilaritiesRequest) GetRecipe() string {
@@ -510,7 +733,7 @@ type SimilarityRow struct {
 
 func (x *SimilarityRow) Reset() {
 	*x = SimilarityRow{}
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[6]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -522,7 +745,7 @@ func (x *SimilarityRow) String() string {
 func (*SimilarityRow) ProtoMessage() {}
 
 func (x *SimilarityRow) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[6]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -535,7 +758,7 @@ func (x *SimilarityRow) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SimilarityRow.ProtoReflect.Descriptor instead.
 func (*SimilarityRow) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *SimilarityRow) GetValues() []float64 {
@@ -559,7 +782,7 @@ type SampleSimilaritiesResponse struct {
 
 func (x *SampleSimilaritiesResponse) Reset() {
 	*x = SampleSimilaritiesResponse{}
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[7]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -571,7 +794,7 @@ func (x *SampleSimilaritiesResponse) String() string {
 func (*SampleSimilaritiesResponse) ProtoMessage() {}
 
 func (x *SampleSimilaritiesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[7]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -584,7 +807,7 @@ func (x *SampleSimilaritiesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SampleSimilaritiesResponse.ProtoReflect.Descriptor instead.
 func (*SampleSimilaritiesResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *SampleSimilaritiesResponse) GetError() HostSearchErrorCode {
@@ -625,7 +848,7 @@ type GetBestSimilarityRequest struct {
 
 func (x *GetBestSimilarityRequest) Reset() {
 	*x = GetBestSimilarityRequest{}
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[8]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -637,7 +860,7 @@ func (x *GetBestSimilarityRequest) String() string {
 func (*GetBestSimilarityRequest) ProtoMessage() {}
 
 func (x *GetBestSimilarityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[8]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -650,7 +873,7 @@ func (x *GetBestSimilarityRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBestSimilarityRequest.ProtoReflect.Descriptor instead.
 func (*GetBestSimilarityRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetBestSimilarityRequest) GetRecipe() string {
@@ -677,7 +900,7 @@ type GetBestSimilarityResponse struct {
 
 func (x *GetBestSimilarityResponse) Reset() {
 	*x = GetBestSimilarityResponse{}
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[9]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -689,7 +912,7 @@ func (x *GetBestSimilarityResponse) String() string {
 func (*GetBestSimilarityResponse) ProtoMessage() {}
 
 func (x *GetBestSimilarityResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[9]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -702,7 +925,7 @@ func (x *GetBestSimilarityResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBestSimilarityResponse.ProtoReflect.Descriptor instead.
 func (*GetBestSimilarityResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetBestSimilarityResponse) GetError() HostSearchErrorCode {
@@ -728,7 +951,7 @@ type GetSearchFloorRequest struct {
 
 func (x *GetSearchFloorRequest) Reset() {
 	*x = GetSearchFloorRequest{}
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[10]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -740,7 +963,7 @@ func (x *GetSearchFloorRequest) String() string {
 func (*GetSearchFloorRequest) ProtoMessage() {}
 
 func (x *GetSearchFloorRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[10]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -753,7 +976,7 @@ func (x *GetSearchFloorRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSearchFloorRequest.ProtoReflect.Descriptor instead.
 func (*GetSearchFloorRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{10}
+	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GetSearchFloorRequest) GetRecipe() string {
@@ -781,7 +1004,7 @@ type GetSearchFloorResponse struct {
 
 func (x *GetSearchFloorResponse) Reset() {
 	*x = GetSearchFloorResponse{}
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[11]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -793,7 +1016,7 @@ func (x *GetSearchFloorResponse) String() string {
 func (*GetSearchFloorResponse) ProtoMessage() {}
 
 func (x *GetSearchFloorResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[11]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -806,7 +1029,7 @@ func (x *GetSearchFloorResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSearchFloorResponse.ProtoReflect.Descriptor instead.
 func (*GetSearchFloorResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{11}
+	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *GetSearchFloorResponse) GetError() HostSearchErrorCode {
@@ -863,7 +1086,7 @@ type SetSearchFloorRequest struct {
 
 func (x *SetSearchFloorRequest) Reset() {
 	*x = SetSearchFloorRequest{}
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[12]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -875,7 +1098,7 @@ func (x *SetSearchFloorRequest) String() string {
 func (*SetSearchFloorRequest) ProtoMessage() {}
 
 func (x *SetSearchFloorRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[12]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -888,7 +1111,7 @@ func (x *SetSearchFloorRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetSearchFloorRequest.ProtoReflect.Descriptor instead.
 func (*SetSearchFloorRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{12}
+	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *SetSearchFloorRequest) GetRecipe() string {
@@ -914,7 +1137,7 @@ type SetSearchFloorResponse struct {
 
 func (x *SetSearchFloorResponse) Reset() {
 	*x = SetSearchFloorResponse{}
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[13]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -926,7 +1149,7 @@ func (x *SetSearchFloorResponse) String() string {
 func (*SetSearchFloorResponse) ProtoMessage() {}
 
 func (x *SetSearchFloorResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostsearch_proto_msgTypes[13]
+	mi := &file_numen_v1_hostsearch_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -939,7 +1162,7 @@ func (x *SetSearchFloorResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetSearchFloorResponse.ProtoReflect.Descriptor instead.
 func (*SetSearchFloorResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{13}
+	return file_numen_v1_hostsearch_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *SetSearchFloorResponse) GetError() HostSearchErrorCode {
@@ -964,7 +1187,30 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\vchunk_count\x18\x05 \x01(\x03R\n" +
 	"chunkCount\x12%\n" +
 	"\x0eembedded_count\x18\x06 \x01(\x03R\rembeddedCount\x12\x19\n" +
-	"\bis_ready\x18\a \x01(\bR\aisReady\")\n" +
+	"\bis_ready\x18\a \x01(\bR\aisReady\"\x16\n" +
+	"\x14GetIndexStatsRequest\"r\n" +
+	"\x0eExtensionStats\x12\x1c\n" +
+	"\textension\x18\x01 \x01(\tR\textension\x12!\n" +
+	"\fsource_count\x18\x02 \x01(\x03R\vsourceCount\x12\x1f\n" +
+	"\vchunk_count\x18\x03 \x01(\x03R\n" +
+	"chunkCount\"\x85\x03\n" +
+	"\x15GetIndexStatsResponse\x123\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x12\x16\n" +
+	"\x06recipe\x18\x02 \x01(\tR\x06recipe\x12\x14\n" +
+	"\x05model\x18\x03 \x01(\tR\x05model\x12\x1e\n" +
+	"\n" +
+	"dimensions\x18\x04 \x01(\x03R\n" +
+	"dimensions\x12\x1f\n" +
+	"\vchunk_count\x18\x05 \x01(\x03R\n" +
+	"chunkCount\x12!\n" +
+	"\fvector_count\x18\x06 \x01(\x03R\vvectorCount\x12!\n" +
+	"\fsource_count\x18\a \x01(\x03R\vsourceCount\x128\n" +
+	"\n" +
+	"extensions\x18\b \x03(\v2\x18.numen.v1.ExtensionStatsR\n" +
+	"extensions\x12%\n" +
+	"\x0edatabase_bytes\x18\t \x01(\x03R\rdatabaseBytes\x12!\n" +
+	"\fvector_bytes\x18\n" +
+	" \x01(\x03R\vvectorBytes\")\n" +
 	"\x11EmbedTextsRequest\x12\x14\n" +
 	"\x05texts\x18\x01 \x03(\tR\x05texts\"\x92\x01\n" +
 	"\x12EmbedTextsResponse\x123\n" +
@@ -1020,9 +1266,10 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\x1fSEARCH_FLOOR_SOURCE_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aSEARCH_FLOOR_SOURCE_STORED\x10\x01\x12\"\n" +
 	"\x1eSEARCH_FLOOR_SOURCE_MODEL_HINT\x10\x02\x12\x1f\n" +
-	"\x1bSEARCH_FLOOR_SOURCE_DEFAULT\x10\x032\xa3\x04\n" +
+	"\x1bSEARCH_FLOOR_SOURCE_DEFAULT\x10\x032\xf5\x04\n" +
 	"\x11HostSearchService\x12\\\n" +
-	"\x11GetEmbeddingState\x12\".numen.v1.GetEmbeddingStateRequest\x1a#.numen.v1.GetEmbeddingStateResponse\x12G\n" +
+	"\x11GetEmbeddingState\x12\".numen.v1.GetEmbeddingStateRequest\x1a#.numen.v1.GetEmbeddingStateResponse\x12P\n" +
+	"\rGetIndexStats\x12\x1e.numen.v1.GetIndexStatsRequest\x1a\x1f.numen.v1.GetIndexStatsResponse\x12G\n" +
 	"\n" +
 	"EmbedTexts\x12\x1b.numen.v1.EmbedTextsRequest\x1a\x1c.numen.v1.EmbedTextsResponse\x12_\n" +
 	"\x12SampleSimilarities\x12#.numen.v1.SampleSimilaritiesRequest\x1a$.numen.v1.SampleSimilaritiesResponse\x12\\\n" +
@@ -1043,55 +1290,62 @@ func file_numen_v1_hostsearch_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_hostsearch_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_numen_v1_hostsearch_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_numen_v1_hostsearch_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_numen_v1_hostsearch_proto_goTypes = []any{
 	(HostSearchErrorCode)(0),           // 0: numen.v1.HostSearchErrorCode
 	(SearchFloorSource)(0),             // 1: numen.v1.SearchFloorSource
 	(*GetEmbeddingStateRequest)(nil),   // 2: numen.v1.GetEmbeddingStateRequest
 	(*GetEmbeddingStateResponse)(nil),  // 3: numen.v1.GetEmbeddingStateResponse
-	(*EmbedTextsRequest)(nil),          // 4: numen.v1.EmbedTextsRequest
-	(*EmbedTextsResponse)(nil),         // 5: numen.v1.EmbedTextsResponse
-	(*SimilarityQuery)(nil),            // 6: numen.v1.SimilarityQuery
-	(*SampleSimilaritiesRequest)(nil),  // 7: numen.v1.SampleSimilaritiesRequest
-	(*SimilarityRow)(nil),              // 8: numen.v1.SimilarityRow
-	(*SampleSimilaritiesResponse)(nil), // 9: numen.v1.SampleSimilaritiesResponse
-	(*GetBestSimilarityRequest)(nil),   // 10: numen.v1.GetBestSimilarityRequest
-	(*GetBestSimilarityResponse)(nil),  // 11: numen.v1.GetBestSimilarityResponse
-	(*GetSearchFloorRequest)(nil),      // 12: numen.v1.GetSearchFloorRequest
-	(*GetSearchFloorResponse)(nil),     // 13: numen.v1.GetSearchFloorResponse
-	(*SetSearchFloorRequest)(nil),      // 14: numen.v1.SetSearchFloorRequest
-	(*SetSearchFloorResponse)(nil),     // 15: numen.v1.SetSearchFloorResponse
-	(*FloatVector)(nil),                // 16: numen.v1.FloatVector
+	(*GetIndexStatsRequest)(nil),       // 4: numen.v1.GetIndexStatsRequest
+	(*ExtensionStats)(nil),             // 5: numen.v1.ExtensionStats
+	(*GetIndexStatsResponse)(nil),      // 6: numen.v1.GetIndexStatsResponse
+	(*EmbedTextsRequest)(nil),          // 7: numen.v1.EmbedTextsRequest
+	(*EmbedTextsResponse)(nil),         // 8: numen.v1.EmbedTextsResponse
+	(*SimilarityQuery)(nil),            // 9: numen.v1.SimilarityQuery
+	(*SampleSimilaritiesRequest)(nil),  // 10: numen.v1.SampleSimilaritiesRequest
+	(*SimilarityRow)(nil),              // 11: numen.v1.SimilarityRow
+	(*SampleSimilaritiesResponse)(nil), // 12: numen.v1.SampleSimilaritiesResponse
+	(*GetBestSimilarityRequest)(nil),   // 13: numen.v1.GetBestSimilarityRequest
+	(*GetBestSimilarityResponse)(nil),  // 14: numen.v1.GetBestSimilarityResponse
+	(*GetSearchFloorRequest)(nil),      // 15: numen.v1.GetSearchFloorRequest
+	(*GetSearchFloorResponse)(nil),     // 16: numen.v1.GetSearchFloorResponse
+	(*SetSearchFloorRequest)(nil),      // 17: numen.v1.SetSearchFloorRequest
+	(*SetSearchFloorResponse)(nil),     // 18: numen.v1.SetSearchFloorResponse
+	(*FloatVector)(nil),                // 19: numen.v1.FloatVector
 }
 var file_numen_v1_hostsearch_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.GetEmbeddingStateResponse.error:type_name -> numen.v1.HostSearchErrorCode
-	0,  // 1: numen.v1.EmbedTextsResponse.error:type_name -> numen.v1.HostSearchErrorCode
-	16, // 2: numen.v1.EmbedTextsResponse.vectors:type_name -> numen.v1.FloatVector
-	16, // 3: numen.v1.SimilarityQuery.vector:type_name -> numen.v1.FloatVector
-	6,  // 4: numen.v1.SampleSimilaritiesRequest.queries:type_name -> numen.v1.SimilarityQuery
-	0,  // 5: numen.v1.SampleSimilaritiesResponse.error:type_name -> numen.v1.HostSearchErrorCode
-	8,  // 6: numen.v1.SampleSimilaritiesResponse.rows:type_name -> numen.v1.SimilarityRow
-	0,  // 7: numen.v1.GetBestSimilarityResponse.error:type_name -> numen.v1.HostSearchErrorCode
-	0,  // 8: numen.v1.GetSearchFloorResponse.error:type_name -> numen.v1.HostSearchErrorCode
-	1,  // 9: numen.v1.GetSearchFloorResponse.source:type_name -> numen.v1.SearchFloorSource
-	0,  // 10: numen.v1.SetSearchFloorResponse.error:type_name -> numen.v1.HostSearchErrorCode
-	2,  // 11: numen.v1.HostSearchService.GetEmbeddingState:input_type -> numen.v1.GetEmbeddingStateRequest
-	4,  // 12: numen.v1.HostSearchService.EmbedTexts:input_type -> numen.v1.EmbedTextsRequest
-	7,  // 13: numen.v1.HostSearchService.SampleSimilarities:input_type -> numen.v1.SampleSimilaritiesRequest
-	10, // 14: numen.v1.HostSearchService.GetBestSimilarity:input_type -> numen.v1.GetBestSimilarityRequest
-	12, // 15: numen.v1.HostSearchService.GetSearchFloor:input_type -> numen.v1.GetSearchFloorRequest
-	14, // 16: numen.v1.HostSearchService.SetSearchFloor:input_type -> numen.v1.SetSearchFloorRequest
-	3,  // 17: numen.v1.HostSearchService.GetEmbeddingState:output_type -> numen.v1.GetEmbeddingStateResponse
-	5,  // 18: numen.v1.HostSearchService.EmbedTexts:output_type -> numen.v1.EmbedTextsResponse
-	9,  // 19: numen.v1.HostSearchService.SampleSimilarities:output_type -> numen.v1.SampleSimilaritiesResponse
-	11, // 20: numen.v1.HostSearchService.GetBestSimilarity:output_type -> numen.v1.GetBestSimilarityResponse
-	13, // 21: numen.v1.HostSearchService.GetSearchFloor:output_type -> numen.v1.GetSearchFloorResponse
-	15, // 22: numen.v1.HostSearchService.SetSearchFloor:output_type -> numen.v1.SetSearchFloorResponse
-	17, // [17:23] is the sub-list for method output_type
-	11, // [11:17] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	0,  // 1: numen.v1.GetIndexStatsResponse.error:type_name -> numen.v1.HostSearchErrorCode
+	5,  // 2: numen.v1.GetIndexStatsResponse.extensions:type_name -> numen.v1.ExtensionStats
+	0,  // 3: numen.v1.EmbedTextsResponse.error:type_name -> numen.v1.HostSearchErrorCode
+	19, // 4: numen.v1.EmbedTextsResponse.vectors:type_name -> numen.v1.FloatVector
+	19, // 5: numen.v1.SimilarityQuery.vector:type_name -> numen.v1.FloatVector
+	9,  // 6: numen.v1.SampleSimilaritiesRequest.queries:type_name -> numen.v1.SimilarityQuery
+	0,  // 7: numen.v1.SampleSimilaritiesResponse.error:type_name -> numen.v1.HostSearchErrorCode
+	11, // 8: numen.v1.SampleSimilaritiesResponse.rows:type_name -> numen.v1.SimilarityRow
+	0,  // 9: numen.v1.GetBestSimilarityResponse.error:type_name -> numen.v1.HostSearchErrorCode
+	0,  // 10: numen.v1.GetSearchFloorResponse.error:type_name -> numen.v1.HostSearchErrorCode
+	1,  // 11: numen.v1.GetSearchFloorResponse.source:type_name -> numen.v1.SearchFloorSource
+	0,  // 12: numen.v1.SetSearchFloorResponse.error:type_name -> numen.v1.HostSearchErrorCode
+	2,  // 13: numen.v1.HostSearchService.GetEmbeddingState:input_type -> numen.v1.GetEmbeddingStateRequest
+	4,  // 14: numen.v1.HostSearchService.GetIndexStats:input_type -> numen.v1.GetIndexStatsRequest
+	7,  // 15: numen.v1.HostSearchService.EmbedTexts:input_type -> numen.v1.EmbedTextsRequest
+	10, // 16: numen.v1.HostSearchService.SampleSimilarities:input_type -> numen.v1.SampleSimilaritiesRequest
+	13, // 17: numen.v1.HostSearchService.GetBestSimilarity:input_type -> numen.v1.GetBestSimilarityRequest
+	15, // 18: numen.v1.HostSearchService.GetSearchFloor:input_type -> numen.v1.GetSearchFloorRequest
+	17, // 19: numen.v1.HostSearchService.SetSearchFloor:input_type -> numen.v1.SetSearchFloorRequest
+	3,  // 20: numen.v1.HostSearchService.GetEmbeddingState:output_type -> numen.v1.GetEmbeddingStateResponse
+	6,  // 21: numen.v1.HostSearchService.GetIndexStats:output_type -> numen.v1.GetIndexStatsResponse
+	8,  // 22: numen.v1.HostSearchService.EmbedTexts:output_type -> numen.v1.EmbedTextsResponse
+	12, // 23: numen.v1.HostSearchService.SampleSimilarities:output_type -> numen.v1.SampleSimilaritiesResponse
+	14, // 24: numen.v1.HostSearchService.GetBestSimilarity:output_type -> numen.v1.GetBestSimilarityResponse
+	16, // 25: numen.v1.HostSearchService.GetSearchFloor:output_type -> numen.v1.GetSearchFloorResponse
+	18, // 26: numen.v1.HostSearchService.SetSearchFloor:output_type -> numen.v1.SetSearchFloorResponse
+	20, // [20:27] is the sub-list for method output_type
+	13, // [13:20] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_hostsearch_proto_init() }
@@ -1106,7 +1360,7 @@ func file_numen_v1_hostsearch_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_hostsearch_proto_rawDesc), len(file_numen_v1_hostsearch_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   14,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -1,0 +1,80 @@
+import { describe, expect, it } from 'vitest'
+import { mount } from '@vue/test-utils'
+import type { Stats } from './api/stats'
+import StatsIndicator from './StatsIndicator.vue'
+
+const STATS: Stats = {
+  vectors: 12480,
+  chunks: 13100,
+  waiting: 620,
+  sources: 84,
+  kinds: [
+    { kind: 'notes', sources: 70, chunks: 4100 },
+    { kind: 'pdf', sources: 0, chunks: 0 },
+  ],
+  model: 'bge-m3',
+  recipe: 'local|bge-m3|1024|512|mean|int8@0.4',
+  dimensions: 1024,
+  profile: 'balanced',
+  threads: 4,
+  speed: 18.5,
+  databaseBytes: 73400320,
+  vectorBytes: 52428800,
+}
+
+const draw = (stats: Stats | null, phase: 'loading' | 'ready' | 'unavailable' = 'ready') =>
+  mount(StatsIndicator, { props: { stats, phase, locale: 'en-US' }, attachTo: document.body })
+
+describe('the index stats indicator', () => {
+  it('shows the vectors over the chunks while chunks wait', () => {
+    const wrapper = draw(STATS)
+
+    expect(wrapper.find('.index-stats__trigger').text()).toBe('⬡ 12,480 / 13,100')
+  })
+
+  it('shows the vectors alone once the index is embedded', () => {
+    const wrapper = draw({ ...STATS, vectors: 13100, waiting: 0 })
+
+    expect(wrapper.find('.index-stats__label').text()).toBe('⬡ 13,100')
+  })
+
+  it('draws nothing before the first answer', () => {
+    expect(draw(null, 'loading').find('.index-stats').exists()).toBe(false)
+  })
+
+  it('shows a dash where the index has nothing to show', () => {
+    const wrapper = draw(null, 'unavailable')
+
+    expect(wrapper.find('.index-stats__label').text()).toBe('⬡ –')
+  })
+
+  it('opens the popover on a click, with the rows, and closes it on Escape', async () => {
+    const wrapper = draw(STATS)
+    expect(wrapper.find('.index-popover').exists()).toBe(false)
+
+    await wrapper.find('.index-stats__trigger').trigger('click')
+
+    expect(wrapper.find('.index-stats__trigger').attributes('aria-expanded')).toBe('true')
+    const labels = wrapper.findAll('.index-popover__label').map((one) => one.text())
+    expect(labels).toContain('Vectors')
+    expect(labels).toContain('Chunks')
+    expect(labels).toContain('Notes')
+    expect(labels).not.toContain('PDF')
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.index-popover').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('closes the popover with its close button', async () => {
+    const wrapper = draw(STATS)
+    await wrapper.find('.index-stats__trigger').trigger('click')
+
+    await wrapper.find('.index-popover__close-btn').trigger('click')
+
+    expect(wrapper.find('.index-popover').exists()).toBe(false)
+    wrapper.unmount()
+  })
+})

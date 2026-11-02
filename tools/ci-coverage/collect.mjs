@@ -23,6 +23,7 @@ const GO_MODULES = [
   'plugins/agents-antigravity',
   'plugins/agents-claude',
   'plugins/agents-codex',
+  'plugins/tools-index-stats',
   'plugins/tools-media-importer',
   'plugins/engines-embeddings',
   'plugins/engines-ocr',

@@ -36,6 +36,9 @@ const (
 	// HostSearchServiceGetEmbeddingStateProcedure is the fully-qualified name of the
 	// HostSearchService's GetEmbeddingState RPC.
 	HostSearchServiceGetEmbeddingStateProcedure = "/numen.v1.HostSearchService/GetEmbeddingState"
+	// HostSearchServiceGetIndexStatsProcedure is the fully-qualified name of the HostSearchService's
+	// GetIndexStats RPC.
+	HostSearchServiceGetIndexStatsProcedure = "/numen.v1.HostSearchService/GetIndexStats"
 	// HostSearchServiceEmbedTextsProcedure is the fully-qualified name of the HostSearchService's
 	// EmbedTexts RPC.
 	HostSearchServiceEmbedTextsProcedure = "/numen.v1.HostSearchService/EmbedTexts"
@@ -60,6 +63,11 @@ type HostSearchServiceClient interface {
 	// that starts after the vectors exist reads the same state as one that was
 	// running when they were made.
 	GetEmbeddingState(context.Context, *connect.Request[v1.GetEmbeddingStateRequest]) (*connect.Response[v1.GetEmbeddingStateResponse], error)
+	// GetIndexStats is what the index of the vault holds: its vectors, chunks and
+	// sources, the sources and chunks by file extension, and the size on disk of
+	// the index. Counts are read at most once a second, and the sizes at most
+	// once every 30 seconds.
+	GetIndexStats(context.Context, *connect.Request[v1.GetIndexStatsRequest]) (*connect.Response[v1.GetIndexStatsResponse], error)
 	// EmbedTexts embeds texts with the model in use. At most 256 texts of at most
 	// 8192 bytes each are embedded in one call.
 	EmbedTexts(context.Context, *connect.Request[v1.EmbedTextsRequest]) (*connect.Response[v1.EmbedTextsResponse], error)
@@ -98,6 +106,12 @@ func NewHostSearchServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(hostSearchServiceMethods.ByName("GetEmbeddingState")),
 			connect.WithClientOptions(opts...),
 		),
+		getIndexStats: connect.NewClient[v1.GetIndexStatsRequest, v1.GetIndexStatsResponse](
+			httpClient,
+			baseURL+HostSearchServiceGetIndexStatsProcedure,
+			connect.WithSchema(hostSearchServiceMethods.ByName("GetIndexStats")),
+			connect.WithClientOptions(opts...),
+		),
 		embedTexts: connect.NewClient[v1.EmbedTextsRequest, v1.EmbedTextsResponse](
 			httpClient,
 			baseURL+HostSearchServiceEmbedTextsProcedure,
@@ -134,6 +148,7 @@ func NewHostSearchServiceClient(httpClient connect.HTTPClient, baseURL string, o
 // hostSearchServiceClient implements HostSearchServiceClient.
 type hostSearchServiceClient struct {
 	getEmbeddingState  *connect.Client[v1.GetEmbeddingStateRequest, v1.GetEmbeddingStateResponse]
+	getIndexStats      *connect.Client[v1.GetIndexStatsRequest, v1.GetIndexStatsResponse]
 	embedTexts         *connect.Client[v1.EmbedTextsRequest, v1.EmbedTextsResponse]
 	sampleSimilarities *connect.Client[v1.SampleSimilaritiesRequest, v1.SampleSimilaritiesResponse]
 	getBestSimilarity  *connect.Client[v1.GetBestSimilarityRequest, v1.GetBestSimilarityResponse]
@@ -144,6 +159,11 @@ type hostSearchServiceClient struct {
 // GetEmbeddingState calls numen.v1.HostSearchService.GetEmbeddingState.
 func (c *hostSearchServiceClient) GetEmbeddingState(ctx context.Context, req *connect.Request[v1.GetEmbeddingStateRequest]) (*connect.Response[v1.GetEmbeddingStateResponse], error) {
 	return c.getEmbeddingState.CallUnary(ctx, req)
+}
+
+// GetIndexStats calls numen.v1.HostSearchService.GetIndexStats.
+func (c *hostSearchServiceClient) GetIndexStats(ctx context.Context, req *connect.Request[v1.GetIndexStatsRequest]) (*connect.Response[v1.GetIndexStatsResponse], error) {
+	return c.getIndexStats.CallUnary(ctx, req)
 }
 
 // EmbedTexts calls numen.v1.HostSearchService.EmbedTexts.
@@ -178,6 +198,11 @@ type HostSearchServiceHandler interface {
 	// that starts after the vectors exist reads the same state as one that was
 	// running when they were made.
 	GetEmbeddingState(context.Context, *connect.Request[v1.GetEmbeddingStateRequest]) (*connect.Response[v1.GetEmbeddingStateResponse], error)
+	// GetIndexStats is what the index of the vault holds: its vectors, chunks and
+	// sources, the sources and chunks by file extension, and the size on disk of
+	// the index. Counts are read at most once a second, and the sizes at most
+	// once every 30 seconds.
+	GetIndexStats(context.Context, *connect.Request[v1.GetIndexStatsRequest]) (*connect.Response[v1.GetIndexStatsResponse], error)
 	// EmbedTexts embeds texts with the model in use. At most 256 texts of at most
 	// 8192 bytes each are embedded in one call.
 	EmbedTexts(context.Context, *connect.Request[v1.EmbedTextsRequest]) (*connect.Response[v1.EmbedTextsResponse], error)
@@ -210,6 +235,12 @@ func NewHostSearchServiceHandler(svc HostSearchServiceHandler, opts ...connect.H
 		HostSearchServiceGetEmbeddingStateProcedure,
 		svc.GetEmbeddingState,
 		connect.WithSchema(hostSearchServiceMethods.ByName("GetEmbeddingState")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostSearchServiceGetIndexStatsHandler := connect.NewUnaryHandler(
+		HostSearchServiceGetIndexStatsProcedure,
+		svc.GetIndexStats,
+		connect.WithSchema(hostSearchServiceMethods.ByName("GetIndexStats")),
 		connect.WithHandlerOptions(opts...),
 	)
 	hostSearchServiceEmbedTextsHandler := connect.NewUnaryHandler(
@@ -246,6 +277,8 @@ func NewHostSearchServiceHandler(svc HostSearchServiceHandler, opts ...connect.H
 		switch r.URL.Path {
 		case HostSearchServiceGetEmbeddingStateProcedure:
 			hostSearchServiceGetEmbeddingStateHandler.ServeHTTP(w, r)
+		case HostSearchServiceGetIndexStatsProcedure:
+			hostSearchServiceGetIndexStatsHandler.ServeHTTP(w, r)
 		case HostSearchServiceEmbedTextsProcedure:
 			hostSearchServiceEmbedTextsHandler.ServeHTTP(w, r)
 		case HostSearchServiceSampleSimilaritiesProcedure:
@@ -267,6 +300,10 @@ type UnimplementedHostSearchServiceHandler struct{}
 
 func (UnimplementedHostSearchServiceHandler) GetEmbeddingState(context.Context, *connect.Request[v1.GetEmbeddingStateRequest]) (*connect.Response[v1.GetEmbeddingStateResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.GetEmbeddingState is not implemented"))
+}
+
+func (UnimplementedHostSearchServiceHandler) GetIndexStats(context.Context, *connect.Request[v1.GetIndexStatsRequest]) (*connect.Response[v1.GetIndexStatsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostSearchService.GetIndexStats is not implemented"))
 }
 
 func (UnimplementedHostSearchServiceHandler) EmbedTexts(context.Context, *connect.Request[v1.EmbedTextsRequest]) (*connect.Response[v1.EmbedTextsResponse], error) {

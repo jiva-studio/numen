@@ -1,0 +1,130 @@
+/* Index stats plugin styles */
+.index-stats {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+}
+
+.index-stats__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 100%;
+  padding: 0 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--numen-hushed);
+  font: inherit;
+  font-size: var(--numen-text-1);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  border-radius: var(--numen-radius-tight);
+}
+
+.index-stats__trigger:hover,
+.index-stats__trigger:focus-visible,
+.index-stats__trigger[aria-expanded='true'] {
+  background: var(--numen-raised);
+  color: var(--numen-ink);
+}
+
+.index-popover {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  width: 24rem;
+  max-width: calc(100vw - 1rem);
+  max-height: 28rem;
+  background: var(--numen-raised);
+  color: var(--numen-ink);
+  border: 1px solid var(--numen-rule);
+  border-radius: var(--numen-radius-panel);
+  box-shadow: var(--numen-panel-shadow);
+  overflow: hidden;
+  z-index: 50;
+}
+
+.index-popover__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--numen-surface);
+  border-bottom: 1px solid var(--numen-rule);
+}
+
+.index-popover__title {
+  font-size: var(--numen-text-2);
+  font-weight: 600;
+  color: var(--numen-ink);
+}
+
+.index-popover__close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--numen-radius-tight);
+  color: var(--numen-hushed);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.index-popover__close-btn:hover {
+  color: var(--numen-ink);
+}
+
+.index-popover__body {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0.5rem;
+  overflow-y: auto;
+}
+
+.index-popover__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--numen-radius);
+  font-size: var(--numen-text-2);
+  line-height: 1.25;
+}
+
+.index-popover__row:hover {
+  background: var(--numen-selection-away);
+}
+
+.index-popover__row--nested {
+  padding-inline-start: 1.25rem;
+  font-size: var(--numen-text-1);
+}
+
+.index-popover__label {
+  flex-shrink: 0;
+  color: var(--numen-hushed);
+}
+
+.index-popover__row--nested .index-popover__label {
+  color: var(--numen-hushed);
+}
+
+.index-popover__value {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--numen-ink);
+}
