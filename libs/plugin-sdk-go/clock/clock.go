@@ -13,7 +13,7 @@ import (
 type System struct{}
 
 // Now gets the current wall-clock time. A plugin may take this clock or
-// declare its own; TestTheMachineClockIsReadOnlyByAClockPortImplementation
+// declare its own; TestTheTypeCheckedWorkspaceObeysItsRules/TheMachineClockIsReadOnlyByAClockPortImplementation
 // accepts a read of the machine clock only inside a method that implements a
 // clock port.
 func (System) Now() time.Time {

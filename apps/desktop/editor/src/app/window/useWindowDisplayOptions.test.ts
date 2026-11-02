@@ -48,8 +48,6 @@ describe('a change of the vault', () => {
 
     createDisplayOptions(wiring).onVaultChanged([], [{ from: 'a.md', to: 'b.md' }])
 
-    await vi.waitFor(() =>
-      expect(writeMessage).toHaveBeenCalledWith(expect.any(String), 'error'),
-    )
+    await vi.waitFor(() => expect(writeMessage).toHaveBeenCalledWith(expect.any(String), 'error'))
   })
 })

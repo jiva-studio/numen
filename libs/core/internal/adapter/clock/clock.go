@@ -12,7 +12,7 @@ import (
 type System struct{}
 
 // Now gets the current wall-clock time. This is the only read of the machine
-// clock in the workspace; TestTheMachineClockIsReadOnlyByAClockPortImplementation
+// clock in the workspace; TestTheTypeCheckedWorkspaceObeysItsRules/TheMachineClockIsReadOnlyByAClockPortImplementation
 // enforces it.
 func (System) Now() time.Time {
 	return time.Now()

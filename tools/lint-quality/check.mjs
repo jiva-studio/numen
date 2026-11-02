@@ -131,6 +131,7 @@ function resolveChecks(args, changedOnly) {
     const hasGo = changed.some((f) => f.endsWith(".go"));
     const hasTsOrVue = changed.some((f) => f.endsWith(".ts") || f.endsWith(".vue") || f.endsWith(".astro"));
     const hasLintConfig = changed.some((f) => /(^|\/)(eslint\.config\.m?js|base-eslint\.mjs|tsconfig\.json)$/.test(f));
+    const hasGoLintConfig = changed.some((f) => /(^|\/)\.golangci[^/]*\.ya?ml$/.test(f));
     const hasUi = changed.some((f) => f.startsWith("libs/ui/core/"));
     const hasGoCore = changed.some((f) => f.startsWith("libs/core/") && f.endsWith(".go"));
 
@@ -139,7 +140,7 @@ function resolveChecks(args, changedOnly) {
       if (id === "complexity") return hasGo;
       if (id === "deadcode") return hasUi || hasGoCore;
       if (id === "interfaces") return hasGo;
-      if (id === "golint") return hasGo;
+      if (id === "golint") return hasGo || hasGoLintConfig;
       if (id === "frontend") return hasTsOrVue || hasLintConfig;
       if (id === "structure") return hasGo || hasTsOrVue;
       return true;

@@ -16,7 +16,12 @@ function createFiles() {
         : { ok: false, error: 'missing' },
     write: async (path, body, seen) => {
       const existing = files.get(path)
-      if (seen && existing !== undefined && existing !== seen.prose && statFile(existing) !== seen.stat) {
+      if (
+        seen &&
+        existing !== undefined &&
+        existing !== seen.prose &&
+        statFile(existing) !== seen.stat
+      ) {
         return { ok: false, error: 'changed' }
       }
       files.set(path, body)
@@ -116,9 +121,10 @@ describe('a note tab of the note kind', () => {
 
     files.set('notes/Ebb.md', files.get('notes/Tide.md') ?? '')
     files.delete('notes/Tide.md')
-    notes.applyPathChanges(['notes/Tide.md', 'notes/Ebb.md'], [
-      { from: 'notes/Tide.md', to: 'notes/Ebb.md' },
-    ])
+    notes.applyPathChanges(
+      ['notes/Tide.md', 'notes/Ebb.md'],
+      [{ from: 'notes/Tide.md', to: 'notes/Ebb.md' }],
+    )
     await wait()
 
     expect(state.path).toBe('notes/Ebb.md')
@@ -156,12 +162,17 @@ describe('the links of a note tab of the note kind', () => {
         getNoteBuffer: () => notes,
         getNotes: () => ({
           findNotes: async (query: string) =>
-            query.toLowerCase().startsWith('en') ? [{ path: 'notes/Entropy.md', title: 'Entropy' }] : [],
+            query.toLowerCase().startsWith('en')
+              ? [{ path: 'notes/Entropy.md', title: 'Entropy' }]
+              : [],
           getHeadings: async () => new Map([['notes/Entropy.md', [{ text: 'Shannon formula' }]]]),
         }),
         getWorkspace: () => ({
           openFile: (path: string, options?: { placement?: string }) =>
-            openCalls.push({ path, ...(options?.placement ? { placement: options.placement } : {}) }),
+            openCalls.push({
+              path,
+              ...(options?.placement ? { placement: options.placement } : {}),
+            }),
         }),
         resolveLink: async (_from: string, address: string) =>
           address === 'name://Entropy' ? 'notes/Entropy.md' : '',

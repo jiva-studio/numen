@@ -30,8 +30,8 @@
     "test:unit": "vitest run --project unit",
     "test:stories": "node ../../../tools/ci-stories/run.mjs libs/ui/core libs/ui/core/src",
     "test:watch": "vitest --project unit",
-    "typecheck": "vue-tsc --build --force",
-    "lint": "eslint ."
+    "typecheck": "vue-tsc --build",
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ ."
   },
   "peerDependencies": {
     "vue": "^3.5.44"

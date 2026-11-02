@@ -34,6 +34,7 @@ export const FRONTEND_VERIFIERS = [
   },
   {
     id: "ui-lint",
+    isLint: true,
     scope: "libs",
     module: "ui",
     name: "UI Library Lint (npm run lint in libs/ui/core; its imports are dependency-graph's)",
@@ -43,6 +44,7 @@ export const FRONTEND_VERIFIERS = [
   },
   {
     id: "shell-lint",
+    isLint: true,
     scope: "libs",
     module: "shell",
     name: "Shell Library Lint (npm run lint in libs/ui/shell; its imports are dependency-graph's)",
@@ -52,6 +54,7 @@ export const FRONTEND_VERIFIERS = [
   },
   {
     id: "plugin-host-lint",
+    isLint: true,
     scope: "libs",
     module: "host",
     name: "Plugin Host Lint (npm run lint in libs/plugin-host-ts; its imports are dependency-graph's)",
@@ -61,6 +64,7 @@ export const FRONTEND_VERIFIERS = [
   },
   {
     id: "desktop-editor-fsd",
+    isLint: true,
     scope: "apps",
     module: "desktop",
     name: "Desktop Editor FSD Layer Hierarchy (shared -> entities -> features -> pages -> app)",
@@ -70,6 +74,7 @@ export const FRONTEND_VERIFIERS = [
   },
   {
     id: "desktop-flashcards-fsd",
+    isLint: true,
     scope: "apps",
     module: "desktop",
     name: "Desktop Flashcards FSD Layer Hierarchy",

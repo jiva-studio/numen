@@ -239,7 +239,9 @@ describe('the open tabs while the window leaves its vault', () => {
     const writeLog: string[] = []
     let release: () => void = () => undefined
     target.writeOpenTabs.mockImplementation((tabs: unknown) => {
-      writeLog.push(JSON.stringify((tabs as { tabs: { title: string }[] }).tabs.map((t) => t.title)))
+      writeLog.push(
+        JSON.stringify((tabs as { tabs: { title: string }[] }).tabs.map((t) => t.title)),
+      )
       return new Promise<void>((resolve) => {
         release = resolve
       })

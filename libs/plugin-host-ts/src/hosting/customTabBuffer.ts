@@ -21,7 +21,13 @@ const getFileConflict = (state: string): FileConflict =>
 const getDefaultName = (path: string): string => stripMarkdownExtension(extractFilename(path))
 
 /** The fields of a buffered note tab, which a tab's own actions cannot replace. */
-export const BUFFERED_FIELDS = ['fileConflict', 'keepMine', 'takeFile', 'wikilinks', 'followLink'] as const
+export const BUFFERED_FIELDS = [
+  'fileConflict',
+  'keepMine',
+  'takeFile',
+  'wikilinks',
+  'followLink',
+] as const
 
 export interface BufferedNoteOptions {
   readonly pluginId: string
@@ -55,7 +61,9 @@ function createWikilinks(deps: PluginHostDeps | undefined, getPath: () => string
       const notes = deps?.getNotes?.()
       if (!notes) return []
       const found = noteTitle
-        ? (await notes.findNotes(noteTitle, 5)).find((one) => one.title.toLowerCase() === noteTitle.toLowerCase())?.path
+        ? (await notes.findNotes(noteTitle, 5)).find(
+            (one) => one.title.toLowerCase() === noteTitle.toLowerCase(),
+          )?.path
         : getPath()
       if (!found) return []
       return ((await notes.getHeadings([found])).get(found) ?? []).map((one) => one.text)

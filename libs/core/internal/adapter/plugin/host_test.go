@@ -708,7 +708,8 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	clock := testsupport.NewClock()
+	host := NewHost(clock, "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -762,7 +763,7 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	host.Release("org.example.sample")
 	host.Release("org.example.sample")
 
-	time.Sleep(1050 * time.Millisecond)
+	clock.Advance(1050 * time.Millisecond)
 
 	evicted := host.EvictIdle(ctx, 0, 500*time.Millisecond)
 	if len(evicted) != 1 || evicted[0] != "org.example.sample" {
@@ -865,7 +866,8 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	clock := testsupport.NewClock()
+	host := NewHost(clock, "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -914,7 +916,7 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 	host.Release("org.example.sample")
 	host.Release("org.example.sample")
 
-	time.Sleep(1050 * time.Millisecond)
+	clock.Advance(1050 * time.Millisecond)
 
 	isDone := make(chan struct{})
 	go func() {
@@ -1090,7 +1092,8 @@ func TestTheExitOfAnOldProcessKeepsTheEndpointOfItsReplacement(t *testing.T) {
 func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
-	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
+	clock := testsupport.NewClock()
+	host := NewHost(clock, "desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
@@ -1134,7 +1137,7 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 		}
 		host.Release("org.example.sample")
 		if i == 0 {
-			time.Sleep(1050 * time.Millisecond)
+			clock.Advance(1050 * time.Millisecond)
 		}
 	}
 	stopEvictor()

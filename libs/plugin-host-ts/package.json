@@ -10,9 +10,9 @@
     "./vite": "./src/vite.ts"
   },
   "scripts": {
-    "typecheck": "tsc --build --force",
+    "typecheck": "tsc --build",
     "test": "vitest run",
-    "lint": "eslint ."
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ ."
   },
   "dependencies": {
     "@numen/core-client": "*",

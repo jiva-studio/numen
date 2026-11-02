@@ -409,12 +409,7 @@ describe('the layout started with an initial tab', () => {
   it('opens tab of kind with at payload from URL search params', async () => {
     h.f.windowTabs.openTabOfKind.mockResolvedValue('note:hello.md')
     try {
-      vi.stubGlobal(
-        'location',
-        new URL(
-          'http://localhost/?window=secondary&tab=note:hello.md',
-        ),
-      )
+      vi.stubGlobal('location', new URL('http://localhost/?window=secondary&tab=note:hello.md'))
       useWindow()
 
       await h.args.bootstrap.startLayout()

@@ -9,7 +9,7 @@
     "build": "npm run manual && astro build",
     "preview": "astro preview",
     "typecheck": "astro check",
-    "lint": "eslint .",
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ .",
     "manual": "node tools/manual.mjs",
     "manual:check": "node tools/manual.mjs --check",
     "shoot": "node tools/shoot.mjs"

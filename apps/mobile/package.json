@@ -10,8 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "vue-tsc --build --force",
-    "lint": "eslint ."
+    "typecheck": "vue-tsc --build",
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ ."
   },
   "//": "vue-router is named in no source file here and is required all the same: @ionic/vue imports routeLocationKey, useRoute and matchedRouteKey from it at the top of its entry, and declares no peer dependency on it.",
   "dependencies": {

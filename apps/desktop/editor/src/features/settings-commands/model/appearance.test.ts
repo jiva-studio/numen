@@ -410,9 +410,9 @@ describe('the sizes the two steps offer', () => {
   it('draws each in a group of its own, named for what that size moves', async () => {
     const one = await startWindow()
 
-    expect(one.appearance.getSizeGroups(INTERFACE_SCALE).map((group) => group.title)).toStrictEqual([
-      words.drawing,
-    ])
+    expect(one.appearance.getSizeGroups(INTERFACE_SCALE).map((group) => group.title)).toStrictEqual(
+      [words.drawing],
+    )
     expect(one.appearance.getSizeGroups(TEXT_SCALE).map((group) => group.title)).toStrictEqual([
       words.setting,
     ])
@@ -846,7 +846,10 @@ describe('the window before it has been told anything', () => {
     expect(appearance.applied.value).toBe('')
     expect(appearance.mode.value).toBe('system')
     expect(appearance.sized.value).toStrictEqual({ interfaceScale: DESIGNED, textScale: DESIGNED })
-    expect(appearance.bounds.value).toStrictEqual({ interfaceScale: EMPTY_RANGE, textScale: EMPTY_RANGE })
+    expect(appearance.bounds.value).toStrictEqual({
+      interfaceScale: EMPTY_RANGE,
+      textScale: EMPTY_RANGE,
+    })
   })
 
   it('writes nothing over the page it was served, whatever the keyboard relies on', async () => {

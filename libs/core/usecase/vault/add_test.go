@@ -190,7 +190,6 @@ func TestAFolderThatIsNotThereIsUnreadable(t *testing.T) {
 
 func TestAdd_UnreadableVaultIsNotAdded(t *testing.T) {
 	t.Parallel()
-	root := folder(t, "notes")
 	for _, tc := range []struct {
 		name     string
 		identity refusingIdentity
@@ -211,6 +210,8 @@ func TestAdd_UnreadableVaultIsNotAdded(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			// A folder of its own: the vault configuration is written into it.
+			root := folder(t, "notes")
 			inner := registryAt(t)
 			add := vaults.NewAdd(tc.identity, tc.registry(inner), testsupport.NewClock())
 

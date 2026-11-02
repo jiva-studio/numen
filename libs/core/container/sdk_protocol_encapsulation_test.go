@@ -183,10 +183,8 @@ func loadAPIPackages(t *testing.T, dir string, env []string) []*packages.Package
 
 // The exported identifiers of the public packages of the plugin SDK and its feature modules mention no
 // type declared in the protocol module: a plugin that compiles against the SDK names no protocol type.
-func TestSDKProtocolRule_RejectsProtocolTypesInTheSDK(t *testing.T) {
-	if testing.Short() {
-		t.Skip("loads and type-checks every module of the plugin SDK")
-	}
+func checkSDKNamesNoProtocolType(t *testing.T, workspace workspacePackages) {
+	t.Helper()
 	var pkgs []*packages.Package
 	modules := 0
 	root, err := filepath.Abs(filepath.Join(numenModulesDir, "libs", "plugin-sdk-go"))
@@ -202,7 +200,15 @@ func TestSDKProtocolRule_RejectsProtocolTypesInTheSDK(t *testing.T) {
 			continue
 		}
 		modules++
-		pkgs = append(pkgs, loadAPIPackages(t, dir, nil)...)
+		for _, pkg := range workspace.listModule(t, dir) {
+			if isTestVariant(pkg) {
+				continue
+			}
+			for _, one := range pkg.Errors {
+				t.Errorf("%s does not load: %v", pkg.ID, one)
+			}
+			pkgs = append(pkgs, pkg)
+		}
 	}
 	leaks, examined := getProtocolLeaks(pkgs, wire, sdkModule)
 	for _, one := range leaks {

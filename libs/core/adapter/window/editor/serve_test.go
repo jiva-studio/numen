@@ -610,6 +610,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 
 	for name, open := range streams {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
 			services := createServices(state)
 
