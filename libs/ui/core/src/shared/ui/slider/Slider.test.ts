@@ -7,6 +7,7 @@
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { SliderRoot } from 'reka-ui'
 import Slider from './Slider.vue'
 
 // The track is measured as it is drawn, and a document with no layout in it
@@ -208,5 +209,65 @@ describe('coming to rest', () => {
     await handle(control).trigger('blur')
 
     expect(control.emitted('commit')).toEqual([[41]])
+  })
+})
+
+describe('the pointer', () => {
+  /** What the track beneath the handle says, which is the track's own event. */
+  const getRoot = (control: ReturnType<typeof mountSlider>) => control.findComponent(SliderRoot)
+
+  it('passes on the value the handle is dragged to', async () => {
+    const control = mountSlider()
+    getRoot(control).vm.$emit('update:modelValue', [55])
+    await nextTick()
+    expect(getEmitted(control)).toEqual([55])
+  })
+
+  it('passes nothing on for a drag that carries no value', async () => {
+    const control = mountSlider()
+    getRoot(control).vm.$emit('update:modelValue', undefined)
+    getRoot(control).vm.$emit('update:modelValue', [])
+    await nextTick()
+    expect(getEmitted(control)).toEqual([])
+  })
+
+  it('passes the value on before the commit, and the commit once', async () => {
+    const control = mountSlider()
+    getRoot(control).vm.$emit('valueCommit', [70])
+    await nextTick()
+    expect(getEmitted(control)).toEqual([70])
+    expect(control.emitted('commit')).toEqual([[70]])
+  })
+
+  it('does not hand a value on twice for one that came to rest where it was dragged', async () => {
+    const control = mountSlider()
+    getRoot(control).vm.$emit('update:modelValue', [70])
+    getRoot(control).vm.$emit('valueCommit', [70])
+    await nextTick()
+    expect(getEmitted(control)).toEqual([70])
+    expect(control.emitted('commit')).toEqual([[70]])
+  })
+
+  it('commits nothing for a rest that carries no value', async () => {
+    const control = mountSlider()
+    getRoot(control).vm.$emit('valueCommit', [])
+    await nextTick()
+    expect(control.emitted('commit')).toBeUndefined()
+  })
+})
+
+describe('a key that is not a walking key', () => {
+  it('is left to the page, and starts no walk', async () => {
+    const control = mountSlider()
+    await handle(control).trigger('keydown', { key: 'a' })
+    await handle(control).trigger('keyup', { key: 'a' })
+    expect(getEmitted(control)).toEqual([])
+    expect(control.emitted('commit')).toBeUndefined()
+  })
+
+  it('is a release with nothing to release where no key was walking', async () => {
+    const control = mountSlider()
+    await handle(control).trigger('keyup', { key: 'ArrowRight' })
+    expect(control.emitted('commit')).toBeUndefined()
   })
 })
