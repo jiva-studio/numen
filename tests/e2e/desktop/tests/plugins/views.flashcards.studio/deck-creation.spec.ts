@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '../../support/test.js'
-import { openWorkspace } from '../../support/workspace.js'
+import { openTaskList, openWorkspace } from '../../support/workspace.js'
 
 /** A deck or a card model made through the palette, under the name typed on its step. */
 const make = async (page: Page, command: string, name: string): Promise<void> => {
@@ -32,7 +32,7 @@ test.describe('a deck or a card model made through the palette', () => {
 
     await make(page, 'New deck', 'Lakes')
 
-    await expect(page.getByText(/filed there already/).first()).toBeVisible()
+    await expect(await openTaskList(page)).toContainText(/filed there already/)
     await expect(page.getByRole('tab', { name: /Lakes/ })).toHaveCount(1)
   })
 

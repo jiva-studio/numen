@@ -2,6 +2,7 @@ import { test, expect, type Page } from '../../support/test.js'
 import {
   getGraph,
   getPaletteField,
+  openTaskList,
   openWorkspace,
   runPaletteCommand,
 } from '../../support/workspace.js'
@@ -60,9 +61,7 @@ test.describe('Removing and renaming a note', () => {
       await expect(getNoteTab(page, target)).toHaveCount(0)
       await expect(page.locator(`[data-tree-row="${target}"]`)).toHaveCount(0)
       await expect(getPlexNode(page, targetTitle, 'child')).toHaveCount(0)
-      await expect(page.getByRole('complementary', { name: 'Background work' })).toContainText(
-        `Broken links in: ${linker}`,
-      )
+      await expect(await openTaskList(page)).toContainText(`Broken links in: ${linker}`)
       expect((await readNote(request, target)).error).toBe('ERROR_CODE_MISSING')
       expect(await listFilePaths(request, 'notes')).not.toContain(target)
       expect(await findTrashed(request, `${targetTitle}.md`)).toHaveLength(1)

@@ -1,5 +1,10 @@
 import { test, expect, type Page } from '../../support/test.js'
-import { openVaultFile, openWorkspace, runPaletteCommand } from '../../support/workspace.js'
+import {
+  openTaskList,
+  openVaultFile,
+  openWorkspace,
+  runPaletteCommand,
+} from '../../support/workspace.js'
 import {
   createCardId,
   createDeckText,
@@ -123,7 +128,9 @@ test.describe('the preset editor', () => {
 
     await runPaletteCommand(page, 'Open preset', 'Open preset tab')
 
-    await expect(page.getByText('No preset set. Scheduled by the defaults.').first()).toBeVisible()
+    await expect(await openTaskList(page)).toContainText(
+      'No preset set. Scheduled by the defaults.',
+    )
     await expect(page.getByRole('region', { name: 'Goal', exact: true })).toHaveCount(0)
   })
 })

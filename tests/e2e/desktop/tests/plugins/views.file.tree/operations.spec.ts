@@ -1,5 +1,5 @@
 import { test, expect } from '../../support/test.js'
-import { openWorkspace } from '../../support/workspace.js'
+import { openTaskList, openWorkspace } from '../../support/workspace.js'
 import {
   createNoteWithBody,
   destroyNotes,
@@ -79,7 +79,7 @@ test.describe('Moving files in the files tab', () => {
 
       await dragRowOnto(page, getRow(page, twin), getRow(page, 'daily'))
 
-      await expect(page.getByRole('complementary', { name: 'Background work' })).toContainText(
+      await expect(await openTaskList(page)).toContainText(
         'Not moved, names already exist: 2026-08-15.md',
       )
       expect(await listPaths(request, 'notes')).toContain(twin)

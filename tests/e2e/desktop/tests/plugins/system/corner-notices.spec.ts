@@ -1,6 +1,11 @@
 import { observeFor } from '../../support/browser.js'
 import { test, expect, type Page } from '../../support/test.js'
-import { getPaletteField, openWorkspace, runCommand } from '../../support/workspace.js'
+import {
+  getPaletteField,
+  openTaskList,
+  openWorkspace,
+  runCommand,
+} from '../../support/workspace.js'
 import { listFilePaths } from '../../support/vault.js'
 import {
   deleteVaultFiles,
@@ -26,13 +31,6 @@ const getOldRegions = (page: Page) =>
 const expectNoCorner = async (page: Page): Promise<void> => {
   await expect(page.locator(OLD_CORNER)).toHaveCount(0)
   await expect(getOldRegions(page)).toHaveCount(0)
-}
-
-const openTasks = async (page: Page) => {
-  await page.locator('.status-bar__trigger').click()
-  const popover = page.locator('.task-popover')
-  await expect(popover).toBeVisible()
-  return popover
 }
 
 test.describe('the window shows no corner notices', () => {
@@ -62,7 +60,7 @@ test.describe('the window shows no corner notices', () => {
       await getPaletteField(page).fill(MISSING_PAGE_ADDRESS)
       await page.keyboard.press('Enter')
 
-      const popover = await openTasks(page)
+      const popover = await openTaskList(page)
       await expect(popover).toContainText('its text was not fetched')
       await expectNoCorner(page)
       made.push(...(await listFilePaths(request)).filter((one) => !before.includes(one)))
@@ -86,7 +84,7 @@ test.describe('the window shows no corner notices', () => {
       await writePluginSetting(request, UPDATER, 'endpoint', '')
       await openWorkspace(page)
 
-      const popover = await openTasks(page)
+      const popover = await openTaskList(page)
       await expect(popover).toContainText('release feed address')
       await expectNoCorner(page)
     })

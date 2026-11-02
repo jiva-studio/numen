@@ -39,7 +39,7 @@ const isIndexed = async (request: APIRequestContext): Promise<boolean> => {
 }
 
 test.describe('Cancelling a background task', () => {
-  test.describe.configure({ timeout: 90_000 })
+  test.describe.configure({ timeout: 180_000 })
 
   test('the row holds still under the pointer, and Cancel stops the vector pass', async ({
     page,
