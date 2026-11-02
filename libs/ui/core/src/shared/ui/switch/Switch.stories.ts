@@ -91,15 +91,15 @@ export const BusyUntilTheAnswer: Story = {
   play: async ({ canvasElement }) => {
     const control = getSwitch(canvasElement)
     const thumb = control.firstElementChild as HTMLElement
-    const getAcross = () =>
+    const getThumbLeft = () =>
       thumb.getBoundingClientRect().left - control.getBoundingClientRect().left
-    const startLeft = getAcross()
+    const startLeft = getThumbLeft()
     const samples: number[] = []
     const opacities = new Set<string>()
     let isSampling = true
     const sample = (): void => {
       if (!isSampling) return
-      samples.push(getAcross())
+      samples.push(getThumbLeft())
       opacities.add(getComputedStyle(control).opacity)
       requestAnimationFrame(sample)
     }
@@ -182,18 +182,18 @@ export const TheThumbSlidesAndTheTrackFills: Story = {
   play: async ({ canvasElement }) => {
     const control = getSwitch(canvasElement)
     const thumb = control.firstElementChild as HTMLElement
-    const getAcross = () =>
+    const getThumbLeft = () =>
       thumb.getBoundingClientRect().left - control.getBoundingClientRect().left
     const getFill = () => getComputedStyle(control).backgroundColor
 
-    const wasAcross = getAcross()
+    const wasAcross = getThumbLeft()
     const wasFilling = getFill()
 
     await userEvent.click(control)
     await waitFor(() => expect(control.getAttribute('aria-checked')).toBe('true'))
 
     // The thumb has moved the width of a thumb, and it is still on the track.
-    await waitFor(() => expect(getAcross()).toBeGreaterThan(wasAcross + thumb.offsetWidth / 2))
+    await waitFor(() => expect(getThumbLeft()).toBeGreaterThan(wasAcross + thumb.offsetWidth / 2))
     const track = control.getBoundingClientRect()
     const box = thumb.getBoundingClientRect()
     await expect(box.right).toBeLessThanOrEqual(track.right + 1)
@@ -203,7 +203,7 @@ export const TheThumbSlidesAndTheTrackFills: Story = {
     await waitFor(() => expect(getFill()).not.toBe(wasFilling))
 
     await userEvent.click(control)
-    await waitFor(() => expect(getAcross()).toBeCloseTo(wasAcross, 0))
+    await waitFor(() => expect(getThumbLeft()).toBeCloseTo(wasAcross, 0))
     await waitFor(() => expect(getFill()).toBe(wasFilling))
   },
 }
