@@ -862,6 +862,7 @@ func (h *Host) defaultLauncher(
 		return nil, nil, errors.Join(fmt.Errorf("pipe stdout: %w", err), stdin.Close())
 	}
 
+	process.HideInheritedFiles()
 	if err := cmd.Start(); err != nil {
 		return nil, nil, errors.Join(fmt.Errorf("start %s: %w", binPath, err), stdin.Close(), stdout.Close())
 	}

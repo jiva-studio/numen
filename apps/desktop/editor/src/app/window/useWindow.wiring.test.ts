@@ -73,6 +73,7 @@ vi.mock('../plugins/useWindowPlugins', () => ({
 vi.mock('./useAppBootstrap', () => ({
   useAppBootstrap: (args: unknown) => {
     h.args.bootstrap = args
+    return { failure: { value: '' }, retry: vi.fn() }
   },
 }))
 

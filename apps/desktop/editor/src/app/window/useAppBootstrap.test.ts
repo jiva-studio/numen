@@ -2,7 +2,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import { PLUGINS_WAIT_MS, useAppBootstrap, type BootstrapDeps } from './useAppBootstrap'
+import {
+  PLUGINS_WAIT_MS,
+  STEP_LIMIT_MS,
+  useAppBootstrap,
+  type BootstrapDeps,
+} from './useAppBootstrap'
 
 const setup = (overrides: Partial<BootstrapDeps> = {}) => {
   const calls: string[] = []
@@ -26,15 +31,16 @@ const setup = (overrides: Partial<BootstrapDeps> = {}) => {
     reportError: vi.fn(),
     ...overrides,
   }
+  let started: ReturnType<typeof useAppBootstrap> | undefined
   const view = mount(
     defineComponent({
       setup() {
-        useAppBootstrap(deps)
+        started = useAppBootstrap(deps)
         return () => h('div')
       },
     }),
   )
-  return { calls, view }
+  return { calls, view, bootstrap: () => started! }
 }
 
 describe('a window mounting', () => {
@@ -99,5 +105,43 @@ describe('a window mounting while a plugin does not start', () => {
 
     expect(reportError).toHaveBeenCalledWith(failure)
     expect(calls).toContain('startLayout')
+  })
+})
+
+describe('a window mounting while the settings never answer', () => {
+  it('shows what did not load, opens nothing, and loads once the person retries', async () => {
+    vi.useFakeTimers()
+    try {
+      let answers = 0
+      const { calls, bootstrap } = setup({
+        startSettings: () => {
+          answers += 1
+          return answers === 1 ? new Promise<void>(() => undefined) : Promise.resolve()
+        },
+      })
+
+      await vi.advanceTimersByTimeAsync(STEP_LIMIT_MS - 1)
+      expect(bootstrap().failure.value).toBe('')
+      await vi.advanceTimersByTimeAsync(1)
+      expect(bootstrap().failure.value).toBe('The settings request did not answer in 10 s')
+      expect(calls).not.toContain('startLayout')
+      expect(calls).not.toContain('startWindow')
+
+      await bootstrap().retry()
+
+      expect(bootstrap().failure.value).toBe('')
+      expect(calls).toContain('startLayout')
+      expect(calls).toContain('startWindow')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('shows a vault list that fails to load', async () => {
+    const { bootstrap } = setup({ loadVaults: () => Promise.reject(new Error('no vaults')) })
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(bootstrap().failure.value).toBe('no vaults')
   })
 })

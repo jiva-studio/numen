@@ -157,7 +157,7 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     deps.onLayoutStarted()
   }
 
-  useAppBootstrap({
+  return useAppBootstrap({
     loadVaults: () => vaultsModule.loadVaults(),
     startSettings: () => settings.start(),
     startLayout,
@@ -481,7 +481,7 @@ export const useWindow = () => {
     windowTabs: base.windowTabs,
     closeWindowIfEmpty: isSecondaryWindow() ? () => window.close() : undefined,
   })
-  initAppLifecycle({
+  const bootstrap = initAppLifecycle({
     vaultsModule: getVaults(ctx),
     windowTabs: base.windowTabs,
     settings,
@@ -500,6 +500,8 @@ export const useWindow = () => {
     runCommand,
     openCurrentVault: () => openPlacedTabs(base),
     isLayoutReady,
+    bootstrapFailure: bootstrap.failure,
+    retryBootstrap: bootstrap.retry,
     openSettings: (pluginId?: string, filter?: string) =>
       settings.configured.openSettings(pluginId, filter),
     commands: getCommands(ctx).commands,

@@ -65,6 +65,7 @@
   "tests/shell/lifecycle/app.spec.ts": 1,
   "tests/shell/lifecycle/chaos.spec.ts": 3,
   "tests/shell/lifecycle/perf.spec.ts": 3,
+  "tests/shell/lifecycle/lost-settings.spec.ts": 20,
   "tests/shell/lifecycle/slow-model.spec.ts": 8,
   "tests/shell/lifecycle/slow-plugin.spec.ts": 8,
   "tests/shell/window/layout.spec.ts": 3,

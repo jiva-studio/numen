@@ -6,6 +6,8 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"strconv"
+	"strings"
 	"syscall"
 	"testing"
 
@@ -88,5 +90,28 @@ func TestLinuxADefaultProcessHasNoCPULimit(t *testing.T) {
 				t.Errorf("RLIMIT_CPU is %d, want %d", rlim.Cur, tc.want)
 			}
 		})
+	}
+}
+
+func TestHideInheritedFilesKeepsPipeOutOfChild(t *testing.T) {
+	var ends [2]int
+	if err := syscall.Pipe2(ends[:], 0); err != nil {
+		t.Fatalf("pipe2: %v", err)
+	}
+	defer func() {
+		_ = syscall.Close(ends[0])
+		_ = syscall.Close(ends[1])
+	}()
+
+	HideInheritedFiles()
+
+	out, err := exec.CommandContext(t.Context(), "ls", "/proc/self/fd").Output()
+	if err != nil {
+		t.Fatalf("list descriptors of the child: %v", err)
+	}
+	for _, line := range strings.Fields(string(out)) {
+		if n, convErr := strconv.Atoi(line); convErr == nil && (n == ends[0] || n == ends[1]) {
+			t.Errorf("the child inherited descriptor %d of the pipe", n)
+		}
 	}
 }

@@ -42,3 +42,13 @@ func setRlimit(pid int, resource int, limit uint64) error {
 	}
 	return unix.Prlimit(pid, resource, &newLim, nil)
 }
+
+// HideInheritedFiles marks every open file descriptor above stderr close-on-exec,
+// so a process started next inherits none of them. The window's asset server
+// creates the pipe of each response without that flag: a plugin started while a
+// response is open would keep the pipe's write end, and the page would not see
+// the end of that response until the plugin exits.
+func HideInheritedFiles() {
+	// An older kernel lacks close_range; those descriptors stay inherited.
+	_ = unix.CloseRange(3, ^uint(0), unix.CLOSE_RANGE_CLOEXEC)
+}

@@ -1203,3 +1203,36 @@ describe('the tabs of a plugin that stops', () => {
     expect(window.getTab('paged:a.bin')?.kind.pluginId).toBe('other.plugin')
   })
 })
+
+describe('a saved tab whose kind fails to open it', () => {
+  it('opens as a placeholder that keeps the saved state, and the other tabs open as usual', () => {
+    const window = useWindowTabs()
+    window.registerKind({
+      ...pagedKind(),
+      open: (targetPath: string) => {
+        if (targetPath === 'bad.bin') throw new Error('cannot read bad.bin')
+        return { targetPath, page: 1 }
+      },
+    })
+
+    window.restoreTabs(
+      [
+        { id: 'paged:a.bin', kind: 'paged', path: 'a.bin' },
+        { id: 'paged:bad.bin', kind: 'paged', path: 'bad.bin', saved: { page: 7 } },
+        { id: 'paged:c.bin', kind: 'paged', path: 'c.bin' },
+      ],
+      'paged:c.bin',
+    )
+
+    expect(window.tabs.value.map((one) => one.id)).toStrictEqual([
+      'paged:a.bin',
+      'paged:bad.bin',
+      'paged:c.bin',
+    ])
+    expect(window.getTabStateIn('paged:c.bin', 'paged')).toMatchObject({ page: 1 })
+    const failed = window.getTab('paged:bad.bin')
+    expect(failed?.state).toMatchObject({ message: 'cannot read bad.bin' })
+    expect(failed?.kind.getState?.(failed.state)).toStrictEqual({ page: 7 })
+    expect(window.handle.front()?.id).toBe('paged:c.bin')
+  })
+})

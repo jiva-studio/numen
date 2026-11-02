@@ -19,6 +19,7 @@ import { closeTab, openTab, openTabAdjacent, pane, paneById, getPanes } from '@n
 import type { Tab, Workspace } from '@numen/shell'
 import type { ActiveTab, AnyTabKind, KindTab, WindowHandle, WindowTab } from './kinds'
 import { createWorkspace, generateId } from '../lib/workspace'
+import { createRestoreFailedKind } from './restoreFailed'
 import {
   createUnavailableKind,
   isUnavailableKind,
@@ -309,6 +310,27 @@ function createTabQueries(
   return { getTab, getTabStateIn, front, each }
 }
 
+/** A saved tab opened by its kind, or by a placeholder when its kind fails, so one bad tab never stops the others. */
+const openInIsolation = (saved: SavedTab, one: AnyTabKind) => {
+  const scope = effectScope(true)
+  try {
+    return [
+      one,
+      scope,
+      openInScope(scope, () => one.open(saved.path, saved.id, saved.saved)),
+    ] as const
+  } catch (error) {
+    scope.stop()
+    const failed = createRestoreFailedKind(saved.kind, saved.title, error)
+    const placeholderScope = effectScope(true)
+    return [
+      failed,
+      placeholderScope,
+      openInScope(placeholderScope, () => failed.open(saved.path, saved.id, saved.saved)),
+    ] as const
+  }
+}
+
 /** Operations for creating and opening tabs. */
 function createTabOpeners(ctx: TabOpenerContext) {
   /** A tab the core kept, opened under its id with the state its kind saved. */
@@ -316,10 +338,9 @@ function createTabOpeners(ctx: TabOpenerContext) {
     const one =
       ctx.byKind.get(saved.kind) ??
       createUnavailableKind(saved.kind, { title: saved.title }, ctx.unavailable)
-    const scope = effectScope(true)
-    const state = openInScope(scope, () => one.open(saved.path, saved.id, saved.saved))
+    const [kind, scope, state] = openInIsolation(saved, one)
     ctx.scopes.set(saved.id, scope)
-    ctx.open.value = new Map(ctx.open.value).set(saved.id, { kind: one, state })
+    ctx.open.value = new Map(ctx.open.value).set(saved.id, { kind, state })
   }
 
   const findOpenTabAt = (kind: string, targetPath: string): string | undefined => {

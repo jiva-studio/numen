@@ -15,6 +15,7 @@ import { CommandPalette } from '@/features/command-palette'
 import { TabLinkIndicator, TabLinkMenu, useTabLinkMenu } from '@/features/tab-linking'
 import { StatusViewHost } from '@/features/status-views'
 import { WelcomeScreen } from '@/pages/welcome'
+import BootstrapFailure from './BootstrapFailure.vue'
 import { useWindow } from '../window/useWindow'
 import { WORDS as words } from '@/shared/words'
 import { WORDS as note } from '@/entities/note'
@@ -32,6 +33,8 @@ const {
   runCommand,
   openCurrentVault,
   isLayoutReady,
+  bootstrapFailure,
+  retryBootstrap,
   openSettings,
   commands,
   pluginWays,
@@ -135,8 +138,13 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       </template>
 
       <template #silence>
+        <BootstrapFailure
+          v-if="bootstrapFailure"
+          :message="bootstrapFailure"
+          @retry="retryBootstrap"
+        />
         <WelcomeScreen
-          v-if="isLayoutReady || !vaultList.showing"
+          v-else-if="isLayoutReady || !vaultList.showing"
           :vault-list="vaultList"
           :tabs="windowTabs.tabs.value"
           :commands="commands"
