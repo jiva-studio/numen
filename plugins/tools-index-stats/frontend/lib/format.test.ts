@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   formatBytes,
   formatCount,
-  formatCounts,
-  formatLabel,
+  formatSummary,
+  formatVectors,
+  isPending,
   formatRate,
   formatTime,
 } from './format'
@@ -25,19 +26,38 @@ describe('formatCount', () => {
   })
 })
 
-describe('formatLabel', () => {
-  it('shows the vectors alone once nothing waits', () => {
-    expect(formatLabel({ vectors: 12480, chunks: 12480, waiting: 0 }, 'ru-RU')).toBe('⬡ 12 480')
+describe('formatVectors', () => {
+  it('writes the vectors alone, whether or not chunks wait', () => {
+    expect(formatVectors({ vectors: 12480 }, 'ru-RU')).toBe(formatCount(12480, 'ru-RU'))
+    expect(formatVectors({ vectors: 124507 }, 'en-US')).toBe('124,507')
+    expect(formatVectors({ vectors: 0 }, 'en-US')).toBe('0')
   })
 
-  it('shows the vectors over the chunks that should carry one while embedding runs', () => {
-    expect(formatLabel({ vectors: 12480, chunks: 13100, waiting: 620 }, 'ru-RU')).toBe(
-      '⬡ 12 480 / 13 100',
+  it('never writes a chunk count', () => {
+    for (const waiting of [0, 1, 620]) {
+      const stats = { vectors: 124507, chunks: 124508, waiting }
+      expect(formatVectors(stats, 'en-US')).not.toContain('/')
+    }
+  })
+})
+
+describe('isPending', () => {
+  it('is true while chunks wait for a vector', () => {
+    expect(isPending({ waiting: 1 })).toBe(true)
+    expect(isPending({ waiting: 620 })).toBe(true)
+  })
+
+  it('is false when the queue is empty', () => {
+    expect(isPending({ waiting: 0 })).toBe(false)
+  })
+})
+
+describe('formatSummary', () => {
+  it('counts the vectors, and says that indexing runs while chunks wait', () => {
+    expect(formatSummary({ vectors: 124507, waiting: 1 }, 'en-US')).toBe(
+      '124,507 vectors, indexing',
     )
-  })
-
-  it('shows zero for an empty index', () => {
-    expect(formatLabel({ vectors: 0, chunks: 0, waiting: 0 }, 'en-US')).toBe('⬡ 0')
+    expect(formatSummary({ vectors: 124508, waiting: 0 }, 'en-US')).toBe('124,508 vectors')
   })
 })
 
@@ -69,14 +89,5 @@ describe('formatTime', () => {
 
   it('gives nothing for a text that is no instant', () => {
     expect(formatTime('later', 'en-US')).toBe('')
-  })
-})
-
-describe('formatCounts', () => {
-  it('writes the vectors alone, or over the chunks while some wait', () => {
-    expect(formatCounts({ vectors: 12480, chunks: 12480, waiting: 0 }, 'en-US')).toBe('12,480')
-    expect(formatCounts({ vectors: 12480, chunks: 13100, waiting: 620 }, 'en-US')).toBe(
-      '12,480 / 13,100',
-    )
   })
 })

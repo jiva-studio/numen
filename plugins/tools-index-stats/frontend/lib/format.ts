@@ -3,6 +3,7 @@
  * locale, sizes in the largest unit that keeps the figure above one, and the time of a change.
  */
 import type { Stats } from '../types'
+import { WORDS as words } from '../words'
 
 /** The mark in front of the count in the status bar. */
 export const MARK = '⬡'
@@ -15,25 +16,20 @@ export function formatCount(value: number, locale?: string): string {
   return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value)
 }
 
-/**
- * The counts of the status bar item: the vectors the index holds, and while chunks wait for theirs,
- * how many chunks should carry one.
- */
-export function formatCounts(
-  stats: Pick<Stats, 'vectors' | 'chunks' | 'waiting'>,
-  locale?: string,
-): string {
-  const vectors = formatCount(stats.vectors, locale)
-  if (stats.waiting <= 0) return vectors
-  return `${vectors} / ${formatCount(stats.chunks, locale)}`
+/** Whether chunks still wait for a vector, which is when the index is being filled. */
+export function isPending(stats: Pick<Stats, 'waiting'>): boolean {
+  return stats.waiting > 0
 }
 
-/** The text of the status bar item: the mark and the counts. */
-export function formatLabel(
-  stats: Pick<Stats, 'vectors' | 'chunks' | 'waiting'>,
-  locale?: string,
-): string {
-  return `${MARK} ${formatCounts(stats, locale)}`
+/** The figure of the status bar item: the vectors the index holds, and never the chunks. */
+export function formatVectors(stats: Pick<Stats, 'vectors'>, locale?: string): string {
+  return formatCount(stats.vectors, locale)
+}
+
+/** The tooltip and the accessible name of the item: the vectors, and that indexing runs. */
+export function formatSummary(stats: Pick<Stats, 'vectors' | 'waiting'>, locale?: string): string {
+  const vectors = `${formatCount(stats.vectors, locale)} ${words.vectorsUnit}`
+  return isPending(stats) ? `${vectors}, ${words.indexing}` : vectors
 }
 
 /** A size in bytes in the largest unit that keeps the figure at one or more, with one decimal. */

@@ -128,3 +128,24 @@
   font-variant-numeric: tabular-nums;
   color: var(--numen-ink);
 }
+
+/* While chunks wait for a vector the mark is green and pulses. The turn takes the motion
+   duration of the theme, so a motion of 0ms or a request for less motion leaves it solid green. */
+.index-stats__icon--indexing {
+  display: inline-block;
+  color: var(--numen-positive);
+  animation: index-stats-pulse calc(var(--numen-motion) * 8) ease-in-out infinite;
+}
+
+@keyframes index-stats-pulse {
+  50% {
+    opacity: 0.45;
+    transform: scale(0.88);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .index-stats__icon--indexing {
+    animation: none;
+  }
+}

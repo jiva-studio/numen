@@ -126,3 +126,72 @@ export const Embedded: Story = {
     await expect(within(popover).queryByText('Embedding speed')).toBeNull()
   },
 }
+
+/** The mark of the item, which is what pulses. */
+const getIcon = (canvasElement: HTMLElement): HTMLElement =>
+  canvasElement.querySelector('.index-stats__icon') as HTMLElement
+
+/** Checks the item while chunks wait: the vectors alone, a green mark and a pulse that runs. */
+const checkIndexing: NonNullable<Story['play']> = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const trigger = await canvas.findByRole('button', { name: '12,480 vectors, indexing' })
+  await expect(trigger.textContent?.trim()).toBe('⬡ 12,480')
+  await expect(trigger.textContent).not.toContain('/')
+  const icon = getIcon(canvasElement)
+  await expect(getComputedStyle(icon).animationName).not.toBe('none')
+  await expect(icon.getAnimations().some((one) => one.playState === 'running')).toBe(true)
+  const label = canvasElement.querySelector('.index-stats__label') as HTMLElement
+  await expect(getComputedStyle(icon).color).not.toBe(getComputedStyle(label).color)
+  await expect(getComputedStyle(label).animationName).toBe('none')
+}
+
+/** Checks the item once the queue is empty: the mark is still and in the colour of the bar. */
+const checkIdle: NonNullable<Story['play']> = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const trigger = await canvas.findByRole('button', { name: '13,100 vectors' })
+  await expect(trigger.textContent?.trim()).toBe('⬡ 13,100')
+  const icon = getIcon(canvasElement)
+  await expect(getComputedStyle(icon).animationName).toBe('none')
+  await expect(icon.getAnimations()).toHaveLength(0)
+  const label = canvasElement.querySelector('.index-stats__label') as HTMLElement
+  await expect(getComputedStyle(icon).color).toBe(getComputedStyle(label).color)
+}
+
+/** The mark pulses green on the light tokens while chunks wait. */
+export const IndexingLight: Story = { globals: { theme: 'light' }, play: checkIndexing }
+
+/** The same on the dark tokens. */
+export const IndexingDark: Story = { globals: { theme: 'dark' }, play: checkIndexing }
+
+/** The mark is still on the light tokens once the queue is empty. */
+export const IdleLight: Story = {
+  args: { stats: DONE },
+  globals: { theme: 'light' },
+  play: checkIdle,
+}
+
+/** The same on the dark tokens. */
+export const IdleDark: Story = {
+  args: { stats: DONE },
+  globals: { theme: 'dark' },
+  play: checkIdle,
+}
+
+/** With no motion in the theme the mark stays solid green and does not fade. */
+export const IndexingWithoutMotion: Story = {
+  decorators: [
+    (story) => ({
+      components: { story },
+      template: '<div style="--numen-motion: 0ms"><story /></div>',
+    }),
+  ],
+  play: async ({ canvasElement }) => {
+    const icon = getIcon(canvasElement)
+    await expect(icon).toBeVisible()
+    await expect(getComputedStyle(icon).animationDuration).toBe('0s')
+    await expect(getComputedStyle(icon).opacity).toBe('1')
+    await expect(getComputedStyle(icon).color).not.toBe(
+      getComputedStyle(canvasElement.querySelector('.index-stats__label') as HTMLElement).color,
+    )
+  },
+}

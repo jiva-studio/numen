@@ -26,16 +26,25 @@ const draw = (stats: Stats | null, phase: 'loading' | 'ready' | 'unavailable' = 
   mount(StatsIndicator, { props: { stats, phase, locale: 'en-US' }, attachTo: document.body })
 
 describe('the index stats indicator', () => {
-  it('shows the vectors over the chunks while chunks wait', () => {
+  it('shows the vectors alone, with no end value, while chunks wait', () => {
     const wrapper = draw(STATS)
+    const trigger = wrapper.find('.index-stats__trigger')
 
-    expect(wrapper.find('.index-stats__trigger').text()).toBe('⬡ 12,480 / 13,100')
+    expect(trigger.text()).toBe('⬡ 12,480')
+    expect(trigger.text()).not.toContain('/')
+    expect(trigger.attributes('aria-label')).toBe('12,480 vectors, indexing')
+    expect(trigger.attributes('title')).toBe('12,480 vectors, indexing')
+    expect(wrapper.find('.index-stats__icon').classes()).toContain('index-stats__icon--indexing')
   })
 
-  it('shows the vectors alone once the index is embedded', () => {
+  it('shows the vectors alone and a still mark once the queue is empty', () => {
     const wrapper = draw({ ...STATS, vectors: 13100, waiting: 0 })
 
     expect(wrapper.find('.index-stats__label').text()).toBe('⬡ 13,100')
+    expect(wrapper.find('.index-stats__trigger').attributes('aria-label')).toBe('13,100 vectors')
+    expect(wrapper.find('.index-stats__icon').classes()).not.toContain(
+      'index-stats__icon--indexing',
+    )
   })
 
   it('draws nothing before the first answer', () => {

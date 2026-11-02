@@ -43,6 +43,8 @@
      on at once. */
   --numen-caution-bg: light-dark(#f7e9c8, #42321c);
   --numen-caution-fg: light-dark(#8a5410, #eec26a);
+  /* The colour of work that is going well and is still in progress. */
+  --numen-positive: light-dark(#2f7a3c, #7cc48a);
   /* The ground under a stretch of text something is about to change. It sits
      under words that are still being read, so it is a tint and not a colour. */
   --numen-highlight: light-dark(#e9a23b33, #e9a23b3d);

@@ -61,7 +61,7 @@ describe('the index stats frontend', () => {
     const wrapper = mount(context.getRegisteredStatusViews()[0]?.component as never)
 
     expect(get).toHaveBeenCalledTimes(1)
-    expect(wrapper.find('.index-stats__label').text()).toMatch(/12.480 \/ 13.100/)
+    expect(wrapper.find('.index-stats__label').text()).toMatch(/^⬡ 12.480$/)
   })
 
   it('draws the new count when the next ask returns one', async () => {

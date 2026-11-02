@@ -134,6 +134,7 @@ Forty-three, each a colour unless stated otherwise.
 | `--numen-highlight`       | the background of a range that is about to change. It is drawn under words that are still being read, so it is a tint. |
 | `--numen-caution-bg`      | the background of a notice that a person should read but need not act on at once.                                      |
 | `--numen-caution-fg`      | the text in that notice.                                                                                               |
+| `--numen-positive`        | the colour of work that is going well and is still in progress.                                                        |
 
 ### Marked-up text
 

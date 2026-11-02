@@ -1,9 +1,11 @@
 /** Words used across the index stats frontend. */
 export const WORDS = {
-  triggerHint: 'Vectors in the search index. Select for details.',
   title: 'Index stats',
+  vectorsUnit: 'vectors',
+  indexing: 'indexing',
   close: 'Close index stats',
   unavailable: '–',
+  unavailableHint: 'The search index is not available',
   none: '–',
   vectors: 'Vectors',
   vectorsHint: 'Chunks of text with a vector, found by a search by meaning',

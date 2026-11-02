@@ -7,17 +7,26 @@ import { openWorkspace } from '../../support/workspace.js'
 /** The status bar item that counts the vectors of the index. */
 const getItem = (page: Page): Locator => page.locator('.index-stats__label')
 
-/** The vectors the item shows: the figure before the slash, which is the only one while nothing waits. */
+/** The mark of the item, which pulses while chunks wait for a vector. */
+const getIcon = (page: Page): Locator => page.locator('.index-stats__icon')
+
+/** The word that makes the mock embedder hold a batch until it is cancelled (engine.MockHoldWord). */
+const HOLD_WORD = 'numenmockhold'
+
+/** The id the core lists its vector pass under. */
+const VECTOR_TASK_ID = 'making the vectors'
+
+/** The vectors the item shows. */
 const readVectors = async (item: Locator): Promise<number> => {
   const text = (await item.textContent()) ?? ''
-  const vectors = text.replace('⬡', '').split('/')[0] ?? ''
-  return Number(vectors.replace(/\D/g, ''))
+  return Number(text.replace('⬡', '').replace(/\D/g, ''))
 }
 
-/** Whether the index is embedded: the item shows no chunk count after the vectors. */
+/** Whether the index is embedded: the mark of the item does not pulse. */
 const isSettled = async (item: Locator): Promise<boolean> => {
   const text = (await item.textContent()) ?? ''
-  return /\d/.test(text) && !text.includes('/')
+  const isIndexing = await item.locator('.index-stats__icon--indexing').count()
+  return /\d/.test(text) && isIndexing === 0
 }
 
 /** Waits until every chunk carries a vector, and returns the number of vectors then. */
@@ -74,11 +83,55 @@ test.describe('the index stats item', () => {
     await expect.poll(() => readVectors(item), { timeout: 45_000 }).toBe(before)
   })
 
+  test('pulses the mark and shows no end value while a chunk waits for its vector', async ({
+    page,
+    request,
+  }) => {
+    test.setTimeout(120_000)
+    await openWorkspace(page)
+    const item = getItem(page)
+    const icon = getIcon(page)
+    await readSettledVectors(item)
+    await expect(icon).not.toHaveClass(/index-stats__icon--indexing/)
+    await expect(icon).toHaveCSS('animation-name', 'none')
+
+    const title = createUniqueTitle('Held ferry log')
+    const path = await createNoteWithBody(
+      request,
+      title,
+      'notes',
+      `${writeParagraphs('tide', 3)} ${HOLD_WORD}`,
+    )
+    notes.push(path)
+    try {
+      await expect(icon).toHaveClass(/index-stats__icon--indexing/, { timeout: 45_000 })
+      await expect(icon).not.toHaveCSS('animation-name', 'none')
+      await expect
+        .poll(() =>
+          icon.evaluate((one) => one.getAnimations().some((a) => a.playState === 'running')),
+        )
+        .toBe(true)
+      expect(await item.textContent()).not.toContain('/')
+      await expect(item).toHaveText(/^⬡\s+\d[\d,.\s\u00a0\u202f]*$/)
+    } finally {
+      // The held batch ends when the pass is cancelled; the note is then written without the word.
+      await request.post('/numen.v1.WindowService/CancelTask', {
+        data: { window: 'editor', id: VECTOR_TASK_ID },
+        headers: { 'Content-Type': 'application/json' },
+      })
+      await writeNote(request, path, writeParagraphs('tide', 3))
+    }
+
+    await expect(icon).not.toHaveClass(/index-stats__icon--indexing/, { timeout: 60_000 })
+    await expect(icon).toHaveCSS('animation-name', 'none')
+    expect(await icon.evaluate((one) => one.getAnimations().length)).toBe(0)
+  })
+
   test('opens the popover above the status bar, and closes it with Escape', async ({ page }) => {
     await openWorkspace(page)
     const item = getItem(page)
     await readSettledVectors(item)
-    const trigger = page.getByRole('button', { name: /^⬡/ })
+    const trigger = page.getByRole('button', { name: / vectors/ })
 
     await trigger.click()
 
