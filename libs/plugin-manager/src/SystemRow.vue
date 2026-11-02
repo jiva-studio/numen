@@ -24,7 +24,7 @@ function onKeydown(e: KeyboardEvent): void {
 
 <template>
   <div
-    class="plugin-row system-row"
+    class="plugin-row row-divider system-row"
     role="button"
     tabindex="0"
     :aria-label="words.systemSettings"
@@ -54,17 +54,12 @@ function onKeydown(e: KeyboardEvent): void {
   gap: var(--numen-panel-gap);
   min-block-size: 3.5rem;
   padding: 0.625rem 0.75rem;
-  border-block-end: var(--numen-stroke) solid var(--numen-rule);
   cursor: pointer;
   user-select: none;
   transition:
     background-color 0.15s ease,
     opacity 0.15s ease;
   border-radius: var(--numen-radius-tight);
-}
-
-.plugin-row:last-child {
-  border-block-end: none;
 }
 
 .plugin-row:hover {

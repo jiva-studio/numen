@@ -40,3 +40,28 @@
   outline: var(--numen-stroke) solid currentColor;
   outline-offset: var(--numen-caret);
 }
+
+/*
+ * The line between two rows of a list. A border on one side of a rounded row
+ * bends with the corners, so the line is drawn on its own: the row takes the
+ * class, keeps its radius for the hover and selected background, and the last
+ * row has no line under it. The numen/no-rounded-side-border rule rejects the
+ * border form.
+ */
+.row-divider {
+  position: relative;
+}
+
+.row-divider::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: var(--numen-stroke);
+  background: var(--numen-rule);
+  pointer-events: none;
+}
+
+.row-divider:last-child::after {
+  display: none;
+}

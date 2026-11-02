@@ -15,6 +15,7 @@ export default {
     "numen/no-var-fallback": true,
     "numen/no-token-declaration": true,
     "numen/known-token": true,
+    "numen/no-rounded-side-border": true,
   },
   overrides: [
     { files: ["**/*.vue"], customSyntax: "postcss-html" },

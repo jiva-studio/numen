@@ -74,7 +74,7 @@ function onChooseMenuItem(id: string): void {
 
 <template>
   <div
-    class="plugin-row"
+    class="plugin-row row-divider"
     :class="{ 'plugin-row--disabled': !props.isEnabled }"
     role="button"
     tabindex="0"
@@ -129,17 +129,12 @@ function onChooseMenuItem(id: string): void {
   gap: var(--numen-panel-gap);
   min-block-size: 3.5rem;
   padding: 0.625rem 0.75rem;
-  border-block-end: var(--numen-stroke) solid var(--numen-rule);
   cursor: pointer;
   user-select: none;
   transition:
     background-color 0.15s ease,
     opacity 0.15s ease;
   border-radius: var(--numen-radius-tight);
-}
-
-.plugin-row:last-child {
-  border-block-end: none;
 }
 
 .plugin-row:hover {

@@ -1,6 +1,7 @@
 /**
  * The rules over design tokens that stylelint has no rule for: no `var()` takes a fallback, a stylesheet
- * declares no `--numen-` token, and every `var(--numen-…)` names a token a token file declares.
+ * declares no `--numen-` token, and every `var(--numen-…)` names a token a token file declares. A fourth
+ * keeps a border on one side of a box from sharing a rule with a radius.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -130,8 +131,61 @@ const knownToken = (primary, secondary) => (root, result) => {
 knownToken.ruleName = KNOWN_TOKEN;
 knownToken.messages = knownTokenMessages;
 
+const NO_ROUNDED_SIDE_BORDER = "numen/no-rounded-side-border";
+
+const noRoundedSideBorderMessages = ruleMessages(NO_ROUNDED_SIDE_BORDER, {
+  rejected: (prop) =>
+    `${prop} on a rounded box bends with the corners; draw the line with the row-divider class, or put it on a box without a radius`,
+});
+
+/** A border on one side or one axis of a box. */
+const SIDE_BORDER = /^border-(top|bottom|left|right|block|block-start|block-end|inline|inline-start|inline-end)$/;
+
+/** A radius on a box: `border-radius` and every corner's own. */
+const RADIUS = /^border(-(top|bottom|start|end)-(left|right|start|end))?-radius$/;
+
+/** True when the value draws nothing: `none`, `0`, `hidden`, `0px`. */
+function isNoValue(value) {
+  return /^(none|hidden|initial|unset|0[a-z%]*)$/i.test(value.trim());
+}
+
+/** True when a Tailwind `@apply` list names a rounded corner: any `rounded` utility but `rounded-none`. */
+function appliesRadius(params) {
+  return params.split(/\s+/).some((one) => /^(?:[a-z-]+:)*rounded(-(?!none$).*)?$/.test(one));
+}
+
+/** True when a Tailwind `@apply` list names a border on one side or axis. */
+function appliesSideBorder(params) {
+  return params.split(/\s+/).some((one) => /^(?:[a-z-]+:)*border-(t|b|l|r|x|y|s|e)(-|$)/.test(one) && !/border-[a-z]-(0|none)$/.test(one));
+}
+
+const noRoundedSideBorder = (primary) => (root, result) => {
+  if (!validateOptions(result, NO_ROUNDED_SIDE_BORDER, { actual: primary })) return;
+  root.walkRules((rule) => {
+    const borders = [];
+    let rounded = false;
+    rule.each((node) => {
+      if (node.type === "decl") {
+        if (SIDE_BORDER.test(node.prop) && !isNoValue(node.value)) borders.push(node);
+        if (RADIUS.test(node.prop) && !isNoValue(node.value)) rounded = true;
+      } else if (node.type === "atrule" && node.name === "apply") {
+        if (appliesRadius(node.params)) rounded = true;
+        if (appliesSideBorder(node.params)) borders.push(node);
+      }
+    });
+    if (!rounded) return;
+    for (const node of borders) {
+      const prop = node.type === "decl" ? node.prop : node.params;
+      report({ ruleName: NO_ROUNDED_SIDE_BORDER, result, node, message: noRoundedSideBorderMessages.rejected(prop) });
+    }
+  });
+};
+noRoundedSideBorder.ruleName = NO_ROUNDED_SIDE_BORDER;
+noRoundedSideBorder.messages = noRoundedSideBorderMessages;
+
 export default [
   createPlugin(NO_FALLBACK, noFallback),
   createPlugin(NO_TOKEN_DECLARATION, noTokenDeclaration),
   createPlugin(KNOWN_TOKEN, knownToken),
+  createPlugin(NO_ROUNDED_SIDE_BORDER, noRoundedSideBorder),
 ];
