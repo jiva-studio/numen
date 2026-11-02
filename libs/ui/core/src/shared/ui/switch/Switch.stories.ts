@@ -66,6 +66,64 @@ export const Off: Story = { args: { isOn: false } }
 /** A switch that cannot be toggled. */
 export const Disabled: Story = { args: { isDisabled: true } }
 
+/**
+ * A write in flight: the parent keeps the old value for a while and then passes the new one.
+ * The thumb must not move on the press nor while busy, must move once when the value arrives,
+ * and the track must not dim. It is sampled on every frame.
+ */
+export const BusyUntilTheAnswer: Story = {
+  render: () => ({
+    components: { Switch },
+    setup: () => {
+      const isOn = ref(true)
+      const isBusy = ref(false)
+      const onChange = (value: boolean): void => {
+        isBusy.value = true
+        setTimeout(() => {
+          isOn.value = value
+          isBusy.value = false
+        }, 300)
+      }
+      return { isOn, isBusy, onChange }
+    },
+    template: `<div style="padding: 2rem"><Switch :model-value="isOn" :is-busy="isBusy" aria-label="Busy" @update:model-value="onChange" /></div>`,
+  }),
+  play: async ({ canvasElement }) => {
+    const control = getSwitch(canvasElement)
+    const thumb = control.firstElementChild as HTMLElement
+    const getAcross = () =>
+      thumb.getBoundingClientRect().left - control.getBoundingClientRect().left
+    const onAt = getAcross()
+    const samples: number[] = []
+    const opacities = new Set<string>()
+    let isSampling = true
+    const sample = (): void => {
+      if (!isSampling) return
+      samples.push(getAcross())
+      opacities.add(getComputedStyle(control).opacity)
+      requestAnimationFrame(sample)
+    }
+    requestAnimationFrame(sample)
+
+    await userEvent.click(control)
+    await waitFor(() => expect(control.getAttribute('aria-busy')).toBe('true'))
+    await new Promise((done) => setTimeout(done, 200))
+    // Pressed and waiting: nothing has moved.
+    await expect(control.getAttribute('aria-checked')).toBe('true')
+    await expect(samples.every((one) => Math.abs(one - onAt) < 0.5)).toBe(true)
+
+    await waitFor(() => expect(control.getAttribute('aria-checked')).toBe('false'))
+    await new Promise((done) => setTimeout(done, 600))
+    isSampling = false
+
+    // One slide, off to the left, with no step back on the way, and no dimming.
+    const steps = samples.slice(1).map((one, at) => one - samples[at]!)
+    await expect(steps.every((one) => one <= 0.5)).toBe(true)
+    await expect(samples.at(-1)!).toBeLessThan(onAt - thumb.offsetWidth / 2)
+    await expect([...opacities]).toEqual(['1'])
+  },
+}
+
 /** A name in another script. */
 export const OtherScripts: Story = { args: { label: 'Показывать сетку' } }
 

@@ -91,7 +91,7 @@ function onDeleteData(): void {
         <Switch
           v-if="isInstalled(props.plugin)"
           :model-value="props.isEnabled"
-          :is-disabled="props.isPending ?? false"
+          :is-busy="props.isPending ?? false"
           :aria-label="`${words.pluginEnabled} ${props.plugin.name}`"
           @update:model-value="onToggleEnabled"
         />

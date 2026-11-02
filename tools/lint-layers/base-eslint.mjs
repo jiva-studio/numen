@@ -377,7 +377,7 @@ const numenPlugin = {
               isBoolean = typeAnnotation.types.some((t) => t.type === 'TSBooleanKeyword')
             }
 
-            if (isBoolean && !/^(is|has|can)[A-Z]/.test(name)) {
+            if (isBoolean && name !== 'modelValue' && !/^(is|has|can)[A-Z]/.test(name)) {
               const capitalized = name.charAt(0).toUpperCase() + name.slice(1)
               context.report({
                 node: node.key,
