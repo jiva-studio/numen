@@ -3,6 +3,8 @@ package chunk
 import (
 	"strings"
 	"unicode"
+
+	"github.com/jiva-studio/numen/libs/core/internal/wordform"
 )
 
 // Expression converts user-typed text into an FTS5 query.
@@ -65,4 +67,48 @@ func writeQuoted(out *strings.Builder, word string) {
 		out.WriteByte(word[i])
 	}
 	out.WriteByte('"')
+}
+
+// Expressions converts user-typed text into the FTS5 queries that find it, from
+// the strictest to the loosest. A search runs them in this order and lists the
+// chunks of an earlier one first:
+//
+//  1. every word exactly;
+//  2. the last word as a prefix of a word of the text (growing only);
+//  3. every word of four letters or more by its stem, as a prefix, so a word
+//     is found in another form: "pizda" finds "pizde", "knigi" finds "knigu"
+//     (growing only).
+//
+// A finished query (growing false) matches exactly, as Expression does. A query
+// equal to an earlier one is left out.
+func Expressions(typed string, growing bool) []string {
+	words := strings.Fields(typed)
+	if len(words) == 0 {
+		return nil
+	}
+	exact := Expression(typed, false)
+	out := []string{exact}
+	if !growing {
+		return out
+	}
+	if prefix := Expression(typed, true); prefix != exact {
+		out = append(out, prefix)
+	}
+
+	var stemmed strings.Builder
+	hasStem := false
+	for _, w := range words {
+		stem := wordform.GetStem(w)
+		if stem == "" {
+			writeQuoted(&stemmed, w)
+			continue
+		}
+		hasStem = true
+		writeQuoted(&stemmed, stem)
+		stemmed.WriteByte('*')
+	}
+	if stems := stemmed.String(); hasStem && stems != out[len(out)-1] {
+		out = append(out, stems)
+	}
+	return out
 }

@@ -126,6 +126,11 @@ func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, p
 // FindLexical is a word search: the chunks of one vault whose text matches the
 // query, best first.
 //
+// While the query grows, a word is also matched in other forms (see
+// Expressions). The chunks of the exact match come first, then those matching
+// the last word as a prefix, then those matching by stem; inside each group the
+// order is BM25's.
+//
 // The result is the large chunk enclosing each hit, which is what a result
 // displays.
 func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) (_ []domain.Passage, err error) {
@@ -134,8 +139,8 @@ func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query
 		// it, and arriving here without one is a mistake in the caller.
 		return nil, fmt.Errorf("a search by words needs a positive limit, got %d", limit)
 	}
-	expression := Expression(query, growing)
-	if expression == "" {
+	expressions := Expressions(query, growing)
+	if len(expressions) == 0 {
 		return nil, nil
 	}
 	vault, err := vaultRow(ctx, q.db, vaultID)
@@ -146,6 +151,29 @@ func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query
 		return nil, err
 	}
 
+	var out []domain.Passage
+	chunkSet := map[domain.ChunkID]bool{}
+	for _, expression := range expressions {
+		found, err := q.findByExpression(ctx, vault, expression, of, limit)
+		if err != nil {
+			return nil, err
+		}
+		for _, p := range found {
+			if chunkSet[p.ChunkID] {
+				continue
+			}
+			chunkSet[p.ChunkID] = true
+			out = append(out, p)
+		}
+		if len(out) >= limit {
+			return out[:limit], nil
+		}
+	}
+	return out, nil
+}
+
+// findByExpression is the chunks matching one FTS5 expression, best first.
+func (q *Queries) findByExpression(ctx context.Context, vault int64, expression string, of []domain.SourceKind, limit int) (_ []domain.Passage, err error) {
 	var rows *sql.Rows
 	if len(of) == 0 {
 		rows, err = q.db.QueryContext(ctx, getStatement("lexical"), expression, vault, limit)
@@ -238,7 +266,7 @@ func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, searc
 		return nil, err
 	}
 
-	item, err := q.findNearestByBits(ctx, vault, search.Vector, search.Limit*coarseCandidates)
+	item, err := q.findNearestByBits(ctx, vault, search.Vector, min(search.Limit*coarseCandidates*max(search.Breadth, 1), maxCoarse))
 	if err != nil {
 		if q.hasOtherCoarseRecipe(ctx, search.Recipe) {
 			return nil, nil

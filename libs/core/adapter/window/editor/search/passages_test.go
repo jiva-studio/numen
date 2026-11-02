@@ -53,8 +53,26 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 		{
 			name:  "a word before the last one is matched whole",
 			text:  "a reversible engine",
-			query: "revers engine",
+			query: "rev engine",
 			want:  []domain.UnitRange{{Start: 13, End: 19}},
+		},
+		{
+			name:  "a word of four letters is also marked in another form of it",
+			text:  "u nego pizde i pizda",
+			query: "pizda",
+			want:  []domain.UnitRange{{Start: 7, End: 11}, {Start: 15, End: 20}},
+		},
+		{
+			name:  "a stem of a Cyrillic word marks the other ending",
+			text:  "Лежит на Столе книге",
+			query: "книга",
+			want:  []domain.UnitRange{{Start: 15, End: 19}},
+		},
+		{
+			name:  "diacritics are folded",
+			text:  "hari Kṛṣṇa hari",
+			query: "krsna",
+			want:  []domain.UnitRange{{Start: 5, End: 10}},
 		},
 		{
 			name:  "two words naming the same characters come back as one span",

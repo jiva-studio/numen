@@ -47,4 +47,8 @@ type NearestQuery struct {
 	Kinds  []domain.SourceKind
 	Limit  int
 	Floor  float64
+	// Breadth multiplies how many candidates the coarse pass keeps. A search
+	// restricted to a kind that is a small share of the vault asks for more, so
+	// the kind is not left with the few candidates of the whole. Zero is one.
+	Breadth int
 }

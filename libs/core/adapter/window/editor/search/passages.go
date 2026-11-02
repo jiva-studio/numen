@@ -6,15 +6,21 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/jiva-studio/numen/libs/core/internal/wordform"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// counts text: in UTF-16 code units. The spans come in order and do not
-// overlap.
+// spans are the ranges of text the query matched, counted in UTF-16 code units.
+// The spans come in order and do not overlap.
 //
-// Case is folded and nothing else is. A span begins where a word begins, and
-// ends where one ends; the last word typed may still be growing, so it matches
-// a word by its opening, which is the rule the index matched it by.
+// Case and diacritics are folded and nothing else is. A span begins where a word
+// begins, and it is the rule the index matched the words by:
+//
+//   - a word typed in full marks the same letters of the word of the text; the
+//     last word typed may still be growing, so it also matches a longer word, and
+//     a word before it ends where the word of the text ends;
+//   - a word of four letters or more is matched in another form as well, by its
+//     stem: the letters the two words share, at least the stem, are marked.
 func spans(text, query string) []domain.UnitRange {
 	words := strings.Fields(query)
 	if len(words) == 0 || text == "" {
@@ -28,19 +34,33 @@ func spans(text, query string) []domain.UnitRange {
 		if len(wanted) == 0 {
 			continue
 		}
+		stem, _ := getFoldedRunes(wordform.GetStem(word))
 		whole := i < len(words)-1
-		for from := 0; from+len(wanted) <= len(folded); from++ {
-			to := from + len(wanted)
-			if !slices.Equal(folded[from:to], wanted) {
+		for from := 0; from < len(folded); from++ {
+			if !isWordStart(folded, from) {
 				continue
 			}
-			if !isWordStart(folded, from) || (whole && !isWordEnd(folded, to)) {
+			shared := countSharedPrefix(folded[from:], wanted)
+			to := from + shared
+			switch {
+			case shared == len(wanted) && (!whole || isWordEnd(folded, to)):
+			case len(stem) > 0 && shared >= len(stem):
+			default:
 				continue
 			}
 			offset = append(offset, domain.UnitRange{Start: units[from], End: units[to]})
 		}
 	}
 	return mergeRanges(offset)
+}
+
+// countSharedPrefix is how many runes the two texts begin with in common.
+func countSharedPrefix(a, b []rune) int {
+	n := 0
+	for n < len(a) && n < len(b) && a[n] == b[n] {
+		n++
+	}
+	return n
 }
 
 // isWordRune reports whether r can be part of a word, so the runes adjacent to
@@ -93,7 +113,7 @@ func getFoldedRunes(text string) ([]rune, []int) {
 
 	pos := 0
 	for _, r := range text {
-		runes = append(runes, unicode.ToLower(r))
+		runes = append(runes, wordform.FoldRune(r))
 		units = append(units, pos)
 		pos++
 		if r > 0xffff {

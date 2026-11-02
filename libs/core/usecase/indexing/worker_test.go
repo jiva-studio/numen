@@ -453,6 +453,39 @@ func TestAChangeOfSourcesStopsTheVectorPass(t *testing.T) {
 	}
 }
 
+// A note written while a pass embeds a backlog does not wait for the whole of
+// it: the pass stops at its position, and the pass that follows starts from the
+// newest source, which is the note.
+func TestANoteSaveStopsTheVectorPass(t *testing.T) {
+	events := newRecorder()
+	model := &nudging{fakeEmbedder: &fakeEmbedder{dims: 64}, wake: make(chan struct{}, 1)}
+	made, db := reading(t)
+	fit(t, db, model)
+
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
+	cut(t, made, db, v)
+
+	p := newPass(made, db, events, model, model.GetModel().Recipe(), v)
+	p.worker.notes = model.wake
+	p.embed(t.Context())
+
+	target, embedded, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if target == 0 {
+		t.Fatal("the vault had no pending vector, and the pass had nothing to stop")
+	}
+	if embedded == target {
+		t.Error("the pass embedded the whole backlog while a note was written")
+	}
+	select {
+	case <-model.wake:
+	default:
+		t.Error("the wake of the note was taken and not put back")
+	}
+}
+
 // The pass for a note written waits for the quiet period, and a second write
 // puts it off again.
 func TestAWakeForNotesIsLeftOnceWhateverTheNumberOfChanges(t *testing.T) {

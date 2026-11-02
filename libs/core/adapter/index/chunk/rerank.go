@@ -20,6 +20,10 @@ import (
 // a fact about this index and not about the search, so the number is here.
 const coarseCandidates = 8
 
+// maxCoarse is the most candidates the coarse pass can be asked for: the vector
+// table answers no query with a larger k.
+const maxCoarse = 4096
+
 // candidate is one candidate and how near the query it turned out to be.
 type candidate struct {
 	chunk      int64

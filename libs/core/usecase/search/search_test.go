@@ -685,3 +685,88 @@ func TestASearchAbortsOnCanceledContext(t *testing.T) {
 		t.Fatalf("expected context.Canceled, got %v", err)
 	}
 }
+
+func TestASearchByMeaningListsAFreshNoteContainingTheWords(t *testing.T) {
+	// The vectors of a vault fill for hours, and a note written a minute ago has
+	// none. The meaning half of a palette lists it all the same, because it holds
+	// the words typed, in another form of the word than the one typed.
+	ctx := t.Context()
+	c := newCorpus(t)
+	c.cut(t, c.first, "notes/Heat.md", "Energy in transit between two bodies")
+	c.vectorise(t, c.first, newVector(+1))
+	c.cut(t, c.first, "notes/Entropy.md", "A measure of disorder in every closed system")
+
+	found, err := c.search(oneWay{newVector(+1)}).Execute(ctx, c.first, "disorders", search.GetTypingParameters(search.Dense, 10))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := sources(found)
+	if !slices.Contains(got, "notes/Entropy.md") {
+		t.Errorf("the note with the word and no vector is missing from %v", got)
+	}
+	if !slices.Contains(got, "notes/Heat.md") {
+		t.Errorf("the note nearest by meaning is missing from %v", got)
+	}
+}
+
+func TestANoteContainingTheWordsRanksFirst(t *testing.T) {
+	// A note that the vectors place far from the query, holding the query word,
+	// is not outranked by notes the vectors place nearer: the two orders are fused
+	// and a chunk of the words is first in one of them.
+	ctx := t.Context()
+	c := newCorpus(t)
+	c.cut(t, c.first, "notes/Heat.md", "Energy in transit between two bodies")
+	c.vectorise(t, c.first, newVector(+1))
+	c.cut(t, c.first, "notes/Entropy.md", "A measure of disorder in every closed system")
+	c.vectorise(t, c.first, newVector(-1))
+
+	found, err := c.search(oneWay{newVector(+1)}).Execute(ctx, c.first, "disorde", search.GetTypingParameters(search.Dense, 10))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := sources(found); len(got) == 0 || got[0] != "notes/Entropy.md" {
+		t.Errorf("the order is %v, want the note with the word first", got)
+	}
+}
+
+// crowded is a vault whose nearest chunks are all of books: asked for the whole
+// vault it answers with nothing a note could be, and a note is found only by
+// asking for notes, from a wider pass.
+type crowded struct {
+	sourceport.PassageQueries
+	requests []sourceport.NearestQuery
+}
+
+func (c *crowded) FindNearest(ctx context.Context, v domain.VaultID, q sourceport.NearestQuery) ([]domain.Passage, error) {
+	c.requests = append(c.requests, q)
+	if len(q.Kinds) == 0 {
+		return nil, nil
+	}
+	return c.PassageQueries.FindNearest(ctx, v, q)
+}
+
+func TestNotesAreRequestedSeparatelyFromBooks(t *testing.T) {
+	ctx := t.Context()
+	c := newCorpus(t)
+	c.cut(t, c.first, "notes/Heat.md", "Energy in transit between two bodies")
+	c.vectorise(t, c.first, newVector(+1))
+
+	spy := &crowded{PassageQueries: c.db.ChunkQueries()}
+	found, err := search.New(spy, vaultreader.Readers{}, nil, oneWay{newVector(+1)}, nil).
+		Execute(ctx, c.first, "zzqqxx", search.GetTypingParameters(search.Dense, 10))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := sources(found); !slices.Contains(got, "notes/Heat.md") {
+		t.Errorf("found %v, want the note the whole vault's candidates did not hold", got)
+	}
+	var isBroadened bool
+	for _, q := range spy.requests {
+		if len(q.Kinds) == 1 && q.Kinds[0] == domain.KindNote && q.Breadth > 1 {
+			isBroadened = true
+		}
+	}
+	if !isBroadened {
+		t.Errorf("the notes were not asked for from a wider pass: %+v", spy.requests)
+	}
+}

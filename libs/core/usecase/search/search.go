@@ -279,8 +279,33 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 	// A vector is stored under the recipe that produced it, which covers every
 	// property of the model that determines what a vector is. A lookup under any
 	// other recipe finds no vector and this mode returns nothing.
-	return u.passages.FindNearest(ctx, v.ID, sourceport.NearestQuery{Recipe: recipe, Vector: vector, Kinds: p.Kinds, Limit: p.Dense, Floor: u.getFloor(ctx, v, recipe, p)})
+	// A vault of books and a few notes: the books hold nearly every chunk, so
+	// the nearest chunks of the whole vault are nearly all theirs and a short
+	// note is buried among them. The notes are asked for apart, from a wider
+	// coarse pass, and the two orders are fused.
+	floor := u.getFloor(ctx, v, recipe, p)
+	all, err := u.passages.FindNearest(ctx, v.ID, sourceport.NearestQuery{Recipe: recipe, Vector: vector, Kinds: p.Kinds, Limit: p.Dense, Floor: floor})
+	if err != nil || len(p.Kinds) > 0 {
+		return all, err
+	}
+	notes, err := u.passages.FindNearest(ctx, v.ID, sourceport.NearestQuery{
+		Recipe: recipe, Vector: vector, Kinds: []domain.SourceKind{domain.KindNote},
+		Limit: p.Dense, Floor: floor, Breadth: noteBreadth,
+	})
+	if err != nil {
+		return nil, err
+	}
+	fused := merge(notes, all)
+	if len(fused) > p.Dense {
+		fused = fused[:p.Dense]
+	}
+	return fused, nil
 }
+
+// noteBreadth multiplies the candidates the coarse pass keeps for the notes.
+// Notes are few chunks among many, and the candidates of the whole vault seldom
+// include one.
+const noteBreadth = 40
 
 // getQueryVector returns the vector of the query from the cache, or embeds the query
 // and caches the result.
@@ -571,14 +596,18 @@ const (
 // GetTypingParameters returns the parameters for a search in the given mode
 // while the query is being typed: the last word is matched as a prefix.
 //
-// Every mode other than the given one gets no candidates and does not run.
+// Lexical and ByName run alone. Dense runs together with the words: a note
+// that holds the query in any form is among the answers by meaning even when
+// its vector is not made yet, or the model puts it far from the query, which
+// is how a short note in transliteration is placed. The two orders are fused
+// by rank, so a chunk both place well comes first.
 func GetTypingParameters(mode Mode, limit int) Parameters {
 	p := Parameters{Limit: limit, IsGrowing: true}.fill()
 	switch mode {
 	case Lexical:
 		p.Dense, p.Named = 0, 0
 	case Dense:
-		p.Lexical, p.Named = 0, 0
+		p.Named = 0
 	case ByName:
 		p.Lexical, p.Dense = 0, 0
 	case Hybrid:

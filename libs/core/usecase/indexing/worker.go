@@ -409,7 +409,7 @@ func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 // embed creates the vectors for the chunks of the vault that lack one, and
 // reads no file the index does not already hold a chunk of.
 //
-// A recognition batch of pages, and a change of the sources (a book added, or
+// A recognition batch of pages, a note written, and a change of the sources (a book added, or
 // the embedding model changed), stop the pass at its current position. The
 // vectors already created are kept, and the resumed pass queries the index for
 // the chunks that still lack a vector, under the recipe in force by then.
@@ -425,7 +425,7 @@ func (p *pass) embed(ctx context.Context) {
 		return
 	}
 
-	limit, stop := stopOnWake(ctx, w.read, w.sources)
+	limit, stop := stopOnWake(ctx, w.read, w.sources, w.notes)
 	defer stop()
 
 	if p.makeVectors(ctx, limit, plan) {
