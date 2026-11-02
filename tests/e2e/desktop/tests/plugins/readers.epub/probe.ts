@@ -242,3 +242,21 @@ const findOffsetReturns = (samples: readonly Sample[], way: Direction): string[]
   }
   return found
 }
+
+/**
+ * Makes every frame of the page last at least `ms` milliseconds by holding the main thread, as a
+ * busy machine does: a key pressed during a frame is handled after it, and the turns of a rapid
+ * run arrive together.
+ */
+export const holdFrames = async (page: Page, ms: number): Promise<void> => {
+  await page.evaluate((hold) => {
+    const spin = () => {
+      const end = performance.now() + hold
+      while (performance.now() < end) {
+        // Holding the thread is the point.
+      }
+      requestAnimationFrame(spin)
+    }
+    requestAnimationFrame(spin)
+  }, ms)
+}

@@ -10,6 +10,7 @@
   "tests/plugins/notes/wikilinks.spec.ts": 13,
   "tests/plugins/readers.epub/contents.spec.ts": 9,
   "tests/plugins/readers.epub/epub.spec.ts": 10,
+  "tests/plugins/readers.epub/flicker-busy.spec.ts": 20,
   "tests/plugins/readers.epub/flicker-one-column.spec.ts": 61,
   "tests/plugins/readers.epub/flicker-two-columns.spec.ts": 62,
   "tests/plugins/readers.epub/flicker.spec.ts": 7,

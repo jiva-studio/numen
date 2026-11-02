@@ -26,22 +26,21 @@ function flushLayout(element: HTMLElement): number {
 }
 
 /**
- * Pins the columns where a turn still under way has carried them, so the next turn starts from
- * there. A turn retargeted while it runs was drawn from where the one before it started, which is
- * the page the reader has just left.
+ * Ends a turn still under way where it was going, so the next turn starts from the page the last
+ * one was carried to. The columns are never read mid-turn: WebKit gives the value of an earlier
+ * frame of the transition to a script that reads it between frames, and a turn started from it
+ * drew the text back toward the page before for a frame. The place a turn is carried to is the
+ * one written to the style, and a turn made while another runs only moves on from it.
  */
-function pinPaper(text: HTMLElement): void {
-  const now = getComputedStyle(text).translate
-  if (now === '' || now === 'none') return
+function endTurnUnderWay(text: HTMLElement): void {
   text.style.transition = 'none'
-  text.style.translate = now
   flushLayout(text)
   text.style.transition = ''
 }
 
 function translatePaper(text: HTMLElement, to: string, how: 'smooth' | 'auto'): void {
   if (how === 'smooth') {
-    pinPaper(text)
+    endTurnUnderWay(text)
     text.style.translate = to
     return
   }

@@ -12,6 +12,7 @@ import {
   getShiftSeries,
   findReturnsOf,
   type Direction,
+  holdFrames,
   startProbe,
   takeSamples,
 } from './probe.js'
@@ -125,4 +126,33 @@ export const slowDown = async (
     await new Promise((resolve) => setTimeout(resolve, delays[method ?? ''] ?? 0))
     await route.continue()
   })
+}
+
+/** How long every frame is held, and how long the presses of a run are apart, in milliseconds. */
+const BUSY_FRAME_MS = 20
+const BUSY_PAUSE_MS = 30
+
+/** Rounds of eight turns forward and six back. */
+const BUSY_ROUNDS = 4
+
+/**
+ * Rapid turns on a machine whose frames take longer than the gap between two presses, so a turn
+ * starts while the one before it is still being carried. Each run must show pages in the
+ * direction of its turns alone.
+ */
+export const expectNoPageBeforeARapidTurnWhenBusy = async (page: Page): Promise<void> => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await openLedger(page)
+  const middle = await getAreaPoint(page, 0.5)
+  await page.mouse.click(middle.x, middle.y)
+  await startProbe(page)
+  await holdFrames(page, BUSY_FRAME_MS)
+  const found: string[] = []
+  for (let round = 0; round < BUSY_ROUNDS; round += 1) {
+    found.push(
+      ...(await playRun(page, { key: 'PageDown', way: 'forward', times: 8, pause: BUSY_PAUSE_MS })),
+      ...(await playRun(page, { key: 'PageUp', way: 'back', times: 6, pause: BUSY_PAUSE_MS })),
+    )
+  }
+  expect(found).toEqual([])
 }

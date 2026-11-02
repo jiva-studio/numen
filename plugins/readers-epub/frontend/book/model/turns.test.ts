@@ -84,29 +84,23 @@ describe('putting a spread in front', () => {
     expect(writes).toStrictEqual(['transition [none]', 'translate -2000px 0', 'transition []'])
   })
 
-  it('carries the columns with the transition where the turn is smooth', () => {
+  it('ends a turn under way, then carries the columns with the transition where the turn is smooth', () => {
     const { turns, writes } = setUp()
 
     turns.stand(2, 'smooth')
 
-    expect(writes).toStrictEqual(['translate -2000px 0'])
+    expect(writes).toStrictEqual(['transition [none]', 'transition []', 'translate -2000px 0'])
   })
 
-  it('pins the columns where a turn under way has carried them before the next smooth turn', () => {
-    const { turns, writes } = setUp()
-    const style = vi
-      .spyOn(window, 'getComputedStyle')
-      .mockReturnValue({ translate: '-120px 0px' } as CSSStyleDeclaration)
+  it('does not read where a turn under way has carried the columns', () => {
+    const { turns } = setUp()
+    const style = vi.spyOn(window, 'getComputedStyle')
 
     turns.stand(2, 'smooth')
-    style.mockRestore()
+    turns.stand(3, 'smooth')
 
-    expect(writes).toStrictEqual([
-      'transition [none]',
-      'translate -120px 0px',
-      'transition []',
-      'translate -2000px 0',
-    ])
+    expect(style).not.toHaveBeenCalled()
+    style.mockRestore()
   })
 
   it('counts the spread without a drawn document', () => {
@@ -124,7 +118,7 @@ describe('going to a spread', () => {
 
     turns.goTo(1)
 
-    expect(writes).toStrictEqual(['translate -1000px 0'])
+    expect(writes).toStrictEqual(['transition [none]', 'transition []', 'translate -1000px 0'])
     expect(onMove).toHaveBeenCalledExactlyOnceWith(100)
   })
 
