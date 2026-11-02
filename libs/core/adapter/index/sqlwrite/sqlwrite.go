@@ -85,13 +85,23 @@ type Transaction struct {
 	ready map[string]*sql.Stmt
 }
 
+// ExecContext, QueryContext and QueryRowContext start a statement only while
+// ctx is live and then run it to its end. See Uninterrupted.
 func (t *Transaction) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	ctx, err := Uninterrupted(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return useStatement(ctx, t, query, func(prepared *sql.Stmt) (sql.Result, error) {
 		return prepared.ExecContext(ctx, args...)
 	})
 }
 
 func (t *Transaction) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	ctx, err := Uninterrupted(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return useStatement(ctx, t, query, func(prepared *sql.Stmt) (*sql.Rows, error) {
 		return prepared.QueryContext(ctx, args...)
 	})
@@ -101,6 +111,10 @@ func (t *Transaction) QueryContext(ctx context.Context, query string, args ...an
 // transaction itself, so the error is returned to the caller: a row carries the error
 // and there is no other channel for it.
 func (t *Transaction) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+	ctx, err := Uninterrupted(ctx)
+	if err != nil {
+		return t.Tx.QueryRowContext(ctx, query, args...)
+	}
 	row, err := useStatement(ctx, t, query, func(prepared *sql.Stmt) (*sql.Row, error) {
 		return prepared.QueryRowContext(ctx, args...), nil
 	})
@@ -108,6 +122,23 @@ func (t *Transaction) QueryRowContext(ctx context.Context, query string, args ..
 		return t.Tx.QueryRowContext(ctx, query, args...)
 	}
 	return row
+}
+
+// Uninterrupted returns the context a statement on the index runs under: ctx
+// itself with its error when ctx is already done, and otherwise a context that
+// is not cancelled while the statement runs.
+//
+// The driver answers a cancelled context by interrupting the connection. The
+// vec0 table prepares its own statements the first time a connection touches
+// it, and a prepare that the interrupt fails leaves it a nil statement that it
+// then clears, which ends the process. A statement therefore starts only while
+// ctx is live and then runs to its end. A write transaction still rolls back
+// when ctx is cancelled, between its statements.
+func Uninterrupted(ctx context.Context) (context.Context, error) {
+	if err := ctx.Err(); err != nil {
+		return ctx, err
+	}
+	return context.WithoutCancel(ctx), nil
 }
 
 // useStatement calls run with the prepared statement for this text, preparing

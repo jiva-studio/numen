@@ -297,6 +297,10 @@ func (q *Queries) hasOtherCoarseRecipe(ctx context.Context, recipe string) bool 
 // findNearestByBits is the pass over the bit vectors: the chunks of one vault whose signs
 // stand nearest the query's, by Hamming distance, k of them.
 func (q *Queries) findNearestByBits(ctx context.Context, vault int64, query []float32, k int) (_ []int64, err error) {
+	ctx, err = sqlwrite.Uninterrupted(ctx)
+	if err != nil {
+		return nil, err
+	}
 	rows, err := q.db.QueryContext(ctx, getStatement("coarse"), vector.Bits(query), vault, k)
 	if err != nil {
 		return nil, err
@@ -415,6 +419,10 @@ func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultI
 		after.MTime = math.MaxInt64
 		after.Source = math.MaxInt64
 	}
+	ctx, err = sqlwrite.Uninterrupted(ctx)
+	if err != nil {
+		return nil, err
+	}
 	rows, err := q.db.QueryContext(ctx, getStatement("unembedded"), recipe, vault, after.MTime, after.MTime, after.Source, after.Source, after.Chunk, limit)
 	if err != nil {
 		return nil, err
@@ -472,6 +480,10 @@ func (q *Queries) GetProgress(ctx context.Context, vaultID domain.VaultID, recip
 	if errors.Is(err, errNoVault) {
 		return 0, 0, nil
 	}
+	if err != nil {
+		return 0, 0, err
+	}
+	ctx, err = sqlwrite.Uninterrupted(ctx)
 	if err != nil {
 		return 0, 0, err
 	}
