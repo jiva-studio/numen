@@ -3,6 +3,7 @@
  */
 import { onMounted, onUnmounted } from 'vue'
 import { runInBackground } from '@numen/ui'
+import { waitFor } from './waitFor'
 
 export interface BootstrapDeps {
   loadVaults(): Promise<void>
@@ -20,11 +21,22 @@ export interface BootstrapDeps {
   reportError(error: unknown): void
 }
 
+/** How long the window waits for the plugins before it opens the tabs without the ones still starting. */
+export const PLUGINS_WAIT_MS = 2_000
+
+/** Starts the plugins and waits for them no longer than PLUGINS_WAIT_MS; the ones still starting go on. */
+async function startPluginsWithinLimit(deps: BootstrapDeps): Promise<void> {
+  const starting = deps.startPlugins?.()
+  if (!starting) return
+  runInBackground(starting, deps.reportError)
+  await waitFor(starting, PLUGINS_WAIT_MS)
+}
+
 export function useAppBootstrap(deps: BootstrapDeps) {
   onMounted(async () => {
     await deps.loadVaults()
     await deps.startSettings()
-    await deps.startPlugins?.()
+    await startPluginsWithinLimit(deps)
     await deps.startLayout()
     runInBackground(deps.startWindow(), deps.reportError)
     deps.startEditing()

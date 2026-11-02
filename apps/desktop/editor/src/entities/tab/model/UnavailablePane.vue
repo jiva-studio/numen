@@ -19,6 +19,7 @@ const props = defineProps<{
 /* --------------------------------- State ---------------------------------- */
 const isEnabling = ref(false)
 const problem = ref('')
+const isStarting = computed(() => props.state.services.arePluginsStarting?.value === true)
 const view = computed(() => getUnavailableView(props.state.lookup.value, isEnabling.value))
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -39,7 +40,13 @@ function onAct(target: UnavailableView): void {
 </script>
 
 <template>
-  <LoadingIndicator v-if="view === undefined" />
+  <div v-if="isStarting" class="tab-unavailable" role="status" data-starting>
+    <div class="tab-unavailable__content">
+      <LoadingIndicator />
+      <p class="tab-unavailable__message">Starting the plugin for this tab…</p>
+    </div>
+  </div>
+  <LoadingIndicator v-else-if="view === undefined" />
   <div v-else class="tab-unavailable" role="status">
     <div class="tab-unavailable__content">
       <TriangleAlert class="tab-unavailable__icon" aria-hidden="true" />

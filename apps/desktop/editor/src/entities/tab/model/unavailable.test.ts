@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { CATALOG_INCOMPATIBILITY, CATALOG_STATE } from '@numen/core-client'
 import {
@@ -254,5 +255,22 @@ describe('the pane while the catalog has not answered', () => {
     const view = await mountPane(services)
 
     expect(view.find('h3').text()).toBe('Plugin unavailable')
+  })
+})
+
+describe('the placeholder while the plugins start', () => {
+  it('says the plugin is starting, and then what the catalog says of it', async () => {
+    const arePluginsStarting = ref(true)
+    const view = await mountPane(createServices(notesOptions, { arePluginsStarting }))
+
+    expect(view.find('[data-starting]').exists()).toBe(true)
+    expect(view.text()).toContain('Starting the plugin')
+    expect(view.text()).not.toContain('Plugin disabled')
+
+    arePluginsStarting.value = false
+    await flushPromises()
+
+    expect(view.find('[data-starting]').exists()).toBe(false)
+    expect(view.text()).toContain('Plugin disabled')
   })
 })

@@ -26,19 +26,31 @@ func (c Config) AgentProvider() agentport.AgentProvider {
 	return agentbridge.NewRouter(c.PluginHost)
 }
 
+// programsWait is how long a read of the settings waits for the providers to list their programs.
+// Past it the read answers with the programs listed last, so a provider that is slow to start does
+// not hold the window back.
+const programsWait = time.Second
+
 // getAgentPrograms returns the programs the agent plugins list, requested with the command lines
-// from the settings. A provider that does not respond in time lists none.
+// from the settings. A provider that does not respond in time lists none, and the read waits for
+// the providers no longer than programsWait: after that it answers with the programs listed last.
 func (c Config) getAgentPrograms(provider agentport.AgentProvider, target settings.Agent) []agentport.AgentProgram {
 	if provider == nil {
 		return nil
 	}
-	ctx, stop := context.WithTimeout(context.Background(), programsLimit)
-	defer stop()
-	programs, err := provider.GetPrograms(ctx, target.GetCommands())
-	if err != nil {
-		c.handleError(fmt.Errorf("list agent programs: %w", err))
+	list := func() []agentport.AgentProgram {
+		ctx, stop := context.WithTimeout(context.Background(), programsLimit)
+		defer stop()
+		programs, err := provider.GetPrograms(ctx, target.GetCommands())
+		if err != nil {
+			c.handleError(fmt.Errorf("list agent programs: %w", err))
+		}
+		return programs
 	}
-	return programs
+	if c.programs == nil {
+		return list()
+	}
+	return c.programs.Get(programsWait, list)
 }
 
 var errNoCompletionProvider = errors.New("no plugin host runs agent programs")

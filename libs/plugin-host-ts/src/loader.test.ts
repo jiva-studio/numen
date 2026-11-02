@@ -3,7 +3,7 @@ import type { PluginContext, PluginLifecycle } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { LoaderHost } from './host'
 import { getPluginStyle } from './styles'
-import { createPluginLoader } from './loader'
+import { createPluginLoader, PLUGIN_WAIT_MS } from './loader'
 
 /** The loader, with a module registered under each plugin id. */
 function registerModules(
@@ -434,6 +434,78 @@ describe('createPluginLoader failures, order and toggles', () => {
     await loader.start()
 
     expect(log).toStrictEqual(['a:start', 'a:end', 'b:start', 'b:end'])
+  })
+
+  it('reads every plugin at once, so a slow one does not delay the reading of the others', async () => {
+    const { host } = createHost()
+    const read: string[] = []
+    const make = (id: string) => async () => {
+      read.push(id)
+      return { activate: () => undefined }
+    }
+    const loader = registerModules(createPluginLoader({ host }), {
+      a: make('a'),
+      b: make('b'),
+      c: make('c'),
+    })
+
+    const started = loader.start()
+
+    expect(read).toStrictEqual(['a', 'b', 'c'])
+    await started
+  })
+
+  it('goes on to the next plugin when one is not read within the wait, and activates it when it is read', async () => {
+    vi.useFakeTimers()
+    try {
+      const { host } = createHost()
+      const log: string[] = []
+      let finishReading: (module: unknown) => void = () => undefined
+      const slow = () =>
+        new Promise<unknown>((resolve) => {
+          finishReading = resolve
+        })
+      const quick = async () => ({
+        activate: () => {
+          log.push('quick')
+        },
+      })
+      const loader = registerModules(createPluginLoader({ host }), { slow, quick })
+
+      const started = loader.start()
+      await vi.advanceTimersByTimeAsync(PLUGIN_WAIT_MS)
+      expect(log).toStrictEqual(['quick'])
+      expect(loader.isPluginActive('slow')).toBe(false)
+
+      finishReading({
+        activate: () => {
+          log.push('slow')
+        },
+      })
+      await started
+      expect(log).toStrictEqual(['quick', 'slow'])
+      expect(loader.isPluginActive('slow')).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('reports a plugin that cannot be read and still starts the others', async () => {
+    const { host } = createHost()
+    const log: string[] = []
+    const loader = registerModules(createPluginLoader({ host }), {
+      broken: () => Promise.reject(new Error('chunk missing')),
+      fine: async () => ({
+        activate: () => {
+          log.push('fine')
+        },
+      }),
+    })
+
+    await loader.start()
+
+    expect(loader.getPluginFailure('broken')).toBe('chunk missing')
+    expect(log).toStrictEqual(['fine'])
   })
 
   it('activates once when two activations are requested at the same time', async () => {

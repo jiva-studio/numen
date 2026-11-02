@@ -2,7 +2,8 @@
  * The window composed: the vault it reads, the kinds it declares, and the
  * few requests one kind makes of another.
  */
-import { ref } from 'vue'
+import { ref, type Ref } from 'vue'
+import { waitFor } from './waitFor'
 import { formatErrorMessage } from '@numen/core-client'
 import { pluginCatalog } from '@/shared/clients'
 import { runInBackground } from '@numen/ui'
@@ -102,10 +103,15 @@ interface AppLifecycleDeps {
   window: ReturnType<typeof useWindowDisplay>
   editing: ReturnType<typeof createNoteEditors>
   pluginLoader?: import('@numen/plugin-host').PluginLoader
+  /** True until every plugin the window starts has started or failed. */
+  arePluginsStarting: Ref<boolean>
   writeMessage: MessageWriter
   /** Called once the tabs the window opens with are open. */
   onLayoutStarted(): void
 }
+
+/** How long a vault with no saved tabs waits for the plugins that place tabs. */
+const NEW_VAULT_PLUGINS_WAIT_MS = 5_000
 
 /** The tabs the core stored for the vault, and none where the core cannot be queried. */
 const readSavedTabs = async () => {
@@ -118,6 +124,7 @@ const readSavedTabs = async () => {
 
 function initAppLifecycle(deps: AppLifecycleDeps) {
   const { vaultsModule, windowTabs, settings, window, editing } = deps
+  let pluginsStarted: Promise<void> = Promise.resolve()
   const startLayout = async () => {
     if (!vaultsModule.activeVault.value.id) return
     const search = typeof globalThis.location !== 'undefined' ? globalThis.location.search : ''
@@ -141,6 +148,8 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     if (saved.tabs.length > 0) {
       windowTabs.restoreTabs(parseSavedTabs(saved), saved.activeId)
     } else {
+      // A new vault places the tabs of the kinds registered, so it gives the plugins still starting a while longer.
+      await waitFor(pluginsStarted, NEW_VAULT_PLUGINS_WAIT_MS)
       await windowTabs.openPlacedTabs((kind, error) =>
         deps.writeMessage(`The ${kind} tab did not open: ${formatErrorMessage(error)}`, 'error'),
       )
@@ -153,10 +162,17 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     startSettings: () => settings.start(),
     startLayout,
     // The plugins the settings name are active before the layout opens the tabs of their kinds.
-    startPlugins: async () => {
-      const plugins = settings.rest?.plugins?.value ?? []
-      await deps.pluginLoader?.trackPlugins(getFrontendPluginIds(plugins))
-      await deps.pluginLoader?.start()
+    startPlugins: () => {
+      pluginsStarted = (async () => {
+        try {
+          const plugins = settings.rest?.plugins?.value ?? []
+          await deps.pluginLoader?.trackPlugins(getFrontendPluginIds(plugins))
+          await deps.pluginLoader?.start()
+        } finally {
+          deps.arePluginsStarting.value = false
+        }
+      })()
+      return pluginsStarted
     },
     startWindow: () => window.start(),
     startEditing: () =>
@@ -180,8 +196,10 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     settingsHolder.current?.rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const log = createMessageLog()
   const writeMessage = log.getWriter('command')
+  const arePluginsStarting = ref(true)
   const windowTabs = useWindowTabs({
     catalog: pluginCatalog,
+    arePluginsStarting,
     enablePlugin: async (pluginId) => {
       await settingsHolder.current?.rest.writeSetting(['plugins', pluginId, 'enabled'], true)
     },
@@ -225,6 +243,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     log,
     writeMessage,
     windowTabs,
+    arePluginsStarting,
     tabLinks,
     tabOpeners,
     runs,
@@ -478,6 +497,7 @@ export const useWindow = () => {
     window,
     editing,
     pluginLoader: base.pluginLoader,
+    arePluginsStarting: base.arePluginsStarting,
     writeMessage: base.writeMessage,
     onLayoutStarted: () => {
       isLayoutReady.value = true

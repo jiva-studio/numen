@@ -130,6 +130,7 @@ func (c Config) listModels() []settingsport.Model {
 
 func (c Config) modelsForProvider(provider agentport.AgentProvider) func() []settingsport.Model {
 	c.agentProvider = provider
+	c.programs = &settings.ProgramList{}
 	return c.listModels
 }
 

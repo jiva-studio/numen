@@ -2,9 +2,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import { useAppBootstrap, type BootstrapDeps } from './useAppBootstrap'
+import { PLUGINS_WAIT_MS, useAppBootstrap, type BootstrapDeps } from './useAppBootstrap'
 
-const setup = () => {
+const setup = (overrides: Partial<BootstrapDeps> = {}) => {
   const calls: string[] = []
   const note = (name: string) => () => {
     calls.push(name)
@@ -24,6 +24,7 @@ const setup = () => {
     closeTabs: note('closeTabs'),
     closeSettings: note('closeSettings'),
     reportError: vi.fn(),
+    ...overrides,
   }
   const view = mount(
     defineComponent({
@@ -62,5 +63,41 @@ describe('a window unmounting', () => {
     view.unmount()
 
     expect(calls).toStrictEqual(['closeWindow', 'closeEditing', 'closeTabs', 'closeSettings'])
+  })
+})
+
+describe('a window mounting while a plugin does not start', () => {
+  it('opens the layout after the wait and lets the plugin go on starting', async () => {
+    vi.useFakeTimers()
+    try {
+      let finishPlugins: () => void = () => undefined
+      const { calls } = setup({
+        startPlugins: () =>
+          new Promise<void>((resolve) => {
+            finishPlugins = resolve
+          }),
+      })
+
+      await vi.advanceTimersByTimeAsync(PLUGINS_WAIT_MS - 1)
+      expect(calls).not.toContain('startLayout')
+      await vi.advanceTimersByTimeAsync(1)
+      expect(calls).toContain('startLayout')
+      expect(calls).toContain('startWindow')
+
+      finishPlugins()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('reports a plugin start that fails and opens the layout', async () => {
+    const failure = new Error('plugins stopped')
+    const reportError = vi.fn()
+    const { calls } = setup({ startPlugins: () => Promise.reject(failure), reportError })
+
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(reportError).toHaveBeenCalledWith(failure)
+    expect(calls).toContain('startLayout')
   })
 })

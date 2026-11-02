@@ -135,17 +135,77 @@ function listenToPluginState(deps: ListenerDeps, pluginId: string) {
   deps.subscriptions.set(pluginId, sub)
 }
 
+/** How long the start waits for one plugin to be read before it goes on to the next. */
+export const PLUGIN_WAIT_MS = 3_000
+
 interface StartLoaderDeps {
   readonly pluginIds: readonly string[]
   readonly listen: (id: string) => void
   readonly isEnabled: (id: string) => boolean
+  /** Reads the module of a plugin from the window. */
+  readonly load: (id: string) => Promise<unknown>
 }
 
-async function startLoader(deps: StartLoaderDeps, activate: (id: string) => Promise<boolean>) {
-  for (const pluginId of deps.pluginIds) {
-    deps.listen(pluginId)
-    if (deps.isEnabled(pluginId)) await activate(pluginId)
+/** What reading a plugin gave: its module, or the failure, which the activation reads again and reports. */
+type Loaded = { readonly isRead: true; readonly module: unknown } | { readonly isRead: false }
+
+/** A plugin that has no frontend has no module, and nothing to activate. */
+const startPlugin = (
+  activate: (id: string, module?: unknown) => Promise<boolean>,
+  id: string,
+  one: Loaded,
+): Promise<boolean> =>
+  one.isRead && one.module === undefined
+    ? Promise.resolve(false)
+    : activate(id, one.isRead ? one.module : undefined)
+
+/** What the read of a plugin gave within PLUGIN_WAIT_MS, or 'late' where it gave nothing yet. */
+async function readWithin(load: Promise<Loaded>): Promise<Loaded | 'late'> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const late = new Promise<'late'>((resolve) => {
+    timer = setTimeout(() => resolve('late'), PLUGIN_WAIT_MS)
+  })
+  try {
+    return await Promise.race([load, late])
+  } finally {
+    clearTimeout(timer)
   }
+}
+
+/**
+ * Reads every enabled plugin at once and activates them in the order of the list, so each plugin
+ * registers what it provides in the same order on every start. A plugin that is not read within
+ * PLUGIN_WAIT_MS is passed over and activated when it is read; it holds back no other plugin. The
+ * promise settles when every plugin has been activated or has failed.
+ */
+async function startLoader(
+  deps: StartLoaderDeps,
+  activate: (id: string, module?: unknown) => Promise<boolean>,
+) {
+  for (const pluginId of deps.pluginIds) deps.listen(pluginId)
+  const enabled = deps.pluginIds.filter((id) => deps.isEnabled(id))
+  const loading = new Map<string, Promise<Loaded>>(
+    enabled.map((id) => [
+      id,
+      deps.load(id).then(
+        (module): Loaded => ({ isRead: true, module }),
+        (): Loaded => ({ isRead: false }),
+      ),
+    ]),
+  )
+  const running: Promise<unknown>[] = []
+  for (const pluginId of enabled) {
+    const load = loading.get(pluginId) as Promise<Loaded>
+    const outcome = await readWithin(load)
+    if (outcome === 'late') {
+      running.push(load.then((one) => startPlugin(activate, pluginId, one)))
+      continue
+    }
+    const run = startPlugin(activate, pluginId, outcome)
+    running.push(run)
+    await run
+  }
+  await Promise.all(running)
 }
 
 interface CloseLoaderDeps {
@@ -209,6 +269,7 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
   }
 
   return {
+    loadModule: (id: string) => resolveModule(id, undefined, activateContext),
     activatePlugin: (id: string, module?: unknown) =>
       enqueue(id, () => activateEntry(activateContext, id, module)),
     deactivatePlugin: (id: string) => enqueue(id, () => deactivateEntry(deactivateContext, id)),
@@ -223,13 +284,14 @@ interface LoaderState {
 }
 
 interface Activation {
+  readonly loadModule: (id: string) => Promise<unknown>
   readonly activatePlugin: (id: string, module?: unknown) => Promise<boolean>
   readonly deactivatePlugin: (id: string) => Promise<boolean>
 }
 
 function createRuntime(deps: PluginLoaderDeps, state: LoaderState, activation: Activation) {
   const { host } = deps
-  const { activatePlugin, deactivatePlugin } = activation
+  const { activatePlugin, deactivatePlugin, loadModule } = activation
   const { activePlugins, moduleLoaders } = state
   const trackedIds = new Set<string>()
   const settingSubscriptions = new Map<string, Disposable>()
@@ -273,7 +335,7 @@ function createRuntime(deps: PluginLoaderDeps, state: LoaderState, activation: A
     start: async (): Promise<void> => {
       hasStarted = true
       const pluginIds = [...new Set([...moduleLoaders.keys(), ...trackedIds])]
-      await startLoader({ pluginIds, listen, isEnabled }, activatePlugin)
+      await startLoader({ pluginIds, listen, isEnabled, load: loadModule }, activatePlugin)
     },
     close: async (): Promise<void> => {
       hasStarted = false

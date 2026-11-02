@@ -116,6 +116,8 @@ type Config struct {
 	Resources *Resources
 
 	agentProvider agentport.AgentProvider
+	// programs keeps the programs the agent plugins listed last.
+	programs *settings.ProgramList
 }
 
 // NewPluginHost creates and initializes a plugin host for the specified target and search directories.
