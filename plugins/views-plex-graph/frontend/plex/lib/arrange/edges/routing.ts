@@ -4,6 +4,7 @@ import {
   getLength,
   type EdgeCurve,
   type EdgeHeading,
+  type EdgeLabel,
   type EdgeSide,
   type EdgeTitle,
   type PlacedEdge,
@@ -76,26 +77,43 @@ export const getLabelPositions = (count: number): number[] => {
 }
 
 /**
- * How far the centre of a label off the line is from it, as a part of the
- * height of a line of text: half of it, and a gap clear of the line and of the
- * label on the other side.
+ * The gap, in plex units, between the line and the near edge of the letters of
+ * a label set beside it: as close as the letters go without touching the line.
+ * It is the same for every kind of line and for both labels.
  */
-const SHIFT = 0.8
+export const LABEL_GAP = 2
 
 /**
- * The side of the line each of `count` labels is set on, in the order the labels
- * are written. One label is on the line. Two are on opposite sides: the first
- * on the left of the line taken from its `from` end, the second on the right.
+ * How far from the line the centre of a title is, for letters this deep: half of
+ * their depth and the gap, so the near edge of the letters is `LABEL_GAP` from the line.
  */
-export const getLabelSides = (count: number): EdgeSide[] => (count <= 1 ? [0] : [-1, 1])
+export const getShift = (side: EdgeSide, depth: number): number => side * (depth / 2 + LABEL_GAP)
 
-/** How far from the line the centre of a title is, for a line of text this deep. */
-export const getShift = (side: EdgeSide, depth: number): number => side * SHIFT * depth
+/**
+ * Where and how each label of one line is set, in the order the labels are written.
+ * One label is centred and beside the line on its left, read the readable way along the line.
+ * Two labels are set near the two ends, on opposite sides, each read in the direction of its
+ * record: when both records have a head, each label is near the end its head is at and reads toward it;
+ * otherwise each is near the note that wrote it and reads away from it, the first on the left of
+ * the line taken from `from`, the second on the right.
+ */
+export function getLabelPlaces(labels: readonly EdgeLabel[]): LabelPlace[] {
+  if (labels.length <= 1) return labels.map(() => ({ position: MIDDLE, side: -1 }))
+  const positions = getLabelPositions(labels.length)
+  const isHeaded = labels.every((label) => label.end !== undefined)
+  return labels.map((label, index) => {
+    const isToward = isHeaded ? label.end === 'to' : index === 0
+    const position = isHeaded ? (isToward ? positions.at(-1)! : positions[0]!) : positions[index]!
+    const side: EdgeSide = isToward ? -1 : 1
+    return { position, side, heading: isToward ? 'along' : 'against' }
+  })
+}
 
-/** The way a title is read: that of its record when it is off the line. */
-function getReading(curve: EdgeCurve, position: number, side: EdgeSide): EdgeHeading {
-  if (side === 0) return getHeading(curve, position)
-  return side < 0 ? 'along' : 'against'
+/** Where a label is set: its place along the line, its side, and the way it is read where its record fixes that. */
+export interface LabelPlace {
+  readonly position: number
+  readonly side: EdgeSide
+  readonly heading?: EdgeHeading
 }
 
 /**
@@ -107,7 +125,7 @@ export function createTitle(
   ...[position, words, title]: [position: number, words: string, title: TitleSetting]
 ): EdgeTitle {
   const { anchor = position, side, shift } = title
-  const heading = getReading(curve, position, side)
+  const heading = title.heading ?? getHeading(curve, position)
   return {
     anchor,
     heading,
@@ -122,6 +140,8 @@ export function createTitle(
 export interface TitleSetting {
   /** Where the title was asked to be set; the position it is created at when omitted. */
   readonly anchor?: number
+  /** The way the words are read where the record fixes it; the way the line runs, readable, when omitted. */
+  readonly heading?: EdgeHeading
   readonly side: EdgeSide
   readonly shift: number
 }
@@ -290,16 +310,16 @@ function createTitles(edge: PlexEdge, curve: EdgeCurve, routing: Routing): EdgeT
   const room =
     (getLength(curve) - (edge.arrows?.length ? 2 * routing.arrowClearance : 0)) / labels.length
   const { labelWidth } = routing
-  const positions = getLabelPositions(labels.length)
-  const sides = getLabelSides(labels.length)
-  return labels.map((label, index) =>
-    createTitle(
+  const places = getLabelPlaces(labels)
+  return labels.map((label, index) => {
+    const { position, side, heading } = places[index]!
+    return createTitle(
       curve,
-      positions[index]!,
+      position,
       labelWidth ? cutToFit(label.text, room, labelWidth) : label.text,
-      { side: sides[index]!, shift: getShift(sides[index]!, routing.labelDepth) },
-    ),
-  )
+      { side, shift: getShift(side, routing.labelDepth), ...(heading ? { heading } : {}) },
+    )
+  })
 }
 
 export interface RouteEdgeOptions {

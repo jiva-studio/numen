@@ -5,8 +5,8 @@ import { DEFAULT_OPTIONS } from '../options'
 import {
   MIDDLE,
   createTitle,
-  getLabelPositions,
-  getLabelSides,
+  getLabelPlaces,
+  type LabelPlace,
   getShift,
   routeEdges,
   createRouting,
@@ -20,6 +20,7 @@ import {
   getLength,
   createPointOnCurve,
   type EdgeArrow,
+  type EdgeLabel,
   type PlacedEdge,
 } from '../../edge'
 import type { PlexNeighbourhood } from '../../neighbourhood'
@@ -35,6 +36,13 @@ const labelDepth = 12
 
 /** What every arrangement here measures its titles with. */
 const measured = { measureLabel, labelDepth }
+
+/** What a title keeps of the place its label was given. */
+const setting = ({ side, heading }: LabelPlace) => ({
+  side,
+  shift: getShift(side, labelDepth),
+  ...(heading ? { heading } : {}),
+})
 
 const VIEWPORT = { width: 1200, height: 800 }
 
@@ -333,7 +341,8 @@ describe('two titles set on opposite sides of a line', () => {
       control2: pointAt(2 / 3),
       toPoint: to,
     }
-    const [first, second] = getLabelSides(2)
+    const labels = [{ text: 'guides' }, { text: 'shelters' }]
+    const [first, second] = getLabelPlaces(labels)
     return {
       from: 'from',
       to: 'to',
@@ -341,11 +350,8 @@ describe('two titles set on opposite sides of a line', () => {
       opacity: 1,
       ...curve,
       titles: [
-        createTitle(curve, 0.2, 'guides', { side: first!, shift: getShift(first!, labelDepth) }),
-        createTitle(curve, 0.8, 'shelters', {
-          side: second!,
-          shift: getShift(second!, labelDepth),
-        }),
+        createTitle(curve, first!.position, 'guides', setting(first!)),
+        createTitle(curve, second!.position, 'shelters', setting(second!)),
       ],
     }
   }
@@ -653,18 +659,14 @@ describe('the titles of one line', () => {
   const TO = { x: 200, y: 0 }
 
   /** A straight line from left to right, with a title for each label given, at its asked place. */
-  const createLine = (
-    labels: readonly { text: string }[],
-    arrows: readonly EdgeArrow[],
-  ): PlacedEdge => {
+  const createLine = (labels: readonly EdgeLabel[], arrows: readonly EdgeArrow[]): PlacedEdge => {
     const curve = {
       fromPoint: FROM,
       control1: { x: -200 / 3, y: 0 },
       control2: { x: 200 / 3, y: 0 },
       toPoint: TO,
     }
-    const positions = getLabelPositions(labels.length)
-    const sides = getLabelSides(labels.length)
+    const places = getLabelPlaces(labels)
     return {
       from: 'harbour',
       to: 'lighthouse',
@@ -673,10 +675,7 @@ describe('the titles of one line', () => {
       arrows,
       opacity: 1,
       titles: labels.map((label, index) =>
-        createTitle(curve, positions[index]!, label.text, {
-          side: sides[index]!,
-          shift: getShift(sides[index]!, labelDepth),
-        }),
+        createTitle(curve, places[index]!.position, label.text, setting(places[index]!)),
       ),
     }
   }

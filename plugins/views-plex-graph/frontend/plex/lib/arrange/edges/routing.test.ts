@@ -5,8 +5,9 @@ import { DEFAULT_OPTIONS } from '../options'
 import {
   cutToFit,
   getLabelPositions,
-  getLabelSides,
+  getLabelPlaces,
   getShift,
+  LABEL_GAP,
   MIDDLE,
   routeEdge,
   routeEdges,
@@ -688,12 +689,14 @@ describe('the position of a label', () => {
     expect(measured).toBeGreaterThan(10)
   })
 
-  it('is on the line for one label and on opposite sides of it for two', () => {
-    expect(getLabelSides(1)).toEqual([0])
-    expect(getLabelSides(2)).toEqual([-1, 1])
+  it('sets one label on the left of the line and two on opposite sides of it', () => {
+    expect(getLabelPlaces([{ text: 'a' }]).map((place) => place.side)).toEqual([-1])
+    expect(getLabelPlaces([{ text: 'a' }, { text: 'b' }]).map((place) => place.side)).toEqual([
+      -1, 1,
+    ])
     expect(getShift(0, 12)).toBe(0)
-    // Half a line of text and a gap, to the side each label is on.
-    expect(getShift(-1, 12)).toBeLessThan(-6)
+    // Half the letters and the gap, to the side each label is on.
+    expect(getShift(-1, 12)).toBe(-(6 + LABEL_GAP))
     expect(getShift(1, 12)).toBe(-getShift(-1, 12))
   })
 
@@ -715,12 +718,47 @@ describe('the position of a label', () => {
     }
   })
 
-  it('reads the one label of a line along the way that is readable, on the line', () => {
+  it('sets each of two labels near the end its head is at and reads it toward that end', () => {
+    const [start, end] = getLabelPositions(2)
+    const labels = [
+      { text: 'to-b', end: 'to' as const },
+      { text: 'to-a', end: 'from' as const },
+    ]
+    const measured = createRouting(DEFAULT_OPTIONS, undefined, 12)
+
+    for (const [from, to] of [
+      ['harbour', 'lighthouse'],
+      ['lighthouse', 'harbour'],
+    ] as const) {
+      const [toB, toA] = routeEdge(
+        { from, to, labels, arrows: ['to', 'from'] },
+        byId,
+        measured,
+      )!.titles
+      // The record pointing at `to` is near the `to` end and reads toward it, on the left of its reading.
+      expect([toB!.heading, toB!.side, toB!.anchor]).toEqual(['along', -1, end])
+      expect([toA!.heading, toA!.side, toA!.anchor]).toEqual(['against', 1, start])
+    }
+  })
+
+  it('sets two labels by the notes that wrote them where one record has no head', () => {
+    const [start, end] = getLabelPositions(2)
+    const labels = [{ text: 'guides', end: 'to' as const }, { text: 'shelters' }]
+    const [first, second] = routeEdge(
+      { from: 'harbour', to: 'lighthouse', labels },
+      byId,
+      createRouting(DEFAULT_OPTIONS),
+    )!.titles
+    expect([first!.anchor, second!.anchor]).toEqual([start, end])
+    expect([first!.heading, second!.heading]).toEqual(['along', 'against'])
+  })
+
+  it('reads the one label of a line along the way that is readable, at the distance of every label', () => {
     const measured = createRouting(DEFAULT_OPTIONS, undefined, 12)
     const edge = { from: 'lighthouse', to: 'harbour', labels: [{ text: 'guides' }] }
     const [only] = routeEdge(edge, byId, measured)!.titles
 
-    expect([only!.heading, only!.side, only!.shift]).toEqual(['against', 0, 0])
+    expect([only!.heading, only!.side, only!.shift]).toEqual(['against', -1, getShift(-1, 12)])
   })
 
   it('draws no title for a label with no words', () => {

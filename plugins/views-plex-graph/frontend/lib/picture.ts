@@ -46,8 +46,9 @@ const isPointing = (record: Written): boolean => record.side?.marker === 'arrow'
 
 /**
  * The label of each record, in the order of the notes that wrote them: the plex
- * sets one label in the middle of the line and two at opposite ends and on opposite sides, each by its own note, whatever
- * markers the records carry. A line with no text carries nothing: a word added
+ * sets one label in the middle of the line and two at opposite ends and on opposite sides: where
+ * both records have a head, each near the end its head is at, and otherwise each by its own note.
+ * A record with a head names the end it points at. A line with no text carries nothing: a word added
  * by the application would be read as written by the user. Two records with the
  * same words are one label.
  */
@@ -56,7 +57,9 @@ function getEdgeLabels(records: readonly Written[]): EdgeLabel[] {
   for (const record of records) {
     const text = record.side?.label ?? ''
     if (!text) continue
-    if (!labels.some((one) => one.text === text)) labels.push({ text })
+    if (!labels.some((one) => one.text === text)) {
+      labels.push(isPointing(record) ? { text, end: record.end } : { text })
+    }
   }
   return labels
 }

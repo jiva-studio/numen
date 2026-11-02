@@ -165,13 +165,13 @@ function createMetrics(type: PlexType, icon: number): PlexMetrics | undefined {
 }
 
 /**
- * How deep a line of one type is: what the font gives its letters above the baseline
- * and below it. The type's size is used where the platform reports no such value.
+ * How deep a line of one type is: the ink of a sample with a capital and a descender,
+ * from the top of the capital to the bottom of the descender. The type's size is used where the platform reports no such value.
  */
 function lineDepth(context: CanvasRenderingContext2D, font: string): number {
   context.font = font
   const line = context.measureText(SAMPLE)
-  const deep = line.fontBoundingBoxAscent + line.fontBoundingBoxDescent
+  const deep = line.actualBoundingBoxAscent + line.actualBoundingBoxDescent
   return Math.ceil(deep) || parsePixels(font)
 }
 

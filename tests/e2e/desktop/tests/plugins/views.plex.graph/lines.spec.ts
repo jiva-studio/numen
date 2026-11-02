@@ -2,6 +2,12 @@ import { test, expect, type APIRequestContext, type Page } from '../../support/t
 import { getGraph, openWorkspace } from '../../support/workspace.js'
 import { createNoteWithBody, destroyNotes, getRow, showInFiles } from '../../support/layout.js'
 import { callRPC } from '../../support/vault.js'
+import {
+  getLabelGaps,
+  isAtSameGap,
+  isHugging,
+  type LabelGap,
+} from '../../support/plex-labels.js'
 
 /** One record of a connection, as SaveConnection takes it. */
 interface WireSide {
@@ -54,11 +60,8 @@ interface LineGeometry {
   readonly labels: Readonly<Record<string, Point>>
   /** The box each label is drawn in, on the screen. */
   readonly boxes: Readonly<Record<string, Box>>
-  /**
-   * How far the middle of each label is from the line, across it, in pixels: positive on the
-   * right of the line looking from the first named note to the second, negative on the left.
-   */
-  readonly across: Readonly<Record<string, number>>
+  /** Where the letters of each label are against the line, measured the same way for every label. */
+  readonly gaps: Readonly<Record<string, LabelGap>>
   /**
    * How much each label is read in the direction from the first named note to the second: 1 along
    * the line that way, -1 along it the other way, 0 across it.
@@ -71,7 +74,7 @@ interface LineGeometry {
  * Reads the line between two notes off the drawing. The line is the one whose ends lie nearest
  * the two titles; each label and each head is measured where the browser drew it.
  */
-const readLine = (page: Page, names: readonly [string, string]): Promise<LineGeometry> =>
+const readLineRaw = (page: Page, names: readonly [string, string]) =>
   page.evaluate((names) => {
     const svg = [...document.querySelectorAll<SVGSVGElement>('svg.plex')].find(
       (one) => one.getBoundingClientRect().width > 0,
@@ -110,7 +113,6 @@ const readLine = (page: Page, names: readonly [string, string]): Promise<LineGeo
 
     const labels: Record<string, { x: number; y: number }> = {}
     const boxes: Record<string, Box> = {}
-    const offsets: Record<string, number> = {}
     const directions: Record<string, number> = {}
     const way = isStartAtFirst ? 1 : -1
     for (const letters of svg.querySelectorAll('.plex__edge-label--letters')) {
@@ -126,12 +128,10 @@ const readLine = (page: Page, names: readonly [string, string]): Promise<LineGeo
           distance(point, middle) < distance(line.points[best]!, middle) ? step : best,
         0,
       )
-      const here = line.points[nearest]!
       const back = line.points[Math.max(nearest - 1, 0)]!
       const on = line.points[Math.min(nearest + 1, line.points.length - 1)]!
       const run = { x: (on.x - back.x) * way, y: (on.y - back.y) * way }
       const size = Math.hypot(run.x, run.y) || 1
-      offsets[words] = ((middle.x - here.x) * -run.y + (middle.y - here.y) * run.x) / size
       const turn = ((letters as SVGTextContentElement).getRotationOfChar(0) * Math.PI) / 180
       directions[words] = (Math.cos(turn) * run.x + Math.sin(turn) * run.y) / size
     }
@@ -146,11 +146,17 @@ const readLine = (page: Page, names: readonly [string, string]): Promise<LineGeo
       middle: line.middle,
       labels,
       boxes,
-      across: offsets,
+      points: line.points,
+      way,
       reading: directions,
       arrows,
     }
   }, names)
+
+const readLine = async (page: Page, names: readonly [string, string]): Promise<LineGeometry> => {
+  const { points, way, ...drawn } = await readLineRaw(page, names)
+  return { ...drawn, gaps: await getLabelGaps(page, { points, way: way as 1 | -1 }) }
+}
 
 const getDistance = (one: Point, other: Point) => Math.hypot(one.x - other.x, one.y - other.y)
 
@@ -177,40 +183,47 @@ const isPointingAt = async (
 }
 
 /**
- * Whether the line between two notes carries the label `first` in its first third, by the end at
- * `names[0]`, and the label `last` in its last third, by the end at `names[1]`, the two boxes
- * clear of each other, on opposite sides of the line, each read in the direction of its record.
+ * Whether a label hugs the line on the side its reading puts it: read toward the end it is by
+ * (`way` 1 toward the second note, -1 toward the first), on the left of its own reading.
+ */
+const isReadToward = (line: LineGeometry, words: string, way: 1 | -1): boolean =>
+  isHugging(line.gaps[words]) &&
+  line.gaps[words]!.side === -way &&
+  line.reading[words]! * way > 0.5
+
+/**
+ * Whether the line between two notes carries the label `toFirst`, the record that points at
+ * `names[0]`, in its first third, by that note and read toward it, and the label `toSecond`, the
+ * record that points at `names[1]`, in its last third, by that note and read toward it, the two
+ * boxes clear of each other, on opposite sides of the line, at the same distance from it.
  */
 const isSetAtBothEnds = async (
   page: Page,
   names: readonly [string, string],
-  words: { readonly first: string; readonly last: string },
+  words: { readonly toFirst: string; readonly toSecond: string },
 ): Promise<boolean> => {
   const line = await readLine(page, names)
-  const first = line.labels[words.first]
-  const last = line.labels[words.last]
+  const first = line.labels[words.toFirst]
+  const last = line.labels[words.toSecond]
   if (!first || !last) return false
   const start = line.ends[names[0]]!
   const run = { x: line.ends[names[1]]!.x - start.x, y: line.ends[names[1]]!.y - start.y }
   const getShare = (point: Point) =>
     ((point.x - start.x) * run.x + (point.y - start.y) * run.y) / (run.x ** 2 + run.y ** 2)
-  const one = line.boxes[words.first]!
-  const other = line.boxes[words.last]!
+  const one = line.boxes[words.toFirst]!
+  const other = line.boxes[words.toSecond]!
   const isApart =
     one.x + one.width <= other.x ||
     other.x + other.width <= one.x ||
     one.y + one.height <= other.y ||
     other.y + other.height <= one.y
-  // The first record is on the left of the line looking from its note and read from it; the last is
-  // on the right, and read from the other note.
   return (
     getShare(first) < 1 / 3 &&
     getShare(last) > 2 / 3 &&
     isApart &&
-    line.across[words.first]! < -5 &&
-    line.across[words.last]! > 5 &&
-    line.reading[words.first]! > 0.5 &&
-    line.reading[words.last]! < -0.5
+    isReadToward(line, words.toFirst, -1) &&
+    isReadToward(line, words.toSecond, 1) &&
+    isAtSameGap(line.gaps[words.toFirst], line.gaps[words.toSecond])
   )
 }
 
@@ -223,7 +236,11 @@ const isSetInTheMiddle = async (
   const line = await readLine(page, names)
   const label = line.labels[words]
   const length = getDistance(line.ends[names[0]]!, line.ends[names[1]]!)
-  return label !== undefined && getDistance(label, line.middle) < length / 4
+  return (
+    label !== undefined &&
+    getDistance(label, line.middle) < length / 4 &&
+    isHugging(line.gaps[words])
+  )
 }
 
 test.describe('Lines between notes other than the one in focus', () => {
@@ -323,9 +340,11 @@ test.describe('Lines between notes other than the one in focus', () => {
     await showInPlex(page, notes['Pharos']!)
     await expect(getGraph(page).getByRole('button', { name: 'Mirror, sibling' })).toBeAttached()
 
-    // Each record is by the note that wrote it: Lamp wrote 'lights', Mirror wrote 'lit by'.
+    // Each record is by the note its head is at: Lamp wrote 'lights' pointing at Mirror, Mirror wrote 'lit by' pointing at Lamp.
     await expect
-      .poll(() => isSetAtBothEnds(page, ['Lamp', 'Mirror'], { first: 'lights', last: 'lit by' }))
+      .poll(() =>
+        isSetAtBothEnds(page, ['Lamp', 'Mirror'], { toFirst: 'lit by', toSecond: 'lights' }),
+      )
       .toBe(true)
   })
 })

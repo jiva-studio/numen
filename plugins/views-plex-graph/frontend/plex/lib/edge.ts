@@ -4,14 +4,16 @@ import type { Position } from './node'
 export type EdgeArrow = 'from' | 'to'
 
 /**
- * Words set along an edge. A line with one label carries it in the middle, on
- * the line. With two, the first is the record written in the `from` note: it
- * is set near the `from` end, on one side of the line, and reads from `from`
- * to `to`. The second is the record written in the `to` note: it is set near
- * the `to` end, on the other side, and reads from `to` to `from`.
+ * Words set along an edge. A line with one label carries it in the middle, beside
+ * the line, at the distance of every label. With two whose records both have a head,
+ * each is set near the end its head is at, on its own side, and reads toward that end. Otherwise
+ * the first, written in the `from` note, is set near the `from` end and reads from `from` to `to`,
+ * and the second, written in the `to` note, is set near the `to` end on the other side and reads back.
  */
 export interface EdgeLabel {
   readonly text: string
+  /** The end of the line the record points at, where it has a head. */
+  readonly end?: EdgeArrow
 }
 
 export interface PlexEdge {
@@ -64,7 +66,7 @@ export interface EdgeTitle {
   readonly heading: EdgeHeading
   /**
    * The side of the line the words are set on, looking along it from its `from`
-   * end: -1 on the left, 1 on the right, 0 on the line. A title off the line is
+   * end: -1 on the left, 1 on the right, 0 on the line. A title of a pair is
    * read in the direction of its record, on the left of its own reading: the
    * left side reads from `from` to `to`, the right side the other way.
    */

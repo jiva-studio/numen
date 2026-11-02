@@ -221,28 +221,31 @@ const RECORD_CASES: readonly {
   readonly first: Stated | null
   readonly second: Stated | null
   readonly arrows: readonly ('from' | 'to')[]
-  readonly labels: readonly { text: string }[]
+  readonly labels: readonly { text: string; end?: 'from' | 'to' }[]
 }[] = [
   {
     name: 'only the first note writes, with an arrow',
     first: ['onward', 'arrow'],
     second: null,
     arrows: ['to'],
-    labels: [{ text: 'onward' }],
+    labels: [{ text: 'onward', end: 'to' }],
   },
   {
     name: 'only the second note writes, with an arrow',
     first: null,
     second: ['backward', 'arrow'],
     arrows: ['from'],
-    labels: [{ text: 'backward' }],
+    labels: [{ text: 'backward', end: 'from' }],
   },
   {
     name: 'both notes write, each with an arrow',
     first: ['onward', 'arrow'],
     second: ['backward', 'arrow'],
     arrows: ['to', 'from'],
-    labels: [{ text: 'onward' }, { text: 'backward' }],
+    labels: [
+      { text: 'onward', end: 'to' },
+      { text: 'backward', end: 'from' },
+    ],
   },
   {
     name: 'the first note writes an arrow with no words',
@@ -270,7 +273,7 @@ const RECORD_CASES: readonly {
     first: ['onward', 'arrow'],
     second: ['backward', null],
     arrows: ['to'],
-    labels: [{ text: 'onward' }, { text: 'backward' }],
+    labels: [{ text: 'onward', end: 'to' }, { text: 'backward' }],
   },
   {
     name: 'neither note writes anything',
@@ -324,7 +327,7 @@ describe('the words and arrowheads of one line', () => {
       ),
     ).plex.edges
 
-    expect(edge?.labels).toEqual([{ text: 'near' }])
+    expect(edge?.labels).toEqual([{ text: 'near', end: 'to' }])
   })
 })
 

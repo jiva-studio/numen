@@ -6,6 +6,12 @@ import {
   type Page,
 } from '../../support/test.js'
 import { getGraph, openWorkspace } from '../../support/workspace.js'
+import {
+  getLabelGaps,
+  isAtSameGap,
+  isHugging,
+  type LabelGap,
+} from '../../support/plex-labels.js'
 
 /** The note the vault opens with, and the child the fixture joins it to. */
 const PATHS = { Thermodynamics: 'Thermodynamics.md', Entropy: 'notes/Entropy.md' } as const
@@ -124,11 +130,8 @@ interface EdgeGeometry {
   readonly labels: Readonly<Record<string, Point>>
   /** The box each label is drawn in, on the screen. */
   readonly boxes: Readonly<Record<string, Box>>
-  /**
-   * How far the middle of each label is from the line, across it, in pixels: positive on the
-   * right of the line looking from the first named note to the second, negative on the left.
-   */
-  readonly across: Readonly<Record<string, number>>
+  /** Where the letters of each label are against the line, measured the same way for every label. */
+  readonly gaps: Readonly<Record<string, LabelGap>>
   /**
    * How much each label is read in the direction from the first named note to the second: 1 along
    * the line that way, -1 along it the other way, 0 across it.
@@ -141,7 +144,7 @@ interface EdgeGeometry {
  * Reads the line between two notes off the drawing. The line is the one whose ends lie nearest
  * the two titles; each label and each head is measured where the browser drew it.
  */
-const readEdge = (page: Page, names: readonly [Name, Name]): Promise<EdgeGeometry> =>
+const readEdgeRaw = (page: Page, names: readonly [Name, Name]) =>
   page.evaluate((names) => {
     const svg = [...document.querySelectorAll<SVGSVGElement>('svg.plex')].find(
       (one) => one.getBoundingClientRect().width > 0,
@@ -180,7 +183,6 @@ const readEdge = (page: Page, names: readonly [Name, Name]): Promise<EdgeGeometr
 
     const labels: Record<string, { x: number; y: number }> = {}
     const boxes: Record<string, Box> = {}
-    const offsets: Record<string, number> = {}
     const directions: Record<string, number> = {}
     const way = isStartAtFirst ? 1 : -1
     for (const letters of svg.querySelectorAll('.plex__edge-label--letters')) {
@@ -196,12 +198,10 @@ const readEdge = (page: Page, names: readonly [Name, Name]): Promise<EdgeGeometr
           distance(point, middle) < distance(line.points[best]!, middle) ? step : best,
         0,
       )
-      const here = line.points[nearest]!
       const back = line.points[Math.max(nearest - 1, 0)]!
       const on = line.points[Math.min(nearest + 1, line.points.length - 1)]!
       const run = { x: (on.x - back.x) * way, y: (on.y - back.y) * way }
       const size = Math.hypot(run.x, run.y) || 1
-      offsets[words] = ((middle.x - here.x) * -run.y + (middle.y - here.y) * run.x) / size
       const turn = ((letters as SVGTextContentElement).getRotationOfChar(0) * Math.PI) / 180
       directions[words] = (Math.cos(turn) * run.x + Math.sin(turn) * run.y) / size
     }
@@ -216,11 +216,17 @@ const readEdge = (page: Page, names: readonly [Name, Name]): Promise<EdgeGeometr
       middle: line.middle,
       labels,
       boxes,
-      across: offsets,
+      points: line.points,
+      way,
       reading: directions,
       arrows,
     }
   }, names)
+
+const readEdge = async (page: Page, names: readonly [Name, Name]): Promise<EdgeGeometry> => {
+  const { points, way, ...drawn } = await readEdgeRaw(page, names)
+  return { ...drawn, gaps: await getLabelGaps(page, { points, way: way as 1 | -1 }) }
+}
 
 const getDistance = (one: Point, other: Point) => Math.hypot(one.x - other.x, one.y - other.y)
 
@@ -256,8 +262,11 @@ const NAMES = ['Thermodynamics', 'Entropy'] as const
  * on the right and read from the child to the parent.
  */
 const isOnItsSide = (edge: EdgeGeometry) =>
-  edge.across['flows into']! < -5 &&
-  edge.across['measures']! > 5 &&
+  edge.gaps['flows into']!.side < 0 &&
+  edge.gaps['measures']!.side > 0 &&
+  isHugging(edge.gaps['flows into']) &&
+  isHugging(edge.gaps['measures']) &&
+  isAtSameGap(edge.gaps['flows into'], edge.gaps['measures']) &&
   edge.reading['flows into']! > 0.5 &&
   edge.reading['measures']! < -0.5
 
@@ -396,14 +405,14 @@ test.describe('Plex Edge and Link Inspector', () => {
           heads.length === 2 &&
           heads.some((head) => isNearer(edge, head, first, second)) &&
           heads.some((head) => isNearer(edge, head, second, first)) &&
-          isNearer(edge, edge.labels['flows into']!, 'Thermodynamics', 'Entropy') &&
-          isNearer(edge, edge.labels['measures']!, 'Entropy', 'Thermodynamics')
+          isNearer(edge, edge.labels['flows into']!, 'Entropy', 'Thermodynamics') &&
+          isNearer(edge, edge.labels['measures']!, 'Thermodynamics', 'Entropy')
         )
       })
       .toBe(true)
   })
 
-  test('sets the two labels of a line apart, one at each end, on opposite sides, and clear of each other', async ({
+  test('sets each of two labels near the end its own head is at, reads it toward that end, on opposite sides', async ({
     page,
     request,
   }) => {
@@ -414,8 +423,9 @@ test.describe('Plex Edge and Link Inspector', () => {
     await openWorkspace(page)
     await expect(page.locator('.plex-frame:not([data-moving])')).toBeAttached()
 
-    // The record of the parent is by the parent, in its first third; the record of the child by the
-    // child, in its last, on the other side of the line.
+    // The record of the parent points at the child: it is in the last third, by the child, and reads
+    // toward it. The record of the child points at the parent: it is in the first third, by the
+    // parent, reads toward it, and is on the other side of the line.
     await expect
       .poll(async () => {
         const edge = await readEdge(page, NAMES)
@@ -423,8 +433,8 @@ test.describe('Plex Edge and Link Inspector', () => {
         const childLabel = edge.labels['measures']
         if (!parentLabel || !childLabel) return false
         return (
-          getShare(edge, parentLabel, 'Thermodynamics', 'Entropy') < 1 / 3 &&
-          getShare(edge, childLabel, 'Thermodynamics', 'Entropy') > 2 / 3 &&
+          getShare(edge, parentLabel, 'Thermodynamics', 'Entropy') > 2 / 3 &&
+          getShare(edge, childLabel, 'Thermodynamics', 'Entropy') < 1 / 3 &&
           isApart(edge.boxes['flows into']!, edge.boxes['measures']!) &&
           isOnItsSide(edge)
         )
@@ -471,7 +481,43 @@ test.describe('Plex Edge and Link Inspector', () => {
           !!label &&
           edge.arrows.length === 1 &&
           isCentred(edge, label) &&
-          Math.abs(edge.across['flows into']!) < 5
+          isHugging(edge.gaps['flows into'])
+        )
+      })
+      .toBe(true)
+  })
+
+  test('keeps the one label of a line and each of two labels at the same distance from it, and reads the first record the same way', async ({
+    page,
+    request,
+  }) => {
+    await saveConnection(request, { Thermodynamics: { label: 'flows into', marker: ARROW } })
+    await openWorkspace(page)
+    await expect(page.locator('.plex-frame:not([data-moving])')).toBeAttached()
+    await expect
+      .poll(async () => {
+        const edge = await readEdge(page, NAMES)
+        return isHugging(edge.gaps['flows into']) && isCentred(edge, edge.labels['flows into']!)
+      })
+      .toBe(true)
+    const singleReading = (await readEdge(page, NAMES)).reading['flows into']!
+    const single = (await readEdge(page, NAMES)).gaps['flows into']!
+
+    await saveConnection(request, {
+      Thermodynamics: { label: 'flows into', marker: ARROW },
+      Entropy: { label: 'measures', marker: ARROW },
+    })
+    await openWorkspace(page)
+    await expect(page.locator('.plex-frame:not([data-moving])')).toBeAttached()
+    await expect
+      .poll(async () => {
+        const edge = await readEdge(page, NAMES)
+        const gaps = [edge.gaps['flows into'], edge.gaps['measures']]
+        return (
+          Object.keys(edge.gaps).length === 2 &&
+          gaps.every((entry) => isHugging(entry) && isAtSameGap(entry, single)) &&
+          Math.sign(edge.reading['flows into']!) === Math.sign(singleReading) &&
+          isApart(edge.boxes['flows into']!, edge.boxes['measures']!)
         )
       })
       .toBe(true)

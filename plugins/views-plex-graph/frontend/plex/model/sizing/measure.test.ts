@@ -222,8 +222,8 @@ describe('what a label needs', () => {
     context.measureText = (text: string) =>
       ({
         width: text.length * PER_CHARACTER,
-        fontBoundingBoxAscent: 9.5,
-        fontBoundingBoxDescent: 2.5,
+        actualBoundingBoxAscent: 9.5,
+        actualBoundingBoxDescent: 2.5,
       }) as TextMetrics
 
     expect(widths()!.labelDepth).toBe(12)

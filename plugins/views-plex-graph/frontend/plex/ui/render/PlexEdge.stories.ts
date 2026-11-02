@@ -13,7 +13,7 @@ import { expect } from 'storybook/test'
 import PlexEdgeLine from './PlexEdgeLine.vue'
 import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import { getLines } from './lines'
-import { createTitle, getLabelPositions, getLabelSides, getShift } from '../../lib/arrange'
+import { createTitle, getLabelPlaces, getShift, LABEL_GAP } from '../../lib/arrange'
 import { getArrow, type EdgeArrow, type EdgeCurve, type PlacedEdge } from '../../lib/edge'
 import { lightness } from '../../../fixtures/colour'
 import { DARK, expectDark } from '../../../fixtures/theme'
@@ -62,28 +62,33 @@ const getRecords = (args: Knobs): { words: string; end?: EdgeArrow }[] => {
 const LABEL_DEPTH = 12
 
 /**
- * The edge as the arrangement places it: one title centred on the line, two at
+ * The edge as the arrangement places it: one title centred along the line, two at
  * opposite ends and on opposite sides of it.
  */
 const createEdge = (args: Knobs): PlacedEdge => {
   const records = getRecords(args)
   const ends = records.flatMap((record) => (record.end ? [record.end] : []))
   const labelled = records.filter((record) => record.words)
-  const positions = getLabelPositions(labelled.length)
-  const sides = getLabelSides(labelled.length)
+  const labels = labelled.map((record) => ({
+    text: record.words,
+    ...(record.end ? { end: record.end } : {}),
+  }))
+  const places = getLabelPlaces(labels)
   return {
     from: 'one',
     to: 'two',
     ...CURVE,
-    labels: labelled.map((record) => ({ text: record.words })),
+    labels,
     arrows: ends,
     opacity: args.opacity,
-    titles: labelled.map((record, index) =>
-      createTitle(CURVE, positions[index]!, record.words, {
-        side: sides[index]!,
-        shift: getShift(sides[index]!, LABEL_DEPTH),
-      }),
-    ),
+    titles: labelled.map((record, index) => {
+      const { position, side, heading } = places[index]!
+      return createTitle(CURVE, position, record.words, {
+        side,
+        shift: getShift(side, LABEL_DEPTH),
+        ...(heading ? { heading } : {}),
+      })
+    }),
     arrowheads: ends.map((end) => getArrow(CURVE, end)),
   }
 }
@@ -183,7 +188,7 @@ export const Forward: Story = {
     await expect(heads).toHaveLength(1)
     await expect(heads[0]).toContain(AT_TO)
     await expect(titles).toStrictEqual([['refers to', '50%']])
-    await expect(getResting(canvasElement).offsets).toStrictEqual([0])
+    await expect(getResting(canvasElement).offsets).toStrictEqual([getShift(-1, LABEL_DEPTH)])
   },
 }
 
@@ -209,13 +214,17 @@ export const BothDirections: Story = {
     await expect(heads).toHaveLength(2)
     await expect(heads[0]).toContain(AT_TO)
     await expect(heads[1]).toContain(AT_FROM)
-    // The second title is read from the far end, so its place on its own path is counted from there.
+    // The title of the record pointing at the `to` end is near that end, and the other is read from
+    // the `to` end back toward the `from` end, so its place on its own path is counted from there.
     await expect(titles).toStrictEqual([
-      ['refers to', '20%'],
-      ['cited by', '20%'],
+      ['refers to', '80%'],
+      ['cited by', '80%'],
     ])
     // Each is on the left of its own reading, so they are on opposite sides of the line.
-    await expect(offsets).toStrictEqual([-0.8 * LABEL_DEPTH, -0.8 * LABEL_DEPTH])
+    await expect(offsets).toStrictEqual([
+      -(LABEL_DEPTH / 2 + LABEL_GAP),
+      -(LABEL_DEPTH / 2 + LABEL_GAP),
+    ])
   },
 }
 

@@ -11,7 +11,7 @@
 import { getLength, type EdgeTitle, type PlacedEdge } from '../../edge'
 import type { PlacedNode } from '../../node'
 import { getBox, isOverlapping, getTitleBoxes, runBoxes, type Box } from '../layout/boxes'
-import { MIDDLE, createTitle, cutToFit, type Routing } from './routing'
+import { MIDDLE, createTitle, cutToFit, type Routing, type TitleSetting } from './routing'
 
 /** A run of one line, as fractions of its length. */
 interface Span {
@@ -71,7 +71,14 @@ export function separateTitles(
       width,
       target: title.anchor,
     })
-    resolved[index]![slot] = found ? createTitle(edge, found.at, found.words, title) : null
+    // A title of a pair keeps the reading of its record; the one title of a line reads the readable way along the line, wherever it is set.
+    const setting: TitleSetting = {
+      anchor: title.anchor,
+      side: title.side,
+      shift: title.shift,
+      ...(edge.titles.length > 1 ? { heading: title.heading } : {}),
+    }
+    resolved[index]![slot] = found ? createTitle(edge, found.at, found.words, setting) : null
     if (!found) continue
 
     const half = found.extent / 2 / metrics.arc
