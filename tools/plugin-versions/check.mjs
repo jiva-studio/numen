@@ -8,6 +8,10 @@
  *
  *   node check.mjs [--base <ref>]            fail when a changed plugin keeps its version
  *   node check.mjs [--base <ref>] --write    write the next version into each changed plugin
+ *
+ * A version is judged against the merge base with `--base`: a plugin takes one bump per change however
+ * many commits the change has, an unchanged plugin keeps its version, and a plugin that is new on the
+ * base starts at build 1 of the current month.
  */
 import { execFileSync, spawnSync } from 'node:child_process'
 import { readFileSync, existsSync, writeFileSync } from 'node:fs'
@@ -57,10 +61,22 @@ export const checkVersion = ({ current, base, isChanged, today }) => {
     return `version ${current} is later than the current month`
   }
   const parsedBase = parseVersion(base)
-  if (isChanged && parsedBase && compareVersions(parsed, parsedBase) <= 0) {
-    return `plugin changed, version ${current} was not raised (next: ${getNextVersion(base, today)})`
+  if (!parsedBase) {
+    // A plugin that is new on the base starts at build 1 of the month it arrives in.
+    const first = getNextVersion('', today)
+    return current === first ? null : `new plugin starts at ${first}, version ${current} does not`
   }
-  return null
+  const next = getNextVersion(base, today)
+  if (!isChanged) {
+    return compareVersions(parsed, parsedBase) === 0
+      ? null
+      : `plugin unchanged, version ${current} differs from ${base}`
+  }
+  if (compareVersions(parsed, parsedBase) <= 0) {
+    return `plugin changed, version ${current} was not raised (next: ${next})`
+  }
+  // One bump per plugin per change relative to the base, not one per commit.
+  return current === next ? null : `version ${current} is raised more than once (next: ${next})`
 }
 
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim()
@@ -98,8 +114,8 @@ const main = () => {
     const packageVersion = packageText === null ? current : readPackageVersion(packageText)
 
     const error = checkVersion({ current, base, isChanged, today })
-    if (isWrite && isChanged && error) {
-      const next = getNextVersion(base ?? '', today)
+    if (isWrite && error) {
+      const next = base !== null && !isChanged ? base : getNextVersion(base ?? '', today)
       writeFileSync(manifestPath, text.replace(VERSION_FIELD, `$1${next}$2`))
       if (packageText !== null)
         writeFileSync(packagePath, packageText.replace(VERSION_FIELD, `$1${next}$2`))
