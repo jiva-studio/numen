@@ -5,6 +5,8 @@ export interface PluginDetailProps {
   readonly plugin: ManagedPlugin
   /** Whether the plugin is switched on. */
   readonly isEnabled: boolean
+  /** Whether the switch waits for the answer to its write: it does not move and cannot be used. */
+  readonly isPending?: boolean
   /** The README.md of the plugin; empty where it has none. */
   readonly readme: string
   /** How many files the plugin keeps in the shown vault; zero hides the delete action. */

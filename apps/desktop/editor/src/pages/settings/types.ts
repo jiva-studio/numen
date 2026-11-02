@@ -32,6 +32,10 @@ export interface Installation {
    * names one can be set to, and settings written where they stand.
    */
   getSetting(at: readonly string[]): unknown
+  /** A setting as the vault last answered it, never a value asked for and not yet answered. */
+  getConfirmedSetting?(at: readonly string[]): unknown
+  /** Whether the write of a setting is in flight. */
+  isPending?(at: readonly string[]): boolean
   getModels(at: readonly string[]): readonly Model[]
   write(content: readonly SettingEdit[]): void
   /**

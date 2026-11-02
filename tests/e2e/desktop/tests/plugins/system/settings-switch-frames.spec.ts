@@ -80,33 +80,48 @@ const slowDown = async (page: Page): Promise<void> => {
   }
 }
 
-/** How long reads show the old value after a write, in milliseconds. */
-const LAG_MS = 4_000
+/** How long a read answers late in the runs with late answers, in milliseconds, by call. */
+const LATE_MS = [500, 3_000, 1_000, 2_500, 1_500, 700]
+
+/** How long after a write the plugin list of a read does not name the plugin, in milliseconds. */
+const EMPTY_LIST_MS = 4_000
 
 /**
- * Has every read of the settings answer with the value the plugin had before the write for
- * `LAG_MS` after it, as a core does that applies a change to the plugin after it answers the write.
+ * Holds every read of the settings, of the catalog and the write by 0.5 to 3 s once the first write
+ * is made, as the core does while a plugin starts or stops, and answers the reads for
+ * `EMPTY_LIST_MS` after a write with a plugin list that does not name the plugin.
  */
-const lagBehind = async (page: Page, id: string): Promise<void> => {
-  let lag: { until: number; old: boolean } | null = null
+const answerLate = async (page: Page, id: string): Promise<void> => {
+  let calls = 0
+  let emptyUntil = 0
+  const hold = (): Promise<void> =>
+    emptyUntil === 0
+      ? Promise.resolve()
+      : new Promise((resolve) => setTimeout(resolve, LATE_MS[calls++ % LATE_MS.length]))
   await page.route('**/numen.v1.SettingsService/WriteSettings', async (route) => {
-    const body = route.request().postDataJSON() as { settings: { at: string[]; value: string }[] }
-    const edit = body.settings.find((one) => one.at.join('.') === `plugins.${id}.enabled`)
-    if (edit) lag = { until: Date.now() + LAG_MS, old: !(JSON.parse(edit.value) as boolean) }
-    await route.continue()
+    emptyUntil = Date.now() + EMPTY_LIST_MS
+    const response = await route.fetch()
+    await hold()
+    await route.fulfill({ response })
+  })
+  await page.route('**/numen.v1.CatalogService/ListCatalog', async (route) => {
+    const response = await route.fetch()
+    await hold()
+    await route.fulfill({ response })
   })
   await page.route('**/numen.v1.SettingsService/GetSettings', async (route) => {
     const response = await route.fetch()
-    if (!lag || Date.now() > lag.until) {
+    const isEmpty = Date.now() < emptyUntil
+    await hold()
+    if (!isEmpty) {
       await route.fulfill({ response })
       return
     }
-    const answer = (await response.json()) as { written: string }
-    const settingsFile = JSON.parse(answer.written) as {
-      plugins: Record<string, { enabled?: boolean }>
-    }
-    settingsFile.plugins[id] = { ...settingsFile.plugins[id], enabled: lag.old }
-    await route.fulfill({ response, json: { ...answer, written: JSON.stringify(settingsFile) } })
+    const answer = (await response.json()) as { plugins?: { id: string }[] }
+    await route.fulfill({
+      response,
+      json: { ...answer, plugins: (answer.plugins ?? []).filter((one) => one.id !== id) },
+    })
   })
 }
 
@@ -277,12 +292,12 @@ const findJumps = (frames: readonly Frame[], from: string, to: string): string[]
 }
 
 test.describe('The enabled switch of a plugin, frame by frame', () => {
-  test.describe.configure({ timeout: 180_000 })
+  test.describe.configure({ timeout: 360_000 })
 
   const MODES: readonly [string, (page: Page, id: string) => Promise<void>][] = [
     ['at the speed of the core', async () => undefined],
     ['with the core slow to answer', (page) => slowDown(page)],
-    ['with reads that lag a write', lagBehind],
+    ['with late answers and a plugin list that drops the plugin', answerLate],
   ]
 
   for (const [mode, slowTheCore] of MODES) {
@@ -317,6 +332,16 @@ test.describe('The enabled switch of a plugin, frame by frame', () => {
           const turnedOn = await toggleAndRecord(page, toggle, one.name)
           expect(findJumps(turnedOn, 'false', 'true')).toEqual([])
           await expect(toggle).toHaveAttribute('aria-checked', 'true')
+          await waitForSettledCard(page)
+
+          for (const cycle of [2, 3]) {
+            const off = await toggleAndRecord(page, toggle, one.name)
+            expect(findJumps(off, 'true', 'false'), `off, cycle ${cycle}`).toEqual([])
+            await waitForSettledCard(page)
+            const on = await toggleAndRecord(page, toggle, one.name)
+            expect(findJumps(on, 'false', 'true'), `on, cycle ${cycle}`).toEqual([])
+            await waitForSettledCard(page)
+          }
         })
       })
     }

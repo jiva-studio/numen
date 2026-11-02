@@ -201,7 +201,12 @@ func (c Config) writeSettings(entries []settingsport.Setting) error {
 	if err := c.getResources().settingsFiles.Save(path, &into, target...); err != nil {
 		return err
 	}
-	notifyPluginSettings(c.PluginHost, entries, c.handleError)
+	notify := func() { notifyPluginSettings(c.PluginHost, entries, c.handleError) }
+	if updates := c.getResources().pluginUpdates; updates != nil {
+		updates.Go(notify)
+	} else {
+		notify()
+	}
 	c.notifyPerformanceProfile(entries)
 	return nil
 }

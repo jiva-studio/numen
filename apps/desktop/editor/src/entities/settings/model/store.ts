@@ -39,6 +39,15 @@ export const getSettingAt = (settings: unknown, at: readonly string[]): unknown 
   return value
 }
 
+/** The settings with the value at a path replaced, and nothing else changed. */
+const withSettingAt = (settings: unknown, at: readonly string[], value: unknown): unknown => {
+  const [step, ...rest] = at
+  if (step === undefined) return value
+  const base = typeof settings === 'object' && settings !== null ? settings : {}
+  const child = (base as Record<string, unknown>)[step]
+  return { ...base, [step]: withSettingAt(child, rest, value) }
+}
+
 const PATH_JOIN = '\u0000'
 
 const getPathKey = (path: readonly string[]): string => path.join(PATH_JOIN)
@@ -58,9 +67,6 @@ const getPluginDefault = (plugins: readonly PluginInfo[], path: readonly string[
   const plugin = plugins.find((one) => one.id === path[1])
   return plugin?.settings.find((one) => one.key === path[2])?.default
 }
-
-/** Whether two values read out of JSON are the same value. */
-const isSame = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b)
 
 export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: MessageWriter) {
   /** Every setting currently. It holds nothing until the vault has answered. */
@@ -96,16 +102,12 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
       say(words.unreadSettings, 'error')
       return
     }
-    requested.takeRead(
-      pendingRead,
-      () => {
-        target.value = settingsFile
-        path.value = answer.path
-        models.value = answer.models
-        plugins.value = answer.plugins ?? []
-      },
-      (_key, edit) => isSame(getCommittedSetting(edit.at), readEditValue(edit)),
-    )
+    requested.takeRead(pendingRead, () => {
+      target.value = settingsFile
+      path.value = answer.path
+      models.value = answer.models
+      plugins.value = answer.plugins ?? []
+    })
   }
 
   const getSetting = (path: readonly string[]): unknown => {
@@ -114,7 +116,13 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     return value !== undefined ? value : getPluginDefault(plugins.value, path)
   }
 
-  /** Reads a setting from the last committed read, without unconfirmed edits. */
+  /** Whether the write of a setting is in flight. */
+  const isPending = (path: readonly string[]): boolean => requested.isPending(getPathKey(path))
+
+  /**
+   * A setting as the vault answered it: the last read, and each value written since from the
+   * answer to its write. It does not show a value requested and not yet answered.
+   */
   const getCommittedSetting = (path: readonly string[]): unknown => {
     const value = getSettingAt(target.value, path)
     return value !== undefined ? value : getPluginDefault(plugins.value, path)
@@ -130,6 +138,10 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
 
     try {
       await requested.requestWrite(new Map(edits.map((one) => [getPathKey(one.at), one])))
+      for (const one of edits) {
+        const value = readEditValue(one)
+        if (value !== undefined) target.value = withSettingAt(target.value, one.at, value)
+      }
     } catch (caughtError) {
       say(`${words.unturned} ${formatErrorMessage(caughtError)}`, 'error')
     }
@@ -148,6 +160,7 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     start,
     getSetting,
     getCommittedSetting,
+    isPending,
     getModelsAt,
     writeSettings,
     writeSetting,

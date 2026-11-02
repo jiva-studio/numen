@@ -27,6 +27,10 @@ export function useCatalogEntries(
     }
   }
 
-  watch(plugins, () => runInBackground(refresh(), reportError))
+  // A read that lists the same plugins in the same states changes nothing in the catalog.
+  watch(
+    () => plugins.value.map((one) => `${one.id}:${one.isActive}`).join('\n'),
+    () => runInBackground(refresh(), reportError),
+  )
   return entries
 }

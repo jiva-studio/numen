@@ -5,6 +5,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/serialqueue"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/port/problemport"
@@ -83,6 +84,7 @@ type Resources struct {
 	vaultLocks    *vaultwriter.Locks
 	watches       *vaultwatch.Hub
 	settingsFiles *settings.Files
+	pluginUpdates *serialqueue.Queue
 }
 
 // NewResources returns the resources of one container.
@@ -91,6 +93,7 @@ func NewResources() *Resources {
 		vaultLocks:    vaultwriter.NewLocks(),
 		watches:       vaultwatch.NewHub(),
 		settingsFiles: settings.NewFiles(),
+		pluginUpdates: serialqueue.New(),
 	}
 }
 
@@ -109,5 +112,5 @@ func (c Config) getResources() *Resources {
 	if c.Resources != nil {
 		return c.Resources
 	}
-	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil}
+	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, pluginUpdates: nil}
 }

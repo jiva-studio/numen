@@ -69,13 +69,17 @@ const createHeldVault = (isEnabled: boolean) => {
       }),
     updateSettings: (edits: readonly { at: readonly string[]; value: string }[]) =>
       new Promise<void>((resolve, reject) => {
+        const previous = file.plugins.p.enabled
         for (const e of edits) file.plugins.p.enabled = JSON.parse(e.value) as boolean
         writes.push({
           resolve: () => {
             isActive = file.plugins.p.enabled
             resolve()
           },
-          reject,
+          reject: (error) => {
+            file.plugins.p.enabled = previous
+            reject(error)
+          },
         })
       }),
   }
@@ -118,38 +122,68 @@ describe('the enabled switch of a plugin', () => {
 
     expect(history).toEqual([false, true, false])
   })
+})
 
-  it('keeps the requested value while reads after the write still show the old one', async () => {
-    const file = { plugins: { p: { enabled: true } } }
-    let shownEnabled = true
-    const core = {
-      getSettings: async () => ({
-        written: JSON.stringify({ plugins: { p: { enabled: shownEnabled } } }),
-        path: '/f',
-        models: [],
-        plugins: [],
-      }),
-      updateSettings: async (edits: readonly { at: readonly string[]; value: string }[]) => {
-        for (const e of edits) file.plugins.p.enabled = JSON.parse(e.value) as boolean
-      },
-    }
-    const store = createSettingsStore(core, { unturned: 'u', unreadSettings: 'r' }, vi.fn())
-    await store.start()
-    const history: unknown[] = [store.getSetting(AT)]
+describe('the enabled switch waits for the answer of the vault', () => {
+  const words = { unturned: 'u', unreadSettings: 'r' }
+
+  it('stays where it was while the write is in flight, and moves once when the answer arrives', async () => {
+    const vault = createHeldVault(true)
+    const store = createSettingsStore(vault.core, words, vi.fn())
+    const first = store.start()
+    vault.reads[0]?.resolve()
+    await first
+    const history: unknown[] = [store.getCommittedSetting(AT)]
     watch(
-      () => store.getSetting(AT),
+      () => store.getCommittedSetting(AT),
       (v) => history.push(v),
       { flush: 'sync' },
     )
 
-    // The core answers reads with the old value for the first three reads after the write.
-    await store.writeSetting(AT, false)
-    await store.start()
-    await store.start()
-    shownEnabled = false
-    await store.start()
-    await store.start()
+    // A read begins before the click and one while the write is in flight; both answer last.
+    const early = store.start()
+    const earlyRead = vault.reads.at(-1)
+    const write = store.writeSetting(AT, false)
+    await vi.waitFor(() => expect(vault.writes).toHaveLength(1))
+    const during = store.start()
+    const duringRead = vault.reads.at(-1)
+    expect(store.isPending(AT)).toBe(true)
+    expect(store.getCommittedSetting(AT)).toBe(true)
 
+    vault.writes[0]?.resolve()
+    await vi.waitFor(() => expect(store.isPending(AT)).toBe(false))
+    expect(store.getCommittedSetting(AT)).toBe(false)
+    await vi.waitFor(() => expect(vault.reads.length).toBeGreaterThan(3))
+    vault.reads.at(-1)?.resolve()
+    duringRead?.resolve()
+    earlyRead?.resolve()
+    await Promise.all([write, during, early])
     expect(history).toEqual([true, false])
+  })
+
+  it('keeps the old value, stops waiting and says why where the write fails', async () => {
+    const vault = createHeldVault(true)
+    const say = vi.fn()
+    const store = createSettingsStore(vault.core, words, say)
+    const first = store.start()
+    vault.reads[0]?.resolve()
+    await first
+    const history: unknown[] = [store.getCommittedSetting(AT)]
+    watch(
+      () => store.getCommittedSetting(AT),
+      (v) => history.push(v),
+      { flush: 'sync' },
+    )
+
+    const write = store.writeSetting(AT, false)
+    await vi.waitFor(() => expect(vault.writes).toHaveLength(1))
+    vault.writes[0]?.reject(new Error('refused'))
+    await vi.waitFor(() => expect(vault.reads.length).toBeGreaterThan(1))
+    // The file holds the old value again, as the vault failed before it wrote.
+    vault.reads.at(-1)?.resolve()
+    await write
+    expect(store.isPending(AT)).toBe(false)
+    expect(say).toHaveBeenCalledWith(expect.stringMatching(/^u /), 'error')
+    expect(history).toEqual([true])
   })
 })

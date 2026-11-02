@@ -32,9 +32,16 @@ const uninstalled = computed(() =>
     (one) => one.id === selectedPluginId.value,
   ),
 )
-const selectedPlugin = computed<PluginInfo | undefined>(() =>
-  plugins.value.find((one) => one.id === selectedPluginId.value),
-)
+/**
+ * The plugin of the open page, as the last read that match it gave it. A read that does not list
+ * it, or lists nothing, does not close the page.
+ */
+let lastSelected: PluginInfo | undefined
+const selectedPlugin = computed<PluginInfo | undefined>(() => {
+  const match = plugins.value.find((one) => one.id === selectedPluginId.value)
+  if (match) lastSelected = match
+  return match ?? (lastSelected?.id === selectedPluginId.value ? lastSelected : undefined)
+})
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSelectPlugin(pluginId: string): void {

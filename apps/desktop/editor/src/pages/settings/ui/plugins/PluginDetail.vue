@@ -39,10 +39,21 @@ const managed = computed(() => {
   return { ...one, info: { ...one.info, consent: getShownConsent(props.plugin, read) } }
 })
 
+/** The switch shows what the vault answered; it moves when the answer to its write arrives. */
+const readEnabled = (): unknown =>
+  (installation.value.getConfirmedSetting ?? installation.value.getSetting)([
+    'plugins',
+    props.plugin.id,
+    'enabled',
+  ])
 const isEnabled = computed<boolean>(() => {
-  const val = read('enabled')
-  return typeof val === 'boolean' ? val : true
+  const value = readEnabled()
+  return typeof value === 'boolean' ? value : true
 })
+
+const isPending = computed<boolean>(
+  () => installation.value.isPending?.(['plugins', props.plugin.id, 'enabled']) ?? false,
+)
 
 const hasSettings = computed(() => hasPluginSettings(props.plugin, read))
 /** How many files the plugin keeps in the shown vault; zero hides the delete action. */
@@ -116,6 +127,7 @@ watch(
     v-if="managed"
     :plugin="managed"
     :is-enabled="isEnabled"
+    :is-pending="isPending"
     :readme="readmeText"
     :data-file-count="fileCount"
     :problem="deleteProblem"

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { shallowRef, watch } from 'vue'
 
-import { MAX_UNCONFIRMED_READS, createRemoteValues, createWriteOrder } from './remoteValues'
+import { createRemoteValues, createWriteOrder } from './remoteValues'
 
 /** A promise settled from outside, and the values it was sent with. */
 const createDeferred = () => {
@@ -102,42 +102,6 @@ describe('a switch bound to a remote value', () => {
     newer(true)
     older(false)
     expect(one.remote.value).toBe(true)
-  })
-})
-
-describe('a switch whose remote shows the old value for a moment', () => {
-  /** A read begun after the write settled, answered with `value`, judged by whether it shows the request. */
-  const takeAfterWrite = (one: ReturnType<typeof createSwitch>, value: boolean) => {
-    const pendingRead = one.values.beginRead()
-    one.values.takeRead(
-      pendingRead,
-      () => (one.remote.value = value),
-      (_key, requested) => one.remote.value === requested,
-    )
-  }
-
-  it('shows the requested value through reads that show the old one, and lets it go on the first that shows it', async () => {
-    const one = createSwitch(false)
-    const write = one.values.requestWrite(new Map([['on', true]]))
-    one.batches[0]?.answer.resolve()
-    await write
-    takeAfterWrite(one, false)
-    takeAfterWrite(one, false)
-    expect(one.getShownValue()).toBe(true)
-    takeAfterWrite(one, true)
-    expect(one.values.getRequested('on')).toBeUndefined()
-    expect(one.history).toEqual([true])
-  })
-
-  it('lets the value go after the reads allowed where the remote never shows it', async () => {
-    const one = createSwitch(false)
-    const write = one.values.requestWrite(new Map([['on', true]]))
-    one.batches[0]?.answer.resolve()
-    await write
-    for (let count = 1; count < MAX_UNCONFIRMED_READS; count += 1) takeAfterWrite(one, false)
-    expect(one.getShownValue()).toBe(true)
-    takeAfterWrite(one, false)
-    expect(one.getShownValue()).toBe(false)
   })
 })
 

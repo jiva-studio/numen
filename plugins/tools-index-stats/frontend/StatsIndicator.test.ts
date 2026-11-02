@@ -47,8 +47,10 @@ describe('the index stats indicator', () => {
     )
   })
 
-  it('draws nothing before the first answer', () => {
-    expect(draw(null, 'loading').find('.index-stats').exists()).toBe(false)
+  it('draws a placeholder before the first answer', () => {
+    const view = draw(null, 'loading')
+    expect(view.find('.index-stats').exists()).toBe(true)
+    expect(view.text()).toContain('…')
   })
 
   it('shows a dash where the index has nothing to show', () => {

@@ -23,14 +23,15 @@ const isOpen = ref(false)
 const root = useTemplateRef<HTMLElement>('root')
 const dismissal = useMenuDismissal(root, onClose)
 
-const figure = computed(() =>
-  props.stats ? formatVectors(props.stats, props.locale) : words.unavailable,
-)
-const isShown = computed(() => props.phase === 'unavailable' || props.stats !== null)
+const figure = computed(() => {
+  if (props.stats) return formatVectors(props.stats, props.locale)
+  return props.phase === 'loading' ? words.loading : words.unavailable
+})
 const isIndexing = computed(() => props.stats !== null && isPending(props.stats))
-const summary = computed(() =>
-  props.stats ? formatSummary(props.stats, props.locale) : words.unavailableHint,
-)
+const summary = computed(() => {
+  if (props.stats) return formatSummary(props.stats, props.locale)
+  return props.phase === 'loading' ? words.loadingHint : words.unavailableHint
+})
 
 /* --------------------------------- Hooks ---------------------------------- */
 watch(isOpen, (open) => (open ? dismissal.listen() : dismissal.release()))
@@ -46,7 +47,7 @@ function onClose() {
 </script>
 
 <template>
-  <div v-if="isShown" ref="root" class="index-stats">
+  <div ref="root" class="index-stats">
     <button
       type="button"
       class="index-stats__trigger"
