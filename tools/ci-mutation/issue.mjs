@@ -13,9 +13,9 @@
  * Needs `gh` and `GH_TOKEN`; reads `GITHUB_REPOSITORY`, `GITHUB_SHA`,
  * `GITHUB_SERVER_URL` and `GITHUB_RUN_ID`.
  */
-import { execFileSync } from 'node:child_process'
 import { listReports, readMutants, getSurvivors, summarize } from './report.mjs'
 import { getTarget } from './targets.mjs'
+import { execTool } from '../shared/tools.mjs'
 
 export const LABEL = 'mutation'
 
@@ -122,7 +122,7 @@ export const renderComment = (fresh, link) =>
 
 /* ---------------------------------- Main ---------------------------------- */
 
-const gh = (args, input) => execFileSync('gh', args, { encoding: 'utf8', input })
+const gh = (args, input) => execTool('gh', args, { encoding: 'utf8', input })
 
 const main = () => {
   const target = getTarget(process.argv[2])

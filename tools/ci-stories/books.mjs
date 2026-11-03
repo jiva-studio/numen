@@ -7,9 +7,9 @@
  * names are started. `STORYBOOK_PORT`, `STORYBOOK_SHELL_PORT` and
  * `STORYBOOK_PLUGINS_PORT` name one already running instead.
  */
-import { spawn } from 'node:child_process'
 import { join } from 'node:path'
 import { root } from '../shared/modules.mjs'
+import { spawnTool } from '../shared/tools.mjs'
 import { BOOKS, stories } from './stories.mjs'
 
 /** The port each Storybook is started on, and the variable naming one already up. */
@@ -56,7 +56,7 @@ export const openBooks = async (shots) => {
       const port = process.env[given] ? Number(process.env[given]) : own
       if (!process.env[given]) {
         started.push(
-          spawn('npx', ['storybook', 'dev', '-p', String(port), '--no-open', '--quiet'], {
+          spawnTool('npx', ['storybook', 'dev', '-p', String(port), '--no-open', '--quiet'], {
             cwd: join(root, BOOKS[book]),
             detached: true,
             stdio: 'ignore',

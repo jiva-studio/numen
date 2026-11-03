@@ -13,13 +13,13 @@
  * `--file` mutates one source file of whichever target holds it, with no cache,
  * and prints the mutants its tests do not notice.
  */
-import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { availableParallelism } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
 import { getCacheFile, keepFiles } from './cache.mjs'
 import { patchVitestRunner } from './patch.mjs'
 import { readMutants } from './report.mjs'
+import { execTool, runTool } from '../shared/tools.mjs'
 import {
   GOMUTANTS,
   OUTPUT,
@@ -68,7 +68,7 @@ const getWorkers = () => Number(process.env.NUMEN_MUTATION_WORKERS) || available
 
 const run = (command, args, options) => {
   console.log(`$ ${command} ${args.join(' ')}`)
-  const result = spawnSync(command, args, { stdio: 'inherit', ...options })
+  const result = runTool(command, args, { stdio: 'inherit', ...options })
   if (result.error) throw result.error
   return result.status ?? 1
 }
@@ -78,7 +78,7 @@ const run = (command, args, options) => {
 /** The module's packages holding Go source, as `./path` patterns. */
 const listGoPackages = (target) => {
   const at = join(root, target.at)
-  const listed = execFileSync('go', ['list', '-f', '{{.Dir}} {{join .GoFiles " "}}', './...'], {
+  const listed = execTool('go', ['list', '-f', '{{.Dir}} {{join .GoFiles " "}}', './...'], {
     cwd: at,
     encoding: 'utf8',
   })

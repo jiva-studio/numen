@@ -79,7 +79,7 @@ export function listLintedPackages(trackedFiles, hasPackageJson) {
       .filter(hasPackageJson),
   );
   return Array.from(new Set([...configured, ...plugins]))
-    .sort()
+    .sort((a, b) => a.localeCompare(b))
     .map((dir) => ({ dir, hasConfig: configured.has(dir) }));
 }
 

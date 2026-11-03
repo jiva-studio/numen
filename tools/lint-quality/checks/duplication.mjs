@@ -84,7 +84,7 @@ export async function runDuplicationCheck({ repoRoot, threshold = 3.5 }) {
 
   const failures = results.filter((r) => r.error || r.percent > threshold);
   const pass = failures.length === 0;
-  const worst = results.reduce((a, b) => ((b.percent || 0) > (a.percent || 0) ? b : a));
+  const worst = results.reduce((a, b) => ((b.percent || 0) > (a.percent || 0) ? b : a), { scope: "none", percent: 0 });
   const lines = failures.map((r) =>
     r.error
       ? `${r.scope}: ${r.error}`

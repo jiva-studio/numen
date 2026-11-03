@@ -33,7 +33,7 @@ export const buildIndex = (pluginsDir = PLUGINS_DIR) => {
       throw new Error(`plugin id ${manifest.id} is declared twice (${name})`)
     byId.set(manifest.id, toJson(ManifestSchema, manifest))
   }
-  return { plugins: [...byId.keys()].sort().map((id) => byId.get(id)) }
+  return { plugins: [...byId.keys()].sort((a, b) => a.localeCompare(b)).map((id) => byId.get(id)) }
 }
 
 /** The text the index file holds. */

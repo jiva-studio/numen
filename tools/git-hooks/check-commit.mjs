@@ -200,14 +200,9 @@ export function validateCommitMessage(content, repoRoot) {
   return { ok: true }
 }
 
+/** Validates the commit message given on standard input. */
 function main() {
-  const msgFile = process.argv[2]
-  if (!msgFile || !fs.existsSync(msgFile)) {
-    console.error('❌ Error: No commit message file provided.')
-    process.exit(1)
-  }
-
-  const content = fs.readFileSync(msgFile, 'utf8')
+  const content = fs.readFileSync(process.stdin.fd, 'utf8')
   const scriptDir = path.dirname(new URL(import.meta.url).pathname)
   const repoRoot = path.resolve(scriptDir, '../..')
 
