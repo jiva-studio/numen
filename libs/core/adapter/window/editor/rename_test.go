@@ -326,40 +326,51 @@ func TestRenamingReturnsWhatItCouldNotName(t *testing.T) {
 	}
 }
 
-// TestARemovedNoteGoesToTheTrashAndSaysWhatNowReachesNothing. A link is not
-// wrong because the note it names is gone, so it is reported and not repaired.
-func TestRemoveFile_TrashesNoteAndReturnsDanglingLinks(t *testing.T) {
+// TestRemoveFile_TrashesAndReturnsDanglingLinks. A removed note or folder goes
+// to the trash with everything under it. A link is not wrong because the note
+// it names is gone, so it is reported and not repaired.
+func TestRemoveFile_TrashesAndReturnsDanglingLinks(t *testing.T) {
 	const pointing = "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n\n# Heat\n"
-	f := openWindow(t, nil, map[string]string{
-		"Entropy.md": "# Entropy\n",
-		"Heat.md":    pointing,
-	})
-	waitForScan(t, f)
+	cases := []struct {
+		name, note, removed, trashed string
+	}{
+		{name: "note", note: "Entropy.md", removed: "Entropy.md", trashed: ".trash/Entropy.md"},
+		{name: "folder", note: "physics/Entropy.md", removed: "physics", trashed: ".trash/physics"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			f := openWindow(t, nil, map[string]string{
+				c.note:    "# Entropy\n",
+				"Heat.md": pointing,
+			})
+			waitForScan(t, f)
 
-	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
-		Path: "Entropy.md",
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the note failed: %v", code)
-	}
-	if trashed := answer.Msg.GetTrashed(); trashed != ".trash/Entropy.md" {
-		t.Errorf("the note is at %q", trashed)
-	}
-	dangling := answer.Msg.GetDangling()
-	if len(dangling) != 1 || dangling[0] != "Heat.md" {
-		t.Errorf("what now reaches nothing came back as %v", dangling)
-	}
-	if !isGone(t, f.root, "Entropy.md") {
-		t.Error("the note is still where it was")
-	}
-	if now := fileAt(t, f.root, ".trash/Entropy.md"); now != "# Entropy\n" {
-		t.Errorf("the note in the trash holds:\n%s", now)
-	}
-	if now := fileAt(t, f.root, "Heat.md"); now != pointing {
-		t.Errorf("the note whose link reaches nothing was written:\n%s", now)
+			answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
+				Path: c.removed,
+			}))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+				t.Fatalf("the %s failed: %v", c.name, code)
+			}
+			if trashed := answer.Msg.GetTrashed(); trashed != c.trashed {
+				t.Errorf("the %s is at %q", c.name, trashed)
+			}
+			dangling := answer.Msg.GetDangling()
+			if len(dangling) != 1 || dangling[0] != "Heat.md" {
+				t.Errorf("what now reaches nothing came back as %v", dangling)
+			}
+			if !isGone(t, f.root, c.note) {
+				t.Errorf("the %s is still where it was", c.name)
+			}
+			if now := fileAt(t, f.root, ".trash/"+c.note); now != "# Entropy\n" {
+				t.Errorf("the note in the trash holds:\n%s", now)
+			}
+			if now := fileAt(t, f.root, "Heat.md"); now != pointing {
+				t.Errorf("the note whose link reaches nothing was written:\n%s", now)
+			}
+		})
 	}
 }
 
@@ -432,29 +443,9 @@ func TestWatchVaultChanges_ReportsRemovedAsset(t *testing.T) {
 		"assets/diagram.png": "a picture, near enough\n",
 	})
 
-	// Its own context, closed before the server is: a stream is an open request,
-	// and a test server waits for those.
-	listening, hangUp := context.WithCancel(t.Context())
-	defer hangUp()
+	changes := openChanges(t, client)
 
-	changes, err := client.WatchVaultChanges(listening, connect.NewRequest(&v1.WatchVaultChangesRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testsupport.Close(t, changes)
-	if !changes.Receive() {
-		t.Fatalf("the stream never opened: %v", changes.Err())
-	}
-
-	reported := make(chan []string, 1)
-	go func() {
-		for changes.Receive() {
-			if paths := changes.Msg().GetPaths(); len(paths) > 0 {
-				reported <- paths
-				return
-			}
-		}
-	}()
+	reported := getReportedPaths(changes)
 
 	answer, err := client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "assets/diagram.png",
@@ -1391,43 +1382,6 @@ func TestAMoveOfAPathWithNothingAtItPreservesNothingPrior(t *testing.T) {
 	}
 }
 
-// TestARemovedFolderGoesToTheTrashWithEverythingUnderIt, and what pointed into
-// it is reported and not repaired.
-func TestARemovedFolderGoesToTheTrashWithEverythingBelowIt(t *testing.T) {
-	const pointing = "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n\n# Heat\n"
-	f := openWindow(t, nil, map[string]string{
-		"physics/Entropy.md": "# Entropy\n",
-		"Heat.md":            pointing,
-	})
-	waitForScan(t, f)
-
-	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
-		Path: "physics",
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the folder failed: %v", code)
-	}
-	if trashed := answer.Msg.GetTrashed(); trashed != ".trash/physics" {
-		t.Errorf("the folder is at %q", trashed)
-	}
-	dangling := answer.Msg.GetDangling()
-	if len(dangling) != 1 || dangling[0] != "Heat.md" {
-		t.Errorf("what now reaches nothing came back as %v", dangling)
-	}
-	if !isGone(t, f.root, "physics/Entropy.md") {
-		t.Error("the folder is still where it was")
-	}
-	if now := fileAt(t, f.root, ".trash/physics/Entropy.md"); now != "# Entropy\n" {
-		t.Errorf("the note in the trash holds:\n%s", now)
-	}
-	if now := fileAt(t, f.root, "Heat.md"); now != pointing {
-		t.Errorf("the note whose link reaches nothing was written:\n%s", now)
-	}
-}
-
 // TestAFolderIsMadeWithTheFoldersAboveIt. An empty folder is a place to file
 // notes in, and the window can make one before there is anything to put there.
 func TestAFolderIsMadeWithTheFoldersAboveIt(t *testing.T) {
@@ -1631,29 +1585,9 @@ func TestImports_DroppedFileAppearsInTree(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Its own context, closed before the server is: a stream is an open request,
-	// and a test server waits for those.
-	listening, hangUp := context.WithCancel(t.Context())
-	defer hangUp()
+	changes := openChanges(t, client)
 
-	changes, err := client.WatchVaultChanges(listening, connect.NewRequest(&v1.WatchVaultChangesRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testsupport.Close(t, changes)
-	if !changes.Receive() {
-		t.Fatalf("the stream never opened: %v", changes.Err())
-	}
-
-	reported := make(chan []string, 1)
-	go func() {
-		for changes.Receive() {
-			if paths := changes.Msg().GetPaths(); len(paths) > 0 {
-				reported <- paths
-				return
-			}
-		}
-	}()
+	reported := getReportedPaths(changes)
 
 	installation.Imports(t.Context(), "physics", []string{cover})
 
