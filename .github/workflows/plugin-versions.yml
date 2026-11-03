@@ -9,11 +9,9 @@ on:
       - "tools/build-plugin-index/**"
       - "tools/shared/**"
       - ".github/workflows/plugin-versions.yml"
-  merge_group:
-    types: [checks_requested]
 
 concurrency:
-  group: plugin-versions-${{ github.ref }}
+  group: plugin-versions-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
@@ -50,5 +48,5 @@ jobs:
 
       - name: Check the versions of changed plugins
         env:
-          BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          BASE: ${{ github.event.pull_request.base.sha }}
         run: node tools/plugin-versions/check.mjs --base "$BASE"
