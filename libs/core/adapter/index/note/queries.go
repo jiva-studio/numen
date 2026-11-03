@@ -45,7 +45,7 @@ func (q *Queries) GetSummary(ctx context.Context, vaultID domain.VaultID) (domai
 	if err != nil {
 		return s, err
 	}
-	err = q.db.QueryRowContext(ctx, getStatement("summary"), vault, vault).Scan(&s.Notes, &s.Headings)
+	err = q.db.QueryRowContext(ctx, summarySQL, vault, vault).Scan(&s.Notes, &s.Headings)
 	return s, err
 }
 
@@ -66,7 +66,7 @@ func (q *Queries) GetNamedPaths(ctx context.Context, vaultID domain.VaultID, nam
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, getStatement("named"), vault, domain.FoldName(name))
+	rows, err := q.db.QueryContext(ctx, namedSQL, vault, domain.FoldName(name))
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (q *Queries) GetNameMatches(ctx context.Context, vaultID domain.VaultID, qu
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, getStatement("titles"),
+	rows, err := q.db.QueryContext(ctx, titlesSQL,
 		opening, closing, words, vault, limit,
 		opening, closing, words, vault, mostPerNote, limit)
 	if err != nil {

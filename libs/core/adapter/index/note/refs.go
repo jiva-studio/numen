@@ -13,7 +13,7 @@ import (
 // GetNotes returns the data needed to display each of the given paths. An empty
 // path is skipped.
 func (q *Queries) GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
-	return queryEachPath(ctx, q.db, vaultID, paths, "notes_at", func(statement *sql.Stmt, vault int64, path string) (domain.NoteRef, bool, error) {
+	return queryEachPath(ctx, q.db, vaultID, paths, notesAtSQL, func(statement *sql.Stmt, vault int64, path string) (domain.NoteRef, bool, error) {
 		var ref domain.NoteRef
 		err := statement.QueryRowContext(ctx, vault, path).Scan(&ref.Path, &ref.Title, &ref.ID)
 		if errors.Is(err, sql.ErrNoRows) {
@@ -23,11 +23,11 @@ func (q *Queries) GetNotes(ctx context.Context, vaultID domain.VaultID, paths []
 	})
 }
 
-// queryEachPath prepares the statement named name and runs read once for each
+// queryEachPath prepares query and runs read once for each
 // path, keeping the results read reports as found. One prepared statement is
 // executed repeatedly: the query text is the same for any number of paths.
 func queryEachPath[T any](
-	ctx context.Context, db *sql.DB, vaultID domain.VaultID, paths []string, name string,
+	ctx context.Context, db *sql.DB, vaultID domain.VaultID, paths []string, query string,
 	read func(statement *sql.Stmt, vault int64, path string) (T, bool, error),
 ) (_ map[string]T, err error) {
 	out := map[string]T{}
@@ -42,7 +42,7 @@ func queryEachPath[T any](
 		return nil, err
 	}
 
-	statement, err := db.PrepareContext(ctx, getStatement(name))
+	statement, err := db.PrepareContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (q *Queries) GetTypes(ctx context.Context, vaultID domain.VaultID, paths []
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, getStatement("types_at"), vault, string(wanted))
+	rows, err := q.db.QueryContext(ctx, typesAtSQL, vault, string(wanted))
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (q *Queries) GetPathsOfType(ctx context.Context, vaultID domain.VaultID, of
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, getStatement("notes_of_type"), vault, string(of))
+	rows, err := q.db.QueryContext(ctx, notesOfTypeSQL, vault, string(of))
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (q *Queries) GetPathsOfType(ctx context.Context, vaultID domain.VaultID, of
 
 // GetHeadings answers NoteQueries.GetHeadings.
 func (q *Queries) GetHeadings(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string][]domain.Heading, error) {
-	return queryEachPath(ctx, q.db, vaultID, paths, "headings_of", func(statement *sql.Stmt, vault int64, path string) ([]domain.Heading, bool, error) {
+	return queryEachPath(ctx, q.db, vaultID, paths, headingsOfSQL, func(statement *sql.Stmt, vault int64, path string) ([]domain.Heading, bool, error) {
 		found, err := getHeadingsAt(ctx, statement, vault, path)
 		return found, len(found) > 0, err
 	})
@@ -167,7 +167,7 @@ func (q *Queries) GetOpeningNote(ctx context.Context, vaultID domain.VaultID) (d
 		return ref, false, err
 	}
 
-	err = q.db.QueryRowContext(ctx, getStatement("opening"), vault).
+	err = q.db.QueryRowContext(ctx, openingSQL, vault).
 		Scan(&ref.Path, &ref.Title, &ref.ID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ref, false, nil

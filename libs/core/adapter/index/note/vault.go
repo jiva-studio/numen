@@ -23,7 +23,7 @@ type querier interface {
 // number this database files it under.
 func vaultRow(ctx context.Context, db querier, identifier domain.VaultID) (int64, error) {
 	var row int64
-	err := db.QueryRowContext(ctx, getStatement("vault_row"), string(identifier)).Scan(&row)
+	err := db.QueryRowContext(ctx, vaultRowSQL, string(identifier)).Scan(&row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, errNoVault
 	}

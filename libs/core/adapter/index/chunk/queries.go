@@ -86,7 +86,7 @@ func (q *Queries) GetFileStats(ctx context.Context, vaultID domain.VaultID, kind
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, getStatement("file_stats"), vault, kind)
+	rows, err := q.db.QueryContext(ctx, fileStatsSQL, vault, kind)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, p
 	}
 
 	first, past := getRangeUnder(path)
-	rows, err := q.db.QueryContext(ctx, getStatement("file_stats_under"), vault, path, vault, first, past)
+	rows, err := q.db.QueryContext(ctx, fileStatsUnderSQL, vault, path, vault, first, past)
 	if err != nil {
 		return nil, fmt.Errorf("what the vault holds at %s and under it: %w", path, err)
 	}
@@ -147,7 +147,7 @@ func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query
 		// it, and arriving here without one is a mistake in the caller.
 		return nil, fmt.Errorf("a search by words needs a positive limit, got %d", limit)
 	}
-	return q.findPassages(ctx, vaultID, Expression(query, growing), of, limit, "lexical")
+	return q.findPassages(ctx, vaultID, Expression(query, growing), of, limit, lexicalSQL, lexicalKindsSQL)
 }
 
 // GetNamedPassages returns the sections of one vault whose names match the
@@ -159,13 +159,13 @@ func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, 
 	if limit <= 0 {
 		return nil, fmt.Errorf("a search by name needs a positive limit, got %d", limit)
 	}
-	return q.findPassages(ctx, vaultID, Expression(query, growing), of, limit, "sections")
+	return q.findPassages(ctx, vaultID, Expression(query, growing), of, limit, sectionsSQL, sectionsKindsSQL)
 }
 
-// findPassages runs the full-text statement named statement, or its _kinds
-// variant when the search is limited to kinds, and reads the passages it
+// findPassages runs the full-text query, or kindsQuery when the search is
+// limited to kinds, and reads the passages it
 // returns. An empty expression matches nothing.
-func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, expression string, of []domain.SourceKind, limit int, statement string) (_ []domain.Passage, err error) {
+func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, expression string, of []domain.SourceKind, limit int, query, kindsQuery string) (_ []domain.Passage, err error) {
 	if expression == "" {
 		return nil, nil
 	}
@@ -179,10 +179,10 @@ func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, expr
 
 	var rows *sql.Rows
 	if len(of) == 0 {
-		rows, err = q.db.QueryContext(ctx, getStatement(statement), expression, vault, limit)
+		rows, err = q.db.QueryContext(ctx, query, expression, vault, limit)
 	} else {
 		wanted := formatKinds(of)
-		rows, err = q.db.QueryContext(ctx, getStatement(statement+"_kinds"), expression, vault, wanted, limit)
+		rows, err = q.db.QueryContext(ctx, kindsQuery, expression, vault, wanted, limit)
 	}
 	if err != nil {
 		return nil, err
@@ -286,7 +286,7 @@ func (q *Queries) findNearestByBits(ctx context.Context, vault int64, query []fl
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.db.QueryContext(ctx, getStatement("coarse"), vector.Bits(query), vault, k)
+	rows, err := q.db.QueryContext(ctx, coarseSQL, vector.Bits(query), vault, k)
 	if err != nil {
 		return nil, err
 	}
@@ -313,7 +313,7 @@ func (q *Queries) getEnclosingPassages(ctx context.Context, vault int64, chunks 
 	if len(chunks) == 0 {
 		return nil, nil
 	}
-	enclosing, err := q.db.PrepareContext(ctx, getStatement("enclosing"))
+	enclosing, err := q.db.PrepareContext(ctx, enclosingSQL)
 	if err != nil {
 		return nil, err
 	}
@@ -345,7 +345,7 @@ func (q *Queries) Passage(ctx context.Context, vaultID domain.VaultID, chunk int
 	if err != nil {
 		return Passage{}, false, err
 	}
-	p, found, err := scanPassage(q.db.QueryRowContext(ctx, getStatement("passage"), chunk, vault), chunk)
+	p, found, err := scanPassage(q.db.QueryRowContext(ctx, passageSQL, chunk, vault), chunk)
 	return p, found, err
 }
 
@@ -364,7 +364,7 @@ func scanPassage(row *sql.Row, chunk int64) (Passage, bool, error) {
 // GetUnchunkedSources is the sources of one kind with no small chunk: the file
 // changed, or it has never been cut.
 func (q *Queries) GetUnchunkedSources(ctx context.Context, vaultID domain.VaultID, kind string, limit int) ([]string, error) {
-	return q.paths(ctx, vaultID, "unchunked", limit, func(vault int64) []any {
+	return q.paths(ctx, vaultID, "unchunked", unchunkedSQL, limit, func(vault int64) []any {
 		return []any{vault, kind, limit}
 	})
 }
@@ -376,7 +376,7 @@ func (q *Queries) GetSourcesWithOtherRecipe(ctx context.Context, vaultID domain.
 	if err != nil {
 		return nil, err
 	}
-	return q.paths(ctx, vaultID, "stale_recipe", limit, func(vault int64) []any {
+	return q.paths(ctx, vaultID, "stale_recipe", staleRecipeSQL, limit, func(vault int64) []any {
 		return []any{vault, kind, string(named), limit}
 	})
 }
@@ -408,7 +408,7 @@ func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultI
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.db.QueryContext(ctx, getStatement("unembedded"), recipe, vault, after.MTime, after.MTime, after.Source, after.Source, after.Chunk, q.minimum.Get(), limit)
+	rows, err := q.db.QueryContext(ctx, unembeddedSQL, recipe, vault, after.MTime, after.MTime, after.Source, after.Source, after.Chunk, q.minimum.Get(), limit)
 	if err != nil {
 		return nil, err
 	}
@@ -426,9 +426,9 @@ func (q *Queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultI
 }
 
 // paths answers the questions that come back as a list of paths in one vault.
-func (q *Queries) paths(ctx context.Context, vaultID domain.VaultID, statement string, limit int, args func(vault int64) []any) (_ []string, err error) {
+func (q *Queries) paths(ctx context.Context, vaultID domain.VaultID, name, query string, limit int, args func(vault int64) []any) (_ []string, err error) {
 	if limit <= 0 {
-		return nil, fmt.Errorf("%s needs a positive limit, got %d", statement, limit)
+		return nil, fmt.Errorf("%s needs a positive limit, got %d", name, limit)
 	}
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
@@ -438,7 +438,7 @@ func (q *Queries) paths(ctx context.Context, vaultID domain.VaultID, statement s
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, getStatement(statement), args(vault)...)
+	rows, err := q.db.QueryContext(ctx, query, args(vault)...)
 	if err != nil {
 		return nil, err
 	}
@@ -472,7 +472,7 @@ func (q *Queries) GetProgress(ctx context.Context, vaultID domain.VaultID, recip
 	if err != nil {
 		return 0, 0, err
 	}
-	err = q.db.QueryRowContext(ctx, getStatement("progress"), recipe, vault, q.minimum.Get()).
+	err = q.db.QueryRowContext(ctx, progressSQL, recipe, vault, q.minimum.Get()).
 		Scan(&target, &embedded)
 	return target, embedded, err
 }
@@ -501,7 +501,7 @@ func (q *Queries) GetKeptVectors(ctx context.Context, recipe string, of [][]byte
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, getStatement("kept_vectors"), string(request), recipe)
+	rows, err := q.db.QueryContext(ctx, keptVectorsSQL, string(request), recipe)
 	if err != nil {
 		return nil, err
 	}
@@ -540,7 +540,7 @@ func (q *Queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, pat
 		return SourceText{}, false, err
 	}
 	found := SourceText{Path: path}
-	err = q.db.QueryRowContext(ctx, getStatement("source_text"), vault, path).Scan(&found.Producer, &found.Hash, &found.Size, &found.MTime)
+	err = q.db.QueryRowContext(ctx, sourceTextSQL, vault, path).Scan(&found.Producer, &found.Hash, &found.Size, &found.MTime)
 	if errors.Is(err, sql.ErrNoRows) {
 		return SourceText{}, false, nil
 	}
@@ -564,7 +564,7 @@ func (q *Queries) GetRecognisedSources(ctx context.Context, vaultID domain.Vault
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.db.QueryContext(ctx, getStatement("recognised"), vault, kind)
+	rows, err := q.db.QueryContext(ctx, recognisedSQL, vault, kind)
 	if err != nil {
 		return nil, fmt.Errorf("what a model made the text of: %w", err)
 	}

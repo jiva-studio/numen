@@ -56,7 +56,7 @@ func (q *Queries) rankCandidates(ctx context.Context, recipe string, query []flo
 
 	ids := formatInt64s(candidates)
 	wanted := formatKinds(of)
-	rows, err := q.db.QueryContext(ctx, getStatement("rerank"), ids, recipe, wanted)
+	rows, err := q.db.QueryContext(ctx, rerankSQL, ids, recipe, wanted)
 	if err != nil {
 		return nil, err
 	}

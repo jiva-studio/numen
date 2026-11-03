@@ -34,12 +34,12 @@ func NewRepository(read, write *sql.DB) *Repository {
 
 // GetVersions is the versions of one file, in the order they were first recorded.
 func (r *Repository) GetVersions(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.TextVersion, error) {
-	return r.query(ctx, "get_path", string(vaultID), path)
+	return r.query(ctx, getPathSQL, string(vaultID), path)
 }
 
 // ListVersions is the versions of every file of a vault, in the order they were first recorded.
 func (r *Repository) ListVersions(ctx context.Context, vaultID domain.VaultID) ([]domain.TextVersion, error) {
-	return r.query(ctx, "list", string(vaultID))
+	return r.query(ctx, listSQL, string(vaultID))
 }
 
 // SaveVersion records a version, replacing the record of the same path, plugin and key in its place.
@@ -112,8 +112,8 @@ func getRangeUnder(folder string) (first, past string) {
 	return folder + "/", folder + "0"
 }
 
-func (r *Repository) query(ctx context.Context, name string, args ...any) ([]domain.TextVersion, error) {
-	return scan(r.read.QueryContext(ctx, getStatement(name), args...))
+func (r *Repository) query(ctx context.Context, query string, args ...any) ([]domain.TextVersion, error) {
+	return scan(r.read.QueryContext(ctx, query, args...))
 }
 
 func scan(rows *sql.Rows, queryErr error) (out []domain.TextVersion, err error) {

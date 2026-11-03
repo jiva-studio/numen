@@ -20,7 +20,7 @@ func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from str
 	}
 
 	var row int64
-	err = q.db.QueryRowContext(ctx, getStatement("identify"), vault, from).Scan(&row)
+	err = q.db.QueryRowContext(ctx, identifySQL, vault, from).Scan(&row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -28,7 +28,7 @@ func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from str
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, getStatement("links_of"), row)
+	rows, err := q.db.QueryContext(ctx, linksOfSQL, row)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func (q *Queries) resolve(ctx context.Context, vault int64, vaultID domain.Vault
 		// An identifier names one note globally, so this lookup is not scoped to a
 		// vault. It is the one deliberate exception to the rule that a query without a
 		// vault must not read another vault's notes.
-		err := q.db.QueryRowContext(ctx, getStatement("note_by_identifier"), r.Target.Value).
+		err := q.db.QueryRowContext(ctx, noteByIdentifierSQL, r.Target.Value).
 			Scan(&r.ToVault, &r.To)
 		if errors.Is(err, sql.ErrNoRows) {
 			// Neither dangling nor resolved: no connected vault holds this note. The
@@ -160,7 +160,7 @@ func (q *Queries) candidates(ctx context.Context, vault int64, name string) (_ [
 	withExt := name + domain.NoteExtension
 	base := domain.FoldName(domain.LinkName(name))
 
-	rows, err := q.db.QueryContext(ctx, getStatement("candidates"),
+	rows, err := q.db.QueryContext(ctx, candidatesSQL,
 		vault, name, vault, withExt, vault, base)
 	if err != nil {
 		return nil, err
@@ -197,7 +197,7 @@ func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to s
 
 	var row int64
 	var identifier, base string
-	err = q.db.QueryRowContext(ctx, getStatement("addressing"), vault, to).
+	err = q.db.QueryRowContext(ctx, addressingSQL, vault, to).
 		Scan(&row, &identifier, &base)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
@@ -229,7 +229,7 @@ func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to s
 // getBacklinkCandidates returns the links that may point at the note filed under
 // an identifier and a base name, before resolution decides which of them do.
 func (q *Queries) getBacklinkCandidates(ctx context.Context, vault int64, identifier, base string) (_ []domain.ResolvedLink, err error) {
-	rows, err := q.db.QueryContext(ctx, getStatement("backlink_candidates"),
+	rows, err := q.db.QueryContext(ctx, backlinkCandidatesSQL,
 		identifier, vault, base, vault)
 	if err != nil {
 		return nil, err
