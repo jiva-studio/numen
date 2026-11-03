@@ -17,7 +17,7 @@ const canonical = new URL(Astro.url.pathname.replace(/index\.html$/, ''), Astro.
 ---
 
 <!doctype html>
-<html lang="en" data-theme="light" data-palette="numen" data-app="numen">
+<html lang="en" data-theme="light" data-app="numen">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -42,16 +42,6 @@ const canonical = new URL(Astro.url.pathname.replace(/index\.html$/, ''), Astro.
             ? 'dark'
             : 'light'
         document.documentElement.setAttribute('data-theme', theme)
-
-        const params = new URLSearchParams(location.search)
-        const queryPalette = params.get('palette')
-        const storedPalette = localStorage.getItem('numen-palette')
-        const palette = queryPalette === 'edgar' || queryPalette === 'numen'
-          ? queryPalette
-          : storedPalette === 'edgar' || storedPalette === 'numen'
-            ? storedPalette
-            : 'numen'
-        document.documentElement.setAttribute('data-palette', palette)
       } catch {
         // Ignore storage errors in private mode.
       }

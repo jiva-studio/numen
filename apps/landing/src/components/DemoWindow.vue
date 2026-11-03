@@ -2470,8 +2470,8 @@ function getTabIcon(id: string): Component | null {
 .demo-window {
   position: relative;
   width: 100%;
-  height: 880px;
-  border-radius: 0 0 9px 9px;
+  height: 100%;
+  border-radius: 0 0 0.45rem 0.45rem;
   overflow: hidden;
   background: var(--numen-surface);
   color: var(--numen-ink);
@@ -2495,8 +2495,8 @@ function getTabIcon(id: string): Component | null {
 }
 
 .tab-icon {
-  inline-size: 0.875rem;
-  block-size: 0.875rem;
+  inline-size: 0.9rem;
+  block-size: 0.9rem;
   flex-shrink: 0;
   stroke-width: 1.75;
   opacity: 0.75;
@@ -2504,7 +2504,7 @@ function getTabIcon(id: string): Component | null {
 
 .demo-window :deep(.tab__icon) {
   inline-size: auto;
-  min-inline-size: 0.875rem;
+  min-inline-size: 0.9rem;
 }
 
 .demo-window :deep(.workspace__dragged) {

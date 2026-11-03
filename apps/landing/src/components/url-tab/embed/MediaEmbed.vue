@@ -235,7 +235,7 @@ defineExpose({ seek })
    is the line between two panels: one stroke of the rule, with the reach a
    pointer is caught by hanging under it. */
 .embed__handle {
-  --reach: 9px;
+  --reach: 0.55rem;
 
   position: relative;
   flex: none;
@@ -259,7 +259,7 @@ defineExpose({ seek })
 /* A finger is caught from further out than a pointer. */
 @media (pointer: coarse) {
   .embed__handle {
-    --reach: 15px;
+    --reach: 0.95rem;
   }
 }
 </style>
