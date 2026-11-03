@@ -36,10 +36,7 @@ func TestANameReachesItsNoteWhateverCaseItIsSavedIn(t *testing.T) {
 				one.filed:   "# The note\n",
 			})
 
-			c := links(t, db, v, "source.md")
-			if len(c.Links) != 1 {
-				t.Fatalf("got %+v", c.Links)
-			}
+			c := getSingleLink(t, db, v, "source.md")
 			if c.Links[0].To != one.filed {
 				t.Errorf("[[%s]] resolved to %q, want %q", one.output, c.Links[0].To, one.filed)
 			}
@@ -69,10 +66,7 @@ func TestANameReachesItsNoteWhicheverWayItIsComposed(t *testing.T) {
 				one.filed:   "# The note\n",
 			})
 
-			c := links(t, db, v, "source.md")
-			if len(c.Links) != 1 {
-				t.Fatalf("got %+v", c.Links)
-			}
+			c := getSingleLink(t, db, v, "source.md")
 			if c.Links[0].To != one.filed {
 				t.Errorf("[[%s]] resolved to %q, want %q", one.output, c.Links[0].To, one.filed)
 			}
@@ -88,10 +82,7 @@ func TestAPathReachesItsNoteWhateverCaseItIsSavedIn(t *testing.T) {
 		"архив/Энтропия.md":   "# The stranger\n",
 	})
 
-	c := links(t, db, v, "source.md")
-	if len(c.Links) != 1 {
-		t.Fatalf("got %+v", c.Links)
-	}
+	c := getSingleLink(t, db, v, "source.md")
 	if c.Links[0].To != "Заметки/Энтропия.md" {
 		t.Errorf("resolved to %q, want the path that was written", c.Links[0].To)
 	}
@@ -124,10 +115,7 @@ func TestATurkishDottedIIsAName(t *testing.T) {
 		"istanbul.md": "# Somewhere else\n",
 	})
 
-	c := links(t, db, v, "source.md")
-	if len(c.Links) != 1 {
-		t.Fatalf("got %+v", c.Links)
-	}
+	c := getSingleLink(t, db, v, "source.md")
 	if c.Links[0].To != "" {
 		t.Errorf("[[İstanbul]] resolved to %q", c.Links[0].To)
 	}
