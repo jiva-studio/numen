@@ -76,11 +76,17 @@ describe('the four commands over how the window is drawn', () => {
     '200%',
   ]
 
-  /** The commands open, and the one the words typed name taken up. */
-  const runCommand = async (words: string) => {
+  /** The window drawn with the commands open. */
+  const openPalette = async () => {
     const window = await mountWindowWithPalette()
     globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
     await settle()
+    return window
+  }
+
+  /** The commands open, and the one the words typed name taken up. */
+  const runCommand = async (words: string) => {
+    const window = await openPalette()
     await type(words)
     await press('Enter')
     return window
@@ -105,40 +111,28 @@ describe('the four commands over how the window is drawn', () => {
     )
 
   describe('the words a person types for them', () => {
-    it('find the theme by “theme”, and light and dark by either word', async () => {
-      await mountWindowWithPalette()
-      globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
-      await settle()
+    it.each([
+      [
+        'find the theme by “theme”, and light and dark by either word',
+        ['theme', 'light', 'dark'],
+        ['Change theme', 'Light or dark', 'Light or dark'],
+      ],
+      [
+        'find the two sizes by “interface”, by “font” and by “reading”',
+        ['interface', 'font', 'reading'],
+        ['Interface size', 'Reading font size', 'Reading font size'],
+      ],
+    ])('%s', async (_, words, rows) => {
+      await openPalette()
 
-      await type('theme')
-      expect(getRemainingRows()).toStrictEqual(['Change theme'])
-
-      await type('light')
-      expect(getRemainingRows()).toStrictEqual(['Light or dark'])
-
-      await type('dark')
-      expect(getRemainingRows()).toStrictEqual(['Light or dark'])
-    })
-
-    it('find the two sizes by “interface”, by “font” and by “reading”', async () => {
-      await mountWindowWithPalette()
-      globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
-      await settle()
-
-      await type('interface')
-      expect(getRemainingRows()).toStrictEqual(['Interface size'])
-
-      await type('font')
-      expect(getRemainingRows()).toStrictEqual(['Reading font size'])
-
-      await type('reading')
-      expect(getRemainingRows()).toStrictEqual(['Reading font size'])
+      for (const [index, word] of words.entries()) {
+        await type(word)
+        expect(getRemainingRows()).toStrictEqual([rows[index]])
+      }
     })
 
     it('turn up both of them, and nothing else, for the word they share', async () => {
-      await mountWindowWithPalette()
-      globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
-      await settle()
+      await openPalette()
 
       await type('size')
 
