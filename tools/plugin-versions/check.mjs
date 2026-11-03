@@ -27,7 +27,7 @@ import { readPackageVersion } from './package.mjs'
 
 const VERSION_PATTERN = /^(\d{4})\.([1-9]|1[0-2])\.([1-9]\d*)$/
 const VERSION_FIELD = /("version"\s*:\s*")[^"]*(")/
-const IGNORED_FILE = /(\.md|\.test\.[cm]?[jt]sx?|_test\.go)$/
+const IGNORED_FILE = /(\.md|\.test\.[cm]?[jt]sx?|_test\.go|(^|\/)\.golangci(-structure)?\.yml)$/
 
 export const parseVersion = (text) => {
   const match = VERSION_PATTERN.exec(text ?? '')

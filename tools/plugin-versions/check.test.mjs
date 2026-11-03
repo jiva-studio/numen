@@ -18,12 +18,14 @@ test('getNextVersion counts within the month and restarts in a new one', () => {
   assert.equal(getNextVersion('', today), '2026.10.1')
 })
 
-test('getCodeFiles drops markdown and tests', () => {
+test('getCodeFiles drops markdown, tests and lint configurations', () => {
   assert.deepEqual(
     getCodeFiles([
       'plugins/a/README.md',
       'plugins/a/x.test.ts',
       'plugins/a/y_test.go',
+      'plugins/a/.golangci.yml',
+      'plugins/a/.golangci-structure.yml',
       'plugins/a/y.go',
     ]),
     ['plugins/a/y.go'],
