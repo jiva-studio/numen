@@ -46,9 +46,9 @@ updates:
       - dependency-name: github.com/getcharzp/onnxruntime_purego
         versions: [">= 1.26.0"]
 
-  # The interface, sites and tools packages managed by npm workspaces at /modules
+  # The interface, sites and tools packages managed by npm workspaces at the repository root.
   - package-ecosystem: npm
-    directory: /modules
+    directory: /
     schedule:
       interval: monthly
     commit-message:
