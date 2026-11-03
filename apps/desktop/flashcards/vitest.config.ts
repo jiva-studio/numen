@@ -3,30 +3,13 @@
  * and queried for what it drew. The build in `vite.config.ts` writes into the
  * Go package's assets and does not apply to it.
  */
-import { fileURLToPath, URL } from 'node:url'
 import { coverageConfigDefaults, defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
+import { createWindowAliases } from '@numen/shell/vite'
 
-const alias = {
-  '@': fileURLToPath(new URL('./src', import.meta.url)),
-  '@numen/core-client/testing': fileURLToPath(
-    new URL('../../../libs/core-client/src/testing/index.ts', import.meta.url),
-  ),
-  '@numen/core-client': fileURLToPath(
-    new URL('../../../libs/core-client/src/index.ts', import.meta.url),
-  ),
-  '@numen/plugin-host': fileURLToPath(
-    new URL('../../../libs/plugin-host-ts/src/index.ts', import.meta.url),
-  ),
-  '@numen/ui/styles.css': fileURLToPath(
-    new URL('../../../libs/ui/core/dist/numen-ui.css', import.meta.url),
-  ),
-  '@numen/ui': fileURLToPath(new URL('../../../libs/ui/core/dist/index.js', import.meta.url)),
-  '@numen/shell/styles.css': fileURLToPath(
-    new URL('../../../libs/ui/shell/dist/numen-shell.css', import.meta.url),
-  ),
-  '@numen/shell': fileURLToPath(new URL('../../../libs/ui/shell/dist/index.js', import.meta.url)),
-}
+const alias = createWindowAliases(import.meta.url, {
+  '@numen/core-client/testing': '../../../libs/core-client/src/testing/index.ts',
+})
 
 export default defineConfig({
   plugins: [vue()],

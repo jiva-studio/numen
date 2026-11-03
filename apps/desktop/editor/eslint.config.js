@@ -7,8 +7,12 @@
 
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'
-import { createBaseConfig, lifetimes } from '../../../tools/lint-layers/base-eslint.mjs'
-import { createLayerElements, createLayerPolicies } from '../../../tools/lint-layers/layers.mjs'
+import { createBaseConfig, createPortConfig } from '../../../tools/lint-layers/base-eslint.mjs'
+import {
+  createLayerConfig,
+  createLayerElements,
+  createLayerPolicies,
+} from '../../../tools/lint-layers/layers.mjs'
 
 const layerOrder = ['shared', 'entities', 'features', 'widgets', 'pages', 'app']
 const sliceLayers = ['entities', 'features', 'widgets', 'pages']
@@ -37,64 +41,25 @@ export default tseslint.config(
   ...createBaseConfig(import.meta.dirname),
 
   // FSD Layer Hierarchy and boundaries enforcement
-  {
-    files: ['src/**/*.{ts,vue}'],
-    plugins: { boundaries },
-    settings: {
-      'import/resolver': { typescript: { alwaysTryTypes: true } },
-      'boundaries/elements': layerElements,
-      'boundaries/files': [
-        { category: 'public', pattern: 'src/*/*/index.ts' },
-        { category: 'entry', pattern: 'src/main.ts' },
-        { category: 'test', pattern: 'src/**/*.test.ts' },
-        { category: 'story', pattern: 'src/**/*.stories.ts' },
-      ],
-    },
-    rules: {
-      'boundaries/no-unknown-files': 'error',
-      'boundaries/dependencies': ['error', { default: 'disallow', policies: layerPolicies }],
-    },
-  },
+  createLayerConfig({
+    boundaries,
+    elements: layerElements,
+    policies: layerPolicies,
+    categories: [
+      { category: 'public', pattern: 'src/*/*/index.ts' },
+      { category: 'entry', pattern: 'src/main.ts' },
+      { category: 'test', pattern: 'src/**/*.test.ts' },
+      { category: 'story', pattern: 'src/**/*.stories.ts' },
+    ],
+  }),
 
   // Anything with a lifetime a test must hold still is a port. The pure core
   // computes what is drawn from what it is given, so it may not ask the machine
   // what time it is, what the window measures, or what comes next.
-  {
+  createPortConfig({
     files: ['src/**/*.ts'],
     ignores: ['src/**/*.test.ts', 'src/**/*.stories.ts', 'src/testing/**'],
-    rules: {
-      'no-restricted-globals': [
-        'error',
-        ...lifetimes.map(({ name, port }) => ({
-          name,
-          message: `${name} has a lifetime a test must hold still — take ${port}`,
-        })),
-      ],
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: 'MemberExpression[object.name="Date"][property.name="now"]',
-          message: 'the clock is a port — take the now a Clock carries',
-        },
-        {
-          selector: 'NewExpression[callee.name="Date"][arguments.length=0]',
-          message: 'the clock is a port — take the now a Clock carries',
-        },
-        {
-          selector: 'MemberExpression[object.name="Math"][property.name="random"]',
-          message: 'the same input gives the same numbers on any machine on any day',
-        },
-        {
-          selector: 'MemberExpression[property.name="getBoundingClientRect"]',
-          message: 'what the window measures is a port — take it as a value',
-        },
-        {
-          selector: 'MemberExpression[property.name="matchMedia"]',
-          message: 'a reader who asks for less motion is answered in CSS',
-        },
-      ],
-    },
-  },
+  }),
 
   {
     files: ['src/testing/**', '.storybook/**'],

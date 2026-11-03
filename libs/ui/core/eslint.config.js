@@ -9,11 +9,15 @@ import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'
 import {
   createBaseConfig,
-  createDeterminismSelectors,
+  createPortConfig,
   createPureSegmentConfig,
-  lifetimes,
 } from '../../../tools/lint-layers/base-eslint.mjs'
-import { createLayerElements, createLayerPolicies } from '../../../tools/lint-layers/layers.mjs'
+import {
+  createLayerConfig,
+  createLayerElements,
+  createLayerPolicies,
+  createOwnImportConfig,
+} from '../../../tools/lint-layers/layers.mjs'
 
 /** The one function declaration that reads the wall clock. */
 const clockFunction = 'getNow'
@@ -60,93 +64,45 @@ const domainImports = [
 ]
 
 export default tseslint.config(
-  ...createBaseConfig(import.meta.dirname, clockFunctions),
-
-  {
-    languageOptions: {
-      parserOptions: {
-        projectService: {
-          allowDefaultProject: ['eslint.config.js'],
-        },
-      },
-    },
-  },
+  ...createBaseConfig(import.meta.dirname, { ...clockFunctions, defaultProject: ['eslint.config.js'] }),
 
   // UI layer boundaries and domain isolation
-  {
-    files: ['src/**/*.{ts,vue}'],
+  createLayerConfig({
+    boundaries,
+    elements: layerElements,
+    policies: layerPolicies,
+    categories: [
+      { category: 'public', pattern: 'src/features/*/index.ts' },
+      { category: 'entry', pattern: 'src/index.ts' },
+    ],
     ignores: outsideLayers,
-    plugins: { boundaries },
-    settings: {
-      'import/resolver': { typescript: { alwaysTryTypes: true } },
-      'boundaries/elements': layerElements,
-      'boundaries/files': [
-        { category: 'public', pattern: 'src/features/*/index.ts' },
-        { category: 'entry', pattern: 'src/index.ts' },
-      ],
-    },
-    rules: {
-      'boundaries/no-unknown-files': 'error',
-      'boundaries/dependencies': ['error', { default: 'disallow', policies: layerPolicies }],
-      'no-restricted-imports': ['error', { patterns: domainImports }],
-    },
-  },
+    rules: { 'no-restricted-imports': ['error', { patterns: domainImports }] },
+  }),
 
-  {
-    files: ['src/features/**/*.{ts,vue}'],
-    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', ...outsideLayers],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            ...domainImports,
-            {
-              group: ['@/features/**', '@/screens/**'],
-              message: 'a slice imports its own files by relative path and no other slice',
-            },
-          ],
-        },
-      ],
-    },
-  },
+  createOwnImportConfig({
+    layer: 'features',
+    patterns: domainImports,
+    group: ['@/features/**', '@/screens/**'],
+    message: 'a slice imports its own files by relative path and no other slice',
+    outsideLayers,
+  }),
 
-  {
-    files: ['src/screens/**/*.{ts,vue}'],
-    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', ...outsideLayers],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            ...domainImports,
-            {
-              group: ['@/screens/**'],
-              message: 'a screen imports its own files by relative path',
-            },
-          ],
-        },
-      ],
-    },
-  },
+  createOwnImportConfig({
+    layer: 'screens',
+    patterns: domainImports,
+    group: ['@/screens/**'],
+    message: 'a screen imports its own files by relative path',
+    outsideLayers,
+  }),
 
   // Anything with a lifetime a test must hold still is a port. The
   // pure core computes what is drawn from its props alone, so it may not ask
   // the machine what time it is, what the window measures, or what comes next.
-  {
+  createPortConfig({
     files: ['src/**/*.ts'],
     ignores: ['src/**/*.test.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**'],
-    rules: {
-      'no-restricted-globals': [
-        'error',
-        ...lifetimes.map(({ name, port }) => ({
-          name,
-          message: `${name} has a lifetime a test must hold still — take ${port}`,
-        })),
-      ],
-      'no-restricted-syntax': ['error', ...createDeterminismSelectors(clockFunctions)],
-    },
-  },
+    ...clockFunctions,
+  }),
 
   createPureSegmentConfig(clockFunctions),
 )

@@ -3,8 +3,13 @@
 
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'
-import { createBaseConfig, lifetimes } from '../../../tools/lint-layers/base-eslint.mjs'
-import { createLayerElements, createLayerPolicies } from '../../../tools/lint-layers/layers.mjs'
+import { createBaseConfig, createPortConfig } from '../../../tools/lint-layers/base-eslint.mjs'
+import {
+  createLayerConfig,
+  createLayerElements,
+  createLayerPolicies,
+  createOwnImportConfig,
+} from '../../../tools/lint-layers/layers.mjs'
 
 const layerOrder = ['shared', 'features', 'screens']
 const sliceLayers = ['features']
@@ -34,91 +39,31 @@ const domainImports = [
 ]
 
 export default tseslint.config(
-  ...createBaseConfig(import.meta.dirname),
+  ...createBaseConfig(import.meta.dirname, { defaultProject: ['eslint.config.js'] }),
 
-  {
-    languageOptions: {
-      parserOptions: {
-        projectService: {
-          allowDefaultProject: ['eslint.config.js'],
-        },
-      },
-    },
-  },
-
-  {
-    files: ['src/**/*.{ts,vue}'],
+  createLayerConfig({
+    boundaries,
+    elements: layerElements,
+    policies: layerPolicies,
+    categories: [
+      { category: 'public', pattern: 'src/features/*/index.ts' },
+      { category: 'entry', pattern: 'src/index.ts' },
+    ],
     ignores: outsideLayers,
-    plugins: { boundaries },
-    settings: {
-      'import/resolver': { typescript: { alwaysTryTypes: true } },
-      'boundaries/elements': layerElements,
-      'boundaries/files': [
-        { category: 'public', pattern: 'src/features/*/index.ts' },
-        { category: 'entry', pattern: 'src/index.ts' },
-      ],
-    },
-    rules: {
-      'boundaries/no-unknown-files': 'error',
-      'boundaries/dependencies': ['error', { default: 'disallow', policies: layerPolicies }],
-      'no-restricted-imports': ['error', { patterns: domainImports }],
-    },
-  },
+    rules: { 'no-restricted-imports': ['error', { patterns: domainImports }] },
+  }),
 
-  {
-    files: ['src/features/**/*.{ts,vue}'],
-    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', ...outsideLayers],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            ...domainImports,
-            {
-              group: ['@/features/**', '@/screens/**'],
-              message: 'a slice imports its own files by relative path and no other slice',
-            },
-          ],
-        },
-      ],
-    },
-  },
+  createOwnImportConfig({
+    layer: 'features',
+    patterns: domainImports,
+    group: ['@/features/**', '@/screens/**'],
+    message: 'a slice imports its own files by relative path and no other slice',
+    outsideLayers,
+  }),
 
   // Anything with a lifetime a test must hold still is a port.
-  {
+  createPortConfig({
     files: ['src/**/*.ts'],
     ignores: ['src/**/*.test.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**'],
-    rules: {
-      'no-restricted-globals': [
-        'error',
-        ...lifetimes.map(({ name, port }) => ({
-          name,
-          message: `${name} has a lifetime a test must hold still — take ${port}`,
-        })),
-      ],
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: 'MemberExpression[object.name="Date"][property.name="now"]',
-          message: 'the clock is a port — take the now a Clock carries',
-        },
-        {
-          selector: 'NewExpression[callee.name="Date"][arguments.length=0]',
-          message: 'the clock is a port — take the now a Clock carries',
-        },
-        {
-          selector: 'MemberExpression[object.name="Math"][property.name="random"]',
-          message: 'the same input gives the same numbers on any machine on any day',
-        },
-        {
-          selector: 'MemberExpression[property.name="getBoundingClientRect"]',
-          message: 'what the window measures is a port — take it as a value',
-        },
-        {
-          selector: 'MemberExpression[property.name="matchMedia"]',
-          message: 'a reader who asks for less motion is answered in CSS',
-        },
-      ],
-    },
-  },
+  }),
 )
