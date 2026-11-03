@@ -1,7 +1,9 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    
+    configurations.classpath {
+        resolutionStrategy.activateDependencyLocking()
+    }
     repositories {
         google()
         mavenCentral()
@@ -16,6 +18,15 @@ buildscript {
 }
 
 apply from: "variables.gradle"
+
+// The versions every configuration of the app resolves are pinned in
+// app/gradle.lockfile, and the build classpath in buildscript-gradle.lockfile.
+// Write them again with: ./gradlew :app:dependencies buildEnvironment --write-locks
+project(':app') {
+    dependencyLocking {
+        lockAllConfigurations()
+    }
+}
 
 allprojects {
     repositories {
