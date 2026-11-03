@@ -6,13 +6,13 @@ on:
   workflow_call:
     inputs:
       scope:
-        description: "all, none, or folders under tests/e2e/desktop/tests/plugins/ (with tests/shell/), separated by spaces"
+        description: 'all, none, or folders under tests/e2e/desktop/tests/plugins/ (with tests/shell/), separated by spaces'
         type: string
         default: all
   workflow_dispatch:
     inputs:
       scope:
-        description: "all, none, or folders under tests/e2e/desktop/tests/plugins/ (with tests/shell/), separated by spaces"
+        description: 'all, none, or folders under tests/e2e/desktop/tests/plugins/ (with tests/shell/), separated by spaces'
         type: string
         default: all
 
@@ -94,7 +94,7 @@ jobs:
       - name: Build UI library
         uses: ./.github/actions/build-ui
         with:
-          shell: "true"
+          shell: 'true'
 
       - name: Build modular plugins
         run: make plugins_build SKIP_UI_BUILD=1

@@ -8,19 +8,19 @@ import { getPlan, getPluginTokens, getScope, getScopePaths, planJobs } from './s
 const e2eRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const pluginsRoot = path.resolve(e2eRoot, '../../../plugins')
 
-test('a plugin change selects its folder, the specs that name it and its scenarios', () => {
+await test('a plugin change selects its folder, the specs that name it and its scenarios', () => {
   assert.equal(
     getScope(['plugins/readers-pdf/frontend/reader.ts']),
     'plugins/system/settings-effects.spec.ts readers.pdf scenarios/ocr-disabled.spec.ts scenarios/recognition.spec.ts',
   )
 })
 
-test('a plugin without tests of its own selects the shell alone', () => {
+await test('a plugin without tests of its own selects the shell alone', () => {
   assert.equal(getScope(['plugins/agents-codex/backend/main.go']), 'shell/')
   assert.deepEqual(getScopePaths('shell/'), ['tests/shell/'])
 })
 
-test('a change to a spec folder selects that folder', () => {
+await test('a change to a spec folder selects that folder', () => {
   assert.equal(getScope(['tests/e2e/desktop/tests/plugins/notes/wikilinks.spec.ts']), 'notes')
   assert.equal(
     getScope([
@@ -31,7 +31,7 @@ test('a change to a spec folder selects that folder', () => {
   )
 })
 
-test('a change to the window, the support code or the lock file selects every test', () => {
+await test('a change to the window, the support code or the lock file selects every test', () => {
   for (const file of [
     'libs/core/usecase/note/create.go',
     'apps/desktop/editor/src/main.ts',
@@ -47,8 +47,11 @@ test('a change to the window, the support code or the lock file selects every te
   }
 })
 
-test('a change outside the desktop window, or to its documentation, selects none', () => {
-  assert.equal(getScope(['apps/mobile/src/main.ts', 'docs/index.md', 'plugins/notes/README.md']), 'none')
+await test('a change outside the desktop window, or to its documentation, selects none', () => {
+  assert.equal(
+    getScope(['apps/mobile/src/main.ts', 'docs/index.md', 'plugins/notes/README.md']),
+    'none',
+  )
   assert.deepEqual(getPlan('none'), [
     'desktop=false',
     'paths=',
@@ -57,7 +60,7 @@ test('a change outside the desktop window, or to its documentation, selects none
   ])
 })
 
-test('a scope of folders runs them and the shell', () => {
+await test('a scope of folders runs them and the shell', () => {
   assert.deepEqual(getScopePaths('readers.epub notes'), [
     'tests/plugins/notes/',
     'tests/plugins/readers.epub/',
@@ -67,7 +70,7 @@ test('a scope of folders runs them and the shell', () => {
   assert.ok(getPlan('views.flashcards.studio').includes('flashcards=true'))
 })
 
-test('every plugin maps to tests that exist, and every plugin test folder has a plugin', () => {
+await test('every plugin maps to tests that exist, and every plugin test folder has a plugin', () => {
   const reached = new Set()
   for (const dir of fs.readdirSync(pluginsRoot)) {
     if (!fs.existsSync(path.join(pluginsRoot, dir, 'manifest.json'))) continue
@@ -84,7 +87,7 @@ test('every plugin maps to tests that exist, and every plugin test folder has a 
   assert.deepEqual(unreached, [])
 })
 
-test('every test runs in at most four shards an engine', () => {
+await test('every test runs in at most four shards an engine', () => {
   const jobs = planJobs(undefined)
   assert.ok(jobs.length >= 2 && jobs.length <= 8)
   assert.deepEqual(jobs[0], { engine: 'chromium', shard: 1, shards: jobs.length / 2 })
