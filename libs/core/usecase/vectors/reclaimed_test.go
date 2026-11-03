@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport/indexfake"
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 )
 
@@ -15,35 +16,35 @@ import (
 // text. What the coarse pass reads is the same either way, so whether a passage
 // enters the rerank is determined by its text.
 func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
-	index, shelf := newStore(), newLibrary()
-	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(getSanskrit(), 900)), 1)
+	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
+	shelf.Put(bookPath, domain.KindFile, indexfake.CreateBook(t, "A Book", indexfake.GetWords(indexfake.GetSanskrit(), 900)), 1)
 
-	embed := newEmbed(vaults{getFirst().ID: shelf, getSecond().ID: shelf}, index, index)
+	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf, indexfake.GetSecond().ID: shelf}, index, index)
 	embed.Embedder = &faint{dims: dimensions}
 	embed.BatchCharacters = 4000
 
-	cutBooks(t, index, shelf, getFirst())
-	if _, err := embed.Execute(t.Context(), getFirst()); err != nil {
+	cutBooks(t, index, shelf, indexfake.GetFirst())
+	if _, err := embed.Execute(t.Context(), indexfake.GetFirst()); err != nil {
 		t.Fatal(err)
 	}
 
 	// What the index now holds, as a second vault finds it.
 	bought := map[string]embeddingport.Vector{}
-	index.preserved = map[string][]byte{}
-	for _, target := range index.vectors {
+	index.Kept = map[string][]byte{}
+	for _, target := range index.Vectors {
 		for _, v := range target {
 			hash := hex.EncodeToString(v.Hash)
 			bought[hash] = v
-			index.preserved[v.Model.Recipe()+"/"+hash] = v.Value
+			index.Kept[v.Model.Recipe()+"/"+hash] = v.Value
 		}
 	}
 	if len(bought) == 0 {
 		t.Fatal("nothing was bought")
 	}
 
-	index.groups = nil
-	cutBooks(t, index, shelf, getSecond())
-	res, err := embed.Execute(t.Context(), getSecond())
+	index.Groups = nil
+	cutBooks(t, index, shelf, indexfake.GetSecond())
+	res, err := embed.Execute(t.Context(), indexfake.GetSecond())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +53,7 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 	}
 
 	var read int
-	for _, group := range index.groups {
+	for _, group := range index.Groups {
 		for _, v := range group {
 			was, targetVal := bought[hex.EncodeToString(v.Hash)]
 			if !targetVal {
