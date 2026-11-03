@@ -12,12 +12,7 @@ import {
   createPortConfig,
   createPureSegmentConfig,
 } from '../../../tools/lint-layers/base-eslint.mjs'
-import {
-  createLayerConfig,
-  createLayerElements,
-  createLayerPolicies,
-  createOwnImportConfig,
-} from '../../../tools/lint-layers/layers.mjs'
+import { createDomainImports, createLibraryLayerConfigs, createOwnImportConfig } from '../../../tools/lint-layers/layers.mjs'
 
 /** The one function declaration that reads the wall clock. */
 const clockFunction = 'getNow'
@@ -26,12 +21,6 @@ const clockFunction = 'getNow'
 const monotonicFunction = 'getMonotonicNow'
 
 const clockFunctions = { clockFunction, monotonicFunction }
-
-const layerOrder = ['shared', 'features', 'screens']
-const sliceLayers = ['features']
-
-const layerElements = createLayerElements({ order: layerOrder, sliceLayers })
-const layerPolicies = createLayerPolicies({ order: layerOrder, sliceLayers, indexOnly: true })
 
 /** The tests that read the wire's fixtures from `libs/protocol/testdata` by relative path. */
 const testdataReaders = []
@@ -45,46 +34,22 @@ const outsideLayers = [
   ...testdataReaders,
 ]
 
-const domainImports = [
-  {
-    group: [
-      '@numen/*',
-      '@numen/*/**',
-      '!@numen/ui',
-      // The same packages named by the path the install put them at.
-      '**/node_modules/@numen/**',
-    ],
-    message:
-      'a component knows nothing about the domain or the wire — take props in a drawing vocabulary and emit opaque identifiers',
-  },
-  {
-    group: ['**/apps/**', '**/libs/**'],
-    message: 'the dependency runs apps → libs/ui/core, never back',
-  },
-]
+const domainImports = createDomainImports({
+  message:
+    'a component knows nothing about the domain or the wire — take props in a drawing vocabulary and emit opaque identifiers',
+  direction: 'the dependency runs apps → libs/ui/core, never back',
+})
 
 export default tseslint.config(
   ...createBaseConfig(import.meta.dirname, { ...clockFunctions, defaultProject: ['eslint.config.js'] }),
 
   // UI layer boundaries and domain isolation
-  createLayerConfig({
+  ...createLibraryLayerConfigs({
     boundaries,
-    elements: layerElements,
-    policies: layerPolicies,
-    categories: [
-      { category: 'public', pattern: 'src/features/*/index.ts' },
-      { category: 'entry', pattern: 'src/index.ts' },
-    ],
-    ignores: outsideLayers,
-    rules: { 'no-restricted-imports': ['error', { patterns: domainImports }] },
-  }),
-
-  createOwnImportConfig({
-    layer: 'features',
-    patterns: domainImports,
-    group: ['@/features/**', '@/screens/**'],
-    message: 'a slice imports its own files by relative path and no other slice',
+    order: ['shared', 'features', 'screens'],
+    sliceLayers: ['features'],
     outsideLayers,
+    domainImports,
   }),
 
   createOwnImportConfig({

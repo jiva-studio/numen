@@ -3,7 +3,7 @@
  */
 import { fileURLToPath, URL } from 'node:url'
 import { Features } from 'lightningcss'
-import type { BuildOptions } from 'vite'
+import type { PluginOption, UserConfig } from 'vite'
 
 /**
  * The Lightning CSS options of every stylesheet a window is built into. `light-dark()` stays as
@@ -21,10 +21,22 @@ const WINDOW_PACKAGES = {
   '@numen/shell': '../../../libs/ui/shell/dist/index.js',
 } as const
 
-/** The host module entries of `@numen/plugin-host/vite` a window is built with. */
+/** The host module build of `@numen/plugin-host/vite` a window is built with. */
 export interface HostModuleBuild {
-  readonly inputs: Readonly<Record<string, string>>
+  readonly createHostModuleEntries: () => PluginOption
+  readonly hostModuleInputs: Readonly<Record<string, string>>
   readonly getEntryFileName: (chunk: { readonly name: string }) => string
+}
+
+/** What one window adds to the config every window shares. */
+export interface WindowOptions {
+  /** The Vue plugin, and any other plugin of the window. */
+  readonly plugins: readonly PluginOption[]
+  readonly hostModules: HostModuleBuild
+  /** The Go package that embeds the build, relative to the window's folder. */
+  readonly outDir: string
+  /** The aliases of the window's own, as `createWindowAliases` takes them. */
+  readonly own?: Readonly<Record<string, string>>
 }
 
 /**
@@ -38,23 +50,36 @@ export function createWindowAliases(
 ): Record<string, string> {
   const resolve = (path: string) => fileURLToPath(new URL(path, root))
   const packages = Object.entries({ ...own, ...WINDOW_PACKAGES })
-  return { '@': resolve('./src'), ...Object.fromEntries(packages.map(([name, path]) => [name, resolve(path)])) }
+  return {
+    '@': resolve('./src'),
+    ...Object.fromEntries(packages.map(([name, path]) => [name, resolve(path)])),
+  }
 }
 
 /**
- * The build of a window into `outDir`, the Go package that embeds it. `assets` is where the
- * vault's own files are requested, so the built files go to `built`.
+ * The Vite config of a window, resolved against `root`, the URL of its config file. The build goes
+ * into the Go package that embeds it; `assets` is where the vault's own files are requested, so the
+ * built files go to `built`.
  */
-export function createWindowBuild(root: string, outDir: string, host: HostModuleBuild): BuildOptions {
+export function createWindowConfig(root: string, options: WindowOptions): UserConfig {
+  const { hostModules } = options
   return {
-    outDir,
-    emptyOutDir: true,
-    assetsDir: 'built',
-    rollupOptions: {
-      input: { index: fileURLToPath(new URL('./index.html', root)), ...host.inputs },
-      // A host module keeps every export, and the page and the plugins share its one instance.
-      preserveEntrySignatures: 'strict',
-      output: { entryFileNames: host.getEntryFileName },
+    plugins: [...options.plugins, hostModules.createHostModuleEntries()],
+    css: { lightningcss: LIGHTNING_CSS },
+    resolve: { alias: createWindowAliases(root, options.own) },
+    build: {
+      outDir: options.outDir,
+      emptyOutDir: true,
+      assetsDir: 'built',
+      rollupOptions: {
+        input: {
+          index: fileURLToPath(new URL('./index.html', root)),
+          ...hostModules.hostModuleInputs,
+        },
+        // A host module keeps every export, and the page and the plugins share its one instance.
+        preserveEntrySignatures: 'strict',
+        output: { entryFileNames: hostModules.getEntryFileName },
+      },
     },
   }
 }
