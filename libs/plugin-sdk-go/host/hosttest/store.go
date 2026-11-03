@@ -106,7 +106,7 @@ type disk struct {
 
 func (d disk) at(filePath string) (string, error) {
 	rel := filepath.FromSlash(filePath)
-	if !filepath.IsLocal(rel) || strings.Contains(rel, "..") {
+	if !filepath.IsLocal(rel) {
 		return "", fs.ErrInvalid
 	}
 	root := filepath.Clean(d.root)
