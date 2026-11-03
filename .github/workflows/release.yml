@@ -645,7 +645,7 @@ jobs:
 
           mkdir -p "$RUNNER_TEMP/plugins"
           for p in ../../plugins/*; do
-            if [ -f "$p/manifest.json" ] && { [ -d "$p/backend" ] || [ -d "$p/dist" ]; }; then
+            if [ -f "$p/manifest.json" ] && { [ -d "$p/backend" ] || [ -d "$p/dist" ] || [ -d "$p/themes" ]; }; then
               name=$(basename "$p")
               mkdir -p "$RUNNER_TEMP/plugins/$name"
               if [ -d "$p/backend" ]; then
@@ -653,7 +653,9 @@ jobs:
                 GOOS=windows GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o "$RUNNER_TEMP/plugins/$name/bin/$name.exe" "$p/backend"
               fi
               cp "$p/manifest.json" "$RUNNER_TEMP/plugins/$name/"
-              if [ -d "$p/dist" ]; then cp -r "$p/dist" "$RUNNER_TEMP/plugins/$name/"; fi
+              for folder in dist themes; do
+                if [ -d "$p/$folder" ]; then cp -r "$p/$folder" "$RUNNER_TEMP/plugins/$name/"; fi
+              done
             fi
           done
           cp ../../plugins/plugins-index.json "$RUNNER_TEMP/plugins/"
@@ -762,7 +764,7 @@ jobs:
 
           mkdir -p "$RUNNER_TEMP/plugins"
           for p in ../../plugins/*; do
-            if [ -f "$p/manifest.json" ] && { [ -d "$p/backend" ] || [ -d "$p/dist" ]; }; then
+            if [ -f "$p/manifest.json" ] && { [ -d "$p/backend" ] || [ -d "$p/dist" ] || [ -d "$p/themes" ]; }; then
               name=$(basename "$p")
               mkdir -p "$RUNNER_TEMP/plugins/$name"
               if [ -d "$p/backend" ]; then
@@ -773,7 +775,9 @@ jobs:
                 rm "$RUNNER_TEMP/plugins/$name/bin/$name-arm64" "$RUNNER_TEMP/plugins/$name/bin/$name-amd64"
               fi
               cp "$p/manifest.json" "$RUNNER_TEMP/plugins/$name/"
-              if [ -d "$p/dist" ]; then cp -r "$p/dist" "$RUNNER_TEMP/plugins/$name/"; fi
+              for folder in dist themes; do
+                if [ -d "$p/$folder" ]; then cp -r "$p/$folder" "$RUNNER_TEMP/plugins/$name/"; fi
+              done
             fi
           done
           cp ../../plugins/plugins-index.json "$RUNNER_TEMP/plugins/"

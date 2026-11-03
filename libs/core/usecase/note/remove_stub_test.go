@@ -69,7 +69,7 @@ type trashing struct {
 	writers   trashWriters
 	moves     *[]string
 	requested *[]string
-	updated  *[][]string
+	updated   *[][]string
 	levelErr  error
 }
 

@@ -235,8 +235,8 @@ func (h *fileHandler) RemoveFile(
 	// published here, so the tree drops the row whatever it held.
 	h.state.ChangeEvents.publish(change{paths: []string{removed.Path}})
 	return connect.NewResponse(&v1.RemoveFileResponse{
-		Trashed:      removed.Trashed,
-		Dangling:     removed.Dangling,
+		Trashed:         removed.Trashed,
+		Dangling:        removed.Dangling,
 		IsIndexOutdated: indexOutdated,
 	}), nil
 }

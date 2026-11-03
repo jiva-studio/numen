@@ -99,11 +99,14 @@ func TestHideInheritedFilesKeepsPipeOutOfChild(t *testing.T) {
 		t.Fatalf("pipe2: %v", err)
 	}
 	defer func() {
-		_ = syscall.Close(ends[0])
-		_ = syscall.Close(ends[1])
+		if err := errors.Join(syscall.Close(ends[0]), syscall.Close(ends[1])); err != nil {
+			t.Errorf("close pipe: %v", err)
+		}
 	}()
 
-	HideInheritedFiles()
+	if err := HideInheritedFiles(); err != nil {
+		t.Fatalf("hide inherited files: %v", err)
+	}
 
 	out, err := exec.CommandContext(t.Context(), "ls", "/proc/self/fd").Output()
 	if err != nil {

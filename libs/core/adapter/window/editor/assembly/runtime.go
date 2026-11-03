@@ -131,9 +131,9 @@ func (e Runtime[H, V]) SetPluginSearch(embedder embeddingport.Embedder, handleEr
 	}
 	e.SetPluginSearchFn(embedder, handleError)
 }
-func (e Runtime[H, V]) OpenNotes(index note.IndexUpdater) note.Scenarios  { return e.OpenNotesFn(index) }
-func (e Runtime[H, V]) OpenVaults(moves note.Move) vaults.Scenarios { return e.OpenVaultsFn(moves) }
-func (e Runtime[H, V]) GetRefresh() vaults.Refresh                  { return e.GetRefreshFn() }
+func (e Runtime[H, V]) OpenNotes(index note.IndexUpdater) note.Scenarios { return e.OpenNotesFn(index) }
+func (e Runtime[H, V]) OpenVaults(moves note.Move) vaults.Scenarios      { return e.OpenVaultsFn(moves) }
+func (e Runtime[H, V]) GetRefresh() vaults.Refresh                       { return e.GetRefreshFn() }
 func (e Runtime[H, V]) ReadWholeVault(ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool) (vaults.ReadWholeVault, error) {
 	return e.ReadWholeVaultFn(ctx, embedder, v, rebuild)
 }

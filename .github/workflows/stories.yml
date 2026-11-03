@@ -82,6 +82,10 @@ jobs:
         with:
           node-version-file: .node-version
 
+      # The manual reads the plugin manifests through @bufbuild/protobuf.
+      - name: Install dependencies
+        uses: ./.github/actions/install-node-modules
+
       # The manual writes its pages from the window's own source as well, so
       # this answers for every name it holds and not for the pictures alone.
       - name: Verify documentation story references
