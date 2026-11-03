@@ -17,11 +17,6 @@ export interface WindowStatusBarDeps {
   resolveAction?: (task: Task) => { label?: string; pluginId?: string | undefined } | undefined
 }
 
-/** The group a task is listed under: the plugin that reported it, and none for the core's own tasks. */
-export function getTaskGroup(task: Task): string | undefined {
-  return task.pluginName || task.pluginId || undefined
-}
-
 function getTaskCounting(counting: string): string | undefined {
   if (!counting || counting === 'items') return undefined
   return counting
@@ -43,7 +38,6 @@ function createStatusBarTask(
   return {
     id: task.id,
     label: task.label,
-    group: getTaskGroup(task),
     about: task.about || undefined,
     progress: hasTotal ? Math.round((task.completedCount / task.total) * 100) : undefined,
     done: hasTotal ? task.completedCount : undefined,

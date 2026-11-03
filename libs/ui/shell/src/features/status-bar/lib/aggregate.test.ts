@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calculateAggregate, formatEta, groupTasks } from './aggregate'
+import { calculateAggregate, formatEta, orderTasks } from './aggregate'
 import type { StatusBarTask } from '../model/types'
 
 describe('calculateAggregate', () => {
@@ -14,8 +14,8 @@ describe('calculateAggregate', () => {
 
   it('calculates average progress across multiple determinate active tasks', () => {
     const tasks: StatusBarTask[] = [
-      { id: '1', label: 'Book 1', group: 'Books', progress: 40, state: 'running' },
-      { id: '2', label: 'Book 2', group: 'Books', progress: 80, state: 'running' },
+      { id: '1', label: 'Book 1', progress: 40, state: 'running' },
+      { id: '2', label: 'Book 2', progress: 80, state: 'running' },
     ]
     const aggregate = calculateAggregate(tasks)
     expect(aggregate.isIdle).toBe(false)
@@ -26,8 +26,8 @@ describe('calculateAggregate', () => {
 
   it('handles mixed determinate and indeterminate tasks', () => {
     const tasks: StatusBarTask[] = [
-      { id: '1', label: 'Book 1', group: 'Books', progress: 50, state: 'running' },
-      { id: '2', label: 'Scan', group: 'Vault', state: 'running' },
+      { id: '1', label: 'Book 1', progress: 50, state: 'running' },
+      { id: '2', label: 'Scan', state: 'running' },
     ]
     const aggregate = calculateAggregate(tasks)
     expect(aggregate.isIdle).toBe(false)
@@ -37,8 +37,8 @@ describe('calculateAggregate', () => {
 
   it('returns undefined progress when all tasks are indeterminate', () => {
     const tasks: StatusBarTask[] = [
-      { id: '1', label: 'Scan 1', group: 'Vault', state: 'running' },
-      { id: '2', label: 'Scan 2', group: 'Vault', state: 'running' },
+      { id: '1', label: 'Scan 1', state: 'running' },
+      { id: '2', label: 'Scan 2', state: 'running' },
     ]
     const aggregate = calculateAggregate(tasks)
     expect(aggregate.isIdle).toBe(false)
@@ -48,7 +48,7 @@ describe('calculateAggregate', () => {
 
   it('counts failed tasks and treats them as non-idle', () => {
     const tasks: StatusBarTask[] = [
-      { id: '1', label: 'Book 1', group: 'Books', state: 'failed', error: 'Corrupted' },
+      { id: '1', label: 'Book 1', state: 'failed', error: 'Corrupted' },
     ]
     const aggregate = calculateAggregate(tasks)
     expect(aggregate.isIdle).toBe(false)
@@ -58,39 +58,28 @@ describe('calculateAggregate', () => {
 
   it('finds maximum ETA among active tasks', () => {
     const tasks: StatusBarTask[] = [
-      { id: '1', label: 'Book 1', group: 'Books', state: 'running', etaSeconds: 30 },
-      { id: '2', label: 'Audio 1', group: 'Audio', state: 'running', etaSeconds: 120 },
+      { id: '1', label: 'Book 1', state: 'running', etaSeconds: 30 },
+      { id: '2', label: 'Audio 1', state: 'running', etaSeconds: 120 },
     ]
     const aggregate = calculateAggregate(tasks)
     expect(aggregate.etaSeconds).toBe(120)
   })
 })
 
-describe('groupTasks', () => {
-  it('groups tasks by their group name in order of first occurrence', () => {
-    const tasks: StatusBarTask[] = [
-      { id: '1', label: 'Task 1', group: 'Books', state: 'running' },
-      { id: '2', label: 'Task 2', group: 'Audio', state: 'running' },
-      { id: '3', label: 'Task 3', group: 'Books', state: 'running' },
-    ]
-    const { coreTasks, groups } = groupTasks(tasks)
-    expect(coreTasks).toEqual([])
-    expect(groups).toHaveLength(2)
-    expect(groups[0]?.name).toBe('Books')
-    expect(groups[0]?.tasks).toHaveLength(2)
-    expect(groups[1]?.name).toBe('Audio')
-    expect(groups[1]?.tasks).toHaveLength(1)
+describe('orderTasks', () => {
+  it('returns an empty list when no tasks are present', () => {
+    expect(orderTasks([])).toEqual([])
   })
 
-  it("lists the tasks without a group as the application's own, apart from the plugin groups", () => {
+  it('orders tasks newest first without mutating the input list', () => {
     const tasks: StatusBarTask[] = [
-      { id: '1', label: 'Plugin task', group: 'Reader', state: 'running' },
-      { id: '2', label: 'Core task', state: 'running' },
-      { id: '3', label: 'Empty group name', group: '', state: 'running' },
+      { id: '1', label: 'Task 1', state: 'running' },
+      { id: '2', label: 'Task 2', state: 'running' },
+      { id: '3', label: 'Task 3', state: 'running' },
     ]
-    const { coreTasks, groups } = groupTasks(tasks)
-    expect(coreTasks.map((one) => one.id)).toEqual(['2', '3'])
-    expect(groups.map((one) => one.name)).toEqual(['Reader'])
+    const ordered = orderTasks(tasks)
+    expect(ordered.map((one) => one.id)).toEqual(['3', '2', '1'])
+    expect(tasks.map((one) => one.id)).toEqual(['1', '2', '3'])
   })
 })
 
@@ -98,7 +87,6 @@ describe('calculateAggregate eta and cancelling', () => {
   const createTask = (overrides: Partial<StatusBarTask>): StatusBarTask => ({
     id: 'x',
     label: 'x',
-    group: 'g',
     state: 'running',
     ...overrides,
   })
@@ -164,32 +152,30 @@ describe('formatEta', () => {
   })
 })
 
-describe('groupTasks across reports', () => {
+describe('orderTasks across reports', () => {
   const report = (step: number): StatusBarTask[] => [
-    { id: 'plugin-a', label: 'Reading', group: 'Reader', progress: step, state: 'running' },
+    { id: 'plugin-a', label: 'Reading', progress: step, state: 'running' },
     { id: 'vectors', label: 'Indexing', about: `file ${step}`, progress: step, state: 'running' },
-    { id: 'plugin-b', label: 'Scanning', group: 'Reader', about: `page ${step}`, state: 'running' },
+    { id: 'plugin-b', label: 'Scanning', about: `page ${step}`, state: 'running' },
     { id: 'walk', label: 'Walking', state: 'running' },
   ]
-  const ids = (listing: ReturnType<typeof groupTasks>): string[] => [
-    ...listing.coreTasks.map((one) => one.id),
-    ...listing.groups.flatMap((group) => [group.name, ...group.tasks.map((one) => one.id)]),
-  ]
+  const ids = (list: readonly StatusBarTask[]): string[] => list.map((one) => one.id)
 
-  it('lists the same ids in the same order whatever the tasks report', () => {
-    const first = ids(groupTasks(report(1)))
+  it('lists the same ids in the same newest-first order whatever the tasks report', () => {
+    const first = ids(orderTasks(report(1)))
     for (let step = 2; step <= 30; step++) {
-      expect(ids(groupTasks(report(step)))).toEqual(first)
+      expect(ids(orderTasks(report(step)))).toEqual(first)
     }
-    expect(first).toEqual(['vectors', 'walk', 'Reader', 'plugin-a', 'plugin-b'])
+    expect(first).toEqual(['walk', 'plugin-b', 'vectors', 'plugin-a'])
   })
 
-  it('puts the updated task where it was, with its new fields', () => {
-    const before = groupTasks(report(1))
-    const after = groupTasks(report(2))
+  it('updates each task in its newest-first position with its new fields', () => {
+    const before = orderTasks(report(1))
+    const after = orderTasks(report(2))
 
-    expect(after.coreTasks[0]?.id).toBe(before.coreTasks[0]?.id)
-    expect(after.coreTasks[0]?.about).toBe('file 2')
-    expect(after.groups[0]?.tasks[1]?.about).toBe('page 2')
+    expect(after[1]?.id).toBe(before[1]?.id)
+    expect(after[1]?.about).toBe('page 2')
+    expect(after[2]?.id).toBe(before[2]?.id)
+    expect(after[2]?.about).toBe('file 2')
   })
 })

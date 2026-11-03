@@ -48,35 +48,6 @@ describe('useWindowStatusBar', () => {
   })
 })
 
-describe('useWindowStatusBar groups', () => {
-  it('groups tasks by the name of the plugin that reported them', () => {
-    const tasks = ref<readonly Task[]>([
-      { ...base, id: 'a', label: 'Step one', pluginId: 'md.example.first', pluginName: 'First' },
-      { ...base, id: 'b', label: 'Step two', pluginId: 'md.example.second', pluginName: 'Second' },
-      { ...base, id: 'c', label: 'Step three', pluginId: 'md.example.first', pluginName: 'First' },
-    ])
-
-    const groups = useWindowStatusBar({ tasks }).tasks.value.map((one) => one.group)
-
-    expect(groups).toEqual(['First', 'Second', 'First'])
-  })
-
-  it('groups a plugin task without a name under the plugin id', () => {
-    expect(first({ ...base, pluginId: 'md.example.first' }).group).toBe('md.example.first')
-  })
-
-  it('leaves the core work without a group whatever its label says', () => {
-    const tasks = ref<readonly Task[]>([
-      { ...base, id: 'a', label: 'Transcribing speech' },
-      { ...base, id: 'b', label: 'Recognising a scan' },
-    ])
-
-    const groups = useWindowStatusBar({ tasks }).tasks.value.map((one) => one.group)
-
-    expect(groups).toEqual([undefined, undefined])
-  })
-})
-
 describe('useWindowStatusBar detail and unit', () => {
   it('carries what the task is about, and nothing where it is about nothing', () => {
     expect(first({ ...base, about: 'doc.pdf' }).about).toBe('doc.pdf')
