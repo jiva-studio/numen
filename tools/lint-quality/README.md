@@ -1,6 +1,6 @@
 # Code Quality & Metrics Validator (`@numen/lint-quality`)
 
-Automated verification of code quality, duplication, complexity, and symbol hygiene across Go and TypeScript/Vue modules.
+Checks over the whole repository that no single module's lint target covers: duplication, unused TypeScript and Vue code, and directory size. Go complexity (`cyclop`, `gocognit`, `nestif`, `funlen`), interface size (`interfacebloat`) and unused parameters and results (`unparam`) are linters of `.golangci-structure.yml`, and ESLint and golangci-lint run in the lint target of each module.
 
 ## Invariants Checked
 
@@ -9,19 +9,11 @@ Automated verification of code quality, duplication, complexity, and symbol hygi
    - Ignores tests, fixtures, generated code, stories, and build artifacts.
    - Enforces a maximum duplication rate threshold per scope (default: <= 3.5%).
 
-2. **Cyclomatic & Cognitive Complexity (`cyclop`, `gocognit`, `nestif`, `funlen`)**:
-   - Enforces complexity boundaries on Go modules and plugins:
-     - `cyclop`: cyclomatic complexity <= 15.
-     - `gocognit`: cognitive complexity <= 15.
-     - `nestif`: nesting depth <= 4.
-     - `funlen`: <= 80 lines / 50 statements.
+2. **Unused Files, Dependencies and Exports (`knip`)**:
+   - Runs `knip` once with the root `knip.json`, whose workspaces name every TS package and plugin frontend. Unused files, unused and unlisted dependencies fail; unused exports and types are reported. A missing `knip` binary, a missing `knip.json` or a frontend package outside its workspaces fails the check.
 
-3. **Dead Code & Unused Symbols (`knip` & `unparam`)**:
-   - **Frontend (TS/Vue)**: runs `knip` once with the root `knip.json`, whose workspaces name every TS package and plugin frontend. Unused files, unused and unlisted dependencies fail; unused exports and types are reported. A missing `knip` binary, a missing `knip.json` or a frontend package outside its workspaces fails the check.
-   - **Backend (Go)**: runs `unparam` to detect unused function parameters and dead return values.
-
-4. **Interface Segregation & Sizing (`interfacebloat`)**:
-   - Detects bloated Go interfaces that exceed 10 methods, encouraging focused, cohesive contracts.
+3. **Directory Structure & Size**:
+   - A directory holds at most 20 handwritten source files.
 
 ---
 
@@ -32,8 +24,7 @@ Automated verification of code quality, duplication, complexity, and symbol hygi
 ```bash
 make check_quality                       # Run full parallel suite
 make check_quality check=duplication     # Run only duplication check
-make check_quality check=complexity      # Run only Go complexity check
-make check_quality check=deadcode        # Run only dead code / unused symbols
+make check_quality check=knip            # Run only knip
 make check_quality opts="--warn"         # Non-blocking / advisory mode
 ```
 
@@ -44,8 +35,7 @@ make check_quality opts="--warn"         # Non-blocking / advisory mode
 node tools/lint-quality/check.mjs
 
 # Run specific checks
-node tools/lint-quality/check.mjs --check=duplication
-node tools/lint-quality/check.mjs --check=complexity,deadcode
+node tools/lint-quality/check.mjs --check=duplication,knip
 
 # Run only on changed files (fast pre-push mode)
 node tools/lint-quality/check.mjs --changed-only

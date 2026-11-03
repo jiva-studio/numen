@@ -1,7 +1,7 @@
 # Rules for every Go file, production code and tests alike.
 #
 # This file is one of two Go lint configurations, and both always run together
-# (make lint targets, CI, tools/lint-quality). The second one,
+# (make lint targets and CI). The second one,
 # .golangci-structure.yml, holds the rules that apply to production code only:
 # complexity, function length, struct completeness and enum switches. golangci-lint
 # scopes a linter to non-test files only through `run.tests: false` for a whole
