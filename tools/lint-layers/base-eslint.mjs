@@ -146,6 +146,42 @@ const SECTION_ORDER = {
 }
 const bannerRegex = /^-{3,}\s*([A-Za-z &]+?)\s*-{3,}$/
 
+function stripBlockComments(text) {
+  let result = ''
+  let cursor = 0
+  while (cursor < text.length) {
+    const open = text.indexOf('/*', cursor)
+    if (open === -1) {
+      result += text.slice(cursor)
+      break
+    }
+    result += text.slice(cursor, open)
+    const close = text.indexOf('*/', open + 2)
+    if (close === -1) break
+    cursor = close + 2
+  }
+  return result
+}
+
+function getScriptBody(sourceCode, script) {
+  if (script.startTag && script.endTag) {
+    return sourceCode.text.slice(script.startTag.range[1], script.endTag.range[0])
+  }
+  const text = sourceCode.getText(script)
+  const openEnd = text.indexOf('>')
+  const closeStart = text.lastIndexOf('<')
+  if (openEnd === -1 || closeStart <= openEnd) return text
+  return text.slice(openEnd + 1, closeStart)
+}
+
+function countScriptCodeLines(sourceCode, script) {
+  const stripped = stripBlockComments(getScriptBody(sourceCode, script))
+  return stripped.split('\n').filter((l) => {
+    const t = l.trim()
+    return t.length > 0 && !t.startsWith('//')
+  }).length
+}
+
 /**
  * Custom rules for Numen project conventions:
  * 1. max-inline-props: Enforce extracting large props interfaces (> 6 fields) into *.types.ts.
@@ -238,15 +274,7 @@ const numenPlugin = {
               .getAllComments()
               .filter((c) => c.loc.start.line >= scriptStart && c.loc.end.line <= scriptEnd)
 
-            const scriptText = context.sourceCode.getText(script)
-            const stripped = scriptText
-              .replace(/<script[\s\S]*?>/, '')
-              .replace(/<\/script>/, '')
-              .replace(/\/\*[\s\S]*?\*\//g, '')
-            const codeLines = stripped.split('\n').filter((l) => {
-              const t = l.trim()
-              return t.length > 0 && !t.startsWith('//')
-            }).length
+            const codeLines = countScriptCodeLines(context.sourceCode, script)
 
             const banners = []
             for (const comment of comments) {
@@ -327,15 +355,7 @@ const numenPlugin = {
             )
             if (!script) return
 
-            const scriptText = context.sourceCode.getText(script)
-            const stripped = scriptText
-              .replace(/<script[\s\S]*?>/, '')
-              .replace(/<\/script>/, '')
-              .replace(/\/\*[\s\S]*?\*\//g, '')
-            const codeLines = stripped.split('\n').filter((l) => {
-              const t = l.trim()
-              return t.length > 0 && !t.startsWith('//')
-            }).length
+            const codeLines = countScriptCodeLines(context.sourceCode, script)
 
             if (codeLines > max) {
               context.report({

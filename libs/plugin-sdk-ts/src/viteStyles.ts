@@ -22,6 +22,14 @@ import { UI_STYLES, getNormalCss, removePresent } from '@numen/ui/vite'
 /** The stylesheet of `@numen/ui` the utilities are built from. */
 const THEME = createRequire(import.meta.url).resolve('@numen/ui/theme.css')
 
+/** The template and scripts of a single-file component, without its style blocks. */
+function getVueScanContent(source: string): string {
+  const { descriptor } = parseSfc(source)
+  return [descriptor.template?.content, descriptor.script?.content, descriptor.scriptSetup?.content]
+    .filter(Boolean)
+    .join('\n')
+}
+
 /** The candidates Tailwind finds in the templates and scripts of these files. */
 export function getCandidates(files: readonly string[]): string[] {
   const scanner = new Scanner({})
@@ -30,7 +38,7 @@ export function getCandidates(files: readonly string[]): string[] {
       const content = readFileSync(file, 'utf8')
       const extension = extname(file).slice(1)
       return {
-        content: extension === 'vue' ? content.replace(/<style[\s\S]*?<\/style>/g, '') : content,
+        content: extension === 'vue' ? getVueScanContent(content) : content,
         extension,
       }
     }),

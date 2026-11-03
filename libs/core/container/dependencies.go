@@ -38,11 +38,14 @@ func newDependencies(defaultDir string) *provision.Registry {
 	)
 }
 
-// newPlaceholders keeps the placeholders under the cache folder of the user.
+// newPlaceholders keeps the placeholders under the cache folder of the user, or
+// in a new private temporary folder where the user has no cache folder.
 func newPlaceholders() *provision.PlaceholderProvisioner {
-	dir := filepath.Join(os.TempDir(), "numen-placeholder-dependencies")
-	if cache, err := os.UserCacheDir(); err == nil {
-		dir = filepath.Join(cache, "numen", "placeholder-dependencies")
+	dir, err := os.UserCacheDir()
+	if err == nil {
+		dir = filepath.Join(dir, "numen", "placeholder-dependencies")
+	} else if tempDir, tempErr := os.MkdirTemp("", "numen-placeholder-dependencies-"); tempErr == nil {
+		dir = tempDir
 	}
 	return provision.NewPlaceholderProvisioner(dir, map[string]func(string) map[string]string{
 		pluginport.RuntimeONNX: func(primary string) map[string]string {

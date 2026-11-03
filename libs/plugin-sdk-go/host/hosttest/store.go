@@ -104,20 +104,44 @@ type disk struct {
 	root string
 }
 
-func (d disk) at(filePath string) string { return filepath.Join(d.root, filepath.FromSlash(filePath)) }
+func (d disk) at(filePath string) (string, error) {
+	rel := filepath.FromSlash(filePath)
+	if !filepath.IsLocal(rel) || strings.Contains(rel, "..") {
+		return "", fs.ErrInvalid
+	}
+	root := filepath.Clean(d.root)
+	target := filepath.Join(root, rel)
+	if !strings.HasPrefix(target, root+string(filepath.Separator)) {
+		return "", fs.ErrInvalid
+	}
+	return target, nil
+}
 
 func (d disk) stat(filePath string) (domain.FileStat, error) {
-	info, err := os.Stat(d.at(filePath))
+	target, err := d.at(filePath)
+	if err != nil {
+		return domain.FileStat{}, err
+	}
+	info, err := os.Stat(target)
 	if err != nil {
 		return domain.FileStat{}, err
 	}
 	return domain.FileStat{Path: filePath, Kind: getKind(filePath), Size: info.Size(), ModTime: info.ModTime()}, nil
 }
 
-func (d disk) read(filePath string) ([]byte, error) { return os.ReadFile(d.at(filePath)) }
+func (d disk) read(filePath string) ([]byte, error) {
+	target, err := d.at(filePath)
+	if err != nil {
+		return nil, err
+	}
+	return os.ReadFile(target)
+}
 
 func (d disk) write(filePath string, content []byte) (domain.FileStat, error) {
-	target := d.at(filePath)
+	target, err := d.at(filePath)
+	if err != nil {
+		return domain.FileStat{}, err
+	}
 	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 		return domain.FileStat{}, err
 	}
@@ -131,9 +155,6 @@ func (d disk) write(filePath string, content []byte) (domain.FileStat, error) {
 	if err := errors.Join(werr, cerr); err != nil {
 		return domain.FileStat{}, removeAfterFailure(temp.Name(), err)
 	}
-	if err := os.Chmod(temp.Name(), 0o644); err != nil {
-		return domain.FileStat{}, removeAfterFailure(temp.Name(), err)
-	}
 	if err := os.Rename(temp.Name(), target); err != nil {
 		return domain.FileStat{}, removeAfterFailure(temp.Name(), err)
 	}
@@ -141,11 +162,14 @@ func (d disk) write(filePath string, content []byte) (domain.FileStat, error) {
 }
 
 func (d disk) create(filePath string, content []byte) (domain.FileStat, error) {
-	target := d.at(filePath)
+	target, err := d.at(filePath)
+	if err != nil {
+		return domain.FileStat{}, err
+	}
 	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 		return domain.FileStat{}, err
 	}
-	file, err := os.OpenFile(target, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
+	file, err := os.OpenFile(target, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if errors.Is(err, fs.ErrExist) {
 		return domain.FileStat{}, host.ErrAlreadyExists
 	}
@@ -168,7 +192,13 @@ func removeAfterFailure(name string, cause error) error {
 	return cause
 }
 
-func (d disk) remove(filePath string) error { return os.Remove(d.at(filePath)) }
+func (d disk) remove(filePath string) error {
+	target, err := d.at(filePath)
+	if err != nil {
+		return err
+	}
+	return os.Remove(target)
+}
 
 func (d disk) paths() ([]string, error) {
 	var out []string
