@@ -2,53 +2,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
-import { listFrontendPackages, listGoModules } from "./modules.mjs";
-
-/**
- * Runs unparam on a single Go module.
- *
- * @param {string} cwd
- * @param {string} configFile
- * @param {string} modName
- * @returns {Promise<string[]>}
- */
-function checkUnparam(cwd, configFile, modName) {
-  return new Promise((resolve) => {
-    const child = spawn(
-      "golangci-lint",
-      [
-        "run",
-        "--config",
-        configFile,
-        "--tests=false",
-        "--allow-parallel-runners",
-        "--enable-only",
-        "unparam",
-        "./...",
-      ],
-      {
-        cwd,
-        stdio: ["ignore", "pipe", "pipe"],
-      }
-    );
-
-    let output = "";
-    child.stdout.on("data", (d) => {
-      output += d.toString();
-    });
-    child.stderr.on("data", (d) => {
-      output += d.toString();
-    });
-
-    child.on("close", () => {
-      const lines = output
-        .split("\n")
-        .map((l) => l.trim())
-        .filter((l) => l.includes("(unparam)"));
-      resolve(lines.map((l) => `[Go unparam: ${modName}] ${l}`));
-    });
-  });
-}
+import { listFrontendPackages } from "./modules.mjs";
 
 /**
  * Lists the frontend packages that no workspace of the root knip.json names.
@@ -119,40 +73,23 @@ function checkKnip(repoRoot, packageDirs) {
 }
 
 /**
- * Checks for dead code, unused exports, and unread parameters asynchronously.
+ * Checks the TypeScript and Vue packages for unused files, dependencies and exports with knip.
+ * Unused Go parameters and results are the `unparam` linter of .golangci-structure.yml.
  *
  * @param {{ repoRoot: string, warnOnly?: boolean }} options
  * @returns {Promise<{ id: string, name: string, pass: boolean, summary: string, details?: string, durationMs: number }>}
  */
-export async function runDeadcodeCheck({ repoRoot, warnOnly = false }) {
+export async function runKnipCheck({ repoRoot, warnOnly = false }) {
   const start = Date.now();
-  const configFile = path.join(repoRoot, ".golangci.yml");
-
-  const goModules = listGoModules(repoRoot);
-  const tsPackages = listFrontendPackages(repoRoot);
-
-  const [unparamResults, knipResults] = await Promise.all([
-    Promise.all(goModules.map((m) => checkUnparam(m.dir, configFile, m.name))),
-    checkKnip(repoRoot, tsPackages.map((p) => p.relDir)),
-  ]);
-
-  const allIssues = [
-    ...unparamResults.flat(),
-    ...knipResults.flat(),
-  ];
-  const durationMs = Date.now() - start;
-  const pass = allIssues.length === 0 || warnOnly;
-  const summary =
-    allIssues.length === 0
-      ? "Zero unused parameters in Go and zero dead exports in UI"
-      : `${allIssues.length} dead code / unused symbol findings`;
+  const packages = listFrontendPackages(repoRoot);
+  const issues = await checkKnip(repoRoot, packages.map((p) => p.relDir));
 
   return {
-    id: "deadcode",
-    name: "Dead Code & Unused Symbols (knip & unparam)",
-    pass,
-    summary,
-    details: allIssues.length > 0 ? allIssues.join("\n") : undefined,
-    durationMs,
+    id: "knip",
+    name: "Unused Files, Dependencies and Exports (knip)",
+    pass: issues.length === 0 || warnOnly,
+    summary: issues.length === 0 ? "Zero knip findings" : `${issues.length} knip finding(s)`,
+    details: issues.length > 0 ? issues.join("\n") : undefined,
+    durationMs: Date.now() - start,
   };
 }
