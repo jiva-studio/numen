@@ -55,3 +55,41 @@ export function createLayerPolicies({ order, sliceLayers, indexOnly = false, ext
     ]),
   ]
 }
+
+/**
+ * The eslint block that enforces the layers on `src/`. `boundaries` is the
+ * eslint-plugin-boundaries instance of the calling package, `categories` the
+ * `boundaries/files` entries, and `rules` any rule added to the same files.
+ */
+export function createLayerConfig({ boundaries, elements, policies, categories, ignores = [], rules = {} }) {
+  return {
+    files: ['src/**/*.{ts,vue}'],
+    ignores,
+    plugins: { boundaries },
+    settings: {
+      'import/resolver': { typescript: { alwaysTryTypes: true } },
+      'boundaries/elements': elements,
+      'boundaries/files': categories,
+    },
+    rules: {
+      'boundaries/no-unknown-files': 'error',
+      'boundaries/dependencies': ['error', { default: 'disallow', policies }],
+      ...rules,
+    },
+  }
+}
+
+/**
+ * The eslint block for the sources of one layer of a component library: the
+ * imports `patterns` bans everywhere, and the alias `group` its own files must
+ * not be imported by.
+ */
+export function createOwnImportConfig({ layer, patterns, group, message, outsideLayers }) {
+  return {
+    files: [`src/${layer}/**/*.{ts,vue}`],
+    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', ...outsideLayers],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [...patterns, { group, message }] }],
+    },
+  }
+}
