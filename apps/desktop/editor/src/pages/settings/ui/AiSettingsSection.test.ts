@@ -176,13 +176,14 @@ describe('the keys', () => {
     expect((input.element as HTMLInputElement).value).toBe('')
   })
 
-  it('are removed where one is set', async () => {
+  it('are removed with the icon button inside a stored field, and show none when not set', async () => {
     const { wrapper, secrets } = createSection()
-    const remove = pick(
-      wrapper.findAll('button').filter((one) => one.text() === 'Delete'),
-      0,
-    )
-    await remove.trigger('click')
+    const deleteButtons = wrapper
+      .findAll('button')
+      .filter((one) => one.attributes('aria-label') === 'Delete the key')
+    expect(deleteButtons).toHaveLength(1)
+    expect(pick(deleteButtons, 0).attributes('title')).toBe('Delete the key')
+    await pick(deleteButtons, 0).trigger('click')
     expect(secrets).toStrictEqual(['delete test.agent-b apiKey'])
   })
 

@@ -79,9 +79,7 @@ export const WORDS = {
   keyMissing: 'Not set',
   keyDetail: 'Stored in the system keychain, not in the settings file.',
   keyPlaceholder: 'Paste a key',
-  keySave: 'Save',
-  keyReplace: 'Replace',
-  keyDelete: 'Delete',
+  keyDelete: 'Delete the key',
   /** Suffix of the default model of an installation. */
   byDefault: 'default',
   /** Download state of a model; remote models show neither. */
