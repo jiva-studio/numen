@@ -37,7 +37,7 @@ func NewRepository(read, write *sql.DB) *Repository {
 // where none is kept.
 func (r *Repository) ReadFloor(ctx context.Context, v domain.Vault, recipe string) (float64, bool, error) {
 	var floor float64
-	err := r.read.QueryRowContext(ctx, getStatement("read"), string(v.ID), recipe).Scan(&floor)
+	err := r.read.QueryRowContext(ctx, readSQL, string(v.ID), recipe).Scan(&floor)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, false, nil
 	}

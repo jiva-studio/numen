@@ -11,6 +11,7 @@ import { ref, watch } from 'vue'
 import Tree from './Tree.vue'
 import type { Row, RowId } from '../lib/row'
 import type { RowDropTarget } from '../lib/drop'
+import { WORK_ROWS } from '../fixtures/rows'
 
 /** A row removed from its position. */
 const removeRow = (rows: readonly Row[], id: RowId): readonly Row[] =>
@@ -65,24 +66,7 @@ const renameRow = (rows: readonly Row[], row: RowId, name: string): readonly Row
     ...(each.rows ? { rows: renameRow(each.rows, row, name) } : {}),
   }))
 
-const FEW: readonly Row[] = [
-  {
-    id: 'work',
-    name: 'Work',
-    hasChildren: true,
-    rows: [
-      {
-        id: 'plans',
-        name: 'Plans',
-        hasChildren: true,
-        rows: [{ id: 'friday', name: 'Friday', hasChildren: false }],
-      },
-      { id: 'notes', name: 'Notes', hasChildren: false },
-    ],
-  },
-  { id: 'empty', name: 'Empty', hasChildren: true },
-  { id: 'loose', name: 'Loose', hasChildren: false },
-]
+const FEW = WORK_ROWS
 
 /** One row inside the next, as far down as it goes. */
 const deep = (levels: number): readonly Row[] => {

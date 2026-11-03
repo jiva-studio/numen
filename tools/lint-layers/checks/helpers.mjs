@@ -186,6 +186,29 @@ export function getGoModReferences(source) {
 }
 
 /**
+ * Reads the Go string literal whose opening quote is at `start`: its value with escapes resolved to
+ * the escaped character, and the index past its closing quote.
+ */
+function readGoLiteral(source, start) {
+  const quote = source[start];
+  let value = "";
+  const isRaw = quote === "`";
+  let i = start + 1;
+  while (i < source.length) {
+    const c = source[i];
+    if (c === quote || (!isRaw && c === "\n")) break;
+    if (!isRaw && c === "\\") {
+      value += source[i + 1] ?? "";
+      i += 2;
+    } else {
+      value += c;
+      i++;
+    }
+  }
+  return { value, end: i + 1 };
+}
+
+/**
  * Lists every string literal of a Go or proto source with its line, and returns the source with its
  * comments and literals blanked so lines keep their numbers.
  */
@@ -215,19 +238,9 @@ export function readGo(source) {
       continue;
     }
     if (c === '"' || c === "'" || c === "`") {
-      let value = "";
-      i++;
-      while (i < source.length && source[i] !== c && (c === "`" || source[i] !== "\n")) {
-        if (c !== "`" && source[i] === "\\") {
-          value += source[i + 1] ?? "";
-          i += 2;
-          continue;
-        }
-        value += source[i];
-        i++;
-      }
-      i++;
-      literals.push({ line, value });
+      const literal = readGoLiteral(source, i);
+      i = literal.end;
+      literals.push({ line, value: literal.value });
       const text = source.slice(from, i);
       line += text.split("\n").length - 1;
       code += blank(text);

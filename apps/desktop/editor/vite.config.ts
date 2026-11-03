@@ -1,57 +1,15 @@
-import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import {
-  createHostModuleEntries,
-  getEntryFileName,
-  hostModuleInputs,
-} from '@numen/plugin-host/vite'
-import { LIGHTNING_CSS } from '@numen/shell/vite'
+import * as hostModules from '@numen/plugin-host/vite'
+import { createWindowConfig } from '@numen/shell/vite'
 
-export default defineConfig({
-  plugins: [vue(), createHostModuleEntries()],
-  css: { lightningcss: LIGHTNING_CSS },
-  // `@/` is the window's own source. A path leaving its own folder is written
-  // through it, so what layer is reached is read off the import itself.
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
-      '@numen/core-client': fileURLToPath(
-        new URL('../../../libs/core-client/src/index.ts', import.meta.url),
-      ),
-      '@numen/plugin-host': fileURLToPath(
-        new URL('../../../libs/plugin-host-ts/src/index.ts', import.meta.url),
-      ),
-      '@numen/plugin-manager': fileURLToPath(
-        new URL('../../../libs/plugin-manager/src/index.ts', import.meta.url),
-      ),
-      '@numen/ui/styles.css': fileURLToPath(
-        new URL('../../../libs/ui/core/dist/numen-ui.css', import.meta.url),
-      ),
-      '@numen/ui': fileURLToPath(new URL('../../../libs/ui/core/dist/index.js', import.meta.url)),
-      '@numen/shell/styles.css': fileURLToPath(
-        new URL('../../../libs/ui/shell/dist/numen-shell.css', import.meta.url),
-      ),
-      '@numen/shell': fileURLToPath(
-        new URL('../../../libs/ui/shell/dist/index.js', import.meta.url),
-      ),
-    },
-  },
-  // Output goes into the Go package that serves it: embedded files must be
-  // located next to the embedding code. `assets` is where the vault's own files
-  // are requested, so the built files of the window go in a separate directory.
-  build: {
+// `@/` is the window's own source. A path leaving its own folder is written
+// through it, so what layer is reached is read off the import itself.
+export default defineConfig(
+  createWindowConfig(import.meta.url, {
+    plugins: [vue()],
+    hostModules,
     outDir: '../../../libs/core/adapter/window/editor/pages/app',
-    emptyOutDir: true,
-    assetsDir: 'built',
-    rollupOptions: {
-      input: {
-        index: fileURLToPath(new URL('./index.html', import.meta.url)),
-        ...hostModuleInputs,
-      },
-      // A host module keeps every export, and the page and the plugins share its one instance.
-      preserveEntrySignatures: 'strict',
-      output: { entryFileNames: getEntryFileName },
-    },
-  },
-})
+    own: { '@numen/plugin-manager': '../../../libs/plugin-manager/src/index.ts' },
+  }),
+)

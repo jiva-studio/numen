@@ -42,7 +42,7 @@ func (p *Proxy) ServeRoute(w http.ResponseWriter, r *http.Request) {
 	defer p.releasePlugin(lease)
 
 	target := url.URL{Path: wire.PluginRoute + rest, RawQuery: r.URL.RawQuery}
-	out, err := http.NewRequestWithContext(r.Context(), r.Method, endpoint.BaseURL()+target.RequestURI(), nil)
+	out, err := http.NewRequestWithContext(r.Context(), r.Method, transport.GetBaseURL(endpoint)+target.RequestURI(), nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

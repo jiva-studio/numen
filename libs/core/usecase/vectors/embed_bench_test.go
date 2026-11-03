@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport/indexfake"
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 )
 
@@ -30,7 +31,7 @@ func BenchmarkEmbedDuplicates(b *testing.B) {
 			uniqueCount := max(1, int(float64(tc.chunks)*(1.0-tc.dupsRatio)))
 			uniqueParts := make([]string, uniqueCount)
 			for i := range uniqueCount {
-				uniqueParts[i] = fmt.Sprintf("Unique section %d %s", i, words(getSanskrit(), 150))
+				uniqueParts[i] = fmt.Sprintf("Unique section %d %s", i, indexfake.GetWords(indexfake.GetSanskrit(), 150))
 			}
 
 			parts := make([]string, tc.chunks)
@@ -38,22 +39,22 @@ func BenchmarkEmbedDuplicates(b *testing.B) {
 				parts[i] = uniqueParts[i%uniqueCount]
 			}
 
-			shelf := newLibrary()
-			shelf.hold(bookPath, domain.KindFile, bookOf(b, "A Book", parts...), 1)
+			shelf := indexfake.NewLibrary()
+			shelf.Put(bookPath, domain.KindFile, indexfake.CreateBook(b, "A Book", parts...), 1)
 
 			b.ReportAllocs()
 			b.ResetTimer()
 			for b.Loop() {
 				b.StopTimer()
-				index := newStore()
-				cutBooks(b, index, shelf, getFirst())
+				index := indexfake.NewStore()
+				cutBooks(b, index, shelf, indexfake.GetFirst())
 				model := &embedder{dims: dimensions}
-				embed := newEmbed(vaults{getFirst().ID: shelf}, index, index)
+				embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
 				embed.Embedder = model
 				embed.BatchCharacters = 4000
 				b.StartTimer()
 
-				if _, err := embed.Execute(b.Context(), getFirst()); err != nil {
+				if _, err := embed.Execute(b.Context(), indexfake.GetFirst()); err != nil {
 					b.Fatal(err)
 				}
 			}
@@ -82,7 +83,7 @@ func BenchmarkEmbedBatchDuplicates(b *testing.B) {
 			uniqueCount := max(1, int(float64(tc.chunks)*(1.0-tc.dupsRatio)))
 			uniqueTexts := make([]string, uniqueCount)
 			for i := range uniqueCount {
-				uniqueTexts[i] = fmt.Sprintf("Unique chunk %d %s", i, words(getSanskrit(), 50))
+				uniqueTexts[i] = fmt.Sprintf("Unique chunk %d %s", i, indexfake.GetWords(indexfake.GetSanskrit(), 50))
 			}
 
 			texts := make([]string, tc.chunks)
@@ -93,13 +94,13 @@ func BenchmarkEmbedBatchDuplicates(b *testing.B) {
 				passages[i] = domain.Passage{
 					ChunkID:   domain.ChunkID(fmt.Sprintf("chunk-%d", i)),
 					Source:    "book.epub",
-					ChunkHash: hashOf(txt),
+					ChunkHash: indexfake.GetHash(txt),
 				}
 			}
 
 			model := embeddingport.EmbeddingModel{Name: "fake", Dimensions: dimensions}
-			index := newStore()
-			embed := newEmbed(vaults{}, index, index)
+			index := indexfake.NewStore()
+			embed := newEmbed(indexfake.Vaults{}, index, index)
 			embed.Embedder = &embedder{dims: dimensions}
 
 			b.ReportAllocs()

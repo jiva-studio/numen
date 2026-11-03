@@ -248,79 +248,70 @@ func TestEventBusDeterministicDebounce(t *testing.T) {
 	}
 }
 
-func TestEventBusConfigurableKeyExtractor(t *testing.T) {
-	bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond,
-		WithKeyExtractor(func(event string) string {
-			if strings.HasPrefix(event, "customGroup:") {
-				return "customGroup"
+// TestEventBusDebouncesEventsOfOneKey. A key extractor and a debounce rule
+// each put several events under one key, and only the last of them is delivered.
+func TestEventBusDebouncesEventsOfOneKey(t *testing.T) {
+	cases := []struct {
+		name   string
+		option Option
+		prefix string
+		events []string
+	}{
+		{
+			name: "key extractor",
+			option: WithKeyExtractor(func(event string) string {
+				if strings.HasPrefix(event, "customGroup:") {
+					return "customGroup"
+				}
+				return event
+			}),
+			prefix: "customGroup:",
+			events: []string{"customGroup:item1", "customGroup:item2"},
+		},
+		{
+			name: "debounce rule",
+			option: WithDebounceRule(func(event string) (string, bool) {
+				if strings.HasPrefix(event, "ruleA:") {
+					return "ruleA-shared", true
+				}
+				return "", false
+			}),
+			prefix: "ruleA:",
+			events: []string{"ruleA:1", "ruleA:2"},
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond, c.option)
+			defer func() {
+				if err := bus.Close(t.Context()); err != nil {
+					t.Error(err)
+				}
+			}()
+
+			var received []string
+			var mu sync.Mutex
+			unsub := bus.Subscribe(c.prefix, func(_ context.Context, event string) error {
+				mu.Lock()
+				received = append(received, event)
+				mu.Unlock()
+				return nil
+			})
+			defer unsub()
+
+			for _, event := range c.events {
+				bus.Publish(event)
 			}
-			return event
-		}),
-	)
-	defer func() {
-		if err := bus.Close(t.Context()); err != nil {
-			t.Error(err)
-		}
-	}()
-
-	var received []string
-	var mu sync.Mutex
-	unsub := bus.Subscribe("customGroup:", func(_ context.Context, event string) error {
-		mu.Lock()
-		received = append(received, event)
-		mu.Unlock()
-		return nil
-	})
-	defer unsub()
-
-	bus.Publish("customGroup:item1")
-	bus.Publish("customGroup:item2")
-	if err := bus.Flush(t.Context()); err != nil {
-		t.Fatalf("flush failed: %v", err)
-	}
-
-	mu.Lock()
-	defer mu.Unlock()
-	if len(received) != 1 || received[0] != "customGroup:item2" {
-		t.Fatalf("expected last event customGroup:item2, got %v", received)
-	}
-}
-
-func TestEventBusDebounceRule(t *testing.T) {
-	bus := New(nil, getRealClock(), 500*time.Millisecond, 1000*time.Millisecond,
-		WithDebounceRule(func(event string) (string, bool) {
-			if strings.HasPrefix(event, "ruleA:") {
-				return "ruleA-shared", true
+			if err := bus.Flush(t.Context()); err != nil {
+				t.Fatalf("flush failed: %v", err)
 			}
-			return "", false
-		}),
-	)
-	defer func() {
-		if err := bus.Close(t.Context()); err != nil {
-			t.Error(err)
-		}
-	}()
 
-	var received []string
-	var mu sync.Mutex
-	unsub := bus.Subscribe("ruleA:", func(_ context.Context, event string) error {
-		mu.Lock()
-		received = append(received, event)
-		mu.Unlock()
-		return nil
-	})
-	defer unsub()
-
-	bus.Publish("ruleA:1")
-	bus.Publish("ruleA:2")
-	if err := bus.Flush(t.Context()); err != nil {
-		t.Fatalf("flush failed: %v", err)
-	}
-
-	mu.Lock()
-	defer mu.Unlock()
-	if len(received) != 1 || received[0] != "ruleA:2" {
-		t.Fatalf("expected debounced ruleA:2, got %v", received)
+			mu.Lock()
+			defer mu.Unlock()
+			if last := c.events[len(c.events)-1]; len(received) != 1 || received[0] != last {
+				t.Fatalf("expected last event %s, got %v", last, received)
+			}
+		})
 	}
 }
 

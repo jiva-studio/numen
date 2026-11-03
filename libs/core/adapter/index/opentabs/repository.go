@@ -32,7 +32,7 @@ func NewRepository(read, write *sql.DB) *Repository {
 
 // ReadOpenTabs returns the tabs last written for the vault, and none where nothing was written.
 func (r *Repository) ReadOpenTabs(ctx context.Context, v domain.Vault) (_ domain.OpenTabs, err error) {
-	rows, err := r.read.QueryContext(ctx, getStatement("list"), string(v.ID))
+	rows, err := r.read.QueryContext(ctx, listSQL, string(v.ID))
 	if err != nil {
 		return domain.OpenTabs{}, fmt.Errorf("read the open tabs of %s: %w", v.ID, err)
 	}

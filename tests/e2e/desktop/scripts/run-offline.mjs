@@ -15,6 +15,7 @@ import { spawn, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { runTool } from '../../../../tools/shared/tools.mjs'
 import { checkShards, getDefaultShardCount } from './shards.mjs'
 
 const ENGINES = ['chromium', 'webkit']
@@ -52,7 +53,7 @@ const getGioModules = () => {
   if (dirs.some((dir) => fs.existsSync(path.join(dir, 'libgiognutls.so')))) {
     return named
   }
-  const nix = spawnSync(
+  const nix = runTool(
     'nix',
     ['build', '--no-link', '--print-out-paths', 'nixpkgs#glib-networking'],
     {
@@ -70,7 +71,7 @@ const isOffline = () => {
   if (process.platform !== 'linux') {
     return false
   }
-  const probe = spawnSync('unshare', ['-rn', 'ip', 'link', 'set', 'lo', 'up'], { encoding: 'utf8' })
+  const probe = runTool('unshare', ['-rn', 'ip', 'link', 'set', 'lo', 'up'], { encoding: 'utf8' })
   if (probe.status !== 0) {
     console.error(
       'run-offline: cannot open a network namespace with `unshare -rn` and `ip`.\n' +

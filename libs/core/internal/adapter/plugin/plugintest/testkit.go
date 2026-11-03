@@ -3,12 +3,15 @@ package plugintest
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"syscall"
 	"testing"
@@ -256,4 +259,32 @@ func GetPort(tb testing.TB, server *httptest.Server) int {
 		tb.Fatalf("test server listens on %T, want a TCP address", server.Listener.Addr())
 	}
 	return addr.Port
+}
+
+// StartSleepProcess starts a placeholder for a plugin's process,
+// and kills and reaps it when the test ends.
+func StartSleepProcess(t *testing.T) *exec.Cmd {
+	t.Helper()
+	// The shell blocks on reading a line; its standard input is closed when the test ends.
+	cmd := exec.CommandContext(t.Context(), "/bin/sh", "-c", "read -r line")
+	input, err := cmd.StdinPipe()
+	if err != nil {
+		t.Fatalf("open the input of the mock proc: %v", err)
+	}
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start mock proc failed: %v", err)
+	}
+	t.Cleanup(func() {
+		KillProcess(t, cmd.Process)
+		ReapProcess(t, cmd.Process)
+		if err := input.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	return cmd
+}
+
+// GetReadyOutput returns the stdout of a plugin that reports it listens on port.
+func GetReadyOutput(port int) io.ReadCloser {
+	return io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", port)))
 }

@@ -53,34 +53,18 @@ const editors = (tabOpeners: ReturnType<typeof fileOpeners>) => {
 }
 
 describe('a path opened', () => {
-  it('opens a sample in the editor of its kind', async () => {
-    const one = vault({ 'Animals.md': note('sample') })
+  it.each([
+    ['a sample in the editor of its kind', 'Animals', 'sample'],
+    ['a form in the editor of its kind', 'Animal', 'form'],
+    ['an ordinary note in the editor of its prose', 'Entropy', 'note'],
+  ] as const)('opens %s', async (_, title, type) => {
+    const one = vault({ [`${title}.md`]: note(type) })
     const tabOpeners = fileOpeners(one.core)
     const activeEditors = editors(tabOpeners)
 
-    await tabOpeners.openFile('Animals.md', 'Animals')
+    await tabOpeners.openFile(`${title}.md`, title)
 
-    expect(activeEditors).toStrictEqual(['sample Animals.md Animals current —'])
-  })
-
-  it('opens a form in the editor of its kind', async () => {
-    const one = vault({ 'Animal.md': note('form') })
-    const tabOpeners = fileOpeners(one.core)
-    const activeEditors = editors(tabOpeners)
-
-    await tabOpeners.openFile('Animal.md', 'Animal')
-
-    expect(activeEditors).toStrictEqual(['form Animal.md Animal current —'])
-  })
-
-  it('opens an ordinary note in the editor of its prose', async () => {
-    const one = vault({ 'Entropy.md': note('note') })
-    const tabOpeners = fileOpeners(one.core)
-    const activeEditors = editors(tabOpeners)
-
-    await tabOpeners.openFile('Entropy.md', 'Entropy')
-
-    expect(activeEditors).toStrictEqual(['note Entropy.md Entropy current —'])
+    expect(activeEditors).toStrictEqual([`${type} ${title}.md ${title} current —`])
   })
 
   it('opens a file that is no note in the reader of its extension, at no place', async () => {

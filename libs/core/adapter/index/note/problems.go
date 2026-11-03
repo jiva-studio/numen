@@ -12,18 +12,18 @@ import (
 // GetParseProblems is what parsing each file turned up. The wording is the
 // parser's and is carried through as it was written.
 func (q *Queries) GetParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error) {
-	return q.getProblems(ctx, vaultID, "problems")
+	return q.getProblems(ctx, vaultID, problemsSQL)
 }
 
 // GetUnreadable is the notes whose frontmatter is not YAML.
 func (q *Queries) GetUnreadable(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error) {
-	return q.getProblems(ctx, vaultID, "frontmatter_errors")
+	return q.getProblems(ctx, vaultID, frontmatterErrorsSQL)
 }
 
 // getProblems reads the two questions that come back as a path and a line of
 // text. What the line means is the caller's to say: a query answers what is
 // stored and does not compose sentences about it.
-func (q *Queries) getProblems(ctx context.Context, vaultID domain.VaultID, statement string) (_ []domain.VaultProblem, err error) {
+func (q *Queries) getProblems(ctx context.Context, vaultID domain.VaultID, query string) (_ []domain.VaultProblem, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -32,7 +32,7 @@ func (q *Queries) getProblems(ctx context.Context, vaultID domain.VaultID, state
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, getStatement(statement), vault)
+	rows, err := q.db.QueryContext(ctx, query, vault)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (q *Queries) GetDanglingLinks(ctx context.Context, vaultID domain.VaultID) 
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, getStatement("dangling"), vault)
+	rows, err := q.db.QueryContext(ctx, danglingSQL, vault)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (q *Queries) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID)
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, getStatement("shared_name_links"), vault, vault)
+	rows, err := q.db.QueryContext(ctx, sharedNameLinksSQL, vault, vault)
 	if err != nil {
 		return nil, err
 	}

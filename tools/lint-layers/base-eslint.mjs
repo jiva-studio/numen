@@ -89,6 +89,30 @@ export function createPureSegmentConfig(options = {}) {
 }
 
 /**
+ * The block that bans, in the sources of `files`, the globals with a lifetime a test must hold
+ * still and the calls that read the clock, randomness or the window.
+ *
+ * @param {{ files: string[], ignores?: string[], clockFunction?: string, monotonicFunction?: string }} options
+ * @returns {object}
+ */
+export function createPortConfig({ files, ignores = [], ...clockFunctions }) {
+  return {
+    files,
+    ignores,
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        ...lifetimes.map(({ name, port }) => ({
+          name,
+          message: `${name} has a lifetime a test must hold still — take ${port}`,
+        })),
+      ],
+      'no-restricted-syntax': ['error', ...createDeterminismSelectors(clockFunctions)],
+    },
+  }
+}
+
+/**
  * The rules every package enforces on every file, tests included. A promise is awaited, returned
  * or given an error channel; `void` never discards a value; no block or function body is empty.
  *
@@ -426,6 +450,16 @@ const numenPlugin = {
         let handlersStart = -1
         let handlersEnd = Infinity
 
+        const checkHandlerName = (node) => {
+          const line = node.loc.start.line
+          if (line <= handlersStart || line >= handlersEnd) return
+          const name = node.id.name
+          if (/^on[A-Z]/.test(name)) return
+          const cleaned = name.replace(/^handle/, '')
+          const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
+          context.report({ node: node.id, messageId: 'invalidHandlerName', data: { name, capitalized } })
+        }
+
         return {
           Program() {
             const docFrag = context.sourceCode.parserServices.getDocumentFragment?.()
@@ -464,19 +498,7 @@ const numenPlugin = {
 
           FunctionDeclaration(node) {
             if (!node.id || handlersStart === -1) return
-            const line = node.loc.start.line
-            if (line > handlersStart && line < handlersEnd) {
-              const name = node.id.name
-              if (!/^on[A-Z]/.test(name)) {
-                const cleaned = name.replace(/^handle/, '')
-                const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
-                context.report({
-                  node: node.id,
-                  messageId: 'invalidHandlerName',
-                  data: { name, capitalized },
-                })
-              }
-            }
+            checkHandlerName(node)
           },
 
           VariableDeclarator(node) {
@@ -484,20 +506,7 @@ const numenPlugin = {
             const isFn =
               node.init?.type === 'ArrowFunctionExpression' ||
               node.init?.type === 'FunctionExpression'
-            if (!isFn) return
-            const line = node.loc.start.line
-            if (line > handlersStart && line < handlersEnd) {
-              const name = node.id.name
-              if (!/^on[A-Z]/.test(name)) {
-                const cleaned = name.replace(/^handle/, '')
-                const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
-                context.report({
-                  node: node.id,
-                  messageId: 'invalidHandlerName',
-                  data: { name, capitalized },
-                })
-              }
-            }
+            if (isFn) checkHandlerName(node)
           },
         }
       },
@@ -849,11 +858,11 @@ const numenPlugin = {
  * Returns the unified base ESLint flat configuration array for Vue 3 + TypeScript projects.
  *
  * @param {string} dirname The import.meta.dirname of the package
- * @param {object} options Optional overrides; `clockFunction` and `monotonicFunction` name the one function allowed to read each clock
+ * @param {object} options Optional overrides; `clockFunction` and `monotonicFunction` name the one function allowed to read each clock; `defaultProject` replaces the files linted outside tsconfig.json
  * @returns {Array}
  */
 export function createBaseConfig(dirname, options = {}) {
-  const allowDefault = [
+  const allowDefault = options.defaultProject ?? [
     'eslint.config.js',
     'vitest.config.ts',
     '.storybook/*.ts',
@@ -1131,6 +1140,80 @@ export function createBaseConfig(dirname, options = {}) {
       },
     },
 
+    prettier,
+  ]
+}
+
+/**
+ * The flat configuration of a TypeScript library without Vue (`libs/core-client`,
+ * `libs/plugin-host-ts`): the strict rules, the size limits, the package boundary and the
+ * determinism of its sources.
+ *
+ * @param {string} dirname The import.meta.dirname of the package
+ * @returns {Array}
+ */
+export function createPlainLibraryConfig(dirname) {
+  const sources = { files: ['**/*.ts'], ignores: ['**/*.test.ts', '**/*.spec.ts'] }
+  return [
+    { ignores: ['dist/**', 'coverage/**', 'node_modules/**'] },
+    js.configs.recommended,
+    ...tseslint.configs.recommended,
+    {
+      languageOptions: {
+        globals: globals.browser,
+        parserOptions: {
+          projectService: { allowDefaultProject: ['eslint.config.js'] },
+          tsconfigRootDir: dirname,
+        },
+      },
+      rules: {
+        'no-console': 'error',
+        ...createStrictRules(),
+        '@typescript-eslint/no-unused-vars': [
+          'error',
+          { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+        ],
+      },
+    },
+    {
+      ...sources,
+      rules: {
+        'max-lines': ['error', { max: 350, skipBlankLines: true, skipComments: true }],
+        'max-lines-per-function': ['error', { max: 60, skipBlankLines: true, skipComments: true }],
+        complexity: ['error', 10],
+        'max-depth': ['error', 3],
+        'max-params': ['error', 3],
+        'no-nested-ternary': 'error',
+        'no-restricted-imports': [
+          'error',
+          {
+            patterns: [
+              {
+                group: ['**/libs/**', '**/apps/**'],
+                message:
+                  'reach libraries and other applications by their package names (@numen/*), never by relative paths out of the module',
+              },
+            ],
+          },
+        ],
+        'no-restricted-syntax': [
+          'error',
+          ...createClockSelectors(),
+          {
+            selector: 'MemberExpression[object.name="Math"][property.name="random"]',
+            message: 'the same input gives the same numbers on any machine on any day',
+          },
+        ],
+      },
+    },
+    {
+      files: ['**/*.test.ts', '**/*.spec.ts'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-non-null-assertion': 'off',
+        'no-console': 'off',
+      },
+    },
     prettier,
   ]
 }

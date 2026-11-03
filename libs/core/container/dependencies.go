@@ -44,8 +44,9 @@ func newPlaceholders() *provision.PlaceholderProvisioner {
 	dir, err := os.UserCacheDir()
 	if err == nil {
 		dir = filepath.Join(dir, "numen", "placeholder-dependencies")
-	} else if tempDir, tempErr := os.MkdirTemp("", "numen-placeholder-dependencies-"); tempErr == nil {
-		dir = tempDir
+	} else if dir, err = os.MkdirTemp("", "numen-placeholder-dependencies-"); err != nil {
+		// Placeholders written under the working folder still let a mock run start.
+		dir = "numen-placeholder-dependencies"
 	}
 	return provision.NewPlaceholderProvisioner(dir, map[string]func(string) map[string]string{
 		pluginport.RuntimeONNX: func(primary string) map[string]string {

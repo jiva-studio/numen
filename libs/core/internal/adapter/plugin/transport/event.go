@@ -22,7 +22,7 @@ var ErrEventRefused = errors.New("plugin rejected the event")
 func DeliverPluginEvent(ctx context.Context, endpoint Endpoint, event string) error {
 	client := numenv1connect.NewPluginEventServiceClient(
 		EndpointClient(endpoint),
-		endpoint.BaseURL(),
+		GetBaseURL(endpoint),
 		connect.WithInterceptors(AuthInterceptor(endpoint.Token)),
 	)
 	eventCtx, cancel := context.WithTimeout(ctx, eventTimeout)

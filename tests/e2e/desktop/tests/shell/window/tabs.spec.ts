@@ -1,36 +1,18 @@
 import { test, expect } from '../../support/test.js'
-import { waitForWindow } from '../../support/workspace.js'
+import { openFromFiles, openTreeRow } from '../../support/workspace.js'
 
 test.describe('Workspace Tab Management', () => {
   test('opens multiple tabs and supports tab switching', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Open Files panel
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // 1. Open notes/Entropy.md
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
-
-    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
-    await expect(entropyRow).toBeVisible()
-    await entropyRow.press('Enter')
+    await openFromFiles(page, ['notes', 'notes/Entropy.md'])
 
     await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
 
     // 2. Open Files panel again to open an EPUB book
     await page.getByRole('tab', { name: /^Files/ }).click()
 
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
+    await openTreeRow(page, 'assets')
 
-    const epubRow = page.locator('[data-tree-row="assets/sample.epub"]')
-    await expect(epubRow).toBeVisible()
-    await epubRow.press('Enter')
+    await openTreeRow(page, 'assets/sample.epub')
 
     await expect(page.locator('.book-tab').first()).toBeVisible({ timeout: 10_000 })
 

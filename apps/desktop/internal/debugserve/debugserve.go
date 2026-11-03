@@ -12,6 +12,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"io"
@@ -30,8 +31,9 @@ type Clock interface {
 }
 
 // Serve serves handler at addr until ctx is done or the process is interrupted.
-// It serves TLS with its own certificate unless NUMEN_DEBUG_TLS is "false", and
-// writes the listening address to out once the listener is bound.
+// It serves TLS with its own certificate unless NUMEN_DEBUG_TLS is "false",
+// writes that certificate in PEM to the file NUMEN_DEBUG_TLS_CERT names when it
+// is set, and writes the listening address to out once the listener is bound.
 func Serve(
 	ctx context.Context,
 	clock Clock,
@@ -54,14 +56,11 @@ func Serve(
 
 	scheme := "http"
 	if os.Getenv("NUMEN_DEBUG_TLS") != "false" {
-		cert, err := generateSelfSignedCert(clock)
+		secure, err := createTLSListener(ln, clock)
 		if err != nil {
-			return fmt.Errorf("generate debug tls cert: %w", err)
+			return err
 		}
-		ln = tls.NewListener(ln, &tls.Config{
-			Certificates: []tls.Certificate{cert},
-			NextProtos:   []string{"h2", "http/1.1"},
-		})
+		ln = secure
 		scheme = "https"
 	}
 
@@ -92,6 +91,23 @@ func Serve(
 	return server.Shutdown(shutdownCtx)
 }
 
+// createTLSListener serves TLS on ln with a new self-signed certificate.
+func createTLSListener(ln net.Listener, clock Clock) (net.Listener, error) {
+	cert, err := generateSelfSignedCert(clock)
+	if err != nil {
+		return nil, fmt.Errorf("generate debug tls cert: %w", err)
+	}
+	if path := os.Getenv("NUMEN_DEBUG_TLS_CERT"); path != "" {
+		if err := writeCertificate(path, cert.Certificate[0]); err != nil {
+			return nil, err
+		}
+	}
+	return tls.NewListener(ln, &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		NextProtos:   []string{"h2", "http/1.1"},
+	}), nil
+}
+
 func generateSelfSignedCert(clock Clock) (tls.Certificate, error) {
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
@@ -107,9 +123,11 @@ func generateSelfSignedCert(clock Clock) (tls.Certificate, error) {
 		DNSNames:              []string{"localhost"},
 		NotBefore:             clock.Now().Add(-1 * time.Hour),
 		NotAfter:              clock.Now().Add(24 * time.Hour),
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment | x509.KeyUsageCertSign,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
+		// A client trusts the certificate as its own root: the e2e scripts pass it as their only CA.
+		IsCA: true,
 	}
 	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
 	if err != nil {
@@ -119,4 +137,18 @@ func generateSelfSignedCert(clock Clock) (tls.Certificate, error) {
 		Certificate: [][]byte{certDER},
 		PrivateKey:  key,
 	}, nil
+}
+
+// writeCertificate writes the DER certificate to path in PEM. The file appears
+// whole: it is written beside path and renamed into place.
+func writeCertificate(path string, der []byte) error {
+	part := path + ".part"
+	data := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
+	if err := os.WriteFile(part, data, 0o600); err != nil {
+		return fmt.Errorf("write debug tls cert: %w", err)
+	}
+	if err := os.Rename(part, path); err != nil {
+		return fmt.Errorf("write debug tls cert: %w", err)
+	}
+	return nil
 }

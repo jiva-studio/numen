@@ -26,6 +26,30 @@ import { getRenamedPath } from '@numen/plugin-sdk'
 const SHARE_ICON: Component = { name: 'ShareIcon', render: () => null }
 const SAMPLE_ICON: Component = { name: 'SampleIcon', render: () => null }
 
+/** What a plex tab is built with: a window that answers nothing, with what a test sets put over it. */
+const createDeps = (
+  editor: PlexTabDeps['editor'],
+  overrides: Partial<PlexTabDeps> = {},
+): PlexTabDeps => ({
+  editor,
+  isReady: ref(true),
+  isNesting: ref(true),
+  headings: ref(6),
+  openNote: () => undefined,
+  readHeadings: async () => new Map(),
+  getNoteCommands: () => [],
+  getCommandIcon: () => null,
+  getNoteIcon: () => null,
+  runCommand: () => undefined,
+  openingPath: ref(''),
+  readOpeningPath: async () => '',
+  dragged: ref([]),
+  showMessage: () => undefined,
+  createUntitledNote: async () => '',
+  creatable: ['parent', 'child', 'jump'],
+  ...overrides,
+})
+
 /** A plex tab with the window it is drawn in written down. */
 const tab = (
   targetPath: string,
@@ -240,25 +264,7 @@ describe('a plex drawing nothing', () => {
       followMoves: () => undefined,
       close: () => undefined,
     }
-    return createPlexTab(view as unknown as PlexView, {
-      editor: createVault().editor,
-      isReady: ref(true),
-      isNesting: ref(true),
-      headings: ref(6),
-      openNote: () => undefined,
-      readHeadings: async () => new Map(),
-      getNoteCommands: () => [],
-      getCommandIcon: () => null,
-      getNoteIcon: () => null,
-      runCommand: () => undefined,
-      openingPath: ref(''),
-      readOpeningPath: async () => '',
-      dragged: ref([]),
-      showMessage: () => undefined,
-      createUntitledNote: async () => '',
-      creatable: ['parent', 'child', 'jump'],
-      ...overrides,
-    })
+    return createPlexTab(view as unknown as PlexView, createDeps(createVault().editor, overrides))
   }
 
   it('is an empty vault where the vault is read and opens with no note', () => {
@@ -340,24 +346,13 @@ describe('what a note in the picture is called', () => {
 describe('the picture', () => {
   it('is nothing while the window has nothing true to draw', () => {
     const plex = viewOn('Root.md')
-    const state = createPlexTab(plex.view, {
-      editor: createVault().editor,
-      isReady: ref(false),
-      isNesting: ref(true),
-      headings: ref(6),
-      openNote: () => undefined,
-      readHeadings: async () => new Map(),
-      getNoteCommands: () => [],
-      getCommandIcon: () => null,
-      getNoteIcon: () => null,
-      runCommand: () => undefined,
-      openingPath: ref(''),
-      readOpeningPath: async () => '',
-      dragged: ref(['Entropy.md']),
-      showMessage: () => undefined,
-      createUntitledNote: async () => '',
-      creatable: ['parent', 'child', 'jump'],
-    })
+    const state = createPlexTab(
+      plex.view,
+      createDeps(createVault().editor, {
+        isReady: ref(false),
+        dragged: ref(['Entropy.md']),
+      }),
+    )
 
     expect(state.picture.value).toBeNull()
     // Nothing is drawn, so nothing can be dragged onto it.
@@ -516,24 +511,14 @@ describe('the headings a node nests', () => {
     // change followed while a travel is still out.
     const answers: ((target: ReadonlyMap<string, readonly NoteHeading[]>) => void)[] = []
     const one = tab('Root.md')
-    const plex = createPlexTab(one.state.view, {
-      editor: createVault().editor,
-      isReady: ref(true),
-      isNesting: ref(true),
-      headings: ref(6),
-      openNote: () => undefined,
-      readHeadings: () => new Promise((isDone) => answers.push(isDone)),
-      getNoteCommands: () => [],
-      getCommandIcon: () => null,
-      getNoteIcon: () => null,
-      runCommand: () => undefined,
-      openingPath: ref('Root.md'),
-      readOpeningPath: async () => 'Root.md',
-      dragged: ref([]),
-      showMessage: () => undefined,
-      createUntitledNote: async () => '',
-      creatable: ['parent', 'child', 'jump'],
-    })
+    const plex = createPlexTab(
+      one.state.view,
+      createDeps(createVault().editor, {
+        readHeadings: () => new Promise((isDone) => answers.push(isDone)),
+        openingPath: ref('Root.md'),
+        readOpeningPath: async () => 'Root.md',
+      }),
+    )
     const node = () => getNode(plex, 'Root')
 
     // The graph queries once when built, and that response stays pending.
@@ -714,25 +699,14 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
       }
     },
   })
-  const state = createPlexTab(view, {
-    editor: vault.editor,
-    isReady: ref(true),
-    isNesting: ref(true),
-    headings: ref(6),
-    openNote: (path, options) =>
-      openedCalls.push([path, options?.title ?? '', options?.showing ?? 'current']),
-    readHeadings: async () => new Map(),
-    getNoteCommands: () => [],
-    getCommandIcon: () => null,
-    getNoteIcon: () => null,
-    runCommand: (id, path, title) => ran.push([id, path, title]),
-    openingPath: ref(''),
-    readOpeningPath: async () => '',
-    dragged: ref([]),
-    showMessage: () => undefined,
-    createUntitledNote: async () => '',
-    creatable: ['parent', 'child', 'jump'],
-  })
+  const state = createPlexTab(
+    view,
+    createDeps(vault.editor, {
+      openNote: (path, options) =>
+        openedCalls.push([path, options?.title ?? '', options?.showing ?? 'current']),
+      runCommand: (id, path, title) => ran.push([id, path, title]),
+    }),
+  )
   await view.go(focus)
 
   /** The current graph, which a rendered window reads. */
@@ -1134,48 +1108,26 @@ describe('quick-link popover from a node handle', () => {
     const searchMock = vi.fn().mockResolvedValue([{ path: 'Note.md', title: 'Note' }])
     const plex = viewOn('Root.md', [])
     const vault = createVault()
-    const stateWithSearch = createPlexTab(plex.view, {
-      editor: vault.editor,
-      isReady: ref(true),
-      isNesting: ref(true),
-      headings: ref(6),
-      openNote: () => undefined,
-      readHeadings: async () => new Map(),
-      getNoteCommands: () => [],
-      getCommandIcon: () => null,
-      getNoteIcon: () => null,
-      runCommand: () => undefined,
-      openingPath: ref('Opening.md'),
-      readOpeningPath: async () => 'Opening.md',
-      dragged: ref([]),
-      showMessage: () => undefined,
-      createUntitledNote: async () => '',
-      creatable: ['parent', 'child', 'jump'],
-      searchNames: searchMock,
-    })
+    const stateWithSearch = createPlexTab(
+      plex.view,
+      createDeps(vault.editor, {
+        openingPath: ref('Opening.md'),
+        readOpeningPath: async () => 'Opening.md',
+        searchNames: searchMock,
+      }),
+    )
 
     const results = await stateWithSearch.searchNotes('test')
     expect(searchMock).toHaveBeenCalledWith('test')
     expect(results).toEqual([{ path: 'Note.md', title: 'Note' }])
 
-    const stateNoSearch = createPlexTab(plex.view, {
-      editor: vault.editor,
-      isReady: ref(true),
-      isNesting: ref(true),
-      headings: ref(6),
-      openNote: () => undefined,
-      readHeadings: async () => new Map(),
-      getNoteCommands: () => [],
-      getCommandIcon: () => null,
-      getNoteIcon: () => null,
-      runCommand: () => undefined,
-      openingPath: ref('Opening.md'),
-      readOpeningPath: async () => 'Opening.md',
-      dragged: ref([]),
-      showMessage: () => undefined,
-      createUntitledNote: async () => '',
-      creatable: ['parent', 'child', 'jump'],
-    })
+    const stateNoSearch = createPlexTab(
+      plex.view,
+      createDeps(vault.editor, {
+        openingPath: ref('Opening.md'),
+        readOpeningPath: async () => 'Opening.md',
+      }),
+    )
     expect(await stateNoSearch.searchNotes('test')).toEqual([])
   })
 

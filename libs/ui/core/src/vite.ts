@@ -22,7 +22,14 @@ export const UI_STYLES = fileURLToPath(new URL('../dist/numen-ui.css', import.me
  */
 export const LIGHTNING_CSS = { exclude: Features.LightDark } as const
 
-const TARGETS = { safari: (16 << 16) | (4 << 8), chrome: 111 << 16, firefox: 128 << 16 }
+/** A browser version in the form Lightning CSS takes: the major in the third byte, the minor in the second. */
+const getBrowserVersion = (major: number, minor = 0): number => (major << 16) | (minor << 8)
+
+const TARGETS = {
+  safari: getBrowserVersion(16, 4),
+  chrome: getBrowserVersion(111),
+  firefox: getBrowserVersion(128),
+}
 
 /** The stylesheet minified the way both sides of a comparison are. */
 export function getNormalCss(css: string): string {

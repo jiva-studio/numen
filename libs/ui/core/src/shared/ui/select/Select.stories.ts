@@ -12,8 +12,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { computed, ref } from 'vue'
 import Select from './Select.vue'
-
-const UNBROKEN = 'supercalifragilisticexpialidocious'
+import { CYRILLIC_CHOICES, LONG_CHOICES, UNBROKEN_CHOICES } from '@/shared/fixtures/prose'
 
 interface Knobs {
   /** The option labels, one per line. A line after a tab names its group. */
@@ -106,21 +105,17 @@ export const OnShelves: Story = {
 
 /** Words far longer than the box drawing them. */
 export const FarTooLong: Story = {
-  args: {
-    words: 'As small as it will go\nSomewhere between the two of them\nAs large as the room allows',
-    chosen: 'somewhere-between-the-two-of-them',
-    width: '10rem',
-  },
+  args: { ...LONG_CHOICES, width: '10rem' },
 }
 
 /** Words in another script. */
 export const OtherScripts: Story = {
-  args: { words: 'Маленький\nСредний\nБольшой', chosen: 'средний' },
+  args: CYRILLIC_CHOICES,
 }
 
 /** A word with nothing in it to break at. */
 export const Unbroken: Story = {
-  args: { words: `${UNBROKEN}\nShort`, chosen: 'short', width: '10rem' },
+  args: { ...UNBROKEN_CHOICES, width: '10rem' },
 }
 
 /** No options: the list shows an empty message and offers nothing. */

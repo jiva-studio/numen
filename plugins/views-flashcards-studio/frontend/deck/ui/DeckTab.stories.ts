@@ -29,49 +29,27 @@ const card = (
   values: readonly { field: string; text: string }[],
 ) => ({ id, section, cardModel: cardModelLink, filled: values })
 
+/** A card of the Root model, named by its root, with its class, present and meaning. */
+const root = (
+  id: string,
+  section: string,
+  [klass, present, meaning]: readonly [string, string, string],
+) =>
+  card(id, section, 'Root', [
+    { field: 'Root', text: id },
+    { field: 'Class', text: klass },
+    { field: 'Present', text: present },
+    { field: 'Meaning', text: meaning },
+  ])
+
 const CARDS = [
-  card('gam', 'going', 'Root', [
-    { field: 'Root', text: 'gam' },
-    { field: 'Class', text: '1, thematic' },
-    { field: 'Present', text: 'gacchati' },
-    { field: 'Meaning', text: 'to go, to move' },
-  ]),
-  card('car', 'going', 'Root', [
-    { field: 'Root', text: 'car' },
-    { field: 'Class', text: '1' },
-    { field: 'Present', text: 'carati' },
-    { field: 'Meaning', text: 'to walk, to wander' },
-  ]),
-  card('sthā', 'going', 'Root', [
-    { field: 'Root', text: 'sthā' },
-    { field: 'Class', text: '1' },
-    { field: 'Present', text: 'tiṣṭhati' },
-    { field: 'Meaning', text: 'to stand, to stay' },
-  ]),
-  card('i', 'going', 'Root', [
-    { field: 'Root', text: 'i' },
-    { field: 'Class', text: '2' },
-    { field: 'Present', text: 'eti' },
-    { field: 'Meaning', text: 'to go' },
-  ]),
-  card('vid', 'knowing', 'Root', [
-    { field: 'Root', text: 'vid' },
-    { field: 'Class', text: '2' },
-    { field: 'Present', text: 'vetti' },
-    { field: 'Meaning', text: 'to know' },
-  ]),
-  card('jñā', 'knowing', 'Root', [
-    { field: 'Root', text: 'jñā' },
-    { field: 'Class', text: '9' },
-    { field: 'Present', text: 'jānāti' },
-    { field: 'Meaning', text: 'to know, to recognise' },
-  ]),
-  card('smṛ', 'knowing', 'Root', [
-    { field: 'Root', text: 'smṛ' },
-    { field: 'Class', text: '1' },
-    { field: 'Present', text: 'smarati' },
-    { field: 'Meaning', text: 'to remember' },
-  ]),
+  root('gam', 'going', ['1, thematic', 'gacchati', 'to go, to move']),
+  root('car', 'going', ['1', 'carati', 'to walk, to wander']),
+  root('sthā', 'going', ['1', 'tiṣṭhati', 'to stand, to stay']),
+  root('i', 'going', ['2', 'eti', 'to go']),
+  root('vid', 'knowing', ['2', 'vetti', 'to know']),
+  root('jñā', 'knowing', ['9', 'jānāti', 'to know, to recognise']),
+  root('smṛ', 'knowing', ['1', 'smarati', 'to remember']),
   card('mārga', 'nouns', 'Word', [
     { field: 'Word', text: 'mārga' },
     { field: 'Reading', text: 'मार्ग' },

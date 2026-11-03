@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport/indexfake"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 )
 
@@ -18,7 +19,7 @@ const bookReader = "test.books"
 // stand-in reads has a version of bookReader, made from the bytes it holds now;
 // a test puts any other version with put.
 type libraryTexts struct {
-	shelves vaults
+	shelves indexfake.Vaults
 
 	mu    sync.Mutex
 	extra map[string][]placedVersion
@@ -34,7 +35,7 @@ type placedVersion struct {
 	parts   []domain.TextSegment
 }
 
-func newLibraryTexts(shelves vaults) *libraryTexts {
+func newLibraryTexts(shelves indexfake.Vaults) *libraryTexts {
 	return &libraryTexts{shelves: shelves, extra: map[string][]placedVersion{}, books: map[string]placedVersion{}, outside: map[string]bool{}}
 }
 
@@ -42,7 +43,7 @@ func newLibraryTexts(shelves vaults) *libraryTexts {
 func (s *libraryTexts) put(v domain.Vault, path, pluginID string, kind domain.TextKind, parts []domain.TextSegment) domain.TextVersion {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	raw := s.shelves[v.ID].files[path].raw
+	raw := s.shelves[v.ID].Files[path].Raw
 	version := domain.TextVersion{
 		Path: path, PluginID: pluginID, Key: fmt.Sprint(len(s.extra[path])), Kind: kind, SourceHash: domain.HashContent(raw),
 	}
@@ -93,23 +94,15 @@ func (t libraryVaultTexts) findLive(ctx context.Context, path, fileHash string) 
 	if isMade {
 		return made, nil
 	}
-	file, ok := s.shelves[t.vault.ID].files[path]
-	if !ok || domain.HashContent(file.raw) != fileHash {
+	file, ok := s.shelves[t.vault.ID].Files[path]
+	if !ok || domain.HashContent(file.Raw) != fileHash {
 		return placedVersion{}, textport.ErrNoText
 	}
-	book, err := documents{}.ReadBook(ctx, file.raw)
+	parts, err := indexfake.ReadBookSegments(file.Raw)
 	if err != nil {
 		return placedVersion{}, textport.ErrNoText
 	}
 	version := domain.TextVersion{Path: path, PluginID: bookReader, Key: fileHash[:8], Kind: "book-text", SourceHash: fileHash}
-	var parts []domain.TextSegment
-	for i, part := range book.Parts {
-		end := len(book.Text)
-		if i+1 < len(book.Parts) {
-			end = book.Parts[i+1].Offset
-		}
-		parts = append(parts, domain.TextSegment{Text: book.Text[part.Offset:end], Heading: part.Title})
-	}
 	made = placedVersion{version: version, parts: parts}
 	s.mu.Lock()
 	s.books[path+"|"+fileHash] = made
@@ -142,11 +135,11 @@ func (t libraryVaultTexts) GetVersionText(ctx context.Context, path string, id d
 			return domain.NewVersionText(one.version, one.parts), nil
 		}
 	}
-	file, ok := t.texts.shelves[t.vault.ID].files[path]
+	file, ok := t.texts.shelves[t.vault.ID].Files[path]
 	if !ok {
 		return domain.VersionText{}, textport.ErrNoText
 	}
-	live, err := t.findLive(ctx, path, domain.HashContent(file.raw))
+	live, err := t.findLive(ctx, path, domain.HashContent(file.Raw))
 	if err != nil || live.version.GetID() != id {
 		return domain.VersionText{}, textport.ErrNoText
 	}

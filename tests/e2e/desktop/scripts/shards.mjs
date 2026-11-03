@@ -27,7 +27,7 @@ export const listSpecs = () => {
     }
   }
   walk(path.join(root, 'tests'))
-  return found.sort()
+  return found.sort((a, b) => a.localeCompare(b))
 }
 
 /** The seconds of every spec file in `shards.json`. */
@@ -86,9 +86,9 @@ export const planShards = (count, paths) => {
   const shards = Array.from({ length: count }, () => ({ load: 0, files: [] }))
   const byLength = Object.entries(durations).sort(([a, x], [b, y]) => y - x || a.localeCompare(b))
   for (const [spec, seconds] of byLength) {
-    const lightest = shards.reduce((least, one) => (one.load < least.load ? one : least))
+    const lightest = shards.reduce((least, one) => (one.load < least.load ? one : least), shards[0])
     lightest.load += seconds
     lightest.files.push(spec)
   }
-  return shards.map((one) => one.files.sort())
+  return shards.map((one) => one.files.sort((a, b) => a.localeCompare(b)))
 }

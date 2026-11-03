@@ -5,7 +5,7 @@
  * last row.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { flatten, getMarkOf, type Row, type RowId, type RowMarker } from './row'
+import { flatten, getMarkOf, type RowId, type RowMarker } from './row'
 import {
   everyRow,
   getRowsBetween,
@@ -17,25 +17,9 @@ import {
 import { isTreeKey, stepTo, TREE_KEYS } from './step'
 import { getDraggedRows, dragLabel } from './drag'
 import { findHolder, isRefused, getRowDropTarget } from './drop'
+import { WORK_ROWS } from '../fixtures/rows'
 
-const ROWS: readonly Row[] = [
-  {
-    id: 'work',
-    name: 'Work',
-    hasChildren: true,
-    rows: [
-      {
-        id: 'plans',
-        name: 'Plans',
-        hasChildren: true,
-        rows: [{ id: 'friday', name: 'Friday', hasChildren: false }],
-      },
-      { id: 'notes', name: 'Notes', hasChildren: false },
-    ],
-  },
-  { id: 'empty', name: 'Empty', hasChildren: true },
-  { id: 'loose', name: 'Loose', hasChildren: false },
-]
+const ROWS = WORK_ROWS
 
 const getShownRows = (...open: readonly RowId[]) => flatten(ROWS, new Set(open))
 

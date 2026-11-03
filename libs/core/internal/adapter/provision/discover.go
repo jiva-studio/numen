@@ -42,11 +42,22 @@ func newDiscovery() discovery {
 func readLoaderCache() []byte {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	out, err := exec.CommandContext(ctx, "ldconfig", "-p").Output()
-	if err != nil {
-		return nil
+	for _, ldconfig := range getLoaderCachePrograms() {
+		if _, err := os.Stat(ldconfig); err != nil {
+			continue
+		}
+		out, err := exec.CommandContext(ctx, ldconfig, "-p").Output()
+		if err != nil {
+			return nil
+		}
+		return out
 	}
-	return out
+	return nil
+}
+
+// getLoaderCachePrograms returns the places a Linux system keeps ldconfig.
+func getLoaderCachePrograms() []string {
+	return []string{"/sbin/ldconfig", "/usr/sbin/ldconfig", "/usr/bin/ldconfig", "/bin/ldconfig"}
 }
 
 // find returns the path of the program or library the requirement names that

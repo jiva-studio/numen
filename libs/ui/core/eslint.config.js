@@ -9,11 +9,10 @@ import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'
 import {
   createBaseConfig,
-  createDeterminismSelectors,
+  createPortConfig,
   createPureSegmentConfig,
-  lifetimes,
 } from '../../../tools/lint-layers/base-eslint.mjs'
-import { createLayerElements, createLayerPolicies } from '../../../tools/lint-layers/layers.mjs'
+import { createDomainImports, createLibraryLayerConfigs, createOwnImportConfig } from '../../../tools/lint-layers/layers.mjs'
 
 /** The one function declaration that reads the wall clock. */
 const clockFunction = 'getNow'
@@ -22,12 +21,6 @@ const clockFunction = 'getNow'
 const monotonicFunction = 'getMonotonicNow'
 
 const clockFunctions = { clockFunction, monotonicFunction }
-
-const layerOrder = ['shared', 'features', 'screens']
-const sliceLayers = ['features']
-
-const layerElements = createLayerElements({ order: layerOrder, sliceLayers })
-const layerPolicies = createLayerPolicies({ order: layerOrder, sliceLayers, indexOnly: true })
 
 /** The tests that read the wire's fixtures from `libs/protocol/testdata` by relative path. */
 const testdataReaders = []
@@ -41,112 +34,40 @@ const outsideLayers = [
   ...testdataReaders,
 ]
 
-const domainImports = [
-  {
-    group: [
-      '@numen/*',
-      '@numen/*/**',
-      '!@numen/ui',
-      // The same packages named by the path the install put them at.
-      '**/node_modules/@numen/**',
-    ],
-    message:
-      'a component knows nothing about the domain or the wire — take props in a drawing vocabulary and emit opaque identifiers',
-  },
-  {
-    group: ['**/apps/**', '**/libs/**'],
-    message: 'the dependency runs apps → libs/ui/core, never back',
-  },
-]
+const domainImports = createDomainImports({
+  message:
+    'a component knows nothing about the domain or the wire — take props in a drawing vocabulary and emit opaque identifiers',
+  direction: 'the dependency runs apps → libs/ui/core, never back',
+})
 
 export default tseslint.config(
-  ...createBaseConfig(import.meta.dirname, clockFunctions),
-
-  {
-    languageOptions: {
-      parserOptions: {
-        projectService: {
-          allowDefaultProject: ['eslint.config.js'],
-        },
-      },
-    },
-  },
+  ...createBaseConfig(import.meta.dirname, { ...clockFunctions, defaultProject: ['eslint.config.js'] }),
 
   // UI layer boundaries and domain isolation
-  {
-    files: ['src/**/*.{ts,vue}'],
-    ignores: outsideLayers,
-    plugins: { boundaries },
-    settings: {
-      'import/resolver': { typescript: { alwaysTryTypes: true } },
-      'boundaries/elements': layerElements,
-      'boundaries/files': [
-        { category: 'public', pattern: 'src/features/*/index.ts' },
-        { category: 'entry', pattern: 'src/index.ts' },
-      ],
-    },
-    rules: {
-      'boundaries/no-unknown-files': 'error',
-      'boundaries/dependencies': ['error', { default: 'disallow', policies: layerPolicies }],
-      'no-restricted-imports': ['error', { patterns: domainImports }],
-    },
-  },
+  ...createLibraryLayerConfigs({
+    boundaries,
+    order: ['shared', 'features', 'screens'],
+    sliceLayers: ['features'],
+    outsideLayers,
+    domainImports,
+  }),
 
-  {
-    files: ['src/features/**/*.{ts,vue}'],
-    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', ...outsideLayers],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            ...domainImports,
-            {
-              group: ['@/features/**', '@/screens/**'],
-              message: 'a slice imports its own files by relative path and no other slice',
-            },
-          ],
-        },
-      ],
-    },
-  },
-
-  {
-    files: ['src/screens/**/*.{ts,vue}'],
-    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', ...outsideLayers],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            ...domainImports,
-            {
-              group: ['@/screens/**'],
-              message: 'a screen imports its own files by relative path',
-            },
-          ],
-        },
-      ],
-    },
-  },
+  createOwnImportConfig({
+    layer: 'screens',
+    patterns: domainImports,
+    group: ['@/screens/**'],
+    message: 'a screen imports its own files by relative path',
+    outsideLayers,
+  }),
 
   // Anything with a lifetime a test must hold still is a port. The
   // pure core computes what is drawn from its props alone, so it may not ask
   // the machine what time it is, what the window measures, or what comes next.
-  {
+  createPortConfig({
     files: ['src/**/*.ts'],
     ignores: ['src/**/*.test.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**'],
-    rules: {
-      'no-restricted-globals': [
-        'error',
-        ...lifetimes.map(({ name, port }) => ({
-          name,
-          message: `${name} has a lifetime a test must hold still — take ${port}`,
-        })),
-      ],
-      'no-restricted-syntax': ['error', ...createDeterminismSelectors(clockFunctions)],
-    },
-  },
+    ...clockFunctions,
+  }),
 
   createPureSegmentConfig(clockFunctions),
 )

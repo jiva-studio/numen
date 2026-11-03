@@ -35,7 +35,7 @@ func (q *Queries) GetIndexCounts(ctx context.Context, vaultID domain.VaultID, re
 }
 
 func (q *Queries) getExtensions(ctx context.Context, vault int64) (_ []indexport.ExtensionCount, err error) {
-	rows, err := q.db.QueryContext(ctx, getStatement("extensions"), vault, vault, q.minimum.Get())
+	rows, err := q.db.QueryContext(ctx, extensionsSQL, vault, vault, q.minimum.Get())
 	if err != nil {
 		return nil, err
 	}
@@ -59,6 +59,6 @@ func (q *Queries) GetIndexSizes(ctx context.Context) (indexport.IndexSizes, erro
 		return indexport.IndexSizes{}, err
 	}
 	var sizes indexport.IndexSizes
-	err = q.db.QueryRowContext(ctx, getStatement("sizes")).Scan(&sizes.Database, &sizes.Vectors)
+	err = q.db.QueryRowContext(ctx, sizesSQL).Scan(&sizes.Database, &sizes.Vectors)
 	return sizes, err
 }

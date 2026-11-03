@@ -25,19 +25,27 @@ var files embed.FS
 // tables come first because they own auxiliary tables that are listed in the
 // catalogue and dropped with them; views come before the tables they read.
 func getDropping() []struct {
-	kind  string
-	where string
+	kind      string
+	isVirtual bool
 } {
 	return []struct {
-		kind  string
-		where string
+		kind      string
+		isVirtual bool
 	}{
-		{"TRIGGER", `type = 'trigger'`},
-		{"VIEW", `type = 'view'`},
-		{"TABLE", `type = 'table' AND sql LIKE 'CREATE VIRTUAL TABLE%'`},
-		{"TABLE", `type = 'table'`},
+		{"TRIGGER", false},
+		{"VIEW", false},
+		{"TABLE", true},
+		{"TABLE", false},
 	}
 }
+
+// findDroppableSQL names one object of a type in the catalogue, only a virtual
+// table where the second parameter is true.
+const findDroppableSQL = `SELECT name FROM sqlite_master
+WHERE type = lower(?1)
+  AND (NOT ?2 OR sql LIKE 'CREATE VIRTUAL TABLE%')
+  AND name NOT LIKE 'sqlite_%'
+LIMIT 1`
 
 // resetIndex takes everything out of the index and puts its version back to nothing,
 // so the migrations run from the first file.
@@ -70,9 +78,7 @@ func dropEverything(ctx context.Context, db *sql.DB) error {
 	for _, one := range getDropping() {
 		for {
 			var name string
-			err := db.QueryRowContext(ctx,
-				`SELECT name FROM sqlite_master WHERE `+one.where+
-					` AND name NOT LIKE 'sqlite_%' LIMIT 1`).Scan(&name)
+			err := db.QueryRowContext(ctx, findDroppableSQL, one.kind, one.isVirtual).Scan(&name)
 			if errors.Is(err, sql.ErrNoRows) {
 				break
 			}

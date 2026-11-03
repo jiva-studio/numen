@@ -35,3 +35,27 @@ export const LONG =
   'the adapter in the application changes and nothing here does.'
 
 export const EMPTY = ''
+
+/** The choices of a control written one a line, and the one chosen, for the controls that offer a few. */
+export interface ChoiceWords {
+  readonly words: string
+  readonly chosen: string
+}
+
+/** Choices far longer than the box drawing them. */
+export const LONG_CHOICES: ChoiceWords = {
+  words: 'As small as it will go\nSomewhere between the two of them\nAs large as the room allows',
+  chosen: 'somewhere-between-the-two-of-them',
+}
+
+/** Choices in another script. */
+export const CYRILLIC_CHOICES: ChoiceWords = {
+  words: 'Маленький\nСредний\nБольшой',
+  chosen: 'средний',
+}
+
+/** A choice with nothing in it to break at, beside a short one. */
+export const UNBROKEN_CHOICES: ChoiceWords = {
+  words: 'supercalifragilisticexpialidocious\nShort',
+  chosen: 'short',
+}

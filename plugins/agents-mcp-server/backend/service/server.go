@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -272,7 +273,7 @@ func (s *Server) GetSSEURL() string {
 	if s.actualAddr == "" {
 		return ""
 	}
-	return "http://" + s.actualAddr + "/sse"
+	return (&url.URL{Scheme: "http", Host: s.actualAddr, Path: "/sse"}).String()
 }
 
 // GetHTTPURL returns the streamable HTTP endpoint URL.
@@ -282,7 +283,7 @@ func (s *Server) GetHTTPURL() string {
 	if s.actualAddr == "" {
 		return ""
 	}
-	return "http://" + s.actualAddr + "/mcp"
+	return (&url.URL{Scheme: "http", Host: s.actualAddr, Path: "/mcp"}).String()
 }
 
 // GetToken returns the authentication token.

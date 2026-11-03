@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"github.com/jiva-studio/numen/libs/core/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/sqlwrite"
 
@@ -18,32 +19,9 @@ type Queries struct{ db *sql.DB }
 
 func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
 
-func (q *Queries) GetFileStats(ctx context.Context, vaultID domain.VaultID) (_ map[string]domain.FileStat, err error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
-	if errors.Is(err, errNoVault) {
-		return map[string]domain.FileStat{}, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := q.db.QueryContext(ctx, getStatement("file_stats"), vault, kind)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
-
-	out := map[string]domain.FileStat{}
-	for rows.Next() {
-		var ref domain.FileStat
-		var mtime int64
-		if err := rows.Scan(&ref.Path, &ref.Size, &mtime); err != nil {
-			return nil, err
-		}
-		ref.ModTime = chunk.ConvertNanosToTime(mtime)
-		out[ref.Path] = ref
-	}
-	return out, rows.Err()
+// GetFileStats is what the index records about each note of the vault, keyed by path.
+func (q *Queries) GetFileStats(ctx context.Context, vaultID domain.VaultID) (map[string]domain.FileStat, error) {
+	return chunk.NewQueries(q.db).GetFileStats(ctx, vaultID, kind)
 }
 
 // Has reports whether the index carries this vault at all.
@@ -67,7 +45,7 @@ func (q *Queries) GetSummary(ctx context.Context, vaultID domain.VaultID) (domai
 	if err != nil {
 		return s, err
 	}
-	err = q.db.QueryRowContext(ctx, getStatement("summary"), vault, vault).Scan(&s.Notes, &s.Headings)
+	err = q.db.QueryRowContext(ctx, summarySQL, vault, vault).Scan(&s.Notes, &s.Headings)
 	return s, err
 }
 
@@ -88,7 +66,7 @@ func (q *Queries) GetNamedPaths(ctx context.Context, vaultID domain.VaultID, nam
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, getStatement("named"), vault, domain.FoldName(name))
+	rows, err := q.db.QueryContext(ctx, namedSQL, vault, domain.FoldName(name))
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +112,7 @@ func (q *Queries) GetNameMatches(ctx context.Context, vaultID domain.VaultID, qu
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, getStatement("titles"),
+	rows, err := q.db.QueryContext(ctx, titlesSQL,
 		opening, closing, words, vault, limit,
 		opening, closing, words, vault, mostPerNote, limit)
 	if err != nil {

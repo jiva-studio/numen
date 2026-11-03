@@ -54,7 +54,7 @@ const listEntryKeys = (entry, message, path) =>
 export const listUnknownKeys = (value, message, path = '') => {
   if (!isObject(value)) return []
   const found = []
-  for (const key of Object.keys(value).sort()) {
+  for (const key of Object.keys(value).sort((a, b) => a.localeCompare(b))) {
     const here = path === '' ? key : `${path}.${key}`
     const field = message.fields.find((one) => one.jsonName === key)
     if (field === undefined) {
@@ -66,7 +66,7 @@ export const listUnknownKeys = (value, message, path = '') => {
     const item = value[key]
     if (field.fieldKind === 'map') {
       if (isObject(item)) {
-        for (const name of Object.keys(item).sort()) {
+        for (const name of Object.keys(item).sort((a, b) => a.localeCompare(b))) {
           found.push(...listEntryKeys(item[name], child, `${here}.${name}`))
         }
       }

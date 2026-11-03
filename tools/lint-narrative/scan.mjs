@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs'
 import path from 'node:path'
-import { execSync } from 'node:child_process'
+import { execTool } from '../shared/tools.mjs'
 
 const args = process.argv.slice(2)
 
@@ -1145,7 +1145,7 @@ function scanFile(filePath) {
     // 21. UI copy in words files
     if (isTs && !isCommentLine && shouldCheckCategory('ui-words') && RE_WORDS_FILE.test(baseName) && !baseName.includes('.test.')) {
       const code = line.replace(/\/\/.*$/, '')
-      if (!/^\s*import\b|\bfrom\s+['"]/.test(code)) {
+      if (!/(?:^\s*import\b)|(?:\bfrom\s+['"])/.test(code)) {
         for (const m of code.matchAll(RE_UI_STRING)) {
           const text = m[1] ?? m[2] ?? m[3] ?? ''
           const rule = findUiWordsRule(text)
@@ -1240,7 +1240,7 @@ function scanManifest(content, relPath) {
 
 function getStagedFiles() {
   try {
-    const stdout = execSync('git diff --cached --name-only --diff-filter=ACM', {
+    const stdout = execTool('git', ['diff', '--cached', '--name-only', '--diff-filter=ACM'], {
       encoding: 'utf8',
       cwd: rootDir,
     })
@@ -1262,7 +1262,7 @@ function isIgnoredDir(name) {
 /** The folders git ignores under rootDir, such as built pages, as absolute paths. */
 function getGitIgnoredDirs() {
   try {
-    const stdout = execSync('git ls-files --others --ignored --exclude-standard --directory', {
+    const stdout = execTool('git', ['ls-files', '--others', '--ignored', '--exclude-standard', '--directory'], {
       encoding: 'utf8',
       cwd: rootDir,
       stdio: ['ignore', 'pipe', 'ignore'],
@@ -1305,8 +1305,8 @@ function walk(dir) {
 function getAddedLines() {
   const added = new Map()
   try {
-    const cmd = isStagedOnly ? 'git diff --cached -U0 --no-color' : `git diff -U0 --no-color ${addedBaseRef || 'HEAD'}`
-    const diff = execSync(cmd, { encoding: 'utf8', cwd: rootDir, maxBuffer: 256 * 1024 * 1024 })
+    const args = isStagedOnly ? ['diff', '--cached', '-U0', '--no-color'] : ['diff', '-U0', '--no-color', addedBaseRef || 'HEAD']
+    const diff = execTool('git', args, { encoding: 'utf8', cwd: rootDir, maxBuffer: 256 * 1024 * 1024 })
     let current = null
     for (const row of diff.split('\n')) {
       if (row.startsWith('+++ b/')) {

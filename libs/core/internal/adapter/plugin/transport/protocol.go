@@ -21,7 +21,7 @@ const pingTimeout = 3 * time.Second
 func CheckPluginProtocol(ctx context.Context, m manifest.Manifest, endpoint Endpoint) error {
 	client := numenv1connect.NewPluginLifecycleServiceClient(
 		EndpointClient(endpoint),
-		endpoint.BaseURL(),
+		GetBaseURL(endpoint),
 		connect.WithInterceptors(AuthInterceptor(endpoint.Token)),
 	)
 	pingCtx, cancel := context.WithTimeout(ctx, pingTimeout)

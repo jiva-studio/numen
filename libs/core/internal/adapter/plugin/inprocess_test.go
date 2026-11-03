@@ -122,7 +122,7 @@ func registerBuiltIn(t *testing.T, host *Host, manifest []byte, serve func(map[s
 
 func getAgentPrompt(t *testing.T, endpoint transport.Endpoint) string {
 	t.Helper()
-	client := numenv1connect.NewAgentServiceClient(transport.EndpointClient(endpoint), endpoint.BaseURL())
+	client := numenv1connect.NewAgentServiceClient(transport.EndpointClient(endpoint), transport.GetBaseURL(endpoint))
 	res, err := client.GetAgentTools(t.Context(), connect.NewRequest(&v1.GetAgentToolsRequest{}))
 	if err != nil {
 		t.Fatalf("GetAgentTools: %v", err)

@@ -78,7 +78,7 @@ func newLoopback(target net.Listener, files *fileServer, stopped func(error)) (*
 
 	back := &Loopback{
 		files:   files,
-		address: "http://" + target.Addr().String(),
+		address: (&url.URL{Scheme: "http", Host: target.Addr().String()}).String(),
 		token:   base64.RawURLEncoding.EncodeToString(word),
 	}
 	back.server = &http.Server{

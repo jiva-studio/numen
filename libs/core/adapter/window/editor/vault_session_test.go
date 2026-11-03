@@ -210,17 +210,7 @@ func (f *showing) getShownVault(t *testing.T, window string) string {
 func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 	f := openTwoVaults(t)
 
-	listening, hangUp := context.WithCancel(t.Context())
-	defer hangUp()
-
-	changes, err := f.client.WatchVaultChanges(listening, connect.NewRequest(&v1.WatchVaultChangesRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testsupport.Close(t, changes)
-	if !changes.Receive() {
-		t.Fatalf("the stream never opened: %v", changes.Err())
-	}
+	changes := openChanges(t, f.client)
 
 	signalCh := make(chan bool, 1)
 	go func() {
@@ -307,17 +297,7 @@ func TestTheVaultThatWentIsNoLongerFollowed(t *testing.T) {
 	}
 	f.read(t)
 
-	listening, hangUp := context.WithCancel(t.Context())
-	defer hangUp()
-
-	changes, err := f.client.WatchVaultChanges(listening, connect.NewRequest(&v1.WatchVaultChangesRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testsupport.Close(t, changes)
-	if !changes.Receive() {
-		t.Fatalf("the stream never opened: %v", changes.Err())
-	}
+	changes := openChanges(t, f.client)
 
 	reported := make(chan []string, 8)
 	go func() {

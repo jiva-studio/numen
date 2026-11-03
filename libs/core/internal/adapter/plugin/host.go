@@ -1068,7 +1068,7 @@ func (h *Host) createRPCShutdown(endpoint transport.Endpoint, gracePeriod time.D
 
 		client := numenv1connect.NewPluginLifecycleServiceClient(
 			transport.EndpointClient(endpoint),
-			endpoint.BaseURL(),
+			transport.GetBaseURL(endpoint),
 			connect.WithInterceptors(transport.AuthInterceptor(endpoint.Token)),
 		)
 		req := connect.NewRequest(&v1.ShutdownRequest{
@@ -1416,7 +1416,7 @@ func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) er
 	httpClient := transport.EndpointClient(endpoint)
 	client := numenv1connect.NewPluginLifecycleServiceClient(
 		httpClient,
-		endpoint.BaseURL(),
+		transport.GetBaseURL(endpoint),
 		connect.WithInterceptors(transport.AuthInterceptor(endpoint.Token)),
 	)
 	req := connect.NewRequest(&v1.ConfigureRequest{

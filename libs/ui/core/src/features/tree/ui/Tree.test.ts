@@ -1,28 +1,11 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Tree from './Tree.vue'
-import type { Row } from '../lib/row'
 import { stubClock } from '@/shared/fixtures/clock'
 import type { Clock } from '@/shared/lib/time/clock'
+import { WORK_ROWS } from '../fixtures/rows'
 
-const ROWS: readonly Row[] = [
-  {
-    id: 'work',
-    name: 'Work',
-    hasChildren: true,
-    rows: [
-      {
-        id: 'plans',
-        name: 'Plans',
-        hasChildren: true,
-        rows: [{ id: 'friday', name: 'Friday', hasChildren: false }],
-      },
-      { id: 'notes', name: 'Notes', hasChildren: false },
-    ],
-  },
-  { id: 'empty', name: 'Empty', hasChildren: true },
-  { id: 'loose', name: 'Loose', hasChildren: false },
-]
+const ROWS = WORK_ROWS
 
 /** One row every 24 down the page: work, plans, notes, empty, loose. */
 const HEIGHT = 24

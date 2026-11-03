@@ -8,6 +8,7 @@ import type { Installation } from './types'
 import { WORDS as words } from './words'
 import { SETTINGS } from '@/entities/tab'
 import type { WindowHandle } from '@/entities/tab'
+import { createInstallation } from '@/testing/installation'
 
 /** A window that records the kinds it was requested to open. */
 const window_ = () => {
@@ -22,27 +23,12 @@ const window_ = () => {
 }
 
 const installation = (): Installation =>
-  ({
-    themes: ref([]),
+  createInstallation({
     applied: ref('preset/Numen.css'),
-    mode: ref('system'),
-    isPinned: ref(false),
-    sizes: ref({ interfaceScale: 1, textScale: 1 }),
-    bounds: ref({
-      interfaceScale: { min: 0.8, max: 2 },
-      textScale: { min: 0.8, max: 1.75 },
-    }),
-    choose: vi.fn(),
     isSyncing: ref(false),
-    writeSecret: vi.fn(),
-    deleteSecret: vi.fn(),
-    retryPlugin: vi.fn(),
-    choosePath: vi.fn(async () => ''),
-    getSetting: () => undefined,
-    getModels: () => [],
     write: vi.fn(),
     file: ref('/vaults/Physics/.numen/settings.json'),
-  }) satisfies Installation
+  })
 
 describe('the settings tab', () => {
   it('holds the installation the window already keeps', () => {

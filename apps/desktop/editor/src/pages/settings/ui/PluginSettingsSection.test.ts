@@ -1,12 +1,16 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
 
 import type { PluginInfo, SettingEdit } from '@/entities/settings'
 import { getSettingAt as at } from '@/entities/settings'
 import PluginSettingsSection from './PluginSettingsSection.vue'
-import type { Installation, SettingsTabState } from '../types'
-import { createProgramModels, type ProgramFixture } from '@/testing/installation'
+import type { SettingsTabState } from '../types'
+import {
+  createInstallation,
+  createProgramModels,
+  type ProgramFixture,
+} from '@/testing/installation'
 
 const SAMPLE_PLUGIN: PluginInfo = {
   id: 'test.transcription',
@@ -66,30 +70,14 @@ const createSection = (
   programs: readonly ProgramFixture[] = [],
 ) => {
   const content: SettingEdit[] = []
-  const installation: Installation = {
+  const installation = createInstallation({
     getSetting: (path) => at(file, path),
     getModels: createProgramModels(programs),
     write: (response) => {
       content.push(...response)
     },
     plugins: ref(plugins),
-    file: ref('/numen.json'),
-    themes: ref([]),
-    applied: ref('preset:numen'),
-    mode: ref('system'),
-    isPinned: ref(false),
-    sizes: ref({ interfaceScale: 1, textScale: 1 }),
-    bounds: ref({
-      interfaceScale: { min: 0.8, max: 2 },
-      textScale: { min: 0.8, max: 1.75 },
-    }),
-    choose: vi.fn(),
-    isSyncing: ref(true),
-    writeSecret: vi.fn(),
-    deleteSecret: vi.fn(),
-    retryPlugin: vi.fn(),
-    choosePath: vi.fn(async () => ''),
-  }
+  })
   const state: SettingsTabState = { installation }
   const wrapper = mount(PluginSettingsSection, {
     props: { state },

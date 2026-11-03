@@ -7,10 +7,10 @@
  * projects that do not run in a browser. Each target is split into shards by
  * the size of its source.
  */
-import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { dirname, join, normalize } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { execTool } from '../shared/tools.mjs'
 
 export const root = join(dirname(fileURLToPath(import.meta.url)), '../..')
 
@@ -96,7 +96,7 @@ export const findTestdata = (at, tests) => {
 /* -------------------------------- Discovery ------------------------------- */
 
 const listTracked = () =>
-  execFileSync('git', ['ls-files'], {
+  execTool('git', ['ls-files'], {
     cwd: root,
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,

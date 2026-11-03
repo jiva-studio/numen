@@ -537,26 +537,7 @@ type identity struct{ in, field, spelled string }
 
 // identities are the exported struct fields of one file whose names end in ID.
 func identities(file *ast.File) []identity {
-	var found []identity
-	ast.Inspect(file, func(node ast.Node) bool {
-		spec, is := node.(*ast.TypeSpec)
-		if !is {
-			return true
-		}
-		target, is := spec.Type.(*ast.StructType)
-		if !is {
-			return true
-		}
-		for _, one := range target.Fields.List {
-			for _, name := range one.Names {
-				if name.IsExported() && strings.HasSuffix(name.Name, "ID") {
-					found = append(found, identity{spec.Name.Name, name.Name, getTypeName(one.Type)})
-				}
-			}
-		}
-		return true
-	})
-	return found
+	return getFieldsNamed(file, "ID")
 }
 
 // getTypeName is a type as it is written, and empty for one this rule reads
@@ -585,19 +566,7 @@ func TestTheCoresIdentitiesAreItsOwn(t *testing.T) {
 	var read int
 	for _, item := range []string{"domain", "port"} {
 		dir := getPackageDir(item)
-		target, err := readTree(dir)
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, one := range target {
-			if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
-				strings.HasSuffix(one.Name(), "_test.go") {
-				continue
-			}
-			file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, one.Name()), nil, 0)
-			if err != nil {
-				t.Fatal(err)
-			}
+		for _, file := range parseSourceFiles(t, dir) {
 			for _, found := range identities(file) {
 				read++
 				if getNumbered()[found.spelled] {
@@ -1261,26 +1230,7 @@ func TestTheTreeIsWhereTheLayersAreRead(t *testing.T) {
 // getInstants are the fields of a struct whose names end in Time, by the type
 // each is written in.
 func getInstants(file *ast.File) []identity {
-	var found []identity
-	ast.Inspect(file, func(node ast.Node) bool {
-		spec, is := node.(*ast.TypeSpec)
-		if !is {
-			return true
-		}
-		target, is := spec.Type.(*ast.StructType)
-		if !is {
-			return true
-		}
-		for _, one := range target.Fields.List {
-			for _, name := range one.Names {
-				if name.IsExported() && strings.HasSuffix(name.Name, "Time") {
-					found = append(found, identity{spec.Name.Name, name.Name, getTypeName(one.Type)})
-				}
-			}
-		}
-		return true
-	})
-	return found
+	return getFieldsNamed(file, "Time")
 }
 
 // An instant in the core is a time.Time. A second count and a millisecond count
@@ -1295,19 +1245,7 @@ func TestEveryInstantTheCoreCarriesIsATime(t *testing.T) {
 	var read int
 	for _, item := range []string{"domain", "port"} {
 		dir := getPackageDir(item)
-		target, err := readTree(dir)
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, one := range target {
-			if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
-				strings.HasSuffix(one.Name(), "_test.go") {
-				continue
-			}
-			file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, one.Name()), nil, 0)
-			if err != nil {
-				t.Fatal(err)
-			}
+		for _, file := range parseSourceFiles(t, dir) {
 			for _, found := range getInstants(file) {
 				read++
 				if found.spelled != "time.Time" {
@@ -1401,19 +1339,7 @@ func TestTheIdentitiesAPortAsksForAreTheCoresOwn(t *testing.T) {
 	var wrong []string
 	var read int
 	dir := filepath.Join("..", "port")
-	target, err := readTree(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, one := range target {
-		if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") ||
-			strings.HasSuffix(one.Name(), "_test.go") {
-			continue
-		}
-		file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, one.Name()), nil, 0)
-		if err != nil {
-			t.Fatal(err)
-		}
+	for _, file := range parseSourceFiles(t, dir) {
 		for _, found := range getMethodIdentities(file) {
 			read++
 			if getNumbered()[found.spelled] {
@@ -1771,4 +1697,50 @@ func TestNothingOutsideAdaptersReadsClockOrRandom(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+}
+
+// getFieldsNamed returns the exported struct fields of one file whose names
+// end in suffix.
+func getFieldsNamed(file *ast.File, suffix string) []identity {
+	var found []identity
+	ast.Inspect(file, func(node ast.Node) bool {
+		spec, is := node.(*ast.TypeSpec)
+		if !is {
+			return true
+		}
+		target, is := spec.Type.(*ast.StructType)
+		if !is {
+			return true
+		}
+		for _, one := range target.Fields.List {
+			for _, name := range one.Names {
+				if name.IsExported() && strings.HasSuffix(name.Name, suffix) {
+					found = append(found, identity{spec.Name.Name, name.Name, getTypeName(one.Type)})
+				}
+			}
+		}
+		return true
+	})
+	return found
+}
+
+// parseSourceFiles parses each Go file directly in dir, tests excluded.
+func parseSourceFiles(t *testing.T, dir string) []*ast.File {
+	t.Helper()
+	entries, err := readTree(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var files []*ast.File
+	for _, one := range entries {
+		if one.IsDir() || !strings.HasSuffix(one.Name(), ".go") || strings.HasSuffix(one.Name(), "_test.go") {
+			continue
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(dir, one.Name()), nil, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		files = append(files, file)
+	}
+	return files
 }

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -105,7 +106,7 @@ func serveEndpoint(ctx context.Context, tools []tool, scope callScope, caller to
 	mux := http.NewServeMux()
 	mux.Handle(endpointPath, sdk.NewStreamableHTTPHandler(func(*http.Request) *sdk.Server { return server }, nil))
 	served := &endpoint{
-		url:     "http://" + listener.Addr().String() + endpointPath,
+		url:     (&url.URL{Scheme: "http", Host: listener.Addr().String(), Path: endpointPath}).String(),
 		token:   token,
 		server:  &http.Server{Handler: requireToken(token, mux), ReadHeaderTimeout: 10 * time.Second},
 		stopped: make(chan struct{}),

@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process'
+import { execTool } from './tools.mjs'
 
 export const DEFAULT_GIST_ID = 'd232b23b1b45234f6fd6570b93f2e63a'
 
@@ -27,7 +27,7 @@ export const updateBadgeGist = async (filename, payload) => {
       },
     })
 
-    execFileSync('gh', ['api', '--method', 'PATCH', `/gists/${gistId}`, '--input', '-'], {
+    execTool('gh', ['api', '--method', 'PATCH', `/gists/${gistId}`, '--input', '-'], {
       input,
       encoding: 'utf8',
       env: { ...process.env, GH_TOKEN: token },

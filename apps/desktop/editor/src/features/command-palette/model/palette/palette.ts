@@ -17,7 +17,7 @@ import {
   type Ref,
   type ShallowRef,
 } from 'vue'
-import { createRequestGuard as latest } from '@/shared/requestGuard'
+import { createRequestGuard as latest } from '@numen/ui'
 import { useDebouncedSearch, type Wait } from '@/shared/search'
 import type { Vault } from '@/entities/vault'
 import { createCommands } from '../../lib/commands/commands'

@@ -116,17 +116,6 @@ func (e Endpoint) Address() string {
 	return fmt.Sprintf("%s:%d", e.Host, e.Port)
 }
 
-// BaseURL returns the HTTP scheme, host, and port for the plugin server.
-func (e Endpoint) BaseURL() string {
-	if e.Port == 0 {
-		if e.Host != "" {
-			return fmt.Sprintf("http://%s", e.Host)
-		}
-		return "http://inprocess"
-	}
-	return fmt.Sprintf("http://%s:%d", e.Host, e.Port)
-}
-
 // PluginResolver locates plugins by capability or identifier. Of several enabled plugins that
 // declare a capability, the one with the lowest id is found.
 type PluginResolver interface {
