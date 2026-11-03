@@ -34,6 +34,8 @@ jobs:
 
       - id: detect
         uses: ./.github/actions/detect-code
+        with:
+          include: '^apps/desktop/|^libs/|^plugins/|^tests/e2e/desktop/|^tools/(build-plugin-index|shared)/|^(Makefile|package\.json|package-lock\.json|go\.work(\.sum)?|\.node-version)$'
 
   e2e:
     name: End-to-End

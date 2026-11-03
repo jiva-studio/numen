@@ -49,6 +49,8 @@ jobs:
 
       - id: detect
         uses: ./.github/actions/detect-code
+        with:
+          include: '^libs/protocol/|^\.golangci\.yml$|(^|/)gorules/'
 
   schema:
     name: Schema
