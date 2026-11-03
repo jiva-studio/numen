@@ -280,6 +280,19 @@ const description =
                 alt="Numen workspace"
                 fetchpriority="high"
               />
+              <button type="button" class="demo-launch" id="demo-launch">
+                <span class="demo-launch__pill">
+                  <span class="demo-launch__badge">
+                    <svg viewBox="0 0 16 16" aria-hidden="true">
+                      <path d="M5 3.5v9l7-4.5-7-4.5Z" />
+                    </svg>
+                  </span>
+                  <span class="demo-launch__copy">
+                    <strong data-i18n="demo_try_title">Try interactive demo</strong>
+                    <small data-i18n="demo_try_sub">Click to explore notes, map, PDF &amp; AI</small>
+                  </span>
+                </span>
+              </button>
             </div>
           </div>
         </div>
@@ -575,6 +588,8 @@ const description =
           'Build your knowledge: linked notes, directional map, PDF/EPUB with OCR, audio transcription, and AI assistant.',
         app2_desc:
           'Retain what matters: a dedicated desktop app for daily spaced repetition, FSRS scheduling, and workload forecasting.',
+        demo_try_title: 'Try interactive demo',
+        demo_try_sub: 'Click to explore notes, map, PDF & AI',
         tab_files: 'Files',
         tab_editor: 'Writing',
         tab_graph: 'The map',
@@ -662,6 +677,8 @@ const description =
           'Собирайте знания: связанные заметки, направленная карта, книги PDF/EPUB с OCR, расшифровка аудио и ИИ-ассистент.',
         app2_desc:
           'Удерживайте в памяти: отдельное приложение для ежедневного повторения, планирования FSRS и прогноза нагрузки.',
+        demo_try_title: 'Попробовать вживую',
+        demo_try_sub: 'Нажмите, чтобы покликать заметки, карту, PDF и ИИ',
         tab_files: 'Файлы',
         tab_editor: 'Редактор',
         tab_graph: 'Карта',
@@ -749,6 +766,8 @@ const description =
           'Gradite znanje: povezane beleške, usmerena mapa, PDF/EPUB uz OCR, transkripcija zvuka i AI asistent.',
         app2_desc:
           'Zadržite u pamćenju: posebna aplikacija za dnevno ponavljanje, FSRS raspored i prognozu opterećenja.',
+        demo_try_title: 'Isprobaj uživo',
+        demo_try_sub: 'Kliknite da istražite beleške, mapu, PDF i AI',
         tab_files: 'Datoteke',
         tab_editor: 'Pisanje',
         tab_graph: 'Mapa',
@@ -925,9 +944,40 @@ const description =
   </script>
 
   <script>
-    import { mountDemoWindow } from '../components/mountDemoWindow'
+    const host = document.getElementById('hero-live-demo')
+    const trigger = document.getElementById('demo-launch')
+    const desktopQuery = window.matchMedia('(min-width: 68rem) and (hover: hover) and (pointer: fine)')
 
-    mountDemoWindow('#hero-live-demo')
+    let preloaded: Promise<typeof import('../components/mountDemoWindow')> | null = null
+    let isMounted = false
+
+    function preloadDemo() {
+      if (!desktopQuery.matches || isMounted) return null
+      if (!preloaded) {
+        preloaded = import('../components/mountDemoWindow')
+      }
+      return preloaded
+    }
+
+    async function launchDemo() {
+      if (!host || !desktopQuery.matches || isMounted) return
+      isMounted = true
+      host.setAttribute('data-loading', 'true')
+      const mod = await (preloadDemo() ?? import('../components/mountDemoWindow'))
+      host.removeAttribute('data-loading')
+      host.setAttribute('data-live', 'true')
+      mod.mountDemoWindow('#hero-live-demo')
+    }
+
+    host?.addEventListener('pointerenter', () => {
+      void preloadDemo()
+    })
+    trigger?.addEventListener('focus', () => {
+      void preloadDemo()
+    })
+    trigger?.addEventListener('click', () => {
+      void launchDemo()
+    })
   </script>
 
   <script>
