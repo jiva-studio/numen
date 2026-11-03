@@ -955,13 +955,7 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 	cutInto(t, db, getFirst(), "library/coarse.epub", "the passage the bits prefer")
 	cutInto(t, db, getFirst(), "library/true.epub", "the passage the vectors prefer")
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", chunk.Cursor{}, 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(unembedded) != 2 {
-		t.Fatalf("%d chunks need a vector, want the two small chunks", len(unembedded))
-	}
+	unembedded := getTwoUnembedded(t, db)
 	for _, p := range unembedded {
 		var vec chunk.Vector
 		if p.Path == "library/coarse.epub" {
@@ -1112,32 +1106,7 @@ func TestTextThatWentConsumesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 	cutInto(t, db, getFirst(), "library/edited.epub", "a passage that will be rewritten")
 	cutInto(t, db, getFirst(), "library/gone.epub", "a passage in a book that goes")
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", chunk.Cursor{}, 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(unembedded) != 2 {
-		t.Fatalf("%d chunks need a vector, want the two small chunks", len(unembedded))
-	}
-	made := make([]chunk.Vector, 0, len(unembedded))
-	for _, p := range unembedded {
-		var hash string
-		if err := db.write.QueryRowContext(ctx,
-			`SELECT hash FROM chunks WHERE id = ?`, p.Chunk).Scan(&hash); err != nil {
-			t.Fatal(err)
-		}
-		raw, err := hex.DecodeString(hash)
-		if err != nil {
-			t.Fatal(err)
-		}
-		made = append(made, chunk.Vector{
-			Chunk: p.Chunk, Hash: raw, Recipe: "model",
-			Coarse: bits(0x00), Value: getPreciseBytes(getVectorForSeed(0x00)),
-		})
-	}
-	if err := db.Chunks().SaveVectors(ctx, made); err != nil {
-		t.Fatal(err)
-	}
+	saveVectorPerChunk(t, db)
 	if got := countRows(t, db, `SELECT COUNT(*) FROM vectors`); got != 2 {
 		t.Fatalf("%d vectors were kept, want 2", got)
 	}
@@ -1168,32 +1137,7 @@ func TestAVectorStaysWhileAnyChunkStillContainsItsText(t *testing.T) {
 	cutInto(t, db, getFirst(), "library/one.epub", shared)
 	cutInto(t, db, getFirst(), "library/two.epub", shared)
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, "model", chunk.Cursor{}, 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(unembedded) != 2 {
-		t.Fatalf("%d chunks need a vector, want two", len(unembedded))
-	}
-	made := make([]chunk.Vector, 0, len(unembedded))
-	for _, p := range unembedded {
-		var hash string
-		if err := db.write.QueryRowContext(ctx,
-			`SELECT hash FROM chunks WHERE id = ?`, p.Chunk).Scan(&hash); err != nil {
-			t.Fatal(err)
-		}
-		raw, err := hex.DecodeString(hash)
-		if err != nil {
-			t.Fatal(err)
-		}
-		made = append(made, chunk.Vector{
-			Chunk: p.Chunk, Hash: raw, Recipe: "model",
-			Coarse: bits(0x00), Value: getPreciseBytes(getVectorForSeed(0x00)),
-		})
-	}
-	if err := db.Chunks().SaveVectors(ctx, made); err != nil {
-		t.Fatal(err)
-	}
+	saveVectorPerChunk(t, db)
 	// One text, one vector, regardless of which chunk requested it.
 	if got := countRows(t, db, `SELECT COUNT(*) FROM vectors`); got != 1 {
 		t.Fatalf("%d vectors were kept for one text, want 1", got)
@@ -1548,5 +1492,36 @@ func TestRecentlyModifiedSourcesAreEmbeddedFirst(t *testing.T) {
 	}
 	if len(secondPage) != 2 || secondPage[0].Source != "library/old.epub" || secondPage[1].Source != "library/old.epub" {
 		t.Fatalf("page 2 unexpected: %+v", secondPage)
+	}
+}
+
+// getTwoUnembedded returns the chunks of the first vault that need a vector,
+// and fails unless there are two of them.
+func getTwoUnembedded(t *testing.T, db *DB) []chunk.Passage {
+	t.Helper()
+	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), getFirst().ID, "model", chunk.Cursor{}, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(unembedded) != 2 {
+		t.Fatalf("%d chunks need a vector, want two", len(unembedded))
+	}
+	return unembedded
+}
+
+// saveVectorPerChunk saves one vector for each of the two chunks of the first
+// vault that need one.
+func saveVectorPerChunk(t *testing.T, db *DB) {
+	t.Helper()
+	unembedded := getTwoUnembedded(t, db)
+	made := make([]chunk.Vector, 0, len(unembedded))
+	for _, p := range unembedded {
+		made = append(made, chunk.Vector{
+			Chunk: p.Chunk, Hash: hashOf(t, db, p.Chunk), Recipe: "model",
+			Coarse: bits(0x00), Value: getPreciseBytes(getVectorForSeed(0x00)),
+		})
+	}
+	if err := db.Chunks().SaveVectors(t.Context(), made); err != nil {
+		t.Fatal(err)
 	}
 }

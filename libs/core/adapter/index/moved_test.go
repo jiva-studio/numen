@@ -12,32 +12,10 @@ import (
 // them.
 func chunksOf(t *testing.T, db *DB, vault domain.Vault, path string) []int64 {
 	t.Helper()
-
-	rows, err := db.read.QueryContext(t.Context(),
+	return rowsOf(t, db,
 		`SELECT c.id FROM chunks c JOIN sources s ON s.id = c.source_id
 		 WHERE s.vault_id = (SELECT id FROM vaults WHERE identifier = ?) AND s.path = ?
 		 ORDER BY c.id`, vault.ID, path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := rows.Close(); err != nil {
-			t.Error(err)
-		}
-	}()
-
-	var out []int64
-	for rows.Next() {
-		var id int64
-		if err := rows.Scan(&id); err != nil {
-			t.Fatal(err)
-		}
-		out = append(out, id)
-	}
-	if err := rows.Err(); err != nil {
-		t.Fatal(err)
-	}
-	return out
 }
 
 // A folder is moved with everything under it, for any type of file,
