@@ -178,10 +178,16 @@ func (c Config) ReadSettings() func() (string, string, error) {
 
 // GetSettingsWriter patches specific settings paths in the configuration file.
 func (c Config) GetSettingsWriter() func(entries []settingsport.Setting) error {
+	return func(entries []settingsport.Setting) error { return c.writeSettings(entries, nil) }
+}
+
+// GetAppliedSettingsWriter patches specific settings paths in the configuration file, and runs the
+// function given once the plugins the settings name have their new values.
+func (c Config) GetAppliedSettingsWriter() func(entries []settingsport.Setting, applied func()) error {
 	return c.writeSettings
 }
 
-func (c Config) writeSettings(entries []settingsport.Setting) error {
+func (c Config) writeSettings(entries []settingsport.Setting, applied func()) error {
 	target := make([]settings.Setting, 0, len(entries))
 	for _, one := range entries {
 		var value json.RawMessage
@@ -201,7 +207,12 @@ func (c Config) writeSettings(entries []settingsport.Setting) error {
 	if err := c.getResources().settingsFiles.Save(path, &into, target...); err != nil {
 		return err
 	}
-	notify := func() { notifyPluginSettings(c.PluginHost, entries, c.handleError) }
+	notify := func() {
+		notifyPluginSettings(c.PluginHost, entries, c.handleError)
+		if applied != nil {
+			applied()
+		}
+	}
 	if updates := c.getResources().pluginUpdates; updates != nil {
 		updates.Go(notify)
 	} else {

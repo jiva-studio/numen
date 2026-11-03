@@ -12,14 +12,16 @@ import (
 func TestWritePassesTheSettingsOn(t *testing.T) {
 	t.Parallel()
 	var passed []settingsport.Setting
-	write := settings.NewWrite(func(output []settingsport.Setting) error {
+	isApplied := false
+	write := settings.NewWrite(func(output []settingsport.Setting, applied func()) error {
 		passed = output
+		applied()
 		return settingsport.ErrNotASetting
 	})
 
-	err := write.Execute([]settingsport.Setting{{Path: []string{"a"}, JSON: "1"}})
+	err := write.Execute([]settingsport.Setting{{Path: []string{"a"}, JSON: "1"}}, func() { isApplied = true })
 
-	if !errors.Is(err, settingsport.ErrNotASetting) || len(passed) != 1 {
-		t.Fatalf("error is %v after passing %v", err, passed)
+	if !errors.Is(err, settingsport.ErrNotASetting) || len(passed) != 1 || !isApplied {
+		t.Fatalf("error is %v after passing %v, applied %v", err, passed, isApplied)
 	}
 }
