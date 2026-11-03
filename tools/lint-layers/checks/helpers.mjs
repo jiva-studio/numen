@@ -192,13 +192,16 @@ export function getGoModReferences(source) {
 function readGoLiteral(source, start) {
   const quote = source[start];
   let value = "";
+  const isRaw = quote === "`";
   let i = start + 1;
-  while (i < source.length && source[i] !== quote && (quote === "`" || source[i] !== "\n")) {
-    if (quote !== "`" && source[i] === "\\") {
+  while (i < source.length) {
+    const c = source[i];
+    if (c === quote || (!isRaw && c === "\n")) break;
+    if (!isRaw && c === "\\") {
       value += source[i + 1] ?? "";
       i += 2;
     } else {
-      value += source[i];
+      value += c;
       i++;
     }
   }

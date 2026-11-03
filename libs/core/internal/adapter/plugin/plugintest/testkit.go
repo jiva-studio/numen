@@ -265,13 +265,21 @@ func GetPort(tb testing.TB, server *httptest.Server) int {
 // and kills and reaps it when the test ends.
 func StartSleepProcess(t *testing.T) *exec.Cmd {
 	t.Helper()
-	cmd := exec.CommandContext(t.Context(), "sleep", "10")
+	// The shell waits for a line on its standard input, which stays open until the test ends.
+	cmd := exec.CommandContext(t.Context(), "/bin/sh", "-c", "read -r line")
+	input, err := cmd.StdinPipe()
+	if err != nil {
+		t.Fatalf("open the input of the mock proc: %v", err)
+	}
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start mock proc failed: %v", err)
 	}
 	t.Cleanup(func() {
 		KillProcess(t, cmd.Process)
 		ReapProcess(t, cmd.Process)
+		if err := input.Close(); err != nil {
+			t.Error(err)
+		}
 	})
 	return cmd
 }
