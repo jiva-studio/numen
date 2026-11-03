@@ -108,7 +108,6 @@ func getPluginsDirs() []string {
 	if err == nil {
 		execDir := filepath.Dir(execPath)
 		addDir(filepath.Join(execDir, "plugins"))
-		addDir(filepath.Join(execDir, "modules", "plugins"))
 		addDir(filepath.Join(execDir, "..", "PlugIns"))
 		addDir(filepath.Join(execDir, "..", "Resources", "plugins"))
 		addDir(filepath.Join(execDir, "..", "lib", "numen", "plugins"))
