@@ -3,7 +3,7 @@ import { afterEach, expect } from 'vitest'
 import type { MessageWriter } from '@numen/plugin-sdk'
 import { DEFAULTS, type Presets, type PresetWriteResult } from '../types'
 
-export const PATH = 'presets/Daily.md'
+const PATH = 'presets/Daily.md'
 
 /** A write the test answers when it chooses. */
 export const createGate = () => {
