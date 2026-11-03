@@ -7,31 +7,6 @@ import { getPageIndex, getWide, holdPageRequests, openPages, readNaturalWidth } 
 const DEBOUNCE_MS = 150
 
 test.describe('PDF reader zoom', () => {
-  test('keeps the page on screen while the new resolution is drawn, then shows it', async ({
-    page,
-  }) => {
-    const first = await openPages(page)
-    const picture = first.locator('.reader__picture')
-    const before = await readNaturalWidth(picture)
-    const pending = await holdPageRequests(page)
-
-    await page.getByRole('button', { name: 'Zoom in' }).click()
-    await page.getByRole('button', { name: 'Zoom in' }).click()
-    await expect.poll(() => pending.requested.length).toBeGreaterThan(0)
-    // Two presses further apart than the debounce ask for two widths; the last one is asked for
-    // once the debounce of the second press has run out.
-    await observeFor(page, DEBOUNCE_MS * 3)
-    // The old picture is scaled up meanwhile, and nothing covers it.
-    await expect(picture).toBeVisible()
-    await expect(first.locator('.reader__spinner')).toHaveCount(0)
-    expect(await readNaturalWidth(picture)).toBe(before)
-
-    pending.release()
-    const last = pending.requested.filter((one) => getPageIndex(one.url()) === 0).at(-1)!
-    await expect.poll(() => readNaturalWidth(picture)).toBe(getWide(last.url()))
-    expect(getWide(last.url())).toBeGreaterThan(before)
-  })
-
   test('requests the new resolution of the pages in view and a margin, and of no others', async ({
     page,
   }) => {

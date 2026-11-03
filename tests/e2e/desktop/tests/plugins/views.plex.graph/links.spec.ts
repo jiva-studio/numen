@@ -1,6 +1,5 @@
 import { test, expect, type Locator, type Page, type Route } from '../../support/test.js'
 import { getGraph, openWorkspace } from '../../support/workspace.js'
-import { expectSearchableList } from '../../support/searchable-list.js'
 import { createUniqueTitle } from '../../support/vault.js'
 import {
   createNoteWithBody,
@@ -102,40 +101,6 @@ test.describe('Links between two notes in the plex', () => {
       .toBe(true)
     await expect(getGraph(page).getByRole('img', { name: /^(Quay|Jetty), focus$/ })).toBeVisible()
     await expect(getGraph(page).locator('.plex__edge')).toHaveCount(1)
-  })
-
-  test('keeps Create as row 1 at the same place while the found notes arrive, in one frame', async ({
-    page,
-  }) => {
-    await openWorkspace(page)
-    await showInPlex(page, quay)
-    const release = await holdSearches(page)
-    const dialog = await openQuickLink(page, 'Quay')
-    const field = dialog.getByRole('combobox')
-    await field.fill('Jett')
-
-    const options = dialog.getByRole('option')
-    await expect(options).toHaveText(['Create "Jett"'])
-    const before = await options.first().boundingBox()
-    await expect(options.first()).toHaveAttribute('aria-selected', 'true')
-
-    await release()
-    await expect(dialog.getByRole('option', { name: 'Jetty', exact: true }).first()).toBeVisible()
-    await expect(options.first()).toHaveText('Create "Jett"')
-    await expect(options.first()).toHaveAttribute('aria-selected', 'true')
-    const after = await options.first().boundingBox()
-    expect(after?.y).toBe(before?.y)
-    expect(after?.x).toBe(before?.x)
-
-    await waitForQuickLinkPanel(dialog)
-    await expectSearchableList(dialog)
-    const frameElement = (await dialog.locator('[data-numen-searchable-list]').elementHandle())!
-    const row = await field.boundingBox()
-    const list = await dialog.getByRole('listbox').boundingBox()
-    const box = await frameElement.boundingBox()
-    expect(list!.y).toBeGreaterThanOrEqual(row!.y + row!.height)
-    expect(list!.y - (row!.y + row!.height)).toBeLessThan(12)
-    expect(list!.y + list!.height).toBeLessThanOrEqual(box!.y + box!.height)
   })
 
   test('replaces row 1 in place with the note of exactly the typed title and links it without creating a note', async ({

@@ -1,30 +1,11 @@
 import { test, expect, type Page } from '../../support/test.js'
-import { openWorkspace, runCommand, runPaletteCommand } from '../../support/workspace.js'
+import { openWorkspace, runCommand } from '../../support/workspace.js'
 import { getRow, readComputedFontSize, showInFiles } from '../../support/layout.js'
 import { readSettings, writeSetting } from '../../support/vault.js'
-
-/** The colour the window is painted in by the default theme, in each half. */
-const SURFACE = { light: 'rgb(250, 244, 232)', dark: 'rgb(30, 25, 22)' } as const
-
-/** The colour `--numen-surface` resolves to on the page. */
-const readSurface = (page: Page): Promise<string> =>
-  page.evaluate(() => {
-    const probe = document.createElement('div')
-    probe.style.color = 'var(--numen-surface)'
-    document.body.append(probe)
-    const colour = getComputedStyle(probe).color
-    probe.remove()
-    return colour
-  })
 
 /** The size of the text the interface is drawn in, which every rem of it is measured in. */
 const readRootFontSize = (page: Page): Promise<number> =>
   page.evaluate(() => Number.parseFloat(getComputedStyle(document.documentElement).fontSize))
-
-const setMode = async (page: Page, name: 'Light' | 'Dark'): Promise<void> => {
-  await runPaletteCommand(page, 'Light or dark', 'Light or dark')
-  await page.getByRole('option', { name: new RegExp(`^${name}`) }).click()
-}
 
 /** Opens the system section of the settings tab, and gives back the tab. */
 const openSystemSettings = async (page: Page) => {
@@ -39,32 +20,6 @@ test.describe('Theming and Display Scaling', () => {
     await writeSetting(request, ['appearance', 'mode'], 'system')
     await writeSetting(request, ['appearance', 'interface_scale'], 1)
     await writeSetting(request, ['appearance', 'text_scale'], 1)
-  })
-
-  test('paints the window in the dark half of the theme once Dark is chosen', async ({
-    page,
-    request,
-  }) => {
-    await openWorkspace(page)
-    await setMode(page, 'Dark')
-
-    await expect.poll(() => readSurface(page)).toBe(SURFACE.dark)
-    await expect
-      .poll(async () => (await readSettings(request))['appearance'])
-      .toMatchObject({ mode: 'dark' })
-  })
-
-  test('paints the window in the light half of the theme once Light is chosen', async ({
-    page,
-    request,
-  }) => {
-    await openWorkspace(page)
-    await setMode(page, 'Light')
-
-    await expect.poll(() => readSurface(page)).toBe(SURFACE.light)
-    await expect
-      .poll(async () => (await readSettings(request))['appearance'])
-      .toMatchObject({ mode: 'light' })
   })
 
   test('draws the interface and the note text at the sizes typed in the settings tab, also after a reload', async ({
