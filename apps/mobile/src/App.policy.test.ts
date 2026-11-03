@@ -22,7 +22,8 @@ vi.mock('@capacitor/core', () => ({
 const PAGE = 'http://localhost'
 
 /** This module, on disk. The runner serves it, so its own address is one. */
-const here = new URL('..', import.meta.url).pathname.replace(/^\/@fs/, '')
+const rawHere = new URL('..', import.meta.url).pathname.replace(/^\/@fs/, '')
+const here = rawHere === '/' ? process.cwd() : rawHere
 
 /** The policy the page carries, directive by directive. */
 const policy: Record<string, string[]> = Object.fromEntries(

@@ -17,32 +17,32 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@connectrpc/connect": "^2.1.2",
-    "@connectrpc/connect-web": "^2.1.2",
+    "@connectrpc/connect": "^2.3.0",
+    "@connectrpc/connect-web": "^2.3.0",
     "@tailwindcss/node": "^4.3.3",
     "@tailwindcss/oxide": "^4.3.3",
     "@vue/compiler-sfc": "^3.5.44",
-    "postcss": "^8.5.29"
+    "postcss": "^8.5.32"
   },
   "peerDependencies": {
     "@numen/ui": "*",
-    "vite": "^8.3.4",
+    "vite": "^8.3.5",
     "vue": "^3.5.44"
   },
   "devDependencies": {
     "@babel/types": "^7.29.8",
     "@numen/protocol": "*",
     "@numen/ui": "*",
-    "@storybook/addon-vitest": "^10.6.2",
-    "@storybook/vue3-vite": "^10.6.2",
-    "@types/node": "^26.6.5",
+    "@storybook/addon-vitest": "^10.6.5",
+    "@storybook/vue3-vite": "^10.6.5",
+    "@types/node": "^26.6.6",
     "@vitejs/plugin-vue": "^6.0.10",
     "@vitest/browser-playwright": "^5.0.5",
-    "eslint": "^10.10.0",
+    "eslint": "^10.14.0",
     "storybook": "^10.6.2",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.71.2",
-    "vite": "^8.3.4",
+    "typescript-eslint": "^8.72.1",
+    "vite": "^8.3.5",
     "vitest": "^5.0.3",
     "vue": "^3.5.44"
   }

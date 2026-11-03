@@ -26,7 +26,25 @@ updates:
       - /apps/desktop
       - /apps/mobile
       - /apps/desktop/build/tools
-      - /plugins/*
+      - /plugins/agents-acp
+      - /plugins/agents-antigravity
+      - /plugins/agents-claude
+      - /plugins/agents-codex
+      - /plugins/agents-mcp-server
+      - /plugins/agents-numen
+      - /plugins/agents-tools-vault
+      - /plugins/agents-tools-window
+      - /plugins/engines-embeddings
+      - /plugins/engines-ocr
+      - /plugins/engines-transcription
+      - /plugins/readers-epub
+      - /plugins/readers-pdf
+      - /plugins/tools-index-stats
+      - /plugins/tools-media-importer
+      - /plugins/tools-proofreading
+      - /plugins/tools-search-relevance
+      - /plugins/tools-updater
+      - /plugins/views-flashcards-studio
     schedule:
       interval: monthly
     commit-message:
