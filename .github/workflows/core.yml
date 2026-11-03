@@ -67,6 +67,8 @@ jobs:
 
       - id: detect
         uses: ./.github/actions/detect-code
+        with:
+          include: '^libs/(core|notes|plugin-catalog|protocol|plugin-sdk-go)/|^tests/|^plugins/.*/manifest\.json$|^tools/(build-plugin-index|shared)/|^(\.golangci.*\.yml|go\.work(\.sum)?)$'
 
   # Which machines this run is for. Linux always; a Windows or a mac runner
   # costs two and ten times a Linux one, and is asked for by name.

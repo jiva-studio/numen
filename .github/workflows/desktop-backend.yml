@@ -56,6 +56,8 @@ jobs:
 
       - id: detect
         uses: ./.github/actions/detect-code
+        with:
+          include: '^apps/desktop/|^libs/(core|notes|plugin-catalog|plugin-sdk-go|protocol)/|^plugins/|^tools/(build-plugin-index|shared)/|^(\.golangci.*\.yml|go\.work(\.sum)?)$|(^|/)gorules/'
 
   lint:
     name: Lint

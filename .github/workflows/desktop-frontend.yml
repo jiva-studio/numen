@@ -58,6 +58,8 @@ jobs:
 
       - id: detect
         uses: ./.github/actions/detect-code
+        with:
+          include: '^apps/desktop/(editor|flashcards)/|^libs/(ui|plugin-sdk-ts|core-client|plugin-host-ts|plugin-manager|protocol)/|^tools/ci-stories/|^tests/e2e/desktop/|^(package\.json|package-lock\.json|\.node-version)$'
 
   screens:
     name: Frontend

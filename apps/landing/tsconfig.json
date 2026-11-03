@@ -1,5 +1,5 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*.ts", "**/*.astro"],
-  "exclude": ["dist"]
+  "exclude": ["dist", "src/components/DemoWindow.vue"]
 }
