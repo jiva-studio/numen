@@ -127,25 +127,20 @@
         "src/**/*.{ts,astro,vue}",
         "tools/**/*.mjs"
       ],
-      "ignoreDependencies": [
-        "@fontsource-variable/newsreader",
-        "@fontsource/ibm-plex-mono",
-        "@fontsource/ibm-plex-sans",
-        "@vitejs/plugin-vue",
-        "@lucide/vue",
-        "vue",
-        "@numen/core-client",
-        "@numen/plugin-host",
-        "@numen/ui-shell",
-        "@plugins/views-file-tree",
-        "@plugins/views-plex-graph",
-        "@plugins/notes",
-        "@plugins/readers-pdf",
-        "@plugins/views-media-player",
-        "@plugins/views-flashcards-studio",
-        "@plugins/views-agent-chat",
-        "@editor-features/tab-linking"
-      ]
+      "paths": {
+        "@editor-features/*": [
+          "../desktop/editor/src/features/*"
+        ],
+        "@plugins/*": [
+          "../../plugins/*"
+        ],
+        "@numen/ui-shell": [
+          "../../libs/ui/shell/src/index.ts"
+        ],
+        "@numen/ui-shell/styles.css": [
+          "../../libs/ui/shell/src/styles.css"
+        ]
+      }
     },
     "tests/e2e/desktop": {
       "entry": [
