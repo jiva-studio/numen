@@ -17,23 +17,29 @@ permissions:
   contents: read
 
 jobs:
-  # Whether the change is more than documentation. The checks below always start
-  # and report under their own names; a job skipped on this result reports as
-  # skipped, which a required check accepts.
+  # Which languages the change touches (.github/scripts/changes.mjs). The analyses below always
+  # start and report under their own names; an analysis whose language did not change runs no step.
   changes:
     name: Changes
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      code: ${{ steps.detect.outputs.code }}
+      go: ${{ steps.areas.outputs.go }}
+      js: ${{ steps.areas.outputs.js }}
     steps:
+      # The merge commit and its first parent, the base, without file contents.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          fetch-depth: 2
+          filter: blob:none
+          sparse-checkout: .github
           persist-credentials: false
 
-      - id: detect
-        uses: ./.github/actions/detect-code
+      - id: areas
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event_name == 'pull_request' && 'HEAD^1' || github.event.before }}
+        run: node .github/scripts/changes.mjs "$EVENT" "$BASE" HEAD | tee -a "$GITHUB_OUTPUT"
 
   # The steps carry the condition: a matrix job skipped whole reports under its
   # unexpanded name, which no required check holds.
@@ -52,30 +58,35 @@ jobs:
         include:
           - language: javascript-typescript
             build-mode: none
+            area: js
           - language: go
             build-mode: autobuild
+            area: go
+
+    env:
+      CHANGED: ${{ needs.changes.result != 'success' || needs.changes.outputs[matrix.area] == 'true' }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
+        if: env.CHANGED == 'true'
         with:
           persist-credentials: false
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') && matrix.language == 'go'
+        if: env.CHANGED == 'true' && matrix.language == 'go'
         with:
           go-version-file: libs/core/go.mod
           cache: false
 
       - name: Initialize CodeQL
-        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
+        if: env.CHANGED == 'true'
         uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
 
       - name: Perform CodeQL Analysis
-        if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
+        if: env.CHANGED == 'true'
         uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           category: "/language:${{ matrix.language }}"
