@@ -1,5 +1,5 @@
 import { test, expect } from '../../support/test.js'
-import { waitForWindow } from '../../support/workspace.js'
+import { openAsset, waitForWindow } from '../../support/workspace.js'
 
 test.describe('Keyboard Shortcuts and Navigation', () => {
   test('dismisses active palette modal on Escape key press', async ({ page }) => {
@@ -18,19 +18,7 @@ test.describe('Keyboard Shortcuts and Navigation', () => {
   })
 
   test('closes active plugin tab via Control+Shift+w keyboard shortcut', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Open sample.pdf
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    const pdfRow = page.locator('[data-tree-row="assets/sample.pdf"]')
-    await expect(pdfRow).toBeVisible()
-    await pdfRow.press('Enter')
+    await openAsset(page, 'sample.pdf')
 
     const reader = page.locator('.reader')
     await expect(reader).toBeVisible({ timeout: 10_000 })

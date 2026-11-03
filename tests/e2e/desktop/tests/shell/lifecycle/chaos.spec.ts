@@ -1,22 +1,9 @@
 import { test, expect } from '../../support/test.js'
-import { waitForWindow } from '../../support/workspace.js'
+import { openFromFiles, openTreeRow } from '../../support/workspace.js'
 
 test.describe('Chaos, Fault Tolerance and Stress Scenarios', () => {
   test('gracefully parses malformed yaml frontmatter without editor crash', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Open notes folder
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
-
-    // Open malformed.md
-    const malformedRow = page.locator('[data-tree-row="notes/malformed.md"]')
-    await expect(malformedRow).toBeVisible()
-    await malformedRow.press('Enter')
+    await openFromFiles(page, ['notes', 'notes/malformed.md'])
 
     // Verify note editor detects malformed frontmatter and displays explicit alert banner
     const alertBanner = page.getByRole('alert')
@@ -29,20 +16,7 @@ test.describe('Chaos, Fault Tolerance and Stress Scenarios', () => {
   })
 
   test('renders high-volume document smoothly without interface freeze', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Open notes folder
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
-
-    // Open large.md
-    const largeRow = page.locator('[data-tree-row="notes/large.md"]')
-    await expect(largeRow).toBeVisible()
-    await largeRow.press('Enter')
+    await openFromFiles(page, ['notes', 'notes/large.md'])
 
     // Verify large document editor is rendered and contains expected content
     await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
@@ -55,35 +29,16 @@ test.describe('Chaos, Fault Tolerance and Stress Scenarios', () => {
   test('handles rapid tab switching and closing across heterogeneous file types', async ({
     page,
   }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Open Files panel
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Open notes folder
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
-
-    // Open Entropy.md
-    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
-    await expect(entropyRow).toBeVisible()
-    await entropyRow.press('Enter')
+    await openFromFiles(page, ['notes', 'notes/Entropy.md'])
 
     // Switch back to Files tab to open assets
     await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Open assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
+    await openTreeRow(page, 'assets')
 
     // Open sample.pdf
-    const pdfRow = page.locator('[data-tree-row="assets/sample.pdf"]')
-    await expect(pdfRow).toBeVisible()
-    await pdfRow.press('Enter')
+    await openTreeRow(page, 'assets/sample.pdf')
 
     // Rapid switch between tabs
     const entropyTab = page.getByRole('tab', { name: /Entropy/i }).first()

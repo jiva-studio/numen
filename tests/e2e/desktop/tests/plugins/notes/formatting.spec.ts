@@ -1,21 +1,9 @@
 import { test, expect } from '../../support/test.js'
-import { waitForWindow } from '../../support/workspace.js'
+import { openFromFiles } from '../../support/workspace.js'
 
 test.describe('Note editor live formatting and styling', () => {
   test('renders markdown blockquote with cm-quote styling in editor', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // 1. Open notes folder and plain.md
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
-
-    const plainRow = page.locator('[data-tree-row="notes/plain.md"]')
-    await expect(plainRow).toBeVisible()
-    await plainRow.press('Enter')
+    await openFromFiles(page, ['notes', 'notes/plain.md'])
 
     const cmContent = page.locator('.note .cm-content').first()
     await expect(cmContent).toBeVisible({ timeout: 10_000 })
@@ -36,18 +24,7 @@ test.describe('Note editor live formatting and styling', () => {
   })
 
   test('renders markdown fenced code block with cm-code styling', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
-
-    const plainRow = page.locator('[data-tree-row="notes/plain.md"]')
-    await expect(plainRow).toBeVisible()
-    await plainRow.press('Enter')
+    await openFromFiles(page, ['notes', 'notes/plain.md'])
 
     const cmContent = page.locator('.note .cm-content').first()
     await expect(cmContent).toBeVisible({ timeout: 10_000 })
@@ -70,18 +47,7 @@ test.describe('Note editor live formatting and styling', () => {
   })
 
   test('renders bulleted list with bullet marker widget in editor', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
-
-    const plainRow = page.locator('[data-tree-row="notes/plain.md"]')
-    await expect(plainRow).toBeVisible()
-    await plainRow.press('Enter')
+    await openFromFiles(page, ['notes', 'notes/plain.md'])
 
     const cmContent = page.locator('.note .cm-content').first()
     await expect(cmContent).toBeVisible({ timeout: 10_000 })
