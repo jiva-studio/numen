@@ -1,0 +1,48 @@
+name: "Set up Go with the build cache of main"
+description: "Installs Go and restores the module, build and golangci-lint caches that the newest push to main saved for the same job"
+inputs:
+  go-version-file:
+    description: "The go.mod whose go line names the Go release"
+    required: true
+  cache-key:
+    description: "The name the caches of this job are saved under, one per job"
+    required: true
+outputs:
+  cache-key:
+    description: "The key save-go-cache saves under"
+    value: ${{ steps.key.outputs.key }}
+runs:
+  using: "composite"
+  steps:
+    - id: setup
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version-file: ${{ inputs.go-version-file }}
+        cache: false
+
+    - id: key
+      shell: bash
+      env:
+        PREFIX: go-${{ inputs.cache-key }}-${{ runner.os }}-${{ steps.setup.outputs.go-version }}-${{ hashFiles('**/go.sum', 'go.work.sum') }}
+      run: |
+        mkdir -p "$HOME/.cache/golangci-lint"
+        echo "GOLANGCI_LINT_CACHE=$HOME/.cache/golangci-lint" >> "$GITHUB_ENV"
+        {
+          echo "prefix=$PREFIX-"
+          echo "key=$PREFIX-$GITHUB_RUN_ID"
+          echo "build=$(go env GOCACHE)"
+          echo "modules=$(go env GOMODCACHE)"
+        } >> "$GITHUB_OUTPUT"
+
+    # The newest cache of the same go.sum, else the newest of the same Go release: a run compiles
+    # and tests only the packages that differ from main.
+    - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ${{ steps.key.outputs.build }}
+          ${{ steps.key.outputs.modules }}
+          ~/.cache/golangci-lint
+        key: ${{ steps.key.outputs.key }}
+        restore-keys: |
+          ${{ steps.key.outputs.prefix }}
+          go-${{ inputs.cache-key }}-${{ runner.os }}-${{ steps.setup.outputs.go-version }}-

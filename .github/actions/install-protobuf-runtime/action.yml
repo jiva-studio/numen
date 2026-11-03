@@ -1,0 +1,23 @@
+name: "Install the protobuf runtime"
+description: "Installs @bufbuild/protobuf alone, at the version and integrity package-lock.json pins, for the tools that read plugin manifests"
+# The manifest readers under tools/ import @bufbuild/protobuf and the generated schema, and nothing
+# else from node_modules. The package has no dependencies of its own.
+runs:
+  using: "composite"
+  steps:
+    - name: Install @bufbuild/protobuf
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      run: |
+        set -euo pipefail
+        read -r version integrity < <(node -e '
+          const entry = require("./package-lock.json").packages["node_modules/@bufbuild/protobuf"]
+          console.log(entry.version, entry.integrity)')
+        packed=$(npm pack "@bufbuild/protobuf@$version" --pack-destination "$RUNNER_TEMP" --json)
+        got=$(node -e 'console.log(JSON.parse(process.argv[1])[0].integrity)' "$packed")
+        if [ "$got" != "$integrity" ]; then
+          echo "::error::@bufbuild/protobuf $version has integrity $got, package-lock.json pins $integrity"
+          exit 1
+        fi
+        mkdir -p node_modules/@bufbuild/protobuf
+        tar -xzf "$RUNNER_TEMP/bufbuild-protobuf-$version.tgz" -C node_modules/@bufbuild/protobuf --strip-components=1
