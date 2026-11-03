@@ -3,10 +3,8 @@
  * it away. The negatives matter most: a row with a submenu is not an item to
  * choose, and the key that closes a submenu must not close the menu under it.
  */
-import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
-import Menu from './Menu.vue'
+import { createMenuMount, settle } from './fixtures/mount'
 import type { MenuItem } from './items/item'
 
 const ITEMS: MenuItem[] = [
@@ -22,31 +20,13 @@ const ITEMS: MenuItem[] = [
   { id: 'copy', text: 'Copy path' },
 ]
 
-type MenuProps = InstanceType<typeof Menu>['$props']
-
-let mounted: { unmount: () => void } | null = null
-
-const mountMenu = (props: Partial<MenuProps> = {}) => {
-  const menu = mount(Menu, {
-    props: { items: ITEMS, at: { x: 40, y: 40 }, isOpen: true, ...props },
-    attachTo: document.body,
-  })
-  mounted = menu
-  return menu
-}
-
-const settle = async () => {
-  await nextTick()
-  await nextTick()
-}
+const { mountMenu } = createMenuMount(ITEMS)
 
 const getMenus = () => Array.from(document.body.querySelectorAll<HTMLElement>('.menu'))
 const getRows = (menu: HTMLElement | undefined) =>
   Array.from(menu?.querySelectorAll<HTMLElement>('.menu__item') ?? [])
 
 afterEach(() => {
-  mounted?.unmount()
-  mounted = null
   vi.restoreAllMocks()
 })
 
