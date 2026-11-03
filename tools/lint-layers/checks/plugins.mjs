@@ -302,6 +302,7 @@ export const PLUGIN_VERIFIERS = [
   },
   {
     id: "plugins-independence",
+    isGoTest: true,
     scope: "plugins",
     module: "plugins",
     name: "Plugin Independence Architecture Suite (14 platform targets)",
