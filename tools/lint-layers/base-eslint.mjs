@@ -450,6 +450,16 @@ const numenPlugin = {
         let handlersStart = -1
         let handlersEnd = Infinity
 
+        const checkHandlerName = (node) => {
+          const line = node.loc.start.line
+          if (line <= handlersStart || line >= handlersEnd) return
+          const name = node.id.name
+          if (/^on[A-Z]/.test(name)) return
+          const cleaned = name.replace(/^handle/, '')
+          const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
+          context.report({ node: node.id, messageId: 'invalidHandlerName', data: { name, capitalized } })
+        }
+
         return {
           Program() {
             const docFrag = context.sourceCode.parserServices.getDocumentFragment?.()
@@ -488,19 +498,7 @@ const numenPlugin = {
 
           FunctionDeclaration(node) {
             if (!node.id || handlersStart === -1) return
-            const line = node.loc.start.line
-            if (line > handlersStart && line < handlersEnd) {
-              const name = node.id.name
-              if (!/^on[A-Z]/.test(name)) {
-                const cleaned = name.replace(/^handle/, '')
-                const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
-                context.report({
-                  node: node.id,
-                  messageId: 'invalidHandlerName',
-                  data: { name, capitalized },
-                })
-              }
-            }
+            checkHandlerName(node)
           },
 
           VariableDeclarator(node) {
@@ -508,20 +506,7 @@ const numenPlugin = {
             const isFn =
               node.init?.type === 'ArrowFunctionExpression' ||
               node.init?.type === 'FunctionExpression'
-            if (!isFn) return
-            const line = node.loc.start.line
-            if (line > handlersStart && line < handlersEnd) {
-              const name = node.id.name
-              if (!/^on[A-Z]/.test(name)) {
-                const cleaned = name.replace(/^handle/, '')
-                const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
-                context.report({
-                  node: node.id,
-                  messageId: 'invalidHandlerName',
-                  data: { name, capitalized },
-                })
-              }
-            }
+            if (isFn) checkHandlerName(node)
           },
         }
       },
