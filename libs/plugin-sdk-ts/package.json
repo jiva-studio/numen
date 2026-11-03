@@ -30,7 +30,7 @@
     "vue": "^3.5.44"
   },
   "devDependencies": {
-    "@babel/types": "^7.29.8",
+    "@babel/types": "^8.1.0",
     "@numen/protocol": "*",
     "@numen/ui": "*",
     "@storybook/addon-vitest": "^10.6.5",
