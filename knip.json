@@ -148,7 +148,6 @@
         "playwright.flashcards.config.ts",
         "eslint.config.js",
         "scripts/*.mjs",
-        "tools/epub-frames/*.mjs",
         "flashcards/**/*.spec.ts",
         "tests/**/*.spec.ts"
       ],

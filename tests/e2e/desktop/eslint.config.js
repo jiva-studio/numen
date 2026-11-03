@@ -13,7 +13,7 @@ export default tseslint.config(
   ...createBaseConfig(import.meta.dirname, {
     // Every file here is test code: it reads the clock and the dice for names no run repeats.
     portIgnores: ['**/*.ts'],
-    extraIgnores: ['playwright-report/**', 'test-results/**', 'tools/**'],
+    extraIgnores: ['playwright-report/**', 'test-results/**'],
     allowDefaultProject: ['scripts/*.mjs'],
   }),
 

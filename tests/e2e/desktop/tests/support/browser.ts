@@ -4,22 +4,6 @@
  */
 import { expect, type Locator, type Page } from 'playwright/test'
 
-/** Waits inside the page until it has drawn that many frames. */
-export const waitForFrames = (page: Page, frames: number): Promise<void> =>
-  page.evaluate(
-    (count) =>
-      new Promise<void>((resolve) => {
-        let remaining = count
-        const draw = (): void => {
-          remaining -= 1
-          if (remaining <= 0) resolve()
-          else requestAnimationFrame(draw)
-        }
-        requestAnimationFrame(draw)
-      }),
-    frames,
-  )
-
 /**
  * Watches the page for that many milliseconds of its own time. A test that asserts nothing
  * happens during the span, or that records what the page does over it, reads the result after.
