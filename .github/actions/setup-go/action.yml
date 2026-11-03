@@ -29,14 +29,15 @@ runs:
         echo "GOLANGCI_LINT_CACHE=$HOME/.cache/golangci-lint" >> "$GITHUB_ENV"
         {
           echo "prefix=$PREFIX-"
-          echo "key=$PREFIX-$GITHUB_RUN_ID"
+          echo "key=$PREFIX"
           echo "build=$(go env GOCACHE)"
           echo "modules=$(go env GOMODCACHE)"
         } >> "$GITHUB_OUTPUT"
 
     # The newest cache of the same go.sum, else the newest of the same Go release: a run compiles
     # and tests only the packages that differ from main.
-    - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+    - id: restore
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: |
           ${{ steps.key.outputs.build }}
@@ -46,3 +47,6 @@ runs:
         restore-keys: |
           ${{ steps.key.outputs.prefix }}
           go-${{ inputs.cache-key }}-${{ runner.os }}-${{ steps.setup.outputs.go-version }}-
+
+    - shell: bash
+      run: echo "GO_CACHE_HIT=${{ steps.restore.outputs.cache-hit }}" >> "$GITHUB_ENV"

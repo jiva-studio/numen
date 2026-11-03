@@ -11,7 +11,8 @@
 // change to plugins/<dir>/ selects the tests of that plugin: tests/plugins/<id without md.numen.>/,
 // the spec files that name its id, and the files PLUGIN_TESTS adds. A change to a spec folder or
 // file under tests/e2e/desktop/tests/ selects it. A change elsewhere in what the desktop window
-// is built from selects every test; a change outside it, or to documentation, selects none.
+// is built from selects every test; a change outside it, to documentation, or to a unit test,
+// story or linter config outside the e2e suite selects none.
 //
 // `plan` prints `key=value` lines for $GITHUB_OUTPUT:
 //
@@ -54,10 +55,23 @@ export const PLUGIN_TESTS = {
 
 /** Paths the desktop window and its tests are built from; a change elsewhere runs no test. */
 const DESKTOP =
-  /^(apps\/desktop\/|libs\/|plugins\/|tests\/e2e\/desktop\/|tests\/vault\/|tools\/(build-plugin-index|shared)\/|(Makefile|package\.json|package-lock\.json|go\.work(\.sum)?|\.node-version)$)/
+  /^(apps\/desktop\/|libs\/|plugins\/|tests\/e2e\/desktop\/|tests\/vault\/|tools\/(build-plugin-index|shared)\/|\.github\/(workflows\/desktop-e2e\.yml$|actions\/(setup-playwright|setup-webkit|build-ui)\/)|(Makefile|package\.json|package-lock\.json|go\.work(\.sum)?|\.node-version)$)/
+
+/** Unit tests, stories and linter or unit-test configs outside the e2e suite. */
+const NON_E2E_TEST_OR_CONFIG =
+  /(_test\.go|\.(test|spec|stories)\.[cm]?[jt]sx?|(^|\/)(\.golangci[^/]*\.ya?ml|eslint\.config\.[cm]?js|vitest\.config\.ts|\.storybook\/.*))$/
 
 /** Text that no build or test reads. The vault of the tests is notes, and is read. */
 const isDocumentation = (file) => /\.mdx?$/.test(file) && !file.startsWith('tests/vault/')
+
+/** Unit tests, stories and linter configs that neither the binaries nor the e2e suite run. */
+const isUnitTestOrStory = (file) =>
+  file === 'tests/e2e/desktop/scripts/select-tests.test.mjs' ||
+  (!file.startsWith('tests/e2e/desktop/') && NON_E2E_TEST_OR_CONFIG.test(file))
+
+/** Whether `file` is part of what the desktop window, its plugins or its e2e suite are built from. */
+const isDesktopInput = (file) =>
+  DESKTOP.test(file) && !isDocumentation(file) && !isUnitTestOrStory(file)
 
 /** The id of the plugin in plugins/<dir>, from its manifest. */
 const readPluginId = (dir) =>
@@ -89,7 +103,7 @@ export const getScope = (files) => {
   const tokens = new Set()
   let isTested = false
   for (const file of files) {
-    if (!DESKTOP.test(file) || isDocumentation(file)) continue
+    if (!isDesktopInput(file)) continue
     isTested = true
     const folder = /^tests\/e2e\/desktop\/tests\/plugins\/([^/]+)\//.exec(file)
     const spec = /^tests\/e2e\/desktop\/tests\/(shell\/|scenarios\/.+\.spec\.ts$)/.exec(file)

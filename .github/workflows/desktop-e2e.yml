@@ -72,9 +72,10 @@ jobs:
           key: go-mod-e2e-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}
           restore-keys: go-mod-e2e-
 
-      # What main's last build left behind: the binaries and plugin backends compile what changed.
-      # The prefix restores main's newest build when the Go version or a go.sum differs.
-      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # What the newest build left behind: the binaries and plugin backends compile what changed.
+      # The prefix restores the newest build when the Go version or a go.sum differs.
+      - id: go-build-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/go-build
           key: go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}
@@ -114,9 +115,9 @@ jobs:
           cat "$RUNNER_TEMP/plugins.log"
           exit "$status"
 
-      # A push to main writes what it built, and every other run only reads it.
+      # Saves the build cache when the exact key was not restored.
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: steps.go-build-cache.outputs.cache-hit != 'true'
         with:
           path: ~/.cache/go-build
           key: go-build-e2e-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('go.work.sum', 'apps/desktop/go.sum', 'libs/**/go.sum', 'plugins/*/go.sum') }}
@@ -160,13 +161,11 @@ jobs:
       - name: Install dependencies
         uses: ./.github/actions/install-node-modules
 
-      # Both engines, as every job of every workflow installs them: they share one cache entry.
+      # The shard's engine and the GTK and WebKitGTK runtime libraries the window links against.
       - uses: ./.github/actions/setup-playwright
-
-      # The runtime of the GTK and WebKitGTK the binary links against. Playwright's install has
-      # updated the package lists.
-      - name: Install the libraries of the window
-        run: sudo apt-get install -y --no-install-recommends libgtk-4-1 libwebkitgtk-6.0-4
+        with:
+          browsers: ${{ matrix.engine }}
+          packages: libgtk-4-1 libwebkitgtk-6.0-4
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -235,9 +234,8 @@ jobs:
         uses: ./.github/actions/install-node-modules
 
       - uses: ./.github/actions/setup-playwright
-
-      - name: Install the libraries of the window
-        run: sudo apt-get install -y --no-install-recommends libgtk-4-1 libwebkitgtk-6.0-4
+        with:
+          packages: libgtk-4-1 libwebkitgtk-6.0-4
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
