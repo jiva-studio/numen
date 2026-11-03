@@ -1,4 +1,4 @@
-/** A vault and a window for the tests of the preset's writes: answers on demand, and what was said. */
+/** A fake vault and window for the tests of the preset writes: replies on demand, and records each message. */
 import { afterEach, expect } from 'vitest'
 import type { MessageWriter } from '@numen/plugin-sdk'
 import { DEFAULTS, type Presets, type PresetWriteResult } from '../types'

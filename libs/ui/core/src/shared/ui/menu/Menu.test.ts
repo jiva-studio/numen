@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import { createMenuMount, settle } from './fixtures/mount'
 import type { MenuItem } from './items/item'
+import type { MenuProps } from './Menu.types'
 
 const ITEMS: MenuItem[] = [
   { id: 'open', text: 'Open' },
