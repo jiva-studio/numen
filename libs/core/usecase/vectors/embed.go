@@ -269,12 +269,13 @@ func (u Embed) sendBatches(
 		}
 		pos += len(batch)
 		prep.id = track.enter(prep.sources)
+		// The batch is reported before it is sent, so no worker embeds it before a report names it.
+		track.publish(func(*EmbedResult) {})
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		case out <- prep:
 		}
-		track.publish(func(*EmbedResult) {})
 	}
 	return nil
 }
