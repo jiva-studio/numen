@@ -11,8 +11,8 @@ import { fileURLToPath } from 'node:url'
 
 export const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 
-/** A module cruised from `src` of its folder `at`. */
-const createModule = ({ name, at, reads, says, book }) => ({
+/** A module cruised from `src` of its folder `at`, with the fields `modules` describes. */
+const createModule = (name, at, reads, book, says) => ({
   name,
   at,
   sources: ['src'],
@@ -34,18 +34,18 @@ const createModule = ({ name, at, reads, says, book }) => ({
  * - `book`, the Storybook its stories are drawn in, as `ci-stories` names them.
  */
 export const modules = [
-  createModule({ name: '@numen/ui', at: 'libs/ui/core', reads: 'src/index.ts', book: 'ui',
-    says: 'The shared components. Reaches nothing of ours.' }),
-  createModule({ name: '@numen/shell', at: 'libs/ui/shell', reads: 'src/index.ts', book: 'shell',
-    says: 'The chrome of the desktop windows: reaches the components.' }),
-  createModule({ name: '@numen/plugin-sdk', at: 'libs/plugin-sdk-ts', reads: 'src/index.ts', book: 'ui',
-    says: "The plugin contract and what a window's ports are answered with." }),
-  createModule({ name: '@numen/editor', at: 'apps/desktop/editor', reads: 'src/app/App.vue', book: 'shell',
-    says: 'The notes window: reaches the components, the shell, the wire and the schema.' }),
-  createModule({ name: '@numen/flashcards', at: 'apps/desktop/flashcards', reads: 'src/app/App.vue', book: 'shell',
-    says: 'The review window: the same four, and never the other window.' }),
-  createModule({ name: '@numen/mobile', at: 'apps/mobile', reads: 'src/App.vue', book: 'ui',
-    says: 'The phone: one vault, the components and the schema.' }),
+  createModule('@numen/ui', 'libs/ui/core', 'src/index.ts', 'ui',
+    'The shared components. Reaches nothing of ours.'),
+  createModule('@numen/shell', 'libs/ui/shell', 'src/index.ts', 'shell',
+    'The chrome of the desktop windows: reaches the components.'),
+  createModule('@numen/plugin-sdk', 'libs/plugin-sdk-ts', 'src/index.ts', 'ui',
+    "The plugin contract and what a window's ports are answered with."),
+  createModule('@numen/editor', 'apps/desktop/editor', 'src/app/App.vue', 'shell',
+    'The notes window: reaches the components, the shell, the wire and the schema.'),
+  createModule('@numen/flashcards', 'apps/desktop/flashcards', 'src/app/App.vue', 'shell',
+    'The review window: the same four, and never the other window.'),
+  createModule('@numen/mobile', 'apps/mobile', 'src/App.vue', 'ui',
+    'The phone: one vault, the components and the schema.'),
 ]
 
 /**
