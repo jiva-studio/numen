@@ -14,8 +14,6 @@ on:
       - "!docs/**"
       - "Makefile"
       - ".github/workflows/architecture.yml"
-  merge_group:
-    types: [checks_requested]
   push:
     branches: [main]
     paths:
@@ -26,7 +24,7 @@ on:
       - ".github/workflows/architecture.yml"
 
 concurrency:
-  group: architecture-${{ github.ref }}
+  group: architecture-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:

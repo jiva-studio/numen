@@ -45,9 +45,10 @@ on:
       - "Makefile"
       - ".github/workflows/plugins-frontend.yml"
 
-# One run at a time per branch, and the newest is the one that matters.
+# A pull request keeps only its newest run. Each push to main has a group of its
+# own: a later push neither cancels it nor replaces it while it waits.
 concurrency:
-  group: plugins-frontend-${{ github.ref }}
+  group: plugins-frontend-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
