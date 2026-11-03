@@ -65,7 +65,7 @@ test.describe('Plugin settings take effect', () => {
     })
   }
 
-  test('keeps an API key out of the page, shows it as set, and clears it with Delete', async ({
+  test('keeps an API key out of the page, shows it as set, and clears it with the delete button', async ({
     page,
     request,
   }) => {
@@ -76,6 +76,7 @@ test.describe('Plugin settings take effect', () => {
     await settings.getByRole('button', { name: /Vector Embeddings/ }).click()
     const field = settings.getByRole('textbox', { name: 'API key' })
     await expect(field).toHaveAttribute('type', 'password')
+    await expect(settings.getByRole('button', { name: 'Delete the key' })).toHaveCount(0)
     expect(await readStoredSecrets(page, EMBEDDINGS_ID)).toEqual([])
 
     await field.fill('sk-invented-harbour-key')
@@ -96,9 +97,11 @@ test.describe('Plugin settings take effect', () => {
     )
     expect(await page.content()).not.toContain('sk-invented-harbour-key')
 
-    await reloaded.getByRole('button', { name: 'Delete' }).click()
+    const deleteButton = reloaded.getByRole('button', { name: 'Delete the key' })
+    await expect(deleteButton).toHaveAttribute('title', 'Delete the key')
+    await deleteButton.click()
 
     await expect.poll(() => readStoredSecrets(page, EMBEDDINGS_ID)).toEqual([])
-    await expect(reloaded.getByRole('button', { name: 'Delete' })).toHaveCount(0)
+    await expect(reloaded.getByRole('button', { name: 'Delete the key' })).toHaveCount(0)
   })
 })

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /**
  * The key of one secret a plugin declares: whether one is set, a field to type
- * one into, and the key removed. A key typed here goes to the vault and is
- * never drawn back.
+ * one into, and an icon button inside the field to delete a stored key. A key
+ * typed here goes to the vault and is never drawn back.
  */
 import { computed, ref, useId } from 'vue'
+import { X } from '@lucide/vue'
 import { Button } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 
@@ -19,8 +20,6 @@ const props = defineProps<{
     readonly keyMissing: string
     readonly keyDetail: string
     readonly keyPlaceholder: string
-    readonly keySave: string
-    readonly keyReplace: string
     readonly keyDelete: string
   }
 }>()
@@ -47,6 +46,7 @@ function onSave() {
 }
 
 function onDelete() {
+  inputValue.value = ''
   emit('delete')
 }
 </script>
@@ -68,8 +68,17 @@ function onDelete() {
         @change="onSave"
         @keydown.enter="onSave"
       />
-      <Button v-if="isStored" variant="ghost" size="small" @click="onDelete">
-        {{ words.keyDelete }}
+      <Button
+        v-if="isStored"
+        variant="ghost"
+        size="icon-small"
+        class="settings__secret-delete"
+        :aria-label="words.keyDelete"
+        :title="words.keyDelete"
+        @mousedown.prevent
+        @click="onDelete"
+      >
+        <X :size="14" aria-hidden="true" />
       </Button>
     </span>
   </SettingRow>
@@ -77,9 +86,10 @@ function onDelete() {
 
 <style scoped>
 .settings__secret {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--settings-near);
+  inline-size: var(--settings-choice);
   min-inline-size: 0;
   max-inline-size: 100%;
 }
@@ -91,7 +101,7 @@ function onDelete() {
   flex: 1 1 auto;
   min-inline-size: 0;
   max-inline-size: 24rem;
-  padding: 0.25rem 0.625rem;
+  padding: 0.25rem 2rem 0.25rem 0.625rem;
   background-color: var(--numen-field-bg);
   border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius);
@@ -102,5 +112,17 @@ function onDelete() {
 
 .settings__secret-input:focus {
   outline: var(--numen-stroke) solid var(--numen-accent);
+}
+
+.settings__secret-delete {
+  position: absolute;
+  inset-inline-end: 0.25rem;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  color: var(--numen-hushed);
+}
+
+.settings__secret-delete:hover {
+  color: var(--numen-ink);
 }
 </style>
