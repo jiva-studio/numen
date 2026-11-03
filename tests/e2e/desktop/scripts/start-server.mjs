@@ -6,7 +6,6 @@ import https from 'node:https'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { getCertificateFile } from './certificate.mjs'
 import { STAND_IN_MODEL, startStandIns } from './stand-ins.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -222,7 +221,8 @@ const vaultPathFile = path.join(os.tmpdir(), `numen-e2e-vault-path-${port}`)
 fs.writeFileSync(vaultPathFile, tmpVault)
 
 // The server writes its certificate here; every https call to it trusts that certificate alone.
-const certificateFile = getCertificateFile(port)
+// tests/support/test.ts names the same file.
+const certificateFile = path.join(os.tmpdir(), `numen-e2e-certificate-${port}.pem`)
 fs.rmSync(certificateFile, { force: true })
 
 /** How long the first pass over the vault may take before the server counts as failed. */

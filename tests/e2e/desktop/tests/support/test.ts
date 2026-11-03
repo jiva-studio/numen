@@ -5,9 +5,9 @@
  */
 import fs from 'node:fs'
 import https from 'node:https'
+import os from 'node:os'
+import path from 'node:path'
 import { expect, test as base, type APIRequestContext } from 'playwright/test'
-
-import { getCertificateFile } from '../../scripts/certificate.mjs'
 
 export * from 'playwright/test'
 
@@ -44,6 +44,10 @@ export const readActivePath = async (request: APIRequestContext): Promise<string
   }
   return tabs.find((one) => one.id === activeId)?.path ?? ''
 }
+
+/** The TLS certificate the debug server listening on port wrote, which scripts/start-server.mjs names. */
+const getCertificateFile = (port: string): string =>
+  path.join(os.tmpdir(), `numen-e2e-certificate-${port}.pem`)
 
 /** The vault fixture whose text cannot be read, which the core reports as a failed task in every run. */
 const UNREADABLE_FIXTURE = 'corrupted.pdf'

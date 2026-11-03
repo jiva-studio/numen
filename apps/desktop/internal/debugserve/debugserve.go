@@ -123,9 +123,11 @@ func generateSelfSignedCert(clock Clock) (tls.Certificate, error) {
 		DNSNames:              []string{"localhost"},
 		NotBefore:             clock.Now().Add(-1 * time.Hour),
 		NotAfter:              clock.Now().Add(24 * time.Hour),
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment | x509.KeyUsageCertSign,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
+		// A client trusts the certificate as its own root: the e2e scripts pass it as their only CA.
+		IsCA: true,
 	}
 	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
 	if err != nil {
