@@ -39,6 +39,9 @@ export default defineConfig({
     ...(process.env.NUMEN_E2E_JSON
       ? [['json', { outputFile: process.env.NUMEN_E2E_JSON }] as const]
       : []),
+    // A CI shard writes a blob report to PLAYWRIGHT_BLOB_OUTPUT_DIR, named by
+    // PLAYWRIGHT_BLOB_OUTPUT_NAME; a final job merges them into one HTML report.
+    ...(process.env.PLAYWRIGHT_BLOB_OUTPUT_DIR ? [['blob'] as const] : []),
   ],
   use: {
     baseURL,
