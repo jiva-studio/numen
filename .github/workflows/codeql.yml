@@ -17,29 +17,32 @@ permissions:
   contents: read
 
 jobs:
-  # Which languages the change touches (.github/scripts/changes.mjs). The analyses below always
-  # start and report under their own names; an analysis whose language did not change runs no step.
+  # Which languages a pull request touches, by the go and js filters of .github/filters.yml; any
+  # other event analyses both. The analyses always start and report under their own names; an
+  # analysis whose language did not change runs no step.
   changes:
     name: Changes
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
-      go: ${{ steps.areas.outputs.go }}
-      js: ${{ steps.areas.outputs.js }}
+      go: ${{ github.event_name != 'pull_request' || steps.filter.outputs.go == 'true' }}
+      js: ${{ github.event_name != 'pull_request' || steps.filter.outputs.js == 'true' }}
     steps:
-      # The merge commit and its first parent, the base, without file contents.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: github.event_name == 'pull_request'
         with:
-          fetch-depth: 2
-          filter: blob:none
           sparse-checkout: .github
           persist-credentials: false
 
-      - id: areas
-        env:
-          EVENT: ${{ github.event_name }}
-          BASE: ${{ github.event_name == 'pull_request' && 'HEAD^1' || github.event.before }}
-        run: node .github/scripts/changes.mjs "$EVENT" "$BASE" HEAD | tee -a "$GITHUB_OUTPUT"
+      - id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: .github/filters.yml
+          predicate-quantifier: some-with-excludes
 
   # The steps carry the condition: a matrix job skipped whole reports under its
   # unexpanded name, which no required check holds.

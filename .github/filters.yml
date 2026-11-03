@@ -1,0 +1,236 @@
+# The areas of the repository a pull request touches, read by dorny/paths-filter in ci.yml and
+# codeql.yml with `predicate-quantifier: some-with-excludes`: a filter is true when a changed file
+# matches one of its globs and none of its `!` globs. Globs are picomatch globs with `dot: true`.
+#
+# An area lists the paths of what it builds on through their anchors, so a change to a library
+# runs every area that depends on it. `shared` is in every area.
+
+shared: &shared
+  - go.work
+  - go.work.sum
+  - package.json
+  - package-lock.json
+  - Makefile
+  - .node-version
+  - tsconfig.base.json
+  - prettier.config.mjs
+  - .prettierignore
+  - stylelint.config.mjs
+  - tools/shared/**
+  - tools/lint-layers/base-eslint.mjs
+  - .github/actions/**
+  - .github/filters.yml
+  - .github/workflows/ci.yml
+  - .github/workflows/checks.yml
+  - .github/workflows/docs.yml
+  - .github/workflows/frontend.yml
+  - .github/workflows/go.yml
+  - .github/workflows/plugins.yml
+  - .github/workflows/desktop-e2e.yml
+
+# ---------------------------------------------------------------- Libraries
+
+go_rules: &go_rules
+  - .golangci.yml
+  - .golangci-structure.yml
+  - '**/gorules/**'
+protocol_lib: &protocol_lib
+  - libs/protocol/**
+notes_lib: &notes_lib
+  - libs/notes/**
+core_lib: &core_lib
+  - libs/core/**
+  - libs/plugin-catalog/**
+sdk_go_lib: &sdk_go_lib
+  - libs/plugin-sdk-go/**
+sdk_ts_lib: &sdk_ts_lib
+  - libs/plugin-sdk-ts/**
+ui_lib: &ui_lib
+  - libs/ui/core/**
+shell_lib: &shell_lib
+  - libs/ui/shell/**
+client_lib: &client_lib
+  - libs/core-client/**
+host_lib: &host_lib
+  - libs/plugin-host-ts/**
+  - libs/plugin-manager/**
+
+# What every Go module of the window and the phone builds on.
+go_base: &go_base
+  - *shared
+  - *go_rules
+  - *protocol_lib
+  - *notes_lib
+  - *core_lib
+
+# What every plugin builds on: a change here lints, builds and tests all of them.
+plugins_all: &plugins_all
+  - *shared
+  - *go_rules
+  - *protocol_lib
+  - *notes_lib
+  - *sdk_go_lib
+  - *sdk_ts_lib
+  - *ui_lib
+  - plugins/*
+  - plugins/.example/**
+  - '!**/*.md'
+
+# ---------------------------------------------------------------- Go
+
+core:
+  - *go_base
+  - tests/vault/**
+  - plugins/*/manifest.json
+  - tools/build-plugin-index/**
+  - '!**/*.md'
+protocol:
+  - *shared
+  - *protocol_lib
+  - '!**/*.md'
+sdk_go:
+  - *shared
+  - *go_rules
+  - *protocol_lib
+  - *notes_lib
+  - *sdk_go_lib
+  - '!**/*.md'
+desktop:
+  - *go_base
+  - apps/desktop/**
+  - '!apps/desktop/editor/**'
+  - '!apps/desktop/flashcards/**'
+  - '!**/*.md'
+mobile:
+  - *go_base
+  - apps/mobile/bind/**
+  - apps/mobile/*.go
+  - apps/mobile/go.mod
+  - apps/mobile/go.sum
+  - '!**/*.md'
+
+# ---------------------------------------------------------------- Frontend
+
+ui:
+  - *shared
+  - *ui_lib
+  - '!**/*.md'
+desktop_fe:
+  - *shared
+  - *protocol_lib
+  - *sdk_ts_lib
+  - *ui_lib
+  - *shell_lib
+  - *client_lib
+  - *host_lib
+  - apps/desktop/editor/**
+  - apps/desktop/flashcards/**
+  - tests/e2e/desktop/**
+  - tools/ci-stories/**
+  - '!**/*.md'
+mobile_fe:
+  - *shared
+  - *protocol_lib
+  - *ui_lib
+  - *client_lib
+  - apps/mobile/**
+  - '!apps/mobile/bind/**'
+  - '!apps/mobile/*.go'
+  - '!apps/mobile/go.mod'
+  - '!apps/mobile/go.sum'
+  - '!**/*.md'
+
+# ---------------------------------------------------------------- Plugins
+
+# A changed file under plugins/; ci.yml lists the plugin folders from these files.
+plugin_files:
+  - plugins/*/**
+  - '!plugins/.example/**'
+plugin_stories:
+  - *plugins_all
+  - plugins/**
+  - tools/ci-stories/**
+plugin_versions:
+  - *shared
+  - plugins/**
+  - tools/plugin-versions/**
+  - tools/build-plugin-index/**
+
+# ---------------------------------------------------------------- Manual
+
+# The manual, and the sources it writes its pages from.
+docs: &docs
+  - *shared
+  - apps/docs/**
+  - apps/desktop/editor/src/**
+  - apps/desktop/cmd/numen/**
+  - libs/core/adapter/cli/**
+  - libs/core/adapter/settings/**
+  - libs/core/container/**
+  - libs/core/usecase/completion/**
+  - plugins/*/manifest.json
+  - plugins/*/frontend/**
+  - tools/ci-commands/**
+# The story names the manual and the landing page hold, and the trees they are held against.
+references:
+  - *docs
+  - libs/ui/core/src/**
+  - libs/ui/shell/src/**
+  - apps/desktop/flashcards/src/**
+  - plugins/themes-presets/themes/**
+  - tools/ci-stories/**
+  - apps/landing/tools/**
+
+# ---------------------------------------------------------------- Repository
+
+code:
+  - *shared
+  - apps/**
+  - libs/**
+  - plugins/**
+  - tools/**
+  - tests/**
+  - knip.json
+  - '!apps/landing/**'
+  - '!**/*.md'
+# The narrative scan reads code and Markdown.
+narrative:
+  - *shared
+  - apps/**
+  - libs/**
+  - plugins/**
+  - tools/**
+  - tests/**
+  - knip.json
+  - '**/*.md'
+  - '**/*.mdx'
+  - '!apps/landing/**'
+go:
+  - *shared
+  - '**/*.go'
+  - '**/go.mod'
+  - '**/go.sum'
+js:
+  - *shared
+  - '**/*.{ts,tsx,js,jsx,mjs,cjs,vue}'
+workflows:
+  - *shared
+  - .github/**
+gradle:
+  - *shared
+  - '**/gradle/wrapper/**'
+  - '**/gradlew'
+  - '**/gradlew.bat'
+staging:
+  - *shared
+  - plugins/**
+  - .github/scripts/stage-plugins.sh
+  - .github/scripts/check-staged-plugins*.sh
+mutation_tool:
+  - *shared
+  - tools/ci-mutation/**
+  - .github/workflows/mutation.yml
+
+# Every changed file, for the end-to-end selection.
+files:
+  - '**'

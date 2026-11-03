@@ -1,0 +1,35 @@
+name: "Install packages from the lock file"
+description: "Installs the named packages alone, at the version and integrity package-lock.json pins, without their dependencies"
+# For tools that import one or two packages without dependencies of their own: the manifest readers
+# under tools/ need @bufbuild/protobuf, the filter tests js-yaml and picomatch.
+inputs:
+  packages:
+    description: "Package names separated by spaces"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Install ${{ inputs.packages }}
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      env:
+        PACKAGES: ${{ inputs.packages }}
+      run: |
+        set -euo pipefail
+        for name in $PACKAGES; do
+          read -r version integrity < <(node -e '
+            const entry = require("./package-lock.json").packages[`node_modules/${process.argv[1]}`]
+            console.log(entry.version, entry.integrity)' "$name")
+          packed=$(npm pack "$name@$version" --pack-destination "$RUNNER_TEMP" --json)
+          read -r file got < <(node -e '
+            const [entry] = JSON.parse(process.argv[1])
+            console.log(entry.filename, entry.integrity)' "$packed")
+          if [ "$got" != "$integrity" ]; then
+            echo "::error::$name $version has integrity $got, package-lock.json pins $integrity"
+            exit 1
+          fi
+          target="$PWD/node_modules/$name"
+          mkdir -p "$target"
+          # GNU tar reads `D:` in an archive path as a remote host, so the archive is named relative.
+          (cd "$RUNNER_TEMP" && tar -xzf "$file" -C "$target" --strip-components=1)
+        done
