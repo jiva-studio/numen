@@ -415,7 +415,7 @@ const meta = {
 
     curvature: 0.55,
     minReach: 22,
-    arrowClearance: 14,
+    arrowClearance: 20,
     arriveAfter: 0.35,
     leaveBefore: 0.45,
 

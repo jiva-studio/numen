@@ -659,7 +659,7 @@ jobs:
             fi
           done
           cp ../../plugins/plugins-index.json "$RUNNER_TEMP/plugins/"
-          ../../../.github/scripts/check-staged-plugins.sh ../../plugins "$RUNNER_TEMP/plugins"
+          ../../.github/scripts/check-staged-plugins.sh ../../plugins "$RUNNER_TEMP/plugins"
 
       - name: Create Windows zip archive
         env:
@@ -781,7 +781,7 @@ jobs:
             fi
           done
           cp ../../plugins/plugins-index.json "$RUNNER_TEMP/plugins/"
-          ../../../.github/scripts/check-staged-plugins.sh ../../plugins "$RUNNER_TEMP/plugins"
+          ../../.github/scripts/check-staged-plugins.sh ../../plugins "$RUNNER_TEMP/plugins"
 
       - name: Assemble macOS application bundle
         env:
