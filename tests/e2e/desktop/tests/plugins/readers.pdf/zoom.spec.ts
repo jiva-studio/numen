@@ -18,6 +18,9 @@ test.describe('PDF reader zoom', () => {
     await page.getByRole('button', { name: 'Zoom in' }).click()
     await page.getByRole('button', { name: 'Zoom in' }).click()
     await expect.poll(() => pending.requested.length).toBeGreaterThan(0)
+    // Two presses further apart than the debounce ask for two widths; the last one is asked for
+    // once the debounce of the second press has run out.
+    await observeFor(page, DEBOUNCE_MS * 3)
     // The old picture is scaled up meanwhile, and nothing covers it.
     await expect(picture).toBeVisible()
     await expect(first.locator('.reader__spinner')).toHaveCount(0)
