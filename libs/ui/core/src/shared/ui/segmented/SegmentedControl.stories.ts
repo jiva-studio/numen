@@ -11,8 +11,7 @@ import { computed, ref } from 'vue'
 import SegmentedControl from './SegmentedControl.vue'
 import { lightness } from '@/shared/fixtures/colour'
 import { DARK, expectDark } from '@/shared/fixtures/theme'
-
-const UNBROKEN = 'supercalifragilisticexpialidocious'
+import { CYRILLIC_CHOICES, LONG_CHOICES, UNBROKEN_CHOICES } from '@/shared/fixtures/prose'
 
 interface Knobs {
   /** Label of each segment, one per line. */
@@ -103,21 +102,17 @@ export const Four: Story = {
 
 /** Words far longer than a segment is drawn for. */
 export const FarTooLong: Story = {
-  args: {
-    words: 'As small as it will go\nSomewhere between the two of them\nAs large as the room allows',
-    chosen: 'somewhere-between-the-two-of-them',
-    width: '24rem',
-  },
+  args: { ...LONG_CHOICES, width: '24rem' },
 }
 
 /** Words in another script. */
 export const OtherScripts: Story = {
-  args: { words: 'Маленький\nСредний\nБольшой', chosen: 'средний' },
+  args: CYRILLIC_CHOICES,
 }
 
 /** A word with nothing in it to break at. */
 export const Unbroken: Story = {
-  args: { words: `${UNBROKEN}\nShort`, chosen: 'short', width: '18rem' },
+  args: { ...UNBROKEN_CHOICES, width: '18rem' },
 }
 
 /** No choices at all: a control with nothing to offer, which takes no keyboard. */
