@@ -92,7 +92,8 @@ func (e Edit) Apply(ctx context.Context, v domain.Vault, path string, change fun
 	if e.Index == nil {
 		return content, nil
 	}
-	return content, WrapIndexOutdated(e.Index(ctx, v, []string{path}), path)
+	// The file is written, so the index follows it even when the caller has gone.
+	return content, WrapIndexOutdated(e.Index(context.WithoutCancel(ctx), v, []string{path}), path)
 }
 
 // splice is the read, the change and the write, under this vault's write lock from before the read

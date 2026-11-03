@@ -26,6 +26,12 @@
   border-radius: var(--numen-radius-tight);
 }
 
+/* WebKit sends no click when the node under a press is replaced before the release, and the
+   summary text is replaced whenever a task starts or ends. The button itself takes the press. */
+.status-bar__trigger > * {
+  pointer-events: none;
+}
+
 .status-bar__trigger:hover,
 .status-bar__trigger:focus-visible {
   background: var(--numen-raised);

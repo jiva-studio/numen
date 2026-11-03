@@ -214,7 +214,8 @@ func (e connectionEditor) updateIndex(ctx context.Context, v domain.Vault, chang
 	for i, c := range changes {
 		paths[i] = c.path
 	}
-	return WrapIndexOutdated(e.index(ctx, v, paths), paths...)
+	// The files are written, so the index follows them even when the caller has gone.
+	return WrapIndexOutdated(e.index(context.WithoutCancel(ctx), v, paths), paths...)
 }
 
 // getKind is the type the records of a connection are addressed by: the type of

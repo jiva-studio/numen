@@ -1061,26 +1061,13 @@ func TestEnsureActiveRetiresARunningProcessWhoseEndpointIsMissing(t *testing.T) 
 	}
 }
 
-func TestTheExitOfAnOldProcessKeepsTheEndpointOfItsReplacement(t *testing.T) {
+func TestTheExitOfAProcessDropsItsEndpoint(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
-	sup := lifecycle.New(testsupport.GetMachine())
-	replacement := transport.Endpoint{Host: "127.0.0.1", Port: 4321, Token: "new"}
-
 	host.mu.Lock()
-	host.endpoints["p"] = replacement
+	host.endpoints["p"] = transport.Endpoint{Host: "127.0.0.1", Port: 4321, Token: "old"}
 	host.mu.Unlock()
-	sup.SetActivating()
-	sup.ActivateInProcess(testsupport.GetMachine().Now())
-	host.dropEndpointOfStoppedPlugin("p", sup)
-	host.mu.RLock()
-	endpoint := host.endpoints["p"]
-	host.mu.RUnlock()
-	if endpoint != replacement {
-		t.Fatalf("the endpoint of a running replacement was dropped: %+v", endpoint)
-	}
 
-	sup.SetDormant(nil)
-	host.dropEndpointOfStoppedPlugin("p", sup)
+	host.dropEndpointOfStoppedPlugin("p")
 	host.mu.RLock()
 	_, stillThere := host.endpoints["p"]
 	host.mu.RUnlock()

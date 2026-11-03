@@ -522,19 +522,14 @@ func (h *Host) awaitActivation(ctx context.Context, pluginID string, sup *lifecy
 	return transport.Endpoint{Host: "", Port: 0, Token: ""}, false, nil
 }
 
-// dropEndpointOfStoppedPlugin forgets the endpoint of an exited process unless a replacement is already running.
-func (h *Host) dropEndpointOfStoppedPlugin(pluginID string, sup *lifecycle.Supervisor) {
+// dropEndpointOfStoppedPlugin forgets the endpoint, the work and the tasks of an ended process. The
+// supervisor runs it before it goes Dormant, so no replacement is running yet.
+func (h *Host) dropEndpointOfStoppedPlugin(pluginID string) {
 	h.mu.Lock()
-	state := sup.GetState()
-	isStopped := state == lifecycle.StateDormant || state == lifecycle.StateActivating
-	if isStopped {
-		delete(h.endpoints, pluginID)
-	}
+	delete(h.endpoints, pluginID)
 	h.mu.Unlock()
-	if isStopped {
-		h.clearPluginWork(pluginID)
-		h.clearPluginTasks(pluginID)
-	}
+	h.clearPluginWork(pluginID)
+	h.clearPluginTasks(pluginID)
 }
 
 // acquireRunningLocked holds the plugin for a consumer when it is running with a usable endpoint.
@@ -790,7 +785,7 @@ func (h *Host) startPluginProcess(ctx context.Context, p manifest.Discovered, su
 		return transport.Endpoint{Host: "", Port: 0, Token: ""}, fmt.Errorf("attach plugin %s: %w", p.Manifest.ID, err)
 	}
 	sup.SetOnExit(func() {
-		h.dropEndpointOfStoppedPlugin(p.Manifest.ID, sup)
+		h.dropEndpointOfStoppedPlugin(p.Manifest.ID)
 
 		h.closeStdin(p.Manifest.ID, proc.Pid)
 	})

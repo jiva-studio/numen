@@ -1,6 +1,7 @@
 package filetext
 
 import (
+	"context"
 	"errors"
 	"slices"
 	"strings"
@@ -542,5 +543,42 @@ func TestTheRecipeNamesTheVersionReaderAndTheSizes(t *testing.T) {
 	sizes := (Index{}).sizes()
 	if want := "text-version-1/large=200+40/small=50+10/limit=1000"; recipe(versionReader, sizes) != want {
 		t.Errorf("a source is cut by %q, want %q", recipe(versionReader, sizes), want)
+	}
+}
+
+const linkPath = "links/tidal mill.md"
+
+// A note whose chunks were cut from a text version is read from its own file
+// again once the version is deleted, and a note no version was cut for is left
+// to the notes pass.
+func TestANoteWhoseVersionIsDeletedIsReadAsANoteAgain(t *testing.T) {
+	ctx := t.Context()
+	index, shelf := newStore(), newLibrary()
+	shelf.hold(linkPath, domain.KindNote, []byte("---\nurl: http://tidal-mills.test\n---\n"), 1)
+	shelf.hold("notes/plain.md", domain.KindNote, []byte("# Plain\n\nA note.\n"), 1)
+
+	extract, texts := newIndexWithTexts(vaults{getFirst().ID: shelf}, index, index)
+	var reread []string
+	extract.ReadNote = func(_ context.Context, _ domain.Vault, path string) error {
+		reread = append(reread, path)
+		return nil
+	}
+	texts.put(getFirst(), linkPath, "test.importer", "article", timedParts())
+	if _, err := extract.IndexOne(ctx, getFirst(), linkPath); err != nil {
+		t.Fatal(err)
+	}
+	if !index.cut(getFirst().ID, linkPath) {
+		t.Fatal("the link note was not cut from its version, so deleting it proves nothing")
+	}
+
+	texts.drop(linkPath)
+	if _, err := extract.IndexOne(ctx, getFirst(), linkPath); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := extract.IndexOne(ctx, getFirst(), "notes/plain.md"); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(reread, []string{linkPath}) {
+		t.Errorf("the notes read again are %v, want only %s", reread, linkPath)
 	}
 }

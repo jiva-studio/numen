@@ -65,6 +65,11 @@ type Index struct {
 	// requested. The source is counted as unreadable and the run continues. Nil
 	// ignores such errors.
 	ErrorHandler windowport.ErrorHandler
+
+	// ReadNote, if set, reads a note again from its own file and replaces its
+	// chunks with the ones its body is cut into. It is called for a note whose
+	// chunks were cut from a text version that is gone.
+	ReadNote func(ctx context.Context, v domain.Vault, path string) error
 }
 
 // NewIndex creates an Index from the vault readers, the source repository
@@ -438,7 +443,7 @@ func (u Index) source(
 			return ctx.Err()
 		}
 		if ref.Kind == domain.KindNote && errors.Is(err, textport.ErrNoText) {
-			return nil
+			return u.dropVersionOfNote(ctx, v, path)
 		}
 		return u.saveWithoutText(ctx, v, on, domain.Source{FileStat: ref, Hash: hash}, err, res)
 	}
@@ -484,6 +489,23 @@ func (u Index) saveWithoutText(
 		if err := on.texts.RequestText(ctx, source.FileStat.Path, source.Hash); err != nil {
 			u.reportError(fmt.Errorf("ask for the text of %s: %w", source.FileStat.Path, err))
 		}
+	}
+	return nil
+}
+
+// dropVersionOfNote reads a note from its own file again when the index holds
+// it as cut from a text version, which is no longer there. A note no version
+// was cut for keeps the chunks of its body.
+func (u Index) dropVersionOfNote(ctx context.Context, v domain.Vault, path string) error {
+	indexed, ok, err := u.queries.GetSourceText(ctx, v.ID, path)
+	if err != nil {
+		return fmt.Errorf("read the index of %s: %w", path, err)
+	}
+	if !ok || indexed.Producer == "" || u.ReadNote == nil {
+		return nil
+	}
+	if err := u.ReadNote(ctx, v, path); err != nil {
+		return fmt.Errorf("read the note %s again: %w", path, err)
 	}
 	return nil
 }

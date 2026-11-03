@@ -72,14 +72,17 @@ func (h *Handler) WriteSettings(
 		}
 		content = append(content, setting.Setting{Path: one.GetAt(), JSON: one.GetValue()})
 	}
-	if err := h.Write.Execute(content); err != nil {
+	// A plugin is given its settings after the write answers, and OnPluginChange reads the model
+	// the embedding plugin reports, so it runs only once the plugin has the new values.
+	var applied func()
+	if hasPluginEdit {
+		applied = h.OnPluginChange
+	}
+	if err := h.Write.Execute(content, applied); err != nil {
 		if errors.Is(err, setting.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-	if hasPluginEdit && h.OnPluginChange != nil {
-		h.OnPluginChange()
 	}
 	return connect.NewResponse(&v1.WriteSettingsResponse{}), nil
 }
