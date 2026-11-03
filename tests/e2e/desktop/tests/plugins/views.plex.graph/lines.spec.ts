@@ -132,6 +132,37 @@ test.describe('Lines between notes other than the one in focus', () => {
     await destroyNotes(request, Object.values(notes))
   })
 
+  /**
+   * Makes Pharos, Lamp and Mirror children of Headland, each record with its label, joins Lamp
+   * to Mirror with the records of `jump`, and shows Pharos in the plex.
+   */
+  const showSiblings = async (
+    page: Page,
+    request: APIRequestContext,
+    sides: {
+      readonly labels: Readonly<Record<'Pharos' | 'Lamp' | 'Mirror', string>>
+      readonly jump: { readonly firstSide: WireSide; readonly secondSide?: WireSide }
+    },
+  ) => {
+    for (const [child, label] of Object.entries(sides.labels)) {
+      await saveConnection(request, {
+        first: notes['Headland']!,
+        second: notes[child]!,
+        role: 'ROLE_CHILD',
+        firstSide: { label },
+      })
+    }
+    await saveConnection(request, {
+      first: notes['Lamp']!,
+      second: notes['Mirror']!,
+      role: 'ROLE_JUMP',
+      ...sides.jump,
+    })
+
+    await showInPlex(page, notes['Pharos']!)
+    await expect(getGraph(page).getByRole('button', { name: 'Mirror, sibling' })).toBeAttached()
+  }
+
   test('draws the arrowhead and the words of a record on a line between two children of the focus', async ({
     page,
     request,
@@ -166,27 +197,10 @@ test.describe('Lines between notes other than the one in focus', () => {
     page,
     request,
   }) => {
-    for (const [child, words] of [
-      ['Pharos', 'holds'],
-      ['Lamp', 'raises'],
-      ['Mirror', 'carries'],
-    ] as const) {
-      await saveConnection(request, {
-        first: notes['Headland']!,
-        second: notes[child]!,
-        role: 'ROLE_CHILD',
-        firstSide: { label: words },
-      })
-    }
-    await saveConnection(request, {
-      first: notes['Lamp']!,
-      second: notes['Mirror']!,
-      role: 'ROLE_JUMP',
-      firstSide: { label: 'faces', marker: 'MARKER_ARROW' },
+    await showSiblings(page, request, {
+      labels: { Pharos: 'holds', Lamp: 'raises', Mirror: 'carries' },
+      jump: { firstSide: { label: 'faces', marker: 'MARKER_ARROW' } },
     })
-
-    await showInPlex(page, notes['Pharos']!)
-    await expect(getGraph(page).getByRole('button', { name: 'Mirror, sibling' })).toBeAttached()
 
     await expect.poll(() => isPointingAt(page, ['Lamp', 'Mirror'], 'Mirror', 'faces')).toBe(true)
     await expect.poll(() => isSetInTheMiddle(page, ['Headland', 'Lamp'], 'raises')).toBe(true)
@@ -196,24 +210,13 @@ test.describe('Lines between notes other than the one in focus', () => {
     page,
     request,
   }) => {
-    for (const child of ['Pharos', 'Lamp', 'Mirror']) {
-      await saveConnection(request, {
-        first: notes['Headland']!,
-        second: notes[child]!,
-        role: 'ROLE_CHILD',
-        firstSide: { label: `holds ${child}` },
-      })
-    }
-    await saveConnection(request, {
-      first: notes['Lamp']!,
-      second: notes['Mirror']!,
-      role: 'ROLE_JUMP',
-      firstSide: { label: 'lights', marker: 'MARKER_ARROW' },
-      secondSide: { label: 'lit by', marker: 'MARKER_ARROW' },
+    await showSiblings(page, request, {
+      labels: { Pharos: 'holds Pharos', Lamp: 'holds Lamp', Mirror: 'holds Mirror' },
+      jump: {
+        firstSide: { label: 'lights', marker: 'MARKER_ARROW' },
+        secondSide: { label: 'lit by', marker: 'MARKER_ARROW' },
+      },
     })
-
-    await showInPlex(page, notes['Pharos']!)
-    await expect(getGraph(page).getByRole('button', { name: 'Mirror, sibling' })).toBeAttached()
 
     // Each record is by the note its head is at: Lamp wrote 'lights' pointing at Mirror, Mirror wrote 'lit by' pointing at Lamp.
     await expect
