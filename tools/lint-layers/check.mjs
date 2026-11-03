@@ -51,12 +51,12 @@ const SCOPES = ["all", "libs", "plugins", "apps"];
 const MODULE_NAMES = Array.from(new Set(VERIFIERS.map((v) => v.module)));
 
 /** The options of a run; every other argument is a target. */
-const FLAGS = ["--list", "--help", "-h", "--without-lint"];
+const FLAGS = ["--list", "--help", "-h", "--without-lint", "--without-go-tests"];
 const flags = new Set(process.argv.slice(2).filter((arg) => FLAGS.includes(arg)));
 const args = process.argv.slice(2).filter((arg) => !FLAGS.includes(arg));
 
 if (flags.has("--help") || flags.has("-h")) {
-  console.log("Usage: node check.mjs [target...] [--without-lint] [--list] [--help]");
+  console.log("Usage: node check.mjs [target...] [--without-lint] [--without-go-tests] [--list] [--help]");
   console.log("");
   console.log("Targets can be scopes or module names:");
   console.log("  Scopes:  " + SCOPES.join(", "));
@@ -108,8 +108,10 @@ function resolveSelectedVerifiers(targets) {
 const selectedVerifiers = resolveSelectedVerifiers(args);
 const activeVerifiers = selectedVerifiers
   .filter((v) => !v.coveredBy || !selectedVerifiers.some((other) => other.id === v.coveredBy))
-  // The lint of a package is `isLint`; `--without-lint` leaves it to the quality check, which runs the same ESLint and golangci-lint configurations.
-  .filter((v) => !(flags.has("--without-lint") && v.isLint));
+  // `isLint` runs the ESLint or golangci-lint configuration of a package, which its own lint target runs as well.
+  .filter((v) => !(flags.has("--without-lint") && v.isLint))
+  // `isGoTest` runs Go tests that the Go test suite of the module runs as well.
+  .filter((v) => !(flags.has("--without-go-tests") && v.isGoTest));
 
 console.log("\x1b[1mNumen Architectural Layer & Boundary Validator\x1b[0m");
 console.log("Selected targets: " + (args.length === 0 ? "all" : args.join(", ")));
