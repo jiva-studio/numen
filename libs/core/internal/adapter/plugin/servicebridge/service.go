@@ -109,7 +109,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	lease := &bridge.Lease{Host: p.host, PluginID: found.Manifest.ID}
 	defer p.releasePlugin(lease)
 
-	out, err := http.NewRequestWithContext(r.Context(), r.Method, endpoint.BaseURL()+r.URL.RequestURI(), r.Body)
+	out, err := http.NewRequestWithContext(r.Context(), r.Method, transport.GetBaseURL(endpoint)+r.URL.RequestURI(), r.Body)
 	if err != nil {
 		p.reportError(writeConnectError(w, http.StatusBadRequest, connect.CodeInvalidArgument, err.Error()))
 		return

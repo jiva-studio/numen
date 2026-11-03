@@ -435,7 +435,11 @@ func (c breakingConn) BeginTx(ctx context.Context, opts driver.TxOptions) (drive
 	if !ok {
 		return nil, errors.New("the wrapped connection cannot begin a transaction with options")
 	}
-	tx, err := begin.BeginTx(ctx, opts)
+	return c.wrapTx(begin.BeginTx(ctx, opts))
+}
+
+// wrapTx returns tx failing with the faults of c, or err where beginning tx failed.
+func (c breakingConn) wrapTx(tx driver.Tx, err error) (driver.Tx, error) {
 	if err != nil {
 		return nil, err
 	}

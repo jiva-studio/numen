@@ -42,7 +42,7 @@ func MakeUnwritable(tb testing.TB, path string) {
 	if err != nil {
 		tb.Fatal(err)
 	}
-	if err := os.Chmod(dir, 0o555); err != nil {
+	if err := os.Chmod(dir, 0o500); err != nil {
 		tb.Fatal(err)
 	}
 	tb.Cleanup(func() {

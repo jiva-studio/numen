@@ -10,6 +10,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -52,6 +53,16 @@ func newHTTPTransport() *http.Transport {
 
 // PluginTransport is an in-process or custom transport for a plugin endpoint.
 type PluginTransport = pluginport.PluginTransport
+
+// GetBaseURL returns the HTTP scheme, host and port of the plugin server at e.
+// An endpoint with neither host nor port is the in-process server.
+func GetBaseURL(e Endpoint) string {
+	host := e.Address()
+	if host == "" {
+		host = "inprocess"
+	}
+	return (&url.URL{Scheme: "http", Host: host}).String()
+}
 
 // EndpointClient returns an HTTP client routed to this endpoint.
 func EndpointClient(e Endpoint) *http.Client {
