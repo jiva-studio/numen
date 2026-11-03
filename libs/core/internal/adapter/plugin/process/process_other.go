@@ -11,4 +11,6 @@ func ApplyLimits(_ int, _ Limits) error {
 }
 
 // HideInheritedFiles does nothing where the window creates no pipes per response.
-func HideInheritedFiles() {}
+func HideInheritedFiles() error {
+	return nil
+}

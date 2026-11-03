@@ -3,6 +3,7 @@
 package process
 
 import (
+	"errors"
 	"fmt"
 	"os/exec"
 	"syscall"
@@ -48,7 +49,14 @@ func setRlimit(pid int, resource int, limit uint64) error {
 // creates the pipe of each response without that flag: a plugin started while a
 // response is open would keep the pipe's write end, and the page would not see
 // the end of that response until the plugin exits.
-func HideInheritedFiles() {
-	// An older kernel lacks close_range; those descriptors stay inherited.
-	_ = unix.CloseRange(3, ^uint(0), unix.CLOSE_RANGE_CLOEXEC)
+func HideInheritedFiles() error {
+	err := unix.CloseRange(3, ^uint(0), unix.CLOSE_RANGE_CLOEXEC)
+	if errors.Is(err, unix.ENOSYS) {
+		// An older kernel lacks close_range; those descriptors stay inherited.
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("close_range: %w", err)
+	}
+	return nil
 }
