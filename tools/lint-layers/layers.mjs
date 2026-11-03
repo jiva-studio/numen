@@ -93,3 +93,52 @@ export function createOwnImportConfig({ layer, patterns, group, message, outside
     },
   }
 }
+
+/**
+ * The layer blocks of a component library (`libs/ui/core`, `libs/ui/shell`):
+ * the layers, the imports `domainImports` bans, and a slice of `features`
+ * reaching no other slice. `outsideLayers` are the files that stand outside.
+ */
+export function createLibraryLayerConfigs({ boundaries, order, sliceLayers, outsideLayers, domainImports }) {
+  return [
+    createLayerConfig({
+      boundaries,
+      elements: createLayerElements({ order, sliceLayers }),
+      policies: createLayerPolicies({ order, sliceLayers, indexOnly: true }),
+      categories: [
+        { category: 'public', pattern: 'src/features/*/index.ts' },
+        { category: 'entry', pattern: 'src/index.ts' },
+      ],
+      ignores: outsideLayers,
+      rules: { 'no-restricted-imports': ['error', { patterns: domainImports }] },
+    }),
+    createOwnImportConfig({
+      layer: 'features',
+      patterns: domainImports,
+      group: ['@/features/**', '@/screens/**'],
+      message: 'a slice imports its own files by relative path and no other slice',
+      outsideLayers,
+    }),
+  ]
+}
+
+/**
+ * The imports a component library bans: every first-party package but
+ * `@numen/ui` (`message` says why), and any path into `apps` or `libs`
+ * (`direction` says which way the dependency runs).
+ */
+export function createDomainImports({ message, direction }) {
+  return [
+    {
+      group: [
+        '@numen/*',
+        '@numen/*/**',
+        '!@numen/ui',
+        // The same packages named by the path the install put them at.
+        '**/node_modules/@numen/**',
+      ],
+      message,
+    },
+    { group: ['**/apps/**', '**/libs/**'], message: direction },
+  ]
+}
