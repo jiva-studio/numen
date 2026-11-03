@@ -599,3 +599,83 @@ export const ClosedByAScrollOfThePerson: Story = {
     })
   },
 }
+
+const SUBMENU_STORY_ITEMS: MenuItem[] = [
+  {
+    id: 'move',
+    text: 'Move to',
+    children: [
+      { id: 'inbox', text: 'Inbox' },
+      { id: 'archive', text: 'Archive' },
+      { id: 'trash', text: 'Trash' },
+    ],
+  },
+  { id: 'rename', text: 'Rename' },
+  { id: 'copy', text: 'Copy path' },
+]
+
+export const PassingOverSubmenuParent: Story = {
+  args: {
+    at: { x: 160, y: 160 },
+    items: SUBMENU_STORY_ITEMS,
+  },
+  play: async ({ args }) => {
+    const menu = within(menuElement()!)
+    const moveRow = menu.getByRole('menuitem', { name: 'Move to' })
+    const renameRow = menu.getByRole('menuitem', { name: 'Rename' })
+    const moveBox = moveRow.getBoundingClientRect()
+    const renameBox = renameRow.getBoundingClientRect()
+
+    moveRow.dispatchEvent(
+      new MouseEvent('mouseenter', {
+        clientX: moveBox.left + 24,
+        clientY: moveBox.top + moveBox.height / 2,
+      }),
+    )
+    renameRow.dispatchEvent(
+      new MouseEvent('mouseenter', {
+        clientX: renameBox.left + 24,
+        clientY: renameBox.top + renameBox.height / 2,
+      }),
+    )
+    await expect(document.body.querySelectorAll('.menu')).toHaveLength(1)
+
+    await userEvent.click(renameRow)
+    await expect(args.onChoose).toHaveBeenCalledWith('rename')
+  },
+}
+
+export const DiagonalMoveIntoSubmenu: Story = {
+  args: {
+    at: { x: 160, y: 160 },
+    items: SUBMENU_STORY_ITEMS,
+  },
+  play: async ({ args }) => {
+    const menu = within(menuElement()!)
+    const moveRow = menu.getByRole('menuitem', { name: 'Move to' })
+    const renameRow = menu.getByRole('menuitem', { name: 'Rename' })
+    const moveBox = moveRow.getBoundingClientRect()
+
+    moveRow.dispatchEvent(
+      new MouseEvent('mouseenter', {
+        clientX: moveBox.left + 20,
+        clientY: moveBox.top + moveBox.height / 2,
+      }),
+    )
+    await waitFor(async () => {
+      await expect(document.body.querySelectorAll('.menu')).toHaveLength(2)
+    })
+
+    const renameBox = renameRow.getBoundingClientRect()
+    const midX = moveBox.left + (moveBox.width * 3) / 4
+    const midY = renameBox.top + renameBox.height / 2
+    renameRow.dispatchEvent(new MouseEvent('mouseenter', { clientX: midX, clientY: midY }))
+    renameRow.dispatchEvent(new MouseEvent('mousemove', { clientX: midX, clientY: midY }))
+    await expect(document.body.querySelectorAll('.menu')).toHaveLength(2)
+
+    const menus = document.body.querySelectorAll<HTMLElement>('.menu')
+    const archiveRow = within(menus[1]!).getByRole('menuitem', { name: 'Archive' })
+    await userEvent.click(archiveRow)
+    await expect(args.onChoose).toHaveBeenCalledWith('archive')
+  },
+}

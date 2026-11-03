@@ -1,7 +1,15 @@
 /**
  * Navigation and submenu interaction within a menu.
  */
-import { computed, ref, type ComputedRef, type Ref, type ShallowRef } from 'vue'
+import {
+  computed,
+  getCurrentScope,
+  onScopeDispose,
+  ref,
+  type ComputedRef,
+  type Ref,
+  type ShallowRef,
+} from 'vue'
 import type { Position } from '@/shared/lib/math/geometry'
 import {
   getInitialIndex,
@@ -10,7 +18,9 @@ import {
   type MenuItem,
   type MenuTrigger,
 } from '../items/item'
+import { createSubmenuAim, type MenuBox } from './aim'
 import { useMenuKeys } from './keys'
+import { isInside } from './outside'
 
 interface ActiveSubmenu {
   readonly id: string
@@ -23,7 +33,8 @@ interface MenuSubmenuState {
   readonly active: Ref<ActiveSubmenu | null>
   readonly trigger: Ref<MenuTrigger>
   readonly onRegisterRow: (id: string, row: unknown) => void
-  readonly onRowHover: (item: MenuItem) => void
+  readonly onRowHover: (item: MenuItem, event?: MouseEvent) => void
+  readonly onMenuLeave: (event?: MouseEvent) => void
   readonly onChoose: (item: MenuItem) => void
   readonly onSubmenuChoose: (id: string) => void
   readonly onClose: () => void
@@ -37,6 +48,8 @@ export interface MenuNavigationOptions {
   readonly menuRef: Readonly<ShallowRef<HTMLElement | null>>
   readonly getFallbackPosition: () => Position
   readonly getSubmenuPosition: (element: HTMLElement | null) => Position | null
+  readonly getSubmenuBox?: () => MenuBox | null
+  readonly getSubmenuElement?: () => HTMLElement | null
   readonly onEmitChoose: (id: string) => void
   readonly onEmitDismiss: () => void
   readonly hasFrom: () => boolean
@@ -59,7 +72,7 @@ function useSubmenuActions(options: MenuNavigationOptions) {
   const rowElements = new Map<string, { getElement?: () => HTMLElement | null }>()
 
   const onOpenSubmenu = (item: MenuItem, how: MenuTrigger = 'pointer'): void => {
-    if (!item.children || item.children.length === 0) return
+    if (item.isDisabled || !item.children || item.children.length === 0) return
     const rowInst = rowElements.get(item.id)
     const el = rowInst?.getElement?.() ?? null
     const position = options.getSubmenuPosition(el) ?? options.getFallbackPosition()
@@ -70,18 +83,26 @@ function useSubmenuActions(options: MenuNavigationOptions) {
       from: el,
     }
     trigger.value = how
+    aim.onSubmenuOpened()
   }
 
   const onCloseSubmenu = (): void => {
+    aim.clear()
     active.value = null
   }
 
-  const onRowHover = (item: MenuItem): void => {
-    if (item.children && item.children.length > 0) {
-      onOpenSubmenu(item, 'pointer')
-    } else if (active.value && active.value.id !== item.id) {
-      onCloseSubmenu()
-    }
+  const aim = createSubmenuAim({
+    clock: options.clock,
+    getActiveId: () => active.value?.id ?? null,
+    getSubmenuBox: () => options.getSubmenuBox?.() ?? null,
+    isInsideSubmenu: (event) => isInside(options.getSubmenuElement?.() ?? null, event),
+    isInsideMenu: (event) => isInside(options.menuRef.value, event),
+    onOpen: (item) => onOpenSubmenu(item, 'pointer'),
+    onClose: onCloseSubmenu,
+  })
+
+  if (getCurrentScope()) {
+    onScopeDispose(() => aim.clear())
   }
 
   const onSubmenuChoose = (id: string): void => {
@@ -104,9 +125,9 @@ function useSubmenuActions(options: MenuNavigationOptions) {
     active,
     trigger,
     rowElements,
+    aim,
     onOpenSubmenu,
     onCloseSubmenu,
-    onRowHover,
     onSubmenuChoose,
     onChoose,
   }
@@ -144,7 +165,8 @@ export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigatio
     active: submenuActions.active,
     trigger: submenuActions.trigger,
     onRegisterRow,
-    onRowHover: submenuActions.onRowHover,
+    onRowHover: submenuActions.aim.onRowHover,
+    onMenuLeave: submenuActions.aim.onMenuLeave,
     onChoose,
     onSubmenuChoose: submenuActions.onSubmenuChoose,
     onClose: onCloseSubmenu,

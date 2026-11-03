@@ -7,6 +7,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import Menu from './Menu.vue'
+import { SUBMENU_CLOSE_GRACE_MS, SUBMENU_OPEN_DELAY_MS } from './interaction/aim'
 import type { MenuItem } from './items/item'
 
 const ITEMS: MenuItem[] = [
@@ -25,10 +26,22 @@ const ITEMS: MenuItem[] = [
 type MenuProps = InstanceType<typeof Menu>['$props']
 
 let mounted: { unmount: () => void } | null = null
+let now = 1_000
+
+const advanceClock = (ms: number): void => {
+  now += ms
+}
 
 const mountMenu = (props: Partial<MenuProps> = {}) => {
+  now = 1_000
   const menu = mount(Menu, {
-    props: { items: ITEMS, at: { x: 40, y: 40 }, isOpen: true, ...props },
+    props: {
+      items: ITEMS,
+      at: { x: 40, y: 40 },
+      isOpen: true,
+      clock: () => now,
+      ...props,
+    },
     attachTo: document.body,
   })
   mounted = menu
@@ -44,6 +57,16 @@ const getMenus = () => Array.from(document.body.querySelectorAll<HTMLElement>('.
 const getRows = (menu: HTMLElement | undefined) =>
   Array.from(menu?.querySelectorAll<HTMLElement>('.menu__item') ?? [])
 
+const restOnRow = async (
+  row: HTMLElement | undefined,
+  point: { clientX?: number; clientY?: number } = {},
+) => {
+  row?.dispatchEvent(new MouseEvent('mouseenter', point))
+  advanceClock(SUBMENU_OPEN_DELAY_MS)
+  row?.dispatchEvent(new MouseEvent('mousemove', point))
+  await settle()
+}
+
 afterEach(() => {
   mounted?.unmount()
   mounted = null
@@ -51,17 +74,38 @@ afterEach(() => {
 })
 
 describe('opening a submenu', () => {
-  it('opens on hover over a row with children', async () => {
+  it('opens after resting on a row with children for SUBMENU_OPEN_DELAY_MS', async () => {
     mountMenu()
     await settle()
     expect(getMenus()).toHaveLength(1)
 
-    getRows(getMenus()[0])[1]?.dispatchEvent(new MouseEvent('mouseenter'))
+    const row = getRows(getMenus()[0])[1]
+    row?.dispatchEvent(new MouseEvent('mouseenter'))
+    await settle()
+    expect(getMenus()).toHaveLength(1)
+
+    advanceClock(SUBMENU_OPEN_DELAY_MS)
+    row?.dispatchEvent(new MouseEvent('mousemove'))
     await settle()
 
     const menus = getMenus()
     expect(menus).toHaveLength(2)
-    expect(getRows(menus[1]).map((row) => row.textContent?.trim())).toEqual(['Inbox', 'Archive'])
+    expect(getRows(menus[1]).map((r) => r.textContent?.trim())).toEqual(['Inbox', 'Archive'])
+  })
+
+  it('does not open when passing over a parent row before the delay', async () => {
+    mountMenu()
+    await settle()
+    const rows = getRows(getMenus()[0])
+
+    rows[1]?.dispatchEvent(new MouseEvent('mouseenter', { clientX: 80, clientY: 65 }))
+    advanceClock(SUBMENU_OPEN_DELAY_MS - 30)
+    rows[2]?.dispatchEvent(new MouseEvent('mouseenter', { clientX: 80, clientY: 95 }))
+    advanceClock(SUBMENU_OPEN_DELAY_MS)
+    rows[2]?.dispatchEvent(new MouseEvent('mousemove', { clientX: 80, clientY: 95 }))
+    await settle()
+
+    expect(getMenus()).toHaveLength(1)
   })
 
   it('is placed at the right edge and the top of the row that opened it', async () => {
@@ -77,8 +121,7 @@ describe('opening a submenu', () => {
       height: 25,
     } as DOMRect)
 
-    row.dispatchEvent(new MouseEvent('mouseenter'))
-    await settle()
+    await restOnRow(row)
 
     expect(getMenus()[1]?.style.left).toBe('180px')
     expect(getMenus()[1]?.style.top).toBe('55px')
@@ -163,8 +206,7 @@ describe('choosing in a submenu', () => {
   it('returns the identifier of the child, and asks the whole menu to go', async () => {
     const menu = mountMenu()
     await settle()
-    getRows(getMenus()[0])[1]?.dispatchEvent(new MouseEvent('mouseenter'))
-    await settle()
+    await restOnRow(getRows(getMenus()[0])[1])
 
     getRows(getMenus()[1])[1]?.click()
     await settle()
@@ -176,27 +218,83 @@ describe('choosing in a submenu', () => {
 })
 
 describe('putting a submenu away', () => {
-  it('goes when the pointer moves onto a row that has no children', async () => {
+  it('goes when moving onto a leaf row outside the safe triangle', async () => {
     const menu = mountMenu()
     await settle()
     const rows = getRows(getMenus()[0])
-    rows[1]?.dispatchEvent(new MouseEvent('mouseenter'))
-    await settle()
+    await restOnRow(rows[1], { clientX: 80, clientY: 60 })
     expect(getMenus()).toHaveLength(2)
 
-    rows[2]?.dispatchEvent(new MouseEvent('mouseenter'))
+    rows[2]?.dispatchEvent(new MouseEvent('mouseenter', { clientX: 80, clientY: 95 }))
     await settle()
 
     expect(getMenus()).toHaveLength(1)
     expect(menu.emitted('dismiss')).toBeUndefined()
   })
 
+  it('keeps the submenu open inside the safe triangle until the pointer rests', async () => {
+    mountMenu()
+    await settle()
+    const rows = getRows(getMenus()[0])
+    await restOnRow(rows[1], { clientX: 100, clientY: 60 })
+    const sub = getMenus()[1]!
+    vi.spyOn(sub, 'getBoundingClientRect').mockReturnValue({
+      left: 200,
+      right: 360,
+      top: 40,
+      bottom: 200,
+      width: 160,
+      height: 160,
+    } as DOMRect)
+
+    rows[2]?.dispatchEvent(new MouseEvent('mouseenter', { clientX: 150, clientY: 95 }))
+    await settle()
+    expect(getMenus()).toHaveLength(2)
+
+    advanceClock(SUBMENU_OPEN_DELAY_MS)
+    rows[2]?.dispatchEvent(new MouseEvent('mousemove', { clientX: 150, clientY: 95 }))
+    await settle()
+    expect(getMenus()).toHaveLength(1)
+  })
+
+  it('delays close on menu leave and cancels close when reaching the submenu', async () => {
+    mountMenu()
+    await settle()
+    const top = getMenus()[0]!
+    const rows = getRows(top)
+    await restOnRow(rows[1], { clientX: 100, clientY: 60 })
+    const sub = getMenus()[1]!
+    vi.spyOn(sub, 'getBoundingClientRect').mockReturnValue({
+      left: 200,
+      right: 360,
+      top: 40,
+      bottom: 200,
+      width: 160,
+      height: 160,
+    } as DOMRect)
+
+    top.dispatchEvent(new MouseEvent('mouseleave', { clientX: 30, clientY: 60 }))
+    await settle()
+    expect(getMenus()).toHaveLength(2)
+
+    advanceClock(100)
+    sub.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 220, clientY: 80 }))
+    advanceClock(SUBMENU_CLOSE_GRACE_MS)
+    await settle()
+    expect(getMenus()).toHaveLength(2)
+
+    window.dispatchEvent(new MouseEvent('mousemove', { clientX: 10, clientY: 10 }))
+    advanceClock(SUBMENU_CLOSE_GRACE_MS)
+    window.dispatchEvent(new MouseEvent('mousemove', { clientX: 5, clientY: 10 }))
+    await settle()
+    expect(getMenus()).toHaveLength(1)
+  })
+
   it('stays where the pointer moves onto the row that opened it again', async () => {
     mountMenu()
     await settle()
     const row = getRows(getMenus()[0])[1]
-    row?.dispatchEvent(new MouseEvent('mouseenter'))
-    await settle()
+    await restOnRow(row)
 
     row?.dispatchEvent(new MouseEvent('mouseenter'))
     await settle()
@@ -208,8 +306,7 @@ describe('putting a submenu away', () => {
     const menu = mountMenu({ trigger: 'keyboard' })
     await settle()
     const top = getMenus()[0]!
-    getRows(top)[1]?.dispatchEvent(new MouseEvent('mouseenter'))
-    await settle()
+    await restOnRow(getRows(top)[1])
     const sub = getMenus()[1]!
 
     sub.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }))
@@ -233,8 +330,7 @@ describe('putting a submenu away', () => {
   it('goes with the menu that holds it', async () => {
     const menu = mountMenu()
     await settle()
-    getRows(getMenus()[0])[1]?.dispatchEvent(new MouseEvent('mouseenter'))
-    await settle()
+    await restOnRow(getRows(getMenus()[0])[1])
 
     await menu.setProps({ isOpen: false })
     await settle()

@@ -9,6 +9,7 @@
 import { useTemplateRef } from 'vue'
 import type { GroupedItem } from './items/item'
 
+/* --------------------------------- Props ---------------------------------- */
 defineProps<{
   item: GroupedItem
   /** Which item is the one in force, by the caller's identifier. */
@@ -19,13 +20,14 @@ defineProps<{
   hasIcons: boolean
 }>()
 
+/* --------------------------------- Events --------------------------------- */
 defineEmits<{
   /** The row was pressed. */
   (event: 'choose'): void
   /** The keyboard came onto the row. */
   (event: 'focus'): void
-  /** The pointer moved onto the row. */
-  (event: 'hover'): void
+  /** The pointer moved onto or across the row. */
+  (event: 'hover', pointer: MouseEvent): void
 }>()
 
 defineSlots<{
@@ -33,8 +35,10 @@ defineSlots<{
   default(): unknown
 }>()
 
+/* --------------------------------- State ---------------------------------- */
 const row = useTemplateRef<HTMLElement>('row')
 
+/* -------------------------------- Helpers --------------------------------- */
 /** Focuses this row; called by the menu. */
 const focus = (): void => row.value?.focus()
 
@@ -57,7 +61,8 @@ defineExpose({ focus, getElement: () => row.value })
     tabindex="-1"
     :disabled="item.isDisabled"
     @focus="$emit('focus')"
-    @mouseenter="$emit('hover')"
+    @mouseenter="$emit('hover', $event)"
+    @mousemove="$emit('hover', $event)"
     @click="$emit('choose')"
   >
     <span v-if="hasIcons" class="menu__icon flex shrink-0 items-center">
@@ -118,7 +123,7 @@ defineExpose({ focus, getElement: () => row.value })
   color: var(--numen-edge-label);
 }
 
-/* The hushed detail is too faint on the highlight; the row is read in the ink. */
+/* Highlighted and focused rows use the primary text color for detail text. */
 .menu__item:hover:not(:disabled) .menu__detail,
 .menu__item:focus-visible .menu__detail {
   color: var(--numen-ink);
