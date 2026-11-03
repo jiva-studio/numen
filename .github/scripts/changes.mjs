@@ -2,7 +2,10 @@
  * Prints, as `name=value` lines for $GITHUB_OUTPUT, which areas of the repository a change touches
  * and so which CI jobs run.
  *
- * Usage: node changes.mjs <event> [<base> <head>]
+ * Usage: git diff --name-only <base> <head> | node changes.mjs <event> [-]
+ *
+ * With `-` the changed files are read from standard input, one per line; without it, or with an
+ * empty input, every area runs. The plugins are the folders under plugins/ that hold a manifest.json.
  *
  * A pull request runs the areas its files touch and every area that depends on them. A push, a
  * manual run, a change to code every area reads (SHARED) and a base missing from the clone run
@@ -10,7 +13,7 @@
  * on a push that changes what the manual is written from. The end-to-end tests a change needs are
  * tests/e2e/desktop/scripts/select-tests.mjs's to choose.
  */
-import { execFileSync } from 'node:child_process'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 
 export const AREAS = [
   'core',
@@ -80,7 +83,7 @@ const RULES = [
   [/^tools\/ci-mutation\/|^\.github\/workflows\/mutation/, ['mutation_tool']],
   [/^\.github\//, ['workflows']],
   [/^\.github\/scripts\/(stage|check-staged)/, ['staging']],
-  [/(^|\/)gradle\/wrapper\/|(^|\/)gradlew(\.bat)?$/, ['gradle']],
+  [/(?:(?:^|\/)gradle\/wrapper\/)|(?:(?:^|\/)gradlew(?:\.bat)?$)/, ['gradle']],
   [MANUAL_SOURCES, ['docs', 'references']],
   [STORY_SOURCES, ['references']],
 ]
@@ -139,28 +142,22 @@ export function getAreas({ everything, files, plugins }) {
 
   const output = Object.fromEntries(AREAS.map((area) => [area, String(areas.has(area))]))
   output.plugins = String(pluginDirs.size > 0)
-  output.plugin_dirs = [...pluginDirs].sort().map((dir) => `plugins/${dir}`).join(' ')
+  output.plugin_dirs = [...pluginDirs].sort((a, b) => a.localeCompare(b)).map((dir) => `plugins/${dir}`).join(' ')
   return output
 }
 
-/** The files that differ between two commits, or undefined when either is not in the clone. */
-const listChangedFiles = (base, head) => {
-  try {
-    return execFileSync('git', ['diff', '--name-only', '--no-renames', base, head], { encoding: 'utf8' })
-      .split('\n')
-      .filter(Boolean)
-  } catch {
-    return undefined
-  }
+/** The changed files on standard input, or undefined when there are none to read. */
+const readChangedFiles = () => {
+  const files = readFileSync(0, 'utf8').split('\n').filter(Boolean)
+  return files.length > 0 ? files : undefined
 }
 
 const main = () => {
-  const [event, base, head] = process.argv.slice(2)
-  const files = (base && head && listChangedFiles(base, head)) || undefined
-  const plugins = execFileSync('git', ['ls-tree', '-r', '--name-only', 'HEAD', 'plugins/'], { encoding: 'utf8' })
-    .split('\n')
-    .map((path) => /^plugins\/([^/]+)\/manifest\.json$/.exec(path)?.[1])
-    .filter(Boolean)
+  const [event, input] = process.argv.slice(2)
+  const files = input === '-' ? readChangedFiles() : undefined
+  const plugins = readdirSync('plugins', { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(`plugins/${entry.name}/manifest.json`))
+    .map((entry) => entry.name)
   const changed = getAreas({ everything: files === undefined, files: files ?? [], plugins })
   const output = event === 'pull_request' ? changed : getAreas({ everything: true, files: [], plugins })
   // A push deploys the manual only when the push changed what the manual is written from.
