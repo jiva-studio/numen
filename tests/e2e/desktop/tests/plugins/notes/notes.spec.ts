@@ -1,5 +1,5 @@
 import { test, expect } from '../../support/test.js'
-import { waitForWindow } from '../../support/workspace.js'
+import { openTreeRow, waitForWindow } from '../../support/workspace.js'
 
 test.describe('Notes and File Tree', () => {
   test('lists vault notes and expands directory tree', async ({ page }) => {
@@ -16,9 +16,7 @@ test.describe('Notes and File Tree', () => {
     await expect(page.getByText('assets').first()).toBeVisible()
 
     // Target notes folder row in the file tree and expand it with Enter
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
+    await openTreeRow(page, 'notes')
 
     // Verify Entropy.md appears inside expanded notes folder
     await expect(page.getByText('Entropy.md').first()).toBeVisible()

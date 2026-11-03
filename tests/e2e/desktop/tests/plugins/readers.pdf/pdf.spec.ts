@@ -1,24 +1,9 @@
 import { test, expect } from '../../support/test.js'
-import { waitForWindow } from '../../support/workspace.js'
+import { openAsset, openTreeRow } from '../../support/workspace.js'
 
 test.describe('PDF Document Reader', () => {
   test('opens PDF document and renders viewer without saving error', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Target sample.pdf in tree
-    const pdfRow = page.locator('[data-tree-row="assets/sample.pdf"]')
-    await expect(pdfRow).toBeVisible()
-    await pdfRow.press('Enter')
+    await openAsset(page, 'sample.pdf')
 
     // Verify document tab opened and no error modal or error panel is shown
     await expect(page.locator('.fallback-panel')).toBeHidden({ timeout: 5_000 })
@@ -30,22 +15,7 @@ test.describe('PDF Document Reader', () => {
   })
 
   test('opens paper.pdf document from vault assets', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Target paper.pdf in tree
-    const paperRow = page.locator('[data-tree-row="assets/paper.pdf"]')
-    await expect(paperRow).toBeVisible()
-    await paperRow.press('Enter')
+    await openAsset(page, 'paper.pdf')
 
     // Verify document tab opened and reader rendered
     await expect(page.locator('.fallback-panel')).toBeHidden({ timeout: 5_000 })
@@ -66,22 +36,7 @@ test.describe('PDF Document Reader', () => {
   })
 
   test('handles viewport resize on PDF reader', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Open sample.pdf
-    const pdfRow = page.locator('[data-tree-row="assets/sample.pdf"]')
-    await expect(pdfRow).toBeVisible()
-    await pdfRow.press('Enter')
+    await openAsset(page, 'sample.pdf')
 
     await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
 
@@ -91,22 +46,7 @@ test.describe('PDF Document Reader', () => {
   })
 
   test('displays graceful fallback panel on corrupted PDF', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Target corrupted.pdf in tree
-    const badPdfRow = page.locator('[data-tree-row="assets/corrupted.pdf"]')
-    await expect(badPdfRow).toBeVisible()
-    await badPdfRow.press('Enter')
+    await openAsset(page, 'corrupted.pdf')
 
     // Verify fallback panel is shown gracefully displaying error message
     await expect(page.locator('.fallback-panel')).toBeVisible({ timeout: 10_000 })
@@ -114,22 +54,7 @@ test.describe('PDF Document Reader', () => {
   })
 
   test('navigates across pages in PDF document', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Open sample.pdf
-    const pdfRow = page.locator('[data-tree-row="assets/sample.pdf"]')
-    await expect(pdfRow).toBeVisible()
-    await pdfRow.press('Enter')
+    await openAsset(page, 'sample.pdf')
 
     const reader = page.locator('.reader')
     await expect(reader).toBeVisible({ timeout: 10_000 })
@@ -141,34 +66,15 @@ test.describe('PDF Document Reader', () => {
   })
 
   test('persists PDF reader across tab switching', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Open sample.pdf
-    const pdfRow = page.locator('[data-tree-row="assets/sample.pdf"]')
-    await expect(pdfRow).toBeVisible()
-    await pdfRow.press('Enter')
+    await openAsset(page, 'sample.pdf')
 
     await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
 
     // Open notes folder and open a note
     await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
+    await openTreeRow(page, 'notes')
 
-    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
-    await expect(entropyRow).toBeVisible()
-    await entropyRow.press('Enter')
+    await openTreeRow(page, 'notes/Entropy.md')
 
     await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
 

@@ -1,119 +1,49 @@
 import { test, expect } from '../../support/test.js'
-import { waitForWindow } from '../../support/workspace.js'
+import { closeTab, openAsset, openTreeRow } from '../../support/workspace.js'
 
 test.describe('Plugin Lifecycle and Process Management', () => {
   test('activates reader-pdf plugin on demand and cleans up on close', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Open sample.pdf to trigger on-demand activation
-    const pdfRow = page.locator('[data-tree-row="assets/sample.pdf"]')
-    await expect(pdfRow).toBeVisible()
-    await pdfRow.press('Enter')
+    await openAsset(page, 'sample.pdf')
 
     // Verify reader rendered
     await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
 
     // Close the tab
-    const closeBtn = page.getByRole('button', { name: /Close sample\.pdf/i }).first()
-    await expect(closeBtn).toBeVisible()
-    await closeBtn.click()
+    await closeTab(page, /Close sample\.pdf/i)
     await expect(page.locator('.reader')).toBeHidden({ timeout: 5_000 })
   })
 
   test('activates reader-epub plugin on demand and cleans up on close', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Open sample.epub
-    const epubRow = page.locator('[data-tree-row="assets/sample.epub"]')
-    await expect(epubRow).toBeVisible()
-    await epubRow.press('Enter')
+    await openAsset(page, 'sample.epub')
 
     // Verify book tab rendered
     await expect(page.locator('.book-tab')).toBeVisible({ timeout: 10_000 })
 
     // Close the tab
-    const closeBtn = page.getByRole('button', { name: /Close sample\.epub/i }).first()
-    await expect(closeBtn).toBeVisible()
-    await closeBtn.click()
+    await closeTab(page, /Close sample\.epub/i)
     await expect(page.locator('.book-tab')).toBeHidden({ timeout: 5_000 })
   })
 
   test('re-activates plugin on second file opening after tab closure', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // 1. Open and close sample.pdf
-    const pdfRow = page.locator('[data-tree-row="assets/sample.pdf"]')
-    await expect(pdfRow).toBeVisible()
-    await pdfRow.press('Enter')
+    await openAsset(page, 'sample.pdf')
     await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
 
-    const closeBtn = page.getByRole('button', { name: /Close sample\.pdf/i }).first()
-    await expect(closeBtn).toBeVisible()
-    await closeBtn.click()
+    await closeTab(page, /Close sample\.pdf/i)
     await expect(page.locator('.reader')).toBeHidden()
 
     // 2. Open paper.pdf to verify plugin re-activation
-    const paperRow = page.locator('[data-tree-row="assets/paper.pdf"]')
-    await expect(paperRow).toBeVisible()
-    await paperRow.press('Enter')
+    await openTreeRow(page, 'assets/paper.pdf')
 
     await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
   })
 
   test('manages multiple distinct plugin processes concurrently', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Open sample.pdf
-    const pdfRow = page.locator('[data-tree-row="assets/sample.pdf"]')
-    await expect(pdfRow).toBeVisible()
-    await pdfRow.press('Enter')
+    await openAsset(page, 'sample.pdf')
     await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
 
     // Open sample.epub
     await page.getByRole('tab', { name: /^Files/ }).click()
-    const epubRow = page.locator('[data-tree-row="assets/sample.epub"]')
-    await expect(epubRow).toBeVisible()
-    await epubRow.press('Enter')
+    await openTreeRow(page, 'assets/sample.epub')
     await expect(page.locator('.book-tab')).toBeVisible({ timeout: 10_000 })
 
     // Switch back to sample.pdf tab

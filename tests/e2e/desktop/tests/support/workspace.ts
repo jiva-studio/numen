@@ -13,6 +13,32 @@ export const waitForWindow = async (page: Page): Promise<void> => {
   await expect(page.getByRole('region', { name: 'Status Bar' })).toBeVisible()
 }
 
+/** Presses Enter on the row at `path` of the files tab once it is drawn: a folder opens, a file opens in a tab. */
+export const openTreeRow = async (page: Page, path: string): Promise<void> => {
+  const row = page.locator(`[data-tree-row="${path}"]`)
+  await expect(row).toBeVisible()
+  await row.press('Enter')
+}
+
+/** Loads the window and presses Enter on each row at `paths` of the files tab, in order. */
+export const openFromFiles = async (page: Page, paths: readonly string[]): Promise<void> => {
+  await page.goto('/')
+  await waitForWindow(page)
+  await page.getByRole('tab', { name: /^Files/ }).click()
+  for (const path of paths) await openTreeRow(page, path)
+}
+
+/** Loads the window and opens the file `name` of the vault's `assets` folder from the files tab. */
+export const openAsset = (page: Page, name: string): Promise<void> =>
+  openFromFiles(page, ['assets', `assets/${name}`])
+
+/** Presses the first close button named `name` once it is drawn. */
+export const closeTab = async (page: Page, name: RegExp): Promise<void> => {
+  const button = page.getByRole('button', { name }).first()
+  await expect(button).toBeVisible()
+  await button.click()
+}
+
 /**
  * Loads the window with the tabs a new vault opens with, and waits until the vault is read and the
  * opening note is drawn.

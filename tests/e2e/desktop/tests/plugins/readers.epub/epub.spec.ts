@@ -1,24 +1,9 @@
 import { test, expect } from '../../support/test.js'
-import { waitForWindow } from '../../support/workspace.js'
+import { openAsset, openTreeRow } from '../../support/workspace.js'
 
 test.describe('EPUB Book Reader', () => {
   test('opens EPUB book and displays reflowable reader content', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Target sample.epub in tree
-    const epubRow = page.locator('[data-tree-row="assets/sample.epub"]')
-    await expect(epubRow).toBeVisible()
-    await epubRow.press('Enter')
+    await openAsset(page, 'sample.epub')
 
     // Verify book tab opened and reflowable content loaded
     await expect(page.locator('.book-tab')).toBeVisible({ timeout: 10_000 })
@@ -29,22 +14,7 @@ test.describe('EPUB Book Reader', () => {
   })
 
   test('toggles contents listing drawer in EPUB reader', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Open sample.epub
-    const epubRow = page.locator('[data-tree-row="assets/sample.epub"]')
-    await expect(epubRow).toBeVisible()
-    await epubRow.press('Enter')
+    await openAsset(page, 'sample.epub')
 
     await expect(page.locator('.book-tab')).toBeVisible({ timeout: 10_000 })
 
@@ -56,44 +26,14 @@ test.describe('EPUB Book Reader', () => {
   })
 
   test('renders book fallback on corrupted EPUB file', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Target corrupted.epub
-    const badEpubRow = page.locator('[data-tree-row="assets/corrupted.epub"]')
-    await expect(badEpubRow).toBeVisible()
-    await badEpubRow.press('Enter')
+    await openAsset(page, 'corrupted.epub')
 
     // Verify application does not crash
     await expect(page.locator('text=something inside numen went wrong')).toBeHidden()
   })
 
   test('turns pages via keyboard navigation in EPUB reader', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Open sample.epub
-    const epubRow = page.locator('[data-tree-row="assets/sample.epub"]')
-    await expect(epubRow).toBeVisible()
-    await epubRow.press('Enter')
+    await openAsset(page, 'sample.epub')
 
     const bookTab = page.locator('.book-tab')
     await expect(bookTab).toBeVisible({ timeout: 10_000 })
@@ -107,34 +47,15 @@ test.describe('EPUB Book Reader', () => {
   })
 
   test('persists book reader across tab switching', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // Switch to Files tab
-    await page.getByRole('tab', { name: /^Files/ }).click()
-
-    // Expand assets folder
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    // Open sample.epub
-    const epubRow = page.locator('[data-tree-row="assets/sample.epub"]')
-    await expect(epubRow).toBeVisible()
-    await epubRow.press('Enter')
+    await openAsset(page, 'sample.epub')
 
     await expect(page.locator('.book-tab')).toBeVisible({ timeout: 10_000 })
 
     // Open notes folder and open a note
     await page.getByRole('tab', { name: /^Files/ }).click()
-    const notesRow = page.locator('[data-tree-row="notes"]')
-    await expect(notesRow).toBeVisible()
-    await notesRow.press('Enter')
+    await openTreeRow(page, 'notes')
 
-    const entropyRow = page.locator('[data-tree-row="notes/Entropy.md"]')
-    await expect(entropyRow).toBeVisible()
-    await entropyRow.press('Enter')
+    await openTreeRow(page, 'notes/Entropy.md')
 
     await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
 

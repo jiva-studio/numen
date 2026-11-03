@@ -1,5 +1,5 @@
 import { test, expect, readSavedStates } from '../../support/test.js'
-import { openVaultFile, openWorkspace, waitForWindow } from '../../support/workspace.js'
+import { openAsset, openVaultFile, openWorkspace } from '../../support/workspace.js'
 import { readSettledWidth, readWidth } from '../../support/layout.js'
 import { observeFor, waitForFrames } from '../../support/browser.js'
 
@@ -55,18 +55,7 @@ test.describe('PDF Document Reader Advanced Controls', () => {
   test('keeps one page number while the view rests on the border between two pages', async ({
     page,
   }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    const pdfRow = page.locator('[data-tree-row="assets/pages.pdf"]')
-    await expect(pdfRow).toBeVisible()
-    await pdfRow.press('Enter')
+    await openAsset(page, 'pages.pdf')
 
     const viewport = page.locator('.reader__viewport')
     const numberField = page.getByLabel('Page', { exact: true })
@@ -102,18 +91,7 @@ test.describe('PDF Document Reader Advanced Controls', () => {
   })
 
   test('shows the page it turned to after the next page button', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    const pdfRow = page.locator('[data-tree-row="assets/pages.pdf"]')
-    await expect(pdfRow).toBeVisible()
-    await pdfRow.press('Enter')
+    await openAsset(page, 'pages.pdf')
 
     const numberField = page.getByLabel('Page', { exact: true })
     await expect(numberField).toHaveValue('1', { timeout: 20_000 })

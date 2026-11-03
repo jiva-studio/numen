@@ -1,9 +1,9 @@
-import { test, expect } from '../../support/test.js'
+import { test, expect, type APIRequestContext, type Page } from '../../support/test.js'
 import {
+  openAsset,
   openVaultFile,
   openWorkspace,
   waitForPassage,
-  waitForWindow,
 } from '../../support/workspace.js'
 import {
   createEpub,
@@ -17,24 +17,31 @@ import { createUniqueTitle } from '../../support/vault.js'
 test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
   const made: string[] = []
 
+  /** Writes a book of two chapters, Dawn tide and Dusk tide, opens it and waits for the first. */
+  const openTideBook = async (page: Page, request: APIRequestContext, title: string) => {
+    const name = `${createUniqueTitle(title).replace(/ /g, '-')}.epub`
+    made.push(`assets/${name}`)
+    writeVaultBytes(
+      `assets/${name}`,
+      createEpub('Tide book', [
+        { title: 'Dawn tide', text: 'The water is low at dawn. '.repeat(120) },
+        { title: 'Dusk tide', text: 'The water is high at dusk. '.repeat(120) },
+      ]),
+    )
+    await waitForListedFile(request, `assets/${name}`)
+    await openWorkspace(page)
+    await openVaultFile(page, 'assets', name)
+    const pages = page.getByRole('region', { name: 'Pages' })
+    await expect(pages.getByRole('heading', { name: 'Dawn tide' })).toBeVisible({ timeout: 10_000 })
+    return { name, pages }
+  }
+
   test.afterEach(() => {
     deleteVaultFiles(...made.splice(0))
   })
 
   test('toggles reflowable book table of contents listing', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    // 1. Open assets folder and sample.epub
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    const epubRow = page.locator('[data-tree-row="assets/sample.epub"]')
-    await expect(epubRow).toBeVisible()
-    await epubRow.press('Enter')
+    await openAsset(page, 'sample.epub')
 
     await expect(page.locator('.book-tab')).toBeVisible({ timeout: 10_000 })
 
@@ -63,20 +70,7 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
     page,
     request,
   }) => {
-    const name = `${createUniqueTitle('chapters').replace(/ /g, '-')}.epub`
-    made.push(`assets/${name}`)
-    writeVaultBytes(
-      `assets/${name}`,
-      createEpub('Tide book', [
-        { title: 'Dawn tide', text: 'The water is low at dawn. '.repeat(120) },
-        { title: 'Dusk tide', text: 'The water is high at dusk. '.repeat(120) },
-      ]),
-    )
-    await waitForListedFile(request, `assets/${name}`)
-    await openWorkspace(page)
-    await openVaultFile(page, 'assets', name)
-    const pages = page.getByRole('region', { name: 'Pages' })
-    await expect(pages.getByRole('heading', { name: 'Dawn tide' })).toBeVisible({ timeout: 10_000 })
+    const { name, pages } = await openTideBook(page, request, 'chapters')
 
     await page.getByRole('button', { name: 'Show contents' }).click()
     const contentsNav = page.getByRole('group', { name: 'Contents' })
@@ -102,20 +96,7 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
     page,
     request,
   }) => {
-    const name = `${createUniqueTitle('narrow').replace(/ /g, '-')}.epub`
-    made.push(`assets/${name}`)
-    writeVaultBytes(
-      `assets/${name}`,
-      createEpub('Tide book', [
-        { title: 'Dawn tide', text: 'The water is low at dawn. '.repeat(120) },
-        { title: 'Dusk tide', text: 'The water is high at dusk. '.repeat(120) },
-      ]),
-    )
-    await waitForListedFile(request, `assets/${name}`)
-    await openWorkspace(page)
-    await openVaultFile(page, 'assets', name)
-    const pages = page.getByRole('region', { name: 'Pages' })
-    await expect(pages.getByRole('heading', { name: 'Dawn tide' })).toBeVisible({ timeout: 10_000 })
+    const { name, pages } = await openTideBook(page, request, 'narrow')
 
     await page.getByRole('button', { name: 'Show contents' }).click()
     const contentsNav = page.getByRole('group', { name: 'Contents' })
@@ -145,18 +126,7 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
   })
 
   test('filters book chapters using contents search field', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
-
-    await page.getByRole('tab', { name: /^Files/ }).click()
-    const assetsRow = page.locator('[data-tree-row="assets"]')
-    await expect(assetsRow).toBeVisible()
-    await assetsRow.press('Enter')
-
-    const epubRow = page.locator('[data-tree-row="assets/sample.epub"]')
-    await expect(epubRow).toBeVisible()
-    await epubRow.press('Enter')
+    await openAsset(page, 'sample.epub')
 
     await expect(page.locator('.book-tab')).toBeVisible({ timeout: 10_000 })
 
