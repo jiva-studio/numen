@@ -187,7 +187,7 @@ func checkSDKNamesNoProtocolType(t *testing.T, workspace workspacePackages) {
 	t.Helper()
 	var pkgs []*packages.Package
 	modules := 0
-	root, err := filepath.Abs(filepath.Join(numenModulesDir, "libs", "plugin-sdk-go"))
+	root, err := filepath.Abs(filepath.Join(repoRootDir, "libs", "plugin-sdk-go"))
 	if err != nil {
 		t.Fatal(err)
 	}

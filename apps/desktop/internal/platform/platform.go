@@ -53,7 +53,7 @@ func GetConfigFor(target string) container.Config {
 }
 
 // getDevPluginsDirs is the plugin folders of a source checkout, relative to the working directory.
-func getDevPluginsDirs() []string { return []string{"modules/plugins", "plugins"} }
+func getDevPluginsDirs() []string { return []string{"plugins"} }
 
 // getCatalogConfig is the catalog of plugins as this machine keeps it: installs go to the plugin folder
 // of the user, and the downloaded packages are kept in the cache folder every window shares. The

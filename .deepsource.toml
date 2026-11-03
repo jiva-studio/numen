@@ -25,7 +25,6 @@ exclude_patterns = [
   "**/*.stories.ts",
   "**/fixtures/**",
   "**/testsupport/**",
-  "modules/tests/**",
   "**/eslint.config.js",
   "**/vite.config.ts",
   "**/vitest.config.ts"

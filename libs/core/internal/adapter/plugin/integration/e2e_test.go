@@ -29,7 +29,7 @@ func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
 
 	plugins := host.GetPlugins()
 	if len(plugins) == 0 {
-		t.Fatal("expected to discover embedding plugin in real modules/plugins")
+		t.Fatal("expected to discover embedding plugin in real plugins/")
 	}
 
 	ctx := t.Context()
