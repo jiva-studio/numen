@@ -261,11 +261,11 @@ func GetPort(tb testing.TB, server *httptest.Server) int {
 	return addr.Port
 }
 
-// StartSleepProcess starts a process that stands in for a plugin's process,
+// StartSleepProcess starts a placeholder for a plugin's process,
 // and kills and reaps it when the test ends.
 func StartSleepProcess(t *testing.T) *exec.Cmd {
 	t.Helper()
-	// The shell waits for a line on its standard input, which stays open until the test ends.
+	// The shell blocks on reading a line; its standard input is closed when the test ends.
 	cmd := exec.CommandContext(t.Context(), "/bin/sh", "-c", "read -r line")
 	input, err := cmd.StdinPipe()
 	if err != nil {
