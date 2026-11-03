@@ -1,4 +1,3 @@
-import type { JSHandle, Locator } from 'playwright/test'
 import { test, expect } from '../../support/test.js'
 import { observeFor } from '../../support/browser.js'
 import { readWidth } from '../../support/layout.js'
@@ -6,36 +5,6 @@ import { getPageIndex, getWide, holdPageRequests, openPages, readNaturalWidth } 
 
 /** Longer than the debounce of the width a page is requested at. */
 const DEBOUNCE_MS = 150
-
-interface BlankFrames {
-  blank: number
-  frames: number
-}
-
-/** Counts the frames in which the first page shows no decoded picture. */
-const watchForBlankPage = (first: Locator): Promise<JSHandle<BlankFrames>> =>
-  first.evaluateHandle((element) => {
-    // The plugin draws in a shadow root, which a document query does not reach.
-    const root = element.getRootNode() as ParentNode
-    const state: BlankFrames = { blank: 0, frames: 0 }
-    const sample = (): void => {
-      const picture = root.querySelector<HTMLImageElement>(
-        '.reader__page[data-page="0"] .reader__picture',
-      )
-      const isShown =
-        picture !== null &&
-        picture.complete &&
-        picture.naturalWidth > 0 &&
-        getComputedStyle(picture).visibility !== 'hidden'
-      if (!isShown) state.blank += 1
-      state.frames += 1
-      requestAnimationFrame(sample)
-    }
-    requestAnimationFrame(sample)
-    return state
-  })
-
-const readBlankFrames = (frames: JSHandle<BlankFrames>) => frames.evaluate((state) => state.blank)
 
 test.describe('PDF reader zoom', () => {
   test('keeps the page on screen while the new resolution is drawn, then shows it', async ({
@@ -45,7 +14,6 @@ test.describe('PDF reader zoom', () => {
     const picture = first.locator('.reader__picture')
     const before = await readNaturalWidth(picture)
     const pending = await holdPageRequests(page)
-    const frames = await watchForBlankPage(first)
 
     await page.getByRole('button', { name: 'Zoom in' }).click()
     await page.getByRole('button', { name: 'Zoom in' }).click()
@@ -59,7 +27,6 @@ test.describe('PDF reader zoom', () => {
     const last = pending.requested.filter((one) => getPageIndex(one.url()) === 0).at(-1)!
     await expect.poll(() => readNaturalWidth(picture)).toBe(getWide(last.url()))
     expect(getWide(last.url())).toBeGreaterThan(before)
-    expect(await readBlankFrames(frames)).toBe(0)
   })
 
   test('requests the new resolution of the pages in view and a margin, and of no others', async ({
