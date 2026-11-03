@@ -23,8 +23,8 @@ const numenRoot = "github.com/jiva-studio/numen/"
 // notesModule is the module of the note model, which plugins do not name.
 const notesModule = numenRoot + "libs/notes"
 
-// numenModulesDir is the folder the modules live in, relative to this package.
-const numenModulesDir = "../../.."
+// repoRootDir is the repository root, relative to this package.
+const repoRootDir = "../../.."
 
 // isWithin reports whether path is root or a path below it.
 func isWithin(path, root string) bool {
@@ -93,7 +93,7 @@ func TestPluginDependencyRule_RejectsForeignDependencies(t *testing.T) {
 // and relative to the root of the modules.
 func listPluginModules(t *testing.T) []string {
 	t.Helper()
-	found, err := filepath.Glob(filepath.Join(numenModulesDir, "plugins", "*", "go.mod"))
+	found, err := filepath.Glob(filepath.Join(repoRootDir, "plugins", "*", "go.mod"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -258,7 +258,7 @@ linters:
 // Every plugin module and the golden template have a depguard rule that denies
 // every library but the plugin SDK, the applications and the RPC library.
 func TestPluginModules_HaveDepguardRulesDenyingCoreAndPlugins(t *testing.T) {
-	dirs := append([]string{filepath.Join(numenModulesDir, "plugins", ".example")}, listPluginModules(t)...)
+	dirs := append([]string{filepath.Join(repoRootDir, "plugins", ".example")}, listPluginModules(t)...)
 	for _, dir := range dirs {
 		path := filepath.Join(dir, ".golangci.yml")
 		config, err := os.ReadFile(path)
@@ -372,8 +372,8 @@ func parseSources(t *testing.T, roots []string, check func(path string, file *as
 func TestNoCoreOrHostSourceSpellsOutAPluginID(t *testing.T) {
 	roots := []string{
 		"..",
-		filepath.Join(numenModulesDir, "apps", "desktop"),
-		filepath.Join(numenModulesDir, "apps", "mobile"),
+		filepath.Join(repoRootDir, "apps", "desktop"),
+		filepath.Join(repoRootDir, "apps", "mobile"),
 	}
 	parseSources(t, roots, func(path string, file *ast.File) {
 		for _, boxes := range getPluginIDLiterals(file) {
@@ -429,8 +429,8 @@ func TestAnonymousAssertionRule_RejectsInterfaceAssertions(t *testing.T) {
 func TestNoHostOrContainerSourceAssertsToAnAnonymousInterface(t *testing.T) {
 	roots := []string{
 		".",
-		filepath.Join(numenModulesDir, "apps", "desktop"),
-		filepath.Join(numenModulesDir, "apps", "mobile"),
+		filepath.Join(repoRootDir, "apps", "desktop"),
+		filepath.Join(repoRootDir, "apps", "mobile"),
 	}
 	parseSources(t, roots, func(path string, file *ast.File) {
 		for range getAnonymousAssertions(file) {
@@ -468,7 +468,7 @@ func TestManifestValidator_RejectsInvalidManifests(t *testing.T) {
 
 // Every manifest.json of a plugin passes the validator.
 func TestEveryPluginManifestPassesTheValidator(t *testing.T) {
-	found, err := filepath.Glob(filepath.Join(numenModulesDir, "plugins", "*", "manifest.json"))
+	found, err := filepath.Glob(filepath.Join(repoRootDir, "plugins", "*", "manifest.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -486,9 +486,9 @@ func TestEveryPluginManifestPassesTheValidator(t *testing.T) {
 	}
 }
 
-// Plugins must be autonomous; modules/plugins contains no shared/ folder.
+// Plugins must be autonomous; plugins/ contains no shared/ folder.
 func TestNoSharedPluginDirectoryExists(t *testing.T) {
-	sharedPath := filepath.Join(numenModulesDir, "plugins", "shared")
+	sharedPath := filepath.Join(repoRootDir, "plugins", "shared")
 	if _, err := os.Stat(sharedPath); !os.IsNotExist(err) {
 		t.Fatalf("%s exists: plugins must be autonomous and cannot share internal libraries", sharedPath)
 	}

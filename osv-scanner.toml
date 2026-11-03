@@ -1,6 +1,0 @@
-# osv-scanner configuration
-# https://google.github.io/osv-scanner/configuration/#ignore-vulnerabilities-by-id
-
-[[IgnoredVulns]]
-id = "GHSA-vfj7-8cjw-p6xm"
-reason = "Transitive dev-dependency of eslint-plugin-boundaries; braces has no upstream patch released yet."

@@ -1,7 +1,7 @@
 // Package bind exposes the core to the mobile platform.
 //
 // One call starts a server on the loopback interface and returns its listening
-// port. All requests to it follow the schema in modules/libs/protocol, the same
+// port. All requests to it follow the schema in libs/protocol, the same
 // schema the desktop window uses.
 package bind
 

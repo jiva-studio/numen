@@ -217,7 +217,7 @@ func newTypedConfig(dir string, env []string) *packages.Config {
 func listWorkspaceModules(t *testing.T) []string {
 	t.Helper()
 	command := exec.CommandContext(t.Context(), "go", "work", "edit", "-json")
-	command.Dir = numenModulesDir
+	command.Dir = repoRootDir
 	output, err := command.Output()
 	if err != nil {
 		t.Fatal(err)
@@ -230,7 +230,7 @@ func listWorkspaceModules(t *testing.T) []string {
 	}
 	dirs := make([]string, len(work.Use))
 	for i, one := range work.Use {
-		abs, err := filepath.Abs(filepath.Join(numenModulesDir, one.DiskPath))
+		abs, err := filepath.Abs(filepath.Join(repoRootDir, one.DiskPath))
 		if err != nil {
 			t.Fatal(err)
 		}

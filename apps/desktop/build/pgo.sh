@@ -22,9 +22,9 @@ if [[ "${1:-}" = "--check" ]]; then
 	exit
 fi
 
-root="$(cd "$(dirname "$0")/../../../.." && pwd)"
-core="$root/modules/libs/core"
-out="$root/modules/apps/desktop/cmd/numen/default.pgo"
+root="$(cd "$(dirname "$0")/../../.." && pwd)"
+core="$root/libs/core"
+out="$root/apps/desktop/cmd/numen/default.pgo"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 

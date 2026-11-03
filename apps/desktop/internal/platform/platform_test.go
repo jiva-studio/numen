@@ -30,11 +30,10 @@ func TestPluginDiscoveryReleaseMode(t *testing.T) {
 		t.Fatal(err)
 	}
 	cwdPlugins := filepath.Join(cwd, "plugins")
-	cwdModulesPlugins := filepath.Join(cwd, "modules", "plugins")
 
 	dirs := getPluginsDirs()
 	for _, dir := range dirs {
-		if dir == cwdPlugins || dir == cwdModulesPlugins {
+		if dir == cwdPlugins {
 			t.Fatalf("release discovery includes working directory path: %s", dir)
 		}
 	}
@@ -48,21 +47,16 @@ func TestPluginDiscoveryDevMode(t *testing.T) {
 		t.Fatal(err)
 	}
 	cwdPlugins := filepath.Join(cwd, "plugins")
-	cwdModulesPlugins := filepath.Join(cwd, "modules", "plugins")
 
 	dirs := getPluginsDirs()
 	hasPlugins := false
-	hasModulesPlugins := false
 	for _, dir := range dirs {
 		if dir == cwdPlugins {
 			hasPlugins = true
 		}
-		if dir == cwdModulesPlugins {
-			hasModulesPlugins = true
-		}
 	}
-	if !hasPlugins || !hasModulesPlugins {
-		t.Fatalf("expected dev discovery to include %s and %s, got %v", cwdPlugins, cwdModulesPlugins, dirs)
+	if !hasPlugins {
+		t.Fatalf("expected dev discovery to include %s, got %v", cwdPlugins, dirs)
 	}
 }
 
