@@ -2,6 +2,9 @@ package container
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
@@ -56,15 +59,32 @@ func (c Config) ReadWholeVault(
 	}
 	refresh := makeRefresh(c, db, db.Notes())
 	refresh.Force = true
-	texts.ReadNote = func(ctx context.Context, v domain.Vault, path string) error {
-		_, err := refresh.Execute(ctx, v, []string{path})
-		return err
-	}
+	texts.ReadNote = newNoteReader(refresh.Execute)
 	embed, err := c.Embed(db, embedder, v)
 	if err != nil {
 		return vault.ReadWholeVault{}, err
 	}
 	return vault.NewReadWholeVault(c.Scan(db), texts, embed), nil
+}
+
+// errNoteUnreadable is the error of a note read again whose file could not be read.
+var errNoteUnreadable = errors.New("the note could not be read")
+
+// newNoteReader reads one note again through refresh. A refresh that finds the file unreadable
+// returns no error of its own, so the result is checked for the path.
+func newNoteReader(
+	refresh func(ctx context.Context, v domain.Vault, paths []string) (vault.RefreshResult, error),
+) func(ctx context.Context, v domain.Vault, path string) error {
+	return func(ctx context.Context, v domain.Vault, path string) error {
+		res, err := refresh(ctx, v, []string{path})
+		if err != nil {
+			return err
+		}
+		if slices.Contains(res.Unreadable, path) {
+			return fmt.Errorf("%s: %w", path, errNoteUnreadable)
+		}
+		return nil
+	}
 }
 
 // FitIndex sets the vector index to the model of the embedding provider.
