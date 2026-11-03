@@ -31,13 +31,13 @@ func TestNoteReaderReturnsTheRefreshError(t *testing.T) {
 }
 
 func TestNoteReaderReturnsNilForAnIndexedNote(t *testing.T) {
-	var asked []string
+	var requestedPaths []string
 	read := newNoteReader(func(_ context.Context, _ domain.Vault, paths []string) (vault.RefreshResult, error) {
-		asked = paths
+		requestedPaths = paths
 		return vault.RefreshResult{Indexed: paths}, nil
 	})
 
-	if err := read(t.Context(), domain.Vault{}, "notes/a.md"); err != nil || len(asked) != 1 || asked[0] != "notes/a.md" {
-		t.Fatalf("error is %v after asking for %v", err, asked)
+	if err := read(t.Context(), domain.Vault{}, "notes/a.md"); err != nil || len(requestedPaths) != 1 || requestedPaths[0] != "notes/a.md" {
+		t.Fatalf("error is %v for %v", err, requestedPaths)
 	}
 }
