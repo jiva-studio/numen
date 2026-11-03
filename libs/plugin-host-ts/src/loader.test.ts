@@ -572,7 +572,8 @@ describe('createPluginLoader failures, order and toggles', () => {
     expect(loader.isPluginActive('p')).toBe(true)
   })
 
-  it('tracks a plugin that is only known by id and loads it from its manifest', async () => {
+  /** A loader whose one plugin, `dyn`, is known only by a manifest with a frontend, and the urls it imports. */
+  const createDynamicLoader = () => {
     const { host } = createHost()
     const imports: string[] = []
     const loader = createPluginLoader({
@@ -587,6 +588,11 @@ describe('createPluginLoader failures, order and toggles', () => {
         return { activate: () => undefined }
       },
     })
+    return { host, imports, loader }
+  }
+
+  it('tracks a plugin that is only known by id and loads it from its manifest', async () => {
+    const { host, loader } = createDynamicLoader()
     await loader.start()
     await loader.trackPlugins(['dyn'])
 
@@ -595,20 +601,7 @@ describe('createPluginLoader failures, order and toggles', () => {
   })
 
   it('imports a dynamic plugin from its entrypoint url at each activation', async () => {
-    const { host } = createHost()
-    const imports: string[] = []
-    const loader = createPluginLoader({
-      host,
-      fetch: (async () =>
-        ({
-          ok: true,
-          text: async () => JSON.stringify({ id: 'dyn', frontend: {} }),
-        }) as Response) as unknown as typeof fetch,
-      dynamicImport: async (url) => {
-        imports.push(url)
-        return { activate: () => undefined }
-      },
-    })
+    const { imports, loader } = createDynamicLoader()
     await loader.activatePlugin('dyn')
     await loader.deactivatePlugin('dyn')
     await loader.activatePlugin('dyn')
