@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/internal/vector"
 	indexport "github.com/jiva-studio/numen/libs/core/usecase/indexing/indexcontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
@@ -171,7 +172,7 @@ func compare(query pluginport.PluginSimilarityQuery, passages []searchpolicyport
 		if len(passage.Vector) != len(query.Vector) {
 			return nil, fmt.Errorf("%w: a passage holds %d dimensions where the query has %d", pluginport.ErrInvalidQuery, len(passage.Vector), len(query.Vector))
 		}
-		row = append(row, getCosine(query.Vector, passage.Vector))
+		row = append(row, vector.SimilarityBytes(query.Vector, passage.Vector))
 	}
 	return row, nil
 }
