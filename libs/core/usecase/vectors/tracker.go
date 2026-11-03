@@ -109,3 +109,17 @@ func (t *tracker) publishNext(source string) {
 		}
 	})
 }
+
+// getCurrentSource returns the current source of the result.
+func (t *tracker) getCurrentSource() string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.res.CurrentSource
+}
+
+// withdraw takes a batch that was never sent out of the list and reports the result again, with
+// current as the current source when no other batch is waiting.
+func (t *tracker) withdraw(id uint64, current string) {
+	t.leave(id)
+	t.publish(func(res *EmbedResult) { res.CurrentSource = current })
+}

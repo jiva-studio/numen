@@ -616,3 +616,33 @@ func TestEmbeddingTheChunksOfAVaultMakesDocumentVectors(t *testing.T) {
 		t.Errorf("%d chunks were embedded as queries, want every chunk embedded as a document", aware.queries)
 	}
 }
+
+// A batch whose send is cancelled leaves the reports: they name the source they named before it.
+func TestACancelledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
+	const (
+		next   = "notes/next.md"
+		unsent = "library/a.epub"
+	)
+	index := newStore()
+	var log progressLog
+	embed := newEmbed(nil, index, index)
+	embed.OnProgress = log.add
+	res := &EmbedResult{CurrentSource: next}
+	track := newTracker(embed, 1, res, &sync.Mutex{})
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+
+	err := embed.sendBatches(ctx, embeddingport.EmbeddingModel{Name: "m", Dimensions: dimensions},
+		[]domain.Passage{{Source: unsent}}, []string{"a passage of the book"}, track, make(chan preparedBatch))
+
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("the send ended with %v, want context.Canceled", err)
+	}
+	last := log.getLast()
+	if last.CurrentSource != next || len(last.Active) != 0 {
+		t.Errorf("the last report names %q with %v in flight, want %q with none", last.CurrentSource, last.Active, next)
+	}
+	if !track.isIdle() {
+		t.Error("the unsent batch is still listed as in flight")
+	}
+}

@@ -268,11 +268,13 @@ func (u Embed) sendBatches(
 			return err
 		}
 		pos += len(batch)
+		current := track.getCurrentSource()
 		prep.id = track.enter(prep.sources)
 		// The batch is reported before it is sent, so no worker embeds it before a report names it.
 		track.publish(func(*EmbedResult) {})
 		select {
 		case <-ctx.Done():
+			track.withdraw(prep.id, current)
 			return ctx.Err()
 		case out <- prep:
 		}
