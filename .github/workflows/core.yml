@@ -2,8 +2,6 @@ name: Core
 
 on:
   pull_request:
-  merge_group:
-    types: [checks_requested]
   push:
     branches: [main]
     paths:
@@ -40,10 +38,10 @@ on:
         type: boolean
         default: false
 
-# One run at a time per branch, and on a pull request the newest is the one that
-# matters. A run on main is left to finish: it fills the cache the branches read.
+# A pull request keeps only its newest run. Each push to main has a group of its
+# own: a later push neither cancels it nor replaces it while it waits.
 concurrency:
-  group: core-${{ github.ref }}
+  group: core-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
@@ -91,8 +89,8 @@ jobs:
           EVENT: ${{ github.event_name }}
           ASKED_WINDOWS: ${{ inputs.windows }}
           ASKED_MACOS: ${{ inputs.macos }}
-          BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
-          HEAD: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
 
@@ -316,9 +314,9 @@ jobs:
       # Git holds the hashes, so nothing here is written down twice: a file the
       # base already carries has to still be what it was there.
       - name: Verify migrations are forward-only
-        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+        if: github.event_name == 'pull_request'
         env:
-          BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          BASE: ${{ github.event.pull_request.base.sha }}
         run: libs/core/adapter/index/migration-forward-only.sh "$BASE"
 
   # The steps carry the condition that skips a documentation-only change: a matrix
