@@ -93,17 +93,14 @@ func (m *models) get(ctx context.Context) (engine.TranscriberPort, error) {
 	return m.current, nil
 }
 
-// updateConfig takes the model and the language the settings name, which the model opens with. A
-// model the plugin does not provision is left as it was. The host stops the plugin when the model
+// updateConfig takes the model the settings name, which the recogniser opens with. A model the
+// plugin does not provision is left as it was. The host stops the plugin when the model
 // changes, since the model's files change with it, so an open model is kept.
 func (m *models) updateConfig(values map[string]string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if model, ok := engine.FindModel(values["model"]); ok {
 		m.cfg.Model = model
-	}
-	if language, ok := values["language"]; ok {
-		m.cfg.Language = language
 	}
 }
 

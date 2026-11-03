@@ -1,10 +1,6 @@
 package engine
 
 import (
-	"fmt"
-	"slices"
-	"strings"
-
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine/segmenter"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/onnx"
 )
@@ -33,9 +29,6 @@ type Config struct {
 	// Workers is how many goroutines share the resampling and feature extraction of a recording. It is not a setting: the composition root fills it from the compute plan, and zero takes one per core.
 	Workers int `json:"-"`
 
-	// Language is the language the settings name for the model: one of its Languages, or empty.
-	Language string `json:"language"`
-
 	Model     ParakeetModel   `json:"model"`
 	Segmenter segmenter.Model `json:"segmenter"`
 
@@ -59,10 +52,6 @@ type ParakeetModel struct {
 	Decoder string `json:"decoder"`
 	Joiner  string `json:"joiner"`
 	Tokens  string `json:"tokens"`
-
-	// Languages are the languages the model can be set to transcribe, LanguageDetected where it detects
-	// the language itself.
-	Languages []string `json:"-"`
 }
 
 // The files one Parakeet export is published as.
@@ -81,7 +70,6 @@ func Defaults() Config {
 		Dir:      "",
 		Threads:  0,
 		Workers:  0,
-		Language: "",
 		Progress: nil,
 		Model:    getModels()[0],
 		Segmenter: segmenter.Model{
@@ -118,12 +106,4 @@ type sessionThreads struct {
 
 func (c Config) sessionThreads() sessionThreads {
 	return sessionThreads{encoder: c.threads(), decoder: 1, joiner: 1, segmenter: 1}
-}
-
-// checkLanguage reports a language the settings name that the model does not transcribe.
-func (c Config) checkLanguage() error {
-	if c.Language == "" || slices.Contains(c.Model.Languages, c.Language) {
-		return nil
-	}
-	return fmt.Errorf("%s transcribes %s, and the settings name %q", c.Model.Name, strings.Join(c.Model.Languages, ", "), c.Language)
 }

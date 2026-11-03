@@ -1147,9 +1147,15 @@ describe('plugin setting invocation', () => {
     expect(one.actions[1]).toBe('plugin md.numen.engines.transcription autoRun false')
 
     await carry(
-      createInvocation('plugin-setting:md.numen.engines.transcription:language', front(), 'en'),
+      createInvocation(
+        'plugin-setting:md.numen.engines.transcription:model',
+        front(),
+        'parakeet-tdt-0.6b-v2-int8',
+      ),
       one.on,
     )
-    expect(one.actions[2]).toBe('plugin md.numen.engines.transcription language en')
+    expect(one.actions[2]).toBe(
+      'plugin md.numen.engines.transcription model parakeet-tdt-0.6b-v2-int8',
+    )
   })
 })
