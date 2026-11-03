@@ -9,7 +9,6 @@ describe('TaskItem', () => {
     const task: StatusBarTask = {
       id: 'task-auth-err',
       label: 'Proofreading a recognition',
-      group: 'Text Recognition',
       about: 'Books/Sample.pdf',
       state: 'failed',
       error: 'OAuth session expired',
@@ -32,7 +31,6 @@ describe('TaskItem', () => {
     const task: StatusBarTask = {
       id: 'task-file-err',
       label: 'Transcribing a recording',
-      group: 'Audio & Transcription',
       about: 'assets/sample.flac',
       state: 'failed',
       error: 'stat assets/sample.flac: no such file or directory',
@@ -52,7 +50,6 @@ describe('TaskItem', () => {
     const task: StatusBarTask = {
       id: 'task-running',
       label: 'Transcribing a recording',
-      group: 'Audio & Transcription',
       about: 'assets/sample.wav',
       state: 'running',
       actionLabel: 'Configure in settings',

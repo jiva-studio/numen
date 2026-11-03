@@ -1,13 +1,12 @@
 <script setup lang="ts">
 /**
- * Popover displaying details of background tasks grouped by source category.
+ * Popover displaying details of background tasks in a flat list, newest first.
  */
 import { computed } from 'vue'
 import { X } from '@lucide/vue'
 import { Button } from '@numen/ui'
 import type { StatusBarTask } from '../model/types'
-import { groupTasks } from '../lib/aggregate'
-import TaskGroup from './TaskGroup.vue'
+import { orderTasks } from '../lib/aggregate'
 import TaskItem from './TaskItem.vue'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -34,11 +33,8 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const taskList = computed(() => props.tasks ?? [])
-const listing = computed(() => groupTasks(taskList.value))
-const isEmpty = computed(
-  () => listing.value.coreTasks.length === 0 && listing.value.groups.length === 0,
-)
+const taskList = computed(() => orderTasks(props.tasks ?? []))
+const isEmpty = computed(() => taskList.value.length === 0)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onCancel(id: string) {
@@ -84,18 +80,9 @@ function onClose() {
 
     <div v-else class="task-popover__body">
       <TaskItem
-        v-for="task in listing.coreTasks"
+        v-for="task in taskList"
         :key="task.id"
         :task="task"
-        @cancel="onCancel"
-        @retry="onRetry"
-        @dismiss="onDismiss"
-        @action="onAction"
-      />
-      <TaskGroup
-        v-for="group in listing.groups"
-        :key="group.name"
-        :group="group"
         @cancel="onCancel"
         @retry="onRetry"
         @dismiss="onDismiss"
@@ -151,7 +138,7 @@ function onClose() {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.125rem;
 }
 
 .task-popover__empty {

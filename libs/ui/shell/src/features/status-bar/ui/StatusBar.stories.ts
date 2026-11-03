@@ -20,7 +20,6 @@ interface Knobs {
 const INDEXING: StatusBarTask = {
   id: 'indexing',
   label: 'Indexing book',
-  group: 'Indexing',
   about: 'library/mahabharata.epub',
   progress: 50,
   done: 2,
@@ -32,7 +31,6 @@ const INDEXING: StatusBarTask = {
 const TRANSCRIBING: StatusBarTask = {
   id: 'transcribing',
   label: 'Transcribing audio',
-  group: 'Audio & Transcription',
   progress: 70,
   etaSeconds: 90,
   state: 'running',
@@ -42,7 +40,6 @@ const TRANSCRIBING: StatusBarTask = {
 const FAILED: StatusBarTask = {
   id: 'failed',
   label: 'Reading file',
-  group: 'Text Recognition',
   about: 'scans/page-4.pdf',
   state: 'failed',
   error: 'The file is corrupted',
@@ -300,27 +297,24 @@ export const NotCancellableHasOnlyTheRing: Story = {
 }
 
 /**
- * The tasks of the application come first with no header, and the tasks of a
- * plugin follow under a header with the name of the plugin alone.
+ * Tasks are listed in one flat list, newest first, without type headings.
  */
-export const OnlyPluginsHaveAHeader: Story = {
+export const FlatNewestFirst: Story = {
   args: {
     tasks: [
-      { ...INDEXING, id: 'reader', group: 'Example Reader' },
-      { id: 'core', label: 'Walking the notes', state: 'running' },
+      { ...INDEXING, id: 'first', label: 'Indexing book' },
+      { ...TRANSCRIBING, id: 'second', label: 'Transcribing audio' },
+      { id: 'third', label: 'Walking the notes', state: 'running' },
     ],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(await canvas.findByRole('button', { name: /active/ }))
-    await waitFor(() => expect(canvasElement.querySelectorAll('.task-item')).toHaveLength(2))
+    await waitFor(() => expect(canvasElement.querySelectorAll('.task-item')).toHaveLength(3))
     const rows = Array.from(canvasElement.querySelectorAll('.task-item')).map((row) =>
       row.getAttribute('data-task-id'),
     )
-    await expect(rows).toEqual(['core', 'reader'])
-    const headers = Array.from(canvasElement.querySelectorAll('.task-group__header')).map(
-      (header) => header.textContent?.trim(),
-    )
-    await expect(headers).toEqual(['Example Reader'])
+    await expect(rows).toEqual(['third', 'second', 'first'])
+    await expect(canvasElement.querySelectorAll('.task-group, .task-group__header')).toHaveLength(0)
   },
 }

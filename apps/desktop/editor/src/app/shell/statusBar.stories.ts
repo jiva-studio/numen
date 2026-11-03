@@ -1,6 +1,6 @@
 /**
- * The window's status bar over the task list the core sends: tasks grouped by the plugin that
- * reported them, with labels that name no domain.
+ * The window's status bar over the task list the core sends: tasks listed newest first without
+ * group headings, with labels that name no domain.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
@@ -23,7 +23,6 @@ const task = (id: string, pluginId: string, pluginName: string): Task => ({
   isCancellable: true,
 })
 
-/** Two tasks in each group, since the popover draws a group heading only over more than one. */
 const TASKS: readonly Task[] = [
   task('one', 'md.example.speech', 'Speech to text'),
   task('two', 'md.example.scans', 'Scan reader'),
@@ -50,15 +49,16 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-/** Each plugin's tasks under the plugin's name, and the core's work first with no header. */
-export const GroupedByPlugin: Story = {
+/** All tasks in one flat list, newest first, without plugin or type headings. */
+export const FlatNewestFirst: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.click(await within(canvasElement).findByRole('button', { name: /active/ }))
     await waitFor(() => {
-      const titles = [...canvasElement.querySelectorAll('.task-group__title')].map(
-        (one) => one.textContent,
+      const ids = [...canvasElement.querySelectorAll('.task-item')].map((one) =>
+        one.getAttribute('data-task-id'),
       )
-      return expect(titles).toEqual(['Speech to text', 'Scan reader'])
+      return expect(ids).toEqual(['six', 'five', 'four', 'three', 'two', 'one'])
     })
+    await expect(canvasElement.querySelectorAll('.task-group, .task-group__title')).toHaveLength(0)
   },
 }

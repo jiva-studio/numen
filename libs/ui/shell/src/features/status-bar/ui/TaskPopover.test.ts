@@ -8,49 +8,31 @@ function mountTasks(tasks: StatusBarTask[]) {
 }
 
 describe('TaskPopover', () => {
-  it('lists the tasks of the application first, without a group header', () => {
+  it('lists all tasks as one flat list, newest first, without group headers', () => {
     const wrapper = mountTasks([
-      { id: '1', label: 'Reader task', group: 'Example Reader', state: 'running' },
+      { id: '1', label: 'Reader task', state: 'running' },
       { id: '2', label: 'Embedding vault', state: 'running' },
       { id: '3', label: 'Walking the notes', state: 'running' },
     ])
 
     const rows = wrapper.findAll('.task-item').map((row) => row.attributes('data-task-id'))
-    expect(rows).toEqual(['2', '3', '1'])
-    const groups = wrapper.findAll('.task-group')
-    expect(groups).toHaveLength(1)
-    expect(wrapper.text()).not.toContain('Numen')
-  })
-
-  it('draws no header over the tasks of the application', () => {
-    const wrapper = mountTasks([{ id: '1', label: 'Embedding vault', state: 'running' }])
-
+    expect(rows).toEqual(['3', '2', '1'])
     expect(wrapper.find('.task-group').exists()).toBe(false)
     expect(wrapper.find('.task-group__header').exists()).toBe(false)
-    expect(wrapper.findAll('.task-item')).toHaveLength(1)
+    expect(wrapper.find('.task-group__title').exists()).toBe(false)
   })
 
-  it('draws a header with only the plugin name over the tasks of a plugin, whatever their number', () => {
-    const wrapper = mountTasks([
-      { id: '1', label: 'Chapter 1', group: 'Example Reader', state: 'running' },
-      { id: '2', label: 'Chapter 2', group: 'Example Reader', state: 'running' },
-      { id: '3', label: 'Transcribe', group: 'Example Audio', state: 'running' },
-    ])
+  it('renders the empty label when no tasks are present', () => {
+    const wrapper = mountTasks([])
 
-    const groups = wrapper.findAll('.task-group')
-    expect(groups.map((one) => one.find('.task-group__header').text())).toEqual([
-      'Example Reader',
-      'Example Audio',
-    ])
-    expect(groups[0]?.findAll('.task-item')).toHaveLength(2)
-    expect(groups[1]?.findAll('.task-item')).toHaveLength(1)
+    expect(wrapper.find('.task-popover__empty').text()).toBe('No active background tasks')
+    expect(wrapper.find('.task-popover__body').exists()).toBe(false)
+    expect(wrapper.findAll('.task-item')).toHaveLength(0)
   })
 
   it('gives the whole error as the title of a failed task', () => {
     const error = 'embed batch rpc: internal: opening onnx embedding engine: no runtime'
-    const wrapper = mountTasks([
-      { id: '1', label: 'Indexing', group: 'Indexing', state: 'failed', error },
-    ])
+    const wrapper = mountTasks([{ id: '1', label: 'Indexing', state: 'failed', error }])
 
     const detail = wrapper.find('.task-item__detail')
     expect(detail.attributes('title')).toBe(error)

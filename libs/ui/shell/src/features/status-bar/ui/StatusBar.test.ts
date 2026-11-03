@@ -18,11 +18,10 @@ describe('StatusBar', () => {
 
   it('renders active aggregate information when tasks are running', () => {
     const tasks: StatusBarTask[] = [
-      { id: '1', label: 'Indexing Book', group: 'Books', progress: 50, state: 'running' },
+      { id: '1', label: 'Indexing Book', progress: 50, state: 'running' },
       {
         id: '2',
         label: 'Audio Transcribe',
-        group: 'Audio',
         progress: 70,
         state: 'running',
         etaSeconds: 90,
@@ -40,9 +39,9 @@ describe('StatusBar', () => {
 
   it('toggles task popover when status bar button is clicked', async () => {
     const tasks: StatusBarTask[] = [
-      { id: '1', label: 'Indexing Book 1', group: 'Books', progress: 50, state: 'running' },
-      { id: '2', label: 'Indexing Book 2', group: 'Books', progress: 60, state: 'running' },
-      { id: '3', label: 'Audio Transcribe', group: 'Audio', progress: 70, state: 'running' },
+      { id: '1', label: 'Indexing Book 1', progress: 50, state: 'running' },
+      { id: '2', label: 'Indexing Book 2', progress: 60, state: 'running' },
+      { id: '3', label: 'Audio Transcribe', progress: 70, state: 'running' },
     ]
 
     const wrapper = mount(StatusBar, {
@@ -56,9 +55,13 @@ describe('StatusBar', () => {
 
     await wrapper.find('.status-bar__trigger').trigger('click')
     expect(wrapper.find('.status-bar__popover-container').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Books')
     expect(wrapper.text()).toContain('Audio Transcribe')
     expect(wrapper.text()).toContain('Indexing Book 1')
+    expect(wrapper.findAll('.task-item').map((row) => row.attributes('data-task-id'))).toEqual([
+      '3',
+      '2',
+      '1',
+    ])
 
     await wrapper.find('.status-bar__trigger').trigger('click')
     expect(wrapper.find('.status-bar__popover-container').exists()).toBe(false)
@@ -69,7 +72,6 @@ describe('StatusBar', () => {
       {
         id: 'task-abc',
         label: 'Long Process',
-        group: 'General',
         state: 'running',
         canCancel: true,
       },
@@ -96,14 +98,12 @@ describe('StatusBar', () => {
       {
         id: 'failed-1',
         label: 'Failed Task',
-        group: 'Import',
         state: 'failed',
         error: 'Network error',
       },
       {
         id: 'completed-1',
         label: 'Done Task',
-        group: 'Import',
         state: 'completed',
       },
     ]
@@ -131,7 +131,7 @@ describe('StatusBar', () => {
 
   const openBar = async () => {
     const wrapper = mount(StatusBar, {
-      props: { tasks: [{ id: '1', label: 'Indexing', group: 'Books', state: 'running' }] },
+      props: { tasks: [{ id: '1', label: 'Indexing', state: 'running' }] },
       attachTo: document.body,
     })
     await wrapper.find('.status-bar__trigger').trigger('click')
@@ -171,8 +171,8 @@ describe('StatusBar', () => {
     const wrapper = mount(StatusBar, {
       props: {
         tasks: [
-          { id: '1', label: 'A', group: 'G', state: 'running' },
-          { id: '2', label: 'B', group: 'G', state: 'failed' },
+          { id: '1', label: 'A', state: 'running' },
+          { id: '2', label: 'B', state: 'failed' },
         ],
         activeLabel: 'в работе',
         failedLabel: 'с ошибкой',
