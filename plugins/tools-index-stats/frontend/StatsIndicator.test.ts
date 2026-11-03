@@ -79,6 +79,17 @@ describe('the index stats indicator', () => {
     wrapper.unmount()
   })
 
+  it('keeps the popover open when the window is resized', async () => {
+    const wrapper = draw(STATS)
+    await wrapper.find('.index-stats__trigger').trigger('click')
+
+    window.dispatchEvent(new Event('resize'))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.index-popover').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
   it('closes the popover with its close button', async () => {
     const wrapper = draw(STATS)
     await wrapper.find('.index-stats__trigger').trigger('click')
