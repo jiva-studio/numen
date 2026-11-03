@@ -54,6 +54,12 @@ func (c Config) ReadWholeVault(
 	if err != nil {
 		return vault.ReadWholeVault{}, err
 	}
+	refresh := makeRefresh(c, db, db.Notes())
+	refresh.Force = true
+	texts.ReadNote = func(ctx context.Context, v domain.Vault, path string) error {
+		_, err := refresh.Execute(ctx, v, []string{path})
+		return err
+	}
 	embed, err := c.Embed(db, embedder, v)
 	if err != nil {
 		return vault.ReadWholeVault{}, err
