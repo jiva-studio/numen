@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport/indexfake"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
@@ -29,20 +30,12 @@ func (t vaultBookTexts) read(ctx context.Context, path string) (domain.VersionTe
 	if err != nil {
 		return domain.VersionText{}, err
 	}
-	book, err := documents{}.ReadBook(ctx, raw)
+	parts, err := indexfake.ReadBookSegments(raw)
 	if err != nil {
 		return domain.VersionText{}, textport.ErrNoText
 	}
 	hash := domain.HashContent(raw)
 	version := domain.TextVersion{Path: path, PluginID: "test.books", Key: hash[:8], Kind: "book-text", SourceHash: hash}
-	var parts []domain.TextSegment
-	for i, part := range book.Parts {
-		end := len(book.Text)
-		if i+1 < len(book.Parts) {
-			end = book.Parts[i+1].Offset
-		}
-		parts = append(parts, domain.TextSegment{Text: book.Text[part.Offset:end], Heading: part.Title})
-	}
 	return domain.NewVersionText(version, parts), nil
 }
 
