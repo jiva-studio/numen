@@ -272,7 +272,7 @@ jobs:
   e2e:
     name: End-to-End
     needs: [plan, build, desktop, flashcards]
-    if: always()
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
