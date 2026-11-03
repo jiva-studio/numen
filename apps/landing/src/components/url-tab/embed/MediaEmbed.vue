@@ -9,7 +9,7 @@
  * runs in this window.
  */
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
-import { getDraggedHeight, LEAST } from '../lib/height'
+import { getDraggedHeight, getTallest, LEAST } from '../lib/height'
 import { getFrameOrigin, seekFrame } from '../lib/player'
 import { createHeightStore, type HeightStore } from '../lib/storage'
 
@@ -39,6 +39,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
+const root = useTemplateRef<HTMLElement>('root')
 const frame = useTemplateRef<HTMLIFrameElement>('frame')
 const player = useTemplateRef<HTMLVideoElement>('player')
 
@@ -51,6 +52,9 @@ const frameStyle = computed(() =>
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
+  if (tall.value !== null) {
+    tall.value = Math.min(getTallest(getPaneHeight()), Math.max(LEAST, tall.value))
+  }
   window.addEventListener('message', onWindowMessage)
 })
 
@@ -86,7 +90,7 @@ function onPointerDown(at: PointerEvent): void {
 function onPointerMove(at: PointerEvent): void {
   const held = drawn.value
   if (!held) return
-  tall.value = getDraggedHeight(held.was, at.clientY - held.from, window.innerHeight)
+  tall.value = getDraggedHeight(held.was, at.clientY - held.from, getPaneHeight())
 }
 
 function onPointerUp(): void {
@@ -98,6 +102,16 @@ function onPointerUp(): void {
   held.bar.removeEventListener('pointercancel', onPointerUp)
   if (held.bar.hasPointerCapture(held.pointer)) held.bar.releasePointerCapture(held.pointer)
   if (tall.value !== null) props.store.write(tall.value)
+}
+
+function onHandleKeydown(event: KeyboardEvent): void {
+  if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return
+  event.preventDefault()
+  const bar = event.currentTarget as HTMLElement
+  const current = tall.value ?? bar.previousElementSibling?.clientHeight ?? LEAST
+  const delta = event.key === 'ArrowDown' ? 16 : -16
+  tall.value = getDraggedHeight(current, delta, getPaneHeight())
+  props.store.write(tall.value)
 }
 
 function onVideoTimeUpdate(event: Event): void {
@@ -116,6 +130,8 @@ function onFrameLoad(): void {
 
 function onWindowMessage(event: MessageEvent): void {
   if (!frame.value || event.source !== frame.value.contentWindow) return
+  const expectedOrigin = getFrameOrigin(props.embed)
+  if (!expectedOrigin || event.origin !== expectedOrigin) return
   if (typeof event.data !== 'string') return
   try {
     const payload = JSON.parse(event.data) as {
@@ -136,6 +152,9 @@ function onWindowMessage(event: MessageEvent): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
+function getPaneHeight(): number {
+  return root.value?.parentElement?.clientHeight || window.innerHeight
+}
 /** Played from a moment, in milliseconds: the copy where there is one. */
 function seek(ms: number): void {
   if (player.value) {
@@ -150,7 +169,7 @@ defineExpose({ seek })
 </script>
 
 <template>
-  <div class="embed" @contextmenu.prevent>
+  <div ref="root" class="embed" @contextmenu.prevent>
     <video
       v-if="props.copy"
       ref="player"
@@ -184,10 +203,14 @@ defineExpose({ seek })
       v-if="props.copy || props.embed"
       class="embed__handle"
       role="separator"
+      tabindex="0"
       aria-orientation="horizontal"
+      :aria-valuemin="LEAST"
+      :aria-valuenow="tall ?? undefined"
       :data-state="drawn ? 'drag' : undefined"
       :title="props.words.taller"
       @pointerdown="onPointerDown"
+      @keydown="onHandleKeydown"
     ></div>
   </div>
 </template>

@@ -33,18 +33,20 @@ const canonical = new URL(Astro.url.pathname.replace(/index\.html$/, ''), Astro.
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="generator" content={Astro.generator} />
     <script is:inline>
+      let storedTheme = null
       try {
-        const storedTheme = localStorage.getItem('numen-theme')
-        const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches
-        const theme = storedTheme === 'dark' || storedTheme === 'light'
+        storedTheme = localStorage.getItem('numen-theme')
+      } catch {
+        // Ignore storage errors in private mode.
+      }
+      const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches
+      const theme =
+        storedTheme === 'dark' || storedTheme === 'light'
           ? storedTheme
           : prefersDark
             ? 'dark'
             : 'light'
-        document.documentElement.setAttribute('data-theme', theme)
-      } catch {
-        // Ignore storage errors in private mode.
-      }
+      document.documentElement.setAttribute('data-theme', theme)
     </script>
   </head>
   <body>

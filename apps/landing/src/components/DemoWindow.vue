@@ -742,7 +742,9 @@ const demoRecordings: Recordings = {
     return list[0]?.from ?? 0
   },
   getMenu: async () => TRANSCRIBED_MENU,
-  runMenuEntry: async () => {},
+  runMenuEntry: async (path) => {
+    getCuesRefForPath(path).value = []
+  },
   watchWork: (_path, onChange) => {
     onChange(false)
     return () => {}
@@ -871,7 +873,20 @@ const deckState: DeckTabState = {
   removeCard: (cardId) => {
     deckCardsList.value = deckCardsList.value.filter((c) => c.id !== cardId)
   },
-  moveCard: () => {},
+  moveCard: (cardId, to) => {
+    const moving = deckCardsList.value.find((c) => c.id === cardId)
+    if (!moving) return
+    const rest = deckCardsList.value.filter((c) => c.id !== cardId)
+    const updated: DeckCard = { ...moving, section: to.section }
+    if (to.before !== null) {
+      const idx = rest.findIndex((c) => c.id === to.before)
+      if (idx >= 0) {
+        deckCardsList.value = [...rest.slice(0, idx), updated, ...rest.slice(idx)]
+        return
+      }
+    }
+    deckCardsList.value = [...rest, updated]
+  },
   writeCardField: (cardId, field, _index, text) => {
     deckCardsList.value = deckCardsList.value.map((card) => {
       if (card.id !== cardId) return card
@@ -1206,18 +1221,25 @@ function listFolderEntries(folder: string): readonly VaultEntry[] {
 }
 
 function getPathCommandsForRow({ entry, isSeveral }: PathMenuRow): readonly MenuEntry[] {
+  const canRemoveEntry = Boolean(notesByPath[entry.path])
   const removeItem: MenuEntry = {
     id: 'remove',
     text: entry.isNote && !isSeveral ? 'Remove note' : 'Remove',
     group: 'remove',
   }
   const copyItem: MenuEntry = { id: 'copy', text: 'Copy path', group: 'file' }
-  if (isSeveral) return [removeItem]
-  if (entry.isFolder) return [copyItem, removeItem]
+  if (isSeveral) {
+    const selected = fileTree.selectedPaths.value
+    const allRemovable = selected.length > 0 && selected.every((p) => Boolean(notesByPath[p]))
+    return allRemovable ? [removeItem] : []
+  }
+  if (entry.isFolder) return [copyItem]
   if (entry.isNote) {
-    return [
-      { id: 'read', text: 'Open the note', group: 'open' },
-      { id: 'travel', text: 'Show in plex', group: 'open' },
+    const items: MenuEntry[] = [{ id: 'read', text: 'Open the note', group: 'open' }]
+    if (notesByPath[entry.path]) {
+      items.push({ id: 'travel', text: 'Show in plex', group: 'open' })
+    }
+    items.push(
       copyItem,
       {
         id: 'relation',
@@ -1230,13 +1252,13 @@ function getPathCommandsForRow({ entry, isSeveral }: PathMenuRow): readonly Menu
         ],
       },
       { id: 'ask', text: 'Ask the agent', group: 'agent' },
-      removeItem,
-    ]
+    )
+    if (canRemoveEntry) items.push(removeItem)
+    return items
   }
   return [
     { id: 'read', text: 'Open the file', group: 'open' },
     copyItem,
-    removeItem,
   ]
 }
 
@@ -1256,9 +1278,47 @@ function getNextUntitledTitle(folder: string): string {
   return `Untitled note ${untitledCounter}`
 }
 
+function rekeySingleNotePath(from: string, to: string) {
+  const note = notesByPath[from]
+  if (!note) return
+  const parts = to.split('/')
+  const filename = parts.pop() ?? to
+  const folder = parts.join('/')
+  const newTitle = filename.replace(/\.md$/, '')
+  delete notesByPath[from]
+  notesByPath[to] = {
+    ...note,
+    path: to,
+    title: newTitle,
+    folder,
+  }
+  for (const other of Object.values(notesByPath)) {
+    other.parents = other.parents.map((p) => (p === from ? to : p))
+    other.jumps = other.jumps.map((j) => (j === from ? to : j))
+  }
+  for (const [edgeKey, label] of Object.entries(EDGE_LABELS)) {
+    const [src, dst] = edgeKey.split('->')
+    if (src === from || dst === from) {
+      delete EDGE_LABELS[edgeKey]
+      const nextSrc = src === from ? to : src
+      const nextDst = dst === from ? to : dst
+      if (nextSrc && nextDst) {
+        EDGE_LABELS[`${nextSrc}->${nextDst}`] = label
+      }
+    }
+  }
+  for (const [tabId, tabPath] of Object.entries(noteTabPaths)) {
+    if (tabPath === from) {
+      noteTabPaths[tabId] = to
+    }
+  }
+  if (plexState.view.here.value === from) {
+    void plexState.view.go(to)
+  }
+}
+
 const filesState: FilesTabState = useFilesTab(fileTree, {
-  openEntry: ({ path, name }) => {
-    if (isNotePath(path) && notesByPath[path] && syncPathFromTab(FILES_TAB, path, name)) return
+  openEntry: ({ path }) => {
     openVaultFile(path, 'current')
   },
   onSelectPath: (path, state) => {
@@ -1268,35 +1328,31 @@ const filesState: FilesTabState = useFilesTab(fileTree, {
     }
   },
   runCommand: (command, paths) => {
+    if (command === 'remove') {
+      for (const p of paths) {
+        runVaultCommand(command, p, 'files')
+      }
+      return
+    }
     const first = paths[0]
     if (!first) return
     runVaultCommand(command, first, 'files')
   },
   movePath: async (from, to) => {
-    const note = notesByPath[from]
-    if (note) {
-      const parts = to.split('/')
-      const filename = parts.pop() ?? to
-      const folder = parts.join('/')
-      const newTitle = filename.replace(/\.md$/, '')
-      delete notesByPath[from]
-      notesByPath[to] = {
-        ...note,
-        path: to,
-        title: newTitle,
-        folder,
-      }
-      for (const other of Object.values(notesByPath)) {
-        other.parents = other.parents.map((p) => (p === from ? to : p))
-        other.jumps = other.jumps.map((j) => (j === from ? to : j))
-      }
-      for (const [tabId, tabPath] of Object.entries(noteTabPaths)) {
-        if (tabPath === from) {
-          noteTabPaths[tabId] = to
-        }
-      }
-      if (plexState.view.here.value === from) {
-        void plexState.view.go(to)
+    if (notesByPath[from]) {
+      rekeySingleNotePath(from, to)
+      return
+    }
+    const prefix = `${from}/`
+    customFolders.value = customFolders.value.map((f) => {
+      if (f === from) return to
+      if (f.startsWith(prefix)) return `${to}/${f.slice(prefix.length)}`
+      return f
+    })
+    for (const oldPath of Object.keys(notesByPath)) {
+      if (oldPath.startsWith(prefix)) {
+        const newPath = `${to}/${oldPath.slice(prefix.length)}`
+        rekeySingleNotePath(oldPath, newPath)
       }
     }
   },
@@ -1787,49 +1843,51 @@ const searchGroups = computed<readonly PaletteGroup[]>(() => {
     n.title.toLowerCase().includes(q),
   )
 
-  return [
+  const fixedPassages = [
     {
+      id: 'reading/Boltzmann 1877.pdf',
+      title: 'Boltzmann 1877',
+      detail:
+        'the entropy of a state is the logarithm of the number of arrangements it could have been made of',
+      actions: [READ_DOC_ACTION],
+    },
+    {
+      id: 'physics/The second law.md',
+      title: 'The second law',
+      detail:
+        'entropy never falls in an isolated system, which is the whole law stated in one line',
+      actions: [READ_ACTION, TRAVEL_ACTION],
+    },
+  ]
+
+  const matchingPassages = fixedPassages
+    .filter((p) => p.title.toLowerCase().includes(q) || p.detail.toLowerCase().includes(q))
+    .map((p) => ({
+      ...p,
+      detailAt: getMarks(p.detail, q),
+    }))
+
+  const groups: PaletteGroup[] = []
+  if (matchingNotes.length > 0) {
+    groups.push({
       id: 'names',
       title: 'Names',
-      items: (matchingNotes.length > 0
-        ? matchingNotes
-        : [notesByPath['physics/Entropy.md']!, notesByPath['physics/Entropy of mixing.md']!]
-      ).map((n) => ({
+      items: matchingNotes.map((n) => ({
         id: n.path,
         title: n.title,
         at: getMarks(n.title, q),
         actions: [TRAVEL_ACTION, READ_ACTION],
       })),
-    },
-    {
+    })
+  }
+  if (matchingPassages.length > 0) {
+    groups.push({
       id: 'text',
       title: 'Text',
-      items: [
-        {
-          id: 'reading/Boltzmann 1877.pdf',
-          title: 'Boltzmann 1877',
-          detail:
-            'the entropy of a state is the logarithm of the number of arrangements it could have been made of',
-          detailAt: getMarks(
-            'the entropy of a state is the logarithm of the number of arrangements it could have been made of',
-            q,
-          ),
-          actions: [READ_DOC_ACTION],
-        },
-        {
-          id: 'physics/The second law.md',
-          title: 'The second law',
-          detail:
-            'entropy never falls in an isolated system, which is the whole law stated in one line',
-          detailAt: getMarks(
-            'entropy never falls in an isolated system, which is the whole law stated in one line',
-            q,
-          ),
-          actions: [READ_ACTION, TRAVEL_ACTION],
-        },
-      ],
-    },
-  ]
+      items: matchingPassages,
+    })
+  }
+  return groups
 })
 
 const KEYBOARD = 'Macintosh'
@@ -2215,7 +2273,7 @@ function openContentTab(tabId: string, placement: 'current' | 'split' = 'current
 }
 
 function openVaultFile(path: string, placement: 'current' | 'split' = 'current'): string | null {
-  if (path === RECORDING_PATH || path.endsWith('.mp3')) {
+  if (path === RECORDING_PATH) {
     return openContentTab(getRecordingTabId(RECORDING_PATH), placement)
   }
   if (path === YOUTUBE_LINK_PATH) {
@@ -2305,9 +2363,10 @@ function runVaultCommand(
         other.parents = other.parents.filter((p) => p !== targetPath)
         other.jumps = other.jumps.filter((j) => j !== targetPath)
       }
-      const existingNoteTab = findNoteTabAt(targetPath)
-      if (existingNoteTab) {
-        onCloseWorkspaceTab(existingNoteTab)
+      for (const [tabId, tabPath] of Object.entries(noteTabPaths)) {
+        if (tabPath === targetPath) {
+          onCloseWorkspaceTab(tabId)
+        }
       }
       void fileTree.refresh()
       if (plexView.here.value === targetPath) {

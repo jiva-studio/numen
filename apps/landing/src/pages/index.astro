@@ -95,7 +95,7 @@ const description =
       </span>
     </a>
 
-    <nav aria-label="Primary navigation">
+    <nav aria-label="Primary navigation" data-i18n-aria="aria_nav">
       <a href={DOCS} data-i18n="nav_docs">Docs</a>
       <a href={FORUM} data-i18n="nav_forum">Forum</a>
       <a href={DOWNLOAD} data-i18n="nav_download">Download</a>
@@ -103,7 +103,13 @@ const description =
     </nav>
 
     <div class="header-right">
-      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+      <button
+        type="button"
+        class="theme-toggle"
+        id="theme-toggle"
+        aria-label="Toggle theme"
+        data-i18n-aria="aria_theme"
+      >
         <span class="theme-toggle__thumb" aria-hidden="true"></span>
         <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">
           <svg viewBox="0 0 24 24">
@@ -144,6 +150,7 @@ const description =
           <button
             type="button"
             class="lang-dropdown__item"
+            role="option"
             data-lang="en"
             aria-selected="true"
           >
@@ -153,6 +160,7 @@ const description =
           <button
             type="button"
             class="lang-dropdown__item"
+            role="option"
             data-lang="ru"
             aria-selected="false"
           >
@@ -162,6 +170,7 @@ const description =
           <button
             type="button"
             class="lang-dropdown__item"
+            role="option"
             data-lang="sr"
             aria-selected="false"
           >
@@ -209,16 +218,24 @@ const description =
             </div>
           </div>
 
-          <div class="suite-dossier" role="tablist" aria-label="Applications">
+          <div
+            class="suite-dossier"
+            role="tablist"
+            aria-label="Applications"
+            data-i18n-aria="aria_apps"
+          >
             <div class="suite-dossier__head">
               <span data-i18n="suite_head">Build knowledge, then keep it</span>
             </div>
             <div class="suite-tabs">
               <button
                 type="button"
+                id="suite-tab-numen"
                 class="suite-tab app-switch-numen"
                 role="tab"
                 aria-selected="true"
+                aria-controls="stage-numen"
+                tabindex="0"
                 data-select-app="numen"
               >
                 <div class="suite-tab__info">
@@ -232,9 +249,12 @@ const description =
 
               <button
                 type="button"
+                id="suite-tab-flashcards"
                 class="suite-tab app-switch-flashcards"
                 role="tab"
                 aria-selected="false"
+                aria-controls="stage-flashcards"
+                tabindex="-1"
                 data-select-app="flashcards"
               >
                 <div class="suite-tab__info">
@@ -250,7 +270,12 @@ const description =
         </div>
 
         <!-- Framed Window Stage for Numen -->
-        <div class="stage-wrap for-numen">
+        <div
+          id="stage-numen"
+          class="stage-wrap for-numen"
+          role="tabpanel"
+          aria-labelledby="suite-tab-numen"
+        >
           <div class="window-artifact">
             <div class="window-titlebar">
               <div class="window-lights"><span></span><span></span><span></span></div>
@@ -293,7 +318,12 @@ const description =
         </div>
 
         <!-- Framed Window Stage for Numen Flashcards -->
-        <div class="stage-wrap for-flashcards">
+        <div
+          id="stage-flashcards"
+          class="stage-wrap for-flashcards"
+          role="tabpanel"
+          aria-labelledby="suite-tab-flashcards"
+        >
           <div class="flashcards-pair">
             {
               framedFlashcards.map((shot) => (
@@ -571,6 +601,9 @@ const description =
   <script>
     const I18N: Record<string, Record<string, string>> = {
       en: {
+        aria_nav: 'Primary navigation',
+        aria_theme: 'Toggle theme',
+        aria_apps: 'Applications',
         nav_docs: 'Docs',
         nav_forum: 'Forum',
         nav_download: 'Download',
@@ -660,6 +693,9 @@ const description =
           'Free during the alpha for macOS, Windows, and Linux. Includes both Numen and Numen Flashcards.',
       },
       ru: {
+        aria_nav: 'Основная навигация',
+        aria_theme: 'Переключить тему',
+        aria_apps: 'Приложения',
         nav_docs: 'Документация',
         nav_forum: 'Форум',
         nav_download: 'Скачать',
@@ -749,6 +785,9 @@ const description =
           'Бесплатно на время альфы для macOS, Windows и Linux. Включает оба приложения: Numen и Numen Flashcards.',
       },
       sr: {
+        aria_nav: 'Glavna navigacija',
+        aria_theme: 'Promeni temu',
+        aria_apps: 'Aplikacije',
         nav_docs: 'Dokumentacija',
         nav_forum: 'Forum',
         nav_download: 'Preuzmi',
@@ -872,6 +911,10 @@ const description =
         const key = el.getAttribute('data-i18n-html')
         if (key && dict[key]) el.innerHTML = dict[key]
       }
+      for (const el of document.querySelectorAll<HTMLElement>('[data-i18n-aria]')) {
+        const key = el.getAttribute('data-i18n-aria')
+        if (key && dict[key]) el.setAttribute('aria-label', dict[key])
+      }
       try {
         localStorage.setItem('numen-lang', lang)
       } catch {
@@ -884,9 +927,11 @@ const description =
       const isNumen = app === 'numen'
       for (const el of document.querySelectorAll<HTMLElement>('.app-switch-numen')) {
         el.setAttribute('aria-selected', String(isNumen))
+        el.setAttribute('tabindex', isNumen ? '0' : '-1')
       }
       for (const el of document.querySelectorAll<HTMLElement>('.app-switch-flashcards')) {
         el.setAttribute('aria-selected', String(!isNumen))
+        el.setAttribute('tabindex', !isNumen ? '0' : '-1')
       }
     }
 
@@ -923,10 +968,29 @@ const description =
       })
     }
 
-    for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-select-app]')) {
+    const appButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-select-app]')]
+    for (const [idx, btn] of appButtons.entries()) {
       btn.addEventListener('click', () => {
         const app = btn.getAttribute('data-select-app')
         if (app) selectApplication(app)
+      })
+      btn.addEventListener('keydown', (event) => {
+        if (
+          event.key !== 'ArrowRight' &&
+          event.key !== 'ArrowLeft' &&
+          event.key !== 'ArrowDown' &&
+          event.key !== 'ArrowUp'
+        ) {
+          return
+        }
+        event.preventDefault()
+        const delta = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1
+        const nextBtn = appButtons[(idx + delta + appButtons.length) % appButtons.length]
+        const nextApp = nextBtn?.getAttribute('data-select-app')
+        if (nextBtn && nextApp) {
+          selectApplication(nextApp)
+          nextBtn.focus()
+        }
       })
     }
 
