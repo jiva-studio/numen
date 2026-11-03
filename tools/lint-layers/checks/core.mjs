@@ -15,6 +15,7 @@ export function verifyGoStructure() {
 export const CORE_VERIFIERS = [
   {
     id: "go-structure",
+    isGoTest: true,
     scope: "libs",
     module: "go",
     name: "Structural Go Tests of the Repository (every test of libs/core/container)",
@@ -22,6 +23,7 @@ export const CORE_VERIFIERS = [
   },
   {
     id: "notes-hexagon",
+    isGoTest: true,
     scope: "libs",
     module: "notes",
     name: "Notes Library Internal Hexagonal Layers (layers_test.go)",
