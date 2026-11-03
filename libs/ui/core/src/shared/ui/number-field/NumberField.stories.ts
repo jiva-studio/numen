@@ -136,47 +136,41 @@ export const BoundedOnTheWayOut: Story = {
   },
 }
 
+/** Presses each run of keys in the field, and expects the number it leaves. */
+const pressKeys = async (
+  canvasElement: HTMLElement,
+  steps: readonly (readonly [keys: string, value: string])[],
+) => {
+  const input = field(canvasElement)
+  await userEvent.click(input)
+  for (const [keys, value] of steps) {
+    await userEvent.keyboard(keys)
+    await expect(input.value).toBe(value)
+  }
+}
+
 /** The arrow keys move the number one step, and stop at the bounds. */
 export const ArrowKeysStep: Story = {
   args: { value: 1, step: 5, min: 0, max: 20 },
-  play: async ({ canvasElement }) => {
-    const input = field(canvasElement)
-
-    await userEvent.click(input)
-    // it onto one of them.
-    await userEvent.keyboard('{ArrowUp}')
-    await expect(input.value).toBe('5')
-
-    await userEvent.keyboard('{ArrowUp}')
-    await expect(input.value).toBe('10')
-
-    await userEvent.keyboard('{ArrowDown}{ArrowDown}')
-    await expect(input.value).toBe('0')
-
-    await userEvent.keyboard('{ArrowDown}')
-    await expect(input.value).toBe('0')
-  },
+  play: ({ canvasElement }) =>
+    pressKeys(canvasElement, [
+      ['{ArrowUp}', '5'],
+      ['{ArrowUp}', '10'],
+      ['{ArrowDown}{ArrowDown}', '0'],
+      ['{ArrowDown}', '0'],
+    ]),
 }
 
 /** The page keys move ten steps, and home and end take the number to the ends. */
 export const TheEndsAreOneKeyAway: Story = {
   args: { value: 100, step: 5, min: 0, max: 240 },
-  play: async ({ canvasElement }) => {
-    const input = field(canvasElement)
-
-    await userEvent.click(input)
-    await userEvent.keyboard('{PageUp}')
-    await expect(input.value).toBe('150')
-
-    await userEvent.keyboard('{PageDown}{PageDown}')
-    await expect(input.value).toBe('50')
-
-    await userEvent.keyboard('{End}')
-    await expect(input.value).toBe('240')
-
-    await userEvent.keyboard('{Home}')
-    await expect(input.value).toBe('0')
-  },
+  play: ({ canvasElement }) =>
+    pressKeys(canvasElement, [
+      ['{PageUp}', '150'],
+      ['{PageDown}{PageDown}', '50'],
+      ['{End}', '240'],
+      ['{Home}', '0'],
+    ]),
 }
 
 export const ARefusedLineIsReadOut: Story = {
