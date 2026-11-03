@@ -3,16 +3,14 @@ import { describe, it } from 'node:test'
 import { AREAS, getAreas } from './changes.mjs'
 
 const plugins = ['readers-pdf', 'views-file-tree', 'themes-presets']
-const e2eFolders = ['readers.pdf', 'system']
-const getChange = (...files) => getAreas({ everything: false, files, plugins, e2eFolders })
+const getChange = (...files) => getAreas({ everything: false, files, plugins })
 const getTrue = (output) => AREAS.filter((area) => output[area] === 'true')
 
 describe('the areas of a change', () => {
   it('runs every area and every plugin on a push', () => {
-    const output = getAreas({ everything: true, files: [], plugins, e2eFolders })
+    const output = getAreas({ everything: true, files: [], plugins })
     assert.deepEqual(getTrue(output), AREAS)
     assert.equal(output.plugin_dirs, 'plugins/readers-pdf plugins/themes-presets plugins/views-file-tree')
-    assert.equal(output.e2e, 'all')
   })
 
   it('runs every area for a change to the root lock file or to CI itself', () => {
@@ -24,22 +22,16 @@ describe('the areas of a change', () => {
     const output = getChange('docs/plan.md', 'libs/core/README.md')
     assert.deepEqual(getTrue(output), ['narrative'])
     assert.equal(output.plugins, 'false')
-    assert.equal(output.e2e, 'none')
   })
 
-  it('runs one plugin and its end-to-end folder for a change inside it', () => {
+  it('runs one plugin for a change inside it', () => {
     const output = getChange('plugins/readers-pdf/frontend/View.vue')
     assert.equal(output.plugin_dirs, 'plugins/readers-pdf')
-    assert.equal(output.e2e, 'readers.pdf')
     assert.equal(output.core, 'false')
     assert.equal(output.desktop, 'false')
     assert.equal(output.references, 'true')
     assert.equal(output.js, 'true')
     assert.equal(output.go, 'false')
-  })
-
-  it('runs no end-to-end folder for a plugin the suite has none for', () => {
-    assert.equal(getChange('plugins/views-file-tree/backend/main.go').e2e, 'none')
   })
 
   it('runs the core and the manual for a changed manifest', () => {
@@ -57,7 +49,6 @@ describe('the areas of a change', () => {
     assert.equal(output.sdk_go, 'true')
     assert.equal(output.plugins, 'true')
     assert.equal(output.desktop_fe, 'false')
-    assert.equal(output.e2e, 'all')
   })
 
   it('runs the Go modules that build on the core and no frontend for a change to the core', () => {
@@ -73,10 +64,8 @@ describe('the areas of a change', () => {
     assert.equal(output.core, 'false')
   })
 
-  it('runs one end-to-end folder for a change to its tests', () => {
-    const output = getChange('tests/e2e/desktop/tests/plugins/system/lifecycle.spec.ts')
-    assert.equal(output.e2e, 'system')
-    assert.equal(output.desktop_fe, 'true')
+  it('lints the end-to-end package for a change to its tests', () => {
+    assert.equal(getChange('tests/e2e/desktop/tests/plugins/system/lifecycle.spec.ts').desktop_fe, 'true')
   })
 
   it('splits the mobile module into its Go binding and its screens', () => {
