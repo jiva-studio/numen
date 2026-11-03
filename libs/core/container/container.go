@@ -178,7 +178,11 @@ func (c Config) ReadSettings() func() (string, string, error) {
 
 // GetSettingsWriter patches specific settings paths in the configuration file.
 func (c Config) GetSettingsWriter() func(entries []settingsport.Setting) error {
-	return func(entries []settingsport.Setting) error { return c.writeSettings(entries, nil) }
+	return c.writeSettingsOnly
+}
+
+func (c Config) writeSettingsOnly(entries []settingsport.Setting) error {
+	return c.writeSettings(entries, nil)
 }
 
 // GetAppliedSettingsWriter patches specific settings paths in the configuration file, and runs the
