@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"github.com/jiva-studio/numen/libs/core/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/sqlwrite"
 
@@ -18,32 +19,9 @@ type Queries struct{ db *sql.DB }
 
 func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
 
-func (q *Queries) GetFileStats(ctx context.Context, vaultID domain.VaultID) (_ map[string]domain.FileStat, err error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
-	if errors.Is(err, errNoVault) {
-		return map[string]domain.FileStat{}, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := q.db.QueryContext(ctx, getStatement("file_stats"), vault, kind)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
-
-	out := map[string]domain.FileStat{}
-	for rows.Next() {
-		var ref domain.FileStat
-		var mtime int64
-		if err := rows.Scan(&ref.Path, &ref.Size, &mtime); err != nil {
-			return nil, err
-		}
-		ref.ModTime = chunk.ConvertNanosToTime(mtime)
-		out[ref.Path] = ref
-	}
-	return out, rows.Err()
+// GetFileStats is what the index records about each note of the vault, keyed by path.
+func (q *Queries) GetFileStats(ctx context.Context, vaultID domain.VaultID) (map[string]domain.FileStat, error) {
+	return chunk.NewQueries(q.db).GetFileStats(ctx, vaultID, kind)
 }
 
 // Has reports whether the index carries this vault at all.

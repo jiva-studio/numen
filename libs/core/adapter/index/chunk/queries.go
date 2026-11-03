@@ -141,47 +141,13 @@ func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, p
 //
 // The result is the large chunk enclosing each hit, which is what a result
 // displays.
-func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) (_ []domain.Passage, err error) {
+func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
 	if limit <= 0 {
 		// How many candidates to keep is a retrieval decision. The caller makes
 		// it, and arriving here without one is a mistake in the caller.
 		return nil, fmt.Errorf("a search by words needs a positive limit, got %d", limit)
 	}
-	expression := Expression(query, growing)
-	if expression == "" {
-		return nil, nil
-	}
-	vault, err := vaultRow(ctx, q.db, vaultID)
-	if errors.Is(err, errNoVault) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	var rows *sql.Rows
-	if len(of) == 0 {
-		rows, err = q.db.QueryContext(ctx, getStatement("lexical"), expression, vault, limit)
-	} else {
-		wanted := formatKinds(of)
-		rows, err = q.db.QueryContext(ctx, getStatement("lexical_kinds"), expression, vault, wanted, limit)
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
-
-	var out []domain.Passage
-	for rows.Next() {
-		var p domain.Passage
-		var row int64
-		if err := rows.Scan(&row, &p.Source, &p.Kind, &p.Producer, &p.SourceHash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
-			return nil, err
-		}
-		p.ChunkID = ID(row)
-		out = append(out, p)
-	}
-	return out, rows.Err()
+	return q.findPassages(ctx, vaultID, Expression(query, growing), of, limit, "lexical")
 }
 
 // GetNamedPassages returns the sections of one vault whose names match the
@@ -189,11 +155,17 @@ func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query
 //
 // A section is represented by the chunk it opens, so a result is the chapter
 // about the query and not the paragraph that repeats the name most often.
-func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) (_ []domain.Passage, err error) {
+func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a search by name needs a positive limit, got %d", limit)
 	}
-	expression := Expression(query, growing)
+	return q.findPassages(ctx, vaultID, Expression(query, growing), of, limit, "sections")
+}
+
+// findPassages runs the full-text statement named statement, or its _kinds
+// variant when the search is limited to kinds, and reads the passages it
+// returns. An empty expression matches nothing.
+func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, expression string, of []domain.SourceKind, limit int, statement string) (_ []domain.Passage, err error) {
 	if expression == "" {
 		return nil, nil
 	}
@@ -207,10 +179,10 @@ func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, 
 
 	var rows *sql.Rows
 	if len(of) == 0 {
-		rows, err = q.db.QueryContext(ctx, getStatement("sections"), expression, vault, limit)
+		rows, err = q.db.QueryContext(ctx, getStatement(statement), expression, vault, limit)
 	} else {
 		wanted := formatKinds(of)
-		rows, err = q.db.QueryContext(ctx, getStatement("sections_kinds"), expression, vault, wanted, limit)
+		rows, err = q.db.QueryContext(ctx, getStatement(statement+"_kinds"), expression, vault, wanted, limit)
 	}
 	if err != nil {
 		return nil, err

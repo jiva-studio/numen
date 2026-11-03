@@ -39,7 +39,6 @@ func getExpectedPlans() []struct {
 		{note.Statements(), "links_of", []any{1}, []string{"(note_id=?)"}},
 		{note.Statements(), "identify", []any{1, "p"}, []string{"(vault_id=? AND path=?)"}},
 		{note.Statements(), "addressing", []any{1, "p"}, []string{"(vault_id=? AND path=?)"}},
-		{note.Statements(), "file_stats", []any{1, "note"}, []string{"sources_by_fingerprint"}},
 		{note.Statements(), "notes_of_type", []any{1, "sample"}, []string{"notes_by_type"}},
 		{note.Statements(), "types_at", []any{1, `["p"]`}, []string{"(vault_id=? AND path=?)"}},
 
