@@ -2,12 +2,13 @@
  * Prints, as `name=value` lines for $GITHUB_OUTPUT, which areas of the repository a change touches
  * and so which CI jobs run.
  *
- * Usage: node changes.mjs <event> <base> <head>
+ * Usage: node changes.mjs <event> [<base> <head>]
  *
  * A pull request runs the areas its files touch and every area that depends on them. A push, a
- * manual run and a change to code every area reads (SHARED) run every area. `plugin_dirs` lists
- * the plugin folders to lint, build and test; `e2e` is `all`, `none` or the folders under
- * tests/e2e/desktop/tests/plugins/ to run.
+ * manual run, a change to code every area reads (SHARED) and a base missing from the clone run
+ * every area. `plugin_dirs` lists the plugin folders to lint, build and test; `e2e` is `all`, `none`
+ * or the folders under tests/e2e/desktop/tests/plugins/ to run. `docs_deploy` is true on a push
+ * that changes what the manual is written from.
  */
 import { execFileSync } from 'node:child_process'
 
@@ -69,7 +70,7 @@ const RULES = [
   [/^apps\/desktop\/(?!editor\/|flashcards\/)/, ['desktop', ALL_E2E]],
   [/^apps\/mobile\/(bind\/|[^/]+\.go$|go\.(mod|sum)$)/, ['mobile']],
   [/^apps\/mobile\/(?!bind\/|[^/]+\.go$|go\.(mod|sum)$)/, ['mobile_fe']],
-  [/^apps\/docs\//, ['docs']],
+  [/^apps\/docs\//, ['docs', 'references']],
   [/^plugins\/[^/]+\/manifest\.json$/, ['core']],
   [/^plugins\//, ['plugin_versions', 'plugin_stories', 'staging']],
   [/^tests\/e2e\/desktop\//, ['desktop_fe']],
@@ -81,7 +82,7 @@ const RULES = [
   [/^\.github\//, ['workflows']],
   [/^\.github\/scripts\/(stage|check-staged)/, ['staging']],
   [/(^|\/)gradle\/wrapper\/|(^|\/)gradlew(\.bat)?$/, ['gradle']],
-  [MANUAL_SOURCES, ['docs']],
+  [MANUAL_SOURCES, ['docs', 'references']],
   [STORY_SOURCES, ['references']],
 ]
 
@@ -165,26 +166,31 @@ const listTree = (path) =>
     .filter(Boolean)
     .map((entry) => entry.slice(path.length + 1))
 
+/** The files that differ between two commits, or undefined when either is not in the clone. */
+const listChangedFiles = (base, head) => {
+  try {
+    return execFileSync('git', ['diff', '--name-only', '--no-renames', base, head], { encoding: 'utf8' })
+      .split('\n')
+      .filter(Boolean)
+  } catch {
+    return undefined
+  }
+}
+
 const main = () => {
   const [event, base, head] = process.argv.slice(2)
-  const everything = event !== 'pull_request'
-  const files = everything
-    ? []
-    : execFileSync('git', ['diff', '--name-only', '--no-renames', base, head], { encoding: 'utf8' })
-        .split('\n')
-        .filter(Boolean)
-  const manifests = execFileSync('git', ['ls-tree', '-r', '--name-only', 'HEAD', 'plugins/'], { encoding: 'utf8' })
+  const files = (base && head && listChangedFiles(base, head)) || undefined
+  const plugins = execFileSync('git', ['ls-tree', '-r', '--name-only', 'HEAD', 'plugins/'], { encoding: 'utf8' })
     .split('\n')
     .map((path) => /^plugins\/([^/]+)\/manifest\.json$/.exec(path)?.[1])
     .filter(Boolean)
-  const output = getAreas({
-    everything,
-    files,
-    plugins: manifests,
-    e2eFolders: listTree('tests/e2e/desktop/tests/plugins'),
-  })
+  const e2eFolders = listTree('tests/e2e/desktop/tests/plugins')
+  const changed = getAreas({ everything: files === undefined, files: files ?? [], plugins, e2eFolders })
+  const output = event === 'pull_request' ? changed : getAreas({ everything: true, files: [], plugins, e2eFolders })
+  // A push deploys the manual only when the push changed what the manual is written from.
+  output.docs_deploy = String(event === 'push' && changed.docs === 'true')
   for (const [name, value] of Object.entries(output)) console.log(`${name}=${value}`)
-  console.error(`${files.length} changed file(s)`)
+  console.error(`${files?.length ?? 'all'} changed file(s)`)
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) main()

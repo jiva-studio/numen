@@ -1,0 +1,24 @@
+name: "Save the Go caches of main"
+description: "On a push to main, saves the module, build and golangci-lint caches under the key setup-go returned; elsewhere does nothing"
+inputs:
+  cache-key:
+    description: "The cache-key output of setup-go"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - id: paths
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      shell: bash
+      run: |
+        echo "build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+        echo "modules=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+
+    - if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ${{ steps.paths.outputs.build }}
+          ${{ steps.paths.outputs.modules }}
+          ~/.cache/golangci-lint
+        key: ${{ inputs.cache-key }}
