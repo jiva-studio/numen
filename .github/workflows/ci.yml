@@ -80,7 +80,8 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event_name == 'pull_request' && 'HEAD^1' || github.event.before }}
-        run: node .github/scripts/changes.mjs "$EVENT" "$BASE" HEAD | tee -a "$GITHUB_OUTPUT"
+        run: |
+          { git diff --name-only --no-renames "$BASE" HEAD || true; } | node .github/scripts/changes.mjs "$EVENT" - | tee -a "$GITHUB_OUTPUT"
 
       - id: e2e
         run: |
@@ -1113,7 +1114,7 @@ jobs:
 
   ci:
     name: CI
-    if: always()
+    if: ${{ !cancelled() }}
     needs:
       - changes
       - gitleaks
