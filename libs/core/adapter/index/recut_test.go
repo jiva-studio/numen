@@ -528,7 +528,6 @@ func TestARecutStaysInsideItsVault(t *testing.T) {
 	// One database holds every vault. The two notes here are at one path and
 	// share no word, so a row that came from the wrong vault is recognisable and
 	// a cut that reached across would take the other vault's chunks with it.
-	ctx := t.Context()
 	db := openDB(t)
 	model := embedder{seed: 0x33}
 
@@ -561,25 +560,7 @@ func TestARecutStaysInsideItsVault(t *testing.T) {
 		t.Errorf("%d vectors, want %d: the one chunk the edit landed in", got, vectors-1)
 	}
 
-	// Neither vault answers for the other.
-	for _, ask := range []struct {
-		vault    domain.Vault
-		word     string
-		isWanted bool
-	}{
-		{getFirst(), "wordzz", true},
-		{getSecond(), "wordzz", false},
-		{getSecond(), "quasar", true},
-		{getFirst(), "quasar", false},
-	} {
-		found, err := db.ChunkQueries().FindLexical(ctx, ask.vault.ID, ask.word, nil, 10, false)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if (len(found) > 0) != ask.isWanted {
-			t.Errorf("%s answered %d passages for %q, want %v", ask.vault.Name, len(found), ask.word, ask.isWanted)
-		}
-	}
+	checkVaultsAnswerOnlyForThemselves(t, db)
 }
 
 // locationsOf is what the chunks of one note are called, in the order they sit
@@ -664,7 +645,6 @@ func TestSplittingOneSectionStaysInsideItsVault(t *testing.T) {
 	// into sections of the same shape, and share no word of prose, so a chunk that
 	// arrived from the wrong vault is recognisable and a cut that reached across
 	// would take the other vault's chunks with it.
-	ctx := t.Context()
 	db := openDB(t)
 	model := embedder{seed: 0x33}
 
@@ -705,25 +685,7 @@ func TestSplittingOneSectionStaysInsideItsVault(t *testing.T) {
 		t.Errorf("editing the first section asked for %d vectors, want 2", request)
 	}
 
-	// Neither vault answers for the other.
-	for _, ask := range []struct {
-		vault    domain.Vault
-		word     string
-		isWanted bool
-	}{
-		{getFirst(), "wordzz", true},
-		{getSecond(), "wordzz", false},
-		{getSecond(), "quasar", true},
-		{getFirst(), "quasar", false},
-	} {
-		found, err := db.ChunkQueries().FindLexical(ctx, ask.vault.ID, ask.word, nil, 10, false)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if (len(found) > 0) != ask.isWanted {
-			t.Errorf("%s answered %d passages for %q, want %v", ask.vault.Name, len(found), ask.word, ask.isWanted)
-		}
-	}
+	checkVaultsAnswerOnlyForThemselves(t, db)
 }
 
 func TestTheWorstCaseIsBoundedByTheSectionAndNotByTheNote(t *testing.T) {
@@ -800,5 +762,29 @@ func TestASectionShorterThanAChunkIsAChunkOfItsOwn(t *testing.T) {
 	}
 	if got := len(smallChunks(t, db, getFirst(), unnamed.FileStat.Path)); got != 7 {
 		t.Errorf("the same words with no part named are cut into %d chunks, want 7", got)
+	}
+}
+
+// checkVaultsAnswerOnlyForThemselves checks that a word search in one vault
+// finds nothing written in the other.
+func checkVaultsAnswerOnlyForThemselves(t *testing.T, db *DB) {
+	t.Helper()
+	for _, ask := range []struct {
+		vault    domain.Vault
+		word     string
+		isWanted bool
+	}{
+		{getFirst(), "wordzz", true},
+		{getSecond(), "wordzz", false},
+		{getSecond(), "quasar", true},
+		{getFirst(), "quasar", false},
+	} {
+		found, err := db.ChunkQueries().FindLexical(t.Context(), ask.vault.ID, ask.word, nil, 10, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if (len(found) > 0) != ask.isWanted {
+			t.Errorf("%s answered %d passages for %q, want %v", ask.vault.Name, len(found), ask.word, ask.isWanted)
+		}
 	}
 }
