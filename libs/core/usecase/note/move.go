@@ -312,7 +312,8 @@ func (u Move) updateIndex(ctx context.Context, v domain.Vault, paths ...string) 
 	if u.index == nil {
 		return nil
 	}
-	return WrapIndexOutdated(u.index(ctx, v, paths), paths...)
+	// The files are written, so the index follows them even when the caller has gone.
+	return WrapIndexOutdated(u.index(context.WithoutCancel(ctx), v, paths), paths...)
 }
 
 // GetPathUnder is where a note lands when it is filed under a folder, keeping

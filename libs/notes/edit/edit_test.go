@@ -268,3 +268,27 @@ func TestANoteIsAddressedByItsNameUnlessAnotherSharesIt(t *testing.T) {
 		t.Errorf("got %v and %v, and %v", byName, byPath, unreachable)
 	}
 }
+
+// A caller that goes away once its note is written still leaves the index following the file.
+func TestTheIndexFollowsAWriteWhoseCallerHasGone(t *testing.T) {
+	f := newFiles(map[string]string{"A.md": "# A\n"})
+	ctx, cancel := context.WithCancel(t.Context())
+	var indexErr error
+	e := editing(f)
+	e.Index = func(ctx context.Context, _ domain.Vault, _ []string) error {
+		indexErr = ctx.Err()
+		return indexErr
+	}
+
+	_, err := e.Apply(ctx, getVault(), "A.md", func(doc *markdown.Document) error {
+		cancel()
+		return doc.SetBody("# B\n")
+	})
+
+	if err != nil || indexErr != nil {
+		t.Fatalf("the index was given a context that ended (%v), and the edit answered %v", indexErr, err)
+	}
+	if got := f.content["A.md"]; !strings.HasSuffix(got, "# B\n") {
+		t.Errorf("the note is now %q", got)
+	}
+}

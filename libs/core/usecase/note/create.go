@@ -159,7 +159,8 @@ func (u Create) updateIndex(ctx context.Context, v domain.Vault, paths ...string
 	if u.index == nil {
 		return nil
 	}
-	return WrapIndexOutdated(u.index(ctx, v, paths), paths...)
+	// The files are written, so the index follows them even when the caller has gone.
+	return WrapIndexOutdated(u.index(context.WithoutCancel(ctx), v, paths), paths...)
 }
 
 func removePath(paths []string, path string) []string {
