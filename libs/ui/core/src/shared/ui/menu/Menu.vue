@@ -4,7 +4,7 @@
  */
 import { computed, useTemplateRef } from 'vue'
 import MenuRow from './MenuRow.vue'
-import { getNow, measureElementRect } from '@/shared/lib/dom'
+import { getNow, measureElementRect, measureRect } from '@/shared/lib/dom'
 import type { Position } from '@/shared/lib/math/geometry'
 import { useMenuDismissal } from './interaction/menuDismissal'
 import { useMenuLifecycle } from './interaction/useMenuLifecycle'
@@ -32,8 +32,9 @@ const emit = defineEmits<MenuEvents>()
 
 defineSlots<MenuSlots>()
 
-/* ---------------------------------- State --------------------------------- */
+/* --------------------------------- State ---------------------------------- */
 const menu = useTemplateRef<HTMLElement>('menu')
+const submenuRef = useTemplateRef<{ getElement?: () => HTMLElement | null }>('submenuRef')
 
 const { setSize, resetSize, menuStyle } = useMenuPlacement({
   at: () => props.at,
@@ -57,6 +58,8 @@ const { visibleItems, rows, here, submenu, focusInitial, onKey, onResetNavigatio
     menuRef: menu,
     getFallbackPosition: () => props.at,
     getSubmenuPosition: (el) => getSubmenuPosition(el),
+    getSubmenuElement: () => submenuRef.value?.getElement?.() ?? null,
+    getSubmenuBox: () => measureRect(submenuRef.value?.getElement?.()) ?? null,
     onEmitChoose: (id) => emit('choose', id),
     onEmitDismiss: () => emit('dismiss'),
     hasFrom: () => Boolean(props.from),
@@ -64,7 +67,7 @@ const { visibleItems, rows, here, submenu, focusInitial, onKey, onResetNavigatio
 
 const isMenuVisible = computed(() => Boolean(props.isOpen))
 
-/* ---------------------------------- Hooks --------------------------------- */
+/* --------------------------------- Hooks ---------------------------------- */
 useMenuLifecycle({
   isOpen: () => isMenuVisible.value,
   listen,
@@ -79,7 +82,7 @@ useMenuLifecycle({
   getWatchedDeps: () => [visibleItems.value, props.at],
 })
 
-/* --------------------------------- Helpers -------------------------------- */
+/* -------------------------------- Helpers --------------------------------- */
 function getSubmenuPosition(el: HTMLElement | null): Position | null {
   const box = el ? measureElementRect(el) : undefined
   return box ? { x: box.right, y: box.top } : null
@@ -89,6 +92,8 @@ function measure(): void {
   const box = menu.value ? measureElementRect(menu.value) : undefined
   if (box) setSize({ width: box.width, height: box.height })
 }
+
+defineExpose({ getElement: () => menu.value })
 </script>
 
 <template>
@@ -102,6 +107,7 @@ function measure(): void {
       :aria-label="name"
       :style="menuStyle"
       @keydown="onKey"
+      @mouseleave="submenu.onMenuLeave"
     >
       <MenuRow
         v-for="(item, index) in rows"
@@ -112,7 +118,7 @@ function measure(): void {
         :has-name="hasGroups && Boolean(item.group) && (item.isRule || index === 0)"
         :has-icons="Boolean($slots.icon)"
         @focus="here = index"
-        @hover="submenu.onRowHover(item)"
+        @hover="(event) => submenu.onRowHover(item, event)"
         @choose="submenu.onChoose(item)"
       >
         <slot name="icon" :id="item.id" />
@@ -125,6 +131,7 @@ function measure(): void {
 
     <Menu
       v-if="submenu.active.value"
+      ref="submenuRef"
       :items="submenu.active.value.items"
       :at="submenu.active.value.at"
       :from="submenu.active.value.from"
