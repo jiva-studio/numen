@@ -7,15 +7,13 @@ import {
 } from '../../support/test.js'
 import { getGraph, openWorkspace } from '../../support/workspace.js'
 import {
-  getLabelGaps,
   isAtSameGap,
   isHugging,
   isOnLine,
   isThroughTheMiddle,
   readLabelPicture,
-  type LabelGap,
-  type SampledLine,
 } from '../../support/plex-labels.js'
+import { getDistance, readPlexLine, type Box, type LineGeometry, type Point } from '../../support/plex-lines.js'
 
 /** The note the vault opens with, and the child the fixture joins it to. */
 const PATHS = { Thermodynamics: 'Thermodynamics.md', Entropy: 'notes/Entropy.md' } as const
@@ -139,133 +137,11 @@ const clickDone = async (page: Page, popover: Locator) => {
   await expect(page.locator('.plex-frame:not([data-moving])')).toBeAttached()
 }
 
-interface Point {
-  readonly x: number
-  readonly y: number
-}
-
-interface Box {
-  readonly x: number
-  readonly y: number
-  readonly width: number
-  readonly height: number
-}
-
-/** The line between two drawn notes: its end at each note, its middle, its labels and its heads, on the screen. */
-interface EdgeGeometry {
-  readonly ends: Readonly<Record<string, Point>>
-  readonly middle: Point
-  readonly labels: Readonly<Record<string, Point>>
-  /** The box each label is drawn in, on the screen. */
-  readonly boxes: Readonly<Record<string, Box>>
-  /** Where the letters of each label are against the line, measured the same way for every label. */
-  readonly gaps: Readonly<Record<string, LabelGap>>
-  /**
-   * How much each label is read in the direction from the first named note to the second: 1 along
-   * the line that way, -1 along it the other way, 0 across it.
-   */
-  readonly reading: Readonly<Record<string, number>>
-  readonly arrows: readonly Point[]
-  /** The curve sampled on the screen. */
-  readonly line: SampledLine
-}
-
-/**
- * Reads the line between two notes off the drawing. The line is the one whose ends lie nearest
- * the two titles; each label and each head is measured where the browser drew it.
- */
-const readEdgeRaw = (page: Page, names: readonly [Name, Name]) =>
-  page.evaluate((names) => {
-    const svg = [...document.querySelectorAll<SVGSVGElement>('svg.plex')].find(
-      (one) => one.getBoundingClientRect().width > 0,
-    )!
-    const centre = (box: DOMRect) => ({ x: box.x + box.width / 2, y: box.y + box.height / 2 })
-    const distance = (one: { x: number; y: number }, other: { x: number; y: number }) =>
-      Math.hypot(one.x - other.x, one.y - other.y)
-    const titles = names.map((name) => {
-      const title = [...svg.querySelectorAll('.plex__title')].find(
-        (one) => one.textContent?.trim() === name,
-      )!
-      return centre(title.getBoundingClientRect())
-    })
-
-    const lines = [...svg.querySelectorAll<SVGPathElement>('.plex__edge')].map((path) => {
-      const screen = path.getScreenCTM()!
-      const length = path.getTotalLength()
-      const getPoint = (offset: number) => {
-        const point = path.getPointAtLength(offset).matrixTransform(screen)
-        return { x: point.x, y: point.y }
-      }
-      const points = Array.from({ length: Math.ceil(length / 2) + 1 }, (_, step) =>
-        getPoint(Math.min(2 * step, length)),
-      )
-      return { start: getPoint(0), end: getPoint(length), middle: getPoint(length / 2), points }
-    })
-    const getFit = (line: (typeof lines)[number]) =>
-      Math.min(
-        distance(line.start, titles[0]!) + distance(line.end, titles[1]!),
-        distance(line.end, titles[0]!) + distance(line.start, titles[1]!),
-      )
-    const line = lines.reduce((best, one) => (getFit(one) < getFit(best) ? one : best))
-    const isStartAtFirst =
-      distance(line.start, titles[0]!) + distance(line.end, titles[1]!) <=
-      distance(line.end, titles[0]!) + distance(line.start, titles[1]!)
-
-    const labels: Record<string, { x: number; y: number }> = {}
-    const boxes: Record<string, Box> = {}
-    const directions: Record<string, number> = {}
-    const way = isStartAtFirst ? 1 : -1
-    for (const letters of svg.querySelectorAll('.plex__edge-label--letters')) {
-      const box = letters.getBoundingClientRect()
-      const words = letters.textContent?.trim() ?? ''
-      labels[words] = centre(box)
-      boxes[words] = { x: box.x, y: box.y, width: box.width, height: box.height }
-
-      // Measure against the line where it is nearest the label, taken from the first note to the second.
-      const middle = centre(box)
-      const nearest = line.points.reduce(
-        (best, point, step) =>
-          distance(point, middle) < distance(line.points[best]!, middle) ? step : best,
-        0,
-      )
-      const back = line.points[Math.max(nearest - 1, 0)]!
-      const on = line.points[Math.min(nearest + 1, line.points.length - 1)]!
-      const run = { x: (on.x - back.x) * way, y: (on.y - back.y) * way }
-      const size = Math.hypot(run.x, run.y) || 1
-      const turn = ((letters as SVGTextContentElement).getRotationOfChar(0) * Math.PI) / 180
-      directions[words] = (Math.cos(turn) * run.x + Math.sin(turn) * run.y) / size
-    }
-    const arrows = [...svg.querySelectorAll('.plex__edge-arrow')].map((head) =>
-      centre(head.getBoundingClientRect()),
-    )
-    return {
-      ends: {
-        [names[0]]: isStartAtFirst ? line.start : line.end,
-        [names[1]]: isStartAtFirst ? line.end : line.start,
-      },
-      middle: line.middle,
-      labels,
-      boxes,
-      points: line.points,
-      way,
-      reading: directions,
-      arrows,
-    }
-  }, names)
-
-const readEdge = async (page: Page, names: readonly [Name, Name]): Promise<EdgeGeometry> => {
-  const { points, way, ...drawn } = await readEdgeRaw(page, names)
-  const line: SampledLine = { points, way: way as 1 | -1 }
-  return { ...drawn, line, gaps: await getLabelGaps(page, line) }
-}
-
-const getDistance = (one: Point, other: Point) => Math.hypot(one.x - other.x, one.y - other.y)
-
 /**
  * How far along the line a point is, as a fraction of the way from the end at `from` to the end
  * at `to`, taking the point's projection on the straight run between the two ends.
  */
-const getShare = (edge: EdgeGeometry, point: Point, from: Name, to: Name) => {
+const getShare = (edge: LineGeometry, point: Point, from: Name, to: Name) => {
   const start = edge.ends[from]!
   const run = { x: edge.ends[to]!.x - start.x, y: edge.ends[to]!.y - start.y }
   return ((point.x - start.x) * run.x + (point.y - start.y) * run.y) / (run.x ** 2 + run.y ** 2)
@@ -278,11 +154,11 @@ const isApart = (one: Box, other: Box) =>
   other.y + other.height <= one.y
 
 /** The label is in the middle of the line, within a tenth of the line either way. */
-const isCentred = (edge: EdgeGeometry, label: Point) =>
+const isCentred = (edge: LineGeometry, label: Point) =>
   Math.abs(getShare(edge, label, 'Thermodynamics', 'Entropy') - 0.5) < 0.1
 
 /** Whether a point is nearer the end of the line at `nearName` than the end at `farName`. */
-const isNearer = (edge: EdgeGeometry, point: Point, nearName: Name, farName: Name) =>
+const isNearer = (edge: LineGeometry, point: Point, nearName: Name, farName: Name) =>
   getDistance(point, edge.ends[nearName]!) < getDistance(point, edge.ends[farName]!)
 
 const NAMES = ['Thermodynamics', 'Entropy'] as const
@@ -292,7 +168,7 @@ const NAMES = ['Thermodynamics', 'Entropy'] as const
  * the left looking from the parent and read from the parent to the child, the record of the child
  * on the right and read from the child to the parent.
  */
-const isOnItsSide = (edge: EdgeGeometry) =>
+const isOnItsSide = (edge: LineGeometry) =>
   edge.gaps['flows into']!.side < 0 &&
   edge.gaps['measures']!.side > 0 &&
   isHugging(edge.gaps['flows into']) &&
@@ -346,7 +222,7 @@ test.describe('Plex Edge and Link Inspector', () => {
     })
     await expect
       .poll(async () => {
-        const edge = await readEdge(page, NAMES)
+        const edge = await readPlexLine(page, NAMES)
         return (
           edge.arrows.length === 1 &&
           isNearer(edge, edge.arrows[0]!, second, first) &&
@@ -368,7 +244,7 @@ test.describe('Plex Edge and Link Inspector', () => {
     })
     await expect
       .poll(async () => {
-        const edge = await readEdge(page, NAMES)
+        const edge = await readPlexLine(page, NAMES)
         return (
           edge.arrows.length === 1 &&
           isNearer(edge, edge.arrows[0]!, first, second) &&
@@ -384,7 +260,7 @@ test.describe('Plex Edge and Link Inspector', () => {
     await clickDone(page, popover)
 
     expect(await getRecords(request)).toEqual({ [first]: { label: 'warms' }, [second]: null })
-    await expect.poll(async () => (await readEdge(page, NAMES)).arrows.length).toBe(0)
+    await expect.poll(async () => (await readPlexLine(page, NAMES)).arrows.length).toBe(0)
   })
 
   test('sets the label of a record without a direction in the middle of its line', async ({
@@ -395,7 +271,7 @@ test.describe('Plex Edge and Link Inspector', () => {
 
     await expect
       .poll(async () => {
-        const edge = await readEdge(page, NAMES)
+        const edge = await readPlexLine(page, NAMES)
         const label = edge.labels['warms']
         if (!label) return false
         const length = getDistance(edge.ends['Thermodynamics']!, edge.ends['Entropy']!)
@@ -430,7 +306,7 @@ test.describe('Plex Edge and Link Inspector', () => {
     })
     await expect
       .poll(async () => {
-        const edge = await readEdge(page, NAMES)
+        const edge = await readPlexLine(page, NAMES)
         const heads = edge.arrows
         return (
           heads.length === 2 &&
@@ -459,7 +335,7 @@ test.describe('Plex Edge and Link Inspector', () => {
     // parent, reads toward it, and is on the other side of the line.
     await expect
       .poll(async () => {
-        const edge = await readEdge(page, NAMES)
+        const edge = await readPlexLine(page, NAMES)
         const parentLabel = edge.labels['flows into']
         const childLabel = edge.labels['measures']
         if (!parentLabel || !childLabel) return false
@@ -486,7 +362,7 @@ test.describe('Plex Edge and Link Inspector', () => {
 
     await expect
       .poll(async () => {
-        const edge = await readEdge(page, NAMES)
+        const edge = await readPlexLine(page, NAMES)
         const parentLabel = edge.labels['flows into']
         const childLabel = edge.labels['measures']
         if (!parentLabel || !childLabel || edge.arrows.length !== 0) return false
@@ -509,7 +385,7 @@ test.describe('Plex Edge and Link Inspector', () => {
 
     await expect
       .poll(async () => {
-        const edge = await readEdge(page, NAMES)
+        const edge = await readPlexLine(page, NAMES)
         const label = edge.labels['flows into']
         return (
           !!label &&
@@ -562,7 +438,7 @@ test.describe('Plex Edge and Link Inspector', () => {
     await clickDone(page, popover)
 
     expect(await getRecords(request)).toEqual({ [first]: both[first], [second]: null })
-    await expect.poll(async () => (await readEdge(page, NAMES)).arrows.length).toBe(1)
+    await expect.poll(async () => (await readPlexLine(page, NAMES)).arrows.length).toBe(1)
   })
 
   test('turns the arrows of two records already on disk with real clicks, one record each', async ({
@@ -591,7 +467,7 @@ test.describe('Plex Edge and Link Inspector', () => {
     const records = await getRecords(request)
     expect(records[first]).toEqual({ label: records[first]!.label, marker: ARROW })
     expect(records[second]).toEqual({ label: records[second]!.label })
-    await expect.poll(async () => (await readEdge(page, NAMES)).arrows.length).toBe(1)
+    await expect.poll(async () => (await readPlexLine(page, NAMES)).arrows.length).toBe(1)
   })
 
   test('takes the arrows off two directed records on disk with real clicks', async ({
@@ -615,7 +491,7 @@ test.describe('Plex Edge and Link Inspector', () => {
     expect(Object.values(records).map((side) => side?.marker)).toStrictEqual([undefined, undefined])
     expect(records[first]?.label).toBeTruthy()
     expect(records[second]?.label).toBeTruthy()
-    await expect.poll(async () => (await readEdge(page, NAMES)).arrows.length).toBe(0)
+    await expect.poll(async () => (await readPlexLine(page, NAMES)).arrows.length).toBe(0)
   })
 
   test('cycles a lone record with real clicks and names each arrow and the next', async ({
@@ -681,13 +557,13 @@ test.describe('The one label of a line, at four pixels to a pixel', () => {
 
     await expect
       .poll(async () => {
-        const edge = await readEdge(page, NAMES)
+        const edge = await readPlexLine(page, NAMES)
         return edge.gaps['eee'] !== undefined && isCentred(edge, edge.labels['eee']!)
       })
       .toBe(true)
 
     // Every figure is checked and reported, so a failure shows where the letters stand.
-    const edge = await readEdge(page, NAMES)
+    const edge = await readPlexLine(page, NAMES)
     const picture = await readLabelPicture(page, 'eee', edge.line)
     const middle = (picture.before + picture.after) / 2
     const report = JSON.stringify({ gap: edge.gaps['eee'], picture })

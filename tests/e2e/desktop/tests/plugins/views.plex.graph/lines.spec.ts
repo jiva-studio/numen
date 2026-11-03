@@ -2,13 +2,8 @@ import { test, expect, type APIRequestContext, type Page } from '../../support/t
 import { getGraph, openWorkspace } from '../../support/workspace.js'
 import { createNoteWithBody, destroyNotes, getRow, showInFiles } from '../../support/layout.js'
 import { callRPC } from '../../support/vault.js'
-import {
-  getLabelGaps,
-  isAtSameGap,
-  isHugging,
-  isOnLine,
-  type LabelGap,
-} from '../../support/plex-labels.js'
+import { isAtSameGap, isHugging, isOnLine } from '../../support/plex-labels.js'
+import { getDistance, readPlexLine, type LineGeometry, type Point } from '../../support/plex-lines.js'
 
 /** One record of a connection, as SaveConnection takes it. */
 interface WireSide {
@@ -42,125 +37,6 @@ const showInPlex = async (page: Page, path: string): Promise<void> => {
   await expect(page.locator('.plex-frame:not([data-moving])')).toBeAttached()
 }
 
-interface Point {
-  readonly x: number
-  readonly y: number
-}
-
-interface Box {
-  readonly x: number
-  readonly y: number
-  readonly width: number
-  readonly height: number
-}
-
-/** The line between two drawn notes: its end at each note, its middle, and the labels and heads of the plex. */
-interface LineGeometry {
-  readonly ends: Readonly<Record<string, Point>>
-  readonly middle: Point
-  readonly labels: Readonly<Record<string, Point>>
-  /** The box each label is drawn in, on the screen. */
-  readonly boxes: Readonly<Record<string, Box>>
-  /** Where the letters of each label are against the line, measured the same way for every label. */
-  readonly gaps: Readonly<Record<string, LabelGap>>
-  /**
-   * How much each label is read in the direction from the first named note to the second: 1 along
-   * the line that way, -1 along it the other way, 0 across it.
-   */
-  readonly reading: Readonly<Record<string, number>>
-  readonly arrows: readonly Point[]
-}
-
-/**
- * Reads the line between two notes off the drawing. The line is the one whose ends lie nearest
- * the two titles; each label and each head is measured where the browser drew it.
- */
-const readLineRaw = (page: Page, names: readonly [string, string]) =>
-  page.evaluate((names) => {
-    const svg = [...document.querySelectorAll<SVGSVGElement>('svg.plex')].find(
-      (one) => one.getBoundingClientRect().width > 0,
-    )!
-    const centre = (box: DOMRect) => ({ x: box.x + box.width / 2, y: box.y + box.height / 2 })
-    const distance = (one: { x: number; y: number }, other: { x: number; y: number }) =>
-      Math.hypot(one.x - other.x, one.y - other.y)
-    const titles = names.map((name) => {
-      const title = [...svg.querySelectorAll('.plex__title')].find(
-        (one) => one.textContent?.trim() === name,
-      )!
-      return centre(title.getBoundingClientRect())
-    })
-
-    const lines = [...svg.querySelectorAll<SVGPathElement>('.plex__edge')].map((path) => {
-      const screen = path.getScreenCTM()!
-      const length = path.getTotalLength()
-      const getPoint = (offset: number) => {
-        const point = path.getPointAtLength(offset).matrixTransform(screen)
-        return { x: point.x, y: point.y }
-      }
-      const points = Array.from({ length: Math.ceil(length / 2) + 1 }, (_, step) =>
-        getPoint(Math.min(2 * step, length)),
-      )
-      return { start: getPoint(0), end: getPoint(length), middle: getPoint(length / 2), points }
-    })
-    const getFit = (line: (typeof lines)[number]) =>
-      Math.min(
-        distance(line.start, titles[0]!) + distance(line.end, titles[1]!),
-        distance(line.end, titles[0]!) + distance(line.start, titles[1]!),
-      )
-    const line = lines.reduce((best, one) => (getFit(one) < getFit(best) ? one : best))
-    const isStartAtFirst =
-      distance(line.start, titles[0]!) + distance(line.end, titles[1]!) <=
-      distance(line.end, titles[0]!) + distance(line.start, titles[1]!)
-
-    const labels: Record<string, { x: number; y: number }> = {}
-    const boxes: Record<string, Box> = {}
-    const directions: Record<string, number> = {}
-    const way = isStartAtFirst ? 1 : -1
-    for (const letters of svg.querySelectorAll('.plex__edge-label--letters')) {
-      const box = letters.getBoundingClientRect()
-      const words = letters.textContent?.trim() ?? ''
-      labels[words] = centre(box)
-      boxes[words] = { x: box.x, y: box.y, width: box.width, height: box.height }
-
-      // Measure against the line where it is nearest the label, taken from the first note to the second.
-      const middle = centre(box)
-      const nearest = line.points.reduce(
-        (best, point, step) =>
-          distance(point, middle) < distance(line.points[best]!, middle) ? step : best,
-        0,
-      )
-      const back = line.points[Math.max(nearest - 1, 0)]!
-      const on = line.points[Math.min(nearest + 1, line.points.length - 1)]!
-      const run = { x: (on.x - back.x) * way, y: (on.y - back.y) * way }
-      const size = Math.hypot(run.x, run.y) || 1
-      const turn = ((letters as SVGTextContentElement).getRotationOfChar(0) * Math.PI) / 180
-      directions[words] = (Math.cos(turn) * run.x + Math.sin(turn) * run.y) / size
-    }
-    const arrows = [...svg.querySelectorAll('.plex__edge-arrow')].map((head) =>
-      centre(head.getBoundingClientRect()),
-    )
-    return {
-      ends: {
-        [names[0]]: isStartAtFirst ? line.start : line.end,
-        [names[1]]: isStartAtFirst ? line.end : line.start,
-      },
-      middle: line.middle,
-      labels,
-      boxes,
-      points: line.points,
-      way,
-      reading: directions,
-      arrows,
-    }
-  }, names)
-
-const readLine = async (page: Page, names: readonly [string, string]): Promise<LineGeometry> => {
-  const { points, way, ...drawn } = await readLineRaw(page, names)
-  return { ...drawn, gaps: await getLabelGaps(page, { points, way: way as 1 | -1 }) }
-}
-
-const getDistance = (one: Point, other: Point) => Math.hypot(one.x - other.x, one.y - other.y)
-
 /**
  * Whether the line between two notes has the only arrowhead of the plex at the end of `target`,
  * with its one label `words` in the middle of the line, within a tenth of its length.
@@ -171,7 +47,7 @@ const isPointingAt = async (
   target: string,
   words: string,
 ): Promise<boolean> => {
-  const line = await readLine(page, names)
+  const line = await readPlexLine(page, names)
   const other = names.find((name) => name !== target)!
   const label = line.labels[words]
   return (
@@ -201,7 +77,7 @@ const isSetAtBothEnds = async (
   names: readonly [string, string],
   words: { readonly toFirst: string; readonly toSecond: string },
 ): Promise<boolean> => {
-  const line = await readLine(page, names)
+  const line = await readPlexLine(page, names)
   const first = line.labels[words.toFirst]
   const last = line.labels[words.toSecond]
   if (!first || !last) return false
@@ -232,7 +108,7 @@ const isSetInTheMiddle = async (
   names: readonly [string, string],
   words: string,
 ): Promise<boolean> => {
-  const line = await readLine(page, names)
+  const line = await readPlexLine(page, names)
   const label = line.labels[words]
   const length = getDistance(line.ends[names[0]]!, line.ends[names[1]]!)
   return (
