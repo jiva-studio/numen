@@ -1,6 +1,5 @@
 /**
- * Page turns in the EPUB reader while the backend is slow. The recorded scenario at two window
- * widths is in flicker-one-column.spec.ts and flicker-two-columns.spec.ts.
+ * Page turns in the EPUB reader while the backend is slow.
  */
 import { test, expect } from '../../support/test.js'
 import { observeFor } from '../../support/browser.js'
