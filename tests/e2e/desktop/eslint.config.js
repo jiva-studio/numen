@@ -13,8 +13,9 @@ export default tseslint.config(
   ...createBaseConfig(import.meta.dirname, {
     // Every file here is test code: it reads the clock and the dice for names no run repeats.
     portIgnores: ['**/*.ts'],
-    extraIgnores: ['playwright-report/**', 'test-results/**', 'tools/**'],
-    allowDefaultProject: ['scripts/*.mjs'],
+    extraIgnores: ['playwright-report/**', 'test-results/**'],
+    // A module with a .d.mts beside it is left out of scripts/tsconfig.json, which takes the declaration.
+    allowDefaultProject: ['scripts/shards.mjs', 'scripts/stand-ins.mjs'],
   }),
 
   {

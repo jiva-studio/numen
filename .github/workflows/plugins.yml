@@ -1,0 +1,164 @@
+name: Plugins
+
+# The plugins, called by ci.yml with the plugin folders a change touches.
+on:
+  workflow_call:
+    inputs:
+      plugin_dirs:
+        type: string
+        required: true
+      plugin_stories:
+        type: boolean
+        required: true
+      plugin_versions:
+        type: boolean
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+
+  # Each plugin's own `make lint` (go vet, both golangci-lint configurations, ESLint, vue-tsc), the
+  # Prettier style of its files, and its manifest read by the plugin CLI.
+  plugins-lint:
+    name: Plugins Lint
+    if: inputs.plugin_dirs != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PLUGIN_DIRS: ${{ inputs.plugin_dirs }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: go
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: apps/desktop/go.mod
+          cache-key: plugins-lint
+
+      - uses: ./.github/actions/install-golangci-lint
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - uses: ./.github/actions/install-node-modules
+
+      - uses: ./.github/actions/build-ui
+
+      - name: Run plugin linters
+        run: make plugins_lint SKIP_UI_BUILD=1 PLUGIN_DIRS="$PLUGIN_DIRS"
+
+      - name: Check plugin formatting
+        run: |
+          set -euo pipefail
+          globs=()
+          for dir in $PLUGIN_DIRS; do globs+=("$dir/**/*.{ts,vue,json,css,js}"); done
+          node_modules/.bin/prettier --check "${globs[@]}"
+
+      - name: Validate each plugin's manifest with the plugin CLI
+        run: |
+          set -euo pipefail
+          (cd apps/desktop && go build -o "$RUNNER_TEMP/numen-plugin" ./cmd/numen-plugin)
+          for dir in $PLUGIN_DIRS; do "$RUNNER_TEMP/numen-plugin" validate "$dir"; done
+
+      - if: ${{ !cancelled() }}
+        uses: ./.github/actions/save-go-cache
+        with:
+          cache-key: ${{ steps.go.outputs.cache-key }}
+
+  plugins-test:
+    name: Plugins Tests
+    if: inputs.plugin_dirs != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PLUGIN_DIRS: ${{ inputs.plugin_dirs }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: go
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: libs/plugin-sdk-go/go.mod
+          cache-key: plugins-test
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - uses: ./.github/actions/install-node-modules
+
+      - uses: ./.github/actions/build-ui
+
+      - name: Build and test the plugins
+        run: |
+          make plugins_build SKIP_UI_BUILD=1 PLUGIN_DIRS="$PLUGIN_DIRS"
+          make plugins_test SKIP_UI_BUILD=1 PLUGIN_DIRS="$PLUGIN_DIRS"
+
+      - if: ${{ !cancelled() }}
+        uses: ./.github/actions/save-go-cache
+        with:
+          cache-key: ${{ steps.go.outputs.cache-key }}
+
+  # The stories of every plugin, drawn in both engines the window is drawn in.
+  plugin-stories:
+    name: Plugin Stories
+    if: inputs.plugin_stories
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - uses: ./.github/actions/install-node-modules
+
+      - uses: ./.github/actions/setup-playwright
+
+      - uses: ./.github/actions/build-ui
+
+      - name: Run plugin stories
+        run: make plugins_stories SKIP_UI_BUILD=1
+
+  # A plugin that changed carries a higher <year>.<month>.<build> version than on the base, the
+  # first parent of the merge commit.
+  plugin-versions:
+    name: Plugin Versions
+    if: github.event_name == 'pull_request' && inputs.plugin_versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+
+      - uses: ./.github/actions/install-lock-packages
+        with:
+          packages: "@bufbuild/protobuf"
+
+      - name: Test the check and the plugin index build
+        run: node --test tools/plugin-versions/check.test.mjs tools/build-plugin-index/build.test.mjs
+
+      - name: Check the versions of changed plugins
+        run: node tools/plugin-versions/check.mjs --base HEAD^1

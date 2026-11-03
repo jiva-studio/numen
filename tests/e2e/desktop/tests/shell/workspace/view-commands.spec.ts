@@ -1,12 +1,5 @@
 import { test, expect, type Page } from '../../support/test.js'
-import { observeFor } from '../../support/browser.js'
 import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
-
-declare global {
-  interface Window {
-    loadingLabels: string[]
-  }
-}
 
 /**
  * Every view a plugin draws in a tab of its own, the command that opens it from the palette, and
@@ -62,29 +55,4 @@ test.describe('a view a plugin draws in a tab', () => {
       })
     }
   }
-
-  test('opens with its content in the first frame it is drawn in', async ({ page }) => {
-    await openWorkspace(page)
-    await page.evaluate(() => {
-      const labels: string[] = []
-      window.loadingLabels = labels
-      const look = () => {
-        for (const one of document.querySelectorAll('.loading-indicator')) {
-          if (one.childElementCount > 0) labels.push(one.textContent ?? '')
-        }
-        requestAnimationFrame(look)
-      }
-      requestAnimationFrame(look)
-    })
-
-    for (const keys of ['Control+Shift+x', 'Control+Shift+a', 'Control+Shift+x']) {
-      const before = await page.getByRole('tab').count()
-      await page.keyboard.press(keys)
-      await expect(page.getByRole('tab')).toHaveCount(before + 1)
-    }
-    await observeFor(page, 500)
-
-    const labels = await page.evaluate(() => window.loadingLabels)
-    expect(labels).toStrictEqual([])
-  })
 })

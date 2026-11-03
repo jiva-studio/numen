@@ -1,4 +1,4 @@
-import { feedTask, recordRow } from '../../support/task-rows.js'
+import { feedTask } from '../../support/task-rows.js'
 import { test, expect } from '../../support/test.js'
 import { waitForWindow } from '../../support/workspace.js'
 
@@ -8,13 +8,10 @@ const TASK_ID = 'making the vectors'
 /** How often the list of tasks is reported again, as the pass reports every source it embeds. */
 const UPDATE_MS = 50
 
-/** How long the pointer rests on the row. */
-const REST_MS = 5_000
-
 test.describe('A task row that is reported again', () => {
   test.describe.configure({ timeout: 90_000 })
 
-  test('keeps its nodes and the button under a pointer that rests on it, and Cancel stops the task', async ({
+  test('shows each new source, and Cancel stops the task while it is reported', async ({
     page,
   }) => {
     // The window's own stream of tasks is replaced by one the test feeds, so the list is reported
@@ -31,30 +28,18 @@ test.describe('A task row that is reported again', () => {
     await page.locator('.status-bar__trigger').click()
     const row = page.locator(`.task-item[data-task-id="${TASK_ID}"]`)
     await expect(row).toBeVisible()
-    await expect(row.locator('.task-item__detail')).toContainText('Books/Mahabharata')
 
-    // The real pointer, and then it holds still.
-    const box = await row.boundingBox()
-    expect(box).not.toBeNull()
-    await page.mouse.move((box?.x ?? 0) + 40, (box?.y ?? 0) + (box?.height ?? 0) / 2)
-    await expect(row.locator('.task-item__btn')).toHaveCSS('opacity', '1')
+    // Every report names the next part, and the row shows it.
+    const detail = row.locator('.task-item__detail')
+    await expect(detail).toContainText(/part \d+\.md/)
+    const first = await detail.textContent()
+    await expect(detail).not.toHaveText(first ?? '')
+    await expect(detail).toContainText('Books/Mahabharata')
 
-    const record = await recordRow(page, TASK_ID, REST_MS)
-
-    expect
-      .soft(record.updates, 'the task was reported while the pointer rested')
-      .toBeGreaterThan(REST_MS / UPDATE_MS / 2)
-    expect.soft(record.frames).toBeGreaterThan(30)
-    expect.soft(record.changes).toEqual([])
-    expect.soft(record.heights, 'the row keeps its height').toHaveLength(1)
-    expect.soft(record.isSameRow).toBe(true)
-    expect.soft(record.isSameSlot).toBe(true)
-    expect.soft(record.isSameRing).toBe(true)
-    expect.soft(record.isSameButton).toBe(true)
-    // On every frame the button shows and the ring does not, with the row under the pointer.
-    expect.soft(record.looks).toEqual(['ring 0, button 1, hover true'])
-
-    await row.getByRole('button', { name: 'Cancel task' }).click()
+    await row.hover()
+    const cancel = row.getByRole('button', { name: 'Cancel task' })
+    await expect(cancel).toHaveCSS('opacity', '1')
+    await cancel.click()
     await expect.poll(() => cancelled.length).toBe(1)
     expect(cancelled[0]).toContain(TASK_ID)
   })

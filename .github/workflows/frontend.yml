@@ -1,0 +1,163 @@
+name: Frontend
+
+# The desktop windows, the shared components and the mobile screens, called by ci.yml with
+# the areas a change touches.
+on:
+  workflow_call:
+    inputs:
+      desktop_fe:
+        type: boolean
+        required: true
+      ui:
+        type: boolean
+        required: true
+      mobile_fe:
+        type: boolean
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Desktop Frontend
+    if: inputs.desktop_fe
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - uses: ./.github/actions/install-node-modules
+
+      - uses: ./.github/actions/setup-playwright
+
+      # A window reaches the components and the shell through their build.
+      - uses: ./.github/actions/build-ui
+        with:
+          shell: "true"
+
+      - name: Verify story references
+        run: npm run check --prefix tools/ci-stories
+
+      # The plugin SDK has an ESLint configuration and no lint script.
+      - name: Lint editor, flashcards and libraries
+        run: |
+          npm run lint --prefix apps/desktop/editor
+          npm run lint --prefix apps/desktop/flashcards
+          npm run lint --prefix libs/ui/shell
+          npm run lint --prefix libs/core-client
+          npm run lint --prefix libs/plugin-host-ts
+          npm run lint --prefix libs/plugin-manager
+          npm run lint --prefix tests/e2e/desktop
+          (cd libs/plugin-sdk-ts && ../../node_modules/.bin/eslint .)
+
+      - name: Typecheck screens and SDK
+        run: |
+          npm run typecheck --prefix libs/plugin-sdk-ts
+          npm run typecheck --prefix libs/core-client
+          npm run typecheck --prefix libs/ui/shell
+          npm run typecheck --prefix libs/plugin-host-ts
+          npm run typecheck --prefix libs/plugin-manager
+          npm run typecheck --prefix apps/desktop/editor
+          npm run typecheck --prefix apps/desktop/flashcards
+
+      - name: Run frontend tests
+        run: |
+          npm test --prefix libs/plugin-sdk-ts
+          npm test --prefix libs/core-client
+          npm run test:unit --prefix libs/ui/shell -- --coverage
+          npm run test:stories --prefix libs/ui/shell
+          npm test --prefix libs/plugin-host-ts
+          npm test --prefix libs/plugin-manager
+          npm run test:unit --prefix apps/desktop/editor -- --coverage
+          npm run test:stories --prefix apps/desktop/editor
+          npm run test:unit --prefix apps/desktop/flashcards -- --coverage
+  ui:
+    name: UI Components
+    if: inputs.ui
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - uses: ./.github/actions/install-node-modules
+
+      - name: Lint components
+        run: npm run lint --prefix libs/ui/core
+
+      - uses: ./.github/actions/build-ui
+
+      - name: Run unit tests
+        run: npm run test:unit --prefix libs/ui/core -- --coverage
+
+  # A story runs in a real browser, and several are the only test of what a browser decides: what
+  # an overflow clips, where a scroll lands, whether a key reaches an SVG group. The window is WebKit
+  # on a mac and on Linux and Chromium on Windows, so both run.
+  ui-stories:
+    name: UI Stories
+    if: inputs.ui
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - uses: ./.github/actions/install-node-modules
+
+      - uses: ./.github/actions/setup-playwright
+
+      - name: Run story tests
+        run: npm run test:stories --prefix libs/ui/core
+
+  mobile-frontend:
+    name: Mobile Frontend
+    if: inputs.mobile_fe
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - uses: ./.github/actions/install-node-modules
+
+      # A screen reaches the components through their build.
+      - uses: ./.github/actions/build-ui
+
+      - name: Typecheck screens
+        run: npm run typecheck --prefix apps/mobile
+
+      - name: Lint screens
+        run: npm run lint --prefix apps/mobile
+
+      - name: Run screen tests
+        run: npm test --prefix apps/mobile

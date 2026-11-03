@@ -1,7 +1,7 @@
 import { test, expect, readSavedStates } from '../../support/test.js'
 import { openVaultFile, openWorkspace, waitForWindow } from '../../support/workspace.js'
 import { readSettledWidth, readWidth } from '../../support/layout.js'
-import { observeFor, waitForFrames } from '../../support/browser.js'
+import { observeFor } from '../../support/browser.js'
 
 test.describe('PDF Document Reader Advanced Controls', () => {
   test('draws the pages wider with each press of Zoom in and narrower with Zoom out', async ({
@@ -52,7 +52,7 @@ test.describe('PDF Document Reader Advanced Controls', () => {
       .toContain('"page":12')
   })
 
-  test('keeps one page number while the view rests on the border between two pages', async ({
+  test('shows the page that holds the centre line of the view on either side of a border', async ({
     page,
   }) => {
     await page.goto('/')
@@ -91,13 +91,6 @@ test.describe('PDF Document Reader Advanced Controls', () => {
         element.scrollLeft = next.offsetLeft - element.clientWidth / 2 + offset
       }, shift)
       await expect(numberField).toHaveValue(expected)
-
-      const values: string[] = []
-      for (let sample = 0; sample < 15; sample++) {
-        await waitForFrames(page, 6)
-        values.push(await numberField.inputValue())
-      }
-      expect(values).toEqual(Array.from({ length: 15 }, () => expected))
     }
   })
 

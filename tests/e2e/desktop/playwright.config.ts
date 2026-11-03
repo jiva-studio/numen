@@ -1,18 +1,20 @@
 import { fileURLToPath } from 'node:url'
 import { defineConfig, devices } from 'playwright/test'
-import { planShards } from './scripts/shards.mjs'
+import { planShards, readPathsFromEnv } from './scripts/shards.mjs'
 
 const port = process.env.NUMEN_TEST_PORT ?? '3456'
 const baseURL = `https://127.0.0.1:${port}`
 
 // `scripts/run-offline.mjs` runs one process for each engine and shard, each against the server of
 // its own port. A shard runs the spec files that `scripts/shards.mjs` deals to it; a run without
-// NUMEN_E2E_SHARD runs every file against one server.
+// NUMEN_E2E_SHARD runs every file against one server. NUMEN_E2E_PATHS limits the run, and its
+// shards, to the spec files of the folders and files it names (`tests/shell/ tests/plugins/notes/`).
 const readShardFiles = (): string[] | undefined => {
   const named = process.env.NUMEN_E2E_SHARD
-  if (!named) return undefined
-  const [index, count] = named.split('/').map(Number)
-  const shard = planShards(count)[index]
+  const paths = readPathsFromEnv()
+  if (!named && !paths) return undefined
+  const [index, count] = named ? named.split('/').map(Number) : [0, 1]
+  const shard = planShards(count, paths)[index]
   if (!shard) throw new Error(`NUMEN_E2E_SHARD=${named} names no shard`)
   return shard.map((file) => fileURLToPath(new URL(file, import.meta.url)))
 }
@@ -37,6 +39,9 @@ export default defineConfig({
     ...(process.env.NUMEN_E2E_JSON
       ? [['json', { outputFile: process.env.NUMEN_E2E_JSON }] as const]
       : []),
+    // A CI shard writes a blob report to PLAYWRIGHT_BLOB_OUTPUT_DIR, named by
+    // PLAYWRIGHT_BLOB_OUTPUT_NAME; a final job merges them into one HTML report.
+    ...(process.env.PLAYWRIGHT_BLOB_OUTPUT_DIR ? [['blob'] as const] : []),
   ],
   use: {
     baseURL,

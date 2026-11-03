@@ -137,14 +137,21 @@ test.describe('Wikilink in the editor', () => {
   }) => {
     const notePath = await createNote(request, createUniqueTitle('Link design'))
     try {
+      await writeNote(request, notePath, 'See\nnext line')
       await openWorkspace(page)
       const text = await openNote(page, notePath)
+      await expect(text.locator('.cm-line:nth-child(2)')).toHaveText('next line')
 
-      await typeAtEnd(page, text, '[[Entropy]]')
-      await page.keyboard.press('Escape')
-      await page.keyboard.type('\nnext line')
+      // The completion list of `[[Entr` answers from the vault index and can open after the
+      // last key: the caret leaves the line with a key the list does not take.
+      await text.click()
+      await page.keyboard.press('ControlOrMeta+Home')
+      await page.keyboard.press('End')
+      await page.keyboard.type(' [[Entropy]]')
+      await page.keyboard.press('ControlOrMeta+End')
 
-      await expect(text.locator('.cm-line').first()).toHaveText('Entropy')
+      await expect(text.locator('.cm-line').first()).toHaveText('See Entropy')
+      await expect(text.locator('.cm-line:nth-child(2)')).toHaveText('next line')
       await expect(text.locator('.cm-wikilink')).toHaveText('Entropy')
       await expect(text.locator('.cm-wikilink-mark')).toHaveCount(0)
 

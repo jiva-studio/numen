@@ -1,67 +1,27 @@
 name: Docs
 
+# The manual, called by ci.yml: built when its sources change, deployed from a push to main
+# that changes them.
 on:
-  pull_request:
-    paths:
-      - "apps/docs/**"
-      # What the manual writes itself from.
-      - "apps/desktop/editor/src/features/command-palette/lib/**"
-      - "apps/desktop/editor/src/features/command-palette/model/palette/shortcuts.ts"
-      - "apps/desktop/editor/src/shared/words.ts"
-      - "apps/desktop/editor/src/app/commands/fileMenuCommands.ts"
-      - "apps/desktop/editor/src/app/window/useSettings.ts"
-      - "plugins/*/manifest.json"
-      - "plugins/*/frontend/index.ts"
-      - "plugins/*/frontend/**/words.ts"
-      - "tools/ci-commands/**"
-      - "apps/desktop/cmd/numen/main.go"
-      - "libs/core/adapter/cli/cli.go"
-      - "libs/core/container/settings.go"
-      - "libs/core/container/indexing.go"
-      - "libs/core/adapter/settings/**"
-      - "libs/core/usecase/completion/**"
-      - ".github/workflows/docs.yml"
-  push:
-    branches: [main]
-    paths:
-      - "apps/docs/**"
-      # What the manual writes itself from.
-      - "apps/desktop/editor/src/features/command-palette/lib/**"
-      - "apps/desktop/editor/src/features/command-palette/model/palette/shortcuts.ts"
-      - "apps/desktop/editor/src/shared/words.ts"
-      - "apps/desktop/editor/src/app/commands/fileMenuCommands.ts"
-      - "apps/desktop/editor/src/app/window/useSettings.ts"
-      - "plugins/*/manifest.json"
-      - "plugins/*/frontend/index.ts"
-      - "plugins/*/frontend/**/words.ts"
-      - "tools/ci-commands/**"
-      - "apps/desktop/cmd/numen/main.go"
-      - "libs/core/adapter/cli/cli.go"
-      - "libs/core/container/settings.go"
-      - "libs/core/container/indexing.go"
-      - "libs/core/adapter/settings/**"
-      - "libs/core/usecase/completion/**"
-      - ".github/workflows/docs.yml"
+  workflow_call:
+    inputs:
+      docs:
+        type: boolean
+        required: true
+      docs_deploy:
+        type: boolean
+        required: true
 
-# Two deploys share one storage zone, and the second takes down what the first
-# has not finished putting up. A deploy that is overtaken is stopped: every
-# deploy writes the whole manual and then removes what it did not write, so the
-# one that follows leaves the zone whole.
-concurrency:
-  group: docs-${{ github.ref }}
-  cancel-in-progress: true
-
-# The deploy goes to storage with a key of its own; nothing here writes to the
-# repository.
 permissions:
   contents: read
 
 jobs:
-  # The manual is markdown and carries no framework, so what there is to check
-  # is that the site builds and that the keyboard page still says what the
-  # window does.
-  build:
-    name: Build
+
+  # The manual is markdown and carries no framework: the site builds, and the keyboard page still
+  # says what the window does. The page references are the job above.
+  docs:
+    name: Docs
+    if: inputs.docs
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -75,14 +35,10 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
-      - name: Install dependencies
-        uses: ./.github/actions/install-node-modules
+      - uses: ./.github/actions/install-node-modules
 
       - name: Check plugin command reader
         run: npm run check --prefix tools/ci-commands
-
-      - name: Verify manual references
-        run: npm run manual:check --prefix apps/docs
 
       - name: Typecheck documentation site
         run: npm run typecheck --prefix apps/docs
@@ -94,19 +50,23 @@ jobs:
         run: npm run build --prefix apps/docs
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: inputs.docs_deploy
         with:
           name: docs
           path: apps/docs/dist
           if-no-files-found: error
 
-  # What is on the default branch is what is on the web. Storage is never
-  # readable without its password: the pull zone in front of it is what serves
-  # the manual, and the manual has a storage zone of its own.
-  deploy:
-    name: Deploy
+  # What is on main is what is on the web. Two deploys share one storage zone, and the second takes
+  # down what the first has not finished putting up, so an overtaken deploy is cancelled: every
+  # deploy writes the whole manual and then removes what it did not write.
+  docs-deploy:
+    name: Docs Deploy
+    needs: [docs]
+    if: inputs.docs_deploy
     environment: production
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: build
+    concurrency:
+      group: docs-deploy
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

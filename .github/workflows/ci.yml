@@ -1,0 +1,149 @@
+name: CI
+
+# The checks of a pull request and of a push to main. `changes` finds the areas a pull request
+# touches from .github/filters.yml; a push and a manual run take every area. Each called workflow
+# runs the jobs of its areas. The CI job is the one required check.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  # Windows and macOS runners cost two and ten times a Linux one, so a manual run asks for them.
+  workflow_dispatch:
+    inputs:
+      windows:
+        description: Windows
+        type: boolean
+        default: false
+      macos:
+        description: macOS
+        type: boolean
+        default: false
+
+# A pull request keeps only its newest run. Each push to main has a group of its own: a later push
+# neither cancels it nor replaces it while it waits.
+concurrency:
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      areas: ${{ steps.areas.outputs.areas }}
+      plugin_dirs: ${{ steps.areas.outputs.plugin_dirs }}
+      e2e: ${{ steps.areas.outputs.e2e }}
+      platforms: ${{ steps.platforms.outputs.matrix }}
+    steps:
+      # The filters, the plugin manifests and the end-to-end selection; a pull request's changed
+      # files come from the API.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/
+            /plugins/*/manifest.json
+            /tests/e2e/desktop/
+          persist-credentials: false
+
+      - id: filter
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: .github/filters.yml
+          predicate-quantifier: some-with-excludes
+          list-files: json
+
+      - id: areas
+        env:
+          EVENT: ${{ github.event_name }}
+          FILTERS: ${{ toJSON(steps.filter.outputs) }}
+        run: .github/scripts/areas.sh | tee -a "$GITHUB_OUTPUT"
+
+      - id: platforms
+        env:
+          EVENT: ${{ github.event_name }}
+          ASKED_WINDOWS: ${{ inputs.windows }}
+          ASKED_MACOS: ${{ inputs.macos }}
+          PULL: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
+        run: .github/scripts/platforms.sh | tee -a "$GITHUB_OUTPUT"
+
+  checks:
+    needs: [changes]
+    uses: ./.github/workflows/checks.yml
+    secrets: inherit
+    with:
+      workflows: ${{ fromJSON(needs.changes.outputs.areas).workflows }}
+      gradle: ${{ fromJSON(needs.changes.outputs.areas).gradle }}
+      staging: ${{ fromJSON(needs.changes.outputs.areas).staging }}
+      mutation_tool: ${{ fromJSON(needs.changes.outputs.areas).mutation_tool }}
+      narrative: ${{ fromJSON(needs.changes.outputs.areas).narrative }}
+      code: ${{ fromJSON(needs.changes.outputs.areas).code }}
+      references: ${{ fromJSON(needs.changes.outputs.areas).references }}
+
+  go:
+    needs: [changes]
+    uses: ./.github/workflows/go.yml
+    with:
+      core: ${{ fromJSON(needs.changes.outputs.areas).core }}
+      protocol: ${{ fromJSON(needs.changes.outputs.areas).protocol }}
+      sdk_go: ${{ fromJSON(needs.changes.outputs.areas).sdk_go }}
+      desktop: ${{ fromJSON(needs.changes.outputs.areas).desktop }}
+      mobile: ${{ fromJSON(needs.changes.outputs.areas).mobile }}
+      platforms: ${{ needs.changes.outputs.platforms }}
+
+  frontend:
+    needs: [changes]
+    uses: ./.github/workflows/frontend.yml
+    with:
+      desktop_fe: ${{ fromJSON(needs.changes.outputs.areas).desktop_fe }}
+      ui: ${{ fromJSON(needs.changes.outputs.areas).ui }}
+      mobile_fe: ${{ fromJSON(needs.changes.outputs.areas).mobile_fe }}
+
+  plugins:
+    needs: [changes]
+    uses: ./.github/workflows/plugins.yml
+    with:
+      plugin_dirs: ${{ needs.changes.outputs.plugin_dirs }}
+      plugin_stories: ${{ fromJSON(needs.changes.outputs.areas).plugin_stories }}
+      plugin_versions: ${{ fromJSON(needs.changes.outputs.areas).plugin_versions }}
+
+  docs:
+    needs: [changes]
+    uses: ./.github/workflows/docs.yml
+    secrets: inherit
+    with:
+      docs: ${{ fromJSON(needs.changes.outputs.areas).docs }}
+      docs_deploy: ${{ fromJSON(needs.changes.outputs.areas).docs_deploy }}
+
+  e2e:
+    name: End-to-End
+    needs: [changes]
+    if: needs.changes.outputs.e2e != 'none'
+    uses: ./.github/workflows/desktop-e2e.yml
+    with:
+      scope: ${{ needs.changes.outputs.e2e }}
+
+  # Fails when a job failed or was cancelled, and when the areas were not found: every other job
+  # is then skipped.
+  ci:
+    name: CI
+    if: ${{ !cancelled() }}
+    needs: [changes, checks, go, frontend, plugins, docs, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          jq -r 'to_entries[] | "\(.value.result)\t\(.key)"' <<< "$RESULTS" | sort
+          jq -e '.changes.result == "success" and all(.[]; .result != "failure" and .result != "cancelled")' <<< "$RESULTS" > /dev/null

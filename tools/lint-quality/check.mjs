@@ -2,8 +2,9 @@
 /**
  * Numen Code Quality & Metrics Validator (@numen/lint-quality)
  *
- * Validates duplication, cognitive & cyclomatic complexity, dead code,
- * and interface sizing across the monorepo.
+ * Validates duplication, unused TypeScript and Vue code (knip) and directory sizes across the
+ * monorepo. Go complexity, interface size and unused parameters are rules of .golangci-structure.yml,
+ * and ESLint and golangci-lint run in each module's own lint target.
  *
  * Usage:
  *   node check.mjs [options]
@@ -17,11 +18,7 @@ import path from "node:path";
 import process from "node:process";
 
 import { runDuplicationCheck } from "./checks/duplication.mjs";
-import { runComplexityCheck } from "./checks/complexity.mjs";
-import { runDeadcodeCheck } from "./checks/deadcode.mjs";
-import { runInterfacesCheck } from "./checks/interfaces.mjs";
-import { runGolintCheck } from "./checks/golint.mjs";
-import { runFrontendCheck } from "./checks/frontend.mjs";
+import { runKnipCheck } from "./checks/knip.mjs";
 import { runStructureCheck } from "./checks/structure.mjs";
 
 const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
@@ -34,29 +31,9 @@ const ALL_CHECKS = [
     run: (opts) => runDuplicationCheck({ repoRoot: REPO_ROOT, ...opts }),
   },
   {
-    id: "complexity",
-    name: "Cyclomatic & Cognitive Complexity (Go)",
-    run: (opts) => runComplexityCheck({ repoRoot: REPO_ROOT, ...opts }),
-  },
-  {
-    id: "deadcode",
-    name: "Dead Code & Unused Symbols (knip & unparam)",
-    run: (opts) => runDeadcodeCheck({ repoRoot: REPO_ROOT, ...opts }),
-  },
-  {
-    id: "interfaces",
-    name: "Interface Segregation / Bloat (interfacebloat)",
-    run: (opts) => runInterfacesCheck({ repoRoot: REPO_ROOT, ...opts }),
-  },
-  {
-    id: "golint",
-    name: "Go Lint (golangci-lint, each module's own configuration)",
-    run: (opts) => runGolintCheck({ repoRoot: REPO_ROOT, ...opts }),
-  },
-  {
-    id: "frontend",
-    name: "Frontend Conventions & Quality (ESLint)",
-    run: (opts) => runFrontendCheck({ repoRoot: REPO_ROOT, ...opts }),
+    id: "knip",
+    name: "Unused Files, Dependencies and Exports (knip)",
+    run: (opts) => runKnipCheck({ repoRoot: REPO_ROOT, ...opts }),
   },
   {
     id: "structure",
@@ -70,7 +47,7 @@ function printHelp() {
 Usage: node check.mjs [options]
 
 Options:
-  --check=<name>       Run specific check(s) by ID (comma-separated: duplication,complexity,deadcode,interfaces,golint,frontend,structure)
+  --check=<name>       Run specific check(s) by ID (comma-separated: duplication,knip,structure)
   --changed-only       Run only checks relevant to modified files against git base
   --warn               Non-blocking mode: report findings with exit code 0
   --strict             Fail on any detected finding (default)
@@ -130,18 +107,11 @@ function resolveChecks(args, changedOnly) {
     }
     const hasGo = changed.some((f) => f.endsWith(".go"));
     const hasTsOrVue = changed.some((f) => f.endsWith(".ts") || f.endsWith(".vue") || f.endsWith(".astro"));
-    const hasLintConfig = changed.some((f) => /(^|\/)(eslint\.config\.m?js|base-eslint\.mjs|tsconfig\.json)$/.test(f));
-    const hasGoLintConfig = changed.some((f) => /(^|\/)\.golangci[^/]*\.ya?ml$/.test(f));
-    const hasUi = changed.some((f) => f.startsWith("libs/ui/core/"));
-    const hasGoCore = changed.some((f) => f.startsWith("libs/core/") && f.endsWith(".go"));
+    const hasPackageManifest = changed.some((f) => /(^|\/)(package\.json|knip\.json)$/.test(f));
 
     targetIds = targetIds.filter((id) => {
       if (id === "duplication") return hasGo || hasTsOrVue;
-      if (id === "complexity") return hasGo;
-      if (id === "deadcode") return hasUi || hasGoCore;
-      if (id === "interfaces") return hasGo;
-      if (id === "golint") return hasGo || hasGoLintConfig;
-      if (id === "frontend") return hasTsOrVue || hasLintConfig;
+      if (id === "knip") return hasTsOrVue || hasPackageManifest;
       if (id === "structure") return hasGo || hasTsOrVue;
       return true;
     });

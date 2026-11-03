@@ -1,6 +1,5 @@
 # Structure rules for production code: complexity, nesting depth, parameter count,
-# function size, enum switches
-# and struct literals.
+# unused parameters and results, function size, enum switches and struct literals.
 #
 # This file is the second of two Go lint configurations; both always run together.
 # It sets `run.tests: false` because these rules do not fit test code (long table
@@ -39,6 +38,7 @@ linters:
     - goconst
     - containedctx
     - revive
+    - unparam
 
   settings:
     maintidx:

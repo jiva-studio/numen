@@ -562,9 +562,14 @@ func computeHash(s string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// exec runs a named statement and wraps an error with the statement name.
+// exec runs a named statement and wraps an error with the statement name. A
+// statement interrupted by a cancelled context can fail as "sql: statement is
+// closed", so the cancellation is reported instead.
 func exec(ctx context.Context, tx *sqlwrite.Transaction, name string, args ...any) error {
 	if _, err := tx.ExecContext(ctx, getStatement(name), args...); err != nil {
+		if ctx.Err() != nil {
+			return fmt.Errorf("%s: %w", name, ctx.Err())
+		}
 		return fmt.Errorf("%s: %w", name, err)
 	}
 	return nil
