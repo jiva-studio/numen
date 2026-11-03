@@ -124,35 +124,15 @@ func TestAnEditReachesAListener(t *testing.T) {
 		"Other.md": "---\ntitle: Other\n---\n\n# Other\n",
 	})
 
-	// Its own context, closed before the server is: a stream is an open request,
-	// and a test server waits for those.
-	listening, hangUp := context.WithCancel(t.Context())
-	defer hangUp()
-
-	changes, err := client.WatchVaultChanges(listening, connect.NewRequest(&v1.WatchVaultChangesRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testsupport.Close(t, changes)
+	changes := openChanges(t, client)
 
 	// The first message reports that the stream is open and that nothing has
 	// changed.
-	if !changes.Receive() {
-		t.Fatalf("the stream never opened: %v", changes.Err())
-	}
 	if paths := changes.Msg().GetPaths(); len(paths) != 0 {
 		t.Fatalf("the stream opened by reporting %v", paths)
 	}
 
-	reported := make(chan []string, 1)
-	go func() {
-		for changes.Receive() {
-			if paths := changes.Msg().GetPaths(); len(paths) > 0 {
-				reported <- paths
-				return
-			}
-		}
-	}()
+	reported := getReportedPaths(changes)
 
 	if err := os.WriteFile(filepath.Join(root, "Note.md"),
 		[]byte("---\ntitle: Renamed\n---\n\n# Renamed\n"), 0o644); err != nil {
@@ -186,28 +166,9 @@ func TestABookDroppedInReachesAListener(t *testing.T) {
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
 	})
 
-	listening, hangUp := context.WithCancel(t.Context())
-	defer hangUp()
+	changes := openChanges(t, client)
 
-	changes, err := client.WatchVaultChanges(listening, connect.NewRequest(&v1.WatchVaultChangesRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testsupport.Close(t, changes)
-
-	if !changes.Receive() {
-		t.Fatalf("the stream never opened: %v", changes.Err())
-	}
-
-	reported := make(chan []string, 1)
-	go func() {
-		for changes.Receive() {
-			if paths := changes.Msg().GetPaths(); len(paths) > 0 {
-				reported <- paths
-				return
-			}
-		}
-	}()
+	reported := getReportedPaths(changes)
 
 	testsupport.WriteBook(t, root, "library/A Book.epub")
 
@@ -229,6 +190,42 @@ type questions struct {
 	numenv1connect.FileServiceClient
 	numenv1connect.NoteServiceClient
 	numenv1connect.SearchServiceClient
+}
+
+// openChanges subscribes to the vault changes and receives the message that
+// opens the stream. The stream has its own context, cancelled before the
+// server closes: a stream is an open request, and a test server waits for those.
+func openChanges(t *testing.T, client numenv1connect.VaultServiceClient) *connect.ServerStreamForClient[v1.WatchVaultChangesResponse] {
+	t.Helper()
+	listening, hangUp := context.WithCancel(t.Context())
+	changes, err := client.WatchVaultChanges(listening, connect.NewRequest(&v1.WatchVaultChangesRequest{}))
+	if err != nil {
+		hangUp()
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		testsupport.Close(t, changes)
+		hangUp()
+	})
+	if !changes.Receive() {
+		t.Fatalf("the stream never opened: %v", changes.Err())
+	}
+	return changes
+}
+
+// getReportedPaths returns a channel that receives the first non-empty set of
+// paths the stream reports.
+func getReportedPaths(changes *connect.ServerStreamForClient[v1.WatchVaultChangesResponse]) <-chan []string {
+	reported := make(chan []string, 1)
+	go func() {
+		for changes.Receive() {
+			if paths := changes.Msg().GetPaths(); len(paths) > 0 {
+				reported <- paths
+				return
+			}
+		}
+	}()
+	return reported
 }
 
 // newQuestionsClient is that client against a server those services are mounted on.
