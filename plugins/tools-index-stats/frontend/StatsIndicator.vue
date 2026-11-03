@@ -21,7 +21,8 @@ const props = defineProps<{
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
 const root = useTemplateRef<HTMLElement>('root')
-const dismissal = useMenuDismissal(root, onClose)
+// The popover is placed against the item by CSS and follows it through a resize.
+const dismissal = useMenuDismissal(root, onClose, isResize)
 
 const figure = computed(() => {
   if (props.stats) return formatVectors(props.stats, props.locale)
@@ -43,6 +44,10 @@ function onToggle() {
 
 function onClose() {
   isOpen.value = false
+}
+
+function isResize(event: Event): boolean {
+  return event.type === 'resize'
 }
 </script>
 

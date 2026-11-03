@@ -1,6 +1,6 @@
 {
   "name": "@numen/tools.index.stats",
-  "version": "2026.11.2",
+  "version": "2026.11.3",
   "private": true,
   "type": "module",
   "description": "Index stats plugin frontend for Numen",

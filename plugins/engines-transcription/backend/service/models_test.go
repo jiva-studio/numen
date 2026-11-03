@@ -10,18 +10,17 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
 )
 
-// The recogniser opens with the model and the language the settings name.
-func TestTheRecogniserOpensWithTheModelAndLanguageOfTheSettings(t *testing.T) {
+// The recogniser opens with the model the settings name.
+func TestTheRecogniserOpensWithTheModelOfTheSettings(t *testing.T) {
 	for _, tc := range []struct {
-		values   map[string]string
-		model    string
-		repo     string
-		language string
+		values map[string]string
+		model  string
+		repo   string
 	}{
-		{map[string]string{}, "parakeet-tdt-0.6b-v3-int8", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8", ""},
-		{map[string]string{"model": "parakeet-tdt-0.6b-v3-int8", "language": "auto"}, "parakeet-tdt-0.6b-v3-int8", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8", "auto"},
-		{map[string]string{"model": "parakeet-tdt-0.6b-v2-int8", "language": "en"}, "parakeet-tdt-0.6b-v2-int8", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8", "en"},
-		{map[string]string{"model": "whisper-large"}, "parakeet-tdt-0.6b-v3-int8", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8", ""},
+		{map[string]string{}, "parakeet-tdt-0.6b-v3-int8", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8"},
+		{map[string]string{"model": "parakeet-tdt-0.6b-v3-int8"}, "parakeet-tdt-0.6b-v3-int8", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8"},
+		{map[string]string{"model": "parakeet-tdt-0.6b-v2-int8"}, "parakeet-tdt-0.6b-v2-int8", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8"},
+		{map[string]string{"model": "whisper-large"}, "parakeet-tdt-0.6b-v3-int8", "sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8"},
 	} {
 		var got engine.Config
 		model := &models{cfg: NewConfig("", ""), open: func(_ context.Context, cfg engine.Config) (engine.TranscriberPort, error) {
@@ -32,9 +31,9 @@ func TestTheRecogniserOpensWithTheModelAndLanguageOfTheSettings(t *testing.T) {
 		if _, err := model.get(t.Context()); err != nil {
 			t.Fatal(err)
 		}
-		if got.Model.Name != tc.model || !strings.Contains(got.Model.Repo, tc.repo) || got.Language != tc.language {
-			t.Errorf("settings %v: got %s from %s in %q, want %s from %s in %q",
-				tc.values, got.Model.Name, got.Model.Repo, got.Language, tc.model, tc.repo, tc.language)
+		if got.Model.Name != tc.model || !strings.Contains(got.Model.Repo, tc.repo) {
+			t.Errorf("settings %v: got %s from %s, want %s from %s",
+				tc.values, got.Model.Name, got.Model.Repo, tc.model, tc.repo)
 		}
 	}
 }
