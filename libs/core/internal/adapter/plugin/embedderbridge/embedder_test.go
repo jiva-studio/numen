@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -148,14 +147,7 @@ func TestEmbedderBridge(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cmd := exec.CommandContext(t.Context(), "sleep", "10")
-	if err := cmd.Start(); err != nil {
-		t.Fatalf("start mock proc failed: %v", err)
-	}
-	defer func() {
-		testsupport.Kill(t, cmd)
-		plugintest.ReapProcess(t, cmd.Process)
-	}()
+	cmd := plugintest.StartSleepProcess(t)
 
 	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))

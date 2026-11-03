@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"slices"
@@ -206,14 +205,7 @@ func openTestBridge(t *testing.T, handler numenv1connect.AgentServiceHandler) *A
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	cmd := exec.CommandContext(t.Context(), "sleep", "10")
-	if err := cmd.Start(); err != nil {
-		t.Fatalf("start mock proc failed: %v", err)
-	}
-	t.Cleanup(func() {
-		testsupport.Kill(t, cmd)
-		plugintest.ReapProcess(t, cmd.Process)
-	})
+	cmd := plugintest.StartSleepProcess(t)
 	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
