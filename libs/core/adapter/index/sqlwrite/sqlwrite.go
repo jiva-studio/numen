@@ -37,6 +37,10 @@ func Begin(ctx context.Context, db *sql.DB) (*Transaction, error) {
 		return err
 	})
 	if err != nil {
+		// The driver interrupts a BEGIN whose context ends and reports the interrupt, not the cause.
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, errors.Join(ctxErr, err)
+		}
 		return nil, err
 	}
 	return &Transaction{Tx: tx, ready: map[string]*sql.Stmt{}}, nil

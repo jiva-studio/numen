@@ -147,7 +147,7 @@ func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query
 		// it, and arriving here without one is a mistake in the caller.
 		return nil, fmt.Errorf("a search by words needs a positive limit, got %d", limit)
 	}
-	return q.findPassages(ctx, vaultID, Expression(query, growing), of, limit, lexicalSQL, lexicalKindsSQL)
+	return q.findPassages(ctx, vaultID, Expression(query, growing), of, limit, passageSearch{all: lexicalSQL, kinds: lexicalKindsSQL})
 }
 
 // GetNamedPassages returns the sections of one vault whose names match the
@@ -159,13 +159,19 @@ func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, 
 	if limit <= 0 {
 		return nil, fmt.Errorf("a search by name needs a positive limit, got %d", limit)
 	}
-	return q.findPassages(ctx, vaultID, Expression(query, growing), of, limit, sectionsSQL, sectionsKindsSQL)
+	return q.findPassages(ctx, vaultID, Expression(query, growing), of, limit, passageSearch{all: sectionsSQL, kinds: sectionsKindsSQL})
 }
 
-// findPassages runs the full-text query, or kindsQuery when the search is
-// limited to kinds, and reads the passages it
-// returns. An empty expression matches nothing.
-func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, expression string, of []domain.SourceKind, limit int, query, kindsQuery string) (_ []domain.Passage, err error) {
+// passageSearch is a full-text statement over every source, and its variant
+// limited to sources of some kinds.
+type passageSearch struct {
+	all   string
+	kinds string
+}
+
+// findPassages runs search.all, or search.kinds when the search is limited to
+// kinds, and reads the passages it returns. An empty expression matches nothing.
+func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, expression string, of []domain.SourceKind, limit int, search passageSearch) (_ []domain.Passage, err error) {
 	if expression == "" {
 		return nil, nil
 	}
@@ -179,10 +185,10 @@ func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, expr
 
 	var rows *sql.Rows
 	if len(of) == 0 {
-		rows, err = q.db.QueryContext(ctx, query, expression, vault, limit)
+		rows, err = q.db.QueryContext(ctx, search.all, expression, vault, limit)
 	} else {
 		wanted := formatKinds(of)
-		rows, err = q.db.QueryContext(ctx, kindsQuery, expression, vault, wanted, limit)
+		rows, err = q.db.QueryContext(ctx, search.kinds, expression, vault, wanted, limit)
 	}
 	if err != nil {
 		return nil, err
