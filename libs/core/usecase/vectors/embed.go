@@ -273,6 +273,7 @@ func (u Embed) sendBatches(
 		track.publish(func(*EmbedResult) {})
 		select {
 		case <-ctx.Done():
+			track.withdraw(prep.id)
 			return ctx.Err()
 		case out <- prep:
 		}

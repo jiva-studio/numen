@@ -109,3 +109,10 @@ func (t *tracker) publishNext(source string) {
 		}
 	})
 }
+
+// withdraw takes a batch that was never sent out of the list and reports the
+// sources still in flight, or none when no other batch is waiting.
+func (t *tracker) withdraw(id uint64) {
+	t.leave(id)
+	t.publish(func(res *EmbedResult) { res.CurrentSource = "" })
+}
