@@ -6,6 +6,7 @@ import https from 'node:https'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { getCertificateFile } from './certificate.mjs'
 import { STAND_IN_MODEL, startStandIns } from './stand-ins.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -189,6 +190,7 @@ fs.writeFileSync(
 
 function cleanup() {
   fs.rmSync(vaultPathFile, { force: true })
+  fs.rmSync(certificateFile, { force: true })
   standIns.close()
   try {
     fs.rmSync(tmpVault, { recursive: true, force: true })
@@ -201,7 +203,7 @@ function cleanup() {
 // host and answers every other host 404, so a page a test imports is never fetched from the network.
 const PAGES = new Map([['tidal-mills.numen.test', path.join(fixturesDir, 'article.html')]])
 const pages = http.createServer((req, res) => {
-  const page = PAGES.get(new URL(req.url ?? '/', 'http://' + req.headers.host).hostname)
+  const page = PAGES.get((req.headers.host ?? '').replace(/:\d+$/, ''))
   if (!page) {
     res.writeHead(404).end()
     return
@@ -219,6 +221,10 @@ const pagesPort = pages.address().port
 const vaultPathFile = path.join(os.tmpdir(), `numen-e2e-vault-path-${port}`)
 fs.writeFileSync(vaultPathFile, tmpVault)
 
+// The server writes its certificate here; every https call to it trusts that certificate alone.
+const certificateFile = getCertificateFile(port)
+fs.rmSync(certificateFile, { force: true })
+
 /** How long the first pass over the vault may take before the server counts as failed. */
 const INDEX_LIMIT_MS = 180_000
 
@@ -227,6 +233,10 @@ let stopping = false
 /** Calls the core of the server over https and gives back what it answers, or nothing while it does not. */
 const callCore = (method, body, isStream) =>
   new Promise((resolve) => {
+    if (!fs.existsSync(certificateFile)) {
+      resolve(undefined)
+      return
+    }
     const json = Buffer.from(JSON.stringify(body))
     // A Connect stream is a message in a five-byte envelope: the first message is all that is read.
     const payload = isStream ? Buffer.concat([Buffer.from([0, 0, 0, 0, 0]), json]) : json
@@ -237,7 +247,7 @@ const callCore = (method, body, isStream) =>
         port: Number(port),
         path: `/numen.v1.${method}`,
         method: 'POST',
-        rejectUnauthorized: false,
+        ca: fs.readFileSync(certificateFile),
         headers: { 'Content-Type': isStream ? 'application/connect+json' : 'application/json' },
       },
       (answer) => {
@@ -290,6 +300,7 @@ const child = spawn(
       HOME: testHomeDir,
       NUMEN_MOCK_ML: 'true',
       NUMEN_PLUGINS_PATH: pluginsPath,
+      NUMEN_DEBUG_TLS_CERT: certificateFile,
       HTTP_PROXY: `http://${host}:${pagesPort}`,
       NO_PROXY: host,
     },

@@ -3,8 +3,11 @@
  * The window opens the tabs the core kept, and every test shares the vault, so each one starts
  * from the tabs a new vault opens with.
  */
+import fs from 'node:fs'
 import https from 'node:https'
 import { expect, test as base, type APIRequestContext } from 'playwright/test'
+
+import { getCertificateFile } from '../../scripts/certificate.mjs'
 
 export * from 'playwright/test'
 
@@ -60,7 +63,7 @@ const readTasks = (
         port: Number(origin.port),
         path: '/numen.v1.WindowService/WatchTasks',
         method: 'POST',
-        rejectUnauthorized: false,
+        ca: fs.readFileSync(getCertificateFile(origin.port)),
         headers: { 'Content-Type': 'application/connect+json' },
       },
       (answer) => {
