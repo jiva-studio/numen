@@ -59,11 +59,30 @@ export const checkShards = () => {
 export const getDefaultShardCount = () =>
   Math.max(1, Math.min(4, Math.floor(os.availableParallelism() / 2)))
 
-/** The spec files of each of `count` shards: longest first, each to the shard with the least load. */
-export const planShards = (count) => {
+/** Whether `spec` is one of `paths`: a path ending in `/` names a folder, any other a file. */
+const isSelected = (spec, paths) =>
+  paths.some((one) => (one.endsWith('/') ? spec.startsWith(one) : spec === one))
+
+/** The seconds of the spec files of `paths`, or of every spec file when `paths` is undefined. */
+export const readSelectedDurations = (paths) =>
+  Object.fromEntries(
+    Object.entries(readDurations()).filter(([spec]) => !paths || isSelected(spec, paths)),
+  )
+
+/** The paths NUMEN_E2E_PATHS names, separated by spaces, or undefined when it names none. */
+export const readPathsFromEnv = () => {
+  const paths = (process.env.NUMEN_E2E_PATHS ?? '').split(' ').filter(Boolean)
+  return paths.length > 0 ? paths : undefined
+}
+
+/**
+ * The spec files of each of `count` shards, out of the files of `paths` (every file when it is
+ * undefined): longest first, each to the shard with the least load.
+ */
+export const planShards = (count, paths) => {
   const problems = checkShards()
   if (problems.length > 0) throw new Error(problems.join('\n'))
-  const durations = readDurations()
+  const durations = readSelectedDurations(paths)
   const shards = Array.from({ length: count }, () => ({ load: 0, files: [] }))
   const byLength = Object.entries(durations).sort(([a, x], [b, y]) => y - x || a.localeCompare(b))
   for (const [spec, seconds] of byLength) {
