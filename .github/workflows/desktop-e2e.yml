@@ -96,20 +96,23 @@ jobs:
         with:
           shell: 'true'
 
-      - name: Build modular plugins
-        run: make plugins_build SKIP_UI_BUILD=1
-
-      - name: Build desktop editor
-        run: npm run build --prefix apps/desktop/editor
-
-      - name: Build the flashcards window
-        run: npm run build --prefix apps/desktop/flashcards
-
-      - name: Build debug desktop binaries
+      # The plugins build beside the windows and the binaries, which embed the windows. The log of
+      # the plugins is printed once both are done.
+      - name: Build the plugins, the windows and the debug binaries
         run: |
-          cd apps/desktop
-          go build -tags numen_debug -o numen-debug ./cmd/numen
-          go build -tags numen_debug -o numen-flashcards-debug ./cmd/numen-flashcards
+          make plugins_build SKIP_UI_BUILD=1 > "$RUNNER_TEMP/plugins.log" 2>&1 &
+          plugins=$!
+          npm run build --prefix apps/desktop/editor
+          npm run build --prefix apps/desktop/flashcards
+          (
+            cd apps/desktop
+            go build -tags numen_debug -o numen-debug ./cmd/numen
+            go build -tags numen_debug -o numen-flashcards-debug ./cmd/numen-flashcards
+          )
+          status=0
+          wait "$plugins" || status=$?
+          cat "$RUNNER_TEMP/plugins.log"
+          exit "$status"
 
       # A push to main writes what it built, and every other run only reads it.
       - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
