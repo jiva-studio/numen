@@ -56,10 +56,7 @@ func TestANameResolvesToTheNoteThatAnswersToIt(t *testing.T) {
 		"notes/Entropy.md": "# Entropy\n",
 	})
 
-	c := links(t, db, v, "source.md")
-	if len(c.Links) != 1 {
-		t.Fatalf("got %+v", c.Links)
-	}
+	c := getSingleLink(t, db, v, "source.md")
 	if c.Links[0].To != "notes/Entropy.md" {
 		t.Errorf("resolved to %q", c.Links[0].To)
 	}
@@ -133,10 +130,7 @@ func TestANameCarryingDotsResolvesWholeAndIsABacklink(t *testing.T) {
 		"notes/" + lecture + ".md": "# " + lecture + "\n",
 	})
 
-	c := links(t, db, v, "source.md")
-	if len(c.Links) != 1 {
-		t.Fatalf("got %+v", c.Links)
-	}
+	c := getSingleLink(t, db, v, "source.md")
 	if c.Links[0].To != "notes/"+lecture+".md" {
 		t.Errorf("resolved to %q", c.Links[0].To)
 	}
@@ -153,10 +147,7 @@ func TestALinkToNothingIsDanglingInsteadOfAnError(t *testing.T) {
 		"source.md": "Points at [[Nothing At All]].\n",
 	})
 
-	c := links(t, db, v, "source.md")
-	if len(c.Links) != 1 {
-		t.Fatalf("got %+v", c.Links)
-	}
+	c := getSingleLink(t, db, v, "source.md")
 	if c.Links[0].To != "" {
 		t.Errorf("resolved to %q, want nothing", c.Links[0].To)
 	}
@@ -205,10 +196,7 @@ func TestAnAttachmentIsALinkAndResolvesToNoNote(t *testing.T) {
 		"source.md": "---\nlinks:\n  - to: \"https://example.org/paper\"\n    role: attachment\n---\n\nbody\n",
 	})
 
-	c := links(t, db, v, "source.md")
-	if len(c.Links) != 1 {
-		t.Fatalf("got %+v", c.Links)
-	}
+	c := getSingleLink(t, db, v, "source.md")
 	if c.Links[0].Role != domain.RoleAttachment {
 		t.Errorf("role = %q", c.Links[0].Role)
 	}
@@ -263,10 +251,7 @@ func TestShowLinks_UnconnectedVaultLinkIsNotResolvedOrBroken(t *testing.T) {
 		"source.md": "---\nlinks:\n  - to: \"note://01M02DTC80PABQQW3XS3XWDVHW\"\n    role: jump\n---\n\nbody\n",
 	})
 
-	c := links(t, db, v, "source.md")
-	if len(c.Links) != 1 {
-		t.Fatalf("got %+v", c.Links)
-	}
+	c := getSingleLink(t, db, v, "source.md")
 	if c.Links[0].To != "" || c.Links[0].ToVault != "" {
 		t.Errorf("something resolved: %+v", c.Links[0])
 	}
@@ -444,4 +429,15 @@ func TestShowLinks_LinkQueryFailureIsError(t *testing.T) {
 			t.Errorf("%s: an error came back with %+v", tc.name, got)
 		}
 	}
+}
+
+// getSingleLink returns the links of the note at path and fails unless it has
+// exactly one.
+func getSingleLink(t *testing.T, db *container.Index, v domain.Vault, path string) note.NoteLinks {
+	t.Helper()
+	c := links(t, db, v, path)
+	if len(c.Links) != 1 {
+		t.Fatalf("got %+v", c.Links)
+	}
+	return c
 }

@@ -165,18 +165,7 @@ func TestMovingPreservesLinksSavedByNameAlone(t *testing.T) {
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
 	})
-	before := c.read(t, "Heat.md")
-
-	moved, err := c.move().Execute(t.Context(), c.vault, "Entropy.md", "physics/Entropy.md")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(moved.Repaired) != 0 {
-		t.Errorf("nothing needed repairing: %v", moved.Repaired)
-	}
-	if got := c.read(t, "Heat.md"); got != before {
-		t.Errorf("the note that pointed at it was rewritten\n want %q\n  got %q", before, got)
-	}
+	moveWithoutRepair(t, c, "Entropy.md", "physics/Entropy.md", "Heat.md")
 
 	found := links(t, c.db, c.vault, "Heat.md")
 	if len(found.Links) != 1 || found.Links[0].To != "physics/Entropy.md" {
@@ -192,18 +181,7 @@ func TestMove_RetitledNoteKeepsNameLinksResolving(t *testing.T) {
 		"physics/Old.md": "---\ntitle: Entropy\n---\nA measure of disorder.\n",
 		"Heat.md":        "---\nlinks:\n  - to: Old\n    role: parent\n---\n# Heat\n",
 	})
-	before := c.read(t, "Heat.md")
-
-	moved, err := c.move().Execute(t.Context(), c.vault, "physics/Old.md", "physics/Thermodynamics.md")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(moved.Repaired) != 0 {
-		t.Errorf("the link still reaches the note, so nothing is repaired: %v", moved.Repaired)
-	}
-	if got := c.read(t, "Heat.md"); got != before {
-		t.Errorf("the note that pointed at it was rewritten:\n%s", got)
-	}
+	moveWithoutRepair(t, c, "physics/Old.md", "physics/Thermodynamics.md", "Heat.md")
 
 	found := links(t, c.db, c.vault, "Heat.md")
 	if len(found.Links) != 1 || found.Links[0].To != "physics/Thermodynamics.md" {
@@ -314,18 +292,7 @@ func TestMovingPreservesALinkThatNowMeansAnotherNote(t *testing.T) {
 		"chemistry/Entropy.md": "# Entropy\n",
 		"chemistry/Heat.md":    "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Heat\n",
 	})
-	before := c.read(t, "chemistry/Heat.md")
-
-	moved, err := c.move().Execute(t.Context(), c.vault, "physics/Entropy.md", "archive/Entropy.md")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(moved.Repaired) != 0 {
-		t.Errorf("nothing was broken, so nothing is repaired: %+v", moved.Repaired)
-	}
-	if got := c.read(t, "chemistry/Heat.md"); got != before {
-		t.Errorf("a link that was not broken was rewritten")
-	}
+	moveWithoutRepair(t, c, "physics/Entropy.md", "archive/Entropy.md", "chemistry/Heat.md")
 	if to := links(t, c.db, c.vault, "chemistry/Heat.md").Links[0].To; to != "chemistry/Entropy.md" {
 		t.Errorf("the link reaches %q", to)
 	}
@@ -361,27 +328,12 @@ func TestRemovingInsertsTheNoteInTheTrashAndOutOfTheIndex(t *testing.T) {
 		"Heat.md":    "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
 	})
 
-	removed, err := c.remove().Execute(t.Context(), c.vault, "Entropy.md")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if removed.Trashed != ".trash/Entropy.md" {
-		t.Errorf("want the note kept under its own path, got %q", removed.Trashed)
-	}
-	if len(removed.Dangling) != 1 || removed.Dangling[0] != "Heat.md" {
-		t.Errorf("want the note left pointing at nothing, got %v", removed.Dangling)
-	}
+	removeToTrash(t, c, "Entropy.md", "Heat.md")
 	if _, err := os.Stat(filepath.Join(c.vault.Path, ".trash", "Entropy.md")); err != nil {
 		t.Errorf("the note is not in the trash: %v", err)
 	}
 
-	found, err := c.search().Execute(t.Context(), c.vault, "disorder", search.Parameters{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(found) != 0 {
-		t.Errorf("a removed note is still in the index: %v", found)
-	}
+	checkNoNoteMentions(t, c, "disorder")
 }
 
 func TestRemovingRemadeNoteInsertsItInTrashWithSuffix(t *testing.T) {
@@ -428,29 +380,14 @@ func TestRemovingAFolderConsumesWhatIsBelowItAndNamesTheLinksLeft(t *testing.T) 
 		"Outside.md":         "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Outside\n",
 	})
 
-	removed, err := c.remove().Execute(t.Context(), c.vault, "physics")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if removed.Trashed != ".trash/physics" {
-		t.Errorf("want the folder kept under its own path, got %q", removed.Trashed)
-	}
-	if len(removed.Dangling) != 1 || removed.Dangling[0] != "Outside.md" {
-		t.Errorf("want the note left pointing at nothing, got %v", removed.Dangling)
-	}
+	removeToTrash(t, c, "physics", "Outside.md")
 	for _, path := range []string{"Entropy.md", "Heat.md"} {
 		if _, err := os.Stat(filepath.Join(c.vault.Path, ".trash", "physics", path)); err != nil {
 			t.Errorf("%s is not in the trash: %v", path, err)
 		}
 	}
 
-	found, err := c.search().Execute(t.Context(), c.vault, "disorder", search.Parameters{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(found) != 0 {
-		t.Errorf("a note under the removed folder is still in the index: %v", found)
-	}
+	checkNoNoteMentions(t, c, "disorder")
 }
 
 func TestLinkingWritesTheIdentifierTheNoteDidNotHave(t *testing.T) {
@@ -619,5 +556,50 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Two.") {
 		t.Errorf("the second write did not land:\n%s", body)
+	}
+}
+
+// moveWithoutRepair moves a note and checks that no link needed repairing and
+// that the note at linking was not rewritten.
+func moveWithoutRepair(t *testing.T, c changing, from, to, linking string) {
+	t.Helper()
+	before := c.read(t, linking)
+	moved, err := c.move().Execute(t.Context(), c.vault, from, to)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(moved.Repaired) != 0 {
+		t.Errorf("the links still reach the note, so nothing is repaired: %+v", moved.Repaired)
+	}
+	if got := c.read(t, linking); got != before {
+		t.Errorf("the note that pointed at it was rewritten\n want %q\n  got %q", before, got)
+	}
+}
+
+// removeToTrash removes path and checks that it is kept in the trash under its
+// own path and that the one note left pointing at nothing is dangling.
+func removeToTrash(t *testing.T, c changing, path, dangling string) {
+	t.Helper()
+	removed, err := c.remove().Execute(t.Context(), c.vault, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if removed.Trashed != ".trash/"+path {
+		t.Errorf("want %s kept under its own path, got %q", path, removed.Trashed)
+	}
+	if len(removed.Dangling) != 1 || removed.Dangling[0] != dangling {
+		t.Errorf("want the note left pointing at nothing, got %v", removed.Dangling)
+	}
+}
+
+// checkNoNoteMentions checks that a search for word finds nothing in the index.
+func checkNoNoteMentions(t *testing.T, c changing, word string) {
+	t.Helper()
+	found, err := c.search().Execute(t.Context(), c.vault, word, search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 0 {
+		t.Errorf("a removed note is still in the index: %v", found)
 	}
 }
