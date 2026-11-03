@@ -12,6 +12,19 @@ export function verifyGoStructure() {
   exec("go test -count=1 ./container", path.join(MODULES_DIR, "libs/core"));
 }
 
+/** A verifier that runs golangci-lint in the Go module at `dir`. */
+const createDepguardVerifier = ({ id, module, name, dir }) => ({
+  id,
+  isLint: true,
+  tools: ["golangci-lint"],
+  scope: "libs",
+  module,
+  name,
+  run: () => {
+    exec("golangci-lint run --issues-exit-code 1 ./...", path.join(MODULES_DIR, dir));
+  },
+});
+
 export const CORE_VERIFIERS = [
   {
     id: "go-structure",
@@ -29,37 +42,10 @@ export const CORE_VERIFIERS = [
       exec("go test -count=1 .", path.join(MODULES_DIR, "libs/notes"));
     },
   },
-  {
-    id: "core-depguard",
-    isLint: true,
-    tools: ["golangci-lint"],
-    scope: "libs",
-    module: "core",
-    name: "Core Domain & UseCase Depguard Boundaries (.golangci.yml)",
-    run: () => {
-      exec("golangci-lint run --issues-exit-code 1 ./...", path.join(MODULES_DIR, "libs/core"));
-    },
-  },
-  {
-    id: "notes-depguard",
-    isLint: true,
-    tools: ["golangci-lint"],
-    scope: "libs",
-    module: "notes",
-    name: "Notes Library Depguard Boundaries",
-    run: () => {
-      exec("golangci-lint run --issues-exit-code 1 ./...", path.join(MODULES_DIR, "libs/notes"));
-    },
-  },
-  {
-    id: "sdk-isolation",
-    isLint: true,
-    tools: ["golangci-lint"],
-    scope: "libs",
-    module: "sdk",
-    name: "Plugin SDK Go Isolation (no core or app imports)",
-    run: () => {
-      exec("golangci-lint run --issues-exit-code 1 ./...", path.join(MODULES_DIR, "libs/plugin-sdk-go"));
-    },
-  },
+  createDepguardVerifier({ id: "core-depguard", module: "core", dir: "libs/core",
+    name: "Core Domain & UseCase Depguard Boundaries (.golangci.yml)" }),
+  createDepguardVerifier({ id: "notes-depguard", module: "notes", dir: "libs/notes",
+    name: "Notes Library Depguard Boundaries" }),
+  createDepguardVerifier({ id: "sdk-isolation", module: "sdk", dir: "libs/plugin-sdk-go",
+    name: "Plugin SDK Go Isolation (no core or app imports)" }),
 ];

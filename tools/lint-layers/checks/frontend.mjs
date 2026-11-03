@@ -24,6 +24,18 @@ export function verifyAllTsPackagesHaveEslint() {
   failOnFindings("TypeScript package missing eslint.config.js", findTsPackagesWithoutEslint(dirs));
 }
 
+/** A verifier that runs `npm run lint` in the package at `dir`. */
+const createLintVerifier = ({ id, scope, module, name, dir }) => ({
+  id,
+  isLint: true,
+  scope,
+  module,
+  name,
+  run: () => {
+    exec("npm run lint", path.join(MODULES_DIR, dir));
+  },
+});
+
 export const FRONTEND_VERIFIERS = [
   {
     id: "all-ts-packages-eslint",
@@ -32,54 +44,14 @@ export const FRONTEND_VERIFIERS = [
     name: "Every TypeScript Package Has ESLint Configured",
     run: verifyAllTsPackagesHaveEslint,
   },
-  {
-    id: "ui-lint",
-    isLint: true,
-    scope: "libs",
-    module: "ui",
-    name: "UI Library Lint (npm run lint in libs/ui/core; its imports are dependency-graph's)",
-    run: () => {
-      exec("npm run lint", path.join(MODULES_DIR, "libs/ui/core"));
-    },
-  },
-  {
-    id: "shell-lint",
-    isLint: true,
-    scope: "libs",
-    module: "shell",
-    name: "Shell Library Lint (npm run lint in libs/ui/shell; its imports are dependency-graph's)",
-    run: () => {
-      exec("npm run lint", path.join(MODULES_DIR, "libs/ui/shell"));
-    },
-  },
-  {
-    id: "plugin-host-lint",
-    isLint: true,
-    scope: "libs",
-    module: "host",
-    name: "Plugin Host Lint (npm run lint in libs/plugin-host-ts; its imports are dependency-graph's)",
-    run: () => {
-      exec("npm run lint", path.join(MODULES_DIR, "libs/plugin-host-ts"));
-    },
-  },
-  {
-    id: "desktop-editor-fsd",
-    isLint: true,
-    scope: "apps",
-    module: "desktop",
-    name: "Desktop Editor FSD Layer Hierarchy (shared -> entities -> features -> pages -> app)",
-    run: () => {
-      exec("npm run lint", path.join(MODULES_DIR, "apps/desktop/editor"));
-    },
-  },
-  {
-    id: "desktop-flashcards-fsd",
-    isLint: true,
-    scope: "apps",
-    module: "desktop",
-    name: "Desktop Flashcards FSD Layer Hierarchy",
-    run: () => {
-      exec("npm run lint", path.join(MODULES_DIR, "apps/desktop/flashcards"));
-    },
-  },
+  createLintVerifier({ id: "ui-lint", scope: "libs", module: "ui", dir: "libs/ui/core",
+    name: "UI Library Lint (npm run lint in libs/ui/core; its imports are dependency-graph's)" }),
+  createLintVerifier({ id: "shell-lint", scope: "libs", module: "shell", dir: "libs/ui/shell",
+    name: "Shell Library Lint (npm run lint in libs/ui/shell; its imports are dependency-graph's)" }),
+  createLintVerifier({ id: "plugin-host-lint", scope: "libs", module: "host", dir: "libs/plugin-host-ts",
+    name: "Plugin Host Lint (npm run lint in libs/plugin-host-ts; its imports are dependency-graph's)" }),
+  createLintVerifier({ id: "desktop-editor-fsd", scope: "apps", module: "desktop", dir: "apps/desktop/editor",
+    name: "Desktop Editor FSD Layer Hierarchy (shared -> entities -> features -> pages -> app)" }),
+  createLintVerifier({ id: "desktop-flashcards-fsd", scope: "apps", module: "desktop", dir: "apps/desktop/flashcards",
+    name: "Desktop Flashcards FSD Layer Hierarchy" }),
 ];
