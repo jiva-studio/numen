@@ -153,13 +153,32 @@ export const APluginAskingIsPutToThePerson: Story = {
   },
 }
 
-/** A key typed is drawn as dots, is announced by its row, and is never filled in. */
+/** A key typed is drawn as dots, is announced by its row, and is cleared by the icon inside its field. */
 export const AKeyIsNeverDrawn: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const field = canvas.getByLabelText('Sample Agent A: apiKey')
+    const emptyField = canvas.getByLabelText('Sample Agent B: apiKey')
     await expect(field).toHaveAttribute('type', 'password')
     await expect(field).toHaveValue('')
+
+    const fieldBox = field.getBoundingClientRect()
+    const emptyFieldBox = emptyField.getBoundingClientRect()
+    await expect(Math.round(fieldBox.width)).toBe(Math.round(emptyFieldBox.width))
+    await expect(Math.round(fieldBox.right)).toBe(Math.round(emptyFieldBox.right))
+
+    const deleteButtons = canvas.getAllByRole('button', { name: 'Delete the key' })
+    await expect(deleteButtons).toHaveLength(1)
+    const deleteButton = deleteButtons[0]!
+    await expect(deleteButton).toHaveAttribute('title', 'Delete the key')
+    const deleteBox = deleteButton.getBoundingClientRect()
+    await expect(deleteBox.left).toBeGreaterThanOrEqual(fieldBox.left)
+    await expect(deleteBox.right).toBeLessThanOrEqual(fieldBox.right)
+    await expect(deleteBox.top).toBeGreaterThanOrEqual(fieldBox.top)
+    await expect(deleteBox.bottom).toBeLessThanOrEqual(fieldBox.bottom)
+
+    await userEvent.click(deleteButton)
+    await expect(installation.deleteSecret).toHaveBeenCalledWith('sample.agent-a', 'apiKey')
 
     await userEvent.type(field, 'made-up-key')
     await expect(canvas.queryByText('made-up-key')).toBeNull()

@@ -4,7 +4,9 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
-import { Button, NumberField, Select, Slider, Switch } from '@numen/ui'
+import { NumberField, Select, Slider, Switch } from '@numen/ui'
+import { WORDS as words } from '../../words'
+import { SecretField } from '../secret-field'
 import SettingRow from './SettingRow.vue'
 
 const CHOICES = [
@@ -18,8 +20,8 @@ const LONG_DETAIL =
 
 /** One row per control type, inside a column of the given width. */
 const rows = (width: string) => () => ({
-  components: { SettingRow, Select, Switch, NumberField, Slider, Button },
-  setup: () => ({ choices: CHOICES, longName: LONG_NAME, longDetail: LONG_DETAIL }),
+  components: { SettingRow, SecretField, Select, Switch, NumberField, Slider },
+  setup: () => ({ choices: CHOICES, longName: LONG_NAME, longDetail: LONG_DETAIL, words }),
   template: `
     <div class="numen" style="container-type:inline-size;inline-size:${width};padding:1rem;background:var(--numen-surface);--settings-choice:16rem">
       <SettingRow v-slot="{ labelledBy }" at="switch" name="Nest headings under notes" detail="Show the headings of a note under its node.">
@@ -42,12 +44,7 @@ const rows = (width: string) => () => ({
           <Slider :model-value="0.7" :min="0" :max="1" :step="0.1" :aria-labelledby="labelledBy" style="flex:1 1 auto" />
         </span>
       </SettingRow>
-      <SettingRow v-slot="{ labelledBy }" at="secret" name="Key: apiKey" detail="Not set. Stored in the system keychain, not in the settings file.">
-        <span style="display:flex;gap:0.375rem;min-inline-size:0;max-inline-size:100%">
-          <input type="password" placeholder="Paste a key" :aria-labelledby="labelledBy" class="settings__text-input" style="flex:1 1 auto;min-inline-size:0" />
-          <Button variant="outline" size="small">Save</Button>
-        </span>
-      </SettingRow>
+      <SecretField at="secret" name="Key: apiKey" :is-stored="true" :words="words" />
     </div>
   `,
 })
@@ -93,14 +90,16 @@ export const WideRowsDoNotOverlap: Story = {
   },
 }
 
-/** Wide: text, select and path controls share one width. */
+/** Wide: text, select, path and secret controls share one width. */
 export const WideTextControlsShareOneWidth: Story = {
   play: async ({ canvasElement }) => {
-    const widths = [...canvasElement.querySelectorAll('.settings__choice, .settings__text-input')]
-      .slice(0, 3)
-      .map((one) => Math.round(one.getBoundingClientRect().width))
+    const widths = [
+      ...canvasElement.querySelectorAll(
+        '.settings__choice, .settings__text-input, .settings__secret-input',
+      ),
+    ].map((one) => Math.round(one.getBoundingClientRect().width))
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize)
-    await expect(widths).toStrictEqual([16 * rem, 16 * rem, 16 * rem])
+    await expect(widths).toStrictEqual([16 * rem, 16 * rem, 16 * rem, 16 * rem])
   },
 }
 
