@@ -2,69 +2,20 @@
  * A preset is written one write at a time: a write requested while another is in
  * progress runs after it, and a file changed externally is not overwritten.
  */
-import { afterEach, describe, expect, it } from 'vitest'
-import type { MessageWriter } from '@numen/plugin-sdk'
-import { DEFAULTS, type Presets, type PresetWriteResult } from '../types'
+import { describe, expect, it } from 'vitest'
+import {
+  createBackgroundRequest,
+  createCore,
+  createGate,
+  createMessages,
+  createWriteOpts,
+  flushPromises,
+} from '../fixtures/writes'
+import type { Presets, PresetWriteResult } from '../types'
 import { WORDS as words } from '../words'
 import { canCloseTab, createWriteFlight, flushWrites, requestWrite, sendWrite } from './flight'
 
-const PATH = 'presets/Daily.md'
-
-/** A write the test answers when it chooses. */
-const createGate = () => {
-  let open: (answer: PresetWriteResult) => void = () => undefined
-  const reply = new Promise<PresetWriteResult>((resolve) => {
-    open = resolve
-  })
-  return { promise: reply, open }
-}
-
-/** A vault whose writes answer in turn, recording the version each was based on. */
-const createCore = (...answers: (PresetWriteResult | Promise<PresetWriteResult>)[]) => {
-  const based: string[] = []
-  const core = {
-    write: async (_path: string, _settings: unknown, target: string) => {
-      based.push(target)
-      return (await answers.shift()) ?? { ok: true, value: { at: 'v-last' } }
-    },
-  } as unknown as Presets
-  return { core, based }
-}
-
-/** The messages the window received, in order. */
-const createMessages = () => {
-  const response: [string, string | undefined][] = []
-  return {
-    messages: response,
-    said: response,
-    writeMessage: (text: string, kind?: string) => {
-      response.push([text, kind])
-    },
-  }
-}
-
-const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
-
-const createFlightOpts = (core: Presets, writeMessage: MessageWriter = () => undefined) => ({
-  path: PATH,
-  settings: DEFAULTS,
-  core,
-  writeMessage,
-})
-
-const writeFailures: unknown[] = []
-
-/** Requests a write without waiting for it; a failure is kept for the assertions of the test. */
-const requestInBackground = (...args: Parameters<typeof requestWrite>): void => {
-  requestWrite(...args).catch((error: unknown) => {
-    writeFailures.push(error)
-  })
-}
-
-afterEach(() => {
-  expect(writeFailures).toStrictEqual([])
-  writeFailures.length = 0
-})
+const requestInBackground = createBackgroundRequest(requestWrite)
 
 describe('a preset nothing has been written to yet', () => {
   it('remains at no version, with nothing queued, changed or returned', () => {
@@ -87,8 +38,8 @@ describe('one write', () => {
     const { core, based } = createCore({ ok: true, value: { at: 'v1' } })
     const { messages, writeMessage } = createMessages()
 
-    await sendWrite(flight, createFlightOpts(core, writeMessage))
-    await sendWrite(flight, createFlightOpts(core, writeMessage))
+    await sendWrite(flight, createWriteOpts(core, writeMessage))
+    await sendWrite(flight, createWriteOpts(core, writeMessage))
 
     expect(based).toStrictEqual(['', 'v1'])
     expect(messages[0]).toStrictEqual(['', undefined])
@@ -101,7 +52,7 @@ describe('one write', () => {
     flight.theirs.add('retention')
     const { core } = createCore({ ok: true, value: { at: 'v1' } })
 
-    await sendWrite(flight, createFlightOpts(core, createMessages().writeMessage))
+    await sendWrite(flight, createWriteOpts(core, createMessages().writeMessage))
 
     expect(flight.errorMessage.value).toBe('')
     expect(flight.isWarned).toBe(false)
@@ -113,7 +64,7 @@ describe('one write', () => {
     const { core } = createCore({ ok: false, error: 'missing' } as PresetWriteResult)
     const { messages, writeMessage } = createMessages()
 
-    await sendWrite(flight, createFlightOpts(core, writeMessage))
+    await sendWrite(flight, createWriteOpts(core, writeMessage))
 
     expect(messages.at(-1)).toStrictEqual([flight.errorMessage.value, 'error'])
   })
@@ -128,7 +79,7 @@ describe('a write the vault could not be requested for', () => {
       },
     } as unknown as Presets
 
-    await sendWrite(flight, createFlightOpts(core, createMessages().writeMessage))
+    await sendWrite(flight, createWriteOpts(core, createMessages().writeMessage))
 
     expect(flight.errorMessage.value).toBe(words.unwritten)
   })
@@ -141,8 +92,8 @@ describe('a write requested for while another is out', () => {
     const { core, based } = createCore(first.promise, { ok: true, value: { at: 'v2' } })
     const { writeMessage } = createMessages()
 
-    const one = requestWrite(flight, createFlightOpts(core, writeMessage))
-    const two = requestWrite(flight, createFlightOpts(core, writeMessage))
+    const one = requestWrite(flight, createWriteOpts(core, writeMessage))
+    const two = requestWrite(flight, createWriteOpts(core, writeMessage))
     expect(flight.isWriteQueued).toBe(true)
     first.open({ ok: true, value: { at: 'v1' } })
     await Promise.all([one, two])
@@ -158,9 +109,9 @@ describe('a write requested for while another is out', () => {
     const { core } = createCore(first.promise)
     const { writeMessage } = createMessages()
 
-    const one = requestWrite(flight, createFlightOpts(core, writeMessage))
+    const one = requestWrite(flight, createWriteOpts(core, writeMessage))
     let isSettled = false
-    const two = requestWrite(flight, createFlightOpts(core, writeMessage)).then(() => {
+    const two = requestWrite(flight, createWriteOpts(core, writeMessage)).then(() => {
       isSettled = true
     })
     await flushPromises()
@@ -177,8 +128,8 @@ describe('a write requested for while another is out', () => {
     const { core, based } = createCore(first.promise)
     const { writeMessage } = createMessages()
 
-    const one = requestWrite(flight, createFlightOpts(core, writeMessage))
-    requestInBackground(flight, createFlightOpts(core, writeMessage))
+    const one = requestWrite(flight, createWriteOpts(core, writeMessage))
+    requestInBackground(flight, createWriteOpts(core, writeMessage))
     first.open({ ok: false, error: 'changed' } as PresetWriteResult)
     await one
 
@@ -193,7 +144,7 @@ describe('flushing a preset', () => {
     flight.theirs.add('retention')
     const { core, based } = createCore()
 
-    await flushWrites(flight, createFlightOpts(core, createMessages().writeMessage))
+    await flushWrites(flight, createWriteOpts(core, createMessages().writeMessage))
 
     expect(based).toStrictEqual([''])
   })
@@ -202,7 +153,7 @@ describe('flushing a preset', () => {
     const flight = createWriteFlight()
     const { core, based } = createCore()
 
-    await flushWrites(flight, createFlightOpts(core, createMessages().writeMessage))
+    await flushWrites(flight, createWriteOpts(core, createMessages().writeMessage))
 
     expect(based).toStrictEqual([])
   })
@@ -213,7 +164,7 @@ describe('flushing a preset', () => {
     flight.hasChanged.value = true
     const { core, based } = createCore()
 
-    await flushWrites(flight, createFlightOpts(core, createMessages().writeMessage))
+    await flushWrites(flight, createWriteOpts(core, createMessages().writeMessage))
 
     expect(based).toStrictEqual([])
   })
@@ -223,10 +174,10 @@ describe('flushing a preset', () => {
     const first = createGate()
     const { core } = createCore(first.promise)
     const { writeMessage } = createMessages()
-    requestInBackground(flight, createFlightOpts(core, writeMessage))
+    requestInBackground(flight, createWriteOpts(core, writeMessage))
 
     let isFlushed = false
-    const flushed = flushWrites(flight, createFlightOpts(core, writeMessage)).then(() => {
+    const flushed = flushWrites(flight, createWriteOpts(core, writeMessage)).then(() => {
       isFlushed = true
     })
     await flushPromises()
@@ -245,7 +196,7 @@ describe('closing a preset tab', () => {
 
     const { writeMessage } = createMessages()
 
-    const isClosable = await canCloseTab(flight, createFlightOpts(core, writeMessage))
+    const isClosable = await canCloseTab(flight, createWriteOpts(core, writeMessage))
 
     expect(isClosable).toBe(true)
     expect(based).toStrictEqual([])
@@ -259,7 +210,7 @@ describe('closing a preset tab', () => {
 
     const { writeMessage } = createMessages()
 
-    const isClosable = await canCloseTab(flight, createFlightOpts(core, writeMessage))
+    const isClosable = await canCloseTab(flight, createWriteOpts(core, writeMessage))
 
     expect(isClosable).toBe(true)
     expect(based).toStrictEqual([''])
@@ -272,9 +223,9 @@ describe('closing a preset tab', () => {
     const { core } = createCore(denied, denied)
     const { writeMessage } = createMessages()
 
-    expect(await canCloseTab(flight, createFlightOpts(core, writeMessage))).toBe(false)
+    expect(await canCloseTab(flight, createWriteOpts(core, writeMessage))).toBe(false)
     expect(flight.isWarned).toBe(true)
-    expect(await canCloseTab(flight, createFlightOpts(core, writeMessage))).toBe(true)
+    expect(await canCloseTab(flight, createWriteOpts(core, writeMessage))).toBe(true)
   })
 
   it('refuses where the file changed elsewhere', async () => {
@@ -284,7 +235,7 @@ describe('closing a preset tab', () => {
 
     const { writeMessage } = createMessages()
 
-    const isClosable = await canCloseTab(flight, createFlightOpts(core, writeMessage))
+    const isClosable = await canCloseTab(flight, createWriteOpts(core, writeMessage))
 
     expect(isClosable).toBe(false)
     expect(based).toStrictEqual([])
