@@ -269,8 +269,8 @@ func TestANoteIsAddressedByItsNameUnlessAnotherSharesIt(t *testing.T) {
 	}
 }
 
-// A caller that goes away once its note is written still leaves the index following the file.
-func TestTheIndexFollowsAWriteWhoseCallerHasGone(t *testing.T) {
+// Write indexes the note even when the caller cancels its context after the write.
+func TestWriteIndexesNoteAfterCallerCancels(t *testing.T) {
 	f := newFiles(map[string]string{"A.md": "# A\n"})
 	ctx, cancel := context.WithCancel(t.Context())
 	var indexErr error

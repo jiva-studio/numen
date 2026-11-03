@@ -140,7 +140,7 @@ test.describe('Wikilink in the editor', () => {
       await writeNote(request, notePath, 'See\nnext line')
       await openWorkspace(page)
       const text = await openNote(page, notePath)
-      await expect(text.locator('.cm-line').nth(1)).toHaveText('next line')
+      await expect(text.locator('.cm-line:nth-child(2)')).toHaveText('next line')
 
       // The completion list of `[[Entr` answers from the vault index and can open after the
       // last key: the caret leaves the line with a key the list does not take.
@@ -151,7 +151,7 @@ test.describe('Wikilink in the editor', () => {
       await page.keyboard.press('ControlOrMeta+End')
 
       await expect(text.locator('.cm-line').first()).toHaveText('See Entropy')
-      await expect(text.locator('.cm-line').nth(1)).toHaveText('next line')
+      await expect(text.locator('.cm-line:nth-child(2)')).toHaveText('next line')
       await expect(text.locator('.cm-wikilink')).toHaveText('Entropy')
       await expect(text.locator('.cm-wikilink-mark')).toHaveCount(0)
 
