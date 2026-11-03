@@ -19,5 +19,7 @@ runs:
           echo "::error::@bufbuild/protobuf $version has integrity $got, package-lock.json pins $integrity"
           exit 1
         fi
-        mkdir -p node_modules/@bufbuild/protobuf
-        tar -xzf "$RUNNER_TEMP/bufbuild-protobuf-$version.tgz" -C node_modules/@bufbuild/protobuf --strip-components=1
+        target="$PWD/node_modules/@bufbuild/protobuf"
+        mkdir -p "$target"
+        # GNU tar reads `D:` in an archive path as a remote host, so the archive is named relative.
+        (cd "$RUNNER_TEMP" && tar -xzf "bufbuild-protobuf-$version.tgz" -C "$target" --strip-components=1)
