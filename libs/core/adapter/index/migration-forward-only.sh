@@ -17,7 +17,7 @@
 
 set -euo pipefail
 
-folder=modules/libs/core/adapter/index/migration
+folder=libs/core/adapter/index/migration
 
 # The one rewrite that is not a fault: eleven files collapsed into one, once,
 # against a sequence no released build had run. It is recorded as the tree the

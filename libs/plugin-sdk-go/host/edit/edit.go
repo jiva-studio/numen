@@ -31,7 +31,7 @@ var (
 	ErrAnchored       = notesedit.ErrAnchored
 	ErrBodyUnwritable = notesedit.ErrBodyUnwritable
 	ErrStale          = notesedit.ErrStale
-	ErrIndexOutdated     = notesedit.ErrIndexOutdated
+	ErrIndexOutdated  = notesedit.ErrIndexOutdated
 )
 
 func CheckSize(path string, size, maxSize int) error { return notesedit.CheckSize(path, size, maxSize) }
@@ -46,4 +46,6 @@ func GetAddress(
 	return notesedit.GetAddress(ctx, names, vaultID, path)
 }
 
-func WrapIndexOutdated(err error, paths ...string) error { return notesedit.WrapIndexOutdated(err, paths...) }
+func WrapIndexOutdated(err error, paths ...string) error {
+	return notesedit.WrapIndexOutdated(err, paths...)
+}
