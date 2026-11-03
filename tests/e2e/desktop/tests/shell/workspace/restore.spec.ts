@@ -101,6 +101,7 @@ test.describe('The tabs of the window after a restart', () => {
     const tab = await openVaultFile(page, 'assets', 'shore.pdf')
     await tab.getByRole('button', { name: 'Next page' }).click()
     await expect(getPageField(page, /shore/i)).toHaveValue('2')
+    await expectSavedState(page, 'assets/shore.pdf', '"page":2')
 
     await setPdfReaderEnabled(page, false)
     await page.getByRole('tab', { name: /shore/i }).click()
