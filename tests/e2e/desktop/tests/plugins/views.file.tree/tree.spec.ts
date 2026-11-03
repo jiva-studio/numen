@@ -35,6 +35,16 @@ const chooseNewItem = async (page: Page, row: string, item: string): Promise<voi
   await page.getByRole('menuitem', { name: item, exact: true }).click()
 }
 
+/** Makes `item` in the folder `row` from the files tab, under the name typed. */
+const nameNewItem = async (page: Page, row: string, item: string, name: string) => {
+  await openWorkspace(page)
+  await showInFiles(page, [])
+  await chooseNewItem(page, row, item)
+  await expect(getNameField(page)).toBeFocused()
+  await getNameField(page).fill(name)
+  await getNameField(page).press('Enter')
+}
+
 test.describe('Naming, making and removing files in the files tab', () => {
   test('creates a folder in a folder from the New menu of its row, under the name typed', async ({
     page,
@@ -42,13 +52,7 @@ test.describe('Naming, making and removing files in the files tab', () => {
   }) => {
     await createFolder(request, 'Saltworks')
     try {
-      await openWorkspace(page)
-      await showInFiles(page, [])
-
-      await chooseNewItem(page, 'Saltworks', 'New folder')
-      await expect(getNameField(page)).toBeFocused()
-      await getNameField(page).fill('Brine tanks')
-      await getNameField(page).press('Enter')
+      await nameNewItem(page, 'Saltworks', 'New folder', 'Brine tanks')
 
       await expect
         .poll(async () => listPaths(request, 'Saltworks'))
@@ -65,13 +69,7 @@ test.describe('Naming, making and removing files in the files tab', () => {
   }) => {
     await createFolder(request, 'Saltpans')
     try {
-      await openWorkspace(page)
-      await showInFiles(page, [])
-
-      await chooseNewItem(page, 'Saltpans', 'New note')
-      await expect(getNameField(page)).toBeFocused()
-      await getNameField(page).fill('Evaporation pans')
-      await getNameField(page).press('Enter')
+      await nameNewItem(page, 'Saltpans', 'New note', 'Evaporation pans')
 
       await expect
         .poll(async () => listPaths(request, 'Saltpans'))
