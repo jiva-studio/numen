@@ -8,5 +8,9 @@ export const writeDurations: (durations: Record<string, number>) => void
 export const checkShards: () => string[]
 /** The shard count when none is named. */
 export const getDefaultShardCount: () => number
-/** The spec files of each of `count` shards. */
-export const planShards: (count: number) => string[][]
+/** The seconds of the spec files of `paths`, or of every spec file when `paths` is undefined. */
+export const readSelectedDurations: (paths?: string[]) => Record<string, number>
+/** The paths NUMEN_E2E_PATHS names, or undefined when it names none. */
+export const readPathsFromEnv: () => string[] | undefined
+/** The spec files of each of `count` shards, out of the files of `paths`. */
+export const planShards: (count: number, paths?: string[]) => string[][]
