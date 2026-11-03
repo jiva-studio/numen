@@ -1,11 +1,9 @@
 import { test, expect } from '../../support/test.js'
-import { waitForWindow } from '../../support/workspace.js'
+import { openWorkspace, waitForWindow } from '../../support/workspace.js'
 
 test.describe('Command Palette Advanced Keyboard and Pointer Interactions', () => {
   test('navigates command palette options using keyboard arrow keys', async ({ page }) => {
-    await page.goto('/')
-
-    await waitForWindow(page)
+    await openWorkspace(page)
 
     // 1. Open command palette
     await page.keyboard.press('Control+p')
@@ -15,6 +13,9 @@ test.describe('Command Palette Advanced Keyboard and Pointer Interactions', () =
     // Verify selectable item rows are present
     const items = page.locator('.palette__item')
     await expect(items.first()).toBeVisible({ timeout: 5_000 })
+    // The commands of the note in front join the list once the opening note is loaded, above rows
+    // already drawn, so the rows are walked after they are there.
+    await expect(page.getByRole('option', { name: /^Open the note/ })).toBeVisible()
 
     // Find the currently selected item
     const selectedItem = page.locator('.palette__item[aria-selected="true"]').first()
