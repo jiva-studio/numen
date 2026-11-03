@@ -70,11 +70,6 @@ const FLASHCARD_SHOTS = [
 
 const shown = { format: 'webp' as const, quality: 84 }
 
-const [demoPlaceholderLight, demoPlaceholderDark] = await Promise.all([
-  getImage({ src: demoWindowLight, ...shown }),
-  getImage({ src: demoWindowDark, ...shown }),
-])
-
 const framedFlashcards = await Promise.all(
   FLASHCARD_SHOTS.map(async (shot) => ({
     ...shot,
@@ -266,7 +261,7 @@ const description =
             <div id="hero-live-demo">
               <img
                 class="img-light hero-live-demo__placeholder"
-                src={demoPlaceholderLight.src}
+                src={demoWindowLight.src}
                 width={demoWindowLight.width / 2}
                 height={demoWindowLight.height / 2}
                 alt="Numen workspace"
@@ -274,7 +269,7 @@ const description =
               />
               <img
                 class="img-dark hero-live-demo__placeholder"
-                src={demoPlaceholderDark.src}
+                src={demoWindowDark.src}
                 width={demoWindowDark.width / 2}
                 height={demoWindowDark.height / 2}
                 alt="Numen workspace"
@@ -289,7 +284,7 @@ const description =
                   </span>
                   <span class="demo-launch__copy">
                     <strong data-i18n="demo_try_title">Try interactive demo</strong>
-                    <small data-i18n="demo_try_sub">Click to explore notes, map, PDF &amp; AI</small>
+                    <small data-i18n="demo_try_sub">Click to try</small>
                   </span>
                 </span>
               </button>
@@ -589,7 +584,7 @@ const description =
         app2_desc:
           'Retain what matters: a dedicated desktop app for daily spaced repetition, FSRS scheduling, and workload forecasting.',
         demo_try_title: 'Try interactive demo',
-        demo_try_sub: 'Click to explore notes, map, PDF & AI',
+        demo_try_sub: 'Click to try',
         tab_files: 'Files',
         tab_editor: 'Writing',
         tab_graph: 'The map',
@@ -677,8 +672,8 @@ const description =
           'Собирайте знания: связанные заметки, направленная карта, книги PDF/EPUB с OCR, расшифровка аудио и ИИ-ассистент.',
         app2_desc:
           'Удерживайте в памяти: отдельное приложение для ежедневного повторения, планирования FSRS и прогноза нагрузки.',
-        demo_try_title: 'Попробовать вживую',
-        demo_try_sub: 'Нажмите, чтобы покликать заметки, карту, PDF и ИИ',
+        demo_try_title: 'Интерактивное демо',
+        demo_try_sub: 'Нажмите, чтобы попробовать',
         tab_files: 'Файлы',
         tab_editor: 'Редактор',
         tab_graph: 'Карта',
@@ -766,8 +761,8 @@ const description =
           'Gradite znanje: povezane beleške, usmerena mapa, PDF/EPUB uz OCR, transkripcija zvuka i AI asistent.',
         app2_desc:
           'Zadržite u pamćenju: posebna aplikacija za dnevno ponavljanje, FSRS raspored i prognozu opterećenja.',
-        demo_try_title: 'Isprobaj uživo',
-        demo_try_sub: 'Kliknite da istražite beleške, mapu, PDF i AI',
+        demo_try_title: 'Interaktivni demo',
+        demo_try_sub: 'Kliknite da isprobate',
         tab_files: 'Datoteke',
         tab_editor: 'Pisanje',
         tab_graph: 'Mapa',
