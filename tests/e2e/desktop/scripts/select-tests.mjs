@@ -100,7 +100,10 @@ export const getScope = (files) => {
       tokens.add(spec[1])
     } else if (file.startsWith('tests/e2e/desktop/flashcards/')) {
       tokens.add(FLASHCARDS)
-    } else if (plugin && fs.existsSync(path.join(repoRoot, 'plugins', plugin[1], 'manifest.json'))) {
+    } else if (
+      plugin &&
+      fs.existsSync(path.join(repoRoot, 'plugins', plugin[1], 'manifest.json'))
+    ) {
       for (const one of getPluginTokens(plugin[1])) tokens.add(one)
     } else {
       return 'all'
@@ -109,7 +112,12 @@ export const getScope = (files) => {
   if (tokens.size === 0) return isTested ? 'shell/' : 'none'
   const folders = [...tokens].map(getTokenPath).filter((one) => one.endsWith('/'))
   return [...tokens]
-    .filter((one) => !folders.some((folder) => getTokenPath(one).startsWith(folder) && getTokenPath(one) !== folder))
+    .filter(
+      (one) =>
+        !folders.some(
+          (folder) => getTokenPath(one).startsWith(folder) && getTokenPath(one) !== folder,
+        ),
+    )
     .sort()
     .join(' ')
 }
