@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -173,23 +174,27 @@ func TestSupervisorProcessCrashTriggersOnExit(t *testing.T) {
 	}
 
 	sup := New(testsupport.NewClock())
-	onExitCh := make(chan struct{})
+	var stateInOnExit atomic.Value
 	sup.SetOnExit(func() {
-		close(onExitCh)
+		stateInOnExit.Store(sup.GetState())
 	})
 
 	if err := sup.Attach(t.Context(), cmd.Process, testsupport.GetEpoch()); err != nil {
 		t.Fatalf("attach process: %v", err)
 	}
+	exited := sup.GetExitSignal()
 
 	testsupport.Kill(t, cmd)
 
 	select {
-	case <-onExitCh:
+	case <-exited:
 	case <-time.After(2 * time.Second):
-		t.Fatal("timed out waiting for onExit callback on crashed process")
+		t.Fatal("timed out waiting for the exit of the crashed process")
 	}
 
+	if state := stateInOnExit.Load(); state != StateActive {
+		t.Errorf("onExit ran in state %v, want it to run before the supervisor leaves StateActive", state)
+	}
 	if sup.GetState() != StateDormant {
 		t.Errorf("expected StateDormant after crash, got %v", sup.GetState())
 	}

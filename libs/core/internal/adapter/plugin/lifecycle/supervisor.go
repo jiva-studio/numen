@@ -105,7 +105,7 @@ func (s *Supervisor) GetActivationPolicy() ActivationPolicy {
 	return s.activationPolicy
 }
 
-// SetOnExit sets a callback invoked when the plugin process terminates.
+// SetOnExit sets a callback invoked when the plugin process terminates, before the supervisor goes Dormant.
 func (s *Supervisor) SetOnExit(fn func()) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -248,9 +248,19 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 
 	go func() {
 		_, waitErr := p.Wait()
-		close(exitCh)
 		if waitErr != nil && !errors.Is(waitErr, os.ErrProcessDone) {
 			s.reportError(fmt.Errorf("wait for plugin process %d: %w", p.Pid, waitErr))
+		}
+		s.mu.Lock()
+		var onExit func()
+		if s.process == p {
+			onExit = s.onExit
+		}
+		s.mu.Unlock()
+		// The supervisor holds p until onExit returns, so no replacement starts before the host has
+		// forgotten the state of the ended process.
+		if onExit != nil {
+			onExit()
 		}
 		s.mu.Lock()
 		if s.process == p {
@@ -259,14 +269,9 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 			s.teardownBegun = false
 			s.state = StateDormant
 			s.activeRefCount = 0
-			onExit := s.onExit
-			s.mu.Unlock()
-			if onExit != nil {
-				onExit()
-			}
-			return
 		}
 		s.mu.Unlock()
+		close(exitCh)
 	}()
 	return nil
 }
@@ -492,7 +497,8 @@ func (s *Supervisor) SetRPCShutdown(fn func(ctx context.Context) error) {
 	s.rpcShutdown = fn
 }
 
-// GetExitSignal returns the channel the supervisor closes once it has reaped its current process.
+// GetExitSignal returns the channel the supervisor closes once it has reaped its current process, run
+// its exit callback and gone Dormant.
 func (s *Supervisor) GetExitSignal() <-chan struct{} {
 	s.mu.Lock()
 	defer s.mu.Unlock()
