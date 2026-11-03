@@ -1,52 +1,37 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
 
 import type { Model, SettingEdit } from '@/entities/settings'
 import { getSettingAt as at } from '@/entities/settings'
 import AgentSettingsSection from './AgentSettingsSection.vue'
-import type { Installation, SettingsTabState } from '../types'
+import type { SettingsTabState } from '../types'
+import { createInstallation } from '@/testing/installation'
+
+/** A model the vault offers for the setting at `namedAt`, written there by its name. */
+const createModel = (
+  namedAt: readonly string[],
+  name: string,
+  title: string,
+  isDefault: boolean,
+): Model => ({
+  namedAt,
+  name,
+  title,
+  group: 'In full',
+  isDefault,
+  writes: [{ at: namedAt, value: JSON.stringify(name) }],
+  presence: 'present',
+})
 
 const CLAUDE_MODELS: readonly Model[] = [
-  {
-    namedAt: ['agent', 'claude', 'model'],
-    name: 'haiku',
-    title: 'Haiku',
-    group: 'In full',
-    isDefault: true,
-    writes: [{ at: ['agent', 'claude', 'model'], value: '"haiku"' }],
-    presence: 'present',
-  },
-  {
-    namedAt: ['agent', 'claude', 'model'],
-    name: 'sonnet',
-    title: 'Sonnet',
-    group: 'In full',
-    isDefault: false,
-    writes: [{ at: ['agent', 'claude', 'model'], value: '"sonnet"' }],
-    presence: 'present',
-  },
+  createModel(['agent', 'claude', 'model'], 'haiku', 'Haiku', true),
+  createModel(['agent', 'claude', 'model'], 'sonnet', 'Sonnet', false),
 ]
 
 const ANTIGRAVITY_MODELS: readonly Model[] = [
-  {
-    namedAt: ['agent', 'antigravity', 'model'],
-    name: 'gemini-2.5-flash',
-    title: 'Gemini 2.5 Flash',
-    group: 'In full',
-    isDefault: true,
-    writes: [{ at: ['agent', 'antigravity', 'model'], value: '"gemini-2.5-flash"' }],
-    presence: 'present',
-  },
-  {
-    namedAt: ['agent', 'antigravity', 'model'],
-    name: 'gemini-2.5-pro',
-    title: 'Gemini 2.5 Pro',
-    group: 'In full',
-    isDefault: false,
-    writes: [{ at: ['agent', 'antigravity', 'model'], value: '"gemini-2.5-pro"' }],
-    presence: 'present',
-  },
+  createModel(['agent', 'antigravity', 'model'], 'gemini-2.5-flash', 'Gemini 2.5 Flash', true),
+  createModel(['agent', 'antigravity', 'model'], 'gemini-2.5-pro', 'Gemini 2.5 Pro', false),
 ]
 
 const USE_MODELS = (defaultName: string): readonly Model[] =>
@@ -55,18 +40,13 @@ const USE_MODELS = (defaultName: string): readonly Model[] =>
     { name: 'antigravity', title: 'Antigravity' },
     { name: '', title: 'No agent responds' },
   ].map(({ name, title }) => ({
-    namedAt: ['agent', 'use'],
-    name,
-    title,
+    ...createModel(['agent', 'use'], name, title, name === defaultName),
     group: '',
-    isDefault: name === defaultName,
-    writes: [{ at: ['agent', 'use'], value: JSON.stringify(name) }],
-    presence: 'present',
   }))
 
 const createSection = (file: Record<string, unknown> = {}, defaultUse = 'claude') => {
   const content: SettingEdit[] = []
-  const installation: Installation = {
+  const installation = createInstallation({
     getSetting: (path) => at(file, path),
     getModels: (path) => {
       if (path.join('.') === 'agent.use') return USE_MODELS(defaultUse)
@@ -77,23 +57,11 @@ const createSection = (file: Record<string, unknown> = {}, defaultUse = 'claude'
     write: (edits) => {
       content.push(...edits)
     },
-    themes: ref([]),
     applied: ref('default'),
     mode: ref('light'),
-    isPinned: ref(false),
-    sizes: ref({ interfaceScale: 1, textScale: 1 }),
-    bounds: ref({
-      interfaceScale: { min: 0.8, max: 2 },
-      textScale: { min: 0.8, max: 1.75 },
-    }),
-    choose: vi.fn(),
     isSyncing: ref(false),
-    writeSecret: vi.fn(),
-    deleteSecret: vi.fn(),
-    retryPlugin: vi.fn(),
-    choosePath: vi.fn(async () => ''),
     file: ref('/test/settings.json'),
-  }
+  })
   const state: SettingsTabState = { installation }
   const wrapper = mount(AgentSettingsSection, { props: { state } })
   return { wrapper, written: content }

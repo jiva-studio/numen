@@ -88,11 +88,12 @@ describe('what remains at a setting', () => {
     expect(kept.plugins.value).toStrictEqual([])
   })
 
-  it('falls back to declarative plugin default when unset in settings file', async () => {
+  /** A store over a vault with one plugin whose `enabled` setting defaults to true. */
+  const createPluginStore = (written: string) => {
     const core: SettingsStoreDeps = {
       getSettings: () =>
         Promise.resolve({
-          written: '{}',
+          written,
           path: '/numen.json',
           models: [],
           plugins: [
@@ -121,7 +122,11 @@ describe('what remains at a setting', () => {
         }),
       updateSettings: () => Promise.resolve(),
     }
-    const store = createSettingsStore(core, words, vi.fn())
+    return createSettingsStore(core, words, vi.fn())
+  }
+
+  it('falls back to declarative plugin default when unset in settings file', async () => {
+    const store = createPluginStore('{}')
     await store.start()
 
     expect(store.getSetting(['plugins', 'my.plugin', 'enabled'])).toBe(true)
@@ -134,39 +139,9 @@ describe('what remains at a setting', () => {
   })
 
   it('prefers explicit configuration over declarative plugin default', async () => {
-    const core: SettingsStoreDeps = {
-      getSettings: () =>
-        Promise.resolve({
-          written: JSON.stringify({ plugins: { 'my.plugin': { enabled: false } } }),
-          path: '/numen.json',
-          models: [],
-          plugins: [
-            {
-              id: 'my.plugin',
-              name: 'My Plugin',
-              version: '1.0.0',
-              description: 'A test plugin',
-              isActive: true,
-              capabilities: [],
-              secrets: [],
-              storedSecrets: [],
-              consent: 'none',
-              hasFrontend: false,
-              settings: [
-                {
-                  key: 'enabled',
-                  type: 'boolean',
-                  title: 'Enabled',
-                  description: 'Enable feature',
-                  default: true,
-                },
-              ],
-            },
-          ],
-        }),
-      updateSettings: () => Promise.resolve(),
-    }
-    const store = createSettingsStore(core, words, vi.fn())
+    const store = createPluginStore(
+      JSON.stringify({ plugins: { 'my.plugin': { enabled: false } } }),
+    )
     await store.start()
 
     expect(store.getSetting(['plugins', 'my.plugin', 'enabled'])).toBe(false)
