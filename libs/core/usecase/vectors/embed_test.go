@@ -626,7 +626,7 @@ func TestACancelledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 		finished = "library/finished.epub"
 		unsent   = "library/a.epub"
 	)
-	index := newStore()
+	index := indexfake.NewStore()
 	var log progressLog
 	embed := newEmbed(nil, index, index)
 	embed.OnProgress = log.add

@@ -554,29 +554,29 @@ const linkPath = "links/tidal mill.md"
 // to the notes pass.
 func TestANoteWhoseVersionIsDeletedIsReadAsANoteAgain(t *testing.T) {
 	ctx := t.Context()
-	index, shelf := newStore(), newLibrary()
-	shelf.hold(linkPath, domain.KindNote, []byte("---\nurl: http://tidal-mills.test\n---\n"), 1)
-	shelf.hold("notes/plain.md", domain.KindNote, []byte("# Plain\n\nA note.\n"), 1)
+	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
+	shelf.Put(linkPath, domain.KindNote, []byte("---\nurl: http://tidal-mills.test\n---\n"), 1)
+	shelf.Put("notes/plain.md", domain.KindNote, []byte("# Plain\n\nA note.\n"), 1)
 
-	extract, texts := newIndexWithTexts(vaults{getFirst().ID: shelf}, index, index)
+	extract, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
 	var reread []string
 	extract.ReadNote = func(_ context.Context, _ domain.Vault, path string) error {
 		reread = append(reread, path)
 		return nil
 	}
-	texts.put(getFirst(), linkPath, "test.importer", "article", timedParts())
-	if _, err := extract.IndexOne(ctx, getFirst(), linkPath); err != nil {
+	texts.put(indexfake.GetFirst(), linkPath, "test.importer", "article", timedParts())
+	if _, err := extract.IndexOne(ctx, indexfake.GetFirst(), linkPath); err != nil {
 		t.Fatal(err)
 	}
-	if !index.cut(getFirst().ID, linkPath) {
+	if !index.IsCut(indexfake.GetFirst().ID, linkPath) {
 		t.Fatal("the link note was not cut from its version, so deleting it proves nothing")
 	}
 
 	texts.drop(linkPath)
-	if _, err := extract.IndexOne(ctx, getFirst(), linkPath); err != nil {
+	if _, err := extract.IndexOne(ctx, indexfake.GetFirst(), linkPath); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := extract.IndexOne(ctx, getFirst(), "notes/plain.md"); err != nil {
+	if _, err := extract.IndexOne(ctx, indexfake.GetFirst(), "notes/plain.md"); err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Equal(reread, []string{linkPath}) {
