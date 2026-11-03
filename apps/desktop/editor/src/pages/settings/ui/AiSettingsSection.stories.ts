@@ -12,8 +12,7 @@ import AiSettingsSection from './AiSettingsSection.vue'
 import PluginSettingsSection from './PluginSettingsSection.vue'
 import type { PluginInfo } from '@/entities/settings'
 import { getSettingAt } from '@/entities/settings'
-import { createProgramModels } from '@/testing/installation'
-import type { Installation } from '../types'
+import { createInstallation, createProgramModels } from '@/testing/installation'
 
 const createPlugin = (
   id: string,
@@ -62,28 +61,12 @@ const PROGRAMS = [
 
 const FILE = {}
 
-const installation: Installation = {
+const installation = createInstallation({
   getSetting: (path) => getSettingAt(FILE, path),
   getModels: createProgramModels(PROGRAMS),
   write: fn(),
-  writeSecret: fn(),
-  deleteSecret: fn(),
-  retryPlugin: fn(),
-  choosePath: fn(async () => ''),
   plugins: ref(PLUGINS),
-  file: ref('/numen.json'),
-  themes: ref([]),
-  applied: ref('preset:numen'),
-  mode: ref('system'),
-  isPinned: ref(false),
-  sizes: ref({ interfaceScale: 1, textScale: 1 }),
-  bounds: ref({
-    interfaceScale: { min: 0.8, max: 2 },
-    textScale: { min: 0.8, max: 1.75 },
-  }),
-  choose: fn(),
-  isSyncing: ref(true),
-}
+})
 
 /** The AI section and a plugin's own settings, at the width a story gives. */
 const sections = (width: string) => () => ({

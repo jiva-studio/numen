@@ -1,39 +1,22 @@
-import { describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 
 import type { SettingEdit } from '@/entities/settings'
 import { getSettingAt as at } from '@/entities/settings'
 import PerformanceSettingsSection from './PerformanceSettingsSection.vue'
-import type { Installation, SettingsTabState } from '../types'
+import type { SettingsTabState } from '../types'
 import { WORDS as words } from '../words'
 import paths from '../paths.json'
+import { createInstallation } from '@/testing/installation'
 
 const createSection = (file: Record<string, unknown> = {}) => {
   const content: SettingEdit[] = []
-  const installation: Installation = {
+  const installation = createInstallation({
     getSetting: (path) => at(file, path),
-    getModels: () => [],
     write: (response) => {
       content.push(...response)
     },
-    file: ref('/numen.json'),
-    themes: ref([]),
-    applied: ref('preset:numen'),
-    mode: ref('system'),
-    isPinned: ref(false),
-    sizes: ref({ interfaceScale: 1, textScale: 1 }),
-    bounds: ref({
-      interfaceScale: { min: 0.8, max: 2 },
-      textScale: { min: 0.8, max: 1.75 },
-    }),
-    choose: vi.fn(),
-    isSyncing: ref(true),
-    writeSecret: vi.fn(),
-    deleteSecret: vi.fn(),
-    retryPlugin: vi.fn(),
-    choosePath: vi.fn(async () => ''),
-  }
+  })
   const state: SettingsTabState = { installation }
   const wrapper = mount(PerformanceSettingsSection, {
     props: { state },
