@@ -59,16 +59,15 @@ import type {
   Tab,
   Workspace as State,
 } from '@numen/ui-shell'
+import { asFailure, asValue } from '@numen/core-client'
 import {
   NOTE_TYPE,
-  asFailure,
-  asValue,
   isNotePath,
   type Connection,
   type MenuEntry,
   type PathMenuRow,
   type VaultEntry,
-} from '@numen/plugin-sdk'
+} from '@numen/plugin-host'
 import {
   FilesTab,
   ROOT,

@@ -1,0 +1,20 @@
+name: "Install golangci-lint"
+description: "Installs the pinned golangci-lint release for linux-amd64 into GOPATH/bin after checking its SHA-256"
+runs:
+  using: "composite"
+  steps:
+    - name: Install golangci-lint
+      shell: bash
+      env:
+        VERSION: "2.14.0"
+        SHA256: "ab90aeb7b066f92a33415b638a50fe5344bbb75a0d32ad30cc248d88f81032ab"
+      run: |
+        name="golangci-lint-${VERSION}-linux-amd64"
+        archive="${RUNNER_TEMP}/${name}.tar.gz"
+        curl --proto '=https' --tlsv1.2 -sSfL -o "${archive}" \
+          "https://github.com/golangci/golangci-lint/releases/download/v${VERSION}/${name}.tar.gz"
+        echo "${SHA256}  ${archive}" | sha256sum --check --strict -
+        bin="$(go env GOPATH)/bin"
+        mkdir -p "${bin}"
+        tar -xzf "${archive}" -C "${bin}" --strip-components=1 "${name}/golangci-lint"
+        "${bin}/golangci-lint" version

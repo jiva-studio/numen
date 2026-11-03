@@ -4,10 +4,12 @@
  */
 export {
   CONVERSATION,
+  NOTE_TYPE,
   VAULT_SUMMARY,
   createMockAgentHost,
   formatFingerprint,
   getRelationErrorWords,
+  isNotePath,
 } from '@numen/plugin-sdk'
 export type {
   AgentHost,
@@ -35,9 +37,11 @@ export type {
   NoteRelation,
   NoteRef,
   NoticeHost,
+  PathMenuRow,
   PluginContext,
   PluginLifecycle,
   ReaderRegistration,
+  ReaderTabState,
   RelatedNoteRequest,
   RelationError,
   Selector,
@@ -49,6 +53,7 @@ export type {
   TextLink,
   TextRange,
   VaultChangeEvent,
+  VaultEntry,
   VaultFiles,
   VaultNotes,
   VaultRelations,

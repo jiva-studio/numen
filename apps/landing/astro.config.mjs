@@ -22,6 +22,8 @@ export default defineConfig({
       alias: {
         vue: resolve(root, 'node_modules/vue/dist/vue.runtime.esm-bundler.js'),
         '@plugins': resolve(root, 'plugins'),
+        '@numen/core-client': resolve(root, 'libs/core-client/src/index.ts'),
+        '@numen/plugin-host': resolve(root, 'libs/plugin-host-ts/src/index.ts'),
         '@numen/plugin-sdk/testing': resolve(root, 'libs/plugin-sdk-ts/src/testing/index.ts'),
         '@numen/plugin-sdk': resolve(root, 'libs/plugin-sdk-ts/src/index.ts'),
         '@numen/protocol/numen/v1': resolve(root, 'libs/protocol/src/numen/v1'),

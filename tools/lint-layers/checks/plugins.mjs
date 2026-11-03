@@ -128,13 +128,17 @@ export function verifyPluginBackendInternalLayers() {
  * Golden Template & Config Drift Verification for Standalone Plugins.
  */
 function parseEnabledGoLinters(yamlText) {
-  const m = yamlText.match(/enable:\s*\n((?:\s*-\s*[\w-]+\s*\n)+)/);
-  if (!m) return [];
-  return m[1]
-    .split("\n")
-    .map((l) => l.replace(/^\s*-\s*/, "").trim())
-    .filter(Boolean)
-    .sort();
+  const lines = yamlText.split("\n");
+  const start = lines.findIndex((l) => /enable:\s*$/.test(l));
+  if (start < 0) return [];
+  const linters = [];
+  for (const line of lines.slice(start + 1)) {
+    if (line.trim() === "") continue;
+    const item = /^\s*-\s*([\w-]+)\s*$/.exec(line);
+    if (!item) break;
+    linters.push(item[1]);
+  }
+  return linters.sort((a, b) => a.localeCompare(b));
 }
 
 function findPluginConfigDrift() {

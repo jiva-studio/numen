@@ -241,20 +241,41 @@ func (s *Services) serveAsset(w http.ResponseWriter, r *http.Request) {
 
 func (s *Services) serveVaultAsset(w http.ResponseWriter, r *http.Request, unescapedPath string) bool {
 	vault := s.state.GetCurrentVault()
-	if vault.Path == "" {
+	name := filepath.FromSlash(unescapedPath)
+	if vault.Path == "" || !filepath.IsLocal(name) {
 		return false
 	}
-	cleanVault := filepath.Clean(vault.Path)
-	cleanTarget := filepath.Clean(filepath.Join(vault.Path, unescapedPath))
-	if !strings.HasPrefix(cleanTarget, cleanVault) {
+	file, info, err := openVaultFile(vault.Path, name)
+	if err != nil {
 		return false
 	}
-	info, err := os.Stat(cleanTarget)
-	if err != nil || info.IsDir() {
-		return false
-	}
-	http.ServeFile(w, r, cleanTarget)
+	defer closeAndReport(s.state.reportTask, file)
+	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
 	return true
+}
+
+// openVaultFile opens the regular file name below vaultDir. The folder is opened once and the
+// name is resolved inside it, so no link leads out of it.
+func openVaultFile(vaultDir, name string) (*os.File, os.FileInfo, error) {
+	root, err := os.OpenRoot(vaultDir)
+	if err != nil {
+		return nil, nil, err
+	}
+	file, err := root.Open(name)
+	if err != nil {
+		return nil, nil, errors.Join(err, root.Close())
+	}
+	if err := root.Close(); err != nil {
+		return nil, nil, errors.Join(err, file.Close())
+	}
+	info, err := file.Stat()
+	if err == nil && info.IsDir() {
+		err = os.ErrNotExist
+	}
+	if err != nil {
+		return nil, nil, errors.Join(err, file.Close())
+	}
+	return file, info, nil
 }
 
 // servePluginRoute answers the plugin route: a file of the plugin's folder, or else the plugin's
