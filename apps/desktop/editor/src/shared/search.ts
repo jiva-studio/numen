@@ -3,7 +3,7 @@
  * the response to the latest query is used.
  */
 import { getCurrentScope, onScopeDispose, ref, shallowRef } from 'vue'
-import { createRequestGuard, type RequestGuard, type InFlightRequest } from './requestGuard'
+import { createRequestGuard, type RequestGuard, type InFlightRequest } from '@numen/ui'
 
 /** The delay after a keystroke before the search runs. */
 export const SEARCH_DEBOUNCE_MS = 120
