@@ -376,7 +376,7 @@ jobs:
           set -euo pipefail
           for module in libs/core libs/notes libs/plugin-catalog; do
             echo "::group::$module"
-            (cd "$module" && go test $RACE ./...)
+            (cd "$module" && go test ${RACE:+"$RACE"} ./...)
             echo "::endgroup::"
           done
 
