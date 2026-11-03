@@ -2,26 +2,44 @@ import { describe, expect, it, vi } from 'vitest'
 import { effectScope, ref } from 'vue'
 import { useCrossWindowTabs } from './useCrossWindowTabs'
 
+/** The tabs of a window, opening a tab of a kind with `openTabOfKind`. */
+interface WindowTabsStub {
+  readonly openTabOfKind: () => Promise<string | undefined>
+  readonly tabs: readonly { readonly id: string; readonly title: string }[]
+}
+
+/**
+ * A window `win-target` listening for dock requests on a channel of its own, and a sender on the
+ * same channel that records the replies.
+ */
+const listenAsTarget = (
+  openTabOfKind: WindowTabsStub['openTabOfKind'],
+  tabs: WindowTabsStub['tabs'],
+) => {
+  const channelName = 'test-channel-' + crypto.randomUUID()
+  const senderChannel = new BroadcastChannel(channelName)
+  const mockWindowTabs = {
+    openTabOfKind: vi.fn(openTabOfKind),
+    releaseTab: vi.fn(() => true),
+    tabs: ref(tabs),
+  }
+  const replies: unknown[] = []
+  senderChannel.onmessage = (event) => {
+    replies.push(event.data)
+  }
+  const scope = effectScope()
+  scope.run(() => {
+    useCrossWindowTabs({ windowTabs: mockWindowTabs, windowId: 'win-target' }, channelName)
+  })
+  return { senderChannel, mockWindowTabs, replies, scope }
+}
+
 describe('useCrossWindowTabs', () => {
   it('handles incoming dock request and replies with tab-docked confirmation', async () => {
-    const channelName = 'test-channel-' + crypto.randomUUID()
-    const senderChannel = new BroadcastChannel(channelName)
-
-    const mockWindowTabs = {
-      openTabOfKind: vi.fn(async () => 'tab-new'),
-      releaseTab: vi.fn(() => true),
-      tabs: ref([{ id: 'tab-1', title: 'Plex' }]),
-    }
-
-    const replies: unknown[] = []
-    senderChannel.onmessage = (event) => {
-      replies.push(event.data)
-    }
-
-    const scope = effectScope()
-    scope.run(() => {
-      useCrossWindowTabs({ windowTabs: mockWindowTabs, windowId: 'win-target' }, channelName)
-    })
+    const { senderChannel, mockWindowTabs, replies, scope } = listenAsTarget(
+      async () => 'tab-new',
+      [{ id: 'tab-1', title: 'Plex' }],
+    )
 
     senderChannel.postMessage({
       type: 'tab-dock',
@@ -111,24 +129,10 @@ describe('useCrossWindowTabs', () => {
   })
 
   it('does not send tab-docked if openTabOfKind returns undefined or empty', async () => {
-    const channelName = 'test-channel-' + crypto.randomUUID()
-    const senderChannel = new BroadcastChannel(channelName)
-
-    const mockWindowTabs = {
-      openTabOfKind: vi.fn(async () => undefined),
-      releaseTab: vi.fn(() => true),
-      tabs: ref([{ id: 'tab-1', title: 'Plex' }]),
-    }
-
-    const replies: unknown[] = []
-    senderChannel.onmessage = (event) => {
-      replies.push(event.data)
-    }
-
-    const scope = effectScope()
-    scope.run(() => {
-      useCrossWindowTabs({ windowTabs: mockWindowTabs, windowId: 'win-target' }, channelName)
-    })
+    const { senderChannel, mockWindowTabs, replies, scope } = listenAsTarget(
+      async () => undefined,
+      [{ id: 'tab-1', title: 'Plex' }],
+    )
 
     senderChannel.postMessage({
       type: 'tab-dock',
@@ -147,19 +151,7 @@ describe('useCrossWindowTabs', () => {
   })
 
   it('ignores malformed or untargeted messages', async () => {
-    const channelName = 'test-channel-' + crypto.randomUUID()
-    const senderChannel = new BroadcastChannel(channelName)
-
-    const mockWindowTabs = {
-      openTabOfKind: vi.fn(async () => 'tab-new'),
-      releaseTab: vi.fn(() => true),
-      tabs: ref([]),
-    }
-
-    const scope = effectScope()
-    scope.run(() => {
-      useCrossWindowTabs({ windowTabs: mockWindowTabs, windowId: 'win-target' }, channelName)
-    })
+    const { senderChannel, mockWindowTabs, scope } = listenAsTarget(async () => 'tab-new', [])
 
     senderChannel.postMessage(null)
     senderChannel.postMessage({ type: 'unknown-type' })
