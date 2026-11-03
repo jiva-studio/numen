@@ -25,7 +25,7 @@ export function verifyAllTsPackagesHaveEslint() {
 }
 
 /** A verifier that runs `npm run lint` in the package at `dir`. */
-const createLintVerifier = ({ id, scope, module, name, dir }) => ({
+const createLintVerifier = (id, scope, module, dir, name) => ({
   id,
   isLint: true,
   scope,
@@ -44,14 +44,14 @@ export const FRONTEND_VERIFIERS = [
     name: "Every TypeScript Package Has ESLint Configured",
     run: verifyAllTsPackagesHaveEslint,
   },
-  createLintVerifier({ id: "ui-lint", scope: "libs", module: "ui", dir: "libs/ui/core",
-    name: "UI Library Lint (npm run lint in libs/ui/core; its imports are dependency-graph's)" }),
-  createLintVerifier({ id: "shell-lint", scope: "libs", module: "shell", dir: "libs/ui/shell",
-    name: "Shell Library Lint (npm run lint in libs/ui/shell; its imports are dependency-graph's)" }),
-  createLintVerifier({ id: "plugin-host-lint", scope: "libs", module: "host", dir: "libs/plugin-host-ts",
-    name: "Plugin Host Lint (npm run lint in libs/plugin-host-ts; its imports are dependency-graph's)" }),
-  createLintVerifier({ id: "desktop-editor-fsd", scope: "apps", module: "desktop", dir: "apps/desktop/editor",
-    name: "Desktop Editor FSD Layer Hierarchy (shared -> entities -> features -> pages -> app)" }),
-  createLintVerifier({ id: "desktop-flashcards-fsd", scope: "apps", module: "desktop", dir: "apps/desktop/flashcards",
-    name: "Desktop Flashcards FSD Layer Hierarchy" }),
+  createLintVerifier("ui-lint", "libs", "ui", "libs/ui/core",
+    "UI Library Lint (npm run lint in libs/ui/core; its imports are dependency-graph's)"),
+  createLintVerifier("shell-lint", "libs", "shell", "libs/ui/shell",
+    "Shell Library Lint (npm run lint in libs/ui/shell; its imports are dependency-graph's)"),
+  createLintVerifier("plugin-host-lint", "libs", "host", "libs/plugin-host-ts",
+    "Plugin Host Lint (npm run lint in libs/plugin-host-ts; its imports are dependency-graph's)"),
+  createLintVerifier("desktop-editor-fsd", "apps", "desktop", "apps/desktop/editor",
+    "Desktop Editor FSD Layer Hierarchy (shared -> entities -> features -> pages -> app)"),
+  createLintVerifier("desktop-flashcards-fsd", "apps", "desktop", "apps/desktop/flashcards",
+    "Desktop Flashcards FSD Layer Hierarchy"),
 ];
