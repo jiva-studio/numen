@@ -59,8 +59,8 @@ jobs:
         with:
           persist-credentials: false
 
-      # A plugin with a backend has a bin folder after the build and a plugin with a frontend has a
-      # dist folder; the release stages the plugins of that tree.
+      # A plugin with a backend has a bin folder after the build, a plugin with a frontend has a
+      # dist folder and a theme plugin carries its themes folder; the release stages that tree.
       - name: Stage the plugins as the release does
         run: |
           set -euo pipefail
@@ -73,6 +73,7 @@ jobs:
               cp "$p/manifest.json" "$built/$name/"
               if [ -d "$p/backend" ]; then mkdir -p "$built/$name/bin"; touch "$built/$name/bin/$name"; fi
               if [ -d "$p/frontend" ]; then mkdir -p "$built/$name/dist"; touch "$built/$name/dist/index.js"; fi
+              if [ -d "$p/themes" ]; then cp -r "$p/themes" "$built/$name/"; fi
             fi
           done
           echo '{"plugins":[]}' > "$built/plugins-index.json"
