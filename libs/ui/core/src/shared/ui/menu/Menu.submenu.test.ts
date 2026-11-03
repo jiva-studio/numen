@@ -3,10 +3,8 @@
  * it away. The negatives matter most: a row with a submenu is not an item to
  * choose, and the key that closes a submenu must not close the menu under it.
  */
-import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
-import Menu from './Menu.vue'
+import { createMenuMount, settle } from './fixtures/mount'
 import { SUBMENU_CLOSE_GRACE_MS, SUBMENU_OPEN_DELAY_MS } from './interaction/aim'
 import type { MenuItem } from './items/item'
 
@@ -23,35 +21,7 @@ const ITEMS: MenuItem[] = [
   { id: 'copy', text: 'Copy path' },
 ]
 
-type MenuProps = InstanceType<typeof Menu>['$props']
-
-let mounted: { unmount: () => void } | null = null
-let now = 1_000
-
-const advanceClock = (ms: number): void => {
-  now += ms
-}
-
-const mountMenu = (props: Partial<MenuProps> = {}) => {
-  now = 1_000
-  const menu = mount(Menu, {
-    props: {
-      items: ITEMS,
-      at: { x: 40, y: 40 },
-      isOpen: true,
-      clock: () => now,
-      ...props,
-    },
-    attachTo: document.body,
-  })
-  mounted = menu
-  return menu
-}
-
-const settle = async () => {
-  await nextTick()
-  await nextTick()
-}
+const { mountMenu, advanceClock } = createMenuMount(ITEMS)
 
 const getMenus = () => Array.from(document.body.querySelectorAll<HTMLElement>('.menu'))
 const getRows = (menu: HTMLElement | undefined) =>
@@ -68,8 +38,6 @@ const restOnRow = async (
 }
 
 afterEach(() => {
-  mounted?.unmount()
-  mounted = null
   vi.restoreAllMocks()
 })
 

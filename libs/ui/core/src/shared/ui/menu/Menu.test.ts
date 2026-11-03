@@ -6,10 +6,9 @@
  * It is drawn at the end of the document, so everything here is read off the
  * document and not off the wrapper.
  */
-import { mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
-import Menu from './Menu.vue'
+import { createMenuMount, settle } from './fixtures/mount'
 import type { MenuItem } from './items/item'
 
 const ITEMS: MenuItem[] = [
@@ -18,32 +17,10 @@ const ITEMS: MenuItem[] = [
   { id: 'copy', text: 'Copy path' },
 ]
 
-type MenuProps = InstanceType<typeof Menu>['$props']
-
-let mounted: { unmount: () => void } | null = null
-
-const mountMenu = (props: Partial<MenuProps> = {}) => {
-  const menu = mount(Menu, {
-    props: { items: ITEMS, at: { x: 40, y: 40 }, isOpen: true, ...props },
-    attachTo: document.body,
-  })
-  mounted = menu
-  return menu
-}
-
-/** Twice: the menu measures and takes the keyboard a tick after it is opened. */
-const settle = async () => {
-  await nextTick()
-  await nextTick()
-}
+const { mountMenu, forgetMenu } = createMenuMount(ITEMS)
 
 const getDrawnMenu = () => document.body.querySelector<HTMLElement>('.menu')
 const choices = () => Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
-
-afterEach(() => {
-  mounted?.unmount()
-  mounted = null
-})
 
 describe('being open and being closed', () => {
   it('draws nothing at all until it is opened', async () => {
@@ -268,7 +245,7 @@ describe('where the keyboard goes when it closes', () => {
     await settle()
 
     menu.unmount()
-    mounted = null
+    forgetMenu()
     expect(document.activeElement).toBe(from)
     from.remove()
   })
@@ -308,11 +285,7 @@ describe('when there is nothing to choose', () => {
   })
 
   it('says it in the words it was given', async () => {
-    mounted = mount(Menu, {
-      props: { items: [], at: { x: 0, y: 0 }, isOpen: true },
-      slots: { silence: 'ничего' },
-      attachTo: document.body,
-    })
+    mountMenu({ items: [], at: { x: 0, y: 0 } }, { silence: 'ничего' })
     await settle()
     expect(getDrawnMenu()?.querySelector('.menu__silence')?.textContent?.trim()).toBe('ничего')
   })
