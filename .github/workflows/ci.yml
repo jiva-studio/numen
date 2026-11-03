@@ -59,16 +59,21 @@ jobs:
       gradle: ${{ steps.areas.outputs.gradle }}
       staging: ${{ steps.areas.outputs.staging }}
       mutation_tool: ${{ steps.areas.outputs.mutation_tool }}
-      e2e: ${{ steps.areas.outputs.e2e }}
+      e2e: ${{ steps.e2e.outputs.scope }}
       platforms: ${{ steps.platforms.outputs.matrix }}
     steps:
       # The merge commit and its first parent, the base, without file contents: the diff of two
-      # trees names the changed files.
+      # trees names the changed files. The end-to-end selection reads the plugin manifests and the
+      # spec files.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2
           filter: blob:none
-          sparse-checkout: .github
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/
+            /plugins/*/manifest.json
+            /tests/e2e/desktop/
           persist-credentials: false
 
       - id: areas
@@ -76,6 +81,14 @@ jobs:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event_name == 'pull_request' && 'HEAD^1' || github.event.before }}
         run: node .github/scripts/changes.mjs "$EVENT" "$BASE" HEAD | tee -a "$GITHUB_OUTPUT"
+
+      - id: e2e
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            git diff --name-only --no-renames HEAD^1 HEAD | node tests/e2e/desktop/scripts/select-tests.mjs scope | tee -a "$GITHUB_OUTPUT"
+          else
+            echo "scope=all" | tee -a "$GITHUB_OUTPUT"
+          fi
 
       # Linux always. Windows and macOS when a commit of the change carries a `Run-On:` trailer
       # naming them (or `all`), or when a manual run asks for them.

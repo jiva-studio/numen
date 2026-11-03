@@ -6,9 +6,9 @@
  *
  * A pull request runs the areas its files touch and every area that depends on them. A push, a
  * manual run, a change to code every area reads (SHARED) and a base missing from the clone run
- * every area. `plugin_dirs` lists the plugin folders to lint, build and test; `e2e` is `all`, `none`
- * or the folders under tests/e2e/desktop/tests/plugins/ to run. `docs_deploy` is true on a push
- * that changes what the manual is written from.
+ * every area. `plugin_dirs` lists the plugin folders to lint, build and test. `docs_deploy` is true
+ * on a push that changes what the manual is written from. The end-to-end tests a change needs are
+ * tests/e2e/desktop/scripts/select-tests.mjs's to choose.
  */
 import { execFileSync } from 'node:child_process'
 
@@ -36,7 +36,6 @@ export const AREAS = [
 ]
 
 const ALL_PLUGINS = 'plugins'
-const ALL_E2E = 'e2e'
 
 /** Read by every area: the workspace, the build, the shared tools and CI itself. */
 const SHARED =
@@ -45,7 +44,7 @@ const SHARED =
 /** The Go lint rules every Go module is held to. */
 const GO_RULES = /^\.golangci(-structure)?\.yml$|(^|\/)gorules\//
 
-const GO_LIBS = ['core', 'desktop', 'mobile', 'sdk_go', ALL_PLUGINS, ALL_E2E]
+const GO_LIBS = ['core', 'desktop', 'mobile', 'sdk_go', ALL_PLUGINS]
 
 /** What the manual writes itself from, besides apps/docs. */
 const MANUAL_SOURCES =
@@ -57,25 +56,25 @@ const STORY_SOURCES =
 
 /** Each rule adds its areas to a file it matches; a file can match several. */
 const RULES = [
-  [/^libs\/protocol\//, ['protocol', 'core', 'desktop', 'mobile', 'sdk_go', 'desktop_fe', 'mobile_fe', ALL_PLUGINS, ALL_E2E]],
-  [/^libs\/notes\//, ['core', 'desktop', 'mobile', 'sdk_go', ALL_PLUGINS, ALL_E2E]],
-  [/^libs\/(core|plugin-catalog)\//, ['core', 'desktop', 'mobile', ALL_E2E]],
-  [/^libs\/plugin-sdk-go\//, ['sdk_go', ALL_PLUGINS, ALL_E2E]],
-  [/^libs\/plugin-sdk-ts\//, ['desktop_fe', ALL_PLUGINS, ALL_E2E]],
-  [/^libs\/ui\/core\//, ['ui', 'desktop_fe', 'mobile_fe', ALL_PLUGINS, ALL_E2E]],
-  [/^libs\/ui\/shell\//, ['desktop_fe', ALL_E2E]],
-  [/^libs\/core-client\//, ['desktop_fe', 'mobile_fe', ALL_E2E]],
-  [/^libs\/(plugin-host-ts|plugin-manager)\//, ['desktop_fe', ALL_E2E]],
-  [/^apps\/desktop\/(editor|flashcards)\//, ['desktop_fe', ALL_E2E]],
-  [/^apps\/desktop\/(?!editor\/|flashcards\/)/, ['desktop', ALL_E2E]],
+  [/^libs\/protocol\//, ['protocol', 'core', 'desktop', 'mobile', 'sdk_go', 'desktop_fe', 'mobile_fe', ALL_PLUGINS]],
+  [/^libs\/notes\//, ['core', 'desktop', 'mobile', 'sdk_go', ALL_PLUGINS]],
+  [/^libs\/(core|plugin-catalog)\//, ['core', 'desktop', 'mobile']],
+  [/^libs\/plugin-sdk-go\//, ['sdk_go', ALL_PLUGINS]],
+  [/^libs\/plugin-sdk-ts\//, ['desktop_fe', ALL_PLUGINS]],
+  [/^libs\/ui\/core\//, ['ui', 'desktop_fe', 'mobile_fe', ALL_PLUGINS]],
+  [/^libs\/ui\/shell\//, ['desktop_fe']],
+  [/^libs\/core-client\//, ['desktop_fe', 'mobile_fe']],
+  [/^libs\/(plugin-host-ts|plugin-manager)\//, ['desktop_fe']],
+  [/^apps\/desktop\/(editor|flashcards)\//, ['desktop_fe']],
+  [/^apps\/desktop\/(?!editor\/|flashcards\/)/, ['desktop']],
   [/^apps\/mobile\/(bind\/|[^/]+\.go$|go\.(mod|sum)$)/, ['mobile']],
   [/^apps\/mobile\/(?!bind\/|[^/]+\.go$|go\.(mod|sum)$)/, ['mobile_fe']],
   [/^apps\/docs\//, ['docs', 'references']],
   [/^plugins\/[^/]+\/manifest\.json$/, ['core']],
   [/^plugins\//, ['plugin_versions', 'plugin_stories', 'staging']],
   [/^tests\/e2e\/desktop\//, ['desktop_fe']],
-  [/^tests\/(?!e2e\/)/, ['core', ALL_E2E]],
-  [/^tools\/build-plugin-index\//, ['core', 'plugin_versions', ALL_E2E]],
+  [/^tests\/(?!e2e\/)/, ['core']],
+  [/^tools\/build-plugin-index\//, ['core', 'plugin_versions']],
   [/^tools\/plugin-versions\//, ['plugin_versions']],
   [/^tools\/ci-stories\//, ['desktop_fe', 'plugin_stories']],
   [/^tools\/ci-mutation\/|^\.github\/workflows\/mutation/, ['mutation_tool']],
@@ -95,23 +94,15 @@ const isScript = (file) => /\.(ts|tsx|js|jsx|mjs|cjs|vue)$/.test(file)
 /** The plugin folder a file is in, or undefined. */
 const getPluginDir = (file) => /^plugins\/([^/]+)\//.exec(file)?.[1]
 
-/** The E2E folder of a plugin: its folder name with dots for dashes, when the suite has one. */
-const getE2eFolder = (pluginDir, e2eFolders) => {
-  const folder = pluginDir.replaceAll('-', '.')
-  return e2eFolders.includes(folder) ? folder : undefined
-}
-
 /**
- * The areas of a change. `plugins` are the folders under plugins/ holding a manifest, and
- * `e2eFolders` the folders under tests/e2e/desktop/tests/plugins/.
+ * The areas of a change. `plugins` are the folders under plugins/ holding a manifest.
  *
- * @param {{ everything: boolean, files: string[], plugins: string[], e2eFolders: string[] }} change
+ * @param {{ everything: boolean, files: string[], plugins: string[] }} change
  * @returns {Record<string, string>}
  */
-export function getAreas({ everything, files, plugins, e2eFolders }) {
+export function getAreas({ everything, files, plugins }) {
   const areas = new Set()
   const pluginDirs = new Set()
-  const e2e = new Set()
 
   for (const file of everything ? [] : files) {
     if (SHARED.test(file)) {
@@ -133,20 +124,14 @@ export function getAreas({ everything, files, plugins, e2eFolders }) {
     const pluginDir = getPluginDir(file)
     if (pluginDir && plugins.includes(pluginDir)) {
       pluginDirs.add(pluginDir)
-      const folder = getE2eFolder(pluginDir, e2eFolders)
-      if (folder) e2e.add(folder)
     } else if (pluginDir || /^plugins\/[^/]+$/.test(file)) {
       areas.add(ALL_PLUGINS)
     }
-    const e2eFolder = /^tests\/e2e\/desktop\/tests\/plugins\/([^/]+)\//.exec(file)?.[1]
-    if (e2eFolder) e2e.add(e2eFolder)
-    else if (/^tests\/e2e\/desktop\//.test(file)) areas.add(ALL_E2E)
   }
 
   if (everything) {
     AREAS.forEach((area) => areas.add(area))
     areas.add(ALL_PLUGINS)
-    areas.add(ALL_E2E)
   }
   if (areas.has('code')) areas.add('narrative')
   if (areas.has(ALL_PLUGINS)) plugins.forEach((dir) => pluginDirs.add(dir))
@@ -155,16 +140,8 @@ export function getAreas({ everything, files, plugins, e2eFolders }) {
   const output = Object.fromEntries(AREAS.map((area) => [area, String(areas.has(area))]))
   output.plugins = String(pluginDirs.size > 0)
   output.plugin_dirs = [...pluginDirs].sort().map((dir) => `plugins/${dir}`).join(' ')
-  output.e2e = areas.has(ALL_E2E) ? 'all' : e2e.size > 0 ? [...e2e].sort().join(' ') : 'none'
   return output
 }
-
-/** The paths git lists under `path` at HEAD, one level deep. */
-const listTree = (path) =>
-  execFileSync('git', ['ls-tree', '--name-only', 'HEAD', `${path}/`], { encoding: 'utf8' })
-    .split('\n')
-    .filter(Boolean)
-    .map((entry) => entry.slice(path.length + 1))
 
 /** The files that differ between two commits, or undefined when either is not in the clone. */
 const listChangedFiles = (base, head) => {
@@ -184,9 +161,8 @@ const main = () => {
     .split('\n')
     .map((path) => /^plugins\/([^/]+)\/manifest\.json$/.exec(path)?.[1])
     .filter(Boolean)
-  const e2eFolders = listTree('tests/e2e/desktop/tests/plugins')
-  const changed = getAreas({ everything: files === undefined, files: files ?? [], plugins, e2eFolders })
-  const output = event === 'pull_request' ? changed : getAreas({ everything: true, files: [], plugins, e2eFolders })
+  const changed = getAreas({ everything: files === undefined, files: files ?? [], plugins })
+  const output = event === 'pull_request' ? changed : getAreas({ everything: true, files: [], plugins })
   // A push deploys the manual only when the push changed what the manual is written from.
   output.docs_deploy = String(event === 'push' && changed.docs === 'true')
   for (const [name, value] of Object.entries(output)) console.log(`${name}=${value}`)
