@@ -126,6 +126,25 @@
       "project": [
         "src/**/*.{ts,astro,vue}",
         "tools/**/*.mjs"
+      ],
+      "ignoreDependencies": [
+        "@fontsource-variable/newsreader",
+        "@fontsource/ibm-plex-mono",
+        "@fontsource/ibm-plex-sans",
+        "@vitejs/plugin-vue",
+        "@lucide/vue",
+        "vue",
+        "@numen/core-client",
+        "@numen/plugin-host",
+        "@numen/ui-shell",
+        "@plugins/views-file-tree",
+        "@plugins/views-plex-graph",
+        "@plugins/notes",
+        "@plugins/readers-pdf",
+        "@plugins/views-media-player",
+        "@plugins/views-flashcards-studio",
+        "@plugins/views-agent-chat",
+        "@editor-features/tab-linking"
       ]
     },
     "tests/e2e/desktop": {
