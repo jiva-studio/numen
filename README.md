@@ -17,7 +17,7 @@
 [![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](https://github.com/jiva-studio/numen/releases/latest)
 [![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/akdasa/d232b23b1b45234f6fd6570b93f2e63a/raw/coverage.json)](https://github.com/jiva-studio/numen)
 [![Mutation Score](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/akdasa/d232b23b1b45234f6fd6570b93f2e63a/raw/mutation.json)](https://github.com/jiva-studio/numen)
-[![End-to-End](https://img.shields.io/github/actions/workflow/status/jiva-studio/numen/desktop-e2e.yml?branch=main&label=End-to-End)](https://github.com/jiva-studio/numen/actions/workflows/desktop-e2e.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/jiva-studio/numen/ci.yml?branch=main&label=CI)](https://github.com/jiva-studio/numen/actions/workflows/ci.yml)
 [![Scorecard](https://img.shields.io/ossf-scorecard/github.com/jiva-studio/numen?label=Scorecard)](https://securityscorecards.dev/viewer/?uri=github.com/jiva-studio/numen)
 [![CodeQL](https://github.com/jiva-studio/numen/actions/workflows/codeql.yml/badge.svg)](https://github.com/jiva-studio/numen/actions/workflows/codeql.yml)
 
