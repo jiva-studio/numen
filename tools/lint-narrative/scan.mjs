@@ -249,7 +249,7 @@ const PHRASE_RULES = [
   {
     name: 'let go',
     re: /\b(?:lets?|letting) (?:(?:it|them) )?go\b(?! (?:code|programs?|packages?|modules?|files?|types?|binar\w*|tests?)\b)/i,
-    use: '"releases pointer capture when the scope is disposed", not "lets go of the window when the scope goes"',
+    use: '`releases pointer capture when the scope is disposed`, `clears the interval on dispose`',
   },
   {
     name: 'goes/leaves',
@@ -257,53 +257,53 @@ const PHRASE_RULES = [
       String.raw`\b(?:when|before|after|once|until|while) ${DEPARTURE_SUBJECT} (?:goes(?: away)?|leaves|has gone|have gone|is gone|are gone)(?=\s*(?:$|[.,;:)'"` + '`' + String.raw`]|\b(?:and|or|but|so|then|when|before|after|while|until|once|first|again)\b))`,
       'i',
     ),
-    use: '"when the scope is disposed", "after the element is removed", not "when the scope goes"',
+    use: '`when the scope is disposed`, `after the element is removed`',
   },
   {
     name: 'is told',
     re: /\b(?:is|are|was|were|be|been|being|gets?|got) told\b|\btold (?:to|of|about|apart)\b/i,
-    use: '"is notified", "receives", "is configured to", "distinguishes", not "is told"',
+    use: '`is notified`, `receives the width`, `is configured to`, `distinguishes`',
   },
   {
     name: 'hears',
     re: /\b(?:hears|hear (?:of|about|back|from)|heard (?:of|about|back|from)|hearing (?:of|about|from)|to hear)\b/i,
-    use: '"receives", "is notified of", "subscribes to", not "hears of"',
+    use: '`receives`, `is notified of`, `subscribes to`',
   },
-  { name: 'comes back', re: /\b(?:comes?|came|coming) back\b/i, use: '"returns", "is returned", not "comes back"' },
+  { name: 'comes back', re: /\b(?:comes?|came|coming) back\b/i, use: '`returns`, `is returned`' },
   {
     name: 'brings along',
     re: /\b(?:brings?|brought|bringing|takes?|took|carries|carry|carried) along\b/i,
-    use: '"includes", "passes", not "brings along"',
+    use: '`includes`, `passes`',
   },
   {
     name: 'nobody',
     re: /\bnobody\b/i,
-    use: '"with no subscriber", "when no caller requested it", not "where nobody requested to hear of it"',
+    use: '`cancels the drag when no listener is registered`',
   },
   {
     name: 'put on',
     re: /,\s*(?:put|laid) (?:on|onto|in|into) (?:the|a|an)\b|\bput on the (?:screen|page|window|line|clipboard|wire)\b/i,
-    use: '"Converts a viewport point to screen coordinates", "copied to the clipboard", not "a point, put on the screen"',
+    use: '`Converts a viewport point to screen coordinates.`, `copies the path to the clipboard`',
   },
   {
     name: 'answers whether',
     re: /\b(?:answers|tells|says) (?:whether|if)\b/i,
-    use: '"Returns whether", "Reports whether", not "answers whether"',
+    use: '`Returns whether`, `Reports whether`',
   },
   {
     name: 'stays where',
     re: /\bstay(?:s|ed)? where (?:it|they) (?:is|are|was|were)\b|\bwhere (?:it|they) (?:sits?|lands?|stands?)\b|\blands? nowhere\b|\ball there is\b/i,
-    use: '"keeps its position", "has no drop target", "when the list has one item", not "stays where it is"',
+    use: '`keeps its position when the list has one item`, `has no drop target`',
   },
   {
     name: 'what it holds',
     re: /\bwhat (?:it|they) (?:holds?|carry|carries|keeps?)\b/i,
-    use: '"its contents", "its value", not "what it holds"',
+    use: '`its contents`, `its value`',
   },
   {
     name: 'does not take',
     re: /\b(?:did|does|do) not take\b(?! (?:effect|place|long|into account|arguments?|parameters?|a context|ctx|ownership)\b)/i,
-    use: '"reports an error when the core rejects the tab report", "does not accept", not "a report the core did not take"',
+    use: '`reports an error when the core rejects the tab report`, `does not accept`',
   },
 ]
 
@@ -906,7 +906,7 @@ function scanFile(filePath) {
           line: lineNum,
           lang: isGo ? 'go' : 'ts',
           word: rule.name,
-          text: `${trimmed.slice(0, 140)} -> write ${rule.use}`,
+          text: `${trimmed.slice(0, 140)} -> Write a subject, a standard verb and concrete nouns, e.g. ${rule.use}`,
         })
       }
     }
