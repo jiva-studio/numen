@@ -77,8 +77,8 @@ export interface VaultPort {
   ): Promise<void>
   /**
    * Streams the link groups and the linkable tabs of all windows, then every change and every
-   * path sync, until the signal aborts. When the stream ends, the core unlinks the tabs of this
-   * window.
+   * path sync, until the signal aborts. When the last stream of this window ends, the core
+   * unlinks the tabs of this window unless a new stream starts within a grace period.
    */
   watchTabLinks(windowId: string, signal: AbortSignal): AsyncIterable<TabLinksEvent>
   /** Cancels the tab links stream of a window. */

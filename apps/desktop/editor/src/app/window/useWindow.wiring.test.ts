@@ -873,4 +873,12 @@ describe('tab links wiring', () => {
       vi.unstubAllGlobals()
     }
   })
+
+  it('closes the tab links session when the page hides', () => {
+    useWindow()
+
+    globalThis.dispatchEvent(new Event('pagehide'))
+
+    expect(h.f.tabLinkSession.close).toHaveBeenCalled()
+  })
 })

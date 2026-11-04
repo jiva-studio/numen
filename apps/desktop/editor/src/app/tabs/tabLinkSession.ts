@@ -52,12 +52,21 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
           isNewStream = false
           reportTabs()
         }
-        if (event.links) deps.tabLinks.applySnapshot(event.links)
-        else if (event.sync) deps.applySync(event.sync)
+        // An event that fails to apply is reported, and the stream stays open: a
+        // reconnect would not apply it either.
+        try {
+          if (event.links) deps.tabLinks.applySnapshot(event.links)
+          else if (event.sync) deps.applySync(event.sync)
+        } catch (error) {
+          deps.onError(error)
+        }
       },
     )
 
-  /** Aborts the stream and cancels the watch; the core then unlinks the tabs of the window. */
+  /**
+   * Aborts the stream and cancels the watch; the core unlinks the tabs of the
+   * window when no watch of the window starts within its grace period.
+   */
   const close = (): void => {
     if (!isOpen) return
     isOpen = false

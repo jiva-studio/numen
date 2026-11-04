@@ -91,6 +91,22 @@ describe('createTabLinkSession', () => {
 
     await vi.waitFor(() => expect(deps.onError).toHaveBeenCalledWith(failure))
   })
+
+  it('keeps the stream open when applySync throws', async () => {
+    const { deps, core, session } = setup([{ sync: SYNC }, { links: SNAPSHOT }])
+    const failure = new Error('navigate failed')
+    deps.applySync.mockImplementationOnce(() => {
+      throw failure
+    })
+
+    const stream = session.start()
+
+    await vi.waitFor(() => expect(deps.tabLinks.applySnapshot).toHaveBeenCalledWith(SNAPSHOT))
+    expect(deps.onError).toHaveBeenCalledWith(failure)
+    expect(core.watchTabLinks).toHaveBeenCalledOnce()
+    session.close()
+    await stream
+  })
 })
 
 describe('getLinkableTabs', () => {

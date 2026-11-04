@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { TabLinkGroup } from '@/features/tab-linking'
+import type { TabPathSync } from '../ports/vault'
 import { createTabSync, type TabSyncDeps } from './useTabSync'
 
 type Navigate = (state: unknown, path: string, title: string) => void | Promise<void>
@@ -149,13 +150,30 @@ describe('applySync', () => {
     expect(sendSync).not.toHaveBeenCalled()
   })
 
-  it('ignores a sync whose source is a tab of this window', () => {
+  it('skips the tabs that show the path of a sync from this window', () => {
     const navigate = vi.fn<Navigate>()
     const { sync } = setup({ s: {}, 'files:1': { navigate } }, createLinkedTabs('files:1'))
+    sync.syncPathFromTab('s', 'b.md', 'B')
 
     sync.applySync({ groupId: 'group-1', sourceTabId: 's', path: 'b.md', title: 'B' })
 
-    expect(navigate).not.toHaveBeenCalled()
+    expect(navigate).toHaveBeenCalledOnce()
+  })
+
+  it('moves the source tab back to the path of an earlier sync from this window', () => {
+    const source = vi.fn<Navigate>()
+    const { sync, sendSync } = setup(
+      { s: { navigate: source }, 'files:1': { navigate: vi.fn() } },
+      createLinkedTabs('files:1'),
+    )
+    sync.syncPathFromTab('s', 'a.md', 'A')
+    sync.syncPathFromTab('s', 'b.md', 'B')
+
+    sync.applySync({ groupId: 'group-1', sourceTabId: 's', path: 'a.md', title: 'A' })
+    sync.syncPathFromTab('s', 'a.md', 'A')
+
+    expect(source).toHaveBeenCalledExactlyOnceWith(undefined, 'a.md', 'A')
+    expect(sendSync).toHaveBeenCalledTimes(2)
   })
 
   it('does not send the sync back when a moved tab reports the path', () => {
@@ -247,5 +265,51 @@ describe('a linked tab that fails to move', () => {
     sync.syncPathFromTab('s', 'a.md')
 
     await vi.waitFor(() => expect(onError).toHaveBeenCalledWith(failure))
+  })
+})
+
+describe('linked tabs in two windows', () => {
+  const GROUP: TabLinkGroup = { id: 'group-1', colorIndex: 1, tabs: ['plex:a', 'plex:b'] }
+
+  /** Returns one window with one plex tab whose navigate reports the path back at once. */
+  const createWindow = (tabId: string, paths: Map<string, string>, sent: TabPathSync[]) => {
+    const window = {} as { sync: ReturnType<typeof createTabSync> }
+    const navigate: Navigate = (_state, path) => {
+      paths.set(tabId, path)
+      window.sync.syncPathFromTab(tabId, path)
+    }
+    window.sync = createTabSync({
+      windowTabs: createWindowTabs({ [tabId]: { navigate } }),
+      tabLinks: {
+        groups: new Map([[GROUP.id, GROUP]]),
+        getGroupOf: (id) => (GROUP.tabs.includes(id) ? GROUP : null),
+      },
+      sendSync: (sync) => {
+        sent.push({ groupId: GROUP.id, ...sync })
+        return Promise.resolve()
+      },
+      onError: () => undefined,
+    })
+    return window.sync
+  }
+
+  it('ends on one path after both windows navigate before either sync arrives', () => {
+    const paths = new Map<string, string>()
+    const sent: TabPathSync[] = []
+    const windowA = createWindow('plex:a', paths, sent)
+    const windowB = createWindow('plex:b', paths, sent)
+
+    paths.set('plex:a', 'first.md')
+    windowA.syncPathFromTab('plex:a', 'first.md')
+    paths.set('plex:b', 'second.md')
+    windowB.syncPathFromTab('plex:b', 'second.md')
+    for (const sync of sent.splice(0)) {
+      windowA.applySync(sync)
+      windowB.applySync(sync)
+    }
+
+    expect(paths.get('plex:a')).toBe('second.md')
+    expect(paths.get('plex:b')).toBe('second.md')
+    expect(sent).toEqual([])
   })
 })
