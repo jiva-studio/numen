@@ -76,4 +76,4 @@ Any claim about scoping is tested with two vaults whose notes share no words, as
 
 ## Output integration
 
-Every result goes into **Stage 3** of the Unified Report in [`../SKILL.md`](../SKILL.md), in the table format given there. Name any test file left behind in the Action Items. Do not output a standalone report.
+A failing test becomes the proof of its finding in the report in [`../SKILL.md`](../SKILL.md); a passing one goes into the list of checks found sound. Name any test file left in the tree in the finding that uses it. Do not output a standalone report.

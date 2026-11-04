@@ -86,6 +86,6 @@ A change to a wire message affects both the Go side and the generated TypeScript
 
 ## Output integration
 
-Every defect goes into **Stage 2** of the Unified Report in [`../SKILL.md`](../SKILL.md), as a defect card in the exact format given there, ordered by severity rather than by position in the file. Do not output a standalone report.
+Every defect becomes a finding in the report in [`../SKILL.md`](../SKILL.md), in the format given there, ordered by severity rather than by position in the file. Do not output a standalone report.
 
 Pass every unproven hypothesis to Stage 3.
