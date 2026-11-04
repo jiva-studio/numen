@@ -49,7 +49,7 @@ func (h *workspaceHandler) WatchTabLinks(
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-watch.Done:
+		case <-watch.Stop:
 			return nil
 		case <-repeat.C:
 			// An empty response is a keepalive that fails when the client has disconnected.

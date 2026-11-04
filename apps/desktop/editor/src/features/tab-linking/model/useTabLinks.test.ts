@@ -46,7 +46,7 @@ describe('the link groups mirrored from the core', () => {
 })
 
 describe('a change to the links', () => {
-  it('is written to the core and changes nothing until the snapshot comes back', () => {
+  it('is written to the core, and the groups change with the next snapshot', () => {
     const { tabLinks, write } = setup()
 
     tabLinks.linkTabs('plex:1', 'files:2')
@@ -78,10 +78,10 @@ describe('a change to the links', () => {
 
   it('reports a change the core did not take', async () => {
     const { tabLinks, write, onError } = setup()
-    const refused = new Error('the core is gone')
-    write.mockRejectedValueOnce(refused)
+    const failure = new Error('the core is gone')
+    write.mockRejectedValueOnce(failure)
 
     tabLinks.linkTabs('plex:1', 'files:2')
-    await vi.waitFor(() => expect(onError).toHaveBeenCalledWith(refused))
+    await vi.waitFor(() => expect(onError).toHaveBeenCalledWith(failure))
   })
 })

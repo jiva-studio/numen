@@ -525,7 +525,7 @@ describe('a tab detached', () => {
       window.detachTabAt(PLEX_TAB, { x: 30, y: 40 })
 
       expect(h.core.detachTab).toHaveBeenCalledWith(
-        { kind: 'plex', path: 'Physics.md' },
+        { id: PLEX_TAB, kind: 'plex', path: 'Physics.md' },
         { x: 1030, y: 540 },
       )
     } finally {
@@ -584,7 +584,7 @@ describe('the layout started with an initial tab', () => {
 
       await h.args.bootstrap.startLayout()
 
-      expect(h.f.windowTabs.openTabOfKind).toHaveBeenCalledWith('reader:epub', 'books/a b.epub')
+      expect(h.f.windowTabs.openTabOfKind).toHaveBeenCalledWith('reader:epub', 'books/a b.epub', '')
       expect(h.f.windowTabs.layout.value).toEqual({
         root: { kind: 'pane', id: 'main', tabs: ['note:hello.md'], active: 'note:hello.md' },
         axis: 'horizontal',

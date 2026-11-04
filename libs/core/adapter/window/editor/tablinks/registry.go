@@ -101,11 +101,11 @@ type Watch struct {
 	// Initial is the state when the watch began; Events carries every change after it.
 	Initial Snapshot
 	Events  <-chan Event
-	// Done is closed when the window cancels its watch.
-	Done <-chan struct{}
+	// Stop is closed when the window cancels its watch.
+	Stop <-chan struct{}
 
 	windowID    string
-	done        chan struct{}
+	stop        chan struct{}
 	isCancelled bool
 	unsubscribe func()
 	registry    *Registry
@@ -131,13 +131,13 @@ func (r *Registry) Watch(windowID string) *Watch {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	events, unsubscribe := r.events.Subscribe()
-	done := make(chan struct{})
+	stop := make(chan struct{})
 	w := &Watch{
 		Initial:     r.getSnapshot(),
 		Events:      events,
-		Done:        done,
+		Stop:        stop,
 		windowID:    windowID,
-		done:        done,
+		stop:        stop,
 		unsubscribe: unsubscribe,
 		registry:    r,
 	}
@@ -145,14 +145,14 @@ func (r *Registry) Watch(windowID string) *Watch {
 	return w
 }
 
-// Cancel closes Done of every watch of a window.
+// Cancel closes Stop of every watch of a window.
 func (r *Registry) Cancel(windowID string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for _, w := range r.watches[windowID] {
 		if !w.isCancelled {
 			w.isCancelled = true
-			close(w.done)
+			close(w.stop)
 		}
 	}
 }

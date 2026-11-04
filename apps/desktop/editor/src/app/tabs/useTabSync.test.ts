@@ -201,12 +201,12 @@ describe('a linked tab that fails to move', () => {
   })
 
   it('reports a move the core did not take', async () => {
-    const refused = new Error('the core is gone')
+    const failure = new Error('the core is gone')
     const { sync, sendSync, onError } = setup({}, createLinkedTabs('plex:elsewhere'))
-    sendSync.mockRejectedValueOnce(refused)
+    sendSync.mockRejectedValueOnce(failure)
 
     sync.syncPathFromTab('s', 'a.md')
 
-    await vi.waitFor(() => expect(onError).toHaveBeenCalledWith(refused))
+    await vi.waitFor(() => expect(onError).toHaveBeenCalledWith(failure))
   })
 })

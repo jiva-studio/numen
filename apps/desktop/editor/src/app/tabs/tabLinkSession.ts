@@ -21,7 +21,7 @@ export interface TabLinkSessionDeps {
 }
 
 export function createTabLinkSession(deps: TabLinkSessionDeps) {
-  const listening = new AbortController()
+  const abortController = new AbortController()
   let isOpen = true
   let isNewReading = false
 
@@ -41,7 +41,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
     follows(
       () => {
         isNewReading = true
-        return deps.core.watchTabLinks(deps.windowId, listening.signal)
+        return deps.core.watchTabLinks(deps.windowId, abortController.signal)
       },
       (event) => {
         if (isNewReading) {
@@ -57,7 +57,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
   const close = (): void => {
     if (!isOpen) return
     isOpen = false
-    listening.abort()
+    abortController.abort()
     deps.core.cancelTabLinksWatch(deps.windowId).catch(deps.onError)
   }
 

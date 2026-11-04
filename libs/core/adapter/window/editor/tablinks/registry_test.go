@@ -62,7 +62,7 @@ func getGroupTabs(s Snapshot) [][]string {
 	return out
 }
 
-func TestLinkPutsTwoTabsOfTwoWindowsInOneGroup(t *testing.T) {
+func TestLinkGroupsTabsOfTwoWindows(t *testing.T) {
 	r, _ := newTestRegistry()
 	r.WriteTabs("window-a", []Tab{plex("plex:1", "Orbits")})
 	r.WriteTabs("window-b", []Tab{files("files:1", "Files")})
@@ -144,7 +144,7 @@ func TestUnlinkDropsAGroupLeftWithOneTab(t *testing.T) {
 	}
 }
 
-func TestATabMissingFromTheReportLeavesItsGroup(t *testing.T) {
+func TestWriteTabsDropsATabMissingFromTheReport(t *testing.T) {
 	r, _ := newTestRegistry()
 	r.WriteTabs("window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
@@ -160,7 +160,7 @@ func TestATabMissingFromTheReportLeavesItsGroup(t *testing.T) {
 	}
 }
 
-func TestAWindowWhoseWatchEndsTakesItsTabsOutOfTheirGroups(t *testing.T) {
+func TestClosingTheLastWatchDropsTheTabsOfTheWindow(t *testing.T) {
 	r, _ := newTestRegistry()
 	r.WriteTabs("window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	watch := r.Watch("window-b")
@@ -219,7 +219,7 @@ func TestADetachedTabKeepsItsLinksWhenTheNewWindowReportsIt(t *testing.T) {
 	}
 }
 
-func TestADetachedTabNoWindowReportsLeavesItsGroupAfterTheGracePeriod(t *testing.T) {
+func TestADetachedTabNoWindowReportsIsDroppedAfterTheGracePeriod(t *testing.T) {
 	r, clock := newTestRegistry()
 	r.WriteTabs("window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
@@ -329,12 +329,12 @@ func TestCancelEndsEveryWatchOfTheWindow(t *testing.T) {
 	r.Cancel("window-a")
 
 	select {
-	case <-mine.Done:
+	case <-mine.Stop:
 	default:
 		t.Error("the cancelled watch is still open")
 	}
 	select {
-	case <-other.Done:
+	case <-other.Stop:
 		t.Error("the watch of another window was cancelled")
 	default:
 	}

@@ -16,7 +16,7 @@ const OPEN_TABS = [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }]
 /** A stream that yields the events, then waits until the signal aborts. */
 async function* createStream(events: readonly TabLinksEvent[], signal: AbortSignal) {
   yield* events
-  await new Promise((resolve) => signal.addEventListener('abort', resolve))
+  if (!signal.aborted) await new Promise((resolve) => signal.addEventListener('abort', resolve))
 }
 
 const setup = (events: readonly TabLinksEvent[]) => {
@@ -45,14 +45,14 @@ describe('the tab links session', () => {
   it('mirrors each snapshot, applies each sync, and reports the open tabs once the stream opens', async () => {
     const { deps, core, session } = setup([{ links: SNAPSHOT }, {}, { sync: SYNC }])
 
-    const reading = session.start()
+    const stream = session.start()
 
     await vi.waitFor(() => expect(deps.applySync).toHaveBeenCalledWith(SYNC))
     expect(core.watchTabLinks).toHaveBeenCalledWith('window-a', expect.any(AbortSignal))
     expect(deps.tabLinks.applySnapshot).toHaveBeenCalledExactlyOnceWith(SNAPSHOT)
     expect(core.writeTabLinks).toHaveBeenCalledExactlyOnceWith('window-a', { tabs: OPEN_TABS })
     session.close()
-    await reading
+    await stream
   })
 
   it('reports the open tabs again on a stream opened after the first ended', async () => {
@@ -61,22 +61,22 @@ describe('the tab links session', () => {
       yield { links: SNAPSHOT }
     })
 
-    const reading = session.start()
+    const stream = session.start()
 
     await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(2))
     expect(core.watchTabLinks).toHaveBeenCalledTimes(2)
     session.close()
-    await reading
+    await stream
   })
 
   it('aborts the stream and cancels the watch of the window when it closes, once', async () => {
     const { core, session, signals } = setup([])
-    const reading = session.start()
+    const stream = session.start()
     await vi.waitFor(() => expect(signals).toHaveLength(1))
 
     session.close()
     session.close()
-    await reading
+    await stream
 
     expect(signals[0]?.aborted).toBe(true)
     expect(core.cancelTabLinksWatch).toHaveBeenCalledExactlyOnceWith('window-a')
@@ -84,12 +84,12 @@ describe('the tab links session', () => {
 
   it('reports a report the core did not take', async () => {
     const { deps, core, session } = setup([])
-    const refused = new Error('the core is gone')
-    core.writeTabLinks.mockRejectedValueOnce(refused)
+    const failure = new Error('the core is gone')
+    core.writeTabLinks.mockRejectedValueOnce(failure)
 
     session.reportTabs()
 
-    await vi.waitFor(() => expect(deps.onError).toHaveBeenCalledWith(refused))
+    await vi.waitFor(() => expect(deps.onError).toHaveBeenCalledWith(failure))
   })
 })
 

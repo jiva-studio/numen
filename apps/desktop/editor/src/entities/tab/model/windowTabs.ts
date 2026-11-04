@@ -388,9 +388,9 @@ function createTabOpeners(ctx: TabOpenerContext) {
 
   /** Opens a tab of a kind and shows it; `id` names the tab where it must keep an id it had elsewhere. */
   const openTabOfKind = async (kind: string, target = '', id = ''): Promise<string> => {
-    const opened = createTabSync(kind, target, id)
-    show(opened)
-    return opened
+    const tabId = createTabSync(kind, target, id)
+    show(tabId)
+    return tabId
   }
 
   const openTabAdjacentOfKind = async (kind: string, target = ''): Promise<string> => {
