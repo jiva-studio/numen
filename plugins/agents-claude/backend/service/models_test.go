@@ -188,7 +188,10 @@ func TestModelCache_AsyncReturnsEmptyThenFallbackOnFailure(t *testing.T) {
 	}
 	close(fail)
 	select {
-	case <-reported:
+	case reportErr := <-reported:
+		if reportErr == nil {
+			t.Error("the load reported no failure")
+		}
 	case <-t.Context().Done():
 		t.Fatal("the load did not report its failure")
 	}

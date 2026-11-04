@@ -17,14 +17,20 @@ type fakeRuntime struct {
 	run      *Graph
 }
 
+// readFirstPointer reads the first pointer of the array that address holds.
+func readFirstPointer(address uintptr) unsafe.Pointer {
+	array := *(*unsafe.Pointer)(unsafe.Pointer(&address))
+	return *(*unsafe.Pointer)(array)
+}
+
 func (f *fakeRuntime) get() Calls {
 	return Calls{
 		Run: func(_, options, inNames, _, _, outNames, _, _ uintptr) uintptr {
 			if options != 0 {
 				return 1
 			}
-			inPtr := *(*unsafe.Pointer)(unsafe.Pointer(inNames))
-			outPtr := *(*unsafe.Pointer)(unsafe.Pointer(outNames))
+			inPtr := readFirstPointer(inNames)
+			outPtr := readFirstPointer(outNames)
 			if inPtr == nil || *(*byte)(inPtr) != 'i' || outPtr == nil || *(*byte)(outPtr) != 'o' {
 				return 1
 			}
