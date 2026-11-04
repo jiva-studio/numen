@@ -26,15 +26,15 @@ import (
 
 type faultyVault struct {
 	host.Vault
-	getVaultErr          error
-	scanErr              error
-	getPathsErr          error
-	getNotesErr          error
-	getLinksErr          error
-	ensureIndexedErr     error
-	watchMovesErr        error
-	watchMovesChan       <-chan host.Move
-	panicOnEmptyGetNotes bool
+	getVaultErr        error
+	scanErr            error
+	getPathsErr        error
+	getNotesErr        error
+	getLinksErr        error
+	ensureIndexedErr   error
+	watchMovesErr      error
+	watchMovesChan     <-chan host.Move
+	emptyGetNotesCalls int
 }
 
 func (f *faultyVault) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
@@ -72,8 +72,8 @@ func (f *faultyVault) GetPathsOfType(ctx context.Context, noteType domain.NoteTy
 }
 
 func (f *faultyVault) GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error) {
-	if f.panicOnEmptyGetNotes && len(paths) == 1 && paths[0] == "" {
-		panic("unexpected GetNotes call for empty path")
+	if len(paths) == 1 && paths[0] == "" {
+		f.emptyGetNotesCalls++
 	}
 	if f.getNotesErr != nil {
 		return nil, f.getNotesErr
@@ -121,15 +121,19 @@ func TestBackendCoresAndVaultHelpers(t *testing.T) {
 		}
 	}
 
-	bPanicEmpty := New(Config{
-		Vault: &faultyVault{Vault: env.Host, panicOnEmptyGetNotes: true},
+	countingVault := &faultyVault{Vault: env.Host}
+	bCountEmpty := New(Config{
+		Vault: countingVault,
 		Store: env.Store,
 		Now:   vaulttest.NewClock(),
 	})
-	if got := bPanicEmpty.getTitle(t.Context(), env.Vault, ""); got != "" {
+	if got := bCountEmpty.getTitle(t.Context(), env.Vault, ""); got != "" {
 		t.Fatalf("expected empty title for empty path, got %q", got)
 	}
-	if got := bPanicEmpty.getTitle(t.Context(), env.Vault, "Term.md"); got != "Term" {
+	if countingVault.emptyGetNotesCalls != 0 {
+		t.Fatalf("expected no GetNotes call for an empty path, got %d", countingVault.emptyGetNotesCalls)
+	}
+	if got := bCountEmpty.getTitle(t.Context(), env.Vault, "Term.md"); got != "Term" {
 		t.Fatalf("expected Term title, got %q", got)
 	}
 

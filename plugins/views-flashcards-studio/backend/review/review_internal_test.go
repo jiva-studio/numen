@@ -295,10 +295,10 @@ func TestPresetAndSchedulingInternals(t *testing.T) {
 	// Test IsLearned at exact retention boundary (Recall == retention) and GetLearnedRule with unknown Rule.
 	pRet := Defaults()
 	pRet.Rule = RuleRetention
-	pRet.Retention = 0.9
+	pRet.Retention = Recall(24*time.Hour, 1.0)
 	sExactRet := Schedule{Last: now.Add(-24 * time.Hour), Due: now, Stability: 1.0}
 	if !pRet.IsLearned(sExactRet, now) {
-		t.Fatal("expected IsLearned true when Recall equals target retention 0.9")
+		t.Fatal("expected IsLearned true when Recall equals target retention")
 	}
 	pBadRule := Defaults()
 	pBadRule.Rule = "unknown"

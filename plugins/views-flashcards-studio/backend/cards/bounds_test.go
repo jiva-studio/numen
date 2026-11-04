@@ -25,8 +25,7 @@ func (w releaseFailWriters) Lock(ctx context.Context, v domain.Vault) (func() er
 		return nil, err
 	}
 	return func() error {
-		_ = release()
-		return w.releaseErr
+		return errors.Join(release(), w.releaseErr)
 	}, nil
 }
 
