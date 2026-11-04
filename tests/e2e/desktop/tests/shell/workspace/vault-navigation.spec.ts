@@ -1,28 +1,20 @@
 import { test, expect } from '../../support/test.js'
-import {
-  getGraph,
-  getPaletteField,
-  openWorkspace,
-  runPaletteCommand,
-} from '../../support/workspace.js'
+import { getPaletteField, openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 import { openNote } from '../../support/vault.js'
 
 test.describe('Vault Navigation and Quick Open Palette', () => {
-  test('puts the start note back in the focus of the plex with Go to start note', async ({
-    page,
-  }) => {
+  test('opens the start note in a tab with Go to start note', async ({ page }) => {
     await openWorkspace(page)
     await openNote(page, 'notes/Entropy.md')
-    await runPaletteCommand(page, 'Show note in plex', 'Show note in plex')
-    await expect(getGraph(page).getByRole('img', { name: 'Entropy, focus' })).toBeAttached()
 
     await runPaletteCommand(page, 'Go to start note', 'Go to start note')
 
-    await expect(getGraph(page).getByRole('img', { name: 'Thermodynamics, focus' })).toBeAttached()
-    await expect(getGraph(page).getByRole('button', { name: 'Entropy, child' })).toBeAttached()
+    await expect(
+      page.getByRole('tab', { name: 'Thermodynamics Close Thermodynamics', exact: true }),
+    ).toHaveAttribute('aria-selected', 'true')
   })
 
-  test('puts the note picked in Go to note in the focus of the plex', async ({ page }) => {
+  test('opens the note picked in Go to note in a tab', async ({ page }) => {
     await openWorkspace(page)
 
     await runPaletteCommand(page, 'Go to note', 'Go to note')
@@ -30,10 +22,9 @@ test.describe('Vault Navigation and Quick Open Palette', () => {
     await expect(page.getByRole('option', { selected: true })).toContainText('Entropy')
     await page.keyboard.press('Enter')
 
-    await expect(getGraph(page).getByRole('img', { name: 'Entropy, focus' })).toBeAttached()
     await expect(
-      getGraph(page).getByRole('button', { name: 'Thermodynamics, parent' }),
-    ).toBeAttached()
+      page.getByRole('tab', { name: 'Entropy Close Entropy', exact: true }),
+    ).toHaveAttribute('aria-selected', 'true')
   })
 
   test('reveals active note in file tree sidebar via reveal command', async ({ page }) => {
