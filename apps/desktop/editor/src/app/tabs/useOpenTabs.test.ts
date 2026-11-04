@@ -324,15 +324,15 @@ describe('the open tabs while the window leaves its vault', () => {
   })
 })
 
-describe('the icon of a kind', () => {
-  it('is the icon the kind declares, for a tab of another window', () => {
+describe('getKindIcon', () => {
+  it('returns the icon the kind declares', () => {
     const icon = { name: 'DeclaredIcon' }
     const target = create([{ id: 'p', title: 'P', kind: 'agent', icon }])
 
     expect(target.getKindIcon('agent')).toBe(icon)
   })
 
-  it('is the one the window keeps for a kind no open tab declares an icon for', () => {
+  it('falls back to the built-in icon of the kind', () => {
     const target = create([])
 
     expect(target.getKindIcon('note')).toBe(findTabKindIcon('note'))

@@ -104,7 +104,7 @@ export function useOpenTabs({
     isPaused.value = false
   }
 
-  /** The icon a kind declares, or the one the window keeps for it; a tab of another window is drawn by its kind. */
+  /** Returns the declared icon of a kind, or its built-in icon. Tabs of other windows use it. */
   const getKindIcon = (kind: string): Component | null =>
     windowTabs.findKind((one) => one.kind === kind)?.icon ?? findTabKindIcon(kind)
 

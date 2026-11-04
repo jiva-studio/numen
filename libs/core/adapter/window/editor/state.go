@@ -85,8 +85,8 @@ type State struct {
 	// DetachTab opens a tab in a window of its own.
 	DetachTab func(context.Context, DetachedTab) error
 
-	// TabLinks is the link groups of the tabs of every window. Nil serves no
-	// tab links.
+	// TabLinks stores the link groups of the tabs of all windows. When nil, the
+	// tab links RPCs return Unimplemented.
 	TabLinks *tablinks.Registry
 
 	// Writing is the writes taken and not yet finished.
@@ -366,7 +366,7 @@ func newEditBroadcaster() broadcaster[domain.Edit] {
 
 // DetachedTab is a tab to open in a window of its own.
 type DetachedTab struct {
-	// ID is the id the new window opens the tab under.
+	// ID is the tab id the new window reuses.
 	ID   string
 	Kind string
 	// Path is the vault path the tab shows; empty for a tab that shows none.

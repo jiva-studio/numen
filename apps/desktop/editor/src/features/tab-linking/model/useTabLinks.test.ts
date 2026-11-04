@@ -19,8 +19,8 @@ const setup = () => {
   return { write, onError, tabLinks: useTabLinks({ write, onError }) }
 }
 
-describe('the link groups mirrored from the core', () => {
-  it('are empty until the core sends a snapshot', () => {
+describe('useTabLinks snapshot', () => {
+  it('has no groups before the first snapshot', () => {
     const { tabLinks } = setup()
 
     expect(tabLinks.groups.size).toBe(0)
@@ -29,7 +29,7 @@ describe('the link groups mirrored from the core', () => {
     expect(tabLinks.getLinkedTargets('plex:1')).toStrictEqual([])
   })
 
-  it('are the groups and tabs of the last snapshot, across windows', () => {
+  it('stores the groups and tabs of the last snapshot', () => {
     const { tabLinks } = setup()
     tabLinks.applySnapshot(SNAPSHOT)
 
@@ -45,8 +45,8 @@ describe('the link groups mirrored from the core', () => {
   })
 })
 
-describe('a change to the links', () => {
-  it('is written to the core, and the groups change with the next snapshot', () => {
+describe('useTabLinks changes', () => {
+  it('writes a change to the core and updates the groups on the next snapshot', () => {
     const { tabLinks, write } = setup()
 
     tabLinks.linkTabs('plex:1', 'files:2')
@@ -55,7 +55,7 @@ describe('a change to the links', () => {
     expect(tabLinks.getGroupOf('plex:1')).toBeNull()
   })
 
-  it('links nothing for a missing tab or a tab to itself', () => {
+  it('writes no link for an empty tab id or a tab linked to itself', () => {
     const { tabLinks, write } = setup()
 
     tabLinks.linkTabs('', 'files:2')
@@ -65,7 +65,7 @@ describe('a change to the links', () => {
     expect(write).not.toHaveBeenCalled()
   })
 
-  it('unlinks a linked tab, and writes nothing for a tab in no group', () => {
+  it('unlinks a linked tab and writes nothing for an unlinked tab', () => {
     const { tabLinks, write } = setup()
     tabLinks.applySnapshot(SNAPSHOT)
 
@@ -76,7 +76,7 @@ describe('a change to the links', () => {
     expect(write).toHaveBeenCalledWith({ unlink: 'plex:1' })
   })
 
-  it('reports a change the core did not take', async () => {
+  it('reports an error when the core rejects a change', async () => {
     const { tabLinks, write, onError } = setup()
     const failure = new Error('the core is gone')
     write.mockRejectedValueOnce(failure)

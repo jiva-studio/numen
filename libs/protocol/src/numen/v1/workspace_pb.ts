@@ -51,8 +51,8 @@ export type DetachTabRequest = Message<"numen.v1.DetachTabRequest"> & {
   y: number;
 
   /**
-   * The id of the tab. The new window opens the tab under the same id, and the
-   * tab keeps its links.
+   * The id of the tab. The new window reuses the id, so the tab keeps its
+   * links.
    *
    * @generated from field: string id = 5;
    */
@@ -260,7 +260,7 @@ export const TabSchema: GenMessage<Tab> = /*@__PURE__*/
  */
 export type WatchTabLinksRequest = Message<"numen.v1.WatchTabLinksRequest"> & {
   /**
-   * The window that watches, by an id the window chooses for itself.
+   * Id of the watching window, chosen by the window.
    *
    * @generated from field: string window_id = 1;
    */
@@ -279,7 +279,7 @@ export const WatchTabLinksRequestSchema: GenMessage<WatchTabLinksRequest> = /*@_
  */
 export type WatchTabLinksResponse = Message<"numen.v1.WatchTabLinksResponse"> & {
   /**
-   * Neither is set on a keepalive.
+   * A keepalive sets neither.
    *
    * @generated from oneof numen.v1.WatchTabLinksResponse.event
    */
@@ -306,8 +306,8 @@ export const WatchTabLinksResponseSchema: GenMessage<WatchTabLinksResponse> = /*
   messageDesc(file_numen_v1_workspace, 10);
 
 /**
- * TabLinks is every link group of the vault and every linkable tab of every
- * window.
+ * TabLinks is the set of link groups of the vault and the linkable tabs of all
+ * windows.
  *
  * @generated from message numen.v1.TabLinks
  */
@@ -362,7 +362,7 @@ export const TabLinkGroupSchema: GenMessage<TabLinkGroup> = /*@__PURE__*/
   messageDesc(file_numen_v1_workspace, 12);
 
 /**
- * A LinkableTab is an open tab whose kind can move to a path.
+ * A LinkableTab is an open tab whose kind supports navigation to a path.
  *
  * @generated from message numen.v1.LinkableTab
  */
@@ -383,8 +383,8 @@ export type LinkableTab = Message<"numen.v1.LinkableTab"> & {
   title: string;
 
   /**
-   * The window that has the tab open. The core sets it; a window reporting its
-   * own tabs leaves it empty.
+   * Id of the window that has the tab open. Set by the core; empty in a tab
+   * report from a window.
    *
    * @generated from field: string window_id = 4;
    */
@@ -399,7 +399,7 @@ export const LinkableTabSchema: GenMessage<LinkableTab> = /*@__PURE__*/
   messageDesc(file_numen_v1_workspace, 13);
 
 /**
- * A TabPathSync is a linked tab that moved to a path.
+ * A TabPathSync is the new path of a linked tab.
  *
  * @generated from message numen.v1.TabPathSync
  */
@@ -467,7 +467,7 @@ export const CancelWatchTabLinksResponseSchema: GenMessage<CancelWatchTabLinksRe
  */
 export type WriteTabLinksRequest = Message<"numen.v1.WriteTabLinksRequest"> & {
   /**
-   * The window that writes.
+   * Id of the writing window.
    *
    * @generated from field: string window_id = 1;
    */
@@ -478,7 +478,7 @@ export type WriteTabLinksRequest = Message<"numen.v1.WriteTabLinksRequest"> & {
    */
   change: {
     /**
-     * Links two tabs. A tab already in a group brings its group along.
+     * Links two tabs. If a tab is already in a group, the other tab joins it.
      *
      * @generated from field: numen.v1.TabLink link = 2;
      */
@@ -486,7 +486,7 @@ export type WriteTabLinksRequest = Message<"numen.v1.WriteTabLinksRequest"> & {
     case: "link";
   } | {
     /**
-     * Takes a tab out of its group.
+     * Removes a tab from its group.
      *
      * @generated from field: string unlink_tab_id = 3;
      */
@@ -494,8 +494,8 @@ export type WriteTabLinksRequest = Message<"numen.v1.WriteTabLinksRequest"> & {
     case: "unlinkTabId";
   } | {
     /**
-     * Every linkable tab the window has open. A tab of the window missing from
-     * the list leaves its group, unless it is being detached.
+     * All linkable tabs of the window. A tab of the window missing from the
+     * list is unlinked, unless it has a pending detach.
      *
      * @generated from field: numen.v1.WindowTabs tabs = 4;
      */
@@ -568,7 +568,7 @@ export const WriteTabLinksResponseSchema: GenMessage<WriteTabLinksResponse> = /*
  */
 export type SyncTabPathRequest = Message<"numen.v1.SyncTabPathRequest"> & {
   /**
-   * The linked tab that moved.
+   * Id of the linked tab that navigated.
    *
    * @generated from field: string source_tab_id = 1;
    */
@@ -660,9 +660,9 @@ export const WorkspaceService: GenService<{
   },
   /**
    * WatchTabLinks streams the link groups of the vault and the linkable tabs of
-   * every window: a snapshot first, a snapshot after each change, and each path
-   * a linked tab moved to. When the stream of a window ends, the tabs of that
-   * window leave their groups.
+   * all windows: a snapshot first, a snapshot after each change, and each path
+   * sync. When the stream of a window ends, the tabs of that window are
+   * unlinked.
    *
    * @generated from rpc numen.v1.WorkspaceService.WatchTabLinks
    */
@@ -672,7 +672,7 @@ export const WorkspaceService: GenService<{
     output: typeof WatchTabLinksResponseSchema;
   },
   /**
-   * CancelWatchTabLinks ends the WatchTabLinks stream of a window.
+   * CancelWatchTabLinks cancels the WatchTabLinks stream of a window.
    *
    * @generated from rpc numen.v1.WorkspaceService.CancelWatchTabLinks
    */
@@ -682,8 +682,8 @@ export const WorkspaceService: GenService<{
     output: typeof CancelWatchTabLinksResponseSchema;
   },
   /**
-   * WriteTabLinks links two tabs, unlinks one, or reports the linkable tabs a
-   * window has open.
+   * WriteTabLinks links two tabs, unlinks a tab, or reports the linkable tabs
+   * of a window.
    *
    * @generated from rpc numen.v1.WorkspaceService.WriteTabLinks
    */
@@ -693,8 +693,8 @@ export const WorkspaceService: GenService<{
     output: typeof WriteTabLinksResponseSchema;
   },
   /**
-   * SyncTabPath reports that a linked tab moved to a path. Every window
-   * watching the tab links receives it.
+   * SyncTabPath sends the new path of a linked tab to every window that watches
+   * the tab links.
    *
    * @generated from rpc numen.v1.WorkspaceService.SyncTabPath
    */

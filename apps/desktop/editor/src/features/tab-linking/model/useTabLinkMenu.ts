@@ -1,7 +1,7 @@
 /**
  * The menu that links a tab to another: the tab it was requested on, its position, and
- * the effect of choosing an item. It lists the tabs of this window and the linkable tabs
- * of every other window.
+ * the effect of choosing an item. Lists the tabs of this window and the linkable tabs of
+ * other windows.
  */
 import { computed, ref } from 'vue'
 import { getAllTabs, getEligibleTabs, getLinkedTitle } from '../lib/eligibility'
@@ -9,10 +9,10 @@ import type { TabId, TabLinksState } from '../types'
 
 export interface TabLinkMenuDeps {
   readonly tabLinks: TabLinksState
-  /** The tabs of this window. */
+  /** Returns the tabs of this window. */
   getTabs(): readonly { readonly id: TabId; readonly title: string }[]
   getKind(tab: TabId): string | undefined
-  /** Whether a tab of this window can be linked. */
+  /** Returns whether a tab of this window can be linked. */
   isLinkable(tab: TabId): boolean
   onDetach?(tab: TabId, position: { x: number; y: number }): void
 }

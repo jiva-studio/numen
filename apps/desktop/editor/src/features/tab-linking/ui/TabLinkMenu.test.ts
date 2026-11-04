@@ -96,8 +96,8 @@ describe('the icon a tab carries in the link menu', () => {
   })
 })
 
-describe('the icon of a tab of another window', () => {
-  it('is the icon of its kind', () => {
+describe('TabLinkMenu icon of a tab of another window', () => {
+  it('uses the icon of its kind', () => {
     const FilesIcon = defineComponent({ name: 'FilesIcon', render: () => h('svg') })
     const wrapper = mount(TabLinkMenu, {
       props: {

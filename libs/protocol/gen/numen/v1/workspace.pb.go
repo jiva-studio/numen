@@ -36,8 +36,8 @@ type DetachTabRequest struct {
 	// The position on screen to open the new window at.
 	X int32 `protobuf:"varint,3,opt,name=x,proto3" json:"x,omitempty"`
 	Y int32 `protobuf:"varint,4,opt,name=y,proto3" json:"y,omitempty"`
-	// The id of the tab. The new window opens the tab under the same id, and the
-	// tab keeps its links.
+	// The id of the tab. The new window reuses the id, so the tab keeps its
+	// links.
 	Id            string `protobuf:"bytes,5,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -508,7 +508,7 @@ func (x *Tab) GetState() string {
 
 type WatchTabLinksRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The window that watches, by an id the window chooses for itself.
+	// Id of the watching window, chosen by the window.
 	WindowId      string `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -553,7 +553,7 @@ func (x *WatchTabLinksRequest) GetWindowId() string {
 
 type WatchTabLinksResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Neither is set on a keepalive.
+	// A keepalive sets neither.
 	//
 	// Types that are valid to be assigned to Event:
 	//
@@ -635,8 +635,8 @@ func (*WatchTabLinksResponse_Links) isWatchTabLinksResponse_Event() {}
 
 func (*WatchTabLinksResponse_Sync) isWatchTabLinksResponse_Event() {}
 
-// TabLinks is every link group of the vault and every linkable tab of every
-// window.
+// TabLinks is the set of link groups of the vault and the linkable tabs of all
+// windows.
 type TabLinks struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Groups        []*TabLinkGroup        `protobuf:"bytes,1,rep,name=groups,proto3" json:"groups,omitempty"`
@@ -751,14 +751,14 @@ func (x *TabLinkGroup) GetTabIds() []string {
 	return nil
 }
 
-// A LinkableTab is an open tab whose kind can move to a path.
+// A LinkableTab is an open tab whose kind supports navigation to a path.
 type LinkableTab struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Kind  string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
 	Title string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	// The window that has the tab open. The core sets it; a window reporting its
-	// own tabs leaves it empty.
+	// Id of the window that has the tab open. Set by the core; empty in a tab
+	// report from a window.
 	WindowId      string `protobuf:"bytes,4,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -822,7 +822,7 @@ func (x *LinkableTab) GetWindowId() string {
 	return ""
 }
 
-// A TabPathSync is a linked tab that moved to a path.
+// A TabPathSync is the new path of a linked tab.
 type TabPathSync struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GroupId       string                 `protobuf:"bytes,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
@@ -973,7 +973,7 @@ func (*CancelWatchTabLinksResponse) Descriptor() ([]byte, []int) {
 
 type WriteTabLinksRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The window that writes.
+	// Id of the writing window.
 	WindowId string `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
 	// Types that are valid to be assigned to Change:
 	//
@@ -1061,18 +1061,18 @@ type isWriteTabLinksRequest_Change interface {
 }
 
 type WriteTabLinksRequest_Link struct {
-	// Links two tabs. A tab already in a group brings its group along.
+	// Links two tabs. If a tab is already in a group, the other tab joins it.
 	Link *TabLink `protobuf:"bytes,2,opt,name=link,proto3,oneof"`
 }
 
 type WriteTabLinksRequest_UnlinkTabId struct {
-	// Takes a tab out of its group.
+	// Removes a tab from its group.
 	UnlinkTabId string `protobuf:"bytes,3,opt,name=unlink_tab_id,json=unlinkTabId,proto3,oneof"`
 }
 
 type WriteTabLinksRequest_Tabs struct {
-	// Every linkable tab the window has open. A tab of the window missing from
-	// the list leaves its group, unless it is being detached.
+	// All linkable tabs of the window. A tab of the window missing from the
+	// list is unlinked, unless it has a pending detach.
 	Tabs *WindowTabs `protobuf:"bytes,4,opt,name=tabs,proto3,oneof"`
 }
 
@@ -1216,7 +1216,7 @@ func (*WriteTabLinksResponse) Descriptor() ([]byte, []int) {
 
 type SyncTabPathRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The linked tab that moved.
+	// Id of the linked tab that navigated.
 	SourceTabId   string `protobuf:"bytes,1,opt,name=source_tab_id,json=sourceTabId,proto3" json:"source_tab_id,omitempty"`
 	Path          string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	Title         string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`

@@ -923,7 +923,7 @@ describe('the identity a kind is told as its tab opens', () => {
     expect(provided).toEqual([id])
   })
 
-  it('is the id the tab had in another window, where the window is given one', async () => {
+  it('reuses a tab id from another window when one is given', async () => {
     const provided: string[] = []
     const thing = kind({
       open: (targetPath: string, id: string) => {

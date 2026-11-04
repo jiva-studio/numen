@@ -1,7 +1,6 @@
 /**
- * The window's part in the tab links the core keeps for every window: it reads
- * the stream of them, reports the linkable tabs it has open, and leaves when it
- * closes.
+ * Watches the tab links stream for this window, reports its linkable tabs, and
+ * cancels the watch on close.
  */
 import { createFollower } from '@numen/ui'
 import type { useWindowTabs } from '@/entities/tab'
@@ -10,11 +9,11 @@ import type { TabPathSync, VaultPort, WindowTabsReport } from '../ports/vault'
 
 export interface TabLinkSessionDeps {
   readonly core: Pick<VaultPort, 'watchTabLinks' | 'cancelTabLinksWatch' | 'writeTabLinks'>
-  /** The id this window watches and writes under. */
+  /** Window id used for the watch and for writes. */
   readonly windowId: string
   readonly tabLinks: Pick<TabLinksState, 'applySnapshot'>
   readonly applySync: (sync: TabPathSync) => void
-  /** The linkable tabs the window has open. */
+  /** Returns the linkable tabs open in the window. */
   readonly getOpenTabs: () => WindowTabsReport['tabs']
   readonly wait: (ms: number) => Promise<unknown>
   readonly onError: (error: unknown) => void
@@ -23,9 +22,9 @@ export interface TabLinkSessionDeps {
 export function createTabLinkSession(deps: TabLinkSessionDeps) {
   const abortController = new AbortController()
   let isOpen = true
-  let isNewReading = false
+  let isNewStream = false
 
-  const follows = createFollower({
+  const followStream = createFollower({
     isOpen: () => isOpen,
     setLost: () => undefined,
     wait: deps.wait,
@@ -33,7 +32,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
 
   let lastReport: Promise<void> = Promise.resolve()
 
-  /** Tells the core the linkable tabs the window has open now, after the reports before it. */
+  /** Writes the current linkable tabs to the core, after any pending report. */
   const reportTabs = (): void => {
     const tabs = deps.getOpenTabs()
     lastReport = lastReport
@@ -41,16 +40,16 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
       .catch(deps.onError)
   }
 
-  /** Reads the stream until the window closes; each new reading reports the tabs again. */
+  /** Reads the stream until close; reports the tabs again on each new stream. */
   const start = (): Promise<void> =>
-    follows(
+    followStream(
       () => {
-        isNewReading = true
+        isNewStream = true
         return deps.core.watchTabLinks(deps.windowId, abortController.signal)
       },
       (event) => {
-        if (isNewReading) {
-          isNewReading = false
+        if (isNewStream) {
+          isNewStream = false
           reportTabs()
         }
         if (event.links) deps.tabLinks.applySnapshot(event.links)
@@ -58,7 +57,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
       },
     )
 
-  /** Ends the stream; the core takes the window's tabs out of their groups. */
+  /** Aborts the stream and cancels the watch; the core then unlinks the tabs of the window. */
   const close = (): void => {
     if (!isOpen) return
     isOpen = false
@@ -69,7 +68,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
   return { start, close, reportTabs }
 }
 
-/** The tabs of the window whose kind can move to a path, in the order the window lists them. */
+/** Returns the tabs whose kind supports navigate, in tab order. */
 export function getLinkableTabs(
   windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'tabs' | 'getTab'>,
 ): WindowTabsReport['tabs'] {

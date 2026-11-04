@@ -49,8 +49,8 @@ describe('the title of what a tab is linked to', () => {
   })
 })
 
-describe('the tabs of every window', () => {
-  it('are the tabs of this window, then the tabs of other windows this one lacks', () => {
+describe('getAllTabs', () => {
+  it('returns the tabs of this window, then the other tabs not open here', () => {
     const own = [{ id: 'plex:1', title: 'Orbits' }]
     const linkable = [
       { id: 'plex:1', kind: 'plex', title: 'Orbits', windowId: 'window-a' },

@@ -23,7 +23,7 @@ var (
 )
 
 // WatchTabLinks streams the tab links to a window until the window cancels the
-// watch or disconnects. The tabs of the window leave their groups when it ends.
+// watch or disconnects. When the stream ends, the tabs of the window are unlinked.
 func (h *workspaceHandler) WatchTabLinks(
 	ctx context.Context,
 	r *connect.Request[v1.WatchTabLinksRequest],
@@ -52,7 +52,7 @@ func (h *workspaceHandler) WatchTabLinks(
 		case <-watch.Stop:
 			return nil
 		case <-repeat.C:
-			// An empty response is a keepalive that fails when the client has disconnected.
+			// An empty response is a keepalive; its send fails once the client disconnects.
 			if err := out.Send(&v1.WatchTabLinksResponse{}); err != nil {
 				return err
 			}
@@ -67,7 +67,7 @@ func (h *workspaceHandler) WatchTabLinks(
 	}
 }
 
-// CancelWatchTabLinks ends the WatchTabLinks streams of a window.
+// CancelWatchTabLinks cancels the WatchTabLinks streams of a window.
 func (h *workspaceHandler) CancelWatchTabLinks(
 	_ context.Context, r *connect.Request[v1.CancelWatchTabLinksRequest],
 ) (*connect.Response[v1.CancelWatchTabLinksResponse], error) {
@@ -78,7 +78,7 @@ func (h *workspaceHandler) CancelWatchTabLinks(
 	return connect.NewResponse(&v1.CancelWatchTabLinksResponse{}), nil
 }
 
-// WriteTabLinks applies one change of a window to the tab links.
+// WriteTabLinks applies a link, an unlink or a tab report from a window.
 func (h *workspaceHandler) WriteTabLinks(
 	_ context.Context, r *connect.Request[v1.WriteTabLinksRequest],
 ) (*connect.Response[v1.WriteTabLinksResponse], error) {
@@ -99,7 +99,7 @@ func (h *workspaceHandler) WriteTabLinks(
 	return connect.NewResponse(&v1.WriteTabLinksResponse{}), nil
 }
 
-// SyncTabPath sends the path a linked tab moved to to every watching window.
+// SyncTabPath sends the new path of a linked tab to every watching window.
 func (h *workspaceHandler) SyncTabPath(
 	_ context.Context, r *connect.Request[v1.SyncTabPathRequest],
 ) (*connect.Response[v1.SyncTabPathResponse], error) {

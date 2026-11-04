@@ -33,20 +33,20 @@ service WorkspaceService {
   rpc DetachTab(DetachTabRequest) returns (DetachTabResponse);
 
   // WatchTabLinks streams the link groups of the vault and the linkable tabs of
-  // every window: a snapshot first, a snapshot after each change, and each path
-  // a linked tab moved to. When the stream of a window ends, the tabs of that
-  // window leave their groups.
+  // all windows: a snapshot first, a snapshot after each change, and each path
+  // sync. When the stream of a window ends, the tabs of that window are
+  // unlinked.
   rpc WatchTabLinks(WatchTabLinksRequest) returns (stream WatchTabLinksResponse);
 
-  // CancelWatchTabLinks ends the WatchTabLinks stream of a window.
+  // CancelWatchTabLinks cancels the WatchTabLinks stream of a window.
   rpc CancelWatchTabLinks(CancelWatchTabLinksRequest) returns (CancelWatchTabLinksResponse);
 
-  // WriteTabLinks links two tabs, unlinks one, or reports the linkable tabs a
-  // window has open.
+  // WriteTabLinks links two tabs, unlinks a tab, or reports the linkable tabs
+  // of a window.
   rpc WriteTabLinks(WriteTabLinksRequest) returns (WriteTabLinksResponse);
 
-  // SyncTabPath reports that a linked tab moved to a path. Every window
-  // watching the tab links receives it.
+  // SyncTabPath sends the new path of a linked tab to every window that watches
+  // the tab links.
   rpc SyncTabPath(SyncTabPathRequest) returns (SyncTabPathResponse);
 }
 
@@ -61,8 +61,8 @@ message DetachTabRequest {
   int32 x = 3;
   int32 y = 4;
 
-  // The id of the tab. The new window opens the tab under the same id, and the
-  // tab keeps its links.
+  // The id of the tab. The new window reuses the id, so the tab keeps its
+  // links.
   string id = 5;
 }
 
@@ -127,20 +127,20 @@ message Tab {
 }
 
 message WatchTabLinksRequest {
-  // The window that watches, by an id the window chooses for itself.
+  // Id of the watching window, chosen by the window.
   string window_id = 1;
 }
 
 message WatchTabLinksResponse {
-  // Neither is set on a keepalive.
+  // A keepalive sets neither.
   oneof event {
     TabLinks links = 1;
     TabPathSync sync = 2;
   }
 }
 
-// TabLinks is every link group of the vault and every linkable tab of every
-// window.
+// TabLinks is the set of link groups of the vault and the linkable tabs of all
+// windows.
 message TabLinks {
   repeated TabLinkGroup groups = 1;
   repeated LinkableTab tabs = 2;
@@ -156,18 +156,18 @@ message TabLinkGroup {
   repeated string tab_ids = 3;
 }
 
-// A LinkableTab is an open tab whose kind can move to a path.
+// A LinkableTab is an open tab whose kind supports navigation to a path.
 message LinkableTab {
   string id = 1;
   string kind = 2;
   string title = 3;
 
-  // The window that has the tab open. The core sets it; a window reporting its
-  // own tabs leaves it empty.
+  // Id of the window that has the tab open. Set by the core; empty in a tab
+  // report from a window.
   string window_id = 4;
 }
 
-// A TabPathSync is a linked tab that moved to a path.
+// A TabPathSync is the new path of a linked tab.
 message TabPathSync {
   string group_id = 1;
   string source_tab_id = 2;
@@ -182,18 +182,18 @@ message CancelWatchTabLinksRequest {
 message CancelWatchTabLinksResponse {}
 
 message WriteTabLinksRequest {
-  // The window that writes.
+  // Id of the writing window.
   string window_id = 1;
 
   oneof change {
-    // Links two tabs. A tab already in a group brings its group along.
+    // Links two tabs. If a tab is already in a group, the other tab joins it.
     TabLink link = 2;
 
-    // Takes a tab out of its group.
+    // Removes a tab from its group.
     string unlink_tab_id = 3;
 
-    // Every linkable tab the window has open. A tab of the window missing from
-    // the list leaves its group, unless it is being detached.
+    // All linkable tabs of the window. A tab of the window missing from the
+    // list is unlinked, unless it has a pending detach.
     WindowTabs tabs = 4;
   }
 }
@@ -210,7 +210,7 @@ message WindowTabs {
 message WriteTabLinksResponse {}
 
 message SyncTabPathRequest {
-  // The linked tab that moved.
+  // Id of the linked tab that navigated.
   string source_tab_id = 1;
   string path = 2;
   string title = 3;

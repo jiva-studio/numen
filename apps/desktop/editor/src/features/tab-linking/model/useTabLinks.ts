@@ -1,6 +1,6 @@
 /**
- * The link groups of the tabs of every window, mirrored from the core. A change
- * is written to the core, and arrives back with the next snapshot.
+ * Mirrors the link groups of all windows from the core. Changes are written to
+ * the core and appear in the next snapshot.
  */
 import { shallowRef } from 'vue'
 import type {
@@ -14,7 +14,7 @@ import type {
 
 export interface TabLinksDeps {
   readonly write: TabLinksWriter
-  /** A change the core did not take. */
+  /** Receives changes the core rejected. */
   readonly onError: (error: unknown) => void
 }
 

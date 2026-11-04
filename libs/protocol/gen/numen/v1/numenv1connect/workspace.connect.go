@@ -81,17 +81,17 @@ type WorkspaceServiceClient interface {
 	// DetachTab asks that a tab be opened in a new window of its own.
 	DetachTab(context.Context, *connect.Request[v1.DetachTabRequest]) (*connect.Response[v1.DetachTabResponse], error)
 	// WatchTabLinks streams the link groups of the vault and the linkable tabs of
-	// every window: a snapshot first, a snapshot after each change, and each path
-	// a linked tab moved to. When the stream of a window ends, the tabs of that
-	// window leave their groups.
+	// all windows: a snapshot first, a snapshot after each change, and each path
+	// sync. When the stream of a window ends, the tabs of that window are
+	// unlinked.
 	WatchTabLinks(context.Context, *connect.Request[v1.WatchTabLinksRequest]) (*connect.ServerStreamForClient[v1.WatchTabLinksResponse], error)
-	// CancelWatchTabLinks ends the WatchTabLinks stream of a window.
+	// CancelWatchTabLinks cancels the WatchTabLinks stream of a window.
 	CancelWatchTabLinks(context.Context, *connect.Request[v1.CancelWatchTabLinksRequest]) (*connect.Response[v1.CancelWatchTabLinksResponse], error)
-	// WriteTabLinks links two tabs, unlinks one, or reports the linkable tabs a
-	// window has open.
+	// WriteTabLinks links two tabs, unlinks a tab, or reports the linkable tabs
+	// of a window.
 	WriteTabLinks(context.Context, *connect.Request[v1.WriteTabLinksRequest]) (*connect.Response[v1.WriteTabLinksResponse], error)
-	// SyncTabPath reports that a linked tab moved to a path. Every window
-	// watching the tab links receives it.
+	// SyncTabPath sends the new path of a linked tab to every window that watches
+	// the tab links.
 	SyncTabPath(context.Context, *connect.Request[v1.SyncTabPathRequest]) (*connect.Response[v1.SyncTabPathResponse], error)
 }
 
@@ -226,17 +226,17 @@ type WorkspaceServiceHandler interface {
 	// DetachTab asks that a tab be opened in a new window of its own.
 	DetachTab(context.Context, *connect.Request[v1.DetachTabRequest]) (*connect.Response[v1.DetachTabResponse], error)
 	// WatchTabLinks streams the link groups of the vault and the linkable tabs of
-	// every window: a snapshot first, a snapshot after each change, and each path
-	// a linked tab moved to. When the stream of a window ends, the tabs of that
-	// window leave their groups.
+	// all windows: a snapshot first, a snapshot after each change, and each path
+	// sync. When the stream of a window ends, the tabs of that window are
+	// unlinked.
 	WatchTabLinks(context.Context, *connect.Request[v1.WatchTabLinksRequest], *connect.ServerStream[v1.WatchTabLinksResponse]) error
-	// CancelWatchTabLinks ends the WatchTabLinks stream of a window.
+	// CancelWatchTabLinks cancels the WatchTabLinks stream of a window.
 	CancelWatchTabLinks(context.Context, *connect.Request[v1.CancelWatchTabLinksRequest]) (*connect.Response[v1.CancelWatchTabLinksResponse], error)
-	// WriteTabLinks links two tabs, unlinks one, or reports the linkable tabs a
-	// window has open.
+	// WriteTabLinks links two tabs, unlinks a tab, or reports the linkable tabs
+	// of a window.
 	WriteTabLinks(context.Context, *connect.Request[v1.WriteTabLinksRequest]) (*connect.Response[v1.WriteTabLinksResponse], error)
-	// SyncTabPath reports that a linked tab moved to a path. Every window
-	// watching the tab links receives it.
+	// SyncTabPath sends the new path of a linked tab to every window that watches
+	// the tab links.
 	SyncTabPath(context.Context, *connect.Request[v1.SyncTabPathRequest]) (*connect.Response[v1.SyncTabPathResponse], error)
 }
 

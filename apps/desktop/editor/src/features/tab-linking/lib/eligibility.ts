@@ -40,7 +40,7 @@ export function getLinkedTitle(
   return targets.map((id) => tabs.find((tab) => tab.id === id)?.title || id).join(', ')
 }
 
-/** The tabs of this window, then the linkable tabs other windows have open. */
+/** Returns the tabs of this window, then the linkable tabs of other windows. */
 export function getAllTabs(
   own: readonly { readonly id: TabId; readonly title: string }[],
   linkable: readonly LinkableTab[],

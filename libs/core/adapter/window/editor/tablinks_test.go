@@ -15,8 +15,8 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// newTabLinksClient serves the workspace of a state whose detach expiries
-// never run, and returns a client of it.
+// newTabLinksClient serves the workspace with detach expiries disabled and
+// returns a client for it.
 func newTabLinksClient(t *testing.T, state *State) numenv1connect.WorkspaceServiceClient {
 	t.Helper()
 	state.TabLinks = tablinks.NewRegistry(detachGrace, func(time.Duration, func()) func() bool {
@@ -51,7 +51,7 @@ func linkTabs(t *testing.T, client numenv1connect.WorkspaceServiceClient, source
 	}
 }
 
-// readLinksUntil reads a stream until a snapshot matches.
+// readLinksUntil reads a stream until a snapshot matches the predicate.
 func readLinksUntil(
 	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchTabLinksResponse], isWanted func(*v1.TabLinks) bool,
 ) *v1.TabLinks {
@@ -71,7 +71,7 @@ func hasGroupOf(size int) func(*v1.TabLinks) bool {
 	}
 }
 
-func TestTwoWindowsWatchOneGroupAndEachPathSync(t *testing.T) {
+func TestWatchTabLinksSendsGroupAndPathSyncToTwoWindows(t *testing.T) {
 	client := newTabLinksClient(t, &State{})
 	ctx, cancel := context.WithTimeout(t.Context(), testsupport.Patience)
 	defer cancel()
@@ -119,7 +119,7 @@ func TestTwoWindowsWatchOneGroupAndEachPathSync(t *testing.T) {
 	}
 }
 
-func TestADetachedTabKeepsItsGroupInTheNewWindow(t *testing.T) {
+func TestDetachTabKeepsGroupInNewWindow(t *testing.T) {
 	state := &State{DetachTab: func(context.Context, DetachedTab) error { return nil }}
 	client := newTabLinksClient(t, state)
 	openWatch(t, client, "window-a")
@@ -141,7 +141,7 @@ func TestADetachedTabKeepsItsGroupInTheNewWindow(t *testing.T) {
 	}
 }
 
-func TestCancelWatchTabLinksEndsTheStreamAndDropsTheWindowsTabs(t *testing.T) {
+func TestCancelWatchTabLinksEndsStreamAndUnlinksWindowTabs(t *testing.T) {
 	state := &State{}
 	client := newTabLinksClient(t, state)
 	ctx, cancel := context.WithTimeout(t.Context(), testsupport.Patience)
@@ -190,7 +190,7 @@ func TestWatchTabLinksRequiresAWindowID(t *testing.T) {
 	}
 }
 
-func TestTabLinksAreUnimplementedWithoutARegistry(t *testing.T) {
+func TestTabLinksReturnUnimplementedWithoutRegistry(t *testing.T) {
 	api := &workspaceHandler{state: &State{}}
 
 	_, err := api.WriteTabLinks(t.Context(), connect.NewRequest(&v1.WriteTabLinksRequest{WindowId: "window-a"}))
@@ -199,8 +199,8 @@ func TestTabLinksAreUnimplementedWithoutARegistry(t *testing.T) {
 	}
 }
 
-// openWatch watches the tab links as a window until the test ends, and returns
-// once the first snapshot has arrived.
+// openWatch opens a tab links watch for a window until the test ends and
+// returns after the first snapshot.
 func openWatch(t *testing.T, client numenv1connect.WorkspaceServiceClient, windowID string) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(t.Context())

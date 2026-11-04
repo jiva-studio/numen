@@ -1,5 +1,5 @@
-// Package tablinks keeps the link groups of the tabs of every window of a
-// vault, and fans each change out to the windows that watch them.
+// Package tablinks stores the link groups of the tabs of all windows of a vault
+// and broadcasts each change to the watching windows.
 package tablinks
 
 import (
@@ -14,13 +14,13 @@ import (
 // maxColorIndex is the number of group colors; groups past it share colors.
 const maxColorIndex = 4
 
-// maxPendingEvents bounds the events waiting for one watch.
+// maxPendingEvents is the queue size of one watch.
 const maxPendingEvents = 1024
 
-// Tab is a linkable tab a window has open.
+// Tab is a linkable tab open in a window.
 type Tab struct {
 	ID, Kind, Title string
-	// WindowID is the window that last reported the tab.
+	// WindowID is the id of the window that last reported the tab.
 	WindowID string
 }
 
@@ -37,7 +37,7 @@ type Snapshot struct {
 	Tabs   []Tab
 }
 
-// PathSync is a linked tab that moved to a path.
+// PathSync is the new path of a linked tab.
 type PathSync struct {
 	GroupID, SourceTabID, Path, Title string
 }
@@ -51,10 +51,10 @@ type Event struct {
 // Schedule runs f once after d and returns a function that cancels the run.
 type Schedule func(d time.Duration, f func()) (cancel func() bool)
 
-// ScheduleAfter is the Schedule of the machine's timers.
+// ScheduleAfter is a Schedule backed by time.AfterFunc.
 func ScheduleAfter(d time.Duration, f func()) func() bool { return time.AfterFunc(d, f).Stop }
 
-// Registry is the link groups of a vault and the linkable tabs of its windows.
+// Registry stores the link groups of a vault and the linkable tabs of its windows.
 type Registry struct {
 	grace    time.Duration
 	schedule Schedule
@@ -63,17 +63,17 @@ type Registry struct {
 	mu       sync.Mutex
 	tabs     map[string]Tab
 	tabOrder []string
-	// windows is the tab ids each window last reported, in its order.
+	// windows maps each window to the tab ids it last reported, in tab order.
 	windows map[string][]string
 	groups  []*Group
 	nextID  int
-	// detaching is the tabs a window was asked to detach.
+	// detaching is the set of tabs with a pending detach.
 	detaching map[string]*detach
 	watches   map[string][]*Watch
 }
 
 // NewRegistry returns an empty registry. A detached tab that no window reports
-// within grace leaves its group.
+// within grace is unlinked.
 func NewRegistry(grace time.Duration, schedule Schedule) *Registry {
 	return &Registry{
 		grace:    grace,
@@ -81,8 +81,8 @@ func NewRegistry(grace time.Duration, schedule Schedule) *Registry {
 		events: broadcast.Broadcaster[Event]{
 			IsLatest: true,
 			GetTopic: getEventTopic,
-			// A subscriber holds at most one snapshot and one sync per group, so
-			// nothing is dropped below this many groups.
+			// A subscriber queues at most one snapshot and one sync per group, so
+			// no event is dropped below this many groups.
 			Capacity: maxPendingEvents,
 		},
 		tabs:      map[string]Tab{},
@@ -92,8 +92,8 @@ func NewRegistry(grace time.Duration, schedule Schedule) *Registry {
 	}
 }
 
-// getEventTopic puts every snapshot on one topic, so a pending snapshot is
-// replaced by a newer one, and each group's syncs on a topic of their own.
+// getEventTopic returns one topic for all snapshots and one topic per group for
+// syncs, so a newer event replaces a pending one on the same topic.
 func getEventTopic(e Event) string {
 	if e.Sync != nil {
 		return "sync:" + e.Sync.GroupID
@@ -103,7 +103,7 @@ func getEventTopic(e Event) string {
 
 // Watch is one window's subscription to the registry.
 type Watch struct {
-	// Initial is the state when the watch began; Events carries every change after it.
+	// Initial is the snapshot at watch start; Events delivers every later change.
 	Initial Snapshot
 	Events  <-chan Event
 	// Stop is closed when the window cancels its watch.
@@ -116,7 +116,7 @@ type Watch struct {
 	registry    *Registry
 }
 
-// Close ends the watch. The tabs of a window with no watch left leave their groups.
+// Close ends the watch. When the window has no other watch, its tabs are unlinked.
 func (w *Watch) Close() {
 	w.unsubscribe()
 	r := w.registry
@@ -169,10 +169,10 @@ func (r *Registry) GetSnapshot() Snapshot {
 	return r.getSnapshot()
 }
 
-// WriteTabs sets the linkable tabs a window has open. A window with no live
-// watch is ignored. A tab of the window missing from the list leaves its group
-// unless it is being detached. A tab another live window has moves to this
-// window only while it is being detached.
+// WriteTabs sets the linkable tabs of a window. A window with no live watch is
+// ignored. A tab of the window missing from the list is unlinked unless it has
+// a pending detach. A tab of another live window is reassigned to this window
+// only during a detach.
 func (r *Registry) WriteTabs(windowID string, tabs []Tab) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -194,8 +194,8 @@ func (r *Registry) WriteTabs(windowID string, tabs []Tab) {
 	r.publishSnapshot()
 }
 
-// acceptTab records a tab a window reports, and reports whether the tab is now
-// the window's.
+// acceptTab records a tab reported by a window and returns whether the tab now
+// belongs to that window.
 func (r *Registry) acceptTab(windowID string, tab Tab) bool {
 	tab.WindowID = windowID
 	previous, isKnown := r.tabs[tab.ID]
@@ -215,8 +215,8 @@ func (r *Registry) acceptTab(windowID string, tab Tab) bool {
 	return true
 }
 
-// Link puts two known tabs in one group. A tab already in a group brings its
-// group along; two groups merge.
+// Link puts two known tabs in one group. If a tab is already in a group, the
+// other tab joins it; two groups merge.
 func (r *Registry) Link(sourceID, targetID string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -247,7 +247,7 @@ func (r *Registry) Link(sourceID, targetID string) {
 	r.publishSnapshot()
 }
 
-// Unlink takes a tab out of its group.
+// Unlink removes a tab from its group.
 func (r *Registry) Unlink(tabID string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -257,7 +257,7 @@ func (r *Registry) Unlink(tabID string) {
 }
 
 // Detach keeps a tab in its group while it moves to a new window. A tab that
-// no window reports within the grace period leaves its group.
+// no window reports within the grace period is unlinked.
 func (r *Registry) Detach(tabID string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -272,11 +272,11 @@ func (r *Registry) Detach(tabID string) {
 	pending.cancel = r.schedule(r.grace, func() { r.expireDetach(tabID, pending) })
 }
 
-// detach is one detach of a tab and the cancel of its expiry.
+// detach is a pending detach of a tab and the cancel func of its expiry.
 type detach struct{ cancel func() bool }
 
-// expireDetach drops a detached tab that no window reports. An expiry that a
-// report or a newer Detach replaced does nothing.
+// expireDetach removes a detached tab that no window reported. It is a no-op
+// when a report or a newer Detach replaced this detach.
 func (r *Registry) expireDetach(tabID string, pending *detach) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -292,8 +292,8 @@ func (r *Registry) expireDetach(tabID string, pending *detach) {
 	r.publishSnapshot()
 }
 
-// SyncPath sends a path a linked tab moved to to every watching window. It
-// reports whether the tab is in a group.
+// SyncPath sends the new path of a linked tab to every watching window. It
+// returns whether the tab is in a group.
 func (r *Registry) SyncPath(sourceTabID, path, title string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -305,8 +305,8 @@ func (r *Registry) SyncPath(sourceTabID, path, title string) bool {
 	return true
 }
 
-// removeWindow drops the tabs of a window from their groups, except the tabs
-// being detached.
+// removeWindow unlinks the tabs of a window, except tabs with a pending
+// detach.
 func (r *Registry) removeWindow(windowID string) {
 	ids, ok := r.windows[windowID]
 	if !ok {
@@ -319,7 +319,8 @@ func (r *Registry) removeWindow(windowID string) {
 	r.publishSnapshot()
 }
 
-// forgetTab drops a tab its window no longer has, unless it is being detached.
+// forgetTab removes a tab missing from the report of its window, unless it has a
+// pending detach.
 func (r *Registry) forgetTab(tabID string) {
 	if _, ok := r.detaching[tabID]; ok {
 		return
@@ -333,8 +334,8 @@ func (r *Registry) dropTab(tabID string) {
 	r.removeFromGroup(tabID)
 }
 
-// removeFromGroup takes a tab out of its group, and drops a group left with
-// fewer than two tabs. It reports whether the tab was in a group.
+// removeFromGroup removes a tab from its group and deletes a group left with
+// fewer than two tabs. It returns whether the tab was in a group.
 func (r *Registry) removeFromGroup(tabID string) bool {
 	group := r.findGroup(tabID)
 	if group == nil {

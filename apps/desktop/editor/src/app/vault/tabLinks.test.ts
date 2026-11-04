@@ -1,5 +1,5 @@
 /**
- * The tab links requests and stream mapped between the window and the workspace service.
+ * Tests the mapping of tab links requests and stream to the workspace service.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { tabLinksCore } from './tabLinks'
@@ -21,7 +21,7 @@ async function* createResponses(responses: readonly unknown[]) {
   yield* responses
 }
 
-describe('the tab links stream', () => {
+describe('watchTabLinks', () => {
   it('maps a snapshot, a sync and a keepalive', async () => {
     request.watchTabLinks.mockReturnValue(
       createResponses([
@@ -66,7 +66,7 @@ describe('the tab links stream', () => {
     ])
   })
 
-  it('is cancelled by the window id', async () => {
+  it('cancels the watch by window id', async () => {
     request.cancelWatchTabLinks.mockResolvedValue({})
 
     await tabLinksCore.cancelTabLinksWatch('window-a')
@@ -75,8 +75,8 @@ describe('the tab links stream', () => {
   })
 })
 
-describe('a change written to the tab links', () => {
-  it('is a link, an unlink or the open tabs of the window', async () => {
+describe('writeTabLinks', () => {
+  it('writes a link, an unlink or the open tabs', async () => {
     request.writeTabLinks.mockResolvedValue({})
 
     await tabLinksCore.writeTabLinks('window-a', { link: { source: 'plex:1', target: 'files:2' } })

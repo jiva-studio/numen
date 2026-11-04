@@ -103,7 +103,7 @@ interface AppLifecycleDeps {
   writeMessage: MessageWriter
   /** Called once the tabs the window opens with are open. */
   onLayoutStarted(): void
-  /** The window's part in the tab links of every window, read once the layout is open. */
+  /** Tab links session, started and closed with the window. */
   tabLinkSession: { start(): Promise<void>; close(): void }
 }
 
@@ -478,7 +478,7 @@ function createTabDetacher(base: WindowCore, closeTab: (id: string) => void) {
   return { detachTab, detachTabAt }
 }
 
-/** The closing of a tab: the hold runs where the tab stays open. The core drops the links of a tab the window no longer reports. */
+/** Closes a tab; calls hold when the tab must stay open. The core unlinks tabs missing from the tab report. */
 function createTabCloser(base: WindowCore) {
   return (id: string, hold?: () => void) => {
     if (!base.windowTabs.releaseTab(id)) {
@@ -499,7 +499,7 @@ function openPlacedTabs(base: WindowCore) {
   )
 }
 
-/** The window's tab links session, told the linkable tabs again whenever they change. */
+/** Creates the tab links session and reports the linkable tabs whenever they change. */
 function createWindowTabLinks(base: WindowCore, tabSync: WindowServices['tabSync']) {
   const getOpenTabs = () => getLinkableTabs(base.windowTabs)
   const session = createTabLinkSession({

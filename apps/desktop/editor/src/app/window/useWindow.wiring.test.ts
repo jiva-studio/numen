@@ -479,7 +479,7 @@ describe('a tab detached', () => {
     })
   })
 
-  it('opens in a new window by its id, kind and path, and closes here', async () => {
+  it('opens in a new window with its id, kind and path, and closes in this window', async () => {
     h.core.detachTab.mockResolvedValue(undefined)
     const window = useWindow()
 
@@ -805,8 +805,8 @@ describe('the services a plugin is given', () => {
   })
 })
 
-describe('the tab links of every window', () => {
-  it('are written and read under one id the window chooses', async () => {
+describe('tab links wiring', () => {
+  it('uses one window id for writes and the watch', async () => {
     useWindow()
     const windowId = h.args.tabLinkSession.windowId
 
@@ -818,7 +818,7 @@ describe('the tab links of every window', () => {
     expect(h.args.tabSync.tabLinks).toBe(h.f.tabLinks)
   })
 
-  it('send a path a linked tab moved to through the core', async () => {
+  it('sends the new path of a linked tab to the core', async () => {
     useWindow()
     const sync = { sourceTabId: 'plex:1', path: 'Orbits.md', title: 'Orbits' }
 
@@ -827,7 +827,7 @@ describe('the tab links of every window', () => {
     expect(h.core.syncTabPath).toHaveBeenCalledWith(sync)
   })
 
-  it('start with the window and close with it', async () => {
+  it('starts with the window and stops when it closes', async () => {
     useWindow()
 
     await h.args.bootstrap.startWindow()
@@ -838,7 +838,7 @@ describe('the tab links of every window', () => {
     expect(h.f.display.close).toHaveBeenCalledOnce()
   })
 
-  it('are told the linkable tabs again whenever they change', async () => {
+  it('reports the linkable tabs again when they change', async () => {
     useWindow()
 
     h.f.linkableTabs.value = [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }]
@@ -846,7 +846,7 @@ describe('the tab links of every window', () => {
     expect(h.args.tabLinkSession.getOpenTabs()).toStrictEqual(h.f.linkableTabs.value)
   })
 
-  it('report a link the core did not take', () => {
+  it('reports an error when the core rejects a link', () => {
     useWindow()
 
     h.args.tabLinks.onError(new Error('refused'))
@@ -857,7 +857,7 @@ describe('the tab links of every window', () => {
     )
   })
 
-  it('open a detached tab under the id it had in the window it left', async () => {
+  it('opens a detached tab with its id from the source window', async () => {
     try {
       vi.stubGlobal(
         'location',

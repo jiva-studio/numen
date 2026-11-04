@@ -1,5 +1,5 @@
 /**
- * The link groups of the tabs of every window, as the workspace service keeps them.
+ * Tab links client: maps the tab links requests and stream to the workspace service.
  */
 import { workspace } from '@/shared/clients'
 import type { VaultPort } from '@/app/ports/vault'

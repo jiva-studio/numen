@@ -16,7 +16,7 @@ const createWindowTabs = (tabs: Record<string, { state?: unknown; navigate?: Nav
     },
   }) as unknown as TabSyncDeps['windowTabs']
 
-/** One group holding the source `s` and the tabs given. */
+/** Returns one group with the source `s` and the given tabs. */
 const createLinkedTabs = (...targets: string[]): TabSyncDeps['tabLinks'] => {
   const group: TabLinkGroup = { id: 'group-1', colorIndex: 1, tabs: ['s', ...targets] }
   return {
@@ -36,7 +36,7 @@ const setup = (
 }
 
 describe('a path chosen in a linked tab', () => {
-  it('moves every tab of this window linked to it, and sends the move to the core', () => {
+  it('moves the linked tabs of this window and sends the sync to the core', () => {
     const files = vi.fn<Navigate>()
     const other = vi.fn<Navigate>()
     const { sync, sendSync } = setup(
@@ -54,14 +54,14 @@ describe('a path chosen in a linked tab', () => {
     expect(sendSync).toHaveBeenCalledWith({ sourceTabId: 's', path: 'test.md', title: 'Test' })
   })
 
-  it('is linked when the only other tab of the group is in another window', () => {
+  it('returns true when the only other tab of the group is in another window', () => {
     const { sync, sendSync } = setup({ s: {} }, createLinkedTabs('plex:elsewhere'))
 
     expect(sync.syncPathFromTab('s', 'a.md')).toBe(true)
     expect(sendSync).toHaveBeenCalledOnce()
   })
 
-  it('leaves alone a linked tab whose kind cannot move', () => {
+  it('skips a linked tab whose kind has no navigate', () => {
     const navigate = vi.fn<Navigate>()
     const { sync } = setup(
       { 'agent:1': {}, 'files:1': { navigate } },
@@ -84,7 +84,7 @@ describe('a path chosen in a linked tab', () => {
     expect(sendSync).not.toHaveBeenCalled()
   })
 
-  it('takes the echo of a moved tab once, and sends the same path chosen later', () => {
+  it('suppresses one echo from a moved tab and syncs the same path selected later', () => {
     const navigate = vi.fn<Navigate>()
     const { sync, sendSync } = setup(
       { s: { navigate: vi.fn() }, 'files:1': { navigate } },
@@ -100,7 +100,7 @@ describe('a path chosen in a linked tab', () => {
     expect(sendSync).toHaveBeenCalledTimes(2)
   })
 
-  it('moves the tabs again to a path a moved tab failed to reach', async () => {
+  it('syncs the path again after a moved tab fails to navigate to it', async () => {
     const failure = new Error('the plugin is gone')
     const navigate = vi.fn<Navigate>(() => Promise.reject(failure))
     const { sync, sendSync, onError } = setup(
@@ -115,7 +115,7 @@ describe('a path chosen in a linked tab', () => {
     expect(sendSync).toHaveBeenCalledTimes(2)
   })
 
-  it('moves the tabs again to a path a moved tab threw on', () => {
+  it('syncs the path again after navigate throws on it', () => {
     const navigate = vi.fn<Navigate>(() => {
       throw new Error('boom')
     })
@@ -135,7 +135,7 @@ describe('a path chosen in a linked tab', () => {
   })
 })
 
-describe('a move another window sent', () => {
+describe('applySync', () => {
   it('moves the tabs of this window in the group', () => {
     const navigate = vi.fn<Navigate>()
     const { sync, sendSync } = setup(
@@ -149,7 +149,7 @@ describe('a move another window sent', () => {
     expect(sendSync).not.toHaveBeenCalled()
   })
 
-  it('is dropped when its source is a tab of this window', () => {
+  it('ignores a sync whose source is a tab of this window', () => {
     const navigate = vi.fn<Navigate>()
     const { sync } = setup({ s: {}, 'files:1': { navigate } }, createLinkedTabs('files:1'))
 
@@ -158,7 +158,7 @@ describe('a move another window sent', () => {
     expect(navigate).not.toHaveBeenCalled()
   })
 
-  it('is not sent back when a moved tab reports the path, during the move or after it', () => {
+  it('does not send the sync back when a moved tab reports the path', () => {
     const navigate = vi.fn<Navigate>()
     const { sync, sendSync } = setup({ 'files:1': { navigate } }, createLinkedTabs('files:1'))
     navigate.mockImplementationOnce(() => {
@@ -173,7 +173,7 @@ describe('a move another window sent', () => {
     expect(sendSync).not.toHaveBeenCalled()
   })
 
-  it('is dropped for a group this window does not know', () => {
+  it('ignores a sync for an unknown group', () => {
     const navigate = vi.fn<Navigate>()
     const { sync } = setup({ 'files:1': { navigate } }, createLinkedTabs('files:1'))
 
@@ -239,7 +239,7 @@ describe('a linked tab that fails to move', () => {
     await vi.waitFor(() => expect(onError).toHaveBeenCalledWith(failure))
   })
 
-  it('reports a move the core did not take', async () => {
+  it('reports an error when the core rejects the sync', async () => {
     const failure = new Error('the core is gone')
     const { sync, sendSync, onError } = setup({}, createLinkedTabs('plex:elsewhere'))
     sendSync.mockRejectedValueOnce(failure)

@@ -1,5 +1,5 @@
 /**
- * Types for tab linking and path synchronization between tabs of every window.
+ * Types for tab linking and path sync between tabs of all windows.
  */
 
 export type TabId = string
@@ -10,37 +10,37 @@ export interface TabLinkGroup {
   readonly tabs: readonly TabId[]
 }
 
-/** An open tab of any window whose kind can move to a path. */
+/** Open tab of any window whose kind supports navigate. */
 export interface LinkableTab {
   readonly id: TabId
   readonly kind: string
   readonly title: string
-  /** The window that has the tab open. */
+  /** Id of the window that has the tab open. */
   readonly windowId: string
 }
 
-/** Every link group of the vault and every linkable tab of every window, as the core sends them. */
+/** Link groups of the vault and linkable tabs of all windows, as sent by the core. */
 export interface TabLinksSnapshot {
   readonly groups: readonly TabLinkGroup[]
   readonly tabs: readonly LinkableTab[]
 }
 
-/** One change a window writes to the link groups the core keeps. */
+/** Link or unlink change written to the core. */
 export type TabLinksChange =
   { readonly link: { readonly source: TabId; readonly target: TabId } } | { readonly unlink: TabId }
 
-/** Where the window writes a change to the link groups. */
+/** Writes a link change to the core. */
 export type TabLinksWriter = (change: TabLinksChange) => Promise<void>
 
 export interface TabLinksState {
   readonly groups: ReadonlyMap<string, TabLinkGroup>
-  /** The linkable tabs of every window. */
+  /** Linkable tabs of all windows. */
   readonly tabs: readonly LinkableTab[]
   linkTabs(sourceTabId: TabId, targetTabId: TabId): void
   unlinkTab(tabId: TabId): void
   getGroupOf(tabId: TabId): TabLinkGroup | null
   getLinkedTargets(tabId: TabId): readonly TabId[]
-  /** Replaces the groups and tabs with the ones the core sent. */
+  /** Replaces the groups and tabs with a snapshot from the core. */
   applySnapshot(snapshot: TabLinksSnapshot): void
 }
 

@@ -125,7 +125,7 @@ describe('the menu on a tab', () => {
   })
 })
 
-describe('the menu with other windows open', () => {
+describe('useTabLinkMenu with other windows open', () => {
   const OTHER_TABS = [
     { id: 'a', kind: 'note', title: 'A', windowId: 'window-a' },
     { id: 'plex:7', kind: 'plex', title: 'Tides', windowId: 'window-b' },
@@ -151,7 +151,7 @@ describe('the menu with other windows open', () => {
     })
   }
 
-  it('lists the tabs of this window, then the linkable tabs of the others', () => {
+  it('lists the tabs of this window, then the linkable tabs of other windows', () => {
     const menu = setupWithOthers()
     menu.open('a', { x: 0, y: 0 })
 
@@ -162,7 +162,7 @@ describe('the menu with other windows open', () => {
     ])
   })
 
-  it('leaves out a tab of this window its kind cannot link, though the core lists it', () => {
+  it('excludes a tab of this window whose kind cannot link, even when the core lists it', () => {
     const tabLinks = {
       tabs: [{ id: 'c', kind: 'agent', title: 'C', windowId: 'window-a' }],
       getGroupOf: () => null,
@@ -182,7 +182,7 @@ describe('the menu with other windows open', () => {
     expect(menu.eligibleTabs.value).toStrictEqual([])
   })
 
-  it('names a linked tab of another window by its title', () => {
+  it('shows the title of a linked tab of another window', () => {
     const group = { id: 'g', colorIndex: 1, tabs: ['a', 'plex:7'] }
     const menu = setupWithOthers({ a: group, 'plex:7': group }, ['plex:7'])
     menu.open('a', { x: 0, y: 0 })

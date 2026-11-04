@@ -386,7 +386,7 @@ function createTabOpeners(ctx: TabOpenerContext) {
     ctx.layout.value = openTab(ctx.layout.value, id)
   }
 
-  /** Opens a tab of a kind and shows it; `id` names the tab where it must keep an id it had elsewhere. */
+  /** Opens a tab of a kind and shows it. A non-empty `id` reuses a tab id from another window. */
   const openTabOfKind = async (kind: string, target = '', id = ''): Promise<string> => {
     const tabId = createTabSync(kind, target, id)
     show(tabId)

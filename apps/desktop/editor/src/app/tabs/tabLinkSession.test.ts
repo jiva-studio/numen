@@ -13,7 +13,7 @@ const SNAPSHOT = {
 const SYNC = { groupId: 'group-1', sourceTabId: 'plex:2', path: 'Tides.md', title: 'Tides' }
 const OPEN_TABS = [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }]
 
-/** A stream that yields the events, then waits until the signal aborts. */
+/** Returns a stream that yields the events, then waits until the signal aborts. */
 async function* createStream(events: readonly TabLinksEvent[], signal: AbortSignal) {
   yield* events
   if (!signal.aborted) await new Promise((resolve) => signal.addEventListener('abort', resolve))
@@ -41,8 +41,8 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
   return { deps, core, signals, session: createTabLinkSession(deps) }
 }
 
-describe('the tab links session', () => {
-  it('mirrors each snapshot, applies each sync, and reports the open tabs once the stream opens', async () => {
+describe('createTabLinkSession', () => {
+  it('applies snapshots and syncs, and reports the open tabs when the stream opens', async () => {
     const { deps, core, session } = setup([{ links: SNAPSHOT }, {}, { sync: SYNC }])
 
     const stream = session.start()
@@ -55,7 +55,7 @@ describe('the tab links session', () => {
     await stream
   })
 
-  it('reports the open tabs again on a stream opened after the first ended', async () => {
+  it('reports the open tabs again when the stream reopens', async () => {
     const { core, session } = setup([{ links: SNAPSHOT }])
     core.watchTabLinks.mockImplementationOnce(async function* () {
       yield { links: SNAPSHOT }
@@ -69,7 +69,7 @@ describe('the tab links session', () => {
     await stream
   })
 
-  it('aborts the stream and cancels the watch of the window when it closes, once', async () => {
+  it('aborts the stream and cancels the watch once on close', async () => {
     const { core, session, signals } = setup([])
     const stream = session.start()
     await vi.waitFor(() => expect(signals).toHaveLength(1))
@@ -82,7 +82,7 @@ describe('the tab links session', () => {
     expect(core.cancelTabLinksWatch).toHaveBeenCalledExactlyOnceWith('window-a')
   })
 
-  it('reports a report the core did not take', async () => {
+  it('reports an error when the core rejects the tab report', async () => {
     const { deps, core, session } = setup([])
     const failure = new Error('the core is gone')
     core.writeTabLinks.mockRejectedValueOnce(failure)
@@ -93,8 +93,8 @@ describe('the tab links session', () => {
   })
 })
 
-describe('the linkable tabs of the window', () => {
-  it('are the tabs whose kind can move to a path, with their kind and title', () => {
+describe('getLinkableTabs', () => {
+  it('returns the tabs whose kind supports navigate, with kind and title', () => {
     const kinds: Record<string, { kind: string; navigate?: () => void }> = {
       'plex:1': { kind: 'plex', navigate: () => undefined },
       'agent:1': { kind: 'agent' },
@@ -114,8 +114,8 @@ describe('the linkable tabs of the window', () => {
   })
 })
 
-describe('the reports of the open tabs', () => {
-  it('are written one after another, each with the tabs open when it was made', async () => {
+describe('reportTabs', () => {
+  it('writes reports in order, each with the tabs open at call time', async () => {
     const tabs = [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }]
     const { core, session } = setup([], () => [...tabs])
     let finishFirst: () => void = () => undefined
@@ -143,7 +143,7 @@ describe('the reports of the open tabs', () => {
     session.close()
   })
 
-  it('go on after a report the core did not take', async () => {
+  it('sends later reports after a failed one', async () => {
     const { deps, core, session } = setup([])
     const failure = new Error('the core is gone')
     core.writeTabLinks.mockRejectedValueOnce(failure)
