@@ -84,6 +84,21 @@ updates:
       - dependency-name: typescript
         update-types: ["version-update:semver-major"]
 
+  # The Android project of the mobile app.
+  - package-ecosystem: gradle
+    directory: /apps/mobile/android
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      gradle:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      gradle-major:
+        patterns: ["*"]
+        update-types: ["major"]
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
