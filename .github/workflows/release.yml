@@ -43,11 +43,9 @@ concurrency:
   group: release
   cancel-in-progress: false
 
-# Building and putting the files on the shelf needs nothing of the repository
-# but the clone. The tag and the release are made by one job, and that job says
-# so for itself.
-permissions:
-  contents: read
+# Each job lists the permissions it needs. Only announce writes: it pushes the
+# tag and creates the release.
+permissions: {}
 
 jobs:
   # What this run is called and where it goes. A stable release is named for
@@ -56,6 +54,8 @@ jobs:
   naming:
     name: Version
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     timeout-minutes: 10
     outputs:
       version: ${{ steps.resolve-version.outputs.version }}
@@ -140,6 +140,8 @@ jobs:
     name: Release Notes
     needs: [naming]
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -185,6 +187,8 @@ jobs:
     needs: [naming]
     if: needs.naming.outputs.linux == 'true'
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -441,6 +445,8 @@ jobs:
     needs: [naming, linux]
     if: needs.naming.outputs.linux == 'true'
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -522,6 +528,8 @@ jobs:
     needs: [naming, linux]
     if: needs.naming.outputs.linux == 'true'
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -585,6 +593,8 @@ jobs:
     needs: [naming]
     if: needs.naming.outputs.windows == 'true'
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -707,6 +717,8 @@ jobs:
     needs: [naming]
     if: needs.naming.outputs.macos == 'true'
     runs-on: macos-15
+    permissions:
+      contents: read
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -937,6 +949,8 @@ jobs:
       && (needs.macos.result == 'success' || needs.macos.result == 'skipped') }}
     needs: [naming, notes, linux, flatpak, snap, windows, macos]
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     timeout-minutes: 60
     steps:
       - name: Validate CDN environment secrets
