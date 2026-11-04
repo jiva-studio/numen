@@ -536,7 +536,7 @@ describe('several files removed at once', () => {
 
     await carry(createInvocation('app:note.trash', both), one.on)
 
-    expect(one.actions.filter((step) => step.startsWith('app:note.trash'))).toStrictEqual([
+    expect(one.actions.filter((step) => step.startsWith('remove'))).toStrictEqual([
       'remove physics/Ontology.md false',
       'remove physics/Heat.pdf false',
     ])
@@ -578,7 +578,7 @@ describe('several files removed at once', () => {
 
     await carry(createInvocation('app:note.trash', both), picky)
 
-    expect(one.actions.filter((step) => step.startsWith('app:note.trash'))).toStrictEqual([
+    expect(one.actions.filter((step) => step.startsWith('remove'))).toStrictEqual([
       'remove physics/Ontology.md false',
       'remove physics/Heat.pdf false',
     ])

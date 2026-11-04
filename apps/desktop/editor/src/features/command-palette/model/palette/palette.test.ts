@@ -217,7 +217,7 @@ describe('the commands as they open', () => {
   it('keeps the commands the words typed leave, and lights where they stand', () => {
     const { commands } = createPalette()
 
-    commands.setTyped('app:note.create-child').catch(rethrow)
+    commands.setTyped('child').catch(rethrow)
 
     expect(getItemIds(commands.groups)).toStrictEqual({ note: ['app:note.create-child'] })
     expect(commands.groups.value[0]?.items[0]?.at).toStrictEqual([{ start: 4, end: 9 }])
@@ -686,10 +686,10 @@ describe('a command that offers a list the window holds', () => {
     commands.leaveStep()
 
     expect(displayedLists).toStrictEqual([
-      'mode mode:light',
-      'mode ',
-      'appearance preset:dracula',
-      'appearance ',
+      'app:appearance.choose-mode mode:light',
+      'app:appearance.choose-mode ',
+      'app:appearance.choose-theme preset:dracula',
+      'app:appearance.choose-theme ',
     ])
   })
 
