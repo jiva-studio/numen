@@ -768,7 +768,7 @@ func TestTabOfAWindowThatNeverWatchesIsUnlinkedAfterGracePeriod(t *testing.T) {
 	}
 }
 
-func TestTabTakenOverFromAClosedWindowLeavesItsOldGroup(t *testing.T) {
+func TestReloadedWindowDropsGroupMatesItDoesNotReport(t *testing.T) {
 	r, _ := newTestRegistry(t)
 	closed := r.Watch("window-a")
 	writeTabs(r, "window-a", []Tab{files("files:1", "Files"), plex("note:1", "A")})
