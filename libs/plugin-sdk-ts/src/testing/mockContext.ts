@@ -81,6 +81,8 @@ function notifyListener<T>(listener: (event: T) => void | Promise<void>, event: 
 
 const DEFAULT_APP: AppInfo = { version: '0.0.0-test', build: 1, platform: 'linux' }
 
+const EMPTY_NOTE: CommandNote = { path: '', title: '', type: 'note' }
+
 // Reports whether the address is an absolute http or https address, as the window opens only those.
 function isWebAddress(url: string): boolean {
   try {
@@ -306,7 +308,7 @@ export function createMockPluginContext(
 
     async triggerCommand(
       commandId: string,
-      note: CommandNote = { path: '', title: '', type: 'note' },
+      note: CommandNote = EMPTY_NOTE,
     ): Promise<void> {
       const cmd = commands.find((c) => c.id === commandId)
       if (!cmd) {

@@ -26,6 +26,8 @@ const browserTimer: Timer = {
   clear: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
 }
 
+const browserParts: UpdateParts = { api: updater, timer: browserTimer }
+
 /** The component of the status bar view: the indicator over the announcement of the model. */
 export function createStatusView(context: PluginContext, updates: Updates) {
   return defineComponent({
@@ -60,7 +62,7 @@ function showMissingAddress(context: PluginContext): void {
 
 export const activate = (
   context: PluginContext,
-  parts: UpdateParts = { api: updater, timer: browserTimer },
+  parts: UpdateParts = browserParts,
 ): void => {
   const updates = createUpdates({
     api: parts.api,
