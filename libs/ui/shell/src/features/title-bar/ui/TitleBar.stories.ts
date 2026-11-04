@@ -75,7 +75,7 @@ type Story = StoryObj<Knobs>
 
 const title = (canvas: HTMLElement): HTMLElement =>
   canvas.querySelector<HTMLElement>('[data-title]')!
-const shown = (canvas: HTMLElement): string[] =>
+const getShownIds = (canvas: HTMLElement): string[] =>
   [...canvas.querySelectorAll('[data-title-bar-action]')].map((one) =>
     one.getAttribute('data-title-bar-action')!,
   )
@@ -84,7 +84,7 @@ const shown = (canvas: HTMLElement): string[] =>
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(title(canvasElement).textContent).toBe('numen — Orchard notes'))
-    await expect(shown(canvasElement)).toStrictEqual(['files', 'plex', 'note'])
+    await expect(getShownIds(canvasElement)).toStrictEqual(['files', 'plex', 'note'])
     await expect(canvasElement.querySelectorAll('[data-group-start]')).toHaveLength(1)
   },
 }
@@ -93,7 +93,7 @@ export const Default: Story = {
 export const Dark: Story = {
   globals: DARK,
   play: async ({ canvasElement }) => {
-    await waitFor(() => expect(shown(canvasElement)).toHaveLength(3))
+    await waitFor(() => expect(getShownIds(canvasElement)).toHaveLength(3))
     const bar = canvasElement.querySelector<HTMLElement>('[data-title-bar]')!
     await expect(getComputedStyle(bar).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
   },
@@ -113,7 +113,7 @@ export const NoVault: Story = {
   args: { vaultName: '', actions: [] },
   play: async ({ canvasElement }) => {
     await expect(title(canvasElement).textContent).toBe('numen')
-    await expect(shown(canvasElement)).toStrictEqual([])
+    await expect(getShownIds(canvasElement)).toStrictEqual([])
     await expect(canvasElement.querySelector('[data-title-bar-more]')).toBeNull()
   },
 }
@@ -127,7 +127,7 @@ export const LongVaultName: Story = {
     await expect(getComputedStyle(text).textOverflow).toBe('ellipsis')
     const close = canvasElement.querySelector('[data-control="close"]')!.getBoundingClientRect()
     await expect(close.right).toBeLessThanOrEqual(canvasElement.getBoundingClientRect().right)
-    await expect(shown(canvasElement)).toStrictEqual(['files', 'plex', 'note'])
+    await expect(getShownIds(canvasElement)).toStrictEqual(['files', 'plex', 'note'])
   },
 }
 
@@ -143,7 +143,7 @@ export const NotLatin: Story = {
 export const TwoOrMoreGroups: Story = {
   args: { actions: ALL },
   play: async ({ canvasElement }) => {
-    await waitFor(() => expect(shown(canvasElement)).toHaveLength(5))
+    await waitFor(() => expect(getShownIds(canvasElement)).toHaveLength(5))
     await expect(canvasElement.querySelectorAll('[data-group-start]')).toHaveLength(2)
     const start = canvasElement.querySelector('[data-group-start]')!
     await expect(getComputedStyle(start, '::before').width).not.toBe('auto')
@@ -155,7 +155,7 @@ export const Overflowing: Story = {
   args: { actions: ALL, width: '22rem' },
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(canvasElement.querySelector('[data-title-bar-more]')).not.toBeNull())
-    const visible = shown(canvasElement)
+    const visible = getShownIds(canvasElement)
     await expect(visible.length).toBeLessThan(5)
     await userEvent.click(canvasElement.querySelector('[data-title-bar-more]')!)
     const menu = within(canvasElement.ownerDocument.body)
@@ -170,7 +170,7 @@ export const OnlyTheMenu: Story = {
   args: { actions: ALL, width: '14rem' },
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(canvasElement.querySelector('[data-title-bar-more]')).not.toBeNull())
-    await expect(shown(canvasElement)).toStrictEqual([])
+    await expect(getShownIds(canvasElement)).toStrictEqual([])
   },
 }
 

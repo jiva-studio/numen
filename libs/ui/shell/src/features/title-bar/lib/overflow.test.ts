@@ -9,10 +9,10 @@ const ids = (list: readonly TitleBarAction[]): string[] => list.map((one) => one
 
 describe('splitActions', () => {
   it('keeps every action visible when they all fit', () => {
-    const split = splitActions(five, 5)
+    const lists = splitActions(five, 5)
 
-    expect(ids(split.visible)).toStrictEqual(['a', 'b', 'c', 'd', 'e'])
-    expect(split.overflow).toStrictEqual([])
+    expect(ids(lists.visible)).toStrictEqual(['a', 'b', 'c', 'd', 'e'])
+    expect(lists.overflow).toStrictEqual([])
   })
 
   it('keeps every action visible when there is more room than actions', () => {
@@ -20,30 +20,30 @@ describe('splitActions', () => {
   })
 
   it('leaves one slot for the menu button when some actions do not fit', () => {
-    const split = splitActions(five, 3)
+    const lists = splitActions(five, 3)
 
-    expect(ids(split.visible)).toStrictEqual(['a', 'b'])
-    expect(ids(split.overflow)).toStrictEqual(['c', 'd', 'e'])
+    expect(ids(lists.visible)).toStrictEqual(['a', 'b'])
+    expect(ids(lists.overflow)).toStrictEqual(['c', 'd', 'e'])
   })
 
   it('keeps the order of the actions across the visible and the overflow lists', () => {
-    const split = splitActions(five, 4)
+    const lists = splitActions(five, 4)
 
-    expect([...ids(split.visible), ...ids(split.overflow)]).toStrictEqual(ids(five))
+    expect([...ids(lists.visible), ...ids(lists.overflow)]).toStrictEqual(ids(five))
   })
 
   it('moves every action to the menu when only one slot fits', () => {
-    const split = splitActions(five, 1)
+    const lists = splitActions(five, 1)
 
-    expect(split.visible).toStrictEqual([])
-    expect(ids(split.overflow)).toStrictEqual(['a', 'b', 'c', 'd', 'e'])
+    expect(lists.visible).toStrictEqual([])
+    expect(ids(lists.overflow)).toStrictEqual(['a', 'b', 'c', 'd', 'e'])
   })
 
   it('moves every action to the menu when no slot fits', () => {
-    const split = splitActions(five, 0)
+    const lists = splitActions(five, 0)
 
-    expect(split.visible).toStrictEqual([])
-    expect(split.overflow).toHaveLength(5)
+    expect(lists.visible).toStrictEqual([])
+    expect(lists.overflow).toHaveLength(5)
   })
 
   it('has nothing to split when there are no actions', () => {

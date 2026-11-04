@@ -27,18 +27,18 @@ const row = useTemplateRef<HTMLElement>('row')
 const more = useTemplateRef<HTMLElement>('more')
 const buttonWidth = ref(0)
 const isOpen = ref(false)
-const at = ref({ x: 0, y: 0 })
-const asking = ref(0)
+const anchor = ref({ x: 0, y: 0 })
+const triggerWidth = ref(0)
 
 const capacity = computed(() =>
   props.room === null || buttonWidth.value === 0
     ? Infinity
     : Math.max(Math.floor(props.room / buttonWidth.value), 0),
 )
-const split = computed(() => splitActions(props.actions, capacity.value))
-const starts = computed(() => findGroupStarts(split.value.visible))
+const lists = computed(() => splitActions(props.actions, capacity.value))
+const starts = computed(() => findGroupStarts(lists.value.visible))
 const items = computed<readonly MenuItem[]>(() =>
-  split.value.overflow.map(({ id, title, group }) => ({
+  lists.value.overflow.map(({ id, title, group }) => ({
     id,
     text: title,
     ...(group === undefined ? {} : { group }),
@@ -52,8 +52,8 @@ onUpdated(measureButton)
 /* -------------------------------- Handlers -------------------------------- */
 function onOpenMenu(): void {
   const box = measureRect(more.value)
-  at.value = { x: box?.left ?? 0, y: box?.bottom ?? 0 }
-  asking.value = box?.width ?? 0
+  anchor.value = { x: box?.left ?? 0, y: box?.bottom ?? 0 }
+  triggerWidth.value = box?.width ?? 0
   isOpen.value = true
 }
 
@@ -78,7 +78,7 @@ function getIcon(id: string) {
 <template>
   <div ref="row" class="title-bar__actions">
     <button
-      v-for="action in split.visible"
+      v-for="action in lists.visible"
       :key="action.id"
       type="button"
       class="title-bar__button"
@@ -92,7 +92,7 @@ function getIcon(id: string) {
       <component :is="action.icon" :size="16" />
     </button>
     <button
-      v-if="split.overflow.length > 0"
+      v-if="lists.overflow.length > 0"
       ref="more"
       type="button"
       class="title-bar__button"
@@ -106,8 +106,8 @@ function getIcon(id: string) {
     </button>
     <Menu
       :items="items"
-      :at="at"
-      :asking="asking"
+      :at="anchor"
+      :asking="triggerWidth"
       :from="more"
       :is-open="isOpen"
       :name="words.more"

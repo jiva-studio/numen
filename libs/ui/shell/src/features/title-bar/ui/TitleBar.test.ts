@@ -206,7 +206,7 @@ describe('the window controls', () => {
     expect(title.compareDocumentPosition(close) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  it('show the restore icon instead of maximise while the window is maximised', () => {
+  it('show the restore icon while the window is maximised', () => {
     const wrapper = mountBar({ isMaximised: true })
 
     expect(control(wrapper, 'toggle-maximise').attributes('data-maximised')).toBe('true')
