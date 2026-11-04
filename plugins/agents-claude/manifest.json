@@ -17,6 +17,13 @@
       "title": "Executable Path",
       "description": "Path to the Claude Code CLI executable. Empty finds it automatically.",
       "default": ""
+    },
+    {
+      "key": "reads_hooks_and_skills",
+      "type": "boolean",
+      "title": "Hooks & skills",
+      "description": "Let Claude Code read the hooks, skills, standing instructions in CLAUDE.md and plugins configured for this person. Off. A hook is a shell command Claude Code runs itself. What a vault contains is never read.",
+      "default": false
     }
   ]
 }

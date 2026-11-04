@@ -27,9 +27,6 @@ const AGENT_USE_AT = ['agent', 'use'] as const
 /** The path the models of one agent are named at. */
 const getModelAt = (agent: string): readonly string[] => ['agent', agent, 'model']
 
-/** The path the depth of reasoning chosen for one agent is kept at. */
-const getReasoningAt = (agent: string): readonly string[] => ['agent', agent, 'reasoning']
-
 /** The setting kept at a path, as text. */
 const getKept = (deps: AgentTabDeps, path: readonly string[]): string =>
   String(deps.getSetting?.(path) ?? '')
@@ -133,7 +130,7 @@ function useReasoningSelection(
     const agentId = selection.selectedAgentId.value
     const configuredReasoning =
       (selected.value.agentId === agentId ? selected.value.id : '') ||
-      getKept(deps, getReasoningAt(agentId))
+      (deps.getReasoning?.() ?? '')
     const offers = (id: string) => reasoningLevels.value.some((level) => level.id === id)
     if (offers(configuredReasoning)) return configuredReasoning
     const byDefault = selectedOption.value?.defaultReasoning ?? ''

@@ -66,7 +66,6 @@ func (c Config) completionAgentSettings() completion.AgentSettings {
 			return completion.ProgramSettings{
 				Model:   section.Model,
 				Command: section.Command,
-				Options: section.Options,
 			}
 		},
 	}

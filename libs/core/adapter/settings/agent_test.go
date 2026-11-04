@@ -2,7 +2,6 @@ package settings_test
 
 import (
 	"encoding/json"
-	"maps"
 	"slices"
 	"testing"
 
@@ -60,17 +59,17 @@ func TestASectionOfTheWrongTypeIsRefused(t *testing.T) {
 // program is called.
 func TestTheFieldsASectionNamesAreTaken(t *testing.T) {
 	target := read(t, `{
-		"claude": {"command": ["c", "--x"], "model": "opus", "reads_hooks_and_skills": true, "extra": [1,2]},
-		"anything": {"command": ["x", "y"], "model": "gpt", "reads_hooks_and_skills": true, "extra": [1,2]}
+		"claude": {"command": ["c", "--x"], "model": "opus"},
+		"anything": {"command": ["x", "y"], "model": "gpt"}
 	}`)
 
 	want := map[string]settings.AgentProgram{
-		"claude":   {Command: []string{"c", "--x"}, Model: "opus", Options: map[string]string{"reads_hooks_and_skills": "true", "extra": "[1,2]"}},
-		"anything": {Command: []string{"x", "y"}, Model: "gpt", Options: map[string]string{"reads_hooks_and_skills": "true", "extra": "[1,2]"}},
+		"claude":   {Command: []string{"c", "--x"}, Model: "opus"},
+		"anything": {Command: []string{"x", "y"}, Model: "gpt"},
 	}
 	for name, program := range want {
 		got := target.GetProgram(name)
-		if !slices.Equal(got.Command, program.Command) || got.Model != program.Model || !maps.Equal(got.Options, program.Options) {
+		if !slices.Equal(got.Command, program.Command) || got.Model != program.Model {
 			t.Errorf("%s: %+v", name, got)
 		}
 	}
@@ -101,7 +100,7 @@ func TestTheCommandsAreThoseTheSettingsSet(t *testing.T) {
 // The section is written with the programs next to `use`, and a choice
 // left to the default is written as null, so it reads back unchanged.
 func TestTheSectionIsSavedAsItIsRead(t *testing.T) {
-	file := `{"use":"claude","claude":{"command":["/c"],"model":"opus","reasoning":"high","reads_hooks_and_skills":true}}`
+	file := `{"use":"claude","claude":{"command":["/c"],"model":"opus"}}`
 	content, err := json.Marshal(read(t, file))
 	if err != nil {
 		t.Fatal(err)

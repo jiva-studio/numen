@@ -16,7 +16,7 @@ The working directory is the vault.
 
 Hooks, skills, standing instructions, plugins and custom agents are blocked by default: the agent is given a list of the configuration sources it may read, and by default the list is empty.
 
-`agent.claude.reads_hooks_and_skills` enables the person's own hooks and skills, and only those. What a vault itself contains is blocked in either mode: a vault is a folder that comes from elsewhere — synced, cloned, shared, restored — and a configuration file inside one can list commands for this machine to run.
+The setting `reads_hooks_and_skills` of the plugin `md.numen.agents.claude` enables the person's own hooks and skills, and only those. What a vault itself contains is blocked in either mode: a vault is a folder that comes from elsewhere — synced, cloned, shared, restored — and a configuration file inside one can list commands for this machine to run.
 
 The sources are listed one by one. This vault's own tools are passed on a command line and are treated as a customisation like any other.
 
@@ -131,7 +131,7 @@ The chat panel provides a floating selector island above the message composer:
 
 ## Settings
 
-`agent.use` sets which program answers, and empty sets none. When unset, the program the plugins mark as the default answers. Each program a plugin lists has a section under its name, `agent.claude.*` for Claude Code: `command` starts it, `model` is which of its models answers, and `reads_hooks_and_skills` is what this machine holds for it. A section is kept whether it is the one in use or not. The programs and their models are listed by the plugins that run them, and the window shows what they list. See [Settings](settings.md).
+`agent.use` sets which program answers, and empty sets none. When unset, the program the plugins mark as the default answers. Each program a plugin lists has a section under its name, `agent.claude.*` for Claude Code: `command` starts it, and `model` is which of its models answers. What a plugin reads for itself, such as `reads_hooks_and_skills` for Claude Code, is the plugin's own setting. A section is kept whether it is the one in use or not. The programs and their models are listed by the plugins that run them, and the window shows what they list. See [Settings](settings.md).
 
 Where `command` is empty, the path is searched first, then the folders the command line's installers write to.
 

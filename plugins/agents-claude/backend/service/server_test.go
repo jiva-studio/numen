@@ -271,7 +271,9 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 			"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+".argv\n"+
 			"while [ $# -gt 0 ]; do if [ \"$1\" = --mcp-config ]; then cp \"$2\" "+out+".config; fi; shift; done\n"+
 			"echo '{\"type\":\"result\",\"is_error\":false}'\n")
-	client := startAgent(t, &agentServer{})
+	agent := &agentServer{}
+	agent.applyConfig(map[string]string{"reads_hooks_and_skills": "true"})
+	client := startAgent(t, agent)
 
 	stream, err := client.Ask(t.Context(), &agentrun.Request{
 		Prompt:     "the question",
@@ -280,7 +282,6 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 		Model:      "opus",
 		MaxSteps:   7,
 		Tools:      []string{"note_read"},
-		Options:    map[string]string{"reads_hooks_and_skills": "true"},
 		ToolsURL:   "http://127.0.0.1:1/mcp",
 		ToolsToken: "secret",
 	})

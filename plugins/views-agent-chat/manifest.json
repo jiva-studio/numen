@@ -32,5 +32,14 @@
     ]
   },
   "permissions": ["vault:read"],
+  "settings": [
+    {
+      "key": "reasoning",
+      "type": "string",
+      "title": "Reasoning",
+      "description": "The depth of reasoning a new question starts with, by the name of one of the levels the model lists. Empty uses the default of the model; a level the model does not list is ignored.",
+      "default": ""
+    }
+  ],
   "frontend": {}
 }
