@@ -85,3 +85,19 @@ func TestTheWindowIsNamedAfterTheFileInFrontOfThePerson(t *testing.T) {
 		})
 	}
 }
+
+func TestGetSecondaryWindowURL(t *testing.T) {
+	cases := []struct {
+		tab  editor.DetachedTab
+		want string
+	}{
+		{editor.DetachedTab{Kind: "reader:epub", Path: "books/a b.epub"}, "/?kind=reader%3Aepub&path=books%2Fa+b.epub&window=secondary"},
+		{editor.DetachedTab{Kind: "settings"}, "/?kind=settings&window=secondary"},
+		{editor.DetachedTab{}, "/?window=secondary"},
+	}
+	for _, c := range cases {
+		if got := getSecondaryWindowURL(c.tab); got != c.want {
+			t.Errorf("getSecondaryWindowURL(%+v) = %q, want %q", c.tab, got, c.want)
+		}
+	}
+}

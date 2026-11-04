@@ -18,28 +18,35 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/workspace.proto.
  */
 export const file_numen_v1_workspace: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS93b3Jrc3BhY2UucHJvdG8SCG51bWVuLnYxIjgKEERldGFjaFRhYlJlcXVlc3QSDgoGdGFiX2lkGAEgASgJEgkKAXgYAiABKAUSCQoBeRgDIAEoBSITChFEZXRhY2hUYWJSZXNwb25zZSITChFXYXRjaEZvY3VzUmVxdWVzdCJDChJXYXRjaEZvY3VzUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIfCgZyYW5nZXMYAiADKAsyDy5udW1lbi52MS5SYW5nZSJGChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEhEKCWFjdGl2ZV9pZBgCIAEoCSIXChVXcml0ZU9wZW5UYWJzUmVzcG9uc2UiFQoTUmVhZE9wZW5UYWJzUmVxdWVzdCJGChRSZWFkT3BlblRhYnNSZXNwb25zZRIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEhEKCWFjdGl2ZV9pZBgCIAEoCSJLCgNUYWISCgoCaWQYASABKAkSDAoEa2luZBgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBXRpdGxlGAQgASgJEg0KBXN0YXRlGAUgASgJMsQCChBXb3Jrc3BhY2VTZXJ2aWNlEkkKCldhdGNoRm9jdXMSGy5udW1lbi52MS5XYXRjaEZvY3VzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoRm9jdXNSZXNwb25zZTABElAKDVdyaXRlT3BlblRhYnMSHi5udW1lbi52MS5Xcml0ZU9wZW5UYWJzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXNwb25zZRJNCgxSZWFkT3BlblRhYnMSHS5udW1lbi52MS5SZWFkT3BlblRhYnNSZXF1ZXN0Gh4ubnVtZW4udjEuUmVhZE9wZW5UYWJzUmVzcG9uc2USRAoJRGV0YWNoVGFiEhoubnVtZW4udjEuRGV0YWNoVGFiUmVxdWVzdBobLm51bWVuLnYxLkRldGFjaFRhYlJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChhudW1lbi92MS93b3Jrc3BhY2UucHJvdG8SCG51bWVuLnYxIkQKEERldGFjaFRhYlJlcXVlc3QSDAoEa2luZBgBIAEoCRIMCgRwYXRoGAIgASgJEgkKAXgYAyABKAUSCQoBeRgEIAEoBSITChFEZXRhY2hUYWJSZXNwb25zZSITChFXYXRjaEZvY3VzUmVxdWVzdCJDChJXYXRjaEZvY3VzUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIfCgZyYW5nZXMYAiADKAsyDy5udW1lbi52MS5SYW5nZSJGChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEhEKCWFjdGl2ZV9pZBgCIAEoCSIXChVXcml0ZU9wZW5UYWJzUmVzcG9uc2UiFQoTUmVhZE9wZW5UYWJzUmVxdWVzdCJGChRSZWFkT3BlblRhYnNSZXNwb25zZRIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEhEKCWFjdGl2ZV9pZBgCIAEoCSJLCgNUYWISCgoCaWQYASABKAkSDAoEa2luZBgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBXRpdGxlGAQgASgJEg0KBXN0YXRlGAUgASgJMsQCChBXb3Jrc3BhY2VTZXJ2aWNlEkkKCldhdGNoRm9jdXMSGy5udW1lbi52MS5XYXRjaEZvY3VzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoRm9jdXNSZXNwb25zZTABElAKDVdyaXRlT3BlblRhYnMSHi5udW1lbi52MS5Xcml0ZU9wZW5UYWJzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXNwb25zZRJNCgxSZWFkT3BlblRhYnMSHS5udW1lbi52MS5SZWFkT3BlblRhYnNSZXF1ZXN0Gh4ubnVtZW4udjEuUmVhZE9wZW5UYWJzUmVzcG9uc2USRAoJRGV0YWNoVGFiEhoubnVtZW4udjEuRGV0YWNoVGFiUmVxdWVzdBobLm51bWVuLnYxLkRldGFjaFRhYlJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.DetachTabRequest
  */
 export type DetachTabRequest = Message<"numen.v1.DetachTabRequest"> & {
   /**
-   * The tab to open in a new window.
+   * The kind of the tab to open in a new window.
    *
-   * @generated from field: string tab_id = 1;
+   * @generated from field: string kind = 1;
    */
-  tabId: string;
+  kind: string;
+
+  /**
+   * The vault path the tab shows; empty for a tab that shows none.
+   *
+   * @generated from field: string path = 2;
+   */
+  path: string;
 
   /**
    * The position on screen to open the new window at.
    *
-   * @generated from field: int32 x = 2;
+   * @generated from field: int32 x = 3;
    */
   x: number;
 
   /**
-   * @generated from field: int32 y = 3;
+   * @generated from field: int32 y = 4;
    */
   y: number;
 };

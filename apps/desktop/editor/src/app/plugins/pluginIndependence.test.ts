@@ -72,7 +72,7 @@ describe('host and plugin independence', () => {
 describe('restoring a session with a disabled plugin', () => {
   it('restores a session holding a tab of a disabled plugin without throwing', async () => {
     try {
-      vi.stubGlobal('location', new URL('http://localhost/?tab=disabled-plugin:/docs/sample.pdf'))
+      vi.stubGlobal('location', new URL('http://localhost/?kind=disabled-plugin&path=/docs/sample.pdf'))
 
       const window = await mountWindow()
       expect(getTabs(window)).toEqual([

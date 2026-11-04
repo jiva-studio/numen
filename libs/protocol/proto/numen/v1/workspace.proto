@@ -34,12 +34,15 @@ service WorkspaceService {
 }
 
 message DetachTabRequest {
-  // The tab to open in a new window.
-  string tab_id = 1;
+  // The kind of the tab to open in a new window.
+  string kind = 1;
+
+  // The vault path the tab shows; empty for a tab that shows none.
+  string path = 2;
 
   // The position on screen to open the new window at.
-  int32 x = 2;
-  int32 y = 3;
+  int32 x = 3;
+  int32 y = 4;
 }
 
 message DetachTabResponse {}

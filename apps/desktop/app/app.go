@@ -307,25 +307,33 @@ func makeWindow(app *application.App, opened *editor.Installation) *application.
 	})
 }
 
-// makeSecondaryWindow creates a new window displaying a torn-off tab at the specified position.
-func makeSecondaryWindow(
-	app *application.App, opened *editor.Installation, tabID string, x, y int,
-) *application.WebviewWindow {
-	destURL := "/?window=secondary"
-	if tabID != "" {
-		destURL = "/?window=secondary&tab=" + url.QueryEscape(tabID)
+// getSecondaryWindowURL is the page of a window that opens with a torn-off tab.
+func getSecondaryWindowURL(tab editor.DetachedTab) string {
+	query := url.Values{"window": {"secondary"}}
+	if tab.Kind != "" {
+		query.Set("kind", tab.Kind)
 	}
+	if tab.Path != "" {
+		query.Set("path", tab.Path)
+	}
+	return "/?" + query.Encode()
+}
+
+// makeSecondaryWindow creates a new window displaying a torn-off tab at its position.
+func makeSecondaryWindow(
+	app *application.App, opened *editor.Installation, tab editor.DetachedTab,
+) *application.WebviewWindow {
 	opts := application.WebviewWindowOptions{
 		Title:          getWindowTitle(opened.GetCurrentVault(), opened.State.GetOpenTabs()),
 		Width:          1280,
 		Height:         860,
-		URL:            destURL,
+		URL:            getSecondaryWindowURL(tab),
 		EnableFileDrop: true,
 	}
-	if x != 0 || y != 0 {
+	if tab.X != 0 || tab.Y != 0 {
 		opts.InitialPosition = application.WindowXY
-		opts.X = x
-		opts.Y = y
+		opts.X = tab.X
+		opts.Y = tab.Y
 	}
 	return app.Window.NewWithOptions(opts)
 }
@@ -357,9 +365,9 @@ func connectWindow(
 		return err
 	}
 
-	opened.State.DetachTab = func(_ context.Context, tabID string, x, y int) error {
+	opened.State.DetachTab = func(_ context.Context, tab editor.DetachedTab) error {
 		hooks.tracker.addWindow()
-		secWindow := makeSecondaryWindow(app, opened, tabID, x, y)
+		secWindow := makeSecondaryWindow(app, opened, tab)
 		secSeen := visibility{
 			hide: func() { secWindow.Hide() },
 			show: func() { secWindow.Show() },

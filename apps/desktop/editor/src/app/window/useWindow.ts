@@ -17,7 +17,6 @@ import { WORDS as words } from '@/shared/words'
 import { useTabLinks } from '@/features/tab-linking'
 import { createTabSync } from '../tabs/useTabSync'
 import { useCrossWindowTabs } from '../tabs/useCrossWindowTabs'
-import { formatDetachedTab, parseInitialTab } from '../tabs/detachedTab'
 
 import { createNoteEditors } from '../tabs/useNoteEditors'
 import { useSettings } from './useSettings'
@@ -127,10 +126,9 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     // Stryker disable next-line ConditionalExpression,EqualityOperator,StringLiteral: location is always defined in the window environment
     const search = typeof globalThis.location !== 'undefined' ? globalThis.location.search : ''
     const params = search ? new URLSearchParams(search) : null
-    const initialTab = params?.get('tab')
-    if (initialTab) {
-      const { kind, target } = parseInitialTab(initialTab)
-      const openedTab = await windowTabs.openTabOfKind(kind, target)
+    const kind = params?.get('kind')
+    if (kind) {
+      const openedTab = await windowTabs.openTabOfKind(kind, params?.get('path') ?? '')
       if (openedTab) {
         windowTabs.layout.value = {
           root: { kind: 'pane', id: 'main', tabs: [openedTab], active: openedTab },
@@ -434,15 +432,17 @@ function createStatusBar(
   })
 }
 
-/** The closing of a tab: its links go, and the hold runs where the tab stays open. */
 type Point = { readonly x: number; readonly y: number }
 
 /** Opening a tab in a new window and closing it in this one. */
 function createTabDetacher(base: WindowCore, closeTab: (id: string) => void) {
   /** Detaches a tab to a new window at a point on the screen. */
   const detachTab = (id: string, point: Point): void => {
+    const tab = base.windowTabs.getTab(id)
+    if (!tab) return
+    const path = tab.kind.getOpenTab?.(tab.state)?.path ?? ''
     core
-      .detachTab(formatDetachedTab(base.windowTabs.getTab, id), point)
+      .detachTab({ kind: tab.kind.kind, path }, point)
       .then(() => closeTab(id))
       .catch((error: unknown) =>
         base.writeMessage(
@@ -457,6 +457,7 @@ function createTabDetacher(base: WindowCore, closeTab: (id: string) => void) {
   return { detachTab, detachTabAt }
 }
 
+/** The closing of a tab: its links go, and the hold runs where the tab stays open. */
 function createTabCloser(base: WindowCore) {
   return (id: string, hold?: () => void) => {
     base.tabLinks.removeClosedTab(id)

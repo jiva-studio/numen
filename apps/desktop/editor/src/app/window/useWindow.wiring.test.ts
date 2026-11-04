@@ -459,6 +459,7 @@ describe('a tab detached', () => {
   const PLEX_TAB = 'plex:248cab16-f508-4fb4-a820-16b6f9090fc3'
 
   beforeEach(() => {
+    h.core.detachTab.mockReset()
     h.f.windowTabs.getTab.mockReturnValue({
       kind: { kind: 'plex', getOpenTab: () => ({ path: 'Physics.md' }) },
       state: {},
@@ -472,8 +473,30 @@ describe('a tab detached', () => {
     window.detachTab(PLEX_TAB, { x: 100, y: 200 })
     await vi.waitFor(() => expect(h.f.windowTabs.finishClose).toHaveBeenCalledWith(PLEX_TAB))
 
-    expect(h.core.detachTab).toHaveBeenCalledWith('plex:Physics.md', { x: 100, y: 200 })
+    expect(h.core.detachTab).toHaveBeenCalledWith(
+      { kind: 'plex', path: 'Physics.md' },
+      { x: 100, y: 200 },
+    )
     expect(h.f.windowTabs.releaseTab).toHaveBeenCalledWith(PLEX_TAB)
+  })
+
+  it('sends no path for a tab that shows none', async () => {
+    h.core.detachTab.mockResolvedValue(undefined)
+    h.f.windowTabs.getTab.mockReturnValue({ kind: { kind: 'settings' }, state: {} })
+    const window = useWindow()
+
+    window.detachTab('settings:settings', { x: 1, y: 2 })
+
+    expect(h.core.detachTab).toHaveBeenCalledWith({ kind: 'settings', path: '' }, { x: 1, y: 2 })
+  })
+
+  it('does nothing for a tab the window no longer holds', () => {
+    h.f.windowTabs.getTab.mockReturnValue(undefined)
+    const window = useWindow()
+
+    window.detachTab(PLEX_TAB, { x: 1, y: 2 })
+
+    expect(h.core.detachTab).not.toHaveBeenCalled()
   })
 
   it('opens at the screen point of a point given in the window', async () => {
@@ -485,7 +508,10 @@ describe('a tab detached', () => {
 
       window.detachTabAt(PLEX_TAB, { x: 30, y: 40 })
 
-      expect(h.core.detachTab).toHaveBeenCalledWith('plex:Physics.md', { x: 1030, y: 540 })
+      expect(h.core.detachTab).toHaveBeenCalledWith(
+        { kind: 'plex', path: 'Physics.md' },
+        { x: 1030, y: 540 },
+      )
     } finally {
       vi.unstubAllGlobals()
     }
@@ -531,15 +557,18 @@ describe('the window started and closed', () => {
 })
 
 describe('the layout started with an initial tab', () => {
-  it('opens tab of kind with at payload from URL search params', async () => {
+  it('opens the tab of the kind and path the page names', async () => {
     h.f.windowTabs.openTabOfKind.mockResolvedValue('note:hello.md')
     try {
-      vi.stubGlobal('location', new URL('http://localhost/?window=secondary&tab=note:hello.md'))
+      vi.stubGlobal(
+        'location',
+        new URL('http://localhost/?window=secondary&kind=reader%3Aepub&path=books%2Fa+b.epub'),
+      )
       const window = useWindow()
 
       await h.args.bootstrap.startLayout()
 
-      expect(h.f.windowTabs.openTabOfKind).toHaveBeenCalledWith('note', 'hello.md')
+      expect(h.f.windowTabs.openTabOfKind).toHaveBeenCalledWith('reader:epub', 'books/a b.epub')
       expect(h.f.windowTabs.layout.value).toEqual({
         root: { kind: 'pane', id: 'main', tabs: ['note:hello.md'], active: 'note:hello.md' },
         axis: 'horizontal',
@@ -741,7 +770,7 @@ describe('the services a plugin is given', () => {
       useWindow()
       expect(typeof h.args.crossWindow.closeWindowIfEmpty).toBe('function')
 
-      vi.stubGlobal('location', new URL('http://localhost/?secondary&tab=files'))
+      vi.stubGlobal('location', new URL('http://localhost/?secondary&kind=files'))
       const secondaryWin = useWindow()
       expect(typeof h.args.crossWindow.closeWindowIfEmpty).toBe('function')
       h.args.crossWindow.closeWindowIfEmpty()
