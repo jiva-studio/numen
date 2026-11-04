@@ -5,6 +5,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { useWindowTabs } from '@/entities/tab'
+import { mockVaultState } from '@/testing/answers'
 import { getTabs, mountWindow } from '@/testing/window'
 
 const editorSrcDir = resolve(import.meta.dirname, '../..')
@@ -72,7 +73,17 @@ describe('host and plugin independence', () => {
 describe('restoring a session with a disabled plugin', () => {
   it('restores a session holding a tab of a disabled plugin without throwing', async () => {
     try {
-      vi.stubGlobal('location', new URL('http://localhost/?kind=disabled-plugin&path=/docs/sample.pdf'))
+      mockVaultState.detachedTab = {
+        id: 'disabled-plugin:/docs/sample.pdf',
+        kind: 'disabled-plugin',
+        path: '/docs/sample.pdf',
+        title: 'sample.pdf',
+        state: '',
+      }
+      vi.stubGlobal(
+        'location',
+        new URL('http://localhost/?window=secondary&id=disabled-plugin:/docs/sample.pdf'),
+      )
 
       const window = await mountWindow()
       expect(getTabs(window)).toEqual([

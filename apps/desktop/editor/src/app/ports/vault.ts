@@ -1,7 +1,8 @@
 import type { PathRename } from '@/shared/paths'
 import type { Task } from '@/shared/notices/task'
-import type { OpenTabs } from '@/entities/tab'
-import type { TabLinksChange, TabLinksSnapshot } from '@/features/tab-linking'
+import type { Result } from '@numen/core-client'
+import type { OpenTabs, Tab } from '@/entities/tab'
+import type { TabLinksChange, TabLinksSnapshot, TabWindow } from '@/features/tab-linking'
 
 export interface VaultPort {
   getInitialOpenPath(): Promise<{ path: string } | null>
@@ -68,13 +69,18 @@ export interface VaultPort {
   /** Reports that this client has written all pending data. */
   reportFlush(token: string, outcome?: 'written' | 'asking'): Promise<void>
   /**
-   * Opens a tab of a kind with an optional vault path in a new window at a screen point. The new
-   * window reuses the tab id, so the tab keeps its links.
+   * Opens a tab in a new window at a screen point. The new window reads the tab and its saved
+   * state by id and reuses the id, so the tab keeps its links.
    */
-  detachTab(
-    tab: { readonly id: string; readonly kind: string; readonly path: string },
-    position: { x: number; y: number },
-  ): Promise<void>
+  detachTab(tab: Tab, position: { x: number; y: number }): Promise<void>
+  /** Returns the tab of a pending detach, or null when no detach of the tab is pending. */
+  readDetachedTab(tabId: string): Promise<Tab | null>
+  /** Sends a tab to another open window. Resolves after the target window accepts the tab. */
+  moveTab(windowId: string, targetWindowId: string, tab: Tab): Promise<Result<void, TabMoveError>>
+  /** Reports that this window opened a moved tab. On an error the window closes the tab. */
+  acceptTabMove(windowId: string, tabId: string): Promise<Result<void, TabMoveError>>
+  /** Turns the outline of a window on or off. */
+  highlightWindow(windowId: string, isOn: boolean): Promise<void>
   /**
    * Streams the link groups and the linkable tabs of all windows, then every change and every
    * path sync, until the signal aborts. When the last stream of this window ends, the core
@@ -89,9 +95,13 @@ export interface VaultPort {
   syncTabPath(sync: { sourceTabId: string; path: string; title: string }): Promise<void>
 }
 
-/** Linkable tabs open in a window. */
+/** Why a move of a tab to another window did not complete. */
+export type TabMoveError = 'window-closed' | 'timeout'
+
+/** Linkable tabs open in a window, and the window summary shown in the menus of other windows. */
 export interface WindowTabsReport {
   readonly tabs: readonly { readonly id: string; readonly kind: string; readonly title: string }[]
+  readonly window: Omit<TabWindow, 'id'>
 }
 
 /** New path of a linked tab. */
@@ -102,8 +112,12 @@ export interface TabPathSync {
   readonly title: string
 }
 
-/** Tab links stream message: a snapshot or a sync; a keepalive has neither. */
+/** Tab links stream message. A keepalive sets none of the fields. */
 export interface TabLinksEvent {
   readonly links?: TabLinksSnapshot
   readonly sync?: TabPathSync
+  /** A tab that another window sends to this window. */
+  readonly movedTab?: Tab
+  /** Whether this window shows the highlight outline. */
+  readonly isHighlighted?: boolean
 }

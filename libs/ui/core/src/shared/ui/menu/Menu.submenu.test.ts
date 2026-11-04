@@ -338,3 +338,20 @@ describe('the size of a menu that changes while it is open', () => {
     expect(measure).not.toHaveBeenCalled()
   })
 })
+
+describe('the highlight event', () => {
+  it('emits the item id under the pointer once per change, for the menu and its submenu, and null when the pointer leaves', async () => {
+    const menu = mountMenu()
+    await settle()
+    const rows = getRows(getMenus()[0])
+
+    rows[0]?.dispatchEvent(new MouseEvent('mouseenter'))
+    rows[0]?.dispatchEvent(new MouseEvent('mousemove'))
+    await restOnRow(rows[1])
+    getRows(getMenus()[1])[1]?.dispatchEvent(new MouseEvent('mouseenter'))
+    getMenus()[1]?.dispatchEvent(new MouseEvent('mouseleave'))
+    await settle()
+
+    expect(menu.emitted('highlight')).toEqual([['open'], ['move'], ['archive'], [null]])
+  })
+})

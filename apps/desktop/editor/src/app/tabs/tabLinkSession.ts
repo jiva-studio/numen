@@ -1,25 +1,33 @@
 /**
- * Watches the tab links stream for this window, reports its linkable tabs, and
- * cancels the watch on close.
+ * Watches the tab links stream for this window, reports its linkable tabs,
+ * opens tabs sent from other windows, and cancels the watch on close.
  */
 import { createFollower } from '@numen/ui'
-import type { useWindowTabs } from '@/entities/tab'
+import type { Result } from '@numen/core-client'
+import type { Tab, useWindowTabs } from '@/entities/tab'
 import type { TabLinkGroup, TabLinksState } from '@/features/tab-linking'
-import type { TabPathSync, VaultPort, WindowTabsReport } from '../ports/vault'
+import type { TabMoveError, TabPathSync, VaultPort, WindowTabsReport } from '../ports/vault'
 
 /** How long a failed tab report waits before it is sent again. */
 export const REPORT_RETRY_MS = 2000
 
 export interface TabLinkSessionDeps {
-  readonly core: Pick<VaultPort, 'watchTabLinks' | 'cancelTabLinksWatch' | 'writeTabLinks'>
+  readonly core: Pick<
+    VaultPort,
+    'watchTabLinks' | 'cancelTabLinksWatch' | 'writeTabLinks' | 'acceptTabMove'
+  >
   /** Window id used for the watch and for writes. */
   readonly windowId: string
   readonly tabLinks: Pick<TabLinksState, 'applySnapshot'>
   readonly applySync: (sync: TabPathSync) => void
   /** Moves the tabs of this window to the path of each group of a snapshot. */
   readonly applyGroupPaths: (groups: readonly TabLinkGroup[]) => void
-  /** Returns the linkable tabs open in the window. */
-  readonly getOpenTabs: () => WindowTabsReport['tabs']
+  /** Opens a tab that another window sends to this window. */
+  readonly openMovedTab: (tab: Tab) => void
+  /** Sets whether the window shows the highlight outline. */
+  readonly setHighlighted: (isOn: boolean) => void
+  /** Returns the linkable tabs and the window summary shown in the menus of other windows. */
+  readonly getReport: () => WindowTabsReport
   readonly wait: (ms: number) => Promise<unknown>
   readonly onError: (error: unknown) => void
 }
@@ -35,9 +43,11 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
     wait: deps.wait,
   })
 
-  /** The latest tab report not yet written to the core. */
-  let pendingTabs: WindowTabsReport['tabs'] | null = null
+  /** The latest report not yet written to the core. */
+  let pendingReport: WindowTabsReport | null = null
   let isReporting = false
+  /** Settles when the running writeReports loop ends. */
+  let reporting: Promise<void> = Promise.resolve()
 
   /**
    * Writes the pending report until none is left. A failed report is reported
@@ -47,27 +57,34 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
   const writeReports = async (): Promise<void> => {
     isReporting = true
     let hasFailed = false
-    while (pendingTabs && isOpen) {
-      const tabs = pendingTabs
-      pendingTabs = null
+    while (pendingReport && isOpen) {
+      const report = pendingReport
+      pendingReport = null
       try {
-        await deps.core.writeTabLinks(deps.windowId, { tabs })
+        await deps.core.writeTabLinks(deps.windowId, report)
         hasFailed = false
       } catch (error) {
         if (!hasFailed) deps.onError(error)
         hasFailed = true
-        pendingTabs ??= tabs
+        pendingReport ??= report
         await deps.wait(REPORT_RETRY_MS)
       }
     }
     isReporting = false
   }
 
-  /** Writes the current linkable tabs to the core, after any pending report. */
+  /** Writes the current report to the core, after any pending report. */
   const reportTabs = (): void => {
-    pendingTabs = deps.getOpenTabs()
-    if (!isReporting) writeReports().catch(deps.onError)
+    pendingReport = deps.getReport()
+    if (!isReporting) reporting = writeReports().catch(deps.onError)
   }
+
+  /**
+   * Sends AcceptTabMove once the pending reports are written, so that a report
+   * made before the tab opened does not reach the core after the accept.
+   */
+  const acceptMove = (tabId: string): Promise<Result<void, TabMoveError>> =>
+    reporting.then(() => deps.core.acceptTabMove(deps.windowId, tabId))
 
   /** Reads the stream until close; reports the tabs again on each new stream. */
   const start = (): Promise<void> =>
@@ -88,6 +105,10 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
             deps.applyGroupPaths(event.links.groups)
           } else if (event.sync) {
             deps.applySync(event.sync)
+          } else if (event.movedTab) {
+            deps.openMovedTab(event.movedTab)
+          } else if (event.isHighlighted !== undefined) {
+            deps.setHighlighted(event.isHighlighted)
           }
         } catch (error) {
           deps.onError(error)
@@ -114,15 +135,32 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
     return start()
   }
 
-  return { start, close, reopen, reportTabs }
+  return { start, close, reopen, reportTabs, acceptMove }
 }
+
+type ReportedTabs = Pick<ReturnType<typeof useWindowTabs>, 'tabs' | 'getTab' | 'handle'>
 
 /** Returns the tabs whose kind supports navigate, in tab order. */
 export function getLinkableTabs(
-  windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'tabs' | 'getTab'>,
+  windowTabs: Pick<ReportedTabs, 'tabs' | 'getTab'>,
 ): WindowTabsReport['tabs'] {
   return windowTabs.tabs.value.flatMap((tab) => {
     const kind = windowTabs.getTab(tab.id)?.kind
     return kind?.navigate ? [{ id: tab.id, kind: kind.kind, title: tab.title }] : []
   })
+}
+
+/** Returns the linkable tabs, the active tab and the tab count of the window. */
+export function getWindowReport(windowTabs: ReportedTabs, isMain: boolean): WindowTabsReport {
+  const front = windowTabs.handle.front()
+  const activeTitle = windowTabs.tabs.value.find((tab) => tab.id === front?.id)?.title ?? ''
+  return {
+    tabs: getLinkableTabs(windowTabs),
+    window: {
+      isMain,
+      activeTitle,
+      activeKind: front?.kind ?? '',
+      tabCount: windowTabs.tabs.value.length,
+    },
+  }
 }

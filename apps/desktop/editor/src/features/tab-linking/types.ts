@@ -22,10 +22,23 @@ export interface LinkableTab {
   readonly windowId: string
 }
 
-/** Link groups of the vault and linkable tabs of all windows, as sent by the core. */
+/** A window as it last reported itself to the core. */
+export interface TabWindow {
+  readonly id: string
+  readonly isMain: boolean
+  /** The active tab; both fields are empty for a window with no tabs. */
+  readonly activeTitle: string
+  readonly activeKind: string
+  /** Every tab the window has open, linkable or not. */
+  readonly tabCount: number
+}
+
+/** Link groups of the vault, linkable tabs of all windows, and the windows, as sent by the core. */
 export interface TabLinksSnapshot {
   readonly groups: readonly TabLinkGroup[]
   readonly tabs: readonly LinkableTab[]
+  /** The main window first. */
+  readonly windows: readonly TabWindow[]
 }
 
 /** Link or unlink change written to the core. */
@@ -39,6 +52,8 @@ export interface TabLinksState {
   readonly groups: ReadonlyMap<string, TabLinkGroup>
   /** Linkable tabs of all windows. */
   readonly tabs: readonly LinkableTab[]
+  /** Every window that reported its tabs, the main window first. */
+  readonly windows: readonly TabWindow[]
   linkTabs(sourceTabId: TabId, targetTabId: TabId): void
   unlinkTab(tabId: TabId): void
   getGroupOf(tabId: TabId): TabLinkGroup | null

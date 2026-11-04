@@ -101,6 +101,11 @@ vi.mock('@/app/vault', () => ({
     cancelTabLinksWatch: async () => undefined,
     writeTabLinks: async () => undefined,
     syncTabPath: async () => undefined,
+    readDetachedTab: async (tabId: string) =>
+      mockVaultState.detachedTab?.id === tabId ? mockVaultState.detachedTab : null,
+    moveTab: async () => ({ ok: true, value: undefined }),
+    acceptTabMove: async () => ({ ok: true, value: undefined }),
+    highlightWindow: async () => undefined,
     names: async () => mockVaultState.names,
     search: async () => mockVaultState.passages,
     fileKinds: async (paths: readonly string[]) =>

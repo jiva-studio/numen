@@ -4,7 +4,7 @@
 import { computed, ref, watch, type Component, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { findTabKindIcon } from '@/entities/tab'
-import type { OpenTabs } from '@/entities/tab'
+import type { OpenTabs, Tab } from '@/entities/tab'
 import type { VaultPort } from '@/app/ports/vault'
 import type { SavedTab, useWindowTabs } from '@/entities/tab'
 
@@ -22,7 +22,7 @@ export interface OpenTabsDeps {
 }
 
 /** The state a kind saved, as JSON, and empty where it saved none. */
-const formatSavedState = (saved: unknown): string =>
+export const formatSavedState = (saved: unknown): string =>
   saved === undefined ? '' : JSON.stringify(saved)
 
 export function useOpenTabs({
@@ -136,14 +136,15 @@ const parseSavedState = (state: string): unknown => {
   /* Stryker restore BlockStatement */
 }
 
+/** Converts a stored tab to the saved tab the window opens. */
+export const parseSavedTab = ({ id, kind, path, title, state }: Tab): SavedTab => ({
+  id,
+  kind,
+  path,
+  ...(title ? { title } : {}),
+  saved: parseSavedState(state),
+})
+
 /** The tabs the core kept, as the window opens them again. */
 export const parseSavedTabs = (open: OpenTabs): readonly SavedTab[] =>
-  open.tabs
-    .filter((one) => one.id !== '' && one.kind !== '')
-    .map(({ id, kind, path, title, state }) => ({
-      id,
-      kind,
-      path,
-      ...(title ? { title } : {}),
-      saved: parseSavedState(state),
-    }))
+  open.tabs.filter((one) => one.id !== '' && one.kind !== '').map(parseSavedTab)

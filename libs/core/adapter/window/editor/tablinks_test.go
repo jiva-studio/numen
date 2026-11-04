@@ -141,7 +141,7 @@ func TestDetachTabKeepsGroupInNewWindow(t *testing.T) {
 		&v1.LinkableTab{Id: "plex:2", Kind: "plex", Title: "Tides"})
 	linkTabs(t, client, "plex:1", "plex:2")
 
-	if _, err := client.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{Id: "plex:2", Kind: "plex"})); err != nil {
+	if _, err := client.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{Tab: &v1.Tab{Id: "plex:2", Kind: "plex"}})); err != nil {
 		t.Fatal(err)
 	}
 	writeTabs(t, client, "window-a", &v1.LinkableTab{Id: "plex:1", Kind: "plex", Title: "Orbits"})
@@ -255,7 +255,7 @@ func TestFailedDetachTabDropsTabClosedInItsWindow(t *testing.T) {
 		&v1.LinkableTab{Id: "plex:2", Kind: "plex", Title: "Tides"})
 	linkTabs(t, client, "plex:1", "plex:2")
 
-	_, err := client.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{Id: "plex:2", Kind: "plex"}))
+	_, err := client.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{Tab: &v1.Tab{Id: "plex:2", Kind: "plex"}}))
 	if err == nil {
 		t.Fatal("the detach succeeded with no window opened")
 	}
@@ -264,6 +264,164 @@ func TestFailedDetachTabDropsTabClosedInItsWindow(t *testing.T) {
 	if groups := state.TabLinks.GetSnapshot().Groups; len(groups) != 0 {
 		t.Errorf("groups are %+v, want none once plex:2 closed", groups)
 	}
+	if tab, ok := state.TabLinks.ReadDetached("plex:2"); ok {
+		t.Errorf("the failed detach kept %+v", tab)
+	}
+}
+
+// watchAs opens a tab links stream for a window until the test ends, and
+// returns it after the first snapshot.
+func watchAs(
+	t *testing.T, client numenv1connect.WorkspaceServiceClient, windowID string,
+) *connect.ServerStreamForClient[v1.WatchTabLinksResponse] {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(t.Context(), testsupport.Patience)
+	t.Cleanup(cancel)
+	stream, err := client.WatchTabLinks(ctx, connect.NewRequest(&v1.WatchTabLinksRequest{WindowId: windowID}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { testsupport.Close(t, stream) })
+	if !stream.Receive() {
+		t.Fatalf("the watch of %s sent no snapshot: %v", windowID, stream.Err())
+	}
+	return stream
+}
+
+func TestMoveTabSendsTheTabToTheTargetAndRespondsAfterAccept(t *testing.T) {
+	client := newTabLinksClient(t, &State{})
+	openWatch(t, client, "window-a")
+	target := watchAs(t, client, "window-b")
+	tab := &v1.Tab{Id: "plex:2", Kind: "plex", Path: "notes/Orbits.md", Title: "Orbits", State: `{"focus":"Kepler"}`}
+
+	answer := make(chan *v1.MoveTabResponse, 1)
+	go func() {
+		response, err := client.MoveTab(t.Context(), connect.NewRequest(&v1.MoveTabRequest{
+			WindowId: "window-a", TargetWindowId: "window-b", Tab: tab,
+		}))
+		if err != nil {
+			t.Error(err)
+		}
+		answer <- response.Msg
+	}()
+
+	var moved *v1.Tab
+	for moved == nil && target.Receive() {
+		moved = target.Msg().GetMovedTab()
+	}
+	if moved.GetId() != "plex:2" || moved.GetState() != tab.GetState() || moved.GetPath() != tab.GetPath() {
+		t.Fatalf("the target received %+v", moved)
+	}
+	accepted, err := client.AcceptTabMove(t.Context(), connect.NewRequest(&v1.AcceptTabMoveRequest{WindowId: "window-b", TabId: "plex:2"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := accepted.Msg.GetError(); got != v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_UNSPECIFIED {
+		t.Errorf("AcceptTabMove answered %v", got)
+	}
+	select {
+	case response := <-answer:
+		if got := response.GetError(); got != v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_UNSPECIFIED {
+			t.Errorf("MoveTab answered %v", got)
+		}
+	case <-time.After(testsupport.Patience):
+		t.Fatal("MoveTab did not answer")
+	}
+}
+
+func TestMoveTabToAWindowWithoutAWatchReturnsWindowClosed(t *testing.T) {
+	client := newTabLinksClient(t, &State{})
+	openWatch(t, client, "window-a")
+
+	response, err := client.MoveTab(t.Context(), connect.NewRequest(&v1.MoveTabRequest{
+		WindowId: "window-a", TargetWindowId: "window-b", Tab: &v1.Tab{Id: "plex:2", Kind: "plex"},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := response.Msg.GetError(); got != v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_WINDOW_CLOSED {
+		t.Errorf("MoveTab answered %v, want window closed", got)
+	}
+}
+
+func TestMoveTabRequiresBothWindowIDs(t *testing.T) {
+	client := newTabLinksClient(t, &State{})
+
+	_, err := client.MoveTab(t.Context(), connect.NewRequest(&v1.MoveTabRequest{WindowId: "window-a"}))
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Errorf("got %v, want invalid argument", err)
+	}
+}
+
+func TestReadDetachedTabReturnsTheTabWithItsState(t *testing.T) {
+	client := newTabLinksClient(t, &State{DetachTab: func(context.Context, DetachedTab) error { return nil }})
+	tab := &v1.Tab{Id: "plex:2", Kind: "plex", Path: "notes/Orbits.md", Title: "Orbits", State: `{"focus":"Kepler"}`}
+
+	if _, err := client.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{Tab: tab})); err != nil {
+		t.Fatal(err)
+	}
+	read, err := client.ReadDetachedTab(t.Context(), connect.NewRequest(&v1.ReadDetachedTabRequest{TabId: "plex:2"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := read.Msg.GetTab()
+	if got.GetKind() != "plex" || got.GetPath() != tab.GetPath() || got.GetTitle() != "Orbits" || got.GetState() != tab.GetState() {
+		t.Errorf("the detached tab is %+v, want %+v", got, tab)
+	}
+
+	missing, err := client.ReadDetachedTab(t.Context(), connect.NewRequest(&v1.ReadDetachedTabRequest{TabId: "plex:9"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if missing.Msg.GetTab() != nil {
+		t.Errorf("ReadDetachedTab returned %+v for a tab with no pending detach", missing.Msg.GetTab())
+	}
+}
+
+func TestHighlightWindowSendsAnEventOnTheStreamOfThatWindow(t *testing.T) {
+	client := newTabLinksClient(t, &State{})
+	target := watchAs(t, client, "window-b")
+
+	if _, err := client.HighlightWindow(t.Context(), connect.NewRequest(&v1.HighlightWindowRequest{WindowId: "window-b", IsOn: true})); err != nil {
+		t.Fatal(err)
+	}
+
+	for target.Receive() {
+		if highlight := target.Msg().GetHighlight(); highlight != nil {
+			if !highlight.GetIsOn() {
+				t.Error("the highlight is off, want on")
+			}
+			return
+		}
+	}
+	t.Fatalf("the stream ended before the highlight: %v", target.Err())
+}
+
+func TestSnapshotContainsTheWindowReports(t *testing.T) {
+	client := newTabLinksClient(t, &State{})
+	stream := watchAs(t, client, "window-a")
+	_, err := client.WriteTabLinks(t.Context(), connect.NewRequest(&v1.WriteTabLinksRequest{
+		WindowId: "window-a",
+		Change: &v1.WriteTabLinksRequest_Tabs{Tabs: &v1.WindowTabs{
+			Window: &v1.TabWindow{IsMain: true, ActiveTitle: "Orbits", ActiveKind: "note", TabCount: 3},
+		}},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	links := readLinksUntil(t, stream, func(links *v1.TabLinks) bool { return len(links.GetWindows()) == 1 })
+	got := links.GetWindows()[0]
+	if got.GetId() != "window-a" || !got.GetIsMain() || got.GetActiveTitle() != "Orbits" || got.GetActiveKind() != "note" || got.GetTabCount() != 3 {
+		t.Errorf("the window is %+v", got)
+	}
+}
+
+func TestConvertMoveErrorToWireCoversEveryTabMoveErrorCode(t *testing.T) {
+	testsupport.CheckProduced(t, map[v1.TabMoveErrorCode]tablinks.MoveError{
+		v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_WINDOW_CLOSED: tablinks.MoveErrorWindowClosed,
+		v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_TIMEOUT:       tablinks.MoveErrorTimeout,
+	}, convertMoveErrorToWire)
 }
 
 func TestWatchTabLinksSendsTheGroupPathInTheSnapshot(t *testing.T) {

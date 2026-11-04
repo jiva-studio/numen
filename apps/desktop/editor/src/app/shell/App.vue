@@ -54,8 +54,13 @@ const {
   getTitle,
   getTarget,
   tabLinks,
+  windowId,
+  isHighlighted,
+  highlightWindow,
+  isTabAsking,
   detachTab,
   detachTabAt,
+  moveTab,
 } = useWindow()
 
 const linkMenu = useTabLinkMenu({
@@ -64,6 +69,10 @@ const linkMenu = useTabLinkMenu({
   getKind: (id) => windowTabs.getTab(id)?.kind.kind,
   isLinkable: (id) => windowTabs.getTab(id)?.kind.navigate !== undefined,
   onDetach: detachTabAt,
+  windowId,
+  isAsking: isTabAsking,
+  onMove: moveTab,
+  onHighlight: highlightWindow,
 })
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -99,7 +108,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
 </script>
 
 <template>
-  <main>
+  <main :class="{ 'is-highlighted': isHighlighted }">
     <CoreFailureNotice :failure="failure" />
 
     <WorkspaceLayout
@@ -158,12 +167,16 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       :at="linkMenu.at.value"
       :is-linked="linkMenu.isLinked.value"
       :can-detach="linkMenu.canDetach.value"
+      :windows="linkMenu.windows.value"
+      :is-asking="linkMenu.isAsking.value"
       :linked-target-title="linkMenu.linkedTargetTitle.value"
       :get-tab-icon="getTabIcon"
       :get-kind-icon="getKindIcon"
       @link="linkMenu.link"
       @unlink="linkMenu.unlink"
       @detach="linkMenu.detach"
+      @move="linkMenu.move"
+      @highlight="linkMenu.highlight"
       @close="linkMenu.close"
     />
 
@@ -200,6 +213,16 @@ main {
   display: flex;
   flex-direction: column;
   height: 100vh;
+}
+
+/* Another window offers to move a tab into this one. */
+main.is-highlighted::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: var(--numen-lift-menu);
+  border: 3px solid var(--numen-accent);
+  pointer-events: none;
 }
 
 .below {

@@ -364,13 +364,10 @@ func newEditBroadcaster() broadcaster[domain.Edit] {
 	}
 }
 
-// DetachedTab is a tab to open in a window of its own.
+// DetachedTab is a tab to open in a window of its own. The new window reads
+// the tab by its id with ReadDetachedTab.
 type DetachedTab struct {
-	// ID is the tab id the new window reuses.
-	ID   string
-	Kind string
-	// Path is the vault path the tab shows; empty for a tab that shows none.
-	Path string
+	ID string
 	// X and Y are the screen position of the new window.
 	X, Y int
 }

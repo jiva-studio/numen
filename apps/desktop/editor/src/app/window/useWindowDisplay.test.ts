@@ -95,6 +95,10 @@ function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
     cancelTabLinksWatch: vi.fn(() => Promise.resolve()),
     writeTabLinks: vi.fn(() => Promise.resolve()),
     syncTabPath: vi.fn(() => Promise.resolve()),
+    readDetachedTab: vi.fn(() => Promise.resolve(null)),
+    moveTab: vi.fn(() => Promise.resolve({ ok: true as const, value: undefined })),
+    acceptTabMove: vi.fn(() => Promise.resolve({ ok: true as const, value: undefined })),
+    highlightWindow: vi.fn(() => Promise.resolve()),
     ...overrides,
   }
 }
