@@ -1,0 +1,84 @@
+import { describe, expect, it, vi } from 'vitest'
+import { createPluginHost } from './host'
+import { listOfferedCommands } from './offered'
+import type { HostRegistry, RegisteredCommand } from './registry'
+import type { CommandDeclaration, PluginHostDeps } from './types'
+
+const declaration: CommandDeclaration = { pluginId: 'md.tree', id: 'tree.open', title: 'Open tree' }
+
+function createRegistry(
+  activated: string[],
+  handlers: [string, RegisteredCommand][],
+): HostRegistry {
+  return {
+    commands: { value: new Map(handlers) },
+    activated: { value: new Set(activated) },
+    disposed: new Set<string>(),
+    reportedIssues: new Set<string>(),
+  } as unknown as HostRegistry
+}
+
+describe('listing the offered commands', () => {
+  it('returns the commands and the issues, and writes and reports nothing', () => {
+    const reportCommandIssue = vi.fn()
+    const deps: PluginHostDeps = {
+      getCommandDeclarations: () => [declaration],
+      reportCommandIssue,
+    } as PluginHostDeps
+    const registry = createRegistry(
+      ['md.tree'],
+      [
+        [
+          'md.tree:tree.stray',
+          { pluginId: 'md.tree', reg: { id: 'tree.stray', handler: vi.fn() } },
+        ],
+      ],
+    )
+
+    const first = listOfferedCommands(deps, registry)
+    const second = listOfferedCommands(deps, registry)
+
+    expect(first.commands).toStrictEqual([])
+    expect(first.issues).toStrictEqual([
+      { pluginId: 'md.tree', id: 'tree.open', kind: 'unbound' },
+      { pluginId: 'md.tree', id: 'tree.stray', kind: 'undeclared' },
+    ])
+    expect(second).toStrictEqual(first)
+    expect(registry.reportedIssues.size).toBe(0)
+    expect(reportCommandIssue).not.toHaveBeenCalled()
+  })
+
+  it('returns no issue for a plugin whose frontend has not activated yet', () => {
+    const deps: PluginHostDeps = { getCommandDeclarations: () => [declaration] } as PluginHostDeps
+
+    const { commands, issues } = listOfferedCommands(deps, createRegistry([], []))
+
+    expect(commands.map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])
+    expect(issues).toStrictEqual([])
+  })
+})
+
+describe('the host reading the offered commands', () => {
+  it('reports one issue once however it is read: palette, shortcut and execute', async () => {
+    const reportCommandIssue = vi.fn()
+    const host = createPluginHost({
+      registerKind: vi.fn(() => vi.fn()),
+      registerExtensionReader: vi.fn(() => vi.fn()),
+      openTab: vi.fn(async () => 'tab-1'),
+      getCommandDeclarations: () => [declaration],
+      reportCommandIssue,
+    })
+    host.createContext('md.tree')
+    const event = new KeyboardEvent('keydown', { key: 'e' })
+    const note = { path: 'a.md', title: 'A', type: 'note' as const }
+
+    host.getPaletteCommands()
+    host.handleShortcut(event, async () => note)
+    await host.executeCommand('md.tree:tree.open', note)
+    host.hasCommand('md.tree:tree.open')
+    host.getPaletteCommands()
+
+    expect(reportCommandIssue).toHaveBeenCalledTimes(1)
+    expect(reportCommandIssue).toHaveBeenCalledWith('md.tree', expect.stringContaining('tree.open'))
+  })
+})

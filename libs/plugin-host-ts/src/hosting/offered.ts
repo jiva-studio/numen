@@ -10,76 +10,80 @@ export interface OfferedCommand {
   readonly entry?: RegisteredCommand
 }
 
-interface CommandIssue {
+/** A mismatch between a declaration and a handler. */
+export interface CommandIssue {
   readonly pluginId: string
   readonly id: string
   readonly kind: 'undeclared' | 'unbound'
 }
 
-/** Reports a mismatch between a declaration and a handler once for each plugin, id and kind. */
-function reportIssue(deps: PluginHostDeps, registry: HostRegistry, issue: CommandIssue): void {
-  const key = `${issue.pluginId}:${issue.id}:${issue.kind}`
-  if (registry.reportedIssues.has(key)) return
-  registry.reportedIssues.add(key)
-  deps.reportCommandIssue?.(
-    issue.pluginId,
-    issue.kind === 'undeclared'
-      ? `the command ${issue.id} has a handler and no declaration in the manifest`
-      : `the command ${issue.id} is declared in the manifest and has no handler`,
-  )
+/** The key an issue is reported once under: its plugin, id and kind. */
+export const getIssueKey = (issue: CommandIssue): string =>
+  `${issue.pluginId}:${issue.id}:${issue.kind}`
+
+/** What a mismatch is reported as. */
+export const getIssueMessage = (issue: CommandIssue): string =>
+  issue.kind === 'undeclared'
+    ? `the command ${issue.id} has a handler and no declaration in the manifest`
+    : `the command ${issue.id} is declared in the manifest and has no handler`
+
+/** What a listing of the offered commands returns. */
+export interface OfferedList {
+  readonly commands: OfferedCommand[]
+  readonly issues: CommandIssue[]
 }
 
 /**
- * Whether a declared command with no handler is offered anyway: its plugin has a frontend that has
- * not started to register yet. A plugin that failed to load is not offered. Once the frontend has
- * started, the command is not offered by the host and the missing handler is reported; the window
- * runs the command in the backend of the plugin where it has one. A plugin with no frontend has
- * nothing to wait for, and its commands are left to the window.
+ * What becomes of a declared command with no handler. It is 'offered' while the frontend of its
+ * plugin has not started to register. It is 'unbound' once the frontend has started: the host does
+ * not offer it, the window runs it in the backend of the plugin where it has one, and the missing
+ * handler is an issue. It is 'left' to the window for a plugin with no frontend and for one that
+ * failed to load.
  */
-function isOfferedBeforeItsHandler(
+function getBeforeHandlerState(
   deps: PluginHostDeps,
   registry: HostRegistry,
   declaration: CommandDeclaration,
-): boolean {
-  if (deps.hasPluginFrontend?.(declaration.pluginId) === false) return false
-  if (deps.isPluginFailed?.(declaration.pluginId)) return false
-  if (!registry.activated.value.has(declaration.pluginId)) return true
-  reportIssue(deps, registry, {
-    pluginId: declaration.pluginId,
-    id: declaration.id,
-    kind: 'unbound',
-  })
-  return false
+): 'offered' | 'unbound' | 'left' {
+  if (deps.hasPluginFrontend?.(declaration.pluginId) === false) return 'left'
+  if (deps.isPluginFailed?.(declaration.pluginId)) return 'left'
+  return registry.activated.value.has(declaration.pluginId) ? 'unbound' : 'offered'
 }
 
 /**
  * The commands of the plugin frontends the window offers: those the manifests declare that have a
  * handler, and those of a frontend that has not started yet. A command with no handler of a plugin
  * that is not loading is left to the window, which runs it in the backend of the plugin. Nothing is
- * offered, and nothing is reported, until the first list of declarations has loaded.
+ * offered, and no issue is returned, until the first list of declarations has loaded. The listing
+ * changes nothing and reports nothing.
  */
-export function listOfferedCommands(
-  deps: PluginHostDeps,
-  registry: HostRegistry,
-): OfferedCommand[] {
+export function listOfferedCommands(deps: PluginHostDeps, registry: HostRegistry): OfferedList {
   const declarations = deps.getCommandDeclarations?.()
-  if (declarations === undefined) return []
+  if (declarations === undefined) return { commands: [], issues: [] }
   const commands: OfferedCommand[] = []
+  const issues = new Map<string, CommandIssue>()
+  const addIssue = (issue: CommandIssue) => issues.set(getIssueKey(issue), issue)
   const declaredIds = new Set<string>()
   for (const declaration of declarations) {
     if (registry.disposed.has(declaration.pluginId)) continue
     const id = formatCommandId(declaration.pluginId, declaration.id)
     declaredIds.add(id)
     const entry = registry.commands.value.get(id)
-    if (entry) commands.push({ id, declaration, entry })
-    else if (isOfferedBeforeItsHandler(deps, registry, declaration))
-      commands.push({ id, declaration })
+    if (entry) {
+      commands.push({ id, declaration, entry })
+      continue
+    }
+    const state = getBeforeHandlerState(deps, registry, declaration)
+    if (state === 'offered') commands.push({ id, declaration })
+    if (state === 'unbound') {
+      addIssue({ pluginId: declaration.pluginId, id: declaration.id, kind: 'unbound' })
+    }
   }
   for (const [id, entry] of registry.commands.value) {
     if (declaredIds.has(id)) continue
-    reportIssue(deps, registry, { pluginId: entry.pluginId, id: entry.reg.id, kind: 'undeclared' })
+    addIssue({ pluginId: entry.pluginId, id: entry.reg.id, kind: 'undeclared' })
   }
-  return commands
+  return { commands, issues: [...issues.values()] }
 }
 
 /** The palette's view of an offered command. */

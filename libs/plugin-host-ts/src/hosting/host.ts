@@ -20,7 +20,8 @@ import { createStatusViewRegistry, type StatusViewRegistry } from '../statusView
 import { createViewRegistry, type ViewRegistry } from '../views'
 import { createPluginContext } from './context'
 import { addListener, notifyListeners, reportError, runCommand } from './events'
-import { createPaletteCommand, listOfferedCommands } from './offered'
+import { createPaletteCommand } from './offered'
+import { readOfferedCommands } from './offeredReader'
 import { matchesShortcut } from './shortcuts'
 import { createPluginPaneWrapper } from './customTabKind'
 import { registerReaderEntry, registerTabKindEntry } from './entries'
@@ -253,10 +254,10 @@ function createHostRegistry(): HostRegistry {
 
 /** The commands the plugins registered: the palette's list, running one, and the plugins' shortcuts. */
 function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
-  const findOffered = (id: string) =>
-    listOfferedCommands(deps, registry).find((one) => one.id === id)
+  const getOffered = () => readOfferedCommands(deps, registry)
+  const findOffered = (id: string) => getOffered().find((one) => one.id === id)
   return {
-    getPaletteCommands: () => listOfferedCommands(deps, registry).map(createPaletteCommand),
+    getPaletteCommands: () => getOffered().map(createPaletteCommand),
     hasCommand: (id: string): boolean => findOffered(id)?.entry !== undefined,
     executeCommand: async (id: string, note: CommandNote): Promise<boolean> => {
       const command = findOffered(id)
@@ -271,7 +272,7 @@ function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
       return true
     },
     handleShortcut: (event: KeyboardEvent, getNote: () => Promise<CommandNote>): boolean => {
-      for (const { entry, declaration } of listOfferedCommands(deps, registry)) {
+      for (const { entry, declaration } of getOffered()) {
         if (entry && matchesShortcut(event, declaration.shortcut)) {
           getNote()
             .then((note) => {
