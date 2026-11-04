@@ -8,13 +8,29 @@ import { usePressDrag } from './press'
 import type { Position } from '@/shared/lib/math/geometry'
 import type { Clock } from '@/shared/lib/time/clock'
 
-const pointer = (type: string, x: number, y: number) =>
-  new PointerEvent(type, { clientX: x, clientY: y, bubbles: true })
+const pointer = (type: string, x: number, y: number, pointerId = 1) =>
+  new PointerEvent(type, { clientX: x, clientY: y, pointerId, bubbles: true })
+
+/** An element that records which pointers it holds. jsdom has no pointer capture. */
+function createCapturingElement() {
+  const element = document.createElement('div')
+  const captured = new Set<number>()
+  element.setPointerCapture = (id) => {
+    captured.add(id)
+  }
+  element.releasePointerCapture = (id) => {
+    captured.delete(id)
+  }
+  element.hasPointerCapture = (id) => captured.has(id)
+  document.body.append(element)
+  return { element, captured }
+}
 
 /** A press under way, with the frame held until the test lets it come. */
 function createPress(threshold = 4, withBegin = true) {
-  const commit = vi.fn<(item: string, target: Position | null) => void>()
+  const commit = vi.fn<(item: string, target: Position | null, point: Position) => void>()
   const begin = vi.fn<(item: string) => void>()
+  const cancel = vi.fn<(item: string) => void>()
   let next: ((now: number) => void) | null = null
   let scheduled = 0
 
@@ -38,7 +54,7 @@ function createPress(threshold = 4, withBegin = true) {
       getClock: () => clock,
       getDropTargetAt: (_item, index) => (index.x < 500 ? index : null),
       commit,
-      ...(withBegin ? { begin } : {}),
+      ...(withBegin ? { begin, cancel } : {}),
     }),
   )!
 
@@ -46,6 +62,7 @@ function createPress(threshold = 4, withBegin = true) {
     ...press,
     commit,
     begin,
+    cancel,
     scope,
     getScheduled: () => scheduled,
     frame: () => {
@@ -99,7 +116,7 @@ describe('usePressDrag', () => {
     window.dispatchEvent(pointer('pointermove', 40, 60))
     window.dispatchEvent(pointer('pointerup', 40, 60))
 
-    expect(press.commit).toHaveBeenCalledExactlyOnceWith('a row', { x: 40, y: 60 })
+    expect(press.commit).toHaveBeenCalledExactlyOnceWith('a row', { x: 40, y: 60 }, { x: 40, y: 60 })
     expect(press.at.value).toBeNull()
     expect(press.position.value).toBeNull()
     press.scope.stop()
@@ -111,7 +128,7 @@ describe('usePressDrag', () => {
     window.dispatchEvent(pointer('pointermove', 600, 60))
     window.dispatchEvent(pointer('pointerup', 600, 60))
 
-    expect(press.commit).toHaveBeenCalledExactlyOnceWith('a row', null)
+    expect(press.commit).toHaveBeenCalledExactlyOnceWith('a row', null, { x: 600, y: 60 })
     press.scope.stop()
   })
 
@@ -201,18 +218,96 @@ describe('usePressDrag', () => {
     press.scope.stop()
   })
 
+  it('commits the landing at the point of release, not at the last move', () => {
+    const press = createPress()
+    press.lift('a row', pointer('pointerdown', 10, 10))
+    window.dispatchEvent(pointer('pointermove', 40, 60))
+    window.dispatchEvent(pointer('pointerup', 700, 60))
+
+    expect(press.commit).toHaveBeenCalledExactlyOnceWith('a row', null, { x: 700, y: 60 })
+    press.scope.stop()
+  })
+
+  it('lands nothing when the system cancels the drag', () => {
+    const press = createPress()
+    press.lift('a row', pointer('pointerdown', 10, 10))
+    window.dispatchEvent(pointer('pointermove', 40, 60))
+    window.dispatchEvent(pointer('pointercancel', 40, 60))
+
+    expect(press.commit).not.toHaveBeenCalled()
+    expect(press.cancel).toHaveBeenCalledExactlyOnceWith('a row')
+    expect(press.at.value).toBeNull()
+    expect(press.position.value).toBeNull()
+    press.frame()
+    expect(press.dragging.value).toBeNull()
+    press.scope.stop()
+  })
+
+  it('reports no cancel for a press that never became a drag', () => {
+    const press = createPress()
+    press.lift('a row', pointer('pointerdown', 10, 10))
+    window.dispatchEvent(pointer('pointercancel', 11, 11))
+
+    expect(press.cancel).not.toHaveBeenCalled()
+    expect(press.commit).not.toHaveBeenCalled()
+    press.scope.stop()
+  })
+
+  it('ends a cancelled drag where nobody requested to hear of it', () => {
+    const press = createPress(4, false)
+    press.lift('a row', pointer('pointerdown', 10, 10))
+    window.dispatchEvent(pointer('pointermove', 40, 60))
+    window.dispatchEvent(pointer('pointercancel', 40, 60))
+
+    expect(press.commit).not.toHaveBeenCalled()
+    expect(press.position.value).toBeNull()
+    press.scope.stop()
+  })
+
   it.each(['pointerup', 'pointercancel'])(
-    'commits what was carried when the pointer ends in a %s',
+    'captures the pointer on the pressed element until a %s',
     (kind) => {
       const press = createPress()
-      press.lift('a row', pointer('pointerdown', 10, 10))
-      window.dispatchEvent(pointer('pointermove', 40, 60))
-      window.dispatchEvent(pointer(kind, 40, 60))
+      const { element, captured } = createCapturingElement()
+      element.addEventListener('pointerdown', (event) => press.lift('a row', event))
+      element.dispatchEvent(pointer('pointerdown', 10, 10, 7))
 
-      expect(press.commit).toHaveBeenCalledExactlyOnceWith('a row', { x: 40, y: 60 })
+      expect(captured).toStrictEqual(new Set([7]))
+      window.dispatchEvent(pointer('pointermove', 40, 60, 7))
+      expect(captured).toStrictEqual(new Set([7]))
+
+      window.dispatchEvent(pointer(kind, 40, 60, 7))
+      expect(captured).toStrictEqual(new Set())
+      element.remove()
       press.scope.stop()
     },
   )
+
+  it('releases the pointer capture when the scope goes', () => {
+    const press = createPress()
+    const { element, captured } = createCapturingElement()
+    element.addEventListener('pointerdown', (event) => press.lift('a row', event))
+    element.dispatchEvent(pointer('pointerdown', 10, 10, 7))
+    press.scope.stop()
+
+    expect(captured).toStrictEqual(new Set())
+    element.remove()
+  })
+
+  it('commits a drag whose pointer cannot be captured', () => {
+    const press = createPress()
+    const element = document.createElement('div')
+    element.setPointerCapture = () => {
+      throw new DOMException('No active pointer', 'NotFoundError')
+    }
+    element.addEventListener('pointerdown', (event) => press.lift('a row', event))
+    element.dispatchEvent(pointer('pointerdown', 10, 10, 7))
+    window.dispatchEvent(pointer('pointermove', 40, 60, 7))
+    window.dispatchEvent(pointer('pointerup', 40, 60, 7))
+
+    expect(press.commit).toHaveBeenCalledOnce()
+    press.scope.stop()
+  })
 
   it.each(['pointermove', 'pointerup', 'pointercancel'])(
     'ignores a %s that comes after the release, before the frame',
