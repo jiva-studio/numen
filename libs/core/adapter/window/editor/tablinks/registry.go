@@ -403,14 +403,13 @@ func (r *Registry) Unlink(tabID string) {
 // Detach stores a tab for ReadDetached and keeps the tab in its group while it
 // moves to a new window. It returns a channel that receives the result once:
 // MoveErrorNone when the window that read the tab calls Accept. A tab that no
-// window reports within the grace period is dropped and unlinked.
+// window reports within the grace period is dropped and unlinked. It ends a
+// pending move or detach of the same tab with MoveErrorTimeout.
 func (r *Registry) Detach(tab MovedTab) <-chan MoveError {
 	result := make(chan MoveError, 1)
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if previous, ok := r.pendingDetaches[tab.ID]; ok {
-		r.endDetach(tab.ID, previous, MoveErrorTimeout)
-	}
+	r.endTransfers(tab.ID, MoveErrorTimeout)
 	pending := &detach{id: r.createMoveID(), tab: tab, result: result}
 	r.pendingDetaches[tab.ID] = pending
 	pending.cancel = r.schedule(r.grace, func() { r.expireDetach(tab.ID, pending) })

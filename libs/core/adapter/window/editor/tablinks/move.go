@@ -66,7 +66,7 @@ type move struct {
 
 // Move sends a tab to another window and returns a channel that receives the
 // result once. The source window owns the tab until the target window calls
-// Accept. A newer move of the same tab ends the older one with
+// Accept. It ends a pending move or detach of the same tab with
 // MoveErrorTimeout. A known tab moves only from the window that owns it.
 func (r *Registry) Move(sourceWindowID, targetWindowID string, tab MovedTab) <-chan MoveError {
 	result := make(chan MoveError, 1)
@@ -80,9 +80,7 @@ func (r *Registry) Move(sourceWindowID, targetWindowID string, tab MovedTab) <-c
 		result <- MoveErrorNotOwner
 		return result
 	}
-	if previous, ok := r.pendingMoves[tab.ID]; ok {
-		r.endMove(tab.ID, previous, MoveErrorTimeout)
-	}
+	r.endTransfers(tab.ID, MoveErrorTimeout)
 	pending := &move{id: r.createMoveID(), targetWindowID: targetWindowID, result: result}
 	r.pendingMoves[tab.ID] = pending
 	pending.cancel = r.schedule(MoveTimeout, func() { r.expireMove(tab.ID, pending) })
@@ -200,4 +198,15 @@ func (r *Registry) endMove(tabID string, pending *move, outcome MoveError) {
 	pending.cancel()
 	delete(r.pendingMoves, tabID)
 	pending.result <- outcome
+}
+
+// endTransfers ends the pending move and the pending detach of a tab, so that
+// a tab has one pending transfer at a time.
+func (r *Registry) endTransfers(tabID string, outcome MoveError) {
+	if pending, ok := r.pendingMoves[tabID]; ok {
+		r.endMove(tabID, pending, outcome)
+	}
+	if pending, ok := r.pendingDetaches[tabID]; ok {
+		r.endDetach(tabID, pending, outcome)
+	}
 }

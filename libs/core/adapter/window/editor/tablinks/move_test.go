@@ -533,3 +533,20 @@ func TestReportOfTheReadingWindowCompletesTheDetach(t *testing.T) {
 		t.Errorf("the detach ended with %v, want none", got)
 	}
 }
+
+func TestDetachEndsAPendingMoveOfTheSameTab(t *testing.T) {
+	r, _ := newTestRegistry(t)
+	writeTabs(r, "window-a", []Tab{plex("plex:2", "Orbits")})
+	writeTabs(r, "window-c", nil)
+	moved := r.Move("window-a", "window-c", newOrbits())
+	moveID := getMoveID(r, "plex:2")
+
+	r.Detach(newOrbits())
+
+	if got := readOutcome(t, moved); got != MoveErrorTimeout {
+		t.Errorf("the move ended with %v, want timeout", got)
+	}
+	if got := r.Accept("window-c", "plex:2", moveID); got == MoveErrorNone {
+		t.Error("window-c accepted a move that the detach ended")
+	}
+}
