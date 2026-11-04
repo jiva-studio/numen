@@ -1,11 +1,11 @@
 ---
-name: spec
-description: Translates intent.md into a technical specification in .agents/tasks/<slug>/spec.md with blast radius matrix, interface contracts, and discrete acceptance criteria. Trigger with "/spec", "spec", "create spec", or "write spec".
+name: nm-specify
+description: Translates intent.md into a technical specification in spec.md in the task folder under .agents/tasks, with blast radius matrix, interface contracts, and discrete acceptance criteria. Trigger with "/nm-specify", "spec", "create spec", or "write spec".
 ---
 
-# Technical Specification Skill (`/spec`)
+# Technical Specification Skill (`/nm-specify`)
 
-The `/spec` skill transforms business intent (`intent.md`) into a precise technical specification (`spec.md`). It maps existing code, prevents hallucinations, defines contracts, outlines the blast radius, and formulates acceptance criteria.
+The `/nm-specify` skill transforms business intent (`intent.md`) into a precise technical specification (`spec.md`). It maps existing code, prevents hallucinations, defines contracts, outlines the blast radius, and formulates acceptance criteria.
 
 ```mermaid
 flowchart TD
@@ -15,7 +15,7 @@ flowchart TD
     (Contracts, Blast Radius, ACs)"]
     WriteSpec --> Checkpoint{"4. 🧑‍💻 Human Gate
     (Review and approve spec?)"}
-    Checkpoint -->|"Approved"| NextStep["5. Handover: Suggest Tester / `/coder`"]
+    Checkpoint -->|"Approved"| NextStep["5. Handover: Suggest Tester / `/nm-implement`"]
 ```
 
 ---
@@ -25,7 +25,7 @@ flowchart TD
 1. Identify the task directory from arguments or git branch:
    - Example: `.agents/tasks/<slug>`
 2. Read `.agents/tasks/<slug>/intent.md`.
-   - If `intent.md` does not exist, ask the user to run `/intent` first.
+   - If `intent.md` does not exist, ask the user to run `/nm-clarify` first.
 
 ---
 
@@ -94,4 +94,4 @@ Present a concise summary of the specification to the user and request confirmat
 > - **Blast Radius:** `<N> files touched across <modules>`
 > - **Acceptance Criteria:** `<Count> verifiable behaviors defined`
 >
-> _Please review the specification above. Once approved, proceed to `/coder` (or let `tester` write the red acceptance tests)._
+> _Please review the specification above. Once approved, proceed to `/nm-implement` (or let `tester` write the red acceptance tests)._

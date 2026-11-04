@@ -1,9 +1,9 @@
 ---
-name: review
-description: Executes the complete, standardized 3-stage code review pipeline (1. Gatekeeper & Architecture -> 2. Bug Hunter -> 3. Adversary) for working tree changes, pull requests, branches, or specified paths. Trigger with "/review", "review", "run review", "code review", or when asked to review Go, Vue or TypeScript code.
+name: nm-review
+description: Executes the complete, standardized 3-stage code review pipeline (gatekeeper and architecture, then bug hunter, then adversary) for working tree changes, pull requests, branches, or specified paths. Trigger with "/nm-review", "review", "run review", "code review", or when asked to review Go, Vue or TypeScript code.
 ---
 
-# Unified 3-Stage Code Review Pipeline (`/review`)
+# Unified 3-Stage Code Review Pipeline (`/nm-review`)
 
 This skill orchestrates the sequential review pipeline for the numen repository. It locates the changed files, audits them against `AGENTS.md` and the rules in `.agents/rules/`, hunts for semantic defects across the blast radius, and proves or disproves each hypothesis with a test that runs.
 
@@ -45,7 +45,7 @@ Resolve the repository root and determine the target:
    ```bash
    REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || readlink -f .agents/.. 2>/dev/null || echo "$PWD/../source/numen")
    ```
-2. **Explicit target**: a path (`/review libs/ui/core/src/plex`) focuses the audit on those files; a git reference (`/review origin/main...HEAD`, a SHA) reviews that range.
+2. **Explicit target**: a path (`/nm-review libs/ui/core/src/plex`) focuses the audit on those files; a git reference (`/nm-review origin/main...HEAD`, a SHA) reviews that range.
 3. **Auto-detection (default)**:
    - `git -C "$REPO_ROOT" status --short` and `git -C "$REPO_ROOT" diff HEAD`.
    - Dirty tree: audit the uncommitted diff.

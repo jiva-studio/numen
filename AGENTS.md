@@ -8,13 +8,13 @@ Gemini, or any other) must follow them.
 - **Architecture guidelines**: [`.agents/rules/architecture.md`](.agents/rules/architecture.md)
 - **Backend coding style (Go)**: [`.agents/rules/coding-style-backend.md`](.agents/rules/coding-style-backend.md)
 - **Frontend coding style (Vue / TypeScript)**: [`.agents/rules/coding-style-frontend.md`](.agents/rules/coding-style-frontend.md)
-- **Unified review skill (`/review`)**: [`.agents/skills/review/SKILL.md`](.agents/skills/review/SKILL.md)
+- **Unified review skill (`/nm-review`)**: [`.agents/skills/nm-review/SKILL.md`](.agents/skills/nm-review/SKILL.md)
 - **Per-module conventions**: `AGENTS.md` inside `libs/core`, `libs/ui/core`, `libs/protocol`, `apps/desktop`.
 
-## Code review protocol: the 3-stage pipeline (`/review`)
+## Code review protocol: the 3-stage pipeline (`/nm-review`)
 
 When asked to review code or a pull request, run the pipeline in
-[`.agents/skills/review/SKILL.md`](.agents/skills/review/SKILL.md):
+[`.agents/skills/nm-review/SKILL.md`](.agents/skills/nm-review/SKILL.md):
 
 ```mermaid
 flowchart LR
@@ -25,9 +25,9 @@ flowchart LR
     Stage3 --> Report["Unified report"]
 ```
 
-1. **Gatekeeper & architecture** — [`stages/1-gatekeeper.md`](.agents/skills/review/stages/1-gatekeeper.md): module targets for touched packages (e.g. `make lib_core_lint lib_core_test`, `make lib_ui_lint lib_ui_test`), then the diff against `AGENTS.md` and the rules in `.agents/rules/`. A failing gate stops the pipeline. Go tests run without `-race` locally; the race detector runs in CI only (`GO_RACE=1` turns it on for a make target).
-2. **Semantic logic audit** — [`stages/2-bughunter.md`](.agents/skills/review/stages/2-bughunter.md): the blast radius, and every defect proven with _Given → When → Then_.
-3. **Dynamic stress verification** — [`stages/3-adversary.md`](.agents/skills/review/stages/3-adversary.md): a test that forces the failure, and the mutation check on the change's own tests.
+1. **Gatekeeper & architecture** — [`stages/1-gatekeeper.md`](.agents/skills/nm-review/stages/1-gatekeeper.md): module targets for touched packages (e.g. `make lib_core_lint lib_core_test`, `make lib_ui_lint lib_ui_test`), then the diff against `AGENTS.md` and the rules in `.agents/rules/`. A failing gate stops the pipeline. Go tests run without `-race` locally; the race detector runs in CI only (`GO_RACE=1` turns it on for a make target).
+2. **Semantic logic audit** — [`stages/2-bughunter.md`](.agents/skills/nm-review/stages/2-bughunter.md): the blast radius, and every defect proven with _Given → When → Then_.
+3. **Dynamic stress verification** — [`stages/3-adversary.md`](.agents/skills/nm-review/stages/3-adversary.md): a test that forces the failure, and the mutation check on the change's own tests.
 4. **Synthesis** — the Unified Review Report exactly as templated in the skill.
 
 One pipeline covers Go and Vue. A reviewer reports findings and does not fix
