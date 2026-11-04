@@ -201,3 +201,52 @@ test('the plugins of the tree are read with their commands', async () => {
   assert.ok(agent, 'the agent chat plugin is read')
   assert.ok(agent.commands.some((one) => one.id === 'chat.open' && one.chord))
 })
+
+test('a registration whose options sit in a constant is read', () =>
+  withPlugins(
+    (root) =>
+      writePlugin(
+        root,
+        'tools-reed',
+        {
+          id: 'tools.reed',
+          name: 'Reed',
+          version: '1.0.0',
+          targets: ['desktop.editor'],
+          frontend: { entrypoint: 'dist/index.js' },
+        },
+        {
+          'index.ts': [
+            "const options = { id: 'reed.cut', handler: () => undefined }",
+            'export const activate = (context) => {',
+            '    context.registerCommand(options)',
+            '}',
+          ].join('\n'),
+        },
+      ),
+    (at) =>
+      assert.rejects(getPluginCommands('desktop.editor', at), {
+        message: 'tools-reed registers reed.cut, which its manifest does not declare',
+      }),
+  ))
+
+test('a registration in a file other than index.ts is read', () =>
+  withPlugins(
+    (root) =>
+      writePlugin(
+        root,
+        'tools-pipe',
+        {
+          id: 'tools.pipe',
+          name: 'Pipe',
+          version: '1.0.0',
+          targets: ['desktop.editor'],
+          frontend: { entrypoint: 'dist/index.js' },
+        },
+        { 'index.ts': '', 'commands.ts': "context.registerCommand({ id: 'pipe.blow', handler })" },
+      ),
+    (at) =>
+      assert.rejects(getPluginCommands('desktop.editor', at), {
+        message: 'tools-pipe registers pipe.blow, which its manifest does not declare',
+      }),
+  ))

@@ -8,6 +8,7 @@
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { ManifestError, readPluginManifests } from '../shared/manifests.mjs'
+import { listRegistrations } from '../shared/registrations.mjs'
 
 const PLUGINS = new URL('../../plugins/', import.meta.url)
 
@@ -142,7 +143,7 @@ export const getPluginCommands = async (target, plugins = PLUGINS) => {
     if (!manifest.targets.includes(target)) continue
     const at = new URL(`${name}/`, plugins)
     const all = manifest.contributes?.commands ?? []
-    const registered = manifest.frontend ? await readRegisteredIds(at, name) : []
+    const registered = manifest.frontend ? readRegisteredIds(at, name) : []
     for (const id of registered) {
       if (!all.some((one) => one.id === id)) {
         fail(`${name} registers ${id}, which its manifest does not declare`)
@@ -180,17 +181,11 @@ const readManifests = (plugins) => {
 }
 
 /**
- * The ids one plugin's frontend registers a handler for. Every `registerCommand` call is
- * read; one this cannot read an id out of is refused.
+ * The ids one plugin's frontend registers a handler for. Every `registerCommand` call of the
+ * frontend's sources is read; one this cannot read an id out of is refused.
  */
-const readRegisteredIds = async (at, name) => {
-  const source = await readFile(new URL('frontend/index.ts', at), 'utf8')
-  const ids = []
-  for (const call of source.matchAll(/\bregisterCommand\(\s*\{/g)) {
-    const block = readBracketed(source, call.index + call[0].length - 1)
-    const id = block?.text.match(/\bid:\s*'([^']+)'/)
-    if (!id) fail(`${name} registers a command this cannot read`)
-    ids.push(id[1])
-  }
-  return ids
-}
+const readRegisteredIds = (at, name) =>
+  listRegistrations(fileURLToPath(new URL('frontend/', at))).map(({ id }) => {
+    if (id === undefined) fail(`${name} registers a command this cannot read`)
+    return id
+  })
