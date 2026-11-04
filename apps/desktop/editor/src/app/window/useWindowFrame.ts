@@ -57,7 +57,7 @@ function getControls(system: FrameRuntime['System']): ControlsStyle {
 }
 
 /** A read of the window state that fails leaves the state as it was. */
-function ignoreFailure(): void {}
+const ignoreFailure = (): undefined => undefined
 
 export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFrame {
   const platform = ref<ControlsStyle>('windows')
