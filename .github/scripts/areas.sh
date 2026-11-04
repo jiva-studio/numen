@@ -6,8 +6,8 @@
 #   e2e=<scope>         the scope tests/e2e/desktop/scripts/select-tests.mjs chooses
 #
 # EVENT is the event name and FILTERS the outputs of dorny/paths-filter as JSON, `{}` when it did
-# not run. A pull request takes the filters that matched; any other event takes every area, every
-# plugin and every end-to-end test.
+# not run. A pull request takes the filters that matched and the changed files of the API (PULL,
+# GH_TOKEN); any other event takes every area, every plugin and every end-to-end test.
 set -euo pipefail
 
 everything=true
@@ -19,13 +19,17 @@ grep -oE '^[a-z_]+:' .github/filters.yml | tr -d : | jq -R . | jq -cs \
   | sed 's/^/areas=/'
 
 list_files() {
-  jq -r --arg name "$1" '.[$name + "_files"] // "[]" | fromjson | .[]' <<< "$FILTERS"
+  gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PULL/files" --jq '.[].filename'
+}
+
+list_plugin_files() {
+  list_files | grep -E '^plugins/[^/]+/' | grep -vE '^plugins/\.example/' || true
 }
 
 if [ "$everything" = true ] || [ "$(jq -r '.plugins_all' <<< "$FILTERS")" = true ]; then
   dirs=$(for manifest in plugins/*/manifest.json; do dirname "$manifest"; done)
 else
-  dirs=$(list_files plugin_files | cut -d/ -f1-2 | sort -u | while read -r dir; do
+  dirs=$(list_plugin_files | cut -d/ -f1-2 | sort -u | while read -r dir; do
     if [ -f "$dir/manifest.json" ]; then echo "$dir"; fi
   done)
 fi
@@ -34,5 +38,5 @@ echo "plugin_dirs=$(echo "$dirs" | xargs)"
 if [ "$everything" = true ]; then
   echo "e2e=all"
 else
-  list_files files | node tests/e2e/desktop/scripts/select-tests.mjs scope | sed 's/^scope=/e2e=/'
+  list_files | node tests/e2e/desktop/scripts/select-tests.mjs scope | sed 's/^scope=/e2e=/'
 fi
