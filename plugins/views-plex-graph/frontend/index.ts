@@ -69,7 +69,7 @@ export function activate(context: PluginContext): void {
   })
 
   context.registerContextMenu({
-    id: 'graph.show-note',
+    id: 'travel',
     text: WORDS.travel,
     group: 'open',
     target: NOTE_TARGET,

@@ -20,10 +20,10 @@ test.describe('Workspace Layout and Split Panes', () => {
     await getRow(page, 'notes/Entropy.md').press('Enter')
     await expect(getTab(page, 'Entropy')).toBeVisible()
 
-    // Open beside is the command Shift and Enter reach on the row of Open the note.
+    // Open note beside is the command Shift and Enter reach on the row of Open note.
     await page.keyboard.press('Control+p')
-    await page.locator('input[data-palette="field"]').fill('Open the note')
-    await expect(page.getByRole('option', { name: /^Open the note/ })).toBeVisible()
+    await page.locator('input[data-palette="field"]').fill('Open note')
+    await expect(page.getByRole('option', { name: /^Open note/ })).toBeVisible()
     await page.keyboard.press('Shift+Enter')
 
     await expect(getPanes(page)).toHaveCount(3)

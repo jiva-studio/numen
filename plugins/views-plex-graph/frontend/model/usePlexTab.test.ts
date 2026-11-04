@@ -215,9 +215,9 @@ describe('the menu on a node', () => {
     one.state.openMenu(createMenuRequest(one.node('Child.md')))
 
     expect(one.state.menuItems.value.map((item) => item.id).slice(0, 3)).toStrictEqual([
-      'read',
+      'app:note.open',
       'plugin:share',
-      'copy',
+      'app:note.copy-path',
     ])
     one.state.chooseMenuItem('plugin:share')
 
@@ -228,7 +228,7 @@ describe('the menu on a node', () => {
     const one = tab('Root.md')
 
     expect(one.state.getMenuIcon('plugin:share')).toBe(SHARE_ICON)
-    expect(one.state.getMenuIcon('read')).toBe(SHARE_ICON)
+    expect(one.state.getMenuIcon('app:note.open')).toBe(SHARE_ICON)
     expect(one.state.getMenuIcon('plugin:unknown')).toBeNull()
   })
 

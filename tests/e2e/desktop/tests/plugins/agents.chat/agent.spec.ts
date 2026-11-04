@@ -21,11 +21,11 @@ const openAgentPanel = async (page: Page) => {
 }
 
 test.describe('Agent Plugin and Interface', () => {
-  test('Ask the agent on a note puts the note path in the composer', async ({ page }) => {
+  test('Ask agent about note on a note puts the note path in the composer', async ({ page }) => {
     await openWorkspace(page)
     await openVaultFile(page, 'notes', 'Entropy.md')
 
-    await runCommand(page, 'Ask the agent', /^Ask the agent/)
+    await runCommand(page, 'Ask agent about note', /^Ask agent about note/)
 
     const input = page.getByRole('textbox', { name: 'Ask about the vault' }).first()
     await expect(input).toBeVisible()

@@ -3,9 +3,9 @@ import { openVaultFile, openWorkspace, runPaletteCommand } from '../../support/w
 import { deleteVaultFiles } from '../../support/media.js'
 import { createUniqueTitle, readNote, readVaultFile } from '../../support/vault.js'
 
-/** Runs `New card model` from the palette under the name given on its step. */
+/** Runs `Create card model` from the palette under the name given on its step. */
 const createCardModel = async (page: Page, title: string): Promise<void> => {
-  await runPaletteCommand(page, 'New card model', 'New card model')
+  await runPaletteCommand(page, 'Create card model', 'Create card model')
   const field = page.locator('input[data-palette="field"]').first()
   await expect(field).toBeVisible()
   await field.fill(title)
@@ -42,7 +42,7 @@ test.describe('the card model editor', () => {
     )
   })
 
-  test('New card model writes a card model file holding its first field', async ({
+  test('Create card model writes a card model file holding its first field', async ({
     page,
     request,
   }) => {

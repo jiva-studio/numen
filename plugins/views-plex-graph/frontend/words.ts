@@ -49,10 +49,10 @@ export const WORDS = {
   travel: 'Show note in plex',
   /** Menu command labels */
   read: 'Open note',
-  copy: 'Copy path',
-  child: 'New child note',
-  parent: 'New parent note',
-  jump: 'New jump note',
-  title: 'Change title',
-  remove: 'Remove note',
+  copy: 'Copy note path',
+  child: 'Create child note',
+  parent: 'Create parent note',
+  jump: 'Create jump note',
+  title: 'Rename note',
+  remove: 'Move note to trash',
 }

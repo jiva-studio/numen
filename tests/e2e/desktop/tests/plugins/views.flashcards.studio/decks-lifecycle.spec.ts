@@ -3,9 +3,9 @@ import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 import { deleteVaultFiles } from '../../support/media.js'
 import { createUniqueTitle, readNote, readVaultFile } from '../../support/vault.js'
 
-/** Runs `New deck` from the palette under the name given on its step. */
+/** Runs `Create deck` from the palette under the name given on its step. */
 const createDeck = async (page: Page, title: string): Promise<void> => {
-  await runPaletteCommand(page, 'New deck', 'New deck')
+  await runPaletteCommand(page, 'Create deck', 'Create deck')
   const field = page.locator('input[data-palette="field"]').first()
   await expect(field).toBeVisible()
   await field.fill(title)
