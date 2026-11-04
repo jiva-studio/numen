@@ -1,0 +1,125 @@
+.title-bar {
+  display: flex;
+  align-items: stretch;
+  box-sizing: border-box;
+  height: 2rem;
+  min-height: 2rem;
+  background: var(--numen-titlebar);
+  border-bottom: 1px solid var(--numen-rule);
+  color: var(--numen-ink);
+  font-size: var(--numen-text-1);
+  user-select: none;
+}
+
+.title-bar__inset {
+  flex: none;
+}
+
+/* The actions and the title share the room between the controls. The room is measured here. */
+.title-bar__start {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  min-width: 0;
+}
+
+.title-bar__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: 100%;
+}
+
+.title-bar__button {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 2rem;
+  height: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.title-bar__button:hover {
+  background: var(--numen-surface);
+}
+
+/* The separator takes no room, so the width of a button is the same in every group. */
+.title-bar__button[data-group-start]::before {
+  content: '';
+  position: absolute;
+  inset-block: 25%;
+  inset-inline-start: 0;
+  width: 1px;
+  background: var(--numen-rule);
+}
+
+.title-bar__title {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: 0.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.window-controls {
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: 100%;
+}
+
+.window-controls--windows .window-controls__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.window-controls--windows .window-controls__button:hover {
+  background: var(--numen-surface);
+}
+
+.window-controls--windows .window-controls__button--close:hover {
+  background: var(--numen-alarm);
+  color: var(--numen-surface);
+}
+
+.window-controls--mac {
+  gap: 0.5rem;
+  padding-inline: 0.75rem;
+}
+
+.window-controls--mac .window-controls__button {
+  width: 0.75rem;
+  height: 0.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.window-controls--mac .window-controls__button--close {
+  background: var(--numen-alarm);
+}
+
+.window-controls--mac .window-controls__button--minimise {
+  background: var(--numen-caution-fg);
+}
+
+.window-controls--mac .window-controls__button--maximise {
+  background: var(--numen-positive);
+}
