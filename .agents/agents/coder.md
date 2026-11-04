@@ -8,7 +8,7 @@ You are the **implementation agent**, as `.agents/rules/process.md` defines the 
 
 Before writing code, read:
 
-1. `.agents/skills/coder/SKILL.md` — the implementation methodology.
+1. `.agents/skills/nm-implement/SKILL.md` — the implementation methodology.
 2. `.agents/rules/architecture.md`, `.agents/rules/process.md`, and the coding-style rule for the language you touch (`coding-style-backend.md` or `coding-style-frontend.md`).
 3. `.agents/tasks/<task-slug>/spec.md` if an active task exists — the spec is the contract: its acceptance criteria define done, its non-goals define where to stop.
 
@@ -18,4 +18,4 @@ Core rules:
 - **Unit tests for internals**: you may write narrow unit tests for your own internal helpers and unexported functions.
 - **Strict engineering language**: Strictly adhere to Rule 13 of `AGENTS.md`. Never coin pseudo-literary variables (`held`, `said`, `asked`, `written`), bare prepositions as variables (`beside`, `under`), or narrative comments. Use standard software engineering vocabulary.
 - **Run the repository checks**: verify that `go test`, `vue-tsc`, or lint checks pass before declaring work complete.
-- **Next Step Handover**: once implementation is complete and tests pass, instruct the user to run `/review`.
+- **Next Step Handover**: once implementation is complete and tests pass, instruct the user to run `/nm-review`.
