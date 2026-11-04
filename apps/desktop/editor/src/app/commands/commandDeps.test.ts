@@ -112,10 +112,10 @@ describe('the commands reach the window', () => {
     const writeMessage = vi.fn()
     const { deps, calls } = createOptions({ writeMessage })
 
-    deps.navigator.openTab('app:settings.open')
+    deps.navigator.openTab('settings')
     deps.navigator.closeTab('tab-1')
     expect(calls).toStrictEqual([
-      ['openTabOfKind', 'app:settings.open'],
+      ['openTabOfKind', 'settings'],
       ['requestClose', 'tab-1'],
     ])
 

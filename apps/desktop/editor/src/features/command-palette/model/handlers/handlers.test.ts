@@ -225,7 +225,7 @@ describe('every command that is offered', () => {
 
     await carry(createInvocation('app:note.open', front()), onWithEmit)
 
-    expect(events).toStrictEqual(['onCommand:read'])
+    expect(events).toStrictEqual(['onCommand:app:note.open'])
   })
 })
 
@@ -944,10 +944,7 @@ describe('the open files a command reaches', () => {
 
   const createStores = () => {
     const isDone: string[] = []
-    const stores = [
-      store('app:note.create', 'Ontology.md', isDone),
-      store('Animals.md', 'Animals.md', isDone),
-    ]
+    const stores = [store('note', 'Ontology.md', isDone), store('Animals.md', 'Animals.md', isDone)]
     return {
       actions: isDone,
       done: isDone,
@@ -958,7 +955,7 @@ describe('the open files a command reaches', () => {
   it('is the tab of whichever store remains at the file', () => {
     const one = createStores()
 
-    expect(one.notes.getTabAt('Ontology.md')).toBe('app:note.create')
+    expect(one.notes.getTabAt('Ontology.md')).toBe('note')
     expect(one.notes.getTabAt('Animals.md')).toBe('Animals.md')
     expect(one.notes.getTabAt('Loose.md')).toBeNull()
   })

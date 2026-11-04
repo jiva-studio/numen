@@ -217,7 +217,7 @@ describe('a command reached by its own keystroke', () => {
     await settle()
 
     expect(event.defaultPrevented).toBe(true)
-    expect(window.findComponent(Palette).props('crumb')).toBe('Go to a note')
+    expect(window.findComponent(Palette).props('crumb')).toBe('Go to note')
   })
 
   it('leaves a keystroke alone while Alt is retained with it', async () => {

@@ -38,7 +38,7 @@ const name = (
   path: string,
   title: string,
   heading = '',
-  type: NameMatch['type'] = 'app:note.create',
+  type: NameMatch['type'] = 'note',
 ): NameMatch => ({
   path,
   title,
@@ -266,7 +266,7 @@ describe('what is in front', () => {
         'app:vault.erase',
       ],
     })
-    expect(commands.groups.value.some((g) => g.id === 'app:note.create')).toBe(false)
+    expect(commands.groups.value.some((g) => g.id === 'note')).toBe(false)
   })
 
   it('offers no close where the window holds no tab at all', () => {
@@ -410,9 +410,9 @@ describe('removing a note', () => {
     commands.startCommand('app:note.trash', front())
 
     expect(commands.groups.value.map((group) => group.id)).toStrictEqual([
-      'app:note.create',
+      'note',
       'window',
-      'app:settings.open',
+      'settings',
       'vault',
     ])
   })
@@ -606,7 +606,10 @@ describe('a command that offers a list the window holds', () => {
     },
   ]
 
-  const target = { appearance: THEMES, mode: HALVES }
+  const target = {
+    'app:appearance.choose-theme': THEMES,
+    'app:appearance.choose-mode': HALVES,
+  }
 
   it('offers the groups the window holds, each under its own name', () => {
     const { commands } = createPalette({}, [], target)
@@ -629,7 +632,7 @@ describe('a command that offers a list the window holds', () => {
     const { commands } = createPalette({}, [], target)
     commands.startCommand('app:appearance.choose-mode', front())
 
-    expect(commands.crumb.value).toBe(words.mode)
+    expect(commands.crumb.value).toBe(words.chooseMode)
     expect(getItemIds(commands.groups)).toStrictEqual({
       half: ['mode:system', 'mode:light'],
     })
@@ -710,9 +713,9 @@ describe('leaving a step', () => {
 
     expect(commands.open.value).toBe(true)
     expect(commands.groups.value.map((group) => group.id)).toStrictEqual([
-      'app:note.create',
+      'note',
       'window',
-      'app:settings.open',
+      'settings',
       'vault',
     ])
   })
@@ -1496,7 +1499,7 @@ describe('a row of a list the window holds', () => {
   ]
 
   it('is lit nowhere while nothing is typed', () => {
-    const { commands } = createPalette({}, [], { appearance: THEMES })
+    const { commands } = createPalette({}, [], { 'app:appearance.choose-theme': THEMES })
     commands.startCommand('app:appearance.choose-theme', front())
 
     expect(commands.groups.value[0]?.items).toStrictEqual([
@@ -1515,7 +1518,7 @@ describe('a row of a list the window holds', () => {
   })
 
   it('is lit from its first letter where the words typed begin it', async () => {
-    const { commands } = createPalette({}, [], { appearance: THEMES })
+    const { commands } = createPalette({}, [], { 'app:appearance.choose-theme': THEMES })
     commands.startCommand('app:appearance.choose-theme', front())
 
     await commands.setTyped('num')
@@ -1526,7 +1529,7 @@ describe('a row of a list the window holds', () => {
   })
 
   it('is kept by the words typed around spaces', async () => {
-    const { commands } = createPalette({}, [], { appearance: THEMES })
+    const { commands } = createPalette({}, [], { 'app:appearance.choose-theme': THEMES })
     commands.startCommand('app:appearance.choose-theme', front())
 
     await commands.setTyped('  rac  ')

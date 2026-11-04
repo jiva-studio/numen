@@ -20,7 +20,7 @@ describe('the commands over a row standing for a file', () => {
   })
 
   it('offer the path and the removal, parted by a rule', () => {
-    expect(getGroupedIds(false)).toStrictEqual(['app:note.copy-path', '— remove'])
+    expect(getGroupedIds(false)).toStrictEqual(['app:note.copy-path', '— app:note.trash'])
   })
 
   it('offer only the removal over a selection of several', () => {
@@ -58,7 +58,11 @@ describe('the commands over a row standing for a file', () => {
 
 describe('the commands over a note', () => {
   it('offers core note commands without plugin contributions', () => {
-    expect(getGroupedIds(true)).toStrictEqual(['app:note.open', '— copy', '— remove'])
+    expect(getGroupedIds(true)).toStrictEqual([
+      'app:note.open',
+      '— app:note.copy-path',
+      '— app:note.trash',
+    ])
   })
 
   it('includes plugin contributions when provided', () => {
@@ -75,10 +79,10 @@ describe('the commands over a note', () => {
     expect(grouped.map((one) => `${one.isRule ? '— ' : ''}${one.id}`)).toStrictEqual([
       'app:note.open',
       'show',
-      '— copy',
+      '— app:note.copy-path',
       '— relation',
       '— question',
-      '— remove',
+      '— app:note.trash',
     ])
     const relationItem = grouped.find((one) => one.id === 'relation')
     expect(relationItem?.children?.map((c) => c.id)).toStrictEqual([

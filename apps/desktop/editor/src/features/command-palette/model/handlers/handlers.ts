@@ -74,7 +74,6 @@ const commandRegistry = new Map<string, CommandHandler>()
 
 export const commands = {
   registerCommand(id: string, handler: CommandHandler): () => void {
-    if (commandRegistry.has(id)) throw new Error(`Command "${id}" is already registered`)
     commandRegistry.set(id, handler)
     return () => {
       if (commandRegistry.get(id) === handler) {

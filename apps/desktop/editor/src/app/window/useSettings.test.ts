@@ -67,13 +67,7 @@ describe('the settings as they are put together', () => {
   it('gives each setting a message writer under a name of its own', () => {
     const { writers } = createSettings()
 
-    expect(writers).toStrictEqual([
-      'app:appearance.choose-theme',
-      'named',
-      'configured',
-      'keys',
-      'plugins',
-    ])
+    expect(writers).toStrictEqual(['appearance', 'named', 'configured', 'keys', 'plugins'])
   })
 
   it('opens the settings tab as kind of tab', () => {
@@ -84,7 +78,7 @@ describe('the settings as they are put together', () => {
 
   it('puts the appearance away when it is put away', () => {
     const { settings } = createSettings()
-    const close = vi.spyOn(settings.appearance, 'app:tab.close')
+    const close = vi.spyOn(settings.appearance, 'close')
 
     settings.close()
 

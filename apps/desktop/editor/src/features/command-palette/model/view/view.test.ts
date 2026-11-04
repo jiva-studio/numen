@@ -59,7 +59,7 @@ const createCommand = (overrides: Partial<Command> & Pick<Command, 'id' | 'text'
 })
 
 const getNoteGroup = (view: ReturnType<typeof createView>, target: CommandTarget, typed: string) =>
-  view.createGroups(null, target, typed).find((group) => group.id === 'app:note.create')
+  view.createGroups(null, target, typed).find((group) => group.id === 'note')
 
 describe('the commands as the words typed leave them', () => {
   const view = createView(createCommands(words))
@@ -233,14 +233,14 @@ describe('a command that gives no words for its confirmation', () => {
     })
 
     const matchedByDetail = customView.createGroups(null, front(), 'special')
-    const detailItem = matchedByDetail.find((g) => g.id === 'app:note.create')?.items[0]
+    const detailItem = matchedByDetail.find((g) => g.id === 'note')?.items[0]
     expect(detailItem?.id).toBe('det')
     expect(detailItem?.detail).toBe('Special detail')
     expect(detailItem).not.toHaveProperty('at')
 
     const allGroups = customView.createGroups(null, front(), '')
     expect(allGroups.find((g) => g.id === 'file')?.title).toBe(customWords.overFile)
-    expect(allGroups.find((g) => g.id === 'app:settings.open')?.title).toBe('Over Settings')
+    expect(allGroups.find((g) => g.id === 'settings')?.title).toBe('Over Settings')
 
     const fallbackWords = {
       ...words,
@@ -262,7 +262,7 @@ describe('a command that gives no words for its confirmation', () => {
       getStepLabel: () => 'Ontology.md',
     })
     expect(
-      fallbackView.createGroups(null, front(), '').find((g) => g.id === 'app:settings.open')?.title,
+      fallbackView.createGroups(null, front(), '').find((g) => g.id === 'settings')?.title,
     ).toBe('Fallback Settings')
   })
 })
