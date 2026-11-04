@@ -292,10 +292,10 @@ func mount(s *server.Server, h Host, complete completer, vars map[string]string)
 	}
 	run := newProofreading(h, getProofreadKinds(), newAskModel(complete, config.getConfig), config.getConfig)
 	commands := command.New()
-	if err := commands.Add("proofread", newProofreadCommand(run)); err != nil {
+	if err := commands.Add("proofreading.create", newProofreadCommand(run)); err != nil {
 		return err
 	}
-	if err := commands.Add("delete-proofreading", command.NewDeleteTextRun(h.Texts, h.Store, PluginID)); err != nil {
+	if err := commands.Add("proofreading.delete", command.NewDeleteTextRun(h.Texts, h.Store, PluginID)); err != nil {
 		return err
 	}
 	s.SetUpdateConfig(config.updateConfig)

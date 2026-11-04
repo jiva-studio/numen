@@ -6,6 +6,7 @@
  * front is what the note can be nested under as it is made.
  */
 import type { PaletteGroup } from '@numen/shell'
+import { COMMAND } from '@/shared/commandIds'
 import { createInvocation } from './invocation'
 import type { CommandInvocation, CommandTarget } from '../../types'
 import type { Words } from '../../words'
@@ -24,10 +25,14 @@ export const createNoteInvocation = (
 ): CommandInvocation =>
   NOTE_PLACEMENTS.includes(relation) && target.path
     ? createInvocation(relation, target, name)
-    : createInvocation('note', { ...target, path: '', title: '' }, name)
+    : createInvocation(COMMAND.createNote, { ...target, path: '', title: '' }, name)
 
 /** The relations a note the search did not find can be made in. */
-const NOTE_PLACEMENTS: readonly string[] = ['child', 'parent', 'jump']
+const NOTE_PLACEMENTS: readonly string[] = [
+  COMMAND.createChildNote,
+  COMMAND.createParentNote,
+  COMMAND.createJumpNote,
+]
 
 /**
  * The groups of a search, and the offer to make a note where every one of them
@@ -49,9 +54,9 @@ export const appendCreateNoteItem = (
   if (!name || !empty) return groups
   const relations = target.path
     ? [
-        { id: 'child', text: words.asChild },
-        { id: 'parent', text: words.asParent },
-        { id: 'jump', text: words.asJump },
+        { id: COMMAND.createChildNote, text: words.asChild },
+        { id: COMMAND.createParentNote, text: words.asParent },
+        { id: COMMAND.createJumpNote, text: words.asJump },
       ]
     : []
   return [

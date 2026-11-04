@@ -9,13 +9,13 @@
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "commands": [
     {
-      "id": "transcribe",
-      "title": "Transcribe",
+      "id": "transcript.create",
+      "title": "Transcribe recording",
       "icon": "audio-lines",
       "contentTypes": ["audio/*", "video/*"]
     },
     {
-      "id": "delete-transcript",
+      "id": "transcript.delete",
       "title": "Delete transcript",
       "icon": "trash-2",
       "when": [{ "key": "version.plugin", "is": ["md.numen.engines.transcription"] }]

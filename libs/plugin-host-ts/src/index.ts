@@ -35,6 +35,7 @@ export {
 export { createAgentPort, type AgentClient } from './agentPort'
 export { resolveTextLinks, type LinkClient } from './textLinks'
 export { createPluginTexts } from './pluginTexts'
+export { APP_COMMAND_OWNER, formatCommandId, getCommandOwner } from './commandId'
 export * from './contract'
 export { createPluginNotices, type NoticeList, type NoticeListTask } from './pluginNotices'
 export { createPluginTasks, type WindowTask } from './pluginTasks'

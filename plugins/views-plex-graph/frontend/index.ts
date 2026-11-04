@@ -50,7 +50,7 @@ export function activate(context: PluginContext): void {
   }
 
   context.registerCommand({
-    id: 'plex',
+    id: 'graph.open',
     title: WORDS.newPlex,
     shortcut: 'mod+shift+x',
     icon: Waypoints,
@@ -59,7 +59,7 @@ export function activate(context: PluginContext): void {
     },
   })
   context.registerCommand({
-    id: 'travel',
+    id: 'graph.show-note',
     title: WORDS.travel,
     scope: NOTE_SCOPE,
     shortcut: 'mod+shift+p',
@@ -69,7 +69,7 @@ export function activate(context: PluginContext): void {
   })
 
   context.registerContextMenu({
-    id: 'travel',
+    id: 'graph.show-note',
     text: WORDS.travel,
     group: 'open',
     target: NOTE_TARGET,

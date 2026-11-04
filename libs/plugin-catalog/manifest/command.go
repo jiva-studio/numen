@@ -22,9 +22,14 @@ var (
 	ErrInvalidCommandArgument = errors.New("invalid command argument")
 )
 
-// manifestCommandPattern is the shape of a command id and of an argument name: lowercase words
-// joined by hyphens, as a command line spells a subcommand and a flag.
-var manifestCommandPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
+// manifestArgumentPattern is the shape of an argument name: lowercase words joined by hyphens, as a
+// command line spells a flag.
+var manifestArgumentPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
+
+// manifestCommandPattern is the shape of a command id: an object and an action, each lowercase words
+// joined by hyphens, with a dot between them (`deck.create`). The host files the command under the id
+// of the plugin and this id.
+var manifestCommandPattern = regexp.MustCompile(`^[a-z][a-z0-9]*(-[a-z0-9]+)*\.[a-z][a-z0-9]*(-[a-z0-9]+)*$`)
 
 // listCommandArgumentTypes returns the types a command argument may have.
 func listCommandArgumentTypes() []string {
@@ -123,7 +128,7 @@ func (m Manifest) listCommandIssues() []error {
 	for _, command := range m.Commands {
 		switch {
 		case !manifestCommandPattern.MatchString(command.ID):
-			issues = append(issues, fmt.Errorf("%w: id %q is not lowercase words joined by hyphens", ErrInvalidCommand, command.ID))
+			issues = append(issues, fmt.Errorf("%w: id %q is not an object and an action, each lowercase words joined by hyphens, with a dot between them", ErrInvalidCommand, command.ID))
 		case observed[command.ID]:
 			issues = append(issues, fmt.Errorf("%w: %q is declared twice", ErrInvalidCommand, command.ID))
 		}
@@ -171,7 +176,7 @@ func listCommandArgumentIssues(command Command) []error {
 	observed := map[string]bool{}
 	for _, argument := range command.Arguments {
 		switch {
-		case !manifestCommandPattern.MatchString(argument.Name):
+		case !manifestArgumentPattern.MatchString(argument.Name):
 			issues = append(issues, fmt.Errorf("%w: %q takes %q, which is not lowercase words joined by hyphens", ErrInvalidCommandArgument, command.ID, argument.Name))
 		case observed[argument.Name]:
 			issues = append(issues, fmt.Errorf("%w: %q takes %q twice", ErrInvalidCommandArgument, command.ID, argument.Name))

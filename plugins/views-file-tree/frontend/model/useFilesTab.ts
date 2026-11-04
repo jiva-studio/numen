@@ -4,7 +4,7 @@
 import { ref } from 'vue'
 import { formatErrorMessage, getFileName, NOTE_TYPE, type MenuEntry } from '@numen/plugin-sdk'
 import { resolveDropFolder, ROOT } from './useFileTree'
-import { createMenuItems, NEW_FOLDER, NEW_NOTE, OWN_IDS, RENAME } from '../lib/menu'
+import { createMenuItems, NEW_FOLDER, NEW_NOTE, OWN_IDS, RENAME, TRASH_NOTE } from '../lib/menu'
 import { resolveRenamePath } from './rename'
 import { WORDS as words } from '../words'
 import type {
@@ -185,7 +185,7 @@ function createFileActions(list: FileTree, deps: FilesTabDeps) {
   const remove = (paths: readonly string[]) => {
     const first = paths[0]
     if (first === undefined) return
-    deps.runCommand('remove', paths, {
+    deps.runCommand(TRASH_NOTE, paths, {
       name: getNameOf(first),
       isNote: isNoteAt(first),
       isFolder: list.getEntryAt(first)?.isFolder ?? false,

@@ -24,6 +24,7 @@ import type {
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
+import { APP_COMMAND_OWNER, formatCommandId } from '../commandId'
 import { createExternalOpener } from '../externalOpener'
 import type { PluginContextHost } from './types'
 
@@ -54,7 +55,12 @@ function checkPermission(target: PermissionTarget, permission: string, operation
 }
 
 /** The commands of the window over a file that change nothing in the vault. */
-const READ_ONLY_COMMANDS: ReadonlySet<string> = new Set(['read', 'travel', 'copy', 'ask'])
+const READ_ONLY_COMMANDS: ReadonlySet<string> = new Set([
+  formatCommandId(APP_COMMAND_OWNER, 'note.open'),
+  formatCommandId(APP_COMMAND_OWNER, 'note.copy-path'),
+  formatCommandId('md.numen.views.plex.graph', 'graph.show-note'),
+  formatCommandId('md.numen.views.agent.chat', 'note.ask'),
+])
 
 function guardNotes(notes: VaultNotes, requireWrite: (operation: string) => void): VaultNotes {
   return {

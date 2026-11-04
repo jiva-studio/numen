@@ -17,6 +17,7 @@ import { StatusViewHost } from '@/features/status-views'
 import { WelcomeScreen } from '@/pages/welcome'
 import BootstrapFailure from './BootstrapFailure.vue'
 import { useWindow } from '../window/useWindow'
+import { COMMAND } from '@/shared/commandIds'
 import { WORDS as words } from '@/shared/words'
 import { WORDS as note } from '@/entities/note'
 
@@ -72,7 +73,7 @@ function onOpenSettings(event: Event): void {
     openSettings(detail.pluginId, detail.filter)
     return
   }
-  runCommand('settings', getTarget())
+  runCommand(COMMAND.openSettings, getTarget())
 }
 
 onMounted(() => {

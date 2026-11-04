@@ -14,6 +14,7 @@ import type {
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { createAppInfo } from '../appInfo'
+import { formatCommandId } from '../commandId'
 import { createDropRegistry } from '../drops'
 import { createStatusViewRegistry, type StatusViewRegistry } from '../statusViews'
 import { createViewRegistry, type ViewRegistry } from '../views'
@@ -94,8 +95,13 @@ function createRegistrationBridge(
         registration,
         getContext: () => registry.contexts.get(pluginId),
       }),
-    registerCommand: (pluginId, registration) =>
-      addEntry(registry.commands, registration.id, { pluginId, reg: registration }),
+    registerCommand: (pluginId, registration) => {
+      const fullId = formatCommandId(pluginId, registration.id)
+      if (registry.commands.value.has(fullId)) {
+        throw new Error(`Command "${fullId}" is already registered`)
+      }
+      return addEntry(registry.commands, fullId, { pluginId, reg: registration })
+    },
     registerContextMenu: (pluginId, registration) =>
       addEntry(registry.contextMenus, registration.id, { pluginId, reg: registration }),
     registerSettingsView: (pluginId, registration) =>

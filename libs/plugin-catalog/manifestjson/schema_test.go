@@ -34,7 +34,7 @@ const everyFieldManifest = `{
 	],
 	"secrets": [{"name": "apiKey", "title": "Key", "description": "d", "when": {"setting": "mode", "is": ["a"]}}],
 	"services": ["numen.v1.Full"],
-	"commands": [{"id": "run", "title": "Run", "icon": "play", "contentTypes": ["audio/*"], "noteTypes": ["link"],
+	"commands": [{"id": "task.run", "title": "Run", "icon": "play", "contentTypes": ["audio/*"], "noteTypes": ["link"],
 		"when": [{"key": "version.kind", "is": ["k"]}],
 		"arguments": [{"name": "n", "title": "N", "type": "number", "required": false, "hiddenInPalette": true},
 			{"name": "m", "title": "M", "type": "number", "required": true}],

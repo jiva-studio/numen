@@ -280,7 +280,12 @@ describe('a command a plugin runs over the vault', () => {
   const target = { path: 'a.md', title: 'A' }
   const row = { paths: ['a.md'], name: 'a', isNote: true, isFolder: false }
 
-  it.each(['remove', 'child', 'title', 'transcribe'])('fails for %s without vault:write', (id) => {
+  it.each([
+    'app:note.trash',
+    'app:note.create-child',
+    'app:note.rename',
+    'md.numen.engines.transcription:transcript.create',
+  ])('fails for %s without vault:write', (id) => {
     const { context, workspace } = createContext(['vault:read'])
 
     expect(() => context.workspace!.runCommand(id, target)).toThrowError(
@@ -293,7 +298,12 @@ describe('a command a plugin runs over the vault', () => {
     expect(workspace.runPathCommand).not.toHaveBeenCalled()
   })
 
-  it.each(['remove', 'child', 'title', 'transcribe'])('runs %s with vault:write', (id) => {
+  it.each([
+    'app:note.trash',
+    'app:note.create-child',
+    'app:note.rename',
+    'md.numen.engines.transcription:transcript.create',
+  ])('runs %s with vault:write', (id) => {
     const { context, workspace } = createContext(['vault:write'])
 
     context.workspace!.runCommand(id, target)
@@ -303,7 +313,12 @@ describe('a command a plugin runs over the vault', () => {
     expect(workspace.runPathCommand).toHaveBeenCalledWith(id, row)
   })
 
-  it.each(['read', 'travel', 'copy', 'ask'])('runs %s without vault:write', (id) => {
+  it.each([
+    'app:note.open',
+    'md.numen.views.plex.graph:graph.show-note',
+    'app:note.copy-path',
+    'md.numen.views.agent.chat:note.ask',
+  ])('runs %s without vault:write', (id) => {
     const { context, workspace } = createContext([])
 
     context.workspace!.runCommand(id, target)

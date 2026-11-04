@@ -4,17 +4,13 @@
 import { computed, watch } from 'vue'
 import { themes } from '@/entities/settings'
 import {
-  APPEARANCE,
   APPEARANCE_COMMANDS,
-  INTERFACE_SCALE,
-  MODE,
   OFF,
   ON,
-  SYNCING,
   syncSetting,
-  TEXT_SCALE,
   createWindowAppearance,
 } from '@/features/settings-commands'
+import { COMMAND } from '@/shared/commandIds'
 import {
   formatValue,
   getOptions,
@@ -249,9 +245,9 @@ function getAppearanceStepGroups(
   appearance: ReturnType<typeof createWindowAppearance>,
   typed: string,
 ) {
-  if (command === APPEARANCE) return appearance.getThemeGroups()
-  if (command === MODE) return appearance.getModeGroups()
-  if (command === INTERFACE_SCALE || command === TEXT_SCALE)
+  if (command === COMMAND.chooseTheme) return appearance.getThemeGroups()
+  if (command === COMMAND.chooseMode) return appearance.getModeGroups()
+  if (command === COMMAND.chooseInterfaceSize || command === COMMAND.chooseTextSize)
     return appearance.getSizeGroups(command, typed)
   return []
 }
@@ -262,8 +258,8 @@ function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
     getStepGroups: (command, typed) => {
       const appearanceGroups = getAppearanceStepGroups(command, appearance, typed)
       if (appearanceGroups.length > 0) return appearanceGroups
-      if (command === SYNCING) return sync.getSyncingGroups()
-      if (command === 'performanceProfile') return getPerformanceStepGroups(words)
+      if (command === COMMAND.chooseTitleSync) return sync.getSyncingGroups()
+      if (command === COMMAND.choosePerformanceProfile) return getPerformanceStepGroups(words)
       if (command.startsWith('plugin-setting:')) return getPluginStepGroups(command, rest, words)
       return []
     },

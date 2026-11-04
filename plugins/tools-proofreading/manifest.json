@@ -20,8 +20,8 @@
   ],
   "commands": [
     {
-      "id": "proofread",
-      "title": "Proofread",
+      "id": "proofreading.create",
+      "title": "Proofread text",
       "icon": "spell-check",
       "when": [
         { "key": "version.live", "is": ["true"] },
@@ -29,7 +29,7 @@
       ]
     },
     {
-      "id": "delete-proofreading",
+      "id": "proofreading.delete",
       "title": "Delete proofreading",
       "icon": "trash-2",
       "when": [{ "key": "version.plugin", "is": ["md.numen.tools.proofreading"] }]

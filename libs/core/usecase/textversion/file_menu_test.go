@@ -86,20 +86,20 @@ func getPdfTypes() types { return types{".pdf": "application/pdf"} }
 
 func getRecogniseCommand() pluginport.PluginCommandEntry {
 	return pluginport.PluginCommandEntry{PluginID: ocr, PluginName: "OCR", Command: pluginport.PluginCommand{
-		ID: "recognise", Title: "Recognise text", Icon: "scan-text", ContentTypes: []domain.ContentType{"application/pdf"},
+		ID: "recognition.create", Title: "Recognise text", Icon: "scan-text", ContentTypes: []domain.ContentType{"application/pdf"},
 	}}
 }
 
 func getProofreadCommand() pluginport.PluginCommandEntry {
 	return pluginport.PluginCommandEntry{PluginID: proofreader, PluginName: "Proofreading", Command: pluginport.PluginCommand{
-		ID: "proofread", Title: "Proofread", Icon: "spell-check",
+		ID: "proofreading.create", Title: "Proofread", Icon: "spell-check",
 		When: liveOfKinds(string(kindPage), string(kindRecognition)),
 	}}
 }
 
 func getDeleteProofreadingCommand() pluginport.PluginCommandEntry {
 	return pluginport.PluginCommandEntry{PluginID: proofreader, PluginName: "Proofreading", Command: pluginport.PluginCommand{
-		ID: "delete-proofreading", Title: "Delete proofreading", When: ownedBy(proofreader),
+		ID: "proofreading.delete", Title: "Delete proofreading", When: ownedBy(proofreader),
 	}}
 }
 
@@ -133,7 +133,7 @@ func TestFileMenuListsCommandForDeclaredKind(t *testing.T) {
 
 	entries, err := menu.GetMenu(t.Context(), s.vault, scanPath)
 	want := []textversion.MenuEntry{{
-		PluginID: proofreader, PluginName: "Proofreading", Command: "proofread", Title: "Proofread", Icon: "spell-check",
+		PluginID: proofreader, PluginName: "Proofreading", Command: "proofreading.create", Title: "Proofread", Icon: "spell-check",
 		Version: s.getReaderVersion(), IsLive: true,
 	}}
 	if err != nil || !slices.Equal(entries, want) {
@@ -180,7 +180,7 @@ func TestFileMenuListsDeletionForEachPluginVersion(t *testing.T) {
 
 	entries, err := menu.GetMenu(t.Context(), s.vault, scanPath)
 	want := []textversion.MenuEntry{{
-		PluginID: proofreader, PluginName: "Proofreading", Command: "delete-proofreading", Title: "Delete proofreading",
+		PluginID: proofreader, PluginName: "Proofreading", Command: "proofreading.delete", Title: "Delete proofreading",
 		Version: b, IsLive: true,
 	}}
 	if err != nil || !slices.Equal(entries, want) {
@@ -214,7 +214,7 @@ func TestFileMenuWithoutVersionListsTypeCommandsUnread(t *testing.T) {
 	}
 
 	entries, err := menu.GetMenu(t.Context(), s.vault, scanPath)
-	want := []textversion.MenuEntry{{PluginID: ocr, PluginName: "OCR", Command: "recognise", Title: "Recognise text", Icon: "scan-text"}}
+	want := []textversion.MenuEntry{{PluginID: ocr, PluginName: "OCR", Command: "recognition.create", Title: "Recognise text", Icon: "scan-text"}}
 	if err != nil || !slices.Equal(entries, want) || reads != 0 {
 		t.Fatalf("a file with no version gets %+v (%v) after %d reads, want %+v and no read", entries, err, reads, want)
 	}
@@ -234,7 +234,7 @@ func TestFileMenuOmitsCommandForOtherTypeOrArgument(t *testing.T) {
 	if entries, err := menu.GetMenu(t.Context(), s.vault, "notes/a.txt"); err != nil || len(entries) != 0 {
 		t.Fatalf("a text file gets %+v (%v)", entries, err)
 	}
-	if entries, err := menu.GetMenu(t.Context(), s.vault, scanPath); err != nil || len(entries) != 1 || entries[0].Command != "recognise" {
+	if entries, err := menu.GetMenu(t.Context(), s.vault, scanPath); err != nil || len(entries) != 1 || entries[0].Command != "recognition.create" {
 		t.Fatalf("a PDF gets %+v (%v), want the command that needs no argument", entries, err)
 	}
 }
@@ -254,13 +254,13 @@ func TestFileMenuRunsListedEntryCommand(t *testing.T) {
 	s := newScene(t)
 	menu, recorder := newMenu(t, s, getProofreadCommand())
 	s.requestText(t)
-	entry := textversion.MenuEntry{PluginID: proofreader, Command: "proofread", Version: s.getReaderVersion()}
+	entry := textversion.MenuEntry{PluginID: proofreader, Command: "proofreading.create", Version: s.getReaderVersion()}
 
 	if err := menu.RunMenuEntry(t.Context(), s.vault, scanPath, entry); err != nil {
 		t.Fatal(err)
 	}
 	want := []pluginport.PluginCommandCall{{
-		PluginID: proofreader, Command: "proofread", Path: scanPath,
+		PluginID: proofreader, Command: "proofreading.create", Path: scanPath,
 		Arguments: map[string]string{pluginport.CommandArgumentVersion: string(s.getReaderVersion())},
 	}}
 	if !reflect.DeepEqual(recorder.ran, want) {
@@ -272,10 +272,10 @@ func TestFileMenuRunsACommandOverTheFileWithNoVersionArgument(t *testing.T) {
 	s := newScene(t)
 	menu, recorder := newMenu(t, s, getRecogniseCommand())
 
-	if err := menu.RunMenuEntry(t.Context(), s.vault, scanPath, textversion.MenuEntry{PluginID: ocr, Command: "recognise"}); err != nil {
+	if err := menu.RunMenuEntry(t.Context(), s.vault, scanPath, textversion.MenuEntry{PluginID: ocr, Command: "recognition.create"}); err != nil {
 		t.Fatal(err)
 	}
-	want := []pluginport.PluginCommandCall{{PluginID: ocr, Command: "recognise", Path: scanPath}}
+	want := []pluginport.PluginCommandCall{{PluginID: ocr, Command: "recognition.create", Path: scanPath}}
 	if !reflect.DeepEqual(recorder.ran, want) {
 		t.Fatalf("ran %+v, want %+v", recorder.ran, want)
 	}
@@ -287,9 +287,9 @@ func TestFileMenuRejectsRunningUnofferedEntry(t *testing.T) {
 	s.requestText(t)
 
 	for name, entry := range map[string]textversion.MenuEntry{
-		"another command": {PluginID: proofreader, Command: "delete-proofreading", Version: s.getReaderVersion()},
-		"another version": {PluginID: proofreader, Command: "proofread", Version: "org.numen.tools-proofreading/other"},
-		"another plugin":  {PluginID: ocr, Command: "proofread", Version: s.getReaderVersion()},
+		"another command": {PluginID: proofreader, Command: "proofreading.delete", Version: s.getReaderVersion()},
+		"another version": {PluginID: proofreader, Command: "proofreading.create", Version: "org.numen.tools-proofreading/other"},
+		"another plugin":  {PluginID: ocr, Command: "proofreading.create", Version: s.getReaderVersion()},
 	} {
 		if err := menu.RunMenuEntry(t.Context(), s.vault, scanPath, entry); !errors.Is(err, textversion.ErrInvalidVersion) {
 			t.Errorf("%s: got %v, want ErrInvalidVersion", name, err)

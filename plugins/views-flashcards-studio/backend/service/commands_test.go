@@ -24,7 +24,7 @@ func newCommands(t *testing.T) (*command.Registry, string) {
 
 func TestTheCreateCommandsMakeTheFileAndOpenIt(t *testing.T) {
 	for id, kind := range map[string]string{
-		"create-deck": "type: deck", "create-card-model": "type: card-model", "create-preset": "type: preset",
+		"deck.create": "type: deck", "card-model.create": "type: card-model", "preset.create": "type: preset",
 	} {
 		t.Run(id, func(t *testing.T) {
 			commands, root := newCommands(t)
@@ -47,7 +47,7 @@ func TestACardModelMadeByItsCommandDeclaresAField(t *testing.T) {
 	commands, root := newCommands(t)
 
 	if _, err := commands.RunCommand(t.Context(), command.Request{
-		Command: "create-card-model", Arguments: command.Arguments{"title": "Mountain"},
+		Command: "card-model.create", Arguments: command.Arguments{"title": "Mountain"},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func TestACardModelMadeByItsCommandDeclaresAField(t *testing.T) {
 
 func TestCreateDeck_ErrorsWhenFileExists(t *testing.T) {
 	commands, _ := newCommands(t)
-	request := command.Request{Command: "create-deck", Arguments: command.Arguments{"title": "Lakes"}}
+	request := command.Request{Command: "deck.create", Arguments: command.Arguments{"title": "Lakes"}}
 	if _, err := commands.RunCommand(t.Context(), request); err != nil {
 		t.Fatal(err)
 	}

@@ -14,6 +14,9 @@ export const NEW_NOTE = 'newNote'
 export const NEW_FOLDER = 'newFolder'
 export const RENAME = 'rename'
 
+/** The command of the window that moves files to the trash. */
+export const TRASH_NOTE = 'app:note.trash'
+
 /** The group the window opens a row in, which precedes what the tab does. */
 const OPEN_GROUP = 'open'
 

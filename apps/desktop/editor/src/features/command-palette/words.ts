@@ -85,6 +85,13 @@ export interface Words extends EmptyWords {
   /** Everything this installation is configured as, in a tab of its own. */
   readonly settings: string
   readonly find: string
+  /** The titles the commands over the settings, the search and the appearance are offered under. */
+  readonly openSettings: string
+  readonly searchVault: string
+  readonly chooseMode: string
+  readonly chooseInterfaceSize: string
+  readonly chooseTextSize: string
+  readonly chooseTitleSync: string
   /** The keystroke the search answers to away from the palette. */
   readonly findKeys: PaletteKeys
   readonly first: string

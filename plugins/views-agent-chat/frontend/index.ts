@@ -43,7 +43,7 @@ export function activate(context: PluginContext): void {
   const askAbout = (path: string): void => workspace.ask(`${path} — `)
 
   context.registerCommand({
-    id: 'agent',
+    id: 'chat.open',
     title: WORDS.newAgent,
     shortcut: 'mod+shift+a',
     icon: Bot,
@@ -52,7 +52,7 @@ export function activate(context: PluginContext): void {
     },
   })
   context.registerCommand({
-    id: 'ask',
+    id: 'note.ask',
     title: WORDS.askAbout,
     scope: NOTE_SCOPE,
     icon: Bot,

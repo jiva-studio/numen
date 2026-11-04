@@ -8,6 +8,7 @@ import type { PaletteKeys } from '@numen/ui'
 import type { VaultRow, WelcomeAction } from '@numen/shell'
 import type { VaultList } from '@/entities/vault'
 import { createRowKeys } from '@/features/command-palette'
+import { COMMAND } from '@/shared/commandIds'
 
 /** What the welcome screen is drawn over. */
 export interface CurrentVault {
@@ -38,9 +39,6 @@ export interface Words {
 /** The row that puts the commands up, which is no command of its own. */
 export const COMMANDS = 'commands'
 
-/** The row that opens the settings, which stand outside any vault. */
-export const SETTINGS = 'settings'
-
 /**
  * The entry points, in render order. The settings belong to the installation,
  * so they are always offered, last. The rest depend on a vault: a window
@@ -58,16 +56,16 @@ export const createWelcomeActions = (
   contributed: readonly WelcomeAction[] = [],
 ): readonly WelcomeAction[] => {
   const settings: WelcomeAction = {
-    id: SETTINGS,
+    id: COMMAND.openSettings,
     text: words.settings,
-    ...createRowKeys(SETTINGS, agent),
+    ...createRowKeys(COMMAND.openSettings, agent),
   }
   if (currentVault.vault === '') return [settings]
   const note: readonly WelcomeAction[] = currentVault.isReady
-    ? [{ id: 'note', text: words.newNote, ...createRowKeys('note', agent) }]
+    ? [{ id: COMMAND.createNote, text: words.newNote, ...createRowKeys(COMMAND.createNote, agent) }]
     : []
   return [
-    { id: 'find', text: words.find, keys: words.findKeys },
+    { id: COMMAND.searchVault, text: words.find, keys: words.findKeys },
     { id: COMMANDS, text: words.commands, keys: words.commandsKeys },
     ...note,
     ...contributed,

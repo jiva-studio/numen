@@ -31,20 +31,20 @@
   "services": ["md.numen.views.flashcards.studio"],
   "commands": [
     {
-      "id": "create-deck",
-      "title": "New deck",
+      "id": "deck.create",
+      "title": "Create deck",
       "icon": "layers",
       "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]
     },
     {
-      "id": "create-card-model",
-      "title": "New card model",
+      "id": "card-model.create",
+      "title": "Create card model",
       "icon": "layout-template",
       "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]
     },
     {
-      "id": "create-preset",
-      "title": "New preset",
+      "id": "preset.create",
+      "title": "Create preset",
       "icon": "gauge",
       "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]
     }

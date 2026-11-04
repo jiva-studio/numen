@@ -7,6 +7,7 @@
  */
 import type { ContextMenuTarget } from '@numen/plugin-host'
 import type { MenuItem } from '@numen/ui'
+import { COMMAND } from '@/shared/commandIds'
 import { WORDS as words } from '@/shared/words'
 import { getNoteCommands } from './commands'
 import { createCommands } from './table'
@@ -47,7 +48,7 @@ const getNoteCommand = (id: string, group: string): readonly PathItem[] => {
 }
 
 /** The removal of a file or of several. */
-const REMOVE: PathItem = { id: 'remove', text: own.remove, group: GROUP.remove }
+const REMOVE: PathItem = { id: COMMAND.trashNote, text: own.remove, group: GROUP.remove }
 
 const toContributedItem = (
   one: PathContribution,
@@ -98,9 +99,9 @@ const getNoteMenu = (contributions: readonly PathContribution[] = []): readonly 
     .map((one) => toContributedItem(one, one.group ?? GROUP.file))
 
   return [
-    ...getNoteCommand('read', GROUP.open),
+    ...getNoteCommand(COMMAND.openNote, GROUP.open),
     ...openContributed,
-    ...getNoteCommand('copy', GROUP.file),
+    ...getNoteCommand(COMMAND.copyNotePath, GROUP.file),
     ...newContributed,
     ...relationSubmenu,
     ...otherContributed,
@@ -109,7 +110,7 @@ const getNoteMenu = (contributions: readonly PathContribution[] = []): readonly 
 }
 
 /** What a row standing for anything but a note offers. */
-const FILED: readonly PathItem[] = [...getNoteCommand('copy', GROUP.file), REMOVE]
+const FILED: readonly PathItem[] = [...getNoteCommand(COMMAND.copyNotePath, GROUP.file), REMOVE]
 
 const getFileMenu = (contributions: readonly PathContribution[] = []): readonly PathItem[] => {
   const openContributed = contributions

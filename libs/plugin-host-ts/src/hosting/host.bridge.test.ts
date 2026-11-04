@@ -121,7 +121,7 @@ describe('command handlers', () => {
     })
 
     await expect(
-      host.executeCommand('plugin:run', { path: '', title: '', type: 'note' }),
+      host.executeCommand('cmd.plugin:run', { path: '', title: '', type: 'note' }),
     ).resolves.toBe(true)
     expect(onError).toHaveBeenCalledWith('cmd.plugin', fault)
   })
@@ -140,10 +140,10 @@ describe('a command over a note', () => {
       handler,
     })
 
-    await host.executeCommand('plugin:summary', NOTE)
+    await host.executeCommand('cmd.plugin:summary', NOTE)
 
     expect(host.getPaletteCommands()).toStrictEqual([
-      { id: 'plugin:summary', title: 'Open summary', scope: 'note' },
+      { id: 'cmd.plugin:summary', title: 'Open summary', scope: 'note' },
     ])
     expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE)
   })
@@ -277,7 +277,7 @@ describe('a tab kind component', () => {
     })
     expect(host.getPaletteCommands()).toStrictEqual([
       {
-        id: 'plugin:rich',
+        id: 'reader.plugin:rich',
         title: 'Rich',
         shortcut: 'ctrl+b',
         scope: 'note',
@@ -319,7 +319,7 @@ describe('a tab kind component', () => {
       },
     })
     await expect(
-      bareHost.executeCommand('fail-quietly', { path: '', title: '', type: 'note' }),
+      bareHost.executeCommand('bare:fail-quietly', { path: '', title: '', type: 'note' }),
     ).resolves.toBe(true)
   })
 })

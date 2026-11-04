@@ -25,7 +25,7 @@ export function activate(context: PluginContext): void {
   context.onVaultChange((event) => trees.refresh(event))
 
   context.registerCommand({
-    id: 'files',
+    id: 'tree.open',
     title: WORDS.showFiles,
     shortcut: 'mod+shift+e',
     icon: FolderTree,
@@ -34,7 +34,7 @@ export function activate(context: PluginContext): void {
     },
   })
   context.registerCommand({
-    id: 'reveal',
+    id: 'tree.reveal-note',
     title: WORDS.reveal,
     scope: NOTE_SCOPE,
     icon: FolderOpen,

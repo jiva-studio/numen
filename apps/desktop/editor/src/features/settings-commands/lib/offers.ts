@@ -10,6 +10,7 @@ import type { StepGroup, StepRow } from '@/shared/steps'
 import { MODES, ladder, parseSize, isInBounds } from '@/entities/settings'
 import type { Mode, Ranges, Sizes, Theme } from '@/entities/settings'
 import type { AppearanceWords } from '../words'
+import { COMMAND } from '@/shared/commandIds'
 import { INTERFACE_SCALE, TEXT_SCALE, getModeId, getSizeId, its } from './appearanceValues'
 import type { ScaleKind } from './appearanceValues'
 
@@ -147,7 +148,7 @@ export const getSizeGroups = (
   context: SizeGroupContext,
 ): readonly StepGroup[] => {
   const { sizes, bounds, words } = context
-  const which: ScaleKind = command === TEXT_SCALE ? TEXT_SCALE : INTERFACE_SCALE
+  const which: ScaleKind = command === COMMAND.chooseTextSize ? TEXT_SCALE : INTERFACE_SCALE
   const range = its(bounds, which)
   const now = its(sizes, which)
   const parsedSize = parseSize(text)
