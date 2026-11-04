@@ -2,6 +2,7 @@ package editor
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,9 +20,20 @@ import (
 // returns a client for it.
 func newTabLinksClient(t *testing.T, state *State) numenv1connect.WorkspaceServiceClient {
 	t.Helper()
-	state.TabLinks = tablinks.NewRegistry(detachGrace, func(time.Duration, func()) func() bool {
+	return serveTabLinks(t, state, func(time.Duration, func()) func() bool {
 		return func() bool { return true }
 	})
+}
+
+// serveTabLinks serves the workspace with tab links on the schedule and returns
+// a client for it.
+func serveTabLinks(t *testing.T, state *State, schedule tablinks.Schedule) numenv1connect.WorkspaceServiceClient {
+	t.Helper()
+	tabLinks, err := tablinks.NewRegistry(linkGrace, schedule)
+	if err != nil {
+		t.Fatal(err)
+	}
+	state.TabLinks = tabLinks
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewWorkspaceServiceHandler(&workspaceHandler{state: state}))
 	server := httptest.NewServer(mux)
@@ -141,9 +153,16 @@ func TestDetachTabKeepsGroupInNewWindow(t *testing.T) {
 	}
 }
 
-func TestCancelWatchTabLinksEndsStreamAndUnlinksWindowTabs(t *testing.T) {
+func TestCancelWatchTabLinksUnlinksWindowTabsAfterGrace(t *testing.T) {
 	state := &State{}
-	client := newTabLinksClient(t, state)
+	expiries := make(chan func(), 8)
+	client := serveTabLinks(t, state, func(_ time.Duration, f func()) func() bool {
+		select {
+		case expiries <- f:
+		default:
+		}
+		return func() bool { return false }
+	})
 	ctx, cancel := context.WithTimeout(t.Context(), testsupport.Patience)
 	defer cancel()
 	stream, err := client.WatchTabLinks(ctx, connect.NewRequest(&v1.WatchTabLinksRequest{WindowId: "window-b"}))
@@ -171,7 +190,18 @@ func TestCancelWatchTabLinksEndsStreamAndUnlinksWindowTabs(t *testing.T) {
 	if err := stream.Err(); err != nil {
 		t.Errorf("the stream ended with %v after %d messages", err, queued)
 	}
-	testsupport.WaitFor(t, func() bool { return len(state.TabLinks.GetSnapshot().Groups) == 0 })
+	select {
+	case expire := <-expiries:
+		if len(state.TabLinks.GetSnapshot().Groups) != 1 {
+			t.Fatal("the tabs of window-b left their group before the grace period ended")
+		}
+		expire()
+	case <-ctx.Done():
+		t.Fatal("the end of the watch scheduled no removal of window-b")
+	}
+	if groups := state.TabLinks.GetSnapshot().Groups; len(groups) != 0 {
+		t.Errorf("groups are %+v, want none", groups)
+	}
 }
 
 func TestWatchTabLinksRequiresAWindowID(t *testing.T) {
@@ -212,5 +242,26 @@ func openWatch(t *testing.T, client numenv1connect.WorkspaceServiceClient, windo
 	t.Cleanup(func() { testsupport.Close(t, stream) })
 	if !stream.Receive() {
 		t.Fatalf("the watch of %s sent no snapshot: %v", windowID, stream.Err())
+	}
+}
+
+func TestFailedDetachTabDropsTabClosedInItsWindow(t *testing.T) {
+	errNoWindow := errors.New("no window opened")
+	state := &State{DetachTab: func(context.Context, DetachedTab) error { return errNoWindow }}
+	client := newTabLinksClient(t, state)
+	openWatch(t, client, "window-a")
+	writeTabs(t, client, "window-a",
+		&v1.LinkableTab{Id: "plex:1", Kind: "plex", Title: "Orbits"},
+		&v1.LinkableTab{Id: "plex:2", Kind: "plex", Title: "Tides"})
+	linkTabs(t, client, "plex:1", "plex:2")
+
+	_, err := client.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{Id: "plex:2", Kind: "plex"}))
+	if err == nil {
+		t.Fatal("the detach succeeded with no window opened")
+	}
+	writeTabs(t, client, "window-a", &v1.LinkableTab{Id: "plex:1", Kind: "plex", Title: "Orbits"})
+
+	if groups := state.TabLinks.GetSnapshot().Groups; len(groups) != 0 {
+		t.Errorf("groups are %+v, want none once plex:2 closed", groups)
 	}
 }

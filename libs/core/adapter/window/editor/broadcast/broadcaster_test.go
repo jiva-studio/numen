@@ -63,3 +63,32 @@ func TestInflightBeginsAndFinishes(t *testing.T) {
 		t.Fatal("expected begin to fail after seal")
 	}
 }
+
+func TestOrderedBroadcasterQueuesSupersedingMessageLast(t *testing.T) {
+	type message struct{ topic, text string }
+	bcast := Broadcaster[message]{
+		IsLatest:  true,
+		IsOrdered: true,
+		GetTopic:  func(m message) string { return m.topic },
+		Capacity:  8,
+	}
+	line, isDone := bcast.Subscribe()
+	defer isDone()
+
+	bcast.Publish(message{"a", "a1"})
+	bcast.Publish(message{"b", "b1"})
+	bcast.Publish(message{"a", "a2"})
+
+	isB1Received := false
+	for got := range line {
+		switch got.text {
+		case "b1":
+			isB1Received = true
+		case "a2":
+			if !isB1Received {
+				t.Fatal("a2 arrived before b1, which was published before it")
+			}
+			return
+		}
+	}
+}

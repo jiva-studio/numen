@@ -13,9 +13,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 )
 
-// detachGrace is how long a detached tab keeps its links before a window
-// reports it.
-const detachGrace = 30 * time.Second
+// linkGrace is how long a detached tab, and the tabs of a window whose last
+// watch ended, keep their links before a window reports them.
+const linkGrace = 30 * time.Second
 
 var (
 	errNoTabLinks = errors.New("this build serves no tab links")
@@ -23,7 +23,8 @@ var (
 )
 
 // WatchTabLinks streams the tab links to a window until the window cancels the
-// watch or disconnects. When the stream ends, the tabs of the window are unlinked.
+// watch or disconnects. When the last stream of the window ends, its tabs are
+// unlinked unless the window watches again within the grace period.
 func (h *workspaceHandler) WatchTabLinks(
 	ctx context.Context,
 	r *connect.Request[v1.WatchTabLinksRequest],

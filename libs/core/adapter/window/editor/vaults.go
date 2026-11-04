@@ -257,7 +257,8 @@ func (h *workspaceHandler) DetachTab(
 	if h.state.DetachTab == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errors.New("tab tear-off not supported"))
 	}
-	if h.state.TabLinks != nil && r.Msg.GetId() != "" {
+	isLinkable := h.state.TabLinks != nil && r.Msg.GetId() != ""
+	if isLinkable {
 		h.state.TabLinks.Detach(r.Msg.GetId())
 	}
 	if err := h.state.DetachTab(ctx, DetachedTab{
@@ -267,6 +268,9 @@ func (h *workspaceHandler) DetachTab(
 		X:    int(r.Msg.GetX()),
 		Y:    int(r.Msg.GetY()),
 	}); err != nil {
+		if isLinkable {
+			h.state.TabLinks.CancelDetach(r.Msg.GetId())
+		}
 		return nil, err
 	}
 	return connect.NewResponse(&v1.DetachTabResponse{}), nil

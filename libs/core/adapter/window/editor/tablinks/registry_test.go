@@ -3,6 +3,7 @@ package tablinks
 import (
 	"reflect"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 )
@@ -42,7 +43,11 @@ const grace = 30 * time.Second
 
 func newTestRegistry() (*Registry, *timers) {
 	clock := &timers{}
-	return NewRegistry(grace, clock.schedule), clock
+	r, err := NewRegistry(grace, clock.schedule)
+	if err != nil {
+		panic(err)
+	}
+	return r, clock
 }
 
 func plex(id, title string) Tab  { return Tab{ID: id, Kind: "plex", Title: title} }
@@ -161,8 +166,8 @@ func TestWriteTabsUnlinksTabMissingFromReport(t *testing.T) {
 	}
 }
 
-func TestCloseOfLastWatchUnlinksWindowTabs(t *testing.T) {
-	r, _ := newTestRegistry()
+func TestCloseOfLastWatchUnlinksWindowTabsAfterGracePeriod(t *testing.T) {
+	r, clock := newTestRegistry()
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	watch := r.Watch("window-b")
 	writeTabs(r, "window-b", []Tab{files("files:1", "Files")})
@@ -170,6 +175,10 @@ func TestCloseOfLastWatchUnlinksWindowTabs(t *testing.T) {
 	r.Link("plex:2", "files:1")
 
 	watch.Close()
+	if want := [][]string{{"plex:1", "files:1", "plex:2"}}; !reflect.DeepEqual(getGroupTabs(r.GetSnapshot()), want) {
+		t.Fatalf("groups are %v before the grace period ended, want %v", getGroupTabs(r.GetSnapshot()), want)
+	}
+	clock.fireAll()
 
 	got := r.GetSnapshot()
 	if want := [][]string{{"plex:1", "plex:2"}}; !reflect.DeepEqual(getGroupTabs(got), want) {
@@ -481,5 +490,182 @@ func TestSlowWatchReceivesLastSyncOfEachGroup(t *testing.T) {
 		if path != "last.md" {
 			t.Errorf("group %s last moved to %q, want last.md", group, path)
 		}
+	}
+}
+
+func TestNewRegistryRequiresASchedule(t *testing.T) {
+	if _, err := NewRegistry(grace, nil); err == nil {
+		t.Error("a registry with no schedule was made")
+	}
+}
+
+func TestWriteTabsAfterReloadKeepsTabsOfTheNewWindow(t *testing.T) {
+	r, _ := newTestRegistry()
+	old := r.Watch("window-old")
+	r.WriteTabs("window-old", []Tab{plex("plex:1", "A")})
+	reloaded := r.Watch("window-new")
+	defer reloaded.Close()
+
+	r.WriteTabs("window-new", []Tab{plex("plex:1", "A")})
+	old.Close()
+
+	got := r.GetSnapshot()
+	if want := []string{"plex:1"}; !reflect.DeepEqual(getTabIDs(got), want) {
+		t.Fatalf("tabs are %v, want %v", getTabIDs(got), want)
+	}
+	if got.Tabs[0].WindowID != "window-new" {
+		t.Errorf("plex:1 is in window %q, want window-new", got.Tabs[0].WindowID)
+	}
+}
+
+func TestRemovalOfReloadedWindowKeepsTabsOfTheNewWindow(t *testing.T) {
+	r, clock := newTestRegistry()
+	old := r.Watch("window-old")
+	r.WriteTabs("window-old", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
+	r.Link("plex:1", "plex:2")
+	old.Close()
+	reloaded := r.Watch("window-new")
+	defer reloaded.Close()
+
+	r.WriteTabs("window-new", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
+	clock.fireAll()
+
+	if want := [][]string{{"plex:1", "plex:2"}}; !reflect.DeepEqual(getGroupTabs(r.GetSnapshot()), want) {
+		t.Errorf("groups are %v, want %v", getGroupTabs(r.GetSnapshot()), want)
+	}
+}
+
+func TestWatchDeliversSnapshotBeforeLaterSync(t *testing.T) {
+	r, _ := newTestRegistry()
+	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B"), plex("plex:3", "C")})
+	r.Link("plex:1", "plex:2")
+	watch := r.Watch("window-b")
+	defer watch.Close()
+
+	r.SyncPath("plex:1", "first.md", "")
+	r.Link("plex:1", "plex:3")
+	r.SyncPath("plex:1", "second.md", "")
+
+	isLinkReceived := false
+	for {
+		select {
+		case event := <-watch.Events:
+			if event.Snapshot != nil && reflect.DeepEqual(getGroupTabs(*event.Snapshot), [][]string{{"plex:1", "plex:2", "plex:3"}}) {
+				isLinkReceived = true
+			}
+			if event.Sync != nil && event.Sync.Path == "second.md" {
+				if !isLinkReceived {
+					t.Fatal("the sync to second.md arrived before the snapshot that adds plex:3")
+				}
+				return
+			}
+		case <-time.After(5 * time.Second):
+			t.Fatal("no sync to second.md arrived")
+		}
+	}
+}
+
+func TestReconnectKeepsLinksOfTheWindow(t *testing.T) {
+	r, clock := newTestRegistry()
+	first := r.Watch("window-a")
+	r.WriteTabs("window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
+	r.Link("plex:1", "plex:2")
+
+	first.Close()
+	second := r.Watch("window-a")
+	defer second.Close()
+	r.WriteTabs("window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
+	clock.fireAll()
+
+	if want := [][]string{{"plex:1", "plex:2"}}; !reflect.DeepEqual(getGroupTabs(r.GetSnapshot()), want) {
+		t.Errorf("groups are %v, want %v", getGroupTabs(r.GetSnapshot()), want)
+	}
+}
+
+func TestFailedDetachDropsTabClosedInItsWindow(t *testing.T) {
+	r, _ := newTestRegistry()
+	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B"), plex("plex:3", "C")})
+	r.Link("plex:1", "plex:2")
+	r.Link("plex:1", "plex:3")
+	r.Detach("plex:2")
+
+	r.CancelDetach("plex:2")
+	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:3", "C")})
+
+	if want := []string{"plex:1", "plex:3"}; !reflect.DeepEqual(getTabIDs(r.GetSnapshot()), want) {
+		t.Errorf("tabs are %v, want %v", getTabIDs(r.GetSnapshot()), want)
+	}
+}
+
+func TestCancelDetachDropsTabItsWindowNoLongerReports(t *testing.T) {
+	r, _ := newTestRegistry()
+	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
+	r.Link("plex:1", "plex:2")
+	r.Detach("plex:2")
+	writeTabs(r, "window-a", []Tab{plex("plex:1", "A")})
+
+	r.CancelDetach("plex:2")
+
+	if len(r.GetSnapshot().Groups) != 0 {
+		t.Errorf("groups are %+v, want none", r.GetSnapshot().Groups)
+	}
+}
+
+// expiries is a Schedule backed by time.AfterFunc whose runs a test can wait for.
+type expiries struct{ running sync.WaitGroup }
+
+func (s *expiries) schedule(d time.Duration, f func()) func() bool {
+	s.running.Add(1)
+	timer := time.AfterFunc(d, func() {
+		defer s.running.Done()
+		f()
+	})
+	return func() bool {
+		if !timer.Stop() {
+			return false
+		}
+		s.running.Done()
+		return true
+	}
+}
+
+func TestConcurrentWatchWriteDetachAndCloseDoNotRace(t *testing.T) {
+	clock := &expiries{}
+	r, err := NewRegistry(time.Millisecond, clock.schedule)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var windows sync.WaitGroup
+	for index := range 40 {
+		windows.Go(func() {
+			window := "window-" + strconv.Itoa(index)
+			watch := r.Watch(window)
+			drained := make(chan struct{})
+			go func() {
+				defer close(drained)
+				for range watch.Events {
+				}
+			}()
+			own := plex("plex:"+strconv.Itoa(index), "T")
+			shared := plex("plex:shared", "S")
+			for range 50 {
+				r.WriteTabs(window, []Tab{own, shared})
+				r.Link(own.ID, "plex:shared")
+				r.SyncPath(own.ID, "a.md", "")
+				r.Detach(own.ID)
+				r.CancelDetach(own.ID)
+				r.Detach(own.ID)
+				r.Unlink(own.ID)
+			}
+			r.Cancel(window)
+			watch.Close()
+			<-drained
+		})
+	}
+	windows.Wait()
+	clock.running.Wait()
+
+	if tabs := r.GetSnapshot().Tabs; len(tabs) != 0 {
+		t.Errorf("tabs are %+v, want none once every window closed", tabs)
 	}
 }
