@@ -37,8 +37,8 @@
   --on-deep-muted: #c4b5a3;
   --footer-border: #3a2e25;
   --footer-muted: #ad9f8f;
-  --font-body: 'Avenir Next', Avenir, 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-display: 'Avenir Next', Avenir, 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Nunito Sans Variable', sans-serif;
+  --font-display: 'Nunito Sans Variable', sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 }
 
@@ -83,7 +83,19 @@
 
 /* ---------------------------------- Base ---------------------------------- */
 :root {
-  font-size: clamp(100%, 55% + 0.5vw, 130%);
+  font-size: 16px;
+}
+
+@media (min-width: 90rem) {
+  :root {
+    font-size: 18px;
+  }
+}
+
+@media (min-width: 120rem) {
+  :root {
+    font-size: 20px;
+  }
 }
 
 @layer base {
@@ -402,7 +414,9 @@ body > footer .brand-logo {
   font-size: 0.95rem;
   cursor: pointer;
   box-shadow: 0 0.3rem var(--lime-shadow);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .button:hover {
@@ -435,7 +449,10 @@ body > footer .brand-logo {
   font-size: 0.95rem;
   cursor: pointer;
   box-shadow: 0 0.3rem var(--border-strong);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
 }
 
 .button-secondary:hover {
