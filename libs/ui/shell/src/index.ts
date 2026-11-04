@@ -30,3 +30,7 @@ export type { StatusBarTask } from './features/status-bar'
 /** The screen a window opens on, and the letter a vault on it is opened by. */
 export { WelcomePage, getVaultForKey } from './features/welcome'
 export type { VaultRow, WelcomeAction } from './features/welcome'
+
+/** The bar every window draws at its top, with its actions and the window controls. */
+export { TitleBar } from './features/title-bar'
+export type { ControlsStyle, TitleBarAction, TitleBarWords } from './features/title-bar'
