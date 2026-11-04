@@ -209,11 +209,13 @@ describe('a field being typed into', () => {
     expect(create(null).entry.typed.value).toBe('')
   })
 
-  it('brings a number the bounds do not hold in, and writes it out', () => {
-    const { model, entry } = create(900)
+  it('brings a number the bounds do not hold in, and writes it out', async () => {
+    const { model, onCommit, entry } = create(900)
 
     expect(model.value).toBe(240)
     expect(entry.typed.value).toBe('240')
+    await entry.commit()
+    expect(onCommit).not.toHaveBeenCalled()
   })
 
   it('leaves what was typed standing and the number alone until it is allowed', () => {
@@ -238,7 +240,7 @@ describe('a field being typed into', () => {
   it('refuses a word and a number past the ends, and not a number on its way', () => {
     const { entry } = create(10)
 
-    entry.setText('abc')
+    entry.setText(' abc ')
     expect(entry.isInvalid.value).toBe(true)
     expect(entry.speechText.value).toBe('abc')
 
@@ -262,6 +264,13 @@ describe('a field being typed into', () => {
 
     await entry.commit()
     expect(onCommit).toHaveBeenCalledTimes(1)
+
+    onCommit.mockImplementationOnce(() => {
+      entry.setText('20.0')
+    })
+    entry.setText('20')
+    await entry.commit()
+    expect(entry.typed.value).toBe('20.0')
   })
 
   it('writes out a number set from outside, and leaves typing that means it alone', async () => {

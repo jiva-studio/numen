@@ -247,12 +247,33 @@ describe('a note whose file is about to be renamed or removed', () => {
   it('writes what is unsaved before it answers', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
-    const notes = openNotes(core, { limits: { quiet: 10_000, bound: 10_000 } })
+    let releaseWrite: () => void = vi.fn()
+    const writeGate = new Promise<void>((done) => {
+      releaseWrite = done
+    })
+    const notes = openNotes(
+      {
+        ...core,
+        write: async (path, body, seen) => {
+          await writeGate
+          return core.write(path, body, seen)
+        },
+      },
+      { limits: { quiet: 10_000, bound: 10_000 } },
+    )
     notes.open('Heat.md')
     await settle()
 
     notes.setBody('Heat.md', 'one two')
-    await notes.flushPending('Heat.md')
+    let isFlushed = false
+    const flushing = notes.flushPending('Heat.md').then(() => {
+      isFlushed = true
+    })
+    await settle()
+    expect(isFlushed).toBe(false)
+
+    releaseWrite()
+    await flushing
 
     expect(wrote).toEqual([{ path: 'Heat.md', body: 'one two' }])
     expect(notes.getOpenNote('Heat.md').state).toBe('clean')

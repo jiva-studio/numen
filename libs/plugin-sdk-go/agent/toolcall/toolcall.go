@@ -82,6 +82,7 @@ func Describe(words map[string]Declaration, name, call, args string) *ToolCall {
 // readRange is the run of a source's text a call names, read once the arguments parse whole.
 func readRange(args string) *Range {
 	var parsed map[string]any
+	// gomutants:disable-next-line BRANCH_IF reason="an unparsed map leaves length zero, which returns nil on the range check"
 	if err := json.Unmarshal([]byte(args), &parsed); err != nil {
 		return nil
 	}
@@ -138,6 +139,7 @@ func describeCollection(value []any, inside string) string {
 // readCallDetails is what an undeclared call is about, the file it names and the span inside it,
 // read from the arguments whole or as far as they have arrived.
 func readCallDetails(args string) (string, string, *Range) {
+	// gomutants:disable-next-line BRANCH_IF reason="empty args fails unmarshal and every partial field lookup, returning empty details"
 	if args == "" {
 		return "", "", nil
 	}
@@ -162,10 +164,12 @@ func readCallDetails(args string) (string, string, *Range) {
 	}
 
 	var span *Range
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="bitSize 32 bounds signed 32-bit integers before the MaxInt32 range check"
 	start, err := strconv.ParseInt(ReadPartialField(args, "start"), 10, 32)
 	if err != nil {
 		return about, path, nil
 	}
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="bitSize 32 bounds signed 32-bit integers before the MaxInt32 range check"
 	length, err := strconv.ParseInt(ReadPartialField(args, "length"), 10, 32)
 	if err == nil && start >= 0 && length >= 0 && start <= math.MaxInt32-length {
 		span = &Range{Start: int32(start), End: int32(start + length)}
@@ -198,20 +202,18 @@ func readWholeCallDetails(parsed map[string]any, args string) (string, string, *
 
 // readNumber returns the number under key, or 0 when the key is absent or not a number.
 func readNumber(values map[string]any, key string) float64 {
-	number, isNumber := values[key].(float64)
-	if !isNumber {
-		return 0
+	if number, ok := values[key].(float64); ok {
+		return number
 	}
-	return number
+	return 0
 }
 
 // readText returns value when it is a string, or "" otherwise.
 func readText(value any) string {
-	text, isString := value.(string)
-	if !isString {
-		return ""
+	if text, ok := value.(string); ok {
+		return text
 	}
-	return text
+	return ""
 }
 
 // readFirstString returns the first of keys whose value in parsed is a string.

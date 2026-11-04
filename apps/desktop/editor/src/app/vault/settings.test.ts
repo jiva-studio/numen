@@ -72,6 +72,8 @@ describe('every setting', () => {
       isDefault: true,
       writes: [{ at: ['indexing', 'model', 'name'], value: '"e5-small-int8"', extra: 1 }],
       presence: MODEL_PRESENCE.NOT_FETCHED,
+      reasoningLevels: [{ name: 'high', title: 'High' }],
+      defaultReasoning: 'high',
       extra: 'not the window’s',
     }
     request.getSettings.mockResolvedValue(answer({ a: 1 }, { models: [model] }))
@@ -88,8 +90,8 @@ describe('every setting', () => {
           isDefault: true,
           writes: [{ at: ['indexing', 'model', 'name'], value: '"e5-small-int8"' }],
           presence: 'not fetched',
-          reasoningLevels: [],
-          defaultReasoning: undefined,
+          reasoningLevels: [{ name: 'high', title: 'High' }],
+          defaultReasoning: 'high',
         },
       ],
       plugins: [],
@@ -123,14 +125,16 @@ describe('every setting', () => {
                   description: 'Run automatically',
                   defaultJson: 'true',
                   palette: true,
-                  options: [],
+                  icon: 'sparkles',
+                  multiple: true,
+                  options: [{ value: 'on', title: 'On', detail: 'Always' }],
                 },
                 {
                   key: 'language',
                   type: 'enum',
                   title: 'Language',
                   description: '',
-                  defaultJson: '',
+                  defaultJson: '{bad',
                   palette: false,
                   options: [],
                   optionsBy: {
@@ -172,7 +176,9 @@ describe('every setting', () => {
             description: 'Run automatically',
             default: true,
             palette: true,
-            options: undefined,
+            icon: 'sparkles',
+            multiple: true,
+            options: [{ value: 'on', title: 'On', detail: 'Always' }],
             optionsBy: undefined,
             when: undefined,
             accept: undefined,
@@ -271,6 +277,8 @@ describe('a plugin the host suspends', () => {
       detail: 'handshake timeout',
       failedAt: 1_700_000_000_123,
     })
+    expect(got.plugins?.[0]?.readers).toStrictEqual([])
+    expect(got.plugins?.[0]?.settingsViews).toStrictEqual([])
   })
 
   it('is started again by its id, and the answer is why it failed again', async () => {

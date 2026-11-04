@@ -3,7 +3,7 @@
  * the sizes are substituted.
  */
 import { mount } from '@vue/test-utils'
-import { defineComponent, h, nextTick, shallowRef } from 'vue'
+import { defineComponent, h, nextTick, shallowRef, triggerRef } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Size } from '../math/geometry'
 import { browserViewport, useFreeSpace, useViewport, useWholeViewport } from './viewport'
@@ -331,11 +331,20 @@ describe('an element that is replaced', () => {
   it('is watched once however it evaluates to stand', async () => {
     const watchers = stubResizeObserver()
     const one = mountViewport(null)
+    const element = viewElement(200, 100)
 
-    one.element.value = viewElement(200, 100)
+    one.element.value = element
+    await nextTick()
+    triggerRef(one.element)
     await nextTick()
 
     expect(watchers).toHaveLength(1)
+    expect(watchers[0]!.disconnected).toBe(false)
+
+    one.element.value = null
+    await nextTick()
+    expect(watchers).toHaveLength(1)
+    expect(watchers[0]!.disconnected).toBe(true)
     one.wrapper.unmount()
   })
 })
@@ -354,6 +363,7 @@ describe('the whole room of one element of a component', () => {
       }),
     )
 
+    expect(target.viewport!.viewport.value).toStrictEqual({ width: 0, height: 0 })
     tellBorder(watchers[0]!, 90, 40)
     expect(target.viewport!.viewport.value).toStrictEqual({ width: 90, height: 40 })
 
@@ -378,6 +388,14 @@ describe('the room of the window, retained by a component', () => {
     )
     return { wrapper, ...target.room! }
   }
+
+  it('starts at zero before the port reports a size', () => {
+    const stop = vi.fn()
+    const one = mountFreeSpace({ ...browserViewport, watchFreeSpace: () => stop })
+    expect(one.room.value).toStrictEqual({ width: 0, height: 0 })
+    one.wrapper.unmount()
+    expect(stop).toHaveBeenCalledTimes(1)
+  })
 
   it('is measured when the component is drawn, and at every resize', () => {
     const onChange = createSizes()

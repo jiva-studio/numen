@@ -2,8 +2,9 @@ import { describe, expect, it, vi } from 'vitest'
 import type { PluginContext, PluginLifecycle } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { LoaderHost } from './host'
-import { getPluginStyle } from './styles'
+import { getPluginStyle, registerPluginStyle } from './styles'
 import { createPluginLoader, PLUGIN_WAIT_MS } from './loader'
+import { getLifecycleHooks, resolveModule } from './module'
 
 /** The loader, with a module registered under each plugin id. */
 function registerModules(
@@ -157,6 +158,14 @@ describe('createPluginLoader', () => {
     await loader.close()
     expect(loader.isPluginActive('p1')).toBe(false)
     expect(host.disposeAll).toHaveBeenCalled()
+
+    await host.triggerSettingChange('p1', 'enabled', true)
+    expect(loader.isPluginActive('p1')).toBe(false)
+
+    await loader.start()
+    expect(activatedCount).toBe(2)
+    await host.triggerSettingChange('p1', 'enabled', false)
+    expect(loader.isPluginActive('p1')).toBe(false)
   })
 
   it('does not activate disabled plugins on start', async () => {
@@ -325,7 +334,7 @@ describe('createPluginLoader catalog manifests', () => {
       'cat.plugin': async () => ({ activate: () => undefined }),
     })
     loader.registerPluginManifest('cat.plugin', manifest)
-    await loader.activatePlugin('cat.plugin')
+    await loader.start()
     expect(createContext).toHaveBeenCalledWith('cat.plugin', manifest)
   })
 })
@@ -399,7 +408,9 @@ describe('createPluginLoader failures, order and toggles', () => {
     await loader.activatePlugin('flaky')
 
     expect(loader.getPluginFailure('flaky')).toBeUndefined()
+    expect(loader.getFailedPlugins()).toEqual([])
     expect(loader.isPluginActive('flaky')).toBe(true)
+    expect(await loader.activatePlugin('flaky')).toBe(true)
   })
 
   it('does not call a failed plugin active when its module cannot be loaded', async () => {
@@ -425,7 +436,7 @@ describe('createPluginLoader failures, order and toggles', () => {
     const make = (id: string) => async () => ({
       activate: async () => {
         log.push(`${id}:start`)
-        await Promise.resolve()
+        await new Promise((resolve) => setTimeout(resolve, 10))
         log.push(`${id}:end`)
       },
     })
@@ -634,7 +645,217 @@ describe('createPluginLoader failures, order and toggles', () => {
       fetch: (async () => ({ ok: false, status: 404 }) as Response) as unknown as typeof fetch,
     })
     await loader.activatePlugin('lost')
-    expect(loader.getPluginFailure('lost')).toContain('404')
+    expect(loader.getPluginFailure('lost')).toBe('manifest.json of plugin "lost" answered 404')
+  })
+
+  it('fails a dynamic plugin whose manifest.json is invalid JSON', async () => {
+    const { host } = createHost()
+    const loader = createPluginLoader({
+      host,
+      onError: vi.fn(),
+      fetch: (async () =>
+        ({
+          ok: true,
+          text: async () => '{invalid',
+        }) as Response) as unknown as typeof fetch,
+    })
+    await loader.activatePlugin('corrupt')
+    expect(loader.getPluginFailure('corrupt')).toContain(
+      'manifest.json of plugin "corrupt" is invalid:',
+    )
+  })
+
+  it('cleans up styles on activation failure, non-Error throws, and unactivated deactivations', async () => {
+    const { host } = createHost()
+    const onError = vi.fn()
+    const loader = createPluginLoader({
+      host,
+      onError,
+      fetch: (async () =>
+        ({
+          ok: true,
+          text: async () => JSON.stringify({ id: 'styled.bad', frontend: {} }),
+        }) as Response) as unknown as typeof fetch,
+      dynamicImport: async () => ({
+        activate: () => {
+          throw 'string fault'
+        },
+      }),
+    })
+
+    expect(await loader.activatePlugin('styled.bad')).toBe(false)
+    expect(getPluginStyle('styled.bad')).toBeUndefined()
+    expect(loader.getPluginFailure('styled.bad')).toBe('the plugin threw a string, not an Error')
+
+    registerPluginStyle('never.active', '/plugin/never.active/dist/styles.css')
+    loader.registerPluginManifest('never.active', createMockManifest('never.active'))
+    expect(await loader.deactivatePlugin('never.active')).toBe(false)
+    expect(getPluginStyle('never.active')).toBeUndefined()
+    expect(host.disposePlugin).toHaveBeenCalledWith('never.active')
+    await loader.activatePlugin('never.active', { activate: () => undefined })
+    expect(host.createContext).toHaveBeenLastCalledWith('never.active', undefined)
+  })
+
+  it('handles deactivation errors and plugins without activate or deactivate hooks', async () => {
+    const { host } = createHost()
+    const onError = vi.fn()
+    const deactivateFault = new Error('deactivate boom')
+    let manifestFetches = 0
+    const loader = createPluginLoader({
+      host,
+      onError,
+      fetch: (async () => {
+        manifestFetches++
+        return {
+          ok: true,
+          text: async () => JSON.stringify({ id: 'dyn.throw', frontend: {} }),
+        } as Response
+      }) as unknown as typeof fetch,
+      dynamicImport: async () => ({
+        deactivate: () => {
+          throw deactivateFault
+        },
+      }),
+    })
+
+    expect(await loader.activatePlugin('dyn.throw')).toBe(true)
+    expect(await loader.deactivatePlugin('dyn.throw')).toBe(true)
+    expect(onError).toHaveBeenCalledWith('dyn.throw', deactivateFault)
+    expect(loader.isPluginActive('dyn.throw')).toBe(false)
+
+    // Re-activating with inline module after deactivation uses undefined manifest because deactivate deleted it
+    await loader.activatePlugin('dyn.throw', { activate: () => undefined })
+    expect(host.createContext).toHaveBeenLastCalledWith('dyn.throw', undefined)
+    await loader.deactivatePlugin('dyn.throw')
+
+    // Re-activating dynamically re-runs loadDynamicModule and passes the newly fetched manifest
+    await loader.activatePlugin('dyn.throw')
+    expect(manifestFetches).toBe(2)
+
+    // Deactivating a plugin without deactivate hook does not report an error
+    loader.registerPluginModule('no.hooks', async () => ({}))
+    expect(await loader.activatePlugin('no.hooks')).toBe(true)
+    expect(host.createContext).not.toHaveBeenCalledWith('no.hooks', expect.anything())
+    expect(await loader.deactivatePlugin('no.hooks')).toBe(true)
+    expect(onError).toHaveBeenCalledTimes(1)
+  })
+
+  it('handles registerPluginModule and trackPlugins before and after start and close', async () => {
+    const { host, listeners } = createHost({
+      'disabled.after.enabled': false,
+      'disabled.tracked.enabled': false,
+    })
+    let manifestCount = 0
+    const loader = createPluginLoader({
+      host,
+      fetch: (async (url: string | URL | Request) => {
+        manifestCount++
+        const isBackendOnly = String(url).includes('backend.only')
+        return {
+          ok: true,
+          text: async () =>
+            JSON.stringify(
+              isBackendOnly ? { id: 'backend.only' } : { id: 'tracked.one', frontend: {} },
+            ),
+        } as Response
+      }) as unknown as typeof fetch,
+      dynamicImport: async () => ({ activate: () => undefined }),
+    })
+
+    await loader.trackPlugins(['tracked.one', 'tracked.one', 'backend.only'])
+    expect(loader.isPluginActive('tracked.one')).toBe(false)
+    expect(host.onSettingChange).not.toHaveBeenCalled()
+
+    await loader.start()
+    expect(loader.isPluginActive('tracked.one')).toBe(true)
+    expect(loader.isPluginActive('backend.only')).toBe(false)
+    expect(manifestCount).toBe(2)
+
+    // Deactivating tracked.one and calling trackPlugins(['tracked.one']) again skips already-tracked id
+    await loader.deactivatePlugin('tracked.one')
+    await loader.trackPlugins(['tracked.one'])
+    expect(loader.isPluginActive('tracked.one')).toBe(false)
+
+    // Tracking a disabled plugin after start listens to settings without activating it
+    await loader.trackPlugins(['disabled.tracked'])
+    expect(loader.isPluginActive('disabled.tracked')).toBe(false)
+    expect(listeners.has('disabled.tracked')).toBe(true)
+
+    let lateActivated = false
+    loader.registerPluginModule('late.enabled', async () => ({
+      activate: () => {
+        lateActivated = true
+      },
+    }))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(lateActivated).toBe(true)
+    expect(listeners.has('late.enabled')).toBe(true)
+
+    let disabledActivated = false
+    loader.registerPluginModule('disabled.after', async () => ({
+      activate: () => {
+        disabledActivated = true
+      },
+    }))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(disabledActivated).toBe(false)
+    expect(listeners.has('disabled.after')).toBe(true)
+
+    await loader.trackPlugins(['disabled.after'])
+    await loader.close()
+
+    await loader.trackPlugins(['after.close'])
+    expect(loader.isPluginActive('after.close')).toBe(false)
+  })
+})
+
+describe('getLifecycleHooks and resolveModule', () => {
+  it('extracts activate and deactivate from module or default export', () => {
+    expect(getLifecycleHooks(null)).toEqual({})
+    expect(getLifecycleHooks(undefined)).toEqual({})
+    expect(getLifecycleHooks('string')).toEqual({})
+    expect(getLifecycleHooks(42)).toEqual({})
+
+    const activate = () => undefined
+    const deactivate = () => undefined
+    expect(getLifecycleHooks({ default: { activate, deactivate } })).toEqual({
+      activate,
+      deactivate,
+    })
+    expect(
+      getLifecycleHooks({
+        default: { activate: 'not-a-fn', deactivate: 123 },
+        activate,
+        deactivate,
+      }),
+    ).toEqual({ activate, deactivate })
+    expect(
+      getLifecycleHooks({
+        default: null,
+        activate: 'not-a-fn',
+        deactivate: 'not-a-fn',
+      }),
+    ).toEqual({ activate: undefined, deactivate: undefined })
+  })
+
+  it('resolves candidate modules and loader functions in resolveModule', async () => {
+    const ctx = {
+      baseUrl: '/plugin',
+      fetchFn: vi.fn() as unknown as typeof fetch,
+      importFn: vi.fn(),
+      manifests: new Map(),
+      loaders: new Map(),
+    }
+    const mod = { activate: () => undefined }
+    const defaultMod = { default: mod }
+    expect(await resolveModule('p', () => Promise.resolve(mod), ctx)).toBe(mod)
+    expect(await resolveModule('p', mod, ctx)).toBe(mod)
+    expect(await resolveModule('p', defaultMod, ctx)).toBe(defaultMod)
+
+    const fnWithActivate = Object.assign(() => Promise.resolve('called'), {
+      activate: () => undefined,
+    })
+    expect(await resolveModule('p', fnWithActivate, ctx)).toBe(fnWithActivate)
   })
 })
 

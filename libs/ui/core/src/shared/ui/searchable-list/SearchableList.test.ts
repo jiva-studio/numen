@@ -4,9 +4,10 @@
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import { nextTick } from 'vue'
+import { nextTick, ref } from 'vue'
 import SearchableList from './SearchableList.vue'
 import type { ListItem } from './rows'
+import { useListRows } from './useListRows'
 
 const MODELS: ListItem[] = [
   { id: 'opus', text: 'Opus 5.5', group: 'Claude Code' },
@@ -80,6 +81,9 @@ describe('the rows', () => {
     await getInput(list).setValue('zzz')
     expect(getOptions(list)).toHaveLength(0)
     expect(list.get('[role="status"]').text()).toBe('No models')
+    await press(list, 'Home')
+    await press(list, 'End')
+    expect(getActive(list)).toBe(-1)
   })
 
   it('say that an answer is awaited where none is there yet', () => {
@@ -183,8 +187,12 @@ describe('the keyboard', () => {
   })
 
   it('returns to the first row as the query changes', async () => {
-    const list = mountList()
+    const list = mountList({ modelValue: 'sonnet' })
+    expect(getActive(list)).toBe(1)
+    await press(list, 'ArrowUp')
+    expect(getActive(list)).toBe(0)
     await press(list, 'ArrowDown')
+    expect(getActive(list)).toBe(1)
     await getInput(list).setValue('5.5')
     expect(getActive(list)).toBe(0)
   })
@@ -192,6 +200,8 @@ describe('the keyboard', () => {
   it('does nothing on Enter where there is no row', async () => {
     const list = mountList()
     await getInput(list).setValue('zzz')
+    await press(list, 'ArrowDown')
+    await press(list, 'End')
     await press(list, 'Enter')
     expect(list.emitted('select')).toBeUndefined()
   })
@@ -294,5 +304,16 @@ describe('what it announces', () => {
     await getInput(list).setValue('zzz')
     expect(getInput(list).attributes('aria-expanded')).toBe('false')
     expect(getInput(list).attributes('aria-activedescendant')).toBeUndefined()
+
+    const emptyRows = useListRows({
+      query: ref(''),
+      items: () => [],
+      current: () => null,
+      isFiltered: () => false,
+      hasAction: () => false,
+      needsQuery: () => false,
+    })
+    emptyRows.moveToEnd(true)
+    expect(emptyRows.activeKey.value).toBeNull()
   })
 })

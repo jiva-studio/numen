@@ -92,11 +92,23 @@ func TestAMachineWithoutAKeychainFailsWithANamedError(t *testing.T) {
 func TestAKeyNeedsANameAndALiveContext(t *testing.T) {
 	keyring.MockInit()
 	store := Store{}
-	if err := store.SetKey(t.Context(), "", "value"); err == nil {
-		t.Error("a key without a name was stored")
+	if err := store.SetKey(t.Context(), "", "value"); !errors.Is(err, errEmptyName) {
+		t.Errorf("a key without a name was stored: %v", err)
+	}
+	if _, err := store.GetKey(t.Context(), ""); !errors.Is(err, errEmptyName) {
+		t.Errorf("a key without a name was read: %v", err)
+	}
+	if err := store.DeleteKey(t.Context(), ""); !errors.Is(err, errEmptyName) {
+		t.Errorf("a key without a name was deleted: %v", err)
 	}
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
+	if err := check(ctx, "n"); !errors.Is(err, context.Canceled) {
+		t.Errorf("check with canceled context = %v, want context.Canceled", err)
+	}
+	if err := store.SetKey(ctx, "", "value"); !errors.Is(err, context.Canceled) {
+		t.Errorf("error = %v, want context.Canceled", err)
+	}
 	if err := store.SetKey(ctx, "n", "value"); !errors.Is(err, context.Canceled) {
 		t.Errorf("error = %v, want context.Canceled", err)
 	}

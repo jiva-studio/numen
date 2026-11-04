@@ -36,6 +36,7 @@ export function canConstructSheets(): boolean {
   return (
     typeof CSSStyleSheet !== 'undefined' &&
     typeof CSSStyleSheet.prototype.replaceSync === 'function' &&
+    // Stryker disable next-line ConditionalExpression,StringLiteral: JSDOM always defines document
     typeof document !== 'undefined' &&
     'adoptedStyleSheets' in document
   )
@@ -49,7 +50,7 @@ export function createSheet(text: string, baseURL?: string): CSSStyleSheet | und
     sheet.replaceSync(text)
     return sheet
   } catch {
-    return undefined
+    // Invalid CSS or unsupported constructor options resolve to undefined.
   }
 }
 
@@ -87,7 +88,7 @@ export function adoptSheet(root: StyleRoot, sheet: CSSStyleSheet): () => void {
   const counts = adoptions.get(root) ?? new Map<CSSStyleSheet, number>()
   adoptions.set(root, counts)
   const count = counts.get(sheet) ?? 0
-  if (count === 0 && !root.adoptedStyleSheets.includes(sheet)) {
+  if (!root.adoptedStyleSheets.includes(sheet)) {
     root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet]
   }
   counts.set(sheet, count + 1)

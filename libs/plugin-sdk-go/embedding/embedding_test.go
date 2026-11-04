@@ -2,22 +2,33 @@ package embedding
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
 
+	"connectrpc.com/connect"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 type fakeHandler struct {
 	info  ModelInfo
 	roles *[]Role
+	err   error
 }
 
-func (f fakeHandler) GetModelInfo(context.Context) (ModelInfo, error) { return f.info, nil }
+func (f fakeHandler) GetModelInfo(context.Context) (ModelInfo, error) {
+	if f.err != nil {
+		return ModelInfo{}, f.err
+	}
+	return f.info, nil
+}
 
 func (f fakeHandler) EmbedTexts(_ context.Context, role Role, texts []string) ([][]float32, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
 	if f.roles != nil {
 		*f.roles = append(*f.roles, role)
 	}
@@ -67,5 +78,32 @@ func TestClient_CarriesTheRoleOfTheTextsToTheHandler(t *testing.T) {
 func TestReadRoleOfARequestWithNoRoleIsDocument(t *testing.T) {
 	if got := readRole(v1.EmbedRole_EMBED_ROLE_UNSPECIFIED); got != RoleDocument {
 		t.Errorf("readRole(unspecified) = %v, want RoleDocument", got)
+	}
+	if got := writeRole(RoleDocument); got != v1.EmbedRole_EMBED_ROLE_DOCUMENT {
+		t.Errorf("writeRole(RoleDocument) = %v, want EMBED_ROLE_DOCUMENT", got)
+	}
+}
+
+func TestClient_PropagatesHandlerErrors(t *testing.T) {
+	wantErr := errors.New("model failed")
+	ad := &adapter{h: fakeHandler{err: wantErr}}
+	if _, err := ad.GetEmbeddingModel(t.Context(), connect.NewRequest(&v1.GetEmbeddingModelRequest{})); !errors.Is(err, wantErr) {
+		t.Fatalf("adapter.GetEmbeddingModel err = %v, want %v", err, wantErr)
+	}
+	if _, err := ad.EmbedBatch(t.Context(), connect.NewRequest(&v1.EmbedBatchRequest{})); !errors.Is(err, wantErr) {
+		t.Fatalf("adapter.EmbedBatch err = %v, want %v", err, wantErr)
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle(NewHandler(fakeHandler{err: wantErr}))
+	web := httptest.NewServer(mux)
+	defer web.Close()
+	client := NewClient(web.Client(), web.URL)
+
+	if _, err := client.GetModelInfo(t.Context()); err == nil {
+		t.Fatal("expected error from GetModelInfo")
+	}
+	if _, err := client.EmbedTexts(t.Context(), RoleDocument, []string{"a"}); err == nil {
+		t.Fatal("expected error from EmbedTexts")
 	}
 }

@@ -6,10 +6,11 @@
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, nextTick, onMounted, onUnmounted } from 'vue'
+import { defineComponent, h, nextTick, onMounted, onUnmounted, watchEffect } from 'vue'
 import WorkspaceLayout from './WorkspaceLayout.vue'
 import { WorkspacePane } from './pane'
 import { type Tab, type Workspace as State } from '../lib/node'
+import { createTabHosts } from '../model/hosts'
 import { oneStack, sideBySide, stack, createWorkspace } from '../fixtures/build'
 import { dropTab } from '../lib/edit'
 
@@ -240,5 +241,39 @@ describe('a tab moved to another pane', () => {
     )
     expect(lifecycle).toStrictEqual({ mounted: 1, unmounted: 0 })
     target.unmount()
+  })
+
+  it('tracks tab host elements across attach and detach', async () => {
+    const hosts = createTabHosts()
+    const first = document.createElement('div')
+    const second = document.createElement('div')
+    let reads = 0
+    const stop = watchEffect(() => {
+      hosts.getElement('plex')
+      reads += 1
+    })
+    expect(reads).toBe(1)
+
+    hosts.attach('plex', 'main', first)
+    await nextTick()
+    expect(hosts.getElement('plex')).toBe(first)
+    expect(reads).toBe(2)
+
+    hosts.attach('plex', 'main', first)
+    await nextTick()
+    expect(reads).toBe(2)
+
+    hosts.attach('plex', 'main', second)
+    await nextTick()
+    expect(hosts.getElement('plex')).toBe(second)
+    expect(reads).toBe(3)
+
+    hosts.detach('plex', 'aside')
+    expect(hosts.getElement('plex')).toBe(second)
+    hosts.detach('unknown', 'main')
+
+    hosts.detach('plex', 'main')
+    expect(hosts.getElement('plex')).toBeUndefined()
+    stop()
   })
 })

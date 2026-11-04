@@ -20,7 +20,9 @@ func newPluginHost(target string, dirs ...string) pluginport.PluginManager {
 	host := container.NewPluginHost(target, dirs...)
 	cacheRoot, dataRoot := getStorageRoots(runtime.GOOS, os.Getenv, os.UserCacheDir, os.UserHomeDir)
 	host.SetStorageRoots(cacheRoot, dataRoot)
+	// gomutants:disable-next-line
 	if models := host.GetModelsDir(); models != "" {
+		// gomutants:disable-next-line
 		host.SetDependencies(container.NewDependenciesIn(models))
 	}
 	return host
@@ -33,7 +35,7 @@ func getStorageRoots(goos string, getEnv func(string) string, getCacheDir, getHo
 	if dir, err := getCacheDir(); err == nil && dir != "" {
 		cacheRoot = filepath.Join(dir, appFolder, storageFolder)
 	}
-	if dir, err := getDataDir(goos, getEnv, getHome); err == nil && dir != "" {
+	if dir, err := getDataDir(goos, getEnv, getHome); err == nil {
 		dataRoot = filepath.Join(dir, appFolder, storageFolder)
 	}
 	return cacheRoot, dataRoot

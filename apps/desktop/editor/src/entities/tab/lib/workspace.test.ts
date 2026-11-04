@@ -6,7 +6,9 @@
  * message lands in a conversation the user cannot see.
  */
 import { describe, expect, it } from 'vitest'
+import { FileText, SlidersHorizontal } from '@lucide/vue'
 import { getPanes } from '@numen/shell'
+import { findTabKindIcon } from './icons'
 import { NOTE, SETTINGS, createWorkspace, generateId } from './workspace'
 
 describe('the identity a tab is filed under', () => {
@@ -106,5 +108,13 @@ describe('the layout of a window with one side empty', () => {
   it('is one empty pane where no kind is placed', () => {
     const layout = createWorkspace([], [])
     expect(getPanes(layout.root).map((one) => one.tabs)).toStrictEqual([[]])
+  })
+})
+
+describe('findTabKindIcon', () => {
+  it('returns the icon for built-in tab kinds and null for others', () => {
+    expect(findTabKindIcon(NOTE)).toBe(FileText)
+    expect(findTabKindIcon(SETTINGS)).toBe(SlidersHorizontal)
+    expect(findTabKindIcon('unknown')).toBeNull()
   })
 })

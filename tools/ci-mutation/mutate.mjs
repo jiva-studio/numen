@@ -17,7 +17,6 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { availableParallelism } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
 import { getCacheFile, keepFiles } from './cache.mjs'
-import { patchVitestRunner } from './patch.mjs'
 import { readMutants } from './report.mjs'
 import { execTool, runTool } from '../shared/tools.mjs'
 import {
@@ -85,7 +84,9 @@ const listGoPackages = (target) => {
   return listed
     .split('\n')
     .map((line) => line.split(' '))
-    .filter(([dir, ...files]) => dir && files.some((file) => isMutatedGo(join(relative(at, dir), file))))
+    .filter(
+      ([dir, ...files]) => dir && files.some((file) => isMutatedGo(join(relative(at, dir), file))),
+    )
     .map(([dir]) => (dir === at ? '.' : `./${relative(at, dir)}`))
     .sort()
 }
@@ -161,7 +162,6 @@ const runTs = (target, shard, { report, cache }, file) => {
   const sources = file ? [file] : pickShard(listSources(target), ...shard)
   const mutate = sources
   if (mutate.length === 0) return null
-  patchVitestRunner()
   const settings = {
     target,
     vitestConfig: writeVitestConfig(target),

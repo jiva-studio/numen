@@ -7,7 +7,10 @@ import { createNoteLookup, findEditorTabAt } from './editorTabs'
 type WindowTabs = Parameters<typeof findEditorTabAt>[0]
 
 const createWindowTabs = (
-  tabs: Record<string, { editsFiles: boolean; path: string } | undefined>,
+  tabs: Record<
+    string,
+    { editsFiles: boolean; path?: string | undefined; hasOpenTab?: boolean } | undefined
+  >,
 ): WindowTabs =>
   ({
     tabs: { value: Object.keys(tabs).map((id) => ({ id, title: id })) },
@@ -17,7 +20,12 @@ const createWindowTabs = (
       return {
         state: tab,
         kind: {
-          getOpenTab: (state: { path: string }) => ({ path: state.path }),
+          ...(tab.hasOpenTab === false
+            ? {}
+            : {
+                getOpenTab: (state: { path?: string }) =>
+                  state.path !== undefined ? { path: state.path } : undefined,
+              }),
           ...(tab.editsFiles ? { flushPending: () => Promise.resolve() } : {}),
         },
       }
@@ -28,6 +36,8 @@ describe('the tab that edits the file at a path', () => {
   it('is the tab of a kind that writes files out, standing at the path', () => {
     const windowTabs = createWindowTabs({
       'document:a': { editsFiles: false, path: 'a.md' },
+      'no-open:a': { editsFiles: true, hasOpenTab: false },
+      'empty-open:a': { editsFiles: true, path: undefined },
       'sample:a': { editsFiles: true, path: 'a.md' },
     })
 
@@ -60,7 +70,10 @@ describe('what the window knows of the note open at a path', () => {
         reached: { getTabAt: () => reachedTab },
         getTitle: (id) => (id === 'note:a' ? 'Alpha' : ''),
       },
-      createWindowTabs({ 'sample:a': { editsFiles: true, path: 'a.md' } }),
+      createWindowTabs({
+        'other:x': { editsFiles: false, path: 'x.md' },
+        'sample:a': { editsFiles: true, path: 'a.md' },
+      }),
     )
 
   it('is the tab of a note editor, called what that editor calls it', () => {
@@ -68,6 +81,13 @@ describe('what the window knows of the note open at a path', () => {
 
     expect(lookup.getTabAt('a.md')).toBe('note:a')
     expect(lookup.getTitle('a.md')).toBe('Alpha')
+  })
+
+  it('returns an empty title when neither the note editor nor the window tabs name the reached tab', () => {
+    const lookup = create('note:unlisted')
+
+    expect(lookup.getTabAt('a.md')).toBe('note:unlisted')
+    expect(lookup.getTitle('a.md')).toBe('')
   })
 
   it('returns the file-editor tab and its title when no note editor exists at the path', () => {

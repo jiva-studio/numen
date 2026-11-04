@@ -340,6 +340,8 @@ describe('another vault under this window', () => {
     await flushPromises()
 
     expect(one.renderEvents).not.toContain('reloaded')
+    expect(one.renderEvents).toContain('changed ')
+    expect(one.window.lost.value).toBe('')
 
     one.window.close()
   })
@@ -435,14 +437,23 @@ describe('a place inside a source requested for from outside the window', () => 
 
 describe('a vault that could not be read', () => {
   it('stops the waiting and is not called empty', async () => {
+    const travelled: string[] = []
     const core = fake({
       getInitialOpenPath: async () => null,
+      watchFocus: async function* () {
+        yield { path: 'Focused.md', ranges: [] }
+      },
       state: async () => ({
         ...resolved,
         scan: { isReady: false, error: 'permission denied', unwatchedPath: '' },
       }),
     })
-    const window = useWindowDisplay(core, { wait: async () => window.close() })
+    const window = useWindowDisplay(core, {
+      wait: async () => window.close(),
+      travelTo: (path) => {
+        travelled.push(path)
+      },
+    })
 
     await window.start()
     await flushPromises()
@@ -450,6 +461,7 @@ describe('a vault that could not be read', () => {
     expect(window.isIndexing.value).toBe(false)
     expect(window.error.value).toBe('permission denied')
     expect(window.hasNote.value).toBe(false)
+    expect(travelled).toStrictEqual(['Focused.md'])
   })
 })
 

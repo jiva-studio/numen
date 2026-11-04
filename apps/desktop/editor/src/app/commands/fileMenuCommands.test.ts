@@ -130,6 +130,7 @@ describe('useFileMenuCommands', () => {
     const run = vi.fn().mockResolvedValue(undefined)
     const onRun = vi.fn()
     const menu = useFileMenuCommands({ get, run, onRun })
+    expect(menu.paletteCommands.value).toStrictEqual([])
     await menu.load('books/Scan.pdf')
     const writeMessage = vi.fn()
 
@@ -148,19 +149,38 @@ describe('useFileMenuCommands', () => {
     expect(commands.get(getFileMenuId(recognise))).toBeUndefined()
   })
 
-  it('reads the menu again after a run', async () => {
-    const get = vi.fn().mockResolvedValueOnce([proofread]).mockResolvedValueOnce([])
-    const menu = useFileMenuCommands({ get, run: vi.fn().mockResolvedValue(undefined) })
+  it('reads the menu again after a run and reports reload errors', async () => {
+    const reloadError = new Error('reload failed')
+    const get = vi
+      .fn()
+      .mockResolvedValueOnce([proofread])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([proofread])
+      .mockRejectedValueOnce(reloadError)
+    const onError = vi.fn()
+    const menu = useFileMenuCommands({ get, run: vi.fn().mockResolvedValue(undefined), onError })
     await menu.load('books/Scan.pdf')
+    const writeMessage = vi.fn()
 
     await commands.get(getFileMenuId(proofread))?.(
       invoke(proofread, 'books/Scan.pdf'),
-      { writeMessage: vi.fn() } as unknown as CommandDeps,
+      { writeMessage } as unknown as CommandDeps,
       ANSWER_WORDS,
     )
 
+    expect(writeMessage).toHaveBeenCalledWith(WORDS.commandRan('Proofread'), 'info')
     expect(get).toHaveBeenCalledTimes(2)
     expect(menu.paletteCommands.value).toStrictEqual([])
+
+    // When reload after run fails, cache for that file was cleared and onError receives the error
+    await menu.load('books/Scan.pdf')
+    await commands.get(getFileMenuId(proofread))?.(
+      invoke(proofread, 'books/Scan.pdf'),
+      { writeMessage } as unknown as CommandDeps,
+      ANSWER_WORDS,
+    )
+    expect(onError).toHaveBeenCalledWith(reloadError)
+    expect(menu.getForFile('books/Scan.pdf')).toStrictEqual([])
   })
 
   it('reports a failed run as an error', async () => {
@@ -244,8 +264,19 @@ describe('useFileMenuCommands', () => {
   })
 
   it('loads and returns commands for a file requested through getForFile', async () => {
-    const get = vi.fn().mockResolvedValue([recognise])
-    const menu = useFileMenuCommands({ get, run: vi.fn() })
+    const loadErr = new Error('failed background load')
+    const get = vi
+      .fn()
+      .mockResolvedValueOnce([recognise, proofread])
+      .mockResolvedValueOnce([recognise, proofread])
+      .mockResolvedValueOnce([recognise, proofread])
+      .mockRejectedValueOnce(loadErr)
+    const onError = vi.fn()
+    const menu = useFileMenuCommands({ get, run: vi.fn(), onError })
+
+    // Empty file does not trigger load
+    expect(menu.getForFile('')).toStrictEqual([])
+    expect(get).not.toHaveBeenCalled()
 
     expect(menu.getForFile('books/Scan.pdf')).toStrictEqual([])
     await Promise.resolve()
@@ -254,7 +285,23 @@ describe('useFileMenuCommands', () => {
     expect(get).toHaveBeenCalledWith('books/Scan.pdf')
     expect(menu.getForFile('books/Scan.pdf').map((one) => one.id)).toStrictEqual([
       getFileMenuId(recognise),
+      getFileMenuId(proofread),
     ])
-    expect(menu.getIcon(getFileMenuId(recognise))).toBe(getNamedIcon('scan-text'))
+    expect(menu.getIcon(getFileMenuId(proofread))).toBe(getNamedIcon('spell-check'))
+
+    // Reloading same file with identical entries preserves computed array reference
+    const beforeSame = menu.paletteCommands.value
+    await menu.load('books/Scan.pdf')
+    expect(menu.paletteCommands.value).toBe(beforeSame)
+
+    // Loading a different file with the same entries updates the target file on the commands
+    await menu.load('books/Other.pdf')
+    expect(menu.paletteCommands.value[0]?.isAvailable(front('books/Other.pdf'), runs)).toBe(true)
+
+    // Background load error in getForFile is reported to onError
+    menu.getForFile('books/Broken.pdf')
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(onError).toHaveBeenCalledWith(loadErr)
   })
 })

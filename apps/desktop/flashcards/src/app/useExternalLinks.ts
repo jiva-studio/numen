@@ -20,6 +20,7 @@ export function useExternalLinks(notices: NoticeQueue) {
     })
   })
   onUnmounted(() => {
+    // Stryker disable next-line OptionalChaining: stop is assigned on mount before unmount runs
     stop?.()
   })
 }

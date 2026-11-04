@@ -144,4 +144,88 @@ describe('a window mounting while the settings never answer', () => {
 
     expect(bootstrap().failure.value).toBe('no vaults')
   })
+
+  it('starts with an empty failure before mounting and skips startPlugins when omitted', async () => {
+    let initialFailure = 'unset'
+    let bootstrap!: ReturnType<typeof useAppBootstrap>
+    const startLayout = vi.fn(async () => undefined)
+    const view = mount(
+      defineComponent({
+        setup() {
+          bootstrap = useAppBootstrap({
+            loadVaults: async () => undefined,
+            startSettings: async () => undefined,
+            startWindow: async () => undefined,
+            startEditing: () => undefined,
+            startLayout,
+            closeWindow: () => undefined,
+            closeEditing: () => undefined,
+            closeTabs: () => undefined,
+            closeSettings: () => undefined,
+            reportError: vi.fn(),
+          })
+          initialFailure = bootstrap.failure.value
+          return () => h('div')
+        },
+      }),
+    )
+    expect(initialFailure).toBe('')
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(bootstrap.failure.value).toBe('')
+    expect(startLayout).toHaveBeenCalledTimes(1)
+    view.unmount()
+  })
+
+  it('names vault list and tab restore timeouts and stringifies non-Error rejections', async () => {
+    vi.useFakeTimers()
+    try {
+      const { bootstrap: bVault } = setup({
+        loadVaults: () => new Promise<void>(() => undefined),
+      })
+      await vi.advanceTimersByTimeAsync(STEP_LIMIT_MS)
+      expect(bVault().failure.value).toBe('The vault list did not answer in 10 s')
+
+      const { bootstrap: bLayout } = setup({
+        startLayout: () => new Promise<void>(() => undefined),
+      })
+      await vi.advanceTimersByTimeAsync(STEP_LIMIT_MS)
+      expect(bLayout().failure.value).toBe('The tab restore did not answer in 10 s')
+    } finally {
+      vi.useRealTimers()
+    }
+
+    const { bootstrap: bStr } = setup({
+      loadVaults: () => Promise.reject('raw string error'),
+    })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(bStr().failure.value).toBe('raw string error')
+  })
+
+  it('ignores late failures or completions after unmount', async () => {
+    let rejectVaults!: (err: Error) => void
+    const { bootstrap: b1, view: v1 } = setup({
+      loadVaults: () =>
+        new Promise<void>((_, reject) => {
+          rejectVaults = reject
+        }),
+    })
+    v1.unmount()
+    rejectVaults(new Error('late error'))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(b1().failure.value).toBe('')
+
+    let resolveLayout!: () => void
+    const { calls, view: v2 } = setup({
+      startLayout: () =>
+        new Promise<void>((resolve) => {
+          resolveLayout = resolve
+        }),
+    })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    v2.unmount()
+    calls.length = 0
+    resolveLayout()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(calls).not.toContain('startWindow')
+  })
 })

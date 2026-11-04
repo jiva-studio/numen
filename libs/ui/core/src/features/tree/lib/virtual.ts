@@ -52,9 +52,11 @@ export function computeScrollTarget(config: ScrollTargetConfig): number {
   const targetTop = targetIndex * rowHeight
   const targetBottom = targetTop + rowHeight
 
+  // Stryker disable next-line EqualityOperator: targetTop === currentScrollTop returns the same value
   if (targetTop < currentScrollTop) {
     return targetTop
   }
+  // Stryker disable next-line EqualityOperator: targetBottom === currentScrollTop + viewportHeight returns the same value
   if (targetBottom > currentScrollTop + viewportHeight) {
     return targetBottom - viewportHeight
   }

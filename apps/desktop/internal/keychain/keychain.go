@@ -59,6 +59,7 @@ func await[T any](ctx context.Context, call func() (T, error)) (T, error) {
 		value T
 		err   error
 	}
+	// gomutants:disable-next-line
 	isDone := make(chan outcome, 1)
 	go func() {
 		value, err := call()

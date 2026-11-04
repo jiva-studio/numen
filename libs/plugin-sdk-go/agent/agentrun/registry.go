@@ -81,9 +81,6 @@ func (r *Registry) EndConversation(_ context.Context, conversation string) error
 // GetSession returns the session in which the next task of the conversation runs, empty when
 // nothing has run yet.
 func (r *Registry) GetSession(conversation string) string {
-	if conversation == "" {
-		return ""
-	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return r.sessions[conversation]

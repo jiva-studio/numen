@@ -194,5 +194,12 @@ describe('prose', () => {
 
   it('writes the alt text of an image without its marks', () => {
     expect(mountProse('![a *big* cat](x.png)').find('img').attributes('alt')).toBe('a big cat')
+    expect(mountProse('![outer ![*inner*](y.png)](x.png)').find('img').attributes('alt')).toBe(
+      'outer inner',
+    )
+    expect(mountProse('![first\nsecond](x.png)').find('img').attributes('alt')).toBe('first second')
+    expect(mountProse('![first  \nsecond](x.png)').find('img').attributes('alt')).toBe(
+      'first second',
+    )
   })
 })

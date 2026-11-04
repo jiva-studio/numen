@@ -94,7 +94,7 @@ func TestAToolThatReturnsAnErrorRanAndRefused(t *testing.T) {
 func TestArgumentsThatDoNotFitTheStructAreAError(t *testing.T) {
 	answer := call(t, newRegistry(t), "greet", `{"name":3}`)
 
-	if !answer.GetResult().GetIsRefusal() {
+	if !answer.GetResult().GetIsRefusal() || !strings.HasPrefix(answer.GetResult().GetText(), "the arguments do not fit:") {
 		t.Errorf("the call was answered %v", answer)
 	}
 }
@@ -108,14 +108,25 @@ func TestCall_UnknownNameAndNonObjectArgsReturnErrorCode(t *testing.T) {
 	if got := call(t, registry, "greet", `[1]`).GetError(); got != v1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS {
 		t.Errorf("arguments that are no object were answered %v", got)
 	}
+	if got := call(t, registry, "greet", `1`).GetError(); got != v1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS {
+		t.Errorf("single-byte non-object arguments were answered %v", got)
+	}
 }
 
 func TestCall_TextResultReturnsText(t *testing.T) {
 	registry := New()
-	if err := Add(registry, Spec{Name: "count", Effect: ReadOnly}, func(context.Context, struct{}) (int, error) {
+	if err := Add(registry, Spec{Name: "count", Effect: ReadOnly}, func(context.Context, int) (int, error) {
 		return 3, nil
 	}); err != nil {
 		t.Fatal(err)
+	}
+
+	listed, err := registry.ListToolInfos(t.Context())
+	if err != nil || len(listed) != 1 {
+		t.Fatalf("ListToolInfos = %v, %v", listed, err)
+	}
+	if string(listed[0].GetInputSchema()) != `{"type":"object"}` || len(listed[0].GetOutputSchema()) != 0 {
+		t.Errorf("non-struct schemas: in=%s out=%s", listed[0].GetInputSchema(), listed[0].GetOutputSchema())
 	}
 
 	answer := call(t, registry, "count", "")
@@ -127,6 +138,11 @@ func TestCall_TextResultReturnsText(t *testing.T) {
 
 func TestTwoToolsOfOneNameAreRefused(t *testing.T) {
 	registry := newRegistry(t)
+	if err := Add(registry, Spec{Name: "farewell", Effect: ReadWrite}, func(context.Context, greetIn) (*greetOut, error) {
+		return &greetOut{Greeting: "bye"}, nil
+	}); err != nil {
+		t.Fatalf("second distinct tool rejected: %v", err)
+	}
 
 	err := Add(registry, Spec{Name: "greet", Effect: ReadOnly}, func(context.Context, greetIn) (greetOut, error) {
 		return greetOut{}, nil
@@ -176,5 +192,73 @@ func TestCall_ContextCarriesVault(t *testing.T) {
 
 	if err != nil || string(res.Msg.GetResult().GetStructured()) != `{"vault":"v-garden"}` {
 		t.Errorf("got %v (%v)", res.Msg.GetResult(), err)
+	}
+}
+
+func TestConversionsConstantsAndSchemaErrors(t *testing.T) {
+	if ReadOnly != 1 || ReadWrite != 2 {
+		t.Fatalf("effects = %d, %d", ReadOnly, ReadWrite)
+	}
+	if Full != 1 || Reading != 2 {
+		t.Fatalf("servers = %d, %d", Full, Reading)
+	}
+	if ErrorCodeUnspecified != 0 || ErrorCodeUnknownTool != 1 || ErrorCodeBadArguments != 2 {
+		t.Fatalf("error codes = %d, %d, %d", ErrorCodeUnspecified, ErrorCodeUnknownTool, ErrorCodeBadArguments)
+	}
+	if readEffect(v1.ToolEffect_TOOL_EFFECT_UNSPECIFIED) != 0 {
+		t.Fatal("expected 0 for unspecified effect")
+	}
+	if readToolInfo(nil) != nil || writeToolInfo(nil) != nil || readCallResponse(nil) != nil {
+		t.Fatal("expected nil for nil conversions")
+	}
+	if got := writeCallResponse(nil); got == nil || got.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED || got.GetResult() != nil {
+		t.Fatalf("writeCallResponse(nil) = %v", got)
+	}
+	if res := writeResult(make(chan int)); !res.GetIsRefusal() || !strings.HasPrefix(res.GetText(), "the result cannot be encoded:") {
+		t.Fatalf("writeResult(chan) = %v", res)
+	}
+
+	type unencodable struct {
+		Ch chan int `json:"ch"`
+	}
+	registry := newRegistry(t)
+	_ = call(t, registry, "greet", `{"name":"Ann"}`)
+	if err := Add(registry, Spec{Name: "after-call"}, func(context.Context, greetIn) (greetOut, error) {
+		return greetOut{}, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := Add(registry, Spec{Name: "bad-in"}, func(context.Context, unencodable) (greetOut, error) {
+		return greetOut{}, nil
+	}); err == nil {
+		t.Fatal("expected error for unencodable input schema")
+	}
+	if err := Add(registry, Spec{Name: "bad-out"}, func(context.Context, greetIn) (unencodable, error) {
+		return unencodable{}, nil
+	}); err == nil {
+		t.Fatal("expected error for unencodable output schema")
+	}
+
+	if err := Add(registry, Spec{Name: "ptr-struct"}, func(context.Context, *greetIn) (*greetOut, error) {
+		return &greetOut{Greeting: "hi"}, nil
+	}); err != nil {
+		t.Fatalf("Add pointer struct failed: %v", err)
+	}
+	infos, err := registry.ListToolInfos(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ptrInfo *ToolInfo
+	for _, info := range infos {
+		if info.GetName() == "ptr-struct" {
+			ptrInfo = info
+		}
+	}
+	if ptrInfo == nil || !strings.Contains(string(ptrInfo.GetInputSchema()), `"name"`) || !strings.Contains(string(ptrInfo.GetOutputSchema()), `"greeting"`) {
+		t.Fatalf("expected pointer struct schemas to contain fields, got in=%s out=%s", ptrInfo.GetInputSchema(), ptrInfo.GetOutputSchema())
+	}
+	var nilInfo *ToolInfo
+	if nilInfo.GetName() != "" || nilInfo.GetInputSchema() != nil || nilInfo.GetOutputSchema() != nil {
+		t.Fatal("expected empty name and nil schemas for nil ToolInfo")
 	}
 }

@@ -110,10 +110,12 @@ const RELATION_READS: Record<string, Call> = {
 describe('the relationships a plugin writes', () => {
   it.each(Object.entries(RELATION_WRITES))(
     'fail through %s without vault:write',
-    async (_, call) => {
+    async (name, call) => {
       const { context } = createContext(['vault:read'])
 
-      await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(/vault:write/)
+      await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(
+        `Plugin "md.numen.sample" lacks required permission "vault:write" for relations.${name}`,
+      )
     },
   )
 
@@ -126,11 +128,16 @@ describe('the relationships a plugin writes', () => {
     },
   )
 
-  it.each(Object.entries(RELATION_READS))('fail through %s without vault:read', async (_, call) => {
-    const { context } = createContext(['vault:write'])
+  it.each(Object.entries(RELATION_READS))(
+    'fail through %s without vault:read',
+    async (name, call) => {
+      const { context } = createContext(['vault:write'])
 
-    await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(/vault:read/)
-  })
+      await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(
+        `Plugin "md.numen.sample" lacks required permission "vault:read" for relations.${name}`,
+      )
+    },
+  )
 
   it.each(Object.entries(RELATION_READS))(
     'are read through %s with vault:read',
@@ -155,11 +162,16 @@ const FILE_WRITES: Record<string, Call> = {
 }
 
 describe('a note a plugin writes', () => {
-  it.each(Object.entries(NOTE_WRITES))('fails through %s without vault:write', async (_, call) => {
-    const { context } = createContext(['vault:read'])
+  it.each(Object.entries(NOTE_WRITES))(
+    'fails through %s without vault:write',
+    async (name, call) => {
+      const { context } = createContext(['vault:read'])
 
-    await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(/vault:write/)
-  })
+      await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(
+        `Plugin "md.numen.sample" lacks required permission "vault:write" for notes.${name}`,
+      )
+    },
+  )
 
   it.each(Object.entries(NOTE_WRITES))(
     'is written through %s with vault:write',
@@ -185,11 +197,16 @@ const BUFFER_WRITES: Record<string, Call> = {
 }
 
 describe('the open files a plugin passes the window', () => {
-  it.each(Object.entries(BUFFER_WRITES))('fail through %s without vault:write', async (_, call) => {
-    const { context } = createContext(['vault:read'])
+  it.each(Object.entries(BUFFER_WRITES))(
+    'fail through %s without vault:write',
+    async (name, call) => {
+      const { context } = createContext(['vault:read'])
 
-    await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(/vault:write/)
-  })
+      await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(
+        `Plugin "md.numen.sample" lacks required permission "vault:write" for buffers.${name}`,
+      )
+    },
+  )
 
   it.each(Object.entries(BUFFER_WRITES))(
     'are taken through %s with vault:write',
@@ -230,11 +247,16 @@ describe('the registrations of a plugin in the open files', () => {
 })
 
 describe('a file a plugin writes', () => {
-  it.each(Object.entries(FILE_WRITES))('fails through %s without vault:write', async (_, call) => {
-    const { context } = createContext(['vault:read'])
+  it.each(Object.entries(FILE_WRITES))(
+    'fails through %s without vault:write',
+    async (name, call) => {
+      const { context } = createContext(['vault:read'])
 
-    await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(/vault:write/)
-  })
+      await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(
+        `Plugin "md.numen.sample" lacks required permission "vault:write" for files.${name}`,
+      )
+    },
+  )
 
   it.each(Object.entries(FILE_WRITES))(
     'is written through %s with vault:write',
@@ -261,8 +283,12 @@ describe('a command a plugin runs over the vault', () => {
   it.each(['remove', 'child', 'title', 'transcribe'])('fails for %s without vault:write', (id) => {
     const { context, workspace } = createContext(['vault:read'])
 
-    expect(() => context.workspace!.runCommand(id, target)).toThrowError(/vault:write/)
-    expect(() => context.workspace!.runPathCommand(id, row)).toThrowError(/vault:write/)
+    expect(() => context.workspace!.runCommand(id, target)).toThrowError(
+      `Plugin "md.numen.sample" lacks required permission "vault:write" for workspace.runCommand ${id}`,
+    )
+    expect(() => context.workspace!.runPathCommand(id, row)).toThrowError(
+      `Plugin "md.numen.sample" lacks required permission "vault:write" for workspace.runPathCommand ${id}`,
+    )
     expect(workspace.runCommand).not.toHaveBeenCalled()
     expect(workspace.runPathCommand).not.toHaveBeenCalled()
   })
@@ -281,8 +307,10 @@ describe('a command a plugin runs over the vault', () => {
     const { context, workspace } = createContext([])
 
     context.workspace!.runCommand(id, target)
+    context.workspace!.runPathCommand(id, row)
 
     expect(workspace.runCommand).toHaveBeenCalledWith(id, target)
+    expect(workspace.runPathCommand).toHaveBeenCalledWith(id, row)
   })
 
   it('opens a file and shows an error without vault:write', () => {
@@ -320,11 +348,11 @@ const ASKING: Record<string, [string, Call]> = {
 describe('the agent a plugin asks', () => {
   it.each(Object.entries(ASKING))(
     'fails through %s without its permission',
-    async (_, [permission, call]) => {
+    async (name, [permission, call]) => {
       const { context } = createContext([])
 
       await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(
-        new RegExp(permission),
+        `Plugin "md.numen.sample" lacks required permission "${permission}" for agent.${name}`,
       )
     },
   )
@@ -361,7 +389,9 @@ describe('the agent a plugin asks', () => {
     const elsewhere = ['plugins', 'md.numen.other', 'enabled']
     expect(request.getSetting(elsewhere)).toBeUndefined()
     expect(request.getModelsAt(elsewhere)).toStrictEqual([])
-    await expect(request.writeSetting(elsewhere, false)).rejects.toThrowError(/agent settings/)
+    await expect(request.writeSetting(elsewhere, false)).rejects.toThrowError(
+      'agent.writeSetting is limited to the agent settings, not "plugins.md.numen.other.enabled"',
+    )
     expect(agent.getSetting).toHaveBeenCalledTimes(1)
     expect(agent.writeSetting).toHaveBeenCalledTimes(1)
   })

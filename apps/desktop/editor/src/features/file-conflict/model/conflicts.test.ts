@@ -52,8 +52,8 @@ const quit = () => {
 const window = () => {
   const store = notes()
   const going = quit()
-  raiseConflicts(store.store, going.going)
-  return { ...store, ...going }
+  const stop = raiseConflicts(store.store, going.going)
+  return { ...store, ...going, stop }
 }
 
 describe('a note the file moved past', () => {
@@ -118,6 +118,36 @@ describe('a note the file moved past', () => {
     await nextTick()
 
     expect(one.paths()).toEqual(['Note.md'])
+  })
+
+  it('drops raised conflicts and stops watching when stopped', async () => {
+    const store = notes()
+    let dropCalls = 0
+    const raised = new Set<string>()
+    const stop = raiseConflicts(store.store, {
+      raise: (one) => {
+        raised.add(one.note)
+        return () => {
+          dropCalls += 1
+          raised.delete(one.note)
+        }
+      },
+    })
+
+    store.setState('Note.md', 'stale')
+    await nextTick()
+    expect([...raised]).toEqual(['Note.md'])
+
+    stop()
+    expect([...raised]).toEqual([])
+    expect(dropCalls).toBe(1)
+
+    stop()
+    expect(dropCalls).toBe(1)
+
+    store.setState('Other.md', 'stale')
+    await nextTick()
+    expect([...raised]).toEqual([])
   })
 })
 

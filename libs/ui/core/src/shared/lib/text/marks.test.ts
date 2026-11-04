@@ -53,28 +53,77 @@ describe('a piece named as a link', () => {
     )
   })
 
-  it('is not drawn inside the text of another link', () => {
-    expect(renderWith('[a [[Entropy]] b](https://example.com)', [ENTROPY])).toBe(
-      '<a href="https://example.com">a [[Entropy]] b</a>',
+  it('is not drawn inside the text of another link, and is drawn after it', () => {
+    expect(renderWith('[a [[Entropy]] b](https://example.com) [[Entropy]]', [ENTROPY])).toBe(
+      '<a href="https://example.com">a [[Entropy]] b</a> <a href="x://Entropy">Entropy</a>',
     )
+    expect(
+      renderWith(
+        '![a [[Entropy]] b](https://example.com/img.png) [c [[Entropy]] d](https://example.com)',
+        [ENTROPY],
+      ),
+    ).toBe(
+      '<img src="https://example.com/img.png" alt="a Entropy b"> <a href="https://example.com">c [[Entropy]] d</a>',
+    )
+    expect(
+      renderWith('![see a]b here](https://example.com/img.png)', [
+        { raw: 'a]b', href: 'x://ab', text: 'AB' },
+      ]),
+    ).toBe('<img src="https://example.com/img.png" alt="see AB here">')
   })
 
-  it('leaves text alone where nothing is named', () => {
+  it('ignores empty pieces and leaves text alone where nothing is named', () => {
+    expect(indexLinkPieces([{ raw: '', href: 'x://empty', text: 'E' }]).size).toBe(0)
     expect(md.renderInline('see [[Entropy]] now')).toBe('see [[Entropy]] now')
     expect(renderWith('see [[Entropy]] now', [])).toBe('see [[Entropy]] now')
   })
 
-  it('pushes no token while only being skipped over', () => {
+  it('pushes no token while only being skipped over and respects posMax', () => {
     const defaultMd = new MarkdownIt()
     const recognized = new Set(defaultMd.inline.ruler.getRules(''))
     const rule = md.inline.ruler
       .getRules('')
       .find((each) => !recognized.has(each) && each.name === 'linkPiece')
+    const textRule = md.inline.ruler.getRules('').find((each) => each.name === 'text')
     const src = '[[Entropy]]'
     const state = new md.inline.State(src, md, { pieces: indexLinkPieces([ENTROPY]) }, [])
 
     expect(rule?.(state, true)).toBe(true)
     expect(state.tokens).toHaveLength(0)
     expect(state.pos).toBe(src.length)
+
+    const truncated = new md.inline.State(src, md, { pieces: indexLinkPieces([ENTROPY]) }, [])
+    truncated.posMax = 5
+    expect(rule?.(truncated, false)).toBe(false)
+
+    const noEnv = new md.inline.State(src, md, undefined as never, [])
+    expect(rule?.(noEnv, false)).toBe(false)
+
+    const textState = new md.inline.State(
+      'hello [[Entropy]]',
+      md,
+      { pieces: indexLinkPieces([ENTROPY]) },
+      [],
+    )
+    expect(textRule?.(textState, false)).toBe(true)
+    expect(textState.pending).toBe('hello ')
+    expect(textState.pos).toBe(6)
+
+    const boundedText = new md.inline.State('hello world', md, {}, [])
+    boundedText.posMax = 5
+    expect(textRule?.(boundedText, false)).toBe(true)
+    expect(boundedText.pending).toBe('hello')
+    expect(boundedText.pos).toBe(5)
+    expect(textRule?.(textState, false)).toBe(false)
+
+    const silentText = new md.inline.State(
+      'hello!',
+      md,
+      { pieces: indexLinkPieces([{ raw: '!', href: 'x://bang', text: '!' }]) },
+      [],
+    )
+    expect(textRule?.(silentText, true)).toBe(true)
+    expect(silentText.pending).toBe('')
+    expect(silentText.pos).toBe(5)
   })
 })

@@ -245,6 +245,23 @@ describe('a note followed', () => {
         secondSide: { label: '', marker: null, reason: '' },
       },
     })
+
+    requestLog.getConnection.mockResolvedValueOnce({ error: NOTE_ERROR_CODE.MISSING })
+    expect(await core.relations.getConnection('a.md', 'b.md')).toEqual({
+      ok: false,
+      error: 'missing',
+    })
+    expect(requestLog.getConnection.mock.calls.at(-1)?.[0]).toEqual({
+      first: 'a.md',
+      second: 'b.md',
+      type: '',
+    })
+
+    requestLog.getConnection.mockResolvedValueOnce({})
+    expect(await core.relations.getConnection('a.md', 'b.md')).toEqual({
+      ok: false,
+      error: 'unreadable',
+    })
   })
 
   it('has a connection saved in one request, with no role on its records', async () => {
@@ -338,6 +355,12 @@ describe('a note followed', () => {
       ok: false,
       error: 'nameExhausted',
     })
+
+    requestLog.createRelatedNote.mockResolvedValue({ error: NOTE_ERROR_CODE.MISSING })
+    expect(await core.relations.createRelated({ from: 'a.md', role: 'jump' })).toEqual({
+      ok: false,
+      error: 'missing',
+    })
   })
 
   it('has the backlinks of a note listed with both roles', async () => {
@@ -366,6 +389,7 @@ describe('a note followed', () => {
         marker: 'arrow',
       },
     ])
+    expect(requestLog.listBacklinks).toHaveBeenCalledWith({ path: 'a.md' })
   })
 
   it('has its edits read under the signal of the window, and a missing span read as the start', async () => {

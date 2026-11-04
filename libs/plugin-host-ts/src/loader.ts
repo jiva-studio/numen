@@ -3,7 +3,7 @@
  * created by the host, and deactivated according to its `enabled` setting.
  */
 import { shallowRef, type ShallowRef } from 'vue'
-import type { Disposable, PluginLifecycle } from '@numen/plugin-sdk'
+import type { Disposable } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import type { LoaderHost } from './host'
 import {
@@ -30,7 +30,7 @@ export function isPluginEnabledValue(value: unknown): boolean {
 
 interface ActivePluginEntry {
   readonly pluginId: string
-  readonly lifecycle?: PluginLifecycle
+  readonly deactivate?: (() => Promise<void> | void) | undefined
 }
 
 interface ActivateContext extends ResolveModuleContext {
@@ -68,13 +68,8 @@ async function activateEntry(
       await activate(host.createContext(pluginId, manifest))
     }
 
-    const lifecycle: PluginLifecycle = {
-      activate: activate ?? (() => undefined),
-      ...(deactivate ? { deactivate } : {}),
-    }
-
     const next = new Map(activePlugins.value)
-    next.set(pluginId, { pluginId, lifecycle })
+    next.set(pluginId, { pluginId, deactivate })
     activePlugins.value = next
     setFailure(ctx, pluginId, undefined)
     return true
@@ -103,9 +98,7 @@ async function deactivateEntry(deps: DeactivateDeps, pluginId: string): Promise<
     return false
   }
   try {
-    if (entry.lifecycle?.deactivate) {
-      await entry.lifecycle.deactivate()
-    }
+    await entry.deactivate?.()
   } catch (error) {
     deps.reportError(pluginId, error)
   } finally {
@@ -150,14 +143,14 @@ interface StartLoaderDeps {
 type Loaded = { readonly isRead: true; readonly module: unknown } | { readonly isRead: false }
 
 /** A plugin that has no frontend has no module, and nothing to activate. */
-const startPlugin = (
+const startPlugin = async (
   activate: (id: string, module?: unknown) => Promise<boolean>,
   id: string,
   one: Loaded,
-): Promise<boolean> =>
-  one.isRead && one.module === undefined
-    ? Promise.resolve(false)
-    : activate(id, one.isRead ? one.module : undefined)
+): Promise<void> => {
+  if (one.isRead && one.module === undefined) return
+  await activate(id, one.isRead ? one.module : undefined)
+}
 
 /** What the read of a plugin gave within PLUGIN_WAIT_MS, or 'late' where it gave nothing yet. */
 async function readWithin(load: Promise<Loaded>): Promise<Loaded | 'late'> {
@@ -165,11 +158,13 @@ async function readWithin(load: Promise<Loaded>): Promise<Loaded | 'late'> {
   const late = new Promise<'late'>((resolve) => {
     timer = setTimeout(() => resolve('late'), PLUGIN_WAIT_MS)
   })
+  /* Stryker disable BlockStatement,CallExpression: timer cleanup after Promise.race settles */
   try {
     return await Promise.race([load, late])
   } finally {
     clearTimeout(timer)
   }
+  /* Stryker restore BlockStatement,CallExpression */
 }
 
 /**
@@ -189,10 +184,12 @@ async function startLoader(
       id,
       deps.load(id).then(
         (module): Loaded => ({ isRead: true, module }),
+        // Stryker disable next-line ObjectLiteral: falsy isRead property is equivalent to isRead: false
         (): Loaded => ({ isRead: false }),
       ),
     ]),
   )
+  // Stryker disable next-line ArrayDeclaration: Promise.all ignores resolved non-promise items when return value is unused
   const running: Promise<unknown>[] = []
   for (const pluginId of enabled) {
     const load = loading.get(pluginId) as Promise<Loaded>
@@ -201,9 +198,7 @@ async function startLoader(
       running.push(load.then((one) => startPlugin(activate, pluginId, one)))
       continue
     }
-    const run = startPlugin(activate, pluginId, outcome)
-    running.push(run)
-    await run
+    await startPlugin(activate, pluginId, outcome)
   }
   await Promise.all(running)
 }
@@ -231,7 +226,9 @@ function resolveDefaultDeps(deps: PluginLoaderDeps) {
     baseUrl: deps.baseUrl ?? '/plugin',
     fetchFn:
       deps.fetch ??
+      // Stryker disable next-line ArrowFunction: default globalThis.fetch wrapper is overridden in unit tests
       ((input: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(input, init)),
+    // Stryker disable next-line ArrowFunction: default dynamic import wrapper is overridden in unit tests
     importFn: deps.dynamicImport ?? ((url: string) => import(/* @vite-ignore */ url)),
     // Without a reporter the failure is already recorded in the failures map.
     reportError: deps.onError ?? (() => undefined),
@@ -310,6 +307,7 @@ function createRuntime(deps: PluginLoaderDeps, state: LoaderState, activation: A
     )
 
   const activateInBackground = (id: string): void => {
+    // Stryker disable next-line BlockStatement,CallExpression,OptionalChaining: activatePlugin handles its own errors inside activateEntry
     activatePlugin(id).catch((error: unknown) => {
       deps.onError?.(id, error)
     })

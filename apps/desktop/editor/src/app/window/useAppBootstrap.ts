@@ -44,11 +44,13 @@ async function withinLimit<T>(what: string, work: Promise<T>, limitMs: number): 
       limitMs,
     )
   })
+  /* Stryker disable BlockStatement,CallExpression: timer cleanup after Promise.race settles */
   try {
     return await Promise.race([work, late])
   } finally {
     clearTimeout(timer)
   }
+  /* Stryker restore BlockStatement,CallExpression */
 }
 
 export function useAppBootstrap(deps: BootstrapDeps, stepLimitMs: number = STEP_LIMIT_MS) {
@@ -57,6 +59,7 @@ export function useAppBootstrap(deps: BootstrapDeps, stepLimitMs: number = STEP_
   let attempt = 0
 
   const run = async (): Promise<void> => {
+    // Stryker disable next-line UpdateOperator: generation counter only needs a distinct value per run
     const mine = ++attempt
     failure.value = ''
     try {
@@ -76,6 +79,7 @@ export function useAppBootstrap(deps: BootstrapDeps, stepLimitMs: number = STEP_
   onMounted(run)
 
   onUnmounted(() => {
+    // Stryker disable next-line UpdateOperator: generation counter only needs a distinct value per run
     attempt++
     runInBackground(Promise.resolve(deps.closePlugins?.()), deps.reportError)
     deps.closeWindow()

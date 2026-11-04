@@ -101,12 +101,37 @@ func TestEndConversationStopsOnlyThatConversation(t *testing.T) {
 // A task that named no conversation keeps no session, and ending none is not an error.
 func TestNoConversationPreservesNoSession(t *testing.T) {
 	var registry agentrun.Registry
+	_, running := start(t, &registry, "")
 	registry.SetSession("", "s-lost")
 	if got := registry.GetSession(""); got != "" {
 		t.Errorf("session is %q, want none", got)
 	}
 	if err := registry.EndConversation(t.Context(), ""); err != nil {
 		t.Fatal(err)
+	}
+	if isOver(running) {
+		t.Error("EndConversation on an empty conversation stopped work without a conversation")
+	}
+}
+
+// Remove drops work so Close does not stop it again.
+func TestRemoveDropsWorkFromClose(t *testing.T) {
+	var registry agentrun.Registry
+	stops := 0
+	w := agentrun.NewWork("one", 1, func() error {
+		stops++
+		return nil
+	})
+	if !registry.Add(w) {
+		t.Fatal("Add() = false, want true")
+	}
+	w.End()
+	registry.Remove(w)
+	if err := registry.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if stops != 0 {
+		t.Errorf("Stop called %d times on removed work, want 0", stops)
 	}
 }
 

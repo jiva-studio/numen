@@ -48,6 +48,7 @@ export function getOptions(
 }
 
 function hasOptionInAnyGroup(setting: PluginSettingInfo, value: string): boolean {
+  // Stryker disable next-line ConditionalExpression: getLinkedValue is only called when setting.optionsBy is defined
   if (!setting.optionsBy) return false
   return Object.values(setting.optionsBy.options).some((list) =>
     list.some((one) => one.value === value),
@@ -70,7 +71,7 @@ function getLinkedValue(
   stored: unknown,
 ): PluginValue {
   const options = getOptions(plugin, setting, read)
-  const isListed = stored !== undefined && options.some((one) => one.value === formatValue(stored))
+  const isListed = options.some((one) => one.value === formatValue(stored))
   if (isListed || isCustomStringOption(setting, stored)) {
     return { value: stored, origin: 'chosen' }
   }

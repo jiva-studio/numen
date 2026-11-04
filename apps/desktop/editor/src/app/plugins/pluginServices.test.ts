@@ -4,6 +4,7 @@ import { ref, shallowRef } from 'vue'
 import {
   createAgentHost,
   createVaultNotes,
+  createVaultRelations,
   createWorkspaceHost,
   type WorkspaceHostDeps,
 } from './pluginServices'
@@ -132,19 +133,37 @@ describe('the window a plugin opens files and reads the note in focus through', 
     expect(deps.tabOpeners.openFileAt).toHaveBeenCalledWith('Source.pdf', [{ start: 3, end: 9 }])
   })
 
-  it('says why a file could not be opened with its runs marked', async () => {
+  it('says why a file could not be opened with its runs marked or directly', async () => {
+    const runContextMenu = vi.fn(() => Promise.reject(new Error('ctx failed')))
     const { workspace, deps } = createWorkspace({
       tabOpeners: {
-        openFile: vi.fn(() => Promise.resolve()),
+        openFile: vi.fn(() => Promise.reject(new Error('open failed'))),
         openFileAt: vi.fn(() => Promise.reject(new Error('no such file'))),
         findFileIcon: vi.fn(() => undefined),
       },
+      runContextMenu,
     })
 
+    workspace.openFile('Gone.pdf')
     workspace.openFileAt('Gone.pdf', [])
+    workspace.runPathCommand('cmd', {
+      paths: ['Gone.pdf'],
+      name: 'Gone.pdf',
+      isNote: false,
+      isFolder: false,
+    })
     await new Promise((isDone) => setTimeout(isDone, 0))
 
-    expect(deps.writeMessage).toHaveBeenCalledWith(expect.any(String), 'error')
+    expect(deps.writeMessage).toHaveBeenCalledTimes(3)
+    expect(deps.writeMessage).toHaveBeenNthCalledWith(1, expect.any(String), 'error')
+    expect(deps.writeMessage).toHaveBeenNthCalledWith(2, expect.any(String), 'error')
+    expect(deps.writeMessage).toHaveBeenNthCalledWith(3, expect.any(String), 'error')
+    expect(
+      workspace.getPathCommands({
+        entry: { path: 'a.md', name: 'a.md', isFolder: false, isNote: true, type: 'note' },
+        isSeveral: false,
+      }).length,
+    ).toBeGreaterThan(0)
   })
 
   it('names the note the window relies on', () => {
@@ -304,5 +323,37 @@ describe('the notes of the vault a plugin is handed', () => {
     vi.mocked(making.createUntitled).mockResolvedValueOnce('')
 
     expect(await notes.createUntitledNote()).toBe('')
+  })
+})
+
+describe('createVaultRelations', () => {
+  it('delegates all relation operations to core.relations', async () => {
+    const relations = {
+      roles: ['parent', 'child', 'jump'] as const,
+      getConnection: vi.fn(() => Promise.resolve({ ok: true as const, value: null as never })),
+      saveConnection: vi.fn(() => Promise.resolve({ ok: true as const, value: undefined })),
+      removeSide: vi.fn(() => Promise.resolve({ ok: true as const, value: undefined })),
+      removeConnection: vi.fn(() => Promise.resolve({ ok: true as const, value: undefined })),
+      join: vi.fn(() => Promise.resolve({ ok: true as const, value: undefined })),
+      createRelated: vi.fn(() => Promise.resolve({ ok: true as const, value: 'New.md' })),
+      listBacklinks: vi.fn(() => Promise.resolve([])),
+    }
+    const host = createVaultRelations({ core: { relations } })
+
+    expect(host.roles).toStrictEqual(['parent', 'child', 'jump'])
+    await host.getConnection('a.md', 'b.md', 't')
+    expect(relations.getConnection).toHaveBeenCalledWith('a.md', 'b.md', 't')
+    await host.saveConnection({} as never)
+    expect(relations.saveConnection).toHaveBeenCalledWith({})
+    await host.removeSide('a.md', 'b.md', 't')
+    expect(relations.removeSide).toHaveBeenCalledWith('a.md', 'b.md', 't')
+    await host.removeConnection('a.md', 'b.md', 't')
+    expect(relations.removeConnection).toHaveBeenCalledWith('a.md', 'b.md', 't')
+    await host.join('a.md', 'b.md', { role: 'child' })
+    expect(relations.join).toHaveBeenCalledWith('a.md', 'b.md', { role: 'child' })
+    await host.createRelated({ from: 'a.md', role: 'child' })
+    expect(relations.createRelated).toHaveBeenCalledWith({ from: 'a.md', role: 'child' })
+    await host.listBacklinks('a.md')
+    expect(relations.listBacklinks).toHaveBeenCalledWith('a.md')
   })
 })

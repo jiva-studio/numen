@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createNamedIcon } from './create'
-import { findNamedIcon, getIconKey } from './icons'
+import { findNamedIcon, getIconKey, isIconKey } from './icons'
+import { buttonVariants } from '../button/variants'
 import NamedIcon from './NamedIcon.vue'
 
 describe('getIconKey', () => {
@@ -9,6 +10,15 @@ describe('getIconKey', () => {
     expect(getIconKey('trash-2')).toBe('Trash2')
     expect(getIconKey('audio-lines')).toBe('AudioLines')
     expect(getIconKey('a-arrow-down')).toBe('AArrowDown')
+    expect(isIconKey('Trash2')).toBe(true)
+    expect(isIconKey('trash2')).toBe(false)
+    expect(isIconKey('trashA')).toBe(false)
+    expect(isIconKey('Icon')).toBe(false)
+    expect(isIconKey('LucideTrash')).toBe(false)
+    expect(buttonVariants()).toContain('bg-accent')
+    expect(buttonVariants({ variant: 'outline', size: 'small' })).toContain('border-field-rule')
+    expect(buttonVariants({ variant: 'danger', size: 'icon' })).toContain('border-alarm')
+    expect(buttonVariants({ variant: 'ghost', size: 'icon-small' })).toContain('hover:bg-raised')
   })
 })
 
@@ -24,6 +34,8 @@ describe('findNamedIcon', () => {
     expect(await findNamedIcon('')).toBeNull()
     expect(await findNamedIcon('icon')).toBeNull()
     expect(await findNamedIcon('use-lucide-props')).toBeNull()
+    expect(await findNamedIcon('lucide-trash-2')).toBeNull()
+    expect(await findNamedIcon('1-trash')).toBeNull()
   })
 })
 
@@ -60,6 +72,9 @@ describe('NamedIcon', () => {
 
 describe('createNamedIcon', () => {
   it('gives the same component for the same name, and draws the icon', async () => {
+    const comp = createNamedIcon('trash-2') as { name?: string; inheritAttrs?: boolean }
+    expect(comp.name).toBe('NamedIconOf')
+    expect(comp.inheritAttrs).toBe(false)
     expect(createNamedIcon('trash-2')).toBe(createNamedIcon('trash-2'))
     expect(createNamedIcon('trash-2')).not.toBe(createNamedIcon('spell-check'))
 

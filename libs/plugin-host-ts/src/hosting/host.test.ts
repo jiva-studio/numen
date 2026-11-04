@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createPluginHost, createPluginPaneWrapper } from './host'
+import { disposeAllEntries, type HostRegistry } from './registry'
+import { createStatusViewRegistry } from '../statusViews'
 import { registerPluginStyle } from '../styles'
 import { CONVERSATION } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
@@ -137,6 +139,79 @@ describe('createPluginHost', () => {
     expect(extensionReaders.has('ext1')).toBe(false)
     expect(host.hasCommand('cmd1')).toBe(false)
     expect(host.getRegisteredReaders()).toHaveLength(0)
+
+    // Disposing a plugin cleans up its agent providers, and disposeAllEntries cleans up agentProviders without context
+    const reg: HostRegistry = {
+      vaultListeners: new Set(),
+      fileListeners: new Set(),
+      readers: new Map(),
+      tabKinds: new Map(),
+      commands: { value: new Map() },
+      contextMenus: { value: new Map() },
+      settingsViews: { value: new Map() },
+      agentProviders: new Map([
+        [
+          'ap-orphan',
+          {
+            pluginId: 'orphan.plugin',
+            reg: { id: 'ap-orphan', name: 'Orphan', createAgent: vi.fn() },
+          },
+        ],
+      ]),
+      contexts: new Map(),
+      manifests: new Map(),
+    }
+    disposeAllEntries(reg, createStatusViewRegistry(), deps)
+    expect(reg.agentProviders.size).toBe(0)
+  })
+
+  it('handles reader extensions fallback, missing tab state on open, and non-function registerEditor return', async () => {
+    const onError = vi.fn()
+    let extCallback: ((path: string, selector?: Record<string, unknown>) => void) | undefined
+    const stateMap = new Map<string, Record<string, unknown>>()
+    const registerExtensionReader = vi.fn((_ext, cb) => {
+      extCallback = cb
+      return vi.fn()
+    })
+
+    // Host without getReaderExtensions does not register extension readers
+    const hostNoExt = createPluginHost({
+      registerKind: vi.fn(() => vi.fn()),
+      registerExtensionReader,
+      openTab: vi.fn(async () => 't1'),
+      registerEditor: vi.fn(() => undefined as unknown as () => void),
+    })
+    const ctxNoExt = hostNoExt.createContext('noext.plugin')
+    ctxNoExt.registerReader({ id: 'r-noext', component: null })
+    expect(registerExtensionReader).not.toHaveBeenCalled()
+    const tabSubVoid = ctxNoExt.registerTabKind({ kind: 'void-editor', component: null })
+    expect(() => tabSubVoid.dispose()).not.toThrow()
+
+    // Host with getReaderExtensions and getTabState returning undefined vs object
+    const hostWithExt = createPluginHost({
+      registerKind: vi.fn(() => vi.fn()),
+      registerExtensionReader,
+      getReaderExtensions: () => ['pdf'],
+      openTab: vi.fn(async () => 't1'),
+      getTabState: (id) => stateMap.get(id),
+      onError,
+    })
+    hostWithExt.createContext('ext.plugin').registerReader({ id: 'r-pdf', component: null })
+    expect(extCallback).toBeDefined()
+
+    // When getTabState returns undefined, selector assignment is skipped without error
+    extCallback!('doc.pdf', { page: 5 })
+    await new Promise((r) => setTimeout(r, 0))
+    expect(onError).not.toHaveBeenCalled()
+
+    // When getTabState returns an object, selector is copied onto it
+    const tabState: Record<string, unknown> = {}
+    stateMap.set('t1', tabState)
+    const sel = { page: 5 }
+    extCallback!('doc.pdf', sel)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(tabState.selector).toEqual({ page: 5 })
+    expect(tabState.selector).not.toBe(sel)
   })
 
   it('calls closeTabsForPlugin when plugin is disposed', () => {

@@ -240,6 +240,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     chooseItem: choice.chooseItem,
     start: async () => {
       await loadAppearance()
+      // Stryker disable next-line ArrowFunction: createFollower handles stream errors internally.
       watcher.follow().catch((error: unknown) => write(formatErrorMessage(error), 'error'))
     },
     close: () => {

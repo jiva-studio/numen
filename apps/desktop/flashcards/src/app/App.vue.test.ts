@@ -11,35 +11,47 @@ const wire = vi.hoisted(() => {
   }
   return {
     waits,
+    agentSignals: [] as AbortSignal[],
+    resolveAddresses: vi.fn(async () => ({ found: [], resolved: [] })),
     getPlugins: vi.fn(),
     listVaults: vi.fn(),
     tasks: (): AsyncIterable<unknown> => waits(),
     requestedTasks: [] as unknown[],
+    taskSignals: [] as AbortSignal[],
     listThemes: vi.fn(),
     readTheme: vi.fn(),
     writeAppearance: vi.fn(),
+    themeStream: (): AsyncIterable<{ names: readonly string[] }> => waits(),
+    themeSignals: [] as AbortSignal[],
   }
 })
 vi.mock('@/shared/clients', () => ({
   agentService: {
-    getAgentState: async () => ({ unreachable: '' }),
+    getAgentState: async (_request: unknown, options: { signal: AbortSignal }) => {
+      wire.agentSignals.push(options.signal)
+      return { unreachable: '' }
+    },
     askAgent: wire.waits,
     finishConversation: async () => ({}),
   },
   noteService: {
-    resolveTextLinks: async () => ({ links: [] }),
+    resolveAddresses: wire.resolveAddresses,
   },
   pluginService: { getPlugins: wire.getPlugins },
   theme: {
     listThemes: wire.listThemes,
     readTheme: wire.readTheme,
     writeAppearance: wire.writeAppearance,
-    watchThemes: () => wire.waits(),
+    watchThemes: (_request: unknown, options: { signal: AbortSignal }) => {
+      wire.themeSignals.push(options.signal)
+      return wire.themeStream()
+    },
   },
   vaultsService: { listVaults: wire.listVaults },
   windowService: {
-    watchTasks: (request: unknown) => {
+    watchTasks: (request: unknown, options: { signal: AbortSignal }) => {
       wire.requestedTasks.push(request)
+      wire.taskSignals.push(options.signal)
       return wire.tasks()
     },
   },
@@ -116,7 +128,12 @@ beforeEach(() => {
 afterEach(() => {
   for (const one of mounted.splice(0)) one.unmount()
   wire.tasks = () => wire.waits()
+  wire.themeStream = () => wire.waits()
   wire.requestedTasks.length = 0
+  wire.taskSignals.length = 0
+  wire.themeSignals.length = 0
+  wire.agentSignals.length = 0
+  vi.useRealTimers()
 })
 
 describe('App', () => {
@@ -133,26 +150,126 @@ describe('App', () => {
   })
 
   it('lists the vaults of the installation, as the window is served them', async () => {
-    wire.getPlugins.mockResolvedValueOnce({ plugins: [] })
+    wire.getPlugins.mockResolvedValueOnce({
+      plugins: [{ id: 'md.numen.missing', name: 'Missing' }],
+    })
     wire.listVaults.mockResolvedValueOnce({
       vaults: [{ id: 'roots', name: 'Roots', path: '/vaults/Roots', isMissing: false }],
     })
     let shell: ReturnType<typeof useShell> | undefined
-    mounted.push(
-      mount(
-        defineComponent({
-          setup: () => {
-            shell = useShell({ listPlugins: async () => [] })
-            return () => null
-          },
-        }),
-      ),
+    let initialLoading = false
+    const wrapper = mount(
+      defineComponent({
+        setup: () => {
+          shell = useShell({
+            fetch: (async () =>
+              new Response('not found', { status: 404 })) as unknown as typeof fetch,
+          })
+          initialLoading = shell.plugins.isLoading.value
+          return () => null
+        },
+      }),
     )
+    mounted.push(wrapper)
+    expect(initialLoading).toBe(true)
     await flushPromises()
 
+    expect(shell?.plugins.isLoading.value).toBe(false)
+    expect(shell?.plugins.failures.value[0]).toContain('md.numen.missing:')
+    expect(shell?.plugins.style.value).toBeUndefined()
     expect(shell?.vaults.list.value).toStrictEqual([
       { id: 'roots', name: 'Roots', path: '/vaults/Roots' },
     ])
+
+    const keyEvent = new KeyboardEvent('keydown', { key: 'a', cancelable: true })
+    globalThis.dispatchEvent(keyEvent)
+    expect(keyEvent.defaultPrevented).toBe(false)
+    expect(shell?.tab.value).toBeNull()
+  })
+
+  it('records failed plugins, uses custom or default linkClient, and cleans up on unmount', async () => {
+    let agentHost: { resolveLinks: (text: string, vault: string) => Promise<unknown> } | undefined
+    const customLinks = {
+      resolveAddresses: vi.fn(async () => ({ found: [], resolved: [] })),
+    }
+    let shellDefault: ReturnType<typeof useShell> | undefined
+    const defaultWrapper = mount(
+      defineComponent({
+        setup: () => {
+          shellDefault = useShell({
+            listPlugins: async () => ['md.numen.broken', 'md.numen.closing'],
+            listVaults: async () => VAULTS,
+            fetch: (async (url: string) => {
+              if (url.includes('broken')) return new Response('not json', { status: 200 })
+              return new Response(JSON.stringify({ ...MANIFEST, id: 'md.numen.closing' }))
+            }) as unknown as typeof fetch,
+            dynamicImport: async () => ({
+              activate: (ctx: {
+                agent?: { resolveLinks: (text: string, vault: string) => Promise<unknown> }
+                subscriptions: { dispose: () => void }[]
+                registerTabKind: (one: unknown) => void
+              }) => {
+                agentHost = ctx.agent
+                ctx.subscriptions.push({
+                  dispose: () => {
+                    throw new Error('close failure')
+                  },
+                })
+                ctx.registerTabKind({
+                  kind: 'review',
+                  component: {},
+                  placement: { pane: 'main', order: 0 },
+                })
+              },
+            }),
+          })
+          return () => null
+        },
+      }),
+    )
+    mounted.push(defaultWrapper)
+    await flushPromises()
+
+    expect(shellDefault?.plugins.failures.value[0]).toContain('md.numen.broken:')
+    expect(shellDefault?.plugins.style.value).toBe('/plugin/md.numen.closing/dist/styles.css')
+    await agentHost?.resolveLinks('[[Note]]', 'physics')
+    expect(wire.resolveAddresses).toHaveBeenCalled()
+
+    defaultWrapper.unmount()
+    await flushPromises()
+    expect(wire.agentSignals.at(-1)?.aborted).toBe(true)
+    expect(shellDefault?.plugins.failures.value).toContain(
+      formatErrorMessage(new Error('close failure')),
+    )
+    const keyAfterUnmount = new KeyboardEvent('keydown', { key: 'a', cancelable: true })
+    globalThis.dispatchEvent(keyAfterUnmount)
+    expect(keyAfterUnmount.defaultPrevented).toBe(false)
+    expect(shellDefault?.tab.value).toBeNull()
+
+    const customWrapper = mount(
+      defineComponent({
+        setup: () => {
+          useShell({
+            listPlugins: async () => ['md.numen.cards'],
+            listVaults: async () => [],
+            linkClient: customLinks,
+            fetch: (async () => new Response(JSON.stringify(MANIFEST))) as unknown as typeof fetch,
+            dynamicImport: async () => ({
+              activate: (ctx: {
+                agent?: { resolveLinks: (text: string, vault: string) => Promise<unknown> }
+              }) => {
+                agentHost = ctx.agent
+              },
+            }),
+          })
+          return () => null
+        },
+      }),
+    )
+    mounted.push(customWrapper)
+    await flushPromises()
+    await agentHost?.resolveLinks('[[Note]]', 'physics')
+    expect(customLinks.resolveAddresses).toHaveBeenCalled()
   })
 })
 
@@ -212,19 +329,44 @@ describe('the window over a plugin that draws the review', () => {
     expect(window.findAll('.welcome-page__row--vault')).toHaveLength(2)
   })
 
-  it('lists no vault and draws no card when the vaults could not be listed', async () => {
-    const { window } = await mountWindow(async () => {
-      throw new Error('the list is locked')
-    })
+  it('lists no vault, records a notice, and finishes listing when the vaults could not be listed', async () => {
+    let shell: ReturnType<typeof useShell> | undefined
+    mounted.push(
+      mount(
+        defineComponent({
+          setup: () => {
+            shell = useShell(
+              createDeps(async () => {
+                throw new Error('the list is locked')
+              }),
+            )
+            return () => null
+          },
+        }),
+      ),
+    )
+    await flushPromises()
 
-    expect(window.findAll('.welcome-page__row--vault')).toHaveLength(0)
-    expect(window.text()).not.toContain('the list is locked')
+    expect(shell?.vaults.isListing.value).toBe(false)
+    expect(shell?.vaults.list.value).toStrictEqual([])
+    expect(shell?.notices.notices.value).toMatchObject([
+      {
+        text: formatErrorMessage(new Error('the list is locked')),
+        severity: 'error',
+      },
+    ])
   })
 })
 
 describe('the work behind the window', () => {
-  it("is followed for the window's own target and held as notices, not drawn", async () => {
+  it("is followed for the window's own target and held as notices, and aborts on unmount", async () => {
+    let attempts = 0
+    let finishSecond: (() => void) | undefined
     wire.tasks = async function* () {
+      attempts += 1
+      if (attempts === 1) {
+        throw new Error('task stream lost')
+      }
       yield {
         tasks: [
           {
@@ -236,25 +378,85 @@ describe('the work behind the window', () => {
           },
         ],
       }
-      await new Promise<never>(() => undefined)
+      await new Promise<void>((resolve) => {
+        finishSecond = resolve
+      })
     }
+    vi.useFakeTimers()
     let shell: ReturnType<typeof useShell> | undefined
-    mounted.push(
-      mount(
-        defineComponent({
-          setup: () => {
-            shell = useShell(createDeps())
-            return () => null
-          },
-        }),
-      ),
+    const wrapper = mount(
+      defineComponent({
+        setup: () => {
+          shell = useShell(createDeps())
+          return () => null
+        },
+      }),
     )
+    mounted.push(wrapper)
     await flushPromises()
 
     expect(wire.requestedTasks).toStrictEqual([{ window: 'desktop.flashcards' }])
-    expect(shell?.notices.notices.value.map((one) => one.text)).toStrictEqual([
-      'Indexing the vault',
+    expect(shell?.notices.notices.value).toMatchObject([
+      {
+        text: 'lost touch with numen — the window keeps trying',
+        severity: 'error',
+      },
     ])
+
+    await vi.advanceTimersByTimeAsync(1_000)
+    await flushPromises()
+    expect(shell?.notices.notices.value.map((one) => one.text)).toContain('Indexing the vault')
+
+    const signal = wire.taskSignals.at(-1)
+    expect(signal?.aborted).toBe(false)
+    wrapper.unmount()
+    expect(signal?.aborted).toBe(true)
+    finishSecond?.()
+    await vi.advanceTimersByTimeAsync(1_000)
+    await flushPromises()
+    expect(attempts).toBe(2)
+  })
+})
+
+describe('external links in the window', () => {
+  it('intercepts external anchor clicks, reports errors to notices, and stops on unmount', async () => {
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => {
+      throw new Error('blocked popup')
+    })
+    let shell: ReturnType<typeof useShell> | undefined
+    const wrapper = mount(
+      defineComponent({
+        setup: () => {
+          shell = useShell(createDeps())
+          return () => h('a', { href: 'https://example.test/docs' }, 'Docs')
+        },
+      }),
+      { attachTo: document.body },
+    )
+    mounted.push(wrapper)
+    await flushPromises()
+
+    wrapper.find('a').element.click()
+    await vi.waitFor(() => {
+      expect(openSpy).toHaveBeenCalledWith('https://example.test/docs', '_blank')
+      expect(shell?.notices.notices.value).toMatchObject([
+        {
+          text: formatErrorMessage(new Error('blocked popup')),
+          severity: 'error',
+        },
+      ])
+    })
+
+    openSpy.mockClear()
+    const anchor = document.createElement('a')
+    anchor.href = 'https://example.test/after'
+    document.body.appendChild(anchor)
+    wrapper.unmount()
+    anchor.click()
+    await flushPromises()
+    anchor.remove()
+    expect(openSpy).not.toHaveBeenCalled()
+    openSpy.mockRestore()
   })
 })
 
@@ -321,8 +523,112 @@ describe('the appearance palette', () => {
       name: 'plugin:org.example.themes/night',
       mode: THEME_MODE.SYSTEM,
     })
+    expect(wire.readTheme).toHaveBeenCalledWith({ name: 'plugin:org.example.themes/night' })
     expect(document.head.querySelector('style[data-appearance="theme"]')?.textContent).toBe(
       ':root { color-scheme: dark; }',
     )
+  })
+
+  it('toggles only on unmodified Ctrl+P or Cmd+P, watches theme updates, and handles errors', async () => {
+    let streamStep = 0
+    let finishSecondThemeStream: (() => void) | undefined
+    wire.themeStream = async function* () {
+      streamStep += 1
+      if (streamStep === 1) {
+        yield { names: [] }
+        yield { names: ['preset:numen'] }
+        yield { names: ['preset:numen', 'plugin:org.example.themes/night'] }
+        throw new Error('theme stream lost')
+      }
+      await new Promise<void>((resolve) => {
+        finishSecondThemeStream = resolve
+      })
+    }
+    vi.useFakeTimers()
+    let shell: ReturnType<typeof useShell> | undefined
+    const wrapper = mount(
+      defineComponent({
+        setup: () => {
+          shell = useShell({
+            listPlugins: async () => [],
+            listVaults: async () => [],
+          })
+          return () => null
+        },
+      }),
+    )
+    mounted.push(wrapper)
+    await flushPromises()
+
+    expect(shell?.appearance.isOpen.value).toBe(false)
+    expect(shell?.appearance.query.value).toBe('')
+    expect(wire.listThemes).toHaveBeenCalledTimes(3)
+    expect(streamStep).toBe(1)
+
+    await vi.advanceTimersByTimeAsync(1_000)
+    await flushPromises()
+    expect(streamStep).toBe(2)
+    expect(
+      shell?.notices.notices.value.some(
+        (one) =>
+          one.severity === 'error' &&
+          one.text === 'lost touch with numen — the window keeps trying',
+      ),
+    ).toBe(true)
+
+    for (const ignored of [
+      new KeyboardEvent('keydown', { key: 'p', cancelable: true }),
+      new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, altKey: true, cancelable: true }),
+      new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, shiftKey: true, cancelable: true }),
+      new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, cancelable: true }),
+    ]) {
+      globalThis.dispatchEvent(ignored)
+      expect(shell?.appearance.isOpen.value).toBe(false)
+    }
+
+    const prePrevented = new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, cancelable: true })
+    prePrevented.preventDefault()
+    globalThis.dispatchEvent(prePrevented)
+    expect(shell?.appearance.isOpen.value).toBe(false)
+
+    shell!.appearance.query.value = 'stale'
+    wire.getPlugins.mockRejectedValueOnce(new Error('plugins offline'))
+    const cmdP = new KeyboardEvent('keydown', { key: 'P', metaKey: true, cancelable: true })
+    globalThis.dispatchEvent(cmdP)
+    expect(cmdP.defaultPrevented).toBe(true)
+    expect(shell?.appearance.isOpen.value).toBe(true)
+    expect(shell?.appearance.query.value).toBe('')
+    await flushPromises()
+    expect(
+      shell?.notices.notices.value.some(
+        (one) =>
+          one.severity === 'error' && one.text === formatErrorMessage(new Error('plugins offline')),
+      ),
+    ).toBe(true)
+
+    globalThis.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, cancelable: true }),
+    )
+    expect(shell?.appearance.isOpen.value).toBe(false)
+
+    globalThis.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, cancelable: true }),
+    )
+    expect(shell?.appearance.isOpen.value).toBe(true)
+    await shell?.appearance.onChoose('other:noop')
+    expect(shell?.appearance.isOpen.value).toBe(false)
+
+    const themeSignal = wire.themeSignals.at(-1)
+    expect(themeSignal?.aborted).toBe(false)
+    wrapper.unmount()
+    expect(themeSignal?.aborted).toBe(true)
+    finishSecondThemeStream?.()
+    await vi.advanceTimersByTimeAsync(1_000)
+    await flushPromises()
+    expect(streamStep).toBe(2)
+    globalThis.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, cancelable: true }),
+    )
+    expect(shell?.appearance.isOpen.value).toBe(false)
   })
 })

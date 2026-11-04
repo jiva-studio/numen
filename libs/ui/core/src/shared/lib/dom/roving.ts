@@ -21,6 +21,7 @@ export const stepTo = <T>(
   for (let step = 1; step <= total; step += 1) {
     const pos = (((from + by * step) % total) + total) % total
     const item = items[pos]
+    // Stryker disable next-line ConditionalExpression: pos is within 0..total-1; undefined check narrows noUncheckedIndexedAccess
     if (item !== undefined && canLand(item)) return pos
   }
   return -1

@@ -4,7 +4,7 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, shallowRef } from 'vue'
-import { useOutsidePress } from './outside'
+import { isInside, useOutsidePress } from './outside'
 
 let mounted: { unmount: () => void } | null = null
 const elements: HTMLElement[] = []
@@ -97,5 +97,21 @@ describe('a press outside', () => {
     wrapper.unmount()
     press(createElement())
     expect(onOutside).not.toHaveBeenCalled()
+  })
+
+  it('checks target node containment when composedPath is empty', () => {
+    const inside = createElement()
+    const child = document.createElement('span')
+    inside.appendChild(child)
+    const outside = createElement()
+    expect(isInside(inside, { composedPath: () => [], target: child } as unknown as Event)).toBe(
+      true,
+    )
+    expect(isInside(inside, { composedPath: () => [], target: outside } as unknown as Event)).toBe(
+      false,
+    )
+    expect(isInside(inside, { composedPath: () => [], target: null } as unknown as Event)).toBe(
+      false,
+    )
   })
 })

@@ -82,22 +82,51 @@ describe('the files of the vault a plugin is handed', () => {
 })
 
 describe('dynamic creator registration', () => {
-  it('registers custom file creators and creates files of registered kinds', async () => {
+  it('registers custom file creators, falls back to windowTabs, and handles errors', async () => {
     const writeMessage = vi.fn()
     const openNewFile = vi.fn()
+    const createFileOfKind = vi.fn()
     const makers = createFileMakers({
       tabOpeners: { openNewFile } as never,
-      windowTabs: { createFileOfKind: vi.fn() },
+      windowTabs: { createFileOfKind },
       writeMessage,
+      creators: {
+        preset: async (title, folder) => ({
+          ok: true,
+          value: { path: `${folder}/${title}.preset` },
+        }),
+      },
     })
 
-    makers.registerCreator('kanban', async (title, folder) => ({
+    expect(await makers.createFile('preset', 'dir', 'One')).toBe('dir/One.preset')
+
+    const disposeFirst = makers.registerCreator('kanban', async (title, folder) => ({
       ok: true,
       value: { path: `${folder}/${title}.kanban` },
     }))
+    const disposeSecond = makers.registerCreator('kanban', async (title, folder) => ({
+      ok: true,
+      value: { path: `${folder}/${title}.kanban2` },
+    }))
+    disposeFirst()
+    expect(await makers.createFile('kanban', 'boards', 'Sprint')).toBe('boards/Sprint.kanban2')
 
-    const path = await makers.createFile('kanban', 'boards', 'Sprint')
-    expect(path).toBe('boards/Sprint.kanban')
+    disposeSecond()
+    createFileOfKind.mockResolvedValueOnce(undefined)
+    expect(await makers.createFile('kanban', 'boards', 'Sprint')).toBe('')
+    expect(writeMessage).toHaveBeenCalledTimes(1)
+    expect(writeMessage).toHaveBeenCalledWith(
+      'Unavailable: the plugin is disabled or stopped.',
+      'error',
+    )
+
+    writeMessage.mockClear()
+    createFileOfKind.mockResolvedValueOnce({ ok: false, error: 'alreadyExists' })
+    expect(await makers.createFile('kanban', 'boards', 'Sprint')).toBe('')
+    expect(writeMessage).toHaveBeenCalledWith('a file with this name exists', 'error')
+
+    createFileOfKind.mockResolvedValueOnce({ ok: true, value: { path: 'boards/Sprint.kb' } })
+    expect(await makers.createFile('kanban', 'boards', 'Sprint')).toBe('boards/Sprint.kb')
   })
 })
 
@@ -125,7 +154,14 @@ describe('the window’s commands over a row', () => {
     ])
   })
 
-  it('includes dynamic file menu items over a file that is no note', () => {
+  it('includes dynamic file menu items and context menu items over a single non-folder file', () => {
+    const getContextMenuItems = vi.fn((t) => [
+      {
+        id: `ctx:${t.path}:${t.name}:${t.isFolder}:${t.isNote}:${t.isSeveral}`,
+        label: 'Plugin Action',
+        handler: vi.fn(),
+      },
+    ])
     const getFileMenuItems = vi.fn((path: string) =>
       path === 'Lecture.mp3'
         ? [
@@ -146,6 +182,7 @@ describe('the window’s commands over a row', () => {
       getTarget: () => target as never,
       runCommand: vi.fn(),
       reportError: vi.fn(),
+      getContextMenuItems: getContextMenuItems as never,
       getFileMenuItems,
     })
 
@@ -153,11 +190,28 @@ describe('the window’s commands over a row', () => {
 
     expect(getFileMenuItems).toHaveBeenCalledWith('Lecture.mp3')
     expect(ids.map((one) => one.id)).toStrictEqual([
+      'ctx:Lecture.mp3:Lecture.mp3:false:false:false',
       'file-menu:create-text:whisper:',
       'file-menu:create-text:proofread:v1',
       'copy',
       'remove',
     ])
+
+    // File menu items are not requested for folders or multi-selection
+    getFileMenuItems.mockClear()
+    const folderCmds = host.getPathCommands({
+      entry: entry('dir', false, true),
+      isSeveral: false,
+    })
+    expect(getFileMenuItems).not.toHaveBeenCalled()
+    expect(folderCmds.some((c) => c.id === 'remove')).toBe(true)
+
+    const multiCmds = host.getPathCommands({
+      entry: entry('Lecture.mp3', false),
+      isSeveral: true,
+    })
+    expect(getFileMenuItems).not.toHaveBeenCalled()
+    expect(multiCmds.map((c) => c.id)).toContain('remove')
   })
 
   it('offers removal over several rows and file commands over a file', () => {
@@ -192,6 +246,64 @@ describe('the window’s commands over a row', () => {
       path: '',
       file: '',
       others: [],
+    })
+
+    // Delegates to runContextMenu first when provided
+    const runContextMenu = vi
+      .fn()
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false)
+      .mockRejectedValueOnce(new Error('ctx error'))
+    const reportError = vi.fn()
+    const fallbackRun = vi.fn()
+    const ctxHost = createPathCommandHost({
+      getTarget: () => target as never,
+      runCommand: fallbackRun,
+      runContextMenu,
+      reportError,
+    })
+
+    ctxHost.runPathCommand('ctx-1', {
+      paths: ['a.md'],
+      name: 'a.md',
+      isNote: true,
+      isFolder: false,
+    })
+    ctxHost.runPathCommand('ctx-2', {
+      paths: ['a.md', 'b.md'],
+      name: 'a.md',
+      isNote: true,
+      isFolder: false,
+    })
+    ctxHost.runPathCommand('ctx-3', {
+      paths: ['a.md'],
+      name: 'a.md',
+      isNote: true,
+      isFolder: false,
+    })
+    return new Promise<void>((r) => setTimeout(r, 0)).then(() => {
+      expect(runContextMenu).toHaveBeenNthCalledWith(1, 'ctx-1', {
+        path: 'a.md',
+        name: 'a.md',
+        isFolder: false,
+        isNote: true,
+        isSeveral: false,
+      })
+      expect(runContextMenu).toHaveBeenNthCalledWith(2, 'ctx-2', {
+        path: 'a.md',
+        name: 'a.md',
+        isFolder: false,
+        isNote: true,
+        isSeveral: true,
+      })
+      expect(fallbackRun).toHaveBeenCalledExactlyOnceWith('ctx-2', {
+        ...target,
+        path: 'a.md',
+        title: 'a.md',
+        file: 'a.md',
+        others: ['b.md'],
+      })
+      expect(reportError).toHaveBeenCalledOnce()
     })
   })
 

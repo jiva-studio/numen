@@ -127,12 +127,14 @@ async function askDisplayState(core: VaultPort, display: DisplayState): Promise<
 
 async function checkVaultSwapped(core: VaultPort, display: DisplayState): Promise<boolean> {
   const was = display.at.value
+  /* Stryker disable BlockStatement: callers only test truthiness of checkVaultSwapped */
   try {
     const state = (await askDisplayState(core, display)) as { path: string }
     return was !== '' && state.path !== was
   } catch {
     return false
   }
+  /* Stryker restore BlockStatement */
 }
 
 async function readInitialNotePath(core: VaultPort, display: DisplayState): Promise<string> {

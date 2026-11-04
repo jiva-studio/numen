@@ -148,10 +148,35 @@ describe('the note editors', () => {
 
   it('closes the changes and the flush', () => {
     const { editors } = create()
+    const closeChanges = vi.spyOn(editors.changes, 'close')
 
     editors.close()
 
+    expect(closeChanges).toHaveBeenCalledTimes(1)
     expect(h.parts.fileFlush.close).toHaveBeenCalledTimes(1)
+  })
+
+  it('measures all open note tabs via state.measure or state.editor.measure', () => {
+    const { editors, windowTabs } = create()
+    const measureDirect = vi.fn()
+    const measureNested = vi.fn()
+    windowTabs.tabs.value = [
+      { id: 't1', title: 'Direct' },
+      { id: 't2', title: 'Nested' },
+      { id: 't3', title: 'None' },
+      { id: 't4', title: 'Missing' },
+    ]
+    windowTabs.getTab.mockImplementation((id: string) => {
+      if (id === 't1') return { state: { measure: measureDirect } }
+      if (id === 't2') return { state: { editor: { measure: measureNested } } }
+      if (id === 't4') return null
+      return { state: {} }
+    })
+
+    editors.noted.measureAll()
+
+    expect(measureDirect).toHaveBeenCalledTimes(1)
+    expect(measureNested).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -169,5 +194,33 @@ describe('the store of open notes, as the palette reads it', () => {
 
     expect(store.getTabAt('title of titled-note')).toBe('titled-note')
     expect(store.getTabAt('notes/Elsewhere.md')).toBeNull()
+  })
+
+  it('delegates has, getPath, asking, flushPending, and close with error reporting', async () => {
+    const { editors, writers } = create()
+    const store = editors.stores[0]!
+
+    expect(store.has('known-note')).toBe(true)
+    expect(store.has('other')).toBe(false)
+    expect(store.getPath('known-note')).toBe('title of known-note')
+    expect(store.asking('known-note')).toBe(false)
+    h.parts.notes.stale = (() => ({ disk: 'new' })) as unknown as () => null
+    expect(store.asking('known-note')).toBe(true)
+
+    const flushResult = Promise.resolve()
+    ;(h.parts.notes.flushPending as ReturnType<typeof vi.fn>).mockReturnValue(flushResult)
+    expect(store.flushPending('known-note')).toBe(flushResult)
+    expect(h.parts.notes.flushPending).toHaveBeenCalledWith('known-note')
+
+    ;(h.parts.notes.close as ReturnType<typeof vi.fn>).mockReturnValue(
+      Promise.reject(new Error('disk locked')),
+    )
+    store.close('known-note')
+    expect(h.parts.notes.close).toHaveBeenCalledWith('known-note')
+    await new Promise((r) => setTimeout(r, 10))
+    expect(writers.editing).toHaveBeenCalledWith(
+      'A note did not close: Numen is not responding; retrying',
+      'error',
+    )
   })
 })

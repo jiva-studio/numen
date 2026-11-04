@@ -4,7 +4,7 @@
 import { nextTick, ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { findTabKindIcon } from '@/entities/tab'
-import { useOpenTabs } from './useOpenTabs'
+import { parseSavedTabs, useOpenTabs } from './useOpenTabs'
 
 interface Entry {
   id: string
@@ -12,13 +12,18 @@ interface Entry {
   kind?: string
   icon?: object
   openTab?: Record<string, string>
+  savedState?: unknown
   /** The tab is listed but the window cannot resolve it. */
   unresolved?: boolean
   /** The tab's kind accepts text sent to it, as a conversation does. */
   takesText?: boolean
 }
 
-const create = (entries: Entry[], front: { id: string; kind: string } | null = null) => {
+const create = (
+  entries: Entry[],
+  front: { id: string; kind: string } | null = null,
+  isWriting = ref(true),
+) => {
   const writeOpenTabs = vi.fn((_tabs: unknown) => Promise.resolve())
   const tabs = ref(entries.map(({ id, title }) => ({ id, title })))
   const windowTabs = {
@@ -33,13 +38,14 @@ const create = (entries: Entry[], front: { id: string; kind: string } | null = n
           kind: one.kind ?? 'note',
           icon: one.icon,
           ...(one.openTab ? { getOpenTab: () => one.openTab } : {}),
+          ...(one.savedState !== undefined ? { getState: () => one.savedState } : {}),
           ...(one.takesText ? { receiveText: vi.fn() } : {}),
         },
       }
     },
   } as unknown as Parameters<typeof useOpenTabs>[0]['windowTabs']
   return {
-    ...useOpenTabs({ core: { writeOpenTabs }, windowTabs, reportError: vi.fn() }),
+    ...useOpenTabs({ core: { writeOpenTabs }, windowTabs, isWriting, reportError: vi.fn() }),
     writeOpenTabs,
     tabs,
   }
@@ -275,5 +281,43 @@ describe('the open tabs while the window leaves its vault', () => {
     await nextTick()
 
     expect(target.writeOpenTabs).toHaveBeenCalledTimes(writeCount + 1)
+  })
+
+  it('does not flush when paused while isWriting is false, and flushes pending state when true', async () => {
+    const isWriting = ref(false)
+    const target = create(
+      [{ id: 'a', title: 'A', kind: 'note', openTab: { path: 'a.md' }, savedState: { page: 2 } }],
+      null,
+      isWriting,
+    )
+    expect(target.open.value.tabs[0]?.state).toBe('{"page":2}')
+    expect(target.writeOpenTabs).not.toHaveBeenCalled()
+
+    await target.pause()
+    expect(target.writeOpenTabs).not.toHaveBeenCalled()
+
+    target.resume()
+    isWriting.value = true
+    await nextTick()
+    target.writeOpenTabs.mockClear()
+    await target.pause()
+    expect(target.writeOpenTabs).toHaveBeenCalledTimes(1)
+  })
+
+  it('parses saved tabs and filters out entries with empty id or kind', () => {
+    expect(
+      parseSavedTabs({
+        activeId: 'a',
+        tabs: [
+          { id: '', kind: 'note', title: 'Empty id', path: 'x.md', state: '' },
+          { id: 'b', kind: '', title: 'Empty kind', path: 'y.md', state: '' },
+          { id: 'a', kind: 'note', title: 'A', path: 'a.md', state: '{"scroll":10}' },
+          { id: 'c', kind: 'note', title: '', path: 'c.md', state: '{bad json' },
+        ],
+      }),
+    ).toEqual([
+      { id: 'a', kind: 'note', title: 'A', path: 'a.md', saved: { scroll: 10 } },
+      { id: 'c', kind: 'note', path: 'c.md', saved: undefined },
+    ])
   })
 })

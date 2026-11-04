@@ -4,7 +4,12 @@ import { mount } from '@vue/test-utils'
 import type { PluginContext, TabKindRegistration } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginHost } from './host'
-import { registerPluginStyle, unregisterPluginStyle } from '../styles'
+import {
+  clearPluginStyles,
+  loadPluginStyle,
+  registerPluginStyle,
+  unregisterPluginStyle,
+} from '../styles'
 import {
   createDeclaredPane,
   createDeclaredTabKind,
@@ -117,8 +122,44 @@ describe('the pane of a declared kind', () => {
     })
 
     expect(view.find('.member').text()).toBe('Graph.md')
+    expect(view.find('link').exists()).toBe(false)
     expect(view.element.shadowRoot).toBeNull()
     expect(view.find('.member').attributes()).toStrictEqual({ class: 'member' })
+    view.unmount()
+  })
+
+  it('adopts a constructed stylesheet on mount and releases it on unmount without rendering a link', async () => {
+    class FakeSheet {
+      cssText = ''
+      replaceSync(text: string) {
+        this.cssText = text
+      }
+    }
+    vi.stubGlobal('CSSStyleSheet', FakeSheet)
+    Object.defineProperty(document, 'adoptedStyleSheets', {
+      value: [],
+      writable: true,
+      configurable: true,
+    })
+    try {
+      await loadPluginStyle(
+        'md.numen.sample',
+        '/plugin/md.numen.sample/dist/styles.css',
+        async () => ({ ok: true, text: async () => '.member {}' }) as unknown as Response,
+      )
+      const view = mount(createDeclaredPane('md.numen.sample', Pane), {
+        props: { state: { at: 'Graph.md', id: 'target: 1', title: '' } },
+      })
+      expect(view.find('link').exists()).toBe(false)
+      expect(document.adoptedStyleSheets.length).toBe(1)
+
+      view.unmount()
+      expect(document.adoptedStyleSheets.length).toBe(0)
+    } finally {
+      clearPluginStyles()
+      vi.unstubAllGlobals()
+      Reflect.deleteProperty(document, 'adoptedStyleSheets')
+    }
   })
 
   it('renders the plugin stylesheet next to the component', () => {

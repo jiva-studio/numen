@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http/httptest"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -11,7 +12,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 func newRegistry(t *testing.T) *Registry {
@@ -114,9 +118,16 @@ func TestNewDeleteTextRunDeletesTheVersionTheHostNames(t *testing.T) {
 	if _, err := run(ctx, Request{Command: "delete", Path: "a.pdf"}); !errors.Is(err, ErrBadArguments) {
 		t.Fatalf("a call with no version: got %v, want ErrBadArguments", err)
 	}
+	if _, err := run(ctx, Request{Command: "delete", Path: "a.pdf", Arguments: Arguments{ArgumentVersion: "missing"}}); err == nil {
+		t.Fatal("expected error when deleting a missing version")
+	}
 	arguments := Arguments{ArgumentVersion: string(version.GetID())}
-	if _, err := run(ctx, Request{Command: "delete", Path: "a.pdf", Arguments: arguments}); err != nil {
+	res, err := run(ctx, Request{Command: "delete", Path: "a.pdf", Arguments: arguments})
+	if err != nil {
 		t.Fatal(err)
+	}
+	if want := "deleted " + string(version.GetID()) + " of a.pdf"; res.Message != want {
+		t.Fatalf("got message %q, want %q", res.Message, want)
 	}
 	listing, err := texts.ListVersions(ctx, "a.pdf")
 	if err != nil {
@@ -124,5 +135,41 @@ func TestNewDeleteTextRunDeletesTheVersionTheHostNames(t *testing.T) {
 	}
 	if len(listing.Versions) != 0 {
 		t.Fatalf("the versions after the deletion: %+v", listing.Versions)
+	}
+}
+
+func TestMountAndCanceledContextAndUnlockAfterRun(t *testing.T) {
+	registry := newRegistry(t)
+	h, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "tok"}, func(s *server.Server) error {
+		Mount(s, registry)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(h)
+	t.Cleanup(srv.Close)
+
+	client := numenv1connect.NewPluginCommandServiceClient(srv.Client(), srv.URL, hostcall.WithBearer("tok"))
+	res, err := client.RunCommand(t.Context(), connect.NewRequest(&v1.RunCommandRequest{
+		Command:   "greet",
+		Arguments: map[string]string{"name": "Bob"},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Msg.GetMessage() != "hello Bob" {
+		t.Fatalf("got %q, want %q", res.Msg.GetMessage(), "hello Bob")
+	}
+
+	if err := registry.Add("extra", func(context.Context, Request) (Result, error) { return Result{Message: "ok"}, nil }); err != nil {
+		t.Fatal(err)
+	}
+
+	canceledCtx, cancel := context.WithCancel(t.Context())
+	cancel()
+	_, err = service{handler: registry}.RunCommand(canceledCtx, connect.NewRequest(&v1.RunCommandRequest{Command: "fail"}))
+	if connect.CodeOf(err) != connect.CodeCanceled {
+		t.Fatalf("got %v, want CodeCanceled", err)
 	}
 }

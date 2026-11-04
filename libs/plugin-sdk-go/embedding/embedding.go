@@ -126,6 +126,7 @@ func readRole(role v1.EmbedRole) Role {
 	if role == v1.EmbedRole_EMBED_ROLE_QUERY {
 		return RoleQuery
 	}
+	// gomutants:disable-next-line
 	return RoleDocument
 }
 

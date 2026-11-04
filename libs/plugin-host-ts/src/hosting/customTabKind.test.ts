@@ -1,8 +1,23 @@
 import { describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, ref } from 'vue'
+import { defineComponent, effectScope, h, ref } from 'vue'
 import { mount } from '@vue/test-utils'
+import { clearPluginStyles, loadPluginStyle, registerPluginStyle } from '../styles'
+import { createBufferedNoteState } from './customTabBuffer'
 import { createCustomTabKind, createPluginPaneWrapper, createReaderTabKind } from './customTabKind'
-import { renderPaneContent } from './pluginView'
+import {
+  adoptHostStyles,
+  attachPluginRoot,
+  extractFilename,
+  extractStatePath,
+  extractTitleValue,
+  PANE_HOST_STYLE,
+  PANE_LAYOUT_STYLE,
+  renderFallback,
+  renderPaneContent,
+  resolvePluginComponent,
+  stripMarkdownExtension,
+} from './pluginView'
+import type { NoteBuffer } from './types'
 
 describe('createPluginPaneWrapper', () => {
   it('unwraps es module default export and forwards normalized props', async () => {
@@ -120,9 +135,16 @@ describe('createCustomTabKind', () => {
       at: string
       path: string
       title: string
+      note: { value: { path: string; body: string } }
+      navigate: (next: string, title?: string) => void
     }
     expect(openState.path).toBe('notes/ideas.md')
     expect(openState.title).toBe('ideas')
+    expect(openState.note.value).toEqual({ path: 'notes/ideas.md', body: '' })
+
+    openState.navigate('.md')
+    expect(openState.title).toBe('')
+    expect(openState.note.value).toEqual({ path: '.md', body: '' })
 
     const initialTitle = customKind.getTitle!({ path: 'notes/ideas.md' })
     expect(initialTitle).toBe('ideas')
@@ -328,8 +350,21 @@ describe('createReaderTabKind (place)', () => {
     const wrapperVNode = nodes[2] as { children?: Array<{ props?: Record<string, unknown> }> }
     const childProps = wrapperVNode.children?.[0]?.props ?? {}
     expect(childProps.path).toBe('audio/730707BG.LON.mp3')
+    expect(childProps.pluginId).toBe('viewer-plugin')
     expect(childProps.title).toBeUndefined()
     expect((childProps.state as { title?: string })?.title).toBe('730707BG.LON.mp3')
+
+    const primNodes = renderPaneContent({
+      pluginId: 'viewer-plugin',
+      component: FakeReader,
+      state: 'raw-string',
+      shadowRoot: null,
+      containerClass: 'reader-pane',
+    }) as unknown[]
+    const primChildProps =
+      (primNodes[2] as { children?: Array<{ props?: Record<string, unknown> }> }).children?.[0]
+        ?.props ?? {}
+    expect(primChildProps['0']).toBeUndefined()
   })
 })
 
@@ -446,5 +481,782 @@ describe('createCustomTabKind (actions)', () => {
 
     kind.onShow!(state, 'note:notes/first.md')
     expect(syncPath).toHaveBeenCalledWith('note:notes/first.md', 'notes/second.md', 'Second Note')
+  })
+
+  it('covers reader and custom tab kind edge cases, action collisions, and in-flight navigation', async () => {
+    const measure = vi.fn()
+    const focusTab = vi.fn()
+    const handleKeyPress = vi.fn((e: KeyboardEvent) => e.key === 'Enter')
+
+    const prefixedReader = createReaderTabKind('p', {
+      id: 'reader:pdf',
+      component: null,
+    })
+    expect(prefixedReader.kind).toBe('reader:pdf')
+    expect(prefixedReader.getTitle!(undefined)).toBe('')
+    expect(prefixedReader.getTarget!(undefined)).toStrictEqual({ title: '' })
+    expect(prefixedReader.getOpenTab!(undefined)).toStrictEqual({ path: '' })
+    expect(prefixedReader.getOpenTab!({ path: 'a.pdf' })).toStrictEqual({ path: 'a.pdf' })
+    expect(prefixedReader.identity!('a.pdf')).toBe('a.pdf')
+    expect(prefixedReader.getState!(undefined)).toBeUndefined()
+
+    const middleReader = createReaderTabKind('p', {
+      id: 'my-reader:2',
+      component: null,
+      title: 'Fallback Reader',
+    })
+    expect(middleReader.kind).toBe('reader:my-reader:2')
+    expect(middleReader.getTitle!({ path: '' })).toBe('Fallback Reader')
+    expect(
+      (middleReader.open('a.pdf', 't', ['array']) as { selector: unknown }).selector,
+    ).toBeNull()
+    expect((middleReader.open('a.pdf', 't', 'str') as { selector: unknown }).selector).toBeNull()
+
+    prefixedReader.onShow!(undefined, 't1')
+    prefixedReader.onShow!({}, 't1')
+    prefixedReader.onShow!({ measure, focusTab }, 't1')
+    expect(measure).toHaveBeenCalledTimes(1)
+    expect(focusTab).toHaveBeenCalledTimes(1)
+
+    const enterEv = new KeyboardEvent('keydown', { key: 'Enter' })
+    const escEv = new KeyboardEvent('keydown', { key: 'Escape' })
+    expect(prefixedReader.onKeyPress!(undefined, enterEv)).toBe(false)
+    expect(prefixedReader.onKeyPress!({}, enterEv)).toBe(false)
+    expect(prefixedReader.onKeyPress!({ handleKeyPress }, enterEv)).toBe(true)
+    expect(prefixedReader.onKeyPress!({ handleKeyPress }, escEv)).toBe(false)
+
+    // CustomTabKind action priority and dispatch
+    const regDoWork = vi.fn()
+    const hostDoWork = vi.fn()
+    const onTabAction = vi.fn()
+    const syncPath = vi.fn()
+    let resolveFirstRead: ((val: string) => void) | undefined
+
+    const kindWithDispatch = createCustomTabKind(
+      'p',
+      {
+        kind: 'custom',
+        component: null,
+        actions: { doWork: regDoWork },
+      },
+      {
+        registerKind: () => vi.fn(),
+        registerExtensionReader: () => vi.fn(),
+        openTab: async () => '',
+        tabActionHandlers: { doWork: hostDoWork },
+        onTabAction,
+        getWorkspace: () => ({ syncPath }) as never,
+        readNote: (path: string) =>
+          path === 'notes/slow.md'
+            ? new Promise<string>((r) => {
+                resolveFirstRead = r
+              })
+            : Promise.resolve('# Fast'),
+      },
+    )
+
+    const st = kindWithDispatch.open('notes/slow.md', 't1') as Record<string, unknown>
+    ;(st.doWork as (x: number) => void)(42)
+    expect(regDoWork).toHaveBeenCalledWith('notes/slow.md', 42)
+    expect(hostDoWork).not.toHaveBeenCalled()
+
+    ;(st.dispatch as (action: string, arg: string) => void)('ping', 'pong')
+    expect(onTabAction).toHaveBeenCalledWith('ping', 'notes/slow.md', 'pong')
+
+    // Save while loading & unedited is ignored
+    const writeNote = vi.fn(async () => undefined)
+    const kindSaveGuard = createCustomTabKind(
+      'p',
+      { kind: 'note', component: null, actions: { dispatch: regDoWork } },
+      {
+        registerKind: () => vi.fn(),
+        registerExtensionReader: () => vi.fn(),
+        openTab: async () => '',
+        onTabAction,
+        readNote: () => new Promise(() => undefined),
+        writeNote,
+      },
+    )
+    const loadingState = kindSaveGuard.open('notes/load.md', 't2') as {
+      save: () => void
+      updateBody: (b: string) => void
+      dispatch: (a: string) => void
+    }
+    loadingState.dispatch('custom')
+    expect(onTabAction).toHaveBeenCalledTimes(1)
+    loadingState.save()
+    expect(writeNote).not.toHaveBeenCalled()
+    loadingState.updateBody('edited while loading')
+    writeNote.mockClear()
+    loadingState.save()
+    expect(writeNote).toHaveBeenCalledWith('notes/load.md', 'edited while loading')
+
+    // Navigating while slow.md read is in flight ignores slow.md resolution
+    const navFn = st.navigate as (next: string, title?: string) => void
+    ;(st.errorMessage as { value: string }).value = 'old error'
+    navFn('')
+    expect(st.path).toBe('notes/slow.md')
+    expect((st.errorMessage as { value: string }).value).toBe('old error')
+    navFn('notes/slow.md')
+    expect(st.path).toBe('notes/slow.md')
+    expect((st.errorMessage as { value: string }).value).toBe('old error')
+
+    navFn('notes/fast.md')
+    expect(st.path).toBe('notes/fast.md')
+    expect(st.title).toBe('fast')
+    expect((st.errorMessage as { value: string }).value).toBe('')
+    expect((st.note as { value: { path: string; body: string } }).value).toEqual({
+      path: 'notes/fast.md',
+      body: '',
+    })
+
+    resolveFirstRead?.('# Stale Slow Body')
+    await new Promise((r) => setTimeout(r, 10))
+    expect((st.body as { value: string }).value).toBe('# Fast')
+
+    // navigate hook ignores non-note paths
+    const navSpy = vi.fn()
+    await kindWithDispatch.navigate!({ navigate: navSpy }, 'books/book.epub', 'Book')
+    expect(navSpy).not.toHaveBeenCalled()
+    await kindWithDispatch.navigate!(undefined, 'notes/a.md', 'A')
+    await kindWithDispatch.navigate!({}, 'notes/a.md', 'A')
+    await kindWithDispatch.navigate!({ navigate: navSpy }, 'notes/a.md', 'A')
+    expect(navSpy).toHaveBeenCalledWith('notes/a.md', 'A')
+
+    // onShow measures state and editor, and syncs path via s.at or s.path
+    const m1 = vi.fn()
+    const m2 = vi.fn()
+    kindWithDispatch.onShow!(undefined, '')
+    kindWithDispatch.onShow!(undefined, 't1')
+    kindWithDispatch.onShow!({ path: 'notes/no-id.md' }, '')
+    kindWithDispatch.onShow!({ editor: {} }, 't1')
+    kindWithDispatch.onShow!({ measure: m1, editor: { measure: m2 }, path: '' }, 't1')
+    expect(m1).toHaveBeenCalledTimes(1)
+    expect(m2).toHaveBeenCalledTimes(1)
+    expect(syncPath).not.toHaveBeenCalled()
+
+    const kindNoDeps = createCustomTabKind('p', { kind: 'custom', component: null })
+    expect(() => kindNoDeps.onShow!({ path: 'notes/a.md' }, 't1')).not.toThrow()
+    const kindUndefWorkspace = createCustomTabKind(
+      'p',
+      { kind: 'custom', component: null },
+      {
+        registerKind: () => vi.fn(),
+        registerExtensionReader: () => vi.fn(),
+        openTab: async () => '',
+        getWorkspace: () => undefined,
+      },
+    )
+    expect(() => kindUndefWorkspace.onShow!({ path: 'notes/a.md' }, 't1')).not.toThrow()
+
+    kindWithDispatch.onShow!({ at: 'notes/at-only.md', title: 'At Title' }, 't1')
+    expect(syncPath).toHaveBeenCalledWith('t1', 'notes/at-only.md', 'At Title')
+
+    // getTitle, identity, getTarget, getOpenTab fallbacks
+    expect(kindWithDispatch.getTitle!(undefined)).toBe('custom')
+    expect(kindWithDispatch.getTitle!({ at: 'notes/from-at.md' })).toBe('from-at')
+    expect(kindWithDispatch.identity!('notes/a.md')).toBe('notes/a.md')
+    expect(kindWithDispatch.identity!('')).toBe('custom')
+    expect(kindWithDispatch.getTarget!(undefined)).toStrictEqual({ title: 'custom' })
+    expect(kindWithDispatch.getTarget!({ at: 'notes/from-at.md' })).toStrictEqual({
+      file: 'notes/from-at.md',
+      path: 'notes/from-at.md',
+      title: 'from-at',
+    })
+    expect(kindWithDispatch.getOpenTab!(undefined)).toStrictEqual({ path: '' })
+    expect(kindWithDispatch.getOpenTab!({ at: 'notes/from-at.md' })).toStrictEqual({
+      path: 'notes/from-at.md',
+    })
+    expect(kindWithDispatch.getOpenTab!({ path: 'notes/from-path.md' })).toStrictEqual({
+      path: 'notes/from-path.md',
+    })
+  })
+})
+
+describe('createBufferedNoteState', () => {
+  function createMockBuffer() {
+    const noteRef = ref({ path: 'notes/buf.md', body: 'initial', state: 'loading' })
+    const errRef = ref('')
+    const buffer: NoteBuffer = {
+      open: vi.fn(),
+      close: vi.fn(async () => true),
+      reload: vi.fn(),
+      flushPending: vi.fn(async () => undefined),
+      getOpenNote: vi.fn(() => noteRef.value),
+      getErrorMessage: vi.fn(() => errRef.value),
+      setBody: vi.fn(),
+      save: vi.fn(),
+      keep: vi.fn(),
+      take: vi.fn(),
+    }
+    return { buffer, noteRef, errRef }
+  }
+
+  it('binds note tab state, wikilinks, link following, navigation, and scope disposal', async () => {
+    const { buffer, noteRef, errRef } = createMockBuffer()
+    const findNotes = vi.fn(async (q: string) =>
+      q
+        ? [
+            { title: 'Alpha Note', path: 'notes/alpha.md' },
+            { title: 'Beta', path: 'notes/beta.md' },
+          ]
+        : [],
+    )
+    const getHeadings = vi.fn(
+      async (paths: readonly string[]) => new Map([[paths[0]!, [{ text: 'H1' }, { text: 'H2' }]]]),
+    )
+    const openFile = vi.fn()
+    const resolveLink = vi.fn(async (_from: string, addr: string) =>
+      addr === 'missing' ? '' : `notes/${addr}.md`,
+    )
+
+    const customKind = createCustomTabKind(
+      'md.numen.notes',
+      { kind: 'note', component: null, title: 'Note' },
+      {
+        registerKind: () => vi.fn(),
+        registerExtensionReader: () => vi.fn(),
+        openTab: async () => '',
+        getNoteBuffer: () => buffer,
+        getNotes: () => ({ findNotes, getHeadings }) as never,
+        getWorkspace: () => ({ openFile }) as never,
+        resolveLink,
+      },
+    )
+
+    const scope = effectScope()
+    const state = scope.run(() => customKind.open('notes/buf.md', 'tab-buf')) as ReturnType<
+      typeof createBufferedNoteState
+    >
+
+    expect(buffer.open).toHaveBeenCalledWith('tab-buf', 'notes/buf.md')
+    expect(state.at).toBe('notes/buf.md')
+    expect(state.path).toBe('notes/buf.md')
+    expect(state.pluginId).toBe('md.numen.notes')
+    expect(state.title).toBe('buf')
+    expect(state.body.value).toBe('initial')
+    expect(state.note.value).toEqual({ path: 'notes/buf.md', body: 'initial' })
+    expect(state.isLoading.value).toBe(true)
+    expect(state.fileConflict.value).toBeNull()
+
+    noteRef.value = { path: '', body: 'updated', state: 'stale' }
+    errRef.value = 'conflict err'
+    await new Promise((r) => setTimeout(r, 0))
+    expect(state.path).toBe('notes/buf.md')
+    expect(state.title).toBe('buf')
+    expect(state.note.value).toEqual({ path: 'notes/buf.md', body: 'updated' })
+    expect(state.isLoading.value).toBe(false)
+    expect(state.fileConflict.value).toBe('stale')
+    expect(state.errorMessage.value).toBe('conflict err')
+
+    noteRef.value = { path: 'notes/buf.md', body: 'gone body', state: 'gone' }
+    await new Promise((r) => setTimeout(r, 0))
+    expect(state.fileConflict.value).toBe('gone')
+
+    state.keepMine()
+    expect(buffer.keep).toHaveBeenCalledWith('tab-buf')
+    state.takeFile()
+    expect(buffer.take).toHaveBeenCalledWith('tab-buf')
+    state.updateBody('new text')
+    expect(buffer.setBody).toHaveBeenCalledWith('tab-buf', 'new text')
+    state.save()
+    expect(buffer.save).toHaveBeenCalledWith('tab-buf')
+
+    // Wikilinks search and headings
+    expect(await state.wikilinks.search('al')).toEqual([
+      { title: 'Alpha Note', type: 'note' },
+      { title: 'Beta', type: 'note' },
+    ])
+    expect(findNotes).toHaveBeenCalledWith('al', 20)
+
+    expect(await state.wikilinks.headings('alpha note')).toEqual(['H1', 'H2'])
+    expect(findNotes).toHaveBeenCalledWith('alpha note', 5)
+    expect(getHeadings).toHaveBeenCalledWith(['notes/alpha.md'])
+
+    expect(await state.wikilinks.headings('nonexistent')).toEqual([])
+    expect(await state.wikilinks.headings('')).toEqual(['H1', 'H2'])
+    expect(getHeadings).toHaveBeenCalledWith(['notes/buf.md'])
+
+    // Follow link
+    state.followLink('target')
+    state.followLink('missing')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(resolveLink).toHaveBeenCalledWith('notes/buf.md', 'target')
+    expect(openFile).toHaveBeenCalledTimes(1)
+    expect(openFile).toHaveBeenCalledWith('notes/target.md', { placement: 'split' })
+
+    // Navigate
+    state.navigate('')
+    state.navigate('notes/buf.md')
+    expect(buffer.flushPending).not.toHaveBeenCalled()
+
+    vi.mocked(buffer.flushPending).mockRejectedValueOnce(new Error('flush fail'))
+    vi.mocked(buffer.reload).mockRejectedValueOnce(new Error('reload fail'))
+    state.navigate('notes/next.md', 'Custom Next')
+    expect(state.path).toBe('notes/next.md')
+    expect(state.at).toBe('notes/next.md')
+    expect(state.title).toBe('Custom Next')
+    await new Promise((r) => setTimeout(r, 0))
+    expect(buffer.flushPending).toHaveBeenCalledWith('tab-buf')
+    expect(buffer.reload).toHaveBeenCalledWith('tab-buf', 'notes/next.md')
+
+    state.navigate('notes/third.md')
+    expect(state.title).toBe('third')
+
+    // Watcher follows renamed file in buffer, and does not reset custom title when path is unchanged
+    state.navigate('notes/renamed.md', 'Custom Renamed Title')
+    noteRef.value = { path: 'notes/renamed.md', body: 'same-path', state: 'ready' }
+    await new Promise((r) => setTimeout(r, 0))
+    expect(state.title).toBe('Custom Renamed Title')
+
+    noteRef.value = { path: 'notes/moved.md', body: 'moved', state: 'ready' }
+    await new Promise((r) => setTimeout(r, 0))
+    expect(state.path).toBe('notes/moved.md')
+    expect(state.at).toBe('notes/moved.md')
+    expect(state.title).toBe('moved')
+
+    vi.mocked(buffer.close).mockRejectedValueOnce(new Error('close fail'))
+    scope.stop()
+    expect(buffer.close).toHaveBeenCalledWith('tab-buf')
+
+    // Non-note custom tab kind does not open note buffer even when getNoteBuffer is provided
+    vi.mocked(buffer.open).mockClear()
+    const nonNoteWithBuffer = createCustomTabKind(
+      'p',
+      { kind: 'custom-other', component: null },
+      {
+        registerKind: () => vi.fn(),
+        registerExtensionReader: () => vi.fn(),
+        openTab: async () => '',
+        getNoteBuffer: () => buffer,
+      },
+    )
+    nonNoteWithBuffer.open('notes/x.md', 'tab-x')
+    expect(buffer.open).not.toHaveBeenCalled()
+
+    // Fallbacks when deps/notes/workspace are missing
+    const bareState = createBufferedNoteState(
+      { targetPath: 'notes/bare.md', id: 'bare', buffer },
+      { pluginId: 'p', title: 'Explicit Title', actions: {} },
+    )
+    expect(bareState.title).toBe('Explicit Title')
+    expect(await bareState.wikilinks.search('q')).toEqual([])
+    expect(await bareState.wikilinks.headings('q')).toEqual([])
+    expect(() => bareState.followLink('addr')).not.toThrow()
+
+    const depsWithoutNotesOrWorkspace = createBufferedNoteState(
+      { targetPath: 'notes/nonotes.md', id: 'nonotes', buffer },
+      {
+        pluginId: 'p',
+        actions: {},
+        deps: {
+          registerKind: () => vi.fn(),
+          registerExtensionReader: () => vi.fn(),
+          openTab: async () => '',
+          resolveLink: vi.fn(async () => 'a.md'),
+        },
+      },
+    )
+    expect(await depsWithoutNotesOrWorkspace.wikilinks.search('q')).toEqual([])
+    expect(await depsWithoutNotesOrWorkspace.wikilinks.headings('q')).toEqual([])
+    depsWithoutNotesOrWorkspace.followLink('addr')
+
+    const resolveWhenNoWorkspace = vi.fn(async () => 'a.md')
+    const emptyMapState = createBufferedNoteState(
+      { targetPath: '', id: 'empty', buffer },
+      {
+        pluginId: 'p',
+        actions: {},
+        deps: {
+          registerKind: () => vi.fn(),
+          registerExtensionReader: () => vi.fn(),
+          openTab: async () => '',
+          getNotes: () => undefined,
+          getWorkspace: () => undefined,
+          resolveLink: resolveWhenNoWorkspace,
+        },
+      },
+    )
+    expect(await emptyMapState.wikilinks.search('q')).toEqual([])
+    expect(await emptyMapState.wikilinks.headings('')).toEqual([])
+    emptyMapState.followLink('addr')
+    expect(resolveWhenNoWorkspace).not.toHaveBeenCalled()
+
+    const undefFindNotesState = createBufferedNoteState(
+      { targetPath: '', id: 'undef-find', buffer },
+      {
+        pluginId: 'p',
+        actions: {},
+        deps: {
+          registerKind: () => vi.fn(),
+          registerExtensionReader: () => vi.fn(),
+          openTab: async () => '',
+          getNotes: () =>
+            ({
+              findNotes: async () => undefined,
+              getHeadings: async () => new Map(),
+            }) as never,
+        },
+      },
+    )
+    expect(await undefFindNotesState.wikilinks.search('q')).toEqual([])
+    expect(await undefFindNotesState.wikilinks.headings('')).toEqual([])
+
+    const unmappedHeadingsState = createBufferedNoteState(
+      { targetPath: 'notes/unmapped.md', id: 'unmapped', buffer },
+      {
+        pluginId: 'p',
+        actions: {},
+        deps: {
+          registerKind: () => vi.fn(),
+          registerExtensionReader: () => vi.fn(),
+          openTab: async () => '',
+          getNotes: () =>
+            ({
+              findNotes: async () => [],
+              getHeadings: async () => new Map(),
+            }) as never,
+          getWorkspace: () => ({ openFile }) as never,
+          resolveLink: () => Promise.reject(new Error('resolve fail')),
+        },
+      },
+    )
+    expect(await unmappedHeadingsState.wikilinks.headings('')).toEqual([])
+    expect(() => unmappedHeadingsState.followLink('addr')).not.toThrow()
+  })
+})
+
+describe('pluginView helpers and stylesheet adoption', () => {
+  it('resolves sync, async, and functional components and extracts paths/titles', () => {
+    expect(resolvePluginComponent(null)).toBeNull()
+    expect(resolvePluginComponent(undefined)).toBeNull()
+    expect(resolvePluginComponent({ default: null })).toBeNull()
+    expect(resolvePluginComponent({ default: undefined })).toBeNull()
+    expect(resolvePluginComponent('div')).toBe('div')
+
+    const syncComp = { name: 'Sync', setup: () => () => null }
+    expect(resolvePluginComponent(syncComp)).toBe(syncComp)
+    expect(resolvePluginComponent({ default: syncComp })).toBe(syncComp)
+
+    const objWithLoaderOnly = { loader: () => Promise.resolve(syncComp) }
+    expect(resolvePluginComponent(objWithLoaderOnly)).toBe(objWithLoaderOnly)
+
+    const fnWithSetup = Object.assign(() => null, { setup: () => null })
+    const fnWithRender = Object.assign(() => null, { render: () => null })
+    const fnWithProps = Object.assign(() => null, { props: ['a'] })
+    const fnWithName = Object.assign(() => null, { __name: 'Named' })
+    const fnWithArity = (props: unknown) => props
+    expect(resolvePluginComponent(fnWithSetup)).toBe(fnWithSetup)
+    expect(resolvePluginComponent(fnWithRender)).toBe(fnWithRender)
+    expect(resolvePluginComponent(fnWithProps)).toBe(fnWithProps)
+    expect(resolvePluginComponent(fnWithName)).toBe(fnWithName)
+    expect(resolvePluginComponent(fnWithArity)).toBe(fnWithArity)
+
+    const asyncObj = { type: 'async', loader: () => Promise.resolve(syncComp) }
+    expect(resolvePluginComponent(asyncObj)).not.toBe(asyncObj)
+
+    const nonLoaderAsync = { type: 'async', loader: 'invalid' }
+    expect(resolvePluginComponent(nonLoaderAsync)).toBe(nonLoaderAsync)
+
+    expect(extractTitleValue('Plain')).toBe('Plain')
+    expect(extractTitleValue({ value: 'RefVal' })).toBe('RefVal')
+    expect(extractTitleValue(null)).toBe('')
+    expect(extractTitleValue(42)).toBe('')
+
+    expect(extractFilename(undefined)).toBe('')
+    expect(extractFilename('')).toBe('')
+    expect(extractFilename('folder/note.md')).toBe('note.md')
+
+    expect(stripMarkdownExtension('note.md')).toBe('note')
+    expect(stripMarkdownExtension('note.md.bak')).toBe('note.md.bak')
+
+    expect(extractStatePath(null)).toBe('')
+    expect(extractStatePath('str')).toBe('')
+    expect(extractStatePath(Object.assign(() => null, { path: 'fn.md' }))).toBe('')
+    expect(extractStatePath({ path: 123 })).toBe('')
+    expect(extractStatePath({ path: 'a.md' })).toBe('a.md')
+    expect(extractStatePath({ file: 'b.md' })).toBe('b.md')
+    expect(extractStatePath({ at: 'c.md' })).toBe('c.md')
+  })
+
+  it('copies and adopts host stylesheets or falls back to cloning head nodes', () => {
+    class MockSheet {
+      text = ''
+      baseURL?: string | undefined
+      constructor(opts?: { baseURL?: string }) {
+        this.baseURL = opts?.baseURL
+      }
+      replaceSync(t: string) {
+        this.text = t
+      }
+    }
+    vi.stubGlobal('CSSStyleSheet', MockSheet)
+    Object.defineProperty(document, 'adoptedStyleSheets', {
+      value: [],
+      writable: true,
+      configurable: true,
+    })
+
+    const headStyle = document.createElement('style')
+    headStyle.textContent = '.host { color: blue; }'
+    document.head.appendChild(headStyle)
+
+    const pluginStyle = document.createElement('style')
+    pluginStyle.setAttribute('data-plugin-id', 'p1')
+    document.head.appendChild(pluginStyle)
+
+    const bodyStyle = document.createElement('style')
+    document.body.appendChild(bodyStyle)
+
+    const normalSheet = {
+      disabled: false,
+      ownerNode: headStyle,
+      cssRules: [{ cssText: '.host { color: blue; }' }, { cssText: '.b { margin: 0; }' }],
+      media: { length: 0, mediaText: '' },
+      href: null,
+    } as unknown as CSSStyleSheet
+    const mediaSheet = {
+      disabled: false,
+      ownerNode: null,
+      cssRules: [{ cssText: '.media { display: block; }' }],
+      media: { length: 1, mediaText: 'screen' },
+      href: 'https://example.org/app.css',
+    } as unknown as CSSStyleSheet
+    const disabledSheet = {
+      disabled: true,
+      ownerNode: headStyle,
+      cssRules: [],
+      media: { length: 0, mediaText: '' },
+    } as unknown as CSSStyleSheet
+    const pluginOwnedSheet = {
+      disabled: false,
+      ownerNode: pluginStyle,
+      cssRules: [],
+      media: { length: 0, mediaText: '' },
+    } as unknown as CSSStyleSheet
+    const bodyOwnedSheet = {
+      disabled: false,
+      ownerNode: bodyStyle,
+      cssRules: [],
+      media: { length: 0, mediaText: '' },
+    } as unknown as CSSStyleSheet
+
+    const sheetsSpy = vi
+      .spyOn(document, 'styleSheets', 'get')
+      .mockReturnValue([
+        normalSheet,
+        mediaSheet,
+        disabledSheet,
+        pluginOwnedSheet,
+        bodyOwnedSheet,
+      ] as unknown as StyleSheetList)
+
+    try {
+      const fakeShadow = {
+        adoptedStyleSheets: [] as CSSStyleSheet[],
+        appendChild: vi.fn(),
+      } as unknown as ShadowRoot
+
+      adoptHostStyles(fakeShadow)
+      expect(fakeShadow.adoptedStyleSheets.length).toBe(2)
+      const firstCopy = fakeShadow.adoptedStyleSheets[0] as unknown as MockSheet
+      const secondCopy = fakeShadow.adoptedStyleSheets[1] as unknown as MockSheet
+      expect(firstCopy.text).toBe('.host { color: blue; }\n.b { margin: 0; }')
+      expect(secondCopy.text).toBe('@media screen {\n.media { display: block; }\n}')
+      expect(secondCopy.baseURL).toBe('https://example.org/app.css')
+
+      // Second adoption reuses cached copy
+      const secondShadow = {
+        adoptedStyleSheets: [] as CSSStyleSheet[],
+        appendChild: vi.fn(),
+      } as unknown as ShadowRoot
+      adoptHostStyles(secondShadow)
+      expect(secondShadow.adoptedStyleSheets[0]).toBe(fakeShadow.adoptedStyleSheets[0])
+
+      // When a sheet throws on cssRules, falls back to cloning head styles
+      const throwingSheet = {
+        disabled: false,
+        ownerNode: null,
+        get cssRules(): never {
+          throw new Error('cors')
+        },
+      } as unknown as CSSStyleSheet
+      sheetsSpy.mockReturnValue([throwingSheet] as unknown as StyleSheetList)
+
+      const fallbackShadow = {
+        adoptedStyleSheets: [] as CSSStyleSheet[],
+        appendChild: vi.fn(),
+      } as unknown as ShadowRoot
+      adoptHostStyles(fallbackShadow)
+      expect(fallbackShadow.appendChild).toHaveBeenCalled()
+      expect(
+        (fallbackShadow.appendChild as ReturnType<typeof vi.fn>).mock.calls[0]?.[0]?.textContent,
+      ).toBe('.host { color: blue; }')
+
+      const realHostDiv = document.createElement('div')
+      const attachedShadow = attachPluginRoot(realHostDiv)
+      expect(attachedShadow?.querySelector('style')?.textContent).toBe('.host { color: blue; }')
+
+      // attachPluginRoot edge cases
+      expect(attachPluginRoot(null)).toBeNull()
+      const existingShadow = {} as ShadowRoot
+      expect(attachPluginRoot({ shadowRoot: existingShadow } as HTMLElement)).toBe(existingShadow)
+      let noAttachReads = 0
+      expect(
+        attachPluginRoot({
+          get shadowRoot() {
+            return noAttachReads++ > 0 ? existingShadow : null
+          },
+        } as unknown as HTMLElement),
+      ).toBeNull()
+      let lateShadowReads = 0
+      expect(
+        attachPluginRoot({
+          get shadowRoot() {
+            return lateShadowReads++ > 0 ? existingShadow : null
+          },
+          attachShadow: () => {
+            throw new Error('already attached')
+          },
+        } as unknown as HTMLElement),
+      ).toBe(existingShadow)
+      const nonShadowEl = {
+        shadowRoot: null,
+        attachShadow: () => {
+          throw new Error('fail')
+        },
+      } as unknown as HTMLElement
+      expect(attachPluginRoot(nonShadowEl)).toBeNull()
+    } finally {
+      sheetsSpy.mockRestore()
+      headStyle.remove()
+      pluginStyle.remove()
+      bodyStyle.remove()
+      vi.unstubAllGlobals()
+      Reflect.deleteProperty(document, 'adoptedStyleSheets')
+    }
+  })
+
+  it('renders wrapper, pane content, adopted styles, and fallback VNodes', async () => {
+    const fallback = renderFallback('my.plugin', new Error('crash detail'))
+    expect(fallback.props?.class).toBe('plugin-error-fallback p-4 text-red-500')
+    const children = fallback.children as Array<{
+      props?: Record<string, unknown>
+      children?: unknown
+    }>
+    expect(children[0]?.props?.class).toBe('font-bold')
+    expect(children[0]?.children).toBe('Plugin "my.plugin" crashed')
+    expect(children[1]?.props?.class).toBe('text-xs mt-2')
+    expect(children[1]?.children).toBe('crash detail')
+
+    expect(
+      renderPaneContent({
+        pluginId: 'p',
+        component: null,
+        state: {},
+        shadowRoot: null,
+        containerClass: 'c',
+      }),
+    ).toBeNull()
+
+    registerPluginStyle('p', '/p.css')
+    const Comp = defineComponent({ setup: () => () => h('span', 'hi') })
+    const adoptedNodes = renderPaneContent({
+      pluginId: 'p',
+      component: Comp,
+      state: null,
+      shadowRoot: null,
+      containerClass: 'custom-container',
+      hasAdoptedStyle: true,
+    }) as Array<{ type?: unknown; props?: Record<string, unknown>; children?: unknown }>
+    expect(adoptedNodes[0]?.type).toBe('style')
+    expect(adoptedNodes[0]?.children).toBe(PANE_LAYOUT_STYLE)
+    expect(adoptedNodes[1]).toBeNull()
+    expect(adoptedNodes[2]?.props?.class).toBe(
+      'custom-container h-full w-full min-h-0 min-w-0 flex flex-col flex-1',
+    )
+    expect(adoptedNodes[2]?.props?.style).toBe(PANE_HOST_STYLE)
+    clearPluginStyles()
+
+    // 1-arg createPluginPaneWrapper and non-Error throw
+    let singleCompSetups = 0
+    const CountingComp = defineComponent({
+      setup: () => {
+        singleCompSetups++
+        return () => h('span', 'hi')
+      },
+    })
+    const SingleArgWrapper = createPluginPaneWrapper(CountingComp)
+    const mountedSingle = mount(SingleArgWrapper, { props: { state: 'primitive' } })
+    await mountedSingle.vm.$nextTick()
+    expect(singleCompSetups).toBe(1)
+    expect(mountedSingle.attributes('data-plugin-id')).toBe('plugin')
+    expect(mountedSingle.classes()).toContain('plugin-pane-plugin')
+    expect(mountedSingle.element.shadowRoot?.textContent).toContain('hi')
+    mountedSingle.unmount()
+
+    const StringThrower = defineComponent({
+      setup: () => () => {
+        throw 'string error'
+      },
+    })
+    const ThrowWrapper = createPluginPaneWrapper('a/b:c', StringThrower)
+    const mountedThrow = mount(ThrowWrapper, { props: { state: {} } })
+    await mountedThrow.vm.$nextTick()
+    expect(mountedThrow.text()).toContain('string error')
+    mountedThrow.unmount()
+
+    // Adopted style in createPluginPaneWrapper
+    class FakeSheet {
+      cssText = ''
+      replaceSync(text: string) {
+        this.cssText = text
+      }
+    }
+    vi.stubGlobal('CSSStyleSheet', FakeSheet)
+    Object.defineProperty(document, 'adoptedStyleSheets', {
+      value: [],
+      writable: true,
+      configurable: true,
+    })
+    Object.defineProperty(ShadowRoot.prototype, 'adoptedStyleSheets', {
+      value: [],
+      writable: true,
+      configurable: true,
+    })
+    try {
+      await loadPluginStyle(
+        'styled.pane',
+        '/styled.css',
+        async () => ({ ok: true, text: async () => '.a {}' }) as unknown as Response,
+      )
+      const StyledWrapper = createPluginPaneWrapper('styled.pane', Comp)
+      const mountedStyled = mount(StyledWrapper, {
+        props: { state: {} },
+        attachTo: document.body,
+      })
+      await mountedStyled.vm.$nextTick()
+      const sr = mountedStyled.element.shadowRoot!
+      expect(sr.adoptedStyleSheets.length).toBeGreaterThan(0)
+      expect(sr.querySelector('link')).toBeNull()
+      expect(sr.querySelector('.plugin-view-styled-pane')).not.toBeNull()
+      mountedStyled.unmount()
+      expect(sr.adoptedStyleSheets).toHaveLength(0)
+
+      // When attachShadow fails (shadowRoot is null), mounting does not attempt to adopt plugin style onto null
+      const attachSpy = vi.spyOn(HTMLElement.prototype, 'attachShadow').mockImplementation(() => {
+        throw new Error('no shadow')
+      })
+      const mountedNoShadow = mount(StyledWrapper, { props: { state: {} } })
+      await mountedNoShadow.vm.$nextTick()
+      expect(mountedNoShadow.text()).toContain('hi')
+      mountedNoShadow.unmount()
+      attachSpy.mockRestore()
+    } finally {
+      clearPluginStyles()
+      vi.unstubAllGlobals()
+      Reflect.deleteProperty(document, 'adoptedStyleSheets')
+      Reflect.deleteProperty(ShadowRoot.prototype, 'adoptedStyleSheets')
+    }
   })
 })

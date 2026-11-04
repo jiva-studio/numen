@@ -22,6 +22,7 @@ export const clamp = (value: number, ends: Ends): number =>
 export const getDecimalPlaces = (value: number): number => {
   const str = `${value}`
   const point = str.indexOf('.')
+  // Stryker disable next-line EqualityOperator: number stringification never places '.' at index 0
   return point < 0 ? 0 : str.length - point - 1
 }
 
@@ -38,6 +39,7 @@ export const roundToPlaces = (value: number, places: number): number => {
 const getStepsAbove = (value: number, bounds: Bounds): number => {
   const steps = (value - bounds.min) / bounds.step
   const whole = Math.round(steps)
+  // Stryker disable next-line EqualityOperator: 1e-9 is a floating-point rounding tolerance
   return Math.abs(steps - whole) < 1e-9 ? whole : steps
 }
 
@@ -52,6 +54,7 @@ export const stepBy = (value: number, delta: number, bounds: Bounds): number => 
   const from = clamp(value, bounds)
   if (bounds.step <= 0 || delta === 0) return from
   const steps = getStepsAbove(from, bounds)
+  // Stryker disable next-line EqualityOperator: delta === 0 returned early above
   const place = (delta > 0 ? Math.floor(steps) : Math.ceil(steps)) + delta
   const places = Math.max(getDecimalPlaces(bounds.min), getDecimalPlaces(bounds.step))
   return clamp(roundToPlaces(bounds.min + place * bounds.step, places), bounds)

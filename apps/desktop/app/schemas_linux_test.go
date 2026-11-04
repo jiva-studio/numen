@@ -119,3 +119,14 @@ func TestAToolkitNamedWithAMalformedPathAnswersWithNone(t *testing.T) {
 		t.Errorf("settings were claimed at %q", got)
 	}
 }
+
+func TestHasSchemas_UsesDefaultDataDirsWhenUnset(t *testing.T) {
+	data := t.TempDir()
+	schemasIn(t, filepath.Join(data, "glib-2.0", "schemas"))
+	t.Setenv("GSETTINGS_SCHEMA_DIR", "")
+	t.Setenv("XDG_DATA_DIRS", "")
+
+	if !hasSchemasWithDefault(data) {
+		t.Error("expected default data directories to be searched when XDG_DATA_DIRS is empty")
+	}
+}

@@ -87,6 +87,7 @@ function createSettingsCommands(options: CommandDepsOptions): CommandDeps['setti
   }
 }
 
+/* Stryker disable OptionalChaining,ConditionalExpression,LogicalOperator: guards partial windowTabs and reached mocks in unit tests */
 function tabMatchesPath(
   windowTab: ReturnType<ReturnType<typeof useWindowTabs>['getTab']>,
   path: string,
@@ -142,6 +143,7 @@ export function createCommandNotes(
     },
   }
 }
+/* Stryker restore OptionalChaining,ConditionalExpression,LogicalOperator */
 
 export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
   const { core, making, setVaultName, reload, reached, windowTabs, runs, writeMessage, tabsHold } =

@@ -12,7 +12,7 @@ type MockSeen = {
 }
 
 const hoisted = vi.hoisted(() => ({
-  built: {} as Record<'files', MockSeen>,
+  built: {} as Record<'files' | 'vaultFiles', MockSeen & { making?: unknown }>,
 }))
 
 vi.mock('../plugins/agentPort', () => ({
@@ -23,7 +23,10 @@ vi.mock('../plugins/fileServices', () => ({
     hoisted.built.files = args as MockSeen
     return 'made'
   },
-  createVaultFiles: () => ({ name: 'files' }),
+  createVaultFiles: (args: unknown) => {
+    hoisted.built.vaultFiles = args as MockSeen & { making?: unknown }
+    return { name: 'files' }
+  },
   createPathCommandHost: () => ({}),
 }))
 
@@ -53,7 +56,11 @@ const create = ({
   ])
   const deps = {
     log: { getWriter: vi.fn(() => writer) },
-    tabOpeners: { openFileAt: vi.fn(), openFile: vi.fn(() => Promise.resolve()) },
+    tabOpeners: {
+      openFileAt: vi.fn(),
+      openFile: vi.fn(() => Promise.resolve()),
+      findFileIcon: vi.fn((path: string) => (path.endsWith('.pdf') ? 'pdf-icon' : undefined)),
+    },
     windowTabs: {
       registerKinds: vi.fn(),
       sendText: vi.fn(() => Promise.resolve('chat:1')),
@@ -77,7 +84,7 @@ const create = ({
 }
 
 beforeEach(() => {
-  hoisted.built = {} as Record<'files', MockSeen>
+  hoisted.built = {} as Record<'files' | 'vaultFiles', MockSeen>
 })
 
 describe('the window kinds', () => {
@@ -110,7 +117,42 @@ describe('the window kinds', () => {
 
 describe('the note the window relies on', () => {
   it('is what the tool that follows a note the person was last in is over', () => {
-    const { window } = create({ graph: { target: { path: 'Ideas/Plan.md', title: 'The plan' } } })
+    const { deps, window } = create({
+      graph: { target: { path: 'Ideas/Plan.md', title: 'The plan' } },
+    })
+    const earlierGraph = {
+      kind: 'graph',
+      isTool: true,
+      navigate: vi.fn(),
+      getTarget: () => ({ path: 'Old.md', title: 'Old' }),
+    }
+    const nonToolWithNav = {
+      kind: 'note',
+      isTool: false,
+      navigate: vi.fn(),
+      getTarget: () => ({ path: 'Note.md', title: 'Note' }),
+    }
+    const toolWithoutGetTarget = {
+      kind: 'tool-no-target',
+      isTool: true,
+      navigate: vi.fn(),
+    }
+    ;(deps.windowTabs.tabs as { value: unknown }).value = [
+      { id: 'graph:0' },
+      { id: 'graph:1' },
+      { id: 'note:1' },
+      { id: 'tool:no-target' },
+      { id: 'missing:1' },
+      { id: 'chat:1' },
+    ]
+    const origImpl = vi.mocked(deps.windowTabs.getTab).getMockImplementation()!
+    vi.mocked(deps.windowTabs.getTab).mockImplementation((id: string) => {
+      if (id === 'graph:0') return { kind: earlierGraph, state: 's0' } as never
+      if (id === 'note:1') return { kind: nonToolWithNav, state: 's1' } as never
+      if (id === 'tool:no-target') return { kind: toolWithoutGetTarget, state: 's2' } as never
+      if (id === 'missing:1') return null as never
+      return origImpl(id)
+    })
 
     expect(window.services.workspace?.getNoteInFocus()).toEqual({
       path: 'Ideas/Plan.md',
@@ -167,8 +209,8 @@ describe('the destinations', () => {
     })
   })
 
-  it('open the file in the tab in front, at the line', () => {
-    const { deps, window } = create()
+  it('open the file in the tab in front, at the line', async () => {
+    const { deps, window, writer } = create()
 
     window.destinations.openFile('a.md', 'A', 7)
 
@@ -177,6 +219,15 @@ describe('the destinations', () => {
       line: 7,
       selector: undefined,
     })
+
+    expect(window.destinations.findFileIcon?.('doc.pdf')).toBe('pdf-icon')
+    expect(deps.tabOpeners.findFileIcon).toHaveBeenCalledWith('doc.pdf')
+
+    vi.mocked(deps.tabOpeners.openFile).mockRejectedValueOnce(new Error('open failed'))
+    window.destinations.openFile('bad.md', 'Bad')
+    await vi.waitFor(() =>
+      expect(writer).toHaveBeenCalledWith('Numen is not responding; retrying', 'error'),
+    )
   })
 })
 
@@ -227,9 +278,21 @@ describe('the services the window gives a plugin', () => {
   })
 
   it('offer the agent the window asks, over the port it talks on', async () => {
-    const { window } = create()
+    const { deps, window } = create()
 
     expect(window.services.agent).toBeDefined()
     await expect(window.services.agent?.finish('conversation:1')).resolves.toBeUndefined()
+
+    const flushFn = vi.fn(() => Promise.resolve())
+    window.services.buffers?.addFlushHandler(flushFn)
+    expect(deps.editing.fileFlush.addHandler).toHaveBeenCalledWith(flushFn)
+    expect(hoisted.built.vaultFiles.making).toBe(deps.editing.making)
+    expect(window.services.relations?.roles).toStrictEqual(['parent', 'child', 'jump'])
+    ;(deps.core as unknown as { headings: ReturnType<typeof vi.fn> }).headings = vi.fn(
+      async () => new Map([['a.md', []]]),
+    )
+    await expect(window.services.notes?.getHeadings(['a.md'])).resolves.toEqual(
+      new Map([['a.md', []]]),
+    )
   })
 })

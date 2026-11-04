@@ -32,9 +32,6 @@ func (f Family) GetModel() *Model {
 // GetVariant is the name of the listed model that works at the level, the default level where the
 // family has none of that name.
 func (f Family) GetVariant(level string) string {
-	if len(f.Levels) == 0 {
-		return f.variants[""]
-	}
 	return f.variants[Normalize(f.Levels, level)]
 }
 
@@ -51,7 +48,7 @@ func SplitTitle(title string) (string, string) {
 	}
 	level := strings.TrimSpace(title[open+1 : len(title)-1])
 	base := strings.TrimSpace(title[:open])
-	if base == "" || !IsKnown(level) {
+	if !IsKnown(level) {
 		return title, ""
 	}
 	return base, strings.ToLower(level)

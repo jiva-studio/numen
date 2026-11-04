@@ -23,7 +23,7 @@ describe('the keys the handle walks under', () => {
   })
 
   it('move a step, and the ends take the handle to the ends', () => {
-    expect(stepForKey('ArrowRight', 40, { bounds: bounds(), isBigStep: false })).toBe(41)
+    expect(stepForKey('ArrowRight', 40, { bounds: bounds() })).toBe(41)
     expect(stepForKey('ArrowUp', 40, { bounds: bounds(), isBigStep: false })).toBe(41)
     expect(stepForKey('ArrowLeft', 40, { bounds: bounds(), isBigStep: false })).toBe(39)
     expect(stepForKey('ArrowDown', 40, { bounds: bounds(), isBigStep: false })).toBe(39)
@@ -33,6 +33,7 @@ describe('the keys the handle walks under', () => {
 
   it('cover ten steps under a page key, and under a key retained with shift', () => {
     expect(stepForKey('PageUp', 40, { bounds: bounds(), isBigStep: false })).toBe(50)
+    expect(stepForKey('PageUp', 40, { bounds: bounds(), isBigStep: true })).toBe(50)
     expect(stepForKey('PageDown', 40, { bounds: bounds(), isBigStep: false })).toBe(30)
     expect(stepForKey('ArrowRight', 40, { bounds: bounds(), isBigStep: true })).toBe(50)
     expect(stepForKey('ArrowLeft', 40, { bounds: bounds(), isBigStep: true })).toBe(30)

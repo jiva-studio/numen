@@ -108,10 +108,16 @@ describe('the keyboard put onto a row', () => {
   })
 
   it('is kept at the row where the row is not drawn', async () => {
-    const rows = create()
+    const scrollToRow = vi.fn<(index: number) => void>()
+    const rows = useDrawnRows(
+      () => flatten(ROWS, new Set()),
+      () => [],
+      scrollToRow,
+    )
 
     await expect(rows.focusRow('gone')).resolves.toBeUndefined()
     expect(rows.here.value).toBe('gone')
+    expect(scrollToRow).not.toHaveBeenCalled()
   })
 
   it('calls scroll callback before focusing', async () => {

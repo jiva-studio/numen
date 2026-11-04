@@ -3,6 +3,7 @@ import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginHost } from './host'
+import { matchesShortcut } from './shortcuts'
 import type { PluginHostDeps } from './types'
 
 function createDeps(extra: Partial<PluginHostDeps> = {}): PluginHostDeps {
@@ -193,5 +194,185 @@ describe('a tab kind component', () => {
     await Promise.resolve()
 
     expect(received[0]).toBe(ctx)
+  })
+
+  it('passes the plugin context to a reader component and bridges services, tabs, and shortcuts', async () => {
+    let readerKind: { pane?: unknown } | undefined
+    const navigateTab = vi.fn(async () => true)
+    const closeTab = vi.fn()
+    const openExternal = vi.fn(async () => undefined)
+    const relations = { roles: ['child'] }
+    const files = { list: vi.fn() }
+    const agent = { getUnreachable: () => '' }
+    const buffers = { track: vi.fn() }
+    const texts = { readLiveText: vi.fn(), createEdit: vi.fn() }
+    const onError = vi.fn()
+
+    const deps = createDeps({
+      app: { version: '1.2.3', build: 9, platform: 'darwin' },
+      openExternal,
+      navigateTab: navigateTab as never,
+      closeTab,
+      onError,
+      getRelations: () => relations as never,
+      getFiles: () => files as never,
+      getAgent: () => agent as never,
+      getBuffers: () => buffers as never,
+      getTexts: () => texts as never,
+      registerKind: vi.fn((registered) => {
+        readerKind = registered as { pane?: unknown }
+        return vi.fn()
+      }),
+    })
+    const host = createPluginHost(deps)
+    host.registerManifest('reader.plugin', READ_WRITE)
+    const ctx = host.createContext('reader.plugin')
+    expect(host.createContext('reader.plugin')).toBe(ctx)
+    expect(ctx.hasPermission?.('vault:read')).toBe(true)
+    expect(ctx.app).toEqual({ version: '1.2.3', build: 9, platform: 'darwin' })
+    expect(ctx.relations).toBeDefined()
+    expect(ctx.files).toBeDefined()
+    expect(ctx.agent).toBeDefined()
+    expect(ctx.buffers).toBeDefined()
+    expect(ctx.texts).toBeDefined()
+
+    expect(await ctx.openExternal('https://numen.md/')).toEqual({ ok: true, value: null })
+    expect(openExternal).toHaveBeenCalledWith('https://numen.md/')
+    await expect(ctx.openTab?.('note', 'a.md')).resolves.toBe('tab-1')
+    await expect(ctx.navigateTab?.('note', 'a.md')).resolves.toBe(true)
+    expect(navigateTab).toHaveBeenCalledWith('note', 'a.md')
+    ctx.closeTab?.('tab-1')
+    expect(closeTab).toHaveBeenCalledWith('tab-1')
+
+    const received: unknown[] = []
+    const ReaderView = defineComponent({
+      props: { context: { type: Object, default: undefined } },
+      setup(props) {
+        received.push(props.context)
+        return () => h('div')
+      },
+    })
+    ctx.registerReader({ id: 'pdf', component: ReaderView })
+    mount(readerKind!.pane as never, { props: { state: {} }, attachTo: document.body } as never)
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(received[0]).toBe(ctx)
+
+    // Palette options and hidden commands
+    ctx.registerCommand({
+      id: 'hidden',
+      title: 'Hidden',
+      canShowInPalette: false,
+      handler: vi.fn(),
+    })
+    ctx.registerCommand({
+      id: 'rich',
+      title: 'Rich',
+      canShowInPalette: true,
+      shortcut: 'ctrl+b',
+      scope: 'note',
+      icon: 'star',
+      isNoteDestination: true,
+      handler: vi.fn(),
+    })
+    expect(host.getPaletteCommands()).toStrictEqual([
+      {
+        id: 'plugin:rich',
+        title: 'Rich',
+        shortcut: 'ctrl+b',
+        scope: 'note',
+        icon: 'star',
+        isNoteDestination: true,
+      },
+    ])
+
+    // Unmatched shortcut returns false and does not call getNote
+    const getNote = vi.fn()
+    expect(host.handleShortcut(new KeyboardEvent('keydown', { key: 'z' }), getNote)).toBe(false)
+    expect(getNote).not.toHaveBeenCalled()
+
+    // Failing getNote reports error
+    const noteErr = new Error('cannot read note')
+    expect(
+      host.handleShortcut(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }), () =>
+        Promise.reject(noteErr),
+      ),
+    ).toBe(true)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(onError).toHaveBeenCalledWith('reader.plugin', noteErr)
+
+    // Minimal host without optional deps
+    const bareHost = createPluginHost(createDeps())
+    const bareCtx = bareHost.createContext('bare')
+    expect(bareCtx.app).toEqual({ version: '0.0.0-dev', build: 0, platform: 'linux' })
+    expect(await bareCtx.openExternal('https://numen.md/')).toEqual({
+      ok: false,
+      error: 'Numen is not responding; retrying',
+    })
+    expect(bareCtx.navigateTab?.('note', 'a.md')).toBeUndefined()
+    expect(() => bareCtx.closeTab?.('tab-1')).not.toThrow()
+    bareCtx.registerCommand({
+      id: 'fail-quietly',
+      title: 'Fail',
+      handler: () => {
+        throw new Error('no reporter')
+      },
+    })
+    await expect(
+      bareHost.executeCommand('fail-quietly', { path: '', title: '', type: 'note' }),
+    ).resolves.toBe(true)
+  })
+})
+
+describe('matchesShortcut', () => {
+  it('matches modifier combinations and key names accurately', () => {
+    expect(matchesShortcut(new KeyboardEvent('keydown', { key: 'k' }))).toBe(false)
+    expect(matchesShortcut(new KeyboardEvent('keydown', { key: 'k' }), '')).toBe(false)
+
+    expect(
+      matchesShortcut(new KeyboardEvent('keydown', { key: 'K', ctrlKey: true }), 'ctrl + k'),
+    ).toBe(true)
+    expect(
+      matchesShortcut(new KeyboardEvent('keydown', { key: 'k', metaKey: true }), 'control+k'),
+    ).toBe(true)
+    expect(
+      matchesShortcut(new KeyboardEvent('keydown', { key: 'k', metaKey: true }), 'mod+k'),
+    ).toBe(true)
+    expect(
+      matchesShortcut(new KeyboardEvent('keydown', { key: 'k', metaKey: true }), 'cmd+k'),
+    ).toBe(true)
+    expect(
+      matchesShortcut(new KeyboardEvent('keydown', { key: 'k', ctrlKey: false }), 'ctrl+k'),
+    ).toBe(false)
+    expect(matchesShortcut(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }), 'k')).toBe(
+      false,
+    )
+
+    expect(matchesShortcut(new KeyboardEvent('keydown', { key: 'k', altKey: true }), 'alt+k')).toBe(
+      true,
+    )
+    expect(
+      matchesShortcut(new KeyboardEvent('keydown', { key: 'k', altKey: true }), 'option+k'),
+    ).toBe(true)
+    expect(
+      matchesShortcut(new KeyboardEvent('keydown', { key: 'k', altKey: false }), 'alt+k'),
+    ).toBe(false)
+    expect(matchesShortcut(new KeyboardEvent('keydown', { key: 'k', altKey: true }), 'k')).toBe(
+      false,
+    )
+
+    expect(
+      matchesShortcut(new KeyboardEvent('keydown', { key: 'k', shiftKey: true }), 'shift+k'),
+    ).toBe(true)
+    expect(
+      matchesShortcut(new KeyboardEvent('keydown', { key: 'k', shiftKey: false }), 'shift+k'),
+    ).toBe(false)
+    expect(matchesShortcut(new KeyboardEvent('keydown', { key: 'k', shiftKey: true }), 'k')).toBe(
+      false,
+    )
+
+    expect(
+      matchesShortcut(new KeyboardEvent('keydown', { key: 'x', ctrlKey: true }), 'ctrl+k'),
+    ).toBe(false)
   })
 })

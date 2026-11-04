@@ -42,8 +42,8 @@ export const transitionTab = (
 
 const applyRequested = (tab: Tab, kind: RequestedKind): Transition => {
   switch (kind) {
+    // Stryker disable next-line ConditionalExpression,BlockStatement: Falling through to save performs the same transition.
     case 'timerFired':
-      // Stryker disable next-line BlockStatement: Falling through to save performs the same transition.
       return applyTimer(tab)
     case 'save':
       return applySave(tab)
@@ -124,8 +124,8 @@ const getWriteDelay = (since: number, now: number, limits: WriteLimits): number 
 /**
  * An error about the body is cleared by typing when there is a written baseline.
  */
-// Stryker disable next-line ConditionalExpression: RETRYABLE_ERRORS.includes(null) evaluates to false.
 const isRetryable = (tab: Tab): boolean =>
+  // Stryker disable next-line ConditionalExpression: RETRYABLE_ERRORS.includes(null) evaluates to false.
   tab.savedText !== null && tab.error !== null && RETRYABLE_ERRORS.includes(tab.error)
 
 const applyEdit = (
@@ -148,7 +148,7 @@ const applyEdit = (
 
 const applyTimer = (tab: Tab): Transition => {
   const state = getState(tab)
-  // Stryker disable next-line ConditionalExpression,EqualityOperator: Loading state returns keepTab either way.
+  // Stryker disable next-line ConditionalExpression,EqualityOperator,StringLiteral: Loading state returns keepTab either way.
   if (state === 'loading') return keepTab(tab)
   if (state === 'unsaved') return beginWrite(tab, getBaseline(tab))
   if (state === 'saving') return { tab: { ...tab, hasPendingWrite: true }, effects: [] }
@@ -249,7 +249,7 @@ const applyClose = (tab: Tab): Transition => {
     }
     return { tab, effects: [{ kind: 'reportError', error: tab.error }, { kind: 'close' }] }
   }
-  // Stryker disable next-line ConditionalExpression,EqualityOperator: Loading state returns close effect either way.
+  // Stryker disable next-line ConditionalExpression,EqualityOperator,StringLiteral: Loading state returns close effect either way.
   if (state === 'loading') return { tab, effects: [{ kind: 'close' }] }
   if (state === 'stale') return { tab, effects: [{ kind: 'keepOpen' }] }
   if (state === 'unsaved') {

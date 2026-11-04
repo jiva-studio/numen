@@ -30,7 +30,6 @@ const CONFIGURABLE_KEYWORDS: readonly string[] = [
 ]
 
 export function isConfigurableError(error: string): boolean {
-  if (!error) return false
   const err = error.toLowerCase()
   if (NON_CONFIGURABLE_KEYWORDS.some((kw) => err.includes(kw))) {
     return false

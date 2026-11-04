@@ -16,8 +16,16 @@ describe('the halves of a pair', () => {
     expect(isTrailing('a'.charCodeAt(0))).toBe(false)
   })
 
-  it('takes the end of a string for neither', () => {
+  it('takes the end of a string and boundary code units accurately', () => {
     expect(isLeading(NaN)).toBe(false)
     expect(isTrailing(NaN)).toBe(false)
+    expect(isLeading(0xd7ff)).toBe(false)
+    expect(isLeading(0xd800)).toBe(true)
+    expect(isLeading(0xdbff)).toBe(true)
+    expect(isLeading(0xdc00)).toBe(false)
+    expect(isTrailing(0xdbff)).toBe(false)
+    expect(isTrailing(0xdc00)).toBe(true)
+    expect(isTrailing(0xdfff)).toBe(true)
+    expect(isTrailing(0xe000)).toBe(false)
   })
 })

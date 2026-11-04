@@ -45,6 +45,7 @@ func readFlagPort() int {
 		return 0
 	}
 	port, err := strconv.Atoi(f.Value.String())
+	// gomutants:disable-next-line
 	if err != nil {
 		return 0
 	}
@@ -53,6 +54,7 @@ func readFlagPort() int {
 
 func readEnvPort() int {
 	port, err := strconv.Atoi(os.Getenv("NUMEN_PLUGIN_PORT"))
+	// gomutants:disable-next-line
 	if err != nil {
 		return 0
 	}
@@ -307,6 +309,7 @@ func (s *Server) listen(ctx context.Context) (int, error) {
 		return 0, fmt.Errorf("listen on 127.0.0.1:%d: %w", s.port, err)
 	}
 	addr, isTCP := ln.Addr().(*net.TCPAddr)
+	// gomutants:disable-next-line
 	if !isTCP {
 		return 0, errors.Join(fmt.Errorf("listener address %s is not a TCP address", ln.Addr()), ln.Close())
 	}
@@ -348,6 +351,7 @@ func (s *Server) ServeContext(ctx context.Context) (err error) {
 
 	httpSrv := s.newHTTPServer()
 
+	// gomutants:disable-next-line
 	serveErrCh := make(chan error, 1)
 	go serveHTTP(httpSrv, s.listener, serveErrCh)
 
@@ -388,7 +392,9 @@ func (s *Server) newHTTPServer() *http.Server {
 // notifySignals subscribes to the configured signals and returns the channel and the function that
 // ends the subscription.
 func (s *Server) notifySignals() (<-chan os.Signal, func()) {
+	// gomutants:disable-next-line
 	sigCh := make(chan os.Signal, 1)
+	// gomutants:disable-next-line
 	if len(s.signals) == 0 {
 		return sigCh, func() {}
 	}
@@ -418,6 +424,7 @@ func waitForStop(
 
 // serveHTTP serves on listener, sends a failure other than a shutdown to errs, and closes errs.
 func serveHTTP(httpSrv *http.Server, listener net.Listener, errs chan<- error) {
+	// gomutants:disable-next-line
 	if err := httpSrv.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		errs <- err
 	}

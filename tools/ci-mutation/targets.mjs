@@ -24,7 +24,8 @@ export const SHARD_LINES = { go: 6000, ts: 4500 }
 export const MAX_SHARDS = 16
 
 /** Whether a path lies in a folder of helpers the tests are built with. */
-export const isTestSupport = (path) => /(^|\/)(testing|testsupport|fixtures)\//.test(path)
+export const isTestSupport = (path) =>
+  /(^|\/)(testing|testsupport|testonly|fixtures|[a-z]+test|[a-z]+fixture)\//.test(path)
 
 /** Whether a repository path is source a `ts` target mutates. */
 export const isMutatedSource = (path) =>
@@ -144,13 +145,17 @@ const findTsTargets = (tracked) => {
     .filter((at) => workspaces.some((pattern) => pattern.test(at)))
     .filter((at) => tracked.includes(`${at}/vitest.config.ts`))
     .map((at) => {
+      const config = `${at}/vitest.config.ts`
       const sources = tracked.filter((path) => isUnder(path, `${at}/src`) && isMutatedSource(path))
       const tests = tracked
-        .filter(
-          (path) =>
-            isUnder(path, at) && (/\.test\.ts$/.test(path) || path === `${at}/vitest.config.ts`),
-        )
+        .filter((path) => isUnder(path, at) && (/\.test\.ts$/.test(path) || path === config))
         .map((path) => ({ path, source: readFileSync(join(root, path), 'utf8') }))
+      if (tests.some((one) => one.path === config && one.source.includes('@numen/shell/vite'))) {
+        tests.push({
+          path: config,
+          source: readFileSync(join(root, 'libs/ui/shell/src/vite.ts'), 'utf8'),
+        })
+      }
       return { kind: 'ts', at, lines: countLines(sources), testdata: findTestdata(at, tests) }
     })
     .filter((one) => one.lines > 0)

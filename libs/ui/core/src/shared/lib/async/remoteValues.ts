@@ -88,6 +88,7 @@ export function createRemoteValues<V>(send: (values: ReadonlyMap<string, V>) => 
     const next = new Map(requested.value)
     for (const [key, { token }] of batch) {
       const one = next.get(key)
+      // Stryker disable next-line OptionalChaining: Map.get returns undefined in its type signature
       if (one?.token !== token) continue
       if (isWritten) next.set(key, { ...one, settledAt: order.getSettledWrites() })
       else next.delete(key)
@@ -130,6 +131,7 @@ export function createRemoteValues<V>(send: (values: ReadonlyMap<string, V>) => 
    * batch that carried them is written, and rejects with its error where it failed.
    */
   const requestWrite = (values: ReadonlyMap<string, V>): Promise<void> => {
+    // Stryker disable next-line UpdateOperator: token is an internal monotonic counter
     const token = ++lastToken
     const next = new Map(requested.value)
     for (const [key, value] of values) {
@@ -155,8 +157,10 @@ export function createRemoteValues<V>(send: (values: ReadonlyMap<string, V>) => 
     apply()
     const next = new Map(requested.value)
     for (const [key, one] of next) {
+      // Stryker disable next-line ConditionalExpression: settledAt never exceeds settledWrites when isReadAfterWrites holds
       if (one.settledAt !== null && one.settledAt <= pendingRead.settledWrites) next.delete(key)
     }
+    // Stryker disable next-line ConditionalExpression: skips redundant shallowRef assignment when no keys were removed
     if (next.size !== requested.value.size) requested.value = next
     return true
   }

@@ -120,6 +120,9 @@ func TestASecondQuitStillFlushes(t *testing.T) {
 	if !g.flushVault(t.Context()) {
 		t.Error("a settled vault answered that it had not")
 	}
+	if !g.isFlushed() {
+		t.Error("a settled vault answered that it was not flushed")
+	}
 	if vault.getSettledCount() != 2 {
 		t.Errorf("a settled vault was settled again, %d times in all", vault.getSettledCount())
 	}
@@ -141,6 +144,11 @@ func TestConcurrentFlushesShareOneRun(t *testing.T) {
 	case <-vault.begun:
 	case <-time.After(5 * time.Second):
 		t.Fatal("the vault was never settled")
+	}
+	select {
+	case <-vault.begun:
+		t.Fatal("a second flush started while the first was still running")
+	case <-time.After(20 * time.Millisecond):
 	}
 	close(vault.until)
 
@@ -234,12 +242,16 @@ func TestCloseWindow_RepeatsCloseAfterPromptResolved(t *testing.T) {
 func TestCloseWindow_NoRepeatWhenPageClosed(t *testing.T) {
 	vault := newSettler(false)
 	g := &vaultFlush{flush: vault.settle}
+	observed := makeScreen()
 
 	again := make(chan struct{}, 1)
-	if closeWindow(t.Context(), g, makeScreen().sight(), func(context.Context) bool { return false }, func() {
+	if closeWindow(t.Context(), g, observed.sight(), func(context.Context) bool { return false }, func() {
 		again <- struct{}{}
 	}) {
 		t.Fatal("a question standing let the window go")
+	}
+	if was := observed.was(); !slices.Equal(was, []string{"hide", "show"}) {
+		t.Errorf("the window was %v, want [hide show]", was)
 	}
 
 	select {

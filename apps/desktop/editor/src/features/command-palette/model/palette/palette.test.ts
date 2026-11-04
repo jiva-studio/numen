@@ -5,12 +5,14 @@
  * destructive action is reached only by typing the note's name.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { defineComponent, ref } from 'vue'
+import { defineComponent, h, ref } from 'vue'
+import { mount } from '@vue/test-utils'
 import { runSupport } from './runSupport'
 import type { CommandTarget, NoteLookup, PaletteLists, RunSupport, StepGroup } from '../../types'
 import { useCommandPalette } from './palette'
+import { usePaletteShortcuts } from './shortcuts'
 import type { VaultList, Vault } from '@/entities/vault'
-import type { NameMatch } from '../search/search'
+import type { NameMatch, SearchState } from '../search/search'
 import { WORDS as words } from '@/shared/words'
 import { createDeferred, type Deferred } from '@/testing/deferred'
 
@@ -938,6 +940,13 @@ describe('a vault taken off the list', () => {
     })
   })
 
+  it('pops the confirmation step and returns null when answered with no', async () => {
+    const commands = await chooseVault('removeVault')
+
+    expect(commands.chooseItem('no', 'no')).toBeNull()
+    expect(commands.groups.value[0]?.id).toBe('vaults')
+  })
+
   it('returns the list, with the vaults on it, where the step is left', async () => {
     const commands = await chooseVault('removeVault')
 
@@ -1447,6 +1456,7 @@ describe('what a step draws', () => {
     expect(commands.groups.value[0]?.items[0]?.actions).toStrictEqual([
       { id: 'exactly', text: words.destroys },
     ])
+    expect(commands.chooseItem('exactly', 'exactly')?.name).toBe('Ontology')
   })
 })
 
@@ -1522,5 +1532,113 @@ describe('the icon of a command', () => {
 
     expect(commands.findCommandIcon('plugin:graph')).toBe(icon)
     expect(commands.findCommandIcon('read')).toBeNull()
+  })
+})
+
+describe('runSupport, arguments steps, and palette shortcuts', () => {
+  it('tracks unsupported runs in runSupport', () => {
+    const runs = runSupport()
+    expect(runs.canRun('ocr')).toBe(true)
+    runs.cannotRun('ocr')
+    expect(runs.canRun('ocr')).toBe(false)
+    expect(runs.canRun('other')).toBe(true)
+  })
+
+  it('walks through multi-prompt arguments steps and handles commands without prompts', () => {
+    const commands = useCommandPalette({
+      core: {
+        names: async () => [],
+        vaults: async () => installation(vault('physics', 'Physics')),
+      },
+      words,
+      at: () => front(),
+      knows: createLookup().knows,
+      lists: createLists({}).paletteLists,
+      runs: runSupport(),
+      getExtraCommands: () => [
+        {
+          id: 'plugin:args',
+          text: 'With args',
+          group: 'window',
+          needs: 'arguments',
+          prompts: [
+            { name: 'topic', title: 'Topic title', isRequired: true },
+            { name: 'detail', title: 'Detail title', isRequired: false },
+          ],
+          isAvailable: () => true,
+        },
+        {
+          id: 'plugin:no-prompts',
+          text: 'No prompts',
+          group: 'window',
+          needs: 'arguments',
+          isAvailable: () => true,
+        },
+      ],
+    })
+
+    commands.startCommand('plugin:no-prompts', front())
+    expect(commands.placeholder.value).toBe(words.typeCommand)
+    expect(commands.chooseItem('name', 'name')).toBeNull()
+    commands.leaveStep()
+
+    commands.startCommand('plugin:args', front())
+    expect(commands.placeholder.value).toBe('Topic title')
+    expect(commands.chooseItem('name', 'name')).toBeNull()
+
+    commands.setTyped('  Quantum  ').catch(rethrow)
+    expect(commands.chooseItem('name', 'name')).toBeNull()
+    expect(commands.placeholder.value).toBe('Detail title')
+
+    const result = commands.chooseItem('name', 'name')
+    expect(result?.id).toBe('plugin:args')
+    expect(result?.values).toStrictEqual({ topic: 'Quantum' })
+  })
+
+  it('toggles search and command palettes via keyboard shortcuts', () => {
+    const searchOpen = ref(false)
+    const search = {
+      open: searchOpen,
+      setOpen: (val: boolean) => {
+        searchOpen.value = val
+      },
+    } as unknown as SearchState
+    const { commands } = createPalette()
+    commands.setOpen(false)
+
+    const Comp = defineComponent({
+      setup() {
+        usePaletteShortcuts(search, commands)
+        return () => h('div')
+      },
+    })
+    const wrapper = mount(Comp)
+
+    const nonChord = new KeyboardEvent('keydown', { key: 'k', cancelable: true })
+    globalThis.dispatchEvent(nonChord)
+    expect(searchOpen.value).toBe(false)
+
+    const prePrevented = new KeyboardEvent('keydown', {
+      key: 'k',
+      ctrlKey: true,
+      cancelable: true,
+    })
+    prePrevented.preventDefault()
+    globalThis.dispatchEvent(prePrevented)
+    expect(searchOpen.value).toBe(false)
+
+    const kEvent = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, cancelable: true })
+    globalThis.dispatchEvent(kEvent)
+    expect(kEvent.defaultPrevented).toBe(true)
+    expect(searchOpen.value).toBe(true)
+    expect(commands.open.value).toBe(false)
+
+    const pEvent = new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, cancelable: true })
+    globalThis.dispatchEvent(pEvent)
+    expect(pEvent.defaultPrevented).toBe(true)
+    expect(searchOpen.value).toBe(false)
+    expect(commands.open.value).toBe(true)
+
+    wrapper.unmount()
   })
 })

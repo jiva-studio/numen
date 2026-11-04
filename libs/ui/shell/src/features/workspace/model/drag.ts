@@ -62,6 +62,7 @@ export interface TabDragState {
 }
 
 export function useTabDrag(options: TabDragOptions): TabDragState {
+  // Stryker disable next-line ObjectLiteral: lastPosition is overwritten on the first pointer move before a drag can commit.
   let lastPosition: Position = { x: 0, y: 0 }
 
   const {
@@ -80,11 +81,9 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
       if (point) {
         land(item, point)
       } else if (options.onTearOff) {
-        const screenX = typeof window !== 'undefined' ? window.screenX : 0
-        const screenY = typeof window !== 'undefined' ? window.screenY : 0
         options.onTearOff(item.tab, {
-          x: screenX + lastPosition.x,
-          y: screenY + lastPosition.y,
+          x: window.screenX + lastPosition.x,
+          y: window.screenY + lastPosition.y,
         })
       }
     },

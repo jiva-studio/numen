@@ -17,8 +17,10 @@ const failed: Task = {
 }
 
 describe('isConfigurableError', () => {
-  it('rejects file missing and filesystem errors', () => {
+  it('rejects empty, file missing, and filesystem errors even when configurable words appear', () => {
+    expect(isConfigurableError('')).toBe(false)
     expect(isConfigurableError('stat assets/sample.flac: no such file or directory')).toBe(false)
+    expect(isConfigurableError('read credentials.json: no such file')).toBe(false)
     expect(isConfigurableError('read Books/manual.pdf: file not found')).toBe(false)
     expect(isConfigurableError('stat /tmp/file: does not exist')).toBe(false)
     expect(isConfigurableError('open notes/today.md: permission denied')).toBe(false)

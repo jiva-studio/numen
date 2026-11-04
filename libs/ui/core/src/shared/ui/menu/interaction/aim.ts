@@ -38,7 +38,7 @@ export interface SubmenuAim {
   readonly clear: () => void
 }
 
-interface PointerTrack {
+export interface PointerTrack {
   readonly origin: Position | null
   readonly current: Position | null
 }
@@ -70,6 +70,7 @@ export function isPointInSafeTriangle(
   const centerX = (submenu.left + submenu.right) / 2
   const nearX = origin.x <= centerX ? submenu.left : submenu.right
   const spanX = nearX - origin.x
+  // Stryker disable next-line ConditionalExpression: division by zero yields Infinity or NaN which fail the range checks below
   if (spanX === 0) return false
   const progress = (point.x - origin.x) / spanX
   if (progress <= 0 || progress > 1) return false
@@ -78,12 +79,12 @@ export function isPointInSafeTriangle(
   return point.y >= minY && point.y <= maxY
 }
 
-function readEventPoint(event?: MouseEvent): Position | null {
+export function readEventPoint(event?: MouseEvent): Position | null {
   if (!event || (event.clientX === 0 && event.clientY === 0)) return null
   return { x: event.clientX, y: event.clientY }
 }
 
-function advancePointerTrack(track: PointerTrack, point: Position | null): PointerTrack {
+export function advancePointerTrack(track: PointerTrack, point: Position | null): PointerTrack {
   if (!point) return track
   if (!track.current) return { origin: null, current: point }
   const step = Math.abs(point.x - track.current.x) + Math.abs(point.y - track.current.y)
@@ -149,8 +150,12 @@ function isTouchHover(event?: MouseEvent): boolean {
 }
 
 function handleClosedHover(ctx: AimContext, item: MenuItem): void {
-  if (!canOpenSubmenu(item)) ctx.clearPending()
-  else if (ctx.pending?.item?.id !== item.id) ctx.schedule('open', SUBMENU_OPEN_DELAY_MS, item)
+  if (!canOpenSubmenu(item)) {
+    ctx.clearPending()
+    return
+  }
+  // Stryker disable next-line OptionalChaining,StringLiteral: pending actions while closed always carry an item and runPending branches on close vs item
+  if (ctx.pending?.item?.id !== item.id) ctx.schedule('open', SUBMENU_OPEN_DELAY_MS, item)
 }
 
 function handleRowHover(ctx: AimContext, item: MenuItem, event?: MouseEvent): void {
@@ -167,13 +172,21 @@ function handleRowHover(ctx: AimContext, item: MenuItem, event?: MouseEvent): vo
   }
   const isInTriangle = ctx.stepTriangle(event)
   const activeId = options.getActiveId()
-  if (activeId === null) handleClosedHover(ctx, item)
-  else if (activeId === item.id) ctx.clearPending()
-  else if (isInTriangle) ctx.schedule('switch', SUBMENU_OPEN_DELAY_MS, item)
-  else {
-    ctx.clearPending()
-    applyRowTarget(item, options)
+  if (activeId === null) {
+    handleClosedHover(ctx, item)
+    return
   }
+  if (activeId === item.id) {
+    ctx.clearPending()
+    return
+  }
+  if (isInTriangle) {
+    // Stryker disable next-line StringLiteral: runPending branches on close vs item
+    ctx.schedule('switch', SUBMENU_OPEN_DELAY_MS, item)
+    return
+  }
+  ctx.clearPending()
+  applyRowTarget(item, options)
 }
 
 function handleMenuLeave(ctx: AimContext, event?: MouseEvent): void {
@@ -213,8 +226,12 @@ export function createSubmenuAim(options: SubmenuAimOptions): SubmenuAim {
 
   const runPending = (action: PendingAimAction): void => {
     clearPending()
-    if (action.kind === 'close') options.onClose()
-    else if (action.item) applyRowTarget(action.item, options)
+    if (action.kind === 'close') {
+      options.onClose()
+      return
+    }
+    // Stryker disable next-line ConditionalExpression: non-close actions always carry an item
+    if (action.item) applyRowTarget(action.item, options)
   }
 
   const schedule = (kind: PendingAimAction['kind'], delayMs: number, item?: MenuItem): void => {
@@ -224,6 +241,7 @@ export function createSubmenuAim(options: SubmenuAimOptions): SubmenuAim {
     syncWindow(true)
     ctx.timerHandle = setTimeout(() => {
       ctx.timerHandle = undefined
+      // Stryker disable next-line ConditionalExpression,EqualityOperator: clearPending cancels the timeout whenever pending changes
       if (ctx.pending === action) runPending(action)
     }, delayMs)
   }
@@ -237,6 +255,7 @@ export function createSubmenuAim(options: SubmenuAimOptions): SubmenuAim {
 
   const ctx: AimContext = {
     options,
+    // Stryker disable next-line ObjectLiteral: null and undefined fields on PointerTrack are both falsy
     track: { origin: null, current: null },
     pending: null,
     timerHandle: undefined,
@@ -258,6 +277,7 @@ export function createSubmenuAim(options: SubmenuAimOptions): SubmenuAim {
     clear: () => {
       clearPending()
       syncWindow(false)
+      // Stryker disable next-line ObjectLiteral: null and undefined fields on PointerTrack are both falsy
       ctx.track = { origin: null, current: null }
     },
   }

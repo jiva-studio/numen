@@ -195,6 +195,7 @@ describe('a file opened at runs of its text', () => {
     const activeEditors = editors(tabOpeners)
 
     await tabOpeners.openFileAt('Physics.bin', [{ start: 1, end: 4 }])
+    await tabOpeners.openFileAt('Gone.md', [{ start: 1, end: 4 }])
 
     expect(activeEditors).toStrictEqual(['reader Physics.bin null'])
   })
@@ -207,16 +208,23 @@ describe('the icon of a file', () => {
     tabOpeners.registerExtensionReader('.bin', vi.fn(), icon)
 
     expect(tabOpeners.findFileIcon('a/b.BIN')).toBe(icon)
+    expect(tabOpeners.findFileIcon('.bin')).toBeUndefined()
     expect(tabOpeners.findFileIcon('a/b.png')).toBeUndefined()
     expect(tabOpeners.findFileIcon('a.dir/bin')).toBeUndefined()
   })
 })
 
 describe('a file just made here', () => {
-  it('opens in nothing where no editor was passed for what it was made as', () => {
+  it('opens in its extension reader when no editor was passed for what it was made as', () => {
     const tabOpeners = fileOpeners(vault().core)
+    const activeReaders: string[] = []
+    tabOpeners.registerExtensionReader('bin', (path, selector) =>
+      activeReaders.push(`${path}:${JSON.stringify(selector)}`),
+    )
 
     expect(() => tabOpeners.openNewFile('Animals.md', 'Animals', 'sample')).not.toThrow()
+    tabOpeners.openNewFile('Physics.bin', 'Physics', 'sample')
+    expect(activeReaders).toStrictEqual(['Physics.bin:null'])
   })
 
   it('opens as what it was made as, the vault not being requested', async () => {

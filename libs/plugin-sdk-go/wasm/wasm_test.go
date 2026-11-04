@@ -25,6 +25,9 @@ func newModule() []byte {
 // the cache.
 func compile(t *testing.T, compilation wazero.CompilationCache) {
 	t.Helper()
+	if compilation == nil {
+		t.Fatal("expected non-nil compilation cache")
+	}
 	ctx := t.Context()
 	runtime := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(compilation))
 	if _, err := runtime.CompileModule(ctx, newModule()); err != nil {

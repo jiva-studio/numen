@@ -19,6 +19,7 @@ export interface PaletteShortcut {
  * footer lists them, and the key assignment is decided here.
  */
 export const getShortcuts = (item: PaletteItem | undefined): readonly PaletteShortcut[] => {
+  // Stryker disable next-line ArrayDeclaration: canChoose verifies that item.actions is non-empty.
   const actions = item && canChoose(item) ? (item.actions ?? []) : []
   return actions
     .slice(0, PALETTE_KEYS.length)

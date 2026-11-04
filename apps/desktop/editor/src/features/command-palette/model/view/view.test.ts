@@ -4,12 +4,19 @@
  * is empty.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { defineComponent, ref } from 'vue'
+import { File } from '@lucide/vue'
+import { getNoteIcon } from '@/entities/note'
+import { findIcon } from '@/shared/icons'
 import { WORDS as words } from '@/shared/words'
 import { createCommands } from '../../lib/commands/commands'
+import { CREATE_NOTE_ID } from '../../lib/offers/offers'
 import type { PendingStep } from '../../lib/step/step'
 import type { Command, CommandTarget, PaletteLists } from '../../types'
+import type { Commands } from '../palette/palette'
 import { runSupport } from '../palette/runSupport'
+import { findRowIcon } from '../rowIcons'
+import type { SearchState } from '../search/search'
 import { getPaletteView } from './view'
 
 const front = (overrides: Partial<CommandTarget> = {}): CommandTarget => ({
@@ -162,5 +169,135 @@ describe('a command that gives no words for its confirmation', () => {
         actions: [{ id: 'exactly', text: '' }],
       },
     ])
+  })
+
+  it('draws asking group with id asking and arguments group with default title when prompts are absent', () => {
+    const askingGroup = view.createGroups(step('asking'), front(), '')[0]
+    expect(askingGroup?.id).toBe('asking')
+
+    const argGroupNoPrompt = view.createGroups(step('arguments'), front(), 'val')[0]
+    expect(argGroupNoPrompt?.id).toBe('arguments')
+    expect(argGroupNoPrompt?.title).toBe('')
+    expect(argGroupNoPrompt?.items).toStrictEqual([
+      {
+        id: 'name',
+        title: ': “val”',
+        actions: [{ id: 'name', text: words.givesIt }],
+      },
+    ])
+
+    const cmdWithOptPrompt = createCommand({
+      id: 'opt',
+      text: 'Opt',
+      prompts: [{ name: 'topic', title: 'Topic', isRequired: false }],
+    })
+    const optView = createView([cmdWithOptPrompt])
+    const optGroup = optView.createGroups(
+      { step: 'arguments', command: cmdWithOptPrompt, on: front() },
+      front(),
+      '',
+    )[0]
+    expect(optGroup?.items).toStrictEqual([
+      {
+        id: 'name',
+        title: `${words.leavesOut} Topic`,
+        actions: [{ id: 'name', text: words.leavesOut }],
+      },
+    ])
+  })
+
+  it('matches commands by detail without highlight ranges and renders file and settings groups', () => {
+    const customWords = { ...words, overSettings: 'Over Settings', settings: 'Fallback Settings' }
+    const cmds: readonly Command[] = [
+      createCommand({ id: 'det', text: 'Alpha', detail: 'Special detail' }),
+      createCommand({ id: 'f1', text: 'File cmd', group: 'file' }),
+      createCommand({ id: 's1', text: 'Set cmd', group: 'settings' }),
+    ]
+    const customView = getPaletteView({
+      words: customWords,
+      commands: cmds,
+      byId: new Map(cmds.map((one) => [one.id, one])),
+      runs: runSupport(),
+      lists,
+      found: ref([]),
+      known: ref([]),
+      showing: ref(''),
+      isWorking: ref(false),
+      failureMessage: ref(''),
+      getStepTitle: () => 'Ontology',
+      getStepLabel: () => 'Ontology.md',
+    })
+
+    const matchedByDetail = customView.createGroups(null, front(), 'special')
+    const detailItem = matchedByDetail.find((g) => g.id === 'note')?.items[0]
+    expect(detailItem?.id).toBe('det')
+    expect(detailItem?.detail).toBe('Special detail')
+    expect(detailItem).not.toHaveProperty('at')
+
+    const allGroups = customView.createGroups(null, front(), '')
+    expect(allGroups.find((g) => g.id === 'file')?.title).toBe(customWords.overFile)
+    expect(allGroups.find((g) => g.id === 'settings')?.title).toBe('Over Settings')
+
+    const fallbackWords = {
+      ...words,
+      overSettings: undefined as unknown as string,
+      settings: 'Fallback Settings',
+    }
+    const fallbackView = getPaletteView({
+      words: fallbackWords,
+      commands: cmds,
+      byId: new Map(cmds.map((one) => [one.id, one])),
+      runs: runSupport(),
+      lists,
+      found: ref([]),
+      known: ref([]),
+      showing: ref(''),
+      isWorking: ref(false),
+      failureMessage: ref(''),
+      getStepTitle: () => 'Ontology',
+      getStepLabel: () => 'Ontology.md',
+    })
+    expect(
+      fallbackView.createGroups(null, front(), '').find((g) => g.id === 'settings')?.title,
+    ).toBe('Fallback Settings')
+  })
+})
+
+describe('findRowIcon', () => {
+  const customIcon = defineComponent({ name: 'CustomIcon', render: () => null })
+
+  it('resolves command and note icons when commands palette is open', () => {
+    const commands = {
+      open: ref(true),
+      findNoteType: (id: string) => (id === 'n1' ? 'sample' : null),
+      findCommandIcon: (id: string) => (id === 'custom-cmd' ? customIcon : undefined),
+    } as unknown as Commands
+    const search = {
+      findNoteType: () => 'form',
+      findHitFile: () => 'doc.pdf',
+    } as unknown as SearchState
+
+    expect(findRowIcon('n1', commands, search)).toBe(getNoteIcon('sample'))
+    expect(findRowIcon('custom-cmd', commands, search)).toBe(customIcon)
+    expect(findRowIcon('note', commands, search)).toBe(findIcon('note'))
+  })
+
+  it('resolves create-note, search note type, and file hit icons when commands palette is closed', () => {
+    const commands = {
+      open: ref(false),
+      findNoteType: () => 'sample',
+      findCommandIcon: () => customIcon,
+    } as unknown as Commands
+    const search = {
+      findNoteType: (id: string) => (id === 'hit-note' ? 'sheet' : null),
+      findHitFile: (id: string) => (id === 'hit-file' ? 'book.epub' : null),
+    } as unknown as SearchState
+
+    expect(findRowIcon(CREATE_NOTE_ID, commands, search)).toBe(findIcon('note'))
+    expect(findRowIcon('hit-note', commands, search)).toBe(getNoteIcon('sheet'))
+    expect(findRowIcon('hit-file', commands, search, () => customIcon)).toBe(customIcon)
+    expect(findRowIcon('hit-file', commands, search, () => undefined)).toBe(File)
+    expect(findRowIcon('hit-file', commands, search)).toBe(File)
+    expect(findRowIcon('unknown', commands, search)).toBeNull()
   })
 })

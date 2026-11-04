@@ -16,14 +16,22 @@ vi.mock('@/features/command-palette', () => ({
 }))
 vi.mock('./commandDeps', () => ({ createCommandDeps: () => ({}) }))
 
-const setup = (load: () => Promise<void>) => {
+const setup = (load: () => Promise<void>, loadMenu?: (file: string) => Promise<void>) => {
   const messages: [string, string][] = []
   const declaredCommands = { paletteCommands: shallowRef([]), load } as unknown as DeclaredCommands
+  const fileMenuCommands = loadMenu
+    ? ({
+        paletteCommands: shallowRef([]),
+        load: loadMenu,
+      } as unknown as CommandsDepsOptions['fileMenuCommands'])
+    : undefined
   useCommands({
     windowTabs: {},
     rest: {},
+    getTarget: () => ({ file: 'books/Scan.pdf' }),
     writeMessage: (text: string, kind: string) => messages.push([text, kind]),
     declaredCommands,
+    fileMenuCommands,
   } as unknown as CommandsDepsOptions)
   return messages
 }
@@ -32,28 +40,39 @@ describe('the declared commands', () => {
   it('are read as the window starts and each time the palette opens, and not as it closes', async () => {
     isOpen.value = false
     const load = vi.fn(() => Promise.resolve())
-    setup(load)
+    const loadMenu = vi.fn(() => Promise.resolve())
+    setup(load, loadMenu)
 
+    expect(loadMenu).not.toHaveBeenCalled()
     isOpen.value = true
     await nextTick()
+    expect(loadMenu).toHaveBeenCalledTimes(1)
+    expect(loadMenu).toHaveBeenCalledWith('books/Scan.pdf')
     isOpen.value = false
     await nextTick()
+    expect(loadMenu).toHaveBeenCalledTimes(1)
     isOpen.value = true
     await nextTick()
 
     expect(load).toHaveBeenCalledTimes(3)
+    expect(loadMenu).toHaveBeenCalledTimes(2)
   })
 
   it('that cannot be read say why', async () => {
     isOpen.value = false
-    const messages = setup(async () => {
-      throw new Error('the application did not answer')
-    })
+    const messages = setup(
+      async () => {
+        throw new Error('the application did not answer')
+      },
+      async () => {
+        throw new Error('the menu did not answer')
+      },
+    )
 
     isOpen.value = true
     await nextTick()
     await nextTick()
 
-    expect(messages.map(([, kind]) => kind)).toStrictEqual(['error', 'error'])
+    expect(messages.map(([, kind]) => kind)).toStrictEqual(['error', 'error', 'error'])
   })
 })

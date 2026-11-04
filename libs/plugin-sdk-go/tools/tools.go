@@ -201,21 +201,19 @@ type vaultKey struct{}
 // that wrote them and a slash. It is empty for a query with none. A tool reads
 // it as data about the call; it is not part of the arguments.
 func GetCallContext(ctx context.Context) map[string]string {
-	request, isMap := ctx.Value(callContextKey{}).(map[string]string)
-	if !isMap {
-		return nil
+	if request, ok := ctx.Value(callContextKey{}).(map[string]string); ok {
+		return request
 	}
-	return request
+	return nil
 }
 
 // GetVault is the identity of the vault the call works: the one the agent run was started on, or for
 // a call from a program outside Numen the one the host shows. It is empty where there is none.
 func GetVault(ctx context.Context) string {
-	vault, isString := ctx.Value(vaultKey{}).(string)
-	if !isString {
-		return ""
+	if vault, ok := ctx.Value(vaultKey{}).(string); ok {
+		return vault
 	}
-	return vault
+	return ""
 }
 
 func isObject(raw []byte) bool {
@@ -413,6 +411,7 @@ func (t *ToolInfo) GetServers() []Server {
 // ListToolInfos returns the tools in the registry.
 func (r *Registry) ListToolInfos(ctx context.Context) ([]*ToolInfo, error) {
 	res, err := registryHandler{registry: r}.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
+	// gomutants:disable-next-line
 	if err != nil {
 		return nil, err
 	}

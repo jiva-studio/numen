@@ -61,7 +61,3 @@ node tools/mutation/issue.mjs libs-core --dry-run       # prints the issue body 
 ```
 
 `NUMEN_MUTATION_WORKERS` sets the parallelism; it defaults to every core. A TypeScript target needs `@numen/ui` built first.
-
-## The Vitest runner patch
-
-`@stryker-mutator/vitest-runner` 10.0.0 names a test with its suite chain joined by single spaces, and Vitest 5 matches the chain joined by a spaced greater-than sign, so the runner selects no test per mutant and every mutant survives ([stryker-js#6210](https://github.com/stryker-mutator/stryker-js/issues/6210)). `patch.mjs` rewrites the join before each run and refuses any other version of the runner.

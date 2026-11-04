@@ -93,6 +93,26 @@ describe('createAgentPort', () => {
         place: { path: 'notes/Leaf mould.md', range: { start: 40, end: 48 } },
       },
     ])
+    const withoutRange = create(AskAgentResponseSchema, {
+      step: {
+        case: 'toolCall',
+        value: {
+          tool: 'read',
+          about: 'notes/Leaf mould.md',
+          length: 12,
+          path: 'notes/Leaf mould.md',
+        } as never,
+      },
+    })
+    expect(await steps([withoutRange])).toEqual([
+      {
+        kind: 'toolCall',
+        tool: 'read',
+        subject: 'notes/Leaf mould.md',
+        written: 12,
+        place: { path: 'notes/Leaf mould.md', range: { start: 0, end: 0 } },
+      },
+    ])
   })
 
   it('leaves out the place of a call naming none', async () => {
@@ -185,7 +205,7 @@ describe('the depth of reasoning', () => {
   }
 
   it('is handed to the service where one is named', async () => {
-    expect(await ask('high')).toMatchObject({ model: 'deep', reasoning: 'high' })
+    expect(await ask('high')).toMatchObject({ agent: 'alpha', model: 'deep', reasoning: 'high' })
   })
 
   it('is left out where none is named', async () => {

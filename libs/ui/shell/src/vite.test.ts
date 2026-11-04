@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { createWindowAliases, createWindowConfig } from './vite'
+import { getUserAgent } from './shared/lib/dom'
+import { LIGHTNING_CSS, createWindowAliases, createWindowConfig } from './vite'
 
 const ROOT = 'file:///repo/apps/desktop/sample/vite.config.ts'
 
@@ -43,7 +44,12 @@ describe('createWindowConfig', () => {
     })
 
     expect(config.plugins).toStrictEqual([{ name: 'vue' }, { name: 'host-module-entries' }])
+    expect(config.css).toStrictEqual({ lightningcss: LIGHTNING_CSS })
+    expect(config.resolve).toStrictEqual({ alias: createWindowAliases(ROOT) })
     expect(config.build?.outDir).toBe('../../../libs/core/adapter/window/sample/pages/app')
+    expect(config.build?.emptyOutDir).toBe(true)
+    expect(config.build?.assetsDir).toBe('built')
+    expect(config.build?.rollupOptions?.preserveEntrySignatures).toBe('strict')
     expect(config.build?.rollupOptions?.input).toStrictEqual({
       index: '/repo/apps/desktop/sample/index.html',
       'sdk/vue': 'host-module:vue',
@@ -51,5 +57,6 @@ describe('createWindowConfig', () => {
     expect(config.build?.rollupOptions?.output).toStrictEqual({
       entryFileNames: hostModules.getEntryFileName,
     })
+    expect(getUserAgent()).toBe(globalThis.navigator.userAgent)
   })
 })

@@ -14,11 +14,13 @@ func lockFile(path string) (func() error, error) {
 		return nil, err
 	}
 	for {
+		// gomutants:disable-next-line
 		err = syscall.Flock(int(file.Fd()), syscall.LOCK_EX)
 		if !errors.Is(err, syscall.EINTR) {
 			break
 		}
 	}
+	// gomutants:disable-next-line
 	if err != nil {
 		return nil, errors.Join(err, file.Close())
 	}

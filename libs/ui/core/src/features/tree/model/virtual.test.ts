@@ -90,6 +90,7 @@ describe('useVirtualTree', () => {
       () => 24,
     )
 
+    virtual.onScroll()
     virtual.scrollToRow(10)
     expect(virtual.window.value.startIndex).toBe(0)
   })

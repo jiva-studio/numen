@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -137,7 +138,10 @@ func TestAsyncGet_ServesStaleWhileRevalidating(t *testing.T) {
 func TestAsyncGetRecordsFailureAfterBackgroundError(t *testing.T) {
 	plugintest.GrantStorage(t)
 
-	c := cache.New[[]string]("models", cache.WithAsync(true))
+	var reported atomic.Value
+	c := cache.New[[]string]("models", cache.WithAsync(true), cache.WithErrorHandler(func(err error) {
+		reported.Store(err.Error())
+	}))
 	gate := make(chan struct{})
 
 	val, found, err := c.Get(t.Context(), "k1", func(context.Context) ([]string, error) {
@@ -149,7 +153,7 @@ func TestAsyncGetRecordsFailureAfterBackgroundError(t *testing.T) {
 	}
 
 	close(gate)
-	waitForCondition(t, func() bool { return c.HasFailed("k1") })
+	waitForCondition(t, func() bool { return c.HasFailed("k1") && reported.Load() != nil })
 }
 
 func TestDiskPersistenceAcrossTwoCacheInstances(t *testing.T) {
@@ -303,8 +307,8 @@ func TestAMemoryCacheOfAPluginWithoutADirectoryReportsTheDiskFailure(t *testing.
 
 	c.Put("k", []string{"v"})
 
-	if len(reported) != 1 {
-		t.Errorf("reported %v, want one error", reported)
+	if len(reported) != 1 || !strings.Contains(reported[0].Error(), cache.EnvCacheDir) {
+		t.Errorf("reported %v, want one error mentioning %s", reported, cache.EnvCacheDir)
 	}
 }
 
@@ -381,5 +385,184 @@ func TestAnOlderHostThatSharesNoDataMakesThePluginUseItsOwnDataDirectory(t *test
 
 	if err != nil || got != dataDir {
 		t.Errorf("GetSharedDataDirOrPluginDataDir() = %q, %v, want %q", got, err, dataDir)
+	}
+}
+
+func TestCacheZeroValueTimeoutDiskCorruptAndAsyncInFlightEdgeCases(t *testing.T) {
+	var zeroCache cache.Cache[string]
+	zeroCache.Put("k1", "v1")
+	if v, ok, err := zeroCache.Get(t.Context(), "k2", func(context.Context) (string, error) { return "v2", nil }); err != nil || !ok || v != "v2" {
+		t.Fatalf("zeroCache.Get = %q, %v, %v", v, ok, err)
+	}
+
+	nilClockCache := cache.New[string]("models", cache.WithClock(nil), cache.WithTimeout(50*time.Millisecond))
+	var hadDeadline bool
+	if _, _, err := nilClockCache.Get(t.Context(), "k", func(ctx context.Context) (string, error) {
+		_, hadDeadline = ctx.Deadline()
+		return "ok", nil
+	}); err != nil || !hadDeadline {
+		t.Fatalf("expected deadline from WithTimeout, got err=%v hadDeadline=%v", err, hadDeadline)
+	}
+
+	noTimeoutCache := cache.New[string]("models", cache.WithFailureBackoff(time.Second), cache.WithClock(clock.NewFake(time.Time{})))
+	var noDeadline bool
+	if _, _, err := noTimeoutCache.Get(t.Context(), "k", func(ctx context.Context) (string, error) {
+		_, noDeadline = ctx.Deadline()
+		return "ok", nil
+	}); err != nil || noDeadline {
+		t.Fatalf("expected no deadline without WithTimeout, got err=%v noDeadline=%v", err, noDeadline)
+	}
+	if _, _, err := noTimeoutCache.Get(t.Context(), "missing", nil); err == nil {
+		t.Fatal("expected error when loader is nil on cache miss")
+	}
+
+	dir := t.TempDir()
+	unnamed := cache.New[[]string]("", cache.WithDir(dir), cache.WithDisk(true))
+	unnamed.Put("k", []string{"v"})
+	if entries, err := os.ReadDir(dir); err != nil || len(entries) != 0 {
+		t.Fatalf("expected unnamed cache not to write to disk, got %v (%v)", entries, err)
+	}
+
+	diskCache := cache.New[[]string]("models", cache.WithDir(dir), cache.WithDisk(true))
+	diskCache.Put("empty", []string{})
+	if _, err := os.Stat(filepath.Join(dir, "models.json")); err == nil {
+		t.Fatal("expected empty slice not to be persisted to disk")
+	}
+
+	var corruptErrors []error
+	corruptCache := cache.New[[]string]("models", cache.WithDir(dir), cache.WithDisk(true), cache.WithErrorHandler(func(err error) {
+		corruptErrors = append(corruptErrors, err)
+	}))
+	if err := os.WriteFile(filepath.Join(dir, "models.json"), []byte(`{"k1":["corrupt"],"k2":bad}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	got, ok, err := corruptCache.Get(t.Context(), "k1", func(context.Context) ([]string, error) {
+		return []string{"fresh"}, nil
+	})
+	if err != nil || !ok || !slices.Equal(got, []string{"fresh"}) {
+		t.Fatalf("expected corrupt disk JSON to be ignored on Get, got %v, %v, %v", got, ok, err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "models.json"), []byte(`{"k1":["corrupt"],"k2":bad}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	corruptCache.Put("k3", []string{"valid"})
+	if len(corruptErrors) == 0 {
+		t.Fatal("expected error handler to be notified of corrupt disk file on Put")
+	}
+
+	now := clock.NewFake(time.Unix(5000, 0))
+	var nilLoadErrs atomic.Int32
+	memAsync := cache.New[string]("", cache.WithAsync(true), cache.WithTTL(time.Second), cache.WithClock(now), cache.WithErrorHandler(func(error) {
+		nilLoadErrs.Add(1)
+	}))
+	memAsync.Put("a", "stale-val")
+	now.Advance(5 * time.Second)
+	if v, found, err := memAsync.Get(t.Context(), "a", nil); err != nil || !found || v != "stale-val" || memAsync.HasFailed("a") {
+		t.Fatalf("expected stale in-memory entry without disk or loader, got %q, found=%v, err=%v, failed=%v", v, found, err, memAsync.HasFailed("a"))
+	}
+	time.Sleep(10 * time.Millisecond)
+	if nilLoadErrs.Load() != 0 || memAsync.HasFailed("a") {
+		t.Fatalf("expected nil async loader not to run or fail, got errs=%d failed=%v", nilLoadErrs.Load(), memAsync.HasFailed("a"))
+	}
+
+	corruptReadCache := cache.New[[]string]("models", cache.WithDir(dir))
+	if v, found, err := corruptReadCache.Get(t.Context(), "k1", func(context.Context) ([]string, error) {
+		return []string{"fresh-after-corrupt"}, nil
+	}); err != nil || !found || len(v) != 1 || v[0] != "fresh-after-corrupt" {
+		t.Fatalf("expected corrupt disk read to fall back to loader, got %v, %v, %v", v, found, err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "models.json"), []byte(`{"empty":[]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	emptyReadCache := cache.New[[]string]("models", cache.WithDir(dir))
+	if v, found, err := emptyReadCache.Get(t.Context(), "empty", func(context.Context) ([]string, error) {
+		return []string{"fresh-after-empty"}, nil
+	}); err != nil || !found || len(v) != 1 || v[0] != "fresh-after-empty" {
+		t.Fatalf("expected empty slice on disk to be treated as miss, got %v, %v, %v", v, found, err)
+	}
+
+	var asyncCalls atomic.Int32
+	gate := make(chan struct{})
+	started := make(chan struct{})
+	diskAsync := cache.New[[]string]("inflight", cache.WithDir(dir), cache.WithAsync(true), cache.WithTTL(time.Second), cache.WithClock(now))
+	_, found, err := diskAsync.Get(t.Context(), "miss", func(context.Context) ([]string, error) {
+		if asyncCalls.Add(1) == 1 {
+			close(started)
+		}
+		<-gate
+		return []string{"loaded"}, nil
+	})
+	if err != nil || found {
+		t.Fatalf("first async miss = found=%v, err=%v", found, err)
+	}
+	<-started
+	if err := os.WriteFile(filepath.Join(dir, "inflight.json"), []byte(`{"miss":["from-disk"]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, found2, err2 := diskAsync.Get(t.Context(), "miss", func(context.Context) ([]string, error) {
+		asyncCalls.Add(1)
+		return []string{"second"}, nil
+	}); err2 != nil || found2 {
+		t.Fatalf("second async miss while in-flight = found=%v, err=%v", found2, err2)
+	}
+	close(gate)
+	waitForCondition(t, func() bool {
+		v, ok, err := diskAsync.Get(t.Context(), "miss", nil)
+		return err == nil && ok && slices.Equal(v, []string{"loaded"})
+	})
+	if asyncCalls.Load() != 1 {
+		t.Fatalf("expected 1 async load call, got %d", asyncCalls.Load())
+	}
+
+	now.Advance(5 * time.Second)
+	staleGate := make(chan struct{})
+	staleStarted := make(chan struct{})
+	var staleCalls atomic.Int32
+	if _, _, err := diskAsync.Get(t.Context(), "miss", func(context.Context) ([]string, error) {
+		if staleCalls.Add(1) == 1 {
+			close(staleStarted)
+		}
+		<-staleGate
+		return []string{"revalidated"}, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	<-staleStarted
+	if _, _, err := diskAsync.Get(t.Context(), "miss", func(context.Context) ([]string, error) {
+		staleCalls.Add(1)
+		return []string{"duplicate"}, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	close(staleGate)
+	waitForCondition(t, func() bool {
+		v, ok, err := diskAsync.Get(t.Context(), "miss", nil)
+		return err == nil && ok && slices.Equal(v, []string{"revalidated"})
+	})
+	if staleCalls.Load() != 1 {
+		t.Fatalf("expected 1 stale revalidation call, got %d", staleCalls.Load())
+	}
+
+	var zeroFailCache cache.Cache[string]
+	if _, _, err := zeroFailCache.Get(t.Context(), "fail", func(context.Context) (string, error) {
+		return "", errors.New("fail")
+	}); err == nil || !zeroFailCache.HasFailed("fail") {
+		t.Fatalf("expected zeroFailCache error and HasFailed=true, got %v", err)
+	}
+
+	nilClockTTL := cache.New[string]("nil-clock", cache.WithTTL(time.Hour))
+	nilClockTTL.SetClock(nil)
+	nilClockTTL.Put("k", "v")
+	if v, found, err := nilClockTTL.Get(t.Context(), "k", nil); err != nil || !found || v != "v" {
+		t.Fatalf("nilClockTTL with TTL Get = %q, %v, %v", v, found, err)
+	}
+
+	var unnamedErrs []error
+	unnamedDisk := cache.New[string]("", cache.WithDisk(true), cache.WithDir(dir), cache.WithErrorHandler(func(err error) {
+		unnamedErrs = append(unnamedErrs, err)
+	}))
+	unnamedDisk.Put("k", "v")
+	if len(unnamedErrs) != 0 {
+		t.Fatalf("expected unnamed cache not to attempt disk write, got errors %v", unnamedErrs)
 	}
 }

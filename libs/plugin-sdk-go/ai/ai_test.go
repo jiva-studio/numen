@@ -139,9 +139,24 @@ func TestClientCompleteReturnsErrorOfHost(t *testing.T) {
 
 		_, err := NewClient(srv.Client(), srv.URL, "t").Complete(t.Context(), newQuestion())
 
-		if !errors.Is(err, want) {
+		if !errors.Is(err, want) || err.Error() != want.Error() {
 			t.Errorf("%v: got %v, want %v", code, err, want)
 		}
+	}
+}
+
+func TestQuestionAndMessageAccessorsHandleNilAndValues(t *testing.T) {
+	var nilQuestion *Question
+	if nilQuestion.GetPurpose() != "" || nilQuestion.GetMessages() != nil || toProtoQuestion(nilQuestion) != nil {
+		t.Fatalf("nil question returned non-empty values")
+	}
+	q := newQuestion()
+	if q.GetPurpose() != "proofreading" || len(q.GetMessages()) != 1 {
+		t.Fatalf("got purpose=%q messages=%v", q.GetPurpose(), q.GetMessages())
+	}
+	msg := q.GetMessages()[0]
+	if msg.GetRole() != "user" || msg.GetText() != "fix this" {
+		t.Fatalf("got role=%q text=%q", msg.GetRole(), msg.GetText())
 	}
 }
 

@@ -23,9 +23,10 @@ const createStore = (failure: string | null = null) => {
 
 describe('a key of a secret', () => {
   it('is handed to the vault and the settings are read again', async () => {
-    const { calls, refresh, store } = createStore()
+    const { calls, notified, refresh, store } = createStore()
     await store.writeSecret('md.numen.sample', 'apiKey', 'made-up-key')
     expect(calls).toStrictEqual(['write md.numen.sample apiKey made-up-key'])
+    expect(notified).toHaveBeenCalledWith('')
     expect(refresh).toHaveBeenCalledOnce()
   })
 

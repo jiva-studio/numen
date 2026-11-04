@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { defineComponent, h, onScopeDispose } from 'vue'
+import { describe, expect, it, vi } from 'vitest'
+import { defineComponent, effectScope, h, onScopeDispose } from 'vue'
 import { CONVERSATION, VAULT_SUMMARY, createMockAgentHost } from '@numen/plugin-host'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createShellHost, TARGET } from './host'
@@ -25,17 +25,53 @@ describe('createShellHost', () => {
     expect(front.value).toBeNull()
 
     context.registerTabKind(view('second', 2))
-    context.registerTabKind(view('first', 1))
-    expect(front.value?.registration.kind).toBe('first')
+    const defaultOrder = context.registerTabKind({
+      kind: 'default-zero',
+      component: {},
+      placement: { pane: 'main' } as never,
+    })
+    expect(front.value?.registration.kind).toBe('default-zero')
+
+    const sub = context.registerTabKind(view('negative', -1))
+    expect(front.value?.registration.kind).toBe('negative')
     expect(front.value?.pluginId).toBe('md.numen.example')
+
+    sub.dispose()
+    expect(front.value?.registration.kind).toBe('default-zero')
+
+    defaultOrder.dispose()
+    expect(front.value?.registration.kind).toBe('second')
   })
 
-  it('lets go of what a plugin registered once it is disposed', () => {
+  it('lets go of what a plugin registered once it is disposed, even if subscriptions were cleared', () => {
     const { host, front } = createShellHost()
-    host.createContext('md.numen.example').registerTabKind(view('review', 0))
+    const ctx = host.createContext('md.numen.example')
+    ctx.registerTabKind(view('review', 0))
+    host.createContext('md.numen.other').registerTabKind(view('fallback', 1))
+    ctx.subscriptions.length = 0
 
     host.disposePlugin('md.numen.example')
+    host.disposePlugin('md.numen.unknown')
 
+    expect(front.value?.registration.kind).toBe('fallback')
+  })
+
+  it('disposes all plugins and does not re-run disposed subscriptions on disposeAll', () => {
+    const { host, front } = createShellHost()
+    const calls: string[] = []
+    const ctx1 = host.createContext('md.numen.one')
+    ctx1.subscriptions.push({ dispose: () => calls.push('one') })
+    ctx1.registerTabKind(view('review', 0))
+
+    host.disposePlugin('md.numen.one')
+    expect(calls).toStrictEqual(['one'])
+
+    const ctx2 = host.createContext('md.numen.two')
+    ctx2.subscriptions.push({ dispose: () => calls.push('two') })
+    ctx2.registerTabKind(view('second', 1))
+
+    host.disposeAll()
+    expect(calls).toStrictEqual(['one', 'two'])
     expect(front.value).toBeNull()
   })
 
@@ -45,9 +81,41 @@ describe('createShellHost', () => {
       'md.numen.example',
       createMockManifest('md.numen.example', { name: 'Example', permissions: ['vault:read'] }),
     )
+    const withoutManifest = host.createContext('md.numen.bare')
+    const withoutPermissions = host.createContext('md.numen.empty', {
+      id: 'md.numen.empty',
+      name: 'Empty',
+      version: '1.0.0',
+    } as never)
 
     expect(context.hasPermission?.('vault:read')).toBe(true)
     expect(context.hasPermission?.('vault:write')).toBe(false)
+    expect(withoutManifest.hasPermission?.('vault:read')).toBe(false)
+    expect(withoutPermissions.hasPermission?.('vault:read')).toBe(false)
+  })
+
+  it('provides no-op capabilities and opens external web URLs', async () => {
+    const { host } = createShellHost()
+    const context = host.createContext('md.numen.example')
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
+
+    context.registerReader?.({} as never).dispose()
+    context.registerCommand?.({} as never).dispose()
+    context.registerContextMenu?.({} as never).dispose()
+    context.registerAgentProvider?.({} as never).dispose()
+    context.registerSettingsView?.({} as never).dispose()
+    context.registerStatusView?.({} as never).dispose()
+    expect(context.getSetting?.('key')).toBeUndefined()
+    context.onSettingChange?.('key', () => undefined).dispose()
+    context.onVaultChange?.(() => undefined).dispose()
+    context.onFileSelect?.(() => undefined).dispose()
+    expect(context.emitVaultChange?.({} as never)).toBeUndefined()
+    expect(context.emitFileSelect?.({} as never)).toBeUndefined()
+
+    const externalResult = await context.openExternal?.('https://example.test')
+    expect(externalResult?.ok).toBe(true)
+    expect(openSpy).toHaveBeenCalledWith('https://example.test', '_blank')
+    openSpy.mockRestore()
   })
 
   it('draws a view one plugin declares into the element of another, until the declaring one goes', () => {
@@ -138,16 +206,29 @@ describe('the tab of the window', () => {
     expect(tab.value).toBeNull()
   })
 
-  it('opens the front kind on the vault chosen, in a scope of its own', () => {
-    const { host, tab, openTab } = createShellHost()
-    const { registration } = createKind()
+  it('opens the front kind on the vault chosen, in a detached scope of its own, even without an open callback', () => {
+    const { host, tab, openTab, closeTab } = createShellHost()
+    const { registration, released } = createKind()
     host.createContext('md.numen.cards').registerTabKind(registration)
 
-    openTab('roots')
+    const parent = effectScope()
+    parent.run(() => openTab('roots'))
+    parent.stop()
 
+    expect(released).toStrictEqual([])
     expect(tab.value?.vault).toBe('roots')
     expect(tab.value?.view.pluginId).toBe('md.numen.cards')
-    expect(tab.value?.state).toStrictEqual({ vault: 'roots', id: tab.value?.id })
+    expect(tab.value?.state).toStrictEqual({ vault: 'roots', id: 'review#1' })
+
+    closeTab()
+    host.createContext('md.numen.stateless').registerTabKind({
+      kind: 'stateless',
+      component: {},
+      placement: { pane: 'main', order: -1 },
+    })
+    openTab('words')
+    expect(tab.value?.id).toBe('stateless#2')
+    expect(tab.value?.state).toBeUndefined()
   })
 
   it('closes the tab a plugin names, which takes the window back to its vaults', () => {
@@ -176,14 +257,16 @@ describe('the tab of the window', () => {
     const first = tab.value!.id
     openTab('words')
 
+    expect(first).toBe('review#1')
     expect(released).toStrictEqual([first])
     expect(tab.value?.vault).toBe('words')
-    expect(tab.value?.id).not.toBe(first)
+    expect(tab.value?.id).toBe('review#2')
   })
 
   it('closes the tab of a plugin that is disposed, and of no other', () => {
     const { host, tab, openTab } = createShellHost()
-    host.createContext('md.numen.cards').registerTabKind(createKind().registration)
+    const cardsContext = host.createContext('md.numen.cards')
+    cardsContext.registerTabKind(createKind().registration)
     host.createContext('md.numen.other')
     openTab('roots')
 
@@ -192,6 +275,11 @@ describe('the tab of the window', () => {
 
     host.disposePlugin('md.numen.cards')
     expect(tab.value).toBeNull()
+
+    const afterDispose = vi.fn()
+    cardsContext.subscriptions.push({ dispose: afterDispose })
+    host.disposeAll()
+    expect(afterDispose).not.toHaveBeenCalled()
   })
 
   it('opens no tab when the kind fails to open, and lets go of what it began', () => {

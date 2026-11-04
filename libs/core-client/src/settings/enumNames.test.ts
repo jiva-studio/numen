@@ -15,6 +15,8 @@ describe('getNames', () => {
 
   it('refuses a table where two values answer to one word', () => {
     const worded = { 1: 'parent', 2: 'parent' } as const
-    expect(() => getNames<'parent', 1 | 2>(worded)).toThrow(/one word/)
+    expect(() => getNames<'parent', 1 | 2>(worded)).toThrow(
+      'two values of this enum answer to one word: parent, parent',
+    )
   })
 })

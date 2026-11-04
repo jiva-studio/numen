@@ -77,6 +77,7 @@ export const createNotice = (task: Task): Notice => {
     isWorking: error === '',
     isUserStarted: task.isUserStarted || error !== '',
     ...(error ? { severity: 'error' as const, stay: 'kept' as const } : {}),
+    // Stryker disable next-line ConditionalExpression,EqualityOperator: undefined > 0 is false, so total > 0 already rejects an undefined total.
     ...(completed !== undefined && total !== undefined && total > 0
       ? { done: completed, total: total, ...(task.counting ? { counting: task.counting } : {}) }
       : {}),

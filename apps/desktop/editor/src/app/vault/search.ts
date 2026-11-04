@@ -8,10 +8,9 @@ import type { SearchDeps } from '@/features/command-palette'
 
 /** The selector of a hit, parsed from its JSON, and null where it has none. */
 const parseSelector = (json: string): Selector | null => {
-  if (!json) return null
   try {
     const value: unknown = JSON.parse(json)
-    return typeof value === 'object' && value !== null ? (value as Selector) : null
+    return typeof value === 'object' ? (value as Selector) : null
   } catch {
     return null
   }

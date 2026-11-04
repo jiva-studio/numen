@@ -14,10 +14,12 @@ type AsyncComponentRegistration = {
 function isAsyncComponent(
   comp: unknown,
 ): comp is (() => Promise<Component>) | AsyncComponentRegistration {
-  if (typeof comp === 'object' && comp !== null && (comp as { type?: unknown }).type === 'async') {
-    return typeof (comp as { loader?: unknown }).loader === 'function'
+  if (typeof comp !== 'function') {
+    return (
+      (comp as { type?: unknown }).type === 'async' &&
+      typeof (comp as { loader?: unknown }).loader === 'function'
+    )
   }
-  if (typeof comp !== 'function') return false
   return !(
     'setup' in comp ||
     'render' in comp ||
@@ -35,8 +37,7 @@ export function resolvePluginComponent(rawComponent: unknown): Component | null 
       : rawComponent
   if (!comp) return null
   if (isAsyncComponent(comp)) {
-    const loader = typeof comp === 'function' ? comp : comp.loader
-    return defineAsyncComponent(loader)
+    return defineAsyncComponent(comp)
   }
   return comp as Component
 }
@@ -51,6 +52,7 @@ export function extractTitleValue(title: unknown): string {
 
 export function extractFilename(path: string | undefined): string {
   if (!path) return ''
+  // Stryker disable next-line LogicalOperator,MethodExpression: split always returns at least one element
   return path.split('/').pop() ?? path
 }
 
@@ -93,6 +95,7 @@ function copyHostSheet(sheet: CSSStyleSheet): CSSStyleSheet | undefined {
     return undefined
   }
   const copy = createSheet(text, sheet.href ?? undefined)
+  // Stryker disable next-line ConditionalExpression: WeakMap lookup checks truthiness of cached sheet
   if (copy) hostSheetCopies.set(sheet, copy)
   return copy
 }
@@ -117,6 +120,7 @@ function copyHostSheets(): CSSStyleSheet[] | undefined {
 }
 
 export function adoptHostStyles(shadowRoot: ShadowRoot): void {
+  // Stryker disable next-line ConditionalExpression,EqualityOperator,StringLiteral: JSDOM always defines document
   if (typeof document === 'undefined') return
   const copies = 'adoptedStyleSheets' in shadowRoot ? copyHostSheets() : undefined
   if (copies) {

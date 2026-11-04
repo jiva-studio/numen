@@ -165,11 +165,7 @@ export function createPathCommandHost(
         ...(getContextMenuItems ? getContextMenuItems(target) : []),
         ...(!isSeveral && !entry.isFolder && getFileMenuItems ? getFileMenuItems(entry.path) : []),
       ]
-      return createPathCommands(
-        { isNote: entry.isNote, isFolder: entry.isFolder },
-        isSeveral,
-        contributions,
-      )
+      return createPathCommands(entry, isSeveral, contributions)
     },
     runPathCommand: (id, { paths, name, isNote, isFolder }) => {
       const path = paths[0] ?? ''

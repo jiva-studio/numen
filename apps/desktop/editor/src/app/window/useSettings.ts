@@ -110,11 +110,11 @@ function createPluginEnumGroup(
 
 function findPluginSetting(plugins: readonly PluginInfo[], command: string) {
   const [, pluginId, key] = command.split(':')
-  if (!pluginId || !key) return null
   const plugin = plugins.find((p) => p.id === pluginId)
-  const setting = plugin?.settings.find((s) => s.key === key)
-  if (!plugin || !setting) return null
-  return { plugin, pluginId, key, setting }
+  if (!plugin) return null
+  const setting = plugin.settings.find((s) => s.key === key)
+  if (!setting) return null
+  return { plugin, pluginId: plugin.id, key: setting.key, setting }
 }
 
 function getPluginStepGroups(
@@ -130,7 +130,7 @@ function getPluginStepGroups(
   const ctx: PluginGroupContext = { id: `plugin-${pluginId}-${key}`, title: setting.title, words }
 
   if (setting.type === 'boolean') {
-    const isOn = current !== undefined ? Boolean(current) : Boolean(setting.default)
+    const isOn = Boolean(current)
     return createPluginBooleanGroup(ctx, isOn)
   }
   if (setting.type === 'enum') {
@@ -278,6 +278,7 @@ function createRefreshSchedule(
   rest: { start: () => Promise<void> },
   reportError: (error: unknown) => void,
 ) {
+  // Stryker disable next-line ArrayDeclaration: clearTimeout ignores non-timer values in the initial array
   const refreshTimers: ReturnType<typeof setTimeout>[] = []
 
   const clearRefreshTimers = () => {
@@ -318,12 +319,13 @@ export function useSettings({
   const sync = syncSetting(core, words, log.getWriter('named'))
   const writeSettingsMessage = log.getWriter('configured')
   const rest = createSettingsStore(core, words, writeSettingsMessage)
+  const getPluginName = (pluginId: string): string =>
+    rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const appearance = createWindowAppearance({
     core: themes,
     words,
     write: writeAppearanceMessage,
-    getPluginName: (pluginId) =>
-      rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId,
+    getPluginName,
   })
   const reportError = (error: unknown) => writeSettingsMessage(formatErrorMessage(error), 'error')
   const { scheduleRefresh, clearRefreshTimers, refreshAndSchedule } = createRefreshSchedule(
@@ -340,7 +342,7 @@ export function useSettings({
     words: { stopped: words.pluginStopped, retryFailed: words.pluginRetryFailed },
     notify: log.getWriter('plugins'),
     refresh: refreshAndSchedule,
-    getName: (pluginId) => rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId,
+    getName: getPluginName,
   })
 
   const catalogEntries = catalog ? useCatalogEntries(catalog, rest.plugins, reportError) : undefined

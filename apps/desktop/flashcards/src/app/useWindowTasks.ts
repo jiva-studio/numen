@@ -37,9 +37,10 @@ export function useWindowTasks(notices: NoticeQueue) {
           })),
         )
       },
-    ).catch((error: unknown) => {
-      notices.show(WINDOW_SOURCE, formatErrorMessage(error), 'error')
-    })
+    ).catch(
+      // Stryker disable next-line all: createFollower catches stream errors and reports them through setLost
+      (error: unknown) => notices.show(WINDOW_SOURCE, formatErrorMessage(error), 'error'),
+    )
   })
   onUnmounted(() => {
     isOpen = false

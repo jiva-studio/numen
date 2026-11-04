@@ -59,10 +59,12 @@ export const writeMarker = (marker: LinkMarker | null | undefined): NoteMarkerCo
 /** The role of a connection as the window names it; null where it is not one a connection carries. */
 const readConnectionRole = (code: NoteRoleCode): ConnectionRole | null => {
   const role = readRole(code)
-  return role !== null && isConnectionRole(role) ? role : null
+  return isConnectionRole(role) ? role : null
 }
 
-const isConnectionRole = (role: LinkRole): role is ConnectionRole => role in connectionRoles
+const isConnectionRole = (role: LinkRole | null): role is ConnectionRole =>
+  // Stryker disable next-line ConditionalExpression: 'null' is not a key in connectionRoles
+  role !== null && role in connectionRoles
 
 interface SideWire {
   readonly label: string

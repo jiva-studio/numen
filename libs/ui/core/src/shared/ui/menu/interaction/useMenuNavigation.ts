@@ -71,7 +71,8 @@ function useSubmenuActions(options: MenuNavigationOptions) {
   const trigger = ref<MenuTrigger>('pointer')
   const rowElements = new Map<string, { getElement?: () => HTMLElement | null }>()
 
-  const onOpenSubmenu = (item: MenuItem, how: MenuTrigger = 'pointer'): void => {
+  const onOpenSubmenu = (item: MenuItem, how: MenuTrigger): void => {
+    // Stryker disable next-line ConditionalExpression,LogicalOperator: callers check children before opening and TypeScript narrows item.children
     if (item.isDisabled || !item.children || item.children.length === 0) return
     const rowInst = rowElements.get(item.id)
     const el = rowInst?.getElement?.() ?? null

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createMockListing, createMockPluginInfo } from './testing/listing'
-import { createManagedPlugins } from './plugins'
+import { createManagedPlugins, isInstalled } from './plugins'
 import {
   formatCategoryLabel,
   getFilteredPluginItems,
@@ -17,15 +17,15 @@ const createContext = (disabledIds: readonly string[] = []): PluginFilterContext
 
 const notesInfo = createMockPluginInfo('sample.alpha', 'Notes', {
   description: 'Markdown note editor',
-  readers: [{ id: 'markdown', extensions: ['md'] }],
+  readers: [{ id: 'markdown', extensions: ['txt', 'md'] }],
 })
 const treeInfo = createMockPluginInfo('sample.beta', 'File Tree Explorer', {
   description: 'Browse vault files',
 })
 const agentInfo = createMockPluginInfo('sample.gamma', 'Claude Code Agent', {
-  capabilities: ['agent', 'ai.agent.provider'],
+  capabilities: ['ocr', 'agent'],
 })
-const bareInfo = createMockPluginInfo('sample.delta', 'Bare Engine')
+const bareInfo = createMockPluginInfo('Sample.Delta', 'Bare Engine')
 
 const entries = [
   createMockListing('sample.alpha', {
@@ -57,7 +57,12 @@ if (!notes || !tree || !agent || !bare || !uninstalled)
 
 describe('createManagedPlugins', () => {
   it('reads category and feature from the catalog entry of each plugin', () => {
-    expect([notes.category, notes.feature, notes.tabKinds]).toStrictEqual([
+    const [mergedNotes] = createManagedPlugins([notesInfo], entries)
+
+    expect(mergedNotes).toBeDefined()
+    if (!mergedNotes) return
+    expect(isInstalled(mergedNotes)).toBe(true)
+    expect([mergedNotes.category, mergedNotes.feature, mergedNotes.tabKinds]).toStrictEqual([
       'editors',
       'Markdown notes',
       ['note', 'reader:markdown'],
@@ -65,15 +70,38 @@ describe('createManagedPlugins', () => {
   })
 
   it('leaves a plugin without an entry in no category', () => {
-    expect([bare.category, bare.feature, bare.tabKinds]).toStrictEqual(['', '', []])
-    expect(getPluginCategory(bare)).toBe('other')
+    const [mergedBare] = createManagedPlugins([bareInfo], entries)
+
+    expect(mergedBare).toBeDefined()
+    if (!mergedBare) return
+    expect([mergedBare.category, mergedBare.feature, mergedBare.tabKinds]).toStrictEqual([
+      '',
+      '',
+      [],
+    ])
+    expect(getPluginCategory(mergedBare)).toBe('other')
   })
 
   it('appends the entries the catalog offers that are not installed', () => {
-    expect([uninstalled.id, uninstalled.info, uninstalled.name]).toStrictEqual([
+    const [, mergedOffered] = createManagedPlugins([notesInfo], entries)
+
+    expect(mergedOffered).toBeDefined()
+    if (!mergedOffered) return
+    expect(isInstalled(mergedOffered)).toBe(false)
+    expect([
+      mergedOffered.id,
+      mergedOffered.info,
+      mergedOffered.name,
+      mergedOffered.category,
+      mergedOffered.feature,
+      mergedOffered.tabKinds,
+    ]).toStrictEqual([
       'sample.offer',
       undefined,
       'Offered Reader',
+      'readers',
+      'EPUB books',
+      ['reader:offer'],
     ])
   })
 
@@ -101,6 +129,18 @@ describe('parsePluginQuery', () => {
     })
   })
 
+  it('returns empty qualifiers and terms for an empty or whitespace query', () => {
+    expect(parsePluginQuery('')).toStrictEqual({ qualifiers: [], terms: [] })
+    expect(parsePluginQuery('   ')).toStrictEqual({ qualifiers: [], terms: [] })
+  })
+
+  it('keeps unknown keys and leading colons as free-text terms and preserves inner quotes', () => {
+    expect(parsePluginQuery(':colon idx unknown:val feature:"a"b"')).toStrictEqual({
+      qualifiers: [{ key: 'feature', value: 'a"b' }],
+      terms: [':colon', 'idx', 'unknown:val'],
+    })
+  })
+
   it('normalizes disabled:true/false and enabled:true/false into status qualifiers', () => {
     expect(parsePluginQuery('disabled:true').qualifiers).toStrictEqual([
       { key: 'status', value: 'disabled' },
@@ -110,6 +150,9 @@ describe('parsePluginQuery', () => {
     ])
     expect(parsePluginQuery('enabled:true').qualifiers).toStrictEqual([
       { key: 'status', value: 'enabled' },
+    ])
+    expect(parsePluginQuery('enabled:false').qualifiers).toStrictEqual([
+      { key: 'status', value: 'disabled' },
     ])
     expect(parsePluginQuery('@available').qualifiers).toStrictEqual([
       { key: 'status', value: 'available' },
@@ -122,8 +165,25 @@ describe('the feature: filter', () => {
     const ctx = createContext()
 
     expect(matchesPluginQuery(tree, parsePluginQuery('feature:file'), ctx)).toBe(true)
+    expect(matchesPluginQuery(tree, parsePluginQuery('feature:trees'), ctx)).toBe(true)
+    expect(matchesPluginQuery(notes, parsePluginQuery('feature:trees'), ctx)).toBe(false)
+    expect(matchesPluginQuery(tree, parsePluginQuery('feature:" file "'), ctx)).toBe(true)
+    expect(matchesPluginQuery(tree, parsePluginQuery('feature:"   "'), ctx)).toBe(false)
     expect(matchesPluginQuery(tree, parsePluginQuery('feature:explorer'), ctx)).toBe(false)
     expect(matchesPluginQuery(tree, parsePluginQuery('feature:beta'), ctx)).toBe(false)
+  })
+
+  it('does not stem short words ending in s or words not ending in s', () => {
+    const ctx = createContext()
+    const [shortPlugin] = createManagedPlugins(
+      [createMockPluginInfo('sample.short', 'Short')],
+      [createMockListing('sample.short', { feature: 'ab not' })],
+    )
+    expect(shortPlugin).toBeDefined()
+    if (!shortPlugin) return
+
+    expect(matchesPluginQuery(shortPlugin, parsePluginQuery('feature:abs'), ctx)).toBe(false)
+    expect(matchesPluginQuery(shortPlugin, parsePluginQuery('feature:note'), ctx)).toBe(false)
   })
 
   it('matches a kind of tab the plugin registers', () => {
@@ -151,9 +211,25 @@ describe('the category: filter', () => {
   })
 
   it('matches the label of the category', () => {
-    expect(matchesPluginQuery(agent, parsePluginQuery('category:AGENTS'), createContext())).toBe(
-      true,
-    )
+    const ctx = createContext()
+    const mixedCase = { ...bare, category: 'CustomCat' }
+
+    expect(matchesPluginQuery(agent, parsePluginQuery('category:AGENTS'), ctx)).toBe(true)
+    expect(matchesPluginQuery(mixedCase, parsePluginQuery('category:customcat'), ctx)).toBe(true)
+    expect(
+      matchesPluginQuery(
+        mixedCase,
+        { qualifiers: [{ key: 'category', value: 'CustomCat' }], terms: [] },
+        ctx,
+      ),
+    ).toBe(true)
+    expect(
+      matchesPluginQuery(
+        mixedCase,
+        { qualifiers: [{ key: 'unknown', value: 'anything' }], terms: [] },
+        ctx,
+      ),
+    ).toBe(true)
   })
 })
 
@@ -167,38 +243,61 @@ describe('matchesPluginQuery and matchesSystemRow', () => {
     expect(matchesSystemRow(query)).toBe(false)
   })
 
-  it('matches capability and id qualifiers', () => {
+  it('matches capability and id qualifiers including plural stems and empty value', () => {
     const ctx = createContext()
 
     expect(matchesPluginQuery(agent, parsePluginQuery('capability:agent'), ctx)).toBe(true)
+    expect(matchesPluginQuery(agent, parsePluginQuery('capability:agents'), ctx)).toBe(true)
+    expect(matchesPluginQuery(agent, parsePluginQuery('capability:'), ctx)).toBe(true)
+    expect(matchesPluginQuery(bare, parsePluginQuery('capability:'), ctx)).toBe(false)
+    expect(matchesPluginQuery(uninstalled, parsePluginQuery('capability:'), ctx)).toBe(false)
     expect(matchesPluginQuery(notes, parsePluginQuery('id:sample.alpha'), ctx)).toBe(true)
+    expect(matchesPluginQuery(bare, parsePluginQuery('id:sample.delta'), ctx)).toBe(true)
   })
 
-  it('matches readers by id and extension only', () => {
+  it('matches readers by id and extension only, including plural stems', () => {
     const ctx = createContext()
 
     expect(matchesPluginQuery(notes, parsePluginQuery('reader:md'), ctx)).toBe(true)
+    expect(matchesPluginQuery(notes, parsePluginQuery('reader:txts'), ctx)).toBe(true)
+    expect(matchesPluginQuery(notes, parsePluginQuery('reader:markdowns'), ctx)).toBe(true)
     expect(matchesPluginQuery(notes, parsePluginQuery('reader:alpha'), ctx)).toBe(false)
     expect(matchesPluginQuery(notes, parsePluginQuery('reader:'), ctx)).toBe(true)
     expect(matchesPluginQuery(tree, parsePluginQuery('reader:'), ctx)).toBe(false)
   })
 
-  it('applies the available status to plugins that are not installed only', () => {
+  it('applies status qualifiers to installed and uninstalled plugins', () => {
     const ctx = createContext(['sample.alpha'])
 
     expect(matchesPluginQuery(uninstalled, parsePluginQuery('@available'), ctx)).toBe(true)
     expect(matchesPluginQuery(notes, parsePluginQuery('@available'), ctx)).toBe(false)
     expect(matchesPluginQuery(uninstalled, parsePluginQuery('@disabled'), ctx)).toBe(false)
     expect(matchesPluginQuery(uninstalled, parsePluginQuery('@enabled'), ctx)).toBe(false)
+    expect(matchesPluginQuery(notes, parsePluginQuery('@disabled'), ctx)).toBe(true)
+    expect(matchesPluginQuery(notes, parsePluginQuery('@enabled'), ctx)).toBe(false)
+    expect(matchesPluginQuery(tree, parsePluginQuery('@enabled'), ctx)).toBe(true)
+    expect(matchesPluginQuery(tree, parsePluginQuery('@disabled'), ctx)).toBe(false)
   })
 
-  it('finds free text in the feature of a plugin', () => {
-    expect(matchesPluginQuery(uninstalled, parsePluginQuery('epub'), createContext())).toBe(true)
+  it('finds free text across name, description, id, category, feature, capability, and reader', () => {
+    const ctx = createContext()
+
+    expect(matchesPluginQuery(bare, parsePluginQuery('bare'), ctx)).toBe(true)
+    expect(matchesPluginQuery(tree, parsePluginQuery('browse'), ctx)).toBe(true)
+    expect(matchesPluginQuery(bare, parsePluginQuery('sample.delta'), ctx)).toBe(true)
+    expect(matchesPluginQuery(tree, parsePluginQuery('views'), ctx)).toBe(true)
+    expect(matchesPluginQuery(uninstalled, parsePluginQuery('epub'), ctx)).toBe(true)
+    expect(matchesPluginQuery(agent, parsePluginQuery('ocr'), ctx)).toBe(true)
+    expect(matchesPluginQuery(notes, parsePluginQuery('txt'), ctx)).toBe(true)
+    expect(matchesPluginQuery(bare, parsePluginQuery('nonexistent'), ctx)).toBe(false)
   })
 
-  it('matches the system row only without plugin qualifiers and with matching keywords', () => {
+  it('matches the system row only without plugin qualifiers and when every term matches a keyword', () => {
     expect(matchesSystemRow(parsePluginQuery(''))).toBe(true)
     expect(matchesSystemRow(parsePluginQuery('theme'))).toBe(true)
+    expect(matchesSystemRow(parsePluginQuery('win'))).toBe(true)
+    expect(matchesSystemRow(parsePluginQuery('themes'))).toBe(true)
+    expect(matchesSystemRow(parsePluginQuery('theme whisper'))).toBe(false)
     expect(matchesSystemRow(parsePluginQuery('@disabled'))).toBe(false)
     expect(matchesSystemRow(parsePluginQuery('whisper'))).toBe(false)
   })
@@ -221,14 +320,20 @@ describe('getFilteredPluginItems', () => {
     ])
   })
 
-  it('keeps only the plugins that match the query', () => {
-    const items = getFilteredPluginItems(
+  it('keeps only the plugins that match a qualifier or free-text query', () => {
+    const byQualifier = getFilteredPluginItems(
       [tree, notes, agent],
       parsePluginQuery('@disabled'),
       createContext(['sample.alpha']),
     )
+    const byTerm = getFilteredPluginItems(
+      [tree, notes, agent],
+      parsePluginQuery('browse'),
+      createContext(),
+    )
 
-    expect(items.map((item) => item.plugin.id)).toStrictEqual(['sample.alpha'])
+    expect(byQualifier.map((item) => item.plugin.id)).toStrictEqual(['sample.alpha'])
+    expect(byTerm.map((item) => item.plugin.id)).toStrictEqual(['sample.beta'])
   })
 
   it('formats the label of a category', () => {

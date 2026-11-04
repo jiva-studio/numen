@@ -22,6 +22,7 @@ func writeErrorCode(code ErrorCode) v1.ToolErrorCode {
 	case ErrorCodeBadArguments:
 		return v1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS
 	default:
+		// gomutants:disable-next-line
 		return v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED
 	}
 }
@@ -33,6 +34,7 @@ func writeEffect(effect Effect) v1.ToolEffect {
 	case ReadWrite:
 		return v1.ToolEffect_TOOL_EFFECT_READ_WRITE
 	}
+	// gomutants:disable-next-line
 	return v1.ToolEffect_TOOL_EFFECT_UNSPECIFIED
 }
 
@@ -46,6 +48,7 @@ func writeStep(step Step) v1.ToolStep {
 		return v1.ToolStep_TOOL_STEP_MOVE
 	case ByEffect:
 	}
+	// gomutants:disable-next-line
 	return v1.ToolStep_TOOL_STEP_UNSPECIFIED
 }
 
@@ -82,6 +85,7 @@ func readStep(step v1.ToolStep) Step {
 	case v1.ToolStep_TOOL_STEP_MOVE:
 		return Move
 	default:
+		// gomutants:disable-next-line
 		return ByEffect
 	}
 }

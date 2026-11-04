@@ -22,10 +22,19 @@ func TestTheTokenIsPresentedOnAStreamingCall(t *testing.T) {
 	conn := &fakeStreamConn{header: http.Header{}}
 	wrapped := hostcall.Bearer("s").WrapStreamingClient(func(context.Context, connect.Spec) connect.StreamingClientConn { return conn })
 
-	wrapped(t.Context(), connect.Spec{})
+	gotConn := wrapped(t.Context(), connect.Spec{})
 
+	if gotConn != conn {
+		t.Fatalf("got conn %v, want %v", gotConn, conn)
+	}
 	if got := conn.header.Get("Authorization"); got != "Bearer s" {
 		t.Errorf("got %q", got)
+	}
+}
+
+func TestWithBearerReturnsClientOption(t *testing.T) {
+	if hostcall.WithBearer("s") == nil {
+		t.Fatal("expected non-nil client option")
 	}
 }
 

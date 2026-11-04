@@ -23,7 +23,7 @@ export interface OpenTabsDeps {
 
 /** The state a kind saved, as JSON, and empty where it saved none. */
 const formatSavedState = (saved: unknown): string =>
-  saved === undefined || saved === null ? '' : JSON.stringify(saved)
+  saved === undefined ? '' : JSON.stringify(saved)
 
 export function useOpenTabs({
   core,
@@ -122,12 +122,13 @@ export function useOpenTabs({
 
 /** The state a kind saved, parsed from its JSON, and nothing where it is empty or not JSON. */
 const parseSavedState = (state: string): unknown => {
-  if (!state) return undefined
+  /* Stryker disable BlockStatement: falling off catch returns undefined */
   try {
     return JSON.parse(state) as unknown
   } catch {
     return undefined
   }
+  /* Stryker restore BlockStatement */
 }
 
 /** The tabs the core kept, as the window opens them again. */

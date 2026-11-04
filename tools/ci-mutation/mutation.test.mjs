@@ -7,7 +7,6 @@ import test from 'node:test'
 import { getGoShardOf, keepFiles, mergeGoCaches, mergeStrykerReports } from './cache.mjs'
 import { groupByLine, isTargetIssue, planIssue, readCount, readKeys, renderBody } from './issue.mjs'
 import { findTarget, formatSurvivors, getRunName, renderVitestConfig } from './mutate.mjs'
-import { patchSource } from './patch.mjs'
 import { listShards } from './shards.mjs'
 import { getOriginal, readMutants, summarize } from './report.mjs'
 import {
@@ -113,6 +112,8 @@ test('source under test is told apart from tests, stories and barrels', () => {
   assert.equal(isMutatedGo('usecase/note/open_test.go'), false)
   assert.equal(isMutatedGo('usecase/note/testdata/case.go'), false)
   assert.equal(isMutatedGo('internal/testsupport/indexfile/index.go'), false)
+  assert.equal(isMutatedGo('agentrun/agenttest/agenttest.go'), false)
+  assert.equal(isMutatedGo('plugintest/messages.go'), false)
   assert.equal(isMutatedSource('apps/desktop/editor/src/testing/answers.ts'), false)
   assert.equal(isMutatedSource('libs/ui/core/src/features/plex/fixtures/build.ts'), false)
   assert.equal(isMutatedSource('libs/ui/core/src/shared/fixtures/clock.ts'), false)
@@ -263,14 +264,6 @@ test('a survivor on a closed issue reopens it', () => {
 
 /* --------------------------------- Guards --------------------------------- */
 
-test('the runner patch joins the suite chain as Vitest 5 does, once', () => {
-  const source = "function collectTestName() {\n    return nameParts.join(' ').trim();\n}"
-  const patched = patchSource(source)
-  assert.match(patched, /join\(' > '\)/)
-  assert.equal(patchSource(patched), patched)
-  assert.throws(() => patchSource('function collectTestName() {}'))
-})
-
 test('the matrix names each shard as the run names its report', () => {
   const targets = getTargets()
   for (const target of targets) {
@@ -325,10 +318,7 @@ test('a file is mutated with the deepest target of its kind that holds it', () =
     { name: 'apps-mobile-go', kind: 'go', at: 'apps/mobile' },
     { name: 'apps-mobile-ts', kind: 'ts', at: 'apps/mobile' },
   ]
-  assert.equal(
-    findTarget(targets, 'apps/desktop/editor/src/a.ts').name,
-    'apps-desktop-editor',
-  )
+  assert.equal(findTarget(targets, 'apps/desktop/editor/src/a.ts').name, 'apps-desktop-editor')
   assert.equal(findTarget(targets, 'apps/desktop/internal/a.go').name, 'apps-desktop')
   assert.equal(findTarget(targets, 'apps/mobile/bind/a.go').name, 'apps-mobile-go')
   assert.equal(findTarget(targets, 'apps/mobile/src/a.ts').name, 'apps-mobile-ts')

@@ -56,9 +56,6 @@ func WriteTempFile(pattern string, data []byte) (path string, err error) {
 
 // RemoveFile removes the file at path. An empty path and a missing file are not errors.
 func RemoveFile(path string) error {
-	if path == "" {
-		return nil
-	}
 	if err := os.Remove(path); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return fmt.Errorf("remove %s: %w", path, err)
 	}

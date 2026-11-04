@@ -81,30 +81,44 @@ describe('the themes the palette offers', () => {
 
     const groups = appearance.getGroups('')
 
+    expect(groups.map((one) => one.id)).toStrictEqual([
+      'shipping',
+      'plugin:org.example.themes',
+      'owned',
+      'half',
+    ])
     expect(groups.map((one) => one.title)).toStrictEqual([
       WORDS.shipping,
       'Sample Themes',
       WORDS.owned,
       WORDS.half,
     ])
+    expect(groups[0]?.items.map((one) => one.title)).toStrictEqual(['numen'])
     expect(groups[1]?.items.map((one) => one.title)).toStrictEqual(['Night', 'Day'])
+    expect(groups[2]?.items.map((one) => one.title)).toStrictEqual(['sea'])
   })
 
-  it('mark the applied one', async () => {
+  it('mark the applied one and leave the others unmarked', async () => {
     const { appearance } = open(setup.client)
     await appearance.refresh()
 
-    const first = appearance.getGroups('')[0]?.items[0]
+    const groups = appearance.getGroups('')
+    const first = groups[0]?.items[0]
+    const other = groups[1]?.items[0]
+    const modeItem = groups[3]?.items[0]
 
     expect(first?.detail).toBe(WORDS.current)
+    expect(first?.actions).toStrictEqual([{ id: 'apply', text: WORDS.apply }])
+    expect(other?.detail).toBeUndefined()
+    expect(modeItem?.actions).toStrictEqual([{ id: 'apply', text: WORDS.apply }])
   })
 
-  it('are narrowed by the text typed, whatever its case', async () => {
+  it('are narrowed by the text typed, whatever its case or surrounding spaces', async () => {
     const { appearance } = open(setup.client)
     await appearance.refresh()
 
     const titles = appearance
-      .getGroups('NIG')
+      .getGroups('  NIG  ')
       .flatMap((group) => group.items)
       .map((one) => one.title)
 
@@ -113,17 +127,20 @@ describe('the themes the palette offers', () => {
 })
 
 describe('choosing a theme', () => {
-  it('writes the name with the mode in force and applies it to the page', async () => {
+  it('writes the name with the mode in force and updates the single style elements on the page', async () => {
     const { client } = createClient()
     const { appearance, page } = open(client)
     await appearance.refresh()
 
     await appearance.chooseItem(`theme:${DAY.name}`)
+    await appearance.chooseItem(`theme:${SEA.name}`)
 
     expect(client.writeAppearance).toHaveBeenCalledWith(DAY.name, THEME_MODE.SYSTEM)
-    expect(style(page, 'theme')).toBe(`:root { --theme: "${DAY.name}" }`)
+    expect(page.head.querySelectorAll('style[data-appearance="theme"]')).toHaveLength(1)
+    expect(page.head.querySelectorAll('style[data-appearance="mode"]')).toHaveLength(1)
+    expect(style(page, 'theme')).toBe(`:root { --theme: "${SEA.name}" }`)
     expect(style(page, 'mode')).toBe(':root { color-scheme: light dark; }')
-    expect(appearance.applied.value).toBe(DAY.name)
+    expect(appearance.applied.value).toBe(SEA.name)
   })
 
   it('reports why the choice was not written and leaves the page as it is', async () => {
@@ -177,16 +194,18 @@ describe('choosing a mode', () => {
     expect(modes.every((one) => one.isDisabled === true && one.detail === WORDS.pinned)).toBe(true)
   })
 
-  it('marks the one in force', async () => {
-    const { client } = createClient({ ...LIST, mode: THEME_MODE.LIGHT })
+  it('marks the one in force and leaves modes enabled when the applied theme is unknown', async () => {
+    const { client } = createClient({ themes: [NIGHT], applied: 'missing', mode: THEME_MODE.LIGHT })
     const { appearance } = open(client)
     await appearance.refresh()
 
-    const current = appearance
+    const modes = appearance
       .getGroups('')
       .flatMap((group) => group.items)
-      .filter((one) => one.id.startsWith('mode:') && one.detail === WORDS.current)
+      .filter((one) => one.id.startsWith('mode:'))
+    const current = modes.filter((one) => one.detail === WORDS.current)
 
+    expect(modes.every((one) => one.isDisabled === undefined)).toBe(true)
     expect(current.map((one) => one.id)).toStrictEqual(['mode:light'])
   })
 
@@ -202,14 +221,27 @@ describe('choosing a mode', () => {
 })
 
 describe('reading the themes again', () => {
-  it('leaves the page as the application served it on the first read', async () => {
+  it('leaves the page as the application served it on the first read and when nothing changed', async () => {
     const { client } = createClient()
     const { appearance, page } = open(client)
 
     await appearance.refresh()
+    await appearance.refresh()
 
     expect(client.readTheme).not.toHaveBeenCalled()
     expect(style(page, 'theme')).toBeUndefined()
+  })
+
+  it('applies the theme when only the mode changed', async () => {
+    const { client, state } = createClient()
+    const { appearance, page } = open(client)
+    await appearance.refresh()
+
+    state.list = { ...LIST, mode: THEME_MODE.DARK }
+    await appearance.refresh()
+
+    expect(appearance.mode.value).toBe('dark')
+    expect(style(page, 'mode')).toBe(':root { color-scheme: dark; }')
   })
 
   it('applies the default theme to the page when the applied theme is gone', async () => {
@@ -233,5 +265,16 @@ describe('reading the themes again', () => {
 
     expect(errors).toHaveLength(1)
     expect(errors[0]).toContain(WORDS.themesUnlisted)
+  })
+
+  it('defaults to the system mode word when the core reports an unmapped mode code', async () => {
+    const { client } = createClient({ ...LIST, mode: 0 as never })
+    const { appearance } = open(client)
+
+    await appearance.refresh()
+
+    expect(appearance.mode.value).toBe('system')
+    const modeItems = appearance.getGroups('').find((one) => one.id === 'half')?.items ?? []
+    expect(modeItems.find((one) => one.id === 'mode:system')?.detail).toBe(WORDS.current)
   })
 })

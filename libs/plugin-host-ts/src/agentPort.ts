@@ -110,8 +110,10 @@ const getAgentStep = (step: WireAgentResponse): AgentStep | undefined => {
       return { kind: 'thinking' }
     case 'stopped':
       return { kind: 'stopped', error: step.step.value === STOPPED_DONE ? '' : step.step.value }
-    default:
+    // Stryker disable next-line BlockStatement: falling off the switch also returns undefined
+    default: {
       return undefined
+    }
   }
 }
 

@@ -78,8 +78,7 @@ const unvaulted: Record<VaultsErrorCodeValue, VaultErrorCode> = {
 
 export const getVaultError = (from: {
   error?: VaultsErrorCodeValue | undefined
-  // Stryker disable next-line ConditionalExpression: indexing unvaulted with undefined yields null via fallback either way.
-}): VaultErrorCode | null => (from.error === undefined ? null : (unvaulted[from.error] ?? null))
+}): VaultErrorCode | null => (from.error === undefined ? null : unvaulted[from.error])
 
 /**
  * What a client has left, in the words the window uses.
