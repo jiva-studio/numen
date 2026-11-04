@@ -1378,7 +1378,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x124\n" +
-	"\x04when\x18\x04 \x01(\v2 .numen.v1.PluginSettingConditionR\x04when\"\xd2\x04\n" +
+	"\x04when\x18\x04 \x01(\v2 .numen.v1.PluginSettingConditionR\x04when\"\xb8\x04\n" +
 	"\n" +
 	"PluginInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -1395,7 +1395,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\afailure\x18\r \x01(\v2\x17.numen.v1.PluginFailureR\afailure\x12!\n" +
 	"\fhas_frontend\x18\x0e \x01(\bR\vhasFrontend\x120\n" +
 	"\areaders\x18\x0f \x03(\v2\x16.numen.v1.PluginReaderR\areaders\x12C\n" +
-	"\x0esettings_views\x18\x10 \x03(\v2\x1c.numen.v1.PluginSettingsViewR\rsettingsViewsJ\x04\b\v\x10\fJ\x04\b\f\x10\rR\x06modelsR\x12completion_consent\"G\n" +
+	"\x0esettings_views\x18\x10 \x03(\v2\x1c.numen.v1.PluginSettingsViewR\rsettingsViewsJ\x04\b\v\x10\fR\x06models\"G\n" +
 	"\x12PluginSettingsView\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05titleJ\x04\b\x03\x10\x04R\x05after\">\n" +

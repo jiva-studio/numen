@@ -116,8 +116,8 @@ message PluginInfo {
   repeated PluginSecret secrets = 9;
   // The names of the secrets that have a key stored. A key never travels here.
   repeated string stored_secrets = 10;
-  reserved 11, 12;
-  reserved "models", "completion_consent";
+  reserved 11;
+  reserved "models";
   // Set while the host suspends the plugin after it failed to start.
   PluginFailure failure = 13;
   // Whether the plugin declares a frontend bundle a window loads.

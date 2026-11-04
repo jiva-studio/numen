@@ -357,11 +357,11 @@ const file_numen_v1_completion_proto_rawDesc = "" +
 	"\x04role\x18\x01 \x01(\tR\x04role\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\"&\n" +
 	"\x10CompletionAnswer\x12\x12\n" +
-	"\x04text\x18\x01 \x01(\tR\x04text*\xaf\x01\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text*\x87\x01\n" +
 	"\x13CompletionErrorCode\x12%\n" +
 	"!COMPLETION_ERROR_CODE_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eCOMPLETION_ERROR_CODE_NO_ROUTE\x10\x01\x12%\n" +
-	"!COMPLETION_ERROR_CODE_UNAVAILABLE\x10\x02\"\x04\b\x03\x10\x03* COMPLETION_ERROR_CODE_NO_CONSENT2f\n" +
+	"!COMPLETION_ERROR_CODE_UNAVAILABLE\x10\x022f\n" +
 	"\vHostService\x12W\n" +
 	"\bComplete\x12$.numen.v1.HostServiceCompleteRequest\x1a%.numen.v1.HostServiceCompleteResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 

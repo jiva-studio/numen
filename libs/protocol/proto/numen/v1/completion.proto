@@ -58,9 +58,6 @@ enum CompletionErrorCode {
   // The program the question is routed to cannot be reached or stopped without
   // an answer.
   COMPLETION_ERROR_CODE_UNAVAILABLE = 2;
-
-  reserved 3;
-  reserved "COMPLETION_ERROR_CODE_NO_CONSENT";
 }
 
 // CompletionAnswer is what a model said.
