@@ -493,3 +493,43 @@ func TestDetachEndsWhenTheReadingWindowStopsWatching(t *testing.T) {
 		t.Errorf("the detach ended with %v, want window closed", got)
 	}
 }
+
+// The source window detaches a tab and, while the new window starts, moves the
+// same tab into another open window.
+func TestDetachAndMoveOfOneTabDoNotBothComplete(t *testing.T) {
+	r, _ := newTestRegistry(t)
+	writeTabs(r, "window-a", []Tab{plex("plex:2", "Orbits")})
+	writeTabs(r, "window-c", nil)
+	detached := r.Detach(newOrbits())
+	detachID := readDetachID(r, "window-b", "plex:2")
+	moved := r.Move("window-a", "window-c", newOrbits())
+
+	detachAccept := r.Accept("window-b", "plex:2", detachID)
+	moveAccept := r.Accept("window-c", "plex:2", getMoveID(r, "plex:2"))
+
+	detachOutcome, moveOutcome := readOutcome(t, detached), readOutcome(t, moved)
+	if detachAccept == MoveErrorNone && moveAccept == MoveErrorNone {
+		t.Errorf("both windows accepted plex:2 (detach %v, move %v): the tab is open in window-b and window-c",
+			detachOutcome, moveOutcome)
+	}
+}
+
+// The source window closes before the new window accepts the tab, so the
+// report of the new window takes the tab first.
+func TestReportOfTheReadingWindowCompletesTheDetach(t *testing.T) {
+	r, _ := newTestRegistry(t)
+	source := r.Watch("window-a")
+	r.WriteTabs(Window{ID: "window-a"}, []Tab{plex("plex:2", "Orbits")})
+	result := r.Detach(newOrbits())
+	detachID := readDetachID(r, "window-b", "plex:2")
+
+	source.Close()
+	writeTabs(r, "window-b", []Tab{plex("plex:2", "Orbits")})
+
+	if got := r.Accept("window-b", "plex:2", detachID); got != MoveErrorNone {
+		t.Errorf("Accept returned %v, want none", got)
+	}
+	if got := readOutcome(t, result); got != MoveErrorNone {
+		t.Errorf("the detach ended with %v, want none", got)
+	}
+}

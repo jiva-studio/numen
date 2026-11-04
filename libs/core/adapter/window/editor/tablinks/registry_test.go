@@ -715,3 +715,33 @@ func TestLinkMergesTwoGroupsOnTheSourcePath(t *testing.T) {
 		t.Errorf("the merged group has path %q and title %q, want the synced notes/Orbits.md", group.Path, group.Title)
 	}
 }
+
+// The window made for a detach accepts the tab during its layout start, before
+// its tab links watch starts. A report of the source window sent before it
+// closed the tab then arrives.
+func TestDetachAcceptedBeforeTheNewWindowWatchesKeepsLinksAfterStaleSourceReport(t *testing.T) {
+	r, clock := newTestRegistry(t)
+	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "Orbits")})
+	r.Link("plex:1", "plex:2")
+	result := r.Detach(newOrbits())
+
+	detachID := readDetachID(r, "window-b", "plex:2")
+	if got := r.Accept("window-b", "plex:2", detachID); got != MoveErrorNone {
+		t.Fatalf("Accept returned %v, want none", got)
+	}
+	if got := readOutcome(t, result); got != MoveErrorNone {
+		t.Fatalf("the detach ended with %v, want none", got)
+	}
+	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "Orbits")})
+	writeTabs(r, "window-a", []Tab{plex("plex:1", "A")})
+	writeTabs(r, "window-b", []Tab{plex("plex:2", "Orbits")})
+	clock.fireAll()
+
+	got := r.GetSnapshot()
+	if want := [][]string{{"plex:1", "plex:2"}}; !reflect.DeepEqual(getGroupTabs(got), want) {
+		t.Fatalf("groups are %v, want %v", getGroupTabs(got), want)
+	}
+	if got.Tabs[1].WindowID != "window-b" {
+		t.Errorf("plex:2 is in window %q, want window-b", got.Tabs[1].WindowID)
+	}
+}
