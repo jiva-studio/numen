@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/container"
-	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
 // A file without a size uses the desktop's scale; unsetting GDK_DPI_SCALE keeps
@@ -126,166 +125,11 @@ func TestASizeAtEitherEndIsTaken(t *testing.T) {
 	}
 }
 
-// A window drawn at 1.5 goes on being drawn at 1.5. The two names are one
-// setting, and the field is given the name this build reads.
-func TestAFileNamingTheZoomIsGivenTheNameThatReplacedIt(t *testing.T) {
-	path := write(t, `{"appearance":{"zoom":1.5}}`)
-	cfg, err := openAt(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cfg.Appearance.InterfaceScale != 1.5 {
-		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
-	}
-	// The text is untouched by it: the window is larger and a note is set as it
-	// was.
-	if cfg.Appearance.TextScale != 1 {
-		t.Errorf("text is set at %v", cfg.Appearance.TextScale)
-	}
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := `{"appearance":{"interface_scale":1.5}}`; string(raw) != want {
-		t.Errorf("the file is now %s, and not %s", raw, want)
-	}
-	// No notice is produced: the scale is unchanged, and the file contains what
-	// this build reads.
-	if len(cfg.Notices) != 0 {
-		t.Errorf("the person is told %q", cfg.Notices)
-	}
-}
-
-// Renaming changes one word of the file and preserves everything else, including
-// blank lines and a number written in two places.
-func TestTheRenamingPreservesEveryOtherByteOfTheFileWhereItWas(t *testing.T) {
-	path := write(t, arranged)
-	if _, err := openAt(path); err != nil {
-		t.Fatal(err)
-	}
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := strings.Replace(arranged, `"zoom": 1.5`, `"interface_scale": 1.5`, 1)
-	if string(raw) != want {
-		t.Errorf("the file came back as:\n%s\nand not as:\n%s", raw, want)
-	}
-}
-
-// The renaming happens once. Every launch after it reads a file naming the
-// setting, so there is nothing to carry and nothing to say, ever again.
-func TestASecondLaunchRenamesNothingAndReturnsNothing(t *testing.T) {
-	path := write(t, arranged)
-	if _, err := openAt(path); err != nil {
-		t.Fatal(err)
-	}
-	renamed, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if strings.Contains(string(renamed), `"zoom"`) {
-		t.Fatalf("the first launch left the file as:\n%s", renamed)
-	}
-
-	for launch := range 3 {
-		cfg, err := openAt(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if cfg.Appearance.InterfaceScale != 1.5 {
-			t.Errorf("launch %d is drawn at %v", launch, cfg.Appearance.InterfaceScale)
-		}
-		if len(cfg.Notices) != 0 {
-			t.Errorf("launch %d tells the person %q", launch, cfg.Notices)
-		}
-		raw, err := os.ReadFile(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if string(raw) != string(renamed) {
-			t.Errorf("launch %d left the file as:\n%s", launch, raw)
-		}
-	}
-}
-
-// A file naming both is drawn at the one this build reads, and keeps both
-// names: one section holds one of a name.
-func TestAFileNamingBothIsGeneratedAtTheOneThisBuildReads(t *testing.T) {
-	const both = `{"appearance":{"zoom":1.5,"interface_scale":1.25}}`
-	path := write(t, both)
-	cfg, err := openAt(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cfg.Appearance.InterfaceScale != 1.25 {
-		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
-	}
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(raw) != both {
-		t.Errorf("the file is now %s", raw)
-	}
-	if len(cfg.Notices) != 0 {
-		t.Errorf("the person is told %q", cfg.Notices)
-	}
-}
-
-// A file nothing may be written over is a window that opens, drawn at the
-// size the file names under the name it names it by.
-func TestAFileThatCannotBeSavedIsReadAndGeneratedAtTheSizeItNames(t *testing.T) {
-	folder := t.TempDir()
-	path := filepath.Join(folder, "numen.json")
-	if err := os.WriteFile(path, []byte(arranged), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	testsupport.MakeUnwritable(t, path)
-
-	for launch := range 2 {
-		cfg, err := openAt(path)
-		if err != nil {
-			t.Fatalf("launch %d: %v", launch, err)
-		}
-		if cfg.Appearance.InterfaceScale != 1.5 {
-			t.Errorf("launch %d is drawn at %v", launch, cfg.Appearance.InterfaceScale)
-		}
-		if len(cfg.Notices) != 0 {
-			t.Errorf("launch %d tells the person %q", launch, cfg.Notices)
-		}
-	}
-
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(raw) != arranged {
-		t.Errorf("the file is now:\n%s", raw)
-	}
-}
-
-// Zero named no size, and every file this application has ever written for
-// itself holds one.
-func TestAZoomNamingNoSizeCarriesNothingAndReturnsNothing(t *testing.T) {
-	cfg, err := openAt(write(t, `{"appearance":{"zoom":0}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cfg.Appearance.InterfaceScale != 1 {
-		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
-	}
-	if len(cfg.Notices) != 0 {
-		t.Errorf("the person is told %q", cfg.Notices)
-	}
-}
-
 // A session that scaled its own text goes on being drawn by it, whether the
 // file is empty about size or names the size of the text alone.
 func TestAFileNamingNoSizeIsGeneratedAtWhatTheDesktopAsksFor(t *testing.T) {
 	t.Setenv("GDK_DPI_SCALE", "1.5")
-	for _, body := range []string{`{}`, `{"appearance":{"zoom":0}}`, `{"appearance":{"text_scale":1.25}}`} {
+	for _, body := range []string{`{}`, `{"appearance":{"text_scale":1.25}}`} {
 		cfg, err := openAt(write(t, body))
 		if err != nil {
 			t.Fatal(err)
@@ -296,12 +140,11 @@ func TestAFileNamingNoSizeIsGeneratedAtWhatTheDesktopAsksFor(t *testing.T) {
 	}
 }
 
-// A file naming a size is drawn at it, under either name.
+// A file naming a size is drawn at it.
 func TestWhatTheDesktopAsksForIsNotReadOverTheFile(t *testing.T) {
 	t.Setenv("GDK_DPI_SCALE", "1.5")
 	for body, scale := range map[string]float64{
 		`{"appearance":{"interface_scale":1.25}}`: 1.25,
-		`{"appearance":{"zoom":1.25}}`:            1.25,
 	} {
 		cfg, err := openAt(write(t, body))
 		if err != nil {
@@ -322,89 +165,6 @@ func TestADesktopScaleOutsideWhatTheSizeGoesToIsNotTaken(t *testing.T) {
 	}
 	if cfg.Appearance.InterfaceScale != 1 {
 		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
-	}
-}
-
-// A number outside the setting's range is not carried over, and a file written by
-// an older build opens. The field keeps its name, so the next launch does not
-// fail on a number the user never wrote under that name.
-func TestAZoomOutsideWhatTheSizeGoesToIsNotCarried(t *testing.T) {
-	const target = `{"appearance":{"zoom":3}}`
-	path := write(t, target)
-	cfg, err := openAt(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cfg.Appearance.InterfaceScale != 1 {
-		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
-	}
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(raw) != target {
-		t.Errorf("the file is now %s", raw)
-	}
-
-	// something about: the field, the setting it would be read as, and how far
-	// that setting goes.
-	if len(cfg.Notices) != 1 {
-		t.Fatalf("the person is told %q", cfg.Notices)
-	}
-	for _, about := range []string{"appearance.zoom", "interface_scale", "0.8", "2"} {
-		if !strings.Contains(cfg.Notices[0], about) {
-			t.Errorf("%q says nothing about %s", cfg.Notices[0], about)
-		}
-	}
-}
-
-// The message is displayed on one line of a band with about sixty characters;
-// overflow is truncated at the end. The end carries the corrective action, so
-// the message length does not depend on the number: every rejected value yields
-// the same text.
-func TestOpen_OutOfRangeErrorMessageLength(t *testing.T) {
-	// Numbers a file can hold and this setting rejects, in human-written and
-	// machine-written formats.
-	for _, zoom := range []string{
-		"3",
-		"2.0001",
-		"3.141592653589793",
-		"0.7999999999999999",
-		"123456789.12",
-		"1e308",
-		"1e-300",
-		"0.0000000000000000000000001",
-		"12345678901234567890123456789",
-	} {
-		cfg, err := openAt(write(t, `{"appearance":{"zoom":`+zoom+`}}`))
-		if err != nil {
-			t.Fatalf("%s: %v", zoom, err)
-		}
-		if len(cfg.Notices) != 1 {
-			t.Fatalf("%s: the person is told %q", zoom, cfg.Notices)
-		}
-		if response := cfg.Notices[0]; len(response) > 62 {
-			t.Errorf("%s: %d characters, cut at 62: %q", zoom, len(response), response)
-		}
-	}
-}
-
-// What the file holds is what is written back, and the two names are not both
-// written.
-func TestWhatIsSavedBackNamesTheSettingThisBuildReads(t *testing.T) {
-	cfg, err := openAt(write(t, `{"appearance":{"zoom":1.5}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	raw, err := json.Marshal(cfg)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if strings.Contains(string(raw), `"zoom"`) || !strings.Contains(string(raw), `"interface_scale":1.5`) {
-		t.Errorf("written back as %s", raw)
-	}
-	if strings.Contains(string(raw), "appearance.zoom") {
-		t.Errorf("written back as %s", raw)
 	}
 }
 
@@ -551,33 +311,15 @@ func TestThereIsOneFileAndItIsNamedForWhatItIs(t *testing.T) {
 // A section is kept whether it is the one in use or not, so trying another agent
 // for an afternoon does not cost the settings of the one before.
 func TestASectionSurvivesNotBeingTheOneInUse(t *testing.T) {
-	cfg, err := openAt(write(t, `{"agent":{"use":"","claude":{"model":"opus","max_steps":12}}}`))
+	cfg, err := openAt(write(t, `{"agent":{"use":"","claude":{"model":"opus"}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if cfg.Agent.IsNamed() || cfg.Agent.GetUse() != "" {
 		t.Errorf("uses %q", cfg.Agent.GetUse())
 	}
-	if got := cfg.Agent.GetProgram("claude"); got.Model != "opus" || got.MaxSteps != 12 {
+	if got := cfg.Agent.GetProgram("claude"); got.Model != "opus" {
 		t.Errorf("got %+v", got)
-	}
-}
-
-// The number in the file is the number of steps. Nothing writes a nought there
-// and calls it a ceiling.
-func TestAnUntouchedInstallationCarriesAStepCount(t *testing.T) {
-	cfg, err := openAt(filepath.Join(t.TempDir(), "numen.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !cfg.Agent.IsNamed() || cfg.Agent.GetUse() != "" {
-		t.Errorf("the choice of program is left to the default, and the settings name %q", cfg.Agent.GetUse())
-	}
-	if got := cfg.Agent.GetProgram("claude"); got.MaxSteps <= 0 {
-		t.Errorf("max steps is %d", got.MaxSteps)
-	}
-	if cfg.Agent.GetProgram("claude").Options["reads_hooks_and_skills"] == "true" {
-		t.Error("reads what this machine holds for it")
 	}
 }
 
@@ -602,9 +344,6 @@ func TestOneAgentFieldKeepsTheRest(t *testing.T) {
 	got := cfg.Agent.GetProgram("claude")
 	if got.Options["reads_hooks_and_skills"] != "true" {
 		t.Error("what the file said was not read")
-	}
-	if got.MaxSteps != settings.DefaultAgentSteps {
-		t.Errorf("max steps is %d", got.MaxSteps)
 	}
 }
 

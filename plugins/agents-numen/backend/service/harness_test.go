@@ -908,3 +908,34 @@ func TestTheContextOfATaskIsTheMetaOfEveryCall(t *testing.T) {
 		t.Errorf("the calls carried %v", vault.metas)
 	}
 }
+
+func TestTheMaxStepsSettingLimitsATaskThatNamesNoLimit(t *testing.T) {
+	model := &fakeChat{replies: []message{newCallReply("c", "note_read", `{"path":"A.md"}`)}}
+	vault := &fakeVault{}
+	s := newServer(model.serve(t).URL)
+	s.Configure(map[string]string{SettingMaxSteps: "3"})
+
+	steps := ask(t, s, newTask(vault.serve(t), "Read forever."))
+
+	if steps[len(steps)-1].GetStopped() != reasonTurns {
+		t.Errorf("stopped %q", steps[len(steps)-1].GetStopped())
+	}
+	if len(model.getRequests()) != 3 {
+		t.Errorf("the model was asked %d times", len(model.getRequests()))
+	}
+}
+
+func TestATaskLimitOverridesTheMaxStepsSetting(t *testing.T) {
+	model := &fakeChat{replies: []message{newCallReply("c", "note_read", `{"path":"A.md"}`)}}
+	vault := &fakeVault{}
+	s := newServer(model.serve(t).URL)
+	s.Configure(map[string]string{SettingMaxSteps: "5"})
+	task := newTask(vault.serve(t), "Read forever.")
+	task.MaxSteps = 2
+
+	ask(t, s, task)
+
+	if len(model.getRequests()) != 2 {
+		t.Errorf("the model was asked %d times", len(model.getRequests()))
+	}
+}

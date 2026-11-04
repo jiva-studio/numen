@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getRegisteredViews, getSettingValues } from './settingsViews'
-import { getShownConsent, hasPluginSettings } from './pluginSettings'
+import { hasPluginSettings } from './pluginSettings'
 import { fetchPluginReadme } from './readme'
 import { createPluginInfo } from '@/testing/installation'
 
@@ -42,7 +42,7 @@ describe('getSettingValues', () => {
   })
 })
 
-describe('hasPluginSettings and getShownConsent', () => {
+describe('hasPluginSettings', () => {
   it('detects settings, settingsViews, and visible secrets', () => {
     const empty = createPluginInfo('p', 'P')
     expect(hasPluginSettings(empty, () => undefined)).toBe(false)
@@ -70,16 +70,6 @@ describe('hasPluginSettings and getShownConsent', () => {
       secrets: [{ name: 's1', title: 'S1', description: '' }],
     })
     expect(hasPluginSettings(withNoSettingsSecretsOnly, () => undefined)).toBe(true)
-  })
-
-  it('computes shown consent from plugin consent and aiConsent setting', () => {
-    const nonePlugin = createPluginInfo('p', 'P', { consent: 'none' })
-    expect(getShownConsent(nonePlugin, (k) => (k === 'aiConsent' ? true : undefined))).toBe('none')
-
-    const reqPlugin = createPluginInfo('p', 'P', { consent: 'requested' })
-    expect(getShownConsent(reqPlugin, () => undefined)).toBe('requested')
-    expect(getShownConsent(reqPlugin, (k) => (k === 'aiConsent' ? true : false))).toBe('allowed')
-    expect(getShownConsent(reqPlugin, (k) => (k === 'aiConsent' ? false : true))).toBe('denied')
   })
 })
 

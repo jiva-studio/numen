@@ -322,7 +322,7 @@ func TestAManifestDeclaresItsSecretsByPlainDistinctNames(t *testing.T) {
 	}
 }
 
-// The names under which the host records the stored secrets and the consent are
+// The name under which the host records the stored secrets is
 // neither a setting nor a secret of a manifest.
 func TestAManifestDoesNotTakeTheNameOfTheStoredSecrets(t *testing.T) {
 	for _, one := range []struct {
@@ -331,8 +331,6 @@ func TestAManifestDoesNotTakeTheNameOfTheStoredSecrets(t *testing.T) {
 	}{
 		{"a setting", `"settings":[{"key":"storedSecrets","type":"string","title":"Stored"}]`},
 		{"a secret", `"secrets":[{"name":"storedSecrets","title":"T"}]`},
-		{"the consent as a setting", `"settings":[{"key":"aiConsent","type":"boolean","title":"Allowed","default":true}]`},
-		{"the consent as a secret", `"secrets":[{"name":"aiConsent","title":"T"}]`},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0",` + one.field + `}`))

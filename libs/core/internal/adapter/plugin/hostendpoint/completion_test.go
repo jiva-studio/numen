@@ -30,7 +30,6 @@ func TestCompletion_ErrorResponseCarriesCode(t *testing.T) {
 		err  error
 		want v1.CompletionErrorCode
 	}{
-		{completionport.ErrNoConsent, v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT},
 		{completionport.ErrNoRoute, v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE},
 		{fmt.Errorf("%w: down", completionport.ErrUnavailable), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE},
 	} {

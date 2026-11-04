@@ -58,10 +58,6 @@ enum CompletionErrorCode {
   // The program the question is routed to cannot be reached or stopped without
   // an answer.
   COMPLETION_ERROR_CODE_UNAVAILABLE = 2;
-
-  // The window asks the person, and a plugin shows this as the reason nothing
-  // was answered.
-  COMPLETION_ERROR_CODE_NO_CONSENT = 3;
 }
 
 // CompletionAnswer is what a model said.

@@ -135,27 +135,6 @@ describe('PluginDetail', () => {
     ])
   })
 
-  it('renders AI consent switch and writes aiConsent change', () => {
-    const plugin = createPluginInfo('test.plugin', 'Super Engine', {
-      consent: 'allowed',
-    })
-    const { wrapper, recordedWrites } = createDetail(plugin)
-
-    const rows = wrapper.findAllComponents({ name: 'DetailRow' })
-    const consentRow = rows.find((r) => r.props('at') === 'ai-consent-test.plugin')
-    expect(consentRow).toBeDefined()
-    expect(consentRow!.text()).toContain(words.consentAllowed)
-
-    const consentSwitch = consentRow!.findComponent(Switch)
-    expect(consentSwitch.props('modelValue')).toBe(true)
-
-    consentSwitch.vm.$emit('update:modelValue', false)
-
-    expect(recordedWrites).toStrictEqual([
-      { at: ['plugins', 'test.plugin', 'aiConsent'], value: 'false' },
-    ])
-  })
-
   it('saves and deletes secret fields', () => {
     const plugin = createPluginInfo('test.plugin', 'Super Engine', {
       secrets: [{ name: 'AUTH_TOKEN', title: 'AUTH_TOKEN', description: '' }],

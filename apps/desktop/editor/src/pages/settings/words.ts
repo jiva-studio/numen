@@ -10,8 +10,6 @@ export const WORDS = {
   window: 'Window',
   naming: 'Note names',
   performance: 'Performance',
-  agent: 'Agent',
-  ai: 'AI',
   /** Window settings. */
   theme: 'Theme',
   themeDetail: 'Window stylesheet.',
@@ -31,46 +29,14 @@ export const WORDS = {
   syncingDetail: 'Renaming one also renames the other.',
   /** Workload and performance calibration. */
   performanceProfile: 'Performance profile',
-  performanceProfileDetail: 'CPU and memory use of local AI work.',
   eco: 'Eco',
   ecoDetail: 'Minimal power, 1 worker thread.',
   balanced: 'Balanced',
   balancedDetail: 'Standard workload, 50% CPU capacity.',
   maximum: 'Maximum',
   maximumDetail: 'All CPU cores and memory.',
-  /** The agent. */
-  agentUse: 'Agent',
-  agentUseDetail: 'Program used by the agent panel. None disables the panel.',
-  agentModel: 'Agent model',
-  agentModelDetail: 'Model of the selected program.',
-  agentSteps: 'Steps per turn',
-  agentStepsDetail: 'Maximum tool calls before the agent answers.',
-  agentTools: 'MCP server',
-  agentToolsDetail:
-    'Serve the vault tools over MCP to other programs, such as editors and coding agents.',
-  agentHooks: 'Hooks and skills',
-  agentHooksDetail: 'Load the hooks and skills configured on this machine.',
-  /** Default agent and model for plugins that use a model. */
-  defaultAgent: 'Default agent',
-  defaultAgentDetail:
-    'Used by plugins without their own agent setting. Defaults to the panel agent.',
-  defaultModel: 'Default model',
-  defaultModelDetail: 'Model of the selected agent.',
-  agentFirst: (name: string) => `Panel agent (${name})`,
-  agentNone: 'None',
-  agentMissing: 'Not installed. Requests fail.',
-  modelByAgent: 'Agent default',
   /** Accessible name of the search field in a long model list. */
   searchModels: 'Search models',
-  /** AI consent of a plugin. */
-  asking: (name: string) => `${name} requests model use.`,
-  allow: 'Allow',
-  refuse: 'Deny',
-  /** Failed plugins. */
-  pluginsStopped: 'Stopped plugins',
-  pluginStoppedAt: (when: string) => `Stopped ${when}`,
-  pluginRetryFor: (name: string) => `Retry ${name}`,
-  pluginDisableFor: (name: string) => `Disable ${name}`,
   /** Accessible name of the info button next to a setting title. */
   aboutSetting: (name: string) => `About ${name}`,
   /** Plugin secrets. */
@@ -80,17 +46,8 @@ export const WORDS = {
   keyDetail: 'Stored in the system keychain, not in the settings file.',
   keyPlaceholder: 'Paste a key',
   keyDelete: 'Delete the key',
-  /** Suffix of the default model of an installation. */
-  byDefault: 'default',
-  /** Download state of a model; remote models show neither. */
-  present: 'downloaded',
-  notFetched: 'not downloaded',
   /** The label of the action that opens a plugin's settings. */
   configure: 'Configure',
-  /** Where the value of a plugin's setting comes from. */
-  valueChosen: 'Chosen',
-  valueDefault: 'Default',
-  valueFollowed: (title: string) => `${title} default`,
   /** A plugin's setting of type file or folder. */
   pathNone: 'None',
   pathChoose: 'Choose…',

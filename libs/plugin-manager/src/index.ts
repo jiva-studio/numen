@@ -10,7 +10,6 @@ export {
   type PluginListing,
 } from './plugins'
 export type {
-  Consent,
   PluginFailure,
   PluginInfo,
   PluginReader,

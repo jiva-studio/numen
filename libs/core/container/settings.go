@@ -73,8 +73,6 @@ func (c Config) getSettingsOrDefaults() Settings {
 // embedding.
 func (c Config) SetSettings(s Settings) Config {
 	c.Embedding = s.Indexing.Embedding
-	c.Agent = s.Agent
-	c.Performance = s.Performance
 	c.Hardware = hardware.Detect()
 	c.ResolvedCompute = hardware.ResolveCompute(s.Performance.Profile, c.Hardware)
 	if c.PluginHost != nil {

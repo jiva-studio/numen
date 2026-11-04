@@ -132,7 +132,6 @@ func TestClientCompleteReturnsErrorOfHost(t *testing.T) {
 	cases := map[v1.CompletionErrorCode]error{
 		v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE:    ErrNoRoute,
 		v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE: ErrUnavailable,
-		v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT:  ErrNoConsent,
 	}
 	for code, want := range cases {
 		srv := startHost(t, &fakeHost{code: code})

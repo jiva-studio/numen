@@ -95,22 +95,7 @@ describe('PluginDetail', () => {
     expect(wrapper.find('details').exists()).toBe(false)
   })
 
-  it('draws the consent switch of a plugin that asks for models and emits its change', () => {
-    const wrapper = mountDetail({
-      plugin: createManaged('sample.notes', 'Notes', { consent: 'allowed' }),
-    })
-    const toggles = wrapper.findAllComponents(Switch)
-    const consent = toggles[1]
-
-    expect(wrapper.text()).toContain('Allow model use')
-    expect(consent?.props('modelValue')).toBe(true)
-
-    consent?.vm.$emit('update:modelValue', false)
-
-    expect(wrapper.emitted('consent-change')).toStrictEqual([[false]])
-  })
-
-  it('draws no settings block without consent and without settings', () => {
+  it('draws no settings block without settings', () => {
     expect(mountDetail().find('.plugin-detail__settings').exists()).toBe(false)
   })
 

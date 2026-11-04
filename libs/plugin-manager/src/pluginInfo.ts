@@ -57,13 +57,6 @@ export interface PluginSettingInfo {
   readonly step?: number | undefined
 }
 
-/**
- * Whether the user permits a plugin to call a model: `none` is a plugin without
- * the ai:complete permission, `requested` is a plugin that requested it since the
- * host started and has received no answer.
- */
-export type Consent = 'none' | 'pending' | 'requested' | 'allowed' | 'denied'
-
 /** Why the host suspends a plugin after it failed to start, and when it gave the plugin up. */
 export interface PluginFailure {
   /** A short UI label, such as "Failed to start". */
@@ -89,7 +82,6 @@ export interface PluginInfo {
   /** The secrets the plugin declares, and the names of those that have a key stored. */
   readonly secrets: readonly PluginSecret[]
   readonly storedSecrets: readonly string[]
-  readonly consent: Consent
   /** The readers the plugin declares, each with the extensions of the files it opens. */
   readonly readers?: readonly PluginReader[]
   /** The views the plugin declares for its settings form, each placed after the setting named by `after`. */
