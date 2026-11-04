@@ -14,13 +14,11 @@ export type {
   Presence,
   SettingEdit,
   PluginInfo,
-  PluginFailure,
   PluginSettingInfo,
   PluginSettingsViewInfo,
   PluginSettingOption,
   PluginSettingCondition,
   PluginSecret,
-  CompletionChoice,
 } from './lib/configuration'
 export { getSettingAt, createSettingsStore } from './model/store'
 export { themes } from './api/theme'
