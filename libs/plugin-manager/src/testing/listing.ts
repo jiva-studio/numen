@@ -42,7 +42,6 @@ export function createMockPluginInfo(
     capabilities: [],
     secrets: [],
     storedSecrets: [],
-    consent: 'none',
     hasFrontend: false,
     hasBackend: false,
     ...overrides,

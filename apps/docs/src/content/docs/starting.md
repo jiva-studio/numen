@@ -17,8 +17,6 @@ numen -vault Research
 | `-index` | Path to the index database. |
 | `-registry` | Path to the vault list. |
 | `-vault` | The vault to open: a name, a path or an identity; the one opened last by default. |
-| `-mcp-addr` | Address agents connect to; any address other than loopback opens the vault to the network. |
-| `-no-mcp` | Do not let agents connect to this vault. |
 | `-interface-scale` | Scale of the interface (controls and spacing); 1 is the default; this launch only. |
 | `-text-scale` | Scale of note and book text; 1 is the default; this launch only. |
 | `-rebuild-index` | Read every file again and rewrite its index entries, whatever the index already holds. |
@@ -37,9 +35,5 @@ and can always be built again. Use it when search returns stale results.
 
 **`-interface-scale`** and **`-text-scale`** try a size out for one launch. Choosing a size in
 the window is what saves it; these do not.
-
-**`-no-mcp`** starts the window with the agent port off. Without it, agents connect to this
-vault at `127.0.0.1:7717`, which is this machine and nothing else. `-mcp-addr` changes that address, and
-any address other than a loopback address makes the vault reachable from the network.
 
 The other program, [`numen-cli`](/cli/), takes flags of its own.

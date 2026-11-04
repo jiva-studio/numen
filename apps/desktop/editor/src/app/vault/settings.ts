@@ -2,7 +2,7 @@
  * Settings domain methods for the window core.
  */
 import { settingsService } from '@/shared/clients'
-import { consented, fetched } from './words'
+import { fetched } from './words'
 import { getSettingAt } from '@/entities/settings'
 import { write } from '@/entities/settings'
 import { formatErrorMessage } from '@numen/core-client'
@@ -128,7 +128,6 @@ export const settingsCore: SettingsPort = {
         hasBackend: p.hasBackend,
         readers: (p.readers ?? []).map((one) => ({ id: one.id, extensions: one.extensions })),
         settingsViews: (p.settingsViews ?? []).map((one) => ({ id: one.id, title: one.title })),
-        consent: consented[p.completionConsent],
         ...(p.failure
           ? {
               failure: {

@@ -79,7 +79,7 @@ export const startOwnServer = async (
   const port = await getFreePort()
   const child: ChildProcess = spawn(
     path.join(repoRoot, 'apps/desktop/numen-debug'),
-    [`-debug-http-addr=${host}:${port}`, '-debug-mock-ml', '-no-mcp', `-vault=${vault}`],
+    [`-debug-http-addr=${host}:${port}`, '-debug-mock-ml', `-vault=${vault}`],
     {
       stdio: 'inherit',
       env: {

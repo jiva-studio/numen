@@ -1,13 +1,12 @@
 <script setup lang="ts">
 /**
  * The page of one plugin: a header card with the README and the enabled switch (or the install
- * button for a plugin that is not installed), the failure card of a suspended plugin, the AI
- * consent, the settings the application draws in the `settings` slot, and the plugin's data.
+ * button for a plugin that is not installed), the failure card of a suspended plugin, the
+ * settings the application draws in the `settings` slot, and the plugin's data.
  */
 import { computed, ref } from 'vue'
 import { Button, Prose, Switch } from '@numen/ui'
 import ChevronIcon from './ChevronIcon.vue'
-import DetailRow from './DetailRow.vue'
 import PluginData from './PluginData.vue'
 import PluginStopped from './PluginStopped.vue'
 import type { PluginDetailProps } from './PluginDetail.types'
@@ -23,7 +22,6 @@ const emit = defineEmits<{
   (e: 'toggle-enabled', isEnabled: boolean): void
   (e: 'retry'): void
   (e: 'install'): void
-  (e: 'consent-change', isAllowed: boolean): void
   (e: 'delete-data'): void
 }>()
 
@@ -34,8 +32,6 @@ defineSlots<{
 
 /* --------------------------------- State ---------------------------------- */
 const isExpanded = ref(false)
-const consent = computed(() => props.plugin.info?.consent ?? 'none')
-const hasConsent = computed(() => consent.value !== 'none')
 const readmeParts = computed(() =>
   parsePluginReadme(props.readme, props.plugin.id, props.plugin.description),
 )
@@ -63,10 +59,6 @@ function onDisable(): void {
 
 function onInstall(): void {
   emit('install')
-}
-
-function onConsentChange(isAllowed: boolean): void {
-  emit('consent-change', isAllowed)
 }
 
 function onDeleteData(): void {
@@ -131,20 +123,7 @@ function onDeleteData(): void {
       @disable="onDisable"
     />
 
-    <div v-if="hasConsent || props.hasSettings" class="plugin-detail__settings">
-      <DetailRow
-        v-if="hasConsent"
-        v-slot="{ labelledBy }"
-        :at="`ai-consent-${props.plugin.id}`"
-        :name="words.consentAllowed"
-        :detail="words.consentDetail[consent]"
-      >
-        <Switch
-          :model-value="consent === 'allowed'"
-          :aria-labelledby="labelledBy"
-          @update:model-value="onConsentChange"
-        />
-      </DetailRow>
+    <div v-if="props.hasSettings" class="plugin-detail__settings">
       <slot name="settings" />
     </div>
 

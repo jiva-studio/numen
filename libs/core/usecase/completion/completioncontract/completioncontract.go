@@ -12,7 +12,6 @@ type (
 
 var (
 	ErrInvalidQuestion = completionport.ErrInvalidQuestion
-	ErrNoConsent       = completionport.ErrNoConsent
 	ErrNoRoute         = completionport.ErrNoRoute
 	ErrUnavailable     = completionport.ErrUnavailable
 )

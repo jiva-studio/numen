@@ -118,8 +118,6 @@ message PluginInfo {
   repeated string stored_secrets = 10;
   reserved 11;
   reserved "models";
-  // Whether the person lets the plugin ask for model completions.
-  CompletionConsent completion_consent = 12;
   // Set while the host suspends the plugin after it failed to start.
   PluginFailure failure = 13;
   // Whether the plugin declares a frontend bundle a window loads.
@@ -163,25 +161,6 @@ message PluginFailure {
   int64 failed_at_unix_ms = 2;
   // The underlying error, shown on request.
   string detail = 3;
-}
-
-// CompletionConsent is whether the person lets a plugin ask for model
-// completions. The zero value is a plugin that does not hold the ai:complete
-// permission.
-enum CompletionConsent {
-  COMPLETION_CONSENT_UNSPECIFIED = 0;
-
-  // The person has not answered, and the plugin has not asked since the host
-  // started.
-  COMPLETION_CONSENT_PENDING = 1;
-
-  // person has not answered.
-  COMPLETION_CONSENT_REQUESTED = 2;
-
-  // The person lets the plugin ask.
-  COMPLETION_CONSENT_ALLOWED = 3;
-
-  COMPLETION_CONSENT_DENIED = 4;
 }
 
 // PluginService allows querying discovered plugins and their settings schemas.

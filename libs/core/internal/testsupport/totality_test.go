@@ -22,7 +22,6 @@ func getWalked() map[protoreflect.FullName]string {
 		"numen.v1.CatalogIncompatibility": "adapter/window/editor/plugincatalog: written by newWireIncompatibility",
 		"numen.v1.CatalogState":           "adapter/window/editor/plugincatalog: written by newWireState",
 		"numen.v1.CommandErrorCode":       "internal/adapter/plugin/commandbridge: read by RunCommand",
-		"numen.v1.CompletionConsent":      "adapter/window/editor: written by the consents table",
 		"numen.v1.CompletionErrorCode":    "plugin-sdk-go/ai: read by readRefusal",
 		"numen.v1.ErrorCode":              "adapter/window/editor: worded by note errors",
 		"numen.v1.FlushResult":            "internal/adapterlib/wire: read by left",

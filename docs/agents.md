@@ -111,9 +111,7 @@ The tools are registered by the plugins that own their subjects — `agents-tool
 
 ## An agent a person runs themselves
 
-The tools are served on a port, and the panel's agent is one caller of it. An agent somebody has configured in their own terminal is another, and `agent.serve_tools` serves them to it: when on, the endpoint responds whether or not the panel has an agent, and its address and the token to send are written to `agents.json` beside this installation's own state, at mode `0600`. The file is removed when the window closes, so a valid-looking token never outlives its port.
-
-It is off. An installation that names no agent and asks for no tools opens no port and writes no token file — a person who never asked for an agent runs only the window.
+The tools are served to an agent somebody has configured in their own terminal by the plugin `md.numen.agents.mcp.server`, which listens on `127.0.0.1` at the plugin's setting `port` (3333 by default). The application itself opens no port and writes no token file.
 
 ## Host agent auto-discovery
 
@@ -133,7 +131,7 @@ The chat panel provides a floating selector island above the message composer:
 
 ## Settings
 
-`agent.use` sets which program answers, and empty sets none. When unset, the program the plugins mark as the default answers. `agent.serve_tools` puts the tools on a port for an agent a person runs themselves, and is off. Each program a plugin lists has a section under its name, `agent.claude.*` for Claude Code: `command` starts it, `model` is which of its models answers, `max_steps` is how many model calls it may make before it is stopped, and `reads_hooks_and_skills` is what this machine holds for it. A section is kept whether it is the one in use or not. The programs and their models are listed by the plugins that run them, and the window shows what they list. See [Settings](settings.md).
+`agent.use` sets which program answers, and empty sets none. When unset, the program the plugins mark as the default answers. Each program a plugin lists has a section under its name, `agent.claude.*` for Claude Code: `command` starts it, `model` is which of its models answers, and `reads_hooks_and_skills` is what this machine holds for it. A section is kept whether it is the one in use or not. The programs and their models are listed by the plugins that run them, and the window shows what they list. See [Settings](settings.md).
 
 Where `command` is empty, the path is searched first, then the folders the command line's installers write to.
 

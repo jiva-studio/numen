@@ -3,14 +3,12 @@
  */
 import type { TallyUnit } from '@numen/shell'
 import {
-  COMPLETION_CONSENT,
   FLUSH_RESULT,
   getNames,
   MODEL_PRESENCE,
   SEARCH_MODE,
   TASK_UNIT,
   VAULTS_ERROR_CODE,
-  type CompletionConsentCode,
   type FlushResultCode,
   type ModelPresenceCode,
   type SearchModeCode,
@@ -20,7 +18,7 @@ import {
   asValue,
 } from '@numen/core-client'
 import type { SearchMode } from '@/features/command-palette'
-import type { Consent, Presence } from '@/entities/settings'
+import type { Presence } from '@/entities/settings'
 import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'
 
 interface VaultWire {
@@ -109,13 +107,4 @@ export const mapVaultResult = (from: {
 }): VaultResult => {
   const error = getVaultError(from)
   return error ? asFailure(error) : asValue(from.vault ? mapVault(from.vault) : null)
-}
-
-/** Whether the user allows a plugin to query a model, in the words the window uses. */
-export const consented: Record<CompletionConsentCode, Consent> = {
-  [COMPLETION_CONSENT.UNSPECIFIED]: 'none',
-  [COMPLETION_CONSENT.PENDING]: 'pending',
-  [COMPLETION_CONSENT.REQUESTED]: 'requested',
-  [COMPLETION_CONSENT.ALLOWED]: 'allowed',
-  [COMPLETION_CONSENT.DENIED]: 'denied',
 }

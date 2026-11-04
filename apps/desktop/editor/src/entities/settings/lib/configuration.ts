@@ -4,8 +4,6 @@
  */
 import type { PluginInfo } from '@numen/plugin-manager'
 export type {
-  Consent,
-  PluginFailure,
   PluginInfo,
   PluginReader,
   PluginSecret,
@@ -15,7 +13,7 @@ export type {
   PluginSettingOptionsBy,
   PluginSettingsViewInfo,
 } from '@numen/plugin-manager'
-export type { CompletionChoice, PluginSettingType } from '@numen/core-client'
+export type { PluginSettingType } from '@numen/core-client'
 
 /** One setting of the configuration file, and the JSON value to set. */
 export interface SettingEdit {

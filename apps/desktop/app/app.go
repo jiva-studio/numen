@@ -27,16 +27,11 @@ import (
 
 const appName = "numen"
 
-// DefaultAgentAddr is the default MCP listening address.
-const DefaultAgentAddr = "127.0.0.1:23579"
-
 // Options holds command-line options for running the desktop application.
 type Options struct {
 	IndexPath      string
 	RegistryPath   string
 	Vault          string
-	McpAddr        string
-	NoMcp          bool
 	InterfaceScale float64
 	TextScale      float64
 	RebuildIndex   bool
@@ -47,9 +42,7 @@ type Options struct {
 
 // NewOptions creates default options for the application.
 func NewOptions() *Options {
-	return &Options{
-		McpAddr: DefaultAgentAddr,
-	}
+	return &Options{}
 }
 
 // Run executes the application. If opts is not supplied or nil, command-line flags are parsed.
@@ -106,9 +99,6 @@ func parseFlags() (*Options, error) {
 		fs.StringVar(&opts.RegistryPath, "registry", "", "path to the vault list")
 		fs.StringVar(&opts.Vault, "vault", "",
 			"the vault to open: a name, a path or an identity; the one opened last by default")
-		fs.StringVar(&opts.McpAddr, "mcp-addr", DefaultAgentAddr,
-			"address agents connect to; any address other than loopback opens the vault to the network")
-		fs.BoolVar(&opts.NoMcp, "no-mcp", false, "do not let agents connect to this vault")
 		fs.Float64Var(&opts.InterfaceScale, "interface-scale", 0,
 			"scale of the interface (controls and spacing); 1 is the default; this launch only")
 		fs.Float64Var(&opts.TextScale, "text-scale", 0,

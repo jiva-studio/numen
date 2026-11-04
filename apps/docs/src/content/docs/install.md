@@ -120,13 +120,11 @@ vault comes back.
 
 What is in it:
 
-|                |                                                                                                                            |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `numen.json`   | [the settings](/settings/), yours to edit.                                                                                 |
-| `vaults.json`  | the vaults this installation knows and which one was open last. numen writes it; you do not.                               |
-| `themes/`      | [your own themes](/themes/), one `.css` file each.                                                                         |
-| `agents.json`  | the address [an agent](/connect/) uses to reach the vault, and the token to send. It is there while the window is running. |
-| `agents.token` | that token, stored so the line in your agent's configuration keeps working.                                                |
+|               |                                                                                              |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| `numen.json`  | [the settings](/settings/), yours to edit.                                                   |
+| `vaults.json` | the vaults this installation knows and which one was open last. numen writes it; you do not. |
+| `themes/`     | [your own themes](/themes/), one `.css` file each.                                           |
 
 Deleting the whole folder removes the list of your vaults and loses nothing you wrote: the notes
 are your files, and adding the folders again brings the same vaults back.

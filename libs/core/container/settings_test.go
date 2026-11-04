@@ -96,7 +96,7 @@ func TestSettingsSavedTogetherAllArrive(t *testing.T) {
 
 	err := cfg.GetSettingsWriter()([]settingsport.Setting{
 		{Path: []string{"agent", "use"}, JSON: `"claude"`},
-		{Path: []string{"agent", "claude", "max_steps"}, JSON: `12`},
+		{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -106,7 +106,7 @@ func TestSettingsSavedTogetherAllArrive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if target.Agent.GetUse() != "claude" || target.Agent.GetProgram("claude").MaxSteps != 12 {
+	if target.Agent.GetUse() != "claude" || target.Agent.GetProgram("claude").Model != "opus" {
 		t.Errorf("the agent reads %+v", target.Agent)
 	}
 }
@@ -158,17 +158,10 @@ func TestSettingsThatCannotBeSavedAreRefused(t *testing.T) {
 // plan is resolved from the performance section.
 func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 	response := DefaultSettings()
-	response.Agent.Use = settings.UseProgram("claude")
 	response.Performance = hardware.Performance{Profile: hardware.ProfileEco}
 
 	got := NewConfig(Config{}).SetSettings(response)
 
-	if got.Agent.GetUse() != "claude" {
-		t.Errorf("the agent is %q", got.Agent.GetUse())
-	}
-	if got.Performance.Profile != hardware.ProfileEco {
-		t.Errorf("the performance profile is %q", got.Performance.Profile)
-	}
 	if got.Hardware.LogicalCPUs < 1 {
 		t.Errorf("the hardware was not detected: %+v", got.Hardware)
 	}

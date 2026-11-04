@@ -60,9 +60,6 @@ type Config struct {
 	// When non-zero, they override values defined in the settings file.
 	InterfaceScale, TextScale float64
 
-	// Performance is the active workload and compute calibration profile.
-	Performance hardware.Performance
-
 	// ResolvedCompute is the concrete calculated concurrency and batch limits.
 	ResolvedCompute hardware.ResolvedCompute
 
@@ -96,9 +93,6 @@ type Config struct {
 	// TextReaders is where the index, the search and the highlighting read text
 	// versions. Defaults to TextVersions if nil.
 	TextReaders textport.TextReaders
-
-	// Agent configures the active assistant model.
-	Agent settings.Agent
 
 	// ShouldRebuildIndex forces re-indexing of all vault files regardless of index state.
 	ShouldRebuildIndex bool

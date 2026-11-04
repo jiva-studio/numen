@@ -17,15 +17,3 @@ func TestTheDefaultIsReadFromTheAISection(t *testing.T) {
 		t.Errorf("the default reads %+v, want %+v", loaded.AI.Default, want)
 	}
 }
-
-// A file written with routes by purpose loads, and keeps its default route.
-func TestAFileWithRoutesByPurposeLoads(t *testing.T) {
-	cfg, _ := writeSettings(t, `{"ai": {"routes": {"default": {"agent": "a", "model": "m"}, "proofreading": {"agent": "b", "concurrency": 2}}}}`)
-	loaded, err := cfg.Settings()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := (settings.AIRoute{Agent: "a", Model: "m"}); loaded.AI.Default != want {
-		t.Errorf("the default reads %+v, want %+v", loaded.AI.Default, want)
-	}
-}

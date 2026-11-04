@@ -8,7 +8,6 @@ import (
 
 type (
 	CommandFailedError     = pluginport.CommandFailedError
-	CompletionConsent      = pluginport.CompletionConsent
 	DependencyCatalog      = pluginport.DependencyCatalog
 	DependencyKind         = pluginport.DependencyKind
 	DependencyProvisioner  = pluginport.DependencyProvisioner
@@ -98,11 +97,6 @@ const (
 	CommandArgumentNumber       = pluginport.CommandArgumentNumber
 	CommandArgumentVersion      = pluginport.CommandArgumentVersion
 	CommandArgumentString       = pluginport.CommandArgumentString
-	ConsentAllowed              = pluginport.ConsentAllowed
-	ConsentRequested            = pluginport.ConsentRequested
-	ConsentNone                 = pluginport.ConsentNone
-	ConsentDenied               = pluginport.ConsentDenied
-	ConsentPending              = pluginport.ConsentPending
 	DependencyKindBinary        = pluginport.DependencyKindBinary
 	DependencyKindDataset       = pluginport.DependencyKindDataset
 	DependencyKindModel         = pluginport.DependencyKindModel
@@ -137,7 +131,6 @@ const (
 	HandlePlaybackCopy          = pluginport.HandlePlaybackCopy
 	HandleTextProvider          = pluginport.HandleTextProvider
 	ContextAnyValue             = pluginport.ContextAnyValue
-	SettingAIConsent            = pluginport.SettingAIConsent
 	ConfigPerformanceProfile    = pluginport.ConfigPerformanceProfile
 	SettingStoredSecrets        = pluginport.SettingStoredSecrets
 	SettingTypeEnum             = pluginport.SettingTypeEnum

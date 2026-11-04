@@ -25,16 +25,6 @@ type (
 	UnavailableError       = pluginport.UnavailableError
 	AgentModel             = agentport.AgentModel
 	ReasoningLevel         = agentport.ReasoningLevel
-	Consent                = pluginport.CompletionConsent
-)
-
-// Whether the user allows a plugin to request model completions.
-const (
-	ConsentNone      = pluginport.ConsentNone
-	ConsentPending   = pluginport.ConsentPending
-	ConsentRequested = pluginport.ConsentRequested
-	ConsentAllowed   = pluginport.ConsentAllowed
-	ConsentDenied    = pluginport.ConsentDenied
 )
 
 // What a model's files are on this machine.

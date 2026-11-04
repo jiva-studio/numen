@@ -45,7 +45,6 @@ const (
 	ContextAnyValue           = manifest.ContextAnyValue
 	PluginProtocolVersion     = manifest.ProtocolVersion
 	SettingStoredSecrets      = manifest.SettingStoredSecrets
-	SettingAIConsent          = manifest.SettingAIConsent
 	SettingTypeString         = manifest.SettingTypeString
 	SettingTypeEnum           = manifest.SettingTypeEnum
 	SettingTypeFile           = manifest.SettingTypeFile

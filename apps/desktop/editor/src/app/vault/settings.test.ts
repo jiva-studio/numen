@@ -3,7 +3,7 @@
  * hands the vault to write.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { AGENT_PROVIDER_CAPABILITY, COMPLETION_CONSENT, MODEL_PRESENCE } from '@numen/core-client'
+import { AGENT_PROVIDER_CAPABILITY, MODEL_PRESENCE } from '@numen/core-client'
 import { settingsCore as core } from './settings'
 
 const request = vi.hoisted(() => ({
@@ -113,7 +113,6 @@ describe('every setting', () => {
               capabilities: [AGENT_PROVIDER_CAPABILITY],
               secrets: [{ name: 'apiKey', title: 'API key', description: '' }],
               storedSecrets: ['apiKey'],
-              completionConsent: COMPLETION_CONSENT.REQUESTED,
               hasFrontend: true,
               hasBackend: false,
               readers: [{ id: 'reader-sample', extensions: ['sample'] }],
@@ -165,7 +164,6 @@ describe('every setting', () => {
         capabilities: [AGENT_PROVIDER_CAPABILITY],
         secrets: [{ name: 'apiKey', title: 'API key', description: '', when: undefined }],
         storedSecrets: ['apiKey'],
-        consent: 'requested',
         hasFrontend: true,
         hasBackend: false,
         readers: [{ id: 'reader-sample', extensions: ['sample'] }],
@@ -259,7 +257,6 @@ describe('a plugin the host suspends', () => {
               capabilities: [],
               secrets: [],
               storedSecrets: [],
-              completionConsent: COMPLETION_CONSENT.UNSPECIFIED,
               settings: [],
               failure: {
                 reason: 'Timed out while starting',

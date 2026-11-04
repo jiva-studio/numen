@@ -33,8 +33,6 @@ var (
 	// ErrUnavailable means the agent the plugin is routed to cannot be reached or
 	// stopped without an answer.
 	ErrUnavailable = errors.New("ai: routed agent did not answer")
-	// ErrNoConsent means user consent is required to invoke an AI model.
-	ErrNoConsent = errors.New("ai: user consent required to invoke model")
 	// ErrNoAnswer means the host replied without an answer.
 	ErrNoAnswer = errors.New("ai: host sent no answer")
 )
@@ -148,8 +146,6 @@ func readRefusal(code v1.CompletionErrorCode, detail string) error {
 		return addDetail(ErrNoRoute, detail)
 	case v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE:
 		return addDetail(ErrUnavailable, detail)
-	case v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT:
-		return addDetail(ErrNoConsent, detail)
 	}
 	return fmt.Errorf("ai: unknown error code %d", code)
 }

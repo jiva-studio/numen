@@ -31,9 +31,6 @@ func TestNamingNoAgentIsCached(t *testing.T) {
 	if target.IsNamed() || target.GetUse() != "" {
 		t.Errorf("a file naming no agent names %q", target.GetUse())
 	}
-	if got := target.GetProgram("claude").MaxSteps; got != settings.DefaultAgentSteps {
-		t.Errorf("a program the file left out lost its defaults: %d", got)
-	}
 
 	if named := read(t, `{"use": "codex"}`); named.GetUse() != "codex" || !named.IsNamed() {
 		t.Errorf("the file names %q", named.GetUse())
@@ -43,52 +40,13 @@ func TestNamingNoAgentIsCached(t *testing.T) {
 	}
 }
 
-// The tools are served on a port when an agent is named for the panel or when
-// the user requests the port explicitly. An installation requesting neither
-// serves none.
-func TestWhatOpensThePort(t *testing.T) {
-	var defaultAgent settings.Agent
-	if defaultAgent.ShouldServeTools {
-		t.Error("the defaults serve the tools to an agent nobody has configured")
-	}
-
-	for name, response := range map[string]struct {
-		file      string
-		isServing bool
-	}{
-		"the defaults":              {`{}`, true},
-		"no agent named":            {`{"use": ""}`, false},
-		"no agent, tools asked for": {`{"use": "", "serve_tools": true}`, true},
-		"an agent named":            {`{"use": "claude"}`, true},
-		"any program named":         {`{"use": "other"}`, true},
-	} {
-		t.Run(name, func(t *testing.T) {
-			if got := read(t, response.file).IsServingTools(); got != response.isServing {
-				t.Errorf("the tools are served: %v", got)
-			}
-		})
-	}
-}
-
-// A section a file leaves empty keeps the step limit the defaults give it, for each program alike.
-func TestAnEmptySectionKeepsItsStepLimit(t *testing.T) {
-	target := read(t, `{"claude": {}, "antigravity": {}, "codex": {}}`)
-	for _, name := range []string{"claude", "antigravity", "codex"} {
-		if got := target.GetProgram(name).MaxSteps; got != settings.DefaultAgentSteps {
-			t.Errorf("%s may go to the model %d times", name, got)
-		}
-	}
-}
-
 // A section of the wrong type is a settings file that cannot be read.
 func TestASectionOfTheWrongTypeIsRefused(t *testing.T) {
 	for _, file := range []string{
 		`{"claude": 5}`,
 		`{"codex": "x"}`,
-		`{"claude": {"max_steps": "many"}}`,
 		`{"codex": {"command": 3}}`,
 		`{"use": 5}`,
-		`{"serve_tools": "yes"}`,
 		`[]`,
 	} {
 		var target settings.Agent
@@ -102,18 +60,17 @@ func TestASectionOfTheWrongTypeIsRefused(t *testing.T) {
 // program is called.
 func TestTheFieldsASectionNamesAreTaken(t *testing.T) {
 	target := read(t, `{
-		"claude": {"command": ["c", "--x"], "model": "opus", "max_steps": 7, "reads_hooks_and_skills": true, "extra": [1,2]},
-		"anything": {"command": ["x", "y"], "model": "gpt", "max_steps": 9, "reads_hooks_and_skills": true, "extra": [1,2]}
+		"claude": {"command": ["c", "--x"], "model": "opus", "reads_hooks_and_skills": true, "extra": [1,2]},
+		"anything": {"command": ["x", "y"], "model": "gpt", "reads_hooks_and_skills": true, "extra": [1,2]}
 	}`)
 
 	want := map[string]settings.AgentProgram{
-		"claude":   {Command: []string{"c", "--x"}, Model: "opus", MaxSteps: 7, Options: map[string]string{"reads_hooks_and_skills": "true", "extra": "[1,2]"}},
-		"anything": {Command: []string{"x", "y"}, Model: "gpt", MaxSteps: 9, Options: map[string]string{"reads_hooks_and_skills": "true", "extra": "[1,2]"}},
+		"claude":   {Command: []string{"c", "--x"}, Model: "opus", Options: map[string]string{"reads_hooks_and_skills": "true", "extra": "[1,2]"}},
+		"anything": {Command: []string{"x", "y"}, Model: "gpt", Options: map[string]string{"reads_hooks_and_skills": "true", "extra": "[1,2]"}},
 	}
 	for name, program := range want {
 		got := target.GetProgram(name)
-		if !slices.Equal(got.Command, program.Command) || got.Model != program.Model ||
-			got.MaxSteps != program.MaxSteps || !maps.Equal(got.Options, program.Options) {
+		if !slices.Equal(got.Command, program.Command) || got.Model != program.Model || !maps.Equal(got.Options, program.Options) {
 			t.Errorf("%s: %+v", name, got)
 		}
 	}
@@ -122,12 +79,12 @@ func TestTheFieldsASectionNamesAreTaken(t *testing.T) {
 // A file read twice into one section keeps the values of the first read that the second omits.
 func TestAgentUnmarshal_RepeatedReadMergesSection(t *testing.T) {
 	var target settings.Agent
-	for _, file := range []string{`{"claude": {"model": "opus"}}`, `{"claude": {"max_steps": 5}}`} {
+	for _, file := range []string{`{"claude": {"model": "opus"}}`, `{"claude": {"command": ["c"]}}`} {
 		if err := json.Unmarshal([]byte(file), &target); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if got := target.GetProgram("claude"); got.Model != "opus" || got.MaxSteps != 5 {
+	if got := target.GetProgram("claude"); got.Model != "opus" || !slices.Equal(got.Command, []string{"c"}) {
 		t.Errorf("got %+v", got)
 	}
 }
@@ -141,10 +98,10 @@ func TestTheCommandsAreThoseTheSettingsSet(t *testing.T) {
 	}
 }
 
-// The section is written with the programs next to its two keys, and a choice
+// The section is written with the programs next to `use`, and a choice
 // left to the default is written as null, so it reads back unchanged.
 func TestTheSectionIsSavedAsItIsRead(t *testing.T) {
-	file := `{"use":"claude","serve_tools":true,"claude":{"command":["/c"],"model":"opus","reasoning":"high","max_steps":7,"reads_hooks_and_skills":true}}`
+	file := `{"use":"claude","claude":{"command":["/c"],"model":"opus","reasoning":"high","reads_hooks_and_skills":true}}`
 	content, err := json.Marshal(read(t, file))
 	if err != nil {
 		t.Fatal(err)
@@ -165,14 +122,14 @@ func TestTheSectionIsSavedAsItIsRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(defaults) != `{"serve_tools":false,"use":null}` {
+	if string(defaults) != `{"use":null}` {
 		t.Errorf("the defaults are written as %s", defaults)
 	}
 	none, err := json.Marshal(settings.Agent{Use: settings.UseProgram("")})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(none) != `{"serve_tools":false,"use":""}` {
+	if string(none) != `{"use":""}` {
 		t.Errorf("no agent is written as %s", none)
 	}
 }
@@ -191,36 +148,5 @@ func TestTheDefaultIsReadFromItsOwnKey(t *testing.T) {
 	}
 	if want := (settings.AIRoute{Agent: "a", Model: "m", Concurrency: 3}); config.Default != want {
 		t.Errorf("read %+v, want %+v", config.Default, want)
-	}
-}
-
-// A file of the older shape keeps its default route, and the routes of single
-// purposes are not read.
-func TestAnOlderFileKeepsItsDefaultRoute(t *testing.T) {
-	var config settings.AI
-	older := `{"routes": {"default": {"agent": "a", "model": "m", "concurrency": 2}, "proofreading": {"agent": "b"}}}`
-	if err := json.Unmarshal([]byte(older), &config); err != nil {
-		t.Fatal(err)
-	}
-	if want := (settings.AIRoute{Agent: "a", Model: "m", Concurrency: 2}); config.Default != want {
-		t.Errorf("read %+v, want %+v", config.Default, want)
-	}
-
-	if err := json.Unmarshal([]byte(`{"routes": {"proofreading": {"agent": "b"}}}`), &config); err != nil {
-		t.Fatal(err)
-	}
-	if config.Default != (settings.AIRoute{}) {
-		t.Errorf("a purpose's route was read as the default: %+v", config.Default)
-	}
-}
-
-func TestTheDefaultExistsOverTheOlderRoutes(t *testing.T) {
-	var config settings.AI
-	both := `{"default": {"agent": "new"}, "routes": {"default": {"agent": "old"}}}`
-	if err := json.Unmarshal([]byte(both), &config); err != nil {
-		t.Fatal(err)
-	}
-	if config.Default.Agent != "new" {
-		t.Errorf("read agent %q, want new", config.Default.Agent)
 	}
 }
