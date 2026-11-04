@@ -725,3 +725,39 @@ func TestServerEdgeCasesAndDirectCalls(t *testing.T) {
 		t.Errorf("expected vault missing reason when tools requested, got %v", stepsWithTools)
 	}
 }
+
+// The person's own hooks and skills are read only where the plugin's setting `reads_hooks_and_skills`
+// is on; a task carries no such option.
+func TestAskReadsHooksAndSkillsOnlyWhereTheSettingIsOn(t *testing.T) {
+	for _, c := range []struct {
+		name   string
+		values map[string]string
+		want   string
+	}{
+		{name: "the setting is on", values: map[string]string{"reads_hooks_and_skills": "true"}, want: "user"},
+		{name: "the setting is off", values: map[string]string{"reads_hooks_and_skills": "false"}, want: ""},
+		{name: "the setting is never configured", values: map[string]string{}, want: ""},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			out := filepath.Join(t.TempDir(), "argv")
+			script := writeScript(t, "mock-claude.sh",
+				"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+"\n"+
+					"echo '{\"type\":\"result\",\"is_error\":false}'\n")
+			agent := &agentServer{}
+			agent.applyConfig(c.values)
+			client := startAgent(t, agent)
+
+			stream, err := client.Ask(t.Context(), &agentrun.Request{Prompt: "q", Command: []string{script}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			collectSteps(t, stream)
+
+			raw, err := os.ReadFile(out)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertPair(t, strings.Split(strings.TrimSuffix(string(raw), "\n"), "\n"), "--setting-sources", c.want)
+		})
+	}
+}

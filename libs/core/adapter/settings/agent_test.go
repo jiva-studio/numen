@@ -150,3 +150,17 @@ func TestTheDefaultIsReadFromItsOwnKey(t *testing.T) {
 		t.Errorf("read %+v, want %+v", config.Default, want)
 	}
 }
+
+// A section of a program holds the command and the model; what a plugin reads for itself is not kept by
+// the core, and a section written back carries only the two.
+func TestASectionKeepsOnlyTheCommandAndTheModel(t *testing.T) {
+	target := read(t, `{"claude":{"command":["/c"],"model":"opus","reasoning":"high","reads_hooks_and_skills":true}}`)
+
+	content, err := json.Marshal(target.GetProgram("claude"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `{"command":["/c"],"model":"opus"}`; string(content) != want {
+		t.Errorf("wrote %s, want %s", content, want)
+	}
+}
