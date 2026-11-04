@@ -66,7 +66,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
   /** Writes the current linkable tabs to the core, after any pending report. */
   const reportTabs = (): void => {
     pendingTabs = deps.getOpenTabs()
-    if (!isReporting) void writeReports()
+    if (!isReporting) writeReports().catch(deps.onError)
   }
 
   /** Reads the stream until close; reports the tabs again on each new stream. */

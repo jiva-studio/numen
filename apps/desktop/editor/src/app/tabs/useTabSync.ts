@@ -19,26 +19,16 @@ export interface TabSyncDeps {
   onError: (error: unknown) => void
 }
 
-export function createTabSync({ windowTabs, tabLinks, sendSync, onError }: TabSyncDeps) {
-  let isSyncing = false
+/** Moves single tabs of this window and keeps the path each one shows. */
+function createTabMover({ windowTabs, onError }: Pick<TabSyncDeps, 'windowTabs' | 'onError'>) {
   /**
-   * Path each tab was moved to by a sync. The next report of that path from the
-   * tab is an echo: it consumes the entry and is not synced.
+   * Path each tab was moved to by a sync. A report of that path from the tab
+   * before its navigate settles is an echo: it consumes the entry and is not
+   * synced.
    */
   const echoPaths = new Map<TabId, string>()
   /** Path each tab of this window shows, from its last report or its last move. */
   const shownPaths = new Map<TabId, string>()
-  /**
-   * Path each moved tab reported that differs from its target path. Each one is
-   * synced after the moves end, so the group follows the redirect.
-   */
-  const redirects = new Map<TabId, { path: string; title: string }>()
-  /**
-   * Path of the last sync this window sent in each group, until the core sends
-   * it back. A snapshot taken before the core received the sync carries an
-   * older path, which does not move the tabs.
-   */
-  const sentPaths = new Map<string, string>()
 
   /** Returns the path a tab of this window shows, or '' when it is not known. */
   const getShownPath = (tabId: TabId): string => {
@@ -49,15 +39,23 @@ export function createTabSync({ windowTabs, tabLinks, sendSync, onError }: TabSy
     return tab.kind.getOpenTab?.(tab.state)?.path || tab.kind.getTarget?.(tab.state)?.path || ''
   }
 
+  /** Removes the echo of a tab and returns the path it expected, if any. */
+  const takeEcho = (tabId: TabId): string | undefined => {
+    const expected = echoPaths.get(tabId)
+    echoPaths.delete(tabId)
+    return expected
+  }
+
   /** Forgets the echo of a move to the path, once the navigate has settled. */
   const forgetEcho = (tabId: TabId, path: string) => {
     if (echoPaths.get(tabId) === path) echoPaths.delete(tabId)
   }
 
   /** Forgets a move to the path, after the tab failed to navigate to it. */
-  const forgetMove = (tabId: TabId, path: string) => {
+  const forgetMove = (tabId: TabId, path: string, error: unknown) => {
     forgetEcho(tabId, path)
     if (shownPaths.get(tabId) === path) shownPaths.delete(tabId)
+    onError(error)
   }
 
   /**
@@ -77,16 +75,34 @@ export function createTabSync({ windowTabs, tabLinks, sendSync, onError }: TabSy
       }
       navigation.then(
         () => forgetEcho(tabId, path),
-        (error: unknown) => {
-          forgetMove(tabId, path)
-          onError(error)
-        },
+        (error: unknown) => forgetMove(tabId, path, error),
       )
     } catch (error) {
-      forgetMove(tabId, path)
-      onError(error)
+      forgetMove(tabId, path, error)
     }
   }
+
+  const setShownPath = (tabId: TabId, path: string): void => {
+    shownPaths.set(tabId, path)
+  }
+
+  return { getShownPath, takeEcho, moveTab, setShownPath }
+}
+
+export function createTabSync({ windowTabs, tabLinks, sendSync, onError }: TabSyncDeps) {
+  const mover = createTabMover({ windowTabs, onError })
+  let isSyncing = false
+  /**
+   * Path each moved tab reported that differs from its target path. Each one is
+   * synced after the moves end, so the group follows the redirect.
+   */
+  const redirects = new Map<TabId, { path: string; title: string }>()
+  /**
+   * Path of the last sync this window sent in each group, until the core sends
+   * it back. A snapshot taken before the core received the sync carries an
+   * older path, which does not move the tabs.
+   */
+  const sentPaths = new Map<string, string>()
 
   /**
    * Navigates each of the tabs of this window that does not show the path, then
@@ -96,7 +112,7 @@ export function createTabSync({ windowTabs, tabLinks, sendSync, onError }: TabSy
     isSyncing = true
     try {
       for (const tabId of tabIds) {
-        if (getShownPath(tabId) !== path) moveTab(tabId, path, title)
+        if (mover.getShownPath(tabId) !== path) mover.moveTab(tabId, path, title)
       }
     } finally {
       isSyncing = false
@@ -113,11 +129,10 @@ export function createTabSync({ windowTabs, tabLinks, sendSync, onError }: TabSy
    */
   const syncPathFromTab = (sourceTabId: TabId, path: string, title = ''): boolean => {
     if (!sourceTabId || !path) return false
-    shownPaths.set(sourceTabId, path)
+    mover.setShownPath(sourceTabId, path)
     const group = tabLinks.getGroupOf(sourceTabId)
     if (!group || group.tabs.length < 2) return false
-    const expected = echoPaths.get(sourceTabId)
-    echoPaths.delete(sourceTabId)
+    const expected = mover.takeEcho(sourceTabId)
     if (expected === path) return true
     if (isSyncing) {
       if (expected === undefined) return false
@@ -167,10 +182,11 @@ export function createTabSync({ windowTabs, tabLinks, sendSync, onError }: TabSy
     }
   }
 
-  /** Records the path a tab of this window was moved to outside a sync. */
-  const setShownPath = (tabId: TabId, path: string): void => {
-    shownPaths.set(tabId, path)
+  return {
+    syncPathFromTab,
+    applySync,
+    applyGroupPaths,
+    /** Records the path a tab of this window was moved to outside a sync. */
+    setShownPath: mover.setShownPath,
   }
-
-  return { syncPathFromTab, applySync, applyGroupPaths, setShownPath }
 }

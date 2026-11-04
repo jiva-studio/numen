@@ -424,7 +424,13 @@ describe('a linked tab that fails to navigate', () => {
   it('sends the sync before the local moves', () => {
     const order: string[] = []
     const { sync, sendSync } = setup(
-      { 'files:1': { navigate: () => void order.push('navigate') } },
+      {
+        'files:1': {
+          navigate: () => {
+            order.push('navigate')
+          },
+        },
+      },
       createLinkedTabs('files:1'),
     )
     sendSync.mockImplementation(() => {
