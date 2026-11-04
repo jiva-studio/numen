@@ -6,6 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
+import { COMMAND } from '@/shared/commandIds'
 import { findIcon, getNamedIcon } from '@/shared/icons'
 import { getNoteIcon, registerNoteIcon } from '@/entities/note'
 import { createCommands, createPathCommands } from '@/features/command-palette'
@@ -39,9 +40,11 @@ describe('the icon a command is drawn with', () => {
   })
 
   it('is there for declared plugin commands and plugin settings, with distinct icons', () => {
-    expect(findIcon('plugin-command:org.example.custom:run')).not.toBeNull()
+    expect(findIcon('org.example.custom:task.run')).not.toBeNull()
     expect(findIcon('plugin-setting:org.example.custom:toggle')).not.toBeNull()
-    expect(findIcon('settings')).not.toBe(findIcon('plugin-setting:org.example.custom:toggle'))
+    expect(findIcon(COMMAND.openSettings)).not.toBe(
+      findIcon('plugin-setting:org.example.custom:toggle'),
+    )
     expect(getNamedIcon('layers')).not.toBe(getNamedIcon('layout-template'))
     expect(getNamedIcon('audio-lines')).not.toBe(getNamedIcon('waypoints'))
   })
@@ -49,6 +52,12 @@ describe('the icon a command is drawn with', () => {
   it('is there for every way into a vault the welcome screen offers', () => {
     const ways = createWelcomeActions({ vault: 'physics', isReady: true }, words, 'Linux')
     for (const one of ways) expect(findIcon(one.id), one.id).not.toBeNull()
+  })
+
+  it('is nothing for a command of the window that no icon is kept for', () => {
+    expect(findIcon(COMMAND.moveFile)).toBeNull()
+    expect(findIcon(COMMAND.createFolder)).toBeNull()
+    expect(findIcon('mode:dark')).toBeNull()
   })
 
   it('is nothing for an identity no list carries', () => {

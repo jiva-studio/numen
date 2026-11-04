@@ -44,11 +44,11 @@ func getVault() shown { return shown{ID: "v1", Name: "Physics"} }
 func TestGetFileMenuReturnsEntries(t *testing.T) {
 	m := &menu{entries: []textversion.MenuEntry{
 		{
-			PluginID: "md.numen.tools.proofreading", PluginName: "LLM Proofreading", Command: "proofread", Title: "Proofread",
+			PluginID: "md.numen.tools.proofreading", PluginName: "LLM Proofreading", Command: "proofreading.create", Title: "Proofread",
 			Icon: "spell-check", Version: "md.numen.engines.ocr/recognition", IsLive: true,
 		},
 		{
-			PluginID: "md.numen.engines.ocr", PluginName: "Document OCR", Command: "delete-recognition",
+			PluginID: "md.numen.engines.ocr", PluginName: "Document OCR", Command: "recognition.delete",
 			Title: "Delete recognition", Version: "md.numen.engines.ocr/recognition",
 		},
 	}}
@@ -60,9 +60,9 @@ func TestGetFileMenuReturnsEntries(t *testing.T) {
 	}
 	got := res.Msg.GetEntries()
 	if len(got) != 2 ||
-		got[0].GetPluginName() != "LLM Proofreading" || got[0].GetCommand() != "proofread" || got[0].GetTitle() != "Proofread" ||
+		got[0].GetPluginName() != "LLM Proofreading" || got[0].GetCommand() != "proofreading.create" || got[0].GetTitle() != "Proofread" ||
 		got[0].GetIcon() != "spell-check" || got[0].GetVersionId() != "md.numen.engines.ocr/recognition" || !got[0].GetIsLive() ||
-		got[1].GetCommand() != "delete-recognition" || got[1].GetTitle() != "Delete recognition" || got[1].GetIsLive() {
+		got[1].GetCommand() != "recognition.delete" || got[1].GetTitle() != "Delete recognition" || got[1].GetIsLive() {
 		t.Fatalf("answered %v", got)
 	}
 	if _, err := h.GetFileMenu(t.Context(), connect.NewRequest(&v1.GetFileMenuRequest{Path: "gone.pdf"})); connect.CodeOf(err) != connect.CodeNotFound {
@@ -71,14 +71,14 @@ func TestGetFileMenuReturnsEntries(t *testing.T) {
 }
 
 func TestFileMenuWithoutVaultIsEmpty(t *testing.T) {
-	m := &menu{entries: []textversion.MenuEntry{{PluginID: "p", Command: "proofread"}}}
+	m := &menu{entries: []textversion.MenuEntry{{PluginID: "p", Command: "proofreading.create"}}}
 	h := NewHandler(shown{}, m)
 
 	res, err := h.GetFileMenu(t.Context(), connect.NewRequest(&v1.GetFileMenuRequest{Path: "scan.pdf"}))
 	if err != nil || len(res.Msg.GetEntries()) != 0 {
 		t.Errorf("answered %v (%v), want nothing", res.Msg.GetEntries(), err)
 	}
-	_, err = h.RunFileMenuEntry(t.Context(), connect.NewRequest(&v1.RunFileMenuEntryRequest{Path: "scan.pdf", PluginId: "p", Command: "proofread"}))
+	_, err = h.RunFileMenuEntry(t.Context(), connect.NewRequest(&v1.RunFileMenuEntryRequest{Path: "scan.pdf", PluginId: "p", Command: "proofreading.create"}))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition || len(m.ran) != 0 {
 		t.Errorf("a run was answered %v and ran %v", err, m.ran)
 	}
@@ -92,12 +92,12 @@ func TestRunFileMenuEntryPassesEntry(t *testing.T) {
 	h := NewHandler(getVault(), m)
 
 	_, err := h.RunFileMenuEntry(t.Context(), connect.NewRequest(&v1.RunFileMenuEntryRequest{
-		Path: "scan.pdf", PluginId: "p", Command: "proofread", VersionId: "q/k",
+		Path: "scan.pdf", PluginId: "p", Command: "proofreading.create", VersionId: "q/k",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := textversion.MenuEntry{PluginID: "p", Command: "proofread", Version: "q/k"}
+	want := textversion.MenuEntry{PluginID: "p", Command: "proofreading.create", Version: "q/k"}
 	if len(m.ran) != 1 || m.ran[0] != want {
 		t.Fatalf("ran %+v, want %+v", m.ran, want)
 	}

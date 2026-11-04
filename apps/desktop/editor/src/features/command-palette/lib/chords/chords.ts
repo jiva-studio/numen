@@ -10,6 +10,7 @@
  * Shift unpressed.
  */
 import { keyChord, type PaletteKeys } from '@numen/ui'
+import { COMMAND } from '@/shared/commandIds'
 
 /** One command bound to a keystroke. */
 export interface Chord {
@@ -22,11 +23,11 @@ export interface Chord {
 }
 
 export const CHORDS: readonly Chord[] = [
-  { command: 'note', letter: 'n', hasShift: false },
-  { command: 'newVault', letter: 'n', hasShift: true },
-  { command: 'goto', letter: 'g', hasShift: false },
-  { command: 'child', letter: 'c', hasShift: true },
-  { command: 'close', letter: 'w', hasShift: true },
+  { command: COMMAND.createNote, letter: 'n', hasShift: false },
+  { command: COMMAND.createVault, letter: 'n', hasShift: true },
+  { command: COMMAND.goToNote, letter: 'g', hasShift: false },
+  { command: COMMAND.createChildNote, letter: 'c', hasShift: true },
+  { command: COMMAND.closeTab, letter: 'w', hasShift: true },
 ]
 
 /** Whether this keystroke is a chord that the window handles. */

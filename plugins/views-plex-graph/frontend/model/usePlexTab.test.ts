@@ -91,8 +91,9 @@ const tab = (
       requestedHeadings.push(paths)
       return new Map([...divides.value].filter(([path]) => paths.includes(path)))
     },
-    getNoteCommands: () => [{ id: 'plugin:share', text: 'Share the note' }],
-    getCommandIcon: (id) => (id === 'plugin:share' || id === 'read' ? SHARE_ICON : null),
+    getNoteCommands: () => [{ id: 'org.example.sample:share.run', text: 'Share the note' }],
+    getCommandIcon: (id) =>
+      id === 'org.example.sample:share.run' || id === 'app:note.open' ? SHARE_ICON : null,
     getNoteIcon: (type) => (type === 'sample' ? SAMPLE_ICON : null),
     runCommand: (id, path, title) => ran.push([id, path, title]),
     openingPath: ref('Opening.md'),
@@ -190,9 +191,9 @@ describe('the menu on a node', () => {
     const one = tab('Root.md', ['Child.md'])
     one.state.openMenu(createMenuRequest(one.node('Child.md')))
 
-    one.state.chooseMenuItem('read')
+    one.state.chooseMenuItem('app:note.open')
 
-    expect(one.ran).toEqual([['read', 'Child.md', 'Child']])
+    expect(one.ran).toEqual([['app:note.open', 'Child.md', 'Child']])
     expect(one.state.menu.value).toBeNull()
   })
 
@@ -205,7 +206,7 @@ describe('the menu on a node', () => {
     one.state.openMenu(createMenuRequest(one.node('Child.md')))
     one.state.chooseMenuItem('constructor')
     one.state.openMenu(createMenuRequest(one.node('Child.md')))
-    one.state.chooseMenuItem('destroy')
+    one.state.chooseMenuItem('app:note.delete')
 
     expect(one.ran.map(([id]) => id)).toStrictEqual(ITEMS.map((item) => item.id))
   })
@@ -215,27 +216,27 @@ describe('the menu on a node', () => {
     one.state.openMenu(createMenuRequest(one.node('Child.md')))
 
     expect(one.state.menuItems.value.map((item) => item.id).slice(0, 3)).toStrictEqual([
-      'read',
-      'plugin:share',
-      'copy',
+      'app:note.open',
+      'org.example.sample:share.run',
+      'app:note.copyPath',
     ])
-    one.state.chooseMenuItem('plugin:share')
+    one.state.chooseMenuItem('org.example.sample:share.run')
 
-    expect(one.ran).toEqual([['plugin:share', 'Child.md', 'Child']])
+    expect(one.ran).toEqual([['org.example.sample:share.run', 'Child.md', 'Child']])
   })
 
   it('uses the window icon of a command, and none without one', () => {
     const one = tab('Root.md')
 
-    expect(one.state.getMenuIcon('plugin:share')).toBe(SHARE_ICON)
-    expect(one.state.getMenuIcon('read')).toBe(SHARE_ICON)
-    expect(one.state.getMenuIcon('plugin:unknown')).toBeNull()
+    expect(one.state.getMenuIcon('org.example.sample:share.run')).toBe(SHARE_ICON)
+    expect(one.state.getMenuIcon('app:note.open')).toBe(SHARE_ICON)
+    expect(one.state.getMenuIcon('org.example.sample:unknown.run')).toBeNull()
   })
 
   it('does nothing when it relies on nothing', () => {
     const one = tab('Root.md')
 
-    one.state.chooseMenuItem('read')
+    one.state.chooseMenuItem('app:note.open')
 
     expect(one.ran).toEqual([])
   })
@@ -321,7 +322,7 @@ describe('the menu off every node', () => {
     const one = tab('Root.md')
     one.state.openMenu(request)
 
-    one.state.chooseMenuItem('read')
+    one.state.chooseMenuItem('app:note.open')
     await settle()
 
     expect(one.wrote).toStrictEqual([])
@@ -891,9 +892,9 @@ describe('a gesture the plex reports', () => {
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
     one.state.openMenu({ node: one.node('Heat'), at: { x: 1, y: 2 }, opening: 'pointer' })
-    one.state.chooseMenuItem('read')
+    one.state.chooseMenuItem('app:note.open')
 
-    expect(one.ran).toStrictEqual([['read', 'physics/Heat.md', 'Heat']])
+    expect(one.ran).toStrictEqual([['app:note.open', 'physics/Heat.md', 'Heat']])
   })
 
   it('makes a note in a relation of the note the node remains for', async () => {
@@ -923,7 +924,7 @@ describe('a gesture the plex reports', () => {
       one.state.activate(node)
       one.state.openNode(node, 'current')
       one.state.openMenu({ node, at: { x: 1, y: 2 }, opening: 'pointer' })
-      one.state.chooseMenuItem('read')
+      one.state.chooseMenuItem('app:note.open')
       await one.state.createNode(node, 'child')
       await one.state.joinNodes(node, one.node('Root'), 'jump')
     }

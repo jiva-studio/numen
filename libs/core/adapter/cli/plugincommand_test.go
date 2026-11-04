@@ -30,7 +30,7 @@ func (p *pluginCommands) RunCommand(_ context.Context, call plugincommand.Call) 
 func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 	declared := &pluginCommands{entries: []plugincommand.Entry{
 		{PluginID: "org.example.sample", Command: plugincommand.Command{
-			ID: "create-sample", Title: "Create a sample",
+			ID: "sample.create", Title: "Create a sample",
 			Arguments: []plugincommand.Argument{
 				{Name: "title", Title: "Title", Type: "string", IsRequired: true},
 				{Name: "folder", Title: "Folder", Type: "string"},
@@ -61,9 +61,9 @@ func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 func TestPluginCommand_DeclaredCommandRunsWithArgumentFlags(t *testing.T) {
 	deps, declared, vaults := createPluginCommandDeps()
 
-	out, err := runWithDeps(deps, "create-sample", "notebook", "--title", "Verbs", "--open", "--folder=samples")
+	out, err := runWithDeps(deps, "sample.create", "notebook", "--title", "Verbs", "--open", "--folder=samples")
 
-	if err != nil || out != "ran create-sample\n" {
+	if err != nil || out != "ran sample.create\n" {
 		t.Fatalf("the command answered %q, %v", out, err)
 	}
 	if len(*vaults) != 1 || (*vaults)[0].ID != getNotebook().ID {
@@ -92,10 +92,10 @@ func TestPluginCommand_FileArgumentFollowsVault(t *testing.T) {
 
 func TestPluginCommand_InvalidArgumentsPrintUsage(t *testing.T) {
 	cases := map[string][]string{
-		"no vault":                      {"create-sample"},
-		"a file to a command over none": {"create-sample", "notebook", "a.md", "--title", "T"},
+		"no vault":                      {"sample.create"},
+		"a file to a command over none": {"sample.create", "notebook", "a.md", "--title", "T"},
 		"no file to a command over one": {"count-pages", "notebook"},
-		"a flag it does not take":       {"create-sample", "notebook", "--title", "T", "--colour", "red"},
+		"a flag it does not take":       {"sample.create", "notebook", "--title", "T", "--colour", "red"},
 	}
 	for name, args := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -116,7 +116,7 @@ func TestPluginCommand_InvalidArgumentsPrintUsage(t *testing.T) {
 func TestACommandMissingARequiredArgumentRunsNothing(t *testing.T) {
 	deps, declared, _ := createPluginCommandDeps()
 
-	_, err := runWithDeps(deps, "create-sample", "notebook", "--folder", "samples")
+	_, err := runWithDeps(deps, "sample.create", "notebook", "--folder", "samples")
 
 	if !errors.Is(err, plugincommand.ErrBadArguments) || len(declared.calls) != 0 {
 		t.Errorf("the command answered %v and sent %+v", err, declared.calls)
@@ -132,7 +132,7 @@ func TestTheHelpListsTheCommandsThePluginsDeclare(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, line := range []string{
-		"numen-cli create-sample <vault> --title <string> [--folder <string>] [--open]",
+		"numen-cli sample.create <vault> --title <string> [--folder <string>] [--open]",
 		"numen-cli count-pages <vault> <file>",
 		"Count the pages",
 	} {
@@ -155,7 +155,7 @@ func TestACommandNoPluginDeclaresIsUnknown(t *testing.T) {
 // The commands of a domain come from the plugin that owns it: without plugins the core's own command
 // line neither runs nor mentions one.
 func TestTheCoreHasNoCommandOfADomain(t *testing.T) {
-	domainCommands := []string{"transcribe", "recognise", "import", "proofread"}
+	domainCommands := []string{"transcript.create", "recognition.create", "link.import", "proofreading.create"}
 	deps := cli.Deps{Vaults: createVaultList(getNotebook())}
 
 	help, err := runWithDeps(deps, "help")
@@ -176,7 +176,7 @@ func TestTheCoreHasNoCommandOfADomain(t *testing.T) {
 func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
 	declared := &pluginCommands{entries: []plugincommand.Entry{{
 		PluginID: "md.numen.engines.transcription",
-		Command:  plugincommand.Command{ID: "transcribe", Title: "Transcribe a recording", ContentTypes: []domain.ContentType{"audio/*"}},
+		Command:  plugincommand.Command{ID: "transcript.create", Title: "Transcribe a recording", ContentTypes: []domain.ContentType{"audio/*"}},
 	}}}
 	commands := plugincommand.NewCommands(declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil)
 	deps := cli.Deps{
@@ -192,10 +192,10 @@ func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
 	}
 
 	help, err := runWithDeps(deps, "help")
-	if err != nil || !strings.Contains(help, "numen-cli transcribe <vault> <file>\n      Transcribe a recording") {
+	if err != nil || !strings.Contains(help, "numen-cli transcript.create <vault> <file>\n      Transcribe a recording") {
 		t.Fatalf("the help reads %q (%v)", help, err)
 	}
-	if _, err := runWithDeps(deps, "transcribe", "notebook", "talks/lecture.wav"); err != nil {
+	if _, err := runWithDeps(deps, "transcript.create", "notebook", "talks/lecture.wav"); err != nil {
 		t.Fatal(err)
 	}
 	if len(declared.calls) != 1 || declared.calls[0].PluginID != "md.numen.engines.transcription" ||
@@ -227,7 +227,7 @@ func (f fileTypes) ListExtensions(mask domain.ContentType) []string {
 func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
 	declared := &pluginCommands{entries: []plugincommand.Entry{{
 		PluginID: "md.numen.links",
-		Command:  plugincommand.Command{ID: "delete-copy", Title: "Delete the copy", NoteTypes: []string{"link"}},
+		Command:  plugincommand.Command{ID: "link.deleteVideo", Title: "Delete the copy", NoteTypes: []string{"link"}},
 	}}}
 	commands := plugincommand.NewCommands(declared, fileTypes{}, nil)
 	deps := cli.Deps{
@@ -238,7 +238,7 @@ func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
 	}
 
 	help, err := runWithDeps(deps, "help")
-	if err != nil || !strings.Contains(help, "numen-cli delete-copy <vault> <file>\n") {
+	if err != nil || !strings.Contains(help, "numen-cli link.deleteVideo <vault> <file>\n") {
 		t.Fatalf("the help reads %q (%v)", help, err)
 	}
 }

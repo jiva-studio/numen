@@ -6,7 +6,7 @@ The recording itself is never moved, copied or renamed. It is played from where 
 
 ## Asking for a transcript
 
-A recording is transcribed when a person asks: **Transcribe** on the recording's menu and in the palette, the button where the transcript would be shown, or `numen-cli transcribe <vault> <file>`. All of them run the plugin's command `transcribe`, which the manifest declares over audio and video files and which waits until the transcript is written. The plugin does not run on its own. **Delete transcript** is the plugin's command `delete-transcript`: its manifest declares it for a file that has a transcript the plugin made (`when.hasOwnText`), and the plugin deletes the transcript and its record.
+A recording is transcribed when a person asks: **Transcribe** on the recording's menu and in the palette, the button where the transcript would be shown, or `numen-cli transcript.create <vault> <file>`. All of them run the plugin's command `transcript.create`, which the manifest declares over audio and video files and which waits until the transcript is written. The plugin does not run on its own. **Delete transcript** is the plugin's command `transcript.delete`: its manifest declares it for a file that has a transcript the plugin made (`when.hasOwnText`), and the plugin deletes the transcript and its record.
 
 The run waits in the core's shared queue as a person's request, after any other work using the models and before work nobody requested, and is shown in the status bar as a task with the seconds transcribed out of the recording's total seconds. A run that cannot open the recording stays in the status bar with the reason.
 

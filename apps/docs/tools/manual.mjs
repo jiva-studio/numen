@@ -89,14 +89,41 @@ const declaring = (source, name, what) => {
 
 /* ------------------------------------------------------------------ keys */
 
+/**
+ * The full id of every command of the window, by the name chords.ts and the table give it. The
+ * names are the keys of COMMAND in commandIds.ts, each filed under the owner app.
+ */
+const readCommandIds = async () => {
+  const source = await read(EDITOR, 'shared/commandIds.ts')
+  const ids = new Map(
+    [...source.matchAll(/^\s*([A-Za-z]+):\s*formatAppCommandId\('([^']+)'\)/gm)].map(([, name, id]) => [
+      name,
+      `app:${id}`,
+    ]),
+  )
+  if (ids.size === 0) die('commandIds.ts no longer names its commands')
+  return ids
+}
+
+/** The full id a name of COMMAND stands for. */
+const getCommandId = (ids, name) => {
+  const id = ids.get(name)
+  if (!id) die(`COMMAND has no command '${name}'`)
+  return id
+}
+
 /** Every chord the window carries out a command for, in the order it declares them. */
-const chords = (source) => {
+const chords = (source, ids) => {
   const table = declaring(source, 'CHORDS', 'chords.ts no longer lists its chords')
   const found = [
     ...table.text.matchAll(
-      /\{\s*command:\s*'([A-Za-z]+)',\s*letter:\s*'([a-z])',\s*hasShift:\s*(true|false)\s*\}/g,
+      /\{\s*command:\s*COMMAND\.([A-Za-z]+),\s*letter:\s*'([a-z])',\s*hasShift:\s*(true|false)\s*\}/g,
     ),
-  ].map(([, command, letter, shift]) => ({ command, letter, shift: shift === 'true' }))
+  ].map(([, name, letter, shift]) => ({
+    command: getCommandId(ids, name),
+    letter,
+    shift: shift === 'true',
+  }))
   if (found.length === 0) die('no chords are declared in chords.ts')
   if (found.length !== table.entries) {
     die(`chords.ts lists ${table.entries} chords and this reads ${found.length}`)
@@ -115,6 +142,7 @@ const chordOf = ({ letter, shift }) => {
 const keyboard = async () => {
   const keys = await read(PALETTE, 'lib/chords/chords.ts')
   const words = await read(UI, 'words.ts')
+  const ids = await readCommandIds()
 
   // The two the window keeps for itself are not in that table: they put the
   // palette up, and the palette answers them.
@@ -129,8 +157,8 @@ const keyboard = async () => {
     `| ${chordOf({ letter: 'k' })} | ${await said(words, 'find')} |`,
     `| ${chordOf({ letter: 'p' })} | Commands |`,
   ]
-  const declared = await readCommands()
-  for (const chord of chords(keys)) {
+  const declared = await readCommands(ids)
+  for (const chord of chords(keys, ids)) {
     rows.push(`| ${chordOf(chord)} | ${await said(words, spoken(declared, chord.command))} |`)
   }
   for (const plugin of await readPlugins()) {
@@ -151,19 +179,19 @@ const keyboard = async () => {
  * Every command the list holds is a command read here. One written in a shape
  * this cannot find an id in stops the build.
  */
-const rowsOf = ({ text, entries }, path = 'table.ts') => {
-  const found = [...text.matchAll(/\bid:\s*'([A-Za-z]+)'/g)]
+const rowsOf = ({ text, entries }, ids, path = 'table.ts') => {
+  const found = [...text.matchAll(/\bid:\s*COMMAND\.([A-Za-z]+)/g)]
   if (found.length !== entries) {
     die(`${path} lists ${entries} commands and this reads ${found.length}`)
   }
   return found.map((one, i) => ({
-    id: one[1],
+    id: getCommandId(ids, one[1]),
     said: text.slice(one.index, found[i + 1]?.index ?? text.length),
   }))
 }
 
 /** The window's own commands, read from table.ts and every slice it composes, in its order. */
-const readCommands = async () => {
+const readCommands = async (ids) => {
   const at = new URL('lib/commands/table.ts', PALETTE)
   const source = await readFile(at, 'utf8')
   const list = declaring(source, 'createCommands', 'table.ts no longer lists its commands')
@@ -180,7 +208,7 @@ const readCommands = async () => {
     if (!specifier) die(`table.ts calls '${fn}' without importing it`)
     const path = new URL(`${specifier}.ts`, at)
     const part = declaring(await readFile(path, 'utf8'), fn, `${specifier} no longer lists ${fn}`)
-    rows.push(...rowsOf(part, specifier))
+    rows.push(...rowsOf(part, ids, specifier))
   }
   return rows
 }
@@ -205,9 +233,10 @@ const checkSettingCommands = async () => {
 const commands = async () => {
   const words = await read(UI, 'words.ts')
   const keys = await read(PALETTE, 'lib/chords/chords.ts')
-  const table = chords(keys)
+  const ids = await readCommandIds()
+  const table = chords(keys, ids)
 
-  const declared = await readCommands()
+  const declared = await readCommands(ids)
   if (declared.length === 0) die('no commands are declared in table.ts')
 
   // Every command declared is a command the page carries. One the words or the
@@ -219,7 +248,7 @@ const commands = async () => {
     if (!word) die(`no words draw the command '${id}'`)
     if (!group) die(`the command '${id}' is in no group`)
     const chord = table.find((one) => one.command === id)
-    const key = chord ? chordOf(chord) : id === 'find' ? chordOf({ letter: 'k' }) : ''
+    const key = chord ? chordOf(chord) : id === getCommandId(ids, 'searchVault') ? chordOf({ letter: 'k' }) : ''
     own.push({ text: await said(words, word[1]), group: group[1], key })
   }
 
@@ -653,31 +682,31 @@ const pictured = async () => {
 const REFUSES = [
   {
     what: 'a list every entry of which the pattern reads',
-    source: "export const CHORDS: readonly Chord[] = [\n  { command: 'note', letter: 'n', hasShift: false },\n]\n",
-    pattern: /\{\s*command:\s*'([A-Za-z]+)',\s*letter:\s*'([a-z])',\s*hasShift:\s*(true|false)\s*\}/g,
+    source: "export const CHORDS: readonly Chord[] = [\n  { command: COMMAND.createNote, letter: 'n', hasShift: false },\n]\n",
+    pattern: /\{\s*command:\s*COMMAND\.([A-Za-z]+),\s*letter:\s*'([a-z])',\s*hasShift:\s*(true|false)\s*\}/g,
     refused: false,
   },
   {
     what: 'a chord spelled in a way the pattern does not match',
-    source: "export const CHORDS: readonly Chord[] = [\n  { command: 'note', letter: 'n', shift: false },\n  { command: 'newVault', letter: 'n', shift: true },\n]\n",
-    pattern: /\{\s*command:\s*'([a-z]+)',\s*letter:\s*'([a-z])',\s*shift:\s*(true|false)\s*\}/g,
+    source: "export const CHORDS: readonly Chord[] = [\n  { command: COMMAND.close, letter: 'n', shift: false },\n  { command: COMMAND.createVault, letter: 'n', shift: true },\n]\n",
+    pattern: /\{\s*command:\s*COMMAND\.([a-z]+),\s*letter:\s*'([a-z])',\s*shift:\s*(true|false)\s*\}/g,
     refused: true,
   },
   {
     what: 'a row of the commands carrying no id',
-    source: "export const commandsOf = (): readonly Command[] => [\n  { id: 'read', group: 'note' },\n  { name: 'beside', group: 'note' },\n]\n",
-    pattern: /\bid:\s*'([A-Za-z]+)'/g,
+    source: "export const commandsOf = (): readonly Command[] => [\n  { id: COMMAND.openNote, group: 'note' },\n  { name: 'beside', group: 'note' },\n]\n",
+    pattern: /\bid:\s*COMMAND\.([A-Za-z]+)/g,
     refused: true,
   },
   {
     what: 'an apostrophe in a comment, which is prose and no quote',
-    source: "export const commandsOf = (): readonly Command[] => [\n  // The vault's own folder.\n  { id: 'read', group: 'note' },\n]\n",
-    pattern: /\bid:\s*'([A-Za-z]+)'/g,
+    source: "export const commandsOf = (): readonly Command[] => [\n  // The vault's own folder.\n  { id: COMMAND.openNote, group: 'note' },\n]\n",
+    pattern: /\bid:\s*COMMAND\.([A-Za-z]+)/g,
     refused: false,
   },
   {
     what: 'a list that never closes',
-    source: "export const CHORDS: readonly Chord[] = [\n  { command: 'note', letter: 'n', shift: false },\n",
+    source: "export const CHORDS: readonly Chord[] = [\n  { command: COMMAND.createNote, letter: 'n', shift: false },\n",
     pattern: /\bcommand:/g,
     refused: true,
   },

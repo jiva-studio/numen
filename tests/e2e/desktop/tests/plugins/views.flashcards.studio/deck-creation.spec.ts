@@ -18,7 +18,7 @@ test.describe('a deck or a card model made through the palette', () => {
     page,
   }) => {
     await openWorkspace(page)
-    await make(page, 'New deck', 'Rivers')
+    await make(page, 'Create deck', 'Rivers')
 
     await expect(page.getByRole('tab', { name: /Rivers/ }).first()).toBeVisible()
     await expect(page.locator('.deck').first()).toBeVisible()
@@ -27,10 +27,10 @@ test.describe('a deck or a card model made through the palette', () => {
 
   test('reports a taken name and opens no second tab', async ({ page }) => {
     await openWorkspace(page)
-    await make(page, 'New deck', 'Lakes')
+    await make(page, 'Create deck', 'Lakes')
     await expect(page.locator('.deck').first()).toBeVisible()
 
-    await make(page, 'New deck', 'Lakes')
+    await make(page, 'Create deck', 'Lakes')
 
     await expect(await openTaskList(page)).toContainText(/filed there already/)
     await expect(page.getByRole('tab', { name: /Lakes/ })).toHaveCount(1)
@@ -40,7 +40,7 @@ test.describe('a deck or a card model made through the palette', () => {
     page,
   }) => {
     await openWorkspace(page)
-    await make(page, 'New card model', 'Mountain')
+    await make(page, 'Create card model', 'Mountain')
 
     await expect(page.getByRole('tab', { name: /Mountain/ }).first()).toBeVisible()
     await expect(page.locator('.card-model-tab').first()).toBeVisible()

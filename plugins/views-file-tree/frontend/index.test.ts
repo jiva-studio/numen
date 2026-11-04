@@ -72,11 +72,11 @@ describe('view-file-tree plugin', () => {
     expect(
       ctx.getRegisteredCommands().map((one) => [one.id, one.scope, one.shortcut]),
     ).toStrictEqual([
-      ['files', undefined, 'mod+shift+e'],
-      ['reveal', 'note', undefined],
+      ['tree.open', undefined, 'mod+shift+e'],
+      ['tree.revealNote', 'note', undefined],
     ])
-    await ctx.triggerCommand('files')
-    await ctx.triggerCommand('reveal', { path: 'notes/A.md', title: 'A', type: 'note' })
+    await ctx.triggerCommand('tree.open')
+    await ctx.triggerCommand('tree.revealNote', { path: 'notes/A.md', title: 'A', type: 'note' })
 
     expect(openCalls).toStrictEqual([[FILES, undefined]])
     expect(navigateCalls).toStrictEqual([[FILES, 'notes/A.md']])

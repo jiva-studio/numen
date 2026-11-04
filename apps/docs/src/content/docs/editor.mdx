@@ -55,7 +55,7 @@ rename it, and neither does changing one. What you type in the body is the body.
 
 ## Making one
 
-**New note** in the commands asks for a title, and the file is named after it. Characters a
+**Create note** in the commands asks for a title, and the file is named after it. Characters a
 filename cannot hold — `/ \ : * ? " < > |` and a few more — become `-`, and a very long title is
 shortened to fit.
 
@@ -67,7 +67,7 @@ Two notes may share a name. numen tells you when this happens and saves both.
 
 ## Renaming
 
-**Change title** changes whichever of the two gives the note its name: the `title:` key if it has one,
+**Rename note** changes whichever of the two gives the note its name: the `title:` key if it has one,
 and otherwise the filename.
 
 **The title and the filename are kept as one name.** Change the title and the file moves to
@@ -75,7 +75,7 @@ match; rename the file — in the [files tab](/files/) or in your own file manag
 and the new name is written into the note. A note that only has a filename is unaffected: there
 is nothing inside it to update.
 
-If you would rather they were two separate things, **Sync title and filename** in the commands
+If you would rather they were two separate things, **Choose title and file name sync** in the commands
 turns it off and on again, and saves the choice. It is
 `naming.sync_title_and_filename` in [the settings](/settings/) if you would rather edit the
 file. Off, a new title stays inside the note and a renamed file stays renamed.
@@ -88,11 +88,11 @@ to nothing. See [links](/links/).
 
 ## Removing
 
-**Remove note** moves the file into `.trash/` inside the vault, keeping the path it had. It
+**Move note to trash** moves the file into `.trash/` inside the vault, keeping the path it had. It
 is removed from search, the plex and the index. Nothing is destroyed, and the file is in that folder
 if you want it back.
 
-**Destroy note** deletes it outright. You are asked to type the note's name first, and it
+**Delete note permanently** deletes it outright. You are asked to type the note's name first, and it
 cannot be restored.
 
 Notes that linked to what you removed are reported and left alone. The link is not wrong. Its

@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.flashcards.studio",
   "name": "Flashcards Studio",
-  "version": "2026.11.4",
+  "version": "2026.11.5",
   "protocol": 1,
   "description": "Flashcard deck editor, card template designer, and spaced-repetition review",
   "capabilities": ["tools"],
@@ -31,20 +31,20 @@
   "services": ["md.numen.views.flashcards.studio"],
   "commands": [
     {
-      "id": "create-deck",
-      "title": "New deck",
+      "id": "deck.create",
+      "title": "Create deck",
       "icon": "layers",
       "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]
     },
     {
-      "id": "create-card-model",
-      "title": "New card model",
+      "id": "cardModel.create",
+      "title": "Create card model",
       "icon": "layout-template",
       "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]
     },
     {
-      "id": "create-preset",
-      "title": "New preset",
+      "id": "preset.create",
+      "title": "Create preset",
       "icon": "gauge",
       "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]
     }

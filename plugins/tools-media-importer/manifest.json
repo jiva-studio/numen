@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.media.importer",
   "name": "Media Importer",
-  "version": "2026.11.4",
+  "version": "2026.11.6",
   "protocol": 1,
   "description": "Saves web articles and downloads online videos for offline playback",
   "targets": ["desktop.editor"],
@@ -20,7 +20,7 @@
   "services": ["md.numen.tools.media.importer"],
   "commands": [
     {
-      "id": "import",
+      "id": "link.import",
       "title": "Import from URL",
       "icon": "link",
       "arguments": [
@@ -39,25 +39,25 @@
       ]
     },
     {
-      "id": "download-text",
+      "id": "link.downloadText",
       "title": "Download text again",
       "icon": "refresh-cw",
       "noteTypes": ["link"]
     },
     {
-      "id": "download-copy",
+      "id": "link.downloadVideo",
       "title": "Download video",
       "icon": "download",
       "noteTypes": ["link"]
     },
     {
-      "id": "delete-text",
+      "id": "link.deleteText",
       "title": "Delete text",
       "icon": "trash-2",
       "when": [{ "key": "version.plugin", "is": ["md.numen.tools.media.importer"] }]
     },
     {
-      "id": "delete-copy",
+      "id": "link.deleteVideo",
       "title": "Delete downloaded video",
       "icon": "trash-2",
       "noteTypes": ["link"]

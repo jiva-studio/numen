@@ -13,11 +13,11 @@ converted or rewritten.
 ## Opening one
 
 **The first launch needs no setup.** numen does not create a folder for you. The window opens showing its name, the vaults it knows (none yet), and the
-one thing to do, **New vault**.
+one thing to do, **Create vault**.
 
 From then on it opens the vault you had last.
 
-**New vault** creates a folder, **Open vault** uses one you already have; either way your
+**Create vault** creates a folder, **Open vault** uses one you already have; either way your
 machine's own folder picker is what chooses it. Both are in the commands —
 <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>P</kbd> — once a vault is open.
 

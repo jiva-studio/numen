@@ -80,17 +80,16 @@ describe('createPluginHost', () => {
         executed = true
       },
     })
-    expect(host.hasCommand('test.run')).toBe(true)
-    expect(host.hasCommand('plugin:test.run')).toBe(true)
+    expect(host.hasCommand('sample.plugin:test.run')).toBe(true)
     expect(host.getRegisteredCommands()).toHaveLength(1)
 
     // Palette commands
     const palette = host.getPaletteCommands()
     expect(palette).toHaveLength(1)
-    expect(palette[0]?.id).toBe('plugin:test.run')
+    expect(palette[0]?.id).toBe('sample.plugin:test.run')
 
     // Execute command
-    await host.executeCommand('plugin:test.run', { path: '', title: '', type: 'note' })
+    await host.executeCommand('sample.plugin:test.run', { path: '', title: '', type: 'note' })
     expect(executed).toBe(true)
 
     // Shortcut matching
@@ -107,7 +106,7 @@ describe('createPluginHost', () => {
 
     // Cleanups via dispose
     cmdSub.dispose()
-    expect(host.hasCommand('test.run')).toBe(false)
+    expect(host.hasCommand('sample.plugin:test.run')).toBe(false)
 
     readerSub.dispose()
     expect(extensionReaders.has('cpdf')).toBe(false)
@@ -132,12 +131,12 @@ describe('createPluginHost', () => {
     })
 
     expect(extensionReaders.has('ext1')).toBe(true)
-    expect(host.hasCommand('cmd1')).toBe(true)
+    expect(host.hasCommand('disposable.plugin:cmd1')).toBe(true)
 
     host.disposePlugin('disposable.plugin')
 
     expect(extensionReaders.has('ext1')).toBe(false)
-    expect(host.hasCommand('cmd1')).toBe(false)
+    expect(host.hasCommand('disposable.plugin:cmd1')).toBe(false)
     expect(host.getRegisteredReaders()).toHaveLength(0)
 
     // Disposing a plugin cleans up its agent providers, and disposeAllEntries cleans up agentProviders without context

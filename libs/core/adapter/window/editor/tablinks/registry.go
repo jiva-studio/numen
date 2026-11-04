@@ -344,6 +344,9 @@ func (r *Registry) setOwner(windowID string, tab Tab) {
 	if !isKnown || previous.WindowID == windowID {
 		return
 	}
+	if pending, ok := r.pendingMoves[tab.ID]; ok && pending.targetWindowID != windowID {
+		r.endMove(tab.ID, pending, MoveErrorCancelled)
+	}
 	if pending, ok := r.pendingDetaches[tab.ID]; ok {
 		outcome := MoveErrorCancelled
 		if pending.windowID == windowID {

@@ -33,7 +33,7 @@ test.describe('the preset editor', () => {
     deleteVaultFiles(...made.splice(0))
   })
 
-  test('New preset writes a preset file and opens its goal, minutes per day first', async ({
+  test('Create preset writes a preset file and opens its goal, minutes per day first', async ({
     page,
     request,
   }) => {
@@ -41,7 +41,7 @@ test.describe('the preset editor', () => {
     made.push(`${title}.md`)
     await openWorkspace(page)
 
-    await runNamingCommand(page, 'New preset', title)
+    await runNamingCommand(page, 'Create preset', title)
 
     await expect(page.getByRole('tab', { name: new RegExp(title) })).toBeVisible()
     await expect(page.getByRole('radio', { name: 'Minutes per day' })).toBeChecked()
@@ -56,7 +56,7 @@ test.describe('the preset editor', () => {
     const title = createUniqueTitle('Tidepool goal')
     made.push(`${title}.md`)
     await openWorkspace(page)
-    await runNamingCommand(page, 'New preset', title)
+    await runNamingCommand(page, 'Create preset', title)
     await expect(page.getByRole('radio', { name: 'Minutes per day' })).toBeChecked()
 
     await page.getByRole('radio', { name: 'Retention' }).click()
@@ -95,7 +95,7 @@ test.describe('the preset editor', () => {
 
     await openWorkspace(page)
     await openVaultFile(page, 'cards', `${deck}.md`)
-    await runPaletteCommand(page, 'Open preset', 'Open preset tab')
+    await runPaletteCommand(page, 'Open preset', 'Open preset')
     await expect(page.getByRole('tab', { name: new RegExp(preset) })).toBeVisible()
     const slider = page.getByRole('slider', { name: 'Preset goal' })
     await expect(slider).toBeVisible()
@@ -126,7 +126,7 @@ test.describe('the preset editor', () => {
     await openWorkspace(page)
     await openVaultFile(page, 'cards', 'Animals.md')
 
-    await runPaletteCommand(page, 'Open preset', 'Open preset tab')
+    await runPaletteCommand(page, 'Open preset', 'Open preset')
 
     await expect(await openTaskList(page)).toContainText(
       'No preset set. Scheduled by the defaults.',

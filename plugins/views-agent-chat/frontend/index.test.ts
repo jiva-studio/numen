@@ -88,11 +88,11 @@ describe('view-agent-chat plugin', () => {
     expect(
       ctx.getRegisteredCommands().map((one) => [one.id, one.scope, one.shortcut]),
     ).toStrictEqual([
-      ['agent', undefined, 'mod+shift+a'],
-      ['ask', 'note', undefined],
+      ['chat.open', undefined, 'mod+shift+a'],
+      ['note.ask', 'note', undefined],
     ])
-    await ctx.triggerCommand('agent')
-    await ctx.triggerCommand('ask', { path: 'One.md', title: 'One', type: 'note' })
+    await ctx.triggerCommand('chat.open')
+    await ctx.triggerCommand('note.ask', { path: 'One.md', title: 'One', type: 'note' })
     await ctx.getRegisteredContextMenus()[0]!.handler({
       path: 'Two.md',
       name: 'Two',

@@ -7,6 +7,8 @@
  */
 import type { Component } from 'vue'
 import { createNamedIcon } from '@numen/ui'
+import { getCommandOwner } from '@numen/plugin-host'
+import { COMMAND } from './commandIds'
 import {
   ALargeSmall,
   ArrowRightLeft,
@@ -41,38 +43,38 @@ import {
 
 /** What each command is drawn as. A map, so an identity answers for itself. */
 const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
-  ['read', FileText],
-  ['beside', FileText],
-  ['child', CornerDownRight],
-  ['parent', CornerLeftUp],
-  ['jump', ArrowRightLeft],
-  ['title', Type],
-  ['copy', Copy],
-  ['remove', Trash2],
-  ['destroy', Trash2],
+  [COMMAND.openNote, FileText],
+  [COMMAND.openNoteBeside, FileText],
+  [COMMAND.createChildNote, CornerDownRight],
+  [COMMAND.createParentNote, CornerLeftUp],
+  [COMMAND.createJumpNote, ArrowRightLeft],
+  [COMMAND.renameNote, Type],
+  [COMMAND.copyNotePath, Copy],
+  [COMMAND.trashNote, Trash2],
+  [COMMAND.deleteNote, Trash2],
   ['new', Plus],
   ['relation', Waypoints],
   ['newNote', FilePlus],
   ['newFolder', FolderPlus],
   ['rename', PenLine],
-  ['note', FilePlus],
-  ['find', Search],
+  [COMMAND.createNote, FilePlus],
+  [COMMAND.searchVault, Search],
   ['commands', Command],
-  ['close', SquareX],
-  ['appearance', Palette],
-  ['mode', Contrast],
-  ['interfaceScale', Ruler],
-  ['textScale', ALargeSmall],
-  ['syncing', RefreshCw],
-  ['performanceProfile', Gauge],
-  ['settings', Settings],
-  ['first', Compass],
-  ['goto', Navigation],
-  ['openVault', FolderRoot],
-  ['newVault', Plus],
-  ['renameVault', PenLine],
-  ['removeVault', X],
-  ['eraseVault', Trash2],
+  [COMMAND.closeTab, SquareX],
+  [COMMAND.chooseTheme, Palette],
+  [COMMAND.chooseMode, Contrast],
+  [COMMAND.chooseInterfaceSize, Ruler],
+  [COMMAND.chooseTextSize, ALargeSmall],
+  [COMMAND.chooseTitleSync, RefreshCw],
+  [COMMAND.choosePerformanceProfile, Gauge],
+  [COMMAND.openSettings, Settings],
+  [COMMAND.goToStartNote, Compass],
+  [COMMAND.goToNote, Navigation],
+  [COMMAND.openVault, FolderRoot],
+  [COMMAND.createVault, Plus],
+  [COMMAND.renameVault, PenLine],
+  [COMMAND.removeVault, X],
+  [COMMAND.eraseVault, Trash2],
 ])
 
 /**
@@ -81,9 +83,12 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
  */
 export const getNamedIcon = (name: string): Component => createNamedIcon(name)
 
+/** Whether the id is a command of a plugin, whose owner is the dotted id of the plugin. */
+const isPluginCommandId = (id: string): boolean => getCommandOwner(id).includes('.')
+
 /** The icon for a command, and nothing where it has none. */
 export const findIcon = (id: string): LucideIcon | null => {
   if (id.startsWith('plugin-setting:')) return SlidersHorizontal
-  if (id.startsWith('plugin-command:')) return Puzzle
+  if (isPluginCommandId(id)) return Puzzle
   return ICONS.get(id) ?? null
 }

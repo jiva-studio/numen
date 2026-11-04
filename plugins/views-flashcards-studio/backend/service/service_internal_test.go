@@ -678,7 +678,7 @@ func TestMountAndAllEndpoints(t *testing.T) {
 	if rec := post("/numen.v1.PluginToolService/ListTools", `{}`); rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "card_model_list") {
 		t.Fatalf("expected ListTools 200 OK with tools, got %d: %s", rec.Code, rec.Body)
 	}
-	if rec := post("/numen.v1.PluginCommandService/RunCommand", `{"command":"create-deck","arguments":{"title":"ViaCommand"}}`); rec.Code != http.StatusOK {
+	if rec := post("/numen.v1.PluginCommandService/RunCommand", `{"command":"deck.create","arguments":{"title":"ViaCommand"}}`); rec.Code != http.StatusOK {
 		t.Fatalf("expected RunCommand 200 OK, got %d: %s", rec.Code, rec.Body)
 	}
 

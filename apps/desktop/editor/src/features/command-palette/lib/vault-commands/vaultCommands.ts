@@ -1,37 +1,43 @@
 /**
  * The commands offered over the vaults an installation holds.
  */
+import { COMMAND } from '@/shared/commandIds'
 import { createRowKeys } from '../chords/chords'
 import { isAlwaysAvailable, isVaultOpen } from '../commands/availability'
 import type { Command } from '../../types'
 import type { Words } from '../../words'
 
 export const createVaultCommands = (words: Words, agent: string): readonly Command[] => [
-  { id: 'first', text: words.first, group: 'vault', isAvailable: (target) => target.isReady },
   {
-    id: 'goto',
+    id: COMMAND.goToStartNote,
+    text: words.first,
+    group: 'vault',
+    isAvailable: (target) => target.isReady,
+  },
+  {
+    id: COMMAND.goToNote,
     text: words.goto,
-    ...createRowKeys('goto', agent),
+    ...createRowKeys(COMMAND.goToNote, agent),
     group: 'vault',
     needs: 'picking',
     isAvailable: (target) => target.isReady,
   },
   {
-    id: 'openVault',
+    id: COMMAND.openVault,
     text: words.openVault,
     group: 'vault',
     needs: 'vaults',
     isAvailable: isAlwaysAvailable,
   },
   {
-    id: 'newVault',
+    id: COMMAND.createVault,
     text: words.newVault,
-    ...createRowKeys('newVault', agent),
+    ...createRowKeys(COMMAND.createVault, agent),
     group: 'vault',
     isAvailable: isAlwaysAvailable,
   },
   {
-    id: 'renameVault',
+    id: COMMAND.renameVault,
     text: words.renameVault,
     group: 'vault',
     needs: 'naming',
@@ -39,7 +45,7 @@ export const createVaultCommands = (words: Words, agent: string): readonly Comma
     getFieldText: (target) => target.vault.name,
   },
   {
-    id: 'removeVault',
+    id: COMMAND.removeVault,
     text: words.removeVault,
     group: 'vault',
     needs: 'vaults',
@@ -53,7 +59,7 @@ export const createVaultCommands = (words: Words, agent: string): readonly Comma
     },
   },
   {
-    id: 'eraseVault',
+    id: COMMAND.eraseVault,
     text: words.eraseVault,
     group: 'vault',
     needs: 'vaults',

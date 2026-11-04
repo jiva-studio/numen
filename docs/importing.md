@@ -4,7 +4,7 @@ A person pastes an address into the palette and gets a link: a note of type `lin
 
 ## The gesture
 
-**Import from URL** in the palette is the plugin's command `import`. It asks for the address, and the plugin creates a note for it, named after the address:
+**Import from URL** in the palette is the plugin's command `link.import`. It asks for the address, and the plugin creates a note for it, named after the address:
 
 ```markdown
 ---
@@ -16,7 +16,7 @@ url: https://www.youtube.com/watch?v=A4OZ4L9TCpM
 
 The plugin does not manage what a person writes below the frontmatter; the tab shows the address, the copy and the text.
 
-At the command line the same run is `numen-cli import <vault> --address <url>`. It waits for the text; `--wait` also waits for the copy of a video, which is otherwise made in the background and needs the window. Over a link note, `numen-cli download-text <vault> <note>` fetches the text again, `download-copy` copies the video and `delete-copy` removes the copy; these three run over notes of type `link` and are offered in the tab, not the palette.
+At the command line the same run is `numen-cli link.import <vault> --address <url>`. It waits for the text; `--wait` also waits for the copy of a video, which is otherwise made in the background and needs the window. Over a link note, `numen-cli link.downloadText <vault> <note>` fetches the text again, `link.downloadVideo` copies the video and `link.deleteVideo` removes the copy; these three run over notes of type `link` and are offered in the tab, not the palette.
 
 An address dragged out of a browser onto the files tree is the same gesture: the plugin registers a drop handler for `text/uri-list`, and the tree passes it the drop and the selected folder, without knowing the plugin.
 

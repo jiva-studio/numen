@@ -138,12 +138,7 @@ export function resolveCommand(
   commands: ReadonlyMap<string, RegisteredCommand>,
   id: string,
 ): RegisteredCommand | undefined {
-  const direct = commands.get(id)
-  if (direct) return direct
-  if (id.startsWith('plugin:')) {
-    return commands.get(id.slice('plugin:'.length))
-  }
-  return undefined
+  return commands.get(id)
 }
 
 function matchesSingleTarget(pattern: string, actual: ContextMenuTarget): boolean {

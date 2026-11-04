@@ -17,15 +17,18 @@ const BAND = {
   remove: 'remove',
 } as const
 
-/** What the window does to a node's note, offered on every node in the order it is drawn. */
+/**
+ * What the window does to a node's note, offered on every node in the order it is drawn. Each id
+ * is the full id of a command of the window.
+ */
 export const ITEMS: readonly MenuItem[] = [
-  { id: 'read', text: words.read, group: BAND.open },
-  { id: 'copy', text: words.copy, group: BAND.file },
-  { id: 'child', text: words.child, group: BAND.plex },
-  { id: 'parent', text: words.parent, group: BAND.plex },
-  { id: 'jump', text: words.jump, group: BAND.plex },
-  { id: 'title', text: words.title, group: BAND.plex },
-  { id: 'remove', text: words.remove, group: BAND.remove },
+  { id: 'app:note.open', text: words.read, group: BAND.open },
+  { id: 'app:note.copyPath', text: words.copy, group: BAND.file },
+  { id: 'app:note.createChild', text: words.child, group: BAND.plex },
+  { id: 'app:note.createParent', text: words.parent, group: BAND.plex },
+  { id: 'app:note.createJump', text: words.jump, group: BAND.plex },
+  { id: 'app:note.rename', text: words.title, group: BAND.plex },
+  { id: 'app:note.trash', text: words.remove, group: BAND.remove },
 ]
 
 /**

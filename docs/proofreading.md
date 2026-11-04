@@ -105,7 +105,7 @@ A printed line contains its words: on a page they stay where they were printed. 
 
 ## Who does it
 
-The proofreading plugin, `md.numen.tools.proofreading`, does all of it, and the core has no proofreading code. The plugin declares a `text-provider` handle under `contributes.handles` and registers the versions it makes with the host. The plugin declares the command `proofread` with the condition `when.liveTextKinds: ["*"]`, so the file's menu offers **Proofread** over the live version of any kind, and the host passes that version to the command as its argument `version-id`.
+The proofreading plugin, `md.numen.tools.proofreading`, does all of it, and the core has no proofreading code. The plugin declares a `text-provider` handle under `contributes.handles` and registers the versions it makes with the host. The plugin declares the command `proofreading.create` with the condition `when.liveTextKinds: ["*"]`, so the file's menu offers **Proofread** over the live version of any kind, and the host passes that version to the command as its argument `version-id`.
 
 The plugin reads the live version through the host, numbers its parts from one, builds the batches, contains the two instructions, applies the gates to each reply, and merges the replies of overlapping batches. The corrected lines replace the parts they correct: a correction keeps its part's page and rectangles or its times, and a run of cues answered as one becomes one part spanning their times. The plugin keeps the corrected text in its folder of the vault's store, `.numen/md.numen.tools.proofreading/proofread-<hash>.json`, one file a version read, rewritten when that version is proofread again, and reports it to the host as a version whose input is the version it read.
 
@@ -117,7 +117,7 @@ A proofreading waits in the core's shared queue and shows its progress as a task
 
 The version shown, searched and passed to the next processor is the newest live one. A proofreading made from a recognition is live while the OCR plugin and the proofreading plugin are both enabled and the recognition is unchanged. With the OCR plugin off, both the recognition and the version made from it are dead, and the file falls back to the newest live version left — a PDF's own text layer, or a proofreading made from it. With the OCR plugin on again, the proofreading of the recognition is shown again.
 
-**Delete proofreading** in the file's menu is the plugin's command `delete-proofreading`, declared with a `when` condition on `version.plugin`: the plugin deletes the version it made and its file.
+**Delete proofreading** in the file's menu is the plugin's command `proofreading.delete`, declared with a `when` condition on `version.plugin`: the plugin deletes the version it made and its file.
 
 ## Settings
 
@@ -127,7 +127,7 @@ A line that two batches of a transcript both replied to is taken from the batch 
 
 ## From the command line
 
-`numen-cli proofread <vault> <file>` is the plugin's command: it proofreads the file's live text, waits for the version, and prints how many lines it read and corrected.
+`numen-cli proofreading.create <vault> <file>` is the plugin's command: it proofreads the file's live text, waits for the version, and prints how many lines it read and corrected.
 
 ## Without a model
 

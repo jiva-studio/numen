@@ -183,14 +183,14 @@ func TestListExtensionsListsTheExtensionsOfTheCommandTypes(t *testing.T) {
 
 func TestRunCommandRejectsAFolderForACommandOverAnyFile(t *testing.T) {
 	declared := &declaredCommands{entries: []plugincommand.Entry{{PluginID: "md.numen.a", Command: plugincommand.Command{
-		ID: "proofread", Title: "Proofread", ContentTypes: []domain.ContentType{domain.AnyContentType},
+		ID: "proofreading.create", Title: "Proofread", ContentTypes: []domain.ContentType{domain.AnyContentType},
 	}}}}
 	commands := plugincommand.NewCommands(declared, getTypes(), nil)
 
-	if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.a", Command: "proofread", Path: "talks/"}); !errors.Is(err, plugincommand.ErrBadArguments) {
+	if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.a", Command: "proofreading.create", Path: "talks/"}); !errors.Is(err, plugincommand.ErrBadArguments) {
 		t.Errorf("a folder answered %v, want ErrBadArguments", err)
 	}
-	if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.a", Command: "proofread", Path: "README"}); err != nil {
+	if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.a", Command: "proofreading.create", Path: "README"}); err != nil {
 		t.Errorf("a file of an unknown type answered %v", err)
 	}
 }

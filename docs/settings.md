@@ -96,7 +96,7 @@ Renaming a file into another folder is not renaming a note, and neither is renam
 
 Typing a new `# Heading` into a note does not rename its file. A save writes the text a person typed and adds nothing to it.
 
-`Sync title and filename` is a separate command in the palette. Choosing `On` or `Off` writes this field, and the next rename uses the value written.
+`Choose title and file name sync` is a separate command in the palette. Choosing `On` or `Off` writes this field, and the next rename uses the value written.
 
 ## Performance profiles
 

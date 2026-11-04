@@ -171,5 +171,5 @@ test('the plugins of the tree are read with their commands', async () => {
   const plugins = await getPluginCommands('desktop.editor')
   const agent = plugins.find((one) => one.id === 'md.numen.views.agent.chat')
   assert.ok(agent, 'the agent chat plugin is read')
-  assert.ok(agent.commands.some((one) => one.id === 'agent' && one.chord))
+  assert.ok(agent.commands.some((one) => one.id === 'chat.open' && one.chord))
 })

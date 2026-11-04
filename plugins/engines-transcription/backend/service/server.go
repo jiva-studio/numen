@@ -139,10 +139,10 @@ func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) error 
 	transcriber := NewTranscriber(vaultFiles{vault: hosted.Vault}, hosted.Store, hosted.Texts, hosted.Queue, model.get)
 	s.SetUpdateConfig(model.updateConfig)
 	commands := command.New()
-	if err := commands.Add("transcribe", newTranscribeCommand(transcriber)); err != nil {
+	if err := commands.Add("transcript.create", newTranscribeCommand(transcriber)); err != nil {
 		return err
 	}
-	if err := commands.Add("delete-transcript", command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID)); err != nil {
+	if err := commands.Add("transcript.delete", command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID)); err != nil {
 		return err
 	}
 	command.Mount(s, commands)

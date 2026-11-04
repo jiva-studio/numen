@@ -86,13 +86,17 @@ describe('what else a files tab asks of the window', () => {
     const { host, recorded } = createHost()
     const deps = createFilesTabDeps(host, 'files')
 
-    deps.runCommand('remove', ['a.md', 'b.md'], { name: 'a', isNote: true, isFolder: false })
+    deps.runCommand('app:note.trash', ['a.md', 'b.md'], {
+      name: 'a',
+      isNote: true,
+      isFolder: false,
+    })
     await deps.movePath('a.md', 'dir/a.md')
     await deps.createFolder('dir')
     expect(await deps.createNote('dir/')).toBe('dir/note')
 
     expect(recorded.commands).toStrictEqual([
-      ['remove', { paths: ['a.md', 'b.md'], name: 'a', isNote: true, isFolder: false }],
+      ['app:note.trash', { paths: ['a.md', 'b.md'], name: 'a', isNote: true, isFolder: false }],
     ])
     expect(recorded.made).toStrictEqual(['move a.md dir/a.md', 'folder dir', 'note dir/'])
   })
@@ -108,7 +112,7 @@ describe('what else a files tab asks of the window', () => {
     expect(recorded.errors).toStrictEqual(['taken'])
     expect(
       deps.getPathCommands({ entry: entry(), isSeveral: true }).map((one) => one.id),
-    ).toStrictEqual(['remove'])
+    ).toStrictEqual(['app:note.trash'])
     expect(deps.getCommandIcon('unknown')).toBeNull()
     expect(deps.getEntryIcon(null, false)).toBeDefined()
   })

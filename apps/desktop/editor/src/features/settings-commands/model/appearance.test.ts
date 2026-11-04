@@ -11,7 +11,7 @@ import type { StepGroup } from '@/shared/steps'
 import { DESIGNED, EMPTY_RANGE } from '@/entities/settings'
 import type { Appearance, Themes } from '@/entities/settings'
 import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from '../lib/head'
-import { INTERFACE_SCALE, TEXT_SCALE } from '../lib/appearanceValues'
+import { COMMAND } from '@/shared/commandIds'
 import { createWindowAppearance } from './appearance'
 import { WORDS as words } from '@/shared/words'
 
@@ -399,9 +399,9 @@ describe('the sizes the two steps offer', () => {
   it('walks each range from end to end, in quarters, with both ends on it', async () => {
     const one = await startWindow()
 
-    expect(rows(one, INTERFACE_SCALE).map((row) => row.title)).toStrictEqual(TENTHS)
+    expect(rows(one, COMMAND.chooseInterfaceSize).map((row) => row.title)).toStrictEqual(TENTHS)
     // The far end of this one falls between two steps, and is offered there.
-    expect(rows(one, TEXT_SCALE).map((row) => row.title)).toStrictEqual([
+    expect(rows(one, COMMAND.chooseTextSize).map((row) => row.title)).toStrictEqual([
       ...TENTHS.slice(0, 10),
       '175%',
     ])
@@ -410,12 +410,12 @@ describe('the sizes the two steps offer', () => {
   it('draws each in a group of its own, named for what that size moves', async () => {
     const one = await startWindow()
 
-    expect(one.appearance.getSizeGroups(INTERFACE_SCALE).map((group) => group.title)).toStrictEqual(
-      [words.drawing],
-    )
-    expect(one.appearance.getSizeGroups(TEXT_SCALE).map((group) => group.title)).toStrictEqual([
-      words.setting,
-    ])
+    expect(
+      one.appearance.getSizeGroups(COMMAND.chooseInterfaceSize).map((group) => group.title),
+    ).toStrictEqual([words.drawing])
+    expect(
+      one.appearance.getSizeGroups(COMMAND.chooseTextSize).map((group) => group.title),
+    ).toStrictEqual([words.setting])
   })
 
   it('offers nothing at all until the application has returned how far a size goes', async () => {
@@ -423,8 +423,8 @@ describe('the sizes the two steps offer', () => {
       bounds: { interfaceScale: { min: 0, max: 0 }, textScale: NARROW },
     })
 
-    expect(rows(one, INTERFACE_SCALE)).toStrictEqual([])
-    expect(rows(one, TEXT_SCALE).map((row) => row.title)).toStrictEqual([
+    expect(rows(one, COMMAND.chooseInterfaceSize)).toStrictEqual([])
+    expect(rows(one, COMMAND.chooseTextSize).map((row) => row.title)).toStrictEqual([
       '100%',
       '110%',
       '120%',
@@ -437,7 +437,7 @@ describe('the sizes the two steps offer', () => {
   it('says on one row that it is the size now, and says nothing on any other', async () => {
     const one = await startWindow({ sizes: { interfaceScale: 1.5, textScale: 1 } })
 
-    expect(rows(one, INTERFACE_SCALE).map((row) => row.detail)).toStrictEqual(
+    expect(rows(one, COMMAND.chooseInterfaceSize).map((row) => row.detail)).toStrictEqual(
       TENTHS.map((title) => (title === '150%' ? words.current : undefined)),
     )
   })
@@ -445,9 +445,9 @@ describe('the sizes the two steps offer', () => {
   it('holds the size the window is drawn at, wherever between the steps it falls', async () => {
     const one = await startWindow({ sizes: { interfaceScale: 1.17, textScale: 1 } })
 
-    const rung = rows(one, INTERFACE_SCALE).find((row) => row.detail === words.current)
+    const rung = rows(one, COMMAND.chooseInterfaceSize).find((row) => row.detail === words.current)
     expect(rung?.title).toBe('117%')
-    expect(rows(one, INTERFACE_SCALE).map((row) => row.title)).toStrictEqual([
+    expect(rows(one, COMMAND.chooseInterfaceSize).map((row) => row.title)).toStrictEqual([
       ...TENTHS.slice(0, 4),
       '117%',
       ...TENTHS.slice(4),
@@ -460,9 +460,9 @@ describe('the sizes the two steps offer', () => {
     const getHundredDetail = (command: string) =>
       rows(one, command).find((row) => row.title === '100%')?.detail
 
-    expect(getHundredDetail(INTERFACE_SCALE)).toBeUndefined()
+    expect(getHundredDetail(COMMAND.chooseInterfaceSize)).toBeUndefined()
     // The reading text is set at 100%, so on its list that row is the one.
-    expect(getHundredDetail(TEXT_SCALE)).toBe(words.current)
+    expect(getHundredDetail(COMMAND.chooseTextSize)).toBe(words.current)
   })
 })
 
@@ -473,20 +473,21 @@ describe('the number a person types at a size', () => {
   it('remains as a row of its own, in its place between the steps', async () => {
     const one = await startWindow()
 
-    expect(rows(one, INTERFACE_SCALE, '137').map((row) => row.title)).toStrictEqual([
+    expect(rows(one, COMMAND.chooseInterfaceSize, '137').map((row) => row.title)).toStrictEqual([
       ...TENTHS.slice(0, 6),
       '137%',
       ...TENTHS.slice(6),
     ])
-    expect(rows(one, INTERFACE_SCALE, '137').find((row) => row.title === '137%')?.id).toBe(
-      'interfaceScale:1.37',
-    )
+    expect(
+      rows(one, COMMAND.chooseInterfaceSize, '137').find((row) => row.title === '137%')?.id,
+    ).toBe('interfaceScale:1.37')
   })
 
   it('is taken with the sign a person reads on the rows, and with none', async () => {
     const one = await startWindow()
 
-    const getTitles = (text: string) => rows(one, INTERFACE_SCALE, text).map((row) => row.title)
+    const getTitles = (text: string) =>
+      rows(one, COMMAND.chooseInterfaceSize, text).map((row) => row.title)
     expect(getTitles('137%')).toStrictEqual(getTitles('137'))
     expect(getTitles(' 137 ')).toStrictEqual(getTitles('137'))
   })
@@ -494,21 +495,29 @@ describe('the number a person types at a size', () => {
   it('is not offered at all where the range does not reach it', async () => {
     const one = await startWindow()
 
-    expect(rows(one, INTERFACE_SCALE, '250').map((row) => row.title)).toStrictEqual(TENTHS)
-    expect(rows(one, TEXT_SCALE, '190').map((row) => row.title)).not.toContain('190%')
+    expect(rows(one, COMMAND.chooseInterfaceSize, '250').map((row) => row.title)).toStrictEqual(
+      TENTHS,
+    )
+    expect(rows(one, COMMAND.chooseTextSize, '190').map((row) => row.title)).not.toContain('190%')
   })
 
   it('is not offered twice where the list already holds that size', async () => {
     const one = await startWindow()
 
-    expect(rows(one, INTERFACE_SCALE, '150').map((row) => row.title)).toStrictEqual(TENTHS)
+    expect(rows(one, COMMAND.chooseInterfaceSize, '150').map((row) => row.title)).toStrictEqual(
+      TENTHS,
+    )
   })
 
   it('is nothing at all where what was typed is not a whole number', async () => {
     const one = await startWindow()
 
-    expect(rows(one, INTERFACE_SCALE, 'large').map((row) => row.title)).toStrictEqual(TENTHS)
-    expect(rows(one, INTERFACE_SCALE, '1.37').map((row) => row.title)).toStrictEqual(TENTHS)
+    expect(rows(one, COMMAND.chooseInterfaceSize, 'large').map((row) => row.title)).toStrictEqual(
+      TENTHS,
+    )
+    expect(rows(one, COMMAND.chooseInterfaceSize, '1.37').map((row) => row.title)).toStrictEqual(
+      TENTHS,
+    )
   })
 
   it('is drawn and written like any other row', async () => {

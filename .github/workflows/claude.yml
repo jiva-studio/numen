@@ -10,6 +10,8 @@ on:
   pull_request_review:
     types: [submitted]
 
+permissions: {}
+
 jobs:
   claude:
     # Only users with write access start a run; the action checks the same again.

@@ -28,7 +28,7 @@ describe('getFileMenu', () => {
     request.getFileMenu.mockResolvedValue({
       entries: [
         wire('proofread', 'ocr/k', 'Proofread', 'spell-check'),
-        wire('delete-proofreading', 'fix/k', 'Delete proofreading'),
+        wire('proofreading.delete', 'fix/k', 'Delete proofreading'),
       ],
     })
 
@@ -47,7 +47,7 @@ describe('getFileMenu', () => {
       {
         pluginId: 'fix',
         pluginName: 'Fix',
-        command: 'delete-proofreading',
+        command: 'proofreading.delete',
         title: 'Delete proofreading',
         icon: '',
         versionId: 'fix/k',

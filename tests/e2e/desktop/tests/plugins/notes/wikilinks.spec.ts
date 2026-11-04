@@ -28,11 +28,11 @@ test.describe('Note Creation and Wikilinks', () => {
     for (const one of madeNotes.splice(0)) await destroyNote(request, one)
   })
 
-  test('makes a note on disk with New note and opens it in front', async ({ page, request }) => {
+  test('makes a note on disk with Create note and opens it in front', async ({ page, request }) => {
     const title = createUniqueTitle('Quantum')
     await openWorkspace(page)
 
-    await runPaletteCommand(page, 'New note', 'New note')
+    await runPaletteCommand(page, 'Create note', 'Create note')
     await expect(page.locator('[data-palette="crumb"]')).toBeVisible()
     await getPaletteField(page).fill(title)
     await expect(page.getByRole('option', { selected: true })).toContainText(title)

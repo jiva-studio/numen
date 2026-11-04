@@ -24,39 +24,50 @@ import {
 } from './noteHandlers'
 import { addVault, renameVault, removeVault, showVault } from './vaults'
 import { SETTINGS } from '@/entities/tab'
+import { COMMAND } from '@/shared/commandIds'
 
 /** What each command evaluates to. A command with no entry here does nothing. */
 const HANDLERS: Record<string, CommandHandler> = {
-  read: (invocation, on) => on.notes.openFile(invocation.path, invocation.title, 'current'),
-  beside: (invocation, on) => on.notes.openFile(invocation.path, invocation.title, 'split'),
-  child: (invocation, on, words) => createNoteCommand(invocation, on, { relation: 'child', words }),
-  parent: (invocation, on, words) =>
+  [COMMAND.openNote]: (invocation, on) =>
+    on.notes.openFile(invocation.path, invocation.title, 'current'),
+  [COMMAND.openNoteBeside]: (invocation, on) =>
+    on.notes.openFile(invocation.path, invocation.title, 'split'),
+  [COMMAND.createChildNote]: (invocation, on, words) =>
+    createNoteCommand(invocation, on, { relation: 'child', words }),
+  [COMMAND.createParentNote]: (invocation, on, words) =>
     createNoteCommand(invocation, on, { relation: 'parent', words }),
-  jump: (invocation, on, words) => createNoteCommand(invocation, on, { relation: 'jump', words }),
-  note: (invocation, on, words) => createNoteCommand(invocation, on, { relation: null, words }),
-  title: (invocation, on, words) => renameNoteCommand(invocation, on, words),
-  remove: (invocation, on, words) => removeFiles(invocation, on, { isPermanent: false, words }),
-  destroy: (invocation, on, words) => removeFiles(invocation, on, { isPermanent: true, words }),
-  copy: (invocation, on) => on.copyPath(invocation.path),
-  settings: (_, on) => on.navigator.openTab(SETTINGS),
-  move: (invocation, on, words) => moveFileCommand(invocation, on, words),
-  createFolder: (invocation, on, words) => createFolderCommand(invocation, on, words),
-  close: (invocation, on) => on.navigator.closeTab(invocation.tab),
-  find: (_, on) => on.navigator.search(),
-  appearance: (invocation, on) => on.settings.chooseAppearance(invocation.name),
-  mode: (invocation, on) => on.settings.chooseAppearance(invocation.name),
-  interfaceScale: (invocation, on) => on.settings.chooseAppearance(invocation.name),
-  textScale: (invocation, on) => on.settings.chooseAppearance(invocation.name),
-  syncing: (invocation, on) => on.settings.chooseSync(invocation.name),
-  performanceProfile: (invocation, on) => on.settings.choosePerformance(invocation.name),
-  first: (_, on, words) => navigateToPath(on.navigator.getOpeningNote(), on, words),
-  goto: (invocation, on, words) => navigateToPath(invocation.path, on, words),
-  openVault: (invocation, on, words) => showVault(invocation.vault.id, on, words),
-  newVault: (_, on, words) => addVault(on, words),
-  renameVault: (invocation, on, words) => renameVault(invocation, on, words),
-  removeVault: (invocation, on, words) =>
+  [COMMAND.createJumpNote]: (invocation, on, words) =>
+    createNoteCommand(invocation, on, { relation: 'jump', words }),
+  [COMMAND.createNote]: (invocation, on, words) =>
+    createNoteCommand(invocation, on, { relation: null, words }),
+  [COMMAND.renameNote]: (invocation, on, words) => renameNoteCommand(invocation, on, words),
+  [COMMAND.trashNote]: (invocation, on, words) =>
+    removeFiles(invocation, on, { isPermanent: false, words }),
+  [COMMAND.deleteNote]: (invocation, on, words) =>
+    removeFiles(invocation, on, { isPermanent: true, words }),
+  [COMMAND.copyNotePath]: (invocation, on) => on.copyPath(invocation.path),
+  [COMMAND.openSettings]: (_, on) => on.navigator.openTab(SETTINGS),
+  [COMMAND.moveFile]: (invocation, on, words) => moveFileCommand(invocation, on, words),
+  [COMMAND.createFolder]: (invocation, on, words) => createFolderCommand(invocation, on, words),
+  [COMMAND.closeTab]: (invocation, on) => on.navigator.closeTab(invocation.tab),
+  [COMMAND.searchVault]: (_, on) => on.navigator.search(),
+  [COMMAND.chooseTheme]: (invocation, on) => on.settings.chooseAppearance(invocation.name),
+  [COMMAND.chooseMode]: (invocation, on) => on.settings.chooseAppearance(invocation.name),
+  [COMMAND.chooseInterfaceSize]: (invocation, on) => on.settings.chooseAppearance(invocation.name),
+  [COMMAND.chooseTextSize]: (invocation, on) => on.settings.chooseAppearance(invocation.name),
+  [COMMAND.chooseTitleSync]: (invocation, on) => on.settings.chooseSync(invocation.name),
+  [COMMAND.choosePerformanceProfile]: (invocation, on) =>
+    on.settings.choosePerformance(invocation.name),
+  [COMMAND.goToStartNote]: (_, on, words) =>
+    navigateToPath(on.navigator.getOpeningNote(), on, words),
+  [COMMAND.goToNote]: (invocation, on, words) => navigateToPath(invocation.path, on, words),
+  [COMMAND.openVault]: (invocation, on, words) => showVault(invocation.vault.id, on, words),
+  [COMMAND.createVault]: (_, on, words) => addVault(on, words),
+  [COMMAND.renameVault]: (invocation, on, words) => renameVault(invocation, on, words),
+  [COMMAND.removeVault]: (invocation, on, words) =>
     removeVault(invocation, on, { shouldErase: false, words }),
-  eraseVault: (invocation, on, words) => removeVault(invocation, on, { shouldErase: true, words }),
+  [COMMAND.eraseVault]: (invocation, on, words) =>
+    removeVault(invocation, on, { shouldErase: true, words }),
 }
 
 const commandRegistry = new Map<string, CommandHandler>()

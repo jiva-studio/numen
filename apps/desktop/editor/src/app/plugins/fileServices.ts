@@ -23,6 +23,7 @@ import {
   type PathContribution,
 } from '@/features/command-palette'
 import type { NoteCreator } from '@/entities/note'
+import { COMMAND } from '@/shared/commandIds'
 import { WORDS as words } from '@/shared/words'
 import { findIcon } from '@/shared/icons'
 import type { MessageWriter } from '@/shared/notices/messages'
@@ -114,8 +115,8 @@ export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
     runInvocation(createInvocation(id, target, name), commandDeps(), ANSWER_WORDS)
   return {
     list: (folder) => core.list(folder),
-    move: (from, to) => run('move', { ...getTarget(), path: from }, to),
-    createFolder: (path) => run('createFolder', getTarget(), path),
+    move: (from, to) => run(COMMAND.moveFile, { ...getTarget(), path: from }, to),
+    createFolder: (path) => run(COMMAND.createFolder, getTarget(), path),
     createNote: (folder) => making.createUntitled(folder),
   }
 }
@@ -202,8 +203,8 @@ export function createPathCommandHost(
       })
     },
     getCommandIcon: (id) =>
-      findIcon(id) ??
       ((getContextMenuIcon?.(id) ?? getPluginCommandIcon?.(id)) as Component | undefined) ??
+      findIcon(id) ??
       null,
     getEntryIcon: (entry, isOpen) => getEntryIcon(entry, isOpen, deps.findFileIcon),
   }
