@@ -45,7 +45,7 @@ export interface TabDragOptions {
   readonly getClock: () => Clock
   /** Returns the viewport size. A pointerup outside the viewport tears off the tab. */
   readonly getViewport?: () => Size
-  /** Called when a tab is dragged and released outside of any workspace drop target. */
+  /** Called on pointerup outside the viewport after a tab drag. */
   readonly onTearOff?: ((tab: TabId, pos: Position) => void) | undefined
 }
 
@@ -82,7 +82,7 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
     commit: (item, target, point) => {
       if (target) {
         land(item, target)
-      } else if (options.onTearOff) {
+      } else if (options.onTearOff && !isInsideViewport(point, getViewport())) {
         options.onTearOff(item.tab, getScreenPosition(point))
       }
     },

@@ -193,7 +193,7 @@ describe('the strip under a keyboard', () => {
 })
 
 describe('a tab dragged out of the workspace', () => {
-  it('emits tear-off when released outside any drop target', async () => {
+  it('emits tear-off on pointerup outside the viewport', async () => {
     const target = mountWorkspace()
     const tab = target.find('[data-workspace-tab="plex"]')
     tab.element.dispatchEvent(
@@ -202,9 +202,11 @@ describe('a tab dragged out of the workspace', () => {
     window.dispatchEvent(
       new PointerEvent('pointermove', { clientX: 10, clientY: 10, bubbles: true }),
     )
-    window.dispatchEvent(new PointerEvent('pointerup', { clientX: 10, clientY: 10, bubbles: true }))
+    window.dispatchEvent(
+      new PointerEvent('pointerup', { clientX: -10, clientY: 10, bubbles: true }),
+    )
 
-    expect(target.emitted('tear-off')).toStrictEqual([['plex', { x: 10, y: 10 }]])
+    expect(target.emitted('tear-off')).toStrictEqual([['plex', { x: -10, y: 10 }]])
   })
 })
 

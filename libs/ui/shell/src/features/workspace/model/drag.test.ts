@@ -363,7 +363,18 @@ describe('letting go of a tab', () => {
     expect(workspace.value).toBe(before)
   })
 
-  it('reports a tab let go over no drop target to onTearOff with screen offset', () => {
+  it('does not tear off the tab on pointerup inside the viewport outside the frame', () => {
+    const tearOffs: string[] = []
+    const { workspace, dragTo, release } = start({ onTearOff: (tab) => tearOffs.push(tab) })
+    const before = workspace.value
+    dragTo('plex', [350, 300], [20, 300])
+    release(20, 300)
+
+    expect(workspace.value).toBe(before)
+    expect(tearOffs).toStrictEqual([])
+  })
+
+  it('passes the pointerup position in screen coordinates to onTearOff', () => {
     let divided: { tab: string; at: { x: number; y: number } } | null = null
     const originalScreenX = window.screenX
     const originalScreenY = window.screenY
@@ -376,9 +387,9 @@ describe('letting go of a tab', () => {
       },
     })
     dragTo('plex', [350, 300], [20, 300])
-    release(20, 300)
+    release(-20, 300)
 
-    expect(divided).toStrictEqual({ tab: 'plex', at: { x: 120, y: 350 } })
+    expect(divided).toStrictEqual({ tab: 'plex', at: { x: 80, y: 350 } })
 
     Object.defineProperty(window, 'screenX', { value: originalScreenX, configurable: true })
     Object.defineProperty(window, 'screenY', { value: originalScreenY, configurable: true })
