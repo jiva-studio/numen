@@ -7,10 +7,11 @@
 import type { Component } from 'vue'
 import '@numen/ui/styles.css'
 import '@numen/shell/styles.css'
-import { Palette } from '@numen/shell'
+import { Palette, TitleBar } from '@numen/shell'
 import { WORDS } from '@/shared/words'
 import VaultChooser from './VaultChooser.vue'
 import { useShell, type ShellDeps } from './useShell'
+import { useWindowFrame } from './useWindowFrame'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -20,10 +21,20 @@ const props = defineProps<{
 
 /* --------------------------------- State ---------------------------------- */
 const { front, tab, openTab, vaults, plugins, mountView, appearance } = useShell(props.deps)
+const frame = useWindowFrame()
 </script>
 
 <template>
   <link v-if="plugins.style.value" rel="stylesheet" :href="plugins.style.value" />
+  <TitleBar
+    :app-name="WORDS.appName"
+    :vault-name="WORDS.windowName"
+    :controls="frame.controls.value"
+    :is-maximised="frame.isMaximised.value"
+    @minimise="frame.minimise"
+    @toggle-maximise="frame.toggleMaximise"
+    @close="frame.close"
+  />
   <main class="window">
     <component
       :is="tab.view.registration.component as Component"
@@ -62,7 +73,8 @@ const { front, tab, openTab, vaults, plugins, mountView, appearance } = useShell
 .window {
   display: flex;
   flex-direction: column;
-  block-size: 100vh;
+  block-size: calc(100vh - 2rem);
+  box-sizing: border-box;
   padding: var(--numen-inset-wide);
   gap: var(--numen-inset);
 }

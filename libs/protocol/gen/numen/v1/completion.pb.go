@@ -349,10 +349,10 @@ const file_numen_v1_completion_proto_rawDesc = "" +
 	"\x1bHostServiceCompleteResponse\x122\n" +
 	"\x06answer\x18\x01 \x01(\v2\x1a.numen.v1.CompletionAnswerR\x06answer\x123\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x1d.numen.v1.CompletionErrorCodeR\x05error\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail\"t\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"g\n" +
 	"\x12CompletionQuestion\x127\n" +
 	"\bmessages\x18\x01 \x03(\v2\x1b.numen.v1.CompletionMessageR\bmessages\x12\x18\n" +
-	"\apurpose\x18\x02 \x01(\tR\apurposeJ\x04\b\x03\x10\x04R\x05hints\";\n" +
+	"\apurpose\x18\x02 \x01(\tR\apurpose\";\n" +
 	"\x11CompletionMessage\x12\x12\n" +
 	"\x04role\x18\x01 \x01(\tR\x04role\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\"&\n" +

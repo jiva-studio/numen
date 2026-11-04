@@ -1346,7 +1346,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"C\n" +
 	"\x11ConfigureResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"\x93\x04\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\"\x82\x04\n" +
 	"\rPluginSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -1367,7 +1367,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\bmultiple\x18\x10 \x01(\bR\bmultipleB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
-	"\x05_stepJ\x04\b\v\x10\fR\tmodels_of\"Y\n" +
+	"\x05_step\"Y\n" +
 	"\x13PluginSettingOption\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
@@ -1387,7 +1387,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x124\n" +
-	"\x04when\x18\x04 \x01(\v2 .numen.v1.PluginSettingConditionR\x04when\"\xd9\x04\n" +
+	"\x04when\x18\x04 \x01(\v2 .numen.v1.PluginSettingConditionR\x04when\"\xcb\x04\n" +
 	"\n" +
 	"PluginInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -1406,10 +1406,10 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\areaders\x18\x0f \x03(\v2\x16.numen.v1.PluginReaderR\areaders\x12C\n" +
 	"\x0esettings_views\x18\x10 \x03(\v2\x1c.numen.v1.PluginSettingsViewR\rsettingsViews\x12\x1f\n" +
 	"\vhas_backend\x18\x11 \x01(\bR\n" +
-	"hasBackendJ\x04\b\v\x10\fR\x06models\"G\n" +
+	"hasBackend\":\n" +
 	"\x12PluginSettingsView\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05titleJ\x04\b\x03\x10\x04R\x05after\">\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\">\n" +
 	"\fPluginReader\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1e\n" +
 	"\n" +

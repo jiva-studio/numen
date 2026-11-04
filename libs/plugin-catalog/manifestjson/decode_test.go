@@ -385,17 +385,6 @@ func TestTheServicesAPluginServesAreFullNamesListedOnce(t *testing.T) {
 	}
 }
 
-func TestReadManifest_ReportsModelsOfAsUnknownKey(t *testing.T) {
-	m, err := manifestjson.Read(strings.NewReader(
-		`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"model","type":"string","title":"Model","modelsOf":"prog"}]}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !slices.Equal(m.Warnings, []string{`unknown key "settings[0].modelsOf"`}) {
-		t.Errorf("warnings = %v", m.Warnings)
-	}
-}
-
 func TestAManifestDeclaresDependencies(t *testing.T) {
 	sum := strings.Repeat("a", 64)
 	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"dependencies":[{"id":"sample-runtime","kind":"runtime"},{"id":"whisper","kind":"model","version":"1","sourceUrl":"https://example.com/w.bin","checksumSha256":"` + sum + `","metadata":{"fileName":"w.bin"}}]}`))

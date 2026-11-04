@@ -72,8 +72,6 @@ message GetSettingsResponse {
 
   // Active plugins and their declarative settings schema.
   repeated PluginInfo plugins = 7;
-
-  reserved 4, 5, 6;
 }
 
 // Model is one model a setting that names a model can be set to.

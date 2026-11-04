@@ -3038,12 +3038,11 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\arelated\x18\x02 \x03(\v2\x13.numen.v1.NeighbourR\arelated\x12\x1d\n" +
 	"\n" +
 	"focus_type\x18\x03 \x01(\tR\tfocusType\x126\n" +
-	"\vconnections\x18\x04 \x03(\v2\x14.numen.v1.ConnectionR\vconnections\"\x97\x01\n" +
+	"\vconnections\x18\x04 \x03(\v2\x14.numen.v1.ConnectionR\vconnections\"s\n" +
 	"\tNeighbour\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x12.\n" +
 	"\brelation\x18\x02 \x01(\x0e2\x12.numen.v1.RelationR\brelation\x12\x12\n" +
-	"\x04type\x18\x06 \x01(\tR\x04typeJ\x04\b\x03\x10\x04J\x04\b\x04\x10\x05J\x04\b\x05\x10\x06J\x04\b\a\x10\bJ\x04\b\b\x10\tJ\x04\b\t\x10\n" +
-	"\"q\n" +
+	"\x04type\x18\x06 \x01(\tR\x04type\"q\n" +
 	"\x17ResolveAddressesRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x18\n" +
 	"\awritten\x18\x02 \x03(\tR\awritten\x12\x12\n" +

@@ -49,8 +49,6 @@ message PluginSetting {
   optional double min = 8;
   optional double max = 9;
   optional double step = 10;
-  reserved 11;
-  reserved "models_of";
   // The options of an enum setting under each value of another setting. The first of a list is the
   // default under that value.
   PluginSettingOptionsBy options_by = 12;
@@ -116,8 +114,6 @@ message PluginInfo {
   repeated PluginSecret secrets = 9;
   // The names of the secrets that have a key stored. A key never travels here.
   repeated string stored_secrets = 10;
-  reserved 11;
-  reserved "models";
   // Set while the host suspends the plugin after it failed to start.
   PluginFailure failure = 13;
   // Whether the plugin declares a frontend bundle a window loads.
@@ -132,9 +128,6 @@ message PluginInfo {
 
 // PluginSettingsView is a component of a plugin's frontend drawn among its settings.
 message PluginSettingsView {
-  reserved 3;
-  reserved "after";
-
   // The id the frontend registers the component under.
   string id = 1;
 
