@@ -186,6 +186,7 @@ describe('tab move requests', () => {
     request.moveTab.mockResolvedValueOnce({ error: 1 })
     request.moveTab.mockResolvedValueOnce({ error: 2 })
     request.moveTab.mockResolvedValueOnce({ error: 3 })
+    request.moveTab.mockResolvedValueOnce({ error: 4 })
 
     expect(await tabLinksCore.moveTab('window-a', 'window-b', ORBITS)).toStrictEqual({
       ok: true,
@@ -202,6 +203,10 @@ describe('tab move requests', () => {
     expect(await tabLinksCore.moveTab('window-a', 'window-b', ORBITS)).toStrictEqual({
       ok: false,
       error: 'not-owner',
+    })
+    expect(await tabLinksCore.moveTab('window-a', 'window-b', ORBITS)).toStrictEqual({
+      ok: false,
+      error: 'cancelled',
     })
     expect(request.moveTab).toHaveBeenCalledWith({
       windowId: 'window-a',

@@ -54,6 +54,9 @@ const (
 	MoveErrorTimeout
 	// MoveErrorNotOwner is a source window that does not own the tab.
 	MoveErrorNotOwner
+	// MoveErrorCancelled is a move that a newer move or detach of the tab, a
+	// cancel, or another window that took the tab ended.
+	MoveErrorCancelled
 )
 
 // move is one pending move of a tab.
@@ -67,7 +70,7 @@ type move struct {
 // Move sends a tab to another window and returns a channel that receives the
 // result once. The source window owns the tab until the target window calls
 // Accept. It ends a pending move or detach of the same tab with
-// MoveErrorTimeout. A known tab moves only from the window that owns it.
+// MoveErrorCancelled. A known tab moves only from the window that owns it.
 func (r *Registry) Move(sourceWindowID, targetWindowID string, tab MovedTab) <-chan MoveError {
 	result := make(chan MoveError, 1)
 	r.mu.Lock()
@@ -80,7 +83,7 @@ func (r *Registry) Move(sourceWindowID, targetWindowID string, tab MovedTab) <-c
 		result <- MoveErrorNotOwner
 		return result
 	}
-	r.endTransfers(tab.ID, MoveErrorTimeout)
+	r.endTransfers(tab.ID, MoveErrorCancelled)
 	pending := &move{id: r.createMoveID(), targetWindowID: targetWindowID, result: result}
 	r.pendingMoves[tab.ID] = pending
 	pending.cancel = r.schedule(MoveTimeout, func() { r.expireMove(tab.ID, pending) })
@@ -137,12 +140,12 @@ func (r *Registry) recordAcceptedMove(moveID, windowID string) {
 }
 
 // CancelMove ends the pending move that result belongs to with
-// MoveErrorTimeout. A move that already ended is left as it is.
+// MoveErrorCancelled. A move that already ended is left as it is.
 func (r *Registry) CancelMove(tabID string, result <-chan MoveError) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if pending, ok := r.pendingMoves[tabID]; ok && (<-chan MoveError)(pending.result) == result {
-		r.endMove(tabID, pending, MoveErrorTimeout)
+		r.endMove(tabID, pending, MoveErrorCancelled)
 	}
 }
 

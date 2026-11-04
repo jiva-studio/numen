@@ -345,7 +345,7 @@ func (r *Registry) setOwner(windowID string, tab Tab) {
 		return
 	}
 	if pending, ok := r.pendingDetaches[tab.ID]; ok {
-		outcome := MoveErrorTimeout
+		outcome := MoveErrorCancelled
 		if pending.windowID == windowID {
 			// The window that read the detach still calls Accept.
 			outcome = MoveErrorNone
@@ -404,12 +404,12 @@ func (r *Registry) Unlink(tabID string) {
 // moves to a new window. It returns a channel that receives the result once:
 // MoveErrorNone when the window that read the tab calls Accept. A tab that no
 // window reports within the grace period is dropped and unlinked. It ends a
-// pending move or detach of the same tab with MoveErrorTimeout.
+// pending move or detach of the same tab with MoveErrorCancelled.
 func (r *Registry) Detach(tab MovedTab) <-chan MoveError {
 	result := make(chan MoveError, 1)
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.endTransfers(tab.ID, MoveErrorTimeout)
+	r.endTransfers(tab.ID, MoveErrorCancelled)
 	pending := &detach{id: r.createMoveID(), tab: tab, result: result}
 	r.pendingDetaches[tab.ID] = pending
 	pending.cancel = r.schedule(r.grace, func() { r.expireDetach(tab.ID, pending) })
@@ -487,7 +487,7 @@ func (r *Registry) CancelDetach(tabID string) {
 	if !ok {
 		return
 	}
-	r.endDetach(tabID, pending, MoveErrorTimeout)
+	r.endDetach(tabID, pending, MoveErrorCancelled)
 	r.dropUnreportedTab(tabID)
 }
 

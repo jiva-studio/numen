@@ -262,9 +262,13 @@ func TestReadDetachedReturnsTheTabUntilTheGracePeriodEnds(t *testing.T) {
 
 func TestCancelDetachDropsTheStoredTab(t *testing.T) {
 	r, _ := newTestRegistry(t)
-	r.Detach(newOrbits())
+	result := r.Detach(newOrbits())
 
 	r.CancelDetach("plex:2")
+
+	if got := readOutcome(t, result); got != MoveErrorCancelled {
+		t.Errorf("the detach ended with %v, want cancelled", got)
+	}
 
 	if got, _, ok := r.ReadDetached("window-b", "plex:2"); ok {
 		t.Errorf("ReadDetached returned %+v after CancelDetach", got)
@@ -359,8 +363,8 @@ func TestAcceptOfAnOlderMoveDoesNotCompleteTheNewerMove(t *testing.T) {
 	if got := r.Accept("window-b", "plex:2", firstID); got != MoveErrorTimeout {
 		t.Errorf("Accept of the older move returned %v, want timeout", got)
 	}
-	if got := readOutcome(t, first); got != MoveErrorTimeout {
-		t.Errorf("the older move ended with %v, want timeout", got)
+	if got := readOutcome(t, first); got != MoveErrorCancelled {
+		t.Errorf("the older move ended with %v, want cancelled", got)
 	}
 	if got := r.Accept("window-b", "plex:2", getMoveID(r, "plex:2")); got != MoveErrorNone {
 		t.Errorf("Accept of the newer move returned %v, want none", got)
@@ -399,8 +403,8 @@ func TestCancelMoveRejectsALaterAccept(t *testing.T) {
 
 	r.CancelMove("plex:2", result)
 
-	if got := readOutcome(t, result); got != MoveErrorTimeout {
-		t.Errorf("the canceled move ended with %v, want timeout", got)
+	if got := readOutcome(t, result); got != MoveErrorCancelled {
+		t.Errorf("the canceled move ended with %v, want cancelled", got)
 	}
 	if got := r.Accept("window-b", "plex:2", moveID); got != MoveErrorTimeout {
 		t.Errorf("Accept after cancel returned %v, want timeout", got)
@@ -543,10 +547,42 @@ func TestDetachEndsAPendingMoveOfTheSameTab(t *testing.T) {
 
 	r.Detach(newOrbits())
 
-	if got := readOutcome(t, moved); got != MoveErrorTimeout {
-		t.Errorf("the move ended with %v, want timeout", got)
+	if got := readOutcome(t, moved); got != MoveErrorCancelled {
+		t.Errorf("the move ended with %v, want cancelled", got)
 	}
 	if got := r.Accept("window-c", "plex:2", moveID); got == MoveErrorNone {
 		t.Error("window-c accepted a move that the detach ended")
+	}
+}
+
+func TestMoveEndsAPendingDetachOfTheSameTab(t *testing.T) {
+	r, _ := newTestRegistry(t)
+	writeTabs(r, "window-a", []Tab{plex("plex:2", "Orbits")})
+	writeTabs(r, "window-c", nil)
+	detached := r.Detach(newOrbits())
+	detachID := readDetachID(r, "window-b", "plex:2")
+
+	r.Move("window-a", "window-c", newOrbits())
+
+	if got := readOutcome(t, detached); got != MoveErrorCancelled {
+		t.Errorf("the detach ended with %v, want cancelled", got)
+	}
+	if got := r.Accept("window-b", "plex:2", detachID); got == MoveErrorNone {
+		t.Error("window-b accepted a detach that the move ended")
+	}
+}
+
+func TestDetachEndsWithCancelledOnAReportOfAnotherWindow(t *testing.T) {
+	r, _ := newTestRegistry(t)
+	source := r.Watch("window-a")
+	r.WriteTabs(Window{ID: "window-a"}, []Tab{plex("plex:2", "Orbits")})
+	result := r.Detach(newOrbits())
+	readDetachID(r, "window-b", "plex:2")
+
+	source.Close()
+	writeTabs(r, "window-c", []Tab{plex("plex:2", "Orbits")})
+
+	if got := readOutcome(t, result); got != MoveErrorCancelled {
+		t.Errorf("the detach ended with %v, want cancelled", got)
 	}
 }

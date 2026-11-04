@@ -103,6 +103,19 @@ describe('moveTab', () => {
     )
   })
 
+  it('shows the cancelled message when a newer transfer ends the move', async () => {
+    const { core, deps, mover } = setup()
+    core.moveTab.mockResolvedValueOnce({ ok: false, error: 'cancelled' } as never)
+
+    await mover.moveTab(ORBITS_ID, 'window-b')
+
+    expect(deps.closeTab).not.toHaveBeenCalled()
+    expect(deps.writeMessage).toHaveBeenCalledWith(
+      'The tab did not move to the window: a newer move of the tab or a cancel ended this move',
+      'error',
+    )
+  })
+
   it('writes a message when the source tab stays open after the target accepts it', async () => {
     const { deps, mover } = setup()
     deps.closeTab.mockReturnValueOnce(false)

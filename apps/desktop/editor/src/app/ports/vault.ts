@@ -104,7 +104,7 @@ export interface VaultPort {
 }
 
 /** Why a move of a tab to another window did not complete. */
-export type TabMoveError = 'window-closed' | 'timeout' | 'not-owner'
+export type TabMoveError = 'window-closed' | 'timeout' | 'not-owner' | 'cancelled'
 
 /** A tab sent to this window, and the id of the move that AcceptTabMove names. */
 export interface MovedTab {

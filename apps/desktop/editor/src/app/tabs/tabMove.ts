@@ -15,6 +15,7 @@ const MOVE_ERRORS: Record<TabMoveError, string> = {
   'window-closed': 'the target window closed',
   timeout: 'the target window did not accept the tab in time',
   'not-owner': 'another window has this tab',
+  cancelled: 'a newer move of the tab or a cancel ended this move',
 }
 
 export const ASKING_MESSAGE = 'The tab is waiting for an answer and was not moved'

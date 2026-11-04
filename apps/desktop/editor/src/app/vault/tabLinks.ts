@@ -74,6 +74,7 @@ const moveErrors: Record<TabMoveErrorCodeValue, TabMoveError | null> = {
   [TAB_MOVE_ERROR_CODE.WINDOW_CLOSED]: 'window-closed',
   [TAB_MOVE_ERROR_CODE.TIMEOUT]: 'timeout',
   [TAB_MOVE_ERROR_CODE.NOT_OWNER]: 'not-owner',
+  [TAB_MOVE_ERROR_CODE.CANCELLED]: 'cancelled',
 }
 
 export const parseMoveError = (code: TabMoveErrorCodeValue): Result<void, TabMoveError> => {

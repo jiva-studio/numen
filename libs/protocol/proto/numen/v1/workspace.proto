@@ -339,6 +339,10 @@ enum TabMoveErrorCode {
   // TAB_MOVE_ERROR_CODE_NOT_OWNER is a source window that does not own the tab;
   // another window reported it first.
   TAB_MOVE_ERROR_CODE_NOT_OWNER = 3;
+
+  // TAB_MOVE_ERROR_CODE_CANCELLED is a move that a newer move or detach of the
+  // tab, a cancelled request, or another window that took the tab ended.
+  TAB_MOVE_ERROR_CODE_CANCELLED = 4;
 }
 
 message HighlightWindowRequest {

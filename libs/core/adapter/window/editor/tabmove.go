@@ -79,6 +79,8 @@ func convertMoveErrorToWire(outcome tablinks.MoveError) v1.TabMoveErrorCode {
 		return v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_TIMEOUT
 	case tablinks.MoveErrorNotOwner:
 		return v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_NOT_OWNER
+	case tablinks.MoveErrorCancelled:
+		return v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_CANCELLED
 	default:
 		return v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_UNSPECIFIED
 	}
