@@ -100,6 +100,14 @@ function createDrag(
   return { drag, workspace, scope, frame, state, main, dragTo, release, cancel }
 }
 
+/** A side of the window: the last move, inside the edge band, and the release past that side. */
+const OUTSIDE_SIDES: readonly [string, [number, number], [number, number]][] = [
+  ['left', [105, 300], [-1, 300]],
+  ['right', [1095, 300], [1101, 300]],
+  ['top', [350, 55], [350, -1]],
+  ['bottom', [350, 645], [350, 651]],
+]
+
 const getTabs = (workspace: Workspace) => getPanes(workspace.root).map((each) => each.tabs)
 
 let target: ReturnType<typeof createDrag> | null = null
@@ -376,12 +384,7 @@ describe('letting go of a tab', () => {
     Object.defineProperty(window, 'screenY', { value: originalScreenY, configurable: true })
   })
 
-  it.each([
-    ['left', [105, 300], [-1, 300]],
-    ['right', [1095, 300], [1101, 300]],
-    ['top', [350, 55], [350, -1]],
-    ['bottom', [350, 645], [350, 651]],
-  ] as const)(
+  it.each(OUTSIDE_SIDES)(
     'tears it off where it is let go past the %s side of the window, after a move in the edge band',
     (_side, last, end) => {
       const tearOffs: { tab: string; at: { x: number; y: number } }[] = []
