@@ -4,6 +4,7 @@
  * without it (stories, tests) gets a frame that does nothing.
  */
 import { computed, getCurrentScope, onScopeDispose, ref, type Ref } from 'vue'
+import { runInBackground } from '@numen/ui'
 import type { ControlsStyle } from '@numen/shell'
 
 /** The path the window serves its Wails runtime module at. */
@@ -55,6 +56,9 @@ function getControls(system: FrameRuntime['System']): ControlsStyle {
   return system?.IsMac?.() ? 'native-mac' : 'windows'
 }
 
+/** A read of the window state that fails leaves the state as it was. */
+function ignoreFailure(): void {}
+
 export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFrame {
   const platform = ref<ControlsStyle>('windows')
   const isMaximised = ref(false)
@@ -76,13 +80,16 @@ export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFr
     await (await load())?.Window?.Close?.()
   }
 
-  void load().then(async (loaded) => {
-    platform.value = getControls(loaded?.System)
-    await readMaximised()
-  })
+  runInBackground(
+    load().then(async (loaded) => {
+      platform.value = getControls(loaded?.System)
+      await readMaximised()
+    }),
+    ignoreFailure,
+  )
 
   // A resize is how a window gets maximised or restored by the system, not only by the button.
-  const onResize = () => void readMaximised()
+  const onResize = () => runInBackground(readMaximised(), ignoreFailure)
   globalThis.addEventListener('resize', onResize)
   if (getCurrentScope()) onScopeDispose(() => globalThis.removeEventListener('resize', onResize))
 
