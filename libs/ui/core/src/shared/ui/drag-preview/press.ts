@@ -28,13 +28,13 @@ export interface Press<Item, At> {
   /** Where letting go here would put what is held. */
   readonly getDropTargetAt: (item: Item, point: Position) => At | null
   /**
-   * What letting go after a drag evaluates to. The target is the one at the point of
-   * release, in window coordinates, and nothing off any target.
+   * Called on pointerup after a drag. `target` is the drop target at the pointerup position,
+   * or null outside every target; `point` is that position in viewport coordinates.
    */
   readonly commit: (item: Item, target: At | null, point: Position) => void
   /** Called once, when the press becomes a drag. */
   readonly begin?: (item: Item) => void
-  /** Called in place of `commit` when the system cancels a drag. */
+  /** Called on pointercancel. `commit` is not called then. */
   readonly cancel?: (item: Item) => void
 }
 
@@ -47,7 +47,7 @@ export interface PressDragState<Item, At> {
   readonly lift: (item: Item, event: PointerEvent) => void
 }
 
-/** The element that holds the pointer for the length of a press. */
+/** The element that captured the pointer, and the pointer id. */
 interface Capture {
   readonly element: Element
   readonly pointer: number
@@ -112,15 +112,15 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
     })
   }
 
-  // WebKit keeps sending a captured pointer's events after it leaves the page; without
-  // capture the release outside the window may never arrive.
+  // WebKit delivers events of a captured pointer outside the page. Without capture, a
+  // pointerup outside the window can be lost.
   function takeCapture(event: PointerEvent): void {
     const element = event.currentTarget ?? event.target
     if (!(element instanceof Element)) return
     try {
       element.setPointerCapture(event.pointerId)
     } catch {
-      // Thrown for a pointer that is not active, such as the pointer of a synthetic event.
+      // setPointerCapture throws for an inactive pointer, e.g. one from a synthetic event.
       return
     }
     capture = { element, pointer: event.pointerId }

@@ -30,7 +30,7 @@ const getTab = (id: string): Tab | undefined => {
 
 /**
  * A workspace drawn in a frame at (100, 50), 1000 by 600, in a window 1100 by 650. The right and
- * bottom sides of the frame are those of the window. `main` is the left half and holds one
+ * bottom sides of the frame coincide with the viewport. `main` is the left half and holds one
  * tab; `aside` is the right half and holds two. A strip is the top 30 of a pane.
  */
 function createDrag(
@@ -100,7 +100,7 @@ function createDrag(
   return { drag, workspace, scope, frame, state, main, dragTo, release, cancel }
 }
 
-/** A side of the window: the last move, inside the edge band, and the release on the first point past that side. */
+/** Per viewport side: the last pointermove position (inside the edge band) and the pointerup position (first pixel outside). */
 const OUTSIDE_SIDES: readonly [string, [number, number], [number, number]][] = [
   ['left', [105, 300], [-1, 300]],
   ['right', [1095, 300], [1100, 300]],
@@ -199,7 +199,7 @@ describe('a tab being dragged', () => {
     expect(drag.overlay.value).toStrictEqual({ x: 700, y: 0, width: 0, height: 30 })
   })
 
-  it('lands anywhere in the frame, up to its last pixels inside the window', () => {
+  it('returns a drop target for every point of the frame inside the viewport', () => {
     const { drag, dragTo } = start()
 
     for (const [x, y] of [
@@ -385,7 +385,7 @@ describe('letting go of a tab', () => {
   })
 
   it.each(OUTSIDE_SIDES)(
-    'tears it off where it is let go past the %s side of the window, after a move in the edge band',
+    'tears off the tab on pointerup past the %s side of the viewport after a move in the edge band',
     (_side, last, end) => {
       const tearOffs: { tab: string; at: { x: number; y: number } }[] = []
       const { workspace, drag, dragTo, release } = start({
@@ -404,7 +404,7 @@ describe('letting go of a tab', () => {
     },
   )
 
-  it('tears it off where it is let go outside the window, over a pane drawn past its side', () => {
+  it('tears off the tab on pointerup outside the viewport over a pane that extends past it', () => {
     const tearOffs: string[] = []
     const { workspace, dragTo, release } = start({
       viewport: { width: 1000, height: 600 },
@@ -418,7 +418,7 @@ describe('letting go of a tab', () => {
     expect(tearOffs).toStrictEqual(['plex'])
   })
 
-  it('divides the whole workspace where it is let go in the edge band after a move outside', () => {
+  it('splits the workspace on pointerup in the edge band after a move outside the viewport', () => {
     const tearOffs: string[] = []
     const { workspace, dragTo, release } = start({ onTearOff: (tab) => tearOffs.push(tab) })
     dragTo('chat', [650, 60], [-1, 300])
@@ -428,7 +428,7 @@ describe('letting go of a tab', () => {
     expect(tearOffs).toStrictEqual([])
   })
 
-  it('lands nowhere and tears nothing off when the system cancels the drag', () => {
+  it('neither drops nor tears off the tab on pointercancel', () => {
     const tearOffs: string[] = []
     const { workspace, drag, dragTo, cancel } = start({ onTearOff: (tab) => tearOffs.push(tab) })
     const before = workspace.value

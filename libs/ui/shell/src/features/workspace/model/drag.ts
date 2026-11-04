@@ -43,7 +43,7 @@ export interface TabDragOptions {
   /** The distance the pointer moves before a press becomes a drag. */
   readonly getThreshold: () => number
   readonly getClock: () => Clock
-  /** The inner size of the window; a release outside it tears the tab off. */
+  /** Returns the viewport size. A pointerup outside the viewport tears off the tab. */
   readonly getViewport?: () => Size
   /** Called when a tab is dragged and released outside of any workspace drop target. */
   readonly onTearOff?: ((tab: TabId, pos: Position) => void) | undefined
@@ -83,7 +83,7 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
       if (target) {
         land(item, target)
       } else if (options.onTearOff) {
-        options.onTearOff(item.tab, getScreenPoint(point))
+        options.onTearOff(item.tab, getScreenPosition(point))
       }
     },
   })
@@ -224,8 +224,8 @@ function resolveDropTarget(
   return getPaneDropTarget(point, { element: pane, id }, local)
 }
 
-/** A point in the window, put on the screen. */
-const getScreenPoint = (point: Position): Position => {
+/** Converts a viewport point to screen coordinates. */
+const getScreenPosition = (point: Position): Position => {
   const origin = getWindowOrigin()
   return { x: origin.x + point.x, y: origin.y + point.y }
 }

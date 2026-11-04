@@ -6,12 +6,12 @@ export function getUserAgent(): string {
   return globalThis.navigator.userAgent
 }
 
-/** The size of the page's viewport, in CSS pixels. */
+/** Returns the viewport size in CSS pixels. */
 export function getViewportSize(): { width: number; height: number } {
   return { width: globalThis.innerWidth, height: globalThis.innerHeight }
 }
 
-/** Where the window's top-left corner is on the screen; 0 where the platform does not say, as on Wayland. */
+/** Returns the screen position of the window's top-left corner. Wayland does not report it; both values are 0 there. */
 export function getWindowOrigin(): { x: number; y: number } {
   return { x: globalThis.screenX, y: globalThis.screenY }
 }
