@@ -18,6 +18,7 @@ let isFixMode = false
 let isStrictMode = false
 let isAddedOnly = false
 let addedBaseRef = ''
+let changedSinceRef = ''
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i]
@@ -38,6 +39,12 @@ for (let i = 0; i < args.length; i++) {
   } else if (arg === '--added-only') {
     isAddedOnly = true
     if (args[i + 1] && !args[i + 1].startsWith('-') && !path.isAbsolute(args[i + 1]) && args[i + 1] !== '.') addedBaseRef = args[++i]
+  } else if (arg === '--changed-since') {
+    changedSinceRef = args[++i] || ''
+    if (!changedSinceRef) {
+      console.error('--changed-since needs a git ref')
+      process.exit(2)
+    }
   } else if (arg === '--strict') {
     isStrictMode = true
   } else if (arg === '--check') {
@@ -73,6 +80,8 @@ Options:
   --summary             Output only summary counts and top-offending files
   --added-only [ref]    Count advisory findings only on lines added in the staged diff (with --staged)
                         or against <ref> (default HEAD)
+  --changed-since <ref> Scan only the files changed since the merge base of <ref> and HEAD; the phrase
+                        rules (phrases) count on the lines added since that merge base
   --check               Exit with code 1 if any findings exist (for CI / pre-commit)
   --strict              Count advisory prose rules (rationale, actor, narrative-verb, poetic-noun,
                         filler, long-test-name) as findings, so --check fails on them
@@ -83,7 +92,9 @@ Options:
                           conversational | async | domestic |
                           error-storytelling | domestic-structs | domestic-verbs |
                           masked-primitives | boolean-prefixes | ui-words |
-                          prose (Markdown) | ui-strings (strings, manifest.json) | advisory
+                          prose (Markdown) | ui-strings (strings, manifest.json) | advisory |
+                          phrases (test titles and comments; advisory on a full scan, counted
+                          on added lines with --staged or --changed-since)
   --word <name>         Filter findings by specific word (e.g. --word beside, --word refusal)
   --help, -h            Show this help message
 `)
@@ -230,6 +241,90 @@ const DOC_PROSE_RULES = [
   { name: 'idiom: personified or theatrical phrase', re: /\b(?:measures patience|never catches up|lost in the noise|says so plainly|the whole case for|what settles it|argues for|hangs? (?:off|under)|hanging under|of its own accord|brought into line|brings? into line|dragged in|mendable|keeps itself alive|behind (?:a|the) person's back|a guest in|hairball|safety catch|appetites?|takes you to|works seamlessly|navigate smoothly|smooth zooming|pick up where it left off|checks quietly|knows (?:none|nothing) (?:of|about)|calls? (?:it|the \w+) off|put right|putting [\w ]{1,20} right)\b/i, use: 'state the operation: depends on, is placed under, automatically, cancels, fixes' },
   { name: 'ground/door/hole as a figure', re: /\b(?:the ground (?:under|beneath)|the door marked|no door at all|shutting the door|three doors|the hole was)\b/i, use: 'background, port, gap' },
 ]
+// 24. Narrative phrases in test titles, Go test names, t.Run names and comments. A full scan reports them as
+// advisory with a count; --staged and --changed-since fail on the ones on added lines.
+// A pointer, caret or focus that leaves an element is the DOM term (pointerleave, focusout), so it is not a departure.
+const DEPARTURE_SUBJECT = String.raw`(?!(?:the|a|an|its) (?:pointer|mouse|cursor|caret|focus)\b)(?:it|they|(?:the|a|an|its|this|that|each|every) [\w-]+(?: [\w-]+)?)`
+const PHRASE_RULES = [
+  {
+    name: 'let go',
+    re: /\b(?:lets?|letting) (?:(?:it|them) )?go\b(?! (?:code|programs?|packages?|modules?|files?|types?|binar\w*|tests?)\b)/i,
+    use: '"releases pointer capture when the scope is disposed", not "lets go of the window when the scope goes"',
+  },
+  {
+    name: 'goes/leaves',
+    re: new RegExp(
+      String.raw`\b(?:when|before|after|once|until|while) ${DEPARTURE_SUBJECT} (?:goes(?: away)?|leaves|has gone|have gone|is gone|are gone)(?=\s*(?:$|[.,;:)'"` + '`' + String.raw`]|\b(?:and|or|but|so|then|when|before|after|while|until|once|first|again)\b))`,
+      'i',
+    ),
+    use: '"when the scope is disposed", "after the element is removed", not "when the scope goes"',
+  },
+  {
+    name: 'is told',
+    re: /\b(?:is|are|was|were|be|been|being|gets?|got) told\b|\btold (?:to|of|about|apart)\b/i,
+    use: '"is notified", "receives", "is configured to", "distinguishes", not "is told"',
+  },
+  {
+    name: 'hears',
+    re: /\b(?:hears|hear (?:of|about|back|from)|heard (?:of|about|back|from)|hearing (?:of|about|from)|to hear)\b/i,
+    use: '"receives", "is notified of", "subscribes to", not "hears of"',
+  },
+  { name: 'comes back', re: /\b(?:comes?|came|coming) back\b/i, use: '"returns", "is returned", not "comes back"' },
+  {
+    name: 'brings along',
+    re: /\b(?:brings?|brought|bringing|takes?|took|carries|carry|carried) along\b/i,
+    use: '"includes", "passes", not "brings along"',
+  },
+  {
+    name: 'nobody',
+    re: /\bnobody\b/i,
+    use: '"with no subscriber", "when no caller requested it", not "where nobody requested to hear of it"',
+  },
+  {
+    name: 'put on',
+    re: /,\s*(?:put|laid) (?:on|onto|in|into) (?:the|a|an)\b|\bput on the (?:screen|page|window|line|clipboard|wire)\b/i,
+    use: '"Converts a viewport point to screen coordinates", "copied to the clipboard", not "a point, put on the screen"',
+  },
+  {
+    name: 'answers whether',
+    re: /\b(?:answers|tells|says) (?:whether|if)\b/i,
+    use: '"Returns whether", "Reports whether", not "answers whether"',
+  },
+  {
+    name: 'stays where',
+    re: /\bstay(?:s|ed)? where (?:it|they) (?:is|are|was|were)\b|\bwhere (?:it|they) (?:sits?|lands?|stands?)\b|\blands? nowhere\b|\ball there is\b/i,
+    use: '"keeps its position", "has no drop target", "when the list has one item", not "stays where it is"',
+  },
+  {
+    name: 'what it holds',
+    re: /\bwhat (?:it|they) (?:holds?|carry|carries|keeps?)\b/i,
+    use: '"its contents", "its value", not "what it holds"',
+  },
+  {
+    name: 'does not take',
+    re: /\b(?:did|does|do) not take\b(?! (?:effect|place|long|into account|arguments?|parameters?|a context|ctx|ownership)\b)/i,
+    use: '"reports an error when the core rejects the tab report", "does not accept", not "a report the core did not take"',
+  },
+]
+
+/** The phrase rule a test title or comment breaks, or null. Backtick-quoted words are not checked. */
+function findPhraseRule(text) {
+  const plain = text.replace(RE_INLINE_CODE, ' ')
+  return PHRASE_RULES.find((rule) => rule.re.test(plain)) ?? null
+}
+
+/** A Go test function name as words: TestScopeGoes_WhenClosed reads "scope goes when closed". */
+function getGoTestWords(funcName) {
+  return funcName
+    .replace(/^Test/, '')
+    .replace(/_/g, ' ')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
+    .toLowerCase()
+    .trim()
+}
+
+const RE_GO_SUBTEST = /\bt\.Run\(\s*"((?:[^"\\]|\\.)*)"/
 const RE_INLINE_CODE = /`[^`]*`/g
 const RE_COMMENT_START = /^(?:\/\/|\/\*|\*|<!--)/
 // Task titles, notices and field values: the keys of the strings a person reads in manifest.json files.
@@ -601,6 +696,10 @@ const advisory = {
   'long-test-name': [],
 }
 
+// Findings of category 24. They count only on added lines, under --staged or --changed-since.
+let narrativePhrases = []
+const isPhraseDiffMode = isStagedOnly || Boolean(changedSinceRef)
+
 const stats = {
   frontendTotal: 0,
   backendTotal: 0,
@@ -787,6 +886,28 @@ function scanFile(filePath) {
       if (titleRule && shouldCheckCategory('tests')) {
         findings.narrativeTestTitles.push({ file: relPath, line: lineNum, lang: 'ts', title: testTitle, text: trimmed })
         stats.frontendTotal++
+      }
+    }
+
+    // 24. Narrative phrases in test titles, Go test names, t.Run names and comments
+    if (!isDoc && shouldCheckCategory('phrases')) {
+      let phraseText = null
+      if (isCommentLine) phraseText = trimmed
+      else if (isGo && isTestFile) {
+        const goName = RE_GO_TEST_FUNC.exec(line)?.[1]
+        phraseText = goName ? getGoTestWords(goName) : (RE_GO_SUBTEST.exec(line)?.[1] ?? null)
+      } else if (isTs && (isTestFile || /\.spec\.[mc]?[jt]sx?$/.test(baseName))) {
+        phraseText = RE_TS_TEST_TITLE.exec(line)?.[1] ?? null
+      }
+      const rule = phraseText ? findPhraseRule(phraseText) : null
+      if (rule) {
+        narrativePhrases.push({
+          file: relPath,
+          line: lineNum,
+          lang: isGo ? 'go' : 'ts',
+          word: rule.name,
+          text: `${trimmed.slice(0, 140)} -> write ${rule.use}`,
+        })
       }
     }
 
@@ -1301,31 +1422,85 @@ function walk(dir) {
   }
 }
 
-/** Added line numbers per absolute file path, from the staged diff or the diff against a ref. */
-function getAddedLines() {
-  const added = new Map()
+/** The directory git commands run in: rootDir, or the folder of rootDir when it is a file. */
+function getGitDir() {
+  return fs.existsSync(rootDir) && fs.statSync(rootDir).isFile() ? path.dirname(rootDir) : rootDir
+}
+
+/** The top folder of the repository that holds rootDir; git diff prints paths relative to it. */
+function getRepoTop() {
+  return execTool('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8', cwd: getGitDir() }).trim()
+}
+
+/** The merge base of ref and HEAD. Exits with code 2 when git cannot find it, so a check never passes on an empty diff. */
+function getMergeBase(ref) {
   try {
-    const args = isStagedOnly ? ['diff', '--cached', '-U0', '--no-color'] : ['diff', '-U0', '--no-color', addedBaseRef || 'HEAD']
-    const diff = execTool('git', args, { encoding: 'utf8', cwd: rootDir, maxBuffer: 256 * 1024 * 1024 })
-    let current = null
-    for (const row of diff.split('\n')) {
-      if (row.startsWith('+++ b/')) {
-        current = path.resolve(rootDir, row.slice(6))
-        added.set(current, new Set())
-      } else if (current && row.startsWith('@@')) {
-        const m = /\+(\d+)(?:,(\d+))?/.exec(row)
-        const start = Number(m[1])
-        const count = m[2] === undefined ? 1 : Number(m[2])
-        for (let n = start; n < start + count; n++) added.get(current).add(n)
-      }
+    return execTool('git', ['merge-base', ref, 'HEAD'], { encoding: 'utf8', cwd: getGitDir(), stdio: ['ignore', 'pipe', 'pipe'] }).trim()
+  } catch (err) {
+    console.error(`--changed-since: no merge base of ${ref} and HEAD: ${err.message}`)
+    process.exit(2)
+  }
+}
+
+/** The files changed since base, as absolute paths: committed, staged and unstaged changes, without deletions. */
+function getChangedFiles(base) {
+  const top = getRepoTop()
+  const stdout = execTool('git', ['diff', '--name-only', '--diff-filter=ACMR', '--no-renames', base], {
+    encoding: 'utf8',
+    cwd: getGitDir(),
+    maxBuffer: 64 * 1024 * 1024,
+  })
+  return stdout
+    .split('\n')
+    .map((f) => f.trim())
+    .filter(Boolean)
+    .map((f) => path.resolve(top, f))
+    .filter((f) => f.startsWith(getRealGitDir() + path.sep))
+}
+
+/**
+ * Added line numbers per absolute file path, from the diff git produces for diffArgs
+ * (the staged diff, or the diff against a ref).
+ */
+function getAddedLines(diffArgs) {
+  const added = new Map()
+  const top = getRepoTop()
+  const diff = execTool('git', ['diff', '-U0', '--no-color', '--no-renames', ...diffArgs], { encoding: 'utf8', cwd: getGitDir(), maxBuffer: 256 * 1024 * 1024 })
+  let current = null
+  for (const row of diff.split('\n')) {
+    if (row.startsWith('+++ b/')) {
+      current = path.resolve(top, row.slice(6))
+      added.set(current, new Set())
+    } else if (current && row.startsWith('@@')) {
+      const m = /\+(\d+)(?:,(\d+))?/.exec(row)
+      const start = Number(m[1])
+      const count = m[2] === undefined ? 1 : Number(m[2])
+      for (let n = start; n < start + count; n++) added.get(current).add(n)
     }
-  } catch {
-    return added
   }
   return added
 }
 
-if (isStagedOnly) {
+/** Whether an item of a scan is on a line in addedLines; item.file is relative to rootDir. */
+function isOnAddedLine(item, addedLines) {
+  return addedLines.get(path.resolve(getRealGitDir(), item.file))?.has(item.line) ?? false
+}
+
+/** getGitDir with symbolic links resolved, as git prints the top folder. */
+function getRealGitDir() {
+  return fs.realpathSync(getGitDir())
+}
+
+const changedSinceBase = changedSinceRef ? getMergeBase(changedSinceRef) : ''
+
+if (changedSinceBase) {
+  const real = getRealGitDir()
+  for (const file of getChangedFiles(changedSinceBase)) {
+    const dirs = path.relative(real, path.dirname(file)).split(path.sep)
+    if (dirs.some((name) => name && isIgnoredDir(name))) continue
+    if (fs.existsSync(file)) scanFile(path.join(getGitDir(), path.relative(real, file)))
+  }
+} else if (isStagedOnly) {
   const staged = getStagedFiles()
   for (const file of staged) {
     const dirs = path.relative(rootDir, path.dirname(file)).split(path.sep)
@@ -1341,17 +1516,27 @@ if (isStagedOnly) {
 }
 
 if (isAddedOnly) {
-  const addedLines = getAddedLines()
-  const base = fs.existsSync(rootDir) && fs.statSync(rootDir).isFile() ? path.dirname(rootDir) : rootDir
-  for (const name of Object.keys(advisory)) {
-    advisory[name] = advisory[name].filter((item) => addedLines.get(path.resolve(base, item.file))?.has(item.line))
+  let addedLines = new Map()
+  try {
+    addedLines = getAddedLines(isStagedOnly ? ['--cached'] : [addedBaseRef || 'HEAD'])
+  } catch {
+    // Outside a git repository nothing is added, so no advisory finding is kept.
   }
+  for (const name of Object.keys(advisory)) {
+    advisory[name] = advisory[name].filter((item) => isOnAddedLine(item, addedLines))
+  }
+}
+
+if (isPhraseDiffMode) {
+  const addedLines = getAddedLines(changedSinceBase ? [changedSinceBase] : ['--cached'])
+  narrativePhrases = narrativePhrases.filter((item) => isOnAddedLine(item, addedLines))
 }
 
 // Compute Aggregates
 const advisoryTotal = Object.values(advisory).reduce((sum, items) => sum + items.length, 0)
 const totalIssues =
   (isStrictMode ? advisoryTotal : 0) +
+  (isPhraseDiffMode || isStrictMode ? narrativePhrases.length : 0) +
   findings.fakeTurnCasts.length +
   findings.participleIdentifiers.length +
   findings.prepositionIdentifiers.length +
@@ -1377,7 +1562,11 @@ const totalIssues =
   findings.uiStrings.length
 
 const fileCounts = {}
-const countedGroups = isStrictMode ? { ...findings, ...advisory } : findings
+const countedGroups = {
+  ...findings,
+  ...(isPhraseDiffMode || isStrictMode ? { narrativePhrases } : {}),
+  ...(isStrictMode ? advisory : {}),
+}
 for (const cat of Object.keys(countedGroups)) {
   for (const item of countedGroups[cat]) {
     fileCounts[item.file] = (fileCounts[item.file] || 0) + 1
@@ -1428,6 +1617,7 @@ console.log('===================================================================
 console.log(`Target path : ${rootDir}`)
 console.log(`Scope       : ${filterLang === 'all' ? 'Full-stack (TS/Vue + Go)' : filterLang.toUpperCase()}`)
 if (isStagedOnly) console.log(`Mode        : Staged files only`)
+if (changedSinceBase) console.log(`Mode        : Files changed since ${changedSinceRef} (${changedSinceBase.slice(0, 12)})`)
 if (filterCategory) console.log(`Category    : ${filterCategory}`)
 if (filterWord) console.log(`Filter word : ${filterWord}`)
 console.log('----------------------------------------------------------------------')
@@ -1454,6 +1644,15 @@ console.log(`20. Hunting and offering metaphors (hunt, offered, lit)    : ${find
 console.log(`21. Narrative UI copy in words files (that…, so…, That…)  : ${findings.uiWords.length}`)
 console.log(`22. Narrative prose in Markdown (wear, hands over, speaks...)  : ${findings.proseDocs.length}`)
 console.log(`23. Narrative prose in strings and manifests a person reads : ${findings.uiStrings.length}`)
+if (isPhraseDiffMode) {
+  console.log(`24. Narrative phrases on added lines (lets go, is told)     : ${narrativePhrases.length}`)
+} else {
+  console.log(`24. Narrative phrases (advisory; counted on added lines)   : ${narrativePhrases.length}`)
+}
+for (const rule of PHRASE_RULES) {
+  const count = narrativePhrases.filter((item) => item.word === rule.name).length
+  if (count > 0) console.log(`      ${rule.name.padEnd(16)}: ${count}`)
+}
 console.log('----------------------------------------------------------------------')
 console.log(`ADVISORY PROSE RULES${isStrictMode ? ' (counted, --strict)' : ' (not counted; use --strict)'}`)
 for (const [name, items] of Object.entries(advisory)) {
@@ -1547,6 +1746,7 @@ if (isJsonOutput) {
         backendTotal: stats.backendTotal,
         totalIssues,
         findings,
+        narrativePhrases,
         advisory,
       },
       null,

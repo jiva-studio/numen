@@ -127,3 +127,147 @@ describe('skipped paths', () => {
     assert.equal(run.status, 0, run.stdout)
   })
 })
+
+/** The phrase rules (category 24) that a fixture file breaks, one rule name per finding. */
+function getPhraseRules(name, content) {
+  const file = path.join(ROOT, name)
+  const report = path.join(ROOT, `${name}.report.json`)
+  fs.mkdirSync(path.dirname(file), { recursive: true })
+  fs.writeFileSync(file, content)
+  const run = spawnSync('node', [SCAN, file, '--category', 'phrases', '--json', report], { encoding: 'utf8' })
+  assert.equal(run.status, 0, run.stderr)
+  return JSON.parse(fs.readFileSync(report, 'utf8')).narrativePhrases.map((item) => item.word)
+}
+
+describe('narrative phrases', () => {
+  const badTitles = [
+    ['lets go of the interval it is waiting on', 'let go'],
+    ['is told, left out of the layout, and lets go of what it started', 'let go'],
+    ['stays where it is when one item is all there is to be on', 'stays where'],
+    ['ends a cancelled drag where nobody requested to hear of it', 'hears'],
+    ['releases the pointer capture when the scope goes', 'goes/leaves'],
+    ['reports a report the core did not take', 'does not take'],
+    ['returns the value that comes back from the core', 'comes back'],
+    ['is told the width of the box', 'is told'],
+    ['brings along the tab state', 'brings along'],
+    ['opens no menu where nobody is listening', 'nobody'],
+  ]
+  for (const [title, rule] of badTitles) {
+    it(`reports the TypeScript test title "${title}" under ${rule}`, () => {
+      const rules = getPhraseRules(`u/${rule.replace(/\W/g, '')}-${title.length}.test.ts`, `it('${title}', () => {})\n`)
+      assert.deepEqual(rules, [rule])
+    })
+  }
+
+  it('reports narrative comments', () => {
+    const content = [
+      '/** A point in the window, put on the screen. */',
+      '/** What letting go after a drag evaluates to. */',
+      '// isOpen answers whether the panel is open.',
+      '// The list keeps what it holds after a reload.',
+      'export const a = 1',
+      '',
+    ].join('\n')
+    assert.deepEqual(getPhraseRules('v/comments.ts', content), ['put on', 'let go', 'answers whether', 'what it holds'])
+  })
+
+  it('reports a Go test name split on case and a t.Run name', () => {
+    const content = [
+      'package a',
+      '',
+      'func TestTheCoreLetsGoOfTheLock(t *testing.T) {',
+      '\tt.Run("is told the size", func(t *testing.T) {})',
+      '}',
+      '',
+    ].join('\n')
+    assert.deepEqual(getPhraseRules('w/a_test.go', content), ['let go', 'is told'])
+  })
+
+  it('accepts the plain forms', () => {
+    const ts = [
+      '/** Converts a viewport point to screen coordinates. */',
+      '// isOpen returns whether the panel is open.',
+      '// After the pointer leaves, the title returns to its default.',
+      "it('releases pointer capture when the scope is disposed', () => {})",
+      "it('reports an error when the core rejects the tab report', () => {})",
+      "it('keeps its position when the list has one item', () => {})",
+      "it('lets Go code call the bridge', () => {})",
+      '',
+    ].join('\n')
+    assert.deepEqual(getPhraseRules('x/plain.test.ts', ts), [])
+    const go = [
+      'package a',
+      '',
+      '// Lock holds the mutex for the write.',
+      '// The caller holds it until Close returns; the output goes to stderr.',
+      'func TestLockReleasesTheMutex(t *testing.T) {',
+      '\tt.Run("returns the stored value", func(t *testing.T) {})',
+      '}',
+      '',
+    ].join('\n')
+    assert.deepEqual(getPhraseRules('x/plain_test.go', go), [])
+  })
+
+  it('reports phrases as advisory on a full scan, so --check passes', () => {
+    const { code, out } = scanFixture('y/a.test.ts', "it('lets go of the interval it is waiting on', () => {})\n")
+    assert.equal(code, 0, out)
+    assert.match(out, /24\. Narrative phrases \(advisory[^:]*: 1/)
+  })
+})
+
+describe('diff mode', () => {
+  const git = (repo, ...args) => {
+    const run = spawnSync('git', ['-c', 'user.name=test', '-c', 'user.email=test@example.com', '-c', 'commit.gpgsign=false', ...args], { cwd: repo, encoding: 'utf8' })
+    assert.equal(run.status, 0, run.stderr)
+    return run.stdout
+  }
+  const OLD_LINE = "it('lets go of the interval it is waiting on', () => {})"
+  const NEW_LINE = "it('releases the pointer capture when the scope goes', () => {})"
+
+  /** A repository with one commit holding OLD_LINE in a.test.ts. */
+  function createRepo(name) {
+    const repo = path.join(ROOT, name)
+    fs.mkdirSync(repo, { recursive: true })
+    git(repo, 'init', '-q', '-b', 'main')
+    fs.writeFileSync(path.join(repo, 'a.test.ts'), `${OLD_LINE}\n`)
+    git(repo, 'add', '.')
+    git(repo, 'commit', '-q', '-m', 'base')
+    return repo
+  }
+
+  it('--changed-since reports only the phrases on lines added since the merge base', () => {
+    const repo = createRepo('diff-changed')
+    git(repo, 'checkout', '-q', '-b', 'topic')
+    fs.writeFileSync(path.join(repo, 'a.test.ts'), `${OLD_LINE}\n${NEW_LINE}\n`)
+    git(repo, 'commit', '-q', '-am', 'add a title')
+    const run = spawnSync('node', [SCAN, repo, '--check', '--changed-since', 'main'], { encoding: 'utf8' })
+    assert.equal(run.status, 1, run.stdout)
+    assert.match(run.stdout, /a\.test\.ts:2 \[narrativePhrases: goes\/leaves\]/)
+    assert.doesNotMatch(run.stdout, /a\.test\.ts:1 /)
+  })
+
+  it('--changed-since passes when the added lines are plain', () => {
+    const repo = createRepo('diff-plain')
+    git(repo, 'checkout', '-q', '-b', 'topic')
+    fs.writeFileSync(path.join(repo, 'a.test.ts'), `${OLD_LINE}\nit('releases pointer capture when the scope is disposed', () => {})\n`)
+    git(repo, 'commit', '-q', '-am', 'add a title')
+    const run = spawnSync('node', [SCAN, repo, '--check', '--changed-since', 'main'], { encoding: 'utf8' })
+    assert.equal(run.status, 0, run.stdout)
+  })
+
+  it('--changed-since exits with code 2 on a ref git does not know', () => {
+    const repo = createRepo('diff-unknown')
+    const run = spawnSync('node', [SCAN, repo, '--check', '--changed-since', 'no-such-ref'], { encoding: 'utf8' })
+    assert.equal(run.status, 2, run.stdout)
+  })
+
+  it('--staged reports only the phrases on staged added lines', () => {
+    const repo = createRepo('diff-staged')
+    fs.writeFileSync(path.join(repo, 'a.test.ts'), `${OLD_LINE}\n${NEW_LINE}\n`)
+    git(repo, 'add', 'a.test.ts')
+    const run = spawnSync('node', [SCAN, repo, '--staged', '--check'], { encoding: 'utf8' })
+    assert.equal(run.status, 1, run.stdout)
+    assert.match(run.stdout, /a\.test\.ts:2 \[narrativePhrases: goes\/leaves\]/)
+    assert.doesNotMatch(run.stdout, /a\.test\.ts:1 /)
+  })
+})

@@ -329,6 +329,13 @@ To keep code readable, pseudo-literary prose, Anglish idioms, irregular past par
 6. **Forbidden error terminology**: Never use `refused` or `refusal`. Always use `error` or `errorCode`.
 7. **Narrative comments & docstrings**: Do not write biblical or Saxon idioms (`hands back`, `comes to`, `stands on`, `where it sits`, `what holds here`). Write plain, technical engineering English.
 8. **Personification and metaphor in prose a person reads**: A task title, notice, error, manifest `title` or `description`, Markdown document or test title states the operation or the fact in standard engineering terms. A window does not `wear` a theme, a plugin does not `speak` a protocol, a page does not `hand over` a value; a task is titled `Apply theme`, not `Wearing a theme`, and its detail reads `Theme not found: dracula`. `tools/lint-narrative/scan.mjs` rejects these families (`wear`/`dress`, `hand over`/`hand back`, `speaks`, `breathe`/`eat`, `lit up`, `bring level`, `stands`/`sits` at a place, `nowhere to put`) in Markdown, comments, test titles, Go and TypeScript string literals and `manifest.json`; words inside backticks are quoted, not checked.
+9. **Narrative phrases in test titles and comments**: A test title or comment names the subject, a standard verb (`returns`, `releases`, `receives`, `rejects`, `reports`) and concrete nouns. A scope does not `go`, a listener is not `told`, a value does not `come back`, a drag is not `let go`. `tools/lint-narrative/scan.mjs` category 24 fails on these phrases on the lines a change adds (`--staged` in the pre-commit hook, `--changed-since` in CI) and reports the rest of the tree as advisory with a count. Write the plain form:
+   - `it('releases pointer capture when the scope is disposed')`, not `it('releases the pointer capture when the scope goes')`
+   - `it('clears the interval on dispose')`, not `it('lets go of the interval it is waiting on')`
+   - `it('keeps its position when the list has one item')`, not `it('stays where it is when one item is all there is to be on')`
+   - `it('cancels the drag when no listener is registered')`, not `it('ends a cancelled drag where nobody requested to hear of it')`
+   - `it('reports an error when the core rejects the tab report')`, not `it('reports a report the core did not take')`
+   - `/** Converts a viewport point to screen coordinates. */`, not `/** A point in the window, put on the screen. */`
 
 ---
 
