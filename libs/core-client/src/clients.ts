@@ -70,7 +70,6 @@ export type NoteRoleCode = Role
 export const NOTE_RELATION = Relation
 export type NoteRelationCode = Relation
 
-
 export const FLUSH_RESULT = FlushResult
 export type FlushResultCode = FlushResult
 

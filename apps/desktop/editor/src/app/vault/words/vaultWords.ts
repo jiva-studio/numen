@@ -108,4 +108,3 @@ export const mapVaultResult = (from: {
   const error = getVaultError(from)
   return error ? asFailure(error) : asValue(from.vault ? mapVault(from.vault) : null)
 }
-
