@@ -44,8 +44,8 @@ describe('the commands of the editor', () => {
   })
 
   it('are offered under the titles that say what each does', () => {
-    const offered = Object.fromEntries(commands.map((one) => [one.id, one.text]))
+    const titleById = Object.fromEntries(commands.map((one) => [one.id, one.text]))
 
-    expect(offered).toStrictEqual(TITLES)
+    expect(titleById).toStrictEqual(TITLES)
   })
 })
