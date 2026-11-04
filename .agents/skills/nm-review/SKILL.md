@@ -99,7 +99,9 @@ The report is read on a GitHub pull request and in a terminal. The verdict and t
 4. **Lists, not tables.** Wide tables break on GitHub. Status is an emoji (✅ ❌), never a code span.
 5. **"No findings" is a real outcome.** Padding a review with cosmetic remarks wastes the time of everyone who reads it.
 
-Severity: 🔴 CRITICAL (data loss, crash, security), 🟠 HIGH (a broken behaviour or consumer), 🟡 MEDIUM (an edge case that misbehaves), ⚪ LOW (a minor or unconfirmed risk).
+Severity: 🔴 CRITICAL (data loss, crash, security), 🟠 HIGH (a broken behaviour or consumer), 🟡 MEDIUM (an edge case that misbehaves), ⚪ LOW (a minor risk, or a hypothesis no test confirmed).
+
+A CRITICAL, HIGH or MEDIUM behaviour defect is proven by a test from Stage 3 that fails against the change: its name, its file, and its failing output. A behaviour hypothesis without such a test is reported as ⚪ LOW and marked unconfirmed, with the reason no test was written. A finding that the change breaks a written rule quotes the rule and the lines that break it.
 
 Verdict: ❌ Rejected when a gate failed or a CRITICAL finding exists; ⚠️ Changes requested when a HIGH or MEDIUM finding exists; ✅ Approved otherwise.
 
@@ -118,7 +120,7 @@ Verdict: ❌ Rejected when a gate failed or a CRITICAL finding exists; ⚠️ Ch
 
 **Given** <initial state> · **When** <action or event> · **Then** <failure>
 
-**Proof:** <the test and its failing output, or "by reading" and the lines that show it>
+**Proof:** <the test name, its file, and its failing output; for a rule finding, the lines that break the rule>
 **Rule:** <the AGENTS.md or rules statement it contradicts; omit the line when none applies>
 **Fix:** <a direction, not a patch>
 
@@ -134,7 +136,7 @@ Verdict: ❌ Rejected when a gate failed or a CRITICAL finding exists; ⚠️ Ch
 
 <details><summary>Checked and found sound (<count>)</summary>
 
-- ✅ <what was checked>: <how, a test name or "by reading">
+- ✅ <what was checked>: <the test that passed, or the gate that covers it>
 
 </details>
 

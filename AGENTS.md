@@ -329,6 +329,13 @@ To keep code readable, pseudo-literary prose, Anglish idioms, irregular past par
 6. **Forbidden error terminology**: Never use `refused` or `refusal`. Always use `error` or `errorCode`.
 7. **Narrative comments & docstrings**: Do not write biblical or Saxon idioms (`hands back`, `comes to`, `stands on`, `where it sits`, `what holds here`). Write plain, technical engineering English.
 8. **Personification and metaphor in prose a person reads**: A task title, notice, error, manifest `title` or `description`, Markdown document or test title states the operation or the fact in standard engineering terms. A window does not `wear` a theme, a plugin does not `speak` a protocol, a page does not `hand over` a value; a task is titled `Apply theme`, not `Wearing a theme`, and its detail reads `Theme not found: dracula`. `tools/lint-narrative/scan.mjs` rejects these families (`wear`/`dress`, `hand over`/`hand back`, `speaks`, `breathe`/`eat`, `lit up`, `bring level`, `stands`/`sits` at a place, `nowhere to put`) in Markdown, comments, test titles, Go and TypeScript string literals and `manifest.json`; words inside backticks are quoted, not checked.
+9. **Test titles and comments**: name the subject, a standard verb and concrete nouns. `tools/lint-narrative/scan.mjs` category 24 checks the lines a change adds. Examples:
+   - `it('releases pointer capture when the scope is disposed')`
+   - `it('clears the interval on dispose')`
+   - `it('keeps its position when the list has one item')`
+   - `it('cancels the drag when no listener is registered')`
+   - `it('reports an error when the core rejects the tab report')`
+   - `/** Converts a viewport point to screen coordinates. */`
 
 ---
 

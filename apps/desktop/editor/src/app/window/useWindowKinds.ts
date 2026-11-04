@@ -122,7 +122,8 @@ export function useWindowKinds(deps: WindowKindsDeps) {
     destinations,
     dragged,
     travel,
-    leavePath: (from: string, to: string) => windowTabs.navigateTabsAt(from, to),
+    leavePath: (from: string, to: string) =>
+      windowTabs.navigateTabsAt(from, to, (tabId) => deps.tabSync?.setShownPath(tabId, to)),
     services,
   }
 }

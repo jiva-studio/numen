@@ -5,7 +5,7 @@
  * the vaults this installation holds, and `folders` what each folder holds.
  */
 import type { Entry } from '@/entities/file'
-import type { OpenTabs } from '@/entities/tab'
+import type { OpenTabs, Tab } from '@/entities/tab'
 
 interface MockVaultState {
   isReady: boolean
@@ -33,6 +33,7 @@ interface MockVaultState {
     selector: Record<string, unknown> | null
   }[]
   savedTabs: OpenTabs
+  detachedTab: Tab | null
   types: Record<string, string>
   embedded: number
   listable: boolean
@@ -53,6 +54,8 @@ export const mockVaultState: MockVaultState = {
   passages: [],
   /** The open tabs the core kept from before the window started. */
   savedTabs: { tabs: [], activeId: '' },
+  /** The tab that readDetachedTab returns for its id. */
+  detachedTab: null,
   /**
    * The note type at each path, as the vault reports it. A path without an
    * entry is an ordinary note.
@@ -201,6 +204,7 @@ export const forgetAnswers = () => {
   mockVaultState.names = []
   mockVaultState.passages = []
   mockVaultState.savedTabs = { tabs: [], activeId: '' }
+  mockVaultState.detachedTab = null
   mockVaultState.types = {}
   mockVaultState.embedded = 0
   mockVaultState.listable = true

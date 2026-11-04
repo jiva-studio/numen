@@ -124,7 +124,9 @@ describe('a tab of a kind', () => {
     expect(thing.opened).toEqual(['Other.md', 'Note.md'])
 
     // After navigating `one` ('thing:Note.md') to 'Renamed.md', opening 'Renamed.md' finds `one` via findOpenTabAt
-    await window.navigateTabsAt('Note.md', 'Renamed.md')
+    const moved: string[] = []
+    await window.navigateTabsAt('Note.md', 'Renamed.md', (id) => moved.push(id))
+    expect(moved).toEqual([one])
     expect(await window.openTabOfKind('thing', 'Renamed.md')).toBe(one)
 
     // Opening 'Note.md' again when 'thing:Note.md' points to 'Renamed.md' allocates a new id
@@ -922,6 +924,24 @@ describe('the identity a kind is told as its tab opens', () => {
 
     expect(provided).toEqual([id])
   })
+
+  it('reuses a tab id from another window when one is given', async () => {
+    const provided: string[] = []
+    const thing = kind({
+      open: (targetPath: string, id: string) => {
+        provided.push(id)
+        return { targetPath, title: targetPath }
+      },
+    })
+    const window = useWindowTabs()
+    window.registerKinds([thing.one])
+
+    const id = await window.openTabOfKind('thing', 'Note.md', 'thing:4f1c')
+
+    expect(id).toBe('thing:4f1c')
+    expect(provided).toEqual(['thing:4f1c'])
+    expect(onScreen(window.layout.value)).toContain('thing:4f1c')
+  })
 })
 
 describe('the kinds the window holds', () => {
@@ -1411,5 +1431,31 @@ describe('a saved tab whose kind fails to open it', () => {
     expect(failed?.kind.identity?.('dir/bad.bin')).toBe('dir/bad.bin')
     expect(window.getTab('paged:empty')?.state).toMatchObject({ message: 'string failure' })
     expect(window.handle.front()?.id).toBe('paged:c.bin')
+  })
+})
+
+describe('openSavedTab', () => {
+  it('opens the tab with its id and saved state as the active tab', async () => {
+    const window = useWindowTabs()
+    window.registerKind(pagedKind())
+    await window.openTabOfKind('paged', 'existing.bin')
+
+    window.openSavedTab({ id: 'paged:a.bin', kind: 'paged', path: 'a.bin', saved: { page: 4 } })
+
+    expect(window.getTabStateIn('paged:a.bin', 'paged')).toMatchObject({ page: 4 })
+    expect(window.handle.front()?.id).toBe('paged:a.bin')
+  })
+
+  it('activates an open tab with the same id without opening it again', async () => {
+    const window = useWindowTabs()
+    window.registerKind(pagedKind())
+    const id = await window.openTabOfKind('paged', 'a.bin')
+    ;(window.getTabStateIn(id, 'paged') as { page: number }).page = 7
+    await window.openTabOfKind('paged', 'b.bin')
+
+    window.openSavedTab({ id, kind: 'paged', path: 'a.bin', saved: { page: 4 } })
+
+    expect(window.getTabStateIn(id, 'paged')).toMatchObject({ page: 7 })
+    expect(window.handle.front()?.id).toBe(id)
   })
 })

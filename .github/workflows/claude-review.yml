@@ -67,6 +67,14 @@ jobs:
       - name: Record the reviewed commit
         run: echo "REVIEWED_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
+      # The review follows the rules and tools of main, so a pull request cannot change the
+      # instructions of its own review. The pull request's versions stay readable with git show.
+      - name: Take the review rules from main
+        run: |
+          set -euo pipefail
+          rm -rf .agents .claude/skills tools/lint-narrative tools/shared
+          git checkout origin/main -- .agents .claude/skills AGENTS.md tools/lint-narrative tools/shared
+
       - if: env.MODE == 'full'
         uses: ./.github/actions/setup-go
         with:
@@ -98,7 +106,7 @@ jobs:
             This run is a quick review of pull request #${{ env.PR_NUMBER }} in CI. The pull request's CI runs the linters and the test suites. Run no gates and no tests, and install nothing: judge every stage by reading the code, and mark each proof "by reading".
             Write the report to review-report.md in the workspace root. Write one word to review-verdict.txt: APPROVED, CHANGES_REQUESTED or REJECTED.
           claude_args: >-
-            --allowedTools "Read,Grep,Glob,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git merge-base:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*)"
+            --allowedTools "Read,Grep,Glob,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git merge-base:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(node tools/lint-narrative/scan.mjs:*)"
 
       - name: Full review
         if: env.MODE == 'full'
@@ -111,7 +119,7 @@ jobs:
             This run is a full review of pull request #${{ env.PR_NUMBER }} in CI. The pull request's CI runs the linters and the test suites, so run no gates and no whole suites. Go, the Node modules and the built UI libraries are installed. In stage 3, prove or disprove each hypothesis with a test you write next to the code, and run only that test: `go test -run <name> ./<package>` from the module directory, or `npx vitest run <file>` from the package directory.
             Write the report to review-report.md in the workspace root. Write one word to review-verdict.txt: APPROVED, CHANGES_REQUESTED or REJECTED.
           claude_args: >-
-            --allowedTools "Read,Grep,Glob,Write,Edit,Bash(cd:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git merge-base:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(go test:*),Bash(npx vitest run:*)"
+            --allowedTools "Read,Grep,Glob,Write,Edit,Bash(cd:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git merge-base:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(go test:*),Bash(npx vitest run:*),Bash(node tools/lint-narrative/scan.mjs:*)"
 
       - name: Submit the review
         run: |

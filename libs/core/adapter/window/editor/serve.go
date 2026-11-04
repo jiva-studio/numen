@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/assembly"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/command"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/plugincatalog"
+	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/tablinks"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/textmenu"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/texts"
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
@@ -110,7 +111,10 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 		closeEmbedder = func() error { return nil }
 	}
 
-	state, services := createWindow(made, tasks, embedder)
+	state, services, err := createWindow(made, tasks, embedder)
+	if err != nil {
+		return nil, errors.Join(err, closeEmbedder(), made.CloseIndex())
+	}
 	indexer := newIndexWorker(made, state, embedder, quietPeriod, out)
 	state.NotifyNoteWritten = indexer.WakeNotes
 
@@ -274,10 +278,15 @@ func (o *Installation) Report(messages []string) {
 // it, with the pieces that need no vault.
 func createWindow(
 	made Assembly, tasks *run.Tasks, embedder embeddingport.Embedder,
-) (*State, *Services) {
+) (*State, *Services, error) {
+	tabLinks, err := tablinks.NewRegistry(linkGrace, tablinks.ScheduleAfter)
+	if err != nil {
+		return nil, nil, err
+	}
 	state := &State{
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),
+		TabLinks:     tabLinks,
 		Edits:        newEditBroadcaster(),
 		Window:       &wire.Window{Named: wire.Editor, Tasking: tasks},
 	}
@@ -309,7 +318,7 @@ func createWindow(
 		state.Indexing.Model.Store(name)
 		state.Indexing.Recipe.Store(recipe)
 	}
-	return state, services
+	return state, services, nil
 }
 
 // wireUseCases builds the use cases the window and everything else working its

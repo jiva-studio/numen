@@ -33,4 +33,18 @@ describe('the wire transport', () => {
     expect(transport).toBeDefined()
     expect(createConnectTransport).toHaveBeenCalledWith({ baseUrl: 'https://example.test' })
   })
+
+  it('sends the requests of the keepalive transport with keepalive', async () => {
+    const fetch = vi.fn((_input: unknown, _init: unknown) => Promise.resolve(new Response()))
+    vi.stubGlobal('fetch', fetch)
+    await import('./transport')
+
+    const options = vi.mocked(createConnectTransport).mock.calls.find(([one]) => one.fetch)?.[0]
+    await options?.fetch?.('https://example.test/rpc', { method: 'POST' })
+
+    expect(fetch).toHaveBeenCalledWith('https://example.test/rpc', {
+      method: 'POST',
+      keepalive: true,
+    })
+  })
 })

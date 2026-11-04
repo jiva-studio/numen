@@ -17,12 +17,21 @@ const h = vi.hoisted(() => ({
     resolveLinks: vi.fn(async () => [{ path: 'resolved.md' }]),
     cancelTask: vi.fn(async () => undefined),
     detachTab: vi.fn(),
+    writeTabLinks: vi.fn(async () => undefined),
+    syncTabPath: vi.fn(async () => undefined),
+    readDetachedTab: vi.fn(async (): Promise<unknown> => null),
+    highlightWindow: vi.fn(async () => undefined),
   },
 }))
 
 vi.mock('../vault', () => ({ core: h.core }))
 vi.mock('@/features/command-palette', () => ({ runSupport: () => ({ name: 'runs' }) }))
-vi.mock('@/features/tab-linking', () => ({ useTabLinks: () => h.f.tabLinks }))
+vi.mock('@/features/tab-linking', () => ({
+  useTabLinks: (args: unknown) => {
+    h.args.tabLinks = args
+    return h.f.tabLinks
+  },
+}))
 vi.mock('@/shared/notices/messages', () => ({ createMessageLog: () => h.f.log }))
 vi.mock('@/entities/tab', () => ({
   createWorkspace: vi.fn(),
@@ -38,7 +47,8 @@ vi.mock('@/entities/tab', () => ({
 vi.mock('../tabs/useTabSync', () => ({
   createTabSync: (args: unknown) => {
     h.args.tabSync = args
-    return { name: 'tabSync' }
+    h.args.tabSyncResult = { name: 'tabSync', applySync: vi.fn(), applyGroupPaths: vi.fn() }
+    return h.args.tabSyncResult
   },
 }))
 vi.mock('../tabs/useNoteEditors', () => ({
@@ -101,10 +111,28 @@ vi.mock('../shell/useWindowStatusBar', () => ({
   },
 }))
 vi.mock('../commands/useAppHotkeys', () => ({ useAppHotkeys: vi.fn() }))
-vi.mock('../tabs/useCrossWindowTabs', () => ({
-  useCrossWindowTabs: (args: unknown) => {
-    h.args.crossWindow = args
-    return { dockToOtherWindow: vi.fn(), windowId: 'win-1' }
+vi.mock('../tabs/tabLinkSession', () => ({
+  createTabLinkSession: (args: unknown) => {
+    h.args.tabLinkSession = args
+    return h.f.tabLinkSession
+  },
+  getWindowReport: () => h.f.windowReport.value,
+}))
+vi.mock('../tabs/tabMove', () => ({
+  createTabMover: (args: unknown) => {
+    h.args.tabMover = args
+    return h.f.tabMover
+  },
+  createMovedTabOpener: (args: unknown) => {
+    h.args.movedTabOpener = args
+    return h.f.openMovedTab
+  },
+}))
+vi.mock('./windowRuntime', () => ({
+  focusWindow: vi.fn(async () => undefined),
+  closeWindow: vi.fn(async () => undefined),
+  closeWindowWhenEmpty: (args: unknown) => {
+    h.args.emptyWindowClose = args
   },
 }))
 vi.mock('../plugins/useWindowPlugins', () => ({
@@ -143,7 +171,22 @@ beforeEach(() => {
   h.f = {
     writer,
     log: { getWriter: vi.fn(() => writer) },
-    tabLinks: { removeClosedTab: vi.fn() },
+    tabLinks: { name: 'tabLinks' },
+    tabLinkSession: {
+      start: vi.fn(async () => undefined),
+      close: vi.fn(),
+      reportTabs: vi.fn(),
+      reopen: vi.fn(async () => undefined),
+      acceptMove: vi.fn(),
+      waitForReports: vi.fn(async () => undefined),
+    },
+    windowReport: ref<unknown>({ tabs: [], window: {} }),
+    tabMover: {
+      detachTab: vi.fn(async () => undefined),
+      detachTabAt: vi.fn(async () => undefined),
+      moveTab: vi.fn(async () => undefined),
+    },
+    openMovedTab: vi.fn(async () => undefined),
     tabOpeners: { openFileAt: vi.fn(() => Promise.resolve()) },
     windowTabs: {
       layout: ref(null),
@@ -156,6 +199,7 @@ beforeEach(() => {
       finishClose: vi.fn(),
       reconcileTab: vi.fn(),
       openTabOfKind: vi.fn(),
+      openSavedTab: vi.fn(),
       restoreTabs: vi.fn(),
       openPlacedTabs: vi.fn(async () => undefined),
       close: vi.fn(),
@@ -419,14 +463,20 @@ describe('what the window knows of a note', () => {
 })
 
 describe('a tab closed', () => {
-  it('is forgotten by the links, released and removed from the layout when no hold is passed', () => {
+  it('is released and removed from the layout when no hold is passed', () => {
     const window = useWindow()
 
-    window.closeTab('t1')
+    expect(window.closeTab('t1')).toBe(true)
 
-    expect(h.f.tabLinks.removeClosedTab).toHaveBeenCalledWith('t1')
     expect(h.f.windowTabs.releaseTab).toHaveBeenCalledWith('t1')
     expect(h.f.windowTabs.finishClose).toHaveBeenCalledWith('t1')
+  })
+
+  it('returns false where the tab was not released', () => {
+    h.f.windowTabs.releaseTab.mockReturnValue(false)
+    const window = useWindow()
+
+    expect(window.closeTab('t1')).toBe(false)
   })
 
   it('calls the hold where the tab was not released', () => {
@@ -459,81 +509,82 @@ describe('a tab closed', () => {
   })
 })
 
-describe('a tab detached', () => {
-  const PLEX_TAB = 'plex:248cab16-f508-4fb4-a820-16b6f9090fc3'
-
-  beforeEach(() => {
-    h.core.detachTab.mockReset()
-    h.f.windowTabs.getTab.mockReturnValue({
-      kind: { kind: 'plex', getOpenTab: () => ({ path: 'Physics.md' }) },
-      state: {},
-    })
-  })
-
-  it('opens in a new window by its kind and path, and closes here', async () => {
-    h.core.detachTab.mockResolvedValue(undefined)
+describe('tab detach and move wiring', () => {
+  it('calls the mover with the window id', () => {
     const window = useWindow()
 
-    window.detachTab(PLEX_TAB, { x: 100, y: 200 })
-    await vi.waitFor(() => expect(h.f.windowTabs.finishClose).toHaveBeenCalledWith(PLEX_TAB))
+    window.detachTab('t1', { x: 1, y: 2 })
+    window.detachTabAt('t1', { x: 3, y: 4 })
+    window.moveTab('t1', 'window-b')
 
-    expect(h.core.detachTab).toHaveBeenCalledWith(
-      { kind: 'plex', path: 'Physics.md' },
-      { x: 100, y: 200 },
-    )
-    expect(h.f.windowTabs.releaseTab).toHaveBeenCalledWith(PLEX_TAB)
+    expect(h.f.tabMover.detachTab).toHaveBeenCalledWith('t1', { x: 1, y: 2 })
+    expect(h.f.tabMover.detachTabAt).toHaveBeenCalledWith('t1', { x: 3, y: 4 })
+    expect(h.f.tabMover.moveTab).toHaveBeenCalledWith('t1', 'window-b')
+    expect(h.args.tabMover.windowId).toBe(window.windowId)
+    expect(h.args.tabMover.core).toBe(h.core)
   })
 
-  it('sends no path for a tab that shows none', async () => {
-    h.core.detachTab.mockResolvedValue(undefined)
-    h.f.windowTabs.getTab.mockReturnValue({ kind: { kind: 'settings' }, state: {} })
+  it('closes the source tab through the tab closer', () => {
+    useWindow()
+
+    h.args.tabMover.closeTab('t1')
+
+    expect(h.f.windowTabs.releaseTab).toHaveBeenCalledWith('t1')
+    expect(h.f.windowTabs.finishClose).toHaveBeenCalledWith('t1')
+  })
+
+  it('reports a tab as asking when its kind is asking', () => {
+    h.f.editing.reached.asking = vi.fn(() => false)
+    h.f.windowTabs.getTab.mockReturnValue({ kind: { isAsking: () => true }, state: {} })
     const window = useWindow()
 
-    window.detachTab('settings:settings', { x: 1, y: 2 })
-
-    expect(h.core.detachTab).toHaveBeenCalledWith({ kind: 'settings', path: '' }, { x: 1, y: 2 })
+    expect(window.isTabAsking('t1')).toBe(true)
   })
+})
 
-  it('does nothing for a tab the window no longer holds', () => {
-    h.f.windowTabs.getTab.mockReturnValue(undefined)
+describe('moved tab wiring', () => {
+  it('opens a moved tab through the opener, accepts it through the session, and sets the highlight', async () => {
     const window = useWindow()
-
-    window.detachTab(PLEX_TAB, { x: 1, y: 2 })
-
-    expect(h.core.detachTab).not.toHaveBeenCalled()
-  })
-
-  it('opens at the screen point of a point given in the window', async () => {
-    h.core.detachTab.mockResolvedValue(undefined)
-    vi.stubGlobal('screenX', 1000)
-    vi.stubGlobal('screenY', 500)
-    try {
-      const window = useWindow()
-
-      window.detachTabAt(PLEX_TAB, { x: 30, y: 40 })
-
-      expect(h.core.detachTab).toHaveBeenCalledWith(
-        { kind: 'plex', path: 'Physics.md' },
-        { x: 1030, y: 540 },
-      )
-    } finally {
-      vi.unstubAllGlobals()
+    const moved = {
+      tab: { id: 'plex:2', kind: 'plex', path: 'Tides.md', title: 'Tides', state: '' },
+      moveId: 'move-1',
     }
+
+    h.args.tabLinkSession.openMovedTab(moved)
+    h.args.tabLinkSession.setHighlighted(true)
+
+    await vi.waitFor(() => expect(h.f.openMovedTab).toHaveBeenCalledWith(moved))
+    expect(h.args.movedTabOpener.acceptMove).toBe(h.f.tabLinkSession.acceptMove)
+    expect(window.isHighlighted.value).toBe(true)
   })
 
-  it('stays open and reports the error where the new window did not open', async () => {
-    h.core.detachTab.mockRejectedValue(new Error('no window'))
+  it('sends HighlightWindow through the core', async () => {
     const window = useWindow()
 
-    window.detachTab(PLEX_TAB, { x: 100, y: 200 })
-    await vi.waitFor(() =>
-      expect(h.f.writer).toHaveBeenCalledWith(
-        expect.stringContaining('The tab did not open in a new window'),
-        'error',
-      ),
-    )
+    window.highlightWindow('window-b', true)
 
-    expect(h.f.windowTabs.releaseTab).not.toHaveBeenCalled()
+    await vi.waitFor(() => expect(h.core.highlightWindow).toHaveBeenCalledWith('window-b', true))
+  })
+
+  it('sends a highlight request after the previous one completes', async () => {
+    let finishOn = (): void => undefined
+    h.core.highlightWindow.mockImplementationOnce(
+      () => new Promise<undefined>((resolve) => (finishOn = () => resolve(undefined))),
+    )
+    const window = useWindow()
+
+    window.highlightWindow('window-b', true)
+    window.highlightWindow('window-b', false)
+    await vi.waitFor(() => expect(h.core.highlightWindow).toHaveBeenCalledOnce())
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(h.core.highlightWindow).toHaveBeenCalledOnce()
+    finishOn()
+
+    await vi.waitFor(() => expect(h.core.highlightWindow).toHaveBeenCalledTimes(2))
+    expect(h.core.highlightWindow.mock.calls).toStrictEqual([
+      ['window-b', true],
+      ['window-b', false],
+    ])
   })
 })
 
@@ -557,31 +608,6 @@ describe('the window started and closed', () => {
     expect(h.f.editing.close).toHaveBeenCalledOnce()
     expect(h.f.windowTabs.close).toHaveBeenCalledOnce()
     expect(h.f.settings.close).toHaveBeenCalledOnce()
-  })
-})
-
-describe('the layout started with an initial tab', () => {
-  it('opens the tab of the kind and path the page names', async () => {
-    h.f.windowTabs.openTabOfKind.mockResolvedValue('note:hello.md')
-    try {
-      vi.stubGlobal(
-        'location',
-        new URL('http://localhost/?window=secondary&kind=reader%3Aepub&path=books%2Fa+b.epub'),
-      )
-      const window = useWindow()
-
-      await h.args.bootstrap.startLayout()
-
-      expect(h.f.windowTabs.openTabOfKind).toHaveBeenCalledWith('reader:epub', 'books/a b.epub')
-      expect(h.f.windowTabs.layout.value).toEqual({
-        root: { kind: 'pane', id: 'main', tabs: ['note:hello.md'], active: 'note:hello.md' },
-        axis: 'horizontal',
-        focus: 'main',
-      })
-      expect(window.isLayoutReady.value).toBe(true)
-    } finally {
-      vi.unstubAllGlobals()
-    }
   })
 })
 
@@ -748,7 +774,6 @@ describe('the services a plugin is given', () => {
     try {
       vi.stubGlobal('location', new URL('http://localhost/'))
       const window = useWindow()
-      expect(h.args.crossWindow.closeWindowIfEmpty).toBeUndefined()
 
       // Empty activeVault id returns early
       h.f.vaults.activeVault.value = { id: '' }
@@ -769,34 +794,154 @@ describe('the services a plugin is given', () => {
       expect(window.isLayoutReady.value).toBe(true)
       expect(h.args.openTabs.isWriting.value).toBe(true)
 
-      // Initial tab without colon that fails to open -> falls back to openPlacedTabs when readOpenTabs rejects
-      vi.stubGlobal('location', new URL('http://localhost/?window=secondary'))
-      useWindow()
-      expect(typeof h.args.crossWindow.closeWindowIfEmpty).toBe('function')
-
-      vi.stubGlobal('location', new URL('http://localhost/?secondary&kind=files'))
+      // readDetachedTab fails -> the detach window opens no tab and does not restore the vault tabs
+      vi.stubGlobal('location', new URL('http://localhost/?secondary&id=files:1'))
       const secondaryWin = useWindow()
-      expect(typeof h.args.crossWindow.closeWindowIfEmpty).toBe('function')
-      h.args.crossWindow.closeWindowIfEmpty()
-      expect(h.f.display.close).toHaveBeenCalledOnce()
+      h.core.readOpenTabs.mockClear()
 
-      h.f.windowTabs.openTabOfKind.mockResolvedValueOnce(undefined)
-      h.core.readOpenTabs.mockRejectedValueOnce(new Error('offline'))
-      h.f.windowTabs.openPlacedTabs.mockImplementationOnce(
-        async (onErr: (kind: string, err: unknown) => void) => {
-          onErr('files', new Error('placed err'))
-        },
-      )
+      h.core.readDetachedTab.mockRejectedValueOnce(new Error('offline'))
       await h.args.bootstrap.startLayout()
-      expect(h.f.windowTabs.openTabOfKind).toHaveBeenCalledWith('files', '')
-      expect(h.f.writer).toHaveBeenCalledWith(
-        'The files tab did not open: Numen is not responding; retrying',
-        'error',
-      )
+      expect(h.core.readDetachedTab).toHaveBeenCalledWith(h.args.tabLinkSession.windowId, 'files:1')
+      expect(h.f.openMovedTab).not.toHaveBeenCalled()
+      expect(h.core.readOpenTabs).not.toHaveBeenCalled()
+      expect(h.f.windowTabs.openPlacedTabs).not.toHaveBeenCalled()
       expect(secondaryWin.isLayoutReady.value).toBe(true)
       expect(h.args.openTabs.isWriting.value).toBe(false)
     } finally {
       vi.unstubAllGlobals()
     }
+  })
+})
+
+describe('tab links wiring', () => {
+  it('writes a link after the pending tab reports', async () => {
+    let finishReports: () => void = () => undefined
+    h.f.tabLinkSession.waitForReports.mockImplementationOnce(
+      () => new Promise<undefined>((resolve) => (finishReports = () => resolve(undefined))),
+    )
+    useWindow()
+
+    const request = h.args.tabLinks.write({ link: { source: 'plex:1', target: 'plex:2' } })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(h.core.writeTabLinks).not.toHaveBeenCalled()
+    finishReports()
+    await request
+
+    expect(h.core.writeTabLinks).toHaveBeenCalledExactlyOnceWith(h.args.tabLinkSession.windowId, {
+      link: { source: 'plex:1', target: 'plex:2' },
+    })
+  })
+
+  it('uses one window id for writes and the watch', async () => {
+    useWindow()
+    const windowId = h.args.tabLinkSession.windowId
+
+    await h.args.tabLinks.write({ unlink: 'plex:1' })
+
+    expect(windowId).toMatch(/^[0-9a-f-]{36}$/)
+    expect(h.core.writeTabLinks).toHaveBeenCalledWith(windowId, { unlink: 'plex:1' })
+    expect(h.args.tabLinkSession.tabLinks).toBe(h.f.tabLinks)
+    expect(h.args.tabSync.tabLinks).toBe(h.f.tabLinks)
+  })
+
+  it('sends the new path of a linked tab to the core', async () => {
+    useWindow()
+    const sync = { sourceTabId: 'plex:1', path: 'Orbits.md', title: 'Orbits' }
+
+    await h.args.tabSync.sendSync(sync)
+
+    expect(h.core.syncTabPath).toHaveBeenCalledWith(sync)
+  })
+
+  it('starts with the window and stops when it closes', async () => {
+    useWindow()
+
+    await h.args.bootstrap.startWindow()
+    expect(h.f.tabLinkSession.start).toHaveBeenCalledOnce()
+
+    h.args.bootstrap.closeWindow()
+    expect(h.f.tabLinkSession.close).toHaveBeenCalledOnce()
+    expect(h.f.display.close).toHaveBeenCalledOnce()
+  })
+
+  it('reports the tabs again when the window report changes', async () => {
+    useWindow()
+
+    h.f.windowReport.value = { tabs: [], window: { isMain: true, tabCount: 1 } }
+    await vi.waitFor(() => expect(h.f.tabLinkSession.reportTabs).toHaveBeenCalledOnce())
+    expect(h.args.tabLinkSession.getReport()).toStrictEqual(h.f.windowReport.value)
+  })
+
+  it('reports an error when the core rejects a link', () => {
+    useWindow()
+
+    h.args.tabLinks.onError(new Error('refused'))
+
+    expect(h.f.writer).toHaveBeenCalledWith(
+      'The tabs were not linked: Numen is not responding; retrying',
+      'error',
+    )
+  })
+
+  it('opens a detached tab with its id and saved state', async () => {
+    try {
+      vi.stubGlobal('location', new URL('http://localhost/?window=secondary&id=plex:4f1c'))
+      const detached = {
+        tab: {
+          id: 'plex:4f1c',
+          kind: 'plex',
+          path: 'Orbits.md',
+          title: 'Orbits',
+          state: '{"focus":"Kepler"}',
+        },
+        moveId: 'move-1',
+      }
+      h.core.readDetachedTab.mockResolvedValueOnce(detached)
+      const window = useWindow()
+
+      await h.args.bootstrap.startLayout()
+
+      expect(h.core.readDetachedTab).toHaveBeenCalledWith(
+        h.args.tabLinkSession.windowId,
+        'plex:4f1c',
+      )
+      await vi.waitFor(() => expect(h.f.openMovedTab).toHaveBeenCalledWith(detached))
+      expect(h.core.readOpenTabs).not.toHaveBeenCalled()
+      expect(window.isLayoutReady.value).toBe(true)
+      expect(h.args.emptyWindowClose.tabCount()).toBe(0)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('closes the tab links session when the page hides', () => {
+    useWindow()
+
+    globalThis.dispatchEvent(new Event('pagehide'))
+
+    expect(h.f.tabLinkSession.close).toHaveBeenCalled()
+  })
+
+  it('reopens the tab links session when the page is restored from the back-forward cache', () => {
+    useWindow()
+    h.f.tabLinkSession.reopen.mockClear()
+
+    globalThis.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: false }))
+    expect(h.f.tabLinkSession.reopen).not.toHaveBeenCalled()
+
+    globalThis.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }))
+    expect(h.f.tabLinkSession.reopen).toHaveBeenCalled()
+  })
+
+  it('passes the group paths of each snapshot to the tab sync', () => {
+    useWindow()
+
+    expect(h.args.tabLinkSession.applyGroupPaths).toBe(h.args.tabSyncResult.applyGroupPaths)
+  })
+
+  it('does not close the main window when its last tab closes', () => {
+    useWindow()
+
+    expect(h.args.emptyWindowClose).toBeUndefined()
   })
 })

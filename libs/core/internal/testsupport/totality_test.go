@@ -44,6 +44,7 @@ func getWalked() map[protoreflect.FullName]string {
 		"numen.v1.Relation":               "adapter/window/editor: written by convertRelationToWire",
 		"numen.v1.Origin":                 "internal/adapter/theme: written by encodeOrigin",
 		"numen.v1.TextErrorCode":          "internal/adapter/plugin/textbridge: read by readError",
+		"numen.v1.TabMoveErrorCode":       "adapter/window/editor: written by convertMoveErrorToWire",
 		"numen.v1.ToolEffect":             "plugin-sdk-go/tools: written by writeEffect",
 		"numen.v1.ToolErrorCode":          "plugin-sdk-go/tools: written by CallTool",
 		"numen.v1.ToolServer":             "plugin-sdk-go/tools: written by writeServers",

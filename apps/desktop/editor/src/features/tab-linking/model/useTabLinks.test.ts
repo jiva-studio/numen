@@ -1,128 +1,132 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { useTabLinks } from './useTabLinks'
+import type { TabLinksSnapshot } from '../types'
 
-describe('useTabLinks', () => {
-  it('links two tabs into a new group', () => {
-    const tabLinks = useTabLinks()
-    tabLinks.linkTabs('tab-1', 'tab-2')
+const SNAPSHOT: TabLinksSnapshot = {
+  groups: [
+    { id: 'group-1', colorIndex: 1, tabs: ['plex:1', 'files:2'], path: '', title: '' },
+    { id: 'group-2', colorIndex: 2, tabs: ['plex:3', 'plex:4', 'plex:5'], path: '', title: '' },
+  ],
+  tabs: [
+    { id: 'plex:1', kind: 'plex', title: 'Orbits', windowId: 'window-a' },
+    { id: 'files:2', kind: 'files', title: 'Files', windowId: 'window-b' },
+  ],
+  windows: [
+    { id: 'window-a', isMain: true, activeTitle: 'Orbits', activeKind: 'plex', tabCount: 1 },
+    { id: 'window-b', isMain: false, activeTitle: 'Files', activeKind: 'files', tabCount: 1 },
+  ],
+}
 
-    expect(tabLinks.getLinkedTargets('tab-1')).toEqual(['tab-2'])
-    expect(tabLinks.getLinkedTargets('tab-2')).toEqual(['tab-1'])
+const setup = () => {
+  const write = vi.fn((_change: unknown) => Promise.resolve())
+  const onError = vi.fn()
+  return { write, onError, tabLinks: useTabLinks({ write, onError }) }
+}
 
-    const group = tabLinks.getGroupOf('tab-1')
-    expect(group).not.toBeNull()
-    expect(group?.colorIndex).toBe(1)
-    expect(group?.tabs).toEqual(['tab-1', 'tab-2'])
-    expect(tabLinks.groups.size).toBe(1)
-  })
+describe('useTabLinks snapshot', () => {
+  it('has no groups before the first snapshot', () => {
+    const { tabLinks } = setup()
 
-  it('links three tabs into the same group', () => {
-    const tabLinks = useTabLinks()
-    tabLinks.linkTabs('tab-1', 'tab-2')
-    tabLinks.linkTabs('tab-1', 'tab-3')
-
-    expect(tabLinks.getLinkedTargets('tab-1')).toEqual(['tab-2', 'tab-3'])
-    expect(tabLinks.getLinkedTargets('tab-2')).toEqual(['tab-1', 'tab-3'])
-    expect(tabLinks.getLinkedTargets('tab-3')).toEqual(['tab-1', 'tab-2'])
-
-    const group = tabLinks.getGroupOf('tab-3')
-    expect(group?.colorIndex).toBe(1)
-    expect(group?.tabs).toEqual(['tab-1', 'tab-2', 'tab-3'])
-  })
-
-  it('merges two separate groups when linking tabs from each', () => {
-    const tabLinks = useTabLinks()
-    tabLinks.linkTabs('tab-1', 'tab-2')
-    tabLinks.linkTabs('tab-3', 'tab-4')
-
-    expect(tabLinks.groups.size).toBe(2)
-
-    tabLinks.linkTabs('tab-1', 'tab-3')
-
-    expect(tabLinks.groups.size).toBe(1)
-    expect(tabLinks.getLinkedTargets('tab-1')).toEqual(['tab-2', 'tab-3', 'tab-4'])
-  })
-
-  it('adds source to existing target group when only target is in a group', () => {
-    const tabLinks = useTabLinks()
-    tabLinks.linkTabs('tab-2', 'tab-3')
-    tabLinks.linkTabs('tab-1', 'tab-2')
-
-    expect(tabLinks.getLinkedTargets('tab-1')).toEqual(['tab-2', 'tab-3'])
-  })
-
-  it('ignores linking when tabs are invalid or already in same group', () => {
-    const tabLinks = useTabLinks()
-    tabLinks.linkTabs('', 'tab-2')
-    tabLinks.linkTabs('tab-1', '')
-    tabLinks.linkTabs('tab-1', 'tab-1')
     expect(tabLinks.groups.size).toBe(0)
-
-    tabLinks.linkTabs('tab-1', 'tab-2')
-    tabLinks.linkTabs('tab-1', 'tab-2')
-    expect(tabLinks.getLinkedTargets('tab-1')).toEqual(['tab-2'])
+    expect(tabLinks.tabs).toStrictEqual([])
+    expect(tabLinks.getGroupOf('plex:1')).toBeNull()
+    expect(tabLinks.getLinkedTargets('plex:1')).toStrictEqual([])
   })
 
-  it('leaves the groups untouched when two tabs of one group are linked again', () => {
-    const tabLinks = useTabLinks()
-    tabLinks.linkTabs('tab-1', 'tab-2')
-    tabLinks.linkTabs('tab-1', 'tab-3')
-    const before = tabLinks.groups
+  it('stores the groups and tabs of the last snapshot', () => {
+    const { tabLinks } = setup()
+    tabLinks.applySnapshot(SNAPSHOT)
 
-    tabLinks.linkTabs('tab-2', 'tab-3')
+    expect(tabLinks.getGroupOf('files:2')?.id).toBe('group-1')
+    expect(tabLinks.getLinkedTargets('plex:4')).toStrictEqual(['plex:3', 'plex:5'])
+    expect(tabLinks.tabs.map((tab) => tab.windowId)).toStrictEqual(['window-a', 'window-b'])
+    expect(tabLinks.windows).toStrictEqual(SNAPSHOT.windows)
 
-    expect(tabLinks.groups).toBe(before)
+    tabLinks.applySnapshot({ groups: [SNAPSHOT.groups[1]!], tabs: [], windows: [] })
+
+    expect(tabLinks.getGroupOf('plex:1')).toBeNull()
+    expect(tabLinks.groups.size).toBe(1)
+    expect(tabLinks.tabs).toStrictEqual([])
+    expect(tabLinks.windows).toStrictEqual([])
+  })
+})
+
+describe('useTabLinks changes', () => {
+  it('writes a change to the core and updates the groups on the next snapshot', async () => {
+    const { tabLinks, write } = setup()
+
+    tabLinks.linkTabs('plex:1', 'files:2')
+
+    await vi.waitFor(() =>
+      expect(write).toHaveBeenCalledWith({ link: { source: 'plex:1', target: 'files:2' } }),
+    )
+    expect(tabLinks.getGroupOf('plex:1')).toBeNull()
   })
 
-  it('unlinks a single tab leaving remaining tabs linked', () => {
-    const tabLinks = useTabLinks()
-    tabLinks.linkTabs('tab-1', 'tab-2')
-    tabLinks.linkTabs('tab-1', 'tab-3')
+  it('writes no link for an empty tab id or a tab linked to itself', () => {
+    const { tabLinks, write } = setup()
 
-    tabLinks.unlinkTab('tab-2')
+    tabLinks.linkTabs('', 'files:2')
+    tabLinks.linkTabs('plex:1', '')
+    tabLinks.linkTabs('plex:1', 'plex:1')
 
-    expect(tabLinks.getLinkedTargets('tab-2')).toEqual([])
-    expect(tabLinks.getLinkedTargets('tab-1')).toEqual(['tab-3'])
-    expect(tabLinks.getLinkedTargets('tab-3')).toEqual(['tab-1'])
+    expect(write).not.toHaveBeenCalled()
   })
 
-  it('handles unlinking a tab that is not in any group', () => {
-    const tabLinks = useTabLinks()
-    tabLinks.unlinkTab('tab-unlinked')
-    expect(tabLinks.getLinkedTargets('tab-unlinked')).toEqual([])
+  it('unlinks a linked tab and writes nothing for an unlinked tab', async () => {
+    const { tabLinks, write } = setup()
+    tabLinks.applySnapshot(SNAPSHOT)
+
+    tabLinks.unlinkTab('plex:9')
+    expect(write).not.toHaveBeenCalled()
+
+    tabLinks.unlinkTab('plex:1')
+    await vi.waitFor(() => expect(write).toHaveBeenCalledWith({ unlink: 'plex:1' }))
   })
 
-  it('dissolves group when only one tab remains', () => {
-    const tabLinks = useTabLinks()
-    tabLinks.linkTabs('tab-1', 'tab-2')
-    tabLinks.unlinkTab('tab-1')
+  it('reports an error when the core rejects a change', async () => {
+    const { tabLinks, write, onError } = setup()
+    const failure = new Error('the core is gone')
+    write.mockRejectedValueOnce(failure)
 
-    expect(tabLinks.getLinkedTargets('tab-1')).toEqual([])
-    expect(tabLinks.getLinkedTargets('tab-2')).toEqual([])
-    expect(tabLinks.getGroupOf('tab-2')).toBeNull()
+    tabLinks.linkTabs('plex:1', 'files:2')
+    await vi.waitFor(() => expect(onError).toHaveBeenCalledWith(failure))
+  })
+})
+
+describe('useTabLinks write order', () => {
+  it('writes a link and then an unlink in the order they were made', async () => {
+    const { tabLinks, write } = setup()
+    tabLinks.applySnapshot(SNAPSHOT)
+    let finishLink = (): void => undefined
+    write.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishLink = resolve
+        }),
+    )
+
+    tabLinks.linkTabs('plex:1', 'plex:3')
+    tabLinks.unlinkTab('plex:1')
+    await vi.waitFor(() => expect(write).toHaveBeenCalledOnce())
+    finishLink()
+
+    await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(2))
+    expect(write.mock.calls).toStrictEqual([
+      [{ link: { source: 'plex:1', target: 'plex:3' } }],
+      [{ unlink: 'plex:1' }],
+    ])
   })
 
-  it('removes closed tab correctly', () => {
-    const tabLinks = useTabLinks()
-    tabLinks.linkTabs('tab-1', 'tab-2')
-    tabLinks.removeClosedTab('tab-1')
+  it('writes the next change after the core rejects one', async () => {
+    const { tabLinks, write, onError } = setup()
+    tabLinks.applySnapshot(SNAPSHOT)
+    write.mockRejectedValueOnce(new Error('the core is gone'))
 
-    expect(tabLinks.getLinkedTargets('tab-2')).toEqual([])
-    expect(tabLinks.getGroupOf('tab-2')).toBeNull()
-  })
+    tabLinks.linkTabs('plex:1', 'plex:3')
+    tabLinks.unlinkTab('plex:1')
 
-  it('allocates and recycles color indices correctly', () => {
-    const tabLinks = useTabLinks()
-    tabLinks.linkTabs('a1', 'a2')
-    tabLinks.linkTabs('b1', 'b2')
-    tabLinks.linkTabs('c1', 'c2')
-    tabLinks.linkTabs('d1', 'd2')
-    tabLinks.linkTabs('e1', 'e2')
-
-    expect(tabLinks.getGroupOf('a1')?.colorIndex).toBe(1)
-    expect(tabLinks.getGroupOf('b1')?.colorIndex).toBe(2)
-    expect(tabLinks.getGroupOf('c1')?.colorIndex).toBe(3)
-    expect(tabLinks.getGroupOf('d1')?.colorIndex).toBe(4)
-    expect(tabLinks.getGroupOf('e1')?.colorIndex).toBe(1)
+    await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(2))
+    expect(onError).toHaveBeenCalledOnce()
   })
 })

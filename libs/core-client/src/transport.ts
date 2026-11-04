@@ -11,3 +11,9 @@ const getOrigin = (): string =>
   typeof window === 'undefined' || !window.location ? '' : window.location.origin
 
 export const transport = createConnectTransport({ baseUrl: getOrigin() })
+
+/** Sends requests with keepalive, so they complete after the page unloads. */
+export const keepaliveTransport = createConnectTransport({
+  baseUrl: getOrigin(),
+  fetch: (input, init) => globalThis.fetch(input, { ...init, keepalive: true }),
+})

@@ -16,6 +16,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/broadcast"
+	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/tablinks"
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
@@ -83,6 +84,10 @@ type State struct {
 
 	// DetachTab opens a tab in a window of its own.
 	DetachTab func(context.Context, DetachedTab) error
+
+	// TabLinks stores the link groups of the tabs of all windows. When nil, the
+	// tab links RPCs return Unimplemented.
+	TabLinks *tablinks.Registry
 
 	// Writing is the writes taken and not yet finished.
 	Writing inflight
@@ -359,11 +364,10 @@ func newEditBroadcaster() broadcaster[domain.Edit] {
 	}
 }
 
-// DetachedTab is a tab to open in a window of its own.
+// DetachedTab is a tab to open in a window of its own. The new window reads
+// the tab by its id with ReadDetachedTab.
 type DetachedTab struct {
-	Kind string
-	// Path is the vault path the tab shows; empty for a tab that shows none.
-	Path string
+	ID string
 	// X and Y are the screen position of the new window.
 	X, Y int
 }

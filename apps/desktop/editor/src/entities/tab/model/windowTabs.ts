@@ -105,6 +105,7 @@ export function useWindowTabs(unavailable: UnavailableServices = {}) {
     getTabStateIn: queries.getTabStateIn,
     createTab: openers.createTab,
     openTabOfKind: openers.openTabOfKind,
+    openSavedTab: (saved: SavedTab) => openSavedTabAsActive(open, openers, saved),
     openTabAdjacentOfKind: openers.openTabAdjacentOfKind,
     show: openers.show,
     finishClose: openers.finishClose,
@@ -336,6 +337,16 @@ const openInIsolation = (saved: SavedTab, one: AnyTabKind) => {
   }
 }
 
+/** Opens a saved tab with its id and state unless it is open, and activates it. */
+function openSavedTabAsActive(
+  open: ShallowRef<ReadonlyMap<string, WindowTab>>,
+  openers: Pick<ReturnType<typeof createTabOpeners>, 'openSavedTab' | 'show'>,
+  saved: SavedTab,
+) {
+  if (!open.value.has(saved.id)) openers.openSavedTab(saved)
+  openers.show(saved.id)
+}
+
 /** Operations for creating and opening tabs. */
 function createTabOpeners(ctx: TabOpenerContext) {
   /** A tab the core kept, opened under its id with the state its kind saved. */
@@ -357,14 +368,15 @@ function createTabOpeners(ctx: TabOpenerContext) {
     return undefined
   }
 
-  const createTabSync = (kind: string, targetPath: string): string => {
+  const createTabSync = (kind: string, targetPath: string, wantedId = ''): string => {
     const one = ctx.byKind.get(kind) ?? createUnavailableKind(kind, undefined, ctx.unavailable)
     // Stryker disable next-line LogicalOperator: empty targetPath matches singleton tabs via candidateId below
     if (targetPath && one.identity) {
       const matchedId = findOpenTabAt(kind, targetPath)
       if (matchedId) return matchedId
     }
-    const candidateId = one.identity ? `${kind}:${one.identity(targetPath)}` : generateId(kind)
+    const candidateId =
+      wantedId || (one.identity ? `${kind}:${one.identity(targetPath)}` : generateId(kind))
     const existing = ctx.open.value.get(candidateId)
     if (existing) {
       const existingPath = getTabPath(existing)
@@ -385,10 +397,11 @@ function createTabOpeners(ctx: TabOpenerContext) {
     ctx.layout.value = openTab(ctx.layout.value, id)
   }
 
-  const openTabOfKind = async (kind: string, target = ''): Promise<string> => {
-    const id = createTabSync(kind, target)
-    show(id)
-    return id
+  /** Opens a tab of a kind and shows it. A non-empty `id` reuses a tab id from another window. */
+  const openTabOfKind = async (kind: string, target = '', id = ''): Promise<string> => {
+    const tabId = createTabSync(kind, target, id)
+    show(tabId)
+    return tabId
   }
 
   const openTabAdjacentOfKind = async (kind: string, target = ''): Promise<string> => {
@@ -476,14 +489,24 @@ function createTabNavigation(
     return id
   }
 
-  /** Every tab standing on a path, of a kind that navigates, moved to another. */
-  const navigateTabsAt = async (from: string, to: string): Promise<void> => {
-    const matchingTabs = [...open.value.values()].filter(
-      (one) => one.kind.navigate && getTabPath(one) === from,
+  /**
+   * Every tab standing on a path, of a kind that navigates, moved to another.
+   * Calls onMove with the id of each tab before it navigates.
+   */
+  const navigateTabsAt = async (
+    from: string,
+    to: string,
+    onMove?: (tabId: string) => void,
+  ): Promise<void> => {
+    const matchingTabs = [...open.value].filter(
+      ([, one]) => one.kind.navigate && getTabPath(one) === from,
     )
     await Promise.all(
-      // Stryker disable next-line OptionalChaining: matchingTabs is filtered by one.kind.navigate above.
-      matchingTabs.map((one) => Promise.resolve(one.kind.navigate?.(one.state, to, ''))),
+      matchingTabs.map(([id, one]) => {
+        onMove?.(id)
+        // Stryker disable next-line OptionalChaining: matchingTabs is filtered by one.kind.navigate above.
+        return Promise.resolve(one.kind.navigate?.(one.state, to, ''))
+      }),
     )
   }
 

@@ -4,6 +4,7 @@
 import { WINDOW } from './clients'
 import { agentService, vault, windowService, workspace } from '@/shared/clients'
 import { counted, flushResults } from './words'
+import { parseMoveError } from './tabLinks'
 import type { VaultPort } from '@/app/ports/vault'
 
 interface ScanState {
@@ -117,11 +118,11 @@ export const sessionCore: SessionCore = {
     })
   },
   detachTab: async (tab, position) => {
-    await workspace.detachTab({
-      kind: tab.kind,
-      path: tab.path,
+    const { error } = await workspace.detachTab({
+      tab: { ...tab },
       x: Math.round(position.x),
       y: Math.round(position.y),
     })
+    return parseMoveError(error)
   },
 }
