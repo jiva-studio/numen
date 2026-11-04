@@ -5,8 +5,8 @@
  * The window's structure is defined in `window.ts`. This file holds what the user
  * sees of it, and the binding between the two.
  */
-import { onMounted, onUnmounted } from 'vue'
-import { StatusBar, WorkspaceLayout } from '@numen/shell'
+import { computed, onMounted, onUnmounted } from 'vue'
+import { StatusBar, TitleBar, WorkspaceLayout } from '@numen/shell'
 import '@numen/ui/styles.css'
 import '@numen/shell/styles.css'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
@@ -17,6 +17,7 @@ import { StatusViewHost } from '@/features/status-views'
 import { WelcomeScreen } from '@/pages/welcome'
 import BootstrapFailure from './BootstrapFailure.vue'
 import { useWindow } from '../window/useWindow'
+import { useWindowFrame } from '../window/useWindowFrame'
 import { WORDS as words } from '@/shared/words'
 import { WORDS as note } from '@/entities/note'
 
@@ -62,6 +63,13 @@ const {
   detachTabAt,
   moveTab,
 } = useWindow()
+
+const frame = useWindowFrame()
+
+/** The vault the window shows; empty where none is open. */
+const vaultName = computed(
+  () => vaultList.value.vaults.find((one) => one.id === vaultList.value.showing)?.name ?? '',
+)
 
 const linkMenu = useTabLinkMenu({
   tabLinks,
@@ -109,6 +117,16 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
 
 <template>
   <main :class="{ 'is-highlighted': isHighlighted }">
+    <TitleBar
+      :app-name="words.appName"
+      :vault-name="vaultName"
+      :controls="frame.controls.value"
+      :is-maximised="frame.isMaximised.value"
+      @minimise="frame.minimise"
+      @toggle-maximise="frame.toggleMaximise"
+      @close="frame.close"
+    />
+
     <CoreFailureNotice :failure="failure" />
 
     <WorkspaceLayout
