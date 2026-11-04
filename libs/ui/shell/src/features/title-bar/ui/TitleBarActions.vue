@@ -8,8 +8,8 @@ import { Menu, measureRect, type MenuItem } from '@numen/ui'
 import { findGroupStarts } from '../lib/groups'
 import { splitActions } from '../lib/overflow'
 import { formatTooltip } from '../lib/title'
-import type { TitleBarAction } from '../model/types'
-import type { TitleBarWords } from '../model/words'
+import type { TitleBarAction } from '../lib/types'
+import type { TitleBarWords } from '../lib/words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{

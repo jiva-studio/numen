@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import TitleBar from './TitleBar.vue'
-import { NATIVE_MAC_INSET, TITLE_MIN_WIDTH } from '../model/layout'
-import type { ControlsStyle, TitleBarAction } from '../model/types'
+import { NATIVE_MAC_INSET, TITLE_MIN_WIDTH } from '../lib/layout'
+import type { ControlsStyle, TitleBarAction } from '../lib/types'
 
 const action = (id: string, group?: string, shortcut?: string): TitleBarAction => ({
   id,

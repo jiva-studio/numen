@@ -1,4 +1,4 @@
-import type { TitleBarAction } from '../model/types'
+import type { TitleBarAction } from './types'
 
 /** The ids of the actions that begin a group after the first one, where a separator is drawn. */
 export function findGroupStarts(actions: readonly TitleBarAction[]): ReadonlySet<string> {

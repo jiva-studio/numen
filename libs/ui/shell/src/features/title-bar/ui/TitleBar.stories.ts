@@ -6,7 +6,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { FilePlus, FolderTree, Search, Settings, Waypoints } from '@lucide/vue'
 import TitleBar from './TitleBar.vue'
-import type { ControlsStyle, TitleBarAction } from '../model/types'
+import type { ControlsStyle, TitleBarAction } from '../lib/types'
 import { DARK } from '@/shared/fixtures/theme'
 import { LONG, RUSSIAN } from '@/shared/fixtures/prose'
 

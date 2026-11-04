@@ -4,7 +4,7 @@
  * as three circles at the left (`mac`).
  */
 import { Copy, Minus, Square, X } from '@lucide/vue'
-import type { TitleBarWords } from '../model/words'
+import type { TitleBarWords } from '../lib/words'
 
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{

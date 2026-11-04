@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { findGroupStarts } from './groups'
-import type { TitleBarAction } from '../model/types'
+import type { TitleBarAction } from './types'
 
 const action = (id: string, group?: string): TitleBarAction => ({
   id,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { splitActions } from './overflow'
-import type { TitleBarAction } from '../model/types'
+import type { TitleBarAction } from './types'
 
 const action = (id: string): TitleBarAction => ({ id, title: id, icon: {} })
 

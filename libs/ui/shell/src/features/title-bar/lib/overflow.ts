@@ -1,4 +1,4 @@
-import type { TitleBarAction } from '../model/types'
+import type { TitleBarAction } from './types'
 
 export interface SplitActions {
   readonly visible: readonly TitleBarAction[]

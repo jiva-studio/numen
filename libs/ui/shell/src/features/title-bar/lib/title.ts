@@ -1,4 +1,4 @@
-import type { TitleBarAction } from '../model/types'
+import type { TitleBarAction } from './types'
 
 /** The title of the window: the application and the vault, or the application alone. */
 export function formatTitle(appName: string, vaultName: string): string {
