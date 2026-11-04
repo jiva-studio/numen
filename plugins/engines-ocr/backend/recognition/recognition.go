@@ -107,7 +107,8 @@ type Result struct {
 // Recognise reads the file and stores its text version. A run that the user
 // did not request skips a file whose pages have embedded text, and a file
 // already recognised in its current state. A failure is shown as a task until
-// the file is recognised again.
+// the file is recognised again. A failure of a file that is no longer in the
+// vault ends the task instead, because nothing can recognise that file again.
 func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error) {
 	on := reach{vault: r.host.Vault, store: r.host.Store, texts: r.host.Texts}
 	if req.Vault != "" {
@@ -118,7 +119,7 @@ func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: req.IsUserStarted,
 	}
 	res, err := r.recognise(ctx, on, req, &task)
-	if err != nil && ctx.Err() == nil {
+	if err != nil && ctx.Err() == nil && !isMissing(ctx, on.vault, req.Path) {
 		task.FailureReason = err.Error()
 		if reportErr := r.host.Queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {
 			return res, errors.Join(err, reportErr)
@@ -129,6 +130,12 @@ func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error
 		return res, finishErr
 	}
 	return res, err
+}
+
+// isMissing reports whether the file is no longer in the vault.
+func isMissing(ctx context.Context, vault host.Vault, filePath string) bool {
+	_, err := vault.StatFile(ctx, filePath)
+	return errors.Is(err, host.ErrNotExist)
 }
 
 // reach is the vault a recognition reads, its store and its text versions, all of one vault.

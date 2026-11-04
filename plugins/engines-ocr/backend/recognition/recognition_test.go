@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"image"
 	"os"
 	"strings"
@@ -52,10 +53,11 @@ func TestMain(m *testing.M) {
 // pages returns "page N" for the Nth page, in one block whose two lines are in the top
 // and the bottom half of the page, and counts the pages.
 type pages struct {
-	mu        sync.Mutex
-	pageCount int
-	err       error
-	says      string
+	mu          sync.Mutex
+	pageCount   int
+	err         error
+	says        string
+	onRecognise func()
 }
 
 func (p *pages) GetRecognitionModel() recognition.Model {
@@ -66,6 +68,9 @@ func (p *pages) Recognise(_ context.Context, page image.Image) ([]recognition.Bl
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.pageCount++
+	if p.onRecognise != nil {
+		p.onRecognise()
+	}
 	if p.err != nil {
 		return nil, p.err
 	}
@@ -88,6 +93,19 @@ func (p *pages) getPageCount() int {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.pageCount
+}
+
+// textsOfVault are texts that refuse a version of a file the vault no longer holds, as the host does.
+type textsOfVault struct {
+	*hosttest.Texts
+	vault *hosttest.Vault
+}
+
+func (t textsOfVault) PutVersion(ctx context.Context, params host.TextPut) (domain.TextVersion, error) {
+	if _, isThere := t.vault.Content(params.Path); !isThere {
+		return domain.TextVersion{}, fmt.Errorf("%s: %w", params.Path, host.ErrNotExist)
+	}
+	return t.Texts.PutVersion(ctx, params)
 }
 
 // scene is one vault holding a scan and a PDF with a text layer, and the plugin over it.
@@ -125,7 +143,7 @@ func newScene(t *testing.T) *scene {
 		s.texts.File(path, []byte(raw))
 	}
 	run, err := recognition.New(
-		recognition.Host{Vault: s.vault, Store: s.store, Texts: s.texts, Queue: s.queue},
+		recognition.Host{Vault: s.vault, Store: s.store, Texts: textsOfVault{Texts: s.texts, vault: s.vault}, Queue: s.queue},
 		func(context.Context) (recognition.Recogniser, error) { return s.recogniser, nil },
 	)
 	if err != nil {
@@ -353,6 +371,23 @@ func TestRecogniseMissingFileFails(t *testing.T) {
 	s := newScene(t)
 	if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/gone.pdf"}); !errors.Is(err, host.ErrNotExist) {
 		t.Fatalf("a file that is not there answered %v", err)
+	}
+	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
+		t.Errorf("tasks %+v for a file that is not there", tasks)
+	}
+}
+
+func TestRecogniseFileDeletedDuringRecognitionLeavesNoTask(t *testing.T) {
+	s := newScene(t)
+	s.recogniser.onRecognise = func() { s.vault.Remove("books/scan.pdf") }
+
+	_, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf", IsUserStarted: true})
+
+	if !errors.Is(err, host.ErrNotExist) {
+		t.Fatalf("a file deleted during its recognition answered %v", err)
+	}
+	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
+		t.Errorf("tasks %+v after the file was deleted", tasks)
 	}
 }
 
