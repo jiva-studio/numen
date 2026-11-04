@@ -168,7 +168,13 @@ const SECTION_ORDER = {
   handlers: 5,
   helpers: 6,
 }
-const bannerRegex = /^-{3,}\s*([A-Za-z &]+?)\s*-{3,}$/
+
+/** Returns the name of a `--- Name ---` banner comment, or null when the comment is not a banner. */
+function getBannerName(comment) {
+  const match = /^-{3,}([^-]+)-{3,}$/.exec(comment.trim())
+  const name = match?.[1].trim()
+  return name && /^[A-Za-z &]+$/.test(name) ? name : null
+}
 
 function stripBlockComments(text) {
   let result = ''
@@ -302,12 +308,11 @@ const numenPlugin = {
 
             const banners = []
             for (const comment of comments) {
-              const text = comment.value.trim()
-              const match = text.match(bannerRegex)
-              if (match) {
+              const name = getBannerName(comment.value)
+              if (name !== null) {
                 banners.push({
                   node: comment,
-                  name: match[1].trim(),
+                  name,
                   line: comment.loc.start.line,
                 })
               }
@@ -478,12 +483,10 @@ const numenPlugin = {
 
             for (let i = 0; i < comments.length; i++) {
               const c = comments[i]
-              const match = c.value.trim().match(bannerRegex)
-              if (match && match[1].trim().toLowerCase() === 'handlers') {
+              if (getBannerName(c.value)?.toLowerCase() === 'handlers') {
                 handlersStart = c.loc.end.line
                 for (let j = i + 1; j < comments.length; j++) {
-                  const nextMatch = comments[j].value.trim().match(bannerRegex)
-                  if (nextMatch) {
+                  if (getBannerName(comments[j].value) !== null) {
                     handlersEnd = comments[j].loc.start.line
                     break
                   }

@@ -24,6 +24,11 @@ describe('the transcript of a recording', () => {
     expect(getCues(getSegments(cues))).toEqual(cues)
   })
 
+  it('drops only the line breaks at the end of a cue', () => {
+    const segments = [{ text: 'One\ntwo \n\n', selector: { t: [0, 1] } }]
+    expect(getCues(segments)).toEqual([{ text: 'One\ntwo ', from: 0, to: 1000 }])
+  })
+
   it('finds the moment the segment at a span begins', () => {
     const segments = getSegments(cues)
     expect(findSegmentTime(segments, { start: 20, end: 25 })).toBe(1500)

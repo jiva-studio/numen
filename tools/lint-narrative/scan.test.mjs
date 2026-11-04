@@ -118,6 +118,27 @@ describe('test titles', () => {
   })
 })
 
+describe('fake Turn values', () => {
+  it('flags a held key after a brace, a comma or two spaces', () => {
+    assert.match(scanFixture('u/a.ts', 'const a = { held: x }\n').out, /key held:/)
+    assert.match(scanFixture('u/b.ts', 'const a = f(1,held: x)\n').out, /key held:/)
+    assert.match(scanFixture('u/c.ts', 'const a = f(1)   refuses: x\n').out, /key refuses:/)
+  })
+  it('does not flag a held key after a single space', () => {
+    assert.doesNotMatch(scanFixture('u/d.ts', 'const a = b ? held: x\n').out, /key held:/)
+  })
+})
+
+describe('--fix', () => {
+  it('removes a whole-line comment with a listed phrase and keeps other comments', () => {
+    const file = path.join(ROOT, 'v/poetic.ts')
+    fs.mkdirSync(path.dirname(file), { recursive: true })
+    fs.writeFileSync(file, 'const a = 1\n  // The page Follows  the hand.\n// Plain comment.\nconst b = 2\n')
+    spawnSync('node', [SCAN, file, '--fix'], { encoding: 'utf8' })
+    assert.equal(fs.readFileSync(file, 'utf8'), 'const a = 1\n// Plain comment.\nconst b = 2\n')
+  })
+})
+
 describe('skipped paths', () => {
   it('does not scan apps/landing while the website is being rewritten', () => {
     const file = path.join(ROOT, 'repo/apps/landing/page.md')
