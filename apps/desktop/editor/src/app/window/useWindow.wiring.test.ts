@@ -17,12 +17,19 @@ const h = vi.hoisted(() => ({
     resolveLinks: vi.fn(async () => [{ path: 'resolved.md' }]),
     cancelTask: vi.fn(async () => undefined),
     detachTab: vi.fn(),
+    writeTabLinks: vi.fn(async () => undefined),
+    syncTabPath: vi.fn(async () => undefined),
   },
 }))
 
 vi.mock('../vault', () => ({ core: h.core }))
 vi.mock('@/features/command-palette', () => ({ runSupport: () => ({ name: 'runs' }) }))
-vi.mock('@/features/tab-linking', () => ({ useTabLinks: () => h.f.tabLinks }))
+vi.mock('@/features/tab-linking', () => ({
+  useTabLinks: (args: unknown) => {
+    h.args.tabLinks = args
+    return h.f.tabLinks
+  },
+}))
 vi.mock('@/shared/notices/messages', () => ({ createMessageLog: () => h.f.log }))
 vi.mock('@/entities/tab', () => ({
   createWorkspace: vi.fn(),
@@ -101,11 +108,12 @@ vi.mock('../shell/useWindowStatusBar', () => ({
   },
 }))
 vi.mock('../commands/useAppHotkeys', () => ({ useAppHotkeys: vi.fn() }))
-vi.mock('../tabs/useCrossWindowTabs', () => ({
-  useCrossWindowTabs: (args: unknown) => {
-    h.args.crossWindow = args
-    return { dockToOtherWindow: vi.fn(), windowId: 'win-1' }
+vi.mock('../tabs/tabLinkSession', () => ({
+  createTabLinkSession: (args: unknown) => {
+    h.args.tabLinkSession = args
+    return h.f.tabLinkSession
   },
+  getLinkableTabs: () => h.f.linkableTabs.value,
 }))
 vi.mock('../plugins/useWindowPlugins', () => ({
   createPluginSupport: (args: unknown) => {
@@ -143,7 +151,13 @@ beforeEach(() => {
   h.f = {
     writer,
     log: { getWriter: vi.fn(() => writer) },
-    tabLinks: { removeClosedTab: vi.fn() },
+    tabLinks: { name: 'tabLinks' },
+    tabLinkSession: {
+      start: vi.fn(async () => undefined),
+      close: vi.fn(),
+      reportTabs: vi.fn(),
+    },
+    linkableTabs: ref<{ id: string; kind: string; title: string }[]>([]),
     tabOpeners: { openFileAt: vi.fn(() => Promise.resolve()) },
     windowTabs: {
       layout: ref(null),
@@ -415,12 +429,11 @@ describe('what the window knows of a note', () => {
 })
 
 describe('a tab closed', () => {
-  it('is forgotten by the links, released and removed from the layout when no hold is passed', () => {
+  it('is released and removed from the layout when no hold is passed', () => {
     const window = useWindow()
 
     window.closeTab('t1')
 
-    expect(h.f.tabLinks.removeClosedTab).toHaveBeenCalledWith('t1')
     expect(h.f.windowTabs.releaseTab).toHaveBeenCalledWith('t1')
     expect(h.f.windowTabs.finishClose).toHaveBeenCalledWith('t1')
   })
@@ -466,7 +479,7 @@ describe('a tab detached', () => {
     })
   })
 
-  it('opens in a new window by its kind and path, and closes here', async () => {
+  it('opens in a new window by its id, kind and path, and closes here', async () => {
     h.core.detachTab.mockResolvedValue(undefined)
     const window = useWindow()
 
@@ -474,7 +487,7 @@ describe('a tab detached', () => {
     await vi.waitFor(() => expect(h.f.windowTabs.finishClose).toHaveBeenCalledWith(PLEX_TAB))
 
     expect(h.core.detachTab).toHaveBeenCalledWith(
-      { kind: 'plex', path: 'Physics.md' },
+      { id: PLEX_TAB, kind: 'plex', path: 'Physics.md' },
       { x: 100, y: 200 },
     )
     expect(h.f.windowTabs.releaseTab).toHaveBeenCalledWith(PLEX_TAB)
@@ -487,7 +500,10 @@ describe('a tab detached', () => {
 
     window.detachTab('settings:settings', { x: 1, y: 2 })
 
-    expect(h.core.detachTab).toHaveBeenCalledWith({ kind: 'settings', path: '' }, { x: 1, y: 2 })
+    expect(h.core.detachTab).toHaveBeenCalledWith(
+      { id: 'settings:settings', kind: 'settings', path: '' },
+      { x: 1, y: 2 },
+    )
   })
 
   it('does nothing for a tab the window no longer holds', () => {
@@ -744,7 +760,6 @@ describe('the services a plugin is given', () => {
     try {
       vi.stubGlobal('location', new URL('http://localhost/'))
       const window = useWindow()
-      expect(h.args.crossWindow.closeWindowIfEmpty).toBeUndefined()
 
       // Empty activeVault id returns early
       h.f.vaults.activeVault.value = { id: '' }
@@ -766,15 +781,8 @@ describe('the services a plugin is given', () => {
       expect(h.args.openTabs.isWriting.value).toBe(true)
 
       // Initial tab without colon that fails to open -> falls back to openPlacedTabs when readOpenTabs rejects
-      vi.stubGlobal('location', new URL('http://localhost/?window=secondary'))
-      useWindow()
-      expect(typeof h.args.crossWindow.closeWindowIfEmpty).toBe('function')
-
       vi.stubGlobal('location', new URL('http://localhost/?secondary&kind=files'))
       const secondaryWin = useWindow()
-      expect(typeof h.args.crossWindow.closeWindowIfEmpty).toBe('function')
-      h.args.crossWindow.closeWindowIfEmpty()
-      expect(h.f.display.close).toHaveBeenCalledOnce()
 
       h.f.windowTabs.openTabOfKind.mockResolvedValueOnce(undefined)
       h.core.readOpenTabs.mockRejectedValueOnce(new Error('offline'))
@@ -784,13 +792,83 @@ describe('the services a plugin is given', () => {
         },
       )
       await h.args.bootstrap.startLayout()
-      expect(h.f.windowTabs.openTabOfKind).toHaveBeenCalledWith('files', '')
+      expect(h.f.windowTabs.openTabOfKind).toHaveBeenCalledWith('files', '', '')
       expect(h.f.writer).toHaveBeenCalledWith(
         'The files tab did not open: Numen is not responding; retrying',
         'error',
       )
       expect(secondaryWin.isLayoutReady.value).toBe(true)
       expect(h.args.openTabs.isWriting.value).toBe(false)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+})
+
+describe('the tab links of every window', () => {
+  it('are written and read under one id the window chooses', async () => {
+    useWindow()
+    const windowId = h.args.tabLinkSession.windowId
+
+    await h.args.tabLinks.write({ unlink: 'plex:1' })
+
+    expect(windowId).toMatch(/^[0-9a-f-]{36}$/)
+    expect(h.core.writeTabLinks).toHaveBeenCalledWith(windowId, { unlink: 'plex:1' })
+    expect(h.args.tabLinkSession.tabLinks).toBe(h.f.tabLinks)
+    expect(h.args.tabSync.tabLinks).toBe(h.f.tabLinks)
+  })
+
+  it('send a path a linked tab moved to through the core', async () => {
+    useWindow()
+    const sync = { sourceTabId: 'plex:1', path: 'Orbits.md', title: 'Orbits' }
+
+    await h.args.tabSync.sendSync(sync)
+
+    expect(h.core.syncTabPath).toHaveBeenCalledWith(sync)
+  })
+
+  it('start with the window and close with it', async () => {
+    useWindow()
+
+    await h.args.bootstrap.startWindow()
+    expect(h.f.tabLinkSession.start).toHaveBeenCalledOnce()
+
+    h.args.bootstrap.closeWindow()
+    expect(h.f.tabLinkSession.close).toHaveBeenCalledOnce()
+    expect(h.f.display.close).toHaveBeenCalledOnce()
+  })
+
+  it('are told the linkable tabs again whenever they change', async () => {
+    useWindow()
+
+    h.f.linkableTabs.value = [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }]
+    await vi.waitFor(() => expect(h.f.tabLinkSession.reportTabs).toHaveBeenCalledOnce())
+    expect(h.args.tabLinkSession.getOpenTabs()).toStrictEqual(h.f.linkableTabs.value)
+  })
+
+  it('report a link the core did not take', () => {
+    useWindow()
+
+    h.args.tabLinks.onError(new Error('refused'))
+
+    expect(h.f.writer).toHaveBeenCalledWith(
+      'The tabs were not linked: Numen is not responding; retrying',
+      'error',
+    )
+  })
+
+  it('open a detached tab under the id it had in the window it left', async () => {
+    try {
+      vi.stubGlobal(
+        'location',
+        new URL('http://localhost/?window=secondary&kind=plex&path=Orbits.md&id=plex:4f1c'),
+      )
+      h.f.windowTabs.openTabOfKind.mockResolvedValueOnce('plex:4f1c')
+      useWindow()
+
+      await h.args.bootstrap.startLayout()
+
+      expect(h.f.windowTabs.openTabOfKind).toHaveBeenCalledWith('plex', 'Orbits.md', 'plex:4f1c')
     } finally {
       vi.unstubAllGlobals()
     }

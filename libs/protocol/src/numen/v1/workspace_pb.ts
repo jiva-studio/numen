@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/workspace.proto.
  */
 export const file_numen_v1_workspace: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS93b3Jrc3BhY2UucHJvdG8SCG51bWVuLnYxIkQKEERldGFjaFRhYlJlcXVlc3QSDAoEa2luZBgBIAEoCRIMCgRwYXRoGAIgASgJEgkKAXgYAyABKAUSCQoBeRgEIAEoBSITChFEZXRhY2hUYWJSZXNwb25zZSITChFXYXRjaEZvY3VzUmVxdWVzdCJDChJXYXRjaEZvY3VzUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIfCgZyYW5nZXMYAiADKAsyDy5udW1lbi52MS5SYW5nZSJGChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEhEKCWFjdGl2ZV9pZBgCIAEoCSIXChVXcml0ZU9wZW5UYWJzUmVzcG9uc2UiFQoTUmVhZE9wZW5UYWJzUmVxdWVzdCJGChRSZWFkT3BlblRhYnNSZXNwb25zZRIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEhEKCWFjdGl2ZV9pZBgCIAEoCSJLCgNUYWISCgoCaWQYASABKAkSDAoEa2luZBgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBXRpdGxlGAQgASgJEg0KBXN0YXRlGAUgASgJMsQCChBXb3Jrc3BhY2VTZXJ2aWNlEkkKCldhdGNoRm9jdXMSGy5udW1lbi52MS5XYXRjaEZvY3VzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoRm9jdXNSZXNwb25zZTABElAKDVdyaXRlT3BlblRhYnMSHi5udW1lbi52MS5Xcml0ZU9wZW5UYWJzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXNwb25zZRJNCgxSZWFkT3BlblRhYnMSHS5udW1lbi52MS5SZWFkT3BlblRhYnNSZXF1ZXN0Gh4ubnVtZW4udjEuUmVhZE9wZW5UYWJzUmVzcG9uc2USRAoJRGV0YWNoVGFiEhoubnVtZW4udjEuRGV0YWNoVGFiUmVxdWVzdBobLm51bWVuLnYxLkRldGFjaFRhYlJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChhudW1lbi92MS93b3Jrc3BhY2UucHJvdG8SCG51bWVuLnYxIlAKEERldGFjaFRhYlJlcXVlc3QSDAoEa2luZBgBIAEoCRIMCgRwYXRoGAIgASgJEgkKAXgYAyABKAUSCQoBeRgEIAEoBRIKCgJpZBgFIAEoCSITChFEZXRhY2hUYWJSZXNwb25zZSITChFXYXRjaEZvY3VzUmVxdWVzdCJDChJXYXRjaEZvY3VzUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIfCgZyYW5nZXMYAiADKAsyDy5udW1lbi52MS5SYW5nZSJGChRXcml0ZU9wZW5UYWJzUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEhEKCWFjdGl2ZV9pZBgCIAEoCSIXChVXcml0ZU9wZW5UYWJzUmVzcG9uc2UiFQoTUmVhZE9wZW5UYWJzUmVxdWVzdCJGChRSZWFkT3BlblRhYnNSZXNwb25zZRIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEhEKCWFjdGl2ZV9pZBgCIAEoCSJLCgNUYWISCgoCaWQYASABKAkSDAoEa2luZBgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBXRpdGxlGAQgASgJEg0KBXN0YXRlGAUgASgJIikKFFdhdGNoVGFiTGlua3NSZXF1ZXN0EhEKCXdpbmRvd19pZBgBIAEoCSJsChVXYXRjaFRhYkxpbmtzUmVzcG9uc2USIwoFbGlua3MYASABKAsyEi5udW1lbi52MS5UYWJMaW5rc0gAEiUKBHN5bmMYAiABKAsyFS5udW1lbi52MS5UYWJQYXRoU3luY0gAQgcKBWV2ZW50IlcKCFRhYkxpbmtzEiYKBmdyb3VwcxgBIAMoCzIWLm51bWVuLnYxLlRhYkxpbmtHcm91cBIjCgR0YWJzGAIgAygLMhUubnVtZW4udjEuTGlua2FibGVUYWIiQAoMVGFiTGlua0dyb3VwEgoKAmlkGAEgASgJEhMKC2NvbG9yX2luZGV4GAIgASgFEg8KB3RhYl9pZHMYAyADKAkiSQoLTGlua2FibGVUYWISCgoCaWQYASABKAkSDAoEa2luZBgCIAEoCRINCgV0aXRsZRgDIAEoCRIRCgl3aW5kb3dfaWQYBCABKAkiUwoLVGFiUGF0aFN5bmMSEAoIZ3JvdXBfaWQYASABKAkSFQoNc291cmNlX3RhYl9pZBgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBXRpdGxlGAQgASgJIi8KGkNhbmNlbFdhdGNoVGFiTGlua3NSZXF1ZXN0EhEKCXdpbmRvd19pZBgBIAEoCSIdChtDYW5jZWxXYXRjaFRhYkxpbmtzUmVzcG9uc2UilQEKFFdyaXRlVGFiTGlua3NSZXF1ZXN0EhEKCXdpbmRvd19pZBgBIAEoCRIhCgRsaW5rGAIgASgLMhEubnVtZW4udjEuVGFiTGlua0gAEhcKDXVubGlua190YWJfaWQYAyABKAlIABIkCgR0YWJzGAQgASgLMhQubnVtZW4udjEuV2luZG93VGFic0gAQggKBmNoYW5nZSI3CgdUYWJMaW5rEhUKDXNvdXJjZV90YWJfaWQYASABKAkSFQoNdGFyZ2V0X3RhYl9pZBgCIAEoCSIxCgpXaW5kb3dUYWJzEiMKBHRhYnMYASADKAsyFS5udW1lbi52MS5MaW5rYWJsZVRhYiIXChVXcml0ZVRhYkxpbmtzUmVzcG9uc2UiSAoSU3luY1RhYlBhdGhSZXF1ZXN0EhUKDXNvdXJjZV90YWJfaWQYASABKAkSDAoEcGF0aBgCIAEoCRINCgV0aXRsZRgDIAEoCSIVChNTeW5jVGFiUGF0aFJlc3BvbnNlMpoFChBXb3Jrc3BhY2VTZXJ2aWNlEkkKCldhdGNoRm9jdXMSGy5udW1lbi52MS5XYXRjaEZvY3VzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoRm9jdXNSZXNwb25zZTABElAKDVdyaXRlT3BlblRhYnMSHi5udW1lbi52MS5Xcml0ZU9wZW5UYWJzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXNwb25zZRJNCgxSZWFkT3BlblRhYnMSHS5udW1lbi52MS5SZWFkT3BlblRhYnNSZXF1ZXN0Gh4ubnVtZW4udjEuUmVhZE9wZW5UYWJzUmVzcG9uc2USRAoJRGV0YWNoVGFiEhoubnVtZW4udjEuRGV0YWNoVGFiUmVxdWVzdBobLm51bWVuLnYxLkRldGFjaFRhYlJlc3BvbnNlElIKDVdhdGNoVGFiTGlua3MSHi5udW1lbi52MS5XYXRjaFRhYkxpbmtzUmVxdWVzdBofLm51bWVuLnYxLldhdGNoVGFiTGlua3NSZXNwb25zZTABEmIKE0NhbmNlbFdhdGNoVGFiTGlua3MSJC5udW1lbi52MS5DYW5jZWxXYXRjaFRhYkxpbmtzUmVxdWVzdBolLm51bWVuLnYxLkNhbmNlbFdhdGNoVGFiTGlua3NSZXNwb25zZRJQCg1Xcml0ZVRhYkxpbmtzEh4ubnVtZW4udjEuV3JpdGVUYWJMaW5rc1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZVRhYkxpbmtzUmVzcG9uc2USSgoLU3luY1RhYlBhdGgSHC5udW1lbi52MS5TeW5jVGFiUGF0aFJlcXVlc3QaHS5udW1lbi52MS5TeW5jVGFiUGF0aFJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.DetachTabRequest
@@ -49,6 +49,14 @@ export type DetachTabRequest = Message<"numen.v1.DetachTabRequest"> & {
    * @generated from field: int32 y = 4;
    */
   y: number;
+
+  /**
+   * The id of the tab. The new window opens the tab under the same id, and the
+   * tab keeps its links.
+   *
+   * @generated from field: string id = 5;
+   */
+  id: string;
 };
 
 /**
@@ -248,6 +256,356 @@ export const TabSchema: GenMessage<Tab> = /*@__PURE__*/
   messageDesc(file_numen_v1_workspace, 8);
 
 /**
+ * @generated from message numen.v1.WatchTabLinksRequest
+ */
+export type WatchTabLinksRequest = Message<"numen.v1.WatchTabLinksRequest"> & {
+  /**
+   * The window that watches, by an id the window chooses for itself.
+   *
+   * @generated from field: string window_id = 1;
+   */
+  windowId: string;
+};
+
+/**
+ * Describes the message numen.v1.WatchTabLinksRequest.
+ * Use `create(WatchTabLinksRequestSchema)` to create a new message.
+ */
+export const WatchTabLinksRequestSchema: GenMessage<WatchTabLinksRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 9);
+
+/**
+ * @generated from message numen.v1.WatchTabLinksResponse
+ */
+export type WatchTabLinksResponse = Message<"numen.v1.WatchTabLinksResponse"> & {
+  /**
+   * Neither is set on a keepalive.
+   *
+   * @generated from oneof numen.v1.WatchTabLinksResponse.event
+   */
+  event: {
+    /**
+     * @generated from field: numen.v1.TabLinks links = 1;
+     */
+    value: TabLinks;
+    case: "links";
+  } | {
+    /**
+     * @generated from field: numen.v1.TabPathSync sync = 2;
+     */
+    value: TabPathSync;
+    case: "sync";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message numen.v1.WatchTabLinksResponse.
+ * Use `create(WatchTabLinksResponseSchema)` to create a new message.
+ */
+export const WatchTabLinksResponseSchema: GenMessage<WatchTabLinksResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 10);
+
+/**
+ * TabLinks is every link group of the vault and every linkable tab of every
+ * window.
+ *
+ * @generated from message numen.v1.TabLinks
+ */
+export type TabLinks = Message<"numen.v1.TabLinks"> & {
+  /**
+   * @generated from field: repeated numen.v1.TabLinkGroup groups = 1;
+   */
+  groups: TabLinkGroup[];
+
+  /**
+   * @generated from field: repeated numen.v1.LinkableTab tabs = 2;
+   */
+  tabs: LinkableTab[];
+};
+
+/**
+ * Describes the message numen.v1.TabLinks.
+ * Use `create(TabLinksSchema)` to create a new message.
+ */
+export const TabLinksSchema: GenMessage<TabLinks> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 11);
+
+/**
+ * A TabLinkGroup is two or more tabs that move to the same path together.
+ *
+ * @generated from message numen.v1.TabLinkGroup
+ */
+export type TabLinkGroup = Message<"numen.v1.TabLinkGroup"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * The color the group is marked with, from 1 to 4.
+   *
+   * @generated from field: int32 color_index = 2;
+   */
+  colorIndex: number;
+
+  /**
+   * @generated from field: repeated string tab_ids = 3;
+   */
+  tabIds: string[];
+};
+
+/**
+ * Describes the message numen.v1.TabLinkGroup.
+ * Use `create(TabLinkGroupSchema)` to create a new message.
+ */
+export const TabLinkGroupSchema: GenMessage<TabLinkGroup> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 12);
+
+/**
+ * A LinkableTab is an open tab whose kind can move to a path.
+ *
+ * @generated from message numen.v1.LinkableTab
+ */
+export type LinkableTab = Message<"numen.v1.LinkableTab"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string kind = 2;
+   */
+  kind: string;
+
+  /**
+   * @generated from field: string title = 3;
+   */
+  title: string;
+
+  /**
+   * The window that has the tab open. The core sets it; a window reporting its
+   * own tabs leaves it empty.
+   *
+   * @generated from field: string window_id = 4;
+   */
+  windowId: string;
+};
+
+/**
+ * Describes the message numen.v1.LinkableTab.
+ * Use `create(LinkableTabSchema)` to create a new message.
+ */
+export const LinkableTabSchema: GenMessage<LinkableTab> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 13);
+
+/**
+ * A TabPathSync is a linked tab that moved to a path.
+ *
+ * @generated from message numen.v1.TabPathSync
+ */
+export type TabPathSync = Message<"numen.v1.TabPathSync"> & {
+  /**
+   * @generated from field: string group_id = 1;
+   */
+  groupId: string;
+
+  /**
+   * @generated from field: string source_tab_id = 2;
+   */
+  sourceTabId: string;
+
+  /**
+   * @generated from field: string path = 3;
+   */
+  path: string;
+
+  /**
+   * @generated from field: string title = 4;
+   */
+  title: string;
+};
+
+/**
+ * Describes the message numen.v1.TabPathSync.
+ * Use `create(TabPathSyncSchema)` to create a new message.
+ */
+export const TabPathSyncSchema: GenMessage<TabPathSync> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 14);
+
+/**
+ * @generated from message numen.v1.CancelWatchTabLinksRequest
+ */
+export type CancelWatchTabLinksRequest = Message<"numen.v1.CancelWatchTabLinksRequest"> & {
+  /**
+   * @generated from field: string window_id = 1;
+   */
+  windowId: string;
+};
+
+/**
+ * Describes the message numen.v1.CancelWatchTabLinksRequest.
+ * Use `create(CancelWatchTabLinksRequestSchema)` to create a new message.
+ */
+export const CancelWatchTabLinksRequestSchema: GenMessage<CancelWatchTabLinksRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 15);
+
+/**
+ * @generated from message numen.v1.CancelWatchTabLinksResponse
+ */
+export type CancelWatchTabLinksResponse = Message<"numen.v1.CancelWatchTabLinksResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.CancelWatchTabLinksResponse.
+ * Use `create(CancelWatchTabLinksResponseSchema)` to create a new message.
+ */
+export const CancelWatchTabLinksResponseSchema: GenMessage<CancelWatchTabLinksResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 16);
+
+/**
+ * @generated from message numen.v1.WriteTabLinksRequest
+ */
+export type WriteTabLinksRequest = Message<"numen.v1.WriteTabLinksRequest"> & {
+  /**
+   * The window that writes.
+   *
+   * @generated from field: string window_id = 1;
+   */
+  windowId: string;
+
+  /**
+   * @generated from oneof numen.v1.WriteTabLinksRequest.change
+   */
+  change: {
+    /**
+     * Links two tabs. A tab already in a group brings its group along.
+     *
+     * @generated from field: numen.v1.TabLink link = 2;
+     */
+    value: TabLink;
+    case: "link";
+  } | {
+    /**
+     * Takes a tab out of its group.
+     *
+     * @generated from field: string unlink_tab_id = 3;
+     */
+    value: string;
+    case: "unlinkTabId";
+  } | {
+    /**
+     * Every linkable tab the window has open. A tab of the window missing from
+     * the list leaves its group, unless it is being detached.
+     *
+     * @generated from field: numen.v1.WindowTabs tabs = 4;
+     */
+    value: WindowTabs;
+    case: "tabs";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message numen.v1.WriteTabLinksRequest.
+ * Use `create(WriteTabLinksRequestSchema)` to create a new message.
+ */
+export const WriteTabLinksRequestSchema: GenMessage<WriteTabLinksRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 17);
+
+/**
+ * @generated from message numen.v1.TabLink
+ */
+export type TabLink = Message<"numen.v1.TabLink"> & {
+  /**
+   * @generated from field: string source_tab_id = 1;
+   */
+  sourceTabId: string;
+
+  /**
+   * @generated from field: string target_tab_id = 2;
+   */
+  targetTabId: string;
+};
+
+/**
+ * Describes the message numen.v1.TabLink.
+ * Use `create(TabLinkSchema)` to create a new message.
+ */
+export const TabLinkSchema: GenMessage<TabLink> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 18);
+
+/**
+ * @generated from message numen.v1.WindowTabs
+ */
+export type WindowTabs = Message<"numen.v1.WindowTabs"> & {
+  /**
+   * @generated from field: repeated numen.v1.LinkableTab tabs = 1;
+   */
+  tabs: LinkableTab[];
+};
+
+/**
+ * Describes the message numen.v1.WindowTabs.
+ * Use `create(WindowTabsSchema)` to create a new message.
+ */
+export const WindowTabsSchema: GenMessage<WindowTabs> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 19);
+
+/**
+ * @generated from message numen.v1.WriteTabLinksResponse
+ */
+export type WriteTabLinksResponse = Message<"numen.v1.WriteTabLinksResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.WriteTabLinksResponse.
+ * Use `create(WriteTabLinksResponseSchema)` to create a new message.
+ */
+export const WriteTabLinksResponseSchema: GenMessage<WriteTabLinksResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 20);
+
+/**
+ * @generated from message numen.v1.SyncTabPathRequest
+ */
+export type SyncTabPathRequest = Message<"numen.v1.SyncTabPathRequest"> & {
+  /**
+   * The linked tab that moved.
+   *
+   * @generated from field: string source_tab_id = 1;
+   */
+  sourceTabId: string;
+
+  /**
+   * @generated from field: string path = 2;
+   */
+  path: string;
+
+  /**
+   * @generated from field: string title = 3;
+   */
+  title: string;
+};
+
+/**
+ * Describes the message numen.v1.SyncTabPathRequest.
+ * Use `create(SyncTabPathRequestSchema)` to create a new message.
+ */
+export const SyncTabPathRequestSchema: GenMessage<SyncTabPathRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 21);
+
+/**
+ * @generated from message numen.v1.SyncTabPathResponse
+ */
+export type SyncTabPathResponse = Message<"numen.v1.SyncTabPathResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.SyncTabPathResponse.
+ * Use `create(SyncTabPathResponseSchema)` to create a new message.
+ */
+export const SyncTabPathResponseSchema: GenMessage<SyncTabPathResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_workspace, 22);
+
+/**
  * WorkspaceService answers where in the vault the person stands, and takes what
  * the window has open.
  *
@@ -299,6 +657,51 @@ export const WorkspaceService: GenService<{
     methodKind: "unary";
     input: typeof DetachTabRequestSchema;
     output: typeof DetachTabResponseSchema;
+  },
+  /**
+   * WatchTabLinks streams the link groups of the vault and the linkable tabs of
+   * every window: a snapshot first, a snapshot after each change, and each path
+   * a linked tab moved to. When the stream of a window ends, the tabs of that
+   * window leave their groups.
+   *
+   * @generated from rpc numen.v1.WorkspaceService.WatchTabLinks
+   */
+  watchTabLinks: {
+    methodKind: "server_streaming";
+    input: typeof WatchTabLinksRequestSchema;
+    output: typeof WatchTabLinksResponseSchema;
+  },
+  /**
+   * CancelWatchTabLinks ends the WatchTabLinks stream of a window.
+   *
+   * @generated from rpc numen.v1.WorkspaceService.CancelWatchTabLinks
+   */
+  cancelWatchTabLinks: {
+    methodKind: "unary";
+    input: typeof CancelWatchTabLinksRequestSchema;
+    output: typeof CancelWatchTabLinksResponseSchema;
+  },
+  /**
+   * WriteTabLinks links two tabs, unlinks one, or reports the linkable tabs a
+   * window has open.
+   *
+   * @generated from rpc numen.v1.WorkspaceService.WriteTabLinks
+   */
+  writeTabLinks: {
+    methodKind: "unary";
+    input: typeof WriteTabLinksRequestSchema;
+    output: typeof WriteTabLinksResponseSchema;
+  },
+  /**
+   * SyncTabPath reports that a linked tab moved to a path. Every window
+   * watching the tab links receives it.
+   *
+   * @generated from rpc numen.v1.WorkspaceService.SyncTabPath
+   */
+  syncTabPath: {
+    methodKind: "unary";
+    input: typeof SyncTabPathRequestSchema;
+    output: typeof SyncTabPathResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_workspace, 0);

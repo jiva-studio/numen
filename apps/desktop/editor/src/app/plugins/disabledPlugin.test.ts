@@ -44,7 +44,7 @@ const createWindow = () => {
   })
   const support = createPluginSupport({
     windowTabs,
-    tabLinks: { removeClosedTab: () => undefined } as never,
+    tabLinks: {} as never,
     tabOpeners: {
       registerExtensionReader: () => () => undefined,
       registerEditor: () => () => undefined,

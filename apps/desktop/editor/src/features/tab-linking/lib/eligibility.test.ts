@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getEligibleTabs, getLinkedTitle } from './eligibility'
+import { getAllTabs, getEligibleTabs, getLinkedTitle } from './eligibility'
 import type { TabLinkGroup } from '../types'
 
 const TABS = [
@@ -46,5 +46,20 @@ describe('the title of what a tab is linked to', () => {
   it('names each by its title, or by its identity where it has none', () => {
     expect(getLinkedTitle(['a', 'z'], TABS)).toBe('A, z')
     expect(getLinkedTitle([], TABS)).toBe('')
+  })
+})
+
+describe('the tabs of every window', () => {
+  it('are the tabs of this window, then the tabs of other windows this one lacks', () => {
+    const own = [{ id: 'plex:1', title: 'Orbits' }]
+    const linkable = [
+      { id: 'plex:1', kind: 'plex', title: 'Orbits', windowId: 'window-a' },
+      { id: 'files:2', kind: 'files', title: 'Files', windowId: 'window-b' },
+    ]
+
+    expect(getAllTabs(own, linkable)).toStrictEqual([
+      { id: 'plex:1', title: 'Orbits' },
+      { id: 'files:2', title: 'Files' },
+    ])
   })
 })

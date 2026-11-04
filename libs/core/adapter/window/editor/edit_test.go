@@ -556,6 +556,7 @@ func TestDetachTabInvokesState(t *testing.T) {
 	api := &workspaceHandler{state: state}
 
 	_, err := api.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{
+		Id:   "plex:7a2e",
 		Kind: "plex",
 		Path: "physics/Ontology.md",
 		X:    150,
@@ -565,7 +566,7 @@ func TestDetachTabInvokesState(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := DetachedTab{Kind: "plex", Path: "physics/Ontology.md", X: 150, Y: 250}
+	want := DetachedTab{ID: "plex:7a2e", Kind: "plex", Path: "physics/Ontology.md", X: 150, Y: 250}
 	if got != want {
 		t.Errorf("detached tab: got %+v, want %+v", got, want)
 	}

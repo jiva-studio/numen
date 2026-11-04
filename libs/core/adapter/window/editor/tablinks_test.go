@@ -1,0 +1,191 @@
+package editor
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
+	"connectrpc.com/connect"
+
+	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/tablinks"
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
+)
+
+// newTabLinksClient serves the workspace of a state whose detach expiries
+// never run, and returns a client of it.
+func newTabLinksClient(t *testing.T, state *State) numenv1connect.WorkspaceServiceClient {
+	t.Helper()
+	state.TabLinks = tablinks.NewRegistry(detachGrace, func(time.Duration, func()) func() bool {
+		return func() bool { return true }
+	})
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewWorkspaceServiceHandler(&workspaceHandler{state: state}))
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	return numenv1connect.NewWorkspaceServiceClient(server.Client(), server.URL)
+}
+
+func writeTabs(t *testing.T, client numenv1connect.WorkspaceServiceClient, windowID string, tabs ...*v1.LinkableTab) {
+	t.Helper()
+	_, err := client.WriteTabLinks(t.Context(), connect.NewRequest(&v1.WriteTabLinksRequest{
+		WindowId: windowID,
+		Change:   &v1.WriteTabLinksRequest_Tabs{Tabs: &v1.WindowTabs{Tabs: tabs}},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func linkTabs(t *testing.T, client numenv1connect.WorkspaceServiceClient, source, target string) {
+	t.Helper()
+	_, err := client.WriteTabLinks(t.Context(), connect.NewRequest(&v1.WriteTabLinksRequest{
+		WindowId: "window-a",
+		Change:   &v1.WriteTabLinksRequest_Link{Link: &v1.TabLink{SourceTabId: source, TargetTabId: target}},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// readLinksUntil reads a stream until a snapshot matches.
+func readLinksUntil(
+	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchTabLinksResponse], isWanted func(*v1.TabLinks) bool,
+) *v1.TabLinks {
+	t.Helper()
+	for stream.Receive() {
+		if links := stream.Msg().GetLinks(); links != nil && isWanted(links) {
+			return links
+		}
+	}
+	t.Fatalf("the stream ended before the snapshot arrived: %v", stream.Err())
+	return nil
+}
+
+func hasGroupOf(size int) func(*v1.TabLinks) bool {
+	return func(links *v1.TabLinks) bool {
+		return len(links.GetGroups()) == 1 && len(links.GetGroups()[0].GetTabIds()) == size
+	}
+}
+
+func TestTwoWindowsWatchOneGroupAndEachPathSync(t *testing.T) {
+	client := newTabLinksClient(t, &State{})
+	ctx, cancel := context.WithTimeout(t.Context(), testsupport.Patience)
+	defer cancel()
+
+	first, err := client.WatchTabLinks(ctx, connect.NewRequest(&v1.WatchTabLinksRequest{WindowId: "window-a"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer testsupport.Close(t, first)
+	second, err := client.WatchTabLinks(ctx, connect.NewRequest(&v1.WatchTabLinksRequest{WindowId: "window-b"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer testsupport.Close(t, second)
+
+	writeTabs(t, client, "window-a", &v1.LinkableTab{Id: "plex:1", Kind: "plex", Title: "Orbits"})
+	writeTabs(t, client, "window-b", &v1.LinkableTab{Id: "files:1", Kind: "files", Title: "Files"})
+	linkTabs(t, client, "plex:1", "files:1")
+
+	for _, stream := range []*connect.ServerStreamForClient[v1.WatchTabLinksResponse]{first, second} {
+		links := readLinksUntil(t, stream, hasGroupOf(2))
+		if got := links.GetTabs()[1].GetWindowId(); got != "window-b" {
+			t.Errorf("files:1 is in window %q, want window-b", got)
+		}
+	}
+
+	_, err = client.SyncTabPath(ctx, connect.NewRequest(&v1.SyncTabPathRequest{
+		SourceTabId: "files:1", Path: "notes/Orbits.md", Title: "Orbits",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, stream := range []*connect.ServerStreamForClient[v1.WatchTabLinksResponse]{first, second} {
+		for stream.Receive() {
+			if sync := stream.Msg().GetSync(); sync != nil {
+				if sync.GetSourceTabId() != "files:1" || sync.GetPath() != "notes/Orbits.md" || sync.GetTitle() != "Orbits" {
+					t.Errorf("the sync is %+v", sync)
+				}
+				break
+			}
+		}
+	}
+}
+
+func TestADetachedTabKeepsItsGroupInTheNewWindow(t *testing.T) {
+	state := &State{DetachTab: func(context.Context, DetachedTab) error { return nil }}
+	client := newTabLinksClient(t, state)
+	writeTabs(t, client, "window-a",
+		&v1.LinkableTab{Id: "plex:1", Kind: "plex", Title: "Orbits"},
+		&v1.LinkableTab{Id: "plex:2", Kind: "plex", Title: "Tides"})
+	linkTabs(t, client, "plex:1", "plex:2")
+
+	if _, err := client.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{Id: "plex:2", Kind: "plex"})); err != nil {
+		t.Fatal(err)
+	}
+	writeTabs(t, client, "window-a", &v1.LinkableTab{Id: "plex:1", Kind: "plex", Title: "Orbits"})
+	writeTabs(t, client, "window-b", &v1.LinkableTab{Id: "plex:2", Kind: "plex", Title: "Tides"})
+
+	got := state.TabLinks.GetSnapshot()
+	if len(got.Groups) != 1 || len(got.Groups[0].TabIDs) != 2 {
+		t.Errorf("groups are %+v, want plex:1 and plex:2 in one", got.Groups)
+	}
+}
+
+func TestCancelWatchTabLinksEndsTheStreamAndDropsTheWindowsTabs(t *testing.T) {
+	state := &State{}
+	client := newTabLinksClient(t, state)
+	ctx, cancel := context.WithTimeout(t.Context(), testsupport.Patience)
+	defer cancel()
+	stream, err := client.WatchTabLinks(ctx, connect.NewRequest(&v1.WatchTabLinksRequest{WindowId: "window-b"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer testsupport.Close(t, stream)
+	writeTabs(t, client, "window-a", &v1.LinkableTab{Id: "plex:1", Kind: "plex"})
+	writeTabs(t, client, "window-b", &v1.LinkableTab{Id: "files:1", Kind: "files"})
+	linkTabs(t, client, "plex:1", "files:1")
+	readLinksUntil(t, stream, hasGroupOf(2))
+
+	if _, err := client.CancelWatchTabLinks(ctx, connect.NewRequest(&v1.CancelWatchTabLinksRequest{WindowId: "window-b"})); err != nil {
+		t.Fatal(err)
+	}
+
+	queued := 0
+	for stream.Receive() {
+		queued++
+	}
+	if err := stream.Err(); err != nil {
+		t.Errorf("the stream ended with %v after %d messages", err, queued)
+	}
+	testsupport.WaitFor(t, func() bool { return len(state.TabLinks.GetSnapshot().Groups) == 0 })
+}
+
+func TestWatchTabLinksRequiresAWindowID(t *testing.T) {
+	client := newTabLinksClient(t, &State{})
+
+	stream, err := client.WatchTabLinks(t.Context(), connect.NewRequest(&v1.WatchTabLinksRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer testsupport.Close(t, stream)
+	if stream.Receive() {
+		t.Fatal("a watch with no window id was served")
+	}
+	if connect.CodeOf(stream.Err()) != connect.CodeInvalidArgument {
+		t.Errorf("got %v, want invalid argument", stream.Err())
+	}
+}
+
+func TestTabLinksAreUnimplementedWithoutARegistry(t *testing.T) {
+	api := &workspaceHandler{state: &State{}}
+
+	_, err := api.WriteTabLinks(t.Context(), connect.NewRequest(&v1.WriteTabLinksRequest{WindowId: "window-a"}))
+	if connect.CodeOf(err) != connect.CodeUnimplemented {
+		t.Errorf("got %v, want unimplemented", err)
+	}
+}

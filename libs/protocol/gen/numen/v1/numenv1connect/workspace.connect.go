@@ -50,6 +50,18 @@ const (
 	// WorkspaceServiceDetachTabProcedure is the fully-qualified name of the WorkspaceService's
 	// DetachTab RPC.
 	WorkspaceServiceDetachTabProcedure = "/numen.v1.WorkspaceService/DetachTab"
+	// WorkspaceServiceWatchTabLinksProcedure is the fully-qualified name of the WorkspaceService's
+	// WatchTabLinks RPC.
+	WorkspaceServiceWatchTabLinksProcedure = "/numen.v1.WorkspaceService/WatchTabLinks"
+	// WorkspaceServiceCancelWatchTabLinksProcedure is the fully-qualified name of the
+	// WorkspaceService's CancelWatchTabLinks RPC.
+	WorkspaceServiceCancelWatchTabLinksProcedure = "/numen.v1.WorkspaceService/CancelWatchTabLinks"
+	// WorkspaceServiceWriteTabLinksProcedure is the fully-qualified name of the WorkspaceService's
+	// WriteTabLinks RPC.
+	WorkspaceServiceWriteTabLinksProcedure = "/numen.v1.WorkspaceService/WriteTabLinks"
+	// WorkspaceServiceSyncTabPathProcedure is the fully-qualified name of the WorkspaceService's
+	// SyncTabPath RPC.
+	WorkspaceServiceSyncTabPathProcedure = "/numen.v1.WorkspaceService/SyncTabPath"
 )
 
 // WorkspaceServiceClient is a client for the numen.v1.WorkspaceService service.
@@ -68,6 +80,19 @@ type WorkspaceServiceClient interface {
 	ReadOpenTabs(context.Context, *connect.Request[v1.ReadOpenTabsRequest]) (*connect.Response[v1.ReadOpenTabsResponse], error)
 	// DetachTab asks that a tab be opened in a new window of its own.
 	DetachTab(context.Context, *connect.Request[v1.DetachTabRequest]) (*connect.Response[v1.DetachTabResponse], error)
+	// WatchTabLinks streams the link groups of the vault and the linkable tabs of
+	// every window: a snapshot first, a snapshot after each change, and each path
+	// a linked tab moved to. When the stream of a window ends, the tabs of that
+	// window leave their groups.
+	WatchTabLinks(context.Context, *connect.Request[v1.WatchTabLinksRequest]) (*connect.ServerStreamForClient[v1.WatchTabLinksResponse], error)
+	// CancelWatchTabLinks ends the WatchTabLinks stream of a window.
+	CancelWatchTabLinks(context.Context, *connect.Request[v1.CancelWatchTabLinksRequest]) (*connect.Response[v1.CancelWatchTabLinksResponse], error)
+	// WriteTabLinks links two tabs, unlinks one, or reports the linkable tabs a
+	// window has open.
+	WriteTabLinks(context.Context, *connect.Request[v1.WriteTabLinksRequest]) (*connect.Response[v1.WriteTabLinksResponse], error)
+	// SyncTabPath reports that a linked tab moved to a path. Every window
+	// watching the tab links receives it.
+	SyncTabPath(context.Context, *connect.Request[v1.SyncTabPathRequest]) (*connect.Response[v1.SyncTabPathResponse], error)
 }
 
 // NewWorkspaceServiceClient constructs a client for the numen.v1.WorkspaceService service. By
@@ -105,15 +130,43 @@ func NewWorkspaceServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(workspaceServiceMethods.ByName("DetachTab")),
 			connect.WithClientOptions(opts...),
 		),
+		watchTabLinks: connect.NewClient[v1.WatchTabLinksRequest, v1.WatchTabLinksResponse](
+			httpClient,
+			baseURL+WorkspaceServiceWatchTabLinksProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("WatchTabLinks")),
+			connect.WithClientOptions(opts...),
+		),
+		cancelWatchTabLinks: connect.NewClient[v1.CancelWatchTabLinksRequest, v1.CancelWatchTabLinksResponse](
+			httpClient,
+			baseURL+WorkspaceServiceCancelWatchTabLinksProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("CancelWatchTabLinks")),
+			connect.WithClientOptions(opts...),
+		),
+		writeTabLinks: connect.NewClient[v1.WriteTabLinksRequest, v1.WriteTabLinksResponse](
+			httpClient,
+			baseURL+WorkspaceServiceWriteTabLinksProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("WriteTabLinks")),
+			connect.WithClientOptions(opts...),
+		),
+		syncTabPath: connect.NewClient[v1.SyncTabPathRequest, v1.SyncTabPathResponse](
+			httpClient,
+			baseURL+WorkspaceServiceSyncTabPathProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("SyncTabPath")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // workspaceServiceClient implements WorkspaceServiceClient.
 type workspaceServiceClient struct {
-	watchFocus    *connect.Client[v1.WatchFocusRequest, v1.WatchFocusResponse]
-	writeOpenTabs *connect.Client[v1.WriteOpenTabsRequest, v1.WriteOpenTabsResponse]
-	readOpenTabs  *connect.Client[v1.ReadOpenTabsRequest, v1.ReadOpenTabsResponse]
-	detachTab     *connect.Client[v1.DetachTabRequest, v1.DetachTabResponse]
+	watchFocus          *connect.Client[v1.WatchFocusRequest, v1.WatchFocusResponse]
+	writeOpenTabs       *connect.Client[v1.WriteOpenTabsRequest, v1.WriteOpenTabsResponse]
+	readOpenTabs        *connect.Client[v1.ReadOpenTabsRequest, v1.ReadOpenTabsResponse]
+	detachTab           *connect.Client[v1.DetachTabRequest, v1.DetachTabResponse]
+	watchTabLinks       *connect.Client[v1.WatchTabLinksRequest, v1.WatchTabLinksResponse]
+	cancelWatchTabLinks *connect.Client[v1.CancelWatchTabLinksRequest, v1.CancelWatchTabLinksResponse]
+	writeTabLinks       *connect.Client[v1.WriteTabLinksRequest, v1.WriteTabLinksResponse]
+	syncTabPath         *connect.Client[v1.SyncTabPathRequest, v1.SyncTabPathResponse]
 }
 
 // WatchFocus calls numen.v1.WorkspaceService.WatchFocus.
@@ -136,6 +189,26 @@ func (c *workspaceServiceClient) DetachTab(ctx context.Context, req *connect.Req
 	return c.detachTab.CallUnary(ctx, req)
 }
 
+// WatchTabLinks calls numen.v1.WorkspaceService.WatchTabLinks.
+func (c *workspaceServiceClient) WatchTabLinks(ctx context.Context, req *connect.Request[v1.WatchTabLinksRequest]) (*connect.ServerStreamForClient[v1.WatchTabLinksResponse], error) {
+	return c.watchTabLinks.CallServerStream(ctx, req)
+}
+
+// CancelWatchTabLinks calls numen.v1.WorkspaceService.CancelWatchTabLinks.
+func (c *workspaceServiceClient) CancelWatchTabLinks(ctx context.Context, req *connect.Request[v1.CancelWatchTabLinksRequest]) (*connect.Response[v1.CancelWatchTabLinksResponse], error) {
+	return c.cancelWatchTabLinks.CallUnary(ctx, req)
+}
+
+// WriteTabLinks calls numen.v1.WorkspaceService.WriteTabLinks.
+func (c *workspaceServiceClient) WriteTabLinks(ctx context.Context, req *connect.Request[v1.WriteTabLinksRequest]) (*connect.Response[v1.WriteTabLinksResponse], error) {
+	return c.writeTabLinks.CallUnary(ctx, req)
+}
+
+// SyncTabPath calls numen.v1.WorkspaceService.SyncTabPath.
+func (c *workspaceServiceClient) SyncTabPath(ctx context.Context, req *connect.Request[v1.SyncTabPathRequest]) (*connect.Response[v1.SyncTabPathResponse], error) {
+	return c.syncTabPath.CallUnary(ctx, req)
+}
+
 // WorkspaceServiceHandler is an implementation of the numen.v1.WorkspaceService service.
 type WorkspaceServiceHandler interface {
 	// WatchFocus reports the places something else asked to be put in front of
@@ -152,6 +225,19 @@ type WorkspaceServiceHandler interface {
 	ReadOpenTabs(context.Context, *connect.Request[v1.ReadOpenTabsRequest]) (*connect.Response[v1.ReadOpenTabsResponse], error)
 	// DetachTab asks that a tab be opened in a new window of its own.
 	DetachTab(context.Context, *connect.Request[v1.DetachTabRequest]) (*connect.Response[v1.DetachTabResponse], error)
+	// WatchTabLinks streams the link groups of the vault and the linkable tabs of
+	// every window: a snapshot first, a snapshot after each change, and each path
+	// a linked tab moved to. When the stream of a window ends, the tabs of that
+	// window leave their groups.
+	WatchTabLinks(context.Context, *connect.Request[v1.WatchTabLinksRequest], *connect.ServerStream[v1.WatchTabLinksResponse]) error
+	// CancelWatchTabLinks ends the WatchTabLinks stream of a window.
+	CancelWatchTabLinks(context.Context, *connect.Request[v1.CancelWatchTabLinksRequest]) (*connect.Response[v1.CancelWatchTabLinksResponse], error)
+	// WriteTabLinks links two tabs, unlinks one, or reports the linkable tabs a
+	// window has open.
+	WriteTabLinks(context.Context, *connect.Request[v1.WriteTabLinksRequest]) (*connect.Response[v1.WriteTabLinksResponse], error)
+	// SyncTabPath reports that a linked tab moved to a path. Every window
+	// watching the tab links receives it.
+	SyncTabPath(context.Context, *connect.Request[v1.SyncTabPathRequest]) (*connect.Response[v1.SyncTabPathResponse], error)
 }
 
 // NewWorkspaceServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -185,6 +271,30 @@ func NewWorkspaceServiceHandler(svc WorkspaceServiceHandler, opts ...connect.Han
 		connect.WithSchema(workspaceServiceMethods.ByName("DetachTab")),
 		connect.WithHandlerOptions(opts...),
 	)
+	workspaceServiceWatchTabLinksHandler := connect.NewServerStreamHandler(
+		WorkspaceServiceWatchTabLinksProcedure,
+		svc.WatchTabLinks,
+		connect.WithSchema(workspaceServiceMethods.ByName("WatchTabLinks")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceCancelWatchTabLinksHandler := connect.NewUnaryHandler(
+		WorkspaceServiceCancelWatchTabLinksProcedure,
+		svc.CancelWatchTabLinks,
+		connect.WithSchema(workspaceServiceMethods.ByName("CancelWatchTabLinks")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceWriteTabLinksHandler := connect.NewUnaryHandler(
+		WorkspaceServiceWriteTabLinksProcedure,
+		svc.WriteTabLinks,
+		connect.WithSchema(workspaceServiceMethods.ByName("WriteTabLinks")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceSyncTabPathHandler := connect.NewUnaryHandler(
+		WorkspaceServiceSyncTabPathProcedure,
+		svc.SyncTabPath,
+		connect.WithSchema(workspaceServiceMethods.ByName("SyncTabPath")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.WorkspaceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case WorkspaceServiceWatchFocusProcedure:
@@ -195,6 +305,14 @@ func NewWorkspaceServiceHandler(svc WorkspaceServiceHandler, opts ...connect.Han
 			workspaceServiceReadOpenTabsHandler.ServeHTTP(w, r)
 		case WorkspaceServiceDetachTabProcedure:
 			workspaceServiceDetachTabHandler.ServeHTTP(w, r)
+		case WorkspaceServiceWatchTabLinksProcedure:
+			workspaceServiceWatchTabLinksHandler.ServeHTTP(w, r)
+		case WorkspaceServiceCancelWatchTabLinksProcedure:
+			workspaceServiceCancelWatchTabLinksHandler.ServeHTTP(w, r)
+		case WorkspaceServiceWriteTabLinksProcedure:
+			workspaceServiceWriteTabLinksHandler.ServeHTTP(w, r)
+		case WorkspaceServiceSyncTabPathProcedure:
+			workspaceServiceSyncTabPathHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -218,4 +336,20 @@ func (UnimplementedWorkspaceServiceHandler) ReadOpenTabs(context.Context, *conne
 
 func (UnimplementedWorkspaceServiceHandler) DetachTab(context.Context, *connect.Request[v1.DetachTabRequest]) (*connect.Response[v1.DetachTabResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WorkspaceService.DetachTab is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) WatchTabLinks(context.Context, *connect.Request[v1.WatchTabLinksRequest], *connect.ServerStream[v1.WatchTabLinksResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WorkspaceService.WatchTabLinks is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) CancelWatchTabLinks(context.Context, *connect.Request[v1.CancelWatchTabLinksRequest]) (*connect.Response[v1.CancelWatchTabLinksResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WorkspaceService.CancelWatchTabLinks is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) WriteTabLinks(context.Context, *connect.Request[v1.WriteTabLinksRequest]) (*connect.Response[v1.WriteTabLinksResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WorkspaceService.WriteTabLinks is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) SyncTabPath(context.Context, *connect.Request[v1.SyncTabPathRequest]) (*connect.Response[v1.SyncTabPathResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WorkspaceService.SyncTabPath is not implemented"))
 }

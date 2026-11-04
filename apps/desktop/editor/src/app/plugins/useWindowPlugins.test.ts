@@ -16,10 +16,9 @@ import { getNoteIcon } from '@/entities/note'
 
 const createSupport = () => {
   const windowTabs = useWindowTabs()
-  const removeClosedTab = vi.fn()
   const support = createPluginSupport({
     windowTabs,
-    tabLinks: { removeClosedTab } as never,
+    tabLinks: {} as never,
     tabOpeners: {
       registerExtensionReader: vi.fn(() => () => undefined),
       registerEditor: vi.fn(() => () => undefined),
@@ -30,7 +29,7 @@ const createSupport = () => {
       agent: { finish: () => Promise.resolve(), getModelsAt: () => [] } as unknown as AgentHost,
     },
   })
-  return { windowTabs, support, removeClosedTab }
+  return { windowTabs, support }
 }
 
 const coreKind = (state: object): AnyTabKind => ({
@@ -122,7 +121,7 @@ describe('the settings and notices a plugin is given', () => {
   const createWith = (more: Partial<Parameters<typeof createPluginSupport>[0]>) =>
     createPluginSupport({
       windowTabs: useWindowTabs(),
-      tabLinks: { removeClosedTab: vi.fn() } as never,
+      tabLinks: {} as never,
       tabOpeners: {
         registerExtensionReader: vi.fn(() => () => undefined),
         registerEditor: vi.fn(() => () => undefined),
@@ -260,7 +259,7 @@ describe('the plugins the window loads', () => {
     }
     const { pluginHost } = createPluginSupport({
       windowTabs,
-      tabLinks: { removeClosedTab: vi.fn() } as never,
+      tabLinks: {} as never,
       tabOpeners: {
         registerExtensionReader: vi.fn(() => () => undefined),
         registerEditor: vi.fn(() => () => undefined),

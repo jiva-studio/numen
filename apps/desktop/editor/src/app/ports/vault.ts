@@ -1,6 +1,7 @@
 import type { PathRename } from '@/shared/paths'
 import type { Task } from '@/shared/notices/task'
 import type { OpenTabs } from '@/entities/tab'
+import type { TabLinksChange, TabLinksSnapshot } from '@/features/tab-linking'
 
 export interface VaultPort {
   getInitialOpenPath(): Promise<{ path: string } | null>
@@ -66,9 +67,43 @@ export interface VaultPort {
   watchQuit(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
   /** Reports that this client has written all pending data. */
   reportFlush(token: string, outcome?: 'written' | 'asking'): Promise<void>
-  /** Opens a tab of a kind, showing a vault path or none, in a new window at a screen point. */
+  /**
+   * Opens a tab of a kind, showing a vault path or none, in a new window at a screen point. The
+   * new window opens the tab under the same id, and the tab keeps its links.
+   */
   detachTab(
-    tab: { readonly kind: string; readonly path: string },
+    tab: { readonly id: string; readonly kind: string; readonly path: string },
     position: { x: number; y: number },
   ): Promise<void>
+  /**
+   * The link groups and the linkable tabs of every window, then each change and each path a
+   * linked tab moved to, until the signal aborts. The tabs of the window leave their groups when
+   * the stream ends.
+   */
+  watchTabLinks(windowId: string, signal: AbortSignal): AsyncIterable<TabLinksEvent>
+  /** Ends the tab links stream of a window. */
+  cancelTabLinksWatch(windowId: string): Promise<void>
+  /** Links two tabs, unlinks one, or reports the linkable tabs the window has open. */
+  writeTabLinks(windowId: string, change: TabLinksChange | WindowTabsReport): Promise<void>
+  /** Reports that a linked tab moved to a path, for every window to move its own linked tabs. */
+  syncTabPath(sync: { sourceTabId: string; path: string; title: string }): Promise<void>
+}
+
+/** The linkable tabs a window has open. */
+export interface WindowTabsReport {
+  readonly tabs: readonly { readonly id: string; readonly kind: string; readonly title: string }[]
+}
+
+/** A path a linked tab moved to. */
+export interface TabPathSync {
+  readonly groupId: string
+  readonly sourceTabId: string
+  readonly path: string
+  readonly title: string
+}
+
+/** One message of the tab links stream: a snapshot or a sync; a keepalive carries neither. */
+export interface TabLinksEvent {
+  readonly links?: TabLinksSnapshot
+  readonly sync?: TabPathSync
 }

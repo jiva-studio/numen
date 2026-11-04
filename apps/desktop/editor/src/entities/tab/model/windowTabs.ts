@@ -357,14 +357,15 @@ function createTabOpeners(ctx: TabOpenerContext) {
     return undefined
   }
 
-  const createTabSync = (kind: string, targetPath: string): string => {
+  const createTabSync = (kind: string, targetPath: string, wantedId = ''): string => {
     const one = ctx.byKind.get(kind) ?? createUnavailableKind(kind, undefined, ctx.unavailable)
     // Stryker disable next-line LogicalOperator: empty targetPath matches singleton tabs via candidateId below
     if (targetPath && one.identity) {
       const matchedId = findOpenTabAt(kind, targetPath)
       if (matchedId) return matchedId
     }
-    const candidateId = one.identity ? `${kind}:${one.identity(targetPath)}` : generateId(kind)
+    const candidateId =
+      wantedId || (one.identity ? `${kind}:${one.identity(targetPath)}` : generateId(kind))
     const existing = ctx.open.value.get(candidateId)
     if (existing) {
       const existingPath = getTabPath(existing)
@@ -385,10 +386,11 @@ function createTabOpeners(ctx: TabOpenerContext) {
     ctx.layout.value = openTab(ctx.layout.value, id)
   }
 
-  const openTabOfKind = async (kind: string, target = ''): Promise<string> => {
-    const id = createTabSync(kind, target)
-    show(id)
-    return id
+  /** Opens a tab of a kind and shows it; `id` names the tab where it must keep an id it had elsewhere. */
+  const openTabOfKind = async (kind: string, target = '', id = ''): Promise<string> => {
+    const opened = createTabSync(kind, target, id)
+    show(opened)
+    return opened
   }
 
   const openTabAdjacentOfKind = async (kind: string, target = ''): Promise<string> => {

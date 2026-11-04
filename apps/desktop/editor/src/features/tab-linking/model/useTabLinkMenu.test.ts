@@ -7,6 +7,7 @@ const KINDS: Record<string, string> = { a: 'note', b: 'files', c: 'agent' }
 const setup = (groups: Record<string, TabLinkGroup> = {}, targets: string[] = []) => {
   const getGroupOf = vi.fn((tab: string) => groups[tab] ?? null)
   const tabLinks = {
+    tabs: [],
     getGroupOf,
     getLinkedTargets: () => targets,
     linkTabs: vi.fn(),
@@ -63,6 +64,7 @@ describe('the menu on a tab', () => {
   it('opens on an unlinkable tab when detach is provided, and detaches it on request', () => {
     const onDetach = vi.fn()
     const tabLinks = {
+      tabs: [],
       getGroupOf: () => null,
       getLinkedTargets: () => [],
       linkTabs: vi.fn(),
@@ -120,5 +122,52 @@ describe('the menu on a tab', () => {
 
     expect(menu.isLinked.value).toBe(true)
     expect(menu.linkedTargetTitle.value).toBe('B')
+  })
+})
+
+describe('the menu with other windows open', () => {
+  const OTHER_TABS = [
+    { id: 'a', kind: 'note', title: 'A', windowId: 'window-a' },
+    { id: 'plex:7', kind: 'plex', title: 'Tides', windowId: 'window-b' },
+    { id: 'files:8', kind: 'files', title: 'Files', windowId: 'window-b' },
+  ]
+
+  const setupWithOthers = (groups: Record<string, TabLinkGroup> = {}, targets: string[] = []) => {
+    const tabLinks = {
+      tabs: OTHER_TABS,
+      getGroupOf: (tab: string) => groups[tab] ?? null,
+      getLinkedTargets: () => targets,
+      linkTabs: vi.fn(),
+      unlinkTab: vi.fn(),
+    } as unknown as TabLinksState
+    return useTabLinkMenu({
+      tabLinks,
+      getTabs: () => [
+        { id: 'a', title: 'A' },
+        { id: 'b', title: 'B' },
+      ],
+      getKind: (tab) => KINDS[tab],
+      isLinkable: (tab) => tab === 'a' || tab === 'b',
+    })
+  }
+
+  it('lists the tabs of this window, then the linkable tabs of the others', () => {
+    const menu = setupWithOthers()
+    menu.open('a', { x: 0, y: 0 })
+
+    expect(menu.eligibleTabs.value).toStrictEqual([
+      { id: 'b', title: 'B', kind: 'files', isLinked: false },
+      { id: 'plex:7', title: 'Tides', kind: 'plex', isLinked: false },
+      { id: 'files:8', title: 'Files', kind: 'files', isLinked: false },
+    ])
+  })
+
+  it('names a linked tab of another window by its title', () => {
+    const group = { id: 'g', colorIndex: 1, tabs: ['a', 'plex:7'] }
+    const menu = setupWithOthers({ a: group, 'plex:7': group }, ['plex:7'])
+    menu.open('a', { x: 0, y: 0 })
+
+    expect(menu.linkedTargetTitle.value).toBe('Tides')
+    expect(menu.eligibleTabs.value.map((tab) => tab.id)).toStrictEqual(['b', 'files:8'])
   })
 })

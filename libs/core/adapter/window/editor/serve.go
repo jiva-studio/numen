@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/assembly"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/command"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/plugincatalog"
+	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/tablinks"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/textmenu"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/texts"
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
@@ -278,6 +279,7 @@ func createWindow(
 	state := &State{
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),
+		TabLinks:     tablinks.NewRegistry(detachGrace, tablinks.ScheduleAfter),
 		Edits:        newEditBroadcaster(),
 		Window:       &wire.Window{Named: wire.Editor, Tasking: tasks},
 	}

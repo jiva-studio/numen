@@ -316,6 +316,9 @@ func getSecondaryWindowURL(tab editor.DetachedTab) string {
 	if tab.Path != "" {
 		query.Set("path", tab.Path)
 	}
+	if tab.ID != "" {
+		query.Set("id", tab.ID)
+	}
 	return "/?" + query.Encode()
 }
 

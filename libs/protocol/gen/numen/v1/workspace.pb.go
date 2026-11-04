@@ -34,8 +34,11 @@ type DetachTabRequest struct {
 	// The vault path the tab shows; empty for a tab that shows none.
 	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// The position on screen to open the new window at.
-	X             int32 `protobuf:"varint,3,opt,name=x,proto3" json:"x,omitempty"`
-	Y             int32 `protobuf:"varint,4,opt,name=y,proto3" json:"y,omitempty"`
+	X int32 `protobuf:"varint,3,opt,name=x,proto3" json:"x,omitempty"`
+	Y int32 `protobuf:"varint,4,opt,name=y,proto3" json:"y,omitempty"`
+	// The id of the tab. The new window opens the tab under the same id, and the
+	// tab keeps its links.
+	Id            string `protobuf:"bytes,5,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -96,6 +99,13 @@ func (x *DetachTabRequest) GetY() int32 {
 		return x.Y
 	}
 	return 0
+}
+
+func (x *DetachTabRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
 }
 
 type DetachTabResponse struct {
@@ -496,16 +506,822 @@ func (x *Tab) GetState() string {
 	return ""
 }
 
+type WatchTabLinksRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The window that watches, by an id the window chooses for itself.
+	WindowId      string `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WatchTabLinksRequest) Reset() {
+	*x = WatchTabLinksRequest{}
+	mi := &file_numen_v1_workspace_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WatchTabLinksRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WatchTabLinksRequest) ProtoMessage() {}
+
+func (x *WatchTabLinksRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_workspace_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WatchTabLinksRequest.ProtoReflect.Descriptor instead.
+func (*WatchTabLinksRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *WatchTabLinksRequest) GetWindowId() string {
+	if x != nil {
+		return x.WindowId
+	}
+	return ""
+}
+
+type WatchTabLinksResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Neither is set on a keepalive.
+	//
+	// Types that are valid to be assigned to Event:
+	//
+	//	*WatchTabLinksResponse_Links
+	//	*WatchTabLinksResponse_Sync
+	Event         isWatchTabLinksResponse_Event `protobuf_oneof:"event"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WatchTabLinksResponse) Reset() {
+	*x = WatchTabLinksResponse{}
+	mi := &file_numen_v1_workspace_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WatchTabLinksResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WatchTabLinksResponse) ProtoMessage() {}
+
+func (x *WatchTabLinksResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_workspace_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WatchTabLinksResponse.ProtoReflect.Descriptor instead.
+func (*WatchTabLinksResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *WatchTabLinksResponse) GetEvent() isWatchTabLinksResponse_Event {
+	if x != nil {
+		return x.Event
+	}
+	return nil
+}
+
+func (x *WatchTabLinksResponse) GetLinks() *TabLinks {
+	if x != nil {
+		if x, ok := x.Event.(*WatchTabLinksResponse_Links); ok {
+			return x.Links
+		}
+	}
+	return nil
+}
+
+func (x *WatchTabLinksResponse) GetSync() *TabPathSync {
+	if x != nil {
+		if x, ok := x.Event.(*WatchTabLinksResponse_Sync); ok {
+			return x.Sync
+		}
+	}
+	return nil
+}
+
+type isWatchTabLinksResponse_Event interface {
+	isWatchTabLinksResponse_Event()
+}
+
+type WatchTabLinksResponse_Links struct {
+	Links *TabLinks `protobuf:"bytes,1,opt,name=links,proto3,oneof"`
+}
+
+type WatchTabLinksResponse_Sync struct {
+	Sync *TabPathSync `protobuf:"bytes,2,opt,name=sync,proto3,oneof"`
+}
+
+func (*WatchTabLinksResponse_Links) isWatchTabLinksResponse_Event() {}
+
+func (*WatchTabLinksResponse_Sync) isWatchTabLinksResponse_Event() {}
+
+// TabLinks is every link group of the vault and every linkable tab of every
+// window.
+type TabLinks struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Groups        []*TabLinkGroup        `protobuf:"bytes,1,rep,name=groups,proto3" json:"groups,omitempty"`
+	Tabs          []*LinkableTab         `protobuf:"bytes,2,rep,name=tabs,proto3" json:"tabs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TabLinks) Reset() {
+	*x = TabLinks{}
+	mi := &file_numen_v1_workspace_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TabLinks) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TabLinks) ProtoMessage() {}
+
+func (x *TabLinks) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_workspace_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TabLinks.ProtoReflect.Descriptor instead.
+func (*TabLinks) Descriptor() ([]byte, []int) {
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *TabLinks) GetGroups() []*TabLinkGroup {
+	if x != nil {
+		return x.Groups
+	}
+	return nil
+}
+
+func (x *TabLinks) GetTabs() []*LinkableTab {
+	if x != nil {
+		return x.Tabs
+	}
+	return nil
+}
+
+// A TabLinkGroup is two or more tabs that move to the same path together.
+type TabLinkGroup struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// The color the group is marked with, from 1 to 4.
+	ColorIndex    int32    `protobuf:"varint,2,opt,name=color_index,json=colorIndex,proto3" json:"color_index,omitempty"`
+	TabIds        []string `protobuf:"bytes,3,rep,name=tab_ids,json=tabIds,proto3" json:"tab_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TabLinkGroup) Reset() {
+	*x = TabLinkGroup{}
+	mi := &file_numen_v1_workspace_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TabLinkGroup) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TabLinkGroup) ProtoMessage() {}
+
+func (x *TabLinkGroup) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_workspace_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TabLinkGroup.ProtoReflect.Descriptor instead.
+func (*TabLinkGroup) Descriptor() ([]byte, []int) {
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *TabLinkGroup) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *TabLinkGroup) GetColorIndex() int32 {
+	if x != nil {
+		return x.ColorIndex
+	}
+	return 0
+}
+
+func (x *TabLinkGroup) GetTabIds() []string {
+	if x != nil {
+		return x.TabIds
+	}
+	return nil
+}
+
+// A LinkableTab is an open tab whose kind can move to a path.
+type LinkableTab struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Kind  string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	Title string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	// The window that has the tab open. The core sets it; a window reporting its
+	// own tabs leaves it empty.
+	WindowId      string `protobuf:"bytes,4,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LinkableTab) Reset() {
+	*x = LinkableTab{}
+	mi := &file_numen_v1_workspace_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LinkableTab) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LinkableTab) ProtoMessage() {}
+
+func (x *LinkableTab) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_workspace_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LinkableTab.ProtoReflect.Descriptor instead.
+func (*LinkableTab) Descriptor() ([]byte, []int) {
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *LinkableTab) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *LinkableTab) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *LinkableTab) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *LinkableTab) GetWindowId() string {
+	if x != nil {
+		return x.WindowId
+	}
+	return ""
+}
+
+// A TabPathSync is a linked tab that moved to a path.
+type TabPathSync struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GroupId       string                 `protobuf:"bytes,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	SourceTabId   string                 `protobuf:"bytes,2,opt,name=source_tab_id,json=sourceTabId,proto3" json:"source_tab_id,omitempty"`
+	Path          string                 `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
+	Title         string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TabPathSync) Reset() {
+	*x = TabPathSync{}
+	mi := &file_numen_v1_workspace_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TabPathSync) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TabPathSync) ProtoMessage() {}
+
+func (x *TabPathSync) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_workspace_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TabPathSync.ProtoReflect.Descriptor instead.
+func (*TabPathSync) Descriptor() ([]byte, []int) {
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *TabPathSync) GetGroupId() string {
+	if x != nil {
+		return x.GroupId
+	}
+	return ""
+}
+
+func (x *TabPathSync) GetSourceTabId() string {
+	if x != nil {
+		return x.SourceTabId
+	}
+	return ""
+}
+
+func (x *TabPathSync) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *TabPathSync) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+type CancelWatchTabLinksRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	WindowId      string                 `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelWatchTabLinksRequest) Reset() {
+	*x = CancelWatchTabLinksRequest{}
+	mi := &file_numen_v1_workspace_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelWatchTabLinksRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelWatchTabLinksRequest) ProtoMessage() {}
+
+func (x *CancelWatchTabLinksRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_workspace_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelWatchTabLinksRequest.ProtoReflect.Descriptor instead.
+func (*CancelWatchTabLinksRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *CancelWatchTabLinksRequest) GetWindowId() string {
+	if x != nil {
+		return x.WindowId
+	}
+	return ""
+}
+
+type CancelWatchTabLinksResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelWatchTabLinksResponse) Reset() {
+	*x = CancelWatchTabLinksResponse{}
+	mi := &file_numen_v1_workspace_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelWatchTabLinksResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelWatchTabLinksResponse) ProtoMessage() {}
+
+func (x *CancelWatchTabLinksResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_workspace_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelWatchTabLinksResponse.ProtoReflect.Descriptor instead.
+func (*CancelWatchTabLinksResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{16}
+}
+
+type WriteTabLinksRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The window that writes.
+	WindowId string `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
+	// Types that are valid to be assigned to Change:
+	//
+	//	*WriteTabLinksRequest_Link
+	//	*WriteTabLinksRequest_UnlinkTabId
+	//	*WriteTabLinksRequest_Tabs
+	Change        isWriteTabLinksRequest_Change `protobuf_oneof:"change"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WriteTabLinksRequest) Reset() {
+	*x = WriteTabLinksRequest{}
+	mi := &file_numen_v1_workspace_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WriteTabLinksRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WriteTabLinksRequest) ProtoMessage() {}
+
+func (x *WriteTabLinksRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_workspace_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WriteTabLinksRequest.ProtoReflect.Descriptor instead.
+func (*WriteTabLinksRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *WriteTabLinksRequest) GetWindowId() string {
+	if x != nil {
+		return x.WindowId
+	}
+	return ""
+}
+
+func (x *WriteTabLinksRequest) GetChange() isWriteTabLinksRequest_Change {
+	if x != nil {
+		return x.Change
+	}
+	return nil
+}
+
+func (x *WriteTabLinksRequest) GetLink() *TabLink {
+	if x != nil {
+		if x, ok := x.Change.(*WriteTabLinksRequest_Link); ok {
+			return x.Link
+		}
+	}
+	return nil
+}
+
+func (x *WriteTabLinksRequest) GetUnlinkTabId() string {
+	if x != nil {
+		if x, ok := x.Change.(*WriteTabLinksRequest_UnlinkTabId); ok {
+			return x.UnlinkTabId
+		}
+	}
+	return ""
+}
+
+func (x *WriteTabLinksRequest) GetTabs() *WindowTabs {
+	if x != nil {
+		if x, ok := x.Change.(*WriteTabLinksRequest_Tabs); ok {
+			return x.Tabs
+		}
+	}
+	return nil
+}
+
+type isWriteTabLinksRequest_Change interface {
+	isWriteTabLinksRequest_Change()
+}
+
+type WriteTabLinksRequest_Link struct {
+	// Links two tabs. A tab already in a group brings its group along.
+	Link *TabLink `protobuf:"bytes,2,opt,name=link,proto3,oneof"`
+}
+
+type WriteTabLinksRequest_UnlinkTabId struct {
+	// Takes a tab out of its group.
+	UnlinkTabId string `protobuf:"bytes,3,opt,name=unlink_tab_id,json=unlinkTabId,proto3,oneof"`
+}
+
+type WriteTabLinksRequest_Tabs struct {
+	// Every linkable tab the window has open. A tab of the window missing from
+	// the list leaves its group, unless it is being detached.
+	Tabs *WindowTabs `protobuf:"bytes,4,opt,name=tabs,proto3,oneof"`
+}
+
+func (*WriteTabLinksRequest_Link) isWriteTabLinksRequest_Change() {}
+
+func (*WriteTabLinksRequest_UnlinkTabId) isWriteTabLinksRequest_Change() {}
+
+func (*WriteTabLinksRequest_Tabs) isWriteTabLinksRequest_Change() {}
+
+type TabLink struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SourceTabId   string                 `protobuf:"bytes,1,opt,name=source_tab_id,json=sourceTabId,proto3" json:"source_tab_id,omitempty"`
+	TargetTabId   string                 `protobuf:"bytes,2,opt,name=target_tab_id,json=targetTabId,proto3" json:"target_tab_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TabLink) Reset() {
+	*x = TabLink{}
+	mi := &file_numen_v1_workspace_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TabLink) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TabLink) ProtoMessage() {}
+
+func (x *TabLink) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_workspace_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TabLink.ProtoReflect.Descriptor instead.
+func (*TabLink) Descriptor() ([]byte, []int) {
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *TabLink) GetSourceTabId() string {
+	if x != nil {
+		return x.SourceTabId
+	}
+	return ""
+}
+
+func (x *TabLink) GetTargetTabId() string {
+	if x != nil {
+		return x.TargetTabId
+	}
+	return ""
+}
+
+type WindowTabs struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Tabs          []*LinkableTab         `protobuf:"bytes,1,rep,name=tabs,proto3" json:"tabs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WindowTabs) Reset() {
+	*x = WindowTabs{}
+	mi := &file_numen_v1_workspace_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WindowTabs) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WindowTabs) ProtoMessage() {}
+
+func (x *WindowTabs) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_workspace_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WindowTabs.ProtoReflect.Descriptor instead.
+func (*WindowTabs) Descriptor() ([]byte, []int) {
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *WindowTabs) GetTabs() []*LinkableTab {
+	if x != nil {
+		return x.Tabs
+	}
+	return nil
+}
+
+type WriteTabLinksResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WriteTabLinksResponse) Reset() {
+	*x = WriteTabLinksResponse{}
+	mi := &file_numen_v1_workspace_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WriteTabLinksResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WriteTabLinksResponse) ProtoMessage() {}
+
+func (x *WriteTabLinksResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_workspace_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WriteTabLinksResponse.ProtoReflect.Descriptor instead.
+func (*WriteTabLinksResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{20}
+}
+
+type SyncTabPathRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The linked tab that moved.
+	SourceTabId   string `protobuf:"bytes,1,opt,name=source_tab_id,json=sourceTabId,proto3" json:"source_tab_id,omitempty"`
+	Path          string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	Title         string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SyncTabPathRequest) Reset() {
+	*x = SyncTabPathRequest{}
+	mi := &file_numen_v1_workspace_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SyncTabPathRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncTabPathRequest) ProtoMessage() {}
+
+func (x *SyncTabPathRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_workspace_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncTabPathRequest.ProtoReflect.Descriptor instead.
+func (*SyncTabPathRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *SyncTabPathRequest) GetSourceTabId() string {
+	if x != nil {
+		return x.SourceTabId
+	}
+	return ""
+}
+
+func (x *SyncTabPathRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *SyncTabPathRequest) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+type SyncTabPathResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SyncTabPathResponse) Reset() {
+	*x = SyncTabPathResponse{}
+	mi := &file_numen_v1_workspace_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SyncTabPathResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncTabPathResponse) ProtoMessage() {}
+
+func (x *SyncTabPathResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_workspace_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncTabPathResponse.ProtoReflect.Descriptor instead.
+func (*SyncTabPathResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{22}
+}
+
 var File_numen_v1_workspace_proto protoreflect.FileDescriptor
 
 const file_numen_v1_workspace_proto_rawDesc = "" +
 	"\n" +
-	"\x18numen/v1/workspace.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"V\n" +
+	"\x18numen/v1/workspace.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"f\n" +
 	"\x10DetachTabRequest\x12\x12\n" +
 	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\f\n" +
 	"\x01x\x18\x03 \x01(\x05R\x01x\x12\f\n" +
-	"\x01y\x18\x04 \x01(\x05R\x01y\"\x13\n" +
+	"\x01y\x18\x04 \x01(\x05R\x01y\x12\x0e\n" +
+	"\x02id\x18\x05 \x01(\tR\x02id\"\x13\n" +
 	"\x11DetachTabResponse\"\x13\n" +
 	"\x11WatchFocusRequest\"Q\n" +
 	"\x12WatchFocusResponse\x12\x12\n" +
@@ -524,13 +1340,62 @@ const file_numen_v1_workspace_proto_rawDesc = "" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x04 \x01(\tR\x05title\x12\x14\n" +
-	"\x05state\x18\x05 \x01(\tR\x05state2\xc4\x02\n" +
+	"\x05state\x18\x05 \x01(\tR\x05state\"3\n" +
+	"\x14WatchTabLinksRequest\x12\x1b\n" +
+	"\twindow_id\x18\x01 \x01(\tR\bwindowId\"y\n" +
+	"\x15WatchTabLinksResponse\x12*\n" +
+	"\x05links\x18\x01 \x01(\v2\x12.numen.v1.TabLinksH\x00R\x05links\x12+\n" +
+	"\x04sync\x18\x02 \x01(\v2\x15.numen.v1.TabPathSyncH\x00R\x04syncB\a\n" +
+	"\x05event\"e\n" +
+	"\bTabLinks\x12.\n" +
+	"\x06groups\x18\x01 \x03(\v2\x16.numen.v1.TabLinkGroupR\x06groups\x12)\n" +
+	"\x04tabs\x18\x02 \x03(\v2\x15.numen.v1.LinkableTabR\x04tabs\"X\n" +
+	"\fTabLinkGroup\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
+	"\vcolor_index\x18\x02 \x01(\x05R\n" +
+	"colorIndex\x12\x17\n" +
+	"\atab_ids\x18\x03 \x03(\tR\x06tabIds\"d\n" +
+	"\vLinkableTab\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x12\x1b\n" +
+	"\twindow_id\x18\x04 \x01(\tR\bwindowId\"v\n" +
+	"\vTabPathSync\x12\x19\n" +
+	"\bgroup_id\x18\x01 \x01(\tR\agroupId\x12\"\n" +
+	"\rsource_tab_id\x18\x02 \x01(\tR\vsourceTabId\x12\x12\n" +
+	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
+	"\x05title\x18\x04 \x01(\tR\x05title\"9\n" +
+	"\x1aCancelWatchTabLinksRequest\x12\x1b\n" +
+	"\twindow_id\x18\x01 \x01(\tR\bwindowId\"\x1d\n" +
+	"\x1bCancelWatchTabLinksResponse\"\xb8\x01\n" +
+	"\x14WriteTabLinksRequest\x12\x1b\n" +
+	"\twindow_id\x18\x01 \x01(\tR\bwindowId\x12'\n" +
+	"\x04link\x18\x02 \x01(\v2\x11.numen.v1.TabLinkH\x00R\x04link\x12$\n" +
+	"\runlink_tab_id\x18\x03 \x01(\tH\x00R\vunlinkTabId\x12*\n" +
+	"\x04tabs\x18\x04 \x01(\v2\x14.numen.v1.WindowTabsH\x00R\x04tabsB\b\n" +
+	"\x06change\"Q\n" +
+	"\aTabLink\x12\"\n" +
+	"\rsource_tab_id\x18\x01 \x01(\tR\vsourceTabId\x12\"\n" +
+	"\rtarget_tab_id\x18\x02 \x01(\tR\vtargetTabId\"7\n" +
+	"\n" +
+	"WindowTabs\x12)\n" +
+	"\x04tabs\x18\x01 \x03(\v2\x15.numen.v1.LinkableTabR\x04tabs\"\x17\n" +
+	"\x15WriteTabLinksResponse\"b\n" +
+	"\x12SyncTabPathRequest\x12\"\n" +
+	"\rsource_tab_id\x18\x01 \x01(\tR\vsourceTabId\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\"\x15\n" +
+	"\x13SyncTabPathResponse2\x9a\x05\n" +
 	"\x10WorkspaceService\x12I\n" +
 	"\n" +
 	"WatchFocus\x12\x1b.numen.v1.WatchFocusRequest\x1a\x1c.numen.v1.WatchFocusResponse0\x01\x12P\n" +
 	"\rWriteOpenTabs\x12\x1e.numen.v1.WriteOpenTabsRequest\x1a\x1f.numen.v1.WriteOpenTabsResponse\x12M\n" +
 	"\fReadOpenTabs\x12\x1d.numen.v1.ReadOpenTabsRequest\x1a\x1e.numen.v1.ReadOpenTabsResponse\x12D\n" +
-	"\tDetachTab\x12\x1a.numen.v1.DetachTabRequest\x1a\x1b.numen.v1.DetachTabResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\tDetachTab\x12\x1a.numen.v1.DetachTabRequest\x1a\x1b.numen.v1.DetachTabResponse\x12R\n" +
+	"\rWatchTabLinks\x12\x1e.numen.v1.WatchTabLinksRequest\x1a\x1f.numen.v1.WatchTabLinksResponse0\x01\x12b\n" +
+	"\x13CancelWatchTabLinks\x12$.numen.v1.CancelWatchTabLinksRequest\x1a%.numen.v1.CancelWatchTabLinksResponse\x12P\n" +
+	"\rWriteTabLinks\x12\x1e.numen.v1.WriteTabLinksRequest\x1a\x1f.numen.v1.WriteTabLinksResponse\x12J\n" +
+	"\vSyncTabPath\x12\x1c.numen.v1.SyncTabPathRequest\x1a\x1d.numen.v1.SyncTabPathResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_workspace_proto_rawDescOnce sync.Once
@@ -544,36 +1409,65 @@ func file_numen_v1_workspace_proto_rawDescGZIP() []byte {
 	return file_numen_v1_workspace_proto_rawDescData
 }
 
-var file_numen_v1_workspace_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_numen_v1_workspace_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_numen_v1_workspace_proto_goTypes = []any{
-	(*DetachTabRequest)(nil),      // 0: numen.v1.DetachTabRequest
-	(*DetachTabResponse)(nil),     // 1: numen.v1.DetachTabResponse
-	(*WatchFocusRequest)(nil),     // 2: numen.v1.WatchFocusRequest
-	(*WatchFocusResponse)(nil),    // 3: numen.v1.WatchFocusResponse
-	(*WriteOpenTabsRequest)(nil),  // 4: numen.v1.WriteOpenTabsRequest
-	(*WriteOpenTabsResponse)(nil), // 5: numen.v1.WriteOpenTabsResponse
-	(*ReadOpenTabsRequest)(nil),   // 6: numen.v1.ReadOpenTabsRequest
-	(*ReadOpenTabsResponse)(nil),  // 7: numen.v1.ReadOpenTabsResponse
-	(*Tab)(nil),                   // 8: numen.v1.Tab
-	(*Range)(nil),                 // 9: numen.v1.Range
+	(*DetachTabRequest)(nil),            // 0: numen.v1.DetachTabRequest
+	(*DetachTabResponse)(nil),           // 1: numen.v1.DetachTabResponse
+	(*WatchFocusRequest)(nil),           // 2: numen.v1.WatchFocusRequest
+	(*WatchFocusResponse)(nil),          // 3: numen.v1.WatchFocusResponse
+	(*WriteOpenTabsRequest)(nil),        // 4: numen.v1.WriteOpenTabsRequest
+	(*WriteOpenTabsResponse)(nil),       // 5: numen.v1.WriteOpenTabsResponse
+	(*ReadOpenTabsRequest)(nil),         // 6: numen.v1.ReadOpenTabsRequest
+	(*ReadOpenTabsResponse)(nil),        // 7: numen.v1.ReadOpenTabsResponse
+	(*Tab)(nil),                         // 8: numen.v1.Tab
+	(*WatchTabLinksRequest)(nil),        // 9: numen.v1.WatchTabLinksRequest
+	(*WatchTabLinksResponse)(nil),       // 10: numen.v1.WatchTabLinksResponse
+	(*TabLinks)(nil),                    // 11: numen.v1.TabLinks
+	(*TabLinkGroup)(nil),                // 12: numen.v1.TabLinkGroup
+	(*LinkableTab)(nil),                 // 13: numen.v1.LinkableTab
+	(*TabPathSync)(nil),                 // 14: numen.v1.TabPathSync
+	(*CancelWatchTabLinksRequest)(nil),  // 15: numen.v1.CancelWatchTabLinksRequest
+	(*CancelWatchTabLinksResponse)(nil), // 16: numen.v1.CancelWatchTabLinksResponse
+	(*WriteTabLinksRequest)(nil),        // 17: numen.v1.WriteTabLinksRequest
+	(*TabLink)(nil),                     // 18: numen.v1.TabLink
+	(*WindowTabs)(nil),                  // 19: numen.v1.WindowTabs
+	(*WriteTabLinksResponse)(nil),       // 20: numen.v1.WriteTabLinksResponse
+	(*SyncTabPathRequest)(nil),          // 21: numen.v1.SyncTabPathRequest
+	(*SyncTabPathResponse)(nil),         // 22: numen.v1.SyncTabPathResponse
+	(*Range)(nil),                       // 23: numen.v1.Range
 }
 var file_numen_v1_workspace_proto_depIdxs = []int32{
-	9, // 0: numen.v1.WatchFocusResponse.ranges:type_name -> numen.v1.Range
-	8, // 1: numen.v1.WriteOpenTabsRequest.tabs:type_name -> numen.v1.Tab
-	8, // 2: numen.v1.ReadOpenTabsResponse.tabs:type_name -> numen.v1.Tab
-	2, // 3: numen.v1.WorkspaceService.WatchFocus:input_type -> numen.v1.WatchFocusRequest
-	4, // 4: numen.v1.WorkspaceService.WriteOpenTabs:input_type -> numen.v1.WriteOpenTabsRequest
-	6, // 5: numen.v1.WorkspaceService.ReadOpenTabs:input_type -> numen.v1.ReadOpenTabsRequest
-	0, // 6: numen.v1.WorkspaceService.DetachTab:input_type -> numen.v1.DetachTabRequest
-	3, // 7: numen.v1.WorkspaceService.WatchFocus:output_type -> numen.v1.WatchFocusResponse
-	5, // 8: numen.v1.WorkspaceService.WriteOpenTabs:output_type -> numen.v1.WriteOpenTabsResponse
-	7, // 9: numen.v1.WorkspaceService.ReadOpenTabs:output_type -> numen.v1.ReadOpenTabsResponse
-	1, // 10: numen.v1.WorkspaceService.DetachTab:output_type -> numen.v1.DetachTabResponse
-	7, // [7:11] is the sub-list for method output_type
-	3, // [3:7] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	23, // 0: numen.v1.WatchFocusResponse.ranges:type_name -> numen.v1.Range
+	8,  // 1: numen.v1.WriteOpenTabsRequest.tabs:type_name -> numen.v1.Tab
+	8,  // 2: numen.v1.ReadOpenTabsResponse.tabs:type_name -> numen.v1.Tab
+	11, // 3: numen.v1.WatchTabLinksResponse.links:type_name -> numen.v1.TabLinks
+	14, // 4: numen.v1.WatchTabLinksResponse.sync:type_name -> numen.v1.TabPathSync
+	12, // 5: numen.v1.TabLinks.groups:type_name -> numen.v1.TabLinkGroup
+	13, // 6: numen.v1.TabLinks.tabs:type_name -> numen.v1.LinkableTab
+	18, // 7: numen.v1.WriteTabLinksRequest.link:type_name -> numen.v1.TabLink
+	19, // 8: numen.v1.WriteTabLinksRequest.tabs:type_name -> numen.v1.WindowTabs
+	13, // 9: numen.v1.WindowTabs.tabs:type_name -> numen.v1.LinkableTab
+	2,  // 10: numen.v1.WorkspaceService.WatchFocus:input_type -> numen.v1.WatchFocusRequest
+	4,  // 11: numen.v1.WorkspaceService.WriteOpenTabs:input_type -> numen.v1.WriteOpenTabsRequest
+	6,  // 12: numen.v1.WorkspaceService.ReadOpenTabs:input_type -> numen.v1.ReadOpenTabsRequest
+	0,  // 13: numen.v1.WorkspaceService.DetachTab:input_type -> numen.v1.DetachTabRequest
+	9,  // 14: numen.v1.WorkspaceService.WatchTabLinks:input_type -> numen.v1.WatchTabLinksRequest
+	15, // 15: numen.v1.WorkspaceService.CancelWatchTabLinks:input_type -> numen.v1.CancelWatchTabLinksRequest
+	17, // 16: numen.v1.WorkspaceService.WriteTabLinks:input_type -> numen.v1.WriteTabLinksRequest
+	21, // 17: numen.v1.WorkspaceService.SyncTabPath:input_type -> numen.v1.SyncTabPathRequest
+	3,  // 18: numen.v1.WorkspaceService.WatchFocus:output_type -> numen.v1.WatchFocusResponse
+	5,  // 19: numen.v1.WorkspaceService.WriteOpenTabs:output_type -> numen.v1.WriteOpenTabsResponse
+	7,  // 20: numen.v1.WorkspaceService.ReadOpenTabs:output_type -> numen.v1.ReadOpenTabsResponse
+	1,  // 21: numen.v1.WorkspaceService.DetachTab:output_type -> numen.v1.DetachTabResponse
+	10, // 22: numen.v1.WorkspaceService.WatchTabLinks:output_type -> numen.v1.WatchTabLinksResponse
+	16, // 23: numen.v1.WorkspaceService.CancelWatchTabLinks:output_type -> numen.v1.CancelWatchTabLinksResponse
+	20, // 24: numen.v1.WorkspaceService.WriteTabLinks:output_type -> numen.v1.WriteTabLinksResponse
+	22, // 25: numen.v1.WorkspaceService.SyncTabPath:output_type -> numen.v1.SyncTabPathResponse
+	18, // [18:26] is the sub-list for method output_type
+	10, // [10:18] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_workspace_proto_init() }
@@ -582,13 +1476,22 @@ func file_numen_v1_workspace_proto_init() {
 		return
 	}
 	file_numen_v1_shared_proto_init()
+	file_numen_v1_workspace_proto_msgTypes[10].OneofWrappers = []any{
+		(*WatchTabLinksResponse_Links)(nil),
+		(*WatchTabLinksResponse_Sync)(nil),
+	}
+	file_numen_v1_workspace_proto_msgTypes[17].OneofWrappers = []any{
+		(*WriteTabLinksRequest_Link)(nil),
+		(*WriteTabLinksRequest_UnlinkTabId)(nil),
+		(*WriteTabLinksRequest_Tabs)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_workspace_proto_rawDesc), len(file_numen_v1_workspace_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -1,7 +1,7 @@
 /**
  * Which tabs can be linked, and which of them a given tab can be linked to.
  */
-import type { EligibleLinkTab, TabId, TabLinkGroup } from '../types'
+import type { EligibleLinkTab, LinkableTab, TabId, TabLinkGroup } from '../types'
 
 /** What the eligibility is read from. */
 export interface EligibilityInput {
@@ -38,4 +38,16 @@ export function getLinkedTitle(
   tabs: readonly { readonly id: TabId; readonly title: string }[],
 ): string {
   return targets.map((id) => tabs.find((tab) => tab.id === id)?.title || id).join(', ')
+}
+
+/** The tabs of this window, then the linkable tabs other windows have open. */
+export function getAllTabs(
+  own: readonly { readonly id: TabId; readonly title: string }[],
+  linkable: readonly LinkableTab[],
+): readonly { readonly id: TabId; readonly title: string }[] {
+  const ownIds = new Set(own.map((tab) => tab.id))
+  const others = linkable
+    .filter((tab) => !ownIds.has(tab.id))
+    .map((tab) => ({ id: tab.id, title: tab.title }))
+  return [...own, ...others]
 }
