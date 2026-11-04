@@ -11,8 +11,8 @@ option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;num
 // A key the schema does not name is reported as a warning by the reader. A message here only describes the
 // shape; the invariants between fields are checked by the manifest reader.
 message Manifest {
-  reserved 10, 18, 19, 20, 21, 22, 23, 25, 27;
-  reserved "runtimes", "commands", "note_types", "texts", "playback", "content_types", "readers", "frames", "app_version";
+  reserved 10, 18, 20, 21, 22, 23, 25, 27;
+  reserved "runtimes", "note_types", "texts", "playback", "content_types", "readers", "frames", "app_version";
   string id = 1;
   string name = 2;
   string version = 3;
@@ -208,8 +208,6 @@ message ManifestContextCondition {
 }
 
 message ManifestCommand {
-  reserved 8;
-  reserved "is_hidden_in_palette";
   string id = 1;
   string title = 2;
   string icon = 3;

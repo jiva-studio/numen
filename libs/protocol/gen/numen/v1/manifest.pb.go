@@ -1610,7 +1610,7 @@ var File_numen_v1_manifest_proto protoreflect.FileDescriptor
 
 const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/manifest.proto\x12\bnumen.v1\x1a\x1cgoogle/protobuf/struct.proto\"\xe5\x06\n" +
+	"\x17numen/v1/manifest.proto\x12\bnumen.v1\x1a\x1cgoogle/protobuf/struct.proto\"\xd5\x06\n" +
 	"\bManifest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
@@ -1629,7 +1629,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\bservices\x18\x11 \x03(\tR\bservices\x12E\n" +
 	"\x0esettings_views\x18\x18 \x03(\v2\x1e.numen.v1.ManifestSettingsViewR\rsettingsViews\x12?\n" +
 	"\vcontributes\x18\x1a \x01(\v2\x1d.numen.v1.ManifestContributesR\vcontributesJ\x04\b\n" +
-	"\x10\vJ\x04\b\x12\x10\x13J\x04\b\x13\x10\x14J\x04\b\x14\x10\x15J\x04\b\x15\x10\x16J\x04\b\x16\x10\x17J\x04\b\x17\x10\x18J\x04\b\x19\x10\x1aJ\x04\b\x1b\x10\x1cR\bruntimesR\bcommandsR\n" +
+	"\x10\vJ\x04\b\x12\x10\x13J\x04\b\x14\x10\x15J\x04\b\x15\x10\x16J\x04\b\x16\x10\x17J\x04\b\x17\x10\x18J\x04\b\x19\x10\x1aJ\x04\b\x1b\x10\x1cR\bruntimesR\n" +
 	"note_typesR\x05textsR\bplaybackR\rcontent_typesR\areadersR\x06framesR\vapp_version\"\x9b\x04\n" +
 	"\x13ManifestContributes\x126\n" +
 	"\ttab_kinds\x18\x01 \x03(\v2\x19.numen.v1.ManifestTabKindR\btabKinds\x12\x18\n" +
@@ -1736,7 +1736,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x14is_hidden_in_palette\x18\x05 \x01(\bR\x0fhiddenInPalette\"<\n" +
 	"\x18ManifestContextCondition\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\x84\x03\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\xe8\x02\n" +
 	"\x0fManifestCommand\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
@@ -1749,7 +1749,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x05scope\x18\t \x01(\tR\x05scope\x12\x1a\n" +
 	"\bshortcut\x18\n" +
 	" \x01(\tR\bshortcut\x12,\n" +
-	"\x13is_note_destination\x18\v \x01(\bR\x0fnoteDestinationJ\x04\b\b\x10\tR\x14is_hidden_in_palette\"Y\n" +
+	"\x13is_note_destination\x18\v \x01(\bR\x0fnoteDestination\"Y\n" +
 	"\x0eManifestReader\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12#\n" +
 	"\rcontent_types\x18\x02 \x03(\tR\fcontentTypes\x12\x12\n" +

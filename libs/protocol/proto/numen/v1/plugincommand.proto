@@ -111,15 +111,6 @@ message PluginCommand {
   // is_note_destination marks the command that puts a note in front.
   bool is_note_destination = 10;
 
-  // has_backend and has_frontend say which parts the plugin that declares the command has.
-  bool has_backend = 11;
-  bool has_frontend = 12;
-
-  // is_listed_by_menu is set for a command the menu of a file or the view of a note type lists and
-  // the palette does not: one with conditions under when, and one over notes of a type. The command
-  // is still declared, and a shortcut of it works.
-  bool is_listed_by_menu = 13;
-
   // is_suspended is set while the host holds the plugin suspended after it failed to start; its
   // backend runs nothing then.
   bool is_suspended = 14;

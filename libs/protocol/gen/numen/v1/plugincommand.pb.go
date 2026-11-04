@@ -318,13 +318,6 @@ type PluginCommand struct {
 	Shortcut string `protobuf:"bytes,9,opt,name=shortcut,proto3" json:"shortcut,omitempty"`
 	// is_note_destination marks the command that puts a note in front.
 	IsNoteDestination bool `protobuf:"varint,10,opt,name=is_note_destination,json=isNoteDestination,proto3" json:"is_note_destination,omitempty"`
-	// has_backend and has_frontend say which parts the plugin that declares the command has.
-	HasBackend  bool `protobuf:"varint,11,opt,name=has_backend,json=hasBackend,proto3" json:"has_backend,omitempty"`
-	HasFrontend bool `protobuf:"varint,12,opt,name=has_frontend,json=hasFrontend,proto3" json:"has_frontend,omitempty"`
-	// is_listed_by_menu is set for a command the menu of a file or the view of a note type lists and
-	// the palette does not: one with conditions under when, and one over notes of a type. The command
-	// is still declared, and a shortcut of it works.
-	IsListedByMenu bool `protobuf:"varint,13,opt,name=is_listed_by_menu,json=isListedByMenu,proto3" json:"is_listed_by_menu,omitempty"`
 	// is_suspended is set while the host holds the plugin suspended after it failed to start; its
 	// backend runs nothing then.
 	IsSuspended   bool `protobuf:"varint,14,opt,name=is_suspended,json=isSuspended,proto3" json:"is_suspended,omitempty"`
@@ -428,27 +421,6 @@ func (x *PluginCommand) GetShortcut() string {
 func (x *PluginCommand) GetIsNoteDestination() bool {
 	if x != nil {
 		return x.IsNoteDestination
-	}
-	return false
-}
-
-func (x *PluginCommand) GetHasBackend() bool {
-	if x != nil {
-		return x.HasBackend
-	}
-	return false
-}
-
-func (x *PluginCommand) GetHasFrontend() bool {
-	if x != nil {
-		return x.HasFrontend
-	}
-	return false
-}
-
-func (x *PluginCommand) GetIsListedByMenu() bool {
-	if x != nil {
-		return x.IsListedByMenu
 	}
 	return false
 }
@@ -672,7 +644,7 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"openedPath\"\x15\n" +
 	"\x13ListCommandsRequest\"K\n" +
 	"\x14ListCommandsResponse\x123\n" +
-	"\bcommands\x18\x01 \x03(\v2\x17.numen.v1.PluginCommandR\bcommands\"\xd8\x03\n" +
+	"\bcommands\x18\x01 \x03(\v2\x17.numen.v1.PluginCommandR\bcommands\"\xe9\x02\n" +
 	"\rPluginCommand\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12\x14\n" +
@@ -686,11 +658,7 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"\x05scope\x18\b \x01(\tR\x05scope\x12\x1a\n" +
 	"\bshortcut\x18\t \x01(\tR\bshortcut\x12.\n" +
 	"\x13is_note_destination\x18\n" +
-	" \x01(\bR\x11isNoteDestination\x12\x1f\n" +
-	"\vhas_backend\x18\v \x01(\bR\n" +
-	"hasBackend\x12!\n" +
-	"\fhas_frontend\x18\f \x01(\bR\vhasFrontend\x12)\n" +
-	"\x11is_listed_by_menu\x18\r \x01(\bR\x0eisListedByMenu\x12!\n" +
+	" \x01(\bR\x11isNoteDestination\x12!\n" +
 	"\fis_suspended\x18\x0e \x01(\bR\visSuspended\"\\\n" +
 	"\x0fCommandArgument\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
