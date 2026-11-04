@@ -64,7 +64,7 @@ export interface HostRegistry {
   readonly manifests: Map<string, Manifest>
   /** The plugins that have had a context made, which is when their frontend starts to register. */
   readonly activated: { value: ReadonlySet<string> }
-  /** The plugins that were disposed and have had no context made since: their declared commands are not offered. */
+  /** The plugins that were disposed and have had no context made since: their declared commands are not listed. */
   readonly disposed: Set<string>
   /** The mismatches between a declaration and a handler already reported. */
   readonly reportedIssues: Set<string>

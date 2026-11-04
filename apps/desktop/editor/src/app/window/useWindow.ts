@@ -211,12 +211,12 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
   })
 }
 
-/** What the declared commands ask of the window: the commands the plugin host offers, and the plugins with a backend. */
+/** What the declared commands ask of the window: the commands the plugin host lists, and the plugins with a backend. */
 const getDeclaredCommandsDeps = (
   hostHolder: { current?: import('@numen/plugin-host').PluginHost },
   settingsHolder: { current?: ReturnType<typeof useSettings> },
 ) => ({
-  isOffered: (id: string): boolean =>
+  isListed: (id: string): boolean =>
     hostHolder.current?.getPaletteCommands().some((one) => one.id === id) ?? false,
   hasBackend: (pluginId: string): boolean =>
     settingsHolder.current?.rest.plugins.value.find((one) => one.id === pluginId)?.hasBackend ??

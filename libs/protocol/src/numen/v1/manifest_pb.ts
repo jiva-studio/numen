@@ -202,7 +202,7 @@ export type ManifestContributes = Message<"numen.v1.ManifestContributes"> & {
   frameOrigins: string[];
 
   /**
-   * commands are the commands the plugin offers, whichever part of the plugin runs them. The
+   * commands are the commands the plugin declares, whichever part of the plugin runs them. The
    * application learns which part from where the handler is registered.
    *
    * @generated from field: repeated numen.v1.ManifestCommand commands = 12;
@@ -783,7 +783,7 @@ export type ManifestCommand = Message<"numen.v1.ManifestCommand"> & {
   arguments: ManifestCommandArgument[];
 
   /**
-   * scope is "note" for a command offered only while a note is in front. Empty is a command over the
+   * scope is "note" for a command listed only while a note is in front. Empty is a command over the
    * window.
    *
    * @generated from field: string scope = 9;

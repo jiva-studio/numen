@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// CommandScopeNote is the scope of a command offered only while a note is in front.
+// CommandScopeNote is the scope of a command listed only while a note is in front.
 const CommandScopeNote = "note"
 
 // The types an argument of a command holds.
@@ -78,7 +78,7 @@ type Command struct {
 	// content type and no note type. The palette has no file context and does not offer it.
 	When      []ContextCondition
 	Arguments []CommandArgument
-	// Scope is CommandScopeNote for a command offered only while a note is in front. Empty is a
+	// Scope is CommandScopeNote for a command listed only while a note is in front. Empty is a
 	// command over the window.
 	Scope string
 	// Shortcut is the keystroke the plugin suggests for the command, such as "mod+shift+e".

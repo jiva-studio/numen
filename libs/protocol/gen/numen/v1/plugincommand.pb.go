@@ -312,7 +312,7 @@ type PluginCommand struct {
 	// The icon the command shows in the palette, by its Lucide name. Empty shows
 	// the default plugin command icon.
 	Icon string `protobuf:"bytes,7,opt,name=icon,proto3" json:"icon,omitempty"`
-	// scope is "note" for a command offered only while a note is in front.
+	// scope is "note" for a command listed only while a note is in front.
 	Scope string `protobuf:"bytes,8,opt,name=scope,proto3" json:"scope,omitempty"`
 	// shortcut is the keystroke the plugin suggests for the command.
 	Shortcut      string `protobuf:"bytes,9,opt,name=shortcut,proto3" json:"shortcut,omitempty"`

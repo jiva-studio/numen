@@ -230,7 +230,7 @@ type ManifestContributes struct {
 	NoteTypes []*ManifestNoteType `protobuf:"bytes,10,rep,name=note_types,json=noteTypes,proto3" json:"note_types,omitempty"`
 	// frame_origins are the https origins the plugin's pages frame.
 	FrameOrigins []string `protobuf:"bytes,11,rep,name=frame_origins,json=frameOrigins,proto3" json:"frame_origins,omitempty"`
-	// commands are the commands the plugin offers, whichever part of the plugin runs them. The
+	// commands are the commands the plugin declares, whichever part of the plugin runs them. The
 	// application learns which part from where the handler is registered.
 	Commands      []*ManifestCommand `protobuf:"bytes,12,rep,name=commands,proto3" json:"commands,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1383,7 +1383,7 @@ type ManifestCommand struct {
 	// command with conditions is offered over each context that meets them.
 	When      []*ManifestContextCondition `protobuf:"bytes,6,rep,name=when,proto3" json:"when,omitempty"`
 	Arguments []*ManifestCommandArgument  `protobuf:"bytes,7,rep,name=arguments,proto3" json:"arguments,omitempty"`
-	// scope is "note" for a command offered only while a note is in front. Empty is a command over the
+	// scope is "note" for a command listed only while a note is in front. Empty is a command over the
 	// window.
 	Scope string `protobuf:"bytes,9,opt,name=scope,proto3" json:"scope,omitempty"`
 	// shortcut is the keystroke the plugin suggests for the command, such as "mod+shift+e".

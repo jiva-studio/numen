@@ -65,7 +65,7 @@ message ManifestContributes {
   repeated ManifestNoteType note_types = 10;
   // frame_origins are the https origins the plugin's pages frame.
   repeated string frame_origins = 11;
-  // commands are the commands the plugin offers, whichever part of the plugin runs them. The
+  // commands are the commands the plugin declares, whichever part of the plugin runs them. The
   // application learns which part from where the handler is registered.
   repeated ManifestCommand commands = 12;
 }
@@ -217,7 +217,7 @@ message ManifestCommand {
   // command with conditions is offered over each context that meets them.
   repeated ManifestContextCondition when = 6;
   repeated ManifestCommandArgument arguments = 7;
-  // scope is "note" for a command offered only while a note is in front. Empty is a command over the
+  // scope is "note" for a command listed only while a note is in front. Empty is a command over the
   // window.
   string scope = 9;
   // shortcut is the keystroke the plugin suggests for the command, such as "mod+shift+e".

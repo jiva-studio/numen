@@ -53,8 +53,8 @@ export function createDeclaredPaletteCommands(
 export interface DeclaredCommandsDeps {
   readonly list?: typeof listDeclaredCommands
   readonly run?: typeof runDeclaredCommand
-  /** Whether the plugin host offers the command of the full id: its frontend registered a handler, or is still loading. */
-  readonly isOffered?: (id: string) => boolean
+  /** Whether the plugin host lists the command of the full id: its frontend registered a handler, or is still loading. */
+  readonly isListed?: (id: string) => boolean
   /** Whether the plugin declares a backend; a command is run in a backend only where it does. */
   readonly hasBackend?: (pluginId: string) => boolean
 }
@@ -76,20 +76,20 @@ const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration 
 export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
   const list = deps.list ?? listDeclaredCommands
   const run = deps.run ?? runDeclaredCommand
-  const isOffered = deps.isOffered ?? (() => false)
+  const isListed = deps.isListed ?? (() => false)
   const hasBackend = deps.hasBackend ?? (() => true)
   const declared = shallowRef<readonly DeclaredCommand[] | undefined>(undefined)
   let newest = 0
   let unregisterAll: readonly (() => void)[] = []
 
   /**
-   * The declared commands a backend runs and the palette lists: those the plugin host does not offer,
+   * The declared commands a backend runs and the palette lists: those the plugin host does not list,
    * because no frontend handler is registered for them and their frontend is not loading, and only
    * for a plugin that has a backend.
    */
   const backendCommands = computed(() =>
     (declared.value ?? []).filter(
-      (one) => hasBackend(one.pluginId) && !isOffered(getPaletteId(one)),
+      (one) => hasBackend(one.pluginId) && !isListed(getPaletteId(one)),
     ),
   )
 

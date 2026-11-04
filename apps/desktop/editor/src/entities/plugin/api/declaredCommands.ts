@@ -37,7 +37,7 @@ export interface DeclaredCommand {
   readonly id: string
   readonly title: string
   readonly icon?: string
-  /** 'note' for a command offered only while a note is in front. */
+  /** 'note' for a command listed only while a note is in front. */
   readonly scope?: 'note'
   readonly shortcut?: string
   readonly contentTypes: readonly string[]

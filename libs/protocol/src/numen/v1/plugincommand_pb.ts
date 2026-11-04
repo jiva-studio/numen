@@ -171,7 +171,7 @@ export type PluginCommand = Message<"numen.v1.PluginCommand"> & {
   icon: string;
 
   /**
-   * scope is "note" for a command offered only while a note is in front.
+   * scope is "note" for a command listed only while a note is in front.
    *
    * @generated from field: string scope = 8;
    */

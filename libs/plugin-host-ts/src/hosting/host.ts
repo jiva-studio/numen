@@ -20,8 +20,8 @@ import { createStatusViewRegistry, type StatusViewRegistry } from '../statusView
 import { createViewRegistry, type ViewRegistry } from '../views'
 import { createPluginContext } from './context'
 import { addListener, notifyListeners, reportError, runCommand } from './events'
-import { createPaletteCommand } from './offered'
-import { readOfferedCommands } from './offeredReader'
+import { createPaletteCommand } from './available'
+import { readAvailableCommands } from './availableReader'
 import { matchesShortcut } from './shortcuts'
 import { createPluginPaneWrapper } from './customTabKind'
 import { registerReaderEntry, registerTabKindEntry } from './entries'
@@ -254,13 +254,13 @@ function createHostRegistry(): HostRegistry {
 
 /** The commands the plugins registered: the palette's list, running one, and the plugins' shortcuts. */
 function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
-  const getOffered = () => readOfferedCommands(deps, registry)
-  const findOffered = (id: string) => getOffered().find((one) => one.id === id)
+  const getAvailable = () => readAvailableCommands(deps, registry)
+  const findAvailable = (id: string) => getAvailable().find((one) => one.id === id)
   return {
-    getPaletteCommands: () => getOffered().map(createPaletteCommand),
-    hasCommand: (id: string): boolean => findOffered(id)?.entry !== undefined,
+    getPaletteCommands: () => getAvailable().map(createPaletteCommand),
+    hasCommand: (id: string): boolean => findAvailable(id)?.entry !== undefined,
     executeCommand: async (id: string, note: CommandNote): Promise<boolean> => {
-      const command = findOffered(id)
+      const command = findAvailable(id)
       if (!command) return false
       let entry = command.entry
       if (!entry) {
@@ -272,7 +272,7 @@ function createCommandApi(deps: PluginHostDeps, registry: HostRegistry) {
       return true
     },
     handleShortcut: (event: KeyboardEvent, getNote: () => Promise<CommandNote>): boolean => {
-      for (const { entry, declaration } of getOffered()) {
+      for (const { entry, declaration } of getAvailable()) {
         if (entry && matchesShortcut(event, declaration.shortcut)) {
           getNote()
             .then((note) => {

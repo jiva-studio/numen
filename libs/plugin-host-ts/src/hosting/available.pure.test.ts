@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createPluginHost } from './host'
-import { listOfferedCommands } from './offered'
+import { listAvailableCommands } from './available'
 import type { HostRegistry, RegisteredCommand } from './registry'
 import type { CommandDeclaration, PluginHostDeps } from './types'
 
@@ -18,7 +18,7 @@ function createRegistry(
   } as unknown as HostRegistry
 }
 
-describe('listing the offered commands', () => {
+describe('listing the listed commands', () => {
   it('returns the commands and the issues, and writes and reports nothing', () => {
     const reportCommandIssue = vi.fn()
     const deps: PluginHostDeps = {
@@ -35,8 +35,8 @@ describe('listing the offered commands', () => {
       ],
     )
 
-    const first = listOfferedCommands(deps, registry)
-    const second = listOfferedCommands(deps, registry)
+    const first = listAvailableCommands(deps, registry)
+    const second = listAvailableCommands(deps, registry)
 
     expect(first.commands).toStrictEqual([])
     expect(first.issues).toStrictEqual([
@@ -54,7 +54,7 @@ describe('listing the offered commands', () => {
       hasPluginBackend: () => true,
     } as unknown as PluginHostDeps
 
-    const { commands, issues } = listOfferedCommands(deps, createRegistry(['md.tree'], []))
+    const { commands, issues } = listAvailableCommands(deps, createRegistry(['md.tree'], []))
 
     expect(commands).toStrictEqual([])
     expect(issues).toStrictEqual([])
@@ -66,7 +66,7 @@ describe('listing the offered commands', () => {
       hasPluginBackend: () => false,
     } as unknown as PluginHostDeps
 
-    const { commands, issues } = listOfferedCommands(deps, createRegistry(['md.tree'], []))
+    const { commands, issues } = listAvailableCommands(deps, createRegistry(['md.tree'], []))
 
     expect(commands).toStrictEqual([])
     expect(issues).toStrictEqual([{ pluginId: 'md.tree', id: 'tree.open', kind: 'unbound' }])
@@ -77,14 +77,14 @@ describe('listing the offered commands', () => {
       getCommandDeclarations: () => [declaration],
     } as unknown as PluginHostDeps
 
-    const { commands, issues } = listOfferedCommands(deps, createRegistry([], []))
+    const { commands, issues } = listAvailableCommands(deps, createRegistry([], []))
 
     expect(commands.map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])
     expect(issues).toStrictEqual([])
   })
 })
 
-describe('the host reading the offered commands', () => {
+describe('the host reading the listed commands', () => {
   it('reports one issue once however it is read: palette, shortcut and execute', async () => {
     const reportCommandIssue = vi.fn()
     const host = createPluginHost({

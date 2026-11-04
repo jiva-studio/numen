@@ -1,16 +1,21 @@
-import { getIssueKey, getIssueMessage, listOfferedCommands, type OfferedCommand } from './offered'
+import {
+  getIssueKey,
+  getIssueMessage,
+  listAvailableCommands,
+  type AvailableCommand,
+} from './available'
 import type { HostRegistry } from './registry'
 import type { PluginHostDeps } from './types'
 
 /**
- * Reads the offered commands. Each issue found is reported once through `deps.reportCommandIssue`,
+ * Reads the listed commands. Each issue found is reported once through `deps.reportCommandIssue`,
  * keyed by its plugin, id and kind.
  */
-export function readOfferedCommands(
+export function readAvailableCommands(
   deps: PluginHostDeps,
   registry: HostRegistry,
-): OfferedCommand[] {
-  const { commands, issues } = listOfferedCommands(deps, registry)
+): AvailableCommand[] {
+  const { commands, issues } = listAvailableCommands(deps, registry)
   for (const issue of issues) {
     const key = getIssueKey(issue)
     if (registry.reportedIssues.has(key)) continue

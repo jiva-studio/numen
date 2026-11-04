@@ -55,7 +55,7 @@ type Contributes struct {
 	// FrameOrigins are the https origins the plugin's pages frame, such as a video site's player. The
 	// window's frame-src names them while the plugin is enabled.
 	FrameOrigins []string
-	// Commands are the commands the plugin offers, whichever part of the plugin runs them. The
+	// Commands are the commands the plugin declares, whichever part of the plugin runs them. The
 	// palette and the command line list them; a command is run by the frontend when the frontend
 	// registers a handler for it and by the backend otherwise.
 	Commands []Command

@@ -19,13 +19,13 @@ function createHost(extra: Partial<PluginHostDeps> = {}) {
 }
 
 describe('the commands of a plugin that failed to load', () => {
-  it('are not offered while the plugin has not made a context', () => {
+  it('are not listed while the plugin has not made a context', () => {
     const host = createHost({ isPluginFailed: () => true })
 
     expect(host.getPaletteCommands()).toStrictEqual([])
   })
 
-  it('are offered while the plugin has not failed and has not made a context', () => {
+  it('are listed while the plugin has not failed and has not made a context', () => {
     const host = createHost({ isPluginFailed: () => false })
 
     expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])
@@ -92,7 +92,7 @@ describe('a handler registered for a command no manifest declares', () => {
 })
 
 describe('a command declared by a plugin with no frontend to load', () => {
-  it('is not offered by the host, before or after the plugin has a context', () => {
+  it('is not listed by the host, before or after the plugin has a context', () => {
     const host = createHost({ hasPluginFrontend: () => false })
 
     expect(host.getPaletteCommands()).toStrictEqual([])
@@ -102,7 +102,7 @@ describe('a command declared by a plugin with no frontend to load', () => {
 })
 
 describe('a plugin that was disposed', () => {
-  it('offers none of its declared commands until it has a context again', () => {
+  it('lists none of its declared commands until it has a context again', () => {
     const host = createHost()
     host.createContext('md.tree').registerCommand({ id: 'tree.open', handler: vi.fn() })
     expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])

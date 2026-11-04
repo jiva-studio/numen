@@ -58,7 +58,7 @@ export interface CommandDeclaration {
   /** The Lucide name of the icon it is drawn with. */
   readonly icon?: string
   readonly shortcut?: string
-  /** 'note' where it is offered only while a note is in front. */
+  /** 'note' where it is listed only while a note is in front. */
   readonly scope?: 'note'
 }
 

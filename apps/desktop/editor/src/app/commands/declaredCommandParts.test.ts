@@ -35,12 +35,12 @@ const openTree: DeclaredCommand = {
 }
 
 async function load(
-  isOffered: (id: string) => boolean,
+  isListed: (id: string) => boolean,
   hasBackend: (pluginId: string) => boolean = () => true,
 ) {
   const declared = useDeclaredCommands({
     list: async () => [createDeck, openPreset, openTree],
-    isOffered,
+    isListed,
     hasBackend,
   })
   await declared.load()
@@ -48,7 +48,7 @@ async function load(
 }
 
 describe('the declared commands the palette runs in a backend', () => {
-  it('are those the plugin host does not offer', async () => {
+  it('are those the plugin host does not list', async () => {
     const declared = await load((id) => id === 'md.cards:preset.open' || id === 'md.tree:tree.open')
 
     expect(declared.paletteCommands.value.map((one) => one.id)).toStrictEqual([
@@ -68,7 +68,7 @@ describe('the declared commands the palette runs in a backend', () => {
     ])
   })
 
-  it('leave out the commands the plugin host offers', async () => {
+  it('leave out the commands the plugin host lists', async () => {
     const declared = await load((id) => id === 'md.tree:tree.open')
 
     expect(declared.paletteCommands.value.map((one) => one.id)).not.toContain('md.tree:tree.open')

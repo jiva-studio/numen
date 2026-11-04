@@ -29,7 +29,7 @@ function createHost(declarations: CommandDeclaration[], extra: Partial<PluginHos
 }
 
 describe('the commands a plugin declares in its manifest', () => {
-  it('are offered with the title, icon, scope and shortcut of the declaration once the handler is registered', () => {
+  it('are listed with the title, icon, scope and shortcut of the declaration once the handler is registered', () => {
     const { host } = createHost([
       declare({
         id: 'tree.revealNote',
@@ -51,7 +51,7 @@ describe('the commands a plugin declares in its manifest', () => {
     ])
   })
 
-  it('are not offered for a handler registered under an id the manifest does not declare, and the mismatch is reported once', () => {
+  it('are not listed for a handler registered under an id the manifest does not declare, and the mismatch is reported once', () => {
     const { host, deps } = createHost([declare()])
     const ctx = host.createContext('md.tree')
 
@@ -69,7 +69,7 @@ describe('the commands a plugin declares in its manifest', () => {
     )
   })
 
-  it('are not offered while the plugin has no backend and registered no handler once its frontend has activated', () => {
+  it('are not listed while the plugin has no backend and registered no handler once its frontend has activated', () => {
     const { host, deps } = createHost([declare()])
     host.createContext('md.tree')
 
@@ -80,7 +80,7 @@ describe('the commands a plugin declares in its manifest', () => {
     )
   })
 
-  it('are offered while the frontend of their plugin is still loading, and running one waits for the plugin', async () => {
+  it('are listed while the frontend of their plugin is still loading, and running one waits for the plugin', async () => {
     let settle: () => void = () => undefined
     const gate = new Promise<void>((resolve) => {
       settle = resolve
@@ -106,7 +106,7 @@ describe('the commands a plugin declares in its manifest', () => {
     expect(await host.executeCommand('md.tree:tree.open', note)).toBe(false)
   })
 
-  it('are left to the backend, and not offered by the host, when the plugin has a backend and no handler is registered', () => {
+  it('are left to the backend, and not listed by the host, when the plugin has a backend and no handler is registered', () => {
     const { host } = createHost([declare({ id: 'deck.create' })], {
       hasPluginFrontend: () => false,
     })
@@ -136,7 +136,7 @@ describe('the commands a plugin declares in its manifest', () => {
     expect(host.handleShortcut(event, async () => note)).toBe(true)
   })
 
-  it('are run through the full id the palette offers', async () => {
+  it('are run through the full id the palette lists', async () => {
     const { host } = createHost([declare()])
     const handler = vi.fn()
     host.createContext('md.tree').registerCommand({ id: 'tree.open', handler })

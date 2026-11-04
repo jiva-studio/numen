@@ -244,10 +244,10 @@ describe('the declared commands read more than once', () => {
 })
 
 describe('a declared command the palette leaves out', () => {
-  it('is one the plugin host offers', async () => {
+  it('is one the plugin host lists', async () => {
     const declared = useDeclaredCommands({
       list: async () => [createSample, convert],
-      isOffered: () => true,
+      isListed: () => true,
     })
     await declared.load()
 

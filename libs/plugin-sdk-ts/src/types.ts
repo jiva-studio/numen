@@ -163,7 +163,7 @@ export const NOTE_TARGET = 'note' as const
 
 // CommandRegistration binds the handler of a command the manifest declares under `contributes.commands`.
 // The title, icon, scope and shortcut are read from the declaration. A handler registered for an id the
-// manifest does not declare is never offered.
+// manifest does not declare is never listed.
 export interface CommandRegistration {
   // The id as `<object>.<action>`, such as `tree.open`, as the manifest declares it. The host files
   // the command under `<plugin id>:<id>`; registering the same full id twice throws.

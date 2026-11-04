@@ -185,7 +185,7 @@ describe('the settings and notices a plugin is given', () => {
     expect(registerExtensionReader).toHaveBeenCalledWith('.pdf', expect.any(Function), undefined)
   })
 
-  it('offers the declared commands of a plugin with a frontend while it loads, and none of a plugin without one', () => {
+  it('lists the declared commands of a plugin with a frontend while it loads, and none of a plugin without one', () => {
     const rest = {
       plugins: ref([
         { id: 'md.numen.tree', hasFrontend: true },

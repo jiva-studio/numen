@@ -2,8 +2,8 @@ import { formatCommandId } from '../commandId'
 import type { HostRegistry, RegisteredCommand } from './registry'
 import type { CommandDeclaration, PluginHostDeps, PluginPaletteCommand } from './types'
 
-/** A command the window offers: what its manifest declares and, where the plugin registered one, its handler. */
-export interface OfferedCommand {
+/** A command the window lists: what its manifest declares and, where the plugin registered one, its handler. */
+export interface AvailableCommand {
   /** The full id: the owner, a colon, and the id the manifest declares. */
   readonly id: string
   readonly declaration: CommandDeclaration
@@ -27,16 +27,16 @@ export const getIssueMessage = (issue: CommandIssue): string =>
     ? `the command ${issue.id} has a handler and no declaration in the manifest`
     : `the command ${issue.id} is declared in the manifest and has no handler`
 
-/** What a listing of the offered commands returns. */
-export interface OfferedList {
-  readonly commands: OfferedCommand[]
+/** What a listing of the listed commands returns. */
+export interface AvailableList {
+  readonly commands: AvailableCommand[]
   readonly issues: CommandIssue[]
 }
 
 /**
- * What becomes of a declared command with no handler. It is 'offered' while the frontend of its
+ * What becomes of a declared command with no handler. It is 'available' while the frontend of its
  * plugin has not started to register. It is 'unbound' once the frontend has started: the host does
- * not offer it, and the window runs it in the backend of the plugin where it has one. A plugin with
+ * not list it, and the window runs it in the backend of the plugin where it has one. A plugin with
  * no backend leaves the missing handler as an issue. It is 'left' to the window for a plugin with no frontend and for one that
  * failed to load.
  */
@@ -44,23 +44,23 @@ function getBeforeHandlerState(
   deps: PluginHostDeps,
   registry: HostRegistry,
   declaration: CommandDeclaration,
-): 'offered' | 'unbound' | 'left' {
+): 'available' | 'unbound' | 'left' {
   if (deps.hasPluginFrontend?.(declaration.pluginId) === false) return 'left'
   if (deps.isPluginFailed?.(declaration.pluginId)) return 'left'
-  return registry.activated.value.has(declaration.pluginId) ? 'unbound' : 'offered'
+  return registry.activated.value.has(declaration.pluginId) ? 'unbound' : 'available'
 }
 
 /**
- * The commands of the plugin frontends the window offers: those the manifests declare that have a
+ * The commands of the plugin frontends the window lists: those the manifests declare that have a
  * handler, and those of a frontend that has not started yet. A command with no handler of a plugin
  * that is not loading is left to the window, which runs it in the backend of the plugin. Nothing is
- * offered, and no issue is returned, until the first list of declarations has loaded. The listing
+ * listed, and no issue is returned, until the first list of declarations has loaded. The listing
  * changes nothing and reports nothing.
  */
-export function listOfferedCommands(deps: PluginHostDeps, registry: HostRegistry): OfferedList {
+export function listAvailableCommands(deps: PluginHostDeps, registry: HostRegistry): AvailableList {
   const declarations = deps.getCommandDeclarations?.()
   if (declarations === undefined) return { commands: [], issues: [] }
-  const commands: OfferedCommand[] = []
+  const commands: AvailableCommand[] = []
   const issues = new Map<string, CommandIssue>()
   const addIssue = (issue: CommandIssue) => issues.set(getIssueKey(issue), issue)
   const declaredIds = new Set<string>()
@@ -74,7 +74,7 @@ export function listOfferedCommands(deps: PluginHostDeps, registry: HostRegistry
       continue
     }
     const state = getBeforeHandlerState(deps, registry, declaration)
-    if (state === 'offered') commands.push({ id, declaration })
+    if (state === 'available') commands.push({ id, declaration })
     if (state === 'unbound' && deps.hasPluginBackend?.(declaration.pluginId) !== true) {
       addIssue({ pluginId: declaration.pluginId, id: declaration.id, kind: 'unbound' })
     }
@@ -86,8 +86,8 @@ export function listOfferedCommands(deps: PluginHostDeps, registry: HostRegistry
   return { commands, issues: [...issues.values()] }
 }
 
-/** The palette's view of an offered command. */
-export function createPaletteCommand({ id, declaration }: OfferedCommand): PluginPaletteCommand {
+/** The palette's view of an listed command. */
+export function createPaletteCommand({ id, declaration }: AvailableCommand): PluginPaletteCommand {
   return {
     id,
     title: declaration.title,
