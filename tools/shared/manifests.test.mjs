@@ -74,7 +74,7 @@ test('the unknown keys are found at every depth, in the options of a setting too
       settings: [
         {
           key: 'mode',
-          modelsOf: 'x',
+          mood: 'x',
           options: ['a', { value: 'b', hint: 'h' }],
           optionsBy: { setting: 'mode', options: { a: [{ value: 'x', hint: 'h' }] } },
         },
@@ -86,7 +86,7 @@ test('the unknown keys are found at every depth, in the options of a setting too
   assert.deepEqual(warnings, [
     'unknown key "contributes.extra"',
     'unknown key "contributes.tabKinds[0].shape"',
-    'unknown key "settings[0].modelsOf"',
+    'unknown key "settings[0].mood"',
     'unknown key "settings[0].options[1].hint"',
     'unknown key "settings[0].optionsBy.options.a[0].hint"',
   ])

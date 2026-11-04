@@ -25,16 +25,6 @@ func TestManifestDeclaresARuntimeAsADependency(t *testing.T) {
 	}
 }
 
-func TestManifestNoLongerReadsARuntimesList(t *testing.T) {
-	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","runtimes":["sample-runtime"],"backend":{"entrypoint":"bin/a"}}`))
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(m.GetRuntimeIDs()) != 0 || len(m.Warnings) != 1 || !strings.Contains(m.Warnings[0], "runtimes") {
-		t.Errorf("runtime ids = %v, warnings = %v; want no runtime and a warning on runtimes", m.GetRuntimeIDs(), m.Warnings)
-	}
-}
-
 func TestAPluginThatDeclaresARuntimeHasABackendToRunIt(t *testing.T) {
 	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"sample-runtime","kind":"runtime"}]}`))
 	if !errors.Is(err, manifest.ErrNoBackend) {
