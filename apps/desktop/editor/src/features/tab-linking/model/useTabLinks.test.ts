@@ -4,8 +4,8 @@ import type { TabLinksSnapshot } from '../types'
 
 const SNAPSHOT: TabLinksSnapshot = {
   groups: [
-    { id: 'group-1', colorIndex: 1, tabs: ['plex:1', 'files:2'] },
-    { id: 'group-2', colorIndex: 2, tabs: ['plex:3', 'plex:4', 'plex:5'] },
+    { id: 'group-1', colorIndex: 1, tabs: ['plex:1', 'files:2'], path: '', title: '' },
+    { id: 'group-2', colorIndex: 2, tabs: ['plex:3', 'plex:4', 'plex:5'], path: '', title: '' },
   ],
   tabs: [
     { id: 'plex:1', kind: 'plex', title: 'Orbits', windowId: 'window-a' },
@@ -46,12 +46,14 @@ describe('useTabLinks snapshot', () => {
 })
 
 describe('useTabLinks changes', () => {
-  it('writes a change to the core and updates the groups on the next snapshot', () => {
+  it('writes a change to the core and updates the groups on the next snapshot', async () => {
     const { tabLinks, write } = setup()
 
     tabLinks.linkTabs('plex:1', 'files:2')
 
-    expect(write).toHaveBeenCalledWith({ link: { source: 'plex:1', target: 'files:2' } })
+    await vi.waitFor(() =>
+      expect(write).toHaveBeenCalledWith({ link: { source: 'plex:1', target: 'files:2' } }),
+    )
     expect(tabLinks.getGroupOf('plex:1')).toBeNull()
   })
 
@@ -65,7 +67,7 @@ describe('useTabLinks changes', () => {
     expect(write).not.toHaveBeenCalled()
   })
 
-  it('unlinks a linked tab and writes nothing for an unlinked tab', () => {
+  it('unlinks a linked tab and writes nothing for an unlinked tab', async () => {
     const { tabLinks, write } = setup()
     tabLinks.applySnapshot(SNAPSHOT)
 
@@ -73,7 +75,7 @@ describe('useTabLinks changes', () => {
     expect(write).not.toHaveBeenCalled()
 
     tabLinks.unlinkTab('plex:1')
-    expect(write).toHaveBeenCalledWith({ unlink: 'plex:1' })
+    await vi.waitFor(() => expect(write).toHaveBeenCalledWith({ unlink: 'plex:1' }))
   })
 
   it('reports an error when the core rejects a change', async () => {
@@ -83,5 +85,42 @@ describe('useTabLinks changes', () => {
 
     tabLinks.linkTabs('plex:1', 'files:2')
     await vi.waitFor(() => expect(onError).toHaveBeenCalledWith(failure))
+  })
+})
+
+describe('useTabLinks write order', () => {
+  it('writes a link and then an unlink in the order they were made', async () => {
+    const { tabLinks, write } = setup()
+    tabLinks.applySnapshot(SNAPSHOT)
+    let finishLink = (): void => undefined
+    write.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishLink = resolve
+        }),
+    )
+
+    tabLinks.linkTabs('plex:1', 'plex:3')
+    tabLinks.unlinkTab('plex:1')
+    await vi.waitFor(() => expect(write).toHaveBeenCalledOnce())
+    finishLink()
+
+    await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(2))
+    expect(write.mock.calls).toStrictEqual([
+      [{ link: { source: 'plex:1', target: 'plex:3' } }],
+      [{ unlink: 'plex:1' }],
+    ])
+  })
+
+  it('writes the next change after the core rejects one', async () => {
+    const { tabLinks, write, onError } = setup()
+    tabLinks.applySnapshot(SNAPSHOT)
+    write.mockRejectedValueOnce(new Error('the core is gone'))
+
+    tabLinks.linkTabs('plex:1', 'plex:3')
+    tabLinks.unlinkTab('plex:1')
+
+    await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(2))
+    expect(onError).toHaveBeenCalledOnce()
   })
 })

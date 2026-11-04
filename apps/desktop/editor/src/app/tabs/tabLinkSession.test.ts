@@ -1,10 +1,23 @@
 import { describe, expect, it, vi } from 'vitest'
 import { computed } from 'vue'
 import type { TabLinksEvent } from '../ports/vault'
-import { createTabLinkSession, getLinkableTabs, type TabLinkSessionDeps } from './tabLinkSession'
+import {
+  createTabLinkSession,
+  getLinkableTabs,
+  REPORT_RETRY_MS,
+  type TabLinkSessionDeps,
+} from './tabLinkSession'
 
 const SNAPSHOT = {
-  groups: [{ id: 'group-1', colorIndex: 1, tabs: ['plex:1', 'plex:2'] }],
+  groups: [
+    {
+      id: 'group-1',
+      colorIndex: 1,
+      tabs: ['plex:1', 'plex:2'],
+      path: 'Orbits.md',
+      title: 'Orbits',
+    },
+  ],
   tabs: [
     { id: 'plex:1', kind: 'plex', title: 'Orbits', windowId: 'window-a' },
     { id: 'plex:2', kind: 'plex', title: 'Tides', windowId: 'window-b' },
@@ -34,8 +47,9 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
     windowId: 'window-a',
     tabLinks: { applySnapshot: vi.fn() },
     applySync: vi.fn(),
+    applyGroupPaths: vi.fn(),
     getOpenTabs,
-    wait: () => Promise.resolve(),
+    wait: vi.fn((_ms: number) => Promise.resolve()),
     onError: vi.fn(),
   } satisfies TabLinkSessionDeps
   return { deps, core, signals, session: createTabLinkSession(deps) }
@@ -169,5 +183,93 @@ describe('reportTabs', () => {
 
     await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(2))
     expect(deps.onError).toHaveBeenCalledExactlyOnceWith(failure)
+  })
+})
+
+describe('a snapshot', () => {
+  it('moves the tabs of this window to the path of each group', async () => {
+    const { deps, session } = setup([{ links: SNAPSHOT }])
+
+    const stream = session.start()
+
+    await vi.waitFor(() => expect(deps.applyGroupPaths).toHaveBeenCalledWith(SNAPSHOT.groups))
+    session.close()
+    await stream
+  })
+})
+
+describe('a failed tab report', () => {
+  it('is sent again after the retry delay', async () => {
+    const { deps, core, session } = setup([])
+    core.writeTabLinks.mockRejectedValueOnce(new Error('the core is gone'))
+
+    session.reportTabs()
+
+    await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(2))
+    expect(deps.wait).toHaveBeenCalledWith(REPORT_RETRY_MS)
+    expect(core.writeTabLinks.mock.calls[1]).toStrictEqual(['window-a', { tabs: OPEN_TABS }])
+  })
+
+  it('is replaced by a newer report made during the retry delay', async () => {
+    const tabs = [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }]
+    const { deps, core, session } = setup([], () => [...tabs])
+    core.writeTabLinks.mockRejectedValueOnce(new Error('the core is gone'))
+    let endDelay = (): void => undefined
+    deps.wait.mockImplementationOnce(() => new Promise<void>((resolve) => (endDelay = resolve)))
+
+    session.reportTabs()
+    await vi.waitFor(() => expect(deps.wait).toHaveBeenCalledOnce())
+    tabs.push({ id: 'plex:2', kind: 'plex', title: 'Tides' })
+    session.reportTabs()
+    endDelay()
+
+    await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(2))
+    expect(core.writeTabLinks.mock.calls[1]?.[1]).toStrictEqual({
+      tabs: [
+        { id: 'plex:1', kind: 'plex', title: 'Orbits' },
+        { id: 'plex:2', kind: 'plex', title: 'Tides' },
+      ],
+    })
+  })
+
+  it('is not sent again after close', async () => {
+    const { deps, core, session } = setup([])
+    core.writeTabLinks.mockRejectedValueOnce(new Error('the core is gone'))
+    let endDelay = (): void => undefined
+    deps.wait.mockImplementationOnce(() => new Promise<void>((resolve) => (endDelay = resolve)))
+
+    session.reportTabs()
+    await vi.waitFor(() => expect(deps.wait).toHaveBeenCalledOnce())
+    session.close()
+    endDelay()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(core.writeTabLinks).toHaveBeenCalledOnce()
+  })
+})
+
+describe('reopen', () => {
+  it('starts a new stream after close and reports the tabs again', async () => {
+    const { core, session, signals } = setup([{ links: SNAPSHOT }])
+    const first = session.start()
+    await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledOnce())
+    session.close()
+    await first
+
+    const second = session.reopen()
+
+    await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(2))
+    expect(signals).toHaveLength(2)
+    expect(signals[1]?.aborted).toBe(false)
+    session.close()
+    await second
+  })
+
+  it('does nothing while the session is open', async () => {
+    const { core, session } = setup([])
+
+    await session.reopen()
+
+    expect(core.watchTabLinks).not.toHaveBeenCalled()
   })
 })

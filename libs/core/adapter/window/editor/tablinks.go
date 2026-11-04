@@ -141,7 +141,11 @@ func convertSnapshotToWire(snapshot tablinks.Snapshot) *v1.WatchTabLinksResponse
 	}
 	for _, group := range snapshot.Groups {
 		links.Groups = append(links.Groups, &v1.TabLinkGroup{
-			Id: group.ID, ColorIndex: int32(group.ColorIndex), TabIds: group.TabIDs,
+			Id:         group.ID,
+			ColorIndex: int32(group.ColorIndex),
+			TabIds:     group.TabIDs,
+			Path:       group.Path,
+			Title:      group.Title,
 		})
 	}
 	for _, tab := range snapshot.Tabs {

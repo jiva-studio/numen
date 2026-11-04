@@ -8,6 +8,9 @@ export interface TabLinkGroup {
   readonly id: string
   readonly colorIndex: number
   readonly tabs: readonly TabId[]
+  /** Last path synced in the group, and its title; empty before the first sync. */
+  readonly path: string
+  readonly title: string
 }
 
 /** Open tab of any window whose kind supports navigate. */

@@ -30,6 +30,10 @@ type Group struct {
 	ID         string
 	ColorIndex int
 	TabIDs     []string
+	// Path and Title are the last path synced in the group; empty before the
+	// first sync. A window that missed a sync moves its tabs to Path from the
+	// next snapshot.
+	Path, Title string
 }
 
 // Snapshot is every group and every known tab.
@@ -72,11 +76,11 @@ type Registry struct {
 	claims map[string][]Tab
 	groups []*Group
 	nextID int
-	// detaching is the pending detach of each tab.
-	detaching map[string]*expiry
-	// closing is the pending removal of each window whose last watch closed.
-	closing map[string]*expiry
-	watches map[string][]*Watch
+	// pendingDetaches is the pending detach of each tab.
+	pendingDetaches map[string]*expiry
+	// pendingWindowRemovals is the pending removal of each window whose last watch closed.
+	pendingWindowRemovals map[string]*expiry
+	watches               map[string][]*Watch
 }
 
 // NewRegistry returns an empty registry. A detached tab that no window reports
@@ -97,12 +101,12 @@ func NewRegistry(grace time.Duration, schedule Schedule) (*Registry, error) {
 			// no event is dropped below this many groups.
 			Capacity: maxPendingEvents,
 		},
-		tabs:      map[string]Tab{},
-		windows:   map[string][]string{},
-		claims:    map[string][]Tab{},
-		detaching: map[string]*expiry{},
-		closing:   map[string]*expiry{},
-		watches:   map[string][]*Watch{},
+		tabs:                  map[string]Tab{},
+		windows:               map[string][]string{},
+		claims:                map[string][]Tab{},
+		pendingDetaches:       map[string]*expiry{},
+		pendingWindowRemovals: map[string]*expiry{},
+		watches:               map[string][]*Watch{},
 	}, nil
 }
 
@@ -151,7 +155,7 @@ func (w *Watch) Close() {
 		r.publishSnapshot()
 	}
 	pending := &expiry{}
-	r.closing[w.windowID] = pending
+	r.pendingWindowRemovals[w.windowID] = pending
 	pending.cancel = r.schedule(r.grace, func() { r.expireWindow(w.windowID, pending) })
 }
 
@@ -160,9 +164,9 @@ func (w *Watch) Close() {
 func (r *Registry) Watch(windowID string) *Watch {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if pending, ok := r.closing[windowID]; ok {
+	if pending, ok := r.pendingWindowRemovals[windowID]; ok {
 		pending.cancel()
-		delete(r.closing, windowID)
+		delete(r.pendingWindowRemovals, windowID)
 	}
 	events, unsubscribe := r.events.Subscribe()
 	stop := make(chan struct{})
@@ -184,10 +188,10 @@ func (r *Registry) Watch(windowID string) *Watch {
 func (r *Registry) expireWindow(windowID string, pending *expiry) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.closing[windowID] != pending {
+	if r.pendingWindowRemovals[windowID] != pending {
 		return
 	}
-	delete(r.closing, windowID)
+	delete(r.pendingWindowRemovals, windowID)
 	r.removeWindow(windowID)
 }
 
@@ -272,7 +276,7 @@ func (r *Registry) acceptTab(windowID string, tab Tab) bool {
 	case !isKnown:
 		r.tabOrder = append(r.tabOrder, tab.ID)
 	case previous.WindowID == windowID:
-	case r.detaching[tab.ID] == nil && len(r.watches[previous.WindowID]) > 0:
+	case r.pendingDetaches[tab.ID] == nil && len(r.watches[previous.WindowID]) > 0:
 		return false
 	}
 	r.setOwner(windowID, tab)
@@ -288,9 +292,9 @@ func (r *Registry) setOwner(windowID string, tab Tab) {
 	if !isKnown || previous.WindowID == windowID {
 		return
 	}
-	if pending, ok := r.detaching[tab.ID]; ok {
+	if pending, ok := r.pendingDetaches[tab.ID]; ok {
 		pending.cancel()
-		delete(r.detaching, tab.ID)
+		delete(r.pendingDetaches, tab.ID)
 	}
 	r.windows[previous.WindowID] = slices.DeleteFunc(r.windows[previous.WindowID], func(id string) bool { return id == tab.ID })
 }
@@ -311,6 +315,9 @@ func (r *Registry) Link(sourceID, targetID string) {
 		return
 	case source != nil && target != nil:
 		source.TabIDs = appendMissing(source.TabIDs, target.TabIDs...)
+		if source.Path == "" {
+			source.Path, source.Title = target.Path, target.Title
+		}
 		r.groups = slices.DeleteFunc(r.groups, func(g *Group) bool { return g == target })
 	case source != nil:
 		source.TabIDs = append(source.TabIDs, targetID)
@@ -344,11 +351,11 @@ func (r *Registry) Detach(tabID string) {
 	if _, ok := r.tabs[tabID]; !ok {
 		return
 	}
-	if previous, ok := r.detaching[tabID]; ok {
+	if previous, ok := r.pendingDetaches[tabID]; ok {
 		previous.cancel()
 	}
 	pending := &expiry{}
-	r.detaching[tabID] = pending
+	r.pendingDetaches[tabID] = pending
 	pending.cancel = r.schedule(r.grace, func() { r.expireDetach(tabID, pending) })
 }
 
@@ -361,12 +368,12 @@ type expiry struct{ cancel func() bool }
 func (r *Registry) CancelDetach(tabID string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	pending, ok := r.detaching[tabID]
+	pending, ok := r.pendingDetaches[tabID]
 	if !ok {
 		return
 	}
 	pending.cancel()
-	delete(r.detaching, tabID)
+	delete(r.pendingDetaches, tabID)
 	r.dropUnreportedTab(tabID)
 }
 
@@ -375,10 +382,10 @@ func (r *Registry) CancelDetach(tabID string) {
 func (r *Registry) expireDetach(tabID string, pending *expiry) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.detaching[tabID] != pending {
+	if r.pendingDetaches[tabID] != pending {
 		return
 	}
-	delete(r.detaching, tabID)
+	delete(r.pendingDetaches, tabID)
 	r.dropUnreportedTab(tabID)
 }
 
@@ -391,8 +398,8 @@ func (r *Registry) dropUnreportedTab(tabID string) {
 	r.publishSnapshot()
 }
 
-// SyncPath sends the new path of a linked tab to every watching window. It
-// returns whether the tab is in a group.
+// SyncPath records the new path of a linked tab as the path of its group and
+// sends it to every watching window. It returns whether the tab is in a group.
 func (r *Registry) SyncPath(sourceTabID, path, title string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -400,6 +407,7 @@ func (r *Registry) SyncPath(sourceTabID, path, title string) bool {
 	if group == nil {
 		return false
 	}
+	group.Path, group.Title = path, title
 	r.events.Publish(Event{Sync: &PathSync{GroupID: group.ID, SourceTabID: sourceTabID, Path: path, Title: title}})
 	return true
 }
@@ -421,7 +429,7 @@ func (r *Registry) removeWindow(windowID string) {
 // forgetTab removes a tab missing from the report of its window, unless it has a
 // pending detach.
 func (r *Registry) forgetTab(tabID string) {
-	if _, ok := r.detaching[tabID]; ok {
+	if _, ok := r.pendingDetaches[tabID]; ok {
 		return
 	}
 	r.dropTab(tabID)
@@ -470,7 +478,9 @@ func (r *Registry) getNextColorIndex() int {
 func (r *Registry) getSnapshot() Snapshot {
 	out := Snapshot{Groups: make([]Group, 0, len(r.groups)), Tabs: make([]Tab, 0, len(r.tabOrder))}
 	for _, group := range r.groups {
-		out.Groups = append(out.Groups, Group{ID: group.ID, ColorIndex: group.ColorIndex, TabIDs: slices.Clone(group.TabIDs)})
+		copied := *group
+		copied.TabIDs = slices.Clone(group.TabIDs)
+		out.Groups = append(out.Groups, copied)
 	}
 	for _, id := range r.tabOrder {
 		out.Tabs = append(out.Tabs, r.tabs[id])

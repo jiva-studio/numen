@@ -12,10 +12,7 @@ const getOrigin = (): string =>
 
 export const transport = createConnectTransport({ baseUrl: getOrigin() })
 
-/**
- * A transport whose requests complete after the page unloads, for a request
- * sent on `pagehide`. A plain fetch is cancelled with the page.
- */
+/** Sends requests with keepalive, so they complete after the page unloads. */
 export const keepaliveTransport = createConnectTransport({
   baseUrl: getOrigin(),
   fetch: (input, init) => globalThis.fetch(input, { ...init, keepalive: true }),

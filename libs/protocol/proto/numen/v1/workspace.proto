@@ -34,8 +34,12 @@ service WorkspaceService {
 
   // WatchTabLinks streams the link groups of the vault and the linkable tabs of
   // all windows: a snapshot first, a snapshot after each change, and each path
-  // sync. When the last stream of a window ends, the tabs of that window are
-  // unlinked unless the window watches again within a grace period.
+  // sync. A slow stream skips events: a newer snapshot replaces a pending one,
+  // and a newer path sync of a group replaces a pending one of that group. Each
+  // snapshot carries the current path of each group, so a window that skipped
+  // a sync moves its tabs on the next snapshot. When the last stream of a
+  // window ends, the tabs of that window are unlinked unless the window watches
+  // again within a grace period.
   rpc WatchTabLinks(WatchTabLinksRequest) returns (stream WatchTabLinksResponse);
 
   // CancelWatchTabLinks cancels the WatchTabLinks stream of a window.
@@ -154,6 +158,11 @@ message TabLinkGroup {
   int32 color_index = 2;
 
   repeated string tab_ids = 3;
+
+  // The last path synced in the group, and its title. Empty before the first
+  // sync.
+  string path = 4;
+  string title = 5;
 }
 
 // A LinkableTab is an open tab whose kind supports navigation to a path.

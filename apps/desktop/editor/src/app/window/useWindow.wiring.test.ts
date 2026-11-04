@@ -45,7 +45,8 @@ vi.mock('@/entities/tab', () => ({
 vi.mock('../tabs/useTabSync', () => ({
   createTabSync: (args: unknown) => {
     h.args.tabSync = args
-    return { name: 'tabSync' }
+    h.args.tabSyncResult = { name: 'tabSync', applySync: vi.fn(), applyGroupPaths: vi.fn() }
+    return h.args.tabSyncResult
   },
 }))
 vi.mock('../tabs/useNoteEditors', () => ({
@@ -156,6 +157,7 @@ beforeEach(() => {
       start: vi.fn(async () => undefined),
       close: vi.fn(),
       reportTabs: vi.fn(),
+      reopen: vi.fn(async () => undefined),
     },
     linkableTabs: ref<{ id: string; kind: string; title: string }[]>([]),
     tabOpeners: { openFileAt: vi.fn(() => Promise.resolve()) },
@@ -880,5 +882,22 @@ describe('tab links wiring', () => {
     globalThis.dispatchEvent(new Event('pagehide'))
 
     expect(h.f.tabLinkSession.close).toHaveBeenCalled()
+  })
+
+  it('reopens the tab links session when the page is restored from the back-forward cache', () => {
+    useWindow()
+    h.f.tabLinkSession.reopen.mockClear()
+
+    globalThis.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: false }))
+    expect(h.f.tabLinkSession.reopen).not.toHaveBeenCalled()
+
+    globalThis.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }))
+    expect(h.f.tabLinkSession.reopen).toHaveBeenCalled()
+  })
+
+  it('passes the group paths of each snapshot to the tab sync', () => {
+    useWindow()
+
+    expect(h.args.tabLinkSession.applyGroupPaths).toBe(h.args.tabSyncResult.applyGroupPaths)
   })
 })

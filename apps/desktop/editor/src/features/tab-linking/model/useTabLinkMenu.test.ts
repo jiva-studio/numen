@@ -28,7 +28,7 @@ const setup = (groups: Record<string, TabLinkGroup> = {}, targets: string[] = []
 
 describe('the menu on a tab', () => {
   it('is closed until requested for', () => {
-    const group = { id: 'g', colorIndex: 0, tabs: ['a', 'b'] }
+    const group = { id: 'g', colorIndex: 0, tabs: ['a', 'b'], path: '', title: '' }
     const { menu, tabLinks } = setup({ a: group }, ['b'])
     expect(menu.tabId.value).toBeNull()
     expect(menu.at.value).toStrictEqual({ x: 0, y: 0 })
@@ -116,7 +116,7 @@ describe('the menu on a tab', () => {
   })
 
   it('says what the tab is linked to', () => {
-    const group = { id: 'g', colorIndex: 0, tabs: ['a', 'b'] }
+    const group = { id: 'g', colorIndex: 0, tabs: ['a', 'b'], path: '', title: '' }
     const { menu } = setup({ a: group, b: group }, ['b'])
     menu.open('a', { x: 0, y: 0 })
 
@@ -183,7 +183,7 @@ describe('useTabLinkMenu with other windows open', () => {
   })
 
   it('shows the title of a linked tab of another window', () => {
-    const group = { id: 'g', colorIndex: 1, tabs: ['a', 'plex:7'] }
+    const group = { id: 'g', colorIndex: 1, tabs: ['a', 'plex:7'], path: '', title: '' }
     const menu = setupWithOthers({ a: group, 'plex:7': group }, ['plex:7'])
     menu.open('a', { x: 0, y: 0 })
 

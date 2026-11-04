@@ -670,3 +670,36 @@ func TestConcurrentWatchWriteDetachAndCloseDoNotRace(t *testing.T) {
 		t.Errorf("tabs are %+v, want none once every window closed", tabs)
 	}
 }
+
+func TestSnapshotCarriesTheGroupPath(t *testing.T) {
+	r, _ := newTestRegistry(t)
+	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
+	r.Link("plex:1", "plex:2")
+	if group := r.GetSnapshot().Groups[0]; group.Path != "" || group.Title != "" {
+		t.Fatalf("a group with no sync has path %q and title %q, want none", group.Path, group.Title)
+	}
+
+	r.SyncPath("plex:2", "notes/Tides.md", "Tides")
+
+	reconnected := r.Watch("window-b")
+	defer reconnected.Close()
+	group := reconnected.Initial.Groups[0]
+	if group.Path != "notes/Tides.md" || group.Title != "Tides" {
+		t.Errorf("the first snapshot has path %q and title %q, want notes/Tides.md and Tides", group.Path, group.Title)
+	}
+}
+
+func TestLinkMergesTwoGroupsOnTheSourcePath(t *testing.T) {
+	r, _ := newTestRegistry(t)
+	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B"), plex("plex:3", "C"), plex("plex:4", "D")})
+	r.Link("plex:1", "plex:2")
+	r.Link("plex:3", "plex:4")
+	r.SyncPath("plex:3", "notes/Orbits.md", "Orbits")
+
+	r.Link("plex:1", "plex:3")
+
+	group := r.GetSnapshot().Groups[0]
+	if group.Path != "notes/Orbits.md" || group.Title != "Orbits" {
+		t.Errorf("the merged group has path %q and title %q, want the synced notes/Orbits.md", group.Path, group.Title)
+	}
+}

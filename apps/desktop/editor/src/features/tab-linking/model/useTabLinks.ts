@@ -1,12 +1,14 @@
 /**
  * Mirrors the link groups of all windows from the core. Changes are written to
- * the core and appear in the next snapshot.
+ * the core one at a time, in the order they are made, and appear in the next
+ * snapshot.
  */
 import { shallowRef } from 'vue'
 import type {
   LinkableTab,
   TabId,
   TabLinkGroup,
+  TabLinksChange,
   TabLinksSnapshot,
   TabLinksState,
   TabLinksWriter,
@@ -28,6 +30,12 @@ function findGroupOf(groups: ReadonlyMap<string, TabLinkGroup>, tabId: TabId): T
 export function useTabLinks(deps: TabLinksDeps): TabLinksState {
   const groupsState = shallowRef<ReadonlyMap<string, TabLinkGroup>>(new Map())
   const tabsState = shallowRef<readonly LinkableTab[]>([])
+  let lastWrite: Promise<void> = Promise.resolve()
+
+  /** Writes a change to the core after the pending writes. */
+  const writeChange = (change: TabLinksChange): void => {
+    lastWrite = lastWrite.then(() => deps.write(change)).catch(deps.onError)
+  }
 
   const getGroupOf = (tabId: TabId): TabLinkGroup | null => findGroupOf(groupsState.value, tabId)
 
@@ -38,12 +46,12 @@ export function useTabLinks(deps: TabLinksDeps): TabLinksState {
 
   const linkTabs = (source: TabId, target: TabId): void => {
     if (!source || !target || source === target) return
-    deps.write({ link: { source, target } }).catch(deps.onError)
+    writeChange({ link: { source, target } })
   }
 
   const unlinkTab = (tabId: TabId): void => {
     if (!getGroupOf(tabId)) return
-    deps.write({ unlink: tabId }).catch(deps.onError)
+    writeChange({ unlink: tabId })
   }
 
   const applySnapshot = (snapshot: TabLinksSnapshot): void => {

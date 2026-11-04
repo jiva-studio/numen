@@ -478,14 +478,24 @@ function createTabNavigation(
     return id
   }
 
-  /** Every tab standing on a path, of a kind that navigates, moved to another. */
-  const navigateTabsAt = async (from: string, to: string): Promise<void> => {
-    const matchingTabs = [...open.value.values()].filter(
-      (one) => one.kind.navigate && getTabPath(one) === from,
+  /**
+   * Every tab standing on a path, of a kind that navigates, moved to another.
+   * Calls onMove with the id of each tab before it navigates.
+   */
+  const navigateTabsAt = async (
+    from: string,
+    to: string,
+    onMove?: (tabId: string) => void,
+  ): Promise<void> => {
+    const matchingTabs = [...open.value].filter(
+      ([, one]) => one.kind.navigate && getTabPath(one) === from,
     )
     await Promise.all(
-      // Stryker disable next-line OptionalChaining: matchingTabs is filtered by one.kind.navigate above.
-      matchingTabs.map((one) => Promise.resolve(one.kind.navigate?.(one.state, to, ''))),
+      matchingTabs.map(([id, one]) => {
+        onMove?.(id)
+        // Stryker disable next-line OptionalChaining: matchingTabs is filtered by one.kind.navigate above.
+        return Promise.resolve(one.kind.navigate?.(one.state, to, ''))
+      }),
     )
   }
 

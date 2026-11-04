@@ -15,6 +15,8 @@ interface WireTabLinks {
     readonly id: string
     readonly colorIndex: number
     readonly tabIds: readonly string[]
+    readonly path: string
+    readonly title: string
   }[]
   readonly tabs: readonly {
     readonly id: string
@@ -29,6 +31,8 @@ const parseLinks = (links: WireTabLinks): TabLinksSnapshot => ({
     id: group.id,
     colorIndex: group.colorIndex,
     tabs: [...group.tabIds],
+    path: group.path,
+    title: group.title,
   })),
   tabs: links.tabs.map(({ id, kind, title, windowId }) => ({ id, kind, title, windowId })),
 })

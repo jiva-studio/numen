@@ -192,7 +192,25 @@ describe('a note travelled to', () => {
 
     await window.leavePath('Gone.md', 'Root.md')
 
-    expect(deps.windowTabs.navigateTabsAt).toHaveBeenCalledWith('Gone.md', 'Root.md')
+    expect(deps.windowTabs.navigateTabsAt).toHaveBeenCalledWith(
+      'Gone.md',
+      'Root.md',
+      expect.any(Function),
+    )
+  })
+
+  it('records the new path of each moved tab in the tab sync', async () => {
+    const { deps, window } = create()
+    const setShownPath = vi.fn()
+    Object.assign(deps, { tabSync: { setShownPath } })
+    vi.mocked(deps.windowTabs.navigateTabsAt).mockImplementationOnce((_from, _to, onMove) => {
+      onMove?.('graph:1')
+      return Promise.resolve()
+    })
+
+    await window.leavePath('Gone.md', 'Root.md')
+
+    expect(setShownPath).toHaveBeenCalledExactlyOnceWith('graph:1', 'Root.md')
   })
 })
 

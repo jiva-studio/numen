@@ -265,3 +265,32 @@ func TestFailedDetachTabDropsTabClosedInItsWindow(t *testing.T) {
 		t.Errorf("groups are %+v, want none once plex:2 closed", groups)
 	}
 }
+
+func TestWatchTabLinksSendsTheGroupPathInTheSnapshot(t *testing.T) {
+	client := newTabLinksClient(t, &State{})
+	ctx, cancel := context.WithTimeout(t.Context(), testsupport.Patience)
+	defer cancel()
+	openWatch(t, client, "window-a")
+	writeTabs(t, client, "window-a",
+		&v1.LinkableTab{Id: "plex:1", Kind: "plex", Title: "Orbits"},
+		&v1.LinkableTab{Id: "plex:2", Kind: "plex", Title: "Tides"},
+	)
+	linkTabs(t, client, "plex:1", "plex:2")
+	_, err := client.SyncTabPath(ctx, connect.NewRequest(&v1.SyncTabPathRequest{
+		SourceTabId: "plex:2", Path: "notes/Tides.md", Title: "Tides",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	stream, err := client.WatchTabLinks(ctx, connect.NewRequest(&v1.WatchTabLinksRequest{WindowId: "window-b"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer testsupport.Close(t, stream)
+	group := readLinksUntil(t, stream, hasGroupOf(2)).GetGroups()[0]
+
+	if group.GetPath() != "notes/Tides.md" || group.GetTitle() != "Tides" {
+		t.Errorf("the snapshot has path %q and title %q, want notes/Tides.md and Tides", group.GetPath(), group.GetTitle())
+	}
+}

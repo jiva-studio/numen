@@ -124,7 +124,9 @@ describe('a tab of a kind', () => {
     expect(thing.opened).toEqual(['Other.md', 'Note.md'])
 
     // After navigating `one` ('thing:Note.md') to 'Renamed.md', opening 'Renamed.md' finds `one` via findOpenTabAt
-    await window.navigateTabsAt('Note.md', 'Renamed.md')
+    const moved: string[] = []
+    await window.navigateTabsAt('Note.md', 'Renamed.md', (id) => moved.push(id))
+    expect(moved).toEqual([one])
     expect(await window.openTabOfKind('thing', 'Renamed.md')).toBe(one)
 
     // Opening 'Note.md' again when 'thing:Note.md' points to 'Renamed.md' allocates a new id

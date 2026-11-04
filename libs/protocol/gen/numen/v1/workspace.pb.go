@@ -694,8 +694,12 @@ type TabLinkGroup struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The color the group is marked with, from 1 to 4.
-	ColorIndex    int32    `protobuf:"varint,2,opt,name=color_index,json=colorIndex,proto3" json:"color_index,omitempty"`
-	TabIds        []string `protobuf:"bytes,3,rep,name=tab_ids,json=tabIds,proto3" json:"tab_ids,omitempty"`
+	ColorIndex int32    `protobuf:"varint,2,opt,name=color_index,json=colorIndex,proto3" json:"color_index,omitempty"`
+	TabIds     []string `protobuf:"bytes,3,rep,name=tab_ids,json=tabIds,proto3" json:"tab_ids,omitempty"`
+	// The last path synced in the group, and its title. Empty before the first
+	// sync.
+	Path          string `protobuf:"bytes,4,opt,name=path,proto3" json:"path,omitempty"`
+	Title         string `protobuf:"bytes,5,opt,name=title,proto3" json:"title,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -749,6 +753,20 @@ func (x *TabLinkGroup) GetTabIds() []string {
 		return x.TabIds
 	}
 	return nil
+}
+
+func (x *TabLinkGroup) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *TabLinkGroup) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
 }
 
 // A LinkableTab is an open tab whose kind supports navigation to a path.
@@ -1349,12 +1367,14 @@ const file_numen_v1_workspace_proto_rawDesc = "" +
 	"\x05event\"e\n" +
 	"\bTabLinks\x12.\n" +
 	"\x06groups\x18\x01 \x03(\v2\x16.numen.v1.TabLinkGroupR\x06groups\x12)\n" +
-	"\x04tabs\x18\x02 \x03(\v2\x15.numen.v1.LinkableTabR\x04tabs\"X\n" +
+	"\x04tabs\x18\x02 \x03(\v2\x15.numen.v1.LinkableTabR\x04tabs\"\x82\x01\n" +
 	"\fTabLinkGroup\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
 	"\vcolor_index\x18\x02 \x01(\x05R\n" +
 	"colorIndex\x12\x17\n" +
-	"\atab_ids\x18\x03 \x03(\tR\x06tabIds\"d\n" +
+	"\atab_ids\x18\x03 \x03(\tR\x06tabIds\x12\x12\n" +
+	"\x04path\x18\x04 \x01(\tR\x04path\x12\x14\n" +
+	"\x05title\x18\x05 \x01(\tR\x05title\"d\n" +
 	"\vLinkableTab\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x14\n" +

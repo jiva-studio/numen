@@ -25,12 +25,12 @@ describe('the tabs a link may end at', () => {
   })
 
   it('leave out the tabs of the group the tab is in', () => {
-    const group = { id: 'g', colorIndex: 0, tabs: ['a', 'b'] }
+    const group = { id: 'g', colorIndex: 0, tabs: ['a', 'b'], path: '', title: '' }
     expect(getEligibleTabs(input({ a: group, b: group })).map((tab) => tab.id)).toStrictEqual(['d'])
   })
 
   it('say the kind and whether the tab is linked already', () => {
-    const group = { id: 'g', colorIndex: 0, tabs: ['d', 'x'] }
+    const group = { id: 'g', colorIndex: 0, tabs: ['d', 'x'], path: '', title: '' }
     expect(getEligibleTabs(input({ d: group }))).toStrictEqual([
       { id: 'b', title: 'B', kind: 'files', isLinked: false },
       { id: 'd', title: 'D', kind: 'plex', isLinked: true },

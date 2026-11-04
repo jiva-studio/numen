@@ -507,15 +507,22 @@ function createWindowTabLinks(base: WindowCore, tabSync: WindowServices['tabSync
     windowId: base.windowId,
     tabLinks: base.tabLinks,
     applySync: tabSync.applySync,
+    applyGroupPaths: tabSync.applyGroupPaths,
     getOpenTabs,
     wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     onError: (error) =>
       base.writeMessage(`The tab links were not written: ${formatErrorMessage(error)}`, 'error'),
   })
   watch(() => JSON.stringify(getOpenTabs()), session.reportTabs)
-  // A reload or a close ends the watch at once: an aborted fetch does not cancel
-  // the stream in the core, and the reloaded page reports the same tabs.
+  // Hiding the page cancels the watch in the core; a page restored from the
+  // back-forward cache watches again.
   globalThis.addEventListener('pagehide', session.close)
+  globalThis.addEventListener('pageshow', (event) => {
+    if (!event.persisted) return
+    runInBackground(session.reopen(), (error) =>
+      base.writeMessage(`The tab links stopped: ${formatErrorMessage(error)}`, 'error'),
+    )
+  })
   return session
 }
 

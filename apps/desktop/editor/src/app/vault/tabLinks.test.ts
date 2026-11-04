@@ -29,7 +29,15 @@ describe('watchTabLinks', () => {
           event: {
             case: 'links',
             value: {
-              groups: [{ id: 'group-1', colorIndex: 2, tabIds: ['plex:1', 'files:2'] }],
+              groups: [
+                {
+                  id: 'group-1',
+                  colorIndex: 2,
+                  tabIds: ['plex:1', 'files:2'],
+                  path: 'Orbits.md',
+                  title: 'Orbits',
+                },
+              ],
               tabs: [{ id: 'plex:1', kind: 'plex', title: 'Orbits', windowId: 'window-a' }],
             },
           },
@@ -57,7 +65,15 @@ describe('watchTabLinks', () => {
     expect(events).toStrictEqual([
       {
         links: {
-          groups: [{ id: 'group-1', colorIndex: 2, tabs: ['plex:1', 'files:2'] }],
+          groups: [
+            {
+              id: 'group-1',
+              colorIndex: 2,
+              tabs: ['plex:1', 'files:2'],
+              path: 'Orbits.md',
+              title: 'Orbits',
+            },
+          ],
           tabs: [{ id: 'plex:1', kind: 'plex', title: 'Orbits', windowId: 'window-a' }],
         },
       },
