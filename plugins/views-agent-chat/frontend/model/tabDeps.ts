@@ -13,7 +13,11 @@ export interface AgentChatHost {
 }
 
 /** What an agent tab requires of the window. */
-export function createAgentTabDeps({ workspace, agent, getReasoning }: AgentChatHost): AgentTabDeps {
+export function createAgentTabDeps({
+  workspace,
+  agent,
+  getReasoning,
+}: AgentChatHost): AgentTabDeps {
   return {
     openFileAt: (path, ...spans) => workspace.openFileAt(path, spans),
     openFileAdjacent: (path) => workspace.openFile(path, { placement: 'split' }),

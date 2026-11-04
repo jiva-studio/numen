@@ -24,14 +24,14 @@ export function activate(context: PluginContext): void {
   const chats = createAgentKind(
     { workspace, agent, getReasoning: () => context.getSetting<string>('reasoning') ?? '' },
     (deps) =>
-    useAgentConversation(
-      useConversation({
-        agent,
-        words: WORDS,
-        conversation: `conversation:${crypto.randomUUID()}`,
-      }),
-      deps,
-    ),
+      useAgentConversation(
+        useConversation({
+          agent,
+          words: WORDS,
+          conversation: `conversation:${crypto.randomUUID()}`,
+        }),
+        deps,
+      ),
   )
   context.registerTabKind(chats.kind)
 

@@ -129,8 +129,7 @@ function useReasoningSelection(
   const selectedReasoningId = computed(() => {
     const agentId = selection.selectedAgentId.value
     const configuredReasoning =
-      (selected.value.agentId === agentId ? selected.value.id : '') ||
-      (deps.getReasoning?.() ?? '')
+      (selected.value.agentId === agentId ? selected.value.id : '') || (deps.getReasoning?.() ?? '')
     const offers = (id: string) => reasoningLevels.value.some((level) => level.id === id)
     if (offers(configuredReasoning)) return configuredReasoning
     const byDefault = selectedOption.value?.defaultReasoning ?? ''
