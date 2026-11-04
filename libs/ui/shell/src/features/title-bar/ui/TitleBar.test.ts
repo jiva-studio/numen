@@ -105,7 +105,7 @@ describe('the actions', () => {
     expect(wrapper.emitted('run')).toStrictEqual([['b']])
   })
 
-  it('do not take the keyboard focus', () => {
+  it('are left out of the tab order', () => {
     const wrapper = mountBar({ actions: [action('a')] })
 
     expect(button(wrapper, 'a').attributes('tabindex')).toBe('-1')
