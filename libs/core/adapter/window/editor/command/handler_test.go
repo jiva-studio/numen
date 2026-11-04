@@ -58,7 +58,7 @@ func run(t *testing.T, commands pluginCommands, request *v1.RunPluginCommandRequ
 	return res.Msg
 }
 
-func TestListCommands_MarksTheCommandsOverNotesOfATypeAsListedByMenu(t *testing.T) {
+func TestListCommands_ListsTheCommandsWithConditionsAndNoteTypesLikeTheOthers(t *testing.T) {
 	res, err := command.NewHandler(shownVault{}, plugincommand.NewCommands(pluginCommands{}, fileTypes{".md": "text/markdown", ".markdown": "text/markdown"}, nil)).ListCommands(
 		t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
@@ -72,11 +72,8 @@ func TestListCommands_MarksTheCommandsOverNotesOfATypeAsListedByMenu(t *testing.
 	one := commands[0]
 	argument := one.GetArguments()[0]
 	if one.GetPluginId() != "org.example.sample" || one.GetId() != "sample.create" || one.GetIcon() != "layers" || !slices.Equal(one.GetContentTypes(), []string{"text/markdown"}) || !slices.Equal(one.GetExtensions(), []string{"markdown", "md"}) ||
-		!argument.GetIsRequired() || len(one.GetArguments()) != 1 || one.GetIsListedByMenu() {
+		!argument.GetIsRequired() || len(one.GetArguments()) != 1 {
 		t.Errorf("got %v", one)
-	}
-	if commands[1].GetIsListedByMenu() || !commands[2].GetIsListedByMenu() {
-		t.Errorf("only the command over notes of a type is marked: %v %v", commands[1], commands[2])
 	}
 }
 

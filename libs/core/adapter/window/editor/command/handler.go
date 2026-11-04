@@ -32,9 +32,7 @@ func NewHandler(vaults VaultProvider, commands plugincommand.Commands) *Handler 
 	return &Handler{vaults: vaults, list: commands.List, run: commands.Run}
 }
 
-// ListCommands lists the commands of every enabled plugin. A command the menu of a file or the view of a
-// note type lists is marked: the palette identifies a file by its extension, so it does not list a command
-// with conditions or one over notes of a type.
+// ListCommands lists the commands of every enabled plugin, whichever part of the plugin runs them.
 func (h *Handler) ListCommands(
 	context.Context, *connect.Request[v1.ListCommandsRequest],
 ) (*connect.Response[v1.ListCommandsResponse], error) {
@@ -104,9 +102,6 @@ func newWireCommand(entry plugincommand.Entry, extensions []string) *v1.PluginCo
 		Scope:             entry.Command.Scope,
 		Shortcut:          entry.Command.Shortcut,
 		IsNoteDestination: entry.Command.IsNoteDestination,
-		HasBackend:        entry.HasBackend,
-		HasFrontend:       entry.HasFrontend,
-		IsListedByMenu:    len(entry.Command.NoteTypes) > 0 || len(entry.Command.When) > 0,
 		IsSuspended:       entry.IsSuspended,
 	}
 }

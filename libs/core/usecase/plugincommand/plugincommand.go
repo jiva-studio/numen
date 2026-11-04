@@ -78,11 +78,14 @@ func (u List) Execute() []Entry {
 }
 
 // ExecuteAll lists every command the enabled plugins declare, whichever part of the plugin runs it.
+// A plugin with neither a frontend nor a backend has nothing that runs its commands, and lists none.
 func (u List) ExecuteAll() []Entry {
 	if u.commands == nil {
 		return nil
 	}
-	return u.commands.ListCommands()
+	return slices.DeleteFunc(u.commands.ListCommands(), func(one Entry) bool {
+		return !one.HasBackend && !one.HasFrontend
+	})
 }
 
 // Find returns the command of the id, by the plugin of the lowest id that declares one, and false
