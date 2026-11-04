@@ -17,11 +17,18 @@ type declaredByTwoPlugins struct{}
 
 func (declaredByTwoPlugins) ListCommands() []plugincommand.Entry {
 	return []plugincommand.Entry{
-		{PluginID: "md.numen.tree", HasFrontend: true, Command: plugincommand.Command{
+		{PluginID: "md.numen.tree", Command: plugincommand.Command{
 			ID: "tree.revealNote", Title: "Show note in file tree", Icon: "folder-open", Scope: "note", Shortcut: "mod+shift+e", IsNoteDestination: true,
 		}},
-		{PluginID: "md.numen.cards", HasBackend: true, HasFrontend: true, Command: plugincommand.Command{ID: "deck.create", Title: "Create deck"}},
+		{PluginID: "md.numen.cards", Command: plugincommand.Command{ID: "deck.create", Title: "Create deck"}},
 	}
+}
+
+func (declaredByTwoPlugins) GetParts(pluginID string) plugincommand.Parts {
+	if pluginID == "md.numen.cards" {
+		return plugincommand.Parts{HasBackend: true, HasFrontend: true}
+	}
+	return plugincommand.Parts{HasFrontend: true}
 }
 
 func (declaredByTwoPlugins) RunCommand(context.Context, plugincommand.Call) (plugincommand.Result, error) {
@@ -40,12 +47,9 @@ func TestListCommands_CarriesTheDeclarationOfEachCommand(t *testing.T) {
 	if len(items) != 2 {
 		t.Fatalf("got %v", items)
 	}
-	tree, cards := items[0], items[1]
+	tree := items[0]
 	if tree.GetScope() != "note" || tree.GetShortcut() != "mod+shift+e" || !tree.GetIsNoteDestination() {
 		t.Errorf("the frontend command came out as %v", tree)
-	}
-	if cards.GetPluginId() != "md.numen.cards" || cards.GetId() != "deck.create" {
-		t.Errorf("the command of a plugin with both parts came out as %v", cards)
 	}
 }
 
@@ -65,14 +69,11 @@ func TestRunPluginCommand_AnswersUnknownForACommandOfAPluginWithoutABackend(t *t
 // suspendedPlugin declares a command of a plugin the host holds suspended after a failed start.
 type suspendedPlugin struct{ declaredByTwoPlugins }
 
-func (suspendedPlugin) ListCommands() []plugincommand.Entry {
-	return []plugincommand.Entry{{
-		PluginID: "md.numen.cards", HasBackend: true, HasFrontend: true, IsSuspended: true,
-		Command: plugincommand.Command{ID: "deck.create", Title: "Create deck"},
-	}}
+func (suspendedPlugin) GetParts(string) plugincommand.Parts {
+	return plugincommand.Parts{HasBackend: true, HasFrontend: true, IsSuspended: true}
 }
 
-func TestListCommands_MarksTheCommandsOfASuspendedPlugin(t *testing.T) {
+func TestListCommands_ListsNoCommandOfASuspendedPlugin(t *testing.T) {
 	handler := command.NewHandler(shownVault{}, plugincommand.NewCommands(suspendedPlugin{}, nil, nil))
 
 	res, err := handler.ListCommands(t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
@@ -80,8 +81,7 @@ func TestListCommands_MarksTheCommandsOfASuspendedPlugin(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	items := res.Msg.GetCommands()
-	if len(items) != 1 || !items[0].GetIsSuspended() {
+	if items := res.Msg.GetCommands(); len(items) != 0 {
 		t.Errorf("got %v", items)
 	}
 }

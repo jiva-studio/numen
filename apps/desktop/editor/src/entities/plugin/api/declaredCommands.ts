@@ -14,7 +14,6 @@ interface WireCommand {
   readonly scope?: string
   readonly shortcut?: string
   readonly isNoteDestination?: boolean
-  readonly isSuspended: boolean
   readonly contentTypes: readonly string[]
   readonly extensions: readonly string[]
   readonly arguments: readonly {
@@ -43,8 +42,6 @@ export interface DeclaredCommand {
   readonly scope?: 'note'
   readonly shortcut?: string
   readonly isNoteDestination?: boolean
-  /** Set while the plugin is held suspended; its backend runs nothing then. */
-  readonly isSuspended: boolean
   readonly contentTypes: readonly string[]
   /** The extensions, without the dot, that give a file one of the types, as the core lists them. */
   readonly extensions: readonly string[]
@@ -73,7 +70,6 @@ const readCommand = (wire: WireCommand): DeclaredCommand => ({
   ...(wire.scope === 'note' ? { scope: 'note' as const } : {}),
   ...(wire.shortcut ? { shortcut: wire.shortcut } : {}),
   ...(wire.isNoteDestination ? { isNoteDestination: true } : {}),
-  isSuspended: wire.isSuspended,
   contentTypes: wire.contentTypes,
   extensions: wire.extensions,
   arguments: wire.arguments.map((one) => ({

@@ -31,18 +31,22 @@ type pluginCommands struct {
 
 func (p pluginCommands) ListCommands() []plugincommand.Entry {
 	return []plugincommand.Entry{
-		{PluginID: "org.example.sample", HasBackend: true, Command: plugincommand.Command{
+		{PluginID: "org.example.sample", Command: plugincommand.Command{
 			ID: "sample.create", Title: "Create a sample", Icon: "layers", ContentTypes: []domain.ContentType{"text/markdown"},
 			Arguments: []plugincommand.Argument{
 				{Name: "pages", Title: "Pages", Type: plugincommand.ArgumentNumber, IsRequired: true},
 				{Name: "wait", Title: "Wait", Type: plugincommand.ArgumentBoolean, IsHiddenInPalette: true},
 			},
 		}},
-		{PluginID: "org.example.sample", HasBackend: true, Command: plugincommand.Command{
+		{PluginID: "org.example.sample", Command: plugincommand.Command{
 			ID: "print-sample", Title: "Print a sample", ContentTypes: []domain.ContentType{"text/markdown"},
 		}},
-		{PluginID: "md.numen.cards", HasBackend: true, Command: plugincommand.Command{ID: "shuffle-deck", Title: "Shuffle a deck", NoteTypes: []string{"deck"}}},
+		{PluginID: "md.numen.cards", Command: plugincommand.Command{ID: "shuffle-deck", Title: "Shuffle a deck", NoteTypes: []string{"deck"}}},
 	}
+}
+
+func (p pluginCommands) GetParts(string) plugincommand.Parts {
+	return plugincommand.Parts{HasBackend: true}
 }
 
 func (p pluginCommands) RunCommand(context.Context, plugincommand.Call) (plugincommand.Result, error) {

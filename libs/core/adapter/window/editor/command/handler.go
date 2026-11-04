@@ -102,7 +102,6 @@ func newWireCommand(entry plugincommand.Entry, extensions []string) *v1.PluginCo
 		Scope:             entry.Command.Scope,
 		Shortcut:          entry.Command.Shortcut,
 		IsNoteDestination: entry.Command.IsNoteDestination,
-		IsSuspended:       entry.IsSuspended,
 	}
 }
 

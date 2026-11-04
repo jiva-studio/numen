@@ -318,11 +318,8 @@ type PluginCommand struct {
 	Shortcut string `protobuf:"bytes,9,opt,name=shortcut,proto3" json:"shortcut,omitempty"`
 	// is_note_destination marks the command that puts a note in front.
 	IsNoteDestination bool `protobuf:"varint,10,opt,name=is_note_destination,json=isNoteDestination,proto3" json:"is_note_destination,omitempty"`
-	// is_suspended is set while the host holds the plugin suspended after it failed to start; its
-	// backend runs nothing then.
-	IsSuspended   bool `protobuf:"varint,14,opt,name=is_suspended,json=isSuspended,proto3" json:"is_suspended,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *PluginCommand) Reset() {
@@ -421,13 +418,6 @@ func (x *PluginCommand) GetShortcut() string {
 func (x *PluginCommand) GetIsNoteDestination() bool {
 	if x != nil {
 		return x.IsNoteDestination
-	}
-	return false
-}
-
-func (x *PluginCommand) GetIsSuspended() bool {
-	if x != nil {
-		return x.IsSuspended
 	}
 	return false
 }
@@ -644,7 +634,7 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"openedPath\"\x15\n" +
 	"\x13ListCommandsRequest\"K\n" +
 	"\x14ListCommandsResponse\x123\n" +
-	"\bcommands\x18\x01 \x03(\v2\x17.numen.v1.PluginCommandR\bcommands\"\xe9\x02\n" +
+	"\bcommands\x18\x01 \x03(\v2\x17.numen.v1.PluginCommandR\bcommands\"\xc6\x02\n" +
 	"\rPluginCommand\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12\x14\n" +
@@ -658,8 +648,7 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"\x05scope\x18\b \x01(\tR\x05scope\x12\x1a\n" +
 	"\bshortcut\x18\t \x01(\tR\bshortcut\x12.\n" +
 	"\x13is_note_destination\x18\n" +
-	" \x01(\bR\x11isNoteDestination\x12!\n" +
-	"\fis_suspended\x18\x0e \x01(\bR\visSuspended\"\\\n" +
+	" \x01(\bR\x11isNoteDestination\"\\\n" +
 	"\x0fCommandArgument\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1f\n" +

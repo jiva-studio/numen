@@ -65,6 +65,10 @@ type commands struct {
 
 func (c *commands) ListCommands() []pluginport.PluginCommandEntry { return c.all }
 
+func (c *commands) GetParts(string) pluginport.PluginParts {
+	return pluginport.PluginParts{HasBackend: true}
+}
+
 func (c *commands) RunCommand(_ context.Context, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error) {
 	c.ran = append(c.ran, call)
 	return pluginport.PluginCommandResult{}, nil

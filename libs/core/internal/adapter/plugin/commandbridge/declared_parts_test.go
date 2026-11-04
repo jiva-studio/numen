@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
-func TestListCommands_CarriesThePartsOfTheDeclaringPlugin(t *testing.T) {
+func TestGetParts_AsksTheManifestOfThePlugin(t *testing.T) {
 	command := []manifest.Command{{ID: "tree.open", Title: "Open file tree"}}
 	host := &commandHost{plugins: []pluginport.DiscoveredPlugin{
 		{Manifest: manifest.Manifest{ID: "md.numen.tree", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{Commands: command}}},
@@ -15,19 +15,17 @@ func TestListCommands_CarriesThePartsOfTheDeclaringPlugin(t *testing.T) {
 		{Manifest: manifest.Manifest{ID: "md.numen.empty", Contributes: manifest.Contributes{Commands: command}}},
 	}}
 
-	entries := Open(host).ListCommands()
+	commands := Open(host)
 
-	if len(entries) != 3 {
-		t.Fatalf("got %+v", entries)
+	want := map[string]pluginport.PluginParts{
+		"md.numen.tree":    {HasFrontend: true},
+		"md.numen.job":     {HasBackend: true},
+		"md.numen.empty":   {},
+		"md.numen.missing": {},
 	}
-	parts := map[string][2]bool{}
-	for _, one := range entries {
-		parts[one.PluginID] = [2]bool{one.HasBackend, one.HasFrontend}
-	}
-	want := map[string][2]bool{"md.numen.tree": {false, true}, "md.numen.job": {true, false}, "md.numen.empty": {false, false}}
-	for id, got := range parts {
-		if got != want[id] {
-			t.Errorf("plugin %s has parts %v, want %v", id, got, want[id])
+	for id, parts := range want {
+		if got := commands.GetParts(id); got != parts {
+			t.Errorf("plugin %s has parts %+v, want %+v", id, got, parts)
 		}
 	}
 }
@@ -43,15 +41,14 @@ func (h suspendedHost) GetPluginInfos() []pluginport.PluginInfo {
 	return infos
 }
 
-func TestListCommands_MarksTheCommandsOfASuspendedPlugin(t *testing.T) {
-	command := []manifest.Command{{ID: "deck.create", Title: "Create deck"}}
+func TestGetParts_SaysWhetherTheHostHoldsThePluginSuspended(t *testing.T) {
 	host := suspendedHost{&commandHost{plugins: []pluginport.DiscoveredPlugin{
-		{Manifest: manifest.Manifest{ID: "md.numen.cards", Backend: manifest.Backend{Entrypoint: "bin/cards"}, Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{Commands: command}}},
+		{Manifest: manifest.Manifest{ID: "md.numen.cards", Backend: manifest.Backend{Entrypoint: "bin/cards"}, Frontend: &manifest.Frontend{}}},
 	}}}
 
-	entries := Open(host).ListCommands()
+	parts := Open(host).GetParts("md.numen.cards")
 
-	if len(entries) != 1 || !entries[0].IsSuspended || !entries[0].HasBackend {
-		t.Fatalf("got %+v", entries)
+	if !parts.IsSuspended || !parts.HasBackend || !parts.HasFrontend {
+		t.Fatalf("got %+v", parts)
 	}
 }

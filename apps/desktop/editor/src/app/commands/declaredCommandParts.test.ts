@@ -7,7 +7,6 @@ import type { DeclaredCommand } from '@/entities/plugin'
 import { useDeclaredCommands } from './declaredCommands'
 
 const base: Omit<DeclaredCommand, 'pluginId' | 'id' | 'title'> = {
-  isSuspended: false,
   contentTypes: [],
   extensions: [],
   arguments: [],
@@ -46,7 +45,7 @@ async function load(isOffered: (id: string) => boolean) {
 }
 
 describe('the declared commands the palette runs in a backend', () => {
-  it('are those of plugins that are not suspended and that the plugin host does not offer', async () => {
+  it('are those the plugin host does not offer', async () => {
     const declared = await load((id) => id === 'md.cards:preset.open' || id === 'md.tree:tree.open')
 
     expect(declared.paletteCommands.value.map((one) => one.id)).toStrictEqual([

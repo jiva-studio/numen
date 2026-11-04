@@ -17,7 +17,6 @@ const createSample: DeclaredCommand = {
   id: 'sample.create',
   title: 'Create a sample',
   icon: 'layers',
-  isSuspended: false,
   contentTypes: [],
   extensions: [],
   arguments: [
@@ -30,7 +29,6 @@ const convert: DeclaredCommand = {
   pluginId: 'md.numen.pages',
   id: 'convert',
   title: 'Convert',
-  isSuspended: false,
   contentTypes: ['application/pdf'],
   extensions: ['pdf'],
   arguments: [],
@@ -246,12 +244,10 @@ describe('the declared commands read more than once', () => {
 })
 
 describe('a declared command the palette leaves out', () => {
-  it('is one of a suspended plugin', async () => {
+  it('is one the plugin host offers', async () => {
     const declared = useDeclaredCommands({
-      list: async () => [
-        { ...createSample, isSuspended: true },
-        { ...convert, isSuspended: true },
-      ],
+      list: async () => [createSample, convert],
+      isOffered: () => true,
     })
     await declared.load()
 

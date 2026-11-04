@@ -110,10 +110,6 @@ message PluginCommand {
 
   // is_note_destination marks the command that puts a note in front.
   bool is_note_destination = 10;
-
-  // is_suspended is set while the host holds the plugin suspended after it failed to start; its
-  // backend runs nothing then.
-  bool is_suspended = 14;
 }
 
 // CommandArgument is one argument a command takes.

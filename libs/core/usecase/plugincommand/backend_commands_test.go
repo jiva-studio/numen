@@ -8,14 +8,25 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 )
 
-// mixedCommands declares one command of a plugin with a backend and one of a plugin with only a frontend.
+// mixedCommands declares commands of plugins with a backend and a frontend, with a frontend only,
+// with neither, and of one the host holds suspended.
 type mixedCommands struct{ calls []plugincommand.Call }
 
 func (m *mixedCommands) ListCommands() []plugincommand.Entry {
 	return []plugincommand.Entry{
-		{PluginID: "md.numen.cards", HasBackend: true, HasFrontend: true, Command: plugincommand.Command{ID: "deck.create", Title: "Create deck"}},
-		{PluginID: "md.numen.tree", HasFrontend: true, Command: plugincommand.Command{ID: "tree.open", Title: "Open file tree", Scope: "note"}},
+		{PluginID: "md.numen.cards", Command: plugincommand.Command{ID: "deck.create", Title: "Create deck"}},
+		{PluginID: "md.numen.tree", Command: plugincommand.Command{ID: "tree.open", Title: "Open file tree", Scope: "note"}},
+		{PluginID: "md.numen.empty", Command: plugincommand.Command{ID: "empty.run", Title: "Run"}},
+		{PluginID: "md.numen.down", Command: plugincommand.Command{ID: "down.run", Title: "Run"}},
 	}
+}
+
+func (m *mixedCommands) GetParts(pluginID string) plugincommand.Parts {
+	return map[string]plugincommand.Parts{
+		"md.numen.cards": {HasBackend: true, HasFrontend: true},
+		"md.numen.tree":  {HasFrontend: true},
+		"md.numen.down":  {HasBackend: true, IsSuspended: true},
+	}[pluginID]
 }
 
 func (m *mixedCommands) RunCommand(_ context.Context, call plugincommand.Call) (plugincommand.Result, error) {
@@ -33,12 +44,12 @@ func TestTheCommandLineListsOnlyCommandsOfPluginsThatHaveABackend(t *testing.T) 
 	}
 }
 
-func TestTheWindowListsTheCommandsOfEveryPluginWhateverPartRunsThem(t *testing.T) {
+func TestTheWindowListsTheCommandsOfEveryRunningPluginWhateverPartRunsThem(t *testing.T) {
 	commands := plugincommand.NewCommands(&mixedCommands{}, getTypes(), nil)
 
 	entries := commands.List.ExecuteAll()
 
-	if len(entries) != 2 || entries[1].Command.ID != "tree.open" || entries[1].HasBackend {
+	if len(entries) != 2 || entries[0].Command.ID != "deck.create" || entries[1].Command.ID != "tree.open" {
 		t.Fatalf("the window lists %+v", entries)
 	}
 }
@@ -65,19 +76,4 @@ func TestACommandOfAPluginWithABackendIsRunInItsBackend(t *testing.T) {
 	if err != nil || result.Message != "ran deck.create" {
 		t.Fatalf("the run answered %+v, %v", result, err)
 	}
-}
-
-func TestTheWindowListsNothingForAPluginWithNeitherAFrontendNorABackend(t *testing.T) {
-	commands := plugincommand.NewCommands(&emptyPluginCommands{}, getTypes(), nil)
-
-	if entries := commands.List.ExecuteAll(); len(entries) != 0 {
-		t.Fatalf("the window lists %+v", entries)
-	}
-}
-
-// emptyPluginCommands declares a command of a plugin with neither a frontend nor a backend.
-type emptyPluginCommands struct{ mixedCommands }
-
-func (*emptyPluginCommands) ListCommands() []plugincommand.Entry {
-	return []plugincommand.Entry{{PluginID: "md.numen.empty", Command: plugincommand.Command{ID: "empty.run", Title: "Run"}}}
 }

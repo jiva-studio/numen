@@ -23,6 +23,8 @@ import (
 type (
 	// Entry is one command an enabled plugin declares, and the plugin that does.
 	Entry = pluginport.PluginCommandEntry
+	// Parts is what one plugin has and whether the host holds it suspended.
+	Parts = pluginport.PluginParts
 	// Command is a command as its manifest declares it.
 	Command = pluginport.PluginCommand
 	// Argument is one argument a command takes.
@@ -74,17 +76,19 @@ type List struct {
 
 // Execute lists the commands that a plugin backend runs. Where there is no plugin host it lists none.
 func (u List) Execute() []Entry {
-	return slices.DeleteFunc(u.ExecuteAll(), func(one Entry) bool { return !one.HasBackend })
+	return slices.DeleteFunc(u.ExecuteAll(), func(one Entry) bool { return !u.commands.GetParts(one.PluginID).HasBackend })
 }
 
 // ExecuteAll lists every command the enabled plugins declare, whichever part of the plugin runs it.
-// A plugin with neither a frontend nor a backend has nothing that runs its commands, and lists none.
+// A plugin with neither a frontend nor a backend has nothing that runs its commands, and a plugin the
+// host holds suspended runs none; both list none.
 func (u List) ExecuteAll() []Entry {
 	if u.commands == nil {
 		return nil
 	}
 	return slices.DeleteFunc(u.commands.ListCommands(), func(one Entry) bool {
-		return !one.HasBackend && !one.HasFrontend
+		parts := u.commands.GetParts(one.PluginID)
+		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
 	})
 }
 
@@ -113,8 +117,11 @@ func (u Run) Execute(ctx context.Context, v domain.Vault, call Call) (Result, er
 		return Result{}, ErrUnavailable
 	}
 	entries := u.commands.ListCommands()
+	if !u.commands.GetParts(call.PluginID).HasBackend {
+		return Result{}, fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)
+	}
 	index := slices.IndexFunc(entries, func(one Entry) bool {
-		return one.HasBackend && one.PluginID == call.PluginID && one.Command.ID == call.Command
+		return one.PluginID == call.PluginID && one.Command.ID == call.Command
 	})
 	if index < 0 {
 		return Result{}, fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)

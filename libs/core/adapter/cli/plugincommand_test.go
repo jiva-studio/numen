@@ -20,6 +20,10 @@ type pluginCommands struct {
 
 func (p *pluginCommands) ListCommands() []plugincommand.Entry { return p.entries }
 
+func (p *pluginCommands) GetParts(string) plugincommand.Parts {
+	return plugincommand.Parts{HasBackend: true}
+}
+
 func (p *pluginCommands) RunCommand(_ context.Context, call plugincommand.Call) (plugincommand.Result, error) {
 	p.calls = append(p.calls, call)
 	return plugincommand.Result{Message: "ran " + call.Command, OpenedPath: call.Path}, nil
@@ -29,7 +33,7 @@ func (p *pluginCommands) RunCommand(_ context.Context, call plugincommand.Call) 
 // file and one over PDFs, and the vaults the plugins were opened over.
 func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 	declared := &pluginCommands{entries: []plugincommand.Entry{
-		{PluginID: "org.example.sample", HasBackend: true, Command: plugincommand.Command{
+		{PluginID: "org.example.sample", Command: plugincommand.Command{
 			ID: "sample.create", Title: "Create a sample",
 			Arguments: []plugincommand.Argument{
 				{Name: "title", Title: "Title", Type: "string", IsRequired: true},
@@ -37,7 +41,7 @@ func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 				{Name: "open", Title: "Open", Type: plugincommand.ArgumentBoolean},
 			},
 		}},
-		{PluginID: "md.numen.pages", HasBackend: true, Command: plugincommand.Command{
+		{PluginID: "md.numen.pages", Command: plugincommand.Command{
 			ID: "count-pages", Title: "Count the pages", ContentTypes: []domain.ContentType{"application/pdf"},
 		}},
 	}}
@@ -175,9 +179,8 @@ func TestTheCoreHasNoCommandOfADomain(t *testing.T) {
 
 func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
 	declared := &pluginCommands{entries: []plugincommand.Entry{{
-		PluginID:   "md.numen.engines.transcription",
-		HasBackend: true,
-		Command:    plugincommand.Command{ID: "transcript.create", Title: "Transcribe a recording", ContentTypes: []domain.ContentType{"audio/*"}},
+		PluginID: "md.numen.engines.transcription",
+		Command:  plugincommand.Command{ID: "transcript.create", Title: "Transcribe a recording", ContentTypes: []domain.ContentType{"audio/*"}},
 	}}}
 	commands := plugincommand.NewCommands(declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil)
 	deps := cli.Deps{
@@ -227,9 +230,8 @@ func (f fileTypes) ListExtensions(mask domain.ContentType) []string {
 
 func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
 	declared := &pluginCommands{entries: []plugincommand.Entry{{
-		PluginID:   "md.numen.links",
-		HasBackend: true,
-		Command:    plugincommand.Command{ID: "link.deleteVideo", Title: "Delete the copy", NoteTypes: []string{"link"}},
+		PluginID: "md.numen.links",
+		Command:  plugincommand.Command{ID: "link.deleteVideo", Title: "Delete the copy", NoteTypes: []string{"link"}},
 	}}}
 	commands := plugincommand.NewCommands(declared, fileTypes{}, nil)
 	deps := cli.Deps{

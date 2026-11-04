@@ -81,13 +81,12 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
   let unregisterAll: readonly (() => void)[] = []
 
   /**
-   * The declared commands a backend runs and the palette lists: those of a plugin that is not
-   * suspended, that the plugin host does not offer, because no frontend handler is registered for
-   * them and their frontend is not loading. The backend of a plugin that has none answers an unknown
+   * The declared commands a backend runs and the palette lists: those the plugin host does not offer,
+   * because no frontend handler is registered for them and their frontend is not loading. The backend of a plugin that has none answers an unknown
    * command.
    */
   const backendCommands = computed(() =>
-    (declared.value ?? []).filter((one) => !one.isSuspended && !isOffered(getPaletteId(one))),
+    (declared.value ?? []).filter((one) => !isOffered(getPaletteId(one))),
   )
 
   watch(
