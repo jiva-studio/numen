@@ -21,6 +21,7 @@ func Mount(s *server.Server) error {
 		model:         "",
 		temperature:   nil,
 		maxTokens:     nil,
+		maxSteps:      0,
 		conversations: nil,
 		models:        nil,
 		isListed:      false,

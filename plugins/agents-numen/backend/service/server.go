@@ -85,12 +85,16 @@ func (s *Server) Configure(values map[string]string) {
 			s.maxTokens = &val
 		}
 	}
-	if stepsStr, ok := values[SettingMaxSteps]; ok && stepsStr != "" {
-		if val, err := strconv.Atoi(stepsStr); err == nil && val > 0 {
-			s.maxSteps = val
-		}
+	if val, ok := readPositive(values[SettingMaxSteps]); ok {
+		s.maxSteps = val
 	}
 	s.models, s.isListed = nil, false
+}
+
+// readPositive reads a whole number above zero from a setting value.
+func readPositive(text string) (int, bool) {
+	val, err := strconv.Atoi(text)
+	return val, err == nil && val > 0
 }
 
 // getChat is the chat API as the settings name it.
