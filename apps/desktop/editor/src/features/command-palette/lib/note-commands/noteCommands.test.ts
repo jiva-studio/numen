@@ -9,7 +9,7 @@ describe('the commands over a note', () => {
   it('are all filed with the note commands', () => {
     const commands = createNoteCommands(words, 'linux')
 
-    expect(commands.map((one) => one.group)).toStrictEqual(commands.map(() => 'note'))
+    expect(commands.map((one) => one.group)).toStrictEqual(commands.map(() => 'app:note.create'))
   })
 
   it('ask for a name where they take one', () => {

@@ -59,13 +59,15 @@ const createCommand = (overrides: Partial<Command> & Pick<Command, 'id' | 'text'
 })
 
 const getNoteGroup = (view: ReturnType<typeof createView>, target: CommandTarget, typed: string) =>
-  view.createGroups(null, target, typed).find((group) => group.id === 'note')
+  view.createGroups(null, target, typed).find((group) => group.id === 'app:note.create')
 
 describe('the commands as the words typed leave them', () => {
   const view = createView(createCommands(words))
 
   it('lights nothing where nothing is typed', () => {
-    const readItem = getNoteGroup(view, front(), '')?.items.find((item) => item.id === 'read')
+    const readItem = getNoteGroup(view, front(), '')?.items.find(
+      (item) => item.id === 'app:note.open',
+    )
 
     expect(readItem).toBeDefined()
     expect(readItem).not.toHaveProperty('at')
@@ -74,14 +76,16 @@ describe('the commands as the words typed leave them', () => {
   it('lights the words typed where the text of a command begins with them', () => {
     const word = words.read.toLowerCase().slice(0, 3)
 
-    const readItem = getNoteGroup(view, front(), word)?.items.find((item) => item.id === 'read')
+    const readItem = getNoteGroup(view, front(), word)?.items.find(
+      (item) => item.id === 'app:note.open',
+    )
 
     expect(readItem?.at).toStrictEqual([{ start: 0, end: 3 }])
   })
 
   it('lights the words typed where they stand inside the text of a command', () => {
     const readItem = getNoteGroup(view, front(), words.read.toLowerCase().slice(1, 3))?.items.find(
-      (item) => item.id === 'read',
+      (item) => item.id === 'app:note.open',
     )
 
     expect(readItem?.at).toStrictEqual([{ start: 1, end: 3 }])
@@ -96,31 +100,31 @@ describe('the commands as the words typed leave them', () => {
 
     const ids = getNoteGroup(view, front(), `   ${word}  `)?.items.map((item) => item.id)
 
-    expect(ids).toContain('read')
+    expect(ids).toContain('app:note.open')
   })
 })
 
 describe('the command reached on the same row', () => {
   it('is drawn as the second action where it is offered', () => {
     const view = createView([
-      createCommand({ id: 'first', text: 'First', also: 'second' }),
+      createCommand({ id: 'app:note.go-to-start', text: 'First', also: 'second' }),
       createCommand({ id: 'second', text: 'Second' }),
     ])
 
     expect(getNoteGroup(view, front(), '')?.items[0]?.actions).toStrictEqual([
-      { id: 'first', text: 'First' },
+      { id: 'app:note.go-to-start', text: 'First' },
       { id: 'second', text: 'Second' },
     ])
   })
 
   it('is drawn nowhere where it is not offered', () => {
     const view = createView([
-      createCommand({ id: 'first', text: 'First', also: 'second' }),
+      createCommand({ id: 'app:note.go-to-start', text: 'First', also: 'second' }),
       createCommand({ id: 'second', text: 'Second', isAvailable: () => false }),
     ])
 
     expect(getNoteGroup(view, front(), '')?.items[0]?.actions).toStrictEqual([
-      { id: 'first', text: 'First' },
+      { id: 'app:note.go-to-start', text: 'First' },
     ])
   })
 })
@@ -229,14 +233,14 @@ describe('a command that gives no words for its confirmation', () => {
     })
 
     const matchedByDetail = customView.createGroups(null, front(), 'special')
-    const detailItem = matchedByDetail.find((g) => g.id === 'note')?.items[0]
+    const detailItem = matchedByDetail.find((g) => g.id === 'app:note.create')?.items[0]
     expect(detailItem?.id).toBe('det')
     expect(detailItem?.detail).toBe('Special detail')
     expect(detailItem).not.toHaveProperty('at')
 
     const allGroups = customView.createGroups(null, front(), '')
     expect(allGroups.find((g) => g.id === 'file')?.title).toBe(customWords.overFile)
-    expect(allGroups.find((g) => g.id === 'settings')?.title).toBe('Over Settings')
+    expect(allGroups.find((g) => g.id === 'app:settings.open')?.title).toBe('Over Settings')
 
     const fallbackWords = {
       ...words,
@@ -258,7 +262,7 @@ describe('a command that gives no words for its confirmation', () => {
       getStepLabel: () => 'Ontology.md',
     })
     expect(
-      fallbackView.createGroups(null, front(), '').find((g) => g.id === 'settings')?.title,
+      fallbackView.createGroups(null, front(), '').find((g) => g.id === 'app:settings.open')?.title,
     ).toBe('Fallback Settings')
   })
 })
@@ -279,7 +283,7 @@ describe('findRowIcon', () => {
 
     expect(findRowIcon('n1', commands, search)).toBe(getNoteIcon('sample'))
     expect(findRowIcon('custom-cmd', commands, search)).toBe(customIcon)
-    expect(findRowIcon('note', commands, search)).toBe(findIcon('note'))
+    expect(findRowIcon('app:note.create', commands, search)).toBe(findIcon('app:note.create'))
   })
 
   it('resolves create-note, search note type, and file hit icons when commands palette is closed', () => {
@@ -293,7 +297,7 @@ describe('findRowIcon', () => {
       findHitFile: (id: string) => (id === 'hit-file' ? 'book.epub' : null),
     } as unknown as SearchState
 
-    expect(findRowIcon(CREATE_NOTE_ID, commands, search)).toBe(findIcon('note'))
+    expect(findRowIcon(CREATE_NOTE_ID, commands, search)).toBe(findIcon('app:note.create'))
     expect(findRowIcon('hit-note', commands, search)).toBe(getNoteIcon('sheet'))
     expect(findRowIcon('hit-file', commands, search, () => customIcon)).toBe(customIcon)
     expect(findRowIcon('hit-file', commands, search, () => undefined)).toBe(File)

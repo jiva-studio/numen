@@ -182,8 +182,8 @@ describe('a command reached by its own keystroke', () => {
     pressKey('p')
     await settle()
 
-    expect(getRow(window, 'note')?.keys).toEqual({ icons: ['control'], letter: 'N' })
-    expect(getRow(window, 'goto')?.keys).toEqual({ icons: ['control'], letter: 'G' })
+    expect(getRow(window, 'app:note.create')?.keys).toEqual({ icons: ['control'], letter: 'N' })
+    expect(getRow(window, 'app:note.go-to')?.keys).toEqual({ icons: ['control'], letter: 'G' })
   })
 
   it('draws no keystroke on the rows no keystroke reaches', async () => {
@@ -192,8 +192,8 @@ describe('a command reached by its own keystroke', () => {
     pressKey('p')
     await settle()
 
-    expect(getRow(window, 'destroy')?.keys).toBeUndefined()
-    expect(getRow(window, 'eraseVault')?.keys).toBeUndefined()
+    expect(getRow(window, 'app:note.delete')?.keys).toBeUndefined()
+    expect(getRow(window, 'app:vault.erase')?.keys).toBeUndefined()
   })
 
   it('makes a note under the name typed, on the keystroke the new note draws', async () => {

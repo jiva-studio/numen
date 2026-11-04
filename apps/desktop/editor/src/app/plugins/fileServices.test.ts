@@ -53,7 +53,7 @@ describe('the files of the vault a plugin is handed', () => {
     await files.move('a.md', 'dir/a.md')
 
     expect(runInvocation).toHaveBeenCalledWith(
-      createInvocation('move', { ...target, path: 'a.md' } as never, 'dir/a.md'),
+      createInvocation('app:file.move', { ...target, path: 'a.md' } as never, 'dir/a.md'),
       commandDeps(),
       ANSWER_WORDS,
     )
@@ -65,7 +65,7 @@ describe('the files of the vault a plugin is handed', () => {
     await files.createFolder('dir')
 
     expect(runInvocation).toHaveBeenCalledWith(
-      createInvocation('createFolder', target as never, 'dir'),
+      createInvocation('app:folder.create', target as never, 'dir'),
       commandDeps(),
       ANSWER_WORDS,
     )
@@ -149,8 +149,8 @@ describe('the window’s commands over a row', () => {
     const ids = host.getPathCommands({ entry: entry('Lecture.mp3', false), isSeveral: false })
 
     expect(ids.map((one) => [one.id, one.isDisabled])).toStrictEqual([
-      ['copy', undefined],
-      ['remove', undefined],
+      ['app:note.copy-path', undefined],
+      ['app:note.trash', undefined],
     ])
   })
 
@@ -193,8 +193,8 @@ describe('the window’s commands over a row', () => {
       'ctx:Lecture.mp3:Lecture.mp3:false:false:false',
       'file-menu:create-text:whisper:',
       'file-menu:create-text:proofread:v1',
-      'copy',
-      'remove',
+      'app:note.copy-path',
+      'app:note.trash',
     ])
 
     // File menu items are not requested for folders or multi-selection
@@ -204,14 +204,14 @@ describe('the window’s commands over a row', () => {
       isSeveral: false,
     })
     expect(getFileMenuItems).not.toHaveBeenCalled()
-    expect(folderCmds.some((c) => c.id === 'remove')).toBe(true)
+    expect(folderCmds.some((c) => c.id === 'app:note.trash')).toBe(true)
 
     const multiCmds = host.getPathCommands({
       entry: entry('Lecture.mp3', false),
       isSeveral: true,
     })
     expect(getFileMenuItems).not.toHaveBeenCalled()
-    expect(multiCmds.map((c) => c.id)).toContain('remove')
+    expect(multiCmds.map((c) => c.id)).toContain('app:note.trash')
   })
 
   it('offers removal over several rows and file commands over a file', () => {
@@ -219,23 +219,23 @@ describe('the window’s commands over a row', () => {
 
     expect(
       host.getPathCommands({ entry: entry('a.md'), isSeveral: true }).map((one) => one.id),
-    ).toStrictEqual(['remove'])
+    ).toStrictEqual(['app:note.trash'])
     const pdf = host.getPathCommands({ entry: entry('Heat.pdf', false), isSeveral: false })
-    expect(pdf.map((one) => one.id)).toStrictEqual(['copy', 'remove'])
+    expect(pdf.map((one) => one.id)).toStrictEqual(['app:note.copy-path', 'app:note.trash'])
   })
 
   it('run over the first path, with the rest as the others', () => {
     const { host, runCommand } = createCommands()
 
-    host.runPathCommand('remove', {
+    host.runPathCommand('app:note.trash', {
       paths: ['Lecture.mp3', 'b.md'],
       name: 'Lecture',
       isNote: false,
       isFolder: false,
     })
-    host.runPathCommand('remove', { paths: [], name: 'A', isNote: true, isFolder: false })
+    host.runPathCommand('app:note.trash', { paths: [], name: 'A', isNote: true, isFolder: false })
 
-    expect(runCommand).toHaveBeenNthCalledWith(1, 'remove', {
+    expect(runCommand).toHaveBeenNthCalledWith(1, 'app:note.trash', {
       ...target,
       path: 'Lecture.mp3',
       title: 'Lecture',

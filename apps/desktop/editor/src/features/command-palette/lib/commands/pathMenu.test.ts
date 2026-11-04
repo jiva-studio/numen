@@ -16,17 +16,17 @@ const getGroupedIds = (isNote: boolean): readonly string[] =>
 describe('the commands over a row standing for a file', () => {
   it('offer the note menu only on a note', () => {
     expect(getItemIds(true)).not.toStrictEqual(getItemIds(false))
-    expect(getItemIds(false)).toStrictEqual(['copy', 'remove'])
+    expect(getItemIds(false)).toStrictEqual(['app:note.copy-path', 'app:note.trash'])
   })
 
   it('offer the path and the removal, parted by a rule', () => {
-    expect(getGroupedIds(false)).toStrictEqual(['copy', '— remove'])
+    expect(getGroupedIds(false)).toStrictEqual(['app:note.copy-path', '— remove'])
   })
 
   it('offer only the removal over a selection of several', () => {
     expect(
       createPathCommands({ isNote: true, isFolder: false }, true).map((one) => one.id),
-    ).toStrictEqual(['remove'])
+    ).toStrictEqual(['app:note.trash'])
   })
 
   it('includes file menu contributions before copy and remove on a file that is no note', () => {
@@ -48,8 +48,8 @@ describe('the commands over a row standing for a file', () => {
     expect(items.map((one) => one.id)).toStrictEqual([
       'file-menu:create-text:whisper:',
       'file-menu:create-text:proofread:v1',
-      'copy',
-      'remove',
+      'app:note.copy-path',
+      'app:note.trash',
     ])
     expect(items[0]?.detail).toBe('Whisper')
     expect(items[1]?.detail).toBe('Claude')
@@ -58,22 +58,22 @@ describe('the commands over a row standing for a file', () => {
 
 describe('the commands over a note', () => {
   it('offers core note commands without plugin contributions', () => {
-    expect(getGroupedIds(true)).toStrictEqual(['read', '— copy', '— remove'])
+    expect(getGroupedIds(true)).toStrictEqual(['app:note.open', '— copy', '— remove'])
   })
 
   it('includes plugin contributions when provided', () => {
     const contributions = [
       { id: 'show', text: 'Show in the graph', group: 'open' },
-      { id: 'child', text: 'New child note', parentId: 'relation' },
-      { id: 'parent', text: 'New parent note', parentId: 'relation' },
-      { id: 'jump', text: 'New jump note', parentId: 'relation' },
+      { id: 'app:note.create-child', text: 'New child note', parentId: 'relation' },
+      { id: 'app:note.create-parent', text: 'New parent note', parentId: 'relation' },
+      { id: 'app:note.create-jump', text: 'New jump note', parentId: 'relation' },
       { id: 'question', text: 'Ask about it', group: 'chat' },
     ]
     const grouped = groupItems(
       createPathCommands({ isNote: true, isFolder: false }, false, contributions),
     )
     expect(grouped.map((one) => `${one.isRule ? '— ' : ''}${one.id}`)).toStrictEqual([
-      'read',
+      'app:note.open',
       'show',
       '— copy',
       '— relation',
@@ -81,6 +81,10 @@ describe('the commands over a note', () => {
       '— remove',
     ])
     const relationItem = grouped.find((one) => one.id === 'relation')
-    expect(relationItem?.children?.map((c) => c.id)).toStrictEqual(['child', 'parent', 'jump'])
+    expect(relationItem?.children?.map((c) => c.id)).toStrictEqual([
+      'app:note.create-child',
+      'app:note.create-parent',
+      'app:note.create-jump',
+    ])
   })
 })

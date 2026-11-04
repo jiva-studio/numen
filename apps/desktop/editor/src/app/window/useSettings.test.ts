@@ -67,7 +67,13 @@ describe('the settings as they are put together', () => {
   it('gives each setting a message writer under a name of its own', () => {
     const { writers } = createSettings()
 
-    expect(writers).toStrictEqual(['appearance', 'named', 'configured', 'keys', 'plugins'])
+    expect(writers).toStrictEqual([
+      'app:appearance.choose-theme',
+      'named',
+      'configured',
+      'keys',
+      'plugins',
+    ])
   })
 
   it('opens the settings tab as kind of tab', () => {
@@ -78,7 +84,7 @@ describe('the settings as they are put together', () => {
 
   it('puts the appearance away when it is put away', () => {
     const { settings } = createSettings()
-    const close = vi.spyOn(settings.appearance, 'close')
+    const close = vi.spyOn(settings.appearance, 'app:tab.close')
 
     settings.close()
 
@@ -129,17 +135,19 @@ describe('the lists the palette offers for a setting', () => {
   it('offers the three performance profiles, each with what it does', () => {
     const { settings } = createSettings()
 
-    expect(settings.paletteLists.getStepGroups('performanceProfile', '')).toStrictEqual([
-      {
-        id: 'performance',
-        title: WORDS.performance,
-        items: [
-          { id: 'eco', title: WORDS.eco, detail: WORDS.ecoDetail },
-          { id: 'balanced', title: WORDS.balanced, detail: WORDS.balancedDetail },
-          { id: 'maximum', title: WORDS.maximum, detail: WORDS.maximumDetail },
-        ],
-      },
-    ])
+    expect(settings.paletteLists.getStepGroups('app:performance.choose-profile', '')).toStrictEqual(
+      [
+        {
+          id: 'performance',
+          title: WORDS.performance,
+          items: [
+            { id: 'eco', title: WORDS.eco, detail: WORDS.ecoDetail },
+            { id: 'balanced', title: WORDS.balanced, detail: WORDS.balancedDetail },
+            { id: 'maximum', title: WORDS.maximum, detail: WORDS.maximumDetail },
+          ],
+        },
+      ],
+    )
   })
 
   it('offers nothing for a command that is over no setting', () => {
@@ -147,24 +155,26 @@ describe('the lists the palette offers for a setting', () => {
     vi.spyOn(settings.rest, 'getSetting').mockReturnValue('people/own-model')
     vi.spyOn(settings.rest, 'getModelsAt').mockReturnValue([model()])
 
-    expect(settings.paletteLists.getStepGroups('child', '')).toStrictEqual([])
+    expect(settings.paletteLists.getStepGroups('app:note.create-child', '')).toStrictEqual([])
   })
 
   it('offers the syncing switch the list its own setting holds', () => {
     const { settings } = createSettings()
 
-    expect(settings.paletteLists.getStepGroups('syncing', '')).toStrictEqual(
+    expect(settings.paletteLists.getStepGroups('app:note.choose-title-sync', '')).toStrictEqual(
       settings.sync.getSyncingGroups(),
     )
-    expect(settings.paletteLists.getStepGroups('syncing', '')[0]?.items).toHaveLength(2)
+    expect(
+      settings.paletteLists.getStepGroups('app:note.choose-title-sync', '')[0]?.items,
+    ).toHaveLength(2)
   })
 
   it('previews what the keyboard relies on in an appearance list, and nowhere else', () => {
     const { settings } = createSettings()
     const preview = vi.spyOn(settings.appearance, 'previewItem').mockImplementation(vi.fn())
 
-    settings.paletteLists.previewItem('syncing', 'off')
-    settings.paletteLists.previewItem('appearance', 'preset:dracula')
+    settings.paletteLists.previewItem('app:note.choose-title-sync', 'off')
+    settings.paletteLists.previewItem('app:appearance.choose-theme', 'preset:dracula')
 
     expect(preview.mock.calls).toStrictEqual([['preset:dracula']])
   })
@@ -394,10 +404,18 @@ describe('the settings tab', () => {
       },
     ])
 
-    expect(settings.paletteLists.getStepGroups('appearance', '').length).toBeGreaterThan(0)
-    expect(settings.paletteLists.getStepGroups('mode', '').length).toBeGreaterThan(0)
-    expect(settings.paletteLists.getStepGroups('interfaceScale', '').length).toBeGreaterThan(0)
-    expect(settings.paletteLists.getStepGroups('textScale', '').length).toBeGreaterThan(0)
+    expect(
+      settings.paletteLists.getStepGroups('app:appearance.choose-theme', '').length,
+    ).toBeGreaterThan(0)
+    expect(
+      settings.paletteLists.getStepGroups('app:appearance.choose-mode', '').length,
+    ).toBeGreaterThan(0)
+    expect(
+      settings.paletteLists.getStepGroups('app:appearance.choose-interface-size', '').length,
+    ).toBeGreaterThan(0)
+    expect(
+      settings.paletteLists.getStepGroups('app:appearance.choose-text-size', '').length,
+    ).toBeGreaterThan(0)
   })
 
   it('delegates settings tab installation actions, path choosing, plugin data, and error reporting', async () => {

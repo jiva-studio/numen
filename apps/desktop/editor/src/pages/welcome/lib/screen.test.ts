@@ -9,15 +9,16 @@ import { describe, expect, it } from 'vitest'
 import { keyChord } from '@numen/ui'
 import type { VaultList, Vault } from '@/entities/vault'
 import { findChordKeys } from '@/features/command-palette'
+import { COMMAND } from '@/shared/commandIds'
 import {
   COMMANDS,
-  SETTINGS,
   createVaultRows,
   createWelcomeActions,
   type CurrentVault,
   type Words,
 } from './screen'
 
+const SETTINGS = COMMAND.openSettings
 const APPLE = 'MacIntel'
 const LINUX = 'Linux x86_64'
 
@@ -81,9 +82,9 @@ describe('the ways into the vault', () => {
   it('are those of a vault that has been read, the commands of the plugins after the note', () => {
     const ways = createWelcomeActions(createCurrentVault(), words, APPLE, CONTRIBUTED)
     expect(ways.map((one) => one.id)).toStrictEqual([
-      'find',
+      COMMAND.searchVault,
       COMMANDS,
-      'note',
+      COMMAND.createNote,
       'plugin:graph',
       'plugin:chat',
       SETTINGS,
@@ -104,7 +105,12 @@ describe('the ways into the vault', () => {
 
   it('are those of the window alone where no plugin declares a command over the window', () => {
     const ways = createWelcomeActions(createCurrentVault(), words, APPLE)
-    expect(ways.map((one) => one.id)).toStrictEqual(['find', COMMANDS, 'note', SETTINGS])
+    expect(ways.map((one) => one.id)).toStrictEqual([
+      COMMAND.searchVault,
+      COMMANDS,
+      COMMAND.createNote,
+      SETTINGS,
+    ])
   })
 
   /** A note cannot be made in a vault that never opened. The rest stand. */
@@ -116,7 +122,7 @@ describe('the ways into the vault', () => {
       CONTRIBUTED,
     )
     expect(ways.map((one) => one.id)).toStrictEqual([
-      'find',
+      COMMAND.searchVault,
       COMMANDS,
       'plugin:graph',
       'plugin:chat',
@@ -140,16 +146,16 @@ describe('the keystroke drawn on a way', () => {
     )?.keys
 
   it('is the one the table binds to that command', () => {
-    expect(getKeys('note')).toStrictEqual(findChordKeys('note', APPLE))
+    expect(getKeys(COMMAND.createNote)).toStrictEqual(findChordKeys(COMMAND.createNote, APPLE))
     expect(getKeys('plugin:graph')).toStrictEqual(CONTRIBUTED[0]!.keys)
   })
 
   it('is the key the keyboard in hand holds', () => {
-    expect(getKeys('note', LINUX)).toStrictEqual({ icons: ['control'], letter: 'N' })
+    expect(getKeys(COMMAND.createNote, LINUX)).toStrictEqual({ icons: ['control'], letter: 'N' })
   })
 
   it('is the two the window keeps for itself, as the window passes them over', () => {
-    expect(getKeys('find')).toBe(words.findKeys)
+    expect(getKeys(COMMAND.searchVault)).toBe(words.findKeys)
     expect(getKeys(COMMANDS)).toBe(words.commandsKeys)
   })
 })

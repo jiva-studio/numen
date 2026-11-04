@@ -15,9 +15,9 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
   const options: CommandDepsOptions = {
     core: {
       rename: record('rename', 'renamed'),
-      remove: record('remove', 'removed'),
-      move: record('move', 'moved'),
-      createFolder: record('createFolder', 'folded'),
+      remove: record('app:note.trash', 'removed'),
+      move: record('app:file.move', 'moved'),
+      createFolder: record('app:folder.create', 'folded'),
     } as never,
     windowTabs: {
       openTabOfKind: (...args: unknown[]) => {
@@ -94,9 +94,9 @@ describe('the commands reach the window', () => {
     expect(calls).toStrictEqual([
       ['createWithTitle', 'Llama', 'Animals.md', null],
       ['rename', 'Llama.md', 'Alpaca'],
-      ['remove', 'Llama.md', true],
-      ['move', 'Llama.md', 'zoo/Llama.md'],
-      ['createFolder', 'zoo'],
+      ['app:note.trash', 'Llama.md', true],
+      ['app:file.move', 'Llama.md', 'zoo/Llama.md'],
+      ['app:folder.create', 'zoo'],
     ])
   })
 
@@ -112,10 +112,10 @@ describe('the commands reach the window', () => {
     const writeMessage = vi.fn()
     const { deps, calls } = createOptions({ writeMessage })
 
-    deps.navigator.openTab('settings')
+    deps.navigator.openTab('app:settings.open')
     deps.navigator.closeTab('tab-1')
     expect(calls).toStrictEqual([
-      ['openTabOfKind', 'settings'],
+      ['openTabOfKind', 'app:settings.open'],
       ['requestClose', 'tab-1'],
     ])
 
@@ -275,7 +275,7 @@ describe('useSettings step groups', () => {
       onSizeChanged: vi.fn(),
     })
 
-    const perfGroups = settings.paletteLists.getStepGroups('performanceProfile', '')
+    const perfGroups = settings.paletteLists.getStepGroups('app:performance.choose-profile', '')
     expect(perfGroups.length).toBe(1)
     expect(perfGroups[0]?.id).toBe('performance')
 

@@ -64,7 +64,7 @@ describe('a search that turned up nothing', () => {
 
   it('makes the note where the person is standing, under the words looked for', () => {
     expect(createNoteInvocation('creating', 'Entropy', front())).toStrictEqual({
-      id: 'note',
+      id: 'app:note.create',
       path: '',
       vault: { id: 'physics', name: 'Physics' },
       note: null,
@@ -86,9 +86,9 @@ describe('a search that turned up nothing', () => {
 
     expect(item?.actions?.map((one) => one.id)).toStrictEqual([
       CREATE_NOTE_ID,
-      'child',
-      'parent',
-      'jump',
+      'app:note.create-child',
+      'app:note.create-parent',
+      'app:note.create-jump',
     ])
     expect(item?.detail).toBe(front().title)
   })
@@ -105,16 +105,18 @@ describe('a search that turned up nothing', () => {
   })
 
   it('hangs the note off the one in front when a relation was chosen', () => {
-    expect(createNoteInvocation('child', 'Entropy', front())).toMatchObject({
-      id: 'child',
+    expect(createNoteInvocation('app:note.create-child', 'Entropy', front())).toMatchObject({
+      id: 'app:note.create-child',
       path: front().path,
       name: 'Entropy',
     })
   })
 
   it('remains the note on its own where a relation has no note to hang it off', () => {
-    expect(createNoteInvocation('child', 'Entropy', front({ path: '', title: '' }))).toMatchObject({
-      id: 'note',
+    expect(
+      createNoteInvocation('app:note.create-child', 'Entropy', front({ path: '', title: '' })),
+    ).toMatchObject({
+      id: 'app:note.create',
       path: '',
       name: 'Entropy',
     })
