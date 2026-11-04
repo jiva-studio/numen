@@ -206,6 +206,25 @@ describe('the window controls', () => {
     expect(title.compareDocumentPosition(close) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
+  it('name the toggle control by what it does next', () => {
+    expect(control(mountBar({ isMaximised: false }), 'toggle-maximise').attributes('title')).toBe(
+      'Maximise',
+    )
+    expect(control(mountBar({ isMaximised: true }), 'toggle-maximise').attributes('title')).toBe(
+      'Restore',
+    )
+  })
+
+  it('write the names of the buttons in the words it is given', () => {
+    const wrapper = mount(TitleBar, {
+      attachTo: document.body,
+      props: { appName: 'numen', words: { close: 'Schliessen' } },
+    })
+
+    expect(control(wrapper, 'close').attributes('title')).toBe('Schliessen')
+    expect(control(wrapper, 'minimise').attributes('title')).toBe('Minimise')
+  })
+
   it('show the restore icon while the window is maximised', () => {
     const wrapper = mountBar({ isMaximised: true })
 
@@ -375,6 +394,32 @@ describe('the actions that do not fit', () => {
 
     expect(shownIds(wrapper)).toStrictEqual(['a', 'b', 'c', 'd', 'e'])
     expect(wrapper.find('[data-title-bar-more]').exists()).toBe(false)
+  })
+
+  it('keep every action in the bar while the room is not measured', async () => {
+    slotWidth = 0
+    const wrapper = mountBar({
+      actions: ['a', 'b', 'c', 'd', 'e'].map((id) => action(id)),
+    })
+    await wrapper.vm.$nextTick()
+
+    expect(shownIds(wrapper)).toStrictEqual(['a', 'b', 'c', 'd', 'e'])
+    expect(wrapper.find('[data-title-bar-more]').exists()).toBe(false)
+  })
+
+  it('round the room down to a whole number of buttons', async () => {
+    const wrapper = await mountOverflowing(3.5)
+
+    expect(shownIds(wrapper)).toStrictEqual(['a', 'b'])
+  })
+
+  it('close the menu when the window grows enough for every action', async () => {
+    const wrapper = await mountOverflowing(3)
+    await wrapper.find('[data-title-bar-more]').trigger('click')
+
+    await resize(wrapper, 5)
+
+    expect(document.body.querySelector('[role="menu"]')).toBeNull()
   })
 
   it('move actions to the menu when the window shrinks', async () => {

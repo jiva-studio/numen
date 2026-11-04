@@ -36,6 +36,7 @@ const capacity = computed(() =>
     : Math.max(Math.floor(props.room / buttonWidth.value), 0),
 )
 const lists = computed(() => splitActions(props.actions, capacity.value))
+const isMenuOpen = computed(() => isOpen.value && lists.value.overflow.length > 0)
 const starts = computed(() => findGroupStarts(lists.value.visible))
 const items = computed<readonly MenuItem[]>(() =>
   lists.value.overflow.map(({ id, title, group }) => ({
@@ -109,7 +110,7 @@ function getIcon(id: string) {
       :at="anchor"
       :asking="triggerWidth"
       :from="more"
-      :is-open="isOpen"
+      :is-open="isMenuOpen"
       :name="words.more"
       @choose="onChoose"
       @dismiss="isOpen = false"
