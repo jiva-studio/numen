@@ -25,7 +25,8 @@ import { createNoteEditors } from '../tabs/useNoteEditors'
 import { useSettings } from './useSettings'
 import { useVaults } from './useVaults'
 import type { TabsHold } from '../commands/leaveVault'
-import { parseSavedTab, parseSavedTabs, useOpenTabs } from '../tabs/useOpenTabs'
+import { parseSavedTabs, useOpenTabs } from '../tabs/useOpenTabs'
+import type { MovedTab } from '../ports/vault'
 import { useCommands } from '../commands/useCommands'
 import { useDeclaredCommands } from '../commands/declaredCommands'
 import { useFileMenuCommands } from '../commands/fileMenuCommands'
@@ -108,15 +109,19 @@ interface AppLifecycleDeps {
   onLayoutStarted(): void
   /** Tab links session, started and closed with the window. */
   tabLinkSession: { start(): Promise<void>; close(): void }
+  /** Id of this window in the tab links of the core. */
+  windowId: string
+  /** Opens the tab of a detach and accepts it; runs in the background. */
+  openDetachedTab(moved: MovedTab): void
 }
 
 /** How long a vault with no saved tabs waits for the plugins that place tabs. */
 const NEW_VAULT_PLUGINS_WAIT_MS = 5_000
 
 /** Returns the tab of a pending detach, or null when the request fails or none is pending. */
-const readDetachedTab = async (tabId: string) => {
+const readDetachedTab = async (windowId: string, tabId: string) => {
   try {
-    return await core.readDetachedTab(tabId)
+    return await core.readDetachedTab(windowId, tabId)
   } catch {
     return null
   }
@@ -141,9 +146,11 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     const search = typeof globalThis.location !== 'undefined' ? globalThis.location.search : ''
     const params = search ? new URLSearchParams(search) : null
     const detachedId = params?.get('id')
-    const detachedTab = detachedId ? await readDetachedTab(detachedId) : null
-    if (detachedTab) {
-      windowTabs.openSavedTab(parseSavedTab(detachedTab))
+    if (detachedId) {
+      // A window made for a detach shows only that tab. With no detach to read, it opens no tab
+      // and closes; it does not restore the tabs of the main window.
+      const detached = await readDetachedTab(deps.windowId, detachedId)
+      if (detached) deps.openDetachedTab(detached)
       deps.onLayoutStarted()
       return
     }
@@ -455,14 +462,18 @@ function createStatusBar(
   })
 }
 
-/** Closes a tab; calls hold when the tab must stay open. The core unlinks tabs missing from the tab report. */
+/**
+ * Closes a tab; calls hold when the tab must stay open. Returns false when the tab stays open. The
+ * core unlinks tabs missing from the tab report.
+ */
 function createTabCloser(base: WindowCore) {
-  return (id: string, hold?: () => void) => {
+  return (id: string, hold?: () => void): boolean => {
     if (!base.windowTabs.releaseTab(id)) {
       hold?.()
-      return
+      return false
     }
     if (!hold) base.windowTabs.finishClose?.(id)
+    return true
   }
 }
 
@@ -485,6 +496,7 @@ interface WindowTabLinksDeps {
 /** Creates the tab links session, reports the tabs whenever they change, and opens tabs sent from other windows. */
 function createWindowTabLinks(base: WindowCore, deps: WindowTabLinksDeps) {
   const isMain = !isSecondaryWindow()
+  const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
   const getReport = () => getWindowReport(base.windowTabs, isMain)
   const onError = (error: unknown) =>
     base.writeMessage(`The tab links were not written: ${formatErrorMessage(error)}`, 'error')
@@ -494,12 +506,12 @@ function createWindowTabLinks(base: WindowCore, deps: WindowTabLinksDeps) {
     tabLinks: base.tabLinks,
     applySync: deps.tabSync.applySync,
     applyGroupPaths: deps.tabSync.applyGroupPaths,
-    openMovedTab: (tab) => runInBackground(openMovedTab(tab), onError),
+    openMovedTab: (moved) => runInBackground(openMovedTab(moved), onError),
     setHighlighted: (isOn) => {
       deps.isHighlighted.value = isOn
     },
     getReport,
-    wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+    wait,
     onError,
   })
   const openMovedTab = createMovedTabOpener({
@@ -507,6 +519,7 @@ function createWindowTabLinks(base: WindowCore, deps: WindowTabLinksDeps) {
     closeTab: deps.closeTab,
     acceptMove: session.acceptMove,
     focusWindow: () => focusWindow(),
+    wait,
     onError: (error) =>
       base.writeMessage(`The moved tab did not open: ${formatErrorMessage(error)}`, 'error'),
   })
@@ -520,7 +533,10 @@ function createWindowTabLinks(base: WindowCore, deps: WindowTabLinksDeps) {
       base.writeMessage(`The tab links stopped: ${formatErrorMessage(error)}`, 'error'),
     )
   })
-  return session
+  return {
+    ...session,
+    openMovedTab: (moved: MovedTab) => runInBackground(openMovedTab(moved), onError),
+  }
 }
 
 /** Closes a secondary window after its last tab closes. */
@@ -538,7 +554,7 @@ function closeWhenEmpty(base: WindowCore, isLayoutReady: Ref<boolean>) {
 function createWindowTabMoves(
   base: WindowCore,
   editing: WindowServices['editing'],
-  closeTab: (id: string) => void,
+  closeTab: (id: string) => boolean,
 ) {
   const notes = createCommandNotes(editing.reached, base.windowTabs)
   const mover = createTabMover({
@@ -552,11 +568,17 @@ function createWindowTabMoves(
   /** The mover writes its own errors; a failed highlight request is ignored. */
   const ignoreError = () => undefined
   type Point = { readonly x: number; readonly y: number }
+  // The core does not order requests, so each highlight waits for the previous one; an off
+  // request then cannot arrive before the on request it ends.
+  let lastHighlight: Promise<void> = Promise.resolve()
   return {
     windowId: base.windowId,
     isTabAsking: (id: string) => notes.asking(id),
-    highlightWindow: (windowId: string, isOn: boolean) =>
-      runInBackground(core.highlightWindow(windowId, isOn), ignoreError),
+    highlightWindow: (windowId: string, isOn: boolean) => {
+      lastHighlight = lastHighlight
+        .then(() => core.highlightWindow(windowId, isOn))
+        .catch(ignoreError)
+    },
     detachTab: (id: string, point: Point) =>
       runInBackground(mover.detachTab(id, point), ignoreError),
     detachTabAt: (id: string, point: Point) =>
@@ -610,6 +632,8 @@ export const useWindow = () => {
     arePluginsStarting: base.arePluginsStarting,
     writeMessage: base.writeMessage,
     tabLinkSession,
+    windowId: base.windowId,
+    openDetachedTab: tabLinkSession.openMovedTab,
     onLayoutStarted: () => {
       isLayoutReady.value = true
       isWritingTabs.value = !isSecondaryWindow()

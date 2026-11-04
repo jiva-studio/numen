@@ -96,13 +96,16 @@ vi.mock('@/app/vault', () => ({
     reportFlush: () => Promise.resolve(),
     detachTab: async () => {
       if (mockVaultState.detachError) throw new Error(mockVaultState.detachError)
+      return { ok: true as const, value: undefined }
     },
     watchTabLinks: pendingStream,
     cancelTabLinksWatch: async () => undefined,
     writeTabLinks: async () => undefined,
     syncTabPath: async () => undefined,
-    readDetachedTab: async (tabId: string) =>
-      mockVaultState.detachedTab?.id === tabId ? mockVaultState.detachedTab : null,
+    readDetachedTab: async (_windowId: string, tabId: string) =>
+      mockVaultState.detachedTab?.id === tabId
+        ? { tab: mockVaultState.detachedTab, moveId: 'move-1' }
+        : null,
     moveTab: async () => ({ ok: true, value: undefined }),
     acceptTabMove: async () => ({ ok: true, value: undefined }),
     highlightWindow: async () => undefined,

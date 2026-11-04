@@ -4,9 +4,15 @@
  */
 import { createFollower } from '@numen/ui'
 import type { Result } from '@numen/core-client'
-import type { Tab, useWindowTabs } from '@/entities/tab'
+import type { useWindowTabs } from '@/entities/tab'
 import type { TabLinkGroup, TabLinksState } from '@/features/tab-linking'
-import type { TabMoveError, TabPathSync, VaultPort, WindowTabsReport } from '../ports/vault'
+import type {
+  MovedTab,
+  TabMoveError,
+  TabPathSync,
+  VaultPort,
+  WindowTabsReport,
+} from '../ports/vault'
 
 /** How long a failed tab report waits before it is sent again. */
 export const REPORT_RETRY_MS = 2000
@@ -23,7 +29,7 @@ export interface TabLinkSessionDeps {
   /** Moves the tabs of this window to the path of each group of a snapshot. */
   readonly applyGroupPaths: (groups: readonly TabLinkGroup[]) => void
   /** Opens a tab that another window sends to this window. */
-  readonly openMovedTab: (tab: Tab) => void
+  readonly openMovedTab: (moved: MovedTab) => void
   /** Sets whether the window shows the highlight outline. */
   readonly setHighlighted: (isOn: boolean) => void
   /** Returns the linkable tabs and the window summary shown in the menus of other windows. */
@@ -83,8 +89,8 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
    * Sends AcceptTabMove once the pending reports are written, so that a report
    * made before the tab opened does not reach the core after the accept.
    */
-  const acceptMove = (tabId: string): Promise<Result<void, TabMoveError>> =>
-    reporting.then(() => deps.core.acceptTabMove(deps.windowId, tabId))
+  const acceptMove = (tabId: string, moveId: string): Promise<Result<void, TabMoveError>> =>
+    reporting.then(() => deps.core.acceptTabMove(deps.windowId, tabId, moveId))
 
   /** Reads the stream until close; reports the tabs again on each new stream. */
   const start = (): Promise<void> =>

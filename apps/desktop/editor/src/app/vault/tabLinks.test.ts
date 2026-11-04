@@ -72,7 +72,16 @@ describe('watchTabLinks', () => {
             },
           },
         },
-        { event: { case: 'movedTab', value: { ...ORBITS, $typeName: 'numen.v1.Tab' } } },
+        {
+          event: {
+            case: 'movedTab',
+            value: {
+              tab: { ...ORBITS, $typeName: 'numen.v1.Tab' },
+              moveId: 'move-1',
+              $typeName: 'numen.v1.MovedTab',
+            },
+          },
+        },
         { event: { case: 'highlight', value: { isOn: true } } },
         { event: { case: undefined } },
       ]),
@@ -100,7 +109,7 @@ describe('watchTabLinks', () => {
         },
       },
       { sync: { groupId: 'group-1', sourceTabId: 'plex:1', path: 'Orbits.md', title: 'Orbits' } },
-      { movedTab: ORBITS },
+      { movedTab: { tab: ORBITS, moveId: 'move-1' } },
       { isHighlighted: true },
       {},
     ])
@@ -157,19 +166,26 @@ describe('writeTabLinks', () => {
 })
 
 describe('tab move requests', () => {
-  it('reads a detached tab by id, and returns null when none is pending', async () => {
-    request.readDetachedTab.mockResolvedValueOnce({ tab: { ...ORBITS, $typeName: 'numen.v1.Tab' } })
+  it('reads a detached tab by window and id, and returns null when none is pending', async () => {
+    request.readDetachedTab.mockResolvedValueOnce({
+      tab: { ...ORBITS, $typeName: 'numen.v1.Tab' },
+      moveId: 'move-1',
+    })
     request.readDetachedTab.mockResolvedValueOnce({})
 
-    expect(await tabLinksCore.readDetachedTab('plex:1')).toStrictEqual(ORBITS)
-    expect(await tabLinksCore.readDetachedTab('plex:9')).toBeNull()
-    expect(request.readDetachedTab).toHaveBeenCalledWith({ tabId: 'plex:1' })
+    expect(await tabLinksCore.readDetachedTab('window-b', 'plex:1')).toStrictEqual({
+      tab: ORBITS,
+      moveId: 'move-1',
+    })
+    expect(await tabLinksCore.readDetachedTab('window-b', 'plex:9')).toBeNull()
+    expect(request.readDetachedTab).toHaveBeenCalledWith({ windowId: 'window-b', tabId: 'plex:1' })
   })
 
   it('sends MoveTab and converts the error code of the response', async () => {
     request.moveTab.mockResolvedValueOnce({ error: 0 })
     request.moveTab.mockResolvedValueOnce({ error: 1 })
     request.moveTab.mockResolvedValueOnce({ error: 2 })
+    request.moveTab.mockResolvedValueOnce({ error: 3 })
 
     expect(await tabLinksCore.moveTab('window-a', 'window-b', ORBITS)).toStrictEqual({
       ok: true,
@@ -183,6 +199,10 @@ describe('tab move requests', () => {
       ok: false,
       error: 'timeout',
     })
+    expect(await tabLinksCore.moveTab('window-a', 'window-b', ORBITS)).toStrictEqual({
+      ok: false,
+      error: 'not-owner',
+    })
     expect(request.moveTab).toHaveBeenCalledWith({
       windowId: 'window-a',
       targetWindowId: 'window-b',
@@ -193,11 +213,15 @@ describe('tab move requests', () => {
   it('sends AcceptTabMove and converts the error code of the response', async () => {
     request.acceptTabMove.mockResolvedValueOnce({ error: 2 })
 
-    expect(await tabLinksCore.acceptTabMove('window-b', 'plex:1')).toStrictEqual({
+    expect(await tabLinksCore.acceptTabMove('window-b', 'plex:1', 'move-1')).toStrictEqual({
       ok: false,
       error: 'timeout',
     })
-    expect(request.acceptTabMove).toHaveBeenCalledWith({ windowId: 'window-b', tabId: 'plex:1' })
+    expect(request.acceptTabMove).toHaveBeenCalledWith({
+      windowId: 'window-b',
+      tabId: 'plex:1',
+      moveId: 'move-1',
+    })
   })
 
   it('sends HighlightWindow for the target window', async () => {

@@ -151,7 +151,7 @@ func convertEventToWire(event tablinks.Event) *v1.WatchTabLinksResponse {
 		}}}
 	case event.Move != nil:
 		return &v1.WatchTabLinksResponse{Event: &v1.WatchTabLinksResponse_MovedTab{
-			MovedTab: convertMovedTabToWire(event.Move.Tab),
+			MovedTab: &v1.MovedTab{Tab: convertMovedTabToWire(event.Move.Tab), MoveId: event.Move.MoveID},
 		}}
 	case event.Highlight != nil:
 		return &v1.WatchTabLinksResponse{Event: &v1.WatchTabLinksResponse_Highlight{

@@ -250,7 +250,9 @@ func (h *workspaceHandler) ReadOpenTabs(
 	return connect.NewResponse(out), nil
 }
 
-// DetachTab stores a tab for ReadDetachedTab and opens a new window for it.
+// DetachTab stores a tab for ReadDetachedTab, opens a new window for it, and
+// responds after that window accepts the tab or the detach ends. A canceled
+// request ends the detach.
 func (h *workspaceHandler) DetachTab(
 	ctx context.Context, r *connect.Request[v1.DetachTabRequest],
 ) (*connect.Response[v1.DetachTabResponse], error) {
@@ -261,7 +263,7 @@ func (h *workspaceHandler) DetachTab(
 	if tab.ID == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("a tab id is required"))
 	}
-	h.state.TabLinks.Detach(tab)
+	result := h.state.TabLinks.Detach(tab)
 	if err := h.state.DetachTab(ctx, DetachedTab{
 		ID: tab.ID,
 		X:  int(r.Msg.GetX()),
@@ -270,7 +272,13 @@ func (h *workspaceHandler) DetachTab(
 		h.state.TabLinks.CancelDetach(tab.ID)
 		return nil, err
 	}
-	return connect.NewResponse(&v1.DetachTabResponse{}), nil
+	select {
+	case <-ctx.Done():
+		h.state.TabLinks.CancelDetach(tab.ID)
+		return nil, connect.NewError(connect.CodeCanceled, ctx.Err())
+	case outcome := <-result:
+		return connect.NewResponse(&v1.DetachTabResponse{Error: convertMoveErrorToWire(outcome)}), nil
+	}
 }
 
 // GetOpenTabs returns the open tabs as last reported by the window, or the

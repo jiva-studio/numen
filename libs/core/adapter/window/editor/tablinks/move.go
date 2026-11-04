@@ -1,6 +1,9 @@
 package tablinks
 
-import "time"
+import (
+	"strconv"
+	"time"
+)
 
 // MoveTimeout is how long a move waits for the target window to accept the tab.
 const MoveTimeout = 10 * time.Second
@@ -11,9 +14,11 @@ type MovedTab struct {
 	ID, Kind, Path, Title, State string
 }
 
-// TabMove is a tab sent to the window WindowID.
+// TabMove is a tab sent to the window WindowID. The window passes MoveID to
+// Accept.
 type TabMove struct {
 	WindowID string
+	MoveID   string
 	Tab      MovedTab
 }
 
@@ -21,6 +26,12 @@ type TabMove struct {
 func (r *Registry) isMovingInto(windowID, tabID string) bool {
 	pending, ok := r.pendingMoves[tabID]
 	return ok && pending.targetWindowID == windowID
+}
+
+// isDetachingInto reports whether a window read the pending detach of a tab.
+func (r *Registry) isDetachingInto(windowID, tabID string) bool {
+	pending, ok := r.pendingDetaches[tabID]
+	return ok && pending.windowID == windowID
 }
 
 // Highlight turns the outline of the window WindowID on or off.
@@ -41,10 +52,13 @@ const (
 	// MoveErrorTimeout is a target window that did not accept the tab within
 	// MoveTimeout, or an Accept for a move no longer pending.
 	MoveErrorTimeout
+	// MoveErrorNotOwner is a source window that does not own the tab.
+	MoveErrorNotOwner
 )
 
 // move is one pending move of a tab.
 type move struct {
+	id             string
 	targetWindowID string
 	result         chan MoveError
 	cancel         func() bool
@@ -53,7 +67,7 @@ type move struct {
 // Move sends a tab to another window and returns a channel that receives the
 // result once. The source window owns the tab until the target window calls
 // Accept. A newer move of the same tab ends the older one with
-// MoveErrorTimeout.
+// MoveErrorTimeout. A known tab moves only from the window that owns it.
 func (r *Registry) Move(sourceWindowID, targetWindowID string, tab MovedTab) <-chan MoveError {
 	result := make(chan MoveError, 1)
 	r.mu.Lock()
@@ -62,32 +76,86 @@ func (r *Registry) Move(sourceWindowID, targetWindowID string, tab MovedTab) <-c
 		result <- MoveErrorWindowClosed
 		return result
 	}
+	if known, ok := r.tabs[tab.ID]; ok && known.WindowID != sourceWindowID {
+		result <- MoveErrorNotOwner
+		return result
+	}
 	if previous, ok := r.pendingMoves[tab.ID]; ok {
 		r.endMove(tab.ID, previous, MoveErrorTimeout)
 	}
-	pending := &move{targetWindowID: targetWindowID, result: result}
+	pending := &move{id: r.createMoveID(), targetWindowID: targetWindowID, result: result}
 	r.pendingMoves[tab.ID] = pending
 	pending.cancel = r.schedule(MoveTimeout, func() { r.expireMove(tab.ID, pending) })
-	r.events.Publish(Event{Move: &TabMove{WindowID: targetWindowID, Tab: tab}})
+	r.events.Publish(Event{Move: &TabMove{WindowID: targetWindowID, MoveID: pending.id, Tab: tab}})
 	return result
 }
 
-// Accept completes the move of a tab into a window. A known tab changes owner
-// to that window and keeps its group.
-func (r *Registry) Accept(windowID, tabID string) MoveError {
+// Accept completes the move or the detach moveID of a tab into a window. A
+// known tab changes owner to that window and keeps its group. An Accept
+// repeated within the grace period after the move completed returns
+// MoveErrorNone again.
+func (r *Registry) Accept(windowID, tabID, moveID string) MoveError {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	pending, ok := r.pendingMoves[tabID]
-	if !ok || pending.targetWindowID != windowID {
+	if windowID == "" || moveID == "" {
 		return MoveErrorTimeout
 	}
-	if tab, isKnown := r.tabs[tabID]; isKnown {
-		r.setOwner(windowID, tab)
-		r.windows[windowID] = appendMissing(r.windows[windowID], tabID)
-		r.publishSnapshot()
+	if pending, ok := r.pendingMoves[tabID]; ok && pending.id == moveID && pending.targetWindowID == windowID {
+		r.takeTab(windowID, tabID)
+		r.endMove(tabID, pending, MoveErrorNone)
+		r.recordAcceptedMove(moveID, windowID)
+		return MoveErrorNone
 	}
-	r.endMove(tabID, pending, MoveErrorNone)
-	return MoveErrorNone
+	if pending, ok := r.pendingDetaches[tabID]; ok && pending.id == moveID && pending.windowID == windowID {
+		r.endDetach(tabID, pending, MoveErrorNone)
+		r.takeTab(windowID, tabID)
+		r.recordAcceptedMove(moveID, windowID)
+		return MoveErrorNone
+	}
+	if r.acceptedMoves[moveID] == windowID {
+		return MoveErrorNone
+	}
+	return MoveErrorTimeout
+}
+
+// takeTab makes a known tab a tab of the window.
+func (r *Registry) takeTab(windowID, tabID string) {
+	tab, isKnown := r.tabs[tabID]
+	if !isKnown {
+		return
+	}
+	r.setOwner(windowID, tab)
+	r.windows[windowID] = appendMissing(r.windows[windowID], tabID)
+	r.publishSnapshot()
+}
+
+// recordAcceptedMove keeps a completed move for a repeated Accept until the
+// grace period ends.
+func (r *Registry) recordAcceptedMove(moveID, windowID string) {
+	r.acceptedMoves[moveID] = windowID
+	r.schedule(r.grace, func() { r.forgetAcceptedMove(moveID) })
+}
+
+// CancelMove ends the pending move that result belongs to with
+// MoveErrorTimeout. A move that already ended is left as it is.
+func (r *Registry) CancelMove(tabID string, result <-chan MoveError) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if pending, ok := r.pendingMoves[tabID]; ok && (<-chan MoveError)(pending.result) == result {
+		r.endMove(tabID, pending, MoveErrorTimeout)
+	}
+}
+
+// createMoveID returns an id no earlier move or detach has.
+func (r *Registry) createMoveID() string {
+	r.nextMoveID++
+	return "move-" + strconv.Itoa(r.nextMoveID)
+}
+
+func (r *Registry) forgetAcceptedMove(moveID string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.acceptedMoves, moveID)
 }
 
 // Highlight turns the outline of a window on or off. A window with no watch
@@ -111,11 +179,17 @@ func (r *Registry) expireMove(tabID string, pending *move) {
 	}
 }
 
-// endMovesInto ends every move into a window that stopped watching.
+// endMovesInto ends every move into a window that stopped watching, and every
+// detach the window read.
 func (r *Registry) endMovesInto(windowID string) {
 	for tabID, pending := range r.pendingMoves {
 		if pending.targetWindowID == windowID {
 			r.endMove(tabID, pending, MoveErrorWindowClosed)
+		}
+	}
+	for tabID, pending := range r.pendingDetaches {
+		if pending.windowID == windowID {
+			r.endDetach(tabID, pending, MoveErrorWindowClosed)
 		}
 	}
 }

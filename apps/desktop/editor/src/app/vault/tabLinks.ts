@@ -73,9 +73,10 @@ const moveErrors: Record<TabMoveErrorCodeValue, TabMoveError | null> = {
   [TAB_MOVE_ERROR_CODE.UNSPECIFIED]: null,
   [TAB_MOVE_ERROR_CODE.WINDOW_CLOSED]: 'window-closed',
   [TAB_MOVE_ERROR_CODE.TIMEOUT]: 'timeout',
+  [TAB_MOVE_ERROR_CODE.NOT_OWNER]: 'not-owner',
 }
 
-const parseMoveError = (code: TabMoveErrorCodeValue): Result<void, TabMoveError> => {
+export const parseMoveError = (code: TabMoveErrorCodeValue): Result<void, TabMoveError> => {
   const error = moveErrors[code]
   return error ? asFailure(error) : asValue(undefined)
 }
@@ -89,7 +90,8 @@ export const tabLinksCore: TabLinksCore = {
         const { groupId, sourceTabId, path, title } = event.value
         yield { sync: { groupId, sourceTabId, path, title } }
       } else if (event.case === 'movedTab') {
-        yield { movedTab: parseTab(event.value) }
+        const { tab, moveId } = event.value
+        yield tab ? { movedTab: { tab: parseTab(tab), moveId } } : {}
       } else if (event.case === 'highlight') {
         yield { isHighlighted: event.value.isOn }
       } else {
@@ -120,16 +122,16 @@ export const tabLinksCore: TabLinksCore = {
   syncTabPath: async (sync) => {
     await workspace.syncTabPath(sync)
   },
-  readDetachedTab: async (tabId) => {
-    const { tab } = await workspace.readDetachedTab({ tabId })
-    return tab ? parseTab(tab) : null
+  readDetachedTab: async (windowId, tabId) => {
+    const { tab, moveId } = await workspace.readDetachedTab({ windowId, tabId })
+    return tab ? { tab: parseTab(tab), moveId } : null
   },
   moveTab: async (windowId, targetWindowId, tab) => {
     const { error } = await workspace.moveTab({ windowId, targetWindowId, tab: { ...tab } })
     return parseMoveError(error)
   },
-  acceptTabMove: async (windowId, tabId) => {
-    const { error } = await workspace.acceptTabMove({ windowId, tabId })
+  acceptTabMove: async (windowId, tabId, moveId) => {
+    const { error } = await workspace.acceptTabMove({ windowId, tabId, moveId })
     return parseMoveError(error)
   },
   highlightWindow: async (windowId, isOn) => {

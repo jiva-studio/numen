@@ -78,7 +78,11 @@ message DetachTabRequest {
   int32 y = 3;
 }
 
-message DetachTabResponse {}
+message DetachTabResponse {
+  // Unspecified after the new window accepts the tab. On any other value the
+  // source window keeps the tab.
+  TabMoveErrorCode error = 1;
+}
 
 message WatchFocusRequest {}
 
@@ -150,8 +154,8 @@ message WatchTabLinksResponse {
     TabPathSync sync = 2;
 
     // A tab sent to the watching window. The window opens it with its id and
-    // saved state, and calls AcceptTabMove.
-    Tab moved_tab = 3;
+    // saved state, and calls AcceptTabMove with the move id.
+    MovedTab moved_tab = 3;
 
     // Whether the watching window shows the highlight outline.
     WindowHighlight highlight = 4;
@@ -267,11 +271,18 @@ message SyncTabPathResponse {}
 
 message ReadDetachedTabRequest {
   string tab_id = 1;
+
+  // The window that opens the tab. The first window that reads a detach owns
+  // it; other windows read no tab.
+  string window_id = 2;
 }
 
 message ReadDetachedTabResponse {
-  // Unset where no detach of the tab is pending.
+  // Unset where no detach of the tab is pending for the window.
   Tab tab = 1;
+
+  // The id the window passes to AcceptTabMove after it opens the tab.
+  string move_id = 2;
 }
 
 message MoveTabRequest {
@@ -295,6 +306,15 @@ message AcceptTabMoveRequest {
   // The window that opened the tab.
   string window_id = 1;
   string tab_id = 2;
+
+  // The move_id of the MovedTab event or of ReadDetachedTabResponse.
+  string move_id = 3;
+}
+
+// MovedTab is a tab sent to a window by MoveTab, and the id of that move.
+message MovedTab {
+  Tab tab = 1;
+  string move_id = 2;
 }
 
 message AcceptTabMoveResponse {
@@ -315,6 +335,10 @@ enum TabMoveErrorCode {
   // TAB_MOVE_ERROR_CODE_TIMEOUT is a target window that did not open the tab in
   // time, or an AcceptTabMove for a move no longer pending.
   TAB_MOVE_ERROR_CODE_TIMEOUT = 2;
+
+  // TAB_MOVE_ERROR_CODE_NOT_OWNER is a source window that does not own the tab;
+  // another window reported it first.
+  TAB_MOVE_ERROR_CODE_NOT_OWNER = 3;
 }
 
 message HighlightWindowRequest {

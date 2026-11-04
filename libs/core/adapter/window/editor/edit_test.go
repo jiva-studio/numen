@@ -558,12 +558,13 @@ func newTabLinks(t *testing.T) *tablinks.Registry {
 
 func TestDetachTabInvokesState(t *testing.T) {
 	var got DetachedTab
-	state := &State{
-		DetachTab: func(_ context.Context, tab DetachedTab) error {
-			got = tab
-			return nil
-		},
-		TabLinks: newTabLinks(t),
+	state := &State{TabLinks: newTabLinks(t)}
+	state.DetachTab = func(_ context.Context, tab DetachedTab) error {
+		got = tab
+		// The new window reads and accepts the tab, so DetachTab responds.
+		_, moveID, _ := state.TabLinks.ReadDetached("window-b", tab.ID)
+		state.TabLinks.Accept("window-b", tab.ID, moveID)
+		return nil
 	}
 	api := &workspaceHandler{state: state}
 

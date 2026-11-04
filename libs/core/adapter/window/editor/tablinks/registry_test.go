@@ -205,7 +205,7 @@ func TestCloseKeepsTabsOfWindowWithAnotherWatch(t *testing.T) {
 	}
 }
 
-func TestDetachKeepsLinksWhenNewWindowReportsTab(t *testing.T) {
+func TestDetachKeepsLinksWhenNewWindowAcceptsTab(t *testing.T) {
 	r, clock := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
@@ -215,7 +215,9 @@ func TestDetachKeepsLinksWhenNewWindowReportsTab(t *testing.T) {
 	if len(r.GetSnapshot().Groups) != 1 {
 		t.Fatalf("the detached tab left its group before the grace period ended")
 	}
+	detachID := readDetachID(r, "window-b", "plex:2")
 	writeTabs(r, "window-b", []Tab{plex("plex:2", "B")})
+	r.Accept("window-b", "plex:2", detachID)
 	clock.fireAll()
 
 	got := r.GetSnapshot()
@@ -423,7 +425,9 @@ func TestDetachIgnoresStaleOldWindowReportAfterNewWindow(t *testing.T) {
 	r.Link("plex:1", "plex:2")
 	r.Detach(MovedTab{ID: "plex:2", Kind: "plex"})
 
+	detachID := readDetachID(r, "window-b", "plex:2")
 	writeTabs(r, "window-b", []Tab{plex("plex:2", "B")})
+	r.Accept("window-b", "plex:2", detachID)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A")})
 	clock.fireAll()
@@ -445,7 +449,9 @@ func TestDetachSurvivesOldWindowReportBeforeNewWindow(t *testing.T) {
 
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A")})
+	detachID := readDetachID(r, "window-b", "plex:2")
 	writeTabs(r, "window-b", []Tab{plex("plex:2", "B")})
+	r.Accept("window-b", "plex:2", detachID)
 	clock.fireAll()
 
 	got := r.GetSnapshot()
@@ -658,7 +664,10 @@ func TestConcurrentWatchWriteDetachMoveAndCloseDoNotRace(t *testing.T) {
 				r.Detach(MovedTab{ID: own.ID, Kind: own.Kind})
 				r.Unlink(own.ID)
 				r.Move(window, "window-0", MovedTab{ID: own.ID, Kind: own.Kind})
-				r.Accept("window-0", own.ID)
+				r.Accept("window-0", own.ID, getMoveID(r, own.ID))
+				if _, detachID, ok := r.ReadDetached(window, own.ID); ok {
+					r.Accept(window, own.ID, detachID)
+				}
 				r.Highlight("window-0", true)
 			}
 			r.Cancel(window)

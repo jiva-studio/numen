@@ -70,15 +70,23 @@ export interface VaultPort {
   reportFlush(token: string, outcome?: 'written' | 'asking'): Promise<void>
   /**
    * Opens a tab in a new window at a screen point. The new window reads the tab and its saved
-   * state by id and reuses the id, so the tab keeps its links.
+   * state by id and reuses the id, so the tab keeps its links. Resolves after the new window
+   * accepts the tab.
    */
-  detachTab(tab: Tab, position: { x: number; y: number }): Promise<void>
-  /** Returns the tab of a pending detach, or null when no detach of the tab is pending. */
-  readDetachedTab(tabId: string): Promise<Tab | null>
+  detachTab(tab: Tab, position: { x: number; y: number }): Promise<Result<void, TabMoveError>>
+  /**
+   * Returns the tab of a pending detach to the first window that reads it, or null when no detach
+   * of the tab is pending for the window.
+   */
+  readDetachedTab(windowId: string, tabId: string): Promise<MovedTab | null>
   /** Sends a tab to another open window. Resolves after the target window accepts the tab. */
   moveTab(windowId: string, targetWindowId: string, tab: Tab): Promise<Result<void, TabMoveError>>
   /** Reports that this window opened a moved tab. On an error the window closes the tab. */
-  acceptTabMove(windowId: string, tabId: string): Promise<Result<void, TabMoveError>>
+  acceptTabMove(
+    windowId: string,
+    tabId: string,
+    moveId: string,
+  ): Promise<Result<void, TabMoveError>>
   /** Turns the outline of a window on or off. */
   highlightWindow(windowId: string, isOn: boolean): Promise<void>
   /**
@@ -96,7 +104,13 @@ export interface VaultPort {
 }
 
 /** Why a move of a tab to another window did not complete. */
-export type TabMoveError = 'window-closed' | 'timeout'
+export type TabMoveError = 'window-closed' | 'timeout' | 'not-owner'
+
+/** A tab sent to this window, and the id of the move that AcceptTabMove names. */
+export interface MovedTab {
+  readonly tab: Tab
+  readonly moveId: string
+}
 
 /** Linkable tabs open in a window, and the window summary shown in the menus of other windows. */
 export interface WindowTabsReport {
@@ -117,7 +131,7 @@ export interface TabLinksEvent {
   readonly links?: TabLinksSnapshot
   readonly sync?: TabPathSync
   /** A tab that another window sends to this window. */
-  readonly movedTab?: Tab
+  readonly movedTab?: MovedTab
   /** Whether this window shows the highlight outline. */
   readonly isHighlighted?: boolean
 }

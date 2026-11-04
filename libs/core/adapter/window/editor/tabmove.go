@@ -10,7 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/tablinks"
 )
 
-// ReadDetachedTab returns the tab of a pending detach, with the state its kind saved.
+// ReadDetachedTab returns the tab of a pending detach, with the state its kind
+// saved, to the first window that reads it.
 func (h *workspaceHandler) ReadDetachedTab(
 	_ context.Context, r *connect.Request[v1.ReadDetachedTabRequest],
 ) (*connect.Response[v1.ReadDetachedTabResponse], error) {
@@ -18,14 +19,16 @@ func (h *workspaceHandler) ReadDetachedTab(
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoTabLinks)
 	}
 	out := &v1.ReadDetachedTabResponse{}
-	if tab, ok := h.state.TabLinks.ReadDetached(r.Msg.GetTabId()); ok {
+	if tab, moveID, ok := h.state.TabLinks.ReadDetached(r.Msg.GetWindowId(), r.Msg.GetTabId()); ok {
 		out.Tab = convertMovedTabToWire(tab)
+		out.MoveId = moveID
 	}
 	return connect.NewResponse(out), nil
 }
 
 // MoveTab sends a tab to another window and responds after the target window
-// accepts it, its watch closes, or the move times out.
+// accepts it, its watch closes, or the move times out. A canceled request ends
+// the move, so the target window cannot accept it afterwards.
 func (h *workspaceHandler) MoveTab(
 	ctx context.Context, r *connect.Request[v1.MoveTabRequest],
 ) (*connect.Response[v1.MoveTabResponse], error) {
@@ -35,9 +38,11 @@ func (h *workspaceHandler) MoveTab(
 	if r.Msg.GetWindowId() == "" || r.Msg.GetTargetWindowId() == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoWindowID)
 	}
-	result := h.state.TabLinks.Move(r.Msg.GetWindowId(), r.Msg.GetTargetWindowId(), convertMovedTabFromWire(r.Msg.GetTab()))
+	tab := convertMovedTabFromWire(r.Msg.GetTab())
+	result := h.state.TabLinks.Move(r.Msg.GetWindowId(), r.Msg.GetTargetWindowId(), tab)
 	select {
 	case <-ctx.Done():
+		h.state.TabLinks.CancelMove(tab.ID, result)
 		return nil, connect.NewError(connect.CodeCanceled, ctx.Err())
 	case outcome := <-result:
 		return connect.NewResponse(&v1.MoveTabResponse{Error: convertMoveErrorToWire(outcome)}), nil
@@ -51,7 +56,7 @@ func (h *workspaceHandler) AcceptTabMove(
 	if h.state.TabLinks == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoTabLinks)
 	}
-	outcome := h.state.TabLinks.Accept(r.Msg.GetWindowId(), r.Msg.GetTabId())
+	outcome := h.state.TabLinks.Accept(r.Msg.GetWindowId(), r.Msg.GetTabId(), r.Msg.GetMoveId())
 	return connect.NewResponse(&v1.AcceptTabMoveResponse{Error: convertMoveErrorToWire(outcome)}), nil
 }
 
@@ -72,6 +77,8 @@ func convertMoveErrorToWire(outcome tablinks.MoveError) v1.TabMoveErrorCode {
 		return v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_WINDOW_CLOSED
 	case tablinks.MoveErrorTimeout:
 		return v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_TIMEOUT
+	case tablinks.MoveErrorNotOwner:
+		return v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_NOT_OWNER
 	default:
 		return v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_UNSPECIFIED
 	}

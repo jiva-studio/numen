@@ -29,11 +29,14 @@ const SYNC = { groupId: 'group-1', sourceTabId: 'plex:2', path: 'Tides.md', titl
 const OPEN_TABS = [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }]
 const WINDOW = { isMain: true, activeTitle: 'Orbits', activeKind: 'plex', tabCount: 1 }
 const MOVED_TAB = {
-  id: 'plex:2',
-  kind: 'plex',
-  path: 'notes/Tides.md',
-  title: 'Tides',
-  state: '{"focus":"Moon"}',
+  tab: {
+    id: 'plex:2',
+    kind: 'plex',
+    path: 'notes/Tides.md',
+    title: 'Tides',
+    state: '{"focus":"Moon"}',
+  },
+  moveId: 'move-1',
 }
 
 /** Returns a stream that yields the events, then waits until the signal aborts. */
@@ -51,7 +54,7 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
     }),
     cancelTabLinksWatch: vi.fn((_windowId: string) => Promise.resolve()),
     writeTabLinks: vi.fn((_windowId: string, _change: unknown) => Promise.resolve()),
-    acceptTabMove: vi.fn((_windowId: string, _tabId: string) =>
+    acceptTabMove: vi.fn((_windowId: string, _tabId: string, _moveId: string) =>
       Promise.resolve({ ok: true as const, value: undefined }),
     ),
   }
@@ -226,7 +229,10 @@ describe('a failed tab report', () => {
 
     await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(2))
     expect(deps.wait).toHaveBeenCalledWith(REPORT_RETRY_MS)
-    expect(core.writeTabLinks.mock.calls[1]).toStrictEqual(['window-a', { tabs: OPEN_TABS, window: WINDOW }])
+    expect(core.writeTabLinks.mock.calls[1]).toStrictEqual([
+      'window-a',
+      { tabs: OPEN_TABS, window: WINDOW },
+    ])
   })
 
   it('is replaced by a newer report made during the retry delay', async () => {
@@ -319,20 +325,39 @@ describe('stream events for this window', () => {
     )
 
     session.reportTabs()
-    const accepted = session.acceptMove('plex:2')
+    const accepted = session.acceptMove('plex:2', 'move-1')
     await new Promise((resolve) => setTimeout(resolve, 0))
     expect(core.acceptTabMove).not.toHaveBeenCalled()
     finishReport()
 
     expect(await accepted).toStrictEqual({ ok: true, value: undefined })
-    expect(core.acceptTabMove).toHaveBeenCalledExactlyOnceWith('window-a', 'plex:2')
+    expect(core.acceptTabMove).toHaveBeenCalledExactlyOnceWith('window-a', 'plex:2', 'move-1')
+  })
+
+  it('sends AcceptTabMove after a failed report is sent again', async () => {
+    const { deps, core, session } = setup([])
+    core.writeTabLinks.mockRejectedValueOnce(new Error('the core is gone'))
+    let endDelay = (): void => undefined
+    deps.wait.mockImplementationOnce(() => new Promise<void>((resolve) => (endDelay = resolve)))
+
+    session.reportTabs()
+    const accepted = session.acceptMove('plex:2', 'move-1')
+    await vi.waitFor(() => expect(deps.wait).toHaveBeenCalledOnce())
+    expect(core.acceptTabMove).not.toHaveBeenCalled()
+    endDelay()
+
+    expect(await accepted).toStrictEqual({ ok: true, value: undefined })
+    expect(core.writeTabLinks).toHaveBeenCalledTimes(2)
+    expect(core.writeTabLinks.mock.invocationCallOrder[1]).toBeLessThan(
+      core.acceptTabMove.mock.invocationCallOrder[0] ?? 0,
+    )
   })
 
   it('sends later tab reports when AcceptTabMove fails', async () => {
     const { core, session } = setup([])
     core.acceptTabMove.mockRejectedValueOnce(new Error('the core is gone'))
 
-    await expect(session.acceptMove('plex:2')).rejects.toThrow('the core is gone')
+    await expect(session.acceptMove('plex:2', 'move-1')).rejects.toThrow('the core is gone')
     session.reportTabs()
 
     await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledOnce())

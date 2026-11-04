@@ -114,7 +114,11 @@ type Registry struct {
 	pendingWindowRemovals map[string]*expiry
 	// pendingMoves holds the pending moves by tab id.
 	pendingMoves map[string]*move
-	watches      map[string][]*Watch
+	nextMoveID   int
+	// acceptedMoves maps the id of each move completed within the grace period to
+	// its target window, so that a repeated Accept succeeds.
+	acceptedMoves map[string]string
+	watches       map[string][]*Watch
 }
 
 // NewRegistry returns an empty registry. A detached tab that no window reports
@@ -142,6 +146,7 @@ func NewRegistry(grace time.Duration, schedule Schedule) (*Registry, error) {
 		pendingDetaches:       map[string]*detach{},
 		pendingWindowRemovals: map[string]*expiry{},
 		pendingMoves:          map[string]*move{},
+		acceptedMoves:         map[string]string{},
 		watches:               map[string][]*Watch{},
 	}, nil
 }
@@ -280,9 +285,9 @@ func (r *Registry) GetSnapshot() Snapshot {
 // WriteTabs stores the report of a window and its linkable tabs. A report from
 // a window with no live watch is ignored. A tab of the window missing from the
 // list is unlinked unless it has a pending detach. A tab of another live window
-// is reassigned to this window during a detach or by Accept. Outside a detach,
-// and outside a pending move into this window, it is claimed: it moves to this
-// window when the last watch of its owner closes.
+// moves to this window only by Accept. Outside a pending move or detach into
+// this window, it is claimed: it moves to this window when the last watch of
+// its owner closes.
 func (r *Registry) WriteTabs(window Window, tabs []Tab) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -301,7 +306,7 @@ func (r *Registry) WriteTabs(window Window, tabs []Tab) {
 		switch {
 		case r.acceptTab(windowID, one):
 			reported = append(reported, one.ID)
-		case !r.isMovingInto(windowID, one.ID):
+		case !r.isMovingInto(windowID, one.ID) && !r.isDetachingInto(windowID, one.ID):
 			claimed = append(claimed, one)
 		}
 	}
@@ -323,7 +328,7 @@ func (r *Registry) acceptTab(windowID string, tab Tab) bool {
 	case !isKnown:
 		r.tabOrder = append(r.tabOrder, tab.ID)
 	case previous.WindowID == windowID:
-	case r.pendingDetaches[tab.ID] == nil && len(r.watches[previous.WindowID]) > 0:
+	case len(r.watches[previous.WindowID]) > 0:
 		return false
 	}
 	r.setOwner(windowID, tab)
@@ -340,8 +345,13 @@ func (r *Registry) setOwner(windowID string, tab Tab) {
 		return
 	}
 	if pending, ok := r.pendingDetaches[tab.ID]; ok {
-		pending.cancel()
-		delete(r.pendingDetaches, tab.ID)
+		outcome := MoveErrorTimeout
+		if pending.windowID == windowID {
+			// The window that read the detach still calls Accept.
+			outcome = MoveErrorNone
+			r.recordAcceptedMove(pending.id, windowID)
+		}
+		r.endDetach(tab.ID, pending, outcome)
 	}
 	r.windows[previous.WindowID] = slices.DeleteFunc(r.windows[previous.WindowID], func(id string) bool { return id == tab.ID })
 }
@@ -391,35 +401,50 @@ func (r *Registry) Unlink(tabID string) {
 }
 
 // Detach stores a tab for ReadDetached and keeps the tab in its group while it
-// moves to a new window. A tab that no window reports within the grace period
-// is dropped and unlinked.
-func (r *Registry) Detach(tab MovedTab) {
+// moves to a new window. It returns a channel that receives the result once:
+// MoveErrorNone when the window that read the tab calls Accept. A tab that no
+// window reports within the grace period is dropped and unlinked.
+func (r *Registry) Detach(tab MovedTab) <-chan MoveError {
+	result := make(chan MoveError, 1)
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if previous, ok := r.pendingDetaches[tab.ID]; ok {
-		previous.cancel()
+		r.endDetach(tab.ID, previous, MoveErrorTimeout)
 	}
-	pending := &detach{tab: tab}
+	pending := &detach{id: r.createMoveID(), tab: tab, result: result}
 	r.pendingDetaches[tab.ID] = pending
 	pending.cancel = r.schedule(r.grace, func() { r.expireDetach(tab.ID, pending) })
+	return result
 }
 
-// ReadDetached returns the tab of a pending detach.
-func (r *Registry) ReadDetached(tabID string) (MovedTab, bool) {
+// ReadDetached returns the tab and the move id of a pending detach to the
+// first window that reads it, and again to that window only.
+func (r *Registry) ReadDetached(windowID, tabID string) (MovedTab, string, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	pending, ok := r.pendingDetaches[tabID]
-	if !ok {
-		return MovedTab{}, false
+	if !ok || windowID == "" || (pending.windowID != "" && pending.windowID != windowID) {
+		return MovedTab{}, "", false
 	}
-	return pending.tab, true
+	pending.windowID = windowID
+	return pending.tab, pending.id, true
 }
 
-// detach is a pending detach: the tab with its saved state and the cancel
-// function of its expiry.
+// detach is a pending detach: the tab with its saved state, the window that
+// read it, the id that window passes to Accept, the channel of its result and
+// the cancel function of its expiry.
 type detach struct {
-	tab    MovedTab
-	cancel func() bool
+	id       string
+	tab      MovedTab
+	windowID string
+	result   chan MoveError
+	cancel   func() bool
+}
+
+func (r *Registry) endDetach(tabID string, pending *detach, outcome MoveError) {
+	pending.cancel()
+	delete(r.pendingDetaches, tabID)
+	pending.result <- outcome
 }
 
 // expiry is a pending removal of a window and the cancel func of its run.
@@ -434,8 +459,7 @@ func (r *Registry) CancelDetach(tabID string) {
 	if !ok {
 		return
 	}
-	pending.cancel()
-	delete(r.pendingDetaches, tabID)
+	r.endDetach(tabID, pending, MoveErrorTimeout)
 	r.dropUnreportedTab(tabID)
 }
 
@@ -447,7 +471,7 @@ func (r *Registry) expireDetach(tabID string, pending *detach) {
 	if r.pendingDetaches[tabID] != pending {
 		return
 	}
-	delete(r.pendingDetaches, tabID)
+	r.endDetach(tabID, pending, MoveErrorTimeout)
 	r.dropUnreportedTab(tabID)
 }
 
