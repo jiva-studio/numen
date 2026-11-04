@@ -86,6 +86,9 @@ func TestTwoWindowsWatchOneGroupAndEachPathSync(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer testsupport.Close(t, second)
+	if !first.Receive() || !second.Receive() {
+		t.Fatal("a watch sent no snapshot")
+	}
 
 	writeTabs(t, client, "window-a", &v1.LinkableTab{Id: "plex:1", Kind: "plex", Title: "Orbits"})
 	writeTabs(t, client, "window-b", &v1.LinkableTab{Id: "files:1", Kind: "files", Title: "Files"})
@@ -119,6 +122,8 @@ func TestTwoWindowsWatchOneGroupAndEachPathSync(t *testing.T) {
 func TestADetachedTabKeepsItsGroupInTheNewWindow(t *testing.T) {
 	state := &State{DetachTab: func(context.Context, DetachedTab) error { return nil }}
 	client := newTabLinksClient(t, state)
+	openWatch(t, client, "window-a")
+	openWatch(t, client, "window-b")
 	writeTabs(t, client, "window-a",
 		&v1.LinkableTab{Id: "plex:1", Kind: "plex", Title: "Orbits"},
 		&v1.LinkableTab{Id: "plex:2", Kind: "plex", Title: "Tides"})
@@ -146,6 +151,10 @@ func TestCancelWatchTabLinksEndsTheStreamAndDropsTheWindowsTabs(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer testsupport.Close(t, stream)
+	if !stream.Receive() {
+		t.Fatal("the watch sent no snapshot")
+	}
+	openWatch(t, client, "window-a")
 	writeTabs(t, client, "window-a", &v1.LinkableTab{Id: "plex:1", Kind: "plex"})
 	writeTabs(t, client, "window-b", &v1.LinkableTab{Id: "files:1", Kind: "files"})
 	linkTabs(t, client, "plex:1", "files:1")
@@ -187,5 +196,21 @@ func TestTabLinksAreUnimplementedWithoutARegistry(t *testing.T) {
 	_, err := api.WriteTabLinks(t.Context(), connect.NewRequest(&v1.WriteTabLinksRequest{WindowId: "window-a"}))
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Errorf("got %v, want unimplemented", err)
+	}
+}
+
+// openWatch watches the tab links as a window until the test ends, and returns
+// once the first snapshot has arrived.
+func openWatch(t *testing.T, client numenv1connect.WorkspaceServiceClient, windowID string) {
+	t.Helper()
+	ctx, cancel := context.WithCancel(t.Context())
+	t.Cleanup(cancel)
+	stream, err := client.WatchTabLinks(ctx, connect.NewRequest(&v1.WatchTabLinksRequest{WindowId: windowID}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { testsupport.Close(t, stream) })
+	if !stream.Receive() {
+		t.Fatalf("the watch of %s sent no snapshot: %v", windowID, stream.Err())
 	}
 }

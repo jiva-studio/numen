@@ -25,7 +25,9 @@ export function useTabLinkMenu(deps: TabLinkMenuDeps) {
   const getKind = (tab: TabId): string | undefined =>
     deps.getKind(tab) ?? deps.tabLinks.tabs.find((one) => one.id === tab)?.kind
   const isLinkable = (tab: TabId): boolean =>
-    deps.isLinkable(tab) || deps.tabLinks.tabs.some((one) => one.id === tab)
+    deps.getTabs().some((one) => one.id === tab)
+      ? deps.isLinkable(tab)
+      : deps.tabLinks.tabs.some((one) => one.id === tab)
 
   const eligibleTabs = computed(() =>
     tabId.value === null

@@ -14,6 +14,9 @@ import (
 // maxColorIndex is the number of group colors; groups past it share colors.
 const maxColorIndex = 4
 
+// maxPendingEvents bounds the events waiting for one watch.
+const maxPendingEvents = 1024
+
 // Tab is a linkable tab a window has open.
 type Tab struct {
 	ID, Kind, Title string
@@ -78,7 +81,9 @@ func NewRegistry(grace time.Duration, schedule Schedule) *Registry {
 		events: broadcast.Broadcaster[Event]{
 			IsLatest: true,
 			GetTopic: getEventTopic,
-			Capacity: 8,
+			// A subscriber holds at most one snapshot and one sync per group, so
+			// nothing is dropped below this many groups.
+			Capacity: maxPendingEvents,
 		},
 		tabs:      map[string]Tab{},
 		windows:   map[string][]string{},
@@ -164,27 +169,21 @@ func (r *Registry) GetSnapshot() Snapshot {
 	return r.getSnapshot()
 }
 
-// WriteTabs sets the linkable tabs a window has open. A tab of the window
-// missing from the list leaves its group unless it is being detached; a tab
-// another window had is now this window's.
+// WriteTabs sets the linkable tabs a window has open. A window with no live
+// watch is ignored. A tab of the window missing from the list leaves its group
+// unless it is being detached. A tab another live window has moves to this
+// window only while it is being detached.
 func (r *Registry) WriteTabs(windowID string, tabs []Tab) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if len(r.watches[windowID]) == 0 {
+		return
+	}
 	reported := make([]string, 0, len(tabs))
 	for _, one := range tabs {
-		one.WindowID = windowID
-		if previous, ok := r.tabs[one.ID]; ok && previous.WindowID != windowID {
-			r.windows[previous.WindowID] = slices.DeleteFunc(r.windows[previous.WindowID], func(id string) bool { return id == one.ID })
+		if r.acceptTab(windowID, one) {
+			reported = append(reported, one.ID)
 		}
-		if _, ok := r.tabs[one.ID]; !ok {
-			r.tabOrder = append(r.tabOrder, one.ID)
-		}
-		r.tabs[one.ID] = one
-		if pending, ok := r.detaching[one.ID]; ok {
-			pending.cancel()
-			delete(r.detaching, one.ID)
-		}
-		reported = append(reported, one.ID)
 	}
 	for _, id := range r.windows[windowID] {
 		if !slices.Contains(reported, id) {
@@ -193,6 +192,27 @@ func (r *Registry) WriteTabs(windowID string, tabs []Tab) {
 	}
 	r.windows[windowID] = reported
 	r.publishSnapshot()
+}
+
+// acceptTab records a tab a window reports, and reports whether the tab is now
+// the window's.
+func (r *Registry) acceptTab(windowID string, tab Tab) bool {
+	tab.WindowID = windowID
+	previous, isKnown := r.tabs[tab.ID]
+	pending, isDetaching := r.detaching[tab.ID]
+	switch {
+	case !isKnown:
+		r.tabOrder = append(r.tabOrder, tab.ID)
+	case previous.WindowID == windowID:
+	case isDetaching:
+		pending.cancel()
+		delete(r.detaching, tab.ID)
+		r.windows[previous.WindowID] = slices.DeleteFunc(r.windows[previous.WindowID], func(id string) bool { return id == tab.ID })
+	case len(r.watches[previous.WindowID]) > 0:
+		return false
+	}
+	r.tabs[tab.ID] = tab
+	return true
 }
 
 // Link puts two known tabs in one group. A tab already in a group brings its

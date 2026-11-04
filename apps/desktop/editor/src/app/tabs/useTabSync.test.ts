@@ -84,14 +84,53 @@ describe('a path chosen in a linked tab', () => {
     expect(sendSync).not.toHaveBeenCalled()
   })
 
-  it('moves nothing again for the path the group last moved to', () => {
+  it('takes the echo of a moved tab once, and sends the same path chosen later', () => {
     const navigate = vi.fn<Navigate>()
-    const { sync, sendSync } = setup({ 'files:1': { navigate } }, createLinkedTabs('files:1'))
+    const { sync, sendSync } = setup(
+      { s: { navigate: vi.fn() }, 'files:1': { navigate } },
+      createLinkedTabs('files:1'),
+    )
 
     sync.syncPathFromTab('s', 'a.md')
     expect(sync.syncPathFromTab('files:1', 'a.md')).toBe(true)
-
     expect(navigate).toHaveBeenCalledOnce()
+    expect(sendSync).toHaveBeenCalledOnce()
+
+    sync.syncPathFromTab('files:1', 'a.md')
+    expect(sendSync).toHaveBeenCalledTimes(2)
+  })
+
+  it('moves the tabs again to a path a moved tab failed to reach', async () => {
+    const failure = new Error('the plugin is gone')
+    const navigate = vi.fn<Navigate>(() => Promise.reject(failure))
+    const { sync, sendSync, onError } = setup(
+      { s: { navigate: vi.fn() }, 'files:1': { navigate } },
+      createLinkedTabs('files:1'),
+    )
+
+    sync.syncPathFromTab('s', 'a.md')
+    await vi.waitFor(() => expect(onError).toHaveBeenCalledWith(failure))
+    sync.syncPathFromTab('files:1', 'a.md')
+
+    expect(sendSync).toHaveBeenCalledTimes(2)
+  })
+
+  it('moves the tabs again to a path a moved tab threw on', () => {
+    const navigate = vi.fn<Navigate>(() => {
+      throw new Error('boom')
+    })
+    const { sync, sendSync } = setup({ 'files:1': { navigate } }, createLinkedTabs('files:1'))
+
+    expect(() =>
+      sync.applySync({
+        groupId: 'group-1',
+        sourceTabId: 'plex:elsewhere',
+        path: 'a.md',
+        title: '',
+      }),
+    ).toThrow('boom')
+    sync.syncPathFromTab('files:1', 'a.md')
+
     expect(sendSync).toHaveBeenCalledOnce()
   })
 })
@@ -119,18 +158,18 @@ describe('a move another window sent', () => {
     expect(navigate).not.toHaveBeenCalled()
   })
 
-  it('is not sent back when a moved tab reports the same path', () => {
+  it('is not sent back when a moved tab reports the path, during the move or after it', () => {
     const navigate = vi.fn<Navigate>()
     const { sync, sendSync } = setup({ 'files:1': { navigate } }, createLinkedTabs('files:1'))
-    navigate.mockImplementation(() => {
+    navigate.mockImplementationOnce(() => {
       sync.syncPathFromTab('files:1', 'b.md', 'B')
     })
 
     sync.applySync({ groupId: 'group-1', sourceTabId: 's', path: 'b.md', title: 'B' })
-    expect(sync.syncPathFromTab('files:1', 'b.md', 'B')).toBe(true)
-    sync.applySync({ groupId: 'group-1', sourceTabId: 's', path: 'b.md', title: 'B' })
+    sync.applySync({ groupId: 'group-1', sourceTabId: 's', path: 'c.md', title: 'C' })
+    expect(sync.syncPathFromTab('files:1', 'c.md', 'C')).toBe(true)
 
-    expect(navigate).toHaveBeenCalledOnce()
+    expect(navigate).toHaveBeenCalledTimes(2)
     expect(sendSync).not.toHaveBeenCalled()
   })
 

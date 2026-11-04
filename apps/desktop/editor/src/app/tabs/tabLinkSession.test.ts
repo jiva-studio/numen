@@ -19,7 +19,7 @@ async function* createStream(events: readonly TabLinksEvent[], signal: AbortSign
   if (!signal.aborted) await new Promise((resolve) => signal.addEventListener('abort', resolve))
 }
 
-const setup = (events: readonly TabLinksEvent[]) => {
+const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) => {
   const signals: AbortSignal[] = []
   const core = {
     watchTabLinks: vi.fn((_windowId: string, signal: AbortSignal) => {
@@ -34,7 +34,7 @@ const setup = (events: readonly TabLinksEvent[]) => {
     windowId: 'window-a',
     tabLinks: { applySnapshot: vi.fn() },
     applySync: vi.fn(),
-    getOpenTabs: () => OPEN_TABS,
+    getOpenTabs,
     wait: () => Promise.resolve(),
     onError: vi.fn(),
   } satisfies TabLinkSessionDeps
@@ -111,5 +111,47 @@ describe('the linkable tabs of the window', () => {
     expect(getLinkableTabs(windowTabs)).toStrictEqual([
       { id: 'plex:1', kind: 'plex', title: 'Orbits' },
     ])
+  })
+})
+
+describe('the reports of the open tabs', () => {
+  it('are written one after another, each with the tabs open when it was made', async () => {
+    const tabs = [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }]
+    const { core, session } = setup([], () => [...tabs])
+    let finishFirst: () => void = () => undefined
+    core.writeTabLinks.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishFirst = resolve)),
+    )
+
+    session.reportTabs()
+    tabs.push({ id: 'plex:2', kind: 'plex', title: 'Tides' })
+    session.reportTabs()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(core.writeTabLinks).toHaveBeenCalledOnce()
+    finishFirst()
+
+    await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(2))
+    expect(core.writeTabLinks.mock.calls.map(([, change]) => change)).toStrictEqual([
+      { tabs: [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }] },
+      {
+        tabs: [
+          { id: 'plex:1', kind: 'plex', title: 'Orbits' },
+          { id: 'plex:2', kind: 'plex', title: 'Tides' },
+        ],
+      },
+    ])
+    session.close()
+  })
+
+  it('go on after a report the core did not take', async () => {
+    const { deps, core, session } = setup([])
+    const failure = new Error('the core is gone')
+    core.writeTabLinks.mockRejectedValueOnce(failure)
+
+    session.reportTabs()
+    session.reportTabs()
+
+    await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(2))
+    expect(deps.onError).toHaveBeenCalledExactlyOnceWith(failure)
   })
 })

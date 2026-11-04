@@ -31,9 +31,14 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
     wait: deps.wait,
   })
 
-  /** Tells the core the linkable tabs the window has open now. */
+  let lastReport: Promise<void> = Promise.resolve()
+
+  /** Tells the core the linkable tabs the window has open now, after the reports before it. */
   const reportTabs = (): void => {
-    deps.core.writeTabLinks(deps.windowId, { tabs: deps.getOpenTabs() }).catch(deps.onError)
+    const tabs = deps.getOpenTabs()
+    lastReport = lastReport
+      .then(() => deps.core.writeTabLinks(deps.windowId, { tabs }))
+      .catch(deps.onError)
   }
 
   /** Reads the stream until the window closes; each new reading reports the tabs again. */

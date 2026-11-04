@@ -162,6 +162,26 @@ describe('the menu with other windows open', () => {
     ])
   })
 
+  it('leaves out a tab of this window its kind cannot link, though the core lists it', () => {
+    const tabLinks = {
+      tabs: [{ id: 'c', kind: 'agent', title: 'C', windowId: 'window-a' }],
+      getGroupOf: () => null,
+      getLinkedTargets: () => [],
+    } as unknown as TabLinksState
+    const menu = useTabLinkMenu({
+      tabLinks,
+      getTabs: () => [
+        { id: 'a', title: 'A' },
+        { id: 'c', title: 'C' },
+      ],
+      getKind: (tab) => KINDS[tab],
+      isLinkable: (tab) => tab === 'a',
+    })
+    menu.open('a', { x: 0, y: 0 })
+
+    expect(menu.eligibleTabs.value).toStrictEqual([])
+  })
+
   it('names a linked tab of another window by its title', () => {
     const group = { id: 'g', colorIndex: 1, tabs: ['a', 'plex:7'] }
     const menu = setupWithOthers({ a: group, 'plex:7': group }, ['plex:7'])

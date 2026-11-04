@@ -17,19 +17,41 @@ export interface TabSyncDeps {
 
 export function createTabSync({ windowTabs, tabLinks, sendSync, onError }: TabSyncDeps) {
   let isSyncing = false
-  /** The path each group last moved to; a repeat of it is an echo and moves nothing. */
-  const lastPaths = new Map<string, string>()
+  /**
+   * The path each tab was moved to by a sync. The tab reporting that path next
+   * is the echo of the move, and the entry is used up by it.
+   */
+  const movedTo = new Map<TabId, string>()
 
-  /** Every tab of this window in the group, other than the source, moved through its kind's navigate. */
+  const forgetMove = (tabId: TabId, path: string) => {
+    if (movedTo.get(tabId) === path) movedTo.delete(tabId)
+  }
+
+  /** One tab of this window moved through its kind's navigate; a failed move is forgotten. */
+  const moveTab = (tabId: TabId, path: string, title: string) => {
+    const target = windowTabs.getTab(tabId)
+    if (!target?.kind.navigate) return
+    movedTo.set(tabId, path)
+    try {
+      const moved = target.kind.navigate(target.state, path, title)
+      if (moved) {
+        moved.catch((error: unknown) => {
+          forgetMove(tabId, path)
+          onError(error)
+        })
+      }
+    } catch (error) {
+      forgetMove(tabId, path)
+      throw error
+    }
+  }
+
+  /** Every tab of this window in the group, other than the source, moved to the path. */
   const moveOwnTabs = (group: TabLinkGroup, sourceTabId: TabId, path: string, title: string) => {
-    lastPaths.set(group.id, path)
     isSyncing = true
     try {
       for (const targetId of group.tabs) {
-        if (targetId === sourceTabId) continue
-        const target = windowTabs.getTab(targetId)
-        const moved = target?.kind.navigate?.(target.state, path, title)
-        if (moved) moved.catch(onError)
+        if (targetId !== sourceTabId) moveTab(targetId, path, title)
       }
     } finally {
       isSyncing = false
@@ -38,24 +60,26 @@ export function createTabSync({ windowTabs, tabLinks, sendSync, onError }: TabSy
 
   /**
    * Moves every tab linked to the source to the path. It answers whether the
-   * source is linked; a repeat of the path the group last moved to moves nothing.
+   * source is linked; the echo of a move this window made moves nothing.
    */
   const syncPathFromTab = (sourceTabId: TabId, path: string, title = ''): boolean => {
-    if (!sourceTabId || !path || isSyncing) return false
+    if (!sourceTabId || !path) return false
     const group = tabLinks.getGroupOf(sourceTabId)
     if (!group || group.tabs.length < 2) return false
-    if (lastPaths.get(group.id) === path) return true
+    const expected = movedTo.get(sourceTabId)
+    movedTo.delete(sourceTabId)
+    if (expected === path) return true
+    if (isSyncing) return false
     moveOwnTabs(group, sourceTabId, path, title)
     sendSync({ sourceTabId, path, title }).catch(onError)
     return true
   }
 
-  /** A move another window sent: this window's tabs of the group move, unless it is an echo. */
+  /** A move another window sent: this window's tabs of the group move. */
   const applySync = (sync: TabPathSync): void => {
     if (windowTabs.getTab(sync.sourceTabId)) return
     const group = tabLinks.groups.get(sync.groupId)
-    if (!group || lastPaths.get(group.id) === sync.path) return
-    moveOwnTabs(group, sync.sourceTabId, sync.path, sync.title)
+    if (group) moveOwnTabs(group, sync.sourceTabId, sync.path, sync.title)
   }
 
   return { syncPathFromTab, applySync }
