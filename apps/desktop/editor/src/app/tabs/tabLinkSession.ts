@@ -85,12 +85,15 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
     if (!isReporting) reporting = writeReports().catch(deps.onError)
   }
 
+  /** Settles when the pending tab reports are written. */
+  const waitForReports = (): Promise<void> => reporting
+
   /**
    * Sends AcceptTabMove once the pending reports are written, so that a report
    * made before the tab opened does not reach the core after the accept.
    */
   const acceptMove = (tabId: string, moveId: string): Promise<Result<void, TabMoveError>> =>
-    reporting.then(() => deps.core.acceptTabMove(deps.windowId, tabId, moveId))
+    waitForReports().then(() => deps.core.acceptTabMove(deps.windowId, tabId, moveId))
 
   /** Reads the stream until close; reports the tabs again on each new stream. */
   const start = (): Promise<void> =>
@@ -141,7 +144,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
     return start()
   }
 
-  return { start, close, reopen, reportTabs, acceptMove }
+  return { start, close, reopen, reportTabs, acceptMove, waitForReports }
 }
 
 type ReportedTabs = Pick<ReturnType<typeof useWindowTabs>, 'tabs' | 'getTab' | 'handle'>

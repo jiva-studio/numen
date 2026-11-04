@@ -317,6 +317,24 @@ describe('stream events for this window', () => {
     await stream
   })
 
+  it('settles waitForReports after the pending tab report is written', async () => {
+    const { core, session } = setup([])
+    let finishReport: () => void = () => undefined
+    core.writeTabLinks.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishReport = resolve)),
+    )
+    let isSettled = false
+
+    session.reportTabs()
+    const waiting = session.waitForReports().then(() => (isSettled = true))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(isSettled).toBe(false)
+    finishReport()
+    await waiting
+
+    expect(isSettled).toBe(true)
+  })
+
   it('sends AcceptTabMove after the pending tab reports complete', async () => {
     const { core, session } = setup([])
     let finishReport: () => void = () => undefined

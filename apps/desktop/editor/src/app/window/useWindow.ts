@@ -226,8 +226,11 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
       globalThis.dispatchEvent(new CustomEvent('numen:open-settings', { detail: { pluginId } })),
   })
   const windowId = crypto.randomUUID()
+  // The core ignores a link to a tab it has no report of, so a link or unlink
+  // waits for the pending tab reports. The tab links session sets the wait.
+  const tabReports = { wait: (): Promise<void> => Promise.resolve() }
   const tabLinks = useTabLinks({
-    write: (change) => core.writeTabLinks(windowId, change),
+    write: (change) => tabReports.wait().then(() => core.writeTabLinks(windowId, change)),
     onError: (error) =>
       writeMessage(`The tabs were not linked: ${formatErrorMessage(error)}`, 'error'),
   })
@@ -271,6 +274,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     windowTabs,
     arePluginsStarting,
     tabLinks,
+    tabReports,
     tabOpeners,
     runs,
     pluginHost,
@@ -523,6 +527,7 @@ function createWindowTabLinks(base: WindowCore, deps: WindowTabLinksDeps) {
     onError: (error) =>
       base.writeMessage(`The moved tab did not open: ${formatErrorMessage(error)}`, 'error'),
   })
+  base.tabReports.wait = session.waitForReports
   watch(() => JSON.stringify(getReport()), session.reportTabs)
   // Hiding the page cancels the watch in the core; a page restored from the
   // back-forward cache watches again.

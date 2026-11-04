@@ -178,6 +178,7 @@ beforeEach(() => {
       reportTabs: vi.fn(),
       reopen: vi.fn(async () => undefined),
       acceptMove: vi.fn(),
+      waitForReports: vi.fn(async () => undefined),
     },
     windowReport: ref<unknown>({ tabs: [], window: {} }),
     tabMover: {
@@ -809,6 +810,24 @@ describe('the services a plugin is given', () => {
 })
 
 describe('tab links wiring', () => {
+  it('writes a link after the pending tab reports', async () => {
+    let finishReports: () => void = () => undefined
+    h.f.tabLinkSession.waitForReports.mockImplementationOnce(
+      () => new Promise<undefined>((resolve) => (finishReports = () => resolve(undefined))),
+    )
+    useWindow()
+
+    const written = h.args.tabLinks.write({ link: { source: 'plex:1', target: 'plex:2' } })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(h.core.writeTabLinks).not.toHaveBeenCalled()
+    finishReports()
+    await written
+
+    expect(h.core.writeTabLinks).toHaveBeenCalledExactlyOnceWith(h.args.tabLinkSession.windowId, {
+      link: { source: 'plex:1', target: 'plex:2' },
+    })
+  })
+
   it('uses one window id for writes and the watch', async () => {
     useWindow()
     const windowId = h.args.tabLinkSession.windowId

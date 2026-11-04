@@ -109,8 +109,8 @@ export interface MovedTabOpenerDeps {
 /** Opens a tab sent from another window as the active tab and focuses the window. */
 export function createMovedTabOpener(deps: MovedTabOpenerDeps) {
   /**
-   * Sends AcceptTabMove, and sends it again after a thrown request: the core answers a repeated
-   * accept of a completed move with success, so the answer tells whether the move completed.
+   * Sends AcceptTabMove, and sends it again after a thrown request. The core returns success for
+   * a repeated accept of a completed move, so a success result means the move completed.
    */
   const accept = async (moved: MovedTab): Promise<Result<void, TabMoveError>> => {
     for (let attempt = 1; ; attempt++) {
