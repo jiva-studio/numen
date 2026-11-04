@@ -586,3 +586,22 @@ func TestDetachEndsWithCancelledOnAReportOfAnotherWindow(t *testing.T) {
 		t.Errorf("the detach ended with %v, want cancelled", got)
 	}
 }
+
+func TestMoveEndsWithCancelledWhenAnotherWindowTakesTheTab(t *testing.T) {
+	r, _ := newTestRegistry(t)
+	source := r.Watch("window-a")
+	r.WriteTabs(Window{ID: "window-a"}, []Tab{plex("plex:2", "Orbits")})
+	writeTabs(r, "window-t", nil)
+	writeTabs(r, "window-c", []Tab{plex("plex:2", "Orbits")})
+	result := r.Move("window-a", "window-t", newOrbits())
+	moveID := getMoveID(r, "plex:2")
+
+	source.Close()
+
+	if got := readOutcome(t, result); got != MoveErrorCancelled {
+		t.Errorf("the move ended with %v, want cancelled", got)
+	}
+	if got := r.Accept("window-t", "plex:2", moveID); got == MoveErrorNone {
+		t.Error("window-t accepted plex:2 after window-c took it")
+	}
+}
