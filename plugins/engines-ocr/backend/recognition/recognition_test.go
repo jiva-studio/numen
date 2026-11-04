@@ -377,7 +377,7 @@ func TestRecogniseMissingFileFails(t *testing.T) {
 	}
 }
 
-func TestRecogniseFileDeletedDuringRecognitionLeavesNoTask(t *testing.T) {
+func TestRecogniseFileDeletedDuringRecognitionReportsNoTask(t *testing.T) {
 	s := newScene(t)
 	s.recogniser.onRecognise = func() { s.vault.Remove("books/scan.pdf") }
 
