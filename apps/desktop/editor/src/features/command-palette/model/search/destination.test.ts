@@ -10,13 +10,9 @@ import type { SearchDestination } from './search'
 
 /** A window that writes down where it was taken. */
 const window = () => {
-  const travelled: string[] = []
   const openedTab: string[] = []
   const displayedItems: string[] = []
   const places: DestinationDeps = {
-    travel: async (path) => {
-      travelled.push(path)
-    },
     openFile: (path, title, line, selector) => {
       if (selector) {
         openedTab.push(`${path} ${JSON.stringify(selector)}`)
@@ -25,7 +21,7 @@ const window = () => {
       displayedItems.push(`${path} ${title}${line === undefined ? '' : ` ${line}`}`)
     },
   }
-  return { places, travelled, opened: openedTab, openedFiles: displayedItems }
+  return { places, opened: openedTab, openedFiles: displayedItems }
 }
 
 const landing = (overrides: Partial<SearchDestination>): SearchDestination => ({
@@ -33,17 +29,6 @@ const landing = (overrides: Partial<SearchDestination>): SearchDestination => ({
   path: 'Note.md',
   title: 'A note',
   ...overrides,
-})
-
-describe('a name chosen', () => {
-  it('is put in front where the plugin that shows notes puts it, and opens no tab', async () => {
-    const one = window()
-
-    await openDestination(landing({ at: 'locate' }), one.places)
-
-    expect(one.travelled).toStrictEqual(['Note.md'])
-    expect(one.openedFiles).toStrictEqual([])
-  })
 })
 
 describe('a file chosen', () => {
@@ -97,6 +82,6 @@ describe('nothing chosen', () => {
 
     await openDestination(null, one.places)
 
-    expect([one.travelled, one.opened, one.openedFiles]).toStrictEqual([[], [], []])
+    expect([one.opened, one.openedFiles]).toStrictEqual([[], []])
   })
 })

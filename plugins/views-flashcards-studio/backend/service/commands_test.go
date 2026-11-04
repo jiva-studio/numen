@@ -73,16 +73,22 @@ func TestCreateDeck_ErrorsWhenFileExists(t *testing.T) {
 
 func TestEveryCommandTheManifestDeclaresIsRun(t *testing.T) {
 	var manifest struct {
-		Commands []struct {
-			ID string `json:"id"`
-		} `json:"commands"`
+		Contributes struct {
+			Commands []struct {
+				ID string `json:"id"`
+			} `json:"commands"`
+		} `json:"contributes"`
 	}
 	if err := json.Unmarshal(flashcardsstudio.Manifest, &manifest); err != nil {
 		t.Fatal(err)
 	}
 	commands, _ := newCommands(t)
+	runByTheFrontend := map[string]bool{"preset.open": true}
 
-	for _, declared := range manifest.Commands {
+	for _, declared := range manifest.Contributes.Commands {
+		if runByTheFrontend[declared.ID] {
+			continue
+		}
 		_, err := commands.RunCommand(t.Context(), command.Request{
 			Command: declared.ID, Arguments: command.Arguments{"title": "Probe " + declared.ID},
 		})

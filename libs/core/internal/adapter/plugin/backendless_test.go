@@ -86,12 +86,12 @@ func TestAnEventForTheFilesOfAFrontendPluginStartsNothing(t *testing.T) {
 	}
 }
 
-func TestPluginInfosMarkThePluginsWithAFrontend(t *testing.T) {
+func TestPluginInfosMarkThePartsOfThePlugins(t *testing.T) {
 	host, _ := newFrontendOnlyHost(t)
 
 	infos := host.GetPluginInfos()
-	if len(infos) != 1 || !infos[0].HasFrontend {
-		t.Fatalf("GetPluginInfos = %+v, want the sketch plugin with a frontend", infos)
+	if len(infos) != 1 || !infos[0].HasFrontend || infos[0].HasBackend {
+		t.Fatalf("GetPluginInfos = %+v, want the sketch plugin with a frontend and no backend", infos)
 	}
 	want := []pluginport.PluginReaderInfo{{ID: "sketch", Extensions: []string{"pdf"}}}
 	if !reflect.DeepEqual(infos[0].Readers, want) {

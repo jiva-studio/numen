@@ -192,7 +192,6 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 		{"an activation event that is not the wildcard", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["onCommand:a"]}`, manifest.ErrInvalidActivationEvent},
 		{"a capability no host resolves", `{"id":"a.b","name":"A","version":"1.0.0","capabilities":["agent"]}`, manifest.ErrInvalidCapability},
 		{"activation events without a backend", `{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["*"],"frontend":{}}`, manifest.ErrNoBackend},
-		{"commands without a backend", `{"id":"a.b","name":"A","version":"1.0.0","commands":[{"id":"run","title":"Run"}]}`, manifest.ErrNoBackend},
 		{"services without a backend", `{"id":"a.b","name":"A","version":"1.0.0","services":["numen.v1.SketchService"]}`, manifest.ErrNoBackend},
 		{"secrets without a backend", `{"id":"a.b","name":"A","version":"1.0.0","secrets":[{"name":"apiKey","title":"T"}]}`, manifest.ErrNoBackend},
 		{"runtime dependencies without a backend", `{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"sample-runtime","kind":"runtime"}]}`, manifest.ErrNoBackend},

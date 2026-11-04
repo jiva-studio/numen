@@ -105,7 +105,6 @@ func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
 		Settings:         settings,
 		Secrets:          newSecrets(wire.GetSecrets()),
 		Services:         wire.GetServices(),
-		Commands:         newCommands(wire.GetCommands()),
 		SettingsViews:    newSettingsViews(wire.GetSettingsViews()),
 		Contributes:      contributes,
 	}, nil
@@ -149,6 +148,7 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		Readers:      newReaders(wire.GetReaders()),
 		NoteTypes:    noteTypes,
 		FrameOrigins: wire.GetFrameOrigins(),
+		Commands:     newCommands(wire.GetCommands()),
 	}, nil
 }
 
@@ -319,14 +319,15 @@ func newCommands(wire []*v1.ManifestCommand) []manifest.Command {
 	var out []manifest.Command
 	for _, one := range wire {
 		out = append(out, manifest.Command{
-			ID:                one.GetId(),
-			Title:             one.GetTitle(),
-			Icon:              one.GetIcon(),
-			ContentTypes:      newContentTypes(one.GetContentTypes()),
-			NoteTypes:         one.GetNoteTypes(),
-			When:              newCommandWhen(one.GetWhen()),
-			Arguments:         newCommandArguments(one.GetArguments()),
-			IsHiddenInPalette: one.GetIsHiddenInPalette(),
+			ID:           one.GetId(),
+			Title:        one.GetTitle(),
+			Icon:         one.GetIcon(),
+			ContentTypes: newContentTypes(one.GetContentTypes()),
+			NoteTypes:    one.GetNoteTypes(),
+			When:         newCommandWhen(one.GetWhen()),
+			Arguments:    newCommandArguments(one.GetArguments()),
+			Scope:        one.GetScope(),
+			Shortcut:     one.GetShortcut(),
 		})
 	}
 	return out

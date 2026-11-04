@@ -80,9 +80,19 @@ describe('the menu items a target is offered', () => {
 
 describe('a command run by its id', () => {
   it('is found under its full id, and nothing else is', async () => {
-    const host = createPluginHost(createDeps())
+    const host = createPluginHost(
+      createDeps({
+        getCommandDeclarations: () => [
+          {
+            pluginId: 'sample.plugin',
+            id: 'count',
+            title: 'Count',
+          },
+        ],
+      }),
+    )
     const handler = vi.fn()
-    host.createContext('sample.plugin').registerCommand({ id: 'count', title: 'Count', handler })
+    host.createContext('sample.plugin').registerCommand({ id: 'count', handler })
     const note = { path: 'Notes/One.md', title: 'One', type: 'note' as const }
 
     expect(host.hasCommand('sample.plugin:count')).toBe(true)
@@ -139,7 +149,7 @@ describe('a registration replaced under the same id', () => {
         permissions: ['vault:read'],
       } as never)
       const ctx = host.createContext(pluginId)
-      ctx.registerCommand({ id: `${pluginId}.count`, title: pluginId, handler })
+      ctx.registerCommand({ id: `${pluginId}.count`, handler })
       ctx.registerContextMenu({ id: `${pluginId}.menu`, text: pluginId, handler })
       ctx.registerAgentProvider({ id: `${pluginId}.agent`, name: pluginId, createAgent: vi.fn() })
       ctx.registerReader({ id: `${pluginId}.reader`, title: pluginId, component: null })
@@ -149,7 +159,7 @@ describe('a registration replaced under the same id', () => {
     host.disposePlugin('first.plugin')
     expect(host.createContext('first.plugin').hasPermission?.('vault:read')).toBe(false)
 
-    expect(host.getRegisteredCommands().map((one) => one.title)).toStrictEqual(['second.plugin'])
+    expect(host.getRegisteredCommands().map((one) => one.id)).toStrictEqual(['second.plugin.count'])
     expect(host.getRegisteredContextMenus().map((one) => one.text)).toStrictEqual(['second.plugin'])
     expect(host.getRegisteredReaders().map((one) => one.title)).toStrictEqual(['second.plugin'])
     expect(host.getRegisteredTabKinds().map((one) => one.kind)).toStrictEqual([
@@ -161,11 +171,7 @@ describe('a registration replaced under the same id', () => {
     const host = createPluginHost(createDeps())
     host.contextHost.registerReader('orphan.reader', { id: 'r1', component: null })
     host.contextHost.registerTabKind('orphan.tab', { kind: 't1', component: null })
-    host.contextHost.registerCommand('orphan.cmd', {
-      id: 'c1',
-      title: 'C1',
-      handler: vi.fn(),
-    })
+    host.contextHost.registerCommand('orphan.cmd', { id: 'c1', handler: vi.fn() })
     host.contextHost.registerContextMenu('orphan.menu', {
       id: 'm1',
       text: 'M1',
@@ -203,6 +209,9 @@ describe('a registration replaced under the same id', () => {
           agentProviders: new Map(),
           contexts: new Map(),
           manifests: new Map(),
+          activated: { value: new Set() },
+          disposed: new Set(),
+          reportedIssues: new Set(),
         },
         statusViews: {
           views: { value: [] } as never,

@@ -1,7 +1,7 @@
 name: "Install packages from the lock file"
 description: "Installs the named packages alone, at the version and integrity package-lock.json pins, without their dependencies"
 # For tools that import one or two packages without dependencies of their own: the manifest readers
-# under tools/ need @bufbuild/protobuf, the filter tests js-yaml and picomatch.
+# under tools/ need @bufbuild/protobuf, the command reader typescript, the filter tests js-yaml and picomatch.
 inputs:
   packages:
     description: "Package names separated by spaces"

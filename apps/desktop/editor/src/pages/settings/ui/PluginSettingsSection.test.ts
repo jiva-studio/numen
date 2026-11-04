@@ -23,6 +23,7 @@ const SAMPLE_PLUGIN: PluginInfo = {
   storedSecrets: [],
   consent: 'none',
   hasFrontend: false,
+  hasBackend: false,
   settings: [
     {
       key: 'autoRun',

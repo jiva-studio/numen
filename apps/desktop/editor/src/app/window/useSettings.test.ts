@@ -244,6 +244,7 @@ describe('the settings tab', () => {
       storedSecrets: [],
       consent: 'none' as const,
       hasFrontend: false,
+      hasBackend: false,
       settings: [
         {
           key: 'autoScan',
@@ -293,6 +294,7 @@ describe('the settings tab', () => {
         storedSecrets: [],
         consent: 'none',
         hasFrontend: false,
+        hasBackend: false,
         settings: [],
       },
       {
@@ -306,6 +308,7 @@ describe('the settings tab', () => {
         storedSecrets: [],
         consent: 'none',
         hasFrontend: false,
+        hasBackend: false,
         settings: [
           {
             key: 'autoScan',
@@ -453,6 +456,7 @@ describe('the settings tab', () => {
         storedSecrets: [],
         consent: 'none',
         hasFrontend: false,
+        hasBackend: false,
         settings: [],
       },
       {
@@ -466,6 +470,7 @@ describe('the settings tab', () => {
         storedSecrets: [],
         consent: 'none',
         hasFrontend: false,
+        hasBackend: false,
         settings: [],
       },
     ]

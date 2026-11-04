@@ -3,6 +3,7 @@
  * the window answers about the tab in front.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { getNamedIcon } from '@/shared/icons'
 import { ref } from 'vue'
 import { useWindow } from './useWindow'
 
@@ -258,7 +259,6 @@ beforeEach(() => {
       commandDeps: { name: 'commandDeps' },
       palette: {},
       onKeyDown: vi.fn(),
-      showNote: vi.fn(() => Promise.resolve(true)),
       getNoteCommands: vi.fn(() => [
         { id: 'org.example.sample:share.run', text: 'Share', group: 'note' },
       ]),
@@ -267,7 +267,7 @@ beforeEach(() => {
     pluginHost: {
       notifyVaultChange: vi.fn(),
       getPaletteCommands: vi.fn(() => [
-        { id: 'org.example.sample:share.run', title: 'Share', icon: 'icon' },
+        { id: 'org.example.sample:share.run', title: 'Share', icon: 'share' },
       ]),
       getRegisteredSettingsViews: vi.fn(() => ['view-1']),
       getContextMenuItems: vi.fn(() => ['ctx-item']),
@@ -393,12 +393,12 @@ describe('the parts of the window', () => {
   it('hand the kinds what the commands declare of the plugins', async () => {
     useWindow()
 
-    await expect(h.args.kinds.showNote('a.md')).resolves.toBe(true)
-    expect(h.f.commands.showNote).toHaveBeenCalledWith('a.md')
     expect(h.args.kinds.getNoteCommands()).toStrictEqual([
       { id: 'org.example.sample:share.run', text: 'Share', group: 'note' },
     ])
-    expect(h.args.kinds.getPluginCommandIcon('org.example.sample:share.run')).toBe('icon')
+    expect(h.args.kinds.getPluginCommandIcon('org.example.sample:share.run')).toBe(
+      getNamedIcon('share'),
+    )
     expect(h.args.kinds.getPluginCommandIcon('org.example.sample:none.run')).toBeUndefined()
   })
 
@@ -646,6 +646,13 @@ describe('the services a plugin is given', () => {
 
     h.args.plugins.reportLoadError('unknown-plugin', new Error('load err'))
     expect(h.f.writer).toHaveBeenCalledWith(expect.stringContaining('unknown-plugin'), 'error')
+
+    h.args.plugins.reportCommandIssue('p1', 'the command tree.open has no handler')
+    expect(h.f.writer).toHaveBeenCalledWith(
+      expect.stringContaining('the command tree.open has no handler'),
+      'warning',
+    )
+    expect(h.args.plugins.getCommandDeclarations()).toBeUndefined()
 
     expect(await h.args.plugins.resolveLink('from.md', 'name://Target')).toBe('resolved.md')
     expect(h.core.resolveLinks).toHaveBeenCalledWith('from.md', '[[Target]]')

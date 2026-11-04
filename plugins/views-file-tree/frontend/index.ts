@@ -1,9 +1,7 @@
-import { FolderOpen, FolderTree } from '@lucide/vue'
-import { definePlugin, NOTE_SCOPE, type PluginContext } from '@numen/plugin-sdk'
+import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import FilesTab from './ui/FilesTab.vue'
 import { createFilesKind, FILES } from './kind'
 import { createFileTree } from './model/useFileTree'
-import { WORDS } from './words'
 
 export { FilesTab }
 export { createFilesKind, FILES } from './kind'
@@ -26,18 +24,12 @@ export function activate(context: PluginContext): void {
 
   context.registerCommand({
     id: 'tree.open',
-    title: WORDS.showFiles,
-    shortcut: 'mod+shift+e',
-    icon: FolderTree,
     handler: async () => {
       await context.openTab?.(FILES)
     },
   })
   context.registerCommand({
     id: 'tree.revealNote',
-    title: WORDS.reveal,
-    scope: NOTE_SCOPE,
-    icon: FolderOpen,
     handler: async (note) => {
       await context.navigateTab?.(FILES, note.path)
     },

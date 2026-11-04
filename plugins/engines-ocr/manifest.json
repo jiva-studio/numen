@@ -1,7 +1,7 @@
 {
   "id": "md.numen.engines.ocr",
   "name": "Document OCR",
-  "version": "2026.11.4",
+  "version": "2026.11.5",
   "protocol": 1,
   "description": "Text recognition for scanned PDFs and images",
   "capabilities": [],
@@ -13,23 +13,28 @@
         "purpose": "text-provider",
         "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"]
       }
+    ],
+    "commands": [
+      {
+        "id": "recognition.create",
+        "title": "Recognise text",
+        "icon": "scan-text",
+        "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"]
+      },
+      {
+        "id": "recognition.delete",
+        "title": "Delete recognition",
+        "icon": "trash-2",
+        "when": [
+          {
+            "key": "version.plugin",
+            "is": ["md.numen.engines.ocr"]
+          }
+        ]
+      }
     ]
   },
   "permissions": ["vault:read", "vault:write", "network:outbound"],
-  "commands": [
-    {
-      "id": "recognition.create",
-      "title": "Recognise text",
-      "icon": "scan-text",
-      "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"]
-    },
-    {
-      "id": "recognition.delete",
-      "title": "Delete recognition",
-      "icon": "trash-2",
-      "when": [{ "key": "version.plugin", "is": ["md.numen.engines.ocr"] }]
-    }
-  ],
   "dependencies": [
     {
       "id": "onnxruntime",
@@ -126,7 +131,9 @@
       }
     }
   ],
-  "backend": { "entrypoint": "bin/engines-ocr" },
+  "backend": {
+    "entrypoint": "bin/engines-ocr"
+  },
   "services": ["numen.v1.TextProviderService"],
   "settings": [
     {

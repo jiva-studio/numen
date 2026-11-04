@@ -76,19 +76,12 @@ export function useCommands(options: CommandsDepsOptions) {
   const { core, words, windowTabs, getTarget, knows, kept, runs, coverage, writeMessage } = options
   const { pluginHost } = options
 
-  const {
-    getPaletteEntries,
-    findNoteDestination,
-    getCommandNote,
-    showNote,
-    getNoteCommands,
-    pluginWays,
-  } = usePluginCommands(core, pluginHost)
+  const { getPaletteEntries, getCommandNote, getNoteCommands, pluginWays } = usePluginCommands(
+    core,
+    pluginHost,
+  )
 
-  const palette = useSearch(core, words, {
-    coverage,
-    getTravel: () => findNoteDestination()?.title ?? '',
-  })
+  const palette = useSearch(core, words, { coverage })
   const commands = useCommandPalette(core, words, getTarget, knows, kept, runs, undefined, () => [
     ...createPluginSettingCommands(options.rest.plugins?.value ?? []),
     ...(options.declaredCommands?.paletteCommands.value ?? []),
@@ -96,7 +89,7 @@ export function useCommands(options: CommandsDepsOptions) {
     ...getPaletteEntries(),
   ])
 
-  watchCommandLists(options, commands.open, getTarget)
+  watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open, getTarget)
 
   const commandDeps: CommandDeps = createCommandDeps({
     ...options,
@@ -151,6 +144,5 @@ export function useCommands(options: CommandsDepsOptions) {
     onKeyDown,
     pluginWays,
     getNoteCommands,
-    showNote,
   }
 }

@@ -3,7 +3,6 @@ import {
   definePlugin,
   formatErrorMessage,
   getRelationErrorWords,
-  NOTE_SCOPE,
   NOTE_TARGET,
   type ConnectionRole,
   type PluginContext,
@@ -51,20 +50,12 @@ export function activate(context: PluginContext): void {
 
   context.registerCommand({
     id: 'graph.open',
-    title: WORDS.newPlex,
-    shortcut: 'mod+shift+x',
-    icon: Waypoints,
     handler: async () => {
       await context.openTab?.(PLEX)
     },
   })
   context.registerCommand({
     id: 'graph.showNote',
-    title: WORDS.travel,
-    scope: NOTE_SCOPE,
-    shortcut: 'mod+shift+p',
-    icon: Waypoints,
-    isNoteDestination: true,
     handler: (note) => travel(note.path),
   })
 

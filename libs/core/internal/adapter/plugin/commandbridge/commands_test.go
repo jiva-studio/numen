@@ -106,7 +106,7 @@ func serveCommandPlugin(t *testing.T, plugin *commandPlugin) pluginport.Endpoint
 func declaring(id string, commands ...string) pluginport.DiscoveredPlugin {
 	manifest := pluginport.PluginManifest{ID: id}
 	for _, one := range commands {
-		manifest.Commands = append(manifest.Commands, pluginport.PluginCommand{ID: one, Title: one})
+		manifest.Contributes.Commands = append(manifest.Contributes.Commands, pluginport.PluginCommand{ID: one, Title: one})
 	}
 	return pluginport.DiscoveredPlugin{Manifest: manifest}
 }

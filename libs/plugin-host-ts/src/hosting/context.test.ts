@@ -97,7 +97,6 @@ describe('PluginContext', () => {
 
     const sub2 = ctx.registerCommand({
       id: 'cmd1',
-      title: 'Command 1',
       handler: vi.fn(() => Promise.resolve()),
     })
     expect(ctx.subscriptions).toHaveLength(2)

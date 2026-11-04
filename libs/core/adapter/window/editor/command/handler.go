@@ -32,18 +32,13 @@ func NewHandler(vaults VaultProvider, commands plugincommand.Commands) *Handler 
 	return &Handler{vaults: vaults, list: commands.List, run: commands.Run}
 }
 
-// ListCommands lists the commands of every enabled plugin that the palette offers. The palette
-// identifies a file by its extension, so a command over notes of a type is offered by its plugin's own
-// view and not listed.
+// ListCommands lists the commands of every enabled plugin, whichever part of the plugin runs them.
 func (h *Handler) ListCommands(
 	context.Context, *connect.Request[v1.ListCommandsRequest],
 ) (*connect.Response[v1.ListCommandsResponse], error) {
-	entries := h.list.Execute()
+	entries := h.list.ExecuteAll()
 	commands := make([]*v1.PluginCommand, 0, len(entries))
 	for _, one := range entries {
-		if one.Command.IsHiddenInPalette || len(one.Command.NoteTypes) > 0 || len(one.Command.When) > 0 {
-			continue
-		}
 		commands = append(commands, newWireCommand(one, h.list.ListExtensions(one.Command)))
 	}
 	return connect.NewResponse(&v1.ListCommandsResponse{Commands: commands}), nil
@@ -104,6 +99,8 @@ func newWireCommand(entry plugincommand.Entry, extensions []string) *v1.PluginCo
 		ContentTypes: getContentTypeTexts(entry.Command.ContentTypes),
 		Extensions:   extensions,
 		Arguments:    arguments,
+		Scope:        entry.Command.Scope,
+		Shortcut:     entry.Command.Shortcut,
 	}
 }
 

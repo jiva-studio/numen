@@ -20,6 +20,10 @@ type pluginCommands struct {
 
 func (p *pluginCommands) ListCommands() []plugincommand.Entry { return p.entries }
 
+func (p *pluginCommands) GetParts(string) plugincommand.Parts {
+	return plugincommand.Parts{HasBackend: true}
+}
+
 func (p *pluginCommands) RunCommand(_ context.Context, call plugincommand.Call) (plugincommand.Result, error) {
 	p.calls = append(p.calls, call)
 	return plugincommand.Result{Message: "ran " + call.Command, OpenedPath: call.Path}, nil

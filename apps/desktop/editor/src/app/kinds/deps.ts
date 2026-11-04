@@ -37,8 +37,6 @@ export interface WindowKindsDeps {
   getContextMenuIcon?: (id: string) => unknown
   /** The icon a plugin draws its command with, and nothing for one it draws none for. */
   getPluginCommandIcon?: (id: string) => unknown
-  /** The note put in front by the command a plugin declares for it; false where none declares one. */
-  showNote: (path: string) => Promise<boolean>
   /** The commands the plugins declare over one note. */
   getNoteCommands: () => readonly MenuEntry[]
 }

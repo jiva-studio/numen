@@ -39,10 +39,14 @@ func (p pluginCommands) ListCommands() []plugincommand.Entry {
 			},
 		}},
 		{PluginID: "org.example.sample", Command: plugincommand.Command{
-			ID: "print-sample", Title: "Print a sample", ContentTypes: []domain.ContentType{"text/markdown"}, IsHiddenInPalette: true,
+			ID: "print-sample", Title: "Print a sample", ContentTypes: []domain.ContentType{"text/markdown"},
 		}},
 		{PluginID: "md.numen.cards", Command: plugincommand.Command{ID: "shuffle-deck", Title: "Shuffle a deck", NoteTypes: []string{"deck"}}},
 	}
+}
+
+func (p pluginCommands) GetParts(string) plugincommand.Parts {
+	return plugincommand.Parts{HasBackend: true}
 }
 
 func (p pluginCommands) RunCommand(context.Context, plugincommand.Call) (plugincommand.Result, error) {
@@ -58,7 +62,7 @@ func run(t *testing.T, commands pluginCommands, request *v1.RunPluginCommandRequ
 	return res.Msg
 }
 
-func TestListCommands_OmitsPaletteHiddenAndNoteTypeCommands(t *testing.T) {
+func TestListCommands_ListsTheCommandsWithConditionsAndNoteTypesLikeTheOthers(t *testing.T) {
 	res, err := command.NewHandler(shownVault{}, plugincommand.NewCommands(pluginCommands{}, fileTypes{".md": "text/markdown", ".markdown": "text/markdown"}, nil)).ListCommands(
 		t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
@@ -66,7 +70,7 @@ func TestListCommands_OmitsPaletteHiddenAndNoteTypeCommands(t *testing.T) {
 	}
 
 	commands := res.Msg.GetCommands()
-	if len(commands) != 1 {
+	if len(commands) != 3 {
 		t.Fatalf("got %v", commands)
 	}
 	one := commands[0]

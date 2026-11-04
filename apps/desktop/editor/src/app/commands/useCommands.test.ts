@@ -1,6 +1,7 @@
 /** How a command runs, and what a key chord triggers. */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CommandTarget } from '@/features/command-palette'
+import { getNamedIcon } from '@/shared/icons'
 import { useCommands, type CommandsDepsOptions } from './useCommands'
 
 const h = vi.hoisted(() => ({
@@ -15,7 +16,6 @@ const h = vi.hoisted(() => ({
   depsOptions: null as unknown,
   registerCommand: vi.fn(),
   getExtraCommands: null as null | (() => readonly unknown[]),
-  searchOptions: null as null | { getTravel?: () => string },
 }))
 
 vi.mock('@/features/command-palette', () => ({
@@ -25,8 +25,7 @@ vi.mock('@/features/command-palette', () => ({
   findShortcutKeys: (shortcut: string) => ({ letter: shortcut }),
   runInvocation: h.runInvocation,
   registerCommand: h.registerCommand,
-  useSearch: (_core: unknown, _words: unknown, options: { getTravel?: () => string }) => {
-    h.searchOptions = options
+  useSearch: () => {
     return { setOpen: h.setPaletteOpen }
   },
   useCommandPalette: (...args: unknown[]) => {
@@ -203,15 +202,8 @@ describe('a plugin command over a note', () => {
     id: 'org.example.sample:graph.run',
     title: 'New graph',
     shortcut: 'mod+shift+x',
-    icon: 'graph icon',
+    icon: 'waypoints',
   }
-  const SHOW = {
-    id: 'org.example.sample:show.run',
-    title: 'Show in the graph',
-    scope: 'note' as const,
-    isNoteDestination: true,
-  }
-
   const setupPlugin = (declared: readonly object[] = [SUMMARY]) => {
     const executeCommand = vi.fn(async () => true)
     const handleShortcut = vi.fn(() => false)
@@ -297,7 +289,7 @@ describe('a plugin command over a note', () => {
     expect(offer?.group).toBe('window')
     expect(offer?.isAvailable({ isReady: false, path: '' } as unknown as CommandTarget)).toBe(true)
     expect(offer?.keys).toStrictEqual({ letter: 'mod+shift+x' })
-    expect(offer?.icon).toBe('graph icon')
+    expect(offer?.icon).toBe(getNamedIcon('waypoints'))
   })
 
   it('offers the keyed commands over the window as ways in, and those over a note to the menus', () => {
@@ -308,47 +300,16 @@ describe('a plugin command over a note', () => {
     ])
 
     expect(one.pluginWays.value).toStrictEqual([
-      { id: GRAPH.id, text: GRAPH.title, keys: { letter: 'mod+shift+x' }, icon: 'graph icon' },
+      {
+        id: GRAPH.id,
+        text: GRAPH.title,
+        keys: { letter: 'mod+shift+x' },
+        icon: getNamedIcon('waypoints'),
+      },
     ])
     expect(one.getNoteCommands()).toStrictEqual([
       { id: SUMMARY.id, text: SUMMARY.title, group: 'note' },
     ])
-  })
-
-  it('puts a note in front through the command declared for it, and offers it to the search', async () => {
-    const one = setupPlugin([SUMMARY, SHOW])
-
-    await expect(one.showNote('Animals.md')).resolves.toBe(true)
-
-    expect(one.executeCommand).toHaveBeenCalledExactlyOnceWith(SHOW.id, {
-      path: 'Animals.md',
-      title: '',
-      type: 'sample',
-    })
-    expect(h.searchOptions?.getTravel?.()).toBe(SHOW.title)
-
-    await one.showNote('')
-    expect(one.executeCommand).toHaveBeenLastCalledWith(SHOW.id, {
-      path: '',
-      title: '',
-      type: 'note',
-    })
-
-    await one.showNote('Unknown.md')
-    expect(one.executeCommand).toHaveBeenLastCalledWith(SHOW.id, {
-      path: 'Unknown.md',
-      title: '',
-      type: 'note',
-    })
-  })
-
-  it('puts no note in front where no plugin declares a command for it', async () => {
-    const one = setupPlugin([SUMMARY])
-
-    await expect(one.showNote('Animals.md')).resolves.toBe(false)
-
-    expect(one.executeCommand).not.toHaveBeenCalled()
-    expect(h.searchOptions?.getTravel?.()).toBe('')
   })
 
   it('runs by id with the note of the target and reports errors', async () => {
