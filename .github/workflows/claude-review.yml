@@ -1,0 +1,85 @@
+name: Claude review
+
+# Runs the nm-review skill on a pull request and submits its verdict as an approval or a change
+# request from github-actions[bot]. It starts when a pull request leaves draft, or when a user
+# with write access comments "/nm-review" on it. Pull requests from forks are refused.
+on:
+  pull_request:
+    types: [ready_for_review]
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  review:
+    if: >-
+      (github.event_name == 'pull_request'
+        && github.event.pull_request.head.repo.full_name == github.repository)
+      || (github.event_name == 'issue_comment'
+        && github.event.issue.pull_request
+        && startsWith(github.event.comment.body, '/nm-review')
+        && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Refuse pull requests from forks
+        run: |
+          set -euo pipefail
+          cross=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json isCrossRepository --jq .isCrossRepository)
+          if [ "$cross" != "false" ]; then
+            echo "::error::Pull request $PR_NUMBER comes from a fork"
+            exit 1
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/pull/${{ env.PR_NUMBER }}/head
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Record the reviewed commit
+        run: echo "REVIEWED_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Review with nm-review
+        uses: anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c # v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            /nm-review origin/main...HEAD
+            This run reviews pull request #${{ env.PR_NUMBER }} in CI. The CI workflow runs the linters and the test suites, so skip the gate commands of stage 1, do not install dependencies and do not run test suites; judge the architecture checks by reading the diff against the rules.
+            Write the Unified Review Report to review-report.md in the workspace root. Write one word to review-verdict.txt: APPROVED, CHANGES_REQUESTED or REJECTED.
+          claude_args: >-
+            --allowedTools "Read,Grep,Glob,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git merge-base:*),Bash(gh pr view:*),Bash(gh pr diff:*)"
+
+      - name: Submit the review
+        run: |
+          set -euo pipefail
+          head=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq .headRefOid)
+          if [ "$head" != "$REVIEWED_SHA" ]; then
+            echo "::notice::The pull request moved to $head during the review of $REVIEWED_SHA; comment /nm-review to review the new head"
+            exit 0
+          fi
+          verdict=$(tr -d '[:space:]' < review-verdict.txt)
+          case "$verdict" in
+            APPROVED) flag=--approve ;;
+            CHANGES_REQUESTED | REJECTED) flag=--request-changes ;;
+            *)
+              echo "::error::Unknown verdict: $verdict"
+              exit 1
+              ;;
+          esac
+          gh pr review "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" "$flag" --body-file review-report.md
