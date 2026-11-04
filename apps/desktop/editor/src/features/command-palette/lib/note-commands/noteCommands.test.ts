@@ -17,15 +17,15 @@ describe('the commands over a note', () => {
     const needs = Object.fromEntries(commands.map((one) => [one.id, one.needs]))
 
     expect(needs).toStrictEqual({
-      read: undefined,
-      beside: undefined,
-      child: 'naming',
-      parent: 'naming',
-      jump: 'naming',
-      title: 'naming',
-      remove: undefined,
-      destroy: 'exactly',
-      copy: undefined,
+      'app:note.open': undefined,
+      'app:note.openBeside': undefined,
+      'app:note.createChild': 'naming',
+      'app:note.createParent': 'naming',
+      'app:note.createJump': 'naming',
+      'app:note.rename': 'naming',
+      'app:note.trash': undefined,
+      'app:note.delete': 'exactly',
+      'app:note.copyPath': undefined,
     })
   })
 })

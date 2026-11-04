@@ -29,9 +29,9 @@ const SYNC_SETTING = ['naming', 'sync_title_and_filename'] as const
 const getPlexNode = (page: Page, title: string, relation: string) =>
   getGraph(page).getByRole('button', { name: `${title}, ${relation}`, exact: true })
 
-/** Renames the note in front through the palette's Change title step. */
+/** Renames the note in front through the palette's Rename note step. */
 const changeTitle = async (page: Page, from: string, to: string) => {
-  await runPaletteCommand(page, 'Change title', 'Change title')
+  await runPaletteCommand(page, 'Rename note', 'Rename note')
   const field = getPaletteField(page)
   await expect(field).toHaveValue(from)
   await field.fill(to)
@@ -52,11 +52,11 @@ test.describe('Removing and renaming a note', () => {
       await writeNote(request, target, 'High water at six.\n')
       await openWorkspace(page)
       await openNote(page, linker)
-      await runPaletteCommand(page, 'Show in plex', 'Show in plex')
+      await runPaletteCommand(page, 'Show note in plex', 'Show note in plex')
       await expect(getPlexNode(page, targetTitle, 'child')).toBeAttached()
 
       await openNote(page, target)
-      await runPaletteCommand(page, 'Remove note', 'Remove note')
+      await runPaletteCommand(page, 'Move note to trash', 'Move note to trash')
 
       await expect(getNoteTab(page, target)).toHaveCount(0)
       await expect(page.locator(`[data-tree-row="${target}"]`)).toHaveCount(0)
@@ -82,8 +82,8 @@ test.describe('Removing and renaming a note', () => {
       await openNote(page, notePath)
 
       await page.keyboard.press('Control+p')
-      await getPaletteField(page).fill('Remove note')
-      await expect(page.getByRole('option', { selected: true })).toContainText('Remove note')
+      await getPaletteField(page).fill('Move note to trash')
+      await expect(page.getByRole('option', { selected: true })).toContainText('Move note to trash')
       await page.keyboard.press('Shift+Enter')
       const field = getPaletteField(page)
       const destroy = page.getByRole('option', { name: new RegExp(`^Destroy “`) })
@@ -163,7 +163,11 @@ test.describe('Removing and renaming a note', () => {
       await openWorkspace(page)
       await openNote(page, target)
 
-      await runPaletteCommand(page, 'Sync title and filename', 'Sync title and filename')
+      await runPaletteCommand(
+        page,
+        'Choose title and file name sync',
+        'Choose title and file name sync',
+      )
       await page.getByRole('option', { name: /^Off/ }).click()
       await expect.poll(() => isSyncingTitles(request)).toBe(false)
       await changeTitle(page, oldTitle, newTitle)

@@ -6,22 +6,20 @@
  * identify the command it belongs to and the value it selects within it.
  */
 import { MODES } from '@/entities/settings'
+import { COMMAND } from '@/shared/commandIds'
 import type { Mode, Scales } from '@/entities/settings'
 
-/** The command whose step offers the themes, and the one that offers the modes. */
-export const APPEARANCE = 'appearance'
+/** The names the rows of the modes and of the two sizes are offered under. */
 export const MODE = 'mode'
-
-/** The command that offers how large the interface is drawn, and how large the text is set. */
 export const INTERFACE_SCALE = 'interfaceScale'
 export const TEXT_SCALE = 'textScale'
 
 /** The commands whose step offers a list the appearance holds. */
 export const APPEARANCE_COMMANDS: readonly string[] = [
-  APPEARANCE,
-  MODE,
-  INTERFACE_SCALE,
-  TEXT_SCALE,
+  COMMAND.chooseTheme,
+  COMMAND.chooseMode,
+  COMMAND.chooseInterfaceSize,
+  COMMAND.chooseTextSize,
 ]
 
 /** Which of the two sizes a row is one of. */

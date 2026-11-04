@@ -32,7 +32,7 @@ type pluginCommands struct {
 func (p pluginCommands) ListCommands() []plugincommand.Entry {
 	return []plugincommand.Entry{
 		{PluginID: "org.example.sample", Command: plugincommand.Command{
-			ID: "create-sample", Title: "Create a sample", Icon: "layers", ContentTypes: []domain.ContentType{"text/markdown"},
+			ID: "sample.create", Title: "Create a sample", Icon: "layers", ContentTypes: []domain.ContentType{"text/markdown"},
 			Arguments: []plugincommand.Argument{
 				{Name: "pages", Title: "Pages", Type: plugincommand.ArgumentNumber, IsRequired: true},
 				{Name: "wait", Title: "Wait", Type: plugincommand.ArgumentBoolean, IsHiddenInPalette: true},
@@ -71,7 +71,7 @@ func TestListCommands_OmitsPaletteHiddenAndNoteTypeCommands(t *testing.T) {
 	}
 	one := commands[0]
 	argument := one.GetArguments()[0]
-	if one.GetPluginId() != "org.example.sample" || one.GetId() != "create-sample" || one.GetIcon() != "layers" || !slices.Equal(one.GetContentTypes(), []string{"text/markdown"}) || !slices.Equal(one.GetExtensions(), []string{"markdown", "md"}) ||
+	if one.GetPluginId() != "org.example.sample" || one.GetId() != "sample.create" || one.GetIcon() != "layers" || !slices.Equal(one.GetContentTypes(), []string{"text/markdown"}) || !slices.Equal(one.GetExtensions(), []string{"markdown", "md"}) ||
 		!argument.GetIsRequired() || len(one.GetArguments()) != 1 {
 		t.Errorf("got %v", one)
 	}
@@ -79,7 +79,7 @@ func TestListCommands_OmitsPaletteHiddenAndNoteTypeCommands(t *testing.T) {
 
 func TestRunPluginCommand_ReturnsMessageAndErrorCode(t *testing.T) {
 	valid := &v1.RunPluginCommandRequest{
-		PluginId: "org.example.sample", Command: "create-sample", Path: "a.md", Arguments: map[string]string{"pages": "2"},
+		PluginId: "org.example.sample", Command: "sample.create", Path: "a.md", Arguments: map[string]string{"pages": "2"},
 	}
 	cases := map[string]struct {
 		commands pluginCommands
@@ -95,7 +95,7 @@ func TestRunPluginCommand_ReturnsMessageAndErrorCode(t *testing.T) {
 			v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND, "",
 		},
 		"arguments that do not meet it": {
-			pluginCommands{}, &v1.RunPluginCommandRequest{PluginId: "org.example.sample", Command: "create-sample", Path: "a.md"},
+			pluginCommands{}, &v1.RunPluginCommandRequest{PluginId: "org.example.sample", Command: "sample.create", Path: "a.md"},
 			v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS, "",
 		},
 		"a command that failed": {

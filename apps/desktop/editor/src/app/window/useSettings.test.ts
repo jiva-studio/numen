@@ -129,7 +129,7 @@ describe('the lists the palette offers for a setting', () => {
   it('offers the three performance profiles, each with what it does', () => {
     const { settings } = createSettings()
 
-    expect(settings.paletteLists.getStepGroups('performanceProfile', '')).toStrictEqual([
+    expect(settings.paletteLists.getStepGroups('app:performance.chooseProfile', '')).toStrictEqual([
       {
         id: 'performance',
         title: WORDS.performance,
@@ -147,24 +147,26 @@ describe('the lists the palette offers for a setting', () => {
     vi.spyOn(settings.rest, 'getSetting').mockReturnValue('people/own-model')
     vi.spyOn(settings.rest, 'getModelsAt').mockReturnValue([model()])
 
-    expect(settings.paletteLists.getStepGroups('child', '')).toStrictEqual([])
+    expect(settings.paletteLists.getStepGroups('app:note.createChild', '')).toStrictEqual([])
   })
 
   it('offers the syncing switch the list its own setting holds', () => {
     const { settings } = createSettings()
 
-    expect(settings.paletteLists.getStepGroups('syncing', '')).toStrictEqual(
+    expect(settings.paletteLists.getStepGroups('app:note.chooseTitleSync', '')).toStrictEqual(
       settings.sync.getSyncingGroups(),
     )
-    expect(settings.paletteLists.getStepGroups('syncing', '')[0]?.items).toHaveLength(2)
+    expect(
+      settings.paletteLists.getStepGroups('app:note.chooseTitleSync', '')[0]?.items,
+    ).toHaveLength(2)
   })
 
   it('previews what the keyboard relies on in an appearance list, and nowhere else', () => {
     const { settings } = createSettings()
     const preview = vi.spyOn(settings.appearance, 'previewItem').mockImplementation(vi.fn())
 
-    settings.paletteLists.previewItem('syncing', 'off')
-    settings.paletteLists.previewItem('appearance', 'preset:dracula')
+    settings.paletteLists.previewItem('app:note.chooseTitleSync', 'off')
+    settings.paletteLists.previewItem('app:appearance.chooseTheme', 'preset:dracula')
 
     expect(preview.mock.calls).toStrictEqual([['preset:dracula']])
   })
@@ -394,10 +396,18 @@ describe('the settings tab', () => {
       },
     ])
 
-    expect(settings.paletteLists.getStepGroups('appearance', '').length).toBeGreaterThan(0)
-    expect(settings.paletteLists.getStepGroups('mode', '').length).toBeGreaterThan(0)
-    expect(settings.paletteLists.getStepGroups('interfaceScale', '').length).toBeGreaterThan(0)
-    expect(settings.paletteLists.getStepGroups('textScale', '').length).toBeGreaterThan(0)
+    expect(
+      settings.paletteLists.getStepGroups('app:appearance.chooseTheme', '').length,
+    ).toBeGreaterThan(0)
+    expect(
+      settings.paletteLists.getStepGroups('app:appearance.chooseMode', '').length,
+    ).toBeGreaterThan(0)
+    expect(
+      settings.paletteLists.getStepGroups('app:appearance.chooseInterfaceSize', '').length,
+    ).toBeGreaterThan(0)
+    expect(
+      settings.paletteLists.getStepGroups('app:appearance.chooseTextSize', '').length,
+    ).toBeGreaterThan(0)
   })
 
   it('delegates settings tab installation actions, path choosing, plugin data, and error reporting', async () => {

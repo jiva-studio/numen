@@ -15,7 +15,7 @@ test.describe('Command Palette Advanced Keyboard and Pointer Interactions', () =
     await expect(items.first()).toBeVisible({ timeout: 5_000 })
     // The commands of the note in front join the list once the opening note is loaded, above rows
     // already drawn, so the rows are walked after they are there.
-    await expect(page.getByRole('option', { name: /^Open the note/ })).toBeVisible()
+    await expect(page.getByRole('option', { name: /^Open note/ })).toBeVisible()
 
     // Find the currently selected item
     const selectedItem = page.locator('.palette__item[aria-selected="true"]').first()
@@ -67,9 +67,9 @@ test.describe('Command Palette Advanced Keyboard and Pointer Interactions', () =
     const paletteInput = page.locator('input[data-palette="field"]').first()
     await expect(paletteInput).toBeVisible({ timeout: 5_000 })
 
-    // Choose New note command
-    await paletteInput.fill('New note')
-    await expect(page.getByRole('option', { selected: true })).toContainText('New note')
+    // Choose Create note command
+    await paletteInput.fill('Create note')
+    await expect(page.getByRole('option', { selected: true })).toContainText('Create note')
     await page.keyboard.press('Enter')
 
     // Second step expects the note name input

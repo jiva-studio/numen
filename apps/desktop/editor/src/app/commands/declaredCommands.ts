@@ -3,6 +3,7 @@
  * for each argument, and the run handed to the plugin's backend.
  */
 import { computed, shallowRef } from 'vue'
+import { formatCommandId } from '@numen/plugin-host'
 import { registerCommand, type Command } from '@/features/command-palette'
 import { getNamedIcon } from '@/shared/icons'
 import {
@@ -14,7 +15,7 @@ import {
 
 /** What the palette files a command a plugin declares under: the plugin and the command's own id. */
 export const getPluginCommandId = (pluginId: string, commandId: string): string =>
-  `plugin-command:${pluginId}:${commandId}`
+  formatCommandId(pluginId, commandId)
 
 /** What the palette files a declared command under. */
 export const getPaletteId = (command: DeclaredCommand): string =>

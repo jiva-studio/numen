@@ -13,7 +13,7 @@ test.describe('Vault Navigation and Quick Open Palette', () => {
   }) => {
     await openWorkspace(page)
     await openNote(page, 'notes/Entropy.md')
-    await runPaletteCommand(page, 'Show in plex', 'Show in plex')
+    await runPaletteCommand(page, 'Show note in plex', 'Show note in plex')
     await expect(getGraph(page).getByRole('img', { name: 'Entropy, focus' })).toBeAttached()
 
     await runPaletteCommand(page, 'Go to start note', 'Go to start note')
@@ -22,10 +22,10 @@ test.describe('Vault Navigation and Quick Open Palette', () => {
     await expect(getGraph(page).getByRole('button', { name: 'Entropy, child' })).toBeAttached()
   })
 
-  test('puts the note picked in Go to a note in the focus of the plex', async ({ page }) => {
+  test('puts the note picked in Go to note in the focus of the plex', async ({ page }) => {
     await openWorkspace(page)
 
-    await runPaletteCommand(page, 'Go to a note', 'Go to a note')
+    await runPaletteCommand(page, 'Go to note', 'Go to note')
     await getPaletteField(page).fill('Entropy')
     await expect(page.getByRole('option', { selected: true })).toContainText('Entropy')
     await page.keyboard.press('Enter')
@@ -46,7 +46,7 @@ test.describe('Vault Navigation and Quick Open Palette', () => {
       'true',
     )
 
-    await runPaletteCommand(page, 'Show in files', 'Show in files')
+    await runPaletteCommand(page, 'Show note in file tree', 'Show note in file tree')
 
     await expect(page.getByRole('tab', { name: /^Files/ })).toHaveAttribute('aria-selected', 'true')
     await expect(page.locator('[data-tree-row="notes/Entropy.md"]')).toBeVisible()

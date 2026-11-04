@@ -6,7 +6,15 @@ import { createNodeItems, ITEMS, NEW_NOTE, NONE, OFFERED } from './menu'
 
 describe('what the menu offers', () => {
   it('offers the commands of the window over a note', () => {
-    const expected = ['read', 'copy', 'child', 'parent', 'jump', 'title', 'remove']
+    const expected = [
+      'app:note.open',
+      'app:note.copyPath',
+      'app:note.createChild',
+      'app:note.createParent',
+      'app:note.createJump',
+      'app:note.rename',
+      'app:note.trash',
+    ]
     expect([...ITEMS.map((item) => item.id)].sort()).toStrictEqual([...expected].sort())
   })
 
@@ -28,7 +36,7 @@ describe('what the menu offers', () => {
   it('holds every item it draws, and no command reached on another row', () => {
     for (const item of ITEMS) expect(OFFERED.has(item.id)).toBe(true)
 
-    expect(OFFERED.has('destroy')).toBe(false)
+    expect(OFFERED.has('app:note.delete')).toBe(false)
     expect(OFFERED.has('constructor')).toBe(false)
   })
 })
@@ -36,20 +44,20 @@ describe('what the menu offers', () => {
 describe('what the menu on a node offers of the commands plugins declare', () => {
   it('draws them after what opens the note, in a band of their own', () => {
     const items = createNodeItems([
-      { id: 'plugin:share', text: 'Share the note' },
-      { id: 'plugin:print', text: 'Print the note' },
+      { id: 'org.example.sample:share.run', text: 'Share the note' },
+      { id: 'org.example.sample:print.run', text: 'Print the note' },
     ])
 
     expect(items.map((item) => [item.id, item.group])).toStrictEqual([
-      ['read', 'open'],
-      ['plugin:share', 'declared'],
-      ['plugin:print', 'declared'],
-      ['copy', 'file'],
-      ['child', 'plex'],
-      ['parent', 'plex'],
-      ['jump', 'plex'],
-      ['title', 'plex'],
-      ['remove', 'remove'],
+      ['app:note.open', 'open'],
+      ['org.example.sample:share.run', 'declared'],
+      ['org.example.sample:print.run', 'declared'],
+      ['app:note.copyPath', 'file'],
+      ['app:note.createChild', 'plex'],
+      ['app:note.createParent', 'plex'],
+      ['app:note.createJump', 'plex'],
+      ['app:note.rename', 'plex'],
+      ['app:note.trash', 'remove'],
     ])
   })
 

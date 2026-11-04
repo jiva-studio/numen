@@ -21,7 +21,7 @@ guessed at.
 
 ## Making one
 
-- **New child note**, **New parent note** and **New jump note** in the commands make the note and
+- **Create child note**, **Create parent note** and **Create jump note** in the commands make the note and
   the link in one go, from the note you are on.
 - In the [plex](/plex/), drag a node out of another node: you draw the connection and the link is created.
 - Searching for a note that does not exist offers to create it, as a child, as a parent or as a

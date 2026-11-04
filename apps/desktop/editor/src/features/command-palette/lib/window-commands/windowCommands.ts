@@ -1,6 +1,7 @@
 /**
  * The commands offered over the window: what it opens, and how it is drawn.
  */
+import { COMMAND } from '@/shared/commandIds'
 import { createRowKeys } from '../chords/chords'
 import { isAlwaysAvailable } from '../commands/availability'
 import type { Command } from '../../types'
@@ -8,9 +9,9 @@ import type { Words } from '../../words'
 
 export const createWindowCreationCommands = (words: Words, agent: string): readonly Command[] => [
   {
-    id: 'note',
+    id: COMMAND.createNote,
     text: words.newNote,
-    ...createRowKeys('note', agent),
+    ...createRowKeys(COMMAND.createNote, agent),
     group: 'window',
     needs: 'naming',
     isAvailable: (target) => target.isReady,
@@ -19,15 +20,15 @@ export const createWindowCreationCommands = (words: Words, agent: string): reado
 
 export const createWindowNavigationCommands = (words: Words, agent: string): readonly Command[] => [
   {
-    id: 'close',
+    id: COMMAND.closeTab,
     text: words.close,
-    ...createRowKeys('close', agent),
+    ...createRowKeys(COMMAND.closeTab, agent),
     group: 'window',
     isAvailable: (target) => target.tab !== '',
   },
   {
-    id: 'find',
-    text: words.find,
+    id: COMMAND.searchVault,
+    text: words.searchVault,
     keys: words.findKeys,
     group: 'window',
     isAvailable: isAlwaysAvailable,
@@ -36,29 +37,29 @@ export const createWindowNavigationCommands = (words: Words, agent: string): rea
 
 export const createWindowDisplayCommands = (words: Words): readonly Command[] => [
   {
-    id: 'appearance',
+    id: COMMAND.chooseTheme,
     text: words.appearance,
     group: 'settings',
     needs: 'choosing',
     isAvailable: isAlwaysAvailable,
   },
   {
-    id: 'mode',
-    text: words.mode,
+    id: COMMAND.chooseMode,
+    text: words.chooseMode,
     group: 'settings',
     needs: 'choosing',
     isAvailable: isAlwaysAvailable,
   },
   {
-    id: 'interfaceScale',
-    text: words.interfaceScale,
+    id: COMMAND.chooseInterfaceSize,
+    text: words.chooseInterfaceSize,
     group: 'settings',
     needs: 'choosing',
     isAvailable: isAlwaysAvailable,
   },
   {
-    id: 'textScale',
-    text: words.textScale,
+    id: COMMAND.chooseTextSize,
+    text: words.chooseTextSize,
     group: 'settings',
     needs: 'choosing',
     isAvailable: isAlwaysAvailable,
@@ -67,20 +68,25 @@ export const createWindowDisplayCommands = (words: Words): readonly Command[] =>
 
 export const createWindowFeatureCommands = (words: Words): readonly Command[] => [
   {
-    id: 'syncing',
-    text: words.syncing,
+    id: COMMAND.chooseTitleSync,
+    text: words.chooseTitleSync,
     group: 'settings',
     needs: 'choosing',
     isAvailable: isAlwaysAvailable,
   },
   {
-    id: 'performanceProfile',
+    id: COMMAND.choosePerformanceProfile,
     text: words.performanceProfile,
     group: 'settings',
     needs: 'choosing',
     isAvailable: isAlwaysAvailable,
   },
-  { id: 'settings', text: words.settings, group: 'settings', isAvailable: isAlwaysAvailable },
+  {
+    id: COMMAND.openSettings,
+    text: words.openSettings,
+    group: 'settings',
+    isAvailable: isAlwaysAvailable,
+  },
 ]
 
 export const createWindowSettingsCommands = (words: Words): readonly Command[] => [

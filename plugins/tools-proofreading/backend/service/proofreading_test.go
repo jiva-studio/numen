@@ -233,7 +233,7 @@ func TestProofreadWithoutAVersionUsesTheLiveOne(t *testing.T) {
 		return getRows(prompt, func(_, text string) string { return strings.ReplaceAll(text, "vacum", "vacuum") })
 	}
 
-	if _, err := newProofreadCommand(s.run)(t.Context(), command.Request{Command: "proofread", Path: scanPath}); err != nil {
+	if _, err := newProofreadCommand(s.run)(t.Context(), command.Request{Command: "proofreading.create", Path: scanPath}); err != nil {
 		t.Fatal(err)
 	}
 

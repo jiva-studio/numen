@@ -81,7 +81,7 @@ const target: CommandTarget = {
 }
 
 const createRenameInvocation = (name = ''): CommandInvocation =>
-  createInvocation('renameVault', target, name)
+  createInvocation('app:vault.rename', target, name)
 
 describe('showing another vault', () => {
   it('opens it and draws the page again', async () => {

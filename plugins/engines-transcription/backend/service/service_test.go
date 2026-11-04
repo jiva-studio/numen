@@ -288,7 +288,7 @@ func TestTranscribeCommandWaitsForTranscript(t *testing.T) {
 	s := newScene(t)
 	run := newTranscribeCommand(s.transcriber)
 
-	res, err := run(t.Context(), command.Request{Command: "transcribe", Path: lecture})
+	res, err := run(t.Context(), command.Request{Command: "transcript.create", Path: lecture})
 	if err != nil || res.Message != "transcribed "+lecture {
 		t.Fatalf("answered %+v (%v)", res, err)
 	}
@@ -304,7 +304,7 @@ func TestTranscribeCommandReportsUnopenableRecording(t *testing.T) {
 	s := newScene(t)
 	s.model.isBroken = true
 
-	_, err := newTranscribeCommand(s.transcriber)(t.Context(), command.Request{Command: "transcribe", Path: lecture})
+	_, err := newTranscribeCommand(s.transcriber)(t.Context(), command.Request{Command: "transcript.create", Path: lecture})
 
 	if err == nil || !strings.Contains(err.Error(), "cannot be opened") {
 		t.Errorf("a recording that cannot be opened was answered %v", err)

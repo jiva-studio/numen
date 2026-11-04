@@ -127,11 +127,11 @@ func TestRecogniseCommandReportsPages(t *testing.T) {
 	}
 	run := newRecogniseCommand(recognitions)
 
-	res, err := run(t.Context(), command.Request{Command: "recognise", Path: "books/scan.pdf"})
+	res, err := run(t.Context(), command.Request{Command: "recognition.create", Path: "books/scan.pdf"})
 	if err != nil || !strings.Contains(res.Message, "recognised 2 pages of books/scan.pdf") {
 		t.Fatalf("answered %+v (%v)", res, err)
 	}
-	if _, err := run(t.Context(), command.Request{Command: "recognise", Path: "books/gone.pdf"}); err == nil {
+	if _, err := run(t.Context(), command.Request{Command: "recognition.create", Path: "books/gone.pdf"}); err == nil {
 		t.Fatal("a file that is not there was recognised")
 	}
 
@@ -151,7 +151,7 @@ func TestRecogniseCommandReportsPages(t *testing.T) {
 		})
 		emptyRecognitions.SetCompilationCache(compilation)
 	}
-	emptyRes, err := newRecogniseCommand(emptyRecognitions)(t.Context(), command.Request{Command: "recognise", Path: "books/scan.pdf"})
+	emptyRes, err := newRecogniseCommand(emptyRecognitions)(t.Context(), command.Request{Command: "recognition.create", Path: "books/scan.pdf"})
 	if err != nil || emptyRes.Message != "books/scan.pdf says nothing that could be read, and nothing was kept" {
 		t.Fatalf("empty scan answered %+v (%v)", emptyRes, err)
 	}

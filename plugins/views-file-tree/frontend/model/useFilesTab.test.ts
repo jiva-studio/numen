@@ -37,7 +37,7 @@ const target: Record<string, readonly Entry[]> = {
 /** The window's commands over a row: every one the menu can offer, on any row, and no icons. */
 const windowCommands = {
   getPathCommands: () =>
-    ['remove', 'transcribe', 'recognise', 'proofread', 'copy'].map((id) => ({
+    ['app:note.trash', 'transcribe', 'recognise', 'proofread', 'app:note.copyPath'].map((id) => ({
       id,
       text: id,
       group: 'run',
@@ -179,7 +179,7 @@ describe('what the menu offers', () => {
   it('draws a command and an entry with the icons the window gives', () => {
     const { one } = tab()
 
-    expect(one.getCommandIcon('remove')).toBeNull()
+    expect(one.getCommandIcon('app:note.trash')).toBeNull()
     expect(one.getEntryIcon(null, false)).toStrictEqual({})
   })
 })
@@ -350,7 +350,7 @@ describe('rows requested to go', () => {
 
     one.remove(['Entropy.md', 'Cover.png'])
 
-    expect(recorded).toStrictEqual(['runs remove Entropy.md Cover.png Entropy.md'])
+    expect(recorded).toStrictEqual(['runs app:note.trash Entropy.md Cover.png Entropy.md'])
   })
 
   it('ask for nothing where nothing is selected', async () => {
@@ -496,27 +496,29 @@ describe('an item chosen in the menu on a row', () => {
   it('passes a command over the file to the window', async () => {
     const { recorded, one } = await openRowMenu()
 
-    one.chooseMenuItem('remove')
+    one.chooseMenuItem('app:note.trash')
 
-    expect(recorded).toStrictEqual(['runs remove Entropy.md Entropy.md'])
+    expect(recorded).toStrictEqual(['runs app:note.trash Entropy.md Entropy.md'])
   })
 
   it('passes the whole selection to the window, on a row standing in it', async () => {
     const pendingState = await openRowMenu()
     pendingState.list.selectPaths(['Entropy.md', 'Cover.png'])
 
-    pendingState.one.chooseMenuItem('remove')
+    pendingState.one.chooseMenuItem('app:note.trash')
 
-    expect(pendingState.recorded).toStrictEqual(['runs remove Entropy.md Cover.png Entropy.md'])
+    expect(pendingState.recorded).toStrictEqual([
+      'runs app:note.trash Entropy.md Cover.png Entropy.md',
+    ])
   })
 
   it('passes the one row to the window, on a row standing outside the selection', async () => {
     const pendingState = await openRowMenu()
     pendingState.list.selectPaths(['Cover.png'])
 
-    pendingState.one.chooseMenuItem('remove')
+    pendingState.one.chooseMenuItem('app:note.trash')
 
-    expect(pendingState.recorded).toStrictEqual(['runs remove Entropy.md Entropy.md'])
+    expect(pendingState.recorded).toStrictEqual(['runs app:note.trash Entropy.md Entropy.md'])
   })
 
   it('does nothing at all for a choice the menu does not offer', async () => {
@@ -530,7 +532,7 @@ describe('an item chosen in the menu on a row', () => {
   it('puts the menu away whatever was chosen', async () => {
     const { one } = await openRowMenu()
 
-    one.chooseMenuItem('remove')
+    one.chooseMenuItem('app:note.trash')
 
     expect(one.menu.value).toBeNull()
   })
@@ -620,9 +622,9 @@ describe('whether a command is run over a note', () => {
     await list.openFolder(ROOT)
 
     one.openMenu({ path: 'physics', at: { x: 0, y: 0 } })
-    one.chooseMenuItem('copy')
+    one.chooseMenuItem('app:note.copyPath')
     one.openMenu({ path: 'Heat.pdf', at: { x: 0, y: 0 } })
-    one.chooseMenuItem('copy')
+    one.chooseMenuItem('app:note.copyPath')
 
     expect(folders).toStrictEqual([true, false])
   })

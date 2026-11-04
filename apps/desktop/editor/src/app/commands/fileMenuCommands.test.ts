@@ -17,7 +17,7 @@ import {
 const recognise: FileMenuEntry = {
   pluginId: 'org.example.ocr',
   pluginName: 'Example OCR',
-  command: 'recognise',
+  command: 'recognition.create',
   title: 'Read the scan',
   icon: 'scan-text',
   versionId: '',
@@ -25,7 +25,7 @@ const recognise: FileMenuEntry = {
 const proofread: FileMenuEntry = {
   pluginId: 'org.example.fix',
   pluginName: 'Example Fix',
-  command: 'proofread',
+  command: 'proofreading.create',
   title: 'Proofread',
   icon: 'spell-check',
   versionId: 'org.example.ocr/recognition',
@@ -33,7 +33,7 @@ const proofread: FileMenuEntry = {
 const deleteRecognition: FileMenuEntry = {
   pluginId: 'org.example.ocr',
   pluginName: 'Example OCR',
-  command: 'delete-recognition',
+  command: 'recognition.delete',
   title: 'Delete recognition',
   icon: 'trash-2',
   versionId: 'org.example.ocr/recognition',
@@ -99,9 +99,9 @@ describe('file menu commands', () => {
 
   it('distinguishes a command over the file from one over a version', () => {
     expect(isOverVersion(recognise)).toBe(false)
-    expect(getFileMenuId(recognise)).toBe('plugin-command:org.example.ocr:recognise')
+    expect(getFileMenuId(recognise)).toBe('org.example.ocr:recognition.create')
     expect(getFileMenuId(proofread)).toBe(
-      'file-menu:org.example.fix:proofread:org.example.ocr/recognition',
+      'org.example.fix:proofreading.create@org.example.ocr/recognition',
     )
   })
 

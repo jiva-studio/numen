@@ -161,7 +161,7 @@ describe('flashcards-studio plugin', () => {
 
     const commands = ctx.getRegisteredCommands()
     expect(commands.map(({ id, title, scope }) => ({ id, title, scope }))).toStrictEqual([
-      { id: 'preset', title: 'Open preset tab', scope: 'note' },
+      { id: 'preset.open', title: 'Open preset', scope: 'note' },
     ])
   })
 
@@ -170,7 +170,7 @@ describe('flashcards-studio plugin', () => {
     const openTab = vi.spyOn(ctx, 'openTab')
     activate(ctx)
 
-    await ctx.triggerCommand('preset', { path: 'Plan.md', title: 'Plan', type: 'note' })
+    await ctx.triggerCommand('preset.open', { path: 'Plan.md', title: 'Plan', type: 'note' })
 
     expect(openTab).toHaveBeenCalledExactlyOnceWith(PRESET, 'Plan.md')
   })

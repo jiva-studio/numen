@@ -17,6 +17,7 @@ import {
   ANSWER_WORDS,
   type VaultRef,
 } from '@/features/command-palette'
+import { COMMAND } from '@/shared/commandIds'
 import { findIcon } from '@/shared/icons'
 import { getUserAgent } from '@/shared/lib/dom'
 import { VERSION } from '../lib/version'
@@ -29,12 +30,12 @@ const props = defineProps<WelcomeScreenProps>()
 
 /* --------------------------------- State ---------------------------------- */
 const adding = computed(() => {
-  const icon = findIcon('newVault')
+  const icon = findIcon(COMMAND.createVault)
   return {
     text: words.newVault,
     detail: words.newVaultDetail,
     ...(icon ? { icon } : {}),
-    ...createRowKeys('newVault', getUserAgent()),
+    ...createRowKeys(COMMAND.createVault, getUserAgent()),
   }
 })
 
@@ -79,7 +80,7 @@ function onOpen(id: string) {
   const vault: VaultRef = { id: one.id, name: one.name }
   runInBackground(
     runInvocation(
-      createInvocation('openVault', { ...props.getTarget(), vault }),
+      createInvocation(COMMAND.openVault, { ...props.getTarget(), vault }),
       props.doing,
       ANSWER_WORDS,
     ),
@@ -106,6 +107,6 @@ function onKeyDown(event: KeyboardEvent) {
     :version="VERSION"
     @run="onRun"
     @open="onOpen"
-    @take-offer="runCommand('newVault', getTarget())"
+    @take-offer="runCommand(COMMAND.createVault, getTarget())"
   />
 </template>

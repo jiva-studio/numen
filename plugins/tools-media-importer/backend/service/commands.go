@@ -16,11 +16,11 @@ const trueValue = "true"
 func newCommands(links *link.Links, hosted link.Host) (*command.Registry, error) {
 	commands := command.New()
 	for id, run := range map[string]command.Run{
-		"import":        newImportCommand(links),
-		"download-text": newDownloadTextCommand(links),
-		"download-copy": newDownloadCopyCommand(links),
-		"delete-copy":   newDeleteCopyCommand(links),
-		"delete-text":   command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID),
+		"link.import":        newImportCommand(links),
+		"link.downloadText":  newDownloadTextCommand(links),
+		"link.downloadVideo": newDownloadCopyCommand(links),
+		"link.deleteVideo":   newDeleteCopyCommand(links),
+		"link.deleteText":    command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID),
 	} {
 		// gomutants:disable-next-line BRANCH_IF reason="registering distinct static command IDs on a new registry cannot fail"
 		if err := commands.Add(id, run); err != nil {

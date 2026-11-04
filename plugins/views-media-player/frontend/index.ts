@@ -29,7 +29,7 @@ export function activate(context: PluginContext): void {
   })
 
   context.registerCommand({
-    id: 'record',
+    id: 'recording.create',
     title: WORDS.record,
     icon: Mic,
     handler: async () => {

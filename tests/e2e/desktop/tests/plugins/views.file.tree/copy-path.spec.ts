@@ -9,7 +9,7 @@ declare global {
   }
 }
 
-test.describe('Copy path', () => {
+test.describe('Copy note path', () => {
   test('puts the vault path of the row on the clipboard', async ({ page }) => {
     await page.addInitScript(() => {
       window.copiedTexts = []
@@ -27,7 +27,7 @@ test.describe('Copy path', () => {
     await showInFiles(page, ['notes'])
 
     await getRow(page, 'notes/Entropy.md').click({ button: 'right' })
-    await page.getByRole('menuitem', { name: 'Copy path', exact: true }).click()
+    await page.getByRole('menuitem', { name: 'Copy note path', exact: true }).click()
 
     await expect.poll(() => page.evaluate(() => window.copiedTexts)).toEqual(['notes/Entropy.md'])
   })

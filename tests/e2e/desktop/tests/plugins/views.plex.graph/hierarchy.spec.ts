@@ -43,7 +43,7 @@ const waitForMadeNote = async (page: Page, title: string): Promise<string> => {
 
 /** Puts the note in front into the focus of the plex. */
 const showInPlex = async (page: Page, title: string) => {
-  await runPaletteCommand(page, 'Show in plex', 'Show in plex')
+  await runPaletteCommand(page, 'Show note in plex', 'Show note in plex')
   await expect(getPlexNode(page, title, 'focus')).toBeAttached()
 }
 
@@ -65,7 +65,7 @@ test.describe('Making a related note', () => {
       await openWorkspace(page)
       await openNote(page, parent)
 
-      await runPaletteCommand(page, 'New child note', 'New child note')
+      await runPaletteCommand(page, 'Create child note', 'Create child note')
       await nameNote(page, childTitle)
 
       const child = await waitForMadeNote(page, childTitle)
@@ -90,7 +90,7 @@ test.describe('Making a related note', () => {
       await openWorkspace(page)
       await openNote(page, note)
 
-      await runPaletteCommand(page, 'New parent note', 'New parent note')
+      await runPaletteCommand(page, 'Create parent note', 'Create parent note')
       await nameNote(page, parentTitle)
 
       const parent = await waitForMadeNote(page, parentTitle)
@@ -113,7 +113,7 @@ test.describe('Making a related note', () => {
       await showInPlex(page, fromTitle)
 
       await getPlexNode(page, fromTitle, 'focus').click({ button: 'right' })
-      await page.getByRole('menuitem', { name: 'New jump note' }).click()
+      await page.getByRole('menuitem', { name: 'Create jump note' }).click()
       await nameNote(page, jumpTitle)
 
       const jump = await waitForMadeNote(page, jumpTitle)

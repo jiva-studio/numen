@@ -162,10 +162,10 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 	}
 	provider := recognition.NewProvider(recognitions)
 	commands := command.New()
-	if err := commands.Add("recognise", newRecogniseCommand(recognitions)); err != nil {
+	if err := commands.Add("recognition.create", newRecogniseCommand(recognitions)); err != nil {
 		return err
 	}
-	if err := commands.Add("delete-recognition", command.NewDeleteTextRun(h.Texts, h.Store, PluginID)); err != nil {
+	if err := commands.Add("recognition.delete", command.NewDeleteTextRun(h.Texts, h.Store, PluginID)); err != nil {
 		return err
 	}
 	s.SetUpdateConfig(models.updateConfig)

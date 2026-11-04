@@ -29,14 +29,14 @@ const getMenu = (overrides: Partial<Entry> = {}, isSeveral = false) =>
 describe('the menu on a row standing for a note', () => {
   it('opens it first, then what the tab does, then the rest of the window’s commands', () => {
     expect(getGroupedIds()).toStrictEqual([
-      'read',
+      'app:note.open',
       'travel',
       '— new',
       'rename',
-      'copy',
+      'app:note.copyPath',
       '— links',
       '— ask',
-      '— remove',
+      '— app:note.trash',
     ])
 
     const menu = getMenu()
@@ -45,10 +45,10 @@ describe('the menu on a row standing for a note', () => {
 
     const linksSubmenu = menu.find((one) => one.id === 'links')
     expect(linksSubmenu?.children?.map((c) => c.id)).toStrictEqual([
-      'child',
-      'parent',
-      'jump',
-      'title',
+      'app:note.createChild',
+      'app:note.createParent',
+      'app:note.createJump',
+      'app:note.rename',
     ])
   })
 })
@@ -58,10 +58,10 @@ describe('the menu on a row standing for any other file', () => {
     expect(getGroupedIds({ isNote: false, path: 'Lecture.mp3' })).toStrictEqual([
       'new',
       'rename',
-      'copy',
+      'app:note.copyPath',
       '— extract',
       'refine',
-      '— remove',
+      '— app:note.trash',
     ])
   })
 
@@ -69,21 +69,21 @@ describe('the menu on a row standing for any other file', () => {
     expect(getGroupedIds({ isNote: false, path: 'Cover.png' })).toStrictEqual([
       'new',
       'rename',
-      'copy',
-      '— remove',
+      'app:note.copyPath',
+      '— app:note.trash',
     ])
     expect(getGroupedIds({ isFolder: true, isNote: false, path: 'physics' })).toStrictEqual([
       'new',
       'rename',
-      'copy',
-      '— remove',
+      'app:note.copyPath',
+      '— app:note.trash',
     ])
   })
 })
 
 describe('the menu over a selection of several', () => {
   it('offers the window’s commands alone, which mean something for all of them', () => {
-    expect(getGroupedIds({}, true)).toStrictEqual(['remove'])
+    expect(getGroupedIds({}, true)).toStrictEqual(['app:note.trash'])
   })
 })
 
@@ -100,7 +100,7 @@ describe('what the tab does itself', () => {
     expect(OWN_IDS.has(NEW_NOTE)).toBe(true)
     expect(OWN_IDS.has(NEW_FOLDER)).toBe(true)
     expect(OWN_IDS.has(RENAME)).toBe(true)
-    expect(OWN_IDS.has('remove')).toBe(false)
+    expect(OWN_IDS.has('app:note.trash')).toBe(false)
     expect(OWN_IDS.has('transcribe')).toBe(false)
   })
 })

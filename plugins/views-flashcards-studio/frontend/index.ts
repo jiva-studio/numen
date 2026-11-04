@@ -75,7 +75,7 @@ export function activate(context: PluginContext): void {
   context.registerTabKind(cardModels.kind)
   context.registerTabKind(schedules.kind)
   context.registerCommand({
-    id: 'preset',
+    id: 'preset.open',
     title: presetWords.openPreset,
     scope: NOTE_SCOPE,
     icon: Gauge,

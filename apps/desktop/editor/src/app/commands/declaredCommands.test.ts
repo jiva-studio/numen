@@ -14,7 +14,7 @@ import {
 
 const createSample: DeclaredCommand = {
   pluginId: 'org.example.sample',
-  id: 'create-sample',
+  id: 'sample.create',
   title: 'Create a sample',
   icon: 'layers',
   contentTypes: [],
@@ -50,7 +50,7 @@ describe('a declared command in the palette', () => {
   it('asks for its arguments, one step each', () => {
     const [sample] = createDeclaredPaletteCommands([createSample])
 
-    expect(sample?.id).toBe('plugin-command:org.example.sample:create-sample')
+    expect(sample?.id).toBe('org.example.sample:sample.create')
     expect(sample?.group).toBe('window')
     expect(sample?.icon).toBe(getNamedIcon('layers'))
     expect(sample?.needs).toBe('arguments')

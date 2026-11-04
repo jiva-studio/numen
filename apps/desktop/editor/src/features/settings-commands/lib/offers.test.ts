@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Ranges, Sizes, Theme } from '@/entities/settings'
 import { WORDS as words } from '@/shared/words'
-import { INTERFACE_SCALE, TEXT_SCALE } from './appearanceValues'
+import { COMMAND } from '@/shared/commandIds'
 import { getModeGroups, getSizeGroups, getThemeGroups } from './offers'
 
 const THEMES: readonly Theme[] = [
@@ -129,17 +129,19 @@ describe('the sizes offered', () => {
       .map((one) => one.title)
 
   it('goes as far as the range of that command reaches', () => {
-    expect(titles(INTERFACE_SCALE).at(-1)).toBe('200%')
-    expect(titles(TEXT_SCALE).at(-1)).toBe('175%')
+    expect(titles(COMMAND.chooseInterfaceSize).at(-1)).toBe('200%')
+    expect(titles(COMMAND.chooseTextSize).at(-1)).toBe('175%')
   })
 
   it('remains a number a person typed in its place, once', () => {
-    expect(titles(INTERFACE_SCALE, '137')).toContain('137%')
-    expect(titles(INTERFACE_SCALE, '137').indexOf('137%')).toBe(6)
-    expect(titles(INTERFACE_SCALE, '150').filter((one) => one === '150%')).toHaveLength(1)
+    expect(titles(COMMAND.chooseInterfaceSize, '137')).toContain('137%')
+    expect(titles(COMMAND.chooseInterfaceSize, '137').indexOf('137%')).toBe(6)
+    expect(titles(COMMAND.chooseInterfaceSize, '150').filter((one) => one === '150%')).toHaveLength(
+      1,
+    )
   })
 
   it('leaves out a number the range does not reach', () => {
-    expect(titles(INTERFACE_SCALE, '250')).not.toContain('250%')
+    expect(titles(COMMAND.chooseInterfaceSize, '250')).not.toContain('250%')
   })
 })

@@ -115,12 +115,12 @@ describe('the four commands over how the window is drawn', () => {
       [
         'find the theme by “theme”, and light and dark by either word',
         ['theme', 'light', 'dark'],
-        ['Change theme', 'Light or dark', 'Light or dark'],
+        ['Change theme', 'Choose light or dark mode', 'Choose light or dark mode'],
       ],
       [
         'find the two sizes by “interface”, by “font” and by “reading”',
         ['interface', 'font', 'reading'],
-        ['Interface size', 'Reading font size', 'Reading font size'],
+        ['Set interface size', 'Set reading font size', 'Set reading font size'],
       ],
     ])('%s', async (_, words, rows) => {
       await openPalette()
@@ -136,7 +136,7 @@ describe('the four commands over how the window is drawn', () => {
 
       await type('size')
 
-      expect(getRemainingRows()).toStrictEqual(['Interface size', 'Reading font size'])
+      expect(getRemainingRows()).toStrictEqual(['Set interface size', 'Set reading font size'])
     })
   })
 

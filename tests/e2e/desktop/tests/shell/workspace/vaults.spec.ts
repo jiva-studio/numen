@@ -104,7 +104,7 @@ test.describe('Vaults of the installation', () => {
     }
   })
 
-  test('takes a vault off the list with Remove from list and keeps its folder', async ({
+  test('takes a vault off the list with Remove vault from list and keeps its folder', async ({
     page,
     request,
   }) => {
@@ -113,7 +113,7 @@ test.describe('Vaults of the installation', () => {
     try {
       await openWorkspace(page)
 
-      await runPaletteCommand(page, 'Remove from list', 'Remove from list')
+      await runPaletteCommand(page, 'Remove vault from list', 'Remove vault from list')
       await pickVault(page, second.name)
       await page.getByRole('option', { name: new RegExp(`^Remove “${second.name}”`) }).click()
 

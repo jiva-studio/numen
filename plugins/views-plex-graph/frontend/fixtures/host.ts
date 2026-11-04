@@ -57,7 +57,9 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     runCommand: (id, target) => {
       recorded.commands.push([id, target])
     },
-    getNoteCommands: () => [{ id: 'plugin:share', text: 'Share the note', group: NOTE_TYPE }],
+    getNoteCommands: () => [
+      { id: 'org.example.sample:share.run', text: 'Share the note', group: NOTE_TYPE },
+    ],
     ask: (text) => {
       recorded.questions.push(text)
     },

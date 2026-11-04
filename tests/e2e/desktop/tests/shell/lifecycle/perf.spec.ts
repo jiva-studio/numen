@@ -51,7 +51,7 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
 
   test('inspects ocr engine language options in settings tab', async ({ page }) => {
     await openWorkspace(page)
-    await runCommand(page, 'Settings', /^Settings$/)
+    await runCommand(page, 'Open settings', /^Open settings$/)
     const settings = page.getByRole('tabpanel', { name: /Settings/ })
 
     await settings
@@ -64,7 +64,7 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
 
   test('persists the dark mode across a full application reload', async ({ page, request }) => {
     await openWorkspace(page)
-    await runPaletteCommand(page, 'Light or dark', 'Light or dark')
+    await runPaletteCommand(page, 'Choose light or dark mode', 'Choose light or dark mode')
     await page.getByRole('option', { name: /^Dark/ }).click()
 
     await expect

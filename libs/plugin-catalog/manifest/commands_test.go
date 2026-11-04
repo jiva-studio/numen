@@ -15,7 +15,7 @@ const commandManifestHead = `{"id":"a.b","name":"A","version":"1.0.0","backend":
 
 func TestAManifestDeclaresCommandsWithTheirFilesAndArguments(t *testing.T) {
 	text := commandManifestHead + `[{
-		"id": "convert-pages", "title": "Convert", "contentTypes": ["application/pdf", "image/vnd.djvu"], "hiddenInPalette": true,
+		"id": "pages.convert", "title": "Convert", "contentTypes": ["application/pdf", "image/vnd.djvu"], "hiddenInPalette": true,
 		"arguments": [
 			{"name": "pages", "title": "Pages", "type": "number", "required": true},
 			{"name": "again", "title": "Again", "type": "boolean"},
@@ -32,7 +32,7 @@ func TestAManifestDeclaresCommandsWithTheirFilesAndArguments(t *testing.T) {
 		t.Fatalf("the commands came out as %+v", parsed.Commands)
 	}
 	command := parsed.Commands[0]
-	if command.ID != "convert-pages" || command.Title != "Convert" || !command.IsHiddenInPalette || !command.HasFiles() || len(command.Arguments) != 3 {
+	if command.ID != "pages.convert" || command.Title != "Convert" || !command.IsHiddenInPalette || !command.HasFiles() || len(command.Arguments) != 3 {
 		t.Fatalf("the command came out as %+v", command)
 	}
 	pages, _ := command.GetArgument("pages")
@@ -54,7 +54,7 @@ func TestAManifestDeclaresCommandsWithTheirFilesAndArguments(t *testing.T) {
 
 func TestACommandOverAnyFileRunsOverEveryFile(t *testing.T) {
 	m, err := manifestjson.Read(strings.NewReader(
-		commandManifestHead + `[{"id":"proofread","title":"Proofread","contentTypes":["*/*"]}]}`,
+		commandManifestHead + `[{"id":"proofreading.create","title":"Proofread","contentTypes":["*/*"]}]}`,
 	))
 	if err != nil {
 		t.Fatal(err)
@@ -70,38 +70,38 @@ func TestACommandThatBreaksARuleIsAnInvalidCommand(t *testing.T) {
 		commands string
 		want     error
 	}{
-		"an id in capitals":       {`[{"id":"Convert","title":"C"}]`, manifest.ErrInvalidCommand},
-		"an id with a space":      {`[{"id":"convert pages","title":"C"}]`, manifest.ErrInvalidCommand},
+		"an id in capitals":       {`[{"id":"page.Convert","title":"C"}]`, manifest.ErrInvalidCommand},
+		"an id with a space":      {`[{"id":"page.convert pages","title":"C"}]`, manifest.ErrInvalidCommand},
 		"an empty id":             {`[{"id":"","title":"C"}]`, manifest.ErrInvalidCommand},
-		"an id declared twice":    {`[{"id":"convert","title":"C"},{"id":"convert","title":"D"}]`, manifest.ErrInvalidCommand},
-		"no title":                {`[{"id":"convert","title":" "}]`, manifest.ErrInvalidCommand},
-		"an extension for a type": {`[{"id":"convert","title":"C","contentTypes":[".pdf"]}]`, manifest.ErrInvalidCommand},
-		"a mask of a subtype":     {`[{"id":"convert","title":"C","contentTypes":["*/pdf"]}]`, manifest.ErrInvalidCommand},
+		"an id declared twice":    {`[{"id":"page.convert","title":"C"},{"id":"page.convert","title":"D"}]`, manifest.ErrInvalidCommand},
+		"no title":                {`[{"id":"page.convert","title":" "}]`, manifest.ErrInvalidCommand},
+		"an extension for a type": {`[{"id":"page.convert","title":"C","contentTypes":[".pdf"]}]`, manifest.ErrInvalidCommand},
+		"a mask of a subtype":     {`[{"id":"page.convert","title":"C","contentTypes":["*/pdf"]}]`, manifest.ErrInvalidCommand},
 		"a type in capitals": {
-			`[{"id":"convert","title":"C","contentTypes":["Application/PDF"]}]`, manifest.ErrInvalidCommand,
+			`[{"id":"page.convert","title":"C","contentTypes":["Application/PDF"]}]`, manifest.ErrInvalidCommand,
 		},
 		"an argument of no known type": {
-			`[{"id":"convert","title":"C","arguments":[{"name":"pages","title":"P","type":"integer"}]}]`,
+			`[{"id":"page.convert","title":"C","arguments":[{"name":"pages","title":"P","type":"integer"}]}]`,
 			manifest.ErrInvalidCommandArgument,
 		},
 		"an argument taken twice": {
-			`[{"id":"convert","title":"C","arguments":[{"name":"p","title":"P","type":"string"},{"name":"p","title":"Q","type":"string"}]}]`,
+			`[{"id":"page.convert","title":"C","arguments":[{"name":"p","title":"P","type":"string"},{"name":"p","title":"Q","type":"string"}]}]`,
 			manifest.ErrInvalidCommandArgument,
 		},
 		"an argument named as no flag is": {
-			`[{"id":"convert","title":"C","arguments":[{"name":"--pages","title":"P","type":"string"}]}]`,
+			`[{"id":"page.convert","title":"C","arguments":[{"name":"--pages","title":"P","type":"string"}]}]`,
 			manifest.ErrInvalidCommandArgument,
 		},
 		"an argument with no title": {
-			`[{"id":"convert","title":"C","arguments":[{"name":"pages","type":"string"}]}]`,
+			`[{"id":"page.convert","title":"C","arguments":[{"name":"pages","type":"string"}]}]`,
 			manifest.ErrInvalidCommandArgument,
 		},
 		"a required argument hidden in the palette": {
-			`[{"id":"convert","title":"C","arguments":[{"name":"wait","title":"W","type":"boolean","required":true,"hiddenInPalette":true}]}]`,
+			`[{"id":"page.convert","title":"C","arguments":[{"name":"wait","title":"W","type":"boolean","required":true,"hiddenInPalette":true}]}]`,
 			manifest.ErrInvalidCommandArgument,
 		},
 		"an undeclared note type": {
-			`[{"id":"convert","title":"C","noteTypes":["undeclared"]}]`,
+			`[{"id":"page.convert","title":"C","noteTypes":["undeclared"]}]`,
 			manifest.ErrInvalidCommand,
 		},
 	}
@@ -117,7 +117,7 @@ func TestACommandThatBreaksARuleIsAnInvalidCommand(t *testing.T) {
 }
 
 func TestAPluginThatDeclaresCommandsHasABackendToRunThem(t *testing.T) {
-	text := `{"id":"a.b","name":"A","version":"1.0.0","commands":[{"id":"convert","title":"C"}]}`
+	text := `{"id":"a.b","name":"A","version":"1.0.0","commands":[{"id":"page.convert","title":"C"}]}`
 
 	_, err := manifestjson.Read(strings.NewReader(text))
 
@@ -128,7 +128,7 @@ func TestAPluginThatDeclaresCommandsHasABackendToRunThem(t *testing.T) {
 
 func TestReadManifestReadsAnArgumentHiddenInThePalette(t *testing.T) {
 	m, err := manifestjson.Read(strings.NewReader(commandManifestHead +
-		`[{"id":"import","title":"I","arguments":[{"name":"wait","title":"W","type":"boolean","hiddenInPalette":true}]}]}`))
+		`[{"id":"link.import","title":"I","arguments":[{"name":"wait","title":"W","type":"boolean","hiddenInPalette":true}]}]}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,9 +139,9 @@ func TestReadManifestReadsAnArgumentHiddenInThePalette(t *testing.T) {
 
 func TestManifestDeclaresCommandWithContextCondition(t *testing.T) {
 	parsed, err := manifestjson.Read(strings.NewReader(commandManifestHead + `[
-		{"id": "proofread", "title": "Proofread", "when": [
+		{"id": "proofreading.create", "title": "Proofread", "when": [
 			{"key": "version.live", "is": ["true"]}, {"key": "version.kind", "is": ["transcript", "recognition"]}]},
-		{"id": "delete-proofreading", "title": "Delete proofreading", "when": [{"key": "version.plugin", "is": ["a.b"]}]}
+		{"id": "proofreading.delete", "title": "Delete proofreading", "when": [{"key": "version.plugin", "is": ["a.b"]}]}
 	]}`))
 	if err != nil {
 		t.Fatal(err)

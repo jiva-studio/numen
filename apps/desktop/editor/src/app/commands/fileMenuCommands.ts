@@ -19,7 +19,7 @@ export const isOverVersion = (entry: FileMenuEntry): boolean => entry.versionId 
 /** What the palette files an entry under: the declared command it is, or the version it is over. */
 export const getFileMenuId = (entry: FileMenuEntry): string =>
   isOverVersion(entry)
-    ? `file-menu:${entry.pluginId}:${entry.command}:${entry.versionId}`
+    ? `${getPluginCommandId(entry.pluginId, entry.command)}@${entry.versionId}`
     : getPluginCommandId(entry.pluginId, entry.command)
 
 /**

@@ -27,9 +27,9 @@ describe('the commands over a note', () => {
   it('leave out the ones another command reaches on its own row', () => {
     const commands = getNoteCommands(createCommands(words)).map((one) => one.id)
 
-    expect(commands).toContain('read')
-    expect(commands).not.toContain('beside')
-    expect(commands).not.toContain('destroy')
+    expect(commands).toContain('app:note.open')
+    expect(commands).not.toContain('app:note.openBeside')
+    expect(commands).not.toContain('app:note.delete')
   })
 })
 
@@ -40,13 +40,13 @@ describe('the commands over the vaults an installation holds', () => {
       .map((one) => one.id)
 
     expect(commands).toStrictEqual([
-      'first',
-      'goto',
-      'openVault',
-      'newVault',
-      'renameVault',
-      'removeVault',
-      'eraseVault',
+      'app:note.goToStart',
+      'app:note.goTo',
+      'app:vault.open',
+      'app:vault.create',
+      'app:vault.rename',
+      'app:vault.remove',
+      'app:vault.erase',
     ])
   })
 })
@@ -58,12 +58,12 @@ describe('the commands that ask for a choice among a few', () => {
       .map((one) => one.id)
 
     expect(choosing).toStrictEqual([
-      'appearance',
-      'mode',
-      'interfaceScale',
-      'textScale',
-      'syncing',
-      'performanceProfile',
+      'app:appearance.chooseTheme',
+      'app:appearance.chooseMode',
+      'app:appearance.chooseInterfaceSize',
+      'app:appearance.chooseTextSize',
+      'app:note.chooseTitleSync',
+      'app:performance.chooseProfile',
     ])
   })
 })
@@ -114,7 +114,7 @@ describe('createPathCommands', () => {
       createPathCommands({ isNote: true, isFolder: false }, true, [
         { id: 'c1', text: 'C1', group: 'open' },
       ]),
-    ).toStrictEqual([{ id: 'remove', text: PATH_WORDS.remove, group: 'remove' }])
+    ).toStrictEqual([{ id: 'app:note.trash', text: PATH_WORDS.remove, group: 'remove' }])
   })
 
   it('builds folder menu with new and file contributions followed by copy and remove', () => {
@@ -126,17 +126,17 @@ describe('createPathCommands', () => {
     expect(items).toStrictEqual([
       { id: 'new-item', text: 'New Item', group: 'file', parentId: 'new', isDisabled: true },
       { id: 'file-item', text: 'File Item', group: 'file', isDisabled: false },
-      { id: 'copy', text: words.copy, group: 'file' },
-      { id: 'remove', text: PATH_WORDS.remove, group: 'remove' },
+      { id: 'app:note.copyPath', text: words.copy, group: 'file' },
+      { id: 'app:note.trash', text: PATH_WORDS.remove, group: 'remove' },
     ])
   })
 
   it('builds note menu with open, copy, new, relation submenu, other contributions, and remove', () => {
     const defaultNoteItems = createPathCommands({ isNote: true, isFolder: false }, false)
     expect(defaultNoteItems).toStrictEqual([
-      { id: 'read', text: words.read, group: 'open' },
-      { id: 'copy', text: words.copy, group: 'file' },
-      { id: 'remove', text: PATH_WORDS.remove, group: 'remove' },
+      { id: 'app:note.open', text: words.read, group: 'open' },
+      { id: 'app:note.copyPath', text: words.copy, group: 'file' },
+      { id: 'app:note.trash', text: PATH_WORDS.remove, group: 'remove' },
     ])
 
     const items = createPathCommands({ isNote: true, isFolder: false }, false, [
@@ -148,9 +148,9 @@ describe('createPathCommands', () => {
       { id: 'other-custom', text: 'Other Custom', group: 'custom' },
     ])
     expect(items).toStrictEqual([
-      { id: 'read', text: words.read, group: 'open' },
+      { id: 'app:note.open', text: words.read, group: 'open' },
       { id: 'open-ext', text: 'Open Ext', detail: 'D1', group: 'open', isDisabled: false },
-      { id: 'copy', text: words.copy, group: 'file' },
+      { id: 'app:note.copyPath', text: words.copy, group: 'file' },
       { id: 'new-child', text: 'New Child', group: 'file', parentId: 'new', isDisabled: false },
       {
         id: 'relation',
@@ -163,15 +163,15 @@ describe('createPathCommands', () => {
       },
       { id: 'other-default', text: 'Other Default', group: 'file', isDisabled: false },
       { id: 'other-custom', text: 'Other Custom', group: 'custom', isDisabled: false },
-      { id: 'remove', text: PATH_WORDS.remove, group: 'remove' },
+      { id: 'app:note.trash', text: PATH_WORDS.remove, group: 'remove' },
     ])
   })
 
   it('builds non-note file menu excluding relation contributions and preserving parentId', () => {
     const defaultFileItems = createPathCommands({ isNote: false, isFolder: false }, false)
     expect(defaultFileItems).toStrictEqual([
-      { id: 'copy', text: words.copy, group: 'file' },
-      { id: 'remove', text: PATH_WORDS.remove, group: 'remove' },
+      { id: 'app:note.copyPath', text: words.copy, group: 'file' },
+      { id: 'app:note.trash', text: PATH_WORDS.remove, group: 'remove' },
     ])
 
     const items = createPathCommands({ isNote: false, isFolder: false }, false, [
@@ -185,8 +185,8 @@ describe('createPathCommands', () => {
       { id: 'open-f', text: 'Open File', group: 'open', isDisabled: false },
       { id: 'sub-f', text: 'Sub File', group: 'file', parentId: 'new', isDisabled: false },
       { id: 'custom-f', text: 'Custom File', group: 'extra', isDisabled: false },
-      { id: 'copy', text: words.copy, group: 'file' },
-      { id: 'remove', text: PATH_WORDS.remove, group: 'remove' },
+      { id: 'app:note.copyPath', text: words.copy, group: 'file' },
+      { id: 'app:note.trash', text: PATH_WORDS.remove, group: 'remove' },
     ])
   })
 })

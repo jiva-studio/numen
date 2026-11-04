@@ -166,6 +166,8 @@ export const NOTE_TARGET = 'note' as const
 
 // CommandRegistration registers a palette or keybound action.
 export interface CommandRegistration {
+  // The id as `<object>.<action>`, such as `tree.open`. The host files the command under
+  // `<plugin id>:<id>`; registering the same full id twice throws.
   id: string
   title: string
   handler: (note: CommandNote) => void | Promise<void>

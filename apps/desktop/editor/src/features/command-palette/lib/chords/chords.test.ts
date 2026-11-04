@@ -42,18 +42,18 @@ describe('a keystroke the window answers', () => {
 
 describe('the command a letter asks for', () => {
   it('is the one the chord alongside it names', () => {
-    expect(findChordCommand('n', false)).toBe('note')
-    expect(findChordCommand('g', false)).toBe('goto')
+    expect(findChordCommand('n', false)).toBe('app:note.create')
+    expect(findChordCommand('g', false)).toBe('app:note.goTo')
   })
 
   it('is the same command in either case', () => {
-    expect(findChordCommand('N', false)).toBe('note')
+    expect(findChordCommand('N', false)).toBe('app:note.create')
   })
 
   it('is another command entirely when Shift is retained with the letter', () => {
-    expect(findChordCommand('c', true)).toBe('child')
-    expect(findChordCommand('w', true)).toBe('close')
-    expect(findChordCommand('n', true)).toBe('newVault')
+    expect(findChordCommand('c', true)).toBe('app:note.createChild')
+    expect(findChordCommand('w', true)).toBe('app:tab.close')
+    expect(findChordCommand('n', true)).toBe('app:vault.create')
   })
 
   it('is nothing when a letter is retained with the wrong half of the chord', () => {
@@ -75,25 +75,34 @@ describe('the command a letter asks for', () => {
 
 describe('how a keystroke is drawn on the row that names it', () => {
   it('is the key the keyboard in hand holds, and the letter in capitals', () => {
-    expect(findChordKeys('note', 'MacIntel')).toEqual({ icons: ['command'], letter: 'N' })
-    expect(findChordKeys('note', 'Linux x86_64')).toEqual({ icons: ['control'], letter: 'N' })
-    expect(findChordKeys('goto', 'Linux x86_64')).toEqual({ icons: ['control'], letter: 'G' })
+    expect(findChordKeys('app:note.create', 'MacIntel')).toEqual({
+      icons: ['command'],
+      letter: 'N',
+    })
+    expect(findChordKeys('app:note.create', 'Linux x86_64')).toEqual({
+      icons: ['control'],
+      letter: 'N',
+    })
+    expect(findChordKeys('app:note.goTo', 'Linux x86_64')).toEqual({
+      icons: ['control'],
+      letter: 'G',
+    })
   })
 
   it('carries Shift where the chord holds it', () => {
-    expect(findChordKeys('child', 'MacIntel')).toEqual({
+    expect(findChordKeys('app:note.createChild', 'MacIntel')).toEqual({
       icons: ['command', 'shift'],
       letter: 'C',
     })
-    expect(findChordKeys('close', 'Linux x86_64')).toEqual({
+    expect(findChordKeys('app:tab.close', 'Linux x86_64')).toEqual({
       icons: ['control', 'shift'],
       letter: 'W',
     })
   })
 
   it('is nothing for a command no keystroke reaches', () => {
-    expect(findChordKeys('destroy', 'Linux x86_64')).toBeUndefined()
-    expect(createRowKeys('destroy', 'Linux x86_64')).toEqual({})
+    expect(findChordKeys('app:note.delete', 'Linux x86_64')).toBeUndefined()
+    expect(createRowKeys('app:note.delete', 'Linux x86_64')).toEqual({})
   })
 })
 
@@ -148,7 +157,7 @@ describe('every keystroke the table holds', () => {
   })
 
   it('reaches nothing that removes a note, a file or a vault', () => {
-    const destroys = ['remove', 'destroy', 'removeVault', 'eraseVault']
+    const destroys = ['app:note.trash', 'app:note.delete', 'app:vault.remove', 'app:vault.erase']
     for (const target of CHORDS) expect(destroys).not.toContain(target.command)
   })
 

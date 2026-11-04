@@ -6,10 +6,10 @@ export function extractPaletteCommands(
   commands: ReadonlyMap<string, { reg: CommandRegistration }>,
 ): PluginPaletteCommand[] {
   const list: PluginPaletteCommand[] = []
-  for (const { reg } of commands.values()) {
+  for (const [fullId, { reg }] of commands) {
     if (reg.canShowInPalette === false) continue
     list.push({
-      id: `plugin:${reg.id}`,
+      id: fullId,
       title: reg.title,
       ...(reg.shortcut ? { shortcut: reg.shortcut } : {}),
       ...(reg.scope ? { scope: reg.scope } : {}),

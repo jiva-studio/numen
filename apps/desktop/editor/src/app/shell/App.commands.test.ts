@@ -182,8 +182,8 @@ describe('a command reached by its own keystroke', () => {
     pressKey('p')
     await settle()
 
-    expect(getRow(window, 'note')?.keys).toEqual({ icons: ['control'], letter: 'N' })
-    expect(getRow(window, 'goto')?.keys).toEqual({ icons: ['control'], letter: 'G' })
+    expect(getRow(window, 'app:note.create')?.keys).toEqual({ icons: ['control'], letter: 'N' })
+    expect(getRow(window, 'app:note.goTo')?.keys).toEqual({ icons: ['control'], letter: 'G' })
   })
 
   it('draws no keystroke on the rows no keystroke reaches', async () => {
@@ -192,8 +192,8 @@ describe('a command reached by its own keystroke', () => {
     pressKey('p')
     await settle()
 
-    expect(getRow(window, 'destroy')?.keys).toBeUndefined()
-    expect(getRow(window, 'eraseVault')?.keys).toBeUndefined()
+    expect(getRow(window, 'app:note.delete')?.keys).toBeUndefined()
+    expect(getRow(window, 'app:vault.erase')?.keys).toBeUndefined()
   })
 
   it('makes a note under the name typed, on the keystroke the new note draws', async () => {
@@ -217,7 +217,7 @@ describe('a command reached by its own keystroke', () => {
     await settle()
 
     expect(event.defaultPrevented).toBe(true)
-    expect(window.findComponent(Palette).props('crumb')).toBe('Go to a note')
+    expect(window.findComponent(Palette).props('crumb')).toBe('Go to note')
   })
 
   it('leaves a keystroke alone while Alt is retained with it', async () => {
@@ -327,3 +327,16 @@ function drawPluginTypes(): void {
     for (const one of unregister) one()
   })
 }
+
+describe('the request to open the settings', () => {
+  it('opens the settings tab when the request names no plugin and no filter', async () => {
+    const window = await mountWindow()
+    const getTabNames = () => window.findAll('[role="tab"]').map((one) => one.text())
+    expect(getTabNames().some((name) => name.includes(WORDS.settings))).toBe(false)
+
+    globalThis.dispatchEvent(new CustomEvent('numen:open-settings'))
+    await settle()
+
+    expect(getTabNames().some((name) => name.includes(WORDS.settings))).toBe(true)
+  })
+})

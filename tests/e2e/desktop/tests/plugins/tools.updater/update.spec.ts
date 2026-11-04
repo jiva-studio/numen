@@ -70,7 +70,7 @@ const getStyle = (element: Locator, property: string): Promise<string> =>
 
 /** The settings page of the updater plugin, opened from the palette. */
 const openUpdaterSettings = async (page: Page): Promise<void> => {
-  await runPaletteCommand(page, 'Settings', 'Settings')
+  await runPaletteCommand(page, 'Open settings', 'Open settings')
   await page
     .getByRole('button', { name: /Update Notifier/i })
     .first()

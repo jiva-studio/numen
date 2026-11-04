@@ -71,7 +71,7 @@ test.describe('Plugin settings take effect', () => {
   }) => {
     await writeSetting(request, ['plugins', EMBEDDINGS_ID, 'provider'], 'custom')
     await openWorkspace(page)
-    await runCommand(page, 'Settings', /^Settings$/)
+    await runCommand(page, 'Open settings', /^Open settings$/)
     const settings = page.getByRole('tabpanel', { name: /Settings/ })
     await settings.getByRole('button', { name: /Vector Embeddings/ }).click()
     const field = settings.getByRole('textbox', { name: 'API key' })
@@ -87,7 +87,7 @@ test.describe('Plugin settings take effect', () => {
     await expect(field).toHaveAttribute('placeholder', '••••••••')
 
     await page.reload()
-    await runCommand(page, 'Settings', /^Settings$/)
+    await runCommand(page, 'Open settings', /^Open settings$/)
     const reloaded = page.getByRole('tabpanel', { name: /Settings/ })
     await reloaded.getByRole('button', { name: /Vector Embeddings/ }).click()
     await expect(reloaded.getByRole('textbox', { name: 'API key' })).toHaveValue('')

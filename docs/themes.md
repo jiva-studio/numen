@@ -205,7 +205,7 @@ The files are in `plugins/themes-presets/themes/`. A first theme is one of them 
 
 ## Choosing one
 
-The editor offers the theme and the mode in the settings and in the command palette (Change theme, Light or dark). The flashcards window has the same two choices in its command palette, opened with Ctrl+P (Cmd+P): the themes grouped by origin, with a plugin's themes under the plugin's name, and the three modes, which are not offered while the applied theme is pinned.
+The editor offers the theme and the mode in the settings and in the command palette (Change theme, Choose light or dark mode). The flashcards window has the same two choices in its command palette, opened with Ctrl+P (Cmd+P): the themes grouped by origin, with a plugin's themes under the plugin's name, and the three modes, which are not offered while the applied theme is pinned.
 
 ## What is stored
 

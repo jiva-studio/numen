@@ -79,17 +79,17 @@ describe('the menu items a target is offered', () => {
 })
 
 describe('a command run by its id', () => {
-  it('is found under its own id and under the plugin prefix, and nothing else is', async () => {
+  it('is found under its full id, and nothing else is', async () => {
     const host = createPluginHost(createDeps())
     const handler = vi.fn()
     host.createContext('sample.plugin').registerCommand({ id: 'count', title: 'Count', handler })
     const note = { path: 'Notes/One.md', title: 'One', type: 'note' as const }
 
-    expect(host.hasCommand('count')).toBe(true)
-    expect(host.hasCommand('plugin:count')).toBe(true)
+    expect(host.hasCommand('sample.plugin:count')).toBe(true)
+    expect(host.hasCommand('count')).toBe(false)
     expect(host.hasCommand('xxxxxxxcount')).toBe(false)
     expect(host.hasCommand('other')).toBe(false)
-    expect(await host.executeCommand('plugin:count', note)).toBe(true)
+    expect(await host.executeCommand('sample.plugin:count', note)).toBe(true)
     expect(await host.executeCommand('other', note)).toBe(false)
     expect(handler).toHaveBeenCalledOnce()
   })
@@ -100,8 +100,6 @@ describe('a registration replaced under the same id', () => {
     const host = createPluginHost(createDeps())
     const ctx = host.createContext('sample.plugin')
     const handler = vi.fn()
-    const firstCommand = ctx.registerCommand({ id: 'count', title: 'First', handler })
-    ctx.registerCommand({ id: 'count', title: 'Second', handler })
     const firstMenu = ctx.registerContextMenu({ id: 'menu', text: 'First', handler })
     ctx.registerContextMenu({ id: 'menu', text: 'Second', handler })
     const firstReader = ctx.registerReader({ id: 'pdf', title: 'First', component: null })
@@ -119,13 +117,11 @@ describe('a registration replaced under the same id', () => {
       createAgent: vi.fn(),
     })
 
-    firstCommand.dispose()
     firstMenu.dispose()
     firstReader.dispose()
     firstTab.dispose()
     firstAgent.dispose()
 
-    expect(host.getRegisteredCommands().map((one) => one.title)).toStrictEqual(['Second'])
     expect(host.getRegisteredContextMenus().map((one) => one.text)).toStrictEqual(['Second'])
     expect(host.getRegisteredReaders().map((one) => one.title)).toStrictEqual(['Second'])
     expect(host.getRegisteredTabKinds().map((one) => one.title)).toStrictEqual(['Second'])

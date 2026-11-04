@@ -69,10 +69,10 @@ Every other command comes from an enabled plugin, which declares it; `numen-cli 
 
 | | |
 | --- | --- |
-| `numen-cli transcribe <vault> <file>` | transcribe a recording (`engines-transcription`) |
-| `numen-cli recognise <vault> <file>` | recognise the text of a scan, page by page (`engines-ocr`) |
-| `numen-cli proofread <vault> <file>` | correct the live text of a file with the model named in [the settings](/reader/#correcting-what-ocr-read) (`tools-proofreading`) |
-| `numen-cli import <vault> --address <url>` | keep an address as a link and fetch its text (`tools-media-importer`) |
+| `numen-cli transcript.create <vault> <file>` | transcribe a recording (`engines-transcription`) |
+| `numen-cli recognition.create <vault> <file>` | recognise the text of a scan, page by page (`engines-ocr`) |
+| `numen-cli proofreading.create <vault> <file>` | correct the live text of a file with the model named in [the settings](/reader/#correcting-what-ocr-read) (`tools-proofreading`) |
+| `numen-cli link.import <vault> --address <url>` | keep an address as a link and fetch its text (`tools-media-importer`) |
 
 What a command creates is a text version of the file. The next `scan` reads it into the index, as the window does, and `search` finds it. A disabled plugin has no commands.
 
