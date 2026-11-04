@@ -152,7 +152,9 @@ func TestReaderLimitsAndConfigureCommandAndSpecs(t *testing.T) {
 
 	// Send on already-stopped Work returns immediately without incrementing sentCount or completed.
 	stoppedWork := agentrun.NewWork("c", 0, func() error { return nil })
-	_ = stoppedWork.Stop()
+	if err := stoppedWork.Stop(); err != nil {
+		t.Fatal(err)
+	}
 	stoppedReader := &reader{work: stoppedWork}
 	stoppedReader.Send(&agentrun.Response{Step: &agentrun.ToolFinishedStep{}})
 	if stoppedReader.sentCount != 0 || stoppedReader.completed != 0 {
@@ -195,7 +197,9 @@ func TestReaderLimitsAndConfigureCommandAndSpecs(t *testing.T) {
 			t.Errorf("newSpec without tools and customPath: Path=%q, err=%v", builtAnsCmd.Path, err)
 		}
 		if ansCleanup != nil {
-			_ = ansCleanup()
+			if err := ansCleanup(); err != nil {
+				t.Error(err)
+			}
 		}
 	}
 
@@ -258,7 +262,9 @@ func TestStartErrorPathsAndReportExitAndScanOutput(t *testing.T) {
 
 	// 4. Closed registry rejects Add and calls cleanup.
 	var closedReg agentrun.Registry
-	_ = closedReg.Close()
+	if err := closedReg.Close(); err != nil {
+		t.Fatal(err)
+	}
 	cleanedClosedReg := false
 	if _, err := start(t.Context(), &closedReg, spec{
 		Build: func(ctx context.Context) (*exec.Cmd, func() error, error) {
@@ -329,7 +335,9 @@ func TestStartErrorPathsAndReportExitAndScanOutput(t *testing.T) {
 	stopWork2 := agentrun.NewWork("c", 10, func() error { return nil })
 	stopReader2 := &reader{work: stopWork2}
 	limited2 := scanOutput(scannerStopped, func(map[string]any) {
-		_ = stopWork2.Stop()
+		if err := stopWork2.Stop(); err != nil {
+			t.Error(err)
+		}
 	}, stopReader2, stopWork2, func() {})
 	if limited2 || stopReader2.sentCount != 0 {
 		t.Errorf("scanOutput stopped mid-stream: limited=%v, sentCount=%d", limited2, stopReader2.sentCount)

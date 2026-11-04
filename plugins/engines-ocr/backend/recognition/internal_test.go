@@ -35,7 +35,7 @@ func (d stubDocument) GetPageCount() int  { return d.pages }
 func (d stubDocument) HasTextLayer() bool { return false }
 func (d stubDocument) Close() error       { return nil }
 
-func (d stubDocument) RenderPage(index, _ int) (image.Image, error) {
+func (d stubDocument) RenderPage(_, _ int) (image.Image, error) {
 	if d.renderErr != nil {
 		return nil, d.renderErr
 	}
@@ -634,7 +634,9 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	releaseSentinel := errors.New("turn release failed")
 	rReleaseErr, err := New(
 		Host{Vault: v, Store: v.Store(), Texts: texts, Queue: &stubQueue{releaseErr: releaseSentinel}},
-		func(context.Context) (Recogniser, error) { return &stubRecogniser{blocks: []Block{{Text: "hello"}}}, nil },
+		func(context.Context) (Recogniser, error) {
+			return &stubRecogniser{blocks: []Block{{Text: "hello"}}}, nil
+		},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -645,7 +647,9 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 
 	rReleaseAndReportErr, err := New(
 		Host{Vault: v, Store: v.Store(), Texts: texts, Queue: &stubQueue{releaseErr: releaseSentinel, reportErr: reportSentinel, reportErrAt: 3}},
-		func(context.Context) (Recogniser, error) { return &stubRecogniser{blocks: []Block{{Text: "hello"}}}, nil },
+		func(context.Context) (Recogniser, error) {
+			return &stubRecogniser{blocks: []Block{{Text: "hello"}}}, nil
+		},
 	)
 	if err != nil {
 		t.Fatal(err)

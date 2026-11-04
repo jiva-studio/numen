@@ -360,8 +360,14 @@ func TestHomeSetupAndMCPConfigEdgeCases(t *testing.T) {
 		t.Fatal(err)
 	}
 	merged := makeMCPConfig(Endpoint{URL: "http://new/mcp", Token: "tok"}, existingPath)
-	servers, _ := merged["mcpServers"].(map[string]any)
-	numenSrv, _ := servers["numen"].(map[string]any)
+	servers, ok := merged["mcpServers"].(map[string]any)
+	if !ok {
+		t.Fatalf("makeMCPConfig merged = %+v, want mcpServers map", merged)
+	}
+	numenSrv, ok := servers["numen"].(map[string]any)
+	if !ok {
+		t.Fatalf("makeMCPConfig merged = %+v, want numen server map", merged)
+	}
 	if numenSrv["serverUrl"] != "http://new/mcp" || servers["other"] == nil {
 		t.Fatalf("makeMCPConfig merged = %+v", merged)
 	}
@@ -450,7 +456,9 @@ func TestRunnerErrorPathsAndLimitsAndCommands(t *testing.T) {
 	}
 
 	stoppedWork := agentrun.NewWork("c", 0, func() error { return nil })
-	_ = stoppedWork.Stop()
+	if err := stoppedWork.Stop(); err != nil {
+		t.Fatal(err)
+	}
 	stoppedReader := &reader{work: stoppedWork}
 	stoppedReader.Send(&agentrun.Response{Step: &agentrun.ToolFinishedStep{}})
 	if stoppedReader.sentCount != 0 || stoppedReader.completed != 0 {
@@ -485,7 +493,9 @@ func TestRunnerErrorPathsAndLimitsAndCommands(t *testing.T) {
 		if slices.Contains(cmdWithTools.Args, "--model") || !slices.Contains(cmdWithTools.Args, "--conversation") {
 			t.Errorf("makeAntigravityCommand Args = %v", cmdWithTools.Args)
 		}
-		_ = cleanTools()
+		if err := cleanTools(); err != nil {
+			t.Fatal(err)
+		}
 
 		ansCmd, cleanAns, err := makeAnswerCommand(t.Context(), &agentrun.Request{
 			Prompt: "p", Model: "m-ans", Conversation: "conv-a",
@@ -496,7 +506,9 @@ func TestRunnerErrorPathsAndLimitsAndCommands(t *testing.T) {
 		if !slices.Contains(ansCmd.Args, "--model") || !slices.Contains(ansCmd.Args, "m-ans") || !slices.Contains(ansCmd.Args, "--conversation") {
 			t.Errorf("makeAnswerCommand Args = %v", ansCmd.Args)
 		}
-		_ = cleanAns()
+		if err := cleanAns(); err != nil {
+			t.Fatal(err)
+		}
 
 		ansDefaultCmd, cleanAnsDef, err := makeAnswerCommand(t.Context(), &agentrun.Request{
 			Prompt: "p", Model: defaultModelName,
@@ -505,7 +517,9 @@ func TestRunnerErrorPathsAndLimitsAndCommands(t *testing.T) {
 			t.Errorf("makeAnswerCommand with defaultModelName Args = %v, err = %v", ansDefaultCmd.Args, err)
 		}
 		if cleanAnsDef != nil {
-			_ = cleanAnsDef()
+			if err := cleanAnsDef(); err != nil {
+				t.Error(err)
+			}
 		}
 	}
 
@@ -537,7 +551,9 @@ func TestRunnerErrorPathsAndLimitsAndCommands(t *testing.T) {
 	}
 
 	var closedReg agentrun.Registry
-	_ = closedReg.Close()
+	if err := closedReg.Close(); err != nil {
+		t.Fatal(err)
+	}
 	cleanedClosed := false
 	if _, err := start(t.Context(), &closedReg, spec{
 		Build: func(ctx context.Context) (*exec.Cmd, func() error, error) {
@@ -579,7 +595,9 @@ func TestRunnerErrorPathsAndLimitsAndCommands(t *testing.T) {
 	stopWork := agentrun.NewWork("c", 10, func() error { return nil })
 	stopReader := &reader{work: stopWork}
 	ended := scanOutput(bufio.NewScanner(strings.NewReader("{\"k\":1}\nplain\n")), func(map[string]any) {
-		_ = stopWork.Stop()
+		if err := stopWork.Stop(); err != nil {
+			t.Error(err)
+		}
 	}, stopReader, stopWork, func() {})
 	if ended || stopReader.sentCount != 0 {
 		t.Errorf("scanOutput stopped mid-stream: ended=%v, sentCount=%d", ended, stopReader.sentCount)

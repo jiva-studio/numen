@@ -22,7 +22,10 @@ func TestMain(m *testing.M) {
 	if os.Getenv("NUMEN_ACP_TEST_CHILD") == "1" {
 		os.Exit(2)
 	}
-	_ = os.Setenv("NUMEN_ACP_TEST_CHILD", "1")
+	if err := os.Setenv("NUMEN_ACP_TEST_CHILD", "1"); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 	os.Exit(m.Run())
 }
 

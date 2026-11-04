@@ -47,7 +47,10 @@ func findCodexIn(places []string, customPath ...string) string {
 	if found, err := exec.LookPath("codex"); err == nil {
 		return found
 	}
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = ""
+	}
 	for _, p := range places {
 		resolved := p
 		if rest, ok := strings.CutPrefix(p, "~/"); ok && home != "" {

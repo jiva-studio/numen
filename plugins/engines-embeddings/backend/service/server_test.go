@@ -658,9 +658,13 @@ func TestEmbedRemoteTextsAndComputeServiceVector(t *testing.T) {
 		switch mode {
 		case "status500":
 			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte("server exploded"))
+			if _, err := w.Write([]byte("server exploded")); err != nil {
+				t.Error(err)
+			}
 		case "badjson":
-			_, _ = w.Write([]byte("{invalid json"))
+			if _, err := w.Write([]byte("{invalid json")); err != nil {
+				t.Error(err)
+			}
 		case "emptydata":
 			encodeJSON(t, w, map[string]any{"data": []any{}})
 		case "emptyvec":

@@ -297,10 +297,18 @@ func TestFolderOperationsAndErrorBranches(t *testing.T) {
 		t.Errorf("findCopy(empty) = %+v, %v, %v", found, ok, err)
 	}
 
-	_ = hs.Write(ctx, "000_other.txt", []byte("x"))
-	_ = hs.Write(ctx, "h1.json", []byte("{}"))
-	_ = hs.Write(ctx, "h1.part", []byte("part"))
-	_ = hs.Write(ctx, "h1.mp4", []byte("mp4"))
+	if err := hs.Write(ctx, "000_other.txt", []byte("x")); err != nil {
+		t.Fatal(err)
+	}
+	if err := hs.Write(ctx, "h1.json", []byte("{}")); err != nil {
+		t.Fatal(err)
+	}
+	if err := hs.Write(ctx, "h1.part", []byte("part")); err != nil {
+		t.Fatal(err)
+	}
+	if err := hs.Write(ctx, "h1.mp4", []byte("mp4")); err != nil {
+		t.Fatal(err)
+	}
 	found, ok, err = f.findCopy(ctx, "h1")
 	if err != nil || !ok || found.Name != "h1.mp4" || found.Size != 3 {
 		t.Errorf("findCopy(match) = %+v, %v, %v", found, ok, err)
@@ -382,8 +390,9 @@ func createTestLinks() (l *Links, v *hosttest.Vault, hv *hookVault, hs *hookStor
 	v = hosttest.New("Mills")
 	hv = &hookVault{Vault: v}
 	hs = &hookStore{Store: v.Store()}
-	ht = &hookTexts{Texts: hosttest.NewTexts(v.Vault().ID, "plug")}
-	ht.Texts.(*hosttest.Texts).SetStore("plug", v.Store())
+	texts := hosttest.NewTexts(v.Vault().ID, "plug")
+	texts.SetStore("plug", v.Store())
+	ht = &hookTexts{Texts: texts}
 	hq = &hookQueue{Queue: hosttest.NewQueue()}
 	sf = &stubFetcher{
 		canCopy:   true,
@@ -484,7 +493,11 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 		t.Fatal(err)
 	}
 	rawNote, _ := v.Content(made.Path)
-	ht.Texts.(*hosttest.Texts).File(made.Path, []byte(rawNote))
+	fakeTexts, ok := ht.Texts.(*hosttest.Texts)
+	if !ok {
+		t.Fatalf("ht.Texts = %T, want *hosttest.Texts", ht.Texts)
+	}
+	fakeTexts.File(made.Path, []byte(rawNote))
 
 	// Claim contention on FetchText and Copy.
 	l.claim("text", made, made.Key)
@@ -712,14 +725,18 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 		t.Errorf("Copy(recordCopy readErr) = %v", err)
 	}
 	hs.readErr = nil
-	_ = hs.Delete(ctx, made.Hash+".mp4")
+	if err := hs.Delete(ctx, made.Hash+".mp4"); err != nil {
+		t.Fatal(err)
+	}
 
 	hq.releaseErr = boom
 	if _, err := l.Copy(ctx, made); !errors.Is(err, boom) {
 		t.Errorf("Copy(releaseErr) = %v", err)
 	}
 	hq.releaseErr = nil
-	_ = hs.Delete(ctx, made.Hash+".mp4")
+	if err := hs.Delete(ctx, made.Hash+".mp4"); err != nil {
+		t.Fatal(err)
+	}
 
 	// Copy with 1-byte file at exact maxSize=1, then 2nd Copy reuses existing 1-byte file without downloading.
 	*maxSize = 1
@@ -771,7 +788,9 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	hs.writeErr = nil
 
 	// Restore old file to test full chained rename across two edits.
-	_ = hs.Rename(ctx, "hash-edit-1.mp4", made.Hash+".mp4")
+	if err := hs.Rename(ctx, "hash-edit-1.mp4", made.Hash+".mp4"); err != nil {
+		t.Fatal(err)
+	}
 	if size, err := l.FindCopy(ctx, edited1); err != nil || size != 1 {
 		t.Fatalf("FindCopy(edited1) = (%d, %v)", size, err)
 	}
@@ -798,7 +817,9 @@ func TestLinksFetchCopyDeleteAndArticleErrorBranches(t *testing.T) {
 	}
 	hs.readErr = nil
 
-	_ = hs.Write(ctx, edited2.Hash+".mp4", []byte{1})
+	if err := hs.Write(ctx, edited2.Hash+".mp4", []byte{1}); err != nil {
+		t.Fatal(err)
+	}
 	hs.writeErr = func(name string) error {
 		if name == edited2.Key+recordExt {
 			return boom
