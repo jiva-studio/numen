@@ -1,11 +1,5 @@
 import { Bot } from '@lucide/vue'
-import {
-  CONVERSATION,
-  definePlugin,
-  NOTE_SCOPE,
-  NOTE_TARGET,
-  type PluginContext,
-} from '@numen/plugin-sdk'
+import { CONVERSATION, definePlugin, NOTE_TARGET, type PluginContext } from '@numen/plugin-sdk'
 import { useConversation } from './thread'
 import AgentTab from './ui/AgentTab.vue'
 import { ConversationView } from './conversation'
@@ -44,18 +38,12 @@ export function activate(context: PluginContext): void {
 
   context.registerCommand({
     id: 'chat.open',
-    title: WORDS.newAgent,
-    shortcut: 'mod+shift+a',
-    icon: Bot,
     handler: async () => {
       await context.openTab?.(AGENT)
     },
   })
   context.registerCommand({
     id: 'note.ask',
-    title: WORDS.askAbout,
-    scope: NOTE_SCOPE,
-    icon: Bot,
     handler: (note) => askAbout(note.path),
   })
   context.registerContextMenu({

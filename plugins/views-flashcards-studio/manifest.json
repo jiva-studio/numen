@@ -1,17 +1,32 @@
 {
   "id": "md.numen.views.flashcards.studio",
   "name": "Flashcards Studio",
-  "version": "2026.11.5",
+  "version": "2026.11.6",
   "protocol": 1,
   "description": "Flashcard deck editor, card template designer, and spaced-repetition review",
   "capabilities": ["tools"],
   "targets": ["desktop.editor", "desktop.flashcards"],
   "contributes": {
     "tabKinds": [
-      { "kind": "deck", "title": "Deck", "icon": "layers" },
-      { "kind": "card-model", "title": "Card Model", "icon": "layout-template" },
-      { "kind": "preset", "title": "Preset", "icon": "gauge" },
-      { "kind": "flashcards.review", "title": "Flashcards" }
+      {
+        "kind": "deck",
+        "title": "Deck",
+        "icon": "layers"
+      },
+      {
+        "kind": "card-model",
+        "title": "Card Model",
+        "icon": "layout-template"
+      },
+      {
+        "kind": "preset",
+        "title": "Preset",
+        "icon": "gauge"
+      },
+      {
+        "kind": "flashcards.review",
+        "title": "Flashcards"
+      }
     ],
     "feature": "flashcards",
     "category": "views",
@@ -23,32 +38,65 @@
         "idHeadingLevels": [2],
         "idPattern": "[0-9a-hjkmnp-tv-z]{10}"
       },
-      { "type": "card-model", "chunks": false, "headings": [] },
-      { "type": "preset" }
+      {
+        "type": "card-model",
+        "chunks": false,
+        "headings": []
+      },
+      {
+        "type": "preset"
+      }
+    ],
+    "commands": [
+      {
+        "id": "deck.create",
+        "title": "Create deck",
+        "icon": "layers",
+        "arguments": [
+          {
+            "name": "title",
+            "title": "Title",
+            "type": "string",
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "cardModel.create",
+        "title": "Create card model",
+        "icon": "layout-template",
+        "arguments": [
+          {
+            "name": "title",
+            "title": "Title",
+            "type": "string",
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "preset.create",
+        "title": "Create preset",
+        "icon": "gauge",
+        "arguments": [
+          {
+            "name": "title",
+            "title": "Title",
+            "type": "string",
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "preset.open",
+        "title": "Open preset",
+        "icon": "gauge",
+        "scope": "note"
+      }
     ]
   },
   "permissions": ["vault:read", "vault:write"],
   "services": ["md.numen.views.flashcards.studio"],
-  "commands": [
-    {
-      "id": "deck.create",
-      "title": "Create deck",
-      "icon": "layers",
-      "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]
-    },
-    {
-      "id": "cardModel.create",
-      "title": "Create card model",
-      "icon": "layout-template",
-      "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]
-    },
-    {
-      "id": "preset.create",
-      "title": "Create preset",
-      "icon": "gauge",
-      "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]
-    }
-  ],
   "settings": [
     {
       "key": "day_start_time",
@@ -59,6 +107,8 @@
       "replaces": ["review.day_start_time", "review.day_starts"]
     }
   ],
-  "backend": { "entrypoint": "bin/views-flashcards-studio" },
+  "backend": {
+    "entrypoint": "bin/views-flashcards-studio"
+  },
   "frontend": {}
 }

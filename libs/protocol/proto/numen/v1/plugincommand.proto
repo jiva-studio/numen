@@ -101,6 +101,12 @@ message PluginCommand {
   // The icon the command shows in the palette, by its Lucide name. Empty shows
   // the default plugin command icon.
   string icon = 7;
+
+  // scope is "note" for a command listed only while a note is in front.
+  string scope = 8;
+
+  // shortcut is the keystroke the plugin suggests for the command.
+  string shortcut = 9;
 }
 
 // CommandArgument is one argument a command takes.

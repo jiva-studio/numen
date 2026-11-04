@@ -29,6 +29,7 @@ import { parseSavedTabs, useOpenTabs } from '../tabs/useOpenTabs'
 import type { MovedTab } from '../ports/vault'
 import { useCommands } from '../commands/useCommands'
 import { useDeclaredCommands } from '../commands/declaredCommands'
+import { getNamedIcon } from '@/shared/icons'
 import { useFileMenuCommands } from '../commands/fileMenuCommands'
 import { useWindowDisplay } from './useWindowDisplay'
 import { useNoticeTasks } from '../shell/useNoticeTasks'
@@ -63,12 +64,13 @@ interface WindowCommandsOptions {
   log: ReturnType<typeof createMessageLog>
   pluginHost: import('@numen/plugin-host').PluginHost
   fileMenuCommands: ReturnType<typeof useFileMenuCommands>
+  declaredCommands: ReturnType<typeof useDeclaredCommands>
 }
 
 function initWindowCommands(deps: WindowCommandsOptions) {
   const { windowTabs, settings, vaultsModule, editing, kinds, window, writeMessage } = deps
   return useCommands({
-    declaredCommands: useDeclaredCommands(),
+    declaredCommands: deps.declaredCommands,
     fileMenuCommands: deps.fileMenuCommands,
     core,
     words,
@@ -209,6 +211,18 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
   })
 }
 
+/** What the declared commands ask of the window: the commands the plugin host lists, and the plugins with a backend. */
+const getDeclaredCommandsDeps = (
+  hostHolder: { current?: import('@numen/plugin-host').PluginHost },
+  settingsHolder: { current?: ReturnType<typeof useSettings> },
+) => ({
+  isListed: (id: string): boolean =>
+    hostHolder.current?.getPaletteCommands().some((one) => one.id === id) ?? false,
+  hasBackend: (pluginId: string): boolean =>
+    settingsHolder.current?.rest.plugins.value.find((one) => one.id === pluginId)?.hasBackend ??
+    true,
+})
+
 function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSettings> }) {
   /* Stryker disable OptionalChaining,ObjectLiteral,StringLiteral,Regex: window core wiring delegates to mocked collaborators in unit tests */
   const getPluginName = (pluginId: string): string =>
@@ -239,7 +253,14 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   const pluginServices: PluginServices = {}
   const pluginNotices = createNoticeQueue()
   const pluginNotes = createPluginNotes(core)
+  const hostHolder: { current?: import('@numen/plugin-host').PluginHost } = {}
+  const declaredCommands = useDeclaredCommands({
+    ...getDeclaredCommandsDeps(hostHolder, settingsHolder),
+  })
   const { pluginHost, pluginLoader } = createPluginSupport({
+    getCommandDeclarations: () => declaredCommands.declarations.value,
+    reportCommandIssue: (pluginId, message) =>
+      log.getWriter(`plugin:${pluginId}`)(`${getPluginName(pluginId)}: ${message}`, 'warning'),
     windowTabs,
     tabLinks,
     tabOpeners,
@@ -266,8 +287,10 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
       return (await core.resolveLinks(from, `[[${rawName}]]`))[0]?.path ?? ''
     },
   })
+  hostHolder.current = pluginHost
   /* Stryker restore OptionalChaining,ObjectLiteral,StringLiteral,Regex */
   return {
+    declaredCommands,
     log,
     writeMessage,
     windowId,
@@ -402,10 +425,10 @@ function initWindowKindsAndCommands(
     runContextMenu: (id, target) => base.pluginHost.runContextMenu(id, target),
     getFileMenuItems: (path) => fileMenuCommands.getForFile(path),
     getContextMenuIcon: (id) => base.pluginHost.getContextMenuIcon(id),
-    getPluginCommandIcon: (id) =>
-      base.pluginHost.getPaletteCommands().find((one) => one.id === id)?.icon ??
-      fileMenuCommands.getIcon(id),
-    showNote: (path) => getCommands(ctx).showNote(path),
+    getPluginCommandIcon: (id) => {
+      const name = base.pluginHost.getPaletteCommands().find((one) => one.id === id)?.icon
+      return name ? getNamedIcon(name) : fileMenuCommands.getIcon(id)
+    },
     getNoteCommands: () => getCommands(ctx).getNoteCommands(),
   })
 
@@ -430,6 +453,7 @@ function initWindowKindsAndCommands(
     writeMessage: base.writeMessage,
     log: base.log,
     pluginHost: base.pluginHost,
+    declaredCommands: base.declaredCommands,
     fileMenuCommands,
   })
 

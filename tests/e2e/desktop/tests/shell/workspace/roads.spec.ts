@@ -19,8 +19,7 @@ const openFromTree = async (page: Page, folder: string, path: string): Promise<v
 }
 
 /**
- * The file the search of the vault turned up under its name, opened as a file: Enter takes the
- * row's first action, which is the plex, and Shift with Enter its second.
+ * The file the search of the vault turned up under its name, opened with Enter.
  */
 const openFromSearch = async (page: Page, name: string): Promise<void> => {
   await page.keyboard.press('Control+k')
@@ -32,7 +31,7 @@ const openFromSearch = async (page: Page, name: string): Promise<void> => {
     .filter({ has: page.locator('[data-palette="name"]', { hasText: new RegExp(`^${name}$`) }) })
     .first()
   await row.hover()
-  await page.keyboard.press('Shift+Enter')
+  await page.keyboard.press('Enter')
 }
 
 const ROADS = {

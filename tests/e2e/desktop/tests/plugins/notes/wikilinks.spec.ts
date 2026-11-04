@@ -1,11 +1,6 @@
 import path from 'node:path'
 import { test, expect, readActivePath } from '../../support/test.js'
-import {
-  getGraph,
-  getPaletteField,
-  openWorkspace,
-  runPaletteCommand,
-} from '../../support/workspace.js'
+import { getPaletteField, openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 import {
   createNote,
   createUniqueTitle,
@@ -44,7 +39,7 @@ test.describe('Note Creation and Wikilinks', () => {
     await expect(
       page.getByRole('tab', { name: `${title} Close ${title}`, exact: true }),
     ).toHaveAttribute('aria-selected', 'true')
-    await expect(getGraph(page).getByRole('img', { name: `${title}, focus` })).toBeAttached()
+    await expect(page.locator('.note').first()).toBeVisible()
     expect(await listFilePaths(request, path.posix.dirname(made).replace(/^\.$/, ''))).toContain(
       made,
     )

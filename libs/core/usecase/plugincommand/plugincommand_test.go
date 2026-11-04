@@ -52,6 +52,10 @@ type declaredCommands struct {
 
 func (d *declaredCommands) ListCommands() []plugincommand.Entry { return d.entries }
 
+func (d *declaredCommands) GetParts(string) plugincommand.Parts {
+	return plugincommand.Parts{HasBackend: true}
+}
+
 func (d *declaredCommands) RunCommand(_ context.Context, call plugincommand.Call) (plugincommand.Result, error) {
 	d.calls = append(d.calls, call)
 	return plugincommand.Result{Message: "ran " + call.Command, OpenedPath: call.Path}, nil

@@ -114,6 +114,7 @@ describe('every setting', () => {
               secrets: [{ name: 'apiKey', title: 'API key', description: '' }],
               storedSecrets: ['apiKey'],
               hasFrontend: true,
+              hasBackend: false,
               readers: [{ id: 'reader-sample', extensions: ['sample'] }],
               settingsViews: [{ id: 'floor', title: 'Floor' }],
               settings: [
@@ -164,6 +165,7 @@ describe('every setting', () => {
         secrets: [{ name: 'apiKey', title: 'API key', description: '', when: undefined }],
         storedSecrets: ['apiKey'],
         hasFrontend: true,
+        hasBackend: false,
         readers: [{ id: 'reader-sample', extensions: ['sample'] }],
         settingsViews: [{ id: 'floor', title: 'Floor' }],
         settings: [

@@ -125,6 +125,7 @@ export const settingsCore: SettingsPort = {
         })),
         storedSecrets: p.storedSecrets,
         hasFrontend: p.hasFrontend,
+        hasBackend: p.hasBackend,
         readers: (p.readers ?? []).map((one) => ({ id: one.id, extensions: one.extensions })),
         settingsViews: (p.settingsViews ?? []).map((one) => ({ id: one.id, title: one.title })),
         ...(p.failure

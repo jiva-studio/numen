@@ -1488,6 +1488,7 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 			StoredSecrets: h.getStoredSecretsLocked(p.Manifest.ID),
 			Failure:       h.getFailureLocked(p.Manifest.ID),
 			HasFrontend:   p.Manifest.HasFrontend(),
+			HasBackend:    p.Manifest.HasBackend(),
 			Readers:       h.listReaderInfosLocked(p.Manifest),
 			SettingsViews: slices.Clone(p.Manifest.SettingsViews),
 		})

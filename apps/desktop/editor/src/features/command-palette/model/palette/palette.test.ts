@@ -1600,7 +1600,7 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
           isAvailable: () => true,
         },
         {
-          id: 'org.example.sample:no-prompts.run',
+          id: 'org.example.sample:noPrompts.run',
           text: 'No prompts',
           group: 'window',
           needs: 'arguments',
@@ -1609,7 +1609,7 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
       ],
     })
 
-    commands.startCommand('org.example.sample:no-prompts.run', front())
+    commands.startCommand('org.example.sample:noPrompts.run', front())
     expect(commands.placeholder.value).toBe(words.typeCommand)
     expect(commands.chooseItem('name', 'name')).toBeNull()
     commands.leaveStep()

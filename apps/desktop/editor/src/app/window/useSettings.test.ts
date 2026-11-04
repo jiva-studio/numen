@@ -243,6 +243,7 @@ describe('the settings tab', () => {
       secrets: [],
       storedSecrets: [],
       hasFrontend: false,
+      hasBackend: false,
       settings: [
         {
           key: 'autoScan',
@@ -291,6 +292,7 @@ describe('the settings tab', () => {
         secrets: [],
         storedSecrets: [],
         hasFrontend: false,
+        hasBackend: false,
         settings: [],
       },
       {
@@ -303,6 +305,7 @@ describe('the settings tab', () => {
         secrets: [],
         storedSecrets: [],
         hasFrontend: false,
+        hasBackend: false,
         settings: [
           {
             key: 'autoScan',
@@ -449,6 +452,7 @@ describe('the settings tab', () => {
         secrets: [],
         storedSecrets: [],
         hasFrontend: false,
+        hasBackend: false,
         settings: [],
       },
       {
@@ -461,6 +465,7 @@ describe('the settings tab', () => {
         secrets: [],
         storedSecrets: [],
         hasFrontend: false,
+        hasBackend: false,
         settings: [],
       },
     ]

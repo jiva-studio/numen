@@ -163,6 +163,7 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 			StoredSecrets: one.StoredSecrets,
 			Failure:       newWirePluginFailure(one.Failure),
 			HasFrontend:   one.HasFrontend,
+			HasBackend:    one.HasBackend,
 			Readers:       newWireReaders(one.Readers),
 			SettingsViews: newWireSettingsViews(one.SettingsViews),
 		})

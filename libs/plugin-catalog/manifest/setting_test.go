@@ -287,7 +287,6 @@ func TestSettingAndManifestValidationEdgeCases(t *testing.T) {
 		"invalid activation":       {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"activationEvents":["bad"]}`, ErrInvalidActivationEvent},
 		"blank entrypoint":         {`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":" "}}`, ErrInvalidBackend},
 		"activation no backend":    {`{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["*"]}`, ErrNoBackend},
-		"commands no backend":      {`{"id":"a.b","name":"A","version":"1.0.0","commands":[{"id":"c","title":"C"}]}`, ErrNoBackend},
 		"services no backend":      {`{"id":"a.b","name":"A","version":"1.0.0","services":["a.b.S"]}`, ErrNoBackend},
 		"secrets no backend":       {`{"id":"a.b","name":"A","version":"1.0.0","secrets":[{"name":"s","title":"S"}]}`, ErrNoBackend},
 		"runtime no backend":       {`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[{"id":"r","kind":"runtime"}]}`, ErrNoBackend},

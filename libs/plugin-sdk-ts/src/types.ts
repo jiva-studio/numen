@@ -158,28 +158,17 @@ export interface CommandNote {
   readonly type: NoteType
 }
 
-// NOTE_SCOPE offers a command while a note is in front, in the palette's group of note commands.
-export const NOTE_SCOPE = 'note' as const
-
 // NOTE_TARGET offers a context menu item on a note.
 export const NOTE_TARGET = 'note' as const
 
-// CommandRegistration registers a palette or keybound action.
+// CommandRegistration binds the handler of a command the manifest declares under `contributes.commands`.
+// The title, icon, scope and shortcut are read from the declaration. A handler registered for an id the
+// manifest does not declare is never listed.
 export interface CommandRegistration {
-  // The id as `<object>.<action>`, such as `tree.open`. The host files the command under
-  // `<plugin id>:<id>`; registering the same full id twice throws.
+  // The id as `<object>.<action>`, such as `tree.open`, as the manifest declares it. The host files
+  // the command under `<plugin id>:<id>`; registering the same full id twice throws.
   id: string
-  title: string
   handler: (note: CommandNote) => void | Promise<void>
-  shortcut?: string
-  canShowInPalette?: boolean
-  // 'note' offers the command only while a note is in front, in the palette's group of note commands.
-  scope?: 'note'
-  // The icon the command is drawn with wherever it is offered.
-  icon?: unknown
-  // With scope 'note': the command opens a note in the editor. The window runs it for a note
-  // selected in the search, navigated to, or named by the agent, and opens the note's file when no command declares one.
-  isNoteDestination?: boolean
 }
 
 // AgentProviderRegistration registers an AI agent provider.

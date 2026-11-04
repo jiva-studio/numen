@@ -2,8 +2,8 @@
  * The commands the enabled plugins declare, offered in the palette: one step
  * for each argument, and the run handed to the plugin's backend.
  */
-import { computed, shallowRef } from 'vue'
-import { formatCommandId } from '@numen/plugin-host'
+import { computed, shallowRef, watch } from 'vue'
+import { formatCommandId, type CommandDeclaration } from '@numen/plugin-host'
 import { registerCommand, type Command } from '@/features/command-palette'
 import { getNamedIcon } from '@/shared/icons'
 import {
@@ -53,7 +53,21 @@ export function createDeclaredPaletteCommands(
 export interface DeclaredCommandsDeps {
   readonly list?: typeof listDeclaredCommands
   readonly run?: typeof runDeclaredCommand
+  /** Whether the plugin host lists the command of the full id: its frontend registered a handler, or is still loading. */
+  readonly isListed?: (id: string) => boolean
+  /** Whether the plugin declares a backend; a command is run in a backend only where it does. */
+  readonly hasBackend?: (pluginId: string) => boolean
 }
+
+/** The declaration the plugin host receives for a declared command. */
+const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration => ({
+  pluginId: command.pluginId,
+  id: command.id,
+  title: command.title,
+  ...(command.icon ? { icon: command.icon } : {}),
+  ...(command.scope ? { scope: command.scope } : {}),
+  ...(command.shortcut ? { shortcut: command.shortcut } : {}),
+})
 
 /**
  * The declared commands, reloaded by `load`, each registered with a handler that runs
@@ -62,26 +76,50 @@ export interface DeclaredCommandsDeps {
 export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
   const list = deps.list ?? listDeclaredCommands
   const run = deps.run ?? runDeclaredCommand
-  const declared = shallowRef<readonly DeclaredCommand[]>([])
+  const isListed = deps.isListed ?? (() => false)
+  const hasBackend = deps.hasBackend ?? (() => true)
+  const declared = shallowRef<readonly DeclaredCommand[] | undefined>(undefined)
+  let newest = 0
   let unregisterAll: readonly (() => void)[] = []
 
+  /**
+   * The declared commands a backend runs and the palette lists: those the plugin host does not list,
+   * because no frontend handler is registered for them and their frontend is not loading, and only
+   * for a plugin that has a backend.
+   */
+  const backendCommands = computed(() =>
+    (declared.value ?? []).filter(
+      (one) => hasBackend(one.pluginId) && !isListed(getPaletteId(one)),
+    ),
+  )
+
+  watch(
+    backendCommands,
+    (commands) => {
+      for (const unregister of unregisterAll) unregister()
+      unregisterAll = commands.map((one) =>
+        registerCommand(getPaletteId(one), async (invocation, on) => {
+          const outcome = await run(one, { path: invocation.file, values: invocation.values ?? {} })
+          if (!outcome.ok) return on.writeMessage(outcome.error, 'error')
+          const { message, openedPath } = outcome.value
+          if (message) on.writeMessage(message, 'info')
+          if (openedPath) on.notes.openFile(openedPath, '', 'current')
+        }),
+      )
+    },
+    { flush: 'sync' },
+  )
+
   const load = async (): Promise<void> => {
+    newest += 1
+    const mine = newest
     const commands = await list()
-    for (const unregister of unregisterAll) unregister()
-    unregisterAll = commands.map((one) =>
-      registerCommand(getPaletteId(one), async (invocation, on) => {
-        const outcome = await run(one, { path: invocation.file, values: invocation.values ?? {} })
-        if (!outcome.ok) return on.writeMessage(outcome.error, 'error')
-        const { message, openedPath } = outcome.value
-        if (message) on.writeMessage(message, 'info')
-        if (openedPath) on.notes.openFile(openedPath, '', 'current')
-      }),
-    )
-    declared.value = commands
+    if (mine === newest) declared.value = commands
   }
 
   return {
-    paletteCommands: computed(() => createDeclaredPaletteCommands(declared.value)),
+    paletteCommands: computed(() => createDeclaredPaletteCommands(backendCommands.value)),
+    declarations: computed(() => declared.value?.map(createCommandDeclaration)),
     load,
   }
 }

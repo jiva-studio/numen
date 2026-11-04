@@ -34,7 +34,6 @@ message Manifest {
   repeated ManifestSetting settings = 15;
   repeated ManifestSecret secrets = 16;
   repeated string services = 17;
-  repeated ManifestCommand commands = 19;
   repeated ManifestSettingsView settings_views = 24;
   // contributes is what the plugin adds to the application, known before its
   // frontend is loaded.
@@ -66,6 +65,9 @@ message ManifestContributes {
   repeated ManifestNoteType note_types = 10;
   // frame_origins are the https origins the plugin's pages frame.
   repeated string frame_origins = 11;
+  // commands are the commands the plugin declares, whichever part of the plugin runs them. The
+  // application learns which part from where the handler is registered.
+  repeated ManifestCommand commands = 12;
 }
 
 // ManifestHandle declares that the plugin takes part in a capability for files of some content
@@ -215,7 +217,11 @@ message ManifestCommand {
   // command with conditions is offered over each context that meets them.
   repeated ManifestContextCondition when = 6;
   repeated ManifestCommandArgument arguments = 7;
-  bool is_hidden_in_palette = 8 [json_name = "hiddenInPalette"];
+  // scope is "note" for a command listed only while a note is in front. Empty is a command over the
+  // window.
+  string scope = 9;
+  // shortcut is the keystroke the plugin suggests for the command, such as "mod+shift+e".
+  string shortcut = 10;
 }
 
 message ManifestReader {

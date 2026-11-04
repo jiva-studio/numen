@@ -30,6 +30,7 @@ type (
 	PluginContext          = pluginport.PluginContext
 	PluginContributes      = pluginport.PluginContributes
 	PluginCommands         = pluginport.PluginCommands
+	PluginParts            = pluginport.PluginParts
 	PluginConfigurator     = pluginport.PluginConfigurator
 	PluginDiscoverer       = pluginport.PluginDiscoverer
 	PluginEmbeddedTexts    = pluginport.PluginEmbeddedTexts

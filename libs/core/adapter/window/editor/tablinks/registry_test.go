@@ -767,3 +767,24 @@ func TestTabOfAWindowThatNeverWatchesIsUnlinkedAfterGracePeriod(t *testing.T) {
 		t.Errorf("tabs are %v, want %v", getTabIDs(got), want)
 	}
 }
+
+func TestReloadedWindowDropsGroupMatesItDoesNotReport(t *testing.T) {
+	r, _ := newTestRegistry(t)
+	closed := r.Watch("window-a")
+	writeTabs(r, "window-a", []Tab{files("files:1", "Files"), plex("note:1", "A")})
+	r.Link("files:1", "note:1")
+	closed.Close()
+	live := r.Watch("window-b")
+	defer live.Close()
+	writeTabs(r, "window-b", []Tab{files("files:2", "Files"), plex("note:1", "A")})
+	r.Link("files:2", "note:1")
+	if want := [][]string{{"files:2", "note:1"}}; !reflect.DeepEqual(getGroupTabs(r.GetSnapshot()), want) {
+		t.Fatalf("groups are %v after the link, want %v", getGroupTabs(r.GetSnapshot()), want)
+	}
+
+	writeTabs(r, "window-b", []Tab{files("files:2", "Files")})
+
+	if got := getGroupTabs(r.GetSnapshot()); len(got) != 0 {
+		t.Errorf("groups are %v after the linked tab closed, want none", got)
+	}
+}

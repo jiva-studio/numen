@@ -198,6 +198,7 @@ describe('the settings tab', () => {
       secrets: [],
       storedSecrets: [],
       hasFrontend: false,
+      hasBackend: false,
       settings: [],
     }
     const { tab } = createTab(false, {}, [samplePlugin])
@@ -279,6 +280,7 @@ describe('the settings tab', () => {
       secrets: [],
       storedSecrets: [],
       hasFrontend: false,
+      hasBackend: false,
       settings: [],
     }
     const { tab } = createTab(false, {}, [samplePlugin])
@@ -314,6 +316,7 @@ describe('the settings tab', () => {
       secrets: [],
       storedSecrets: [],
       hasFrontend: true,
+      hasBackend: false,
       settings: [],
     }
     const { tab, initialSearchQuery } = createTab(false, {}, [samplePlugin])

@@ -136,6 +136,7 @@ describe('linked plugin settings', () => {
     secrets: [],
     storedSecrets: [],
     hasFrontend: false,
+    hasBackend: false,
     settings: [providerSetting, modelSetting, countSetting],
   }
 

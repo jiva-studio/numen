@@ -155,14 +155,11 @@ describe('flashcards-studio plugin', () => {
     )
   })
 
-  it('offers opening the preset of the note in front as a command over a note', () => {
+  it('registers the handler that opens the preset of the note in front', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    const commands = ctx.getRegisteredCommands()
-    expect(commands.map(({ id, title, scope }) => ({ id, title, scope }))).toStrictEqual([
-      { id: 'preset.open', title: 'Open preset', scope: 'note' },
-    ])
+    expect(ctx.getRegisteredCommands().map(({ id }) => id)).toStrictEqual(['preset.open'])
   })
 
   it('opens a note that is no deck as its own preset', async () => {
