@@ -8,7 +8,7 @@
  * messages a player takes from the page holding it, so nothing that host serves
  * runs in this window.
  */
-import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { getDraggedHeight, getTallest, LEAST } from '../lib/height'
 import { getFrameOrigin, seekFrame } from '../lib/player'
 import { createHeightStore, type HeightStore } from '../lib/storage'
@@ -48,6 +48,25 @@ const tall = ref(props.store.read())
 const drawn = ref<{ bar: HTMLElement; pointer: number; from: number; was: number } | null>(null)
 const frameStyle = computed(() =>
   tall.value === null ? undefined : { blockSize: `${tall.value}px` },
+)
+/** The rendered height of the player and the tallest it can be drawn, for the resize handle. */
+const shown = ref<number | null>(null)
+const tallest = ref(LEAST)
+
+watch(
+  () => player.value ?? frame.value,
+  (element, _, onCleanup) => {
+    if (!element || typeof ResizeObserver === 'undefined') return
+    const sizes = new ResizeObserver(() => {
+      shown.value = Math.round(element.clientHeight)
+      tallest.value = getTallest(getPaneHeight())
+    })
+    sizes.observe(element)
+    const pane = root.value?.parentElement
+    if (pane) sizes.observe(pane)
+    onCleanup(() => sizes.disconnect())
+  },
+  { flush: 'post' },
 )
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -205,8 +224,10 @@ defineExpose({ seek })
       role="separator"
       tabindex="0"
       aria-orientation="horizontal"
+      :aria-label="props.words.taller"
       :aria-valuemin="LEAST"
-      :aria-valuenow="tall ?? undefined"
+      :aria-valuemax="tallest"
+      :aria-valuenow="shown ?? tall ?? LEAST"
       :data-state="drawn ? 'drag' : undefined"
       :title="props.words.taller"
       @pointerdown="onPointerDown"
