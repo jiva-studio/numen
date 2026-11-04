@@ -124,17 +124,24 @@ describe('the actions', () => {
 
 describe('the window drag area', () => {
   it('lets the empty part drag the window', () => {
-    expect((mountBar().find('[data-title-bar]').element as HTMLElement).style.getPropertyValue('--wails-draggable'))
-      .toBe('drag')
+    expect(
+      (mountBar().find('[data-title-bar]').element as HTMLElement).style.getPropertyValue(
+        '--wails-draggable',
+      ),
+    ).toBe('drag')
   })
 
   it('keeps the buttons out of the drag area', () => {
     const wrapper = mountBar({ actions: [action('a')] })
 
-    expect((button(wrapper, 'a').element as HTMLElement).style.getPropertyValue('--wails-draggable')).toBe('no-drag')
-    expect((control(wrapper, 'close').element as HTMLElement).style.getPropertyValue('--wails-draggable')).toBe(
-      'no-drag',
-    )
+    expect(
+      (button(wrapper, 'a').element as HTMLElement).style.getPropertyValue('--wails-draggable'),
+    ).toBe('no-drag')
+    expect(
+      (control(wrapper, 'close').element as HTMLElement).style.getPropertyValue(
+        '--wails-draggable',
+      ),
+    ).toBe('no-drag')
   })
 
   it('toggles maximise on a double click on the empty part', async () => {
@@ -174,9 +181,9 @@ describe('the window controls', () => {
   it('draw minimise, maximise and close in the windows style', () => {
     const wrapper = mountBar({ controls: 'windows' })
 
-    expect(wrapper.findAll('[data-control]').map((one) => one.attributes('data-control'))).toStrictEqual(
-      ['minimise', 'toggle-maximise', 'close'],
-    )
+    expect(
+      wrapper.findAll('[data-control]').map((one) => one.attributes('data-control')),
+    ).toStrictEqual(['minimise', 'toggle-maximise', 'close'])
   })
 
   it('emit the event of the control that is pressed', async () => {
@@ -203,9 +210,11 @@ describe('the window controls', () => {
     const wrapper = mountBar({ isMaximised: true })
 
     expect(control(wrapper, 'toggle-maximise').attributes('data-maximised')).toBe('true')
-    expect(mountBar({ isMaximised: false }).find('[data-control="toggle-maximise"]').attributes(
-      'data-maximised',
-    )).toBe('false')
+    expect(
+      mountBar({ isMaximised: false })
+        .find('[data-control="toggle-maximise"]')
+        .attributes('data-maximised'),
+    ).toBe('false')
   })
 
   it('draw the three circles of the mac style before the actions', () => {
@@ -276,9 +285,7 @@ describe('the actions that do not fit', () => {
 
   const resize = async (wrapper: VueWrapper, fits: number): Promise<void> => {
     slotWidth = TITLE_MIN_WIDTH + fits * BUTTON_WIDTH
-    const entries = [
-      { contentRect: { width: slotWidth, height: 32 } } as ResizeObserverEntry,
-    ]
+    const entries = [{ contentRect: { width: slotWidth, height: 32 } } as ResizeObserverEntry]
     for (const tell of callbacks) tell(entries, {} as ResizeObserver)
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()

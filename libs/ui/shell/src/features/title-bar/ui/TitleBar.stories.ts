@@ -76,8 +76,8 @@ type Story = StoryObj<Knobs>
 const title = (canvas: HTMLElement): HTMLElement =>
   canvas.querySelector<HTMLElement>('[data-title]')!
 const shown = (canvas: HTMLElement): string[] =>
-  [...canvas.querySelectorAll('[data-title-bar-action]')].map(
-    (one) => one.getAttribute('data-title-bar-action')!,
+  [...canvas.querySelectorAll('[data-title-bar-action]')].map((one) =>
+    one.getAttribute('data-title-bar-action')!,
   )
 
 /** The bar of a window with a vault open and three actions in two groups. */
