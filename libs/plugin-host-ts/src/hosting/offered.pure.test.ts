@@ -48,6 +48,30 @@ describe('listing the offered commands', () => {
     expect(reportCommandIssue).not.toHaveBeenCalled()
   })
 
+  it('returns no issue for a command with no handler of a plugin that has a backend', () => {
+    const deps = {
+      getCommandDeclarations: () => [declaration],
+      hasPluginBackend: () => true,
+    } as unknown as PluginHostDeps
+
+    const { commands, issues } = listOfferedCommands(deps, createRegistry(['md.tree'], []))
+
+    expect(commands).toStrictEqual([])
+    expect(issues).toStrictEqual([])
+  })
+
+  it('returns the unbound issue for a command with no handler of a plugin that has no backend', () => {
+    const deps = {
+      getCommandDeclarations: () => [declaration],
+      hasPluginBackend: () => false,
+    } as unknown as PluginHostDeps
+
+    const { commands, issues } = listOfferedCommands(deps, createRegistry(['md.tree'], []))
+
+    expect(commands).toStrictEqual([])
+    expect(issues).toStrictEqual([{ pluginId: 'md.tree', id: 'tree.open', kind: 'unbound' }])
+  })
+
   it('returns no issue for a plugin whose frontend has not activated yet', () => {
     const deps: PluginHostDeps = {
       getCommandDeclarations: () => [declaration],

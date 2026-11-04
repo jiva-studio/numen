@@ -205,6 +205,34 @@ describe('the settings and notices a plugin is given', () => {
     ])
   })
 
+  it('reports a declared command with no handler for a plugin without a backend, and for none with one', () => {
+    const rest = {
+      plugins: ref([
+        { id: 'md.numen.tree', hasFrontend: true, hasBackend: false },
+        { id: 'md.numen.cards', hasFrontend: true, hasBackend: true },
+      ]),
+    }
+    const reportCommandIssue = vi.fn()
+    const { pluginHost } = createWith({
+      settingsHolder: { current: { rest } as never },
+      getCommandDeclarations: () => [
+        { pluginId: 'md.numen.tree', id: 'tree.open', title: 'Open tree' },
+        { pluginId: 'md.numen.cards', id: 'deck.create', title: 'Create deck' },
+      ],
+      reportCommandIssue,
+    })
+    pluginHost.createContext('md.numen.tree')
+    pluginHost.createContext('md.numen.cards')
+
+    pluginHost.getPaletteCommands()
+    pluginHost.getPaletteCommands()
+
+    expect(reportCommandIssue).toHaveBeenCalledExactlyOnceWith(
+      'md.numen.tree',
+      expect.stringContaining('tree.open'),
+    )
+  })
+
   it('reads no setting before the window has its settings', () => {
     const { pluginHost } = createWith({})
 

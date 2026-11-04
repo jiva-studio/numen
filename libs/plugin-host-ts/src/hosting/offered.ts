@@ -36,8 +36,8 @@ export interface OfferedList {
 /**
  * What becomes of a declared command with no handler. It is 'offered' while the frontend of its
  * plugin has not started to register. It is 'unbound' once the frontend has started: the host does
- * not offer it, the window runs it in the backend of the plugin where it has one, and the missing
- * handler is an issue. It is 'left' to the window for a plugin with no frontend and for one that
+ * not offer it, and the window runs it in the backend of the plugin where it has one. A plugin with
+ * no backend leaves the missing handler as an issue. It is 'left' to the window for a plugin with no frontend and for one that
  * failed to load.
  */
 function getBeforeHandlerState(
@@ -75,7 +75,7 @@ export function listOfferedCommands(deps: PluginHostDeps, registry: HostRegistry
     }
     const state = getBeforeHandlerState(deps, registry, declaration)
     if (state === 'offered') commands.push({ id, declaration })
-    if (state === 'unbound') {
+    if (state === 'unbound' && deps.hasPluginBackend?.(declaration.pluginId) !== true) {
       addIssue({ pluginId: declaration.pluginId, id: declaration.id, kind: 'unbound' })
     }
   }

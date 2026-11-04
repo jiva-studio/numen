@@ -79,6 +79,8 @@ export interface PluginHostDeps {
   readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
   /** Whether the plugin declares a frontend the window loads; where absent, every plugin does. */
   readonly hasPluginFrontend?: (pluginId: string) => boolean
+  /** Whether the plugin declares a backend that runs the commands no frontend handler takes; where absent, none does. */
+  readonly hasPluginBackend?: (pluginId: string) => boolean
   /** Whether the plugin failed to load or to activate. */
   readonly isPluginFailed?: (pluginId: string) => boolean
   /** Settles once the plugin has been activated, or has failed to. */

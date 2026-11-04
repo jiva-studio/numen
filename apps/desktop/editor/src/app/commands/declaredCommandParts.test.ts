@@ -34,10 +34,14 @@ const openTree: DeclaredCommand = {
   icon: 'folder-tree',
 }
 
-async function load(isOffered: (id: string) => boolean) {
+async function load(
+  isOffered: (id: string) => boolean,
+  hasBackend: (pluginId: string) => boolean = () => true,
+) {
   const declared = useDeclaredCommands({
     list: async () => [createDeck, openPreset, openTree],
     isOffered,
+    hasBackend,
   })
   await declared.load()
   return declared
@@ -49,6 +53,18 @@ describe('the declared commands the palette runs in a backend', () => {
 
     expect(declared.paletteCommands.value.map((one) => one.id)).toStrictEqual([
       'md.cards:deck.create',
+    ])
+  })
+
+  it('leave out the commands of a plugin that has no backend', async () => {
+    const declared = await load(
+      () => false,
+      (pluginId) => pluginId !== 'md.tree',
+    )
+
+    expect(declared.paletteCommands.value.map((one) => one.id)).toStrictEqual([
+      'md.cards:deck.create',
+      'md.cards:preset.open',
     ])
   })
 

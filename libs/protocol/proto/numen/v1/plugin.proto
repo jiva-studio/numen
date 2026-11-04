@@ -128,6 +128,8 @@ message PluginInfo {
   repeated PluginReader readers = 15;
   // The components the frontend draws inside the plugin's settings.
   repeated PluginSettingsView settings_views = 16;
+  // Whether the plugin declares a backend the host starts.
+  bool has_backend = 17;
 }
 
 // PluginSettingsView is a component of a plugin's frontend drawn among its settings.

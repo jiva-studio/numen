@@ -44,6 +44,8 @@ type PluginInfo struct {
 	Failure *PluginFailure
 	// HasFrontend is whether the plugin declares a bundle the windows load.
 	HasFrontend bool
+	// HasBackend is whether the plugin declares a process the host starts.
+	HasBackend bool
 	// Readers are the readers the manifest declares, with the files each opens.
 	Readers []PluginReaderInfo
 	// SettingsViews are the components the settings page draws among the settings of the plugin.
