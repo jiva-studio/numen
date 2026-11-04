@@ -443,7 +443,7 @@ func TestPresetAndSchedulingInternals(t *testing.T) {
 	// tie-breaking preferring dueDay inside [from, to] vs dueDay outside [from, to], weight calculation),
 	// getSlacks, and window boundaries.
 	if EvenFrom != 2.5 || EvenTo != 90 {
-		t.Fatalf("unexpected EvenFrom/EvenTo: %g, %g", EvenFrom, EvenTo)
+		t.Fatalf("unexpected EvenFrom/EvenTo: %g, %d", EvenFrom, EvenTo)
 	}
 	var nilDue *DueByDay
 	if nilDue.CountOn(now) != 0 {
@@ -497,7 +497,7 @@ func TestPresetAndSchedulingInternals(t *testing.T) {
 	// slack = 1 + 0.15*0.6 = 1.09, first = round(2.01) = 2, last = round(4.19) = 4.
 	// And due = 2026-06-10 23:00 + 74h24m = 2026-06-14 01:24 UTC -> date 2026-06-14 = 2026-06-10 + 4 = to!
 	posLate := time.Date(2026, 6, 10, 23, 0, 0, 0, time.UTC)
-	dueAtTo := posLate.Add(time.Duration(3.1 * 24 * float64(time.Hour)))
+	dueAtTo := posLate.Add(74*time.Hour + 24*time.Minute)
 	if got := Defaults().GetDueDay(NewDueByDay(day), posLate, dueAtTo); !got.Equal(dueAtTo) {
 		t.Fatalf("expected dueDay == to to win tie, got %v want %v", got, dueAtTo)
 	}

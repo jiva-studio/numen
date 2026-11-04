@@ -60,7 +60,10 @@ func locateExecutable(names, places []string) string {
 }
 
 func findInPlaces(places []string) string {
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = ""
+	}
 	for _, place := range places {
 		if after, ok := strings.CutPrefix(place, "~/"); ok {
 			if home == "" {

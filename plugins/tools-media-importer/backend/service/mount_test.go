@@ -95,7 +95,11 @@ func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer func() { _ = res.Body.Close() }()
+		defer func() {
+			if err := res.Body.Close(); err != nil {
+				t.Error(err)
+			}
+		}()
 		return res.StatusCode
 	}
 

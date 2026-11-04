@@ -95,7 +95,7 @@ func TestSplitRowsKeepsTheVectorsOfAnOutputThatIsPooled(t *testing.T) {
 
 func TestPadBatchSetsPositionsOfTheRealTokensAndZeroForPadding(t *testing.T) {
 	paddings := newPaddingPool()
-	if got := paddings.Get(); got == nil || got.(*padding) == nil {
+	if got, ok := paddings.Get().(*padding); !ok || got == nil {
 		t.Fatalf("newPaddingPool().Get() = %v", got)
 	}
 	rows, seq, in := padBatch(paddings, [][]int{{7, 8, 9}, {5}}, 99, 512)

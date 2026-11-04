@@ -119,10 +119,14 @@ func TestGetMockModelAndEmbedderDetails(t *testing.T) {
 	}
 	os.Stderr = w
 	(MockEmbedder{}).record([]string{"quiet"})
-	_ = w.Close()
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
 	os.Stderr = origStderr
 	stderrBytes, err := io.ReadAll(r)
-	_ = r.Close()
+	if closeErr := r.Close(); closeErr != nil {
+		t.Fatal(closeErr)
+	}
 	if err != nil || len(stderrBytes) != 0 {
 		t.Errorf("empty LogPath wrote to stderr: %q, %v", stderrBytes, err)
 	}

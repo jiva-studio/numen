@@ -283,7 +283,7 @@ type failingStore struct {
 	err error
 }
 
-func (f *failingStore) Write(ctx context.Context, path string, data []byte) error {
+func (f *failingStore) Write(_ context.Context, _ string, _ []byte) error {
 	return f.err
 }
 
@@ -292,7 +292,7 @@ type failingTexts struct {
 	err error
 }
 
-func (f *failingTexts) PutVersion(ctx context.Context, req host.TextPut) (domain.TextVersion, error) {
+func (f *failingTexts) PutVersion(_ context.Context, _ host.TextPut) (domain.TextVersion, error) {
 	return domain.TextVersion{}, f.err
 }
 
@@ -317,7 +317,9 @@ func TestTextServerLifecycleAndFailures(t *testing.T) {
 		t.Fatal(err)
 	}
 	srv.Close()
-	_ = held.Release()
+	if err := held.Release(); err != nil {
+		t.Error(err)
+	}
 	// Call after Close is a no-op
 	if err := srv.CreateText(t.Context(), host.TextCreation{Path: "book.epub"}); err != nil {
 		t.Fatal(err)

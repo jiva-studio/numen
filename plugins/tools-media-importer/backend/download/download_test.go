@@ -159,7 +159,10 @@ func TestPagesProviderConfigurationAndBodyLimit(t *testing.T) {
 	if tr.IdleConnTimeout != 90*time.Second || tr.TLSHandshakeTimeout != 10*time.Second || tr.ExpectContinueTimeout != 1*time.Second {
 		t.Errorf("timeouts = (%v, %v, %v), want (90s, 10s, 1s)", tr.IdleConnTimeout, tr.TLSHandshakeTimeout, tr.ExpectContinueTimeout)
 	}
-	localURL, _ := url.Parse("http://127.0.0.1/secret")
+	localURL, err := url.Parse("http://127.0.0.1/secret")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := pages.client.CheckRedirect(&http.Request{URL: localURL}, nil); err == nil {
 		t.Error("CheckRedirect allowed local redirect")
 	}

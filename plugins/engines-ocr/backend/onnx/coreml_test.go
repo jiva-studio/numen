@@ -161,7 +161,9 @@ func TestDeleteCoreMLCacheReturnsFalseWhenRemoveFails(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_ = os.Chmod(lockedSub, 0o700)
+		if err := os.Chmod(lockedSub, 0o700); err != nil {
+			t.Error(err)
+		}
 	})
 	if DeleteCoreMLCache(model) {
 		t.Fatal("DeleteCoreMLCache returned true when removing an entry failed")

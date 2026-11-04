@@ -375,7 +375,9 @@ func TestTextServerLifecycleAndVaultStatus(t *testing.T) {
 	}
 	// Close cancels running task and unlocks
 	srv.Close()
-	_ = held.Release()
+	if err := held.Release(); err != nil {
+		t.Error(err)
+	}
 
 	// CreateText after Close is a no-op
 	if err := srv.CreateText(t.Context(), host.TextCreation{Path: "tiny.pdf"}); err != nil {

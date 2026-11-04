@@ -435,7 +435,9 @@ func TestDiscardDownloadAndSnapshotEdgeCases(t *testing.T) {
 		t.Fatal(err)
 	}
 	zeroTime := time.Time{}
-	_ = os.Chtimes(bModel, zeroTime, zeroTime)
+	if err := os.Chtimes(bModel, zeroTime, zeroTime); err != nil {
+		t.Fatal(err)
+	}
 
 	got, ok, err := locateNewestSnapshot(snapRoot, "owner/repo", "model.onnx")
 	if err != nil || !ok || got.Model != bModel {

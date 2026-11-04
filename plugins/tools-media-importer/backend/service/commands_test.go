@@ -148,7 +148,9 @@ func (f *configurableFetcher) Download(ctx context.Context, _ string, into io.Wr
 	if f.copyErr != nil {
 		return download.Copy{}, f.copyErr
 	}
-	_, _ = into.Write([]byte("0123456789"))
+	if _, err := into.Write([]byte("0123456789")); err != nil {
+		return download.Copy{}, err
+	}
 	return download.Copy{MediaType: "audio/wav", Extension: ".wav"}, nil
 }
 

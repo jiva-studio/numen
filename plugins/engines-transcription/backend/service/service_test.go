@@ -400,7 +400,7 @@ func (f *faultyStore) Rename(ctx context.Context, from, to string) error {
 
 type faultyTexts struct {
 	host.Texts
-	listRes host.TextVersionList
+	listRes host.TextListing
 	listErr error
 	putErr  error
 	puts    int
@@ -408,9 +408,9 @@ type faultyTexts struct {
 
 func (f *faultyTexts) With(_ domain.VaultID) host.Texts { return f }
 
-func (f *faultyTexts) ListVersions(ctx context.Context, path string) (host.TextVersionList, error) {
+func (f *faultyTexts) ListVersions(ctx context.Context, path string) (host.TextListing, error) {
 	if f.listErr != nil {
-		return host.TextVersionList{}, f.listErr
+		return host.TextListing{}, f.listErr
 	}
 	if len(f.listRes.Versions) > 0 {
 		return f.listRes, nil
@@ -603,7 +603,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 		t.Fatalf("expected listErr, got %v", err)
 	}
 	ft.listErr = nil
-	ft.listRes = host.TextVersionList{
+	ft.listRes = host.TextListing{
 		Versions: []domain.TextVersion{
 			{Key: "other", PluginID: PluginID},
 			{Key: "k1", PluginID: "other.plugin"},
@@ -613,7 +613,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	if err := s.transcriber.putWholeVersion(ctx, j); err != nil || ft.puts != 0 {
 		t.Fatalf("expected existing matching version to skip PutVersion, puts=%d, err=%v", ft.puts, err)
 	}
-	ft.listRes = host.TextVersionList{
+	ft.listRes = host.TextListing{
 		Versions: []domain.TextVersion{
 			{Key: "other", PluginID: PluginID},
 			{Key: "k1", PluginID: "other.plugin"},

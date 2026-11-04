@@ -119,7 +119,9 @@ func TestRecogniseCommandReportsPages(t *testing.T) {
 	if dir := os.Getenv("NUMEN_TEST_WASM_CACHE"); dir != "" {
 		compilation := wasm.NewCompilationCache(dir)
 		t.Cleanup(func() {
-			_ = compilation.Close(context.WithoutCancel(t.Context()))
+			if err := compilation.Close(context.WithoutCancel(t.Context())); err != nil {
+				t.Error(err)
+			}
 		})
 		recognitions.SetCompilationCache(compilation)
 	}
@@ -143,7 +145,9 @@ func TestRecogniseCommandReportsPages(t *testing.T) {
 	if dir := os.Getenv("NUMEN_TEST_WASM_CACHE"); dir != "" {
 		compilation := wasm.NewCompilationCache(dir)
 		t.Cleanup(func() {
-			_ = compilation.Close(context.WithoutCancel(t.Context()))
+			if err := compilation.Close(context.WithoutCancel(t.Context())); err != nil {
+				t.Error(err)
+			}
 		})
 		emptyRecognitions.SetCompilationCache(compilation)
 	}

@@ -12,7 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/markdown"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
@@ -516,7 +516,7 @@ func TestCardsDueInternalsAndErrors(t *testing.T) {
 	}
 
 	env := vaulttest.New(t, map[string]string{
-		"Term.md": "---\ntype: card-model\nfields:\n  - Front\n---\n\n## Card\n\n### Front\n\n{{Front}}\n\n### Back\n\n{{Front}}\n",
+		"Term.md":    "---\ntype: card-model\nfields:\n  - Front\n---\n\n## Card\n\n### Front\n\n{{Front}}\n\n### Back\n\n{{Front}}\n",
 		"decks/A.md": "---\ntype: deck\n---\n\n## One ^k7m2xq9fzp\n\n[[Term]]\n\n### Front\n\nhi\n",
 	})
 	rc := NewListReviewCards(env.Readers, env.Notes, env.Links)
@@ -566,10 +566,10 @@ func TestCardsDueInternalsAndErrors(t *testing.T) {
 }
 
 type countingLogStores struct {
-	calls       int
-	failOnCall  int
-	err         error
-	store       ports.LogStore
+	calls      int
+	failOnCall int
+	err        error
+	store      ports.LogStore
 }
 
 func (c *countingLogStores) Open(_ domain.Vault) (ports.LogStore, error) {
@@ -1183,7 +1183,7 @@ func TestNeighbourhoodInternalsAndErrors(t *testing.T) {
 	}
 
 	env := vaulttest.New(t, map[string]string{
-		"NotADeck.md": "plain note\n",
+		"NotADeck.md":   "plain note\n",
 		"decks/Good.md": "---\ntype: deck\n---\n\n## One\n\n[[Term]]\n\n### Front\n\nhi\n",
 	})
 	acMulti := NewAssignCardIDs(
