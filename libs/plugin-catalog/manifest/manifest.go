@@ -88,13 +88,8 @@ var (
 // never a key, and neither a setting nor a secret of a manifest takes the name.
 const SettingStoredSecrets = "storedSecrets"
 
-// SettingAIConsent is the setting under which the host records AI consent;
-// absent means the user has not been prompted yet. The window writes it, and no
-// manifest uses the name.
-const SettingAIConsent = "aiConsent"
-
 // listReservedSettingKeys returns the settings of a plugin the host keeps for itself.
-func listReservedSettingKeys() []string { return []string{SettingStoredSecrets, SettingAIConsent} }
+func listReservedSettingKeys() []string { return []string{SettingStoredSecrets} }
 
 var (
 	manifestIDPattern       = regexp.MustCompile(`^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$`)

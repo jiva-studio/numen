@@ -288,7 +288,7 @@ const readIdle = async () => {
 
 const child = spawn(
   binaryPath,
-  [`-debug-http-addr=${host}:${port}`, '-debug-mock-ml', '-no-mcp', `-vault=${tmpVault}`],
+  [`-debug-http-addr=${host}:${port}`, '-debug-mock-ml', `-vault=${tmpVault}`],
   {
     stdio: 'inherit',
     env: {

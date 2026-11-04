@@ -87,7 +87,6 @@ const plugin = (id: string, name: string, description: string): PluginInfo => ({
   capabilities: [],
   secrets: [],
   storedSecrets: [],
-  consent: 'none',
   hasFrontend: false,
 })
 

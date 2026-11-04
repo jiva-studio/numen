@@ -21,7 +21,7 @@ const arranged = `{
     "v": 1,
 
     "appearance": {
-        "zoom": 1.5,
+        "text_scale": 1.5,
         "theme": "preset:numen",
         "mode": "system"
     },
@@ -109,51 +109,12 @@ func TestTheTwoSizesAreSavedWithoutMovingAnythingElse(t *testing.T) {
 	}
 }
 
-// The size stored under the old name stays where it is, and the setting that
-// replaced it is written next to it.
-func TestASizeIsSavedAdjacentTheZoomAFileStillNames(t *testing.T) {
-	path := write(t, `{
-  "appearance": {
-    "zoom": 1.5
-  }
-}
-`)
-	if err := settings.NewFiles().Save(path, newDocument(),
-		settings.Setting{At: []string{"appearance", "interface_scale"}, Written: 1.25}); err != nil {
-		t.Fatal(err)
-	}
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := `{
-  "appearance": {
-    "zoom": 1.5,
-    "interface_scale": 1.25
-  }
-}
-`
-	if string(raw) != want {
-		t.Errorf("the file came back as:\n%s\nand not as:\n%s", raw, want)
-	}
-
-	// Both names in one file: the window is drawn at the one this build reads.
-	cfg, err := openAt(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cfg.Appearance.InterfaceScale != 1.25 {
-		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
-	}
-}
-
 // A key missing from the file is appended at the end of its section. The order
 // of the existing keys is preserved.
 func TestAFieldTheFileHasNotGotIsAppendedToItsSection(t *testing.T) {
 	path := write(t, `{
   "appearance": {
-    "zoom": 1.5
+    "text_scale": 1.5
   },
   "agent": {"use": "claude"}
 }
@@ -168,7 +129,7 @@ func TestAFieldTheFileHasNotGotIsAppendedToItsSection(t *testing.T) {
 
 	want := `{
   "appearance": {
-    "zoom": 1.5,
+    "text_scale": 1.5,
     "theme": "mine:dracula"
   },
   "agent": {"use": "claude"}
@@ -210,7 +171,7 @@ func TestASectionTheFileHasNotGotIsMadeAtTheEnd(t *testing.T) {
 
 // A file written on one line takes another field on that line.
 func TestAFileOnOneLineStaysOnOneLine(t *testing.T) {
-	path := write(t, `{"appearance": {"zoom": 1.5}}`)
+	path := write(t, `{"appearance": {"text_scale": 1.5}}`)
 	if err := settings.NewFiles().Save(path, newDocument(), theme("mine:dracula")); err != nil {
 		t.Fatal(err)
 	}
@@ -218,13 +179,13 @@ func TestAFileOnOneLineStaysOnOneLine(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := `{"appearance": {"zoom": 1.5, "theme": "mine:dracula"}}`; string(raw) != want {
+	if want := `{"appearance": {"text_scale": 1.5, "theme": "mine:dracula"}}`; string(raw) != want {
 		t.Errorf("the file came back as %s, and not as %s", raw, want)
 	}
 }
 
 func TestSave_PreservesUnknownFields(t *testing.T) {
-	path := write(t, `{"v":1,"appearance":{"zoom":1.5,"tint":"warm"},"tomorrow":{"of":["a","later","build"]}}`)
+	path := write(t, `{"v":1,"appearance":{"text_scale":1.5,"tint":"warm"},"tomorrow":{"of":["a","later","build"]}}`)
 	if err := settings.NewFiles().Save(path, newDocument(), theme("preset:nord")); err != nil {
 		t.Fatal(err)
 	}
@@ -235,9 +196,9 @@ func TestSave_PreservesUnknownFields(t *testing.T) {
 	}
 	var file struct {
 		Appearance struct {
-			Zoom  float64 `json:"zoom"`
-			Tint  string  `json:"tint"`
-			Theme string  `json:"theme"`
+			TextScale float64 `json:"text_scale"`
+			Tint      string  `json:"tint"`
+			Theme     string  `json:"theme"`
 		} `json:"appearance"`
 		Tomorrow struct {
 			Of []string `json:"of"`
@@ -249,7 +210,7 @@ func TestSave_PreservesUnknownFields(t *testing.T) {
 	if file.Appearance.Theme != "preset:nord" {
 		t.Errorf("applied %q", file.Appearance.Theme)
 	}
-	if file.Appearance.Zoom != 1.5 || file.Appearance.Tint != "warm" {
+	if file.Appearance.TextScale != 1.5 || file.Appearance.Tint != "warm" {
 		t.Errorf("the window section is now %+v", file.Appearance)
 	}
 	if strings.Join(file.Tomorrow.Of, " ") != "a later build" {
@@ -259,7 +220,7 @@ func TestSave_PreservesUnknownFields(t *testing.T) {
 
 // A file with a syntax error is not patched, so the user's content stays as written.
 func TestAFileThatDoesNotParseIsNotPatched(t *testing.T) {
-	body := `{"appearance": {"zoom": 1.5,,}}`
+	body := `{"appearance": {"text_scale": 1.5,,}}`
 	path := write(t, body)
 	if err := settings.NewFiles().Save(path, newDocument(), theme("preset:nord")); err == nil {
 		t.Fatal("a file nothing can read took a setting")
@@ -306,7 +267,7 @@ func TestSavingIntoAFileThatIsNotThereWritesTheSettingAlone(t *testing.T) {
 }
 
 func TestTheSettingsAreLeftReadableByThePersonAlone(t *testing.T) {
-	path := write(t, `{"appearance":{"zoom":1.5}}`)
+	path := write(t, `{"appearance":{"text_scale":1.5}}`)
 	if err := os.Chmod(path, 0o644); err != nil {
 		t.Fatal(err)
 	}

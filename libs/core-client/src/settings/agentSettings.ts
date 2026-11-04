@@ -12,11 +12,6 @@ export const getProgramModelPath = (program: string): readonly string[] => [
   program,
   'model',
 ]
-export const getProgramStepsPath = (program: string): readonly string[] => [
-  'agent',
-  program,
-  'max_steps',
-]
 export const getProgramHooksPath = (program: string): readonly string[] => [
   'agent',
   program,

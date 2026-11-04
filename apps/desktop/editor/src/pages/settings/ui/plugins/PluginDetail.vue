@@ -13,8 +13,8 @@ import { createManagedFromEntries } from '@/shared/pluginListing'
 import { createRequestGuard, runInBackground } from '@numen/ui'
 import PluginFields from './PluginFields.vue'
 import type { SettingsTabState } from '../../types'
-import { createSettingFields, write, type PluginInfo } from '@/entities/settings'
-import { getShownConsent, hasPluginSettings } from '../../lib/pluginSettings'
+import { createSettingFields, type PluginInfo } from '@/entities/settings'
+import { hasPluginSettings } from '../../lib/pluginSettings'
 import { fetchPluginReadme } from '../../lib/readme'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -33,11 +33,9 @@ const fields = createSettingFields(() => props.state.installation)
 
 const read = (key: string) => installation.value.getSetting(['plugins', props.plugin.id, key])
 
-const managed = computed(() => {
-  const [one] = createManagedFromEntries([props.plugin], installation.value.catalog?.value ?? [])
-  if (!one?.info) return one
-  return { ...one, info: { ...one.info, consent: getShownConsent(props.plugin, read) } }
-})
+const managed = computed(
+  () => createManagedFromEntries([props.plugin], installation.value.catalog?.value ?? [])[0],
+)
 
 /** The switch shows what the vault answered; it moves when the answer to its write arrives. */
 const readEnabled = (): unknown =>
@@ -74,12 +72,6 @@ function onToggleEnabled(isOn: boolean): void {
 
 function onRetry(): void {
   installation.value.retryPlugin(props.plugin.id)
-}
-
-function onConsentChange(isAllowed: boolean): void {
-  installation.value.write([
-    { at: ['plugins', props.plugin.id, 'aiConsent'], value: write(isAllowed) },
-  ])
 }
 
 async function onDeleteData(): Promise<void> {
@@ -136,7 +128,6 @@ watch(
     @back="onBack"
     @toggle-enabled="onToggleEnabled"
     @retry="onRetry"
-    @consent-change="onConsentChange"
     @delete-data="onDeleteData"
   >
     <template #settings>

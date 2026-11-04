@@ -21,22 +21,19 @@ import (
 // The values are arbitrary user input between the braces, so none of them is
 // assumed to be valid.
 func FuzzAt(f *testing.F) {
-	// The file the application writes, a size the setting does not go to, a
-	// word no half of a colour pair is called, a theme named nothing at all, an
-	// hour that is no hour and one with spaces around it, and a version the file
-	// was never written at.
-	f.Add(1, "system", "preset:numen", "04:00", 1.0, 1.0)
-	f.Add(1, "dark", "mine:dracula", "23:59", 2.0, 1.75)
-	f.Add(1, "light", "preset:numen", "04:00", 9.0, 1.0)
-	f.Add(1, "purple", "preset:numen", "04:00", 1.0, 1.0)
-	f.Add(1, "", "", "", 1.0, 1.0)
-	f.Add(1, "system", "preset:numen", "99:99", 1.0, 1.0)
-	f.Add(1, "system", "preset:numen", "  07:30  ", 1.0, 1.0)
-	f.Add(0, "system", "preset:numen", "04:00", 1.0, 1.0)
-	f.Add(1, "system", "preset:numen", "04:00", 0.8, 0.8)
+	// The file the application writes, a size the setting does not go to, a word no half of a
+	// colour pair is called, a theme named nothing at all, and a version the file was never
+	// written at.
+	f.Add(1, "system", "preset:numen", 1.0, 1.0)
+	f.Add(1, "dark", "mine:dracula", 2.0, 1.75)
+	f.Add(1, "light", "preset:numen", 9.0, 1.0)
+	f.Add(1, "purple", "preset:numen", 1.0, 1.0)
+	f.Add(1, "", "", 1.0, 1.0)
+	f.Add(0, "system", "preset:numen", 1.0, 1.0)
+	f.Add(1, "system", "preset:numen", 0.8, 0.8)
 
 	path := filepath.Join(f.TempDir(), "numen.json")
-	f.Fuzz(func(t *testing.T, version int, mode, theme, dayStartTime string,
+	f.Fuzz(func(t *testing.T, version int, mode, theme string,
 		interfaceScale, textScale float64) {
 		raw, err := json.Marshal(file{
 			Version: version,
@@ -46,7 +43,6 @@ func FuzzAt(f *testing.F) {
 				Mode:           mode,
 				Theme:          theme,
 			},
-			Review: review{DayStartTime: dayStartTime},
 		})
 		if err != nil {
 			// A size that is not a number is not something a file can hold.
@@ -85,7 +81,6 @@ func FuzzAt(f *testing.F) {
 type file struct {
 	Version    int        `json:"v"`
 	Appearance appearance `json:"appearance"`
-	Review     review     `json:"review"`
 }
 
 type appearance struct {
@@ -93,10 +88,6 @@ type appearance struct {
 	TextScale      float64 `json:"text_scale"`
 	Mode           string  `json:"mode"`
 	Theme          string  `json:"theme"`
-}
-
-type review struct {
-	DayStartTime string `json:"day_start_time"`
 }
 
 // is. One file is written over and over: a folder for each of a million inputs

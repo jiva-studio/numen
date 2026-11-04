@@ -114,7 +114,7 @@ func (f *Files) OpenAt(path string, into Document) error {
 	if version := into.GetVersion(); *version < DefaultVersion {
 		*version = DefaultVersion
 	}
-	f.readInterfaceScale(into, path, raw)
+	readInterfaceScale(into, raw)
 	if err := into.GetAppearance().Check(); err != nil {
 		return err
 	}
@@ -135,46 +135,19 @@ func checkMode(into Document) {
 	appearance.Mode = ModeSystem
 }
 
-// readInterfaceScale reads `appearance.zoom` as the setting that replaced it and
-// renames the field in the file. Both express the window's display scale, so the
-// number and the resulting size are unchanged.
-//
-// A file that cannot be written is read this way at every launch and yields the
-// same size each time.
-func (f *Files) readInterfaceScale(into Document, path string, raw []byte) {
+// readInterfaceScale sets the interface scale to the size the desktop asks for when the file
+// names none.
+func readInterfaceScale(into Document, raw []byte) {
 	var file struct {
 		Appearance struct {
-			Zoom           *float64 `json:"zoom"`
 			InterfaceScale *float64 `json:"interface_scale"`
 		} `json:"appearance"`
 	}
 	if err := json.Unmarshal(raw, &file); err != nil {
 		return
 	}
-	// A file naming the size is drawn at it, and keeps the names it holds: one
-	// section holds one of a name.
-	if file.Appearance.InterfaceScale != nil {
-		return
-	}
-
-	// Zero named no size, and neither did a file that named neither.
-	var zoom float64
-	if file.Appearance.Zoom != nil {
-		zoom = *file.Appearance.Zoom
-	}
-	switch {
-	case zoom <= 0:
+	if file.Appearance.InterfaceScale == nil {
 		into.GetAppearance().InterfaceScale = getDesktopScale()
-	case GetInterfaceScaleBounds().Contains(zoom):
-		into.GetAppearance().InterfaceScale = zoom
-		if err := f.renameField(path, []string{"appearance", "zoom"}, "interface_scale"); err != nil && !isUnwritable(err) {
-			warn(into, "appearance.zoom could not be renamed to interface_scale in %s: %v", path, err)
-		}
-	default:
-		// Warns with the setting the number maps to and its bounds. The number remains
-		// in the file.
-		warn(into, "appearance.zoom is outside interface_scale, %v to %v",
-			GetInterfaceScaleBounds().Min, GetInterfaceScaleBounds().Max)
 	}
 }
 

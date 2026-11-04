@@ -5,7 +5,7 @@ description: What you change from the window, where the settings file lives, and
 
 import Shot from '../../components/Shot.astro'
 
-**Settings** in the commands opens the settings page, which edits the settings file. It lists **System**, the settings of the window itself, and below it every installed plugin, each with a page of its own. The search at the top narrows the list by a plugin's name, its description or its kind. The rest of the file is edited in [the file itself](#the-file).
+**Settings** in the commands opens the settings page, which edits the settings file. It lists **System**, the settings of the window itself, and below it every installed plugin, each with a page of its own. The search at the top narrows the list by a plugin's name, its description or its kind. The rest of the file is edited in any text editor, see [the file](#the-file).
 
 <Shot
   name="settings"
@@ -17,7 +17,7 @@ Changing a control saves it. There is no separate save, and nothing is applied l
 
 ## System
 
-At the top of **System** is the path of the file that the page edits, and **Open the file** beside it. See [the file itself](#the-file).
+At the top of **System** is the path of the file that the page edits. See [the file](#the-file).
 
 ### The window
 
@@ -42,7 +42,6 @@ A plugin's page holds what the plugin declares, and the window's controls over t
 | ------------------------ | --------------------------------------------------------------------------------------------------------------- |
 | **Enabled**              | whether the plugin runs at all. A disabled plugin offers none of its commands, views or texts.                  |
 | **Plugins that stopped** | a plugin the window could not start, with when it failed and why, and **Retry** or **Disable**.                 |
-| **May ask a model**      | for a plugin that sends requests to a model, whether you allow it. Until you choose, its first request fails.   |
 | **Keys**                 | each key the plugin declares, stored in the system keychain, never in the settings file, and never shown again. |
 
 Below them are the plugin's own settings, each with the control its manifest declares — a model to choose, a number, a list. The [scanned books](/reader/) and [recordings](/recordings/) pages say which of those are worth changing.
@@ -55,9 +54,7 @@ A row on the page and the command of the same name use the same code, so it make
 
 ## The file
 
-Every setting is in one file, `numen.json`, in [the folder numen keeps its own things in](/install/#where-numen-keeps-its-own-files). **Open the file**, at the head of **System** on the settings page, opens it in its own tab, shown as JSON. Unlike a note, it is not saved as you type: <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>S</kbd> saves it, which is also the shortcut for saving a note.
-
-If the file changes outside the tab, the tab stops saving at once and shows the same two choices as a note: [keep mine, or take the file's](/editor/#when-the-file-changed-underneath-you). Content that does not match recognized configuration schemas is rejected, and the tab reports an error without saving invalid changes.
+Every setting is in one file, `numen.json`, in [the folder numen keeps its own things in](/install/#where-numen-keeps-its-own-files). The settings page shows its path at the head of **System**.
 
 It is yours to edit. Fields you leave out keep their defaults, so a file naming one setting is a
 complete file. Keys numen does not know are kept unchanged, and a file that does not
@@ -76,15 +73,15 @@ parse is never overwritten: numen reports the error and does not change the file
 
 ## What is in it
 
-|                      |                                                                                                           |
-| -------------------- | --------------------------------------------------------------------------------------------------------- |
-| `appearance`         | how the window is drawn: the theme, which half of it, the two sizes, and the headings shown under a node. |
-| `indexing.embedding` | how the index keeps the vectors the embedding plugin makes. See [semantic search](/semantic-search/).     |
-| `agent`              | which assistant is used in the panel, and how it is started. See [the agent](/agent/).                    |
-| `naming`             | whether a note's title and its filename are kept as one name. See [writing notes](/editor/#renaming).     |
-| `performance`        | how much of the machine the background work may use.                                                      |
-| `ai.default`         | the agent and the model that receive a plugin's request when the plugin names none.                       |
-| `plugins`            | each plugin's own settings, under its id.                                                                 |
+|                      |                                                                                                       |
+| -------------------- | ----------------------------------------------------------------------------------------------------- |
+| `appearance`         | how the window is drawn: the theme, which half of it and the two sizes.                               |
+| `indexing.embedding` | how the index keeps the vectors the embedding plugin makes. See [semantic search](/semantic-search/). |
+| `agent`              | which assistant is used in the panel, and how it is started. See [the agent](/agent/).                |
+| `naming`             | whether a note's title and its filename are kept as one name. See [writing notes](/editor/#renaming). |
+| `performance`        | how much of the machine the background work may use.                                                  |
+| `ai.default`         | the agent and the model that receive a plugin's request when the plugin names none.                   |
+| `plugins`            | each plugin's own settings, under its id.                                                             |
 
 [Every setting](/reference/) is the complete list, generated from the application itself.
 

@@ -106,7 +106,6 @@ describe('what remains at a setting', () => {
               capabilities: [],
               secrets: [],
               storedSecrets: [],
-              consent: 'none',
               hasFrontend: false,
               settings: [
                 {
@@ -230,11 +229,11 @@ const defer = <T>() => {
 }
 
 describe('a setting written twice in quick succession', () => {
-  const settingPath = ['appearance', 'nest_headings_under_notes']
+  const settingPath = ['naming', 'sync_title_and_filename']
 
   /** A file whose text a test sets, with every write and every read held until it is let through. */
   const createBlockedVault = () => {
-    let file = '{"appearance":{"nest_headings_under_notes":true}}'
+    let file = '{"naming":{"sync_title_and_filename":true}}'
     const writes: ReturnType<typeof defer<void>>[] = []
     const reads: ReturnType<typeof defer<string>>[] = []
     const core: SettingsStoreDeps = {
@@ -247,7 +246,7 @@ describe('a setting written twice in quick succession', () => {
         const isDone = defer<void>()
         writes.push(isDone)
         await isDone.promise
-        file = `{"appearance":{"nest_headings_under_notes":${edits[0]?.value}}}`
+        file = `{"naming":{"sync_title_and_filename":${edits[0]?.value}}}`
       },
     }
     return { core, writes, reads, getFile: () => file }
@@ -264,7 +263,7 @@ describe('a setting written twice in quick succession', () => {
 
     vault.writes[0]?.resolve()
     await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
-    vault.reads[0]?.resolve('{"appearance":{"nest_headings_under_notes":false}}')
+    vault.reads[0]?.resolve('{"naming":{"sync_title_and_filename":false}}')
     await first
     expect(retainedState.getSetting(settingPath)).toBe(true)
     expect(retainedState.getCommittedSetting(settingPath)).toBe(false)

@@ -197,7 +197,6 @@ describe('the settings tab', () => {
       capabilities: [],
       secrets: [],
       storedSecrets: [],
-      consent: 'none',
       hasFrontend: false,
       settings: [],
     }
@@ -279,7 +278,6 @@ describe('the settings tab', () => {
       capabilities: [],
       secrets: [],
       storedSecrets: [],
-      consent: 'none',
       hasFrontend: false,
       settings: [],
     }
@@ -315,7 +313,6 @@ describe('the settings tab', () => {
       capabilities: ['agent'],
       secrets: [],
       storedSecrets: [],
-      consent: 'none',
       hasFrontend: true,
       settings: [],
     }

@@ -160,26 +160,14 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 			Permissions:  one.Permissions,
 			Secrets:      newWireSecrets(one.Secrets),
 			// The names of the stored secrets travel, and a key never does.
-			StoredSecrets:     one.StoredSecrets,
-			CompletionConsent: GetConsents()[one.Consent],
-			Failure:           newWirePluginFailure(one.Failure),
-			HasFrontend:       one.HasFrontend,
-			Readers:           newWireReaders(one.Readers),
-			SettingsViews:     newWireSettingsViews(one.SettingsViews),
+			StoredSecrets: one.StoredSecrets,
+			Failure:       newWirePluginFailure(one.Failure),
+			HasFrontend:   one.HasFrontend,
+			Readers:       newWireReaders(one.Readers),
+			SettingsViews: newWireSettingsViews(one.SettingsViews),
 		})
 	}
 	return infos
-}
-
-// Consents maps whether the user lets a plugin query a model to its wire value.
-func GetConsents() map[setting.Consent]v1.CompletionConsent {
-	return map[setting.Consent]v1.CompletionConsent{
-		setting.ConsentNone:      v1.CompletionConsent_COMPLETION_CONSENT_UNSPECIFIED,
-		setting.ConsentPending:   v1.CompletionConsent_COMPLETION_CONSENT_PENDING,
-		setting.ConsentRequested: v1.CompletionConsent_COMPLETION_CONSENT_REQUESTED,
-		setting.ConsentAllowed:   v1.CompletionConsent_COMPLETION_CONSENT_ALLOWED,
-		setting.ConsentDenied:    v1.CompletionConsent_COMPLETION_CONSENT_DENIED,
-	}
 }
 
 // WritePluginSecret stores the key of a secret a plugin declares. A secret the

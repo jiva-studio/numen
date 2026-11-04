@@ -32,7 +32,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
-	coreSettings "github.com/jiva-studio/numen/libs/core/usecase/settings"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -701,15 +700,6 @@ func TestEveryPresenceIsSavedFromOne(t *testing.T) {
 		v1.Presence_PRESENCE_NOT_FETCHED:      settingsport.NotFetched,
 		v1.Presence_PRESENCE_NOTHING_TO_FETCH: settingsport.NothingToFetch,
 	}, func(is settingsport.Presence) v1.Presence { return editorSettings.GetPresences()[is] })
-}
-
-func TestEveryCompletionConsentIsSavedFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.CompletionConsent]coreSettings.Consent{
-		v1.CompletionConsent_COMPLETION_CONSENT_PENDING:   coreSettings.ConsentPending,
-		v1.CompletionConsent_COMPLETION_CONSENT_REQUESTED: coreSettings.ConsentRequested,
-		v1.CompletionConsent_COMPLETION_CONSENT_ALLOWED:   coreSettings.ConsentAllowed,
-		v1.CompletionConsent_COMPLETION_CONSENT_DENIED:    coreSettings.ConsentDenied,
-	}, func(is coreSettings.Consent) v1.CompletionConsent { return editorSettings.GetConsents()[is] })
 }
 
 func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {

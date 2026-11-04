@@ -812,7 +812,7 @@ const SETTINGS = `{
     "transcribe_recordings": true,
     "transcribe_under_mb": 200
   },
-  "agent": { "use": "claude", "serve_tools": false }
+  "agent": { "use": "claude" }
 }
 `
 

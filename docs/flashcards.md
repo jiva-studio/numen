@@ -30,7 +30,7 @@ A card whose first field is empty is shown like any other. Its heading is empty,
 
 A card is due when the current day is the day of its schedule or later. **A card due today is due for the whole day**, whatever hour it is scheduled for, because a person can review at any hour.
 
-A day begins four hours past midnight, and that is `review.day_start_time` in [Settings](settings.md). Reviewing cards at one in the morning finishes the day before, not starting the next, and a boundary at midnight would split one session in two. The hour uses local time, so the review day begins and ends according to the user's schedule.
+A day begins four hours past midnight, and that is the Flashcards plugin's setting `day_start_time`, described in [Settings](settings.md). Reviewing cards at one in the morning finishes the day before, not starting the next, and a boundary at midnight would split one session in two. The hour uses local time, so the review day begins and ends according to the user's schedule.
 
 A card that has no answers yet is due at its first review.
 

@@ -34,8 +34,7 @@ var (
 )
 
 // Callers is what the host endpoint queries the host for about a call: who made
-// it, what that plugin may do, whether the user permits it to use a model, and
-// who serves a completion.
+// it, what that plugin may do, and who serves a completion.
 type callerLease interface {
 	Acquire(pluginID string)
 	Release(pluginID string)
@@ -45,7 +44,6 @@ type Callers interface {
 	Services
 	GetPluginIDByToken(token string) (string, bool)
 	CheckPluginPermission(pluginID, permission string) error
-	CheckCompletionConsent(pluginID string) error
 	callerLease
 }
 
@@ -133,8 +131,7 @@ func (e *Endpoint) Close(ctx context.Context) error {
 
 // Complete serves a plugin's completion request with text from the configured
 // agent. A request without a valid token is unauthenticated, one without the
-// ai:complete permission is denied, and a plugin the user has not allowed to use
-// a model receives NO_CONSENT.
+// ai:complete permission is denied.
 func (e *Endpoint) Complete(
 	ctx context.Context,
 	req *connect.Request[v1.HostServiceCompleteRequest],
@@ -142,9 +139,6 @@ func (e *Endpoint) Complete(
 	pluginID, err := e.authorize(req.Header().Get("Authorization"), manifest.PermissionAIComplete)
 	if err != nil {
 		return nil, err
-	}
-	if err := e.callers.CheckCompletionConsent(pluginID); err != nil {
-		return answerFailure(ctx, err)
 	}
 	completer := e.callers.GetCompleter()
 	if completer == nil {

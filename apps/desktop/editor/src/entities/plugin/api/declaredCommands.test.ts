@@ -136,7 +136,6 @@ describe('useCatalogEntries', () => {
     capabilities: [],
     secrets: [],
     storedSecrets: [],
-    consent: 'none',
     hasFrontend: false,
     settings: [],
   })

@@ -28,6 +28,7 @@ const (
 	SettingAPIKey      = "apiKey"
 	SettingTemperature = "temperature"
 	SettingMaxTokens   = "max_tokens"
+	SettingMaxSteps    = "maxSteps"
 )
 
 // modelsLimit is how long the chat API has to list its models.
@@ -51,6 +52,7 @@ type Server struct {
 	model         string
 	temperature   *float64
 	maxTokens     *int
+	maxSteps      int
 	conversations map[string][]message
 	models        []model
 	isListed      bool
@@ -83,6 +85,11 @@ func (s *Server) Configure(values map[string]string) {
 			s.maxTokens = &val
 		}
 	}
+	if stepsStr, ok := values[SettingMaxSteps]; ok && stepsStr != "" {
+		if val, err := strconv.Atoi(stepsStr); err == nil && val > 0 {
+			s.maxSteps = val
+		}
+	}
 	s.models, s.isListed = nil, false
 }
 
@@ -97,6 +104,17 @@ func (s *Server) getChat() chat {
 		temperature: s.temperature,
 		maxTokens:   s.maxTokens,
 	}
+}
+
+// getMaxSteps returns how many requests to the model a task may make: the limit the task names,
+// else the setting, else zero, which the run reads as its default.
+func (s *Server) getMaxSteps(task *agentrun.Request) int {
+	if task.MaxSteps > 0 {
+		return int(task.MaxSteps)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.maxSteps
 }
 
 // getModel returns the model to use: the one named, else the configured one, else the default.
@@ -152,7 +170,7 @@ func (s *Server) Ask(ctx context.Context, task *agentrun.Request, send func(*age
 		effort:  s.getEffort(taskCtx, modelName, task.Reasoning),
 		tools:   tools,
 		words:   toolcall.IndexDeclarations(task.ToolDeclarations),
-		turns:   int(task.MaxSteps),
+		turns:   s.getMaxSteps(task),
 		send:    send,
 		isPlain: false,
 	}

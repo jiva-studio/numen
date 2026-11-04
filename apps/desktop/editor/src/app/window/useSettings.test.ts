@@ -242,7 +242,6 @@ describe('the settings tab', () => {
       capabilities: [],
       secrets: [],
       storedSecrets: [],
-      consent: 'none' as const,
       hasFrontend: false,
       settings: [
         {
@@ -291,7 +290,6 @@ describe('the settings tab', () => {
         capabilities: [],
         secrets: [],
         storedSecrets: [],
-        consent: 'none',
         hasFrontend: false,
         settings: [],
       },
@@ -304,7 +302,6 @@ describe('the settings tab', () => {
         capabilities: [],
         secrets: [],
         storedSecrets: [],
-        consent: 'none',
         hasFrontend: false,
         settings: [
           {
@@ -451,7 +448,6 @@ describe('the settings tab', () => {
         capabilities: [],
         secrets: [],
         storedSecrets: [],
-        consent: 'none',
         hasFrontend: false,
         settings: [],
       },
@@ -464,7 +460,6 @@ describe('the settings tab', () => {
         capabilities: [],
         secrets: [],
         storedSecrets: [],
-        consent: 'none',
         hasFrontend: false,
         settings: [],
       },

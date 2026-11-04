@@ -59,9 +59,8 @@ enum CompletionErrorCode {
   // an answer.
   COMPLETION_ERROR_CODE_UNAVAILABLE = 2;
 
-  // The window asks the person, and a plugin shows this as the reason nothing
-  // was answered.
-  COMPLETION_ERROR_CODE_NO_CONSENT = 3;
+  reserved 3;
+  reserved "COMPLETION_ERROR_CODE_NO_CONSENT";
 }
 
 // CompletionAnswer is what a model said.

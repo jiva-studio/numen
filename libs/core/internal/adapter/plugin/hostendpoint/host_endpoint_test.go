@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -29,7 +28,6 @@ type callers struct {
 	mu        sync.Mutex
 	plugins   map[string]string
 	allowed   map[string]bool
-	consented map[string]bool
 	completer completionport.Completer
 	checked   []string
 	vault     pluginport.PluginVault
@@ -52,16 +50,6 @@ func (c *callers) CheckPluginPermission(pluginID, permission string) error {
 	c.mu.Unlock()
 	if !c.allowed[pluginID] {
 		return pluginport.ErrPermissionDenied
-	}
-	return nil
-}
-
-func (c *callers) CheckCompletionConsent(pluginID string) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.checked = append(c.checked, pluginID+" consent")
-	if !c.consented[pluginID] {
-		return completionport.ErrNoConsent
 	}
 	return nil
 }
@@ -111,7 +99,6 @@ func newCallers(completer completionport.Completer) *callers {
 	return &callers{
 		plugins:   map[string]string{"token-a": "md.numen.a", "token-b": "md.numen.b", "token-c": "md.numen.c"},
 		allowed:   map[string]bool{"md.numen.a": true, "md.numen.c": true},
-		consented: map[string]bool{"md.numen.a": true},
 		completer: completer,
 	}
 }
@@ -164,8 +151,8 @@ func TestHostEndpoint_ServesPluginWithPermission(t *testing.T) {
 		requestVal.Messages[0].Role != "user" {
 		t.Errorf("the completer was asked %+v", requestVal)
 	}
-	if len(fakeCallers.checked) != 2 || fakeCallers.checked[0] != "md.numen.a ai:complete" || fakeCallers.checked[1] != "md.numen.a consent" {
-		t.Errorf("checked %v, want md.numen.a ai:complete, then its consent", fakeCallers.checked)
+	if len(fakeCallers.checked) != 1 || fakeCallers.checked[0] != "md.numen.a ai:complete" {
+		t.Errorf("checked %v, want md.numen.a ai:complete", fakeCallers.checked)
 	}
 }
 
@@ -332,37 +319,6 @@ func TestHostEndpoint_BindsLoopbackAndServes(t *testing.T) {
 	}
 	if _, err := client.Complete(t.Context(), newHostQuestion()); err == nil {
 		t.Error("a closed endpoint answered")
-	}
-}
-
-// A plugin without user consent to call a model receives NO_CONSENT, and no
-// model is called.
-func TestHostEndpoint_ReturnsNoConsentWithoutConsent(t *testing.T) {
-	request := false
-	fakeCallers := newCallers(plugintest.CompleterFunc(func(context.Context, completionport.Question) (string, error) {
-		request = true
-		return "", nil
-	}))
-	res, err := newHostClient(t, fakeCallers, "token-c").Complete(t.Context(), newHostQuestion())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.Msg.GetError() != v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT || res.Msg.GetAnswer() != nil {
-		t.Errorf("answered %v, want NO_CONSENT", res.Msg)
-	}
-	if request {
-		t.Error("a model was asked for a plugin without consent")
-	}
-}
-
-// A plugin without the permission fails before its consent is looked at.
-func TestThePermissionIsCheckedBeforeTheConsent(t *testing.T) {
-	fakeCallers := newCallers(nil)
-	if _, err := newHostClient(t, fakeCallers, "token-b").Complete(t.Context(), newHostQuestion()); err == nil {
-		t.Fatal("a plugin without the permission was served")
-	}
-	if slices.Contains(fakeCallers.checked, "md.numen.b consent") {
-		t.Errorf("checked %v", fakeCallers.checked)
 	}
 }
 

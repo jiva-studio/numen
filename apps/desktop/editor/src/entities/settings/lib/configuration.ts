@@ -4,7 +4,6 @@
  */
 import type { PluginInfo } from '@numen/plugin-manager'
 export type {
-  Consent,
   PluginFailure,
   PluginInfo,
   PluginReader,

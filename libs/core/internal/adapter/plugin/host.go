@@ -96,12 +96,9 @@ type Host struct {
 	vault            pluginport.PluginVault
 	texts            pluginport.PluginTexts
 	search           pluginport.PluginSearch
-	// consentAsks holds the plugins that requested a completion while the consent
-	// prompt was unanswered, since the host started.
-	consentAsks   map[string]bool
-	secretLocksMu sync.Mutex
-	secretLocks   map[string]*sync.Mutex
-	keyStore      pluginport.KeyStore
+	secretLocksMu    sync.Mutex
+	secretLocks      map[string]*sync.Mutex
+	keyStore         pluginport.KeyStore
 	// noKeyStoreOnce reports once that a recorded secret cannot be read on a
 	// machine without a key store.
 	noKeyStoreOnce sync.Once
@@ -147,7 +144,6 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		failedPlugins:    nil,
 		problems:         nil,
 		completer:        nil,
-		consentAsks:      make(map[string]bool),
 		keyStore:         nil,
 		hostEndpoint:     nil,
 		hostAddress:      hostendpoint.Address,
@@ -1222,7 +1218,6 @@ func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
 		result = map[string]any{}
 	}
 	delete(result, pluginport.SettingStoredSecrets)
-	delete(result, pluginport.SettingAIConsent)
 	if p, ok := h.plugins[pluginID]; ok {
 		for _, name := range p.Manifest.GetSecretNames() {
 			delete(result, name)
@@ -1491,7 +1486,6 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 			Permissions:   p.Manifest.Permissions,
 			Secrets:       p.Manifest.Secrets,
 			StoredSecrets: h.getStoredSecretsLocked(p.Manifest.ID),
-			Consent:       h.getCompletionConsentLocked(p.Manifest),
 			Failure:       h.getFailureLocked(p.Manifest.ID),
 			HasFrontend:   p.Manifest.HasFrontend(),
 			Readers:       h.listReaderInfosLocked(p.Manifest),
@@ -1506,7 +1500,7 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 // executables, and its default where the manifest gives none.
 func resolveSettingDefaultAndOptions(s pluginport.PluginManifestSetting) (any, pluginport.PluginSettingOptions) {
 	if !isACPPathsSetting(s) {
-		return resolveSettingDefault(s), s.Options
+		return s.Default, s.Options
 	}
 	discovered := resolveDiscoveredACPOptions()
 	options := s.Options
@@ -1517,22 +1511,6 @@ func resolveSettingDefaultAndOptions(s pluginport.PluginManifestSetting) (any, p
 		return paths, options
 	}
 	return s.Default, options
-}
-
-func resolveSettingDefault(s pluginport.PluginManifestSetting) any {
-	if s.Default == "" {
-		switch s.Key {
-		case "yt_dlp":
-			if path, err := exec.LookPath("yt-dlp"); err == nil {
-				return path
-			}
-		case "ffmpeg":
-			if path, err := exec.LookPath("ffmpeg"); err == nil {
-				return path
-			}
-		}
-	}
-	return s.Default
 }
 
 type acpExecutableCandidate struct {
