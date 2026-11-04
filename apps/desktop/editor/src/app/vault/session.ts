@@ -116,7 +116,12 @@ export const sessionCore: SessionCore = {
       result: flushResults[outcome ?? 'nothing'],
     })
   },
-  detachTab: async (tabId, position) => {
-    await workspace.detachTab({ tabId, x: position.x, y: position.y })
+  detachTab: async (tab, position) => {
+    await workspace.detachTab({
+      kind: tab.kind,
+      path: tab.path,
+      x: Math.round(position.x),
+      y: Math.round(position.y),
+    })
   },
 }

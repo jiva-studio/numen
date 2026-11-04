@@ -29,11 +29,13 @@ const (
 
 type DetachTabRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The tab to open in a new window.
-	TabId string `protobuf:"bytes,1,opt,name=tab_id,json=tabId,proto3" json:"tab_id,omitempty"`
+	// The kind of the tab to open in a new window.
+	Kind string `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`
+	// The vault path the tab shows; empty for a tab that shows none.
+	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// The position on screen to open the new window at.
-	X             int32 `protobuf:"varint,2,opt,name=x,proto3" json:"x,omitempty"`
-	Y             int32 `protobuf:"varint,3,opt,name=y,proto3" json:"y,omitempty"`
+	X             int32 `protobuf:"varint,3,opt,name=x,proto3" json:"x,omitempty"`
+	Y             int32 `protobuf:"varint,4,opt,name=y,proto3" json:"y,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -68,9 +70,16 @@ func (*DetachTabRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_workspace_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *DetachTabRequest) GetTabId() string {
+func (x *DetachTabRequest) GetKind() string {
 	if x != nil {
-		return x.TabId
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *DetachTabRequest) GetPath() string {
+	if x != nil {
+		return x.Path
 	}
 	return ""
 }
@@ -491,11 +500,12 @@ var File_numen_v1_workspace_proto protoreflect.FileDescriptor
 
 const file_numen_v1_workspace_proto_rawDesc = "" +
 	"\n" +
-	"\x18numen/v1/workspace.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"E\n" +
-	"\x10DetachTabRequest\x12\x15\n" +
-	"\x06tab_id\x18\x01 \x01(\tR\x05tabId\x12\f\n" +
-	"\x01x\x18\x02 \x01(\x05R\x01x\x12\f\n" +
-	"\x01y\x18\x03 \x01(\x05R\x01y\"\x13\n" +
+	"\x18numen/v1/workspace.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"V\n" +
+	"\x10DetachTabRequest\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12\f\n" +
+	"\x01x\x18\x03 \x01(\x05R\x01x\x12\f\n" +
+	"\x01y\x18\x04 \x01(\x05R\x01y\"\x13\n" +
 	"\x11DetachTabResponse\"\x13\n" +
 	"\x11WatchFocusRequest\"Q\n" +
 	"\x12WatchFocusResponse\x12\x12\n" +

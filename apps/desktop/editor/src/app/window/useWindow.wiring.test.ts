@@ -153,6 +153,7 @@ beforeEach(() => {
         front.value?.id === id ? { kind: front.value.kind } : undefined,
       ),
       releaseTab: vi.fn(() => true),
+      finishClose: vi.fn(),
       reconcileTab: vi.fn(),
       openTabOfKind: vi.fn(),
       restoreTabs: vi.fn(),
@@ -414,13 +415,14 @@ describe('what the window knows of a note', () => {
 })
 
 describe('a tab closed', () => {
-  it('is forgotten by the links and released', () => {
+  it('is forgotten by the links, released and removed from the layout when no hold is passed', () => {
     const window = useWindow()
 
     window.closeTab('t1')
 
     expect(h.f.tabLinks.removeClosedTab).toHaveBeenCalledWith('t1')
     expect(h.f.windowTabs.releaseTab).toHaveBeenCalledWith('t1')
+    expect(h.f.windowTabs.finishClose).toHaveBeenCalledWith('t1')
   })
 
   it('calls the hold where the tab was not released', () => {
@@ -431,15 +433,17 @@ describe('a tab closed', () => {
     window.closeTab('t1', hold)
 
     expect(hold).toHaveBeenCalledOnce()
+    expect(h.f.windowTabs.finishClose).not.toHaveBeenCalled()
   })
 
-  it('does not call the hold where the tab was released', () => {
+  it('does not call the hold or finishClose where a hold is passed and the tab was released', () => {
     const window = useWindow()
     const hold = vi.fn()
 
     window.closeTab('t1', hold)
 
     expect(hold).not.toHaveBeenCalled()
+    expect(h.f.windowTabs.finishClose).not.toHaveBeenCalled()
   })
 
   it('needs no hold where the tab was not released', () => {
@@ -447,6 +451,85 @@ describe('a tab closed', () => {
     const window = useWindow()
 
     expect(() => window.closeTab('t1')).not.toThrow()
+    expect(h.f.windowTabs.finishClose).not.toHaveBeenCalled()
+  })
+})
+
+describe('a tab detached', () => {
+  const PLEX_TAB = 'plex:248cab16-f508-4fb4-a820-16b6f9090fc3'
+
+  beforeEach(() => {
+    h.core.detachTab.mockReset()
+    h.f.windowTabs.getTab.mockReturnValue({
+      kind: { kind: 'plex', getOpenTab: () => ({ path: 'Physics.md' }) },
+      state: {},
+    })
+  })
+
+  it('opens in a new window by its kind and path, and closes here', async () => {
+    h.core.detachTab.mockResolvedValue(undefined)
+    const window = useWindow()
+
+    window.detachTab(PLEX_TAB, { x: 100, y: 200 })
+    await vi.waitFor(() => expect(h.f.windowTabs.finishClose).toHaveBeenCalledWith(PLEX_TAB))
+
+    expect(h.core.detachTab).toHaveBeenCalledWith(
+      { kind: 'plex', path: 'Physics.md' },
+      { x: 100, y: 200 },
+    )
+    expect(h.f.windowTabs.releaseTab).toHaveBeenCalledWith(PLEX_TAB)
+  })
+
+  it('sends no path for a tab that shows none', async () => {
+    h.core.detachTab.mockResolvedValue(undefined)
+    h.f.windowTabs.getTab.mockReturnValue({ kind: { kind: 'settings' }, state: {} })
+    const window = useWindow()
+
+    window.detachTab('settings:settings', { x: 1, y: 2 })
+
+    expect(h.core.detachTab).toHaveBeenCalledWith({ kind: 'settings', path: '' }, { x: 1, y: 2 })
+  })
+
+  it('does nothing for a tab the window no longer holds', () => {
+    h.f.windowTabs.getTab.mockReturnValue(undefined)
+    const window = useWindow()
+
+    window.detachTab(PLEX_TAB, { x: 1, y: 2 })
+
+    expect(h.core.detachTab).not.toHaveBeenCalled()
+  })
+
+  it('opens at the screen point of a point given in the window', async () => {
+    h.core.detachTab.mockResolvedValue(undefined)
+    vi.stubGlobal('screenX', 1000)
+    vi.stubGlobal('screenY', 500)
+    try {
+      const window = useWindow()
+
+      window.detachTabAt(PLEX_TAB, { x: 30, y: 40 })
+
+      expect(h.core.detachTab).toHaveBeenCalledWith(
+        { kind: 'plex', path: 'Physics.md' },
+        { x: 1030, y: 540 },
+      )
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('stays open and reports the error where the new window did not open', async () => {
+    h.core.detachTab.mockRejectedValue(new Error('no window'))
+    const window = useWindow()
+
+    window.detachTab(PLEX_TAB, { x: 100, y: 200 })
+    await vi.waitFor(() =>
+      expect(h.f.writer).toHaveBeenCalledWith(
+        expect.stringContaining('The tab did not open in a new window'),
+        'error',
+      ),
+    )
+
+    expect(h.f.windowTabs.releaseTab).not.toHaveBeenCalled()
   })
 })
 
@@ -474,20 +557,24 @@ describe('the window started and closed', () => {
 })
 
 describe('the layout started with an initial tab', () => {
-  it('opens tab of kind with at payload from URL search params', async () => {
+  it('opens the tab of the kind and path the page names', async () => {
     h.f.windowTabs.openTabOfKind.mockResolvedValue('note:hello.md')
     try {
-      vi.stubGlobal('location', new URL('http://localhost/?window=secondary&tab=note:hello.md'))
-      useWindow()
+      vi.stubGlobal(
+        'location',
+        new URL('http://localhost/?window=secondary&kind=reader%3Aepub&path=books%2Fa+b.epub'),
+      )
+      const window = useWindow()
 
       await h.args.bootstrap.startLayout()
 
-      expect(h.f.windowTabs.openTabOfKind).toHaveBeenCalledWith('note', 'hello.md')
+      expect(h.f.windowTabs.openTabOfKind).toHaveBeenCalledWith('reader:epub', 'books/a b.epub')
       expect(h.f.windowTabs.layout.value).toEqual({
         root: { kind: 'pane', id: 'main', tabs: ['note:hello.md'], active: 'note:hello.md' },
         axis: 'horizontal',
         focus: 'main',
       })
+      expect(window.isLayoutReady.value).toBe(true)
     } finally {
       vi.unstubAllGlobals()
     }
@@ -683,7 +770,7 @@ describe('the services a plugin is given', () => {
       useWindow()
       expect(typeof h.args.crossWindow.closeWindowIfEmpty).toBe('function')
 
-      vi.stubGlobal('location', new URL('http://localhost/?secondary&tab=files'))
+      vi.stubGlobal('location', new URL('http://localhost/?secondary&kind=files'))
       const secondaryWin = useWindow()
       expect(typeof h.args.crossWindow.closeWindowIfEmpty).toBe('function')
       h.args.crossWindow.closeWindowIfEmpty()

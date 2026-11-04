@@ -44,7 +44,6 @@ const {
   windowTabs,
   layout,
   vaultList,
-  log,
   statusBar,
   statusViews,
   palette,
@@ -55,6 +54,7 @@ const {
   getTarget,
   tabLinks,
   detachTab,
+  detachTabAt,
 } = useWindow()
 
 const linkMenu = useTabLinkMenu({
@@ -62,8 +62,8 @@ const linkMenu = useTabLinkMenu({
   getTabs: () => windowTabs.tabs.value,
   getKind: (id) => windowTabs.getTab(id)?.kind.kind,
   isLinkable: (id) => windowTabs.getTab(id)?.kind.navigate !== undefined,
+  onDetach: detachTabAt,
 })
-const writeMessage = log.getWriter('window')
 
 /* --------------------------------- Hooks ---------------------------------- */
 function onOpenSettings(event: Event): void {
@@ -88,15 +88,6 @@ function onCloseTab(id: string, hold?: () => void) {
   closeTab(id, hold)
 }
 
-async function onTearOffTab(id: string, position: { x: number; y: number }) {
-  try {
-    await detachTab(id, position)
-    onCloseTab(id)
-  } catch (err) {
-    writeMessage(err instanceof Error ? err.message : String(err), 'error')
-  }
-}
-
 function onShowTab(id: string) {
   windowTabs.onTabShown(id)
 }
@@ -117,7 +108,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       @close="onCloseTab"
       @show="onShowTab"
       @tab-context-menu="onTabContextMenu"
-      @tear-off="onTearOffTab"
+      @tear-off="detachTab"
     >
       <template #icon="{ id }">
         <component :is="getTabIcon(id)" v-if="getTabIcon(id)" class="tab-icon" />
@@ -165,10 +156,12 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       :eligible-tabs="linkMenu.eligibleTabs.value"
       :at="linkMenu.at.value"
       :is-linked="linkMenu.isLinked.value"
+      :can-detach="linkMenu.canDetach.value"
       :linked-target-title="linkMenu.linkedTargetTitle.value"
       :get-tab-icon="getTabIcon"
       @link="linkMenu.link"
       @unlink="linkMenu.unlink"
+      @detach="linkMenu.detach"
       @close="linkMenu.close"
     />
 

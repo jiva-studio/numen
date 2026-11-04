@@ -81,8 +81,8 @@ type State struct {
 	// them for as long as the core runs.
 	OpenTabsStore windowport.OpenTabsStore
 
-	// DetachTab opens a tab in its own window at the given screen coordinates.
-	DetachTab func(context.Context, string, int, int) error
+	// DetachTab opens a tab in a window of its own.
+	DetachTab func(context.Context, DetachedTab) error
 
 	// Writing is the writes taken and not yet finished.
 	Writing inflight
@@ -357,4 +357,13 @@ func newEditBroadcaster() broadcaster[domain.Edit] {
 			Capacity:   8,
 		},
 	}
+}
+
+// DetachedTab is a tab to open in a window of its own.
+type DetachedTab struct {
+	Kind string
+	// Path is the vault path the tab shows; empty for a tab that shows none.
+	Path string
+	// X and Y are the screen position of the new window.
+	X, Y int
 }

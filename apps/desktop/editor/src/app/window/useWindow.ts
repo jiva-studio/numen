@@ -126,18 +126,16 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     // Stryker disable next-line ConditionalExpression,EqualityOperator,StringLiteral: location is always defined in the window environment
     const search = typeof globalThis.location !== 'undefined' ? globalThis.location.search : ''
     const params = search ? new URLSearchParams(search) : null
-    const initialTab = params?.get('tab')
-    if (initialTab) {
-      const colonIdx = initialTab.indexOf(':')
-      const kind = colonIdx !== -1 ? initialTab.slice(0, colonIdx) : initialTab
-      const target = colonIdx !== -1 ? initialTab.slice(colonIdx + 1) : ''
-      const openedTab = await windowTabs.openTabOfKind(kind, target)
+    const kind = params?.get('kind')
+    if (kind) {
+      const openedTab = await windowTabs.openTabOfKind(kind, params?.get('path') ?? '')
       if (openedTab) {
         windowTabs.layout.value = {
           root: { kind: 'pane', id: 'main', tabs: [openedTab], active: openedTab },
           axis: 'horizontal',
           focus: 'main',
         }
+        deps.onLayoutStarted()
         return
       }
     }
@@ -434,11 +432,40 @@ function createStatusBar(
   })
 }
 
+type Point = { readonly x: number; readonly y: number }
+
+/** Opening a tab in a new window and closing it in this one. */
+function createTabDetacher(base: WindowCore, closeTab: (id: string) => void) {
+  /** Detaches a tab to a new window at a point on the screen. */
+  const detachTab = (id: string, point: Point): void => {
+    const tab = base.windowTabs.getTab(id)
+    if (!tab) return
+    const path = tab.kind.getOpenTab?.(tab.state)?.path ?? ''
+    core
+      .detachTab({ kind: tab.kind.kind, path }, point)
+      .then(() => closeTab(id))
+      .catch((error: unknown) =>
+        base.writeMessage(
+          `The tab did not open in a new window: ${formatErrorMessage(error)}`,
+          'error',
+        ),
+      )
+  }
+  /** Detaches a tab at a point relative to this window, as a context menu reports it. */
+  const detachTabAt = (id: string, point: Point): void =>
+    detachTab(id, { x: globalThis.screenX + point.x, y: globalThis.screenY + point.y })
+  return { detachTab, detachTabAt }
+}
+
 /** The closing of a tab: its links go, and the hold runs where the tab stays open. */
 function createTabCloser(base: WindowCore) {
   return (id: string, hold?: () => void) => {
     base.tabLinks.removeClosedTab(id)
-    if (!base.windowTabs.releaseTab(id)) hold?.()
+    if (!base.windowTabs.releaseTab(id)) {
+      hold?.()
+      return
+    }
+    if (!hold) base.windowTabs.finishClose?.(id)
   }
 }
 
@@ -525,7 +552,7 @@ export const useWindow = () => {
     getTitle: editing.getTitle,
     getTarget,
     tabLinks: base.tabLinks,
-    detachTab: core.detachTab,
+    ...createTabDetacher(base, closeTab),
     dockToOtherWindow: crossWindowTabs.dockToOtherWindow,
   }
   return api

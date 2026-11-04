@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createLinkMenuItems, UNLINK_ID } from './menu'
+import { createLinkMenuItems, DETACH_ID, UNLINK_ID } from './menu'
 
 describe('createLinkMenuItems', () => {
   it('creates items for unlinked tab', () => {
@@ -21,6 +21,16 @@ describe('createLinkMenuItems', () => {
       detail: 'files',
       group: 'Link with tab',
     })
+  })
+
+  it('includes detach item when canDetach is true', () => {
+    const tabs = [{ id: 'tab-1', title: 'Note 1', kind: 'note', isLinked: false }]
+    const items = createLinkMenuItems(tabs, false, '', true)
+
+    expect(items).toEqual([
+      { id: DETACH_ID, text: 'Detach tab' },
+      { id: 'tab-1', text: 'Note 1', detail: 'note', group: 'Link with tab' },
+    ])
   })
 
   it('includes unlink item when tab is already linked with or without target title', () => {

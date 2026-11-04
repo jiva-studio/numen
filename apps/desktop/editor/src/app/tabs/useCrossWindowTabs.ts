@@ -7,6 +7,7 @@ export interface CrossWindowTabsDeps {
   readonly windowTabs: {
     readonly openTabOfKind: (kind: string) => Promise<string | undefined>
     readonly releaseTab: (tabId: string) => boolean
+    readonly finishClose?: ((tabId: string) => void) | undefined
     readonly tabs: { readonly value: readonly unknown[] }
   }
   readonly closeWindowIfEmpty?: (() => void) | undefined
@@ -103,7 +104,10 @@ export function useCrossWindowTabs(
   const handleTabDocked = (msg: CrossWindowMessage): void => {
     if (msg.targetWindowId !== windowId || !isMatchingPendingDock(msg)) return
     pendingDocks.delete(msg.tabId)
-    deps.windowTabs.releaseTab(msg.tabId)
+    if (deps.windowTabs.releaseTab(msg.tabId)) {
+      // Stryker disable next-line OptionalChaining: finishClose is optional on CrossWindowTabsDeps
+      deps.windowTabs.finishClose?.(msg.tabId)
+    }
     if (deps.windowTabs.tabs.value.length === 0) {
       // Stryker disable next-line OptionalChaining: closeWindowIfEmpty is optional on CrossWindowTabsDeps
       deps.closeWindowIfEmpty?.()
