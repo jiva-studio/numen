@@ -152,7 +152,7 @@ export const TwoOrMoreGroups: Story = {
 
 /** The window is too narrow: the actions that do not fit are in the menu. */
 export const Overflowing: Story = {
-  args: { actions: ALL, width: '26rem' },
+  args: { actions: ALL, width: '22rem' },
   play: async ({ canvasElement }) => {
     await waitFor(() => expect(canvasElement.querySelector('[data-title-bar-more]')).not.toBeNull())
     const visible = shown(canvasElement)
