@@ -76,15 +76,21 @@ jobs:
 
       - id: go-cache-path
         if: matrix.kind == 'go'
-        run: echo "build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+        run: |
+          mkdir -p "$HOME/.cache/golangci-lint"
+          echo "build=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+          echo "modules=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
 
       # The build cache the module's own CI saves, read and never written.
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         if: matrix.kind == 'go'
         with:
-          path: ${{ steps.go-cache-path.outputs.build }}
-          key: ${{ matrix.target == 'libs-core' && 'go-build-core-ubuntu-latest-' || format('go-build-{0}-', matrix.at) }}${{ github.sha }}
-          restore-keys: ${{ matrix.target == 'libs-core' && 'go-build-core-ubuntu-latest-' || format('go-build-{0}-', matrix.at) }}
+          path: |
+            ${{ steps.go-cache-path.outputs.build }}
+            ${{ steps.go-cache-path.outputs.modules }}
+            ~/.cache/golangci-lint
+          key: ${{ matrix.target == 'libs-core' && 'go-core-test-race-Linux-' || matrix.target == 'apps-desktop' && 'go-desktop-test-Linux-' || matrix.target == 'apps-mobile' && 'go-mobile-test-Linux-' || 'go-plugins-test-Linux-' }}${{ github.sha }}
+          restore-keys: ${{ matrix.target == 'libs-core' && 'go-core-test-race-Linux-' || matrix.target == 'apps-desktop' && 'go-desktop-test-Linux-' || matrix.target == 'apps-mobile' && 'go-mobile-test-Linux-' || 'go-plugins-test-Linux-' }}
 
       # A Go module that links the window needs the system browser's headers.
       - uses: ./.github/actions/setup-webkit

@@ -1,12 +1,10 @@
 name: CI
 
-# The checks of a pull request and of a push to main. `changes` finds the areas a pull request
-# touches from .github/filters.yml; a push and a manual run take every area. Each called workflow
-# runs the jobs of its areas. The CI job is the one required check.
+# The checks of a pull request and of a manual run. `changes` finds the areas a pull request
+# touches from .github/filters.yml; a manual run takes every area. Each called workflow runs the
+# jobs of its areas. The CI job is the one required check.
 on:
   pull_request:
-  push:
-    branches: [main]
   # Windows and macOS runners cost two and ten times a Linux one, so a manual run asks for them.
   workflow_dispatch:
     inputs:
@@ -19,8 +17,7 @@ on:
         type: boolean
         default: false
 
-# A pull request keeps only its newest run. Each push to main has a group of its own: a later push
-# neither cancels it nor replaces it while it waits.
+# A pull request keeps only its newest run; a manual run has a group of its own.
 concurrency:
   group: ci-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -55,7 +52,7 @@ jobs:
           persist-credentials: false
 
       - id: filter
-        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        if: github.event_name == 'pull_request'
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         with:
           filters: .github/filters.yml
@@ -123,7 +120,6 @@ jobs:
     secrets: inherit
     with:
       docs: ${{ fromJSON(needs.changes.outputs.areas).docs }}
-      docs_deploy: ${{ fromJSON(needs.changes.outputs.areas).docs_deploy }}
 
   e2e:
     name: End-to-End

@@ -41,7 +41,8 @@ await test('a change to the window, the support code or the lock file selects ev
     'package-lock.json',
     'Makefile',
     'go.work',
-    'plugins/.golangci.yml',
+    '.github/workflows/desktop-e2e.yml',
+    '.github/actions/setup-playwright/action.yml',
   ]) {
     assert.equal(getScope(['plugins/notes/frontend/index.ts', file]), 'all')
   }
@@ -49,9 +50,23 @@ await test('a change to the window, the support code or the lock file selects ev
 
 await test('a change outside the desktop window, or to its documentation, selects none', () => {
   assert.equal(
-    getScope(['apps/mobile/src/main.ts', 'docs/index.md', 'plugins/notes/README.md']),
+    getScope([
+      'apps/mobile/src/main.ts',
+      'docs/index.md',
+      'plugins/notes/README.md',
+      'libs/core/usecase/note/create_test.go',
+      'apps/desktop/editor/src/main.test.ts',
+      'libs/ui/core/src/Button.stories.ts',
+      'plugins/notes/frontend/Note.test.ts',
+      'plugins/.golangci.yml',
+      'apps/desktop/editor/eslint.config.js',
+      'apps/desktop/editor/vitest.config.ts',
+      'libs/ui/core/.storybook/main.ts',
+      'tests/e2e/desktop/scripts/select-tests.test.mjs',
+    ]),
     'none',
   )
+  assert.equal(getScope(['tests/e2e/desktop/scripts/select-tests.mjs']), 'all')
   assert.deepEqual(getPlan('none'), [
     'desktop=false',
     'paths=',

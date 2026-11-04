@@ -3,30 +3,33 @@
 # matches one of its globs and none of its `!` globs. Globs are picomatch globs with `dot: true`.
 #
 # An area lists the paths of what it builds on through their anchors, so a change to a library
-# runs every area that depends on it. `shared` is in every area.
+# runs every area that depends on it. `ci_router` is in every area.
 
-shared: &shared
+ci_router: &ci_router
+  - Makefile
+  - tools/shared/**
+  - .github/filters.yml
+  - .github/workflows/ci.yml
+  - .github/scripts/areas.sh
+  - .github/scripts/platforms.sh
+
+go_workspace: &go_workspace
   - go.work
   - go.work.sum
+
+node_lock: &node_lock
   - package.json
   - package-lock.json
-  - Makefile
   - .node-version
+  - .github/actions/install-node-modules/**
+  - .github/actions/install-lock-packages/**
+
+ts_config: &ts_config
   - tsconfig.base.json
   - prettier.config.mjs
   - .prettierignore
   - stylelint.config.mjs
-  - tools/shared/**
   - tools/lint-layers/base-eslint.mjs
-  - .github/actions/**
-  - .github/filters.yml
-  - .github/workflows/ci.yml
-  - .github/workflows/checks.yml
-  - .github/workflows/docs.yml
-  - .github/workflows/frontend.yml
-  - .github/workflows/go.yml
-  - .github/workflows/plugins.yml
-  - .github/workflows/desktop-e2e.yml
 
 # ---------------------------------------------------------------- Libraries
 
@@ -34,6 +37,10 @@ go_rules: &go_rules
   - .golangci.yml
   - .golangci-structure.yml
   - '**/gorules/**'
+  - .github/actions/setup-go/**
+  - .github/actions/save-go-cache/**
+  - .github/actions/install-golangci-lint/**
+  - .github/actions/govulncheck/**
 protocol_lib: &protocol_lib
   - libs/protocol/**
 notes_lib: &notes_lib
@@ -57,21 +64,28 @@ host_lib: &host_lib
 
 # What every Go module of the window and the phone builds on.
 go_base: &go_base
-  - *shared
+  - *ci_router
+  - *go_workspace
   - *go_rules
   - *protocol_lib
   - *notes_lib
   - *core_lib
+  - .github/workflows/go.yml
 
 # What every plugin builds on: a change here lints, builds and tests all of them.
 plugins_all: &plugins_all
-  - *shared
+  - *ci_router
+  - *go_workspace
+  - *node_lock
+  - *ts_config
   - *go_rules
   - *protocol_lib
   - *notes_lib
   - *sdk_go_lib
   - *sdk_ts_lib
   - *ui_lib
+  - .github/actions/build-ui/**
+  - .github/workflows/plugins.yml
   - plugins/*
   - plugins/.example/**
   - '!**/*.md'
@@ -80,23 +94,30 @@ plugins_all: &plugins_all
 
 core:
   - *go_base
+  - *node_lock
   - tests/vault/**
   - plugins/*/manifest.json
   - tools/build-plugin-index/**
   - '!**/*.md'
 protocol:
-  - *shared
+  - *ci_router
+  - *go_workspace
+  - *node_lock
   - *protocol_lib
+  - .github/workflows/go.yml
   - '!**/*.md'
 sdk_go:
-  - *shared
+  - *ci_router
+  - *go_workspace
   - *go_rules
   - *protocol_lib
   - *notes_lib
   - *sdk_go_lib
+  - .github/workflows/go.yml
   - '!**/*.md'
 desktop:
   - *go_base
+  - .github/actions/setup-webkit/**
   - apps/desktop/**
   - '!apps/desktop/editor/**'
   - '!apps/desktop/flashcards/**'
@@ -112,27 +133,41 @@ mobile:
 # ---------------------------------------------------------------- Frontend
 
 ui:
-  - *shared
+  - *ci_router
+  - *node_lock
+  - *ts_config
   - *ui_lib
+  - .github/actions/build-ui/**
+  - .github/actions/setup-playwright/**
+  - .github/workflows/frontend.yml
   - '!**/*.md'
 desktop_fe:
-  - *shared
+  - *ci_router
+  - *node_lock
+  - *ts_config
   - *protocol_lib
   - *sdk_ts_lib
   - *ui_lib
   - *shell_lib
   - *client_lib
   - *host_lib
+  - .github/actions/build-ui/**
+  - .github/actions/setup-playwright/**
+  - .github/workflows/frontend.yml
   - apps/desktop/editor/**
   - apps/desktop/flashcards/**
   - tests/e2e/desktop/**
   - tools/ci-stories/**
   - '!**/*.md'
 mobile_fe:
-  - *shared
+  - *ci_router
+  - *node_lock
+  - *ts_config
   - *protocol_lib
   - *ui_lib
   - *client_lib
+  - .github/actions/build-ui/**
+  - .github/workflows/frontend.yml
   - apps/mobile/**
   - '!apps/mobile/bind/**'
   - '!apps/mobile/*.go'
@@ -147,11 +182,22 @@ plugin_files:
   - plugins/*/**
   - '!plugins/.example/**'
 plugin_stories:
-  - *plugins_all
-  - plugins/**
+  - *ci_router
+  - *node_lock
+  - tsconfig.base.json
+  - *protocol_lib
+  - *sdk_ts_lib
+  - *ui_lib
+  - .github/actions/build-ui/**
+  - .github/actions/setup-playwright/**
+  - .github/workflows/plugins.yml
+  - plugins/*/frontend/**
   - tools/ci-stories/**
+  - '!**/*.md'
 plugin_versions:
-  - *shared
+  - *ci_router
+  - *node_lock
+  - .github/workflows/plugins.yml
   - plugins/**
   - tools/plugin-versions/**
   - tools/build-plugin-index/**
@@ -159,8 +205,7 @@ plugin_versions:
 # ---------------------------------------------------------------- Manual
 
 # The manual, and the sources it writes its pages from.
-docs: &docs
-  - *shared
+docs_sources: &docs_sources
   - apps/docs/**
   - apps/desktop/editor/src/**
   - apps/desktop/cmd/numen/**
@@ -171,9 +216,19 @@ docs: &docs
   - plugins/*/manifest.json
   - plugins/*/frontend/**
   - tools/ci-commands/**
+docs:
+  - *ci_router
+  - *node_lock
+  - *ts_config
+  - *docs_sources
+  - .github/actions/deploy-bunny/**
+  - .github/workflows/docs.yml
 # The story names the manual and the landing page hold, and the trees they are held against.
 references:
-  - *docs
+  - *ci_router
+  - *node_lock
+  - *docs_sources
+  - .github/workflows/checks.yml
   - libs/ui/core/src/**
   - libs/ui/shell/src/**
   - apps/desktop/flashcards/src/**
@@ -184,7 +239,11 @@ references:
 # ---------------------------------------------------------------- Repository
 
 code:
-  - *shared
+  - *ci_router
+  - *go_workspace
+  - *node_lock
+  - *ts_config
+  - .github/workflows/checks.yml
   - apps/**
   - libs/**
   - plugins/**
@@ -195,7 +254,8 @@ code:
   - '!**/*.md'
 # The narrative scan reads code and Markdown.
 narrative:
-  - *shared
+  - *ci_router
+  - .github/workflows/checks.yml
   - apps/**
   - libs/**
   - plugins/**
@@ -206,28 +266,38 @@ narrative:
   - '**/*.mdx'
   - '!apps/landing/**'
 go:
-  - *shared
+  - *ci_router
+  - *go_workspace
+  - .github/workflows/codeql.yml
   - '**/*.go'
   - '**/go.mod'
   - '**/go.sum'
 js:
-  - *shared
+  - *ci_router
+  - *node_lock
+  - *ts_config
+  - .github/workflows/codeql.yml
   - '**/*.{ts,tsx,js,jsx,mjs,cjs,vue}'
+  - '**/*.{html,htm}'
 workflows:
-  - *shared
+  - *ci_router
+  - *node_lock
   - .github/**
 gradle:
-  - *shared
+  - *ci_router
+  - .github/workflows/checks.yml
   - '**/gradle/wrapper/**'
   - '**/gradlew'
   - '**/gradlew.bat'
 staging:
-  - *shared
+  - *ci_router
+  - .github/workflows/checks.yml
   - plugins/**
   - .github/scripts/stage-plugins.sh
   - .github/scripts/check-staged-plugins*.sh
 mutation_tool:
-  - *shared
+  - *ci_router
+  - .github/workflows/checks.yml
   - tools/ci-mutation/**
   - .github/workflows/mutation.yml
 

@@ -57,11 +57,57 @@ describe('the filters of the changed areas', () => {
     )
   })
 
-  it('runs every area except the plugin list for a change to the lock file or to CI itself', () => {
+  it('runs every area except the plugin list for a change to the CI router', () => {
     const all = AREAS.filter((area) => area !== 'plugin_files')
-    assert.deepEqual(getAreas('package-lock.json'), all)
-    assert.deepEqual(getAreas('.github/actions/build-ui/action.yml'), all)
-    assert.deepEqual(getAreas('.github/workflows/go.yml'), all)
+    assert.deepEqual(getAreas('Makefile'), all)
+    assert.deepEqual(getAreas('.github/filters.yml'), all)
+    assert.deepEqual(getAreas('.github/workflows/ci.yml'), all)
+  })
+
+  it('scopes workflow, action, lock file and config changes to the areas that use them', () => {
+    assert.deepEqual(getAreas('.github/workflows/go.yml'), [
+      'core',
+      'protocol',
+      'sdk_go',
+      'desktop',
+      'mobile',
+      'workflows',
+    ])
+    assert.deepEqual(getAreas('.github/actions/build-ui/action.yml'), [
+      'ui',
+      'desktop_fe',
+      'mobile_fe',
+      'plugins_all',
+      'plugin_stories',
+      'workflows',
+    ])
+    assert.deepEqual(getAreas('go.work'), [
+      'core',
+      'protocol',
+      'sdk_go',
+      'desktop',
+      'mobile',
+      'plugins_all',
+      'code',
+      'go',
+    ])
+    assert.deepEqual(getAreas('tsconfig.base.json'), [
+      'ui',
+      'desktop_fe',
+      'mobile_fe',
+      'plugins_all',
+      'plugin_stories',
+      'docs',
+      'code',
+      'js',
+    ])
+    const lockAreas = getAreas('package-lock.json')
+    for (const area of ['ui', 'desktop_fe', 'mobile_fe', 'plugins_all', 'plugin_stories', 'core', 'protocol']) {
+      assert.ok(lockAreas.includes(area), area)
+    }
+    for (const area of ['sdk_go', 'desktop', 'mobile', 'go', 'gradle', 'staging', 'mutation_tool']) {
+      assert.ok(!lockAreas.includes(area), area)
+    }
   })
 
   it('runs only the narrative check for documentation', () => {
@@ -70,8 +116,10 @@ describe('the filters of the changed areas', () => {
 
   it('lists a plugin for a change inside it and runs no Go module', () => {
     const areas = getAreas('plugins/readers-pdf/frontend/View.vue')
-    for (const area of ['plugin_files', 'references', 'docs', 'js', 'code']) assert.ok(areas.includes(area), area)
+    for (const area of ['plugin_files', 'plugin_stories', 'references', 'docs', 'js', 'code'])
+      assert.ok(areas.includes(area), area)
     for (const area of ['plugins_all', 'core', 'desktop', 'go']) assert.ok(!areas.includes(area), area)
+    assert.ok(!getAreas('plugins/engines-transcription/backend/main.go').includes('plugin_stories'))
   })
 
   it('runs the core and the manual for a changed manifest', () => {
@@ -91,6 +139,7 @@ describe('the filters of the changed areas', () => {
     assert.ok(areas.includes('sdk_go'))
     assert.ok(areas.includes('plugins_all'))
     assert.ok(!areas.includes('desktop_fe'))
+    assert.ok(!areas.includes('plugin_stories'))
   })
 
   it('runs the Go modules that build on the core and no frontend for a change to the core', () => {
