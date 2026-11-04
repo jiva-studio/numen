@@ -38,9 +38,7 @@ describe('media-player plugin', () => {
     })
     activate(context)
 
-    expect(context.getRegisteredCommands().map((one) => [one.id, one.title])).toStrictEqual([
-      ['recording.create', 'Record audio'],
-    ])
+    expect(context.getRegisteredCommands().map((one) => one.id)).toStrictEqual(['recording.create'])
     await context.triggerCommand('recording.create')
 
     expect(kinds).toStrictEqual([RECORDER])

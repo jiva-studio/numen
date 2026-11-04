@@ -108,6 +108,7 @@ describe('what remains at a setting', () => {
               storedSecrets: [],
               consent: 'none',
               hasFrontend: false,
+              hasBackend: false,
               settings: [
                 {
                   key: 'enabled',

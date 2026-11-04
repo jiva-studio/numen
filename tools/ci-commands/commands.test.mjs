@@ -41,32 +41,31 @@ test('a plugin is read with its settings, declared and registered commands', () 
           targets: ['desktop.editor'],
           frontend: { entrypoint: 'dist/index.js' },
           settings: [{ title: 'Glow', palette: true }, { title: 'Hidden' }],
-          commands: [
-            { title: 'Light a file', contentTypes: ['text/plain'] },
-            { title: 'Light the room' },
-            { title: 'Secret', hiddenInPalette: true },
-            {
-              title: 'Dim a text',
-              when: [{ key: 'version.plugin', is: ['md.numen.tools.lantern'] }],
-            },
-          ],
+          contributes: {
+            commands: [
+              { id: 'file.light', title: 'Light a file', contentTypes: ['text/plain'] },
+              { id: 'room.light', title: 'Light the room' },
+              {
+                id: 'text.dim',
+                title: 'Dim a text',
+                when: [{ key: 'version.plugin', is: ['md.numen.tools.lantern'] }],
+              },
+              { id: 'lamp.create', title: 'New lamp', shortcut: 'mod+shift+l' },
+              { id: 'wick.trim', title: 'Trim the wick', scope: 'note' },
+            ],
+          },
         },
         {
           'index.ts': [
-            "import { WORDS } from './words'",
             'context.registerCommand({',
-            "  id: 'lamp',",
-            '  title: WORDS.lamp,',
-            "  shortcut: 'mod+shift+l',",
+            "  id: 'lamp.create',",
+            '  handler: () => undefined,',
             '})',
             'context.registerCommand({',
-            "  id: 'wick',",
-            '  title: WORDS.wick,',
-            "  scope: 'note',",
+            "  id: 'wick.trim',",
+            '  handler: () => undefined,',
             '})',
           ].join('\n'),
-          'words.ts':
-            "export const WORDS = {\n  lamp: 'New lamp',\n  wick: (name) => `Trim ${name}`,\n}\n",
         },
       )
       await writePlugin(root, 'tools-elsewhere', {
@@ -86,8 +85,13 @@ test('a plugin is read with its settings, declared and registered commands', () 
             { text: 'Light the room', group: 'window' },
           ],
           commands: [
-            { id: 'lamp', text: 'New lamp', group: 'window', chord: { letter: 'l', shift: true } },
-            { id: 'wick', text: 'Trim *name*', group: 'note' },
+            {
+              id: 'lamp.create',
+              text: 'New lamp',
+              group: 'window',
+              chord: { letter: 'l', shift: true },
+            },
+            { id: 'wick.trim', text: 'Trim the wick', group: 'note' },
           ],
         },
       ])
@@ -106,11 +110,11 @@ test('a shortcut the window cannot draw is refused', () =>
           version: '1.0.0',
           targets: ['desktop.editor'],
           frontend: { entrypoint: 'dist/index.js' },
+          contributes: { commands: [{ id: 'ring.create', title: 'Ring', shortcut: 'alt+f4' }] },
         },
         {
           'index.ts':
-            "import { WORDS } from './words'\ncontext.registerCommand({\n  id: 'ring',\n  title: WORDS.ring,\n  shortcut: 'alt+f4',\n})\n",
-          'words.ts': "export const WORDS = {\n  ring: 'Ring',\n}\n",
+            "context.registerCommand({\n  id: 'ring.create',\n  handler: () => undefined,\n})\n",
         },
       ),
     (at) =>
@@ -124,7 +128,7 @@ test('a shortcut the window cannot draw is refused', () =>
       }),
   ))
 
-test('a command with no title this can read is refused', () =>
+test('a command the frontend registers and the manifest does not declare is refused', () =>
   withPlugins(
     (root) =>
       writePlugin(
@@ -137,12 +141,36 @@ test('a command with no title this can read is refused', () =>
           targets: ['desktop.editor'],
           frontend: { entrypoint: 'dist/index.js' },
         },
-        { 'index.ts': "context.registerCommand({\n  id: 'beat',\n  title: 'Beat',\n})\n" },
+        {
+          'index.ts':
+            "context.registerCommand({\n  id: 'beat.create',\n  handler: () => undefined,\n})\n",
+        },
       ),
     (at) =>
       assert.rejects(getPluginCommands('desktop.editor', at), {
         name: 'Error',
-        message: 'tools-drum registers a command this cannot read',
+        message: 'tools-drum registers beat.create, which its manifest does not declare',
+      }),
+  ))
+
+test('a registration this cannot read an id out of is refused', () =>
+  withPlugins(
+    (root) =>
+      writePlugin(
+        root,
+        'tools-flute',
+        {
+          id: 'tools.flute',
+          name: 'Flute',
+          version: '1.0.0',
+          targets: ['desktop.editor'],
+          frontend: { entrypoint: 'dist/index.js' },
+        },
+        { 'index.ts': 'context.registerCommand({\n  handler: () => undefined,\n})\n' },
+      ),
+    (at) =>
+      assert.rejects(getPluginCommands('desktop.editor', at), {
+        message: 'tools-flute registers a command this cannot read',
       }),
   ))
 
@@ -173,3 +201,52 @@ test('the plugins of the tree are read with their commands', async () => {
   assert.ok(agent, 'the agent chat plugin is read')
   assert.ok(agent.commands.some((one) => one.id === 'chat.open' && one.chord))
 })
+
+test('a registration whose options sit in a constant is read', () =>
+  withPlugins(
+    (root) =>
+      writePlugin(
+        root,
+        'tools-reed',
+        {
+          id: 'tools.reed',
+          name: 'Reed',
+          version: '1.0.0',
+          targets: ['desktop.editor'],
+          frontend: { entrypoint: 'dist/index.js' },
+        },
+        {
+          'index.ts': [
+            "const options = { id: 'reed.cut', handler: () => undefined }",
+            'export const activate = (context) => {',
+            '    context.registerCommand(options)',
+            '}',
+          ].join('\n'),
+        },
+      ),
+    (at) =>
+      assert.rejects(getPluginCommands('desktop.editor', at), {
+        message: 'tools-reed registers reed.cut, which its manifest does not declare',
+      }),
+  ))
+
+test('a registration in a file other than index.ts is read', () =>
+  withPlugins(
+    (root) =>
+      writePlugin(
+        root,
+        'tools-pipe',
+        {
+          id: 'tools.pipe',
+          name: 'Pipe',
+          version: '1.0.0',
+          targets: ['desktop.editor'],
+          frontend: { entrypoint: 'dist/index.js' },
+        },
+        { 'index.ts': '', 'commands.ts': "context.registerCommand({ id: 'pipe.blow', handler })" },
+      ),
+    (at) =>
+      assert.rejects(getPluginCommands('desktop.editor', at), {
+        message: 'tools-pipe registers pipe.blow, which its manifest does not declare',
+      }),
+  ))

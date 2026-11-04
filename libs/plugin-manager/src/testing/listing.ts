@@ -44,6 +44,7 @@ export function createMockPluginInfo(
     storedSecrets: [],
     consent: 'none',
     hasFrontend: false,
+    hasBackend: false,
     ...overrides,
   }
 }

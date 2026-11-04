@@ -30,6 +30,7 @@ const createPlugin = (
   storedSecrets: [],
   consent: 'none',
   hasFrontend: false,
+  hasBackend: false,
   ...overrides,
 })
 

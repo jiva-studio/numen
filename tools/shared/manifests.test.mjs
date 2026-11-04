@@ -123,7 +123,11 @@ test('a manifest with no id, name or version is refused', () => {
 })
 
 test('the version of a manifest of an older schema is read without the schema', () => {
-  const older = JSON.stringify({ ...valid, version: '2026.9.2', commands: [{ id: 'a', when: {} }] })
+  const older = JSON.stringify({
+    ...valid,
+    version: '2026.9.2',
+    contributes: { ...valid.contributes, commands: [{ id: 'a', when: {} }] },
+  })
 
   assert.equal(readManifestVersion(older), '2026.9.2')
   assert.throws(() => parseManifest(older), ManifestError)

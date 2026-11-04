@@ -10,7 +10,6 @@ describe('plugin lifecycle', () => {
         activated = true
         ctx.registerCommand({
           id: 'test.hello',
-          title: 'Hello',
           handler: vi.fn(),
         })
       },

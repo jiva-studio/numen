@@ -301,11 +301,16 @@ func (r *Registry) WriteTabs(window Window, tabs []Tab) {
 	r.windowInfo[windowID] = window
 	reported := make([]string, 0, len(tabs))
 	var claimed []Tab
+	takenFrom := map[string]string{}
 	for _, one := range tabs {
 		one.WindowID = windowID
+		previous, isKnown := r.tabs[one.ID]
 		switch {
 		case r.acceptTab(windowID, one):
 			reported = append(reported, one.ID)
+			if isKnown && previous.WindowID != windowID {
+				takenFrom[one.ID] = previous.WindowID
+			}
 		case !r.isMovingInto(windowID, one.ID) && !r.isDetachingInto(windowID, one.ID):
 			claimed = append(claimed, one)
 		}
@@ -317,7 +322,27 @@ func (r *Registry) WriteTabs(window Window, tabs []Tab) {
 	}
 	r.windows[windowID] = reported
 	r.claims[windowID] = claimed
+	r.dropUnreportedGroupMates(reported, takenFrom)
 	r.publishSnapshot()
+}
+
+// dropUnreportedGroupMates removes the tabs that a window left out of its report from the groups of
+// the tabs it took over from a window that is gone. A window that reloads reports all of its tabs, so
+// a group mate of the old window that is missing from the report was closed, and a tab with a
+// pending detach is kept.
+func (r *Registry) dropUnreportedGroupMates(reported []string, takenFrom map[string]string) {
+	for tabID, oldWindowID := range takenFrom {
+		group := r.findGroup(tabID)
+		if group == nil {
+			continue
+		}
+		for _, mate := range slices.Clone(group.TabIDs) {
+			if slices.Contains(reported, mate) || r.tabs[mate].WindowID != oldWindowID {
+				continue
+			}
+			r.forgetTab(mate)
+		}
+	}
 }
 
 // acceptTab records a tab reported by a window and returns whether the tab now

@@ -183,8 +183,6 @@ type Manifest struct {
 	// receives a call for one forwards it to the plugin; a service the host serves itself is never
 	// forwarded.
 	Services []string
-	// Commands are the commands the plugin's backend runs, offered by the palette and the command line.
-	Commands []Command
 	// SettingsViews are the components of the plugin's frontend the settings page draws among the
 	// settings of the plugin, each by the id the frontend registers it under.
 	SettingsViews []SettingsView
@@ -374,7 +372,6 @@ func (m Manifest) listBackendlessIssues() []error {
 		isDeclared bool
 	}{
 		{"activationEvents", len(m.ActivationEvents) > 0},
-		{"commands", len(m.Commands) > 0},
 		{"services", len(m.Services) > 0},
 		{"secrets", len(m.Secrets) > 0},
 		{"runtime dependencies", slices.ContainsFunc(m.Dependencies, func(d DependencyRequirement) bool { return d.Kind == DependencyKindRuntime })},

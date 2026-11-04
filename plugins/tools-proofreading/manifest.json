@@ -1,11 +1,46 @@
 {
   "id": "md.numen.tools.proofreading",
   "name": "LLM Proofreading",
-  "version": "2026.11.3",
+  "version": "2026.11.4",
   "protocol": 1,
   "description": "Cleans up transcripts and scanned text with a language model",
   "targets": ["desktop.editor"],
-  "contributes": { "category": "tools", "handles": [{ "purpose": "text-provider" }] },
+  "contributes": {
+    "category": "tools",
+    "handles": [
+      {
+        "purpose": "text-provider"
+      }
+    ],
+    "commands": [
+      {
+        "id": "proofreading.create",
+        "title": "Proofread text",
+        "icon": "spell-check",
+        "when": [
+          {
+            "key": "version.live",
+            "is": ["true"]
+          },
+          {
+            "key": "version.kind",
+            "is": ["*"]
+          }
+        ]
+      },
+      {
+        "id": "proofreading.delete",
+        "title": "Delete proofreading",
+        "icon": "trash-2",
+        "when": [
+          {
+            "key": "version.plugin",
+            "is": ["md.numen.tools.proofreading"]
+          }
+        ]
+      }
+    ]
+  },
   "permissions": ["vault:read", "vault:write", "ai:complete", "network:outbound"],
   "secrets": [
     {
@@ -18,23 +53,6 @@
       }
     }
   ],
-  "commands": [
-    {
-      "id": "proofreading.create",
-      "title": "Proofread text",
-      "icon": "spell-check",
-      "when": [
-        { "key": "version.live", "is": ["true"] },
-        { "key": "version.kind", "is": ["*"] }
-      ]
-    },
-    {
-      "id": "proofreading.delete",
-      "title": "Delete proofreading",
-      "icon": "trash-2",
-      "when": [{ "key": "version.plugin", "is": ["md.numen.tools.proofreading"] }]
-    }
-  ],
   "settings": [
     {
       "key": "provider",
@@ -43,7 +61,11 @@
       "description": "How proofreading requests are executed: through the default Numen agent or directly against an OpenAI-compatible batch/chat API",
       "default": "agent",
       "options": [
-        { "value": "agent", "title": "Agent", "detail": "Uses the default Numen agent" },
+        {
+          "value": "agent",
+          "title": "Agent",
+          "detail": "Uses the default Numen agent"
+        },
         {
           "value": "openrouter",
           "title": "OpenRouter",
@@ -175,6 +197,8 @@
       "step": 0.05
     }
   ],
-  "backend": { "entrypoint": "bin/tools-proofreading" },
+  "backend": {
+    "entrypoint": "bin/tools-proofreading"
+  },
   "services": ["numen.v1.TextProviderService"]
 }

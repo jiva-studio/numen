@@ -11,7 +11,7 @@ import (
 
 func TestACommandIdIsAnObjectAndAnActionJoinedByADot(t *testing.T) {
 	for _, id := range []string{"deck.create", "cardModel.create", "link.downloadText", "recognition.delete", "tree.revealNote", "note.goTo", "appearance.chooseInterfaceSize", "deck2.create", "a.b"} {
-		text := commandManifestHead + `[{"id":"` + id + `","title":"C"}]}`
+		text := commandManifestHead + `[{"id":"` + id + `","title":"C"}]}}`
 
 		if _, err := manifestjson.Read(strings.NewReader(text)); err != nil {
 			t.Errorf("the id %q was refused: %v", id, err)
@@ -39,7 +39,7 @@ func TestACommandIdOutsideTheObjectAndActionFormIsInvalid(t *testing.T) {
 		"deck create.now",
 		"1deck.create",
 	} {
-		text := commandManifestHead + `[{"id":"` + id + `","title":"C"}]}`
+		text := commandManifestHead + `[{"id":"` + id + `","title":"C"}]}}`
 
 		_, err := manifestjson.Read(strings.NewReader(text))
 
@@ -50,8 +50,8 @@ func TestACommandIdOutsideTheObjectAndActionFormIsInvalid(t *testing.T) {
 }
 
 func TestACommandArgumentNameStaysLowercaseWordsJoinedByHyphens(t *testing.T) {
-	ok := commandManifestHead + `[{"id":"deck.create","title":"C","arguments":[{"name":"deck-title","title":"T","type":"string"}]}]}`
-	bad := commandManifestHead + `[{"id":"deck.create","title":"C","arguments":[{"name":"deck.title","title":"T","type":"string"}]}]}`
+	ok := commandManifestHead + `[{"id":"deck.create","title":"C","arguments":[{"name":"deck-title","title":"T","type":"string"}]}]}}`
+	bad := commandManifestHead + `[{"id":"deck.create","title":"C","arguments":[{"name":"deck.title","title":"T","type":"string"}]}]}}`
 
 	if _, err := manifestjson.Read(strings.NewReader(ok)); err != nil {
 		t.Errorf("a hyphenated argument name was refused: %v", err)

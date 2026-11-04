@@ -10,6 +10,18 @@ type PluginCommandEntry struct {
 	Command    PluginCommand
 }
 
+// PluginParts is what one plugin has and whether the host runs it.
+type PluginParts struct {
+	// HasBackend is set where the plugin declares a backend. A command is run in the backend only
+	// where the plugin has one.
+	HasBackend bool
+	// HasFrontend is set where the plugin declares a frontend bundle the windows load.
+	HasFrontend bool
+	// IsSuspended is set while the host holds the plugin suspended after it failed to start; its
+	// backend runs nothing then.
+	IsSuspended bool
+}
+
 // PluginCommandCall is one run of a command, checked against its declaration.
 type PluginCommandCall struct {
 	PluginID string
@@ -45,6 +57,9 @@ type PluginCommands interface {
 	// ListCommands lists the commands of every enabled plugin, in the order of the plugins' ids and
 	// then of each manifest.
 	ListCommands() []PluginCommandEntry
+	// GetParts says what the plugin of the id has and whether it is suspended. A plugin that is not
+	// enabled has none.
+	GetParts(pluginID string) PluginParts
 	// RunCommand runs the command in the backend of its plugin. A plugin that cannot be started or
 	// reached is an *UnavailableError, and a command that ran and failed a *CommandFailedError.
 	RunCommand(ctx context.Context, call PluginCommandCall) (PluginCommandResult, error)

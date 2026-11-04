@@ -89,6 +89,7 @@ const plugin = (id: string, name: string, description: string): PluginInfo => ({
   storedSecrets: [],
   consent: 'none',
   hasFrontend: false,
+  hasBackend: false,
 })
 
 /** Plugins of every category the list sorts by, as an installation ships them. */

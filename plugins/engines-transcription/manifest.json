@@ -1,26 +1,38 @@
 {
   "id": "md.numen.engines.transcription",
   "name": "Audio/Video Transcription",
-  "version": "2026.11.5",
+  "version": "2026.11.6",
   "protocol": 1,
   "description": "Offline speech-to-text transcription for audio and video recordings",
   "targets": ["desktop.editor"],
-  "contributes": { "category": "engines", "handles": [{ "purpose": "text-provider" }] },
+  "contributes": {
+    "category": "engines",
+    "handles": [
+      {
+        "purpose": "text-provider"
+      }
+    ],
+    "commands": [
+      {
+        "id": "transcript.create",
+        "title": "Transcribe recording",
+        "icon": "audio-lines",
+        "contentTypes": ["audio/*", "video/*"]
+      },
+      {
+        "id": "transcript.delete",
+        "title": "Delete transcript",
+        "icon": "trash-2",
+        "when": [
+          {
+            "key": "version.plugin",
+            "is": ["md.numen.engines.transcription"]
+          }
+        ]
+      }
+    ]
+  },
   "permissions": ["vault:read", "vault:write", "network:outbound"],
-  "commands": [
-    {
-      "id": "transcript.create",
-      "title": "Transcribe recording",
-      "icon": "audio-lines",
-      "contentTypes": ["audio/*", "video/*"]
-    },
-    {
-      "id": "transcript.delete",
-      "title": "Delete transcript",
-      "icon": "trash-2",
-      "when": [{ "key": "version.plugin", "is": ["md.numen.engines.transcription"] }]
-    }
-  ],
   "dependencies": [
     {
       "id": "onnxruntime",
@@ -117,7 +129,9 @@
       }
     }
   ],
-  "backend": { "entrypoint": "bin/engines-transcription" },
+  "backend": {
+    "entrypoint": "bin/engines-transcription"
+  },
   "services": ["numen.v1.TextProviderService"],
   "settings": [
     {

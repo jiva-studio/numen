@@ -1,8 +1,7 @@
-import { AudioLines, Mic } from '@lucide/vue'
+import { AudioLines } from '@lucide/vue'
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import RecordingTab from './RecordingTab.vue'
 import MediaRecordingTab from './MediaRecordingTab.vue'
-import { WORDS } from './words'
 import { bindTexts, refreshRecordings, setTaskHost } from './api/wire'
 
 export { RecordingTab, MediaRecordingTab }
@@ -30,8 +29,6 @@ export function activate(context: PluginContext): void {
 
   context.registerCommand({
     id: 'recording.create',
-    title: WORDS.record,
-    icon: Mic,
     handler: async () => {
       await context.openTab?.(RECORDER)
     },

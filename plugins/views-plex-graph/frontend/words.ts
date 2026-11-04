@@ -44,8 +44,7 @@ export const WORDS = {
   apply: 'Done',
   /** Button to cancel and close inspector without saving. */
   cancel: 'Cancel',
-  /** The commands the plugin declares: a plex opened, and a note put in front in one. */
-  newPlex: 'Open plex graph',
+  /** The command that puts a note in front in the plex. */
   travel: 'Show note in plex',
   /** Menu command labels */
   read: 'Open note',

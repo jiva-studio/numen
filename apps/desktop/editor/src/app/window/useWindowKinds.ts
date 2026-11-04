@@ -56,9 +56,9 @@ export function useWindowKinds(deps: WindowKindsDeps) {
   const writeMessage = log.getWriter('command')
   const dragged = shallowRef<readonly string[]>([])
 
-  /** Shows a note where a plugin shows notes, and in the editor when no plugin does. */
+  /** Opens the note in a tab of the current window. */
   const travel = async (path: string): Promise<void> => {
-    if (!(await deps.showNote(path))) await tabOpeners.openFile(path, '', 'current')
+    await tabOpeners.openFile(path, '', 'current')
   }
 
   /**
@@ -77,7 +77,6 @@ export function useWindowKinds(deps: WindowKindsDeps) {
   const agents = createAgentAsker(windowTabs, writeMessage)
 
   const destinations: DestinationDeps = {
-    travel: (path) => travel(path),
     openFile: (path, title, line, selector) =>
       runInBackground(
         tabOpeners.openFile(path, title, { where: 'current', line, selector }),

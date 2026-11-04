@@ -1,10 +1,9 @@
 import { Gauge, Layers, LayoutTemplate } from '@lucide/vue'
-import { definePlugin, NOTE_SCOPE, type PluginContext } from '@numen/plugin-sdk'
+import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import { cards, presets } from './cards'
 import { useDeckTabs } from './deck/model/useDeckTabs'
 import { createCardModelTabs } from './card-model/kind'
 import { usePresetTab } from './preset/kind'
-import { WORDS as presetWords } from './preset/words'
 import {
   createNotices,
   createReviewKind,
@@ -76,9 +75,6 @@ export function activate(context: PluginContext): void {
   context.registerTabKind(schedules.kind)
   context.registerCommand({
     id: 'preset.open',
-    title: presetWords.openPreset,
-    scope: NOTE_SCOPE,
-    icon: Gauge,
     handler: async (note) => {
       await schedules.openPresetOf(note, (kind, path) => context.openTab?.(kind, path))
     },

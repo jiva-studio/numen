@@ -55,6 +55,38 @@ describe('the commands the plugins declare', () => {
     ])
   })
 
+  it('are read with their scope, shortcut, destination flag and the parts of their plugin', async () => {
+    request.listCommands.mockResolvedValue({
+      commands: [
+        {
+          pluginId: 'md.numen.tree',
+          id: 'tree.revealNote',
+          title: 'Show note in file tree',
+          icon: 'folder-open',
+          scope: 'note',
+          shortcut: 'mod+shift+e',
+          contentTypes: [],
+          extensions: [],
+          arguments: [],
+        },
+      ],
+    })
+
+    const [one] = await listDeclaredCommands()
+
+    expect(one).toStrictEqual({
+      pluginId: 'md.numen.tree',
+      id: 'tree.revealNote',
+      title: 'Show note in file tree',
+      icon: 'folder-open',
+      scope: 'note',
+      shortcut: 'mod+shift+e',
+      contentTypes: [],
+      extensions: [],
+      arguments: [],
+    })
+  })
+
   it('run over a file of one of their extensions, by the name of the file alone', () => {
     expect(canRunOn(convert, 'books/Bees.PDF')).toBe(true)
     expect(canRunOn(convert, '.pdf')).toBe(true)
@@ -138,6 +170,7 @@ describe('useCatalogEntries', () => {
     storedSecrets: [],
     consent: 'none',
     hasFrontend: false,
+    hasBackend: false,
     settings: [],
   })
 

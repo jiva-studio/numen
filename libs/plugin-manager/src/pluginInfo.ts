@@ -82,6 +82,8 @@ export interface PluginInfo {
   readonly description: string
   readonly isActive: boolean
   readonly hasFrontend: boolean
+  /** Whether the plugin declares a backend the host starts. */
+  readonly hasBackend: boolean
   readonly settings: readonly PluginSettingInfo[]
   readonly capabilities: readonly string[]
   /** The secrets the plugin declares, and the names of those that have a key stored. */

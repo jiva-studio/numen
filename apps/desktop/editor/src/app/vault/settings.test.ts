@@ -115,6 +115,7 @@ describe('every setting', () => {
               storedSecrets: ['apiKey'],
               completionConsent: COMPLETION_CONSENT.REQUESTED,
               hasFrontend: true,
+              hasBackend: false,
               readers: [{ id: 'reader-sample', extensions: ['sample'] }],
               settingsViews: [{ id: 'floor', title: 'Floor' }],
               settings: [
@@ -166,6 +167,7 @@ describe('every setting', () => {
         storedSecrets: ['apiKey'],
         consent: 'requested',
         hasFrontend: true,
+        hasBackend: false,
         readers: [{ id: 'reader-sample', extensions: ['sample'] }],
         settingsViews: [{ id: 'floor', title: 'Floor' }],
         settings: [

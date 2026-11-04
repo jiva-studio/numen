@@ -1,6 +1,7 @@
 /**
  * Loads the commands the plugins declare and the menu of the file in front, as the
- * window starts and each time the palette opens.
+ * window starts and each time the palette opens. The declared commands are read again when a
+ * plugin starts or stops, so the shortcuts of its commands follow it.
  */
 import { watch, type Ref } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
@@ -13,6 +14,7 @@ interface CommandListSources {
   readonly declaredCommands?: DeclaredCommands | undefined
   readonly fileMenuCommands?: FileMenuCommands | undefined
   readonly writeMessage: MessageWriter
+  readonly plugins?: Ref<readonly { readonly id: string; readonly isActive: boolean }[]> | undefined
 }
 
 export function watchCommandLists(
@@ -20,7 +22,7 @@ export function watchCommandLists(
   isOpen: Ref<boolean>,
   getTarget: () => CommandTarget,
 ): void {
-  const { declaredCommands, fileMenuCommands, writeMessage } = sources
+  const { declaredCommands, fileMenuCommands, writeMessage, plugins } = sources
   if (declaredCommands) {
     const loadDeclared = () => {
       declaredCommands
@@ -31,6 +33,9 @@ export function watchCommandLists(
     watch(isOpen, (open) => {
       if (open) loadDeclared()
     })
+    if (plugins) {
+      watch(() => plugins.value.map((one) => `${one.id}:${one.isActive}`).join(), loadDeclared)
+    }
   }
 
   // Stryker disable next-line ConditionalExpression: fileMenuCommands is optional in unit test setups

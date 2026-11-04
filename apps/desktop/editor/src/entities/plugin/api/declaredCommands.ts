@@ -11,6 +11,8 @@ interface WireCommand {
   readonly id: string
   readonly title: string
   readonly icon?: string
+  readonly scope?: string
+  readonly shortcut?: string
   readonly contentTypes: readonly string[]
   readonly extensions: readonly string[]
   readonly arguments: readonly {
@@ -35,6 +37,9 @@ export interface DeclaredCommand {
   readonly id: string
   readonly title: string
   readonly icon?: string
+  /** 'note' for a command listed only while a note is in front. */
+  readonly scope?: 'note'
+  readonly shortcut?: string
   readonly contentTypes: readonly string[]
   /** The extensions, without the dot, that give a file one of the types, as the core lists them. */
   readonly extensions: readonly string[]
@@ -60,6 +65,8 @@ const readCommand = (wire: WireCommand): DeclaredCommand => ({
   id: wire.id,
   title: wire.title,
   ...(wire.icon ? { icon: wire.icon } : {}),
+  ...(wire.scope === 'note' ? { scope: 'note' as const } : {}),
+  ...(wire.shortcut ? { shortcut: wire.shortcut } : {}),
   contentTypes: wire.contentTypes,
   extensions: wire.extensions,
   arguments: wire.arguments.map((one) => ({

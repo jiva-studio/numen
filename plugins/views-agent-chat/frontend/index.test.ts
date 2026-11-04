@@ -71,7 +71,7 @@ describe('view-agent-chat plugin', () => {
     expect(second.userQuestion.value).toBe('')
   })
 
-  it('declares a new conversation over the window, and a question about a note', async () => {
+  it('registers the handlers that open a conversation and ask about a note', async () => {
     const openCalls: (readonly [string, string | undefined])[] = []
     const { host, recorded } = createHost()
     const ctx = createMockPluginContext({
@@ -85,11 +85,9 @@ describe('view-agent-chat plugin', () => {
     })
     activate(ctx)
 
-    expect(
-      ctx.getRegisteredCommands().map((one) => [one.id, one.scope, one.shortcut]),
-    ).toStrictEqual([
-      ['chat.open', undefined, 'mod+shift+a'],
-      ['note.ask', 'note', undefined],
+    expect(ctx.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
+      'chat.open',
+      'note.ask',
     ])
     await ctx.triggerCommand('chat.open')
     await ctx.triggerCommand('note.ask', { path: 'One.md', title: 'One', type: 'note' })
