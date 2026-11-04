@@ -63,7 +63,7 @@ func TestPluginCommand_DeclaredCommandRunsWithArgumentFlags(t *testing.T) {
 
 	out, err := runWithDeps(deps, "sample.create", "notebook", "--title", "Verbs", "--open", "--folder=samples")
 
-	if err != nil || out != "ran create-sample\n" {
+	if err != nil || out != "ran sample.create\n" {
 		t.Fatalf("the command answered %q, %v", out, err)
 	}
 	if len(*vaults) != 1 || (*vaults)[0].ID != getNotebook().ID {
@@ -132,7 +132,7 @@ func TestTheHelpListsTheCommandsThePluginsDeclare(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, line := range []string{
-		"numen-cli create-sample <vault> --title <string> [--folder <string>] [--open]",
+		"numen-cli sample.create <vault> --title <string> [--folder <string>] [--open]",
 		"numen-cli count-pages <vault> <file>",
 		"Count the pages",
 	} {
@@ -192,7 +192,7 @@ func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
 	}
 
 	help, err := runWithDeps(deps, "help")
-	if err != nil || !strings.Contains(help, "numen-cli transcribe <vault> <file>\n      Transcribe a recording") {
+	if err != nil || !strings.Contains(help, "numen-cli transcript.create <vault> <file>\n      Transcribe a recording") {
 		t.Fatalf("the help reads %q (%v)", help, err)
 	}
 	if _, err := runWithDeps(deps, "transcript.create", "notebook", "talks/lecture.wav"); err != nil {
@@ -238,7 +238,7 @@ func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
 	}
 
 	help, err := runWithDeps(deps, "help")
-	if err != nil || !strings.Contains(help, "numen-cli delete-copy <vault> <file>\n") {
+	if err != nil || !strings.Contains(help, "numen-cli link.delete-video <vault> <file>\n") {
 		t.Fatalf("the help reads %q (%v)", help, err)
 	}
 }
