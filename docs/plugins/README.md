@@ -173,7 +173,7 @@ The manifest declares identity, activation rules, required permissions, and serv
 - **`contributes.noteTypes`**: The types of note the plugin defines, each `{ "type", "chunks", "headings", "idHeadingLevels", "idPattern" }`, and how the index keeps the notes of each: `chunks` states whether the prose is split into chunks and searched by meaning (it is, when omitted), `headings` lists the levels of heading the index keeps (every level, when omitted), `idHeadingLevels` the levels whose headings end in a block id, and `idPattern` the pattern a block id matches whole. A note of a type no plugin declares is kept as an ordinary note is.
 - **`contributes.frameOrigins`**: The https origins the plugin's pages frame (`["https://www.youtube-nocookie.com"]`). The window's `frame-src` names them while the plugin is enabled. A page that frames a site checking the Referer is loaded from the loopback socket at the address `MediaService.GetPageSource` returns, under a policy that frames the plugin's origins alone.
 
-A key that the schema does not name is not an error: the manifest reader leaves it out and reports a warning that names its path (`unknown key "settings[0].modelsOf"`). The catalog entry of the plugin contains the warnings.
+A key that the schema does not name is not an error: the manifest reader leaves it out and reports a warning that names its path (`unknown key "settings[0].mood"`). The catalog entry of the plugin contains the warnings.
 
 ---
 

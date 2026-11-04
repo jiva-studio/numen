@@ -166,7 +166,6 @@ message HostFileStat {
   int64 size = 2;
   // Nanoseconds since the epoch.
   int64 mod_time = 3;
-  reserved 4;
   // Whether the file is a note.
   bool is_note = 5;
 }

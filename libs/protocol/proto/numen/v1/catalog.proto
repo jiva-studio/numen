@@ -31,8 +31,6 @@ enum CatalogState {
 
 // CatalogIncompatibility is why the application cannot run a plugin.
 enum CatalogIncompatibility {
-  reserved 3, 4;
-  reserved "CATALOG_INCOMPATIBILITY_APP_TOO_OLD", "CATALOG_INCOMPATIBILITY_APP_TOO_NEW";
   // CATALOG_INCOMPATIBILITY_UNSPECIFIED is a plugin the application can run.
   CATALOG_INCOMPATIBILITY_UNSPECIFIED = 0;
   CATALOG_INCOMPATIBILITY_TARGET = 1;

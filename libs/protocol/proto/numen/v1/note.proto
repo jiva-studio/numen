@@ -149,8 +149,6 @@ message Neighbour {
   // The `type` key of the note's frontmatter, so a client draws a note as what it is.
   // Empty for an ordinary note.
   string type = 6;
-
-  reserved 3, 4, 5, 7, 8, 9;
 }
 
 message ResolveAddressesRequest {

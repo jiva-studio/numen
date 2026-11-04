@@ -265,12 +265,12 @@ func TestTheFakeSourceSatisfiesTheSourceContract(t *testing.T) {
 }
 
 func TestAnEntryCarriesTheWarningsOfItsManifest(t *testing.T) {
-	m := manifest.Manifest{ID: "a.b", Name: "A", Version: "1.0.0", Warnings: []string{`unknown key "texts"`}}
+	m := manifest.Manifest{ID: "a.b", Name: "A", Version: "1.0.0", Warnings: []string{`unknown key "unrelated"`}}
 
 	got := catalog.NewEntry("local", catalog.StateInstalled, m)
 	m.Warnings[0] = "changed"
 
-	if len(got.Warnings) != 1 || got.Warnings[0] != `unknown key "texts"` {
+	if len(got.Warnings) != 1 || got.Warnings[0] != `unknown key "unrelated"` {
 		t.Errorf("warnings = %q, want the warning of the manifest", got.Warnings)
 	}
 }

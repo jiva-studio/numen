@@ -44,7 +44,7 @@ const listEntryKeys = (entry, message, path) =>
 
 /**
  * The paths of the keys of `value` that the message does not name by its JSON name, at every depth.
- * Paths are written as the Go reader writes them: `settings[0].modelsOf`.
+ * Paths are written as the Go reader writes them: `settings[0].mood`.
  *
  * @param {unknown} value - the parsed JSON
  * @param {import('@bufbuild/protobuf').DescMessage} message - the schema the value is read as

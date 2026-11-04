@@ -265,7 +265,7 @@ func TestAKeyOfTheWrongTypeIsRefused(t *testing.T) {
 }
 
 func TestKeysTheSchemaDoesNotNameAreReportedAsWarnings(t *testing.T) {
-	m, err := manifestjson.Decode([]byte(`{"id":"a.b","texts":{},"contributes":{"tabKinds":[{"kind":"k","title":"K","shape":1}],
+	m, err := manifestjson.Decode([]byte(`{"id":"a.b","unrelated":{},"contributes":{"tabKinds":[{"kind":"k","title":"K","shape":1}],
 		"extra":true},"settings":[{"key":"s","type":"enum","title":"S","default":{"nested":1},"options":["a",{"value":"b","hint":"h"}],
 		"optionsBy":{"setting":"s","options":{"a":[{"value":"x","hint":"h"}]}}}]}`))
 	if err != nil {
@@ -276,7 +276,7 @@ func TestKeysTheSchemaDoesNotNameAreReportedAsWarnings(t *testing.T) {
 		`unknown key "contributes.tabKinds[0].shape"`,
 		`unknown key "settings[0].options[1].hint"`,
 		`unknown key "settings[0].optionsBy.options.a[0].hint"`,
-		`unknown key "texts"`,
+		`unknown key "unrelated"`,
 	}
 	if !slices.Equal(m.Warnings, want) {
 		t.Errorf("warnings = %q, want %q", m.Warnings, want)
