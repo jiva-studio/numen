@@ -135,6 +135,7 @@ func (c Card) Value(field string) (string, bool) {
 // author meant.
 func (d Deck) Card(carried cardid.ID) (Card, error) {
 	found := Card{
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Initial found Card is overwritten before Card returns on success."
 		Heading: "", CardID: "", CardModelLink: "", Preamble: "", Section: 0, Values: nil,
 	}
 	target := false

@@ -24,6 +24,9 @@ func TestNewConfigOfBGEM3(t *testing.T) {
 	if info.Concurrency != 1 {
 		t.Errorf("expected 1 concurrency, got %d", info.Concurrency)
 	}
+	if info.MinChunkLength != 0 {
+		t.Errorf("expected 0 min chunk length, got %d", info.MinChunkLength)
+	}
 	if local.Name != "Xenova/bge-m3" {
 		t.Errorf("expected Xenova/bge-m3, got %s", local.Name)
 	}
@@ -32,6 +35,15 @@ func TestNewConfigOfBGEM3(t *testing.T) {
 	}
 	if local.BatchTexts != 8 {
 		t.Errorf("expected 8 batch texts, got %d", local.BatchTexts)
+	}
+	if local.Threads != 0 {
+		t.Errorf("expected 0 threads, got %d", local.Threads)
+	}
+	if local.Sessions != 0 {
+		t.Errorf("expected 0 sessions, got %d", local.Sessions)
+	}
+	if local.PassMemory != 0 {
+		t.Errorf("expected 0 pass memory, got %d", local.PassMemory)
 	}
 	if !local.ShouldDownload {
 		t.Errorf("expected download enabled by default")
@@ -223,6 +235,59 @@ func TestNewConfigRunsOnePassWhateverTheCPUCount(t *testing.T) {
 
 	if got := resolvePasses(local, onnx.ProviderCPU, info); got != 1 {
 		t.Errorf("expected one pass at a time, got %d", got)
+	}
+}
+
+func TestGetPassBytesAndMemoryBounds(t *testing.T) {
+	if got := GetDefaultBatchTexts(); got != 8 {
+		t.Errorf("GetDefaultBatchTexts() = %d, want 8", got)
+	}
+	if got := getPassBytes(0, 0, 0); got != 20 {
+		t.Errorf("getPassBytes(0, 0, 0) = %d, want 20", got)
+	}
+	if got := getPassBytes(1, 1, 1); got != 20 {
+		t.Errorf("getPassBytes(1, 1, 1) = %d, want 20", got)
+	}
+	// batchTexts=2, window=10, hiddenDim=64 -> heads=1, tokens=20, cells=200 -> 4 * (200 + 20*64*4) = 4 * 5320 = 21280
+	if got := getPassBytes(2, 10, 64); got != 21280 {
+		t.Errorf("getPassBytes(2, 10, 64) = %d, want 21280", got)
+	}
+	// batchTexts=1, window=1024, hiddenDim=64 -> heads=1, tokens=1024, cells=1048576 -> 4 * (1048576 + 1024*64*4) = 5242880
+	if got := getPassBytes(1, 1024, 64); got != 5242880 {
+		t.Errorf("getPassBytes(1, 1024, 64) = %d, want 5242880", got)
+	}
+	// batchTexts=1, window=1, hiddenDim=128 -> heads=2, tokens=1, cells=1 -> 4 * (1*2 + 1*128*4) = 4 * 514 = 2056
+	if got := getPassBytes(1, 1, 128); got != 2056 {
+		t.Errorf("getPassBytes(1, 1, 128) = %d, want 2056", got)
+	}
+	// hiddenDim=126 -> heads=1 (126/64=1, whereas 126/63=2) -> 4 * (1*1 + 1*126*4) = 4 * 505 = 2020
+	if got := getPassBytes(1, 1, 126); got != 2020 {
+		t.Errorf("getPassBytes(1, 1, 126) = %d, want 2020", got)
+	}
+
+	passBytes := getPassBytes(1, 64, 64)
+	if got := getPassesWithinMemory(3, 0, 1, 64, 64); got != 3 {
+		t.Errorf("getPassesWithinMemory with memory=0: got %d, want 3", got)
+	}
+	if got := getPassesWithinMemory(3, -1, 1, 64, 64); got != 3 {
+		t.Errorf("getPassesWithinMemory with memory=-1: got %d, want 3", got)
+	}
+	if got := getPassesWithinMemory(3, 1, 1, 64, 64); got != 1 {
+		t.Errorf("getPassesWithinMemory with memory=1: got %d, want 1", got)
+	}
+	if got := getPassesWithinMemory(3, passBytes*2, 1, 64, 64); got != 2 {
+		t.Errorf("getPassesWithinMemory with memory=2*passBytes: got %d, want 2", got)
+	}
+
+	info := ModelInfo{Dimensions: 64, MaxTokens: 64}
+	if got := resolvePasses(LocalModel{Sessions: 3, PassMemory: 1}, onnx.ProviderCPU, info); got != 3 {
+		t.Errorf("resolvePasses with explicit Sessions=3: got %d, want 3", got)
+	}
+	if got := resolvePasses(LocalModel{PassBudget: 3, PassMemory: 1}, onnx.ProviderCPU, info); got != 1 {
+		t.Errorf("resolvePasses with PassBudget=3 and tight memory: got %d, want 1", got)
+	}
+	if got := resolvePasses(LocalModel{BatchTexts: 1, PassBudget: 3, PassMemory: passBytes * 2}, onnx.ProviderCPU, info); got != 2 {
+		t.Errorf("resolvePasses with BatchTexts=1 and memory for 2 passes: got %d, want 2", got)
 	}
 }
 

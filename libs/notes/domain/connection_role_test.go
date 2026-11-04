@@ -35,3 +35,28 @@ func TestGetRoleOfAConnectionWithOnlyTheSecondRecordIsItsInverse(t *testing.T) {
 		t.Errorf("GetRole = %s, want parent", got)
 	}
 }
+
+func TestGetRoleAndFillRolesHandleOneSidedAndPrepopulatedRecords(t *testing.T) {
+	abOnly := domain.Connection{A: "a", B: "b", AB: &domain.Side{Role: domain.RoleChild}}
+	if got := abOnly.GetRole(); got != domain.RoleChild {
+		t.Errorf("GetRole = %s, want child", got)
+	}
+	filledAB := abOnly.FillRoles(domain.RoleParent)
+	if filledAB.AB.Role != domain.RoleChild || filledAB.BA != nil {
+		t.Errorf("FillRoles overwrote AB or created BA: %+v", filledAB)
+	}
+
+	baOnly := domain.Connection{A: "a", B: "b", BA: &domain.Side{Role: domain.RoleParent}}
+	filledBA := baOnly.FillRoles(domain.RoleParent)
+	if filledBA.AB != nil || filledBA.BA.Role != domain.RoleParent {
+		t.Errorf("FillRoles created AB or overwrote BA: %+v", filledBA)
+	}
+
+	empty := domain.Connection{A: "a", B: "b"}
+	if got := empty.GetRole(); got != "" {
+		t.Errorf("GetRole of empty = %q, want empty", got)
+	}
+	if !empty.IsEmpty() || abOnly.IsEmpty() || baOnly.IsEmpty() {
+		t.Error("IsEmpty reported wrong emptiness")
+	}
+}

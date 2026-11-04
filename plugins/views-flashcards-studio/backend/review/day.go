@@ -86,6 +86,7 @@ func (d Day) getStartTime(y int, m time.Month, day int) time.Time {
 	open := time.Date(y, m, day, h, minute, 0, 0, d.zone())
 	// An hour the clock skips over is read by no instant, and the day begins
 	// where the clock jumped to.
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT reason="Adding zero duration at a normal wall clock boundary returns the same instant, and DST gaps are whole minutes."
 	if late := time.Date(y, m, day, h, minute, 0, 0, time.UTC).Sub(wall(open)); late > 0 {
 		return open.Add(late)
 	}
@@ -271,6 +272,7 @@ func (h History) GetSpentUnder(
 				one.Reviews++
 			}
 		}
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="Adding a zero duration leaves one.Took unchanged."
 		if took := a.GetCountedTime(); took > 0 {
 			one.Took += took
 		}

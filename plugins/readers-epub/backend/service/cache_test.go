@@ -156,3 +156,66 @@ func TestCloseKeepsTheFileOpenForAReadingRequest(t *testing.T) {
 		t.Error("the archive is still kept after the last request gave the book back")
 	}
 }
+
+func TestCacheLRUAndConcurrentEviction(t *testing.T) {
+	files, name, _, _ := writeBook(t)
+	files.File("second.epub", string(createImageEpub(t)))
+	books, opens := newCountingServer(t, files)
+
+	// Open name, then second.epub, then name again to exercise LRU loop skipping non-matching key
+	if _, err := readEntryFrom(books, name, "EPUB/cover.png"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := readEntryFrom(books, "second.epub", "EPUB/cover.png"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := readEntryFrom(books, "second.epub", "EPUB/cover.png"); err != nil {
+		t.Fatal(err)
+	}
+	if got := opens.Load(); got != 2 {
+		t.Fatalf("expected 2 opens, got %d", got)
+	}
+
+	// Acquire second.epub and hold it while changing its size only (or mtime only)
+	held, err := books.books.acquire(t.Context(), files, "", "second.epub")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Acquire again so readers == 2, then release one so readers == 1 (must not nil archive)
+	held2, err := books.books.acquire(t.Context(), files, "", "second.epub")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Modify file size to force eviction while held
+	files.File("second.epub", string(createGuidedEpub(t)))
+	if _, err := readEntryFrom(books, "second.epub", "EPUB/c1.xhtml"); err != nil {
+		t.Fatal(err)
+	}
+	if !held.evicted || held.archive == nil {
+		t.Fatalf("expected held book to be marked evicted with non-nil archive while readers=%d", held.readers)
+	}
+	books.books.release(held2)
+	if held.archive == nil {
+		t.Fatal("archive was cleared while one reader remained")
+	}
+	books.books.release(held)
+	if held.archive != nil {
+		t.Fatal("archive was not cleared after last reader released")
+	}
+
+	// Also test when size is identical but mtime differs
+	b3, err := books.books.acquire(t.Context(), files, "", name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b3.mtime--
+	books.books.release(b3)
+	b4, err := books.books.acquire(t.Context(), files, "", name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	books.books.release(b4)
+	if !b3.evicted {
+		t.Error("expected book with changed mtime to be evicted")
+	}
+}

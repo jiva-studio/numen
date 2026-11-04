@@ -51,6 +51,7 @@ type Meter struct {
 // NewMeter returns a meter that has observed nothing.
 func NewMeter() *Meter {
 	return &Meter{
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="m.last is unread while hasLast is false."
 		mu: sync.Mutex{}, samples: nil, last: Counts{Vectors: 0, Chunks: 0, Sources: 0}, hasLast: false,
 		changedAt: time.Time{}, hasChanged: false,
 	}

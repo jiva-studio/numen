@@ -37,6 +37,7 @@ func (b *Backend) Commands() (*command.Registry, error) {
 			return b.scenarios().cards.Create.Preset(ctx, v, in)
 		},
 	} {
+		// gomutants:disable-next-line BRANCH_IF reason="Static command identifiers are non-empty and unique."
 		if err := registry.Add(id, b.newCreateRun(create)); err != nil {
 			return nil, err
 		}
@@ -74,6 +75,7 @@ func describeCreateError(code api.ErrorCode) string {
 		api.ErrorCodeTooLarge, api.ErrorCodeBodyUnwritable, api.ErrorCodeUnreadable,
 		api.ErrorCodeNotACardModel, api.ErrorCodeNotADeck, api.ErrorCodeDeckTooLarge,
 		api.ErrorCodeNotAPreset, api.ErrorCodeStale:
+		// gomutants:disable-next-line BRANCH_CASE reason="Other error codes share the fallback message."
 		return "the file could not be made: " + string(code)
 	}
 	return "the file could not be made: " + string(code)

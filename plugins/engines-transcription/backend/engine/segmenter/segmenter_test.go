@@ -303,3 +303,58 @@ func TestNewSpeechPassConstructorErrors(t *testing.T) {
 		}
 	}
 }
+
+func TestSegmenterBoundaries(t *testing.T) {
+	// joinShortSpans: span of exact least length does not join; joined span of exact longest length does join.
+	if got := joinShortSpans([]span{{0, 10}, {12, 20}}, 10, 100); !slices.Equal(got, []span{{0, 10}, {12, 20}}) {
+		t.Errorf("joinShortSpans exact least = %v", got)
+	}
+	if got := joinShortSpans([]span{{0, 5}, {6, 12}}, 10, 12); !slices.Equal(got, []span{{0, 12}}) {
+		t.Errorf("joinShortSpans exact longest = %v", got)
+	}
+
+	// findSpeechSpans boundaries.
+	if got := findSpeechSpans([]float32{0.5}, 0.5, 1); !slices.Equal(got, []span{{0, 1}}) {
+		t.Errorf("findSpeechSpans exact threshold = %v", got)
+	}
+	if got := findSpeechSpans([]float32{1, 1}, 0.5, 1); !slices.Equal(got, []span{{0, 2}}) {
+		t.Errorf("findSpeechSpans from zero = %v", got)
+	}
+	if got := findSpeechSpans([]float32{1, 0, 0, 1}, 0.5, 1); !slices.Equal(got, []span{{0, 1}, {3, 4}}) {
+		t.Errorf("findSpeechSpans closing at zero = %v", got)
+	}
+	if got := findSpeechSpans([]float32{1, 0, 0, 1}, 0.5, 2); !slices.Equal(got, []span{{0, 4}}) {
+		t.Errorf("findSpeechSpans exact silenceWindows = %v", got)
+	}
+	if got := findSpeechSpans([]float32{1, 0, 0}, 0.5, 1); !slices.Equal(got, []span{{0, 1}}) {
+		t.Errorf("findSpeechSpans trailing silence = %v", got)
+	}
+
+	// widenSpans boundaries.
+	if got := widenSpans([]span{{0, 1}}, 2, 5); !slices.Equal(got, []span{{0, 3}}) {
+		t.Errorf("widenSpans clamp zero = %v", got)
+	}
+	if got := widenSpans([]span{{0, 1}}, 0, 5); !slices.Equal(got, []span{{0, 1}}) {
+		t.Errorf("widenSpans zero pad = %v", got)
+	}
+	if got := widenSpans([]span{{0, 2}, {4, 6}, {8, 9}}, 1, 10); !slices.Equal(got, []span{{0, 7}, {7, 10}}) {
+		t.Errorf("widenSpans touching and continuing = %v", got)
+	}
+
+	// splitLongSpan and findQuietest boundaries.
+	if got := splitLongSpan(span{0, 4}, []float32{1, 1, 1, 1}, 1); !slices.Equal(got, []span{{0, 4}}) {
+		t.Errorf("splitLongSpan longest=1 = %v", got)
+	}
+	if got := splitLongSpan(span{0, 7}, []float32{0.9, 0.8, 0.1, 0.7, 0.6, 0.5, 0.9}, 6); !slices.Equal(got, []span{{0, 5}, {5, 7}}) {
+		t.Errorf("splitLongSpan second half = %v", got)
+	}
+	if got := findQuietest([]float32{0.5, 0.2}, -1, 2); got != 1 {
+		t.Errorf("findQuietest negative from = %d, want 1", got)
+	}
+	if got := findQuietest([]float32{0.1, 0.5}, 0, 2); got != 0 {
+		t.Errorf("findQuietest at 0 = %d, want 0", got)
+	}
+	if got := findQuietest([]float32{0.2, 0.2}, 0, 2); got != 0 {
+		t.Errorf("findQuietest tie = %d, want 0", got)
+	}
+}

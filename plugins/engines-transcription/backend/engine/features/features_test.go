@@ -176,3 +176,47 @@ func TestTheFeaturesAreTheSameWhateverTheWorkerCount(t *testing.T) {
 		}
 	}
 }
+
+func TestFeaturesEdgeCases(t *testing.T) {
+	if got, frames := GetLogMel(nil, 1); got != nil || frames != 0 {
+		t.Errorf("GetLogMel(nil) = (%v, %d), want (nil, 0)", got, frames)
+	}
+	if got, frames := GetLogMel([]float32{1}, 1); len(got) != MelBands || frames != 1 {
+		t.Errorf("GetLogMel(1 sample) = (len %d, %d), want (%d, 1)", len(got), frames, MelBands)
+	}
+	if power, frames := spectrogram(nil, 1); power != nil || frames != 0 {
+		t.Errorf("spectrogram(nil) = (%v, %d), want (nil, 0)", power, frames)
+	}
+	power, frames := spectrogram([]float64{1}, 1)
+	if frames != 1 || math.Abs(power[0]-40000) > 1e-6 {
+		t.Errorf("spectrogram([1]) = (frames %d, power[0] %g), want (1, 40000)", frames, power[0])
+	}
+
+	for _, tc := range []struct {
+		i, n, want int
+	}{
+		{5, 1, 0},
+		{1, 2, 1},
+		{-1, 4, 1},
+		{-2, 4, 2},
+		{4, 4, 2},
+		{5, 4, 1},
+		{6, 4, 0},
+		{7, 4, 1},
+	} {
+		if got := getMirroredIndex(tc.i, tc.n); got != tc.want {
+			t.Errorf("getMirroredIndex(%d, %d) = %d, want %d", tc.i, tc.n, got, tc.want)
+		}
+	}
+
+	bank := getMelBank()
+	if bank[0].firstBin != 1 {
+		t.Errorf("bank[0].firstBin = %d, want 1", bank[0].firstBin)
+	}
+	if got := hzToMel(500); math.Abs(got-7.5) > 1e-9 {
+		t.Errorf("hzToMel(500) = %g, want 7.5", got)
+	}
+	if got := len(getTwiddles()); got != fftSize/2 {
+		t.Errorf("len(getTwiddles()) = %d, want %d", got, fftSize/2)
+	}
+}

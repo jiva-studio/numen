@@ -89,6 +89,7 @@ func FormatSettingValue(value any) string {
 	switch v := value.(type) {
 	case nil:
 		return ""
+	// gomutants:disable-next-line BRANCH_CASE reason="string case avoids fmt.Sprint allocation"
 	case string:
 		return v
 	case bool:
@@ -124,6 +125,7 @@ func (m Manifest) ResolveSettings(stored map[string]any) map[string]any {
 		}
 	}
 	for _, s := range m.Settings {
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="cycle detection bound exceeds any valid setting chain"
 		if !m.isActive(s.When, values, 0) {
 			delete(values, s.Key)
 		}
@@ -142,6 +144,7 @@ func (m Manifest) resolveValue(s Setting, values map[string]any) (any, bool) {
 		return value, ok
 	}
 	options := m.GetSettingOptions(s, values)
+	// gomutants:disable-next-line EXPRESSION_REMOVE reason="nil value when not ok is rejected by isAcceptedOptionValue"
 	if ok && s.isAcceptedOptionValue(options, value) {
 		return value, true
 	}
@@ -166,6 +169,7 @@ func (s Setting) isAcceptedOptionValue(options SettingOptions, value any) bool {
 }
 
 func (s Setting) hasOptionInAnyGroup(value string) bool {
+	// gomutants:disable-next-line BRANCH_IF reason="caller checks OptionsBy != nil"
 	if s.OptionsBy == nil {
 		return false
 	}
@@ -179,6 +183,7 @@ func (s Setting) hasOptionInAnyGroup(value string) bool {
 
 // IsSecretActive reports whether the secret is handed to the plugin under the values in force.
 func (m Manifest) IsSecretActive(secret Secret, values map[string]any) bool {
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="cycle detection bound exceeds any valid setting chain"
 	return m.isActive(secret.When, values, 0)
 }
 
@@ -187,10 +192,12 @@ func (m Manifest) isActive(when *Condition, values map[string]any, depth int) bo
 	if when == nil {
 		return true
 	}
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="cycle detection bound exceeds any valid setting chain"
 	if depth > len(m.Settings) || !slices.Contains(when.Is, FormatSettingValue(values[when.Setting])) {
 		return false
 	}
 	parent, ok := m.GetSetting(when.Setting)
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="cycle detection bound exceeds any valid setting chain"
 	return ok && m.isActive(parent.When, values, depth+1)
 }
 
@@ -294,6 +301,7 @@ func (m Manifest) getOptionalDependencies(values map[string]any) (optional, acti
 			}
 		}
 		value, ok := values[s.Key]
+		// gomutants:disable-next-line INVERT_LOGICAL reason="Find returns false for empty string when ok is false"
 		if option, isOption := m.GetSettingOptions(s, values).Find(FormatSettingValue(value)); ok && isOption {
 			addAll(active, option.Dependencies)
 		}

@@ -82,6 +82,7 @@ func getBudgets(ctx context.Context, v domain.Vault, in budgetInputs) (*budgets,
 			cost = review.GetDefaultCost()
 		}
 		// Target date goals scale daily review allowances by learning duration.
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Non-date goals ignore the learning-days parameter."
 		learn := 0
 		if p.Goal == review.GoalDate {
 			learn = projection.GetDaysToLearn(pos(p.Retention), day, p, now)

@@ -43,6 +43,18 @@ func TestLinkedHandler_RequiresTheHostToken(t *testing.T) {
 	if got := postMethod(t, handler, "GetBook", `{}`, "linked-token"); got.Code != http.StatusBadRequest || !strings.Contains(got.Body.String(), `"code":"invalid_argument"`) {
 		t.Fatalf("GetBook with no path = %d %s, want invalid_argument", got.Code, got.Body)
 	}
+	for _, method := range []string{"ReadBookMarkup", "ReadBookEntry", "GetCfi", "FindOffset"} {
+		if got := postMethod(t, handler, method, `{}`, "linked-token"); got.Code != http.StatusBadRequest {
+			t.Errorf("%s with empty body = %d, want 400", method, got.Code)
+		}
+	}
+	entryReq := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/plugin/entries/EPUB/cover.png", nil)
+	entryReq.Header.Set("Authorization", "Bearer linked-token")
+	entryRec := httptest.NewRecorder()
+	handler.ServeHTTP(entryRec, entryReq)
+	if entryRec.Code != http.StatusBadRequest {
+		t.Errorf("GET /plugin/entries without path = %d, want 400", entryRec.Code)
+	}
 }
 
 func TestLinkedHandler_ReachesTheHostOfItsVariables(t *testing.T) {

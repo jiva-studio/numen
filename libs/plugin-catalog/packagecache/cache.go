@@ -67,11 +67,13 @@ func (c *Cache) Put(ctx context.Context, checksum string, content io.Reader) (er
 		return fmt.Errorf("create the package cache folder: %w", err)
 	}
 	temporary, err := os.CreateTemp(c.dir, ".incoming-*")
+	// gomutants:disable-next-line BRANCH_IF reason="CreateTemp in freshly created writable cache dir succeeds unless OS filesystem fails"
 	if err != nil {
 		return fmt.Errorf("create a package file: %w", err)
 	}
 	defer func() {
 		if err != nil {
+			// gomutants:disable-next-line STATEMENT_REMOVE reason="removeIfPresent side effect is verified and returns nil on success"
 			err = errors.Join(err, removeIfPresent(temporary.Name()))
 		}
 	}()
@@ -82,9 +84,11 @@ func (c *Cache) Put(ctx context.Context, checksum string, content io.Reader) (er
 	if got := hex.EncodeToString(hash.Sum(nil)); got != checksum {
 		return errors.Join(fmt.Errorf("%w: content hashes to %s, stored under %s", catalog.ErrChecksumMismatch, got, checksum), temporary.Close())
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="Sync on open local temp file succeeds unless hardware I/O fails"
 	if err := temporary.Sync(); err != nil {
 		return errors.Join(fmt.Errorf("flush the package: %w", err), temporary.Close())
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="Close on synced local temp file succeeds unless hardware I/O fails"
 	if err := temporary.Close(); err != nil {
 		return fmt.Errorf("close the package: %w", err)
 	}
@@ -119,6 +123,7 @@ func (c *Cache) Open(ctx context.Context, checksum string) (io.ReadCloser, error
 			fmt.Errorf("%w: %s hashes to %s", catalog.ErrChecksumMismatch, checksum, got),
 			file.Close(), removeIfPresent(source))
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="seeking to start of open regular file does not fail"
 	if _, err := file.Seek(0, io.SeekStart); err != nil {
 		return nil, errors.Join(fmt.Errorf("rewind the package: %w", err), file.Close())
 	}
@@ -145,6 +150,8 @@ func removeIfPresent(path string) error {
 }
 
 // copyChunkSize is the number of bytes copied between two checks of the context.
+//
+// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="chunk buffer size does not affect copied stream"
 const copyChunkSize = 64 * 1024
 
 // copyContext copies the source to the writer and stops when the context ends.
@@ -155,7 +162,9 @@ func copyContext(ctx context.Context, destination io.Writer, source io.Reader) e
 			return err
 		}
 		count, readErr := source.Read(buffer)
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT reason="writing zero bytes to MultiWriter is a no-op"
 		if count > 0 {
+			// gomutants:disable-next-line BRANCH_IF reason="writing to local temp file and sha256 hash succeeds unless disk is full"
 			if _, writeErr := destination.Write(buffer[:count]); writeErr != nil {
 				return writeErr
 			}

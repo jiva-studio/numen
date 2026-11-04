@@ -97,6 +97,7 @@ func (s *agentServer) GetPrograms(ctx context.Context, commands []agentrun.Progr
 func (s *agentServer) getFamilies(ctx context.Context, command []string) []reasoning.Family {
 	list := func(ctx context.Context) ([]antigravityModel, error) { return listAntigravityModels(ctx, command) }
 	items, _, err := s.getModelCache().Get(ctx, strings.Join(command, " "), list)
+	// gomutants:disable-next-line BRANCH_IF reason="A failed load returns the cached items folded identically to a succeeded load."
 	if err != nil {
 		// A failed load leaves the last list of the cache, or none, and the program is offered with it.
 		return foldModels(items)

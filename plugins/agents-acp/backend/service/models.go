@@ -57,9 +57,7 @@ func buildCustomACPAgent(execPath string, isMulti bool) acpAgent {
 	baseName := getExecutableProgramName(execPath)
 	for _, candidate := range getKnownACPAgents() {
 		if candidate.binary == baseName {
-			command := make([]string, 0, 1+len(candidate.args))
-			command = append(command, execPath)
-			command = append(command, candidate.args...)
+			command := append([]string{execPath}, candidate.args...)
 			program := defaultACPProgram
 			if isMulti {
 				program = candidate.program
@@ -117,8 +115,10 @@ func (s *agentServer) getACPListing(ctx context.Context, agent acpAgent) acpList
 	listing, _, err := s.getModelCache().Get(ctx, key, func(ctx context.Context) (acpListing, error) {
 		return readACPListing(ctx, agent)
 	})
+	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="Cache.Get returns a zero listing on error."
 	if err != nil {
 		// A failed load leaves the last listing of the cache, or none, and the agent is listed with it.
+		// gomutants:disable-next-line RETURN_ZERO reason="Cache.Get returns a zero listing on error."
 		return listing
 	}
 	return listing

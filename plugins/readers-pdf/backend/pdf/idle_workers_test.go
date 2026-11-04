@@ -25,6 +25,8 @@ func TestTheIdleWorkersFitTheAvailableMemory(t *testing.T) {
 		{"no plan keeps none", 0, 16 * 1024 * mb, 0},
 		{"negative plan keeps none", -1, 2048 * mb, 0},
 		{"negative memory keeps none", 4, -1, 0},
+		{"one planned worker with minimal fitting memory", 1, 700 * mb, 1},
+		{"one planned worker with 1 byte of memory", 1, 1, 0},
 	}
 	for _, c := range cases {
 		if got := ComputeIdleWorkers(c.planned, c.available); got != c.want {

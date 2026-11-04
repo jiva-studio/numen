@@ -39,12 +39,45 @@ func TestSetCardModelReplacesALinkOnTheLineBelowTheHeading(t *testing.T) {
 
 // A problem about a card names the card and no template.
 func TestOnCardFilesAProblemAgainstOneCard(t *testing.T) {
+	if NoPosition != -1 {
+		t.Fatalf("NoPosition = %d, want -1", NoPosition)
+	}
 	got := OnCard(3, FaultDuplicateCardID, "detail")
 	want := Problem{
 		Fault: FaultDuplicateCardID, Card: 3, Template: NoPosition, Detail: "detail",
 	}
 	if got != want {
 		t.Errorf("problem = %+v, want %+v", got, want)
+	}
+}
+
+func TestSectionAndLinkHelpers(t *testing.T) {
+	if got := sections(nil, SectionLevel, FieldLevel); len(got) != 0 {
+		t.Fatalf("expected empty sections, got %+v", got)
+	}
+	if lvl, name, ok := heading([]byte("##\tTabbed ###"), SectionLevel, FieldLevel); !ok || lvl != 2 || name != "Tabbed" {
+		t.Fatalf("unexpected tabbed heading: %d %q %v", lvl, name, ok)
+	}
+	if lvl, name, ok := heading([]byte("## ###"), SectionLevel, FieldLevel); !ok || lvl != 2 || name != "" {
+		t.Fatalf("unexpected empty closed heading: %d %q %v", lvl, name, ok)
+	}
+	if line, next := lineAt([]byte("no-newline\r"), 0, 11); string(line) != "no-newline" || next != 11 {
+		t.Fatalf("unexpected lineAt: %q %d", string(line), next)
+	}
+	if from := lineFrom([]byte("first\nsecond"), 0, 12); from != 6 {
+		t.Fatalf("expected lineFrom 6, got %d", from)
+	}
+	if target, leadFrom := readCardModelLink([]byte("prefix [[Animal]]\n\n"), 3, 19); target != "" || leadFrom != 3 {
+		t.Fatalf("expected no link when preceded by text, got %q %d", target, leadFrom)
+	}
+	if target, leadFrom := readCardModelLink([]byte("   \n"), 2, 4); target != "" || leadFrom != 2 {
+		t.Fatalf("expected empty link at offset 2, got %q %d", target, leadFrom)
+	}
+	if got := oneLine("\nsecond"); got != "" {
+		t.Fatalf("expected empty first line, got %q", got)
+	}
+	if got := links("![[embed]] [single] [[a ] b]] [[unclosed"); len(got) != 2 || got[0][0] != 0 || got[0][1] != 10 || got[1][0] != 20 || got[1][1] != 29 {
+		t.Fatalf("unexpected links: %v", got)
 	}
 }
 

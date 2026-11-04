@@ -80,6 +80,11 @@ func TestACheckOfANewerBuildReportsTheUpdate(t *testing.T) {
 	if len(fetcher.requested) != 1 || fetcher.requested[0] != StableEndpoint {
 		t.Errorf("endpoints requested = %v, want the stable feed", fetcher.requested)
 	}
+
+	devStatus, err := u.check(t.Context(), api.CheckRequest{App: windowsApp(0)})
+	if err != nil || devStatus.State != api.StateAvailable {
+		t.Errorf("dev build status = %+v, error = %v", devStatus, err)
+	}
 }
 
 func TestACheckOfTheCurrentBuildReportsNoUpdate(t *testing.T) {

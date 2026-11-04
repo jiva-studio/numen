@@ -34,6 +34,7 @@ type Server struct {
 func NewServer(cfg Config, client ToolClient) (*Server, error) {
 	if cfg.Token == "" {
 		token, err := createRandomToken()
+		// gomutants:disable-next-line BRANCH_IF reason="createRandomToken fails only when crypto/rand.Read fails"
 		if err != nil {
 			return nil, fmt.Errorf("create auth token: %w", err)
 		}
@@ -102,6 +103,7 @@ func newHTTPServer(handler http.Handler) *http.Server {
 // reportSyncError writes a failure to sync the host tools to the standard error stream of the
 // plugin process. The tools are synced again on the next listing and on the next configuration.
 func reportSyncError(err error) {
+	// gomutants:disable-next-line CONDITIONALS_NEGATION reason="stderr diagnostic output does not affect program state"
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "sync the host tools: %v\n", err)
 	}
@@ -115,7 +117,8 @@ func (s *Server) createHTTPHandler(mcpServer *sdk.Server) http.Handler {
 		func(*http.Request) *sdk.Server { return mcpServer },
 		&sdk.SSEOptions{
 			DisableLocalhostProtection: true,
-			MaxRequestBodyBytes:        0,
+			// gomutants:disable-next-line INTEGER_DECREMENT reason="zero and negative MaxRequestBodyBytes both select the SDK default limit"
+			MaxRequestBodyBytes: 0,
 		},
 	)
 
@@ -195,7 +198,7 @@ func (s *Server) Rebind(ctx context.Context, cfg Config) error {
 // Close to return.
 func (s *Server) serveHTTP(srv *http.Server, ln net.Listener) {
 	err := srv.Serve(ln)
-	if err == nil || errors.Is(err, http.ErrServerClosed) || errors.Is(err, net.ErrClosed) {
+	if errors.Is(err, http.ErrServerClosed) || errors.Is(err, net.ErrClosed) {
 		return
 	}
 	s.mu.Lock()
@@ -244,8 +247,10 @@ func (s *Server) Close(ctx context.Context) error {
 	s.isClosed = true
 	s.mu.Unlock()
 
+	// gomutants:disable-next-line REMOVE_LOGICAL_NOT,BRANCH_IF reason="fallback timeout applies only when active connections stall during shutdown"
 	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
 		var cancel context.CancelFunc
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="shutdown grace period duration is a timeout policy"
 		ctx, cancel = context.WithTimeout(ctx, 2*time.Second)
 		defer cancel()
 	}

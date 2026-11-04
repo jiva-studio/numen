@@ -286,3 +286,68 @@ func TestSectionsAreAddedRenamedAndRemovedWithoutTouchingCards(t *testing.T) {
 		t.Errorf("the section stands:\n%s", body)
 	}
 }
+
+func TestDeckEditScenariosCoverEdgesAndErrors(t *testing.T) {
+	e := newEditing(t)
+
+	// Query second card by CardID (pos == 1) and with empty Fields (len(fields) == 0).
+	second, err := e.page.Execute(t.Context(), e.vs.first, deckedit.Query{
+		Path: mammals, CardID: "zpqrstvwxy",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(second.Cards) != 1 || string(second.Cards[0].CardID) != "zpqrstvwxy" || len(second.Cards[0].Values) != 2 {
+		t.Fatalf("got %+v, want second card with 2 values", second.Cards)
+	}
+
+	// AddCard at section 0, negative section (-1), and exact out-of-bounds section (1).
+	zero := 0
+	addedInSec, err := e.addCard.Execute(t.Context(), e.vs.first, e.version(t), "Animal",
+		[]format.Value{{Field: "Name", Text: "Alpaca"}}, &zero)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if addedInSec.Cards != 3 || addedInSec.CardID == "" {
+		t.Fatalf("got %+v", addedInSec)
+	}
+
+	minusOne := -1
+	if _, err := e.addCard.Execute(t.Context(), e.vs.first, e.version(t), "Animal", nil, &minusOne); err == nil {
+		t.Fatal("expected error for section -1")
+	}
+	oneSec := 1
+	if _, err := e.addCard.Execute(t.Context(), e.vs.first, e.version(t), "Animal", nil, &oneSec); err == nil {
+		t.Fatal("expected error for section == len(Sections)")
+	}
+
+	// EditCard with non-empty cardModel.
+	if _, err := e.editCard.Execute(t.Context(), e.vs.first, e.version(t), "k7m2xq9fzp", "Term",
+		[]format.Value{{Field: "Word", Text: "Llama"}}); err != nil {
+		t.Fatal(err)
+	}
+	if body := read(t, e.vs.first, mammals); !strings.Contains(body, "[[Term]]") {
+		t.Fatalf("expected card model Term in body:\n%s", body)
+	}
+
+	// Duplicate CardID in deck triggers ErrTwoCards at pos 0 and pos > 0.
+	dupBody := "---\ntype: deck\n---\n\n## One ^k7m2xq9fzp\n\n[[Animal]]\n\n## Two ^k7m2xq9fzp\n\n[[Animal]]\n\n## Three ^zpqrstvwxy\n\n[[Animal]]\n\n## Four ^zpqrstvwxy\n\n[[Animal]]\n"
+	if err := os.WriteFile(filepath.Join(e.vs.first.Path, filepath.FromSlash(mammals)), []byte(dupBody), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.page.Execute(t.Context(), e.vs.first, deckedit.Query{Path: mammals, CardID: "k7m2xq9fzp"}); !errors.Is(err, format.ErrTwoCards) {
+		t.Fatalf("got %v, want ErrTwoCards for first card duplicate", err)
+	}
+	if _, err := e.page.Execute(t.Context(), e.vs.first, deckedit.Query{Path: mammals, CardID: "zpqrstvwxy"}); !errors.Is(err, format.ErrTwoCards) {
+		t.Fatalf("got %v, want ErrTwoCards for later card duplicate", err)
+	}
+
+	// Read error propagation through readExistingDeck and changeDeck.
+	unknownVault := domain.Vault{ID: "unknown"}
+	if _, err := e.page.Execute(t.Context(), unknownVault, deckedit.Query{Path: mammals}); err == nil {
+		t.Fatal("expected error for unknown vault")
+	}
+	if _, err := e.editCard.Execute(t.Context(), unknownVault, deckedit.DeckVersion{Path: mammals}, "k7m2xq9fzp", "", nil); err == nil {
+		t.Fatal("expected error for unknown vault")
+	}
+}

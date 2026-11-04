@@ -64,6 +64,7 @@ var errTrailingData = errors.New("unexpected data after the manifest")
 // not name by their JSON name are dropped and returned as paths, in the order of their location.
 func canonicalize(data []byte) (canonical []byte, unknown []string, err error) {
 	decoder := json.NewDecoder(bytes.NewReader(data))
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="UseNumber preserves exact numeric tokens before protojson unmarshaling"
 	decoder.UseNumber()
 	var value any
 	if err := decoder.Decode(&value); err != nil {
@@ -75,6 +76,7 @@ func canonicalize(data []byte) (canonical []byte, unknown []string, err error) {
 		return nil, nil, errTrailingData
 	}
 	canonical, err = json.Marshal(value)
+	// gomutants:disable-next-line RETURN_ERROR_NIL reason="value decoded from JSON always marshals back to JSON"
 	return canonical, unknown, err
 }
 
@@ -151,10 +153,7 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 }
 
 func newDependencies(wire []*v1.ManifestDependency) []manifest.DependencyRequirement {
-	if wire == nil {
-		return nil
-	}
-	out := make([]manifest.DependencyRequirement, 0, len(wire))
+	var out []manifest.DependencyRequirement
 	for _, one := range wire {
 		out = append(out, manifest.DependencyRequirement{
 			ID:             one.GetId(),
@@ -170,10 +169,7 @@ func newDependencies(wire []*v1.ManifestDependency) []manifest.DependencyRequire
 }
 
 func newSecrets(wire []*v1.ManifestSecret) []manifest.Secret {
-	if wire == nil {
-		return nil
-	}
-	out := make([]manifest.Secret, 0, len(wire))
+	var out []manifest.Secret
 	for _, one := range wire {
 		out = append(out, manifest.Secret{
 			Name:        one.GetName(),
@@ -193,10 +189,7 @@ func newCondition(wire *v1.ManifestCondition) *manifest.Condition {
 }
 
 func newSettings(wire []*v1.ManifestSetting) ([]manifest.Setting, error) {
-	if wire == nil {
-		return nil, nil
-	}
-	out := make([]manifest.Setting, 0, len(wire))
+	var out []manifest.Setting
 	for _, one := range wire {
 		options, err := newSettingOptions(one.GetOptions())
 		if err != nil {
@@ -232,10 +225,7 @@ var errOptionShape = errors.New("options must be a list of values or of objects 
 
 // newSettingOptions reads a list of options, each a bare string or an object of ManifestSettingOption.
 func newSettingOptions(list *structpb.ListValue) (manifest.SettingOptions, error) {
-	if list == nil {
-		return nil, nil
-	}
-	options := make(manifest.SettingOptions, 0, len(list.GetValues()))
+	var options manifest.SettingOptions
 	for _, item := range list.GetValues() {
 		switch kind := item.GetKind().(type) {
 		case *structpb.Value_StringValue:
@@ -255,6 +245,7 @@ func newSettingOptions(list *structpb.ListValue) (manifest.SettingOptions, error
 
 func newSettingOption(object *structpb.Struct) (manifest.SettingOption, error) {
 	data, err := json.Marshal(object.AsMap())
+	// gomutants:disable-next-line BRANCH_IF reason="structpb.Struct map always marshals to JSON"
 	if err != nil {
 		return manifest.SettingOption{}, fmt.Errorf("%w: %w", errOptionShape, err)
 	}
@@ -288,21 +279,15 @@ func newOptionsBy(wire *v1.ManifestOptionsBy) (*manifest.OptionsBy, error) {
 var errHeadingShape = errors.New("headings must be a list of whole numbers")
 
 func newNoteTypes(wire []*v1.ManifestNoteType) ([]manifest.NoteType, error) {
-	if wire == nil {
-		return nil, nil
-	}
-	out := make([]manifest.NoteType, 0, len(wire))
+	var out []manifest.NoteType
 	for _, one := range wire {
 		headings, err := newHeadings(one.GetHeadings())
 		if err != nil {
 			return nil, fmt.Errorf("note type %q: %w", one.GetType(), err)
 		}
-		levels := make([]int, 0, len(one.GetIdHeadingLevels()))
+		var levels []int
 		for _, level := range one.GetIdHeadingLevels() {
 			levels = append(levels, int(level))
-		}
-		if len(levels) == 0 {
-			levels = nil
 		}
 		out = append(out, manifest.NoteType{
 			Type:            one.GetType(),
@@ -319,7 +304,7 @@ func newHeadings(list *structpb.ListValue) (*[]int, error) {
 	if list == nil {
 		return nil, nil
 	}
-	levels := make([]int, 0, len(list.GetValues()))
+	levels := []int{}
 	for _, item := range list.GetValues() {
 		number, isNumber := item.GetKind().(*structpb.Value_NumberValue)
 		if !isNumber || number.NumberValue != math.Trunc(number.NumberValue) {
@@ -331,10 +316,7 @@ func newHeadings(list *structpb.ListValue) (*[]int, error) {
 }
 
 func newCommands(wire []*v1.ManifestCommand) []manifest.Command {
-	if wire == nil {
-		return nil
-	}
-	out := make([]manifest.Command, 0, len(wire))
+	var out []manifest.Command
 	for _, one := range wire {
 		out = append(out, manifest.Command{
 			ID:                one.GetId(),
@@ -351,10 +333,7 @@ func newCommands(wire []*v1.ManifestCommand) []manifest.Command {
 }
 
 func newCommandWhen(wire []*v1.ManifestContextCondition) []manifest.ContextCondition {
-	if wire == nil {
-		return nil
-	}
-	out := make([]manifest.ContextCondition, 0, len(wire))
+	var out []manifest.ContextCondition
 	for _, one := range wire {
 		out = append(out, manifest.ContextCondition{Key: one.GetKey(), Is: one.GetIs()})
 	}
@@ -362,10 +341,7 @@ func newCommandWhen(wire []*v1.ManifestContextCondition) []manifest.ContextCondi
 }
 
 func newCommandArguments(wire []*v1.ManifestCommandArgument) []manifest.CommandArgument {
-	if wire == nil {
-		return nil
-	}
-	out := make([]manifest.CommandArgument, 0, len(wire))
+	var out []manifest.CommandArgument
 	for _, one := range wire {
 		out = append(out, manifest.CommandArgument{
 			Name:              one.GetName(),
@@ -379,10 +355,7 @@ func newCommandArguments(wire []*v1.ManifestCommandArgument) []manifest.CommandA
 }
 
 func newHandles(wire []*v1.ManifestHandle) []manifest.Handle {
-	if wire == nil {
-		return nil
-	}
-	out := make([]manifest.Handle, 0, len(wire))
+	var out []manifest.Handle
 	for _, one := range wire {
 		out = append(out, manifest.Handle{Purpose: one.GetPurpose(), ContentTypes: newContentTypes(one.GetContentTypes()), NoteTypes: one.GetNoteTypes()})
 	}
@@ -390,10 +363,7 @@ func newHandles(wire []*v1.ManifestHandle) []manifest.Handle {
 }
 
 func newReaders(wire []*v1.ManifestReader) []manifest.Reader {
-	if wire == nil {
-		return nil
-	}
-	out := make([]manifest.Reader, 0, len(wire))
+	var out []manifest.Reader
 	for _, one := range wire {
 		out = append(out, manifest.Reader{ID: one.GetId(), ContentTypes: newContentTypes(one.GetContentTypes()), Rank: newHandlerRank(one.GetRank())})
 	}
@@ -401,10 +371,7 @@ func newReaders(wire []*v1.ManifestReader) []manifest.Reader {
 }
 
 func newSettingsViews(wire []*v1.ManifestSettingsView) []manifest.SettingsView {
-	if wire == nil {
-		return nil
-	}
-	out := make([]manifest.SettingsView, 0, len(wire))
+	var out []manifest.SettingsView
 	for _, one := range wire {
 		out = append(out, manifest.SettingsView{ID: one.GetId(), Title: one.GetTitle()})
 	}
@@ -415,10 +382,7 @@ func newSettingsViews(wire []*v1.ManifestSettingsView) []manifest.SettingsView {
 // JSON name, at every depth, and returns the path of each key removed. Values of the well-known
 // types are left as written, except the options of a setting.
 func pruneUnknown(value any, message protoreflect.MessageDescriptor, path string, unknown []string) []string {
-	object, isObject := value.(map[string]any)
-	if !isObject {
-		return unknown
-	}
+	object, _ := value.(map[string]any)
 	for _, key := range slices.Sorted(maps.Keys(object)) {
 		field := message.Fields().ByJSONName(key)
 		if field == nil {
@@ -441,18 +405,12 @@ func joinPath(path, key string) string {
 func pruneField(value any, field protoreflect.FieldDescriptor, path string, unknown []string) []string {
 	switch {
 	case field.IsMap():
-		entries, isObject := value.(map[string]any)
-		if !isObject {
-			return unknown
-		}
+		entries, _ := value.(map[string]any)
 		for _, name := range slices.Sorted(maps.Keys(entries)) {
 			unknown = pruneEntry(entries[name], field.MapValue(), joinPath(path, name), unknown)
 		}
 	case field.IsList():
-		items, isList := value.([]any)
-		if !isList {
-			return unknown
-		}
+		items, _ := value.([]any)
 		for index, item := range items {
 			unknown = pruneEntry(item, field, fmt.Sprintf("%s[%d]", path, index), unknown)
 		}
@@ -482,10 +440,7 @@ const listValueName protoreflect.FullName = "google.protobuf.ListValue"
 
 // pruneOptionList prunes each option written as an object in a list of options.
 func pruneOptionList(value any, path string, unknown []string) []string {
-	items, isList := value.([]any)
-	if !isList {
-		return unknown
-	}
+	items, _ := value.([]any)
 	descriptor := (&v1.ManifestSettingOption{}).ProtoReflect().Descriptor()
 	for index, item := range items {
 		unknown = pruneUnknown(item, descriptor, fmt.Sprintf("%s[%d]", path, index), unknown)

@@ -1,6 +1,9 @@
 package onnx
 
-import "testing"
+import (
+	"runtime"
+	"testing"
+)
 
 func TestParseProviderAcceptsEverySpelling(t *testing.T) {
 	for _, tc := range []struct {
@@ -43,7 +46,22 @@ func TestParseComputeUnitsIgnoresCase(t *testing.T) {
 }
 
 func TestGetDefaultThreadsIsAtMostEight(t *testing.T) {
-	if got := GetDefaultThreads(); got < 1 || got > 8 {
-		t.Errorf("GetDefaultThreads() = %d, want 1 to 8", got)
+	prev := runtime.GOMAXPROCS(4)
+	defer runtime.GOMAXPROCS(prev)
+	if got := GetDefaultThreads(); got != 4 {
+		t.Errorf("GetDefaultThreads() with GOMAXPROCS=4 = %d, want 4", got)
+	}
+	if got := GetDefaultThreads(); got != 4 {
+		t.Errorf("second GetDefaultThreads() with GOMAXPROCS=4 = %d, want 4", got)
+	}
+
+	runtime.GOMAXPROCS(8)
+	if got := GetDefaultThreads(); got != 8 {
+		t.Errorf("GetDefaultThreads() with GOMAXPROCS=8 = %d, want 8", got)
+	}
+
+	runtime.GOMAXPROCS(16)
+	if got := GetDefaultThreads(); got != 8 {
+		t.Errorf("GetDefaultThreads() with GOMAXPROCS=16 = %d, want 8", got)
 	}
 }

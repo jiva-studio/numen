@@ -30,6 +30,7 @@ func writeMcpConfig(url, token string) (string, error) {
 		},
 	}
 	data, err := json.Marshal(config)
+	// gomutants:disable-next-line BRANCH_IF reason="Marshaling a static struct of string fields and string maps cannot fail."
 	if err != nil {
 		return "", fmt.Errorf("marshal mcp config: %w", err)
 	}

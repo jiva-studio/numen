@@ -50,6 +50,7 @@ func getCardRange(deck []format.Card, from, limit int) []format.Card {
 }
 
 func keepFields(card format.Card, fields []string) format.Card {
+	// gomutants:disable-next-line INTEGER_DECREMENT reason="Slice length is never negative."
 	if len(fields) == 0 {
 		return card
 	}

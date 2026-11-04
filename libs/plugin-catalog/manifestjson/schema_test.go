@@ -1,9 +1,13 @@
 package manifestjson_test
 
 import (
+	"encoding/json"
+	"errors"
 	"reflect"
 	"slices"
+	"strings"
 	"testing"
+	"testing/iotest"
 
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -132,6 +136,12 @@ func TestTheSampleManifestIsReadWithEveryFieldMapped(t *testing.T) {
 			t.Errorf("%s holds its zero value in every instance of the sample: a mapping for it is untested", name)
 		}
 	}
+	if len(m.Settings) != 2 || len(m.Settings[1].OptionsBy.Options["a"]) != 1 || m.Settings[1].OptionsBy.Options["a"][0].Value != "x" {
+		t.Errorf("optionsBy = %+v", m.Settings)
+	}
+	if len(m.Contributes.NoteTypes) != 1 || m.Contributes.NoteTypes[0].Headings == nil || !slices.Equal(*m.Contributes.NoteTypes[0].Headings, []int{1, 2}) || !slices.Equal(m.Contributes.NoteTypes[0].IDHeadingLevels, []int{3}) {
+		t.Errorf("noteTypes = %+v", m.Contributes.NoteTypes)
+	}
 }
 
 func listModelFields(kind reflect.Type, visited map[reflect.Type]bool) []string {
@@ -203,15 +213,41 @@ func TestARepeatedKeyResolvesToItsLastValue(t *testing.T) {
 }
 
 func TestDataAfterTheManifestIsRefused(t *testing.T) {
-	if _, err := manifestjson.Decode([]byte(`{"id":"a.b"} {"id":"c.d"}`)); err == nil {
-		t.Error("data after the manifest was accepted")
+	if _, err := manifestjson.Decode([]byte(`{"id":"a.b"} {"id":"c.d"}`)); err == nil || !strings.Contains(err.Error(), "unexpected data after the manifest") {
+		t.Errorf("data after the manifest error = %v", err)
+	}
+	var syntaxErr *json.SyntaxError
+	if _, err := manifestjson.Decode([]byte(`{invalid}`)); !errors.As(err, &syntaxErr) {
+		t.Errorf("expected json.SyntaxError from Decode, got %v", err)
+	}
+	if _, err := manifestjson.Read(strings.NewReader(`{invalid}`)); !errors.As(err, &syntaxErr) || !strings.Contains(err.Error(), "decode manifest:") {
+		t.Errorf("expected wrapped json.SyntaxError from Read, got %v", err)
+	}
+	readErr := errors.New("read failed")
+	if _, err := manifestjson.Read(iotest.ErrReader(readErr)); !errors.Is(err, readErr) {
+		t.Errorf("expected wrapped reader error from Read, got %v", err)
 	}
 }
 
 func TestAnOptionOfNoValueShapeIsRefused(t *testing.T) {
-	_, err := manifestjson.Decode([]byte(`{"settings":[{"key":"k","options":[1]}]}`))
-	if err == nil {
-		t.Error("a number was accepted as an option")
+	if _, err := manifestjson.Decode([]byte(`{"settings":[{"key":"k","options":[1]}]}`)); err == nil || !strings.Contains(err.Error(), `setting "k"`) || !strings.Contains(err.Error(), "options must be a list") {
+		t.Errorf("a number was accepted as an option: %v", err)
+	}
+	if _, err := manifestjson.Decode([]byte(`{"settings":[{"key":"k","options":[{"value":1}]}]}`)); err == nil || !strings.Contains(err.Error(), "options must be a list") {
+		t.Errorf("an option with numeric value was accepted: %v", err)
+	}
+	if _, err := manifestjson.Decode([]byte(`{"settings":[{"key":"k","optionsBy":{"setting":"p","options":{"a":[1]}}}]}`)); err == nil || !strings.Contains(err.Error(), `setting "k"`) || !strings.Contains(err.Error(), `options under "a"`) {
+		t.Errorf("an invalid optionsBy option was accepted: %v", err)
+	}
+	if _, err := manifestjson.Decode([]byte(`{"contributes":{"noteTypes":[{"type":"link","headings":["bad"]}]}}`)); err == nil || !strings.Contains(err.Error(), `note type "link"`) {
+		t.Errorf("a string heading was accepted: %v", err)
+	}
+	if _, err := manifestjson.Decode([]byte(`{"contributes":{"noteTypes":[{"type":"link","headings":[1.5]}]}}`)); err == nil || !strings.Contains(err.Error(), `note type "link"`) {
+		t.Errorf("a fractional heading was accepted: %v", err)
+	}
+	m, err := manifestjson.Decode([]byte(`{"contributes":{"noteTypes":[{"type":"link","headings":[]}]}}`))
+	if err != nil || len(m.Contributes.NoteTypes) != 1 || m.Contributes.NoteTypes[0].Headings == nil || len(*m.Contributes.NoteTypes[0].Headings) != 0 {
+		t.Errorf("empty headings = %+v, %v", m.Contributes.NoteTypes, err)
 	}
 }
 
@@ -230,7 +266,7 @@ func TestAKeyOfTheWrongTypeIsRefused(t *testing.T) {
 
 func TestKeysTheSchemaDoesNotNameAreReportedAsWarnings(t *testing.T) {
 	m, err := manifestjson.Decode([]byte(`{"id":"a.b","texts":{},"contributes":{"tabKinds":[{"kind":"k","title":"K","shape":1}],
-		"extra":true},"settings":[{"key":"s","type":"enum","title":"S","options":["a",{"value":"b","hint":"h"}],
+		"extra":true},"settings":[{"key":"s","type":"enum","title":"S","default":{"nested":1},"options":["a",{"value":"b","hint":"h"}],
 		"optionsBy":{"setting":"s","options":{"a":[{"value":"x","hint":"h"}]}}}]}`))
 	if err != nil {
 		t.Fatal(err)

@@ -153,6 +153,33 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	}
 }
 
+func TestBookServerPartsPagesAndErrors(t *testing.T) {
+	files, name, _, _ := writeBook(t)
+	files.File("bad.epub", "not an epub")
+	files.File("enc.epub", string(createEncryptedEpub(t)))
+	books := NewBookServer(files)
+	t.Cleanup(books.Close)
+	ctx := t.Context()
+
+	resp, err := books.GetBook(ctx, api.GetBookRequest{Path: name})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(resp.Parts) != 2 || len(resp.PrintedPages) != 2 {
+		t.Errorf("got %d parts and %d pages, want 2 and 2", len(resp.Parts), len(resp.PrintedPages))
+	}
+
+	if _, err := books.GetBook(ctx, api.GetBookRequest{Path: "bad.epub"}); codeOf(err) != server.CodeInvalidArgument {
+		t.Errorf("GetBook(bad.epub) = %v, want invalid_argument", err)
+	}
+	if _, err := books.ReadBookMarkup(ctx, api.ReadBookMarkupRequest{Path: ""}); codeOf(err) != server.CodeInvalidArgument {
+		t.Errorf("ReadBookMarkup(\"\") = %v, want invalid_argument", err)
+	}
+	if _, err := books.ReadBookEntry(ctx, api.ReadBookEntryRequest{Path: "enc.epub", Entry: "EPUB/c1.xhtml"}); codeOf(err) != server.CodeFailedPrecondition {
+		t.Errorf("ReadBookEntry(enc.epub) = %v, want failed_precondition", err)
+	}
+}
+
 // writeFile writes content to path and fails the test when writing fails.
 func writeFile(t *testing.T, path string, content []byte, perm os.FileMode) {
 	t.Helper()

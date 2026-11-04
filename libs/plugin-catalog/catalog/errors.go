@@ -12,6 +12,7 @@ func SourceErrors(err error) []*SourceError {
 
 func collectSourceErrors(err error, found *[]*SourceError) {
 	switch wrapped := err.(type) {
+	// gomutants:disable-next-line BRANCH_CASE reason="errors.Unwrap(nil) returns nil in default branch"
 	case nil:
 		return
 	case *SourceError:

@@ -34,6 +34,7 @@ func getRunLimits(profile performance.Profile, cpus int) runLimits {
 	case performance.Eco:
 		batchTexts = ecoBatchTexts
 	case performance.Balanced:
+		// gomutants:disable-next-line BRANCH_CASE,STATEMENT_REMOVE reason="batchTexts is initialized to balancedBatchTexts before switch"
 		batchTexts = balancedBatchTexts
 	case performance.Maximum:
 		batchTexts = engine.GetDefaultBatchTexts()
@@ -68,7 +69,9 @@ func (s *embeddingServer) applyProfileLocked(profile performance.Profile) {
 		retired := s.embedder
 		s.embedder = nil
 		go func() {
+			// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="stderr log on background close error has no side effect"
 			if err := retired.Close(); err != nil {
+				// gomutants:disable-next-line STATEMENT_REMOVE reason="stderr log on background close error has no side effect"
 				fmt.Fprintf(os.Stderr, "close the embedder: %v\n", err)
 			}
 		}()
@@ -79,7 +82,9 @@ func (s *embeddingServer) applyProfileLocked(profile performance.Profile) {
 // priority than it has, so a profile that asks for one keeps the niceness in force until the
 // plugin restarts.
 func (s *embeddingServer) lowerPriorityLocked(limits runLimits) {
+	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="stderr log on priority error has no side effect"
 	if err := s.lowerNice(limits.nice); err != nil {
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="stderr log on priority error has no side effect"
 		fmt.Fprintf(os.Stderr, "set the priority of the embeddings plugin: %v\n", err)
 	}
 }

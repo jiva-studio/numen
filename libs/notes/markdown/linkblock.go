@@ -96,9 +96,11 @@ func (d *Document) readBlockEntries(items *yaml.Node, end int) ([]entry, string)
 			linked = offsetLine(lines, end) - 1
 		}
 		last := d.endLine(lines, item, items.Column)
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="clamping last when equal to linked leaves last unchanged"
 		if last > linked {
 			last = linked
 		}
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="clamping last when equal to itemLine leaves last unchanged"
 		if last < itemLine {
 			last = itemLine
 		}
@@ -143,6 +145,7 @@ func (d *Document) AddLink(add domain.Link) error {
 			return nil
 		}
 		rendered, err := renderEntry(next, b.indent, d.eol)
+		// gomutants:disable-next-line BRANCH_IF reason="renderEntry encodes a string struct slice to bytes.Buffer and cannot fail"
 		if err != nil {
 			return err
 		}
@@ -179,6 +182,7 @@ func (d *Document) SetLink(link domain.Link, also ...domain.Address) error {
 		next := link
 		next.Target = e.link.Target
 		rendered, err := renderEntry(next, b.indent, d.eol)
+		// gomutants:disable-next-line BRANCH_IF reason="renderEntry encodes a string struct slice to bytes.Buffer and cannot fail"
 		if err != nil {
 			return err
 		}
@@ -225,6 +229,7 @@ func (d *Document) RemoveLink(key domain.LinkKey) (int, error) {
 		removed++
 	}
 	if removed > 0 && keptCount == 0 {
+		// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="removing links after block() validated the frontmatter always returns nil"
 		if err := d.set("links", nil); err != nil {
 			return removed, err
 		}
@@ -266,6 +271,7 @@ func (d *Document) replaceTypedEntries(b block, carrying []int, kind string, to 
 		next := e.link
 		next.Target, next.Type = to, kind
 		rendered, err := renderEntry(next, b.indent, d.eol)
+		// gomutants:disable-next-line BRANCH_IF reason="renderEntry encodes a string struct slice to bytes.Buffer and cannot fail"
 		if err != nil {
 			return err
 		}
@@ -276,6 +282,7 @@ func (d *Document) replaceTypedEntries(b block, carrying []int, kind string, to 
 
 func (d *Document) appendEntry(b block, l domain.Link) error {
 	rendered, err := renderEntry(l, b.indent, d.eol)
+	// gomutants:disable-next-line BRANCH_IF reason="renderEntry encodes a string struct slice to bytes.Buffer and cannot fail"
 	if err != nil {
 		return err
 	}
@@ -305,6 +312,7 @@ func (d *Document) SetLinkOfType(kind string, to domain.Address, role domain.Lin
 		return err
 	}
 
+	// gomutants:disable-next-line BRANCH_IF reason="replaceTypedEntries only calls renderEntry and splice and cannot fail"
 	if err := d.replaceTypedEntries(b, carrying, kind, to); err != nil {
 		return err
 	}
@@ -358,6 +366,7 @@ func (d *Document) collectLinkEdits(b block, to domain.Address, change domain.Li
 		}
 		next := applyLinkChange(e.link, change)
 		rendered, err := renderEntry(next, b.indent, d.eol)
+		// gomutants:disable-next-line BRANCH_IF reason="renderEntry encodes a string struct slice to bytes.Buffer and cannot fail"
 		if err != nil {
 			return nil, err
 		}
@@ -403,6 +412,7 @@ func (d *Document) RedirectLinks(from domain.Address, to string) (int, error) {
 		if e.link.Target != from || !e.isReadable || !e.isOwned {
 			continue
 		}
+		// gomutants:disable-next-line BRANCH_IF reason="an entry with isReadable true always has a non-nil to address node"
 		if e.address == nil {
 			continue
 		}
@@ -411,6 +421,7 @@ func (d *Document) RedirectLinks(from domain.Address, to string) (int, error) {
 			continue
 		}
 		content, err := scalarLike(keepLinkNotation(e.address.Value, to), e.address.Style)
+		// gomutants:disable-next-line BRANCH_IF reason="scalarLike encodes a scalar string to bytes.Buffer and cannot fail"
 		if err != nil {
 			return moved, err
 		}
@@ -424,7 +435,9 @@ func (d *Document) RedirectLinks(from domain.Address, to string) (int, error) {
 func renderEntry(l domain.Link, indent, eol string) ([]byte, error) {
 	var out bytes.Buffer
 	enc := yaml.NewEncoder(&out)
+	// gomutants:disable-next-line STATEMENT_REMOVE,INTEGER_DECREMENT reason="a top-level sequence of one mapping aligns its keys after the sequence dash regardless of SetIndent"
 	enc.SetIndent(2)
+	// gomutants:disable-next-line BRANCH_IF reason="encoding a linkEntry slice to bytes.Buffer cannot fail"
 	if err := enc.Encode([]linkEntry{{
 		To:     l.Target.GetWritten(),
 		Role:   string(l.Role),
@@ -435,11 +448,13 @@ func renderEntry(l domain.Link, indent, eol string) ([]byte, error) {
 	}}); err != nil {
 		return nil, err
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="closing a yaml.Encoder backed by bytes.Buffer cannot fail"
 	if err := enc.Close(); err != nil {
 		return nil, err
 	}
 
 	text := bytes.TrimRight(out.Bytes(), "\n")
+	// gomutants:disable-next-line ARITHMETIC_BASE,INTEGER_DECREMENT,INTEGER_INCREMENT reason="slice capacity hint does not alter the rendered block bytes"
 	block := make([]byte, 0, len(text)+(bytes.Count(text, []byte("\n"))+1)*(len(indent)+len(eol)))
 	for {
 		line, rest, more := bytes.Cut(text, []byte("\n"))
@@ -482,6 +497,7 @@ func linkOf(item *yaml.Node) domain.Link {
 // isReadable is whether the application can act on an entry at all: somewhere to
 // go, a role it has decided on, and a marker that is absent or one it draws.
 func isReadable(item *yaml.Node) bool {
+	// gomutants:disable-next-line BRANCH_IF reason="linkOf returns a zero Link with empty Target.Value when item is not a MappingNode"
 	if item.Kind != yaml.MappingNode {
 		return false
 	}
@@ -506,6 +522,7 @@ func hasOnlyOwnedKeys(item *yaml.Node) bool {
 // brackets are the user's link notation, and an alias after `|` or a heading after
 // `#` belongs to the user: only the target changes.
 func keepLinkNotation(was, to string) string {
+	// gomutants:disable-next-line EXPRESSION_REMOVE,INVERT_LOGICAL,INTEGER_DECREMENT reason="any string with both [[ prefix and ]] suffix has length at least 4"
 	if !strings.HasPrefix(was, "[[") || !strings.HasSuffix(was, "]]") || len(was) < 4 {
 		return to
 	}

@@ -1,0 +1,740 @@
+package service
+
+import (
+	"context"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"runtime"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/edit"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service/cardwire"
+)
+
+type faultyVault struct {
+	host.Vault
+	getVaultErr          error
+	scanErr              error
+	getPathsErr          error
+	getNotesErr          error
+	getLinksErr          error
+	ensureIndexedErr     error
+	watchMovesErr        error
+	watchMovesChan       <-chan host.Move
+	panicOnEmptyGetNotes bool
+}
+
+func (f *faultyVault) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
+	if f.getLinksErr != nil {
+		return nil, f.getLinksErr
+	}
+	return f.Vault.GetLinks(ctx, from)
+}
+
+func (f *faultyVault) With(id domain.VaultID) host.Vault {
+	cp := *f
+	cp.Vault = f.Vault.With(id)
+	return &cp
+}
+
+func (f *faultyVault) GetVault(ctx context.Context) (domain.Vault, error) {
+	if f.getVaultErr != nil {
+		return domain.Vault{}, f.getVaultErr
+	}
+	return f.Vault.GetVault(ctx)
+}
+
+func (f *faultyVault) Scan(ctx context.Context, paths []string) error {
+	if f.scanErr != nil {
+		return f.scanErr
+	}
+	return f.Vault.Scan(ctx, paths)
+}
+
+func (f *faultyVault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+	if f.getPathsErr != nil {
+		return nil, f.getPathsErr
+	}
+	return f.Vault.GetPathsOfType(ctx, noteType)
+}
+
+func (f *faultyVault) GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error) {
+	if f.panicOnEmptyGetNotes && len(paths) == 1 && paths[0] == "" {
+		panic("unexpected GetNotes call for empty path")
+	}
+	if f.getNotesErr != nil {
+		return nil, f.getNotesErr
+	}
+	return f.Vault.GetNotes(ctx, paths)
+}
+
+func (f *faultyVault) EnsureIndexed(ctx context.Context) (host.IndexState, error) {
+	if f.ensureIndexedErr != nil {
+		return host.IndexState{}, f.ensureIndexedErr
+	}
+	return f.Vault.EnsureIndexed(ctx)
+}
+
+func (f *faultyVault) WatchMoves(ctx context.Context) (<-chan host.Move, error) {
+	if f.watchMovesErr != nil {
+		return nil, f.watchMovesErr
+	}
+	if f.watchMovesChan != nil {
+		return f.watchMovesChan, nil
+	}
+	return f.Vault.WatchMoves(ctx)
+}
+
+func TestBackendCoresAndVaultHelpers(t *testing.T) {
+	env := vaulttest.New(t, map[string]string{"Term.md": getDeck()["Term.md"]})
+	prev := runtime.GOMAXPROCS(2)
+	defer runtime.GOMAXPROCS(prev)
+
+	for _, tc := range []struct {
+		cores int
+		want  int
+	}{
+		{0, 2},
+		{-1, 2},
+		{1, 1},
+		{3, 3},
+	} {
+		b := New(Config{Vault: env.Host, Store: env.Store, Now: vaulttest.NewClock(), Cores: tc.cores})
+		if got := b.scenarios().flash.ReviewCards.Cores; got != tc.want {
+			t.Fatalf("Cores=%d: expected %d, got %d", tc.cores, tc.want, got)
+		}
+		if got := runtime.GOMAXPROCS(0); got != 2 {
+			t.Fatalf("expected GOMAXPROCS to remain 2, got %d", got)
+		}
+	}
+
+	bPanicEmpty := New(Config{
+		Vault: &faultyVault{Vault: env.Host, panicOnEmptyGetNotes: true},
+		Store: env.Store,
+		Now:   vaulttest.NewClock(),
+	})
+	if got := bPanicEmpty.getTitle(t.Context(), env.Vault, ""); got != "" {
+		t.Fatalf("expected empty title for empty path, got %q", got)
+	}
+	if got := bPanicEmpty.getTitle(t.Context(), env.Vault, "Term.md"); got != "Term" {
+		t.Fatalf("expected Term title, got %q", got)
+	}
+
+	bNotesErr := New(Config{
+		Vault: &faultyVault{Vault: env.Host, getNotesErr: errors.New("notes boom")},
+		Store: env.Store,
+		Now:   vaulttest.NewClock(),
+	})
+	if got := bNotesErr.getTitle(t.Context(), env.Vault, "Term.md"); got != "" {
+		t.Fatalf("expected empty title on GetNotes error, got %q", got)
+	}
+
+	bVaultErr := New(Config{
+		Vault: &faultyVault{Vault: env.Host, getVaultErr: errors.New("vault boom")},
+		Store: env.Store,
+		Now:   vaulttest.NewClock(),
+	})
+	if v, err := bVaultErr.getCurrentVault(t.Context()); v != (domain.Vault{}) || codeOf(err) != server.CodeInternal {
+		t.Fatalf("expected CodeInternal from getCurrentVault, got %+v, %v", v, err)
+	}
+	if v, err := bVaultErr.getVault(t.Context(), string(env.Vault.ID)); v != (domain.Vault{}) || codeOf(err) != server.CodeInternal {
+		t.Fatalf("expected CodeInternal from getVault, got %+v, %v", v, err)
+	}
+
+	env.Host.Hide()
+	bNoVault := New(Config{Vault: env.Host, Store: env.Store, Now: vaulttest.NewClock()})
+	if v, err := bNoVault.getCurrentVault(t.Context()); v != (domain.Vault{}) || codeOf(err) != server.CodeFailedPrecondition {
+		t.Fatalf("expected CodeFailedPrecondition from getCurrentVault, got %+v, %v", v, err)
+	}
+}
+
+func TestCardsLimitsErrorCodesAndCreateCardNote(t *testing.T) {
+	if got := getCardModelLimit(0); got != cardwire.MaxCardModels {
+		t.Fatalf("expected %d for 0, got %d", cardwire.MaxCardModels, got)
+	}
+	if got := getCardModelLimit(-1); got != cardwire.MaxCardModels {
+		t.Fatalf("expected %d for -1, got %d", cardwire.MaxCardModels, got)
+	}
+	if got := getCardModelLimit(1); got != 1 {
+		t.Fatalf("expected 1, got %d", got)
+	}
+	if got := getCardModelLimit(cardwire.MaxCardModels); got != cardwire.MaxCardModels {
+		t.Fatalf("expected %d, got %d", cardwire.MaxCardModels, got)
+	}
+	if got := getCardModelLimit(cardwire.MaxCardModels + 1); got != cardwire.MaxCardModels {
+		t.Fatalf("expected %d for MaxCardModels+1, got %d", cardwire.MaxCardModels, got)
+	}
+
+	if code, ok := errorCodeOfDeck(note.TooLarge, format.TypeDeck); !ok || code != api.ErrorCodeDeckTooLarge {
+		t.Fatalf("unexpected errorCodeOfDeck(TooLarge): %v, %v", code, ok)
+	}
+	if code, ok := errorCodeOfDeck(note.Ok, format.TypeDeck); ok || code != api.ErrorCodeUnspecified {
+		t.Fatalf("unexpected errorCodeOfDeck(Ok, TypeDeck): %v, %v", code, ok)
+	}
+	if code, ok := errorCodeOfDeck(note.Ok, format.TypeCardModel); !ok || code != api.ErrorCodeNotADeck {
+		t.Fatalf("unexpected errorCodeOfDeck(Ok, TypeCardModel): %v, %v", code, ok)
+	}
+	if code, ok := errorCodeOfDeck(note.Missing, format.TypeCardModel); !ok || code != api.ErrorCodeMissing {
+		t.Fatalf("unexpected errorCodeOfDeck(Missing, TypeCardModel): %v, %v", code, ok)
+	}
+
+	if code, ok := errorCodeOfCardModel(note.Ok, format.TypeCardModel); ok || code != api.ErrorCodeUnspecified {
+		t.Fatalf("unexpected errorCodeOfCardModel(Ok, TypeCardModel): %v, %v", code, ok)
+	}
+	if code, ok := errorCodeOfCardModel(note.Ok, format.TypeDeck); !ok || code != api.ErrorCodeNotACardModel {
+		t.Fatalf("unexpected errorCodeOfCardModel(Ok, TypeDeck): %v, %v", code, ok)
+	}
+	if code, ok := errorCodeOfCardModel(note.Missing, format.TypeDeck); !ok || code != api.ErrorCodeMissing {
+		t.Fatalf("unexpected errorCodeOfCardModel(Missing, TypeDeck): %v, %v", code, ok)
+	}
+
+	env := vaulttest.New(t, map[string]string{})
+	b := New(Config{Vault: env.Host, Store: env.Store, Now: vaulttest.NewClock()})
+	ctx := t.Context()
+
+	made, code, outdated, err := b.createCardNote(ctx, func(domain.Vault, cards.New) (cards.CreateNoteResult, error) {
+		return cards.CreateNoteResult{Path: "Deck.md"}, nil
+	}, "Deck", "")
+	if err != nil || made.Path != "Deck.md" || code != api.ErrorCodeUnspecified || outdated {
+		t.Fatalf("unexpected createCardNote ok: %+v, %v, %v, %v", made, code, outdated, err)
+	}
+
+	made, code, outdated, err = b.createCardNote(ctx, func(domain.Vault, cards.New) (cards.CreateNoteResult, error) {
+		return cards.CreateNoteResult{Path: "Deck.md"}, note.ErrIndexOutdated
+	}, "Deck", "")
+	if err != nil || made.Path != "Deck.md" || code != api.ErrorCodeUnspecified || !outdated {
+		t.Fatalf("unexpected createCardNote outdated: %+v, %v, %v, %v", made, code, outdated, err)
+	}
+
+	made, code, outdated, err = b.createCardNote(ctx, func(domain.Vault, cards.New) (cards.CreateNoteResult, error) {
+		return cards.CreateNoteResult{}, cards.ErrNoFields
+	}, "Model", "")
+	if codeOf(err) != server.CodeInvalidArgument || made != (cards.CreateNoteResult{}) || code != api.ErrorCodeUnspecified || outdated {
+		t.Fatalf("unexpected createCardNote ErrNoFields: %+v, %v, %v, %v", made, code, outdated, err)
+	}
+
+	made, code, outdated, err = b.createCardNote(ctx, func(domain.Vault, cards.New) (cards.CreateNoteResult, error) {
+		return cards.CreateNoteResult{}, ports.ErrAlreadyExists
+	}, "Deck", "")
+	if err != nil || made != (cards.CreateNoteResult{}) || code != api.ErrorCodeAlreadyExists || outdated {
+		t.Fatalf("unexpected createCardNote ErrAlreadyExists: %+v, %v, %v, %v", made, code, outdated, err)
+	}
+
+	made, code, outdated, err = b.createCardNote(ctx, func(domain.Vault, cards.New) (cards.CreateNoteResult, error) {
+		return cards.CreateNoteResult{}, errors.New("disk boom")
+	}, "Deck", "")
+	if codeOf(err) != server.CodeInternal || made != (cards.CreateNoteResult{}) || code != api.ErrorCodeUnspecified || outdated {
+		t.Fatalf("unexpected createCardNote internal error: %+v, %v, %v, %v", made, code, outdated, err)
+	}
+
+	env.Host.Hide()
+	made, code, outdated, err = b.createCardNote(ctx, func(domain.Vault, cards.New) (cards.CreateNoteResult, error) {
+		return cards.CreateNoteResult{Path: "Deck.md"}, nil
+	}, "Deck", "")
+	if codeOf(err) != server.CodeFailedPrecondition || made != (cards.CreateNoteResult{}) || code != api.ErrorCodeUnspecified || outdated {
+		t.Fatalf("unexpected createCardNote no vault: %+v, %v, %v, %v", made, code, outdated, err)
+	}
+}
+
+func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
+	ctx := t.Context()
+
+	t.Run("no vault open", func(t *testing.T) {
+		env := vaulttest.New(t, map[string]string{})
+		env.Host.Hide()
+		b := New(Config{Vault: env.Host, Store: env.Store, Now: vaulttest.NewClock()})
+		cardsAPI := b.Cards()
+		presetsAPI := b.Presets()
+
+		if _, err := cardsAPI.ListCardModels(ctx, &api.ListCardModelsRequest{}); codeOf(err) != server.CodeFailedPrecondition {
+			t.Fatalf("ListCardModels: %v", err)
+		}
+		if _, err := cardsAPI.CreateCardModel(ctx, &api.CreateCardModelRequest{Title: "M", Fields: []string{"F"}}); codeOf(err) != server.CodeFailedPrecondition {
+			t.Fatalf("CreateCardModel: %v", err)
+		}
+		if _, err := cardsAPI.CreateDeck(ctx, &api.CreateDeckRequest{Title: "D"}); codeOf(err) != server.CodeFailedPrecondition {
+			t.Fatalf("CreateDeck: %v", err)
+		}
+		if _, err := cardsAPI.RenameCardModelField(ctx, &api.RenameCardModelFieldRequest{Path: "M.md", From: "F", To: "G"}); codeOf(err) != server.CodeFailedPrecondition {
+			t.Fatalf("RenameCardModelField: %v", err)
+		}
+		if _, err := cardsAPI.ReadCardModel(ctx, &api.ReadCardModelRequest{Path: "M.md"}); codeOf(err) != server.CodeFailedPrecondition {
+			t.Fatalf("ReadCardModel: %v", err)
+		}
+		if _, err := cardsAPI.ReadDeck(ctx, &api.ReadDeckRequest{Path: "D.md"}); codeOf(err) != server.CodeFailedPrecondition {
+			t.Fatalf("ReadDeck: %v", err)
+		}
+		if _, err := cardsAPI.WriteDeck(ctx, &api.WriteDeckRequest{Path: "D.md"}); codeOf(err) != server.CodeFailedPrecondition {
+			t.Fatalf("WriteDeck: %v", err)
+		}
+		if _, err := cardsAPI.WriteCardModel(ctx, &api.WriteCardModelRequest{Path: "M.md", Fields: []string{"F"}}); codeOf(err) != server.CodeFailedPrecondition {
+			t.Fatalf("WriteCardModel: %v", err)
+		}
+
+		if _, err := presetsAPI.GetDeckPreset(ctx, &api.GetDeckPresetRequest{Deck: "D.md"}); codeOf(err) != server.CodeFailedPrecondition {
+			t.Fatalf("GetDeckPreset: %v", err)
+		}
+		if _, err := presetsAPI.ListPresets(ctx, &api.ListPresetsRequest{}); codeOf(err) != server.CodeFailedPrecondition {
+			t.Fatalf("ListPresets: %v", err)
+		}
+		if _, err := presetsAPI.CreatePreset(ctx, &api.CreatePresetRequest{Title: "P"}); codeOf(err) != server.CodeFailedPrecondition {
+			t.Fatalf("CreatePreset: %v", err)
+		}
+		if _, err := presetsAPI.ScheduleDeck(ctx, &api.ScheduleDeckRequest{Deck: "D.md"}); codeOf(err) != server.CodeFailedPrecondition {
+			t.Fatalf("ScheduleDeck: %v", err)
+		}
+		if _, err := presetsAPI.ReadPreset(ctx, &api.ReadPresetRequest{Path: "P.md"}); codeOf(err) != server.CodeFailedPrecondition {
+			t.Fatalf("ReadPreset: %v", err)
+		}
+		if _, err := presetsAPI.WritePreset(ctx, &api.WritePresetRequest{Path: "P.md"}); codeOf(err) != server.CodeFailedPrecondition {
+			t.Fatalf("WritePreset: %v", err)
+		}
+		if _, err := presetsAPI.ComputeCurve(ctx, &api.ComputeCurveRequest{Path: "P.md"}); codeOf(err) != server.CodeFailedPrecondition {
+			t.Fatalf("ComputeCurve: %v", err)
+		}
+	})
+
+	t.Run("list failure", func(t *testing.T) {
+		env := vaulttest.New(t, map[string]string{})
+		b := New(Config{
+			Vault: &faultyVault{Vault: env.Host, getPathsErr: errors.New("paths boom"), getLinksErr: errors.New("links boom")},
+			Store: env.Store,
+			Now:   vaulttest.NewClock(),
+		})
+		if _, err := b.Cards().ListCardModels(ctx, &api.ListCardModelsRequest{}); codeOf(err) != server.CodeInternal {
+			t.Fatalf("expected CodeInternal from ListCardModels, got %v", err)
+		}
+		if _, err := b.Presets().ListPresets(ctx, &api.ListPresetsRequest{}); codeOf(err) != server.CodeInternal {
+			t.Fatalf("expected CodeInternal from ListPresets, got %v", err)
+		}
+		if _, err := b.Presets().GetDeckPreset(ctx, &api.GetDeckPresetRequest{Deck: "D.md"}); codeOf(err) != server.CodeInternal {
+			t.Fatalf("expected CodeInternal from GetDeckPreset, got %v", err)
+		}
+	})
+
+	t.Run("index outdated on writes", func(t *testing.T) {
+		env := vaulttest.New(t, getPointed())
+		b := New(Config{
+			Vault: &faultyVault{Vault: env.Host, scanErr: errors.New("scan boom")},
+			Store: env.Store,
+			Now:   vaulttest.NewClock(),
+		})
+		cardsAPI := b.Cards()
+		presetsAPI := b.Presets()
+
+		created, err := cardsAPI.CreateDeck(ctx, &api.CreateDeckRequest{Title: "Fresh"})
+		if err != nil || !created.IsIndexOutdated || created.Path != "Fresh.md" || created.Error != api.ErrorCodeUnspecified {
+			t.Fatalf("unexpected CreateDeck outdated: %+v, %v", created, err)
+		}
+
+		renamed, err := cardsAPI.RenameCardModelField(ctx, &api.RenameCardModelFieldRequest{
+			Path: "Term.md", From: "Word", To: "TermWord",
+		})
+		if err != nil || !renamed.IsIndexOutdated || renamed.At == nil || renamed.Error != api.ErrorCodeUnspecified {
+			t.Fatalf("unexpected RenameCardModelField outdated: %+v, %v", renamed, err)
+		}
+
+		wroteDeck, err := cardsAPI.WriteDeck(ctx, &api.WriteDeckRequest{Path: "decks/Words.md"})
+		if err != nil || !wroteDeck.IsIndexOutdated || wroteDeck.At == nil || wroteDeck.Bound != 0 {
+			t.Fatalf("unexpected WriteDeck outdated: %+v, %v", wroteDeck, err)
+		}
+
+		wroteModel, err := cardsAPI.WriteCardModel(ctx, &api.WriteCardModelRequest{
+			Path: "Term.md", Fields: []string{"TermWord", "Meaning"},
+		})
+		if err != nil || !wroteModel.IsIndexOutdated || wroteModel.At == nil {
+			t.Fatalf("unexpected WriteCardModel outdated: %+v, %v", wroteModel, err)
+		}
+
+		scheduled, err := presetsAPI.ScheduleDeck(ctx, &api.ScheduleDeckRequest{
+			Deck: "decks/Words.md", Preset: "Sanskrit.md",
+		})
+		if err != nil || !scheduled.IsIndexOutdated || scheduled.At == nil {
+			t.Fatalf("unexpected ScheduleDeck outdated: %+v, %v", scheduled, err)
+		}
+
+		readPreset, err := presetsAPI.ReadPreset(ctx, &api.ReadPresetRequest{Path: "Sanskrit.md"})
+		if err != nil || readPreset.Preset == nil {
+			t.Fatalf("unexpected ReadPreset: %+v, %v", readPreset, err)
+		}
+		wrotePreset, err := presetsAPI.WritePreset(ctx, &api.WritePresetRequest{
+			Path: "Sanskrit.md", Settings: readPreset.Preset.Settings,
+		})
+		if err != nil || !wrotePreset.IsIndexOutdated || wrotePreset.At == nil {
+			t.Fatalf("unexpected WritePreset outdated: %+v, %v", wrotePreset, err)
+		}
+	})
+
+	t.Run("validation, bounds, and error codes", func(t *testing.T) {
+		notes := getPointed()
+		notes["Huge.md"] = "---\ntype: deck\n---\n\n" + strings.Repeat("x", int(cards.MaxBytes)+10)
+		env := vaulttest.New(t, notes)
+		b := New(Config{Vault: env.Host, Store: env.Store, Now: vaulttest.NewClock()})
+		cardsAPI := b.Cards()
+		presetsAPI := b.Presets()
+
+		if _, err := cardsAPI.CreateCardModel(ctx, &api.CreateCardModelRequest{Title: "Empty"}); codeOf(err) != server.CodeInvalidArgument {
+			t.Fatalf("expected CodeInvalidArgument for empty fields, got %v", err)
+		}
+
+		if _, err := cardsAPI.RenameCardModelField(ctx, &api.RenameCardModelFieldRequest{
+			Path: "Term.md", From: "MissingField", To: "NewField",
+		}); codeOf(err) != server.CodeInvalidArgument {
+			t.Fatalf("expected CodeInvalidArgument for ErrNoSuchField, got %v", err)
+		}
+		if _, err := cardsAPI.RenameCardModelField(ctx, &api.RenameCardModelFieldRequest{
+			Path: "Term.md", From: "Word", To: "Meaning",
+		}); codeOf(err) != server.CodeInvalidArgument {
+			t.Fatalf("expected CodeInvalidArgument for ErrFieldTaken, got %v", err)
+		}
+		if _, err := cardsAPI.RenameCardModelField(ctx, &api.RenameCardModelFieldRequest{
+			Path: "../../outside.md", From: "Word", To: "Other",
+		}); codeOf(err) != server.CodeInvalidArgument {
+			t.Fatalf("expected CodeInvalidArgument for outside path, got %v", err)
+		}
+		renamedStale, err := cardsAPI.RenameCardModelField(ctx, &api.RenameCardModelFieldRequest{
+			Path:     "Term.md",
+			From:     "Word",
+			To:       "Other",
+			Baseline: &api.FileStat{Path: "Term.md", Size: 999999, Mtime: 1},
+		})
+		if err != nil || renamedStale.Error != api.ErrorCodeStale || renamedStale.Cards != 0 || renamedStale.IsIndexOutdated {
+			t.Fatalf("unexpected RenameCardModelField on stale: %+v, %v", renamedStale, err)
+		}
+
+		readOK, err := cardsAPI.ReadDeck(ctx, &api.ReadDeckRequest{Path: "decks/Words.md"})
+		if err != nil || readOK.Error != api.ErrorCodeUnspecified || readOK.Bound != 0 {
+			t.Fatalf("unexpected ReadDeck ok: %+v, %v", readOK, err)
+		}
+		readMissing, err := cardsAPI.ReadDeck(ctx, &api.ReadDeckRequest{Path: "Missing.md"})
+		if err != nil || readMissing.Error != api.ErrorCodeMissing || readMissing.Bound != 0 {
+			t.Fatalf("unexpected ReadDeck missing: %+v, %v", readMissing, err)
+		}
+		readHuge, err := cardsAPI.ReadDeck(ctx, &api.ReadDeckRequest{Path: "Huge.md"})
+		if err != nil || readHuge.Error != api.ErrorCodeDeckTooLarge || readHuge.Bound != cards.MaxBytes {
+			t.Fatalf("unexpected ReadDeck huge: %+v, %v", readHuge, err)
+		}
+
+		writeOK, err := cardsAPI.WriteDeck(ctx, &api.WriteDeckRequest{Path: "decks/Words.md"})
+		if err != nil || writeOK.Error != api.ErrorCodeUnspecified || writeOK.Bound != 0 || writeOK.IsIndexOutdated {
+			t.Fatalf("unexpected WriteDeck ok: %+v, %v", writeOK, err)
+		}
+		writeHuge, err := cardsAPI.WriteDeck(ctx, &api.WriteDeckRequest{
+			Path:     "decks/Words.md",
+			Preamble: strings.Repeat("x", int(cards.MaxBytes)+10),
+		})
+		if err != nil || writeHuge.Error != api.ErrorCodeDeckTooLarge || writeHuge.Bound != cards.MaxBytes || writeHuge.IsIndexOutdated {
+			t.Fatalf("unexpected WriteDeck huge: %+v, %v", writeHuge, err)
+		}
+		writeMissing, err := cardsAPI.WriteDeck(ctx, &api.WriteDeckRequest{Path: "Missing.md"})
+		if err != nil || writeMissing.Error != api.ErrorCodeMissing || writeMissing.Bound != 0 || writeMissing.IsIndexOutdated {
+			t.Fatalf("unexpected WriteDeck missing: %+v, %v", writeMissing, err)
+		}
+		if _, err := cardsAPI.WriteDeck(ctx, &api.WriteDeckRequest{Path: "../../outside.md"}); codeOf(err) != server.CodeInvalidArgument {
+			t.Fatalf("expected CodeInvalidArgument for WriteDeck outside, got %v", err)
+		}
+		if _, err := cardsAPI.WriteCardModel(ctx, &api.WriteCardModelRequest{Path: "../../outside.md", Fields: []string{"Word"}}); codeOf(err) != server.CodeInvalidArgument {
+			t.Fatalf("expected CodeInvalidArgument for WriteCardModel outside, got %v", err)
+		}
+
+		deckPreset, err := presetsAPI.GetDeckPreset(ctx, &api.GetDeckPresetRequest{Deck: "decks/Words.md"})
+		if err != nil || deckPreset.At == nil || deckPreset.At.Path != "Sanskrit.md" {
+			t.Fatalf("expected GetDeckPreset At for Sanskrit.md, got %+v, %v", deckPreset, err)
+		}
+		if _, err := presetsAPI.CreatePreset(ctx, &api.CreatePresetRequest{Title: "P", Path: "../outside"}); codeOf(err) != server.CodeInvalidArgument {
+			t.Fatalf("expected CodeInvalidArgument for CreatePreset outside, got %v", err)
+		}
+		if _, err := presetsAPI.ScheduleDeck(ctx, &api.ScheduleDeckRequest{Deck: "../../outside.md"}); codeOf(err) != server.CodeInvalidArgument {
+			t.Fatalf("expected CodeInvalidArgument for ScheduleDeck outside, got %v", err)
+		}
+		if _, err := presetsAPI.ReadPreset(ctx, &api.ReadPresetRequest{Path: "../../outside.md"}); codeOf(err) != server.CodeInvalidArgument {
+			t.Fatalf("expected CodeInvalidArgument for ReadPreset outside, got %v", err)
+		}
+
+		validSettings := deckPreset.Preset.Settings
+		notAPreset, err := presetsAPI.WritePreset(ctx, &api.WritePresetRequest{
+			Path: "decks/Words.md", Settings: validSettings,
+		})
+		if err != nil || notAPreset.Error != api.ErrorCodeNotAPreset || notAPreset.At != nil || notAPreset.IsIndexOutdated {
+			t.Fatalf("unexpected WritePreset on deck: %+v, %v", notAPreset, err)
+		}
+		if _, err := presetsAPI.WritePreset(ctx, &api.WritePresetRequest{
+			Path: "../../outside.md", Settings: validSettings,
+		}); codeOf(err) != server.CodeInvalidArgument {
+			t.Fatalf("expected CodeInvalidArgument for WritePreset outside, got %v", err)
+		}
+
+		if _, err := presetsAPI.WritePreset(ctx, &api.WritePresetRequest{
+			Path: "Sanskrit.md", Settings: &api.Settings{ByDate: "not-a-date"},
+		}); codeOf(err) != server.CodeInvalidArgument {
+			t.Fatalf("expected CodeInvalidArgument for WritePreset invalid ByDate, got %v", err)
+		}
+		if _, err := presetsAPI.ComputeCurve(ctx, &api.ComputeCurveRequest{
+			Path: "Sanskrit.md", Settings: &api.Settings{ByDate: "not-a-date"},
+		}); codeOf(err) != server.CodeInvalidArgument {
+			t.Fatalf("expected CodeInvalidArgument for ComputeCurve invalid settings, got %v", err)
+		}
+		badRetention := *validSettings
+		badRetention.Goal = api.GoalRetention
+		badRetention.Retention = 1.5
+		if _, err := presetsAPI.ComputeCurve(ctx, &api.ComputeCurveRequest{
+			Path: "Sanskrit.md", Settings: &badRetention,
+		}); err == nil {
+			t.Fatal("expected error from ComputeCurve with out-of-bounds retention")
+		}
+	})
+}
+
+func TestCommandsErrorCodesAndFileStatHelpers(t *testing.T) {
+	env := vaulttest.New(t, map[string]string{})
+	env.Host.Hide()
+	cmds, err := New(Config{Vault: env.Host, Store: env.Store, Now: vaulttest.NewClock()}).Commands()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := cmds.RunCommand(t.Context(), command.Request{
+		Command: commandCreateDeck, Arguments: command.Arguments{argumentTitle: "D"},
+	}); codeOf(err) != server.CodeFailedPrecondition {
+		t.Fatalf("expected CodeFailedPrecondition from command with no vault, got %v", err)
+	}
+
+	if got := describeCreateError(api.ErrorCodeInvalidName); got != "a note cannot be called that" {
+		t.Fatalf("unexpected invalid name error: %q", got)
+	}
+	if got := describeCreateError(api.ErrorCodeMissing); got != "the file could not be made: missing" {
+		t.Fatalf("unexpected missing error: %q", got)
+	}
+	if got := describeCreateError(api.ErrorCode("CUSTOM")); got != "the file could not be made: CUSTOM" {
+		t.Fatalf("unexpected custom error: %q", got)
+	}
+
+	if code, ok := convertOutcomeToErrorCode(edit.Ok); ok || code != api.ErrorCodeUnspecified {
+		t.Fatalf("unexpected convertOutcomeToErrorCode(Ok): %v, %v", code, ok)
+	}
+	if code, ok := convertOutcomeToErrorCode(edit.ReadOutcome("unknown")); ok || code != api.ErrorCodeUnspecified {
+		t.Fatalf("unexpected convertOutcomeToErrorCode(unknown): %v, %v", code, ok)
+	}
+	if code, ok := getErrorCode(errors.New("unmapped")); ok || code != api.ErrorCodeUnspecified {
+		t.Fatalf("unexpected getErrorCode(unmapped): %v, %v", code, ok)
+	}
+	if isIndexOutdated(nil) || !isIndexOutdated(edit.ErrIndexOutdated) {
+		t.Fatal("unexpected isIndexOutdated results")
+	}
+
+	if got := stamp(time.Time{}); got != 0 {
+		t.Fatalf("expected 0 for zero time stamp, got %d", got)
+	}
+	if got := stamp(time.Unix(0, 789)); got != 789 {
+		t.Fatalf("expected 789 for stamp, got %d", got)
+	}
+	if !instant(0).IsZero() {
+		t.Fatalf("expected zero time for instant(0), got %v", instant(0))
+	}
+	if got := instant(-1).UnixNano(); got != -1 {
+		t.Fatalf("expected -1 for instant(-1), got %d", got)
+	}
+	if got := instant(1).UnixNano(); got != 1 {
+		t.Fatalf("expected 1 for instant(1), got %d", got)
+	}
+	if got := writeFileStat(domain.FileStat{}); got != nil {
+		t.Fatalf("expected nil for zero FileStat, got %+v", got)
+	}
+	if got := readFileStat(nil); got != (domain.FileStat{}) {
+		t.Fatalf("expected zero FileStat for nil, got %+v", got)
+	}
+}
+
+func TestReviewInternalPaths(t *testing.T) {
+	ctx := t.Context()
+
+	s := &sessions{}
+	if _, err := s.getRun("v1", "r1"); !errors.Is(err, ErrNoRun) {
+		t.Fatalf("expected ErrNoRun, got %v", err)
+	}
+
+	env := vaulttest.New(t, getDeck())
+	bEnsureErr := New(Config{
+		Vault: &faultyVault{Vault: env.Host, ensureIndexedErr: errors.New("ensure boom")},
+		Store: env.Store,
+		Now:   vaulttest.NewClock(),
+	})
+	hEnsureErr := &reviewHandler{Backend: bEnsureErr}
+	if got := hEnsureErr.countVault(ctx, env.Vault); got == nil || got.Unread != "ensure boom" {
+		t.Fatalf("expected Unread='ensure boom', got %+v", got)
+	}
+
+	bDueErr := New(Config{
+		Vault: &faultyVault{Vault: env.Host, getPathsErr: errors.New("due boom")},
+		Store: env.Store,
+		Now:   vaulttest.NewClock(),
+	})
+	hDueErr := &reviewHandler{Backend: bDueErr}
+	if got := hDueErr.countVault(ctx, env.Vault); got == nil || got.Unread != "due boom" {
+		t.Fatalf("expected Unread='due boom', got %+v", got)
+	}
+
+	handler, target := newAPI(t, getDeck())
+	v := target[0]
+	sess := startSession(t, handler, v)
+	card := sess.Cards[0]
+	if _, err := handler.RecordReview(ctx, &api.RecordReviewRequest{
+		Vault: string(v.ID), Run: sess.Run, CardID: card.CardID, Template: card.Template, Rating: api.RatingEasy,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	daysOut, err := handler.ListReviewDays(ctx, &api.ListReviewDaysRequest{Vault: string(v.ID)})
+	if err != nil || len(daysOut.Due) != 1 {
+		t.Fatalf("unexpected ListReviewDays: %+v, %v", daysOut, err)
+	}
+	dueDay := daysOut.Due[0]
+	if dueDay.Reviewed != 1 || dueDay.Again != 0 || dueDay.Hard != 0 || dueDay.Good != 0 ||
+		dueDay.Easy != 0 || dueDay.Tested != 0 || dueDay.Recalled != 0 {
+		t.Fatalf("unexpected Due ReviewDay fields: %+v", dueDay)
+	}
+
+	bWatchErr := New(Config{
+		Vault: &faultyVault{Vault: env.Host, watchMovesErr: errors.New("watch boom")},
+		Store: env.Store,
+		Now:   vaulttest.NewClock(),
+	})
+	if err := bWatchErr.Review().WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
+		return nil
+	}); codeOf(err) != server.CodeUnavailable {
+		t.Fatalf("expected CodeUnavailable when WatchMoves fails, got %v", err)
+	}
+
+	closedMoves := make(chan host.Move)
+	close(closedMoves)
+	bClosedMoves := New(Config{
+		Vault: &faultyVault{Vault: env.Host, watchMovesChan: closedMoves},
+		Store: env.Store,
+		Now:   vaulttest.NewClock(),
+	})
+	if err := bClosedMoves.Review().WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
+		return nil
+	}); err != nil {
+		t.Fatalf("expected nil when WatchMoves channel closes cleanly, got %v", err)
+	}
+
+	errMoves := make(chan host.Move, 1)
+	errMoves <- host.Move{Err: errors.New("move boom")}
+	bErrMoves := New(Config{
+		Vault: &faultyVault{Vault: env.Host, watchMovesChan: errMoves},
+		Store: env.Store,
+		Now:   vaulttest.NewClock(),
+	})
+	if err := bErrMoves.Review().WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
+		return nil
+	}); codeOf(err) != server.CodeUnavailable {
+		t.Fatalf("expected CodeUnavailable when move.Err != nil, got %v", err)
+	}
+
+	if got := parseRating(api.RatingUnspecified); got != 0 {
+		t.Fatalf("expected 0 for RatingUnspecified, got %v", got)
+	}
+	if got := parseRating(api.Rating("unknown")); got != 0 {
+		t.Fatalf("expected 0 for unknown rating, got %v", got)
+	}
+}
+
+func TestMountAndAllEndpoints(t *testing.T) {
+	env := vaulttest.New(t, getPointed())
+	b := New(Config{Vault: env.Host, Store: env.Store, Now: vaulttest.NewClock()})
+
+	const tok = "test-mount-token"
+	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": tok}, func(s *server.Server) error {
+		return mountAPI(s.NewAPI(""), b.Cards(), b.Presets(), b.Review())
+	}); err == nil {
+		t.Fatal("expected mountAPI with invalid service name to return error")
+	}
+
+	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": tok}, b.Mount)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	post := func(path, body string) *httptest.ResponseRecorder {
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, path, strings.NewReader(body))
+		req.Header.Set("Authorization", "Bearer "+tok)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		return rec
+	}
+
+	if rec := post("/numen.v1.PluginToolService/ListTools", `{}`); rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "card_model_list") {
+		t.Fatalf("expected ListTools 200 OK with tools, got %d: %s", rec.Code, rec.Body)
+	}
+	if rec := post("/numen.v1.PluginCommandService/RunCommand", `{"command":"create-deck","arguments":{"title":"ViaCommand"}}`); rec.Code != http.StatusOK {
+		t.Fatalf("expected RunCommand 200 OK, got %d: %s", rec.Code, rec.Body)
+	}
+
+	for _, method := range []string{
+		"ListCardModels",
+		"CreateCardModel",
+		"ReadCardModel",
+		"WriteCardModel",
+		"RenameCardModelField",
+		"CreateDeck",
+		"ReadDeck",
+		"WriteDeck",
+		"GetDeckPreset",
+		"ListPresets",
+		"CreatePreset",
+		"ScheduleDeck",
+		"ReadPreset",
+		"WritePreset",
+		"ComputeCurve",
+		"StartSession",
+		"RecordReview",
+		"UndoReview",
+		"ListReviewDays",
+		"GetDeckNeighbourhood",
+		"GetVaultDeckPreset",
+		"WatchCardsDue",
+	} {
+		rec := post("/"+ServiceName+"/"+method, `null`)
+		if rec.Code == http.StatusNotFound && !strings.Contains(rec.Body.String(), `"code":"not_found"`) {
+			t.Fatalf("method %s not mounted (404): %s", method, rec.Body)
+		}
+	}
+
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	req := httptest.NewRequestWithContext(ctx, http.MethodPost, "/"+ServiceName+"/WatchReloads", strings.NewReader(`null`))
+	req.Header.Set("Authorization", "Bearer "+tok)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code == http.StatusNotFound {
+		t.Fatalf("WatchReloads not mounted (404): %s", rec.Body)
+	}
+
+	emptyEnv := vaulttest.New(t, map[string]string{})
+	emptyB := New(Config{Vault: emptyEnv.Host, Store: emptyEnv.Store, Now: vaulttest.NewClock()})
+	emptyHandler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": tok}, emptyB.Mount)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reqModels := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/"+ServiceName+"/ListCardModels", strings.NewReader(`null`))
+	reqModels.Header.Set("Authorization", "Bearer "+tok)
+	reqModels.Header.Set("Content-Type", "application/json")
+	recModels := httptest.NewRecorder()
+	emptyHandler.ServeHTTP(recModels, reqModels)
+	if recModels.Code != http.StatusOK || !strings.Contains(recModels.Body.String(), `"cardModels":[]`) {
+		t.Fatalf("expected cardModels:[], got %d: %s", recModels.Code, recModels.Body)
+	}
+}

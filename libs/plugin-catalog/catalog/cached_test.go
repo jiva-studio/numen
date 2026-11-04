@@ -1,6 +1,7 @@
 package catalog_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -97,6 +98,11 @@ func TestAnExpiredSnapshotIsReplacedByTheSource(t *testing.T) {
 	if err != nil || readErr != nil || cache.Writes != 2 || !snapshot.At.Equal(now.now) {
 		t.Errorf("error = %v, writes = %d, snapshot taken at %v; want a second snapshot at %v", err, cache.Writes, snapshot.At, now.now)
 	}
+	// Exact TTL boundary: age == ttl is expired and triggers a third write
+	now.now = now.now.Add(time.Hour)
+	if _, err := cached.List(t.Context()); err != nil || cache.Writes != 3 {
+		t.Errorf("at exact TTL boundary: err = %v, writes = %d, want 3", err, cache.Writes)
+	}
 }
 
 func TestAWriteFailureOfTheCacheIsReportedWithTheEntries(t *testing.T) {
@@ -126,6 +132,49 @@ func TestACachedSourceGetsOneEntry(t *testing.T) {
 	if !errors.Is(missing, catalog.ErrNotFound) {
 		t.Errorf("Get of a missing plugin: error = %v", missing)
 	}
+
+	readFailErr := errors.New("corrupt cache")
+	badCache := &errCache{readErr: readFailErr}
+	cachedWithBadRead := catalog.NewCachedSource(source, badCache, time.Hour, now.Now)
+	got2, err2 := cachedWithBadRead.Get(t.Context(), "org.example.a")
+	if got2.ID != "org.example.a" || !errors.Is(err2, readFailErr) {
+		t.Errorf("Get with cache read error = %+v, %v; want entry and wrapped readFailErr", got2, err2)
+	}
+	partErr := errors.New("partial source error")
+	partSrc := &partialSource{entries: []catalog.Entry{entry("org.example.a", "1.0.0", catalog.StateAvailable)}, err: partErr}
+	badCache.readErr = catalog.ErrEmptyCache
+	cachedPartial := catalog.NewCachedSource(partSrc, badCache, time.Hour, now.Now)
+	entries3, err3 := cachedPartial.List(t.Context())
+	if len(entries3) != 1 || !errors.Is(err3, partErr) {
+		t.Errorf("List with partial source error and empty cache = %v, %v; want 1 entry and partErr", entries3, err3)
+	}
+}
+
+type errCache struct {
+	catalogtest.FakeCache
+	readErr error
+}
+
+func (c *errCache) Read(ctx context.Context) (catalog.Snapshot, error) {
+	if c.readErr != nil {
+		return catalog.Snapshot{}, c.readErr
+	}
+	return c.FakeCache.Read(ctx)
+}
+
+type partialSource struct {
+	entries []catalog.Entry
+	err     error
+}
+
+func (s *partialSource) Name() string { return "remote" }
+
+func (s *partialSource) List(context.Context) ([]catalog.Entry, error) {
+	return s.entries, s.err
+}
+
+func (s *partialSource) Get(context.Context, string) (catalog.Entry, error) {
+	return s.entries[0], s.err
 }
 
 func TestACachedSourceSatisfiesTheSourceContract(t *testing.T) {

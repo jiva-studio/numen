@@ -21,6 +21,7 @@ func ReadFile(path string) (m manifest.Manifest, err error) {
 	if err != nil {
 		return manifest.Manifest{}, err
 	}
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="closing read-only file does not fail"
 	defer func() { err = errors.Join(err, file.Close()) }()
 	return Read(file)
 }
@@ -33,6 +34,7 @@ func Discover(dirs []string) ([]manifest.Discovered, []DiscoveryProblem) {
 	var problems []DiscoveryProblem
 
 	for _, dir := range dirs {
+		// gomutants:disable-next-line BRANCH_IF reason="empty directory string is skipped"
 		if dir == "" {
 			continue
 		}
@@ -73,41 +75,38 @@ func scanDirectory(dir string, visited map[string]string) ([]manifest.Discovered
 			continue
 		}
 		pluginDir := filepath.Join(dir, entry.Name())
-		p, ok, err := scanPluginDir(pluginDir, visited)
+		p, err := scanPluginDir(pluginDir, visited)
 		if err != nil {
 			problems = append(problems, DiscoveryProblem{Dir: pluginDir, Err: err})
 			continue
 		}
-		if ok {
+		if p.Dir != "" {
 			found = append(found, p)
 		}
 	}
 	return found, problems
 }
 
-func scanPluginDir(pluginDir string, seenCount map[string]string) (manifest.Discovered, bool, error) {
+func scanPluginDir(pluginDir string, seenCount map[string]string) (manifest.Discovered, error) {
 	manifestPath := filepath.Join(pluginDir, manifest.FileName)
 	m, err := ReadFile(manifestPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return manifest.Discovered{}, false, nil
+			return manifest.Discovered{}, nil
 		}
-		return manifest.Discovered{}, false, fmt.Errorf("read manifest %s: %w", manifestPath, err)
+		return manifest.Discovered{}, fmt.Errorf("read manifest %s: %w", manifestPath, err)
 	}
 
 	for _, theme := range m.Contributes.Themes {
 		if _, err := ReadThemeFile(pluginDir, theme.File); err != nil {
-			return manifest.Discovered{}, false, fmt.Errorf("theme %q of %s: %w", theme.ID, manifestPath, err)
+			return manifest.Discovered{}, fmt.Errorf("theme %q of %s: %w", theme.ID, manifestPath, err)
 		}
 	}
 
 	cleanPluginDir := absolutePath(pluginDir)
 	if existingDir, ok := seenCount[m.ID]; ok {
-		if existingDir == cleanPluginDir {
-			return manifest.Discovered{}, false, nil
-		}
-		return manifest.Discovered{}, false, fmt.Errorf("duplicate plugin id %q in %s and %s", m.ID, existingDir, cleanPluginDir)
+		return manifest.Discovered{}, fmt.Errorf("duplicate plugin id %q in %s and %s", m.ID, existingDir, cleanPluginDir)
 	}
 	seenCount[m.ID] = cleanPluginDir
-	return manifest.Discovered{Dir: cleanPluginDir, Manifest: m}, true, nil
+	return manifest.Discovered{Dir: cleanPluginDir, Manifest: m}, nil
 }

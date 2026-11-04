@@ -116,3 +116,54 @@ func TestGetCoreMLOptionsPlacesADefaultModelOnAllUnits(t *testing.T) {
 		t.Errorf("MLComputeUnits = %q, want CPUOnly", units)
 	}
 }
+
+func TestCoreMLCacheErrors(t *testing.T) {
+	_, model := grantModel(t)
+	missingModel := filepath.Join(t.TempDir(), "missing.onnx")
+	if _, err := GetCoreMLCacheDir(missingModel); err == nil {
+		t.Fatal("GetCoreMLCacheDir with missing model succeeded, want error")
+	}
+	if DeleteCoreMLCache(missingModel) {
+		t.Fatal("DeleteCoreMLCache with missing model returned true, want false")
+	}
+
+	t.Setenv(cache.EnvSharedDir, model)
+	if _, err := GetCoreMLCacheDir(model); err == nil {
+		t.Fatal("GetCoreMLCacheDir with file as shared dir succeeded, want error")
+	}
+
+	t.Setenv(cache.EnvSharedDir, "")
+	t.Setenv(cache.EnvCacheDir, "")
+	t.Setenv("HOME", "")
+	t.Setenv("XDG_CACHE_HOME", "")
+	if _, err := GetCoreMLCacheDir(model); err == nil {
+		t.Fatal("GetCoreMLCacheDir without cache env or HOME succeeded, want error")
+	}
+}
+
+func TestDeleteCoreMLCacheReturnsFalseWhenRemoveFails(t *testing.T) {
+	if runtime.GOOS == "windows" || os.Geteuid() == 0 {
+		t.Skip("chmod permission check requires non-root unix")
+	}
+	_, model := grantModel(t)
+	dir, err := GetCoreMLCacheDir(model)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lockedSub := filepath.Join(dir, "locked-sub")
+	if err := os.MkdirAll(lockedSub, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(lockedSub, "inner"), []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(lockedSub, 0o500); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = os.Chmod(lockedSub, 0o700)
+	})
+	if DeleteCoreMLCache(model) {
+		t.Fatal("DeleteCoreMLCache returned true when removing an entry failed")
+	}
+}

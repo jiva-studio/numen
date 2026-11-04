@@ -66,6 +66,7 @@ func getSegments(fetched download.Text) ([]domain.TextSegment, error) {
 	segments := make([]domain.TextSegment, len(fetched.Cues))
 	for i, cue := range fetched.Cues {
 		selector, err := timeSelector{T: []float64{float64(cue.From) / 1000, float64(cue.To) / 1000}}.encode()
+		// gomutants:disable-next-line BRANCH_IF reason="finite float64 slice derived from int cue bounds always marshals to JSON"
 		if err != nil {
 			return nil, err
 		}
@@ -90,6 +91,7 @@ func (f folder) hasText(ctx context.Context, key string) (bool, error) {
 
 func (f folder) writeRecord(ctx context.Context, key string, rec record) error {
 	raw, err := json.Marshal(rec)
+	// gomutants:disable-next-line BRANCH_IF reason="json.Marshal of string-only record struct cannot fail"
 	if err != nil {
 		return err
 	}
@@ -100,6 +102,7 @@ func (f folder) writeRecord(ctx context.Context, key string, rec record) error {
 func (f folder) findRecord(ctx context.Context, key string) (record, bool, error) {
 	raw, err := f.store.Read(ctx, key+recordExt)
 	if errors.Is(err, host.ErrNotExist) {
+		// gomutants:disable-next-line RETURN_ZERO reason="explicit empty fields equal zero record"
 		return record{Address: "", Title: "", Producer: "", Downloader: "", Kind: "", Copy: ""}, false, nil
 	}
 	if err != nil {
@@ -144,6 +147,7 @@ func (f folder) findCopy(ctx context.Context, hash string) (host.StoreFile, bool
 			return one, true, nil
 		}
 	}
+	// gomutants:disable-next-line RETURN_ZERO reason="explicit empty fields equal zero StoreFile"
 	return host.StoreFile{Name: "", Size: 0}, false, nil
 }
 

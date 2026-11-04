@@ -3,10 +3,13 @@ package relevance_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/relevance"
 )
@@ -22,6 +25,9 @@ func calibrate(t *testing.T, search host.Search, vault host.NoteLookup) (relevan
 }
 
 func TestCalibrateMeasuresTheNoise(t *testing.T) {
+	if relevance.Calibrated != 1 || relevance.TooFew != 2 {
+		t.Fatalf("outcomes %d and %d, want 1 and 2", relevance.Calibrated, relevance.TooFew)
+	}
 	search, vault := newHost(0)
 	fill(search, vault, 25, passagesOf(60, 3))
 
@@ -113,29 +119,161 @@ func TestCalibrateCountsOnlyTitlesThatGotAVector(t *testing.T) {
 	if err != nil || outcome != relevance.TooFew {
 		t.Errorf("got %v, %v, want TooFew", outcome, err)
 	}
+
+	fill(search, vault, 21, passagesOf(60, 3))
+	outcome, got, err := calibrate(t, search, vault)
+	if err != nil || outcome != relevance.Calibrated || got.QueryCount != 20 {
+		t.Errorf("21 titles with one empty vector gave %v, %+v, %v, want Calibrated with 20 queries", outcome, got, err)
+	}
+}
+
+type noteLookup struct {
+	host.NoteLookup
+	paths    []string
+	pathsErr error
+	getNotes func(ctx context.Context, paths []string) (map[string]domain.NoteRef, error)
+}
+
+func (n noteLookup) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+	if n.pathsErr != nil {
+		return nil, n.pathsErr
+	}
+	if n.paths != nil {
+		return n.paths, nil
+	}
+	return n.NoteLookup.GetPathsOfType(ctx, noteType)
+}
+
+func (n noteLookup) GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error) {
+	if n.getNotes != nil {
+		return n.getNotes(ctx, paths)
+	}
+	return n.NoteLookup.GetNotes(ctx, paths)
+}
+
+func TestCalibrateSamplesAtMostTwoHundredNonBlankTitles(t *testing.T) {
+	search, vault := newHost(0)
+	fill(search, vault, 25, passagesOf(60, 3))
+
+	paths := make([]string, 420)
+	for i := range paths {
+		paths[i] = fmt.Sprintf("note-%03d.md", i+1)
+	}
+	lookup := noteLookup{
+		NoteLookup: vault,
+		paths:      paths,
+		getNotes: func(_ context.Context, batch []string) (map[string]domain.NoteRef, error) {
+			if len(batch) == 0 {
+				return nil, errors.New("empty batch")
+			}
+			refs := make(map[string]domain.NoteRef, len(batch))
+			for _, p := range batch {
+				var index int
+				if _, err := fmt.Sscanf(p, "note-%03d.md", &index); err != nil {
+					return nil, err
+				}
+				title := "   "
+				if index > 205 {
+					title = fmt.Sprintf("title %d", index)
+				}
+				refs[p] = domain.NoteRef{Path: p, Title: title}
+			}
+			return refs, nil
+		},
+	}
+
+	outcome, got, err := calibrate(t, search, lookup)
+	if err != nil || outcome != relevance.Calibrated || got.QueryCount != 200 {
+		t.Fatalf("got %v, %+v, %v, want 200 queries", outcome, got, err)
+	}
+	batch := search.EmbeddedBatches()[0]
+	if batch[0] != "title 206" || batch[199] != "title 405" {
+		t.Errorf("embedded %q..%q, want title 206..title 405", batch[0], batch[199])
+	}
+
+	exactBatchLookup := noteLookup{
+		NoteLookup: vault,
+		paths:      paths[:200],
+		getNotes: func(_ context.Context, batch []string) (map[string]domain.NoteRef, error) {
+			if len(batch) == 0 {
+				return nil, errors.New("empty batch")
+			}
+			refs := make(map[string]domain.NoteRef, len(batch))
+			for i, p := range batch {
+				if i < 20 {
+					refs[p] = domain.NoteRef{Path: p, Title: fmt.Sprintf("title %d", i)}
+				}
+			}
+			return refs, nil
+		},
+	}
+	if outcome, _, err := calibrate(t, search, exactBatchLookup); err != nil || outcome != relevance.Calibrated {
+		t.Errorf("200 paths with 20 titles gave %v, %v", outcome, err)
+	}
+
+	calls := 0
+	fullFirstBatchLookup := noteLookup{
+		NoteLookup: vault,
+		paths:      paths[:210],
+		getNotes: func(_ context.Context, batch []string) (map[string]domain.NoteRef, error) {
+			calls++
+			if calls > 1 {
+				return nil, errors.New("extra batch after reaching sample limit")
+			}
+			refs := make(map[string]domain.NoteRef, len(batch))
+			for i, p := range batch {
+				refs[p] = domain.NoteRef{Path: p, Title: fmt.Sprintf("title %d", i)}
+			}
+			return refs, nil
+		},
+	}
+	if outcome, _, err := calibrate(t, search, fullFirstBatchLookup); err != nil || outcome != relevance.Calibrated {
+		t.Errorf("210 titled paths gave %v, %v", outcome, err)
+	}
 }
 
 func TestCalibrateClipsALongTitleAtTheEmbeddingLimit(t *testing.T) {
 	search, vault := newHost(0)
-	long := strings.Repeat("é", host.MaxEmbeddedBytes)
+	exact := strings.Repeat("a", host.MaxEmbeddedBytes)
+	multiByte := strings.Repeat("€", host.MaxEmbeddedBytes)
+	continuation := strings.Repeat("\x80", host.MaxEmbeddedBytes+5)
 	fill(search, vault, 25, passagesOf(60, 3))
-	vault.File(notePath(1), "---\ntitle: "+long+"\n---\n")
+	lookup := noteLookup{
+		NoteLookup: vault,
+		getNotes: func(ctx context.Context, batch []string) (map[string]domain.NoteRef, error) {
+			refs, err := vault.GetNotes(ctx, batch)
+			if err != nil {
+				return nil, err
+			}
+			refs[batch[0]] = domain.NoteRef{Path: batch[0], Title: exact}
+			refs[batch[1]] = domain.NoteRef{Path: batch[1], Title: multiByte}
+			refs[batch[2]] = domain.NoteRef{Path: batch[2], Title: continuation}
+			return refs, nil
+		},
+	}
 
-	outcome, _, err := calibrate(t, search, vault)
+	outcome, _, err := calibrate(t, search, lookup)
 	if err != nil || outcome != relevance.Calibrated {
 		t.Fatalf("got %v, %v", outcome, err)
 	}
-	clipped := search.EmbeddedBatches()[0][0]
-	if len(clipped) > host.MaxEmbeddedBytes || !strings.HasPrefix(long, clipped) || len(clipped) < host.MaxEmbeddedBytes-1 {
-		t.Errorf("the title was embedded as %d bytes, want it cut at the limit on a character", len(clipped))
+	embedded := search.EmbeddedBatches()[0]
+	if embedded[0] != exact {
+		t.Errorf("exact limit title was embedded as %d bytes, want %d", len(embedded[0]), len(exact))
+	}
+	if len(embedded[1]) != host.MaxEmbeddedBytes-(host.MaxEmbeddedBytes%3) || !utf8.ValidString(embedded[1]) {
+		t.Errorf("multibyte title was embedded as %d bytes (valid=%v), want %d valid bytes",
+			len(embedded[1]), utf8.ValidString(embedded[1]), host.MaxEmbeddedBytes-(host.MaxEmbeddedBytes%3))
+	}
+	if embedded[2] != "" {
+		t.Errorf("continuation-only title was embedded as %q, want empty", embedded[2])
 	}
 }
 
-// changingSearch is a search whose model answers the titles under another recipe, as a model that
-// changed while the titles were embedded does.
+// changingSearch is a search whose model or index changes between calls.
 type changingSearch struct {
 	host.Search
 	answer func(embedded host.EmbeddedTexts) (host.EmbeddedTexts, error)
+	sample func(ctx context.Context, recipe string, queries []host.SimilarityQuery) (host.SimilaritySample, error)
 }
 
 func (s changingSearch) EmbedTexts(ctx context.Context, texts []string) (host.EmbeddedTexts, error) {
@@ -143,21 +281,47 @@ func (s changingSearch) EmbedTexts(ctx context.Context, texts []string) (host.Em
 	if err != nil {
 		return embedded, err
 	}
-	return s.answer(embedded)
+	if s.answer != nil {
+		return s.answer(embedded)
+	}
+	return embedded, nil
+}
+
+func (s changingSearch) SampleSimilarities(ctx context.Context, recipe string, queries []host.SimilarityQuery) (host.SimilaritySample, error) {
+	if s.sample != nil && queries != nil {
+		return s.sample(ctx, recipe, queries)
+	}
+	return s.Search.SampleSimilarities(ctx, recipe, queries)
 }
 
 func TestCalibrateKeepsNothingWhenTheModelChangesDuringTheRun(t *testing.T) {
 	for _, tc := range []struct {
-		name   string
-		answer func(embedded host.EmbeddedTexts) (host.EmbeddedTexts, error)
+		name         string
+		answer       func(embedded host.EmbeddedTexts) (host.EmbeddedTexts, error)
+		sample       func(ctx context.Context, recipe string, queries []host.SimilarityQuery) (host.SimilaritySample, error)
+		wantMismatch bool
 	}{
-		{"the vectors come under another recipe", func(embedded host.EmbeddedTexts) (host.EmbeddedTexts, error) {
-			embedded.Recipe = "other|recipe"
-			return embedded, nil
-		}},
-		{"the host refuses the recipe", func(host.EmbeddedTexts) (host.EmbeddedTexts, error) {
-			return host.EmbeddedTexts{}, host.ErrRecipeMismatch
-		}},
+		{
+			name: "the vectors come under another recipe",
+			answer: func(embedded host.EmbeddedTexts) (host.EmbeddedTexts, error) {
+				embedded.Recipe = "other|recipe"
+				return embedded, nil
+			},
+		},
+		{
+			name: "the host refuses the recipe during embedding",
+			answer: func(host.EmbeddedTexts) (host.EmbeddedTexts, error) {
+				return host.EmbeddedTexts{}, host.ErrRecipeMismatch
+			},
+			wantMismatch: true,
+		},
+		{
+			name: "the host refuses the recipe during sampling",
+			sample: func(context.Context, string, []host.SimilarityQuery) (host.SimilaritySample, error) {
+				return host.SimilaritySample{}, host.ErrRecipeMismatch
+			},
+			wantMismatch: true,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			search, vault := newHost(0)
@@ -166,27 +330,79 @@ func TestCalibrateKeepsNothingWhenTheModelChangesDuringTheRun(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			changing := changingSearch{Search: search, answer: tc.answer}
+			changing := changingSearch{Search: search, answer: tc.answer, sample: tc.sample}
 
 			outcome, got, err := relevance.NewCalibrator(newClock()).Calibrate(t.Context(), changing, vault, state)
 			if !errors.Is(err, relevance.ErrRecipeChanged) {
 				t.Errorf("got %v, want ErrRecipeChanged", err)
+			}
+			if tc.wantMismatch && !errors.Is(err, host.ErrRecipeMismatch) {
+				t.Errorf("got %v, want wrapped ErrRecipeMismatch", err)
 			}
 			if outcome != 0 || got.QueryCount != 0 {
 				t.Errorf("a calibration of a model that changed returned %v and %+v", outcome, got)
 			}
 		})
 	}
+
+	search, vault := newHost(0)
+	fill(search, vault, 25, passagesOf(60, 3))
+	state, err := search.GetEmbeddingState(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	shrinking := changingSearch{
+		Search: search,
+		sample: func(_ context.Context, _ string, queries []host.SimilarityQuery) (host.SimilaritySample, error) {
+			return host.SimilaritySample{PassageCount: 10, SourceCount: 3, Rows: make([][]float64, len(queries))}, nil
+		},
+	}
+	if outcome, _, err := relevance.NewCalibrator(newClock()).Calibrate(t.Context(), shrinking, vault, state); err != nil || outcome != relevance.TooFew {
+		t.Errorf("shrunk sample gave %v, %v, want TooFew", outcome, err)
+	}
 }
 
 func TestCalibrateReportsTheFailuresOfTheHost(t *testing.T) {
 	for _, tc := range []struct {
 		name string
-		set  func(search *hosttest.Search)
+		set  func(search *hosttest.Search, vault *hosttest.Vault) (host.Search, host.NoteLookup)
 		want error
 	}{
-		{"a model that fails", func(search *hosttest.Search) { search.FailEmbedding(errors.New("the plugin is not running")) }, host.ErrEmbeddingFailed},
-		{"a permission that is denied", func(search *hosttest.Search) { search.Deny(host.PermissionIndexRead) }, host.ErrPermissionDenied},
+		{
+			name: "a model that fails",
+			set: func(search *hosttest.Search, vault *hosttest.Vault) (host.Search, host.NoteLookup) {
+				search.FailEmbedding(errors.New("the plugin is not running"))
+				return search, vault
+			},
+			want: host.ErrEmbeddingFailed,
+		},
+		{
+			name: "a permission that is denied",
+			set: func(search *hosttest.Search, vault *hosttest.Vault) (host.Search, host.NoteLookup) {
+				search.Deny(host.PermissionIndexRead)
+				return search, vault
+			},
+			want: host.ErrPermissionDenied,
+		},
+		{
+			name: "listing notes fails",
+			set: func(search *hosttest.Search, vault *hosttest.Vault) (host.Search, host.NoteLookup) {
+				return search, noteLookup{NoteLookup: vault, pathsErr: host.ErrUnknownVault}
+			},
+			want: host.ErrUnknownVault,
+		},
+		{
+			name: "reading note titles fails",
+			set: func(search *hosttest.Search, vault *hosttest.Vault) (host.Search, host.NoteLookup) {
+				return search, noteLookup{
+					NoteLookup: vault,
+					getNotes: func(context.Context, []string) (map[string]domain.NoteRef, error) {
+						return nil, host.ErrPermissionDenied
+					},
+				}
+			},
+			want: host.ErrPermissionDenied,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			search, vault := newHost(0)
@@ -195,10 +411,10 @@ func TestCalibrateReportsTheFailuresOfTheHost(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			tc.set(search)
-			_, _, err = relevance.NewCalibrator(newClock()).Calibrate(t.Context(), search, vault, state)
-			if !errors.Is(err, tc.want) {
-				t.Errorf("got %v, want %v", err, tc.want)
+			idx, notes := tc.set(search, vault)
+			outcome, _, err := relevance.NewCalibrator(newClock()).Calibrate(t.Context(), idx, notes, state)
+			if outcome != 0 || !errors.Is(err, tc.want) {
+				t.Errorf("got outcome %v, err %v, want 0 and %v", outcome, err, tc.want)
 			}
 		})
 	}
@@ -207,8 +423,8 @@ func TestCalibrateReportsTheFailuresOfTheHost(t *testing.T) {
 func TestCalibrateRefusesAPassageOfAnotherWidth(t *testing.T) {
 	search, vault := newHost(0)
 	fill(search, vault, 25, append(passagesOf(60, 3), hosttest.SearchPassage{Path: "narrow.md", Vector: []float32{1, 2}}))
-	if _, _, err := calibrate(t, search, vault); err == nil {
-		t.Error("a vector of another width was measured")
+	if outcome, _, err := calibrate(t, search, vault); outcome != 0 || !errors.Is(err, host.ErrInvalidQuery) {
+		t.Errorf("got outcome %v, err %v, want 0 and ErrInvalidQuery", outcome, err)
 	}
 }
 

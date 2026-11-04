@@ -69,6 +69,7 @@ func getQuantile(sorted []float64, p float64) float64 {
 // getBin is the histogram bin of a similarity. Values outside zero to one fall in
 // the first or last bin.
 func getBin(similarity float64) int {
+	// gomutants:disable-next-line BRANCH_IF reason="Clamping maps NaN to bin zero."
 	if math.IsNaN(similarity) {
 		return 0
 	}

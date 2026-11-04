@@ -104,8 +104,29 @@ func TestAWaiterPreservesOnItsOwnContextAndTheNextGetsTheEngine(t *testing.T) {
 		t.Fatalf("waiting Open() = %v, want context.Canceled", err)
 	}
 
+	waiterDone := make(chan *fakeEngine)
+	go func() {
+		engine, _, err := r.Open(t.Context(), "/lib/one.so", load)
+		if err != nil {
+			t.Errorf("concurrent Open() = %v", err)
+		}
+		waiterDone <- engine
+	}()
+	for {
+		r.mu.Lock()
+		isOpening := r.opening != nil
+		r.mu.Unlock()
+		if isOpening {
+			break
+		}
+	}
+
 	close(release)
 	first := <-isDone
+	waited := <-waiterDone
+	if waited != first {
+		t.Fatalf("concurrent waiter got %v, want %v", waited, first)
+	}
 	engine, _, err := r.Open(t.Context(), "/lib/one.so", load)
 	if err != nil || engine != first {
 		t.Fatalf("Open() = %v, %v, want the first engine", engine, err)

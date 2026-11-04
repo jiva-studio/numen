@@ -139,6 +139,21 @@ func TestMeanPool(t *testing.T) {
 			t.Errorf("multiOut[1][%d] = %f; want 0", d, multiOut[1][d])
 		}
 	}
+
+	// Test dim=7 (below 8-wide unroll) and dim=16 (two 8-wide unroll steps) without normalisation
+	for _, width := range []int{7, 16} {
+		rawFlat := make([]float32, 2*width)
+		for d := range width {
+			rawFlat[d] = 2
+			rawFlat[width+d] = 6
+		}
+		rawOut := meanPool(rawFlat, []int64{1, 1}, 1, 2, width, false)
+		for d := range width {
+			if rawOut[0][d] != 4 {
+				t.Errorf("width=%d rawOut[0][%d] = %f, want 4", width, d, rawOut[0][d])
+			}
+		}
+	}
 }
 
 func TestRoundUpToBucket(t *testing.T) {
@@ -174,18 +189,23 @@ func TestRoundUpToBucket(t *testing.T) {
 }
 
 func TestAddRow(t *testing.T) {
-	dst := make([]float32, 10)
-	src := []float32{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-	addRow(dst, src)
-	for i, want := range src {
-		if dst[i] != want {
-			t.Errorf("dst[%d] = %f, want %f", i, dst[i], want)
+	for _, n := range []int{7, 10, 16} {
+		dst := make([]float32, n)
+		src := make([]float32, n)
+		for i := range n {
+			src[i] = float32(i + 1)
 		}
-	}
-	addRow(dst, src)
-	for i, v := range src {
-		if want := v * 2; dst[i] != want {
-			t.Errorf("dst[%d] = %f, want %f", i, dst[i], want)
+		addRow(dst, src)
+		for i, want := range src {
+			if dst[i] != want {
+				t.Errorf("n=%d dst[%d] = %f, want %f", n, i, dst[i], want)
+			}
+		}
+		addRow(dst, src)
+		for i, v := range src {
+			if want := v * 2; dst[i] != want {
+				t.Errorf("n=%d dst[%d] = %f, want %f", n, i, dst[i], want)
+			}
 		}
 	}
 }

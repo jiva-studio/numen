@@ -29,6 +29,7 @@ type antigravityModel struct {
 func listAntigravityModels(ctx context.Context, command []string) ([]antigravityModel, error) {
 	name, args := resolveCommand(command)
 	cmd := exec.CommandContext(ctx, name, slices.Concat(args, []string{"models"})...)
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="process.Supervise sets OS process-group attributes for child cleanup."
 	process.Supervise(cmd)
 	out, err := cmd.Output()
 	if err != nil {

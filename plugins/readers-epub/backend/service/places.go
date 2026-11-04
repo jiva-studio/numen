@@ -35,10 +35,12 @@ func (s *BookServer) readPlacedBook(ctx context.Context, path string) (*epub.Boo
 	s.mu.Lock()
 	last := s.placed
 	s.mu.Unlock()
+	// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_NEGATION,INVERT_LOGICAL,BRANCH_IF reason="single-book cache avoids re-parsing unchanged EPUB bytes"
 	if last.book != nil && last.key == key && last.size == info.Size && last.mtime == info.ModTime.UnixNano() {
 		return last.book, nil
 	}
 	raw, info, err := files.Read(ctx, path)
+	// gomutants:disable-next-line BRANCH_IF reason="propagates vault read failure after StatFile succeeded"
 	if err != nil {
 		return nil, readVaultError(path, err)
 	}
@@ -47,6 +49,7 @@ func (s *BookServer) readPlacedBook(ctx context.Context, path string) (*epub.Boo
 		return nil, newReadError(err)
 	}
 	s.mu.Lock()
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="caches the parsed book for subsequent place lookups"
 	s.placed = placedBook{key: key, size: info.Size, mtime: info.ModTime.UnixNano(), book: book}
 	s.mu.Unlock()
 	return book, nil

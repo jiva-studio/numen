@@ -31,6 +31,7 @@ func sections(body []byte, first, last int) []section {
 	var out []section
 	var f markdown.Fence
 	for pos := 0; pos <= len(body); {
+		// gomutants:disable-next-line INTEGER_INCREMENT reason="Any value > len(body) terminates the loop on the next iteration."
 		end, next := len(body), len(body)+1
 		if i := bytes.IndexByte(body[pos:], '\n'); i >= 0 {
 			end, next = pos+i, pos+i+1
@@ -41,7 +42,9 @@ func sections(body []byte, first, last int) []section {
 		}
 		pos = next
 	}
+	// gomutants:disable-next-line INTEGER_INCREMENT,BRANCH_IF reason="openSection already initializes every section with to = len(body)."
 	if n := len(out); n > 0 {
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="openSection already initializes every section with to = len(body)."
 		out[n-1].to = len(body)
 	}
 	return out
@@ -78,15 +81,18 @@ func heading(line []byte, first, last int) (level int, name string, ok bool) {
 		hashes++
 	}
 	if hashes < first || hashes > last {
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Callers ignore level when ok is false."
 		return 0, "", false
 	}
 	rest := line[hashes:]
 	if len(rest) > 0 && rest[0] != ' ' && rest[0] != '\t' {
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Callers ignore level when ok is false."
 		return 0, "", false
 	}
 	cleaned := bytes.TrimSpace(rest)
 	// front of it, and a name ending in one keeps it.
 	if closed := bytes.TrimRight(cleaned, "#"); len(closed) != len(cleaned) {
+		// gomutants:disable-next-line INTEGER_DECREMENT reason="Slice length is never negative."
 		if t := bytes.TrimRight(closed, " \t"); len(closed) == 0 || len(t) != len(closed) {
 			cleaned = t
 		}
@@ -129,6 +135,7 @@ func lineAt(body []byte, pos, to int) ([]byte, int) {
 // lineFrom is the byte the line holding at begins at, looked for no further
 // back than from.
 func lineFrom(body []byte, from, pos int) int {
+	// gomutants:disable-next-line INTEGER_DECREMENT reason="bytes.LastIndexByte returns -1 when not found and >= 0 when found."
 	if i := bytes.LastIndexByte(body[from:pos], '\n'); i >= 0 {
 		return from + i + 1
 	}

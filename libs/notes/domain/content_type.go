@@ -59,6 +59,7 @@ func (t ContentType) getWidth() int {
 	case t.IsMask():
 		return 1
 	}
+	// gomutants:disable-next-line INTEGER_DECREMENT reason="cmp.Compare depends only on the relative order of the three width ranks"
 	return 0
 }
 

@@ -210,15 +210,15 @@ func TestDecodeAdvancesAfterMostPerFrame(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantTokens := 2 * mostPerFrame
+	wantTokens := 20
 	if len(response) != wantTokens {
 		t.Fatalf("got %d tokens, want %d", len(response), wantTokens)
 	}
-	if callsPerFrame[0] != mostPerFrame {
-		t.Errorf("frame 0 was called %d times, want %d", callsPerFrame[0], mostPerFrame)
+	if callsPerFrame[0] != 10 {
+		t.Errorf("frame 0 was called %d times, want 10", callsPerFrame[0])
 	}
-	if callsPerFrame[1] != mostPerFrame {
-		t.Errorf("frame 1 was called %d times, want %d", callsPerFrame[1], mostPerFrame)
+	if callsPerFrame[1] != 10 {
+		t.Errorf("frame 1 was called %d times, want 10", callsPerFrame[1])
 	}
 	if callsPerFrame[2] != 1 {
 		t.Errorf("frame 2 was called %d times, want 1", callsPerFrame[2])
@@ -269,6 +269,17 @@ func TestChooseSeparatesTokenAndStepScores(t *testing.T) {
 	}
 	if ch.step != 0 {
 		t.Errorf("ch.step = %d, want 0", ch.step)
+	}
+
+	dMin := Decoder{
+		Blank: 1,
+		Joint: func(_, _ []float32) ([]float32, error) {
+			return []float32{0, 1, 5}, nil
+		},
+	}
+	chMin, err := dMin.choose(nil, nil)
+	if err != nil || chMin.token != 1 || chMin.step != 0 {
+		t.Fatalf("expected minimum valid scores (blank+2) to succeed, got %+v, err %v", chMin, err)
 	}
 }
 

@@ -78,6 +78,7 @@ func checkGoal(p review.Preset) error {
 	case review.GoalRetention:
 		value, bounds, key = p.Retention, review.GetRetentionBounds(), retentionKey
 	case review.GoalDate:
+		// gomutants:disable-next-line BRANCH_CASE reason="Zero value and zero bounds satisfy Contains when GoalDate exits the switch."
 		return nil
 	default:
 		return nil
@@ -121,6 +122,7 @@ func (u ProjectCurve) Execute(
 	schedules := u.schedules.getSchedules(target, asks)
 
 	mine, err := u.readScheduledCards(ctx, v, reads, path, reviewCards, schedules)
+	// gomutants:disable-next-line BRANCH_IF reason="PresetReads cache is already populated for all reviewCard decks by getAssignmentFrom."
 	if err != nil {
 		return Curve{}, err
 	}
@@ -143,6 +145,7 @@ func (u ProjectCurve) Execute(
 	// already given.
 	run := projection.Simulation{
 		By: u.getScheduler(p.Retention), Day: u.day, Cost: cost,
+		// gomutants:disable-next-line INTEGER_DECREMENT reason="Non-positive simulation Days defaults to HorizonDays."
 		Days:    0,
 		Retains: nil,
 		Recalls: nil,
@@ -281,6 +284,7 @@ func (u ProjectCurve) countPointingDecks(
 // place's run reads the context it was given.
 func (u ProjectCurve) computePlaces(count int, each func(index int) error) error {
 	failed := make([]error, count)
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="Worker semaphore capacity affects concurrency bound only."
 	room := make(chan struct{}, max(1, u.Cores))
 	var running sync.WaitGroup
 	for item := range count {

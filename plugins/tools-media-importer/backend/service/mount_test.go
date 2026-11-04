@@ -63,6 +63,79 @@ func TestTheLinkedHandlerAnswersTheImporterAPI(t *testing.T) {
 	if status != http.StatusNotFound || failure.Code != server.CodeNotFound {
 		t.Errorf("a file that is no note is answered %d %+v, want 404 not_found", status, failure)
 	}
+
+	if _, err := NewHandler(map[string]string{}); err == nil {
+		t.Error("NewHandler with empty vars succeeded")
+	}
+}
+
+func TestMountRegistersAllRoutesConfigAndLifecycle(t *testing.T) {
+	_, _, hosted := newMockLinks(t)
+	var mountedSrv *server.Server
+	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "test-token"}, func(srv *server.Server) error {
+		mountedSrv = srv
+		return Mount(srv, hosted, true)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	web := httptest.NewServer(handler)
+	defer web.Close()
+
+	call := func(method, path, body string) int {
+		req, err := http.NewRequestWithContext(t.Context(), method, web.URL+path, strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Authorization", "Bearer test-token")
+		if method == http.MethodPost {
+			req.Header.Set("Content-Type", "application/json")
+		}
+		res, err := web.Client().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = res.Body.Close() }()
+		return res.StatusCode
+	}
+
+	// Verify all mounted API methods and the embed route are reachable.
+	if code := call(http.MethodPost, "/"+api.Service+"/"+api.MethodCreateLinks, `{"folder":"f","urls":["`+videoAddress+`"]}`); code != http.StatusOK {
+		t.Errorf("CreateLinks status = %d, want 200", code)
+	}
+	for _, method := range []string{
+		api.MethodGetLink,
+		api.MethodReadArticle,
+		api.MethodFetchText,
+		api.MethodCopyVideo,
+		api.MethodDeleteCopy,
+	} {
+		if code := call(http.MethodPost, "/"+api.Service+"/"+method, `{"path":"missing.md"}`); code != http.StatusNotFound {
+			t.Errorf("%s(missing.md) status = %d, want 404", method, code)
+		}
+	}
+	if code := call(http.MethodGet, server.RoutePrefix+embedPattern+"?address=not-a-url", ""); code != http.StatusBadRequest {
+		t.Errorf("embed route status = %d, want 400", code)
+	}
+	if code := call(http.MethodPost, "/numen.v1.PluginLifecycleService/Configure", `{"config":{"copy_max_size_mb":"10"}}`); code != http.StatusOK {
+		t.Errorf("Configure RPC status = %d, want 200", code)
+	}
+	if code := call(http.MethodPost, "/numen.v1.PluginLifecycleService/Shutdown", `{}`); code != http.StatusOK {
+		t.Errorf("Shutdown RPC status = %d, want 200", code)
+	}
+	if err := mountedSrv.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify NewHandler forwards EnvMockML == "true" vs "false".
+	mockHandler, err := NewHandler(map[string]string{
+		"NUMEN_PLUGIN_TOKEN": "tok",
+		"NUMEN_HOST_PORT":    "1",
+		EnvMockML:            "true",
+	})
+	if err != nil || mockHandler == nil {
+		t.Fatalf("NewHandler(mock): %v", err)
+	}
 }
 
 // Every error a link operation reports maps to the API code a client reads.
@@ -93,11 +166,25 @@ func TestToAPIErrorMapsLinkErrors(t *testing.T) {
 
 // The settings name the programs, the captions and how large a copy may be.
 func TestUpdateConfigSetsToolsCaptionsAndTheLargestCopy(t *testing.T) {
+	fMock := newFetchers(true)
+	if fMock.getFetcher() == nil || fMock.getFetcher().GetDownloadModel(videoAddress).Tool != "mock" {
+		t.Fatalf("mock fetcher = %+v", fMock.getFetcher())
+	}
 	f := newFetchers(false)
+	if f.getFetcher() == nil || f.getFetcher().GetDownloadModel(videoAddress).Tool == "mock" {
+		t.Fatalf("real fetcher = %+v", f.getFetcher())
+	}
+	if f.getSettings().CopyMaxSize != 500<<20 {
+		t.Errorf("default CopyMaxSize = %d, want %d", f.getSettings().CopyMaxSize, 500<<20)
+	}
+	before := f.getFetcher()
 	f.updateConfig(map[string]string{
 		"yt_dlp": "/custom/yt-dlp", "ffmpeg": "/custom/ffmpeg",
 		"captions": " sa, en ,", "automatic_captions": "false", "copy_max_size_mb": "20",
 	})
+	if f.getFetcher() == before || f.getFetcher() == nil || f.getFetcher().GetDownloadModel(videoAddress).Tool != "yt-dlp" {
+		t.Error("updateConfig did not reopen current fetcher")
+	}
 	if !slices.Equal(f.cfg.Video.Command, []string{"/custom/yt-dlp"}) || !slices.Equal(f.cfg.Sound.Command, []string{"/custom/ffmpeg"}) {
 		t.Errorf("the programs are %v and %v", f.cfg.Video.Command, f.cfg.Sound.Command)
 	}
@@ -108,5 +195,18 @@ func TestUpdateConfigSetsToolsCaptionsAndTheLargestCopy(t *testing.T) {
 	f.updateConfig(map[string]string{"yt_dlp": "", "ffmpeg": "", "copy_max_size_mb": "many"})
 	if len(f.cfg.Video.Command) != 0 || len(f.cfg.Sound.Command) != 0 || f.getSettings().CopyMaxSize != 20<<20 {
 		t.Errorf("cleared settings leave %v, %v and %d", f.cfg.Video.Command, f.cfg.Sound.Command, f.getSettings().CopyMaxSize)
+	}
+	f.updateConfig(map[string]string{"copy_max_size_mb": "-1"})
+	if f.getSettings().CopyMaxSize != 20<<20 {
+		t.Errorf("negative size changed CopyMaxSize to %d", f.getSettings().CopyMaxSize)
+	}
+	f.updateConfig(map[string]string{"copy_max_size_mb": "0"})
+	if f.getSettings().CopyMaxSize != 0 {
+		t.Errorf("zero size left CopyMaxSize = %d, want 0", f.getSettings().CopyMaxSize)
+	}
+	f.updateConfig(map[string]string{"copy_max_size_mb": "20"})
+	f.updateConfig(map[string]string{"copy_max_size_mb": "4611686018427387904"})
+	if f.getSettings().CopyMaxSize != 0 {
+		t.Errorf("64-bit size parse failed: CopyMaxSize = %d, want 0", f.getSettings().CopyMaxSize)
 	}
 }

@@ -89,6 +89,16 @@ func TestHasValidToken(t *testing.T) {
 	}
 }
 
+type statusRecorder struct {
+	*httptest.ResponseRecorder
+	statusCode int
+}
+
+func (r *statusRecorder) WriteHeader(code int) {
+	r.statusCode = code
+	r.ResponseRecorder.WriteHeader(code)
+}
+
 func TestRequireToken(t *testing.T) {
 	t.Parallel()
 
@@ -103,10 +113,19 @@ func TestRequireToken(t *testing.T) {
 
 	// Options preflight
 	reqOpts := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "/mcp", nil)
-	recOpts := httptest.NewRecorder()
+	recOpts := &statusRecorder{ResponseRecorder: httptest.NewRecorder()}
 	handler.ServeHTTP(recOpts, reqOpts)
-	if recOpts.Code != http.StatusOK {
-		t.Fatalf("OPTIONS returned status %d, want 200", recOpts.Code)
+	if recOpts.statusCode != http.StatusOK {
+		t.Fatalf("OPTIONS wrote status %d, want 200", recOpts.statusCode)
+	}
+	if got := recOpts.Header().Get("Access-Control-Allow-Origin"); got != "*" {
+		t.Fatalf("Access-Control-Allow-Origin = %q, want *", got)
+	}
+	if got := recOpts.Header().Get("Access-Control-Allow-Methods"); got != "GET, POST, OPTIONS" {
+		t.Fatalf("Access-Control-Allow-Methods = %q, want GET, POST, OPTIONS", got)
+	}
+	if got := recOpts.Header().Get("Access-Control-Allow-Headers"); got != "Authorization, Content-Type" {
+		t.Fatalf("Access-Control-Allow-Headers = %q, want Authorization, Content-Type", got)
 	}
 
 	// Unauthorized request
@@ -115,6 +134,9 @@ func TestRequireToken(t *testing.T) {
 	handler.ServeHTTP(recUnauth, reqUnauth)
 	if recUnauth.Code != http.StatusUnauthorized {
 		t.Fatalf("unauthorized returned %d, want 401", recUnauth.Code)
+	}
+	if got := recUnauth.Header().Get("WWW-Authenticate"); got != `Bearer realm="numen"` {
+		t.Fatalf("WWW-Authenticate = %q, want Bearer realm=\"numen\"", got)
 	}
 	if innerCalled {
 		t.Fatal("inner handler called when unauthorized")
@@ -128,7 +150,37 @@ func TestRequireToken(t *testing.T) {
 	if recAuth.Code != http.StatusOK {
 		t.Fatalf("authorized returned %d, want 200", recAuth.Code)
 	}
+	if got := recAuth.Header().Get("Access-Control-Allow-Origin"); got != "*" {
+		t.Fatalf("Access-Control-Allow-Origin = %q, want *", got)
+	}
 	if !innerCalled {
 		t.Fatal("inner handler not called when authorized")
+	}
+}
+
+func TestReadConfig(t *testing.T) {
+	t.Setenv("MCP_PORT", "")
+	t.Setenv("MCP_TOKEN", "")
+
+	if cfg := readConfig(nil); cfg.Addr != "" || cfg.Token != "" {
+		t.Fatalf("expected empty config, got %+v", cfg)
+	}
+
+	t.Setenv("MCP_PORT", "9001")
+	t.Setenv("MCP_TOKEN", "env-token")
+	if cfg := readConfig(nil); cfg.Addr != "127.0.0.1:9001" || cfg.Token != "env-token" {
+		t.Fatalf("expected env config, got %+v", cfg)
+	}
+
+	if cfg := readConfig(map[string]string{"port": "9002", "token": "map-token"}); cfg.Addr != "127.0.0.1:9002" || cfg.Token != "map-token" {
+		t.Fatalf("expected port config, got %+v", cfg)
+	}
+
+	if cfg := readConfig(map[string]string{"address": "127.0.0.1:9003", "port": "9002"}); cfg.Addr != "127.0.0.1:9003" {
+		t.Fatalf("expected address config, got %+v", cfg)
+	}
+
+	if cfg := readConfig(map[string]string{"addr": " 127.0.0.1:9004 ", "address": "127.0.0.1:9003", "port": "9002", "token": " tok "}); cfg.Addr != "127.0.0.1:9004" || cfg.Token != "tok" {
+		t.Fatalf("expected addr config, got %+v", cfg)
 	}
 }

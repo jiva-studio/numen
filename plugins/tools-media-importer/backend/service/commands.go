@@ -22,6 +22,7 @@ func newCommands(links *link.Links, hosted link.Host) (*command.Registry, error)
 		"delete-copy":   newDeleteCopyCommand(links),
 		"delete-text":   command.NewDeleteTextRun(hosted.Texts, hosted.Store, PluginID),
 	} {
+		// gomutants:disable-next-line BRANCH_IF reason="registering distinct static command IDs on a new registry cannot fail"
 		if err := commands.Add(id, run); err != nil {
 			return nil, err
 		}

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"testing/iotest"
 
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/packagecache"
@@ -77,6 +78,9 @@ func TestAPackageIsStoredByChecksumAndReadBack(t *testing.T) {
 	}
 	if names := listNames(t, dir); len(names) != 1 || names[0] != sum {
 		t.Errorf("the folder holds %v, want only the package named by its checksum", names)
+	}
+	if info, err := os.Stat(dir); err != nil || info.Mode().Perm() != 0o700 {
+		t.Errorf("dir mode = %v, %v; want 0o700", info.Mode().Perm(), err)
 	}
 }
 
@@ -207,6 +211,64 @@ func TestAnEndedContextStopsTheWrite(t *testing.T) {
 	if _, statErr := os.Stat(dir); statErr == nil {
 		t.Error("the folder was created for a write that did not start")
 	}
+	if _, err := cache.Open(ctx, checksumOf("x")); !errors.Is(err, context.Canceled) {
+		t.Errorf("Open canceled = %v", err)
+	}
+	if err := cache.Remove(ctx, checksumOf("x")); !errors.Is(err, context.Canceled) {
+		t.Errorf("Remove canceled = %v", err)
+	}
+
+	// Cancel during copyContext and reader error during copyContext.
+	midCtx, midCancel := context.WithCancel(t.Context())
+	cancelingReader := &funcReader{fn: func(p []byte) (int, error) {
+		midCancel()
+		p[0] = 'x'
+		return 1, nil
+	}}
+	if err := cache.Put(midCtx, checksumOf("x"), cancelingReader); !errors.Is(err, context.Canceled) {
+		t.Errorf("Put canceled mid-stream = %v, want context.Canceled", err)
+	}
+	readErr := errors.New("stream broke")
+	if err := cache.Put(t.Context(), checksumOf("x"), iotest.ErrReader(readErr)); !errors.Is(err, readErr) {
+		t.Errorf("Put ErrReader = %v, want %v", err, readErr)
+	}
+
+	// Filesystem error paths when cache dir is a regular file or destination is a directory.
+	fileAsDir := filepath.Join(t.TempDir(), "not-a-dir")
+	if err := os.WriteFile(fileAsDir, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	badCache, err := packagecache.New(fileAsDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := badCache.Put(t.Context(), checksumOf("x"), strings.NewReader("x")); err == nil {
+		t.Error("expected Put to fail when cache dir is a file")
+	}
+	if _, err := badCache.Open(t.Context(), checksumOf("x")); err == nil || errors.Is(err, catalog.ErrPackageNotCached) {
+		t.Errorf("expected Open to fail when cache dir is a file, got %v", err)
+	}
+	if err := badCache.Remove(t.Context(), checksumOf("x")); err == nil {
+		t.Error("expected Remove to fail when cache dir is a file")
+	}
+
+	if err := os.MkdirAll(filepath.Join(dir, checksumOf("x")), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := cache.Open(t.Context(), checksumOf("x")); err == nil {
+		t.Error("expected Open to fail when package path is a directory")
+	}
+	if err := cache.Put(t.Context(), checksumOf("x"), strings.NewReader("x")); err == nil {
+		t.Error("expected Put to fail when destination is a directory")
+	}
+}
+
+type funcReader struct {
+	fn func([]byte) (int, error)
+}
+
+func (r *funcReader) Read(p []byte) (int, error) {
+	return r.fn(p)
 }
 
 func TestACacheNeedsAFolder(t *testing.T) {
@@ -222,10 +284,17 @@ func TestTheDefaultFolderIsSharedInTheUserCacheFolder(t *testing.T) {
 
 	dir, err := packagecache.DefaultDir()
 	if err != nil {
-		t.Skipf("this machine has no user cache folder: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
 
 	if filepath.Base(dir) != "packages" || filepath.Base(filepath.Dir(dir)) != "numen" {
 		t.Errorf("default folder = %s, want .../numen/packages", dir)
+	}
+
+	t.Setenv("XDG_CACHE_HOME", "")
+	t.Setenv("HOME", "")
+	t.Setenv("LocalAppData", "")
+	if _, err := packagecache.DefaultDir(); err == nil {
+		t.Error("expected error when no user cache dir environment is set")
 	}
 }

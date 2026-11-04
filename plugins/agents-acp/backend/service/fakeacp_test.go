@@ -10,13 +10,19 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 // TestMain runs the test binary as a fake ACP agent when it is started as one.
 func TestMain(m *testing.M) {
 	if len(os.Args) > 1 && os.Args[1] == "fake-acp" {
+		time.AfterFunc(4*time.Second, func() { os.Exit(0) })
 		os.Exit(runFakeACPAgent(os.Args[2:], os.Stdin, os.Stdout))
 	}
+	if os.Getenv("NUMEN_ACP_TEST_CHILD") == "1" {
+		os.Exit(2)
+	}
+	_ = os.Setenv("NUMEN_ACP_TEST_CHILD", "1")
 	os.Exit(m.Run())
 }
 
@@ -146,6 +152,18 @@ func (a *fakeAgent) handle() {
 		a.send(map[string]any{"id": id, "result": a.getSession()})
 	case "session/prompt":
 		a.answerPrompt(id)
+	case "session/set_config_option":
+		if a.behaviour == "fail-reasoning" {
+			a.send(map[string]any{"id": id, "error": map[string]any{"code": -32000, "message": "reasoning rejected"}})
+			return
+		}
+		a.send(map[string]any{"id": id, "result": map[string]any{}})
+	case "session/close":
+		if a.behaviour == "fail-close" {
+			a.send(map[string]any{"id": id, "error": map[string]any{"code": -32000, "message": "close rejected"}})
+			return
+		}
+		a.send(map[string]any{"id": id, "result": map[string]any{}})
 	default:
 		a.send(map[string]any{"id": id, "result": map[string]any{}})
 	}
@@ -155,14 +173,14 @@ func (a *fakeAgent) getSession() map[string]any {
 	session := map[string]any{"sessionId": "s1"}
 	models := []map[string]any{{"value": "m1", "name": "Model One"}, {"value": "m2", "name": "Model Two"}}
 	switch a.behaviour {
-	case "config", "thought":
+	case "config", "thought", "fail-reasoning":
 		options := []map[string]any{
 			{"id": "mode", "category": "mode", "type": "select", "currentValue": "ask", "options": []map[string]any{{"value": "ask"}}},
 			{"id": "model", "category": "model", "type": "select", "currentValue": "m1", "options": []map[string]any{
 				{"group": "g", "name": "Group", "options": models},
 			}},
 		}
-		if a.behaviour == "thought" {
+		if a.behaviour == "thought" || a.behaviour == "fail-reasoning" {
 			options = append(options, map[string]any{
 				"id": "effort", "category": "thought_level", "type": "select", "currentValue": "medium", "options": []map[string]any{
 					{"value": "low", "name": "Low"}, {"value": "medium", "name": "Medium"}, {"value": "high", "name": "High"},

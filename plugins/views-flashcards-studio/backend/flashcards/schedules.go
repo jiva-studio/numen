@@ -181,6 +181,7 @@ func (u Schedules) getAssignmentFrom(
 		underMap[one.ID] = delta[path]
 	}
 
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Slice capacity preallocation does not affect the computed mark digest."
 	marks := make([]string, 0, len(underMap)+2)
 	marks = append(marks, u.scheduler.GetName(), u.getDayStartMark())
 	for reviewCard, one := range underMap {
@@ -382,9 +383,11 @@ func (u Schedules) remember(
 	})
 
 	raw, err := json.Marshal(now)
+	// gomutants:disable-next-line BRANCH_IF reason="Marshaling scheduleCache with primitive fields cannot fail."
 	if err != nil {
 		return
 	}
+	// gomutants:disable-next-line CONDITIONALS_NEGATION reason="Cache write failure logs to stderr without affecting the returned schedules."
 	if err := u.Cache.Write(ctx, v.ID, raw); err != nil {
 		fmt.Fprintf(os.Stderr, "views-flashcards-studio: keep the schedules of %s: %v\n", v.ID, err)
 	}

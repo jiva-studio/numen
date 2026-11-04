@@ -156,6 +156,7 @@ func (u Log) Open(_ context.Context, v domain.Vault, now time.Time) (*LogWriter,
 		return nil, err
 	}
 	id, err := ulid.NewGenerator(rand.Reader).NewID(now)
+	// gomutants:disable-next-line BRANCH_IF reason="ULID generation from crypto/rand.Reader does not fail."
 	if err != nil {
 		return nil, err
 	}
@@ -182,6 +183,7 @@ func (r *LogWriter) Append(ctx context.Context, a review.Answer) error {
 		return r.stopped
 	}
 	raw, err := review.Write(a)
+	// gomutants:disable-next-line BRANCH_IF reason="Marshaling wireAnswer with string and integer fields cannot fail."
 	if err != nil {
 		return err
 	}
@@ -229,6 +231,7 @@ func (u Record) Answer(
 	}
 	pos := u.now.Now()
 	id, err := ulid.NewGenerator(rand.Reader).NewID(pos)
+	// gomutants:disable-next-line BRANCH_IF reason="ULID generation from crypto/rand.Reader does not fail."
 	if err != nil {
 		return review.Answer{}, err
 	}
@@ -250,6 +253,7 @@ func (u Record) TakeBack(ctx context.Context, run *LogWriter, id string) (review
 	}
 	pos := u.now.Now()
 	own, err := ulid.NewGenerator(rand.Reader).NewID(pos)
+	// gomutants:disable-next-line BRANCH_IF reason="ULID generation from crypto/rand.Reader does not fail."
 	if err != nil {
 		return review.Answer{}, err
 	}

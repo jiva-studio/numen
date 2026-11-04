@@ -107,6 +107,17 @@ func TestRenderPageAtWidthDrawsThePageThatWide(t *testing.T) {
 	if _, err := scan.RenderPageAtWidth(0, 0, 1<<24); err == nil {
 		t.Error("a page no pixels across was drawn")
 	}
+	if _, err := scan.RenderPageAtWidth(-1, 100, 1<<24); err == nil {
+		t.Error("an invalid page index was drawn")
+	}
+	onePixelMax := getHeightAt(1, width, height)
+	drawnOne, err := scan.RenderPageAtWidth(0, 1, onePixelMax)
+	if err != nil {
+		t.Fatalf("RenderPageAtWidth(0, 1, %d) failed: %v", onePixelMax, err)
+	}
+	if drawnOne.Bounds().Dx() != 1 {
+		t.Errorf("drawnOne width = %d, want 1", drawnOne.Bounds().Dx())
+	}
 }
 
 func TestGetFittingWidthKeepsThePageWithinTheMostPixels(t *testing.T) {
@@ -114,11 +125,19 @@ func TestGetFittingWidthKeepsThePageWithinTheMostPixels(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	scan, err := newWorkers(t).OpenReader(&trackingCloser{Reader: bytes.NewReader(raw)})
+	fc := &trackingCloser{Reader: bytes.NewReader(raw)}
+	scan, err := newWorkers(t).OpenReader(fc)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cleanup.Close(t, scan)
+	defer func() {
+		if closeErr := scan.Close(); closeErr != nil {
+			t.Error(closeErr)
+		}
+		if !fc.isClosed {
+			t.Error("scan.Close() did not close underlying reader")
+		}
+	}()
 	width, height, err := scan.GetPageSize(0)
 	if err != nil {
 		t.Fatal(err)
@@ -142,5 +161,36 @@ func TestGetFittingWidthKeepsThePageWithinTheMostPixels(t *testing.T) {
 	}
 	if fitting != 120 {
 		t.Errorf("a width that fits was changed to %d", fitting)
+	}
+	minFitting, err := scan.GetFittingWidth(0, 0, 0)
+	if err != nil || minFitting != 1 {
+		t.Errorf("GetFittingWidth(0, 0, 0) = %d, %v; want 1, nil", minFitting, err)
+	}
+	if _, err := scan.GetFittingWidth(-1, 100, 1000); err == nil {
+		t.Error("GetFittingWidth(-1) succeeded on invalid page")
+	}
+	if h := getHeightAt(0, 100, 100); h != 1 {
+		t.Errorf("getHeightAt(0, 100, 100) = %d, want 1", h)
+	}
+
+	turnedRaw, err := os.ReadFile("testdata/turned.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	turnedScan, err := newWorkers(t).OpenBytes(turnedRaw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup.Close(t, turnedScan)
+	tw, th, err := turnedScan.GetPageSize(0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tfitting, err := turnedScan.GetFittingWidth(0, 1000, 10000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tfitting*getHeightAt(tfitting, tw, th) > 10000 {
+		t.Errorf("turned fitting %d exceeds 10000 pixels", tfitting)
 	}
 }

@@ -3,7 +3,10 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -214,11 +217,22 @@ func TestAskAgentStopsWithTheReasonItCannotAnswer(t *testing.T) {
 		{Agent: "acp:failing", Prompt: "why?"},
 		{Agent: "acp:refusing", Prompt: "why?"},
 		{Agent: "acp:absent", Prompt: "why?"},
+		{Agent: "acp:", Command: []string{"/bin/true"}, Prompt: "why?"},
 		{Agent: "claude", Prompt: "why?"},
 	} {
 		response, stopReason := askAgent(t, svc, task)
 		if response != "" || stopReason == "" || stopReason == reasonDone {
 			t.Errorf("%s: said %q, stopReason %q", task.Agent, response, stopReason)
+		}
+	}
+	for _, task := range []*agentrun.Request{
+		{Agent: "acp:absent", Prompt: "why?"},
+		{Agent: "acp:", Command: []string{"/bin/true"}, Prompt: "why?"},
+		{Agent: "claude", Prompt: "why?"},
+	} {
+		_, stopReason := askAgent(t, svc, task)
+		if stopReason != errAgentNotInstalled.Error() {
+			t.Errorf("%s: stopReason = %q, want %q", task.Agent, stopReason, errAgentNotInstalled.Error())
 		}
 	}
 }
@@ -261,11 +275,19 @@ func TestAskAgent_RejectsEveryAgentRequest(t *testing.T) {
 	askAgent(t, serveAgents(agent), &agentrun.Request{Agent: "acp:fake", Prompt: "why?"})
 
 	observed := readRecord(t, record)
+	initMsg := observed["initialize"][0]
+	if getField[float64](t, initMsg, "id") != 1 {
+		t.Errorf("initialize id = %v, want 1", initMsg["id"])
+	}
+	initParams := getField[map[string]any](t, initMsg, "params")
+	if getField[float64](t, initParams, "protocolVersion") != 1 {
+		t.Errorf("protocolVersion = %v, want 1", initParams["protocolVersion"])
+	}
 	session := getField[map[string]any](t, observed["session/new"][0], "params")
 	if cwd, ok := session["cwd"].(string); !ok || cwd == "" || !filepath.IsAbs(cwd) {
 		t.Errorf("the session was opened in %q", cwd)
 	}
-	capabilities := getField[map[string]any](t, getField[map[string]any](t, observed["initialize"][0], "params"), "clientCapabilities")
+	capabilities := getField[map[string]any](t, initParams, "clientCapabilities")
 	if capabilities["terminal"] != false {
 		t.Errorf("the client offered a terminal: %v", capabilities)
 	}
@@ -283,6 +305,9 @@ func TestAskAgent_RejectsEveryAgentRequest(t *testing.T) {
 	}
 	if replies[1]["error"] == nil || replies[1]["result"] != nil {
 		t.Errorf("the file read was answered %v, want an error", replies[1])
+	}
+	if code := getField[float64](t, getField[map[string]any](t, replies[1], "error"), "code"); code != -32601 {
+		t.Errorf("error code = %v, want -32601", code)
 	}
 	if len(observed["session/close"]) != 1 {
 		t.Errorf("the session was closed %d times, want 1", len(observed["session/close"]))
@@ -410,17 +435,21 @@ func TestNoProgramIsListedWithoutAnACPAgent(t *testing.T) {
 
 // An agent that failed to list is not queried again until the backoff has elapsed.
 func TestAnAgentThatFailedToListIsLeftAlone(t *testing.T) {
+	if acpListLimit != 15*time.Second || acpFailureBackoff != 30*time.Second {
+		t.Fatalf("acpListLimit = %v, acpFailureBackoff = %v", acpListLimit, acpFailureBackoff)
+	}
 	agent, record := fakeACPAgent(t, "failing", "fail")
 	now := clock.NewFake(time.Unix(1000, 0))
 	svc := serveAgents(agent)
 	svc.getModelCache().SetClock(now)
 
 	listPrograms(t, svc)
+	now.Advance(29 * time.Second)
 	listPrograms(t, svc)
 	if started := readRecord(t, record)["started"]; len(started) != 1 {
 		t.Fatalf("the agent was started %d times within the backoff, want 1", len(started))
 	}
-	now.Advance(acpFailureBackoff)
+	now.Advance(time.Second)
 	listPrograms(t, svc)
 	if started := readRecord(t, record)["started"]; len(started) != 2 {
 		t.Errorf("the agent was started %d times after the backoff, want 2", len(started))
@@ -467,5 +496,147 @@ func TestAskAgentSetsTheDepthTheTaskNamesWhereTheAgentReportsIt(t *testing.T) {
 	askAgent(t, serveAgents(other), &agentrun.Request{Agent: "acp:other", Reasoning: "max", Prompt: "why?"})
 	if set := readRecord(t, otherRecord)["session/set_config_option"]; len(set) != 0 {
 		t.Errorf("a depth the agent does not report was sent: %v", set)
+	}
+}
+
+func TestAskAndSessionEdgeCases(t *testing.T) {
+	errSend := errors.New("send failed")
+	agent, _ := fakeACPAgent(t, "fake", "plain")
+	svc := serveAgents(agent)
+
+	// Send failing on ModelStartedStep returns immediately.
+	calls := 0
+	err := svc.Ask(t.Context(), &agentrun.Request{Agent: "acp:fake", Prompt: "why?"}, func(*agentrun.Response) error {
+		calls++
+		return errSend
+	})
+	if !errors.Is(err, errSend) || calls != 1 {
+		t.Errorf("Ask on initial send error = %v (calls %d)", err, calls)
+	}
+
+	// Send failing on StoppedStep for missing agent returns the error.
+	calls = 0
+	err = svc.Ask(t.Context(), &agentrun.Request{Agent: "acp:absent", Prompt: "why?"}, func(res *agentrun.Response) error {
+		calls++
+		if res.GetStopped() != "" {
+			return errSend
+		}
+		return nil
+	})
+	if !errors.Is(err, errSend) || calls != 2 {
+		t.Errorf("Ask on stopped send error = %v (calls %d)", err, calls)
+	}
+
+	// Send failing on TextStep returns without sending StoppedStep.
+	calls = 0
+	err = svc.Ask(t.Context(), &agentrun.Request{Agent: "acp:fake", Prompt: "why?"}, func(res *agentrun.Response) error {
+		calls++
+		if res.GetText() != "" {
+			return errSend
+		}
+		return nil
+	})
+	if !errors.Is(err, errSend) || calls != 2 {
+		t.Errorf("Ask on text send error = %v (calls %d)", err, calls)
+	}
+
+	// Cancelled context returns ctx.Err() directly without sending StoppedStep.
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	var stopReason string
+	err = svc.Ask(ctx, &agentrun.Request{Agent: "acp:fake", Prompt: "why?"}, func(res *agentrun.Response) error {
+		if s := res.GetStopped(); s != "" {
+			stopReason = s
+		}
+		return nil
+	})
+	if !errors.Is(err, context.Canceled) || stopReason != "" {
+		t.Errorf("Ask on cancelled ctx = %v, stopReason = %q", err, stopReason)
+	}
+
+	// setReasoning failure and session close failure propagate from answer and readACPListing.
+	failReasoning, _ := fakeACPAgent(t, "fail-reasoning", "fail-reasoning")
+	if _, err := svc.answer(t.Context(), failReasoning, question{reasoning: "high", prompt: "why?"}); err == nil || !strings.Contains(err.Error(), "reasoning rejected") {
+		t.Errorf("answer with failing setReasoning = %v", err)
+	}
+	failClose, _ := fakeACPAgent(t, "fail-close", "fail-close")
+	if _, err := svc.answer(t.Context(), failClose, question{prompt: "why?"}); err == nil || !strings.Contains(err.Error(), "close rejected") {
+		t.Errorf("answer with failing close = %v", err)
+	}
+	if _, err := readACPListing(t.Context(), failClose); err == nil || !strings.Contains(err.Error(), "close rejected") {
+		t.Errorf("readACPListing with failing close = %v", err)
+	}
+
+	// Unnamed model in GetPrograms falls back to ID as Title.
+	unnamedAgent := acpAgent{Program: "unnamed", Title: "Unnamed", Command: []string{"/bin/unnamed"}}
+	unnamedSvc := serveAgents(unnamedAgent)
+	unnamedSvc.getModelCache().Put("unnamed\x00/bin/unnamed", acpListing{
+		Models:  []acpModel{{ID: "m-id", Name: ""}},
+		Current: "m-id",
+	})
+	programs := listPrograms(t, unnamedSvc)
+	if len(programs) != 1 || len(programs[0].Models) != 1 || programs[0].Models[0].Title != "m-id" {
+		t.Errorf("unnamed model programs = %+v", programs)
+	}
+
+	// findAgent with single-element command succeeds.
+	if found, err := svc.findAgent("acp:single", []string{"/bin/single"}); err != nil || found.Program != "single" || !slices.Equal(found.Command, []string{"/bin/single"}) {
+		t.Errorf("findAgent single command = %+v, %v", found, err)
+	}
+
+	// openACPSession and start error paths and supervision.
+	if _, err := openACPSession(t.Context(), acpAgent{Program: "empty", Command: nil}, toolEndpoint{}); err == nil || !strings.Contains(err.Error(), "no command starts empty") {
+		t.Errorf("openACPSession empty command = %v", err)
+	}
+	if _, err := openACPSession(t.Context(), acpAgent{Program: "missing", Command: []string{"/nonexistent-acp-bin"}}, toolEndpoint{}); err == nil || !strings.Contains(err.Error(), "start missing") {
+		t.Errorf("openACPSession missing binary = %v", err)
+	}
+	sess, err := openACPSession(t.Context(), agent, toolEndpoint{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sess.cmd.Dir != sess.dir || sess.cmd.Cancel == nil || sess.cmd.WaitDelay <= 0 {
+		t.Errorf("session cmd not supervised or dir mismatch: dir=%q want=%q waitDelay=%v", sess.cmd.Dir, sess.dir, sess.cmd.WaitDelay)
+	}
+	if closeErr := sess.close(); closeErr != nil {
+		t.Errorf("close session: %v", closeErr)
+	}
+
+	stdinSet := &acpSession{cmd: exec.CommandContext(t.Context(), "/bin/true"), program: "stdin-prog"}
+	stdinSet.cmd.Stdin = strings.NewReader("")
+	if err := stdinSet.start(); err == nil || !strings.Contains(err.Error(), "open the input of stdin-prog") || errors.Unwrap(err) == nil {
+		t.Errorf("start with Stdin set = %v", err)
+	}
+	stdoutSet := &acpSession{cmd: exec.CommandContext(t.Context(), "/bin/true"), program: "stdout-prog"}
+	stdoutSet.cmd.Stdout = io.Discard
+	if err := stdoutSet.start(); err == nil || !strings.Contains(err.Error(), "open the output of stdout-prog") || errors.Unwrap(err) == nil {
+		t.Errorf("start with Stdout set = %v", err)
+	}
+
+	t.Setenv("TMPDIR", filepath.Join(t.TempDir(), "nonexistent-parent"))
+	if _, err := openACPSession(t.Context(), agent, toolEndpoint{}); err == nil || !strings.Contains(err.Error(), "create the session folder") || errors.Unwrap(err) == nil {
+		t.Errorf("openACPSession with invalid TMPDIR = %v", err)
+	}
+
+	// maxAnswerBytes and stderrTailBytes boundaries.
+	chunkSess := &acpSession{id: "s1"}
+	chunkSess.answer.WriteString(strings.Repeat("a", (4<<20)-4))
+	validChunk := json.RawMessage(`{"sessionId":"s1","update":{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"1234"}}}`)
+	if err := chunkSess.readUpdate(validChunk); err != nil || chunkSess.answer.Len() != 4<<20 {
+		t.Errorf("readUpdate at 4MiB boundary = %v (len %d)", err, chunkSess.answer.Len())
+	}
+	extraChunk := json.RawMessage(`{"sessionId":"s1","update":{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"5"}}}`)
+	if err := chunkSess.readUpdate(extraChunk); !errors.Is(err, errAnswerTooLarge) {
+		t.Errorf("readUpdate past 4MiB boundary = %v, want errAnswerTooLarge", err)
+	}
+
+	var tb tailBuffer
+	prefix := "dropped-"
+	tail := strings.Repeat("k", 8<<10)
+	if _, err := tb.Write([]byte(prefix + tail)); err != nil {
+		t.Fatal(err)
+	}
+	if tb.String() != tail {
+		t.Errorf("tailBuffer len = %d, want %d", len(tb.String()), len(tail))
 	}
 }

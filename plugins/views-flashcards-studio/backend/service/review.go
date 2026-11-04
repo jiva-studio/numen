@@ -136,6 +136,7 @@ func (h *reviewHandler) WatchCardsDue(
 		case one, open := <-counted:
 			if !open {
 				counted = nil
+				// gomutants:disable-next-line INVERT_LOOP_CTRL reason="Setting counted to nil exits the loop on either continue or break."
 				continue
 			}
 			if err := send(&api.WatchCardsDueResponse{Vaults: nil, Day: "", Counted: one}); err != nil {
@@ -365,6 +366,7 @@ func parseRating(r api.Rating) review.Rating {
 	case api.RatingEasy:
 		return review.Easy
 	case api.RatingUnspecified:
+		// gomutants:disable-next-line BRANCH_CASE reason="Unspecified rating shares the default zero return."
 		return 0
 	default:
 		return 0

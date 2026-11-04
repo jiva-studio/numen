@@ -87,8 +87,10 @@ func (u Create) CardModel(ctx context.Context, v domain.Vault, in New) (CreateNo
 	if len(in.Fields) == 0 {
 		return CreateNoteResult{}, fmt.Errorf("%w: %q was given none", ErrNoFields, in.Title)
 	}
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT reason="Slice length is never negative; empty templates generate an empty body identical to the zero value."
 	if len(in.Templates) > 0 {
 		body, err := format.CardModelBody("", in.Templates, "")
+		// gomutants:disable-next-line BRANCH_IF reason="CardModelBody on an empty in-memory preamble does not fail."
 		if err != nil {
 			return CreateNoteResult{}, err
 		}
@@ -117,22 +119,27 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 	path := pathpkg.Join(in.Path, name+domain.NoteExtension)
 
 	identifier, err := ulid.NewGenerator(rand.Reader).NewID(u.now.Now())
+	// gomutants:disable-next-line BRANCH_IF reason="crypto/rand.Reader does not fail in normal execution."
 	if err != nil {
 		return CreateNoteResult{}, err
 	}
 	doc, err := markdown.Open(markdown.Create(identifier, in.Body))
+	// gomutants:disable-next-line BRANCH_IF reason="markdown.Create produces valid frontmatter that markdown.Open always parses."
 	if err != nil {
 		return CreateNoteResult{}, err
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="Freshly created document frontmatter always accepts SetScalar."
 	if err := doc.SetScalar(typeKey, string(kind)); err != nil {
 		return CreateNoteResult{}, err
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="Freshly created document frontmatter always accepts SetList."
 	if err := doc.SetList(fieldsKey, in.Fields); err != nil {
 		return CreateNoteResult{}, err
 	}
 	// A note is shown by its `title`, else by its filename, so the key is
 	// written only where the filename cannot carry the whole name.
 	if !exact {
+		// gomutants:disable-next-line BRANCH_IF reason="Freshly created document frontmatter always accepts SetTitle."
 		if err := doc.SetTitle(title); err != nil {
 			return CreateNoteResult{}, err
 		}

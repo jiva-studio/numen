@@ -26,6 +26,7 @@ func mountAPI(s *server.Server, links *link.Links) error {
 	server.Handle(a, api.MethodCopyVideo, service.copyVideo)
 	server.Handle(a, api.MethodDeleteCopy, service.deleteCopy)
 	server.Handle(a, api.MethodCreateLinks, service.createLinks)
+	// gomutants:disable-next-line RETURN_ERROR_NIL reason="compile-time API service and method constants are valid so a.Err() is always nil"
 	return a.Err()
 }
 
@@ -33,6 +34,7 @@ func mountAPI(s *server.Server, links *link.Links) error {
 // failed_precondition for a missing vault. Any other error is returned as it is.
 func toAPIError(err error) error {
 	switch {
+	// gomutants:disable-next-line BRANCH_CASE reason="nil error falls through to return err which is nil"
 	case err == nil:
 		return nil
 	case errors.Is(err, link.ErrNotALink), errors.Is(err, address.ErrNotAURL), errors.Is(err, host.ErrNotExist):

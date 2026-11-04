@@ -68,6 +68,7 @@ func ConvertStopReasonToWire(s review.StopReason) api.StopReason {
 	case review.StoppedNothing:
 		return api.StopReasonNothing
 	default:
+		// gomutants:disable-next-line RETURN_ZERO reason="StopReasonUnspecified is the zero value of api.StopReason."
 		return api.StopReasonUnspecified
 	}
 }
@@ -177,6 +178,7 @@ func ConvertCurveToWire(c flashcards.Curve) *api.Curve {
 
 // ConvertBudgetsToWire are the budgets that closed a day, as the schema names them.
 func ConvertBudgetsToWire(names review.BudgetNames) []api.BudgetName {
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="Slice capacity hint does not affect observable behaviour."
 	out := make([]api.BudgetName, 0, len(names))
 	for _, one := range names {
 		out = append(out, ConvertBudgetToWire(one))
@@ -188,6 +190,7 @@ func ConvertBudgetsToWire(names review.BudgetNames) []api.BudgetName {
 // is named here, so a budget added to the core is a case added beside them.
 func ConvertBudgetToWire(name review.BudgetName) api.BudgetName {
 	switch name {
+	// gomutants:disable-next-line BRANCH_CASE,RETURN_ZERO reason="ClosedNothing falls through to the same BudgetNameUnspecified zero value."
 	case review.ClosedNothing:
 		return api.BudgetNameUnspecified
 	case review.ClosedMinutes:
@@ -203,6 +206,7 @@ func ConvertBudgetToWire(name review.BudgetName) api.BudgetName {
 	case review.ClosedPaused:
 		return api.BudgetNamePaused
 	}
+	// gomutants:disable-next-line RETURN_ZERO reason="BudgetNameUnspecified is the zero value of api.BudgetName."
 	return api.BudgetNameUnspecified
 }
 
@@ -220,6 +224,7 @@ func ConvertGoalToWire(g review.Goal) api.Goal {
 	case review.GoalDate:
 		return api.GoalByDate
 	default:
+		// gomutants:disable-next-line RETURN_ZERO reason="GoalUnspecified is the zero value of api.Goal."
 		return api.GoalUnspecified
 	}
 }
@@ -233,6 +238,7 @@ func ConvertGoalFromWire(g api.Goal) review.Goal {
 		return review.GoalRetention
 	case api.GoalByDate:
 		return review.GoalDate
+	// gomutants:disable-next-line BRANCH_CASE reason="GoalUnspecified and default both return the empty domain goal."
 	case api.GoalUnspecified:
 		return ""
 	default:
@@ -248,6 +254,7 @@ func ConvertRuleToWire(r review.LearnedRule) api.Rule {
 	case review.RuleRetention:
 		return api.RuleRetention
 	default:
+		// gomutants:disable-next-line RETURN_ZERO reason="RuleUnspecified is the zero value of api.Rule."
 		return api.RuleUnspecified
 	}
 }
@@ -259,6 +266,7 @@ func ConvertRuleFromWire(r api.Rule) review.LearnedRule {
 		return review.RuleInterval
 	case api.RuleRetention:
 		return review.RuleRetention
+	// gomutants:disable-next-line BRANCH_CASE reason="RuleUnspecified and default both return the empty domain rule."
 	case api.RuleUnspecified:
 		return ""
 	default:
@@ -274,6 +282,7 @@ func ConvertBudgetUnitToWire(u review.BudgetUnit) api.BudgetUnit {
 	case review.BudgetUnitShows:
 		return api.BudgetUnitShows
 	default:
+		// gomutants:disable-next-line RETURN_ZERO reason="BudgetUnitUnspecified is the zero value of api.BudgetUnit."
 		return api.BudgetUnitUnspecified
 	}
 }
@@ -286,6 +295,7 @@ func ConvertBudgetUnitFromWire(u api.BudgetUnit) review.BudgetUnit {
 		return review.BudgetUnitCards
 	case api.BudgetUnitShows:
 		return review.BudgetUnitShows
+	// gomutants:disable-next-line BRANCH_CASE reason="BudgetUnitUnspecified and default both return the empty domain budget unit."
 	case api.BudgetUnitUnspecified:
 		return ""
 	default:

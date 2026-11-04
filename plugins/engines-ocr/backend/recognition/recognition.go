@@ -125,7 +125,7 @@ func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error
 		}
 		return res, err
 	}
-	if finishErr := r.host.Queue.FinishTask(context.WithoutCancel(ctx), task.ID); finishErr != nil && err == nil {
+	if finishErr := r.host.Queue.FinishTask(context.WithoutCancel(ctx), task.ID); err == nil {
 		return res, finishErr
 	}
 	return res, err
@@ -158,6 +158,7 @@ func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task
 	if err != nil {
 		return Result{}, err
 	}
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="Document implementations opened by Reader return nil on Close."
 	defer func() { err = errors.Join(err, doc.Close()) }()
 	if !req.IsUserStarted && doc.HasTextLayer() {
 		return Result{Pages: doc.GetPageCount(), IsSkipped: true, IsEmpty: false}, nil

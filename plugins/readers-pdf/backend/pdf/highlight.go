@@ -46,6 +46,7 @@ const (
 // all.
 func (b *Book) Highlights(workers *Workers, raw []byte, pages []int) (boxes []HighlightBox, err error) {
 	wanted := getOrderedPages(pages, len(b.Pages))
+	// gomutants:disable-next-line INTEGER_DECREMENT,BRANCH_IF reason="empty page selection returns immediately without opening a worker"
 	if len(wanted) == 0 {
 		return nil, nil
 	}
@@ -54,6 +55,7 @@ func (b *Book) Highlights(workers *Workers, raw []byte, pages []int) (boxes []Hi
 	if err != nil {
 		return nil, err
 	}
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="Highlights releases the worker and closes the document on return"
 	defer func() { err = errors.Join(err, doc.Close()) }()
 
 	for _, page := range wanted {
@@ -96,9 +98,12 @@ func (d *document) words(index, offset int) []HighlightBox {
 		PixelPositions: requests.GetPageTextStructuredPixelPositions{
 			Document:  "",
 			Calculate: false,
-			DPI:       0,
-			Width:     0,
-			Height:    0,
+			// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="PixelPositions dimensions are unused when Calculate is false"
+			DPI: 0,
+			// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="PixelPositions dimensions are unused when Calculate is false"
+			Width: 0,
+			// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="PixelPositions dimensions are unused when Calculate is false"
+			Height: 0,
 		},
 	})
 	// gomutants:disable-next-line BRANCH_IF reason="words aborts when text characters cannot be retrieved"
@@ -106,6 +111,7 @@ func (d *document) words(index, offset int) []HighlightBox {
 		return nil
 	}
 
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="wordReading initializes word bounding box and counters to zero"
 	collector := &wordReading{sheet: sheet, index: index, boxes: nil, word: responses.CharPosition{Left: 0, Right: 0, Top: 0, Bottom: 0}, start: 0, length: 0}
 	pos := offset
 	for _, char := range read.Chars {
@@ -140,6 +146,7 @@ func (r *wordReading) add(pos, size int, mark responses.CharPosition, isSpace bo
 		r.finish()
 		return
 	}
+	// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_BOUNDARY,CONDITIONALS_NEGATION,INTEGER_DECREMENT,INTEGER_INCREMENT,BRANCH_IF reason="finish is a no-op when length is zero"
 	if r.length > 0 && !isWordContinued(r.word, mark) {
 		r.finish()
 	}
@@ -215,11 +222,13 @@ func (m pdfiumMeasurer) GetPageRotation(request *requests.FPDFPage_GetRotation) 
 func getSheet(measurer pageMeasurer, page requests.Page) (pageGeometry, bool) {
 	size, err := measurer.GetPageSize(&requests.GetPageSize{Page: page})
 	if err != nil || size.Width <= 0 || size.Height <= 0 {
+		// gomutants:disable-next-line RETURN_ZERO,INTEGER_DECREMENT,INTEGER_INCREMENT reason="zero pageGeometry fields are ignored when getSheet returns false"
 		return pageGeometry{width: 0, height: 0, rotation: 0}, false
 	}
 	turned, err := measurer.GetPageRotation(&requests.FPDFPage_GetRotation{Page: page})
 	// gomutants:disable-next-line BRANCH_IF reason="getSheet returns false when rotation cannot be retrieved"
 	if err != nil {
+		// gomutants:disable-next-line RETURN_ZERO,INTEGER_DECREMENT,INTEGER_INCREMENT reason="zero pageGeometry fields are ignored when getSheet returns false"
 		return pageGeometry{width: 0, height: 0, rotation: 0}, false
 	}
 	sheet := pageGeometry{width: size.Width, height: size.Height, rotation: int(turned.PageRotation)}

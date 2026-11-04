@@ -71,11 +71,13 @@ func TestIsValidRejectsBytesOutsideTheAlphabet(t *testing.T) {
 		"non-ascii":  "01234567é",
 		"high byte":  "012345678\xff",
 		"nul byte":   "012345678\x00",
+		"first zero": "0abcde1234",
 		"too long":   "01234567890",
 		"too short":  "012345678",
 	} {
-		if cardid.IsValid(cardid.ID(s)) {
-			t.Errorf("%s: %q validated", name, s)
+		want := name == "first zero"
+		if cardid.IsValid(cardid.ID(s)) != want {
+			t.Errorf("%s: %q got %v, want %v", name, s, !want, want)
 		}
 	}
 }

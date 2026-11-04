@@ -507,6 +507,25 @@ func TestProject(t *testing.T) {
 		"inside a wikilink holding an embed": {
 			upTo(100) + " [[a ![[img.png]] b]] tail", upTo(100),
 		},
+		"exact HeadingRunes length": {
+			upTo(format.HeadingRunes), upTo(format.HeadingRunes),
+		},
+		"one rune over HeadingRunes": {
+			upTo(format.HeadingRunes + 1), upTo(format.HeadingRunes),
+		},
+		"cut right at end of emphasis": {
+			upTo(format.HeadingRunes-6) + "**ab**cd", upTo(format.HeadingRunes-6) + "**ab**",
+		},
+		"cut right at start of emphasis": {
+			upTo(format.HeadingRunes) + "**ab**", upTo(format.HeadingRunes),
+		},
+		"star inside wikilink does not pair with star outside": {
+			upTo(100) + " [[a*b]] " + upTo(15) + " *tail",
+			upTo(100) + " [[a*b]] " + upTo(11),
+		},
+		"emphasis immediately after wikilink": {
+			upTo(105) + " [[ab]]*very long emphasis*", upTo(105) + " [[ab]]",
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			got := format.Project(one.value)
@@ -517,5 +536,34 @@ func TestProject(t *testing.T) {
 				t.Errorf("the heading is %d characters, and %d is the most one is", n, format.HeadingRunes)
 			}
 		})
+	}
+}
+
+func TestCardModelFileRenameAndTemplates(t *testing.T) {
+	raw := "---\ntype: card-model\nfields:\n  - First\n  - Second\n---\n\n## Ask\n\n### Front\n\n{{First}} and {{Second}}\n"
+	f, err := format.OpenCardModel([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := f.RenameField("First", "First"); err != nil {
+		t.Fatalf("rename to self: %v", err)
+	}
+	if err := f.RenameField("Second", "First"); !errors.Is(err, format.ErrFieldTaken) {
+		t.Fatalf("expected ErrFieldTaken, got %v", err)
+	}
+	if err := f.RenameField("First", "Renamed"); err != nil {
+		t.Fatalf("rename first field: %v", err)
+	}
+	if err := f.AddTemplate(format.CardTemplate{Name: "BackOnly", Back: "{{Renamed}}"}); err != nil {
+		t.Fatalf("add template: %v", err)
+	}
+	body := string(f.Bytes())
+	if !strings.Contains(body, "{{Renamed}} and {{Second}}") || !strings.Contains(body, "## BackOnly\n\n### Back\n\n{{Renamed}}") {
+		t.Fatalf("unexpected body: %q", body)
+	}
+
+	emptyBody, err := format.CardModelBody("Preamble\n", nil, "\n\n")
+	if err != nil || emptyBody != "Preamble\n" {
+		t.Fatalf("expected preamble only when no templates, got %q, err %v", emptyBody, err)
 	}
 }

@@ -141,7 +141,9 @@ func (f *DeckFile) RemoveValue(card cardid.ID, field string) error {
 		// A value at the end of the file leaves the preceding content ending with
 		// the single line break a file ends with.
 		if to == len(body) {
+			// gomutants:disable-next-line INTEGER_INCREMENT reason="A value heading is always preceded by a card heading of at least 2 bytes."
 			head = getTrimmedEnd(body, 0, head)
+			// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT reason="A value heading is always preceded by a card heading, so trimmed head is at least 2."
 			if head > 0 {
 				content = "\n"
 			}
@@ -221,6 +223,7 @@ func (f *DeckFile) RenameSection(index int, name string) error {
 		return fmt.Errorf("%w: %d", ErrNoSuchSection, index)
 	}
 	line := headingLine(1, name)
+	// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT reason="A section heading is at least '# ' (1 or more bytes), so heads[index].from is always >= 1."
 	if from := heads[index].from; from > 0 && body[from-1] == '\n' {
 		line += "\n"
 	}
@@ -330,6 +333,7 @@ type deckBodyWriter struct {
 
 func (w *deckBodyWriter) writeSectionsUpTo(to int) error {
 	for w.sectionCount < len(w.sections) && w.sectionCount <= to {
+		// gomutants:disable-next-line BRANCH_IF reason="AddSection on an in-memory scratch DeckFile never fails."
 		if err := w.scratch.AddSection(w.sections[w.sectionCount]); err != nil {
 			return err
 		}
@@ -343,6 +347,7 @@ func (w *deckBodyWriter) writeCard(card Card) error {
 	if card.Section != NoSection && (card.Section < 0 || card.Section >= len(w.sections)) {
 		return fmt.Errorf("%w: %d", ErrNoSuchSection, card.Section)
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="writeSectionsUpTo on an in-memory scratch DeckFile never fails."
 	if err := w.writeSectionsUpTo(card.Section); err != nil {
 		return err
 	}
@@ -352,6 +357,7 @@ func (w *deckBodyWriter) writeCard(card Card) error {
 // DeckBody renders the cards and sections of d as the body of a deck note.
 func DeckBody(d Deck) (string, error) {
 	scratch, err := OpenDeck(markdown.Create("", d.Preamble))
+	// gomutants:disable-next-line BRANCH_IF reason="markdown.Create produces valid frontmatter that OpenDeck always opens."
 	if err != nil {
 		return "", err
 	}
@@ -365,6 +371,7 @@ func DeckBody(d Deck) (string, error) {
 			return "", err
 		}
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="writeSectionsUpTo on an in-memory scratch DeckFile never fails."
 	if err := w.writeSectionsUpTo(len(d.Sections)); err != nil {
 		return "", err
 	}

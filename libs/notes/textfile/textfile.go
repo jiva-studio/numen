@@ -36,7 +36,9 @@ func Encode(segments []domain.TextSegment) ([]byte, error) {
 			one.Selector = json.RawMessage(s.Selector)
 		}
 		raw, err := json.Marshal(one)
+		// gomutants:disable-next-line BRANCH_IF reason="json.Marshal on strings and a validated RawMessage cannot fail"
 		if err != nil {
+			// gomutants:disable-next-line RETURN_ERROR_NIL,ERRORF_WRAP reason="json.Marshal on strings and a validated RawMessage cannot fail"
 			return nil, fmt.Errorf("segment %d: %w", i, err)
 		}
 		b.Write(raw)
@@ -49,6 +51,7 @@ func Encode(segments []domain.TextSegment) ([]byte, error) {
 func Decode(raw []byte) ([]domain.TextSegment, error) {
 	var segments []domain.TextSegment
 	scanner := bufio.NewScanner(bytes.NewReader(raw))
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="a larger scanner buffer ceiling does not alter token scanning"
 	scanner.Buffer(nil, len(raw)+1)
 	for number := 1; scanner.Scan(); number++ {
 		text := bytes.TrimSpace(scanner.Bytes())
@@ -60,12 +63,15 @@ func Decode(raw []byte) ([]domain.TextSegment, error) {
 			return nil, fmt.Errorf("textfile: line %d: %w", number, err)
 		}
 		segment := domain.TextSegment{Text: one.Text, Heading: one.Heading}
+		// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_BOUNDARY,INTEGER_DECREMENT reason="converting an empty slice to domain.Selector yields the same empty string"
 		if len(one.Selector) > 0 && !bytes.Equal(one.Selector, []byte("null")) {
 			segment.Selector = domain.Selector(one.Selector)
 		}
 		segments = append(segments, segment)
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="bytes.Reader with a buffer of len(raw)+1 never produces a scanner error"
 	if err := scanner.Err(); err != nil {
+		// gomutants:disable-next-line RETURN_ERROR_NIL,ERRORF_WRAP reason="bytes.Reader with a buffer of len(raw)+1 never produces a scanner error"
 		return nil, fmt.Errorf("textfile: %w", err)
 	}
 	return segments, nil

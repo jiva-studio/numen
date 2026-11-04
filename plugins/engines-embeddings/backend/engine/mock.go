@@ -133,10 +133,12 @@ func embedMock(text string) []float32 {
 	for _, word := range strings.FieldsFunc(strings.ToLower(text), isNotWordRune) {
 		counts[getConcept(word)]++
 	}
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="an empty term has count zero and adds zero"
 	terms := make([]string, 0, len(counts))
 	for term := range counts {
 		terms = append(terms, term)
 	}
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="sorting terms fixes float addition order across map iterations"
 	slices.Sort(terms)
 
 	v := make([]float32, mockSharedDimensions+mockWordDimensions)

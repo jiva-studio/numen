@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalogtest"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/indexsource"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 func manifestOf(entry catalog.Entry) map[string]any {
@@ -102,16 +103,22 @@ func TestAnInvalidManifestIsReportedAndDoesNotHideTheOthers(t *testing.T) {
 	path := filepath.Join(t.TempDir(), indexsource.FileName)
 	good := manifestOf(catalogtest.OfferedEntries()[0])
 	writeIndex(t, path, []map[string]any{{"id": "org.example.broken"}, good})
+	src := indexsource.New([]string{path}, nil)
 
-	listed, err := indexsource.New([]string{path}, nil).List(t.Context())
+	listed, err := src.List(t.Context())
+	got, getErr := src.Get(t.Context(), good["id"].(string))
 
-	if err == nil || len(listed) != 1 || listed[0].ID != good["id"] {
-		t.Errorf("List = %+v, %v; want the valid plugin and an error for the other", listed, err)
+	if !errors.Is(err, manifest.ErrEmptyName) || len(listed) != 1 || listed[0].ID != good["id"] {
+		t.Errorf("List = %+v, %v; want the valid plugin and ErrEmptyName for the other", listed, err)
+	}
+	if !errors.Is(getErr, manifest.ErrEmptyName) || got.ID != good["id"] {
+		t.Errorf("Get = %+v, %v; want the valid plugin and ErrEmptyName", got, getErr)
 	}
 }
 
 func TestAnIndexThatIsNotJSONIsAnError(t *testing.T) {
-	path := filepath.Join(t.TempDir(), indexsource.FileName)
+	dir := t.TempDir()
+	path := filepath.Join(dir, indexsource.FileName)
 	if err := os.WriteFile(path, []byte("not json"), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -120,10 +127,33 @@ func TestAnIndexThatIsNotJSONIsAnError(t *testing.T) {
 	listed, err := source.List(t.Context())
 	_, getErr := source.Get(t.Context(), "org.example.any")
 
-	if err == nil || len(listed) != 0 {
-		t.Errorf("List = %+v, %v; want an error and no entries", listed, err)
+	var synErr *json.SyntaxError
+	if !errors.As(err, &synErr) || len(listed) != 0 {
+		t.Errorf("List = %+v, %v; want json.SyntaxError and no entries", listed, err)
 	}
 	if !errors.Is(getErr, catalog.ErrNotFound) {
 		t.Errorf("Get error = %v, want catalog.ErrNotFound joined to the read error", getErr)
+	}
+
+	// Directory as index path causes os.ReadFile error != ErrNotExist
+	dirSource := indexsource.New([]string{dir}, nil)
+	if _, dirErr := dirSource.List(t.Context()); dirErr == nil {
+		t.Error("expected error when index path is a directory")
+	}
+
+	// Fallback folders with multiple invalid plugins
+	fallbackDir := t.TempDir()
+	for _, bad := range []string{"bad1", "bad2"} {
+		folder := filepath.Join(fallbackDir, bad)
+		if err := os.MkdirAll(folder, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(folder, "manifest.json"), []byte(`{"id":"nodots"}`), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	fbSource := indexsource.New(nil, []string{fallbackDir})
+	if _, fbErr := fbSource.List(t.Context()); !errors.Is(fbErr, manifest.ErrEmptyName) {
+		t.Errorf("fallback discover error = %v, want ErrEmptyName", fbErr)
 	}
 }

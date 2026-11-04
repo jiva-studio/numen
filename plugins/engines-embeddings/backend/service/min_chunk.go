@@ -19,9 +19,11 @@ const (
 // number outside the bounds of the setting is brought to the nearest bound.
 func readMinChunkLength(values map[string]string) int {
 	raw, ok := values[settingMinChunkLength]
+	// gomutants:disable-next-line BRANCH_IF reason="missing key yields empty raw string that ParseFloat rejects"
 	if !ok {
 		return defaultMinChunkLength
 	}
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="ParseFloat treats bitSize other than 32 as 64"
 	number, err := strconv.ParseFloat(strings.TrimSpace(raw), 64)
 	if err != nil || math.IsNaN(number) {
 		return defaultMinChunkLength

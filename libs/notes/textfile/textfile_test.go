@@ -1,8 +1,10 @@
 package textfile_test
 
 import (
+	"encoding/json"
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -49,7 +51,40 @@ func TestEncodeRejectsASelectorThatIsNotJSON(t *testing.T) {
 }
 
 func TestDecodeRejectsALineThatIsNotJSON(t *testing.T) {
-	if _, err := textfile.Decode([]byte("{\"text\":\"a\"}\nWEBVTT\n")); err == nil {
+	_, err := textfile.Decode([]byte("{\"text\":\"a\"}\n\nWEBVTT\n"))
+	if err == nil {
 		t.Fatal("a WebVTT line was read as a segment")
+	}
+	if !strings.Contains(err.Error(), "line 3:") {
+		t.Fatalf("got %v, want line 3 reported", err)
+	}
+	var syntaxErr *json.SyntaxError
+	if !errors.As(err, &syntaxErr) {
+		t.Fatalf("got %v, want wrapped *json.SyntaxError", err)
+	}
+}
+
+func TestDecodeHandlesBlankLinesSelectorsAndLargeLines(t *testing.T) {
+	large := strings.Repeat("x", 70000)
+	input := "\n{\"text\":\"" + large + "\",\"selector\":1}\n{\"text\":\"b\",\"selector\":null}"
+	got, err := textfile.Decode([]byte(input))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []domain.TextSegment{
+		{Text: large, Selector: "1"},
+		{Text: "b", Selector: ""},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %+v, want %+v", got, want)
+	}
+
+	singleLargeNoNewline := []byte("{\"text\":\"" + large + "\"}")
+	gotSingle, err := textfile.Decode(singleLargeNoNewline)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(gotSingle) != 1 || gotSingle[0].Text != large {
+		t.Fatalf("got %+v", gotSingle)
 	}
 }

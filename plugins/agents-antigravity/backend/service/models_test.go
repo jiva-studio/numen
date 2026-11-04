@@ -3,6 +3,7 @@ package service
 import (
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
@@ -165,5 +166,36 @@ func TestAFamilyOfOneListedModelRunsThatModel(t *testing.T) {
 
 	if response != "ran solo" || stopReason != "" {
 		t.Errorf("said %q and stopReason %q", response, stopReason)
+	}
+}
+
+func TestModelConstantsAndLineSplitting(t *testing.T) {
+	if modelListLimit != 15*time.Second {
+		t.Errorf("modelListLimit = %v, want 15s", modelListLimit)
+	}
+	if failureBackoff != 30*time.Second {
+		t.Errorf("failureBackoff = %v, want 30s", failureBackoff)
+	}
+
+	// Leading '\r' at index 0, double-space with empty name, double-space with spaces in name, and double-space with empty title.
+	got := parseAntigravityModels([]byte(
+		"\rcr-at-zero\tCR Zero\n" +
+			"   leading-spaces-only\n" +
+			"has space  Not A Model ID\n" +
+			"space-bare  \n"))
+	want := []antigravityModel{
+		{Name: "cr-at-zero", Title: "CR Zero"},
+		{Name: "space-bare", Title: "space-bare"},
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("parseAntigravityModels edge cases = %v, want %v", got, want)
+	}
+
+	// listAntigravityModels passes extra arguments before "models".
+	models, err := listAntigravityModels(t.Context(), []string{
+		"/bin/sh", "-c", `if [ "$1" != "--extra" ] || [ "$2" != "models" ]; then exit 2; fi; printf 'm1\tModel 1\n'`, "sh", "--extra",
+	})
+	if err != nil || len(models) != 1 || models[0].Name != "m1" {
+		t.Fatalf("listAntigravityModels with extra args = (%v, %v)", models, err)
 	}
 }

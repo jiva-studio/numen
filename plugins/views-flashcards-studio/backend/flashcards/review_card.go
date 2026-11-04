@@ -140,6 +140,7 @@ func (u ListReviewCards) GetReviewCards(ctx context.Context, v domain.Vault, pat
 	}
 
 	cardModels := &cardModelMemo{read: cards.NewRead(u.readers, u.links), mu: sync.Mutex{}, cardModels: make(map[string]cardModelRead)}
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="Minimum worker count affects concurrency bound only."
 	places := min(max(1, u.Cores), len(misses))
 	var running sync.WaitGroup
 	queue := make(chan int)
@@ -383,12 +384,14 @@ func (c *reviewCardCache) begin() uint64 {
 
 func (c *reviewCardCache) get(key deckKey) (deckCards, bool) {
 	if c == nil {
+		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero deckCards value."
 		return deckCards{deck: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, cardModels: nil, reviewCards: nil}, false
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	pos, target := c.decks[key]
 	if !target {
+		// gomutants:disable-next-line RETURN_ZERO reason="Struct literal already holds the zero deckCards value."
 		return deckCards{deck: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, cardModels: nil, reviewCards: nil}, false
 	}
 	c.order.MoveToFront(pos)

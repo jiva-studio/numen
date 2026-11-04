@@ -210,6 +210,7 @@ type AmbiguousLink struct {
 // the character is read as punctuation of the link. Such a note is addressed
 // by its identifier or not at all.
 func IsNameable(name string) bool {
+	// gomutants:disable-next-line EXPRESSION_REMOVE reason="ParseAddress trims surrounding space so untrimmed names also fail the final equality check"
 	if strings.TrimSpace(name) != name || name == "" || strings.ContainsAny(name, "\n\r") {
 		return false
 	}

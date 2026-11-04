@@ -30,8 +30,10 @@ func convertOutcomeToErrorCode(o edit.ReadOutcome) (api.ErrorCode, bool) {
 	case edit.Unreadable:
 		return api.ErrorCodeUnreadable, true
 	case edit.Ok:
+		// gomutants:disable-next-line BRANCH_CASE,RETURN_ZERO reason="Ok shares the fallback return and ErrorCodeUnspecified is the zero value."
 		return api.ErrorCodeUnspecified, false
 	}
+	// gomutants:disable-next-line RETURN_ZERO reason="ErrorCodeUnspecified is the zero value of ErrorCode."
 	return api.ErrorCodeUnspecified, false
 }
 
@@ -61,6 +63,7 @@ func getErrorCode(err error) (api.ErrorCode, bool) {
 	case errors.Is(err, ports.ErrAlreadyExists), errors.Is(err, syscall.ENOTDIR):
 		return api.ErrorCodeAlreadyExists, true
 	}
+	// gomutants:disable-next-line RETURN_ZERO reason="ErrorCodeUnspecified is the zero value of ErrorCode."
 	return api.ErrorCodeUnspecified, false
 }
 

@@ -19,7 +19,15 @@ type fakeRuntime struct {
 
 func (f *fakeRuntime) get() Calls {
 	return Calls{
-		Run: func(_, _, _, _, _, _, _, _ uintptr) uintptr {
+		Run: func(_, options, inNames, _, _, outNames, _, _ uintptr) uintptr {
+			if options != 0 {
+				return 1
+			}
+			inPtr := *(*unsafe.Pointer)(unsafe.Pointer(inNames))
+			outPtr := *(*unsafe.Pointer)(unsafe.Pointer(outNames))
+			if inPtr == nil || *(*byte)(inPtr) != 'i' || outPtr == nil || *(*byte)(outPtr) != 'o' {
+				return 1
+			}
 			f.calls = append(f.calls, "run")
 			for i := range f.run.outputs {
 				if f.run.outputs[i] == 0 {
@@ -106,5 +114,24 @@ func TestAFailedRawRunStillReleasesWhatItCreated(t *testing.T) {
 
 	if len(f.released) != 3 {
 		t.Errorf("released %v after a failed run, want the 3 outputs", f.released)
+	}
+}
+
+func TestNewRunnerAndCopyOutputError(t *testing.T) {
+	if NewRunner() == nil {
+		t.Fatal("NewRunner() = nil")
+	}
+	f := &fakeRuntime{output: []float32{1, 2, 3}}
+	run := newFakeRun(f, 1)
+	if err := run.Run(); err != nil {
+		t.Fatal(err)
+	}
+	got := make([]float32, 2)
+	if err := run.CopyOutput(0, got); err != nil {
+		t.Fatal(err)
+	}
+	run.calls.GetData = func(_, _ uintptr) uintptr { return 1 }
+	if err := run.CopyOutput(0, got); err == nil {
+		t.Fatal("CopyOutput succeeded when GetData failed")
 	}
 }

@@ -34,6 +34,7 @@ func changeDeck(
 		return deckChange{}, err
 	}
 	return deckChange{
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Zero-valued FileStat Size is unused when counting deck cards."
 		result:  EditResult{FileStat: wrote.FileStat, Cards: len(file.Deck(domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}).Cards)},
 		cardIDs: wrote.Given,
 	}, nil

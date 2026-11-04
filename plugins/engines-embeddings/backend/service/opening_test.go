@@ -121,3 +121,136 @@ func embedText(ctx context.Context, t *testing.T, srv *embeddingServer) {
 		t.Errorf("vectors: %v", vectors)
 	}
 }
+
+type stubEmbedder struct {
+	engine.MockEmbedder
+	concurrency int
+	closeErr    error
+	onClose     func()
+}
+
+func (s stubEmbedder) Concurrency() int { return s.concurrency }
+
+func (s stubEmbedder) Close() error {
+	if s.onClose != nil {
+		s.onClose()
+	}
+	return s.closeErr
+}
+
+func TestStartOpeningUsesLocalInfoForNonMockAndModelInfoForMock(t *testing.T) {
+	srv := newEmbeddingServer()
+	srv.isMock = false
+	srv.modelInfo = engine.ModelInfo{Name: "remote-override"}
+	srv.localInfo = engine.ModelInfo{Name: "local-actual"}
+	var gotInfo engine.ModelInfo
+	srv.open = func(_ context.Context, info engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+		gotInfo = info
+		return stubEmbedder{concurrency: 6}, nil
+	}
+	emb, err := srv.getEmbedder(t.Context())
+	if err != nil || emb == nil {
+		t.Fatalf("getEmbedder = %v, %v", emb, err)
+	}
+	if gotInfo.Name != "local-actual" {
+		t.Fatalf("non-mock opened %q, want local-actual", gotInfo.Name)
+	}
+	if srv.modelInfo.Concurrency != 6 {
+		t.Fatalf("modelInfo.Concurrency = %d, want 6", srv.modelInfo.Concurrency)
+	}
+
+	mockSrv := newEmbeddingServer()
+	mockSrv.isMock = true
+	mockSrv.modelInfo = engine.ModelInfo{Name: "mock-model-info"}
+	mockSrv.localInfo = engine.ModelInfo{Name: "unused-local"}
+	mockSrv.open = func(_ context.Context, info engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+		gotInfo = info
+		return stubEmbedder{concurrency: 4}, nil
+	}
+	if _, err := mockSrv.getEmbedder(t.Context()); err != nil {
+		t.Fatalf("mock getEmbedder: %v", err)
+	}
+	if gotInfo.Name != "mock-model-info" {
+		t.Fatalf("mock opened %q, want mock-model-info", gotInfo.Name)
+	}
+}
+
+func TestFinishOpeningFailure(t *testing.T) {
+	srv := newEmbeddingServer()
+	wantErr := errors.New("boom")
+	srv.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+		return stubEmbedder{}, wantErr
+	}
+	emb, err := srv.getEmbedder(t.Context())
+	if !errors.Is(err, wantErr) || emb != nil {
+		t.Fatalf("getEmbedder = %v, %v, want nil and %v", emb, err, wantErr)
+	}
+	if srv.embedder != nil {
+		t.Fatal("srv.embedder should remain nil on open error")
+	}
+}
+
+func TestFinishOpeningSupersededClosesRetiredModelAndRetries(t *testing.T) {
+	srv := newEmbeddingServer()
+	closedRetired := make(chan struct{})
+	firstEntered := make(chan struct{})
+	releaseFirst := make(chan struct{})
+	calls := 0
+	srv.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+		calls++
+		if calls == 1 {
+			close(firstEntered)
+			<-releaseFirst
+			return stubEmbedder{
+				concurrency: 3,
+				onClose:     func() { close(closedRetired) },
+			}, nil
+		}
+		return stubEmbedder{concurrency: 5}, nil
+	}
+
+	errCh := make(chan error, 1)
+	go func() {
+		_, err := srv.getEmbedder(t.Context())
+		errCh <- err
+	}()
+	<-firstEntered
+
+	srv.mu.Lock()
+	srv.retireOpeningLocked()
+	srv.mu.Unlock()
+	close(releaseFirst)
+
+	if err := <-errCh; err != nil {
+		t.Fatalf("getEmbedder after supersede = %v", err)
+	}
+	<-closedRetired
+	if srv.modelInfo.Concurrency != 5 {
+		t.Fatalf("Concurrency = %d, want 5 from second opening", srv.modelInfo.Concurrency)
+	}
+}
+
+func TestCloseRetiresOpeningAndClosesLoadedEmbedder(t *testing.T) {
+	srv := newEmbeddingServer()
+	canceled := false
+	closed := false
+	wantErr := errors.New("close failed")
+	srv.opening = &modelOpening{
+		ready:  make(chan struct{}),
+		cancel: func() { canceled = true },
+	}
+	srv.embedder = stubEmbedder{
+		closeErr: wantErr,
+		onClose:  func() { closed = true },
+	}
+	err := srv.Close()
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("Close error = %v, want %v", err, wantErr)
+	}
+	if !canceled || srv.opening != nil {
+		t.Fatal("Close did not retire active opening")
+	}
+	if !closed || srv.embedder != nil {
+		t.Fatal("Close did not close and clear embedder")
+	}
+}

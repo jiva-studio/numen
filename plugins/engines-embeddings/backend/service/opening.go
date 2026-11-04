@@ -98,7 +98,9 @@ func (s *embeddingServer) finishOpening(op *modelOpening, emb textEmbedder, err 
 	}
 	// The runtime starts its threads while it opens the model, and a thread starts at the niceness of
 	// the thread that starts it.
+	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="stderr log on priority error has no side effect"
 	if err := s.lowerNice(limits.nice); err != nil {
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="stderr log on priority error has no side effect"
 		fmt.Fprintf(os.Stderr, "set the priority of the embeddings plugin: %v\n", err)
 	}
 	s.embedder = emb
@@ -117,7 +119,9 @@ func (s *embeddingServer) retireOpeningLocked() {
 
 func (s *embeddingServer) closeRetired(emb textEmbedder) {
 	go func() {
+		// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="stderr log on background close error has no side effect"
 		if err := emb.Close(); err != nil {
+			// gomutants:disable-next-line STATEMENT_REMOVE reason="stderr log on background close error has no side effect"
 			fmt.Fprintf(os.Stderr, "close the embedder: %v\n", err)
 		}
 	}()

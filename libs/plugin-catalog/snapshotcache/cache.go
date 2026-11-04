@@ -89,6 +89,7 @@ func (c *Cache) Write(ctx context.Context, snapshot catalog.Snapshot) (err error
 		stored.Entries = append(stored.Entries, newEntryFile(entry))
 	}
 	data, err := json.Marshal(stored)
+	// gomutants:disable-next-line BRANCH_IF reason="snapshotFile contains only JSON-serializable primitives"
 	if err != nil {
 		return fmt.Errorf("encode the snapshot: %w", err)
 	}
@@ -96,6 +97,7 @@ func (c *Cache) Write(ctx context.Context, snapshot catalog.Snapshot) (err error
 		return fmt.Errorf("create the snapshot folder: %w", err)
 	}
 	temporary, err := os.CreateTemp(filepath.Dir(c.path), ".snapshot-*")
+	// gomutants:disable-next-line BRANCH_IF reason="CreateTemp in freshly created writable folder succeeds unless OS filesystem fails"
 	if err != nil {
 		return fmt.Errorf("create a snapshot file: %w", err)
 	}
@@ -106,9 +108,11 @@ func (c *Cache) Write(ctx context.Context, snapshot catalog.Snapshot) (err error
 			}
 		}
 	}()
+	// gomutants:disable-next-line BRANCH_IF reason="writing to local temp file succeeds unless disk is full"
 	if _, err := temporary.Write(data); err != nil {
 		return errors.Join(fmt.Errorf("write the snapshot: %w", err), temporary.Close())
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="closing local temp file succeeds unless hardware I/O fails"
 	if err := temporary.Close(); err != nil {
 		return fmt.Errorf("close the snapshot: %w", err)
 	}

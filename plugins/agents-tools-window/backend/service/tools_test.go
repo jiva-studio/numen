@@ -34,6 +34,11 @@ func TestRegisterTools(t *testing.T) {
 			t.Errorf("ListTools missing %q, got %v", expected, names)
 		}
 	}
+
+	// Registering duplicate tools returns an error.
+	if err := RegisterTools(registry, mgr, nil); err == nil {
+		t.Errorf("expected error when registering duplicate tools")
+	}
 }
 
 func TestWindowTabsGetEmpty(t *testing.T) {
@@ -128,8 +133,69 @@ func TestWindowTabsGet_UsesContextFocus(t *testing.T) {
 	if output.Tabs[0].Path != "notes/inferred.md" {
 		t.Errorf("Tabs[0].Path = %q, want notes/inferred.md", output.Tabs[0].Path)
 	}
+	if output.ActiveID != "front-tab" {
+		t.Errorf("ActiveID = %q, want front-tab", output.ActiveID)
+	}
 	if !strings.Contains(output.Summary, "inferred") {
 		t.Errorf("Summary = %q, want to mention inferred", output.Summary)
+	}
+
+	// When open tabs already exist, context focus does not override them.
+	mgr.SetOpenTabs([]TabInfo{
+		{ID: "tab-1", Kind: "note", Path: "notes/real.md", Title: "real"},
+	}, "tab-1")
+	resp, err = registry.InvokeTool(t.Context(), tools.Call{
+		Name:      "window_tabs_get",
+		Arguments: []byte(`{}`),
+		Context:   map[string]string{"focus": "notes/inferred.md"},
+	})
+	if err != nil {
+		t.Fatalf("CallTool: %v", err)
+	}
+	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
+		t.Fatalf("unmarshal output: %v", err)
+	}
+	if output.ActiveID != "tab-1" || len(output.Tabs) != 1 || output.Tabs[0].Path != "notes/real.md" {
+		t.Errorf("expected real tab preserved, got %+v", output)
+	}
+}
+
+func TestFormatTabsSummaryAndDescribeTab(t *testing.T) {
+	// Empty ID on first tab with empty activeID does not match activeID; picks IsActive tab.
+	tabs := []TabInfo{
+		{ID: "", Kind: "note", Path: "notes/a.md", Title: "A"},
+		{ID: "t2", Kind: "note", Path: "notes/b.md", Title: "B", IsActive: true},
+	}
+	if got := formatTabsSummary(tabs, ""); got != `the note "B" at notes/b.md is in front of them` {
+		t.Errorf("formatTabsSummary empty activeID = %q", got)
+	}
+
+	// Exact activeID match stops search before a later IsActive tab.
+	tabsBoth := []TabInfo{
+		{ID: "t1", Kind: "note", Path: "notes/a.md", Title: "A"},
+		{ID: "t2", Kind: "note", Path: "notes/b.md", Title: "B", IsActive: true},
+	}
+	if got := formatTabsSummary(tabsBoth, "t1"); got != `the note "A" at notes/a.md is in front of them` {
+		t.Errorf("formatTabsSummary activeID match = %q", got)
+	}
+
+	// Fallback to first tab when neither activeID nor IsActive matches.
+	tabsNone := []TabInfo{
+		{ID: "t1", Kind: "", Path: "notes/a.md", Title: ""},
+		{ID: "t2", Kind: "note", Path: "notes/b.md", Title: "B"},
+	}
+	if got := formatTabsSummary(tabsNone, "missing"); got != `the tab notes/a.md is in front of them` {
+		t.Errorf("formatTabsSummary fallback = %q", got)
+	}
+
+	// describeTab with neither Title nor Path.
+	if got := describeTab(TabInfo{Kind: "canvas"}); got != `a tab of kind "canvas" is in front of them` {
+		t.Errorf("describeTab empty title/path = %q", got)
+	}
+
+	// describeTab with Title only (no Path).
+	if got := describeTab(TabInfo{Kind: "note", Title: "Untracked"}); got != `the note "Untracked" is in front of them` {
+		t.Errorf("describeTab title only = %q", got)
 	}
 }
 
@@ -265,8 +331,56 @@ func TestEditPreviewWithDirectDiff(t *testing.T) {
 	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
+	if output.Diff != customDiff {
+		t.Errorf("output.Diff = %q, want %q", output.Diff, customDiff)
+	}
 	if output.Additions != 1 || output.Deletions != 1 {
 		t.Errorf("got +%d, -%d; want +1, -1", output.Additions, output.Deletions)
+	}
+
+	// Explicit OriginalContent takes precedence over vault content, and works with nil vault.
+	vault := hosttest.New("test-vault")
+	if err := vault.Create(t.Context(), "notes/override.md", []byte("vault line\n")); err != nil {
+		t.Fatalf("create vault file: %v", err)
+	}
+	registryWithVault := tools.New()
+	if err := RegisterTools(registryWithVault, mgr, vault); err != nil {
+		t.Fatalf("RegisterTools: %v", err)
+	}
+	respOverride, err := registryWithVault.InvokeTool(t.Context(), tools.Call{
+		Name: "edit_preview",
+		Arguments: marshalJSON(t, EditPreviewInput{
+			Path:            "notes/override.md",
+			OriginalContent: "explicit original\n",
+			ProposedContent: "explicit proposed\n",
+		}),
+	})
+	if err != nil {
+		t.Fatalf("CallTool override: %v", err)
+	}
+	if err := json.Unmarshal(respOverride.GetResult().GetStructured(), &output); err != nil {
+		t.Fatalf("unmarshal override output: %v", err)
+	}
+	if !strings.Contains(output.Diff, "-explicit original") {
+		t.Errorf("expected diff against OriginalContent, got %s", output.Diff)
+	}
+
+	// Nil vault with empty OriginalContent diffs against empty string.
+	respNilVault, err := registry.InvokeTool(t.Context(), tools.Call{
+		Name: "edit_preview",
+		Arguments: marshalJSON(t, EditPreviewInput{
+			Path:            "notes/new.md",
+			ProposedContent: "brand new\n",
+		}),
+	})
+	if err != nil {
+		t.Fatalf("CallTool nil vault: %v", err)
+	}
+	if err := json.Unmarshal(respNilVault.GetResult().GetStructured(), &output); err != nil {
+		t.Fatalf("unmarshal nil vault output: %v", err)
+	}
+	if output.Additions != 1 || output.Deletions != 0 {
+		t.Errorf("nil vault got +%d, -%d; want +1, -0", output.Additions, output.Deletions)
 	}
 }
 

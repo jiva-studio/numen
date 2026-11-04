@@ -41,22 +41,17 @@ func FindCodex(customPath ...string) string {
 // findCodexIn returns the path of the Codex CLI, searched in customPath, PATH and places, or the
 // bare name where not found.
 func findCodexIn(places []string, customPath ...string) string {
-	if len(customPath) > 0 && customPath[0] != "" {
-		if agentrun.IsRunnable(customPath[0]) {
-			return customPath[0]
-		}
+	if len(customPath) > 0 && agentrun.IsRunnable(customPath[0]) {
+		return customPath[0]
 	}
 	if found, err := exec.LookPath("codex"); err == nil {
 		return found
 	}
-	home, err := os.UserHomeDir()
-	if err != nil {
-		home = ""
-	}
+	home, _ := os.UserHomeDir()
 	for _, p := range places {
 		resolved := p
-		if strings.HasPrefix(p, "~/") && home != "" {
-			resolved = filepath.Join(home, p[2:])
+		if rest, ok := strings.CutPrefix(p, "~/"); ok && home != "" {
+			resolved = filepath.Join(home, rest)
 		}
 		if agentrun.IsRunnable(resolved) {
 			return resolved

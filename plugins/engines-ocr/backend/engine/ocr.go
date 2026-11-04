@@ -39,16 +39,7 @@ type Block = recognition.Block
 
 // Distinct drops a region that covers one already kept.
 func Distinct(regions []Region, most float64) []Region {
-	slices.SortStableFunc(regions, func(a, b Region) int {
-		switch {
-		case a.Score > b.Score:
-			return -1
-		// gomutants:disable-next-line CONDITIONALS_BOUNDARY,CONDITIONALS_NEGATION reason="slices.SortStableFunc tests only for negative comparison results; returning 1 or 0 produces the same order"
-		case b.Score > a.Score:
-			return 1
-		}
-		return 0
-	})
+	slices.SortStableFunc(regions, func(a, b Region) int { return cmp.Compare(b.Score, a.Score) })
 
 	result := regions[:0]
 	for _, r := range regions {
@@ -70,6 +61,7 @@ func Distinct(regions []Region, most float64) []Region {
 
 func overlap(a, b image.Rectangle) float64 {
 	both := a.Intersect(b)
+	// gomutants:disable-next-line BRANCH_IF reason="Intersect returns the zero rectangle when disjoint, yielding zero intersection area."
 	if both.Empty() {
 		return 0
 	}
@@ -84,6 +76,7 @@ func overlap(a, b image.Rectangle) float64 {
 
 func isInside(a, b image.Rectangle) bool {
 	both := a.Intersect(b)
+	// gomutants:disable-next-line BRANCH_IF reason="Intersect returns the zero rectangle when disjoint, yielding zero intersection area."
 	if both.Empty() {
 		return false
 	}
@@ -108,7 +101,7 @@ func Assemble(lines []Line) (string, []Box) {
 		}
 		if n := getHyphenLength(out); n > 0 {
 			out = out[:len(out)-n]
-			// gomutants:disable-next-line INTEGER_DECREMENT reason="len(kept) is at least 1 whenever out holds text"
+			// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT reason="assembledBoxes holds at least one entry whenever out holds text."
 			if k := len(assembledBoxes); k > 0 {
 				assembledBoxes[k-1].Range.End -= n
 			}

@@ -53,6 +53,7 @@ func NewService(config Config) (*Service, error) {
 // cannot run. A source that fails does not remove the entries of the others: the error returned
 // joins one *SourceError for each source that failed, and the listing holds what the rest returned.
 func (s *Service) List(ctx context.Context) (Listing, error) {
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="lists starts with zero length and capacity len(s.sources)"
 	lists := make([][]Entry, 0, len(s.sources))
 	var failures []*SourceError
 	for _, source := range s.sources {
@@ -93,6 +94,7 @@ func checkEntry(entry Entry, env manifest.Environment) *manifest.IncompatibleErr
 // it, and the sources that failed are joined to it.
 func (s *Service) Get(ctx context.Context, id string) (Entry, error) {
 	listing, err := s.List(ctx)
+	// gomutants:disable-next-line BRANCH_IF reason="List already returns empty entries when ctx is canceled"
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return Entry{}, ctxErr
 	}
@@ -108,6 +110,7 @@ func (s *Service) Get(ctx context.Context, id string) (Entry, error) {
 // application cannot run does not provide it, and a plugin on disk is preferred to one on offer.
 func (s *Service) FindByTabKind(ctx context.Context, kind string) (Entry, error) {
 	listing, err := s.List(ctx)
+	// gomutants:disable-next-line BRANCH_IF reason="List already returns empty entries when ctx is canceled"
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return Entry{}, ctxErr
 	}

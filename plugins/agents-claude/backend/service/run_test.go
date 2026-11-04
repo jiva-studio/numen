@@ -392,6 +392,59 @@ func TestWriteMcpConfigRequiresBothUrlAndToken(t *testing.T) {
 	if file != "" {
 		t.Errorf("expected no config file when token is empty, got %q", file)
 	}
+	file2, err := writeMcpConfig("", "token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if file2 != "" {
+		t.Errorf("expected no config file when url is empty, got %q", file2)
+	}
+}
+
+func TestDiscoveryCustomPathAndGlobEscaping(t *testing.T) {
+	if len(getClaudeSearchPlaces()) == 0 {
+		t.Fatal("expected non-empty default search places")
+	}
+
+	withoutClaudeAnywhere(t)
+	runnable := filepath.Join(t.TempDir(), "custom-claude")
+	writeRunnable(t, runnable)
+	t.Setenv("NUMEN_CLAUDE_COMMAND", "/opt/env-claude")
+
+	// Valid customPath[0] takes precedence over environment variables.
+	if got := findClaudeIn(nil, runnable); got != runnable {
+		t.Errorf("findClaudeIn(runnable) = %q, want %q", got, runnable)
+	}
+	// Empty customPath[0] or non-runnable customPath[0] falls through to environment variable.
+	if got := findClaudeIn(nil, "", runnable); got != "/opt/env-claude" {
+		t.Errorf("findClaudeIn(\"\", runnable) = %q, want /opt/env-claude", got)
+	}
+	if got := findClaudeIn(nil, "/nonexistent/claude"); got != "/opt/env-claude" {
+		t.Errorf("findClaudeIn(nonexistent) = %q, want /opt/env-claude", got)
+	}
+
+	// Empty HOME skips ~/ places and uses absolute places.
+	t.Setenv("NUMEN_CLAUDE_COMMAND", "")
+	t.Setenv("HOME", "")
+	if got := findInPlaces([]string{"~/.local/bin/claude", runnable}); got != runnable {
+		t.Errorf("findInPlaces with empty HOME = %q, want %q", got, runnable)
+	}
+
+	// Glob characters in path are escaped.
+	escaped := escapeGlob(`/tmp/a*b?c[d\e`)
+	wantEscaped := `/tmp/a[*]b[?]c[[]d\\e`
+	if runtime.GOOS == "windows" {
+		wantEscaped = `/tmp/a[*]b[?]c[[]d\e`
+	}
+	if escaped != wantEscaped {
+		t.Errorf("escapeGlob = %q, want %q", escaped, wantEscaped)
+	}
+
+	// getVariables returns exact slice length.
+	vars := getVariables(map[string]string{"K": "V"})
+	if len(vars) != 1 || vars[0] != "K=V" {
+		t.Errorf("getVariables = %v, want [K=V]", vars)
+	}
 }
 
 // A program started by an agent linked into the host's process is given the variables its

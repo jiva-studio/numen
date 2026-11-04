@@ -28,6 +28,7 @@ type diffHunk struct {
 
 // CreateUnifiedDiff creates a unified diff between original and proposed content.
 func CreateUnifiedDiff(filePath, original, proposed string) (string, int, int) {
+	// gomutants:disable-next-line BRANCH_IF reason="Identical inputs also produce zero hunks and return the same empty diff result."
 	if original == proposed {
 		return "", 0, 0
 	}
@@ -36,10 +37,6 @@ func CreateUnifiedDiff(filePath, original, proposed string) (string, int, int) {
 	propLines := splitLines(proposed)
 
 	script := computeEditScript(origLines, propLines)
-	if len(script) == 0 {
-		return "", 0, 0
-	}
-
 	additions, deletions := countScriptChanges(script)
 	hunks := buildHunks(script, 3)
 	if len(hunks) == 0 {
@@ -232,20 +229,9 @@ func (c *hunkCollector) handleDifference(script []editItem, idx int) {
 
 func (c *hunkCollector) openHunk(script []editItem, idx int) {
 	c.inHunk = true
-	c.trailingContext = 0
 	leadingStart := max(0, idx-c.contextLines)
-	c.currentLines = nil
-	c.origLen = 0
-	c.propLen = 0
-
-	prefixOrig := c.origLine
-	prefixProp := c.propLine
-	for k := idx - 1; k >= leadingStart; k-- {
-		prefixOrig--
-		prefixProp--
-	}
-	c.origStart = prefixOrig
-	c.propStart = prefixProp
+	c.origStart = c.origLine - (idx - leadingStart)
+	c.propStart = c.propLine - (idx - leadingStart)
 
 	for k := leadingStart; k < idx; k++ {
 		c.currentLines = append(c.currentLines, " "+script[k].text)
@@ -258,6 +244,7 @@ func (c *hunkCollector) flushHunk() {
 	if !c.inHunk || len(c.currentLines) == 0 {
 		return
 	}
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="Zero excess when trailingContext equals contextLines is a no-op slice and subtraction."
 	if c.trailingContext > c.contextLines {
 		excess := c.trailingContext - c.contextLines
 		c.currentLines = c.currentLines[:len(c.currentLines)-excess]
@@ -272,8 +259,9 @@ func (c *hunkCollector) flushHunk() {
 		lines:     c.currentLines,
 	})
 	c.currentLines = nil
+	c.origLen = 0
+	c.propLen = 0
 	c.inHunk = false
-	c.trailingContext = 0
 }
 
 func hasUpcomingChanges(script []editItem, startIdx, maxLookahead int) bool {

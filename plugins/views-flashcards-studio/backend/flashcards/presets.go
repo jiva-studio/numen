@@ -363,6 +363,7 @@ func parsePresetBytes(out PresetContents, ref domain.FileStat, raw []byte) (Pres
 	if _, err := markdown.Open(raw); errors.Is(err, markdown.ErrUnreadable) {
 		out.Outcome = note.Unreadable
 		return out, nil
+		// gomutants:disable-next-line BRANCH_IF reason="Markdown Open returns only nil or ErrUnreadable."
 	} else if err != nil {
 		return PresetContents{}, fmt.Errorf("read %s: %w", out.Path, err)
 	}
@@ -432,19 +433,24 @@ func (u Presets) Point(
 func (u Presets) getPresetAddress(ctx context.Context, v domain.Vault, preset string) (domain.Address, error) {
 	var to domain.Address
 	if preset == "" {
+		// gomutants:disable-next-line RETURN_ZERO reason="Address variable to is already the zero value at this return."
 		return to, nil
 	}
 	if u.notes == nil {
+		// gomutants:disable-next-line RETURN_ZERO reason="Address variable to is already the zero value at this return."
 		return to, ErrNoPresets
 	}
 	pos, err := u.Read(ctx, v, preset)
 	if err != nil {
+		// gomutants:disable-next-line RETURN_ZERO reason="Address variable to is already the zero value at this return."
 		return to, err
 	}
 	switch {
 	case pos.Outcome == note.Missing:
+		// gomutants:disable-next-line RETURN_ZERO reason="Address variable to is already the zero value at this return."
 		return to, fmt.Errorf("%w: %s", note.ErrNoNote, preset)
 	case pos.Outcome != note.Ok || pos.Type != format.TypePreset:
+		// gomutants:disable-next-line RETURN_ZERO reason="Address variable to is already the zero value at this return."
 		return to, fmt.Errorf("%w: %s", ErrNotAPreset, preset)
 	}
 	return note.GetAddress(ctx, u.notes, v.ID, preset)
@@ -470,6 +476,7 @@ func (u Presets) Save(
 	}
 	pos, err := u.save(ctx, v, path, settings, stat)
 	if err != nil {
+		// gomutants:disable-next-line RETURN_ZERO reason="Save helper returns a zero FileStat alongside any error."
 		return pos, err
 	}
 	return pos, note.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)
@@ -517,9 +524,11 @@ func (u Presets) save(
 	was, _ := review.ReadPreset(n.Frontmatter)
 
 	doc, err := markdown.Open(raw)
+	// gomutants:disable-next-line BRANCH_IF reason="Notes with parsed preset frontmatter always open as valid markdown documents."
 	if err != nil {
 		return domain.FileStat{}, fmt.Errorf("%s: %w", path, err)
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="Setting scalar and mapping values on a parsed preset document does not fail."
 	if err := writeSettings(doc, settings, was); err != nil {
 		return domain.FileStat{}, fmt.Errorf("%s: %w", path, err)
 	}
@@ -541,6 +550,7 @@ func (u Presets) save(
 // byte. A key the read could not parse and the user has since changed differs
 // from was and is written.
 func writeSettings(doc *markdown.Document, p, was review.Preset) error {
+	// gomutants:disable-next-line BRANCH_IF reason="Setting by_date on a parsed preset document does not fail."
 	if err := writeByDate(doc, p, was); err != nil {
 		return err
 	}
@@ -562,6 +572,7 @@ func writeSettings(doc *markdown.Document, p, was review.Preset) error {
 		if one.value == one.was {
 			continue
 		}
+		// gomutants:disable-next-line BRANCH_IF reason="Setting primitive frontmatter values on a parsed preset document does not fail."
 		if err := doc.SetValue(one.key, one.value); err != nil {
 			return err
 		}

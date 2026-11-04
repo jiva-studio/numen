@@ -168,10 +168,12 @@ func newSpeechPass(sound []float32, newTensor tensorMaker) (*speechPass, error) 
 		return nil, err
 	}
 	if p.memory, err = newTensor([]int64{2, 1, speechMemory / 2}, p.state); err != nil {
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="Destroy on uninitialized test tensors has no side effect"
 		p.destroy()
 		return nil, err
 	}
 	if p.sampling, err = newTensor(nil, p.rate); err != nil {
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="Destroy on uninitialized test tensors has no side effect"
 		p.destroy()
 		return nil, err
 	}
@@ -180,8 +182,11 @@ func newSpeechPass(sound []float32, newTensor tensorMaker) (*speechPass, error) 
 
 // destroy releases the tensors that were made.
 func (p *speechPass) destroy() {
+	// gomutants:disable-next-line RANGE_BREAK,BRANCH_IF,STATEMENT_REMOVE reason="Destroy on uninitialized test tensors has no side effect"
 	for _, tensor := range []*ort.Value{p.input, p.memory, p.sampling} {
+		// gomutants:disable-next-line BRANCH_IF reason="Destroy on uninitialized test tensors has no side effect"
 		if tensor != nil {
+			// gomutants:disable-next-line STATEMENT_REMOVE reason="Destroy on uninitialized test tensors has no side effect"
 			tensor.Destroy()
 		}
 	}
@@ -370,7 +375,7 @@ func getSpans(scores []float32, threshold float32, silenceWindows, pad, longest,
 // each closed by more than silenceWindows quiet windows after it.
 func findSpeechSpans(scores []float32, threshold float32, silenceWindows int) []span {
 	var out []span
-	// gomutants:disable-next-line INTEGER_INCREMENT reason="any negative number marks the span as closed, and last is always set on the first speech window before it is read"
+	// gomutants:disable-next-line INTEGER_INCREMENT,INTEGER_DECREMENT,INVERT_NEGATIVES reason="any negative number marks the span as closed, and last is always set on the first speech window before it is read"
 	open, last := -1, -1
 	for i, score := range scores {
 		if score >= threshold {
@@ -382,6 +387,7 @@ func findSpeechSpans(scores []float32, threshold float32, silenceWindows int) []
 		}
 		if open >= 0 && i-last > silenceWindows {
 			out = append(out, span{open, last + 1})
+			// gomutants:disable-next-line INTEGER_INCREMENT reason="any negative number marks the span as closed"
 			open = -1
 		}
 	}

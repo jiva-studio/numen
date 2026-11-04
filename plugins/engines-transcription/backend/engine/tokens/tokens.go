@@ -27,6 +27,7 @@ func Read(path string) (pieces Pieces, err error) {
 	if err != nil {
 		return nil, err
 	}
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="closing a read-only os.File in defer does not fail under normal reads"
 	defer func() { err = errors.Join(err, file.Close()) }()
 
 	var out Pieces
@@ -68,13 +69,18 @@ func (p Pieces) GetIndex(piece string) int {
 // GetText returns the text of a run of tokens. A token in the model vocabulary and absent from this file
 // is omitted.
 func (p Pieces) GetText(response []int) string {
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="builder preallocation size hint does not affect output text"
 	size := 0
+	// gomutants:disable-next-line RANGE_BREAK reason="builder preallocation loop does not affect output text"
 	for _, token := range response {
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_INCREMENT,BRANCH_IF reason="builder preallocation condition does not affect output text"
 		if token >= 0 && token < len(p) {
+			// gomutants:disable-next-line REMOVE_SELF_ASSIGNMENTS reason="builder preallocation accumulation does not affect output text"
 			size += len(p[token])
 		}
 	}
 	var out strings.Builder
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="strings.Builder.Grow preallocation does not affect output text"
 	out.Grow(size)
 	for _, token := range response {
 		if token >= 0 && token < len(p) {

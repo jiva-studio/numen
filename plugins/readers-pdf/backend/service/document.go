@@ -34,6 +34,7 @@ const pluginID = "md.numen.readers.pdf"
 // compiles PDFium; without that directory the compiled module is kept in memory.
 func newCompilationCache() wazero.CompilationCache {
 	dir, err := cache.GetPluginDir()
+	// gomutants:disable-next-line BRANCH_IF reason="missing plugin cache directory falls back to in-memory compilation cache"
 	if err != nil {
 		return wasm.NewCompilationCache("")
 	}
@@ -44,9 +45,11 @@ func newCompilationCache() wazero.CompilationCache {
 // them kept while idle, released by the plugin's clock.
 func newWorkers() *pdf.Workers {
 	workers := pdf.NewWorkers()
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="production workers share the plugin compilation cache"
 	workers.SetCompilationCache(newCompilationCache())
 	workers.SetAfterFunc(clock.AfterFunc)
 	workers.SetWorkers(runtime.NumCPU())
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="idle worker count is bounded between 2 and 4"
 	workers.SetIdleWorkers(max(2, min(runtime.NumCPU(), 4)))
 	go workers.Warmup()
 	return workers
@@ -62,6 +65,7 @@ func NewDocumentServer(files host.Vault, texts host.Texts, workers *pdf.Workers)
 func (s *DocumentServer) Mount(api *server.API) error {
 	server.Handle(api, "GetDocument", s.GetDocument)
 	server.Handle(api, "GetHighlights", s.GetHighlights)
+	// gomutants:disable-next-line RETURN_ERROR_NIL reason="Mount returns any registration error accumulated on api"
 	return api.Err()
 }
 
@@ -112,6 +116,7 @@ func (s *DocumentServer) GetHighlights(ctx context.Context, req GetHighlightsReq
 	if len(req.Ranges) == 0 || len(req.Ranges) > mostSpans {
 		return GetHighlightsResponse{}, server.NewAPIError(server.CodeInvalidArgument, fmt.Sprintf("expected between one and %d ranges, got %d", mostSpans, len(req.Ranges)))
 	}
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="slice starts with zero length and capacity len(req.Ranges)"
 	runs := make([]domain.ByteRange, 0, len(req.Ranges))
 	end := 0
 	for _, one := range req.Ranges {

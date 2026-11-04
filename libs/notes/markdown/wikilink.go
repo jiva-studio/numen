@@ -22,6 +22,7 @@ func WikilinksIn(line string) []Wikilink {
 	var out []Wikilink
 	spans := getCodeSpans(line)
 	pos := 0
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="at pos == len(line) strings.Index on the empty slice returns -1 and breaks"
 	for pos < len(line) {
 		start := strings.Index(line[pos:], "[[")
 		if start < 0 {
@@ -61,6 +62,7 @@ func WikilinksIn(line string) []Wikilink {
 func WikilinksInText(text string) []Wikilink {
 	var out []Wikilink
 	var f Fence
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="at lineStart == len(text) the trailing empty slice contains no wikilinks"
 	for lineStart := 0; lineStart <= len(text); {
 		lineEnd := len(text)
 		if next := strings.IndexByte(text[lineStart:], '\n'); next >= 0 {
@@ -84,6 +86,7 @@ func WikilinksInText(text string) []Wikilink {
 // length closes; a run that nothing closes is text.
 func getCodeSpans(line string) [][2]int {
 	var out [][2]int
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="at pos == len(line) strings.IndexByte on the empty slice returns -1 and breaks"
 	for pos := 0; pos < len(line); {
 		open := strings.IndexByte(line[pos:], '`')
 		if open < 0 {
@@ -92,8 +95,10 @@ func getCodeSpans(line string) [][2]int {
 		open += pos
 		size := getBacktickRun(line, open)
 		closeAt := -1
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="at p == len(line) strings.IndexByte on the empty slice returns -1 and breaks"
 		for p := open + size; p < len(line); {
 			next := strings.IndexByte(line[p:], '`')
+			// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_INCREMENT reason="p is always immediately past a full backtick run so line[p] is never a backtick and next is never 0"
 			if next < 0 {
 				break
 			}

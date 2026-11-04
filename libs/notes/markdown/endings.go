@@ -10,6 +10,7 @@ import (
 // It is the form clients receive and send back. An offset into a chunk is an
 // offset into the file, so the text passed to Parse is the current file.
 func Normalise(text string) string {
+	// gomutants:disable-next-line BRANCH_IF reason="ReplaceAll on a string without carriage returns returns the same string"
 	if !strings.ContainsRune(text, '\r') {
 		return text
 	}
@@ -86,6 +87,7 @@ func separatorWidth(block []byte, offset int) int {
 
 // endsWithBreak reports whether a block's last line is finished.
 func endsWithBreak(block []byte) bool {
+	// gomutants:disable-next-line EXPRESSION_REMOVE,INTEGER_INCREMENT reason="breakWidth returns at most 3 so widths above 3 never equal breakWidth"
 	for width := 1; width <= 3 && width <= len(block); width++ {
 		if breakWidth(block, len(block)-width) == width {
 			return true
@@ -116,6 +118,7 @@ func lineOffsets(block []byte) []int {
 // block, in bytes. The parser counts a column in characters, and a column past
 func columnOffset(block []byte, lines []int, line, column int) int {
 	offset, end := lines[line-1], lines[line]
+	// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_BOUNDARY reason="utf8.DecodeRune on an empty slice at offset == end returns width 0"
 	for count := 1; count < column && offset < end; count++ {
 		_, width := utf8.DecodeRune(block[offset:end])
 		offset += width

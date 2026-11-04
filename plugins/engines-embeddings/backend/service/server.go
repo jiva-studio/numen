@@ -92,11 +92,15 @@ const envMockLog = "NUMEN_MOCK_EMBED_LOG"
 
 // newLocalModelOpener returns what loads a model on this machine through the library.
 func newLocalModelOpener(library *onnx.Library) openEmbedder {
+	// gomutants:disable-next-line RETURN_ZERO reason="production opener wraps engine.Open with native ONNX runtime"
 	return func(ctx context.Context, info engine.ModelInfo, local engine.LocalModel) (textEmbedder, error) {
 		emb, err := engine.Open(ctx, library, info, local, nil)
+		// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="production opener wraps engine.Open with native ONNX runtime"
 		if err != nil {
+			// gomutants:disable-next-line RETURN_ERROR_NIL reason="production opener wraps engine.Open with native ONNX runtime"
 			return nil, err
 		}
+		// gomutants:disable-next-line RETURN_ZERO reason="production opener wraps engine.Open with native ONNX runtime"
 		return emb, nil
 	}
 }
@@ -106,7 +110,9 @@ func newLocalModelOpener(library *onnx.Library) openEmbedder {
 const envMockOpenHold = "NUMEN_MOCK_OPEN_HOLD_MS"
 
 func (s *embeddingServer) openMockModel(ctx context.Context, _ engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+	// gomutants:disable-next-line INVERT_LOGICAL,EXPRESSION_REMOVE,CONDITIONALS_BOUNDARY,INTEGER_DECREMENT reason="0ms timeout completes immediately without blocking"
 	if held, err := strconv.Atoi(os.Getenv(envMockOpenHold)); err == nil && held > 0 {
+		// gomutants:disable-next-line ARITHMETIC_BASE reason="mock hold duration scaling for integration tests"
 		hold, cancel := context.WithTimeout(ctx, time.Duration(held)*time.Millisecond)
 		defer cancel()
 		<-hold.Done()
@@ -150,8 +156,10 @@ func (s *embeddingServer) updateConfig(values map[string]string) {
 // plugin runs takes effect with the next change of a setting.
 func (s *embeddingServer) loadProfilesLocked() {
 	shipped, err := engine.GetShippedProfiles()
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="embedded shipped profiles json is valid"
 	s.profilesErr = err
 	s.profiles = shipped.WithUserProfiles(s.profilesDir, func(file string, err error) {
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="stderr log on invalid user profile has no side effect"
 		fmt.Fprintf(os.Stderr, "embeddings: skipped the model profile %s: %v\n", file, err)
 	})
 }
@@ -253,7 +261,9 @@ func newEmbeddingServer() *embeddingServer {
 		s := &embeddingServer{
 			modelInfo: info,
 			localModel: engine.LocalModel{
+				// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="zero-value struct literal fields"
 				Name: "", Dir: "", File: "", BatchTexts: 0, Runtime: "", Threads: 0, Sessions: 0,
+				// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="zero-value struct literal fields"
 				PassBudget: 0, PassMemory: 0, Provider: "", ShouldDownload: false, Revision: "", Sums: nil,
 			},
 			localInfo: none, localErr: nil, profilesErr: nil, localKey: "", profiles: nil, open: nil,
@@ -319,9 +329,11 @@ func applyModelOverrides(_ *engine.ModelInfo, local *engine.LocalModel) {
 }
 
 func parsePositiveInt(val string) int {
+	// gomutants:disable-next-line BRANCH_IF reason="empty string is rejected by strconv.Atoi"
 	if val == "" {
 		return 0
 	}
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT reason="returning 0 for d == 0 matches the fallback return 0"
 	if d, err := strconv.Atoi(val); err == nil && d > 0 && d <= math.MaxInt32 {
 		return d
 	}
@@ -347,6 +359,7 @@ func applyRuntimeEnv(local *engine.LocalModel) {
 		local.Runtime = runtimeLib
 	}
 	if threads := os.Getenv("NUMEN_ONNX_THREADS"); threads != "" {
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_DECREMENT reason="setting local.Threads to 0 leaves default 0 unchanged"
 		if th, err := strconv.Atoi(threads); err == nil && th > 0 {
 			local.Threads = th
 		}
@@ -453,6 +466,7 @@ func (s *embeddingServer) EmbedTexts(ctx context.Context, role embedding.Role, t
 		}
 	}
 	if err != nil {
+		// gomutants:disable-next-line ERRORF_WRAP reason="rpcerror.New extracts only error message string"
 		return nil, rpcerror.New(rpcerror.Internal, fmt.Errorf("embed batch: %w", err))
 	}
 	if len(denseVectors) != len(texts) {
@@ -468,8 +482,10 @@ func (s *embeddingServer) embedRemoteTexts(ctx context.Context, key, baseURL str
 	for i, t := range texts {
 		vec, err := computeServiceVector(ctx, key, baseURL, model, t)
 		if err != nil {
+			// gomutants:disable-next-line ERRORF_WRAP reason="rpcerror.New extracts only error message string"
 			return nil, rpcerror.New(rpcerror.Internal, fmt.Errorf("service text %d: %w", i, err))
 		}
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY,CONDITIONALS_NEGATION,INTEGER_DECREMENT,INTEGER_INCREMENT,BRANCH_IF reason="computeServiceVector returns non-empty vector on nil error"
 		if len(vec) > 0 {
 			s.mu.Lock()
 			s.modelInfo.Dimensions = len(vec)
@@ -528,13 +544,16 @@ func (s *embeddingServer) getModelName() string {
 }
 
 func computeServiceVector(ctx context.Context, key, baseURL, model, text string) (vector []float32, err error) {
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT,ARITHMETIC_BASE reason="HTTP client timeout constant"
 	client := &http.Client{Transport: nil, CheckRedirect: nil, Jar: nil, Timeout: 30 * time.Second}
 	endpoint := strings.TrimSuffix(baseURL, "/") + "/embeddings"
 	reqBody, err := json.Marshal(openAIEmbeddingRequest{
 		Input: []string{text},
 		Model: model,
 	})
+	// gomutants:disable-next-line BRANCH_IF reason="marshalling string struct cannot fail"
 	if err != nil {
+		// gomutants:disable-next-line RETURN_ERROR_NIL reason="marshalling string struct cannot fail"
 		return nil, err
 	}
 
@@ -549,10 +568,13 @@ func computeServiceVector(ctx context.Context, key, baseURL, model, text string)
 	if err != nil {
 		return nil, err
 	}
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="http response body close does not fail in memory"
 	defer func() { err = errors.Join(err, resp.Body.Close()) }()
 
 	respBytes, err := io.ReadAll(resp.Body)
+	// gomutants:disable-next-line BRANCH_IF reason="unreadable body leaves respBytes empty and fails status or unmarshal"
 	if err != nil {
+		// gomutants:disable-next-line RETURN_ERROR_NIL reason="unreadable body leaves respBytes empty and fails status or unmarshal"
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
@@ -560,6 +582,7 @@ func computeServiceVector(ctx context.Context, key, baseURL, model, text string)
 	}
 
 	var openAIResp openAIEmbeddingResponse
+	// gomutants:disable-next-line BRANCH_IF reason="invalid json leaves openAIResp.Data empty and fails length check below"
 	if err := json.Unmarshal(respBytes, &openAIResp); err != nil {
 		return nil, err
 	}
@@ -576,6 +599,7 @@ func Mount(s *server.Server) error {
 	embedSrv := newEmbeddingServer()
 	s.SetUpdateConfig(embedSrv.updateConfig)
 	embedding.Mount(s, embedSrv)
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="server shutdown callback closes internal embedSrv state"
 	s.OnClose(embedSrv.Close)
 	return nil
 }

@@ -4,9 +4,13 @@ import (
 	"context"
 	"errors"
 	"os"
+	"os/exec"
 	"slices"
 	"strings"
+	"syscall"
 	"testing"
+	"testing/iotest"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
@@ -191,5 +195,99 @@ func TestModelCache_AsyncReturnsEmptyThenFallbackOnFailure(t *testing.T) {
 	got, err = s.getModels(t.Context(), command, nil)
 	if err != nil || len(got) != len(getFallbackModels()) {
 		t.Fatalf("failed async cache returned %v, %v", got, err)
+	}
+}
+
+func TestModelConstantsLevelsAndParseEdgeCases(t *testing.T) {
+	if modelsTimeout != 30*time.Second {
+		t.Errorf("modelsTimeout = %v, want 30s", modelsTimeout)
+	}
+	if modelsLifetime != 10*time.Minute {
+		t.Errorf("modelsLifetime = %v, want 10m", modelsLifetime)
+	}
+
+	noEffort := claudeModel{Value: "m", SupportsEffort: false, EffortLevels: []string{"high"}}
+	if got := noEffort.getLevels(); got != nil {
+		t.Errorf("expected nil levels when SupportsEffort is false, got %v", got)
+	}
+
+	unsorted := claudeModel{Value: "m", SupportsEffort: true, EffortLevels: []string{"max", "low", "high"}}
+	if got := getLevelNames(unsorted.getLevels()); !slices.Equal(got, []string{"low", "high", "max"}) {
+		t.Errorf("expected sorted levels [low high max], got %v", got)
+	}
+
+	// Large line (>64KB), non-control_response with matching request_id, and broken JSON with control_response.
+	largeLine := `{"type":"system","padding":"` + strings.Repeat("x", 70*1024) + `"}`
+	wrongType := `{"type":"other","response":{"subtype":"success","request_id":"r1","response":{"models":[{"value":"bad"}]}}}`
+	brokenJSON := `{"type":"control_response","response":bad}`
+	models, err := parseModels(strings.NewReader(strings.Join([]string{
+		largeLine,
+		wrongType,
+		brokenJSON,
+		readFixture(t),
+	}, "\n")), "r1")
+	if err != nil || len(models) != 13 {
+		t.Fatalf("parseModels with prefix lines = (%d, %v), want (13, nil)", len(models), err)
+	}
+
+	// Scanner read error.
+	readErr := errors.New("read failed")
+	if _, err := parseModels(iotest.ErrReader(readErr), "r1"); !errors.Is(err, readErr) {
+		t.Errorf("parseModels ErrReader = %v, want %v", err, readErr)
+	}
+}
+
+func TestIsStoppedAndFetchModelsDetails(t *testing.T) {
+	if !isStopped(nil) {
+		t.Error("expected nil error to be stopped")
+	}
+	if !isStopped(&exec.ExitError{}) {
+		t.Error("expected ExitError to be stopped")
+	}
+	if !isStopped(context.Canceled) {
+		t.Error("expected context.Canceled to be stopped")
+	}
+	if !isStopped(os.ErrProcessDone) {
+		t.Error("expected os.ErrProcessDone to be stopped")
+	}
+	if !isStopped(syscall.ESRCH) {
+		t.Error("expected syscall.ESRCH to be stopped")
+	}
+	if isStopped(errors.New("other error")) {
+		t.Error("expected arbitrary error to not be stopped")
+	}
+
+	// Non-existent command returns Start error.
+	if _, err := fetchModels(t.Context(), []string{"/nonexistent-claude-bin"}, nil); err == nil {
+		t.Error("expected error when starting nonexistent binary")
+	}
+
+	// Command arguments after command[0] and sanitized environment are passed to the process.
+	answer := strings.Replace(readFixture(t), `"r1"`, `"numen-models"`, 1)
+	answer = strings.ReplaceAll(answer, "'", "")
+	body := "if [ \"$1\" != \"--extra\" ] || [ -n \"$CLAUDECODE\" ] || [ \"$KEEP_VAR\" != \"yes\" ]; then exit 2; fi\n" +
+		"read -r _\ncat <<'EOF'\n" + answer + "EOF\nexit 0\n"
+	models, err := fetchModels(t.Context(), []string{"/bin/sh", "-c", body, "sh", "--extra"}, []string{"PATH=" + os.Getenv("PATH"), "CLAUDECODE=1", "KEEP_VAR=yes"})
+	if err != nil || len(models) != 13 {
+		t.Fatalf("fetchModels with args and env = (%d, %v)", len(models), err)
+	}
+
+	// Synchronous getModels returns fetch error directly.
+	s := &agentServer{
+		fetch: func(context.Context, []string, []string) ([]claudeModel, error) {
+			return nil, errors.New("sync fetch failed")
+		},
+	}
+	if _, err := s.getModels(t.Context(), []string{"claude"}, nil); err == nil {
+		t.Error("expected getModels to return synchronous fetch error")
+	}
+
+	// Empty model name resolves against defaultModelName in the cache.
+	sDefault := &agentServer{}
+	sDefault.getModelCache().Put("claude", []claudeModel{
+		{Value: defaultModelName, SupportsEffort: true, EffortLevels: []string{"low", "high"}},
+	})
+	if got := sDefault.getReasoning("", "xhigh"); got != "" {
+		t.Errorf("getReasoning(\"\", \"xhigh\") = %q, want empty when default model lacks xhigh", got)
 	}
 }

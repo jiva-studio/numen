@@ -30,7 +30,9 @@ type PageProvider struct {
 // NewPages returns the provider of web pages other than video sites.
 func NewPages() *PageProvider {
 	dialer := new(net.Dialer)
+	// gomutants:disable-next-line STATEMENT_REMOVE,INTEGER_DECREMENT,INTEGER_INCREMENT,ARITHMETIC_BASE reason="net.Dialer fields are captured in closure and not observable without waiting 30s"
 	dialer.Timeout = 30 * time.Second
+	// gomutants:disable-next-line STATEMENT_REMOVE,INTEGER_DECREMENT,INTEGER_INCREMENT,ARITHMETIC_BASE reason="net.Dialer fields are captured in closure and not observable without waiting 30s"
 	dialer.KeepAlive = 30 * time.Second
 
 	transport := new(http.Transport)

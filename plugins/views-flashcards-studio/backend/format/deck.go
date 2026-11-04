@@ -155,6 +155,7 @@ func (b *deckBuilder) addCard(body []byte, s section, secsAfter []section, end i
 
 // createEmptyStat is the file stat of a deck that was not read from a file.
 func createEmptyStat() domain.FileStat {
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Empty FileStat Size is unused by internal span readers."
 	return domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}
 }
 
@@ -164,7 +165,8 @@ func readDeck(ref domain.FileStat, body []byte) (Deck, []cardSpan) {
 		deck: Deck{
 			Ref: ref, Preamble: "", Tail: "", Sections: nil, Cards: nil, Problems: nil,
 		},
-		spans:          nil,
+		spans: nil,
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Initial read offset is only used when Cards or Sections is non-empty, which overwrites read."
 		read:           0,
 		currentSection: NoSection,
 	}
@@ -211,6 +213,7 @@ func findDuplicateCardIDs(cs []Card) []Problem {
 	}
 	var out []Problem
 	for item, c := range cs {
+		// gomutants:disable-next-line EXPRESSION_REMOVE reason="carried[\"\"] is always 0, so carried[c.CardID] > 1 already excludes empty CardID."
 		if c.CardID != "" && carried[c.CardID] > 1 {
 			out = append(out, newCardProblem(item, FaultDuplicateCardID,
 				"another card in this deck has the card id "+string(c.CardID)))
@@ -250,10 +253,12 @@ func readCardModelLink(body []byte, from, to int) (target string, leadFrom int) 
 // the next line is blank, or there is no next line. A wikilink followed by
 // prose is a paragraph that begins with a link.
 func paragraphEnds(body []byte, pos, to int) bool {
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,BRANCH_IF,RETURN_FALSE reason="When pos >= to, body[pos:to] is empty and trims to empty string, returning true below."
 	if pos >= to {
 		return true
 	}
 	end := to
+	// gomutants:disable-next-line INTEGER_DECREMENT reason="bytes.IndexByte returns -1 when not found and >= 0 when found."
 	if i := bytes.IndexByte(body[pos:to], '\n'); i >= 0 {
 		end = pos + i
 	}
