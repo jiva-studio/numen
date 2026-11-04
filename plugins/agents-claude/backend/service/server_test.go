@@ -728,7 +728,7 @@ func TestServerEdgeCasesAndDirectCalls(t *testing.T) {
 }
 
 // The person's own hooks and skills are read only where the plugin's setting `reads_hooks_and_skills`
-// is on; a task carries no such option.
+// is on and the task names a tool; a task carries no such option.
 func TestAskReadsHooksAndSkillsOnlyWhereTheSettingIsOn(t *testing.T) {
 	for _, c := range []struct {
 		name   string
@@ -748,7 +748,9 @@ func TestAskReadsHooksAndSkillsOnlyWhereTheSettingIsOn(t *testing.T) {
 			agent.applyConfig(c.values)
 			client := startAgent(t, agent)
 
-			stream, err := client.Ask(t.Context(), &agentrun.Request{Prompt: "q", Command: []string{script}})
+			stream, err := client.Ask(t.Context(), &agentrun.Request{
+				Prompt: "q", Command: []string{script}, Tools: []string{"note_read"},
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
