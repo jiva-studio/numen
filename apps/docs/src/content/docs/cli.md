@@ -18,28 +18,26 @@ numen-cli search Research "entropy"
 ## What it takes
 
 <!-- BEGIN AUTOGEN -->
-
-|                                              |                                                                                                                                 |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `numen-cli vault add <path> [--name <name>]` | add a folder to the vault list                                                                                                  |
-| `numen-cli vault list`                       | show the vaults this installation knows                                                                                         |
-| `numen-cli vault rename <vault> <new name>`  | change the name of a vault                                                                                                      |
-| `numen-cli vault remove <vault>`             | take a vault off the list, leaving its folder                                                                                   |
-| `numen-cli vault erase <vault> [--yes]`      | remove it and move its folder to the trash                                                                                      |
-| `numen-cli vault open <vault>`               | set the vault the next window opens                                                                                             |
-| `numen-cli scan <vault> [--rebuild-index]`   | update the index of a vault --rebuild-index reads every file again and deletes the vectors of every model except the one in use |
-| `numen-cli search <vault> <query>`           | full-text search within one vault                                                                                               |
-| `numen-cli links <vault> <note>`             | what a note points at, and what points at it                                                                                    |
-| `numen-cli problems <vault> [<check>...]`    | list notes with broken links, invalid frontmatter or ambiguous links                                                            |
+| | |
+| --- | --- |
+| `numen-cli vault add <path> [--name <name>]` | add a folder to the vault list |
+| `numen-cli vault list` | show the vaults this installation knows |
+| `numen-cli vault rename <vault> <new name>` | change the name of a vault |
+| `numen-cli vault remove <vault>` | take a vault off the list, leaving its folder |
+| `numen-cli vault erase <vault> [--yes]` | remove it and move its folder to the trash |
+| `numen-cli vault open <vault>` | set the vault the next window opens |
+| `numen-cli scan <vault> [--rebuild-index]` | update the index of a vault --rebuild-index reads every file again and deletes the vectors of every model except the one in use |
+| `numen-cli search <vault> <query>` | full-text search within one vault |
+| `numen-cli links <vault> <note>` | what a note points at, and what points at it |
+| `numen-cli problems <vault> [<check>...]` | list notes with broken links, invalid frontmatter or ambiguous links |
 
 ### Over every command
 
-|                        |                                                                 |
-| ---------------------- | --------------------------------------------------------------- |
-| `--index <path>`       | where the index lives (default: platform cache directory)       |
-| `--registry <path>`    | where the vault list lives (default: platform config directory) |
-| `--service-dir <name>` | the folder a vault keeps its identity in (default: .numen)      |
-
+| | |
+| --- | --- |
+| `--index <path>` | where the index lives (default: platform cache directory) |
+| `--registry <path>` | where the vault list lives (default: platform config directory) |
+| `--service-dir <name>` | the folder a vault keeps its identity in (default: .numen) |
 <!-- END AUTOGEN -->
 
 ## The commands, one at a time
@@ -48,7 +46,7 @@ numen-cli search Research "entropy"
 
 **`vault erase`** asks before it moves a folder to the trash. `--yes` confirms for you, which a script needs. `vault remove` never asks for confirmation: the folder stays where it is.
 
-**`vault open`** does not open anything here. It sets which vault the _next window_ opens.
+**`vault open`** does not open anything here. It sets which vault the *next window* opens.
 
 **`scan`** brings the index up to date with what is on disk: changed files are read again, and deleted files are removed from the index. `--rebuild-index` reads every file regardless of what the index has stored. Use it when search returns stale results. Vectors are made here too, and unlike the window, which does it in the background, the command waits for them.
 
@@ -58,23 +56,23 @@ numen-cli search Research "entropy"
 
 **`problems`** prints what numen cannot interpret in the vault. Name the checks you want, or none to run all four:
 
-|               |                                                                       |
-| ------------- | --------------------------------------------------------------------- |
-| `parse`       | a link with no target, a link with no role, a role nobody decided on. |
-| `frontmatter` | a block between the `---` lines that is not YAML.                     |
-| `ambiguous`   | a link that points to more than one note.                             |
-| `dangling`    | a link that points to no note.                                        |
+| | |
+| --- | --- |
+| `parse` | a link with no target, a link with no role, a role nobody decided on. |
+| `frontmatter` | a block between the `---` lines that is not YAML. |
+| `ambiguous` | a link that points to more than one note. |
+| `dangling` | a link that points to no note. |
 
 ## Commands of the plugins
 
 Every other command comes from an enabled plugin, which declares it; `numen-cli help` lists them under "commands of the plugins", each with the arguments it takes. A command over a file takes the file after the vault, and an argument is a flag. The plugins run without a window, and a command waits until its plugin is done:
 
-|                                                 |                                                                                                                                  |
-| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `numen-cli transcript.create <vault> <file>`    | transcribe a recording (`engines-transcription`)                                                                                 |
-| `numen-cli recognition.create <vault> <file>`   | recognise the text of a scan, page by page (`engines-ocr`)                                                                       |
-| `numen-cli proofreading.create <vault> <file>`  | correct the live text of a file with the model named in [the settings](/reader/#correcting-what-ocr-read) (`tools-proofreading`) |
-| `numen-cli link.import <vault> --address <url>` | keep an address as a link and fetch its text (`tools-media-importer`)                                                            |
+| | |
+| --- | --- |
+| `numen-cli transcript.create <vault> <file>` | transcribe a recording (`engines-transcription`) |
+| `numen-cli recognition.create <vault> <file>` | recognise the text of a scan, page by page (`engines-ocr`) |
+| `numen-cli proofreading.create <vault> <file>` | correct the live text of a file with the model named in [the settings](/reader/#correcting-what-ocr-read) (`tools-proofreading`) |
+| `numen-cli link.import <vault> --address <url>` | keep an address as a link and fetch its text (`tools-media-importer`) |
 
 What a command creates is a text version of the file. The next `scan` reads it into the index, as the window does, and `search` finds it. A disabled plugin has no commands.
 

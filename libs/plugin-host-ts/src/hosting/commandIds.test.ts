@@ -52,8 +52,12 @@ describe('a command a plugin registers', () => {
     const host = createPluginHost(createDeps())
     const first = vi.fn()
     const second = vi.fn()
-    host.createContext('md.example.one').registerCommand({ id: 'note.open', title: 'One', handler: first })
-    host.createContext('md.example.two').registerCommand({ id: 'note.open', title: 'Two', handler: second })
+    host
+      .createContext('md.example.one')
+      .registerCommand({ id: 'note.open', title: 'One', handler: first })
+    host
+      .createContext('md.example.two')
+      .registerCommand({ id: 'note.open', title: 'Two', handler: second })
 
     expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual([
       'md.example.one:note.open',
