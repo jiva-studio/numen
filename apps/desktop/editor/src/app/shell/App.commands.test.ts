@@ -331,11 +331,12 @@ function drawPluginTypes(): void {
 describe('the request to open the settings', () => {
   it('opens the settings tab when the request names no plugin and no filter', async () => {
     const window = await mountWindow()
-    expect(window.text()).not.toContain(WORDS.settings)
+    const getTabNames = () => window.findAll('[role="tab"]').map((one) => one.text())
+    expect(getTabNames().some((name) => name.includes(WORDS.settings))).toBe(false)
 
     globalThis.dispatchEvent(new CustomEvent('numen:open-settings'))
     await settle()
 
-    expect(window.text()).toContain(WORDS.settings)
+    expect(getTabNames().some((name) => name.includes(WORDS.settings))).toBe(true)
   })
 })
