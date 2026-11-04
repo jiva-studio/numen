@@ -670,12 +670,12 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"\x15TOOL_STEP_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10TOOL_STEP_SEARCH\x10\x01\x12\x14\n" +
 	"\x10TOOL_STEP_REMOVE\x10\x02\x12\x12\n" +
-	"\x0eTOOL_STEP_MOVE\x10\x03*^\n" +
+	"\x0eTOOL_STEP_MOVE\x10\x03*X\n" +
 	"\n" +
 	"ToolServer\x12\x1b\n" +
 	"\x17TOOL_SERVER_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10TOOL_SERVER_FULL\x10\x01\x12\x17\n" +
-	"\x13TOOL_SERVER_READING\x10\x02\"\x04\b\x03\x10\x03*u\n" +
+	"\x13TOOL_SERVER_READING\x10\x02*u\n" +
 	"\rToolErrorCode\x12\x1f\n" +
 	"\x1bTOOL_ERROR_CODE_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cTOOL_ERROR_CODE_UNKNOWN_TOOL\x10\x01\x12!\n" +

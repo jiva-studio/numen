@@ -61,8 +61,6 @@ message Entry {
   // nothing is made from it.
   bool is_folder = 3;
 
-  reserved 4;
-
   // Whether the entry is a note. Every other file is opened by the plugin its
   // content type names.
   bool is_note = 6;
@@ -84,8 +82,6 @@ message ListFileKindsResponse {
 // FileKind is what the vault holds at one path.
 message FileKind {
   string path = 1;
-
-  reserved 2, 4;
 
   // Whether a note is at the path.
   bool is_note = 5;
