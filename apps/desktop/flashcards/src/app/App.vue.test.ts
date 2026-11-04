@@ -632,3 +632,15 @@ describe('the appearance palette', () => {
     expect(shell?.appearance.isOpen.value).toBe(false)
   })
 })
+
+describe('the title bar of the flashcards window', () => {
+  it('is drawn above the window, with the window controls', async () => {
+    const window = mount(App, { props: { deps: createDeps() }, attachTo: document.body })
+    mounted.push(window)
+    await flushPromises()
+
+    expect(window.find('[data-title-bar]').exists()).toBe(true)
+    expect(window.find('[data-title]').text()).toBe('numen — flashcards')
+    expect(window.findAll('[data-title-bar] button')).toHaveLength(3)
+  })
+})

@@ -1,5 +1,8 @@
 /** The strings displayed by the window. */
 export const WORDS = {
+  /** The title bar: the application, and the window it is beside the application's name. */
+  appName: 'numen',
+  windowName: 'flashcards',
   /** What the list of vaults is called. */
   vaults: 'Vaults',
   /** Shown while the installation has not yet reported its vaults. */

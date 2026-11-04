@@ -16,6 +16,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
+	"github.com/jiva-studio/numen/apps/desktop/internal/frame"
 	"github.com/jiva-studio/numen/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/apps/desktop/internal/themes"
@@ -288,7 +289,12 @@ func makeApplication(
 }
 
 func makeWindow(app *application.App, opened *editor.Installation) *application.WebviewWindow {
-	return app.Window.NewWithOptions(application.WebviewWindowOptions{
+	return app.Window.NewWithOptions(getMainWindowOptions(opened))
+}
+
+// getMainWindowOptions is the main window: its title is for the taskbar, the title bar is drawn by the page.
+func getMainWindowOptions(opened *editor.Installation) application.WebviewWindowOptions {
+	return frame.Window(application.WebviewWindowOptions{
 		Title:          getWindowTitle(opened.GetCurrentVault(), opened.State.GetOpenTabs()),
 		Width:          1280,
 		Height:         860,
@@ -310,19 +316,24 @@ func getSecondaryWindowURL(tab editor.DetachedTab) string {
 func makeSecondaryWindow(
 	app *application.App, opened *editor.Installation, tab editor.DetachedTab,
 ) *application.WebviewWindow {
-	opts := application.WebviewWindowOptions{
+	return app.Window.NewWithOptions(getSecondaryWindowOptions(opened, tab))
+}
+
+// getSecondaryWindowOptions is the window of a torn-off tab, placed where the tab was dropped.
+func getSecondaryWindowOptions(opened *editor.Installation, tab editor.DetachedTab) application.WebviewWindowOptions {
+	opts := frame.Window(application.WebviewWindowOptions{
 		Title:          getWindowTitle(opened.GetCurrentVault(), opened.State.GetOpenTabs()),
 		Width:          1280,
 		Height:         860,
 		URL:            getSecondaryWindowURL(tab),
 		EnableFileDrop: true,
-	}
+	})
 	if tab.X != 0 || tab.Y != 0 {
 		opts.InitialPosition = application.WindowXY
 		opts.X = tab.X
 		opts.Y = tab.Y
 	}
-	return app.Window.NewWithOptions(opts)
+	return opts
 }
 
 // windowHooks holds what a window needs to close and to follow the vault.
