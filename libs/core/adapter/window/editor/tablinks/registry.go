@@ -65,7 +65,7 @@ type PathSync struct {
 type Event struct {
 	Snapshot  *Snapshot
 	Sync      *PathSync
-	Move      *TabMove
+	Move      *MovedTab
 	Highlight *Highlight
 }
 
@@ -405,7 +405,7 @@ func (r *Registry) Unlink(tabID string) {
 // MoveErrorNone when the window that read the tab calls Accept. A tab that no
 // window reports within the grace period is dropped and unlinked. It ends a
 // pending move or detach of the same tab with MoveErrorCancelled.
-func (r *Registry) Detach(tab MovedTab) <-chan MoveError {
+func (r *Registry) Detach(tab SavedTab) <-chan MoveError {
 	result := make(chan MoveError, 1)
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -418,12 +418,12 @@ func (r *Registry) Detach(tab MovedTab) <-chan MoveError {
 
 // ReadDetached returns the tab and the move id of a pending detach to the
 // first window that reads it, and again to that window only.
-func (r *Registry) ReadDetached(windowID, tabID string) (MovedTab, string, bool) {
+func (r *Registry) ReadDetached(windowID, tabID string) (SavedTab, string, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	pending, ok := r.pendingDetaches[tabID]
 	if !ok || windowID == "" || (pending.windowID != "" && pending.windowID != windowID) {
-		return MovedTab{}, "", false
+		return SavedTab{}, "", false
 	}
 	pending.windowID = windowID
 	return pending.tab, pending.id, true
@@ -434,7 +434,7 @@ func (r *Registry) ReadDetached(windowID, tabID string) (MovedTab, string, bool)
 // the cancel function of its expiry.
 type detach struct {
 	id       string
-	tab      MovedTab
+	tab      SavedTab
 	windowID string
 	result   chan MoveError
 	cancel   func() bool

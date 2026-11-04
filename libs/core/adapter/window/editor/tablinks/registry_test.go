@@ -210,7 +210,7 @@ func TestDetachKeepsLinksWhenNewWindowAcceptsTab(t *testing.T) {
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
 
-	r.Detach(MovedTab{ID: "plex:2", Kind: "plex"})
+	r.Detach(SavedTab{ID: "plex:2", Kind: "plex"})
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A")})
 	if len(r.GetSnapshot().Groups) != 1 {
 		t.Fatalf("the detached tab left its group before the grace period ended")
@@ -236,7 +236,7 @@ func TestDetachUnlinksUnreportedTabAfterGracePeriod(t *testing.T) {
 	r, clock := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
-	r.Detach(MovedTab{ID: "plex:2", Kind: "plex"})
+	r.Detach(SavedTab{ID: "plex:2", Kind: "plex"})
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A")})
 
 	clock.fireAll()
@@ -254,7 +254,7 @@ func TestFailedDetachKeepsTabInItsWindow(t *testing.T) {
 	r, clock := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
-	r.Detach(MovedTab{ID: "plex:2", Kind: "plex"})
+	r.Detach(SavedTab{ID: "plex:2", Kind: "plex"})
 
 	clock.fireAll()
 
@@ -269,7 +269,7 @@ func TestDetachKeepsLinksAfterOldWindowClosesUntilGracePeriodEnds(t *testing.T) 
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A")})
 	writeTabs(r, "window-c", []Tab{plex("plex:3", "C")})
 	r.Link("plex:1", "plex:3")
-	r.Detach(MovedTab{ID: "plex:1", Kind: "plex"})
+	r.Detach(SavedTab{ID: "plex:1", Kind: "plex"})
 
 	watch.Close()
 	if len(r.GetSnapshot().Groups) != 1 {
@@ -423,7 +423,7 @@ func TestDetachIgnoresStaleOldWindowReportAfterNewWindow(t *testing.T) {
 	r, clock := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
-	r.Detach(MovedTab{ID: "plex:2", Kind: "plex"})
+	r.Detach(SavedTab{ID: "plex:2", Kind: "plex"})
 
 	detachID := readDetachID(r, "window-b", "plex:2")
 	writeTabs(r, "window-b", []Tab{plex("plex:2", "B")})
@@ -445,7 +445,7 @@ func TestDetachSurvivesOldWindowReportBeforeNewWindow(t *testing.T) {
 	r, clock := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
-	r.Detach(MovedTab{ID: "plex:2", Kind: "plex"})
+	r.Detach(SavedTab{ID: "plex:2", Kind: "plex"})
 
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A")})
@@ -594,7 +594,7 @@ func TestFailedDetachDropsTabClosedInItsWindow(t *testing.T) {
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B"), plex("plex:3", "C")})
 	r.Link("plex:1", "plex:2")
 	r.Link("plex:1", "plex:3")
-	r.Detach(MovedTab{ID: "plex:2", Kind: "plex"})
+	r.Detach(SavedTab{ID: "plex:2", Kind: "plex"})
 
 	r.CancelDetach("plex:2")
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:3", "C")})
@@ -608,7 +608,7 @@ func TestCancelDetachDropsTabItsWindowNoLongerReports(t *testing.T) {
 	r, _ := newTestRegistry(t)
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A"), plex("plex:2", "B")})
 	r.Link("plex:1", "plex:2")
-	r.Detach(MovedTab{ID: "plex:2", Kind: "plex"})
+	r.Detach(SavedTab{ID: "plex:2", Kind: "plex"})
 	writeTabs(r, "window-a", []Tab{plex("plex:1", "A")})
 
 	r.CancelDetach("plex:2")
@@ -659,11 +659,11 @@ func TestConcurrentWatchWriteDetachMoveAndCloseDoNotRace(t *testing.T) {
 				r.WriteTabs(Window{ID: window}, []Tab{own, shared})
 				r.Link(own.ID, "plex:shared")
 				r.SyncPath(own.ID, "a.md", "")
-				r.Detach(MovedTab{ID: own.ID, Kind: own.Kind})
+				r.Detach(SavedTab{ID: own.ID, Kind: own.Kind})
 				r.CancelDetach(own.ID)
-				r.Detach(MovedTab{ID: own.ID, Kind: own.Kind})
+				r.Detach(SavedTab{ID: own.ID, Kind: own.Kind})
 				r.Unlink(own.ID)
-				r.Move(window, "window-0", MovedTab{ID: own.ID, Kind: own.Kind})
+				r.Move(window, "window-0", SavedTab{ID: own.ID, Kind: own.Kind})
 				r.Accept("window-0", own.ID, getMoveID(r, own.ID))
 				if _, detachID, ok := r.ReadDetached(window, own.ID); ok {
 					r.Accept(window, own.ID, detachID)

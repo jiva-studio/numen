@@ -20,7 +20,7 @@ func (h *workspaceHandler) ReadDetachedTab(
 	}
 	out := &v1.ReadDetachedTabResponse{}
 	if tab, moveID, ok := h.state.TabLinks.ReadDetached(r.Msg.GetWindowId(), r.Msg.GetTabId()); ok {
-		out.Tab = convertMovedTabToWire(tab)
+		out.Tab = convertSavedTabToWire(tab)
 		out.MoveId = moveID
 	}
 	return connect.NewResponse(out), nil
@@ -38,7 +38,7 @@ func (h *workspaceHandler) MoveTab(
 	if r.Msg.GetWindowId() == "" || r.Msg.GetTargetWindowId() == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoWindowID)
 	}
-	tab := convertMovedTabFromWire(r.Msg.GetTab())
+	tab := convertSavedTabFromWire(r.Msg.GetTab())
 	result := h.state.TabLinks.Move(r.Msg.GetWindowId(), r.Msg.GetTargetWindowId(), tab)
 	select {
 	case <-ctx.Done():
@@ -86,8 +86,8 @@ func convertMoveErrorToWire(outcome tablinks.MoveError) v1.TabMoveErrorCode {
 	}
 }
 
-func convertMovedTabFromWire(tab *v1.Tab) tablinks.MovedTab {
-	return tablinks.MovedTab{
+func convertSavedTabFromWire(tab *v1.Tab) tablinks.SavedTab {
+	return tablinks.SavedTab{
 		ID:    tab.GetId(),
 		Kind:  tab.GetKind(),
 		Path:  tab.GetPath(),
@@ -96,6 +96,6 @@ func convertMovedTabFromWire(tab *v1.Tab) tablinks.MovedTab {
 	}
 }
 
-func convertMovedTabToWire(tab tablinks.MovedTab) *v1.Tab {
+func convertSavedTabToWire(tab tablinks.SavedTab) *v1.Tab {
 	return &v1.Tab{Id: tab.ID, Kind: tab.Kind, Path: tab.Path, Title: tab.Title, State: tab.State}
 }

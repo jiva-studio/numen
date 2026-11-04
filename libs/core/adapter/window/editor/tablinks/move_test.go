@@ -7,8 +7,8 @@ import (
 )
 
 // newOrbits returns the tab that the tests move.
-func newOrbits() MovedTab {
-	return MovedTab{ID: "plex:2", Kind: "plex", Path: "notes/Orbits.md", Title: "Orbits", State: `{"focus":"Kepler"}`}
+func newOrbits() SavedTab {
+	return SavedTab{ID: "plex:2", Kind: "plex", Path: "notes/Orbits.md", Title: "Orbits", State: `{"focus":"Kepler"}`}
 }
 
 // readEvent returns the first matching event of a watch, and fails the test
@@ -78,7 +78,7 @@ func TestMoveChangesTheOwnerAfterAccept(t *testing.T) {
 }
 
 func TestMoveAndHighlightEventsAreForTheTargetWindowOnly(t *testing.T) {
-	event := Event{Move: &TabMove{WindowID: "window-b", Tab: newOrbits()}}
+	event := Event{Move: &MovedTab{WindowID: "window-b", Tab: newOrbits()}}
 	if event.IsFor("window-a") || !event.IsFor("window-b") {
 		t.Error("a move is for a window other than its target")
 	}
@@ -228,7 +228,7 @@ func TestAcceptFromAnotherWindowIsIgnored(t *testing.T) {
 func TestMoveOfAnUnknownTabCompletes(t *testing.T) {
 	r, _ := newTestRegistry(t)
 	writeTabs(r, "window-b", nil)
-	settings := MovedTab{ID: "settings:1", Kind: "settings"}
+	settings := SavedTab{ID: "settings:1", Kind: "settings"}
 	result := r.Move("window-a", "window-b", settings)
 
 	if got := r.Accept("window-b", "settings:1", getMoveID(r, "settings:1")); got != MoveErrorNone {
@@ -458,7 +458,7 @@ func TestDetachEndsWhenTheReadingWindowAcceptsTheTab(t *testing.T) {
 
 func TestDetachOfAnUnknownTabEndsOnAccept(t *testing.T) {
 	r, _ := newTestRegistry(t)
-	settings := MovedTab{ID: "settings:1", Kind: "settings"}
+	settings := SavedTab{ID: "settings:1", Kind: "settings"}
 	result := r.Detach(settings)
 
 	if got := r.Accept("window-b", "settings:1", readDetachID(r, "window-b", "settings:1")); got != MoveErrorNone {

@@ -8,18 +8,18 @@ import (
 // MoveTimeout is how long a move waits for the target window to accept the tab.
 const MoveTimeout = 10 * time.Second
 
-// MovedTab is a tab sent to another window. State is the JSON from the getState
-// of its kind, empty when the kind saves none.
-type MovedTab struct {
+// SavedTab is a tab with the state its kind saved, as the wire Tab. State is
+// the JSON from the getState of its kind, empty when the kind saves none.
+type SavedTab struct {
 	ID, Kind, Path, Title, State string
 }
 
-// TabMove is a tab sent to the window WindowID. The window passes MoveID to
-// Accept.
-type TabMove struct {
+// MovedTab is a tab sent to the window WindowID, as the wire MovedTab. The
+// window passes MoveID to Accept.
+type MovedTab struct {
 	WindowID string
 	MoveID   string
-	Tab      MovedTab
+	Tab      SavedTab
 }
 
 // isMovingInto reports whether a tab has a pending move into a window.
@@ -71,7 +71,7 @@ type move struct {
 // result once. The source window owns the tab until the target window calls
 // Accept. It ends a pending move or detach of the same tab with
 // MoveErrorCancelled. A known tab moves only from the window that owns it.
-func (r *Registry) Move(sourceWindowID, targetWindowID string, tab MovedTab) <-chan MoveError {
+func (r *Registry) Move(sourceWindowID, targetWindowID string, tab SavedTab) <-chan MoveError {
 	result := make(chan MoveError, 1)
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -87,7 +87,7 @@ func (r *Registry) Move(sourceWindowID, targetWindowID string, tab MovedTab) <-c
 	pending := &move{id: r.createMoveID(), targetWindowID: targetWindowID, result: result}
 	r.pendingMoves[tab.ID] = pending
 	pending.cancel = r.schedule(MoveTimeout, func() { r.expireMove(tab.ID, pending) })
-	r.events.Publish(Event{Move: &TabMove{WindowID: targetWindowID, MoveID: pending.id, Tab: tab}})
+	r.events.Publish(Event{Move: &MovedTab{WindowID: targetWindowID, MoveID: pending.id, Tab: tab}})
 	return result
 }
 

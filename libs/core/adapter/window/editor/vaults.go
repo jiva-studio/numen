@@ -259,7 +259,7 @@ func (h *workspaceHandler) DetachTab(
 	if h.state.DetachTab == nil || h.state.TabLinks == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errors.New("tab tear-off not supported"))
 	}
-	tab := convertMovedTabFromWire(r.Msg.GetTab())
+	tab := convertSavedTabFromWire(r.Msg.GetTab())
 	if tab.ID == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("a tab id is required"))
 	}
