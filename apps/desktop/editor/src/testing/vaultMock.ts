@@ -97,6 +97,10 @@ vi.mock('@/app/vault', () => ({
     detachTab: async () => {
       if (mockVaultState.detachError) throw new Error(mockVaultState.detachError)
     },
+    watchTabLinks: pendingStream,
+    cancelTabLinksWatch: async () => undefined,
+    writeTabLinks: async () => undefined,
+    syncTabPath: async () => undefined,
     names: async () => mockVaultState.names,
     search: async () => mockVaultState.passages,
     fileKinds: async (paths: readonly string[]) =>

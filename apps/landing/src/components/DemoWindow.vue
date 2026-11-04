@@ -110,6 +110,9 @@ import {
   TabLinkMenu,
   useTabLinkMenu,
   useTabLinks,
+  type TabId,
+  type TabLinkGroup,
+  type TabLinksChange,
 } from '@editor-features/tab-linking'
 
 import '@numen/ui/styles.css'
@@ -984,11 +987,7 @@ function createInitialLayout(): State {
           'middle',
           [
             pane('map', [PLEX_TAB]),
-            pane(
-              'note',
-              [entropyTab, boltzmannTab, recordingTab, youtubeTab, deckTab],
-              entropyTab,
-            ),
+            pane('note', [entropyTab, boltzmannTab, recordingTab, youtubeTab, deckTab], entropyTab),
           ],
           [0.52, 0.48],
         ),
@@ -1022,7 +1021,76 @@ function setReaderRef(tabId: string) {
 }
 
 /* ------------------- Real Tab Linking (`useTabLinks`) --------------------- */
-const tabLinks = useTabLinks()
+// The demo has no core: the link groups of its one window are held in memory,
+// and each write applies the change and hands the groups back as a snapshot.
+const MAX_LINK_COLOR_INDEX = 4
+
+/** Returns the lowest color no group has, or 1 when every color is taken. */
+function getNextLinkColorIndex(groups: readonly TabLinkGroup[]): number {
+  const used = new Set(groups.map((group) => group.colorIndex))
+  for (let index = 1; index <= MAX_LINK_COLOR_INDEX; index++) {
+    if (!used.has(index)) return index
+  }
+  return 1
+}
+
+/** Returns the groups with two tabs linked: a tab joins the group of the other, two groups merge. */
+function linkDemoTabs(
+  groups: readonly TabLinkGroup[],
+  source: TabId,
+  target: TabId,
+): readonly TabLinkGroup[] {
+  const sourceGroup = groups.find((group) => group.tabs.includes(source))
+  const targetGroup = groups.find((group) => group.tabs.includes(target))
+  if (sourceGroup && sourceGroup === targetGroup) return groups
+  if (sourceGroup) {
+    const joined = targetGroup ? targetGroup.tabs : [target]
+    return groups
+      .filter((group) => group !== targetGroup)
+      .map((group) =>
+        group === sourceGroup
+          ? { ...group, tabs: [...new Set([...group.tabs, ...joined])] }
+          : group,
+      )
+  }
+  if (targetGroup) {
+    return groups.map((group) =>
+      group === targetGroup ? { ...group, tabs: [...group.tabs, source] } : group,
+    )
+  }
+  const created: TabLinkGroup = {
+    id: crypto.randomUUID(),
+    colorIndex: getNextLinkColorIndex(groups),
+    tabs: [source, target],
+    path: '',
+    title: '',
+  }
+  return [...groups, created]
+}
+
+/** Returns the groups without the tab; a group left with one tab is removed. */
+function unlinkDemoTab(groups: readonly TabLinkGroup[], tabId: TabId): readonly TabLinkGroup[] {
+  return groups
+    .map((group) => ({ ...group, tabs: group.tabs.filter((id) => id !== tabId) }))
+    .filter((group) => group.tabs.length >= 2)
+}
+
+/** Returns tab links whose groups are held in memory. */
+function createDemoTabLinks() {
+  let groups: readonly TabLinkGroup[] = []
+  const tabLinks = useTabLinks({
+    write: (change: TabLinksChange) => {
+      if ('link' in change) groups = linkDemoTabs(groups, change.link.source, change.link.target)
+      else groups = unlinkDemoTab(groups, change.unlink)
+      tabLinks.applySnapshot({ groups, tabs: [] })
+      return Promise.resolve()
+    },
+    onError: (error: unknown) => console.error(error),
+  })
+  return tabLinks
+}
+
+const tabLinks = createDemoTabLinks()
 // Pre-link Files, Plex, and the primary Note tab into one synchronized group.
 tabLinks.linkTabs(FILES_TAB, PLEX_TAB)
 tabLinks.linkTabs(PLEX_TAB, PRIMARY_NOTE_TAB)
@@ -1255,10 +1323,7 @@ function getPathCommandsForRow({ entry, isSeveral }: PathMenuRow): readonly Menu
     if (canRemoveEntry) items.push(removeItem)
     return items
   }
-  return [
-    { id: 'read', text: 'Open the file', group: 'open' },
-    copyItem,
-  ]
+  return [{ id: 'read', text: 'Open the file', group: 'open' }, copyItem]
 }
 
 const fileTree = createFileTree({
@@ -1322,7 +1387,12 @@ const filesState: FilesTabState = useFilesTab(fileTree, {
   },
   onSelectPath: (path, state) => {
     const entry = state.list.getEntryAt(path)
-    if (entry && !entry.isFolder && entry.type === NOTE_TYPE && (entry.isNote || isNotePath(path))) {
+    if (
+      entry &&
+      !entry.isFolder &&
+      entry.type === NOTE_TYPE &&
+      (entry.isNote || isNotePath(path))
+    ) {
       syncPathFromTab(FILES_TAB, path, entry.name)
     }
   },
@@ -1486,7 +1556,8 @@ function buildVaultNeighbourhood(focusPath: string): Neighbourhood {
   for (const p of getParentsOf(resolvedPath)) pushNeighbour(p, 'parent')
   for (const c of getChildrenOf(resolvedPath)) pushNeighbour(c, 'child')
   for (const j of getJumpsOf(resolvedPath)) pushNeighbour(j, 'jump')
-  for (const s of getSiblingsOf(resolvedPath).slice(0, 2)) pushNeighbour(s.path, 'sibling', s.through)
+  for (const s of getSiblingsOf(resolvedPath).slice(0, 2))
+    pushNeighbour(s.path, 'sibling', s.through)
 
   return {
     focus: { path: resolvedPath, title: focusNote.title },
@@ -1575,22 +1646,14 @@ const plexState = createPlexTab(plexView, {
       const isJump =
         (notesByPath[first]?.jumps ?? []).includes(second) ||
         (notesByPath[second]?.jumps ?? []).includes(first)
-      const role = isFirstParent
-        ? 'child'
-        : isSecondParent
-          ? 'parent'
-          : isJump
-            ? 'jump'
-            : null
+      const role = isFirstParent ? 'child' : isSecondParent ? 'parent' : isJump ? 'jump' : null
       return asValue({
         first,
         second,
         role,
         type,
         firstSide:
-          isFirstParent || isJump
-            ? { label: firstLabel ?? '', marker: 'arrow', reason: '' }
-            : null,
+          isFirstParent || isJump ? { label: firstLabel ?? '', marker: 'arrow', reason: '' } : null,
         secondSide: isSecondParent
           ? { label: secondLabel ?? '', marker: 'arrow', reason: '' }
           : null,
@@ -1634,7 +1697,11 @@ const plexState = createPlexTab(plexView, {
   headings: ref(6),
   openNote: (path, options) => {
     const title = options?.title ?? notesByPath[path]?.title ?? ''
-    if (!options?.showing && options?.line === undefined && syncPathFromTab(PLEX_TAB, path, title)) {
+    if (
+      !options?.showing &&
+      options?.line === undefined &&
+      syncPathFromTab(PLEX_TAB, path, title)
+    ) {
       return
     }
     const placement = options?.showing === 'split' ? 'split' : 'current'
@@ -1838,9 +1905,7 @@ const READ_DOC_ACTION = { id: 'readDocument', text: 'Open the document here' }
 
 const searchGroups = computed<readonly PaletteGroup[]>(() => {
   const q = searchTyped.value.trim().toLowerCase() || 'entrop'
-  const matchingNotes = Object.values(notesByPath).filter((n) =>
-    n.title.toLowerCase().includes(q),
-  )
+  const matchingNotes = Object.values(notesByPath).filter((n) => n.title.toLowerCase().includes(q))
 
   const fixedPassages = [
     {
@@ -1949,10 +2014,7 @@ const commandGroups = computed<readonly PaletteGroup[]>(() => {
         title: one.title,
         ...(at.length > 0 ? { at } : {}),
         ...(one.keys ? { keys: one.keys } : {}),
-        actions: [
-          { id: one.id, text: one.title },
-          ...(one.also ? [one.also] : []),
-        ],
+        actions: [{ id: one.id, text: one.title }, ...(one.also ? [one.also] : [])],
       })
     }
     if (items.length > 0) {
@@ -2093,7 +2155,7 @@ function onActivateWorkspaceTab(tabId: string) {
 }
 
 function onCloseWorkspaceTab(tabId: string) {
-  tabLinks.removeClosedTab(tabId)
+  tabLinks.unlinkTab(tabId)
   held.value = closeTab(held.value, tabId)
   openTabIds.value = openTabIds.value.filter((id) => id !== tabId)
   delete noteTabPaths[tabId]
@@ -2319,11 +2381,7 @@ function ensureToolTabOpen(tabId: string, preferredPaneId: string) {
   onShowWorkspaceTab(tabId)
 }
 
-function runVaultCommand(
-  command: string,
-  targetPath: string,
-  source: 'files' | 'plex' = 'plex',
-) {
+function runVaultCommand(command: string, targetPath: string, source: 'files' | 'plex' = 'plex') {
   if (command === 'read') {
     openVaultFile(targetPath, 'current')
   } else if (command === 'beside') {
@@ -2403,7 +2461,13 @@ function getTabIcon(id: string): Component | null {
 </script>
 
 <template>
-  <div ref="demoWindowRef" class="demo-window numen" tabindex="-1" @keydown="onWindowKeydown" @contextmenu.prevent>
+  <div
+    ref="demoWindowRef"
+    class="demo-window numen"
+    tabindex="-1"
+    @keydown="onWindowKeydown"
+    @contextmenu.prevent
+  >
     <WorkspaceLayout
       v-model="held"
       :tabs="tabs"
@@ -2415,11 +2479,7 @@ function getTabIcon(id: string): Component | null {
       @tab-context-menu="onTabContextMenu"
     >
       <template #icon="{ id }">
-        <component
-          :is="getTabIcon(id)"
-          v-if="getTabIcon(id)"
-          class="tab-icon"
-        />
+        <component :is="getTabIcon(id)" v-if="getTabIcon(id)" class="tab-icon" />
         <TabLinkIndicator
           :is-linked="tabLinks.getGroupOf(id) !== null"
           :color-index="tabLinks.getGroupOf(id)?.colorIndex"
@@ -2427,10 +2487,7 @@ function getTabIcon(id: string): Component | null {
       </template>
 
       <template #tab="{ id }">
-        <PlexGraphView
-          v-if="id === PLEX_TAB"
-          :state="plexState"
-        />
+        <PlexGraphView v-if="id === PLEX_TAB" :state="plexState" />
         <Editor
           v-else-if="id.startsWith('note:') && noteTabPaths[id] && notesByPath[noteTabPaths[id]!]"
           :ref="setEditorRef(id)"
@@ -2460,11 +2517,7 @@ function getTabIcon(id: string): Component | null {
           :path="YOUTUBE_LINK_PATH"
           :recordings="demoRecordings"
         />
-        <DeckTab
-          v-else-if="id.startsWith('deck:')"
-          class="h-full"
-          :state="deckState"
-        />
+        <DeckTab v-else-if="id.startsWith('deck:')" class="h-full" :state="deckState" />
         <Agent
           v-else-if="id === AGENT_TAB"
           ref="agentRef"
@@ -2480,10 +2533,7 @@ function getTabIcon(id: string): Component | null {
           @open="onOpenTurnSource"
           @select-model="onSelectModel"
         />
-        <FilesTab
-          v-else-if="id === FILES_TAB"
-          :state="filesState"
-        />
+        <FilesTab v-else-if="id === FILES_TAB" :state="filesState" />
       </template>
     </WorkspaceLayout>
 

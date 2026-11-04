@@ -24,6 +24,7 @@ import (
 	adapterSettings "github.com/jiva-studio/numen/libs/core/adapter/settings"
 	editorSearch "github.com/jiva-studio/numen/libs/core/adapter/window/editor/search"
 	editorSettings "github.com/jiva-studio/numen/libs/core/adapter/window/editor/settings"
+	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/tablinks"
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
@@ -596,6 +597,11 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 				WatchFocus(ctx, connect.NewRequest(&v1.WatchFocusRequest{}))
 			return err
 		},
+		"tab links": func(ctx context.Context, http connect.HTTPClient, linksPath string) error {
+			_, err := numenv1connect.NewWorkspaceServiceClient(http, linksPath).
+				WatchTabLinks(ctx, connect.NewRequest(&v1.WatchTabLinksRequest{WindowId: "window-a"}))
+			return err
+		},
 		"quitting": func(ctx context.Context, http connect.HTTPClient, targetPath string) error {
 			_, err := numenv1connect.NewWindowServiceClient(http, targetPath).
 				WatchQuit(ctx, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
@@ -611,7 +617,11 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	for name, open := range streams {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
+			tabLinks, err := tablinks.NewRegistry(linkGrace, tablinks.ScheduleAfter)
+			if err != nil {
+				t.Fatal(err)
+			}
+			state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}, TabLinks: tabLinks}
 			services := createServices(state)
 
 			entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)

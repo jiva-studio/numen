@@ -34,7 +34,7 @@ import {
   WindowService,
   WorkspaceService,
 } from '@numen/protocol'
-import { transport } from './transport'
+import { keepaliveTransport, transport } from './transport'
 
 export const createVaultClient = (customTransport: Transport = transport) =>
   createClient(VaultService, customTransport)
@@ -44,6 +44,8 @@ export const createNoteClient = (customTransport: Transport = transport) =>
 export const vault = createVaultClient()
 export const agentService = createClient(AgentService, transport)
 export const workspace = createClient(WorkspaceService, transport)
+/** The workspace client for a request that must complete after the page unloads. */
+export const keepaliveWorkspace = createClient(WorkspaceService, keepaliveTransport)
 export const files = createClient(FileService, transport)
 export const notes = createNoteClient()
 export const search = createClient(SearchService, transport)

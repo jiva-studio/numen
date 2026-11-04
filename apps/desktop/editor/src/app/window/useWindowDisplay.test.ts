@@ -91,6 +91,10 @@ function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
     watchQuit: emptyStream,
     reportFlush: vi.fn(() => Promise.resolve()),
     detachTab: vi.fn(() => Promise.resolve()),
+    watchTabLinks: emptyStream,
+    cancelTabLinksWatch: vi.fn(() => Promise.resolve()),
+    writeTabLinks: vi.fn(() => Promise.resolve()),
+    syncTabPath: vi.fn(() => Promise.resolve()),
     ...overrides,
   }
 }

@@ -104,6 +104,10 @@ export function useOpenTabs({
     isPaused.value = false
   }
 
+  /** Returns the declared icon of a kind, or its built-in icon. Tabs of other windows use it. */
+  const getKindIcon = (kind: string): Component | null =>
+    windowTabs.findKind((one) => one.kind === kind)?.icon ?? findTabKindIcon(kind)
+
   /** The icon the tab's kind declares, or the one the window keeps for that kind. */
   const getTabIcon = (id: string): Component | null => {
     const kind = windowTabs.getTab(id)?.kind
@@ -117,6 +121,7 @@ export function useOpenTabs({
     resume,
     getActiveTabId,
     getTabIcon,
+    getKindIcon,
   }
 }
 

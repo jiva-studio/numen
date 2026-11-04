@@ -1,15 +1,18 @@
 /**
  * The menu that links a tab to another: the tab it was requested on, its position, and
- * the effect of choosing an item.
+ * the effect of choosing an item. Lists the tabs of this window and the linkable tabs of
+ * other windows.
  */
 import { computed, ref } from 'vue'
-import { getEligibleTabs, getLinkedTitle } from '../lib/eligibility'
+import { getAllTabs, getEligibleTabs, getLinkedTitle } from '../lib/eligibility'
 import type { TabId, TabLinksState } from '../types'
 
 export interface TabLinkMenuDeps {
   readonly tabLinks: TabLinksState
+  /** Returns the tabs of this window. */
   getTabs(): readonly { readonly id: TabId; readonly title: string }[]
   getKind(tab: TabId): string | undefined
+  /** Returns whether a tab of this window can be linked. */
   isLinkable(tab: TabId): boolean
   onDetach?(tab: TabId, position: { x: number; y: number }): void
 }
@@ -18,14 +21,22 @@ export function useTabLinkMenu(deps: TabLinkMenuDeps) {
   const tabId = ref<TabId | null>(null)
   const coords = ref<{ x: number; y: number }>({ x: 0, y: 0 })
 
+  const getTabs = () => getAllTabs(deps.getTabs(), deps.tabLinks.tabs)
+  const getKind = (tab: TabId): string | undefined =>
+    deps.getKind(tab) ?? deps.tabLinks.tabs.find((one) => one.id === tab)?.kind
+  const isLinkable = (tab: TabId): boolean =>
+    deps.getTabs().some((one) => one.id === tab)
+      ? deps.isLinkable(tab)
+      : deps.tabLinks.tabs.some((one) => one.id === tab)
+
   const eligibleTabs = computed(() =>
     tabId.value === null
       ? []
       : getEligibleTabs({
           from: tabId.value,
-          tabs: deps.getTabs(),
-          getKind: deps.getKind,
-          isLinkable: deps.isLinkable,
+          tabs: getTabs(),
+          getKind,
+          isLinkable,
           getGroupOf: deps.tabLinks.getGroupOf,
         }),
   )
@@ -33,7 +44,7 @@ export function useTabLinkMenu(deps: TabLinkMenuDeps) {
   const linkedTargetTitle = computed(() =>
     tabId.value === null
       ? ''
-      : getLinkedTitle(deps.tabLinks.getLinkedTargets(tabId.value), deps.getTabs()),
+      : getLinkedTitle(deps.tabLinks.getLinkedTargets(tabId.value), getTabs()),
   )
 
   const isLinked = computed(

@@ -15,5 +15,6 @@ export {
   vaultsService,
   windowService,
   workspace,
+  keepaliveWorkspace,
   pluginCatalog,
 } from '@numen/core-client'

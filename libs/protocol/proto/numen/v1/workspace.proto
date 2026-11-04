@@ -31,6 +31,27 @@ service WorkspaceService {
 
   // DetachTab asks that a tab be opened in a new window of its own.
   rpc DetachTab(DetachTabRequest) returns (DetachTabResponse);
+
+  // WatchTabLinks streams the link groups of the vault and the linkable tabs of
+  // all windows: a snapshot first, a snapshot after each change, and each path
+  // sync. A slow stream skips events: a newer snapshot replaces a pending one,
+  // and a newer path sync of a group replaces a pending one of that group. Each
+  // snapshot carries the current path of each group, so a window that skipped
+  // a sync moves its tabs on the next snapshot. When the last stream of a
+  // window ends, the tabs of that window are unlinked unless the window watches
+  // again within a grace period.
+  rpc WatchTabLinks(WatchTabLinksRequest) returns (stream WatchTabLinksResponse);
+
+  // CancelWatchTabLinks cancels the WatchTabLinks stream of a window.
+  rpc CancelWatchTabLinks(CancelWatchTabLinksRequest) returns (CancelWatchTabLinksResponse);
+
+  // WriteTabLinks links two tabs, unlinks a tab, or reports the linkable tabs
+  // of a window.
+  rpc WriteTabLinks(WriteTabLinksRequest) returns (WriteTabLinksResponse);
+
+  // SyncTabPath sends the new path of a linked tab to every window that watches
+  // the tab links.
+  rpc SyncTabPath(SyncTabPathRequest) returns (SyncTabPathResponse);
 }
 
 message DetachTabRequest {
@@ -43,6 +64,10 @@ message DetachTabRequest {
   // The position on screen to open the new window at.
   int32 x = 3;
   int32 y = 4;
+
+  // The id of the tab. The new window reuses the id, so the tab keeps its
+  // links.
+  string id = 5;
 }
 
 message DetachTabResponse {}
@@ -104,3 +129,100 @@ message Tab {
   // whose kind saves none.
   string state = 5;
 }
+
+message WatchTabLinksRequest {
+  // Id of the watching window, chosen by the window.
+  string window_id = 1;
+}
+
+message WatchTabLinksResponse {
+  // A keepalive sets neither.
+  oneof event {
+    TabLinks links = 1;
+    TabPathSync sync = 2;
+  }
+}
+
+// TabLinks is the set of link groups of the vault and the linkable tabs of all
+// windows.
+message TabLinks {
+  repeated TabLinkGroup groups = 1;
+  repeated LinkableTab tabs = 2;
+}
+
+// A TabLinkGroup is two or more tabs that move to the same path together.
+message TabLinkGroup {
+  string id = 1;
+
+  // The color the group is marked with, from 1 to 4.
+  int32 color_index = 2;
+
+  repeated string tab_ids = 3;
+
+  // The last path synced in the group, and its title. Empty before the first
+  // sync.
+  string path = 4;
+  string title = 5;
+}
+
+// A LinkableTab is an open tab whose kind supports navigation to a path.
+message LinkableTab {
+  string id = 1;
+  string kind = 2;
+  string title = 3;
+
+  // Id of the window that has the tab open. Set by the core; empty in a tab
+  // report from a window.
+  string window_id = 4;
+}
+
+// A TabPathSync is the new path of a linked tab.
+message TabPathSync {
+  string group_id = 1;
+  string source_tab_id = 2;
+  string path = 3;
+  string title = 4;
+}
+
+message CancelWatchTabLinksRequest {
+  string window_id = 1;
+}
+
+message CancelWatchTabLinksResponse {}
+
+message WriteTabLinksRequest {
+  // Id of the writing window.
+  string window_id = 1;
+
+  oneof change {
+    // Links two tabs. If a tab is already in a group, the other tab joins it.
+    TabLink link = 2;
+
+    // Removes a tab from its group.
+    string unlink_tab_id = 3;
+
+    // All linkable tabs of the window. A tab of the window missing from the
+    // list is unlinked, unless it has a pending detach.
+    WindowTabs tabs = 4;
+  }
+}
+
+message TabLink {
+  string source_tab_id = 1;
+  string target_tab_id = 2;
+}
+
+message WindowTabs {
+  repeated LinkableTab tabs = 1;
+}
+
+message WriteTabLinksResponse {}
+
+message SyncTabPathRequest {
+  // Id of the linked tab that navigated.
+  string source_tab_id = 1;
+  string path = 2;
+  string title = 3;
+}
+
+message SyncTabPathResponse {}

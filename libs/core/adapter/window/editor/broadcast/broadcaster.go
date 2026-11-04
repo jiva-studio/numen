@@ -1,7 +1,10 @@
 // Package broadcast provides broadcaster and inflight synchronization primitives.
 package broadcast
 
-import "sync"
+import (
+	"slices"
+	"sync"
+)
 
 // Broadcaster delivers messages of one type to its subscribers.
 //
@@ -15,6 +18,10 @@ type Broadcaster[T any] struct {
 	// IsLatest replaces a pending message with the newest message on the same
 	// topic.
 	IsLatest bool
+	// IsOrdered queues a superseding message after every pending message instead
+	// of in the place of the message it supersedes, so messages on different
+	// topics reach a subscriber in the order they were published.
+	IsOrdered bool
 	// GetTopic returns the topic a message is about. A message supersedes
 	// pending messages on the same topic; messages on different topics are
 	// queued independently. Nil puts every message on the same topic.
@@ -94,6 +101,12 @@ func (a *Broadcaster[T]) queue(l *subscriber[T], message T) bool {
 
 	fitted := false
 	switch pos := a.findSupersededIndex(l.waiting, message); {
+	case pos >= 0 && a.IsOrdered:
+		l.waiting = append(slices.Delete(l.waiting, pos, pos+1), message)
+		fitted = true
+		if pos == 0 {
+			l.frontSeq++
+		}
 	case pos >= 0:
 		l.waiting[pos] = message
 		fitted = true

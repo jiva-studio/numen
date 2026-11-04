@@ -220,9 +220,13 @@ describe('the streams a window follows', () => {
 describe('detaching a tab', () => {
   it('asks the workspace to open a new window for the tab', async () => {
     request.detachTab.mockResolvedValue({})
-    await sessionCore.detachTab({ kind: 'plex', path: 'Physics.md' }, { x: 100.6, y: 200.4 })
+    await sessionCore.detachTab(
+      { id: 'plex:3b9d', kind: 'plex', path: 'Physics.md' },
+      { x: 100.6, y: 200.4 },
+    )
 
     expect(request.detachTab).toHaveBeenCalledWith({
+      id: 'plex:3b9d',
       kind: 'plex',
       path: 'Physics.md',
       x: 101,
