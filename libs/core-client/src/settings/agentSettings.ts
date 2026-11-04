@@ -12,11 +12,6 @@ export const getProgramModelPath = (program: string): readonly string[] => [
   program,
   'model',
 ]
-export const getProgramHooksPath = (program: string): readonly string[] => [
-  'agent',
-  program,
-  'reads_hooks_and_skills',
-]
 
 /** The agent program and the model a setting of that type holds. Empty is the default. */
 export interface CompletionChoice {
