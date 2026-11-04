@@ -211,6 +211,12 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
   })
 }
 
+/** Whether the plugin host offers the command of the full id in the palette. */
+const isOfferedByHost = (
+  host: import('@numen/plugin-host').PluginHost | undefined,
+  id: string,
+): boolean => host?.getPaletteCommands().some((one) => one.id === id) ?? false
+
 function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSettings> }) {
   /* Stryker disable OptionalChaining,ObjectLiteral,StringLiteral,Regex: window core wiring delegates to mocked collaborators in unit tests */
   const getPluginName = (pluginId: string): string =>
@@ -243,8 +249,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   const pluginNotes = createPluginNotes(core)
   const hostHolder: { current?: import('@numen/plugin-host').PluginHost } = {}
   const declaredCommands = useDeclaredCommands({
-    isOffered: (id) =>
-      hostHolder.current?.getPaletteCommands().some((one) => one.id === id) ?? false,
+    isOffered: (id) => isOfferedByHost(hostHolder.current, id),
   })
   const { pluginHost, pluginLoader } = createPluginSupport({
     getCommandDeclarations: () => declaredCommands.declarations.value,
