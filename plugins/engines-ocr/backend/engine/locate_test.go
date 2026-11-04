@@ -110,6 +110,50 @@ func TestIsFetchedWithConfiguredOrEnvPath(t *testing.T) {
 	if !IsFetched(Config{}, RecogniserModel{}) {
 		t.Fatal("expected IsFetched to be true with env var set")
 	}
+
+	// False when explicit path does not exist
+	if IsFetched(Config{}, RecogniserModel{Path: filepath.Join(dir, "missing.onnx")}) {
+		t.Fatal("expected IsFetched to be false when explicit path is missing")
+	}
+}
+
+func TestFindInFolderAndHomeFallbacks(t *testing.T) {
+	dir := t.TempDir()
+	if got := findInFolder("", "locate.go"); got != "" {
+		t.Fatalf("findInFolder with empty dir = %q, want empty", got)
+	}
+	if got := findInFolder(dir, ""); got != "" {
+		t.Fatalf("findInFolder with empty fileName = %q, want empty", got)
+	}
+
+	if _, err := locateModel(filepath.Join(dir, "missing.onnx"), "", "pp-doclayout.onnx", ""); err == nil {
+		t.Fatal("locateModel with missing explicit path succeeded, want error")
+	}
+
+	t.Setenv("NUMEN_DEPENDENCY_PP_DOCLAYOUT", filepath.Join(dir, "missing-env.onnx"))
+	homeDir := t.TempDir()
+	homeModel := filepath.Join(homeDir, "pp-doclayout.onnx")
+	writeFile(t, homeModel, []byte("home"), 0o644)
+	t.Setenv(EnvDir, homeDir)
+
+	got, err := locateModel("", "NUMEN_DEPENDENCY_PP_DOCLAYOUT", "pp-doclayout.onnx", "")
+	if err != nil || got != homeModel {
+		t.Fatalf("locateModel via EnvDir = (%q, %v), want (%q, nil)", got, err, homeModel)
+	}
+
+	sharedDir := t.TempDir()
+	sharedModels := filepath.Join(sharedDir, "models")
+	if err := os.MkdirAll(sharedModels, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	sharedModel := filepath.Join(sharedModels, "pp-ocr-det.onnx")
+	writeFile(t, sharedModel, []byte("shared"), 0o644)
+	t.Setenv("NUMEN_SHARED_DATA_DIR", sharedDir)
+
+	got, err = locateModel("", "", "pp-ocr-det.onnx", "")
+	if err != nil || got != sharedModel {
+		t.Fatalf("locateModel via shared data dir = (%q, %v), want (%q, nil)", got, err, sharedModel)
+	}
 }
 
 // writeFile writes content to path and fails the test when writing fails.

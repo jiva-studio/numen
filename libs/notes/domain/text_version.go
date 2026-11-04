@@ -77,6 +77,7 @@ func IsChainValid(versions []TextVersion, id TextVersionID, fileHash string) boo
 			return v.SourceHash == fileHash
 		}
 		source, ok := byID[v.Source]
+		// gomutants:disable-next-line EXPRESSION_REMOVE reason="a missing source either mismatches a non-empty SourceHash here or fails the byID lookup on the next iteration"
 		if !ok || source.Hash != v.SourceHash {
 			return false
 		}
@@ -116,6 +117,7 @@ type FileInput []string
 // Extensions compare without regard to case.
 func (in FileInput) IsFileAccepted(path string) bool {
 	dot := strings.LastIndexByte(path, '.')
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="a slash and a dot cannot occupy the same positive byte index"
 	if dot < 0 || strings.LastIndexByte(path, '/') > dot {
 		return false
 	}

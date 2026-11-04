@@ -36,6 +36,7 @@ type Vaults []Vault
 // names the overlapping vault.
 func (vs Vaults) CheckOverlap(path string) error {
 	for _, other := range vs {
+		// gomutants:disable-next-line BRANCH_IF reason="isBelow returns false when both paths are equal"
 		if other.Path == path {
 			continue
 		}

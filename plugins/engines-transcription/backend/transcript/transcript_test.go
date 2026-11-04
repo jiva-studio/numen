@@ -35,13 +35,32 @@ func TestSegmentsReadBackAsTheCuesTheyWere(t *testing.T) {
 	if got := transcript.GetCues(segments); !slices.Equal(got, cues) {
 		t.Fatalf("got %+v, want %+v", got, cues)
 	}
+
+	malformed := []domain.TextSegment{
+		{Text: "No selector\n", Selector: ""},
+		{Text: "Single bound\n", Selector: `{"t":[1.5]}`},
+		{Text: "Invalid JSON\n", Selector: `{bad`},
+	}
+	wantZero := []transcript.Cue{
+		{Text: "No selector", From: 0, To: 0},
+		{Text: "Single bound", From: 0, To: 0},
+		{Text: "Invalid JSON", From: 0, To: 0},
+	}
+	if got := transcript.GetCues(malformed); !slices.Equal(got, wantZero) {
+		t.Fatalf("got %+v, want %+v", got, wantZero)
+	}
 }
 
 func TestFormatTimestampWritesHoursMinutesSecondsAndThousandths(t *testing.T) {
 	for ms, want := range map[int]string{
 		0:        "00:00:00.000",
 		9100:     "00:00:09.100",
+		60000:    "00:01:00.000",
+		620000:   "00:10:20.000",
+		3600000:  "01:00:00.000",
 		3723456:  "01:02:03.456",
+		32400000: "09:00:00.000",
+		36000000: "10:00:00.000",
 		86399999: "23:59:59.999",
 		-5:       "00:00:00.000",
 	} {

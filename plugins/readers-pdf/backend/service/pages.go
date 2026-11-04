@@ -48,6 +48,7 @@ func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	pixelWidth, err := strconv.Atoi(r.URL.Query().Get("wide"))
+	// gomutants:disable-next-line EXPRESSION_REMOVE reason="strconv.Atoi returns pixelWidth 0 on parse failure"
 	if err != nil || pixelWidth <= 0 {
 		http.Error(w, "invalid wide", http.StatusBadRequest)
 		return
@@ -58,6 +59,7 @@ func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// A window that asked for another width, or left the page, no longer wants this one.
+	// gomutants:disable-next-line BRANCH_IF reason="vault.Read already rejects canceled contexts before reaching this check"
 	if err := r.Context().Err(); err != nil {
 		http.Error(w, err.Error(), http.StatusRequestTimeout)
 		return

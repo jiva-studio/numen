@@ -35,10 +35,13 @@ func getPassesWithinMemory(passes int, memory int64, batchTexts, window, hiddenD
 
 // resolvePasses determines the number of concurrent passes for a model.
 func resolvePasses(cfg LocalModel, provider onnx.Provider, identity ModelInfo) int {
+	// gomutants:disable-next-line INTEGER_DECREMENT reason="GetPasses returns at least one pass"
 	passes := max(cfg.GetPasses(provider), 1)
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="one session returns one pass through either branch"
 	if cfg.Sessions > 0 {
 		return passes
 	}
 	return getPassesWithinMemory(passes, cfg.PassMemory,
+		// gomutants:disable-next-line INTEGER_DECREMENT reason="getPassBytes clamps batchTexts to at least one"
 		max(cfg.BatchTexts, 1), getWindow(provider, identity.MaxTokens), identity.Dimensions)
 }

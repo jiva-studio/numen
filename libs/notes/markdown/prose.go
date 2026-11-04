@@ -29,6 +29,7 @@ func (d *Document) RedirectProse(from domain.Address, to string) (int, error) {
 	body := string(d.body)
 	last, moved := 0, 0
 
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="at pos == len(body) the remaining line is empty and holds no wikilinks"
 	for pos := 0; pos <= len(body); {
 		end := len(body)
 		if next := strings.IndexByte(body[pos:], '\n'); next >= 0 {
@@ -52,6 +53,7 @@ func (d *Document) RedirectProse(from domain.Address, to string) (int, error) {
 		}
 		pos = end + 1
 	}
+	// gomutants:disable-next-line BRANCH_IF,INTEGER_DECREMENT reason="when moved is 0 last is 0 and writing body[0:] leaves d.body unchanged"
 	if moved == 0 {
 		return 0, nil
 	}

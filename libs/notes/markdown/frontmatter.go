@@ -19,9 +19,11 @@ func render(node *yaml.Node) (string, error) {
 	var out bytes.Buffer
 	enc := yaml.NewEncoder(&out)
 	enc.SetIndent(2)
+	// gomutants:disable-next-line BRANCH_IF reason="yaml.Encoder writing a valid node to bytes.Buffer cannot fail"
 	if err := enc.Encode(node); err != nil {
 		return "", err
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="closing a yaml.Encoder backed by bytes.Buffer cannot fail"
 	if err := enc.Close(); err != nil {
 		return "", err
 	}
@@ -33,12 +35,14 @@ func render(node *yaml.Node) (string, error) {
 // application owns.
 func (d *Document) put(key string, value *yaml.Node) error {
 	node, err := d.getWritableNode()
+	// gomutants:disable-next-line BRANCH_IF reason="set re-runs getWritableNode and returns the same error before modifying the document"
 	if err != nil {
 		return err
 	}
 	name := &yaml.Node{Kind: yaml.ScalarNode, Value: key}
 	pair(node, key).copyLineComment(name, value)
 	rendered, err := render(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{name, value}})
+	// gomutants:disable-next-line BRANCH_IF reason="render on an in-memory key-value MappingNode cannot fail"
 	if err != nil {
 		return err
 	}
@@ -102,6 +106,7 @@ func (d *Document) set(key string, rendered []byte) error {
 		return d.appendKey(node, rendered)
 	}
 
+	// gomutants:disable-next-line ARITHMETIC_BASE,INVERT_NEGATIVES reason="slice capacity hint does not alter the appended frontmatter bytes"
 	front := make([]byte, 0, len(d.front)-(end-start)+len(rendered))
 	front = append(front, d.front[:start]...)
 	front = append(front, rendered...)
@@ -142,6 +147,7 @@ func (d *Document) commit(front []byte) error {
 
 // splice puts bytes in place of a range of the frontmatter.
 func (d *Document) splice(start, end int, rendered []byte) {
+	// gomutants:disable-next-line ARITHMETIC_BASE,INVERT_NEGATIVES reason="slice capacity hint does not alter the appended frontmatter bytes"
 	front := make([]byte, 0, len(d.front)-(end-start)+len(rendered))
 	front = append(front, d.front[:start]...)
 	front = append(front, rendered...)
@@ -166,9 +172,11 @@ func (d *Document) indent(node *yaml.Node) string {
 // indentLines is rendered lines written at the indentation the block's keys
 // stand at. A line with nothing on it takes none.
 func indentLines(rendered []byte, indent string) []byte {
+	// gomutants:disable-next-line EXPRESSION_REMOVE,INVERT_LOGICAL,INTEGER_DECREMENT,BRANCH_IF reason="empty indent or empty input produces the same byte sequence through the loop"
 	if indent == "" || len(rendered) == 0 {
 		return rendered
 	}
+	// gomutants:disable-next-line ARITHMETIC_BASE,INTEGER_DECREMENT,INTEGER_INCREMENT reason="slice capacity hint does not alter the indented output bytes"
 	out := make([]byte, 0, len(rendered)+4*len(indent))
 	for pos := 0; pos < len(rendered); {
 		end := len(rendered)
@@ -194,6 +202,7 @@ func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool
 	if node == nil {
 		return 0, 0, false
 	}
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="any negative sentinel triggers the keyIdx < 0 check when the key is absent"
 	keyIdx := -1
 	for i := 0; i+1 < len(node.Content); i += 2 {
 		if node.Content[i].Value == key {
@@ -212,12 +221,15 @@ func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool
 	}
 
 	last := d.endLine(lines, node.Content[keyIdx+1], node.Content[keyIdx].Column)
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="assigning keyLine when last equals keyLine leaves last unchanged"
 	if last < keyLine {
 		last = keyLine
 	}
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="clamping last when equal to the bound leaves last unchanged"
 	if keyIdx+2 < len(node.Content) && last > node.Content[keyIdx+2].Line-1 {
 		last = node.Content[keyIdx+2].Line - 1
 	}
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="clamping last when equal to len(lines)-1 leaves last unchanged"
 	if last > len(lines)-1 {
 		last = len(lines) - 1
 	}
@@ -243,6 +255,7 @@ func (d *Document) endLine(lines []int, node *yaml.Node, column int) int {
 func (d *Document) endLineOfMapping(lines []int, node *yaml.Node) int {
 	last := node.Line
 	for i := 0; i+1 < len(node.Content); i += 2 {
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="updating last when end equals last leaves last unchanged"
 		if end := d.endLine(lines, node.Content[i+1], node.Content[i].Column); end > last {
 			last = end
 		}
@@ -253,6 +266,7 @@ func (d *Document) endLineOfMapping(lines []int, node *yaml.Node) int {
 func (d *Document) endLineOfSequence(lines []int, node *yaml.Node) int {
 	last := node.Line
 	for _, item := range node.Content {
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="updating last when end equals last leaves last unchanged"
 		if end := d.endLine(lines, item, node.Column); end > last {
 			last = end
 		}
@@ -280,6 +294,7 @@ func (d *Document) readMapping() (*yaml.Node, error) {
 	if d.mapping != nil {
 		return d.mapping, nil
 	}
+	// gomutants:disable-next-line INTEGER_DECREMENT,BRANCH_IF reason="yaml.Unmarshal on whitespace-only bytes produces an empty document handled identically below"
 	if len(bytes.TrimSpace(d.front)) == 0 {
 		return nil, nil
 	}
@@ -296,7 +311,9 @@ func (d *Document) readMapping() (*yaml.Node, error) {
 	}
 	// A key written twice names two values, and which of them the note holds is
 	// not a question the block answers.
+	// gomutants:disable-next-line ARITHMETIC_BASE,INTEGER_DECREMENT,INTEGER_INCREMENT reason="map capacity hint does not change duplicate key detection"
 	content := make(map[string]bool, len(node.Content)/2)
+	// gomutants:disable-next-line INTEGER_DECREMENT,CONDITIONALS_BOUNDARY reason="yaml.Unmarshal produces an even number of Content nodes for MappingNode"
 	for i := 0; i+1 < len(node.Content); i += 2 {
 		key := node.Content[i].Value
 		if content[key] {
@@ -315,7 +332,9 @@ func (d *Document) getWritableNode() (*yaml.Node, error) {
 		return nil, ErrUnterminated
 	}
 	node, err := d.readMapping()
+	// gomutants:disable-next-line EXPRESSION_REMOVE reason="hasAnchor and isFlowCollection both return false for a nil node"
 	if err != nil || node == nil {
+		// gomutants:disable-next-line RETURN_ZERO reason="readMapping always returns a nil node whenever err is non-nil"
 		return node, err
 	}
 	if hasAnchor(node) {

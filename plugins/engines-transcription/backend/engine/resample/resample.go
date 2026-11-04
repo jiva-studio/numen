@@ -37,6 +37,7 @@ func Convert(ctx context.Context, in []float32, from, to, workers int) ([]float3
 	var wg sync.WaitGroup
 	wg.Add(workers)
 	for worker := range workers {
+		// gomutants:disable-next-line ARITHMETIC_BASE reason="shrinking start only repeats deterministic sample work"
 		start := worker * len(out) / workers
 		end := (worker + 1) * len(out) / workers
 		go func(start, end int) {
@@ -65,6 +66,7 @@ type resampleSpan struct {
 // the context ends.
 func (s resampleSpan) fill(ctx context.Context, start, end int) {
 	for i := start; i < end; i++ {
+		// gomutants:disable-next-line EXPRESSION_REMOVE,ARITHMETIC_BASE,INVERT_NEGATIVES,INTEGER_INCREMENT,INTEGER_DECREMENT,CONDITIONALS_NEGATION,BRANCH_IF reason="periodic cancellation check is a performance optimization backed by the post-Wait check"
 		if (i-start)%(1<<16) == 0 && ctx.Err() != nil {
 			return
 		}
@@ -129,6 +131,7 @@ func getSinc(x float64) float64 {
 
 // getBlackmanWindow brings the kernel to nothing at the edge of its reach.
 func getBlackmanWindow(t float64) float64 {
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="the Blackman window is zero at t == -1 and t == 1"
 	if t < -1 || t > 1 {
 		return 0
 	}

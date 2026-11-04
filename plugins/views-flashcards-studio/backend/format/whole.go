@@ -59,6 +59,7 @@ func Whole(
 		if span.from < len(raw) {
 			line += "\n"
 		}
+		// gomutants:disable-next-line ARITHMETIC_BASE,INVERT_NEGATIVES reason="Slice capacity hint does not affect observable output."
 		out := make([]byte, 0, len(raw)-(span.from-span.head)+len(line))
 		out = append(out, raw[:span.head]...)
 		out = append(out, line...)

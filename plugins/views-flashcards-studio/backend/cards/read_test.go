@@ -258,6 +258,15 @@ func TestACardModelAtTheBoundIsRead(t *testing.T) {
 	if got.Outcome != note.Ok || got.FileStat.Size != note.MaxBytes {
 		t.Errorf("outcome = %q, size = %d, want a card model of %d bytes read", got.Outcome, got.FileStat.Size, note.MaxBytes)
 	}
+
+	write(t, vs.first, "TitledModel.md", "---\ntype: card-model\ntitle: Custom Title\nfields:\n  - Name\n---\n")
+	titled, err := cards.NewRead(vs.ports.Readers, nil).CardModel(t.Context(), vs.first, "TitledModel.md")
+	if err != nil {
+		t.Fatalf("read titled: %v", err)
+	}
+	if titled.Title != "Custom Title" {
+		t.Errorf("title = %q, want Custom Title", titled.Title)
+	}
 }
 
 // A path with nothing at it is an outcome, and no error.

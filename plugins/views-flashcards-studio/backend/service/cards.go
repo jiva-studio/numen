@@ -96,6 +96,7 @@ func (b *Backend) createCardNote(
 	if err == nil || errors.Is(err, note.ErrIndexOutdated) {
 		// The file is on disk under that name and nothing renumbers a second
 		// attempt, so the path is the only way back to it.
+		// gomutants:disable-next-line RETURN_ZERO reason="ErrorCodeUnspecified is the zero value of ErrorCode."
 		return made, api.ErrorCodeUnspecified, isIndexOutdated(err), nil
 	}
 	if errors.Is(err, cards.ErrNoFields) {
@@ -103,8 +104,10 @@ func (b *Backend) createCardNote(
 	}
 	reason, ok := getErrorCode(err)
 	if !ok {
+		// gomutants:disable-next-line RETURN_ZERO reason="ErrorCodeUnspecified is the zero value of ErrorCode."
 		return cards.CreateNoteResult{}, api.ErrorCodeUnspecified, false, newError(getCode(err), err)
 	}
+	// gomutants:disable-next-line RETURN_ZERO reason="Empty struct literal equals the zero value."
 	return cards.CreateNoteResult{Path: "", ID: "", Title: ""}, reason, false, nil
 }
 
@@ -246,6 +249,7 @@ func (h *cardsHandler) WriteCardModel(
 	}
 	body, err := format.CardModelBody(
 		req.Preamble, cardwire.NewTemplates(req.Templates), req.Tail)
+	// gomutants:disable-next-line BRANCH_IF reason="CardModelBody normalizes template names to a single heading line."
 	if err != nil {
 		return nil, newError(server.CodeInvalidArgument, err)
 	}

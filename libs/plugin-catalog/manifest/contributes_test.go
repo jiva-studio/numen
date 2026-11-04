@@ -95,3 +95,48 @@ func TestAStatusViewNeedsAFrontendToRegisterIt(t *testing.T) {
 		t.Errorf("error = %v, want a refusal for the missing frontend", err)
 	}
 }
+
+func TestCheckThemeFileAndThemeIssues(t *testing.T) {
+	if manifest.MaxThemeSize != 256<<10 {
+		t.Fatalf("MaxThemeSize = %d, want %d", manifest.MaxThemeSize, 256<<10)
+	}
+	if err := manifest.CheckThemeFile("themes/night.css"); err != nil {
+		t.Errorf("CheckThemeFile valid: %v", err)
+	}
+	if err := manifest.CheckThemeFile("a\x01n.css"); err != nil {
+		t.Errorf("CheckThemeFile with rune 1: %v", err)
+	}
+	for name, tc := range map[string]struct {
+		file string
+		want string
+	}{
+		"empty":          {"", "file is empty"},
+		"backslash":      {`a\n.css`, "not a slash-separated path"},
+		"null byte":      {"a\x00n.css", "not a slash-separated path"},
+		"absolute":       {"/n.css", "not a clean relative path"},
+		"unclean":        {"a//n.css", "not a clean relative path"},
+		"dotdot":         {"..", "leaves the plugin folder"},
+		"dotdot prefix":  {"../n.css", "leaves the plugin folder"},
+		"wrong ext":      {"n.txt", "not a .css stylesheet"},
+		"bare extension": {".css", "not a .css stylesheet"},
+		"dir bare ext":   {"a/.css", "not a .css stylesheet"},
+	} {
+		err := manifest.CheckThemeFile(tc.file)
+		if err == nil || !strings.Contains(err.Error(), tc.want) {
+			t.Errorf("%s: CheckThemeFile(%q) = %v, want %q", name, tc.file, err, tc.want)
+		}
+	}
+
+	for name, themes := range map[string]string{
+		"capital id":         `[{"id":"Night","name":"N","file":"n.css"}]`,
+		"duplicate id":       `[{"id":"n","name":"N","file":"n.css"},{"id":"n","name":"M","file":"m.css"}]`,
+		"blank name":         `[{"id":"n","name":" ","file":"n.css"}]`,
+		"invalid appearance": `[{"id":"n","name":"N","appearance":"sepia","file":"n.css"}]`,
+		"invalid file":       `[{"id":"n","name":"N","file":"../n.css"}]`,
+	} {
+		_, err := manifestjson.Read(strings.NewReader(contributesHead + `,"contributes":{"themes":` + themes + `}}`))
+		if !errors.Is(err, manifest.ErrInvalidContribution) {
+			t.Errorf("%s: error = %v, want ErrInvalidContribution", name, err)
+		}
+	}
+}

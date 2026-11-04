@@ -80,6 +80,7 @@ func (d Decoder) choose(frame, upto []float32) (choice, error) {
 // getStep returns how far the decoding advances. The blank advances by at
 // least one, and a frame that has emitted mostPerFrame tokens advances too.
 func (d Decoder) getStep(c choice, tokensInFrame int) int {
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_INCREMENT reason="when c.step is 1, returning 1 and returning c.step are identical"
 	if c.step < 1 && (c.token == d.Blank || tokensInFrame >= mostPerFrame) {
 		return 1
 	}

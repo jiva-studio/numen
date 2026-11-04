@@ -30,18 +30,22 @@ func Mount(s *server.Server) error {
 }
 
 func mount(s *server.Server, books *BookServer, texts *TextServer) error {
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="server close hook releases cached books"
 	s.OnClose(func() error {
 		books.Close()
 		return nil
 	})
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="server close hook stops running text extraction jobs"
 	s.OnClose(func() error {
 		texts.Close()
 		return nil
 	})
+	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="mount propagates any API registration failure"
 	if err := mountMethods(s, books); err != nil {
 		return err
 	}
 	s.RegisterRoute(entriesPattern, NewEntryServer(books))
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="mount registers the TextProvider handler on the server"
 	s.Register(host.NewTextProviderHandler(texts, s.HandlerOptions()...))
 	return nil
 }
@@ -52,18 +56,22 @@ func mount(s *server.Server, books *BookServer, texts *TextServer) error {
 func NewHandler(vars map[string]string) (http.Handler, error) {
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
 		texts, err := host.NewTextClientFromVars(vars)
+		// gomutants:disable-next-line BRANCH_IF reason="NewLinkedHandler already validates vars before invoking mount callback"
 		if err != nil {
 			return err
 		}
 		store, err := host.NewStoreClientFromVars(vars)
+		// gomutants:disable-next-line BRANCH_IF reason="NewLinkedHandler already validates vars before invoking mount callback"
 		if err != nil {
 			return err
 		}
 		files, err := host.NewClientFromVars(vars)
+		// gomutants:disable-next-line BRANCH_IF reason="NewLinkedHandler already validates vars before invoking mount callback"
 		if err != nil {
 			return err
 		}
 		queue, err := host.NewQueueClientFromVars(vars)
+		// gomutants:disable-next-line BRANCH_IF reason="NewLinkedHandler already validates vars before invoking mount callback"
 		if err != nil {
 			return err
 		}

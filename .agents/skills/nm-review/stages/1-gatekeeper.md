@@ -115,4 +115,4 @@ Read `AGENTS.md` at the root and in the touched module, and the rules summarized
 
 ## Output integration
 
-Every finding from this stage goes into **Stage 1** of the Unified Report in [`../SKILL.md`](../SKILL.md). Do not output a standalone report.
+A failed gate goes into the gates line of the report in [`../SKILL.md`](../SKILL.md), and a rule violation becomes a finding there. Do not output a standalone report.

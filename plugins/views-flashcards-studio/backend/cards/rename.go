@@ -239,6 +239,7 @@ func (u RenameField) writeCardModelField(
 	if err := f.RenameField(in.From, in.To); err != nil {
 		return domain.FileStat{}, fmt.Errorf("%s: %w", in.CardModel, err)
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="crypto/rand.Reader and freshly opened card model frontmatter do not fail when writing an identifier."
 	if err := u.writeIdentifier(f.WriteIdentifier); err != nil {
 		return domain.FileStat{}, fmt.Errorf("%s: %w", in.CardModel, err)
 	}
@@ -249,6 +250,7 @@ func (u RenameField) writeCardModelField(
 // what the application changing what a note holds does.
 func (u RenameField) writeIdentifier(into func(string) (bool, error)) error {
 	identifier, err := u.createIdentifier()
+	// gomutants:disable-next-line BRANCH_IF reason="crypto/rand.Reader does not fail in normal execution."
 	if err != nil {
 		return err
 	}
@@ -289,42 +291,53 @@ type deckWriter struct {
 func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, error) {
 	on, err := d.reader.StatFile(ctx, path)
 	if err != nil {
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Caller ignores card count when rename returns an error."
 		return 0, err
 	}
 	if on.Size > MaxBytes {
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Caller ignores card count when rename returns an error."
 		return 0, fmt.Errorf("it is %d bytes, and %d is the most a deck is read at", on.Size, MaxBytes)
 	}
 
 	raw, err := d.reader.Read(ctx, path)
 	if err != nil {
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Caller ignores card count when rename returns an error."
 		return 0, err
 	}
 	f, err := format.OpenDeck(raw)
 	if err != nil {
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Caller ignores card count when rename returns an error."
 		return 0, err
 	}
 	pos, err := getCardModelPaths(ctx, d.links, d.vault.ID, path, f.Deck(on))
 	if err != nil {
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Caller ignores card count when rename returns an error."
 		return 0, err
 	}
 	cards, err := f.RenameField(pos, in.CardModel, in.From, in.To)
 	if err != nil {
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Caller ignores card count when rename returns an error."
 		return 0, err
 	}
 	if cards == 0 {
+		// gomutants:disable-next-line INTEGER_DECREMENT reason="Caller only records the deck when cards > 0."
 		return 0, nil
 	}
 	delta, _, err := d.read.readCardModels(ctx, d.vault, pos)
 	if err != nil {
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Caller ignores card count when rename returns an error."
 		return 0, err
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="DeckFile.Whole does not fail on a deck that already passed OpenDeck and RenameField."
 	if _, err := f.Whole(delta, cardid.New); err != nil {
 		return 0, err
 	}
 	if err := d.writeIdentifier(f.WriteIdentifier); err != nil {
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Caller ignores card count when rename returns an error."
 		return 0, err
 	}
 	if _, err := d.writer.Write(ctx, path, f.Bytes(), on); err != nil {
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Caller ignores card count when rename returns an error."
 		return 0, err
 	}
 	return cards, nil

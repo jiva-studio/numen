@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/catalogtest"
 	"github.com/jiva-studio/numen/libs/plugin-catalog/localsource"
+	"github.com/jiva-studio/numen/libs/plugin-catalog/manifest"
 )
 
 // settings answers from the set of ids that are switched off.
@@ -99,14 +100,19 @@ func TestABrokenFolderIsReportedWithThePluginsThatRead(t *testing.T) {
 	entry := catalogtest.OnDiskEntries()[0]
 	writePlugin(t, dir, entry.ID, manifestOf(entry))
 	writePlugin(t, dir, "broken", map[string]any{"id": "nodots", "name": "Broken", "version": "1.0.0"})
+	src := localsource.New([]string{dir}, settings{disabled: nil})
 
-	entries, err := localsource.New([]string{dir}, settings{disabled: nil}).List(t.Context())
+	entries, err := src.List(t.Context())
+	got, getErr := src.Get(t.Context(), entry.ID)
 
 	if len(entries) != 1 || entries[0].ID != entry.ID {
 		t.Errorf("entries = %+v, want the valid plugin", entries)
 	}
-	if err == nil || errors.Is(err, catalog.ErrNotFound) {
-		t.Errorf("error = %v, want the broken folder reported", err)
+	if !errors.Is(err, manifest.ErrInvalidID) || errors.Is(err, catalog.ErrNotFound) {
+		t.Errorf("error = %v, want the broken folder reported with ErrInvalidID", err)
+	}
+	if !errors.Is(getErr, manifest.ErrInvalidID) || got.ID != entry.ID {
+		t.Errorf("Get = %+v, %v; want valid plugin and ErrInvalidID", got, getErr)
 	}
 }
 

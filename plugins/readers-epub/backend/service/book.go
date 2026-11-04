@@ -17,6 +17,7 @@ import (
 // from the bytes the caller read.
 var errChanged = errors.New("the file changed")
 
+// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="mostListed caps the maximum number of items returned in a book summary"
 const mostListed = 1000
 
 // readBookFile reads a book of the vault the request works.
@@ -43,9 +44,10 @@ type BookServer struct {
 // NewBookServer returns a BookServer that reads the vault of a request through files.
 func NewBookServer(files host.Vault) *BookServer {
 	return &BookServer{
-		files:  files,
-		books:  newBookCache(),
-		mu:     sync.Mutex{},
+		files: files,
+		books: newBookCache(),
+		mu:    sync.Mutex{},
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="placedBook starts with nil book so size and mtime are ignored until populated"
 		placed: placedBook{key: "", size: 0, mtime: 0, book: nil},
 	}
 }

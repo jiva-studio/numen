@@ -116,6 +116,7 @@ func (t *Tools) readCardCardModel(ctx context.Context, in cardModelReadInput) (c
 		return cardModelReadOutput{}, err
 	}
 	if s.Outcome != note.Ok {
+		// gomutants:disable-next-line BRANCH_IF reason="All non-Ok ReadOutcome values map to an ErrorCode in convertOutcomeToErrorCode."
 		if reason, ok := convertOutcomeToErrorCode(s.Outcome); ok {
 			return cardModelReadOutput{}, errors.New(describeCode(reason))
 		}

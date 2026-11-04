@@ -152,3 +152,54 @@ func TestANoteWithoutAnIdentifierIsStillANote(t *testing.T) {
 		t.Error("the rest of the note was not parsed")
 	}
 }
+
+func TestLinksEdgeCasesAndProblems(t *testing.T) {
+	// Leading empty line followed by link and fenced link, plus duplicate link before second link on same line.
+	n := parse(t, "\n[[First]] [[First]] [[Second]]\n```\n[[Ignored]]\n```\n")
+	if got := targets(n); !slices.Equal(got, []string{"ref name://First", "ref name://Second"}) {
+		t.Errorf("got %v", got)
+	}
+
+	// Frontmatter link problems with a valid entry after each invalid entry.
+	nProblems := parse(t, `---
+id: 123
+title: "   "
+links:
+  - 42
+  - role: parent
+  - to: "[[MissingRole]]"
+  - to: "[[BadMarker]]"
+    role: jump
+    marker: unknown
+  - to: "[[Valid]]"
+    role: child
+---
+body
+`)
+	if got := targets(nProblems); !slices.Equal(got, []string{"child name://Valid"}) {
+		t.Errorf("got links %v", got)
+	}
+	wantProblems := []string{
+		"links: entry is not a mapping",
+		"links: an entry has no target",
+		"links: [[MissingRole]] has no role",
+		"links: [[BadMarker]] has an unknown marker unknown",
+		"id is not text",
+	}
+	if !slices.Equal(nProblems.Problems, wantProblems) {
+		t.Errorf("problems = %v, want %v", nProblems.Problems, wantProblems)
+	}
+	if nProblems.Title != "Source" {
+		t.Errorf("whitespace title did not fall back to filename: %q", nProblems.Title)
+	}
+
+	nBadID := parse(t, "---\nid: not-a-ulid\n---\nbody\n")
+	if !slices.Equal(nBadID.Problems, []string{"id not-a-ulid is not a ULID"}) {
+		t.Errorf("bad id problems = %v", nBadID.Problems)
+	}
+
+	nScalarFM := parse(t, "---\na\n---\nbody\n")
+	if nScalarFM.FrontmatterErr == "" {
+		t.Error("expected FrontmatterErr for 1-char non-mapping frontmatter")
+	}
+}

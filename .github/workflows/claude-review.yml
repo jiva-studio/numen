@@ -1,0 +1,133 @@
+name: Claude review
+
+# Runs the nm-review skill on a pull request and submits its verdict as an approval or a change
+# request from github-actions[bot]. A pull request leaving draft and the comment "/nm-review" start
+# a quick review that only reads the code; the comment "/nm-review full" starts a full review that
+# also writes and runs the tests that prove its hypotheses. Neither runs the gates or the suites,
+# because the pull request's CI runs them. Only users with write access start a review, and pull
+# requests from forks are refused.
+on:
+  pull_request:
+    types: [ready_for_review]
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  review:
+    if: >-
+      (github.event_name == 'pull_request'
+        && github.event.pull_request.head.repo.full_name == github.repository)
+      || (github.event_name == 'issue_comment'
+        && github.event.issue.pull_request
+        && startsWith(github.event.comment.body, '/nm-review')
+        && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association))
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Refuse pull requests from forks
+        run: |
+          set -euo pipefail
+          cross=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json isCrossRepository --jq .isCrossRepository)
+          if [ "$cross" != "false" ]; then
+            echo "::error::Pull request $PR_NUMBER comes from a fork"
+            exit 1
+          fi
+
+      - name: Choose the review mode
+        env:
+          COMMENT: ${{ github.event.comment.body }}
+        run: |
+          mode=quick
+          case "$COMMENT" in
+            "/nm-review full"*) mode=full ;;
+          esac
+          echo "MODE=$mode" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/pull/${{ env.PR_NUMBER }}/head
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Record the reviewed commit
+        run: echo "REVIEWED_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - if: env.MODE == 'full'
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: libs/core/go.mod
+          cache-key: core-test-plain
+
+      - if: env.MODE == 'full'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - if: env.MODE == 'full'
+        uses: ./.github/actions/install-node-modules
+
+      - if: env.MODE == 'full'
+        uses: ./.github/actions/build-ui
+        with:
+          shell: "true"
+
+      - name: Quick review
+        if: env.MODE == 'quick'
+        timeout-minutes: 20
+        uses: anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c # v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            /nm-review origin/main...HEAD
+            This run is a quick review of pull request #${{ env.PR_NUMBER }} in CI. The pull request's CI runs the linters and the test suites. Run no gates and no tests, and install nothing: judge every stage by reading the code, and mark each proof "by reading".
+            Write the report to review-report.md in the workspace root. Write one word to review-verdict.txt: APPROVED, CHANGES_REQUESTED or REJECTED.
+          claude_args: >-
+            --allowedTools "Read,Grep,Glob,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git merge-base:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*)"
+
+      - name: Full review
+        if: env.MODE == 'full'
+        timeout-minutes: 75
+        uses: anthropics/claude-code-action@c0949c50a78c1ec8ce2647db36629b870e715d0c # v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            /nm-review origin/main...HEAD
+            This run is a full review of pull request #${{ env.PR_NUMBER }} in CI. The pull request's CI runs the linters and the test suites, so run no gates and no whole suites. Go, the Node modules and the built UI libraries are installed. In stage 3, prove or disprove each hypothesis with a test you write next to the code, and run only that test: `go test -run <name> ./<package>` from the module directory, or `npx vitest run <file>` from the package directory.
+            Write the report to review-report.md in the workspace root. Write one word to review-verdict.txt: APPROVED, CHANGES_REQUESTED or REJECTED.
+          claude_args: >-
+            --allowedTools "Read,Grep,Glob,Write,Edit,Bash(cd:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git merge-base:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(go test:*),Bash(npx vitest run:*)"
+
+      - name: Submit the review
+        run: |
+          set -euo pipefail
+          head=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq .headRefOid)
+          if [ "$head" != "$REVIEWED_SHA" ]; then
+            echo "::notice::The pull request moved to $head during the review of $REVIEWED_SHA; comment /nm-review to review the new head"
+            exit 0
+          fi
+          verdict=$(tr -d '[:space:]' < review-verdict.txt)
+          case "$verdict" in
+            APPROVED) flag=--approve ;;
+            CHANGES_REQUESTED | REJECTED) flag=--request-changes ;;
+            *)
+              echo "::error::Unknown verdict: $verdict"
+              exit 1
+              ;;
+          esac
+          gh pr review "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" "$flag" --body-file review-report.md

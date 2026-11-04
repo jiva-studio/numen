@@ -6,6 +6,7 @@ import "runtime"
 // requested, or one per CPU when none is, and never more than there are jobs.
 func GetWorkerCount(requested, jobs int) int {
 	if requested <= 0 {
+		// gomutants:disable-next-line INTEGER_DECREMENT reason="GOMAXPROCS queries without changing for any argument below 1"
 		requested = runtime.GOMAXPROCS(0)
 	}
 	return max(1, min(requested, jobs))

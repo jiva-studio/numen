@@ -25,6 +25,7 @@ const caret = "^"
 func ReadHeading(heading string) (text string, carried cardid.ID) {
 	pos := strings.LastIndex(heading, " ")
 	last := heading
+	// gomutants:disable-next-line INTEGER_DECREMENT reason="strings.LastIndex returns -1 when not found and >= 0 when found."
 	if pos >= 0 {
 		last = heading[pos+1:]
 	}
@@ -32,6 +33,7 @@ func ReadHeading(heading string) (text string, carried cardid.ID) {
 	if !found || !cardid.IsValid(cardid.ID(content)) {
 		return heading, ""
 	}
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_INCREMENT reason="When pos == 0, heading[:0] is the empty string."
 	if pos < 0 {
 		return "", cardid.ID(content)
 	}
@@ -70,6 +72,7 @@ func Project(value string) string {
 		}
 		runes++
 	}
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,BRANCH_IF reason="Fast-path return when no runes were truncated; span[1] <= len(line) and line is already TrimSpace'd."
 	if trimmed == len(line) {
 		return line
 	}
@@ -107,6 +110,7 @@ func getUnsplittableRanges(line string) [][]int {
 			masked[pos] = maskRune
 		}
 	}
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="Any negative count returns all regex matches."
 	return append(found, emphasisRe.FindAllIndex(masked, -1)...)
 }
 
@@ -126,6 +130,7 @@ func matchLinkEnd(line string, pos int) (int, bool) {
 			return to, true
 		}
 	}
+	// gomutants:disable-next-line RETURN_ZERO reason="Caller ignores the returned offset when ok is false."
 	return to, false
 }
 
@@ -161,6 +166,7 @@ func links(line string) [][]int {
 // heading is a single line.
 func oneLine(name string) string {
 	line := markdown.Normalise(name)
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_INCREMENT reason="When pos == 0, line[:0] is empty and TrimSpace on the rest is only affected if newline is at index 0."
 	if pos := strings.IndexByte(line, '\n'); pos >= 0 {
 		line = line[:pos]
 	}

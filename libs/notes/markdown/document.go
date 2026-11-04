@@ -112,6 +112,7 @@ func Create(identifier, body string) []byte {
 
 // Bytes returns the current content of the note.
 func (d *Document) Bytes() []byte {
+	// gomutants:disable-next-line ARITHMETIC_BASE reason="make capacity hint does not alter the appended slice contents"
 	out := make([]byte, 0, len(d.bom)+len(d.open)+len(d.front)+len(d.closeDelimiter)+len(d.body))
 	out = append(out, d.bom...)
 	out = append(out, d.open...)
@@ -159,6 +160,7 @@ func (d *Document) SpliceBody(start, end int, text string) error {
 		content = strings.ReplaceAll(content, "\n", "\r\n")
 	}
 
+	// gomutants:disable-next-line ARITHMETIC_BASE,INVERT_NEGATIVES reason="make capacity hint does not alter the appended slice contents"
 	body := make([]byte, 0, len(d.body)-(end-start)+len(content))
 	body = append(body, d.body[:start]...)
 	body = append(body, content...)

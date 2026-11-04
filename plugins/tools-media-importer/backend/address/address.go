@@ -27,6 +27,7 @@ func Parse(raw string) (URL, error) {
 	if err != nil {
 		return "", ErrNotAURL
 	}
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="url.Parse already lowercases Scheme"
 	address.Scheme = strings.ToLower(address.Scheme)
 	if address.Scheme != "http" && address.Scheme != "https" {
 		return "", ErrNotAURL
@@ -54,6 +55,7 @@ func isLocalHost(host string) bool {
 		return true
 	}
 	address, err := netip.ParseAddr(strings.Trim(host, "[]"))
+	// gomutants:disable-next-line BRANCH_IF reason="zero netip.Addr returns false for IsLoopback and IsUnspecified"
 	if err != nil {
 		return false
 	}

@@ -79,9 +79,6 @@ type event struct {
 }
 
 func (e event) hasToolAnswer() bool {
-	if len(e.Message) == 0 {
-		return false
-	}
 	var msg struct {
 		Content []struct {
 			Type string `json:"type"`
@@ -147,6 +144,7 @@ func parseStream(ctx context.Context, r io.Reader, send func(*agentrun.Response)
 		callID:       "",
 		tool:         "",
 		arguments:    strings.Builder{},
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Initial offset is reset to zero on every content_block_start before tool deltas arrive."
 		offset:       0,
 		reason:       "",
 		sendErr:      nil,
@@ -188,9 +186,7 @@ func (p *streamParser) parseLine(ctx context.Context, line string) {
 	case "result":
 		if response.IsError {
 			p.setReason(getResultError(response))
-			return
 		}
-		p.setReason("")
 	}
 }
 
@@ -256,8 +252,7 @@ func (p *streamParser) parseStreamEvent(_ context.Context, ev streamEvent) {
 }
 
 func (p *streamParser) parseAssistantMessage(_ context.Context, response event) {
-	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="json.Unmarshal on an empty message returns an error and stops"
-	if p.isStreaming || len(response.Message) == 0 {
+	if p.isStreaming {
 		return
 	}
 	var msg struct {
@@ -314,8 +309,8 @@ func (p *streamParser) buildCallStep(callID, tool, args string) *agentrun.Respon
 // reportEdit reports the change a call is writing, once the text that replaces the match has
 // begun to arrive. A change is reported at most once every previewInterval.
 func (p *streamParser) reportEdit() {
-	words, declared := p.words[stripServerPrefix(p.tool)]
-	if !declared || words.Text == "" {
+	words := p.words[stripServerPrefix(p.tool)]
+	if words.Text == "" {
 		return
 	}
 	args := p.arguments.String()

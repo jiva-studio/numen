@@ -108,6 +108,7 @@ func (u Session) Execute(
 		reads: reads, day: u.day, reviewCards: reviewCards, schedules: schedules, log: target,
 		delta: u.schedules.scheduler, pos: u.schedules.getScheduler, now: now,
 	})
+	// gomutants:disable-next-line BRANCH_IF reason="PresetReads cache is already populated for all reviewCard decks by getAssignmentFrom."
 	if err != nil {
 		return SessionResult{}, err
 	}

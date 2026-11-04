@@ -109,12 +109,14 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 	}
 
 	run := reviewCounter{
-		was:        u.readRemembered(ctx, v),
-		now:        countCache{V: countedVersion, Runs: nil},
+		was: u.readRemembered(ctx, v),
+		now: countCache{V: countedVersion, Runs: nil},
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Streak is always overwritten from the day tallies before return."
 		out:        ReviewCounts{Days: make(map[string]review.Tally), Due: nil, Retained: nil, Streak: 0, Answered: 0},
 		countedIDs: make(map[string]bool),
 		coming:     u.schedules.scheduler != nil,
-		log:        ReviewLog{Answers: nil, order: nil, Files: nil, Skipped: 0},
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="ReviewCounter does not read Skipped from its internal ReviewLog."
+		log: ReviewLog{Answers: nil, order: nil, Files: nil, Skipped: 0},
 	}
 	for _, file := range files {
 		if err := u.countFile(ctx, log, store, file, &run); err != nil {
@@ -122,6 +124,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 		}
 	}
 
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="GetHistory computes the same ordered answers when the memoized function is nil."
 	run.log.order = newHistory(run.log.Answers)
 	u.remember(ctx, v, run.now)
 	run.out.Streak = review.Streak(u.day, run.out.Days, u.now.Now())
@@ -316,9 +319,11 @@ func (u CountReviews) remember(ctx context.Context, v domain.Vault, now countCac
 		return
 	}
 	raw, err := json.Marshal(now)
+	// gomutants:disable-next-line BRANCH_IF reason="Marshaling countCache with primitive and map fields cannot fail."
 	if err != nil {
 		return
 	}
+	// gomutants:disable-next-line CONDITIONALS_NEGATION reason="Cache write failure logs to stderr without affecting the returned counts."
 	if err := u.Cache.Write(ctx, v.ID, raw); err != nil {
 		fmt.Fprintf(os.Stderr, "views-flashcards-studio: keep the count of reviews of %s: %v\n", v.ID, err)
 	}

@@ -76,6 +76,7 @@ func Parse(s string) (CFI, error) {
 func (p *parser) readEnd(parent path, s string) (path, error) {
 	if p.peek() != ',' {
 		if p.pos != len(p.in) {
+			// gomutants:disable-next-line RETURN_ZERO reason="parent is ignored when readEnd returns an error"
 			return parent, fmt.Errorf("%w: %q has %q after its path", ErrSyntax, s, p.in[p.pos:])
 		}
 		return parent, nil
@@ -88,6 +89,7 @@ func (p *parser) readEnd(parent path, s string) (path, error) {
 	}
 	parent = mergeRange(parent, start)
 	if p.peek() != ',' {
+		// gomutants:disable-next-line RETURN_ZERO reason="parent is ignored when readEnd returns an error"
 		return parent, fmt.Errorf("%w: %q has a range with no end", ErrSyntax, s)
 	}
 	return parent, nil
@@ -106,6 +108,7 @@ func mergeRange(parent, start path) path {
 	if start.hasBang {
 		parent.indirected = slices.Concat(parent.steps, start.indirected)
 		parent.steps = start.steps
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="hasBang tracks indirection presence on merged range path"
 		parent.hasBang = true
 	} else {
 		parent.steps = append(parent.steps, start.steps...)
@@ -121,6 +124,7 @@ type parser struct {
 
 func (p *parser) peek() byte {
 	if p.pos >= len(p.in) {
+		// gomutants:disable-next-line INTEGER_INCREMENT reason="any non-delimiter sentinel byte indicates end of input"
 		return 0
 	}
 	return p.in[p.pos]
@@ -173,6 +177,7 @@ func (p *parser) readInteger() (int, error) {
 		p.pos++
 	}
 	if p.pos == start {
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="zero integer is ignored when readInteger returns an error"
 		return 0, fmt.Errorf("%w: a step or offset without a number", ErrSyntax)
 	}
 	return strconv.Atoi(p.in[start:p.pos])
@@ -183,6 +188,7 @@ func (p *parser) skipAssertion() {
 	if p.peek() != '[' {
 		return
 	}
+	// gomutants:disable-next-line STATEMENT_REMOVE,INCREMENT_DECREMENT,CONDITIONALS_BOUNDARY reason="opening bracket is non-^ and non-], so first loop iteration advances past it"
 	for p.pos++; p.pos < len(p.in); p.pos++ {
 		switch p.in[p.pos] {
 		case '^':

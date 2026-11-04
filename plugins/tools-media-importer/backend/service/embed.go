@@ -48,15 +48,18 @@ func serveEmbed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	page, err := template.New("embed").Parse(embedPage)
+	// gomutants:disable-next-line BRANCH_IF reason="constant embedPage template always parses"
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="template execution error only logs to stderr"
 	err = page.Execute(w, struct {
 		Address string
 		Player  template.URL
 	}{Address: string(parsed), Player: template.URL(player)})
+	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="stderr diagnostic log on response write failure has no observable effect"
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "tools-media-importer: write the embed page: %v\n", err)
 	}

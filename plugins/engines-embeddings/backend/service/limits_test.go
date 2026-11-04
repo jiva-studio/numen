@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"runtime"
 	"sync"
 	"testing"
 
@@ -154,5 +155,61 @@ func TestTheThreadsOfTheEnvironmentWinOverTheProfile(t *testing.T) {
 	}
 	if got := record.opened[0].Threads; got != 3 {
 		t.Errorf("opened with %d threads, want 3", got)
+	}
+}
+
+func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T) {
+	prevProcs := runtime.GOMAXPROCS(0)
+	t.Cleanup(func() { runtime.GOMAXPROCS(prevProcs) })
+
+	srv, record := newRecordedServer(t)
+	srv.updateConfig(map[string]string{performance.ConfigKey: "balanced"})
+	if len(record.nices) != 1 || record.nices[0] != 10 {
+		t.Fatalf("nices on first balanced config = %v, want [10]", record.nices)
+	}
+
+	srv.updateConfig(map[string]string{performance.ConfigKey: "balanced"})
+	if len(record.nices) != 1 {
+		t.Fatalf("nices on repeated balanced config = %v, want [10]", record.nices)
+	}
+
+	srv.updateConfig(map[string]string{performance.ConfigKey: "eco"})
+	if len(record.nices) != 2 || record.nices[1] != 19 {
+		t.Fatalf("nices on eco config = %v, want [10 19]", record.nices)
+	}
+	if got := runtime.GOMAXPROCS(0); got != 1 {
+		t.Fatalf("GOMAXPROCS = %d, want 1", got)
+	}
+
+	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
+		t.Fatal(err)
+	}
+	srv.isProfileSet = false
+	srv.applyProfileLocked(performance.Eco)
+	if srv.embedder == nil {
+		t.Fatal("embedder was retired when limits did not change")
+	}
+
+	canceled := false
+	srv.opening = &modelOpening{
+		ready:  make(chan struct{}),
+		cancel: func() { canceled = true },
+	}
+	srv.isProfileSet = false
+	srv.applyProfileLocked(performance.Eco)
+	if canceled || srv.opening == nil {
+		t.Fatal("opening was retired when limits did not change")
+	}
+
+	srv.applyProfileLocked(performance.Maximum)
+	if !canceled || srv.opening != nil {
+		t.Fatal("opening was not retired when limits changed")
+	}
+
+	runtime.GOMAXPROCS(4)
+	srv.isMock = true
+	srv.applyProfileLocked(performance.Eco)
+	if got := runtime.GOMAXPROCS(0); got != 4 {
+		t.Fatalf("mock profile changed GOMAXPROCS to %d, want 4", got)
 	}
 }

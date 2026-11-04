@@ -168,6 +168,7 @@ func (u CountCardsDue) readInputs(ctx context.Context, v domain.Vault) (dueInput
 		reads: reads, day: u.day, reviewCards: reviewCards, schedules: schedules, log: log,
 		delta: u.schedules.scheduler, pos: u.schedules.getScheduler, now: now,
 	})
+	// gomutants:disable-next-line BRANCH_IF reason="PresetReads cache is already populated for all reviewCard decks by getAssignmentFrom."
 	if err != nil {
 		return dueInputs{}, err
 	}

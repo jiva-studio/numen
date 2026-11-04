@@ -151,6 +151,7 @@ func readLink(ctx context.Context, vault host.Vault, path string) (Link, error) 
 	if err != nil {
 		return Link{}, err
 	}
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="markdown.Parse ignores FileStat.Size"
 	note := markdown.Parse(domain.FileStat{Path: path, Kind: "", Size: 0, ModTime: time.Time{}}, raw)
 	value, isText := note.Frontmatter[urlKey].(string)
 	if note.Type != NoteType || !isText || value == "" {
@@ -178,17 +179,21 @@ func (l *Links) Create(ctx context.Context, folder, raw string) (Link, error) {
 		return Link{}, err
 	}
 	name, _, err := domain.Filename(string(parsed))
+	// gomutants:disable-next-line BRANCH_IF reason="domain.Filename cannot fail on a validated http or https URL"
 	if err != nil {
 		return Link{}, err
 	}
 	identifier, err := ulid.NewGenerator(rand.Reader).NewID(l.clock.Now())
+	// gomutants:disable-next-line BRANCH_IF reason="crypto/rand.Reader does not fail in ulid generation"
 	if err != nil {
 		return Link{}, err
 	}
 	doc, err := markdown.Open(markdown.Create(identifier, ""))
+	// gomutants:disable-next-line BRANCH_IF reason="markdown.Create output is always valid for markdown.Open"
 	if err != nil {
 		return Link{}, err
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="SetScalar on valid frontmatter keys of a new document cannot fail"
 	if err := errors.Join(doc.SetScalar(typeKey, string(NoteType)), doc.SetScalar(urlKey, string(parsed))); err != nil {
 		return Link{}, err
 	}
@@ -392,6 +397,7 @@ func (l *Links) fetchText(ctx context.Context, folder folder, link Link) error {
 	rec.Downloader = model.Tool + " " + model.Version
 	rec.Kind = getKind(fetched)
 	segments, err := getSegments(fetched)
+	// gomutants:disable-next-line BRANCH_IF reason="getSegments cannot fail for integer cue timestamps"
 	if err != nil {
 		return err
 	}
@@ -564,6 +570,7 @@ func (l *Links) GetTitle(ctx context.Context, link Link) (string, error) {
 
 // reportTask shows a task. A host that cannot show it leaves the work to go on unseen.
 func (l *Links) reportTask(ctx context.Context, task host.Task) {
+	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="stderr diagnostic log on queue failure has no observable effect"
 	if err := l.host.Queue.ReportTask(ctx, task); err != nil {
 		fmt.Fprintf(os.Stderr, "tools-media-importer: show the task %s: %v\n", task.ID, err)
 	}
@@ -573,6 +580,7 @@ func (l *Links) reportTask(ctx context.Context, task host.Task) {
 func (l *Links) endTask(ctx context.Context, task host.Task, err error) {
 	ctx = context.WithoutCancel(ctx)
 	if err == nil || errors.Is(err, context.Canceled) {
+		// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="stderr diagnostic log on queue failure has no observable effect"
 		if finishErr := l.host.Queue.FinishTask(ctx, task.ID); finishErr != nil {
 			fmt.Fprintf(os.Stderr, "tools-media-importer: finish the task %s: %v\n", task.ID, finishErr)
 		}

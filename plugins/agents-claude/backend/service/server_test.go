@@ -104,8 +104,8 @@ func TestAgentServiceRPC(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTools failed: %v", err)
 	}
-	if len(toolSet.Tools) != 2 {
-		t.Errorf("expected 2 tools, got %d", len(toolSet.Tools))
+	if len(toolSet.Tools) != 2 || toolSet.Tools[0].Name != "search_tool" || toolSet.Tools[1].Name != "new_tool" {
+		t.Errorf("expected [search_tool, new_tool], got %+v", toolSet.Tools)
 	}
 
 	if err := client.FinishConversation(ctx, "conv-1"); err != nil {
@@ -131,7 +131,7 @@ func TestTheProgramIsUnreachableWhereItIsNotInstalled(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(programs) != 1 || programs[0].IsInstalled {
+	if len(programs) != 1 || programs[0].IsInstalled || len(programs[0].Models) != len(getFallbackModels()) {
 		t.Errorf("the programs are %v", programs)
 	}
 }
@@ -416,8 +416,8 @@ func TestAskAgent_ClosedAgent(t *testing.T) {
 	}
 	for stream.Receive() {
 	}
-	if stream.Err() == nil {
-		t.Error("a closed agent took a task")
+	if rpcerror.GetCode(stream.Err()) != rpcerror.Unavailable {
+		t.Errorf("expected Unavailable error from closed agent, got %v", stream.Err())
 	}
 }
 
@@ -636,5 +636,92 @@ func TestTheProgramListNeedsNoKey(t *testing.T) {
 	}
 	if models := got[0].Models; len(models) != len(getFallbackModels()) {
 		t.Errorf("the models are %v", models)
+	}
+}
+
+func TestServerEdgeCasesAndDirectCalls(t *testing.T) {
+	s := &agentServer{}
+	s.applyConfig(map[string]string{"model": "m1"})
+	s.applyConfig(map[string]string{"model": ""})
+	if s.defaultModel != "m1" {
+		t.Errorf("defaultModel = %q, want m1 preserved when empty model configured", s.defaultModel)
+	}
+
+	if got := combineInstructions("inst", ""); got != "inst" {
+		t.Errorf("combineInstructions(\"inst\", \"\") = %q, want \"inst\"", got)
+	}
+
+	// prepareClaudeArgs with empty tools creates no configFile, and defaultModelName omits --model.
+	args, cfg, err := s.prepareClaudeArgs(&agentrun.Request{
+		Model:      defaultModelName,
+		ToolsURL:   "http://127.0.0.1:1/mcp",
+		ToolsToken: "tok",
+	}, "", "")
+	if err != nil || cfg != "" {
+		t.Fatalf("prepareClaudeArgs empty tools = (%q, %v), want empty cfg", cfg, err)
+	}
+	if slices.Contains(args, "--model") {
+		t.Errorf("expected --model omitted for defaultModelName, got %v", args)
+	}
+
+	// Ask when claude is not installed and send fails on the first step returns that error.
+	withoutClaudeAnywhere(t)
+	sendErr := rpcerror.New(rpcerror.Canceled, os.ErrClosed)
+	if err := s.Ask(t.Context(), &agentrun.Request{Prompt: "q"}, func(*agentrun.Response) error {
+		return sendErr
+	}); err == nil {
+		t.Error("expected error when send fails on not-installed message")
+	}
+
+	// Ask when send fails on ModelStartedStep returns that error.
+	if err := s.Ask(t.Context(), &agentrun.Request{Prompt: "q", Command: []string{"true"}}, func(*agentrun.Response) error {
+		return sendErr
+	}); err == nil {
+		t.Error("expected error when send fails on ModelStartedStep")
+	}
+
+	// Ask when command fails to start returns Internal error.
+	if err := s.Ask(t.Context(), &agentrun.Request{Prompt: "q", Command: []string{"/nonexistent-claude-bin"}}, func(*agentrun.Response) error {
+		return nil
+	}); rpcerror.GetCode(err) != rpcerror.Internal {
+		t.Errorf("expected Internal error on nonexistent binary, got %v", err)
+	}
+
+	// Ask when script writes to stderr and exits non-zero reports stderr failure message.
+	failCmd := []string{"/bin/sh", "-c", "echo 'fatal stderr crash' >&2\nexit 1\n", "sh"}
+	client := startAgent(t, &agentServer{})
+	stream, err := client.Ask(t.Context(), &agentrun.Request{Prompt: "q", Command: failCmd})
+	if err != nil {
+		t.Fatal(err)
+	}
+	steps := collectSteps(t, stream)
+	if !slices.Contains(steps, "stopped:fatal stderr crash") {
+		t.Errorf("expected stopped:fatal stderr crash, got %v", steps)
+	}
+
+	// Ask with tools (expectsVault=true) vs without tools (expectsVault=false) on empty mcp_servers init.
+	initNoVaultCmd := []string{"/bin/sh", "-c", "echo '{\"type\":\"system\",\"subtype\":\"init\",\"mcp_servers\":[]}'\n", "sh"}
+	streamNoTools, err := client.Ask(t.Context(), &agentrun.Request{Prompt: "q", Command: initNoVaultCmd})
+	if err != nil {
+		t.Fatal(err)
+	}
+	stepsNoTools := collectSteps(t, streamNoTools)
+	if !slices.Contains(stepsNoTools, "stopped:done") {
+		t.Errorf("expected stopped:done when no tools requested, got %v", stepsNoTools)
+	}
+
+	streamWithTools, err := client.Ask(t.Context(), &agentrun.Request{
+		Prompt:     "q",
+		Command:    initNoVaultCmd,
+		Tools:      []string{"note_read"},
+		ToolsURL:   "http://127.0.0.1:1/mcp",
+		ToolsToken: "tok",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	stepsWithTools := collectSteps(t, streamWithTools)
+	if !slices.Contains(stepsWithTools, "stopped:the agent was started without this vault") {
+		t.Errorf("expected vault missing reason when tools requested, got %v", stepsWithTools)
 	}
 }

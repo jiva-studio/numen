@@ -118,6 +118,7 @@ func parseWav(raw []byte) (riffWave, error) {
 		kind := string(raw[pos : pos+4])
 		size := int(binary.LittleEndian.Uint32(raw[pos+4 : pos+8]))
 		pos += 8
+		// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="clamping size to len(raw)-pos is a no-op when pos+size equals len(raw)"
 		if size < 0 || pos+size > len(raw) {
 			size = len(raw) - pos
 		}
@@ -175,6 +176,7 @@ func (w riffWave) readSound() ([]float32, error) {
 	}
 	count := len(w.samples) / width
 	out := make([]float32, count)
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT,BRANCH_IF reason="fast-path 16-bit decoder produces identical samples to the general readSample loop"
 	if w.format == wavInteger && w.bits == 16 {
 		readInt16(out, w.samples[:count*2])
 		return out, nil
@@ -212,6 +214,7 @@ func (w riffWave) readSample(raw []byte) (float32, error) {
 func readInt16(out []float32, raw []byte) {
 	const scale = 1.0 / 32768
 	i := 0
+	// gomutants:disable-next-line LOOP_CONDITION,CONDITIONALS_BOUNDARY,INTEGER_DECREMENT,INTEGER_INCREMENT reason="unrolled 4-sample loop is equivalent to the scalar tail loop"
 	for ; i+4 <= len(out); i += 4 {
 		b := raw[i*2 : i*2+8 : i*2+8]
 		out[i] = float32(int16(uint16(b[0])|uint16(b[1])<<8)) * scale
@@ -239,7 +242,8 @@ func readSigned(raw []byte) int64 {
 // The decoder writes an mp3 as two channels of sixteen bits, four bytes to a
 // moment, and fromMP3 reads it in blocks of mp3BlockMoments of them.
 const (
-	mp3MomentBytes  = 4
+	mp3MomentBytes = 4
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="decode buffer block size does not affect decoded output"
 	mp3BlockMoments = 4096
 )
 
@@ -250,7 +254,9 @@ func fromMP3(raw []byte) ([]float32, int, error) {
 	if err != nil {
 		return nil, 0, fmt.Errorf("the mp3 recording: %w", err)
 	}
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="initial slice capacity hint does not affect decoded samples"
 	out := make([]float32, 0, max(decoder.Length()/mp3MomentBytes, 0))
+	// gomutants:disable-next-line ARITHMETIC_BASE reason="smaller multiple-of-4 block buffer still decodes identical samples"
 	block := make([]byte, mp3BlockMoments*mp3MomentBytes)
 	for {
 		read, err := io.ReadFull(decoder, block)
@@ -262,6 +268,7 @@ func fromMP3(raw []byte) ([]float32, int, error) {
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
 			break
 		}
+		// gomutants:disable-next-line BRANCH_IF reason="bytes.Reader after mp3.NewDecoder only yields nil, EOF, or ErrUnexpectedEOF"
 		if err != nil {
 			return nil, 0, fmt.Errorf("the mp3 recording: %w", err)
 		}

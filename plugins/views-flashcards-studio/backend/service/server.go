@@ -74,15 +74,18 @@ const ServiceName = "md.numen.views.flashcards.studio"
 
 // Mount registers the API, the tools and the commands on s.
 func (b *Backend) Mount(s *server.Server) error {
+	// gomutants:disable-next-line BRANCH_IF reason="Static service and method names are always valid."
 	if err := mountAPI(s.NewAPI(ServiceName), b.Cards(), b.Presets(), b.Review()); err != nil {
 		return err
 	}
 	registry, err := b.Tools()
+	// gomutants:disable-next-line BRANCH_IF reason="Static tool schemas are always valid."
 	if err != nil {
 		return err
 	}
 	registry.Mount(s)
 	commands, err := b.Commands()
+	// gomutants:disable-next-line BRANCH_IF reason="Static command registrations are always valid."
 	if err != nil {
 		return err
 	}

@@ -49,9 +49,11 @@ func Parse(ref domain.FileStat, raw []byte) domain.Note {
 
 func readFrontmatter(raw []byte) ([]byte, map[string]any, string) {
 	frontmatter, body, ok := splitFrontmatter(raw)
+	// gomutants:disable-next-line BRANCH_IF reason="when ok is false splitFrontmatter returns frontmatter nil and body equal to raw"
 	if !ok {
 		return raw, nil, ""
 	}
+	// gomutants:disable-next-line BRANCH_IF,INTEGER_DECREMENT reason="yaml.Unmarshal on whitespace-only bytes leaves parsed nil with no error"
 	if len(bytes.TrimSpace(frontmatter)) == 0 {
 		return body, nil, ""
 	}
@@ -101,6 +103,7 @@ func splitFrontmatter(raw []byte) (frontmatter, body []byte, ok bool) {
 	rest := bytes.TrimPrefix(raw, []byte("\xef\xbb\xbf"))
 
 	idx := bytes.IndexByte(rest, '\n')
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_INCREMENT reason="at idx 0 rest[:0] is empty and fails isFrontmatterDelimiter on the next line"
 	if idx < 0 {
 		return nil, raw, false
 	}
@@ -155,12 +158,14 @@ func Body(raw []byte) string {
 func headings(body []byte) []domain.Heading {
 	var out []domain.Heading
 	var f Fence
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="at pos == len(body) the slice is empty and skipped by len(text) == 0"
 	for line, pos := 0, 0; pos <= len(body); line++ {
 		end := len(body)
 		if next := bytes.IndexByte(body[pos:], '\n'); next >= 0 {
 			end = pos + next
 		}
 		text := bytes.TrimRight(body[pos:end], "\r")
+		// gomutants:disable-next-line EXPRESSION_REMOVE reason="parseHeading rejects any text that does not start with #"
 		if f.IsCrossedByBytes(text) || f.IsInside() || len(text) == 0 || text[0] != '#' {
 			pos = end + 1
 			continue
@@ -182,6 +187,7 @@ func parseHeading(text string) (level int, heading string, ok bool) {
 		return 0, "", false
 	}
 	rest := text[n:]
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="a 1-byte rest starting with space or tab trims to empty content on the next line"
 	if len(rest) == 0 || (rest[0] != ' ' && rest[0] != '\t') {
 		return 0, "", false
 	}

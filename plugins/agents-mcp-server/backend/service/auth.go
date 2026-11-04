@@ -12,6 +12,7 @@ import (
 // createRandomToken generates a 32-byte hex-encoded random authentication token.
 func createRandomToken() (string, error) {
 	bytes := make([]byte, 32)
+	// gomutants:disable-next-line BRANCH_IF reason="crypto/rand.Read never returns a non-nil error"
 	if _, err := entropy.Read(bytes); err != nil {
 		return "", err
 	}

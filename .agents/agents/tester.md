@@ -15,4 +15,4 @@ Core rules:
 - **You write the acceptance test files**: nobody else edits them, and you edit nothing else — you do not implement the domain/feature logic, not even to see the test pass.
 - **Pure behavioral naming**: name each test as a clear sentence about observable behavior (e.g. `it('rejects card with empty front')` or `TestPush_RejectBehindAck`). **Never** include synthetic tags or prefixes like `AC-1`, `(D-1)`, `(I-1)` in code or test names.
 - **Reuse existing test helpers**: use existing test contexts, mocks, and fixtures rather than building parallel harnesses.
-- **Next Step Handover**: once red tests are proven and recorded, instruct the user to run `/coder`.
+- **Next Step Handover**: once red tests are proven and recorded, instruct the user to run `/nm-implement`.

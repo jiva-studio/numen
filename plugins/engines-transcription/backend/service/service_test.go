@@ -31,14 +31,19 @@ type heardModel struct {
 	words         map[int]string
 	opened        int
 	segmentStarts []int
+	batchCounts   []int
 	isBroken      bool
+	segmentErr    error
+	transcribeErr error
 }
+
+var errNoDecoder = errors.New("no decoder reads this")
 
 func (m *heardModel) Open(context.Context, []byte) (engine.Recording, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.isBroken {
-		return nil, errors.New("no decoder reads this")
+		return nil, errNoDecoder
 	}
 	m.opened++
 	return heardRecording{model: m}, nil
@@ -47,6 +52,9 @@ func (m *heardModel) Open(context.Context, []byte) (engine.Recording, error) {
 func (m *heardModel) Transcribe(_ context.Context, audio engine.Audio) (string, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if m.transcribeErr != nil {
+		return "", m.transcribeErr
+	}
 	return m.words[audio.From], nil
 }
 
@@ -65,13 +73,20 @@ type heardRecording struct {
 func (r heardRecording) GetDuration() int {
 	r.model.mu.Lock()
 	defer r.model.mu.Unlock()
+	if len(r.model.segments) == 0 {
+		return 0
+	}
 	return r.model.segments[len(r.model.segments)-1].To
 }
 
 func (r heardRecording) GetSegments(_ context.Context, from, count int) ([]engine.Audio, error) {
 	r.model.mu.Lock()
 	defer r.model.mu.Unlock()
+	if r.model.segmentErr != nil {
+		return nil, r.model.segmentErr
+	}
 	r.model.segmentStarts = append(r.model.segmentStarts, from)
+	r.model.batchCounts = append(r.model.batchCounts, count)
 	var out []engine.Audio
 	for _, one := range r.model.segments {
 		if one.From >= from && len(out) < count {
@@ -213,8 +228,9 @@ func TestTranscribeReportsUnopenableRecording(t *testing.T) {
 	s := newScene(t)
 	s.model.isBroken = true
 
-	if err := s.transcriber.Transcribe(t.Context(), s.vault.Vault().ID, lecture); err == nil {
-		t.Fatal("a recording that cannot be opened was transcribed")
+	err := s.transcriber.Transcribe(t.Context(), s.vault.Vault().ID, lecture)
+	if !errors.Is(err, errNoDecoder) {
+		t.Fatalf("a recording that cannot be opened returned %v, want it to wrap the decoder error", err)
 	}
 
 	tasks := s.queue.ListTasks()
@@ -321,5 +337,387 @@ func TestTranscribeRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	}
 	if len(inShown.Versions) != 0 {
 		t.Errorf("the shown vault holds %+v, want no version", inShown.Versions)
+	}
+	if len(s.model.batchCounts) == 0 || s.model.batchCounts[0] != 16 {
+		t.Errorf("expected batchSize 16, got %v", s.model.batchCounts)
+	}
+
+	onlyChem := "assets/only-chemistry.wav"
+	chemistry.File(onlyChem, "chem bytes")
+	rawChem, err := (vaultFiles{vault: s.vault}).ReadFile(t.Context(), "Chemistry", onlyChem)
+	if err != nil || string(rawChem) != "chem bytes" {
+		t.Fatalf("ReadFile in Chemistry = %q, %v", rawChem, err)
+	}
+}
+
+type faultyStore struct {
+	host.Store
+	readErr   func(name string) error
+	writeErr  func(name string) error
+	appendErr error
+	deleteErr error
+	renameErr error
+}
+
+func (f *faultyStore) With(_ domain.VaultID) host.Store { return f }
+
+func (f *faultyStore) Read(ctx context.Context, name string) ([]byte, error) {
+	if f.readErr != nil {
+		if err := f.readErr(name); err != nil {
+			return nil, err
+		}
+	}
+	return f.Store.Read(ctx, name)
+}
+
+func (f *faultyStore) Write(ctx context.Context, name string, content []byte) error {
+	if f.writeErr != nil {
+		if err := f.writeErr(name); err != nil {
+			return err
+		}
+	}
+	return f.Store.Write(ctx, name, content)
+}
+
+func (f *faultyStore) Append(ctx context.Context, name string, content []byte) error {
+	if f.appendErr != nil {
+		return f.appendErr
+	}
+	return f.Store.Append(ctx, name, content)
+}
+
+func (f *faultyStore) Delete(ctx context.Context, name string) error {
+	if f.deleteErr != nil {
+		return f.deleteErr
+	}
+	return f.Store.Delete(ctx, name)
+}
+
+func (f *faultyStore) Rename(ctx context.Context, from, to string) error {
+	if f.renameErr != nil {
+		return f.renameErr
+	}
+	return f.Store.Rename(ctx, from, to)
+}
+
+type faultyTexts struct {
+	host.Texts
+	listRes host.TextListing
+	listErr error
+	putErr  error
+	puts    int
+}
+
+func (f *faultyTexts) With(_ domain.VaultID) host.Texts { return f }
+
+func (f *faultyTexts) ListVersions(ctx context.Context, path string) (host.TextListing, error) {
+	if f.listErr != nil {
+		return host.TextListing{}, f.listErr
+	}
+	if len(f.listRes.Versions) > 0 {
+		return f.listRes, nil
+	}
+	return f.Texts.ListVersions(ctx, path)
+}
+
+func (f *faultyTexts) PutVersion(ctx context.Context, req host.TextPut) (domain.TextVersion, error) {
+	f.puts++
+	if f.putErr != nil {
+		return domain.TextVersion{}, f.putErr
+	}
+	return f.Texts.PutVersion(ctx, req)
+}
+
+type faultyTurn struct {
+	waiting    chan struct{}
+	releaseErr error
+}
+
+func (t *faultyTurn) Release() error                { return t.releaseErr }
+func (t *faultyTurn) WatchWaiting() <-chan struct{} { return t.waiting }
+
+type faultyQueue struct {
+	host.Queue
+	enqueueErr error
+	reportErr  error
+	turn       host.Turn
+	tasks      []host.Task
+}
+
+func (q *faultyQueue) EnqueueWork(ctx context.Context, work host.Work) (host.Turn, error) {
+	if q.enqueueErr != nil {
+		return nil, q.enqueueErr
+	}
+	if q.turn != nil {
+		return q.turn, nil
+	}
+	return q.Queue.EnqueueWork(ctx, work)
+}
+
+func (q *faultyQueue) ReportTask(ctx context.Context, task host.Task) error {
+	q.tasks = append(q.tasks, task)
+	if q.reportErr != nil {
+		return q.reportErr
+	}
+	return q.Queue.ReportTask(ctx, task)
+}
+
+func TestStoreEdgeCasesAndErrorPropagation(t *testing.T) {
+	ctx := t.Context()
+	s := newScene(t)
+	errDisk := errors.New("disk error")
+
+	// hasWhole error propagation.
+	fs := &faultyStore{Store: s.store, readErr: func(string) error { return errDisk }}
+	ok, err := (transcripts{store: fs}).hasWhole(ctx, "k")
+	if ok || !errors.Is(err, errDisk) {
+		t.Fatalf("expected (false, errDisk), got (%v, %v)", ok, err)
+	}
+
+	// readReached when reached does not exist returns (0, Delete error).
+	ms, err := (transcripts{store: s.store}).readReached(ctx, "none")
+	if ms != 0 || err != nil {
+		t.Fatalf("expected (0, nil), got (%d, %v)", ms, err)
+	}
+	fsDel := &faultyStore{Store: s.store, deleteErr: errDisk}
+	if _, err := (transcripts{store: fsDel}).readReached(ctx, "none"); !errors.Is(err, errDisk) {
+		t.Fatalf("expected errDisk from Delete, got %v", err)
+	}
+
+	// readReached when Read(reached) fails with non-ErrNotExist.
+	if _, err := (transcripts{store: fs}).readReached(ctx, "k"); !errors.Is(err, errDisk) {
+		t.Fatalf("expected errDisk on Read(reached), got %v", err)
+	}
+
+	// readReached when reached contains invalid JSON deletes both partial and reached.
+	if err := s.store.Write(ctx, getReachedName("corrupt"), []byte("{bad")); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.store.Write(ctx, getPartialName("corrupt"), []byte("partial")); err != nil {
+		t.Fatal(err)
+	}
+	ms, err = (transcripts{store: s.store}).readReached(ctx, "corrupt")
+	if ms != 0 || err != nil {
+		t.Fatalf("expected (0, nil) on corrupt reached JSON, got (%d, %v)", ms, err)
+	}
+	if _, err := s.store.Read(ctx, getPartialName("corrupt")); !errors.Is(err, host.ErrNotExist) {
+		t.Fatalf("expected corrupt partial deleted, got %v", err)
+	}
+	if _, err := s.store.Read(ctx, getReachedName("corrupt")); !errors.Is(err, host.ErrNotExist) {
+		t.Fatalf("expected corrupt reached deleted, got %v", err)
+	}
+
+	// readReached when reached exists but partial is missing deletes reached.
+	if err := s.store.Write(ctx, getReachedName("nopart"), []byte(`{"ms":500,"size":10}`)); err != nil {
+		t.Fatal(err)
+	}
+	ms, err = (transcripts{store: s.store}).readReached(ctx, "nopart")
+	if ms != 0 || err != nil {
+		t.Fatalf("expected (0, nil) when partial missing, got (%d, %v)", ms, err)
+	}
+	if _, err := s.store.Read(ctx, getReachedName("nopart")); !errors.Is(err, host.ErrNotExist) {
+		t.Fatalf("expected orphaned reached deleted, got %v", err)
+	}
+
+	// readReached when Read(partial) fails with non-ErrNotExist.
+	if err := s.store.Write(ctx, getReachedName("parterr"), []byte(`{"ms":500,"size":2}`)); err != nil {
+		t.Fatal(err)
+	}
+	fsPartRead := &faultyStore{Store: s.store, readErr: func(name string) error {
+		if name == getPartialName("parterr") {
+			return errDisk
+		}
+		return nil
+	}}
+	if _, err := (transcripts{store: fsPartRead}).readReached(ctx, "parterr"); !errors.Is(err, errDisk) {
+		t.Fatalf("expected errDisk reading partial, got %v", err)
+	}
+
+	// readReached when truncating oversized partial fails on Write.
+	if err := s.store.Write(ctx, getPartialName("parterr"), []byte("12345")); err != nil {
+		t.Fatal(err)
+	}
+	fsPartWrite := &faultyStore{Store: s.store, writeErr: func(string) error { return errDisk }}
+	if _, err := (transcripts{store: fsPartWrite}).readReached(ctx, "parterr"); !errors.Is(err, errDisk) {
+		t.Fatalf("expected errDisk truncating partial, got %v", err)
+	}
+
+	// appendBatch errors on Append and Read(partial).
+	fsAppend := &faultyStore{Store: s.store, appendErr: errDisk}
+	if err := (transcripts{store: fsAppend}).appendBatch(ctx, "b", []transcript.Cue{{Text: "hi", From: 0, To: 100}}, 100); !errors.Is(err, errDisk) {
+		t.Fatalf("expected errDisk from Append, got %v", err)
+	}
+	fsReadAfterAppend := &faultyStore{Store: s.store, readErr: func(string) error { return errDisk }}
+	if err := (transcripts{store: fsReadAfterAppend}).appendBatch(ctx, "b", []transcript.Cue{{Text: "hi", From: 0, To: 100}}, 100); !errors.Is(err, errDisk) {
+		t.Fatalf("expected errDisk reading partial after append, got %v", err)
+	}
+
+	// finish error on Rename.
+	fsRename := &faultyStore{Store: s.store, renameErr: errDisk}
+	if err := (transcripts{store: fsRename}).finish(ctx, "b"); !errors.Is(err, errDisk) {
+		t.Fatalf("expected errDisk from Rename, got %v", err)
+	}
+}
+
+func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
+	ctx := t.Context()
+	s := newScene(t)
+	errBoom := errors.New("boom")
+
+	// Duplicate claim returns errAlreadyTranscribing.
+	key, ok := s.transcriber.claim(s.vault.Vault().ID, lecture)
+	if !ok {
+		t.Fatal("expected first claim to succeed")
+	}
+	if _, ok2 := s.transcriber.claim(s.vault.Vault().ID, lecture); ok2 {
+		t.Fatal("expected second claim while running to fail")
+	}
+	if err := s.transcriber.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errAlreadyTranscribing) {
+		t.Fatalf("expected errAlreadyTranscribing, got %v", err)
+	}
+	s.transcriber.clearRunning(key)
+
+	// ReportTask error at start of Transcribe.
+	fq := &faultyQueue{Queue: s.queue, reportErr: errBoom}
+	trReportErr := NewTranscriber(vaultFiles{vault: s.vault}, s.store, s.texts, fq,
+		func(context.Context) (engine.TranscriberPort, error) { return s.model, nil })
+	if err := trReportErr.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
+		t.Fatalf("expected ReportTask errBoom, got %v", err)
+	}
+
+	// ReadFile error on missing recording.
+	if err := s.transcriber.Transcribe(ctx, s.vault.Vault().ID, "missing.wav"); err == nil {
+		t.Fatal("expected error for missing recording")
+	}
+
+	// hasWhole store error in run.
+	fsRead := &faultyStore{Store: s.store, readErr: func(string) error { return errBoom }}
+	trStoreErr := NewTranscriber(vaultFiles{vault: s.vault}, fsRead, s.texts, s.queue,
+		func(context.Context) (engine.TranscriberPort, error) { return s.model, nil })
+	if err := trStoreErr.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
+		t.Fatalf("expected store error from hasWhole, got %v", err)
+	}
+
+	// putWholeVersion branches: ListVersions error, non-matching versions vs matching version, PutVersion error.
+	ft := &faultyTexts{Texts: s.texts, listErr: errBoom}
+	j := &job{path: lecture, key: "k1", fileHash: "h1", texts: ft}
+	if err := s.transcriber.putWholeVersion(ctx, j); !errors.Is(err, errBoom) {
+		t.Fatalf("expected listErr, got %v", err)
+	}
+	ft.listErr = nil
+	ft.listRes = host.TextListing{
+		Versions: []domain.TextVersion{
+			{Key: "other", PluginID: PluginID},
+			{Key: "k1", PluginID: "other.plugin"},
+			{Key: "k1", PluginID: PluginID},
+		},
+	}
+	if err := s.transcriber.putWholeVersion(ctx, j); err != nil || ft.puts != 0 {
+		t.Fatalf("expected existing matching version to skip PutVersion, puts=%d, err=%v", ft.puts, err)
+	}
+	ft.listRes = host.TextListing{
+		Versions: []domain.TextVersion{
+			{Key: "other", PluginID: PluginID},
+			{Key: "k1", PluginID: "other.plugin"},
+		},
+	}
+	ft.putErr = errBoom
+	if err := s.transcriber.putWholeVersion(ctx, j); !errors.Is(err, errBoom) || ft.puts != 1 {
+		t.Fatalf("expected non-matching versions to call PutVersion and return putErr, puts=%d, err=%v", ft.puts, err)
+	}
+
+	// takeTurn error when EnqueueWork fails.
+	fqEnq := &faultyQueue{Queue: s.queue, enqueueErr: errBoom}
+	trEnqErr := NewTranscriber(vaultFiles{vault: s.vault}, s.store, s.texts, fqEnq,
+		func(context.Context) (engine.TranscriberPort, error) { return s.model, nil })
+	if err := trEnqErr.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
+		t.Fatalf("expected enqueueErr, got %v", err)
+	}
+
+	// engines callback error.
+	trEngineErr := NewTranscriber(vaultFiles{vault: s.vault}, s.store, s.texts, s.queue,
+		func(context.Context) (engine.TranscriberPort, error) { return nil, errBoom })
+	if err := trEngineErr.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
+		t.Fatalf("expected engine open error, got %v", err)
+	}
+
+	// Zero segments in recording: hearSegments returns nil without creating partial file, finish returns ErrNotExist -> nil.
+	emptyModel := &heardModel{segments: nil}
+	trEmpty := NewTranscriber(vaultFiles{vault: s.vault}, s.store, s.texts, s.queue,
+		func(context.Context) (engine.TranscriberPort, error) { return emptyModel, nil })
+	if err := trEmpty.Transcribe(ctx, s.vault.Vault().ID, lecture); err != nil {
+		t.Fatalf("expected 0-segment recording to succeed, got %v", err)
+	}
+
+	// finish returning non-ErrNotExist error in run.
+	fsRename := &faultyStore{Store: s.store, renameErr: errBoom}
+	trRenameErr := NewTranscriber(vaultFiles{vault: s.vault}, fsRename, s.texts, s.queue,
+		func(context.Context) (engine.TranscriberPort, error) { return s.model, nil })
+	if err := trRenameErr.Transcribe(ctx, s.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
+		t.Fatalf("expected finish renameErr, got %v", err)
+	}
+
+	// hearSegments errors: readReached error, GetSegments error, Transcribe error, appendBatch error, putVersion error, yieldTurn error.
+	s2 := newScene(t)
+	s2.model.segmentErr = errBoom
+	if err := s2.transcriber.Transcribe(ctx, s2.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
+		t.Fatalf("expected segmentErr, got %v", err)
+	}
+	s2.model.segmentErr = nil
+	s2.model.transcribeErr = errBoom
+	if err := s2.transcriber.Transcribe(ctx, s2.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
+		t.Fatalf("expected transcribeErr, got %v", err)
+	}
+	s2.model.transcribeErr = nil
+
+	fsReachedErr := &faultyStore{Store: s2.store, readErr: func(name string) error {
+		if strings.HasSuffix(name, ".reached") {
+			return errBoom
+		}
+		return nil
+	}}
+	trReachedErr := NewTranscriber(vaultFiles{vault: s2.vault}, fsReachedErr, s2.texts, s2.queue,
+		func(context.Context) (engine.TranscriberPort, error) { return s2.model, nil })
+	if err := trReachedErr.Transcribe(ctx, s2.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
+		t.Fatalf("expected readReached error, got %v", err)
+	}
+
+	fsAppendErr := &faultyStore{Store: hosttest.New("Tmp").Store(), appendErr: errBoom}
+	trAppendErr := NewTranscriber(vaultFiles{vault: s2.vault}, fsAppendErr, s2.texts, s2.queue,
+		func(context.Context) (engine.TranscriberPort, error) { return s2.model, nil })
+	if err := trAppendErr.Transcribe(ctx, "", lecture); !errors.Is(err, errBoom) {
+		t.Fatalf("expected appendBatch error, got %v", err)
+	}
+
+	ftPutErr := &faultyTexts{Texts: s2.texts, putErr: errBoom}
+	trPutErr := NewTranscriber(vaultFiles{vault: s2.vault}, hosttest.New("Tmp2").Store(), ftPutErr, s2.queue,
+		func(context.Context) (engine.TranscriberPort, error) { return s2.model, nil })
+	if err := trPutErr.Transcribe(ctx, "", lecture); !errors.Is(err, errBoom) {
+		t.Fatalf("expected putVersion error, got %v", err)
+	}
+
+	waitingCh := make(chan struct{})
+	close(waitingCh)
+	fqYieldErr := &faultyQueue{Queue: s2.queue, turn: &faultyTurn{waiting: waitingCh, releaseErr: errBoom}}
+	trYieldErr := NewTranscriber(vaultFiles{vault: s2.vault}, hosttest.New("Tmp3").Store(), s2.texts, fqYieldErr,
+		func(context.Context) (engine.TranscriberPort, error) { return s2.model, nil })
+	if err := trYieldErr.Transcribe(ctx, "", lecture); !errors.Is(err, errBoom) {
+		t.Fatalf("expected yieldTurn releaseErr, got %v", err)
+	}
+
+	// reportProgress division by 1000 boundaries.
+	fqProgress := &faultyQueue{Queue: s2.queue}
+	trProgress := NewTranscriber(vaultFiles{vault: s2.vault}, s2.store, s2.texts, fqProgress,
+		func(context.Context) (engine.TranscriberPort, error) { return s2.model, nil })
+	trProgress.reportProgress(ctx, lecture, 999, 1998)
+	trProgress.reportProgress(ctx, lecture, 1000, 2000)
+	if len(fqProgress.tasks) != 2 {
+		t.Fatalf("expected 2 progress tasks, got %d", len(fqProgress.tasks))
+	}
+	if fqProgress.tasks[0].CompletedCount != 0 || fqProgress.tasks[0].TotalCount != 1 {
+		t.Fatalf("expected (0, 1) for (999, 1998), got (%d, %d)", fqProgress.tasks[0].CompletedCount, fqProgress.tasks[0].TotalCount)
+	}
+	if fqProgress.tasks[1].CompletedCount != 1 || fqProgress.tasks[1].TotalCount != 2 {
+		t.Fatalf("expected (1, 2) for (1000, 2000), got (%d, %d)", fqProgress.tasks[1].CompletedCount, fqProgress.tasks[1].TotalCount)
 	}
 }

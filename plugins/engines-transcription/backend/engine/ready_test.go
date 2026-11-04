@@ -40,6 +40,15 @@ func TestReady_ChecksLocalModelFiles(t *testing.T) {
 		"a path written down names nothing": {
 			func(_ *testing.T, cfg *Config) { cfg.Segmenter.Path = filepath.Join(dir, "gone.onnx") }, false,
 		},
+		"the runtime is written down and gone": {
+			func(_ *testing.T, cfg *Config) { cfg.Runtime = filepath.Join(dir, "gone.so") }, false,
+		},
+		"the encoder is written down and gone": {
+			func(_ *testing.T, cfg *Config) { cfg.Model.Encoder = filepath.Join(dir, "gone.onnx") }, false,
+		},
+		"the decoder is written down and gone": {
+			func(_ *testing.T, cfg *Config) { cfg.Model.Decoder = filepath.Join(dir, "gone.onnx") }, false,
+		},
 		"one of the four is written down and gone": {
 			func(_ *testing.T, cfg *Config) { cfg.Model.Joiner = filepath.Join(dir, "gone.onnx") }, false,
 		},

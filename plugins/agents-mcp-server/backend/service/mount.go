@@ -18,11 +18,13 @@ func Mount(s *server.Server) error {
 
 	cfg := readConfig(nil)
 	srv, err := NewServer(cfg, client)
+	// gomutants:disable-next-line BRANCH_IF reason="NewServer fails only when crypto/rand.Read fails"
 	if err != nil {
 		return err
 	}
 
 	s.OnClose(func() error {
+		// gomutants:disable-next-line RETURN_ERROR_NIL reason="loopback listener shutdown within the timeout does not error"
 		return srv.Close(context.Background())
 	})
 

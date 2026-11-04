@@ -10,13 +10,13 @@ import (
 // first it qualifies for.
 func TestARelationIsTakenInOneOrder(t *testing.T) {
 	order := []domain.Relation{domain.RelationParent, domain.RelationChild, domain.RelationJump, domain.RelationSibling}
-	for i := 1; i < len(order); i++ {
-		if domain.GetRelationRank(order[i-1]) >= domain.GetRelationRank(order[i]) {
-			t.Errorf("%q does not come before %q", order[i-1], order[i])
+	for i, rel := range order {
+		if got := domain.GetRelationRank(rel); got != i {
+			t.Errorf("GetRelationRank(%q) = %d, want %d", rel, got, i)
 		}
 	}
-	if domain.GetRelationRank("whatever") <= domain.GetRelationRank(domain.RelationSibling) {
-		t.Error("a relation nobody decided on comes before one that was")
+	if got := domain.GetRelationRank("whatever"); got != 4 {
+		t.Errorf("GetRelationRank(whatever) = %d, want 4", got)
 	}
 }
 

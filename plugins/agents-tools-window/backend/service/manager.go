@@ -98,7 +98,6 @@ func (m *WindowManager) activateTab(idx int) TabInfo {
 	for j := range m.tabs {
 		m.tabs[j].IsActive = (j == idx)
 	}
-	m.tabs[idx].IsActive = true
 	return m.tabs[idx]
 }
 

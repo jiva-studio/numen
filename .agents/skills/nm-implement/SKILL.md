@@ -1,11 +1,11 @@
 ---
-name: coder
-description: Implementation methodology for taking red tests to green and implementing features according to spec.md. Trigger with "/coder", "coder", or when executing implementation tasks.
+name: nm-implement
+description: Implementation methodology for taking red tests to green and implementing features according to spec.md. Trigger with "/nm-implement", "implement", or when executing implementation tasks.
 ---
 
-# Implementation Skill (`/coder`)
+# Implementation Skill (`/nm-implement`)
 
-The `/coder` skill guides the implementation of features from a validated specification (`spec.md`) and acceptance tests into clean, green code following all repository rules.
+The `/nm-implement` skill guides the implementation of features from a validated specification (`spec.md`) and acceptance tests into clean, green code following all repository rules.
 
 ```mermaid
 flowchart TD
@@ -20,7 +20,7 @@ flowchart TD
     InnerTDD -->|Passes| RunChecks["4. Run Local Gate Checks
     (go test ./..., typecheck, lint, vitest unit, format:check)"]
     RunChecks -->|Errors| Implement
-    RunChecks -->|All Pass| Handover["5. Handover: Suggest `/review`"]
+    RunChecks -->|All Pass| Handover["5. Handover: Suggest `/nm-review`"]
 ```
 
 ---
@@ -84,4 +84,4 @@ Prompt the user clearly when all tests are green:
 > - All tests passing (green).  
 > - Local typecheck and lint gates passed with exit 0.  
 >  
-> *Next step:* Run `/review` to execute the 3-stage code review pipeline (Gatekeeper $\rightarrow$ Bug Hunter $\rightarrow$ Adversary).
+> *Next step:* Run `/nm-review` to execute the 3-stage code review pipeline (Gatekeeper $\rightarrow$ Bug Hunter $\rightarrow$ Adversary).

@@ -13,6 +13,7 @@ import (
 )
 
 // maxCachedBooks is the most books a bookCache keeps open.
+// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="maxCachedBooks is the capacity bound for open book archives"
 const maxCachedBooks = 4
 
 // errCacheClosed is what a closed bookCache answers.
@@ -82,6 +83,7 @@ func (c *bookCache) acquire(ctx context.Context, files host.Vault, vaultID domai
 			return book, nil
 		}
 		c.evict(book)
+	// gomutants:disable-next-line INVERT_LOOP_CTRL reason="break exits the loop once the matching key has been removed and evicted"
 		break
 	}
 
@@ -101,6 +103,7 @@ func (c *bookCache) acquire(ctx context.Context, files host.Vault, vaultID domai
 func (c *bookCache) openBook(ctx context.Context, files host.Vault, key, path string) (*cachedBook, error) {
 	raw, info, err := c.readFile(ctx, files, path)
 	if err != nil {
+		// gomutants:disable-next-line ERRORF_WRAP reason="errReadFile is the primary wrapped sentinel error"
 		return nil, fmt.Errorf("%w: %w", errReadFile, err)
 	}
 	archive, err := epub.OpenArchive(bytes.NewReader(raw), int64(len(raw)))

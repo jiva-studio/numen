@@ -16,4 +16,10 @@ func TestResolveWithFragmentWhenTargetResolvesToEmpty(t *testing.T) {
 	if got := href.ResolveWithFragment("OEBPS", "#fragment"); got != "" {
 		t.Errorf("ResolveWithFragment(\"OEBPS\", \"#fragment\") = %q, want \"\"", got)
 	}
+	if got := href.ResolveWithFragment("OEBPS", "chapter.xhtml#sec1"); got != "OEBPS/chapter.xhtml#sec1" {
+		t.Errorf("ResolveWithFragment(\"OEBPS\", \"chapter.xhtml#sec1\") = %q, want \"OEBPS/chapter.xhtml#sec1\"", got)
+	}
+	if got := href.ResolveWithFragment("OEBPS", "/EPUB/chapter.xhtml"); got != "EPUB/chapter.xhtml" {
+		t.Errorf("ResolveWithFragment(\"OEBPS\", \"/EPUB/chapter.xhtml\") = %q, want \"EPUB/chapter.xhtml\"", got)
+	}
 }

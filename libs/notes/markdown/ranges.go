@@ -31,7 +31,9 @@ func FindRanges(text, wanted string) (spans []Range, isApproximate bool) {
 	}
 	for _, read := range []func(string) mappedText{foldPunctuation, foldSpacing} {
 		target, sought := read(text), read(wanted)
+		// gomutants:disable-next-line BRANCH_IF reason="foldPunctuation and foldSpacing preserve at least one rune for any non-empty wanted"
 		if sought.text == "" {
+			// gomutants:disable-next-line INVERT_LOOP_CTRL reason="sought.text is never empty when wanted is non-empty"
 			continue
 		}
 		found := occurrences(target.text, sought.text)
@@ -50,6 +52,7 @@ func FindRanges(text, wanted string) (spans []Range, isApproximate bool) {
 // stepped over, so two reported spans never overlap.
 func occurrences(text, wanted string) []Range {
 	var foundSpans []Range
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="at from == len(text) strings.Index on an empty slice with non-empty wanted returns -1"
 	for from := 0; from <= len(text); {
 		next := strings.Index(text[from:], wanted)
 		if next < 0 {
@@ -71,6 +74,7 @@ type mappedText struct {
 // foldPunctuation reads typographic punctuation and spacing as the marks they stand for.
 func foldPunctuation(text string) mappedText {
 	var out strings.Builder
+	// gomutants:disable-next-line ARITHMETIC_BASE,INTEGER_DECREMENT,INTEGER_INCREMENT reason="make capacity hint does not alter the appended slice contents"
 	offsets := make([]int, 0, len(text)+1)
 	for from, r := range text {
 		before := out.Len()
@@ -86,6 +90,7 @@ func foldPunctuation(text string) mappedText {
 // lines is spacing of its own and is left where it is.
 func foldSpacing(text string) mappedText {
 	var out strings.Builder
+	// gomutants:disable-next-line ARITHMETIC_BASE,INTEGER_DECREMENT,INTEGER_INCREMENT reason="make capacity hint does not alter the appended slice contents"
 	offsets := make([]int, 0, len(text)+1)
 	spacing := false
 	for from, r := range text {
@@ -197,6 +202,7 @@ func isSpace(b byte) bool {
 // A note is read by something that counts its own way, and a span named in
 // bytes lands somewhere else in prose that is not ASCII.
 func CountUTF16(text string, offset int) int {
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="setting offset to len(text) when offset equals len(text) is a no-op"
 	if offset > len(text) {
 		offset = len(text)
 	}

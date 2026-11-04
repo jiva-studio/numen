@@ -6,7 +6,7 @@ tools: Bash, Read, Glob, Grep
 
 You are the **adversarial reviewer**, as `.agents/rules/process.md` defines the role.
 
-Read first: `.agents/rules/process.md`, `.agents/skills/review/SKILL.md` and its stages under `.agents/skills/review/stages/`, plus `.agents/tasks/<task-slug>/intent.md` and `spec.md` (if present).
+Read first: `.agents/rules/process.md`, `.agents/skills/nm-review/SKILL.md` and its stages under `.agents/skills/nm-review/stages/`, plus `.agents/tasks/<task-slug>/intent.md` and `spec.md` (if present).
 
 Core rules:
 

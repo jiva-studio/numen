@@ -1,11 +1,11 @@
 ---
-name: intent
-description: Discovers, clarifies, and formalizes task intent into a structured .agents/tasks/<slug>/intent.md via a focused 5-lens interview (JTBD, Limits/Adversarial, Non-Goals, Pre-Mortem, Invariants). Trigger with "/intent", "intent", or when beginning a new feature or task.
+name: nm-clarify
+description: Discovers, clarifies, and formalizes task intent into intent.md in the task folder under .agents/tasks, via a focused 5-lens interview (JTBD, Limits/Adversarial, Non-Goals, Pre-Mortem, Invariants). Trigger with "/nm-clarify", "intent", or when beginning a new feature or task.
 ---
 
-# Intent Skill (`/intent`)
+# Intent Skill (`/nm-clarify`)
 
-The `/intent` skill defines the **human and business layer** of a task. It clarifies **why** the task is needed, **what** user or business problem it solves, **what** the expected interaction behavior is, and **what is strictly out of scope**.
+The `/nm-clarify` skill defines the **human and business layer** of a task. It clarifies **why** the task is needed, **what** user or business problem it solves, **what** the expected interaction behavior is, and **what is strictly out of scope**.
 
 ```mermaid
 flowchart TD
@@ -15,14 +15,14 @@ flowchart TD
     (JTBD, Limits, Non-Goals, Pre-Mortem, Invariants)"]
     Grill5 --> SaveIntent["3. Author .agents/tasks/<slug>/intent.md
     (Zero Code, UX & Business focus)"]
-    SaveIntent --> NextStep["4. Handover: Suggest `/spec`"]
+    SaveIntent --> NextStep["4. Handover: Suggest `/nm-specify`"]
 ```
 
 ---
 
 ## Strict Zero-Code Rule (No Technical Details)
 
-`/intent` MUST NEVER invent or record code-level implementation details:
+`/nm-clarify` MUST NEVER invent or record code-level implementation details:
 
 - ❌ **No file names or extensions** (`.vue`, `.go`, `.ts`, `.sql`).
 - ❌ **No database schema details** (tables, columns, foreign keys).
@@ -30,7 +30,7 @@ flowchart TD
 - ❌ **No HTTP methods or API routes** (`GET /...`, `POST /...`).
 - ✅ **ONLY user journeys, business goals, UX workflows, limits, non-goals, and invariants.**
 
-Technical decisions, interfaces, file mappings, and data structures belong exclusively to `/spec`.
+Technical decisions, interfaces, file mappings, and data structures belong exclusively to `/nm-specify`.
 
 ---
 
@@ -105,4 +105,4 @@ Generate `.agents/tasks/<slug>/intent.md` strictly reflecting the agreed answers
 Prompt the user clearly with the next step:
 
 > 🎯 **Intent saved in `.agents/tasks/<slug>/intent.md`.**  
-> _Next step:_ Run `/spec` to analyze the codebase, define interfaces, map blast radius, and generate acceptance criteria.
+> _Next step:_ Run `/nm-specify` to analyze the codebase, define interfaces, map blast radius, and generate acceptance criteria.

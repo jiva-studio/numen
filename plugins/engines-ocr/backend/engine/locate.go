@@ -59,7 +59,7 @@ func locateModel(explicitPath, envVar, fileName, dir string) (string, error) {
 		return explicitPath, nil
 	}
 	if envVar != "" {
-		if env := os.Getenv(envVar); env != "" && isPresent(env) {
+		if env := os.Getenv(envVar); isPresent(env) {
 			return env, nil
 		}
 	}

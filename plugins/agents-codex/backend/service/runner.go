@@ -17,8 +17,10 @@ import (
 )
 
 const (
+	// gomutants:disable-next-line INTEGER_INCREMENT,INTEGER_DECREMENT reason="Channel buffer capacity is a throughput bound."
 	outputBuffer = 64
-	maxLine      = 4 << 20
+	// gomutants:disable-next-line INTEGER_INCREMENT,INTEGER_DECREMENT,BITWISE_SHIFT,ARITHMETIC_BASE reason="Scanner maximum token size is a capacity bound."
+	maxLine = 4 << 20
 )
 
 var errNoOutput = errors.New("the program ended without output")
@@ -89,6 +91,7 @@ func start(ctx context.Context, reg *agentrun.Registry, s spec) (*agentrun.Work,
 	if cmd.Stderr == nil {
 		cmd.Stderr = &stderr
 	}
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="process.Supervise sets OS process-group attributes for child cleanup."
 	process.Supervise(cmd)
 
 	stdout, err := cmd.StdoutPipe()
@@ -153,7 +156,9 @@ func runReader(runCtx context.Context, p *runProcess, w *agentrun.Work, reg *age
 	isLimited := scanOutput(scanner, s.NewHandler(r), r, w, stop)
 	scanErr := scanner.Err()
 	isCancelled := runCtx.Err() != nil
+	// gomutants:disable-next-line BRANCH_IF reason="Stopping the context on scanner error cancels the child before defer calls stop()."
 	if scanErr != nil {
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="Stopping the context on scanner error cancels the child before defer calls stop()."
 		stop()
 	}
 	waitErr := errors.Join(stdout.Close(), cmd.Wait())
@@ -176,6 +181,7 @@ func scanOutput(
 		}
 		if r.isOverLimit() {
 			r.reportLimit()
+			// gomutants:disable-next-line STATEMENT_REMOVE reason="Calling stop() when the step limit is reached cancels the child before runReader's defer calls stop()."
 			stop()
 			return true
 		}

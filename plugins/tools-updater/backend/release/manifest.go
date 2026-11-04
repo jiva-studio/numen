@@ -54,6 +54,7 @@ func ParseBuild(text string) Build {
 		candidate = match[1]
 	}
 	number, err := strconv.ParseInt(candidate, 10, 64)
+	// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_BOUNDARY,INTEGER_DECREMENT reason="buildStamp extracts unsigned digits and zero returns Build(0) on both branches."
 	if err != nil || number <= 0 {
 		return 0
 	}

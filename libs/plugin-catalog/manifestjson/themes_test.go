@@ -106,6 +106,9 @@ func TestDiscoveryReportsAThemeFileThatCannotBeRead(t *testing.T) {
 		"a link out of the plugin folder": func(dir string) error {
 			return os.Symlink(outside, filepath.Join(dir, "n.css"))
 		},
+		"a link to the parent folder": func(dir string) error {
+			return os.Symlink("..", filepath.Join(dir, "n.css"))
+		},
 		"an oversized file": func(dir string) error {
 			return os.WriteFile(filepath.Join(dir, "n.css"), []byte(strings.Repeat("a", manifest.MaxThemeSize+1)), 0o644)
 		},
@@ -121,6 +124,12 @@ func TestDiscoveryReportsAThemeFileThatCannotBeRead(t *testing.T) {
 
 		if len(found) != 0 || len(problems) != 1 {
 			t.Errorf("%s: found = %+v, problems = %+v", name, found, problems)
+		}
+		if name == "a missing file" && !errors.Is(problems[0].Err, os.ErrNotExist) {
+			t.Errorf("%s: expected os.ErrNotExist, got %v", name, problems[0].Err)
+		}
+		if name == "a link to the parent folder" && !strings.Contains(problems[0].Err.Error(), "leaves the plugin folder") {
+			t.Errorf("%s: expected leaves the plugin folder, got %v", name, problems[0].Err)
 		}
 	}
 }
@@ -141,5 +150,20 @@ func TestAThemeFileLinkedInsideThePluginFolderIsRead(t *testing.T) {
 
 	if err != nil || text != "a{}" {
 		t.Errorf("text = %q, error = %v", text, err)
+	}
+
+	// Exact MaxThemeSize boundary is accepted.
+	maxContent := strings.Repeat("a", manifest.MaxThemeSize)
+	if err := os.WriteFile(filepath.Join(dir, "max.css"), []byte(maxContent), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := manifestjson.ReadThemeFile(dir, "max.css"); err != nil || len(got) != manifest.MaxThemeSize {
+		t.Errorf("ReadThemeFile max.css: len=%d, err=%v", len(got), err)
+	}
+	if _, err := manifestjson.ReadThemeFile(dir, "../bad.css"); err == nil {
+		t.Error("expected error for invalid theme file name")
+	}
+	if _, err := manifestjson.ReadThemeFile(filepath.Join(dir, "nonexistent"), "n.css"); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("expected ErrNotExist for nonexistent dir, got %v", err)
 	}
 }

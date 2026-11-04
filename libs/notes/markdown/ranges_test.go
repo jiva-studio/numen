@@ -1,6 +1,7 @@
 package markdown
 
 import (
+	"slices"
 	"testing"
 	"unicode/utf8"
 )
@@ -124,15 +125,15 @@ func TestFindRanges_ExactMatchPrecedesApproximate(t *testing.T) {
 
 // Nothing is what an empty span finds. Every place would be the alternative.
 func TestAnEmptySpanFindsNothing(t *testing.T) {
-	if spans, _ := FindRanges("some prose", ""); spans != nil {
-		t.Errorf("found %d places for nothing", len(spans))
+	if spans, approx := FindRanges("some prose", ""); spans != nil || approx {
+		t.Errorf("found %d places for nothing (approx=%v)", len(spans), approx)
 	}
 }
 
 // A span that does not appear in the text is not found by any matching mode.
 func TestASpanThatIsNotThereIsNotFound(t *testing.T) {
-	if spans, _ := FindRanges("the aggressor is named", "the poisoner"); spans != nil {
-		t.Errorf("found %d places", len(spans))
+	if spans, approx := FindRanges("the aggressor is named", "the poisoner"); spans != nil || approx {
+		t.Errorf("found %d places (approx=%v)", len(spans), approx)
 	}
 }
 
@@ -154,7 +155,7 @@ func TestDiff_ReturnsOnlyChangedSpan(t *testing.T) {
 // Two texts that are the same name no span at all.
 func TestTextThatDidNotChangeAnswersAnEmptySpan(t *testing.T) {
 	span, insert := Diff("the same", "the same")
-	if span.Start != span.End || insert != "" {
+	if span != (Range{Start: 8, End: 8}) || insert != "" {
 		t.Errorf("answered %d..%d with %q", span.Start, span.End, insert)
 	}
 }
@@ -190,5 +191,72 @@ func TestAnOffsetIsCountedTheWayAClientCountsText(t *testing.T) {
 				t.Errorf("counted %d, wanted %d", got, c.want)
 			}
 		})
+	}
+}
+
+func TestRangesFoldingAndDiffBoundaries(t *testing.T) {
+	// foldPunctuation preserves exact spacing count while normalizing dash.
+	spans, approx := FindRanges("a  —  b and a — b", "a  -  b")
+	if !approx || len(spans) != 1 {
+		t.Errorf("expected 1 punctuation match, got %v (approx=%v)", spans, approx)
+	}
+
+	if got := foldSpacing("a \n b").text; got != "a \n b" {
+		t.Errorf("foldSpacing across newline = %q", got)
+	}
+	if got := foldSpacing("a b  c").text; got != "a b c" {
+		t.Errorf("foldSpacing multiple words = %q", got)
+	}
+	mapped := foldSpacing("a é b")
+	if mapped.text != "a é b" || !slices.Equal(mapped.offsets, []int{0, 1, 2, 2, 4, 5, 6}) {
+		t.Errorf("foldSpacing(a é b) = %+v", mapped)
+	}
+
+	for r, want := range map[rune]rune{
+		'\u200f': '\u200f', '\u2010': '-', '\u2015': '-', '\u2016': '\u2016', '−': '-',
+		'\u2017': '\u2017', '\u2018': '\'', '\u201b': '\'', '\u201c': '"', '\u201f': '"',
+		'\u2020': '\u2020', '‹': '\'', '›': '\'', '«': '"', '»': '"',
+		'\u00a0': ' ', '\u2001': '\u2001', '\u2002': ' ', '\u200a': ' ', '\u200b': '\u200b',
+		'\u202f': ' ', '\u205f': ' ', '\u3000': ' ',
+	} {
+		if got := getPlainRune(r); got != want {
+			t.Errorf("getPlainRune(%U) = %q, want %q", r, got, want)
+		}
+	}
+
+	// Diff boundary cases.
+	if sp, ins := Diff("a", "b"); sp != (Range{Start: 0, End: 1}) || ins != "b" {
+		t.Errorf("Diff(a, b) = %+v, %q", sp, ins)
+	}
+	if sp, ins := Diff("hello ", "hello world"); sp != (Range{Start: 6, End: 6}) || ins != "world" {
+		t.Errorf("Diff(hello , hello world) = %+v, %q", sp, ins)
+	}
+	if sp, ins := Diff("hello world", "hello "); sp != (Range{Start: 6, End: 11}) || ins != "" {
+		t.Errorf("Diff(hello world, hello ) = %+v, %q", sp, ins)
+	}
+	if sp, ins := Diff("abc def", "axc def"); sp != (Range{Start: 0, End: 3}) || ins != "axc" {
+		t.Errorf("Diff(abc def, axc def) = %+v, %q", sp, ins)
+	}
+	if sp, ins := Diff("word", "wXrd"); sp != (Range{Start: 0, End: 4}) || ins != "wXrd" {
+		t.Errorf("Diff(word, wXrd) = %+v, %q", sp, ins)
+	}
+	if sp, ins := Diff("abc ", "abd\n"); sp != (Range{Start: 0, End: 4}) || ins != "abd\n" {
+		t.Errorf("Diff(abc , abd\\n) = %+v, %q", sp, ins)
+	}
+	if sp, ins := Diff("a  ", "a "); sp != (Range{Start: 2, End: 3}) || ins != "" {
+		t.Errorf("Diff(a  , a ) = %+v, %q", sp, ins)
+	}
+
+	if !canSpanBeginAt("a", -1) || !canSpanBeginAt("a", 0) || canSpanBeginAt("a", 1) || !canSpanBeginAt("a ", 2) || canSpanBeginAt("é", 1) {
+		t.Error("canSpanBeginAt boundary failure")
+	}
+	if !canSpanEndAt("a", 1) || !canSpanEndAt("a", 2) || canSpanEndAt("a", 0) || !canSpanEndAt("a b", 1) || canSpanEndAt("é", 1) {
+		t.Error("canSpanEndAt boundary failure")
+	}
+	if !isSpace(' ') || !isSpace('\t') || !isSpace('\n') || !isSpace('\r') || isSpace('a') {
+		t.Error("isSpace boundary failure")
+	}
+	if got := CountUTF16("\uffff\U00010000", 7); got != 3 {
+		t.Errorf("CountUTF16(\\uffff\\U00010000) = %d, want 3", got)
 	}
 }

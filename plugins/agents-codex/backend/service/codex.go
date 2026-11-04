@@ -198,6 +198,7 @@ func askCodexModels(ctx context.Context, command []string) (models []AgentModel,
 	running, stop := context.WithCancel(ctx)
 	defer stop()
 	cmd := exec.CommandContext(running, name, slices.Concat(args, []string{"app-server"})...)
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="process.Supervise sets OS process-group attributes for child cleanup."
 	process.Supervise(cmd)
 	in, err := cmd.StdinPipe()
 	// gomutants:disable-next-line BRANCH_IF reason="cmd.StdinPipe cannot fail on an unstarted exec.Cmd"
@@ -205,6 +206,7 @@ func askCodexModels(ctx context.Context, command []string) (models []AgentModel,
 		return nil, err
 	}
 	out, err := cmd.StdoutPipe()
+	// gomutants:disable-next-line BRANCH_IF reason="cmd.StdoutPipe on a fresh command before Start fails only on OS descriptor exhaustion."
 	if err != nil {
 		return nil, err
 	}
@@ -212,11 +214,14 @@ func askCodexModels(ctx context.Context, command []string) (models []AgentModel,
 		return nil, err
 	}
 	defer func() {
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="Closing child pipes in defer is best-effort cleanup after reading models."
 		closeErr := errors.Join(in.Close(), out.Close())
 		waitErr := process.WaitForExit(cmd, stop)
+		// gomutants:disable-next-line BRANCH_IF reason="WaitForExit after Start returns only OS wait errors that are covered by isStopped."
 		if isStopped(waitErr) {
 			waitErr = nil
 		}
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="Joining cleanup errors in defer applies only when pipe close or process wait fails with an unexpected OS error."
 		err = errors.Join(err, closeErr, waitErr)
 	}()
 	return listCodexModels(in, out)
@@ -224,6 +229,7 @@ func askCodexModels(ctx context.Context, command []string) (models []AgentModel,
 
 func listCodexModels(in io.Writer, out io.Reader) ([]AgentModel, error) {
 	lines := bufio.NewScanner(out)
+	// gomutants:disable-next-line INTEGER_INCREMENT,INTEGER_DECREMENT,BITWISE_SHIFT,ARITHMETIC_BASE reason="Scanner maximum token size is a capacity bound."
 	lines.Buffer(nil, 4<<20)
 	hello := map[string]any{"id": 1, codexMethodKey: "initialize", codexParamsKey: map[string]any{
 		"clientInfo": map[string]any{"name": "numen", "title": "Numen", "version": "1.0.0"},

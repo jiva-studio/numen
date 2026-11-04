@@ -48,6 +48,7 @@ func (d *Document) Title() (string, bool) {
 // SetTitle writes the title the note is shown by from now on.
 func (d *Document) SetTitle(title string) error {
 	var node yaml.Node
+	// gomutants:disable-next-line BRANCH_IF reason="encoding a Go string into a yaml.Node cannot fail"
 	if err := node.Encode(title); err != nil {
 		return err
 	}
@@ -145,6 +146,7 @@ func (d *Document) entries(node *yaml.Node, key string) *yaml.Node {
 // on, one to a line and in the order they are given. No entries removes the
 // key.
 func (d *Document) SetMapping(key string, entries []Entry) error {
+	// gomutants:disable-next-line INTEGER_DECREMENT,BRANCH_IF reason="an empty entries slice produces an empty mapping.Content and executes the same d.set(key, nil) below"
 	if len(entries) == 0 {
 		return d.set(key, nil)
 	}
@@ -154,6 +156,7 @@ func (d *Document) SetMapping(key string, entries []Entry) error {
 		return err
 	}
 	existing := d.entries(node, key)
+	// gomutants:disable-next-line BRANCH_IF reason="pair returns an empty nodePair when given a nil mapping node"
 	if existing == nil {
 		existing = &yaml.Node{Kind: yaml.MappingNode}
 	}

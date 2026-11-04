@@ -86,12 +86,14 @@ func (f *CardModelFile) replacePlaceholders(from, to string) error {
 	content := "{{" + to + "}}"
 
 	// Backwards, because a splice moves every byte after it.
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="Any negative count returns all regex matches."
 	found := placeholderRe.FindAllStringSubmatchIndex(body, -1)
 	for i := len(found) - 1; i >= 0; i-- {
 		pos := found[i]
 		if body[pos[2]:pos[3]] != from {
 			continue
 		}
+		// gomutants:disable-next-line BRANCH_IF reason="SpliceBody on a document whose frontmatter SetFields just succeeded does not fail."
 		if err := f.doc.SpliceBody(pos[0], pos[1], content); err != nil {
 			return err
 		}
@@ -136,16 +138,19 @@ func formatTemplate(template CardTemplate) string {
 // The templates are written into a card model of no templates, one after another, so every
 func CardModelBody(preamble string, templates []CardTemplate, tail string) (string, error) {
 	scratch, err := OpenCardModel(markdown.Create("", preamble))
+	// gomutants:disable-next-line BRANCH_IF reason="markdown.Create produces valid frontmatter that OpenCardModel always opens."
 	if err != nil {
 		return "", err
 	}
 	for _, template := range templates {
+		// gomutants:disable-next-line BRANCH_IF reason="AddTemplate on a freshly created in-memory document does not fail."
 		if err := scratch.AddTemplate(template); err != nil {
 			return "", err
 		}
 	}
 
 	body := scratch.doc.Body()
+	// gomutants:disable-next-line INTEGER_DECREMENT reason="Slice length is never negative."
 	if len(templates) == 0 {
 		return body, nil
 	}

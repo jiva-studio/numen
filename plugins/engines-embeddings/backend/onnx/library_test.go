@@ -47,23 +47,33 @@ func TestGetLibraryNameIsThisPlatformsName(t *testing.T) {
 
 func TestFindInstalledFindsTheFilesOnTheLoaderPath(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("HOME", t.TempDir())
+	home := t.TempDir()
+	t.Setenv("HOME", home)
 	t.Setenv("LD_LIBRARY_PATH", dir)
 	lib := filepath.Join(dir, "libnumenfixture.so.1")
 	if err := os.WriteFile(lib, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	nixLibDir := filepath.Join(home, ".nix-profile", "lib")
+	if err := os.MkdirAll(nixLibDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	nixLib := filepath.Join(nixLibDir, "libnumenfixture.so.2")
+	if err := os.WriteFile(nixLib, nil, 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.Mkdir(filepath.Join(dir, "libnumenfixture.so.d"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	got := FindInstalled("libnumenfixture.so", "numenfixture-*")
-	if len(got) != 1 || got[0] != lib {
-		t.Errorf("FindInstalled() = %v, want [%s]", got, lib)
+	if !slices.Equal(got, []string{lib, nixLib}) {
+		t.Errorf("FindInstalled() = %v, want [%s %s]", got, lib, nixLib)
 	}
 }
 
 func TestSortNewestFirstInsertsTheHighestVersionFirst(t *testing.T) {
 	paths := []string{
+		"/nix/store/aaaa-gcc-15.1.0-lib/lib/libstdc++.so.6",
 		"/nix/store/aaaa-gcc-15.2.0-lib/lib/libstdc++.so.6",
 		"/nix/store/bbbb-gcc-16.2.0-lib/lib/libstdc++.so.6",
 		"/nix/store/cccc-gcc-9.5.0-lib/lib/libstdc++.so.6",
@@ -72,6 +82,7 @@ func TestSortNewestFirstInsertsTheHighestVersionFirst(t *testing.T) {
 	want := []string{
 		"/nix/store/bbbb-gcc-16.2.0-lib/lib/libstdc++.so.6",
 		"/nix/store/aaaa-gcc-15.2.0-lib/lib/libstdc++.so.6",
+		"/nix/store/aaaa-gcc-15.1.0-lib/lib/libstdc++.so.6",
 		"/nix/store/cccc-gcc-9.5.0-lib/lib/libstdc++.so.6",
 	}
 	if !slices.Equal(paths, want) {

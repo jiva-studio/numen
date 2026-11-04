@@ -25,6 +25,7 @@ func (s timeSelector) encode() (domain.Selector, error) {
 // readTimeSelector reads the span of a segment's selector. An empty selector has none.
 func readTimeSelector(raw domain.Selector) (timeSelector, error) {
 	var out timeSelector
+	// gomutants:disable-next-line BRANCH_IF reason="empty selector fast-path returns zero value directly"
 	if raw == "" {
 		return out, nil
 	}

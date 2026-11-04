@@ -98,6 +98,7 @@ func (s *agentServer) prepareClaudeArgs(
 	if len(toolNames) > 0 {
 		configFile, err = writeMcpConfig(msg.ToolsURL, msg.ToolsToken)
 		if err != nil {
+			// gomutants:disable-next-line ERRORF_WRAP reason="rpcerror.New extracts only the error message string."
 			return nil, "", rpcerror.New(rpcerror.Internal, fmt.Errorf("write mcp config: %w", err))
 		}
 	}
@@ -152,6 +153,7 @@ func (s *agentServer) Ask(ctx context.Context, msg *agentrun.Request, send func(
 	}
 
 	runErr := s.streamClaude(ctx, send, msg, claudeCommand{name: cmdName, args: cmdArgs, claudeArgs: claudeArgs, configFile: configFile})
+	// gomutants:disable-next-line BRANCH_IF reason="agentrun.RemoveFile ignores non-existent paths and fails only on OS permission errors in the temp directory."
 	if removeErr := agentrun.RemoveFile(configFile); removeErr != nil {
 		return errors.Join(runErr, fmt.Errorf("remove the tool configuration: %w", removeErr))
 	}
@@ -198,6 +200,7 @@ func (s *agentServer) streamClaude(
 	}
 
 	recordSession := func(session string) { s.registry.SetSession(conversation, session) }
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Channel buffer capacity of 1 is a non-blocking send optimization before waitAgentCompletion receives."
 	reasons := make(chan string, 1)
 	go func() {
 		reasons <- parseStream(runCtx, out, send, streamOptions{
@@ -230,6 +233,7 @@ func (s *agentServer) launchAgentCmd(
 	process.Supervise(cmd)
 
 	out, err := cmd.StdoutPipe()
+	// gomutants:disable-next-line BRANCH_IF reason="cmd.StdoutPipe on a fresh command before Start fails only on OS descriptor exhaustion."
 	if err != nil {
 		return nil, nil, nil, rpcerror.New(rpcerror.Internal, fmt.Errorf("stdout pipe: %w", err))
 	}
@@ -255,7 +259,9 @@ func waitAgentCompletion(
 	select {
 	case failedReason = <-reasons:
 	case <-runCtx.Done():
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="Closing stdout on context cancellation unblocks the reader goroutine while runCtx.Err() returns early below."
 		closeErr = out.Close()
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="Draining reasons waits for the reader goroutine while runCtx.Err() returns early below."
 		failedReason = <-reasons
 	}
 
@@ -385,6 +391,7 @@ func (s *agentServer) listModels(ctx context.Context, command string, extra []st
 		models, err = s.getModels(ctx, slices.Concat([]string{command}, extra), s.getEnvironment())
 	}
 	if err != nil {
+		// gomutants:disable-next-line STATEMENT_REMOVE reason="Diagnostic log to os.Stderr does not affect the returned fallback models."
 		fmt.Fprintf(os.Stderr, "list models of claude: %v\n", err)
 		models = getFallbackModels()
 	}

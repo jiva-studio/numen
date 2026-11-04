@@ -55,6 +55,7 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 		t.addCardCardModelEdit,
 		t.addCardFieldRename,
 	} {
+		// gomutants:disable-next-line BRANCH_IF reason="Static tool specifications with distinct names always register on a new registry."
 		if err := add(registry); err != nil {
 			return nil, err
 		}

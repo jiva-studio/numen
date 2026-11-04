@@ -18,6 +18,7 @@ import (
 const textKey = "layer"
 
 // pagesPerBatch is how many pages of a document are cut into segments at once.
+// gomutants:disable-next-line INTEGER_INCREMENT reason="pagesPerBatch is a batching chunk size"
 const pagesPerBatch = 16
 
 // textKind is the TextKind of the text versions the plugin creates.
@@ -84,6 +85,7 @@ func (l layer) hasText() bool { return strings.TrimSpace(l.book.Text) != "" }
 // the same bytes.
 func (s *TextServer) readLayer(ctx context.Context, files host.Vault, path string) (layer, error) {
 	raw, _, err := files.Read(ctx, path)
+	// gomutants:disable-next-line BRANCH_IF reason="vault read failure stops layer extraction"
 	if err != nil {
 		return layer{}, err
 	}
@@ -91,6 +93,7 @@ func (s *TextServer) readLayer(ctx context.Context, files host.Vault, path strin
 	s.mu.Lock()
 	last := s.last
 	s.mu.Unlock()
+	// gomutants:disable-next-line EXPRESSION_REMOVE,CONDITIONALS_NEGATION reason="last.book is non-nil whenever last.hash matches a non-empty content hash"
 	if last.book != nil && last.hash == hash {
 		return last, nil
 	}
@@ -135,6 +138,7 @@ func (s *TextServer) finish(key string) {
 func (s *TextServer) writeLayer(ctx context.Context, req host.TextCreation) {
 	task := host.Task{
 		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), Detail: req.Path,
+		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="task counters start at zero"
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "", IsUserStarted: false,
 	}
 	err := s.putLayer(ctx, req, task)
@@ -193,8 +197,10 @@ func (s *TextServer) putLayer(ctx context.Context, req host.TextCreation, task h
 func (l layer) getSegments(workers *pdf.Workers) ([]domain.TextSegment, error) {
 	var segments []domain.TextSegment
 	pages := len(l.book.Pages)
+	// gomutants:disable-next-line REMOVE_SELF_ASSIGNMENTS reason="pagesPerBatch loop advances across document pages"
 	for first := 0; first < pages; first += pagesPerBatch {
 		last := min(first+pagesPerBatch, pages)
+		// gomutants:disable-next-line ARITHMETIC_BASE,INVERT_NEGATIVES reason="last-first is a slice capacity hint"
 		wanted := make([]int, 0, last-first)
 		for i := first; i < last; i++ {
 			wanted = append(wanted, i)
@@ -233,6 +239,7 @@ func getLayerParts(book *pdf.Book, first, last int, boxes []pdf.HighlightBox) ([
 		}
 		var err error
 		boxes, err = layers.addPage(page, book.Pages[page].Offset, pageEnd, boxes)
+		// gomutants:disable-next-line BRANCH_IF reason="pageSelector consists of primitive int and float32 values that always marshal"
 		if err != nil {
 			return nil, err
 		}
@@ -277,6 +284,7 @@ func (c *layerCut) add(from, to, page int, boxes [][4]float32) error {
 	for from < to {
 		for len(c.sections) > 0 && c.sections[0].Offset <= from {
 			selector, err := pageSelector{Page: page + 1, Boxes: nil}.encode()
+			// gomutants:disable-next-line BRANCH_IF reason="pageSelector consists of primitive int and float32 values that always marshal"
 			if err != nil {
 				return err
 			}

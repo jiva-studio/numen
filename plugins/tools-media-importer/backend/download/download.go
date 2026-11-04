@@ -122,6 +122,7 @@ func resolveProgram(named Tool, tool string) program {
 	}
 	found, err := exec.LookPath(tool)
 	if err != nil {
+		// gomutants:disable-next-line RETURN_ZERO reason="struct literal with nil fields equals zero value"
 		return program{command: nil, env: nil}
 	}
 	return program{command: append([]string{found}, named.Arguments...), env: named.getEnvironment()}

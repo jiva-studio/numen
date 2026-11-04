@@ -82,6 +82,12 @@ func TestTheSameIdFromTwoSourcesIsOneEntry(t *testing.T) {
 	if b, _ := find(listing, "org.example.b"); b.Source != "remote" {
 		t.Errorf("the entry only the remote source lists: %+v", b)
 	}
+
+	// Reversed source order: local first, remote second -> local still wins
+	listingRev := list(t, newService(t, local, remote))
+	if aRev, _ := find(listingRev, "org.example.a"); aRev.Source != "local" {
+		t.Errorf("local entry was overwritten by remote when local came first: %+v", aRev)
+	}
 }
 
 func TestOfferedEntriesOfOneIdTakeTheNewerVersionAndATieGoesToTheFirstSource(t *testing.T) {
@@ -166,18 +172,40 @@ func TestGetFindsOnePluginOrReportsNotFound(t *testing.T) {
 }
 
 func TestAKindOfTabIsFoundInThePluginThatProvidesIt(t *testing.T) {
+	brokenSource := catalogtest.NewFakeSource("broken")
+	brokenSource.Err = errors.New("source down")
 	service := newService(t,
-		catalogtest.NewFakeSource("remote", entry("org.example.offered", "1.0.0", catalog.StateAvailable, "plex")),
-		catalogtest.NewFakeSource("local", entry("org.example.disk", "1.0.0", catalog.StateDisabled, "plex", "other")))
+		brokenSource,
+		catalogtest.NewFakeSource("remote",
+			entry("org.example.a_unrelated", "1.0.0", catalog.StateAvailable, "other"),
+			entry("org.example.b_offered", "1.0.0", catalog.StateAvailable, "plex"),
+			entry("org.example.d_offered2", "1.0.0", catalog.StateAvailable, "plex")),
+		catalogtest.NewFakeSource("local",
+			entry("org.example.c_disk", "1.0.0", catalog.StateDisabled, "plex", "other"),
+			entry("org.example.e_disk2", "1.0.0", catalog.StateInstalled, "plex")))
 
 	got, err := service.FindByTabKind(t.Context(), "plex")
 	_, missing := service.FindByTabKind(t.Context(), "nothing")
 
-	if err != nil || got.ID != "org.example.disk" {
-		t.Errorf("FindByTabKind = %+v, %v; want the plugin on disk", got, err)
+	if !errors.Is(err, brokenSource.Err) || got.ID != "org.example.c_disk" {
+		t.Errorf("FindByTabKind = %+v, %v; want first plugin on disk and source error", got, err)
 	}
 	if !errors.Is(missing, catalog.ErrNotFound) {
 		t.Errorf("a kind no plugin provides: error = %v, want ErrNotFound", missing)
+	}
+
+	gotPlugin, getErr := service.Get(t.Context(), "org.example.c_disk")
+	if !errors.Is(getErr, brokenSource.Err) || gotPlugin.ID != "org.example.c_disk" {
+		t.Errorf("Get = %+v, %v; want plugin and source error", gotPlugin, getErr)
+	}
+
+	// Offered only: first offered plugin wins
+	offeredOnly := newService(t, catalogtest.NewFakeSource("remote",
+		entry("org.example.b_offered", "1.0.0", catalog.StateAvailable, "plex"),
+		entry("org.example.d_offered2", "1.0.0", catalog.StateAvailable, "plex")))
+	gotOffered, errOffered := offeredOnly.FindByTabKind(t.Context(), "plex")
+	if errOffered != nil || gotOffered.ID != "org.example.b_offered" {
+		t.Errorf("FindByTabKind offeredOnly = %+v, %v; want org.example.b_offered", gotOffered, errOffered)
 	}
 }
 

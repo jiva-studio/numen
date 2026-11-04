@@ -637,6 +637,7 @@ func Weekday(name string) (time.Weekday, bool) {
 			return day, true
 		}
 	}
+	// gomutants:disable-next-line RETURN_ZERO reason="Constant time.Sunday is already the zero Weekday value."
 	return time.Sunday, false
 }
 

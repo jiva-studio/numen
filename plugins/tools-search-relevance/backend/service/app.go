@@ -89,6 +89,7 @@ func (a *App) Mount(s *server.Server) error {
 	server.Handle(service, api.MethodCalibrateFloor, a.calibrateFloor)
 	server.Handle(service, api.MethodSetFloor, a.setFloor)
 	server.Handle(service, api.MethodProbeFloor, a.probeFloor)
+	// gomutants:disable-next-line RETURN_ERROR_NIL reason="Constant service and method names are always valid."
 	return service.Err()
 }
 

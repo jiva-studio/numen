@@ -1,6 +1,8 @@
 package snapshotcache_test
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -93,13 +95,67 @@ func TestAFileThatIsNotASnapshotIsAnErrorAndNotAnEmptyCache(t *testing.T) {
 
 	_, readErr := cache.Read(t.Context())
 
-	if readErr == nil || errors.Is(readErr, catalog.ErrEmptyCache) {
-		t.Errorf("error = %v, want a decode error", readErr)
+	var syntaxErr *json.SyntaxError
+	if !errors.As(readErr, &syntaxErr) || errors.Is(readErr, catalog.ErrEmptyCache) {
+		t.Errorf("error = %v, want a json.SyntaxError", readErr)
 	}
 }
 
 func TestACacheNeedsAFile(t *testing.T) {
 	if _, err := snapshotcache.New(""); err == nil {
 		t.Error("a cache with no file was made")
+	}
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "sub", "catalog.json")
+	cache, err := snapshotcache.New(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := cache.Write(t.Context(), catalog.Snapshot{}); err != nil {
+		t.Fatal(err)
+	}
+	if info, err := os.Stat(filepath.Dir(path)); err != nil || info.Mode().Perm() != 0o700 {
+		t.Errorf("folder mode = %v, %v; want 0o700", info.Mode().Perm(), err)
+	}
+
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if _, err := cache.Read(ctx); !errors.Is(err, context.Canceled) {
+		t.Errorf("Read canceled = %v", err)
+	}
+	if err := cache.Write(ctx, catalog.Snapshot{}); !errors.Is(err, context.Canceled) {
+		t.Errorf("Write canceled = %v", err)
+	}
+
+	// Read and Write when path is a directory, and Write when parent is a regular file.
+	dirPath := filepath.Join(dir, "as-dir")
+	if err := os.MkdirAll(dirPath, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	dirCache, err := snapshotcache.New(dirPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := dirCache.Read(t.Context()); err == nil || errors.Is(err, catalog.ErrEmptyCache) {
+		t.Errorf("expected Read error on directory, got %v", err)
+	}
+	if err := dirCache.Write(t.Context(), catalog.Snapshot{}); err == nil {
+		t.Error("expected Write error when destination path is a directory")
+	}
+	if entries, err := os.ReadDir(dir); err != nil || len(entries) != 2 {
+		t.Errorf("expected temporary file to be cleaned up on failed Write, got %v, %v", entries, err)
+	}
+
+	fileParent := filepath.Join(dir, "file-parent")
+	if err := os.WriteFile(fileParent, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	badParentCache, err := snapshotcache.New(filepath.Join(fileParent, "catalog.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := badParentCache.Write(t.Context(), catalog.Snapshot{}); err == nil {
+		t.Error("expected Write error when parent is a file")
 	}
 }

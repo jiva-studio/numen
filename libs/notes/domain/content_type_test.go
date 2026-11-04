@@ -59,6 +59,15 @@ func TestChooseHandlerPrefersTheNarrowerOfTwoDefaults(t *testing.T) {
 	if !ok || got.PluginID != "z.plugin" {
 		t.Fatalf("ChooseHandler = %+v, %v; want z.plugin", got, ok)
 	}
+
+	maskVsAny := []domain.ContentHandler{
+		{PluginID: "a.plugin", ID: "any", Type: "*/*", Rank: domain.RankDefault},
+		{PluginID: "z.plugin", ID: "audio", Type: "audio/*", Rank: domain.RankDefault},
+	}
+	got, ok = domain.ChooseHandler("audio/mpeg", maskVsAny)
+	if !ok || got.PluginID != "z.plugin" {
+		t.Fatalf("ChooseHandler = %+v, %v; want z.plugin over */*", got, ok)
+	}
 }
 
 func TestChooseHandler_PrefersLowerPluginIDForDefaultRank(t *testing.T) {

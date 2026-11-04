@@ -1,6 +1,9 @@
 package release_test
 
 import (
+	"encoding/json"
+	"errors"
+	"math"
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/release"
@@ -8,7 +11,10 @@ import (
 
 func TestParseBuildReadsPlainNumbersAndStamps(t *testing.T) {
 	cases := map[string]release.Build{
+		"1":                         1,
 		"920":                       920,
+		"9223372036854775807":       math.MaxInt64,
+		"9223372036854775808":       0,
 		"2026.10.1-beta.920":        920,
 		"0.4.0-alpha.1-364-283d1d5": 364,
 		"2026.10.2-144-ab260c4":     144,
@@ -50,11 +56,21 @@ func TestReadAcceptsTheBuildAsNumberOrText(t *testing.T) {
 			t.Errorf("Read(%s) build = %d, want %d", body, manifest.Build, want)
 		}
 	}
+
+	build := release.Build(42)
+	if err := build.UnmarshalJSON([]byte("true")); err != nil || build != 0 {
+		t.Errorf("UnmarshalJSON(true) = (%d, %v), want (0, nil)", build, err)
+	}
+	if err := build.UnmarshalJSON([]byte("{")); err == nil || errors.Unwrap(err) == nil {
+		t.Errorf("UnmarshalJSON({) = %v, want wrapped decode error", err)
+	}
 }
 
 func TestReadFailsOnTextThatIsNoJSON(t *testing.T) {
-	if _, err := release.Read([]byte("<html>")); err == nil {
-		t.Error("Read of a page that is no JSON succeeded")
+	_, err := release.Read([]byte("<html>"))
+	var syntaxErr *json.SyntaxError
+	if !errors.As(err, &syntaxErr) {
+		t.Errorf("Read error = %v, want SyntaxError", err)
 	}
 }
 
@@ -66,10 +82,13 @@ func TestIsNewerComparesBuildsWhereTheRunningBuildHasANumber(t *testing.T) {
 		want    bool
 	}{
 		{"a greater build", release.Current{Version: "a", Build: 100}, release.Manifest{Version: "b", Build: 105}, true},
+		{"a greater build with empty versions", release.Current{Version: "", Build: 100}, release.Manifest{Version: "", Build: 105}, true},
 		{"the same build", release.Current{Version: "a", Build: 100}, release.Manifest{Version: "b", Build: 100}, false},
+		{"the same build 1", release.Current{Version: "2026.9.0", Build: 1}, release.Manifest{Version: "2026.10.1", Build: 1}, false},
 		{"a lesser build", release.Current{Version: "a", Build: 105}, release.Manifest{Version: "b", Build: 100}, false},
 		{"the same version", release.Current{Version: "2026.10.1", Build: 1}, release.Manifest{Version: "2026.10.1", Build: 500}, false},
-		{"a latest with no build", release.Current{Version: "a", Build: 100}, release.Manifest{Version: "b", Build: 0}, false},
+		{"a latest with no build", release.Current{Version: "2026.9.0", Build: 0}, release.Manifest{Version: "2026.10.1", Build: 0}, false},
+		{"a latest with build 1", release.Current{Version: "2026.9.0", Build: 0}, release.Manifest{Version: "2026.10.1", Build: 1}, true},
 	}
 	for _, c := range cases {
 		if got := release.IsNewer(c.current, c.latest); got != c.want {
@@ -88,6 +107,7 @@ func TestIsNewerComparesVersionsWhereTheRunningBuildHasNoNumber(t *testing.T) {
 		{"a development build", "0.0.0-dev", "2026.10.1", true},
 		{"an older release", "2026.9.0", "2026.10.1", true},
 		{"a newer release", "2026.11.0", "2026.10.1", false},
+		{"an equal release with prefix", "v2026.10.1", "2026.10.1", false},
 		{"the beta of the release", "2026.10.1-beta.884", "2026.10.1", true},
 		{"the release of the beta", "2026.10.1", "2026.10.1-beta.884", false},
 	}
@@ -105,15 +125,21 @@ func TestCompareVersionsOrdersReleasesAndPrereleases(t *testing.T) {
 		want int
 	}{
 		{"2026.10.1", "2026.10.1", 0},
+		{"2027.0.0", "2026.10.1", 1},
 		{"2026.10.2", "2026.10.1", 1},
 		{"2026.9.9", "2026.10.0", -1},
 		{"v1.2", "1.2.0", 0},
 		{"1.0.0-alpha", "1.0.0", -1},
+		{"1.0.0", "1.0.0-alpha", 1},
 		{"1.0.0-beta.2", "1.0.0-beta.11", -1},
 		{"1.0.0-beta.2", "1.0.0-alpha.9", 1},
 		{"1.0.0-1", "1.0.0-alpha", -1},
+		{"1.0.0-9", "1.0.0-0a", -1},
+		{"1.0.0-alpha", "1.0.0-1", 1},
+		{"1.0.0-0a", "1.0.0-9", 1},
 		{"1.0.0-alpha", "1.0.0-alpha.1", -1},
 		{"x.y", "0.0", 0},
+		{"99999999999999999999.0", "0.0", 0},
 	}
 	for _, c := range cases {
 		if got := release.CompareVersions(c.a, c.b); got != c.want {
@@ -142,19 +168,78 @@ func TestFindPlatformFilePicksTheMainFileOfThePlatform(t *testing.T) {
 			t.Errorf("FindPlatformFile(%s) = %v, want %s", platform, got, want)
 		}
 	}
+
+	darwinList := []release.File{
+		{Name: "linux.dmg", Platform: "linux", Kind: "dmg"},
+		{Name: "darwin.zip", Platform: "darwin", Kind: "zip"},
+		{Name: "macos.dmg", Platform: "macos", Kind: "dmg"},
+	}
+	if got := release.FindPlatformFile(darwinList, release.PlatformDarwin); got == nil || got.Name != "macos.dmg" {
+		t.Errorf("darwin dmg = %v", got)
+	}
+
+	windowsKindList := []release.File{
+		{Name: "linux-exe", Platform: "linux", Kind: "exe"},
+		{Name: "win.zip", Platform: "windows", Kind: "zip"},
+		{Name: "win-suffix.exe", Platform: "windows", Kind: "installer"},
+		{Name: "win-kind.bin", Platform: "windows", Kind: "exe"},
+	}
+	if got := release.FindPlatformFile(windowsKindList, release.PlatformWindows); got == nil || got.Name != "win-kind.bin" {
+		t.Errorf("windows kind exe = %v", got)
+	}
+
+	windowsSuffixList := []release.File{
+		{Name: "linux.exe", Platform: "linux", Kind: "bin"},
+		{Name: "win.zip", Platform: "windows", Kind: "zip"},
+		{Name: "win.exe", Platform: "windows", Kind: "bin"},
+	}
+	if got := release.FindPlatformFile(windowsSuffixList, release.PlatformWindows); got == nil || got.Name != "win.exe" {
+		t.Errorf("windows suffix exe = %v", got)
+	}
+
+	linuxDebList := []release.File{
+		{Name: "win.deb", Platform: "windows", Kind: "deb"},
+		{Name: "linux.AppImage", Platform: "linux", Kind: "appimage"},
+		{Name: "linux.tar.gz", Platform: "linux", Kind: "tar.gz"},
+		{Name: "linux.deb", Platform: "linux", Kind: "deb"},
+	}
+	if got := release.FindPlatformFile(linuxDebList, release.PlatformLinux); got == nil || got.Name != "linux.deb" {
+		t.Errorf("linux deb = %v", got)
+	}
 }
 
 func TestFindPlatformFileFallsBackToAnyFileOfThePlatform(t *testing.T) {
 	list := []release.File{
-		{Name: "numen.zip", Platform: "windows", Arch: "", Kind: "zip", URL: "u", Size: 1, SHA256: "h"},
+		{Name: "win.tar.gz", Platform: "windows", Arch: "", Kind: "tar.gz", URL: "u", Size: 1, SHA256: "h"},
+		{Name: "linux.AppImage", Platform: "linux", Arch: "", Kind: "appimage", URL: "u", Size: 1, SHA256: "h"},
 		{Name: "numen.tar.gz", Platform: "linux", Arch: "", Kind: "tar.gz", URL: "u", Size: 1, SHA256: "h"},
-		{Name: "numen.AppImage", Platform: "linux", Arch: "", Kind: "appimage", URL: "u", Size: 1, SHA256: "h"},
-	}
-	if got := release.FindPlatformFile(list, release.PlatformWindows); got == nil || got.Name != "numen.zip" {
-		t.Errorf("windows file = %v", got)
 	}
 	if got := release.FindPlatformFile(list, release.PlatformLinux); got == nil || got.Name != "numen.tar.gz" {
-		t.Errorf("linux file = %v", got)
+		t.Errorf("linux tar.gz file = %v", got)
+	}
+
+	fallbackList := []release.File{
+		{Name: "other.zip", Platform: "other", Kind: "zip"},
+		{Name: "numen.zip", Platform: "windows", Kind: "zip"},
+		{Name: "linux.AppImage", Platform: "linux", Kind: "appimage"},
+		{Name: "darwin.zip", Platform: "darwin", Kind: "zip"},
+	}
+	if got := release.FindPlatformFile(fallbackList, release.PlatformWindows); got == nil || got.Name != "numen.zip" {
+		t.Errorf("windows fallback file = %v", got)
+	}
+	if got := release.FindPlatformFile(fallbackList, release.PlatformLinux); got == nil || got.Name != "linux.AppImage" {
+		t.Errorf("linux fallback file = %v", got)
+	}
+	if got := release.FindPlatformFile(fallbackList, release.PlatformDarwin); got == nil || got.Name != "darwin.zip" {
+		t.Errorf("darwin fallback file = %v", got)
+	}
+
+	macosFallbackList := []release.File{
+		{Name: "numen.zip", Platform: "windows", Kind: "zip"},
+		{Name: "macos.zip", Platform: "macos", Kind: "zip"},
+	}
+	if got := release.FindPlatformFile(macosFallbackList, release.PlatformDarwin); got == nil || got.Name != "macos.zip" {
+		t.Errorf("macos fallback file = %v", got)
 	}
 }
 
@@ -186,6 +271,14 @@ func TestEvaluateOffersTheFileOfThePlatformAndTheReleasePage(t *testing.T) {
 	}
 	if update.File == nil || update.File.SHA256 != "hash2" {
 		t.Errorf("file = %v", update.File)
+	}
+
+	noFileUpdate, ok := release.Evaluate(
+		release.Manifest{Version: "2026.10.1", Build: 950},
+		release.Current{Version: "2026.9.0", Build: 900, Platform: release.PlatformWindows},
+	)
+	if !ok || noFileUpdate.DownloadURL != release.DownloadPage || noFileUpdate.File != nil {
+		t.Errorf("update without platform file = %+v, %v", noFileUpdate, ok)
 	}
 }
 

@@ -46,6 +46,7 @@ func foldASCII(name string) (folded string, ok bool) {
 		return name, true
 	}
 	var lower strings.Builder
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="strings.Builder.Grow is a capacity hint that does not alter the built string"
 	lower.Grow(len(name))
 	for i := 0; i < len(name); i++ {
 		c := name[i]

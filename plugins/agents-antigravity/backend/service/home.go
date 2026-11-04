@@ -39,6 +39,7 @@ func setupAntigravityHome(tools *Endpoint) (string, func() error, error) {
 	tempGemini := filepath.Join(tempHome, ".gemini")
 	realConfig := filepath.Join(realGemini, "config")
 	tempConfig := filepath.Join(tempGemini, "config")
+	// gomutants:disable-next-line BRANCH_IF reason="Creating a subdirectory inside a freshly created temporary directory fails only on OS filesystem exhaustion."
 	if err := agentrun.CreateDir(tempConfig, 0o700); err != nil {
 		return "", noRelease, errors.Join(fmt.Errorf("create %s: %w", tempConfig, err), cleanup())
 	}
@@ -54,10 +55,12 @@ func setupAntigravityHome(tools *Endpoint) (string, func() error, error) {
 		mcpConfig = makeMCPConfig(*tools, filepath.Join(realConfig, "mcp_config.json"))
 	}
 	encoded, err := json.MarshalIndent(mcpConfig, "", "  ")
+	// gomutants:disable-next-line BRANCH_IF reason="json.MarshalIndent on a map of decoded JSON values and string maps cannot fail."
 	if err != nil {
 		return "", noRelease, errors.Join(fmt.Errorf("encode the MCP configuration: %w", err), cleanup())
 	}
 	configPath := filepath.Join(tempConfig, "mcp_config.json")
+	// gomutants:disable-next-line BRANCH_IF reason="Writing a small file inside a freshly created temporary directory fails only on OS filesystem exhaustion."
 	if err := agentrun.WriteFile(configPath, append(encoded, '\n'), 0o600); err != nil {
 		return "", noRelease, errors.Join(fmt.Errorf("write %s: %w", configPath, err), cleanup())
 	}

@@ -1,9 +1,12 @@
 package engine
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/cache"
 )
 
 func TestLocateModelResolvesExplicitPath(t *testing.T) {
@@ -19,6 +22,58 @@ func TestLocateModelResolvesExplicitPath(t *testing.T) {
 	}
 	if found != explicit {
 		t.Errorf("got %s, want %s", found, explicit)
+	}
+	if _, err := locateModel(filepath.Join(dir, "missing.onnx"), "", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, dir); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("missing explicit path err = %v, want os.ErrNotExist", err)
+	}
+}
+
+func TestLocateModelEdgeCases(t *testing.T) {
+	dir := t.TempDir()
+	if got := findInFolder("", "locate.go"); got != "" {
+		t.Errorf("findInFolder empty dir = %q, want empty", got)
+	}
+	if got := findInFolder(dir, ""); got != "" {
+		t.Errorf("findInFolder empty fileName = %q, want empty", got)
+	}
+	if got := resolveFileName(".", "def.onnx"); got != "def.onnx" {
+		t.Errorf("resolveFileName(.) = %q, want def.onnx", got)
+	}
+	if got := resolveFileName("/", "def.onnx"); got != "def.onnx" {
+		t.Errorf("resolveFileName(/) = %q, want def.onnx", got)
+	}
+	if got := resolveFileName("https://example.invalid/repo/custom.onnx", "def.onnx"); got != "custom.onnx" {
+		t.Errorf("resolveFileName(custom.onnx) = %q, want custom.onnx", got)
+	}
+
+	t.Setenv("NUMEN_DEPENDENCY_PARAKEET_ENCODER", filepath.Join(dir, "missing-env.onnx"))
+	if got := findInEnv("NUMEN_DEPENDENCY_PARAKEET_ENCODER"); got != "" {
+		t.Errorf("findInEnv missing file = %q, want empty", got)
+	}
+	if got := findInEnv(""); got != "" {
+		t.Errorf("findInEnv empty var = %q, want empty", got)
+	}
+
+	homeDir := t.TempDir()
+	homeModel := filepath.Join(homeDir, "in-home.onnx")
+	writeFile(t, homeModel, []byte("home"), 0o644)
+	t.Setenv(EnvDir, homeDir)
+	got, err := locateModel("", "https://example.invalid/repo/", "", "in-home.onnx", "")
+	if err != nil || got != homeModel {
+		t.Errorf("locateModel in home = %q, %v, want %q", got, err, homeModel)
+	}
+
+	t.Setenv(EnvDir, t.TempDir())
+	sharedData := t.TempDir()
+	sharedModels := filepath.Join(sharedData, "models")
+	if err := os.MkdirAll(sharedModels, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	sharedModel := filepath.Join(sharedModels, "in-shared.onnx")
+	writeFile(t, sharedModel, []byte("shared"), 0o644)
+	t.Setenv(cache.EnvSharedDataDir, sharedData)
+	if got := findInHome("in-shared.onnx"); got != sharedModel {
+		t.Errorf("findInHome shared = %q, want %q", got, sharedModel)
 	}
 }
 

@@ -27,11 +27,13 @@ func (u EditCard) Execute(
 			return err
 		}
 		if cardModel != "" {
+			// gomutants:disable-next-line BRANCH_IF reason="findCard already verified the card exists uniquely, and SpliceBody on an OpenDeckBody document does not fail."
 			if err := file.SetCardModel(card, cardModel); err != nil {
 				return err
 			}
 		}
 		for _, one := range values {
+			// gomutants:disable-next-line BRANCH_IF reason="findCard already verified the card exists uniquely, and SpliceBody on an OpenDeckBody document does not fail."
 			if err := file.SetValue(card, one.Field, one.Text); err != nil {
 				return err
 			}

@@ -29,9 +29,11 @@ func GetCoreMLCacheDir(modelPath string) (string, error) {
 		return "", err
 	}
 	dir := filepath.Join(root, coreMLFolder, key)
+	// gomutants:disable-next-line INTEGER_INCREMENT reason="os.Chmod sets the final 0700 permissions on the directory immediately after creation."
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", err
 	}
+	// gomutants:disable-next-line BRANCH_IF reason="os.Chmod on a directory just created by os.MkdirAll only fails on a concurrent filesystem change."
 	if err := os.Chmod(dir, 0o700); err != nil {
 		return "", err
 	}
@@ -67,6 +69,7 @@ func DeleteCoreMLCache(modelPath string) bool {
 		return false
 	}
 	entries, err := os.ReadDir(dir)
+	// gomutants:disable-next-line BRANCH_IF reason="When os.ReadDir fails, entries is empty and the loop below returns false."
 	if err != nil {
 		return false
 	}

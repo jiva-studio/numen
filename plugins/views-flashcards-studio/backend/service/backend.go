@@ -97,6 +97,7 @@ func (b *Backend) build(dayStart func() time.Duration) *Scenarios {
 	cfg, wired, now := b.cfg, b.ports, b.now
 	cores := cfg.Cores
 	if cores <= 0 {
+		// gomutants:disable-next-line INTEGER_DECREMENT reason="Any non-positive argument queries GOMAXPROCS without changing it."
 		cores = runtime.GOMAXPROCS(0)
 	}
 	// What a window writes is updated in the index by the paths it touched, and the index is the host's.

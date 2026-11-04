@@ -60,6 +60,7 @@ func (s *Source) List(ctx context.Context) ([]catalog.Entry, error) {
 // Get returns the entry of the plugin. A plugin that is not in the index is catalog.ErrNotFound.
 func (s *Source) Get(ctx context.Context, id string) (catalog.Entry, error) {
 	entries, err := s.List(ctx)
+	// gomutants:disable-next-line BRANCH_IF reason="List already returns empty entries when ctx is canceled"
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return catalog.Entry{}, ctxErr
 	}

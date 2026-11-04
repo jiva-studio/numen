@@ -117,6 +117,7 @@ func (u Write) CardModel(
 	e, getReleaseError := note.NewEdit(u.readers, u.writers, u.index, u.now)
 	e.FileStat, e.Bound = stat, note.MaxBytes
 	written, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
+		// gomutants:disable-next-line BRANCH_IF,RETURN_ERROR_NIL reason="SetBody on an already opened document with non-frontmatter body always succeeds."
 		if err := doc.SetBody(body); err != nil {
 			return err
 		}

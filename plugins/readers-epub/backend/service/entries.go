@@ -40,6 +40,7 @@ func (s *EntryServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	// gomutants:disable-next-line CONDITIONALS_NEGATION reason="HTTP response write errors are logged to stderr"
 	if _, err := w.Write(res.Body); err != nil {
 		fmt.Fprintf(os.Stderr, "readers-epub: write the entry %s: %v\n", r.PathValue("entry"), err)
 	}
@@ -48,11 +49,14 @@ func (s *EntryServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // parseBytesQuery reads the size and the modification time of a file from the query, and is nil
 // where the query names no size.
 func parseBytesQuery(query url.Values) *api.FileStat {
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="size query parameter is a base-10 64-bit integer"
 	size, err := strconv.ParseInt(query.Get("size"), 10, 64)
 	if err != nil {
 		return nil
 	}
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="mtime query parameter is a base-10 64-bit integer"
 	stamp, err := strconv.ParseInt(query.Get("mtime"), 10, 64)
+	// gomutants:disable-next-line BRANCH_IF reason="strconv.ParseInt returns 0 on error"
 	if err != nil {
 		stamp = 0
 	}

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -911,5 +913,842 @@ func TestAnEntryWithNoRoleIsRemainingWhereItExists(t *testing.T) {
 	}
 	if !strings.Contains(got, "to: Slow going") {
 		t.Errorf("the entry was not written in\n%s", got)
+	}
+}
+
+type failingYAMLMarshaler struct{}
+
+func (failingYAMLMarshaler) MarshalYAML() (any, error) {
+	return nil, errors.New("marshal failed")
+}
+
+func TestFrontmatterInternalHelpersAndBoundaries(t *testing.T) {
+	nested := &yaml.Node{
+		Kind: yaml.MappingNode,
+		Content: []*yaml.Node{
+			{Kind: yaml.ScalarNode, Value: "outer"},
+			{
+				Kind: yaml.MappingNode,
+				Content: []*yaml.Node{
+					{Kind: yaml.ScalarNode, Value: "inner"},
+					{Kind: yaml.ScalarNode, Value: "val"},
+				},
+			},
+		},
+	}
+	rendered, err := render(nested)
+	if err != nil || rendered != "outer:\n  inner: val\n" {
+		t.Fatalf("render(nested) = (%q, %v), want %q", rendered, err, "outer:\n  inner: val\n")
+	}
+
+	if got := pair(&yaml.Node{Kind: yaml.SequenceNode, Content: []*yaml.Node{{Value: "k"}, {Value: "v"}}}, "k"); got.name != nil || got.value != nil {
+		t.Fatalf("pair on SequenceNode = %+v, want empty", got)
+	}
+	if got := pair(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{{Value: "k"}}}, "k"); got.name != nil {
+		t.Fatalf("pair on odd Content = %+v, want empty", got)
+	}
+	pairMap := &yaml.Node{
+		Kind: yaml.MappingNode,
+		Content: []*yaml.Node{
+			{Kind: yaml.ScalarNode, Value: "k1"},
+			{Kind: yaml.ScalarNode, Value: "k2"},
+			{Kind: yaml.ScalarNode, Value: "k2"},
+			{Kind: yaml.ScalarNode, Value: "v2"},
+		},
+	}
+	if got := pair(pairMap, "k2"); got.value == nil || got.value.Value != "v2" {
+		t.Fatalf("pair(pairMap, k2) = %+v, want v2", got)
+	}
+
+	if got := valueOf(&yaml.Node{Kind: yaml.SequenceNode, Content: []*yaml.Node{{Value: "k"}, {Value: "v"}}}, "k"); got != nil {
+		t.Fatalf("valueOf on SequenceNode = %+v, want nil", got)
+	}
+	if got := valueOf(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{{Value: "k"}}}, "k"); got != nil {
+		t.Fatalf("valueOf on odd Content = %+v, want nil", got)
+	}
+	if got := valueOf(pairMap, "k2"); got == nil || got.Value != "v2" {
+		t.Fatalf("valueOf(pairMap, k2) = %+v, want v2", got)
+	}
+
+	anchored, err := Open([]byte("---\nid: &a 01J8\n---\n"))
+	if err != nil {
+		t.Fatalf("open anchored: %v", err)
+	}
+	if err := anchored.SetScalar("id", ""); !errors.Is(err, ErrAnchored) {
+		t.Fatalf("SetScalar empty on anchored = %v, want ErrAnchored", err)
+	}
+
+	noFront, err := Open([]byte("# Body\n"))
+	if err != nil {
+		t.Fatalf("open noFront: %v", err)
+	}
+	if err := noFront.SetScalar("missing", ""); err != nil {
+		t.Fatalf("SetScalar empty on noFront: %v", err)
+	}
+	if got := string(noFront.Bytes()); got != "# Body\n" {
+		t.Fatalf("noFront changed to %q", got)
+	}
+
+	oneByteRenderDoc := &Document{eol: "\n"}
+	if err := oneByteRenderDoc.appendKey(nil, []byte("\n")); err != nil || string(oneByteRenderDoc.open) != "---\n" {
+		t.Fatalf("appendKey 1-byte = %v, open = %q", err, oneByteRenderDoc.open)
+	}
+
+	oneByteFrontDoc := &Document{open: []byte("---\n"), front: []byte("#"), closeDelimiter: []byte("---\n"), eol: "\n"}
+	if err := oneByteFrontDoc.SetIdentifier("01J8"); err != nil {
+		t.Fatalf("SetIdentifier on 1-byte comment front: %v", err)
+	}
+	if id, ok := oneByteFrontDoc.Identifier(); !ok || id != "01J8" {
+		t.Fatalf("Identifier after 1-byte comment front = (%q, %v)", id, ok)
+	}
+
+	spacedOpenDoc := &Document{open: []byte("---\n"), closeDelimiter: []byte("---\n"), eol: "\r\n"}
+	if err := spacedOpenDoc.SetIdentifier("01J8"); err != nil {
+		t.Fatalf("SetIdentifier on spacedOpenDoc: %v", err)
+	}
+	if string(spacedOpenDoc.open) != "---\n" {
+		t.Fatalf("spacedOpenDoc overwrote existing open delimiter: %q", spacedOpenDoc.open)
+	}
+
+	existingNoOpen := &Document{front: []byte("a: 1\n"), eol: "\n"}
+	existingNode, err := existingNoOpen.readMapping()
+	if err != nil || existingNode == nil {
+		t.Fatalf("readMapping: %v", err)
+	}
+	if err := existingNoOpen.appendKey(existingNode, []byte("b: 2\n")); err != nil {
+		t.Fatalf("appendKey existingNode: %v", err)
+	}
+	if len(existingNoOpen.open) != 0 {
+		t.Fatalf("existingNoOpen grew open delimiter %q", existingNoOpen.open)
+	}
+
+	indentDoc := &Document{front: []byte("  a: 1\n")}
+	if got := indentDoc.indent(&yaml.Node{Kind: yaml.MappingNode}); got != "" {
+		t.Fatalf("indent empty Content = %q, want empty", got)
+	}
+	if got := indentDoc.indent(&yaml.Node{Content: []*yaml.Node{{Line: 1}}}); got != "  " {
+		t.Fatalf("indent 1-item Content = %q, want 2 spaces", got)
+	}
+	if got := indentDoc.indent(&yaml.Node{Content: []*yaml.Node{{Line: 0}}}); got != "" {
+		t.Fatalf("indent Line 0 = %q, want empty", got)
+	}
+	if got := indentDoc.indent(&yaml.Node{Content: []*yaml.Node{{Line: 2}}}); got != "" {
+		t.Fatalf("indent Line==len(lines) = %q, want empty", got)
+	}
+
+	if got := string(indentLines([]byte("x"), "  ")); got != "  x" {
+		t.Fatalf("indentLines 1-byte = %q, want %q", got, "  x")
+	}
+	if got := string(indentLines([]byte("\na\n \nb"), "  ")); got != "\n  a\n \n  b" {
+		t.Fatalf("indentLines multi = %q, want %q", got, "\n  a\n \n  b")
+	}
+}
+
+func TestSpanAndEndLineBoundaries(t *testing.T) {
+	d := &Document{front: []byte("a: 1\nb: 2\n")}
+	if s, e, ok := d.span(nil, "a"); s != 0 || e != 0 || ok {
+		t.Fatalf("span(nil) = (%d, %d, %v)", s, e, ok)
+	}
+	if s, e, ok := d.span(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{{Value: "a"}}}, "a"); s != 0 || e != 0 || ok {
+		t.Fatalf("span(odd Content) = (%d, %d, %v)", s, e, ok)
+	}
+	if s, e, ok := d.span(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{{Value: "a", Line: 1, Column: 1}, {Value: "1", Line: 1}}}, "missing"); s != 0 || e != 0 || ok {
+		t.Fatalf("span(missing) = (%d, %d, %v)", s, e, ok)
+	}
+
+	dupSpanNode := &yaml.Node{
+		Kind: yaml.MappingNode,
+		Content: []*yaml.Node{
+			{Value: "x", Line: 1, Column: 1},
+			{Value: "k", Line: 1, Column: 4},
+			{Value: "k", Line: 1, Column: 1},
+			{Value: "1", Line: 1, Column: 4},
+			{Value: "k", Line: 2, Column: 1},
+			{Value: "2", Line: 2, Column: 4},
+		},
+	}
+	if s, e, ok := d.span(dupSpanNode, "k"); !ok || s != 0 || e != 5 {
+		t.Fatalf("span(dupSpanNode, k) = (%d, %d, %v), want (0, 5, true)", s, e, ok)
+	}
+
+	if s, e, ok := d.span(&yaml.Node{Content: []*yaml.Node{{Value: "a", Line: 0}, {Value: "1", Line: 1}}}, "a"); s != 0 || e != 0 || ok {
+		t.Fatalf("span(keyLine 0) = (%d, %d, %v)", s, e, ok)
+	}
+	if s, e, ok := d.span(&yaml.Node{Content: []*yaml.Node{{Value: "a", Line: 3}, {Value: "1", Line: 3}}}, "a"); s != 0 || e != 0 || ok {
+		t.Fatalf("span(keyLine>=len(lines)) = (%d, %d, %v)", s, e, ok)
+	}
+
+	seqDoc, err := Open([]byte("---\ntags:\n- a\n- b\n---\n"))
+	if err != nil {
+		t.Fatalf("open seqDoc: %v", err)
+	}
+	seqMap, err := seqDoc.readMapping()
+	if err != nil {
+		t.Fatalf("readMapping seqDoc: %v", err)
+	}
+	if s, e, ok := seqDoc.span(seqMap, "tags"); !ok || s != 0 || e != len(seqDoc.front) {
+		t.Fatalf("span(seqDoc, tags) = (%d, %d, %v), want (0, %d, true)", s, e, ok, len(seqDoc.front))
+	}
+
+	zeroValNode := &yaml.Node{
+		Content: []*yaml.Node{
+			{Value: "a", Line: 1, Column: 1},
+			{Kind: yaml.ScalarNode, Line: 0},
+		},
+	}
+	if s, e, ok := d.span(zeroValNode, "a"); !ok || s != 0 || e != 5 {
+		t.Fatalf("span(zeroValNode) = (%d, %d, %v), want (0, 5, true)", s, e, ok)
+	}
+
+	clampNextNode := &yaml.Node{
+		Content: []*yaml.Node{
+			{Value: "a", Line: 1, Column: 1},
+			{Kind: yaml.MappingNode, Line: 5},
+			{Value: "b", Line: 2, Column: 1},
+			{Kind: yaml.ScalarNode, Line: 2},
+		},
+	}
+	if s, e, ok := d.span(clampNextNode, "a"); !ok || s != 0 || e != 5 {
+		t.Fatalf("span(clampNextNode) = (%d, %d, %v), want (0, 5, true)", s, e, ok)
+	}
+
+	withCommentDoc := &Document{front: []byte("a: 1\n# comment\nb: 2\n")}
+	withCommentNode := &yaml.Node{
+		Content: []*yaml.Node{
+			{Value: "a", Line: 1, Column: 1},
+			{Kind: yaml.ScalarNode, Line: 1, Column: 4},
+			{Value: "b", Line: 3, Column: 1},
+			{Kind: yaml.ScalarNode, Line: 3, Column: 4},
+		},
+	}
+	if s, e, ok := withCommentDoc.span(withCommentNode, "a"); !ok || s != 0 || e != 5 {
+		t.Fatalf("span(withCommentNode) = (%d, %d, %v), want (0, 5, true)", s, e, ok)
+	}
+
+	clampLinesNode := &yaml.Node{
+		Content: []*yaml.Node{
+			{Value: "a", Line: 1, Column: 1},
+			{Kind: yaml.MappingNode, Line: 10},
+		},
+	}
+	if s, e, ok := d.span(clampLinesNode, "a"); !ok || s != 0 || e != 10 {
+		t.Fatalf("span(clampLinesNode) = (%d, %d, %v), want (0, 10, true)", s, e, ok)
+	}
+
+	lines := lineOffsets(d.front)
+	if got := d.endLine(lines, nil, 1); got != 0 {
+		t.Fatalf("endLine(nil) = %d, want 0", got)
+	}
+	if got := d.endLine(lines, &yaml.Node{Line: 0}, 1); got != 0 {
+		t.Fatalf("endLine(Line 0) = %d, want 0", got)
+	}
+
+	oddMap := &yaml.Node{
+		Kind: yaml.MappingNode,
+		Line: 1,
+		Content: []*yaml.Node{
+			{Kind: yaml.ScalarNode, Line: 1, Column: 1},
+		},
+	}
+	if got := d.endLineOfMapping(lines, oddMap); got != 1 {
+		t.Fatalf("endLineOfMapping(oddMap) = %d, want 1", got)
+	}
+	evenMap := &yaml.Node{
+		Kind: yaml.MappingNode,
+		Line: 1,
+		Content: []*yaml.Node{
+			{Kind: yaml.ScalarNode, Line: 1, Column: 1},
+			{Kind: yaml.MappingNode, Line: 4},
+			{Kind: yaml.ScalarNode, Line: 2, Column: 1},
+			{Kind: yaml.MappingNode, Line: 3},
+		},
+	}
+	if got := d.endLineOfMapping(lines, evenMap); got != 4 {
+		t.Fatalf("endLineOfMapping(evenMap) = %d, want 4", got)
+	}
+
+	scalarDoc := &Document{front: []byte("a: |\n  x\n\n b\nc: 2\n  d: 3\n")}
+	scalarLines := lineOffsets(scalarDoc.front)
+	if got := scalarDoc.endLineOfScalar(scalarLines, &yaml.Node{Kind: yaml.ScalarNode, Line: 1}, 1); got != 4 {
+		t.Fatalf("endLineOfScalar = %d, want 4", got)
+	}
+	twoLineDoc := &Document{front: []byte("a: |\n  x\n")}
+	twoLines := lineOffsets(twoLineDoc.front)
+	if got := twoLineDoc.endLineOfScalar(twoLines, &yaml.Node{Kind: yaml.ScalarNode, Line: 1}, 1); got != 2 {
+		t.Fatalf("endLineOfScalar(twoLineDoc) = %d, want 2", got)
+	}
+}
+
+func TestReadMappingAndNodePredicates(t *testing.T) {
+	d := &Document{front: []byte("a: 1\n")}
+	n1, err := d.readMapping()
+	if err != nil || n1 == nil {
+		t.Fatalf("readMapping 1: %v", err)
+	}
+	n2, err := d.readMapping()
+	if err != nil || n1 != n2 {
+		t.Fatalf("readMapping did not return cached pointer: %p vs %p", n1, n2)
+	}
+
+	oneCharInvalid := &Document{front: []byte("[")}
+	if _, err := oneCharInvalid.readMapping(); !errors.Is(err, ErrUnreadable) {
+		t.Fatalf("readMapping([) = %v, want ErrUnreadable", err)
+	}
+
+	notMapping := &Document{front: []byte("- item\n")}
+	if _, err := notMapping.readMapping(); !errors.Is(err, ErrUnreadable) {
+		t.Fatalf("readMapping(- item) = %v, want ErrUnreadable", err)
+	}
+
+	badWritable := &Document{front: []byte(": bad")}
+	if n, err := badWritable.getWritableNode(); n != nil || !errors.Is(err, ErrUnreadable) {
+		t.Fatalf("getWritableNode(bad) = (%v, %v), want (nil, ErrUnreadable)", n, err)
+	}
+
+	if hasAnchor(nil) {
+		t.Fatal("hasAnchor(nil) = true")
+	}
+	if !hasAnchor(&yaml.Node{Kind: yaml.ScalarNode, Anchor: "a"}) {
+		t.Fatal("hasAnchor(Anchor) = false")
+	}
+	if !hasAnchor(&yaml.Node{Kind: yaml.AliasNode}) {
+		t.Fatal("hasAnchor(AliasNode) = false")
+	}
+
+	if isFlowCollection(nil) {
+		t.Fatal("isFlowCollection(nil) = true")
+	}
+	if isFlowCollection(&yaml.Node{Kind: yaml.ScalarNode, Style: yaml.FlowStyle}) {
+		t.Fatal("isFlowCollection(ScalarNode) = true")
+	}
+	if !isFlowCollection(&yaml.Node{Kind: yaml.SequenceNode, Style: yaml.FlowStyle}) {
+		t.Fatal("isFlowCollection(Flow SequenceNode) = false")
+	}
+
+	if isNullValue(&yaml.Node{Kind: yaml.MappingNode, Tag: "!!null", Value: ""}) {
+		t.Fatal("isNullValue(MappingNode) = true")
+	}
+	if isNullValue(&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: ""}) {
+		t.Fatal("isNullValue(!!str) = true")
+	}
+
+	flowChildTree := &yaml.Node{
+		Kind: yaml.SequenceNode,
+		Content: []*yaml.Node{
+			{Kind: yaml.MappingNode},
+			{Kind: yaml.MappingNode, Style: yaml.FlowStyle},
+		},
+	}
+	if !hasFlowStyle(flowChildTree) {
+		t.Fatal("hasFlowStyle(flowChildTree) = false")
+	}
+}
+
+func TestKeysMethodsAndBoundaries(t *testing.T) {
+	emptyDoc := &Document{}
+	if id, ok := emptyDoc.Identifier(); id != "" || ok {
+		t.Fatalf("emptyDoc.Identifier() = (%q, %v)", id, ok)
+	}
+	if title, ok := emptyDoc.Title(); title != "" || ok {
+		t.Fatalf("emptyDoc.Title() = (%q, %v)", title, ok)
+	}
+	if list, ok := emptyDoc.List("tags"); list != nil || ok {
+		t.Fatalf("emptyDoc.List() = (%v, %v)", list, ok)
+	}
+
+	badDoc := &Document{front: []byte(": bad")}
+	if id, ok := badDoc.Identifier(); id != "" || ok {
+		t.Fatalf("badDoc.Identifier() = (%q, %v)", id, ok)
+	}
+	if title, ok := badDoc.Title(); title != "" || ok {
+		t.Fatalf("badDoc.Title() = (%q, %v)", title, ok)
+	}
+	if list, ok := badDoc.List("tags"); list != nil || ok {
+		t.Fatalf("badDoc.List() = (%v, %v)", list, ok)
+	}
+	if names, ok := badDoc.EntryNames("load"); names != nil || ok {
+		t.Fatalf("badDoc.EntryNames() = (%v, %v)", names, ok)
+	}
+
+	oddMappingDoc := &Document{
+		mapping: &yaml.Node{
+			Kind:    yaml.MappingNode,
+			Content: []*yaml.Node{{Kind: yaml.ScalarNode, Value: "id"}},
+		},
+	}
+	if id, ok := oddMappingDoc.Identifier(); id != "" || ok {
+		t.Fatalf("oddMappingDoc.Identifier() = (%q, %v)", id, ok)
+	}
+	if title, ok := oddMappingDoc.Title(); title != "" || ok {
+		t.Fatalf("oddMappingDoc.Title() = (%q, %v)", title, ok)
+	}
+
+	valCollisionDoc, err := Open([]byte("---\nother: id\nid: real-id\nother2: title\ntitle: real-title\n---\n"))
+	if err != nil {
+		t.Fatalf("Open valCollisionDoc: %v", err)
+	}
+	if id, ok := valCollisionDoc.Identifier(); !ok || id != "real-id" {
+		t.Fatalf("valCollisionDoc.Identifier() = (%q, %v), want real-id", id, ok)
+	}
+	if title, ok := valCollisionDoc.Title(); !ok || title != "real-title" {
+		t.Fatalf("valCollisionDoc.Title() = (%q, %v), want real-title", title, ok)
+	}
+
+	blankTitleDoc, err := Open([]byte("---\ntitle: \"   \"\n---\n"))
+	if err != nil {
+		t.Fatalf("Open blankTitleDoc: %v", err)
+	}
+	if title, ok := blankTitleDoc.Title(); title != "" || ok {
+		t.Fatalf("blankTitleDoc.Title() = (%q, %v), want empty/false", title, ok)
+	}
+
+	mixedListDoc := &Document{
+		mapping: &yaml.Node{
+			Kind: yaml.MappingNode,
+			Content: []*yaml.Node{
+				{Kind: yaml.ScalarNode, Value: "tags"},
+				{
+					Kind: yaml.SequenceNode,
+					Content: []*yaml.Node{
+						{Kind: yaml.MappingNode, Tag: "!!str", Value: "skip"},
+						{Kind: yaml.ScalarNode, Tag: "!!str", Value: "keep"},
+					},
+				},
+			},
+		},
+	}
+	if list, ok := mixedListDoc.List("tags"); !ok || !reflect.DeepEqual(list, []string{"keep"}) {
+		t.Fatalf("mixedListDoc.List() = (%v, %v), want [keep]", list, ok)
+	}
+
+	if got := emptyDoc.entries(nil, "load"); got == nil || got.Kind != yaml.MappingNode {
+		t.Fatalf("entries(nil) = %+v, want MappingNode", got)
+	}
+	nullEntryDoc, err := Open([]byte("---\nload:\nscalar: 1\n---\n"))
+	if err != nil {
+		t.Fatalf("Open nullEntryDoc: %v", err)
+	}
+	if names, ok := nullEntryDoc.EntryNames("load"); !ok || len(names) != 0 {
+		t.Fatalf("EntryNames(null load) = (%v, %v), want empty/true", names, ok)
+	}
+	if names, ok := nullEntryDoc.EntryNames("missing"); !ok || len(names) != 0 {
+		t.Fatalf("EntryNames(missing) = (%v, %v), want empty/true", names, ok)
+	}
+	if names, ok := nullEntryDoc.EntryNames("scalar"); ok || names != nil {
+		t.Fatalf("EntryNames(scalar) = (%v, %v), want nil/false", names, ok)
+	}
+
+	badUnterminated := &Document{isUnterminated: true, front: []byte(": bad")}
+	if err := badUnterminated.SetMapping("load", []Entry{{Key: "a", Value: 1}}); !errors.Is(err, ErrUnreadable) {
+		t.Fatalf("SetMapping on badUnterminated = %v, want ErrUnreadable", err)
+	}
+	if err := nullEntryDoc.SetMapping("load", []Entry{{Key: "a", Value: failingYAMLMarshaler{}}}); err == nil {
+		t.Fatal("SetMapping with failingYAMLMarshaler succeeded, want error")
+	}
+	if err := nullEntryDoc.SetValue("load", failingYAMLMarshaler{}); err == nil {
+		t.Fatal("SetValue with failingYAMLMarshaler succeeded, want error")
+	}
+
+	verbatimDoc, err := Open([]byte("---\nid: 01J8\nload:\n  sat: 50\n---\n"))
+	if err != nil {
+		t.Fatalf("Open verbatimDoc: %v", err)
+	}
+	if err := verbatimDoc.SetMapping("load", []Entry{{Key: "missing", IsVerbatim: true}, {Key: "sat", IsVerbatim: true}}); err != nil {
+		t.Fatalf("SetMapping partial verbatim: %v", err)
+	}
+	if names, ok := verbatimDoc.EntryNames("load"); !ok || !reflect.DeepEqual(names, []string{"sat"}) {
+		t.Fatalf("EntryNames after partial verbatim = (%v, %v)", names, ok)
+	}
+	if err := verbatimDoc.SetMapping("load", []Entry{{Key: "missing", IsVerbatim: true}}); err != nil {
+		t.Fatalf("SetMapping all missing verbatim: %v", err)
+	}
+	if strings.Contains(string(verbatimDoc.Bytes()), "load:") {
+		t.Fatalf("all-missing verbatim did not remove key:\n%s", verbatimDoc.Bytes())
+	}
+
+	if got := emptyDoc.getSpelling("tags"); got == nil || len(got) != 0 {
+		t.Fatalf("emptyDoc.getSpelling = %v, want non-nil empty map", got)
+	}
+	if got := badDoc.getSpelling("tags"); got == nil || len(got) != 0 {
+		t.Fatalf("badDoc.getSpelling = %v, want non-nil empty map", got)
+	}
+	if got := nullEntryDoc.getSpelling("scalar"); got == nil || len(got) != 0 {
+		t.Fatalf("nullEntryDoc.getSpelling(scalar) = %v, want non-nil empty map", got)
+	}
+}
+
+func TestLinkblockHelpersAndBoundaries(t *testing.T) {
+	anchored, err := Open([]byte("---\nid: &a 01J8\n---\n"))
+	if err != nil {
+		t.Fatalf("Open anchored: %v", err)
+	}
+	if _, err := anchored.block(); !errors.Is(err, ErrAnchored) {
+		t.Fatalf("anchored.block() = %v, want ErrAnchored", err)
+	}
+	if err := anchored.SetLink(domain.Link{Target: domain.ParseAddress("A"), Role: domain.RoleJump}); !errors.Is(err, ErrAnchored) {
+		t.Fatalf("anchored.SetLink() = %v, want ErrAnchored", err)
+	}
+	if _, err := anchored.RemoveLink(domain.LinkKey{Target: domain.ParseAddress("A")}); !errors.Is(err, ErrAnchored) {
+		t.Fatalf("anchored.RemoveLink() = %v, want ErrAnchored", err)
+	}
+	if err := anchored.SetLinkOfType("preset", domain.ParseAddress("A"), domain.RoleRef); !errors.Is(err, ErrAnchored) {
+		t.Fatalf("anchored.SetLinkOfType() = %v, want ErrAnchored", err)
+	}
+	if _, err := anchored.UpdateLink(domain.ParseAddress("A"), domain.Link{Role: domain.RoleJump}); !errors.Is(err, ErrAnchored) {
+		t.Fatalf("anchored.UpdateLink() = %v, want ErrAnchored", err)
+	}
+	if _, err := anchored.RedirectLinks(domain.ParseAddress("A"), "B"); !errors.Is(err, ErrAnchored) {
+		t.Fatalf("anchored.RedirectLinks() = %v, want ErrAnchored", err)
+	}
+
+	noLinksDoc, err := Open([]byte("---\nid: 01J8\n---\n"))
+	if err != nil {
+		t.Fatalf("Open noLinksDoc: %v", err)
+	}
+	b, err := noLinksDoc.block()
+	if err != nil || b.isFound || b.indent != "  " {
+		t.Fatalf("noLinksDoc.block() = (%+v, %v)", b, err)
+	}
+
+	nullLinksDoc, err := Open([]byte("---\nlinks:\n---\n"))
+	if err != nil {
+		t.Fatalf("Open nullLinksDoc: %v", err)
+	}
+	b, err = nullLinksDoc.block()
+	if err != nil || !b.isFound || b.indent != "  " {
+		t.Fatalf("nullLinksDoc.block() = (%+v, %v)", b, err)
+	}
+	if n, err := nullLinksDoc.RemoveLink(domain.LinkKey{Target: domain.ParseAddress("A")}); err != nil || n != 0 || !strings.Contains(string(nullLinksDoc.Bytes()), "links:") {
+		t.Fatalf("nullLinksDoc.RemoveLink = (%d, %v), bytes = %q", n, err, nullLinksDoc.Bytes())
+	}
+	if err := nullLinksDoc.SetLinkOfType("preset", domain.Address{}, domain.RoleRef); err != nil || !strings.Contains(string(nullLinksDoc.Bytes()), "links:") {
+		t.Fatalf("nullLinksDoc.SetLinkOfType empty = %v, bytes = %q", err, nullLinksDoc.Bytes())
+	}
+
+	nilItemsDoc := &Document{
+		front: []byte("links:\n"),
+		mapping: &yaml.Node{
+			Kind: yaml.MappingNode,
+			Content: []*yaml.Node{
+				{Kind: yaml.ScalarNode, Value: "links", Line: 1, Column: 1},
+				nil,
+			},
+		},
+	}
+	if b, err := nilItemsDoc.block(); err != nil || !b.isFound || b.indent != "  " {
+		t.Fatalf("nilItemsDoc.block() = (%+v, %v)", b, err)
+	}
+
+	emptySeqDoc := &Document{
+		front: []byte("links:\n"),
+		mapping: &yaml.Node{
+			Kind: yaml.MappingNode,
+			Content: []*yaml.Node{
+				{Kind: yaml.ScalarNode, Value: "links", Line: 1, Column: 1},
+				{Kind: yaml.SequenceNode, Line: 1, Column: 1},
+			},
+		},
+	}
+	if b, err := emptySeqDoc.block(); err != nil || b.indent != "  " {
+		t.Fatalf("emptySeqDoc.block() = (%+v, %v)", b, err)
+	}
+
+	entriesDoc := &Document{front: []byte("  - to: A\n    role: jump\n  - to: B\n    role: parent\n")}
+	seqItems := &yaml.Node{
+		Kind:   yaml.SequenceNode,
+		Column: 3,
+		Content: []*yaml.Node{
+			{
+				Kind: yaml.MappingNode,
+				Line: 1,
+				Content: []*yaml.Node{
+					{Kind: yaml.ScalarNode, Value: "to", Line: 1, Column: 5},
+					{Kind: yaml.ScalarNode, Value: "A", Line: 4, Column: 9},
+				},
+			},
+			{
+				Kind: yaml.MappingNode,
+				Line: 3,
+				Content: []*yaml.Node{
+					{Kind: yaml.ScalarNode, Value: "to", Line: 3, Column: 5},
+					{Kind: yaml.ScalarNode, Value: "B", Line: 1, Column: 9},
+				},
+			},
+			{Kind: yaml.MappingNode, Line: 0},
+			{Kind: yaml.MappingNode, Line: 6},
+		},
+	}
+	gotEntries, gotIndent := entriesDoc.readBlockEntries(seqItems, 25)
+	if len(gotEntries) != 2 || gotIndent != "  " {
+		t.Fatalf("readBlockEntries = (%d, %q), want (2, \"  \")", len(gotEntries), gotIndent)
+	}
+	if gotEntries[0].start != 0 || gotEntries[0].end != 25 {
+		t.Fatalf("gotEntries[0] span = (%d, %d), want (0, 25)", gotEntries[0].start, gotEntries[0].end)
+	}
+	if gotEntries[1].start != 25 || gotEntries[1].end != 35 {
+		t.Fatalf("gotEntries[1] span = (%d, %d), want (25, 35)", gotEntries[1].start, gotEntries[1].end)
+	}
+
+	addDoc, err := Open([]byte("---\nlinks:\n  - to: A\n    role: ref\n    type: other\n  - to: A # keep comment\n    role: parent\n    type: target\n    note: initial\n---\n"))
+	if err != nil {
+		t.Fatalf("Open addDoc: %v", err)
+	}
+	if err := addDoc.AddLink(domain.Link{
+		Target: domain.ParseAddress("A"),
+		Role:   domain.RoleParent,
+		Type:   "target",
+	}); err != nil {
+		t.Fatalf("AddLink unchanged: %v", err)
+	}
+	if !strings.Contains(string(addDoc.Bytes()), "# keep comment") {
+		t.Fatalf("AddLink unchanged rewrote entry:\n%s", addDoc.Bytes())
+	}
+	if err := addDoc.AddLink(domain.Link{
+		Target: domain.ParseAddress("A"),
+		Role:   domain.RoleChild,
+		Type:   "target",
+		Marker: domain.MarkerArrow,
+		Why:    "updated",
+	}); err != nil {
+		t.Fatalf("AddLink updated: %v", err)
+	}
+	gotAdd := string(addDoc.Bytes())
+	if !strings.Contains(gotAdd, "marker: arrow") || !strings.Contains(gotAdd, "note: updated") || !strings.Contains(gotAdd, "type: other") {
+		t.Fatalf("AddLink updated output:\n%s", gotAdd)
+	}
+
+	setLinkDoc, err := Open([]byte("---\nlinks:\n  - to: Other\n    role: jump\n  - to: OldA\n    role: parent\n  - to: NewA\n    role: child\n---\n"))
+	if err != nil {
+		t.Fatalf("Open setLinkDoc: %v", err)
+	}
+	if err := setLinkDoc.SetLink(
+		domain.Link{Target: domain.ParseAddress("NewA"), Role: domain.RoleRef},
+		domain.ParseAddress("OldA"),
+	); err != nil {
+		t.Fatalf("SetLink: %v", err)
+	}
+	gotSetLink := string(setLinkDoc.Bytes())
+	if !strings.Contains(gotSetLink, "to: OldA\n    role: ref") || strings.Contains(gotSetLink, "to: NewA") {
+		t.Fatalf("SetLink did not deduplicate to first matching target:\n%s", gotSetLink)
+	}
+
+	unownedSetDoc, err := Open([]byte("---\nlinks:\n  - to: A\n    role: parent\n    custom: 1\n---\n"))
+	if err != nil {
+		t.Fatalf("Open unownedSetDoc: %v", err)
+	}
+	if err := unownedSetDoc.SetLink(domain.Link{Target: domain.ParseAddress("A"), Role: domain.RoleRef}); !errors.Is(err, ErrNotOwned) {
+		t.Fatalf("SetLink on unowned = %v, want ErrNotOwned", err)
+	}
+
+	removeRoleDoc, err := Open([]byte("---\nlinks:\n  - to: A\n    role: parent\n  - to: B\n    role: child\n  - to: A\n    role: child\n---\n"))
+	if err != nil {
+		t.Fatalf("Open removeRoleDoc: %v", err)
+	}
+	removedCount, err := removeRoleDoc.RemoveLink(domain.LinkKey{Target: domain.ParseAddress("A"), Role: domain.RoleChild})
+	if err != nil || removedCount != 1 {
+		t.Fatalf("RemoveLink by role = (%d, %v), want 1", removedCount, err)
+	}
+	if !strings.Contains(string(removeRoleDoc.Bytes()), "role: parent") || !strings.Contains(string(removeRoleDoc.Bytes()), "to: B") {
+		t.Fatalf("RemoveLink removed wrong entry:\n%s", removeRoleDoc.Bytes())
+	}
+
+	carrying, remCount, err := findTypedEntries([]entry{
+		{link: domain.Link{Type: "other"}, isReadable: true, isOwned: true},
+		{link: domain.Link{Type: "preset"}, isReadable: true, isOwned: true},
+	}, "preset")
+	if err != nil || !reflect.DeepEqual(carrying, []int{1}) || remCount != 1 {
+		t.Fatalf("findTypedEntries = (%v, %d, %v), want ([1], 1, nil)", carrying, remCount, err)
+	}
+
+	multiPresetDoc, err := Open([]byte("---\nlinks:\n  - to: P1\n    role: ref\n    type: preset\n  - to: P2\n    role: ref\n    type: preset\n---\n"))
+	if err != nil {
+		t.Fatalf("Open multiPresetDoc: %v", err)
+	}
+	if err := multiPresetDoc.SetLinkOfType("preset", domain.ParseAddress("P3"), domain.RoleRef); err != nil {
+		t.Fatalf("SetLinkOfType multiPresetDoc: %v", err)
+	}
+	if strings.Count(string(multiPresetDoc.Bytes()), "type: preset") != 1 || !strings.Contains(string(multiPresetDoc.Bytes()), "to: P3") {
+		t.Fatalf("SetLinkOfType did not collapse multiple entries:\n%s", multiPresetDoc.Bytes())
+	}
+
+	origLink := domain.Link{
+		Target: domain.ParseAddress("A"),
+		Role:   domain.RoleParent,
+		Type:   "t1",
+		Why:    "w1",
+		Label:  "l1",
+		Marker: domain.MarkerArrow,
+	}
+	if got := applyLinkChange(origLink, domain.Link{}); got != origLink {
+		t.Fatalf("applyLinkChange empty = %+v, want %+v", got, origLink)
+	}
+	changedLink := domain.Link{
+		Role:   domain.RoleChild,
+		Type:   "t2",
+		Why:    "w2",
+		Label:  "l2",
+		Marker: domain.LinkMarker("custom"),
+	}
+	if got := applyLinkChange(origLink, changedLink); got.Role != domain.RoleChild || got.Type != "t2" || got.Why != "w2" || got.Label != "l2" || got.Marker != domain.LinkMarker("custom") {
+		t.Fatalf("applyLinkChange full = %+v", got)
+	}
+
+	updateOrderDoc, err := Open([]byte("---\nlinks:\n  - to: Target\n    role: parent\n  - to: Other\n    role: jump\n---\n"))
+	if err != nil {
+		t.Fatalf("Open updateOrderDoc: %v", err)
+	}
+	if n, err := updateOrderDoc.UpdateLink(domain.ParseAddress("Target"), domain.Link{Role: domain.RoleChild}); err != nil || n != 1 {
+		t.Fatalf("UpdateLink = (%d, %v), want 1", n, err)
+	}
+
+	redirectOrderDoc, err := Open([]byte("---\nlinks:\n  - to: Target\n    role: parent\n  - to: Other\n    role: jump\n  - to: Target\n    role: unknown_role\n  - to: Target\n    role: parent\n    extra: 1\n---\n"))
+	if err != nil {
+		t.Fatalf("Open redirectOrderDoc: %v", err)
+	}
+	if moved, err := redirectOrderDoc.RedirectLinks(domain.ParseAddress("Target"), "Moved"); err != nil || moved != 1 {
+		t.Fatalf("RedirectLinks = (%d, %v), want 1", moved, err)
+	}
+
+	if got := linkOf(&yaml.Node{
+		Kind: yaml.MappingNode,
+		Content: []*yaml.Node{
+			{Value: "label"},
+			{Value: "to"},
+			{Value: "to"},
+			{Value: "Dest"},
+			{Value: "orphan"},
+		},
+	}); got.Label != "to" || got.Target.Value != "Dest" {
+		t.Fatalf("linkOf = %+v", got)
+	}
+
+	if isReadable(&yaml.Node{
+		Kind: yaml.MappingNode,
+		Content: []*yaml.Node{
+			{Value: "role"},
+			{Value: "parent"},
+		},
+	}) {
+		t.Fatal("isReadable without target = true")
+	}
+
+	if hasOnlyOwnedKeys(&yaml.Node{Kind: yaml.ScalarNode}) {
+		t.Fatal("hasOnlyOwnedKeys(ScalarNode) = true")
+	}
+	if !hasOnlyOwnedKeys(&yaml.Node{
+		Kind:    yaml.MappingNode,
+		Content: []*yaml.Node{{Value: "to"}},
+	}) {
+		t.Fatal("hasOnlyOwnedKeys(odd Content) = false")
+	}
+
+	if got := keepLinkNotation("[[a", "B"); got != "B" {
+		t.Fatalf("keepLinkNotation([[a) = %q, want B", got)
+	}
+	if got := keepLinkNotation("a]]", "B"); got != "B" {
+		t.Fatalf("keepLinkNotation(a]]) = %q, want B", got)
+	}
+	if got := keepLinkNotation("[[]]", "B"); got != "[[B]]" {
+		t.Fatalf("keepLinkNotation([[]]) = %q, want [[B]]", got)
+	}
+	if got := keepLinkNotation("[[old|alias]]", "B"); got != "[[B|alias]]" {
+		t.Fatalf("keepLinkNotation([[old|alias]]) = %q, want [[B|alias]]", got)
+	}
+}
+
+func TestScalarHelpersAndBoundaries(t *testing.T) {
+	d := &Document{front: []byte("\"actual\"\n")}
+	if s, e, ok := d.scalarSpan(&yaml.Node{Kind: yaml.MappingNode}); s != 0 || e != 0 || ok {
+		t.Fatalf("scalarSpan(MappingNode) = (%d, %d, %v)", s, e, ok)
+	}
+	if s, e, ok := d.scalarSpan(&yaml.Node{Kind: yaml.ScalarNode, Style: yaml.LiteralStyle, Line: 1, Column: 1}); s != 0 || e != 0 || ok {
+		t.Fatalf("scalarSpan(LiteralStyle) = (%d, %d, %v)", s, e, ok)
+	}
+	if s, e, ok := d.scalarSpan(&yaml.Node{Kind: yaml.ScalarNode, Style: yaml.DoubleQuotedStyle, Line: 1, Column: 1, Value: "mismatch"}); s != 0 || e != 0 || ok {
+		t.Fatalf("scalarSpan(mismatch) = (%d, %d, %v)", s, e, ok)
+	}
+
+	if pos, ok := d.readScalarStart(&yaml.Node{Kind: yaml.SequenceNode}); pos != 0 || ok {
+		t.Fatalf("readScalarStart(SequenceNode) = (%d, %v)", pos, ok)
+	}
+	if pos, ok := d.readScalarStart(&yaml.Node{Kind: yaml.ScalarNode, Line: 0, Column: 1}); pos != 0 || ok {
+		t.Fatalf("readScalarStart(Line 0) = (%d, %v)", pos, ok)
+	}
+	if pos, ok := d.readScalarStart(&yaml.Node{Kind: yaml.ScalarNode, Line: 2, Column: 1}); pos != 0 || ok {
+		t.Fatalf("readScalarStart(Line>=len) = (%d, %v)", pos, ok)
+	}
+	if pos, ok := d.readScalarStart(&yaml.Node{Kind: yaml.ScalarNode, Line: 1, Column: 0}); pos != 0 || ok {
+		t.Fatalf("readScalarStart(Column 0) = (%d, %v)", pos, ok)
+	}
+	if pos, ok := d.readScalarStart(&yaml.Node{Kind: yaml.ScalarNode, Line: 1, Column: 1}); !ok || pos != 0 {
+		t.Fatalf("readScalarStart(1, 1) = (%d, %v), want (0, true)", pos, ok)
+	}
+
+	noBreakDoc := &Document{front: []byte("abc")}
+	if pos, ok := noBreakDoc.readScalarStart(&yaml.Node{Kind: yaml.ScalarNode, Line: 1, Column: 10}); pos != 0 || ok {
+		t.Fatalf("readScalarStart(past end) = (%d, %v), want (0, false)", pos, ok)
+	}
+
+	if end, ok := noBreakDoc.findScalarEnd(&yaml.Node{Style: 0, Value: "abcd"}, 0); end != 0 || ok {
+		t.Fatalf("findScalarEnd(past end) = (%d, %v)", end, ok)
+	}
+	if end, ok := noBreakDoc.findScalarEnd(&yaml.Node{Style: 0, Value: "abc"}, 0); !ok || end != 3 {
+		t.Fatalf("findScalarEnd(exact end) = (%d, %v), want (3, true)", end, ok)
+	}
+	if end, ok := noBreakDoc.findScalarEnd(&yaml.Node{Style: 0, Value: "abd"}, 0); end != 0 || ok {
+		t.Fatalf("findScalarEnd(mismatch) = (%d, %v)", end, ok)
+	}
+	if end, ok := d.findScalarEnd(&yaml.Node{Style: yaml.TaggedStyle, Value: "actual"}, 0); end != 0 || ok {
+		t.Fatalf("findScalarEnd(TaggedStyle) = (%d, %v), want (0, false)", end, ok)
+	}
+
+	if isValidScalarSpan([]byte("[unclosed"), 0, 9, "") {
+		t.Fatal("isValidScalarSpan(invalid YAML, empty want) = true")
+	}
+	if isValidScalarSpan([]byte("actual"), 0, 6, "want") {
+		t.Fatal("isValidScalarSpan(mismatch) = true")
+	}
+
+	if canEscapeBackslash([]byte(`'\a'`), 1, '\'') {
+		t.Fatal("canEscapeBackslash(single quote) = true")
+	}
+	if canEscapeBackslash([]byte(`"\`), 1, '"') {
+		t.Fatal("canEscapeBackslash(at end) = true")
+	}
+	if !canEscapeBackslash([]byte(`"\"`), 1, '"') {
+		t.Fatal("canEscapeBackslash(valid) = false")
+	}
+	if canEscapeBackslash([]byte("\"\\\n\""), 1, '"') {
+		t.Fatal("canEscapeBackslash(before newline) = true")
+	}
+
+	if isEscapedSingleQuote([]byte(`"''"`), 1, '"') {
+		t.Fatal("isEscapedSingleQuote(double quote) = true")
+	}
+	if isEscapedSingleQuote([]byte(`'a'`), 2, '\'') {
+		t.Fatal("isEscapedSingleQuote(at end) = true")
+	}
+	if !isEscapedSingleQuote([]byte(`'''`), 1, '\'') {
+		t.Fatal("isEscapedSingleQuote(valid) = false")
+	}
+
+	if end, ok := findQuotedEnd([]byte("abc"), 0, '"'); end != 0 || ok {
+		t.Fatalf("findQuotedEnd(unquoted) = (%d, %v)", end, ok)
+	}
+	if end, ok := findQuotedEnd([]byte(`""`), 0, '"'); !ok || end != 2 {
+		t.Fatalf("findQuotedEnd(empty quotes) = (%d, %v), want (2, true)", end, ok)
+	}
+	if end, ok := findQuotedEnd([]byte("\"a\nb\""), 0, '"'); end != 0 || ok {
+		t.Fatalf("findQuotedEnd(multiline) = (%d, %v)", end, ok)
+	}
+
+	if got, err := scalarLike("true", 0); err != nil || got != `"true"` {
+		t.Fatalf("scalarLike(true, 0) = (%q, %v), want \"true\"", got, err)
+	}
+	if got, err := scalarLike("true", yaml.TaggedStyle); err != nil || got != "true" {
+		t.Fatalf("scalarLike(true, TaggedStyle) = (%q, %v), want true", got, err)
+	}
+	if got, err := scalarLike("a\r\nb", yaml.SingleQuotedStyle); err != nil || got != `"a\r\nb"` {
+		t.Fatalf("scalarLike(CRLF, SingleQuotedStyle) = (%q, %v), want \"a\\r\\nb\"", got, err)
 	}
 }

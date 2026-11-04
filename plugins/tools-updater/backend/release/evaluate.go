@@ -120,6 +120,7 @@ func CompareVersions(a, b string) int {
 	}
 	switch {
 	case preA == "" && preB == "":
+		// gomutants:disable-next-line BRANCH_CASE reason="comparePrerelease returns 0 when both prerelease strings are empty."
 		return 0
 	case preA == "":
 		return 1
@@ -136,6 +137,7 @@ func splitVersion(version string) (core []string, prerelease string) {
 }
 
 func compareNumbers(a, b []string) int {
+	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="getNumber returns 0 out of bounds on both sides."
 	for i := 0; i < max(len(a), len(b)); i++ {
 		if order := compareInts(getNumber(a, i), getNumber(b, i)); order != 0 {
 			return order

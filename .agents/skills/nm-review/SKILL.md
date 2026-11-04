@@ -1,9 +1,9 @@
 ---
-name: review
-description: Executes the complete, standardized 3-stage code review pipeline (1. Gatekeeper & Architecture -> 2. Bug Hunter -> 3. Adversary) for working tree changes, pull requests, branches, or specified paths. Trigger with "/review", "review", "run review", "code review", or when asked to review Go, Vue or TypeScript code.
+name: nm-review
+description: Executes the complete, standardized 3-stage code review pipeline (gatekeeper and architecture, then bug hunter, then adversary) for working tree changes, pull requests, branches, or specified paths. Trigger with "/nm-review", "review", "run review", "code review", or when asked to review Go, Vue or TypeScript code.
 ---
 
-# Unified 3-Stage Code Review Pipeline (`/review`)
+# Unified 3-Stage Code Review Pipeline (`/nm-review`)
 
 This skill orchestrates the sequential review pipeline for the numen repository. It locates the changed files, audits them against `AGENTS.md` and the rules in `.agents/rules/`, hunts for semantic defects across the blast radius, and proves or disproves each hypothesis with a test that runs.
 
@@ -45,7 +45,7 @@ Resolve the repository root and determine the target:
    ```bash
    REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || readlink -f .agents/.. 2>/dev/null || echo "$PWD/../source/numen")
    ```
-2. **Explicit target**: a path (`/review libs/ui/core/src/plex`) focuses the audit on those files; a git reference (`/review origin/main...HEAD`, a SHA) reviews that range.
+2. **Explicit target**: a path (`/nm-review libs/ui/core/src/plex`) focuses the audit on those files; a git reference (`/nm-review origin/main...HEAD`, a SHA) reviews that range.
 3. **Auto-detection (default)**:
    - `git -C "$REPO_ROOT" status --short` and `git -C "$REPO_ROOT" diff HEAD`.
    - Dirty tree: audit the uncommitted diff.
@@ -89,97 +89,56 @@ _Guide: [`stages/3-adversary.md`](./stages/3-adversary.md)_
 
 ---
 
-## Strict output formatting contract (mandatory)
+## Report format (mandatory)
 
-1. **No intermediate chatter.** Output only the Unified Review Report.
-2. **Deterministic sections** in this exact order with identical titles: `# 📋 Unified Code Review Report`, `## 🚦 Stage 1`, `## 🐞 Stage 2`, `## ⚔️ Stage 3`, `## 📝 Action Items`.
-3. **No omitted sections.** Where there is nothing to report, use the placeholder line given below.
+The report is read on a GitHub pull request and in a terminal. The verdict and the findings come first, and the report shows only what the review did.
 
-"No findings" is a real outcome and a useful one. Padding a review with cosmetic remarks to look thorough wastes the time of everyone who reads it.
+1. **Only the report.** No text before or after it.
+2. **Order:** verdict heading, summary, findings by severity, the gates that ran, the list of checks found sound, the footer.
+3. **A check that did not run is left out.** No "N/A" or "not run" rows. When the caller ran no gates, the gates line is omitted, and the footer says in one line what was not run and why.
+4. **Lists, not tables.** Wide tables break on GitHub. Status is an emoji (✅ ❌), never a code span.
+5. **"No findings" is a real outcome.** Padding a review with cosmetic remarks wastes the time of everyone who reads it.
+
+Severity: 🔴 CRITICAL (data loss, crash, security), 🟠 HIGH (a broken behaviour or consumer), 🟡 MEDIUM (an edge case that misbehaves), ⚪ LOW (a minor or unconfirmed risk).
+
+Verdict: ❌ Rejected when a gate failed or a CRITICAL finding exists; ⚠️ Changes requested when a HIGH or MEDIUM finding exists; ✅ Approved otherwise.
 
 ---
 
-## Standardized unified review report template
+## Report template
 
 ````markdown
-# 📋 Unified Code Review Report
+## ⚠️ Changes requested
 
-**Target**: `<branch / commit / file path>`
-**Verdict**: `[ ✅ APPROVED | ⚠️ CHANGES REQUESTED | ❌ REJECTED ]`
+<One or two sentences: what the change does, and what blocks merging.>
 
----
+### 🟠 HIGH · <defect title>
 
-## 🚦 Stage 1: Gatekeeper & Architecture
+`path/file.go:12`
 
-| Check                                  |       Status        | Details                                              |
-| :------------------------------------- | :-----------------: | :--------------------------------------------------- |
-| **gofmt / Prettier / go vet**          | `PASS / FAIL / N/A` | <details or '0 errors'>                              |
-| **go test**                            | `PASS / FAIL / N/A` | <per module, or why it did not run>                  |
-| **buf lint**                           | `PASS / FAIL / N/A` | <details or 'clean'>                                 |
-| **vue-tsc typecheck**                  | `PASS / FAIL / N/A` | <details or '0 errors'>                              |
-| **Unit tests** (`vitest`)              | `PASS / FAIL / N/A` | <details or 'X passed'>                              |
-| **Story tests** (chromium / webkit)    | `PASS / FAIL / N/A` | <both engines, or which one is missing>              |
-| **Architecture** (`AGENTS.md` / rules) |    `PASS / FAIL`    | <rule honoured or contradicted, by file and section> |
-| **Naming & placement** (`AGENTS.md`)   |    `PASS / FAIL`    | <details or 'clean'>                                 |
+**Given** <initial state> · **When** <action or event> · **Then** <failure>
 
-_Gatekeeper log:_
+**Proof:** <the test and its failing output, or "by reading" and the lines that show it>
+**Rule:** <the AGENTS.md or rules statement it contradicts; omit the line when none applies>
+**Fix:** <a direction, not a patch>
+
+### 🟡 MEDIUM · <defect title>
+
+…
+
+**Gates:** ✅ `make lib_core_lint` · ✅ `make lib_core_test` · ❌ `make lib_ui_test`
 
 ```text
-<If failed: the exact error output.>
-<If passed: every gate ran and exited 0; name the commands.>
+<the exact error output of a failed gate>
 ```
+
+<details><summary>Checked and found sound (<count>)</summary>
+
+- ✅ <what was checked>: <how, a test name or "by reading">
+
+</details>
+
+<sub>nm-review · <one line on what this run did not do and why></sub>
 ````
 
----
-
-## 🐞 Stage 2: Semantic Logic & Blast Radius
-
-<!-- IF DEFECTS FOUND: one card per defect, ordered by severity -->
-
-### [ CRITICAL | HIGH | MEDIUM ] <Defect title>
-
-- **Location**: `path/file.go:L12-L34`
-- **Category**: `[ Concurrency | Context | Reactivity | Boundary | Error Handling | Wire Contract | Architecture ]`
-- **Failure scenario**:
-  - **Given**: <initial state / preconditions>
-  - **When**: <triggering action or event sequence>
-  - **Then**: <failure, corrupted state, or crash>
-- **Root cause**: <what is actually wrong>
-- **Decision it contradicts**: <the `AGENTS.md` / rules statement, or none>
-- **Direction**: <a direction, not a patch>
-
-<!-- IF NO DEFECTS FOUND: output ONLY this line: -->
-
-_No semantic logic defects or regressions detected._
-
----
-
-## ⚔️ Stage 3: Dynamic Stress Verification
-
-| Attack vector        | Target      | Test file               |                Outcome                |
-| :------------------- | :---------- | :---------------------- | :-----------------------------------: |
-| <attack description> | `<file.go>` | `<file_test.go or N/A>` | `[ 💥 BUG CONFIRMED / 🛡️ RESILIENT ]` |
-
-_Failure details:_
-
-```text
-<assertion or failure trace, if a test failed>
-```
-
-<!-- IF RESILIENT / NO FAILURES: output ONLY this line: -->
-
-_All targeted stress checks passed or the code is proven resilient._
-
----
-
-## 📝 Action Items & Recommendations
-
-1. <Concrete action item>
-
-<!-- IF APPROVED WITH NO ACTIONS: 1. None — the change is ready to merge. -->
-
-<One line: what the change does, and whether anything in it blocks merging.>
-
-```
-
-```
+The heading is `## ✅ Approved`, `## ⚠️ Changes requested` or `## ❌ Rejected`. With no findings, the summary is followed directly by the gates line and the sound list. Tests written in Stage 3 and left in the tree are named in the finding that uses them.

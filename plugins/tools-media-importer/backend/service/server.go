@@ -97,6 +97,7 @@ func (f *fetchers) updateConfig(values map[string]string) {
 
 func getTool(path string) download.Tool {
 	if path == "" {
+		// gomutants:disable-next-line RETURN_ZERO reason="explicit nil fields equal zero Tool"
 		return download.Tool{Command: nil, Arguments: nil, Environment: nil}
 	}
 	return download.Tool{Command: []string{path}, Arguments: nil, Environment: nil}
@@ -119,10 +120,12 @@ func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	f := newFetchers(isMock)
 	links := link.New(hosted, f.getFetcher, f.getSettings)
 	commands, err := newCommands(links, hosted)
+	// gomutants:disable-next-line BRANCH_IF reason="newCommands with static command IDs never returns an error"
 	if err != nil {
 		return err
 	}
 	s.SetUpdateConfig(f.updateConfig)
+	// gomutants:disable-next-line BRANCH_IF reason="mountAPI with static service and method constants never returns an error"
 	if err := mountAPI(s, links); err != nil {
 		return err
 	}

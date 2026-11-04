@@ -50,6 +50,7 @@ func findInHome(fileName string) string {
 }
 
 func resolveFileName(repoAddress, defaultFileName string) string {
+	// gomutants:disable-next-line EXPRESSION_REMOVE reason="filepath.Base never returns empty and only returns slash when repoAddress ends with slash"
 	if base := filepath.Base(repoAddress); base != "" && base != "." && base != "/" && !strings.HasSuffix(repoAddress, "/") {
 		return base
 	}
@@ -85,10 +86,12 @@ func locateModel(explicitPath, repoAddress, envVar, defaultFileName, dir string)
 
 // findInEnv is the file the variable names, empty when it is unset or the file is missing.
 func findInEnv(envVar string) string {
+	// gomutants:disable-next-line BRANCH_IF reason="os.Getenv returns empty for an empty variable name"
 	if envVar == "" {
 		return ""
 	}
 	env := os.Getenv(envVar)
+	// gomutants:disable-next-line BRANCH_IF reason="os.Stat fails on an empty path"
 	if env == "" {
 		return ""
 	}

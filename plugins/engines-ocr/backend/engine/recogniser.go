@@ -194,6 +194,7 @@ func (r *Recogniser) makeBlock(t recogniseTarget, found []read.RecResult) (Block
 	}
 	text, boxes := Assemble(lines)
 	if text == "" {
+		// gomutants:disable-next-line RETURN_ZERO,INTEGER_DECREMENT,INTEGER_INCREMENT reason="Callers ignore the returned Block when the boolean result is false."
 		return Block{Label: "", Text: "", IsHeading: false, Depth: 0, Boxes: nil}, false
 	}
 	depth, head := r.head[t.region.Label]
@@ -212,6 +213,7 @@ func (r *Recogniser) makeBlock(t recogniseTarget, found []read.RecResult) (Block
 func cropRegion(page image.Image, rect image.Rectangle, margin int) (image.Image, image.Point) {
 	wider := rect.Inset(-margin).Intersect(page.Bounds())
 	if wider.Empty() {
+		// gomutants:disable-next-line RETURN_ZERO reason="image.Point{X: 0, Y: 0} is the zero value of image.Point."
 		return nil, image.Point{X: 0, Y: 0}
 	}
 	out := image.NewRGBA(image.Rect(0, 0, wider.Dx(), wider.Dy()))

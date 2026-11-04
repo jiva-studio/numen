@@ -51,6 +51,7 @@ func (c *Client) Fetch(ctx context.Context, endpoint string) (manifest release.M
 		return release.Manifest{}, err
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	// gomutants:disable-next-line BRANCH_IF reason="CheckEndpoint already validates url.Parse for the endpoint."
 	if err != nil {
 		return release.Manifest{}, fmt.Errorf("create release request: %w", err)
 	}

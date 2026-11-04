@@ -32,16 +32,16 @@ type version struct {
 
 func parseVersion(text string) (version, error) {
 	if !manifestVersionPattern.MatchString(text) {
-		return version{numbers: [3]uint64{}, prerelease: nil}, fmt.Errorf("%w: %q", ErrInvalidVersion, text)
+		return version{}, fmt.Errorf("%w: %q", ErrInvalidVersion, text)
 	}
 	core := strings.TrimPrefix(text, "v")
 	core, _, _ = strings.Cut(core, "+")
 	core, prerelease, hasPrerelease := strings.Cut(core, "-")
-	parsed := version{numbers: [3]uint64{}, prerelease: nil}
+	var parsed version
 	for i, part := range strings.Split(core, ".") {
 		number, err := strconv.ParseUint(part, 10, 64)
 		if err != nil {
-			return version{numbers: [3]uint64{}, prerelease: nil}, fmt.Errorf("%w: %q: %w", ErrInvalidVersion, text, err)
+			return version{}, fmt.Errorf("%w: %q: %w", ErrInvalidVersion, text, err)
 		}
 		parsed.numbers[i] = number
 	}
@@ -64,13 +64,8 @@ func compareNumbers(a, b uint64) int {
 // comparePrerelease orders two prerelease lists: a version without one follows any with one, and a
 // shorter list precedes a longer one it begins.
 func comparePrerelease(a, b []string) int {
-	switch {
-	case len(a) == 0 && len(b) == 0:
-		return 0
-	case len(a) == 0:
-		return 1
-	case len(b) == 0:
-		return -1
+	if len(a) == 0 || len(b) == 0 {
+		return compareNumbers(uint64(len(b)), uint64(len(a)))
 	}
 	for i := 0; i < len(a) && i < len(b); i++ {
 		if order := compareIdentifier(a[i], b[i]); order != 0 {
