@@ -24,7 +24,7 @@ describe('listing the offered commands', () => {
     const deps: PluginHostDeps = {
       getCommandDeclarations: () => [declaration],
       reportCommandIssue,
-    } as PluginHostDeps
+    } as unknown as PluginHostDeps
     const registry = createRegistry(
       ['md.tree'],
       [
@@ -49,7 +49,9 @@ describe('listing the offered commands', () => {
   })
 
   it('returns no issue for a plugin whose frontend has not activated yet', () => {
-    const deps: PluginHostDeps = { getCommandDeclarations: () => [declaration] } as PluginHostDeps
+    const deps: PluginHostDeps = {
+      getCommandDeclarations: () => [declaration],
+    } as unknown as PluginHostDeps
 
     const { commands, issues } = listOfferedCommands(deps, createRegistry([], []))
 
